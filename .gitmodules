@@ -1,0 +1,3 @@
+[submodule "Submodules/agg-sharp"]
+	path = Submodules/agg-sharp
+	url = https://github.com/MatterHackers/agg-sharp.git
