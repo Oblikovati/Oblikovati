@@ -29,8 +29,8 @@ if (Vulkan.CheckVulkanSDKDebugLibs()):
 subprocess.call(["git", "lfs", "pull"])
 subprocess.call(["git", "submodule", "update", "--init", "--recursive"])
 
-if not os.path.exists("oblikovati_runtime/DotNet/"):
-    os.makedirs("oblikovati_runtime/DotNet/")
+if not os.path.exists("Oblikovati/DotNet/"):
+    os.makedirs("Oblikovati/DotNet/")
 
 print(f"{Style.BRIGHT}{Back.GREEN}Generating Visual Studio 2022 solution.{Style.RESET_ALL}")
 subprocess.call(["lib_vendor_precompiled/premake/premake5.exe", "vs2022"])

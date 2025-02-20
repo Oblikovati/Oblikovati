@@ -4,7 +4,7 @@ include "dependencies.lua"
 
 workspace "Oblikovati"
 	configurations { "Debug", "Debug-AS", "Release" }
-	startproject "oblikovati_runtime"
+	startproject "Oblikovati"
     conformancemode "On"
 
 	language "C++"
@@ -60,10 +60,10 @@ include "lib_vendor_source/msdf-atlas-gen"
 group ""
 
 group "Kernel"
-include "oblikovati_kernel"
+include "Oblikovati.Kernel"
 include "./lib_internal_source/Oblikovati-API"
 group ""
 
 group "Runtime"
-include "oblikovati_runtime"
+include "Oblikovati"
 group ""

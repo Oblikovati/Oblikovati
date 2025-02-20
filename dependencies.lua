@@ -1,5 +1,3 @@
-include "./lib_internal_source/premake/dependency_extensions.lua"
-
 VULKAN_SDK = os.getenv("VULKAN_SDK")
 
 -- Keep in alphabetical order
@@ -49,3 +47,5 @@ Dependencies = {
 		},
 	}
 }
+
+include "./lib_internal_source/premake/dependency_extensions.lua"

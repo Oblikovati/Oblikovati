@@ -73,8 +73,8 @@ obj/
 Intermediates/
 __pycache__
 
-oblikovati_runtime/DotNet
-oblikovati_runtime/**/*.pdb
+Oblikovati/DotNet
+Oblikovati/**/*.pdb
 
 lib_vendor_source/**/*.pdb
 
