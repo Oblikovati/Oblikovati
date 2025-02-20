@@ -1,0 +1,25 @@
+[submodule "lib_internal_source/Oblikovati-API"]
+	path = lib_internal_source/Oblikovati-API
+	url = https://github.com/Oblikovati/Oblikovati-API.git
+	branch = main
+	shallow = true
+[submodule "lib_vendor_source/Coral"]
+	path = lib_vendor_source/Coral
+	url = https://github.com/StudioCherno/Coral
+	branch = dev
+	shallow = true
+	ignore = dirty
+[submodule "lib_vendor_source/glfw"]
+	path = lib_vendor_source/glfw
+	url = https://github.com/TheCherno/glfw
+	ignore = dirty
+	shallow = true
+[submodule "lib_vendor_source/imgui"]
+	path = lib_vendor_source/imgui
+	url = https://github.com/TheCherno/imgui
+	branch = docking
+	ignore = dirty
+	shallow = true
+[submodule "lib_vendor_source/glm"]
+	path = lib_vendor_source/glm
+	url = https://github.com/g-truc/glm
