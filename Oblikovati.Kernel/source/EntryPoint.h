@@ -3,7 +3,7 @@
 #include "kernel/Application.h"
 #include "kernel/Assert.h"
 
-extern Oblikovati::Application* Oblikovati::CreateApplication(int argc, char** argv);
+extern Oblikovati::Kernel::Application* Oblikovati::Kernel::CreateApplication(int argc, char** argv);
 bool g_ApplicationRunning = true;
 
 namespace Oblikovati {
@@ -14,7 +14,7 @@ namespace Oblikovati {
 		{
 
 			InitializeKernel();
-			Application* app = CreateApplication(argc, argv);
+			Kernel::Application* app = Kernel::CreateApplication(argc, argv);
 			OBKVT_CORE_ASSERT(app, "Client Application is null!");
 			app->Run();
 			delete app;

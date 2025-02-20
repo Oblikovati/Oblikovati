@@ -2,7 +2,7 @@
 	path = lib_internal_source/Oblikovati-API
 	url = https://github.com/Oblikovati/Oblikovati-API.git
 	branch = main
-	shallow = true
+
 [submodule "lib_vendor_source/Coral"]
 	path = lib_vendor_source/Coral
 	url = https://github.com/StudioCherno/Coral

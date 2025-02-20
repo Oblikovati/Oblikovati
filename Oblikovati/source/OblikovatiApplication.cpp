@@ -1,10 +1,10 @@
 #include "EntryPoint.h"
 
-class OblikovatiApplication : public Oblikovati::Application
+class OblikovatiApplication : public Oblikovati::Kernel::Application
 {
 	public:
-	OblikovatiApplication(const Oblikovati::ApplicationConfiguration& config)
-		: Oblikovati::Application(config)
+	OblikovatiApplication(const Oblikovati::Kernel::ApplicationConfiguration& config)
+		: Oblikovati::Kernel::Application(config)
 	{
 
 	}
@@ -18,9 +18,9 @@ class OblikovatiApplication : public Oblikovati::Application
 	}
 };
 
-Oblikovati::Application* Oblikovati::CreateApplication(int argc, char** argv)
+Oblikovati::Kernel::Application* Oblikovati::Kernel::CreateApplication(int argc, char** argv)
 {
-	Oblikovati::ApplicationConfiguration config;
+	Oblikovati::Kernel::ApplicationConfiguration config;
 	
 	return new OblikovatiApplication(config);
 }

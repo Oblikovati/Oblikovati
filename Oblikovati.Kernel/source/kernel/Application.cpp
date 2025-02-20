@@ -1,7 +1,7 @@
 #include "kernelpch.h"
 #include "Application.h"
 
-namespace Oblikovati {
+namespace Oblikovati::Kernel {
 	Application::Application(const ApplicationConfiguration& config)
 	{
 

@@ -2,7 +2,7 @@
 
 #include "Base.h"
 
-namespace Oblikovati
+namespace Oblikovati::Kernel
 {
 	class IApplication
 	{
