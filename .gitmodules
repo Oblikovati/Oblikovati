@@ -23,3 +23,7 @@
 [submodule "lib_vendor_source/glm"]
 	path = lib_vendor_source/glm
 	url = https://github.com/g-truc/glm
+[submodule "lib_vendor_source/googletest"]
+	path = lib_vendor_source/googletest
+	url = https://github.com/Oblikovati/googletest.git
+	branch = premake_support
