@@ -67,6 +67,8 @@ hooks/
 
 bin/
 bin-int/
+bin-tests/
+bin-tests-int/
 obj/
 **/cache/**
 **/Cache/**
@@ -75,7 +77,6 @@ __pycache__
 
 Oblikovati/DotNet
 Oblikovati/**/*.pdb
-
 lib_vendor_source/**/*.pdb
 
 #Exceptions
