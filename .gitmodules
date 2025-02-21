@@ -23,7 +23,10 @@
 [submodule "lib_vendor_source/glm"]
 	path = lib_vendor_source/glm
 	url = https://github.com/g-truc/glm
+	ignore = dirty
+	shallow = true
 [submodule "lib_vendor_source/googletest"]
 	path = lib_vendor_source/googletest
 	url = https://github.com/Oblikovati/googletest.git
+	ignore = dirty
 	branch = premake_support
