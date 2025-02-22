@@ -1,4 +1,7 @@
 #include "gtest/gtest.h"
+#include "OblikovatiKernel.h"
+
+extern Oblikovati::Kernel::ApplicationObject* g_Application;
 
 namespace Oblikovati::Tests::ClientGraphics
 {
@@ -246,6 +249,20 @@ namespace Oblikovati::Tests::ClientGraphics
 
 TEST(ClientGraphicsTests, DrawCylinder)
 {
+	//auto thisApplication = g_Application;
+
+	// TODO: We have to create the host instance on a separate thread
+	// The test should dispatch the desired state and some way get a capture from the framebuffer
+	// and compare with a known good previous capture.
+
+	// TODO: Create and Set active document as a PartDocument
+
+	//auto doc = thisApplication->GetActiveDocument();
+
+	//auto componentDefinition =  doc->GetComponentDefinition();
+
+	//auto graphicsData = doc->GetGraphicsDataSetsCollection()["SampleGraphicsID"]
+
 	EXPECT_STRNE("hello", "cylinder");
 	EXPECT_EQ(7 * 6, 42);
 }

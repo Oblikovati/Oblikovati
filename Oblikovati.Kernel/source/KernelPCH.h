@@ -36,3 +36,4 @@
 #include <kernel/Enumerator.h>
 #include <kernel/Iterator.h>
 #include <kernel/List.h>
+#include <kernel/Dictionary.h>

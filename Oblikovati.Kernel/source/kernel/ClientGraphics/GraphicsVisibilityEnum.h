@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Oblikovati::Kernel::ClientGraphics
+namespace Oblikovati::Kernel::CltGraphics
 {
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- START
 	/// <summary>Indicates whether some, all, or none of the client graphics are visible.</summary>

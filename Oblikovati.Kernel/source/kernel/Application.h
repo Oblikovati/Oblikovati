@@ -12,8 +12,8 @@ namespace Oblikovati::Kernel
 			Application() {}
 			virtual ~Application() {}
 			virtual void Run(void) = 0;
-			virtual Documents::Document* GetActiveDocument() = 0;
-			virtual void SetActiveDocument(Documents::Document* Document) = 0;
+			virtual Docs::Document* GetActiveDocument() = 0;
+			virtual void SetActiveDocument(Docs::Document* Document) = 0;
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
 
@@ -29,8 +29,8 @@ namespace Oblikovati::Kernel
 			ApplicationObject(const ApplicationConfiguration& config);
 			virtual ~ApplicationObject();
 			void Run(void) override;
-			virtual Documents::Document* GetActiveDocument() override;
-			virtual void SetActiveDocument(Documents::Document* Document) override;
+			virtual Docs::Document* GetActiveDocument() override;
+			virtual void SetActiveDocument(Docs::Document* Document) override;
 			virtual void OnInit() = 0;
 			virtual void OnShutdown();
 			virtual Oblikovati::Kernel::ObjectTypeEnum GetType() override
@@ -38,7 +38,7 @@ namespace Oblikovati::Kernel
 				return Kernel::ObjectTypeEnum::kApplicationObject;
 			}
 		protected:
-			Documents::Document* ActiveDocument;
+			Docs::Document* ActiveDocument;
 	private: 
 		bool m_Running = true;
 	};

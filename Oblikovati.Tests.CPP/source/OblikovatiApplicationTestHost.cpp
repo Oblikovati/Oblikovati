@@ -27,8 +27,6 @@ namespace Oblikovati::Host
 		}
 
 	};
-
-
 };
 
 Oblikovati::Kernel::ApplicationObject* Oblikovati::Kernel::CreateApplication(int argc, char** argv)
@@ -37,4 +35,3 @@ Oblikovati::Kernel::ApplicationObject* Oblikovati::Kernel::CreateApplication(int
 
 	return new Oblikovati::Host::OblikovatiApplicationTestHost(config);
 }
-

@@ -1,7 +1,10 @@
 #pragma once
 
 #include "../../KernelPCH.h"
-namespace Oblikovati::Kernel::Documents
+#include "ComponentDefinition.h"
+#include "../ClientGraphics/GraphicsDataSetsCollection.h"
+
+namespace Oblikovati::Kernel::Docs
 {
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- START
 	CONTRACT Document : public Object
@@ -9,6 +12,10 @@ namespace Oblikovati::Kernel::Documents
 	public:
 		Document() {}
 		~Document() {}
+		virtual ComponentDefinition* GetComponentDefinition() = 0;
+		virtual CltGraphics::GraphicsDataSetsCollection GetGraphicsDataSetsCollection() = 0;
+		virtual ObjectTypeEnum GetType() override { return ObjectTypeEnum::kDocumentObject; }
 	};
+
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
 }

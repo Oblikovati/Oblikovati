@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Oblikovati::Kernel::ClientGraphics
+namespace Oblikovati::Kernel::CltGraphics
 {
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- START
 	enum GraphicsSelectabilityEnum

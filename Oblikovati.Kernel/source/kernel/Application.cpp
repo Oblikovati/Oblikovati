@@ -24,12 +24,12 @@ namespace Oblikovati::Kernel {
 		g_ApplicationRunning = false;
 	}
 
-	Documents::Document* ApplicationObject::GetActiveDocument(void)
+	Docs::Document* ApplicationObject::GetActiveDocument(void)
 	{
 		return nullptr;
 	}
 
-	void ApplicationObject::SetActiveDocument(Documents::Document* Document)
+	void ApplicationObject::SetActiveDocument(Docs::Document* Document)
 	{
 
 	}

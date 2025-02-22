@@ -38,3 +38,20 @@ Oblikovati::Kernel::ApplicationObject* Oblikovati::Kernel::CreateApplication(int
 	return new Oblikovati::Host::OblikovatiApplicationHost(config);
 }
 
+#if OBKVT_RELEASE && OBKVT_PLATFORM_WINDOWS
+
+#include <Windows.h>
+
+int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
+{
+	return Oblikovati::Main(__argc, __argv);
+}
+
+#else
+
+int main(int argc, char** argv)
+{
+	return Oblikovati::Main(argc, argv);
+}
+
+#endif

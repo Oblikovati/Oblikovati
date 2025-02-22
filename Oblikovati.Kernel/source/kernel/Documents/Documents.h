@@ -2,7 +2,7 @@
 
 #include "../Base.h"
 
-namespace Oblikovati::Kernel::Documents
+namespace Oblikovati::Kernel::Docs
 {
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- START
 	CONTRACT Documents
