@@ -1,8 +1,0 @@
-//This file should only be included in the runtime project, not in the kernel project.
-#pragma once
-
-#include "kernel/Application.h"
-#include "kernel/Log.h"
-#include "kernel/Version.h"
-
-#include "imgui/imgui.h"

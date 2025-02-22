@@ -6,6 +6,8 @@ namespace Oblikovati {
 
 	void InitializeKernel()
 	{
+		Log::Init();
+
 		OBKVT_CORE_TRACE_TAG("Kernel", "Oblikovati {}", OBKVT_VERSION);
 		OBKVT_CORE_TRACE_TAG("Kernel", "Initializing...");
 	}

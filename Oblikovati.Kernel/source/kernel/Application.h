@@ -1,17 +1,21 @@
 #pragma once
 
-#include "Base.h"
+#include "../KernelPCH.h"
+#include "Documents/Document.h"
 
 namespace Oblikovati::Kernel
 {
-	class IApplication
+	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- START
+	CONTRACT Application : public Object
 	{
 		public:
-			IApplication() {}
-			virtual ~IApplication() {}
+			Application() {}
+			virtual ~Application() {}
 			virtual void Run(void) = 0;
-
+			virtual Documents::Document* GetActiveDocument() = 0;
+			virtual void SetActiveDocument(Documents::Document* Document) = 0;
 	};
+	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
 
 	struct ApplicationConfiguration
 	{
@@ -19,14 +23,25 @@ namespace Oblikovati::Kernel
 	
 	};
 
-	class Application : IApplication
+	class ApplicationObject : Application
 	{
 		public:
-			Application(const ApplicationConfiguration& config);
-			virtual ~Application();
+			ApplicationObject(const ApplicationConfiguration& config);
+			virtual ~ApplicationObject();
 			void Run(void) override;
-			virtual void OnInit() {}
+			virtual Documents::Document* GetActiveDocument() override;
+			virtual void SetActiveDocument(Documents::Document* Document) override;
+			virtual void OnInit() = 0;
+			virtual void OnShutdown();
+			virtual Oblikovati::Kernel::ObjectTypeEnum GetType() override
+			{
+				return Kernel::ObjectTypeEnum::kApplicationObject;
+			}
+		protected:
+			Documents::Document* ActiveDocument;
+	private: 
+		bool m_Running = true;
 	};
 	
-	Application* CreateApplication(int argc, char** argv);
+	ApplicationObject* CreateApplication(int argc, char** argv);
 }

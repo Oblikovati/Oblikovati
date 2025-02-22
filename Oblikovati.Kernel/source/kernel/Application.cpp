@@ -1,18 +1,42 @@
 #include "kernelpch.h"
 #include "Application.h"
+#include "Documents/Document.h"
+
+extern bool g_ApplicationRunning;
 
 namespace Oblikovati::Kernel {
-	Application::Application(const ApplicationConfiguration& config)
+	ApplicationObject::ApplicationObject(const ApplicationConfiguration& config)
 	{
 
 	}
-	void Application::Run(void)
+	void ApplicationObject::Run(void)
 	{
 		OnInit();
+		while (m_Running)
+		{
+
+		}
+		OnShutdown();
 	}
 
-	Application::~Application()
+	void ApplicationObject::OnShutdown()
+	{
+		g_ApplicationRunning = false;
+	}
+
+	Documents::Document* ApplicationObject::GetActiveDocument(void)
+	{
+		return nullptr;
+	}
+
+	void ApplicationObject::SetActiveDocument(Documents::Document* Document)
 	{
 
 	}
+
+	ApplicationObject::~ApplicationObject()
+	{
+
+	}
+
 }

@@ -29,6 +29,10 @@
 #include <thread>
 
 #include <kernel/Base.h>
-#include <kernel/Assert.h>
+#include <kernel/OblikovatiAssert.h>
 #include <kernel/Log.h>
 #include <kernel/Version.h>
+#include <kernel/Object.h>
+#include <kernel/Enumerator.h>
+#include <kernel/Iterator.h>
+#include <kernel/List.h>

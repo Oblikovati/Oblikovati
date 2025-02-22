@@ -74,6 +74,8 @@ obj/
 **/Cache/**
 Intermediates/
 __pycache__
+x64/
+packages/
 
 Oblikovati/DotNet
 Oblikovati/**/*.pdb

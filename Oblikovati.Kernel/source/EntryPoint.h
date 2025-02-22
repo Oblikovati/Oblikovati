@@ -1,9 +1,9 @@
 #pragma once
 
 #include "kernel/Application.h"
-#include "kernel/Assert.h"
+#include "kernel/OblikovatiAssert.h"
 
-extern Oblikovati::Kernel::Application* Oblikovati::Kernel::CreateApplication(int argc, char** argv);
+extern Oblikovati::Kernel::ApplicationObject* Oblikovati::Kernel::CreateApplication(int argc, char** argv);
 bool g_ApplicationRunning = true;
 
 namespace Oblikovati {
@@ -14,7 +14,7 @@ namespace Oblikovati {
 		{
 
 			InitializeKernel();
-			Kernel::Application* app = Kernel::CreateApplication(argc, argv);
+			Kernel::ApplicationObject* app = Kernel::CreateApplication(argc, argv);
 			OBKVT_CORE_ASSERT(app, "Client Application is null!");
 			app->Run();
 			delete app;
@@ -26,6 +26,8 @@ namespace Oblikovati {
 }
 
 #if OBKVT_RELEASE && OBKVT_PLATFORM_WINDOWS
+
+#include <Windows.h>
 
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {

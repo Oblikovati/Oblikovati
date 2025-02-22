@@ -8,3 +8,6 @@ namespace Oblikovati {
 #if !defined(OBKVT_PLATFORM_WINDOWS) && !defined(OBKVT_PLATFORM_LINUX)  && !defined(OBKVT_PLATFORM_MAC)
 #error Unknown platform.
 #endif
+
+#define CONTRACT class
+#define CONTRACT_STRUCT struct
