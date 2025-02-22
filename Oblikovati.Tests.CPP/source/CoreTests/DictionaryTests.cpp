@@ -211,7 +211,7 @@ namespace Oblikovati::Tests::Core {
 
 	TEST_F(DictionaryTest, Performance_QuickLookup)
 	{
-		const int itemCount = 10000;
+		const int itemCount = 100000;
 
 		for (int i = 0; i < itemCount; i++)
 		{
@@ -230,7 +230,7 @@ namespace Oblikovati::Tests::Core {
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
 		// This is a simple performance check - adjust the threshold based on your needs
-		EXPECT_LT(duration.count(), 1000); // Should complete in less than 1 second
+		EXPECT_LT(duration.count(), 122); // Should complete in less than 122 miliseconds
 	}
 
 	

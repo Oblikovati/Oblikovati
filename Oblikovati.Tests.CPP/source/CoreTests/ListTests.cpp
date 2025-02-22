@@ -269,7 +269,7 @@ namespace Oblikovati::Tests::Core {
 	// Performance Tests
 	TEST_F(ListTest, Performance_QuickAdd)
 	{
-		const int itemCount = 10000;
+		const int itemCount = 100000;
 
 		auto start = std::chrono::high_resolution_clock::now();
 
@@ -281,7 +281,7 @@ namespace Oblikovati::Tests::Core {
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-		EXPECT_LT(duration.count(), 1000);  // Should complete in less than 1 second
+		EXPECT_LT(duration.count(), 1);  // Should complete in less than 1 mili second
 		EXPECT_EQ(list.Count(), itemCount);
 	}
 
