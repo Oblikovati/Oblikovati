@@ -30,3 +30,6 @@
 	url = https://github.com/Oblikovati/googletest.git
 	ignore = dirty
 	branch = premake_support
+[submodule "lib_vendor_source/tracy"]
+	path = lib_vendor_source/tracy
+	url = https://github.com/wolfpld/tracy
