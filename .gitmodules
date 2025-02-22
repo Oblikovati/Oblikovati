@@ -31,7 +31,7 @@
 	ignore = dirty
 	branch = premake_support
 [submodule "lib_vendor_source/tracy/tracy"]
-	path = lib_vendor_source/tracy
+	path = lib_vendor_source/tracy/tracy
 	url = https://github.com/wolfpld/tracy
 	ignore = dirty
 	shallow = true
