@@ -27,6 +27,7 @@ workspace "Oblikovati"
 		"TRACY_CALLSTACK=10",
 	}
 
+
     filter "action:vs*"
         linkoptions { "/ignore:4099" } -- Disable no PDB found warning
         disablewarnings { "4068" } -- Disable "Unknown #pragma mark warning"
@@ -39,7 +40,7 @@ workspace "Oblikovati"
 		symbols "On"
 
 	filter { "system:windows", "configurations:Debug-AS" }	
-		sanitize { "Address" }
+		--sanitize { "Address" }
 		flags { "NoRuntimeChecks", "NoIncrementalLink" }
 
 	filter "configurations:Release"

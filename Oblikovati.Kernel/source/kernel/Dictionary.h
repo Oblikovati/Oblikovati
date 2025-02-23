@@ -5,49 +5,6 @@ namespace Oblikovati::Kernel
 	template<typename TKey, typename TValue>
 		class Dictionary : public IEnumerable<std::pair<const TKey, TValue>>, public IIterable<std::pair<const TKey, TValue>>
 	{
-	private:
-		struct Node
-		{
-			TKey key;
-			TValue value;
-			Node* next;
-
-			Node(const TKey& k, const TValue& v) : key(k), value(v), next(nullptr) {}
-		};
-
-		static constexpr size_t INITIAL_CAPACITY = 16;
-		static constexpr float LOAD_FACTOR_THRESHOLD = 0.75f;
-
-		Node** buckets;
-		size_t capacity;
-		size_t count;
-		mutable std::vector<std::pair<const TKey, TValue>> pairs_cache;
-		mutable bool cache_valid;
-
-		size_t GetHash(const TKey& key) const
-		{
-			return std::hash<TKey>{}(key) % capacity;
-		}
-
-		void UpdateCache() const
-		{
-			if (!cache_valid)
-			{
-				pairs_cache.clear();
-				pairs_cache.reserve(count);
-				for (size_t i = 0; i < capacity; i++)
-				{
-					Node* current = buckets[i];
-					while (current != nullptr)
-					{
-						pairs_cache.emplace_back(current->key, current->value);
-						current = current->next;
-					}
-				}
-				cache_valid = true;
-			}
-		}
-
 	public:
 		using value_type = std::pair<const TKey, TValue>;
 		using reference = value_type&;
@@ -60,7 +17,7 @@ namespace Oblikovati::Kernel
 
 		Dictionary(size_t InitialCapacity) : buckets(new Node* [InitialCapacity]()), capacity(InitialCapacity), count(0), cache_valid(false) {}
 
-		~Dictionary()
+		~Dictionary() override
 		{
 			Clear();
 			delete[] buckets;
@@ -80,7 +37,6 @@ namespace Oblikovati::Kernel
 			}
 		}
 
-		// Move constructor
 		Dictionary(Dictionary&& other) noexcept
 			: buckets(other.buckets)
 			, capacity(other.capacity)
@@ -94,7 +50,6 @@ namespace Oblikovati::Kernel
 			other.cache_valid = false;
 		}
 
-		// Move assignment
 		Dictionary& operator=(Dictionary&& other) noexcept
 		{
 			if (this != &other)
@@ -116,7 +71,6 @@ namespace Oblikovati::Kernel
 			return *this;
 		}
 
-		// Assignment operator
 		Dictionary& operator=(const Dictionary& other)
 		{
 			if (this != &other)
@@ -361,6 +315,49 @@ namespace Oblikovati::Kernel
 		Enumerator<Dictionary<TKey, TValue>, std::pair<const TKey, TValue>> GetEnumerator() const
 		{
 			return Enumerator<Dictionary<TKey, TValue>, std::pair<const TKey, TValue>>(this);
+		}
+
+	private:
+		struct Node
+		{
+			TKey key;
+			TValue value;
+			Node* next;
+
+			Node(const TKey& k, const TValue& v) : key(k), value(v), next(nullptr) {}
+		};
+
+		static constexpr size_t INITIAL_CAPACITY = 16;
+		static constexpr float LOAD_FACTOR_THRESHOLD = 0.75f;
+
+		Node** buckets;
+		size_t capacity;
+		size_t count;
+		mutable std::vector<std::pair<const TKey, TValue>> pairs_cache;
+		mutable bool cache_valid;
+
+		size_t GetHash(const TKey& key) const
+		{
+			return std::hash<TKey>{}(key) % capacity;
+		}
+
+		void UpdateCache() const
+		{
+			if (!cache_valid)
+			{
+				pairs_cache.clear();
+				pairs_cache.reserve(count);
+				for (size_t i = 0; i < capacity; i++)
+				{
+					Node* current = buckets[i];
+					while (current != nullptr)
+					{
+						pairs_cache.emplace_back(current->key, current->value);
+						current = current->next;
+					}
+				}
+				cache_valid = true;
+			}
 		}
 	};
 }

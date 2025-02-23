@@ -15,7 +15,6 @@ namespace Oblikovati {
 	void ShutdownKernel()
 	{
 		OBKVT_CORE_TRACE_TAG("Kernel", "Shutting down...");
-
 	}
 
 }

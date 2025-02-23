@@ -7,11 +7,8 @@ namespace Oblikovati::Kernel::Math
 	/// <summary>
 	/// 
 	/// </summary>
-	struct IMatrix
+	CONTRACT_STRUCT Matrix
 	{
-	public:
-		IMatrix() {};
-		~IMatrix() {};
 
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END

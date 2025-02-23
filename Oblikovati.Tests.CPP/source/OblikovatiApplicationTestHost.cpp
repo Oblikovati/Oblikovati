@@ -3,11 +3,11 @@
 
 namespace Oblikovati::Host 
 {
-	class OblikovatiApplicationTestHost : public Oblikovati::Kernel::ApplicationObject
+	class OblikovatiApplicationTestHost : public Kernel::ApplicationObject
 	{
 	public:
-		OblikovatiApplicationTestHost(const Oblikovati::Kernel::ApplicationConfiguration& config)
-			: Oblikovati::Kernel::ApplicationObject(config)
+		OblikovatiApplicationTestHost(const Kernel::ApplicationConfiguration& Config)
+			: ApplicationObject(Config)
 		{
 
 		}
@@ -16,12 +16,15 @@ namespace Oblikovati::Host
 
 		}
 
-		virtual void OnInit() override
+		DISABLE_COPY_AND_MOVE(OblikovatiApplicationTestHost);
+
+
+		void OnInit() override
 		{
 
 		}
 
-		virtual void* GetApplication() override
+		Application* GetApplication() override
 		{
 			return this;
 		}
@@ -31,7 +34,7 @@ namespace Oblikovati::Host
 
 Oblikovati::Kernel::ApplicationObject* Oblikovati::Kernel::CreateApplication(int argc, char** argv)
 {
-	Oblikovati::Kernel::ApplicationConfiguration config;
+	constexpr  ApplicationConfiguration config;
 
-	return new Oblikovati::Host::OblikovatiApplicationTestHost(config);
+	return new Host::OblikovatiApplicationTestHost(config);
 }

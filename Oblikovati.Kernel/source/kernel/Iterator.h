@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iterator>
-
 namespace Oblikovati::Kernel
 {
 
@@ -62,7 +60,13 @@ namespace Oblikovati::Kernel
 		using iterator = Iterator<IIterable<T>, T>;
 		using const_iterator = ConstIterator<IIterable<T>, T>;
 
+		IIterable() = default;
 		virtual ~IIterable() = default;
+		IIterable(IIterable const&) = default;
+		IIterable& operator =(IIterable const&) = default;
+		IIterable(IIterable&&) = default;
+		IIterable& operator=(IIterable&&) = default;
+
 		virtual iterator begin() = 0;
 		virtual iterator end() = 0;
 		virtual const_iterator begin() const = 0;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../KernelPCH.h"
+#include "Object.h"
 #include "Documents/Document.h"
 
 namespace Oblikovati::Kernel
@@ -9,9 +9,12 @@ namespace Oblikovati::Kernel
 	CONTRACT Application : public Object
 	{
 		public:
-			Application() {}
-			virtual ~Application() {}
-			virtual void Run(void) = 0;
+			Application() = default;
+			~Application() override = default;
+
+			DISABLE_COPY_AND_MOVE(Application);
+
+			virtual void Run() = 0;
 			virtual Docs::Document* GetActiveDocument() = 0;
 			virtual void SetActiveDocument(Docs::Document* Document) = 0;
 	};
@@ -23,19 +26,22 @@ namespace Oblikovati::Kernel
 	
 	};
 
-	class ApplicationObject : Application
+	class ApplicationObject : public Application
 	{
 		public:
-			ApplicationObject(const ApplicationConfiguration& config);
-			virtual ~ApplicationObject();
-			void Run(void) override;
-			virtual Docs::Document* GetActiveDocument() override;
-			virtual void SetActiveDocument(Docs::Document* Document) override;
+			explicit ApplicationObject(const ApplicationConfiguration& Config);
+			~ApplicationObject() override;
+
+			DISABLE_COPY_AND_MOVE(ApplicationObject);
+
+			void Run() override;
+			Docs::Document* GetActiveDocument() override;
+			void SetActiveDocument(Docs::Document* Document) override;
 			virtual void OnInit() = 0;
 			virtual void OnShutdown();
-			virtual Oblikovati::Kernel::ObjectTypeEnum GetType() override
+			ObjectTypeEnum GetType() override
 			{
-				return Kernel::ObjectTypeEnum::kApplicationObject;
+				return kApplicationObject;
 			}
 		protected:
 			Docs::Document* ActiveDocument;
@@ -43,5 +49,5 @@ namespace Oblikovati::Kernel
 		bool m_Running = true;
 	};
 	
-	ApplicationObject* CreateApplication(int argc, char** argv);
+	ApplicationObject* CreateApplication(int Argc, char** Argv);
 }

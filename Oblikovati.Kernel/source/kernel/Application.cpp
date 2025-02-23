@@ -5,9 +5,9 @@
 extern bool g_ApplicationRunning;
 
 namespace Oblikovati::Kernel {
-	ApplicationObject::ApplicationObject(const ApplicationConfiguration& config)
+	ApplicationObject::ApplicationObject(const ApplicationConfiguration& Config)
 	{
-
+		ActiveDocument = nullptr;
 	}
 	void ApplicationObject::Run(void)
 	{
@@ -24,7 +24,7 @@ namespace Oblikovati::Kernel {
 		g_ApplicationRunning = false;
 	}
 
-	Docs::Document* ApplicationObject::GetActiveDocument(void)
+	Docs::Document* ApplicationObject::GetActiveDocument()
 	{
 		return nullptr;
 	}
@@ -34,9 +34,6 @@ namespace Oblikovati::Kernel {
 
 	}
 
-	ApplicationObject::~ApplicationObject()
-	{
-
-	}
+	ApplicationObject::~ApplicationObject() = default;
 
 }

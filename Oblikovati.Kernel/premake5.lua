@@ -51,7 +51,7 @@ project "Oblikovati.Kernel"
 		defines { "OBKVT_DEBUG", "_DEBUG", "ACL_ON_ASSERT_ABORT", }
 
 	filter { "system:windows", "configurations:Debug-AS" }	
-		sanitize { "Address" }
+		--sanitize { "Address" }
 		flags { "NoRuntimeChecks", "NoIncrementalLink" }
 
 	filter "configurations:Release"

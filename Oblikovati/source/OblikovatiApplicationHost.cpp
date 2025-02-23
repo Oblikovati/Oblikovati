@@ -16,12 +16,12 @@ namespace Oblikovati::Host
 
 		}
 
-		virtual void OnInit() override
+		void OnInit() override
 		{
 
 		}
 
-		virtual void* GetApplication() override
+		Application* GetApplication() override
 		{
 			return this;
 		}

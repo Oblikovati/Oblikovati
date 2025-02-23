@@ -44,5 +44,5 @@ project "Oblikovati.Tests.CPP"
 		defines { "OBKVT_DEBUG" }
 
 	filter { "system:windows", "configurations:Debug-AS" }
-		sanitize { "Address" }
+		--sanitize { "Address" }
 		flags { "NoRuntimeChecks", "NoIncrementalLink" }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ClientGraphicsCollection.h"
-#include "../../KernelPCH.h"
 #include "../Math/Box.h"
 #include "GraphicsNode.h"
 #include "GraphicsSelectabilityEnum.h"
@@ -14,14 +13,19 @@ namespace Oblikovati::Kernel::CltGraphics
 	/// <summary>
 	/// The ClientGraphics object is a collection of objects.
 	/// </summary>
-	CONTRACT ClientGraphics : public Object, public List<GraphicsNode>
+	CONTRACT ClientGraphics : Object, Dictionary<std::string,GraphicsNode*>
 	{
 	public:
-		ClientGraphics() {}
-		~ClientGraphics() {}
-		virtual ObjectTypeEnum GetType() override { return ObjectTypeEnum::kClientGraphicsObject; }
+		ClientGraphics() = default;
+		~ClientGraphics() override = default;
+
+		DISABLE_COPY_AND_MOVE(ClientGraphics);
+
+		ObjectTypeEnum GetType() override { return kClientGraphicsObject; }
+
 		virtual ClientGraphicsCollection* GetParent() =0;
-		virtual GraphicsNode GetItemById(int32_t NodeId) = 0;
+
+		virtual GraphicsNode* GetItemById(int32_t NodeId) = 0;
 		/// <summary>
 		/// Property that returns the ID of this ClientGraphics object.
 		/// </summary>
@@ -32,13 +36,13 @@ namespace Oblikovati::Kernel::CltGraphics
 		/// rectangular box that is guaranteed to enclose this object.
 		/// </summary>
 		/// <returns></returns>
-		virtual Math::Box GetRangeBox() = 0;
+		virtual Math::Box* GetRangeBox() = 0;
 		/// <summary>
 		/// Input Long that specifies the identifier for the newly created entity.
 		/// </summary>
 		/// <param name="NodeId"> This id needs to be unique with respect to all other objects in this ClientGraphics object.</param>
 		/// <returns>GraphicsNode</returns>
-		virtual GraphicsNode AddNode(int32_t NodeId) = 0;
+		virtual GraphicsNode* AddNode(int32_t NodeId) = 0;
 		/// <summary>
 		/// Property that gets whether all of the GraphicsNode objects within the ClientGraphics object are selectable. 
 		/// When getting this property valid values are kAllGraphicsSelectable, kNoGraphicsSelectable, and kSomeGraphicsSelectable. 
@@ -74,4 +78,31 @@ namespace Oblikovati::Kernel::CltGraphics
 		virtual bool GetNonTransacting() = 0;
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
+
+	class ClientGraphicsObject final : public ClientGraphics
+	{
+	public:
+		ClientGraphicsObject() = default;
+		~ClientGraphicsObject() override = default;
+
+		DISABLE_COPY_AND_MOVE(ClientGraphicsObject);
+
+		GraphicsNode* GetItemById(int32_t NodeId) override { return nullptr; }
+		std::string GetClientId() override { return ""; }
+		Math::Box* GetRangeBox() override 
+		{
+			Math::BoxObject box;
+			Math::BoxObject* boxPtr = &box;
+			return boxPtr;
+		}
+
+		ClientGraphicsCollection* GetParent() override;
+		GraphicsNode* AddNode(int32_t NodeId) override;
+		GraphicsSelectabilityEnum GetSelectable() override;
+		void SetSelectable(GraphicsSelectabilityEnum Selectability) override;
+		GraphicsVisibilityEnum GetVisible() override;
+		void SetVisible(GraphicsVisibilityEnum Visibility) override;
+		void Delete() override;
+		bool GetNonTransacting() override;
+	};
 }

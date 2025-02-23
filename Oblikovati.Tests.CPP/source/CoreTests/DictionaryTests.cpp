@@ -10,10 +10,10 @@ namespace Oblikovati::Tests::Core {
 	{
 	protected:
 		Oblikovati::Kernel::Dictionary<std::string, int> dict;
-
 		void SetUp() override
 		{
 			dict.Clear();
+
 		}
 	};
 
@@ -114,14 +114,14 @@ namespace Oblikovati::Tests::Core {
 	TEST_F(DictionaryTest, TryGetValue_ExistingKey_ReturnsTrueAndValue)
 	{
 		dict.Add("test", 42);
-		int value;
+		int value = 1;
 		EXPECT_TRUE(dict.TryGetValue("test", value));
 		EXPECT_EQ(value, 42);
 	}
 
 	TEST_F(DictionaryTest, TryGetValue_NonExistingKey_ReturnsFalse)
 	{
-		int value;
+		int value =1;
 		EXPECT_FALSE(dict.TryGetValue("nonexistent", value));
 	}
 

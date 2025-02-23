@@ -1,6 +1,5 @@
 #pragma once
 
-#include "KernelPCH.h"
 #include "../Document.h"
 #include "PartComponentDefinition.h"
 
@@ -11,10 +10,12 @@ namespace Oblikovati::Kernel::Docs::PrtDocument
 	CONTRACT PartDocument : public Document
 	{
 	public:
-		PartDocument(){}
-		~PartDocument() { }
+		PartDocument() = default;
+		~PartDocument() override = default;
 
-		virtual PartComponentDefinition* GetComponentDefinition() = 0;
+		DISABLE_COPY_AND_MOVE(PartDocument);
+
+		PartComponentDefinition* GetComponentDefinition() override = 0;
 		
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
@@ -22,11 +23,16 @@ namespace Oblikovati::Kernel::Docs::PrtDocument
 	class PartDocumentObject : public PartDocument
 	{
 	public:
-		PartDocumentObject();
-		~PartDocumentObject();
-		
+		PartDocumentObject() = default;
+		~PartDocumentObject() override = default;
 
-	private:
+		DISABLE_COPY_AND_MOVE(PartDocumentObject);
 
+		PartComponentDefinition* GetComponentDefinition() override
+		{
+			PartComponentDefinitionObject partComponentDef;
+			PartComponentDefinitionObject* partComponentDefPtr = & partComponentDef;
+			return  partComponentDefPtr;
+		}
 	};
 }

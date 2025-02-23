@@ -10,7 +10,6 @@ namespace Oblikovati::Tests::Core {
 	{
 	protected:
 		Oblikovati::Kernel::List<int> list;
-
 		void SetUp() override
 		{
 			list.Clear();

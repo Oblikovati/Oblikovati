@@ -6,12 +6,14 @@ namespace Oblikovati::Kernel::Math
 	/// <summary>
 	/// 
 	/// </summary>
-	struct IVector
+	CONTRACT_STRUCT Vector
 	{
-	public:
-		IVector() {};
-		~IVector() {};
 
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
+
+	struct VectorObject final : Vector
+	{
+
+	};
 }

@@ -36,9 +36,9 @@ namespace Oblikovati::Kernel
 		using const_iterator = typename IIterable<T>::const_iterator;
 		using size_type = size_t;
 
-		List() : array(new T[4]), capacity(4), count(0) {}
+		List() :IIterable<T>(),  array(new T[4]), capacity(4), count(0) {}
 
-		~List()
+		~List() override
 		{
 			delete[] array;
 		}
