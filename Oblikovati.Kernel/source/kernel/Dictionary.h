@@ -15,7 +15,7 @@ namespace Oblikovati::Kernel
 
 		Dictionary() : buckets(new Node* [INITIAL_CAPACITY]()), capacity(INITIAL_CAPACITY), count(0), cache_valid(false) {}
 
-		Dictionary(size_t InitialCapacity) : buckets(new Node* [InitialCapacity]()), capacity(InitialCapacity), count(0), cache_valid(false) {}
+		Dictionary(const size_t InitialCapacity) : buckets(new Node* [InitialCapacity]()), capacity(InitialCapacity), count(0), cache_valid(false) {}
 
 		~Dictionary() override
 		{
@@ -94,6 +94,11 @@ namespace Oblikovati::Kernel
 				}
 			}
 			return *this;
+		}
+
+		TValue Item(const TKey& key)
+		{
+			return this->operator[](key);
 		}
 
 		void Add(const TKey& key, const TValue& value)
@@ -358,6 +363,50 @@ namespace Oblikovati::Kernel
 				}
 				cache_valid = true;
 			}
+		}
+	};
+
+	template<typename TKey, typename TValue>
+	class DictionaryPtr
+	{
+		Dictionary<TKey, TValue>* ptr;
+
+	public:
+		DictionaryPtr(Dictionary<TKey, TValue>* p) : ptr(p) { }
+
+		Dictionary<TKey, TValue>* operator->()
+		{
+			return ptr;
+		}
+
+		TValue& operator[](const TKey& key)
+		{
+			return ptr->operator[](key);
+		}
+
+		const TValue& operator[](const TKey& key) const
+		{
+			return ptr->operator[](key);
+		}
+
+		void Add(const TKey& key, const TValue& value)
+		{
+			ptr->Add(key, value);
+		}
+
+		bool Remove(const TKey& key)
+		{
+			return ptr->Remove(key);
+		}
+
+		bool ContainsKey(const TKey& key) const
+		{
+			return ptr->ContainsKey(key);
+		}
+
+		size_t Count() const
+		{
+			return ptr->Count();
 		}
 	};
 }

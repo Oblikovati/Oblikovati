@@ -2,6 +2,8 @@
 
 #include "Object.h"
 #include "Documents/Document.h"
+#include "Transients/TransientGeometry.h"
+#include "UserInterface/View.h"
 
 namespace Oblikovati::Kernel
 {
@@ -17,6 +19,12 @@ namespace Oblikovati::Kernel
 			virtual void Run() = 0;
 			virtual Docs::Document* GetActiveDocument() = 0;
 			virtual void SetActiveDocument(Docs::Document* Document) = 0;
+			virtual UserInterface::View* GetActiveView() = 0;
+			virtual Transients::TransientGeometry* GetTransientGeometry() = 0;
+			ObjectTypeEnum GetType() override
+			{
+				return kApplicationObject;
+			}
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
 
@@ -39,14 +47,15 @@ namespace Oblikovati::Kernel
 			void SetActiveDocument(Docs::Document* Document) override;
 			virtual void OnInit() = 0;
 			virtual void OnShutdown();
-			ObjectTypeEnum GetType() override
-			{
-				return kApplicationObject;
-			}
+			UserInterface::View* GetActiveView() override { return ActiveView; }
+			Transients::TransientGeometry* GetTransientGeometry() override { return TransientGeometry; }
 		protected:
 			Docs::Document* ActiveDocument;
+			UserInterface::View* ActiveView;
+			Transients::TransientGeometry* TransientGeometry = &m_TransientGeometryObject;
 	private: 
 		bool m_Running = true;
+		Transients::TransientGeometryObject m_TransientGeometryObject;
 	};
 	
 	ApplicationObject* CreateApplication(int Argc, char** Argv);

@@ -1,3 +1,5 @@
+#include <numbers>
+#include <cmath>
 #include "gtest/gtest.h"
 #include "OblikovatiKernel.h"
 
@@ -249,7 +251,7 @@ namespace Oblikovati::Tests::ClientGraphics
 
 TEST(ClientGraphicsTests, DrawCylinder)
 {
-	//auto thisApplication = g_Application;
+	auto thisApplication = g_Application;
 
 	// TODO: We have to create the host instance on a separate thread
 	// The test should dispatch the desired state and some way get a capture from the framebuffer
@@ -257,11 +259,68 @@ TEST(ClientGraphicsTests, DrawCylinder)
 
 	// TODO: Create and Set active document as a PartDocument
 
-	//auto doc = thisApplication->GetActiveDocument();
+	auto doc = thisApplication->GetActiveDocument();
 
-	//auto componentDefinition =  doc->GetComponentDefinition();
+	auto componentDefinition =  doc->GetComponentDefinition();
 
-	//auto graphicsData = doc->GetGraphicsDataSetsCollection()["SampleGraphicsID"]
+	auto graphicsDataCol = doc->GetGraphicsDataSetsCollection();
+
+	if (graphicsDataCol->ContainsKey("SampleGraphicsID"))
+	{
+		graphicsDataCol->Item("SampleGraphicsID")->Delete();
+
+		componentDefinition->GetClientGraphicsCollection()->Item("SampleGraphicsID")->Delete();
+
+		thisApplication->GetActiveView()->Update();
+	}
+	else
+	{
+		auto transGeom = thisApplication->GetTransientGeometry();
+
+		auto dataSets = doc->GetGraphicsDataSetsCollection()->Add("SampleGraphicsID");
+
+		auto coordSet = dataSets->CreateCoordinateSet(1);
+
+		int constexpr sideCount = 25;
+		auto radius = 3.0;
+		auto height = 7.0;
+
+		double pointCoords[(((sideCount + 1) * 2) * 3)+1];
+		double angle = 0;
+
+		for (int i =0; i < sideCount -1 ; i++)
+		{
+			pointCoords[i * 3 + 1] = radius * cos(angle);
+			pointCoords[i * 3 + 2] = radius * sin(angle);
+			pointCoords[i * 3 + 3] = 0;
+
+			angle = angle + ((2 * std::numbers::pi) / sideCount);
+		}
+
+		angle = 0;
+
+		for (int i = sideCount; i < sideCount * 2; i++)
+		{
+			pointCoords[i * 3 + 1] = radius * cos(angle);
+			pointCoords[i * 3 + 2] = radius * sin(angle);
+			pointCoords[i * 3 + 3] = height;
+
+			angle = angle + ((2 * std::numbers::pi) / sideCount);
+		}
+
+		pointCoords[(sideCount * 2) * 3 + 1] = 0;
+		pointCoords[(sideCount * 2) * 3 + 2] = 0;
+		pointCoords[(sideCount * 2) * 3 + 3] = 0;
+
+		pointCoords[(sideCount * 2) * 3 + 4] = 0;
+		pointCoords[(sideCount * 2) * 3 + 5] = 0;
+		pointCoords[(sideCount * 2) * 3 + 6] = height;
+
+		coordSet->PutCoordinates(pointCoords);
+
+		auto indexSet = dataSets->CreateIndexSet(1);
+	}
+
 
 	EXPECT_STRNE("hello", "cylinder");
 	EXPECT_EQ(7 * 6, 42);

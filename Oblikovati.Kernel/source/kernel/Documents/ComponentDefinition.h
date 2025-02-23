@@ -1,4 +1,5 @@
 #pragma once
+#include "kernel/ClientGraphics/ClientGraphicsCollection.h"
 
 namespace Oblikovati::Kernel::Docs
 {
@@ -11,6 +12,10 @@ namespace Oblikovati::Kernel::Docs
 
 		DISABLE_COPY_AND_MOVE(ComponentDefinition);
 
+		virtual CltGraphics::ClientGraphicsCollection* GetClientGraphicsCollection() { return  ClientGraphicsCollection;  }
+
+		protected:
+			CltGraphics::ClientGraphicsCollection* ClientGraphicsCollection;
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
 }
