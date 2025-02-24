@@ -3,6 +3,7 @@
 #include "GraphicsDataset.h"
 #include "GraphicsCoordinateSet.h"
 #include "GraphicsIndexSet.h"
+#include "GraphicsNormalSet.h"
 
 namespace Oblikovati::Kernel::CltGraphics
 {
@@ -23,6 +24,13 @@ namespace Oblikovati::Kernel::CltGraphics
 		/// </param>
 		/// <returns />
 		virtual GraphicsCoordinateSet* CreateCoordinateSet(int DataSetId) = 0;
+		/// <summary>Method that creates a new GraphicsNormalSet object. You use methods provided by the NormalSet object to define the normal vectors.</summary>
+		/// <param name="DataSetId">
+		///     <summary>Input Long that specifies the unique identifier for the GraphicsDataSet object. This must be unique with respect to all other GraphicsDataSet objects within this GraphicsDataSets object.</summary>
+		/// </param>
+		/// <returns />
+
+		virtual GraphicsNormalSet* CreateNormalSet(int DataSetId) = 0;
 		/// <summary>Method that creates a new GraphicsIndexSet object. You use methods provided by the GraphicsIndexSet object to define the indices.</summary>
 		/// <param name="DataSetId">
 		///     <summary>Input Long that specifies the unique identifier for the GraphicsDataSet object. This must be unique with respect to all other GraphicsDataSet objects within this GraphicsDataSets object.</summary>
@@ -48,6 +56,13 @@ namespace Oblikovati::Kernel::CltGraphics
 			GraphicsIndexSetObject graphicsIndexSetObject;
 			GraphicsIndexSetObject* graphicsIndexSetObjectPtr = &graphicsIndexSetObject;
 			return graphicsIndexSetObjectPtr;
+		}
+
+		GraphicsNormalSet* CreateNormalSet(int DataSetId) override
+		{
+			GraphicsNormalSetObject graphicsNormalSetObject;
+			GraphicsNormalSetObject* graphicsNormalSetObjectPtr = &graphicsNormalSetObject;
+			return graphicsNormalSetObjectPtr;
 		}
 
 		void Delete() override

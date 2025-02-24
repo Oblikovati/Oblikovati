@@ -376,7 +376,13 @@ TEST(ClientGraphicsTests, DrawCylinder)
 
 		cylinderNode->SetAppearance(appearance);
 
+		thisApplication->GetActiveView()->Update();
 
+		auto cap1Normals = dataSets->CreateNormalSet(1);
+
+		cap1Normals->Add(1, transGeom->CreateUnitVector(0, 0, -1));
+
+		cap1TriangleFan->SetNormalSet(cap1Normals);
 	}
 
 

@@ -62,7 +62,7 @@ namespace Oblikovati::Kernel::CltGraphics
 		/// <returns></returns>
 		virtual GraphicsVisibilityEnum GetVisible() = 0;
 		/// <summary>
-		/// Property thatsets whether all of the GraphicsNode objects within the ClientGraphics object are visible. 
+		/// Property that sets whether all of the GraphicsNode objects within the ClientGraphics object are visible. 
 		/// When setting this property kAllGraphicsVisible and kNoGraphicsVisible are valid.
 		/// </summary>
 		/// <returns></returns>
