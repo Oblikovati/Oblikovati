@@ -1,4 +1,5 @@
 #pragma once
+#include "ClientGraphics.h"
 
 namespace Oblikovati::Kernel::CltGraphics
 {
@@ -17,6 +18,8 @@ namespace Oblikovati::Kernel::CltGraphics
 		DISABLE_COPY_AND_MOVE(ClientGraphicsCollection);
 
 		ObjectTypeEnum GetType() override { return kClientGraphicsCollectionObject; }
+
+		virtual ClientGraphics* Add(std::string ClientId) = 0;
 	};
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- END
 
@@ -28,5 +31,15 @@ namespace Oblikovati::Kernel::CltGraphics
 
 		DISABLE_COPY_AND_MOVE(ClientGraphicsCollectionObject);
 
+		ClientGraphics* Add(const std::string ClientId) override
+		{
+			if (ContainsKey(ClientId))
+				return operator[](ClientId);
+
+			ClientGraphicsObject clientGraphicsObject;
+			ClientGraphicsObject* clientGraphicsObjectPtr = &clientGraphicsObject;
+			Dictionary::Add(ClientId, clientGraphicsObjectPtr);
+			return  clientGraphicsObjectPtr;
+		}
 	};
 }

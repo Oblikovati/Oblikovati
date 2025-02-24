@@ -259,7 +259,7 @@ TEST(ClientGraphicsTests, DrawCylinder)
 
 	// TODO: Create and Set active document as a PartDocument
 
-	auto doc = thisApplication->GetActiveDocument();
+	auto doc = static_cast<Kernel::Docs::PrtDocument::PartDocument*>(thisApplication->GetActiveDocument());
 
 	auto componentDefinition =  doc->GetComponentDefinition();
 
@@ -282,8 +282,8 @@ TEST(ClientGraphicsTests, DrawCylinder)
 		auto coordSet = dataSets->CreateCoordinateSet(1);
 
 		int constexpr sideCount = 25;
-		auto radius = 3.0;
-		auto height = 7.0;
+		auto constexpr radius = 3.0;
+		auto constexpr height = 7.0;
 
 		double pointCoords[(((sideCount + 1) * 2) * 3)+1];
 		double angle = 0;
@@ -318,7 +318,65 @@ TEST(ClientGraphicsTests, DrawCylinder)
 
 		coordSet->PutCoordinates(pointCoords);
 
-		auto indexSet = dataSets->CreateIndexSet(1);
+		auto cap1IndexSet = dataSets->CreateIndexSet(1);
+
+		cap1IndexSet->Add(1, sideCount * 2 + 1);
+		cap1IndexSet->Add(2, 1);
+		cap1IndexSet->Add(3, 2);
+		for (int i = 4; i < sideCount + 2; i++)
+			cap1IndexSet->Add(i, i - 1);
+
+		cap1IndexSet->Add(sideCount + 2, 1);
+
+		auto cap2IndexSet = dataSets->CreateIndexSet(2);
+
+		cap2IndexSet->Add(1, sideCount * 2 + 2);
+		cap2IndexSet->Add(2, sideCount + 1);
+		cap2IndexSet->Add(3, sideCount + 2);
+		for (int i = 4; i < sideCount + 1; i++)
+			cap2IndexSet->Add(i, i + sideCount + 1);
+
+		auto cylinderIndexSet = dataSets->CreateIndexSet(3);
+
+		double indexValues[((sideCount + 1) * 2)+1];
+
+		for (int i = 0; i < sideCount -1; i++)
+		{
+			indexValues[i * 2 + 1] = i + 1;
+			indexValues[i * 2 + 2] = i + sideCount + 1;
+		}
+
+		indexValues[((sideCount + 1) * 2) - 1] = 1;
+		indexValues[(sideCount + 1) * 2] = sideCount + 1;
+
+		cylinderIndexSet->PutIndices(indexValues);
+
+		auto clientGraphics = componentDefinition->GetClientGraphicsCollection()->Add("SampleGraphicsId");
+
+		auto cylinderNode = clientGraphics->AddNode(1);
+
+		auto cap1TriangleFan = cylinderNode->AddTriangleFanGraphics();
+
+		cap1TriangleFan->SetCoordinateSet(coordSet);
+		cap1TriangleFan->SetCoordinateIndexSet(cap1IndexSet);
+
+		auto cap2TriangleFan = cylinderNode->AddTriangleFanGraphics();
+
+		cap2TriangleFan->SetCoordinateSet(coordSet);
+		cap2TriangleFan->SetCoordinateIndexSet(cap2IndexSet);
+
+		auto cylinderStrip = cylinderNode->AddTriangleStripGraphics();
+
+		cylinderStrip->SetCoordinateSet(coordSet);
+		cylinderStrip->SetCoordinateIndexSet(cylinderIndexSet);
+
+		auto appearanceAssets = doc->GetAppearanceAssets();
+
+		auto appearance = appearanceAssets->operator[](1);
+
+		cylinderNode->SetAppearance(appearance);
+
+
 	}
 
 

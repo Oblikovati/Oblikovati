@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ClientGraphicsCollection.h"
 #include "../Math/Box.h"
 #include "GraphicsNode.h"
 #include "GraphicsSelectabilityEnum.h"
@@ -9,6 +8,7 @@
 
 namespace Oblikovati::Kernel::CltGraphics
 {
+	class ClientGraphicsCollection;
 	// DO NOT MODIFY -> INVENTOR API COMPLIANCE <- START
 	/// <summary>
 	/// The ClientGraphics object is a collection of objects.
