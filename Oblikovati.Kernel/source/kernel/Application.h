@@ -2,6 +2,8 @@
 
 #include "Object.h"
 #include "Documents/Document.h"
+#include "Renderer/Model.h"
+#include "Renderer/Window.h"
 #include "Transients/TransientGeometry.h"
 #include "UserInterface/View.h"
 
@@ -30,8 +32,10 @@ namespace Oblikovati::Kernel
 
 	struct ApplicationConfiguration
 	{
-		//char* Name = "Oblikovati";
-	
+		std::string Title = "Oblikovati";
+		int Width = 800;
+		int Height = 600;
+		bool EnableValidation = true;
 	};
 
 	class ApplicationObject : public Application
@@ -49,6 +53,16 @@ namespace Oblikovati::Kernel
 			virtual void OnShutdown();
 			UserInterface::View* GetActiveView() override { return ActiveView; }
 			Transients::TransientGeometry* GetTransientGeometry() override { return TransientGeometry; }
+
+			void run();
+			bool loadModel(const std::string& path);
+			void init();
+
+			// For testing purposes
+			bool renderSingleFrame();
+			bool captureFramebuffer(const std::string& outputPath);
+			bool compareWithReference(const std::string& referencePath, float threshold = 0.01f);
+
 		protected:
 			Docs::Document* ActiveDocument;
 			UserInterface::View* ActiveView;
@@ -56,6 +70,11 @@ namespace Oblikovati::Kernel
 	private: 
 		bool m_Running = true;
 		Transients::TransientGeometryObject m_TransientGeometryObject;
+		std::unique_ptr<VulkanRenderer::Window> m_window;
+		std::unique_ptr<VulkanRenderer::Renderer> m_renderer;
+		std::vector<std::unique_ptr<VulkanRenderer::Model>> m_models;
+		ApplicationConfiguration m_settings;
+		bool m_initialized = false;
 	};
 	
 	ApplicationObject* CreateApplication(int Argc, char** Argv);

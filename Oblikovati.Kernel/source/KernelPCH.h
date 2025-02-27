@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <cstdarg>
@@ -25,8 +26,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <filesystem>
 #include <thread>
+#include <stdexcept>
+#include <optional>
+#include <cstring>
+
 
 #include <kernel/ObjectType.h>
 #include <kernel/Object.h>

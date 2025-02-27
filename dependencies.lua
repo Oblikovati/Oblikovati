@@ -34,6 +34,9 @@ Dependencies = {
 		Windows = { LibDir = "%{wks.location}/lib_vendor_precompiled/NvidiaAftermath/lib/x64/windows/" },
 		Linux = { LibDir = "%{wks.location}/lib_vendor_precompiled/NvidiaAftermath/lib/x64/linux/" },
 	},
+	STB = {
+		IncludeDir = "%{wks.location}/lib_vendor_source/stb/include",
+	},
 	Tracy = {
 		LibName = "Tracy",
 		IncludeDir = "%{wks.location}/lib_vendor_source/tracy/tracy/public",

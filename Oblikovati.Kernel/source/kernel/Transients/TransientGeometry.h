@@ -14,6 +14,9 @@ namespace Oblikovati::Kernel::Transients
 	class TransientGeometryObject final : public TransientGeometry
 	{
 
-		
+		Math::UnitVector* CreateUnitVector(float X, float Y, float Z) override
+		{
+			return nullptr;
+		}
 	};
 }

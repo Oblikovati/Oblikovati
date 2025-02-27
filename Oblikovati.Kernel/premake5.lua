@@ -33,7 +33,7 @@ project "Oblikovati.Kernel"
 
 	IncludeDependencies()
 
-	defines { "GLM_FORCE_DEPTH_ZERO_TO_ONE", }
+	defines { "GLM_FORCE_DEPTH_ZERO_TO_ONE", "GLM_ENABLE_EXPERIMENTAL" }
 
 	filter "files:../lib_vendor_source/imgui/misc/cpp/imgui_stdlib.cpp"
 	flags { "NoPCH" }
