@@ -1,10 +1,16 @@
 #include <gtest/gtest.h>
-#include "kernel/Application.h"
-#include "kernel/Renderer/Renderer.h"
 #include "kernel/Renderer/Model.h"
-
+#include "../OblikovatiApplicationTestHost.h"
 #include <memory>
 #include <string>
+#include <glm/glm/vec3.hpp>
+
+#include "kernel/Application.h"
+
+namespace Oblikovati::Host
+{
+	class OblikovatiApplicationTestHost;
+}
 
 namespace Oblikovati::RendererTests
 {
@@ -13,14 +19,14 @@ namespace Oblikovati::RendererTests
 	protected:
 		void SetUp() override
 		{
-			// Configure application settings for headless testing
-			Kernel::ApplicationConfiguration settings;
-			settings.Width = 800;
-			settings.Height = 600;
-			settings.Title = "Renderer Test";
+			Kernel::ApplicationConfiguration config;
 
+			config.Width = 800;
+			config.Height = 600;
+			config.Title = "Renderer Test";
+		
 			// Create application with test settings
-			m_app = std::make_unique<Kernel::ApplicationObject>(settings);
+			m_app = std::make_unique<Host::OblikovatiApplicationTestHost>(config);
 		}
 
 		void TearDown() override
@@ -28,7 +34,7 @@ namespace Oblikovati::RendererTests
 			m_app.reset();
 		}
 
-		std::unique_ptr<Kernel::ApplicationObject> m_app;
+		std::unique_ptr<Host::OblikovatiApplicationTestHost> m_app;
 
 		// Helper function to create a simple triangle model
 		static std::unique_ptr<Kernel::VulkanRenderer::Model> createTriangleModel()

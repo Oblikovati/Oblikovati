@@ -6,7 +6,7 @@ project "Oblikovati"
 	targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
 
-	links { "Oblikovati.Kernel" }
+	dependson "Oblikovati.Kernel"
 
 	defines { "GLM_FORCE_DEPTH_ZERO_TO_ONE", }
 

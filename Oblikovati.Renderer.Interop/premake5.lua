@@ -1,17 +1,12 @@
 OblikovatiRootDirectory = os.getenv("OBLIKOVATI_DIR")
 
-project "Oblikovati.Kernel"
+project "Oblikovati.Renderer.Interop"
 	kind "SharedLib"
 	language "C#"
 	dotnetframework "net9.0"
 	clr "Unsafe"
 	targetdir "%{OblikovatiRootDirectory}/Oblikovati/Resources/Scripts"
 	objdir "%{OblikovatiRootDirectory}/Oblikovati/Resources/Scripts/Intermediates"
-
-	links {
-		"Oblikovati.API",
-		"Oblikovati.Renderer.Interop"
-	}
 
 	vsprops {
 		AppendTargetFrameworkToOutputPath = "false",
@@ -20,6 +15,10 @@ project "Oblikovati.Kernel"
 		EnableDynamicLoading = "true",
 	}
 
+	links {
+		"Oblikovati.API"
+	}
+
 	files {
-		"%{OblikovatiRootDirectory}/Oblikovati.Kernel/Source/**.cs",
+		"%{OblikovatiRootDirectory}/Oblikovati.Renderer.Interop/Source/**.cs",
 	}

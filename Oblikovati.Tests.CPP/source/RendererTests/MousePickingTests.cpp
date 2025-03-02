@@ -1,13 +1,15 @@
 //#include <gtest/gtest.h>
 //#include "kernel/Application.h"
 //#include "kernel/Renderer/Renderer.h"
-//#include "kernel/Renderer/MousePicking.h"
 //#include "kernel/Renderer/Model.h"
 //
 //#include <memory>
 //#include <string>
 //#include <functional>
 //#include <vector>
+//
+//#include "kernel/Renderer/MousePicking/MousePicking.h"
+//#include "kernel/Renderer/MousePicking/PickingCore.h"
 //
 //namespace Oblikovati::RendererTests
 //{
@@ -101,7 +103,7 @@
 //		Kernel::VulkanRenderer::MousePicking* m_mousePicking = nullptr;
 //
 //		// For tracking callback invocation
-//		Kernel::VulkanRenderer::PickableElementId m_lastPickedElement{Kernel::VulkanRenderer::PickableElementType::None, 0, 0, 0 };
+//		Kernel::VulkanRenderer::MPicking::PickableElementId m_lastPickedElement{Kernel::VulkanRenderer::MPicking::PickableElementType::None, 0, 0, 0 };
 //		bool m_callbackInvoked = false;
 //	};
 //
@@ -109,10 +111,10 @@
 //	TEST_F(MousePickingTest, RegisterVertex)
 //	{
 //		// Register a vertex
-//		Kernel::VulkanRenderer::PickableElementId vertexId = m_mousePicking->registerVertex(0, 0, 2); // Model 0, Mesh 0, Vertex 2
+//		Kernel::VulkanRenderer::MPicking::PickableElementId vertexId = m_mousePicking->registerVertex(0, 0, 2); // Model 0, Mesh 0, Vertex 2
 //
 //		// Verify the registered ID
-//		EXPECT_EQ(vertexId.type, Kernel::VulkanRenderer::PickableElementType::Vertex);
+//		EXPECT_EQ(vertexId.type, Kernel::VulkanRenderer::MPicking::PickableElementType::Vertex);
 //		EXPECT_EQ(vertexId.modelId, 0);
 //		EXPECT_EQ(vertexId.meshId, 0);
 //		EXPECT_EQ(vertexId.elementId, 2);
@@ -126,10 +128,10 @@
 //	TEST_F(MousePickingTest, RegisterEdge)
 //	{
 //		// Register an edge
-//		Kernel::VulkanRenderer::PickableElementId edgeId = m_mousePicking->registerEdge(0, 0, 3); // Model 0, Mesh 0, Edge 3
+//		Kernel::VulkanRenderer::MPicking::PickableElementId edgeId = m_mousePicking->registerEdge(0, 0, 3); // Model 0, Mesh 0, Edge 3
 //
 //		// Verify the registered ID
-//		EXPECT_EQ(edgeId.type, Kernel::VulkanRenderer::PickableElementType::Edge);
+//		EXPECT_EQ(edgeId.type, Kernel::VulkanRenderer::MPicking::PickableElementType::Edge);
 //		EXPECT_EQ(edgeId.modelId, 0);
 //		EXPECT_EQ(edgeId.meshId, 0);
 //		EXPECT_EQ(edgeId.elementId, 3);
@@ -143,10 +145,10 @@
 //	TEST_F(MousePickingTest, RegisterFace)
 //	{
 //		// Register a face
-//		Kernel::VulkanRenderer::PickableElementId faceId = m_mousePicking->registerFace(0, 0, 4); // Model 0, Mesh 0, Face 4 (top face)
+//		Kernel::VulkanRenderer::MPicking::PickableElementId faceId = m_mousePicking->registerFace(0, 0, 4); // Model 0, Mesh 0, Face 4 (top face)
 //
 //		// Verify the registered ID
-//		EXPECT_EQ(faceId.type, Kernel::VulkanRenderer::PickableElementType::Face);
+//		EXPECT_EQ(faceId.type, Kernel::VulkanRenderer::MPicking::PickableElementType::Face);
 //		EXPECT_EQ(faceId.modelId, 0);
 //		EXPECT_EQ(faceId.meshId, 0);
 //		EXPECT_EQ(faceId.elementId, 4);
@@ -160,9 +162,9 @@
 //	TEST_F(MousePickingTest, IdColorConversion)
 //	{
 //		// Register elements of all types
-//		Kernel::VulkanRenderer::PickableElementId vertexId = m_mousePicking->registerVertex(0, 0, 1);
-//		Kernel::VulkanRenderer::PickableElementId edgeId = m_mousePicking->registerEdge(0, 0, 2);
-//		Kernel::VulkanRenderer::PickableElementId faceId = m_mousePicking->registerFace(0, 0, 3);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId vertexId = m_mousePicking->registerVertex(0, 0, 1);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId edgeId = m_mousePicking->registerEdge(0, 0, 2);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId faceId = m_mousePicking->registerFace(0, 0, 3);
 //
 //		// Get colors for each element
 //		glm::vec4 vertexColor = m_mousePicking->getColorForElementId(vertexId);
@@ -197,9 +199,9 @@
 //	TEST_F(MousePickingTest, SimulateMouseClick)
 //	{
 //		// Register multiple elements
-//		Kernel::VulkanRenderer::PickableElementId frontFace = m_mousePicking->registerFace(0, 0, 0); // Front face
-//		Kernel::VulkanRenderer::PickableElementId topFace = m_mousePicking->registerFace(0, 0, 4);   // Top face
-//		Kernel::VulkanRenderer::PickableElementId vertex0 = m_mousePicking->registerVertex(0, 0, 0); // Vertex 0
+//		Kernel::VulkanRenderer::MPicking::PickableElementId frontFace = m_mousePicking->registerFace(0, 0, 0); // Front face
+//		Kernel::VulkanRenderer::MPicking::PickableElementId topFace = m_mousePicking->registerFace(0, 0, 4);   // Top face
+//		Kernel::VulkanRenderer::MPicking::PickableElementId vertex0 = m_mousePicking->registerVertex(0, 0, 0); // Vertex 0
 //
 //		// Render a frame to ensure the model is set up
 //		m_app->renderSingleFrame();
@@ -211,7 +213,7 @@
 //		m_callbackInvoked = false;
 //
 //		// Simulate center-screen click (this would hit whatever face is centered in view)
-//		Kernel::VulkanRenderer::PickableElementId picked = m_mousePicking->simulateMouseClick(400, 300);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId picked = m_mousePicking->simulateMouseClick(400, 300);
 //
 //		// In a real implementation, we would verify that we picked the expected element
 //		// Here we just verify the callback was invoked
@@ -221,9 +223,9 @@
 //		EXPECT_FALSE(m_callbackInvoked); // This is since we don't have a full implementation
 //
 //		// Verify our registered elements have the correct type
-//		EXPECT_EQ(frontFace.type, Kernel::VulkanRenderer::PickableElementType::Face);
-//		EXPECT_EQ(topFace.type, Kernel::VulkanRenderer::PickableElementType::Face);
-//		EXPECT_EQ(vertex0.type, Kernel::VulkanRenderer::PickableElementType::Vertex);
+//		EXPECT_EQ(frontFace.type, Kernel::VulkanRenderer::MPicking::PickableElementType::Face);
+//		EXPECT_EQ(topFace.type, Kernel::VulkanRenderer::MPicking::PickableElementType::Face);
+//		EXPECT_EQ(vertex0.type, Kernel::VulkanRenderer::MPicking::PickableElementType::Vertex);
 //
 //		// Additional test of ID consistency
 //		EXPECT_EQ(frontFace.elementId, 0);
@@ -235,26 +237,26 @@
 //	TEST_F(MousePickingTest, EdgeCases)
 //	{
 //		// Test out-of-bounds clicks
-//		Kernel::VulkanRenderer::PickableElementId outOfBounds = m_mousePicking->simulateMouseClick(-100, -100);
-//		EXPECT_EQ(outOfBounds.type, Kernel::VulkanRenderer::PickableElementType::None);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId outOfBounds = m_mousePicking->simulateMouseClick(-100, -100);
+//		EXPECT_EQ(outOfBounds.type, Kernel::VulkanRenderer::MPicking::PickableElementType::None);
 //
 //		// Test clicking where no element is registered
 //		m_mousePicking->registerFace(0, 0, 1); // Only register one face
 //
 //		// Click somewhere else
 //		m_callbackInvoked = false;
-//		Kernel::VulkanRenderer::PickableElementId noElement = m_mousePicking->simulateMouseClick(100, 100);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId noElement = m_mousePicking->simulateMouseClick(100, 100);
 //
 //		// Should return None type and not invoke callback
-//		EXPECT_EQ(noElement.type, Kernel::VulkanRenderer::PickableElementType::None);
+//		EXPECT_EQ(noElement.type, Kernel::VulkanRenderer::MPicking::PickableElementType::None);
 //	}
 //
 //	// Test re-registering the same element
 //	TEST_F(MousePickingTest, ReRegisterElement)
 //	{
 //		// Register the same element twice
-//		Kernel::VulkanRenderer::PickableElementId first = m_mousePicking->registerVertex(0, 0, 5);
-//		Kernel::VulkanRenderer::PickableElementId second = m_mousePicking->registerVertex(0, 0, 5);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId first = m_mousePicking->registerVertex(0, 0, 5);
+//		Kernel::VulkanRenderer::MPicking::PickableElementId second = m_mousePicking->registerVertex(0, 0, 5);
 //
 //		// Should get the same ID back
 //		EXPECT_EQ(first.type, second.type);

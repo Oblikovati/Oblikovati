@@ -12,7 +12,13 @@ project "Oblikovati.Tests.CPP"
 		"Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn:1.8.1.7",
 	}
 
-	defines { "GLM_FORCE_DEPTH_ZERO_TO_ONE", }
+	defines { 
+		"GLM_FORCE_DEPTH_ZERO_TO_ONE", 
+		"GLM_ENABLE_EXPERIMENTAL",
+		"VR_BUILD_DLL",
+        "GLFW_INCLUDE_VULKAN" }
+
+	IncludeDependencies()
 
 	files  { 
 		"source/**.h",
