@@ -3,12 +3,6 @@
 	url = https://github.com/Oblikovati/Oblikovati-API.git
 	branch = main
 
-[submodule "lib_vendor_source/Coral"]
-	path = lib_vendor_source/Coral
-	url = https://github.com/StudioCherno/Coral
-	branch = dev
-	shallow = true
-	ignore = dirty
 [submodule "lib_vendor_source/glfw"]
 	path = lib_vendor_source/glfw
 	url = https://github.com/TheCherno/glfw
