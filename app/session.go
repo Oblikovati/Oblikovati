@@ -33,6 +33,7 @@ type Session struct {
 	sketchReturnCam scene.Camera
 	activeSketch    *sketch.Sketch
 	pendingDim      *sketch.DimensionConstraint
+	featureEdit     *featureEditState
 	overlays        []renderer.DrawItem
 	addins          *AddInManager
 	grid            *GridSettings

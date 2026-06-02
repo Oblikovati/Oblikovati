@@ -5,6 +5,7 @@ package feature
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/model/health"
@@ -79,6 +80,20 @@ func (fs *PartFeatures) ByName(name string) (*PartFeature, bool) {
 		}
 	}
 	return nil, false
+}
+
+// UniqueName returns base suffixed with the smallest positive integer that is not
+// already a feature name (Inventor numbers features Extrusion1, Extrusion2, …). A
+// caller names a newly added feature with this so the browser shows distinct rows and
+// Dear ImGui derives a distinct id per node — two nodes sharing a label trips ImGui's
+// duplicate-id assertion on hover.
+func (fs *PartFeatures) UniqueName(base string) string {
+	for n := 1; ; n++ {
+		name := base + strconv.Itoa(n)
+		if _, taken := fs.ByName(name); !taken {
+			return name
+		}
+	}
 }
 
 // Result returns the body state after evaluating up to the end-of-part marker.

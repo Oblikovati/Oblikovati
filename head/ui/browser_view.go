@@ -54,9 +54,22 @@ func drawSelectableNode(s *app.Session, n app.BrowserNode) {
 	if native.Selectable(n.Label, current == n.Select) {
 		s.SelectBrowserNode(n)
 	}
+	openFeatureEditOnDoubleClick(s, n)
 	drawNodeMenu(s, n)
 	if current != nil && n.Select == current && current != browserSync.last {
 		native.SetScrollHereY()
+	}
+}
+
+// openFeatureEditOnDoubleClick re-opens a feature node's parameter editor when its row is
+// double-clicked (Inventor's edit-on-double-click). Only feature nodes carry an editor;
+// double-clicking other nodes does nothing.
+func openFeatureEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
+	if !native.IsItemHovered() || !native.IsMouseDoubleClicked(native.MouseLeft) {
+		return
+	}
+	if h, ok := n.Select.(app.FeatureHandle); ok {
+		s.BeginEditFeature(h)
 	}
 }
 
