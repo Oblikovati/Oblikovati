@@ -95,7 +95,14 @@ func (d *Document) DisplayName() string {
 	if d.displayName != "" {
 		return d.displayName
 	}
-	base := filepath.Base(d.fullDocumentName)
+	return derivedDisplayName(d.fullDocumentName)
+}
+
+// derivedDisplayName is the human name implied by a full document name — its base
+// without directory or extension — used as the fallback when no explicit override
+// is set, and by [Restore] to tell a persisted derived name from a custom one.
+func derivedDisplayName(fullDocumentName string) string {
+	base := filepath.Base(fullDocumentName)
 	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 

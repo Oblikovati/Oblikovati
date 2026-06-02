@@ -2,40 +2,20 @@
 
 package persistence
 
-import (
-	"encoding/json"
-	"fmt"
-)
+// CurrentSchemaVersion is the document schema version written by this build. Bump it
+// whenever the on-disk layout changes and add a [Migration] from the prior version so
+// old files keep opening (architecture core/05). v2 is the YAML single-file format
+// (ADR-0020); v1 and earlier were the ZIP-package format and are not migrated (the
+// only pre-v2 files were regenerable fixtures).
+const CurrentSchemaVersion = 2
 
-// CurrentSchemaVersion is the package schema version written by this build. Bump
-// it whenever the on-disk layout changes and add a [Migration] from the prior
-// version so old files keep opening (architecture core/05).
-const CurrentSchemaVersion = 1
-
-// manifestStream is the well-known stream holding the package manifest.
-const manifestStream = "manifest.json"
-
-// Manifest is the package header: schema version (for migration), the root
-// document kind, the display name, and an optional thumbnail stream reference. It
-// is the JSON document at [manifestStream] and is the only part of the package the
-// store needs to reconstruct a document's identity today.
+// Manifest is the document's identity header: schema version (for migration), the
+// root document kind, and the display name. On disk these are the top-level fields of
+// the YAML document (see persistence/yamlcodec); in memory the [Package] holds it as
+// a value. It is the only part of the document the store needs to reconstruct a
+// document's identity.
 type Manifest struct {
-	SchemaVersion int    `json:"schemaVersion"`
-	DocumentType  uint32 `json:"documentType"`
-	DisplayName   string `json:"displayName"`
-	Thumbnail     string `json:"thumbnail,omitempty"`
-}
-
-// encode renders the manifest as indented JSON so the package stays diff-friendly.
-func (m Manifest) encode() ([]byte, error) {
-	return json.MarshalIndent(m, "", "  ")
-}
-
-// decodeManifest parses a manifest stream.
-func decodeManifest(data []byte) (Manifest, error) {
-	var m Manifest
-	if err := json.Unmarshal(data, &m); err != nil {
-		return Manifest{}, fmt.Errorf("persistence: invalid manifest: %w", err)
-	}
-	return m, nil
+	SchemaVersion int
+	DocumentType  uint32
+	DisplayName   string
 }

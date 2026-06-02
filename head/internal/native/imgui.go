@@ -32,6 +32,7 @@ void obk_ig_bullet_text(const char* s);
 void obk_ig_set_item_tooltip(const char* s);
 int  obk_ig_input_float(const char* label, float* v);
 int  obk_ig_input_int(const char* label, int* v);
+int  obk_ig_input_text(const char* label, char* buf, int buf_size);
 int  obk_ig_checkbox(const char* label, int* v);
 void obk_ig_begin_disabled(int disabled);
 void obk_ig_end_disabled(void);
@@ -132,6 +133,19 @@ func InputInt(label string, v *int32) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_input_int(c, (*C.int)(v)) != 0
+}
+
+// InputText draws a single-line text field bound to buf, a fixed byte buffer the
+// caller owns across frames; ImGui edits it in place (NUL-terminated, up to
+// len(buf)-1 bytes) and returns true on the frame the text changed. The head's
+// file-path modal is the only string input on the chrome today.
+func InputText(label string, buf []byte) bool {
+	if len(buf) == 0 {
+		return false
+	}
+	c, free := cstr(label)
+	defer free()
+	return C.obk_ig_input_text(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))) != 0
 }
 
 // Checkbox draws a checkbox; returns true (and writes *v) when toggled.

@@ -23,8 +23,9 @@ func NewPackageStore() *PackageStore {
 
 var _ doc.Store = (*PackageStore)(nil)
 
-// Save writes the document's manifest into a fresh package and saves it atomically
-// at the document's file name.
+// Save writes the document's manifest and — when its content carries a recipe — the
+// model recipe into a fresh package, and saves it atomically at the document's file
+// name. The realized geometry is never written; it is recomputed on open (ADR-0020).
 func (s *PackageStore) Save(d *doc.Document) error {
 	pkg := NewPackage()
 	manifest := Manifest{
@@ -34,6 +35,13 @@ func (s *PackageStore) Save(d *doc.Document) error {
 	}
 	if err := pkg.SetManifest(manifest); err != nil {
 		return err
+	}
+	if rc, ok := d.Content().(doc.RecipeContent); ok {
+		model, err := rc.MarshalRecipe()
+		if err != nil {
+			return fmt.Errorf("persistence: save %q: marshal recipe: %w", d.FullFileName(), err)
+		}
+		pkg.SetModelYAML(model)
 	}
 	return pkg.Save(d.FullFileName())
 }
@@ -49,7 +57,20 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	if err != nil {
 		return nil, fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
 	}
-	return doc.Restore(doc.DocumentType(manifest.DocumentType), fullDocumentName, manifest.DisplayName)
+	d, err := doc.Restore(doc.DocumentType(manifest.DocumentType), fullDocumentName, manifest.DisplayName)
+	if err != nil {
+		return nil, err
+	}
+	if model, ok := pkg.ModelYAML(); ok {
+		rc, ok := d.Content().(doc.RecipeContent)
+		if !ok {
+			return nil, fmt.Errorf("persistence: load %q: file has a model recipe but %v content cannot restore it (is its package imported?)", fullDocumentName, d.DocumentType())
+		}
+		if err := rc.ApplyRecipe(model); err != nil {
+			return nil, fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
+		}
+	}
+	return d, nil
 }
 
 // Exists reports whether a package file is present at fullDocumentName.

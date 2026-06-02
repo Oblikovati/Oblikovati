@@ -54,6 +54,42 @@ func TestPackageStoreExists(t *testing.T) {
 	}
 }
 
+// TestDerivedDisplayNameFollowsSaveAs guards the Restore refinement: a document
+// saved with a name derived from its file (no explicit override) must, after
+// save-as to a new path, reopen under the NEW base name — not the stale original.
+func TestDerivedDisplayNameFollowsSaveAs(t *testing.T) {
+	dir := t.TempDir()
+	store := NewPackageStore()
+	src := filepath.Join(dir, "original.obk")
+	dst := filepath.Join(dir, "renamed.obk")
+
+	ws := doc.NewWorkspace(store)
+	d, err := ws.Add(doc.Part, src, true) // derived name "original", no override
+	if err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := ws.Save(d); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	editing := doc.NewWorkspace(store)
+	reopened, err := editing.Open(src, true)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if err := editing.SaveAs(reopened, dst); err != nil {
+		t.Fatalf("SaveAs: %v", err)
+	}
+
+	final, err := doc.NewWorkspace(store).Open(dst, true)
+	if err != nil {
+		t.Fatalf("Open renamed: %v", err)
+	}
+	if got := final.DisplayName(); got != "renamed" {
+		t.Errorf("display name after save-as = %q, want %q (derived names must follow the file)", got, "renamed")
+	}
+}
+
 func TestPackageStoreLoadRejectsNonPackage(t *testing.T) {
 	dir := t.TempDir()
 	bogus := filepath.Join(dir, "bogus.obk")

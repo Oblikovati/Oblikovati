@@ -57,7 +57,13 @@ type DimensionConstraint struct {
 	limits  ConstraintLimits
 	measure func() float64
 	vars    []*math.Scalar
+	refs    []Entity // the dimensioned geometry (points/lines/arcs), for editing + serialization
 }
+
+// Refs returns the geometry the dimension measures (points for a distance, the line
+// pair for an angle, the circle for a radius, …). It is what serialization records so
+// the dimension can be rebound on open.
+func (d *DimensionConstraint) Refs() []Entity { return d.refs }
 
 // Kind returns the dimension kind.
 func (d *DimensionConstraint) Kind() DimKind { return d.kind }
@@ -126,17 +132,17 @@ func (dc *DimensionConstraints) Item(i int) *DimensionConstraint { return dc.ite
 func (dc *DimensionConstraints) AddDistance(a, b *Point, expression string) (*DimensionConstraint, error) {
 	measure := func() float64 { return a.Position().DistanceTo(b.Position()) }
 	vars := []*math.Scalar{&a.X, &a.Y, &b.X, &b.Y}
-	return dc.create(DistanceDim, expression, measure, vars)
+	return dc.create(DistanceDim, expression, []Entity{a, b}, measure, vars)
 }
 
 // AddRadius dimensions a circle's radius.
 func (dc *DimensionConstraints) AddRadius(c *Circle, expression string) (*DimensionConstraint, error) {
-	return dc.create(RadiusDim, expression, func() float64 { return c.Radius }, []*math.Scalar{&c.Radius})
+	return dc.create(RadiusDim, expression, []Entity{c}, func() float64 { return c.Radius }, []*math.Scalar{&c.Radius})
 }
 
 // AddDiameter dimensions a circle's diameter.
 func (dc *DimensionConstraints) AddDiameter(c *Circle, expression string) (*DimensionConstraint, error) {
-	return dc.create(DiameterDim, expression, func() float64 { return 2 * c.Radius }, []*math.Scalar{&c.Radius})
+	return dc.create(DiameterDim, expression, []Entity{c}, func() float64 { return 2 * c.Radius }, []*math.Scalar{&c.Radius})
 }
 
 // AddAngle dimensions the angle (radians, in [0,π]) between two lines.
@@ -146,23 +152,24 @@ func (dc *DimensionConstraints) AddAngle(l1, l2 *Line, expression string) (*Dime
 		d2x, d2y := lineDir(l2)
 		return stdmath.Atan2(stdmath.Abs(d1x*d2y-d1y*d2x), d1x*d2x+d1y*d2y)
 	}
-	return dc.create(AngleDim, expression, measure, lineVars(l1, l2))
+	return dc.create(AngleDim, expression, []Entity{l1, l2}, measure, lineVars(l1, l2))
 }
 
 // AddArcLength dimensions an arc's length (radius × swept angle).
 func (dc *DimensionConstraints) AddArcLength(a *Arc, expression string) (*DimensionConstraint, error) {
 	measure := func() float64 { return a.Radius() * arcSweep(a) }
 	vars := []*math.Scalar{&a.Center.X, &a.Center.Y, &a.Start.X, &a.Start.Y, &a.End.X, &a.End.Y}
-	return dc.create(ArcLengthDim, expression, measure, vars)
+	return dc.create(ArcLengthDim, expression, []Entity{a}, measure, vars)
 }
 
-// create builds a driving dimension backed by a fresh model parameter.
-func (dc *DimensionConstraints) create(kind DimKind, expression string, measure func() float64, vars []*math.Scalar) (*DimensionConstraint, error) {
+// create builds a driving dimension backed by a fresh model parameter. refs records
+// the dimensioned geometry for editing and serialization.
+func (dc *DimensionConstraints) create(kind DimKind, expression string, refs []Entity, measure func() float64, vars []*math.Scalar) (*DimensionConstraint, error) {
 	p, err := dc.params.AddModelParameter(dc.nextName(), expression)
 	if err != nil {
 		return nil, fmt.Errorf("sketch: dimension parameter: %w", err)
 	}
-	d := &DimensionConstraint{constraintBase: newConstraint(), kind: kind, param: p, measure: measure, vars: vars}
+	d := &DimensionConstraint{constraintBase: newConstraint(), kind: kind, param: p, measure: measure, vars: vars, refs: refs}
 	dc.items = append(dc.items, d)
 	return d, nil
 }

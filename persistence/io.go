@@ -3,23 +3,23 @@
 package persistence
 
 import (
-	"archive/zip"
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/Oblikovati/oblikovati/persistence/yamlcodec"
 )
 
-// OpenPackage reads the ZIP package at path into memory and runs the migration
+// OpenPackage reads the YAML document at path into memory and runs the migration
 // pipeline so the result is at [CurrentSchemaVersion]. It does not hold the file
-// open — the package is fully buffered, which is what makes save atomic.
+// open — the document is fully buffered, which is what makes save atomic. A legacy
+// ZIP package is rejected with a clear message (ADR-0020).
 func OpenPackage(path string) (*Package, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("persistence: open %q: %w", path, err)
 	}
-	p, err := readZip(raw)
+	p, err := decode(raw)
 	if err != nil {
 		return nil, fmt.Errorf("persistence: read %q: %w", path, err)
 	}
@@ -29,62 +29,50 @@ func OpenPackage(path string) (*Package, error) {
 	return p, nil
 }
 
-// Save writes the package to path atomically: it serializes the whole archive in
+// Save writes the package to path atomically: it serializes the whole document in
 // memory, writes it to a sibling temp file, fsyncs, then renames over path. An
 // interruption before the rename leaves any prior file at path untouched
-// (architecture core/05: replaces COM compaction-on-save with a simpler invariant).
+// (architecture core/05).
 func (p *Package) Save(path string) error {
-	data, err := p.marshalZip()
+	data, err := p.marshal()
 	if err != nil {
 		return fmt.Errorf("persistence: marshal %q: %w", path, err)
 	}
 	return atomicWriteFile(path, data)
 }
 
-// marshalZip renders the package as a deflate-compressed ZIP archive with streams
-// in deterministic order (see streamNames) for stable output.
-func (p *Package) marshalZip() ([]byte, error) {
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-	for _, name := range p.streamNames() {
-		w, err := zw.Create(name)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := w.Write(p.streams[name]); err != nil {
-			return nil, err
-		}
-	}
-	if err := zw.Close(); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+// marshal renders the package as a single YAML document (manifest + recipe + data
+// sections). Map keys are emitted in sorted order by the YAML library, so output is
+// stable for clean git diffs.
+func (p *Package) marshal() ([]byte, error) {
+	return yamlcodec.MarshalDocument(yamlcodec.Document{
+		SchemaVersion: p.manifest.SchemaVersion,
+		DocumentType:  p.manifest.DocumentType,
+		DisplayName:   p.manifest.DisplayName,
+		Model:         p.model,
+		Data:          p.streams,
+	})
 }
 
-// readZip rebuilds a package from ZIP bytes, preserving entry order.
-func readZip(raw []byte) (*Package, error) {
-	zr, err := zip.NewReader(bytes.NewReader(raw), int64(len(raw)))
+// decode rebuilds a package from a document's YAML bytes.
+func decode(raw []byte) (*Package, error) {
+	doc, err := yamlcodec.UnmarshalDocument(raw)
 	if err != nil {
 		return nil, err
 	}
 	p := NewPackage()
-	for _, entry := range zr.File {
-		data, err := readZipEntry(entry)
-		if err != nil {
-			return nil, err
+	if doc.SchemaVersion != 0 || doc.DocumentType != 0 || doc.DisplayName != "" {
+		p.manifest = Manifest{
+			SchemaVersion: doc.SchemaVersion,
+			DocumentType:  doc.DocumentType,
+			DisplayName:   doc.DisplayName,
 		}
-		p.WriteStream(entry.Name, data)
+	}
+	p.model = doc.Model
+	for name, data := range doc.Data {
+		p.WriteStream(name, data)
 	}
 	return p, nil
-}
-
-func readZipEntry(entry *zip.File) ([]byte, error) {
-	rc, err := entry.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-	return io.ReadAll(rc)
 }
 
 // atomicWriteFile writes data to path via a sibling temp file and a rename, so the

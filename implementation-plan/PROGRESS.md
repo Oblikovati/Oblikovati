@@ -188,6 +188,82 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 
 ## Session log
 
+- **2026-06-02:** **Feature persistence — dress-up family + reference keys.** Added
+  codecs for **fillet, chamfer, shell, draft, thread** to `model/feature/serialize.go`.
+  These reference body edges/faces by **reference key**; the keys are lineage-derived
+  bytes (`topo …ReferenceKey()`), so they serialize as base64 and **re-bind to the
+  regenerated topology after recompute** via `body.FindEdgeByKey`/`FindFaceByKey` — no
+  KeyManager context blob is needed (the earlier plan over-scoped this). Verified:
+  extrude → pick a real edge → fillet → save → reopen → recompute → the fillet's edge
+  key **re-binds** (health Warning = resolved, not Sick). Dress-up values
+  (radius/distance/thickness/angle) persist as evaluated scalars like the extrude
+  distance. No-silent-loss still errors on the remaining uncoded feature kinds (holes,
+  patterns, work features, surfaces, mesh, …). Full suite + `go vet` green.
+- **2026-06-02:** **Feature persistence — extrude (Phase 4 of the YAML recipe).** The
+  feature program now serializes into the recipe via `model/feature/serialize.go`: a
+  per-kind codec (switch) + a `SketchIndexer` seam so features re-bind their input
+  sketch by index. **Extrude** is fully coded (sketch+profile+operation+distance extent
+  +taper); on open the program is rebuilt and `Recompute()` regenerates the solid.
+  Verified end-to-end: part → rectangle sketch → extrude → save → reopen → **identical
+  body** (same range box, 1 body). `compdef.partRecipe.Features` wires it in; `cli new
+  part --seed` now emits a real 4×3×5 block that round-trips. No-silent-loss:
+  `MarshalRecipe` errors on any feature kind without a codec. **Remaining (follow-on,
+  incremental):** codecs for the other ~24 feature kinds (dress-up, holes, patterns,
+  work features, surfaces, …); the dress-up family additionally needs reference-key
+  context persistence (`identity.SaveContextToArray` + `KeyToString`) so edge/face
+  picks rebind after recompute — the machinery is scoped but lands with those codecs.
+  Also captured a model gap: distance extents serialize the evaluated value (parametric
+  distance expressions need the dimension-driven extent API). Full suite + race green.
+- **2026-06-02:** **Sketch persistence (Phase 3 of the YAML recipe).** Sketches now
+  round-trip in the `.obk` recipe: `model/sketch/serialize.go` + `serialize_restore.go`
+  capture the host plane, every constrainable point, all curve entities (line/circle/
+  arc/ellipse/spline + standalone points), and **all** geometric (~17 kinds) and
+  dimensional (distance/radius/diameter/angle/arc-length) constraints. Points are
+  recorded once and referenced by id, so a **shared corner stays one point** — a
+  rectangle reopens as 4 points / 4 lines / 1 closed profile, not 8 points. Added
+  point-accepting `Add` cores to the entity collections and a `refs []Entity` to
+  `DimensionConstraint` (a dimension now records what it measures). No-silent-loss:
+  `MarshalRecipe` errors on blocks / any uncoded entity/constraint kind. Wired into
+  `compdef` `partRecipe.Sketches`. Verified: a part with a constrained sketch survives
+  save→YAML→open through the real store; `cli new part --seed` now persists its sketch.
+  Full suite + `go vet` green. **Remaining:** Phase 4 — the feature program + reference
+  keys (the geometry-producing features), still dropped on save until then.
+- **2026-06-02:** **Git-friendly YAML document format + parameter persistence (user
+  direction; ADR-0020).** Replaced the ZIP `.obk` container with a **single YAML text
+  file** per document so models live in git with line-level diffs. New
+  `persistence/yamlcodec` is the sole importer of `gopkg.in/yaml.v3` (the GPL core's
+  first third-party dep, wrapped per CLAUDE.md) and owns the on-disk shape: manifest at
+  top level, recipe as a **native nested node** (not an escaped blob), binary data
+  sections base64. `persistence` reworked (io/package/manifest/migration/compaction);
+  schema bumped **1→2**; legacy ZIP `.obk` rejected with a clear message (no migration —
+  only fixtures existed). **Recipe round-trip:** a new `doc.RecipeContent` seam + a
+  content-factory registry (`doc.RegisterContentFactory`, populated by `compdef.init`)
+  lets the store reconstruct a live part on open; `compdef/serialize.go` persists/restores
+  **parameters** (creation order, incl. dependent expressions), **display units**, and
+  the **end-of-part** marker, then `Recompute()`s. Proven: `cli new part p.obk --seed`
+  → `cat` shows readable YAML → `save-as` reopens and re-emits the `width` param + units
+  identically. `go vet` + full core suite green. **KNOWN GAP (next):** sketches (Phase 3)
+  and the feature program + reference keys (Phase 4) are NOT yet in the recipe, so a
+  part's geometry is currently dropped on save — strict no-silent-loss guard lands with
+  those phases.
+- **2026-06-02:** **Document open/save flow wired through the CLI and UI head (user
+  direction, e2e fixtures).** The M03 model lifecycle (`Workspace.Open/Save/SaveAs`,
+  `persistence.PackageStore`) existed but nothing drove it — `app.NewSession` passed a
+  nil store, so Save/Open always errored. Added `app.NewSessionWithStore(doc.Store)` (app
+  still depends only on the interface; the binaries inject `persistence.PackageStore`) and
+  thin Session verbs `OpenDocument` / `SaveActiveDocument` (returns `ErrNeedsPath` when the
+  doc has no `.obk` path yet) / `SaveActiveDocumentAs`. New **`oblikovati-cli`** fixture
+  generator: `new <type> <path> [--seed]`, `open`, `info [--json]`, `save-as`, `version`,
+  sharing one `doc.ParseDocumentType` with the add-in router (de-duped). The head's File
+  menu gained working **Open / Save / Save As** via a pure-Go `fileDialog` state machine
+  (unit-tested) + one new cgo `native.InputText` binding; `newDemoSession` now injects a
+  real store. Fixed a latent wart: `doc.Restore` made every persisted name an explicit
+  override, freezing a *derived* name across Save As — now a derived name stays derived and
+  follows the file (regression test in `persistence/store_test.go`). **Known limit:**
+  `PackageStore.Save` still persists only the manifest (type + name), so `--seed` content
+  and model streams do not round-trip until stream persistence (M07+); `.obk` fixtures are
+  type+name-bearing shells today. `go vet` + race suite green (golangci-lint not run — not
+  installed locally).
 - **2026-06-01:** **Coincident point-to-curve / midpoint (M05 UI, user direction).** Bug:
   coincident only worked end-to-end (point-to-point) — picking a point and a line/midpoint
   added nothing, because the model only had point-to-point coincident and the tool only
