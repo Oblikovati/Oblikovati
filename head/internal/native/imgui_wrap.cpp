@@ -49,6 +49,7 @@ void obk_ig_set_item_tooltip(const char* s)  { ImGui::SetItemTooltip("%s", s); }
 // changed this frame and writes the new value back through the pointer.
 int  obk_ig_input_float(const char* label, float* v) { return ImGui::InputFloat(label, v) ? 1 : 0; }
 int  obk_ig_input_int(const char* label, int* v)     { return ImGui::InputInt(label, v) ? 1 : 0; }
+int  obk_ig_input_text(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size) ? 1 : 0; }
 int  obk_ig_checkbox(const char* label, int* v) {
     bool b = (*v != 0);
     bool changed = ImGui::Checkbox(label, &b);

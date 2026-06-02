@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/Oblikovati/api/wire"
 
@@ -47,9 +46,9 @@ func createDocument(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 	if in.Name == "" {
 		return nil, errors.New("documents.create: name is required")
 	}
-	t, err := parseDocumentType(in.Type)
+	t, err := doc.ParseDocumentType(in.Type)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("documents.create: %w", err)
 	}
 	d, err := newDocumentOfType(s, t, in.Name)
 	if err != nil {
@@ -82,20 +81,4 @@ func newDocumentOfType(s *app.Session, t doc.DocumentType, name string) (*doc.Do
 		return compdef.AddPart(s.Workspace(), name, true)
 	}
 	return s.Workspace().Add(t, name, true)
-}
-
-// parseDocumentType maps a type name to the DocumentType discriminator.
-func parseDocumentType(name string) (doc.DocumentType, error) {
-	switch strings.ToLower(strings.TrimSpace(name)) {
-	case "part":
-		return doc.Part, nil
-	case "assembly":
-		return doc.Assembly, nil
-	case "drawing":
-		return doc.Drawing, nil
-	case "presentation":
-		return doc.Presentation, nil
-	default:
-		return doc.Unknown, fmt.Errorf("documents.create: unknown type %q (want part|assembly|drawing|presentation)", name)
-	}
 }

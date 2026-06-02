@@ -44,6 +44,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawViewportPanel(win, s)
 	drawStatusBar(s)
 	drawPreferencesWindow(s)
+	drawFileDialog(s)
 	return activated
 }
 
@@ -99,7 +100,15 @@ func drawMenuBar(s *app.Session) string {
 		if native.MenuItem("New Part") {
 			createNewPart(s)
 		}
-		native.MenuItem("Open")
+		if native.MenuItem("Open") {
+			fileModal.openFor(dialogOpen)
+		}
+		if native.MenuItem("Save") {
+			saveActive(s)
+		}
+		if native.MenuItem("Save As") {
+			fileModal.openFor(dialogSaveAs)
+		}
 		native.EndMenu()
 	}
 	if native.BeginMenu("Edit") {

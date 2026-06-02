@@ -23,10 +23,15 @@ type Store interface {
 	Exists(fullDocumentName string) bool
 }
 
-// newContent builds the empty content stub for a document kind. Save/Load and the
-// create-from-template path use it so a kind always pairs with matching content.
-// The concrete content types fill in from M07/M11/M14/M16.
+// newContent builds the content object for a document kind. It prefers a real content
+// factory registered by the owning package (e.g. model/compdef via
+// [RegisterContentFactory]) so Load reconstructs live, recipe-bearing content; absent a
+// factory it returns the identity-only stub. Save/Load and the create-from-template
+// path use it so a kind always pairs with matching content.
 func newContent(t DocumentType) (Content, error) {
+	if factory, ok := contentFactories[t]; ok {
+		return factory(), nil
+	}
 	switch t {
 	case Part:
 		return &PartComponentDefinition{}, nil
@@ -51,6 +56,12 @@ func Restore(t DocumentType, fullDocumentName, displayName string) (*Document, e
 		return nil, err
 	}
 	d := newDocument(t, fullDocumentName, content, true)
-	d.displayName = displayName
+	// Only carry an explicit override when the persisted name diverges from what the
+	// file path implies. A derived name must stay derived so it follows the file
+	// across Save As — otherwise reopening would freeze the old base name (e.g.
+	// `save-as a.obk b.obk` would reopen still calling the document "a").
+	if displayName != "" && displayName != derivedDisplayName(fullDocumentName) {
+		d.displayName = displayName
+	}
 	return d, nil
 }

@@ -3,7 +3,9 @@
 package app
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Oblikovati/oblikovati/event"
 	"github.com/Oblikovati/oblikovati/model/doc"
@@ -33,10 +35,21 @@ type Session struct {
 	grid            *GridSettings
 }
 
-// NewSession creates an empty in-memory session.
-func NewSession() *Session {
+// NewSession creates an empty in-memory session with no persistence store. Its
+// documents live only in memory — Save/Open return "no store configured" — which
+// is what the unit tests and headless synthetic sessions want. The windowed head
+// and the CLI inject a real store via [NewSessionWithStore].
+func NewSession() *Session { return newSession(nil) }
+
+// NewSessionWithStore creates a session whose workspace persists through store, so
+// File ▸ Open/Save and the CLI fixture commands read and write real .obk packages
+// on disk. Pass a persistence.PackageStore from the binary (the app package depends
+// only on the doc.Store interface, never on persistence — the DI rule).
+func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
+
+func newSession(store doc.Store) *Session {
 	return &Session{
-		workspace: doc.NewWorkspace(nil),
+		workspace: doc.NewWorkspace(store),
 		commands:  NewCommandManager(),
 		bus:       event.NewBus(),
 		selection: NewSelection(),
@@ -116,4 +129,47 @@ func (s *Session) Invoke(alias string) error {
 		return fmt.Errorf("app: no command for alias %q", alias)
 	}
 	return s.Execute(c.id)
+}
+
+// ErrNoActiveDoc is returned by the save verbs when there is no active document to
+// act on (an empty session).
+var ErrNoActiveDoc = errors.New("app: no active document to save")
+
+// ErrNeedsPath is returned by [Session.SaveActiveDocument] when the active document
+// has never been saved — its name is not yet an .obk path (a freshly created
+// "PartN"). File ▸ Save catches this and falls back to Save As to prompt for a
+// destination.
+var ErrNeedsPath = errors.New("app: document has no file path yet; use Save As")
+
+// OpenDocument loads the package at path into the workspace and makes it the active,
+// visible document. It is the core of File ▸ Open and the CLI open command.
+//
+//	d, err := session.OpenDocument("/models/bracket.obk")
+func (s *Session) OpenDocument(path string) (*doc.Document, error) {
+	return s.workspace.Open(path, true)
+}
+
+// SaveActiveDocument writes the active document back to its existing .obk path. A
+// document that was never saved has no path yet — we detect this by the absence of
+// the [doc.PackageExtension] suffix, since new documents are minted with bare names
+// like "Part1" — and return [ErrNeedsPath] so the UI can prompt via Save As.
+func (s *Session) SaveActiveDocument() error {
+	d := s.workspace.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	if !strings.HasSuffix(d.FullFileName(), doc.PackageExtension) {
+		return ErrNeedsPath
+	}
+	return s.workspace.Save(d)
+}
+
+// SaveActiveDocumentAs writes the active document to path, which becomes its new
+// identity. It is the core of File ▸ Save As and the CLI save-as command.
+func (s *Session) SaveActiveDocumentAs(path string) error {
+	d := s.workspace.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	return s.workspace.SaveAs(d, path)
 }

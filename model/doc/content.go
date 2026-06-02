@@ -17,6 +17,35 @@ type Content interface {
 	DocumentType() DocumentType
 }
 
+// RecipeContent is the optional interface real content implements to persist and
+// restore its modeling recipe (parameters, sketches, features) as opaque YAML bytes.
+// The store serializes the recipe for content that implements it and restores it on
+// open; a bare stub (which implements only [Content]) round-trips identity alone.
+// The recipe schema is owned by the content's own package (e.g. model/compdef), not
+// by doc or persistence — keeping the format layer content-agnostic (ADR-0020).
+type RecipeContent interface {
+	Content
+	// MarshalRecipe renders the content's recipe as YAML bytes.
+	MarshalRecipe() ([]byte, error)
+	// ApplyRecipe restores the content from recipe YAML bytes (and recomputes).
+	ApplyRecipe(model []byte) error
+}
+
+// contentFactories holds the constructor for each document kind's REAL content,
+// registered by the owning package's init (e.g. model/compdef). It is the seam that
+// lets [Restore] rebuild live content — with its recipe machinery — without doc
+// importing the heavy model packages (which would cycle). Writes happen at init
+// (single-threaded); reads happen later.
+var contentFactories = map[DocumentType]func() Content{}
+
+// RegisterContentFactory installs the constructor for a kind's real content. Call it
+// from an init() in the package that owns the content type, so any binary that imports
+// that package gets live content on open. Without a registered factory, [newContent]
+// falls back to the identity-only stub.
+func RegisterContentFactory(t DocumentType, factory func() Content) {
+	contentFactories[t] = factory
+}
+
 // PartComponentDefinition is the stub for a part's modeling content: sketches,
 // features and the resulting B-rep body (M07). Modernizes COM
 // PartComponentDefinition.

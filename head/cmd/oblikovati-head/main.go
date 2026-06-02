@@ -23,6 +23,7 @@ import (
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/sketch"
+	"github.com/Oblikovati/oblikovati/persistence"
 )
 
 func main() {
@@ -72,7 +73,10 @@ func run(session *app.Session, maxFrames int) error {
 // content: the ribbon lists sketch/create tools, and the browser shows a part with a
 // parameter and a sketch. Clicking Extrude starts the interactive tool.
 func newDemoSession() *app.Session {
-	s := app.NewSession()
+	// A real .obk store so File ▸ Open/Save/Save As hit disk (the headless tests use the
+	// nil-store NewSession). The head injects the concrete store; app depends only on the
+	// doc.Store interface.
+	s := app.NewSessionWithStore(persistence.NewPackageStore())
 	registerCommands(s)
 	seedPart(s)
 	return s
