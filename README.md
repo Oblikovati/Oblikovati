@@ -62,9 +62,10 @@ prereleases under the rolling `nightly` tag.
   loader is bundled; your GPU's Vulkan driver is used from the system.
 - **Windows** — download and unzip `*-windows-amd64.zip`, run `oblikovati-head.exe`
   (the GLFW + runtime DLLs are bundled; `vulkan-1.dll` comes from your GPU driver).
-- **macOS** — download `*-darwin-<arch>.tar.gz`, extract, run `./oblikovati/oblikovati-head`.
-  Vulkan runs over **MoltenVK** (bundled). Builds are **unsigned** (no Apple cert
-  yet), so the first launch needs **right-click → Open** to clear Gatekeeper.
+- **macOS** — download `Oblikovati-*-macos-universal.zip`, unzip, and double-click
+  **`Oblikovati.app`** (one universal build for Intel + Apple Silicon). Vulkan runs over
+  **MoltenVK**, bundled inside the app; it is codesigned + notarized, so it launches with
+  no Gatekeeper prompt and needs no Vulkan SDK or setup.
 
 **CLI (`oblikovati-cli`)** — a single static binary for your OS/arch; download, make
 it executable, and run. `oblikovati-cli version` prints the build metadata.

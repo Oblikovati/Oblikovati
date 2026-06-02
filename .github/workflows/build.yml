@@ -141,9 +141,38 @@ jobs:
           name: head-windows
           path: dist/*.zip
 
-  # GUI head — macOS, Intel (macos-15-intel) + Apple Silicon (macos-14). Unsigned;
-  # MoltenVK + the Vulkan loader are bundled.
-  head-macos:
+  # macOS signing is gated on repo secrets. A no-Gatekeeper-workaround download must be
+  # Developer-ID signed + notarized, so without those credentials we skip the whole
+  # macOS release rather than publish something Gatekeeper would block (forks and
+  # unconfigured repos still build every other target). Secrets cannot be read in job
+  # `if:` directly, so this job surfaces their presence as an output the macOS jobs gate
+  # on. Requires the caller to pass `secrets: inherit`.
+  macos-preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          CERT: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
+          AC_APPLE_ID: ${{ secrets.MACOS_AC_APPLE_ID }}
+          AC_PASSWORD: ${{ secrets.MACOS_AC_PASSWORD }}
+          AC_TEAM_ID: ${{ secrets.MACOS_AC_TEAM_ID }}
+        run: |
+          if [ -n "$CERT" ] && [ -n "$CERT_PW" ] && [ -n "$AC_APPLE_ID" ] && [ -n "$AC_PASSWORD" ] && [ -n "$AC_TEAM_ID" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::macOS signing secrets not configured — skipping the macOS release."
+          fi
+
+  # GUI head — macOS per-arch build (Intel + Apple Silicon). Each runner natively builds
+  # the cgo/Vulkan head and stages its binary plus the dylibs it bundles (loader, GLFW,
+  # MoltenVK) for the universal merge in head-macos.
+  head-macos-build:
+    needs: macos-preflight
+    if: needs.macos-preflight.outputs.enabled == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -172,9 +201,66 @@ jobs:
           VER='${{ inputs.version }}'
           LD="-s -w -X ${CORE}/build.Version=${VER} -X ${CORE}/build.Commit=$(git rev-parse --short HEAD) -X ${CORE}/build.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           CGO_ENABLED=1 go build -ldflags "$LD" -o "$GITHUB_WORKSPACE/dist/oblikovati-head" ./cmd/oblikovati-head
-      - name: Package tarball
-        run: scripts/package-macos.sh dist/oblikovati-head '${{ inputs.version }}' '${{ matrix.arch }}' dist
+      - name: Stage binary + dylibs
+        run: scripts/macos-stage.sh dist/oblikovati-head "stage-${{ matrix.arch }}"
       - uses: actions/upload-artifact@v4
         with:
-          name: head-macos-${{ matrix.arch }}
-          path: dist/*.tar.gz
+          name: head-macos-stage-${{ matrix.arch }}
+          path: stage-${{ matrix.arch }}
+
+  # GUI head — macOS universal bundle: lipo both arches into one Oblikovati.app, then
+  # codesign (Developer ID + hardened runtime) + notarize + staple, so a downloaded build
+  # runs on a clean Mac with no Vulkan SDK, no env setup, and no Gatekeeper prompt.
+  head-macos:
+    needs: [macos-preflight, head-macos-build]
+    if: needs.macos-preflight.outputs.enabled == 'true'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: head-macos-stage-*
+          path: stage
+      - name: Lipo universal binary + dylibs
+        run: |
+          set -euo pipefail
+          mkdir -p uni/bin uni/fw
+          amd_bin="$(find stage -path '*amd64*' -name oblikovati-head -type f | head -1)"
+          arm_bin="$(find stage -path '*arm64*' -name oblikovati-head -type f | head -1)"
+          lipo -create "$amd_bin" "$arm_bin" -output uni/bin/oblikovati-head
+          arm_fw="$(dirname "$(find stage -path '*arm64*' -name libvulkan.1.dylib -type f | head -1)")"
+          amd_fw="$(dirname "$(find stage -path '*amd64*' -name libvulkan.1.dylib -type f | head -1)")"
+          for f in "$arm_fw"/*.dylib; do
+            b="$(basename "$f")"
+            lipo -create "$amd_fw/$b" "$arm_fw/$b" -output "uni/fw/$b"
+          done
+      - name: Assemble .app
+        run: scripts/package-macos.sh uni/bin/oblikovati-head uni/fw '${{ inputs.version }}' dist
+      - name: Import Developer ID certificate
+        env:
+          CERT: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KC="$RUNNER_TEMP/signing.keychain-db"
+          KCPW="$(uuidgen)"
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          echo "$CERT" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PW" -t cert -f pkcs12 -k "$KC" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          IDENT="$(security find-identity -v -p codesigning "$KC" | awk -F'"' '/Developer ID Application/{print $2; exit}')"
+          [ -n "$IDENT" ] || { echo "no Developer ID Application identity found in the imported certificate"; exit 1; }
+          echo "DEVELOPER_ID_APP=$IDENT" >> "$GITHUB_ENV"
+      - name: Sign, notarize, staple
+        env:
+          AC_APPLE_ID: ${{ secrets.MACOS_AC_APPLE_ID }}
+          AC_PASSWORD: ${{ secrets.MACOS_AC_PASSWORD }}
+          AC_TEAM_ID: ${{ secrets.MACOS_AC_TEAM_ID }}
+        run: scripts/macos-sign.sh dist/Oblikovati.app '${{ inputs.version }}' dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-macos
+          path: dist/*.zip
