@@ -73,6 +73,10 @@ func (f *faceEditFeature) Recompute(in Input) (Output, error) {
 	return resolveFacesThenDefer(in, f.faceKeys, f.kind)
 }
 
+// FaceKeys returns the reference keys of the faces this direct edit acts on. It lets
+// the recipe serialize every face-edit feature uniformly (they share this shape).
+func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
+
 // SplitFeature, MoveFaceFeature, FaceOffsetFeature, DeleteFaceFeature,
 // ReplaceFaceFeature and ThickenFeature are the deferred direct edits (phase C).
 type (

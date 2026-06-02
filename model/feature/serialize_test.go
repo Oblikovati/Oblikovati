@@ -188,6 +188,41 @@ func TestSurfaceFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+func TestFaceEditFeaturesRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	m := NewModifyFeatures(fs)
+	m.AddSplit([][]byte{[]byte("f-split")})
+	m.AddMoveFace([][]byte{[]byte("f-move")})
+	m.AddFaceOffset([][]byte{[]byte("f-off")})
+	m.AddDeleteFace([][]byte{[]byte("f-del")})
+	m.AddReplaceFace([][]byte{[]byte("f-rep")})
+	m.AddThicken([][]byte{[]byte("f-thick")})
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+
+	want := []string{"split", "move-face", "face-offset", "delete-face", "replace-face", "thicken"}
+	if fresh.Count() != len(want) {
+		t.Fatalf("feature count = %d, want %d", fresh.Count(), len(want))
+	}
+	for i, kind := range want {
+		if got := fresh.Item(i).Kind(); got != kind {
+			t.Errorf("feature %d kind = %q, want %q", i, got, kind)
+		}
+	}
+	// The split's face key must survive byte-for-byte.
+	split := fresh.Item(0).Definition().(faceEditor)
+	if len(split.FaceKeys()) != 1 || string(split.FaceKeys()[0]) != "f-split" {
+		t.Errorf("split face keys = %v, want [f-split]", split.FaceKeys())
+	}
+}
+
 func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	fs.Add(fakeFeature{})

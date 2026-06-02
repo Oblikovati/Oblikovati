@@ -39,6 +39,7 @@ type FeatureData struct {
 
 	BoundaryPatch *BoundaryPatchData `yaml:"boundaryPatch,omitempty"`
 	RuledSurface  *RuledSurfaceData  `yaml:"ruledSurface,omitempty"`
+	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -143,6 +144,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.RuledSurface = rs
+	case faceEditor:
+		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -226,6 +229,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreBoundaryPatch(fs, fd.BoundaryPatch, sk)
 	case "ruled-surface":
 		return restoreRuledSurface(fs, fd.RuledSurface, sk)
+	case "split", "move-face", "face-offset", "delete-face", "replace-face", "thicken":
+		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}
