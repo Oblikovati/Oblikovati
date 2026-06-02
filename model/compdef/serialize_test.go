@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package compdef_test
+
+import (
+	"path/filepath"
+	"testing"
+
+	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/doc"
+	"github.com/Oblikovati/oblikovati/model/feature"
+	"github.com/Oblikovati/oblikovati/model/health"
+	"github.com/Oblikovati/oblikovati/model/param"
+	"github.com/Oblikovati/oblikovati/model/sketch"
+	"github.com/Oblikovati/oblikovati/persistence"
+)
+
+// reopenThroughStore saves ws's active document to a temp .obk and reopens it in a
+// fresh, store-backed workspace — the real save→YAML→open path.
+func reopenThroughStore(t *testing.T, d *doc.Document) *compdef.PartComponentDefinition {
+	t.Helper()
+	store := persistence.NewPackageStore()
+	path := filepath.Join(t.TempDir(), "part.obk")
+	saveWS := doc.NewWorkspace(store)
+	// Re-register d under the store-backed workspace identity, then save.
+	saved, err := compdef.AddPart(saveWS, path, true)
+	if err != nil {
+		t.Fatalf("AddPart(save): %v", err)
+	}
+	// Copy the recipe across by marshaling the source and applying onto the saved doc.
+	src := d.Content().(*compdef.PartComponentDefinition)
+	model, err := src.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if err := saved.Content().(*compdef.PartComponentDefinition).ApplyRecipe(model); err != nil {
+		t.Fatalf("ApplyRecipe(seed): %v", err)
+	}
+	if err := saveWS.Save(saved); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	def, ok := reopened.Content().(*compdef.PartComponentDefinition)
+	if !ok {
+		t.Fatalf("reopened content is %T, want *PartComponentDefinition", reopened.Content())
+	}
+	return def
+}
+
+func TestParametersSurviveRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, err := compdef.AddPart(ws, "Part1", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := d.Content().(*compdef.PartComponentDefinition)
+	if _, err := def.Parameters().AddUserParameter("width", "4 cm"); err != nil {
+		t.Fatalf("AddUserParameter: %v", err)
+	}
+	if _, err := def.Parameters().AddUserParameter("height", "width / 2"); err != nil {
+		t.Fatalf("AddUserParameter(height): %v", err)
+	}
+
+	reopened := reopenThroughStore(t, d)
+
+	width, ok := reopened.Parameters().ByName("width")
+	if !ok || width.Expression() != "4 cm" {
+		t.Errorf("width after reopen = %v ok=%v, want expression 4 cm", width, ok)
+	}
+	// A dependent expression must survive too (proves creation-order restore is valid).
+	height, ok := reopened.Parameters().ByName("height")
+	if !ok || height.Expression() != "width / 2" {
+		t.Errorf("height after reopen = %v ok=%v, want expression 'width / 2'", height, ok)
+	}
+	if got := reopened.Parameters().Count(); got != 2 {
+		t.Errorf("parameter count after reopen = %d, want 2", got)
+	}
+}
+
+func TestSketchGeometrySurvivesRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	// A closed rectangle from four corner-sharing lines.
+	c0 := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(4, 0))
+	c1 := sk.Lines().AddByTwoPoints(math.P2(4, 0), math.P2(4, 3))
+	sk.GeometricConstraints().AddPerpendicular(c0, c1)
+
+	reopened := reopenThroughStore(t, d)
+	if got := reopened.Sketches().Count(); got != 1 {
+		t.Fatalf("sketch count after reopen = %d, want 1", got)
+	}
+	rs := reopened.Sketches().Item(0)
+	if got := rs.Lines().Count(); got != 2 {
+		t.Errorf("line count after reopen = %d, want 2", got)
+	}
+	if got := rs.GeometricConstraints().Count(); got != 1 {
+		t.Errorf("constraint count after reopen = %d, want 1", got)
+	}
+}
+
+func TestExtrudedSolidSurvivesRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	rectangle(sk, 4, 3)
+	feature.NewExtrudeFeatures(def.Features()).
+		AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+	def.Recompute()
+	before := def.RangeBox()
+	if len(def.SurfaceBodies().All()) != 1 {
+		t.Fatalf("expected 1 body before save, got %d", len(def.SurfaceBodies().All()))
+	}
+
+	reopened := reopenThroughStore(t, d)
+	bodies := reopened.SurfaceBodies().All()
+	if len(bodies) != 1 {
+		t.Fatalf("expected 1 body after reopen+recompute, got %d (the extrude must regenerate)", len(bodies))
+	}
+	after := reopened.RangeBox()
+	if !after.Min.IsEqualTo(before.Min, 1e-6) || !after.Max.IsEqualTo(before.Max, 1e-6) {
+		t.Errorf("range box after reopen = [%v..%v], want [%v..%v]",
+			after.Min, after.Max, before.Min, before.Max)
+	}
+}
+
+// rectangle adds a closed w×h rectangle (one profile) at the sketch origin, with the
+// corners as shared points so the loop is structurally closed (a shared point IS a
+// coincidence) — the same way the head's rectangle tool builds it.
+func rectangle(s *sketch.Sketch, w, h float64) {
+	c0 := s.Points().Add(math.P2(0, 0))
+	c1 := s.Points().Add(math.P2(w, 0))
+	c2 := s.Points().Add(math.P2(w, h))
+	c3 := s.Points().Add(math.P2(0, h))
+	s.Lines().Add(c0, c1)
+	s.Lines().Add(c1, c2)
+	s.Lines().Add(c2, c3)
+	s.Lines().Add(c3, c0)
+}
+
+func TestFilletEdgeKeyRebindsAfterReopen(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	rectangle(sk, 4, 3)
+	feature.NewExtrudeFeatures(def.Features()).
+		AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+	def.Recompute()
+
+	// Pick a real edge off the extruded body and fillet it by reference key.
+	edgeKey := def.SurfaceBodies().All()[0].Edges()[0].ReferenceKey()
+	fillet := feature.NewDressUpFeatures(def.Features()).
+		AddFillet([][]byte{edgeKey}, func() float64 { return 0.2 })
+	def.Recompute()
+	if fillet.Health().Status != health.Warning {
+		t.Fatalf("fillet health before save = %v, want Warning (edge resolved, geometry deferred)", fillet.Health().Status)
+	}
+
+	reopened := reopenThroughStore(t, d)
+	// The reopened extrude regenerates the body with the same lineage, so the fillet's
+	// edge key must re-bind — proving reference keys survive save→reopen.
+	got, ok := featureByKind(reopened.Features(), "fillet")
+	if !ok {
+		t.Fatal("fillet feature missing after reopen")
+	}
+	if got.Health().Status != health.Warning {
+		t.Errorf("fillet health after reopen = %v, want Warning (edge key must re-bind, not be lost/Sick)", got.Health().Status)
+	}
+}
+
+// featureByKind returns the first feature of the given kind.
+func featureByKind(fs *feature.PartFeatures, kind string) (*feature.PartFeature, bool) {
+	for i := 0; i < fs.Count(); i++ {
+		if fs.Item(i).Kind() == kind {
+			return fs.Item(i), true
+		}
+	}
+	return nil, false
+}
+
+func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	if err := def.SetLengthUnit("in"); err != nil {
+		t.Fatalf("SetLengthUnit: %v", err)
+	}
+
+	reopened := reopenThroughStore(t, d)
+	if got := reopened.Units().PreferredName(param.Length); got != "in" {
+		t.Errorf("length unit after reopen = %q, want in", got)
+	}
+}

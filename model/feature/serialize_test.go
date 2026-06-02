@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package feature
+
+import (
+	"testing"
+
+	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"github.com/Oblikovati/oblikovati/model/sketch"
+)
+
+// oneSketch is a SketchIndexer over a single sketch at index 0 — enough to round-trip
+// a feature program that consumes one sketch.
+type oneSketch struct{ s *sketch.Sketch }
+
+func (o oneSketch) IndexOf(s *sketch.Sketch) (int, bool) { return 0, s == o.s }
+func (o oneSketch) At(i int) (*sketch.Sketch, bool) {
+	if i == 0 {
+		return o.s, true
+	}
+	return nil, false
+}
+
+func TestExtrudeFeatureRoundTrip(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	fs := NewPartFeatures(nil, nil)
+	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+
+	data, err := fs.MarshalRecipe(oneSketch{sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if len(data) != 1 || data[0].Kind != "extrude" || data[0].Extrude == nil {
+		t.Fatalf("marshaled = %+v, want one extrude with payload", data)
+	}
+	if data[0].Extrude.Distance != 5 {
+		t.Errorf("distance = %v, want 5", data[0].Extrude.Distance)
+	}
+
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 1 || fresh.Item(0).Kind() != "extrude" {
+		t.Errorf("restored program = %d features, want one extrude", fresh.Count())
+	}
+}
+
+// fakeFeature is a feature kind with no codec, used to prove Save errors rather than
+// dropping it.
+type fakeFeature struct{}
+
+func (fakeFeature) Kind() string                    { return "fake" }
+func (fakeFeature) Recompute(Input) (Output, error) { return Output{}, nil }
+
+func TestDressUpFeaturesRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	du := NewDressUpFeatures(fs)
+	du.AddFillet([][]byte{[]byte("edge-a"), []byte("edge-b")}, func() float64 { return 0.5 })
+	du.AddChamfer([][]byte{[]byte("edge-c")}, func() float64 { return 0.3 })
+	du.AddShell([][]byte{[]byte("face-a")}, func() float64 { return 2 })
+	du.AddDraft([][]byte{[]byte("face-b")}, func() float64 { return 0.1 })
+	du.AddThread([]byte("face-c"), "M6x1")
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 5 {
+		t.Fatalf("feature count after round trip = %d, want 5", fresh.Count())
+	}
+
+	// The fillet's edge keys and radius must survive byte-for-byte / value-for-value.
+	fillet := fresh.Item(0).Definition().(*FilletFeature).Definition()
+	if len(fillet.EdgeKeys) != 2 || string(fillet.EdgeKeys[0]) != "edge-a" || string(fillet.EdgeKeys[1]) != "edge-b" {
+		t.Errorf("fillet edge keys = %v, want [edge-a edge-b]", fillet.EdgeKeys)
+	}
+	if fillet.Radius() != 0.5 {
+		t.Errorf("fillet radius = %v, want 0.5", fillet.Radius())
+	}
+	thread := fresh.Item(4).Definition().(*ThreadFeature).Definition()
+	if string(thread.FaceKey) != "face-c" || thread.Designation != "M6x1" {
+		t.Errorf("thread = key %q designation %q, want face-c M6x1", thread.FaceKey, thread.Designation)
+	}
+}
+
+func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	fs.Add(fakeFeature{})
+	if _, err := fs.MarshalRecipe(oneSketch{}); err == nil {
+		t.Error("MarshalRecipe silently accepted a feature with no codec; it must error")
+	}
+}

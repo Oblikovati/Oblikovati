@@ -40,7 +40,14 @@ type Circles struct {
 
 // AddByCenterRadius creates a circle from a new center point and a radius.
 func (c *Circles) AddByCenterRadius(center math.Point2, radius math.Scalar) *Circle {
-	circ := &Circle{entityBase: newEntity(), Center: c.s.newPoint(center), Radius: radius}
+	return c.Add(c.s.newPoint(center), radius)
+}
+
+// Add creates a circle around an existing center point; sharing the center with
+// another entity makes them concentric structurally. Used by restore to rebuild a
+// circle that shares points with other geometry.
+func (c *Circles) Add(center *Point, radius math.Scalar) *Circle {
+	circ := &Circle{entityBase: newEntity(), Center: center, Radius: radius}
 	c.s.add(circ)
 	c.items = append(c.items, circ)
 	return circ
@@ -58,11 +65,17 @@ type Arcs struct {
 
 // AddByCenterStartEnd creates an arc from a center and two endpoints.
 func (c *Arcs) AddByCenterStartEnd(center, start, end math.Point2, ccw bool) *Arc {
+	return c.Add(c.s.newPoint(center), c.s.newPoint(start), c.s.newPoint(end), ccw)
+}
+
+// Add creates an arc from existing center/start/end points; sharing endpoints with
+// other entities makes them coincident structurally. Used by restore.
+func (c *Arcs) Add(center, start, end *Point, ccw bool) *Arc {
 	a := &Arc{
 		entityBase:       newEntity(),
-		Center:           c.s.newPoint(center),
-		Start:            c.s.newPoint(start),
-		End:              c.s.newPoint(end),
+		Center:           center,
+		Start:            start,
+		End:              end,
 		CounterClockwise: ccw,
 	}
 	c.s.add(a)
@@ -82,9 +95,14 @@ type Ellipses struct {
 
 // Add creates an ellipse from a center, major-axis direction, and the two radii.
 func (c *Ellipses) Add(center math.Point2, majorAxis math.Vector2, majorR, minorR math.Scalar) *Ellipse {
+	return c.AddWithCenter(c.s.newPoint(center), majorAxis, majorR, minorR)
+}
+
+// AddWithCenter creates an ellipse around an existing center point. Used by restore.
+func (c *Ellipses) AddWithCenter(center *Point, majorAxis math.Vector2, majorR, minorR math.Scalar) *Ellipse {
 	e := &Ellipse{
 		entityBase:  newEntity(),
-		Center:      c.s.newPoint(center),
+		Center:      center,
 		MajorAxis:   majorAxis,
 		MajorRadius: majorR,
 		MinorRadius: minorR,
@@ -119,6 +137,12 @@ func (c *Splines) add(pts []math.Point2, closed, fit bool) *Spline {
 	for i, p := range pts {
 		points[i] = c.s.newPoint(p)
 	}
+	return c.AddWithPoints(points, closed, fit)
+}
+
+// AddWithPoints creates a spline through existing points. Used by restore to rebuild
+// a spline that may share endpoints with adjacent geometry.
+func (c *Splines) AddWithPoints(points []*Point, closed, fit bool) *Spline {
 	sp := &Spline{entityBase: newEntity(), Points: points, Closed: closed, fit: fit}
 	c.s.add(sp)
 	c.items = append(c.items, sp)
