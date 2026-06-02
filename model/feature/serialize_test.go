@@ -38,7 +38,7 @@ func TestExtrudeFeatureRoundTrip(t *testing.T) {
 	}
 
 	fresh := NewPartFeatures(nil, nil)
-	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	if fresh.Count() != 1 || fresh.Item(0).Kind() != "extrude" {
@@ -67,7 +67,7 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
 	fresh := NewPartFeatures(nil, nil)
-	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	if fresh.Count() != 5 {
@@ -99,7 +99,7 @@ func TestSolidFeaturesRoundTrip(t *testing.T) {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
 	fresh := NewPartFeatures(nil, nil)
-	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	if fresh.Count() != 3 {
@@ -135,7 +135,7 @@ func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
 	fresh := NewPartFeatures(nil, nil)
-	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	if fresh.Count() != 3 {
@@ -171,7 +171,7 @@ func TestSurfaceFeaturesRoundTrip(t *testing.T) {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
 	fresh := NewPartFeatures(nil, nil)
-	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	if fresh.Count() != 2 {
@@ -203,7 +203,7 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
 	fresh := NewPartFeatures(nil, nil)
-	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 

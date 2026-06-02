@@ -19,6 +19,7 @@ import (
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/renderer"
 )
@@ -338,7 +339,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		// ignore user input; otherwise apply navigation then resolve clicks/hover so the
 		// picker hit-tests against the current view.
 		placing := isPlacingTool(s)
-		var hovered *compdef.WorkPlane
+		var hovered *feature.WorkPlane
 		cam := s.Camera()
 		cam.Width, cam.Height = pw, ph
 		if s.CameraAnimating() {
@@ -414,7 +415,7 @@ func handleViewportClick(s *app.Session) {
 // hoveredPlane returns the origin work plane under the cursor (the front-most hit), or
 // nil — used to highlight the plane the user is about to pick. Only meaningful while
 // the viewport is hovered and not editing a sketch.
-func hoveredPlane(s *app.Session) *compdef.WorkPlane {
+func hoveredPlane(s *app.Session) *feature.WorkPlane {
 	if !native.IsItemHovered() || s.InSketch() {
 		return nil
 	}

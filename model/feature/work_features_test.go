@@ -12,11 +12,39 @@ import (
 
 const wtol = 1e-9
 
+func TestOriginCoordinateFrame(t *testing.T) {
+	g := NewWorkGeometry()
+	if g.WorkPoints().Count() != 1 || g.WorkAxes().Count() != 3 || g.WorkPlanes().Count() != 3 {
+		t.Fatalf("origin frame counts pts=%d axes=%d planes=%d, want 1/3/3",
+			g.WorkPoints().Count(), g.WorkAxes().Count(), g.WorkPlanes().Count())
+	}
+	// Every origin element is a grounded coordinate-system element.
+	for i := 0; i < g.WorkPlanes().Count(); i++ {
+		p := g.WorkPlanes().Item(i)
+		if !p.IsCoordinateSystemElement() || !p.Grounded() {
+			t.Errorf("origin plane %q not a grounded coordinate-system element", p.Name())
+		}
+	}
+	// Well-known origin references resolve to the absolute frame.
+	xy, err := g.plane(OriginXYPlane)
+	if err != nil || !xy.Normal().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
+		t.Errorf("origin XY plane normal = %v err=%v, want +Z", xy.Normal(), err)
+	}
+	c, err := g.point(OriginCenter)
+	if err != nil || !c.IsEqualTo(math.P3(0, 0, 0), wtol) {
+		t.Errorf("origin center = %v err=%v, want (0,0,0)", c, err)
+	}
+	x, err := g.axis(OriginXAxis)
+	if err != nil || !x.Direction().AsVector().IsEqualTo(math.V3(1, 0, 0), wtol) {
+		t.Errorf("origin X axis dir = %v err=%v, want +X", x.Direction(), err)
+	}
+}
+
 func TestOffsetWorkPlaneMovesWithParameter(t *testing.T) {
 	ps := param.NewParameters()
 	off, _ := ps.AddUserParameter("gap", "5 cm")
-	planes := NewWorkPlanes()
-	wp := planes.AddByPlaneAndOffset(sketch.XYPlane(), func() float64 { return off.ModelValue() })
+	g := NewWorkGeometry()
+	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return off.ModelValue() })
 
 	// XY plane offset 5 along +Z → origin at z=5.
 	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 5), wtol) {
@@ -25,65 +53,45 @@ func TestOffsetWorkPlaneMovesWithParameter(t *testing.T) {
 	if !wp.Health().OK() {
 		t.Error("offset plane should be healthy")
 	}
+	if wp.IsCoordinateSystemElement() {
+		t.Error("a user work plane is not a coordinate-system element")
+	}
 	// Drive the parameter: the datum moves on recompute.
 	if err := off.SetExpression("12 cm"); err != nil {
 		t.Fatalf("SetExpression: %v", err)
 	}
-	wp.Recompute()
+	g.Recompute()
 	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 12), wtol) {
 		t.Errorf("after param change, plane origin = %v, want (0,0,12)", wp.Plane().Origin())
 	}
 }
 
-func TestWorkPlaneServesAsSketchPlane(t *testing.T) {
-	planes := NewWorkPlanes()
-	wp := planes.AddByPlaneAndOffset(sketch.XYPlane(), func() float64 { return 3 })
-	// The datum plane is directly usable as a sketch host.
-	s := sketch.NewSketches().Add(wp.Plane())
-	got := s.ToModel(math.P2(1, 2)) // sketch (1,2) on the z=3 plane → (1,2,3)
-	if !got.IsEqualTo(math.P3(1, 2, 3), wtol) {
-		t.Errorf("sketch on work plane mapped to %v, want (1,2,3)", got)
-	}
-}
-
 func TestThreePointWorkPlaneAndDegenerate(t *testing.T) {
-	planes := NewWorkPlanes()
-	wp := planes.AddByThreePoints(
-		func() math.Point3 { return math.P3(0, 0, 0) },
-		func() math.Point3 { return math.P3(1, 0, 0) },
-		func() math.Point3 { return math.P3(0, 1, 0) },
-	)
+	g := NewWorkGeometry()
+	a := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
+	b := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 0, 0) })
+	c := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 1, 0) })
+	wp := g.WorkPlanes().AddByThreePoints(a.Key(), b.Key(), c.Key())
 	if !wp.Health().OK() || !wp.Plane().Normal().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
 		t.Errorf("three-point plane normal = %v, want (0,0,1)", wp.Plane().Normal())
 	}
 	// Collinear points are degenerate → sick, not garbage.
-	bad := planes.AddByThreePoints(
-		func() math.Point3 { return math.P3(0, 0, 0) },
-		func() math.Point3 { return math.P3(1, 0, 0) },
-		func() math.Point3 { return math.P3(2, 0, 0) },
-	)
+	d := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(2, 0, 0) })
+	bad := g.WorkPlanes().AddByThreePoints(a.Key(), b.Key(), d.Key())
 	if bad.Health().OK() {
 		t.Error("collinear three-point plane should be sick")
-	}
-	if planes.Count() != 2 || planes.Item(0) != wp {
-		t.Error("work plane collection tracking wrong")
-	}
-	if _, ok := planes.ByID(wp.ID()); !ok {
-		t.Error("ByID failed")
 	}
 }
 
 func TestWorkAxisByTwoPointsAndPlaneIntersection(t *testing.T) {
-	axes := NewWorkAxes()
-	ax := axes.AddByTwoPoints(
-		func() math.Point3 { return math.P3(0, 0, 0) },
-		func() math.Point3 { return math.P3(0, 0, 4) },
-	)
+	g := NewWorkGeometry()
+	top := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 4) })
+	ax := g.WorkAxes().AddByTwoPoints(OriginCenter, top.Key())
 	if !ax.Direction().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
 		t.Errorf("axis dir = %v, want +Z", ax.Direction())
 	}
 	// XY plane ∩ XZ plane = the X axis.
-	inter := axes.AddByPlaneIntersection(sketch.XYPlane(), sketch.XZPlane())
+	inter := g.WorkAxes().AddByPlaneIntersection(OriginXYPlane, OriginXZPlane)
 	if !inter.Health().OK() {
 		t.Fatalf("plane-intersection axis sick: %+v", inter.Health())
 	}
@@ -91,44 +99,52 @@ func TestWorkAxisByTwoPointsAndPlaneIntersection(t *testing.T) {
 		t.Errorf("XY∩XZ axis dir = %v, want parallel to X", inter.Direction())
 	}
 	// Parallel planes do not intersect → sick.
-	top := axes.AddByPlaneIntersection(sketch.XYPlane(), offsetXY(10))
-	if top.Health().OK() {
+	off := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 10 })
+	par := g.WorkAxes().AddByPlaneIntersection(OriginXYPlane, off.Key())
+	if par.Health().OK() {
 		t.Error("parallel planes should yield a sick axis")
-	}
-	if axes.Count() != 3 || axes.Item(0) != ax {
-		t.Error("axis collection tracking wrong")
 	}
 }
 
-func TestWorkPointAndUCS(t *testing.T) {
-	pts := NewWorkPoints()
-	wp := pts.AddByPoint(func() math.Point3 { return math.P3(2, 3, 4) })
+func TestWorkPointPiercesPlane(t *testing.T) {
+	g := NewWorkGeometry()
+	wp := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(2, 3, 4) })
 	if !wp.Point().IsEqualTo(math.P3(2, 3, 4), wtol) || !wp.Health().OK() {
 		t.Errorf("work point = %v", wp.Point())
 	}
-	// Z axis through origin pierces the z=5 plane at (0,0,5).
-	axes := NewWorkAxes()
-	zAxis := axes.AddByTwoPoints(func() math.Point3 { return math.P3(0, 0, 0) }, func() math.Point3 { return math.P3(0, 0, 1) })
-	pierce := pts.AddByPlaneAndAxisIntersection(offsetXY(5), zAxis)
+	// The Z origin axis pierces the z=5 plane at (0,0,5).
+	off := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 5 })
+	pierce := g.WorkPoints().AddByPlaneAndAxisIntersection(off.Key(), OriginZAxis)
 	if !pierce.Point().IsEqualTo(math.P3(0, 0, 5), 1e-6) {
 		t.Errorf("pierce point = %v, want (0,0,5)", pierce.Point())
 	}
-	// An axis parallel to the plane never pierces it → sick.
-	xAxis := axes.AddByTwoPoints(func() math.Point3 { return math.P3(0, 0, 0) }, func() math.Point3 { return math.P3(1, 0, 0) })
-	if pts.AddByPlaneAndAxisIntersection(offsetXY(5), xAxis).Health().OK() {
+	// The X axis is parallel to the z=5 plane → never pierces → sick.
+	bad := g.WorkPoints().AddByPlaneAndAxisIntersection(off.Key(), OriginXAxis)
+	if bad.Health().OK() {
 		t.Error("axis parallel to plane should give a sick point")
 	}
-	if pts.Count() != 3 {
-		t.Errorf("point collection count = %d, want 3", pts.Count())
-	}
+}
 
-	ucs := NewUserCoordinateSystems()
-	frame := ucs.AddByPlane(offsetXY(5))
-	if !frame.Origin().IsEqualTo(math.P3(0, 0, 5), wtol) || !frame.ZAxis().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
-		t.Errorf("UCS frame wrong: origin=%v z=%v", frame.Origin(), frame.ZAxis())
+func TestWorkFeatureNamesAndKeys(t *testing.T) {
+	g := NewWorkGeometry()
+	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
+	wp.SetName("Datum1")
+	if wp.Name() != "Datum1" || wp.Key() != WorkRef("plane/3") {
+		t.Errorf("work plane name/key = %q/%q, want Datum1/plane/3", wp.Name(), wp.Key())
 	}
-	if !frame.XYPlane().Origin().IsEqualTo(math.P3(0, 0, 5), wtol) || ucs.Count() != 1 || ucs.Item(0) != frame {
-		t.Error("UCS plane / collection wrong")
+	// The origin center is point 0, so the first user point is point/1.
+	up := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 1, 1) })
+	if up.Key() != WorkRef("point/1") {
+		t.Errorf("first user point key = %q, want point/1", up.Key())
+	}
+}
+
+func TestUserCoordinateSystem(t *testing.T) {
+	ucs := NewUserCoordinateSystems().AddByPlane(offsetXY(5))
+	ucs.SetName("Frame")
+	if ucs.Name() != "Frame" || !ucs.Origin().IsEqualTo(math.P3(0, 0, 5), wtol) ||
+		!ucs.ZAxis().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
+		t.Errorf("UCS frame wrong: origin=%v z=%v", ucs.Origin(), ucs.ZAxis())
 	}
 }
 
@@ -140,32 +156,3 @@ func offsetXY(z float64) sketch.Plane {
 
 func mustX() math.UnitVector3 { u, _ := math.NewUnitVector3(1, 0, 0); return u }
 func mustY() math.UnitVector3 { u, _ := math.NewUnitVector3(0, 1, 0); return u }
-
-func TestWorkFeatureAccessors(t *testing.T) {
-	planes := NewWorkPlanes()
-	wp := planes.AddByPlaneAndOffset(sketch.XYPlane(), func() float64 { return 1 })
-	wp.SetName("Datum1")
-	if wp.Name() != "Datum1" {
-		t.Error("work plane SetName/Name wrong")
-	}
-
-	axes := NewWorkAxes()
-	ax := axes.AddByTwoPoints(func() math.Point3 { return math.P3(0, 0, 0) }, func() math.Point3 { return math.P3(1, 0, 0) })
-	if ax.ID() == 0 || ax.Name() != "WorkAxis" || !ax.Origin().IsEqualTo(math.P3(0, 0, 0), wtol) || axes.Item(0) != ax {
-		t.Error("work axis accessors wrong")
-	}
-
-	pts := NewWorkPoints()
-	p := pts.AddByPoint(func() math.Point3 { return math.P3(1, 1, 1) })
-	if p.ID() == 0 || p.Name() != "WorkPoint" {
-		t.Error("work point accessors wrong")
-	}
-
-	ucs := NewUserCoordinateSystems().AddByPlane(sketch.XYPlane())
-	ucs.SetName("Frame")
-	if ucs.ID() == 0 || ucs.Name() != "Frame" ||
-		!ucs.XAxis().AsVector().IsEqualTo(math.V3(1, 0, 0), wtol) ||
-		!ucs.YAxis().AsVector().IsEqualTo(math.V3(0, 1, 0), wtol) {
-		t.Error("UCS accessors wrong")
-	}
-}

@@ -8,7 +8,7 @@ import (
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/scene"
 )
 
@@ -20,7 +20,7 @@ import (
 type RayPicker struct {
 	camera scene.Camera
 	bodies func() []*topo.Body
-	planes func() []*compdef.WorkPlane
+	planes func() []*feature.WorkPlane
 }
 
 // NewRayPicker builds a picker over a camera and a provider of the current scene
@@ -31,7 +31,7 @@ func NewRayPicker(camera scene.Camera, bodies func() []*topo.Body) *RayPicker {
 
 // WithPlanes adds a provider of selectable work planes (the part's origin planes), so
 // the picker can resolve a click on a datum plane in empty space.
-func (p *RayPicker) WithPlanes(planes func() []*compdef.WorkPlane) *RayPicker {
+func (p *RayPicker) WithPlanes(planes func() []*feature.WorkPlane) *RayPicker {
 	p.planes = planes
 	return p
 }
@@ -73,11 +73,11 @@ func (p *RayPicker) nearestFace(origin math.Point3, dir math.Vector3) (*topo.Fac
 
 // nearestPlane returns the closest origin work plane whose display square the ray
 // crosses, and the ray parameter (or nil/Inf if none).
-func (p *RayPicker) nearestPlane(origin math.Point3, dir math.Vector3) (*compdef.WorkPlane, float64) {
+func (p *RayPicker) nearestPlane(origin math.Point3, dir math.Vector3) (*feature.WorkPlane, float64) {
 	if p.planes == nil {
 		return nil, stdmath.Inf(1)
 	}
-	var hit *compdef.WorkPlane
+	var hit *feature.WorkPlane
 	best := stdmath.Inf(1)
 	for _, wp := range p.planes() {
 		if t, ok := rayWorkPlane(origin, dir, wp); ok && t < best {
@@ -104,7 +104,7 @@ func facePick(face *topo.Face, body *topo.Body, filter *SelectionFilter) (Select
 
 // rayWorkPlane intersects a ray with a work plane and reports the forward parameter
 // when the hit lies within the plane's finite display square.
-func rayWorkPlane(origin math.Point3, dir math.Vector3, wp *compdef.WorkPlane) (float64, bool) {
+func rayWorkPlane(origin math.Point3, dir math.Vector3, wp *feature.WorkPlane) (float64, bool) {
 	plane := wp.Plane()
 	n := plane.Normal().AsVector()
 	denom := dir.Dot(n)

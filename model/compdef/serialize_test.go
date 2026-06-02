@@ -187,6 +187,51 @@ func featureByKind(fs *feature.PartFeatures, kind string) (*feature.PartFeature,
 	return nil, false
 }
 
+func TestWorkFeaturesSurviveRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	// A user work plane offset 5 above the origin XY plane (references the origin).
+	def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 5 })
+
+	reopened := reopenThroughStore(t, d)
+	if got := reopened.WorkPlanes().Count(); got != 4 {
+		t.Fatalf("work plane count after reopen = %d, want 4 (3 origin + 1 user)", got)
+	}
+	// The origin frame is regenerated (grounded coordinate-system elements).
+	if !reopened.WorkPlanes().Item(0).IsCoordinateSystemElement() {
+		t.Error("origin plane lost its coordinate-system flag after reopen")
+	}
+	user := reopened.WorkPlanes().Item(3)
+	if user.IsCoordinateSystemElement() {
+		t.Error("restored user plane should not be a coordinate-system element")
+	}
+	if !user.Plane().Origin().IsEqualTo(math.P3(0, 0, 5), 1e-9) {
+		t.Errorf("restored work plane origin = %v, want (0,0,5) — its ref to the origin XY plane must re-resolve", user.Plane().Origin())
+	}
+}
+
+func TestRevolveAxisRebindsAfterReopen(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	rectangle(sk, 4, 3)
+	zAxis := def.WorkAxes().Item(2) // the origin Z axis
+	feature.NewRevolveFeatures(def.Features()).
+		Add(sk, 0, zAxis, func() float64 { return 0 }, ops.NewBody)
+
+	reopened := reopenThroughStore(t, d)
+	rev, ok := featureByKind(reopened.Features(), "revolve")
+	if !ok {
+		t.Fatal("revolve feature missing after reopen")
+	}
+	axis := rev.Definition().(*feature.RevolveFeature).Definition().Axis
+	if axis == nil || axis.Key() != feature.OriginZAxis {
+		t.Errorf("revolve axis after reopen = %v, want origin Z axis — it must re-bind by WorkRef", axis)
+	}
+}
+
 func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
 	ws := doc.NewWorkspace(nil)
 	d, _ := compdef.AddPart(ws, "Part1", true)

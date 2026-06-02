@@ -27,8 +27,8 @@ type PartComponentDefinition struct {
 	sketches *sketch.Sketches
 	features *feature.PartFeatures
 	keys     *identity.KeyManager
-	origin   []*WorkPlane         // the three origin datum planes (XY/XZ/YZ)
-	units    param.UnitsOfMeasure // document display units (length/angle/…)
+	work     *feature.WorkGeometry // origin coordinate frame + user work planes/axes/points
+	units    param.UnitsOfMeasure  // document display units (length/angle/…)
 	version  uint64
 	eop      int // end-of-part feature index; endOfPartAtEnd ⇒ full program
 }
@@ -44,7 +44,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		sketches: sketch.NewSketches(),
 		features: feature.NewPartFeatures(params, keys),
 		keys:     keys,
-		origin:   newOriginPlanes(),
+		work:     feature.NewWorkGeometry(),
 		units:    param.DefaultUnitsOfMeasure(),
 		eop:      endOfPartAtEnd,
 	}
@@ -71,6 +71,7 @@ func (d *PartComponentDefinition) Features() *feature.PartFeatures { return d.fe
 // SurfaceBodies, advancing the geometry version. This is the part-level
 // orchestration that turns the feature history into the evaluated result.
 func (d *PartComponentDefinition) Recompute() {
+	d.work.Recompute()
 	d.features.Recompute()
 	d.bodies = topo.NewSurfaceBodies()
 	for _, b := range d.features.Result() {
