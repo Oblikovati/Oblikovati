@@ -123,6 +123,43 @@ func TestSolidFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	fs := NewPartFeatures(nil, nil)
+	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+	NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return 3 }, func() int { return 2 })
+	NewPatternFeatures(fs).AddMirror([]ID{src.ID()}, []byte("plane-key"))
+
+	data, err := fs.MarshalRecipe(oneSketch{sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 3 {
+		t.Fatalf("feature count = %d, want 3 (extrude + rect pattern + mirror)", fresh.Count())
+	}
+
+	// The pattern's source must re-bind to the RESTORED extrude's id, not the old one.
+	wantSource := fresh.Item(0).ID()
+	rect := fresh.Item(1).Definition().(*RectangularPatternFeature).Definition()
+	if len(rect.SourceFeatures) != 1 || rect.SourceFeatures[0] != wantSource {
+		t.Errorf("rect pattern source = %v, want [%d]", rect.SourceFeatures, wantSource)
+	}
+	if rect.CountX() != 3 || rect.CountY() != 2 {
+		t.Errorf("rect counts = %dx%d, want 3x2", rect.CountX(), rect.CountY())
+	}
+	mirror := fresh.Item(2).Definition().(*MirrorFeature).Definition()
+	if len(mirror.SourceFeatures) != 1 || mirror.SourceFeatures[0] != wantSource {
+		t.Errorf("mirror source = %v, want [%d]", mirror.SourceFeatures, wantSource)
+	}
+	if string(mirror.MirrorPlaneKey) != "plane-key" {
+		t.Errorf("mirror plane key = %q, want plane-key", mirror.MirrorPlaneKey)
+	}
+}
+
 func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	fs.Add(fakeFeature{})

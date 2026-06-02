@@ -32,6 +32,11 @@ type FeatureData struct {
 	Hole       *HoleData      `yaml:"hole,omitempty"`
 	Boss       *BossData      `yaml:"boss,omitempty"`
 	Combine    *CombineData   `yaml:"combine,omitempty"`
+
+	RectPattern   *RectPatternData         `yaml:"rectangularPattern,omitempty"`
+	CircPattern   *CircPatternData         `yaml:"circularPattern,omitempty"`
+	SketchPattern *SketchDrivenPatternData `yaml:"sketchDrivenPattern,omitempty"`
+	Mirror        *MirrorData              `yaml:"mirror,omitempty"`
 }
 
 // EdgeDressData is an edge-based dress-up (fillet radius / chamfer distance): the
@@ -77,10 +82,11 @@ type SketchIndexer interface {
 // MarshalRecipe projects the feature program into its serializable form, in history
 // order, erroring on any feature kind without a codec (no silent loss).
 func (fs *PartFeatures) MarshalRecipe(sk SketchIndexer) ([]FeatureData, error) {
+	idx := fs.indexByID()
 	out := make([]FeatureData, 0, fs.Count())
 	for i := 0; i < fs.Count(); i++ {
 		pf := fs.Item(i)
-		fd, err := serializeFeature(pf, sk)
+		fd, err := serializeFeature(pf, sk, idx)
 		if err != nil {
 			return nil, fmt.Errorf("feature %d (%s): %w", i, pf.Kind(), err)
 		}
@@ -89,7 +95,17 @@ func (fs *PartFeatures) MarshalRecipe(sk SketchIndexer) ([]FeatureData, error) {
 	return out, nil
 }
 
-func serializeFeature(pf *PartFeature, sk SketchIndexer) (FeatureData, error) {
+// indexByID maps each feature's stable id to its position, so a pattern can record
+// which earlier features it replicates as program indices (ids are not persisted).
+func (fs *PartFeatures) indexByID() map[ID]int {
+	m := make(map[ID]int, fs.Count())
+	for i := 0; i < fs.Count(); i++ {
+		m[fs.Item(i).ID()] = i
+	}
+	return m
+}
+
+func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (FeatureData, error) {
 	fd := FeatureData{Kind: pf.Kind(), Name: pf.name, Suppressed: pf.suppress}
 	switch f := pf.feature.(type) {
 	case *ExtrudeFeature:
@@ -122,6 +138,30 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer) (FeatureData, error) {
 			return FeatureData{}, err
 		}
 		fd.Combine = &CombineData{Target: f.def.TargetIndex, Tool: f.def.ToolIndex, Operation: op}
+	case *RectangularPatternFeature:
+		src, err := sourceIndices(f.def.SourceFeatures, idx)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.RectPattern = &RectPatternData{Source: src, CountX: evalInt(f.def.CountX), CountY: evalInt(f.def.CountY)}
+	case *CircularPatternFeature:
+		src, err := sourceIndices(f.def.SourceFeatures, idx)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.CircPattern = &CircPatternData{Source: src, Count: evalInt(f.def.Count), Angle: evalFloat(f.def.Angle)}
+	case *SketchDrivenPatternFeature:
+		src, err := sourceIndices(f.def.SourceFeatures, idx)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.SketchPattern = &SketchDrivenPatternData{Source: src, PointCount: evalInt(f.def.PointCount)}
+	case *MirrorFeature:
+		src, err := sourceIndices(f.def.SourceFeatures, idx)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Mirror = &MirrorData{Source: src, Plane: encodeKey(f.def.MirrorPlaneKey)}
 	default:
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -149,30 +189,28 @@ func serializeExtrude(def *ExtrudeDefinition, sk SketchIndexer) (*ExtrudeData, e
 	}, nil
 }
 
-// ApplyRecipe rebuilds the feature program from its serialized form, in order. The
-// caller recomputes afterward to regenerate geometry.
+// ApplyRecipe rebuilds the feature program from its serialized form, in order. It
+// tracks the features restored so far so a pattern/mirror can resolve the earlier
+// features it replicates (recorded as program indices). The caller recomputes
+// afterward to regenerate geometry.
 func (fs *PartFeatures) ApplyRecipe(data []FeatureData, sk SketchIndexer) error {
+	restored := make([]*PartFeature, 0, len(data))
 	for i, fd := range data {
-		if err := restoreFeature(fs, fd, sk); err != nil {
+		pf, err := buildFeature(fs, fd, sk, restored)
+		if err != nil {
 			return fmt.Errorf("feature %d (%s): %w", i, fd.Kind, err)
 		}
+		applyFeatureState(pf, fd)
+		restored = append(restored, pf)
 	}
-	return nil
-}
-
-func restoreFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer) error {
-	pf, err := buildFeature(fs, fd, sk)
-	if err != nil {
-		return err
-	}
-	applyFeatureState(pf, fd)
 	return nil
 }
 
 // buildFeature reconstructs one feature from its payload, erroring on an unknown kind
 // or a missing payload (no silent loss). Dress-up edge/face keys re-bind to the
-// regenerated topology on the next recompute (kernel topo FindEdgeByKey/FindFaceByKey).
-func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer) (*PartFeature, error) {
+// regenerated topology on the next recompute (kernel topo FindEdgeByKey/FindFaceByKey);
+// patterns resolve their source features from restored (the features built so far).
+func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored []*PartFeature) (*PartFeature, error) {
 	du := NewDressUpFeatures(fs)
 	switch fd.Kind {
 	case "extrude":
@@ -216,6 +254,14 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer) (*PartFeat
 		return restoreBoss(fs, fd.Boss)
 	case "combine":
 		return restoreCombine(fs, fd.Combine)
+	case "rectangular-pattern":
+		return restoreRectPattern(fs, fd.RectPattern, restored)
+	case "circular-pattern":
+		return restoreCircPattern(fs, fd.CircPattern, restored)
+	case "sketch-driven-pattern":
+		return restoreSketchPattern(fs, fd.SketchPattern, restored)
+	case "mirror":
+		return restoreMirror(fs, fd.Mirror, restored)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}
@@ -317,6 +363,16 @@ func evalFloat(fn func() float64) float64 {
 }
 
 func constFloat(v float64) func() float64 { return func() float64 { return v } }
+
+// evalInt / constInt are the integer counterparts for pattern counts.
+func evalInt(fn func() int) int {
+	if fn == nil {
+		return 0
+	}
+	return fn()
+}
+
+func constInt(v int) func() int { return func() int { return v } }
 
 // applyFeatureState restores the per-feature engine state (name, suppression).
 func applyFeatureState(pf *PartFeature, fd FeatureData) {
