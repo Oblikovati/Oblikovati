@@ -289,34 +289,39 @@ func applyFix(s *Session, ents []sketch.Entity) error {
 
 // applyDimension adds the dimension implied by the picked entities: a circle's radius,
 // the angle between two lines, or a distance between two points (or a line's length),
-// created at the current measured value in the document's units.
+// created at the current measured value in the document's units. The new dimension is
+// held as the session's pending dimension so the UI can immediately prompt for a value
+// to drive the geometry (Inventor's edit-on-place flow).
 func applyDimension(s *Session, ents []sketch.Entity) error {
 	if s.activeSketch == nil {
 		return errors.New("no active sketch")
 	}
-	dims := s.activeSketch.DimensionConstraints()
-	units := s.DocumentUnits()
+	created, err := addDimensionFor(s.activeSketch.DimensionConstraints(), s.DocumentUnits(), ents)
+	if err != nil {
+		return err
+	}
+	s.pendingDim = created
+	return s.afterConstraint()
+}
+
+// addDimensionFor creates the dimension implied by the picked entities — a circle's
+// radius, the angle between two lines, or a distance between two points (or a line's
+// length) — at the current measured value in the document's units.
+func addDimensionFor(dims *sketch.DimensionConstraints, units param.UnitsOfMeasure, ents []sketch.Entity) (*sketch.DimensionConstraint, error) {
 	switch {
 	case len(filterCircles(ents)) >= 1:
 		c := filterCircles(ents)[0]
-		if _, err := dims.AddRadius(c, lengthExpr(units, c.Radius)); err != nil {
-			return err
-		}
+		return dims.AddRadius(c, lengthExpr(units, c.Radius))
 	case len(filterLines(ents)) >= 2:
 		l := filterLines(ents)
-		if _, err := dims.AddAngle(l[0], l[1], angleExpr(units, lineAngle(l[0], l[1]))); err != nil {
-			return err
-		}
+		return dims.AddAngle(l[0], l[1], angleExpr(units, lineAngle(l[0], l[1])))
 	default:
 		a, b, ok := pointPairFrom(ents)
 		if !ok {
-			return errNeed("dimension", "points, a line, a circle, or two lines")
+			return nil, errNeed("dimension", "points, a line, a circle, or two lines")
 		}
-		if _, err := dims.AddDistance(a, b, lengthExpr(units, a.Position().DistanceTo(b.Position()))); err != nil {
-			return err
-		}
+		return dims.AddDistance(a, b, lengthExpr(units, a.Position().DistanceTo(b.Position())))
 	}
-	return s.afterConstraint()
 }
 
 // lengthExpr formats a database-unit length as a parseable expression in the document's

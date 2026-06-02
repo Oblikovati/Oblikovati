@@ -22,6 +22,25 @@ func ViewProjection(cam scene.Camera, near, far float64) [16]float32 {
 	return mul4(projection(cam, near, far), view(cam))
 }
 
+// Project maps a world point to viewport pixel coordinates (origin top-left, x right,
+// y down), using the same view·projection the viewport uploads — so an overlay drawn at
+// (x, y) sits exactly over the 3D point (e.g. a dimension's value label over its anchor).
+// ok is false when the point is at or behind the camera (clip w ≤ 0, not on screen).
+func Project(cam scene.Camera, near, far float64, p math.Point3) (x, y float64, ok bool) {
+	vp := ViewProjection(cam, near, far)
+	v := [4]float64{p.X, p.Y, p.Z, 1}
+	var clip [4]float64
+	for r := 0; r < 4; r++ {
+		clip[r] = float64(vp[0*4+r])*v[0] + float64(vp[1*4+r])*v[1] +
+			float64(vp[2*4+r])*v[2] + float64(vp[3*4+r])*v[3]
+	}
+	if clip[3] <= 0 {
+		return 0, 0, false
+	}
+	ndcX, ndcY := clip[0]/clip[3], clip[1]/clip[3] // Vulkan clip y already points down
+	return (ndcX*0.5 + 0.5) * float64(cam.Width), (ndcY*0.5 + 0.5) * float64(cam.Height), true
+}
+
 // view is the right-handed world→eye transform (camera looks down its local −Z),
 // column-major.
 func view(cam scene.Camera) [16]float32 {

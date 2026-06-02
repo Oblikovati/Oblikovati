@@ -7,10 +7,31 @@ package ui
 import (
 	stdmath "math"
 
+	"github.com/Oblikovati/oblikovati/app"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/renderer"
 )
+
+// partSketchOverlays renders the active part's finished, visible sketches in the 3D
+// view (the one being edited is drawn by the in-sketch overlay instead), so a sketch
+// stays visible after Finish Sketch and its profile can be clicked to extrude. Returns
+// nil when there is no active part.
+func partSketchOverlays(s *app.Session) []renderer.DrawItem {
+	part := activePart(s)
+	if part == nil {
+		return nil
+	}
+	var items []renderer.DrawItem
+	for i := 0; i < part.Sketches().Count(); i++ {
+		sk := part.Sketches().Item(i)
+		if !sk.Visible() || sk.IsEditing() {
+			continue
+		}
+		items = append(items, sketchOverlay(sk, nil, nil)...)
+	}
+	return items
+}
 
 // sketchOverlay turns the active sketch's geometry into wireframe line items drawn in
 // the viewport, so the user sees what they draw in the sketch environment. Curves are

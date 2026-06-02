@@ -100,3 +100,29 @@ func TestProjectionTranslationInvariance(t *testing.T) {
 		}
 	}
 }
+
+func TestProjectTargetIsScreenCenter(t *testing.T) {
+	cam := testCamera() // 800×600, looking at the origin
+	x, y, ok := Project(cam, 0.1, 1000, math.P3(0, 0, 0))
+	if !ok {
+		t.Fatal("the target is in front of the camera, want ok")
+	}
+	if stdmath.Abs(x-400) > 1e-3 || stdmath.Abs(y-300) > 1e-3 {
+		t.Errorf("target projected to pixel (%g, %g), want screen center (400, 300)", x, y)
+	}
+}
+
+func TestProjectPlacesWorldUpInUpperHalf(t *testing.T) {
+	cam := testCamera()
+	_, y, ok := Project(cam, 0.1, 1000, math.P3(0, 1, 0)) // above the target
+	if !ok || y >= 300 {
+		t.Errorf("world +Y projected to pixel y=%g (ok=%v), want upper half (< 300)", y, ok)
+	}
+}
+
+func TestProjectBehindCameraNotOk(t *testing.T) {
+	cam := testCamera() // eye at z=10 looking toward −z
+	if _, _, ok := Project(cam, 0.1, 1000, math.P3(0, 0, 20)); ok {
+		t.Error("a point behind the camera should report ok=false")
+	}
+}

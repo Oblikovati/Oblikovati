@@ -4,6 +4,7 @@
 // Go-described tree in C++ — is what lets Go own the UI composition. Add wrappers as
 // the chrome grows; resist putting logic here.
 #include "imgui.h"
+#include "imgui_internal.h" // SeparatorEx (vertical ribbon-panel divider)
 
 extern "C" {
 
@@ -22,6 +23,15 @@ int  obk_ig_button(const char* label)        { return ImGui::Button(label) ? 1 :
 void obk_ig_same_line(void)                  { ImGui::SameLine(); }
 void obk_ig_separator(void)                  { ImGui::Separator(); }
 void obk_ig_separator_text(const char* s)    { ImGui::SeparatorText(s); }
+// begin_group/end_group bracket a layout group so a whole ribbon panel (its button
+// row + title) lays out as one item and panels can sit SameLine side-by-side.
+void obk_ig_begin_group(void)                { ImGui::BeginGroup(); }
+void obk_ig_end_group(void)                  { ImGui::EndGroup(); }
+// separator_vertical draws a vertical divider between two horizontally-laid panels.
+void obk_ig_separator_vertical(void)         { ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); }
+// mouse_double_clicked reports a double-click of the given button this frame (used to
+// re-open a dimension for editing).
+int  obk_ig_mouse_double_clicked(int button) { return ImGui::IsMouseDoubleClicked(button) ? 1 : 0; }
 
 int  obk_ig_begin_tab_bar(const char* id)    { return ImGui::BeginTabBar(id) ? 1 : 0; }
 void obk_ig_end_tab_bar(void)                { ImGui::EndTabBar(); }

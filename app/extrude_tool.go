@@ -46,6 +46,18 @@ func (t *ExtrudeTool) Pick(_ *Session, sel Selectable) {
 // would set).
 func (t *ExtrudeTool) SetDistance(d float64) { t.distance = d }
 
+// Distance returns the current extrusion distance (database units).
+func (t *ExtrudeTool) Distance() float64 { return t.distance }
+
+// PickedProfile returns the profile the user clicked (and true), or false when none has
+// been picked yet — so the UI can highlight the selected profile and prompt otherwise.
+func (t *ExtrudeTool) PickedProfile() (ProfileHandle, bool) {
+	if t.profile == nil {
+		return ProfileHandle{}, false
+	}
+	return *t.profile, true
+}
+
 // SetOperation chooses join/cut/intersect/new-body.
 func (t *ExtrudeTool) SetOperation(op ops.PartFeatureOperation) { t.operation = op }
 
