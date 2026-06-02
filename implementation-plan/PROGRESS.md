@@ -188,6 +188,22 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 
 ## Session log
 
+- **2026-06-02:** **Feature persistence — more codecs (branch `feature-codecs`).** Added
+  recipe codecs (with round-trip tests) for: **hole/boss** (placed on a face by key) +
+  **combine** (bodies by index); **patterns** rectangular/circular/sketch-driven + **mirror**
+  (source features recorded as program indices, re-bound on restore); **boundary-patch**
+  and **ruled-surface** (sketch-based, like extrude); the six direct **face-edits**
+  (split/move-face/face-offset/delete-face/replace-face/thicken, uniform via a faceEditor
+  interface). Split the feature codecs into per-family files (serialize_*.go) to stay
+  under the size limit. With extrude + dress-up (already merged), ~20 feature kinds now
+  round-trip; uncoded kinds still error on save (no silent loss).
+  **Blocked on model integration (not serialization):** user **work features**
+  (WorkPlane/Axis/Point/UCS) and **revolve** — work features are standalone types not
+  stored on the PartComponentDefinition, so there is nothing persistent to serialize until
+  they are wired into the part (and revolve references a WorkAxis with no persistent home).
+  **Deferred (geometry-data serialization):** freeform sub-D cage, mesh, non-parametric
+  base (raw B-rep bodies). **Scattered numeric edits remaining:** trim-by-plane, surface
+  offset, mid-surface, stitch, sculpt, core-cavity.
 - **2026-06-02:** **Feature persistence — dress-up family + reference keys.** Added
   codecs for **fillet, chamfer, shell, draft, thread** to `model/feature/serialize.go`.
   These reference body edges/faces by **reference key**; the keys are lineage-derived
