@@ -37,6 +37,9 @@ type FeatureData struct {
 	CircPattern   *CircPatternData         `yaml:"circularPattern,omitempty"`
 	SketchPattern *SketchDrivenPatternData `yaml:"sketchDrivenPattern,omitempty"`
 	Mirror        *MirrorData              `yaml:"mirror,omitempty"`
+
+	BoundaryPatch *BoundaryPatchData `yaml:"boundaryPatch,omitempty"`
+	RuledSurface  *RuledSurfaceData  `yaml:"ruledSurface,omitempty"`
 }
 
 // EdgeDressData is an edge-based dress-up (fillet radius / chamfer distance): the
@@ -162,6 +165,18 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.Mirror = &MirrorData{Source: src, Plane: encodeKey(f.def.MirrorPlaneKey)}
+	case *BoundaryPatchFeature:
+		bp, err := serializeBoundaryPatch(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.BoundaryPatch = bp
+	case *RuledSurfaceFeature:
+		rs, err := serializeRuledSurface(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.RuledSurface = rs
 	default:
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -262,6 +277,10 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSketchPattern(fs, fd.SketchPattern, restored)
 	case "mirror":
 		return restoreMirror(fs, fd.Mirror, restored)
+	case "boundary-patch":
+		return restoreBoundaryPatch(fs, fd.BoundaryPatch, sk)
+	case "ruled-surface":
+		return restoreRuledSurface(fs, fd.RuledSurface, sk)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}

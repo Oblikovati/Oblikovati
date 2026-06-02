@@ -160,6 +160,34 @@ func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 	}
 }
 
+func TestSurfaceFeaturesRoundTrip(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	fs := NewPartFeatures(nil, nil)
+	NewBoundaryPatchFeatures(fs).Add(sk, 0, PatchFree)
+	NewRuledSurfaceFeatures(fs).AddByDistance(sk, 0, RuledNormal, func() float64 { return 2 })
+
+	data, err := fs.MarshalRecipe(oneSketch{sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 2 {
+		t.Fatalf("feature count = %d, want 2", fresh.Count())
+	}
+
+	bp := fresh.Item(0).Definition().(*BoundaryPatchFeature).Definition()
+	if bp.Loops.Count() != 1 || bp.Loops.Item(0).ProfileIndex != 0 || bp.Loops.Item(0).Condition != PatchFree {
+		t.Errorf("boundary patch loop = %+v, want one free loop on profile 0", bp.Loops.Item(0))
+	}
+	rs := fresh.Item(1).Definition().(*RuledSurfaceFeature).Definition()
+	if rs.Type != RuledNormal || rs.Distance() != 2 {
+		t.Errorf("ruled surface = type %v dist %v, want normal 2", rs.Type, rs.Distance())
+	}
+}
+
 func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	fs.Add(fakeFeature{})
