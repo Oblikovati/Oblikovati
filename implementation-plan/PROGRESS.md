@@ -188,6 +188,22 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 
 ## Session log
 
+- **2026-06-02:** **Inventor-style origin coordinate system + work-feature persistence
+  (branch `work-features`).** Modelled construction geometry like Inventor (verified
+  against `Oblikovati.Contracts.CSharp`): a part owns one `feature.WorkGeometry` holding
+  the static origin coordinate system — center point, X/Y/Z axes, XY/XZ/YZ planes — as
+  grounded `IsCoordinateSystemElement` members with well-known `WorkRef` keys, plus the
+  user work planes/axes/points. Work features are now defined **relative to references**
+  (origin well-known keys; user features by collection position), resolved at recompute,
+  replacing the opaque eval closures with typed serializable definitions. Unified on one
+  `WorkPlane` type (dropped `compdef.WorkPlane`; migrated ~13 app/head sites); the part
+  recomputes its work geometry before the feature program. Persistence: a `workFeatures`
+  recipe section serializes user features in creation order (origin regenerated);
+  **revolve** serializes its axis as a `WorkRef` and re-binds it on restore. Verified:
+  a work plane offset off the origin XY re-resolves to z=5 after reopen; a revolve's axis
+  re-binds to `origin/axis/z`. Full suite + `head` green. Out of scope (error loudly until
+  coded): face/edge/sketch-referenced work features, sweep/loft/coil/rib, mesh, freeform
+  cage, non-parametric base.
 - **2026-06-02:** **Feature persistence — more codecs (branch `feature-codecs`).** Added
   recipe codecs (with round-trip tests) for: **hole/boss** (placed on a face by key) +
   **combine** (bodies by index); **patterns** rectangular/circular/sketch-driven + **mirror**
