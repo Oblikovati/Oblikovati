@@ -56,7 +56,7 @@ func frontCamera() scene.Camera {
 }
 
 func TestBuildDrawListEmitsSurfacesAndWireframe(t *testing.T) {
-	list := BuildDrawList([]*topo.Body{box(2, math.V3(0, 0, 0))}, frontCamera(), ops.DefaultQuality())
+	list := BuildDrawList([]*topo.Body{box(2, math.V3(0, 0, 0))}, frontCamera(), ops.DefaultQuality(), nil)
 	if len(list.Items) != 2 {
 		t.Fatalf("draw items = %d, want 2 (surface + wireframe)", len(list.Items))
 	}
@@ -76,7 +76,7 @@ func TestBuildDrawListEmitsSurfacesAndWireframe(t *testing.T) {
 
 func TestObjectIDsTagEachBody(t *testing.T) {
 	a, b := box(1, math.V3(0, 0, 0)), box(1, math.V3(3, 0, 0))
-	list := BuildDrawList([]*topo.Body{a, b}, frontCamera(), ops.DefaultQuality())
+	list := BuildDrawList([]*topo.Body{a, b}, frontCamera(), ops.DefaultQuality(), nil)
 	ids := map[uint64]bool{}
 	for _, it := range list.Items {
 		ids[it.ObjectID] = true
@@ -89,13 +89,13 @@ func TestObjectIDsTagEachBody(t *testing.T) {
 // TestTranslationInvariance is a metamorphic oracle (ADR-0014): translating the
 // scene must not change how much is drawn.
 func TestTranslationInvariance(t *testing.T) {
-	atOrigin := BuildDrawList([]*topo.Body{box(2, math.V3(0, 0, 0))}, frontCamera(), ops.DefaultQuality())
+	atOrigin := BuildDrawList([]*topo.Body{box(2, math.V3(0, 0, 0))}, frontCamera(), ops.DefaultQuality(), nil)
 	// Move both the body and the camera by the same offset → identical draw list size.
 	off := math.V3(7, -3, 0)
 	cam := frontCamera()
 	cam.Eye = cam.Eye.TranslateBy(off)
 	cam.Target = cam.Target.TranslateBy(off)
-	moved := BuildDrawList([]*topo.Body{box(2, off)}, cam, ops.DefaultQuality())
+	moved := BuildDrawList([]*topo.Body{box(2, off)}, cam, ops.DefaultQuality(), nil)
 	if atOrigin.Triangles() != moved.Triangles() || atOrigin.Lines() != moved.Lines() {
 		t.Errorf("translation changed draw counts: %d/%d vs %d/%d",
 			atOrigin.Triangles(), atOrigin.Lines(), moved.Triangles(), moved.Lines())
@@ -105,7 +105,7 @@ func TestTranslationInvariance(t *testing.T) {
 func TestBodyBehindCameraIsCulled(t *testing.T) {
 	cam := frontCamera()                 // looking from z=30 toward z=0 (forward −Z)
 	behind := box(2, math.V3(0, 0, 100)) // box well behind the eye
-	list := BuildDrawList([]*topo.Body{behind}, cam, ops.DefaultQuality())
+	list := BuildDrawList([]*topo.Body{behind}, cam, ops.DefaultQuality(), nil)
 	if len(list.Items) != 0 {
 		t.Errorf("body behind the camera not culled: %d items", len(list.Items))
 	}
@@ -113,7 +113,7 @@ func TestBodyBehindCameraIsCulled(t *testing.T) {
 
 func TestNullBackendRecordsFrames(t *testing.T) {
 	var be Backend = &NullBackend{}
-	list := BuildDrawList([]*topo.Body{box(1, math.V3(0, 0, 0))}, frontCamera(), ops.DefaultQuality())
+	list := BuildDrawList([]*topo.Body{box(1, math.V3(0, 0, 0))}, frontCamera(), ops.DefaultQuality(), nil)
 	be.Render(list)
 	be.Render(list)
 	null := be.(*NullBackend)
@@ -134,5 +134,25 @@ func TestDrawItemPrimitiveCounts(t *testing.T) {
 	}
 	if line.LineCount() != 2 || line.TriangleCount() != 0 {
 		t.Error("line item counts wrong")
+	}
+}
+
+// A SurfaceLookup must drive the triangle item's PBR fields (albedo + metallic/roughness);
+// the wireframe item keeps the edge color.
+func TestBuildDrawListAppliesSurfaceLookup(t *testing.T) {
+	want := Surface{Albedo: [4]float32{0.2, 0.4, 0.8, 1}, Metallic: 0.9, Roughness: 0.3, Opacity: 1}
+	list := BuildDrawList([]*topo.Body{box(2, math.V3(0, 0, 0))}, frontCamera(), ops.DefaultQuality(),
+		func(*topo.Body) Surface { return want })
+	var tri *DrawItem
+	for i := range list.Items {
+		if list.Items[i].Primitive == Triangles {
+			tri = &list.Items[i]
+		}
+	}
+	if tri == nil {
+		t.Fatal("no triangle item produced")
+	}
+	if tri.Color != want.Albedo || tri.Metallic != want.Metallic || tri.Roughness != want.Roughness {
+		t.Errorf("surface not applied: color=%v metallic=%v roughness=%v", tri.Color, tri.Metallic, tri.Roughness)
 	}
 }

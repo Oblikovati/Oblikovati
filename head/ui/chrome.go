@@ -422,7 +422,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		}
 
 		bodies := activeBodies(s)
-		list := renderer.BuildDrawList(bodies, cam, ops.DefaultQuality())
+		list := renderer.BuildDrawList(bodies, cam, ops.DefaultQuality(), s.SurfaceLookup())
 		// Paint the selected body cyan so a browser/viewport pick reads in the 3D view
 		// (a no-op in sketch mode, where the selection is sketch entities, not bodies).
 		list = highlightSelection(list, s.Selection().First(), bodies)

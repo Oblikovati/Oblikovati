@@ -9,6 +9,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/event"
 	"github.com/Oblikovati/oblikovati/model/doc"
+	"github.com/Oblikovati/oblikovati/model/material"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/renderer"
 	"github.com/Oblikovati/oblikovati/scene"
@@ -37,6 +38,7 @@ type Session struct {
 	grid            *GridSettings
 	themes          *theme.Library
 	themeStore      *theme.Store
+	materials       *material.Library
 }
 
 // NewSession creates an empty in-memory session with no persistence store. Its
