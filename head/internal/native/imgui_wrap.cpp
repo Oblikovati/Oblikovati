@@ -70,6 +70,7 @@ void obk_ig_set_scroll_here_y(void)          { ImGui::SetScrollHereY(0.5f); }
 // Preference widgets: a float/int field and a checkbox. Each returns 1 when the value
 // changed this frame and writes the new value back through the pointer.
 int  obk_ig_input_float(const char* label, float* v) { return ImGui::InputFloat(label, v) ? 1 : 0; }
+int  obk_ig_input_double(const char* label, double* v) { return ImGui::InputDouble(label, v) ? 1 : 0; }
 int  obk_ig_input_int(const char* label, int* v)     { return ImGui::InputInt(label, v) ? 1 : 0; }
 int  obk_ig_input_text(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size) ? 1 : 0; }
 int  obk_ig_checkbox(const char* label, int* v) {

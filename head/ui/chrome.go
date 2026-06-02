@@ -51,6 +51,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawExtrudeDialog(s)
 	drawStatusBar(s)
 	drawPreferencesWindow(s)
+	drawMaterialsWindow(s)
 	drawFileDialog(s)
 	return activated
 }
@@ -125,6 +126,9 @@ func drawMenuBar(s *app.Session) string {
 		native.EndMenu()
 	}
 	if native.BeginMenu("Tools") {
+		if native.MenuItem("Materials") {
+			showMaterials = !showMaterials
+		}
 		if native.MenuItem("Preferences") {
 			showPreferences = !showPreferences
 		}
