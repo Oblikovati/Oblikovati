@@ -96,27 +96,49 @@ func (s *Session) PhysicalProperties() (types.PhysicalProperties, bool) {
 	if err != nil {
 		return types.PhysicalProperties{}, false
 	}
+	return s.sumBodyProperties(part), true
+}
+
+// massAccum accumulates volume/area/mass and the volume-weighted centroid numerator across
+// a part's bodies.
+type massAccum struct {
+	volume, area, mass float64
+	cx, cy, cz         float64
+}
+
+// sumBodyProperties sums the per-body geometry properties (each body weighted by its
+// effective material's density) into the part's physical properties.
+func (s *Session) sumBodyProperties(part *compdef.PartComponentDefinition) types.PhysicalProperties {
 	look := material.MergedLookup{Embedded: part.Assets(), Catalog: s.Materials()}
 	assign := part.Assignments()
-	var volume, area, mass float64
-	var cx, cy, cz float64
+	var a massAccum
 	for _, b := range part.SurfaceBodies().All() {
 		gp := ops.BodyGeometryProperties(b, ops.DefaultQuality())
 		density := 0.0
 		if m, ok := assign.EffectiveMaterial(look, material.RefKey(b.ReferenceKey())); ok {
 			density = m.Density()
 		}
-		volume += gp.Volume
-		area += gp.Area
-		mass += density * gp.Volume
-		cx += float64(gp.Centroid.X) * gp.Volume
-		cy += float64(gp.Centroid.Y) * gp.Volume
-		cz += float64(gp.Centroid.Z) * gp.Volume
+		a.add(gp, density)
 	}
-	props := types.PhysicalProperties{Mass: mass, Volume: volume, Area: area}
-	if volume > 0 {
-		props.Density = mass / volume
-		props.Centroid = [3]float64{cx / volume, cy / volume, cz / volume}
+	return a.result()
+}
+
+// add folds one body's geometry properties (at the given density) into the accumulator.
+func (a *massAccum) add(gp ops.GeometryProperties, density float64) {
+	a.volume += gp.Volume
+	a.area += gp.Area
+	a.mass += density * gp.Volume
+	a.cx += float64(gp.Centroid.X) * gp.Volume
+	a.cy += float64(gp.Centroid.Y) * gp.Volume
+	a.cz += float64(gp.Centroid.Z) * gp.Volume
+}
+
+// result finalizes the accumulator, dividing the centroid numerator by total volume.
+func (a *massAccum) result() types.PhysicalProperties {
+	props := types.PhysicalProperties{Mass: a.mass, Volume: a.volume, Area: a.area}
+	if a.volume > 0 {
+		props.Density = a.mass / a.volume
+		props.Centroid = [3]float64{a.cx / a.volume, a.cy / a.volume, a.cz / a.volume}
 	}
-	return props, true
+	return props
 }
