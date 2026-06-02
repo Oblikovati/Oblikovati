@@ -16,7 +16,7 @@ func TestActiveExtrudeNilWhenNoExtrudeTool(t *testing.T) {
 }
 
 func TestExtrudeDistanceDisplayRoundTripsThroughDocUnit(t *testing.T) {
-	s, _ := topDownPickerOverSquare(t)
+	s := topDownPickerOverSquare(t)
 	s.StartTool(NewExtrudeTool())
 	// The document length unit defaults to mm; the model database unit is cm. Setting
 	// 50 mm must store 5 (cm) on the tool and read back as 50 mm.
@@ -30,7 +30,7 @@ func TestExtrudeDistanceDisplayRoundTripsThroughDocUnit(t *testing.T) {
 }
 
 func TestExtrudeDialogPathBuildsSolid(t *testing.T) {
-	s, _ := topDownPickerOverSquare(t) // 2×2 square at origin, top-down camera
+	s := topDownPickerOverSquare(t) // 2×2 square at origin, top-down camera
 	s.StartTool(NewExtrudeTool())
 	s.Click(200, 200) // pick the profile (center pixel)
 	ext := s.ActiveExtrude()
