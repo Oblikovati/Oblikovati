@@ -94,17 +94,40 @@ func (ps *Profiles) All() []*Profile {
 	return out
 }
 
-// Profiles detects regions in the sketch from its non-construction geometry: closed
-// loops become closed profiles (with inner/outer classification by nesting); a
-// connected but unclosed chain becomes a single open profile.
+// Profiles detects regions in the sketch from its non-construction geometry: it builds
+// a planar arrangement of the (faceted) curves and extracts the minimal closed cells —
+// so a dividing curve splits a shape into several regions (arrangement.go / regions.go).
+// Cells are classified into outer boundaries and holes by even–odd nesting; geometry
+// that bounds no cell (a connected but unclosed chain) becomes an open profile.
 func (s *Sketch) Profiles() *Profiles {
-	loops, openChains := detectLoops(s.normalGeometry())
+	ents := s.normalGeometry()
+	loops := detectRegions(ents)
 	ps := &Profiles{}
 	ps.items = append(ps.items, groupRegions(loops)...)
-	for _, chain := range openChains {
+	for _, chain := range openChainsOutside(ents, loops) {
 		ps.items = append(ps.items, &Profile{outer: chain})
 	}
 	return ps
+}
+
+// openChainsOutside returns the open chains formed by entities that bound no detected
+// region — the geometry an extrude rightly rejects but a surface may consume. Entities
+// already used by a region are excluded so a dividing curve is not also reported open.
+func openChainsOutside(ents []Entity, loops []Loop) []Loop {
+	used := map[Entity]bool{}
+	for _, l := range loops {
+		for _, pe := range l.entities {
+			used[pe.Entity] = true
+		}
+	}
+	var leftover []Entity
+	for _, e := range ents {
+		if !used[e] {
+			leftover = append(leftover, e)
+		}
+	}
+	_, open := detectLoops(leftover)
+	return open
 }
 
 // normalGeometry returns the sketch's non-construction curve entities.

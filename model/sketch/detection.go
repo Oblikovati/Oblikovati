@@ -31,21 +31,40 @@ func detectLoops(entities []Entity) (closed []Loop, open []Loop) {
 	return append(closed, c...), o
 }
 
-// standaloneLoop returns a one-entity closed loop for an inherently closed curve.
+// standaloneLoop returns a one-entity closed loop for an inherently closed curve: a
+// circle, a full ellipse, or a spline flagged closed.
 func standaloneLoop(e Entity) (Loop, bool) {
-	if c, ok := e.(*Circle); ok {
-		return Loop{entities: []ProfileEntity{{Entity: c}}, polygon: sampleCircle(c), closed: true}, true
+	switch t := e.(type) {
+	case *Circle:
+		return oneEntityLoop(t, sampleCircle(t)), true
+	case *Ellipse:
+		return oneEntityLoop(t, sampleEllipseEntity(t)), true
+	case *Spline:
+		if t.Closed {
+			return oneEntityLoop(t, sampleSplineEntity(t)), true
+		}
 	}
 	return Loop{}, false
 }
 
-// segmentEnds returns the endpoints of an open segment entity (line or arc).
+// oneEntityLoop wraps a single closed entity and its sampled polygon as a loop.
+func oneEntityLoop(e Entity, polygon []math.Point2) Loop {
+	return Loop{entities: []ProfileEntity{{Entity: e}}, polygon: polygon, closed: true}
+}
+
+// segmentEnds returns the endpoints of an open segment entity (line, arc, or an open
+// spline — joined to its neighbours by its first/last defining point).
 func segmentEnds(e Entity) (a, b *Point, ok bool) {
 	switch t := e.(type) {
 	case *Line:
 		return t.A, t.B, true
 	case *Arc:
 		return t.Start, t.End, true
+	case *Spline:
+		if !t.Closed && len(t.Points) >= 2 {
+			return t.Points[0], t.Points[len(t.Points)-1], true
+		}
+		return nil, nil, false
 	default:
 		return nil, nil, false
 	}
@@ -89,7 +108,7 @@ func walkChain(start int, segs []segment, adj map[*Point][]int, used []bool) Loo
 		s := segs[idx]
 		next, reversed := otherEnd(s, cur)
 		entities = append(entities, ProfileEntity{Entity: s.entity, reversed: reversed})
-		polygon = append(polygon, cur.Position())
+		polygon = append(polygon, traversalPolyline(s.entity, reversed)...)
 		cur = next
 		if cur == startPoint {
 			return Loop{entities: entities, polygon: polygon, closed: true}
