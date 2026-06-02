@@ -43,8 +43,9 @@ precedence chain.
    → neutral default`.
 
 5. **Public API (ADR-0018).** `types` (AssetSource, property groups, PhysicalProperties,
-   reusing `Rgba`), `contract` (Appearance/Material), `wire` (appearances.* / materials.* /
-   model.assign* / model.physicalProperties), `client` groups; served by `addin/router`.
+   reusing `Rgba`), `contract` (Appearance/Material), `wire` (`appearances.*`, `materials.*`,
+   `model.assignMaterial`, `model.assignAppearance`, `model.physicalProperties`), `client`
+   groups; served by `addin/router`.
 
 6. **Renderer stays pure.** `BuildDrawList` takes a `SurfaceLookup` resolver built in the app
    from the active part's assignments + library; `renderer` never imports `model`.
