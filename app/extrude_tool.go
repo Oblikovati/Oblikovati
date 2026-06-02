@@ -9,16 +9,17 @@ import (
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/feature"
+	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/renderer"
 )
 
-// ExtrudeTool is the interactive Extrude command: activate it, click a sketch
-// profile, set a distance, and OK to add an extrude feature to the active part —
-// the full Inventor extrude flow, driven entirely by session input so a test
-// exercises it with synthetic clicks. It is the worked example proving geometry
-// flows end to end from the UI.
+// ExtrudeTool is the interactive Extrude command: activate it, hover a sketch region
+// (a closed area) and click to pick it, Ctrl+click more regions to extrude together,
+// set a distance, and OK to add an extrude feature to the active part — the full
+// Inventor extrude flow, driven entirely by session input so a test exercises it with
+// synthetic clicks. It is the worked example proving geometry flows end to end.
 type ExtrudeTool struct {
-	profile   *ProfileHandle
+	profiles  []ProfileHandle
 	distance  float64
 	operation ops.PartFeatureOperation
 	added     *feature.PartFeature
@@ -32,14 +33,45 @@ func NewExtrudeTool() *ExtrudeTool {
 // Name implements [Tool].
 func (t *ExtrudeTool) Name() string { return "Extrude" }
 
-// Start sets the selection filter to profiles (so clicks pick a profile).
+// Start sets the selection filter to profiles (so clicks pick a region).
 func (t *ExtrudeTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectProfile)) }
 
-// Pick captures the profile the user clicked.
+// Pick captures the region the user clicked, replacing any previous selection (a plain
+// click selects a single region).
 func (t *ExtrudeTool) Pick(_ *Session, sel Selectable) {
 	if p, ok := sel.(ProfileHandle); ok {
-		t.profile = &p
+		t.profiles = []ProfileHandle{p}
 	}
+}
+
+// PickWithMods extends the selection on Ctrl+click — adding the region, or removing it
+// if it was already picked (toggle) — and replaces it otherwise. This is how the user
+// gathers several closed paths into one extrusion.
+func (t *ExtrudeTool) PickWithMods(s *Session, sel Selectable, mods Modifier) {
+	p, ok := sel.(ProfileHandle)
+	if !ok {
+		return
+	}
+	if !mods.Has(CtrlMod) {
+		t.Pick(s, sel)
+		return
+	}
+	if i := indexOfProfile(t.profiles, p); i >= 0 {
+		t.profiles = append(t.profiles[:i], t.profiles[i+1:]...)
+		return
+	}
+	t.profiles = append(t.profiles, p)
+}
+
+// indexOfProfile returns the position of p in handles, or -1. ProfileHandle is
+// comparable (sketch pointer + region index), so equality identifies the same region.
+func indexOfProfile(handles []ProfileHandle, p ProfileHandle) int {
+	for i, h := range handles {
+		if h == p {
+			return i
+		}
+	}
+	return -1
 }
 
 // SetDistance sets the extrusion distance (the value the in-canvas field / spinner
@@ -49,31 +81,41 @@ func (t *ExtrudeTool) SetDistance(d float64) { t.distance = d }
 // Distance returns the current extrusion distance (database units).
 func (t *ExtrudeTool) Distance() float64 { return t.distance }
 
-// PickedProfile returns the profile the user clicked (and true), or false when none has
-// been picked yet — so the UI can highlight the selected profile and prompt otherwise.
+// PickedProfiles returns the regions the user has picked (in click order), for the UI
+// to highlight. Empty until the first pick.
+func (t *ExtrudeTool) PickedProfiles() []ProfileHandle {
+	return append([]ProfileHandle(nil), t.profiles...)
+}
+
+// PickedProfile returns the first picked region (and true), or false when none has been
+// picked yet — a convenience for single-region UI/tests.
 func (t *ExtrudeTool) PickedProfile() (ProfileHandle, bool) {
-	if t.profile == nil {
+	if len(t.profiles) == 0 {
 		return ProfileHandle{}, false
 	}
-	return *t.profile, true
+	return t.profiles[0], true
 }
 
 // SetOperation chooses join/cut/intersect/new-body.
 func (t *ExtrudeTool) SetOperation(op ops.PartFeatureOperation) { t.operation = op }
 
-// CanCommit reports whether a profile and a non-zero distance have been gathered.
-func (t *ExtrudeTool) CanCommit() bool { return t.profile != nil && t.distance != 0 }
+// CanCommit reports whether at least one region and a non-zero distance are gathered.
+func (t *ExtrudeTool) CanCommit() bool { return len(t.profiles) > 0 && t.distance != 0 }
 
 // Commit adds the extrude feature to the active part and recomputes; a sick feature
-// (e.g. an open profile) keeps the tool open by returning an error.
+// (e.g. an open profile) keeps the tool open by returning an error. All picked regions
+// must lie on one sketch (a single extrude consumes one sketch's regions); picks on
+// other sketches are ignored.
 func (t *ExtrudeTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
+	skt := t.profiles[0].Sketch
+	indices := profileIndicesOn(t.profiles, skt)
 	dist := t.distance
 	t.added = feature.NewExtrudeFeatures(part.Features()).
-		AddByDistanceExtent(t.profile.Sketch, t.profile.ProfileIndex, t.operation, func() float64 { return dist })
+		AddByDistanceExtentProfiles(skt, indices, t.operation, func() float64 { return dist })
 	part.Recompute()
 	if !t.added.Health().OK() {
 		return errors.New("extrude: " + t.added.Health().Reason)
@@ -82,14 +124,25 @@ func (t *ExtrudeTool) Commit(s *Session) error {
 	return nil
 }
 
+// profileIndicesOn returns the region indices among handles that belong to sketch skt.
+func profileIndicesOn(handles []ProfileHandle, skt *sketch.Sketch) []int {
+	var out []int
+	for _, h := range handles {
+		if h.Sketch == skt {
+			out = append(out, h.ProfileIndex)
+		}
+	}
+	return out
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ExtrudeTool) AddedFeature() *feature.PartFeature { return t.added }
 
 // Prompt guides the user through the extrude steps (Inventor's status-bar prompts).
 func (t *ExtrudeTool) Prompt(*Session) string {
 	switch {
-	case t.profile == nil:
-		return "Select a profile to extrude"
+	case len(t.profiles) == 0:
+		return "Select a region to extrude (Ctrl+click to add more)"
 	case t.distance == 0:
 		return "Specify the extrude distance"
 	default:
@@ -97,19 +150,31 @@ func (t *ExtrudeTool) Prompt(*Session) string {
 	}
 }
 
-// Preview returns a transient wireframe of the prism the tool will create — the
-// bottom and top profile loops plus vertical connectors — so the viewport shows a
-// live preview before OK (Inventor's in-canvas preview). Empty until a profile and
-// distance are set.
+// Preview returns a transient wireframe of the prisms the tool will create — each
+// picked region's bottom and top loops plus vertical connectors — so the viewport
+// shows a live preview before OK (Inventor's in-canvas preview). Empty until a region
+// and distance are set.
 func (t *ExtrudeTool) Preview(*Session) []renderer.DrawItem {
 	if !t.CanCommit() {
 		return nil
 	}
-	plane := t.profile.Sketch.Plane()
-	poly := t.profile.Sketch.Profiles().Item(t.profile.ProfileIndex).OuterLoop().Polygon()
-	up := plane.Normal().AsVector().Scale(t.distance)
+	var items []renderer.DrawItem
+	for _, ph := range t.profiles {
+		if ph.ProfileIndex >= ph.Sketch.Profiles().Count() {
+			continue
+		}
+		poly := ph.Sketch.Profiles().Item(ph.ProfileIndex).OuterLoop().Polygon()
+		items = append(items, prismWireframe(ph.Sketch.Plane(), poly, t.distance))
+	}
+	return items
+}
+
+// prismWireframe builds the line-primitive draw item outlining the prism a region's
+// polygon sweeps to distance dist along the sketch plane normal.
+func prismWireframe(plane sketch.Plane, poly []math.Point2, dist float64) renderer.DrawItem {
+	up := plane.Normal().AsVector().Scale(dist)
 	n := len(poly)
-	var pts []math.Point3
+	pts := make([]math.Point3, 0, 2*n)
 	for _, p := range poly { // bottom ring [0,n)
 		pts = append(pts, plane.ToModel(p))
 	}
@@ -123,7 +188,7 @@ func (t *ExtrudeTool) Preview(*Session) []renderer.DrawItem {
 		idx = append(idx, n+i, n+j) // top loop
 		idx = append(idx, i, n+i)   // vertical
 	}
-	return []renderer.DrawItem{{Primitive: renderer.Lines, Positions: pts, Indices: idx, Color: [4]float32{1, 0.6, 0, 1}}}
+	return renderer.DrawItem{Primitive: renderer.Lines, Positions: pts, Indices: idx, Color: [4]float32{1, 0.6, 0, 1}}
 }
 
 // Cancel restores the default selection filter.

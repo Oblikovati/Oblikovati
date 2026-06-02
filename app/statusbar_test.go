@@ -21,8 +21,8 @@ func TestBuildStatusGuidesExtrude(t *testing.T) {
 	if !sb.ToolActive || sb.ToolName != "Extrude" || sb.CanCommit {
 		t.Fatalf("started status = %+v, want active Extrude, not yet committable", sb)
 	}
-	if sb.Prompt != "Select a profile to extrude" {
-		t.Errorf("initial prompt = %q, want select-profile guidance", sb.Prompt)
+	if sb.Prompt != "Select a region to extrude (Ctrl+click to add more)" {
+		t.Errorf("initial prompt = %q, want select-region guidance", sb.Prompt)
 	}
 
 	s.Click(120, 90) // synthetic click picks the profile

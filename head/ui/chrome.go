@@ -453,6 +453,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			list.Items = append(list.Items, planesOverlay(activePart(s), s.SelectedWorkPlane(), hovered)...)
 			list.Items = append(list.Items, partSketchOverlays(s)...)
+			list.Items = append(list.Items, extrudeHoverHighlight(s)...)
 			list.Items = append(list.Items, extrudeProfileHighlight(s)...)
 			list.Items = append(list.Items, activeToolPreviewItems(s)...)
 		}
@@ -495,7 +496,10 @@ func handleViewportClick(s *app.Session) {
 	x, y := viewportCursor()
 	e := app.PointerEvent{X: x, Y: y, Button: app.LeftButton}
 	if native.KeyShift() {
-		e.Mods = app.ShiftMod
+		e.Mods |= app.ShiftMod
+	}
+	if native.KeyCtrl() {
+		e.Mods |= app.CtrlMod // Ctrl+click adds a region to a multi-region extrude
 	}
 	s.Pointer(e)
 }
