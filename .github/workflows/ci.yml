@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [develop, release]
   pull_request:
 
 permissions:
@@ -24,6 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Oblikovati/Oblikovati.API
+          ref: develop
           path: _api
       - uses: actions/setup-go@v5
         with:
@@ -76,6 +77,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Oblikovati/Oblikovati.API
+          ref: develop
           path: _api
       - uses: actions/setup-go@v5
         with:
@@ -99,6 +101,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Oblikovati/Oblikovati.API
+          ref: develop
           path: _api
       - uses: actions/setup-go@v5
         with:
@@ -120,6 +123,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Oblikovati/Oblikovati.API
+          ref: develop
           path: _api
       - uses: actions/setup-go@v5
         with:
