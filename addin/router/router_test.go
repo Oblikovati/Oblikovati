@@ -246,6 +246,44 @@ func TestModelSelectionEmpty(t *testing.T) {
 	}
 }
 
+func TestThemeActiveServesEveryColor(t *testing.T) {
+	r, s := seededSession(t)
+	var view wire.ThemeView
+	call(t, r, s, "theme.active", "{}", &view)
+	if view.Name != "Dark" || view.Kind != "dark" {
+		t.Fatalf("theme.active = (%q,%q), want (Dark,dark)", view.Name, view.Kind)
+	}
+	// An add-in reads colors by token string; every token must be present so its UI can
+	// look them all up without a missing-key check.
+	for _, tok := range types.AllThemeTokens() {
+		hex, ok := view.Colors[string(tok)]
+		if !ok || len(hex) != 9 || hex[0] != '#' {
+			t.Errorf("theme.active color %q = %q, want a \"#RRGGBBAA\" value", tok, hex)
+		}
+	}
+}
+
+func TestThemeListFlagsActive(t *testing.T) {
+	r, s := seededSession(t)
+	if err := s.DuplicateTheme("Dark", "My Dark"); err != nil { // becomes active
+		t.Fatalf("DuplicateTheme: %v", err)
+	}
+	var list wire.ListThemesResult
+	call(t, r, s, "theme.list", "{}", &list)
+	if len(list.Themes) != 3 { // Dark, Light, My Dark
+		t.Fatalf("theme.list = %d themes, want 3", len(list.Themes))
+	}
+	var active string
+	for _, th := range list.Themes {
+		if th.Active {
+			active = th.Name
+		}
+	}
+	if active != "My Dark" {
+		t.Errorf("active theme in list = %q, want \"My Dark\"", active)
+	}
+}
+
 func TestParametersNoActiveDocument(t *testing.T) {
 	r := New(opregistry.Default())
 	s := app.NewSession() // empty workspace

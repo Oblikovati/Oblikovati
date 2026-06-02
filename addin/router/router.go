@@ -49,6 +49,8 @@ func New(ops *opregistry.Registry) *Router {
 	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
 	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
 	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
+	r.handlers[wire.MethodThemeActive] = themeActive
+	r.handlers[wire.MethodThemeList] = themeList
 	return r
 }
 
