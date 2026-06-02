@@ -25,16 +25,30 @@ Two binaries ship from this repo:
 - **`oblikovati-head`** — the GUI: a Vulkan 1.3 viewport + Dear ImGui shell.
 - **`oblikovati-cli`** — a headless, cgo-free command-line tool.
 
-Plus the first add-in, in its own repo:
-
-- **`oblikovati-mcp-bridge`** — an [MCP](https://modelcontextprotocol.io) server that
-  lets an LLM drive the live application in real time, in
-  [`../Oblikovati.AddIns`](https://github.com/Oblikovati/Oblikovati.AddIns).
+The application also loads **add-ins** at runtime (shared libraries over a stable C
+ABI). Add-ins build against the separate, permissively licensed
+[**Oblikovati.API**](https://github.com/Oblikovati/Oblikovati.API) contract — so
+anyone can extend Oblikovati, including with closed-source add-ins (see
+[License](#license)).
 
 > **Status — early/foundational.** Part modeling works today (sketches, parameters,
 > the constraint solver, a B-rep kernel, and features such as extrude), along with
-> the GUI head, the CLI, and the MCP add-in. Assemblies, drawings, sheet-metal, and
+> the GUI head and the CLI. Assemblies, drawings, sheet-metal, and
 > the rest are on the [roadmap](implementation-plan/). Expect rapid change.
+
+## Repositories
+
+Oblikovati lives in two repositories, split by license so the application can stay
+open while anyone can build on it (see [License](#license)):
+
+| Repository | License | What it is |
+|------------|---------|------------|
+| **`Oblikovati`** (this repo) | GPL-2.0 | The application — kernel, modeler, UI head, CLI, renderer, release pipeline. |
+| **[`Oblikovati.API`](https://github.com/Oblikovati/Oblikovati.API)** | Apache-2.0 | The public automation contract that the app implements and add-ins are written against. |
+
+They are developed together via a `go.work` workspace over sibling checkouts (see
+[Develop](#develop)); the dependency only flows one way — the application implements
+`Oblikovati.API`, never the reverse.
 
 ## Install
 
@@ -89,8 +103,9 @@ make run         # build + launch the windowed app
 make smoke       # open a window, render a few frames, exit (CI smoke)
 ```
 
-The MCP bridge add-in lives in [`Oblikovati.AddIns`](https://github.com/Oblikovati/Oblikovati.AddIns);
-build it there and it loads into the head at runtime.
+To write an add-in, build a shared library against the
+[Oblikovati.API](https://github.com/Oblikovati/Oblikovati.API) contract and drop it
+in the head's add-ins directory; the host loads it at startup over the C ABI.
 
 Docs are linted too: `make docs-lint` (at the repo root) runs markdownlint; CI also
 link-checks the docs. House style and conventions live in [CLAUDE.md](CLAUDE.md).
@@ -102,8 +117,7 @@ link-checks the docs. House style and conventions live in [CLAUDE.md](CLAUDE.md)
 | **Architecture** | [`architecture/`](architecture/README.md) | How the system is built: `core/` (runtime, object model, kernel, params, persistence, events, renderer, UI), `modeling/`, `assembly/`, `apps/`, `testing/`, and the **ADRs** in `decisions/`. |
 | **Roadmap** | [`implementation-plan/`](implementation-plan/) | The 19-milestone / 170-PBI feature plan and live `PROGRESS.md`. |
 | **Dev workflow** | [`DEVELOPMENT.md`](DEVELOPMENT.md) | Module layout, `go.work` setup, `make` targets, build-time gating, code conventions. |
-| **Public API** | [`Oblikovati.API`](https://github.com/Oblikovati/Oblikovati.API) | The Apache-2.0 contract module (`types`, `contract`, `wire`, `client`) both the app and add-ins build on — [ADR-0018](architecture/decisions/ADR-0018-apache-api-contract-module.md). |
-| **Add-ins** | [`Oblikovati.AddIns`](https://github.com/Oblikovati/Oblikovati.AddIns) | The proprietary add-ins (incl. the MCP bridge): the MCP tools/resources, the host JSON method contract, and the add-in C ABI. |
+| **Public API** | [`Oblikovati.API`](https://github.com/Oblikovati/Oblikovati.API) | The Apache-2.0 contract module (`types`, `contract`, `wire`, `client`) the app implements and add-ins build on — [ADR-0018](architecture/decisions/ADR-0018-apache-api-contract-module.md). |
 | **Releasing** | [`RELEASING.md`](RELEASING.md) | The nightly + stable channels and the `MAJOR.MINOR.PATCH` versioning rules. |
 | **Reference API** | [`Oblikovati.Contracts`](https://github.com/Oblikovati/Oblikovati.Contracts) (archived) | The Inventor-class COM/C# surface this project modernizes — kept in the archived monorepo for consultation. |
 
@@ -112,18 +126,28 @@ what is kept from the original CAD model and what is replaced on the Go + Vulkan
 
 ## License
 
-Oblikovati is **dual-licensed** so vendors — including closed-source ones — can build
-add-ins against a permissive contract while the application itself stays open
-([ADR-0018](architecture/decisions/ADR-0018-apache-api-contract-module.md)):
+Oblikovati is split across two repositories under **two deliberately different
+licenses** ([ADR-0018](architecture/decisions/ADR-0018-apache-api-contract-module.md)).
+The split is what lets the project be **open-source friendly** and **extensible by
+anyone** at the same time:
 
+- **`Oblikovati`** (this repo) — the application: kernel, UI head, CLI, renderer.
+  Licensed under the [**GNU GPL v2**](LICENSE). The product itself is, and stays,
+  free and open source: changes to the application are shared back under the same
+  license.
 - **[`Oblikovati.API`](https://github.com/Oblikovati/Oblikovati.API)** — the public
-  automation contract (Go interfaces, value types, enums, JSON DTOs, typed client) —
-  under the **Apache License 2.0**.
-- **`Oblikovati`** (this repo) — the application (kernel, UI head, CLI) — under the
-  [**GNU GPL v2**](LICENSE).
-- **[`Oblikovati.AddIns`](https://github.com/Oblikovati/Oblikovati.AddIns)** — add-ins
-  link only the Apache-2.0 contract and ship under their own (proprietary) license.
+  automation contract (Go interfaces, value types, enums, JSON DTOs, typed client)
+  that the application implements and add-ins are written against. Licensed under
+  the permissive **Apache License 2.0**.
 
-The split into three repos keeps the licenses cleanly separated (ADR-0018). Every
-`.go` file carries an `SPDX-License-Identifier` header (`GPL-2.0-only` here). See the
+**Why two licenses?** An add-in only ever links the **Apache-2.0** API contract — it
+never links the GPL application (the runtime boundary is a C ABI, so an add-in is a
+separate program that talks to the host, not a derivative of it). Because the contract
+is permissive, **add-in authors are free to license their own add-ins however they
+like — including keeping them fully closed-source / commercial** — while the
+Oblikovati application stays GPL and open. You get a copyleft, community-friendly core
+*and* a healthy third-party ecosystem on top of it.
+
+Every `.go` file carries an `SPDX-License-Identifier` header recording which license
+applies (`GPL-2.0-only` here, `Apache-2.0` in the API repo). See the
 [LICENSE](LICENSE) for the full statement.

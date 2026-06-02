@@ -53,9 +53,9 @@
 
 **This repo is the GPL-v2 application** (`github.com/Oblikovati/oblikovati`): the
 kernel, UI head, CLI, tests, and release pipeline live at the repo root. The
-Apache-2.0 contract and the proprietary add-ins were split out into sibling repos
-for licensing reasons (ADR-0018); they are resolved for local dev via the `go.work`
-workspace over sibling checkouts (not committed; CI checks out siblings).
+Apache-2.0 contract was split out into a sibling repo for licensing reasons
+(ADR-0018); it is resolved for local dev via the `go.work` workspace over sibling
+checkouts (not committed; CI checks out the sibling).
 
 This repo's top-level layout:
 - the Go application module at the root — `kernel/`, `model/`, `app/`, `command/`,
@@ -64,8 +64,8 @@ This repo's top-level layout:
   binaries). It `require`s `github.com/Oblikovati/api` and implements its contracts.
 - /head -> the cgo Vulkan + Dear ImGui windowed app, a separate submodule so the
   cgo build never touches the headless-tested core. It vendors the C ABI header at
-  `head/internal/addinhost/include/oblikovati_addin.h` (kept byte-identical to the
-  add-in repo's copy) so it builds standalone.
+  `head/internal/addinhost/include/oblikovati_addin.h` (the contract an add-in's
+  shared library is compiled against) so it builds standalone.
 - /test-utilities -> utilities and artifacts to help us test the code (e.g. blender projects).
 - /architecture -> HOW we want to build; Documentation for architecture, ADRs.
 - /experiments -> disposable experiments to validate things quickly before implementation (git-ignored).
@@ -75,16 +75,19 @@ The Autodesk Inventor C# API reference (Oblikovati.Contracts.CSharp) is intentio
 NOT in this repo — it lives, read-only, in the archived monorepo
 (github.com/Oblikovati/Oblikovati.Contracts) for consultation.
 
-Sibling repos (checked out alongside this one; tied together by `go.work`):
+Sibling repo (checked out alongside this one; tied together by `go.work`):
 - ../Oblikovati.API -> the public API contract, a standalone Go module
   (`github.com/Oblikovati/api`), **Apache-2.0**. Four packages: `types` (enums, ids,
   value structs), `contract` (in-proc Go interfaces), `wire` (method-name constants
   + JSON DTOs), `client` (a `Transport` + typed client for add-ins). The source of
   truth for the API; it must NEVER import this application module (the dependency
   only flows the other way; CI enforces it). See ADR-0018.
-- ../Oblikovati.AddIns -> our proprietary, closed-source add-ins. Add-ins link
-  **only** ../Oblikovati.API (Apache-2.0), never this GPL module in their shipped
-  build, and reach the host over the C ABI (ADR-0016).
+
+Add-ins are separate shared libraries (their own repos, not this one). They link
+**only** ../Oblikovati.API (Apache-2.0) — never this GPL module in their shipped
+build — and reach the host over the C ABI (ADR-0016). Because the contract is
+Apache-2.0, an add-in may be licensed however its author chooses, including
+closed-source.
 
 ## Public API & implementation split (MANDATORY for all new work)
 
