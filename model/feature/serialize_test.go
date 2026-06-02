@@ -88,6 +88,41 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSolidFeaturesRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewHoleFeatures(fs).AddTapped([]byte("face-1"), func() float64 { return 6 }, func() float64 { return 10 }, "M6x1")
+	NewBossFeatures(fs).Add([]byte("face-2"), func() float64 { return 8 }, func() float64 { return 4 })
+	NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 3 {
+		t.Fatalf("feature count = %d, want 3", fresh.Count())
+	}
+
+	hole := fresh.Item(0).Definition().(*HoleFeature).Definition()
+	if string(hole.PlacementFaceKey) != "face-1" || hole.Diameter() != 6 || hole.Depth() != 10 {
+		t.Errorf("hole = face %q d %v depth %v, want face-1 6 10", hole.PlacementFaceKey, hole.Diameter(), hole.Depth())
+	}
+	if !hole.Tap.Tapped || hole.Tap.Designation != "M6x1" {
+		t.Errorf("hole tap = %+v, want tapped M6x1", hole.Tap)
+	}
+	boss := fresh.Item(1).Definition().(*BossFeature).Definition()
+	if string(boss.PlacementFaceKey) != "face-2" || boss.Height() != 4 {
+		t.Errorf("boss = face %q height %v, want face-2 4", boss.PlacementFaceKey, boss.Height())
+	}
+	combine := fresh.Item(2).Definition().(*CombineFeature).Definition()
+	if combine.TargetIndex != 0 || combine.ToolIndex != 1 || combine.Operation != ops.Cut {
+		t.Errorf("combine = %+v, want target 0 tool 1 Cut", combine)
+	}
+}
+
 func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	fs.Add(fakeFeature{})

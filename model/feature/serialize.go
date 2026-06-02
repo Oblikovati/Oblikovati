@@ -29,6 +29,9 @@ type FeatureData struct {
 	Shell      *FaceDressData `yaml:"shell,omitempty"`
 	Draft      *FaceDressData `yaml:"draft,omitempty"`
 	Thread     *ThreadData    `yaml:"thread,omitempty"`
+	Hole       *HoleData      `yaml:"hole,omitempty"`
+	Boss       *BossData      `yaml:"boss,omitempty"`
+	Combine    *CombineData   `yaml:"combine,omitempty"`
 }
 
 // EdgeDressData is an edge-based dress-up (fillet radius / chamfer distance): the
@@ -105,6 +108,20 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer) (FeatureData, error) {
 		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle)}
 	case *ThreadFeature:
 		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation}
+	case *HoleFeature:
+		h, err := serializeHole(f.def)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Hole = h
+	case *BossFeature:
+		fd.Boss = &BossData{Face: encodeKey(f.def.PlacementFaceKey), Diameter: evalFloat(f.def.Diameter), Height: evalFloat(f.def.Height)}
+	case *CombineFeature:
+		op, err := operationName(f.def.Operation)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Combine = &CombineData{Target: f.def.TargetIndex, Tool: f.def.ToolIndex, Operation: op}
 	default:
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -193,6 +210,12 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer) (*PartFeat
 			return nil, err
 		}
 		return du.AddThread(key, fd.Thread.Designation), nil
+	case "hole":
+		return restoreHole(fs, fd.Hole)
+	case "boss":
+		return restoreBoss(fs, fd.Boss)
+	case "combine":
+		return restoreCombine(fs, fd.Combine)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}
