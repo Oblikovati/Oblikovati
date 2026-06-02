@@ -59,9 +59,3 @@ func appendGrid(items []renderer.DrawItem, acc *segAccum, color [4]float32) []re
 		Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: color,
 	})
 }
-
-var (
-	gridMinorColor = [4]float32{0.27, 0.29, 0.33, 1}
-	gridMajorColor = [4]float32{0.4, 0.43, 0.48, 1}
-	gridAxisColor  = [4]float32{0.55, 0.6, 0.68, 1}
-)

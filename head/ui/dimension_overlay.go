@@ -20,13 +20,6 @@ import (
 // clicking a label re-opens the dimension's value editor (drawDimensionPopup). The
 // geometry + labels come pre-computed from app.Session.SketchDimensions (headless).
 
-var (
-	// dimensionColor is the green used for driving dimension lines (Inventor-like);
-	// drivenColor marks reference (driven) dimensions distinctly.
-	dimensionColor       = [4]float32{0.45, 0.85, 0.5, 1}
-	dimensionDrivenColor = [4]float32{0.55, 0.7, 0.95, 1}
-)
-
 // dimensionLines accumulates every dimension's segments (mapped plane→model through the
 // sketch plane) into colored line items, driving and driven dimensions kept apart.
 func dimensionLines(plane sketch.Plane, views []app.DimensionView) []renderer.DrawItem {

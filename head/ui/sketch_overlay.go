@@ -84,16 +84,6 @@ func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candida
 	return items
 }
 
-var (
-	// sketchColor is the amber wireframe used for sketch geometry (Inventor-like).
-	sketchColor = [4]float32{1, 0.78, 0.2, 1}
-	// sketchSelectedColor highlights selected / picked sketch entities (cyan).
-	sketchSelectedColor = [4]float32{0.3, 0.9, 1, 1}
-	// sketchCandidateColor highlights the valid hover target for the active constraint
-	// tool (green), so the user sees which geometry is selectable.
-	sketchCandidateColor = [4]float32{0.4, 1, 0.45, 1}
-)
-
 // sketchSegments is the polyline resolution for sampling sketch curves.
 const sketchSegments = 64
 

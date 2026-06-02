@@ -33,6 +33,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	if icons == nil {
 		icons = newIconCache(win) // lazily bind the icon cache to this window
 	}
+	applyThemeIfChanged(win, s) // restyle ImGui + overlays when the theme changed (live preview)
 	handleKeyboard(s)
 	activated := drawMenuBar(s)
 	dockID := native.DockSpaceOverMain()
@@ -568,9 +569,6 @@ func toolPreview(s *app.Session) (renderer.DrawItem, bool) {
 	acc.polyline(s.ActiveSketch().Plane(), pts, closed)
 	return renderer.DrawItem{Primitive: renderer.Lines, Positions: acc.pos, Indices: acc.idx, Color: previewColor}, true
 }
-
-// previewColor is the bright rubber-band color for in-progress sketch geometry.
-var previewColor = [4]float32{0.95, 0.95, 1, 1}
 
 const (
 	viewportNear = 0.1

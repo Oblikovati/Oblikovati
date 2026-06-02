@@ -39,12 +39,6 @@ func planeColor(wp, selected, hovered *feature.WorkPlane) [4]float32 {
 	}
 }
 
-var (
-	faintPlaneColor    = [4]float32{0.45, 0.5, 0.6, 1}
-	hoverPlaneColor    = [4]float32{1, 0.7, 0.2, 1}
-	selectedPlaneColor = [4]float32{0.3, 0.85, 1, 1}
-)
-
 // planeBorder builds the border-and-diagonals line item of a work plane's display
 // square, mapped from the plane's 2D frame into model space.
 func planeBorder(wp *feature.WorkPlane, color [4]float32) renderer.DrawItem {

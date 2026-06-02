@@ -12,6 +12,7 @@ import (
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/renderer"
 	"github.com/Oblikovati/oblikovati/scene"
+	"github.com/Oblikovati/oblikovati/theme"
 )
 
 // Session is the running application state and the seam tests drive synthetically.
@@ -34,6 +35,8 @@ type Session struct {
 	overlays        []renderer.DrawItem
 	addins          *AddInManager
 	grid            *GridSettings
+	themes          *theme.Library
+	themeStore      *theme.Store
 }
 
 // NewSession creates an empty in-memory session with no persistence store. Its

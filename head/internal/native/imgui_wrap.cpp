@@ -3,6 +3,7 @@
 // each frame (ADR-0004/0009). Keeping the binding here — rather than rendering a
 // Go-described tree in C++ — is what lets Go own the UI composition. Add wrappers as
 // the chrome grows; resist putting logic here.
+#include <cstring> // strcmp (theme color-name lookup)
 #include "imgui.h"
 #include "imgui_internal.h" // SeparatorEx (vertical ribbon-panel divider)
 
@@ -16,6 +17,9 @@ int  obk_ig_menu_item(const char* label)     { return ImGui::MenuItem(label) ? 1
 
 void obk_ig_set_next_window_pos(float x, float y)  { ImGui::SetNextWindowPos(ImVec2(x, y)); }
 void obk_ig_set_next_window_size(float w, float h) { ImGui::SetNextWindowSize(ImVec2(w, h)); }
+void obk_ig_set_next_window_size_first_use(float w, float h) {
+    ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver);
+}
 int  obk_ig_begin(const char* name)          { return ImGui::Begin(name) ? 1 : 0; }
 void obk_ig_end(void)                        { ImGui::End(); }
 void obk_ig_text(const char* s)              { ImGui::TextUnformatted(s); }
@@ -77,6 +81,52 @@ int  obk_ig_checkbox(const char* label, int* v) {
 
 void obk_ig_begin_disabled(int disabled)     { ImGui::BeginDisabled(disabled != 0); }
 void obk_ig_end_disabled(void)               { ImGui::EndDisabled(); }
+
+// --- Theming (ADR-0021) -----------------------------------------------------------
+// obk_col_index maps an ImGui color NAME to its ImGuiCol_ enum so the Go side never
+// hardcodes the numeric index (it shifts between ImGui versions). Only the slots the
+// theme drives are listed; an unknown name returns -1 (ignored). Several names may share
+// a token on the Go side (e.g. an accent token sets TabSelected, CheckMark, SliderGrab).
+static int obk_col_index(const char* name) {
+    struct { const char* n; int c; } table[] = {
+        {"Text", ImGuiCol_Text}, {"TextDisabled", ImGuiCol_TextDisabled},
+        {"WindowBg", ImGuiCol_WindowBg}, {"ChildBg", ImGuiCol_ChildBg},
+        {"PopupBg", ImGuiCol_PopupBg}, {"Border", ImGuiCol_Border},
+        {"FrameBg", ImGuiCol_FrameBg}, {"FrameBgHovered", ImGuiCol_FrameBgHovered},
+        {"FrameBgActive", ImGuiCol_FrameBgActive}, {"TitleBg", ImGuiCol_TitleBg},
+        {"TitleBgActive", ImGuiCol_TitleBgActive}, {"TitleBgCollapsed", ImGuiCol_TitleBgCollapsed},
+        {"MenuBarBg", ImGuiCol_MenuBarBg}, {"ScrollbarBg", ImGuiCol_ScrollbarBg},
+        {"ScrollbarGrab", ImGuiCol_ScrollbarGrab}, {"ScrollbarGrabHovered", ImGuiCol_ScrollbarGrabHovered},
+        {"ScrollbarGrabActive", ImGuiCol_ScrollbarGrabActive}, {"CheckMark", ImGuiCol_CheckMark},
+        {"SliderGrab", ImGuiCol_SliderGrab}, {"SliderGrabActive", ImGuiCol_SliderGrabActive},
+        {"Button", ImGuiCol_Button}, {"ButtonHovered", ImGuiCol_ButtonHovered},
+        {"ButtonActive", ImGuiCol_ButtonActive}, {"Header", ImGuiCol_Header},
+        {"HeaderHovered", ImGuiCol_HeaderHovered}, {"HeaderActive", ImGuiCol_HeaderActive},
+        {"Separator", ImGuiCol_Separator}, {"SeparatorHovered", ImGuiCol_SeparatorHovered},
+        {"SeparatorActive", ImGuiCol_SeparatorActive}, {"Tab", ImGuiCol_Tab},
+        {"TabHovered", ImGuiCol_TabHovered}, {"TabSelected", ImGuiCol_TabSelected},
+        {"TabDimmed", ImGuiCol_TabDimmed}, {"TabDimmedSelected", ImGuiCol_TabDimmedSelected},
+        {"TextSelectedBg", ImGuiCol_TextSelectedBg},
+    };
+    for (auto& e : table) {
+        if (strcmp(e.n, name) == 0) return e.c;
+    }
+    return -1;
+}
+
+void obk_ig_set_style_color(const char* name, float r, float g, float b, float a) {
+    int idx = obk_col_index(name);
+    if (idx < 0) return;
+    ImGui::GetStyle().Colors[idx] = ImVec4(r, g, b, a);
+}
+
+int  obk_ig_color_edit4(const char* label, float* rgba) {
+    return ImGui::ColorEdit4(label, rgba) ? 1 : 0;
+}
+int  obk_ig_begin_combo(const char* label, const char* preview) {
+    return ImGui::BeginCombo(label, preview) ? 1 : 0;
+}
+void obk_ig_end_combo(void)                  { ImGui::EndCombo(); }
 
 // want_capture_mouse reports whether ImGui consumed the pointer this frame, so the Go
 // loop knows when NOT to forward a click to the 3D viewport (picking).

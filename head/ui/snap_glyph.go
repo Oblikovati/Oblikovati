@@ -22,13 +22,8 @@ const (
 	triBaseDrop      = 0.5       // sin(30°)
 )
 
-var (
-	// snapGlyphColor is the bright marker drawn under the cursor at a snap point.
-	snapGlyphColor = [4]float32{1, 1, 1, 1}
-	// pointMarkerColor marks placed sketch points so a 1px point is visible; it matches
-	// the sketch wireframe amber so points read as part of the geometry.
-	pointMarkerColor = sketchColor
-)
+// snapGlyphColor (the cursor snap marker) and pointMarkerColor (placed sketch points,
+// matching the sketch wireframe) are theme-driven and declared in theme_apply.go.
 
 // snapGlyph builds the snap marker at the snapped point: a square for an endpoint, a
 // triangle for a line midpoint, a cross for an on-curve (edge) snap. hWorld is the

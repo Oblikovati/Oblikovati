@@ -11,6 +11,7 @@ void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32
 void     obk_viewport_render(void* h, int w, int hh, const float* mvp, int lit_unused,
                              const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                              const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC);
+void     obk_viewport_set_clear(void* h, float r, float g, float b);
 uint64_t obk_viewport_texture(void* h);
 
 void obk_ig_image(unsigned long long tex, float w, float h);
@@ -39,6 +40,12 @@ func (win *Window) RenderViewport(w, h int, mvp []float32,
 		(*C.float)(unsafe.Pointer(&mvp[0])), 0,
 		floatPtr(triVerts), C.int(triVCount), uint32Ptr(triIdx), C.int(len(triIdx)),
 		floatPtr(lineVerts), C.int(lineVCount), uint32Ptr(lineIdx), C.int(len(lineIdx)))
+}
+
+// SetViewportClear sets the 3D pass background color (themed); it takes effect on the
+// next RenderViewport.
+func (w *Window) SetViewportClear(r, g, b float32) {
+	C.obk_viewport_set_clear(w.handle, C.float(r), C.float(g), C.float(b))
 }
 
 // ViewportTexture returns the ImGui texture handle for the last rendered frame.
