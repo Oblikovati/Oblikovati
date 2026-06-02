@@ -60,6 +60,7 @@ func TestInWindowDockedViewportIsInteractive(t *testing.T) {
 	win := newViewportWindow(t)
 	defer win.Destroy()
 	dockLaidOut = false // rebuild the default layout for this fresh window/context
+	icons = nil         // rebind the icon cache to this fresh window (it holds GPU handles)
 	s := framedSession()
 
 	frame := func() {

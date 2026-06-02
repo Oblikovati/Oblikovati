@@ -129,6 +129,15 @@ void obk_ig_set_cursor_pos(float x, float y)  { ImGui::SetCursorPos(ImVec2(x, y)
 void obk_ig_image(unsigned long long tex, float w, float h) {
     ImGui::Image((ImTextureID)tex, ImVec2(w, h));
 }
+// image_button draws a clickable icon (a ribbon button) tinted by (r,g,b,a) so a theme
+// recolors the monochrome glyph without re-rasterizing it; the str_id keeps each
+// button's ImGui id distinct. Returns 1 if clicked this frame.
+int obk_ig_image_button(const char* id, unsigned long long tex, float w, float h,
+                        float r, float g, float b, float a) {
+    return ImGui::ImageButton(id, (ImTextureID)tex, ImVec2(w, h),
+                              ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0),
+                              ImVec4(r, g, b, a)) ? 1 : 0;
+}
 void obk_ig_content_region_avail(float* w, float* h) {
     ImVec2 a = ImGui::GetContentRegionAvail();
     *w = a.x;

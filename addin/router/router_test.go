@@ -9,10 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Oblikovati/api/types"
 	"github.com/Oblikovati/api/wire"
 
 	"github.com/Oblikovati/oblikovati/addin/opregistry"
 	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/event"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/doc"
@@ -85,9 +87,62 @@ func TestCommandsListAndExecute(t *testing.T) {
 	if len(res.Commands) == 0 {
 		t.Fatal("commands.list returned none")
 	}
+	// The icon + button-style metadata must survive the wire round-trip so add-ins
+	// can render the host's ribbon styling.
+	var extrude *wire.CommandInfo
+	for i := range res.Commands {
+		if res.Commands[i].ID == "Create.Extrude" {
+			extrude = &res.Commands[i]
+		}
+	}
+	if extrude == nil {
+		t.Fatal("commands.list omitted Create.Extrude")
+	}
+	if extrude.Icon != "extrude" || extrude.ButtonStyle != types.LargeIconButton {
+		t.Errorf("Extrude wire info = (%q, %s), want (\"extrude\", %s)",
+			extrude.Icon, extrude.ButtonStyle, types.LargeIconButton)
+	}
 	call(t, r, s, "commands.execute", `{"id":"test.noop"}`, nil)
 	if _, err := r.Handle(s, "commands.execute", []byte(`{"id":"does.not.exist"}`)); err == nil {
 		t.Fatal("expected error executing unknown command")
+	}
+}
+
+// TestCommandsCreateAddsRibbonButtonAndNotifiesOnExecute proves the add-in UI
+// extension contract: commands.create registers a button that appears in the ribbon,
+// and executing it (a click) fires a command.ended event — the signal forwarded to an
+// add-in so it can run the button's action. A duplicate id is rejected.
+func TestCommandsCreateAddsRibbonButtonAndNotifiesOnExecute(t *testing.T) {
+	r, s := seededSession(t)
+	call(t, r, s, "commands.create",
+		`{"id":"AddIn.Ping","displayName":"Ping","tab":"AddInTab","category":"Demo","icon":"extrude","buttonStyle":2}`, nil)
+
+	// The add-in's button is now on the ribbon, styled as requested.
+	panel, ok := app.BuildRibbon(s).Panel("Demo")
+	if !ok || len(panel.Buttons) != 1 {
+		t.Fatalf("Demo panel = %+v ok=%v, want one add-in button", panel, ok)
+	}
+	if b := panel.Buttons[0].Command; b.DisplayName() != "Ping" || b.Icon() != "extrude" || b.ButtonStyle() != app.LargeIconButton {
+		t.Errorf("button = (%q,%q,%s), want (Ping,extrude,large-icon)", b.DisplayName(), b.Icon(), b.ButtonStyle())
+	}
+
+	// Clicking it fires command.ended so a listening add-in can react.
+	var ended string
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, e app.CommandEnded) event.Outcome {
+		ended = e.ID
+		return event.Continue()
+	})
+	call(t, r, s, "commands.execute", `{"id":"AddIn.Ping"}`, nil)
+	if ended != "AddIn.Ping" {
+		t.Errorf("command.ended id = %q, want AddIn.Ping", ended)
+	}
+
+	// A duplicate id and a missing displayName are both rejected.
+	if _, err := r.Handle(s, "commands.create", []byte(`{"id":"AddIn.Ping","displayName":"Dup"}`)); err == nil {
+		t.Error("duplicate commands.create accepted")
+	}
+	if _, err := r.Handle(s, "commands.create", []byte(`{"id":"AddIn.NoName"}`)); err == nil {
+		t.Error("commands.create without displayName accepted")
 	}
 }
 

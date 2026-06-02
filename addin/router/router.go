@@ -35,6 +35,7 @@ func New(ops *opregistry.Registry) *Router {
 	r := &Router{ops: ops, handlers: map[string]handlerFunc{}}
 	r.handlers[wire.MethodCommandsList] = listCommands
 	r.handlers[wire.MethodCommandsExecute] = executeCommand
+	r.handlers[wire.MethodCommandsCreate] = createCommand
 	r.handlers[wire.MethodDocumentsList] = listDocuments
 	r.handlers[wire.MethodDocumentsCreate] = createDocument
 	r.handlers[wire.MethodDocumentsActivate] = activateDocument

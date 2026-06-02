@@ -21,21 +21,21 @@ import (
 // build never reaches the network, and GOWORK=off so the fixture builds against its
 // own go.mod — it is a separate module standing in for an external add-in, and the
 // repo's go.work workspace (which does not `use` it) must not capture it.
-func buildFixture(t *testing.T) string {
+func buildFixture(t *testing.T, dirName string) string {
 	t.Helper()
 	ext := ".so"
 	if runtime.GOOS == "darwin" {
 		ext = ".dylib"
 	}
-	out := filepath.Join(t.TempDir(), "echofixture"+ext)
+	out := filepath.Join(t.TempDir(), dirName+ext)
 	_, thisFile, _, _ := runtime.Caller(0)
-	src := filepath.Join(filepath.Dir(thisFile), "testdata", "echoaddin")
+	src := filepath.Join(filepath.Dir(thisFile), "testdata", dirName)
 
 	cmd := exec.Command("go", "build", "-buildmode=c-shared", "-o", out, ".")
 	cmd.Dir = src
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=1", "GOTOOLCHAIN=local", "GOWORK=off")
 	if combined, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("build fixture add-in: %v\n%s", err, combined)
+		t.Fatalf("build fixture add-in %q: %v\n%s", dirName, err, combined)
 	}
 	return out
 }
@@ -44,7 +44,7 @@ func buildFixture(t *testing.T) string {
 // activate it, and confirm its add-in->host->add-in echo round-trips through the
 // Dispatcher. Activate blocks on the host-call, so we drain concurrently.
 func TestLoadDirRoundTripsHostCall(t *testing.T) {
-	so := buildFixture(t)
+	so := buildFixture(t, "echoaddin")
 	dir := filepath.Dir(so)
 
 	d := dispatch.New(8)
