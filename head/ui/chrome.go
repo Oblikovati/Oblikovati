@@ -49,6 +49,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawViewportPanel(win, s)
 	drawDimensionPopup(s)
 	drawExtrudeDialog(s)
+	drawFeatureEditDialog(s)
 	drawStatusBar(s)
 	drawPreferencesWindow(s)
 	drawMaterialsWindow(s)

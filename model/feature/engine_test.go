@@ -55,6 +55,25 @@ func TestRecomputeProducesBodies(t *testing.T) {
 	}
 }
 
+func TestUniqueNameNumbersFromOneAndSkipsTaken(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	if got := fs.UniqueName("Extrusion"); got != "Extrusion1" {
+		t.Errorf("first unique name = %q, want Extrusion1", got)
+	}
+	a := fs.Add(body())
+	a.SetName("Extrusion1")
+	b := fs.Add(body())
+	b.SetName("Extrusion2")
+	if got := fs.UniqueName("Extrusion"); got != "Extrusion3" {
+		t.Errorf("unique name with 1,2 taken = %q, want Extrusion3", got)
+	}
+	// A gap is filled by the smallest free integer, not the next after the max.
+	b.SetName("Extrusion9")
+	if got := fs.UniqueName("Extrusion"); got != "Extrusion2" {
+		t.Errorf("unique name with 1,9 taken = %q, want Extrusion2", got)
+	}
+}
+
 func TestEditingEarlyFeatureReusesCleanPrefix(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	a := fs.Add(body())

@@ -122,6 +122,41 @@ func TestUngeneratedFeaturesGoSick(t *testing.T) {
 	}
 }
 
+func TestExtrudesGetUniqueInventorNames(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	ex := NewExtrudeFeatures(fs)
+	a := ex.AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 3 })
+	b := ex.AddByDistanceExtent(squareSketchAt(2, 10), 0, ops.NewBody, func() float64 { return 3 })
+	// Distinct names keep the browser rows — and Dear ImGui's per-node ids — unique.
+	if a.Name() != "Extrusion1" || b.Name() != "Extrusion2" {
+		t.Errorf("extrude names = %q, %q; want Extrusion1, Extrusion2", a.Name(), b.Name())
+	}
+}
+
+func TestExtrudeSetDistanceAndOperationDriveRecompute(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	pf := NewExtrudeFeatures(fs).AddByDistanceExtent(squareSketch(2), 0, ops.NewBody, func() float64 { return 5 })
+	ext := pf.Definition().(*ExtrudeFeature)
+	fs.Recompute()
+	if z := fs.Result()[0].RangeBox().Diagonal().Z; !approxEq(z, 5) {
+		t.Fatalf("initial height = %v, want 5", z)
+	}
+	if ext.DistanceValue() != 5 || ext.Operation() != ops.NewBody {
+		t.Fatalf("read back distance/op = %v/%v, want 5/NewBody", ext.DistanceValue(), ext.Operation())
+	}
+	// Editing the distance through the feature (the double-click edit path) grows the solid.
+	ext.SetDistance(8)
+	ext.SetOperation(ops.Join)
+	fs.MarkDirty(pf)
+	fs.Recompute()
+	if z := fs.Result()[0].RangeBox().Diagonal().Z; !approxEq(z, 8) {
+		t.Errorf("height after SetDistance(8) = %v, want 8", z)
+	}
+	if ext.Operation() != ops.Join {
+		t.Errorf("operation after SetOperation = %v, want Join", ext.Operation())
+	}
+}
+
 func approxEq(a, b float64) bool { return a-b < 1e-9 && b-a < 1e-9 }
 
 // squareSketchAt is squareSketch translated by (dx,0) so two extrudes are disjoint.

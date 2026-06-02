@@ -39,6 +39,23 @@ func (e *ExtrudeFeature) Definition() *ExtrudeDefinition { return e.def }
 // Kind implements [Feature].
 func (e *ExtrudeFeature) Kind() string { return "extrude" }
 
+// DistanceValue returns the current extent distance (database units) — the value a
+// feature editor shows when re-opening the extrude.
+func (e *ExtrudeFeature) DistanceValue() float64 { return e.def.Extent.distance() }
+
+// SetDistance replaces the extent with a constant distance, keeping the extent type and
+// direction — the feature editor's distance field writes through here. Mark the feature
+// dirty and recompute afterwards for the change to take effect.
+func (e *ExtrudeFeature) SetDistance(d float64) {
+	e.def.Extent.Distance = func() float64 { return d }
+}
+
+// Operation returns the boolean operation applied against the existing bodies.
+func (e *ExtrudeFeature) Operation() ops.PartFeatureOperation { return e.def.Operation }
+
+// SetOperation changes the boolean operation (join/cut/intersect/new-body).
+func (e *ExtrudeFeature) SetOperation(op ops.PartFeatureOperation) { e.def.Operation = op }
+
 // Recompute resolves the profile, builds the prism solid at the extent distance,
 // and applies the operation against the running bodies.
 func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
@@ -92,8 +109,9 @@ func (c *ExtrudeFeatures) AddByDistanceExtent(skt *sketch.Sketch, profileIndex i
 		Sketch: skt, ProfileIndex: profileIndex, Operation: op,
 		Extent: Extent{Type: DistanceExtent, Distance: distance},
 	}
-	ef := &ExtrudeFeature{def: def, featName: "Extrusion"}
+	ef := &ExtrudeFeature{def: def}
 	pf := c.engine.Add(ef)
+	pf.SetName(c.engine.UniqueName("Extrusion")) // Extrusion1, Extrusion2, … (Inventor's naming)
 	ef.featName = pf.name
 	return pf
 }
