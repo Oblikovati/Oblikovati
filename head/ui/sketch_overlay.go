@@ -22,15 +22,34 @@ func partSketchOverlays(s *app.Session) []renderer.DrawItem {
 	if part == nil {
 		return nil
 	}
+	selected := selectedSketch(s)
 	var items []renderer.DrawItem
 	for i := 0; i < part.Sketches().Count(); i++ {
 		sk := part.Sketches().Item(i)
 		if !sk.Visible() || sk.IsEditing() {
 			continue
 		}
-		items = append(items, sketchOverlay(sk, nil, nil)...)
+		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil)...)
 	}
 	return items
+}
+
+// selectedSketch returns the whole sketch selected in the browser, or nil — the input for
+// highlighting a finished sketch in the 3D view.
+func selectedSketch(s *app.Session) *sketch.Sketch {
+	if h, ok := s.Selection().First().(app.SketchHandle); ok {
+		return h.Sketch
+	}
+	return nil
+}
+
+// allEntitiesWhenSelected returns a predicate that marks every entity of sk as selected
+// when sk is the chosen sketch (so its curves draw cyan), or nil to draw it amber.
+func allEntitiesWhenSelected(sk, selected *sketch.Sketch) func(sketch.Entity) bool {
+	if sk != selected {
+		return nil
+	}
+	return func(sketch.Entity) bool { return true }
 }
 
 // sketchOverlay turns the active sketch's geometry into wireframe line items drawn in

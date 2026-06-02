@@ -55,6 +55,14 @@ void obk_ig_tree_pop(void)                   { ImGui::TreePop(); }
 void obk_ig_bullet_text(const char* s)       { ImGui::BulletText("%s", s); }
 void obk_ig_set_item_tooltip(const char* s)  { ImGui::SetItemTooltip("%s", s); }
 
+// begin_popup_context_item opens (on right-click of the just-drawn item) and begins a
+// context-menu popup keyed by id; returns 1 while the popup is open so the caller fills
+// it with menu_items, then calls end_popup. set_scroll_here_y scrolls the current window
+// so the last item is centered — used to reveal the browser node synced to the selection.
+int  obk_ig_begin_popup_context_item(const char* id) { return ImGui::BeginPopupContextItem(id) ? 1 : 0; }
+void obk_ig_end_popup(void)                  { ImGui::EndPopup(); }
+void obk_ig_set_scroll_here_y(void)          { ImGui::SetScrollHereY(0.5f); }
+
 // Preference widgets: a float/int field and a checkbox. Each returns 1 when the value
 // changed this frame and writes the new value back through the pointer.
 int  obk_ig_input_float(const char* label, float* v) { return ImGui::InputFloat(label, v) ? 1 : 0; }

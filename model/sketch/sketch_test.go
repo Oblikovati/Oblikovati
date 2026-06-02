@@ -110,3 +110,39 @@ func TestSketchIDsAreUnique(t *testing.T) {
 		t.Error("sketches share an id")
 	}
 }
+
+func TestAddAutoNamesSequentially(t *testing.T) {
+	c := NewSketches()
+	if got := c.Add(XYPlane()).Name(); got != "Sketch1" {
+		t.Errorf("first Add name = %q, want Sketch1", got)
+	}
+	if got := c.Add(XYPlane()).Name(); got != "Sketch2" {
+		t.Errorf("second Add name = %q, want Sketch2", got)
+	}
+}
+
+func TestAddSkipsNameTakenByAddNamed(t *testing.T) {
+	c := NewSketches()
+	c.AddNamed("Sketch1", XYPlane()) // a restored sketch already holds Sketch1
+	if got := c.Add(XYPlane()).Name(); got != "Sketch2" {
+		t.Errorf("Add after explicit Sketch1 = %q, want Sketch2 (no collision)", got)
+	}
+}
+
+func TestRemoveSketch(t *testing.T) {
+	c := NewSketches()
+	a := c.Add(XYPlane())
+	b := c.Add(XZPlane())
+	if !c.Remove(a.ID()) {
+		t.Fatal("Remove reported the sketch missing")
+	}
+	if c.Count() != 1 || c.Item(0) != b {
+		t.Errorf("after Remove: count=%d, item0==b: %v", c.Count(), c.Item(0) == b)
+	}
+	if _, ok := c.ByID(a.ID()); ok {
+		t.Error("ByID still finds the removed sketch")
+	}
+	if c.Remove(a.ID()) {
+		t.Error("second Remove of the same id reported success")
+	}
+}

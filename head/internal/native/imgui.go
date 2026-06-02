@@ -34,6 +34,9 @@ int  obk_ig_tree_node(const char* label);
 void obk_ig_tree_pop(void);
 void obk_ig_bullet_text(const char* s);
 void obk_ig_set_item_tooltip(const char* s);
+int  obk_ig_begin_popup_context_item(const char* id);
+void obk_ig_end_popup(void);
+void obk_ig_set_scroll_here_y(void);
 int  obk_ig_input_float(const char* label, float* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
@@ -246,6 +249,22 @@ func SetItemTooltip(s string) {
 	defer free()
 	C.obk_ig_set_item_tooltip(c)
 }
+
+// BeginPopupContextItem opens (on a right-click of the item just drawn) and begins a
+// context-menu popup identified by id, returning true while it is open — fill it with
+// MenuItem rows, then call EndPopup only when this returned true.
+func BeginPopupContextItem(id string) bool {
+	c, free := cstr(id)
+	defer free()
+	return C.obk_ig_begin_popup_context_item(c) != 0
+}
+
+// EndPopup closes a popup begun by BeginPopupContextItem (call only when it returned true).
+func EndPopup() { C.obk_ig_end_popup() }
+
+// SetScrollHereY scrolls the current window to center the most recently drawn item — used
+// to reveal the browser node that just synced to the active selection.
+func SetScrollHereY() { C.obk_ig_set_scroll_here_y() }
 
 // BeginDisabled / EndDisabled gray out and disable the widgets between them.
 func BeginDisabled(disabled bool) {

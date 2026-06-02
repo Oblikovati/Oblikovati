@@ -2,7 +2,11 @@
 
 package app
 
-import "github.com/Oblikovati/oblikovati/model/compdef"
+import (
+	"fmt"
+
+	"github.com/Oblikovati/oblikovati/model/compdef"
+)
 
 // The browser tree reflects the active document's structure — parameters, sketches,
 // and the feature history — read directly from the model each frame (no parallel
@@ -14,7 +18,7 @@ import "github.com/Oblikovati/oblikovati/model/compdef"
 // clicking "XY Plane" selects the plane to sketch on).
 type BrowserNode struct {
 	Label    string
-	Kind     string // "document" | "origin" | "workplane" | "parameters" | "parameter" | "sketches" | "sketch" | "feature"
+	Kind     string // "document" | "origin" | "workplane" | "parameters" | "parameter" | "bodies" | "body" | "sketches" | "sketch" | "feature"
 	Select   Selectable
 	Children []BrowserNode
 }
@@ -46,7 +50,9 @@ func BuildBrowser(s *Session) BrowserNode {
 	return root
 }
 
-// addPartBranches adds the origin, parameters, sketches and features of a part.
+// addPartBranches adds the origin, parameters, solid bodies, sketches and features of a
+// part. Sketch/feature/body nodes are selectable so clicking one syncs the 3D view (and
+// a viewport pick lights up the matching node).
 func addPartBranches(root *BrowserNode, part *compdef.PartComponentDefinition) {
 	origin := root.child("Origin", "origin")
 	for _, wp := range part.OriginPlanes() {
@@ -56,13 +62,29 @@ func addPartBranches(root *BrowserNode, part *compdef.PartComponentDefinition) {
 	for _, p := range part.Parameters().All() {
 		params.child(p.Name(), "parameter")
 	}
+	addBodyBranch(root, part)
 	sketches := root.child("Sketches", "sketches")
 	for i := 0; i < part.Sketches().Count(); i++ {
-		sketches.child(part.Sketches().Item(i).Name(), "sketch")
+		sk := part.Sketches().Item(i)
+		sketches.selectableChild(sk.Name(), "sketch", SketchHandle{Sketch: sk})
 	}
 	features := part.Features()
 	for i := 0; i < features.Count(); i++ {
 		f := features.Item(i)
-		root.child(f.Name(), "feature")
+		root.selectableChild(f.Name(), "feature", FeatureHandle{Feature: f})
+	}
+}
+
+// addBodyBranch adds the "Solid Bodies" folder. Bodies carry no name, so they are
+// numbered Solid1, Solid2, … in body order (Inventor's convention). The folder is
+// omitted when the part has produced no bodies yet.
+func addBodyBranch(root *BrowserNode, part *compdef.PartComponentDefinition) {
+	bodies := part.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		return
+	}
+	folder := root.child("Solid Bodies", "bodies")
+	for i, b := range bodies {
+		folder.selectableChild(fmt.Sprintf("Solid%d", i+1), "body", BodyHandle{Body: b})
 	}
 }

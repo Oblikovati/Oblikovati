@@ -328,36 +328,6 @@ func drawDocumentTabs(s *app.Session) {
 	}
 }
 
-// drawBrowser renders the model browser tree from the active document.
-func drawBrowser(s *app.Session) {
-	if native.Begin("Model") {
-		drawNode(s, app.BuildBrowser(s))
-	}
-	native.End()
-}
-
-// drawNode renders a browser node and its children: a selectable node (e.g. a work
-// plane) as a clickable, highlightable row that selects it; a branch as a tree node;
-// a plain leaf as a bullet row.
-func drawNode(s *app.Session, n app.BrowserNode) {
-	if n.Select != nil {
-		if native.Selectable(n.Label, s.Selection().First() == n.Select) {
-			s.SelectBrowserNode(n)
-		}
-		return
-	}
-	if len(n.Children) == 0 {
-		native.BulletText(n.Label)
-		return
-	}
-	if native.TreeNode(n.Label) {
-		for _, child := range n.Children {
-			drawNode(s, child)
-		}
-		native.TreePop()
-	}
-}
-
 // drawViewportPanel renders the active part's geometry through the Vulkan viewport and
 // shows the result as an image filling the panel. An invisible drag button under the
 // image captures mouse navigation (orbit/pan/zoom) and updates the session camera, so
@@ -392,7 +362,11 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 			hovered = hoveredPlane(s)
 		}
 
-		list := renderer.BuildDrawList(activeBodies(s), cam, ops.DefaultQuality())
+		bodies := activeBodies(s)
+		list := renderer.BuildDrawList(bodies, cam, ops.DefaultQuality())
+		// Paint the selected body cyan so a browser/viewport pick reads in the 3D view
+		// (a no-op in sketch mode, where the selection is sketch entities, not bodies).
+		list = highlightSelection(list, s.Selection().First(), bodies)
 		var dims []app.DimensionView
 		var sketchPlane sketch.Plane
 		if s.InSketch() {

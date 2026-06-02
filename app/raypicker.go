@@ -176,7 +176,7 @@ func facePick(face *topo.Face, body *topo.Body, filter *SelectionFilter) (Select
 	case face == nil:
 		return nil, false
 	case filter.Accepts(SelectFace):
-		return FaceHandle{Face: face}, true
+		return FaceHandle{Face: face, Body: body}, true
 	case filter.Accepts(SelectBody):
 		return BodyHandle{Body: body}, true
 	default:

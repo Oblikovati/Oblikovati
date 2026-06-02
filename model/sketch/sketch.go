@@ -3,6 +3,7 @@
 package sketch
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/Oblikovati/oblikovati/math"
@@ -180,6 +181,7 @@ func (s *Sketch) ToSketch(p math.Point3) math.Point2 { return s.plane.ToSketch(p
 type Sketches struct {
 	items []*Sketch
 	byID  map[ID]*Sketch
+	seq   int // running counter behind the Sketch1, Sketch2, … auto-names
 }
 
 // NewSketches returns an empty collection.
@@ -187,9 +189,32 @@ func NewSketches() *Sketches {
 	return &Sketches{byID: map[ID]*Sketch{}}
 }
 
-// Add creates a planar sketch on plane and adds it to the collection.
+// Add creates a planar sketch on plane and adds it to the collection, giving it the
+// next free auto-name (Sketch1, Sketch2, …) like Inventor.
 func (c *Sketches) Add(plane Plane) *Sketch {
-	return c.AddNamed("", plane)
+	return c.AddNamed(c.nextSketchName(), plane)
+}
+
+// nextSketchName mints the first unused Sketch{N} name, advancing the counter past
+// names already taken (so a restored "Sketch3" doesn't collide with a later Add).
+func (c *Sketches) nextSketchName() string {
+	for {
+		c.seq++
+		name := fmt.Sprintf("Sketch%d", c.seq)
+		if !c.nameTaken(name) {
+			return name
+		}
+	}
+}
+
+// nameTaken reports whether a sketch in the collection already uses name.
+func (c *Sketches) nameTaken(name string) bool {
+	for _, s := range c.items {
+		if s.Name() == name {
+			return true
+		}
+	}
+	return false
 }
 
 // AddNamed creates a named planar sketch on plane.
@@ -211,4 +236,20 @@ func (c *Sketches) Item(i int) *Sketch { return c.items[i] }
 func (c *Sketches) ByID(id ID) (*Sketch, bool) {
 	s, ok := c.byID[id]
 	return s, ok
+}
+
+// Remove deletes the sketch with the given id, reporting whether it was found. The
+// auto-name counter is not rewound — Inventor does not reuse a deleted sketch's number.
+func (c *Sketches) Remove(id ID) bool {
+	if _, ok := c.byID[id]; !ok {
+		return false
+	}
+	delete(c.byID, id)
+	for i, s := range c.items {
+		if s.id == id {
+			c.items = append(c.items[:i], c.items[i+1:]...)
+			break
+		}
+	}
+	return true
 }
