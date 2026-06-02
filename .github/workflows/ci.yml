@@ -44,7 +44,6 @@ jobs:
         with:
           globs: |
             architecture/**/*.md
-            implementation-plan/**/*.md
 
   # Check that cross-document links resolve (e.g. ADRs referencing each other).
   docs-links:

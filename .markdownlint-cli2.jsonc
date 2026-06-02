@@ -1,5 +1,5 @@
 // Documentation lint config (markdownlint-cli2). Scoped to the architecture design
-// docs + the implementation-plan roadmap. Run locally with: npx markdownlint-cli2
+// docs. Run locally with: npx markdownlint-cli2
 {
   "config": {
     "default": true,
@@ -17,8 +17,7 @@
     "MD032": false
   },
   "globs": [
-    "architecture/**/*.md",
-    "implementation-plan/**/*.md"
+    "architecture/**/*.md"
   ],
   "ignores": [
     "**/node_modules/**"
