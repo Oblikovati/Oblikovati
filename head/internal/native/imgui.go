@@ -38,6 +38,7 @@ int  obk_ig_begin_popup_context_item(const char* id);
 void obk_ig_end_popup(void);
 void obk_ig_set_scroll_here_y(void);
 int  obk_ig_input_float(const char* label, float* v);
+int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
 int  obk_ig_checkbox(const char* label, int* v);
@@ -153,6 +154,14 @@ func InputFloat(label string, v *float32) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_input_float(c, (*C.float)(v)) != 0
+}
+
+// InputDouble draws a float64 field; returns true (and writes *v) when edited. Used by the
+// material editors, where values (e.g. resistivity ~1e15) exceed float32 precision.
+func InputDouble(label string, v *float64) bool {
+	c, free := cstr(label)
+	defer free()
+	return C.obk_ig_input_double(c, (*C.double)(v)) != 0
 }
 
 // InputInt draws an integer field; returns true (and writes *v) when edited.

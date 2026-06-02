@@ -51,6 +51,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawExtrudeDialog(s)
 	drawStatusBar(s)
 	drawPreferencesWindow(s)
+	drawMaterialsWindow(s)
 	drawFileDialog(s)
 	return activated
 }
@@ -125,6 +126,9 @@ func drawMenuBar(s *app.Session) string {
 		native.EndMenu()
 	}
 	if native.BeginMenu("Tools") {
+		if native.MenuItem("Materials") {
+			showMaterials = !showMaterials
+		}
 		if native.MenuItem("Preferences") {
 			showPreferences = !showPreferences
 		}
@@ -422,7 +426,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		}
 
 		bodies := activeBodies(s)
-		list := renderer.BuildDrawList(bodies, cam, ops.DefaultQuality())
+		list := renderer.BuildDrawList(bodies, cam, ops.DefaultQuality(), s.SurfaceLookup())
 		// Paint the selected body cyan so a browser/viewport pick reads in the 3D view
 		// (a no-op in sketch mode, where the selection is sketch entities, not bodies).
 		list = highlightSelection(list, s.Selection().First(), bodies)

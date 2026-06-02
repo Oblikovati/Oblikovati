@@ -21,15 +21,40 @@ const (
 
 // DrawItem is one batch of geometry to draw — geometry-as-data, independent of any
 // GPU type. ObjectID is written to the id-buffer for picking; Color is the base
-// shading color.
+// (albedo) color and Metallic/Roughness/Emissive/Opacity carry the rest of the PBR
+// surface (ADR-0022) for the GPU shader — the basic shader uses albedo today and the
+// other terms feed a future GGX upgrade.
 type DrawItem struct {
 	Primitive Primitive
 	Positions []math.Point3
 	Normals   []math.Vector3
 	Indices   []int
 	Color     [4]float32
+	Metallic  float32
+	Roughness float32
+	Emissive  [3]float32
+	Opacity   float32
 	ObjectID  uint64
 }
+
+// Surface is a resolved PBR appearance for one body — what [SurfaceLookup] returns. It is
+// the renderer-side value the model's effective Appearance maps onto, keeping the renderer
+// independent of the material package.
+type Surface struct {
+	Albedo    [4]float32
+	Metallic  float32
+	Roughness float32
+	Emissive  [3]float32
+	Opacity   float32
+}
+
+// SurfaceLookup returns the surface to shade a body with. BuildDrawList calls it per body;
+// a nil lookup means "use the neutral default" (the pre-materials look).
+type SurfaceLookup func(b *topo.Body) Surface
+
+// defaultSurface is the neutral material used for an un-assigned body — its albedo is the
+// pre-materials default gray, so a model with no assignments looks unchanged.
+var defaultSurface = Surface{Albedo: defaultSurfaceColor, Metallic: 0, Roughness: 0.6, Opacity: 1}
 
 // TriangleCount / LineCount report the primitive count of an item.
 func (d DrawItem) TriangleCount() int {
@@ -79,7 +104,7 @@ var edgeColor = [4]float32{0.1, 0.1, 0.12, 1}
 // list at the given quality: each visible body contributes a shaded triangle item
 // (its tessellation) and a wireframe line item (its edges), tagged with the body's
 // object id for picking. Bodies outside the view are culled.
-func BuildDrawList(bodies []*topo.Body, cam scene.Camera, q ops.Quality) DrawList {
+func BuildDrawList(bodies []*topo.Body, cam scene.Camera, q ops.Quality, lookup SurfaceLookup) DrawList {
 	var items []DrawItem
 	for _, b := range bodies {
 		if !visible(cam, b.RangeBox()) {
@@ -87,7 +112,7 @@ func BuildDrawList(bodies []*topo.Body, cam scene.Camera, q ops.Quality) DrawLis
 		}
 		mesh, edges := ops.TessellateBody(b, q)
 		if mesh.TriangleCount() > 0 {
-			items = append(items, triangleItem(b.ID(), mesh))
+			items = append(items, triangleItem(b.ID(), mesh, surfaceFor(b, lookup)))
 		}
 		if line := lineItem(b.ID(), edges); line != nil {
 			items = append(items, *line)
@@ -96,14 +121,27 @@ func BuildDrawList(bodies []*topo.Body, cam scene.Camera, q ops.Quality) DrawLis
 	return DrawList{Items: items}
 }
 
-// triangleItem builds the shaded surface item for a body's mesh.
-func triangleItem(objectID uint64, mesh *ops.Mesh) DrawItem {
+// surfaceFor returns the body's resolved surface, or the neutral default when no lookup is
+// supplied (headless tests, or before materials are wired).
+func surfaceFor(b *topo.Body, lookup SurfaceLookup) Surface {
+	if lookup == nil {
+		return defaultSurface
+	}
+	return lookup(b)
+}
+
+// triangleItem builds the shaded surface item for a body's mesh with its PBR surface.
+func triangleItem(objectID uint64, mesh *ops.Mesh, s Surface) DrawItem {
 	return DrawItem{
 		Primitive: Triangles,
 		Positions: mesh.Positions,
 		Normals:   mesh.Normals,
 		Indices:   mesh.Indices,
-		Color:     defaultSurfaceColor,
+		Color:     s.Albedo,
+		Metallic:  s.Metallic,
+		Roughness: s.Roughness,
+		Emissive:  s.Emissive,
+		Opacity:   s.Opacity,
 		ObjectID:  objectID,
 	}
 }

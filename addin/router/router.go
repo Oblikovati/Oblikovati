@@ -33,6 +33,14 @@ type Router struct {
 // New builds a router whose feature operations come from ops.
 func New(ops *opregistry.Registry) *Router {
 	r := &Router{ops: ops, handlers: map[string]handlerFunc{}}
+	r.registerStandardHandlers()
+	r.registerMaterialHandlers()
+	return r
+}
+
+// registerStandardHandlers wires the command/document/parameter/model/sketch/feature/theme
+// methods.
+func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodCommandsList] = listCommands
 	r.handlers[wire.MethodCommandsExecute] = executeCommand
 	r.handlers[wire.MethodCommandsCreate] = createCommand
@@ -51,7 +59,22 @@ func New(ops *opregistry.Registry) *Router {
 	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
 	r.handlers[wire.MethodThemeActive] = themeActive
 	r.handlers[wire.MethodThemeList] = themeList
-	return r
+}
+
+// registerMaterialHandlers wires the appearance/material/assignment/physical-properties
+// methods (M19 / ADR-0022).
+func (r *Router) registerMaterialHandlers() {
+	r.handlers[wire.MethodAppearancesList] = listAppearances
+	r.handlers[wire.MethodAppearancesGet] = getAppearance
+	r.handlers[wire.MethodAppearancesCreate] = createAppearance
+	r.handlers[wire.MethodAppearancesUpdate] = updateAppearance
+	r.handlers[wire.MethodMaterialsList] = listMaterials
+	r.handlers[wire.MethodMaterialsGet] = getMaterial
+	r.handlers[wire.MethodMaterialsCreate] = createMaterial
+	r.handlers[wire.MethodMaterialsUpdate] = updateMaterial
+	r.handlers[wire.MethodModelAssignMaterial] = assignMaterial
+	r.handlers[wire.MethodModelAssignAppearance] = assignAppearance
+	r.handlers[wire.MethodModelPhysicalProperties] = physicalProperties
 }
 
 // Handle dispatches method with its JSON args (empty args become {}), returning the

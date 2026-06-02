@@ -284,6 +284,65 @@ func TestThemeListFlagsActive(t *testing.T) {
 	}
 }
 
+func TestAppearancesAndMaterialsListAndCreate(t *testing.T) {
+	r, s := seededSession(t)
+	var apprs wire.ListAppearancesResult
+	call(t, r, s, "appearances.list", "{}", &apprs)
+	if len(apprs.Appearances) == 0 {
+		t.Fatal("appearances.list returned none")
+	}
+	var mats wire.ListMaterialsResult
+	call(t, r, s, "materials.list", "{}", &mats)
+	if len(mats.Materials) == 0 {
+		t.Fatal("materials.list returned none")
+	}
+	// Duplicate a built-in into a project-scoped editable material.
+	var made wire.MaterialInfo
+	call(t, r, s, "materials.create", `{"baseId":"steel","name":"Shop Steel"}`, &made)
+	if made.Source != "project" || made.Density == 0 {
+		t.Fatalf("created material = %+v, want a project copy with density", made)
+	}
+	// Edit its appearance's albedo and read it back.
+	var appr wire.AppearanceInfo
+	call(t, r, s, "appearances.create", `{"baseId":"steel","name":"Shop Steel Look"}`, &appr)
+	appr.Albedo = "#ff8800ff"
+	var updated wire.AppearanceInfo
+	call(t, r, s, "appearances.update", mustJSON(t, appr), &updated)
+	if updated.Albedo != "#ff8800ff" {
+		t.Errorf("updated albedo = %q, want #ff8800ff", updated.Albedo)
+	}
+}
+
+func TestAssignMaterialAndPhysicalProperties(t *testing.T) {
+	r, s := seededSession(t)
+	// Build a solid so there is volume to weigh.
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"5 cm"}}`, nil)
+	call(t, r, s, "model.assignMaterial", `{"materialId":"steel"}`, nil)
+
+	var props struct {
+		Mass    float64 `json:"mass"`
+		Volume  float64 `json:"volume"`
+		Density float64 `json:"density"`
+	}
+	call(t, r, s, "model.physicalProperties", "{}", &props)
+	if props.Volume <= 0 || props.Mass <= 0 {
+		t.Fatalf("physical properties = %+v, want positive volume and mass", props)
+	}
+	// Steel density is 7.85 g/cm³, so mass ≈ density × volume.
+	if got := props.Mass / props.Volume; got < 7.8 || got > 7.9 {
+		t.Errorf("mass/volume = %v, want ≈7.85 (steel density)", got)
+	}
+}
+
+func mustJSON(t *testing.T, v any) string {
+	t.Helper()
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	return string(b)
+}
+
 func TestParametersNoActiveDocument(t *testing.T) {
 	r := New(opregistry.Default())
 	s := app.NewSession() // empty workspace

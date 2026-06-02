@@ -33,7 +33,7 @@ func (s *Session) Overlays() []renderer.DrawItem {
 // RenderFrame builds the frame draw list — the active part's bodies, the persistent
 // overlays, and the active tool's transient preview — and submits it to the backend.
 func (s *Session) RenderFrame(backend renderer.Backend) {
-	list := renderer.BuildDrawList(s.sceneBodies(), s.camera, ops.DefaultQuality())
+	list := renderer.BuildDrawList(s.sceneBodies(), s.camera, ops.DefaultQuality(), s.SurfaceLookup())
 	list.Items = append(list.Items, s.overlays...)
 	if s.tool != nil {
 		if p, ok := s.tool.tool.(Previewable); ok {
