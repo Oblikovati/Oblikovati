@@ -275,6 +275,6 @@ func buildRuledBand(poly []math.Point2, plane sketch.Plane, dist float64, feat s
 		top[i] = bld.AddVertex(b.TranslateBy(up), topo.NewLineage(topo.Tok(feat, "vertex", n+i)))
 	}
 	be, te, ve := prismEdges(bld, bottom, top, feat)
-	addSides(bld, bottom, be, te, ve, plane, feat)
+	addSides(bld, bottom, be, te, ve, plane, outwardSign(poly), feat)
 	return bld.Build()
 }

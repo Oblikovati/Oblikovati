@@ -19,11 +19,11 @@ import (
 // taper. It re-derives the profile from its sketch each recompute (so sketch edits
 // flow through), going sick if the profile is gone or open.
 type ExtrudeDefinition struct {
-	Sketch       *sketch.Sketch
-	ProfileIndex int
-	Operation    ops.PartFeatureOperation
-	Extent       Extent
-	Taper        float64 // draft angle (radians); 0 in phase A (planar sides)
+	Sketch         *sketch.Sketch
+	ProfileIndices []int // one or more sketch regions, extruded together into one feature
+	Operation      ops.PartFeatureOperation
+	Extent         Extent
+	Taper          float64 // draft angle (radians); 0 in phase A (planar sides)
 }
 
 // ExtrudeFeature turns a profile into a prism and combines it with the running
@@ -62,7 +62,7 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 	if e.def.Extent.Type != DistanceExtent {
 		return Output{}, build.NotYetImplemented("PBI-092-extent-" + fmt.Sprint(e.def.Extent.Type))
 	}
-	profile, err := e.resolveProfile()
+	profiles, err := e.resolveProfiles()
 	if err != nil {
 		return Output{}, err
 	}
@@ -70,26 +70,56 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 	if dist == 0 {
 		return Output{}, errors.New("extrude distance is zero")
 	}
-	prism := buildPrism(profile.OuterLoop().Polygon(), e.def.Sketch.Plane(), dist, e.featName)
-	bodies, err := combine(in.Bodies, prism, e.def.Operation)
+	bodies, err := combine(in.Bodies, e.buildTool(profiles, dist), e.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
 }
 
-// resolveProfile re-derives the closed profile from the sketch, erroring (→ sick)
-// when it is missing or open (a lost/invalid input).
-func (e *ExtrudeFeature) resolveProfile() (*sketch.Profile, error) {
-	profiles := e.def.Sketch.Profiles()
-	if e.def.ProfileIndex < 0 || e.def.ProfileIndex >= profiles.Count() {
-		return nil, fmt.Errorf("extrude: profile %d not found (sketch has %d)", e.def.ProfileIndex, profiles.Count())
+// buildTool extrudes each selected region into a prism and merges the prisms into one
+// body. The regions are distinct cells of the same sketch, so they never overlap — a
+// shell merge is exactly their union and avoids the unimplemented intersecting Join.
+func (e *ExtrudeFeature) buildTool(profiles []*sketch.Profile, dist float64) *topo.Body {
+	plane := e.def.Sketch.Plane()
+	prisms := make([]*topo.Body, len(profiles))
+	for i, p := range profiles {
+		prisms[i] = buildPrism(p.OuterLoop().Polygon(), plane, dist, e.prismFeat(i, len(profiles)))
 	}
-	p := profiles.Item(e.def.ProfileIndex)
-	if !p.IsClosed() {
-		return nil, errors.New("extrude: profile is open (cannot form a solid)")
+	if len(prisms) == 1 {
+		return prisms[0]
 	}
-	return p, nil
+	return topo.MergeBodies(topo.NewLineage(topo.Tok(e.featName, "merged", 0)), true, prisms...)
+}
+
+// prismFeat namespaces each region's prism lineage; a single-profile extrude keeps the
+// bare feature name so its persistent face IDs are unchanged.
+func (e *ExtrudeFeature) prismFeat(i, n int) string {
+	if n == 1 {
+		return e.featName
+	}
+	return fmt.Sprintf("%s/p%d", e.featName, i)
+}
+
+// resolveProfiles re-derives the selected closed regions from the sketch, erroring
+// (→ sick) when one is missing or open, or when none is selected.
+func (e *ExtrudeFeature) resolveProfiles() ([]*sketch.Profile, error) {
+	all := e.def.Sketch.Profiles()
+	if len(e.def.ProfileIndices) == 0 {
+		return nil, errors.New("extrude: no profile selected")
+	}
+	out := make([]*sketch.Profile, 0, len(e.def.ProfileIndices))
+	for _, idx := range e.def.ProfileIndices {
+		if idx < 0 || idx >= all.Count() {
+			return nil, fmt.Errorf("extrude: profile %d not found (sketch has %d)", idx, all.Count())
+		}
+		p := all.Item(idx)
+		if !p.IsClosed() {
+			return nil, errors.New("extrude: profile is open (cannot form a solid)")
+		}
+		out = append(out, p)
+	}
+	return out, nil
 }
 
 // ExtrudeFeatures is the collection of extrude features, adding into the engine.
@@ -102,11 +132,17 @@ func NewExtrudeFeatures(engine *PartFeatures) *ExtrudeFeatures {
 	return &ExtrudeFeatures{engine: engine}
 }
 
-// AddByDistanceExtent adds an extrude of the sketch's profileIndex profile, growing
-// distance (a closure, typically a parameter) under the given operation.
+// AddByDistanceExtent adds an extrude of a single sketch region, growing distance (a
+// closure, typically a parameter) under the given operation.
 func (c *ExtrudeFeatures) AddByDistanceExtent(skt *sketch.Sketch, profileIndex int, op ops.PartFeatureOperation, distance func() float64) *PartFeature {
+	return c.AddByDistanceExtentProfiles(skt, []int{profileIndex}, op, distance)
+}
+
+// AddByDistanceExtentProfiles adds an extrude of one or more sketch regions, merged
+// into one body — the multi-region selection the Extrude tool gathers with Ctrl+click.
+func (c *ExtrudeFeatures) AddByDistanceExtentProfiles(skt *sketch.Sketch, profileIndices []int, op ops.PartFeatureOperation, distance func() float64) *PartFeature {
 	def := &ExtrudeDefinition{
-		Sketch: skt, ProfileIndex: profileIndex, Operation: op,
+		Sketch: skt, ProfileIndices: append([]int(nil), profileIndices...), Operation: op,
 		Extent: Extent{Type: DistanceExtent, Distance: distance},
 	}
 	ef := &ExtrudeFeature{def: def}
@@ -150,8 +186,26 @@ func buildPrism(poly []math.Point2, plane sketch.Plane, dist float64, feat strin
 	}
 	be, te, ve := prismEdges(bld, bottom, top, feat)
 	addCaps(bld, bottom, top, be, te, plane, feat)
-	addSides(bld, bottom, be, te, ve, plane, feat)
+	addSides(bld, bottom, be, te, ve, plane, outwardSign(poly), feat)
 	return bld.Build()
+}
+
+// outwardSign returns +1 when the profile polygon is wound counter-clockwise in the
+// sketch plane and −1 when clockwise. Side-wall normals are built as edgeDir×normal,
+// which points away from the interior only for a CCW loop; profile detection does not
+// guarantee a winding, so a clockwise loop must flip the side normals to stay coherent
+// with the (fixed up/down) caps — otherwise the prism is "inside-out" and breaks
+// rendering, volume, and downstream booleans.
+func outwardSign(poly []math.Point2) float64 {
+	area := 0.0
+	for i, n := 0, len(poly); i < n; i++ {
+		j := (i + 1) % n
+		area += poly[i].X*poly[j].Y - poly[j].X*poly[i].Y
+	}
+	if area < 0 {
+		return -1
+	}
+	return 1
 }
 
 // prismEdges builds the bottom, top and vertical edges and returns them.
@@ -183,14 +237,16 @@ func addCaps(bld *topo.Builder, bottom, top []*topo.Vertex, be, te []*topo.Edge,
 	bld.AddFace(topPlane, topo.NewLineage(topo.Tok(feat, "end-cap", 0)), topo.OuterLoop(topLoop...))
 }
 
-// addSides builds one planar side wall per profile edge.
-func addSides(bld *topo.Builder, bottom []*topo.Vertex, be, te, ve []*topo.Edge, plane sketch.Plane, feat string) {
+// addSides builds one planar side wall per profile edge. sign flips the computed
+// outward normal for a clockwise profile (see outwardSign) so every wall faces away
+// from the solid's interior.
+func addSides(bld *topo.Builder, bottom []*topo.Vertex, be, te, ve []*topo.Edge, plane sketch.Plane, sign float64, feat string) {
 	n := len(bottom)
 	normal := plane.Normal().AsVector()
 	for i := 0; i < n; i++ {
 		j := (i + 1) % n
 		edgeDir := bottom[i].Point().VectorTo(bottom[j].Point())
-		outward, err := math.UnitVector3FromVector(edgeDir.Cross(normal))
+		outward, err := math.UnitVector3FromVector(edgeDir.Cross(normal).Scale(sign))
 		surf := sideSurface(bottom[i].Point(), outward, err)
 		loop := topo.OuterLoop(topo.Fwd(be[i]), topo.Fwd(ve[j]), topo.Rev(te[i]), topo.Rev(ve[i]))
 		bld.AddFace(surf, topo.NewLineage(topo.Tok(feat, "side", i)), loop)
