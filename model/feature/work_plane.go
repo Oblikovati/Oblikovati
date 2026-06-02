@@ -128,12 +128,12 @@ func newWorkPlanes(g *WorkGeometry) *WorkPlanes {
 }
 
 // addOrigin adds a grounded coordinate-system plane with a well-known reference.
-func (c *WorkPlanes) addOrigin(key WorkRef, name string, plane sketch.Plane) *WorkPlane {
+func (c *WorkPlanes) addOrigin(key WorkRef, name string, plane sketch.Plane) {
 	w := &WorkPlane{
 		id: nextID(), key: key, name: name, def: fixedPlaneDef{plane: plane},
 		displaySize: defaultOriginPlaneSize, coordinateSystem: true, grounded: true,
 	}
-	return c.track(w)
+	c.track(w)
 }
 
 // AddByPlaneAndOffset creates a user plane parallel to base, offset by the value the
@@ -159,12 +159,11 @@ func (c *WorkPlanes) addUser(name string, def planeDefinition) *WorkPlane {
 	return w
 }
 
-func (c *WorkPlanes) track(w *WorkPlane) *WorkPlane {
+func (c *WorkPlanes) track(w *WorkPlane) {
 	w.recompute(c.g)
 	c.items = append(c.items, w)
 	c.byID[w.id] = w
 	c.byKey[w.key] = w
-	return w
 }
 
 // Count/Item index the collection; ByID/ByKey look up.

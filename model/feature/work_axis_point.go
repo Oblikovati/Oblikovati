@@ -108,12 +108,12 @@ func newWorkAxes(g *WorkGeometry) *WorkAxes {
 	return &WorkAxes{g: g, byID: map[ID]*WorkAxis{}, byKey: map[WorkRef]*WorkAxis{}}
 }
 
-func (c *WorkAxes) addOrigin(key WorkRef, name string, origin math.Point3, dir math.UnitVector3) *WorkAxis {
+func (c *WorkAxes) addOrigin(key WorkRef, name string, origin math.Point3, dir math.UnitVector3) {
 	w := &WorkAxis{
 		id: nextID(), key: key, name: name, def: fixedAxisDef{origin: origin, dir: dir},
 		coordinateSystem: true, grounded: true,
 	}
-	return c.track(w)
+	c.track(w)
 }
 
 // AddByTwoPoints creates a user axis through two referenced points.
@@ -133,12 +133,11 @@ func (c *WorkAxes) addUser(def axisDefinition) *WorkAxis {
 	return w
 }
 
-func (c *WorkAxes) track(w *WorkAxis) *WorkAxis {
+func (c *WorkAxes) track(w *WorkAxis) {
 	w.recompute(c.g)
 	c.items = append(c.items, w)
 	c.byID[w.id] = w
 	c.byKey[w.key] = w
-	return w
 }
 
 // Count/Item index the collection.
@@ -234,12 +233,12 @@ func newWorkPoints(g *WorkGeometry) *WorkPoints {
 	return &WorkPoints{g: g, byID: map[ID]*WorkPoint{}, byKey: map[WorkRef]*WorkPoint{}}
 }
 
-func (c *WorkPoints) addOrigin(key WorkRef, name string, at math.Point3) *WorkPoint {
+func (c *WorkPoints) addOrigin(key WorkRef, name string, at math.Point3) {
 	w := &WorkPoint{
 		id: nextID(), key: key, name: name, def: fixedPointDef{point: at},
 		coordinateSystem: true, grounded: true,
 	}
-	return c.track(w)
+	c.track(w)
 }
 
 // AddByPosition creates a user point at a (parametric) absolute position.
@@ -260,12 +259,11 @@ func (c *WorkPoints) addUser(def pointDefinition) *WorkPoint {
 	return w
 }
 
-func (c *WorkPoints) track(w *WorkPoint) *WorkPoint {
+func (c *WorkPoints) track(w *WorkPoint) {
 	w.recompute(c.g)
 	c.items = append(c.items, w)
 	c.byID[w.id] = w
 	c.byKey[w.key] = w
-	return w
 }
 
 // Count/Item index the collection.

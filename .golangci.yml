@@ -49,3 +49,12 @@ issues:
     # Tests may be longer and print freely.
     - path: _test\.go
       linters: [funlen, gocyclo, forbidigo, dupl]
+    # The recipe codecs (ADR-0020 document persistence) are exhaustive, one-case-per
+    # -kind dispatch switches — serializing/restoring every entity/constraint/feature
+    # kind — so their statement count is inherent to the dispatch, not a smell.
+    - path: serialize.*\.go
+      linters: [funlen, gocyclo]
+    # The recipe DTOs deliberately echo their package (SketchData, FeatureData) for
+    # readable cross-package use; the stutter is intentional, descriptive naming.
+    - text: "stutters"
+      linters: [revive]
