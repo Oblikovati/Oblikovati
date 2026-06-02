@@ -158,6 +158,7 @@ void obk_ig_mouse_pos(float* x, float* y) {
     *y = p.y;
 }
 int  obk_ig_key_shift(void)                  { return ImGui::GetIO().KeyShift ? 1 : 0; }
+int  obk_ig_key_ctrl(void)                   { return ImGui::GetIO().KeyCtrl ? 1 : 0; }
 // escape_pressed fires once on the frame Esc is pressed (cancel the active tool).
 int  obk_ig_escape_pressed(void)             { return ImGui::IsKeyPressed(ImGuiKey_Escape) ? 1 : 0; }
 float obk_ig_mouse_wheel(void)               { return ImGui::GetIO().MouseWheel; }

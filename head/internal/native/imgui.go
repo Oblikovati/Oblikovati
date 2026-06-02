@@ -53,6 +53,7 @@ int  obk_ig_is_item_clicked(int button);
 void obk_ig_item_rect_min(float* x, float* y);
 void obk_ig_mouse_pos(float* x, float* y);
 int  obk_ig_key_shift(void);
+int  obk_ig_key_ctrl(void);
 int  obk_ig_escape_pressed(void);
 float obk_ig_mouse_wheel(void);
 float obk_ig_delta_time(void);
@@ -381,6 +382,9 @@ func MousePos() (float32, float32) {
 
 // KeyShift reports whether a Shift key is held (orbit modifier).
 func KeyShift() bool { return C.obk_ig_key_shift() != 0 }
+
+// KeyCtrl reports whether a Ctrl key is held (multi-select modifier).
+func KeyCtrl() bool { return C.obk_ig_key_ctrl() != 0 }
 
 // EscapePressed reports whether Esc was pressed this frame (cancel the active tool).
 func EscapePressed() bool { return C.obk_ig_escape_pressed() != 0 }

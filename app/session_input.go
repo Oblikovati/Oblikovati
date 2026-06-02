@@ -74,6 +74,23 @@ func (s *Session) feedPick(sel Selectable) {
 	s.autoCommitAfterPick()
 }
 
+// modifierPicker is a Tool whose pick behavior depends on held modifiers — e.g. Extrude
+// adds a region to its set on Ctrl+click rather than replacing the single selection.
+type modifierPicker interface {
+	PickWithMods(*Session, Selectable, Modifier)
+}
+
+// feedPickMods is feedPick for graphics clicks that carry modifiers: a modifier-aware
+// tool sees the held keys (Ctrl to extend a multi-selection); others get the plain pick.
+func (s *Session) feedPickMods(sel Selectable, mods Modifier) {
+	if mp, ok := s.tool.tool.(modifierPicker); ok {
+		mp.PickWithMods(s, sel, mods)
+	} else {
+		s.tool.tool.Pick(s, sel)
+	}
+	s.autoCommitAfterPick()
+}
+
 // autoCommitAfterPick commits the active tool when it opts into auto-commit and is now
 // ready (used after both 3D picks and snap-aware sketch-entity picks).
 func (s *Session) autoCommitAfterPick() {
@@ -137,7 +154,7 @@ func (s *Session) Pointer(e PointerEvent) {
 		return
 	}
 	if s.tool != nil {
-		s.feedPick(sel)
+		s.feedPickMods(sel, e.Mods)
 		return
 	}
 	if !e.Mods.Has(ShiftMod) && !e.Mods.Has(CtrlMod) {
