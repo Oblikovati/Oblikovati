@@ -53,18 +53,9 @@ func (l *Library) Materials() []*Material {
 func (l *Library) Appearance(id string) (*Appearance, bool) { a, ok := l.appearances[id]; return a, ok }
 func (l *Library) Material(id string) (*Material, bool)     { m, ok := l.materials[id]; return m, ok }
 
-// appearanceOrNil returns the appearance for id, or nil for an empty/unknown id — the
-// form the assignment resolver wants so it can fall through the precedence chain.
-func (l *Library) appearanceOrNil(id string) *Appearance {
-	if id == "" {
-		return nil
-	}
-	return l.appearances[id]
-}
-
-// defaultAppearance returns the neutral built-in appearance, the resolver's last resort.
-// It is always present (seeded by the built-in catalog).
-func (l *Library) defaultAppearance() *Appearance { return l.appearances[DefaultAppearanceID] }
+// DefaultAppearance returns the neutral built-in appearance, the resolver's last resort.
+// It is always present (seeded by the built-in catalog). Part of [AssetLookup].
+func (l *Library) DefaultAppearance() *Appearance { return l.appearances[DefaultAppearanceID] }
 
 // AddAppearance / AddMaterial insert an asset (built-in seeding, library/document load),
 // replacing any existing asset with the same id without disturbing display order. They do

@@ -54,9 +54,18 @@ func (s *AssignmentStore) BodyAppearances() map[string]string {
 }
 func (s *AssignmentStore) FaceAppearances() map[string]string { return copyMap(s.faceAppearance) }
 
+// AssetLookup resolves asset ids to assets. Both [Library] (the session catalog) and a
+// [MergedLookup] (document-embedded assets over the catalog) satisfy it, so the same
+// precedence logic serves the browser and the renderer regardless of where an asset lives.
+type AssetLookup interface {
+	Appearance(id string) (*Appearance, bool)
+	Material(id string) (*Material, bool)
+	DefaultAppearance() *Appearance
+}
+
 // EffectiveMaterial returns the material governing a body (its override, else the part
 // default), or false when none is assigned.
-func (s *AssignmentStore) EffectiveMaterial(lib *Library, bodyKey string) (*Material, bool) {
+func (s *AssignmentStore) EffectiveMaterial(look AssetLookup, bodyKey string) (*Material, bool) {
 	id := s.bodyMaterial[bodyKey]
 	if id == "" {
 		id = s.partMaterial
@@ -64,30 +73,39 @@ func (s *AssignmentStore) EffectiveMaterial(lib *Library, bodyKey string) (*Mate
 	if id == "" {
 		return nil, false
 	}
-	return lib.Material(id)
+	return look.Material(id)
 }
 
 // EffectiveAppearance resolves the appearance shown for a body/face along the precedence
 // chain. faceKey may be "" to resolve at body level. It always returns a non-nil
 // appearance (the neutral default when nothing else applies).
-func (s *AssignmentStore) EffectiveAppearance(lib *Library, bodyKey, faceKey string) *Appearance {
+func (s *AssignmentStore) EffectiveAppearance(look AssetLookup, bodyKey, faceKey string) *Appearance {
 	if faceKey != "" {
-		if a := lib.appearanceOrNil(s.faceAppearance[faceKey]); a != nil {
+		if a := apprOrNil(look, s.faceAppearance[faceKey]); a != nil {
 			return a
 		}
 	}
-	if a := lib.appearanceOrNil(s.bodyAppearance[bodyKey]); a != nil {
+	if a := apprOrNil(look, s.bodyAppearance[bodyKey]); a != nil {
 		return a
 	}
-	if m, ok := s.EffectiveMaterial(lib, bodyKey); ok {
-		if a := lib.appearanceOrNil(m.AppearanceID()); a != nil {
+	if m, ok := s.EffectiveMaterial(look, bodyKey); ok {
+		if a := apprOrNil(look, m.AppearanceID()); a != nil {
 			return a
 		}
 	}
-	if a := lib.appearanceOrNil(s.partAppearance); a != nil {
+	if a := apprOrNil(look, s.partAppearance); a != nil {
 		return a
 	}
-	return lib.defaultAppearance()
+	return look.DefaultAppearance()
+}
+
+// apprOrNil returns the appearance for id via look, or nil for an empty/unknown id.
+func apprOrNil(look AssetLookup, id string) *Appearance {
+	if id == "" {
+		return nil
+	}
+	a, _ := look.Appearance(id)
+	return a
 }
 
 // setOrClear sets key→id, or deletes key when id is empty.

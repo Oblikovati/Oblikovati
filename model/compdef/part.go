@@ -35,6 +35,9 @@ type PartComponentDefinition struct {
 	// assignments survive Recompute (keyed by persistent reference key, not body id), so a
 	// material/appearance stays put when the body it is on is regenerated.
 	assignments *material.AssignmentStore
+	// assets are the document's embedded appearance/material copies (the non-built-in
+	// assets it uses), making the .obk self-contained (ADR-0022).
+	assets *material.AssetSet
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
@@ -52,12 +55,17 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		units:       param.DefaultUnitsOfMeasure(),
 		eop:         endOfPartAtEnd,
 		assignments: material.NewAssignmentStore(),
+		assets:      material.NewAssetSet(),
 	}
 }
 
 // Assignments returns the part's material/appearance assignment store. It is keyed by
 // persistent reference keys, so it is unaffected by Recompute.
 func (d *PartComponentDefinition) Assignments() *material.AssignmentStore { return d.assignments }
+
+// Assets returns the part's embedded appearance/material set (the document-owned copies of
+// the non-built-in assets it uses).
+func (d *PartComponentDefinition) Assets() *material.AssetSet { return d.assets }
 
 // AddPart creates a new part document in ws with a realized part component
 // definition installed (not the bare doc-package placeholder), makes it active, and

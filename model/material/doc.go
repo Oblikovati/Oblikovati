@@ -34,3 +34,7 @@ const (
 	SourceProject  = types.AssetProject
 	SourceDocument = types.AssetDocument
 )
+
+// ParseColor parses a "#RRGGBBAA" (or "#RRGGBB") hex color into an Rgba — re-exported
+// from the canonical types parser so the head editors and recipe code share one path.
+func ParseColor(s string) (Rgba, error) { return types.ParseHex(s) }

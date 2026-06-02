@@ -1,0 +1,174 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package material
+
+import (
+	"sort"
+
+	"github.com/Oblikovati/api/types"
+)
+
+// AppearanceRecipe / MaterialRecipe / AssignmentRecipe are the persisted YAML shapes of
+// the materials data — embedded in a document's recipe and stored in the project library
+// (ADR-0020/0022). Colors are "#RRGGBBAA" hex for readable, git-diffable files.
+type AppearanceRecipe struct {
+	ID          string  `yaml:"id"`
+	DisplayName string  `yaml:"name"`
+	Albedo      string  `yaml:"albedo"`
+	Metallic    float32 `yaml:"metallic"`
+	Roughness   float32 `yaml:"roughness"`
+	Emissive    string  `yaml:"emissive,omitempty"`
+	Opacity     float32 `yaml:"opacity"`
+}
+
+type MaterialRecipe struct {
+	ID           string           `yaml:"id"`
+	DisplayName  string           `yaml:"name"`
+	Density      float64          `yaml:"density"`
+	Mechanical   types.Mechanical `yaml:"mechanical,omitempty"`
+	Thermal      types.Thermal    `yaml:"thermal,omitempty"`
+	Electrical   types.Electrical `yaml:"electrical,omitempty"`
+	AppearanceID string           `yaml:"appearance,omitempty"`
+}
+
+type AssignmentRecipe struct {
+	PartMaterial   string            `yaml:"partMaterial,omitempty"`
+	PartAppearance string            `yaml:"partAppearance,omitempty"`
+	BodyMaterial   map[string]string `yaml:"bodyMaterial,omitempty"`
+	BodyAppearance map[string]string `yaml:"bodyAppearance,omitempty"`
+	FaceAppearance map[string]string `yaml:"faceAppearance,omitempty"`
+}
+
+// RecipeData is the materials section embedded in a part's recipe: the document's own
+// assets plus its assignments.
+type RecipeData struct {
+	Appearances []AppearanceRecipe `yaml:"appearances,omitempty"`
+	Materials   []MaterialRecipe   `yaml:"materials,omitempty"`
+	Assignments *AssignmentRecipe  `yaml:"assignments,omitempty"`
+}
+
+// MarshalRecipe captures a document's embedded asset set and assignments as RecipeData,
+// in a deterministic (id-sorted) order so the YAML diffs cleanly.
+func MarshalRecipe(set *AssetSet, assign *AssignmentStore) RecipeData {
+	var data RecipeData
+	for _, a := range sortAppearances(set.Appearances()) {
+		data.Appearances = append(data.Appearances, appearanceToRecipe(a))
+	}
+	for _, m := range sortMaterials(set.Materials()) {
+		data.Materials = append(data.Materials, materialToRecipe(m))
+	}
+	data.Assignments = assignmentRecipe(assign)
+	return data
+}
+
+// ApplyRecipe restores embedded assets (as document-source) into set and assignments into
+// assign. A malformed color aborts the load (no silent black surfaces).
+func ApplyRecipe(data RecipeData, set *AssetSet, assign *AssignmentStore) error {
+	for _, ar := range data.Appearances {
+		a, err := recipeToAppearance(ar, SourceDocument)
+		if err != nil {
+			return err
+		}
+		set.PutAppearance(a)
+	}
+	for _, mr := range data.Materials {
+		set.PutMaterial(recipeToMaterial(mr, SourceDocument))
+	}
+	if data.Assignments != nil {
+		applyAssignmentRecipe(assign, data.Assignments)
+	}
+	return nil
+}
+
+func appearanceToRecipe(a *Appearance) AppearanceRecipe {
+	return AppearanceRecipe{
+		ID: a.id, DisplayName: a.spec.DisplayName,
+		Albedo: a.spec.Albedo.Hex(), Metallic: a.spec.Metallic, Roughness: a.spec.Roughness,
+		Emissive: a.spec.Emissive.Hex(), Opacity: a.spec.Opacity,
+	}
+}
+
+func recipeToAppearance(r AppearanceRecipe, source Source) (*Appearance, error) {
+	albedo, err := types.ParseHex(r.Albedo)
+	if err != nil {
+		return nil, err
+	}
+	emissive := types.Rgba{A: 1}
+	if r.Emissive != "" {
+		if emissive, err = types.ParseHex(r.Emissive); err != nil {
+			return nil, err
+		}
+	}
+	return NewAppearance(r.ID, source, AppearanceSpec{
+		DisplayName: r.DisplayName, Albedo: albedo, Metallic: r.Metallic,
+		Roughness: r.Roughness, Emissive: emissive, Opacity: r.Opacity,
+	}), nil
+}
+
+func materialToRecipe(m *Material) MaterialRecipe {
+	return MaterialRecipe{
+		ID: m.id, DisplayName: m.spec.DisplayName, Density: m.spec.Density,
+		Mechanical: m.spec.Mechanical, Thermal: m.spec.Thermal, Electrical: m.spec.Electrical,
+		AppearanceID: m.spec.AppearanceID,
+	}
+}
+
+func recipeToMaterial(r MaterialRecipe, source Source) *Material {
+	return NewMaterial(r.ID, source, MaterialSpec{
+		DisplayName: r.DisplayName, Density: r.Density,
+		Mechanical: r.Mechanical, Thermal: r.Thermal, Electrical: r.Electrical,
+		AppearanceID: r.AppearanceID,
+	})
+}
+
+// assignmentRecipe captures the store, or nil when nothing is assigned (keeps the recipe
+// minimal).
+func assignmentRecipe(assign *AssignmentStore) *AssignmentRecipe {
+	r := &AssignmentRecipe{
+		PartMaterial:   assign.partMaterial,
+		PartAppearance: assign.partAppearance,
+		BodyMaterial:   nonEmpty(assign.bodyMaterial),
+		BodyAppearance: nonEmpty(assign.bodyAppearance),
+		FaceAppearance: nonEmpty(assign.faceAppearance),
+	}
+	if r.PartMaterial == "" && r.PartAppearance == "" &&
+		r.BodyMaterial == nil && r.BodyAppearance == nil && r.FaceAppearance == nil {
+		return nil
+	}
+	return r
+}
+
+// applyAssignmentRecipe writes a recipe's assignments back into a store.
+func applyAssignmentRecipe(assign *AssignmentStore, r *AssignmentRecipe) {
+	assign.partMaterial = r.PartMaterial
+	assign.partAppearance = r.PartAppearance
+	assign.bodyMaterial = orEmpty(r.BodyMaterial)
+	assign.bodyAppearance = orEmpty(r.BodyAppearance)
+	assign.faceAppearance = orEmpty(r.FaceAppearance)
+}
+
+func sortAppearances(in []*Appearance) []*Appearance {
+	sort.Slice(in, func(i, j int) bool { return in[i].id < in[j].id })
+	return in
+}
+
+func sortMaterials(in []*Material) []*Material {
+	sort.Slice(in, func(i, j int) bool { return in[i].id < in[j].id })
+	return in
+}
+
+// nonEmpty returns m, or nil when empty (so an empty map is omitted from YAML).
+func nonEmpty(m map[string]string) map[string]string {
+	if len(m) == 0 {
+		return nil
+	}
+	return copyMap(m)
+}
+
+// orEmpty returns m, or a fresh empty map when nil (so a store never holds a nil map).
+func orEmpty(m map[string]string) map[string]string {
+	if m == nil {
+		return map[string]string{}
+	}
+	return m
+}

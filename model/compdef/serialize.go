@@ -7,6 +7,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/model/doc"
 	"github.com/Oblikovati/oblikovati/model/feature"
+	"github.com/Oblikovati/oblikovati/model/material"
 	"github.com/Oblikovati/oblikovati/model/param"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/persistence/yamlcodec"
@@ -34,6 +35,7 @@ type partRecipe struct {
 	WorkFeatures []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
 	Sketches     []sketch.SketchData       `yaml:"sketches,omitempty"`
 	Features     []feature.FeatureData     `yaml:"features,omitempty"`
+	Materials    *material.RecipeData      `yaml:"materials,omitempty"`
 }
 
 // sketchIndex adapts a part's sketch collection to feature.SketchIndexer so features
@@ -92,6 +94,7 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		WorkFeatures: work,
 		Sketches:     sketches,
 		Features:     features,
+		Materials:    d.materialsRecipe(),
 	}
 	if d.eop != endOfPartAtEnd {
 		eop := d.eop
@@ -121,11 +124,26 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := d.features.ApplyRecipe(r.Features, sketchIndex{d.sketches}, d.work); err != nil {
 		return fmt.Errorf("compdef: restore features: %w", err)
 	}
+	if r.Materials != nil {
+		if err := material.ApplyRecipe(*r.Materials, d.assets, d.assignments); err != nil {
+			return fmt.Errorf("compdef: restore materials: %w", err)
+		}
+	}
 	if r.EndOfPart != nil {
 		d.SetEndOfPart(*r.EndOfPart)
 	}
 	d.Recompute()
 	return nil
+}
+
+// materialsRecipe captures the document's embedded assets and assignments, or nil when
+// the part has neither (keeps an un-styled part's recipe minimal).
+func (d *PartComponentDefinition) materialsRecipe() *material.RecipeData {
+	data := material.MarshalRecipe(d.assets, d.assignments)
+	if len(data.Appearances) == 0 && len(data.Materials) == 0 && data.Assignments == nil {
+		return nil
+	}
+	return &data
 }
 
 // unitsRecipe captures the preferred display-unit name for each category.

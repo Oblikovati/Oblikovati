@@ -28,10 +28,10 @@ func (s *Session) SurfaceLookup() renderer.SurfaceLookup {
 	if err != nil {
 		return nil
 	}
-	lib := s.Materials()
+	look := material.MergedLookup{Embedded: part.Assets(), Catalog: s.Materials()}
 	assign := part.Assignments()
 	return func(b *topo.Body) renderer.Surface {
-		appr := assign.EffectiveAppearance(lib, material.RefKey(b.ReferenceKey()), "")
+		appr := assign.EffectiveAppearance(look, material.RefKey(b.ReferenceKey()), "")
 		return appearanceSurface(appr)
 	}
 }
