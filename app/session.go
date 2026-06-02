@@ -30,6 +30,7 @@ type Session struct {
 	camTween        cameraTween
 	sketchReturnCam scene.Camera
 	activeSketch    *sketch.Sketch
+	pendingDim      *sketch.DimensionConstraint
 	overlays        []renderer.DrawItem
 	addins          *AddInManager
 	grid            *GridSettings
@@ -91,6 +92,7 @@ func (s *Session) ExitSketch() {
 	if s.activeSketch != nil {
 		s.activeSketch.ExitEdit()
 		s.activeSketch = nil
+		s.pendingDim = nil // no dangling edit box after leaving the sketch
 		s.animateCameraTo(s.sketchReturnCam, sketchViewTweenSeconds)
 	}
 }

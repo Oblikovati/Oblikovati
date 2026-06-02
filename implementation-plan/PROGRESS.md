@@ -188,6 +188,59 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 
 ## Session log
 
+- **2026-06-02:** **Usable Extrude in the head: distance dialog + profile-pick feedback
+  (M05 UI, user direction).** Even with finished sketches now pickable, the head had no
+  way to *complete* an extrude — picking a profile stored it on the tool with no highlight,
+  and there was no distance field, so OK stayed disabled (distance 0) and extrude looked
+  like "can't select." Added: `ExtrudeTool.PickedProfile`/`Distance` getters + Session
+  bridges (`ActiveExtrude`, `ExtrudeDistanceDisplay`/`SetExtrudeDistanceDisplay` converting
+  the document length unit ↔ database units, `LengthUnitName`); a head **Extrude dialog**
+  (distance field in doc units + OK/Cancel, syncing the tool each frame) and a viewport
+  **profile highlight** of the picked region (outer + holes) plus the live prism **preview**
+  (the tool's Previewable wireframe, now drawn outside the sketch env). Verified headlessly:
+  click a profile → set 40 mm via the dialog path → OK → a healthy solid; the mm↔cm
+  round-trip is unit-tested. Core suite + vet + fmt green; head builds, `make smoke` 5
+  frames zero validation errors, `head/ui` in-window tests pass. (Known lim: a circle drawn
+  *inside* a rectangle is one region with a hole — the inner disk isn't independently
+  selectable yet; multi-region overlapping profiles are a model-level follow-up.)
+- **2026-06-02:** **Finished sketches stay visible and are pickable for extrude (M05 UI,
+  user direction).** After Finish Sketch the sketch vanished from the 3D view and could
+  not be selected, so extrude was unreachable. Two gaps: the sketch overlay only rendered
+  *inside* the sketch editor, and `RayPicker` only hit-tested faces/work-planes (never
+  profiles — the end-to-end extrude test used a stub picker). Now (1) the head renders the
+  active part's finished, visible sketches in the 3D view (`partSketchOverlays`, skipping
+  the one being edited); (2) `RayPicker.WithSketches` lets the picker resolve a click
+  inside a sketch **profile region** to a `ProfileHandle` — it ray-casts each visible
+  sketch's plane, maps the hit to 2D, and tests the new `sketch.Profile.Contains` (inside
+  the outer loop, outside any hole); nearest-candidate selection keeps a solid in front
+  winning over the sketch on its face, and profiles are only picked when the filter admits
+  them (the Extrude tool sets `SelectProfile`). Verified end-to-end headlessly: a top-down
+  click inside a square picks its profile and extrudes to a healthy solid; clicks outside
+  miss; an open profile contains nothing. Core suite + vet + fmt green; head builds, `make
+  smoke` 5 frames zero validation errors, `head/ui` in-window tests pass.
+- **2026-06-02:** **Sketch editor: dimension constraints made real in the UI + ribbon
+  panels laid out horizontally (M05 UI, user direction).** Two gaps closed toward a
+  feature-complete sketch editor. (1) **Ribbon layout** — panels were stacking
+  *vertically*, pushing the contextual Sketch tab's "Exit" panel (Finish Sketch) off
+  screen; new `BeginGroup`/`EndGroup`/`SeparatorVertical` native bindings + a rewritten
+  `drawRibbon`/`drawPanel` now lay each panel out as a horizontal group (button row +
+  title) with vertical dividers, so every panel (incl. Exit/Finish Sketch) is visible.
+  (2) **Dimensions** — the Dimension tool placed a driving dimension at the *measured*
+  value with no way to set it and no on-screen display. Now the just-placed dimension is
+  held as the session's **pending** dimension (`Session.PendingDimension`/
+  `CommitPendingDimension`/`CancelPendingDimension`/`BeginEditDimension`); the head shows
+  an **edit popup** pre-filled with the value, and committing an expression (e.g. "50 mm",
+  "width/2") **drives the geometry** through the parameter DAG + solver. Dimensions now
+  **render in the viewport**: `Session.SketchDimensions()` emits render-ready
+  `DimensionView`s (witness/dimension lines, radial/diameter leaders, angle arcs, arc-
+  length leaders + a value label) computed headlessly in sketch-plane coords; the head
+  draws the lines as 3D line items and the value text at the label anchor projected to
+  screen via the new pure `renderer.Project`. **Double-clicking** a dimension's label
+  re-opens its editor. App-layer logic fully unit-tested (pending/commit/cancel + a view
+  per kind + parallel-line angle skip); `renderer.Project` tested (center/upper-half/
+  behind-camera). `CGO_ENABLED=0 go test ./...` + vet + race green; head builds, `make
+  smoke` renders 5 frames with zero Vulkan validation errors and `head/ui` in-window
+  tests pass.
 - **2026-06-02:** **Inventor-style origin coordinate system + work-feature persistence
   (branch `work-features`).** Modelled construction geometry like Inventor (verified
   against `Oblikovati.Contracts.CSharp`): a part owns one `feature.WorkGeometry` holding

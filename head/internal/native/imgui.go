@@ -19,6 +19,10 @@ int  obk_ig_button(const char* label);
 void obk_ig_same_line(void);
 void obk_ig_separator(void);
 void obk_ig_separator_text(const char* s);
+void obk_ig_begin_group(void);
+void obk_ig_end_group(void);
+void obk_ig_separator_vertical(void);
+int  obk_ig_mouse_double_clicked(int button);
 int  obk_ig_begin_tab_bar(const char* id);
 int  obk_ig_begin_tab_item_ex(const char* label, int setSelected);
 int  obk_ig_selectable(const char* label, int selected);
@@ -120,6 +124,15 @@ func Button(label string) bool {
 
 func SameLine()  { C.obk_ig_same_line() }
 func Separator() { C.obk_ig_separator() }
+
+// BeginGroup / EndGroup bracket a layout group: everything between them is treated as
+// one item for SameLine, so a ribbon panel (button row + title) can sit beside the next.
+func BeginGroup() { C.obk_ig_begin_group() }
+func EndGroup()   { C.obk_ig_end_group() }
+
+// SeparatorVertical draws a vertical divider line, for separating horizontally-laid
+// ribbon panels.
+func SeparatorVertical() { C.obk_ig_separator_vertical() }
 
 // InputFloat draws a float field; returns true (and writes *v) when edited.
 func InputFloat(label string, v *float32) bool {
@@ -275,6 +288,10 @@ func MouseDown(button int) bool { return C.obk_ig_mouse_down(C.int(button)) != 0
 // IsItemClicked reports whether the last item was clicked with the given button this
 // frame (used to place sketch geometry by clicking in the viewport).
 func IsItemClicked(button int) bool { return C.obk_ig_is_item_clicked(C.int(button)) != 0 }
+
+// IsMouseDoubleClicked reports a double-click of the given button this frame (used to
+// re-open a dimension for editing).
+func IsMouseDoubleClicked(button int) bool { return C.obk_ig_mouse_double_clicked(C.int(button)) != 0 }
 
 // ItemRectMin returns the screen-space top-left of the last item (the viewport image),
 // so a mouse position can be converted to a pixel local to the viewport.

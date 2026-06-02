@@ -111,7 +111,8 @@ func seedPart(s *app.Session) {
 	// staying bound to this seeded part.
 	s.SetPicker(app.NewRayPicker(s.Camera(),
 		func() []*topo.Body { return activeBodies(s) }).
-		WithPlanes(func() []*feature.WorkPlane { return activeOriginPlanes(s) }))
+		WithPlanes(func() []*feature.WorkPlane { return activeOriginPlanes(s) }).
+		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }))
 
 	// Frame the box (centered ~(2,1.5,2.5)) from a three-quarter view.
 	cam := s.Camera()
@@ -137,6 +138,22 @@ func activeOriginPlanes(s *app.Session) []*feature.WorkPlane {
 		return p.OriginPlanes()
 	}
 	return nil
+}
+
+// activeSketches returns the active part's visible sketches (nil if none), so the picker
+// can resolve a click inside a finished sketch's profile region (for extrude/revolve).
+func activeSketches(s *app.Session) []*sketch.Sketch {
+	p, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil
+	}
+	var out []*sketch.Sketch
+	for i := 0; i < p.Sketches().Count(); i++ {
+		if sk := p.Sketches().Item(i); sk.Visible() {
+			out = append(out, sk)
+		}
+	}
+	return out
 }
 
 // rectangle adds a closed w×h rectangle (one profile) at the sketch origin.

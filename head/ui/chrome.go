@@ -43,6 +43,8 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	}
 	drawBrowser(s)
 	drawViewportPanel(win, s)
+	drawDimensionPopup(s)
+	drawExtrudeDialog(s)
 	drawStatusBar(s)
 	drawPreferencesWindow(s)
 	drawFileDialog(s)
@@ -165,10 +167,8 @@ func drawRibbon(s *app.Session) string {
 	if native.Begin("Ribbon") && native.BeginTabBar("##ribbon-tabs") {
 		for _, tab := range app.BuildRibbon(s).Tabs {
 			if native.BeginTabItemSelected(tab.Name, tab.Name == force) {
-				for _, panel := range tab.Panels {
-					if id := drawPanel(panel); id != "" {
-						activated = id
-					}
+				if id := drawTabPanels(tab.Panels); id != "" {
+					activated = id
 				}
 				native.EndTabItem()
 			}
@@ -176,6 +176,24 @@ func drawRibbon(s *app.Session) string {
 		native.EndTabBar()
 	}
 	native.End()
+	return activated
+}
+
+// drawTabPanels lays the tab's panels out horizontally — each panel is a layout group
+// (button row + title) and panels sit SameLine with a vertical divider between them, so
+// no panel is pushed off-screen the way a vertical stack hid the Sketch tab's Exit panel.
+func drawTabPanels(panels []app.RibbonPanel) string {
+	var activated string
+	for i, panel := range panels {
+		if i > 0 {
+			native.SameLine()
+			native.SeparatorVertical()
+			native.SameLine()
+		}
+		if id := drawPanel(panel); id != "" {
+			activated = id
+		}
+	}
 	return activated
 }
 
@@ -193,14 +211,32 @@ func contextualTab(s *app.Session) string {
 	return "3D Model"
 }
 
-// drawPanel renders one ribbon panel — a titled separator and a row of command buttons.
-// Returns the id of a clicked command, or "".
+// ribbonMaxRows caps how many button rows a panel uses (Inventor stacks small buttons a
+// few rows deep); the column count grows to fit, keeping each panel narrow so panels sit
+// side-by-side without running off the ribbon.
+const ribbonMaxRows = 3
+
+// panelCols returns how many columns to wrap a panel's n buttons into, bounded so the
+// panel is at most ribbonMaxRows tall.
+func panelCols(n int) int {
+	if n <= ribbonMaxRows {
+		return 1
+	}
+	return (n + ribbonMaxRows - 1) / ribbonMaxRows
+}
+
+// drawPanel renders one ribbon panel as a self-contained layout group: a compact grid of
+// command buttons with the panel title beneath them (Inventor's panel layout), so the
+// whole panel is one narrow, horizontally-placeable unit. The title uses plain Text (not
+// SeparatorText, which would stretch the group to the full window width and hide every
+// panel to its right). Returns the id of a clicked command, or "".
 func drawPanel(panel app.RibbonPanel) string {
 	var activated string
-	native.SeparatorText(panel.Name)
+	cols := panelCols(len(panel.Buttons))
+	native.BeginGroup()
 	for i, btn := range panel.Buttons {
-		if i > 0 {
-			native.SameLine()
+		if i > 0 && i%cols != 0 {
+			native.SameLine() // continue the current row; a new row starts at each multiple of cols
 		}
 		native.BeginDisabled(!btn.Enabled)
 		if native.Button(btn.Command.DisplayName()) {
@@ -209,6 +245,8 @@ func drawPanel(panel app.RibbonPanel) string {
 		native.EndDisabled()
 		native.SetItemTooltip(btn.Command.Tooltip())
 	}
+	native.Text(panel.Name) // panel title under its buttons
+	native.EndGroup()
 	return activated
 }
 
@@ -355,23 +393,30 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		}
 
 		list := renderer.BuildDrawList(activeBodies(s), cam, ops.DefaultQuality())
+		var dims []app.DimensionView
+		var sketchPlane sketch.Plane
 		if s.InSketch() {
-			plane := s.ActiveSketch().Plane()
+			sketchPlane = s.ActiveSketch().Plane()
 			if g := s.Grid(); g.Visible {
-				list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery), list.Items...)
+				list.Items = append(gridOverlay(sketchPlane, g.SpacingModel(), g.MajorEvery), list.Items...)
 			}
 			list.Items = append(list.Items, sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s))...)
-			if item, ok := pointsOverlay(plane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {
+			dims = s.SketchDimensions()
+			list.Items = append(list.Items, dimensionLines(sketchPlane, dims)...)
+			if item, ok := pointsOverlay(sketchPlane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {
 				list.Items = append(list.Items, item)
 			}
 			if item, ok := toolPreview(s); ok {
 				list.Items = append(list.Items, item)
 			}
-			if item, ok := snapMarker(s, plane, cam.WorldPerPixel()); ok {
+			if item, ok := snapMarker(s, sketchPlane, cam.WorldPerPixel()); ok {
 				list.Items = append(list.Items, item)
 			}
 		} else {
 			list.Items = append(list.Items, planesOverlay(activePart(s), s.SelectedWorkPlane(), hovered)...)
+			list.Items = append(list.Items, partSketchOverlays(s)...)
+			list.Items = append(list.Items, extrudeProfileHighlight(s)...)
+			list.Items = append(list.Items, activeToolPreviewItems(s)...)
 		}
 		m := viewport.Flatten(list)
 		mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
@@ -381,6 +426,11 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		if tex := win.ViewportTexture(); tex != 0 {
 			native.SetCursorPos(cx, cy) // draw the image back over the invisible button
 			native.Image(tex, float32(pw), float32(ph))
+		}
+		if s.InSketch() && len(dims) > 0 {
+			if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
+				s.BeginEditDimension(d) // double-clicked a dimension's value
+			}
 		}
 	}
 	native.End()

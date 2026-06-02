@@ -63,6 +63,21 @@ func (p *Profile) InnerLoops() []Loop {
 // IsClosed reports whether the profile encloses a region (its outer loop is closed).
 func (p *Profile) IsClosed() bool { return p.outer.closed }
 
+// Contains reports whether the sketch-plane point q lies in the profile's region: inside
+// the (closed) outer loop and outside every inner-loop hole. Used to hit-test a click on
+// a profile so it can be picked for extrude/revolve. An open profile contains nothing.
+func (p *Profile) Contains(q math.Point2) bool {
+	if !p.outer.closed || !pointInPolygon(q, p.outer.polygon) {
+		return false
+	}
+	for _, h := range p.inner {
+		if pointInPolygon(q, h.polygon) {
+			return false
+		}
+	}
+	return true
+}
+
 // Profiles is the set of profiles detected in a sketch.
 type Profiles struct {
 	items []*Profile

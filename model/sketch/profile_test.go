@@ -36,6 +36,36 @@ func TestRectangleYieldsOneClosedProfile(t *testing.T) {
 	}
 }
 
+func TestProfileContainsPointInsideOutsideAndInHole(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	addRectangle(s, 0, 0, 10, 10)                   // outer
+	s.Circles().AddByCenterRadius(math.P2(5, 5), 2) // hole at the center
+	p := s.Profiles().Item(0)
+	if !p.Contains(math.P2(1, 1)) {
+		t.Error("a point inside the rectangle (clear of the hole) should be contained")
+	}
+	if p.Contains(math.P2(5, 5)) {
+		t.Error("the hole center is in an inner loop and must NOT be contained")
+	}
+	if p.Contains(math.P2(20, 20)) {
+		t.Error("a point outside the outer loop must not be contained")
+	}
+}
+
+func TestOpenProfileContainsNothing(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	a := s.Points().Add(math.P2(0, 0))
+	b := s.Points().Add(math.P2(4, 0))
+	c := s.Points().Add(math.P2(4, 3))
+	s.Lines().Add(a, b)
+	s.Lines().Add(b, c) // an open chain — no enclosed region
+	for i := 0; i < s.Profiles().Count(); i++ {
+		if s.Profiles().Item(i).Contains(math.P2(2, 1)) {
+			t.Error("an open profile should contain no point")
+		}
+	}
+}
+
 func TestNestedLoopsClassifyInnerAndOuter(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	addRectangle(s, 0, 0, 10, 10)                   // outer
