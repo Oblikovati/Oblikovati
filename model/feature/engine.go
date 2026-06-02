@@ -43,6 +43,27 @@ func (fs *PartFeatures) Add(f Feature, deps ...ID) *PartFeature {
 	return pf
 }
 
+// Remove deletes the feature with the given id from the program, reporting whether it
+// was found. The tail from the removed position is marked dirty so the next Recompute
+// rebuilds the body state without it (the clean prefix before it is still reused).
+func (fs *PartFeatures) Remove(id ID) bool {
+	if _, ok := fs.byID[id]; !ok {
+		return false
+	}
+	delete(fs.byID, id)
+	for i, pf := range fs.items {
+		if pf.id != id {
+			continue
+		}
+		fs.items = append(fs.items[:i], fs.items[i+1:]...)
+		for _, tail := range fs.items[i:] {
+			tail.dirty = true
+		}
+		break
+	}
+	return true
+}
+
 // Count returns the number of features; Item returns the i-th in history order.
 func (fs *PartFeatures) Count() int              { return len(fs.items) }
 func (fs *PartFeatures) Item(i int) *PartFeature { return fs.items[i] }
@@ -74,7 +95,11 @@ func (fs *PartFeatures) Recompute() {
 	end := fs.effectiveEnd()
 	start := fs.earliestDirty(end)
 	if start < 0 {
-		return // nothing dirty within the evaluated range
+		// Nothing dirty: the result is the cached body state at the cutoff. Re-deriving
+		// it (rather than leaving fs.result untouched) keeps the result correct after a
+		// Remove that shortened the program — the deleted tail no longer contributes.
+		fs.result = fs.prefixBodies(end)
+		return
 	}
 	bodies := fs.prefixBodies(start)
 	sick := fs.sickBefore(start)

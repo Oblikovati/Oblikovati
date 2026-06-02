@@ -124,3 +124,37 @@ func TestLookupAndRename(t *testing.T) {
 		t.Error("ByID failed after rename")
 	}
 }
+
+func TestRemoveFeatureDropsItAndRebuilds(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	a := fs.Add(body())
+	b := fs.Add(body())
+	fs.Recompute()
+	if len(fs.Result()) != 2 {
+		t.Fatalf("precondition: result has %d bodies, want 2", len(fs.Result()))
+	}
+	if !fs.Remove(a.ID()) {
+		t.Fatal("Remove reported the feature missing")
+	}
+	if fs.Count() != 1 || fs.Item(0) != b {
+		t.Errorf("after Remove: count=%d, item0==b: %v", fs.Count(), fs.Item(0) == b)
+	}
+	if _, ok := fs.ByID(a.ID()); ok {
+		t.Error("ByID still finds the removed feature")
+	}
+	fs.Recompute()
+	if len(fs.Result()) != 1 {
+		t.Errorf("after Remove+Recompute: result has %d bodies, want 1", len(fs.Result()))
+	}
+}
+
+func TestRemoveFeatureMissingIsNoop(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	fs.Add(body())
+	if fs.Remove(99999) {
+		t.Error("Remove of an absent id reported success")
+	}
+	if fs.Count() != 1 {
+		t.Errorf("Remove of an absent id changed the count to %d", fs.Count())
+	}
+}

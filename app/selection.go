@@ -21,6 +21,7 @@ const (
 	SelectProfile
 	SelectSketchEntity
 	SelectWorkPlane
+	SelectSketch
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -30,9 +31,13 @@ type Selectable interface {
 	SelectionKind() SelectionKind
 }
 
-// FaceHandle / EdgeHandle / VertexHandle / BodyHandle wrap picked topology.
+// FaceHandle / EdgeHandle / VertexHandle / BodyHandle wrap picked topology. FaceHandle
+// also carries the owning Body so a face pick can light up that body's browser node.
 type (
-	FaceHandle   struct{ Face *topo.Face }
+	FaceHandle struct {
+		Face *topo.Face
+		Body *topo.Body
+	}
 	EdgeHandle   struct{ Edge *topo.Edge }
 	VertexHandle struct{ Vertex *topo.Vertex }
 	BodyHandle   struct{ Body *topo.Body }
@@ -60,6 +65,12 @@ func (ProfileHandle) SelectionKind() SelectionKind { return SelectProfile }
 type SketchEntityHandle struct{ Entity sketch.Entity }
 
 func (SketchEntityHandle) SelectionKind() SelectionKind { return SelectSketchEntity }
+
+// SketchHandle wraps a whole sketch (selected in the browser), as opposed to one of its
+// entities — the input for Edit Sketch and for highlighting the sketch in the view.
+type SketchHandle struct{ Sketch *sketch.Sketch }
+
+func (SketchHandle) SelectionKind() SelectionKind { return SelectSketch }
 
 // WorkPlaneHandle wraps a picked origin/work plane (selected to host a new sketch).
 type WorkPlaneHandle struct{ Plane *feature.WorkPlane }
