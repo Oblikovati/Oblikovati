@@ -53,6 +53,10 @@ struct Viewport {
     VkDescriptorSet texture = VK_NULL_HANDLE; // ImGui sampled-image set
 
     GpuBuffer       vbuf, ibuf;
+
+    // Background the 3D pass clears to (themed; ADR-0021). Defaults reproduce the
+    // pre-theming look so an un-themed build is unchanged.
+    float           clearR = 0.10f, clearG = 0.11f, clearB = 0.13f;
 };
 
 namespace {
@@ -384,7 +388,7 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, int lit_unuse
     vkBeginCommandBuffer(v->cmd, &bi);
 
     VkClearValue clears[2];
-    clears[0].color = {{0.10f, 0.11f, 0.13f, 1.0f}};
+    clears[0].color = {{v->clearR, v->clearG, v->clearB, 1.0f}};
     clears[1].depthStencil = {1.0f, 0};
     VkRenderPassBeginInfo rp{};
     rp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -434,6 +438,16 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, int lit_unuse
     vkResetFences(c->device, 1, &v->fence);
     vkQueueSubmit(c->queue, 1, &submit, v->fence);
     vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, UINT64_MAX);
+}
+
+// obk_viewport_set_clear sets the 3D pass background (themed). Takes effect on the next
+// render; a no-op before the viewport is initialized.
+void obk_viewport_set_clear(void* h, float r, float g, float b) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c->viewport) return;
+    c->viewport->clearR = r;
+    c->viewport->clearG = g;
+    c->viewport->clearB = b;
 }
 
 // obk_viewport_texture returns the ImGui texture handle for the rendered color image

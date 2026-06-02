@@ -60,6 +60,17 @@ void obk_ig_get_cursor_pos(float* x, float* y);
 void obk_ig_set_cursor_pos(float x, float y);
 void obk_ig_set_next_window_pos(float x, float y);
 void obk_ig_set_next_window_size(float w, float h);
+void obk_ig_set_next_window_size_first_use(float w, float h);
+
+// Theming verbs (ADR-0021). set_style_color overwrites one persistent ImGuiStyle color,
+// addressed by its ImGui name (e.g. "WindowBg", "Button") so Go never hardcodes the
+// enum index (which shifts between ImGui versions); an unknown name is ignored.
+// color_edit4 is the swatch+picker editing a 4-float RGBA in place (1 on change).
+// begin_combo/end_combo bracket the theme selector dropdown.
+void obk_ig_set_style_color(const char* name, float r, float g, float b, float a);
+int  obk_ig_color_edit4(const char* label, float* rgba);
+int  obk_ig_begin_combo(const char* label, const char* preview);
+void obk_ig_end_combo(void);
 
 unsigned int obk_ig_dockspace_over_main(void);
 void obk_ig_dock_default_layout(unsigned int dockId, const char* ribbon, const char* model, const char* viewport, const char* status);
@@ -173,6 +184,38 @@ func Checkbox(label string, v *bool) bool {
 	*v = cv != 0
 	return changed
 }
+
+// SetStyleColor overwrites one Dear ImGui style color, addressed by its ImGui name
+// (e.g. "WindowBg", "Button", "TabSelected"). ImGui's style is persistent global state,
+// so the theme apply layer calls this once per token when the theme changes — not every
+// frame. An unrecognized name is a no-op. See head/ui theme apply (ADR-0021).
+func SetStyleColor(name string, c [4]float32) {
+	cn, free := cstr(name)
+	defer free()
+	C.obk_ig_set_style_color(cn, C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
+}
+
+// ColorEdit4 draws a color swatch that opens a picker, editing the RGBA in place and
+// returning true on the frame the color changed — the per-token control in the
+// Appearance editor.
+func ColorEdit4(label string, c *[4]float32) bool {
+	cl, free := cstr(label)
+	defer free()
+	return C.obk_ig_color_edit4(cl, (*C.float)(unsafe.Pointer(&c[0]))) != 0
+}
+
+// BeginCombo / EndCombo bracket a dropdown showing preview as the closed value; when
+// BeginCombo returns true the popup is open, so draw the Selectable options and pair it
+// with EndCombo. Used by the theme selector.
+func BeginCombo(label, preview string) bool {
+	cl, free := cstr(label)
+	defer free()
+	cp, free2 := cstr(preview)
+	defer free2()
+	return C.obk_ig_begin_combo(cl, cp) != 0
+}
+
+func EndCombo() { C.obk_ig_end_combo() }
 
 // SeparatorText draws a labeled horizontal separator (used as panel titles).
 func SeparatorText(s string) {
@@ -359,6 +402,12 @@ func SetCursorPos(x, y float32) { C.obk_ig_set_cursor_pos(C.float(x), C.float(y)
 // in-window tests to put the viewport panel at a known rect so injected input lands on it.
 func SetNextWindowPos(x, y float32)  { C.obk_ig_set_next_window_pos(C.float(x), C.float(y)) }
 func SetNextWindowSize(w, h float32) { C.obk_ig_set_next_window_size(C.float(w), C.float(h)) }
+
+// SetNextWindowSizeOnce sets the next window's size only the first time it is shown
+// (ImGuiCond_FirstUseEver), so it gives a sensible default the user can still resize.
+func SetNextWindowSizeOnce(w, h float32) {
+	C.obk_ig_set_next_window_size_first_use(C.float(w), C.float(h))
+}
 
 // DockSpaceOverMain hosts a full-window dockspace each frame and returns its stable id.
 // Call it once per frame before the panels; the panels then dock into it.

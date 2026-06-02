@@ -9,10 +9,9 @@ import (
 	"github.com/Oblikovati/oblikovati/head/internal/native"
 )
 
-// iconTint is the color every ribbon glyph is drawn with. The icons are rasterized as
-// white alpha masks, so this single tint recolors all of them — the hook a future
-// theme manager sets. Default: a light gray that reads on the dark chrome.
-var iconTint = [4]float32{0.85, 0.87, 0.90, 1}
+// iconTint (the color every ribbon glyph is drawn with) is now theme-driven and lives in
+// theme_apply.go: icons are rasterized as white alpha masks, so that single tint recolors
+// all of them when the theme changes (ADR-0021).
 
 // Rasterization sizes per button style. Small icons fill the dense sketch tool grids;
 // large icons head a panel (Inventor's two button sizes).

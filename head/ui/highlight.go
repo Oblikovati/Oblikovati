@@ -14,10 +14,6 @@ import (
 // a viewport pick, which sets the same selection, lights up the same body). Work-plane
 // and sketch highlight are handled by their own overlays (planesOverlay / sketchOverlay).
 
-// selectionHighlight is the cyan used for a selected body, matching the selected-plane
-// color so selection reads consistently across the view.
-var selectionHighlight = [4]float32{0.3, 0.85, 1, 1}
-
 // highlightSelection recolors the draw items belonging to the selected body/bodies. It
 // returns the (in-place mutated) list for call-site convenience; the list is rebuilt
 // each frame so the mutation is not observable across frames.

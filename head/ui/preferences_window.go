@@ -13,20 +13,34 @@ import (
 // not model state, so it lives here in the head.
 var showPreferences bool
 
-// drawPreferencesWindow renders the Preferences window when open: the sketch-grid
-// spacing (in the document's units), visibility, and major-line interval. Edits write
-// straight back to the session's settings, so the grid updates next frame.
+// drawPreferencesWindow renders the Preferences window when open, as tabs: Sketch Grid
+// (spacing in the document's units, visibility, major-line interval) and Appearance (the
+// theme picker + editor). Edits write straight back to the session, so the grid and theme
+// update next frame.
 func drawPreferencesWindow(s *app.Session) {
 	if !showPreferences {
 		return
 	}
-	if native.Begin("Preferences") {
-		native.SeparatorText("Sketch Grid")
-		editGridSpacing(s)
-		editGridVisibility(s)
-		editGridMajor(s)
+	native.SetNextWindowSizeOnce(640, 480) // sensible default; the user can still resize
+	if native.Begin("Preferences") && native.BeginTabBar("##prefs-tabs") {
+		if native.BeginTabItem("Sketch Grid") {
+			drawGridTab(s)
+			native.EndTabItem()
+		}
+		if native.BeginTabItem("Theme") {
+			drawAppearanceTab(s)
+			native.EndTabItem()
+		}
+		native.EndTabBar()
 	}
 	native.End()
+}
+
+// drawGridTab renders the sketch-grid preference fields.
+func drawGridTab(s *app.Session) {
+	editGridSpacing(s)
+	editGridVisibility(s)
+	editGridMajor(s)
 }
 
 // editGridSpacing draws the spacing field labeled with the document's length unit.

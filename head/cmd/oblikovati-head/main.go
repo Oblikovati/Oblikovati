@@ -24,6 +24,7 @@ import (
 	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/persistence"
+	"github.com/Oblikovati/oblikovati/theme"
 )
 
 func main() {
@@ -64,7 +65,7 @@ func run(session *app.Session, maxFrames int) error {
 			}
 		}
 		addins.drain()
-		win.EndFrame(0.12, 0.13, 0.16)
+		win.EndFrame(ui.WindowClearColor()) // themed swapchain background (ADR-0021)
 	}
 	return nil
 }
@@ -79,7 +80,23 @@ func newDemoSession() *app.Session {
 	s := app.NewSessionWithStore(persistence.NewPackageStore())
 	registerCommands(s)
 	seedPart(s)
+	loadThemes(s)
 	return s
+}
+
+// loadThemes folds the user's saved custom themes and selected theme into the session
+// from the OS config dir, so the chrome opens in the theme last used. A locate/load error
+// is non-fatal — the built-in Dark/Light are always available — so a bad theme file never
+// blocks startup; it is reported to stderr.
+func loadThemes(s *app.Session) {
+	root, err := theme.DefaultRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "themes: %v\n", err)
+		return
+	}
+	if err := s.LoadThemes(theme.NewStore(root, theme.OSFileSystem{})); err != nil {
+		fmt.Fprintf(os.Stderr, "themes: %v\n", err)
+	}
 }
 
 func registerCommands(s *app.Session) {
