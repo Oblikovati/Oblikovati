@@ -112,11 +112,14 @@ bool create_device(HeadContext* c) {
 }
 
 bool create_descriptor_pool(HeadContext* c) {
-    VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 64}};
+    // Combined-image-sampler sets are shared by the font atlas, the offscreen viewport
+    // image, and one per cached ribbon icon (texture.cpp). The icon set alone is ~25
+    // and grows with the command set, so size generously to avoid AddTexture failing.
+    VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 256}};
     VkDescriptorPoolCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    ci.maxSets = 64;
+    ci.maxSets = 256;
     ci.poolSizeCount = 1;
     ci.pPoolSizes = sizes;
     return ok(vkCreateDescriptorPool(c->device, &ci, c->allocator, &c->descriptorPool));
@@ -354,6 +357,7 @@ void obk_head_destroy(void* h) {
     if (!c) return;
     vkDeviceWaitIdle(c->device);
     obk_viewport_destroy(c);
+    obk_icons_destroy(c); // frees icon textures before the Vulkan backend shuts down
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

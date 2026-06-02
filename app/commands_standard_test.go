@@ -31,6 +31,36 @@ func TestStandardRibbonHasSketchCreatePanel(t *testing.T) {
 	}
 }
 
+// TestIconCommandsCarryIconAndStyle guards that every command rendered with an icon
+// style also names an icon asset (so the ribbon never asks the head for an empty key)
+// and that a known large/small command keeps its expected style.
+func TestIconCommandsCarryIconAndStyle(t *testing.T) {
+	s := registeredSession(t)
+	for _, c := range s.Commands().All() {
+		if c.ButtonStyle().ShowsIcon() && c.Icon() == "" {
+			t.Errorf("command %q has icon style %s but no icon key", c.ID(), c.ButtonStyle())
+		}
+	}
+	want := map[string]struct {
+		icon  string
+		style ButtonStyle
+	}{
+		"Create.Extrude": {"extrude", LargeIconButton},
+		"Sketch.Line":    {"line", SmallIconButton},
+		"Sketch.Finish":  {"finish-sketch", LargeIconButton},
+	}
+	for id, w := range want {
+		c, ok := s.Commands().ByID(id)
+		if !ok {
+			t.Fatalf("command %q not registered", id)
+		}
+		if c.Icon() != w.icon || c.ButtonStyle() != w.style {
+			t.Errorf("command %q = (%q, %s), want (%q, %s)",
+				id, c.Icon(), c.ButtonStyle(), w.icon, w.style)
+		}
+	}
+}
+
 func TestModelTabHasCreate2DSketch(t *testing.T) {
 	s := registeredSession(t)
 	r := BuildRibbon(s)

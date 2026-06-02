@@ -2,7 +2,23 @@
 
 package app
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/Oblikovati/api/types"
+)
+
+// ButtonStyle is how a command renders in the ribbon (text, small icon, large icon).
+// The type and its values are defined once in the Apache-2.0 contract
+// ([types.ButtonStyle]); this alias keeps the app.ButtonStyle / app.LargeIconButton
+// spelling local to the implementation (ADR-0018).
+type ButtonStyle = types.ButtonStyle
+
+const (
+	TextOnlyButton  = types.TextOnlyButton
+	SmallIconButton = types.SmallIconButton
+	LargeIconButton = types.LargeIconButton
+)
 
 // ControlKind is the UI control a command presents as — Inventor's ControlDefinition
 // kinds. The ribbon (ImGui) renders the right widget per kind; the logic is identical.
@@ -30,6 +46,8 @@ type CommandDefinition struct {
 	kind        ControlKind
 	alias       string // typed command alias (e.g. "E" → Extrude), Inventor-style
 	tooltip     string
+	iconKey     string      // icon asset key (e.g. "extrude"); empty ⇒ no icon
+	buttonStyle ButtonStyle // ribbon render style; zero value ⇒ text-only
 	enabled     func(*Session) bool
 	run         func(*Session) error
 }
@@ -54,6 +72,18 @@ func (c *CommandDefinition) WithKind(k ControlKind) *CommandDefinition { c.kind 
 // WithTooltip sets the hover tooltip.
 func (c *CommandDefinition) WithTooltip(t string) *CommandDefinition { c.tooltip = t; return c }
 
+// WithIcon sets the command's icon asset key (resolved by the head to an SVG glyph).
+// Pair it with WithButtonStyle to make the ribbon show the icon; a key with the
+// text-only style is ignored by the renderer.
+func (c *CommandDefinition) WithIcon(key string) *CommandDefinition { c.iconKey = key; return c }
+
+// WithButtonStyle sets how the command renders in the ribbon (text/small-icon/
+// large-icon). Inventor's large buttons head a panel; small ones fill dense grids.
+func (c *CommandDefinition) WithButtonStyle(s ButtonStyle) *CommandDefinition {
+	c.buttonStyle = s
+	return c
+}
+
 // WithEnable sets the enable predicate (nil ⇒ always enabled).
 func (c *CommandDefinition) WithEnable(p func(*Session) bool) *CommandDefinition {
 	c.enabled = p
@@ -61,13 +91,15 @@ func (c *CommandDefinition) WithEnable(p func(*Session) bool) *CommandDefinition
 }
 
 // ID/DisplayName/Tab/Category/Kind/Alias/Tooltip are the command's metadata.
-func (c *CommandDefinition) ID() string          { return c.id }
-func (c *CommandDefinition) DisplayName() string { return c.displayName }
-func (c *CommandDefinition) Tab() string         { return c.tab }
-func (c *CommandDefinition) Category() string    { return c.category }
-func (c *CommandDefinition) Kind() ControlKind   { return c.kind }
-func (c *CommandDefinition) Alias() string       { return c.alias }
-func (c *CommandDefinition) Tooltip() string     { return c.tooltip }
+func (c *CommandDefinition) ID() string               { return c.id }
+func (c *CommandDefinition) DisplayName() string      { return c.displayName }
+func (c *CommandDefinition) Tab() string              { return c.tab }
+func (c *CommandDefinition) Category() string         { return c.category }
+func (c *CommandDefinition) Kind() ControlKind        { return c.kind }
+func (c *CommandDefinition) Alias() string            { return c.alias }
+func (c *CommandDefinition) Tooltip() string          { return c.tooltip }
+func (c *CommandDefinition) Icon() string             { return c.iconKey }
+func (c *CommandDefinition) ButtonStyle() ButtonStyle { return c.buttonStyle }
 
 // IsEnabled reports whether the command may run in the given session (predicate true
 // or absent).

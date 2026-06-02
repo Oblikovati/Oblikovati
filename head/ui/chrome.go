@@ -30,6 +30,9 @@ import (
 // function stays free of side effects on the model. The window is needed to render the
 // 3D viewport into its offscreen target.
 func DrawChrome(win *native.Window, s *app.Session) string {
+	if icons == nil {
+		icons = newIconCache(win) // lazily bind the icon cache to this window
+	}
 	handleKeyboard(s)
 	activated := drawMenuBar(s)
 	dockID := native.DockSpaceOverMain()
@@ -238,16 +241,71 @@ func drawPanel(panel app.RibbonPanel) string {
 		if i > 0 && i%cols != 0 {
 			native.SameLine() // continue the current row; a new row starts at each multiple of cols
 		}
-		native.BeginDisabled(!btn.Enabled)
-		if native.Button(btn.Command.DisplayName()) {
-			activated = btn.Command.ID()
+		if id := drawRibbonButton(btn); id != "" {
+			activated = id
 		}
-		native.EndDisabled()
-		native.SetItemTooltip(btn.Command.Tooltip())
 	}
 	native.Text(panel.Name) // panel title under its buttons
 	native.EndGroup()
 	return activated
+}
+
+// drawRibbonButton renders one command in its configured style (text, small icon, or
+// large icon), greyed when its predicate is false, with the command tooltip on hover.
+// It returns the command id when clicked this frame, else "".
+func drawRibbonButton(btn app.RibbonButton) string {
+	native.BeginDisabled(!btn.Enabled)
+	clicked := drawButtonControl(btn)
+	native.EndDisabled()
+	if clicked {
+		return btn.Command.ID()
+	}
+	return ""
+}
+
+// drawButtonControl draws the command's clickable control and its tooltip, returning
+// whether it was clicked. An icon-style command falls back to a labeled text button
+// when its glyph texture is unavailable (missing asset or upload failure), so a missing
+// icon never hides the command.
+func drawButtonControl(btn app.RibbonButton) bool {
+	if px, ok := iconSizeFor(btn.Command.ButtonStyle()); ok {
+		if tex, ok := icons.texture(btn.Command.Icon(), px); ok {
+			return drawIconButton(btn, tex, float32(px))
+		}
+	}
+	clicked := native.Button(btn.Command.DisplayName())
+	native.SetItemTooltip(btn.Command.Tooltip())
+	return clicked
+}
+
+// iconSizeFor returns the rasterization size for an icon button style, or false for a
+// text-only command.
+func iconSizeFor(s app.ButtonStyle) (int, bool) {
+	switch s {
+	case app.SmallIconButton:
+		return smallIconPx, true
+	case app.LargeIconButton:
+		return largeIconPx, true
+	default:
+		return 0, false
+	}
+}
+
+// drawIconButton renders an icon button: small ones are icon-only (dense tool grids),
+// large ones place the name as a caption beneath the icon (Inventor's large button).
+// The icon is the click target either way.
+func drawIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
+	if btn.Command.ButtonStyle() != app.LargeIconButton {
+		clicked := native.ImageButton(btn.Command.ID(), tex, px, px, iconTint)
+		native.SetItemTooltip(btn.Command.Tooltip())
+		return clicked
+	}
+	native.BeginGroup()
+	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, iconTint)
+	native.SetItemTooltip(btn.Command.Tooltip())
+	native.Text(btn.Command.DisplayName())
+	native.EndGroup()
+	return clicked
 }
 
 // prevFramedDoc tracks which document the camera was last framed to, so switching

@@ -2,6 +2,8 @@
 
 package app
 
+import "strings"
+
 // RegisterStandardCommands wires Inventor's standard ribbon for a session: the 3D Model
 // tab (Create 2D Sketch, Extrude), the contextual Sketch tab (the full geometry-tool
 // Create panel + Finish Sketch), and the View tab (Zoom All, Home). Sketch geometry
@@ -39,11 +41,13 @@ func modelTabCommands() []*CommandDefinition {
 			s.StartTool(NewCreateSketchTool())
 			return nil
 		}).WithTab("3D Model").WithAlias("S").WithEnable(canCreateSketch).
+			WithIcon("create-sketch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Create 2D Sketch — pick a work plane or planar face to sketch on."),
 		NewCommand("Create.Extrude", "Extrude", "Create", func(s *Session) error {
 			s.StartTool(NewExtrudeTool())
 			return nil
 		}).WithTab("3D Model").WithAlias("E").WithEnable(notInSketch).
+			WithIcon("extrude").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extrude — add depth to a sketch profile to create or modify a solid."),
 	}
 }
@@ -57,10 +61,12 @@ func sketchTabCommands() []*CommandDefinition {
 		s.StartTool(newDimensionTool())
 		return nil
 	}).WithTab("Sketch").WithAlias("D").WithEnable(inSketch).
+		WithIcon("dimension").WithButtonStyle(SmallIconButton).
 		WithTooltip("Dimension — then pick points/a line/a circle/two lines to dimension."))
 	return append(cmds, NewCommand("Sketch.Finish", "Finish Sketch", "Exit", func(s *Session) error {
 		return s.FinishSketch()
 	}).WithTab("Sketch").WithEnable(inSketch).
+		WithIcon("finish-sketch").WithButtonStyle(LargeIconButton).
 		WithTooltip("Finish Sketch — leave the sketch environment and update the part."))
 }
 
@@ -85,7 +91,8 @@ func createCommands() []*CommandDefinition {
 		cmds[i] = NewCommand(c.id, c.name, "Create", func(s *Session) error {
 			s.StartTool(start())
 			return nil
-		}).WithTab("Sketch").WithAlias(c.alias).WithEnable(inSketch).WithTooltip(c.tip)
+		}).WithTab("Sketch").WithAlias(c.alias).WithEnable(inSketch).WithTooltip(c.tip).
+			WithIcon(strings.ToLower(c.name)).WithButtonStyle(SmallIconButton)
 	}
 	return cmds
 }
@@ -99,7 +106,8 @@ func constrainCommands() []*CommandDefinition {
 		cmds[i] = NewCommand(d.id, d.name, "Constrain", func(s *Session) error {
 			s.StartTool(newTool())
 			return nil
-		}).WithTab("Sketch").WithEnable(inSketch).WithTooltip(d.tooltip)
+		}).WithTab("Sketch").WithEnable(inSketch).WithTooltip(d.tooltip).
+			WithIcon(strings.ToLower(d.name)).WithButtonStyle(SmallIconButton)
 	}
 	return cmds
 }
@@ -110,11 +118,13 @@ func viewTabCommands() []*CommandDefinition {
 		NewCommand("View.ZoomAll", "Zoom All", "Navigate", func(s *Session) error {
 			s.FitView()
 			return nil
-		}).WithTab("View").WithTooltip("Zoom All — fit the entire model in the viewport."),
+		}).WithTab("View").WithIcon("zoom-all").WithButtonStyle(LargeIconButton).
+			WithTooltip("Zoom All — fit the entire model in the viewport."),
 		NewCommand("View.Home", "Home", "Navigate", func(s *Session) error {
 			s.HomeView()
 			return nil
-		}).WithTab("View").WithTooltip("Home View — the default isometric view, framed to fit."),
+		}).WithTab("View").WithIcon("home").WithButtonStyle(LargeIconButton).
+			WithTooltip("Home View — the default isometric view, framed to fit."),
 	}
 }
 

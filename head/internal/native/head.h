@@ -8,7 +8,8 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
-struct Viewport; // defined in viewport.cpp
+struct Viewport;     // defined in viewport.cpp
+struct IconTextures; // ribbon-icon texture cache, defined in texture.cpp
 
 struct HeadContext {
     GLFWwindow*              window = nullptr;
@@ -23,6 +24,7 @@ struct HeadContext {
     uint32_t                 minImageCount = 2;
     bool                     swapChainRebuild = false;
     Viewport*                viewport = nullptr; // 3D scene render target (lazy)
+    IconTextures*            icons = nullptr;    // ribbon-icon texture cache (lazy)
 };
 
 // Pick a memory type index satisfying type_bits and props, or UINT32_MAX. Shared by
@@ -33,3 +35,7 @@ uint32_t obk_find_memory_type(VkPhysicalDevice phys, uint32_t type_bits,
 // obk_viewport_destroy frees the viewport target/pipelines; defined in viewport.cpp
 // (C linkage) and called from app.cpp on teardown.
 extern "C" void obk_viewport_destroy(HeadContext* c);
+
+// obk_icons_destroy frees the ribbon-icon texture cache (images + sampler); defined in
+// texture.cpp (C linkage) and called from app.cpp on teardown.
+extern "C" void obk_icons_destroy(HeadContext* c);
