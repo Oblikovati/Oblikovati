@@ -426,6 +426,10 @@ go.work.sum
 
 experiments/
 
+# Generated document thumbnails (ADR-0020): a .obk is a committed YAML text file;
+# its thumbnail is regenerable cache written beside it on save and never committed.
+*.obk.thumb.*
+
 # Add-in *sources* are tracked; only shared-library build outputs are ignored.
 # The host loads built libs from addins/ at runtime, and `go build -buildmode=
 # c-shared` also emits a header beside the .so/.dll output, so keep them out.

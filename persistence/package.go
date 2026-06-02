@@ -2,29 +2,29 @@
 
 package persistence
 
-import (
-	"errors"
-	"sort"
-)
+import "errors"
 
-// errNoManifest reports a package with no manifest stream — not a valid document
-// package (though still a valid container of arbitrary streams, e.g. for DataIO).
+// errNoManifest reports a document with no manifest — not a valid document file
+// (though still a valid container of arbitrary data sections, e.g. for DataIO).
 var errNoManifest = errors.New("persistence: package has no manifest")
 
-// StreamStat is the size/name of one stream. It modernizes COM's tagSTATSTG, kept
-// to the two fields callers actually use here.
+// StreamStat is the size/name of one data section. It modernizes COM's tagSTATSTG,
+// kept to the two fields callers actually use here.
 type StreamStat struct {
 	Name string
 	Size int64
 }
 
-// Package is an in-memory document container: an ordered set of named byte
-// streams. Order is preserved so saved archives are stable (manifest first), which
-// keeps diffs readable. Stream bytes are copied in and out so a Package never
-// shares backing arrays with its callers.
+// Package is an in-memory document: its manifest identity, the recipe section (the
+// model, as opaque YAML bytes owned by model/compdef), and an ordered set of named
+// binary data sections (DataIO / attribute scratch). On disk it is one YAML text
+// file (ADR-0020). Stream bytes are copied in and out so a Package never shares
+// backing arrays with its callers.
 type Package struct {
-	streams map[string][]byte
-	order   []string
+	manifest Manifest          // identity; the zero value means "no manifest"
+	model    []byte            // recipe YAML bytes; nil ⇒ no model
+	streams  map[string][]byte // named binary data sections
+	order    []string          // data-section insertion order, for stable enumeration
 }
 
 // NewPackage returns an empty package.
@@ -32,7 +32,7 @@ func NewPackage() *Package {
 	return &Package{streams: map[string][]byte{}}
 }
 
-// WriteStream stores data under name, replacing any existing stream of that name.
+// WriteStream stores data under name, replacing any existing section of that name.
 // The bytes are copied; later mutations by the caller do not affect the package.
 func (p *Package) WriteStream(name string, data []byte) {
 	if _, exists := p.streams[name]; !exists {
@@ -43,7 +43,7 @@ func (p *Package) WriteStream(name string, data []byte) {
 	p.streams[name] = clone
 }
 
-// ReadStream returns a copy of the named stream's bytes, or false if absent.
+// ReadStream returns a copy of the named section's bytes, or false if absent.
 func (p *Package) ReadStream(name string) ([]byte, bool) {
 	data, ok := p.streams[name]
 	if !ok {
@@ -54,7 +54,7 @@ func (p *Package) ReadStream(name string) ([]byte, bool) {
 	return clone, true
 }
 
-// DeleteStream removes a stream, reporting whether it existed.
+// DeleteStream removes a data section, reporting whether it existed.
 func (p *Package) DeleteStream(name string) bool {
 	if _, ok := p.streams[name]; !ok {
 		return false
@@ -69,7 +69,7 @@ func (p *Package) DeleteStream(name string) bool {
 	return true
 }
 
-// Streams returns a stat for every stream, in write order.
+// Streams returns a stat for every data section, in write order.
 func (p *Package) Streams() []StreamStat {
 	stats := make([]StreamStat, 0, len(p.order))
 	for _, name := range p.order {
@@ -78,7 +78,7 @@ func (p *Package) Streams() []StreamStat {
 	return stats
 }
 
-// Stat returns the stat of one stream, or false if absent.
+// Stat returns the stat of one data section, or false if absent.
 func (p *Package) Stat(name string) (StreamStat, bool) {
 	data, ok := p.streams[name]
 	if !ok {
@@ -87,40 +87,34 @@ func (p *Package) Stat(name string) (StreamStat, bool) {
 	return StreamStat{Name: name, Size: int64(len(data))}, true
 }
 
-// Manifest decodes the package manifest, or returns errNoManifest if absent.
+// Manifest returns the document's manifest, or errNoManifest if none has been set
+// (a manifest-less data container).
 func (p *Package) Manifest() (Manifest, error) {
-	data, ok := p.ReadStream(manifestStream)
-	if !ok {
+	if p.manifest == (Manifest{}) {
 		return Manifest{}, errNoManifest
 	}
-	return decodeManifest(data)
+	return p.manifest, nil
 }
 
-// SetManifest encodes m into the manifest stream.
+// SetManifest records the document's identity.
 func (p *Package) SetManifest(m Manifest) error {
-	data, err := m.encode()
-	if err != nil {
-		return err
-	}
-	p.WriteStream(manifestStream, data)
+	p.manifest = m
 	return nil
 }
 
-// streamNames returns the stream names in a deterministic order (manifest first,
-// then the rest sorted) for stable archive output regardless of write order.
-func (p *Package) streamNames() []string {
-	rest := make([]string, 0, len(p.order))
-	hasManifest := false
-	for _, n := range p.order {
-		if n == manifestStream {
-			hasManifest = true
-			continue
-		}
-		rest = append(rest, n)
+// ModelYAML returns a copy of the recipe section's YAML bytes, or false if the
+// document has no model. The recipe schema is owned by model/compdef; persistence
+// treats it as opaque bytes embedded natively in the file (ADR-0020).
+func (p *Package) ModelYAML() ([]byte, bool) {
+	if len(p.model) == 0 {
+		return nil, false
 	}
-	sort.Strings(rest)
-	if hasManifest {
-		return append([]string{manifestStream}, rest...)
-	}
-	return rest
+	out := make([]byte, len(p.model))
+	copy(out, p.model)
+	return out, true
+}
+
+// SetModelYAML stores the recipe section's YAML bytes (copied).
+func (p *Package) SetModelYAML(b []byte) {
+	p.model = append([]byte(nil), b...)
 }

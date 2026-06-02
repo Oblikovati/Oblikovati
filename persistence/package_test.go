@@ -101,7 +101,7 @@ func TestInterruptedSaveLeavesPriorFileIntact(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "p.obk")
 
-	v1, err := packageWith(map[string][]byte{"s": []byte("v1")}).marshalZip()
+	v1, err := packageWith(map[string][]byte{"s": []byte("v1")}).marshal()
 	if err != nil {
 		t.Fatalf("marshal v1: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestInterruptedSaveLeavesPriorFileIntact(t *testing.T) {
 	}
 
 	// Stage v2 but never commit — the "crash" happens between stage and rename.
-	v2, _ := packageWith(map[string][]byte{"s": []byte("v2")}).marshalZip()
+	v2, _ := packageWith(map[string][]byte{"s": []byte("v2")}).marshal()
 	tmp, err := stage(path, v2)
 	if err != nil {
 		t.Fatalf("stage v2: %v", err)

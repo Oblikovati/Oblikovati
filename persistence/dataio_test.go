@@ -55,7 +55,7 @@ func TestCompactionDropsCacheLosslessly(t *testing.T) {
 		"cache/tessellation":   bytes.Repeat([]byte{0xaa}, 4096),
 		"cache/preview":        bytes.Repeat([]byte{0xbb}, 1024),
 	})
-	before, _ := p.marshalZip()
+	before, _ := p.marshal()
 
 	reclaimed := Compact(p)
 	if reclaimed != 4096+1024 {
@@ -68,7 +68,7 @@ func TestCompactionDropsCacheLosslessly(t *testing.T) {
 		t.Error("recipe stream lost during compaction")
 	}
 
-	after, _ := p.marshalZip()
+	after, _ := p.marshal()
 	if len(after) >= len(before) {
 		t.Errorf("compacted archive (%d B) not smaller than original (%d B)", len(after), len(before))
 	}

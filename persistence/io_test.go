@@ -17,14 +17,27 @@ func TestOpenMissingFileErrors(t *testing.T) {
 	}
 }
 
-func TestOpenCorruptArchiveErrors(t *testing.T) {
+func TestOpenNonDocumentYAMLErrors(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "corrupt.obk")
-	if err := os.WriteFile(path, []byte("this is not a zip archive"), 0o644); err != nil {
+	// A bare scalar is valid YAML but not a document mapping — must be rejected.
+	if err := os.WriteFile(path, []byte("this is not a document"), 0o644); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	if _, err := OpenPackage(path); err == nil {
-		t.Error("OpenPackage of a non-zip file returned no error")
+		t.Error("OpenPackage of a non-document YAML file returned no error")
+	}
+}
+
+func TestOpenLegacyZipRejected(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "legacy-zip.obk")
+	// "PK\x03\x04" is the ZIP local-file-header magic — a pre-ADR-0020 package.
+	if err := os.WriteFile(path, []byte("PK\x03\x04rest-of-a-zip"), 0o644); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if _, err := OpenPackage(path); err == nil {
+		t.Error("OpenPackage accepted a legacy ZIP .obk; it should reject pre-YAML packages")
 	}
 }
 
@@ -39,13 +52,14 @@ func TestSaveToMissingDirectoryErrors(t *testing.T) {
 	}
 }
 
-func TestBadManifestJSONErrors(t *testing.T) {
-	p := NewPackage()
-	p.WriteStream(manifestStream, []byte("{ not valid json"))
-	if _, err := p.Manifest(); err == nil {
-		t.Error("Manifest accepted invalid JSON")
+func TestOpenMalformedYAMLErrors(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bad.obk")
+	// Unbalanced brackets — not parseable as YAML at all.
+	if err := os.WriteFile(path, []byte("schemaVersion: 2\nmodel: [unclosed"), 0o644); err != nil {
+		t.Fatalf("seed: %v", err)
 	}
-	if err := Migrate(p); err == nil {
-		t.Error("Migrate accepted a package with an invalid manifest")
+	if _, err := OpenPackage(path); err == nil {
+		t.Error("OpenPackage accepted malformed YAML")
 	}
 }
