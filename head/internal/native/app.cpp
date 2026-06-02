@@ -8,6 +8,16 @@
 #include "imgui_internal.h" // DockBuilder* for the default dock layout
 #include "backends/imgui_impl_glfw.h"
 #include <cstring>
+#include <cstdio>
+#include <vector>
+
+// obk_glfw_error surfaces GLFW init/window failures (otherwise obk_head_create just
+// returns null and the Go side reports a generic "step 1" with no cause — on macOS the
+// usual cause is calling GLFW off the main thread, see runtime.LockOSThread in the
+// head commands).
+static void obk_glfw_error(int code, const char* desc) {
+    fprintf(stderr, "[head] GLFW error %d: %s\n", code, desc ? desc : "(null)");
+}
 
 // obk_find_memory_type: shared with viewport.cpp (declared in head.h).
 uint32_t obk_find_memory_type(VkPhysicalDevice phys, uint32_t type_bits,
@@ -27,16 +37,48 @@ namespace {
 
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 
+// instance_has_ext reports whether the loader advertises an instance extension, so we
+// only opt into portability on platforms (macOS/MoltenVK) that actually expose it.
+bool instance_has_ext(const char* name) {
+    uint32_t n = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &n, nullptr);
+    std::vector<VkExtensionProperties> props(n);
+    vkEnumerateInstanceExtensionProperties(nullptr, &n, props.data());
+    for (const auto& p : props)
+        if (strcmp(p.extensionName, name) == 0) return true;
+    return false;
+}
+
+// device_has_ext reports whether a physical device advertises a device extension.
+bool device_has_ext(VkPhysicalDevice dev, const char* name) {
+    uint32_t n = 0;
+    vkEnumerateDeviceExtensionProperties(dev, nullptr, &n, nullptr);
+    std::vector<VkExtensionProperties> props(n);
+    vkEnumerateDeviceExtensionProperties(dev, nullptr, &n, props.data());
+    for (const auto& p : props)
+        if (strcmp(p.extensionName, name) == 0) return true;
+    return false;
+}
+
 bool create_instance(HeadContext* c, const char** exts, uint32_t n) {
     VkApplicationInfo app{};
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app.pApplicationName = "Oblikovati";
     app.apiVersion = VK_API_VERSION_1_3;
+    std::vector<const char*> enabled(exts, exts + n);
     VkInstanceCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    // Portability drivers (MoltenVK on macOS) are hidden from the loader unless the
+    // instance opts in, otherwise vkCreateInstance fails with INCOMPATIBLE_DRIVER
+    // ("Found no drivers!"). The guard keeps this a no-op on Linux/Windows, where the
+    // extension is absent.
+    if (instance_has_ext(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        enabled.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        ci.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    }
     ci.pApplicationInfo = &app;
-    ci.enabledExtensionCount = n;
-    ci.ppEnabledExtensionNames = exts;
+    ci.enabledExtensionCount = (uint32_t)enabled.size();
+    ci.ppEnabledExtensionNames = enabled.data();
     return ok(vkCreateInstance(&ci, c->allocator, &c->instance));
 }
 
@@ -51,13 +93,19 @@ bool create_device(HeadContext* c) {
     q.queueFamilyIndex = c->queueFamily;
     q.queueCount = 1;
     q.pQueuePriorities = &prio;
-    const char* dev_ext[] = {"VK_KHR_swapchain"};
+    std::vector<const char*> dev_ext = {"VK_KHR_swapchain"};
+    // A portability-subset device (MoltenVK) MUST enable VK_KHR_portability_subset when
+    // it advertises it, or device creation is a validation error
+    // (VUID-VkDeviceCreateInfo-pProperties-04451). String literal, not the *_EXTENSION_NAME
+    // macro, which is gated behind VK_ENABLE_BETA_EXTENSIONS.
+    if (device_has_ext(c->physical, "VK_KHR_portability_subset"))
+        dev_ext.push_back("VK_KHR_portability_subset");
     VkDeviceCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     ci.queueCreateInfoCount = 1;
     ci.pQueueCreateInfos = &q;
-    ci.enabledExtensionCount = 1;
-    ci.ppEnabledExtensionNames = dev_ext;
+    ci.enabledExtensionCount = (uint32_t)dev_ext.size();
+    ci.ppEnabledExtensionNames = dev_ext.data();
     if (!ok(vkCreateDevice(c->physical, &ci, c->allocator, &c->device))) return false;
     vkGetDeviceQueue(c->device, c->queueFamily, 0, &c->queue);
     return true;
@@ -153,17 +201,21 @@ void frame_present(HeadContext* c) {
 extern "C" {
 
 void* obk_head_create(int width, int height, const char* title) {
-    if (!glfwInit()) return nullptr;
-    if (!glfwVulkanSupported()) { glfwTerminate(); return nullptr; }
+    glfwSetErrorCallback(obk_glfw_error);
+    if (!glfwInit()) { fprintf(stderr, "[head] glfwInit failed\n"); return nullptr; }
+    if (!glfwVulkanSupported()) {
+        fprintf(stderr, "[head] glfwVulkanSupported=false (GLFW cannot find the Vulkan loader)\n");
+        glfwTerminate(); return nullptr;
+    }
     HeadContext* c = new HeadContext();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     c->window = glfwCreateWindow(width, height, title, nullptr, nullptr);
-    if (!c->window) { delete c; glfwTerminate(); return nullptr; }
+    if (!c->window) { fprintf(stderr, "[head] glfwCreateWindow failed\n"); delete c; glfwTerminate(); return nullptr; }
     uint32_t n = 0;
     const char** exts = glfwGetRequiredInstanceExtensions(&n);
-    if (!create_instance(c, exts, n) || !create_device(c) || !create_descriptor_pool(c)) {
-        delete c; return nullptr;
-    }
+    if (!create_instance(c, exts, n)) { fprintf(stderr, "[head] vkCreateInstance failed\n"); delete c; return nullptr; }
+    if (!create_device(c)) { fprintf(stderr, "[head] device selection/creation failed (no Vulkan physical device?)\n"); delete c; return nullptr; }
+    if (!create_descriptor_pool(c)) { fprintf(stderr, "[head] descriptor pool creation failed\n"); delete c; return nullptr; }
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     if (!ok(glfwCreateWindowSurface(c->instance, c->window, c->allocator, &surface))) {
         delete c; return nullptr;

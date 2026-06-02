@@ -59,7 +59,9 @@ channels driven by the branch model rather than hand-cut tags.
 - Per-OS head packaging may need occasional CI tuning (AppImage Vulkan bundling,
   macOS dylib relocation, Windows DLLs); the CLI path is cgo-free and reliable, and
   the workflow ships it independently of head packaging.
-- macOS builds are **unsigned** (Gatekeeper right-click → Open); Linux/Windows
-  **arm64 head** is deferred (no standard arm runner) while the CLI ships all arches.
+- macOS packaging was later reworked by [ADR-0019](ADR-0019-macos-moltenvk-support.md):
+  the head now ships as one **signed + notarized universal `.app`** (not an unsigned
+  tarball), gated on `MACOS_*` secrets. Linux/Windows **arm64 head** is deferred (no
+  standard arm runner) while the CLI ships all arches.
 - CI (`ci.yml`) runs on `main` + `develop` and PRs; the release workflows are
   separate. ADR-0015's `make`/lint/test foundation is unchanged.
