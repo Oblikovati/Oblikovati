@@ -1,0 +1,176 @@
+name: build
+
+# Reusable build pipeline: cross-builds the cgo-free CLI and natively builds +
+# packages the cgo/Vulkan GUI head per OS, uploading everything as run artifacts.
+# Called by nightly.yml and release.yml.
+#
+# The Apache-2.0 API contract is a sibling repo (Oblikovati/Oblikovati.API). Each
+# Go job checks it out into ./_api and points the `api` require at it via
+# `go mod edit -replace` on the job's MAIN module (root for the CLI, head for the
+# GUI) — the committed go.mod has no replace (local dev uses go.work).
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Full version, e.g. 0.0.20260602T120000[-nightly]"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  # Stamp build.{Version,Commit,Date}; Commit/Date are filled per job.
+  CORE: github.com/Oblikovati/oblikovati
+
+jobs:
+  # CLI — pure Go, cross-compiled for every target in one job.
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - name: Cross-build CLI
+        run: |
+          set -euo pipefail
+          VER='${{ inputs.version }}'
+          LD="-s -w -X ${CORE}/build.Version=${VER} -X ${CORE}/build.Commit=$(git rev-parse --short HEAD) -X ${CORE}/build.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          mkdir -p dist
+          for p in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${p%/*}; arch=${p#*/}; ext=""; [ "$os" = windows ] && ext=".exe"
+            echo "→ cli $os/$arch"
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "$LD" \
+              -o "dist/oblikovati-cli-${VER}-${os}-${arch}${ext}" ./cmd/oblikovati-cli
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli
+          path: dist/*
+
+  # GUI head — Linux, packaged as an AppImage (Vulkan loader bundled, GPU ICD host-provided).
+  head-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: false
+      - run: go -C head mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - name: Install build + packaging deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config imagemagick wget file
+          wget -qO /usr/local/bin/linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x /usr/local/bin/linuxdeploy
+      - name: Build head
+        working-directory: head
+        run: |
+          set -euo pipefail
+          VER='${{ inputs.version }}'
+          LD="-s -w -X ${CORE}/build.Version=${VER} -X ${CORE}/build.Commit=$(git rev-parse --short HEAD) -X ${CORE}/build.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          CGO_ENABLED=1 go build -ldflags "$LD" -o "$GITHUB_WORKSPACE/dist/oblikovati-head" ./cmd/oblikovati-head
+      - name: Package AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1" # GitHub runners have no FUSE
+        run: scripts/package-linux.sh dist/oblikovati-head '${{ inputs.version }}' dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-linux
+          path: dist/*.AppImage
+
+  # GUI head — Windows, built with the MSYS2 mingw toolchain, zipped.
+  head-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-go
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-glfw
+            mingw-w64-x86_64-vulkan-loader
+            mingw-w64-x86_64-vulkan-headers
+            zip
+      - run: go -C head mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - name: Build head
+        working-directory: head
+        run: |
+          set -euo pipefail
+          VER='${{ inputs.version }}'
+          LD="-s -w -X ${CORE}/build.Version=${VER} -X ${CORE}/build.Commit=$(git rev-parse --short HEAD) -X ${CORE}/build.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          CGO_ENABLED=1 go build -ldflags "$LD" -o "$GITHUB_WORKSPACE/dist/oblikovati-head.exe" ./cmd/oblikovati-head
+      - name: Package zip
+        run: |
+          set -euo pipefail
+          VER='${{ inputs.version }}'
+          cd dist
+          # Bundle the mingw runtime + GLFW DLLs the .exe needs (vulkan-1.dll ships
+          # with the user's GPU driver). ldd lists the mingw deps.
+          for dll in $(ldd oblikovati-head.exe | grep -i mingw64 | awk '{print $3}'); do cp "$dll" .; done
+          cp /mingw64/bin/glfw3.dll . 2>/dev/null || true
+          zip -j "oblikovati-head-${VER}-windows-amd64.zip" oblikovati-head.exe ./*.dll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-windows
+          path: dist/*.zip
+
+  # GUI head — macOS, Intel (macos-15-intel) + Apple Silicon (macos-14). Unsigned;
+  # MoltenVK + the Vulkan loader are bundled.
+  head-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-15-intel, arch: amd64 } # Intel
+          - { runner: macos-14, arch: arm64 } # Apple Silicon
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: false
+      - run: go -C head mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - name: Install deps
+        run: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config
+      - name: Build head
+        working-directory: head
+        run: |
+          set -euo pipefail
+          VER='${{ inputs.version }}'
+          LD="-s -w -X ${CORE}/build.Version=${VER} -X ${CORE}/build.Commit=$(git rev-parse --short HEAD) -X ${CORE}/build.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          CGO_ENABLED=1 go build -ldflags "$LD" -o "$GITHUB_WORKSPACE/dist/oblikovati-head" ./cmd/oblikovati-head
+      - name: Package tarball
+        run: scripts/package-macos.sh dist/oblikovati-head '${{ inputs.version }}' '${{ matrix.arch }}' dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-macos-${{ matrix.arch }}
+          path: dist/*.tar.gz

@@ -1,0 +1,86 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+// Package router is the host-side API: it dispatches the bridge's JSON method
+// contract (commands.*, documents.*, parameters.*, model.*, features.*) to the live
+// *app.Session. It is the single place that contract is wired to the model, and is
+// pure Go (no cgo, no MCP/HTTP) so it is fully headless-testable. Handle runs on the
+// session goroutine (via the Dispatcher), so handlers may touch the model directly.
+//
+// This is the same contract the future M16 gRPC api/ will serve; keeping it here and
+// transport-agnostic lets the bridge retarget onto that layer with minimal churn.
+package router
+
+import (
+	"encoding/json"
+	"fmt"
+	"sort"
+
+	"github.com/Oblikovati/api/wire"
+
+	"github.com/Oblikovati/oblikovati/addin/opregistry"
+	"github.com/Oblikovati/oblikovati/app"
+)
+
+// handlerFunc handles one method: decode args, read/mutate the session, return JSON.
+type handlerFunc func(s *app.Session, args json.RawMessage) (json.RawMessage, error)
+
+// Router maps method names to handlers.
+type Router struct {
+	ops      *opregistry.Registry
+	handlers map[string]handlerFunc
+}
+
+// New builds a router whose feature operations come from ops.
+func New(ops *opregistry.Registry) *Router {
+	r := &Router{ops: ops, handlers: map[string]handlerFunc{}}
+	r.handlers[wire.MethodCommandsList] = listCommands
+	r.handlers[wire.MethodCommandsExecute] = executeCommand
+	r.handlers[wire.MethodDocumentsList] = listDocuments
+	r.handlers[wire.MethodDocumentsCreate] = createDocument
+	r.handlers[wire.MethodDocumentsActivate] = activateDocument
+	r.handlers[wire.MethodParametersList] = listParameters
+	r.handlers[wire.MethodParametersGet] = getParameter
+	r.handlers[wire.MethodParametersAdd] = addParameter
+	r.handlers[wire.MethodParametersSet] = setParameter
+	r.handlers[wire.MethodModelTree] = modelTree
+	r.handlers[wire.MethodModelSelection] = modelSelection
+	r.handlers[wire.MethodSketchCreate] = createSketch
+	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
+	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
+	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
+	return r
+}
+
+// Handle dispatches method with its JSON args (empty args become {}), returning the
+// JSON result, or an error for an unknown method or a failed handler.
+func (r *Router) Handle(s *app.Session, method string, req []byte) ([]byte, error) {
+	h, ok := r.handlers[method]
+	if !ok {
+		return nil, fmt.Errorf("router: unknown method %q", method)
+	}
+	args := json.RawMessage(req)
+	if len(req) == 0 {
+		args = json.RawMessage("{}")
+	}
+	return h(s, args)
+}
+
+// Methods returns the supported method names, sorted — used by self-description.
+func (r *Router) Methods() []string {
+	out := make([]string, 0, len(r.handlers))
+	for m := range r.handlers {
+		out = append(out, m)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func ok() (json.RawMessage, error) { return json.Marshal(wire.OKResult{OK: true}) }
+
+// decode unmarshals args into v, wrapping the error for a clearer method failure.
+func decode(args json.RawMessage, v any) error {
+	if err := json.Unmarshal(args, v); err != nil {
+		return fmt.Errorf("invalid arguments: %w", err)
+	}
+	return nil
+}

@@ -1,0 +1,51 @@
+# golangci-lint configuration. Encodes the CLAUDE.md house style where a linter
+# can enforce it: short functions, low complexity, explicit errors, no stray
+# fmt.Print* (structured slog only), gofumpt formatting.
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck      # never silently drop an error
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofumpt       # stricter gofmt
+    - goimports
+    - misspell
+    - unconvert
+    - unparam
+    - revive
+    - gocritic
+    - gocyclo       # one responsibility per function
+    - funlen        # 4-20 line functions (CLAUDE.md)
+    - nakedret
+    - copyloopvar
+    - forbidigo
+
+linters-settings:
+  funlen:
+    lines: 30       # allows doc/blank lines around the ~20 logical lines
+    statements: 20
+  gocyclo:
+    min-complexity: 12
+  goimports:
+    local-prefixes: github.com/Oblikovati/oblikovati
+  revive:
+    rules:
+      - name: exported   # document every exported symbol
+  forbidigo:
+    forbid:
+      - p: ^fmt\.Print.*$
+        msg: "use log/slog for diagnostics; user-facing CLI text belongs in cmd/ output helpers"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    # Tests may be longer and print freely.
+    - path: _test\.go
+      linters: [funlen, gocyclo, forbidigo, dupl]

@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # bash on every OS — Windows' default pwsh mangles `gotestsum -- -coverprofile=...`.
+    shell: bash
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The Apache-2.0 contract is a sibling repo now; check it out and point the
+      # `api` require at it (the committed go.mod has no replace — local dev uses
+      # go.work, CI injects an equivalent replace).
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59.1
+
+  # Lint the architecture/design docs. Config: .markdownlint-cli2.jsonc at the root.
+  docs-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            architecture/**/*.md
+            implementation-plan/**/*.md
+
+  # Check that cross-document links resolve (e.g. ADRs referencing each other).
+  docs-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: "--offline --no-progress architecture implementation-plan"
+          fail: true
+
+  # SPDX: every Go file in this GPL repo must carry GPL-2.0-only.
+  spdx:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/add-spdx-headers.py --check
+
+  # Tier 1 — fast, cgo-free unit tests on every OS (architecture/testing/README).
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go install gotest.tools/gotestsum@v1.12.0
+      - name: Test
+        run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count ./...
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test-results-${{ matrix.os }}.xml
+
+  # Race detector needs cgo; Linux only.
+  race:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go test -race ./...
+
+  # Confirm the cgo-free core cross-compiles for every shipping target.
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+    strategy:
+      matrix:
+        target: [linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - name: Cross-compile
+        run: |
+          GOOS=$(echo "${{ matrix.target }}" | cut -d/ -f1)
+          GOARCH=$(echo "${{ matrix.target }}" | cut -d/ -f2)
+          echo "building $GOOS/$GOARCH"
+          GOOS=$GOOS GOARCH=$GOARCH go build ./...

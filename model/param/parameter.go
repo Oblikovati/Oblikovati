@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package param
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/Oblikovati/api/types"
+)
+
+// ParameterKind is a parameter's category. The type, its stable ids, String, and
+// Editable are defined once in the Apache-2.0 contract ([types.ParameterKind]);
+// this alias keeps the historical param.ParameterKind / param.UserParam spelling
+// working unchanged across the implementation (ADR-0018).
+type ParameterKind = types.ParameterKind
+
+const (
+	ModelParam     = types.ModelParam
+	UserParam      = types.UserParam
+	ReferenceParam = types.ReferenceParam
+	DerivedParam   = types.DerivedParam
+	TableParam     = types.TableParam
+)
+
+// HealthStatus is a parameter's evaluation health (contract: HealthStatusEnum).
+type HealthStatus uint8
+
+const (
+	// Healthy: value is current and valid.
+	Healthy HealthStatus = 0
+	// OutOfDate: the expression depends on parameters not yet recomputed.
+	OutOfDate HealthStatus = 1
+	// Failed: evaluation failed (dimensional mismatch, cycle, undefined ref).
+	Failed HealthStatus = 2
+)
+
+// Health is a parameter's status plus a human-readable reason when not healthy.
+// Modeling problems are health, never panics (parametric-cad skill §2).
+type Health struct {
+	Status HealthStatus
+	Reason string
+}
+
+// OK reports whether the parameter is healthy.
+func (h Health) OK() bool { return h.Status == Healthy }
+
+// Parameter is one parametric variable: the Expression→Value→ModelValue triad
+// plus identity, units, tolerance, and presentation. Value is the evaluated
+// quantity in database units; ModelValue applies the tolerance. Construct
+// parameters through a [Parameters] collection, never directly.
+type Parameter struct {
+	id     ID
+	name   string
+	expr   Expr
+	value  Quantity
+	tol    Tolerance
+	kind   ParameterKind
+	health Health
+
+	Comment           string
+	IsKey             bool
+	Visible           bool
+	Precision         int
+	DisplayFormat     ParameterDisplayFormat
+	ExposedAsProperty bool
+}
+
+// ID returns the parameter's stable identity.
+func (p *Parameter) ID() ID { return p.id }
+
+// Name returns the display label.
+func (p *Parameter) Name() string { return p.name }
+
+// Kind returns the parameter category.
+func (p *Parameter) Kind() ParameterKind { return p.kind }
+
+// Unit returns the unit of the evaluated value.
+func (p *Parameter) Unit() Unit { return p.value.Unit }
+
+// Value returns the evaluated quantity (database units).
+func (p *Parameter) Value() Quantity { return p.value }
+
+// ModelValue returns the value the model consumes after the tolerance is
+// applied (database units).
+func (p *Parameter) ModelValue() float64 { return p.tol.ModelValue(p.value.Value) }
+
+// Expression returns the authored expression source.
+func (p *Parameter) Expression() string { return p.expr.Source() }
+
+// Health returns the current evaluation health.
+func (p *Parameter) Health() Health { return p.health }
+
+// Tolerance returns the engineering tolerance.
+func (p *Parameter) Tolerance() Tolerance { return p.tol }
+
+// SetTolerance sets the engineering tolerance; this changes ModelValue but not
+// the nominal Value.
+func (p *Parameter) SetTolerance(t Tolerance) { p.tol = t }
+
+// SetExpression replaces the expression and re-evaluates if it is constant. A
+// reference-bearing expression is left OutOfDate for the graph to recompute. It
+// errors for read-only kinds and for malformed source.
+func (p *Parameter) SetExpression(src string) error {
+	if !p.kind.Editable() {
+		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+	}
+	e, err := Parse(src)
+	if err != nil {
+		return err
+	}
+	p.expr = e
+	p.reevaluateConstant()
+	return nil
+}
+
+// SetValue sets a constant value, equivalent to assigning a constant
+// expression. It errors for read-only kinds.
+func (p *Parameter) SetValue(q Quantity) error {
+	if !p.kind.Editable() {
+		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+	}
+	p.expr = constantExpr(q)
+	p.value = q
+	p.health = Health{Status: Healthy}
+	return nil
+}
+
+// reevaluateConstant evaluates a reference-free expression immediately; an
+// expression with references is marked OutOfDate for the dependency graph.
+func (p *Parameter) reevaluateConstant() {
+	if p.expr.root == nil {
+		return
+	}
+	if hasRefs(p.expr.root) {
+		p.health = Health{Status: OutOfDate, Reason: "awaiting dependency recompute"}
+		return
+	}
+	q, err := p.expr.Eval(nil)
+	if err != nil {
+		p.health = Health{Status: Failed, Reason: err.Error()}
+		return
+	}
+	p.value, p.health = q, Health{Status: Healthy}
+}
+
+// constantExpr builds an [Expr] that evaluates to q, without going through the
+// parser (so area/volume units, whose names contain '^', are representable).
+func constantExpr(q Quantity) Expr {
+	src := strconv.FormatFloat(q.Value, 'g', -1, 64) + " " + q.Unit.String()
+	return Expr{src: src, root: numberNode{q: q}}
+}

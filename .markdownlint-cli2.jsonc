@@ -1,0 +1,26 @@
+// Documentation lint config (markdownlint-cli2). Scoped to the architecture design
+// docs + the implementation-plan roadmap. Run locally with: npx markdownlint-cli2
+{
+  "config": {
+    "default": true,
+    // Docs wrap ~85 cols and use wide tables; line length is an intentional style.
+    "MD013": false,
+    // Many fenced blocks are ASCII diagrams with no sensible language tag.
+    "MD040": false,
+    // Table pipe-spacing style is not enforced (tables are hand-aligned).
+    "MD060": false,
+    // The docs wrap prose like "X + Y" so a line can start with "+ "; these rules
+    // misread such continuations as list items (and auto-fix corrupts the meaning),
+    // and the corpus uses tight lists by style. Other structural rules stay on
+    // (bare URLs, multiple H1, hard tabs, reversed/empty links, trailing space, …).
+    "MD004": false,
+    "MD032": false
+  },
+  "globs": [
+    "architecture/**/*.md",
+    "implementation-plan/**/*.md"
+  ],
+  "ignores": [
+    "**/node_modules/**"
+  ]
+}

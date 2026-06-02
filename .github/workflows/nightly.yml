@@ -1,0 +1,79 @@
+name: nightly
+
+# Nightly prereleases from develop. Runs daily and on demand; skips when develop has
+# no new commits since the last nightly. Publishes a single rolling `nightly`
+# prerelease (tag moved each run).
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+      - id: check
+        run: |
+          set -euo pipefail
+          echo "version=$(scripts/version.sh nightly)" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify refs/tags/nightly >/dev/null; then
+            n="$(git rev-list --count nightly..HEAD)"
+          else
+            n=1 # first nightly
+          fi
+          if [ "$n" -gt 0 ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "No new commits on develop since the last nightly — skipping."
+          fi
+
+  build:
+    needs: guard
+    if: needs.guard.outputs.proceed == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.guard.outputs.version }}
+
+  publish:
+    needs: [guard, build]
+    if: needs.guard.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Assemble artifacts + checksums
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          find artifacts -type f -exec cp {} dist/ \;
+          ( cd dist && files=$(ls) && sha256sum $files > checksums.txt )
+          ls -la dist
+      - name: Publish rolling nightly prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ver='${{ needs.guard.outputs.version }}'
+          gh release delete nightly --yes --cleanup-tag 2>/dev/null || true
+          gh release create nightly dist/* \
+            --prerelease --target develop \
+            --title "Nightly $ver" \
+            --notes "Automated nightly build from develop (\`$ver\`). Prerelease — not for production use."

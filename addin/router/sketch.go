@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package router
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/Oblikovati/api/wire"
+
+	"github.com/Oblikovati/oblikovati/addin/modelaccess"
+	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/param"
+	"github.com/Oblikovati/oblikovati/model/sketch"
+)
+
+// createSketch adds a sketch on an origin plane of the active part and returns its
+// index (for sketch.rectangle / features.add).
+func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.CreateSketchArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	plane, name, err := parsePlane(in.Plane)
+	if err != nil {
+		return nil, err
+	}
+	part.Sketches().Add(plane)
+	return json.Marshal(wire.CreateSketchResult{SketchIndex: part.Sketches().Count() - 1, Plane: name})
+}
+
+// sketchRectangle adds a closed rectangle (one profile) to a sketch, ready to extrude.
+func sketchRectangle(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.SketchRectangleArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	sk, err := sketchAtIndex(part, in.SketchIndex)
+	if err != nil {
+		return nil, err
+	}
+	w, err := part.Units().Parse(in.Width, param.Length)
+	if err != nil {
+		return nil, fmt.Errorf("sketch.rectangle: width %q: %w", in.Width, err)
+	}
+	h, err := part.Units().Parse(in.Height, param.Length)
+	if err != nil {
+		return nil, fmt.Errorf("sketch.rectangle: height %q: %w", in.Height, err)
+	}
+	addRectangle(sk, w.Value, h.Value)
+	return json.Marshal(wire.SketchRectangleResult{SketchIndex: in.SketchIndex, Profiles: sk.Profiles().Count()})
+}
+
+// addRectangle draws a closed w×h rectangle at the sketch origin (one profile).
+func addRectangle(sk *sketch.Sketch, w, h float64) {
+	c0 := sk.Points().Add(math.P2(0, 0))
+	c1 := sk.Points().Add(math.P2(w, 0))
+	c2 := sk.Points().Add(math.P2(w, h))
+	c3 := sk.Points().Add(math.P2(0, h))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+}
+
+// parsePlane maps a plane name to its sketch plane and a normalized label.
+func parsePlane(name string) (sketch.Plane, string, error) {
+	switch strings.ToUpper(strings.TrimSpace(name)) {
+	case "", "XY":
+		return sketch.XYPlane(), "XY", nil
+	case "XZ":
+		return sketch.XZPlane(), "XZ", nil
+	case "YZ":
+		return sketch.YZPlane(), "YZ", nil
+	default:
+		return sketch.Plane{}, "", fmt.Errorf("sketch.create: unknown plane %q (want XY|XZ|YZ)", name)
+	}
+}
+
+// sketchAtIndex returns the active part's sketch at i, bounds-checked.
+func sketchAtIndex(part *compdef.PartComponentDefinition, i int) (*sketch.Sketch, error) {
+	if i < 0 || i >= part.Sketches().Count() {
+		return nil, fmt.Errorf("sketch index %d out of range (part has %d sketches)", i, part.Sketches().Count())
+	}
+	return part.Sketches().Item(i), nil
+}

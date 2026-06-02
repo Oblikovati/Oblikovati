@@ -9,7 +9,6 @@
 *.user
 *.userosscache
 *.sln.docstates
-*.env
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -29,16 +28,11 @@ x86/
 [Aa][Rr][Mm]64/
 [Aa][Rr][Mm]64[Ee][Cc]/
 bld/
+[Bb]in/
 [Oo]bj/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
-
-# Build results on 'Bin' directories
-**/[Bb]in/*
-# Uncomment if you have tasks that rely on *.refresh files to move binaries
-# (https://github.com/github/gitignore/pull/3736)
-#!**/[Bb]in/*.refresh
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -51,15 +45,11 @@ Generated\ Files/
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
-*.trx
 
 # NUnit
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
-
-# Approval Tests result files
-*.received.*
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
@@ -87,7 +77,6 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
-*.idb
 *.iobj
 *.pch
 *.pdb
@@ -330,22 +319,22 @@ node_modules/
 _Pvt_Extensions
 
 # Paket dependency manager
-**/.paket/paket.exe
+.paket/paket.exe
 paket-files/
 
 # FAKE - F# Make
-**/.fake/
+.fake/
 
 # CodeRush personal settings
-**/.cr/personal
+.cr/personal
 
 # Python Tools for Visual Studio (PTVS)
-**/__pycache__/
+__pycache__/
 *.pyc
 
 # Cake - Uncomment if you are using it
-#tools/**
-#!tools/packages.config
+# tools/**
+# !tools/packages.config
 
 # Tabs Studio
 *.tss
@@ -367,7 +356,6 @@ ASALocalRun/
 
 # MSBuild Binary and Structured Log
 *.binlog
-MSBuild_Logs/
 
 # AWS SAM Build and Temporary Artifacts folder
 .aws-sam
@@ -376,10 +364,10 @@ MSBuild_Logs/
 *.nvuser
 
 # MFractors (Xamarin productivity tool) working folder
-**/.mfractor/
+.mfractor/
 
 # Local History for Visual Studio
-**/.localhistory/
+.localhistory/
 
 # Visual Studio History (VSHistory) files
 .vshistory/
@@ -391,7 +379,7 @@ healthchecksdb
 MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
-**/.ionide/
+.ionide/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
@@ -402,13 +390,10 @@ FodyWeavers.xsd
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-!.vscode/*.code-snippets
+*.code-workspace
 
 # Local History for Visual Studio Code
 .history/
-
-# Built Visual Studio Code Extensions
-*.vsix
 
 # Windows Installer files from build outputs
 *.cab
@@ -416,3 +401,36 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# JetBrains Rider
+*.sln.iml
+*.sln
+.vscode/settings.json
+*.csproj
+*.vcxproj
+
+## Go (Oblikovati application)
+# Build artifacts
+/dist/
+/bin/
+# Test & coverage output
+coverage.out
+*.coverprofile
+test-results*.xml
+# Go workspace files
+go.work
+go.work.sum
+# Editor/OS
+*.test
+*.out
+
+experiments/
+
+# Add-in *sources* are tracked; only shared-library build outputs are ignored.
+# The host loads built libs from addins/ at runtime, and `go build -buildmode=
+# c-shared` also emits a header beside the .so/.dll output, so keep them out.
+addins/
+add-in/**/build/
+add-in/**/*.so
+add-in/**/*.dll
+add-in/**/*.dylib

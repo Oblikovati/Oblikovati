@@ -1,0 +1,45 @@
+# goreleaser config for continuous delivery: on a `v*` tag the release workflow
+# cross-compiles both binaries (cgo-free), archives them, and publishes a GitHub
+# release with checksums. See ../.github/workflows/release.yml.
+version: 2
+
+project_name: oblikovati
+
+builds:
+  - id: oblikovati-cli
+    main: ./cmd/oblikovati-cli
+    binary: oblikovati-cli
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X github.com/Oblikovati/oblikovati/build.Version={{ .Version }}
+      - -X github.com/Oblikovati/oblikovati/build.Commit={{ .ShortCommit }}
+      - -X github.com/Oblikovati/oblikovati/build.Date={{ .Date }}
+
+  - id: oblikovati
+    main: ./cmd/oblikovati
+    binary: oblikovati
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X github.com/Oblikovati/oblikovati/build.Version={{ .Version }}
+      - -X github.com/Oblikovati/oblikovati/build.Commit={{ .ShortCommit }}
+      - -X github.com/Oblikovati/oblikovati/build.Date={{ .Date }}
+
+archives:
+  - id: default
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  use: github

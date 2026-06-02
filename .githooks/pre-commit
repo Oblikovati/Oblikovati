@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# Pre-commit gate mirroring CI's cheap checks. Enable with `make hooks`
+# (sets git config core.hooksPath .githooks).
+set -e
+
+root=$(git rev-parse --show-toplevel)
+cd "$root/source"
+
+echo "› gofmt"
+out=$(gofmt -l .)
+if [ -n "$out" ]; then
+	echo "gofmt needed in:"
+	echo "$out"
+	echo "run: make fmt"
+	exit 1
+fi
+
+echo "› go vet"
+CGO_ENABLED=0 go vet ./...
+
+echo "› go test (short)"
+CGO_ENABLED=0 go test -short ./...

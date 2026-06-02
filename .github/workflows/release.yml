@@ -1,0 +1,58 @@
+name: release
+
+# Stable release: cut when a PR is merged into `release` (develop → release). Builds
+# the GUI head + CLI for all platforms and publishes a GitHub release tagged
+# vMAJOR.MINOR.<timestamp> (the version comes from the VERSION file + a timestamp;
+# see RELEASING.md). Replaces the old `v*`-tag goreleaser flow.
+on:
+  push:
+    branches: [release]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: echo "version=$(scripts/version.sh stable)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Assemble artifacts + checksums
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          find artifacts -type f -exec cp {} dist/ \;
+          ( cd dist && files=$(ls) && sha256sum $files > checksums.txt )
+          ls -la dist
+      - name: Publish stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ver='${{ needs.version.outputs.version }}'
+          gh release create "v$ver" dist/* \
+            --target "$GITHUB_SHA" --latest \
+            --title "Oblikovati v$ver" \
+            --generate-notes

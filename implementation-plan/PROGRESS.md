@@ -1,0 +1,899 @@
+# Implementation Progress
+
+Live tracker for building Oblikovati against [the roadmap](README.md). Updated as
+each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (green in CI).
+
+- **Code root:** `/source` (Go module `github.com/Oblikovati/oblikovati`, go 1.22).
+- **"Done" means:** acceptance criteria green via `make ci` (build + vet + lint +
+  `CGO_ENABLED=0 go test ./...` + race), per [CONVENTIONS.md](CONVENTIONS.md).
+- **Architecture mapping:** plan milestones map onto the modernized Go packages in
+  `../architecture/core/01-module-layout.md`. M00 (COM interop) is deleted in the
+  Go design; implementation begins at M01.
+
+## Milestone status
+
+| ID | Milestone | Status | Notes |
+|----|-----------|:------:|-------|
+| M00 | Platform Foundation & Interop | ✅ n/a | Deleted in Go architecture; replaced by `build/` foundation + ADR-0015. |
+| M01 | Math & Transient Geometry | ✅ | All 4 features done: `math/` (linear algebra + boxes) + `kernel/geom/` (curves, surfaces, NURBS, queries). |
+| M02 | Units, Parameters & Expressions | ✅ | All 4 features done → `model/param` (units, expression engine, parameter model, dependency graph). |
+| M03 | Documents, Persistence & Identity | ✅ | All 6 features done → `model/doc` (Document/Workspace/refs/FileManager), `persistence` (.obk), `model/identity` (reference keys), `model/health`, `model/attr` (attributes + iProperties). |
+| M04 | Transactions, Undo & Events | ✅ | All 4 features done → `command` (undo/redo/transactions/checkpoints) + `event` (typed bus) + `model/doc` core event sets & `ChangeManager`. |
+| M05 | UI, Commands, Add-ins | ✅ | Headless logic (pure-Go, 93.7%): command + interaction/selection framework, **end-to-end Extrude via synthetic clicks → solid**, ribbon/browser models, add-in platform (**sample add-in → ribbon button → interactive command** = exit criterion), client/preview graphics + null backend. **cgo head DONE** (`source/head`, separate module): vendored Dear ImGui 1.92.8 + GLFW + **Vulkan 1.3** — Go drives the frame loop and ImGui chrome (menu/ribbon/browser from the live Session) + a **3D Vulkan viewport** (offscreen color+depth, lit-triangle/flat-line pipelines) rendering `renderer.DrawList` of the extruded box. Runs with **zero Vulkan validation errors**. ADR-0004/0005 honored. |
+| M06 | Sketching & Constraint Solver | ✅ | All 6 features → `model/sketch`: sketches, entities, geometric/dimensional/3D constraints, inference, Newton/LM solver + DOF, profiles & paths. **Headless first (M05/M16 deferred).** |
+| M07 | B-Rep Kernel & Topology | ✅ | All 4 features → `kernel/topo` + `math/predicate` + `kernel/ops` (tessellation/validation/Phase-A booleans) + `model/compdef` (PartComponentDefinition). General intersecting booleans + tolerant sew deferred to kernel phase C/D. |
+| M08 | Part: Sketched & Work Features | ✅ | All 4 features → `model/feature` (recompute engine, datums/UCS, extrude solid generator + sketched-feature defs, derived/base features). Revolve+sweep/loft/coil generation deferred to kernel phase A/B. |
+| M09 | Part: Dress-up & Pattern | ✅ | All 4 features → `model/feature` (dress-up, hole/boss, patterns/mirror, modify/direct). Combine real (Phase-A booleans); fillet/hole/face-edit geometry deferred (phase B/C) with reference-key input resolution + Warning/Sick health; pattern element bookkeeping real. |
+| M10 | Surfacing & Freeform | ✅ | All 4 features done → `model/feature` (patch/ruled/sculpt/stitch/knit; trim/surface-offset/mid-surface; **sub-D freeform**; **mesh import + mold core/cavity**) + `kernel/ops` (`Stitch`, `TrimByPlane`, `OffsetSurface`, `MidSurfaces`) + new **`kernel/subd`** (Catmull–Clark). |
+| M11 | Assembly & Instancing | ⬜ | |
+| M12 | Assembly Constraints/Joints | ⬜ | |
+| M13 | Sheet Metal | ⬜ | |
+| M14 | Drawing & Documentation | ⬜ | |
+| M15 | Design Automation | ⬜ | |
+| M16 | Visualization & Presentation | ⬜ | |
+| M17 | Interoperability & Translation | ⬜ | |
+| M18 | Analysis & Simulation | ⬜ | |
+
+## PBI log (most recent first)
+
+### M10 — Surfacing & Freeform Modeling
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 115 | Mesh features & mesh topology | ✅ | `model/feature` | `MeshGeometry` (welded verts + facets) imported via an **ASCII STL parser** (`ParseSTL`, coincidence-welds shared corners, names malformed tokens). `MeshFeature(s)` wraps it as reference geometry (passes the running solid through) with selectable `MeshFace`/`MeshEdge`/`MeshVertex` handles (facet centroid for measure/selection); `MeshFeatureSet` groups them. A tetra STL → a mesh feature with 4 facets / 4 verts / 6 edges. Binary STL decoder + mesh→B-rep conversion are follow-ups. |
+| 116 | Mold core/cavity tooling | ✅ | `model/feature`, `kernel/subd` | `CoreCavityFeature(s)` splits the running tooling block by a **planar parting** (`PartingAxis` X/Y/Z + position) into a **core** (below) and **cavity** (above) solid — built from the block's range box via `subd.Box`/`ToBody`, both validated solids that meet at the parting plane (10³ block parted at z=4 → core z∈[0,4], cavity z∈[4,10]); `Shrinkage` allowance recorded. Sick when the parting falls outside the block. The part-shaped pocket (block − part) and silhouette parting surfaces are general solid–solid booleans (phase C). |
+| 113 | Freeform (sub-D) bodies & primitives | ✅ | `kernel/subd`, `model/feature` | New **`kernel/subd`** sub-D kernel: a `Mesh` control cage (verts + polygon faces + per-edge creases), `Box`/`Plane`/`QuadBall` primitives, **Catmull–Clark `Subdivide`/`SubdivideN`** (face/edge/vertex rules with crease + boundary handling), and `ToBody` → a B-rep body (one shared vertex/edge per cage element, planar face per cage face via Newell normal; closed cage → solid, open → surface). `FreeformFeature(s)`/`FreeformBody`/`FreeformFace`·`Edge`·`Vertex`/`FreeformBodies` recompute the limit surface from the cage at the current level. A box primitive → a validated solid; the limit-surface (bicubic) approximation is a NURBS phase. |
+| 114 | Freeform edit operations | ✅ | `model/feature` | Cage editing on `FreeformBody`: `MoveVertices`/per-vertex `Move` (selection transforms) and `CreaseEdges`/per-edge `Crease`, plus `SetLevel`. Recompute reflects edits in the B-rep — moving a cage corner grows the body, creasing the three edges at a corner keeps it a **sharp fixed point** while a smooth box rounds inward (verified). `AliasFreeformFeature(s)` wraps an imported Alias sub-D cage (M17) as the same editable feature. Subdivide/bridge/symmetry beyond move+crease+level are the same cage ops, extensible. |
+| 111 | Trim & extend surfaces | ✅ | `kernel/ops`, `model/feature` | `ops.TrimByPlane` clips a planar surface body's boundary polygon against a cutting plane (**Sutherland–Hodgman** half-space clip, edge–plane intersections inserted) and rebuilds the kept patch; `TrimFeature(s)` trims the running surface (sick if nothing remains). `ExtendFeature(s)` validates a target surface then defers the edge-to-target geometry (`ErrDeferred`→Warning, phase C). Curved/multi-face trims → `NotYetImplemented`. |
+| 112 | Mid-surface & offset | ✅ | `kernel/ops`, `model/feature` | `ops.MidSurfaces` pairs a solid's **antiparallel planar faces** within a thickness threshold (the thin walls), emits a mid-plane patch per pair and records the separation; `MidSurfaceFeature(s)` + `MidSurfaceThickness(es)` extract them from the running solid (a 4×4×1 plate → one mid-surface, thickness 1, for FEA M18). `ops.OffsetSurface` translates a planar patch along its normal; `SurfaceOffsetFeature(s)` offsets the running surface (the M09 direct-edit `FaceOffsetFeature` is a distinct deferred op). Curved offset/mid-surface → phase C. |
+| 109 | Boundary patch & ruled surface | ✅ | `model/feature` | `BoundaryPatchFeature(s)`/`Definition`/`BoundaryPatchLoop(s)` fill a closed planar profile (outer loop + inner-loop holes) into a real **surface body** (one trimmed planar face); per-loop `PatchCondition` (Free/Tangent/Curvature = G0/G1/G2) carried — an isolated planar loop satisfies any condition vacuously, the curved-blend-to-adjacent-face case is NURBS phase B. `RuledSurfaceFeature(s)` rules a closed profile by a distance: `RuledNormal` builds the real band (one planar quad per edge, open quilt) along the plane normal; `RuledTangent`/`RuledPerpendicular` resolve inputs then defer (`ErrDeferred`→Warning, need adjacent-face/reference-plane data). Open profile → sick. |
+| 110 | Sculpt & knit/stitch | ✅ | `kernel/ops`, `model/feature` | New `ops.Stitch` — **exact-coincidence weld** of independently-built surface bodies: vertices quantized to a tolerance grid become one, shared boundary edges merge, and when every edge ends used by exactly two faces the quilt is **closed → a solid** (deterministic sorted lineage so reference keys are stable; tolerant near-gap matching stays phase-D `Sew`). `StitchFeature(s)` welds the running surface bodies (closed quilt → solid unless `MaintainAsSurface`); `KnitFeatures` = alias. `SculptFeature(s)` requires the bounding surfaces to enclose a volume → fills the solid, else sick. Verified: 6 oriented cube-face surface bodies → one watertight, manifold, validated solid. |
+
+### M05 — UI, Commands, Interaction & Add-in Platform
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 056 | Control definitions | ✅ | `app` | `CommandDefinition` (id/name/category/`ControlKind`/alias/tooltip/enable predicate) with a fluent builder. |
+| 057 | Command manager | ✅ | `app` | `CommandManager` registry (by id/alias/category, dup-rejecting); `Session.Execute`/`Invoke` (alias) fire `CommandStarted`/`CommandEnded` events; disabled commands refuse. |
+| 061 | Select set | ✅ | `app` | `Selection` (ordered, filtered) + typed `Selectable` handles (face/edge/vertex/body/feature/profile/sketch-entity) + `SelectionFilter` (Inventor SelectionFilterEnum). |
+| 062 | Interaction events | ✅ | `app` | `PointerEvent`/`KeyEvent`/`Modifier`; `Session.Click`/`Pointer`/`PressKey` route input per Inventor mouse/keys (LMB select, plain-click replace / Shift add, alias keys, Esc/Enter). Interactive `Tool` framework (Start/Pick/CanCommit/Commit/Cancel) + OK/Cancel flow. |
+| 063 | Hit-test & filters | ✅ | `app` | `Picker` interface (viewport ID-buffer in prod; **stub picker in tests = "click on geometry" headlessly**). **End-to-end `ExtrudeTool`**: synthetic click picks a sketch profile → set distance → OK → real watertight prism in the active part (`compdef` now owns the feature engine + `Recompute`). Real `RayPicker` = camera ray (`scene.Camera.RayThrough`) vs per-face tessellation (`ops.RayCastFaces`, Möller–Trumbore). |
+| 058 | Ribbon & UI model | ✅ | `app` | `BuildRibbon` generates Inventor's two-level ribbon from the command registry (tab → panel → button) each frame with live enabled state; `BuildBrowser` walks the active part into a parameter/sketch/feature tree; `BuildStatus` drives the status-bar prompt + selection count. Pure models that Dear ImGui renders (core/09); a new/add-in command appears as a button (with hover tooltip) under its tab with no UI-code edit. |
+| 060 | Add-in platform | ✅ | `app` | `AddIn` interface (ApplicationAddInServer: `ID`/`Activate`/`Deactivate`) + `AddInManager` (register/activate/deactivate, idempotent, dup-rejecting). **Exit criterion test**: a sample add-in registers an interactive command on `Activate` → it shows as a ribbon button → executing it starts the tool that uses selection + preview graphics. |
+| 064 | Client graphics | ✅ | `app`/`renderer`/`scene` | `scene.Camera` (eye/target/fov, `RayThrough`); `renderer.DrawList`/`DrawItem` + `BuildDrawList` (per-body surface + wireframe items, front-of-camera cull, object-id tagging); `Backend` interface + `NullBackend` (records frames, no GPU). `Session.AddOverlay`/`Overlays` = persistent client graphics. Metamorphic oracle: translation-invariance of draw counts (ADR-0014). |
+| 065 | Interaction graphics | ✅ | `app` | `Previewable` tool capability + `Session.RenderFrame`: assembles active-part bodies + overlays + the active tool's transient preview into one draw list and submits to a backend. `ExtrudeTool.Preview` = live wireframe of the prism (bottom/top loops + vertical connectors) before OK — Inventor's in-canvas preview, asserted headlessly via the null backend. |
+
+### M09 — Part: Dress-up & Pattern Features
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 102 | Hole feature | 🟦 | `model/feature` | `HoleFeature`/`Definition` (placement face key, diameter/depth, `HoleType`, `HoleTapInfo`), `AddDrilled`/`AddTapped`; placement face resolved each recompute, cut geometry deferred (phase C boolean). |
+| 103 | Boss feature | 🟦 | `model/feature` | `BossFeature` (placement face + diameter/height); resolve-then-defer. |
+| 104 | Feature patterns | ✅ | `model/feature` | `RectangularPatternFeature`/`CircularPatternFeature` + `PatternElement` with **real** parameter-driven element count and per-element suppression (`ActiveCount`/`SetElementSuppressed`); geometry duplication deferred to the M11 body-transform op. |
+| 105 | Sketch-driven & mirror | ✅ | `model/feature` | `SketchDrivenPatternFeature` (count = sketch points), `MirrorFeature` (one reflected element); same element model. `PatternFeatures` collection (patterns depend on their source features). |
+| 106 | Combine & split | 🟦 | `model/feature` | `CombineFeature` is **real** — booleans two running bodies via `ops.Boolean` (Join/Cut/Intersect), valid for Phase-A cases (disjoint join verified manifold). `SplitFeature` defers (phase C). |
+| 107 | Face edits | 🟦 | `model/feature` | `MoveFace`/`FaceOffset`/`DeleteFace`/`ReplaceFace` features: face-key resolution + deferred geometry (phase C). |
+| 108 | Thicken & direct-edit | 🟦 | `model/feature` | `ThickenFeature` + the `ModifyFeatures` collection; deferred. |
+| 099 | Fillet feature | 🟦 | `model/feature` | `FilletFeature`/`Definition` over picked edge **reference keys**, re-resolved against the running body via the topo rebind (`FindEdgeByKey`); a resolved input defers geometry (`ErrDeferred`→Warning), a lost edge → Sick. Rolling-ball geometry = kernel phase B. |
+| 100 | Chamfer feature | 🟦 | `model/feature` | `ChamferFeature` (edge keys + distance); same resolve-then-defer + health. |
+| 101 | Shell/draft/thread | 🟦 | `model/feature` | `ShellFeature` (removed faces + thickness), `FaceDraftFeature` (faces + angle), `ThreadFeature` (cylindrical face + designation); face-key resolution + Warning/Sick. `DressUpFeatures` collection. Added engine `ErrDeferred`→`health.Warning` (inputs valid, geometry pending). |
+
+### M08 — Part: Sketched & Work Features
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 097 | Derived parts/components | ✅ | `model/feature` | `DerivedPartComponent` pulls a source part's bodies **associatively** (re-reads each recompute; `SourceVersion` tracks change). Source is the consumer-side `BodySource` interface — `compdef.PartComponentDefinition` satisfies it structurally, so feature doesn't import compdef (no cycle). Scale/Mirror recorded; geometric transform deferred to the M11 body-transform op. |
+| 098 | Base / imported features | ✅ | `model/feature` | `NonParametricBaseFeature` wraps frozen imported bodies (from translation, M17) as a feature-tree participant, so downstream parametric features consume them. `BaseFeatures`/`DerivedComponents` collections add into the engine. |
+| 092 | Extrude feature (full triangle + extents) | ✅ | `model/feature` | `ExtrudeDefinition`/`ExtrudeFeature`/`ExtrudeFeatures`. `AddByDistanceExtent` generates a **real watertight prism** B-rep from a closed profile (bottom/top caps + indexed side walls, lineage on each), validated manifold; recomputes when its driving parameter changes; goes sick on a missing/open profile; combines with running material via `ops.Boolean`. `Extent`/`ExtentType`/`ExtentDirection` enums. |
+| 093 | Revolve feature | 🟦 | `model/feature` | `RevolveDefinition`/`RevolveFeature` (profile/axis/angle/op) + `Add`; generation → `NotYetImplemented` (kernel phase A analytic surfaces of revolution). |
+| 094 | Sweep feature | 🟦 | `model/feature` | `SweepDefinition`/`SweepFeature` (profile/path/twist) + triangle; generation deferred (phase B NURBS). |
+| 095 | Loft feature | 🟦 | `model/feature` | `LoftDefinition`/`LoftFeature` (sections/closed); generation deferred (phase B). |
+| 096 | Coil & rib features | 🟦 | `model/feature` | `CoilDefinition`/`CoilFeature` (pitch/revolutions/taper), `RibDefinition`/`RibFeature` (open profile/thickness); generation deferred (phase B). |
+| 090 | Work planes/axes/points by relationship | ✅ | `model/feature` | Parametric datums recomputing from a definition closure: `WorkPlanes.AddByPlaneAndOffset` (moves with its driving parameter), `AddByThreePoints`; `WorkAxes.AddByTwoPoints`/`AddByPlaneIntersection`; `WorkPoints.AddByPoint`/`AddByPlaneAndAxisIntersection`. Degenerate definitions → health-sick. Datum planes serve directly as sketch planes. |
+| 091 | User coordinate systems | ✅ | `model/feature` | `UserCoordinateSystem` (origin + X/Y/Z triad, `XYPlane` sketch host) + collection; `AddByPlane` aligns a frame to a plane. |
+| 087 | Feature-history recompute engine | ✅ | `model/feature` | `PartFeatures` rollback-replay (ADR-0010): `Recompute` finds the earliest dirty feature, reuses the cached body state before it, replays the tail to the EOP marker. `Feature` interface (pure `Recompute(Input)→Output`); inputs are `Ref` reference keys. Editing an early feature recomputes only it + tail (prefix reused, verified by recompute counts); a failing feature goes `health.Sick` and poisons dependents without aborting the rebuild. |
+| 088 | Suppression, conditional suppression & health | ✅ | `model/feature` | `SetSuppressed` (passes body state through); `SetSuppressionCondition(param, ComparisonType, threshold)` toggles as the driving parameter crosses the threshold; health states (ok/sick/suppressed) propagate along the dependency edges. |
+| 089 | Feature reorder, rename & EOP moves | ✅ | `model/feature` | `Reorder` validates against dependencies (rejects moving before a dependency), re-evaluates the affected range; id-stable `SetName`; `SetEndOfPart`/`RollToEnd` exclude/include trailing features. |
+
+### M07 — B-Rep Kernel & Topology
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 085 | PartComponentDefinition container | ✅ | `model/compdef` | `PartComponentDefinition` owns `topo.SurfaceBodies` + `param.Parameters` + `sketch.Sketches`; `RangeBox`/`PreciseRangeBox`/`OrientedMinimumRangeBox`; `ModelGeometryVersion` (changes every edit via `MarkChanged`). Implements `doc.Content` (compdef→doc one-way); wired onto a `PartDocument` via new `doc.Document.SetContent`. |
+| 086 | Rollback / End-of-Part state | ✅ | `model/compdef` | EOP marker (`EndOfPartPosition`/`SetEndOfPart`/`RollToEnd`, `IsRolledBack`); moving it bumps the geometry version to request re-evaluation. Evaluate-up-to-marker semantics consumed by the feature engine (M08). |
+| 082 | Boolean operations (join/cut/intersect/new-body) | 🟦 | `kernel/ops`, `math/predicate` | `PartFeatureOperation` enum + `Boolean`. **Exact predicates** (`math/predicate`: orient2D/orient3D/incircle, float64 fast path + `big.Rat` exact fallback — the robustness foundation, 100% cov). `PointInsideBody` (ray-cast classification), relationship classifier; **Phase-A** handles disjoint/containment (valid manifold results, key lineage flows through). General intersecting booleans (face splitting) → `NotYetImplemented`, Phase C. |
+| 083 | Tessellation & display faceting | ✅ | `kernel/ops` | `Mesh` (positions/normals/indices) + edge polylines. Adaptive chordal-tolerance sampling (recursive midpoint) honored on edges & curved faces; planar faces ear-clipped (exact `Orient2D`) → watertight per face. `TessellateBody`/`Face`/`Edge`, `Quality`. |
+| 084 | Geometry healing & validation | 🟦 | `kernel/ops` | `Validate` (manifold = every solid edge used by exactly 2 faces with opposite orientation; closed; reports each offending edge precisely) + `BoundaryEdges`. Tolerant `Sew` (stitching) → `NotYetImplemented` (phase D); the "reported precisely" branch is satisfied now. |
+| 081 | Topology evaluators (point/normal/tangent/curvature) | ✅ | `kernel/topo` | `CurveEvaluator`/`EdgeEvaluator` (point, unit tangent, curvature via FD, Simpson arc length, golden-section closest-param/point); `SurfaceEvaluator` (point, normal, partials, grid+projected-Gauss–Newton closest-point); `FaceEvaluator` (planar Newell area, planar point-in-loop containment incl. holes). Outputs match analytic refs within tolerance (circle κ=1/r, length 2πr; segment foot; sphere closest along radius; triangle area 0.5). |
+| 079 | B-rep topology: bodies/faces/edges/vertices/loops | ✅ | `kernel/topo` | Full Body→Shell→Face→Loop→EdgeUse→Edge→Vertex graph + adjacency (Edge.Faces, Face.Edges/Vertices, Vertex.Edges, …) via a consistency-preserving `Builder`. Every entity carries a `Lineage` (generative history) → `ReferenceKey()` bytes; `Body.FindFaceByKey`/`FindEdgeByKey` **rebind by lineage after a recompute** (verified against a rebuilt body). Layering: topo is below model/, so it owns lineage/key bytes and does NOT import `model/identity` (the KeyManager binds at the feature layer, M08). |
+| 080 | Topology↔geometry binding & containers | ✅ | `kernel/topo` | `Face.Geometry()` → `geom.Surface` (planar face → `geom.Plane`), `Edge.Geometry()` → `geom.Curve3` (straight → `LineSegment`, circular → `geom.Circle`). Per-entity `RangeBox` and `Body.RangeBox`; `SurfaceBodies` container (Add/ByID/Remove); solid/surface + shell organization. |
+
+### M06 — Sketching & Constraint Solver
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 077 | Profile & region detection | ✅ | `model/sketch` | `Sketch.Profiles()` walks segment connectivity into closed loops + standalone circles, classifies inner/outer by even–odd nesting (all-vertices containment), groups into `Profile{outer, inner}`. Multi-region; nested hole → outer+inner; open chain → open profile (`IsClosed` lets the feature reject for solids). Construction geometry excluded. `Profile`/`Profiles`/`Loop`/`ProfileEntity`. |
+| 078 | Paths for sweeps & lofts | ✅ | `model/sketch` | `Sketch.Paths()` returns every maximal connected chain (open + closed) as `Path` for sweep/loft rails; `Path3D` built from an ordered 3D point chain. |
+| 075 | 2D/3D constraint solver core | ✅ | `model/sketch` | Whole-system Newton/Gauss–Newton with Levenberg–Marquardt damping over the residual vector (FD Jacobian), warm-started from current values → an edit re-solves stably; capped iterations, non-convergence → health-sick (no hang/NaN). Dimension-agnostic (`[]*Scalar`), so 2D & 3D solve through the same `Solve`. Pure-Go dense linalg (Gaussian elimination + rank). Decomposition layer deferred behind the same API (ADR-0009). |
+| 076 | DOF analysis & over/under-constraint reporting | ✅ | `model/sketch` | `DOFAnalysis` from Jacobian rank: `DOF = vars−rank`, `Redundant = eqs−rank`; `SolveStatus` well/under/over. `Sketch.DegreesOfFreedom`/`AnalyzeConstraints`/`Solve`. Fully-constrained → 0 DOF; redundant constraint flagged (over-constrained); conflicting system → sick. Auto-dimension deferred (heuristic layer). |
+| 073 | Dimensional constraints backed by parameters | ✅ | `model/sketch` | `DimensionConstraint` owns a `param.Parameter` (M02 DAG): residual = `measure − param.ModelValue()`. Distance/Radius/Diameter/Angle/ArcLength `Add*` (auto-named model params). Editing the param expression changes the target (drives geometry via solver). Driven mode → no residual/variables, reports `Measured()`; `Sketch.Constraints()` aggregates geometric + driving dims. |
+| 074 | Constraint limits & 3D dimensions | ✅ | `model/sketch` | `ConstraintLimits` (min/max) + `Drive(v)` clamps for drive/animation. `DimensionConstraint3D`/`DimensionConstraints3D` (distance) on the same `Constraint` interface for the dimension-agnostic solver. |
+| 070 | Geometric constraint set (2D) | ✅ | `model/sketch` | `Constraint` interface (`Residuals []float64` + `Variables []*Scalar` → solver is dimension-agnostic). Coincident/PointOnLine/Midpoint/PointOnCircle/Horizontal/Vertical/Parallel/Perpendicular/Collinear/Concentric/EqualLength/EqualRadius/Tangent/CircularTangent/Symmetry/Smooth/Fix, each verified residual-zero iff satisfied. **Polymorphic over a sealed `CircularCurve` (Circle or Arc):** Concentric/PointOnCircle/EqualRadius/Tangent accept an arc anywhere a circle is accepted, and `CircularTangent` does curve-to-curve tangency (external/internal mode auto-picked from placement). **`SmoothConstraint` (G2)** joins two curves curvature-continuous at an endpoint via orientation-free curvature *vectors* (G0+G1+G2); sealed `SmoothCurve` over Line/Arc/Spline, and — like Inventor — needs a spline (the adjustable-curvature side). `GeometricConstraints` Add*/Delete/enumerate. (App tools in `app/sketch_constraint_tools.go` expose all of these, incl. Symmetric and Smooth, as tool-first ribbon commands.) |
+| 071 | Constraint inference during sketching | ✅ | `model/sketch` | Pure ranked-heuristic `Inference`: `InferSegment` (near-axis → horizontal/vertical w/ priority), `InferSnap` (nearest point → coincident). Apply-on-commit verified. Glyph display deferred (UI/overlay). |
+| 072 | 3D sketch constraints | ✅ | `model/sketch` | `Point3D` (3 vars) + `Coincident3D`/`Collinear3D`/`Concentric3D`/`Equal3D`/`CustomConstraint3D`; same `Constraint` interface so the F05 Newton core solves 3D unchanged. |
+| 068 | Sketch lines/arcs/circles/ellipses | ✅ | `model/sketch` | Entities on shared constrainable `*Point`s (a shared endpoint *is* a coincidence): `Line`/`Arc`/`Circle`/`Ellipse`/`Point`, construction flag. Typed factory collections `Lines`/`Arcs`/`Circles`/`Ellipses`/`Points` (Add* + Count/Item); `AllPoints` exposes every solver variable. (Names drop the COM `Sketch` prefix per the Go design — `sketch.Line`, not `SketchLine`.) |
+| 069 | Sketch splines & blocks | ✅ | `model/sketch` | `Spline` (fit vs control points, closed) via `AddByPoints`/`AddByControlPoints`. `BlockDefinition`/`BlockInstance` + `Blocks`: an instance reads its definition live (transform via `math.Matrix3`), so definition edits reflect in instances. |
+| 066 | PlanarSketch/Sketch3D containers & collections | ✅ | `model/sketch` | `Plane` (origin + orthonormal axes, normal = x×y) with `ToModel`/`ToSketch` 2D↔3D mapping (round-trips; off-plane points orthogonally projected) + standard `XYPlane`/`XZPlane`/`YZPlane`. Shared `base` (id/name/edit/visible/health). `Sketch`+`Sketches`, `Sketch3D`+`Sketches3D`, `DrawingSketch`+`DrawingSketches`. |
+| 067 | Project geometry & reference into sketch | ✅ | `model/sketch` | Projection via a kernel **seam** (`PointSource`/`CurveSource`, implemented by topo in M07): `ProjectPoint`/`ProjectCurve`/`ProjectCutEdges` create associative reference geometry; `Update` re-projects when the source moves; `BreakLink` freezes it. Verified a projected point/edge follows its source and freezes on break-link. |
+
+### M04 — Transactions, Undo & Events
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 052 | Application & Document event sets | ✅ | `model/doc` | Typed events on the `Workspace` bus: `DocumentCreated`/`DocumentOpened`/`DocumentSave`/`DocumentClose`/`DocumentActivate`/`ApplicationQuit` (stable TypeIDs). Lifecycle ops (Add/Open/Save/Close/SetActive/Quit) emit Before (vetoable, `VetoError`) + After. A dirty-close or quit can be vetoed; the document/session stays. |
+| 053 | ModelingEvents & ChangeManager/ChangeProcessor | ✅ | `model/doc` | `ModelChanged` event + `ChangeDefinition`/`ChangeKind`. `ChangeManager` subscribes to `ModelChanged` (After) and dispatches to registered `ChangeProcessor`s; `Registration` is the process control (enable/disable/unregister). `Workspace.NotifyModelChanged` emits Before (vetoable) + After. Composes from command+event — no separate framework (core/06). |
+| 050 | Object/sink event composition & subscription | ✅ | `event` | Typed bus per core/06 (replaces COM connection points). `Subscribe[E](bus, phase, handler)` + `Emit[E]`/`EmitContext[E]` (generic funcs; methods can't be generic). Dispatch keyed by Go type+phase (reflect); multicast; `Subscription.Cancel`. Handlers may (un)subscribe mid-emit (snapshot). `Event.EventID() TypeID` = wire identity. |
+| 051 | Before/after timing & HandlingCode veto | ✅ | `event` | `Phase` (Before/After = EventTimingEnum). `Outcome`/`HandlingCode` (NotHandled/Handled/Abort): `Continue`/`Handle`/`Veto(reason)`; `Emit` aggregates strongest disposition keeping the first veto reason → a Before veto cancels. Typed event structs replace `NameValueMap`; `Context` carries phase + `context.Context` (add-in veto deadline). |
+| 048 | Undo/redo stacks with recompute restore | ✅ | `command` | `History.Undo`/`Redo` (done/undone stacks) revert/re-apply a committed `Batch`, restoring model state and firing one coalesced `OnChange` (the recompute hook). Undo→Redo returns to identical state; a new edit clears the redo stack; `UndoLabels`/`RedoLabels` = enumerators; guarded against an open transaction. |
+| 049 | Checkpoints (SetCheckPoint/GoToCheckPoint) | ✅ | `command` | `CheckPoint` = remembered history depth + label (no geometry snapshot). `GoToCheckPoint` undoes/redoes to that depth with one coalesced update; unreachable depth errors. `CheckPoints`/`ReleaseCheckPoint` enumerate & dispose. |
+| 046 | Transaction lifecycle (start/end/abort, nested, global) | ✅ | `command` | Command pattern per core/06 (not a literal COM TransactionManager). `Command` (Label/Apply/Revert, self-contained → cross-doc batches), `Func` (closure cmd), `Batch` (composite, atomic Apply with prefix-rollback). `History.Begin`→`Transaction.Commit`/`Abort`; nesting folds child batch into parent; mid-transaction `History.Do` joins the open txn. Abort reverts in reverse → exact pre-state. Labels = undo menu. |
+| 047 | Transaction merge & suppression of change notifications | ✅ | `command` | `Transaction.MergeWithPrevious` combines two committed steps into one undo. `History.SuppressNotifications`+coalesced `OnChange`: a recording transaction fires exactly one update at Commit (1000-edit batch → 1 update); suppress/resume gates bare edits. |
+
+### M03 — Documents, Persistence & Identity
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 044 | AttributeSets/Attributes on any model object | ✅ | `model/attr` | `Value` typed tagged union (bool/int/double/string/bytes — `ValueTypeEnum`, no `any`). `AttributeSet`/`AttributeSets` CRUD. `AttributeManager` anchors sets by `identity.RefKey` (serialized) so a face's attributes survive recompute (equal re-minted key re-anchors) and reload (`Encode`/`DecodeAttributes` = attributes.bin). `FindAttributes` query by set/name. Add-in private data round-trips. |
+| 045 | iProperties / PropertySets | ✅ | `model/attr` | `Property`/`PropertySet`/`PropertySets` with the four standard sets (Summary/DocumentSummary/DesignTracking/UserDefined). `EncodeProperties`/`DecodeProperties` persist + queryable. `ExposeParameter(*param.Parameter)` bridge promotes a parameter into a custom property (provenance via `ExposedFromParameter`), surviving round-trip. |
+| 042 | ReferenceKeyManager: keys, contexts, bind/can-bind | ✅ | `model/identity` | `RefKey` = opaque, serializable value encoding an entity's **generative lineage** (not an address). `KeyManager`: `CreateKeyContext`/`ReleaseContext`/`RebindSource`, `GetReferenceKey`, `BindKeyToObject`/`CanBindKeyToObject` (→`MatchType` exact/none), `SaveContextToArray`/`LoadContextToArray` (ids preserved), `KeyToString`/`StringToKey`. Built against a topology **seam** (`Entity`/`Lineage`/`EntitySource`) — kernel/topo implements it in M07. Key rebinds after recompute recreates the face; CanBind false when topology vanishes; keys survive save→reopen. |
+| 043 | Reference-loss propagation policy | ✅ | `model/identity`, `model/health` | `model/health` = canonical `Status` vocabulary (ok/warning/sick/suppressed, modernizes HealthStatusEnum). `KeyManager.Resolve` is the one place the loss policy lives: a bound entity → healthy; a lost reference → `health.Sick` + `ErrReferenceLost` reason, fixable by re-selection, never fatal. (Consumers = features/dimensions/mates from M08+.) |
+| 040 | Document reference graph & descriptors | ✅ | `model/doc` | `RefGraph` (owned by `Workspace`, shared by all docs): `Document.ReferencedDocuments`/`ReferencingDocuments`/`AllReferencedDocuments` (transitive), `AddReference`/`RemoveReference`/`References`. `DocumentDescriptor` (full name, needs-update, reference-key placeholder for F05, broken flag). Lazy resolution: open-set first, else load via store; **broken refs flagged, never fatal**. Drives `referencedBy` for unreferenced-only close. |
+| 041 | FileManager, project paths & file locations | ✅ | `model/doc` | `FileManager.Resolve` (workspace-then-library search paths), `Relativize`, `TemplateFile(type)` (`<type>.obk` in templates dir). `DesignProject` (workspace + library roots + `FileLocations`), `DesignProjectManager` (active project). Portable path config — no registry/monikers (core/05). |
+| 037 | Structured storage container & streams | ✅ | `persistence` | `.obk` = portable ZIP package (replaces OLE structured storage). `Package` = ordered named byte streams + typed `Manifest`; `OpenPackage`/`Save`. **Atomic save** stage→fsync→`commit` (rename); interrupted save leaves the prior file byte-intact. `StreamStat` (modernizes `tagSTATSTG`). Streams round-trip byte-identical. |
+| 038 | DataIO stream I/O & attribute/data persistence | ✅ | `persistence` | `DataIO` bound to a `Package` (`WriteData`/`ReadData`) + file-level `WriteDataToFile`/`ReadDataFromFile` that preserve other streams. Arbitrary client/add-in data persists & reloads. |
+| 039 | Compaction & version migration | ✅ | `persistence` | `Compact` drops regenerable `cache/` streams losslessly (smaller archive, recipe intact). `Migrate` pipeline: manifest `schemaVersion`, ordered steps keyed by from-version (`v0→v1` renames `model/params.bin`→`model/parameters.bin`), newer-than-supported rejected. `OnMigrateDocument` hook → M04. `PackageStore` implements `doc.Store`: documents save/reopen as real files. |
+| 035 | Documents collection & create-from-template | ✅ | `model/doc` | `Workspace` (modernized `Documents` collection, core/02/05): `Add` create-from-template (empty default content, dirty until saved), `Count`/`LoadedCount`/`VisibleDocuments`/`Documents` snapshot, `ByID`/`ByName`, active document. Visible vs hidden-open. Typed-view helpers `AsPartDocument`/etc. |
+| 036 | Open/OpenWithOptions/Save/Close lifecycle | ✅ | `model/doc` | `Open`/`OpenWithOptions` (typed `OpenOptions`, not `NameValueMap`; `DeferContent`→reference stub w/o store hit), `Save`/`SaveAs`, `Close`/`CloseAll(unreferencedOnly, skipSave)` with dirty-on-close handling. Persistence behind an injected `Store` seam (real zip backend = F03); tested via `fakeStore`. Saved doc reopens identically in a fresh workspace. |
+| 033 | Document base: identity, dirty, lifecycle | ✅ | `model/doc` | `Document`: session `ID` (not persisted), `FullDocumentName`/`FullFileName`/`DisplayName` (derived), `Dirty`/`MarkDirty`/`ClearDirty`, `Open`/`Compacted`. `NewReference` → reference stub (identity known, content nil, not open). |
+| 034 | Document specializations & content exposure | ✅ | `model/doc` | `DocumentType` enum (stable 0–4) + `PartDocument`/`AssemblyDocument`/`DrawingDocument`/`PresentationDocument` embedding the base; each exposes a typed content stub (`*PartComponentDefinition` M07, `*AssemblyComponentDefinition` M11, `*DrawingContent` M14, `*PresentationContent` M16) via the `Content` interface. Type discrimination verified end-to-end. |
+
+### M02 — Units, Parameters & Expressions
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 023 | UnitsTypeEnum & quantity model | ✅ | `model/param` | `Unit` enum (stable ids) + dimension signatures; `Quantity` (db units) with dimensional arithmetic. |
+| 024 | UnitsOfMeasure: conversion & format | ✅ | `model/param` | Named-unit registry; `Parse`/`Format` at the boundary; switching prefs changes display not storage. |
+| 025 | Expression parser & AST | ✅ | `model/param` | Lexer + recursive-descent parser; AST with unit literals, refs, calls; positioned errors; constant folding. |
+| 026 | Unit-aware evaluator + functions | ✅ | `model/param` | Dimensional eval; function library (trig/sqrt/min/max/…); refs bound by stable `ID`. `sin(30 deg)=0.5`, `1mm+1deg` errors. |
+| 027 | Parameter base (triad) | ✅ | `model/param` | `Parameter`: Expression→Value→ModelValue; SetExpression/SetValue; health (dimensional error → sick). |
+| 028 | Parameter types & collections | ✅ | `model/param` | `ParameterKind` (model/user/reference/derived/table); `Parameters` Add*/ByName/ByID/Rename/Delete; read-only enforcement; name uniqueness. |
+| 029 | Tolerance, precision, format | ✅ | `model/param` | `Tolerance`+`ModelValueType` (nominal/upper/lower/median); `Precision`/`ParameterDisplayFormat` display-only. |
+| 030 | Dependency edges | ✅ | `model/param` | `DrivenBy`/`Dependents` from bound refs; edges by id; rename preserves edges + rewrites dependent display text. |
+| 031 | Cycle detection & health | ✅ | `model/param` | Cycle rejected at edit time (`CycleError`, param sick); undefined ref → sick, not panic. |
+| 032 | Dirty-propagation recompute | ✅ | `model/param` | Topo recompute of exactly the transitive dependents; independents untouched. |
+
+### M01 — Math & Transient Geometry
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 014 | Point/Vector/UnitVector (2D & 3D) | ✅ | `math/` | Immutable value types; ops return new values (not COM mutation). `Point3/Vector3/UnitVector3` + 2D. |
+| 015 | Matrix & Matrix2d transforms | ✅ | `math/` | `Matrix4` (3D affine), `Matrix3` (2D affine): compose/invert/determinant/rigid + rotation/CS constructors. |
+| 016 | Lines, arcs, circles | ✅ | `kernel/geom/` | Line(2d)/LineSegment(2d)/Circle(2d)/Arc3d/Arc2d + 3-point arc/circle constructors; `Curve2`/`Curve3` eval interfaces. |
+| 017 | Ellipses, polylines | ✅ | `kernel/geom/` | EllipseFull(2d)/EllipticalArc(2d)/Polyline(2d); ratio + sweep verified. |
+| 018 | Analytic surfaces | ✅ | `kernel/geom/` | Plane/Cylinder/Cone/Sphere/Torus + `Surface` eval interface (Point/Derivatives/Normal/Domains). |
+| 019 | NURBS curves & surfaces | ✅ | `kernel/geom/` | BSplineCurve/BSplineSurface; Cox–de Boor + rational quotient-rule derivatives. Loft/sweep round-trip deferred to M10 (no generator yet). |
+| 020 | TransientGeometry factory | ✅ | `math/`+`kernel/geom/` | No COM factory (architecture core/03); package surface = construction point. Verified allocation-free via `testing.AllocsPerRun`. PointTolerance = `math.DefaultTolerance`. |
+| 021 | Boxes (AABB/OBB) | ✅ | `math/` | `Box`/`Box2d` (extend/contains/intersect/union) + `OrientedBox` (contains/corners/ToAABB) — per core/01 these live in `math/`. |
+| 022 | Geometry queries | ✅ | `kernel/geom/` | Closed-form: closest-point/distance (line/segment/plane), line-plane, line-line closest+intersection, 2D line-line. General numeric curve/surface intersection deferred to kernel numeric phase (M06/M07). |
+
+## Session log
+
+- **2026-06-01:** **Coincident point-to-curve / midpoint (M05 UI, user direction).** Bug:
+  coincident only worked end-to-end (point-to-point) — picking a point and a line/midpoint
+  added nothing, because the model only had point-to-point coincident and the tool only
+  accepted points. Added `AddPointOnLine`/`AddMidpoint`/`AddPointOnCircle` to
+  `model/sketch` (residual + solve tested). The **Coincident tool** now accepts a point +
+  a line/circle and applies the right constraint: two points → coincident; point + line →
+  point-on-line (or **midpoint** when the line was picked at its midpoint snap); point +
+  circle → point-on-circle. To know midpoint-vs-edge, constraint tools became
+  **snap-aware** — each pick now carries the `SnapResult` (`ConstraintTool.picks` of
+  `constraintPick`, `SketchEntityTool.PickSnap`), and the viewport feeds the snap under
+  the cursor. Tested point-to-point / point-on-line / midpoint via the tool flow + the
+  model constraints. `make ci` green (total 93.0%); head builds + `make smoke` renders 5
+  frames, zero Vulkan validation errors.
+- **2026-06-01:** **Snap markers (cross/triangle/square) + visible points (M05 UI, user
+  direction).** A bare sketch point is 1px, so hover/snap highlighting was invisible.
+  Extended snapping into a typed `SnapResult`/`SnapKind` (`app/sketch_snap.go`):
+  `snapAt` now finds, by priority, an existing **endpoint**, a line **midpoint**, an
+  **on-curve** point (closest point on a line segment or circle outline), then the grid;
+  `SnapAt(px,py)` exposes it. Geometry-tool clicks snap to all of these. Head: while any
+  sketch tool is active and the viewport is hovered, a **snap glyph** is drawn at the
+  snap point — a **square** for an endpoint, a **triangle** for a midpoint, a **cross**
+  for a line/circle edge (screen-constant size via `Camera.WorldPerPixel`); placed
+  sketch points also get a persistent square marker so they are visible at rest. Snap
+  kind/point detection is unit-tested (endpoint/midpoint/line-edge/circle-edge/grid).
+  `make ci` green (app 91.9%, total 93.0%); head builds + `make smoke` renders 5 frames,
+  zero Vulkan validation errors.
+- **2026-06-01:** **Constraints/dimensions reworked to Inventor's tool-first flow +
+  hover candidate highlighting (M05 UI, user direction).** Constraints were immediate
+  commands on the current selection; now each is an **interactive tool**: activate the
+  constraint, then pick the geometry. New `ConstraintTool` (generic, table-driven over
+  `constraintToolDefs`) gathers picks filtered by an `accepts` predicate (only the entity
+  kinds valid for that constraint) and auto-applies when `ready`, then deactivates;
+  `SketchEntityTool` marks them so `Pointer` routes sketch-entity picks to the active
+  tool. The apply logic was refactored to `applyX(s, ents)` functions (taking explicit
+  entities). **Hover highlight**: `Session.HoverCandidate` returns the entity under the
+  cursor the active tool would accept; the head paints it **green** (valid candidate),
+  picked entities **cyan**, others amber — so the user sees what's selectable for the
+  current constraint. Tests cover every constraint/dimension tool through the pick flow
+  + the apply functions. `make ci` green (app 91.8%, total 93.0%); head builds + `make
+  smoke` renders 5 frames, zero Vulkan validation errors.
+- **2026-06-01:** **Single-shot tools + Esc cancels at any point (M05 UI, user
+  direction).** Changed the auto-commit geometry tools from continuous to **single-shot**:
+  after a tool completes its shape it **deactivates** (no auto-restart) — `AutoCommitTool`
+  is now a marker (`AutoCommits() bool`) and `sketchClick` commits without restarting.
+  **Esc** now cancels the active tool at any point in its operation (or clears the
+  selection when idle): `Session.PressKey` Escape → cancel-tool-else-deselect, and the
+  head routes the physical Esc key each frame (`DrawChrome.handleKeyboard` + native
+  `EscapePressed`). Tests updated to single-shot; added Esc-cancels-mid-operation and
+  Esc-clears-selection coverage. `make ci` green (total 93.2%); head builds + `make smoke`
+  renders 5 frames, zero Vulkan validation errors.
+- **2026-06-01:** **Fix: sketch geometry tools now create geometry on click (auto-commit
+  + live preview).** Bug report — clicking with Line/Rectangle/Circle active produced no
+  visible object, because tools only created geometry on an explicit OK that the user
+  never issued. Fixed: the fixed-arity tools (line/rectangle/circle/arc/ellipse/polygon/
+  point) now **auto-commit** the instant they have enough clicks and **restart** for
+  continuous drawing (new `AutoCommitTool.Fresh`; `sketchClick` commits + restarts).
+  Spline keeps explicit OK (variable length). Added a **rubber-band preview**
+  (`PreviewTool`/`ActiveToolPreview` + `CursorSketchPoint`): while drawing, the
+  provisional shape (line to cursor, rectangle/circle/polygon from the first click
+  through the cursor, spline through placed points) renders in the viewport following
+  the mouse. Existing tests updated to the no-explicit-OK flow. `make ci` green (total
+  93.2%); head builds + `make smoke` renders 5 frames, zero Vulkan validation errors.
+- **2026-06-01:** **Sketch snapping + entity selection + constraint & dimension tools
+  (M05 UI, user direction).** Verified the geometry tools (line/rectangle/circle/arc/
+  spline/ellipse/polygon/point) all green, then added the constraint workflow. **Snap
+  points** (`app/sketch_snap.go`): every geometry-tool click maps to the plane and snaps
+  to a nearby existing point (or the sketch origin) then the nearest grid intersection,
+  within a zoom-scaled tolerance (`scene.Camera.WorldPerPixel`), toggled by `SnapToPoints`/
+  `SnapToGrid` prefs. **Sketch-entity selection** (`sketch_select.go`): in the sketch
+  environment a plain click picks the nearest point/line/circle/arc (points before
+  curves; Shift extends), and `IsSelectedEntity` drives a cyan highlight in the overlay.
+  **Constraint commands** (`sketch_constraints.go`) act on the selection and re-solve:
+  Coincident, Collinear, Parallel, Perpendicular, Horizontal, Vertical, Tangent,
+  Concentric, Equal (length/radius), Fix — all verified to actually drive the geometry
+  via the M06 solver (perpendicular→90°, parallel, equal radius, concentric, tangent…).
+  **Dimension** infers distance/length, radius, or angle from the selection and creates a
+  driving `DimensionConstraint` at the measured value in document units. Ribbon: new
+  **Constrain** + **Dimension** panels on the Sketch tab. Head: Shift multi-select +
+  selected-entity highlight. `make ci` green (app 93.4%, total 93.3%); head builds +
+  `make smoke` renders 5 frames, zero Vulkan validation errors.
+- **2026-06-01:** **Sketch grid (document units, configurable spacing) + Preferences
+  window (M05 UI, user direction).** The part now carries document `Units` (default mm;
+  db length unit = cm) via `compdef.PartComponentDefinition.Units`/`SetLengthUnit`, and
+  `param.UnitsOfMeasure` gained `ToPreferred`/`FromPreferred`/`PreferredName`. New
+  `app.GridSettings` (spacing as a length `Quantity` in db units, `Visible`,
+  `MajorEvery`) on the `Session` (`Grid()`), with `GridSpacingDisplay`/`SetGridSpacingDisplay`
+  presenting the spacing in the document's unit (5 mm ⇒ 0.5 cm model, 1 in ⇒ 2.54 cm).
+  Head: a **sketch grid** drawn in the active sketch plane (lines parallel to the plane
+  axes, **origin at the plane's 0,0**, minor/major/axis colors) when editing, plus a
+  **Preferences window** (Tools ▸ Preferences) editing grid spacing (labeled with the
+  doc unit), visibility and the major interval — new native `InputFloat`/`InputInt`/
+  `Checkbox` widgets. `make ci` green (total 93.4%); head builds + `make smoke` renders
+  5 frames, zero Vulkan validation errors.
+- **2026-06-01:** **Camera swings to face the sketch plane on enter / restores on exit
+  (M05 UI, user direction).** `scene.Camera.Facing(target,normal,up)` aims the view
+  straight at a plane at the preserved eye–target distance, keeping the eye on its
+  current side (no back-flip); `scene.Lerp` blends two views. The `Session` holds a
+  short eased **camera tween** (`animateCameraTo`/`CameraAnimating`/`TickCameraAnimation`,
+  smoothstep, 0.35 s): `EnterSketch` remembers the prior view and swings to face the
+  sketch plane (`YAxis` as up); `ExitSketch` swings back to the remembered view. The
+  head drives the tween in the viewport each frame (new native `DeltaTime`), ignoring
+  user navigation/clicks while it runs. Verified headlessly: entering a sketch ends with
+  the view's forward parallel to the plane normal; exiting restores the exact eye/target;
+  an XY sketch leaves the top-down view unchanged. `make ci` green (app 94.6%, total
+  93.5%); head builds + `make smoke` renders 5 frames, zero Vulkan validation errors.
+- **2026-06-01:** **Create-Sketch plane-pick tool + work-plane hover highlight (M05
+  UI, user direction).** Fixed two issues: Create 2D Sketch did not let you pick the
+  plane *after* clicking the command, and planes had no hover feedback. Now
+  `Sketch.Create2D` starts an interactive **`CreateSketchTool`** when no plane is
+  pre-selected: it restricts the filter to work planes and, the instant a plane is
+  clicked (3D view or browser), **auto-commits** — creating + opening the sketch
+  (new `autoCommitter` capability + `Session.feedPick`; a pre-selected plane still
+  sketches immediately). The `RayPicker` pick logic was rewritten to prefer the
+  nearest *accepted* candidate, so a work-plane-only pick falls through a rejected
+  face. Hover: `Session.PickAt` hit-tests without selecting; the viewport highlights
+  the **plane under the cursor** in an amber hover color (selected > hovered > faint),
+  and the camera is now updated before the click/hover pick each frame. `make ci`
+  green (app 94.8%, total 93.5%); head builds + `make smoke` renders 5 frames, zero
+  Vulkan validation errors.
+- **2026-06-01:** **Origin work planes + selection + contextual Sketch tab (M05 UI,
+  user direction).** Made the part's datum planes real, selectable objects so a sketch
+  can be started on a chosen plane. `compdef`: `WorkPlane` (name + `sketch.Plane` +
+  display half-extent) and the three **origin planes** (XY/XZ/YZ) owned by every part
+  (`OriginPlanes`/`WorkPlaneByName`). `app`: `WorkPlaneHandle`/`SelectWorkPlane`;
+  `RayPicker.WithPlanes` now hit-tests the origin planes (ray↔plane within the display
+  square, **face wins when a solid is in front**); `Session.Select`/`SelectBrowserNode`
+  + `Camera`/`SetCamera` keeps the picker's view in sync; `CreateSketchOnSelectedPlane`
+  starts the sketch on the selected plane (falls back to XY); the **browser** gains an
+  **Origin folder** of selectable plane nodes (`BrowserNode.Select`). Head: the ribbon
+  **auto-switches to the contextual Sketch tab** on entering the sketch environment and
+  back to 3D Model on finish (new `BeginTabItemSelected`); browser rows are clickable
+  `Selectable`s that select the plane; the viewport **renders the origin planes** as
+  finite squares (selected one highlighted) and **routes left-clicks** to pick a
+  face/plane (or place sketch geometry), with the part's plane-aware `RayPicker`
+  installed. So: click a plane in the 3D view or the tree → Create 2D Sketch builds on
+  it. `make ci` green (app 94.4%, total 93.5%); head builds + `make smoke` renders 5
+  frames, zero Vulkan validation errors.
+- **2026-06-01:** **Sketch editor environment + full Create ribbon (M05 UI, user
+  direction).** The head had placeholder sketch buttons and no way to start/edit a
+  sketch like Inventor. Added the **sketch environment** to `app`: `Session.CreateSketch`/
+  `CreateSketchOnOrigin` (XY/XZ/YZ) enters edit mode, `FinishSketch` exits + recomputes
+  the part, with `InSketch`/`CanCreateSketch` predicates. New geometry tools (interactive
+  `Tool`+`PlaneClickTool`+`Prompted`, click-driven, real `model/sketch` entities):
+  **Circle, Arc (3-point), Spline, Ellipse, Polygon, Point** joining Line/Rectangle —
+  click routing refactored to the `PlaneClickTool` interface. `RegisterStandardCommands`
+  builds Inventor's ribbon: **3D Model** (Create 2D Sketch, Extrude), the contextual
+  **Sketch** tab (8-tool Create panel + Finish Sketch, all gated on `InSketch`), and
+  View; Extrude/Create-2D-Sketch gate on environment so the ribbon acts as a sketch
+  editor when a sketch is open. Head wiring: new native verbs (`IsItemClicked`,
+  `ItemRectMin`, `MousePos`) route viewport left-clicks to the active sketch tool
+  (left-orbit suppressed while placing), and a **sketch overlay** renders the live
+  sketch geometry (lines/circles/arcs/ellipses/splines sampled to wireframe) in the
+  Vulkan viewport. `make ci` green (app 93.9%, total 93.4%); head builds + `make smoke`
+  renders 5 frames with zero Vulkan validation errors. Constraints/dimensions/Slot/
+  Fillet (selection-based) are the next sketch-editor increment.
+- **2026-06-01:** **M10-F04 (Mesh, Imported Geometry & Mold) complete — M10 fully
+  done (4/4 features).** PBI-115: `MeshGeometry` + an **ASCII STL importer**
+  (`ParseSTL`, coincidence-welds shared corners) wrapped by `MeshFeature` as reference
+  geometry with selectable `MeshFace`/`MeshEdge`/`MeshVertex` handles + `MeshFeatureSet`
+  grouping (a tetra STL → 4 facets / 4 verts / 6 edges; the prior solid passes through).
+  PBI-116: `CoreCavityFeature` splits the running tooling block by a planar parting
+  (axis + position) into a **core** and **cavity** solid (10³ block at z=4 → core
+  [0,4] / cavity [4,10], both validated), recording a shrinkage allowance; sick when
+  the parting is outside the block. Part-pocket subtraction + silhouette parting are
+  phase-C booleans. `make ci` green, total 93.3%. **M10 complete: surface creation,
+  surface editing, sub-D freeform (real Catmull–Clark), and mesh/mold — the whole
+  surfacing & freeform milestone, all headless-tested.**
+- **2026-06-01:** **M10-F03 (Freeform Modeling) complete — 2/2 PBIs.** A real
+  sub-D subsystem, headless. New **`kernel/subd`**: a `Mesh` control cage, `Box`/
+  `Plane`/`QuadBall` primitives, **Catmull–Clark `Subdivide`** (face/edge/vertex
+  rules with crease + boundary handling, creases propagating across levels), and
+  `ToBody` converting a refined cage to a B-rep body (closed cage → validated solid,
+  open → surface). `model/feature` `FreeformFeature`/`FreeformBody` recompute the
+  limit surface from the cage; cage edits — `MoveVertices`, `CreaseEdges`, `SetLevel`
+  + `FreeformFace`/`Edge`/`Vertex` handles — redeform the body. Verified: a box
+  primitive → a valid solid; smooth subdivision **rounds** the cube (range box
+  shrinks); creasing the three edges at a corner keeps it a **sharp fixed point**;
+  a quad-ball is a rounded solid. `AliasFreeformFeature` wraps an imported Alias
+  cage (M17). `make ci` green, total 93.4%.
+- **2026-06-01:** **M10-F02 (Surface Editing) complete — 2/2 PBIs.** Real planar
+  surface editing in `kernel/ops` + `model/feature`. PBI-111: `ops.TrimByPlane` is a
+  **Sutherland–Hodgman half-space clip** of a planar surface body's boundary polygon
+  against a cutting plane (edge–plane crossings inserted), rebuilding the kept patch;
+  `TrimFeature` trims the running surface (sick if nothing remains). `ExtendFeature`
+  validates a target then defers the edge-to-target geometry. PBI-112: `ops.MidSurfaces`
+  pairs a solid's **antiparallel planar faces** within a thickness threshold, emitting
+  a mid-plane patch + recorded thickness per thin-wall pair — a 4×4×1 plate yields one
+  mid-surface (thickness 1) for FEA (M18); `MidSurfaceThickness(es)` carry the values.
+  `ops.OffsetSurface` translates a planar patch along its normal (`SurfaceOffsetFeature`,
+  named to avoid the M09 direct-edit `FaceOffsetFeature`). Curved/multi-face trims,
+  offsets and mid-surfaces are honestly `NotYetImplemented` (phase C). `make ci` green,
+  total 93.9%.
+- **2026-06-01:** **M10-F01 (Surface Creation) complete — 2/2 PBIs.** The first
+  surfacing features, all headless. PBI-109: `BoundaryPatchFeature` fills a closed
+  planar sketch profile (with inner loops as holes) into a real **surface body** —
+  one trimmed planar face — carrying a per-loop `PatchCondition` (G0/G1/G2);
+  `RuledSurfaceFeature` rules a profile by a distance into an open band (real for the
+  `RuledNormal` direction, tangent/perpendicular resolve-then-defer). PBI-110: new
+  `kernel/ops.Stitch` is a real **exact-coincidence weld** — independently-built
+  surface bodies whose vertices/edges coincide on a tolerance grid merge into one
+  quilt, and a quilt where every edge is used twice becomes a **solid** (deterministic
+  sorted lineage keeps reference keys stable; tolerant near-gap matching is still the
+  deferred phase-D `Sew`). `StitchFeature`/`KnitFeatures` (alias) weld the running
+  surface bodies; `SculptFeature` requires them to enclose a volume → solid, else
+  sick. Headline: six oriented cube-face surface bodies stitch into one watertight,
+  manifold, validated solid. `make ci` green (fmt+vet+lint+race), total 94.0%,
+  feature 94.9%, ops 93.5%.
+- **2026-06-01:** **M05 UI fidelity pass** (post-completion polish, user
+  direction), grounded in the freshly-scraped Inventor 2026 help corpus (32,824
+  topics → condensed Markdown at `experiments/inventor-docs-scraper/out/md/`).
+  Three increments on the cgo head: (1) **two-level ribbon** — `CommandDefinition`
+  gains `Tab` (`WithTab`), `Category` becomes the panel within it; `BuildRibbon`
+  groups tab → panel → button (empty tab ⇒ `DefaultTab` "Tools"); chrome renders an
+  ImGui tab bar (new native `BeginTabBar`/`BeginTabItem` verbs). (2) **Status bar**
+  — pure `BuildStatus` model + optional `Prompted` tool capability; Extrude/Line/
+  Rectangle emit per-step prompts ("Select a profile to extrude" → "Specify the
+  extrude distance" → "Click OK …"), shown with the selection count + OK/Cancel.
+  (3) **Hover tooltips** on ribbon buttons (new native `SetItemTooltip`).
+  (4) **Viewport mouse navigation** — pure immutable `scene.Camera.Dolly/Orbit/Pan`
+  (turntable orbit via Rodrigues, pole-guarded; distance-clamped zoom; FOV-scaled
+  pan), wired to wheel-zoom / middle-pan / Shift+middle-orbit (left-drag orbits too)
+  through new native input verbs (input-capturing `InvisibleButton`, mouse delta/
+  wheel/down, Shift, cursor get/set). Each ran the head 5 frames with **zero Vulkan
+  validation errors**; `app` + `scene` tests green.
+  (5) **Zoom All / Home view** — pure `scene.Camera.Fit` (frame a box, keep
+  orientation) + `Home` (default +Y isometric, then fit); `Session.FitView`/
+  `HomeView` over `modelBounds` (union of active-part body range boxes), exposed as
+  View-tab / Navigate-panel commands. The viewport input→camera mapping was extracted
+  into a pure `ui.ApplyNavigation(NavInput)` (untagged, unit-testable without cgo).
+  **UI integration tests**: synthetic-input extrude → a real solid → `Zoom All`
+  (incl. via `Session.Execute`, the ribbon-button path) reframes the model; ran the
+  head 8 frames with zero validation errors.
+  (6) **True in-window verification** — an input-injection seam in
+  `obk_head_begin_frame` feeds synthetic pointer events into ImGui's IO *after* the
+  GLFW backend's NewFrame (winning over the real cursor; trickling disabled so a
+  pos+button+wheel burst lands in one frame), plus `SetNextWindowPos/Size` to pin the
+  viewport to a known rect. cgo in-window tests open a real GLFW+Vulkan+ImGui window
+  and drive the **production** nav path (InvisibleButton → ApplyNavigation →
+  SetCamera) with injected hover/press/drag/scroll, asserting the live camera
+  orbits / pans / zooms (distance-preserving where expected). All green, **zero
+  Vulkan validation errors**; tests skip cleanly when no display/Vulkan is present.
+- **2026-06-01:** Pivot to the **renderer/UI** with a headless synthetic-input
+  integration-test harness (user direction). New `app` package — the application-
+  shell logic (Inventor's CommandManager/ControlDefinitions/SelectSet/
+  InteractionEvents), **pure Go, no ImGui/Vulkan** (ADR-0014 "below the GPU line" +
+  ADR-0004 "state in the model"). Delivered M05-F02 (command framework: definitions
+  + manager + alias/enable + lifecycle events) and M05-F04 (selection set + typed
+  handles + filters; pointer/key interaction routing per Inventor mouse/keyboard;
+  the interactive `Tool` framework with OK/Cancel). The headline result: a
+  `Session` is driven by `Click`/`PressKey`/`Invoke`/`OK`, and a `Picker` stub lets
+  a test "click on" geometry with no GPU — `TestExtrudeToolEndToEnd` **starts the
+  Extrude tool, clicks the profile, sets a distance, hits OK, and asserts a real
+  watertight prism solid** in the active part. To wire it, `compdef.
+  PartComponentDefinition` now owns the feature engine + `Recompute()` (syncs the
+  feature program's result bodies; one-way compdef→feature, no cycle — feature's
+  derived-source test uses a local `BodySource` stub). Inventor fidelity (aliases,
+  LMB/RMB/MMB behavior, OK/Apply/Cancel) is the model; the 2026 help portal blocks
+  WebFetch (503) so defaults are encoded with TODO-verify. `make ci` green; app
+  93.5%. (M05 F01 add-ins, F03 ribbon, F05 client-graphics next; then the Vulkan/
+  ImGui rendering backend behind the null/offscreen/vulkan interface.)
+- **2026-06-01:** M05 **F05 client/interaction graphics + F03 ribbon/browser + F01
+  add-in platform — all M05 logic now complete, headless.** F05: `scene.Camera`
+  (ray casting) + `renderer.DrawList`/`BuildDrawList` (per-body surface+wireframe,
+  front-of-camera cull, object-id tagging) + `Backend`/`NullBackend`;
+  `Session.RenderFrame` assembles active-part bodies + persistent overlays + the
+  active tool's transient `Preview` into one frame, asserted via the null backend
+  (no GPU). `ExtrudeTool.Preview` draws a live prism wireframe before OK. Real
+  `RayPicker` (camera ray vs face tessellation, `ops.RayCastFaces`) replaces the
+  stub for production picking. F03: `BuildRibbon`/`BuildBrowser` are pure models
+  built from live command-registry/part state each frame (core/09). F01: `AddIn`/
+  `AddInManager` (Inventor's ApplicationAddInServer). **M05 exit criterion met
+  headlessly** — a sample add-in registers an interactive command on activation,
+  it appears as a ribbon button, and executing it starts a tool that uses selection
+  + preview graphics. `make ci` green; app 93.7%, scene 100%, renderer 95.6%, total
+  94.2%. **Only the cgo "head" remains** (Vulkan viewport + Dear ImGui chrome behind
+  the offscreen/vulkan backends) — per the user's gate, implemented now that the
+  whole UI/renderer stack is built and end-to-end coverage is >90%.
+- **2026-06-01:** **M05 cgo head COMPLETE — M05 fully done.** Added `renderer.
+  ViewProjection` (GPU-facing column-major MVP, Vulkan clip conventions; headless
+  metamorphic tests). Built the head as a **separate Go module** (`source/head`,
+  replace `=> ../`) so its cgo/Vulkan/go1.24 toolchain never touches the go-1.22,
+  lint-clean, 94%-covered core (`go test ./...` doesn't descend into it). Pivoted
+  ImGui binding: cimgui-go's prebuilt `cimgui.a` uses an unreproducible generated
+  imconfig (MyVec2/MyMatrix44), so we **vendor pristine Dear ImGui 1.92.8** (core +
+  GLFW + Vulkan backends, MIT) with our own `imconfig.h` and thin cgo bindings
+  (`internal/native`, the single cgo boundary per ADR-0008). The head: a persistent
+  GLFW window + Vulkan device/swapchain + ImGui context, with **Go driving the frame
+  loop AND the chrome layout** — menu bar, a ribbon panel per command category
+  (buttons reflect each command's live enabled predicate), and the model browser tree
+  — all read from the live `app.Session` each frame (ADR-0004/0009). The **3D Vulkan
+  viewport** (ADR-0005) renders offscreen (color+depth) with two pipelines (Lambert
+  triangles, flat lines sharing one pos/normal/color vertex format, push-constant MVP
+  + lit flag), uploads `renderer.DrawList` flattened by the pure-Go `head/viewport`
+  package (tested), and is shown in the dockable panel via an ImGui sampled texture.
+  **VERIFIED running on this machine (Radeon/RADV + lavapipe fallback) with Vulkan
+  validation layers enabled → ZERO validation errors** across the loop and teardown.
+  `make smoke` / `make run` in source/head. Commits: 69cae15, 2728495, ecb7154,
+  a83b1bd.
+- **2026-06-01:** M09-F02/F03/F04 **complete — M09 fully done.** Hole/boss (F02)
+  resolve their placement face by reference key then defer the cut geometry (phase
+  C boolean); `HoleTapInfo` carries thread data for hole tables (M14). Patterns/
+  mirror (F03) implement the **real** per-element model — `PatternElement` count
+  driven by parameters (3×2 grid → 6 elements, 4×4 → 16) with per-element
+  suppression (`ActiveCount`/`SetElementSuppressed`); rectangular/circular/sketch-
+  driven/mirror all share it, with geometry duplication deferred to the M11
+  body-transform op. Modify/direct (F04): **Combine is real** — it booleans two
+  running bodies via `ops.Boolean` (a disjoint Join merges into one validated
+  manifold); split/move-face/offset/delete-face/replace-face/thicken resolve their
+  inputs then defer (phase C). All deferred features report Warning (inputs valid)
+  vs Sick (input lost), never silently doing nothing. `make ci` green; feature
+  95.6%. **M09 complete: 4/4.**
+- **2026-06-01:** M09-F01 (Dress-up Features) — Phase A. Fillet/chamfer/shell/
+  draft/thread in `model/feature` consume picked edges/faces as **reference keys**
+  and re-resolve them against the running body each recompute via the topological-
+  naming rebind (`topo.Body.FindEdgeByKey`/`FindFaceByKey`) — the load-bearing M03
+  ↔ M07 seam exercised end to end through a feature. A resolved input means the
+  inputs are valid but the rounding/cut geometry is kernel phase B, so the feature
+  reports the new `ErrDeferred` sentinel which the engine maps to `health.Warning`
+  (passthrough); a genuinely lost edge/face → `health.Sick` and surfaces for
+  re-selection. `make ci` green; feature 95.6%.
+- **2026-06-01:** M08-F04 (Derived & Reference Features) **complete — M08 fully
+  done.** `DerivedPartComponent` pulls another part's bodies associatively
+  (re-reads the source each recompute; `SourceVersion` tracks edits) — its source
+  is the consumer-side `BodySource` interface that `compdef.PartComponentDefinition`
+  satisfies structurally, so `feature` never imports `compdef` (no cycle, and
+  compdef can later own the feature program one-way). `NonParametricBaseFeature`
+  wraps frozen imported bodies (M17 translation output) as a feature-tree
+  participant downstream features consume. `make ci` green; feature 95.4%. **M08
+  complete: 4/4 features — the feature engine, datums, the extrude solid generator,
+  and derived/base features. The Definition→Feature→geometry triangle now spans
+  sketch → kernel → parameters → recompute end to end.**
+- **2026-06-01:** M08-F03 (Sketched Features) — Phase A. **Extrude** is implemented
+  end to end as the reference feature (PBI-092): `ExtrudeFeatures.AddByDistanceExtent`
+  builds a real watertight prism B-rep from a closed sketch profile (bottom/top cap
+  faces + one planar side wall per profile edge, lineage on each so reference keys
+  derive), validated as a manifold solid by `ops.Validate`; it recomputes when its
+  driving parameter changes (height grows), goes health-sick on a missing/open
+  profile, and combines with running material via `ops.Boolean` (a disjoint Join
+  merges two prisms). The full `Extent`/`ExtentType`/`ExtentDirection` surface is
+  defined. Revolve/sweep/loft/coil/rib (PBI-093/094/095/096) ship their complete
+  Definition/triangle objects and `Add` constructors, with B-rep generation honestly
+  deferred (`NotYetImplemented`: revolve = kernel phase A, sweep/loft/coil = phase B
+  NURBS), so those features go sick until their generators land. `make ci` green;
+  feature 95.5%.
+- **2026-06-01:** M08-F02 (Work Features / Datums) complete. Parametric construction
+  geometry in `model/feature`, each holding a definition closure and recomputing
+  when its inputs change: `WorkPlane` (offset-from-plane that moves with its driving
+  parameter; three-point), `WorkAxis` (two-point; plane∩plane intersection),
+  `WorkPoint` (explicit; axis∩plane pierce), and `UserCoordinateSystem` (origin +
+  X/Y/Z triad). Degenerate definitions (collinear points, parallel planes, axis
+  parallel to plane) go health-sick rather than producing garbage; a datum plane is
+  directly usable as a sketch host (`sketch.Plane`). `make ci` green; feature 96.4%.
+- **2026-06-01:** M08-F01 (Feature History Engine) complete — new `model/feature`,
+  the heart of part modeling. `PartFeatures` is the ordered feature program and its
+  **rollback-replay** engine (ADR-0010): `Recompute` finds the earliest dirty
+  feature, reuses the cached body state from just before it (the clean prefix is
+  never recomputed — verified by recompute counts), and replays the dirty tail to
+  the end-of-part marker. A `Feature` is a pure `Recompute(Input)→Output`; inputs
+  are `Ref` reference keys resolved lazily, not pointers (because replay destroys
+  and recreates topology). Failure isolation: a feature whose op fails goes
+  `health.Sick` and poisons its dependents (via dependency edges), but the rebuild
+  continues so independent features still evaluate. Suppression (explicit +
+  conditional via a parameter/`ComparisonType`/threshold) passes bodies through;
+  reorder validates against dependencies and rejects illegal moves; rename is
+  id-stable; `SetEndOfPart`/`RollToEnd` roll the part back/forward. `make ci`
+  green; feature 95.7%.
+- **2026-06-01:** M07-F04 (Part Component Definition Container) **complete — M07
+  fully done.** New `model/compdef`: `PartComponentDefinition` is the part's
+  modeling content and the root the feature engine (M08) operates within — it owns
+  the surface bodies (`topo.SurfaceBodies`), parameters and sketches, the bounding
+  boxes (`RangeBox`/`PreciseRangeBox`/`OrientedMinimumRangeBox`), a
+  `ModelGeometryVersion` string that advances on every `MarkChanged`, and the
+  end-of-part rollback marker (`SetEndOfPart`/`RollToEnd`/`IsRolledBack`, which
+  bumps the version to request re-evaluation). It implements `doc.Content`
+  (compdef→doc, one-way — doc never imports compdef) and attaches to a part
+  document via the new `doc.Document.SetContent`; callers retrieve it by
+  type-asserting `Content()`. `make ci` green; compdef 100%. **M07 complete: 4/4
+  features — the pure-Go B-rep kernel (topology, evaluators, exact predicates,
+  tessellation, validation, Phase-A booleans, part container) is in place.**
+- **2026-06-01:** M07-F03 (Boolean & Modeling Operations) — Phase A. New
+  `math/predicate` (the robustness foundation core/03 mandates): exact orient2D/
+  orient3D/incircle with a float64 fast path and a `big.Rat` exact fallback, so the
+  predicate SIGN is always correct even at near-degenerate configurations (verified
+  on a point microscopically off a line); 100% covered. New `kernel/ops`:
+  tessellation (`Mesh` + edge polylines; adaptive recursive-midpoint sampling that
+  honors chordal tolerance on edges and curved faces; planar faces ear-clipped via
+  exact `Orient2D` → watertight), validation (`Validate` checks manifold/closed/
+  orientation, reports each offending edge precisely; `BoundaryEdges`), and the
+  boolean framework (`PartFeatureOperation`, `PointInsideBody` ray-cast
+  classification, relationship classifier; Phase-A handles disjoint and containment
+  with valid manifold results). Genuinely hard parts are honestly deferred behind
+  the same API: general intersecting booleans (face splitting) and tolerant `Sew`
+  → `NotYetImplemented` (kernel phase C/D). `make ci` green; predicate 100%, ops 91.9%.
+- **2026-06-01:** M07-F02 (Geometry Evaluators) complete — the numeric services on
+  topology (`kernel/topo`). `CurveEvaluator`/`EdgeEvaluator`: point, unit tangent,
+  curvature (κ=|r′×r″|/|r′|³ by finite difference), arc length (composite Simpson),
+  and closest-param/point (coarse sample + golden-section). `SurfaceEvaluator`:
+  point, unit normal, partials, and closest-point (coarse grid seed + projected
+  Gauss–Newton, infinite domains clamped). `FaceEvaluator`: exact planar area
+  (Newell), planar point-in-loop containment (dropping the normal's dominant axis,
+  excluding holes). All verified against analytic references — radius-2 circle
+  curvature 0.5 and length 4π, segment perpendicular foot, sphere closest along a
+  radius, triangle area 0.5. `make ci` green; topo 94.3%.
+- **2026-06-01:** M07-F01 (Topology Model) complete — new `kernel/topo`, the B-rep
+  graph. Full Body→Shell→Face→Loop→EdgeUse→Edge→Vertex with adjacency
+  (Edge.Faces, Face.Edges/Vertices, Vertex.Edges) assembled by a back-pointer-
+  consistent `Builder`; faces bind to `geom.Surface` and edges to `geom.Curve3`
+  (planar→Plane, circular→Circle), with per-entity and body `RangeBox` and a
+  `SurfaceBodies` container. The load-bearing rule (parametric-cad §7): every
+  entity records its generative `Lineage`, from which `ReferenceKey()` bytes
+  derive, so `FindFaceByKey`/`FindEdgeByKey` rebind by lineage after a recompute
+  destroys and recreates the body (verified: a rebuilt face is a new object yet
+  the key still binds). Layering: topo sits below model/, so it is self-contained
+  — it owns the lineage/key bytes and does NOT import `model/identity`; the
+  `identity.KeyManager` binds those keys at the feature layer (M08). `make ci`
+  green; topo 95.9%.
+- **2026-06-01:** Strategy set — **build headless-testable (pure-Go) milestones
+  first, defer renderer/UI/cgo work** (M05 UI, M16 visualization, and the
+  view-rendering parts of M14). Order: M06→M07→M08–M13→M14 model→M15→M17→M18.
+  Saved to memory (headless-first-sequencing).
+- **2026-06-01:** M06-F06 (Profiles & Paths) **complete — M06 fully done.** The
+  sketch→feature boundary (parametric-cad §10): `Sketch.Profiles()` walks segment
+  connectivity into closed loops (plus standalone circles), classifies outer vs
+  inner by even–odd nesting using an all-vertices containment test (robust when a
+  hole is centered on the region centroid), and groups them into `Profile{outer,
+  inner}` — multi-region and nested holes supported; a connected-but-unclosed chain
+  becomes an open profile whose `IsClosed()` lets a solid feature reject it (surface
+  features accept). Construction geometry is excluded. `Sketch.Paths()` returns every
+  maximal connected chain (open and closed) as a `Path` sweep/loft rail, with
+  `Path3D` constructible from an ordered 3D point chain. `make ci` green; sketch
+  97.6%. **M06 complete: 6/6 features — `model/sketch` is the full constrained
+  sketch environment, all headless-tested.**
+- **2026-06-01:** M06-F05 (Constraint Solver) complete — the milestone's XL core,
+  pure Go and headless. The whole-system numerical solver (ADR-0009): Newton/
+  Gauss–Newton with Levenberg–Marquardt damping over the concatenated residual
+  vector, finite-difference Jacobian, warm-started from the current variable values
+  so an edit re-solves in a few iterations; iterations are capped and a
+  non-convergent/conflicting system reports as health-sick rather than hanging or
+  returning NaN (parametric-cad §2). It is dimension-agnostic — variables are
+  `[]*math.Scalar`, so the same `Solve` resolves 2D and 3D. DOF analysis falls out
+  of the Jacobian rank (`DOF = vars−rank`, `Redundant = eqs−rank`) giving
+  well/under/over-constrained status: a fully-constrained sketch reports 0 DOF, a
+  redundant constraint is flagged over-constrained, and conflicting constraints go
+  sick. Small pure-Go dense linalg (Gaussian elimination + numeric rank) backs it;
+  the graph decomposition into clusters is a future layer behind the same API.
+  Auto-dimension deferred (a heuristic layer). `make ci` green; sketch 97.9%.
+- **2026-06-01:** M06-F04 (Dimensional Constraints) complete. A `DimensionConstraint`
+  owns a `param.Parameter` (the M02 DAG): its residual is `measure() −
+  param.ModelValue()`, so editing the parameter's expression changes the target and
+  the solver drives geometry to it (the solver and parameter DAG meet only through
+  the parameter value, modeling/00). Distance/Radius/Diameter/Angle/ArcLength via
+  auto-named model parameters; a driven dimension contributes no residual/variables
+  and just reports `Measured()` (excluded from `Sketch.Constraints()`).
+  `ConstraintLimits` + `Drive(v)` clamp for drive/animation. 3D variants
+  (`DimensionConstraint3D`) share the `Constraint` interface. The sketch owns its
+  own `param.Parameters` by default, swappable for the document's shared store via
+  `SetParameters`. `make ci` green; sketch 97.8%.
+- **2026-06-01:** M06-F03 (Geometric Constraints) complete. The `Constraint`
+  interface exposes `Residuals() []float64` plus `Variables() []*math.Scalar`
+  (DOFs by pointer) — so the solver is dimension-agnostic (2D points, 3D points,
+  scalar radii all look alike). Full 2D set: Coincident/Horizontal/Vertical/
+  Parallel/Perpendicular/Collinear/Concentric/EqualLength/EqualRadius/Tangent/
+  Symmetry/Fix, each tested residual-zero exactly when satisfied; `GeometricConstraints`
+  provides Add*/Delete/enumerate. Inference (PBI-071) is a pure ranked heuristic
+  (`InferSegment` near-axis → H/V, `InferSnap` → nearest-point coincidence),
+  separate from the solver, with apply-on-commit verified; the glyph overlay is
+  UI-deferred. 3D variants (PBI-072): `Point3D` + Coincident3D/Collinear3D/
+  Concentric3D/Equal3D/CustomConstraint3D share the same interface, so the F05
+  Newton core will solve them unchanged. `make ci` green; sketch 94.1%.
+- **2026-06-01:** M06-F02 (Sketch Entities) complete. Entities are built on shared
+  constrainable `*Point`s — the solver's variable carriers — so a shared endpoint
+  *is* a coincidence with no explicit constraint (modeling/00). `Line`/`Arc`/
+  `Circle`/`Ellipse`/`Spline`/`Point` (construction flag on each curve), created by
+  typed factory collections (`Lines`/`Arcs`/`Circles`/`Ellipses`/`Splines`/`Points`)
+  bound to the sketch; `AllPoints` collects every solver variable. Splines support
+  fit and control points; `BlockDefinition`/`BlockInstance`/`Blocks` give reusable
+  groups whose instances track definition edits live (placed via `math.Matrix3`).
+  Type names drop the redundant COM `Sketch` prefix (`sketch.Line`, not
+  `SketchLine`) — the Go design in modeling/00, and it avoids the revive
+  package-stutter rule. `make ci` green; sketch 98.1%.
+- **2026-06-01:** M06-F01 (Sketch Infrastructure) complete — new `model/sketch`
+  package. `Plane` is the planar sketch's host coordinate system (origin +
+  orthonormal in-plane axes, normal = x×y) with `ToModel`/`ToSketch` mapping
+  (round-trips; off-plane points orthogonally projected) and the three standard
+  planes. A shared `base` carries id/name/edit-state/visibility/health for the
+  three sketch kinds — planar `Sketch`, `Sketch3D`, and `DrawingSketch` — each
+  with its collection. Projection (PBI-067) links model geometry through a kernel
+  **seam** (`PointSource`/`CurveSource`, which topo implements in M07, same
+  discipline as reference keys): `ProjectPoint`/`ProjectCurve`/`ProjectCutEdges`
+  produce associative reference geometry that `Update` re-projects when the source
+  moves and `BreakLink` freezes — so the solver/entity work (F02+) and the kernel
+  stay decoupled. `make ci` green; sketch 96.6%.
+- **2026-06-01:** M04-F04 (Core Events & Change Manager) **complete — M04 fully
+  done.** The `Workspace` now owns an `event.Bus` (`Events()`) and emits the core
+  event sets: lifecycle ops (Add/Open/Save/Close/SetActive/Quit) fire typed
+  Before (vetoable) + After events — `DocumentCreated`/`DocumentOpened`/
+  `DocumentSave`/`DocumentClose`/`DocumentActivate`/`ApplicationQuit` with stable
+  TypeIDs. A Before handler returning `Veto` cancels the op (`VetoError`): a
+  dirty-document close and an application quit can both be vetoed and the
+  session is left intact; existing lifecycle tests are unaffected because an emit
+  with no subscribers is `Continue`. ModelingEvents + change processing compose
+  straight from the command+event primitives (no separate framework, core/06):
+  `ModelChanged`/`ChangeDefinition` describe a committed edit batch, `Workspace.
+  NotifyModelChanged` emits it (Before vetoable + After), and `ChangeManager`
+  subscribes to the After phase and dispatches to registered `ChangeProcessor`s,
+  with `Registration` giving per-processor enable/disable/unregister control.
+  `make ci` green; doc 97.4%. **M04 complete: 4/4 features.**
+- **2026-06-01:** M04-F03 (Event Infrastructure) complete — new pure `event`
+  package: the typed bus that replaces COM connection points (core/06). One
+  generic `Subscribe[E](bus, phase, handler)` (the XEventsObject/Sink split
+  collapses to a single call) and `Emit[E]`/`EmitContext[E]`; in-proc dispatch is
+  keyed by Go type + `Phase`, so a `Handler[DocumentClosing]` only ever sees that
+  struct — no `VARIANT`, no 316 delegate types. `Phase` = EventTimingEnum;
+  `Outcome`/`HandlingCode` (NotHandled/Handled/Abort) replace the `out
+  HandlingCode` — a Before handler returns `Veto(reason)` and `Emit` aggregates
+  the strongest disposition (keeping the first veto reason) so the caller cancels.
+  The typed event struct replaces the `NameValueMap` context; `Context` still
+  carries a `context.Context` to bound an add-in's veto reply. Concurrency-safe,
+  with a handler snapshot so handlers may (un)subscribe mid-emit. `make ci` green;
+  event 100%.
+- **2026-06-01:** M04-F02 (Undo/Redo & Checkpoints) complete. `History.Undo`/
+  `Redo` revert/re-apply committed `Batch`es over the done/undone stacks,
+  restoring model state and firing one coalesced `OnChange` (the recompute seam):
+  undo→redo returns to identical state, a new edit clears the redo stack,
+  `UndoLabels`/`RedoLabels` are the enumerators, and both refuse to run while a
+  transaction is open. Checkpoints follow core/06's "remember the history length"
+  model — a `CheckPoint` is a captured depth + label, not a geometry snapshot;
+  `GoToCheckPoint` undoes or redoes to that depth in one coalesced update and
+  errors if the depth is unreachable; `CheckPoints`/`ReleaseCheckPoint` enumerate
+  and dispose. `make ci` green; command 94.9%.
+- **2026-06-01:** M04-F01 (Transaction Manager) complete — new `command` package
+  implementing undo as the **command pattern** (core/06, realtime-3d §11), not a
+  literal COM TransactionManager. `Command` is a self-contained reversible unit
+  (Label/Apply/Revert, no document arg → a `Batch` can span documents, the COM
+  "global transaction"); `Func` is a closure command (capturing prior state at
+  Apply time so redo stays correct); `Batch` is the composite undo step with
+  atomic Apply (a mid-batch failure rolls back the applied prefix). The COM
+  vocabulary maps on: `History.Begin`/`Transaction.Commit`/`Abort` for
+  start/end/abort, nested transactions fold their batch into the parent, and a
+  bare `History.Do` issued while a transaction is open joins it (so history stays
+  complete regardless of who edits). Abort reverts recorded commands in reverse
+  for an exact pre-transaction restore; transaction labels are the undo-menu text.
+  `MergeWithPrevious` combines two committed steps into one; `SuppressNotifications`
+  + a single coalesced `OnChange` mean a 1000-edit transaction fires exactly one
+  recompute/notification at commit (the seam the async recompute engine plugs into
+  in M07+). `make ci` green; command 95.0%.
+- **2026-06-01:** M03-F06 (Attributes & Metadata) **complete — M03 fully done.**
+  New `model/attr`: the extensible metadata side-channel. `Value` is a typed
+  tagged union (boolean/integer/double/string/bytes — the `ValueTypeEnum`, no
+  `any`/`map[string]interface{}`). `AttributeSet`/`AttributeSets` give namespaced
+  CRUD; the `AttributeManager` anchors an object's sets by `identity.RefKey` (its
+  serialized bytes) so a face's attributes survive recompute — the rebuilt face
+  re-mints an equal key and re-anchors — and reload (`Encode`/`DecodeAttributes`,
+  the attributes.bin content); `FindAttributes` queries across objects by
+  set/name. iProperties: `PropertySets` ships the four standard sets
+  (Summary/DocumentSummary/DesignTracking/UserDefined), persist via
+  `EncodeProperties`/`DecodeProperties`, and `ExposeParameter` bridges a
+  `param.Parameter` into a custom property (provenance kept via
+  `ExposedFromParameter`, round-trip-stable). `make ci` green; attr 93.8%.
+  **M03 complete: 6/6 features.**
+- **2026-06-01:** M03-F05 (Persistent Identity / Reference Keys) complete — the
+  most load-bearing kernel mechanism, built early per the architecture's mandate
+  (before features depend on selecting topology). New `model/identity`: a `RefKey`
+  is an opaque, serializable **value** encoding an entity's *generative lineage*
+  (e.g. "the top cap of Extrude#3"), never a pointer or array index — topological
+  naming. `KeyManager` (=ReferenceKeyManager) mints (`GetReferenceKey`), rebinds
+  (`BindKeyToObject`→`MatchType`), validates (`CanBindKeyToObject`), and persists
+  key contexts (`SaveContextToArray`/`LoadContextToArray`, ids preserved) plus
+  `KeyToString`/`StringToKey`. Because `kernel/topo` doesn't exist until M07, it is
+  built against a topology **seam** — `Entity`/`Lineage`/`EntitySource` interfaces
+  the real B-rep types implement later; today fakes exercise it. Verified: a key
+  rebinds after a recompute that destroys and recreates the face (new object, same
+  lineage), `CanBind` returns false when topology genuinely vanishes, and keys
+  survive save→close→reopen via context save/load. PBI-043: new `model/health`
+  holds the canonical `Status` vocabulary (ok/warning/sick/suppressed); the
+  reference-loss policy lives once in `KeyManager.Resolve` — a lost reference
+  yields `health.Sick`+`ErrReferenceLost`, fixable by re-selection, never a panic
+  (wired to features/dimensions/mates from M08+). `make ci` green; identity 97.8%,
+  health 100%.
+- **2026-06-01:** M03-F04 (Document References) complete — added the document
+  reference graph and project file resolution to `model/doc`. `RefGraph` is owned
+  by the `Workspace` and shared by every document (each holds a back-pointer), so
+  a document answers its own reference queries: `ReferencedDocuments` (an
+  assembly's parts), `ReferencingDocuments` (the assemblies a part is used in),
+  and the transitive `AllReferencedDocuments`. `DocumentDescriptor` records each
+  reference by full document name with a needs-update flag and a reference-key
+  placeholder (F05); resolution is lazy — already-open docs win, otherwise the
+  target is loaded through the store — and a target that can't be found is
+  **flagged broken, never fatal** (core/05). The graph maintains each doc's
+  `referencedBy` count so `CloseAll(unreferencedOnly)` leaves referenced parts
+  open. File resolution (`FileManager`) uses a portable project search-path model
+  (`DesignProject` = workspace + library roots + `FileLocations`,
+  `DesignProjectManager` tracks the active one): `Resolve` searches workspace then
+  libraries, `Relativize` stores references portably, `TemplateFile` locates a
+  `<type>.obk` template — no registry, no OLE monikers. `make ci` green; doc 97.2%.
+- **2026-06-01:** M03-F03 (File Format & Storage) complete — new `persistence`
+  package implementing `doc.Store`. The `.obk` document is a portable ZIP
+  package (manifest + named binary streams), replacing COM's OLE structured
+  storage with a cross-platform, inspectable container (core/05). `Package` is
+  an ordered set of byte streams with typed `Manifest` access; `Save` is
+  **atomic** — serialize in memory, `stage` to a sibling temp, fsync, then
+  `commit` (rename) — so an interrupted save never corrupts the prior file
+  (verified: a staged-but-uncommitted write leaves the live file byte-intact).
+  `DataIO` reads/writes arbitrary client streams (add-ins, attributes →F06).
+  `Migrate` runs on open: a manifest `schemaVersion` drives ordered migration
+  steps keyed by from-version (`v0→v1` renames the legacy parameter stream
+  losslessly), and a package from a newer build is rejected. `Compact` drops
+  regenerable `cache/` streams (smaller archive, recipe untouched). `PackageStore`
+  adapts all this into the `doc.Store` seam, so a workspace document now saves
+  and reopens as a real file on disk. Scope note: streams are opaque blobs today;
+  typed columnar `Codec[T]` serialization keyed by `TypeID` arrives with real
+  model data (M07+). Exported `doc.Restore` for stores to rebuild a loaded
+  document. `make ci` green; persistence 87.4%, doc 97.0%.
+- **2026-06-01:** M03-F02 (Documents Collection & Open/Save) complete. Added
+  `Workspace` to `model/doc` — the modernized `Documents` collection plus the
+  Application's document ownership (core/02/05), holding open documents, the
+  active document, and the (F04) reference-count hooks. Lifecycle: `Add`
+  create-from-template (empty content, dirty until first save), `Open`/
+  `OpenWithOptions` (typed `OpenOptions` replacing COM's `NameValueMap`;
+  `DeferContent` registers a reference stub without touching the store),
+  `Save`/`SaveAs`, `Close`/`CloseAll(unreferencedOnly, skipSave)` with
+  save-or-discard dirty handling. Persistence is an injected `Store` seam —
+  the workspace stays format-agnostic; the real zip-package backend is F03 —
+  exercised here by a named `fakeStore`. A saved document reopens identically
+  in a fresh workspace. `make ci` green; doc 97.0%.
+- **2026-06-01:** M03-F01 (Document Model & Types) complete — new `model/doc`
+  package. The document/content split (parametric-cad §1b): `Document` is the
+  file/identity/lifecycle unit (session `ID` regenerated on load, not persisted;
+  `FullDocumentName`/`FullFileName`/derived `DisplayName`; `Dirty` with
+  `MarkDirty`/`ClearDirty`; `Open`/`Compacted`), the `Content` interface is the
+  modeling payload. `NewReference` mints a reference stub — identity known,
+  content nil, not open — so the reference graph (F04) can record a dependency
+  without paging in the model. Four concrete specializations embed the base and
+  expose a typed content stub (`PartComponentDefinition`/`AssemblyComponentDefinition`/
+  `DrawingContent`/`PresentationContent`, filled in M07/M11/M14/M16), with a
+  stable `DocumentType` discriminator (values 0–4, never renumber — persisted in
+  manifests per core/05). `Compacted` is always false: the modern atomic
+  write-temp-then-rename save leaves no slack to reclaim. `make ci` green; doc
+  97.6%.
+- **2026-06-01:** M02 (Units, Parameters & Expressions) **complete** — all 4
+  features in one `model/param` package (Parameter/Expr/Graph are mutually
+  dependent; splitting would cycle). F01 units+quantities (dimension signatures,
+  `UnitsOfMeasure` parse/format). F02 expression engine (lexer + recursive-
+  descent parser, unit-aware evaluator with a function library, constant
+  folding, refs bound by stable `ID`). F03 parameter model (Expression→Value→
+  ModelValue triad, kinds with read-only enforcement, `Parameters` collection,
+  tolerance/precision). F04 dependency graph on `Parameters`: edges by id,
+  cycle rejection at edit time (sick, not crash), topo dirty-propagation
+  recomputing exactly the transitive dependents; rename preserves edges and
+  rewrites dependents' display text token-aware. `make ci` green; param 90.2%.
+- **2026-06-01:** M01-F04 (Geometry Utilities & Factory) complete — **M01 fully
+  done.** Boxes in `math/` (per core/01): `Box`/`Box2d` (normalizing
+  constructors, extend/contains/intersect/union/corners, empty-box union
+  identity) and `OrientedBox` (axis-projection containment, corners, `ToAABB`).
+  Closed-form queries in `kernel/geom/query.go` (plain functions, not a COM
+  `GeometryUtilities` object): point→line/segment/plane closest-point & distance,
+  plane projection + signed distance, line-plane intersection, line-line closest
+  pair + intersection, 2D line-line intersection; added `math.IsNearZero` as the
+  shared degeneracy guard. PBI-020: the COM factory is gone (core/03) — the
+  package surface is the construction point, proven allocation-free for value
+  types via `testing.AllocsPerRun == 0`. Deferred (documented): general numeric
+  curve/surface intersection → kernel numeric phase (M06/M07). `make ci` green;
+  math 95.5%, geom 93.5%.
+- **2026-06-01:** M01-F03 (Transient Surfaces & Splines) complete. Added the
+  `Surface` evaluation interface (`PointAt`/`DerivativesAt`/`NormalAt`/`UDomain`/
+  `VDomain`) and the five analytic surfaces (Plane, Cylinder, Cone, Sphere,
+  Torus) with exact normals, plus NURBS `BSplineCurve` (satisfies `Curve3`) and
+  `BSplineSurface`: knot-span search + Cox–de Boor basis, first derivatives via
+  the lower-degree recurrence, rational evaluation/derivatives via a homogeneous
+  accumulator and the quotient rule. Constructors validate sizes/weights and
+  deep-copy for immutability. Tests: analytic reference invariants
+  (radius/normal/tube), metamorphic `NormalAt == normalize(∂u×∂v)`, partials vs
+  finite difference for all surfaces, NURBS quarter-circle stays on the unit
+  circle, bilinear patch matches its closed form. `make ci` green; geom 93.3%.
+  Note: PBI-019's loft/sweep round-trip is deferred to M10 (no surface generator
+  exists yet) — the evaluator correctness it depends on is covered now.
+- **2026-06-01:** M01-F02 (Transient Curves) complete. New `kernel/geom/`
+  package: ownerless immutable curve value types over `math/`, with `Curve2`/
+  `Curve3` evaluation interfaces (`PointAt`/`TangentAt`/`Domain`). Lines &
+  segments, circles & arcs (incl. by-three-points center/radius reconstruction
+  in 2D and 3D via in-plane projection), full/partial ellipses (2D & 3D), and
+  polylines (uniform-by-segment parameterization, vertices copied for
+  immutability). Typed `CollinearPointsError`/`CollinearPoints3dError`. Key test:
+  analytic `TangentAt` checked against a central finite difference for every
+  curve type (catches missing chain factors). `make ci` green; geom coverage
+  93.6%. Acceptance met: 3-point arc reproduces center/radius; ellipse major/
+  minor ratio + axis directions honored; sweep/parameterization correct.
+- **2026-06-01:** M01-F01 (Linear Algebra Primitives) complete. New `math/`
+  package: `scalar.go` (Scalar alias, tolerances, helpers), `vector3/point3/
+  unitvector3`, 2D counterparts, `matrix4` (+ `matrix4_transform` for rotation/
+  coordinate-system/align constructors), `matrix3`, shared `mat_internal`
+  (det3/invert3x3/mul3x3). All immutable; ops return new values. UnitVector
+  enforces unit-length at construction and errors (with the offending magnitude)
+  on a zero vector. `make ci` green: gofmt + vet + golangci-lint + race; math
+  coverage 94.6%. Acceptance criteria met: ops match double-precision reference
+  within tolerance; transform∘inverse = identity (TestMatrix4/3InverseRoundTrip).
+
+## Design decisions made during implementation
+
+- **2026-06-01:** M01-F01 lives in `math/` (not a `TransientGeometry` factory):
+  the COM factory existed only to cross the interop boundary, which is gone
+  (architecture core/03). Value types are plain immutable Go structs, `float64`.
+- **2026-06-01:** Naming — internal Go types use idiomatic, grep-distinct names
+  (`Vector3`/`Point3`/`UnitVector3`/`Matrix4`; `Vector2`/`Point2`/`UnitVector2`/
+  `Matrix3`). Contract names (`Vector`/`Point`/`Matrix`/`Matrix2d`) live on the
+  public gRPC surface (ADR-0006), so internal naming need not mirror COM.
+- **2026-06-01:** Operations are **pure** (return new values) instead of COM-style
+  in-place mutation (`TransformBy`, `Normalize`, `AddVector`), matching the
+  immutable-value-type rule in architecture core/03.

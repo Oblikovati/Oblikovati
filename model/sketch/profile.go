@@ -1,0 +1,182 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package sketch
+
+import (
+	stdmath "math"
+
+	"github.com/Oblikovati/oblikovati/math"
+)
+
+// Profiles, loops and paths are the only things a sketch exports to the feature
+// engine (parametric-cad §10, modeling/00): solved geometry is turned into closed
+// regions (with outer/inner loops) and connected chains. The feature engine never
+// sees the solver or raw sketch entities beyond these.
+
+// ProfileEntity is one curve in a loop or path, with the orientation in which it is
+// traversed (Reversed when its natural direction opposes the traversal).
+type ProfileEntity struct {
+	Entity   Entity
+	reversed bool
+}
+
+// Reversed reports whether the entity is traversed against its natural direction.
+func (pe ProfileEntity) Reversed() bool { return pe.reversed }
+
+// Loop is an ordered chain of entities. It is closed when its traversal returns to
+// the start point.
+type Loop struct {
+	entities []ProfileEntity
+	polygon  []math.Point2
+	closed   bool
+}
+
+// Entities returns the loop's ordered entities.
+func (l Loop) Entities() []ProfileEntity { return l.entities }
+
+// IsClosed reports whether the loop forms a closed region.
+func (l Loop) IsClosed() bool { return l.closed }
+
+// Polygon returns the loop's representative polyline (arcs/circles sampled), used
+// for containment tests.
+func (l Loop) Polygon() []math.Point2 { return l.polygon }
+
+// Profile is a region features extrude/revolve: an outer boundary loop and the
+// inner loops (holes) it contains. An open profile (IsClosed false) has only its
+// chain as the outer loop; features reject open profiles for solids but accept them
+// for surfaces (enforced at the feature, not here).
+type Profile struct {
+	outer Loop
+	inner []Loop
+}
+
+// OuterLoop returns the profile's outer boundary loop.
+func (p *Profile) OuterLoop() Loop { return p.outer }
+
+// InnerLoops returns the profile's hole loops.
+func (p *Profile) InnerLoops() []Loop {
+	out := make([]Loop, len(p.inner))
+	copy(out, p.inner)
+	return out
+}
+
+// IsClosed reports whether the profile encloses a region (its outer loop is closed).
+func (p *Profile) IsClosed() bool { return p.outer.closed }
+
+// Profiles is the set of profiles detected in a sketch.
+type Profiles struct {
+	items []*Profile
+}
+
+// Count returns the number of profiles; Item returns the i-th.
+func (ps *Profiles) Count() int          { return len(ps.items) }
+func (ps *Profiles) Item(i int) *Profile { return ps.items[i] }
+
+// All returns the detected profiles.
+func (ps *Profiles) All() []*Profile {
+	out := make([]*Profile, len(ps.items))
+	copy(out, ps.items)
+	return out
+}
+
+// Profiles detects regions in the sketch from its non-construction geometry: closed
+// loops become closed profiles (with inner/outer classification by nesting); a
+// connected but unclosed chain becomes a single open profile.
+func (s *Sketch) Profiles() *Profiles {
+	loops, openChains := detectLoops(s.normalGeometry())
+	ps := &Profiles{}
+	ps.items = append(ps.items, groupRegions(loops)...)
+	for _, chain := range openChains {
+		ps.items = append(ps.items, &Profile{outer: chain})
+	}
+	return ps
+}
+
+// normalGeometry returns the sketch's non-construction curve entities.
+func (s *Sketch) normalGeometry() []Entity {
+	var out []Entity
+	for _, e := range s.ents {
+		if cg, ok := e.(interface{ IsConstruction() bool }); ok && cg.IsConstruction() {
+			continue
+		}
+		out = append(out, e)
+	}
+	return out
+}
+
+// groupRegions builds profiles from closed loops by even–odd nesting: a loop
+// contained in an even number of others is an outer boundary; loops one level
+// deeper inside it are its holes.
+func groupRegions(loops []Loop) []*Profile {
+	depth := make([]int, len(loops))
+	for i := range loops {
+		for j := range loops {
+			if i != j && containsLoop(loops[j], loops[i]) {
+				depth[i]++
+			}
+		}
+	}
+	var profiles []*Profile
+	for i, l := range loops {
+		if depth[i]%2 != 0 {
+			continue // a hole; attached to its outer loop below
+		}
+		profiles = append(profiles, &Profile{outer: l, inner: holesOf(i, loops, depth)})
+	}
+	return profiles
+}
+
+// holesOf returns the loops one nesting level inside outer (index oi) — its holes.
+func holesOf(oi int, loops []Loop, depth []int) []Loop {
+	var holes []Loop
+	for j, l := range loops {
+		if j != oi && depth[j] == depth[oi]+1 && containsLoop(loops[oi], l) {
+			holes = append(holes, l)
+		}
+	}
+	return holes
+}
+
+// containsLoop reports whether outer contains inner: every vertex of inner lies
+// inside outer's polygon. (Testing all vertices, not just the centroid, avoids a
+// false positive when a hole is centered on the region's centroid.)
+func containsLoop(outer, inner Loop) bool {
+	if len(inner.polygon) == 0 {
+		return false
+	}
+	for _, v := range inner.polygon {
+		if !pointInPolygon(v, outer.polygon) {
+			return false
+		}
+	}
+	return true
+}
+
+// pointInPolygon is the even–odd ray-casting test.
+func pointInPolygon(p math.Point2, poly []math.Point2) bool {
+	inside := false
+	n := len(poly)
+	for i, j := 0, n-1; i < n; j, i = i, i+1 {
+		yi, yj := poly[i].Y, poly[j].Y
+		if (yi > p.Y) != (yj > p.Y) {
+			x := poly[i].X + (p.Y-yi)/(yj-yi)*(poly[j].X-poly[i].X)
+			if p.X < x {
+				inside = !inside
+			}
+		}
+	}
+	return inside
+}
+
+// circleSamples is how many points a closed curve is sampled into for containment.
+const circleSamples = 24
+
+// sampleCircle returns a polygon approximating a circle.
+func sampleCircle(c *Circle) []math.Point2 {
+	pts := make([]math.Point2, circleSamples)
+	for i := range pts {
+		a := 2 * stdmath.Pi * float64(i) / float64(circleSamples)
+		pts[i] = math.P2(c.Center.X+c.Radius*stdmath.Cos(a), c.Center.Y+c.Radius*stdmath.Sin(a))
+	}
+	return pts
+}

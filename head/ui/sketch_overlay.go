@@ -1,0 +1,179 @@
+//go:build cgo
+
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ui
+
+import (
+	stdmath "math"
+
+	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/sketch"
+	"github.com/Oblikovati/oblikovati/renderer"
+)
+
+// sketchOverlay turns the active sketch's geometry into wireframe line items drawn in
+// the viewport, so the user sees what they draw in the sketch environment. Curves are
+// sampled into polylines; everything is mapped from sketch 2D to model 3D through the
+// sketch plane. Returns nil when there is nothing to draw.
+func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) []renderer.DrawItem {
+	if sk == nil {
+		return nil
+	}
+	normal, sel, cand := &segAccum{}, &segAccum{}, &segAccum{}
+	plane := sk.Plane()
+	pick := func(e sketch.Entity) *segAccum {
+		switch {
+		case candidate != nil && e == candidate:
+			return cand // the geometry the active constraint tool would accept on hover
+		case selected != nil && selected(e):
+			return sel
+		default:
+			return normal
+		}
+	}
+	addLines(pick, plane, sk)
+	addCircles(pick, plane, sk)
+	addArcs(pick, plane, sk)
+	addEllipses(pick, plane, sk)
+	addSplines(pick, plane, sk)
+	var items []renderer.DrawItem
+	items = appendGrid(items, normal, sketchColor)
+	items = appendGrid(items, sel, sketchSelectedColor)
+	items = appendGrid(items, cand, sketchCandidateColor)
+	return items
+}
+
+var (
+	// sketchColor is the amber wireframe used for sketch geometry (Inventor-like).
+	sketchColor = [4]float32{1, 0.78, 0.2, 1}
+	// sketchSelectedColor highlights selected / picked sketch entities (cyan).
+	sketchSelectedColor = [4]float32{0.3, 0.9, 1, 1}
+	// sketchCandidateColor highlights the valid hover target for the active constraint
+	// tool (green), so the user sees which geometry is selectable.
+	sketchCandidateColor = [4]float32{0.4, 1, 0.45, 1}
+)
+
+// sketchSegments is the polyline resolution for sampling sketch curves.
+const sketchSegments = 64
+
+// accumFor is the per-entity accumulator chooser passed to the add* helpers.
+type accumFor func(sketch.Entity) *segAccum
+
+func addLines(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
+	for i := 0; i < sk.Lines().Count(); i++ {
+		l := sk.Lines().Item(i)
+		pick(l).seg(plane, l.A.Position(), l.B.Position())
+	}
+}
+
+func addCircles(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
+	for i := 0; i < sk.Circles().Count(); i++ {
+		c := sk.Circles().Item(i)
+		pick(c).polyline(plane, sampleArc(c.Center.Position(), c.Radius, 0, 2*stdmath.Pi), true)
+	}
+}
+
+func addArcs(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
+	for i := 0; i < sk.Arcs().Count(); i++ {
+		a := sk.Arcs().Item(i)
+		c := a.Center.Position()
+		start := angleOf(c, a.Start.Position())
+		end := angleOf(c, a.End.Position())
+		if a.CounterClockwise && end < start {
+			end += 2 * stdmath.Pi
+		}
+		if !a.CounterClockwise && end > start {
+			end -= 2 * stdmath.Pi
+		}
+		pick(a).polyline(plane, sampleArc(c, a.Radius(), start, end), false)
+	}
+}
+
+func addEllipses(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
+	for i := 0; i < sk.Ellipses().Count(); i++ {
+		e := sk.Ellipses().Item(i)
+		pick(e).polyline(plane, sampleEllipse(e), true)
+	}
+}
+
+func addSplines(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
+	for i := 0; i < sk.Splines().Count(); i++ {
+		sp := sk.Splines().Item(i)
+		pts := make([]math.Point2, sp.PointCount())
+		for j, p := range sp.Points {
+			pts[j] = p.Position()
+		}
+		pick(sp).polyline(plane, pts, sp.Closed)
+	}
+}
+
+// sampleArc samples count+1 points of a circular arc from angle a0 to a1.
+func sampleArc(center math.Point2, r, a0, a1 float64) []math.Point2 {
+	pts := make([]math.Point2, sketchSegments+1)
+	for i := range pts {
+		a := a0 + (a1-a0)*float64(i)/float64(sketchSegments)
+		pts[i] = math.P2(center.X+r*stdmath.Cos(a), center.Y+r*stdmath.Sin(a))
+	}
+	return pts
+}
+
+// sampleEllipse samples the ellipse's perimeter in its major/minor frame.
+func sampleEllipse(e *sketch.Ellipse) []math.Point2 {
+	c := e.Center.Position()
+	ux, uy := unit(e.MajorAxis)
+	pts := make([]math.Point2, sketchSegments)
+	for i := range pts {
+		a := 2 * stdmath.Pi * float64(i) / float64(sketchSegments)
+		mx, my := e.MajorRadius*stdmath.Cos(a), e.MinorRadius*stdmath.Sin(a)
+		pts[i] = math.P2(c.X+mx*ux-my*uy, c.Y+mx*uy+my*ux)
+	}
+	return pts
+}
+
+func angleOf(center, p math.Point2) float64 {
+	return stdmath.Atan2(p.Y-center.Y, p.X-center.X)
+}
+
+// unit returns the normalized components of v (falling back to +X for a zero vector).
+func unit(v math.Vector2) (float64, float64) {
+	l := v.Length()
+	if l < math.DefaultTolerance {
+		return 1, 0
+	}
+	return v.X / l, v.Y / l
+}
+
+// segAccum accumulates indexed line segments (positions + endpoint index pairs).
+type segAccum struct {
+	pos []math.Point3
+	idx []int
+}
+
+func (a *segAccum) add(p math.Point3) int {
+	i := len(a.pos)
+	a.pos = append(a.pos, p)
+	return i
+}
+
+func (a *segAccum) seg(plane sketch.Plane, p, q math.Point2) {
+	i, j := a.add(plane.ToModel(p)), a.add(plane.ToModel(q))
+	a.idx = append(a.idx, i, j)
+}
+
+// polyline adds a connected chain (optionally closed) of plane points.
+func (a *segAccum) polyline(plane sketch.Plane, pts []math.Point2, closed bool) {
+	if len(pts) < 2 {
+		return
+	}
+	idxs := make([]int, len(pts))
+	for i, p := range pts {
+		idxs[i] = a.add(plane.ToModel(p))
+	}
+	for i := 0; i+1 < len(pts); i++ {
+		a.idx = append(a.idx, idxs[i], idxs[i+1])
+	}
+	if closed {
+		a.idx = append(a.idx, idxs[len(pts)-1], idxs[0])
+	}
+}
