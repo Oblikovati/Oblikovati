@@ -51,6 +51,17 @@ func New(ops *opregistry.Registry) *Router {
 	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
 	r.handlers[wire.MethodThemeActive] = themeActive
 	r.handlers[wire.MethodThemeList] = themeList
+	r.handlers[wire.MethodAppearancesList] = listAppearances
+	r.handlers[wire.MethodAppearancesGet] = getAppearance
+	r.handlers[wire.MethodAppearancesCreate] = createAppearance
+	r.handlers[wire.MethodAppearancesUpdate] = updateAppearance
+	r.handlers[wire.MethodMaterialsList] = listMaterials
+	r.handlers[wire.MethodMaterialsGet] = getMaterial
+	r.handlers[wire.MethodMaterialsCreate] = createMaterial
+	r.handlers[wire.MethodMaterialsUpdate] = updateMaterial
+	r.handlers[wire.MethodModelAssignMaterial] = assignMaterial
+	r.handlers[wire.MethodModelAssignAppearance] = assignAppearance
+	r.handlers[wire.MethodModelPhysicalProperties] = physicalProperties
 	return r
 }
 

@@ -39,6 +39,7 @@ type Session struct {
 	themes          *theme.Library
 	themeStore      *theme.Store
 	materials       *material.Library
+	materialStore   *material.Store
 }
 
 // NewSession creates an empty in-memory session with no persistence store. Its
