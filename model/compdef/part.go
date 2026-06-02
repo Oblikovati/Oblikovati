@@ -10,6 +10,7 @@ import (
 	"github.com/Oblikovati/oblikovati/model/doc"
 	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/identity"
+	"github.com/Oblikovati/oblikovati/model/material"
 	"github.com/Oblikovati/oblikovati/model/param"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
@@ -31,6 +32,9 @@ type PartComponentDefinition struct {
 	units    param.UnitsOfMeasure  // document display units (length/angle/…)
 	version  uint64
 	eop      int // end-of-part feature index; endOfPartAtEnd ⇒ full program
+	// assignments survive Recompute (keyed by persistent reference key, not body id), so a
+	// material/appearance stays put when the body it is on is regenerated.
+	assignments *material.AssignmentStore
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
@@ -39,16 +43,21 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 	params := param.NewParameters()
 	keys := identity.NewKeyManager()
 	return &PartComponentDefinition{
-		bodies:   topo.NewSurfaceBodies(),
-		params:   params,
-		sketches: sketch.NewSketches(),
-		features: feature.NewPartFeatures(params, keys),
-		keys:     keys,
-		work:     feature.NewWorkGeometry(),
-		units:    param.DefaultUnitsOfMeasure(),
-		eop:      endOfPartAtEnd,
+		bodies:      topo.NewSurfaceBodies(),
+		params:      params,
+		sketches:    sketch.NewSketches(),
+		features:    feature.NewPartFeatures(params, keys),
+		keys:        keys,
+		work:        feature.NewWorkGeometry(),
+		units:       param.DefaultUnitsOfMeasure(),
+		eop:         endOfPartAtEnd,
+		assignments: material.NewAssignmentStore(),
 	}
 }
+
+// Assignments returns the part's material/appearance assignment store. It is keyed by
+// persistent reference keys, so it is unaffected by Recompute.
+func (d *PartComponentDefinition) Assignments() *material.AssignmentStore { return d.assignments }
 
 // AddPart creates a new part document in ws with a realized part component
 // definition installed (not the bare doc-package placeholder), makes it active, and
