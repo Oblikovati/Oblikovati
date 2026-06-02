@@ -88,6 +88,141 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSolidFeaturesRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewHoleFeatures(fs).AddTapped([]byte("face-1"), func() float64 { return 6 }, func() float64 { return 10 }, "M6x1")
+	NewBossFeatures(fs).Add([]byte("face-2"), func() float64 { return 8 }, func() float64 { return 4 })
+	NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 3 {
+		t.Fatalf("feature count = %d, want 3", fresh.Count())
+	}
+
+	hole := fresh.Item(0).Definition().(*HoleFeature).Definition()
+	if string(hole.PlacementFaceKey) != "face-1" || hole.Diameter() != 6 || hole.Depth() != 10 {
+		t.Errorf("hole = face %q d %v depth %v, want face-1 6 10", hole.PlacementFaceKey, hole.Diameter(), hole.Depth())
+	}
+	if !hole.Tap.Tapped || hole.Tap.Designation != "M6x1" {
+		t.Errorf("hole tap = %+v, want tapped M6x1", hole.Tap)
+	}
+	boss := fresh.Item(1).Definition().(*BossFeature).Definition()
+	if string(boss.PlacementFaceKey) != "face-2" || boss.Height() != 4 {
+		t.Errorf("boss = face %q height %v, want face-2 4", boss.PlacementFaceKey, boss.Height())
+	}
+	combine := fresh.Item(2).Definition().(*CombineFeature).Definition()
+	if combine.TargetIndex != 0 || combine.ToolIndex != 1 || combine.Operation != ops.Cut {
+		t.Errorf("combine = %+v, want target 0 tool 1 Cut", combine)
+	}
+}
+
+func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	fs := NewPartFeatures(nil, nil)
+	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+	NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return 3 }, func() int { return 2 })
+	NewPatternFeatures(fs).AddMirror([]ID{src.ID()}, []byte("plane-key"))
+
+	data, err := fs.MarshalRecipe(oneSketch{sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 3 {
+		t.Fatalf("feature count = %d, want 3 (extrude + rect pattern + mirror)", fresh.Count())
+	}
+
+	// The pattern's source must re-bind to the RESTORED extrude's id, not the old one.
+	wantSource := fresh.Item(0).ID()
+	rect := fresh.Item(1).Definition().(*RectangularPatternFeature).Definition()
+	if len(rect.SourceFeatures) != 1 || rect.SourceFeatures[0] != wantSource {
+		t.Errorf("rect pattern source = %v, want [%d]", rect.SourceFeatures, wantSource)
+	}
+	if rect.CountX() != 3 || rect.CountY() != 2 {
+		t.Errorf("rect counts = %dx%d, want 3x2", rect.CountX(), rect.CountY())
+	}
+	mirror := fresh.Item(2).Definition().(*MirrorFeature).Definition()
+	if len(mirror.SourceFeatures) != 1 || mirror.SourceFeatures[0] != wantSource {
+		t.Errorf("mirror source = %v, want [%d]", mirror.SourceFeatures, wantSource)
+	}
+	if string(mirror.MirrorPlaneKey) != "plane-key" {
+		t.Errorf("mirror plane key = %q, want plane-key", mirror.MirrorPlaneKey)
+	}
+}
+
+func TestSurfaceFeaturesRoundTrip(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	fs := NewPartFeatures(nil, nil)
+	NewBoundaryPatchFeatures(fs).Add(sk, 0, PatchFree)
+	NewRuledSurfaceFeatures(fs).AddByDistance(sk, 0, RuledNormal, func() float64 { return 2 })
+
+	data, err := fs.MarshalRecipe(oneSketch{sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 2 {
+		t.Fatalf("feature count = %d, want 2", fresh.Count())
+	}
+
+	bp := fresh.Item(0).Definition().(*BoundaryPatchFeature).Definition()
+	if bp.Loops.Count() != 1 || bp.Loops.Item(0).ProfileIndex != 0 || bp.Loops.Item(0).Condition != PatchFree {
+		t.Errorf("boundary patch loop = %+v, want one free loop on profile 0", bp.Loops.Item(0))
+	}
+	rs := fresh.Item(1).Definition().(*RuledSurfaceFeature).Definition()
+	if rs.Type != RuledNormal || rs.Distance() != 2 {
+		t.Errorf("ruled surface = type %v dist %v, want normal 2", rs.Type, rs.Distance())
+	}
+}
+
+func TestFaceEditFeaturesRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	m := NewModifyFeatures(fs)
+	m.AddSplit([][]byte{[]byte("f-split")})
+	m.AddMoveFace([][]byte{[]byte("f-move")})
+	m.AddFaceOffset([][]byte{[]byte("f-off")})
+	m.AddDeleteFace([][]byte{[]byte("f-del")})
+	m.AddReplaceFace([][]byte{[]byte("f-rep")})
+	m.AddThicken([][]byte{[]byte("f-thick")})
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+
+	want := []string{"split", "move-face", "face-offset", "delete-face", "replace-face", "thicken"}
+	if fresh.Count() != len(want) {
+		t.Fatalf("feature count = %d, want %d", fresh.Count(), len(want))
+	}
+	for i, kind := range want {
+		if got := fresh.Item(i).Kind(); got != kind {
+			t.Errorf("feature %d kind = %q, want %q", i, got, kind)
+		}
+	}
+	// The split's face key must survive byte-for-byte.
+	split := fresh.Item(0).Definition().(faceEditor)
+	if len(split.FaceKeys()) != 1 || string(split.FaceKeys()[0]) != "f-split" {
+		t.Errorf("split face keys = %v, want [f-split]", split.FaceKeys())
+	}
+}
+
 func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	fs.Add(fakeFeature{})
