@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/feature"
 )
 
 // CreateSketchTool is Inventor's "Create 2D Sketch" interaction: after the command
@@ -14,7 +14,7 @@ import (
 // the instant it is clicked (auto-commit). It restricts the selection filter to work
 // planes while active, so only valid sketch hosts highlight/pick.
 type CreateSketchTool struct {
-	plane      *compdef.WorkPlane
+	plane      *feature.WorkPlane
 	prevFilter *SelectionFilter
 }
 

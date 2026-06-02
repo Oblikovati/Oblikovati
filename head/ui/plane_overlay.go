@@ -7,6 +7,7 @@ package ui
 import (
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/renderer"
 )
 
@@ -15,7 +16,7 @@ import (
 // host. The selected plane is highlighted; the plane under the cursor is shown in the
 // hover color (the focus the user is about to pick). Shown outside the sketch
 // environment.
-func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *compdef.WorkPlane) []renderer.DrawItem {
+func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *feature.WorkPlane) []renderer.DrawItem {
 	if part == nil {
 		return nil
 	}
@@ -27,7 +28,7 @@ func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *com
 }
 
 // planeColor chooses a plane's draw color: selected wins, then hovered, then faint.
-func planeColor(wp, selected, hovered *compdef.WorkPlane) [4]float32 {
+func planeColor(wp, selected, hovered *feature.WorkPlane) [4]float32 {
 	switch wp {
 	case selected:
 		return selectedPlaneColor
@@ -46,7 +47,7 @@ var (
 
 // planeBorder builds the border-and-diagonals line item of a work plane's display
 // square, mapped from the plane's 2D frame into model space.
-func planeBorder(wp *compdef.WorkPlane, color [4]float32) renderer.DrawItem {
+func planeBorder(wp *feature.WorkPlane, color [4]float32) renderer.DrawItem {
 	pl := wp.Plane()
 	s := wp.DisplaySize()
 	corners2D := []math.Point2{math.P2(-s, -s), math.P2(s, -s), math.P2(s, s), math.P2(-s, s)}

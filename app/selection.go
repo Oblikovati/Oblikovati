@@ -4,7 +4,6 @@ package app
 
 import (
 	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
@@ -63,7 +62,7 @@ type SketchEntityHandle struct{ Entity sketch.Entity }
 func (SketchEntityHandle) SelectionKind() SelectionKind { return SelectSketchEntity }
 
 // WorkPlaneHandle wraps a picked origin/work plane (selected to host a new sketch).
-type WorkPlaneHandle struct{ Plane *compdef.WorkPlane }
+type WorkPlaneHandle struct{ Plane *feature.WorkPlane }
 
 func (WorkPlaneHandle) SelectionKind() SelectionKind { return SelectWorkPlane }
 

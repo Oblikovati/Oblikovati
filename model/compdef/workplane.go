@@ -2,55 +2,36 @@
 
 package compdef
 
-import "github.com/Oblikovati/oblikovati/model/sketch"
+import "github.com/Oblikovati/oblikovati/model/feature"
 
-// WorkPlane is a part datum plane — one of the three origin planes (XY/XZ/YZ) or, in
-// future, a user-created work plane. It hosts sketches and is selectable in the browser
-// and the 3D view. DisplaySize is the half-extent at which the (infinite) plane is
-// drawn and hit-tested as a finite square so it can be picked in the viewport.
-type WorkPlane struct {
-	name        string
-	plane       sketch.Plane
-	displaySize float64
-}
+// The part's datum geometry — the origin coordinate system (XY/XZ/YZ planes, X/Y/Z
+// axes, center point) plus user-created work planes/axes/points — lives in one
+// [feature.WorkGeometry], matching how Inventor structures a ComponentDefinition's
+// WorkPlanes/WorkAxes/WorkPoints collections (the origin elements are grounded
+// coordinate-system members). The part delegates to it.
 
-// newWorkPlane constructs a named datum plane with a display half-extent.
-func newWorkPlane(name string, plane sketch.Plane, displaySize float64) *WorkPlane {
-	return &WorkPlane{name: name, plane: plane, displaySize: displaySize}
-}
+// WorkGeometry returns the part's construction-geometry frame.
+func (d *PartComponentDefinition) WorkGeometry() *feature.WorkGeometry { return d.work }
 
-// Name returns the plane's display name (e.g. "XY Plane").
-func (w *WorkPlane) Name() string { return w.name }
-
-// Plane returns the underlying sketch plane (origin + in-plane axes), the host a new
-// sketch is created on.
-func (w *WorkPlane) Plane() sketch.Plane { return w.plane }
-
-// DisplaySize is the half-edge length of the square the plane is drawn/picked as.
-func (w *WorkPlane) DisplaySize() float64 { return w.displaySize }
-
-// defaultOriginPlaneSize is the half-extent the origin planes display at.
-const defaultOriginPlaneSize = 5.0
-
-// newOriginPlanes builds the three standard origin work planes of a fresh part.
-func newOriginPlanes() []*WorkPlane {
-	return []*WorkPlane{
-		newWorkPlane("XY Plane", sketch.XYPlane(), defaultOriginPlaneSize),
-		newWorkPlane("XZ Plane", sketch.XZPlane(), defaultOriginPlaneSize),
-		newWorkPlane("YZ Plane", sketch.YZPlane(), defaultOriginPlaneSize),
-	}
+// WorkPlanes/WorkAxes/WorkPoints/UserCoordinateSystems expose the datum collections.
+func (d *PartComponentDefinition) WorkPlanes() *feature.WorkPlanes { return d.work.WorkPlanes() }
+func (d *PartComponentDefinition) WorkAxes() *feature.WorkAxes     { return d.work.WorkAxes() }
+func (d *PartComponentDefinition) WorkPoints() *feature.WorkPoints { return d.work.WorkPoints() }
+func (d *PartComponentDefinition) UserCoordinateSystems() *feature.UserCoordinateSystems {
+	return d.work.UserCoordinateSystems()
 }
 
 // OriginPlanes returns the part's origin datum planes (XY/XZ/YZ), the Origin folder's
 // contents in the browser and the default sketch hosts.
-func (d *PartComponentDefinition) OriginPlanes() []*WorkPlane {
-	return append([]*WorkPlane(nil), d.origin...)
+func (d *PartComponentDefinition) OriginPlanes() []*feature.WorkPlane {
+	return d.work.OriginPlanes()
 }
 
-// WorkPlaneByName returns the origin plane with the given name, or false.
-func (d *PartComponentDefinition) WorkPlaneByName(name string) (*WorkPlane, bool) {
-	for _, w := range d.origin {
-		if w.name == name {
+// WorkPlaneByName returns the work plane with the given name (e.g. "XY Plane"), or false.
+func (d *PartComponentDefinition) WorkPlaneByName(name string) (*feature.WorkPlane, bool) {
+	planes := d.work.WorkPlanes()
+	for i := 0; i < planes.Count(); i++ {
+		if w := planes.Item(i); w.Name() == name {
 			return w, true
 		}
 	}

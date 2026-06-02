@@ -8,34 +8,105 @@ import (
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
-// Work features are parametric construction geometry — datum planes, axes and
-// points defined by relationships (offset, three-point, intersection…) that
-// recompute when their driving inputs change and are valid feature/sketch inputs
-// wherever no model face exists yet (modeling/01). Each holds an evaluate closure
-// capturing its definition; Recompute re-derives the geometry and sets health.
+// Work features are parametric construction geometry — datum planes, axes and points
+// defined by relationships to other geometry (Inventor's model: every work feature is
+// built relative to references, resolved at recompute). Each holds a typed, serializable
+// [planeDefinition]/etc. (not an opaque closure) so it round-trips. The origin elements
+// are grounded coordinate-system members with fixed geometry; user features reference
+// the origin or earlier features by [WorkRef].
 
-// WorkPlane is a parametric datum plane.
-type WorkPlane struct {
-	id       ID
-	name     string
-	evaluate func() (sketch.Plane, error)
-	plane    sketch.Plane
-	health   health.Health
+// defaultOriginPlaneSize is the half-extent the origin planes display at.
+const defaultOriginPlaneSize = 5.0
+
+// planeDefinition computes a work plane from its references. Concrete kinds capture the
+// references + parameters; eval resolves the references through the work resolver.
+type planeDefinition interface {
+	kindName() string
+	refs() []WorkRef
+	eval(r workResolver) (sketch.Plane, error)
 }
 
-// ID/Name identify the datum; Health reports its last recompute state.
+// fixedPlaneDef is a grounded plane (an origin plane): fixed geometry, no references.
+type fixedPlaneDef struct{ plane sketch.Plane }
+
+func (d fixedPlaneDef) kindName() string                        { return "fixed" }
+func (d fixedPlaneDef) refs() []WorkRef                         { return nil }
+func (d fixedPlaneDef) eval(workResolver) (sketch.Plane, error) { return d.plane, nil }
+
+// offsetPlaneDef is a plane parallel to a base plane, offset along its normal by a
+// (parametric) distance — Inventor's PlaneAndOffset definition.
+type offsetPlaneDef struct {
+	base   WorkRef
+	offset func() float64
+}
+
+func (d offsetPlaneDef) kindName() string { return "plane-offset" }
+func (d offsetPlaneDef) refs() []WorkRef  { return []WorkRef{d.base} }
+func (d offsetPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+	base, err := r.plane(d.base)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	origin := base.Origin().TranslateBy(base.Normal().AsVector().Scale(d.offset()))
+	return sketch.NewPlane(origin, base.XAxis(), base.YAxis())
+}
+
+// threePointPlaneDef builds a plane through three referenced points.
+type threePointPlaneDef struct{ a, b, c WorkRef }
+
+func (d threePointPlaneDef) kindName() string { return "three-points" }
+func (d threePointPlaneDef) refs() []WorkRef  { return []WorkRef{d.a, d.b, d.c} }
+func (d threePointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+	a, err := r.point(d.a)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	b, err := r.point(d.b)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	c, err := r.point(d.c)
+	if err != nil {
+		return sketch.Plane{}, err
+	}
+	return planeThroughPoints(a, b, c)
+}
+
+// WorkPlane is a datum plane — an origin coordinate-system plane or a user work plane.
+type WorkPlane struct {
+	id               ID
+	key              WorkRef
+	name             string
+	def              planeDefinition
+	plane            sketch.Plane
+	health           health.Health
+	displaySize      float64
+	coordinateSystem bool
+	grounded         bool
+}
+
+// ID/Key/Name identify the datum; Health reports its last recompute state.
 func (w *WorkPlane) ID() ID                { return w.id }
+func (w *WorkPlane) Key() WorkRef          { return w.key }
 func (w *WorkPlane) Name() string          { return w.name }
 func (w *WorkPlane) SetName(n string)      { w.name = n }
 func (w *WorkPlane) Health() health.Health { return w.health }
 
-// Plane returns the current datum plane, also usable directly as a sketch plane.
+// Plane returns the current datum plane, also usable directly as a sketch host.
 func (w *WorkPlane) Plane() sketch.Plane { return w.plane }
 
-// Recompute re-derives the plane from its definition, going sick on failure (e.g.
+// DisplaySize is the half-edge length of the square the plane is drawn/picked as.
+func (w *WorkPlane) DisplaySize() float64 { return w.displaySize }
+
+// IsCoordinateSystemElement reports whether this is one of the origin frame's planes;
+// Grounded reports whether its geometry is fixed (the absolute document frame).
+func (w *WorkPlane) IsCoordinateSystemElement() bool { return w.coordinateSystem }
+func (w *WorkPlane) Grounded() bool                  { return w.grounded }
+
+// recompute re-derives the plane from its definition, going sick on failure (e.g.
 // degenerate three points) rather than producing garbage.
-func (w *WorkPlane) Recompute() {
-	p, err := w.evaluate()
+func (w *WorkPlane) recompute(r workResolver) {
+	p, err := w.def.eval(r)
 	if err != nil {
 		w.health = health.Sicken("work plane: " + err.Error())
 		return
@@ -43,44 +114,57 @@ func (w *WorkPlane) Recompute() {
 	w.plane, w.health = p, health.Healthy
 }
 
-// WorkPlanes is the collection of datum planes and their relationship constructors.
+// WorkPlanes is the part's collection of datum planes (origin first, then user). It
+// holds its owning [WorkGeometry] so Add* can resolve references at creation.
 type WorkPlanes struct {
+	g     *WorkGeometry
 	items []*WorkPlane
 	byID  map[ID]*WorkPlane
+	byKey map[WorkRef]*WorkPlane
 }
 
-// NewWorkPlanes returns an empty collection.
-func NewWorkPlanes() *WorkPlanes { return &WorkPlanes{byID: map[ID]*WorkPlane{}} }
+func newWorkPlanes(g *WorkGeometry) *WorkPlanes {
+	return &WorkPlanes{g: g, byID: map[ID]*WorkPlane{}, byKey: map[WorkRef]*WorkPlane{}}
+}
 
-// AddByPlaneAndOffset creates a plane parallel to base, offset along its normal by
-// the value the offset closure returns (typically a parameter), so the datum moves
-// when that parameter changes.
-func (c *WorkPlanes) AddByPlaneAndOffset(base sketch.Plane, offset func() float64) *WorkPlane {
-	eval := func() (sketch.Plane, error) {
-		origin := base.Origin().TranslateBy(base.Normal().AsVector().Scale(offset()))
-		return sketch.NewPlane(origin, base.XAxis(), base.YAxis())
+// addOrigin adds a grounded coordinate-system plane with a well-known reference.
+func (c *WorkPlanes) addOrigin(key WorkRef, name string, plane sketch.Plane) *WorkPlane {
+	w := &WorkPlane{
+		id: nextID(), key: key, name: name, def: fixedPlaneDef{plane: plane},
+		displaySize: defaultOriginPlaneSize, coordinateSystem: true, grounded: true,
 	}
-	return c.add("WorkPlane", eval)
+	return c.track(w)
 }
 
-// AddByThreePoints creates a plane through three (parametric) points, with its X
-// axis toward the second point.
-func (c *WorkPlanes) AddByThreePoints(a, b, cc func() math.Point3) *WorkPlane {
-	eval := func() (sketch.Plane, error) {
-		return planeThroughPoints(a(), b(), cc())
+// AddByPlaneAndOffset creates a user plane parallel to base, offset by the value the
+// closure returns (typically a parameter), so the datum moves when that param changes.
+func (c *WorkPlanes) AddByPlaneAndOffset(base WorkRef, offset func() float64) *WorkPlane {
+	return c.addUser("WorkPlane", offsetPlaneDef{base: base, offset: offset})
+}
+
+// AddByThreePoints creates a user plane through three referenced points.
+func (c *WorkPlanes) AddByThreePoints(a, b, cc WorkRef) *WorkPlane {
+	return c.addUser("WorkPlane", threePointPlaneDef{a: a, b: b, c: cc})
+}
+
+// addUser adds a user datum plane, keying it by its position so references stay stable.
+func (c *WorkPlanes) addUser(name string, def planeDefinition) *WorkPlane {
+	w := &WorkPlane{
+		id: nextID(), key: userRef("plane", len(c.items)), name: name, def: def,
+		displaySize: defaultOriginPlaneSize,
 	}
-	return c.add("WorkPlane", eval)
+	return c.track(w)
 }
 
-func (c *WorkPlanes) add(name string, eval func() (sketch.Plane, error)) *WorkPlane {
-	w := &WorkPlane{id: nextID(), name: name, evaluate: eval}
-	w.Recompute()
+func (c *WorkPlanes) track(w *WorkPlane) *WorkPlane {
+	w.recompute(c.g)
 	c.items = append(c.items, w)
 	c.byID[w.id] = w
+	c.byKey[w.key] = w
 	return w
 }
 
-// Count/Item index the collection; ByID looks up.
+// Count/Item index the collection; ByID/ByKey look up.
 func (c *WorkPlanes) Count() int            { return len(c.items) }
 func (c *WorkPlanes) Item(i int) *WorkPlane { return c.items[i] }
 func (c *WorkPlanes) ByID(id ID) (*WorkPlane, bool) {

@@ -111,7 +111,7 @@ func seedPart(s *app.Session) {
 	// staying bound to this seeded part.
 	s.SetPicker(app.NewRayPicker(s.Camera(),
 		func() []*topo.Body { return activeBodies(s) }).
-		WithPlanes(func() []*compdef.WorkPlane { return activeOriginPlanes(s) }))
+		WithPlanes(func() []*feature.WorkPlane { return activeOriginPlanes(s) }))
 
 	// Frame the box (centered ~(2,1.5,2.5)) from a three-quarter view.
 	cam := s.Camera()
@@ -132,7 +132,7 @@ func activeBodies(s *app.Session) []*topo.Body {
 
 // activeOriginPlanes returns the active part's origin work planes (nil if none), so
 // the picker can hit-test the current document's planes.
-func activeOriginPlanes(s *app.Session) []*compdef.WorkPlane {
+func activeOriginPlanes(s *app.Session) []*feature.WorkPlane {
 	if p, err := modelaccess.ActivePart(s); err == nil {
 		return p.OriginPlanes()
 	}

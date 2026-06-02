@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
@@ -49,7 +49,7 @@ func (s *Session) CreateSketchOnSelectedPlane() (*sketch.Sketch, error) {
 }
 
 // SelectedWorkPlane returns the first selected work plane, or nil.
-func (s *Session) SelectedWorkPlane() *compdef.WorkPlane {
+func (s *Session) SelectedWorkPlane() *feature.WorkPlane {
 	for _, it := range s.selection.Items() {
 		if h, ok := it.(WorkPlaneHandle); ok {
 			return h.Plane
