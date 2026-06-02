@@ -147,13 +147,16 @@ func (c *WorkPlanes) AddByThreePoints(a, b, cc WorkRef) *WorkPlane {
 	return c.addUser("WorkPlane", threePointPlaneDef{a: a, b: b, c: cc})
 }
 
-// addUser adds a user datum plane, keying it by its position so references stay stable.
+// addUser adds a user datum plane, keying it by its position so references stay stable,
+// and records it in the part's global creation order.
 func (c *WorkPlanes) addUser(name string, def planeDefinition) *WorkPlane {
 	w := &WorkPlane{
 		id: nextID(), key: userRef("plane", len(c.items)), name: name, def: def,
 		displaySize: defaultOriginPlaneSize,
 	}
-	return c.track(w)
+	c.track(w)
+	c.g.recordUser("plane", len(c.items)-1)
+	return w
 }
 
 func (c *WorkPlanes) track(w *WorkPlane) *WorkPlane {

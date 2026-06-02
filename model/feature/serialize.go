@@ -40,6 +40,7 @@ type FeatureData struct {
 	BoundaryPatch *BoundaryPatchData `yaml:"boundaryPatch,omitempty"`
 	RuledSurface  *RuledSurfaceData  `yaml:"ruledSurface,omitempty"`
 	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
+	Revolve       *RevolveData       `yaml:"revolve,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -144,6 +145,12 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.RuledSurface = rs
+	case *RevolveFeature:
+		rv, err := serializeRevolve(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Revolve = rv
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:
@@ -156,10 +163,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 // tracks the features restored so far so a pattern/mirror can resolve the earlier
 // features it replicates (recorded as program indices). The caller recomputes
 // afterward to regenerate geometry.
-func (fs *PartFeatures) ApplyRecipe(data []FeatureData, sk SketchIndexer) error {
+func (fs *PartFeatures) ApplyRecipe(data []FeatureData, sk SketchIndexer, work *WorkGeometry) error {
 	restored := make([]*PartFeature, 0, len(data))
 	for i, fd := range data {
-		pf, err := buildFeature(fs, fd, sk, restored)
+		pf, err := buildFeature(fs, fd, sk, restored, work)
 		if err != nil {
 			return fmt.Errorf("feature %d (%s): %w", i, fd.Kind, err)
 		}
@@ -173,7 +180,7 @@ func (fs *PartFeatures) ApplyRecipe(data []FeatureData, sk SketchIndexer) error 
 // or a missing payload (no silent loss). Dress-up edge/face keys re-bind to the
 // regenerated topology on the next recompute (kernel topo FindEdgeByKey/FindFaceByKey);
 // patterns resolve their source features from restored (the features built so far).
-func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored []*PartFeature) (*PartFeature, error) {
+func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored []*PartFeature, work *WorkGeometry) (*PartFeature, error) {
 	du := NewDressUpFeatures(fs)
 	switch fd.Kind {
 	case "extrude":
@@ -231,6 +238,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreRuledSurface(fs, fd.RuledSurface, sk)
 	case "split", "move-face", "face-offset", "delete-face", "replace-face", "thicken":
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
+	case "revolve":
+		return restoreRevolve(fs, fd.Revolve, sk, work)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}

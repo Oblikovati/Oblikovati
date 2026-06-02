@@ -46,10 +46,24 @@ type workResolver interface {
 // the single owner so references between work features (and from revolve) resolve in
 // one place. A part component definition holds exactly one.
 type WorkGeometry struct {
-	planes *WorkPlanes
-	axes   *WorkAxes
-	points *WorkPoints
-	ucs    *UserCoordinateSystems
+	planes  *WorkPlanes
+	axes    *WorkAxes
+	points  *WorkPoints
+	ucs     *UserCoordinateSystems
+	userSeq []userEntry // user work features in global creation order (for serialization)
+}
+
+// userEntry records a user work feature's collection and index in global creation
+// order, so serialization replays them in dependency order — a work feature may
+// reference an earlier one (e.g. a point on a user plane).
+type userEntry struct {
+	collection string
+	index      int
+}
+
+// recordUser appends a freshly added user work feature to the creation-order log.
+func (g *WorkGeometry) recordUser(collection string, index int) {
+	g.userSeq = append(g.userSeq, userEntry{collection: collection, index: index})
 }
 
 // NewWorkGeometry builds the frame pre-populated with the grounded origin coordinate

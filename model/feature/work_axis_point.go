@@ -128,7 +128,9 @@ func (c *WorkAxes) AddByPlaneIntersection(p1, p2 WorkRef) *WorkAxis {
 
 func (c *WorkAxes) addUser(def axisDefinition) *WorkAxis {
 	w := &WorkAxis{id: nextID(), key: userRef("axis", len(c.items)), name: "WorkAxis", def: def}
-	return c.track(w)
+	c.track(w)
+	c.g.recordUser("axis", len(c.items)-1)
+	return w
 }
 
 func (c *WorkAxes) track(w *WorkAxis) *WorkAxis {
@@ -253,7 +255,9 @@ func (c *WorkPoints) AddByPlaneAndAxisIntersection(plane, axis WorkRef) *WorkPoi
 
 func (c *WorkPoints) addUser(def pointDefinition) *WorkPoint {
 	w := &WorkPoint{id: nextID(), key: userRef("point", len(c.items)), name: "WorkPoint", def: def}
-	return c.track(w)
+	c.track(w)
+	c.g.recordUser("point", len(c.items)-1)
+	return w
 }
 
 func (c *WorkPoints) track(w *WorkPoint) *WorkPoint {

@@ -28,11 +28,12 @@ var _ doc.RecipeContent = (*PartComponentDefinition)(nil)
 // parameters. Sketches and features join it in later phases. The realized B-rep is
 // never stored — ApplyRecipe recomputes it.
 type partRecipe struct {
-	Units      map[string]string     `yaml:"units,omitempty"`
-	EndOfPart  *int                  `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
-	Parameters []parameterRecipe     `yaml:"parameters,omitempty"`
-	Sketches   []sketch.SketchData   `yaml:"sketches,omitempty"`
-	Features   []feature.FeatureData `yaml:"features,omitempty"`
+	Units        map[string]string         `yaml:"units,omitempty"`
+	EndOfPart    *int                      `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
+	Parameters   []parameterRecipe         `yaml:"parameters,omitempty"`
+	WorkFeatures []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
+	Sketches     []sketch.SketchData       `yaml:"sketches,omitempty"`
+	Features     []feature.FeatureData     `yaml:"features,omitempty"`
 }
 
 // sketchIndex adapts a part's sketch collection to feature.SketchIndexer so features
@@ -81,11 +82,16 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compdef: marshal features: %w", err)
 	}
+	work, err := feature.MarshalWork(d.work)
+	if err != nil {
+		return nil, fmt.Errorf("compdef: marshal work features: %w", err)
+	}
 	r := partRecipe{
-		Units:      d.unitsRecipe(),
-		Parameters: d.parametersRecipe(),
-		Sketches:   sketches,
-		Features:   features,
+		Units:        d.unitsRecipe(),
+		Parameters:   d.parametersRecipe(),
+		WorkFeatures: work,
+		Sketches:     sketches,
+		Features:     features,
 	}
 	if d.eop != endOfPartAtEnd {
 		eop := d.eop
@@ -106,10 +112,13 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := d.applyParameters(r.Parameters); err != nil {
 		return err
 	}
+	if err := feature.ApplyWork(d.work, r.WorkFeatures); err != nil {
+		return fmt.Errorf("compdef: restore work features: %w", err)
+	}
 	if err := d.sketches.ApplyRecipe(r.Sketches); err != nil {
 		return fmt.Errorf("compdef: restore sketches: %w", err)
 	}
-	if err := d.features.ApplyRecipe(r.Features, sketchIndex{d.sketches}); err != nil {
+	if err := d.features.ApplyRecipe(r.Features, sketchIndex{d.sketches}, d.work); err != nil {
 		return fmt.Errorf("compdef: restore features: %w", err)
 	}
 	if r.EndOfPart != nil {
