@@ -78,13 +78,32 @@ func (f *faceEditFeature) Recompute(in Input) (Output, error) {
 // the recipe serialize every face-edit feature uniformly (they share this shape).
 func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
 
-// SplitFeature, ReplaceFaceFeature and ThickenFeature are the direct edits whose geometry
-// still defers (phase C).
+// SplitFeature and ThickenFeature are the direct edits whose geometry still defers (phase C).
 type (
-	SplitFeature       struct{ faceEditFeature }
-	ReplaceFaceFeature struct{ faceEditFeature }
-	ThickenFeature     struct{ faceEditFeature }
+	SplitFeature   struct{ faceEditFeature }
+	ThickenFeature struct{ faceEditFeature }
 )
+
+// ReplaceFaceFeature replaces the picked faces' surface with that of a target face.
+type ReplaceFaceFeature struct {
+	faceEditFeature
+	targetKey []byte
+}
+
+// TargetKey returns the reference key of the face whose plane replaces the picked faces.
+func (f *ReplaceFaceFeature) TargetKey() []byte { return f.targetKey }
+
+// Recompute replaces the picked faces with the target face's plane on the running body (see
+// kernel/ops/replace_face.go); a lost picked or target face makes the feature go Sick.
+func (f *ReplaceFaceFeature) Recompute(in Input) (Output, error) {
+	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
+		target, ok := ops.PlaneOfFace(b, f.targetKey)
+		if !ok {
+			return nil, fmt.Errorf("replace-face: target face reference lost")
+		}
+		return ops.ReplaceFaces(b, keys, target)
+	})
+}
 
 // DeleteFaceFeature removes the picked faces and heals the openings (extends neighbours).
 type DeleteFaceFeature struct{ faceEditFeature }
@@ -170,8 +189,8 @@ func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte) *PartFeature {
 	return c.engine.Add(&DeleteFaceFeature{faceEditFeature{kind: "delete-face", faceKeys: faceKeys}})
 }
 
-func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte) *PartFeature {
-	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature{kind: "replace-face", faceKeys: faceKeys}})
+func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte, targetKey []byte) *PartFeature {
+	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetKey: targetKey})
 }
 
 func (c *ModifyFeatures) AddThicken(faceKeys [][]byte) *PartFeature {

@@ -205,6 +205,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Translation: []float64{t.X, t.Y, t.Z}}
 	case *FaceOffsetFeature:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Distance: f.Distance()}
+	case *ReplaceFaceFeature:
+		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Target: encodeKey(f.TargetKey())}
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:

@@ -72,11 +72,10 @@ func TestDirectEditsResolveThenDefer(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	mod := NewModifyFeatures(fs)
-	// move-face, face-offset and delete-face are real now (see their own tests); the rest defer.
+	// move/offset/delete/replace-face are real now (see their own tests); split & thicken defer.
 	feats := map[string]*PartFeature{
-		"split":        mod.AddSplit([][]byte{face}),
-		"replace-face": mod.AddReplaceFace([][]byte{face}),
-		"thicken":      mod.AddThicken([][]byte{face}),
+		"split":   mod.AddSplit([][]byte{face}),
+		"thicken": mod.AddThicken([][]byte{face}),
 	}
 	fs.Recompute()
 	for name, pf := range feats {
@@ -139,6 +138,30 @@ func TestDeleteFaceHealsInModel(t *testing.T) {
 	}
 	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("healed volume = %g, want 8", got)
+	}
+}
+
+// TestReplaceFaceIdentityIsValid exercises the replace-face feature wiring and key
+// resolution on a box: replacing the top face with its own plane is a valid no-op (vol 8).
+// Geometric correctness for non-identity targets is covered by the kernel ReplaceFaces tests
+// (a same-body parallel/stepped target needs a stepped solid to set up).
+func TestReplaceFaceIdentityIsValid(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var top []byte
+	for _, f := range box.Faces() {
+		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	rf := NewModifyFeatures(fs).AddReplaceFace([][]byte{top}, top) // replace top with its own plane
+	fs.Recompute()
+	if !rf.Health().OK() {
+		t.Fatalf("replace-face sick: %+v", rf.Health())
+	}
+	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
+		t.Errorf("identity replace-face volume = %g, want 8", got)
 	}
 }
 

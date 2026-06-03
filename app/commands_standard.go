@@ -105,8 +105,14 @@ func cutFeatureCommands() []*CommandDefinition {
 	}
 }
 
-// localFaceCommands are the F04 local face operations (shell, offset face, draft).
+// localFaceCommands are the F04 local face operations — the metric edits (shell, offset
+// face, draft) plus the topology edits (delete face, replace face).
 func localFaceCommands() []*CommandDefinition {
+	return append(faceMetricCommands(), faceTopologyCommands()...)
+}
+
+// faceMetricCommands move faces by a distance/angle (shell, offset face, draft).
+func faceMetricCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Modify.Shell", "Shell", "Modify", func(s *Session) error {
 			s.StartTool(NewShellTool())
@@ -126,12 +132,24 @@ func localFaceCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("draft").WithButtonStyle(LargeIconButton).
 			WithTooltip("Draft — taper selected faces by an angle about the pull direction."),
+	}
+}
+
+// faceTopologyCommands change which faces exist (delete face + heal, replace face).
+func faceTopologyCommands() []*CommandDefinition {
+	return []*CommandDefinition{
 		NewCommand("Modify.DeleteFace", "Delete Face", "Modify", func(s *Session) error {
 			s.StartTool(NewDeleteFaceTool())
 			return nil
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("delete-face").WithButtonStyle(LargeIconButton).
 			WithTooltip("Delete Face — remove selected faces and heal the openings."),
+		NewCommand("Modify.ReplaceFace", "Replace Face", "Modify", func(s *Session) error {
+			s.StartTool(NewReplaceFaceTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("replace-face").WithButtonStyle(LargeIconButton).
+			WithTooltip("Replace Face — move selected faces onto a target face's plane."),
 	}
 }
 
