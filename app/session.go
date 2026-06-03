@@ -41,12 +41,19 @@ type Session struct {
 	themeStore      *theme.Store
 	materials       *material.Library
 	materialStore   *material.Store
-	notice          string // last user-facing notice (e.g. a failed-commit reason)
+	notice          string               // last user-facing notice (e.g. a failed-commit reason)
+	visualStyle     renderer.VisualStyle // how the scene is drawn (View tab's Visual Style)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
 // the status bar so a failed OK is not silent.
 func (s *Session) Notice() string { return s.notice }
+
+// VisualStyle returns the active scene visual style (default Shaded with Edges).
+func (s *Session) VisualStyle() renderer.VisualStyle { return s.visualStyle }
+
+// SetVisualStyle sets how the scene is drawn (the View tab's Visual Style).
+func (s *Session) SetVisualStyle(v renderer.VisualStyle) { s.visualStyle = v }
 
 // NewSession creates an empty in-memory session with no persistence store. Its
 // documents live only in memory — Save/Open return "no store configured" — which
@@ -62,12 +69,13 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	return &Session{
-		workspace: doc.NewWorkspace(store),
-		commands:  NewCommandManager(),
-		bus:       event.NewBus(),
-		selection: NewSelection(),
-		camera:    scene.NewCamera(800, 600),
-		addins:    NewAddInManager(),
+		workspace:   doc.NewWorkspace(store),
+		commands:    NewCommandManager(),
+		bus:         event.NewBus(),
+		selection:   NewSelection(),
+		camera:      scene.NewCamera(800, 600),
+		addins:      NewAddInManager(),
+		visualStyle: renderer.ShadedWithEdges,
 	}
 }
 

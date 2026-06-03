@@ -74,6 +74,23 @@ func TestBuildDrawListEmitsSurfacesAndWireframe(t *testing.T) {
 	}
 }
 
+func TestVisualStyleSelectsItems(t *testing.T) {
+	b := box(2, math.V3(0, 0, 0))
+	cam := frontCamera()
+	shaded := BuildDrawListStyled([]*topo.Body{b}, cam, ops.DefaultQuality(), nil, Shaded)
+	if shaded.Triangles() != 12 || shaded.Lines() != 0 {
+		t.Errorf("Shaded = %d tris / %d lines, want 12 / 0", shaded.Triangles(), shaded.Lines())
+	}
+	withEdges := BuildDrawListStyled([]*topo.Body{b}, cam, ops.DefaultQuality(), nil, ShadedWithEdges)
+	if withEdges.Triangles() != 12 || withEdges.Lines() != 12 {
+		t.Errorf("ShadedWithEdges = %d tris / %d lines, want 12 / 12", withEdges.Triangles(), withEdges.Lines())
+	}
+	wire := BuildDrawListStyled([]*topo.Body{b}, cam, ops.DefaultQuality(), nil, Wireframe)
+	if wire.Triangles() != 0 || wire.Lines() != 12 {
+		t.Errorf("Wireframe = %d tris / %d lines, want 0 / 12", wire.Triangles(), wire.Lines())
+	}
+}
+
 func TestObjectIDsTagEachBody(t *testing.T) {
 	a, b := box(1, math.V3(0, 0, 0)), box(1, math.V3(3, 0, 0))
 	list := BuildDrawList([]*topo.Body{a, b}, frontCamera(), ops.DefaultQuality(), nil)
