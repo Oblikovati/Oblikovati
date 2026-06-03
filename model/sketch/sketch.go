@@ -123,6 +123,16 @@ func (s *Sketch) Entities() []Entity {
 // EntityCount returns the number of entities.
 func (s *Sketch) EntityCount() int { return len(s.ents) }
 
+// EntityByID returns the entity with the given session id, or false if none matches.
+func (s *Sketch) EntityByID(id ID) (Entity, bool) {
+	for _, e := range s.ents {
+		if e.EntityID() == id {
+			return e, true
+		}
+	}
+	return nil, false
+}
+
 // AllPoints returns every constrainable point in the sketch — endpoints, centers,
 // and standalone points — which are the solver's position variables.
 func (s *Sketch) AllPoints() []*Point {

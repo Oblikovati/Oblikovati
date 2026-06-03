@@ -144,15 +144,97 @@ func buildSketchEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch,
 		return buildCircle(part, sk, in, pts)
 	case "arc":
 		return buildArc(sk, in, pts)
+	default:
+		return buildCurvedEntity(part, sk, in, pts)
+	}
+}
+
+// buildCurvedEntity dispatches the conic/spline and corner-blend kinds (split from
+// buildSketchEntity to keep each switch small).
+func buildCurvedEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) (sketch.Entity, []uint64, error) {
+	switch in.Kind {
 	case "ellipse":
 		return buildEllipse(part, sk, in, pts)
 	case "ellipticalArc":
 		return buildEllipticalArc(part, sk, in, pts)
 	case "spline":
 		return buildSpline(sk, in, pts)
+	case "fillet":
+		return buildFillet(part, sk, in)
+	case "chamfer":
+		return buildChamfer(part, sk, in)
 	default:
-		return nil, nil, fmt.Errorf("sketch.addEntity: unknown kind %q (want line|point|circle|arc|ellipse|ellipticalArc|spline)", in.Kind)
+		return nil, nil, fmt.Errorf("sketch.addEntity: unknown kind %q (want line|point|circle|arc|ellipse|ellipticalArc|spline|fillet|chamfer)", in.Kind)
 	}
+}
+
+// buildFillet rounds the corner between two referenced lines with a tangent arc.
+func buildFillet(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (sketch.Entity, []uint64, error) {
+	l1, l2, err := twoLineRefs(sk, in.EntityRefs)
+	if err != nil {
+		return nil, nil, err
+	}
+	r, err := part.Units().Parse(in.Radius, param.Length)
+	if err != nil {
+		return nil, nil, fmt.Errorf("sketch.addEntity: fillet radius %q: %w", in.Radius, err)
+	}
+	arc, err := sk.AddFillet(l1, l2, math.Scalar(r.Value))
+	if err != nil {
+		return nil, nil, err
+	}
+	return arc, arcPointIDs(arc), nil
+}
+
+// buildChamfer bevels the corner between two referenced lines (Distance2 defaults to Radius).
+func buildChamfer(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (sketch.Entity, []uint64, error) {
+	l1, l2, err := twoLineRefs(sk, in.EntityRefs)
+	if err != nil {
+		return nil, nil, err
+	}
+	d1, err := part.Units().Parse(in.Radius, param.Length)
+	if err != nil {
+		return nil, nil, fmt.Errorf("sketch.addEntity: chamfer distance %q: %w", in.Radius, err)
+	}
+	d2 := d1
+	if in.Distance2 != "" {
+		if d2, err = part.Units().Parse(in.Distance2, param.Length); err != nil {
+			return nil, nil, fmt.Errorf("sketch.addEntity: chamfer distance2 %q: %w", in.Distance2, err)
+		}
+	}
+	line, err := sk.AddChamfer(l1, l2, math.Scalar(d1.Value), math.Scalar(d2.Value))
+	if err != nil {
+		return nil, nil, err
+	}
+	return line, []uint64{uint64(line.A.EntityID()), uint64(line.B.EntityID())}, nil
+}
+
+// twoLineRefs resolves exactly two entity-reference ids to sketch lines.
+func twoLineRefs(sk *sketch.Sketch, refs []uint64) (*sketch.Line, *sketch.Line, error) {
+	if len(refs) != 2 {
+		return nil, nil, fmt.Errorf("sketch.addEntity: corner blend needs 2 line refs, got %d", len(refs))
+	}
+	l1, err := lineRef(sk, refs[0])
+	if err != nil {
+		return nil, nil, err
+	}
+	l2, err := lineRef(sk, refs[1])
+	if err != nil {
+		return nil, nil, err
+	}
+	return l1, l2, nil
+}
+
+// lineRef resolves an entity id to a sketch line.
+func lineRef(sk *sketch.Sketch, id uint64) (*sketch.Line, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addEntity: no entity with id %d", id)
+	}
+	l, ok := e.(*sketch.Line)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addEntity: entity %d is %T, want a line", id, e)
+	}
+	return l, nil
 }
 
 // buildLine creates a line between two points.

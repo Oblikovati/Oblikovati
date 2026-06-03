@@ -3,6 +3,7 @@
 package router
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Oblikovati/api/wire"
@@ -250,6 +251,48 @@ func TestSketchAddCompositeEntities(t *testing.T) {
 	}
 	if got := part.Sketches().Item(0).Profiles().Count(); got != 3 {
 		t.Fatalf("profiles = %d, want 3 closed regions", got)
+	}
+}
+
+// TestSketchFilletViaAPI builds two corner lines then fillets them through the API,
+// asserting a tangent arc appears.
+func TestSketchFilletViaAPI(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var l1, l2 wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &l1)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[0,4]]}`, &l2)
+
+	var fillet wire.AddSketchEntityResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"fillet","entityRefs":[%d,%d],"radius":"10 mm"}`, l1.EntityID, l2.EntityID)
+	call(t, r, s, "sketch.addEntity", args, &fillet)
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	if countKind(ents.Entities, "arc") != 1 {
+		t.Fatalf("want exactly one arc after fillet, got %+v", ents.Entities)
+	}
+	if !hasArcRadius(ents.Entities, 1) { // a 10 mm = 1 cm radius fillet arc
+		t.Fatalf("no radius-1 arc after fillet in %+v", ents.Entities)
+	}
+}
+
+// hasArcRadius reports whether some enumerated arc has the given radius.
+func hasArcRadius(ents []wire.SketchEntityInfo, radius float64) bool {
+	for _, e := range ents {
+		if e.Kind == "arc" && e.Radius == radius {
+			return true
+		}
+	}
+	return false
+}
+
+func TestSketchFilletNeedsTwoLineRefs(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"fillet","entityRefs":[1],"radius":"1 cm"}`)); err == nil {
+		t.Fatal("expected error for fillet with one ref")
 	}
 }
 
