@@ -50,3 +50,19 @@ func TestReplaceFaceLostKeyErrors(t *testing.T) {
 		t.Error("replace-face with a lost key should error")
 	}
 }
+
+// TestPlaneOfFace resolves a planar face's plane by reference key, and reports a miss for an
+// unknown key.
+func TestPlaneOfFace(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	pl, ok := ops.PlaneOfFace(box, topFaceKey(t, box))
+	if !ok {
+		t.Fatal("PlaneOfFace should resolve the +Z face")
+	}
+	if n := pl.Normal(); stdmath.Abs(n.Z-1) > 1e-9 {
+		t.Errorf("+Z face normal = %v, want ≈ (0,0,1)", n)
+	}
+	if _, ok := ops.PlaneOfFace(box, []byte("ghost")); ok {
+		t.Error("PlaneOfFace should miss on an unknown key")
+	}
+}
