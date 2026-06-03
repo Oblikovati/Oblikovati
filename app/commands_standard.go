@@ -97,6 +97,12 @@ func modifyFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("chamfer").WithButtonStyle(LargeIconButton).
 			WithTooltip("Chamfer — bevel selected edges by a setback distance."),
+		NewCommand("Modify.Shell", "Shell", "Modify", func(s *Session) error {
+			s.StartTool(NewShellTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("shell").WithButtonStyle(LargeIconButton).
+			WithTooltip("Shell — hollow the solid to a wall thickness, removing the selected faces."),
 	}
 }
 

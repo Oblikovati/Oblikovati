@@ -67,12 +67,18 @@ type ShellDefinition struct {
 }
 
 // ShellFeature hollows a solid.
-type ShellFeature struct{ def *ShellDefinition }
+type ShellFeature struct {
+	def      *ShellDefinition
+	featName string
+}
 
 func (s *ShellFeature) Definition() *ShellDefinition { return s.def }
 func (s *ShellFeature) Kind() string                 { return "shell" }
+
+// Recompute hollows the running body to the wall thickness, opening the removed faces. See
+// shell.go.
 func (s *ShellFeature) Recompute(in Input) (Output, error) {
-	return resolveFacesThenDefer(in, s.def.RemovedFaceKeys, "shell")
+	return shellBody(in, s.def.RemovedFaceKeys, callOrZero(s.def.Thickness), featOr(s.featName, "shell"))
 }
 
 // FaceDraftDefinition tapers selected faces by an angle about a pull direction.
@@ -165,7 +171,11 @@ func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64)
 
 // AddShell hollows the body, removing the given faces, to thickness.
 func (c *DressUpFeatures) AddShell(removedFaceKeys [][]byte, thickness func() float64) *PartFeature {
-	return c.engine.Add(&ShellFeature{def: &ShellDefinition{RemovedFaceKeys: removedFaceKeys, Thickness: thickness}})
+	sf := &ShellFeature{def: &ShellDefinition{RemovedFaceKeys: removedFaceKeys, Thickness: thickness}}
+	pf := c.engine.Add(sf)
+	pf.SetName(c.engine.UniqueName("Shell"))
+	sf.featName = pf.name
+	return pf
 }
 
 // AddDraft tapers the given faces by angle.
