@@ -64,6 +64,22 @@ void obk_ig_set_next_window_pos(float x, float y);
 void obk_ig_set_next_window_size(float w, float h);
 void obk_ig_set_next_window_size_first_use(float w, float h);
 
+// Table verbs (the Parameters dialog grid). begin_table opens a bordered, row-striped,
+// vertically scrolling table of `columns` columns; pair with end_table only when it
+// returned non-zero. setup_column/setup_scroll_freeze/headers_row define the header;
+// next_row/next_column advance the cursor (next_column returns visibility). push_id_int/
+// pop_id scope per-row widget ids so identical cell labels don't collide.
+int  obk_ig_begin_table(const char* id, int columns, float outer_w, float outer_h);
+void obk_ig_table_setup_column(const char* label);
+void obk_ig_table_setup_scroll_freeze(int cols, int rows);
+void obk_ig_table_headers_row(void);
+void obk_ig_table_next_row(void);
+int  obk_ig_table_next_column(void);
+void obk_ig_end_table(void);
+void obk_ig_set_next_item_width(float w);
+void obk_ig_push_id_int(int id);
+void obk_ig_pop_id(void);
+
 // Theming verbs (ADR-0021). set_style_color overwrites one persistent ImGuiStyle color,
 // addressed by its ImGui name (e.g. "WindowBg", "Button") so Go never hardcodes the
 // enum index (which shifts between ImGui versions); an unknown name is ignored.
@@ -226,6 +242,42 @@ func BeginCombo(label, preview string) bool {
 }
 
 func EndCombo() { C.obk_ig_end_combo() }
+
+// BeginTable opens a bordered, row-striped, scrolling table of columns columns sized to
+// (w, h) (0 ⇒ fit content / fill avail). Draw its rows only when it returns true, and
+// pair every true with EndTable. Define headers with TableSetupColumn + TableHeadersRow.
+func BeginTable(id string, columns int, w, h float32) bool {
+	c, free := cstr(id)
+	defer free()
+	return C.obk_ig_begin_table(c, C.int(columns), C.float(w), C.float(h)) != 0
+}
+func EndTable() { C.obk_ig_end_table() }
+
+// TableSetupColumn declares the next header column; TableSetupScrollFreeze keeps the
+// first cols columns / rows rows pinned while scrolling; TableHeadersRow emits the
+// header row from the declared columns.
+func TableSetupColumn(label string) {
+	c, free := cstr(label)
+	defer free()
+	C.obk_ig_table_setup_column(c)
+}
+func TableSetupScrollFreeze(cols, rows int) {
+	C.obk_ig_table_setup_scroll_freeze(C.int(cols), C.int(rows))
+}
+func TableHeadersRow() { C.obk_ig_table_headers_row() }
+
+// TableNextRow starts a new row; TableNextColumn advances to the next cell and reports
+// whether it is visible (so a Go loop can skip clipped cells).
+func TableNextRow()         { C.obk_ig_table_next_row() }
+func TableNextColumn() bool { return C.obk_ig_table_next_column() != 0 }
+
+// SetNextItemWidth sets the width of the next widget (-1 ⇒ fill the cell/column).
+func SetNextItemWidth(w float32) { C.obk_ig_set_next_item_width(C.float(w)) }
+
+// PushIDInt / PopID scope an integer id (a parameter's id) so identical cell-widget
+// labels across rows do not collide. Pair every PushIDInt with a PopID.
+func PushIDInt(id int) { C.obk_ig_push_id_int(C.int(id)) }
+func PopID()           { C.obk_ig_pop_id() }
 
 // SeparatorText draws a labeled horizontal separator (used as panel titles).
 func SeparatorText(s string) {

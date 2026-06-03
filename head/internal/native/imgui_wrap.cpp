@@ -129,6 +129,23 @@ int  obk_ig_begin_combo(const char* label, const char* preview) {
 }
 void obk_ig_end_combo(void)                  { ImGui::EndCombo(); }
 
+// Table verbs (the Parameters dialog grid). A fixed flag set gives the dialog its
+// bordered, row-striped, resizable, vertically scrolling grid; the Go side owns layout.
+int  obk_ig_begin_table(const char* id, int columns, float outer_w, float outer_h) {
+    ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                            ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY;
+    return ImGui::BeginTable(id, columns, flags, ImVec2(outer_w, outer_h)) ? 1 : 0;
+}
+void obk_ig_table_setup_column(const char* label)      { ImGui::TableSetupColumn(label); }
+void obk_ig_table_setup_scroll_freeze(int cols, int rows) { ImGui::TableSetupScrollFreeze(cols, rows); }
+void obk_ig_table_headers_row(void)                    { ImGui::TableHeadersRow(); }
+void obk_ig_table_next_row(void)                       { ImGui::TableNextRow(); }
+int  obk_ig_table_next_column(void)                    { return ImGui::TableNextColumn() ? 1 : 0; }
+void obk_ig_end_table(void)                            { ImGui::EndTable(); }
+void obk_ig_set_next_item_width(float w)               { ImGui::SetNextItemWidth(w); }
+void obk_ig_push_id_int(int id)                        { ImGui::PushID(id); }
+void obk_ig_pop_id(void)                               { ImGui::PopID(); }
+
 // want_capture_mouse reports whether ImGui consumed the pointer this frame, so the Go
 // loop knows when NOT to forward a click to the 3D viewport (picking).
 int  obk_ig_want_capture_mouse(void)         { return ImGui::GetIO().WantCaptureMouse ? 1 : 0; }
