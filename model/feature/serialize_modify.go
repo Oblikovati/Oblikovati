@@ -16,6 +16,7 @@ type FaceEditData struct {
 	Faces       []string  `yaml:"faces"`
 	Translation []float64 `yaml:"translation,omitempty"` // move-face: dx, dy, dz
 	Distance    float64   `yaml:"distance,omitempty"`    // face-offset
+	Target      string    `yaml:"target,omitempty"`      // replace-face: source face key
 }
 
 // faceEditor is satisfied by every direct face-edit feature (they embed faceEditFeature),
@@ -45,7 +46,11 @@ func restoreFaceEdit(fs *PartFeatures, kind string, d *FaceEditData) (*PartFeatu
 	case "delete-face":
 		return m.AddDeleteFace(keys), nil
 	case "replace-face":
-		return m.AddReplaceFace(keys), nil
+		target, err := decodeKey(d.Target)
+		if err != nil {
+			return nil, err
+		}
+		return m.AddReplaceFace(keys, target), nil
 	case "thicken":
 		return m.AddThicken(keys), nil
 	default:
