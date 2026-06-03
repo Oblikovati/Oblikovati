@@ -25,6 +25,9 @@ func TestInWindowRibbonUploadsIconTextures(t *testing.T) {
 	if err := app.RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
 	}
+	if _, err := s.NewPart(); err != nil { // a part must be active for the Part ribbon (3D Model/Extrude) to show
+		t.Fatalf("NewPart: %v", err)
+	}
 	for i := 0; i < 3; i++ { // settle the dock/tab layout, then draw the ribbon's icons
 		win.BeginFrame()
 		DrawChrome(win, s)
