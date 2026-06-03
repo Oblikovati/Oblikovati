@@ -42,6 +42,11 @@ type FeatureData struct {
 	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
 	Revolve       *RevolveData       `yaml:"revolve,omitempty"`
 	Move          *MoveData          `yaml:"move,omitempty"`
+	Decal         *DecalData         `yaml:"decal,omitempty"`
+	Reference     *ReferenceData     `yaml:"reference,omitempty"`
+	Client        *ClientData        `yaml:"client,omitempty"`
+	Mark          *MarkData          `yaml:"mark,omitempty"`
+	Finish        *FinishData        `yaml:"finish,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -163,6 +168,16 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Revolve = rv
 	case *MoveFeature:
 		fd.Move = serializeMove(f.def)
+	case *DecalFeature:
+		fd.Decal = &DecalData{Face: encodeKey(f.def.FaceKey), Image: f.def.Image}
+	case *ReferenceFeature:
+		fd.Reference = &ReferenceData{Label: f.def.Label, Source: encodeKey(f.def.SourceKey)}
+	case *ClientFeature:
+		fd.Client = &ClientData{AddIn: f.def.AddInID, Attributes: f.def.Attributes}
+	case *MarkFeature:
+		fd.Mark = &MarkData{Faces: encodeKeys(f.def.FaceKeys), Text: f.def.Text}
+	case *FinishFeature:
+		fd.Finish = &FinishData{Faces: encodeKeys(f.def.FaceKeys), Spec: f.def.Spec}
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:
@@ -254,6 +269,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreRevolve(fs, fd.Revolve, sk, work)
 	case "move":
 		return restoreMove(fs, fd.Move)
+	case "decal", "reference", "client", "mark", "finish":
+		return restoreCosmetic(fs, fd)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}
