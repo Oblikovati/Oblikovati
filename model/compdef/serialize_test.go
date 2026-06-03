@@ -11,7 +11,6 @@ import (
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/doc"
 	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/health"
 	"github.com/Oblikovati/oblikovati/model/param"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/persistence"
@@ -161,19 +160,20 @@ func TestFilletEdgeKeyRebindsAfterReopen(t *testing.T) {
 	fillet := feature.NewDressUpFeatures(def.Features()).
 		AddFillet([][]byte{edgeKey}, func() float64 { return 0.2 })
 	def.Recompute()
-	if fillet.Health().Status != health.Warning {
-		t.Fatalf("fillet health before save = %v, want Warning (edge resolved, geometry deferred)", fillet.Health().Status)
+	if !fillet.Health().OK() {
+		t.Fatalf("fillet health before save = %v, want OK (edge resolved, real blend built)", fillet.Health().Status)
 	}
 
 	reopened := reopenThroughStore(t, d)
 	// The reopened extrude regenerates the body with the same lineage, so the fillet's
-	// edge key must re-bind — proving reference keys survive save→reopen.
+	// edge key must re-bind and the blend rebuild — proving reference keys survive
+	// save→reopen (a lost key would make the fillet Sick).
 	got, ok := featureByKind(reopened.Features(), "fillet")
 	if !ok {
 		t.Fatal("fillet feature missing after reopen")
 	}
-	if got.Health().Status != health.Warning {
-		t.Errorf("fillet health after reopen = %v, want Warning (edge key must re-bind, not be lost/Sick)", got.Health().Status)
+	if !got.Health().OK() {
+		t.Errorf("fillet health after reopen = %v, want OK (edge key must re-bind, not be lost/Sick)", got.Health().Status)
 	}
 }
 

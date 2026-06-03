@@ -82,18 +82,31 @@ func prismBody() *topo.Body {
 	return buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 1, Y: 1}, {X: 0, Y: 1}}, sketch.XYPlane(), span{near: 0, far: 1}, 0, "ext")
 }
 
-func TestFilletResolvesEdgeThenDefers(t *testing.T) {
-	body := prismBody()
-	edgeKey := body.Edges()[0].ReferenceKey()
-
+// TestFilletRoundsEdgeForReal rounds a vertical edge of a 2×2×2 box (r=0.5) through the
+// feature engine: a healthy feature whose result is a valid solid with a cylinder face.
+func TestFilletRoundsEdgeForReal(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var edge []byte
+	for _, e := range box.Edges() {
+		if a, b := e.StartVertex().Point(), e.EndVertex().Point(); a.X == b.X && a.Y == b.Y {
+			edge = e.ReferenceKey()
+			break
+		}
+	}
 	fs := NewPartFeatures(nil, nil)
-	NewBaseFeatures(fs).AddBase(body) // running body the fillet operates on
-	fillet := NewDressUpFeatures(fs).AddFillet([][]byte{edgeKey}, func() float64 { return 0.2 })
+	NewBaseFeatures(fs).AddBase(box)
+	fillet := NewDressUpFeatures(fs).AddFillet([][]byte{edge}, func() float64 { return 0.5 })
 	fs.Recompute()
-
-	// The edge resolves → the feature is healthy-but-deferred (Warning), not sick.
-	if fillet.Health().Status != health.Warning {
-		t.Fatalf("fillet health = %v, want warning (input resolved, geometry deferred)", fillet.Health().Status)
+	if !fillet.Health().OK() {
+		t.Fatalf("fillet sick: %+v", fillet.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("filleted body not a valid solid: %+v", r)
+	}
+	want := 8 - (0.5*0.5-stdmath.Pi*0.25*0.25)*2
+	if got := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-4}).Volume; relErr(got, want) > 1e-3 {
+		t.Errorf("fillet volume = %g, want ≈ %g", got, want)
 	}
 }
 

@@ -34,10 +34,10 @@ func (f *FilletFeature) Definition() *FilletDefinition { return f.def }
 // Kind implements [Feature].
 func (f *FilletFeature) Kind() string { return "fillet" }
 
-// Recompute resolves the picked edges against the running body, then defers the
-// rounding geometry.
+// Recompute rounds the picked convex edges on the running body with a real rolling-ball
+// blend (cylinder faces). See fillet.go.
 func (f *FilletFeature) Recompute(in Input) (Output, error) {
-	return resolveEdgesThenDefer(in, f.def.EdgeKeys, "fillet")
+	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), "fillet")
 }
 
 // ChamferDefinition bevels selected edges by a distance.
@@ -115,22 +115,9 @@ func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	return resolveFacesThenDefer(in, [][]byte{t.def.FaceKey}, "thread")
 }
 
-// resolveEdgesThenDefer resolves edge keys against the running body and, if all
-// bind, defers the geometry (passthrough + ErrDeferred); a lost key is a Sick error.
-func resolveEdgesThenDefer(in Input, keys [][]byte, kind string) (Output, error) {
-	body, err := runningBody(in)
-	if err != nil {
-		return Output{}, err
-	}
-	for _, k := range keys {
-		if _, ok := body.FindEdgeByKey(k); !ok {
-			return Output{}, fmt.Errorf("%s: edge reference lost", kind)
-		}
-	}
-	return Output{Bodies: in.Bodies}, ErrDeferred
-}
-
-// resolveFacesThenDefer is the face-input analogue.
+// resolveFacesThenDefer resolves face keys against the running body and, if all bind, defers
+// the geometry (passthrough + ErrDeferred); a lost key is a Sick error. (Still used by the
+// thread cosmetic feature.)
 func resolveFacesThenDefer(in Input, keys [][]byte, kind string) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
