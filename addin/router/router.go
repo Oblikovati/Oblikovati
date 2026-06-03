@@ -51,14 +51,30 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodParametersSet] = setParameter
 	r.handlers[wire.MethodModelTree] = modelTree
 	r.handlers[wire.MethodModelSelection] = modelSelection
-	r.handlers[wire.MethodSketchCreate] = createSketch
-	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
+	r.registerSketchHandlers()
 	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
 	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
 	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodThemeActive] = themeActive
 	r.handlers[wire.MethodThemeList] = themeList
+}
+
+// registerSketchHandlers wires the 2D-sketch methods: creation (create/rectangle),
+// the F01 spine (list/get/edit/exitEdit/solve/delete), and enumeration
+// (entities/constraints/dimensions).
+func (r *Router) registerSketchHandlers() {
+	r.handlers[wire.MethodSketchCreate] = createSketch
+	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
+	r.handlers[wire.MethodSketchList] = listSketches
+	r.handlers[wire.MethodSketchGet] = getSketch
+	r.handlers[wire.MethodSketchEdit] = editSketch
+	r.handlers[wire.MethodSketchExitEdit] = exitEditSketch
+	r.handlers[wire.MethodSketchSolve] = solveSketch
+	r.handlers[wire.MethodSketchDelete] = deleteSketch
+	r.handlers[wire.MethodSketchEntities] = enumerateEntities
+	r.handlers[wire.MethodSketchConstraints] = enumerateConstraints
+	r.handlers[wire.MethodSketchDimensions] = enumerateDimensions
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface
