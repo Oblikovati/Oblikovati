@@ -184,6 +184,17 @@ func (g *WorkGeometry) axis(ref WorkRef) (*WorkAxis, error) {
 	return w, nil
 }
 
+// AxisByRef returns the work axis with the given reference (e.g. [OriginYAxis]) — the
+// exported lookup the UI uses to resolve a chosen revolve/coil axis. Reports false when
+// no such axis exists.
+func (g *WorkGeometry) AxisByRef(ref WorkRef) (*WorkAxis, bool) {
+	a, err := g.axis(ref)
+	if err != nil {
+		return nil, false
+	}
+	return a, true
+}
+
 func (g *WorkGeometry) point(ref WorkRef) (math.Point3, error) {
 	if p, isVertex, err := g.vertexPoint(ref); isVertex {
 		return p, err

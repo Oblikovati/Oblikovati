@@ -39,8 +39,16 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 
 ### M20 — Feature Completion & Geometry Parity
 
+**Definition of Done (CONVENTIONS.md):** a feature is done only with UI exposure (ribbon
+button + property window) **and** end-to-end UI tests, not model+serialize alone. The
+rows below marked "model-complete, UI pending" satisfy the model layer but still need
+their ribbon command, property window, and e2e UI tests to count as done. **Revolve** is
+the first brought fully to the new DoD (ribbon button `R`, `head/ui` property window,
+app-layer e2e tests driving command→tool→OK→validated solid).
+
 | PBI | Title | Status | Go package | Notes |
 |-----|-------|:------:|------------|-------|
+| 173-UI | Revolve UI (ribbon + property window + e2e) | ✅ | `app`, `head/ui`, `model/feature` | `RevolveTool` + `Create.Revolve` ribbon command (alias `R`) + `head/ui/revolve_dialog.go` property window (output/axis/angle) + `revolve.svg`. E2e: `TestRevolveToolEndToEnd` (click profile → full revolution → OK → validated 24π washer), `TestRevolveViaCommandAlias` (alias `R` → 90° quarter washer), `TestRevolveToolNeedsProfile`. `WorkGeometry.AxisByRef` added. **Reference for retrofitting the other M20 features' UI.** |
 | 174 | Sweep & loft bodies | ✅ | `model/feature` | `SweepFeature` (profile placed along a 3D path, oriented to the local tangent, optional twist) and `LoftFeature` (blend through ordered `(sketch,profile)` sections resampled to a common point count, optional closed) generate real faceted solids via the shared `sweptSolid` primitive. A 2×2 square swept along an L-path is a valid elbow; a 4×4→2×2 square loft is an exact frustum (V=140/3). New `SweepFeatures`/`LoftFeatures` collections + `SweepData`/`LoftData` `.obk` codecs (path as 3D points, sections as sketch+profile indices). `SweepDefinition.Path` is now a `Path3D`; `LoftDefinition` carries `LoftSection{Sketch,ProfileIndex}`. Guide rails, path-frame torsion-minimization and section alignment are follow-ups. |
 | 173 | Revolve & coil surfaces of revolution | ✅ | `model/feature` | `RevolveFeature` and `CoilFeature` now generate **real faceted solids** via a shared `sweptSolid` primitive (cross-section loops → `subd.ToBody` cage → B-rep, re-oriented outward by signed volume). Revolve: full (closed, no caps) or partial (capped) about a `WorkAxis`; a square x∈[2,4]×y∈[0,2] revolved 360° about Y is a validated washer of volume 24π (±1%). Coil: helical placement (pitch/revolutions, taper recorded) capped at both ends; climbs pitch·revs + profile height. New `CoilFeatures` collection + `CoilData` `.obk` codec (axis by WorkRef like revolve). Curved profile edges and exact analytic surfaces are a later refinement; profiles must not touch the axis (pole handling pending). |
 | 189 | Decal, Reference, Client, Mark & Finish | ✅ | `model/feature` | Five cosmetic/reference parity features (`DecalFeature`/`ReferenceFeature`/`ClientFeature`/`MarkFeature`/`FinishFeature` + `*Definition` + `CosmeticFeatures` collection). Pass-through recompute (no geometry change) carrying their payload — decal image+face, reference label+source key, add-in id+attributes, mark faces+text, finish faces+spec — all round-tripping through `.obk`. Completes 5 more Inventor `*Feature` types toward parity. |
