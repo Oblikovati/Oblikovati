@@ -3,6 +3,7 @@
 package feature
 
 import (
+	stdmath "math"
 	"testing"
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
@@ -71,10 +72,9 @@ func TestDirectEditsResolveThenDefer(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	mod := NewModifyFeatures(fs)
-	// move-face and face-offset are real now (see their own tests); the rest still defer.
+	// move-face, face-offset and delete-face are real now (see their own tests); the rest defer.
 	feats := map[string]*PartFeature{
 		"split":        mod.AddSplit([][]byte{face}),
-		"delete-face":  mod.AddDeleteFace([][]byte{face}),
 		"replace-face": mod.AddReplaceFace([][]byte{face}),
 		"thicken":      mod.AddThicken([][]byte{face}),
 	}
@@ -108,6 +108,37 @@ func TestMoveAndOffsetFaceRealGeometry(t *testing.T) {
 	}
 	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
 		t.Errorf("move-face volume = %g, want 12", got)
+	}
+}
+
+// TestDeleteFaceHealsInModel chamfers a box edge then deletes the chamfer face through the
+// feature engine: the body heals back to the sharp box (vol 8), a valid solid.
+func TestDeleteFaceHealsInModel(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var edge []byte
+	for _, e := range box.Edges() {
+		if a, c := e.StartVertex().Point(), e.EndVertex().Point(); a.X == c.X && a.Y == c.Y {
+			edge = e.ReferenceKey()
+			break
+		}
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.5 })
+	fs.Recompute()
+	var chamfer []byte
+	for _, f := range fs.Result()[0].Faces() {
+		if n := f.Geometry().NormalAt(0, 0); stdmath.Abs(n.X) > 0.1 && stdmath.Abs(n.Y) > 0.1 {
+			chamfer = f.ReferenceKey()
+		}
+	}
+	del := NewModifyFeatures(fs).AddDeleteFace([][]byte{chamfer})
+	fs.Recompute()
+	if !del.Health().OK() {
+		t.Fatalf("delete-face sick: %+v", del.Health())
+	}
+	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
+		t.Errorf("healed volume = %g, want 8", got)
 	}
 }
 

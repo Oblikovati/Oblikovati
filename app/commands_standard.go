@@ -126,6 +126,12 @@ func localFaceCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("draft").WithButtonStyle(LargeIconButton).
 			WithTooltip("Draft — taper selected faces by an angle about the pull direction."),
+		NewCommand("Modify.DeleteFace", "Delete Face", "Modify", func(s *Session) error {
+			s.StartTool(NewDeleteFaceTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("delete-face").WithButtonStyle(LargeIconButton).
+			WithTooltip("Delete Face — remove selected faces and heal the openings."),
 	}
 }
 
