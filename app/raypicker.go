@@ -73,18 +73,8 @@ func (p *RayPicker) SetCamera(c scene.Camera) { p.camera = c }
 // profiles (the append order), so a solid in front wins over the sketch on its face.
 func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, bool) {
 	origin, dir := p.camera.RayThrough(x, y)
-	// Precise datum snaps win first: a point, then an axis, the cursor lands on is the
-	// target the user is aiming at, even with a face behind it (Inventor's snap order).
-	if pt, _ := p.nearestPoint(origin, dir); pt != nil && filter.Accepts(SelectWorkPoint) {
-		return WorkPointHandle{Point: pt}, true
-	}
-	if ax, _ := p.nearestAxis(origin, dir); ax != nil && filter.Accepts(SelectWorkAxis) {
-		return WorkAxisHandle{Axis: ax}, true
-	}
-	// A body edge the cursor lands on (within the snap radius) wins over the face behind it,
-	// matching Inventor's edge snap — needed for chamfer/fillet/dress-up edge picks.
-	if e := p.nearestEdge(origin, dir); e != nil && filter.Accepts(SelectEdge) {
-		return EdgeHandle{Edge: e}, true
+	if sel, ok := p.snapPick(origin, dir, filter); ok {
+		return sel, true
 	}
 	var cands []pickCandidate
 	if face, body, t := p.nearestFace(origin, dir); face != nil {
@@ -99,6 +89,25 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 		cands = append(cands, pickCandidate{t, sel})
 	}
 	return nearestCandidate(cands)
+}
+
+// snapPick returns the precise snap the cursor lands on — a datum point, datum axis, body
+// vertex, then edge — each winning over the face behind it (Inventor's snap order). These
+// are exact targets (within the pixel-snap radius), so the first accepted one wins.
+func (p *RayPicker) snapPick(origin math.Point3, dir math.Vector3, filter *SelectionFilter) (Selectable, bool) {
+	if pt, _ := p.nearestPoint(origin, dir); pt != nil && filter.Accepts(SelectWorkPoint) {
+		return WorkPointHandle{Point: pt}, true
+	}
+	if ax, _ := p.nearestAxis(origin, dir); ax != nil && filter.Accepts(SelectWorkAxis) {
+		return WorkAxisHandle{Axis: ax}, true
+	}
+	if v := p.nearestVertex(origin, dir); v != nil && filter.Accepts(SelectVertex) {
+		return VertexHandle{Vertex: v}, true
+	}
+	if e := p.nearestEdge(origin, dir); e != nil && filter.Accepts(SelectEdge) {
+		return EdgeHandle{Edge: e}, true
+	}
+	return nil, false
 }
 
 // pickCandidate is one ray hit: its forward parameter and the selectable it resolves to.
@@ -182,6 +191,27 @@ func (p *RayPicker) nearestFace(origin math.Point3, dir math.Vector3) (*topo.Fac
 		}
 	}
 	return hitFace, hitBody, best
+}
+
+// nearestVertex returns the closest body vertex within the pixel-snap radius of the ray
+// (nearest by ray depth on ties), or nil — the hit-test for picking model vertices (e.g. a
+// three-point work plane through solid corners).
+func (p *RayPicker) nearestVertex(origin math.Point3, dir math.Vector3) *topo.Vertex {
+	tol := pickPixelRadius * p.camera.WorldPerPixel()
+	var hit *topo.Vertex
+	best := stdmath.Inf(1)
+	for _, b := range p.bodies() {
+		for _, v := range b.Vertices() {
+			t := origin.VectorTo(v.Point()).Dot(dir)
+			if t <= 0 || t >= best {
+				continue
+			}
+			if origin.TranslateBy(dir.Scale(t)).DistanceTo(v.Point()) <= tol {
+				best, hit = t, v
+			}
+		}
+	}
+	return hit
 }
 
 // nearestEdge returns the closest body edge whose polyline passes within the pixel-snap

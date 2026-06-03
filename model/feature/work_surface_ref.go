@@ -9,7 +9,29 @@ import (
 
 	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/sketch"
 )
+
+// facePlane resolves a planar B-rep face WorkRef to a sketch plane, so a picked planar face
+// can serve anywhere a plane reference is accepted (offset-from-face, midplane, …). The bool
+// is false when ref is not a face reference (the caller falls through to its other kinds); a
+// face that is non-planar or no longer binds is an error.
+func (g *WorkGeometry) facePlane(ref WorkRef) (sketch.Plane, bool, error) {
+	_, isFace, err := parseFaceRef(ref)
+	if !isFace || err != nil {
+		return sketch.Plane{}, isFace, err
+	}
+	surf, err := g.surface(ref)
+	if err != nil {
+		return sketch.Plane{}, true, err
+	}
+	pl, ok := surf.(geom.Plane)
+	if !ok {
+		return sketch.Plane{}, true, fmt.Errorf("work geometry: face %q is not planar", ref)
+	}
+	sp, err := sketch.NewPlane(pl.Origin, pl.UAxis, pl.VAxis)
+	return sp, true, err
+}
 
 // Surface-tangent work planes are built on a B-rep face the user picked, not on
 // another work feature. A face is named by its persistent topological reference key

@@ -361,3 +361,30 @@ func TestWorkFeatureRibbonCommandsRegistered(t *testing.T) {
 		}
 	}
 }
+
+// TestOffsetWorkPlaneFromFace offsets a work plane from a picked planar face: the box's top
+// face (z=4) offset by 2 lands at z=6. Regression for the offset-plane tool ignoring face
+// picks (it filtered/handled work planes only, despite its "or planar face" prompt).
+func TestOffsetWorkPlaneFromFace(t *testing.T) {
+	s := extrudedBox(t, 2, 4) // box, top face at z=4
+	body := partBodies(s)()[0]
+	top := topFaceOf(t, body)
+
+	tool := NewOffsetWorkPlaneTool()
+	s.StartTool(tool)
+	tool.Pick(s, FaceHandle{Face: top, Body: body})
+	if !tool.BasePicked() {
+		t.Fatal("offset tool did not accept the picked planar face")
+	}
+	tool.SetDistance(2)
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	wp := tool.AddedPlane()
+	if wp == nil {
+		t.Fatal("no plane created")
+	}
+	if z := wp.Plane().Origin().Z; z < 6-1e-9 || z > 6+1e-9 {
+		t.Errorf("offset-from-face plane Z = %g, want 6 (4 + 2)", z)
+	}
+}

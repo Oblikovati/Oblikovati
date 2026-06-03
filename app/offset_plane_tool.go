@@ -15,7 +15,8 @@ import (
 // a fixed distance without asking). The distance is held in model (database) units; the
 // session bridge converts to/from the document's display unit for the dialog field.
 type OffsetWorkPlaneTool struct {
-	base     *feature.WorkPlane
+	baseRef  feature.WorkRef // the plane or planar-face reference to offset from
+	hasBase  bool
 	distance float64 // offset in model units; 0 until the user sets it (so OK stays disabled)
 	added    *feature.WorkPlane
 	prev     *SelectionFilter
@@ -27,19 +28,24 @@ func NewOffsetWorkPlaneTool() *OffsetWorkPlaneTool { return &OffsetWorkPlaneTool
 // Name implements [Tool].
 func (t *OffsetWorkPlaneTool) Name() string { return "Offset Plane" }
 
-// Start filters selection to work planes and seeds the base from a pre-selected plane (so
-// a user who picked a plane first only needs to enter the distance).
+// Start filters selection to work planes and planar faces and seeds the base from a
+// pre-selected plane (so a user who picked a plane first only needs to enter the distance).
 func (t *OffsetWorkPlaneTool) Start(s *Session) {
 	t.prev = s.Selection().Filter()
-	t.base = s.SelectedWorkPlane()
+	if wp := s.SelectedWorkPlane(); wp != nil {
+		t.baseRef, t.hasBase = wp.Key(), true
+	}
 	s.Selection().Clear()
-	s.Selection().SetFilter(NewSelectionFilter(SelectWorkPlane))
+	s.Selection().SetFilter(NewSelectionFilter(SelectWorkPlane, SelectFace))
 }
 
-// Pick records the plane to offset from.
+// Pick records the plane or planar face to offset from.
 func (t *OffsetWorkPlaneTool) Pick(_ *Session, sel Selectable) {
-	if h, ok := sel.(WorkPlaneHandle); ok {
-		t.base = h.Plane
+	switch h := sel.(type) {
+	case WorkPlaneHandle:
+		t.baseRef, t.hasBase = h.Plane.Key(), true
+	case FaceHandle:
+		t.baseRef, t.hasBase = feature.FaceRef(h.Face.ReferenceKey()), true
 	}
 }
 
@@ -48,26 +54,26 @@ func (t *OffsetWorkPlaneTool) Pick(_ *Session, sel Selectable) {
 func (t *OffsetWorkPlaneTool) SetDistance(d float64) { t.distance = d }
 func (t *OffsetWorkPlaneTool) Distance() float64     { return t.distance }
 
-// BasePicked reports whether the plane to offset from has been chosen, so the dialog knows
-// to prompt for the pick vs. the distance.
-func (t *OffsetWorkPlaneTool) BasePicked() bool { return t.base != nil }
+// BasePicked reports whether the plane/face to offset from has been chosen, so the dialog
+// knows to prompt for the pick vs. the distance.
+func (t *OffsetWorkPlaneTool) BasePicked() bool { return t.hasBase }
 
-// CanCommit requires a base plane and a non-zero offset (so OK stays disabled until both
-// are gathered — the tool never silently creates a plane).
-func (t *OffsetWorkPlaneTool) CanCommit() bool { return t.base != nil && t.distance != 0 }
+// CanCommit requires a base and a non-zero offset (so OK stays disabled until both are
+// gathered — the tool never silently creates a plane).
+func (t *OffsetWorkPlaneTool) CanCommit() bool { return t.hasBase && t.distance != 0 }
 
 // Commit creates the offset work plane at the entered distance and recomputes.
 func (t *OffsetWorkPlaneTool) Commit(s *Session) error {
 	s.Selection().SetFilter(t.prev)
-	if t.base == nil {
-		return errors.New("offset plane: no base plane picked")
+	if !t.hasBase {
+		return errors.New("offset plane: no base plane or face picked")
 	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	d := t.distance
-	t.added = finishWorkPlane(part, part.WorkPlanes().AddByPlaneAndOffset(t.base.Key(), func() float64 { return d }))
+	d, ref := t.distance, t.baseRef
+	t.added = finishWorkPlane(part, part.WorkPlanes().AddByPlaneAndOffset(ref, func() float64 { return d }))
 	return nil
 }
 
@@ -76,7 +82,7 @@ func (t *OffsetWorkPlaneTool) Cancel(s *Session) { s.Selection().SetFilter(t.pre
 
 // Prompt guides the user through the two steps (Inventor's status-bar prompts).
 func (t *OffsetWorkPlaneTool) Prompt(*Session) string {
-	if t.base == nil {
+	if !t.hasBase {
 		return "Select a plane or planar face to offset from"
 	}
 	return "Enter the offset distance, then click OK"

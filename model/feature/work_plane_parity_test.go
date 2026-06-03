@@ -283,3 +283,24 @@ func triangleBody(t *testing.T) (*topo.Body, [3][]byte) {
 	bld.AddFace(pl, topo.NewLineage(topo.Tok("f", "face", 0)), topo.OuterLoop(topo.Fwd(ab), topo.Fwd(bc), topo.Fwd(ca)))
 	return bld.Build(), [3][]byte{a.ReferenceKey(), b.ReferenceKey(), c.ReferenceKey()}
 }
+
+// TestOffsetPlaneFromFace offsets a work plane from a planar B-rep face (FaceRef as the
+// base of AddByPlaneAndOffset): a face at z=3 (+Z) offset by 2 lands at z=5. Regression for
+// plane references not resolving a planar face (the offset-from-face work-plane bug).
+func TestOffsetPlaneFromFace(t *testing.T) {
+	g := NewWorkGeometry()
+	pl, err := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, key := faceBody(t, pl)
+	g.Recompute([]*topo.Body{body})
+	wp := g.WorkPlanes().AddByPlaneAndOffset(FaceRef(key), func() float64 { return 2 })
+	g.Recompute([]*topo.Body{body})
+	if !wp.Health().OK() {
+		t.Fatalf("offset-from-face sick: %+v", wp.Health())
+	}
+	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 5), wtol) {
+		t.Errorf("offset-from-face origin = %v, want (0,0,5)", wp.Plane().Origin())
+	}
+}
