@@ -116,6 +116,12 @@ func cutFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("chamfer").WithButtonStyle(LargeIconButton).
 			WithTooltip("Chamfer — bevel selected edges by a setback distance."),
+		NewCommand("Modify.Fillet", "Fillet", "Modify", func(s *Session) error {
+			s.StartTool(NewFilletTool())
+			return nil
+		}).WithTab("3D Model").WithAlias("F").WithEnable(notInSketch).
+			WithIcon("fillet").WithButtonStyle(LargeIconButton).
+			WithTooltip("Fillet — round selected convex edges with a rolling-ball radius."),
 	}
 }
 
