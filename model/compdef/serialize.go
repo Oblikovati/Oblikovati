@@ -29,13 +29,14 @@ var _ doc.RecipeContent = (*PartComponentDefinition)(nil)
 // parameters. Sketches and features join it in later phases. The realized B-rep is
 // never stored — ApplyRecipe recomputes it.
 type partRecipe struct {
-	Units        map[string]string         `yaml:"units,omitempty"`
-	EndOfPart    *int                      `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
-	Parameters   []parameterRecipe         `yaml:"parameters,omitempty"`
-	WorkFeatures []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
-	Sketches     []sketch.SketchData       `yaml:"sketches,omitempty"`
-	Features     []feature.FeatureData     `yaml:"features,omitempty"`
-	Materials    *material.RecipeData      `yaml:"materials,omitempty"`
+	Units           map[string]string         `yaml:"units,omitempty"`
+	EndOfPart       *int                      `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
+	Parameters      []parameterRecipe         `yaml:"parameters,omitempty"`
+	ParameterGroups []string                  `yaml:"parameterGroups,omitempty"` // custom group names, in order
+	WorkFeatures    []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
+	Sketches        []sketch.SketchData       `yaml:"sketches,omitempty"`
+	Features        []feature.FeatureData     `yaml:"features,omitempty"`
+	Materials       *material.RecipeData      `yaml:"materials,omitempty"`
 }
 
 // sketchIndex adapts a part's sketch collection to feature.SketchIndexer so features
@@ -58,14 +59,35 @@ func (si sketchIndex) At(i int) (*sketch.Sketch, bool) {
 	return si.sketches.Item(i), true
 }
 
-// parameterRecipe is one parameter: an editable parameter carries an Expression; a
-// read-only parameter (reference/derived) carries a measured Value + Unit.
+// parameterRecipe is one parameter. A numeric editable parameter carries an Expression; a
+// text/boolean parameter carries Text/Bool (ValueType names the flavor); a read-only
+// parameter (reference/derived) carries a measured Value + Unit. The remaining fields are
+// the shared presentation/behavior state (comment, key, export, precision, tolerance,
+// multi-value list, group membership).
 type parameterRecipe struct {
-	Name       string  `yaml:"name"`
-	Kind       string  `yaml:"kind"`
-	Expression string  `yaml:"expression,omitempty"`
-	Value      float64 `yaml:"value,omitempty"`
-	Unit       string  `yaml:"unit,omitempty"`
+	Name        string           `yaml:"name"`
+	Kind        string           `yaml:"kind"`
+	ValueType   string           `yaml:"valueType,omitempty"` // "text" | "boolean"; numeric when empty
+	Expression  string           `yaml:"expression,omitempty"`
+	Text        string           `yaml:"text,omitempty"`
+	Bool        bool             `yaml:"bool,omitempty"`
+	Value       float64          `yaml:"value,omitempty"`
+	Unit        string           `yaml:"unit,omitempty"`
+	Comment     string           `yaml:"comment,omitempty"`
+	Key         bool             `yaml:"key,omitempty"`
+	Export      bool             `yaml:"export,omitempty"`
+	Precision   int              `yaml:"precision,omitempty"`
+	Tolerance   *toleranceRecipe `yaml:"tolerance,omitempty"`
+	ExprList    []string         `yaml:"expressionList,omitempty"`
+	AllowCustom bool             `yaml:"allowCustomValue,omitempty"`
+	Group       string           `yaml:"group,omitempty"`
+}
+
+// toleranceRecipe is the persisted form of a non-zero engineering tolerance.
+type toleranceRecipe struct {
+	Upper float64 `yaml:"upper,omitempty"`
+	Lower float64 `yaml:"lower,omitempty"`
+	Type  uint8   `yaml:"type,omitempty"`
 }
 
 // unitCategories are the display-unit categories a document persists, in a stable
@@ -89,12 +111,13 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		return nil, fmt.Errorf("compdef: marshal work features: %w", err)
 	}
 	r := partRecipe{
-		Units:        d.unitsRecipe(),
-		Parameters:   d.parametersRecipe(),
-		WorkFeatures: work,
-		Sketches:     sketches,
-		Features:     features,
-		Materials:    d.materialsRecipe(),
+		Units:           d.unitsRecipe(),
+		Parameters:      d.parametersRecipe(),
+		ParameterGroups: d.params.Groups(),
+		WorkFeatures:    work,
+		Sketches:        sketches,
+		Features:        features,
+		Materials:       d.materialsRecipe(),
 	}
 	if d.eop != endOfPartAtEnd {
 		eop := d.eop
@@ -112,7 +135,7 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := d.applyUnits(r.Units); err != nil {
 		return err
 	}
-	if err := d.applyParameters(r.Parameters); err != nil {
+	if err := d.applyParameters(r.ParameterGroups, r.Parameters); err != nil {
 		return err
 	}
 	if err := feature.ApplyWork(d.work, r.WorkFeatures); err != nil {
@@ -179,59 +202,112 @@ func (d *PartComponentDefinition) parametersRecipe() []parameterRecipe {
 	}
 	out := make([]parameterRecipe, 0, len(all))
 	for _, p := range all {
-		pr := parameterRecipe{Name: p.Name(), Kind: p.Kind().String()}
-		if p.Kind().Editable() {
-			pr.Expression = p.Expression()
-		} else {
-			pr.Value, pr.Unit = p.Value().Value, p.Value().Unit.String()
-		}
-		out = append(out, pr)
+		out = append(out, d.parameterRecipeOf(p))
 	}
 	return out
 }
 
-// applyParameters re-adds each parameter in recipe order. A parse error (bad
-// expression, duplicate name, unknown kind/unit) aborts the load rather than dropping
-// the parameter silently.
-func (d *PartComponentDefinition) applyParameters(params []parameterRecipe) error {
+// parameterRecipeOf captures one parameter's persisted form: its value (by flavor) plus
+// the shared comment/key/export/precision/tolerance/multi-value/group state.
+func (d *PartComponentDefinition) parameterRecipeOf(p *param.Parameter) parameterRecipe {
+	pr := parameterRecipe{
+		Name: p.Name(), Kind: p.Kind().String(),
+		Comment: p.Comment, Key: p.IsKey, Export: p.ExposedAsProperty, Precision: p.Precision,
+	}
+	switch {
+	case p.IsText():
+		pr.ValueType, pr.Text = "text", p.Text()
+	case p.IsBoolean():
+		pr.ValueType, pr.Bool = "boolean", p.Bool()
+	case p.Kind().Editable():
+		pr.Expression = p.Expression()
+	default:
+		pr.Value, pr.Unit = p.Value().Value, p.Value().Unit.String()
+	}
+	if t := p.Tolerance(); t != (param.Tolerance{}) {
+		pr.Tolerance = &toleranceRecipe{Upper: t.Upper, Lower: t.Lower, Type: uint8(t.Type)}
+	}
+	if p.IsMultiValue() {
+		pr.ExprList, pr.AllowCustom = p.ExpressionList(), p.AllowsCustomValue()
+	}
+	if g, ok := d.params.GroupOf(p.ID()); ok {
+		pr.Group = g
+	}
+	return pr
+}
+
+// applyParameters re-creates the custom groups (in their saved order) then re-adds each
+// parameter in recipe order. A parse error (bad expression, duplicate name, unknown
+// kind/unit) aborts the load rather than dropping the parameter silently.
+func (d *PartComponentDefinition) applyParameters(groups []string, params []parameterRecipe) error {
+	for _, g := range groups {
+		if err := d.params.AddGroup(g); err != nil {
+			return fmt.Errorf("compdef: restore parameter group %q: %w", g, err)
+		}
+	}
 	for _, pr := range params {
-		if err := d.addParameter(pr); err != nil {
+		p, err := d.addParameter(pr)
+		if err != nil {
+			return fmt.Errorf("compdef: restore parameter %q: %w", pr.Name, err)
+		}
+		if err := d.applyParameterState(p, pr); err != nil {
 			return fmt.Errorf("compdef: restore parameter %q: %w", pr.Name, err)
 		}
 	}
 	return nil
 }
 
-// addParameter re-creates one parameter from its recipe entry.
-func (d *PartComponentDefinition) addParameter(pr parameterRecipe) error {
+// addParameter re-creates one parameter's value from its recipe entry, returning it so the
+// shared state can be applied. Read-only parameters return nil (no editable state to set).
+func (d *PartComponentDefinition) addParameter(pr parameterRecipe) (*param.Parameter, error) {
+	switch pr.ValueType {
+	case "text":
+		return d.params.AddTextUserParameter(pr.Name, pr.Text)
+	case "boolean":
+		return d.params.AddBooleanUserParameter(pr.Name, pr.Bool)
+	}
 	switch pr.Kind {
 	case param.UserParam.String():
-		_, err := d.params.AddUserParameter(pr.Name, pr.Expression)
-		return err
+		return d.params.AddUserParameter(pr.Name, pr.Expression)
 	case param.ModelParam.String():
-		_, err := d.params.AddModelParameter(pr.Name, pr.Expression)
-		return err
+		return d.params.AddModelParameter(pr.Name, pr.Expression)
 	case param.TableParam.String():
-		_, err := d.params.AddTableParameter(pr.Name, pr.Expression)
-		return err
+		return d.params.AddTableParameter(pr.Name, pr.Expression)
 	case param.ReferenceParam.String():
 		return d.addReadOnlyParameter(pr, d.params.AddReferenceParameter)
 	case param.DerivedParam.String():
 		return d.addReadOnlyParameter(pr, d.params.AddDerivedParameter)
 	default:
-		return fmt.Errorf("unknown parameter kind %q (want user|model|table|reference|derived)", pr.Kind)
+		return nil, fmt.Errorf("unknown parameter kind %q (want user|model|table|reference|derived)", pr.Kind)
 	}
+}
+
+// applyParameterState restores the shared presentation/behavior fields onto a freshly
+// re-added parameter: comment, key, export, precision, tolerance, multi-value list, group.
+func (d *PartComponentDefinition) applyParameterState(p *param.Parameter, pr parameterRecipe) error {
+	p.Comment, p.IsKey, p.ExposedAsProperty, p.Precision = pr.Comment, pr.Key, pr.Export, pr.Precision
+	if pr.Tolerance != nil {
+		p.SetTolerance(param.Tolerance{Upper: pr.Tolerance.Upper, Lower: pr.Tolerance.Lower, Type: param.ModelValueType(pr.Tolerance.Type)})
+	}
+	if len(pr.ExprList) > 0 {
+		if err := p.SetExpressionList(pr.ExprList, pr.AllowCustom); err != nil {
+			return err
+		}
+	}
+	if pr.Group != "" {
+		return d.params.AddToGroup(p.ID(), pr.Group)
+	}
+	return nil
 }
 
 // addReadOnlyParameter rebuilds a read-only parameter's measured quantity from its
 // value + unit and adds it through the given collection method.
-func (d *PartComponentDefinition) addReadOnlyParameter(pr parameterRecipe, add func(string, param.Quantity) (*param.Parameter, error)) error {
+func (d *PartComponentDefinition) addReadOnlyParameter(pr parameterRecipe, add func(string, param.Quantity) (*param.Parameter, error)) (*param.Parameter, error) {
 	unit, ok := unitCategoryByName(pr.Unit)
 	if !ok {
-		return fmt.Errorf("unknown unit %q", pr.Unit)
+		return nil, fmt.Errorf("unknown unit %q", pr.Unit)
 	}
-	_, err := add(pr.Name, param.Q(pr.Value, unit))
-	return err
+	return add(pr.Name, param.Q(pr.Value, unit))
 }
 
 // unitCategoryByName maps a category name (param.Unit.String()) back to its Unit.

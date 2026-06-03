@@ -82,6 +82,52 @@ func TestParametersSurviveRoundTrip(t *testing.T) {
 	}
 }
 
+// TestParameterFieldsSurviveRoundTrip exercises the extended parameter recipe: text and
+// boolean parameters, comment/key/export/tolerance/multi-value state, and group membership.
+func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	ps := d.Content().(*compdef.PartComponentDefinition).Parameters()
+
+	num, _ := ps.AddUserParameter("len", "10 mm")
+	num.Comment, num.IsKey, num.ExposedAsProperty = "the length", true, true
+	num.SetTolerance(param.Tolerance{Upper: 0.01, Lower: -0.02, Type: param.Median})
+	_ = num.SetExpressionList([]string{"10 mm", "20 mm"}, true)
+	txt, _ := ps.AddTextUserParameter("material", "steel")
+	flag, _ := ps.AddBooleanUserParameter("vented", true)
+	_ = ps.AddToGroup(num.ID(), "Frame")
+	_ = ps.AddToGroup(txt.ID(), "Frame")
+
+	r := reopenThroughStore(t, d).Parameters()
+
+	rl, _ := r.ByName("len")
+	if rl.Comment != "the length" || !rl.IsKey || !rl.ExposedAsProperty {
+		t.Errorf("len comment/key/export not restored: %+v", rl)
+	}
+	if tol := rl.Tolerance(); tol.Upper != 0.01 || tol.Lower != -0.02 || tol.Type != param.Median {
+		t.Errorf("tolerance = %+v, want {0.01 -0.02 Median}", tol)
+	}
+	if !rl.IsMultiValue() || !rl.AllowsCustomValue() || len(rl.ExpressionList()) != 2 {
+		t.Errorf("multi-value not restored: %v custom=%v", rl.ExpressionList(), rl.AllowsCustomValue())
+	}
+	if g, _ := r.GroupOf(rl.ID()); g != "Frame" {
+		t.Errorf("len group = %q, want Frame", g)
+	}
+
+	rt, _ := r.ByName("material")
+	if !rt.IsText() || rt.Text() != "steel" {
+		t.Errorf("text parameter not restored: isText=%v text=%q", rt.IsText(), rt.Text())
+	}
+	rf, _ := r.ByName("vented")
+	if !rf.IsBoolean() || !rf.Bool() {
+		t.Errorf("boolean parameter not restored: isBool=%v val=%v", rf.IsBoolean(), rf.Bool())
+	}
+	if g, _ := r.GroupOf(rt.ID()); g != "Frame" {
+		t.Errorf("material group = %q, want Frame", g)
+	}
+	_ = flag
+}
+
 func TestSketchGeometrySurvivesRoundTrip(t *testing.T) {
 	ws := doc.NewWorkspace(nil)
 	d, _ := compdef.AddPart(ws, "Part1", true)
