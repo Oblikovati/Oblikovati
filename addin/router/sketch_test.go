@@ -7,6 +7,7 @@ import (
 
 	"github.com/Oblikovati/api/wire"
 
+	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/addin/opregistry"
 	"github.com/Oblikovati/oblikovati/app"
 	"github.com/Oblikovati/oblikovati/model/compdef"
@@ -219,6 +220,44 @@ func TestSketchAddConicsAndSplines(t *testing.T) {
 		if countKind(ents.Entities, want) != 1 {
 			t.Errorf("want exactly one %s entity, got %+v", want, ents.Entities)
 		}
+	}
+}
+
+// TestSketchAddCompositeEntities builds rectangle/polygon/slot via the API and checks
+// each yields its closed profile.
+func TestSketchAddCompositeEntities(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var res wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[4,3]]}`, &res)
+	if len(res.EntityIDs) != 4 {
+		t.Fatalf("rectangle entity ids = %d, want 4 lines", len(res.EntityIDs))
+	}
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"polygon","points":[[10,0],[12,0]],"sides":6}`, &res)
+	if len(res.EntityIDs) != 6 {
+		t.Fatalf("hexagon entity ids = %d, want 6", len(res.EntityIDs))
+	}
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"slot","points":[[0,10],[6,10]],"width":"2 cm"}`, &res)
+	if len(res.EntityIDs) != 4 {
+		t.Fatalf("slot entity ids = %d, want 4 (2 lines + 2 arcs)", len(res.EntityIDs))
+	}
+
+	// Rectangle + hexagon + slot are three disjoint closed regions.
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := part.Sketches().Item(0).Profiles().Count(); got != 3 {
+		t.Fatalf("profiles = %d, want 3 closed regions", got)
+	}
+}
+
+func TestSketchPolygonNeedsThreeSides(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"polygon","points":[[0,0],[1,0]],"sides":2}`)); err == nil {
+		t.Fatal("expected error for a 2-sided polygon")
 	}
 }
 

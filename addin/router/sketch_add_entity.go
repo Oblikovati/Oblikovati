@@ -31,6 +31,9 @@ func addSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
+	if isCompositeKind(in.Kind) {
+		return addCompositeEntity(part, sk, in)
+	}
 	ent, pointIDs, err := buildSketchEntity(part, sk, in)
 	if err != nil {
 		return nil, err
@@ -39,6 +42,90 @@ func addSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	return json.Marshal(wire.AddSketchEntityResult{
 		EntityID: uint64(ent.EntityID()), Kind: in.Kind, PointIDs: pointIDs,
 	})
+}
+
+// isCompositeKind reports whether a kind builds several entities at once.
+func isCompositeKind(kind string) bool {
+	switch kind {
+	case "rectangle", "polygon", "slot":
+		return true
+	default:
+		return false
+	}
+}
+
+// addCompositeEntity builds a multi-entity composite (rectangle/polygon/slot), applies
+// the construction flag to every created entity, and returns all their ids.
+func addCompositeEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (json.RawMessage, error) {
+	ents, err := buildComposite(part, sk, in)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]uint64, len(ents))
+	for i, e := range ents {
+		applyConstruction(e, in.Construction)
+		ids[i] = uint64(e.EntityID())
+	}
+	return json.Marshal(wire.AddSketchEntityResult{EntityID: ids[0], Kind: in.Kind, EntityIDs: ids})
+}
+
+// buildComposite dispatches a composite create request to its model builder.
+func buildComposite(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) ([]sketch.Entity, error) {
+	pts, err := toPoint2s(in.Points)
+	if err != nil {
+		return nil, err
+	}
+	switch in.Kind {
+	case "rectangle":
+		return buildRectangle(sk, in.Variant, pts)
+	case "polygon":
+		return buildPolygon(sk, in, pts)
+	case "slot":
+		return buildSlot(part, sk, pts, in.Width)
+	default:
+		return nil, fmt.Errorf("sketch.addEntity: %q is not a composite kind", in.Kind)
+	}
+}
+
+// buildRectangle builds the two-corner (default), center, or three-point rectangle.
+func buildRectangle(sk *sketch.Sketch, variant string, pts []math.Point2) ([]sketch.Entity, error) {
+	switch variant {
+	case "center":
+		if err := wantPoints("rectangle center", pts, 2); err != nil {
+			return nil, err
+		}
+		return sk.AddRectangleByCenter(pts[0], pts[1]), nil
+	case "threePoint":
+		if err := wantPoints("rectangle threePoint", pts, 3); err != nil {
+			return nil, err
+		}
+		return sk.AddRectangleByThreePoints(pts[0], pts[1], pts[2])
+	default:
+		if err := wantPoints("rectangle", pts, 2); err != nil {
+			return nil, err
+		}
+		return sk.AddRectangleByCorners(pts[0], pts[1]), nil
+	}
+}
+
+// buildPolygon builds a regular polygon (variant "circumscribed" ⇒ apothem, else inscribed).
+func buildPolygon(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) ([]sketch.Entity, error) {
+	if err := wantPoints("polygon", pts, 2); err != nil {
+		return nil, err
+	}
+	return sk.AddPolygon(pts[0], pts[1], in.Sides, in.Variant != "circumscribed")
+}
+
+// buildSlot builds a center-to-center straight slot of the given unit-bearing width.
+func buildSlot(part *compdef.PartComponentDefinition, sk *sketch.Sketch, pts []math.Point2, width string) ([]sketch.Entity, error) {
+	if err := wantPoints("slot", pts, 2); err != nil {
+		return nil, err
+	}
+	w, err := part.Units().Parse(width, param.Length)
+	if err != nil {
+		return nil, fmt.Errorf("sketch.addEntity: slot width %q: %w", width, err)
+	}
+	return sk.AddStraightSlot(pts[0], pts[1], math.Scalar(w.Value))
 }
 
 // buildSketchEntity dispatches a create request to the matching model constructor,
