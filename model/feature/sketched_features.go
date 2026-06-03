@@ -134,40 +134,6 @@ func (c *RevolveFeatures) Add(skt *sketch.Sketch, profileIndex int, axis *WorkAx
 	return pf
 }
 
-// SweepDefinition is the recipe for a sweep: a profile along a path.
-type SweepDefinition struct {
-	Sketch       *sketch.Sketch
-	ProfileIndex int
-	Path         *sketch.Path
-	Twist        func() float64
-	Operation    ops.PartFeatureOperation
-}
-
-// SweepFeature sweeps a profile along a path.
-type SweepFeature struct{ def *SweepDefinition }
-
-func (s *SweepFeature) Definition() *SweepDefinition { return s.def }
-func (s *SweepFeature) Kind() string                 { return "sweep" }
-func (s *SweepFeature) Recompute(Input) (Output, error) {
-	return Output{}, build.NotYetImplemented("PBI-094-sweep-generation")
-}
-
-// LoftDefinition is the recipe for a loft: a blend through sections.
-type LoftDefinition struct {
-	Sections  []*sketch.Profile
-	Closed    bool
-	Operation ops.PartFeatureOperation
-}
-
-// LoftFeature blends through sections.
-type LoftFeature struct{ def *LoftDefinition }
-
-func (l *LoftFeature) Definition() *LoftDefinition { return l.def }
-func (l *LoftFeature) Kind() string                { return "loft" }
-func (l *LoftFeature) Recompute(Input) (Output, error) {
-	return Output{}, build.NotYetImplemented("PBI-095-loft-generation")
-}
-
 // CoilDefinition is the recipe for a coil (helical sweep).
 type CoilDefinition struct {
 	Sketch       *sketch.Sketch

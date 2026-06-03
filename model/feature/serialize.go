@@ -42,6 +42,8 @@ type FeatureData struct {
 	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
 	Revolve       *RevolveData       `yaml:"revolve,omitempty"`
 	Coil          *CoilData          `yaml:"coil,omitempty"`
+	Sweep         *SweepData         `yaml:"sweep,omitempty"`
+	Loft          *LoftData          `yaml:"loft,omitempty"`
 	Move          *MoveData          `yaml:"move,omitempty"`
 	Decal         *DecalData         `yaml:"decal,omitempty"`
 	Reference     *ReferenceData     `yaml:"reference,omitempty"`
@@ -173,6 +175,18 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.Coil = cd
+	case *SweepFeature:
+		sw, err := serializeSweep(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Sweep = sw
+	case *LoftFeature:
+		lo, err := serializeLoft(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Loft = lo
 	case *MoveFeature:
 		fd.Move = serializeMove(f.def)
 	case *DecalFeature:
@@ -276,6 +290,10 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreRevolve(fs, fd.Revolve, sk, work)
 	case "coil":
 		return restoreCoil(fs, fd.Coil, sk, work)
+	case "sweep":
+		return restoreSweep(fs, fd.Sweep, sk)
+	case "loft":
+		return restoreLoft(fs, fd.Loft, sk)
 	case "move":
 		return restoreMove(fs, fd.Move)
 	case "decal", "reference", "client", "mark", "finish":

@@ -111,9 +111,11 @@ func TestUngeneratedFeaturesGoSick(t *testing.T) {
 		fs.Add(&RibFeature{def: &RibDefinition{Sketch: sk}}),
 	}
 	fs.Recompute()
+	// Revolve/coil/sweep/loft now generate geometry but go sick here on missing inputs
+	// (no axis / path / sections); rib is still generation-deferred.
 	for _, pf := range feats {
 		if pf.Health().Status != health.Sick {
-			t.Errorf("%s should be sick (generation deferred), got %v", pf.Kind(), pf.Health().Status)
+			t.Errorf("%s should be sick (missing inputs or deferred), got %v", pf.Kind(), pf.Health().Status)
 		}
 	}
 	// Definitions are still accessible (the triangle/API is complete).
