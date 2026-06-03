@@ -519,6 +519,30 @@ func TestSketchAddDimensionErrors(t *testing.T) {
 	}
 }
 
+// TestSketchConstraintStatusReportsDOF takes a circle from under- to fully-constrained and
+// checks the non-mutating status query reflects each state.
+func TestSketchConstraintStatusReportsDOF(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var circ wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"10 mm"}`, &circ)
+	center := circ.PointIDs[0]
+
+	var st wire.ConstraintStatusResult
+	call(t, r, s, "sketch.constraintStatus", `{"sketchIndex":0}`, &st)
+	if st.Status != "under" || st.DOF != 3 {
+		t.Fatalf("bare circle status = %+v, want under / DOF 3 (center x,y + radius)", st)
+	}
+
+	call(t, r, s, "sketch.addConstraint", fmt.Sprintf(`{"sketchIndex":0,"kind":"fix","entities":[%d]}`, center), &wire.AddConstraintResult{})
+	call(t, r, s, "sketch.addDimension", fmt.Sprintf(`{"sketchIndex":0,"kind":"radius","entities":[%d],"expression":"10 mm"}`, circ.EntityID), &wire.AddDimensionResult{})
+
+	call(t, r, s, "sketch.constraintStatus", `{"sketchIndex":0}`, &st)
+	if st.Status != "well" || st.DOF != 0 {
+		t.Fatalf("constrained circle status = %+v, want well / DOF 0", st)
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

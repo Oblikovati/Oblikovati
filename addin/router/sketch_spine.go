@@ -76,6 +76,34 @@ func solveSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	})
 }
 
+// constraintStatus reports the sketch's DOF analysis without moving geometry.
+func constraintStatus(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	sk, _, err := resolveSketch(s, raw)
+	if err != nil {
+		return nil, err
+	}
+	a := sk.AnalyzeConstraints()
+	return json.Marshal(wire.ConstraintStatusResult{
+		Status:    dofStatus(a.DOF, a.Redundant),
+		DOF:       a.DOF,
+		Variables: a.Variables,
+		Equations: a.Equations,
+		Redundant: a.Redundant,
+	})
+}
+
+// dofStatus maps a DOF count + redundancy to the wire constraint-status string.
+func dofStatus(dof, redundant int) string {
+	switch {
+	case redundant > 0:
+		return "over"
+	case dof > 0:
+		return "under"
+	default:
+		return "well"
+	}
+}
+
 // deleteSketch removes a sketch (only valid when no feature consumes it).
 func deleteSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	sk, _, err := resolveSketch(s, raw)
