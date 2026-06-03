@@ -18,6 +18,11 @@ type Parameters struct {
 	// of parameters p's expression reads; dependents[p] is the reverse.
 	drivenBy   map[ID]idSet
 	dependents map[ID]idSet
+
+	// Custom parameter groups (Inventor's CustomParameterGroups): names in creation
+	// order plus each parameter's group membership. See group.go.
+	groupOrder []string
+	groupOf    map[ID]string
 }
 
 // idSet is a set of parameter ids.
@@ -28,6 +33,7 @@ func NewParameters() *Parameters {
 	return &Parameters{
 		byID: map[ID]*Parameter{}, byName: map[string]ID{}, nextID: 1,
 		drivenBy: map[ID]idSet{}, dependents: map[ID]idSet{},
+		groupOf: map[ID]string{},
 	}
 }
 
@@ -210,6 +216,7 @@ func (ps *Parameters) remove(p *Parameter) {
 		delete(ps.drivenBy[d], p.id)
 	}
 	delete(ps.dependents, p.id)
+	delete(ps.groupOf, p.id)
 	delete(ps.byID, p.id)
 	delete(ps.byName, p.name)
 	for i, id := range ps.order {
