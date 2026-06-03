@@ -3,7 +3,6 @@
 package ops
 
 import (
-	"github.com/Oblikovati/oblikovati/build"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 )
@@ -53,24 +52,45 @@ func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, erro
 	switch op {
 	case Join:
 		if rel == intersecting {
-			return nil, build.NotYetImplemented("PBI-082-join-intersecting")
+			return booleanCSG(op, target, tool, lin)
 		}
 		return topo.MergeBodies(lin, true, target, tool), nil
 	case Cut:
-		return cut(lin, target, rel)
+		return cut(lin, target, tool, rel)
 	default: // Intersect
 		return intersect(lin, target, tool, rel)
 	}
 }
 
-func cut(lin topo.Lineage, target *topo.Body, rel relation) (*topo.Body, error) {
+// booleanCSG runs the general intersecting boolean via the BSP-tree CSG over the
+// operands' triangles, welding the kept triangles back into a watertight solid
+// (PBI-171). An empty result (e.g. an intersection that turns out disjoint) yields an
+// empty body, which the caller drops.
+func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
+	a, b := bodyTriangles(target), bodyTriangles(tool)
+	var result []tri
+	switch op {
+	case Join:
+		result = csgUnion(a, b)
+	case Cut:
+		result = csgSubtract(a, b)
+	default:
+		result = csgIntersect(a, b)
+	}
+	if body := trianglesToBody(result, "boolean-"+op.String()); body != nil {
+		return body, nil
+	}
+	return topo.MergeBodies(lin, true), nil
+}
+
+func cut(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, error) {
 	switch rel {
 	case disjoint:
 		return target, nil // tool removes nothing
 	case toolContainsTarget:
 		return topo.MergeBodies(lin, true), nil // target fully removed → empty
-	default: // targetContainsTool (cavity) and intersecting need face splitting
-		return nil, build.NotYetImplemented("PBI-082-cut-intersecting")
+	default: // targetContainsTool (a void/cavity) and intersecting need face splitting
+		return booleanCSG(Cut, target, tool, lin)
 	}
 }
 
@@ -83,7 +103,7 @@ func intersect(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.B
 	case toolContainsTarget:
 		return target, nil
 	default:
-		return nil, build.NotYetImplemented("PBI-082-intersect-intersecting")
+		return booleanCSG(Intersect, target, tool, lin)
 	}
 }
 

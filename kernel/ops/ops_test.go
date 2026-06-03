@@ -163,9 +163,14 @@ func TestBooleanContainment(t *testing.T) {
 	if len(inter.Faces()) != 4 { // intersection is the inner body
 		t.Errorf("contained intersect → %d faces, want 4 (the inner)", len(inter.Faces()))
 	}
-	// Cutting a fully-enclosed tool creates a cavity — deferred to Phase C.
-	if _, err := Boolean(Cut, tetra(10, math.V3(0, 0, 0)), tetra(1, math.V3(2, 2, 2))); err == nil {
-		t.Error("cavity cut should report NotYetImplemented for now")
+	// Cutting a fully-enclosed tool hollows the target into a cavity (a solid with a
+	// void): the BSP CSG keeps the outer shell and the tool's inward-facing walls.
+	cav, err := Boolean(Cut, tetra(10, math.V3(0, 0, 0)), tetra(1, math.V3(2, 2, 2)))
+	if err != nil {
+		t.Fatalf("cavity cut: %v", err)
+	}
+	if r := Validate(cav); !r.Valid {
+		t.Errorf("cavity cut should be a valid (hollow) solid: %+v", r)
 	}
 }
 
@@ -208,13 +213,22 @@ func TestQuadFaceEarClipping(t *testing.T) {
 	}
 }
 
-func TestBooleanIntersectingDeferred(t *testing.T) {
-	// Two tetra that overlap with neither containing the other → intersecting.
+func TestBooleanIntersectingProducesValidSolids(t *testing.T) {
+	// Two tetra that overlap with neither containing the other → the intersecting case,
+	// now handled by the BSP CSG (PBI-171): each operation yields a valid solid.
 	a := tetra(3, math.V3(0, 0, 0))
-	b := tetra(3, math.V3(1, 1, 1))
+	b := tetra(3, math.V3(0.5, 0.5, 0.5)) // overlaps a's volume, neither contains the other
 	for _, op := range []PartFeatureOperation{Join, Cut, Intersect} {
-		if _, err := Boolean(op, a, b); err == nil {
-			t.Errorf("intersecting %v should be NotYetImplemented", op)
+		res, err := Boolean(op, a, b)
+		if err != nil {
+			t.Fatalf("intersecting %v: %v", op, err)
+		}
+		if res == nil || len(res.Faces()) == 0 {
+			t.Errorf("intersecting %v produced an empty body", op)
+			continue
+		}
+		if r := Validate(res); !r.Valid {
+			t.Errorf("intersecting %v not a valid solid: %+v", op, r)
 		}
 	}
 }

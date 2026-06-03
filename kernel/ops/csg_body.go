@@ -1,0 +1,225 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops
+
+import (
+	stdmath "math"
+	"sort"
+
+	"github.com/Oblikovati/oblikovati/kernel/geom"
+	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"github.com/Oblikovati/oblikovati/math"
+)
+
+// weldGrid is the coincidence grid for welding CSG output vertices (database units).
+const weldGrid = 1e-6
+
+// bodyTriangles returns a body's tessellation as CSG triangles (exact for the planar
+// faces our features generate, now consistently outward-wound).
+func bodyTriangles(b *topo.Body) []tri {
+	mesh, _ := TessellateBody(b, DefaultQuality())
+	var out []tri
+	for i := 0; i+2 < len(mesh.Indices); i += 3 {
+		if t, ok := newTri(mesh.Positions[mesh.Indices[i]], mesh.Positions[mesh.Indices[i+1]], mesh.Positions[mesh.Indices[i+2]]); ok {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// trianglesToBody welds CSG output triangles into a watertight B-rep: coincident
+// vertices merge, T-junctions are split out so the cage is combinatorially closed, and
+// the welded triangle cage becomes a body. Returns nil when the result is empty.
+func trianglesToBody(tris []tri, feat string) *topo.Body {
+	verts, faces := weldTriangles(tris)
+	if len(faces) == 0 {
+		return nil
+	}
+	faces = removeTJunctions(verts, faces)
+	return cageToBody(verts, dropDegenerate(faces), feat)
+}
+
+// weldTriangles merges coincident triangle corners onto a shared vertex list, dropping
+// triangles that collapse to a degenerate (a repeated corner).
+func weldTriangles(tris []tri) ([]math.Point3, [][3]int) {
+	index := map[[3]int64]int{}
+	var verts []math.Point3
+	weld := func(p math.Point3) int {
+		k := [3]int64{quantize(p.X), quantize(p.Y), quantize(p.Z)}
+		if i, ok := index[k]; ok {
+			return i
+		}
+		index[k] = len(verts)
+		verts = append(verts, p)
+		return len(verts) - 1
+	}
+	var faces [][3]int
+	for _, t := range tris {
+		a, b, c := weld(t.a), weld(t.b), weld(t.c)
+		if a != b && b != c && a != c {
+			faces = append(faces, [3]int{a, b, c})
+		}
+	}
+	return verts, faces
+}
+
+func quantize(v float64) int64 { return int64(stdmath.Round(v / weldGrid)) }
+
+// removeTJunctions repeatedly splits any triangle edge that another vertex lands on, so
+// every undirected edge ends up shared by exactly two triangles (the prerequisite for a
+// closed solid). Capped to avoid pathological loops.
+func removeTJunctions(verts []math.Point3, faces [][3]int) [][3]int {
+	for pass := 0; pass < 12; pass++ {
+		split := false
+		var next [][3]int
+		for _, f := range faces {
+			if rep, ok := splitFaceAtTJunction(verts, f); ok {
+				next = append(next, rep...)
+				split = true
+			} else {
+				next = append(next, f)
+			}
+		}
+		faces = next
+		if !split {
+			break
+		}
+	}
+	return faces
+}
+
+// splitFaceAtTJunction finds a vertex lying on one of the triangle's edges and splits
+// the triangle across it into two triangles, reporting whether a split happened.
+func splitFaceAtTJunction(verts []math.Point3, f [3]int) ([][3]int, bool) {
+	for e := 0; e < 3; e++ {
+		p, q := f[e], f[(e+1)%3]
+		apex := f[(e+2)%3]
+		for ci := range verts {
+			if ci == p || ci == q || ci == apex {
+				continue
+			}
+			if onSegment(verts[ci], verts[p], verts[q]) {
+				return [][3]int{{p, ci, apex}, {ci, q, apex}}, true
+			}
+		}
+	}
+	return nil, false
+}
+
+// onSegment reports whether p lies strictly between a and b (within weld tolerance of
+// the segment and not at either endpoint).
+func onSegment(p, a, b math.Point3) bool {
+	ab := a.VectorTo(b)
+	lenSq := ab.LengthSquared()
+	if lenSq == 0 {
+		return false
+	}
+	t := a.VectorTo(p).Dot(ab) / lenSq
+	if t <= 1e-4 || t >= 1-1e-4 {
+		return false
+	}
+	foot := a.TranslateBy(ab.Scale(t))
+	return foot.DistanceTo(p) < 10*weldGrid
+}
+
+// dropDegenerate removes triangles with a repeated corner.
+func dropDegenerate(faces [][3]int) [][3]int {
+	out := faces[:0]
+	for _, f := range faces {
+		if f[0] != f[1] && f[1] != f[2] && f[0] != f[2] {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// cageToBody assembles a B-rep from a welded triangle cage: one shared vertex per cage
+// vertex, one shared edge per undirected edge (sorted for stable lineage), a planar face
+// per triangle. The body is a solid when every edge is shared by exactly two triangles.
+func cageToBody(verts []math.Point3, faces [][3]int, feat string) *topo.Body {
+	if len(faces) == 0 {
+		return nil
+	}
+	uses := edgeUseCounts(faces)
+	bld := topo.NewBuilder(isClosedCage(uses), topo.NewLineage(topo.Tok(feat, "body", 0)))
+	tv := make([]*topo.Vertex, len(verts))
+	for i, p := range verts {
+		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
+	}
+	edges := buildCageEdges(bld, verts, tv, uses, feat)
+	for fi, f := range faces {
+		bld.AddFace(trianglePlane(verts, f), topo.NewLineage(topo.Tok(feat, "face", fi)), triangleLoop(f, edges))
+	}
+	return bld.Build()
+}
+
+func edgeKeyOf(a, b int) [2]int {
+	if a < b {
+		return [2]int{a, b}
+	}
+	return [2]int{b, a}
+}
+
+// edgeUseCounts counts how many triangles use each undirected edge.
+func edgeUseCounts(faces [][3]int) map[[2]int]int {
+	uses := map[[2]int]int{}
+	for _, f := range faces {
+		for i := 0; i < 3; i++ {
+			uses[edgeKeyOf(f[i], f[(i+1)%3])]++
+		}
+	}
+	return uses
+}
+
+func isClosedCage(uses map[[2]int]int) bool {
+	for _, c := range uses {
+		if c != 2 {
+			return false
+		}
+	}
+	return len(uses) > 0
+}
+
+// buildCageEdges creates one shared topo edge per undirected edge, in sorted-key order
+// so the synthesized lineage (and reference keys) is stable.
+func buildCageEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, uses map[[2]int]int, feat string) map[[2]int]*topo.Edge {
+	keys := make([][2]int, 0, len(uses))
+	for k := range uses {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i][0] != keys[j][0] {
+			return keys[i][0] < keys[j][0]
+		}
+		return keys[i][1] < keys[j][1]
+	})
+	edges := make(map[[2]int]*topo.Edge, len(keys))
+	for i, k := range keys {
+		seg := geom.NewLineSegment(verts[k[0]], verts[k[1]])
+		edges[k] = bld.AddEdge(seg, tv[k[0]], tv[k[1]], topo.NewLineage(topo.Tok(feat, "edge", i)))
+	}
+	return edges
+}
+
+// triangleLoop builds a triangle's outer loop, marking a use reversed when its directed
+// edge runs against the canonical (min,max) stored edge.
+func triangleLoop(f [3]int, edges map[[2]int]*topo.Edge) topo.LoopSpec {
+	uses := make([]topo.Use, 3)
+	for i := 0; i < 3; i++ {
+		a, b := f[i], f[(i+1)%3]
+		uses[i] = topo.Use{Edge: edges[edgeKeyOf(a, b)], Reversed: a > b}
+	}
+	return topo.OuterLoop(uses...)
+}
+
+// trianglePlane fits the plane through a triangle's centroid with its (winding) normal,
+// falling back to +Z for a degenerate triangle.
+func trianglePlane(verts []math.Point3, f [3]int) geom.Surface {
+	a, b, c := verts[f[0]], verts[f[1]], verts[f[2]]
+	centroid := math.P3((a.X+b.X+c.X)/3, (a.Y+b.Y+c.Y)/3, (a.Z+b.Z+c.Z)/3)
+	p, err := geom.NewPlane(centroid, a.VectorTo(b).Cross(a.VectorTo(c)))
+	if err != nil {
+		p, _ = geom.NewPlane(centroid, math.V3(0, 0, 1))
+	}
+	return p
+}
