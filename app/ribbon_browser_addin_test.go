@@ -9,7 +9,7 @@ import (
 )
 
 func TestBuildRibbonFromCommands(t *testing.T) {
-	s := NewSession()
+	s, _ := emptyPartSession(t) // a part is active, so default-Part commands appear (not ZeroDoc)
 	_ = s.Commands().Add(NewCommand("Sketch.Line", "Line", "Sketch", noop))
 	_ = s.Commands().Add(NewCommand("Sketch.Circle", "Circle", "Sketch", noop))
 	on := false
@@ -33,7 +33,7 @@ func TestBuildRibbonFromCommands(t *testing.T) {
 }
 
 func TestBuildRibbonGroupsByTabThenPanel(t *testing.T) {
-	s := NewSession()
+	s, _ := emptyPartSession(t) // a part is active, so default-Part commands appear (not ZeroDoc)
 	_ = s.Commands().Add(NewCommand("Sketch.Line", "Line", "Create", noop).WithTab("Sketch"))
 	_ = s.Commands().Add(NewCommand("Sketch.Rectangle", "Rectangle", "Create", noop).WithTab("Sketch"))
 	_ = s.Commands().Add(NewCommand("Model.Extrude", "Extrude", "Create", noop).WithTab("3D Model"))
@@ -108,7 +108,7 @@ func (a sampleAddIn) Activate(s *Session) error {
 func (a sampleAddIn) Deactivate(*Session) error { return nil }
 
 func TestAddInAddsRibbonButtonThatRunsTool(t *testing.T) {
-	s := NewSession()
+	s, _ := emptyPartSession(t) // an add-in's command defaults to the Part ribbon, so a part must be active
 	if err := s.AddIns().Register(sampleAddIn{id: "acme.extrude"}); err != nil {
 		t.Fatalf("Register: %v", err)
 	}

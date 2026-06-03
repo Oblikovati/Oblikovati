@@ -26,12 +26,27 @@ func RegisterStandardCommands(s *Session) error {
 // standardCommands returns every standard command definition in ribbon order.
 func standardCommands() []*CommandDefinition {
 	var cmds []*CommandDefinition
+	cmds = append(cmds, getStartedCommands()...)
 	cmds = append(cmds, modelTabCommands()...)
 	cmds = append(cmds, workFeatureCommands()...)
 	cmds = append(cmds, manageTabCommands()...)
 	cmds = append(cmds, sketchTabCommands()...)
 	cmds = append(cmds, viewTabCommands()...)
 	return cmds
+}
+
+// getStartedCommands are the ZeroDoc ribbon's Get Started tab — shown when no document is
+// open. New Part is the primary action; it creates a part, which switches the active ribbon
+// to the Part ribbon (RibbonUI_Overview's per-document-type ribbons).
+func getStartedCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("GetStarted.NewPart", "New Part", "Launch", func(s *Session) error {
+			_, err := s.NewPart()
+			return err
+		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
+			WithIcon("new-part").WithButtonStyle(LargeIconButton).
+			WithTooltip("New Part — create a part document and open the part environment."),
+	}
 }
 
 // manageTabCommands are the Manage tab's Parameters panel: open the Parameters dialog
@@ -255,12 +270,12 @@ func sketchTabCommands() []*CommandDefinition {
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Dimension", func(s *Session) error {
 		s.StartTool(newDimensionTool())
 		return nil
-	}).WithTab("Sketch").WithAlias("D").WithEnable(inSketch).
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias("D").WithEnable(inSketch).
 		WithIcon("dimension").WithButtonStyle(SmallIconButton).
 		WithTooltip("Dimension — then pick points/a line/a circle/two lines to dimension."))
 	return append(cmds, NewCommand("Sketch.Finish", "Finish Sketch", "Exit", func(s *Session) error {
 		return s.FinishSketch()
-	}).WithTab("Sketch").WithEnable(inSketch).
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
 		WithIcon("finish-sketch").WithButtonStyle(LargeIconButton).
 		WithTooltip("Finish Sketch — leave the sketch environment and update the part."))
 }
@@ -286,7 +301,7 @@ func createCommands() []*CommandDefinition {
 		cmds[i] = NewCommand(c.id, c.name, "Create", func(s *Session) error {
 			s.StartTool(start())
 			return nil
-		}).WithTab("Sketch").WithAlias(c.alias).WithEnable(inSketch).WithTooltip(c.tip).
+		}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias(c.alias).WithEnable(inSketch).WithTooltip(c.tip).
 			WithIcon(strings.ToLower(c.name)).WithButtonStyle(SmallIconButton)
 	}
 	return cmds
@@ -301,7 +316,7 @@ func constrainCommands() []*CommandDefinition {
 		cmds[i] = NewCommand(d.id, d.name, "Constrain", func(s *Session) error {
 			s.StartTool(newTool())
 			return nil
-		}).WithTab("Sketch").WithEnable(inSketch).WithTooltip(d.tooltip).
+		}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).WithTooltip(d.tooltip).
 			WithIcon(strings.ToLower(d.name)).WithButtonStyle(SmallIconButton)
 	}
 	return cmds

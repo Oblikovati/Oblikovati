@@ -19,6 +19,11 @@ import (
 // arrTol is the planar-arrangement coincidence/intersection tolerance (database units).
 const arrTol = 1e-9
 
+// parallelDenomTol is the magnitude below which a line/ray·edge or line/ray·plane denominator
+// is treated as zero — the two are parallel, so there is no single crossing. Below arrTol
+// because it bounds a cross/dot product of (roughly unit) directions, not a length.
+const parallelDenomTol = 1e-12
+
 // Face2D is one region of a planar arrangement: a counter-clockwise outer loop and any
 // clockwise hole loops nested directly inside it.
 type Face2D struct {

@@ -18,8 +18,9 @@ func listCommands(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	out := make([]wire.CommandInfo, len(all))
 	for i, c := range all {
 		out[i] = wire.CommandInfo{
-			ID: c.ID(), DisplayName: c.DisplayName(), Tab: c.Tab(),
-			Category: c.Category(), Alias: c.Alias(), Tooltip: c.Tooltip(),
+			ID: c.ID(), DisplayName: c.DisplayName(), Ribbon: c.Ribbons()[0],
+			Tab: c.Tab(), Category: c.Category(), Environment: c.Environment(),
+			Alias: c.Alias(), Tooltip: c.Tooltip(),
 			Icon: c.Icon(), ButtonStyle: c.ButtonStyle(),
 			Enabled: c.IsEnabled(s),
 		}
@@ -39,9 +40,15 @@ func createCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error
 	if in.ID == "" || in.DisplayName == "" {
 		return nil, fmt.Errorf("commands.create: id and displayName are required, got id=%q displayName=%q", in.ID, in.DisplayName)
 	}
+	if in.Ribbon != "" && !in.Ribbon.Valid() {
+		return nil, fmt.Errorf("commands.create: unknown ribbon %q (one of ZeroDoc/Part/Assembly/Drawing/Presentation/iFeatures/UnknownDocument)", in.Ribbon)
+	}
 	cmd := app.NewCommand(in.ID, in.DisplayName, in.Category, func(*app.Session) error { return nil }).
-		WithTab(in.Tab).WithAlias(in.Alias).WithTooltip(in.Tooltip).
+		WithTab(in.Tab).WithEnvironment(in.Environment).WithAlias(in.Alias).WithTooltip(in.Tooltip).
 		WithIcon(in.Icon).WithButtonStyle(in.ButtonStyle)
+	if in.Ribbon != "" {
+		cmd.WithRibbons(in.Ribbon)
+	}
 	if err := s.Commands().Add(cmd); err != nil {
 		return nil, err
 	}

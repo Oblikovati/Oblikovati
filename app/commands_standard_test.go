@@ -16,6 +16,7 @@ func registeredSession(t *testing.T) *Session {
 
 func TestStandardRibbonHasSketchCreatePanel(t *testing.T) {
 	s := registeredSession(t)
+	enterSketchEnv(t, s) // the Sketch tab is contextual — present only in the sketch environment
 	r := BuildRibbon(s)
 	tab, ok := r.Tab("Sketch")
 	if !ok {

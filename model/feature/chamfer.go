@@ -13,6 +13,13 @@ import (
 	"github.com/Oblikovati/oblikovati/math"
 )
 
+// singularDetTol is the magnitude below which a normal determinant (three planes' triple
+// product) or a scalar triple product of edge vectors is treated as zero: the three planes
+// share no unique meeting point, or the four tetra points are coplanar so the cut has no
+// volume. It sits below the linear DefaultTolerance because it bounds a product of three
+// (roughly unit) vectors, not a length.
+const singularDetTol = 1e-12
+
 // chamferEdges bevels each selected edge by cutting a triangular wedge tool that runs
 // along it. All cut tools are built from the original body up front (a boolean rebuilds
 // topology with new lineage, so a reference key would not survive the first cut), then
@@ -101,8 +108,7 @@ func chamferWedge(edge *topo.Edge, dist float64, feat string) (*topo.Body, error
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
 	poly := []math.Point2{{X: 0, Y: 0}, proj(t1.Scale(dist)), proj(t2.Scale(dist))}
-	const overhang = 1e-2
-	return buildPrism(poly, plane, span{near: -overhang, far: v0.DistanceTo(v1) + overhang}, 0, feat), nil
+	return buildPrism(poly, plane, span{near: -cutterOverhang, far: v0.DistanceTo(v1) + cutterOverhang}, 0, feat), nil
 }
 
 // interiorDir returns the unit direction, perpendicular to the edge, pointing from the
@@ -269,7 +275,7 @@ func chamferPlane(e *topo.Edge, corner *topo.Vertex, dist float64) (geom.Plane, 
 func threePlaneIntersection(a, b, c geom.Plane) (math.Point3, bool) {
 	n1, n2, n3 := a.Normal(), b.Normal(), c.Normal()
 	det := n1.Dot(n2.Cross(n3))
-	if stdmath.Abs(float64(det)) < 1e-12 {
+	if stdmath.Abs(float64(det)) < singularDetTol {
 		return math.Point3{}, false
 	}
 	d1 := a.Origin.AsVector().Dot(n1)
@@ -298,7 +304,7 @@ func degenerateTetra(apex math.Point3, base [3]math.Point3) bool {
 	a := apex.VectorTo(base[0])
 	b := apex.VectorTo(base[1])
 	c := apex.VectorTo(base[2])
-	return stdmath.Abs(float64(a.Cross(b).Dot(c))) < 1e-12
+	return stdmath.Abs(float64(a.Cross(b).Dot(c))) < singularDetTol
 }
 
 // tetraEdges holds the six edges of a tetrahedron keyed by their ascending vertex-index

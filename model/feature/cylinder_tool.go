@@ -14,14 +14,19 @@ import (
 // (an exact analytic cylinder is a NURBS-phase refinement).
 const holeFacets = 32
 
+// cutterOverhang extends a cut tool a small distance past the surface it enters/exits, so the
+// boolean's entry/exit faces sit clear of the target's faces rather than coincident with them
+// (a coincident pair would leave a zero-thickness sliver). Database units; shared by the drill
+// tool and the chamfer wedge.
+const cutterOverhang = 1e-2
+
 // drillTool builds a faceted cylinder solid: a regular polygon of the given radius,
 // centered at center on the plane perpendicular to axisInto, extruded `depth` along
 // axisInto. A small entry overhang past the start keeps the boolean's entry face clean.
 // It is the cut tool for holes and (joined) the boss body.
 func drillTool(center math.Point3, axisInto math.UnitVector3, radius, depth float64, feat string) *topo.Body {
-	const overhang = 1e-2
 	plane := planePerp(center, axisInto)
-	return buildPrism(regularPolygon(radius, holeFacets), plane, span{near: -overhang, far: depth}, 0, feat)
+	return buildPrism(regularPolygon(radius, holeFacets), plane, span{near: -cutterOverhang, far: depth}, 0, feat)
 }
 
 // regularPolygon returns an n-gon of the given radius centered at the origin, wound

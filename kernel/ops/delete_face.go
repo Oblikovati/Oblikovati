@@ -163,7 +163,7 @@ func twoPlaneLine(a, b geom.Plane) (math.Point3, math.Vector3, bool) {
 func lineHitsPlane(p0 math.Point3, dir math.Vector3, c geom.Plane) (float64, bool) {
 	n := c.Normal()
 	den := dir.Dot(n)
-	if stdmath.Abs(den) < 1e-12 {
+	if stdmath.Abs(den) < singularSolveTol {
 		return 0, false
 	}
 	return (n.Dot(c.Origin.AsVector()) - n.Dot(p0.AsVector())) / den, true

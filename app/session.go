@@ -5,9 +5,11 @@ package app
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Oblikovati/oblikovati/event"
+	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/doc"
 	"github.com/Oblikovati/oblikovati/model/material"
 	"github.com/Oblikovati/oblikovati/model/sketch"
@@ -172,6 +174,28 @@ var ErrNeedsPath = errors.New("app: document has no file path yet; use Save As")
 //	d, err := session.OpenDocument("/models/bracket.obk")
 func (s *Session) OpenDocument(path string) (*doc.Document, error) {
 	return s.workspace.Open(path, true)
+}
+
+// NewPart creates a realized part document with a unique "PartN" name and makes it active
+// (the workspace activates a newly added document), so the viewport and ribbon switch to the
+// part environment. It backs the New Part command on the ZeroDoc ribbon and the File menu.
+//
+//	d, err := session.NewPart()
+func (s *Session) NewPart() (*doc.Document, error) {
+	return compdef.AddPart(s.workspace, s.uniquePartName(), true)
+}
+
+// uniquePartName returns the first "PartN" name not currently open, so New Part never clashes.
+func (s *Session) uniquePartName() string {
+	taken := map[string]bool{}
+	for _, d := range s.workspace.Documents() {
+		taken[d.DisplayName()] = true
+	}
+	for n := 1; ; n++ {
+		if name := "Part" + strconv.Itoa(n); !taken[name] {
+			return name
+		}
+	}
 }
 
 // SaveActiveDocument writes the active document back to its existing .obk path. A

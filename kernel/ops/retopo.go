@@ -98,10 +98,16 @@ func vertexFaceMap(solid *topo.Body) map[uint64][]*topo.Face {
 	return m
 }
 
+// singularSolveTol is the magnitude below which a determinant or a ray/line·plane denominator
+// is treated as zero — the linear solve is singular or the line is parallel to the plane. It
+// is below the linear DefaultTolerance because it bounds a product of (roughly unit) direction
+// terms, not a length.
+const singularSolveTol = 1e-12
+
 // solve3 solves the 3×3 system a·x = b by Cramer's rule, ok=false when a is singular.
 func solve3(a [3][3]float64, b [3]float64) ([3]float64, bool) {
 	det := det3(a)
-	if det < 1e-12 && det > -1e-12 {
+	if det < singularSolveTol && det > -singularSolveTol {
 		return [3]float64{}, false
 	}
 	var x [3]float64

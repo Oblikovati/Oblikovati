@@ -140,7 +140,7 @@ func ringCrossings(o2 math.Point2, d2 math.Vector2, ring []math.Point3, pl geom.
 func lineSegCross(o math.Point2, d math.Vector2, a, b math.Point2) (float64, bool) {
 	e := a.VectorTo(b)
 	den := d.Cross(e)
-	if stdmath.Abs(den) < 1e-12 {
+	if stdmath.Abs(den) < parallelDenomTol {
 		return 0, false // parallel
 	}
 	ao := o.VectorTo(a)

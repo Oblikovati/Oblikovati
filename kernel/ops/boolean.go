@@ -37,13 +37,12 @@ func (op PartFeatureOperation) String() string {
 	}
 }
 
-// Boolean combines target and tool under op. Phase A handles the non-overlapping
-// topological cases — disjoint bodies and one fully containing the other — which
-// produce valid results without splitting faces. General intersecting booleans
-// (face-face intersection, splitting and re-stitching) are the hardest part of the
-// kernel and are phased to Phase C, returning NotYetImplemented for now
-// (architecture core/03). Result-face lineage flows from the operands, so reference
-// keys stay rebindable.
+// Boolean combines target and tool under op. The non-overlapping topological cases —
+// disjoint bodies and one fully containing the other — produce valid results without
+// splitting faces. General intersecting booleans (face-face intersection, splitting and
+// re-stitching) go through booleanGeneral: the exact planar B-rep boolean for
+// planar-faceted operands, falling back to triangle-soup CSG when an operand has a curved
+// face. Result-face lineage flows from the operands, so reference keys stay rebindable.
 func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, error) {
 	lin := topo.NewLineage(topo.Tok("boolean", op.String(), 0))
 	if op == NewBody {
@@ -153,8 +152,8 @@ const (
 )
 
 // classify determines the spatial relationship from bounding boxes and vertex
-// containment. It recognizes the cases Phase A can combine without face splitting;
-// anything else is reported as intersecting.
+// containment. It recognizes the cases that combine without face splitting (disjoint,
+// or one body containing the other); anything else is reported as intersecting.
 func classify(target, tool *topo.Body) relation {
 	if !target.RangeBox().Intersects(tool.RangeBox()) {
 		return disjoint
