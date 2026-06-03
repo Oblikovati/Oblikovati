@@ -58,9 +58,11 @@ type EntityData struct {
 	Points       []int     `yaml:"points,omitempty"`
 	Radius       float64   `yaml:"radius,omitempty"`
 	CCW          bool      `yaml:"ccw,omitempty"`
-	MajorAxis    []float64 `yaml:"majorAxis,omitempty"` // ellipse only: [x, y]
+	MajorAxis    []float64 `yaml:"majorAxis,omitempty"` // ellipse/ellipticalArc: [x, y]
 	MajorRadius  float64   `yaml:"majorRadius,omitempty"`
 	MinorRadius  float64   `yaml:"minorRadius,omitempty"`
+	StartAngle   float64   `yaml:"startAngle,omitempty"` // ellipticalArc only (radians)
+	EndAngle     float64   `yaml:"endAngle,omitempty"`   // ellipticalArc only (radians)
 	Closed       bool      `yaml:"closed,omitempty"`
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
@@ -178,6 +180,8 @@ func serializeEntity(e Entity) (EntityData, error) {
 		return EntityData{ID: int(v.id), Kind: "arc", Points: []int{int(v.Center.id), int(v.Start.id), int(v.End.id)}, CCW: v.CounterClockwise, Construction: v.construction}, nil
 	case *Ellipse:
 		return EntityData{ID: int(v.id), Kind: "ellipse", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), Construction: v.construction}, nil
+	case *EllipticalArc:
+		return EntityData{ID: int(v.id), Kind: "ellipticalArc", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), StartAngle: float64(v.StartAngle), EndAngle: float64(v.EndAngle), Construction: v.construction}, nil
 	case *Spline:
 		return EntityData{ID: int(v.id), Kind: "spline", Points: pointIDsOf(v.Points), Closed: v.Closed, Fit: v.fit, Construction: v.construction}, nil
 	default:

@@ -122,6 +122,19 @@ type Ellipse struct {
 	MinorRadius math.Scalar
 }
 
+// EllipticalArc is an ellipse restricted to a parametric-angle range [StartAngle,
+// EndAngle] (radians, measured in the major/minor frame). It shares the ellipse's
+// center, major-axis direction, and two radii.
+type EllipticalArc struct {
+	entityBase
+	Center      *Point
+	MajorAxis   math.Vector2
+	MajorRadius math.Scalar
+	MinorRadius math.Scalar
+	StartAngle  math.Scalar
+	EndAngle    math.Scalar
+}
+
 // Spline is a NURBS-style sketch spline through (fit) or near (control) its points.
 type Spline struct {
 	entityBase

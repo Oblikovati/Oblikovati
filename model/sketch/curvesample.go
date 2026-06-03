@@ -45,6 +45,8 @@ func naturalPolyline(e Entity) []math.Point2 {
 		return sampleArcEntity(t)
 	case *Spline:
 		return sampleSplineEntity(t)
+	case *EllipticalArc:
+		return sampleEllipticalArcEntity(t)
 	default:
 		a, b, ok := segmentEnds(e)
 		if !ok {
@@ -52,6 +54,22 @@ func naturalPolyline(e Entity) []math.Point2 {
 		}
 		return []math.Point2{a.Position(), b.Position()}
 	}
+}
+
+// sampleEllipticalArcEntity samples an elliptical arc from StartAngle to EndAngle along
+// the ellipse (in the major/minor frame), endpoints inclusive.
+func sampleEllipticalArcEntity(e *EllipticalArc) []math.Point2 {
+	c := e.Center.Position()
+	ux, uy := unitAxis(e.MajorAxis)
+	start := float64(e.StartAngle)
+	sweep := float64(e.EndAngle) - start
+	pts := make([]math.Point2, curveSamples+1)
+	for i := range pts {
+		a := start + sweep*float64(i)/float64(curveSamples)
+		mx, my := e.MajorRadius*stdmath.Cos(a), e.MinorRadius*stdmath.Sin(a)
+		pts[i] = math.P2(c.X+mx*ux-my*uy, c.Y+mx*uy+my*ux)
+	}
+	return pts
 }
 
 // sampleArcEntity samples a circular arc from its Start to its End along the true

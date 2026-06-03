@@ -116,6 +116,16 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 		}
 		axis := math.V2(ed.MajorAxis[0], ed.MajorAxis[1])
 		return r.s.ellipses.AddWithCenter(p[0], axis, math.Scalar(ed.MajorRadius), math.Scalar(ed.MinorRadius)), nil
+	case "ellipticalArc":
+		p, err := r.points(ed.Points, 1)
+		if err != nil {
+			return nil, err
+		}
+		if len(ed.MajorAxis) != 2 {
+			return nil, fmt.Errorf("ellipticalArc needs a 2-component majorAxis, got %d", len(ed.MajorAxis))
+		}
+		axis := math.V2(ed.MajorAxis[0], ed.MajorAxis[1])
+		return r.s.ellArcs.AddWithCenter(p[0], axis, math.Scalar(ed.MajorRadius), math.Scalar(ed.MinorRadius), math.Scalar(ed.StartAngle), math.Scalar(ed.EndAngle)), nil
 	case "spline":
 		p, err := r.points(ed.Points, len(ed.Points))
 		if err != nil {

@@ -91,6 +91,8 @@ func entityShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64)
 		return types.SketchEntityArc, [][]float64{pt(v.Center), pt(v.Start), pt(v.End)}, float64(v.Radius())
 	case *sketch.Ellipse:
 		return types.SketchEntityEllipse, [][]float64{pt(v.Center)}, 0
+	case *sketch.EllipticalArc:
+		return types.SketchEntityEllipticalArc, [][]float64{pt(v.Center)}, 0
 	case *sketch.Spline:
 		return types.SketchEntitySpline, splinePts(v), 0
 	default:

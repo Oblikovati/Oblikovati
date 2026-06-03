@@ -197,6 +197,39 @@ func TestSketchAddEntityKinds(t *testing.T) {
 	}
 }
 
+// TestSketchAddConicsAndSplines creates ellipse/ellipticalArc/spline through the API.
+func TestSketchAddConicsAndSplines(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var res wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"ellipse","points":[[0,0]],"axis":[1,0],"majorRadius":"20 mm","minorRadius":"10 mm"}`, &res)
+	if res.Kind != "ellipse" {
+		t.Fatalf("ellipse kind = %q", res.Kind)
+	}
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"ellipticalArc","points":[[0,0]],"axis":[1,0],"majorRadius":"20 mm","minorRadius":"10 mm","startAngle":"0 deg","endAngle":"90 deg"}`, &res)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"spline","points":[[0,0],[1,1],[2,0]]}`, &res)
+	if len(res.PointIDs) != 3 {
+		t.Fatalf("spline point ids = %d, want 3", len(res.PointIDs))
+	}
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	for _, want := range []string{"ellipse", "ellipticalArc", "spline"} {
+		if countKind(ents.Entities, want) != 1 {
+			t.Errorf("want exactly one %s entity, got %+v", want, ents.Entities)
+		}
+	}
+}
+
+func TestSketchAddEllipseNeedsAxis(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"ellipse","points":[[0,0]],"majorRadius":"2 cm","minorRadius":"1 cm"}`)); err == nil {
+		t.Fatal("expected error for ellipse without a 2-component axis")
+	}
+}
+
 func TestSketchAddEntityRejectsCollinearCircle(t *testing.T) {
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})

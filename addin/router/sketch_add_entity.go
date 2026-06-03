@@ -57,8 +57,14 @@ func buildSketchEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch,
 		return buildCircle(part, sk, in, pts)
 	case "arc":
 		return buildArc(sk, in, pts)
+	case "ellipse":
+		return buildEllipse(part, sk, in, pts)
+	case "ellipticalArc":
+		return buildEllipticalArc(part, sk, in, pts)
+	case "spline":
+		return buildSpline(sk, in, pts)
 	default:
-		return nil, nil, fmt.Errorf("sketch.addEntity: unknown kind %q (want line|point|circle|arc)", in.Kind)
+		return nil, nil, fmt.Errorf("sketch.addEntity: unknown kind %q (want line|point|circle|arc|ellipse|ellipticalArc|spline)", in.Kind)
 	}
 }
 
@@ -117,6 +123,75 @@ func buildArc(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2)
 	}
 	a := sk.Arcs().AddByCenterStartEnd(pts[0], pts[1], pts[2], in.CCW)
 	return a, arcPointIDs(a), nil
+}
+
+// buildEllipse creates a full ellipse from a center, major-axis direction, and two radii.
+func buildEllipse(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) (sketch.Entity, []uint64, error) {
+	if err := wantPoints("ellipse", pts, 1); err != nil {
+		return nil, nil, err
+	}
+	axis, majorR, minorR, err := ellipseFrame(part, in)
+	if err != nil {
+		return nil, nil, err
+	}
+	e := sk.Ellipses().Add(pts[0], axis, majorR, minorR)
+	return e, []uint64{uint64(e.Center.EntityID())}, nil
+}
+
+// buildEllipticalArc creates an elliptical arc bounded by parametric start/end angles.
+func buildEllipticalArc(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) (sketch.Entity, []uint64, error) {
+	if err := wantPoints("ellipticalArc", pts, 1); err != nil {
+		return nil, nil, err
+	}
+	axis, majorR, minorR, err := ellipseFrame(part, in)
+	if err != nil {
+		return nil, nil, err
+	}
+	start, err := modelAngle(part, in.StartAngle)
+	if err != nil {
+		return nil, nil, err
+	}
+	end, err := modelAngle(part, in.EndAngle)
+	if err != nil {
+		return nil, nil, err
+	}
+	e := sk.EllipticalArcs().Add(pts[0], axis, majorR, minorR, math.Scalar(start), math.Scalar(end))
+	return e, []uint64{uint64(e.Center.EntityID())}, nil
+}
+
+// ellipseFrame parses the shared ellipse inputs: a 2-component major-axis direction and
+// the two unit-bearing radii.
+func ellipseFrame(part *compdef.PartComponentDefinition, in wire.AddSketchEntityArgs) (math.Vector2, math.Scalar, math.Scalar, error) {
+	if len(in.Axis) != 2 {
+		return math.Vector2{}, 0, 0, fmt.Errorf("sketch.addEntity: ellipse axis needs 2 components, got %d", len(in.Axis))
+	}
+	majorR, err := part.Units().Parse(in.MajorRadius, param.Length)
+	if err != nil {
+		return math.Vector2{}, 0, 0, fmt.Errorf("sketch.addEntity: majorRadius %q: %w", in.MajorRadius, err)
+	}
+	minorR, err := part.Units().Parse(in.MinorRadius, param.Length)
+	if err != nil {
+		return math.Vector2{}, 0, 0, fmt.Errorf("sketch.addEntity: minorRadius %q: %w", in.MinorRadius, err)
+	}
+	return math.V2(in.Axis[0], in.Axis[1]), math.Scalar(majorR.Value), math.Scalar(minorR.Value), nil
+}
+
+// buildSpline creates a spline interpolating (default) or controlling its points.
+func buildSpline(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) (sketch.Entity, []uint64, error) {
+	if len(pts) < 2 {
+		return nil, nil, fmt.Errorf("sketch.addEntity: spline needs at least 2 points, got %d", len(pts))
+	}
+	var sp *sketch.Spline
+	if in.Variant == "controlPoint" {
+		sp = sk.Splines().AddByControlPoints(pts, in.Closed)
+	} else {
+		sp = sk.Splines().AddByPoints(pts, in.Closed)
+	}
+	ids := make([]uint64, len(sp.Points))
+	for i, p := range sp.Points {
+		ids[i] = uint64(p.EntityID())
+	}
+	return sp, ids, nil
 }
 
 // arcPointIDs returns an arc's center/start/end point ids.
