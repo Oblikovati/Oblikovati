@@ -283,6 +283,61 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	return NewRevolveFeatures(fs).Add(skt, d.Profile, axis, func() float64 { return angle }, op), nil
 }
 
+// CoilData is a coil's recipe: the sketch profile, the helix axis (a WorkRef), the
+// pitch (per revolution), the number of revolutions, the taper, and the operation.
+type CoilData struct {
+	Sketch      int     `yaml:"sketch"`
+	Profile     int     `yaml:"profile"`
+	Axis        string  `yaml:"axis"`
+	Pitch       float64 `yaml:"pitch"`
+	Revolutions float64 `yaml:"revolutions"`
+	Taper       float64 `yaml:"taper,omitempty"`
+	Operation   string  `yaml:"operation"`
+}
+
+func serializeCoil(def *CoilDefinition, sk SketchIndexer) (*CoilData, error) {
+	idx, ok := sk.IndexOf(def.Sketch)
+	if !ok {
+		return nil, fmt.Errorf("coil references a sketch that is not in the part")
+	}
+	if def.Axis == nil {
+		return nil, fmt.Errorf("coil has no axis")
+	}
+	op, err := operationName(def.Operation)
+	if err != nil {
+		return nil, err
+	}
+	return &CoilData{
+		Sketch: idx, Profile: def.ProfileIndex, Axis: string(def.Axis.Key()),
+		Pitch: evalFloat(def.Pitch), Revolutions: evalFloat(def.Revolutions),
+		Taper: def.Taper, Operation: op,
+	}, nil
+}
+
+func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeometry) (*PartFeature, error) {
+	if d == nil {
+		return nil, fmt.Errorf("coil feature is missing its payload")
+	}
+	skt, ok := sk.At(d.Sketch)
+	if !ok {
+		return nil, fmt.Errorf("coil references sketch index %d, which does not exist", d.Sketch)
+	}
+	if work == nil {
+		return nil, fmt.Errorf("coil needs the part's work geometry to resolve its axis")
+	}
+	axis, err := work.axis(WorkRef(d.Axis))
+	if err != nil {
+		return nil, fmt.Errorf("coil axis: %w", err)
+	}
+	op, err := parseOperation(d.Operation)
+	if err != nil {
+		return nil, err
+	}
+	pitch, revs := d.Pitch, d.Revolutions
+	return NewCoilFeatures(fs).Add(skt, d.Profile, axis,
+		func() float64 { return pitch }, func() float64 { return revs }, d.Taper, op), nil
+}
+
 // refStrings renders work references as their string form for YAML.
 func refStrings(refs []WorkRef) []string {
 	if len(refs) == 0 {
