@@ -148,6 +148,58 @@ func TestFilletCornerBlend(t *testing.T) {
 	}
 }
 
+// meshOpenEdges counts the welded mesh edges not shared by exactly two triangles — i.e. the
+// cracks. A watertight tessellation has zero.
+func meshOpenEdges(m *ops.Mesh) int {
+	grid := func(x float64) int64 { return int64(stdmath.Round(x / 1e-5)) }
+	id := map[[3]int64]int{}
+	vid := func(i int) int {
+		p := m.Positions[i]
+		k := [3]int64{grid(p.X), grid(p.Y), grid(p.Z)}
+		if v, ok := id[k]; ok {
+			return v
+		}
+		v := len(id)
+		id[k] = v
+		return v
+	}
+	use := map[[2]int]int{}
+	for t := 0; t+2 < len(m.Indices); t += 3 {
+		vs := [3]int{vid(m.Indices[t]), vid(m.Indices[t+1]), vid(m.Indices[t+2])}
+		for _, e := range [][2]int{{vs[0], vs[1]}, {vs[1], vs[2]}, {vs[2], vs[0]}} {
+			if e[0] > e[1] {
+				e[0], e[1] = e[1], e[0]
+			}
+			use[e]++
+		}
+	}
+	open := 0
+	for _, c := range use {
+		if c != 2 {
+			open++
+		}
+	}
+	return open
+}
+
+// TestFilletCornerBlendMeshWatertight checks the corner blend's TESSELLATION is watertight at
+// a fine quality — the spherical patch's lat/long UV is degenerate where a box corner lands on
+// the pole, so it must be flattened onto a tangent plane (else the ear-clip stalls and cracks).
+func TestFilletCornerBlendMeshWatertight(t *testing.T) {
+	box := shellBox(4, 3, 5)
+	keys := cornerEdgeKeys(t, box)
+	res, err := ops.FilletEdges(box, keys, 0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
+		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		if open := meshOpenEdges(m); open != 0 {
+			t.Errorf("corner-blend mesh at tol %g has %d open edges, want watertight", tol, open)
+		}
+	}
+}
+
 // TestFilletAllBoxEdges rounds every edge of a 2×2×2 box: 12 cylinder fillets joined by 8
 // spherical corner patches into a valid solid (a fully-rounded box), with material removed.
 func TestFilletAllBoxEdges(t *testing.T) {
