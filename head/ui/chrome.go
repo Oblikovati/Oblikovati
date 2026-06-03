@@ -466,6 +466,8 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			list.Items = append(list.Items, planesOverlay(activePart(s), s.SelectedWorkPlane(), hovered)...)
 			list.Items = append(list.Items, partSketchOverlays(s)...)
+			list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
+			list.Items = append(list.Items, selectedEdgeOverlay(s)...)
 			list.Items = append(list.Items, extrudeHoverHighlight(s)...)
 			list.Items = append(list.Items, extrudeProfileHighlight(s)...)
 			list.Items = append(list.Items, activeToolPreviewItems(s)...)

@@ -34,6 +34,27 @@ func partSketchOverlays(s *app.Session) []renderer.DrawItem {
 	return items
 }
 
+// partSketchPoints draws the target glyph at every point of the active part's finished,
+// visible sketches, so placed points stay visible after Finish Sketch (the in-sketch overlay
+// draws them while editing). hWorld is the screen-constant half-size in model units.
+func partSketchPoints(s *app.Session, hWorld float64) []renderer.DrawItem {
+	part := activePart(s)
+	if part == nil {
+		return nil
+	}
+	var items []renderer.DrawItem
+	for i := 0; i < part.Sketches().Count(); i++ {
+		sk := part.Sketches().Item(i)
+		if !sk.Visible() || sk.IsEditing() {
+			continue
+		}
+		if item, ok := pointsOverlay(sk.Plane(), sk, hWorld); ok {
+			items = append(items, item)
+		}
+	}
+	return items
+}
+
 // selectedSketch returns the whole sketch selected in the browser, or nil — the input for
 // highlighting a finished sketch in the 3D view.
 func selectedSketch(s *app.Session) *sketch.Sketch {
@@ -188,6 +209,12 @@ func (a *segAccum) add(p math.Point3) int {
 
 func (a *segAccum) seg(plane sketch.Plane, p, q math.Point2) {
 	i, j := a.add(plane.ToModel(p)), a.add(plane.ToModel(q))
+	a.idx = append(a.idx, i, j)
+}
+
+// addSegment adds a model-space line segment (3D, no plane mapping).
+func (a *segAccum) addSegment(p, q math.Point3) {
+	i, j := a.add(p), a.add(q)
 	a.idx = append(a.idx, i, j)
 }
 

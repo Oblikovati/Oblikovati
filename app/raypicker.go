@@ -81,6 +81,11 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 	if ax, _ := p.nearestAxis(origin, dir); ax != nil && filter.Accepts(SelectWorkAxis) {
 		return WorkAxisHandle{Axis: ax}, true
 	}
+	// A body edge the cursor lands on (within the snap radius) wins over the face behind it,
+	// matching Inventor's edge snap — needed for chamfer/fillet/dress-up edge picks.
+	if e := p.nearestEdge(origin, dir); e != nil && filter.Accepts(SelectEdge) {
+		return EdgeHandle{Edge: e}, true
+	}
 	var cands []pickCandidate
 	if face, body, t := p.nearestFace(origin, dir); face != nil {
 		if sel, ok := facePick(face, body, filter); ok {
@@ -177,6 +182,68 @@ func (p *RayPicker) nearestFace(origin math.Point3, dir math.Vector3) (*topo.Fac
 		}
 	}
 	return hitFace, hitBody, best
+}
+
+// nearestEdge returns the closest body edge whose polyline passes within the pixel-snap
+// radius of the ray (nearest by ray depth on ties), or nil. Edges are sampled via the
+// tessellator, so curved edges (arcs) pick too.
+func (p *RayPicker) nearestEdge(origin math.Point3, dir math.Vector3) *topo.Edge {
+	tol := pickPixelRadius * p.camera.WorldPerPixel()
+	var hit *topo.Edge
+	best := stdmath.Inf(1)
+	for _, b := range p.bodies() {
+		for _, e := range b.Edges() {
+			pts := ops.TessellateEdge(e, ops.DefaultQuality())
+			for i := 0; i+1 < len(pts); i++ {
+				if d, t, ok := raySegmentDistance(origin, dir, pts[i], pts[i+1]); ok && d <= tol && t < best {
+					best, hit = t, e
+				}
+			}
+		}
+	}
+	return hit
+}
+
+// raySegmentDistance returns the closest distance between the forward ray (origin + t·dir,
+// t ≥ 0; dir unit) and the segment [a, b], plus the ray parameter t at that closest point.
+// ok is false for a degenerate segment.
+func raySegmentDistance(origin math.Point3, dir math.Vector3, a, b math.Point3) (dist, t float64, ok bool) {
+	e := a.VectorTo(b)
+	eLen := e.Dot(e)
+	if eLen < 1e-18 {
+		return 0, 0, false
+	}
+	s, u := closestRaySegParams(dir, e, a.VectorTo(origin), eLen)
+	p1 := origin.TranslateBy(dir.Scale(s))
+	p2 := a.TranslateBy(e.Scale(u))
+	return p1.DistanceTo(p2), s, true
+}
+
+// closestRaySegParams returns the ray parameter s (≥0) and segment parameter u (∈[0,1]) of
+// the closest approach between ray (dir from origin) and segment direction e, where r is
+// origin−a and eLen = e·e.
+func closestRaySegParams(dir, e, r math.Vector3, eLen float64) (s, u float64) {
+	bDot, c, f := dir.Dot(e), dir.Dot(r), e.Dot(r)
+	if denom := dir.Dot(dir)*eLen - bDot*bDot; denom > 1e-12 {
+		s = (bDot*f - c*eLen) / denom
+	}
+	if s < 0 {
+		s = 0
+	}
+	switch u = (bDot*s + f) / eLen; {
+	case u < 0:
+		u, s = 0, clampNonNeg(-c)
+	case u > 1:
+		u, s = 1, clampNonNeg(bDot-c)
+	}
+	return s, u
+}
+
+func clampNonNeg(x float64) float64 {
+	if x < 0 {
+		return 0
+	}
+	return x
 }
 
 // nearestPlane returns the closest origin work plane whose display square the ray
