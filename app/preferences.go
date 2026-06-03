@@ -59,6 +59,14 @@ func (g *GridSettings) SetSpacingIn(value float64, u param.UnitsOfMeasure) error
 	return nil
 }
 
+// ChamferFlatCorners reports the default corner treatment new Chamfer tools start with:
+// true blends a vertex where three chamfered edges meet into a flat triangular face (the
+// Inventor default), false leaves the three chamfer planes meeting at a point.
+func (s *Session) ChamferFlatCorners() bool { return s.chamferFlatCorners }
+
+// SetChamferFlatCorners sets the default corner treatment for new chamfers.
+func (s *Session) SetChamferFlatCorners(flat bool) { s.chamferFlatCorners = flat }
+
 // Grid returns the session's sketch-grid settings (created on first use).
 func (s *Session) Grid() *GridSettings {
 	if s.grid == nil {

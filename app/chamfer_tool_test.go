@@ -8,6 +8,7 @@ import (
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/feature"
 )
 
 // activePartDef returns the active document's part component definition.
@@ -80,6 +81,27 @@ func TestChamferViaRibbonCommand(t *testing.T) {
 	def := activePartDef(t, s)
 	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("chamfer did not remove material: volume %g, want < 8", v)
+	}
+}
+
+// TestChamferToolSeedsCornerPreference checks the tool adopts the session's default
+// corner treatment on Start, and that the chosen treatment reaches the committed feature.
+func TestChamferToolSeedsCornerPreference(t *testing.T) {
+	s, block := newPartWithBlock(t, 2)
+	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
+	s.SetChamferFlatCorners(false)
+
+	ch := NewChamferTool()
+	s.StartTool(ch)
+	if ch.FlatCorners() {
+		t.Error("tool should have seeded pointy corners from the session preference")
+	}
+	s.Click(1, 1)
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	if def := ch.AddedFeature().Definition().(*feature.ChamferFeature).Definition(); def.FlatCorners {
+		t.Error("committed chamfer should carry the pointy preference")
 	}
 }
 

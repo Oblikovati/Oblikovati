@@ -27,6 +27,10 @@ func drawPreferencesWindow(s *app.Session) {
 			drawGridTab(s)
 			native.EndTabItem()
 		}
+		if native.BeginTabItem("Modeling") {
+			drawModelingTab(s)
+			native.EndTabItem()
+		}
 		if native.BeginTabItem("Theme") {
 			drawAppearanceTab(s)
 			native.EndTabItem()
@@ -34,6 +38,15 @@ func drawPreferencesWindow(s *app.Session) {
 		native.EndTabBar()
 	}
 	native.End()
+}
+
+// drawModelingTab renders modeling-feature preferences (the default chamfer corner
+// treatment for now).
+func drawModelingTab(s *app.Session) {
+	flat := s.ChamferFlatCorners()
+	if native.Checkbox("Chamfer: flat triangular face at 3-edge corners", &flat) {
+		s.SetChamferFlatCorners(flat)
+	}
 }
 
 // drawGridTab renders the sketch-grid preference fields.

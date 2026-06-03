@@ -12,19 +12,30 @@ import (
 // edges, set the setback distance in the property window, and OK to bevel them. Each
 // picked edge becomes a wedge cut on the active part.
 type ChamferTool struct {
-	edges    []EdgeHandle
-	distance float64
-	added    *feature.PartFeature
+	edges       []EdgeHandle
+	distance    float64
+	flatCorners bool
+	added       *feature.PartFeature
 }
 
-// NewChamferTool returns a chamfer tool with a default 1-unit setback.
-func NewChamferTool() *ChamferTool { return &ChamferTool{distance: 1} }
+// NewChamferTool returns a chamfer tool with a default 1-unit setback and flat three-edge
+// corners (overridden from the session preference in Start).
+func NewChamferTool() *ChamferTool { return &ChamferTool{distance: 1, flatCorners: true} }
 
 // Name implements [Tool].
 func (t *ChamferTool) Name() string { return "Chamfer" }
 
-// Start sets the selection filter to edges so clicks pick edges to bevel.
-func (t *ChamferTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectEdge)) }
+// Start sets the selection filter to edges and seeds the corner treatment from the
+// session's chamfer preference.
+func (t *ChamferTool) Start(s *Session) {
+	t.flatCorners = s.ChamferFlatCorners()
+	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
+}
+
+// SetFlatCorners/FlatCorners choose whether a vertex where three picked edges meet is
+// blended into a flat triangular face (true) or left pointy (false).
+func (t *ChamferTool) SetFlatCorners(flat bool) { t.flatCorners = flat }
+func (t *ChamferTool) FlatCorners() bool        { return t.flatCorners }
 
 // Pick appends the clicked edge (ignoring one already chosen, so a double-click does not
 // duplicate it).
@@ -67,7 +78,7 @@ func (t *ChamferTool) Commit(s *Session) error {
 		keys[i] = e.Edge.ReferenceKey()
 	}
 	d := t.distance
-	t.added = feature.NewDressUpFeatures(part.Features()).AddChamfer(keys, func() float64 { return d })
+	t.added = feature.NewDressUpFeatures(part.Features()).AddChamferCorners(keys, func() float64 { return d }, t.flatCorners)
 	part.Recompute()
 	if !t.added.Health().OK() {
 		return errors.New("chamfer: " + t.added.Health().Reason)

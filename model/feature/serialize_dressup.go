@@ -24,10 +24,13 @@ func draftPull(p []float64) math.Vector3 {
 // and re-bind to the regenerated topology after recompute.
 
 // EdgeDressData is an edge-based dress-up (fillet radius / chamfer distance): the
-// picked edges as reference keys plus the scalar value.
+// picked edges as reference keys plus the scalar value. FlatCorners is chamfer-only and a
+// pointer so an absent value (older recipes, or a fillet) is distinguishable from an
+// explicit false; absent restores as the flat-corner default (see chamferFlatCornersOr).
 type EdgeDressData struct {
-	Edges []string `yaml:"edges"`
-	Value float64  `yaml:"value"`
+	Edges       []string `yaml:"edges"`
+	Value       float64  `yaml:"value"`
+	FlatCorners *bool    `yaml:"flatCorners,omitempty"`
 }
 
 // FaceDressData is a face-based dress-up (shell thickness / draft angle): the picked
@@ -115,3 +118,12 @@ func evalFloat(fn func() float64) float64 {
 }
 
 func constFloat(v float64) func() float64 { return func() float64 { return v } }
+
+// chamferFlatCornersOr reads a serialized chamfer's flat-corner flag, defaulting an absent
+// value (older recipes) to the flat-corner default so reopening matches a fresh chamfer.
+func chamferFlatCornersOr(p *bool) bool {
+	if p == nil {
+		return true
+	}
+	return *p
+}
