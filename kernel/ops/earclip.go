@@ -10,16 +10,17 @@ import (
 	"github.com/Oblikovati/oblikovati/math/predicate"
 )
 
-// tessellatePlanarFace triangulates a planar face's outer boundary by ear-clipping
-// (using the exact orientation predicate), giving a watertight triangulation whose
-// vertices are exactly the boundary vertices — chordal tolerance is met trivially
-// since the facets lie in the face plane.
-func tessellatePlanarFace(f *topo.Face) *Mesh {
+// tessellatePlanarFace triangulates a planar face's boundary by ear-clipping (using
+// the exact orientation predicate), giving a watertight triangulation. The boundary
+// comes from [loopBoundary], so a planar face bordered by a curved edge (e.g. a fillet's
+// flat end cap) follows the arc — sampled identically to the curved neighbour, no
+// T-junctions — rather than chording across it.
+func tessellatePlanarFace(f *topo.Face, q Quality) *Mesh {
 	normal := f.Geometry().NormalAt(0, 0)
 	flat := planeProjector(normal)
-	boundary3D := faceOuterBoundary(f)
+	boundary3D := faceOuterBoundary(f, q)
 	boundary2D := project2D(boundary3D, flat)
-	if holes3D := faceHoleBoundaries(f); len(holes3D) > 0 {
+	if holes3D := faceHoleBoundaries(f, q); len(holes3D) > 0 {
 		holes2D := make([][]math.Point2, len(holes3D))
 		for i, h := range holes3D {
 			holes2D[i] = project2D(h, flat)
@@ -45,38 +46,25 @@ func project2D(pts []math.Point3, flat func(math.Point3) math.Point2) []math.Poi
 	return out
 }
 
-// faceOuterBoundary returns the ordered vertices of a face's outer loop.
-func faceOuterBoundary(f *topo.Face) []math.Point3 {
+// faceOuterBoundary returns the discretized point ring of a face's outer loop.
+func faceOuterBoundary(f *topo.Face, q Quality) []math.Point3 {
 	for _, l := range f.Loops() {
 		if l.IsOuter() {
-			return loopVertices(l)
+			return loopBoundary(l, q)
 		}
 	}
 	return nil
 }
 
-// faceHoleBoundaries returns the ordered vertices of each of a face's inner (hole) loops.
-func faceHoleBoundaries(f *topo.Face) [][]math.Point3 {
+// faceHoleBoundaries returns the discretized point ring of each inner (hole) loop.
+func faceHoleBoundaries(f *topo.Face, q Quality) [][]math.Point3 {
 	var holes [][]math.Point3
 	for _, l := range f.Loops() {
 		if !l.IsOuter() {
-			holes = append(holes, loopVertices(l))
+			holes = append(holes, loopBoundary(l, q))
 		}
 	}
 	return holes
-}
-
-// loopVertices returns a loop's ordered vertex points (honouring edge-use reversal).
-func loopVertices(l *topo.Loop) []math.Point3 {
-	pts := make([]math.Point3, 0, len(l.EdgeUses()))
-	for _, u := range l.EdgeUses() {
-		v := u.Edge().StartVertex()
-		if u.Reversed() {
-			v = u.Edge().EndVertex()
-		}
-		pts = append(pts, v.Point())
-	}
-	return pts
 }
 
 // earClip triangulates a simple polygon, returning triangles as index triples into

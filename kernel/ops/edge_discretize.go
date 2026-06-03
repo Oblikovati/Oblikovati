@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops
+
+import (
+	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"github.com/Oblikovati/oblikovati/math"
+)
+
+// Curved edges must be sampled into the SAME chord polyline by every face that uses
+// them, or two faces meeting at an arc would tessellate it differently and leave a
+// T-junction (a crack) in the mesh. discretizeEdge derives the polyline only from the
+// edge (its curve, in its natural start→end parameter order), so any caller gets the
+// identical result; loopBoundary then orients per edge use and concatenates. A straight
+// edge yields just its two endpoints, so polyhedral faces are unaffected.
+
+// discretizeEdge samples an edge's curve into a chord polyline (start vertex → end
+// vertex) meeting the chordal tolerance. Endpoints are snapped to the edge's vertices
+// so adjacent edges share exact points.
+func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
+	c := e.Geometry()
+	lo, hi := c.Domain()
+	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.tol())
+	pts := make([]math.Point3, len(ts))
+	for i, t := range ts {
+		pts[i] = c.PointAt(t)
+	}
+	pts[0] = e.StartVertex().Point()
+	pts[len(pts)-1] = e.EndVertex().Point()
+	return pts
+}
+
+// loopBoundary returns a loop's boundary as an ordered point ring, each edge sampled
+// by [discretizeEdge] and oriented to the edge use, with shared vertices not repeated.
+// Both faces of a curved edge get matching interior points (watertight, no T-junctions).
+func loopBoundary(l *topo.Loop, q Quality) []math.Point3 {
+	var out []math.Point3
+	for _, u := range l.EdgeUses() {
+		pts := discretizeEdge(u.Edge(), q)
+		if u.Reversed() {
+			pts = reverse3(pts)
+		}
+		if len(out) > 0 {
+			pts = pts[1:] // drop the point shared with the previous edge's end
+		}
+		out = append(out, pts...)
+	}
+	if n := len(out); n > 1 && out[0].DistanceTo(out[n-1]) < weldPointTol {
+		out = out[:n-1] // drop the closing duplicate (last == first)
+	}
+	return out
+}
+
+// reverse3 returns the points in reverse order (new slice).
+func reverse3(pts []math.Point3) []math.Point3 {
+	out := make([]math.Point3, len(pts))
+	for i, p := range pts {
+		out[len(pts)-1-i] = p
+	}
+	return out
+}
+
+// weldPointTol is the distance under which two boundary points are the same vertex.
+const weldPointTol = 1e-9
