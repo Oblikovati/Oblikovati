@@ -567,6 +567,51 @@ func TestSketchProfilesEnumerated(t *testing.T) {
 	}
 }
 
+// TestSketchTransformCopyAndMirror exercises the F09 edit operations through the API.
+func TestSketchTransformCopyAndMirror(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var circ wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"10 mm"}`, &circ)
+
+	// Copy the circle by (5,0) → two circles.
+	var res wire.TransformSketchResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"op":"copy","entities":[%d],"vector":[5,0]}`, circ.EntityID)
+	call(t, r, s, "sketch.transform", args, &res)
+	if len(res.Created) != 1 {
+		t.Fatalf("copy created = %d, want 1", len(res.Created))
+	}
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	if countKind(ents.Entities, "circle") != 2 {
+		t.Fatalf("circles after copy = %d, want 2", countKind(ents.Entities, "circle"))
+	}
+
+	// Move the original in place by (0,3).
+	var moved wire.TransformSketchResult
+	args = fmt.Sprintf(`{"sketchIndex":0,"op":"move","entities":[%d],"vector":[0,3]}`, circ.EntityID)
+	call(t, r, s, "sketch.transform", args, &moved)
+	if len(moved.Created) != 0 {
+		t.Fatalf("move created = %d, want 0 (in place)", len(moved.Created))
+	}
+}
+
+func TestSketchTransformErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"1 cm"}`, &wire.AddSketchEntityResult{})
+	for _, bad := range []string{
+		`{"sketchIndex":0,"op":"bogus","entities":[1]}`,                   // unknown op
+		`{"sketchIndex":0,"op":"move","entities":[]}`,                     // empty selection
+		`{"sketchIndex":0,"op":"move","entities":[99999],"vector":[1,1]}`, // missing entity
+		`{"sketchIndex":0,"op":"move","entities":[1],"vector":[1]}`,       // bad vector
+	} {
+		if _, err := r.Handle(s, "sketch.transform", []byte(bad)); err == nil {
+			t.Errorf("expected error for %s", bad)
+		}
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {
