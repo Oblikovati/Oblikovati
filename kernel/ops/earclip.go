@@ -15,40 +15,68 @@ import (
 // vertices are exactly the boundary vertices — chordal tolerance is met trivially
 // since the facets lie in the face plane.
 func tessellatePlanarFace(f *topo.Face) *Mesh {
-	boundary := faceOuterBoundary(f)
 	normal := f.Geometry().NormalAt(0, 0)
 	flat := planeProjector(normal)
-	poly := make([]math.Point2, len(boundary))
-	for i, p := range boundary {
-		poly[i] = flat(p)
+	boundary3D := faceOuterBoundary(f)
+	boundary2D := project2D(boundary3D, flat)
+	if holes3D := faceHoleBoundaries(f); len(holes3D) > 0 {
+		holes2D := make([][]math.Point2, len(holes3D))
+		for i, h := range holes3D {
+			holes2D[i] = project2D(h, flat)
+		}
+		boundary2D, boundary3D = mergeHoles(boundary2D, boundary3D, holes2D, holes3D)
 	}
 	m := &Mesh{}
-	for _, p := range boundary {
+	for _, p := range boundary3D {
 		m.addVertex(p, normal)
 	}
-	for _, tri := range earClip(poly) {
+	for _, tri := range earClip(boundary2D) {
 		m.addTriangle(tri[0], tri[1], tri[2])
 	}
 	return m
 }
 
+// project2D drops each point to the face plane via the projector.
+func project2D(pts []math.Point3, flat func(math.Point3) math.Point2) []math.Point2 {
+	out := make([]math.Point2, len(pts))
+	for i, p := range pts {
+		out[i] = flat(p)
+	}
+	return out
+}
+
 // faceOuterBoundary returns the ordered vertices of a face's outer loop.
 func faceOuterBoundary(f *topo.Face) []math.Point3 {
 	for _, l := range f.Loops() {
-		if !l.IsOuter() {
-			continue
+		if l.IsOuter() {
+			return loopVertices(l)
 		}
-		pts := make([]math.Point3, 0, len(l.EdgeUses()))
-		for _, u := range l.EdgeUses() {
-			v := u.Edge().StartVertex()
-			if u.Reversed() {
-				v = u.Edge().EndVertex()
-			}
-			pts = append(pts, v.Point())
-		}
-		return pts
 	}
 	return nil
+}
+
+// faceHoleBoundaries returns the ordered vertices of each of a face's inner (hole) loops.
+func faceHoleBoundaries(f *topo.Face) [][]math.Point3 {
+	var holes [][]math.Point3
+	for _, l := range f.Loops() {
+		if !l.IsOuter() {
+			holes = append(holes, loopVertices(l))
+		}
+	}
+	return holes
+}
+
+// loopVertices returns a loop's ordered vertex points (honouring edge-use reversal).
+func loopVertices(l *topo.Loop) []math.Point3 {
+	pts := make([]math.Point3, 0, len(l.EdgeUses()))
+	for _, u := range l.EdgeUses() {
+		v := u.Edge().StartVertex()
+		if u.Reversed() {
+			v = u.Edge().EndVertex()
+		}
+		pts = append(pts, v.Point())
+	}
+	return pts
 }
 
 // earClip triangulates a simple polygon, returning triangles as index triples into
@@ -97,26 +125,35 @@ func findEar(poly []math.Point2, idx []int) (int, bool) {
 	return 0, false
 }
 
-// anyInside reports whether any vertex other than the ear's three lies inside abc.
+// anyInside reports whether any reflex vertex (other than the ear's three) lies strictly
+// inside abc. Only reflex vertices can block an ear, and coincident bridge vertices (equal
+// to a corner) are skipped — both are required so hole-bridged polygons, which carry doubled
+// bridge vertices, still triangulate instead of stalling.
 func anyInside(poly []math.Point2, idx []int, ear int, a, b, c math.Point2) bool {
 	m := len(idx)
 	for k := 0; k < m; k++ {
 		if k == ear || k == (ear+m-1)%m || k == (ear+1)%m {
 			continue
 		}
-		if pointInTriangle(poly[idx[k]], a, b, c) {
+		p := poly[idx[k]]
+		if p == a || p == b || p == c {
+			continue // a doubled bridge vertex coincident with an ear corner — not blocking
+		}
+		if predicate.Orient2D(poly[idx[(k+m-1)%m]], p, poly[idx[(k+1)%m]]) > 0 {
+			continue // convex vertex — cannot block an ear
+		}
+		if pointInTriangle(p, a, b, c) {
 			return true
 		}
 	}
 	return false
 }
 
-// pointInTriangle reports whether p is inside CCW triangle abc (boundary counts as
-// inside to reject degenerate ears).
+// pointInTriangle reports whether p is strictly inside CCW triangle abc.
 func pointInTriangle(p, a, b, c math.Point2) bool {
-	return predicate.Orient2D(a, b, p) >= 0 &&
-		predicate.Orient2D(b, c, p) >= 0 &&
-		predicate.Orient2D(c, a, p) >= 0
+	return predicate.Orient2D(a, b, p) > 0 &&
+		predicate.Orient2D(b, c, p) > 0 &&
+		predicate.Orient2D(c, a, p) > 0
 }
 
 // signedArea returns the shoelace signed area (positive = CCW).

@@ -56,6 +56,14 @@ func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
 	for e := range edges {
 		out = append(out, e)
 	}
+	// Sort for determinism (map iteration order is random and was producing
+	// run-to-run-different arrangements on tolerance-fragile inputs).
+	sort.Slice(out, func(i, j int) bool {
+		if out[i][0] != out[j][0] {
+			return out[i][0] < out[j][0]
+		}
+		return out[i][1] < out[j][1]
+	})
 	return weld.points, out
 }
 

@@ -75,8 +75,8 @@ func TestBRepIntersection(t *testing.T) {
 // two disjoint tools, each removing 0.5×1×1 = 0.5 ⇒ 8 − 0.5 − 0.5 = 7.
 func TestBRepChainedDifference(t *testing.T) {
 	a := box(0, 0, 0, 2, 2, 2)
-	t1 := box(-0.25, 0.5, 0.5, 0.5, 1, 1) // pokes through the −X face, removes 0.5×1×1
-	t2 := box(1.75, 0.5, 0.5, 0.5, 1, 1)  // pokes through the +X face, removes 0.5×1×1
+	t1 := box(-0.25, 0.5, 0.5, 0.75, 1, 1) // x∈[−0.25,0.5]: pokes through the −X face, removes 0.5×1×1
+	t2 := box(1.5, 0.5, 0.5, 0.75, 1, 1)   // x∈[1.5,2.25]: pokes through the +X face, removes 0.5×1×1
 	step1, err := brep.Boolean(brep.Difference, a, t1)
 	if err != nil {
 		t.Fatal(err)

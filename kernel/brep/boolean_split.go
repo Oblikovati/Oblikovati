@@ -51,29 +51,81 @@ func ring3D(pl geom.Plane, loop []math.Point2) []math.Point3 {
 	return out
 }
 
-// interiorPoint2D returns a point strictly inside the region (in the outer loop, outside
-// holes). It tries the vertex centroid, then triangle-fan centroids — robust for the
-// convex and mildly-non-convex regions the boolean produces.
+// interiorPoint2D returns a point STRICTLY inside the region (inside the outer loop,
+// outside holes). It probes just inside each outer edge (the midpoint nudged inward by a
+// small fraction of the edge length): such points hug the boundary, so unlike an ear
+// centroid they never fall in a central hole (a square frame) and never land on an edge
+// (which would make the inside/outside classification ambiguous). An ear-centroid pass is
+// the fallback for slivers where no edge probe lands clear.
 func interiorPoint2D(r Face2D) (math.Point2, bool) {
-	inHoles := func(p math.Point2) bool {
-		for _, h := range r.Holes {
-			if pointInPolygon2D(p, h) {
-				return true
+	poly := r.Outer
+	n := len(poly)
+	if n < 3 {
+		return math.Point2{}, false
+	}
+	for i := 0; i < n; i++ {
+		a, b := poly[i], poly[(i+1)%n]
+		e := a.VectorTo(b)
+		mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
+		left := math.V2(-e.Y, e.X) // interior side of a CCW loop (magnitude = |edge|)
+		for _, f := range []float64{1e-3, 1e-2, 0.05, 0.2} {
+			p := mid.TranslateBy(left.Scale(f))
+			if pointInPolygon2D(p, poly) && !inHoles2D(p, r.Holes) {
+				return p, true
 			}
 		}
-		return false
 	}
-	ok := func(p math.Point2) bool { return pointInPolygon2D(p, r.Outer) && !inHoles(p) }
-	if c := centroid2D(r.Outer); ok(c) {
-		return c, true
-	}
-	for i := 1; i+1 < len(r.Outer); i++ {
-		c := centroid2D([]math.Point2{r.Outer[0], r.Outer[i], r.Outer[i+1]})
-		if ok(c) {
+	for i := 0; i < n; i++ { // fallback: ear centroids
+		prev, cur, next := poly[(i-1+n)%n], poly[i], poly[(i+1)%n]
+		if turn2D(prev, cur, next) <= arrTol || !earEmpty(poly, i) {
+			continue
+		}
+		if c := centroid2D([]math.Point2{prev, cur, next}); !inHoles2D(c, r.Holes) {
 			return c, true
 		}
 	}
 	return math.Point2{}, false
+}
+
+// turn2D returns the signed turn (cross product) at b going a→b→c (>0 = left/convex CCW).
+func turn2D(a, b, c math.Point2) float64 {
+	return b.VectorTo(c).Cross(a.VectorTo(b)) * -1
+}
+
+// earEmpty reports whether the triangle at vertex i (prev,cur,next) contains no other
+// vertex of the polygon — the ear test.
+func earEmpty(poly []math.Point2, i int) bool {
+	n := len(poly)
+	a, b, c := poly[(i-1+n)%n], poly[i], poly[(i+1)%n]
+	for j := 0; j < n; j++ {
+		if j == i || j == (i-1+n)%n || j == (i+1)%n {
+			continue
+		}
+		if pointInTriangle2D(poly[j], a, b, c) {
+			return false
+		}
+	}
+	return true
+}
+
+// pointInTriangle2D reports whether p is inside triangle abc (inclusive of edges).
+func pointInTriangle2D(p, a, b, c math.Point2) bool {
+	d1 := turn2D(a, b, p)
+	d2 := turn2D(b, c, p)
+	d3 := turn2D(c, a, p)
+	hasNeg := d1 < -arrTol || d2 < -arrTol || d3 < -arrTol
+	hasPos := d1 > arrTol || d2 > arrTol || d3 > arrTol
+	return !(hasNeg && hasPos)
+}
+
+// inHoles2D reports whether p lies in any hole loop.
+func inHoles2D(p math.Point2, holes [][]math.Point2) bool {
+	for _, h := range holes {
+		if pointInPolygon2D(p, h) {
+			return true
+		}
+	}
+	return false
 }
 
 // centroid2D returns the average of a point set.
