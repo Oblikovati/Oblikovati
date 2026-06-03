@@ -71,10 +71,9 @@ func TestDirectEditsResolveThenDefer(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	mod := NewModifyFeatures(fs)
+	// move-face and face-offset are real now (see their own tests); the rest still defer.
 	feats := map[string]*PartFeature{
 		"split":        mod.AddSplit([][]byte{face}),
-		"move-face":    mod.AddMoveFace([][]byte{face}),
-		"face-offset":  mod.AddFaceOffset([][]byte{face}),
 		"delete-face":  mod.AddDeleteFace([][]byte{face}),
 		"replace-face": mod.AddReplaceFace([][]byte{face}),
 		"thicken":      mod.AddThicken([][]byte{face}),
@@ -87,6 +86,28 @@ func TestDirectEditsResolveThenDefer(t *testing.T) {
 		if pf.Kind() != name {
 			t.Errorf("kind = %q, want %q", pf.Kind(), name)
 		}
+	}
+}
+
+// TestMoveAndOffsetFaceRealGeometry moves the top face of a box up and offsets it in,
+// checking each is healthy and changes the volume the expected way.
+func TestMoveAndOffsetFaceRealGeometry(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var top []byte
+	for _, f := range box.Faces() {
+		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	mv := NewModifyFeatures(fs).AddMoveFace([][]byte{top}, math.V3(0, 0, 1)) // grow 2×2×2 → 2×2×3
+	fs.Recompute()
+	if !mv.Health().OK() {
+		t.Fatalf("move-face sick: %+v", mv.Health())
+	}
+	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 12) > 1e-6 {
+		t.Errorf("move-face volume = %g, want 12", got)
 	}
 }
 
