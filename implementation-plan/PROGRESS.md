@@ -41,7 +41,8 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 
 | PBI | Title | Status | Go package | Notes |
 |-----|-------|:------:|------------|-------|
-| 171 | Face-splitting solid/solid boolean | 🟦 | `kernel/ops` | In progress — see branch `feat/m20-feature-completion`. |
+| 190 | Body transform op & Move feature | ✅ | `kernel/geom`, `kernel/ops`, `model/feature`, `math` | `geom.TransformCurve`/`TransformSurface` (similarity-transform dispatchers over the analytic curve/surface types) + `ops.TransformBody` (clones a body's combinatorial topology, maps geometry, reverses winding on reflection so normals stay outward → stays a valid manifold under translate/rotate/reflect/uniform-scale; rejects non-uniform scale). A caller `derive` either preserves reference keys (in-place Move) or makes distinct-key copies (pattern/mirror). `MoveFeature`/`MoveDefinition` relocates a running body in place (keys survive); `math.Matrix4FromCells` persists the transform as 16 cells → `.obk` round-trips. The shared enabler for pattern/mirror geometry (PBI-191). |
+| 171 | Face-splitting solid/solid boolean | ⬜ | `kernel/ops` | Planned — the biggest unblocker (Cut/Split/Hole/Emboss/sheet-metal). |
 
 ### M10 — Surfacing & Freeform Modeling
 
