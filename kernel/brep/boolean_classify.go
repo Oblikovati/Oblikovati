@@ -31,7 +31,7 @@ func insideSolid(b *topo.Body, p math.Point3) bool {
 func rayHitsFace(p math.Point3, dir math.Vector3, f planarFace) bool {
 	n := f.normal
 	den := dir.Dot(n)
-	if stdmath.Abs(den) < 1e-12 {
+	if stdmath.Abs(den) < parallelDenomTol {
 		return false // ray parallel to the face plane
 	}
 	t := f.plane.Origin.VectorTo(p).Dot(n) / -den // n·(p+t dir) = n·origin ⇒ t = n·(origin−p)/(n·dir)
