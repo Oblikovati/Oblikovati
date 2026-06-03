@@ -110,6 +110,15 @@ func sketchInfo(index int, sk *sketch.Sketch) wire.SketchInfo {
 	}
 }
 
+// activeSketchAt returns the active part's sketch at the given index.
+func activeSketchAt(s *app.Session, index int) (*sketch.Sketch, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	return sketchAtIndex(part, index)
+}
+
 // resolveSketch decodes a SketchArgs and returns the active part's sketch at that index.
 func resolveSketch(s *app.Session, raw json.RawMessage) (*sketch.Sketch, int, error) {
 	part, err := modelaccess.ActivePart(s)

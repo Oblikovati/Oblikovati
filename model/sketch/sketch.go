@@ -133,6 +133,17 @@ func (s *Sketch) EntityByID(id ID) (Entity, bool) {
 	return nil, false
 }
 
+// PointByID returns the constrainable point with the given id — including curve
+// endpoints/centers, which are not standalone entities — or false if none matches.
+func (s *Sketch) PointByID(id ID) (*Point, bool) {
+	for _, p := range s.pts {
+		if p.id == id {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
 // AllPoints returns every constrainable point in the sketch — endpoints, centers,
 // and standalone points — which are the solver's position variables.
 func (s *Sketch) AllPoints() []*Point {

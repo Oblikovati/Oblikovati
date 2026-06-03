@@ -77,6 +77,8 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchDimensions] = enumerateDimensions
 	r.handlers[wire.MethodSketchSetProperty] = setSketchProperty
 	r.handlers[wire.MethodSketchAddEntity] = addSketchEntity
+	r.handlers[wire.MethodSketchAddConstraint] = addConstraint
+	r.handlers[wire.MethodSketchDeleteConstraint] = deleteConstraint
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface

@@ -4,6 +4,7 @@ package router
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/Oblikovati/api/wire"
@@ -328,6 +329,129 @@ func hasCircleRadius(ents []wire.SketchEntityInfo, radius float64) bool {
 		}
 	}
 	return false
+}
+
+// TestSketchAddConstraintReducesDOFAndSolves applies a horizontal constraint to a line's
+// endpoints, then concentric+equalRadius to two circles, checking DOF and enumeration.
+func TestSketchAddConstraintReducesDOFAndSolves(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var line wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,1]]}`, &line)
+	pA, pB := line.PointIDs[0], line.PointIDs[1]
+
+	var con wire.AddConstraintResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"horizontal","entities":[%d,%d]}`, pA, pB)
+	call(t, r, s, "sketch.addConstraint", args, &con)
+	if con.Kind != "horizontal" {
+		t.Fatalf("constraint kind = %q, want horizontal", con.Kind)
+	}
+
+	var cons wire.ListConstraintsResult
+	call(t, r, s, "sketch.constraints", `{"sketchIndex":0}`, &cons)
+	if len(cons.Constraints) != 1 || cons.Constraints[0].Kind != "horizontal" {
+		t.Fatalf("constraints = %+v, want one horizontal", cons.Constraints)
+	}
+
+	var solved wire.SolveSketchResult
+	call(t, r, s, "sketch.solve", `{"sketchIndex":0}`, &solved)
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	if y0, y1 := lineEndpointYs(ents.Entities); math.Abs(y0-y1) > 1e-6 {
+		t.Fatalf("after horizontal+solve endpoints Y = %v vs %v, want equal", y0, y1)
+	}
+
+	// Delete it again.
+	var ok wire.OKResult
+	call(t, r, s, "sketch.deleteConstraint", `{"sketchIndex":0,"constraintIndex":0}`, &ok)
+	call(t, r, s, "sketch.constraints", `{"sketchIndex":0}`, &cons)
+	if len(cons.Constraints) != 0 {
+		t.Fatalf("after delete: %d constraints, want 0", len(cons.Constraints))
+	}
+}
+
+// lineEndpointYs returns the Y coordinates of the first enumerated line's two endpoints.
+func lineEndpointYs(ents []wire.SketchEntityInfo) (float64, float64) {
+	for _, e := range ents {
+		if e.Kind == "line" && len(e.Points) == 2 {
+			return e.Points[0][1], e.Points[1][1]
+		}
+	}
+	return 0, 1 // unequal sentinel → fails the test loudly
+}
+
+func TestSketchAddConstraintConcentric(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var c1, c2 wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"1 cm"}`, &c1)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[2,2]],"radius":"2 cm"}`, &c2)
+	var con wire.AddConstraintResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"concentric","entities":[%d,%d]}`, c1.EntityID, c2.EntityID)
+	call(t, r, s, "sketch.addConstraint", args, &con)
+	if con.Kind != "concentric" {
+		t.Fatalf("kind = %q, want concentric", con.Kind)
+	}
+}
+
+func TestSketchAddConstraintRejectsBadRefCount(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.addConstraint", []byte(`{"sketchIndex":0,"kind":"parallel","entities":[1]}`)); err == nil {
+		t.Fatal("expected error for parallel with one ref")
+	}
+}
+
+// TestSketchConstraintKinds exercises the remaining constraint families and the
+// reference-resolution error paths.
+func TestSketchConstraintKinds(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var l1, l2, c1 wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &l1)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,2],[4,2]]}`, &l2)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[2,2]],"radius":"1 cm"}`, &c1)
+
+	var con wire.AddConstraintResult
+	for _, tc := range []struct{ kind, refs string }{
+		{"parallel", fmt.Sprintf("[%d,%d]", l1.EntityID, l2.EntityID)},
+		{"perpendicular", fmt.Sprintf("[%d,%d]", l1.EntityID, l2.EntityID)},
+		{"equalLength", fmt.Sprintf("[%d,%d]", l1.EntityID, l2.EntityID)},
+		{"tangent", fmt.Sprintf("[%d,%d]", l1.EntityID, c1.EntityID)},
+		{"pointOnLine", fmt.Sprintf("[%d,%d]", l1.PointIDs[0], l2.EntityID)},
+		{"fix", fmt.Sprintf("[%d]", l1.PointIDs[0])},
+	} {
+		args := fmt.Sprintf(`{"sketchIndex":0,"kind":%q,"entities":%s}`, tc.kind, tc.refs)
+		call(t, r, s, "sketch.addConstraint", args, &con)
+		if con.Kind != tc.kind {
+			t.Fatalf("kind = %q, want %q", con.Kind, tc.kind)
+		}
+	}
+}
+
+func TestSketchAddConstraintErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &wire.AddSketchEntityResult{})
+	for _, bad := range []string{
+		`{"sketchIndex":0,"kind":"bogus","entities":[1,2]}`,    // unsupported kind
+		`{"sketchIndex":0,"kind":"coincident","entities":[99999,99998]}`, // missing point id
+		`{"sketchIndex":0,"kind":"concentric","entities":[99999,99998]}`, // missing circular id
+		`{"sketchIndex":0,"kind":"fix","entities":[1,2]}`,      // wrong ref count
+	} {
+		if _, err := r.Handle(s, "sketch.addConstraint", []byte(bad)); err == nil {
+			t.Errorf("expected error for %s", bad)
+		}
+	}
+}
+
+func TestSketchDeleteConstraintBadIndex(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.deleteConstraint", []byte(`{"sketchIndex":0,"constraintIndex":3}`)); err == nil {
+		t.Fatal("expected error deleting out-of-range constraint")
+	}
 }
 
 func TestSketchCreateUnknownPlane(t *testing.T) {
