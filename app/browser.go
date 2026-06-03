@@ -18,7 +18,7 @@ import (
 // clicking "XY Plane" selects the plane to sketch on).
 type BrowserNode struct {
 	Label    string
-	Kind     string // "document" | "origin" | "workplane" | "parameters" | "parameter" | "bodies" | "body" | "sketches" | "sketch" | "feature"
+	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketches" | "sketch" | "feature"
 	Select   Selectable
 	Children []BrowserNode
 }
@@ -58,11 +58,14 @@ func addPartBranches(root *BrowserNode, part *compdef.PartComponentDefinition) {
 	for _, wp := range part.OriginPlanes() {
 		origin.selectableChild(wp.Name(), "workplane", WorkPlaneHandle{Plane: wp})
 	}
+	addOriginAxesAndPoint(origin, part)
 	params := root.child("Parameters", "parameters")
 	for _, p := range part.Parameters().All() {
 		params.child(p.Name(), "parameter")
 	}
 	addBodyBranch(root, part)
+	addUserWorkPlanes(root, part)
+	addUserWorkAxesAndPoints(root, part)
 	sketches := root.child("Sketches", "sketches")
 	for i := 0; i < part.Sketches().Count(); i++ {
 		sk := part.Sketches().Item(i)
@@ -72,6 +75,55 @@ func addPartBranches(root *BrowserNode, part *compdef.PartComponentDefinition) {
 	for i := 0; i < features.Count(); i++ {
 		f := features.Item(i)
 		root.selectableChild(f.Name(), "feature", FeatureHandle{Feature: f})
+	}
+}
+
+// addUserWorkPlanes adds the part's user-created datum planes (offset, midplane, …) as
+// top-level selectable nodes, so a plane made from the ribbon shows in the tree and can
+// be re-picked (to sketch on, or as input to another datum). The origin coordinate-system
+// planes live in the Origin folder, so they are skipped here.
+func addUserWorkPlanes(root *BrowserNode, part *compdef.PartComponentDefinition) {
+	planes := part.WorkPlanes()
+	for i := 0; i < planes.Count(); i++ {
+		if wp := planes.Item(i); !wp.IsCoordinateSystemElement() {
+			root.selectableChild(wp.Name(), "workplane", WorkPlaneHandle{Plane: wp})
+		}
+	}
+}
+
+// addOriginAxesAndPoint completes the Origin folder with the X/Y/Z axes and the center
+// point (the planes are added by the caller), so the whole origin coordinate frame is
+// selectable — the reference inputs for axis/point-driven work planes (Inventor's Origin
+// folder holds all seven elements).
+func addOriginAxesAndPoint(origin *BrowserNode, part *compdef.PartComponentDefinition) {
+	axes := part.WorkAxes()
+	for i := 0; i < axes.Count(); i++ {
+		if a := axes.Item(i); a.IsCoordinateSystemElement() {
+			origin.selectableChild(a.Name(), "workaxis", WorkAxisHandle{Axis: a})
+		}
+	}
+	points := part.WorkPoints()
+	for i := 0; i < points.Count(); i++ {
+		if p := points.Item(i); p.IsCoordinateSystemElement() {
+			origin.selectableChild(p.Name(), "workpoint", WorkPointHandle{Point: p})
+		}
+	}
+}
+
+// addUserWorkAxesAndPoints adds user-created datum axes and points as top-level
+// selectable nodes (the origin ones live in the Origin folder).
+func addUserWorkAxesAndPoints(root *BrowserNode, part *compdef.PartComponentDefinition) {
+	axes := part.WorkAxes()
+	for i := 0; i < axes.Count(); i++ {
+		if a := axes.Item(i); !a.IsCoordinateSystemElement() {
+			root.selectableChild(a.Name(), "workaxis", WorkAxisHandle{Axis: a})
+		}
+	}
+	points := part.WorkPoints()
+	for i := 0; i < points.Count(); i++ {
+		if p := points.Item(i); !p.IsCoordinateSystemElement() {
+			root.selectableChild(p.Name(), "workpoint", WorkPointHandle{Point: p})
+		}
 	}
 }
 

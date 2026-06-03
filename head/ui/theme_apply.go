@@ -26,6 +26,7 @@ var (
 	dimensionColor, dimensionDrivenColor                   [4]float32
 	snapGlyphColor, pointMarkerColor                       [4]float32
 	faintPlaneColor, hoverPlaneColor, selectedPlaneColor   [4]float32
+	planeFillColor                                         [4]float32 // translucent plane fill (alpha = opacity)
 	selectionHighlight                                     [4]float32 // picked-body highlight
 	iconTint                                               [4]float32 // ribbon glyph tint
 	windowClearColor                                       [3]float32 // swapchain (chrome) clear
@@ -73,6 +74,7 @@ func refreshThemeColors(t contract.Theme) {
 	faintPlaneColor = arr(types.TokenPlaneFaint)
 	hoverPlaneColor = arr(types.TokenPlaneHover)
 	selectedPlaneColor = arr(types.TokenPlaneSelected)
+	planeFillColor = arr(types.TokenPlaneFill)
 	selectionHighlight = arr(types.TokenSelectionHighlight)
 	iconTint = arr(types.TokenIconTint)
 	c := t.Color(types.TokenChromeWindowBg)

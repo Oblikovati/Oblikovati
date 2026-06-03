@@ -88,8 +88,14 @@ func (d *PartComponentDefinition) Features() *feature.PartFeatures { return d.fe
 // SurfaceBodies, advancing the geometry version. This is the part-level
 // orchestration that turns the feature history into the evaluated result.
 func (d *PartComponentDefinition) Recompute() {
-	d.work.Recompute()
+	// Two passes around the feature program: the first so features can reference work
+	// axes/planes (e.g. a revolve axis); the second so surface-tangent work planes can
+	// resolve their picked faces against the freshly built body. The first pass sees the
+	// previous result, which is correct for body-independent work features and harmless
+	// for body-dependent ones (refreshed by the second pass).
+	d.work.Recompute(d.features.Result())
 	d.features.Recompute()
+	d.work.Recompute(d.features.Result())
 	d.bodies = topo.NewSurfaceBodies()
 	for _, b := range d.features.Result() {
 		d.bodies.Add(b)

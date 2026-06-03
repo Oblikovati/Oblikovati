@@ -7,6 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Oblikovati/api/types"
+
+	"github.com/Oblikovati/oblikovati/kernel/geom"
+	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
@@ -22,15 +26,17 @@ type WorkRef string
 
 // Well-known origin references — the static coordinate system every part document has
 // from creation (Inventor's "Origin" folder): a center point, the X/Y/Z axes, and the
-// XY/XZ/YZ planes. They are grounded coordinate-system elements.
+// XY/XZ/YZ planes. They are grounded coordinate-system elements. The reference strings
+// are the canonical, Apache-2.0 contract vocabulary ([types] WorkRef*), aliased here so
+// /source and the public API can never drift (ADR-0018).
 const (
-	OriginCenter  WorkRef = "origin/point/center"
-	OriginXAxis   WorkRef = "origin/axis/x"
-	OriginYAxis   WorkRef = "origin/axis/y"
-	OriginZAxis   WorkRef = "origin/axis/z"
-	OriginXYPlane WorkRef = "origin/plane/xy"
-	OriginXZPlane WorkRef = "origin/plane/xz"
-	OriginYZPlane WorkRef = "origin/plane/yz"
+	OriginCenter  WorkRef = types.WorkRefCenter
+	OriginXAxis   WorkRef = types.WorkRefXAxis
+	OriginYAxis   WorkRef = types.WorkRefYAxis
+	OriginZAxis   WorkRef = types.WorkRefZAxis
+	OriginXYPlane WorkRef = types.WorkRefXYPlane
+	OriginXZPlane WorkRef = types.WorkRefXZPlane
+	OriginYZPlane WorkRef = types.WorkRefYZPlane
 )
 
 // workResolver resolves a WorkRef to its current geometry. [WorkGeometry] implements
@@ -39,6 +45,7 @@ type workResolver interface {
 	plane(WorkRef) (sketch.Plane, error)
 	axis(WorkRef) (*WorkAxis, error)
 	point(WorkRef) (math.Point3, error)
+	surface(WorkRef) (geom.Surface, error)
 }
 
 // WorkGeometry is a part's construction-geometry frame: the static origin coordinate
@@ -50,7 +57,9 @@ type WorkGeometry struct {
 	axes    *WorkAxes
 	points  *WorkPoints
 	ucs     *UserCoordinateSystems
-	userSeq []userEntry // user work features in global creation order (for serialization)
+	userSeq []userEntry  // user work features in global creation order (for serialization)
+	bodies  []*topo.Body // the running solid result, so surface-tangent work planes can
+	// resolve a picked B-rep face's reference key to its surface (set each Recompute).
 }
 
 // userEntry records a user work feature's collection and index in global creation
@@ -99,8 +108,13 @@ func (g *WorkGeometry) OriginPlanes() []*WorkPlane {
 }
 
 // Recompute re-derives every work feature in order (origin first, grounded; then user
-// features, which may reference earlier ones).
-func (g *WorkGeometry) Recompute() {
+// features, which may reference earlier ones). bodies is the part's current solid
+// result, against which surface-tangent work planes resolve their picked faces; pass
+// nil when no body exists yet (those planes then go Sick until one does). The part
+// recomputes work geometry once before the feature program (so features can reference
+// work axes/planes) and once after (so tangent planes see the freshly built body).
+func (g *WorkGeometry) Recompute(bodies []*topo.Body) {
+	g.bodies = bodies
 	for i := 0; i < g.points.Count(); i++ {
 		g.points.Item(i).recompute(g)
 	}
@@ -155,6 +169,9 @@ func (g *WorkGeometry) axis(ref WorkRef) (*WorkAxis, error) {
 }
 
 func (g *WorkGeometry) point(ref WorkRef) (math.Point3, error) {
+	if p, isVertex, err := g.vertexPoint(ref); isVertex {
+		return p, err
+	}
 	if i, ok := userIndex(ref, "point"); ok {
 		if i < 0 || i >= g.points.Count() {
 			return math.Point3{}, fmt.Errorf("work geometry: no work point %q", ref)

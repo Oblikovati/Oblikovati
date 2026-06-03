@@ -83,6 +83,7 @@ type WorkPlane struct {
 	displaySize      float64
 	coordinateSystem bool
 	grounded         bool
+	visible          bool
 }
 
 // ID/Key/Name identify the datum; Health reports its last recompute state.
@@ -102,6 +103,11 @@ func (w *WorkPlane) DisplaySize() float64 { return w.displaySize }
 // Grounded reports whether its geometry is fixed (the absolute document frame).
 func (w *WorkPlane) IsCoordinateSystemElement() bool { return w.coordinateSystem }
 func (w *WorkPlane) Grounded() bool                  { return w.grounded }
+
+// Visible reports whether the datum is drawn in the viewport; SetVisible toggles it
+// (Inventor's per-work-feature Visibility). New planes are visible by default.
+func (w *WorkPlane) Visible() bool     { return w.visible }
+func (w *WorkPlane) SetVisible(v bool) { w.visible = v }
 
 // recompute re-derives the plane from its definition, going sick on failure (e.g.
 // degenerate three points) rather than producing garbage.
@@ -131,7 +137,7 @@ func newWorkPlanes(g *WorkGeometry) *WorkPlanes {
 func (c *WorkPlanes) addOrigin(key WorkRef, name string, plane sketch.Plane) {
 	w := &WorkPlane{
 		id: nextID(), key: key, name: name, def: fixedPlaneDef{plane: plane},
-		displaySize: defaultOriginPlaneSize, coordinateSystem: true, grounded: true,
+		displaySize: defaultOriginPlaneSize, coordinateSystem: true, grounded: true, visible: true,
 	}
 	c.track(w)
 }
@@ -139,20 +145,21 @@ func (c *WorkPlanes) addOrigin(key WorkRef, name string, plane sketch.Plane) {
 // AddByPlaneAndOffset creates a user plane parallel to base, offset by the value the
 // closure returns (typically a parameter), so the datum moves when that param changes.
 func (c *WorkPlanes) AddByPlaneAndOffset(base WorkRef, offset func() float64) *WorkPlane {
-	return c.addUser("WorkPlane", offsetPlaneDef{base: base, offset: offset})
+	return c.addUser(offsetPlaneDef{base: base, offset: offset})
 }
 
 // AddByThreePoints creates a user plane through three referenced points.
 func (c *WorkPlanes) AddByThreePoints(a, b, cc WorkRef) *WorkPlane {
-	return c.addUser("WorkPlane", threePointPlaneDef{a: a, b: b, c: cc})
+	return c.addUser(threePointPlaneDef{a: a, b: b, c: cc})
 }
 
 // addUser adds a user datum plane, keying it by its position so references stay stable,
-// and records it in the part's global creation order.
-func (c *WorkPlanes) addUser(name string, def planeDefinition) *WorkPlane {
+// and records it in the part's global creation order. All user planes start named
+// "WorkPlane"; the app renames them uniquely (e.g. "Work Plane1") on creation.
+func (c *WorkPlanes) addUser(def planeDefinition) *WorkPlane {
 	w := &WorkPlane{
-		id: nextID(), key: userRef("plane", len(c.items)), name: name, def: def,
-		displaySize: defaultOriginPlaneSize,
+		id: nextID(), key: userRef("plane", len(c.items)), name: "WorkPlane", def: def,
+		displaySize: defaultOriginPlaneSize, visible: true,
 	}
 	c.track(w)
 	c.g.recordUser("plane", len(c.items)-1)

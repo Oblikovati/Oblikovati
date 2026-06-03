@@ -83,6 +83,7 @@ var tokenInfos = map[Token]TokenInfo{
 	types.TokenPlaneFaint:          {types.TokenPlaneFaint, "Work plane", GroupGizmos},
 	types.TokenPlaneHover:          {types.TokenPlaneHover, "Work plane (hover)", GroupGizmos},
 	types.TokenPlaneSelected:       {types.TokenPlaneSelected, "Work plane (selected)", GroupGizmos},
+	types.TokenPlaneFill:           {types.TokenPlaneFill, "Work plane fill (alpha = opacity)", GroupGizmos},
 	types.TokenSelectionHighlight:  {types.TokenSelectionHighlight, "Selection highlight", GroupGizmos},
 	types.TokenIconTint:            {types.TokenIconTint, "Icon tint", GroupIcons},
 	types.TokenIconDisabled:        {types.TokenIconDisabled, "Icon (disabled)", GroupIcons},

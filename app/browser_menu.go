@@ -62,7 +62,7 @@ func featureMenu(sel Selectable) []BrowserMenuItem {
 	}
 }
 
-// workPlaneMenu offers New Sketch on the plane (the model has no plane-visibility flag yet).
+// workPlaneMenu offers New Sketch on the plane and a Visibility toggle.
 func workPlaneMenu(sel Selectable) []BrowserMenuItem {
 	h, ok := sel.(WorkPlaneHandle)
 	if !ok {
@@ -72,6 +72,10 @@ func workPlaneMenu(sel Selectable) []BrowserMenuItem {
 		{Label: "New Sketch", Enabled: true, Invoke: func(s *Session) error {
 			_, err := s.CreateSketch(h.Plane.Plane())
 			return err
+		}},
+		{Label: "Visibility", Enabled: true, Invoke: func(*Session) error {
+			h.Plane.SetVisible(!h.Plane.Visible())
+			return nil
 		}},
 	}
 }

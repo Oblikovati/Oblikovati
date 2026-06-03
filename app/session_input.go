@@ -183,6 +183,12 @@ func (s *Session) PressKey(e KeyEvent) error {
 			return s.OK()
 		}
 		return nil
+	case "v", "V":
+		// Toggle visibility of the selected work plane(s) (Autodesk Fusion's V binding;
+		// Inventor has no default visibility hotkey). No-op when nothing applicable is
+		// selected, so V stays free for other contexts.
+		s.ToggleSelectedWorkPlaneVisibility()
+		return nil
 	default:
 		if _, ok := s.commands.ByAlias(e.Key); ok {
 			return s.Invoke(e.Key)

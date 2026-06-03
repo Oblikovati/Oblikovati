@@ -22,7 +22,10 @@ type WorkFeatureData struct {
 	Kind       string    `yaml:"kind"`
 	Refs       []string  `yaml:"refs,omitempty"`
 	Offset     float64   `yaml:"offset,omitempty"`   // plane-offset
-	Position   []float64 `yaml:"position,omitempty"` // point position [x,y,z]
+	Angle      float64   `yaml:"angle,omitempty"`    // line-plane-angle
+	Position   []float64 `yaml:"position,omitempty"` // point position / fixed-frame origin [x,y,z]
+	XAxis      []float64 `yaml:"xaxis,omitempty"`    // fixed-frame X axis [x,y,z]
+	YAxis      []float64 `yaml:"yaxis,omitempty"`    // fixed-frame Y axis [x,y,z]
 }
 
 // MarshalWork projects the user work features into the recipe, in creation order.
@@ -56,7 +59,15 @@ func serializePlaneDef(def planeDefinition) (WorkFeatureData, error) {
 	switch v := def.(type) {
 	case offsetPlaneDef:
 		d.Offset = v.offset()
-	case threePointPlaneDef:
+	case fixedFramePlaneDef:
+		p := v.origin()
+		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
+		d.XAxis, d.YAxis = unitSlice(v.x), unitSlice(v.y)
+	case linePlaneAnglePlaneDef:
+		d.Angle = v.angle()
+	case threePointPlaneDef, planeAndPointPlaneDef, twoPlanesPlaneDef, twoLinesPlaneDef,
+		normalToCurvePlaneDef, torusMidPlaneDef, pointAndTangentPlaneDef,
+		planeAndTangentPlaneDef, lineAndTangentPlaneDef:
 		// references only
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work plane definition %q", def.kindName())
@@ -99,48 +110,122 @@ func ApplyWork(g *WorkGeometry, data []WorkFeatureData) error {
 }
 
 func restoreWorkFeature(g *WorkGeometry, d WorkFeatureData) error {
-	switch d.Collection + "/" + d.Kind {
-	case "plane/plane-offset":
-		base, err := workRefAt(d.Refs, 0)
-		if err != nil {
-			return err
-		}
-		off := d.Offset
-		g.WorkPlanes().AddByPlaneAndOffset(base, func() float64 { return off })
-	case "plane/three-points":
-		r, err := workRefs(d.Refs, 3)
-		if err != nil {
-			return err
-		}
-		g.WorkPlanes().AddByThreePoints(r[0], r[1], r[2])
-	case "axis/two-points":
-		r, err := workRefs(d.Refs, 2)
-		if err != nil {
-			return err
-		}
-		g.WorkAxes().AddByTwoPoints(r[0], r[1])
-	case "axis/plane-intersection":
-		r, err := workRefs(d.Refs, 2)
-		if err != nil {
-			return err
-		}
-		g.WorkAxes().AddByPlaneIntersection(r[0], r[1])
-	case "point/position":
-		if len(d.Position) != 3 {
-			return fmt.Errorf("position point needs 3 coordinates, got %d", len(d.Position))
-		}
-		pos := math.P3(d.Position[0], d.Position[1], d.Position[2])
-		g.WorkPoints().AddByPosition(func() math.Point3 { return pos })
-	case "point/plane-axis-intersection":
-		r, err := workRefs(d.Refs, 2)
-		if err != nil {
-			return err
-		}
-		g.WorkPoints().AddByPlaneAndAxisIntersection(r[0], r[1])
+	switch d.Collection {
+	case "plane":
+		return restorePlaneFeature(g.WorkPlanes(), d)
+	case "axis":
+		return restoreAxisFeature(g.WorkAxes(), d)
+	case "point":
+		return restorePointFeature(g.WorkPoints(), d)
 	default:
-		return fmt.Errorf("no restore codec for work feature %s/%s", d.Collection, d.Kind)
+		return fmt.Errorf("unknown work collection %q", d.Collection)
+	}
+}
+
+// restorePlaneFeature rebuilds one user work plane from its recipe. Reference-only kinds
+// resolve through workRefs; fixed-frame/offset/angle kinds also carry scalar parameters,
+// re-installed as closures so a recompute re-reads them.
+func restorePlaneFeature(c *WorkPlanes, d WorkFeatureData) error {
+	switch d.Kind {
+	case "plane-offset":
+		return restoreRefPlane(d, 1, func(r []WorkRef) {
+			off := d.Offset
+			c.AddByPlaneAndOffset(r[0], func() float64 { return off })
+		})
+	case "three-points":
+		return restoreRefPlane(d, 3, func(r []WorkRef) { c.AddByThreePoints(r[0], r[1], r[2]) })
+	case "fixed-frame":
+		return restoreFixedFrame(c, d)
+	case "plane-point":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByPlaneAndPoint(r[0], r[1]) })
+	case "two-planes":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByTwoPlanes(r[0], r[1]) })
+	case "line-plane-angle":
+		return restoreRefPlane(d, 2, func(r []WorkRef) {
+			ang := d.Angle
+			c.AddByLinePlaneAndAngle(r[0], r[1], func() float64 { return ang })
+		})
+	case "two-lines":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByTwoLines(r[0], r[1]) })
+	case "normal-to-curve":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByNormalToCurve(r[0], r[1]) })
+	case "torus-midplane":
+		return restoreRefPlane(d, 1, func(r []WorkRef) { c.AddByTorusMidPlane(r[0]) })
+	case "point-tangent":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByPointAndTangent(r[0], r[1]) })
+	case "plane-tangent":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByPlaneAndTangent(r[0], r[1]) })
+	case "line-tangent":
+		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByLineAndTangent(r[0], r[1]) })
+	default:
+		return fmt.Errorf("no restore codec for work plane kind %q", d.Kind)
+	}
+}
+
+// restoreRefPlane resolves d's n references and calls add with them, centralizing the
+// arity check so each plane kind above stays a single line.
+func restoreRefPlane(d WorkFeatureData, n int, add func([]WorkRef)) error {
+	r, err := workRefs(d.Refs, n)
+	if err != nil {
+		return err
+	}
+	add(r)
+	return nil
+}
+
+// restoreFixedFrame rebuilds an AddFixed plane from its origin and two in-plane axes.
+func restoreFixedFrame(c *WorkPlanes, d WorkFeatureData) error {
+	origin, err := point3From(d.Position, "fixed-frame origin")
+	if err != nil {
+		return err
+	}
+	x, err := unit3From(d.XAxis, "fixed-frame X axis")
+	if err != nil {
+		return err
+	}
+	y, err := unit3From(d.YAxis, "fixed-frame Y axis")
+	if err != nil {
+		return err
+	}
+	c.AddFixed(func() math.Point3 { return origin }, x, y)
+	return nil
+}
+
+func restoreAxisFeature(c *WorkAxes, d WorkFeatureData) error {
+	r, err := workRefs(d.Refs, 2)
+	if err != nil {
+		return err
+	}
+	switch d.Kind {
+	case "two-points":
+		c.AddByTwoPoints(r[0], r[1])
+	case "plane-intersection":
+		c.AddByPlaneIntersection(r[0], r[1])
+	default:
+		return fmt.Errorf("no restore codec for work axis kind %q", d.Kind)
 	}
 	return nil
+}
+
+func restorePointFeature(c *WorkPoints, d WorkFeatureData) error {
+	switch d.Kind {
+	case "position":
+		pos, err := point3From(d.Position, "position point")
+		if err != nil {
+			return err
+		}
+		c.AddByPosition(func() math.Point3 { return pos })
+		return nil
+	case "plane-axis-intersection":
+		r, err := workRefs(d.Refs, 2)
+		if err != nil {
+			return err
+		}
+		c.AddByPlaneAndAxisIntersection(r[0], r[1])
+		return nil
+	default:
+		return fmt.Errorf("no restore codec for work point kind %q", d.Kind)
+	}
 }
 
 // RevolveData is a revolve's recipe: the sketch profile, the revolution axis (a
@@ -210,7 +295,7 @@ func refStrings(refs []WorkRef) []string {
 	return out
 }
 
-// workRefs requires exactly n references; workRefAt fetches one by position.
+// workRefs requires exactly n references, converting them from their string form.
 func workRefs(refs []string, n int) ([]WorkRef, error) {
 	if len(refs) != n {
 		return nil, fmt.Errorf("expected %d references, got %d", n, len(refs))
@@ -222,9 +307,24 @@ func workRefs(refs []string, n int) ([]WorkRef, error) {
 	return out, nil
 }
 
-func workRefAt(refs []string, i int) (WorkRef, error) {
-	if i >= len(refs) {
-		return "", fmt.Errorf("missing reference %d (have %d)", i, len(refs))
+// unitSlice renders a unit vector as its [x,y,z] components for YAML.
+func unitSlice(u math.UnitVector3) []float64 {
+	v := u.AsVector()
+	return []float64{float64(v.X), float64(v.Y), float64(v.Z)}
+}
+
+// point3From reads a 3-component coordinate slice into a point, naming what for errors.
+func point3From(s []float64, what string) (math.Point3, error) {
+	if len(s) != 3 {
+		return math.Point3{}, fmt.Errorf("%s needs 3 coordinates, got %d", what, len(s))
 	}
-	return WorkRef(refs[i]), nil
+	return math.P3(s[0], s[1], s[2]), nil
+}
+
+// unit3From reads a 3-component slice into a unit vector (erroring on a zero vector).
+func unit3From(s []float64, what string) (math.UnitVector3, error) {
+	if len(s) != 3 {
+		return math.UnitVector3{}, fmt.Errorf("%s needs 3 components, got %d", what, len(s))
+	}
+	return math.NewUnitVector3(s[0], s[1], s[2])
 }

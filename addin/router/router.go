@@ -57,6 +57,8 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
 	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
 	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
+	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
+	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodThemeActive] = themeActive
 	r.handlers[wire.MethodThemeList] = themeList
 }

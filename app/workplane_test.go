@@ -121,13 +121,19 @@ func TestBrowserHasOriginFolderWithSelectablePlanes(t *testing.T) {
 	if origin == nil {
 		t.Fatal("browser has no Origin folder")
 	}
-	if len(origin.Children) != 3 {
-		t.Fatalf("Origin folder has %d planes, want 3", len(origin.Children))
+	// The Origin folder holds the full coordinate frame: 3 planes, 3 axes, 1 center point.
+	if len(origin.Children) != 7 {
+		t.Fatalf("Origin folder has %d elements, want 7 (3 planes, 3 axes, 1 point)", len(origin.Children))
 	}
+	kinds := map[string]int{}
 	for _, n := range origin.Children {
 		if n.Select == nil {
-			t.Errorf("origin plane node %q is not selectable", n.Label)
+			t.Errorf("origin node %q is not selectable", n.Label)
 		}
+		kinds[n.Kind]++
+	}
+	if kinds["workplane"] != 3 || kinds["workaxis"] != 3 || kinds["workpoint"] != 1 {
+		t.Errorf("Origin folder kinds = %v, want 3 planes / 3 axes / 1 point", kinds)
 	}
 }
 
