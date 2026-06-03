@@ -7,6 +7,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"github.com/Oblikovati/oblikovati/math"
 )
 
 // Modify / direct-edit features operate on whole bodies or picked faces. Combine is
@@ -77,16 +78,60 @@ func (f *faceEditFeature) Recompute(in Input) (Output, error) {
 // the recipe serialize every face-edit feature uniformly (they share this shape).
 func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
 
-// SplitFeature, MoveFaceFeature, FaceOffsetFeature, DeleteFaceFeature,
-// ReplaceFaceFeature and ThickenFeature are the deferred direct edits (phase C).
+// SplitFeature, DeleteFaceFeature, ReplaceFaceFeature and ThickenFeature are the direct
+// edits whose geometry still defers (phase C).
 type (
 	SplitFeature       struct{ faceEditFeature }
-	MoveFaceFeature    struct{ faceEditFeature }
-	FaceOffsetFeature  struct{ faceEditFeature }
 	DeleteFaceFeature  struct{ faceEditFeature }
 	ReplaceFaceFeature struct{ faceEditFeature }
 	ThickenFeature     struct{ faceEditFeature }
 )
+
+// MoveFaceFeature translates the picked faces by a vector, retrimming the neighbours.
+type MoveFaceFeature struct {
+	faceEditFeature
+	translation math.Vector3
+}
+
+// Translation returns the move-face displacement (for the UI / serialization).
+func (f *MoveFaceFeature) Translation() math.Vector3 { return f.translation }
+
+// Recompute moves the picked faces on the running body (see kernel/ops/move_face.go).
+func (f *MoveFaceFeature) Recompute(in Input) (Output, error) {
+	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
+		return ops.MoveFaces(b, keys, f.translation)
+	})
+}
+
+// FaceOffsetFeature moves the picked faces along their own normals by a distance.
+type FaceOffsetFeature struct {
+	faceEditFeature
+	distance float64
+}
+
+// Distance returns the face-offset distance (for the UI / serialization).
+func (f *FaceOffsetFeature) Distance() float64 { return f.distance }
+
+// Recompute offsets the picked faces on the running body (see kernel/ops/move_face.go).
+func (f *FaceOffsetFeature) Recompute(in Input) (Output, error) {
+	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
+		return ops.OffsetFaces(b, keys, f.distance)
+	})
+}
+
+// retopoFacesBody applies a face retopology op to the running body and replaces it; a lost
+// key (surfaced by the op) makes the feature go Sick.
+func retopoFacesBody(in Input, keys [][]byte, feat string, op func(*topo.Body, [][]byte) (*topo.Body, error)) (Output, error) {
+	body, err := runningBody(in)
+	if err != nil {
+		return Output{}, err
+	}
+	result, err := op(body, keys)
+	if err != nil {
+		return Output{}, fmt.Errorf("%s: %w", feat, err)
+	}
+	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+}
 
 // ModifyFeatures adds modify/direct-edit features into the engine.
 type ModifyFeatures struct{ engine *PartFeatures }
@@ -105,12 +150,12 @@ func (c *ModifyFeatures) AddSplit(faceKeys [][]byte) *PartFeature {
 	return c.engine.Add(&SplitFeature{faceEditFeature{kind: "split", faceKeys: faceKeys}})
 }
 
-func (c *ModifyFeatures) AddMoveFace(faceKeys [][]byte) *PartFeature {
-	return c.engine.Add(&MoveFaceFeature{faceEditFeature{kind: "move-face", faceKeys: faceKeys}})
+func (c *ModifyFeatures) AddMoveFace(faceKeys [][]byte, translation math.Vector3) *PartFeature {
+	return c.engine.Add(&MoveFaceFeature{faceEditFeature: faceEditFeature{kind: "move-face", faceKeys: faceKeys}, translation: translation})
 }
 
-func (c *ModifyFeatures) AddFaceOffset(faceKeys [][]byte) *PartFeature {
-	return c.engine.Add(&FaceOffsetFeature{faceEditFeature{kind: "face-offset", faceKeys: faceKeys}})
+func (c *ModifyFeatures) AddFaceOffset(faceKeys [][]byte, distance float64) *PartFeature {
+	return c.engine.Add(&FaceOffsetFeature{faceEditFeature: faceEditFeature{kind: "face-offset", faceKeys: faceKeys}, distance: distance})
 }
 
 func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte) *PartFeature {

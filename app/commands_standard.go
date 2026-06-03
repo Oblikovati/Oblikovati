@@ -103,6 +103,12 @@ func modifyFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("shell").WithButtonStyle(LargeIconButton).
 			WithTooltip("Shell — hollow the solid to a wall thickness, removing the selected faces."),
+		NewCommand("Modify.FaceOffset", "Offset Face", "Modify", func(s *Session) error {
+			s.StartTool(NewFaceOffsetTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("face-offset").WithButtonStyle(LargeIconButton).
+			WithTooltip("Offset Face — move selected faces along their normal, retrimming neighbours."),
 	}
 }
 

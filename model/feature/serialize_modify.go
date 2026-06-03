@@ -6,12 +6,16 @@ import "fmt"
 
 // This file holds the YAML codec for the direct face-edit features — split, move-face,
 // face-offset, delete-face, replace-face and thicken. They share one shape (a set of
-// picked faces by reference key), so they serialize uniformly via the faceEditor
-// interface and restore by kind. The keys re-bind to the regenerated faces on recompute.
+// picked faces by reference key) plus, for the geometric edits, a parameter: move-face
+// carries a translation vector, face-offset a distance. The keys re-bind to the
+// regenerated faces on recompute.
 
-// FaceEditData is a direct face edit: the picked faces as reference keys.
+// FaceEditData is a direct face edit: the picked faces as reference keys, plus the optional
+// parameter of the geometric edits (move-face translation, face-offset distance).
 type FaceEditData struct {
-	Faces []string `yaml:"faces"`
+	Faces       []string  `yaml:"faces"`
+	Translation []float64 `yaml:"translation,omitempty"` // move-face: dx, dy, dz
+	Distance    float64   `yaml:"distance,omitempty"`    // face-offset
 }
 
 // faceEditor is satisfied by every direct face-edit feature (they embed faceEditFeature),
@@ -35,9 +39,9 @@ func restoreFaceEdit(fs *PartFeatures, kind string, d *FaceEditData) (*PartFeatu
 	case "split":
 		return m.AddSplit(keys), nil
 	case "move-face":
-		return m.AddMoveFace(keys), nil
+		return m.AddMoveFace(keys, decodeVec3(d.Translation)), nil
 	case "face-offset":
-		return m.AddFaceOffset(keys), nil
+		return m.AddFaceOffset(keys, d.Distance), nil
 	case "delete-face":
 		return m.AddDeleteFace(keys), nil
 	case "replace-face":
