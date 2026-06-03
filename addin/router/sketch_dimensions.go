@@ -1,0 +1,165 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package router
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/Oblikovati/api/types"
+	"github.com/Oblikovati/api/wire"
+
+	"github.com/Oblikovati/oblikovati/addin/modelaccess"
+	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/param"
+	"github.com/Oblikovati/oblikovati/model/sketch"
+)
+
+// addDimension adds a dimensional constraint of the requested kind and reports the
+// backing parameter, the measured value, and the sketch's resulting DOF.
+func addDimension(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.AddDimensionArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	sk, err := activeSketchAt(s, in.SketchIndex)
+	if err != nil {
+		return nil, err
+	}
+	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression)
+	if err != nil {
+		return nil, err
+	}
+	dc := sk.DimensionConstraints()
+	return json.Marshal(wire.AddDimensionResult{
+		Index: dc.Count() - 1, Kind: in.Kind, Parameter: dim.Parameter().Name(),
+		Value: dim.Measured(), DOF: sk.DegreesOfFreedom(),
+	})
+}
+
+// driveDimension edits a dimension: its value (expression), driven flag, and/or limits.
+func driveDimension(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.DriveDimensionArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	dim, err := dimensionAt(part, in.SketchIndex, in.DimensionIndex)
+	if err != nil {
+		return nil, err
+	}
+	return applyDimensionEdit(part, dim, in)
+}
+
+// applyDimensionEdit applies the optional value/driven/limits edits to a dimension.
+func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.DimensionConstraint, in wire.DriveDimensionArgs) (json.RawMessage, error) {
+	if in.SetLimits {
+		dim.SetLimits(in.Min, in.Max)
+	}
+	if in.SetDriven {
+		dim.SetDriven(in.Driven)
+	}
+	if in.Expression != "" {
+		v, err := part.Units().Parse(in.Expression, dimensionUnit(dim.Kind()))
+		if err != nil {
+			return nil, fmt.Errorf("sketch.driveDimension: value %q: %w", in.Expression, err)
+		}
+		if err := dim.Drive(v.Value); err != nil {
+			return nil, fmt.Errorf("sketch.driveDimension: %w", err)
+		}
+	}
+	return json.Marshal(wire.OKResult{OK: true})
+}
+
+// buildDimension resolves references and applies the matching model dimension factory.
+func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+	dc := sk.DimensionConstraints()
+	switch kind {
+	case types.DimConstraintDistance:
+		a, b, err := twoPointRefs(sk, refs)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddDistance(a, b, expr)
+	case types.DimConstraintAngle:
+		a, b, err := twoLineRefs(sk, refs)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddAngle(a, b, expr)
+	case types.DimConstraintRadius:
+		return radiusDimension(sk, dc.AddRadius, refs, expr)
+	case types.DimConstraintDiameter:
+		return radiusDimension(sk, dc.AddDiameter, refs, expr)
+	case types.DimConstraintArcLength:
+		return arcLengthDimension(sk, refs, expr)
+	default:
+		return nil, fmt.Errorf("sketch.addDimension: unsupported kind %q", kind)
+	}
+}
+
+// radiusDimension resolves a single circle ref and applies a radius/diameter factory.
+func radiusDimension(sk *sketch.Sketch, add func(*sketch.Circle, string) (*sketch.DimensionConstraint, error), refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+	c, err := circleRef(sk, refs)
+	if err != nil {
+		return nil, err
+	}
+	return add(c, expr)
+}
+
+// arcLengthDimension resolves a single arc ref and applies the arc-length factory.
+func arcLengthDimension(sk *sketch.Sketch, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+	if len(refs) != 1 {
+		return nil, fmt.Errorf("sketch.addDimension: arcLength needs 1 arc ref, got %d", len(refs))
+	}
+	e, ok := sk.EntityByID(sketch.ID(refs[0]))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: no entity with id %d", refs[0])
+	}
+	a, ok := e.(*sketch.Arc)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: entity %d is %T, want an arc", refs[0], e)
+	}
+	return sk.DimensionConstraints().AddArcLength(a, expr)
+}
+
+// circleRef resolves a single ref to a *Circle.
+func circleRef(sk *sketch.Sketch, refs []uint64) (*sketch.Circle, error) {
+	if len(refs) != 1 {
+		return nil, fmt.Errorf("sketch.addDimension: needs 1 circle ref, got %d", len(refs))
+	}
+	e, ok := sk.EntityByID(sketch.ID(refs[0]))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: no entity with id %d", refs[0])
+	}
+	c, ok := e.(*sketch.Circle)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: entity %d is %T, want a circle", refs[0], e)
+	}
+	return c, nil
+}
+
+// dimensionAt returns the dimensional constraint at (sketchIndex, dimIndex).
+func dimensionAt(part *compdef.PartComponentDefinition, sketchIndex, dimIndex int) (*sketch.DimensionConstraint, error) {
+	sk, err := sketchAtIndex(part, sketchIndex)
+	if err != nil {
+		return nil, err
+	}
+	dc := sk.DimensionConstraints()
+	if dimIndex < 0 || dimIndex >= dc.Count() {
+		return nil, fmt.Errorf("sketch.driveDimension: index %d out of range (%d dimensions)", dimIndex, dc.Count())
+	}
+	return dc.Item(dimIndex), nil
+}
+
+// dimensionUnit returns the unit a dimension's value expression is parsed in.
+func dimensionUnit(kind sketch.DimKind) param.Unit {
+	if kind == sketch.AngleDim {
+		return param.Angle
+	}
+	return param.Length
+}

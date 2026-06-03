@@ -435,10 +435,10 @@ func TestSketchAddConstraintErrors(t *testing.T) {
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &wire.AddSketchEntityResult{})
 	for _, bad := range []string{
-		`{"sketchIndex":0,"kind":"bogus","entities":[1,2]}`,    // unsupported kind
+		`{"sketchIndex":0,"kind":"bogus","entities":[1,2]}`,              // unsupported kind
 		`{"sketchIndex":0,"kind":"coincident","entities":[99999,99998]}`, // missing point id
 		`{"sketchIndex":0,"kind":"concentric","entities":[99999,99998]}`, // missing circular id
-		`{"sketchIndex":0,"kind":"fix","entities":[1,2]}`,      // wrong ref count
+		`{"sketchIndex":0,"kind":"fix","entities":[1,2]}`,                // wrong ref count
 	} {
 		if _, err := r.Handle(s, "sketch.addConstraint", []byte(bad)); err == nil {
 			t.Errorf("expected error for %s", bad)
@@ -451,6 +451,71 @@ func TestSketchDeleteConstraintBadIndex(t *testing.T) {
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
 	if _, err := r.Handle(s, "sketch.deleteConstraint", []byte(`{"sketchIndex":0,"constraintIndex":3}`)); err == nil {
 		t.Fatal("expected error deleting out-of-range constraint")
+	}
+}
+
+// TestSketchRadiusDimensionDrivesCircle adds a radius dimension to a circle, solves it to
+// the target, then re-drives it to a new value.
+func TestSketchRadiusDimensionDrivesCircle(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var circ wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"10 mm"}`, &circ)
+
+	var dim wire.AddDimensionResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"radius","entities":[%d],"expression":"20 mm"}`, circ.EntityID)
+	call(t, r, s, "sketch.addDimension", args, &dim)
+	if dim.Kind != "radius" || dim.Parameter == "" {
+		t.Fatalf("dimension = %+v, want radius with a parameter", dim)
+	}
+
+	call(t, r, s, "sketch.solve", `{"sketchIndex":0}`, &wire.SolveSketchResult{})
+	if got := circleRadiusOf(t, r, s); math.Abs(got-2) > 1e-6 { // 20 mm = 2 cm
+		t.Fatalf("after radius dim + solve, radius = %v, want 2", got)
+	}
+
+	// Re-drive to 30 mm.
+	call(t, r, s, "sketch.driveDimension", `{"sketchIndex":0,"dimensionIndex":0,"expression":"30 mm"}`, &wire.OKResult{})
+	call(t, r, s, "sketch.solve", `{"sketchIndex":0}`, &wire.SolveSketchResult{})
+	if got := circleRadiusOf(t, r, s); math.Abs(got-3) > 1e-6 {
+		t.Fatalf("after drive to 30 mm, radius = %v, want 3", got)
+	}
+
+	var dims wire.ListDimensionsResult
+	call(t, r, s, "sketch.dimensions", `{"sketchIndex":0}`, &dims)
+	if len(dims.Dimensions) != 1 || dims.Dimensions[0].Kind != "radius" {
+		t.Fatalf("dimensions = %+v, want one radius", dims.Dimensions)
+	}
+}
+
+// circleRadiusOf enumerates entities and returns the first circle's radius.
+func circleRadiusOf(t *testing.T, r *Router, s *app.Session) float64 {
+	t.Helper()
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	for _, e := range ents.Entities {
+		if e.Kind == "circle" {
+			return e.Radius
+		}
+	}
+	t.Fatal("no circle entity found")
+	return 0
+}
+
+func TestSketchAddDimensionErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	for _, bad := range []string{
+		`{"sketchIndex":0,"kind":"radius","entities":[99999],"expression":"1 cm"}`, // missing circle
+		`{"sketchIndex":0,"kind":"bogus","entities":[1],"expression":"1 cm"}`,      // unsupported kind
+	} {
+		if _, err := r.Handle(s, "sketch.addDimension", []byte(bad)); err == nil {
+			t.Errorf("expected error for %s", bad)
+		}
+	}
+	if _, err := r.Handle(s, "sketch.driveDimension", []byte(`{"sketchIndex":0,"dimensionIndex":5}`)); err == nil {
+		t.Fatal("expected error driving an out-of-range dimension")
 	}
 }
 
