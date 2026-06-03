@@ -166,6 +166,55 @@ func TestSketchSetPropertyUnknownProperty(t *testing.T) {
 	}
 }
 
+// TestSketchAddEntityKinds creates each F02 entity kind/variant through the API and
+// verifies they enumerate with the right kinds and geometry.
+func TestSketchAddEntityKinds(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var res wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &res)
+	if len(res.PointIDs) != 2 || res.Kind != "line" {
+		t.Fatalf("addEntity line = %+v, want kind line / 2 point ids", res)
+	}
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"point","points":[[1,1]]}`, &res)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","variant":"centerRadius","points":[[0,0]],"radius":"10 mm"}`, &res)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","variant":"threePoint","points":[[1,0],[0,1],[-1,0]]}`, &res)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"arc","variant":"centerStartEnd","points":[[0,0],[2,0],[0,2]],"ccw":true}`, &res)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"arc","variant":"threePoint","points":[[2,0],[0,2],[-2,0]]}`, &res)
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	if got := countKind(ents.Entities, "circle"); got != 2 {
+		t.Fatalf("circles = %d, want 2", got)
+	}
+	if got := countKind(ents.Entities, "arc"); got != 2 {
+		t.Fatalf("arcs = %d, want 2", got)
+	}
+	// The center-radius circle (10 mm → 1 cm) must report radius 1.
+	if !hasCircleRadius(ents.Entities, 1.0) {
+		t.Fatalf("no circle with radius 1 cm (10 mm) in %+v", ents.Entities)
+	}
+}
+
+func TestSketchAddEntityRejectsCollinearCircle(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"circle","variant":"threePoint","points":[[0,0],[1,0],[2,0]]}`)); err == nil {
+		t.Fatal("expected error for circle through collinear points")
+	}
+}
+
+// hasCircleRadius reports whether some enumerated circle has the given radius.
+func hasCircleRadius(ents []wire.SketchEntityInfo, radius float64) bool {
+	for _, e := range ents {
+		if e.Kind == "circle" && e.Radius == radius {
+			return true
+		}
+	}
+	return false
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {
