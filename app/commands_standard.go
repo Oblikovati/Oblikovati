@@ -82,6 +82,12 @@ func modelTabCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("E").WithEnable(notInSketch).
 			WithIcon("extrude").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extrude — add depth to a sketch profile to create or modify a solid."),
+		NewCommand("Create.Revolve", "Revolve", "Create", func(s *Session) error {
+			s.StartTool(NewRevolveTool())
+			return nil
+		}).WithTab("3D Model").WithAlias("R").WithEnable(notInSketch).
+			WithIcon("revolve").WithButtonStyle(LargeIconButton).
+			WithTooltip("Revolve — spin a sketch profile about an axis to create or modify a solid."),
 	}
 }
 

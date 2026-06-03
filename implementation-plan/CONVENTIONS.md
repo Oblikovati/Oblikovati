@@ -100,6 +100,31 @@ approach follows the layer (full strategy: `../architecture/testing/`):
 A PBI is "done" when its acceptance criteria are green in CI, not when it renders
 something that looks right.
 
+## Definition of Done — every user-facing feature ships its UI (MANDATORY)
+
+A modeling feature is **not done when its model layer + serialization + unit tests
+are green**. It is done only when a user can invoke it in the application and an
+**end-to-end test drives that UI and validates the resulting geometry**. Every
+user-facing feature ships **all four** of these, mirroring Extrude (the reference):
+
+1. **Model** (`model/feature`): the `Definition → Add → Feature` triangle, `.obk`
+   serialize round-trip, and unit tests.
+2. **Command & interaction** (`app/`): a `CommandDefinition` ribbon button registered
+   in `app/commands_standard.go` (`NewCommand(id,name,panel,…).WithTab("3D Model")
+   .WithIcon(…).WithTooltip(…)`), plus an interactive `Tool` (`app/<feat>_tool.go` —
+   `Start`/`Pick`/`Set*`/`Commit`) and/or a settings window that edits the feature's
+   inputs and writes them through to the definition.
+3. **Property window** (`head/ui/<feat>_dialog.go`): the rendered Dear ImGui dialog —
+   value fields, option combos, OK/Cancel, and in-canvas preview/highlight.
+4. **End-to-end tests** (`app/<feat>_tool_test.go`): drive the command (by alias or
+   synthetic click) → set the tool/dialog fields → commit → assert the feature lands
+   in the model with the **expected geometry** (validated manifold, volume, etc.).
+   The reference tests are `TestExtrudeToolEndToEnd`, `TestExtrudeViaCommandAlias`,
+   `TestExtrudeDialogPathBuildsSolid`.
+
+A feature whose only entry point is a Go API call, with no ribbon button, no property
+window, and no UI-driven test, is **incomplete** regardless of model-layer coverage.
+
 ## Naming (mirror the contract library)
 
 `XFeature` / `XFeatures` / `XDefinition` / `XProxy` / `XEnumerator` / `XEvents` /
