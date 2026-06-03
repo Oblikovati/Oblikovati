@@ -133,17 +133,6 @@ func clamp01(x float64) float64 {
 	return x
 }
 
-// tessellateCurvedFace samples the surface on a UV grid whose iso-curve breakpoints
-// honor the chordal tolerance, emitting two triangles per cell with true normals.
-func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
-	s := f.Geometry()
-	uLo, uHi := clampSpan(s.UDomain())
-	vLo, vHi := clampSpan(s.VDomain())
-	us := adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, (vLo+vHi)/2) }, uLo, uHi, q.tol())
-	vs := adaptiveParams(func(v float64) math.Point3 { return s.PointAt((uLo+uHi)/2, v) }, vLo, vHi, q.tol())
-	return gridMesh(s, us, vs)
-}
-
 // gridMesh builds a mesh from a UV breakpoint grid.
 func gridMesh(s geom.Surface, us, vs []float64) *Mesh {
 	m := &Mesh{}
