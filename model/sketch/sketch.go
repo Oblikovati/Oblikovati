@@ -28,13 +28,19 @@ type Entity interface {
 	EntityID() ID
 }
 
-// base holds the identity and edit/visibility state common to every sketch kind.
+// base holds the identity and edit/visibility/display state common to every sketch kind.
 type base struct {
 	id      ID
 	name    string
 	editing bool
 	visible bool
 	health  health.Health
+
+	// Display + solve overrides (Inventor Sketch.Color/LineType/LineWeight/DeferUpdates).
+	color        string  // empty ⇒ inherit the document default
+	lineType     string  // empty ⇒ inherit (api/types.SketchLineType value)
+	lineWeight   float64 // 0 ⇒ inherit
+	deferUpdates bool    // true ⇒ batch edits, solve on resume (M21-F08)
 }
 
 func newBase(name string) base {
@@ -63,6 +69,25 @@ func (b *base) SetVisible(v bool) { b.visible = v }
 
 // Health returns the sketch's solve health (set by the solver, M06-F05).
 func (b *base) Health() health.Health { return b.health }
+
+// Color returns the sketch's color override ("" ⇒ inherit); SetColor sets it.
+func (b *base) Color() string     { return b.color }
+func (b *base) SetColor(c string) { b.color = c }
+
+// LineType returns the sketch's line-type override (api/types.SketchLineType value,
+// "" ⇒ inherit); SetLineType sets it.
+func (b *base) LineType() string     { return b.lineType }
+func (b *base) SetLineType(t string) { b.lineType = t }
+
+// LineWeight returns the sketch's line-weight override in cm (0 ⇒ inherit);
+// SetLineWeight sets it.
+func (b *base) LineWeight() float64     { return b.lineWeight }
+func (b *base) SetLineWeight(w float64) { b.lineWeight = w }
+
+// DeferUpdates reports whether the sketch batches edits (solving on resume);
+// SetDeferUpdates toggles it (the solve gate is wired in M21-F08).
+func (b *base) DeferUpdates() bool     { return b.deferUpdates }
+func (b *base) SetDeferUpdates(d bool) { b.deferUpdates = d }
 
 // Sketch is a planar 2D sketch hosted on a [Plane]. It owns its entities and (from
 // F03/F04) its constraints, and resolves to profiles/paths via the solver (F05/F06).

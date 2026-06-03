@@ -131,6 +131,41 @@ func countKind(ents []wire.SketchEntityInfo, kind string) int {
 	return n
 }
 
+// TestSketchSetPropertyRoundTripsThroughGet sets each sketch property through the API
+// and reads it back via sketch.get (F01 PBI-201).
+func TestSketchSetPropertyRoundTripsThroughGet(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var info wire.SketchInfo
+	call(t, r, s, "sketch.setProperty", `{"sketchIndex":0,"property":"name","value":"Profile"}`, &info)
+	if info.Name != "Profile" {
+		t.Fatalf("setProperty name → %q, want Profile", info.Name)
+	}
+	call(t, r, s, "sketch.setProperty", `{"sketchIndex":0,"property":"visible","value":"false"}`, &info)
+	call(t, r, s, "sketch.setProperty", `{"sketchIndex":0,"property":"color","value":"#ff8800"}`, &info)
+	call(t, r, s, "sketch.setProperty", `{"sketchIndex":0,"property":"lineType","value":"center"}`, &info)
+	call(t, r, s, "sketch.setProperty", `{"sketchIndex":0,"property":"lineWeight","value":"0.5 mm"}`, &info)
+	call(t, r, s, "sketch.setProperty", `{"sketchIndex":0,"property":"deferUpdates","value":"true"}`, &info)
+
+	var got wire.SketchInfo
+	call(t, r, s, "sketch.get", `{"sketchIndex":0}`, &got)
+	if got.Name != "Profile" || got.Visible || got.Color != "#ff8800" || got.LineType != "center" || !got.DeferUpdates {
+		t.Fatalf("after sets, get = %+v", got)
+	}
+	if got.LineWeight <= 0 { // 0.5 mm in model cm
+		t.Fatalf("lineWeight = %v, want > 0 (0.5 mm in cm)", got.LineWeight)
+	}
+}
+
+func TestSketchSetPropertyUnknownProperty(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.setProperty", []byte(`{"sketchIndex":0,"property":"bogus","value":"x"}`)); err == nil {
+		t.Fatal("expected error for unknown property")
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

@@ -26,6 +26,33 @@ func roundTrip(t *testing.T, sc *Sketches) *Sketch {
 	return fresh.Item(0)
 }
 
+// TestSketchPropertiesSurvive proves the name and display/solve overrides round-trip
+// (M21-F01 PBI-201 — previously the name was regenerated and the props were dropped).
+func TestSketchPropertiesSurvive(t *testing.T) {
+	sc := NewSketches()
+	s := sc.Add(XYPlane())
+	s.SetName("Profile")
+	s.SetVisible(false)
+	s.SetColor("#ff8800")
+	s.SetLineType("center")
+	s.SetLineWeight(0.05)
+	s.SetDeferUpdates(true)
+
+	out := roundTrip(t, sc)
+	if out.Name() != "Profile" {
+		t.Errorf("name = %q, want Profile", out.Name())
+	}
+	if out.Visible() {
+		t.Error("visible = true, want false (hidden persisted)")
+	}
+	if out.Color() != "#ff8800" || out.LineType() != "center" || out.LineWeight() != 0.05 {
+		t.Errorf("display props = %q/%q/%v, want #ff8800/center/0.05", out.Color(), out.LineType(), out.LineWeight())
+	}
+	if !out.DeferUpdates() {
+		t.Error("deferUpdates = false, want true")
+	}
+}
+
 // TestRectangleSharedPointsSurvive proves that a rectangle built from four lines
 // sharing corner points round-trips as four lines and four points (not eight), i.e.
 // the structural coincidence at each corner is preserved.

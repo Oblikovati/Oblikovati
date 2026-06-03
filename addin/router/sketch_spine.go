@@ -95,14 +95,18 @@ func deleteSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 // sketchInfo renders a sketch as its wire summary (DOF computed without moving geometry).
 func sketchInfo(index int, sk *sketch.Sketch) wire.SketchInfo {
 	return wire.SketchInfo{
-		Index:       index,
-		Name:        sk.Name(),
-		Plane:       planeLabel(sk.Plane()),
-		Visible:     sk.Visible(),
-		EntityCount: sk.EntityCount(),
-		DOF:         sk.DegreesOfFreedom(),
-		Editing:     sk.IsEditing(),
-		Healthy:     sk.Health().OK(),
+		Index:        index,
+		Name:         sk.Name(),
+		Plane:        planeLabel(sk.Plane()),
+		Visible:      sk.Visible(),
+		EntityCount:  sk.EntityCount(),
+		DOF:          sk.DegreesOfFreedom(),
+		Editing:      sk.IsEditing(),
+		Healthy:      sk.Health().OK(),
+		Color:        sk.Color(),
+		LineType:     sk.LineType(),
+		LineWeight:   sk.LineWeight(),
+		DeferUpdates: sk.DeferUpdates(),
 	}
 }
 

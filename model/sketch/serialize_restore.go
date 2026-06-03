@@ -32,6 +32,7 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 		pointMap:  make(map[int]*Point, len(sd.Points)),
 		entityMap: make(map[int]Entity, len(sd.Entities)),
 	}
+	restoreSketchProps(r.s, sd)
 	r.restorePoints(sd.Points)
 	if err := r.restoreEntities(sd.Entities); err != nil {
 		return err
@@ -40,6 +41,19 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 		return err
 	}
 	return r.restoreDimensions(sd.Dimensions)
+}
+
+// restoreSketchProps reapplies the persisted name and display/solve overrides onto a
+// freshly-added sketch (sc.Add auto-named it; an empty persisted name keeps that).
+func restoreSketchProps(s *Sketch, sd SketchData) {
+	if sd.Name != "" {
+		s.SetName(sd.Name)
+	}
+	s.SetVisible(!sd.Hidden)
+	s.SetColor(sd.Color)
+	s.SetLineType(sd.LineType)
+	s.SetLineWeight(sd.LineWeight)
+	s.SetDeferUpdates(sd.DeferUpdates)
 }
 
 // sketchRestorer carries the id→object maps while rebuilding one sketch.

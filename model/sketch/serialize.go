@@ -16,13 +16,21 @@ import (
 // where two lines meet *is* a coincidence — are preserved because every point is
 // recorded once and referenced by id.
 
-// SketchData is the serializable form of one sketch.
+// SketchData is the serializable form of one sketch. Hidden inverts Visible so the
+// common visible=true case omits the field (M21-F01 PBI-201 persists name/display props,
+// closing the previous name-not-persisted gap).
 type SketchData struct {
-	Plane       PlaneData        `yaml:"plane"`
-	Points      []PointData      `yaml:"points,omitempty"`
-	Entities    []EntityData     `yaml:"entities,omitempty"`
-	Constraints []ConstraintData `yaml:"constraints,omitempty"`
-	Dimensions  []DimensionData  `yaml:"dimensions,omitempty"`
+	Name         string           `yaml:"name,omitempty"`
+	Hidden       bool             `yaml:"hidden,omitempty"`
+	Color        string           `yaml:"color,omitempty"`
+	LineType     string           `yaml:"lineType,omitempty"`
+	LineWeight   float64          `yaml:"lineWeight,omitempty"`
+	DeferUpdates bool             `yaml:"deferUpdates,omitempty"`
+	Plane        PlaneData        `yaml:"plane"`
+	Points       []PointData      `yaml:"points,omitempty"`
+	Entities     []EntityData     `yaml:"entities,omitempty"`
+	Constraints  []ConstraintData `yaml:"constraints,omitempty"`
+	Dimensions   []DimensionData  `yaml:"dimensions,omitempty"`
 }
 
 // PlaneData is a sketch plane as an origin and two in-plane axes (model space).
@@ -102,7 +110,15 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 	if len(s.blocks.defs) > 0 || len(s.blocks.instances) > 0 {
 		return SketchData{}, fmt.Errorf("block serialization is not yet supported (%d defs, %d instances)", len(s.blocks.defs), len(s.blocks.instances))
 	}
-	sd := SketchData{Plane: serializePlane(s.plane)}
+	sd := SketchData{
+		Name:         s.name,
+		Hidden:       !s.visible,
+		Color:        s.color,
+		LineType:     s.lineType,
+		LineWeight:   s.lineWeight,
+		DeferUpdates: s.deferUpdates,
+		Plane:        serializePlane(s.plane),
+	}
 	standalone := standalonePointIDs(s)
 	for _, p := range s.pts {
 		sd.Points = append(sd.Points, PointData{ID: int(p.id), X: float64(p.X), Y: float64(p.Y), Standalone: standalone[p.id]})
