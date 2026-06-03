@@ -63,7 +63,7 @@ func workFeatureCommands() []*CommandDefinition {
 
 // modelTabCommands are the 3D Model tab: starting a sketch and the solid features.
 func modelTabCommands() []*CommandDefinition {
-	return []*CommandDefinition{
+	cmds := []*CommandDefinition{
 		NewCommand("Sketch.Create2D", "Create 2D Sketch", "Sketch", func(s *Session) error {
 			// With a plane already selected, sketch on it immediately; otherwise start
 			// the tool and let the user pick a plane in the 3D view or the browser.
@@ -76,6 +76,14 @@ func modelTabCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("S").WithEnable(canCreateSketch).
 			WithIcon("create-sketch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Create 2D Sketch — pick a work plane or planar face to sketch on."),
+	}
+	return append(cmds, solidFeatureCommands()...)
+}
+
+// solidFeatureCommands are the 3D Model tab's "Create" panel — the sketched solid
+// features (extrude, revolve, coil, …), each launching its interactive tool.
+func solidFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
 		NewCommand("Create.Extrude", "Extrude", "Create", func(s *Session) error {
 			s.StartTool(NewExtrudeTool())
 			return nil
@@ -88,6 +96,12 @@ func modelTabCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("R").WithEnable(notInSketch).
 			WithIcon("revolve").WithButtonStyle(LargeIconButton).
 			WithTooltip("Revolve — spin a sketch profile about an axis to create or modify a solid."),
+		NewCommand("Create.Coil", "Coil", "Create", func(s *Session) error {
+			s.StartTool(NewCoilTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("coil").WithButtonStyle(LargeIconButton).
+			WithTooltip("Coil — sweep a sketch profile along a helix to create or modify a solid."),
 	}
 }
 
