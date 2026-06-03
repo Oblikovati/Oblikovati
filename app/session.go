@@ -41,7 +41,12 @@ type Session struct {
 	themeStore      *theme.Store
 	materials       *material.Library
 	materialStore   *material.Store
+	notice          string // last user-facing notice (e.g. a failed-commit reason)
 }
+
+// Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
+// the status bar so a failed OK is not silent.
+func (s *Session) Notice() string { return s.notice }
 
 // NewSession creates an empty in-memory session with no persistence store. Its
 // documents live only in memory — Save/Open return "no store configured" — which

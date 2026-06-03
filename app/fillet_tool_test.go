@@ -8,6 +8,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"github.com/Oblikovati/oblikovati/kernel/topo"
 )
 
 // TestFilletToolEndToEnd drives the Fillet UI: start the tool, click a vertical edge of a
@@ -71,6 +72,42 @@ func TestFilletViaRibbonCommand(t *testing.T) {
 	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; v >= 8 {
 		t.Errorf("fillet did not round material: volume %g, want < 8", v)
 	}
+}
+
+// TestFilletCornerEdgesSurfaceNotice checks that committing a fillet over edges that meet at
+// a corner (unsupported) fails loudly: the tool stays open and the session carries a notice
+// the status bar shows — so the user is not left with a silent "nothing happened".
+func TestFilletCornerEdgesSurfaceNotice(t *testing.T) {
+	s, block := newPartWithBlock(t, 2)
+	f := NewFilletTool()
+	s.StartTool(f)
+	for _, e := range cornerEdges(block) { // three edges meeting at one corner
+		f.Pick(s, EdgeHandle{Edge: e})
+	}
+	if err := s.OK(); err == nil {
+		t.Fatal("filleting corner edges should fail")
+	}
+	if s.ActiveTool() == nil {
+		t.Error("a failed commit should keep the fillet tool open")
+	}
+	if s.Notice() == "" {
+		t.Error("a failed commit should set a status-bar notice, not fail silently")
+	}
+	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
+		t.Errorf("body should be unchanged (vol 8) after a failed fillet, got %g", v)
+	}
+}
+
+// cornerEdges returns the three edges meeting at the (0,0,0) corner of a box.
+func cornerEdges(b *topo.Body) []*topo.Edge {
+	var out []*topo.Edge
+	for _, e := range b.Edges() {
+		a, c := e.StartVertex().Point(), e.EndVertex().Point()
+		if (a.X == 0 && a.Y == 0 && a.Z == 0) || (c.X == 0 && c.Y == 0 && c.Z == 0) {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
 // TestFilletToolNeedsEdge checks the tool is not committable until an edge is picked.

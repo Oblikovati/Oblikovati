@@ -104,6 +104,10 @@ func drawStatusBar(s *app.Session) {
 		}
 		native.SameLine()
 		native.Text(selectionText(sb.SelectionCount))
+		if sb.Notice != "" {
+			native.SameLine()
+			native.Text("— " + sb.Notice)
+		}
 	}
 	native.End()
 }

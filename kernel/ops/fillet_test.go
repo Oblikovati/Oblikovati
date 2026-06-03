@@ -4,6 +4,7 @@ package ops_test
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"github.com/Oblikovati/oblikovati/kernel/geom"
@@ -96,6 +97,29 @@ func TestFilletLostKeyErrors(t *testing.T) {
 	box := shellBox(2, 2, 2)
 	if _, err := ops.FilletEdges(box, [][]byte{[]byte("ghost")}, 0.5); err == nil {
 		t.Error("fillet with a lost key should error")
+	}
+}
+
+// TestFilletSharedCornerErrors checks that filleting edges meeting at a corner (a fillet-
+// fillet corner, not yet supported) returns a clear error rather than a broken solid.
+func TestFilletSharedCornerErrors(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	var keys [][]byte
+	for _, e := range box.Edges() {
+		a, c := e.StartVertex().Point(), e.EndVertex().Point()
+		if (a.X == 0 && a.Y == 0 && a.Z == 0) || (c.X == 0 && c.Y == 0 && c.Z == 0) {
+			keys = append(keys, e.ReferenceKey())
+		}
+	}
+	if len(keys) != 3 {
+		t.Fatalf("found %d edges at the corner, want 3", len(keys))
+	}
+	_, err := ops.FilletEdges(box, keys, 0.3)
+	if err == nil {
+		t.Fatal("filleting edges that meet at a corner should error")
+	}
+	if !strings.Contains(err.Error(), "corner") {
+		t.Errorf("error %q should mention the corner-blend limitation", err)
 	}
 }
 

@@ -21,12 +21,13 @@ type StatusBar struct {
 	ToolActive     bool   // whether a tool is running (so OK/Cancel show)
 	CanCommit      bool   // whether OK should be enabled
 	SelectionCount int    // size of the current selection set
+	Notice         string // last user-facing notice (a failed-commit reason), or ""
 }
 
 // BuildStatus assembles the status bar from the session: the active tool's prompt and
-// commit-readiness, or "Ready" when idle, plus the selection count.
+// commit-readiness, or "Ready" when idle, plus the selection count and any notice.
 func BuildStatus(s *Session) StatusBar {
-	sb := StatusBar{Prompt: "Ready", SelectionCount: s.Selection().Count()}
+	sb := StatusBar{Prompt: "Ready", SelectionCount: s.Selection().Count(), Notice: s.Notice()}
 	ti := s.ActiveTool()
 	if ti == nil {
 		return sb

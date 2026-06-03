@@ -20,6 +20,7 @@ func (s *Session) StartTool(t Tool) {
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
 	}
+	s.notice = ""
 	s.tool = &ToolInstance{tool: t}
 	t.Start(s)
 }
@@ -46,14 +47,17 @@ func (s *Session) OK() error {
 		return errors.New("app: active tool is not ready to commit")
 	}
 	if err := s.tool.tool.Commit(s); err != nil {
-		return err // keep the tool open so the user can fix the input
+		s.notice = err.Error() // surface why (the status bar shows it); keep the tool open
+		return err
 	}
+	s.notice = ""
 	s.tool = nil
 	return nil
 }
 
 // CancelTool abandons the active tool (Inventor's Escape / Cancel).
 func (s *Session) CancelTool() {
+	s.notice = ""
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
 		s.tool = nil

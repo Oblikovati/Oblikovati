@@ -22,12 +22,19 @@ func FilletEdges(body *topo.Body, edgeKeys [][]byte, r float64) (*topo.Body, err
 	if r <= 0 {
 		return nil, fmt.Errorf("fillet: radius %g must be > 0", r)
 	}
-	fils := make([]edgeFillet, 0, len(edgeKeys))
+	edges := make([]*topo.Edge, 0, len(edgeKeys))
 	for _, k := range edgeKeys {
 		e, ok := body.FindEdgeByKey(k)
 		if !ok {
 			return nil, fmt.Errorf("fillet: edge reference lost: %x", k)
 		}
+		edges = append(edges, e)
+	}
+	if err := noSharedCorners(edges); err != nil {
+		return nil, err
+	}
+	fils := make([]edgeFillet, 0, len(edges))
+	for _, e := range edges {
 		ef, err := computeEdgeFillet(body, e, r)
 		if err != nil {
 			return nil, err
@@ -39,6 +46,22 @@ func FilletEdges(body *topo.Body, edgeKeys [][]byte, r float64) (*topo.Body, err
 		return nil, fmt.Errorf("fillet: result is not a valid solid %v", rep.Issues)
 	}
 	return res, nil
+}
+
+// noSharedCorners rejects a set of edges where two meet at a common vertex: filleting them
+// together needs a corner blend (a spherical/toroidal patch where the rounds meet), which is
+// not yet supported. The clear error lets the UI tell the user to pick non-adjacent edges.
+func noSharedCorners(edges []*topo.Edge) error {
+	seen := map[uint64]bool{}
+	for _, e := range edges {
+		for _, v := range []*topo.Vertex{e.StartVertex(), e.EndVertex()} {
+			if seen[v.ID()] {
+				return fmt.Errorf("fillet: selected edges meet at a corner — corner blends are not yet supported; fillet adjacent edges one at a time or pick non-adjacent edges")
+			}
+			seen[v.ID()] = true
+		}
+	}
+	return nil
 }
 
 // corner is one rounded end of a filleted edge: the cylinder centre at that end, the tangent
