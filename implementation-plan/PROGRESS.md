@@ -33,8 +33,15 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 | M16 | Visualization & Presentation | ⬜ | |
 | M17 | Interoperability & Translation | ⬜ | |
 | M18 | Analysis & Simulation | ⬜ | |
+| M20 | Feature Completion & Geometry Parity | 🟦 | Consolidated drive of every remaining Inventor `*Feature` to real geometry: kernel enablers (intersecting booleans, swept surfaces, fillet, local face ops, body transform) + sheet-metal + plastic + misc model features. |
 
 ## PBI log (most recent first)
+
+### M20 — Feature Completion & Geometry Parity
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 171 | Face-splitting solid/solid boolean | 🟦 | `kernel/ops` | In progress — see branch `feat/m20-feature-completion`. |
 
 ### M10 — Surfacing & Freeform Modeling
 
