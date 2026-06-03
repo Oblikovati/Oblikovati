@@ -74,18 +74,18 @@ func TestFilletViaRibbonCommand(t *testing.T) {
 	}
 }
 
-// TestFilletCornerEdgesSurfaceNotice checks that committing a fillet over edges that meet at
-// a corner (unsupported) fails loudly: the tool stays open and the session carries a notice
-// the status bar shows — so the user is not left with a silent "nothing happened".
-func TestFilletCornerEdgesSurfaceNotice(t *testing.T) {
+// TestFilletUnsupportedCornerSurfacesNotice checks that committing a fillet over an
+// unsupported corner config (two of the three edges at a vertex) fails loudly: the tool stays
+// open and the session carries a notice the status bar shows — not a silent "nothing happened".
+func TestFilletUnsupportedCornerSurfacesNotice(t *testing.T) {
 	s, block := newPartWithBlock(t, 2)
 	f := NewFilletTool()
 	s.StartTool(f)
-	for _, e := range cornerEdges(block) { // three edges meeting at one corner
+	for _, e := range cornerEdges(block)[:2] { // two of the three edges at one corner (unsupported)
 		f.Pick(s, EdgeHandle{Edge: e})
 	}
 	if err := s.OK(); err == nil {
-		t.Fatal("filleting corner edges should fail")
+		t.Fatal("filleting an unsupported corner config should fail")
 	}
 	if s.ActiveTool() == nil {
 		t.Error("a failed commit should keep the fillet tool open")

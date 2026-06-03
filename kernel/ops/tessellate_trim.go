@@ -28,18 +28,55 @@ const trimBorderTol = 1e-6
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	s := f.Geometry()
 	outer3D := faceOuterBoundary(f, q)
-	if len(outer3D) < 3 || len(faceHoleBoundaries(f, q)) > 0 {
+	holes3D := faceHoleBoundaries(f, q)
+	if len(outer3D) < 3 {
 		return fullDomainGridMesh(s, q)
 	}
-	uv, _, ok := toUVLoops(s, outer3D, nil)
+	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
-		return fullDomainGridMesh(s, q)
+		return fullDomainGridMesh(s, q) // seam-crossing periodic face
 	}
-	us, vs, ok := isoRectangleGrid(uv)
-	if !ok {
-		return fullDomainGridMesh(s, q)
+	if len(holesUV) == 0 {
+		if us, vs, isRect := isoRectangleGrid(outerUV); isRect {
+			return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
+		}
 	}
-	return structuredGridMesh(s, us, vs)
+	// A non-rectangular trim (e.g. a corner sphere patch): triangulate the boundary in UV.
+	return boundaryUVMesh(s, outerUV, outer3D, holesUV, holes3D)
+}
+
+// boundaryUVMesh triangulates a curved face from its boundary loops alone (no interior Steiner
+// points): the loops are ear-clipped in (u,v) and lifted back to their exact 3D boundary
+// points, each triangle wound outward. The facets chord the curvature, so it is a coarse but
+// watertight covering of the exact trim region — right for small patches (corner blends);
+// larger non-rectangular curved faces would want a refined constrained triangulation.
+func boundaryUVMesh(s geom.Surface, outerUV []math.Point2, outer3D []math.Point3, holesUV [][]math.Point2, holes3D [][]math.Point3) *Mesh {
+	uv, pos := outerUV, outer3D
+	if len(holesUV) > 0 {
+		uv, pos = mergeHoles(outerUV, outer3D, holesUV, holes3D)
+	}
+	m := &Mesh{}
+	for _, p := range pos {
+		u, v := s.ParamAt(p)
+		m.addVertex(p, s.NormalAt(u, v))
+	}
+	for _, tri := range earClip(uv) {
+		a, b, c := tri[0], tri[1], tri[2]
+		if triangleFlipped(s, pos[a], pos[b], pos[c]) {
+			b, c = c, b
+		}
+		m.addTriangle(a, b, c)
+	}
+	return m
+}
+
+// triangleFlipped reports whether triangle abc winds against the surface normal at its
+// centroid (so it should be reversed to face outward).
+func triangleFlipped(s geom.Surface, a, b, c math.Point3) bool {
+	n := a.VectorTo(b).Cross(a.VectorTo(c))
+	cen := math.P3((a.X+b.X+c.X)/3, (a.Y+b.Y+c.Y)/3, (a.Z+b.Z+c.Z)/3)
+	u, v := s.ParamAt(cen)
+	return n.Dot(s.NormalAt(u, v)) < 0
 }
 
 // isoRectangleGrid returns the sorted u and v grid lines when the UV boundary is an

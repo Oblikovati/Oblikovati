@@ -9,9 +9,10 @@ import (
 )
 
 // filletResultFaces builds the faces of the filleted body: every original face transformed
-// for the fillets touching it (its A/B corners pulled back to the tangent points, its end
-// corners replaced by an arc), plus one cylinder face per filleted edge.
-func filletResultFaces(body *topo.Body, fils []edgeFillet) []filletFace {
+// for the fillets touching it (its A/B corners pulled back to the tangent points, its simple
+// end corners replaced by an arc), one cylinder face per filleted edge, and one sphere patch
+// per corner blend.
+func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) []filletFace {
 	abSubst, endCorner := filletMaps(fils)
 	var out []filletFace
 	for _, f := range body.Faces() {
@@ -20,11 +21,16 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet) []filletFace {
 	for _, ef := range fils {
 		out = append(out, cylinderFace(ef))
 	}
+	for _, cb := range blends {
+		out = append(out, spherePatchFace(cb))
+	}
 	return out
 }
 
 // filletMaps indexes, per face: the corner-vertex → tangent-point pullbacks (where the face
-// is a fillet's A or B face), and the corner-vertex → corner arc (where it is the end face).
+// is a fillet's A or B face — every corner, simple or blended), and the corner-vertex →
+// corner arc (only for SIMPLE end corners; a blend corner's arc lives on the sphere patch,
+// and all its faces just pull back to the sphere tangent points).
 func filletMaps(fils []edgeFillet) (map[*topo.Face]map[uint64]math.Point3, map[*topo.Face]map[uint64]corner) {
 	ab := map[*topo.Face]map[uint64]math.Point3{}
 	ends := map[*topo.Face]map[uint64]corner{}
@@ -38,6 +44,9 @@ func filletMaps(fils []edgeFillet) (map[*topo.Face]map[uint64]math.Point3, map[*
 		for _, c := range []corner{ef.c0, ef.c1} {
 			put(ab, c.a, c.vertex.ID(), c.ta)
 			put(ab, c.b, c.vertex.ID(), c.tb)
+			if c.blend {
+				continue // the rounded corner is the sphere patch, not an end-face arc
+			}
 			if ends[c.endFace] == nil {
 				ends[c.endFace] = map[uint64]corner{}
 			}
@@ -146,4 +155,88 @@ func reverseFilletLoop(_ filletLoop, ef edgeFillet) filletLoop {
 		pts:    []math.Point3{c0.ta, c0.tb, c1.tb, c1.ta},
 		curves: []geom.Curve3{arc0, nil, arc1, nil},
 	}
+}
+
+// spherePatchFace builds the corner sphere patch: a spherical triangle bounded by the blend's
+// three arcs (each shared with a cylinder fillet), wound so its normal points outward (away
+// from the sphere centre).
+func spherePatchFace(cb *cornerBlend) filletFace {
+	loop := chainArcs(cb.arcs)
+	if spherePatchFlipped(cb, loop) {
+		loop = reverseArcLoop(loop)
+	}
+	return filletFace{surface: cb.sphere, loops: []filletLoop{loop}}
+}
+
+// chainArcs links the blend's arcs head-to-tail into a closed loop (each tangent point is an
+// endpoint of exactly two arcs), with the arc curve on each segment.
+func chainArcs(arcs []blendArc) filletLoop {
+	used := make([]bool, len(arcs))
+	var fl filletLoop
+	cur := arcs[0].ta
+	for range arcs {
+		for j, a := range arcs {
+			if used[j] {
+				continue
+			}
+			from, to, ok := arcEndpoints(a, cur)
+			if !ok {
+				continue
+			}
+			used[j] = true
+			arc, _ := geom.Arc3dByThreePoints(from, a.mid, to)
+			fl.pts = append(fl.pts, from)
+			fl.curves = append(fl.curves, arc)
+			cur = to
+			break
+		}
+	}
+	return fl
+}
+
+// arcEndpoints orients an arc so it starts at cur (returning from=cur, to=other), or ok=false
+// when neither end is cur.
+func arcEndpoints(a blendArc, cur math.Point3) (from, to math.Point3, ok bool) {
+	switch {
+	case a.ta.DistanceTo(cur) < 1e-7:
+		return a.ta, a.tb, true
+	case a.tb.DistanceTo(cur) < 1e-7:
+		return a.tb, a.ta, true
+	}
+	return math.Point3{}, math.Point3{}, false
+}
+
+// spherePatchFlipped reports whether the loop winds against the sphere's outward normal at the
+// patch centroid (so it should be reversed to face outward).
+func spherePatchFlipped(cb *cornerBlend, loop filletLoop) bool {
+	c := centroidPts(loop.pts)
+	n := loop.pts[0].VectorTo(loop.pts[1]).Cross(loop.pts[0].VectorTo(loop.pts[2]))
+	return n.Dot(cb.center.VectorTo(c)) < 0
+}
+
+// reverseArcLoop reverses a closed arc loop, re-deriving each segment's arc in the new
+// direction (the arc midpoints are recovered from the original arcs).
+func reverseArcLoop(loop filletLoop) filletLoop {
+	n := len(loop.pts)
+	mids := arcMidpoints(loop)
+	var out filletLoop
+	for i := 0; i < n; i++ {
+		from := loop.pts[(n-i)%n]
+		to := loop.pts[(n-i-1+n)%n]
+		arc, _ := geom.Arc3dByThreePoints(from, mids[(n-i-1+n)%n], to)
+		out.pts = append(out.pts, from)
+		out.curves = append(out.curves, arc)
+	}
+	return out
+}
+
+// arcMidpoints samples each segment's arc curve at its midpoint (for re-orienting the loop).
+func arcMidpoints(loop filletLoop) []math.Point3 {
+	mids := make([]math.Point3, len(loop.curves))
+	for i, c := range loop.curves {
+		if c != nil {
+			mids[i] = c.PointAt(0.5)
+		}
+	}
+	return mids
 }

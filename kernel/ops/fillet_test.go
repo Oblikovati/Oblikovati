@@ -100,26 +100,88 @@ func TestFilletLostKeyErrors(t *testing.T) {
 	}
 }
 
-// TestFilletSharedCornerErrors checks that filleting edges meeting at a corner (a fillet-
-// fillet corner, not yet supported) returns a clear error rather than a broken solid.
-func TestFilletSharedCornerErrors(t *testing.T) {
-	box := shellBox(2, 2, 2)
+// cornerEdgeKeys returns the reference keys of the edges meeting at the (0,0,0) box corner.
+func cornerEdgeKeys(t *testing.T, b *topo.Body) [][]byte {
+	t.Helper()
 	var keys [][]byte
-	for _, e := range box.Edges() {
+	for _, e := range b.Edges() {
 		a, c := e.StartVertex().Point(), e.EndVertex().Point()
 		if (a.X == 0 && a.Y == 0 && a.Z == 0) || (c.X == 0 && c.Y == 0 && c.Z == 0) {
 			keys = append(keys, e.ReferenceKey())
 		}
 	}
+	return keys
+}
+
+// hasSphereFaces counts a body's spherical faces.
+func hasSphereFaces(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Sphere); ok {
+			n++
+		}
+	}
+	return n
+}
+
+// TestFilletCornerBlend rounds the three edges meeting at a box corner: the three cylinder
+// fillets are joined by a spherical corner patch into a valid solid (3 cylinders + 1 sphere),
+// with material removed (volume < 8). The corner-blend acceptance.
+func TestFilletCornerBlend(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	keys := cornerEdgeKeys(t, box)
 	if len(keys) != 3 {
 		t.Fatalf("found %d edges at the corner, want 3", len(keys))
 	}
+	res, err := ops.FilletEdges(box, keys, 0.3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("corner-blended box not a valid solid: %+v", r)
+	}
+	if c, s := hasCylinderFaces(res), hasSphereFaces(res); c != 3 || s != 1 {
+		t.Errorf("got %d cylinder + %d sphere faces, want 3 + 1", c, s)
+	}
+	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 7.5 || v >= 8 {
+		t.Errorf("corner-blend volume = %g, want material removed (7.5 < v < 8)", v)
+	}
+}
+
+// TestFilletAllBoxEdges rounds every edge of a 2×2×2 box: 12 cylinder fillets joined by 8
+// spherical corner patches into a valid solid (a fully-rounded box), with material removed.
+func TestFilletAllBoxEdges(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	var keys [][]byte
+	for _, e := range box.Edges() {
+		keys = append(keys, e.ReferenceKey())
+	}
+	res, err := ops.FilletEdges(box, keys, 0.3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("fully-rounded box not a valid solid: %+v", r)
+	}
+	if c, s := hasCylinderFaces(res), hasSphereFaces(res); c != 12 || s != 8 {
+		t.Errorf("got %d cylinder + %d sphere faces, want 12 + 8", c, s)
+	}
+	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
+		t.Errorf("fully-rounded box volume = %g, want < 8", v)
+	}
+}
+
+// TestFilletTwoEdgeCornerErrors checks an unsupported corner config (two of the three edges
+// at a vertex) errors clearly rather than producing a broken solid.
+func TestFilletTwoEdgeCornerErrors(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
 	_, err := ops.FilletEdges(box, keys, 0.3)
 	if err == nil {
-		t.Fatal("filleting edges that meet at a corner should error")
+		t.Fatal("filleting only two of the three edges at a corner should error")
 	}
 	if !strings.Contains(err.Error(), "corner") {
-		t.Errorf("error %q should mention the corner-blend limitation", err)
+		t.Errorf("error %q should mention the corner limitation", err)
 	}
 }
 
