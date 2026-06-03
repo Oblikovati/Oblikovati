@@ -31,6 +31,30 @@ func TestCombineJoinsTwoBodiesForReal(t *testing.T) {
 	}
 }
 
+func TestCombineCutOverlappingForReal(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	// Block A: 2×2×2 at the origin (vol 8). Tool B: 2×2×2 shifted to x∈[1,3]
+	// (overlap 1×2×2 = 4). A − B should leave 4.
+	NewBaseFeatures(fs).AddBase(buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "a"))
+	NewBaseFeatures(fs).AddBase(buildPrism([]math.Point2{{X: 1, Y: 0}, {X: 3, Y: 0}, {X: 3, Y: 2}, {X: 1, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "b"))
+	cut := NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
+	fs.Recompute()
+
+	if !cut.Health().OK() {
+		t.Fatalf("overlapping cut sick: %+v", cut.Health())
+	}
+	if len(fs.Result()) != 1 {
+		t.Fatalf("cut result = %d bodies, want 1", len(fs.Result()))
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("cut body not a valid solid: %+v", r)
+	}
+	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 4) > 1e-6 {
+		t.Errorf("A−B volume = %g, want 4 (8 − 4 overlap)", v)
+	}
+}
+
 func TestCombineRejectsBadIndices(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(prismBody())
