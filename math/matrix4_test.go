@@ -14,6 +14,13 @@ func TestMatrix4Identity(t *testing.T) {
 	}
 }
 
+func TestMatrix4FromCellsRoundTrip(t *testing.T) {
+	m := Rotation4(0.7, V3(0, 0, 1).AsUnit(), P3(1, 2, 3)).Mul(Translation4(V3(4, -5, 6)))
+	if got := Matrix4FromCells(m.Cells()); !got.IsEqualTo(m, 1e-12) {
+		t.Errorf("Matrix4FromCells(m.Cells()) != m:\n%v\n%v", got.Cells(), m.Cells())
+	}
+}
+
 func TestMatrix4Translation(t *testing.T) {
 	m := Translation4(V3(1, 2, 3))
 	if got := m.TransformPoint(P3(0, 0, 0)); got != (Point3{1, 2, 3}) {
