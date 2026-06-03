@@ -34,8 +34,24 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 | M17 | Interoperability & Translation | ⬜ | |
 | M18 | Analysis & Simulation | ⬜ | |
 | M20 | Feature Completion & Geometry Parity | 🟦 | Consolidated drive of every remaining Inventor `*Feature` to real geometry: kernel enablers (intersecting booleans, swept surfaces, fillet, local face ops, body transform) + sheet-metal + plastic + misc model features. |
+| M21 | Sketch2D Feature Completion (2D Parity) | 🟦 | Bring the 2D planar sketch domain to full Inventor `Sketch` parity (ex-DWG) across API + kernel/model + UI: the rich `model/sketch` is exposed through `/api` (contract/wire/client) and made fully driveable in the app. 11 features (F01 API spine → F11 profiles), PBIs 200–221. |
 
 ## PBI log (most recent first)
+
+### M21 — Sketch2D Feature Completion (2D Parity)
+
+The `model/sketch` layer (M06) is rich but almost entirely unexposed through `/api` (only
+`sketch.create` + `sketch.rectangle`) and only partially driveable in the UI. M21 closes
+that gap to full Inventor 2D-sketch parity and fills the remaining model/kernel holes
+(elliptical arc, control/fixed/offset/equation splines, slots, polygon, sketch
+fillet/chamfer, fill region, text, image; ground/offset/align/pattern constraints; new
+dimension kinds; trim/extend/split/move/rotate/copy/mirror; rectangular/circular sketch
+patterns; `ConstraintStatus`). Each PBI ships contract+impl+UI+e2e per the DoD. Pattern
+follows the `WorkPlanes` slice (discriminated `Kind`-based wire methods + typed client).
+
+| PBI | Title | Status | Go package | Notes |
+|-----|-------|:------:|------------|-------|
+| 200 | Sketch contract/wire/client spine + enumeration + router | ⬜ | `Oblikovati.API/{contract,wire,client}`, `addin/router` | F01 |
 
 ### M20 — Feature Completion & Geometry Parity
 

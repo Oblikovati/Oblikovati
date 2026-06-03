@@ -40,6 +40,7 @@ rules (units, identity, transactions, events) that apply to every milestone.
 | **M17** | [Interoperability & Translation](M17-interoperability-translation/_milestone.md) | 4 | 6 | M07 |
 | **M18** | [Analysis, Measurement & Simulation](M18-analysis-simulation/_milestone.md) | 5 | 7 | M07, M11, M16 |
 | **M20** | [Feature Completion & Geometry Parity](M20-feature-completion-geometry/_milestone.md) | 15 | 24 | M08, M09, M10 |
+| **M21** | [Sketch2D Feature Completion (2D Parity)](M21-sketch2d-feature-completion/_milestone.md) | 11 | 22 | M06, M08 |
 
 ## Dependency spine
 
