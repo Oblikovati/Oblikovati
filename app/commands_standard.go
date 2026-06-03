@@ -102,6 +102,12 @@ func solidFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("coil").WithButtonStyle(LargeIconButton).
 			WithTooltip("Coil — sweep a sketch profile along a helix to create or modify a solid."),
+		NewCommand("Create.Loft", "Loft", "Create", func(s *Session) error {
+			s.StartTool(NewLoftTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("loft").WithButtonStyle(LargeIconButton).
+			WithTooltip("Loft — blend two or more sketch sections into a solid."),
 	}
 }
 
