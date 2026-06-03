@@ -23,6 +23,14 @@ type Surface interface {
 	// directions (around an axis) return [0, 2π], unbounded ones return ±Inf.
 	UDomain() (lo, hi float64)
 	VDomain() (lo, hi float64)
+	// ParamAt inverts PointAt: for a point on the surface it reproduces PointAt's
+	// parameters (angular ones wrapped to [0, 2π)) — exactly for the analytic
+	// surfaces, numerically for NURBS. This on-surface inverse is what trimmed-face
+	// tessellation needs (loop vertices lie on the face's surface). Off-surface, it
+	// returns the frame projection along the parameter directions, which equals the
+	// metric nearest point for the plane, cylinder and sphere but not exactly for the
+	// cone or torus (where it is still a stable, continuous projection).
+	ParamAt(p math.Point3) (u, v float64)
 }
 
 // normalFromPartials returns the unit normal du×dv, or zero when the partials
