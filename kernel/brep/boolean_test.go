@@ -70,6 +70,41 @@ func TestBRepIntersection(t *testing.T) {
 	checkSolid(t, "intersection", res, 2.25)
 }
 
+// TestBRepCoplanarUnion fuses two boxes flush along x=2: the shared internal wall (the
+// anti-shared coplanar overlap) must vanish, leaving one 4×2×2 = 16 solid.
+func TestBRepCoplanarUnion(t *testing.T) {
+	a, b := box(0, 0, 0, 2, 2, 2), box(2, 0, 0, 2, 2, 2)
+	res, err := brep.Boolean(brep.Union, a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkSolid(t, "coplanar union", res, 16)
+}
+
+// TestBRepCoplanarDifferencePocket cuts a tool whose top is flush with A's top (a same-
+// normal coplanar overlap) — an open-top square pocket. A's top becomes a frame; the pocket
+// region of A's top drops. 8 − 1×1×1 = 7.
+func TestBRepCoplanarDifferencePocket(t *testing.T) {
+	a := box(0, 0, 0, 2, 2, 2)
+	tool := box(0.5, 0.5, 1, 1, 1, 1) // z∈[1,2]; top z=2 coincides with A's top
+	res, err := brep.Boolean(brep.Difference, a, tool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkSolid(t, "coplanar pocket", res, 7)
+}
+
+// TestBRepCoplanarIntersection intersects boxes sharing all four y/z faces (both span
+// [0,2]²) and overlapping x∈[1,2]: the coplanar shared faces must be kept once. 1×2×2 = 4.
+func TestBRepCoplanarIntersection(t *testing.T) {
+	a, b := box(0, 0, 0, 2, 2, 2), box(1, 0, 0, 2, 2, 2)
+	res, err := brep.Boolean(brep.Intersection, a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkSolid(t, "coplanar intersection", res, 4)
+}
+
 // TestBRepChainedDifference is the headline: a boolean's OUTPUT fed back as a boolean
 // input — the exact case the triangle-soup CSG got wrong (returned 0.25). A=[0,2]³ minus
 // two disjoint tools, each removing 0.5×1×1 = 0.5 ⇒ 8 − 0.5 − 0.5 = 7.

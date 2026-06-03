@@ -45,8 +45,8 @@ func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 	}
 	impA, impB := imprintAll(fa, fb)
 	var kept []subFace
-	kept = append(kept, selectFaces(fa, impA, b, op, false)...)
-	kept = append(kept, selectFaces(fb, impB, a, op, true)...)
+	kept = append(kept, selectFaces(fa, impA, b, fb, op, false)...)
+	kept = append(kept, selectFaces(fb, impB, a, fa, op, true)...)
 	return stitch(kept)
 }
 
@@ -57,6 +57,11 @@ func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
 	impB = make([][][2]math.Point3, len(fb))
 	for i := range fa {
 		for j := range fb {
+			if coplanar(fa[i], fb[j]) {
+				impA[i] = append(impA[i], faceEdges3D(fb[j])...)
+				impB[j] = append(impB[j], faceEdges3D(fa[i])...)
+				continue
+			}
 			segs := imprint(fa[i], fb[j])
 			impA[i] = append(impA[i], segs...)
 			impB[j] = append(impB[j], segs...)
@@ -110,23 +115,36 @@ func minf(a, b float64) float64 {
 	return b
 }
 
-// selectFaces splits each face by its imprints, classifies every material sub-face
-// against `other`, and keeps the ones this operation wants. When the faces belong to B
-// (isB), a Difference reverses them (they become the cut walls).
-func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Body, op Op, isB bool) []subFace {
+// selectFaces splits each face by its imprints and keeps the material sub-faces this
+// operation wants, classifying each via [classifySubFace]. `others` is the other solid's
+// face list (for the coplanar overlap test); `other` is the body itself (for the ray cast).
+func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Body, others []planarFace, op Op, isB bool) []subFace {
 	var kept []subFace
 	for i, f := range faces {
 		for _, sf := range splitFace(f, imprints[i]) {
-			if !keep(op, isB, insideSolid(other, sf.point)) {
-				continue
+			if out, ok := classifySubFace(sf, f, other, others, op, isB); ok {
+				kept = append(kept, out)
 			}
-			if op == Difference && isB {
-				sf = reverseSubFace(sf)
-			}
-			kept = append(kept, sf)
 		}
 	}
 	return kept
+}
+
+// classifySubFace decides whether a sub-face survives. A fragment coplanar with a face of
+// the other solid follows the ON/ON table ([coplanarKeep]); otherwise it is kept by the
+// inside/outside table ([keep]) from a ray cast, with B's difference faces reversed to form
+// the cut walls.
+func classifySubFace(sf subFace, f planarFace, other *topo.Body, others []planarFace, op Op, isB bool) (subFace, bool) {
+	if covered, sameNormal := coplanarCover(f, sf.point, others); covered {
+		return sf, coplanarKeep(op, isB, sameNormal)
+	}
+	if !keep(op, isB, insideSolid(other, sf.point)) {
+		return sf, false
+	}
+	if op == Difference && isB {
+		sf = reverseSubFace(sf)
+	}
+	return sf, true
 }
 
 // keep encodes the boolean selection table: which sub-faces (by side and inside/outside
