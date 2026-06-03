@@ -21,7 +21,12 @@ struct HeadContext {
     VkQueue                  queue = VK_NULL_HANDLE;
     VkDescriptorPool         descriptorPool = VK_NULL_HANDLE;
     ImGui_ImplVulkanH_Window window_data;
-    uint32_t                 minImageCount = 2;
+    // Triple buffering: with FIFO present, 2 images locks rendering to an integer
+    // fraction of the vsync rate and stutters when a frame runs long; 3 lets a finished
+    // frame queue while the next renders. (Vulkan best-practices
+    // vkCreateSwapchainKHR-suboptimal-swapchain-image-count.) Clamped to surface caps by
+    // ImGui_ImplVulkanH_CreateOrResizeWindow.
+    uint32_t                 minImageCount = 3;
     bool                     swapChainRebuild = false;
     Viewport*                viewport = nullptr; // 3D scene render target (lazy)
     IconTextures*            icons = nullptr;    // ribbon-icon texture cache (lazy)
