@@ -60,9 +60,8 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodThemeList] = themeList
 }
 
-// registerSketchHandlers wires the 2D-sketch methods: creation (create/rectangle),
-// the F01 spine (list/get/edit/exitEdit/solve/delete), and enumeration
-// (entities/constraints/dimensions).
+// registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and
+// the authoring (entity/constraint/dimension/edit/pattern) methods in the companion.
 func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchCreate] = createSketch
 	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
@@ -75,15 +74,22 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchEntities] = enumerateEntities
 	r.handlers[wire.MethodSketchConstraints] = enumerateConstraints
 	r.handlers[wire.MethodSketchDimensions] = enumerateDimensions
+	r.handlers[wire.MethodSketchConstraintStatus] = constraintStatus
+	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
+	r.registerSketchAuthoringHandlers()
+}
+
+// registerSketchAuthoringHandlers wires the sketch mutation methods: property edits,
+// entity/constraint/dimension creation, and the edit/pattern operations.
+func (r *Router) registerSketchAuthoringHandlers() {
 	r.handlers[wire.MethodSketchSetProperty] = setSketchProperty
 	r.handlers[wire.MethodSketchAddEntity] = addSketchEntity
 	r.handlers[wire.MethodSketchAddConstraint] = addConstraint
 	r.handlers[wire.MethodSketchDeleteConstraint] = deleteConstraint
 	r.handlers[wire.MethodSketchAddDimension] = addDimension
 	r.handlers[wire.MethodSketchDriveDimension] = driveDimension
-	r.handlers[wire.MethodSketchConstraintStatus] = constraintStatus
-	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
 	r.handlers[wire.MethodSketchTransform] = transformSketch
+	r.handlers[wire.MethodSketchAddPattern] = addSketchPattern
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface

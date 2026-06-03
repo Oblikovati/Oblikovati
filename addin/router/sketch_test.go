@@ -612,6 +612,52 @@ func TestSketchTransformErrors(t *testing.T) {
 	}
 }
 
+// TestSketchPatternsViaAPI builds rectangular and circular patterns of a circle.
+func TestSketchPatternsViaAPI(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var seed wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"5 mm"}`, &seed)
+
+	var rect wire.AddSketchPatternResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"rectangular","entities":[%d],"count1":3,"count2":2,"spacing1":"20 mm","spacing2":"20 mm"}`, seed.EntityID)
+	call(t, r, s, "sketch.addPattern", args, &rect)
+	if len(rect.Created) != 5 { // 3×2 − seed
+		t.Fatalf("rectangular created = %d, want 5", len(rect.Created))
+	}
+
+	// Fresh sketch for the circular pattern.
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"circle","points":[[2,0]],"radius":"5 mm"}`, &seed)
+	var circ wire.AddSketchPatternResult
+	args = fmt.Sprintf(`{"sketchIndex":1,"kind":"circular","entities":[%d],"count":6,"angle":"360 deg","center":[0,0]}`, seed.EntityID)
+	call(t, r, s, "sketch.addPattern", args, &circ)
+	if len(circ.Created) != 5 { // 6 − seed
+		t.Fatalf("circular created = %d, want 5", len(circ.Created))
+	}
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":1}`, &ents)
+	if countKind(ents.Entities, "circle") != 6 {
+		t.Fatalf("circles after circular pattern = %d, want 6", countKind(ents.Entities, "circle"))
+	}
+}
+
+func TestSketchAddPatternErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"5 mm"}`, &wire.AddSketchEntityResult{})
+	for _, bad := range []string{
+		`{"sketchIndex":0,"kind":"bogus","entities":[1]}`,                                                                 // unknown kind
+		`{"sketchIndex":0,"kind":"rectangular","entities":[1],"count1":0,"count2":1,"spacing1":"1 cm","spacing2":"1 cm"}`, // bad count
+		`{"sketchIndex":0,"kind":"circular","entities":[1],"count":1,"angle":"360 deg","center":[0,0]}`,                   // count < 2
+	} {
+		if _, err := r.Handle(s, "sketch.addPattern", []byte(bad)); err == nil {
+			t.Errorf("expected error for %s", bad)
+		}
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {
