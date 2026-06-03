@@ -2,7 +2,7 @@
 milestone: M21
 feature: F08
 name: Constraint Status & DOF
-status: planned
+status: done
 ---
 
 # M21 · F08 — Constraint Status & DOF

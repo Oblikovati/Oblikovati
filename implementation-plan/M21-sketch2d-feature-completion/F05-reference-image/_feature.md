@@ -2,7 +2,7 @@
 milestone: M21
 feature: F05
 name: Reference & Image Entities
-status: planned
+status: done
 ---
 
 # M21 · F05 — Reference & Image Entities

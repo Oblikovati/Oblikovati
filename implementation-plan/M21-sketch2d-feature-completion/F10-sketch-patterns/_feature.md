@@ -2,7 +2,7 @@
 milestone: M21
 feature: F10
 name: Sketch Patterns
-status: planned
+status: done
 ---
 
 # M21 · F10 — Sketch Patterns

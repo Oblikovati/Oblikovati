@@ -2,7 +2,7 @@
 milestone: M21
 feature: F03
 name: Conics & Splines
-status: planned
+status: done
 ---
 
 # M21 · F03 — Conics & Splines

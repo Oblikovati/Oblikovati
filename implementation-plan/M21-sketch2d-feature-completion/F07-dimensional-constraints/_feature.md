@@ -2,7 +2,7 @@
 milestone: M21
 feature: F07
 name: Dimensional Constraints
-status: planned
+status: done
 ---
 
 # M21 · F07 — Dimensional Constraints

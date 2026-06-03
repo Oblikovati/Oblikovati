@@ -2,7 +2,7 @@
 milestone: M21
 feature: F09
 name: Editing Operations
-status: planned
+status: done
 ---
 
 # M21 · F09 — Editing Operations

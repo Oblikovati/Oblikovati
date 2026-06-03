@@ -2,7 +2,7 @@
 milestone: M21
 feature: F11
 name: Profiles & Regions API
-status: planned
+status: done
 ---
 
 # M21 · F11 — Profiles & Regions API

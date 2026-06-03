@@ -2,7 +2,7 @@
 milestone: M21
 feature: F04
 name: Composite & Parametric Entities
-status: planned
+status: done
 ---
 
 # M21 · F04 — Composite & Parametric Entities

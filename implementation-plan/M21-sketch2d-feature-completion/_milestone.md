@@ -1,7 +1,7 @@
 ---
 milestone: M21
 name: Sketch2D Feature Completion (2D Parity)
-status: planned
+status: in-progress
 ---
 
 # M21 — Sketch2D Feature Completion (2D Parity)

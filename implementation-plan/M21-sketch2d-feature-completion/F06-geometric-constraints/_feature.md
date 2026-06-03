@@ -2,7 +2,7 @@
 milestone: M21
 feature: F06
 name: Geometric Constraints
-status: planned
+status: done
 ---
 
 # M21 · F06 — Geometric Constraints

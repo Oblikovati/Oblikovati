@@ -2,7 +2,7 @@
 milestone: M21
 feature: F02
 name: Curve & Point Entities
-status: planned
+status: done
 ---
 
 # M21 · F02 — Curve & Point Entities
