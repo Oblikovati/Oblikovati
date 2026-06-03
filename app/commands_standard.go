@@ -91,6 +91,12 @@ func modifyFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("H").WithEnable(notInSketch).
 			WithIcon("hole").WithButtonStyle(LargeIconButton).
 			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
+		NewCommand("Modify.Chamfer", "Chamfer", "Modify", func(s *Session) error {
+			s.StartTool(NewChamferTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("chamfer").WithButtonStyle(LargeIconButton).
+			WithTooltip("Chamfer — bevel selected edges by a setback distance."),
 	}
 }
 

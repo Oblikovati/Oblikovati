@@ -5,11 +5,45 @@ package feature
 import (
 	"testing"
 
+	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/health"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
+
+// TestChamferBevelsEdgeForReal drills a real 45° chamfer on a box edge and checks the
+// removed volume (a right-triangle prism of legs d along the full edge).
+func TestChamferBevelsEdgeForReal(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var edge []byte
+	for _, e := range box.Edges() {
+		a, b := e.StartVertex().Point(), e.EndVertex().Point()
+		if a.X == b.X && a.Y == b.Y { // a vertical edge
+			edge = e.ReferenceKey()
+			break
+		}
+	}
+	if edge == nil {
+		t.Fatal("no vertical edge found on the box")
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	ch := NewDressUpFeatures(fs).AddChamfer([][]byte{edge}, func() float64 { return 0.5 })
+	fs.Recompute()
+
+	if !ch.Health().OK() {
+		t.Fatalf("chamfer sick: %+v", ch.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("chamfered body not a valid solid: %+v", r)
+	}
+	want := 8 - 0.5*0.5*0.5*2 // box 8 − wedge (½·d²·length, d=0.5, length=2) = 7.75
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, want) > 1e-6 {
+		t.Errorf("chamfer volume = %g, want %g", got, want)
+	}
+}
 
 // prismBody builds a unit-square prism via the extrude generator (for real edges).
 func prismBody() *topo.Body {
@@ -53,19 +87,17 @@ func TestDressUpWithNoBodyIsSick(t *testing.T) {
 	}
 }
 
-func TestChamferShellDraftThreadResolveInputs(t *testing.T) {
+func TestShellDraftThreadResolveInputs(t *testing.T) {
 	body := prismBody()
-	edge := body.Edges()[0].ReferenceKey()
 	face := body.Faces()[0].ReferenceKey()
 
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	du := NewDressUpFeatures(fs)
 	feats := map[string]*PartFeature{
-		"chamfer": du.AddChamfer([][]byte{edge}, func() float64 { return 0.1 }),
-		"shell":   du.AddShell([][]byte{face}, func() float64 { return 0.2 }),
-		"draft":   du.AddDraft([][]byte{face}, func() float64 { return 0.05 }),
-		"thread":  du.AddThread(face, "M6x1"),
+		"shell":  du.AddShell([][]byte{face}, func() float64 { return 0.2 }),
+		"draft":  du.AddDraft([][]byte{face}, func() float64 { return 0.05 }),
+		"thread": du.AddThread(face, "M6x1"),
 	}
 	fs.Recompute()
 	for name, pf := range feats {

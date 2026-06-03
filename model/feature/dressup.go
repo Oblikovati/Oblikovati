@@ -46,12 +46,18 @@ type ChamferDefinition struct {
 }
 
 // ChamferFeature is an equal-distance edge chamfer.
-type ChamferFeature struct{ def *ChamferDefinition }
+type ChamferFeature struct {
+	def      *ChamferDefinition
+	featName string
+}
 
 func (c *ChamferFeature) Definition() *ChamferDefinition { return c.def }
 func (c *ChamferFeature) Kind() string                   { return "chamfer" }
+
+// Recompute bevels each selected (convex) edge by cutting a wedge tool along it via the
+// boolean. See chamfer.go.
 func (c *ChamferFeature) Recompute(in Input) (Output, error) {
-	return resolveEdgesThenDefer(in, c.def.EdgeKeys, "chamfer")
+	return chamferEdges(in, c.def.EdgeKeys, callOrZero(c.def.Distance), featOr(c.featName, "chamfer"))
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.
@@ -150,7 +156,11 @@ func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *P
 
 // AddChamfer bevels the given edges by distance.
 func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64) *PartFeature {
-	return c.engine.Add(&ChamferFeature{def: &ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance}})
+	cf := &ChamferFeature{def: &ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance}}
+	pf := c.engine.Add(cf)
+	pf.SetName(c.engine.UniqueName("Chamfer"))
+	cf.featName = pf.name
+	return pf
 }
 
 // AddShell hollows the body, removing the given faces, to thickness.
