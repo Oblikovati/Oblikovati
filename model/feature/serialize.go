@@ -115,25 +115,34 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		if err != nil {
 			return FeatureData{}, err
 		}
-		fd.RectPattern = &RectPatternData{Source: src, CountX: evalInt(f.def.CountX), CountY: evalInt(f.def.CountY)}
+		fd.RectPattern = &RectPatternData{
+			Source: src, CountX: evalInt(f.def.CountX), CountY: evalInt(f.def.CountY),
+			StepX: encodeVec3(f.def.StepX), StepY: encodeVec3(f.def.StepY),
+		}
 	case *CircularPatternFeature:
 		src, err := sourceIndices(f.def.SourceFeatures, idx)
 		if err != nil {
 			return FeatureData{}, err
 		}
-		fd.CircPattern = &CircPatternData{Source: src, Count: evalInt(f.def.Count), Angle: evalFloat(f.def.Angle)}
+		fd.CircPattern = &CircPatternData{
+			Source: src, Count: evalInt(f.def.Count), Angle: evalFloat(f.def.Angle),
+			AxisPoint: encodePoint3(f.def.AxisPoint), AxisDir: encodeVec3(f.def.AxisDir),
+		}
 	case *SketchDrivenPatternFeature:
 		src, err := sourceIndices(f.def.SourceFeatures, idx)
 		if err != nil {
 			return FeatureData{}, err
 		}
-		fd.SketchPattern = &SketchDrivenPatternData{Source: src, PointCount: evalInt(f.def.PointCount)}
+		fd.SketchPattern = &SketchDrivenPatternData{Source: src, Points: encodePoints(callPoints(f.def.Points))}
 	case *MirrorFeature:
 		src, err := sourceIndices(f.def.SourceFeatures, idx)
 		if err != nil {
 			return FeatureData{}, err
 		}
-		fd.Mirror = &MirrorData{Source: src, Plane: encodeKey(f.def.MirrorPlaneKey)}
+		fd.Mirror = &MirrorData{
+			Source: src, Plane: encodeKey(f.def.MirrorPlaneKey),
+			Origin: encodePoint3(f.def.Origin), Normal: encodeVec3(f.def.Normal),
+		}
 	case *BoundaryPatchFeature:
 		bp, err := serializeBoundaryPatch(f.def, sk)
 		if err != nil {

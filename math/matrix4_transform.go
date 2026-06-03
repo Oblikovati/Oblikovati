@@ -54,6 +54,21 @@ func CoordinateSystem4(origin Point3, xAxis, yAxis, zAxis Vector3) Matrix4 {
 	}}
 }
 
+// Reflection4 returns the mirror transform across the plane through origin with
+// the given unit normal: reflect(p) = p − 2((p−origin)·n)n. Its determinant is −1
+// (orientation-reversing), which a body-transform op uses to flip face winding so
+// normals stay outward. Used by MirrorFeature and the mirror pattern.
+func Reflection4(origin Point3, normal UnitVector3) Matrix4 {
+	n := normal.AsVector()
+	d := 2 * origin.AsVector().Dot(n) // translation component = 2(o·n)n
+	return Matrix4{[16]Scalar{
+		1 - 2*n.X*n.X, -2 * n.X * n.Y, -2 * n.X * n.Z, d * n.X,
+		-2 * n.Y * n.X, 1 - 2*n.Y*n.Y, -2 * n.Y * n.Z, d * n.Y,
+		-2 * n.Z * n.X, -2 * n.Z * n.Y, 1 - 2*n.Z*n.Z, d * n.Z,
+		0, 0, 0, 1,
+	}}
+}
+
 // RotateBetween returns the shortest-arc rotation that aligns direction from
 // with direction to (both about the origin). When the two are antiparallel it
 // rotates π about an arbitrary perpendicular axis, since the axis is otherwise

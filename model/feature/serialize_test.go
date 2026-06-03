@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
@@ -127,8 +128,8 @@ func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 	sk := sketch.NewSketches().Add(sketch.XYPlane())
 	fs := NewPartFeatures(nil, nil)
 	src := NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
-	NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return 3 }, func() int { return 2 })
-	NewPatternFeatures(fs).AddMirror([]ID{src.ID()}, []byte("plane-key"))
+	NewPatternFeatures(fs).AddRectangular([]ID{src.ID()}, func() int { return 3 }, func() int { return 2 }, math.V3(2, 0, 0), math.V3(0, 2, 0))
+	NewPatternFeatures(fs).AddMirror([]ID{src.ID()}, []byte("plane-key"), math.P3(0, 0, 0), math.V3(1, 0, 0))
 
 	data, err := fs.MarshalRecipe(oneSketch{sk})
 	if err != nil {
@@ -150,6 +151,9 @@ func TestPatternFeaturesRebindSourceByIndex(t *testing.T) {
 	}
 	if rect.CountX() != 3 || rect.CountY() != 2 {
 		t.Errorf("rect counts = %dx%d, want 3x2", rect.CountX(), rect.CountY())
+	}
+	if rect.StepX != math.V3(2, 0, 0) || rect.StepY != math.V3(0, 2, 0) {
+		t.Errorf("rect steps = %v / %v, want (2,0,0) / (0,2,0)", rect.StepX, rect.StepY)
 	}
 	mirror := fresh.Item(2).Definition().(*MirrorFeature).Definition()
 	if len(mirror.SourceFeatures) != 1 || mirror.SourceFeatures[0] != wantSource {
