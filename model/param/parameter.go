@@ -59,6 +59,9 @@ type Parameter struct {
 	kind   ParameterKind
 	health Health
 
+	exprList    []string // multi-value choices (empty ⇒ single-valued); see expression_list.go
+	allowCustom bool     // a value outside exprList is accepted (the one custom value)
+
 	Comment           string
 	IsKey             bool
 	Visible           bool
