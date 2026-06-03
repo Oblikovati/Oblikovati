@@ -38,6 +38,39 @@ func wrapPositive(delta float64) float64 {
 	return d
 }
 
+// wrap2pi maps any angle into the half-open range [0, 2π) — the canonical form
+// for an inverted angular parameter (see ParamAt).
+func wrap2pi(a float64) float64 {
+	d := stdmath.Mod(a, twoPi)
+	if d < 0 {
+		d += twoPi
+	}
+	return d
+}
+
+// clampUnit constrains x to [−1, 1] so it is a valid argument to asin/acos after
+// the rounding of a normalized-direction component.
+func clampUnit(x float64) float64 {
+	if x > 1 {
+		return 1
+	}
+	if x < -1 {
+		return -1
+	}
+	return x
+}
+
+// clampTo constrains x to [lo, hi].
+func clampTo(x, lo, hi float64) float64 {
+	if x < lo {
+		return lo
+	}
+	if x > hi {
+		return hi
+	}
+	return x
+}
+
 // signedArea2 returns twice the signed area of triangle (a, b, c). Positive
 // means the three points wind counter-clockwise.
 func signedArea2(a, b, c math.Point2) float64 {
