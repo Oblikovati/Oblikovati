@@ -2,7 +2,7 @@
 milestone: M21
 feature: F01
 name: API Spine & Properties
-status: planned
+status: done
 ---
 
 # M21 · F01 — API Spine & Properties
