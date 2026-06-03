@@ -78,7 +78,7 @@ func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
 // outer boundary (watertight); curved faces are sampled on an adaptive UV grid.
 func TessellateFace(f *topo.Face, q Quality) *Mesh {
 	if _, planar := f.Geometry().(geom.Plane); planar {
-		return tessellatePlanarFace(f)
+		return tessellatePlanarFace(f, q)
 	}
 	return tessellateCurvedFace(f, q)
 }
