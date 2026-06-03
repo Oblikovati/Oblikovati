@@ -54,6 +54,7 @@ type Parameter struct {
 	name   string
 	expr   Expr
 	value  Quantity
+	text   string // the value when this is a Text parameter (Unit == Text)
 	tol    Tolerance
 	kind   ParameterKind
 	health Health
@@ -77,6 +78,19 @@ func (p *Parameter) Kind() ParameterKind { return p.kind }
 
 // Unit returns the unit of the evaluated value.
 func (p *Parameter) Unit() Unit { return p.value.Unit }
+
+// IsText / IsBoolean / IsNumeric report the parameter's value flavor. Only numeric
+// parameters support expressions and tolerances (Inventor: "Only numeric parameters
+// support expressions"); text and true/false parameters carry a literal value.
+func (p *Parameter) IsText() bool    { return p.value.Unit == Text }
+func (p *Parameter) IsBoolean() bool { return p.value.Unit == Boolean }
+func (p *Parameter) IsNumeric() bool { return !p.IsText() && !p.IsBoolean() }
+
+// Text returns the literal of a text parameter ("" for non-text parameters).
+func (p *Parameter) Text() string { return p.text }
+
+// Bool returns the value of a true/false parameter (false for non-boolean parameters).
+func (p *Parameter) Bool() bool { return p.IsBoolean() && p.value.Value != 0 }
 
 // Value returns the evaluated quantity (database units).
 func (p *Parameter) Value() Quantity { return p.value }
@@ -105,6 +119,9 @@ func (p *Parameter) SetExpression(src string) error {
 	if !p.kind.Editable() {
 		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
 	}
+	if !p.IsNumeric() {
+		return fmt.Errorf("param: %q is a %s parameter; only numeric parameters take expressions", p.name, p.value.Unit)
+	}
 	e, err := Parse(src)
 	if err != nil {
 		return err
@@ -120,11 +137,57 @@ func (p *Parameter) SetValue(q Quantity) error {
 	if !p.kind.Editable() {
 		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
 	}
+	if !p.IsNumeric() {
+		return fmt.Errorf("param: %q is a %s parameter; use SetText/SetBool", p.name, p.value.Unit)
+	}
 	p.expr = constantExpr(q)
 	p.value = q
 	p.health = Health{Status: Healthy}
 	return nil
 }
+
+// SetText sets the literal of a text parameter. It errors for read-only kinds and for
+// non-text parameters. The stored expression is the value quoted (Inventor surfaces a
+// text parameter's equation as a quoted string).
+func (p *Parameter) SetText(s string) error {
+	if !p.kind.Editable() {
+		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+	}
+	if !p.IsText() {
+		return fmt.Errorf("param: %q is not a text parameter (unit %s)", p.name, p.value.Unit)
+	}
+	p.text = s
+	p.expr = literalExpr(strconv.Quote(s))
+	p.health = Health{Status: Healthy}
+	return nil
+}
+
+// SetBool sets the value of a true/false parameter. It errors for read-only kinds and for
+// non-boolean parameters. Booleans are stored as 0/1 in the value quantity.
+func (p *Parameter) SetBool(b bool) error {
+	if !p.kind.Editable() {
+		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+	}
+	if !p.IsBoolean() {
+		return fmt.Errorf("param: %q is not a true/false parameter (unit %s)", p.name, p.value.Unit)
+	}
+	p.value = Q(boolValue(b), Boolean)
+	p.expr = literalExpr(strconv.FormatBool(b))
+	p.health = Health{Status: Healthy}
+	return nil
+}
+
+// boolValue maps a bool to its 0/1 stored representation.
+func boolValue(b bool) float64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// literalExpr wraps a fixed source string as an [Expr] for non-numeric parameters: its
+// Source is the text the UI shows, and it is never evaluated through the graph.
+func literalExpr(src string) Expr { return Expr{src: src} }
 
 // reevaluateConstant evaluates a reference-free expression immediately; an
 // expression with references is marked OutOfDate for the dependency graph.

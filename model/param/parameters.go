@@ -77,6 +77,37 @@ func (ps *Parameters) AddModelParameter(name, expression string) (*Parameter, er
 	return ps.addEditable(name, expression, ModelParam)
 }
 
+// AddTextUserParameter adds an editable user parameter holding a text literal. Text
+// parameters carry no expression and take no part in the dependency graph.
+func (ps *Parameters) AddTextUserParameter(name, value string) (*Parameter, error) {
+	p, err := ps.add(name, UserParam)
+	if err != nil {
+		return nil, err
+	}
+	p.value = Q(0, Text)
+	if err := p.SetText(value); err != nil {
+		ps.remove(p)
+		return nil, err
+	}
+	ps.onParameterAdded(p)
+	return p, nil
+}
+
+// AddBooleanUserParameter adds an editable user parameter holding a true/false value.
+func (ps *Parameters) AddBooleanUserParameter(name string, value bool) (*Parameter, error) {
+	p, err := ps.add(name, UserParam)
+	if err != nil {
+		return nil, err
+	}
+	p.value = Q(0, Boolean)
+	if err := p.SetBool(value); err != nil {
+		ps.remove(p)
+		return nil, err
+	}
+	ps.onParameterAdded(p)
+	return p, nil
+}
+
 // AddTableParameter adds an editable table parameter (iPart member value).
 func (ps *Parameters) AddTableParameter(name, expression string) (*Parameter, error) {
 	return ps.addEditable(name, expression, TableParam)
