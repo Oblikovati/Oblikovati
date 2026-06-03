@@ -8,3 +8,6 @@ import "github.com/Oblikovati/api/contract"
 // (api/contract.Sketch). The richer entity/constraint access travels as wire DTOs via
 // addin/router, not through this interface (ADR-0018, M21-F01).
 var _ contract.Sketch = (*Sketch)(nil)
+
+// A realized sketch Profile satisfies the public Profile contract (area + closed state).
+var _ contract.Profile = (*Profile)(nil)

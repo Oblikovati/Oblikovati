@@ -543,6 +543,30 @@ func TestSketchConstraintStatusReportsDOF(t *testing.T) {
 	}
 }
 
+// TestSketchProfilesEnumerated builds a rectangle with a rectangular hole and checks the
+// profiles API reports the annulus region with the right area.
+func TestSketchProfilesEnumerated(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[10,10]]}`, &wire.AddSketchEntityResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[2,2],[8,8]]}`, &wire.AddSketchEntityResult{})
+
+	var prof wire.ListProfilesResult
+	call(t, r, s, "sketch.profiles", `{"sketchIndex":0}`, &prof)
+	var annulus *wire.ProfileInfo
+	for i := range prof.Profiles {
+		if prof.Profiles[i].Holes == 1 {
+			annulus = &prof.Profiles[i]
+		}
+	}
+	if annulus == nil {
+		t.Fatalf("no profile with a hole among %+v", prof.Profiles)
+	}
+	if math.Abs(annulus.Area-64) > 1e-9 || !annulus.Closed { // 100 − 36
+		t.Fatalf("annulus = %+v, want area 64 / closed", *annulus)
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {
