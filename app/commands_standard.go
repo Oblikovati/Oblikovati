@@ -28,9 +28,30 @@ func standardCommands() []*CommandDefinition {
 	var cmds []*CommandDefinition
 	cmds = append(cmds, modelTabCommands()...)
 	cmds = append(cmds, workFeatureCommands()...)
+	cmds = append(cmds, manageTabCommands()...)
 	cmds = append(cmds, sketchTabCommands()...)
 	cmds = append(cmds, viewTabCommands()...)
 	return cmds
+}
+
+// manageTabCommands are the Manage tab's Parameters panel: open the Parameters dialog
+// (Inventor's Manage ▸ Parameters). Enabled whenever a part is active.
+func manageTabCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Manage.Parameters", "Parameters", "Parameters", func(s *Session) error {
+			s.OpenParameters()
+			return nil
+		}).WithTab("Manage").WithEnable(hasActivePart).
+			WithIcon("parameters").WithButtonStyle(LargeIconButton).
+			WithTooltip("Parameters — add, edit, and organize the model and user parameters that drive the part."),
+	}
+}
+
+// hasActivePart reports whether the active document is a part (the Parameters dialog
+// needs one to read and edit).
+func hasActivePart(s *Session) bool {
+	_, err := activePart(s)
+	return err == nil
 }
 
 // workFeatureCommands are the 3D Model tab's Work Features panel: the datum-plane

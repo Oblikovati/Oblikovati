@@ -44,6 +44,7 @@ type Session struct {
 	notice             string               // last user-facing notice (e.g. a failed-commit reason)
 	visualStyle        renderer.VisualStyle // how the scene is drawn (View tab's Visual Style)
 	chamferFlatCorners bool                 // default three-edge-corner treatment for new chamfers
+	paramsDialogOpen   bool                 // the Manage ▸ Parameters dialog is open
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
