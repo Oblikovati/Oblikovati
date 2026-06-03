@@ -136,15 +136,30 @@ func reverse(idx []int) {
 }
 
 // planeProjector returns a 2D projection that drops the normal's dominant axis,
-// preserving in-plane geometry for triangulation.
+// preserving in-plane geometry for triangulation. The two retained axes are ordered so
+// their cross product equals the normal's sign — i.e. a counter-clockwise loop in the
+// projection corresponds to the face's outward normal. This keeps the triangulation
+// wound consistently outward (every emitted triangle's geometric normal matches the
+// face normal), which the renderer ignores (it uses per-vertex normals) but boolean CSG
+// and divergence-theorem volume depend on. Without the sign-aware axis order, faces with
+// a negative-axis normal come out inward and the triangle soup is not a coherent solid.
 func planeProjector(n math.Vector3) func(math.Point3) math.Point2 {
 	ax, ay, az := stdmath.Abs(n.X), stdmath.Abs(n.Y), stdmath.Abs(n.Z)
 	switch {
-	case ax >= ay && ax >= az:
-		return func(p math.Point3) math.Point2 { return math.P2(p.Y, p.Z) }
-	case ay >= ax && ay >= az:
-		return func(p math.Point3) math.Point2 { return math.P2(p.Z, p.X) }
-	default:
-		return func(p math.Point3) math.Point2 { return math.P2(p.X, p.Y) }
+	case ax >= ay && ax >= az: // drop X: (Y,Z) for +X, (Z,Y) for −X
+		if n.X >= 0 {
+			return func(p math.Point3) math.Point2 { return math.P2(p.Y, p.Z) }
+		}
+		return func(p math.Point3) math.Point2 { return math.P2(p.Z, p.Y) }
+	case ay >= ax && ay >= az: // drop Y: (Z,X) for +Y, (X,Z) for −Y
+		if n.Y >= 0 {
+			return func(p math.Point3) math.Point2 { return math.P2(p.Z, p.X) }
+		}
+		return func(p math.Point3) math.Point2 { return math.P2(p.X, p.Z) }
+	default: // drop Z: (X,Y) for +Z, (Y,X) for −Z
+		if n.Z >= 0 {
+			return func(p math.Point3) math.Point2 { return math.P2(p.X, p.Y) }
+		}
+		return func(p math.Point3) math.Point2 { return math.P2(p.Y, p.X) }
 	}
 }
