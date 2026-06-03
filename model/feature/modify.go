@@ -78,14 +78,22 @@ func (f *faceEditFeature) Recompute(in Input) (Output, error) {
 // the recipe serialize every face-edit feature uniformly (they share this shape).
 func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
 
-// SplitFeature, DeleteFaceFeature, ReplaceFaceFeature and ThickenFeature are the direct
-// edits whose geometry still defers (phase C).
+// SplitFeature, ReplaceFaceFeature and ThickenFeature are the direct edits whose geometry
+// still defers (phase C).
 type (
 	SplitFeature       struct{ faceEditFeature }
-	DeleteFaceFeature  struct{ faceEditFeature }
 	ReplaceFaceFeature struct{ faceEditFeature }
 	ThickenFeature     struct{ faceEditFeature }
 )
+
+// DeleteFaceFeature removes the picked faces and heals the openings (extends neighbours).
+type DeleteFaceFeature struct{ faceEditFeature }
+
+// Recompute deletes the picked faces from the running body and heals it (see
+// kernel/ops/delete_face.go); a non-healable selection makes the feature go Sick.
+func (f *DeleteFaceFeature) Recompute(in Input) (Output, error) {
+	return retopoFacesBody(in, f.faceKeys, f.kind, ops.DeleteFaces)
+}
 
 // MoveFaceFeature translates the picked faces by a vector, retrimming the neighbours.
 type MoveFaceFeature struct {
