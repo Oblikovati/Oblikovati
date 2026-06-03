@@ -125,8 +125,8 @@ func TestShellDraftThreadResolveInputs(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	du := NewDressUpFeatures(fs)
+	// Draft and thread still defer their geometry (Warning); shell is real (see its own test).
 	feats := map[string]*PartFeature{
-		"shell":  du.AddShell([][]byte{face}, func() float64 { return 0.2 }),
 		"draft":  du.AddDraft([][]byte{face}, func() float64 { return 0.05 }),
 		"thread": du.AddThread(face, "M6x1"),
 	}
@@ -145,6 +145,32 @@ func TestShellDraftThreadResolveInputs(t *testing.T) {
 	fs.Recompute()
 	if bad.Health().Status != health.Sick {
 		t.Error("shell with a lost face should be sick")
+	}
+}
+
+// TestShellHollowsRunningBodyForReal shells the running body (a unit prism) with its top
+// face removed and checks the feature is healthy and the result a valid hollow solid.
+func TestShellHollowsRunningBodyForReal(t *testing.T) {
+	body := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 4}, 0, "box")
+	var top []byte
+	for _, f := range body.Faces() {
+		if f.Geometry().NormalAt(0, 0).Z > 0.99 {
+			top = f.ReferenceKey()
+		}
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(body)
+	sh := NewDressUpFeatures(fs).AddShell([][]byte{top}, func() float64 { return 0.5 })
+	fs.Recompute()
+	if !sh.Health().OK() {
+		t.Fatalf("shell sick: %+v", sh.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("shelled body not a valid solid: %+v", r)
+	}
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 64-3*3*3.5) > 1e-6 {
+		t.Errorf("shell volume = %g, want %g", got, 64-3*3*3.5)
 	}
 }
 

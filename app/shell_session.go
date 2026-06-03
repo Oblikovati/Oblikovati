@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package app
+
+// Session bridge for the Shell tool's property window.
+
+// ActiveShell returns the running Shell tool, or nil when the active tool is not a shell
+// (or there is none).
+func (s *Session) ActiveShell() *ShellTool {
+	if s.tool == nil {
+		return nil
+	}
+	sh, _ := s.tool.tool.(*ShellTool)
+	return sh
+}
