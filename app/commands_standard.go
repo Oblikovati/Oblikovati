@@ -77,7 +77,21 @@ func modelTabCommands() []*CommandDefinition {
 			WithIcon("create-sketch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Create 2D Sketch — pick a work plane or planar face to sketch on."),
 	}
-	return append(cmds, solidFeatureCommands()...)
+	cmds = append(cmds, solidFeatureCommands()...)
+	return append(cmds, modifyFeatureCommands()...)
+}
+
+// modifyFeatureCommands are the 3D Model tab's "Modify" panel — features that cut or
+// alter existing material (hole, …).
+func modifyFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Modify.Hole", "Hole", "Modify", func(s *Session) error {
+			s.StartTool(NewHoleTool())
+			return nil
+		}).WithTab("3D Model").WithAlias("H").WithEnable(notInSketch).
+			WithIcon("hole").WithButtonStyle(LargeIconButton).
+			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
+	}
 }
 
 // solidFeatureCommands are the 3D Model tab's "Create" panel — the sketched solid

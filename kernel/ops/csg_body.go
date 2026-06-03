@@ -32,11 +32,65 @@ func bodyTriangles(b *topo.Body) []tri {
 // the welded triangle cage becomes a body. Returns nil when the result is empty.
 func trianglesToBody(tris []tri, feat string) *topo.Body {
 	verts, faces := weldTriangles(tris)
+	faces = dedupTriangles(faces)
 	if len(faces) == 0 {
 		return nil
 	}
 	faces = removeTJunctions(verts, faces)
 	return cageToBody(verts, dropDegenerate(faces), feat)
+}
+
+// dedupTriangles cancels coincident triangles produced where coplanar faces of the two
+// operands overlap: a triangle and its reverse (opposite orientation) annihilate (an
+// internal face); identical-orientation duplicates collapse to one. This keeps each
+// surface patch represented exactly once so the weld is 2-manifold.
+func dedupTriangles(faces [][3]int) [][3]int {
+	type bal struct {
+		fwd, rev int
+		face     [3]int
+	}
+	seen := map[[3]int]*bal{}
+	order := [][3]int{}
+	for _, f := range faces {
+		key, reversed := sortedTri(f)
+		b := seen[key]
+		if b == nil {
+			b = &bal{face: f}
+			seen[key] = b
+			order = append(order, key)
+		}
+		if reversed {
+			b.rev++
+		} else {
+			b.fwd++
+		}
+	}
+	var out [][3]int
+	for _, key := range order {
+		b := seen[key]
+		if net := b.fwd - b.rev; net != 0 { // surviving orientation wins; equal ⇒ cancelled
+			out = append(out, b.face)
+		}
+	}
+	return out
+}
+
+// sortedTri returns a triangle's canonical (ascending) vertex key and whether the given
+// winding runs opposite the canonical cyclic order (i.e. it is the reversed face).
+func sortedTri(f [3]int) ([3]int, bool) {
+	a, b, c := f[0], f[1], f[2]
+	even := (a < b && b < c) || (b < c && c < a) || (c < a && a < b) // cyclic-sorted ⇒ same orientation
+	key := f
+	if key[1] < key[0] {
+		key[0], key[1] = key[1], key[0]
+	}
+	if key[2] < key[1] {
+		key[1], key[2] = key[2], key[1]
+	}
+	if key[1] < key[0] {
+		key[0], key[1] = key[1], key[0]
+	}
+	return key, !even
 }
 
 // weldTriangles merges coincident triangle corners onto a shared vertex list, dropping
@@ -69,7 +123,7 @@ func quantize(v float64) int64 { return int64(stdmath.Round(v / weldGrid)) }
 // every undirected edge ends up shared by exactly two triangles (the prerequisite for a
 // closed solid). Capped to avoid pathological loops.
 func removeTJunctions(verts []math.Point3, faces [][3]int) [][3]int {
-	for pass := 0; pass < 12; pass++ {
+	for pass := 0; pass < 64; pass++ {
 		split := false
 		var next [][3]int
 		for _, f := range faces {
@@ -106,8 +160,12 @@ func splitFaceAtTJunction(verts []math.Point3, f [3]int) ([][3]int, bool) {
 	return nil, false
 }
 
-// onSegment reports whether p lies strictly between a and b (within weld tolerance of
-// the segment and not at either endpoint).
+// onSegment reports whether p lies on the interior of segment a→b: within onLineTol of
+// the line and strictly between the endpoints (more than onLineTol from each). Endpoint
+// exclusion is by absolute distance, not a parameter fraction, so a vertex near a long
+// edge's end is still recognized as a T-junction.
+const onLineTol = 1e-6
+
 func onSegment(p, a, b math.Point3) bool {
 	ab := a.VectorTo(b)
 	lenSq := ab.LengthSquared()
@@ -115,11 +173,14 @@ func onSegment(p, a, b math.Point3) bool {
 		return false
 	}
 	t := a.VectorTo(p).Dot(ab) / lenSq
-	if t <= 1e-4 || t >= 1-1e-4 {
+	if t <= 0 || t >= 1 {
 		return false
 	}
 	foot := a.TranslateBy(ab.Scale(t))
-	return foot.DistanceTo(p) < 10*weldGrid
+	if foot.DistanceTo(p) >= onLineTol {
+		return false
+	}
+	return p.DistanceTo(a) > onLineTol && p.DistanceTo(b) > onLineTol
 }
 
 // dropDegenerate removes triangles with a repeated corner.
