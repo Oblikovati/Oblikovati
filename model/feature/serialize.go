@@ -101,7 +101,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 	case *ShellFeature:
 		fd.Shell = &FaceDressData{Faces: encodeKeys(f.def.RemovedFaceKeys), Value: evalFloat(f.def.Thickness)}
 	case *FaceDraftFeature:
-		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle)}
+		p := f.def.PullDir
+		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle), Pull: []float64{p.X, p.Y, p.Z}}
 	case *ThreadFeature:
 		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation}
 	case *HoleFeature:
@@ -261,7 +262,7 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		return du.AddDraft(d.keys, constFloat(d.value)), nil
+		return du.AddDraftPull(d.keys, draftPull(fd.Draft.Pull), constFloat(d.value)), nil
 	case "thread":
 		if fd.Thread == nil {
 			return nil, fmt.Errorf("thread feature is missing its payload")

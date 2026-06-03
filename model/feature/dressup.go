@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"github.com/Oblikovati/oblikovati/math"
 )
 
 // Dress-up features operate on existing topology picked by the user — edges to
@@ -84,6 +85,7 @@ func (s *ShellFeature) Recompute(in Input) (Output, error) {
 // FaceDraftDefinition tapers selected faces by an angle about a pull direction.
 type FaceDraftDefinition struct {
 	FaceKeys [][]byte
+	PullDir  math.Vector3
 	Angle    func() float64
 }
 
@@ -92,8 +94,10 @@ type FaceDraftFeature struct{ def *FaceDraftDefinition }
 
 func (d *FaceDraftFeature) Definition() *FaceDraftDefinition { return d.def }
 func (d *FaceDraftFeature) Kind() string                     { return "draft" }
+
+// Recompute tapers the picked faces about the pull direction by the angle (see draft.go).
 func (d *FaceDraftFeature) Recompute(in Input) (Output, error) {
-	return resolveFacesThenDefer(in, d.def.FaceKeys, "draft")
+	return draftBody(in, d.def.FaceKeys, d.def.PullDir, callOrZero(d.def.Angle), "draft")
 }
 
 // ThreadDefinition applies thread data to a cylindrical face (cosmetic in phase A).
@@ -178,9 +182,14 @@ func (c *DressUpFeatures) AddShell(removedFaceKeys [][]byte, thickness func() fl
 	return pf
 }
 
-// AddDraft tapers the given faces by angle.
+// AddDraft tapers the given faces by angle about the default +Z pull direction.
 func (c *DressUpFeatures) AddDraft(faceKeys [][]byte, angle func() float64) *PartFeature {
-	return c.engine.Add(&FaceDraftFeature{def: &FaceDraftDefinition{FaceKeys: faceKeys, Angle: angle}})
+	return c.AddDraftPull(faceKeys, math.V3(0, 0, 1), angle)
+}
+
+// AddDraftPull tapers the given faces by angle about an explicit pull direction.
+func (c *DressUpFeatures) AddDraftPull(faceKeys [][]byte, pull math.Vector3, angle func() float64) *PartFeature {
+	return c.engine.Add(&FaceDraftFeature{def: &FaceDraftDefinition{FaceKeys: faceKeys, PullDir: pull, Angle: angle}})
 }
 
 // AddThread tags a cylindrical face with thread data.
