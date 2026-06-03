@@ -21,6 +21,24 @@ func TestMatrix4FromCellsRoundTrip(t *testing.T) {
 	}
 }
 
+func TestReflection4AcrossYZPlane(t *testing.T) {
+	r := Reflection4(P3(0, 0, 0), V3(1, 0, 0).AsUnit())
+	if got := r.TransformPoint(P3(3, 5, -2)); !got.IsEqualTo(P3(-3, 5, -2), 1e-12) {
+		t.Errorf("reflect across X=0: got %v, want (-3,5,-2)", got)
+	}
+	if det := r.Determinant(); stdmath.Abs(det+1) > 1e-12 {
+		t.Errorf("reflection determinant = %g, want -1", det)
+	}
+}
+
+func TestReflection4AcrossOffsetPlane(t *testing.T) {
+	// Plane x = 2 (normal +X, through (2,0,0)): a point at x=5 reflects to x=-1.
+	r := Reflection4(P3(2, 0, 0), V3(1, 0, 0).AsUnit())
+	if got := r.TransformPoint(P3(5, 1, 1)); !got.IsEqualTo(P3(-1, 1, 1), 1e-12) {
+		t.Errorf("reflect across x=2: got %v, want (-1,1,1)", got)
+	}
+}
+
 func TestMatrix4Translation(t *testing.T) {
 	m := Translation4(V3(1, 2, 3))
 	if got := m.TransformPoint(P3(0, 0, 0)); got != (Point3{1, 2, 3}) {
