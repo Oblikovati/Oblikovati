@@ -65,9 +65,11 @@ func (s *Session) SetParameterBool(id param.ID, value bool) error {
 func (s *Session) SetParameterComment(id param.ID, comment string) error {
 	return s.editParam(id, func(p *param.Parameter) error { p.Comment = comment; return nil })
 }
+
 func (s *Session) SetParameterKey(id param.ID, key bool) error {
 	return s.editParam(id, func(p *param.Parameter) error { p.IsKey = key; return nil })
 }
+
 func (s *Session) SetParameterExport(id param.ID, export bool) error {
 	return s.editParam(id, func(p *param.Parameter) error { p.ExposedAsProperty = export; return nil })
 }
@@ -84,6 +86,7 @@ func (s *Session) SetParameterTolerance(id param.ID, upper, lower float64, kind 
 func (s *Session) SetParameterValueList(id param.ID, list []string, allowCustom bool) error {
 	return s.editParam(id, func(p *param.Parameter) error { return p.SetExpressionList(list, allowCustom) })
 }
+
 func (s *Session) ClearParameterValueList(id param.ID) error {
 	return s.editParam(id, func(p *param.Parameter) error { p.ClearExpressionList(); return nil })
 }
@@ -105,6 +108,7 @@ func (s *Session) DeleteParameter(id param.ID) error {
 func (s *Session) AddParameterToGroup(id param.ID, group string) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.AddToGroup(id, group) })
 }
+
 func (s *Session) RemoveParameterFromGroup(id param.ID) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.RemoveFromGroup(id) })
 }
@@ -114,6 +118,7 @@ func (s *Session) RemoveParameterFromGroup(id param.ID) error {
 func (s *Session) RenameParameterGroup(oldName, newName string) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.RenameGroup(oldName, newName) })
 }
+
 func (s *Session) DeleteParameterGroup(name string) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.DeleteGroup(name) })
 }

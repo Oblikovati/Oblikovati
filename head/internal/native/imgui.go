@@ -262,6 +262,7 @@ func TableSetupColumn(label string) {
 	defer free()
 	C.obk_ig_table_setup_column(c)
 }
+
 func TableSetupScrollFreeze(cols, rows int) {
 	C.obk_ig_table_setup_scroll_freeze(C.int(cols), C.int(rows))
 }
