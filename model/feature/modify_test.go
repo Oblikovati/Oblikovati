@@ -14,8 +14,8 @@ import (
 func TestCombineJoinsTwoBodiesForReal(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	// Two disjoint prisms in the running state, then Combine them.
-	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(0), sketch.XYPlane(), 1, "a"))
-	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(10), sketch.XYPlane(), 1, "b"))
+	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(0), sketch.XYPlane(), span{near: 0, far: 1}, 0, "a"))
+	NewBaseFeatures(fs).AddBase(buildPrism(squarePoly(10), sketch.XYPlane(), span{near: 0, far: 1}, 0, "b"))
 	combine := NewModifyFeatures(fs).AddCombine(0, 1, ops.Join)
 	fs.Recompute()
 

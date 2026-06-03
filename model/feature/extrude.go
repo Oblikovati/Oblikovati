@@ -5,8 +5,8 @@ package feature
 import (
 	"errors"
 	"fmt"
+	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/build"
 	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
@@ -56,40 +56,58 @@ func (e *ExtrudeFeature) Operation() ops.PartFeatureOperation { return e.def.Ope
 // SetOperation changes the boolean operation (join/cut/intersect/new-body).
 func (e *ExtrudeFeature) SetOperation(op ops.PartFeatureOperation) { e.def.Operation = op }
 
-// Recompute resolves the profile, builds the prism solid at the extent distance,
-// and applies the operation against the running bodies.
+// Extent returns the feature's termination (type/direction/distances/targets); SetExtent
+// replaces it — the feature editor and Extrude tool write the chosen mode through here.
+func (e *ExtrudeFeature) Extent() Extent           { return e.def.Extent }
+func (e *ExtrudeFeature) SetExtent(ext Extent)     { e.def.Extent = ext }
+func (e *ExtrudeFeature) Taper() float64           { return e.def.Taper }
+func (e *ExtrudeFeature) SetTaper(radians float64) { e.def.Taper = radians }
+
+// Recompute resolves the profile, computes the extent span (distance/through-all/to-face/
+// …), builds the prism solid the span sweeps, and applies the operation against the
+// running bodies.
 func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
-	if e.def.Extent.Type != DistanceExtent {
-		return Output{}, build.NotYetImplemented("PBI-092-extent-" + fmt.Sprint(e.def.Extent.Type))
-	}
 	profiles, err := e.resolveProfiles()
 	if err != nil {
 		return Output{}, err
 	}
-	dist := e.def.Extent.distance()
-	if dist == 0 {
-		return Output{}, errors.New("extrude distance is zero")
+	plane := e.def.Sketch.Plane()
+	sp, err := e.resolveSpan(in.Bodies, plane, outerPolygons(profiles))
+	if err != nil {
+		return Output{}, err
 	}
-	bodies, err := combine(in.Bodies, e.buildTool(profiles, dist), e.def.Operation)
+	if sp.depth() == 0 {
+		return Output{}, errors.New("extrude: the extent has zero depth")
+	}
+	bodies, err := combine(in.Bodies, e.buildTool(profiles, plane, sp), e.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
 }
 
-// buildTool extrudes each selected region into a prism and merges the prisms into one
-// body. The regions are distinct cells of the same sketch, so they never overlap — a
-// shell merge is exactly their union and avoids the unimplemented intersecting Join.
-func (e *ExtrudeFeature) buildTool(profiles []*sketch.Profile, dist float64) *topo.Body {
-	plane := e.def.Sketch.Plane()
+// buildTool extrudes each selected region into a prism over the span and merges the
+// prisms into one body. The regions are distinct cells of the same sketch, so they never
+// overlap — a shell merge is exactly their union and avoids the intersecting Join.
+func (e *ExtrudeFeature) buildTool(profiles []*sketch.Profile, plane sketch.Plane, sp span) *topo.Body {
 	prisms := make([]*topo.Body, len(profiles))
 	for i, p := range profiles {
-		prisms[i] = buildPrism(p.OuterLoop().Polygon(), plane, dist, e.prismFeat(i, len(profiles)))
+		prisms[i] = buildPrism(p.OuterLoop().Polygon(), plane, sp, e.def.Taper, e.prismFeat(i, len(profiles)))
 	}
 	if len(prisms) == 1 {
 		return prisms[0]
 	}
 	return topo.MergeBodies(topo.NewLineage(topo.Tok(e.featName, "merged", 0)), true, prisms...)
+}
+
+// outerPolygons returns each profile's outer-loop polygon, the input the span resolver
+// (to-next ray-casting) and the prism builder both consume.
+func outerPolygons(profiles []*sketch.Profile) [][]math.Point2 {
+	out := make([][]math.Point2, len(profiles))
+	for i, p := range profiles {
+		out[i] = p.OuterLoop().Polygon()
+	}
+	return out
 }
 
 // prismFeat namespaces each region's prism lineage; a single-profile extrude keeps the
@@ -141,9 +159,17 @@ func (c *ExtrudeFeatures) AddByDistanceExtent(skt *sketch.Sketch, profileIndex i
 // AddByDistanceExtentProfiles adds an extrude of one or more sketch regions, merged
 // into one body — the multi-region selection the Extrude tool gathers with Ctrl+click.
 func (c *ExtrudeFeatures) AddByDistanceExtentProfiles(skt *sketch.Sketch, profileIndices []int, op ops.PartFeatureOperation, distance func() float64) *PartFeature {
+	return c.AddExtrude(skt, profileIndices, op, Extent{Type: DistanceExtent, Distance: distance}, 0)
+}
+
+// AddExtrude adds an extrude of one or more regions with a fully-specified extent
+// (distance / through-all / to-face / from-to / to-next / distance-from-face), boolean
+// operation, and taper (draft) angle — the general constructor the Extrude tool and the
+// automation API drive. The distance constructors above delegate here.
+func (c *ExtrudeFeatures) AddExtrude(skt *sketch.Sketch, profileIndices []int, op ops.PartFeatureOperation, extent Extent, taper float64) *PartFeature {
 	def := &ExtrudeDefinition{
-		Sketch: skt, ProfileIndices: append([]int(nil), profileIndices...), Operation: op,
-		Extent: Extent{Type: DistanceExtent, Distance: distance},
+		Sketch: skt, ProfileIndices: append([]int(nil), profileIndices...),
+		Operation: op, Extent: extent, Taper: taper,
 	}
 	ef := &ExtrudeFeature{def: def}
 	pf := c.engine.Add(ef)
@@ -170,24 +196,81 @@ func combine(running []*topo.Body, body *topo.Body, op ops.PartFeatureOperation)
 	return out, nil
 }
 
-// buildPrism extrudes a closed polygon by distance along the plane normal, building
-// a watertight solid: a bottom cap, a top cap, and one planar side face per profile
-// edge, with lineage on each (start/end caps and indexed side walls).
-func buildPrism(poly []math.Point2, plane sketch.Plane, dist float64, feat string) *topo.Body {
+// buildPrism extrudes a closed polygon over the span (near→far offsets along the plane
+// normal) into a watertight solid: a near cap, a far cap, and one planar side face per
+// profile edge. A non-zero taper offsets the far loop by depth·tan(taper) so the sides
+// draft outward (positive) or inward (negative); the far cap stays perpendicular to the
+// normal, and each side stays a planar trapezoid.
+func buildPrism(poly []math.Point2, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
 	n := len(poly)
+	normal := plane.Normal().AsVector()
+	topPoly := taperedLoop(poly, sp.depth(), taper)
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok(feat, "body", 0)))
-	up := plane.Normal().AsVector().Scale(dist)
 	bottom := make([]*topo.Vertex, n)
 	top := make([]*topo.Vertex, n)
-	for i, p := range poly {
-		b := plane.ToModel(p)
+	for i := 0; i < n; i++ {
+		b := plane.ToModel(poly[i]).TranslateBy(normal.Scale(sp.near))
+		t := plane.ToModel(topPoly[i]).TranslateBy(normal.Scale(sp.far))
 		bottom[i] = bld.AddVertex(b, topo.NewLineage(topo.Tok(feat, "vertex", i)))
-		top[i] = bld.AddVertex(b.TranslateBy(up), topo.NewLineage(topo.Tok(feat, "vertex", n+i)))
+		top[i] = bld.AddVertex(t, topo.NewLineage(topo.Tok(feat, "vertex", n+i)))
 	}
 	be, te, ve := prismEdges(bld, bottom, top, feat)
-	addCaps(bld, bottom, top, be, te, plane, feat)
-	addSides(bld, bottom, be, te, ve, plane, outwardSign(poly), feat)
+	addCaps(bld, bottom, top, be, te, normal, feat)
+	addSides(bld, bottom, top, be, te, ve, outwardSign(poly), feat)
 	return bld.Build()
+}
+
+// taperedLoop returns the far-loop polygon: poly unchanged when taper is 0, else each
+// vertex offset along its outward bisector by depth·tan(taper) (positive widens).
+func taperedLoop(poly []math.Point2, depth, taper float64) []math.Point2 {
+	if taper == 0 {
+		return poly
+	}
+	delta := depth * stdmath.Tan(taper) * outwardSign(poly)
+	return offsetPolygon2D(poly, delta)
+}
+
+// offsetPolygon2D offsets each vertex outward by delta along the angle bisector of its two
+// incident edges (a simple miter offset, exact for convex corners).
+func offsetPolygon2D(poly []math.Point2, delta float64) []math.Point2 {
+	n := len(poly)
+	out := make([]math.Point2, n)
+	for i := 0; i < n; i++ {
+		prev := poly[(i-1+n)%n]
+		next := poly[(i+1)%n]
+		nIn := edgeNormal2D(prev, poly[i])
+		nOut := edgeNormal2D(poly[i], next)
+		bisect := math.V2(nIn.X+nOut.X, nIn.Y+nOut.Y)
+		u, err := math.UnitVector2FromVector(bisect)
+		if err != nil {
+			out[i] = poly[i]
+			continue
+		}
+		scale := delta / cosHalf(nIn, nOut)
+		out[i] = math.P2(poly[i].X+u.AsVector().X*scale, poly[i].Y+u.AsVector().Y*scale)
+	}
+	return out
+}
+
+// edgeNormal2D returns the left-hand unit normal of edge a→b (points outward for a CCW loop).
+func edgeNormal2D(a, b math.Point2) math.Vector2 {
+	d := math.V2(b.X-a.X, b.Y-a.Y)
+	u, err := math.UnitVector2FromVector(math.V2(d.Y, -d.X))
+	if err != nil {
+		return math.V2(0, 0)
+	}
+	return u.AsVector()
+}
+
+// cosHalf returns the cosine of the half-angle between two edge normals, the miter
+// factor that keeps the bisector offset's perpendicular distance equal to delta (clamped
+// so a near-straight corner does not blow up the offset).
+func cosHalf(nIn, nOut math.Vector2) float64 {
+	c := stdmath.Sqrt(stdmath.Max(0, (1+nIn.X*nOut.X+nIn.Y*nOut.Y)/2))
+	if c < 0.2 {
+		return 0.2
+	}
+	return c
 }
 
 // outwardSign returns +1 when the profile polygon is wound counter-clockwise in the
@@ -221,12 +304,12 @@ func prismEdges(bld *topo.Builder, bottom, top []*topo.Vertex, feat string) (be,
 	return be, te, ve
 }
 
-// addCaps builds the bottom (downward) and top (upward) cap faces.
-func addCaps(bld *topo.Builder, bottom, top []*topo.Vertex, be, te []*topo.Edge, plane sketch.Plane, feat string) {
+// addCaps builds the near (downward) and far (upward) cap faces, perpendicular to the
+// extrude normal at each end.
+func addCaps(bld *topo.Builder, bottom, top []*topo.Vertex, be, te []*topo.Edge, normal math.Vector3, feat string) {
 	n := len(bottom)
-	down := plane.Normal().AsVector().Negate()
-	bottomPlane, _ := geom.NewPlane(bottom[0].Point(), down)
-	topPlane, _ := geom.NewPlane(top[0].Point(), plane.Normal().AsVector())
+	bottomPlane, _ := geom.NewPlane(bottom[0].Point(), normal.Negate())
+	topPlane, _ := geom.NewPlane(top[0].Point(), normal)
 	bottomLoop := make([]topo.Use, n)
 	topLoop := make([]topo.Use, n)
 	for i := 0; i < n; i++ {
@@ -237,29 +320,28 @@ func addCaps(bld *topo.Builder, bottom, top []*topo.Vertex, be, te []*topo.Edge,
 	bld.AddFace(topPlane, topo.NewLineage(topo.Tok(feat, "end-cap", 0)), topo.OuterLoop(topLoop...))
 }
 
-// addSides builds one planar side wall per profile edge. sign flips the computed
-// outward normal for a clockwise profile (see outwardSign) so every wall faces away
-// from the solid's interior.
-func addSides(bld *topo.Builder, bottom []*topo.Vertex, be, te, ve []*topo.Edge, plane sketch.Plane, sign float64, feat string) {
+// addSides builds one planar side wall per profile edge, through the wall's corners so
+// the face tilts correctly when the extrude is tapered. sign flips the outward normal for
+// a clockwise profile (see outwardSign) so every wall faces away from the interior.
+func addSides(bld *topo.Builder, bottom, top []*topo.Vertex, be, te, ve []*topo.Edge, sign float64, feat string) {
 	n := len(bottom)
-	normal := plane.Normal().AsVector()
 	for i := 0; i < n; i++ {
 		j := (i + 1) % n
-		edgeDir := bottom[i].Point().VectorTo(bottom[j].Point())
-		outward, err := math.UnitVector3FromVector(edgeDir.Cross(normal).Scale(sign))
-		surf := sideSurface(bottom[i].Point(), outward, err)
+		surf := sideSurface(bottom[i].Point(), bottom[j].Point(), top[i].Point(), sign)
 		loop := topo.OuterLoop(topo.Fwd(be[i]), topo.Fwd(ve[j]), topo.Rev(te[i]), topo.Rev(ve[i]))
 		bld.AddFace(surf, topo.NewLineage(topo.Tok(feat, "side", i)), loop)
 	}
 }
 
-// sideSurface returns the side face's plane (falling back to a degenerate plane if
-// the edge was zero-length, which the validator will then flag).
-func sideSurface(origin math.Point3, outward math.UnitVector3, err error) geom.Surface {
+// sideSurface returns the side face's plane through corners b0,b1,t0 (b0→b1 along the
+// profile edge, b0→t0 up the wall), oriented outward by sign. Falls back to a degenerate
+// plane on a zero-area corner, which the validator then flags.
+func sideSurface(b0, b1, t0 math.Point3, sign float64) geom.Surface {
+	normal, err := math.UnitVector3FromVector(b0.VectorTo(b1).Cross(b0.VectorTo(t0)).Scale(sign))
 	if err != nil {
-		p, _ := geom.NewPlane(origin, math.V3(0, 0, 1))
+		p, _ := geom.NewPlane(b0, math.V3(0, 0, 1))
 		return p
 	}
-	p, _ := geom.NewPlane(origin, outward.AsVector())
+	p, _ := geom.NewPlane(b0, normal.AsVector())
 	return p
 }

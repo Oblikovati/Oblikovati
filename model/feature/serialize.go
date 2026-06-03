@@ -184,7 +184,7 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 	du := NewDressUpFeatures(fs)
 	switch fd.Kind {
 	case "extrude":
-		return requireExtrude(fs, fd.Extrude, sk)
+		return requireExtrude(fs, fd.Extrude, sk, work)
 	case "fillet":
 		d, err := requireEdgeDress(fd.Fillet, "fillet")
 		if err != nil {

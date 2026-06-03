@@ -42,3 +42,41 @@ func (s *Session) SetExtrudeDistanceDisplay(value float64) {
 func (s *Session) LengthUnitName() string {
 	return s.DocumentUnits().PreferredName(param.Length)
 }
+
+// AngleUnitName returns the document's preferred angle-unit name (e.g. "deg"), to label
+// the taper field.
+func (s *Session) AngleUnitName() string {
+	return s.DocumentUnits().PreferredName(param.Angle)
+}
+
+// ExtrudeSecondDistanceDisplay / SetExtrudeSecondDistanceDisplay read/write the active
+// extrude's asymmetric second-direction depth in the document's length unit.
+func (s *Session) ExtrudeSecondDistanceDisplay() float64 {
+	ext := s.ActiveExtrude()
+	if ext == nil {
+		return 0
+	}
+	return s.DocumentUnits().ToPreferred(param.Q(ext.SecondDistance(), param.Length))
+}
+
+func (s *Session) SetExtrudeSecondDistanceDisplay(value float64) {
+	if ext := s.ActiveExtrude(); ext != nil {
+		ext.SetSecondDistance(s.DocumentUnits().FromPreferred(value, param.Length).Value)
+	}
+}
+
+// ExtrudeTaperDisplay / SetExtrudeTaperDisplay read/write the active extrude's draft
+// taper in the document's angle unit (e.g. degrees).
+func (s *Session) ExtrudeTaperDisplay() float64 {
+	ext := s.ActiveExtrude()
+	if ext == nil {
+		return 0
+	}
+	return s.DocumentUnits().ToPreferred(param.Q(ext.Taper(), param.Angle))
+}
+
+func (s *Session) SetExtrudeTaperDisplay(value float64) {
+	if ext := s.ActiveExtrude(); ext != nil {
+		ext.SetTaper(s.DocumentUnits().FromPreferred(value, param.Angle).Value)
+	}
+}

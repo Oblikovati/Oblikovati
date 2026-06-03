@@ -154,6 +154,22 @@ func (g *WorkGeometry) plane(ref WorkRef) (sketch.Plane, error) {
 	return w.Plane(), nil
 }
 
+// WorkPlaneByRef resolves a WorkRef to its *WorkPlane (origin or user) — for features
+// that reference a datum plane, e.g. an extrude's to-face / from-to target.
+func (g *WorkGeometry) WorkPlaneByRef(ref WorkRef) (*WorkPlane, error) {
+	if i, ok := userIndex(ref, "plane"); ok {
+		if i < 0 || i >= g.planes.Count() {
+			return nil, fmt.Errorf("work geometry: no work plane %q", ref)
+		}
+		return g.planes.Item(i), nil
+	}
+	w, ok := g.planes.byKey[ref]
+	if !ok {
+		return nil, fmt.Errorf("work geometry: unknown plane reference %q", ref)
+	}
+	return w, nil
+}
+
 func (g *WorkGeometry) axis(ref WorkRef) (*WorkAxis, error) {
 	if i, ok := userIndex(ref, "axis"); ok {
 		if i < 0 || i >= g.axes.Count() {
