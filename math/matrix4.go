@@ -30,6 +30,14 @@ func Identity4() Matrix4 {
 	}}
 }
 
+// Matrix4FromCells reconstructs a transform from its 16 row-major cells — the
+// inverse of [Matrix4.Cells], used to restore a persisted transform (Inventor's
+// PutMatrixData). The caller is responsible for the cells describing an affine
+// transform (bottom row (0,0,0,1)); no normalization is applied.
+func Matrix4FromCells(cells [16]Scalar) Matrix4 {
+	return Matrix4{cells}
+}
+
 // Translation4 returns a transform that displaces every point by v.
 func Translation4(v Vector3) Matrix4 {
 	t := Identity4()

@@ -41,6 +41,7 @@ type FeatureData struct {
 	RuledSurface  *RuledSurfaceData  `yaml:"ruledSurface,omitempty"`
 	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
 	Revolve       *RevolveData       `yaml:"revolve,omitempty"`
+	Move          *MoveData          `yaml:"move,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -151,6 +152,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.Revolve = rv
+	case *MoveFeature:
+		fd.Move = serializeMove(f.def)
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:
@@ -240,6 +243,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
 	case "revolve":
 		return restoreRevolve(fs, fd.Revolve, sk, work)
+	case "move":
+		return restoreMove(fs, fd.Move)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}
