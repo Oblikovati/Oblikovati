@@ -99,6 +99,17 @@ func (b *Body) FindEdgeByKey(key []byte) (*Edge, bool) {
 	return nil, false
 }
 
+// FindVertexByKey re-binds a vertex reference key by lineage — used to resolve a picked
+// B-rep vertex as a work-feature point input after the body is rebuilt.
+func (b *Body) FindVertexByKey(key []byte) (*Vertex, bool) {
+	for _, v := range b.Vertices() {
+		if bytes.Equal(v.ReferenceKey(), key) {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
 // MergeBodies combines the shells of several bodies into one (a multi-lump body),
 // re-parenting each shell. Used by a boolean Join of non-touching bodies
 // (kernel/ops). The input bodies should not be used afterward.

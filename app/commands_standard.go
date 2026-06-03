@@ -23,9 +23,42 @@ func RegisterStandardCommands(s *Session) error {
 func standardCommands() []*CommandDefinition {
 	var cmds []*CommandDefinition
 	cmds = append(cmds, modelTabCommands()...)
+	cmds = append(cmds, workFeatureCommands()...)
 	cmds = append(cmds, sketchTabCommands()...)
 	cmds = append(cmds, viewTabCommands()...)
 	return cmds
+}
+
+// workFeatureCommands are the 3D Model tab's Work Features panel: the datum-plane
+// constructors. Each button is always live in the part environment (Inventor's Work Plane
+// behavior) — click it and, if the right geometry is already selected it builds the datum
+// at once, otherwise it starts a guided pick that prompts for the inputs and commits when
+// they are gathered. So a click is never inert, whether or not anything was pre-selected.
+func workFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("WorkPlane.Offset", "Offset Plane", "Work Features", func(s *Session) error {
+			s.StartTool(NewOffsetWorkPlaneTool()) // always opens the distance dialog (Inventor's flow)
+			return nil
+		}).WithTab("3D Model").WithEnable(canStartWorkPlane).
+			WithIcon("work-plane-offset").WithButtonStyle(LargeIconButton).
+			WithTooltip("Offset Plane — a work plane parallel to a plane, offset by a distance. Pick a plane, then enter the offset."),
+		NewCommand("WorkPlane.Midplane", "Midplane", "Work Features", startWorkPlane(newMidplaneWorkPlaneTool)).
+			WithTab("3D Model").WithEnable(canStartWorkPlane).
+			WithIcon("work-plane-midplane").WithButtonStyle(SmallIconButton).
+			WithTooltip("Midplane — a work plane bisecting two planes. Pick two planes when prompted."),
+		NewCommand("WorkPlane.ThreePoints", "Three Points", "Work Features", startWorkPlane(newThreePointWorkPlaneTool)).
+			WithTab("3D Model").WithEnable(canStartWorkPlane).
+			WithIcon("work-plane-3pt").WithButtonStyle(SmallIconButton).
+			WithTooltip("Three Points — a work plane through three points or model vertices. Pick three when prompted."),
+		NewCommand("WorkPlane.Tangent", "Tangent to Face", "Work Features", startWorkPlane(newTangentWorkPlaneTool)).
+			WithTab("3D Model").WithEnable(canStartWorkPlane).
+			WithIcon("work-plane-tangent").WithButtonStyle(SmallIconButton).
+			WithTooltip("Tangent to Face — a work plane parallel to a plane and tangent to a cylindrical/spherical face. Pick a plane then a face."),
+		NewCommand("WorkPlane.NormalToAxis", "Normal to Axis", "Work Features", startWorkPlane(newNormalToAxisWorkPlaneTool)).
+			WithTab("3D Model").WithEnable(canStartWorkPlane).
+			WithIcon("work-plane-normal").WithButtonStyle(SmallIconButton).
+			WithTooltip("Normal to Axis — a work plane through a point, normal to an axis. Pick an axis then a point."),
+	}
 }
 
 // modelTabCommands are the 3D Model tab: starting a sketch and the solid features.

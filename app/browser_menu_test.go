@@ -83,7 +83,7 @@ func TestBrowserMenuByKind(t *testing.T) {
 	if labels := menuLabels(BrowserMenu(findNode(t, root, "feature"))); !equalStrings(labels, []string{"Suppress", "Delete"}) {
 		t.Errorf("feature menu = %v", labels)
 	}
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "workplane"))); !equalStrings(labels, []string{"New Sketch"}) {
+	if labels := menuLabels(BrowserMenu(findNode(t, root, "workplane"))); !equalStrings(labels, []string{"New Sketch", "Visibility"}) {
 		t.Errorf("workplane menu = %v", labels)
 	}
 	if m := BrowserMenu(findNode(t, root, "parameters")); m != nil {

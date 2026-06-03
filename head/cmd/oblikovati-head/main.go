@@ -129,6 +129,8 @@ func seedPart(s *app.Session) {
 	s.SetPicker(app.NewRayPicker(s.Camera(),
 		func() []*topo.Body { return activeBodies(s) }).
 		WithPlanes(func() []*feature.WorkPlane { return activeOriginPlanes(s) }).
+		WithPoints(func() []*feature.WorkPoint { return activeWorkPoints(s) }).
+		WithAxes(func() []*feature.WorkAxis { return activeWorkAxes(s) }).
 		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }))
 
 	// Frame the box (centered ~(2,1.5,2.5)) from a three-quarter view.
@@ -155,6 +157,34 @@ func activeOriginPlanes(s *app.Session) []*feature.WorkPlane {
 		return p.OriginPlanes()
 	}
 	return nil
+}
+
+// activeWorkPoints / activeWorkAxes return the active part's datum points/axes (origin
+// and user), so the picker can snap a click to them as work-plane reference inputs.
+func activeWorkPoints(s *app.Session) []*feature.WorkPoint {
+	p, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil
+	}
+	points := p.WorkPoints()
+	out := make([]*feature.WorkPoint, 0, points.Count())
+	for i := 0; i < points.Count(); i++ {
+		out = append(out, points.Item(i))
+	}
+	return out
+}
+
+func activeWorkAxes(s *app.Session) []*feature.WorkAxis {
+	p, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil
+	}
+	axes := p.WorkAxes()
+	out := make([]*feature.WorkAxis, 0, axes.Count())
+	for i := 0; i < axes.Count(); i++ {
+		out = append(out, axes.Item(i))
+	}
+	return out
 }
 
 // activeSketches returns the active part's visible sketches (nil if none), so the picker

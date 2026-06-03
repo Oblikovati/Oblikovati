@@ -60,7 +60,7 @@ func TestOffsetWorkPlaneMovesWithParameter(t *testing.T) {
 	if err := off.SetExpression("12 cm"); err != nil {
 		t.Fatalf("SetExpression: %v", err)
 	}
-	g.Recompute()
+	g.Recompute(nil)
 	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 12), wtol) {
 		t.Errorf("after param change, plane origin = %v, want (0,0,12)", wp.Plane().Origin())
 	}
@@ -136,6 +136,22 @@ func TestWorkFeatureNamesAndKeys(t *testing.T) {
 	up := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 1, 1) })
 	if up.Key() != WorkRef("point/1") {
 		t.Errorf("first user point key = %q, want point/1", up.Key())
+	}
+}
+
+func TestWorkPlaneVisibilityDefaultsTrueAndToggles(t *testing.T) {
+	g := NewWorkGeometry()
+	// Origin planes and user planes are visible by default.
+	if !g.WorkPlanes().Item(0).Visible() {
+		t.Error("origin plane should be visible by default")
+	}
+	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
+	if !wp.Visible() {
+		t.Error("a new user work plane should be visible by default")
+	}
+	wp.SetVisible(false)
+	if wp.Visible() {
+		t.Error("SetVisible(false) should hide the plane")
 	}
 }
 

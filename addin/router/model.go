@@ -50,5 +50,9 @@ func modelSelection(s *app.Session, _ json.RawMessage) (json.RawMessage, error) 
 	for i, it := range items {
 		kinds[i] = int(it.SelectionKind())
 	}
-	return json.Marshal(wire.SelectionResult{Count: len(items), Kinds: kinds})
+	return json.Marshal(wire.SelectionResult{
+		Count: len(items),
+		Kinds: kinds,
+		Refs:  s.Selection().References(),
+	})
 }

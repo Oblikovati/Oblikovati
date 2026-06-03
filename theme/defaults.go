@@ -56,6 +56,7 @@ var darkHex = map[string]string{
 	string(types.TokenPlaneFaint):         "#738099ff", // plane_overlay.go faintPlaneColor
 	string(types.TokenPlaneHover):         "#ffb333ff", // plane_overlay.go hoverPlaneColor
 	string(types.TokenPlaneSelected):      "#4dd9ffff", // plane_overlay.go selectedPlaneColor
+	string(types.TokenPlaneFill):          "#73809933", // plane_overlay.go translucent plane fill
 	string(types.TokenSelectionHighlight): "#4dd9ffff", // highlight.go selectionHighlight
 	// Icons (pre-theming head values)
 	string(types.TokenIconTint):     "#d9dee6ff", // icon_cache.go iconTint
@@ -97,6 +98,7 @@ var lightHex = map[string]string{
 	string(types.TokenPlaneFaint):         "#8c99adff",
 	string(types.TokenPlaneHover):         "#d98a00ff",
 	string(types.TokenPlaneSelected):      "#0a84c7ff",
+	string(types.TokenPlaneFill):          "#5a6b8533",
 	string(types.TokenSelectionHighlight): "#0a84c7ff",
 	// Icons
 	string(types.TokenIconTint):     "#3a3f49ff",

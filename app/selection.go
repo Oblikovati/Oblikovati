@@ -22,6 +22,8 @@ const (
 	SelectSketchEntity
 	SelectWorkPlane
 	SelectSketch
+	SelectWorkPoint
+	SelectWorkAxis
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -76,6 +78,17 @@ func (SketchHandle) SelectionKind() SelectionKind { return SelectSketch }
 type WorkPlaneHandle struct{ Plane *feature.WorkPlane }
 
 func (WorkPlaneHandle) SelectionKind() SelectionKind { return SelectWorkPlane }
+
+// WorkPointHandle / WorkAxisHandle wrap a picked datum point / axis — the reference
+// inputs for the work-plane constructors that build on points or lines (three points,
+// normal to a curve, two lines).
+type (
+	WorkPointHandle struct{ Point *feature.WorkPoint }
+	WorkAxisHandle  struct{ Axis *feature.WorkAxis }
+)
+
+func (WorkPointHandle) SelectionKind() SelectionKind { return SelectWorkPoint }
+func (WorkAxisHandle) SelectionKind() SelectionKind  { return SelectWorkAxis }
 
 // SelectionFilter restricts which selection kinds a pick accepts — Inventor's
 // SelectionFilterEnum. A zero filter (no kinds) accepts everything.
@@ -145,4 +158,34 @@ func (s *Selection) First() Selectable {
 		return nil
 	}
 	return s.items[0]
+}
+
+// References returns, parallel to Items, the work-feature reference for each selected
+// entity — a datum plane/axis/point key, or a face/vertex reference — the string an
+// automation client passes to a work-plane constructor. Entities with no such reference
+// (a body, a sketch entity) yield an empty string, so the slice stays index-aligned.
+func (s *Selection) References() []string {
+	refs := make([]string, len(s.items))
+	for i, it := range s.items {
+		refs[i] = string(selectionRef(it))
+	}
+	return refs
+}
+
+// selectionRef maps a selectable to its work-feature reference (empty when it has none).
+func selectionRef(it Selectable) feature.WorkRef {
+	switch h := it.(type) {
+	case WorkPlaneHandle:
+		return h.Plane.Key()
+	case WorkAxisHandle:
+		return h.Axis.Key()
+	case WorkPointHandle:
+		return h.Point.Key()
+	case FaceHandle:
+		return feature.FaceRef(h.Face.ReferenceKey())
+	case VertexHandle:
+		return feature.VertexRef(h.Vertex.ReferenceKey())
+	default:
+		return ""
+	}
 }
