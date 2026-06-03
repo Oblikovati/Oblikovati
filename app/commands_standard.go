@@ -81,9 +81,14 @@ func modelTabCommands() []*CommandDefinition {
 	return append(cmds, modifyFeatureCommands()...)
 }
 
-// modifyFeatureCommands are the 3D Model tab's "Modify" panel — features that cut or
-// alter existing material (hole, …).
+// modifyFeatureCommands are the 3D Model tab's "Modify" panel: the material-cutting
+// features (hole/chamfer) plus the local face operations (shell/offset/draft).
 func modifyFeatureCommands() []*CommandDefinition {
+	return append(cutFeatureCommands(), localFaceCommands()...)
+}
+
+// cutFeatureCommands are the Modify features that remove material against picked topology.
+func cutFeatureCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Modify.Hole", "Hole", "Modify", func(s *Session) error {
 			s.StartTool(NewHoleTool())
@@ -97,6 +102,12 @@ func modifyFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("chamfer").WithButtonStyle(LargeIconButton).
 			WithTooltip("Chamfer — bevel selected edges by a setback distance."),
+	}
+}
+
+// localFaceCommands are the F04 local face operations (shell, offset face, draft).
+func localFaceCommands() []*CommandDefinition {
+	return []*CommandDefinition{
 		NewCommand("Modify.Shell", "Shell", "Modify", func(s *Session) error {
 			s.StartTool(NewShellTool())
 			return nil
@@ -109,6 +120,12 @@ func modifyFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("face-offset").WithButtonStyle(LargeIconButton).
 			WithTooltip("Offset Face — move selected faces along their normal, retrimming neighbours."),
+		NewCommand("Modify.Draft", "Draft", "Modify", func(s *Session) error {
+			s.StartTool(NewDraftTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("draft").WithButtonStyle(LargeIconButton).
+			WithTooltip("Draft — taper selected faces by an angle about the pull direction."),
 	}
 }
 

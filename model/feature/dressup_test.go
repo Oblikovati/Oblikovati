@@ -3,6 +3,7 @@
 package feature
 
 import (
+	stdmath "math"
 	"testing"
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
@@ -118,26 +119,23 @@ func TestDressUpWithNoBodyIsSick(t *testing.T) {
 	}
 }
 
-func TestShellDraftThreadResolveInputs(t *testing.T) {
+// TestThreadResolvesThenDefers checks the thread feature (still deferred geometry) resolves
+// its face and reports Warning, and that a lost-face shell goes Sick. (Shell and draft are
+// real now — see their own tests.)
+func TestThreadResolvesThenDefers(t *testing.T) {
 	body := prismBody()
 	face := body.Faces()[0].ReferenceKey()
 
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	du := NewDressUpFeatures(fs)
-	// Draft and thread still defer their geometry (Warning); shell is real (see its own test).
-	feats := map[string]*PartFeature{
-		"draft":  du.AddDraft([][]byte{face}, func() float64 { return 0.05 }),
-		"thread": du.AddThread(face, "M6x1"),
-	}
+	th := du.AddThread(face, "M6x1")
 	fs.Recompute()
-	for name, pf := range feats {
-		if pf.Health().Status != health.Warning {
-			t.Errorf("%s health = %v, want warning (resolved + deferred)", name, pf.Health().Status)
-		}
-		if pf.Kind() != name {
-			t.Errorf("kind = %q, want %q", pf.Kind(), name)
-		}
+	if th.Health().Status != health.Warning {
+		t.Errorf("thread health = %v, want warning (resolved + deferred)", th.Health().Status)
+	}
+	if th.Kind() != "thread" {
+		t.Errorf("kind = %q, want thread", th.Kind())
 	}
 	// A shell referencing a vanished face goes sick.
 	bad := du.AddShell([][]byte{[]byte("ghost")}, func() float64 { return 0.2 })
@@ -145,6 +143,32 @@ func TestShellDraftThreadResolveInputs(t *testing.T) {
 	fs.Recompute()
 	if bad.Health().Status != health.Sick {
 		t.Error("shell with a lost face should be sick")
+	}
+}
+
+// TestDraftTapersFaceForReal drafts one side face of a 2×2×2 box inward by atan(0.25)
+// about +Z: the side tilts, removing a 4·tan = 1 wedge ⇒ vol 7, a valid solid.
+func TestDraftTapersFaceForReal(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var side []byte
+	for _, f := range box.Faces() {
+		if f.Geometry().NormalAt(0, 0).X > 0.99 {
+			side = f.ReferenceKey()
+		}
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	dr := NewDressUpFeatures(fs).AddDraft([][]byte{side}, func() float64 { return -stdmath.Atan(0.25) })
+	fs.Recompute()
+	if !dr.Health().OK() {
+		t.Fatalf("draft sick: %+v", dr.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("drafted body not a valid solid: %+v", r)
+	}
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
+		t.Errorf("draft volume = %g, want 7", got)
 	}
 }
 

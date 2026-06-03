@@ -5,7 +5,18 @@ package feature
 import (
 	"encoding/base64"
 	"fmt"
+
+	"github.com/Oblikovati/oblikovati/math"
 )
+
+// draftPull reads a serialized pull direction [dx,dy,dz], defaulting to +Z when absent
+// (older recipes / the common Z-up mould pull).
+func draftPull(p []float64) math.Vector3 {
+	if len(p) != 3 {
+		return math.V3(0, 0, 1)
+	}
+	return math.V3(p[0], p[1], p[2])
+}
 
 // This file holds the YAML codecs for the dress-up family (fillet/chamfer/shell/draft/
 // thread) and the reference-key + scalar helpers shared across feature codecs. Edge and
@@ -20,10 +31,11 @@ type EdgeDressData struct {
 }
 
 // FaceDressData is a face-based dress-up (shell thickness / draft angle): the picked
-// faces as reference keys plus the scalar value.
+// faces as reference keys plus the scalar value, and (draft only) the pull direction.
 type FaceDressData struct {
-	Faces []string `yaml:"faces"`
-	Value float64  `yaml:"value"`
+	Faces []string  `yaml:"faces"`
+	Value float64   `yaml:"value"`
+	Pull  []float64 `yaml:"pull,omitempty"` // draft pull direction (dx,dy,dz); absent ⇒ +Z
 }
 
 // ThreadData tags a single cylindrical face (reference key) with a thread designation.
