@@ -24,6 +24,28 @@ func (p *Path) Count() int { return len(p.entities) }
 // IsClosed reports whether the path forms a closed loop.
 func (p *Path) IsClosed() bool { return p.closed }
 
+// Points returns the path's ordered vertices in sketch space — the endpoint chain of
+// its segments, honoring each segment's traversal direction. A sweep maps these through
+// the path's sketch plane to a 3D rail. (Curved segments contribute only their
+// endpoints in phase A; sampling arcs into a polyline is a later refinement.)
+func (p *Path) Points() []math.Point2 {
+	var pts []math.Point2
+	for i, pe := range p.entities {
+		a, b, ok := segmentEnds(pe.Entity)
+		if !ok {
+			continue
+		}
+		if pe.reversed {
+			a, b = b, a
+		}
+		if i == 0 {
+			pts = append(pts, a.Position())
+		}
+		pts = append(pts, b.Position())
+	}
+	return pts
+}
+
 // Paths returns every maximal connected chain in the sketch — open and closed —
 // from its non-construction geometry, for use as sweep/loft rails.
 func (s *Sketch) Paths() []*Path {

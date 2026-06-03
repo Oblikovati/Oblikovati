@@ -52,6 +52,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawRevolveDialog(s)
 	drawCoilDialog(s)
 	drawLoftDialog(s)
+	drawSweepDialog(s)
 	drawOffsetPlaneDialog(s)
 	drawFeatureEditDialog(s)
 	drawStatusBar(s)
