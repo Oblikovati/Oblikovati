@@ -200,7 +200,7 @@ func TestFaceEditFeaturesRoundTrip(t *testing.T) {
 	m.AddFaceOffset([][]byte{[]byte("f-off")}, 0.5)
 	m.AddDeleteFace([][]byte{[]byte("f-del")})
 	m.AddReplaceFace([][]byte{[]byte("f-rep")}, []byte("f-target"))
-	m.AddThicken([][]byte{[]byte("f-thick")})
+	m.AddThicken(0.5)
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {

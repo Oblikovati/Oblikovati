@@ -40,6 +40,7 @@ type FeatureData struct {
 	BoundaryPatch *BoundaryPatchData `yaml:"boundaryPatch,omitempty"`
 	RuledSurface  *RuledSurfaceData  `yaml:"ruledSurface,omitempty"`
 	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
+	Thicken       *ThickenData       `yaml:"thicken,omitempty"`
 	Revolve       *RevolveData       `yaml:"revolve,omitempty"`
 	Coil          *CoilData          `yaml:"coil,omitempty"`
 	Sweep         *SweepData         `yaml:"sweep,omitempty"`
@@ -207,6 +208,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Distance: f.Distance()}
 	case *ReplaceFaceFeature:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Target: encodeKey(f.TargetKey())}
+	case *ThickenFeature:
+		fd.Thicken = &ThickenData{Value: f.Thickness()}
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:
@@ -292,8 +295,13 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreBoundaryPatch(fs, fd.BoundaryPatch, sk)
 	case "ruled-surface":
 		return restoreRuledSurface(fs, fd.RuledSurface, sk)
-	case "split", "move-face", "face-offset", "delete-face", "replace-face", "thicken":
+	case "split", "move-face", "face-offset", "delete-face", "replace-face":
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
+	case "thicken":
+		if fd.Thicken == nil {
+			return nil, fmt.Errorf("thicken feature is missing its payload")
+		}
+		return NewModifyFeatures(fs).AddThicken(fd.Thicken.Value), nil
 	case "revolve":
 		return restoreRevolve(fs, fd.Revolve, sk, work)
 	case "coil":

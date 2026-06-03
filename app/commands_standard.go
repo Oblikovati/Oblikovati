@@ -82,9 +82,23 @@ func modelTabCommands() []*CommandDefinition {
 }
 
 // modifyFeatureCommands are the 3D Model tab's "Modify" panel: the material-cutting
-// features (hole/chamfer) plus the local face operations (shell/offset/draft).
+// features (hole/chamfer), the local face operations (shell/offset/draft/delete/replace),
+// and surface→solid (thicken).
 func modifyFeatureCommands() []*CommandDefinition {
-	return append(cutFeatureCommands(), localFaceCommands()...)
+	cmds := append(cutFeatureCommands(), localFaceCommands()...)
+	return append(cmds, surfaceSolidCommands()...)
+}
+
+// surfaceSolidCommands are the Modify features that turn a surface body into a solid.
+func surfaceSolidCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Modify.Thicken", "Thicken", "Modify", func(s *Session) error {
+			s.StartTool(NewThickenTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("thicken").WithButtonStyle(LargeIconButton).
+			WithTooltip("Thicken — turn the active surface body into a solid of a wall thickness."),
+	}
 }
 
 // cutFeatureCommands are the Modify features that remove material against picked topology.

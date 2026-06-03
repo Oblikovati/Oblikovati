@@ -78,11 +78,31 @@ func (f *faceEditFeature) Recompute(in Input) (Output, error) {
 // the recipe serialize every face-edit feature uniformly (they share this shape).
 func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
 
-// SplitFeature and ThickenFeature are the direct edits whose geometry still defers (phase C).
-type (
-	SplitFeature   struct{ faceEditFeature }
-	ThickenFeature struct{ faceEditFeature }
-)
+// SplitFeature is the direct edit whose geometry still defers (phase C).
+type SplitFeature struct{ faceEditFeature }
+
+// ThickenFeature turns the running surface (sheet) body into a solid of a wall thickness.
+type ThickenFeature struct{ thickness float64 }
+
+// Kind implements [Feature].
+func (f *ThickenFeature) Kind() string { return "thicken" }
+
+// Thickness returns the wall thickness (for the UI / serialization).
+func (f *ThickenFeature) Thickness() float64 { return f.thickness }
+
+// Recompute thickens the running surface body into a solid (see kernel/ops/thicken.go); a
+// non-surface or non-thickenable body makes the feature go Sick.
+func (f *ThickenFeature) Recompute(in Input) (Output, error) {
+	body, err := runningBody(in)
+	if err != nil {
+		return Output{}, err
+	}
+	result, err := ops.Thicken(body, f.thickness)
+	if err != nil {
+		return Output{}, fmt.Errorf("thicken: %w", err)
+	}
+	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+}
 
 // ReplaceFaceFeature replaces the picked faces' surface with that of a target face.
 type ReplaceFaceFeature struct {
@@ -193,6 +213,7 @@ func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte, targetKey []byte) *Pa
 	return c.engine.Add(&ReplaceFaceFeature{faceEditFeature: faceEditFeature{kind: "replace-face", faceKeys: faceKeys}, targetKey: targetKey})
 }
 
-func (c *ModifyFeatures) AddThicken(faceKeys [][]byte) *PartFeature {
-	return c.engine.Add(&ThickenFeature{faceEditFeature{kind: "thicken", faceKeys: faceKeys}})
+// AddThicken thickens the running surface body into a solid of the given wall thickness.
+func (c *ModifyFeatures) AddThicken(thickness float64) *PartFeature {
+	return c.engine.Add(&ThickenFeature{thickness: thickness})
 }

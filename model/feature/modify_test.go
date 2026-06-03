@@ -6,7 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
+	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/health"
 	"github.com/Oblikovati/oblikovati/model/sketch"
@@ -72,10 +74,9 @@ func TestDirectEditsResolveThenDefer(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	mod := NewModifyFeatures(fs)
-	// move/offset/delete/replace-face are real now (see their own tests); split & thicken defer.
+	// Only split still defers; the other direct edits are real (see their own tests).
 	feats := map[string]*PartFeature{
-		"split":   mod.AddSplit([][]byte{face}),
-		"thicken": mod.AddThicken([][]byte{face}),
+		"split": mod.AddSplit([][]byte{face}),
 	}
 	fs.Recompute()
 	for name, pf := range feats {
@@ -163,6 +164,45 @@ func TestReplaceFaceIdentityIsValid(t *testing.T) {
 	if got := ops.BodyGeometryProperties(fs.Result()[0], ops.DefaultQuality()).Volume; relErr(got, 8) > 1e-6 {
 		t.Errorf("identity replace-face volume = %g, want 8", got)
 	}
+}
+
+// TestThickenSurfaceToSlab thickens a planar surface patch (added as the base body) into a
+// slab solid through the feature engine: 2×3 patch × 0.5 = vol 3, a valid solid.
+func TestThickenSurfaceToSlab(t *testing.T) {
+	patch := patchSurfaceBody(2, 3)
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(patch)
+	th := NewModifyFeatures(fs).AddThicken(0.5)
+	fs.Recompute()
+	if !th.Health().OK() {
+		t.Fatalf("thicken sick: %+v", th.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("thickened patch not a valid solid: %+v", r)
+	}
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 3) > 1e-6 {
+		t.Errorf("slab volume = %g, want 3", got)
+	}
+}
+
+// patchSurfaceBody builds a one-face planar surface (non-solid) body [0,w]×[0,h] at z=0.
+func patchSurfaceBody(w, h float64) *topo.Body {
+	lin := topo.NewLineage(topo.Tok("test", "patch", 0))
+	bld := topo.NewBuilder(false, lin)
+	p := []math.Point3{{X: 0, Y: 0}, {X: w, Y: 0}, {X: w, Y: h}, {X: 0, Y: h}}
+	v := make([]*topo.Vertex, 4)
+	for i, q := range p {
+		v[i] = bld.AddVertex(q, lin)
+	}
+	uses := make([]topo.Use, 4)
+	for i := range p {
+		e := bld.AddEdge(geom.NewLineSegment(p[i], p[(i+1)%4]), v[i], v[(i+1)%4], lin)
+		uses[i] = topo.Use{Edge: e}
+	}
+	plane, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	bld.AddFace(plane, lin, topo.OuterLoop(uses...))
+	return bld.Build()
 }
 
 // squarePoly returns a unit square offset by dx; planeXY is the XY sketch plane.

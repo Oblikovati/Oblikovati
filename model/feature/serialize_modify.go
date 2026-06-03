@@ -19,6 +19,11 @@ type FaceEditData struct {
 	Target      string    `yaml:"target,omitempty"`      // replace-face: source face key
 }
 
+// ThickenData is a thicken feature: the wall thickness applied to the running surface body.
+type ThickenData struct {
+	Value float64 `yaml:"value"`
+}
+
 // faceEditor is satisfied by every direct face-edit feature (they embed faceEditFeature),
 // exposing the picked face keys for serialization.
 type faceEditor interface {
@@ -51,8 +56,6 @@ func restoreFaceEdit(fs *PartFeatures, kind string, d *FaceEditData) (*PartFeatu
 			return nil, err
 		}
 		return m.AddReplaceFace(keys, target), nil
-	case "thicken":
-		return m.AddThicken(keys), nil
 	default:
 		return nil, fmt.Errorf("unknown face-edit kind %q", kind)
 	}
