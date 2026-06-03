@@ -41,19 +41,21 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 			return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 		}
 	}
-	// A non-rectangular trim (e.g. a corner sphere patch): triangulate the boundary in UV.
-	return boundaryUVMesh(s, outerUV, outer3D, holesUV, holes3D)
+	// A non-rectangular trim (e.g. a corner sphere patch): triangulate the boundary.
+	return boundaryPatchMesh(s, outer3D, holes3D)
 }
 
-// boundaryUVMesh triangulates a curved face from its boundary loops alone (no interior Steiner
-// points): the loops are ear-clipped in (u,v) and lifted back to their exact 3D boundary
-// points, each triangle wound outward. The facets chord the curvature, so it is a coarse but
-// watertight covering of the exact trim region — right for small patches (corner blends);
-// larger non-rectangular curved faces would want a refined constrained triangulation.
-func boundaryUVMesh(s geom.Surface, outerUV []math.Point2, outer3D []math.Point3, holesUV [][]math.Point2, holes3D [][]math.Point3) *Mesh {
-	uv, pos := outerUV, outer3D
-	if len(holesUV) > 0 {
-		uv, pos = mergeHoles(outerUV, outer3D, holesUV, holes3D)
+// boundaryPatchMesh triangulates a curved face from its boundary loops alone (no interior
+// Steiner points): the loops are flattened onto their best-fit plane (NOT the surface's own
+// (u,v), which can be degenerate — e.g. a sphere patch corner landing on the lat/long pole),
+// ear-clipped there, and lifted back to their exact 3D boundary points, each triangle wound
+// outward. A coarse but watertight covering of the exact trim region — right for small patches
+// (corner blends); larger non-rectangular curved faces would want a refined triangulation.
+func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) *Mesh {
+	outer2D, holes2D := projectToPlane(outer3D, holes3D)
+	uv, pos := outer2D, outer3D
+	if len(holes2D) > 0 {
+		uv, pos = mergeHoles(outer2D, outer3D, holes2D, holes3D)
 	}
 	m := &Mesh{}
 	for _, p := range pos {
@@ -68,6 +70,61 @@ func boundaryUVMesh(s geom.Surface, outerUV []math.Point2, outer3D []math.Point3
 		m.addTriangle(a, b, c)
 	}
 	return m
+}
+
+// projectToPlane flattens the boundary loops onto the outer loop's best-fit plane (Newell
+// normal + an in-plane basis) — a non-degenerate 2D embedding of a single-valued patch.
+func projectToPlane(outer3D []math.Point3, holes3D [][]math.Point3) ([]math.Point2, [][]math.Point2) {
+	n := newellUnit(outer3D)
+	e1, e2 := planeBasis(n)
+	o := outer3D[0]
+	flat := func(p math.Point3) math.Point2 {
+		d := o.VectorTo(p)
+		return math.P2(d.Dot(e1), d.Dot(e2))
+	}
+	outer2D := make([]math.Point2, len(outer3D))
+	for i, p := range outer3D {
+		outer2D[i] = flat(p)
+	}
+	holes2D := make([][]math.Point2, len(holes3D))
+	for i, h := range holes3D {
+		hp := make([]math.Point2, len(h))
+		for j, p := range h {
+			hp[j] = flat(p)
+		}
+		holes2D[i] = hp
+	}
+	return outer2D, holes2D
+}
+
+// newellUnit returns a loop's unit normal by Newell's method (robust for non-planar loops).
+func newellUnit(loop []math.Point3) math.Vector3 {
+	var nx, ny, nz float64
+	n := len(loop)
+	for i := 0; i < n; i++ {
+		c, d := loop[i], loop[(i+1)%n]
+		nx += (c.Y - d.Y) * (c.Z + d.Z)
+		ny += (c.Z - d.Z) * (c.X + d.X)
+		nz += (c.X - d.X) * (c.Y + d.Y)
+	}
+	u, err := math.UnitVector3FromVector(math.V3(nx, ny, nz))
+	if err != nil {
+		return math.V3(0, 0, 1)
+	}
+	return u.AsVector()
+}
+
+// planeBasis returns two orthonormal in-plane vectors for the plane with unit normal n.
+func planeBasis(n math.Vector3) (e1, e2 math.Vector3) {
+	seed := math.V3(1, 0, 0)
+	if stdmath.Abs(n.X) > 0.9 {
+		seed = math.V3(0, 1, 0)
+	}
+	a, err := math.UnitVector3FromVector(n.Cross(seed))
+	if err != nil {
+		return math.V3(1, 0, 0), math.V3(0, 1, 0)
+	}
+	return a.AsVector(), n.Cross(a.AsVector())
 }
 
 // triangleFlipped reports whether triangle abc winds against the surface normal at its
