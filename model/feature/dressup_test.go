@@ -45,6 +45,37 @@ func TestChamferBevelsEdgeForReal(t *testing.T) {
 	}
 }
 
+// TestChamferAllFourVerticalEdges chains four wedge cuts on a 2×2×2 box (an octagonal
+// prism). Each cut feeds the previous result back into the boolean — the chaining case the
+// triangle-soup CSG got wrong; the B-rep boolean must keep it exact. Volume =
+// (4 − 4·½·0.5²)·2 = 7.
+func TestChamferAllFourVerticalEdges(t *testing.T) {
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	var verticals [][]byte
+	for _, e := range box.Edges() {
+		if a, b := e.StartVertex().Point(), e.EndVertex().Point(); a.X == b.X && a.Y == b.Y {
+			verticals = append(verticals, e.ReferenceKey())
+		}
+	}
+	if len(verticals) != 4 {
+		t.Fatalf("found %d vertical edges, want 4", len(verticals))
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	ch := NewDressUpFeatures(fs).AddChamfer(verticals, func() float64 { return 0.5 })
+	fs.Recompute()
+	if !ch.Health().OK() {
+		t.Fatalf("multi-edge chamfer sick: %+v", ch.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("octagonal prism not a valid solid: %+v", r)
+	}
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; relErr(got, 7) > 1e-6 {
+		t.Errorf("four-edge chamfer volume = %g, want 7", got)
+	}
+}
+
 // prismBody builds a unit-square prism via the extrude generator (for real edges).
 func prismBody() *topo.Body {
 	return buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 1, Y: 1}, {X: 0, Y: 1}}, sketch.XYPlane(), span{near: 0, far: 1}, 0, "ext")

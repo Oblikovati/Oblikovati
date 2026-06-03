@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"github.com/Oblikovati/oblikovati/kernel/brep"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 )
@@ -52,13 +53,47 @@ func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, erro
 	switch op {
 	case Join:
 		if rel == intersecting {
-			return booleanCSG(op, target, tool, lin)
+			return booleanGeneral(op, target, tool, lin)
 		}
 		return topo.MergeBodies(lin, true, target, tool), nil
 	case Cut:
 		return cut(lin, target, tool, rel)
 	default: // Intersect
 		return intersect(lin, target, tool, rel)
+	}
+}
+
+// booleanGeneral runs the general (face-splitting) boolean: the planar B-rep boolean first
+// — it is sound under chaining and yields a low-face-count solid — falling back to the
+// triangle-soup BSP CSG only when an operand has a non-planar face the B-rep path can't take
+// (a cylinder, cone, etc.). A nil B-rep result is a (valid) empty body.
+func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
+	bop, ok := toBrepOp(op)
+	if !ok {
+		return booleanCSG(op, target, tool, lin)
+	}
+	body, err := brep.Boolean(bop, target, tool)
+	if err != nil {
+		return booleanCSG(op, target, tool, lin) // non-planar operand → triangle CSG
+	}
+	if body == nil {
+		return topo.MergeBodies(lin, true), nil
+	}
+	return body, nil
+}
+
+// toBrepOp maps the feature-level operation to the B-rep boolean operation (NewBody has no
+// B-rep analogue — it is handled before this point).
+func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
+	switch op {
+	case Join:
+		return brep.Union, true
+	case Cut:
+		return brep.Difference, true
+	case Intersect:
+		return brep.Intersection, true
+	default:
+		return 0, false
 	}
 }
 
@@ -90,7 +125,7 @@ func cut(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, e
 	case toolContainsTarget:
 		return topo.MergeBodies(lin, true), nil // target fully removed → empty
 	default: // targetContainsTool (a void/cavity) and intersecting need face splitting
-		return booleanCSG(Cut, target, tool, lin)
+		return booleanGeneral(Cut, target, tool, lin)
 	}
 }
 
@@ -103,7 +138,7 @@ func intersect(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.B
 	case toolContainsTarget:
 		return target, nil
 	default:
-		return booleanCSG(Intersect, target, tool, lin)
+		return booleanGeneral(Intersect, target, tool, lin)
 	}
 }
 

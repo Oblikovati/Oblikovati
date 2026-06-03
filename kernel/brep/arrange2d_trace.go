@@ -100,10 +100,13 @@ func nestFaces(cycles [][]math.Point2) []Face2D {
 }
 
 // smallestContainer returns the index of the smallest CCW cycle strictly containing
-// cycle i (its direct parent in the nesting), or −1 if it is top-level.
+// cycle i (its direct parent in the nesting), or −1 if it is top-level. The probe sits
+// just inside cycle i's boundary (an edge midpoint nudged inward), so it is in cycle i's
+// own region — not at a shared-boundary vertex (ambiguous) and not near the centre where a
+// concentric inner cycle would swallow it (which made a frame look nested in its own hole).
 func smallestContainer(ccw [][]math.Point2, i int) int {
+	probe := probeJustInside(ccw[i])
 	best, bestArea := -1, stdmath.Inf(1)
-	probe := ccw[i][0]
 	for j, c := range ccw {
 		if j == i || !pointInPolygon2D(probe, c) {
 			continue
@@ -113,6 +116,16 @@ func smallestContainer(ccw [][]math.Point2, i int) int {
 		}
 	}
 	return best
+}
+
+// probeJustInside returns a point just inside a CCW loop near its first edge: the edge
+// midpoint nudged along the inward (left) normal by a small fraction of the edge length.
+func probeJustInside(loop []math.Point2) math.Point2 {
+	a, b := loop[0], loop[1]
+	e := a.VectorTo(b)
+	mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
+	left := math.V2(-e.Y, e.X) // interior side of a CCW loop
+	return mid.TranslateBy(left.Scale(1e-4))
 }
 
 func reversedLoop(loop []math.Point2) []math.Point2 {
