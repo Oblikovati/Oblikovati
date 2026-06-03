@@ -89,6 +89,40 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+// TestChamferFlatCornersRoundTrip checks the chamfer corner treatment survives a recipe
+// round trip in both states, and that an older recipe with no flag restores as flat (the
+// default, matching a freshly created chamfer).
+func TestChamferFlatCornersRoundTrip(t *testing.T) {
+	for _, flat := range []bool{true, false} {
+		fs := NewPartFeatures(nil, nil)
+		NewDressUpFeatures(fs).AddChamferCorners([][]byte{[]byte("edge")}, func() float64 { return 0.3 }, flat)
+		data, err := fs.MarshalRecipe(oneSketch{})
+		if err != nil {
+			t.Fatalf("MarshalRecipe(flat=%v): %v", flat, err)
+		}
+		if data[0].Chamfer.FlatCorners == nil || *data[0].Chamfer.FlatCorners != flat {
+			t.Fatalf("serialized FlatCorners = %v, want %v", data[0].Chamfer.FlatCorners, flat)
+		}
+		fresh := NewPartFeatures(nil, nil)
+		if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+			t.Fatalf("ApplyRecipe(flat=%v): %v", flat, err)
+		}
+		if got := fresh.Item(0).Definition().(*ChamferFeature).Definition().FlatCorners; got != flat {
+			t.Errorf("restored FlatCorners = %v, want %v", got, flat)
+		}
+	}
+
+	// An older recipe without the flag restores as flat (the default).
+	fresh := NewPartFeatures(nil, nil)
+	legacy := []FeatureData{{Kind: "chamfer", Chamfer: &EdgeDressData{Edges: []string{}, Value: 0.3}}}
+	if err := fresh.ApplyRecipe(legacy, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe(legacy): %v", err)
+	}
+	if !fresh.Item(0).Definition().(*ChamferFeature).Definition().FlatCorners {
+		t.Error("legacy chamfer without flatCorners should restore as flat")
+	}
+}
+
 func TestSolidFeaturesRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewHoleFeatures(fs).AddTapped([]byte("face-1"), func() float64 { return 6 }, func() float64 { return 10 }, "M6x1")

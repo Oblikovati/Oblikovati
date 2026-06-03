@@ -40,10 +40,13 @@ func (f *FilletFeature) Recompute(in Input) (Output, error) {
 	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), "fillet")
 }
 
-// ChamferDefinition bevels selected edges by a distance.
+// ChamferDefinition bevels selected edges by a distance. FlatCorners blends a vertex
+// where three selected edges meet into a flat triangular face (the Inventor default);
+// when false the three chamfer planes are left to meet at a point.
 type ChamferDefinition struct {
-	EdgeKeys [][]byte
-	Distance func() float64
+	EdgeKeys    [][]byte
+	Distance    func() float64
+	FlatCorners bool
 }
 
 // ChamferFeature is an equal-distance edge chamfer.
@@ -58,7 +61,7 @@ func (c *ChamferFeature) Kind() string                   { return "chamfer" }
 // Recompute bevels each selected (convex) edge by cutting a wedge tool along it via the
 // boolean. See chamfer.go.
 func (c *ChamferFeature) Recompute(in Input) (Output, error) {
-	return chamferEdges(in, c.def.EdgeKeys, callOrZero(c.def.Distance), featOr(c.featName, "chamfer"))
+	return chamferEdges(in, c.def.EdgeKeys, callOrZero(c.def.Distance), featOr(c.featName, "chamfer"), c.def.FlatCorners)
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.
@@ -151,9 +154,16 @@ func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *P
 	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius}})
 }
 
-// AddChamfer bevels the given edges by distance.
+// AddChamfer bevels the given edges by distance, blending three-edge corners flat (the
+// default treatment). Use [AddChamferCorners] to choose the pointy corner instead.
 func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64) *PartFeature {
-	cf := &ChamferFeature{def: &ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance}}
+	return c.AddChamferCorners(edgeKeys, distance, true)
+}
+
+// AddChamferCorners bevels the given edges by distance; flatCorners selects whether a
+// three-edge corner is blended into a flat triangular face (true) or left pointy (false).
+func (c *DressUpFeatures) AddChamferCorners(edgeKeys [][]byte, distance func() float64, flatCorners bool) *PartFeature {
+	cf := &ChamferFeature{def: &ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, FlatCorners: flatCorners}}
 	pf := c.engine.Add(cf)
 	pf.SetName(c.engine.UniqueName("Chamfer"))
 	cf.featName = pf.name

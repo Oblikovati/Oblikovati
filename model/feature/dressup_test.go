@@ -77,6 +77,73 @@ func TestChamferAllFourVerticalEdges(t *testing.T) {
 	}
 }
 
+// edgesAtCorner returns the reference keys of every box edge touching the point p.
+func edgesAtCorner(b *topo.Body, p math.Point3) [][]byte {
+	var keys [][]byte
+	for _, e := range b.Edges() {
+		if e.StartVertex().Point().IsEqualTo(p, 1e-9) || e.EndVertex().Point().IsEqualTo(p, 1e-9) {
+			keys = append(keys, e.ReferenceKey())
+		}
+	}
+	return keys
+}
+
+// chamferedCorner chamfers the three edges meeting at the box's (0,0,0) corner and returns
+// the resulting body, with flat or pointy corner treatment.
+func chamferedCorner(t *testing.T, flat bool) *topo.Body {
+	t.Helper()
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	keys := edgesAtCorner(box, math.P3(0, 0, 0))
+	if len(keys) != 3 {
+		t.Fatalf("found %d edges at the corner, want 3", len(keys))
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	ch := NewDressUpFeatures(fs).AddChamferCorners(keys, func() float64 { return 0.5 }, flat)
+	fs.Recompute()
+	if !ch.Health().OK() {
+		t.Fatalf("corner chamfer (flat=%v) sick: %+v", flat, ch.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("corner chamfer (flat=%v) not a valid solid: %+v", flat, r)
+	}
+	return res
+}
+
+// hasFlatCornerFace reports whether the body carries the triangular blend face on the
+// corner's diagonal plane — the flat-corner result. Its outward normal points away from
+// the solid toward the (0,0,0) corner, i.e. along (−1,−1,−1)/√3.
+func hasFlatCornerFace(b *topo.Body) bool {
+	for _, f := range b.Faces() {
+		n := f.Geometry().NormalAt(0, 0)
+		if len(f.Edges()) == 3 && n.X < -0.5 && n.Y < -0.5 && n.Z < -0.5 {
+			return true
+		}
+	}
+	return false
+}
+
+// TestChamferFlatCornerBlendsThreeEdges checks that flat-corner chamfering three edges of a
+// box corner trims the pointy three-plane tip into a triangular face, removing the extra
+// sliver of material the pointy treatment keeps.
+func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
+	flat := chamferedCorner(t, true)
+	pointy := chamferedCorner(t, false)
+
+	if !hasFlatCornerFace(flat) {
+		t.Error("flat-corner chamfer did not produce a triangular blend face")
+	}
+	if hasFlatCornerFace(pointy) {
+		t.Error("pointy chamfer unexpectedly produced a flat triangular corner face")
+	}
+	volFlat := ops.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
+	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
+	if !(volFlat < volPointy) {
+		t.Errorf("flat corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
+	}
+}
+
 // prismBody builds a unit-square prism via the extrude generator (for real edges).
 func prismBody() *topo.Body {
 	return buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 1, Y: 1}, {X: 0, Y: 1}}, sketch.XYPlane(), span{near: 0, far: 1}, 0, "ext")

@@ -98,7 +98,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 	case *FilletFeature:
 		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius)}
 	case *ChamferFeature:
-		fd.Chamfer = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Distance)}
+		flat := f.def.FlatCorners
+		fd.Chamfer = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Distance), FlatCorners: &flat}
 	case *ShellFeature:
 		fd.Shell = &FaceDressData{Faces: encodeKeys(f.def.RemovedFaceKeys), Value: evalFloat(f.def.Thickness)}
 	case *FaceDraftFeature:
@@ -255,7 +256,7 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		return du.AddChamfer(d.keys, constFloat(d.value)), nil
+		return du.AddChamferCorners(d.keys, constFloat(d.value), chamferFlatCornersOr(fd.Chamfer.FlatCorners)), nil
 	case "shell":
 		d, err := requireFaceDress(fd.Shell, "shell")
 		if err != nil {

@@ -22,27 +22,28 @@ import (
 // it through Execute / the input methods (Click, PressKey…) — there is no GPU or
 // window involved, so "operating the UI" is fully unit-testable (ADR-0014/0004).
 type Session struct {
-	workspace       *doc.Workspace
-	commands        *CommandManager
-	bus             *event.Bus
-	selection       *Selection
-	tool            *ToolInstance
-	picker          Picker
-	camera          scene.Camera
-	camTween        cameraTween
-	sketchReturnCam scene.Camera
-	activeSketch    *sketch.Sketch
-	pendingDim      *sketch.DimensionConstraint
-	featureEdit     *featureEditState
-	overlays        []renderer.DrawItem
-	addins          *AddInManager
-	grid            *GridSettings
-	themes          *theme.Library
-	themeStore      *theme.Store
-	materials       *material.Library
-	materialStore   *material.Store
-	notice          string               // last user-facing notice (e.g. a failed-commit reason)
-	visualStyle     renderer.VisualStyle // how the scene is drawn (View tab's Visual Style)
+	workspace          *doc.Workspace
+	commands           *CommandManager
+	bus                *event.Bus
+	selection          *Selection
+	tool               *ToolInstance
+	picker             Picker
+	camera             scene.Camera
+	camTween           cameraTween
+	sketchReturnCam    scene.Camera
+	activeSketch       *sketch.Sketch
+	pendingDim         *sketch.DimensionConstraint
+	featureEdit        *featureEditState
+	overlays           []renderer.DrawItem
+	addins             *AddInManager
+	grid               *GridSettings
+	themes             *theme.Library
+	themeStore         *theme.Store
+	materials          *material.Library
+	materialStore      *material.Store
+	notice             string               // last user-facing notice (e.g. a failed-commit reason)
+	visualStyle        renderer.VisualStyle // how the scene is drawn (View tab's Visual Style)
+	chamferFlatCorners bool                 // default three-edge-corner treatment for new chamfers
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
@@ -69,13 +70,14 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	return &Session{
-		workspace:   doc.NewWorkspace(store),
-		commands:    NewCommandManager(),
-		bus:         event.NewBus(),
-		selection:   NewSelection(),
-		camera:      scene.NewCamera(800, 600),
-		addins:      NewAddInManager(),
-		visualStyle: renderer.ShadedWithEdges,
+		workspace:          doc.NewWorkspace(store),
+		commands:           NewCommandManager(),
+		bus:                event.NewBus(),
+		selection:          NewSelection(),
+		camera:             scene.NewCamera(800, 600),
+		addins:             NewAddInManager(),
+		visualStyle:        renderer.ShadedWithEdges,
+		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
 }
 
