@@ -132,6 +132,12 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 			return nil, err
 		}
 		return r.s.splines.AddWithPoints(p, ed.Closed, ed.Fit), nil
+	case "image":
+		if len(ed.Anchor) != 2 || len(ed.Size) != 2 {
+			return nil, fmt.Errorf("image needs a 2-component anchor and size")
+		}
+		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
+		return r.s.images.Add(ed.ImageRef, anchor, math.Scalar(ed.Size[0]), math.Scalar(ed.Size[1]), math.Scalar(ed.Rotation), ed.Opacity), nil
 	default:
 		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
 	}

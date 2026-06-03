@@ -66,6 +66,11 @@ type EntityData struct {
 	Closed       bool      `yaml:"closed,omitempty"`
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
+	ImageRef     string    `yaml:"imageRef,omitempty"` // image only
+	Anchor       []float64 `yaml:"anchor,omitempty"`   // image only: [x, y]
+	Size         []float64 `yaml:"size,omitempty"`     // image only: [w, h]
+	Rotation     float64   `yaml:"rotation,omitempty"` // image only (radians)
+	Opacity      float64   `yaml:"opacity,omitempty"`  // image only
 }
 
 // ConstraintData is one geometric constraint: its kind plus operand ids split into
@@ -184,6 +189,13 @@ func serializeEntity(e Entity) (EntityData, error) {
 		return EntityData{ID: int(v.id), Kind: "ellipticalArc", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), StartAngle: float64(v.StartAngle), EndAngle: float64(v.EndAngle), Construction: v.construction}, nil
 	case *Spline:
 		return EntityData{ID: int(v.id), Kind: "spline", Points: pointIDsOf(v.Points), Closed: v.Closed, Fit: v.fit, Construction: v.construction}, nil
+	case *SketchImage:
+		return EntityData{
+			ID: int(v.id), Kind: "image", ImageRef: v.Ref,
+			Anchor:   []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
+			Size:     []float64{float64(v.Width), float64(v.Height)},
+			Rotation: float64(v.Rotation), Opacity: v.Opacity,
+		}, nil
 	default:
 		return EntityData{}, fmt.Errorf("cannot serialize entity of type %T (no codec)", e)
 	}

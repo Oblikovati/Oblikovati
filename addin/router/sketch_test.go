@@ -658,6 +658,52 @@ func TestSketchAddPatternErrors(t *testing.T) {
 	}
 }
 
+// TestSketchOffsetAndImage exercises the F05 offset + image-placement operations.
+func TestSketchOffsetAndImage(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var c wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"10 mm"}`, &c)
+
+	var off wire.OffsetSketchResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"entity":%d,"distance":"5 mm"}`, c.EntityID)
+	call(t, r, s, "sketch.offset", args, &off)
+	if off.Kind != "circle" {
+		t.Fatalf("offset kind = %q, want circle", off.Kind)
+	}
+	if !hasCircleRadius2(t, r, s, 1.5) { // 10mm + 5mm = 15mm = 1.5 cm
+		t.Fatalf("no radius-1.5 offset circle")
+	}
+
+	var img wire.AddSketchImageResult
+	call(t, r, s, "sketch.addImage", `{"sketchIndex":0,"ref":"pkg://trace.png","anchor":[1,1],"width":"80 mm","height":"60 mm","opacity":0.5}`, &img)
+	if img.EntityID == 0 {
+		t.Fatal("addImage returned no entity id")
+	}
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	if countKind(ents.Entities, "image") != 1 {
+		t.Fatalf("images = %d, want 1", countKind(ents.Entities, "image"))
+	}
+}
+
+func TestSketchOffsetErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"10 mm"}`, &wire.AddSketchEntityResult{})
+	if _, err := r.Handle(s, "sketch.offset", []byte(`{"sketchIndex":0,"entity":99999,"distance":"1 mm"}`)); err == nil {
+		t.Fatal("expected error offsetting a missing entity")
+	}
+}
+
+// hasCircleRadius2 enumerates and checks for a circle of the given radius.
+func hasCircleRadius2(t *testing.T, r *Router, s *app.Session, radius float64) bool {
+	t.Helper()
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	return hasCircleRadius(ents.Entities, radius)
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

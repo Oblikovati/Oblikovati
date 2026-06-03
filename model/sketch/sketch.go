@@ -104,6 +104,7 @@ type Sketch struct {
 	ellArcs  *EllipticalArcs
 	splines  *Splines
 	points   *Points
+	images   *SketchImages
 	blocks   *Blocks
 	geomCons *GeometricConstraints
 	dimCons  *DimensionConstraints
@@ -162,8 +163,11 @@ func (s *Sketch) Splines() *Splines   { return s.splines }
 
 // EllipticalArcs returns the elliptical-arc collection.
 func (s *Sketch) EllipticalArcs() *EllipticalArcs { return s.ellArcs }
-func (s *Sketch) Points() *Points                 { return s.points }
-func (s *Sketch) Blocks() *Blocks                 { return s.blocks }
+
+// Images returns the sketch-image collection.
+func (s *Sketch) Images() *SketchImages { return s.images }
+func (s *Sketch) Points() *Points       { return s.points }
+func (s *Sketch) Blocks() *Blocks       { return s.blocks }
 
 // GeometricConstraints returns the sketch's geometric-constraint collection.
 func (s *Sketch) GeometricConstraints() *GeometricConstraints { return s.geomCons }
@@ -216,6 +220,7 @@ func (s *Sketch) initCollections() {
 	s.ellArcs = &EllipticalArcs{s: s}
 	s.splines = &Splines{s: s}
 	s.points = &Points{s: s}
+	s.images = &SketchImages{s: s}
 	s.blocks = &Blocks{s: s}
 	s.geomCons = &GeometricConstraints{}
 	s.params = param.NewParameters()
