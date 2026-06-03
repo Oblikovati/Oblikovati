@@ -13,7 +13,7 @@ import (
 
 // prismBody builds a unit-square prism via the extrude generator (for real edges).
 func prismBody() *topo.Body {
-	return buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 1, Y: 1}, {X: 0, Y: 1}}, sketch.XYPlane(), 1, "ext")
+	return buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 1, Y: 1}, {X: 0, Y: 1}}, sketch.XYPlane(), span{near: 0, far: 1}, 0, "ext")
 }
 
 func TestFilletResolvesEdgeThenDefers(t *testing.T) {

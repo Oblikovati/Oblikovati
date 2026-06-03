@@ -28,7 +28,7 @@ func TestBuildStatusGuidesExtrude(t *testing.T) {
 	s.Click(120, 90) // synthetic click picks the profile
 	ext.SetDistance(5)
 	sb = BuildStatus(s)
-	if !sb.CanCommit || sb.Prompt != "Click OK to create the extrusion" {
+	if !sb.CanCommit || sb.Prompt != "Set the extrude options and click OK" {
 		t.Errorf("after profile + distance: %+v, want committable OK prompt", sb)
 	}
 }

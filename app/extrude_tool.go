@@ -19,15 +19,21 @@ import (
 // Inventor extrude flow, driven entirely by session input so a test exercises it with
 // synthetic clicks. It is the worked example proving geometry flows end to end.
 type ExtrudeTool struct {
-	profiles  []ProfileHandle
-	distance  float64
-	operation ops.PartFeatureOperation
-	added     *feature.PartFeature
+	profiles   []ProfileHandle
+	distance   float64 // primary depth, model units
+	distance2  float64 // asymmetric second-direction depth, model units
+	taper      float64 // draft angle, radians
+	extent     feature.ExtentType
+	direction  feature.ExtentDirection
+	asymmetric bool
+	operation  ops.PartFeatureOperation
+	added      *feature.PartFeature
 }
 
-// NewExtrudeTool returns an extrude tool defaulting to a new-body extrusion.
+// NewExtrudeTool returns an extrude tool defaulting to a positive distance extrusion that
+// creates a new body.
 func NewExtrudeTool() *ExtrudeTool {
-	return &ExtrudeTool{operation: ops.NewBody}
+	return &ExtrudeTool{operation: ops.NewBody, extent: feature.DistanceExtent, direction: feature.PositiveDir}
 }
 
 // Name implements [Tool].
@@ -81,6 +87,39 @@ func (t *ExtrudeTool) SetDistance(d float64) { t.distance = d }
 // Distance returns the current extrusion distance (database units).
 func (t *ExtrudeTool) Distance() float64 { return t.distance }
 
+// The extrude options the dialog drives: extent type, direction, the asymmetric
+// second-direction depth, and the draft taper. All values are database units / radians.
+func (t *ExtrudeTool) SetExtentType(e feature.ExtentType)     { t.extent = e }
+func (t *ExtrudeTool) ExtentType() feature.ExtentType         { return t.extent }
+func (t *ExtrudeTool) SetDirection(d feature.ExtentDirection) { t.direction = d }
+func (t *ExtrudeTool) Direction() feature.ExtentDirection     { return t.direction }
+func (t *ExtrudeTool) SetAsymmetric(on bool)                  { t.asymmetric = on }
+func (t *ExtrudeTool) Asymmetric() bool                       { return t.asymmetric }
+func (t *ExtrudeTool) SetSecondDistance(d float64)            { t.distance2 = d }
+func (t *ExtrudeTool) SecondDistance() float64                { return t.distance2 }
+func (t *ExtrudeTool) SetTaper(radians float64)               { t.taper = radians }
+func (t *ExtrudeTool) Taper() float64                         { return t.taper }
+
+// needsDistance reports whether the current extent is gauged by the distance field (vs.
+// measured from the model, like through-all / to-next).
+func (t *ExtrudeTool) needsDistance() bool {
+	return t.extent == feature.DistanceExtent || t.extent == feature.DistanceFromFaceExtent
+}
+
+// buildExtent assembles the model extent from the tool's option state.
+func (t *ExtrudeTool) buildExtent() feature.Extent {
+	ext := feature.Extent{Type: t.extent, Direction: t.direction}
+	if t.needsDistance() {
+		d := t.distance
+		ext.Distance = func() float64 { return d }
+		if t.asymmetric {
+			d2 := t.distance2
+			ext.Distance2 = func() float64 { return d2 }
+		}
+	}
+	return ext
+}
+
 // PickedProfiles returns the regions the user has picked (in click order), for the UI
 // to highlight. Empty until the first pick.
 func (t *ExtrudeTool) PickedProfiles() []ProfileHandle {
@@ -96,11 +135,15 @@ func (t *ExtrudeTool) PickedProfile() (ProfileHandle, bool) {
 	return t.profiles[0], true
 }
 
-// SetOperation chooses join/cut/intersect/new-body.
+// SetOperation chooses join/cut/intersect/new-body; Operation returns the current choice.
 func (t *ExtrudeTool) SetOperation(op ops.PartFeatureOperation) { t.operation = op }
+func (t *ExtrudeTool) Operation() ops.PartFeatureOperation      { return t.operation }
 
-// CanCommit reports whether at least one region and a non-zero distance are gathered.
-func (t *ExtrudeTool) CanCommit() bool { return len(t.profiles) > 0 && t.distance != 0 }
+// CanCommit reports whether enough input is gathered: at least one region, and — for a
+// distance-gauged extent — a non-zero distance.
+func (t *ExtrudeTool) CanCommit() bool {
+	return len(t.profiles) > 0 && (!t.needsDistance() || t.distance != 0)
+}
 
 // Commit adds the extrude feature to the active part and recomputes; a sick feature
 // (e.g. an open profile) keeps the tool open by returning an error. All picked regions
@@ -113,9 +156,8 @@ func (t *ExtrudeTool) Commit(s *Session) error {
 	}
 	skt := t.profiles[0].Sketch
 	indices := profileIndicesOn(t.profiles, skt)
-	dist := t.distance
 	t.added = feature.NewExtrudeFeatures(part.Features()).
-		AddByDistanceExtentProfiles(skt, indices, t.operation, func() float64 { return dist })
+		AddExtrude(skt, indices, t.operation, t.buildExtent(), t.taper)
 	part.Recompute()
 	if !t.added.Health().OK() {
 		return errors.New("extrude: " + t.added.Health().Reason)
@@ -143,10 +185,10 @@ func (t *ExtrudeTool) Prompt(*Session) string {
 	switch {
 	case len(t.profiles) == 0:
 		return "Select a region to extrude (Ctrl+click to add more)"
-	case t.distance == 0:
+	case t.needsDistance() && t.distance == 0:
 		return "Specify the extrude distance"
 	default:
-		return "Click OK to create the extrusion"
+		return "Set the extrude options and click OK"
 	}
 }
 
@@ -155,7 +197,9 @@ func (t *ExtrudeTool) Prompt(*Session) string {
 // shows a live preview before OK (Inventor's in-canvas preview). Empty until a region
 // and distance are set.
 func (t *ExtrudeTool) Preview(*Session) []renderer.DrawItem {
-	if !t.CanCommit() {
+	// Preview the swept prism only for a distance extent; model-gauged extents
+	// (through-all / to-next) have no fixed depth to draw until commit.
+	if len(t.profiles) == 0 || !t.needsDistance() || t.distance == 0 {
 		return nil
 	}
 	var items []renderer.DrawItem
