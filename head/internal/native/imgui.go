@@ -79,6 +79,7 @@ void obk_ig_end_table(void);
 void obk_ig_set_next_item_width(float w);
 void obk_ig_push_id_int(int id);
 void obk_ig_pop_id(void);
+int  obk_ig_is_item_deactivated_after_edit(void);
 
 // Theming verbs (ADR-0021). set_style_color overwrites one persistent ImGuiStyle color,
 // addressed by its ImGui name (e.g. "WindowBg", "Button") so Go never hardcodes the
@@ -278,6 +279,11 @@ func SetNextItemWidth(w float32) { C.obk_ig_set_next_item_width(C.float(w)) }
 // labels across rows do not collide. Pair every PushIDInt with a PopID.
 func PushIDInt(id int) { C.obk_ig_push_id_int(C.int(id)) }
 func PopID()           { C.obk_ig_pop_id() }
+
+// IsItemDeactivatedAfterEdit reports whether the most recent item was edited and then
+// committed this frame (Enter or focus loss) — so a text cell commits once the user is
+// done, not on every keystroke.
+func IsItemDeactivatedAfterEdit() bool { return C.obk_ig_is_item_deactivated_after_edit() != 0 }
 
 // SeparatorText draws a labeled horizontal separator (used as panel titles).
 func SeparatorText(s string) {

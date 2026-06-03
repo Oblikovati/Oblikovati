@@ -145,6 +145,7 @@ void obk_ig_end_table(void)                            { ImGui::EndTable(); }
 void obk_ig_set_next_item_width(float w)               { ImGui::SetNextItemWidth(w); }
 void obk_ig_push_id_int(int id)                        { ImGui::PushID(id); }
 void obk_ig_pop_id(void)                               { ImGui::PopID(); }
+int  obk_ig_is_item_deactivated_after_edit(void)       { return ImGui::IsItemDeactivatedAfterEdit() ? 1 : 0; }
 
 // want_capture_mouse reports whether ImGui consumed the pointer this frame, so the Go
 // loop knows when NOT to forward a click to the 3D viewport (picking).
