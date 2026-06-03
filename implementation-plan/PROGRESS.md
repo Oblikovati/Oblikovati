@@ -51,7 +51,8 @@ follows the `WorkPlanes` slice (discriminated `Kind`-based wire methods + typed 
 
 | PBI | Title | Status | Go package | Notes |
 |-----|-------|:------:|------------|-------|
-| 200 | Sketch contract/wire/client spine + enumeration + router | ⬜ | `Oblikovati.API/{contract,wire,client}`, `addin/router` | F01 |
+| 200 | Sketch contract/wire/client spine + enumeration + router | ✅ | `Oblikovati.API/{contract,wire,client}`, `addin/router`, `model/sketch` | F01. `contract.Sketch` (name/visible/entityCount/DOF) + `types.{SketchEntityKind,GeometricConstraintKind,DimensionConstraintKind}` + wire `sketch.list/get/edit/exitEdit/solve/delete/entities/constraints/dimensions` + typed `client.Sketch`. Router handlers map model entities/constraints → kind via type-switch; `var _ contract.Sketch` assertion. Dogfood e2e (create→rectangle→list/get/entities/edit/solve/delete) + client tests. lint/vet/test green. |
+| 201 | Sketch properties (name/visible/color/linetype/lineweight/defer) | ⬜ | `Oblikovati.API`, `model/sketch`, `addin/router` | F01 |
 
 ### M20 — Feature Completion & Geometry Parity
 
