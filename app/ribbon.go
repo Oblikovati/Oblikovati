@@ -7,6 +7,10 @@ package app
 // generated from the command registry and mirrors Inventor's two-level layout: tab →
 // panel → command. A command's Tab picks the ribbon tab, its Category the panel within
 // it, so a new command (or an add-in's command) appears as a button with no UI code edited.
+//
+// Inventor has one ribbon per document type plus ZeroDoc, switched by the active document
+// (RibbonUI_Overview); BuildRibbon selects that ribbon by RibbonKey and includes only the
+// commands scoped to it and to the current environment (so the Sketch tab is contextual).
 
 // DefaultTab is where commands with no explicit tab land — Inventor's catch-all "Tools"
 // tab, so an under-specified or add-in command is still reachable.
@@ -31,20 +35,27 @@ type RibbonTab struct {
 	Panels []RibbonPanel
 }
 
-// Ribbon is the full ribbon model for a frame.
+// Ribbon is the full ribbon model for a frame: the document ribbon selected this frame and
+// its tabs.
 type Ribbon struct {
+	Key  RibbonKey
 	Tabs []RibbonTab
 }
 
-// BuildRibbon generates the ribbon from the session's command registry, grouping each
-// command under its tab then its panel. Tabs, panels, and buttons all follow command
-// registration order; each button carries its live enabled state.
+// BuildRibbon generates the ribbon for the active document (ZeroDoc when none is open),
+// including only the commands scoped to that ribbon and to the current environment — so the
+// part ribbon's contextual Sketch tab appears only while a sketch is open. Tabs, panels, and
+// buttons follow command registration order; each button carries its live enabled state.
 func BuildRibbon(s *Session) Ribbon {
+	key := ribbonKeyForDocument(s.ActiveDocument())
+	env := currentEnvironment(s)
 	b := ribbonBuilder{tabIndex: map[string]int{}, panelIndex: map[string]map[string]int{}}
 	for _, c := range s.commands.All() {
-		b.add(c, c.IsEnabled(s))
+		if c.appearsOnRibbon(key) && environmentShows(c.environment, env) {
+			b.add(c, c.IsEnabled(s))
+		}
 	}
-	return Ribbon{Tabs: b.tabs}
+	return Ribbon{Key: key, Tabs: b.tabs}
 }
 
 // ribbonBuilder accumulates commands into ordered tabs/panels, remembering first-seen

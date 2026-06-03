@@ -57,6 +57,29 @@ type Command interface {
 No COM `ButtonDefinition`/`ComboBoxDefinition` zoo — one interface; the *surface*
 (button vs menu vs hotkey) is a UI concern, not baked into the definition.
 
+#### Ribbon placement (the COM `Ribbons`/`RibbonTab`/`RibbonPanel` replacement)
+
+The host has one ribbon per document type plus ZeroDoc, switched by the active
+document (Inventor's RibbonUI model — `Inventor-API/files/RibbonUI_Overview.md`,
+core/09). A command declares **where** it surfaces: a `RibbonKey` (which of the seven
+ribbons — `ZeroDoc, Part, Assembly, Drawing, Presentation, iFeatures,
+UnknownDocument`, default `Part`), a tab and panel within it, and an `Environment`
+(base, or a contextual one like `sketch`). `BuildRibbon` then emits exactly the active
+document's ribbon, with contextual tabs present only in their environment.
+
+Add-ins manage the ribbon through the same contract (no special path):
+
+- **Discover** — `ribbon.list` (`client.Ribbon().List()`) returns the active ribbon's
+  `key → tabs → panels → controls`, so an add-in can find the internal names to insert
+  next to — Inventor's "list the contents of the ribbon".
+- **Place** — `commands.create` (`client.Commands().Create`) carries `Ribbon`,
+  `Tab`, `Category`, and `Environment`, so a button lands on, say, the Draw panel of the
+  Sketch tab of the Part ribbon. An unknown ribbon name is rejected, not silently
+  defaulted.
+
+`RibbonKey` and `Environment` are defined once in `api/types` (Apache-2.0) and aliased
+in `/source`, like every other public enum (ADR-0018).
+
 ## Out-of-process add-ins (third-party) — gRPC
 
 > **As built (2026-06, [ADR-0016](../decisions/ADR-0016-shared-library-addins-mcp-bridge.md)).**

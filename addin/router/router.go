@@ -41,9 +41,7 @@ func New(ops *opregistry.Registry) *Router {
 // registerStandardHandlers wires the command/document/parameter/model/sketch/feature/theme
 // methods.
 func (r *Router) registerStandardHandlers() {
-	r.handlers[wire.MethodCommandsList] = listCommands
-	r.handlers[wire.MethodCommandsExecute] = executeCommand
-	r.handlers[wire.MethodCommandsCreate] = createCommand
+	r.registerCommandHandlers()
 	r.handlers[wire.MethodDocumentsList] = listDocuments
 	r.handlers[wire.MethodDocumentsCreate] = createDocument
 	r.handlers[wire.MethodDocumentsActivate] = activateDocument
@@ -61,6 +59,15 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodThemeActive] = themeActive
 	r.handlers[wire.MethodThemeList] = themeList
+}
+
+// registerCommandHandlers wires the command and ribbon methods — the add-in UI surface
+// (list/execute/create commands and enumerate the active ribbon, RibbonUI core/07).
+func (r *Router) registerCommandHandlers() {
+	r.handlers[wire.MethodCommandsList] = listCommands
+	r.handlers[wire.MethodCommandsExecute] = executeCommand
+	r.handlers[wire.MethodCommandsCreate] = createCommand
+	r.handlers[wire.MethodRibbonList] = ribbonList
 }
 
 // registerMaterialHandlers wires the appearance/material/assignment/physical-properties

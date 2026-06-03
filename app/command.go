@@ -48,6 +48,8 @@ type CommandDefinition struct {
 	tooltip     string
 	iconKey     string      // icon asset key (e.g. "extrude"); empty ⇒ no icon
 	buttonStyle ButtonStyle // ribbon render style; zero value ⇒ text-only
+	ribbons     []RibbonKey // ribbons this command appears on; empty ⇒ the Part ribbon
+	environment Environment // ribbon environment; BaseEnvironment ⇒ always shown
 	enabled     func(*Session) bool
 	run         func(*Session) error
 }
@@ -84,10 +86,49 @@ func (c *CommandDefinition) WithButtonStyle(s ButtonStyle) *CommandDefinition {
 	return c
 }
 
+// WithRibbons sets the document ribbon(s) the command appears on (e.g. PartRibbon, or several
+// for a command shared across document types). Unset ⇒ the Part ribbon, the only modeling
+// ribbon today. This is Inventor's "which of the seven ribbons does this control belong to".
+func (c *CommandDefinition) WithRibbons(keys ...RibbonKey) *CommandDefinition {
+	c.ribbons = keys
+	return c
+}
+
+// WithEnvironment scopes the command to a ribbon environment. A SketchEnvironment command
+// forms the contextual Sketch tab and shows only while a sketch is open; the default
+// BaseEnvironment always shows.
+func (c *CommandDefinition) WithEnvironment(e Environment) *CommandDefinition {
+	c.environment = e
+	return c
+}
+
 // WithEnable sets the enable predicate (nil ⇒ always enabled).
 func (c *CommandDefinition) WithEnable(p func(*Session) bool) *CommandDefinition {
 	c.enabled = p
 	return c
+}
+
+// Ribbons returns the ribbons the command appears on, resolving the default (the Part ribbon)
+// so a caller always sees the effective placement. The slice is a copy.
+func (c *CommandDefinition) Ribbons() []RibbonKey {
+	if len(c.ribbons) == 0 {
+		return []RibbonKey{PartRibbon}
+	}
+	return append([]RibbonKey(nil), c.ribbons...)
+}
+
+// appearsOnRibbon reports whether the command belongs on the given ribbon. With no explicit
+// ribbons it defaults to the Part ribbon (the only modeling ribbon implemented today).
+func (c *CommandDefinition) appearsOnRibbon(key RibbonKey) bool {
+	if len(c.ribbons) == 0 {
+		return key == PartRibbon
+	}
+	for _, k := range c.ribbons {
+		if k == key {
+			return true
+		}
+	}
+	return false
 }
 
 // ID/DisplayName/Tab/Category/Kind/Alias/Tooltip are the command's metadata.
@@ -100,6 +141,7 @@ func (c *CommandDefinition) Alias() string            { return c.alias }
 func (c *CommandDefinition) Tooltip() string          { return c.tooltip }
 func (c *CommandDefinition) Icon() string             { return c.iconKey }
 func (c *CommandDefinition) ButtonStyle() ButtonStyle { return c.buttonStyle }
+func (c *CommandDefinition) Environment() Environment { return c.environment }
 
 // IsEnabled reports whether the command may run in the given session (predicate true
 // or absent).
