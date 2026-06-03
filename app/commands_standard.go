@@ -2,7 +2,11 @@
 
 package app
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/Oblikovati/oblikovati/renderer"
+)
 
 // RegisterStandardCommands wires Inventor's standard ribbon for a session: the 3D Model
 // tab (Create 2D Sketch, Extrude), the contextual Sketch tab (the full geometry-tool
@@ -282,8 +286,13 @@ func constrainCommands() []*CommandDefinition {
 	return cmds
 }
 
-// viewTabCommands are the View tab navigation commands.
+// viewTabCommands are the View tab commands: navigation plus the Visual Style presets.
 func viewTabCommands() []*CommandDefinition {
+	return append(viewNavigateCommands(), visualStyleCommands()...)
+}
+
+// viewNavigateCommands are the View tab's Navigate panel.
+func viewNavigateCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("View.ZoomAll", "Zoom All", "Navigate", func(s *Session) error {
 			s.FitView()
@@ -295,6 +304,28 @@ func viewTabCommands() []*CommandDefinition {
 			return nil
 		}).WithTab("View").WithIcon("home").WithButtonStyle(LargeIconButton).
 			WithTooltip("Home View — the default isometric view, framed to fit."),
+	}
+}
+
+// visualStyleCommands are the View tab's Visual Style panel: how the model is drawn (Shaded,
+// Shaded with Edges, Wireframe — Inventor's display-mode presets our renderer supports).
+func visualStyleCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("View.Shaded", "Shaded", "Visual Style", func(s *Session) error {
+			s.SetVisualStyle(renderer.Shaded)
+			return nil
+		}).WithTab("View").WithIcon("shaded").
+			WithTooltip("Shaded — lit faces, no edges."),
+		NewCommand("View.ShadedWithEdges", "Shaded with Edges", "Visual Style", func(s *Session) error {
+			s.SetVisualStyle(renderer.ShadedWithEdges)
+			return nil
+		}).WithTab("View").WithIcon("shaded-edges").
+			WithTooltip("Shaded with Edges — lit faces with the edge wireframe."),
+		NewCommand("View.Wireframe", "Wireframe", "Visual Style", func(s *Session) error {
+			s.SetVisualStyle(renderer.Wireframe)
+			return nil
+		}).WithTab("View").WithIcon("wireframe").
+			WithTooltip("Wireframe — edges only, no shaded faces."),
 	}
 }
 

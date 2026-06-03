@@ -100,22 +100,55 @@ var defaultSurfaceColor = [4]float32{0.7, 0.72, 0.75, 1}
 // edgeColor is the wireframe color.
 var edgeColor = [4]float32{0.1, 0.1, 0.12, 1}
 
-// BuildDrawList is the pure function that turns the visible scene bodies into a draw
-// list at the given quality: each visible body contributes a shaded triangle item
-// (its tessellation) and a wireframe line item (its edges), tagged with the body's
-// object id for picking. Bodies outside the view are culled.
+// VisualStyle selects how the scene bodies are drawn (Inventor's Visual Style / display
+// mode). Our flat-shaded renderer supports the three that map to it directly; the richer
+// Inventor presets (realistic/monochrome/illustration, hidden-edge removal) need NPR work.
+type VisualStyle uint8
+
+const (
+	// Shaded draws lit faces only (no wireframe).
+	Shaded VisualStyle = iota
+	// ShadedWithEdges draws lit faces with the edge wireframe over them (the default).
+	ShadedWithEdges
+	// Wireframe draws the edges only (no shaded faces) — every edge visible.
+	Wireframe
+)
+
+// String returns a stable, user-facing name.
+func (v VisualStyle) String() string {
+	switch v {
+	case Shaded:
+		return "Shaded"
+	case Wireframe:
+		return "Wireframe"
+	default:
+		return "Shaded with Edges"
+	}
+}
+
+// BuildDrawList turns the visible scene bodies into a draw list at the given quality in the
+// default Shaded-with-Edges style. Bodies outside the view are culled.
 func BuildDrawList(bodies []*topo.Body, cam scene.Camera, q ops.Quality, lookup SurfaceLookup) DrawList {
+	return BuildDrawListStyled(bodies, cam, q, lookup, ShadedWithEdges)
+}
+
+// BuildDrawListStyled is BuildDrawList honoring a visual style: each visible body contributes
+// a shaded triangle item (unless Wireframe) and/or a wireframe line item (unless Shaded),
+// tagged with the body's object id for picking.
+func BuildDrawListStyled(bodies []*topo.Body, cam scene.Camera, q ops.Quality, lookup SurfaceLookup, style VisualStyle) DrawList {
 	var items []DrawItem
 	for _, b := range bodies {
 		if !visible(cam, b.RangeBox()) {
 			continue
 		}
 		mesh, edges := ops.TessellateBody(b, q)
-		if mesh.TriangleCount() > 0 {
+		if style != Wireframe && mesh.TriangleCount() > 0 {
 			items = append(items, triangleItem(b.ID(), mesh, surfaceFor(b, lookup)))
 		}
-		if line := lineItem(b.ID(), edges); line != nil {
-			items = append(items, *line)
+		if style != Shaded {
+			if line := lineItem(b.ID(), edges); line != nil {
+				items = append(items, *line)
+			}
 		}
 	}
 	return DrawList{Items: items}
