@@ -5,6 +5,8 @@
 package ui
 
 import (
+	stdmath "math"
+
 	"github.com/Oblikovati/oblikovati/app"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/sketch"
@@ -46,8 +48,9 @@ func snapGlyph(plane sketch.Plane, r app.SnapResult, hWorld float64) (renderer.D
 	return lineItem(acc, snapGlyphColor), true
 }
 
-// pointsOverlay draws a small square at every placed sketch point so it is visible
-// (a bare point is a single pixel). hWorld is the half-size in model units.
+// pointsOverlay draws Inventor's target glyph (a circle with a centred crosshair) at every
+// placed sketch point so it is visible (a bare point is a single pixel). hWorld is the
+// half-size in model units (screen-constant via the camera).
 func pointsOverlay(plane sketch.Plane, sk *sketch.Sketch, hWorld float64) (renderer.DrawItem, bool) {
 	if sk == nil {
 		return renderer.DrawItem{}, false
@@ -55,12 +58,31 @@ func pointsOverlay(plane sketch.Plane, sk *sketch.Sketch, hWorld float64) (rende
 	acc := &segAccum{}
 	pts := sk.Points()
 	for i := 0; i < pts.Count(); i++ {
-		acc.polyline(plane, square(pts.Item(i).Position(), hWorld), true)
+		acc.targetMarker(plane, pts.Item(i).Position(), hWorld)
 	}
 	if len(acc.pos) == 0 {
 		return renderer.DrawItem{}, false
 	}
 	return lineItem(acc, pointMarkerColor), true
+}
+
+// targetMarker adds the sketch-point glyph at c: a small circle with a centred crosshair
+// (the "target" symbol Inventor uses), screen-constant via hWorld.
+func (a *segAccum) targetMarker(plane sketch.Plane, c math.Point2, h float64) {
+	a.polyline(plane, circlePoints(c, h*0.7), true)
+	a.seg(plane, math.P2(c.X-h, c.Y), math.P2(c.X+h, c.Y))
+	a.seg(plane, math.P2(c.X, c.Y-h), math.P2(c.X, c.Y+h))
+}
+
+// circlePoints samples a closed circle of radius r about c.
+func circlePoints(c math.Point2, r float64) []math.Point2 {
+	const n = 16
+	pts := make([]math.Point2, n)
+	for i := 0; i < n; i++ {
+		t := 2 * stdmath.Pi * float64(i) / n
+		pts[i] = math.P2(c.X+r*stdmath.Cos(t), c.Y+r*stdmath.Sin(t))
+	}
+	return pts
 }
 
 func lineItem(acc *segAccum, color [4]float32) renderer.DrawItem {
