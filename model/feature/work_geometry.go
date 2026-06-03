@@ -141,6 +141,9 @@ func (g *WorkGeometry) seedOrigin() {
 
 // plane/axis/point implement workResolver, resolving a ref to its current geometry.
 func (g *WorkGeometry) plane(ref WorkRef) (sketch.Plane, error) {
+	if pl, isFace, err := g.facePlane(ref); isFace {
+		return pl, err // a planar B-rep face used as a plane input (offset-from-face, etc.)
+	}
 	if i, ok := userIndex(ref, "plane"); ok {
 		if i < 0 || i >= g.planes.Count() {
 			return sketch.Plane{}, fmt.Errorf("work geometry: no work plane %q", ref)

@@ -31,6 +31,26 @@ func TestRayPickerSelectsEdge(t *testing.T) {
 	}
 }
 
+// TestRayPickerSelectsVertex aims a ray straight at a box corner and checks the picker
+// returns that vertex — the path the three-point-plane tool relies on (the RayPicker had no
+// vertex picking, so model-vertex selection silently did nothing in the head).
+func TestRayPickerSelectsVertex(t *testing.T) {
+	s := extrudedBox(t, 2, 4) // box [0,2]×[0,2]×[0,4]
+	cam := scene.NewCamera(400, 400)
+	cam.Eye = math.P3(10, 0, 0)
+	cam.Target = math.P3(2, 0, 0)
+	p := NewRayPicker(cam, partBodies(s))
+
+	dir, _ := math.UnitVector3FromVector(math.V3(-1, 0, 0))
+	v := p.nearestVertex(math.P3(10, 0, 0), dir.AsVector()) // straight at the (2,0,0) corner
+	if v == nil {
+		t.Fatal("nearestVertex found no vertex aiming at the (2,0,0) corner")
+	}
+	if !v.Point().IsEqualTo(math.P3(2, 0, 0), 1e-9) {
+		t.Errorf("picked vertex %v, want (2,0,0)", v.Point())
+	}
+}
+
 // TestRayPickerEdgeFilter checks the edge pick is gated by the filter: a face-only filter
 // near an edge does not return an edge (it falls through to the face).
 func TestRayPickerEdgeFilter(t *testing.T) {
