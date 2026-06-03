@@ -81,8 +81,14 @@ func modelTabCommands() []*CommandDefinition {
 }
 
 // solidFeatureCommands are the 3D Model tab's "Create" panel — the sketched solid
-// features (extrude, revolve, coil, …), each launching its interactive tool.
+// features, each launching its interactive tool. Split into sketched-profile features
+// (extrude/revolve) and swept features (sweep/loft/coil) to keep each builder small.
 func solidFeatureCommands() []*CommandDefinition {
+	return append(profileSolidCommands(), sweptSolidCommands()...)
+}
+
+// profileSolidCommands are the single-profile solid features (extrude, revolve).
+func profileSolidCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Create.Extrude", "Extrude", "Create", func(s *Session) error {
 			s.StartTool(NewExtrudeTool())
@@ -96,18 +102,30 @@ func solidFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("R").WithEnable(notInSketch).
 			WithIcon("revolve").WithButtonStyle(LargeIconButton).
 			WithTooltip("Revolve — spin a sketch profile about an axis to create or modify a solid."),
-		NewCommand("Create.Coil", "Coil", "Create", func(s *Session) error {
-			s.StartTool(NewCoilTool())
+	}
+}
+
+// sweptSolidCommands are the swept/blended solid features (sweep, loft, coil).
+func sweptSolidCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Create.Sweep", "Sweep", "Create", func(s *Session) error {
+			s.StartTool(NewSweepTool())
 			return nil
 		}).WithTab("3D Model").WithEnable(notInSketch).
-			WithIcon("coil").WithButtonStyle(LargeIconButton).
-			WithTooltip("Coil — sweep a sketch profile along a helix to create or modify a solid."),
+			WithIcon("sweep").WithButtonStyle(LargeIconButton).
+			WithTooltip("Sweep — run a sketch profile along a path to create or modify a solid."),
 		NewCommand("Create.Loft", "Loft", "Create", func(s *Session) error {
 			s.StartTool(NewLoftTool())
 			return nil
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("loft").WithButtonStyle(LargeIconButton).
 			WithTooltip("Loft — blend two or more sketch sections into a solid."),
+		NewCommand("Create.Coil", "Coil", "Create", func(s *Session) error {
+			s.StartTool(NewCoilTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("coil").WithButtonStyle(LargeIconButton).
+			WithTooltip("Coil — sweep a sketch profile along a helix to create or modify a solid."),
 	}
 }
 

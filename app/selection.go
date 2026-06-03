@@ -24,6 +24,7 @@ const (
 	SelectSketch
 	SelectWorkPoint
 	SelectWorkAxis
+	SelectPath
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -62,6 +63,15 @@ type ProfileHandle struct {
 }
 
 func (ProfileHandle) SelectionKind() SelectionKind { return SelectProfile }
+
+// PathHandle wraps a sketch path chain (the rail a sweep follows) by its index among
+// the sketch's detected paths. The sweep resolves it to a 3D rail via the sketch plane.
+type PathHandle struct {
+	Sketch    *sketch.Sketch
+	PathIndex int
+}
+
+func (PathHandle) SelectionKind() SelectionKind { return SelectPath }
 
 // SketchEntityHandle wraps a picked sketch entity.
 type SketchEntityHandle struct{ Entity sketch.Entity }
