@@ -15,10 +15,11 @@ import (
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
-// newPartWithBlock sets up a part whose active body is a side×side×height block (built
-// by an extrude), returning the session and the block body.
-func newPartWithBlock(t *testing.T, side, height float64) (*Session, *topo.Body) {
+// newPartWithBlock sets up a part whose active body is a side×side×2 block (built by an
+// extrude), returning the session and the block body.
+func newPartWithBlock(t *testing.T, side float64) (*Session, *topo.Body) {
 	t.Helper()
+	const height = 2.0
 	s := NewSession()
 	def := compdef.NewPartComponentDefinition()
 	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
@@ -58,7 +59,7 @@ func topFaceOf(t *testing.T, b *topo.Body) *topo.Face {
 // TestHoleToolEndToEnd drives the Hole UI: start the tool, click the block's top face,
 // set diameter and depth, OK — and asserts a through hole removed the right volume.
 func TestHoleToolEndToEnd(t *testing.T) {
-	s, block := newPartWithBlock(t, 4, 2) // 4×4×2 block, vol 32
+	s, block := newPartWithBlock(t, 4) // 4×4×2 block, vol 32
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
 
@@ -94,7 +95,7 @@ func TestHoleToolEndToEnd(t *testing.T) {
 }
 
 func TestHoleViaRibbonCommand(t *testing.T) {
-	s, block := newPartWithBlock(t, 4, 2)
+	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
 	if err := RegisterStandardCommands(s); err != nil {
@@ -117,7 +118,7 @@ func TestHoleViaRibbonCommand(t *testing.T) {
 }
 
 func TestHoleToolNeedsFace(t *testing.T) {
-	s, block := newPartWithBlock(t, 4, 2)
+	s, block := newPartWithBlock(t, 4)
 	top := topFaceOf(t, block)
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
 	hole := NewHoleTool()
