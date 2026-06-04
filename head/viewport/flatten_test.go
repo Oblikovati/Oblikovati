@@ -60,13 +60,32 @@ func TestFlattenRebasesIndicesPerItem(t *testing.T) {
 
 func TestFlattenInterleavesPositionNormalColor(t *testing.T) {
 	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{triItem(2)}})
-	// First vertex: pos (0,0,2), normal (0,0,1), color (1,0,0,1).
+	// First vertex: pos (0,0,2), normal (0,0,1), color (1,0,0,1), then PBR fields + mode
+	// (all zero for this item: metallic, roughness, emissive.rgb, mode=ShadeNone).
 	got := m.TriVerts[:VertexFloats]
-	want := []float32{0, 0, 2, 0, 0, 1, 1, 0, 0, 1}
+	want := []float32{0, 0, 2, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0}
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("interleaved vertex = %v, want %v", got, want)
 		}
+	}
+}
+
+// TestFlattenCarriesShadingAndMaterial checks the PBR/shading-mode slots are packed from the
+// draw item (so the native pipeline can pick the per-body shader).
+func TestFlattenCarriesShadingAndMaterial(t *testing.T) {
+	item := renderer.DrawItem{
+		Primitive: renderer.Triangles,
+		Positions: []math.Point3{math.P3(0, 0, 0)},
+		Color:     [4]float32{0.3, 0.4, 0.5, 1},
+		Metallic:  0.8, Roughness: 0.25, Emissive: [3]float32{0.1, 0, 0},
+		Shading: renderer.ShadePBR,
+	}
+	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{item}})
+	v := m.TriVerts[:VertexFloats]
+	if v[10] != 0.8 || v[11] != 0.25 || v[12] != 0.1 || v[15] != float32(renderer.ShadePBR) {
+		t.Errorf("material/mode slots = %v, want metallic .8, roughness .25, emissive.r .1, mode %d",
+			v[10:], renderer.ShadePBR)
 	}
 }
 

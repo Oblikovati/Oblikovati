@@ -368,26 +368,42 @@ func viewNavigateCommands() []*CommandDefinition {
 	}
 }
 
-// visualStyleCommands are the View tab's Visual Style panel: how the model is drawn (Shaded,
-// Shaded with Edges, Wireframe — Inventor's display-mode presets our renderer supports).
+// visualStyleSpec maps a renderer VisualStyle to its View-tab command id and tooltip. The ids
+// are stable (tests + aliases depend on "View.Shaded" etc.); the styles and labels come from
+// the renderer's gallery so the ribbon mirrors Inventor's full DisplayModeEnum set.
+type visualStyleSpec struct {
+	style   renderer.VisualStyle
+	id      string
+	tooltip string
+}
+
+var visualStyleSpecs = []visualStyleSpec{
+	{renderer.Realistic, "View.Realistic", "Realistic — physically based (PBR) shading."},
+	{renderer.Shaded, "View.Shaded", "Shaded — lit faces, no edges."},
+	{renderer.ShadedWithEdges, "View.ShadedWithEdges", "Shaded with Edges — lit faces with the edge wireframe."},
+	{renderer.ShadedWithHiddenEdges, "View.ShadedWithHiddenEdges", "Shaded with Hidden Edges — visible edges solid, occluded edges dashed."},
+	{renderer.Wireframe, "View.Wireframe", "Wireframe — every edge, no shaded faces."},
+	{renderer.WireframeVisibleOnly, "View.WireframeVisibleOnly", "Wireframe with Visible Edges Only — occluded edges removed."},
+	{renderer.WireframeWithHiddenEdges, "View.WireframeWithHiddenEdges", "Wireframe with Hidden Edges — visible edges solid, occluded edges dashed."},
+	{renderer.Monochrome, "View.Monochrome", "Monochrome — desaturated, posterized illustration with outlines."},
+	{renderer.Watercolor, "View.Watercolor", "Watercolor — soft pigment washes on paper."},
+	{renderer.Illustration, "View.Illustration", "Illustration — flat/cel shading with crisp outlines."},
+	{renderer.TechnicalIllustration, "View.TechnicalIllustration", "Technical Illustration — Gooch cool-warm shading with emphasized edges."},
+}
+
+// visualStyleCommands are the View tab's Visual Style panel: every Inventor display mode as a
+// mutually-exclusive option of one selection box (ComboControl). Selecting one sets the
+// session style; the active one drives the box's current selection.
 func visualStyleCommands() []*CommandDefinition {
-	return []*CommandDefinition{
-		NewCommand("View.Shaded", "Shaded", "Visual Style", func(s *Session) error {
-			s.SetVisualStyle(renderer.Shaded)
+	cmds := make([]*CommandDefinition, 0, len(visualStyleSpecs))
+	for _, sp := range visualStyleSpecs {
+		cmds = append(cmds, NewCommand(sp.id, sp.style.String(), "Visual Style", func(s *Session) error {
+			s.SetVisualStyle(sp.style)
 			return nil
-		}).WithTab("View").WithIcon("shaded").
-			WithTooltip("Shaded — lit faces, no edges."),
-		NewCommand("View.ShadedWithEdges", "Shaded with Edges", "Visual Style", func(s *Session) error {
-			s.SetVisualStyle(renderer.ShadedWithEdges)
-			return nil
-		}).WithTab("View").WithIcon("shaded-edges").
-			WithTooltip("Shaded with Edges — lit faces with the edge wireframe."),
-		NewCommand("View.Wireframe", "Wireframe", "Visual Style", func(s *Session) error {
-			s.SetVisualStyle(renderer.Wireframe)
-			return nil
-		}).WithTab("View").WithIcon("wireframe").
-			WithTooltip("Wireframe — edges only, no shaded faces."),
+		}).WithTab("View").WithKind(ComboControl).WithTooltip(sp.tooltip).
+			WithActive(func(s *Session) bool { return s.VisualStyle() == sp.style }))
 	}
+	return cmds
 }
 
 // Enable predicates shared by the standard commands.

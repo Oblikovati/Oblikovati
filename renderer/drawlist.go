@@ -34,7 +34,16 @@ type DrawItem struct {
 	Roughness float32
 	Emissive  [3]float32
 	Opacity   float32
-	ObjectID  uint64
+	// Shading is how the native pipeline should light this item's faces (flat/PBR/NPR),
+	// resolved from the active VisualStyle. Zero value (ShadeNone) is fine for line items.
+	Shading Shading
+	// Occluder marks a triangle item that writes depth but no color — an invisible occluder
+	// used by the hidden-line modes to hide edges behind faces that are not themselves drawn.
+	Occluder bool
+	// Hidden marks a line item drawn only where it is occluded (reversed depth test) in a
+	// dashed style — the hidden-edge half of the wireframe/shaded-with-hidden modes.
+	Hidden   bool
+	ObjectID uint64
 }
 
 // Surface is a resolved PBR appearance for one body — what [SurfaceLookup] returns. It is
@@ -100,31 +109,8 @@ var defaultSurfaceColor = [4]float32{0.7, 0.72, 0.75, 1}
 // edgeColor is the wireframe color.
 var edgeColor = [4]float32{0.1, 0.1, 0.12, 1}
 
-// VisualStyle selects how the scene bodies are drawn (Inventor's Visual Style / display
-// mode). Our flat-shaded renderer supports the three that map to it directly; the richer
-// Inventor presets (realistic/monochrome/illustration, hidden-edge removal) need NPR work.
-type VisualStyle uint8
-
-const (
-	// Shaded draws lit faces only (no wireframe).
-	Shaded VisualStyle = iota
-	// ShadedWithEdges draws lit faces with the edge wireframe over them (the default).
-	ShadedWithEdges
-	// Wireframe draws the edges only (no shaded faces) — every edge visible.
-	Wireframe
-)
-
-// String returns a stable, user-facing name.
-func (v VisualStyle) String() string {
-	switch v {
-	case Shaded:
-		return "Shaded"
-	case Wireframe:
-		return "Wireframe"
-	default:
-		return "Shaded with Edges"
-	}
-}
+// outlineColor is the near-black "ink" used for NPR illustration outlines.
+var outlineColor = [4]float32{0.04, 0.04, 0.06, 1}
 
 // BuildDrawList turns the visible scene bodies into a draw list at the given quality in the
 // default Shaded-with-Edges style. Bodies outside the view are culled.
@@ -132,26 +118,62 @@ func BuildDrawList(bodies []*topo.Body, cam scene.Camera, q ops.Quality, lookup 
 	return BuildDrawListStyled(bodies, cam, q, lookup, ShadedWithEdges)
 }
 
-// BuildDrawListStyled is BuildDrawList honoring a visual style: each visible body contributes
-// a shaded triangle item (unless Wireframe) and/or a wireframe line item (unless Shaded),
-// tagged with the body's object id for picking.
+// BuildDrawListStyled is BuildDrawList honoring a visual style. The style resolves to a
+// [PassSet] (PassSetFor): a body contributes a shaded triangle item when the style draws
+// faces, and/or an edge line item when it draws edges, each tagged with the body's object id
+// for picking. The triangle item carries the style's [Shading] so the native pipeline can
+// pick the shader (flat/PBR/NPR); hidden-line removal of edges (EdgesVisible*) is applied by
+// the viewport pass, so at the draw-list level the occluded-edge styles still emit every
+// edge segment and the pass classifies them.
 func BuildDrawListStyled(bodies []*topo.Body, cam scene.Camera, q ops.Quality, lookup SurfaceLookup, style VisualStyle) DrawList {
+	pass := PassSetFor(style)
+	dashWorld := cam.WorldPerPixel() * hiddenDashPixels
 	var items []DrawItem
 	for _, b := range bodies {
 		if !visible(cam, b.RangeBox()) {
 			continue
 		}
 		mesh, edges := ops.TessellateBody(b, q)
-		if style != Wireframe && mesh.TriangleCount() > 0 {
-			items = append(items, triangleItem(b.ID(), mesh, surfaceFor(b, lookup)))
-		}
-		if style != Shaded {
-			if line := lineItem(b.ID(), edges); line != nil {
-				items = append(items, *line)
-			}
-		}
+		items = appendBodyItems(items, b.ID(), mesh, edges, surfaceFor(b, lookup), pass, dashWorld)
 	}
 	return DrawList{Items: items}
+}
+
+// hiddenDashPixels is the on-screen dash period (in pixels) for occluded edges; the dash is
+// rendered as CPU-split geometry so the GPU line pipeline needs no dash pattern.
+const hiddenDashPixels = 7.0
+
+// appendBodyItems appends one body's draw items for the resolved pass: shaded faces, or a
+// depth-only occluder when the mode hides edges but does not draw faces; the solid edge set
+// (depth-tested so only the visible parts show); and, for the with-hidden modes, a dashed
+// occluded-edge set drawn with the reversed depth test.
+func appendBodyItems(items []DrawItem, id uint64, mesh *ops.Mesh, edges [][]math.Point3,
+	surf Surface, pass PassSet, dashWorld float64,
+) []DrawItem {
+	if mesh.TriangleCount() > 0 {
+		switch {
+		case pass.Faces != ShadeNone:
+			items = append(items, triangleItem(id, mesh, surf, pass.Faces))
+		case pass.HidesEdges():
+			items = append(items, occluderItem(id, mesh)) // hide edges behind unseen faces
+		}
+	}
+	if pass.Edges != EdgesNone {
+		if line := lineItem(id, edges); line != nil {
+			items = append(items, *line) // depth-tested ⇒ shows the visible portions
+		}
+	}
+	if pass.Edges == EdgesVisiblePlusHidden {
+		if dash := dashedHiddenItem(id, edges, dashWorld); dash != nil {
+			items = append(items, *dash)
+		}
+	}
+	if pass.Outline {
+		if o := outlineItem(id, edges); o != nil {
+			items = append(items, *o) // dark "ink" outline over NPR faces (depth-tested ⇒ visible only)
+		}
+	}
+	return items
 }
 
 // surfaceFor returns the body's resolved surface, or the neutral default when no lookup is
@@ -163,8 +185,9 @@ func surfaceFor(b *topo.Body, lookup SurfaceLookup) Surface {
 	return lookup(b)
 }
 
-// triangleItem builds the shaded surface item for a body's mesh with its PBR surface.
-func triangleItem(objectID uint64, mesh *ops.Mesh, s Surface) DrawItem {
+// triangleItem builds the shaded surface item for a body's mesh with its PBR surface and the
+// active style's shading mode (which the native pipeline reads to pick the face shader).
+func triangleItem(objectID uint64, mesh *ops.Mesh, s Surface, shading Shading) DrawItem {
 	return DrawItem{
 		Primitive: Triangles,
 		Positions: mesh.Positions,
@@ -175,6 +198,7 @@ func triangleItem(objectID uint64, mesh *ops.Mesh, s Surface) DrawItem {
 		Roughness: s.Roughness,
 		Emissive:  s.Emissive,
 		Opacity:   s.Opacity,
+		Shading:   shading,
 		ObjectID:  objectID,
 	}
 }
@@ -182,7 +206,19 @@ func triangleItem(objectID uint64, mesh *ops.Mesh, s Surface) DrawItem {
 // lineItem builds the wireframe item from a body's edge polylines, or nil if there
 // are no edges.
 func lineItem(objectID uint64, edges [][]math.Point3) *DrawItem {
-	item := DrawItem{Primitive: Lines, Color: edgeColor, ObjectID: objectID}
+	return coloredLineItem(objectID, edges, edgeColor)
+}
+
+// outlineItem builds the NPR "ink" outline item — the body's edges in a near-black color,
+// composited over the stylized faces to give the illustration outline.
+func outlineItem(objectID uint64, edges [][]math.Point3) *DrawItem {
+	return coloredLineItem(objectID, edges, outlineColor)
+}
+
+// coloredLineItem builds a line item from a body's edge polylines in the given color, or nil
+// if there are no edges.
+func coloredLineItem(objectID uint64, edges [][]math.Point3, color [4]float32) *DrawItem {
+	item := DrawItem{Primitive: Lines, Color: color, ObjectID: objectID}
 	for _, poly := range edges {
 		base := len(item.Positions)
 		item.Positions = append(item.Positions, poly...)
@@ -194,6 +230,66 @@ func lineItem(objectID uint64, edges [][]math.Point3) *DrawItem {
 		return nil
 	}
 	return &item
+}
+
+// hiddenEdgeColor is the dim color of dashed occluded edges (distinct from the solid edge
+// color so hidden lines read as hidden).
+var hiddenEdgeColor = [4]float32{0.45, 0.46, 0.52, 1}
+
+// occluderItem builds a depth-only triangle item for a body's mesh: it writes depth (to hide
+// edges behind it) but no color, so the faces themselves are not seen.
+func occluderItem(objectID uint64, mesh *ops.Mesh) DrawItem {
+	return DrawItem{
+		Primitive: Triangles,
+		Positions: mesh.Positions,
+		Normals:   mesh.Normals,
+		Indices:   mesh.Indices,
+		Occluder:  true,
+		ObjectID:  objectID,
+	}
+}
+
+// dashedHiddenItem builds the dashed occluded-edge line item: every edge segment split into
+// on/off dashes of dashWorld length, drawn (by the native pipeline) only where it is behind
+// geometry. Returns nil if there are no edges.
+func dashedHiddenItem(objectID uint64, edges [][]math.Point3, dashWorld float64) *DrawItem {
+	item := DrawItem{Primitive: Lines, Color: hiddenEdgeColor, Hidden: true, ObjectID: objectID}
+	for _, poly := range edges {
+		for i := 0; i+1 < len(poly); i++ {
+			appendDashes(&item, poly[i], poly[i+1], dashWorld)
+		}
+	}
+	if len(item.Indices) == 0 {
+		return nil
+	}
+	return &item
+}
+
+// appendDashes appends the "on" dash sub-segments of a→b (period = 2·dashWorld) to a line
+// item. With no usable scale (dashWorld ≤ 0) it appends the segment solid, so hidden edges
+// still show.
+func appendDashes(item *DrawItem, a, b math.Point3, dashWorld float64) {
+	seg := a.VectorTo(b)
+	length := seg.Length()
+	if length == 0 {
+		return
+	}
+	if dashWorld <= 0 {
+		base := len(item.Positions)
+		item.Positions = append(item.Positions, a, b)
+		item.Indices = append(item.Indices, base, base+1)
+		return
+	}
+	dir := seg.Scale(1 / length)
+	for start := 0.0; start < length; start += dashWorld * 2 {
+		end := start + dashWorld
+		if end > length {
+			end = length
+		}
+		base := len(item.Positions)
+		item.Positions = append(item.Positions, a.TranslateBy(dir.Scale(start)), a.TranslateBy(dir.Scale(end)))
+		item.Indices = append(item.Indices, base, base+1)
+	}
 }
 
 // visible reports whether any corner of a bounding box is in front of the camera —
