@@ -887,6 +887,30 @@ func TestSketchTrimErrors(t *testing.T) {
 	}
 }
 
+// TestSketchAutoDimensionAndChainOffset exercises auto-constrain + chain offset.
+func TestSketchAutoDimensionAndChainOffset(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[4,3]]}`, &wire.AddSketchEntityResult{})
+
+	var auto wire.AutoDimensionResult
+	call(t, r, s, "sketch.autoDimension", `{"sketchIndex":0}`, &auto)
+	if auto.Added == 0 || auto.DOF != 0 {
+		t.Fatalf("autoDimension = %+v, want some added / DOF 0", auto)
+	}
+
+	// Chain-offset an L of two connected lines.
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var l1, l2 wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"line","points":[[0,0],[4,0]]}`, &l1)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":1,"kind":"line","points":[[4,0],[4,3]]}`, &l2)
+	var off wire.OffsetSketchResult
+	call(t, r, s, "sketch.offset", fmt.Sprintf(`{"sketchIndex":1,"entities":[%d,%d],"distance":"10 mm"}`, l1.EntityID, l2.EntityID), &off)
+	if len(off.Created) != 2 {
+		t.Fatalf("chain offset created %d lines, want 2", len(off.Created))
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

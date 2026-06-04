@@ -30,20 +30,56 @@ func offsetSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
-	e, ok := sk.EntityByID(sketch.ID(in.Entity))
-	if !ok {
-		return nil, fmt.Errorf("sketch.offset: no entity with id %d", in.Entity)
-	}
 	d, err := part.Units().Parse(in.Distance, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.offset: distance %q: %w", in.Distance, err)
 	}
-	off, err := sk.OffsetEntity(e, math.Scalar(d.Value))
+	if len(in.Entities) > 0 {
+		return offsetChain(sk, in.Entities, math.Scalar(d.Value))
+	}
+	return offsetSingle(sk, in.Entity, math.Scalar(d.Value))
+}
+
+// offsetSingle offsets one referenced line/circle/arc.
+func offsetSingle(sk *sketch.Sketch, id uint64, d math.Scalar) (json.RawMessage, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch.offset: no entity with id %d", id)
+	}
+	off, err := sk.OffsetEntity(e, d)
 	if err != nil {
 		return nil, err
 	}
 	kind, _, _ := entityShape(off)
-	return json.Marshal(wire.OffsetSketchResult{EntityID: uint64(off.EntityID()), Kind: string(kind)})
+	return json.Marshal(wire.OffsetSketchResult{EntityID: uint64(off.EntityID()), Kind: string(kind), Created: []uint64{uint64(off.EntityID())}})
+}
+
+// offsetChain offsets a connected chain of referenced lines, mitring the joins.
+func offsetChain(sk *sketch.Sketch, refs []uint64, d math.Scalar) (json.RawMessage, error) {
+	lines := make([]*sketch.Line, len(refs))
+	for i, id := range refs {
+		l, err := lineRef(sk, id)
+		if err != nil {
+			return nil, err
+		}
+		lines[i] = l
+	}
+	off := sk.OffsetChain(lines, d)
+	created := make([]uint64, len(off))
+	for i, l := range off {
+		created[i] = uint64(l.EntityID())
+	}
+	return json.Marshal(wire.OffsetSketchResult{EntityID: created[0], Kind: "line", Created: created})
+}
+
+// autoDimensionSketch fully constrains the sketch and reports the added count + DOF.
+func autoDimensionSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	sk, _, err := resolveSketch(s, raw)
+	if err != nil {
+		return nil, err
+	}
+	added := sk.AutoDimension()
+	return json.Marshal(wire.AutoDimensionResult{Added: added, DOF: sk.DegreesOfFreedom()})
 }
 
 // addSketchImage places a raster image on the sketch plane.
