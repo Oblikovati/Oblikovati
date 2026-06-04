@@ -108,13 +108,13 @@ func TestEntity3DCodecErrors(t *testing.T) {
 	}
 	s := NewSketches3D().Add()
 	idmap := map[int]*Point3D{1: s.newPoint3D(gmath.P3(0, 0, 0))}
-	if err := restoreEntity3D(s, Entity3DData{Kind: "circle", Points: []int{1}, Axis: [3]float64{0, 0, 0}}, idmap); err == nil {
+	if _, err := restoreEntity3D(s, Entity3DData{Kind: "circle", Points: []int{1}, Axis: [3]float64{0, 0, 0}}, idmap); err == nil {
 		t.Error("a zero circle axis should fail to restore")
 	}
-	if err := restoreEntity3D(s, Entity3DData{Kind: "bogus", Points: []int{1}}, idmap); err == nil {
+	if _, err := restoreEntity3D(s, Entity3DData{Kind: "bogus", Points: []int{1}}, idmap); err == nil {
 		t.Error("an unknown entity kind should fail to restore")
 	}
-	if err := restoreEntity3D(s, Entity3DData{Kind: "line", Points: []int{1, 99}}, idmap); err == nil {
+	if _, err := restoreEntity3D(s, Entity3DData{Kind: "line", Points: []int{1, 99}}, idmap); err == nil {
 		t.Error("a line referencing an unknown point should fail to restore")
 	}
 }

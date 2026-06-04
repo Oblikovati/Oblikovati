@@ -97,6 +97,8 @@ func (r *Router) registerSketch3DHandlers() {
 	r.handlers[wire.MethodSketch3DDimensions] = enumerateDimensions3D
 	r.handlers[wire.MethodSketch3DConstraintStatus] = constraintStatus3D
 	r.handlers[wire.MethodSketch3DAddEntity] = addSketch3DEntity
+	r.handlers[wire.MethodSketch3DAddConstraint] = addSketch3DConstraint
+	r.handlers[wire.MethodSketch3DDeleteConstraint] = deleteSketch3DConstraint
 }
 
 // registerSketchAuthoringHandlers wires the sketch mutation methods: property edits,

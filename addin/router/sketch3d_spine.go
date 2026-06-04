@@ -211,6 +211,15 @@ func sketch3DAtIndex(part *compdef.PartComponentDefinition, i int) (*sketch.Sket
 	return part.Sketches3D().Item(i), nil
 }
 
+// activeSketch3DAt returns the active part's 3D sketch at the given index.
+func activeSketch3DAt(s *app.Session, index int) (*sketch.Sketch3D, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	return sketch3DAtIndex(part, index)
+}
+
 // resolveSketch3D decodes a Sketch3DArgs and returns the active part's 3D sketch at that index.
 func resolveSketch3D(s *app.Session, raw json.RawMessage) (*sketch.Sketch3D, int, error) {
 	part, err := modelaccess.ActivePart(s)

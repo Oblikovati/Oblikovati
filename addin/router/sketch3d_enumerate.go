@@ -141,6 +141,50 @@ func constraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind, []u
 	case *sketch.Equal3D:
 		return types.Geo3DEqual, nil
 	default:
+		return lineConstraint3DKind(c)
+	}
+}
+
+// lineConstraint3DKind maps the line/point-operand constraints (M22-F05) to their kind.
+func lineConstraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind, []uint64) {
+	switch v := c.(type) {
+	case *sketch.Parallel3D:
+		return types.Geo3DParallel, []uint64{uint64(v.L1.EntityID()), uint64(v.L2.EntityID())}
+	case *sketch.Perpendicular3D:
+		return types.Geo3DPerpendicular, []uint64{uint64(v.L1.EntityID()), uint64(v.L2.EntityID())}
+	case *sketch.Midpoint3D:
+		return types.Geo3DMidpoint, []uint64{uint64(v.P.EntityID()), uint64(v.L.EntityID())}
+	case *sketch.Ground3D:
+		return types.Geo3DGround, []uint64{uint64(v.P.EntityID())}
+	case *sketch.ParallelToAxis3D:
+		return axisConstraintKind(v), []uint64{uint64(v.L.EntityID())}
+	case *sketch.ParallelToPlane3D:
+		return planeConstraintKind(v), []uint64{uint64(v.L.EntityID())}
+	default:
 		return types.Geo3DUnknown, nil
+	}
+}
+
+// axisConstraintKind names a parallel-to-axis constraint by which world axis it pins to.
+func axisConstraintKind(c *sketch.ParallelToAxis3D) types.Geometric3DConstraintKind {
+	switch {
+	case c.Axis.X != 0:
+		return types.Geo3DParallelToXAxis
+	case c.Axis.Y != 0:
+		return types.Geo3DParallelToYAxis
+	default:
+		return types.Geo3DParallelToZAxis
+	}
+}
+
+// planeConstraintKind names a parallel-to-plane constraint by its plane normal.
+func planeConstraintKind(c *sketch.ParallelToPlane3D) types.Geometric3DConstraintKind {
+	switch {
+	case c.Normal.Z != 0:
+		return types.Geo3DParallelToXYPlane
+	case c.Normal.Y != 0:
+		return types.Geo3DParallelToXZPlane
+	default:
+		return types.Geo3DParallelToYZPlane
 	}
 }

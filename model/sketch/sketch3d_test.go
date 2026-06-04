@@ -123,12 +123,12 @@ func TestSketch3DSerializeErrors(t *testing.T) {
 	}
 	// Restoring a constraint that references an unknown point id fails honestly.
 	idmap := map[int]*Point3D{}
-	if err := restoreConstraint3D(NewSketches3D().Add(), Constraint3DRow{Kind: "coincident", Points: []int{7, 8}}, idmap); err == nil {
+	if err := restoreConstraint3D(NewSketches3D().Add(), Constraint3DRow{Kind: "coincident", Points: []int{7, 8}}, idmap, map[int]Entity{}); err == nil {
 		t.Error("restoreConstraint3D should error on an unknown point id")
 	}
 	// An unknown constraint kind is a corrupt-recipe error.
 	a := NewPoint3D(math.P3(0, 0, 0))
-	if err := restoreConstraint3D(NewSketches3D().Add(), Constraint3DRow{Kind: "bogus", Points: []int{1}}, map[int]*Point3D{1: a}); err == nil {
+	if err := restoreConstraint3D(NewSketches3D().Add(), Constraint3DRow{Kind: "bogus", Points: []int{1}}, map[int]*Point3D{1: a}, map[int]Entity{}); err == nil {
 		t.Error("restoreConstraint3D should error on an unknown kind")
 	}
 }

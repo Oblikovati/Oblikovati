@@ -65,11 +65,13 @@ type Entity3DData struct {
 	SweepAngle  float64    `yaml:"sweepAngle,omitempty"`
 }
 
-// Constraint3DRow is one geometric 3D constraint: its kind and the point operand ids in
-// the order the constraint's factory expects.
+// Constraint3DRow is one geometric 3D constraint: its kind plus operand ids split into
+// Points (point operands) and Curves (line/curve entity operands), in the order the
+// constraint's factory expects.
 type Constraint3DRow struct {
 	Kind   string `yaml:"kind"`
 	Points []int  `yaml:"points,omitempty"`
+	Curves []int  `yaml:"curves,omitempty"`
 }
 
 // MarshalRecipe3D projects every 3D sketch into its serializable form, in order.
@@ -174,8 +176,44 @@ func serializeConstraint3D(c Constraint) (Constraint3DRow, error) {
 		return Constraint3DRow{Kind: "collinear", Points: []int{int(v.A.id), int(v.B.id), int(v.C.id)}}, nil
 	case *Concentric3D:
 		return Constraint3DRow{Kind: "concentric", Points: []int{int(v.Center1.id), int(v.Center2.id)}}, nil
+	case *Parallel3D:
+		return Constraint3DRow{Kind: "parallel", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
+	case *Perpendicular3D:
+		return Constraint3DRow{Kind: "perpendicular", Curves: []int{int(v.L1.id), int(v.L2.id)}}, nil
+	case *Midpoint3D:
+		return Constraint3DRow{Kind: "midpoint", Points: []int{int(v.P.id)}, Curves: []int{int(v.L.id)}}, nil
+	case *Ground3D:
+		return Constraint3DRow{Kind: "ground", Points: []int{int(v.P.id)}}, nil
+	case *ParallelToAxis3D:
+		return Constraint3DRow{Kind: axisRowKind(v.Axis), Curves: []int{int(v.L.id)}}, nil
+	case *ParallelToPlane3D:
+		return Constraint3DRow{Kind: planeRowKind(v.Normal), Curves: []int{int(v.L.id)}}, nil
 	default:
 		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint of type %T (no codec yet)", c)
+	}
+}
+
+// axisRowKind names a parallel-to-axis constraint for serialization by its axis vector.
+func axisRowKind(axis math.Vector3) string {
+	switch {
+	case axis.X != 0:
+		return "parallelToXAxis"
+	case axis.Y != 0:
+		return "parallelToYAxis"
+	default:
+		return "parallelToZAxis"
+	}
+}
+
+// planeRowKind names a parallel-to-plane constraint for serialization by its normal.
+func planeRowKind(normal math.Vector3) string {
+	switch {
+	case normal.Z != 0:
+		return "parallelToXYPlane"
+	case normal.Y != 0:
+		return "parallelToXZPlane"
+	default:
+		return "parallelToYZPlane"
 	}
 }
 
@@ -207,86 +245,158 @@ func (c *Sketches3D) restoreSketch3D(sd SketchData3D) error {
 		}
 		idmap[pd.ID] = p
 	}
+	entmap := make(map[int]Entity, len(sd.Entities))
 	for _, ed := range sd.Entities {
-		if err := restoreEntity3D(s, ed, idmap); err != nil {
+		e, err := restoreEntity3D(s, ed, idmap)
+		if err != nil {
 			return err
 		}
+		entmap[ed.ID] = e
 	}
 	for _, cd := range sd.Constraints {
-		if err := restoreConstraint3D(s, cd, idmap); err != nil {
+		if err := restoreConstraint3D(s, cd, idmap, entmap); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// restoreEntity3D re-creates one 3D curve entity over its already-restored points.
-func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) error {
+// restoreEntity3D re-creates one 3D curve entity over its already-restored points,
+// returning it so constraints can re-bind to it by its saved id.
+func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Entity, error) {
 	pts, err := lookupPoints3D(ed.Points, idmap)
 	if err != nil {
-		return fmt.Errorf("%s entity: %w", ed.Kind, err)
+		return nil, fmt.Errorf("%s entity: %w", ed.Kind, err)
 	}
 	switch ed.Kind {
 	case "line":
-		s.addLine3DPts(pts[0], pts[1]).SetConstruction(ed.Construction)
+		l := s.addLine3DPts(pts[0], pts[1])
+		l.SetConstruction(ed.Construction)
+		return l, nil
 	case "circle":
-		axis, aerr := math.NewUnitVector3(math.Scalar(ed.Axis[0]), math.Scalar(ed.Axis[1]), math.Scalar(ed.Axis[2]))
+		axis, aerr := unitFromTriple(ed.Axis)
 		if aerr != nil {
-			return fmt.Errorf("circle entity: axis %v: %w", ed.Axis, aerr)
+			return nil, fmt.Errorf("circle entity: axis %v: %w", ed.Axis, aerr)
 		}
-		s.addCircle3DPts(pts[0], axis, ed.Radius).SetConstruction(ed.Construction)
+		c := s.addCircle3DPts(pts[0], axis, ed.Radius)
+		c.SetConstruction(ed.Construction)
+		return c, nil
 	case "arc":
-		s.addArc3DPts(pts[0], pts[1], pts[2], ed.CCW).SetConstruction(ed.Construction)
+		a := s.addArc3DPts(pts[0], pts[1], pts[2], ed.CCW)
+		a.SetConstruction(ed.Construction)
+		return a, nil
 	case "helical":
 		axis, aerr := unitFromTriple(ed.Axis)
 		if aerr != nil {
-			return fmt.Errorf("helical entity: axis %v: %w", ed.Axis, aerr)
+			return nil, fmt.Errorf("helical entity: axis %v: %w", ed.Axis, aerr)
 		}
-		s.addHelix3DPt(pts[0], axis, ed.Radius, ed.Pitch, ed.RadialPerTurn, ed.Turns, ed.Clockwise).SetConstruction(ed.Construction)
+		h := s.addHelix3DPt(pts[0], axis, ed.Radius, ed.Pitch, ed.RadialPerTurn, ed.Turns, ed.Clockwise)
+		h.SetConstruction(ed.Construction)
+		return h, nil
 	case "ellipse", "ellipticalArc":
 		return restoreConic3D(s, ed, pts[0])
 	default:
-		return fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
+		return nil, fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
 	}
-	return nil
 }
 
 // restoreConstraint3D re-adds one geometric 3D constraint, binding its point operands
-// through the id map.
-func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D) error {
+// through idmap and its line operands through entmap.
+func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D, entmap map[int]Entity) error {
 	pts, err := lookupPoints3D(cd.Points, idmap)
 	if err != nil {
 		return fmt.Errorf("%s constraint: %w", cd.Kind, err)
 	}
-	switch cd.Kind {
-	case "coincident":
-		s.geomCons.add(NewCoincident3D(pts[0], pts[1]))
-	case "collinear":
-		s.geomCons.add(NewCollinear3D(pts[0], pts[1], pts[2]))
-	case "concentric":
-		s.geomCons.add(NewConcentric3D(pts[0], pts[1]))
-	default:
-		return fmt.Errorf("unknown 3D constraint kind %q", cd.Kind)
+	lines, err := lookupLines3D(cd.Curves, entmap)
+	if err != nil {
+		return fmt.Errorf("%s constraint: %w", cd.Kind, err)
 	}
+	c, err := constraint3DFromRow(cd.Kind, pts, lines)
+	if err != nil {
+		return err
+	}
+	s.geomCons.add(c)
 	return nil
 }
 
+// constraint3DFromRow builds the constraint for a serialized kind from its resolved
+// point and line operands.
+func constraint3DFromRow(kind string, pts []*Point3D, lines []*Line3D) (Constraint, error) {
+	switch kind {
+	case "coincident":
+		return NewCoincident3D(pts[0], pts[1]), nil
+	case "collinear":
+		return NewCollinear3D(pts[0], pts[1], pts[2]), nil
+	case "concentric":
+		return NewConcentric3D(pts[0], pts[1]), nil
+	case "parallel":
+		return NewParallel3D(lines[0], lines[1]), nil
+	case "perpendicular":
+		return NewPerpendicular3D(lines[0], lines[1]), nil
+	case "midpoint":
+		return NewMidpoint3D(pts[0], lines[0]), nil
+	case "ground":
+		return NewGround3D(pts[0]), nil
+	default:
+		return orientationFromRow(kind, lines)
+	}
+}
+
+// orientationFromRow builds the parallel-to-axis/plane constraints from a serialized kind.
+func orientationFromRow(kind string, lines []*Line3D) (Constraint, error) {
+	switch kind {
+	case "parallelToXAxis":
+		return NewParallelToXAxis3D(lines[0]), nil
+	case "parallelToYAxis":
+		return NewParallelToYAxis3D(lines[0]), nil
+	case "parallelToZAxis":
+		return NewParallelToZAxis3D(lines[0]), nil
+	case "parallelToXYPlane":
+		return NewParallelToXYPlane3D(lines[0]), nil
+	case "parallelToXZPlane":
+		return NewParallelToXZPlane3D(lines[0]), nil
+	case "parallelToYZPlane":
+		return NewParallelToYZPlane3D(lines[0]), nil
+	default:
+		return nil, fmt.Errorf("unknown 3D constraint kind %q", kind)
+	}
+}
+
 // restoreConic3D rebuilds a full or partial ellipse from its serialized form.
-func restoreConic3D(s *Sketch3D, ed Entity3DData, center *Point3D) error {
+func restoreConic3D(s *Sketch3D, ed Entity3DData, center *Point3D) (Entity, error) {
 	normal, err := unitFromTriple(ed.Axis)
 	if err != nil {
-		return fmt.Errorf("%s entity: normal %v: %w", ed.Kind, ed.Axis, err)
+		return nil, fmt.Errorf("%s entity: normal %v: %w", ed.Kind, ed.Axis, err)
 	}
 	major, err := unitFromTriple(ed.MajorAxis)
 	if err != nil {
-		return fmt.Errorf("%s entity: major axis %v: %w", ed.Kind, ed.MajorAxis, err)
+		return nil, fmt.Errorf("%s entity: major axis %v: %w", ed.Kind, ed.MajorAxis, err)
 	}
 	if ed.Kind == "ellipse" {
-		s.addEllipse3DPt(center, normal, major, ed.Radius, ed.MinorRadius).SetConstruction(ed.Construction)
-		return nil
+		e := s.addEllipse3DPt(center, normal, major, ed.Radius, ed.MinorRadius)
+		e.SetConstruction(ed.Construction)
+		return e, nil
 	}
-	s.addEllipticalArc3DPt(center, normal, major, ed.Radius, ed.MinorRadius, ed.StartAngle, ed.SweepAngle).SetConstruction(ed.Construction)
-	return nil
+	e := s.addEllipticalArc3DPt(center, normal, major, ed.Radius, ed.MinorRadius, ed.StartAngle, ed.SweepAngle)
+	e.SetConstruction(ed.Construction)
+	return e, nil
+}
+
+// lookupLines3D resolves saved entity ids to live 3D lines through the entity map.
+func lookupLines3D(ids []int, entmap map[int]Entity) ([]*Line3D, error) {
+	out := make([]*Line3D, len(ids))
+	for i, id := range ids {
+		e, ok := entmap[id]
+		if !ok {
+			return nil, fmt.Errorf("references unknown entity id %d", id)
+		}
+		l, ok := e.(*Line3D)
+		if !ok {
+			return nil, fmt.Errorf("entity id %d is %T, want a 3D line", id, e)
+		}
+		out[i] = l
+	}
+	return out, nil
 }
 
 // unitFromTriple builds a unit vector from a serialized triple.

@@ -3,6 +3,7 @@
 package router
 
 import (
+	"fmt"
 	stdmath "math"
 	"testing"
 
@@ -275,6 +276,64 @@ func TestSketch3DAddEntityErrors(t *testing.T) {
 	}
 	if _, err := r.Handle(s, "sketch3d.addEntity", []byte(`{"sketchIndex":0,"kind":"circle","points":[[0,0,0]],"radius":"oops"}`)); err == nil {
 		t.Error("a bad radius should error")
+	}
+}
+
+// TestSketch3DAddConstraints exercises the geometric-constraint constructor over the
+// router: build two lines, constrain them perpendicular + one parallel-to-Z, and delete.
+func TestSketch3DAddConstraints(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	var l1, l2 wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[1,0,0]]}`, &l1)
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[1,1,0]]}`, &l2)
+
+	var perp wire.AddSketch3DConstraintResult
+	call(t, r, s, "sketch3d.addConstraint",
+		fmt.Sprintf(`{"sketchIndex":0,"kind":"perpendicular","entities":[%d,%d]}`, l1.EntityID, l2.EntityID), &perp)
+	if perp.Kind != "perpendicular" || perp.Index != 0 {
+		t.Fatalf("addConstraint = %+v", perp)
+	}
+
+	var axis wire.AddSketch3DConstraintResult
+	call(t, r, s, "sketch3d.addConstraint",
+		fmt.Sprintf(`{"sketchIndex":0,"kind":"parallelToZAxis","entities":[%d]}`, l1.EntityID), &axis)
+	if axis.Index != 1 {
+		t.Fatalf("second constraint index = %d, want 1", axis.Index)
+	}
+
+	var cons wire.ListConstraints3DResult
+	call(t, r, s, "sketch3d.constraints", `{"sketchIndex":0}`, &cons)
+	if len(cons.Constraints) != 2 || cons.Constraints[0].Kind != "perpendicular" || cons.Constraints[1].Kind != "parallelToZAxis" {
+		t.Fatalf("constraints = %+v", cons.Constraints)
+	}
+
+	var ok wire.OKResult
+	call(t, r, s, "sketch3d.deleteConstraint", `{"sketchIndex":0,"constraintIndex":0}`, &ok)
+	call(t, r, s, "sketch3d.constraints", `{"sketchIndex":0}`, &cons)
+	if len(cons.Constraints) != 1 || cons.Constraints[0].Kind != "parallelToZAxis" {
+		t.Fatalf("after delete, constraints = %+v", cons.Constraints)
+	}
+}
+
+// TestSketch3DAddConstraintErrors covers the constraint operand-validation error paths.
+func TestSketch3DAddConstraintErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"point","points":[[0,0,0]]}`, &wire.AddSketch3DEntityResult{})
+	bad := []string{
+		`{"sketchIndex":0,"kind":"parallel","entities":[999,998]}`, // unknown line ids
+		`{"sketchIndex":0,"kind":"coincident","entities":[1]}`,     // wrong operand count
+		`{"sketchIndex":0,"kind":"bogus","entities":[1]}`,          // unknown kind
+	}
+	for _, b := range bad {
+		if _, err := r.Handle(s, "sketch3d.addConstraint", []byte(b)); err == nil {
+			t.Errorf("expected error for %s", b)
+		}
+	}
+	if _, err := r.Handle(s, "sketch3d.deleteConstraint", []byte(`{"sketchIndex":0,"constraintIndex":5}`)); err == nil {
+		t.Error("deleting an out-of-range constraint should error")
 	}
 }
 
