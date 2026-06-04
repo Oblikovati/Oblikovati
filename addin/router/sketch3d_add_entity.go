@@ -34,7 +34,8 @@ func addSketch3DEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	return buildSketch3DEntity(part, sk, in)
 }
 
-// buildSketch3DEntity resolves the requested kind and applies the matching model factory.
+// buildSketch3DEntity resolves the requested kind and applies the matching model factory,
+// splitting the base primitives from the richer curve families to stay small.
 func buildSketch3DEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
 	switch types.Sketch3DEntityKind(in.Kind) {
 	case types.Sketch3DEntityPoint:
@@ -50,10 +51,24 @@ func buildSketch3DEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketc
 		return buildCircle3D(part, sk, in)
 	case types.Sketch3DEntityArc:
 		return buildArc3D(sk, in)
+	default:
+		return buildCurve3DEntity(part, sk, in)
+	}
+}
+
+// buildCurve3DEntity dispatches the curve families (helix, conics, spline family).
+func buildCurve3DEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
+	switch types.Sketch3DEntityKind(in.Kind) {
 	case types.Sketch3DEntityHelical:
 		return buildHelix3D(part, sk, in)
 	case types.Sketch3DEntityEllipse, types.Sketch3DEntityEllipticalArc:
 		return buildConic3D(part, sk, in)
+	case types.Sketch3DEntitySpline, types.Sketch3DEntityControlPointSpline:
+		return buildSpline3D(sk, in)
+	case types.Sketch3DEntityFixedSpline:
+		return buildFixedSpline3D(sk, in)
+	case types.Sketch3DEntityEquationCurve:
+		return buildEquationCurve3D(sk, in)
 	default:
 		return nil, fmt.Errorf("sketch3d.addEntity: unsupported kind %q", in.Kind)
 	}
@@ -292,6 +307,64 @@ func buildArc3D(sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMes
 	a := sk.AddArc3D(center, start, end, in.CCW)
 	a.SetConstruction(in.Construction)
 	return entityResult(uint64(a.EntityID()), in.Kind, a.Center.EntityID(), a.Start.EntityID(), a.End.EntityID())
+}
+
+// buildSpline3D builds an interpolation or control-point spline through the request points.
+func buildSpline3D(sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
+	pts, err := point3List(in.Points, 2)
+	if err != nil {
+		return nil, err
+	}
+	fit := types.Sketch3DEntityKind(in.Kind) == types.Sketch3DEntitySpline
+	sp := sk.AddSpline3D(pts, in.Closed, fit)
+	sp.SetConstruction(in.Construction)
+	return entityResult(uint64(sp.EntityID()), in.Kind, point3DEntityIDs(sp.Points)...)
+}
+
+// buildFixedSpline3D builds an immutable spline through the request points.
+func buildFixedSpline3D(sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
+	pts, err := point3List(in.Points, 2)
+	if err != nil {
+		return nil, err
+	}
+	sp := sk.AddFixedSpline3D(pts, in.Closed)
+	sp.SetConstruction(in.Construction)
+	return entityResult(uint64(sp.EntityID()), in.Kind)
+}
+
+// buildEquationCurve3D builds a parametric x(t)/y(t)/z(t) curve.
+func buildEquationCurve3D(sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
+	e, err := sk.AddEquationCurve3D(in.XExpr, in.YExpr, in.ZExpr, in.T0, in.T1)
+	if err != nil {
+		return nil, fmt.Errorf("sketch3d.addEntity: equation curve: %w", err)
+	}
+	e.SetConstruction(in.Construction)
+	return entityResult(uint64(e.EntityID()), in.Kind)
+}
+
+// point3List reads at least min [x,y,z] coordinate triples as model points.
+func point3List(points [][]float64, min int) ([]math.Point3, error) {
+	if len(points) < min {
+		return nil, fmt.Errorf("sketch3d.addEntity: need ≥ %d points, got %d", min, len(points))
+	}
+	out := make([]math.Point3, len(points))
+	for i := range points {
+		p, err := point3At(points, i)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = p
+	}
+	return out, nil
+}
+
+// point3DEntityIDs returns the entity ids of a list of 3D points.
+func point3DEntityIDs(pts []*sketch.Point3D) []sketch.ID {
+	out := make([]sketch.ID, len(pts))
+	for i, p := range pts {
+		out[i] = p.EntityID()
+	}
+	return out
 }
 
 // entityResult marshals the created entity's id, kind, and defining point ids.

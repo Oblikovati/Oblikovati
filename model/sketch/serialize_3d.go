@@ -76,6 +76,17 @@ type Entity3DData struct {
 	MinorRadius float64    `yaml:"minorRadius,omitempty"`
 	StartAngle  float64    `yaml:"startAngle,omitempty"`
 	SweepAngle  float64    `yaml:"sweepAngle,omitempty"`
+
+	// Spline fields. Closed marks a closed loop; Coords is a fixed spline's flattened
+	// [x,y,z,…] (Points carries the solver-point ids of an interpolation/control spline).
+	// X/Y/ZExpr over [T0,T1] define an equation curve.
+	Closed bool      `yaml:"closed,omitempty"`
+	Coords []float64 `yaml:"coords,omitempty"`
+	XExpr  string    `yaml:"xExpr,omitempty"`
+	YExpr  string    `yaml:"yExpr,omitempty"`
+	ZExpr  string    `yaml:"zExpr,omitempty"`
+	T0     float64   `yaml:"t0,omitempty"`
+	T1     float64   `yaml:"t1,omitempty"`
 }
 
 // Constraint3DRow is one geometric 3D constraint: its kind plus operand ids split into
@@ -209,6 +220,25 @@ func serializeEntity3D(e Entity) (Entity3DData, error) {
 			Radius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius),
 			StartAngle: v.StartAngle, SweepAngle: v.SweepAngle, Construction: v.construction,
 		}, nil
+	case *Spline3D:
+		kind := "spline"
+		if !v.fit {
+			kind = "controlPointSpline"
+		}
+		return Entity3DData{
+			ID: int(v.id), Kind: kind, Points: point3DIDs(v.Points),
+			Closed: v.Closed, Construction: v.construction,
+		}, nil
+	case *FixedSpline3D:
+		return Entity3DData{
+			ID: int(v.id), Kind: "fixedSpline", Coords: flattenPoint3s(v.Pts),
+			Closed: v.Closed, Construction: v.construction,
+		}, nil
+	case *EquationCurve3D:
+		return Entity3DData{
+			ID: int(v.id), Kind: "equationCurve", XExpr: v.XExpr, YExpr: v.YExpr, ZExpr: v.ZExpr,
+			T0: v.T0, T1: v.T1, Construction: v.construction,
+		}, nil
 	default:
 		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T (no codec)", e)
 	}
@@ -217,6 +247,33 @@ func serializeEntity3D(e Entity) (Entity3DData, error) {
 // axisTriple flattens a unit axis to a serializable triple.
 func axisTriple(u math.UnitVector3) [3]float64 {
 	return [3]float64{float64(u.X()), float64(u.Y()), float64(u.Z())}
+}
+
+// point3DIDs returns the ids of a list of 3D points.
+func point3DIDs(pts []*Point3D) []int {
+	out := make([]int, len(pts))
+	for i, p := range pts {
+		out[i] = int(p.id)
+	}
+	return out
+}
+
+// flattenPoint3s flattens points to an [x,y,z,…] slice.
+func flattenPoint3s(pts []math.Point3) []float64 {
+	out := make([]float64, 0, len(pts)*3)
+	for _, p := range pts {
+		out = append(out, float64(p.X), float64(p.Y), float64(p.Z))
+	}
+	return out
+}
+
+// unflattenPoint3s rebuilds points from an [x,y,z,…] slice.
+func unflattenPoint3s(coords []float64) []math.Point3 {
+	out := make([]math.Point3, 0, len(coords)/3)
+	for i := 0; i+2 < len(coords); i += 3 {
+		out = append(out, math.P3(math.Scalar(coords[i]), math.Scalar(coords[i+1]), math.Scalar(coords[i+2])))
+	}
+	return out
 }
 
 // serializeConstraint3D captures one geometric 3D constraint by its point operands.
@@ -426,6 +483,21 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Enti
 		return h, nil
 	case "ellipse", "ellipticalArc":
 		return restoreConic3D(s, ed, pts[0])
+	case "spline", "controlPointSpline":
+		sp := s.addSpline3DPts(pts, ed.Closed, ed.Kind == "spline")
+		sp.SetConstruction(ed.Construction)
+		return sp, nil
+	case "fixedSpline":
+		sp := s.AddFixedSpline3D(unflattenPoint3s(ed.Coords), ed.Closed)
+		sp.SetConstruction(ed.Construction)
+		return sp, nil
+	case "equationCurve":
+		e, eerr := s.AddEquationCurve3D(ed.XExpr, ed.YExpr, ed.ZExpr, ed.T0, ed.T1)
+		if eerr != nil {
+			return nil, fmt.Errorf("equationCurve entity: %w", eerr)
+		}
+		e.SetConstruction(ed.Construction)
+		return e, nil
 	default:
 		return nil, fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
 	}

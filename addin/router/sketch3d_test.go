@@ -428,6 +428,47 @@ func TestSketch3DProfilesAndPaths(t *testing.T) {
 	}
 }
 
+// TestSketch3DAddSplines exercises the spline family constructors over the router.
+func TestSketch3DAddSplines(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"spline","points":[[0,0,0],[1,2,0],[3,1,1]]}`, &wire.AddSketch3DEntityResult{})
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"controlPointSpline","points":[[0,0,0],[1,0,2],[2,0,0]]}`, &wire.AddSketch3DEntityResult{})
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"fixedSpline","points":[[0,0,0],[1,1,1]]}`, &wire.AddSketch3DEntityResult{})
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"equationCurve","xExpr":"cos(t)","yExpr":"sin(t)","zExpr":"t","t0":0,"t1":3.14159}`, &wire.AddSketch3DEntityResult{})
+
+	var ents wire.EnumerateEntities3DResult
+	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &ents)
+	if len(ents.Entities) != 4 {
+		t.Fatalf("entities = %d, want 4", len(ents.Entities))
+	}
+	want := map[string]bool{"spline": false, "controlPointSpline": false, "fixedSpline": false, "equationCurve": false}
+	for _, e := range ents.Entities {
+		want[e.Kind] = true
+	}
+	for k, seen := range want {
+		if !seen {
+			t.Errorf("missing enumerated kind %q (%+v)", k, ents.Entities)
+		}
+	}
+}
+
+// TestSketch3DAddSplineErrors covers the spline validation error paths.
+func TestSketch3DAddSplineErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	bad := []string{
+		`{"sketchIndex":0,"kind":"spline","points":[[0,0,0]]}`,
+		`{"sketchIndex":0,"kind":"equationCurve","xExpr":"@@","yExpr":"t","zExpr":"t","t0":0,"t1":1}`,
+	}
+	for _, b := range bad {
+		if _, err := r.Handle(s, "sketch3d.addEntity", []byte(b)); err == nil {
+			t.Errorf("expected error for %s", b)
+		}
+	}
+}
+
 // TestConstraint3DKindMapping covers the constraint/entity wire mappings directly (the
 // wire path to add 3D constraints lands in M22-F05).
 func TestConstraint3DKindMapping(t *testing.T) {

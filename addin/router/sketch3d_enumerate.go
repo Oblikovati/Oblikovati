@@ -121,7 +121,41 @@ func fillRoundCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
 		info.Points = [][]float64{p3coords(v.Center.Position())}
 		info.Radius = float64(v.MajorRadius)
 		info.Construction = v.IsConstruction()
+	default:
+		fillSplineCurve3DInfo(info, e)
 	}
+}
+
+// fillSplineCurve3DInfo renders the spline family (interpolation/control/fixed spline +
+// equation curve) into info.
+func fillSplineCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
+	switch v := e.(type) {
+	case *sketch.Spline3D:
+		if v.IsFitType() {
+			info.Kind = string(types.Sketch3DEntitySpline)
+		} else {
+			info.Kind = string(types.Sketch3DEntityControlPointSpline)
+		}
+		info.Points = point3sCoords(v.Sample())
+		info.Construction = v.IsConstruction()
+	case *sketch.FixedSpline3D:
+		info.Kind = string(types.Sketch3DEntityFixedSpline)
+		info.Points = point3sCoords(v.Sample())
+		info.Construction = v.IsConstruction()
+	case *sketch.EquationCurve3D:
+		info.Kind = string(types.Sketch3DEntityEquationCurve)
+		info.Points = point3sCoords(v.Sample(16))
+		info.Construction = v.IsConstruction()
+	}
+}
+
+// point3sCoords flattens a polyline to [[x,y,z],…] for enumeration.
+func point3sCoords(pts []math.Point3) [][]float64 {
+	out := make([][]float64, len(pts))
+	for i, p := range pts {
+		out[i] = p3coords(p)
+	}
+	return out
 }
 
 // p3coords flattens a model point to [x,y,z].
