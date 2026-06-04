@@ -128,25 +128,44 @@ func modelTabCommands() []*CommandDefinition {
 	return append(cmds, modifyFeatureCommands()...)
 }
 
-// sketch3DToolCommands are the contextual 3D-sketch geometry tools, enabled only while a
-// 3D sketch is being edited (M22-F12).
+// sketch3DToolCommands are the contextual 3D-sketch tools, enabled only while a 3D sketch
+// is being edited (M22-F12): the geometry tools plus Finish.
 func sketch3DToolCommands() []*CommandDefinition {
+	finish := NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
+		return s.FinishSketch3D()
+	}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("finish-sketch").
+		WithTooltip("Finish the 3D sketch and return to the model.")
+	return append(sketch3DDrawCommands(), finish)
+}
+
+// sketch3DDrawCommands are the 3D-sketch geometry-placement tools (line/point/circle/arc/
+// helix), each starting its interactive tool.
+func sketch3DDrawCommands() []*CommandDefinition {
 	return []*CommandDefinition{
-		NewCommand("Sketch3D.Line", "3D Line", "Sketch3D", func(s *Session) error {
-			s.StartTool(NewLine3DTool())
-			return nil
-		}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("line").
-			WithTooltip("3D Line — place points in model space to build a polyline rail."),
-		NewCommand("Sketch3D.Point", "3D Point", "Sketch3D", func(s *Session) error {
-			s.StartTool(NewPoint3DTool())
-			return nil
-		}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("point").
-			WithTooltip("3D Point — place a point in model space."),
-		NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
-			return s.FinishSketch3D()
-		}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("finish-sketch").
-			WithTooltip("Finish the 3D sketch and return to the model."),
+		sketch3DToolCommand("Sketch3D.Line", "3D Line", "line",
+			"3D Line — place points in model space to build a polyline rail.",
+			func() Tool { return NewLine3DTool() }),
+		sketch3DToolCommand("Sketch3D.Point", "3D Point", "point",
+			"3D Point — place a point in model space.",
+			func() Tool { return NewPoint3DTool() }),
+		sketch3DToolCommand("Sketch3D.Circle", "3D Circle", "circle",
+			"3D Circle — a circle from a center, plane axis and radius.",
+			func() Tool { return NewCircle3DTool() }),
+		sketch3DToolCommand("Sketch3D.Arc", "3D Arc", "arc",
+			"3D Arc — an arc through center, start and end points.",
+			func() Tool { return NewArc3DTool() }),
+		sketch3DToolCommand("Sketch3D.Helix", "Helical Curve", "helix",
+			"Helical Curve — a spring/thread path from radius, pitch and turns.",
+			func() Tool { return NewHelix3DTool() }),
 	}
+}
+
+// sketch3DToolCommand builds a contextual 3D-sketch command that starts the tool from new.
+func sketch3DToolCommand(id, name, icon, tip string, newTool func() Tool) *CommandDefinition {
+	return NewCommand(id, name, "Sketch3D", func(s *Session) error {
+		s.StartTool(newTool())
+		return nil
+	}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon(icon).WithTooltip(tip)
 }
 
 // modifyFeatureCommands are the 3D Model tab's "Modify" panel: the material-cutting

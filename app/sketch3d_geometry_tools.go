@@ -90,8 +90,144 @@ func (t *Point3DTool) Commit(s *Session) error {
 // Cancel implements [Tool].
 func (t *Point3DTool) Cancel(*Session) {}
 
+// Circle3DTool places a full circle in the active 3D sketch from a center, a plane axis
+// (defaulting to +Z), and a radius.
+type Circle3DTool struct {
+	center *math.Point3
+	axis   math.Vector3
+	radius float64
+}
+
+// NewCircle3DTool returns a 3D circle tool (axis defaults to +Z).
+func NewCircle3DTool() *Circle3DTool { return &Circle3DTool{axis: math.V3(0, 0, 1)} }
+
+// Name implements [Tool]; Start/Pick are no-ops (inputs arrive via the setters).
+func (t *Circle3DTool) Name() string              { return "3D Circle" }
+func (t *Circle3DTool) Start(*Session)            {}
+func (t *Circle3DTool) Pick(*Session, Selectable) {}
+
+// SetCenter/SetAxis/SetRadius supply the circle's inputs.
+func (t *Circle3DTool) SetCenter(p math.Point3) { t.center = &p }
+func (t *Circle3DTool) SetAxis(v math.Vector3)  { t.axis = v }
+func (t *Circle3DTool) SetRadius(r float64)     { t.radius = r }
+
+// CanCommit is true once a center and a positive radius are set.
+func (t *Circle3DTool) CanCommit() bool { return t.center != nil && t.radius > 0 }
+
+// Commit adds the circle to the active 3D sketch.
+func (t *Circle3DTool) Commit(s *Session) error {
+	sk := s.ActiveSketch3D()
+	if sk == nil {
+		return errors.New("3D circle: not editing a 3D sketch")
+	}
+	if !t.CanCommit() {
+		return errors.New("3D circle: need a center and a positive radius")
+	}
+	axis, err := math.UnitVector3FromVector(t.axis)
+	if err != nil {
+		return errors.New("3D circle: degenerate plane axis")
+	}
+	sk.AddCircle3D(*t.center, axis, t.radius)
+	return nil
+}
+
+// Cancel implements [Tool].
+func (t *Circle3DTool) Cancel(*Session) {}
+
+// Arc3DTool places a circular arc from three picked points: center, start, end.
+type Arc3DTool struct {
+	points []math.Point3
+	ccw    bool
+}
+
+// NewArc3DTool returns a 3D arc tool (counter-clockwise by default).
+func NewArc3DTool() *Arc3DTool { return &Arc3DTool{ccw: true} }
+
+// Name implements [Tool]; Start/Pick are no-ops.
+func (t *Arc3DTool) Name() string              { return "3D Arc" }
+func (t *Arc3DTool) Start(*Session)            {}
+func (t *Arc3DTool) Pick(*Session, Selectable) {}
+
+// AddPoint records the next of the arc's center/start/end points; SetCCW orients it.
+func (t *Arc3DTool) AddPoint(p math.Point3) { t.points = append(t.points, p) }
+func (t *Arc3DTool) SetCCW(ccw bool)        { t.ccw = ccw }
+
+// CanCommit is true once all three points are placed.
+func (t *Arc3DTool) CanCommit() bool { return len(t.points) == 3 }
+
+// Commit adds the arc (center, start, end) to the active 3D sketch.
+func (t *Arc3DTool) Commit(s *Session) error {
+	sk := s.ActiveSketch3D()
+	if sk == nil {
+		return errors.New("3D arc: not editing a 3D sketch")
+	}
+	if !t.CanCommit() {
+		return errors.New("3D arc: need center, start and end points")
+	}
+	sk.AddArc3D(t.points[0], t.points[1], t.points[2], t.ccw)
+	return nil
+}
+
+// Cancel implements [Tool].
+func (t *Arc3DTool) Cancel(*Session) {}
+
+// Helix3DTool places a cylindrical helix from an axis-base origin, radius, pitch and turn
+// count (axis defaults to +Z). It is the spring/thread-path tool.
+type Helix3DTool struct {
+	origin    *math.Point3
+	axis      math.Vector3
+	radius    float64
+	pitch     float64
+	turns     float64
+	clockwise bool
+}
+
+// NewHelix3DTool returns a 3D helix tool (axis +Z).
+func NewHelix3DTool() *Helix3DTool { return &Helix3DTool{axis: math.V3(0, 0, 1)} }
+
+// Name implements [Tool]; Start/Pick are no-ops.
+func (t *Helix3DTool) Name() string              { return "Helical Curve" }
+func (t *Helix3DTool) Start(*Session)            {}
+func (t *Helix3DTool) Pick(*Session, Selectable) {}
+
+// Setters supply the helix's inputs (radius/pitch in cm, turns a revolution count).
+func (t *Helix3DTool) SetOrigin(p math.Point3) { t.origin = &p }
+func (t *Helix3DTool) SetAxis(v math.Vector3)  { t.axis = v }
+func (t *Helix3DTool) SetRadius(r float64)     { t.radius = r }
+func (t *Helix3DTool) SetPitch(p float64)      { t.pitch = p }
+func (t *Helix3DTool) SetTurns(n float64)      { t.turns = n }
+func (t *Helix3DTool) SetClockwise(cw bool)    { t.clockwise = cw }
+
+// CanCommit is true once origin, positive radius/pitch and a positive turn count are set.
+func (t *Helix3DTool) CanCommit() bool {
+	return t.origin != nil && t.radius > 0 && t.pitch > 0 && t.turns > 0
+}
+
+// Commit adds the helix to the active 3D sketch.
+func (t *Helix3DTool) Commit(s *Session) error {
+	sk := s.ActiveSketch3D()
+	if sk == nil {
+		return errors.New("helix: not editing a 3D sketch")
+	}
+	if !t.CanCommit() {
+		return errors.New("helix: need origin, radius, pitch and turns")
+	}
+	axis, err := math.UnitVector3FromVector(t.axis)
+	if err != nil {
+		return errors.New("helix: degenerate axis")
+	}
+	sk.AddHelix3D(*t.origin, axis, t.radius, t.pitch, 0, t.turns, t.clockwise)
+	return nil
+}
+
+// Cancel implements [Tool].
+func (t *Helix3DTool) Cancel(*Session) {}
+
 // compile-time assertions that the 3D sketch tools satisfy the Tool interface.
 var (
 	_ Tool = (*Line3DTool)(nil)
 	_ Tool = (*Point3DTool)(nil)
+	_ Tool = (*Circle3DTool)(nil)
+	_ Tool = (*Arc3DTool)(nil)
+	_ Tool = (*Helix3DTool)(nil)
 )

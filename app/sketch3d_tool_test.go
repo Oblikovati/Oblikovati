@@ -96,6 +96,88 @@ func TestCanCreateSketch3DPredicate(t *testing.T) {
 	}
 }
 
+// TestSketch3DCircleArcHelixTools drives the circle, arc and helix tools end to end.
+func TestSketch3DCircleArcHelixTools(t *testing.T) {
+	s, def := emptyPartSession(t)
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	if err := s.Execute("Sketch.Create3D"); err != nil {
+		t.Fatalf("3D Sketch: %v", err)
+	}
+
+	// 3D Circle.
+	if err := s.Execute("Sketch3D.Circle"); err != nil {
+		t.Fatalf("3D Circle: %v", err)
+	}
+	circ := s.ActiveTool().Tool().(*Circle3DTool)
+	circ.SetCenter(math.P3(0, 0, 0))
+	circ.SetRadius(5)
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit circle: %v", err)
+	}
+
+	// 3D Arc.
+	if err := s.Execute("Sketch3D.Arc"); err != nil {
+		t.Fatalf("3D Arc: %v", err)
+	}
+	arc := s.ActiveTool().Tool().(*Arc3DTool)
+	arc.AddPoint(math.P3(0, 0, 0))
+	arc.AddPoint(math.P3(1, 0, 0))
+	arc.AddPoint(math.P3(0, 1, 0))
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit arc: %v", err)
+	}
+
+	// Helical curve.
+	if err := s.Execute("Sketch3D.Helix"); err != nil {
+		t.Fatalf("Helix: %v", err)
+	}
+	hx := s.ActiveTool().Tool().(*Helix3DTool)
+	hx.SetOrigin(math.P3(0, 0, 0))
+	hx.SetRadius(2)
+	hx.SetPitch(1)
+	hx.SetTurns(5)
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit helix: %v", err)
+	}
+
+	sk := def.Sketches3D().Item(0)
+	if sk.EntityCount() != 3 {
+		t.Fatalf("3D sketch has %d entities, want 3 (circle/arc/helix)", sk.EntityCount())
+	}
+}
+
+// TestSketch3DToolCommitGuards checks each tool refuses to commit before it has input.
+func TestSketch3DToolCommitGuards(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	if _, err := s.CreateSketch3D(); err != nil {
+		t.Fatalf("CreateSketch3D: %v", err)
+	}
+	circ, arc, hx := NewCircle3DTool(), NewArc3DTool(), NewHelix3DTool()
+	if circ.CanCommit() || arc.CanCommit() || hx.CanCommit() {
+		t.Error("tools should not be committable before input")
+	}
+	for _, tl := range []Tool{circ, arc, hx} {
+		if tl.Name() == "" {
+			t.Errorf("%T has no name", tl)
+		}
+		tl.Start(s)
+		tl.Pick(s, nil)
+		tl.Cancel(s)
+		if err := tl.Commit(s); err == nil {
+			t.Errorf("%T should refuse to commit with no input", tl)
+		}
+	}
+	// A degenerate axis is rejected by the circle/helix tools.
+	circ.SetCenter(math.P3(0, 0, 0))
+	circ.SetRadius(3)
+	circ.SetAxis(math.V3(0, 0, 0))
+	if err := circ.Commit(s); err == nil {
+		t.Error("a zero circle axis should be rejected")
+	}
+}
+
 // TestSketch3DToolInterfaceMethods exercises the trivial Tool surface (Name/Start/Pick/
 // Cancel) and the not-ready-to-commit guards.
 func TestSketch3DToolInterfaceMethods(t *testing.T) {
