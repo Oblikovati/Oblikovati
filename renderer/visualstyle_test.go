@@ -141,8 +141,12 @@ func TestTriangleItemsCarryShading(t *testing.T) {
 		style VisualStyle
 		want  Shading
 	}{
-		{Shaded, ShadeFlat}, {Realistic, ShadePBR}, {Monochrome, ShadeMonochrome},
-		{Illustration, ShadeCel}, {TechnicalIllustration, ShadeGooch}, {Watercolor, ShadeWatercolor},
+		{Shaded, ShadeFlat},
+		{Realistic, ShadePBR},
+		{Monochrome, ShadeMonochrome},
+		{Illustration, ShadeCel},
+		{TechnicalIllustration, ShadeGooch},
+		{Watercolor, ShadeWatercolor},
 	} {
 		list := BuildDrawListStyled([]*topo.Body{b}, cam, ops.DefaultQuality(), nil, c.style)
 		var got Shading = 255

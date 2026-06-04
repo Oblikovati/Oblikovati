@@ -148,7 +148,8 @@ const hiddenDashPixels = 7.0
 // (depth-tested so only the visible parts show); and, for the with-hidden modes, a dashed
 // occluded-edge set drawn with the reversed depth test.
 func appendBodyItems(items []DrawItem, id uint64, mesh *ops.Mesh, edges [][]math.Point3,
-	surf Surface, pass PassSet, dashWorld float64) []DrawItem {
+	surf Surface, pass PassSet, dashWorld float64,
+) []DrawItem {
 	if mesh.TriangleCount() > 0 {
 		switch {
 		case pass.Faces != ShadeNone:

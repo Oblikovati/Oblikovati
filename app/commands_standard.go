@@ -397,7 +397,6 @@ var visualStyleSpecs = []visualStyleSpec{
 func visualStyleCommands() []*CommandDefinition {
 	cmds := make([]*CommandDefinition, 0, len(visualStyleSpecs))
 	for _, sp := range visualStyleSpecs {
-		sp := sp // capture per iteration
 		cmds = append(cmds, NewCommand(sp.id, sp.style.String(), "Visual Style", func(s *Session) error {
 			s.SetVisualStyle(sp.style)
 			return nil
