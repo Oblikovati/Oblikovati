@@ -14,6 +14,7 @@ void     obk_viewport_render(void* h, int w, int hh, const float* mvp, const flo
                              const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
                              const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC);
 void     obk_viewport_set_clear(void* h, float r, float g, float b);
+void     obk_viewport_set_lighting(void* h, const float* data, int n);
 uint64_t obk_viewport_texture(void* h);
 
 void obk_ig_image(unsigned long long tex, float w, float h);
@@ -54,6 +55,16 @@ func (win *Window) RenderViewport(w, h int, mvp []float32, camPos []float32,
 // next RenderViewport.
 func (w *Window) SetViewportClear(r, g, b float32) {
 	C.obk_viewport_set_clear(w.handle, C.float(r), C.float(g), C.float(b))
+}
+
+// SetViewportLighting uploads the packed scene-lighting UBO (viewport.PackLighting's std140
+// float array) to the viewport; it takes effect on the next RenderViewport. An empty slice is
+// a no-op (the previously set lighting, or the default headlight, stays in effect).
+func (w *Window) SetViewportLighting(ubo []float32) {
+	if len(ubo) == 0 {
+		return
+	}
+	C.obk_viewport_set_lighting(w.handle, floatPtr(ubo), C.int(len(ubo)))
 }
 
 // ViewportTexture returns the ImGui texture handle for the last rendered frame.

@@ -44,7 +44,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			list = modelOverlays(s, cam, hovered, list)
 		}
-		renderViewportImage(win, cam, list, pw, ph, cx, cy)
+		renderViewportImage(win, s, cam, list, pw, ph, cx, cy)
 		if s.InSketch() && len(dims) > 0 {
 			if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
 				s.BeginEditDimension(d) // double-clicked a dimension's value
@@ -77,10 +77,11 @@ func updateViewportCamera(s *app.Session, pw, ph int) (scene.Camera, *feature.Wo
 // renderViewportImage flattens the draw list, renders it into the window's offscreen target
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
-func renderViewportImage(win *native.Window, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
+func renderViewportImage(win *native.Window, s *app.Session, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
 	m := viewport.Flatten(list)
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
+	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	win.RenderViewport(pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
 		m.OccVerts, m.OccVCount, m.OccIndices,

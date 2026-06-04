@@ -17,6 +17,10 @@ bool ok(VkResult r) { return r == VK_SUCCESS; }
 constexpr uint32_t kVertexFloats = 16;
 constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 
+// Scene-lighting UBO size in floats: a vec4 header + 8 lights × 3 vec4. Must match
+// viewport.PackLighting / the Scene block in mesh.frag (std140) — ADR-0026 §1,§3.
+constexpr uint32_t kSceneFloats = 4 + 8 * 12;
+
 // camPosLit packs the camera eye (xyz, world space, for the PBR view vector) and the lit flag
 // (w: 0 = line/flat, 1 = surface) into one vec4 so the push block stays 16-byte aligned.
 struct PushConstants {
@@ -42,6 +46,17 @@ struct Viewport {
     VkShaderModule  vertModule = VK_NULL_HANDLE;
     VkShaderModule  fragModule = VK_NULL_HANDLE;
     VkSampler       sampler = VK_NULL_HANDLE;
+
+    // Scene-lighting descriptor set + its host-visible, persistently mapped UBO. sceneData is
+    // the CPU-side copy obk_viewport_set_lighting writes; render memcpy's it into the UBO.
+    VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
+    VkDescriptorPool      descPool = VK_NULL_HANDLE;
+    VkDescriptorSet       sceneSet = VK_NULL_HANDLE;
+    VkBuffer              uboBuf = VK_NULL_HANDLE;
+    VkDeviceMemory        uboMem = VK_NULL_HANDLE;
+    void*                 uboMapped = nullptr;
+    float                 sceneData[kSceneFloats] = {0};
+
     VkCommandPool   cmdPool = VK_NULL_HANDLE;
     VkCommandBuffer cmd = VK_NULL_HANDLE;
     VkFence         fence = VK_NULL_HANDLE;
@@ -353,6 +368,71 @@ void ensure_target(HeadContext* c, Viewport* v, int w, int h) {
                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
+// default_headlight fills the scene UBO with the LightingDefault rig (one directional
+// headlight, ambience 0.18) so an un-configured viewport renders exactly as it did before
+// lighting control existed (ADR-0026 §7). Layout matches viewport.PackLighting.
+void default_headlight(float* d) {
+    d[0] = 0.18f; d[1] = 1.0f; d[2] = 1.0f; d[3] = 1.0f; // ambience, brightness, exposure, count
+    d[4] = 0.4f;  d[5] = 0.6f; d[6] = 0.8f; d[7] = 0.0f;  // dir.xyz + kind (directional)
+    d[8] = 1.0f;  d[9] = 1.0f; d[10] = 1.0f; d[11] = 3.0f; // color.rgb + intensity
+}
+
+// create_scene_resources builds the lighting descriptor set: a fragment-stage UBO (binding 0)
+// backed by a small host-visible, persistently mapped buffer that render refreshes each frame.
+void create_scene_resources(HeadContext* c, Viewport* v) {
+    VkDescriptorSetLayoutBinding b{};
+    b.binding = 0;
+    b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    b.descriptorCount = 1;
+    b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    VkDescriptorSetLayoutCreateInfo lci{};
+    lci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    lci.bindingCount = 1;
+    lci.pBindings = &b;
+    vkCreateDescriptorSetLayout(c->device, &lci, nullptr, &v->setLayout);
+
+    VkBufferCreateInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bi.size = sizeof(v->sceneData);
+    bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkCreateBuffer(c->device, &bi, nullptr, &v->uboBuf);
+    VkMemoryRequirements req;
+    vkGetBufferMemoryRequirements(c->device, v->uboBuf, &req);
+    VkMemoryAllocateInfo ai{};
+    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    ai.allocationSize = req.size;
+    ai.memoryTypeIndex = obk_find_memory_type(c->physical, req.memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkAllocateMemory(c->device, &ai, nullptr, &v->uboMem);
+    vkBindBufferMemory(c->device, v->uboBuf, v->uboMem, 0);
+    vkMapMemory(c->device, v->uboMem, 0, sizeof(v->sceneData), 0, &v->uboMapped);
+    default_headlight(v->sceneData);
+
+    VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
+    VkDescriptorPoolCreateInfo pci{};
+    pci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pci.maxSets = 1;
+    pci.poolSizeCount = 1;
+    pci.pPoolSizes = &ps;
+    vkCreateDescriptorPool(c->device, &pci, nullptr, &v->descPool);
+    VkDescriptorSetAllocateInfo dai{};
+    dai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    dai.descriptorPool = v->descPool;
+    dai.descriptorSetCount = 1;
+    dai.pSetLayouts = &v->setLayout;
+    vkAllocateDescriptorSets(c->device, &dai, &v->sceneSet);
+    VkDescriptorBufferInfo dbi{v->uboBuf, 0, sizeof(v->sceneData)};
+    VkWriteDescriptorSet w{};
+    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    w.dstSet = v->sceneSet;
+    w.dstBinding = 0;
+    w.descriptorCount = 1;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    w.pBufferInfo = &dbi;
+    vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+}
+
 } // namespace
 
 extern "C" {
@@ -366,10 +446,15 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     v->vertModule = make_module(c->device, vert, vlen);
     v->fragModule = make_module(c->device, frag, flen);
 
+    // The scene-lighting descriptor set must exist before the pipeline layout references it.
+    create_scene_resources(c, v);
+
     VkPushConstantRange pc{VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(PushConstants)};
     VkPipelineLayoutCreateInfo li{};
     li.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    li.setLayoutCount = 1;
+    li.pSetLayouts = &v->setLayout;
     li.pushConstantRangeCount = 1;
     li.pPushConstantRanges = &pc;
     vkCreatePipelineLayout(c->device, &li, nullptr, &v->layout);
@@ -444,6 +529,10 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
     upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(),
            idx.size() * sizeof(uint32_t));
 
+    // Refresh the scene-lighting UBO from the CPU copy (coherent mapped memory, so the copy is
+    // visible to the GPU without an explicit flush).
+    if (v->uboMapped) std::memcpy(v->uboMapped, v->sceneData, sizeof(v->sceneData));
+
     vkResetCommandBuffer(v->cmd, 0);
     VkCommandBufferBeginInfo bi{};
     bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -471,6 +560,9 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
         VkDeviceSize zero = 0;
         vkCmdBindVertexBuffers(v->cmd, 0, 1, &v->vbuf.buffer, &zero);
         vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
+        // The scene-lighting set is shared by every pipeline (set 0); bind it once.
+        vkCmdBindDescriptorSets(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->layout, 0, 1,
+                                &v->sceneSet, 0, nullptr);
         PushConstants push{};
         std::memcpy(push.mvp, mvp, sizeof(push.mvp));
         push.camPosLit[0] = camPos ? camPos[0] : 0.0f;
@@ -519,6 +611,17 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
     vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, UINT64_MAX);
 }
 
+// obk_viewport_set_lighting copies the packed scene-lighting UBO (viewport.PackLighting's
+// std140 float array) into the CPU-side copy; the next render uploads it. Extra floats beyond
+// the UBO are ignored, and a short array leaves the remainder (a no-op before init). It is the
+// single seam the app drives lights/ambient/exposure through (ADR-0026 §1,§3).
+void obk_viewport_set_lighting(void* h, const float* data, int n) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c->viewport || !data || n <= 0) return;
+    uint32_t count = (uint32_t)n < kSceneFloats ? (uint32_t)n : kSceneFloats;
+    std::memcpy(c->viewport->sceneData, data, count * sizeof(float));
+}
+
 // obk_viewport_set_clear sets the 3D pass background (themed). Takes effect on the next
 // render; a no-op before the viewport is initialized.
 void obk_viewport_set_clear(void* h, float r, float g, float b) {
@@ -545,6 +648,11 @@ void obk_viewport_destroy(HeadContext* c) {
     if (v->vbuf.memory) vkFreeMemory(c->device, v->vbuf.memory, nullptr);
     if (v->ibuf.buffer) vkDestroyBuffer(c->device, v->ibuf.buffer, nullptr);
     if (v->ibuf.memory) vkFreeMemory(c->device, v->ibuf.memory, nullptr);
+    if (v->uboMapped) vkUnmapMemory(c->device, v->uboMem);
+    if (v->uboBuf) vkDestroyBuffer(c->device, v->uboBuf, nullptr);
+    if (v->uboMem) vkFreeMemory(c->device, v->uboMem, nullptr);
+    if (v->descPool) vkDestroyDescriptorPool(c->device, v->descPool, nullptr);
+    if (v->setLayout) vkDestroyDescriptorSetLayout(c->device, v->setLayout, nullptr);
     vkDestroyFence(c->device, v->fence, nullptr);
     vkDestroyCommandPool(c->device, v->cmdPool, nullptr);
     vkDestroySampler(c->device, v->sampler, nullptr);
