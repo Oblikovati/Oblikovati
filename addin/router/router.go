@@ -77,6 +77,25 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchConstraintStatus] = constraintStatus
 	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
 	r.registerSketchAuthoringHandlers()
+	r.registerSketch3DHandlers()
+}
+
+// registerSketch3DHandlers wires the 3D-sketch (Sketch3D) methods: the spine, enumeration,
+// and property edits (M22-F01). The 3D authoring methods (addEntity/addConstraint/
+// addDimension) are wired by their features (M22 F02+).
+func (r *Router) registerSketch3DHandlers() {
+	r.handlers[wire.MethodSketch3DCreate] = createSketch3D
+	r.handlers[wire.MethodSketch3DList] = listSketches3D
+	r.handlers[wire.MethodSketch3DGet] = getSketch3D
+	r.handlers[wire.MethodSketch3DEdit] = editSketch3D
+	r.handlers[wire.MethodSketch3DExitEdit] = exitEditSketch3D
+	r.handlers[wire.MethodSketch3DSolve] = solveSketch3D
+	r.handlers[wire.MethodSketch3DDelete] = deleteSketch3D
+	r.handlers[wire.MethodSketch3DSetProperty] = setSketch3DProperty
+	r.handlers[wire.MethodSketch3DEntities] = enumerateEntities3D
+	r.handlers[wire.MethodSketch3DConstraints] = enumerateConstraints3D
+	r.handlers[wire.MethodSketch3DDimensions] = enumerateDimensions3D
+	r.handlers[wire.MethodSketch3DConstraintStatus] = constraintStatus3D
 }
 
 // registerSketchAuthoringHandlers wires the sketch mutation methods: property edits,

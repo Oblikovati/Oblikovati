@@ -25,6 +25,22 @@ type DimensionConstraint3D struct {
 func (d *DimensionConstraint3D) Parameter() *param.Parameter { return d.param }
 func (d *DimensionConstraint3D) Measured() float64           { return d.measure() }
 
+// KindName returns the wire/types name of this 3D dimension's kind
+// ([github.com/Oblikovati/api/types.Dimension3DConstraintKind]). The set grows with the
+// 3D dimension factories (M22-F06); unmapped kinds report "unknown".
+func (d *DimensionConstraint3D) KindName() string {
+	switch d.kind {
+	case DistanceDim:
+		return "distance"
+	case RadiusDim:
+		return "radius"
+	case AngleDim:
+		return "twoLineAngle"
+	default:
+		return "unknown"
+	}
+}
+
 // Driven reports/sets whether the dimension only reports rather than constrains.
 func (d *DimensionConstraint3D) Driven() bool          { return d.driven }
 func (d *DimensionConstraint3D) SetDriven(driven bool) { d.driven = driven }

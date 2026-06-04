@@ -23,15 +23,16 @@ const endOfPartAtEnd = -1
 // (bodies), the inputs (parameters, sketches), the bounding boxes, a change-
 // detection version, and the rollback marker.
 type PartComponentDefinition struct {
-	bodies   *topo.SurfaceBodies
-	params   *param.Parameters
-	sketches *sketch.Sketches
-	features *feature.PartFeatures
-	keys     *identity.KeyManager
-	work     *feature.WorkGeometry // origin coordinate frame + user work planes/axes/points
-	units    param.UnitsOfMeasure  // document display units (length/angle/…)
-	version  uint64
-	eop      int // end-of-part feature index; endOfPartAtEnd ⇒ full program
+	bodies     *topo.SurfaceBodies
+	params     *param.Parameters
+	sketches   *sketch.Sketches
+	sketches3D *sketch.Sketches3D
+	features   *feature.PartFeatures
+	keys       *identity.KeyManager
+	work       *feature.WorkGeometry // origin coordinate frame + user work planes/axes/points
+	units      param.UnitsOfMeasure  // document display units (length/angle/…)
+	version    uint64
+	eop        int // end-of-part feature index; endOfPartAtEnd ⇒ full program
 	// assignments survive Recompute (keyed by persistent reference key, not body id), so a
 	// material/appearance stays put when the body it is on is regenerated.
 	assignments *material.AssignmentStore
@@ -49,6 +50,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		bodies:      topo.NewSurfaceBodies(),
 		params:      params,
 		sketches:    sketch.NewSketches(),
+		sketches3D:  sketch.NewSketches3D(),
 		features:    feature.NewPartFeatures(params, keys),
 		keys:        keys,
 		work:        feature.NewWorkGeometry(),
@@ -121,8 +123,11 @@ func (d *PartComponentDefinition) SetLengthUnit(name string) error {
 	return d.units.SetPreferred(param.Length, name)
 }
 
-// Sketches returns the part's sketches.
+// Sketches returns the part's planar (2D) sketches.
 func (d *PartComponentDefinition) Sketches() *sketch.Sketches { return d.sketches }
+
+// Sketches3D returns the part's non-planar (3D) sketches.
+func (d *PartComponentDefinition) Sketches3D() *sketch.Sketches3D { return d.sketches3D }
 
 // RangeBox returns the axis-aligned bounding box of all bodies (empty if none).
 func (d *PartComponentDefinition) RangeBox() math.Box {

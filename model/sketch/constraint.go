@@ -58,3 +58,11 @@ func (g *GeometricConstraints) Delete(c Constraint) bool {
 func (g *GeometricConstraints) add(c Constraint) {
 	g.items = append(g.items, c)
 }
+
+// Add appends an already-constructed constraint to the collection and returns it. It is
+// the general seam the 3D constraint factories use (M22-F05) until they grow typed
+// helpers; the 2D typed factories call the unexported add directly.
+func (g *GeometricConstraints) Add(c Constraint) Constraint {
+	g.add(c)
+	return c
+}

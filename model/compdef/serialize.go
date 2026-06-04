@@ -35,6 +35,7 @@ type partRecipe struct {
 	ParameterGroups []string                  `yaml:"parameterGroups,omitempty"` // custom group names, in order
 	WorkFeatures    []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
 	Sketches        []sketch.SketchData       `yaml:"sketches,omitempty"`
+	Sketches3D      []sketch.SketchData3D     `yaml:"sketches3D,omitempty"`
 	Features        []feature.FeatureData     `yaml:"features,omitempty"`
 	Materials       *material.RecipeData      `yaml:"materials,omitempty"`
 }
@@ -102,6 +103,10 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compdef: marshal sketches: %w", err)
 	}
+	sketches3D, err := d.sketches3D.MarshalRecipe3D()
+	if err != nil {
+		return nil, fmt.Errorf("compdef: marshal 3D sketches: %w", err)
+	}
 	features, err := d.features.MarshalRecipe(sketchIndex{d.sketches})
 	if err != nil {
 		return nil, fmt.Errorf("compdef: marshal features: %w", err)
@@ -116,6 +121,7 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		ParameterGroups: d.params.Groups(),
 		WorkFeatures:    work,
 		Sketches:        sketches,
+		Sketches3D:      sketches3D,
 		Features:        features,
 		Materials:       d.materialsRecipe(),
 	}
@@ -143,6 +149,9 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 	}
 	if err := d.sketches.ApplyRecipe(r.Sketches); err != nil {
 		return fmt.Errorf("compdef: restore sketches: %w", err)
+	}
+	if err := d.sketches3D.ApplyRecipe3D(r.Sketches3D); err != nil {
+		return fmt.Errorf("compdef: restore 3D sketches: %w", err)
 	}
 	if err := d.features.ApplyRecipe(r.Features, sketchIndex{d.sketches}, d.work); err != nil {
 		return fmt.Errorf("compdef: restore features: %w", err)
