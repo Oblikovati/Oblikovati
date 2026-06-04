@@ -129,6 +129,9 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 		if _, isPoint := e.(*Point3D); isPoint {
 			continue // standalone points are captured in Points, not Entities
 		}
+		if isDerivedCurve3D(e) {
+			continue // surface-derived curves rebind from references on recompute (M22-F11)
+		}
 		ed, err := serializeEntity3D(e)
 		if err != nil {
 			return SketchData3D{}, err
