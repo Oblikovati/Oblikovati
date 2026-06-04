@@ -114,8 +114,12 @@ func TestAnisotropicMaterialsAreComplete(t *testing.T) {
 				label string
 				v     float64
 			}{
-				{"e1", o.E1}, {"e2", o.E2}, {"e3", o.E3},
-				{"g12", o.G12}, {"g23", o.G23}, {"g13", o.G13},
+				{"e1", o.E1},
+				{"e2", o.E2},
+				{"e3", o.E3},
+				{"g12", o.G12},
+				{"g23", o.G23},
+				{"g13", o.G13},
 			} {
 				if c.v <= 0 {
 					t.Errorf("material %q (%s): orthotropic %s = %v, want > 0", m.ID(), m.IsotropyClass(), c.label, c.v)
