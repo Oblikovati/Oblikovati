@@ -148,5 +148,6 @@ func (s *Session) editParameters(edit func(*param.Parameters) error) error {
 	}
 	s.notice = ""
 	part.Recompute()
+	s.recordEdit(part, "Edit Parameters")
 	return nil
 }

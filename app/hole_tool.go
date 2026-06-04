@@ -65,6 +65,7 @@ func (t *HoleTool) Commit(s *Session) error {
 	t.added = feature.NewHoleFeatures(part.Features()).
 		AddDrilled(key, func() float64 { return d }, func() float64 { return depth })
 	part.Recompute()
+	s.recordEdit(part, "Hole")
 	if !t.added.Health().OK() {
 		return errors.New("hole: " + t.added.Health().Reason)
 	}

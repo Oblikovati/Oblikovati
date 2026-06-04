@@ -77,10 +77,25 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 }
 
 // handleKeyboard routes global shortcuts to the session. Esc cancels the active tool at
-// any point (or clears the selection when idle) — Inventor's universal cancel.
+// any point (or clears the selection when idle) — Inventor's universal cancel. Ctrl+Z /
+// Ctrl+Y (Ctrl+Shift+Z) navigate the undo stream, but only when no text field has focus,
+// so a field's own editing keeps the keystroke.
 func handleKeyboard(s *app.Session) {
 	if native.EscapePressed() {
 		_ = s.PressKey(app.KeyEvent{Key: "Escape"})
+	}
+	if !native.KeyCtrl() || native.WantTextInput() {
+		return
+	}
+	mods := app.CtrlMod
+	if native.KeyShift() {
+		mods |= app.ShiftMod
+	}
+	switch {
+	case native.UndoPressed():
+		_ = s.PressKey(app.KeyEvent{Key: "z", Mods: mods})
+	case native.RedoPressed():
+		_ = s.PressKey(app.KeyEvent{Key: "y", Mods: mods})
 	}
 }
 

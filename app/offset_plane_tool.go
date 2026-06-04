@@ -74,6 +74,7 @@ func (t *OffsetWorkPlaneTool) Commit(s *Session) error {
 	}
 	d, ref := t.distance, t.baseRef
 	t.added = finishWorkPlane(part, part.WorkPlanes().AddByPlaneAndOffset(ref, func() float64 { return d }))
+	s.recordEdit(part, "Offset Work Plane")
 	return nil
 }
 

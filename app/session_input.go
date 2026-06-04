@@ -175,6 +175,20 @@ func (s *Session) Pointer(e PointerEvent) {
 // PressKey routes a key press: Escape cancels the active tool, Enter commits it, and
 // otherwise a registered command alias runs (Inventor command aliases).
 func (s *Session) PressKey(e KeyEvent) error {
+	// Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) navigate the active document's transaction stream.
+	// Only when no interactive tool is mid-operation — Inventor forbids undo while a
+	// transaction is in progress; the head also gates this on text fields not having focus.
+	if e.Mods.Has(CtrlMod) && s.tool == nil {
+		switch e.Key {
+		case "z", "Z":
+			if e.Mods.Has(ShiftMod) {
+				return s.Redo()
+			}
+			return s.Undo()
+		case "y", "Y":
+			return s.Redo()
+		}
+	}
 	switch e.Key {
 	case "Escape":
 		// Esc cancels the active tool at any point in its operation; with no tool it

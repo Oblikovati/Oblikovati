@@ -44,6 +44,7 @@ func (t *ThickenTool) Commit(s *Session) error {
 	}
 	t.added = feature.NewModifyFeatures(part.Features()).AddThicken(t.thickness)
 	part.Recompute()
+	s.recordEdit(part, "Thicken")
 	if !t.added.Health().OK() {
 		return errors.New("thicken: " + t.added.Health().Reason)
 	}

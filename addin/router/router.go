@@ -63,6 +63,9 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodViewGetDisplayMode] = getDisplayMode
 	r.handlers[wire.MethodViewSetDisplayMode] = setDisplayMode
 	r.handlers[wire.MethodViewListDisplayModes] = listDisplayModes
+	r.handlers[wire.MethodTransactionUndo] = undoTransaction
+	r.handlers[wire.MethodTransactionRedo] = redoTransaction
+	r.handlers[wire.MethodTransactionState] = transactionState
 }
 
 // registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and

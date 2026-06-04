@@ -70,6 +70,7 @@ func (t *LoftTool) Commit(s *Session) error {
 	}
 	t.added = feature.NewLoftFeatures(part.Features()).Add(sections, t.closed, t.operation)
 	part.Recompute()
+	s.recordEdit(part, "Loft")
 	if !t.added.Health().OK() {
 		return errors.New("loft: " + t.added.Health().Reason)
 	}

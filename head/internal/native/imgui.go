@@ -12,6 +12,7 @@ void obk_ig_end_main_menu_bar(void);
 int  obk_ig_begin_menu(const char* label);
 void obk_ig_end_menu(void);
 int  obk_ig_menu_item(const char* label);
+int  obk_ig_menu_item_ex(const char* label, const char* shortcut, int enabled);
 int  obk_ig_begin(const char* name);
 void obk_ig_end(void);
 void obk_ig_text(const char* s);
@@ -56,6 +57,9 @@ void obk_ig_mouse_pos(float* x, float* y);
 int  obk_ig_key_shift(void);
 int  obk_ig_key_ctrl(void);
 int  obk_ig_escape_pressed(void);
+int  obk_ig_undo_pressed(void);
+int  obk_ig_redo_pressed(void);
+int  obk_ig_want_text_input(void);
 float obk_ig_mouse_wheel(void);
 float obk_ig_delta_time(void);
 void obk_ig_mouse_delta(float* dx, float* dy);
@@ -132,6 +136,18 @@ func MenuItem(label string) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_menu_item(c) != 0
+}
+
+// MenuItemEx renders a menu item with a right-aligned shortcut hint and an enabled
+// state — a disabled item greys out and cannot be clicked (Inventor's Edit ▸ Undo when
+// there is nothing to undo). Reports whether it was activated this frame. shortcut "" or
+// enabled false are both honored.
+func MenuItemEx(label, shortcut string, enabled bool) bool {
+	cl, freeL := cstr(label)
+	defer freeL()
+	cs, freeS := cstr(shortcut)
+	defer freeS()
+	return C.obk_ig_menu_item_ex(cl, cs, cBool(enabled)) != 0
 }
 
 // Begin / End bracket a window; Begin reports whether its content is visible.
@@ -459,6 +475,17 @@ func KeyCtrl() bool { return C.obk_ig_key_ctrl() != 0 }
 
 // EscapePressed reports whether Esc was pressed this frame (cancel the active tool).
 func EscapePressed() bool { return C.obk_ig_escape_pressed() != 0 }
+
+// UndoPressed / RedoPressed report whether the Z / Y key was pressed this frame (the
+// caller pairs them with KeyCtrl and WantTextInput to form the Ctrl+Z / Ctrl+Y / Ctrl+
+// Shift+Z bindings only when no text field is capturing input).
+func UndoPressed() bool { return C.obk_ig_undo_pressed() != 0 }
+func RedoPressed() bool { return C.obk_ig_redo_pressed() != 0 }
+
+// WantTextInput reports whether an ImGui widget currently has keyboard text focus (a
+// text/number field being edited). Global shortcuts must be suppressed when it is true so
+// the field's own editing — including its built-in Ctrl+Z — keeps the keystroke.
+func WantTextInput() bool { return C.obk_ig_want_text_input() != 0 }
 
 // MouseWheel returns this frame's vertical scroll amount (zoom).
 func MouseWheel() float32 { return float32(C.obk_ig_mouse_wheel()) }

@@ -31,6 +31,15 @@ func drawMenuBar(s *app.Session) string {
 		native.EndMenu()
 	}
 	if native.BeginMenu("Edit") {
+		// Undo/Redo name the step they act on (Inventor's "Undo Extrude") and grey out
+		// when the stream cursor is at an end. Keyboard equivalents: Ctrl+Z / Ctrl+Y.
+		if native.MenuItemEx(undoLabel("Undo", s.UndoLabel()), "Ctrl+Z", s.CanUndo()) {
+			_ = s.Undo()
+		}
+		if native.MenuItemEx(undoLabel("Redo", s.RedoLabel()), "Ctrl+Y", s.CanRedo()) {
+			_ = s.Redo()
+		}
+		native.Separator()
 		if native.MenuItem("Cancel Tool (Esc)") && s.ActiveTool() != nil {
 			s.CancelTool()
 		}
@@ -47,4 +56,13 @@ func drawMenuBar(s *app.Session) string {
 	}
 	native.EndMainMenuBar()
 	return ""
+}
+
+// undoLabel builds an Edit-menu label that names the step undo/redo would act on (e.g.
+// "Undo Extrude"), falling back to the bare verb when the stream cursor is at an end.
+func undoLabel(verb, step string) string {
+	if step == "" {
+		return verb
+	}
+	return verb + " " + step
 }

@@ -27,6 +27,7 @@ import (
 type Session struct {
 	workspace          *doc.Workspace
 	commands           *CommandManager
+	histories          map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	bus                *event.Bus
 	selection          *Selection
 	tool               *ToolInstance
@@ -82,6 +83,7 @@ func newSession(store doc.Store) *Session {
 	return &Session{
 		workspace:          doc.NewWorkspace(store),
 		commands:           NewCommandManager(),
+		histories:          map[doc.ID]*docHistory{},
 		bus:                event.NewBus(),
 		selection:          NewSelection(),
 		camera:             scene.NewCamera(800, 600),
@@ -183,7 +185,12 @@ var ErrNeedsPath = errors.New("app: document has no file path yet; use Save As")
 //
 //	d, err := session.OpenDocument("/models/bracket.obk")
 func (s *Session) OpenDocument(path string) (*doc.Document, error) {
-	return s.workspace.Open(path, true)
+	d, err := s.workspace.Open(path, true)
+	if err != nil {
+		return nil, err
+	}
+	s.documentHistory(d) // open the event stream now so the first edit's before-snapshot is the open state
+	return d, nil
 }
 
 // NewPart creates a realized part document with a unique "PartN" name and makes it active
@@ -192,7 +199,12 @@ func (s *Session) OpenDocument(path string) (*doc.Document, error) {
 //
 //	d, err := session.NewPart()
 func (s *Session) NewPart() (*doc.Document, error) {
-	return compdef.AddPart(s.workspace, s.uniquePartName(), true)
+	d, err := compdef.AddPart(s.workspace, s.uniquePartName(), true)
+	if err != nil {
+		return nil, err
+	}
+	s.documentHistory(d) // open the event stream now so the first edit is undoable to the empty part
+	return d, nil
 }
 
 // uniquePartName returns the first "PartN" name not currently open, so New Part never clashes.

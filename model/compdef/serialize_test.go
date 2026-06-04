@@ -118,6 +118,56 @@ func TestParametersSurviveRoundTrip(t *testing.T) {
 	}
 }
 
+// TestRestoreRecipeReplacesRatherThanMerges is the regression test for the undo restore
+// path: applying a snapshot to an already-populated definition must yield exactly the
+// snapshot, not a union with what was there. (ApplyRecipe alone merges additively — it
+// is for loading onto a fresh part — so undo would otherwise duplicate sketches and
+// re-add parameters.)
+func TestRestoreRecipeReplacesRatherThanMerges(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, err := compdef.AddPart(ws, "Part1", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := d.Content().(*compdef.PartComponentDefinition)
+
+	// Snapshot an empty part, then populate it.
+	empty, err := def.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("marshal empty: %v", err)
+	}
+	def.Sketches().Add(sketch.XYPlane())
+	if _, err := def.Parameters().AddUserParameter("w", "5 mm"); err != nil {
+		t.Fatalf("add param: %v", err)
+	}
+	populated, err := def.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("marshal populated: %v", err)
+	}
+
+	// Restoring the empty snapshot onto the populated part must clear the additions.
+	if err := def.RestoreRecipe(empty); err != nil {
+		t.Fatalf("RestoreRecipe(empty): %v", err)
+	}
+	if def.Sketches().Count() != 0 {
+		t.Errorf("after restore-empty: %d sketches, want 0 (merge, not replace)", def.Sketches().Count())
+	}
+	if _, ok := def.Parameters().ByName("w"); ok {
+		t.Error("after restore-empty: parameter w still present (merge, not replace)")
+	}
+
+	// Restoring the populated snapshot brings them back exactly once.
+	if err := def.RestoreRecipe(populated); err != nil {
+		t.Fatalf("RestoreRecipe(populated): %v", err)
+	}
+	if def.Sketches().Count() != 1 {
+		t.Errorf("after restore-populated: %d sketches, want 1", def.Sketches().Count())
+	}
+	if _, ok := def.Parameters().ByName("w"); !ok {
+		t.Error("after restore-populated: parameter w missing")
+	}
+}
+
 // TestParameterFieldsSurviveRoundTrip exercises the extended parameter recipe: text and
 // boolean parameters, comment/key/export/tolerance/multi-value state, and group membership.
 func TestParameterFieldsSurviveRoundTrip(t *testing.T) {

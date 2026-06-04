@@ -37,6 +37,7 @@ func (s *Session) AssignMaterial(bodyKey, materialID string) error {
 		part.Assignments().SetBodyMaterial(bodyKey, materialID)
 	}
 	part.MarkChanged()
+	s.recordEdit(part, "Assign Material")
 	return nil
 }
 
@@ -62,6 +63,7 @@ func (s *Session) AssignAppearance(scope, key, appearanceID string) error {
 		return fmt.Errorf("app: unknown appearance scope %q", scope)
 	}
 	part.MarkChanged()
+	s.recordEdit(part, "Assign Appearance")
 	return nil
 }
 

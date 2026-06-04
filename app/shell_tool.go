@@ -71,6 +71,7 @@ func (t *ShellTool) Commit(s *Session) error {
 	th := t.thickness
 	t.added = feature.NewDressUpFeatures(part.Features()).AddShell(keys, func() float64 { return th })
 	part.Recompute()
+	s.recordEdit(part, "Shell")
 	if !t.added.Health().OK() {
 		return errors.New("shell: " + t.added.Health().Reason)
 	}

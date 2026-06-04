@@ -89,6 +89,7 @@ func (s *Session) CommitFeatureEdit() error {
 	pf := s.featureEdit.feature
 	part.Features().MarkDirty(pf)
 	part.Recompute()
+	s.recordEdit(part, "Edit "+pf.Name())
 	if !pf.Health().OK() {
 		return errors.New("feature edit: " + pf.Health().Reason)
 	}
