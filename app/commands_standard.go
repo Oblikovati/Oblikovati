@@ -116,9 +116,37 @@ func modelTabCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("S").WithEnable(canCreateSketch).
 			WithIcon("create-sketch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Create 2D Sketch — pick a work plane or planar face to sketch on."),
+		NewCommand("Sketch.Create3D", "3D Sketch", "Sketch", func(s *Session) error {
+			_, err := s.CreateSketch3D()
+			return err
+		}).WithTab("3D Model").WithEnable(canCreateSketch3D).
+			WithIcon("create-sketch-3d").WithButtonStyle(LargeIconButton).
+			WithTooltip("3D Sketch — create a non-planar sketch (sweep/loft path, helix)."),
 	}
+	cmds = append(cmds, sketch3DToolCommands()...)
 	cmds = append(cmds, solidFeatureCommands()...)
 	return append(cmds, modifyFeatureCommands()...)
+}
+
+// sketch3DToolCommands are the contextual 3D-sketch geometry tools, enabled only while a
+// 3D sketch is being edited (M22-F12).
+func sketch3DToolCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Sketch3D.Line", "3D Line", "Sketch3D", func(s *Session) error {
+			s.StartTool(NewLine3DTool())
+			return nil
+		}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("line").
+			WithTooltip("3D Line — place points in model space to build a polyline rail."),
+		NewCommand("Sketch3D.Point", "3D Point", "Sketch3D", func(s *Session) error {
+			s.StartTool(NewPoint3DTool())
+			return nil
+		}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("point").
+			WithTooltip("3D Point — place a point in model space."),
+		NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
+			return s.FinishSketch3D()
+		}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("finish-sketch").
+			WithTooltip("Finish the 3D sketch and return to the model."),
+	}
 }
 
 // modifyFeatureCommands are the 3D Model tab's "Modify" panel: the material-cutting
@@ -391,6 +419,8 @@ func visualStyleCommands() []*CommandDefinition {
 }
 
 // Enable predicates shared by the standard commands.
-func inSketch(s *Session) bool        { return s.InSketch() }
-func notInSketch(s *Session) bool     { return !s.InSketch() }
-func canCreateSketch(s *Session) bool { return s.CanCreateSketch() }
+func inSketch(s *Session) bool          { return s.InSketch() }
+func notInSketch(s *Session) bool       { return !s.InSketch() }
+func canCreateSketch(s *Session) bool   { return s.CanCreateSketch() }
+func canCreateSketch3D(s *Session) bool { return s.CanCreateSketch3D() }
+func inSketch3D(s *Session) bool        { return s.InSketch3D() }
