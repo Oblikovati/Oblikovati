@@ -1,0 +1,163 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: carbon, alloy, tool and stainless steels plus cast irons — the
+# ferrous grades most used in mechanical design.
+#
+# Property sources (room temperature, condition noted per grade):
+#   - Strength & elastic data: ASM Metals Handbook Vol. 1 (Properties and Selection:
+#     Irons, Steels); MatWeb grade datasheets; AZoM. Carbon/alloy strengths are for the
+#     common delivery condition (cold-drawn or quenched-and-tempered); tool steels are
+#     hardened-and-tempered; stainless grades are annealed unless noted.
+#   - Thermal & electrical: ASM; MatWeb; engineeringtoolbox.com.
+#   - Cast irons are brittle with no distinct yield; the yield figure given is the
+#     0.2%-offset / proof figure where defined, else approximated to tensile strength.
+#
+# Appearances are physically-based ferrous metal looks (metallic = 1.0). Roughness
+# separates polished stainless from satin carbon steel, as-cast iron and galvanised
+# spangle. Base colors are neutral iron-grey F0 reflectance in sRGB.
+#
+# Units: density g/cm3 | youngsModulus GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
+
+appearances:
+  - {id: steel,            name: Steel (Carbon),    albedo: "#bcbfc0ff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
+  - {id: stainless-steel,  name: Stainless Steel,   albedo: "#cdd0d1ff", metallic: 1.0, roughness: 0.30, opacity: 1.0}
+  - {id: tool-steel,       name: Tool Steel,        albedo: "#b2b4b6ff", metallic: 1.0, roughness: 0.35, opacity: 1.0}
+  - {id: cast-iron,        name: Cast Iron,         albedo: "#a6a8a9ff", metallic: 1.0, roughness: 0.60, opacity: 1.0}
+  - {id: galvanized-steel, name: Galvanized Steel,  albedo: "#cfd4d6ff", metallic: 1.0, roughness: 0.48, opacity: 1.0}
+
+materials:
+  - id: steel
+    name: Steel (AISI 1018, Cold Drawn)
+    density: 7.87
+    appearance: steel
+    mechanical: {youngsModulus: 205, poissonsRatio: 0.29, yieldStrength: 370, ultimateTensileStrength: 440}
+    thermal:    {conductivity: 51.9, expansionCoeff: 11.5e-6, specificHeat: 486}
+    electrical: {resistivity: 1.59e-7, relativePermittivity: 1}
+  - id: steel-a36
+    name: Steel (ASTM A36 Structural)
+    density: 7.85
+    appearance: steel
+    mechanical: {youngsModulus: 200, poissonsRatio: 0.26, yieldStrength: 250, ultimateTensileStrength: 400}
+    thermal:    {conductivity: 50.0, expansionCoeff: 11.7e-6, specificHeat: 486}
+    electrical: {resistivity: 1.5e-7, relativePermittivity: 1}
+  - id: steel-1045
+    name: Steel (AISI 1045, Cold Drawn)
+    density: 7.87
+    appearance: steel
+    mechanical: {youngsModulus: 200, poissonsRatio: 0.29, yieldStrength: 530, ultimateTensileStrength: 625}
+    thermal:    {conductivity: 49.8, expansionCoeff: 11.5e-6, specificHeat: 486}
+    electrical: {resistivity: 1.6e-7, relativePermittivity: 1}
+  - id: steel-4140
+    name: Steel (AISI 4140 Chromoly, Q&T)
+    density: 7.85
+    appearance: steel
+    mechanical: {youngsModulus: 205, poissonsRatio: 0.29, yieldStrength: 655, ultimateTensileStrength: 1020}
+    thermal:    {conductivity: 42.6, expansionCoeff: 12.3e-6, specificHeat: 473}
+    electrical: {resistivity: 2.2e-7, relativePermittivity: 1}
+  - id: steel-4340
+    name: Steel (AISI 4340 Alloy, Q&T)
+    density: 7.85
+    appearance: steel
+    mechanical: {youngsModulus: 205, poissonsRatio: 0.29, yieldStrength: 862, ultimateTensileStrength: 1110}
+    thermal:    {conductivity: 44.5, expansionCoeff: 12.3e-6, specificHeat: 475}
+    electrical: {resistivity: 2.48e-7, relativePermittivity: 1}
+  - id: steel-1095
+    name: Steel (AISI 1095 Spring, Annealed)
+    density: 7.85
+    appearance: tool-steel
+    mechanical: {youngsModulus: 205, poissonsRatio: 0.29, yieldStrength: 525, ultimateTensileStrength: 685}
+    thermal:    {conductivity: 46.7, expansionCoeff: 11.0e-6, specificHeat: 477}
+    electrical: {resistivity: 1.8e-7, relativePermittivity: 1}
+  - id: steel-d2
+    name: Tool Steel (AISI D2, Hardened)
+    density: 7.70
+    appearance: tool-steel
+    mechanical: {youngsModulus: 210, poissonsRatio: 0.30, yieldStrength: 1550, ultimateTensileStrength: 1900}
+    thermal:    {conductivity: 20.0, expansionCoeff: 10.4e-6, specificHeat: 460}
+    electrical: {resistivity: 6.5e-7, relativePermittivity: 1}
+  - id: steel-a2
+    name: Tool Steel (AISI A2, Hardened)
+    density: 7.86
+    appearance: tool-steel
+    mechanical: {youngsModulus: 203, poissonsRatio: 0.30, yieldStrength: 1380, ultimateTensileStrength: 1620}
+    thermal:    {conductivity: 24.0, expansionCoeff: 10.7e-6, specificHeat: 460}
+    electrical: {resistivity: 6.0e-7, relativePermittivity: 1}
+  - id: steel-o1
+    name: Tool Steel (AISI O1, Hardened)
+    density: 7.81
+    appearance: tool-steel
+    mechanical: {youngsModulus: 205, poissonsRatio: 0.30, yieldStrength: 1400, ultimateTensileStrength: 1500}
+    thermal:    {conductivity: 30.0, expansionCoeff: 11.5e-6, specificHeat: 460}
+    electrical: {resistivity: 5.0e-7, relativePermittivity: 1}
+  - id: steel-h13
+    name: Tool Steel (AISI H13, Hot Work)
+    density: 7.80
+    appearance: tool-steel
+    mechanical: {youngsModulus: 210, poissonsRatio: 0.30, yieldStrength: 1380, ultimateTensileStrength: 1740}
+    thermal:    {conductivity: 24.3, expansionCoeff: 10.4e-6, specificHeat: 460}
+    electrical: {resistivity: 5.2e-7, relativePermittivity: 1}
+  - id: stainless-304
+    name: Stainless Steel (AISI 304, Annealed)
+    density: 8.00
+    appearance: stainless-steel
+    mechanical: {youngsModulus: 193, poissonsRatio: 0.29, yieldStrength: 215, ultimateTensileStrength: 505}
+    thermal:    {conductivity: 16.2, expansionCoeff: 17.3e-6, specificHeat: 500}
+    electrical: {resistivity: 7.2e-7, relativePermittivity: 1}
+  - id: stainless-316
+    name: Stainless Steel (AISI 316, Annealed)
+    density: 8.00
+    appearance: stainless-steel
+    mechanical: {youngsModulus: 193, poissonsRatio: 0.27, yieldStrength: 290, ultimateTensileStrength: 580}
+    thermal:    {conductivity: 16.3, expansionCoeff: 15.9e-6, specificHeat: 500}
+    electrical: {resistivity: 7.4e-7, relativePermittivity: 1}
+  - id: stainless-316l
+    name: Stainless Steel (AISI 316L, Annealed)
+    density: 8.00
+    appearance: stainless-steel
+    mechanical: {youngsModulus: 193, poissonsRatio: 0.27, yieldStrength: 170, ultimateTensileStrength: 485}
+    thermal:    {conductivity: 16.3, expansionCoeff: 15.9e-6, specificHeat: 500}
+    electrical: {resistivity: 7.4e-7, relativePermittivity: 1}
+  - id: stainless-430
+    name: Stainless Steel (AISI 430, Ferritic)
+    density: 7.70
+    appearance: stainless-steel
+    mechanical: {youngsModulus: 200, poissonsRatio: 0.28, yieldStrength: 310, ultimateTensileStrength: 515}
+    thermal:    {conductivity: 26.1, expansionCoeff: 10.4e-6, specificHeat: 460}
+    electrical: {resistivity: 6.0e-7, relativePermittivity: 1}
+  - id: stainless-410
+    name: Stainless Steel (AISI 410, Martensitic)
+    density: 7.74
+    appearance: stainless-steel
+    mechanical: {youngsModulus: 200, poissonsRatio: 0.28, yieldStrength: 415, ultimateTensileStrength: 585}
+    thermal:    {conductivity: 24.9, expansionCoeff: 9.9e-6, specificHeat: 460}
+    electrical: {resistivity: 5.7e-7, relativePermittivity: 1}
+  - id: stainless-17-4ph
+    name: Stainless Steel (17-4 PH, H900)
+    density: 7.75
+    appearance: stainless-steel
+    mechanical: {youngsModulus: 196, poissonsRatio: 0.27, yieldStrength: 1170, ultimateTensileStrength: 1310}
+    thermal:    {conductivity: 18.4, expansionCoeff: 10.8e-6, specificHeat: 460}
+    electrical: {resistivity: 8.0e-7, relativePermittivity: 1}
+  - id: cast-iron-gray
+    name: Cast Iron (Gray, Class 40)
+    density: 7.15
+    appearance: cast-iron
+    # brittle: no distinct yield, value approximated to tensile strength
+    mechanical: {youngsModulus: 100, poissonsRatio: 0.26, yieldStrength: 275, ultimateTensileStrength: 290}
+    thermal:    {conductivity: 53.0, expansionCoeff: 11.0e-6, specificHeat: 490}
+    electrical: {resistivity: 1.1e-6, relativePermittivity: 1}
+  - id: cast-iron-ductile
+    name: Cast Iron (Ductile, 65-45-12)
+    density: 7.10
+    appearance: cast-iron
+    mechanical: {youngsModulus: 168, poissonsRatio: 0.29, yieldStrength: 310, ultimateTensileStrength: 448}
+    thermal:    {conductivity: 33.0, expansionCoeff: 11.6e-6, specificHeat: 460}
+    electrical: {resistivity: 6.0e-7, relativePermittivity: 1}
+  - id: steel-galvanized
+    name: Steel (Galvanized, Structural)
+    density: 7.85
+    appearance: galvanized-steel
+    mechanical: {youngsModulus: 200, poissonsRatio: 0.29, yieldStrength: 250, ultimateTensileStrength: 350}
+    thermal:    {conductivity: 50.0, expansionCoeff: 11.7e-6, specificHeat: 480}
+    electrical: {resistivity: 1.5e-7, relativePermittivity: 1}

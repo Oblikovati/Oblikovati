@@ -1,0 +1,133 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: fibre-reinforced polymers and engineered wood panels.
+#
+# Composites are anisotropic and lay-up dependent; the scalar figures are representative
+# in-plane values for the stated reinforcement and fibre fraction, NOT a design allowable.
+# Unidirectional laminates carry a `transversely-isotropic` orthotropic group (axis 1 =
+# fibre, 2 = 3 = transverse); balanced-weave and panel products carry an `orthotropic`
+# group; random-mat products (chopped strand, SMC, carbon-filled nylon, MDF) are in-plane
+# ISOTROPIC and ship the scalar group only. Orthotropic constants ready for FEA (ADR-0025).
+#
+# Property sources:
+#   - FRP laminate engineering constants (E1/E2, G12, nu12, CTE): ASM Handbook Vol. 21
+#     (Composites); CMH-17 / MIL-HDBK-17 generic carbon-epoxy & glass-epoxy lamina data;
+#     Barbero "Introduction to Composite Materials Design"; manufacturer laminate data.
+#     G23 follows the transverse-isotropy relation G23 = E2 / (2*(1+nu23)).
+#   - G10/FR4 laminate: NEMA LI-1 / manufacturer (Garolite) datasheets.
+#   - Engineered wood (plywood, OSB, MDF): APA panel design data; EN 622/EN 300.
+#     yieldStrength is the in-plane compressive/bending design-strength proxy.
+#   - Carbon laminates conduct along the fibre (low resistivity); glass/aramid laminates
+#     and wood panels are insulators.
+#
+# Appearances: carbon laminates are dark with a glossy clear-coat (low roughness, but
+# dielectric matrix so metallic = 0.0); others are matte dielectrics. Albedo is a
+# representative finished sRGB body colour (no weave/grain texture map yet).
+#
+# Units: density g/cm3 | E & G GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
+
+appearances:
+  - {id: cfrp,        name: Carbon Fiber (Gloss),  albedo: "#1c1e22ff", metallic: 0.0, roughness: 0.25, opacity: 1.0}
+  - {id: cfrp-nylon,  name: Carbon-Filled Nylon,   albedo: "#26282bff", metallic: 0.0, roughness: 0.55, opacity: 1.0}
+  - {id: fiberglass,  name: Fiberglass,            albedo: "#d8d9d2ff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
+  - {id: g10,         name: G10 / FR4,             albedo: "#b6bd7aff", metallic: 0.0, roughness: 0.40, opacity: 1.0}
+  - {id: aramid,      name: Aramid (Kevlar),       albedo: "#c9a227ff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
+  - {id: smc,         name: SMC (Molded),          albedo: "#d5d3ccff", metallic: 0.0, roughness: 0.45, opacity: 1.0}
+  - {id: plywood,     name: Plywood,               albedo: "#d2b483ff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
+  - {id: osb,         name: OSB,                   albedo: "#c9a86aff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+  - {id: mdf,         name: MDF,                   albedo: "#b8956aff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+
+materials:
+  - id: cfrp-unidirectional
+    name: Carbon Fiber/Epoxy (UD, 0deg)
+    density: 1.60
+    appearance: cfrp
+    isotropy: transversely-isotropic
+    # brittle laminate: scalar yield ~ tensile (no yield plateau)
+    mechanical: {youngsModulus: 135, poissonsRatio: 0.30, yieldStrength: 1200, ultimateTensileStrength: 1500}
+    thermal:    {conductivity: 5.0, expansionCoeff: 2.0e-6, specificHeat: 900}
+    electrical: {resistivity: 1.5e-5, relativePermittivity: 1}
+    orthotropic: {e1: 135, e2: 10, e3: 10, g12: 5.0, g23: 3.57, g13: 5.0, nu12: 0.30, nu23: 0.40, nu13: 0.30, alpha1: -0.5e-6, alpha2: 28e-6, alpha3: 28e-6}
+  - id: cfrp-woven
+    name: Carbon Fiber/Epoxy (Woven, Quasi-Iso)
+    density: 1.55
+    appearance: cfrp
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 70, poissonsRatio: 0.30, yieldStrength: 500, ultimateTensileStrength: 600}
+    thermal:    {conductivity: 5.0, expansionCoeff: 3.0e-6, specificHeat: 900}
+    electrical: {resistivity: 1.5e-5, relativePermittivity: 1}
+    orthotropic: {e1: 70, e2: 70, e3: 8, g12: 5.0, g23: 3.5, g13: 3.5, nu12: 0.05, nu23: 0.30, nu13: 0.30, alpha1: 2e-6, alpha2: 2e-6, alpha3: 30e-6}
+  - id: cfrp-nylon
+    name: Carbon-Filled Nylon (Printed)
+    density: 1.30
+    appearance: cfrp-nylon
+    mechanical: {youngsModulus: 8.0, poissonsRatio: 0.38, yieldStrength: 70, ultimateTensileStrength: 90}
+    thermal:    {conductivity: 0.30, expansionCoeff: 40e-6, specificHeat: 1400}
+    electrical: {resistivity: 1e6, relativePermittivity: 3.0}
+  - id: gfrp-eglass
+    name: E-Glass/Epoxy (UD, 0deg)
+    density: 2.00
+    appearance: fiberglass
+    isotropy: transversely-isotropic
+    mechanical: {youngsModulus: 45, poissonsRatio: 0.28, yieldStrength: 900, ultimateTensileStrength: 1000}
+    thermal:    {conductivity: 0.35, expansionCoeff: 7.0e-6, specificHeat: 1000}
+    electrical: {resistivity: 1e13, relativePermittivity: 4.5}
+    orthotropic: {e1: 45, e2: 12, e3: 12, g12: 5.0, g23: 4.29, g13: 5.0, nu12: 0.28, nu23: 0.40, nu13: 0.28, alpha1: 7e-6, alpha2: 25e-6, alpha3: 25e-6}
+  - id: fiberglass-csm
+    name: Fiberglass (Chopped Strand/Polyester)
+    density: 1.50
+    appearance: fiberglass
+    mechanical: {youngsModulus: 7.0, poissonsRatio: 0.30, yieldStrength: 100, ultimateTensileStrength: 120}
+    thermal:    {conductivity: 0.30, expansionCoeff: 25e-6, specificHeat: 1000}
+    electrical: {resistivity: 1e13, relativePermittivity: 4.5}
+  - id: g10-fr4
+    name: G10 / FR4 (Glass/Epoxy Laminate)
+    density: 1.85
+    appearance: g10
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 24, poissonsRatio: 0.18, yieldStrength: 300, ultimateTensileStrength: 340}
+    thermal:    {conductivity: 0.30, expansionCoeff: 14e-6, specificHeat: 1100}
+    electrical: {resistivity: 1e12, relativePermittivity: 4.7}
+    orthotropic: {e1: 24, e2: 24, e3: 18, g12: 7.0, g23: 3.5, g13: 3.5, nu12: 0.12, nu23: 0.18, nu13: 0.18, alpha1: 14e-6, alpha2: 14e-6, alpha3: 70e-6}
+  - id: aramid-epoxy
+    name: Aramid (Kevlar)/Epoxy (UD, 0deg)
+    density: 1.38
+    appearance: aramid
+    isotropy: transversely-isotropic
+    mechanical: {youngsModulus: 76, poissonsRatio: 0.34, yieldStrength: 1200, ultimateTensileStrength: 1400}
+    thermal:    {conductivity: 0.50, expansionCoeff: 2.0e-6, specificHeat: 1100}
+    electrical: {resistivity: 1e14, relativePermittivity: 4.0}
+    orthotropic: {e1: 76, e2: 5.5, e3: 5.5, g12: 2.3, g23: 1.96, g13: 2.3, nu12: 0.34, nu23: 0.40, nu13: 0.34, alpha1: -2e-6, alpha2: 60e-6, alpha3: 60e-6}
+  - id: smc
+    name: SMC (Glass/Polyester, Molded)
+    density: 1.90
+    appearance: smc
+    mechanical: {youngsModulus: 11, poissonsRatio: 0.30, yieldStrength: 80, ultimateTensileStrength: 82}
+    thermal:    {conductivity: 0.20, expansionCoeff: 20e-6, specificHeat: 1200}
+    electrical: {resistivity: 1e13, relativePermittivity: 4.5}
+  - id: plywood-structural
+    name: Plywood (Softwood, Structural)
+    density: 0.55
+    appearance: plywood
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 7.0, poissonsRatio: 0.30, yieldStrength: 30, ultimateTensileStrength: 35}
+    thermal:    {conductivity: 0.13, expansionCoeff: 6.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e14, relativePermittivity: 3.0}
+    orthotropic: {e1: 7.0, e2: 4.5, e3: 0.5, g12: 0.6, g23: 0.5, g13: 0.5, nu12: 0.20, nu23: 0.30, nu13: 0.30, alpha1: 6e-6, alpha2: 6e-6, alpha3: 30e-6}
+  - id: osb
+    name: OSB (Oriented Strand Board)
+    density: 0.65
+    appearance: osb
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 5.5, poissonsRatio: 0.30, yieldStrength: 20, ultimateTensileStrength: 28}
+    thermal:    {conductivity: 0.13, expansionCoeff: 6.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e13, relativePermittivity: 3.0}
+    orthotropic: {e1: 5.5, e2: 3.0, e3: 0.4, g12: 1.0, g23: 0.5, g13: 0.5, nu12: 0.20, nu23: 0.30, nu13: 0.30, alpha1: 6e-6, alpha2: 6e-6, alpha3: 30e-6}
+  - id: mdf
+    name: MDF (Medium-Density Fiberboard)
+    density: 0.75
+    appearance: mdf
+    mechanical: {youngsModulus: 3.6, poissonsRatio: 0.25, yieldStrength: 18, ultimateTensileStrength: 30}
+    thermal:    {conductivity: 0.10, expansionCoeff: 6.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e12, relativePermittivity: 3.0}

@@ -1,0 +1,204 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: solid woods most used in furniture, construction and joinery.
+#
+# Wood is ORTHOTROPIC; entries carry both a scalar summary and the full orthotropic
+# elastic group (ADR-0025) so they are ready for FEA without re-sourcing.
+#
+# Scalar fields (mechanical/thermal/electrical) are the standard engineering values
+# measured PARALLEL TO THE GRAIN at 12% moisture content, from the USDA Forest Products
+# Laboratory "Wood Handbook" (FPL-GTR-282) and the Wood Database (wood-database.com):
+#   - youngsModulus: modulus of elasticity along the grain (= orthotropic E1).
+#   - yieldStrength: maximum crushing strength in compression parallel to grain (wood has
+#     no metallic yield; conventional design-strength proxy). UTS = modulus of rupture.
+#   - thermal.expansionCoeff: longitudinal thermal expansion (= orthotropic alpha1).
+#
+# The `orthotropic` block gives the direction-dependent constants in the material axes
+# 1=longitudinal, 2=radial, 3=tangential. They are derived from E1 using the FPL Wood
+# Handbook average elastic RATIOS (Table 5-1) for hardwoods / softwoods:
+#   hardwood: E2/E1=0.10 E3/E1=0.05 G12/E1=0.066 G13/E1=0.060 G23/E1=0.013
+#             nu12(LR)=0.37 nu13(LT)=0.42 nu23(RT)=0.47
+#   softwood: E2/E1=0.075 E3/E1=0.043 G12/E1=0.061 G13/E1=0.069 G23/E1=0.007
+#             nu12(LR)=0.32 nu13(LT)=0.42 nu23(RT)=0.40
+# Transverse thermal expansion (alpha2 radial, alpha3 tangential) is representative for
+# timber (Wood Handbook ch.4: transverse CTE is ~6-10x longitudinal).
+#
+# Appearances are dielectric (metallic = 0.0), high roughness, representative finished
+# sRGB body colour (no grain texture map yet).
+#
+# Units: density g/cm3 | E & G GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
+
+appearances:
+  - {id: oak,         name: Oak (Red),        albedo: "#b88a4fff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+  - {id: oak-white,   name: Oak (White),      albedo: "#c2a06aff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+  - {id: maple,       name: Maple,            albedo: "#d8b98aff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
+  - {id: birch,       name: Birch,            albedo: "#e0c89cff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
+  - {id: beech,       name: Beech,            albedo: "#cda982ff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
+  - {id: ash,         name: Ash,              albedo: "#d6c19aff", metallic: 0.0, roughness: 0.68, opacity: 1.0}
+  - {id: walnut,      name: Walnut,           albedo: "#5c4327ff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+  - {id: mahogany,    name: Mahogany,         albedo: "#8a4b32ff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
+  - {id: cherry,      name: Cherry,           albedo: "#9c5a3cff", metallic: 0.0, roughness: 0.60, opacity: 1.0}
+  - {id: teak,        name: Teak,             albedo: "#b1814aff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
+  - {id: pine,        name: Pine,             albedo: "#d8b074ff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+  - {id: pine-white,  name: Pine (White),     albedo: "#e3cfa0ff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+  - {id: douglas-fir, name: Douglas Fir,      albedo: "#c79a5eff", metallic: 0.0, roughness: 0.70, opacity: 1.0}
+  - {id: spruce,      name: Spruce,           albedo: "#e0cba0ff", metallic: 0.0, roughness: 0.72, opacity: 1.0}
+  - {id: cedar,       name: Cedar (Red),      albedo: "#b07a52ff", metallic: 0.0, roughness: 0.72, opacity: 1.0}
+  - {id: balsa,       name: Balsa,            albedo: "#e8dcc0ff", metallic: 0.0, roughness: 0.75, opacity: 1.0}
+  - {id: bamboo,      name: Bamboo,           albedo: "#d6b87aff", metallic: 0.0, roughness: 0.65, opacity: 1.0}
+
+materials:
+  - id: oak-red
+    name: Oak, Red
+    density: 0.63
+    appearance: oak
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 12.5, poissonsRatio: 0.37, yieldStrength: 47, ultimateTensileStrength: 99}
+    thermal:    {conductivity: 0.16, expansionCoeff: 4.9e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 12.5, e2: 1.25, e3: 0.63, g12: 0.83, g23: 0.16, g13: 0.75, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.9e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: oak-white
+    name: Oak, White
+    density: 0.68
+    appearance: oak-white
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 12.3, poissonsRatio: 0.37, yieldStrength: 51, ultimateTensileStrength: 105}
+    thermal:    {conductivity: 0.17, expansionCoeff: 4.9e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 12.3, e2: 1.23, e3: 0.62, g12: 0.81, g23: 0.16, g13: 0.74, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.9e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: maple-hard
+    name: Maple, Hard (Sugar)
+    density: 0.63
+    appearance: maple
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 12.6, poissonsRatio: 0.37, yieldStrength: 54, ultimateTensileStrength: 109}
+    thermal:    {conductivity: 0.16, expansionCoeff: 4.8e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 12.6, e2: 1.26, e3: 0.63, g12: 0.83, g23: 0.16, g13: 0.76, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: birch-yellow
+    name: Birch, Yellow
+    density: 0.62
+    appearance: birch
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 13.9, poissonsRatio: 0.37, yieldStrength: 56, ultimateTensileStrength: 114}
+    thermal:    {conductivity: 0.16, expansionCoeff: 4.8e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 13.9, e2: 1.39, e3: 0.70, g12: 0.92, g23: 0.18, g13: 0.83, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: beech
+    name: Beech, American
+    density: 0.64
+    appearance: beech
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 11.9, poissonsRatio: 0.37, yieldStrength: 50, ultimateTensileStrength: 103}
+    thermal:    {conductivity: 0.16, expansionCoeff: 4.8e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 11.9, e2: 1.19, e3: 0.60, g12: 0.79, g23: 0.15, g13: 0.71, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: ash-white
+    name: Ash, White
+    density: 0.60
+    appearance: ash
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 12.0, poissonsRatio: 0.37, yieldStrength: 51, ultimateTensileStrength: 103}
+    thermal:    {conductivity: 0.15, expansionCoeff: 4.9e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 12.0, e2: 1.20, e3: 0.60, g12: 0.79, g23: 0.16, g13: 0.72, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.9e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: walnut-black
+    name: Walnut, Black
+    density: 0.55
+    appearance: walnut
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 11.6, poissonsRatio: 0.37, yieldStrength: 52, ultimateTensileStrength: 101}
+    thermal:    {conductivity: 0.14, expansionCoeff: 4.8e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 11.6, e2: 1.16, e3: 0.58, g12: 0.77, g23: 0.15, g13: 0.70, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.8e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: mahogany
+    name: Mahogany, Honduran
+    density: 0.50
+    appearance: mahogany
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 10.0, poissonsRatio: 0.37, yieldStrength: 46, ultimateTensileStrength: 79}
+    thermal:    {conductivity: 0.13, expansionCoeff: 4.5e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 10.0, e2: 1.00, e3: 0.50, g12: 0.66, g23: 0.13, g13: 0.60, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.5e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: cherry-black
+    name: Cherry, Black
+    density: 0.50
+    appearance: cherry
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 10.3, poissonsRatio: 0.37, yieldStrength: 49, ultimateTensileStrength: 85}
+    thermal:    {conductivity: 0.13, expansionCoeff: 4.7e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 10.3, e2: 1.03, e3: 0.52, g12: 0.68, g23: 0.13, g13: 0.62, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.7e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: teak
+    name: Teak
+    density: 0.65
+    appearance: teak
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 12.3, poissonsRatio: 0.37, yieldStrength: 58, ultimateTensileStrength: 100}
+    thermal:    {conductivity: 0.16, expansionCoeff: 4.5e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 12.3, e2: 1.23, e3: 0.62, g12: 0.81, g23: 0.16, g13: 0.74, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.5e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: pine-southern-yellow
+    name: Pine, Southern Yellow (Loblolly)
+    density: 0.59
+    appearance: pine
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 14.8, poissonsRatio: 0.32, yieldStrength: 58, ultimateTensileStrength: 100}
+    thermal:    {conductivity: 0.15, expansionCoeff: 4.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 14.8, e2: 1.11, e3: 0.64, g12: 0.90, g23: 0.10, g13: 1.02, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: pine-eastern-white
+    name: Pine, Eastern White
+    density: 0.35
+    appearance: pine-white
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 8.5, poissonsRatio: 0.32, yieldStrength: 33, ultimateTensileStrength: 59}
+    thermal:    {conductivity: 0.11, expansionCoeff: 4.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 8.5, e2: 0.64, e3: 0.37, g12: 0.52, g23: 0.06, g13: 0.59, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: douglas-fir
+    name: Douglas Fir
+    density: 0.48
+    appearance: douglas-fir
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 13.4, poissonsRatio: 0.29, yieldStrength: 50, ultimateTensileStrength: 85}
+    thermal:    {conductivity: 0.13, expansionCoeff: 4.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 13.4, e2: 1.01, e3: 0.58, g12: 0.82, g23: 0.09, g13: 0.92, nu12: 0.29, nu23: 0.40, nu13: 0.45, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: spruce-sitka
+    name: Spruce, Sitka
+    density: 0.40
+    appearance: spruce
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 9.9, poissonsRatio: 0.32, yieldStrength: 39, ultimateTensileStrength: 70}
+    thermal:    {conductivity: 0.12, expansionCoeff: 4.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 9.9, e2: 0.74, e3: 0.43, g12: 0.60, g23: 0.07, g13: 0.68, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: cedar-western-red
+    name: Cedar, Western Red
+    density: 0.32
+    appearance: cedar
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 7.7, poissonsRatio: 0.32, yieldStrength: 31, ultimateTensileStrength: 52}
+    thermal:    {conductivity: 0.10, expansionCoeff: 4.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 7.7, e2: 0.58, e3: 0.33, g12: 0.47, g23: 0.05, g13: 0.53, nu12: 0.32, nu23: 0.40, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: balsa
+    name: Balsa
+    density: 0.16
+    appearance: balsa
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 3.4, poissonsRatio: 0.37, yieldStrength: 12, ultimateTensileStrength: 19}
+    thermal:    {conductivity: 0.055, expansionCoeff: 4.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 3.4, e2: 0.34, e3: 0.17, g12: 0.22, g23: 0.04, g13: 0.20, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}
+  - id: bamboo
+    name: Bamboo (Moso, Laminated)
+    density: 0.70
+    appearance: bamboo
+    isotropy: orthotropic
+    mechanical: {youngsModulus: 15.0, poissonsRatio: 0.37, yieldStrength: 55, ultimateTensileStrength: 120}
+    thermal:    {conductivity: 0.17, expansionCoeff: 4.0e-6, specificHeat: 1700}
+    electrical: {resistivity: 1e15, relativePermittivity: 3.0}
+    orthotropic: {e1: 15.0, e2: 1.50, e3: 0.75, g12: 0.99, g23: 0.20, g13: 0.90, nu12: 0.37, nu23: 0.47, nu13: 0.42, alpha1: 4.0e-6, alpha2: 30e-6, alpha3: 40e-6}

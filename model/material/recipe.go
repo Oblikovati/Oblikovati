@@ -22,13 +22,17 @@ type AppearanceRecipe struct {
 }
 
 type MaterialRecipe struct {
-	ID           string           `yaml:"id"`
-	DisplayName  string           `yaml:"name"`
-	Density      float64          `yaml:"density"`
-	Mechanical   types.Mechanical `yaml:"mechanical,omitempty"`
-	Thermal      types.Thermal    `yaml:"thermal,omitempty"`
-	Electrical   types.Electrical `yaml:"electrical,omitempty"`
-	AppearanceID string           `yaml:"appearance,omitempty"`
+	ID          string           `yaml:"id"`
+	DisplayName string           `yaml:"name"`
+	Density     float64          `yaml:"density"`
+	Mechanical  types.Mechanical `yaml:"mechanical,omitempty"`
+	Thermal     types.Thermal    `yaml:"thermal,omitempty"`
+	Electrical  types.Electrical `yaml:"electrical,omitempty"`
+	// Isotropy / Orthotropic capture direction-dependent elasticity (ADR-0025). Orthotropic
+	// is a pointer so the block is omitted entirely for ordinary isotropic materials.
+	Isotropy     types.IsotropyClass       `yaml:"isotropy,omitempty"`
+	Orthotropic  *types.AnisotropicElastic `yaml:"orthotropic,omitempty"`
+	AppearanceID string                    `yaml:"appearance,omitempty"`
 }
 
 type AssignmentRecipe struct {
@@ -106,19 +110,28 @@ func recipeToAppearance(r AppearanceRecipe, source Source) (*Appearance, error) 
 }
 
 func materialToRecipe(m *Material) MaterialRecipe {
-	return MaterialRecipe{
+	r := MaterialRecipe{
 		ID: m.id, DisplayName: m.spec.DisplayName, Density: m.spec.Density,
 		Mechanical: m.spec.Mechanical, Thermal: m.spec.Thermal, Electrical: m.spec.Electrical,
-		AppearanceID: m.spec.AppearanceID,
+		Isotropy: m.spec.IsotropyClass, AppearanceID: m.spec.AppearanceID,
 	}
+	if m.spec.IsotropyClass.Anisotropic() {
+		o := m.spec.Anisotropic
+		r.Orthotropic = &o
+	}
+	return r
 }
 
 func recipeToMaterial(r MaterialRecipe, source Source) *Material {
-	return NewMaterial(r.ID, source, MaterialSpec{
+	spec := MaterialSpec{
 		DisplayName: r.DisplayName, Density: r.Density,
 		Mechanical: r.Mechanical, Thermal: r.Thermal, Electrical: r.Electrical,
-		AppearanceID: r.AppearanceID,
-	})
+		IsotropyClass: r.Isotropy, AppearanceID: r.AppearanceID,
+	}
+	if r.Orthotropic != nil {
+		spec.Anisotropic = *r.Orthotropic
+	}
+	return NewMaterial(r.ID, source, spec)
 }
 
 // assignmentRecipe captures the store, or nil when nothing is assigned (keeps the recipe

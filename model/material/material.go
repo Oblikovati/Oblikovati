@@ -7,12 +7,17 @@ import "github.com/Oblikovati/api/contract"
 // MaterialSpec is the editable content of a material — density, the property groups, and
 // the id of the appearance it renders with.
 type MaterialSpec struct {
-	DisplayName  string
-	Density      float64 // g/cm³
-	Mechanical   Mechanical
-	Thermal      Thermal
-	Electrical   Electrical
-	AppearanceID string
+	DisplayName string
+	Density     float64 // g/cm³
+	Mechanical  Mechanical
+	Thermal     Thermal
+	Electrical  Electrical
+	// IsotropyClass / Anisotropic describe direction-dependent elasticity for FEA
+	// (ADR-0025). Empty class + zero Anisotropic means an ordinary isotropic material, so
+	// metals and bulk plastics carry nothing extra.
+	IsotropyClass IsotropyClass
+	Anisotropic   AnisotropicElastic
+	AppearanceID  string
 }
 
 // Material is one physical-world material asset. It satisfies [contract.Material].
@@ -39,6 +44,19 @@ func (m *Material) Mechanical() Mechanical { return m.spec.Mechanical }
 func (m *Material) Thermal() Thermal       { return m.spec.Thermal }
 func (m *Material) Electrical() Electrical { return m.spec.Electrical }
 func (m *Material) AppearanceID() string   { return m.spec.AppearanceID }
+
+// IsotropyClass reports the material's elastic symmetry, normalising an unset class to
+// Isotropic so callers never see the empty string (contract guarantee).
+func (m *Material) IsotropyClass() IsotropyClass {
+	if m.spec.IsotropyClass == "" {
+		return Isotropic
+	}
+	return m.spec.IsotropyClass
+}
+
+// Anisotropic returns the direction-dependent elastic constants (zero for an isotropic
+// material).
+func (m *Material) Anisotropic() AnisotropicElastic { return m.spec.Anisotropic }
 
 // Spec returns a copy of the editable fields.
 func (m *Material) Spec() MaterialSpec { return m.spec }
