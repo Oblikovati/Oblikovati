@@ -51,6 +51,7 @@ type CommandDefinition struct {
 	ribbons     []RibbonKey // ribbons this command appears on; empty ⇒ the Part ribbon
 	environment Environment // ribbon environment; BaseEnvironment ⇒ always shown
 	enabled     func(*Session) bool
+	active      func(*Session) bool // for a ComboControl option: is this the current selection?
 	run         func(*Session) error
 }
 
@@ -106,6 +107,19 @@ func (c *CommandDefinition) WithEnvironment(e Environment) *CommandDefinition {
 func (c *CommandDefinition) WithEnable(p func(*Session) bool) *CommandDefinition {
 	c.enabled = p
 	return c
+}
+
+// WithActive sets the predicate that reports whether this command is the *current* selection
+// of its combo group — used to drive the highlighted item of a ribbon selection box (a panel
+// of ComboControl commands, e.g. the View tab's Visual Style). Unset ⇒ never the selection.
+func (c *CommandDefinition) WithActive(p func(*Session) bool) *CommandDefinition {
+	c.active = p
+	return c
+}
+
+// IsActive reports whether this command is its combo group's current selection.
+func (c *CommandDefinition) IsActive(s *Session) bool {
+	return c.active != nil && c.active(s)
 }
 
 // Ribbons returns the ribbons the command appears on, resolving the default (the Part ribbon)

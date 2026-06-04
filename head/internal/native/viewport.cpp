@@ -13,12 +13,15 @@
 
 namespace {
 bool ok(VkResult r) { return r == VK_SUCCESS; }
-constexpr uint32_t kVertexFloats = 10; // vec3 pos + vec3 normal + vec4 color
+// vec3 pos + vec3 normal + vec4 color + metallic + roughness + vec3 emissive + mode.
+constexpr uint32_t kVertexFloats = 16;
 constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 
+// camPosLit packs the camera eye (xyz, world space, for the PBR view vector) and the lit flag
+// (w: 0 = line/flat, 1 = surface) into one vec4 so the push block stays 16-byte aligned.
 struct PushConstants {
     float mvp[16];
-    int32_t lit;
+    float camPosLit[4];
 };
 
 struct GpuBuffer {
@@ -34,6 +37,8 @@ struct Viewport {
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkPipeline      triPipeline = VK_NULL_HANDLE;
     VkPipeline      linePipeline = VK_NULL_HANDLE;
+    VkPipeline      occluderPipeline = VK_NULL_HANDLE; // depth-only faces (hidden-line modes)
+    VkPipeline      hiddenPipeline = VK_NULL_HANDLE;   // occluded edges (reversed depth test)
     VkShaderModule  vertModule = VK_NULL_HANDLE;
     VkShaderModule  fragModule = VK_NULL_HANDLE;
     VkSampler       sampler = VK_NULL_HANDLE;
@@ -142,7 +147,8 @@ void create_render_pass(HeadContext* c, Viewport* v) {
 }
 
 VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo,
-                           VkPolygonMode poly) {
+                           VkPolygonMode poly, VkBool32 colorWrite, VkCompareOp depthOp,
+                           VkBool32 depthWrite) {
     VkPipelineShaderStageCreateInfo stages[2]{};
     stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -155,16 +161,22 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
 
     VkVertexInputBindingDescription bind{0, kVertexFloats * sizeof(float),
                                          VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription attrs[3] = {
+    // pos, normal, color, metallic, roughness, emissive, mode — matching mesh.vert and the
+    // 16-float interleave in viewport.Flatten.
+    VkVertexInputAttributeDescription attrs[7] = {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
         {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
         {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
+        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
+        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
+        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
+        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
     };
     VkPipelineVertexInputStateCreateInfo vi{};
     vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vi.vertexBindingDescriptionCount = 1;
     vi.pVertexBindingDescriptions = &bind;
-    vi.vertexAttributeDescriptionCount = 3;
+    vi.vertexAttributeDescriptionCount = 7;
     vi.pVertexAttributeDescriptions = attrs;
 
     VkPipelineInputAssemblyStateCreateInfo ia{};
@@ -190,12 +202,13 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
     VkPipelineDepthStencilStateCreateInfo ds{};
     ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     ds.depthTestEnable = VK_TRUE;
-    ds.depthWriteEnable = VK_TRUE;
-    ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    ds.depthWriteEnable = depthWrite;
+    ds.depthCompareOp = depthOp;
 
     VkPipelineColorBlendAttachmentState cba{};
-    cba.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    cba.colorWriteMask = colorWrite ? (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                       VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT)
+                                    : 0;
     // Standard alpha blending so translucent overlays (work-plane fills) show through.
     // Opaque geometry has alpha 1, so src*1 + dst*0 = src — solids are unaffected.
     cba.blendEnable = VK_TRUE;
@@ -362,10 +375,17 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     vkCreatePipelineLayout(c->device, &li, nullptr, &v->layout);
 
     create_render_pass(c, v);
+    // Shaded triangles and solid lines: standard depth test, write depth. The occluder writes
+    // depth only (no color) to hide edges behind unseen faces. The hidden-edge pipeline draws
+    // only where it is behind geometry (GREATER) and does not write depth.
     v->triPipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                                     VK_POLYGON_MODE_FILL);
+                                     VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL, VK_TRUE);
     v->linePipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-                                      VK_POLYGON_MODE_FILL);
+                                      VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL, VK_TRUE);
+    v->occluderPipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                          VK_POLYGON_MODE_FILL, VK_FALSE, VK_COMPARE_OP_LESS_OR_EQUAL, VK_TRUE);
+    v->hiddenPipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+                                        VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE);
 
     VkSamplerCreateInfo si{};
     si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -391,24 +411,34 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
 
 // obk_viewport_render uploads the flattened geometry, records the offscreen pass, and
 // submits it (waiting on a fence so the color image is ready to sample this frame).
-void obk_viewport_render(void* h, int w, int hh, const float* mvp, int lit_unused,
+void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* camPos,
                          const float* triV, int triVC, const uint32_t* triIdx, int triIC,
-                         const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC) {
-    (void)lit_unused;
+                         const float* occV, int occVC, const uint32_t* occIdx, int occIC,
+                         const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
+                         const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
     ensure_target(c, v, w, hh);
 
-    // One interleaved vertex buffer (tris then lines), one index buffer (tri then line).
+    // One interleaved vertex buffer and one index buffer hold the four streams back to back, in
+    // draw order: occluder faces, shaded tris, solid lines, hidden lines. Each stream's indices
+    // are 0-based within its own vertices, so each draw passes its vertexOffset (the stream's
+    // vertex base) and firstIndex (its offset in the index buffer).
+    const int occBase = 0, triBase = occVC, lineBase = occVC + triVC, hidBase = occVC + triVC + lineVC;
+    const int occFirst = 0, triFirst = occIC, lineFirst = occIC + triIC, hidFirst = occIC + triIC + lineIC;
     std::vector<float> verts;
-    verts.reserve((size_t)(triVC + lineVC) * kVertexFloats);
+    verts.reserve((size_t)(occVC + triVC + lineVC + hidVC) * kVertexFloats);
+    verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
     verts.insert(verts.end(), triV, triV + (size_t)triVC * kVertexFloats);
     verts.insert(verts.end(), lineV, lineV + (size_t)lineVC * kVertexFloats);
+    verts.insert(verts.end(), hidV, hidV + (size_t)hidVC * kVertexFloats);
     std::vector<uint32_t> idx;
-    idx.reserve((size_t)(triIC + lineIC));
+    idx.reserve((size_t)(occIC + triIC + lineIC + hidIC));
+    idx.insert(idx.end(), occIdx, occIdx + occIC);
     idx.insert(idx.end(), triIdx, triIdx + triIC);
     idx.insert(idx.end(), lineIdx, lineIdx + lineIC);
+    idx.insert(idx.end(), hidIdx, hidIdx + hidIC);
     upload(c, &v->vbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts.data(),
            verts.size() * sizeof(float));
     upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(),
@@ -443,21 +473,37 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, int lit_unuse
         vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
         PushConstants push{};
         std::memcpy(push.mvp, mvp, sizeof(push.mvp));
-        if (triIC > 0) {
-            push.lit = 1;
+        push.camPosLit[0] = camPos ? camPos[0] : 0.0f;
+        push.camPosLit[1] = camPos ? camPos[1] : 0.0f;
+        push.camPosLit[2] = camPos ? camPos[2] : 0.0f;
+        auto pushLit = [&](float lit) {
+            push.camPosLit[3] = lit;
             vkCmdPushConstants(v->cmd, v->layout,
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                sizeof(push), &push);
-            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, 0, 0, 0);
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(push), &push);
+        };
+        // 1) occluder faces — depth only, hide edges behind unseen geometry.
+        if (occIC > 0) {
+            pushLit(1.0f);
+            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->occluderPipeline);
+            vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
         }
+        // 2) shaded triangles — color + depth, per-vertex shading mode.
+        if (triIC > 0) {
+            pushLit(1.0f);
+            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
+            vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+        }
+        // 3) solid edges — depth-tested, so only the visible portions appear.
         if (lineIC > 0) {
-            push.lit = 0;
-            vkCmdPushConstants(v->cmd, v->layout,
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                sizeof(push), &push);
+            pushLit(0.0f);
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->linePipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)lineIC, 1, (uint32_t)triIC, triVC, 0);
+            vkCmdDrawIndexed(v->cmd, (uint32_t)lineIC, 1, (uint32_t)lineFirst, lineBase, 0);
+        }
+        // 4) hidden edges — reversed depth test, drawn only where occluded (dashed geometry).
+        if (hidIC > 0) {
+            pushLit(0.0f);
+            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->hiddenPipeline);
+            vkCmdDrawIndexed(v->cmd, (uint32_t)hidIC, 1, (uint32_t)hidFirst, hidBase, 0);
         }
     }
 
@@ -504,6 +550,8 @@ void obk_viewport_destroy(HeadContext* c) {
     vkDestroySampler(c->device, v->sampler, nullptr);
     vkDestroyPipeline(c->device, v->triPipeline, nullptr);
     vkDestroyPipeline(c->device, v->linePipeline, nullptr);
+    vkDestroyPipeline(c->device, v->occluderPipeline, nullptr);
+    vkDestroyPipeline(c->device, v->hiddenPipeline, nullptr);
     vkDestroyPipelineLayout(c->device, v->layout, nullptr);
     vkDestroyRenderPass(c->device, v->renderPass, nullptr);
     vkDestroyShaderModule(c->device, v->vertModule, nullptr);
