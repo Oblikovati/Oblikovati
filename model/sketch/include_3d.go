@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package sketch
+
+import "github.com/Oblikovati/oblikovati/math"
+
+// Include links part geometry (edges/vertices) into a 3D sketch as associative reference
+// geometry — Inventor's "Include Geometry" for a 3D sketch. It reuses the model-side
+// source seam ([PointSource]/[CurveSource]) so the sketch never depends on the B-rep
+// kernel directly; the kernel's vertices/edges adapt to those interfaces (M22-F08
+// PBI-241). Unlike the 2D projection there is no host plane: included geometry is the
+// source's model-space position/polyline verbatim. Included entities are reference
+// (construction) geometry and recompute-derived, so serialization skips them and they
+// rebind from their source on recompute (via SourceID).
+
+// IncludedPoint3D is a model vertex included into a 3D sketch, tracking its source.
+type IncludedPoint3D struct {
+	entityBase
+	source PointSource
+	pos    math.Point3
+	linked bool
+}
+
+// Position returns the cached model-space position.
+func (p *IncludedPoint3D) Position() math.Point3 { return p.pos }
+
+// SourceID returns the source identity, or "" once the link is broken.
+func (p *IncludedPoint3D) SourceID() string {
+	if !p.linked {
+		return ""
+	}
+	return p.source.SourceID()
+}
+
+// Linked reports whether the include still tracks its source.
+func (p *IncludedPoint3D) Linked() bool { return p.linked }
+
+// Update re-reads the source position; a no-op once the link is broken.
+func (p *IncludedPoint3D) Update() {
+	if p.linked {
+		p.pos = p.source.Position()
+	}
+}
+
+// BreakLink detaches the include from its source, freezing the current position.
+func (p *IncludedPoint3D) BreakLink() { p.linked = false }
+
+// IncludedCurve3D is a model edge included into a 3D sketch as a reference polyline.
+type IncludedCurve3D struct {
+	entityBase
+	source CurveSource
+	points []math.Point3
+	linked bool
+}
+
+// Points returns the cached model-space polyline.
+func (c *IncludedCurve3D) Points() []math.Point3 {
+	out := make([]math.Point3, len(c.points))
+	copy(out, c.points)
+	return out
+}
+
+// SourceID returns the source identity, or "" once the link is broken.
+func (c *IncludedCurve3D) SourceID() string {
+	if !c.linked {
+		return ""
+	}
+	return c.source.SourceID()
+}
+
+// Linked reports whether the include still tracks its source.
+func (c *IncludedCurve3D) Linked() bool { return c.linked }
+
+// Update re-reads the source's sample points; a no-op once the link is broken.
+func (c *IncludedCurve3D) Update() {
+	if !c.linked {
+		return
+	}
+	c.points = append(c.points[:0], c.source.SamplePoints()...)
+}
+
+// BreakLink detaches the include from its source, freezing the current polyline.
+func (c *IncludedCurve3D) BreakLink() { c.linked = false }
+
+// IncludePoint3D includes a model vertex into the sketch as reference geometry.
+func (s *Sketch3D) IncludePoint3D(src PointSource) *IncludedPoint3D {
+	p := &IncludedPoint3D{entityBase: newEntity(), source: src, linked: true}
+	p.SetConstruction(true)
+	p.Update()
+	s.addEntity3D(p)
+	return p
+}
+
+// IncludeCurve3D includes a model edge into the sketch as a reference polyline.
+func (s *Sketch3D) IncludeCurve3D(src CurveSource) *IncludedCurve3D {
+	c := &IncludedCurve3D{entityBase: newEntity(), source: src, linked: true}
+	c.SetConstruction(true)
+	c.Update()
+	s.addEntity3D(c)
+	return c
+}
+
+// UpdateIncluded re-projects every linked included entity from its source — the hook a
+// recompute calls so included geometry tracks the part as it changes.
+func (s *Sketch3D) UpdateIncluded() {
+	for _, e := range s.ents {
+		switch v := e.(type) {
+		case *IncludedPoint3D:
+			v.Update()
+		case *IncludedCurve3D:
+			v.Update()
+		}
+	}
+}

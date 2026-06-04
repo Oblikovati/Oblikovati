@@ -26,6 +26,8 @@ func isDerivedCurve3D(e Entity) bool {
 	switch e.(type) {
 	case *IntersectionCurve3D, *SilhouetteCurve3D, *ProjectToSurfaceCurve3D, *OnFaceCurve3D, *OffsetCurve3:
 		return true
+	case *IncludedPoint3D, *IncludedCurve3D:
+		return true // included reference geometry rebinds from its source on recompute
 	default:
 		return false
 	}

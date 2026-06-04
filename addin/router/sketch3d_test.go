@@ -3,6 +3,7 @@
 package router
 
 import (
+	"encoding/json"
 	"fmt"
 	stdmath "math"
 	"testing"
@@ -520,6 +521,58 @@ func TestSketch3DTransformErrors(t *testing.T) {
 		if _, err := r.Handle(s, "sketch3d.transform", []byte(b)); err == nil {
 			t.Errorf("expected error for %s", b)
 		}
+	}
+}
+
+// TestSketch3DInclude builds a box, then includes one of its edges into a 3D sketch as
+// associative reference geometry (matching the 2D project-geometry flow).
+func TestSketch3DInclude(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bodies := part.SurfaceBodies().All()
+	if len(bodies) == 0 || len(bodies[0].Edges()) == 0 {
+		t.Fatal("extrude produced no body edges to include")
+	}
+	ref := string(bodies[0].Edges()[0].ReferenceKey())
+
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var inc wire.IncludeSketch3DResult
+	argBytes, err := json.Marshal(wire.IncludeSketch3DArgs{SketchIndex: 0, Refs: []string{ref}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	call(t, r, s, "sketch3d.include", string(argBytes), &inc)
+	if len(inc.Created) != 1 || !inc.Healthy {
+		t.Fatalf("include = %+v, want 1 created / healthy", inc)
+	}
+
+	// The included edge is reference geometry on the 3D sketch.
+	sk := part.Sketches3D().Item(0)
+	if sk.EntityCount() != 1 {
+		t.Fatalf("3D sketch has %d entities, want 1 included curve", sk.EntityCount())
+	}
+	if _, ok := sk.Entities()[0].(*sketch.IncludedCurve3D); !ok {
+		t.Errorf("included entity is %T, want *IncludedCurve3D", sk.Entities()[0])
+	}
+}
+
+// TestSketch3DIncludeUnknownRefIsUnhealthy checks a lost reference is reported, not fatal.
+func TestSketch3DIncludeUnknownRefIsUnhealthy(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var inc wire.IncludeSketch3DResult
+	call(t, r, s, "sketch3d.include", `{"sketchIndex":0,"refs":["nope"]}`, &inc)
+	if inc.Healthy || len(inc.Created) != 0 {
+		t.Fatalf("include of a bogus ref = %+v, want unhealthy / nothing created", inc)
 	}
 }
 
