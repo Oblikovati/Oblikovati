@@ -2,7 +2,7 @@
 milestone: M22
 feature: F08
 name: Editing & Reference Ops (3D)
-status: planned
+status: partial (PBI-240 edit-ops done; PBI-241 include/refkey TODO)
 ---
 
 # M22 · F08 — Editing & Reference Ops (3D)

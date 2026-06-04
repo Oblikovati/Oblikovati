@@ -3,7 +3,7 @@ milestone: M22
 feature: F08
 pbi: PBI-240
 title: Move/rotate/copy/delete 3D entities + API + tools
-status: planned
+status: done (model+API; UI in F12)
 estimate: M
 ---
 
