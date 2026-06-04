@@ -3,7 +3,7 @@ milestone: M22
 feature: F10
 pbi: PBI-244
 title: Surface↔surface intersection + silhouette extraction
-status: planned
+status: done
 estimate: L
 ---
 

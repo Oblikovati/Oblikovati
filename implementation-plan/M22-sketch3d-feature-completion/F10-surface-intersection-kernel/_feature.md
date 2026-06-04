@@ -2,7 +2,7 @@
 milestone: M22
 feature: F10
 name: Surface-Intersection Kernel
-status: partial (PBI-243 surface↔curve done; PBI-244 surface↔surface TODO)
+status: done (both PBIs; kernel only)
 ---
 
 # M22 · F10 — Surface-Intersection Kernel
