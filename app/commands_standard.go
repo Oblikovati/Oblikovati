@@ -157,6 +157,12 @@ func sketch3DDrawCommands() []*CommandDefinition {
 		sketch3DToolCommand("Sketch3D.Helix", "Helical Curve", "helix",
 			"Helical Curve — a spring/thread path from radius, pitch and turns.",
 			func() Tool { return NewHelix3DTool() }),
+		sketch3DToolCommand("Sketch3D.Include", "Include Geometry", "include",
+			"Include Geometry — pick part edges/vertices to reference in the 3D sketch.",
+			func() Tool { return NewIncludeGeometry3DTool() }),
+		sketch3DToolCommand("Sketch3D.SurfaceCurve", "Surface Curve", "surface-curve",
+			"Surface Curve — derive an intersection (2 faces) or silhouette (1 face) curve.",
+			func() Tool { return NewSurfaceCurve3DTool() }),
 	}
 }
 
@@ -315,6 +321,12 @@ func sketchTabCommands() []*CommandDefinition {
 	cmds := createCommands()
 	cmds = append(cmds, sketchModifyCommands()...)
 	cmds = append(cmds, constrainCommands()...)
+	cmds = append(cmds, NewCommand("Sketch.Project", "Project Geometry", "Draw", func(s *Session) error {
+		s.StartTool(NewProjectGeometryTool())
+		return nil
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
+		WithIcon("project-geometry").WithButtonStyle(SmallIconButton).
+		WithTooltip("Project Geometry — pick part edges/vertices to reference onto the sketch plane."))
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Dimension", func(s *Session) error {
 		s.StartTool(newDimensionTool())
 		return nil

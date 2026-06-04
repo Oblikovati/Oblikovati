@@ -12,7 +12,6 @@ import (
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/app"
 	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
@@ -48,10 +47,10 @@ func intersectionCurve3D(part *compdef.PartComponentDefinition, sk *sketch.Sketc
 	if len(in.FaceRefs) != 2 {
 		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: intersection needs 2 face refs, got %d", len(in.FaceRefs))
 	}
-	if !faceKeyResolves(part, in.FaceRefs[0]) || !faceKeyResolves(part, in.FaceRefs[1]) {
+	if !part.FaceKeyResolves(in.FaceRefs[0]) || !part.FaceKeyResolves(in.FaceRefs[1]) {
 		return surfaceCurveUnhealthy(in.Kind)
 	}
-	c := sk.AddIntersectionCurve3DRef(newFaceSource(part, in.FaceRefs[0]), newFaceSource(part, in.FaceRefs[1]), gridFromArgs(in))
+	c := sk.AddIntersectionCurve3DRef(compdef.NewFaceRefSource(part, in.FaceRefs[0]), compdef.NewFaceRefSource(part, in.FaceRefs[1]), gridFromArgs(in))
 	return surfaceCurveResult(c.EntityID(), in.Kind)
 }
 
@@ -60,51 +59,15 @@ func silhouetteCurve3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3
 	if len(in.FaceRefs) != 1 {
 		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: silhouette needs 1 face ref, got %d", len(in.FaceRefs))
 	}
-	if !faceKeyResolves(part, in.FaceRefs[0]) {
+	if !part.FaceKeyResolves(in.FaceRefs[0]) {
 		return surfaceCurveUnhealthy(in.Kind)
 	}
 	dir, err := vector3Arg(in.ViewDir)
 	if err != nil {
 		return nil, err
 	}
-	c := sk.AddSilhouetteCurve3DRef(newFaceSource(part, in.FaceRefs[0]), dir, gridFromArgs(in))
+	c := sk.AddSilhouetteCurve3DRef(compdef.NewFaceRefSource(part, in.FaceRefs[0]), dir, gridFromArgs(in))
 	return surfaceCurveResult(c.EntityID(), in.Kind)
-}
-
-// faceKeyResolves reports whether a face reference key currently binds to a part face.
-func faceKeyResolves(part *compdef.PartComponentDefinition, ref string) bool {
-	key := []byte(ref)
-	for _, body := range part.SurfaceBodies().All() {
-		if _, ok := body.FindFaceByKey(key); ok {
-			return true
-		}
-	}
-	return false
-}
-
-// faceSurfaceSource adapts a part face to a self-resolving sketch.SurfaceSource: it re-finds
-// the face by reference key among the part's current bodies, so a surface-derived curve
-// re-evaluates against the rebuilt B-rep on recompute. A lost key yields a zero surface,
-// which the kernel tracer treats as no intersection.
-type faceSurfaceSource struct {
-	ref    string
-	bodies func() []*topo.Body
-}
-
-func newFaceSource(part *compdef.PartComponentDefinition, ref string) faceSurfaceSource {
-	return faceSurfaceSource{ref: ref, bodies: func() []*topo.Body { return part.SurfaceBodies().All() }}
-}
-
-func (s faceSurfaceSource) SourceID() string { return s.ref }
-
-func (s faceSurfaceSource) Surface() geom.Surface {
-	key := []byte(s.ref)
-	for _, b := range s.bodies() {
-		if face, ok := b.FindFaceByKey(key); ok {
-			return face.Geometry()
-		}
-	}
-	return nil
 }
 
 // gridFromArgs builds the tracer grid window from the request fields.

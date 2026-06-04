@@ -52,14 +52,11 @@ func includeRefs3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, r
 // includeRef3D resolves one reference key to an edge or vertex among the part's bodies and
 // includes it into the 3D sketch (an edge as a reference polyline, a vertex as a point).
 func includeRef3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, ref string) (sketch.Entity, bool) {
-	key := []byte(ref)
-	for _, body := range part.SurfaceBodies().All() {
-		if _, ok := body.FindEdgeByKey(key); ok {
-			return sk.IncludeCurve3D(newEdgeSource(part, ref)), true
-		}
-		if _, ok := body.FindVertexByKey(key); ok {
-			return sk.IncludePoint3D(newVertexSource(part, ref)), true
-		}
+	if part.EdgeKeyResolves(ref) {
+		return sk.IncludeCurve3D(compdef.NewEdgeRefSource(part, ref)), true
+	}
+	if part.VertexKeyResolves(ref) {
+		return sk.IncludePoint3D(compdef.NewVertexRefSource(part, ref)), true
 	}
 	return nil, false
 }
