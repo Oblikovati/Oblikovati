@@ -79,6 +79,7 @@ func dimensionInfo(index int, d *sketch.DimensionConstraint) wire.DimensionInfo 
 }
 
 // entityShape returns an entity's wire kind, defining points ([x,y] each), and radius.
+// Split into geometric curves and annotative entities to keep each switch small.
 func entityShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64) {
 	switch v := e.(type) {
 	case *sketch.Point:
@@ -95,8 +96,20 @@ func entityShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64)
 		return types.SketchEntityEllipticalArc, [][]float64{pt(v.Center)}, 0
 	case *sketch.Spline:
 		return types.SketchEntitySpline, splinePts(v), 0
+	default:
+		return annotationShape(e)
+	}
+}
+
+// annotationShape handles the non-curve (image/fill/text) entities.
+func annotationShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64) {
+	switch v := e.(type) {
 	case *sketch.SketchImage:
 		return types.SketchEntityImage, [][]float64{{float64(v.Anchor.X), float64(v.Anchor.Y)}}, 0
+	case *sketch.FillRegion:
+		return types.SketchEntityFillRegion, [][]float64{{float64(v.Seed.X), float64(v.Seed.Y)}}, 0
+	case *sketch.TextBox:
+		return types.SketchEntityText, [][]float64{{float64(v.Anchor.X), float64(v.Anchor.Y)}}, 0
 	default:
 		return types.SketchEntityUnknown, nil, 0
 	}

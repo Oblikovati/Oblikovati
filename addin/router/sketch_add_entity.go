@@ -81,7 +81,7 @@ func buildComposite(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in
 	case "polygon":
 		return buildPolygon(sk, in, pts)
 	case "slot":
-		return buildSlot(part, sk, pts, in.Width)
+		return buildSlot(part, sk, in, pts)
 	default:
 		return nil, fmt.Errorf("sketch.addEntity: %q is not a composite kind", in.Kind)
 	}
@@ -116,14 +116,21 @@ func buildPolygon(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Poi
 	return sk.AddPolygon(pts[0], pts[1], in.Sides, in.Variant != "circumscribed")
 }
 
-// buildSlot builds a center-to-center straight slot of the given unit-bearing width.
-func buildSlot(part *compdef.PartComponentDefinition, sk *sketch.Sketch, pts []math.Point2, width string) ([]sketch.Entity, error) {
+// buildSlot builds a straight (center-to-center, default) or arc (3-point) slot of the
+// given unit-bearing width.
+func buildSlot(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) ([]sketch.Entity, error) {
+	w, err := part.Units().Parse(in.Width, param.Length)
+	if err != nil {
+		return nil, fmt.Errorf("sketch.addEntity: slot width %q: %w", in.Width, err)
+	}
+	if in.Variant == "arc" {
+		if err := wantPoints("arc slot", pts, 3); err != nil {
+			return nil, err
+		}
+		return sk.AddArcSlot(pts[0], pts[1], pts[2], math.Scalar(w.Value), in.CCW)
+	}
 	if err := wantPoints("slot", pts, 2); err != nil {
 		return nil, err
-	}
-	w, err := part.Units().Parse(width, param.Length)
-	if err != nil {
-		return nil, fmt.Errorf("sketch.addEntity: slot width %q: %w", width, err)
 	}
 	return sk.AddStraightSlot(pts[0], pts[1], math.Scalar(w.Value))
 }

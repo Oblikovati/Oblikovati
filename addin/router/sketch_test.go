@@ -704,6 +704,33 @@ func hasCircleRadius2(t *testing.T, r *Router, s *app.Session, radius float64) b
 	return hasCircleRadius(ents.Entities, radius)
 }
 
+// TestSketchAnnotationsAndArcSlot exercises fill-region/text/arc-slot through the API.
+func TestSketchAnnotationsAndArcSlot(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"rectangle","points":[[0,0],[10,10]]}`, &wire.AddSketchEntityResult{})
+
+	var fill wire.AddEntityIDResult
+	call(t, r, s, "sketch.addFillRegion", `{"sketchIndex":0,"seed":[5,5],"style":"hatch"}`, &fill)
+	if fill.EntityID == 0 {
+		t.Fatal("addFillRegion returned no id")
+	}
+	var text wire.AddEntityIDResult
+	call(t, r, s, "sketch.addText", `{"sketchIndex":0,"anchor":[1,1],"text":"PART A","height":"5 mm","justify":"center"}`, &text)
+
+	var arc wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"slot","variant":"arc","points":[[20,0],[25,0],[20,5]],"width":"2 cm","ccw":true}`, &arc)
+	if len(arc.EntityIDs) != 4 {
+		t.Fatalf("arc slot ids = %d, want 4", len(arc.EntityIDs))
+	}
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	if countKind(ents.Entities, "fillRegion") != 1 || countKind(ents.Entities, "text") != 1 {
+		t.Fatalf("want 1 fillRegion + 1 text, got %+v", ents.Entities)
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

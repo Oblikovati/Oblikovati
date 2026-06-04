@@ -92,6 +92,8 @@ func (r *Router) registerSketchAuthoringHandlers() {
 	r.handlers[wire.MethodSketchAddPattern] = addSketchPattern
 	r.handlers[wire.MethodSketchOffset] = offsetSketchEntity
 	r.handlers[wire.MethodSketchAddImage] = addSketchImage
+	r.handlers[wire.MethodSketchAddFillRegion] = addFillRegion
+	r.handlers[wire.MethodSketchAddText] = addText
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface

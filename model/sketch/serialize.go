@@ -66,11 +66,16 @@ type EntityData struct {
 	Closed       bool      `yaml:"closed,omitempty"`
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
-	ImageRef     string    `yaml:"imageRef,omitempty"` // image only
-	Anchor       []float64 `yaml:"anchor,omitempty"`   // image only: [x, y]
-	Size         []float64 `yaml:"size,omitempty"`     // image only: [w, h]
-	Rotation     float64   `yaml:"rotation,omitempty"` // image only (radians)
-	Opacity      float64   `yaml:"opacity,omitempty"`  // image only
+	ImageRef     string    `yaml:"imageRef,omitempty"`   // image only
+	Anchor       []float64 `yaml:"anchor,omitempty"`     // image/text: [x, y]
+	Size         []float64 `yaml:"size,omitempty"`       // image only: [w, h]
+	Rotation     float64   `yaml:"rotation,omitempty"`   // image/text (radians)
+	Opacity      float64   `yaml:"opacity,omitempty"`    // image only
+	Text         string    `yaml:"text,omitempty"`       // text only
+	TextHeight   float64   `yaml:"textHeight,omitempty"` // text only
+	Justify      int       `yaml:"justify,omitempty"`    // text only
+	Seed         []float64 `yaml:"seed,omitempty"`       // fillRegion only: [x, y]
+	Style        string    `yaml:"style,omitempty"`      // fillRegion only
 }
 
 // ConstraintData is one geometric constraint: its kind plus operand ids split into
@@ -195,6 +200,14 @@ func serializeEntity(e Entity) (EntityData, error) {
 			Anchor:   []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
 			Size:     []float64{float64(v.Width), float64(v.Height)},
 			Rotation: float64(v.Rotation), Opacity: v.Opacity,
+		}, nil
+	case *FillRegion:
+		return EntityData{ID: int(v.id), Kind: "fillRegion", Seed: []float64{float64(v.Seed.X), float64(v.Seed.Y)}, Style: v.Style}, nil
+	case *TextBox:
+		return EntityData{
+			ID: int(v.id), Kind: "text", Text: v.Text,
+			Anchor:     []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
+			TextHeight: float64(v.Height), Rotation: float64(v.Rotation), Justify: int(v.Justify),
 		}, nil
 	default:
 		return EntityData{}, fmt.Errorf("cannot serialize entity of type %T (no codec)", e)

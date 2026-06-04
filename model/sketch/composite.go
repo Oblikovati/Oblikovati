@@ -96,6 +96,35 @@ func (s *Sketch) AddStraightSlot(c0, c1 math.Point2, width math.Scalar) ([]Entit
 	}, nil
 }
 
+// AddArcSlot builds an arc-shaped slot: a centerline arc (center, from start to end,
+// CCW per ccw) thickened by width into inner/outer concentric arcs capped by a semicircle
+// at each end. Returns the four boundary arcs. It errors on a zero radius or width ≥ 2R.
+func (s *Sketch) AddArcSlot(center, start, end math.Point2, width math.Scalar, ccw bool) ([]Entity, error) {
+	dirS, okS := unitVec(center.VectorTo(start))
+	dirE, okE := unitVec(center.VectorTo(end))
+	if !okS || !okE {
+		return nil, fmt.Errorf("arc slot: start/end coincides with center")
+	}
+	r := center.DistanceTo(start)
+	half := width / 2
+	if r-half <= 0 {
+		return nil, fmt.Errorf("arc slot: width %.4g ≥ 2·radius %.4g", float64(width), float64(r))
+	}
+	so := s.newPoint(center.TranslateBy(dirS.Scale(float64(r + half))))
+	si := s.newPoint(center.TranslateBy(dirS.Scale(float64(r - half))))
+	eo := s.newPoint(center.TranslateBy(dirE.Scale(float64(r + half))))
+	ei := s.newPoint(center.TranslateBy(dirE.Scale(float64(r - half))))
+	cOut, cIn := s.newPoint(center), s.newPoint(center)
+	capE, capS := s.newPoint(end), s.newPoint(start)
+	// Loop: so →(outer, ccw)→ eo →(end cap, ccw)→ ei →(inner, !ccw)→ si →(start cap, ccw)→ so.
+	return []Entity{
+		s.arcs.Add(cOut, so, eo, ccw),
+		s.arcs.Add(capE, eo, ei, ccw),
+		s.arcs.Add(cIn, ei, si, !ccw),
+		s.arcs.Add(capS, si, so, ccw),
+	}, nil
+}
+
 // polygonVertices returns the n vertex positions. For circumscribed polygons the vertex
 // radius is the apothem / cos(π/n) and the ring is rotated half a step so the through
 // point lands on an edge midpoint.

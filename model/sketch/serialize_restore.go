@@ -138,6 +138,17 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 		}
 		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
 		return r.s.images.Add(ed.ImageRef, anchor, math.Scalar(ed.Size[0]), math.Scalar(ed.Size[1]), math.Scalar(ed.Rotation), ed.Opacity), nil
+	case "fillRegion":
+		if len(ed.Seed) != 2 {
+			return nil, fmt.Errorf("fillRegion needs a 2-component seed")
+		}
+		return r.s.fills.Add(math.P2(math.Scalar(ed.Seed[0]), math.Scalar(ed.Seed[1])), ed.Style), nil
+	case "text":
+		if len(ed.Anchor) != 2 {
+			return nil, fmt.Errorf("text needs a 2-component anchor")
+		}
+		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
+		return r.s.texts.Add(anchor, ed.Text, math.Scalar(ed.TextHeight), math.Scalar(ed.Rotation), TextHJustify(ed.Justify)), nil
 	default:
 		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
 	}
