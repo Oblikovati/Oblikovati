@@ -97,10 +97,10 @@ func fillDerivedCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
 	case *sketch.OffsetCurve3:
 		info.Kind, info.Construction = string(types.Sketch3DEntityOffset), v.IsConstruction()
 	case *sketch.IncludedPoint3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntityPoint), true
+		info.Kind, info.Construction = string(types.Sketch3DEntityIncludedPoint), true
 		info.Points = [][]float64{p3coords(v.Position())}
 	case *sketch.IncludedCurve3D:
-		info.Kind, info.Construction = string(types.Sketch3DEntityProjectToSurface), true
+		info.Kind, info.Construction = string(types.Sketch3DEntityIncludedCurve), true
 		info.Points = point3sCoords(v.Points())
 	}
 }
