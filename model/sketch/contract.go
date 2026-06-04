@@ -15,3 +15,6 @@ var _ contract.Sketch3D = (*Sketch3D)(nil)
 
 // A realized sketch Profile satisfies the public Profile contract (area + closed state).
 var _ contract.Profile = (*Profile)(nil)
+
+// A closed planar 3D-sketch loop satisfies the public Profile3D contract (M22-F09).
+var _ contract.Profile3D = (*Profile3D)(nil)

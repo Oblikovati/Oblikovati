@@ -393,6 +393,41 @@ func TestSketch3DDimensionErrors(t *testing.T) {
 	}
 }
 
+// TestSketch3DProfilesAndPaths exercises path + profile enumeration over the router: a
+// planar square loop is both one closed path and one profile.
+func TestSketch3DProfilesAndPaths(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	for _, seg := range [][2][3]float64{
+		{{0, 0, 0}, {4, 0, 0}},
+		{{4, 0, 0}, {4, 3, 0}},
+		{{4, 3, 0}, {0, 3, 0}},
+		{{0, 3, 0}, {0, 0, 0}},
+	} {
+		call(t, r, s, "sketch3d.addEntity",
+			fmt.Sprintf(`{"sketchIndex":0,"kind":"line","points":[[%g,%g,%g],[%g,%g,%g]]}`,
+				seg[0][0], seg[0][1], seg[0][2], seg[1][0], seg[1][1], seg[1][2]), &wire.AddSketch3DEntityResult{})
+	}
+
+	var paths wire.ListPaths3DResult
+	call(t, r, s, "sketch3d.paths", `{"sketchIndex":0}`, &paths)
+	if len(paths.Paths) != 1 || !paths.Paths[0].Closed || paths.Paths[0].Points != 5 {
+		t.Fatalf("paths = %+v, want 1 closed path of 5 pts", paths.Paths)
+	}
+
+	var profs wire.ListProfiles3DResult
+	call(t, r, s, "sketch3d.profiles", `{"sketchIndex":0}`, &profs)
+	if len(profs.Profiles) != 1 {
+		t.Fatalf("profiles = %+v, want 1", profs.Profiles)
+	}
+	if a := profs.Profiles[0].Area; a < 11.999 || a > 12.001 {
+		t.Errorf("profile area = %v, want 12", a)
+	}
+	if len(profs.Profiles[0].Normal) != 3 {
+		t.Errorf("profile normal = %v, want a 3-vector", profs.Profiles[0].Normal)
+	}
+}
+
 // TestConstraint3DKindMapping covers the constraint/entity wire mappings directly (the
 // wire path to add 3D constraints lands in M22-F05).
 func TestConstraint3DKindMapping(t *testing.T) {
