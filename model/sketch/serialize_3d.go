@@ -55,6 +55,14 @@ type Entity3DData struct {
 	Turns         float64 `yaml:"turns,omitempty"`         // revolution count
 	RadialPerTurn float64 `yaml:"radialPerTurn,omitempty"` // per-revolution radial growth
 	Clockwise     bool    `yaml:"clockwise,omitempty"`     // helix handedness
+
+	// Conic fields (kind "ellipse"/"ellipticalArc"). MajorAxis is the in-plane major
+	// direction; Radius is the major radius and MinorRadius the minor; Start/Sweep bound
+	// an elliptical arc (radians).
+	MajorAxis   [3]float64 `yaml:"majorAxis,omitempty"`
+	MinorRadius float64    `yaml:"minorRadius,omitempty"`
+	StartAngle  float64    `yaml:"startAngle,omitempty"`
+	SweepAngle  float64    `yaml:"sweepAngle,omitempty"`
 }
 
 // Constraint3DRow is one geometric 3D constraint: its kind and the point operand ids in
@@ -133,6 +141,19 @@ func serializeEntity3D(e Entity) (Entity3DData, error) {
 			Radius: float64(v.StartRadius), Axis: axisTriple(v.Axis),
 			Pitch: v.AxialPerTurn, Turns: v.Turns, RadialPerTurn: v.RadialPerTurn,
 			Clockwise: v.Clockwise, Construction: v.construction,
+		}, nil
+	case *Ellipse3D:
+		return Entity3DData{
+			ID: int(v.id), Kind: "ellipse", Points: []int{int(v.Center.id)},
+			Axis: axisTriple(v.Normal), MajorAxis: axisTriple(v.MajorAxis),
+			Radius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), Construction: v.construction,
+		}, nil
+	case *EllipticalArc3D:
+		return Entity3DData{
+			ID: int(v.id), Kind: "ellipticalArc", Points: []int{int(v.Center.id)},
+			Axis: axisTriple(v.Normal), MajorAxis: axisTriple(v.MajorAxis),
+			Radius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius),
+			StartAngle: v.StartAngle, SweepAngle: v.SweepAngle, Construction: v.construction,
 		}, nil
 	default:
 		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T (no codec)", e)
@@ -217,11 +238,13 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) error
 	case "arc":
 		s.addArc3DPts(pts[0], pts[1], pts[2], ed.CCW).SetConstruction(ed.Construction)
 	case "helical":
-		axis, aerr := math.NewUnitVector3(math.Scalar(ed.Axis[0]), math.Scalar(ed.Axis[1]), math.Scalar(ed.Axis[2]))
+		axis, aerr := unitFromTriple(ed.Axis)
 		if aerr != nil {
 			return fmt.Errorf("helical entity: axis %v: %w", ed.Axis, aerr)
 		}
 		s.addHelix3DPt(pts[0], axis, ed.Radius, ed.Pitch, ed.RadialPerTurn, ed.Turns, ed.Clockwise).SetConstruction(ed.Construction)
+	case "ellipse", "ellipticalArc":
+		return restoreConic3D(s, ed, pts[0])
 	default:
 		return fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
 	}
@@ -246,6 +269,29 @@ func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D
 		return fmt.Errorf("unknown 3D constraint kind %q", cd.Kind)
 	}
 	return nil
+}
+
+// restoreConic3D rebuilds a full or partial ellipse from its serialized form.
+func restoreConic3D(s *Sketch3D, ed Entity3DData, center *Point3D) error {
+	normal, err := unitFromTriple(ed.Axis)
+	if err != nil {
+		return fmt.Errorf("%s entity: normal %v: %w", ed.Kind, ed.Axis, err)
+	}
+	major, err := unitFromTriple(ed.MajorAxis)
+	if err != nil {
+		return fmt.Errorf("%s entity: major axis %v: %w", ed.Kind, ed.MajorAxis, err)
+	}
+	if ed.Kind == "ellipse" {
+		s.addEllipse3DPt(center, normal, major, ed.Radius, ed.MinorRadius).SetConstruction(ed.Construction)
+		return nil
+	}
+	s.addEllipticalArc3DPt(center, normal, major, ed.Radius, ed.MinorRadius, ed.StartAngle, ed.SweepAngle).SetConstruction(ed.Construction)
+	return nil
+}
+
+// unitFromTriple builds a unit vector from a serialized triple.
+func unitFromTriple(v [3]float64) (math.UnitVector3, error) {
+	return math.NewUnitVector3(math.Scalar(v[0]), math.Scalar(v[1]), math.Scalar(v[2]))
 }
 
 // lookupPoints3D resolves saved point ids to live points through the id map.

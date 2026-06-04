@@ -72,12 +72,16 @@ func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 		info.Points = [][]float64{p3coords(p.Position())}
 		return info
 	}
-	fillCurve3DInfo(&info, e)
+	if fillSegmentCurve3DInfo(&info, e) {
+		return info
+	}
+	fillRoundCurve3DInfo(&info, e)
 	return info
 }
 
-// fillCurve3DInfo renders the curve entities (line/circle/arc/helix) into info.
-func fillCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
+// fillSegmentCurve3DInfo renders the straight/poly curve families (line/arc) and the
+// plain circle into info, reporting whether it matched.
+func fillSegmentCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) bool {
 	switch v := e.(type) {
 	case *sketch.Line3D:
 		info.Kind = string(types.Sketch3DEntityLine)
@@ -93,10 +97,29 @@ func fillCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
 		info.Points = [][]float64{p3coords(v.Center.Position()), p3coords(v.Start.Position()), p3coords(v.End.Position())}
 		info.Radius = float64(v.Radius())
 		info.Construction = v.IsConstruction()
+	default:
+		return false
+	}
+	return true
+}
+
+// fillRoundCurve3DInfo renders the helix and conic families (centered, radius-bearing).
+func fillRoundCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
+	switch v := e.(type) {
 	case *sketch.HelicalCurve3D:
 		info.Kind = string(types.Sketch3DEntityHelical)
 		info.Points = [][]float64{p3coords(v.Origin.Position())}
 		info.Radius = float64(v.StartRadius)
+		info.Construction = v.IsConstruction()
+	case *sketch.Ellipse3D:
+		info.Kind = string(types.Sketch3DEntityEllipse)
+		info.Points = [][]float64{p3coords(v.Center.Position())}
+		info.Radius = float64(v.MajorRadius)
+		info.Construction = v.IsConstruction()
+	case *sketch.EllipticalArc3D:
+		info.Kind = string(types.Sketch3DEntityEllipticalArc)
+		info.Points = [][]float64{p3coords(v.Center.Position())}
+		info.Radius = float64(v.MajorRadius)
 		info.Construction = v.IsConstruction()
 	}
 }

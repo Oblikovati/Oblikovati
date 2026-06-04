@@ -227,6 +227,41 @@ func TestSketch3DAddHelixErrors(t *testing.T) {
 	}
 }
 
+// TestSketch3DAddConics exercises the ellipse and elliptical-arc constructors over the
+// router and checks their enumerated radius.
+func TestSketch3DAddConics(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"ellipse","points":[[0,0,0]],"majorRadius":"50 mm","minorRadius":"30 mm"}`, &wire.AddSketch3DEntityResult{})
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"ellipticalArc","points":[[0,0,0]],"majorRadius":"40 mm","minorRadius":"20 mm","startAngle":"0 deg","sweepAngle":"90 deg"}`, &wire.AddSketch3DEntityResult{})
+
+	var ents wire.EnumerateEntities3DResult
+	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &ents)
+	if len(ents.Entities) != 2 || ents.Entities[0].Kind != "ellipse" || ents.Entities[1].Kind != "ellipticalArc" {
+		t.Fatalf("entities = %+v, want ellipse + ellipticalArc", ents.Entities)
+	}
+	if r := ents.Entities[0].Radius; r < 4.999 || r > 5.001 { // 50 mm major = 5 cm
+		t.Errorf("ellipse major radius = %v cm, want ~5", r)
+	}
+}
+
+// TestSketch3DAddConicErrors covers the conic validation error paths.
+func TestSketch3DAddConicErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	bad := []string{
+		`{"sketchIndex":0,"kind":"ellipse","points":[[0,0,0]],"majorRadius":"0 mm","minorRadius":"3 mm"}`,
+		`{"sketchIndex":0,"kind":"ellipticalArc","points":[[0,0,0]],"majorRadius":"4 mm","minorRadius":"2 mm","sweepAngle":"0 deg"}`,
+		`{"sketchIndex":0,"kind":"ellipse","points":[[0,0,0]],"majorRadius":"oops","minorRadius":"3 mm"}`,
+	}
+	for _, b := range bad {
+		if _, err := r.Handle(s, "sketch3d.addEntity", []byte(b)); err == nil {
+			t.Errorf("expected error for %s", b)
+		}
+	}
+}
+
 // TestSketch3DAddEntityErrors covers the malformed-input paths of the constructor.
 func TestSketch3DAddEntityErrors(t *testing.T) {
 	r, s := emptyPartSession(t)

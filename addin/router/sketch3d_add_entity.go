@@ -52,6 +52,8 @@ func buildSketch3DEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketc
 		return buildArc3D(sk, in)
 	case types.Sketch3DEntityHelical:
 		return buildHelix3D(part, sk, in)
+	case types.Sketch3DEntityEllipse, types.Sketch3DEntityEllipticalArc:
+		return buildConic3D(part, sk, in)
 	default:
 		return nil, fmt.Errorf("sketch3d.addEntity: unsupported kind %q", in.Kind)
 	}
@@ -148,6 +150,96 @@ func helixSpiral(part *compdef.PartComponentDefinition, in wire.AddSketch3DEntit
 		}
 	}
 	return turns, radial, nil
+}
+
+// buildConic3D resolves a full or partial ellipse from its center, plane, radii and
+// (for an elliptical arc) angular bounds.
+func buildConic3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
+	center, err := point3At(in.Points, 0)
+	if err != nil {
+		return nil, err
+	}
+	normal, err := axisOrZ(in.Axis)
+	if err != nil {
+		return nil, err
+	}
+	major, err := axisOrX(in.MajorAxis)
+	if err != nil {
+		return nil, err
+	}
+	majorR, minorR, err := conicRadii(part, in)
+	if err != nil {
+		return nil, err
+	}
+	if types.Sketch3DEntityKind(in.Kind) == types.Sketch3DEntityEllipse {
+		e := sk.AddEllipse3D(center, normal, major, majorR, minorR)
+		e.SetConstruction(in.Construction)
+		return entityResult(uint64(e.EntityID()), in.Kind, e.Center.EntityID())
+	}
+	return buildEllipticalArc3D(part, sk, in, center, normal, major, majorR, minorR)
+}
+
+// buildEllipticalArc3D finishes a bounded ellipse once its center/plane/radii are resolved.
+func buildEllipticalArc3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs, center math.Point3, normal, major math.UnitVector3, majorR, minorR float64) (json.RawMessage, error) {
+	start, sweep, err := conicAngles(part, in)
+	if err != nil {
+		return nil, err
+	}
+	e := sk.AddEllipticalArc3D(center, normal, major, majorR, minorR, start, sweep)
+	e.SetConstruction(in.Construction)
+	return entityResult(uint64(e.EntityID()), in.Kind, e.Center.EntityID())
+}
+
+// conicRadii parses the required major and minor radii of an ellipse.
+func conicRadii(part *compdef.PartComponentDefinition, in wire.AddSketch3DEntityArgs) (majorR, minorR float64, err error) {
+	if majorR, err = lengthArg(part, "majorRadius", in.MajorRadius); err != nil {
+		return 0, 0, err
+	}
+	if minorR, err = lengthArg(part, "minorRadius", in.MinorRadius); err != nil {
+		return 0, 0, err
+	}
+	if majorR <= 0 || minorR <= 0 {
+		return 0, 0, fmt.Errorf("sketch3d.addEntity: ellipse needs positive radii, got major=%g minor=%g", majorR, minorR)
+	}
+	return majorR, minorR, nil
+}
+
+// conicAngles parses the start and sweep angles of an elliptical arc (radians).
+func conicAngles(part *compdef.PartComponentDefinition, in wire.AddSketch3DEntityArgs) (start, sweep float64, err error) {
+	if start, err = angleArg(part, "startAngle", in.StartAngle); err != nil {
+		return 0, 0, err
+	}
+	sweep, err = angleArg(part, "sweepAngle", in.SweepAngle)
+	if err != nil {
+		return 0, 0, err
+	}
+	if sweep == 0 {
+		return 0, 0, fmt.Errorf("sketch3d.addEntity: elliptical arc needs a non-zero sweep angle")
+	}
+	return start, sweep, nil
+}
+
+// angleArg parses an optional unit-bearing angle ("" ⇒ 0), in radians.
+func angleArg(part *compdef.PartComponentDefinition, name, expr string) (float64, error) {
+	if expr == "" {
+		return 0, nil
+	}
+	q, err := part.Units().Parse(expr, param.Angle)
+	if err != nil {
+		return 0, fmt.Errorf("sketch3d.addEntity: %s %q: %w", name, expr, err)
+	}
+	return float64(q.Value), nil
+}
+
+// axisOrX reads an in-plane major-axis [x,y,z], defaulting to +X when empty.
+func axisOrX(axis []float64) (math.UnitVector3, error) {
+	if len(axis) == 0 {
+		return math.NewUnitVector3(1, 0, 0)
+	}
+	if len(axis) != 3 {
+		return math.UnitVector3{}, fmt.Errorf("sketch3d.addEntity: majorAxis must be [x,y,z], got %d components", len(axis))
+	}
+	return math.NewUnitVector3(math.Scalar(axis[0]), math.Scalar(axis[1]), math.Scalar(axis[2]))
 }
 
 // lengthArg parses an optional unit-bearing length ("" ⇒ 0).
