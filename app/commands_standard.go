@@ -406,9 +406,11 @@ func constrainCommands() []*CommandDefinition {
 	return cmds
 }
 
-// viewTabCommands are the View tab commands: navigation plus the Visual Style presets.
+// viewTabCommands are the View tab commands: navigation, the Visual Style presets, and the
+// lighting/environment/shadow controls (M16/F03).
 func viewTabCommands() []*CommandDefinition {
-	return append(viewNavigateCommands(), visualStyleCommands()...)
+	cmds := append(viewNavigateCommands(), visualStyleCommands()...)
+	return append(cmds, lightingViewCommands()...)
 }
 
 // viewNavigateCommands are the View tab's Navigate panel.
