@@ -11,7 +11,23 @@ import "github.com/Oblikovati/oblikovati/renderer"
 func lightingViewCommands() []*CommandDefinition {
 	cmds := lightingStyleCommands()
 	cmds = append(cmds, environmentCommands()...)
-	return append(cmds, shadowCommands()...)
+	cmds = append(cmds, shadowCommands()...)
+	return append(cmds, lightingSettingsCommand())
+}
+
+// lightingSettingsCommand is the View tab's "Lighting…" button: it toggles the Lighting
+// settings panel (exposure/brightness/ambience sliders + per-light editing).
+func lightingSettingsCommand() *CommandDefinition {
+	return NewCommand("View.LightingSettings", "Lighting…", "Lighting Style", func(s *Session) error {
+		if s.LightingPanelOpen() {
+			s.CloseLightingPanel()
+		} else {
+			s.OpenLightingPanel()
+		}
+		return nil
+	}).WithTab("View").
+		WithTooltip("Lighting settings — exposure, brightness, ambience, and per-light controls.").
+		WithActive(func(s *Session) bool { return s.LightingPanelOpen() })
 }
 
 // lightingStyleCommands are the View tab's Lighting Style selection box: each preset from the

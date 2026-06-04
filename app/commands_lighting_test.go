@@ -71,6 +71,39 @@ func TestShadowToggleCommands(t *testing.T) {
 	}
 }
 
+// TestLightingSettingsCommandToggles checks the "Lighting…" command opens and closes the
+// settings panel and reports its open state.
+func TestLightingSettingsCommandToggles(t *testing.T) {
+	s := registeredSession(t)
+	if s.LightingPanelOpen() {
+		t.Fatal("panel should start closed")
+	}
+	if err := s.Execute("View.LightingSettings"); err != nil {
+		t.Fatalf("execute LightingSettings: %v", err)
+	}
+	cmd, _ := s.Commands().ByID("View.LightingSettings")
+	if !s.LightingPanelOpen() || !cmd.IsActive(s) {
+		t.Errorf("panel should be open and command active after toggle")
+	}
+	if err := s.Execute("View.LightingSettings"); err != nil {
+		t.Fatalf("re-toggle: %v", err)
+	}
+	if s.LightingPanelOpen() {
+		t.Errorf("panel should be closed after second toggle")
+	}
+}
+
+// TestLightingToneSetters checks the exposure/brightness/ambience setters edit the live rig.
+func TestLightingToneSetters(t *testing.T) {
+	s := NewSession()
+	s.SetExposure(1.7)
+	s.SetBrightness(2.2)
+	s.SetAmbience(0.33)
+	if got := s.SceneLighting(); got.Exposure != 1.7 || got.Brightness != 2.2 || got.Ambience != 0.33 {
+		t.Errorf("tone = exp %g bri %g amb %g, want 1.7/2.2/0.33", got.Exposure, got.Brightness, got.Ambience)
+	}
+}
+
 // TestLightingPanelsOnViewTab checks the Lighting Style, Environment and Shadows panels are all
 // present on the View tab (the ribbon exposes the controls).
 func TestLightingPanelsOnViewTab(t *testing.T) {

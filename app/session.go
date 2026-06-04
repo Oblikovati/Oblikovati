@@ -50,6 +50,7 @@ type Session struct {
 	lighting           renderer.SceneLighting   // the live lighting rig (resolved from the style, then edited)
 	chamferFlatCorners bool                     // default three-edge-corner treatment for new chamfers
 	paramsDialogOpen   bool                     // the Manage ▸ Parameters dialog is open
+	lightingPanelOpen  bool                     // the View ▸ Lighting settings panel is open
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in

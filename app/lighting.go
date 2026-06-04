@@ -64,6 +64,22 @@ func (s *Session) ShadowSettings() renderer.ShadowSettings { return s.lighting.S
 // SetShadowSettings sets the active shadow settings on the live rig.
 func (s *Session) SetShadowSettings(sh renderer.ShadowSettings) { s.lighting.Shadows = sh }
 
+// Exposure/Brightness/Ambience read the active rig's global tone controls; the Set* forms edit
+// them in place (the Lighting settings panel's sliders).
+func (s *Session) Exposure() float32     { return s.lighting.Exposure }
+func (s *Session) SetExposure(v float32) { s.lighting.Exposure = v }
+func (s *Session) Brightness() float32   { return s.lighting.Brightness }
+func (s *Session) SetBrightness(v float32) {
+	s.lighting.Brightness = v
+}
+func (s *Session) Ambience() float32     { return s.lighting.Ambience }
+func (s *Session) SetAmbience(v float32) { s.lighting.Ambience = v }
+
+// OpenLightingPanel / CloseLightingPanel / LightingPanelOpen drive the Lighting settings panel.
+func (s *Session) OpenLightingPanel()      { s.lightingPanelOpen = true }
+func (s *Session) CloseLightingPanel()     { s.lightingPanelOpen = false }
+func (s *Session) LightingPanelOpen() bool { return s.lightingPanelOpen }
+
 // Lights returns the live rig's lights.
 func (s *Session) Lights() []renderer.SceneLight { return s.lighting.Lights }
 

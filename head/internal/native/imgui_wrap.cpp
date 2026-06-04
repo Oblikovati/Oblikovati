@@ -79,6 +79,9 @@ int  obk_ig_checkbox(const char* label, int* v) {
     *v = b ? 1 : 0;
     return changed ? 1 : 0;
 }
+int  obk_ig_slider_float(const char* label, float* v, float lo, float hi) {
+    return ImGui::SliderFloat(label, v, lo, hi) ? 1 : 0;
+}
 
 void obk_ig_begin_disabled(int disabled)     { ImGui::BeginDisabled(disabled != 0); }
 void obk_ig_end_disabled(void)               { ImGui::EndDisabled(); }

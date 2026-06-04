@@ -68,6 +68,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawParametersWindow(s)
 	drawPreferencesWindow(s)
 	drawMaterialsWindow(s)
+	drawLightingWindow(s)
 	drawFileDialog(s)
 	return activated
 }
