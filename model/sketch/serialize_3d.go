@@ -38,14 +38,17 @@ type Point3DData struct {
 }
 
 // Entity3DData is one 3D curve entity. Points lists the curve's defining point ids in a
-// kind-specific order. Standalone points are captured in Points, not here. Unused fields
-// stay zero/omitted per kind (curve kinds land in F02+).
+// kind-specific order (line: A,B; circle: center; arc: center,start,end). Axis is the
+// circle's plane normal. Standalone points are captured in Points, not here. Unused
+// fields stay zero/omitted per kind.
 type Entity3DData struct {
-	ID           int     `yaml:"id"`
-	Kind         string  `yaml:"kind"`
-	Points       []int   `yaml:"points,omitempty"`
-	Radius       float64 `yaml:"radius,omitempty"`
-	Construction bool    `yaml:"construction,omitempty"`
+	ID           int        `yaml:"id"`
+	Kind         string     `yaml:"kind"`
+	Points       []int      `yaml:"points,omitempty"`
+	Radius       float64    `yaml:"radius,omitempty"`
+	Axis         [3]float64 `yaml:"axis,omitempty"` // circle plane normal
+	CCW          bool       `yaml:"ccw,omitempty"`  // arc sweep direction
+	Construction bool       `yaml:"construction,omitempty"`
 }
 
 // Constraint3DRow is one geometric 3D constraint: its kind and the point operand ids in
@@ -86,9 +89,11 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 		if _, isPoint := e.(*Point3D); isPoint {
 			continue // standalone points are captured in Points, not Entities
 		}
-		// Curve-entity codecs land with their features (M22 F02+); until then a
-		// non-point entity has no projection and is a missing-codec error.
-		return SketchData3D{}, fmt.Errorf("cannot serialize 3D entity of type %T (no codec yet)", e)
+		ed, err := serializeEntity3D(e)
+		if err != nil {
+			return SketchData3D{}, err
+		}
+		sd.Entities = append(sd.Entities, ed)
 	}
 	for _, con := range s.geomCons.All() {
 		cd, err := serializeConstraint3D(con)
@@ -98,6 +103,32 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 		sd.Constraints = append(sd.Constraints, cd)
 	}
 	return sd, nil
+}
+
+// serializeEntity3D captures one 3D curve entity by its kind, defining point ids, and
+// kind-specific shape (radius/axis/sweep).
+func serializeEntity3D(e Entity) (Entity3DData, error) {
+	switch v := e.(type) {
+	case *Line3D:
+		return Entity3DData{ID: int(v.id), Kind: "line", Points: []int{int(v.A.id), int(v.B.id)}, Construction: v.construction}, nil
+	case *Circle3D:
+		return Entity3DData{
+			ID: int(v.id), Kind: "circle", Points: []int{int(v.Center.id)},
+			Radius: float64(v.Radius), Axis: axisTriple(v.Axis), Construction: v.construction,
+		}, nil
+	case *Arc3D:
+		return Entity3DData{
+			ID: int(v.id), Kind: "arc", Points: []int{int(v.Center.id), int(v.Start.id), int(v.End.id)},
+			CCW: v.CounterClockwise, Construction: v.construction,
+		}, nil
+	default:
+		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T (no codec)", e)
+	}
+}
+
+// axisTriple flattens a unit axis to a serializable triple.
+func axisTriple(u math.UnitVector3) [3]float64 {
+	return [3]float64{float64(u.X()), float64(u.Y()), float64(u.Z())}
 }
 
 // serializeConstraint3D captures one geometric 3D constraint by its point operands.
@@ -142,10 +173,38 @@ func (c *Sketches3D) restoreSketch3D(sd SketchData3D) error {
 		}
 		idmap[pd.ID] = p
 	}
+	for _, ed := range sd.Entities {
+		if err := restoreEntity3D(s, ed, idmap); err != nil {
+			return err
+		}
+	}
 	for _, cd := range sd.Constraints {
 		if err := restoreConstraint3D(s, cd, idmap); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// restoreEntity3D re-creates one 3D curve entity over its already-restored points.
+func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) error {
+	pts, err := lookupPoints3D(ed.Points, idmap)
+	if err != nil {
+		return fmt.Errorf("%s entity: %w", ed.Kind, err)
+	}
+	switch ed.Kind {
+	case "line":
+		s.addLine3DPts(pts[0], pts[1]).SetConstruction(ed.Construction)
+	case "circle":
+		axis, aerr := math.NewUnitVector3(math.Scalar(ed.Axis[0]), math.Scalar(ed.Axis[1]), math.Scalar(ed.Axis[2]))
+		if aerr != nil {
+			return fmt.Errorf("circle entity: axis %v: %w", ed.Axis, aerr)
+		}
+		s.addCircle3DPts(pts[0], axis, ed.Radius).SetConstruction(ed.Construction)
+	case "arc":
+		s.addArc3DPts(pts[0], pts[1], pts[2], ed.CCW).SetConstruction(ed.Construction)
+	default:
+		return fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
 	}
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/Oblikovati/api/wire"
 
 	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
@@ -62,16 +63,35 @@ func enumerateDimensions3D(s *app.Session, raw json.RawMessage) (json.RawMessage
 	return json.Marshal(wire.ListDimensions3DResult{Dimensions: out})
 }
 
-// entity3DInfo renders one 3D entity as its wire summary. Curve kinds are added by F02+;
-// the spine renders standalone points (the only entity kind in F01).
+// entity3DInfo renders one 3D entity as its wire summary (kind, defining points in
+// model cm, radius for circular kinds, construction flag).
 func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 	info := wire.Sketch3DEntityInfo{Index: index, ID: uint64(e.EntityID()), Kind: string(types.Sketch3DEntityUnknown)}
-	if p, ok := e.(*sketch.Point3D); ok {
-		pos := p.Position()
+	switch v := e.(type) {
+	case *sketch.Point3D:
 		info.Kind = string(types.Sketch3DEntityPoint)
-		info.Points = [][]float64{{float64(pos.X), float64(pos.Y), float64(pos.Z)}}
+		info.Points = [][]float64{p3coords(v.Position())}
+	case *sketch.Line3D:
+		info.Kind = string(types.Sketch3DEntityLine)
+		info.Points = [][]float64{p3coords(v.A.Position()), p3coords(v.B.Position())}
+		info.Construction = v.IsConstruction()
+	case *sketch.Circle3D:
+		info.Kind = string(types.Sketch3DEntityCircle)
+		info.Points = [][]float64{p3coords(v.Center.Position())}
+		info.Radius = float64(v.Radius)
+		info.Construction = v.IsConstruction()
+	case *sketch.Arc3D:
+		info.Kind = string(types.Sketch3DEntityArc)
+		info.Points = [][]float64{p3coords(v.Center.Position()), p3coords(v.Start.Position()), p3coords(v.End.Position())}
+		info.Radius = float64(v.Radius())
+		info.Construction = v.IsConstruction()
 	}
 	return info
+}
+
+// p3coords flattens a model point to [x,y,z].
+func p3coords(p math.Point3) []float64 {
+	return []float64{float64(p.X), float64(p.Y), float64(p.Z)}
 }
 
 // constraint3DKind maps a 3D constraint to its wire kind and the session ids it relates.

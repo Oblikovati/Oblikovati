@@ -112,6 +112,70 @@ func TestSketch3DEnumerationAndStatus(t *testing.T) {
 	}
 }
 
+// TestSketch3DAddEntities exercises the discriminated 3D entity constructor over the
+// router: add a point, line, circle and arc, then enumerate them.
+func TestSketch3DAddEntities(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	var pt wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"point","points":[[1,2,3]]}`, &pt)
+	if pt.Kind != "point" || len(pt.PointIDs) != 1 {
+		t.Fatalf("add point = %+v", pt)
+	}
+
+	var line wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[3,0,4]]}`, &line)
+	if line.Kind != "line" || len(line.PointIDs) != 2 {
+		t.Fatalf("add line = %+v", line)
+	}
+
+	var circle wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0,0]],"radius":"10 mm"}`, &circle)
+	if circle.Kind != "circle" {
+		t.Fatalf("add circle = %+v", circle)
+	}
+
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"arc","points":[[0,0,0],[1,0,0],[0,1,0]],"ccw":true}`, &wire.AddSketch3DEntityResult{})
+
+	var ents wire.EnumerateEntities3DResult
+	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &ents)
+	if len(ents.Entities) != 4 {
+		t.Fatalf("entities = %d, want 4 (point/line/circle/arc)", len(ents.Entities))
+	}
+	if k := kindAt(ents.Entities, 2); k != "circle" {
+		t.Errorf("entity 2 kind = %q, want circle", k)
+	}
+	// The circle's radius enumerates in cm (10 mm = 1 cm).
+	if r := ents.Entities[2].Radius; r < 0.999 || r > 1.001 {
+		t.Errorf("circle radius = %v cm, want ~1", r)
+	}
+}
+
+// kindAt returns the kind of the entity at index i (or "" if out of range).
+func kindAt(ents []wire.Sketch3DEntityInfo, i int) string {
+	if i < 0 || i >= len(ents) {
+		return ""
+	}
+	return ents[i].Kind
+}
+
+// TestSketch3DAddEntityErrors covers the malformed-input paths of the constructor.
+func TestSketch3DAddEntityErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	if _, err := r.Handle(s, "sketch3d.addEntity", []byte(`{"sketchIndex":0,"kind":"line","points":[[0,0,0]]}`)); err == nil {
+		t.Error("a line with one point should error")
+	}
+	if _, err := r.Handle(s, "sketch3d.addEntity", []byte(`{"sketchIndex":0,"kind":"bogus"}`)); err == nil {
+		t.Error("an unknown kind should error")
+	}
+	if _, err := r.Handle(s, "sketch3d.addEntity", []byte(`{"sketchIndex":0,"kind":"circle","points":[[0,0,0]],"radius":"oops"}`)); err == nil {
+		t.Error("a bad radius should error")
+	}
+}
+
 // TestConstraint3DKindMapping covers the constraint/entity wire mappings directly (the
 // wire path to add 3D constraints lands in M22-F05).
 func TestConstraint3DKindMapping(t *testing.T) {
