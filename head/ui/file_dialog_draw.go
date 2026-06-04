@@ -52,6 +52,8 @@ func applyFileAction(s *app.Session, act fileAction) {
 		if err := s.SaveActiveDocumentAs(act.Path); err != nil {
 			fmt.Fprintf(os.Stderr, "save as %q: %v\n", act.Path, err)
 		}
+	case dialogLoadHDR:
+		s.LoadEnvironmentFile(act.Path) // the decode happens lazily on the next viewport frame
 	}
 }
 

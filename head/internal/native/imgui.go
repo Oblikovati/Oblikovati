@@ -42,6 +42,7 @@ int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
 int  obk_ig_checkbox(const char* label, int* v);
+int  obk_ig_slider_float(const char* label, float* v, float lo, float hi);
 void obk_ig_begin_disabled(int disabled);
 void obk_ig_end_disabled(void);
 int  obk_ig_want_capture_mouse(void);
@@ -209,6 +210,17 @@ func Checkbox(label string, v *bool) bool {
 	cv := cBool(*v)
 	changed := C.obk_ig_checkbox(c, &cv) != 0
 	*v = cv != 0
+	return changed
+}
+
+// SliderFloat draws a horizontal slider over [lo,hi], editing *v in place and returning true
+// on the frame the value changed.
+func SliderFloat(label string, v *float32, lo, hi float32) bool {
+	c, free := cstr(label)
+	defer free()
+	cv := C.float(*v)
+	changed := C.obk_ig_slider_float(c, &cv, C.float(lo), C.float(hi)) != 0
+	*v = float32(cv)
 	return changed
 }
 

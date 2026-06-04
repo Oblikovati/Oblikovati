@@ -15,3 +15,9 @@ var meshVertSPV []byte
 
 //go:embed shaders/mesh.frag.spv
 var meshFragSPV []byte
+
+//go:embed shaders/skybox.vert.spv
+var skyboxVertSPV []byte
+
+//go:embed shaders/skybox.frag.spv
+var skyboxFragSPV []byte

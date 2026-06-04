@@ -16,9 +16,14 @@ import (
 
 func main() {
 	frames := flag.Int("frames", 30, "number of frames to render before exiting")
+	vp := flag.Bool("viewport", false, "also exercise the 3D viewport (lighting + IBL) path")
 	flag.Parse()
 
-	if code := native.RunSmoke(*frames); code != 0 {
+	run := native.RunSmoke
+	if *vp {
+		run = native.RunViewportSmoke
+	}
+	if code := run(*frames); code != 0 {
 		fmt.Fprintf(os.Stderr, "head smoke failed at init step %d\n", code)
 		os.Exit(code)
 	}

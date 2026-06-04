@@ -44,10 +44,14 @@ type Session struct {
 	themeStore         *theme.Store
 	materials          *material.Library
 	materialStore      *material.Store
-	notice             string               // last user-facing notice (e.g. a failed-commit reason)
-	visualStyle        renderer.VisualStyle // how the scene is drawn (View tab's Visual Style)
-	chamferFlatCorners bool                 // default three-edge-corner treatment for new chamfers
-	paramsDialogOpen   bool                 // the Manage ▸ Parameters dialog is open
+	notice             string                   // last user-facing notice (e.g. a failed-commit reason)
+	visualStyle        renderer.VisualStyle     // how the scene is drawn (View tab's Visual Style)
+	lightingStyle      renderer.LightingStyleID // active lighting preset (View tab's Lighting Style)
+	lighting           renderer.SceneLighting   // the live lighting rig (resolved from the style, then edited)
+	chamferFlatCorners bool                     // default three-edge-corner treatment for new chamfers
+	paramsDialogOpen   bool                     // the Manage ▸ Parameters dialog is open
+	lightingPanelOpen  bool                     // the View ▸ Lighting settings panel is open
+	loadEnvRequested   bool                     // a "Load HDR…" was requested; the head opens the file dialog
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
@@ -81,6 +85,8 @@ func newSession(store doc.Store) *Session {
 		camera:             scene.NewCamera(800, 600),
 		addins:             NewAddInManager(),
 		visualStyle:        renderer.ShadedWithEdges,
+		lightingStyle:      renderer.LightingDefault,
+		lighting:           renderer.DefaultSceneLighting(),
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
 }
