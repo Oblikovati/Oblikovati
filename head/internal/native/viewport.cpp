@@ -17,9 +17,12 @@ bool ok(VkResult r) { return r == VK_SUCCESS; }
 constexpr uint32_t kVertexFloats = 16;
 constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 
-// Scene-lighting UBO size in floats: a vec4 header + 8 lights × 3 vec4. Must match
-// viewport.PackLighting / the Scene block in mesh.frag (std140) — ADR-0026 §1,§3.
-constexpr uint32_t kSceneFloats = 4 + 8 * 12;
+// Scene-lighting UBO size in floats: a vec4 header + 8 lights × 3 vec4 + a vec4 environment
+// block. The first 100 floats match viewport.PackLighting; the trailing env vec4 (enabled,
+// rotation, iblIntensity, maxLod) is written by obk_viewport_set_environment — ADR-0026 §1,§3.
+constexpr uint32_t kSceneFloats = 4 + 8 * 12 + 4;
+constexpr uint32_t kEnvBlock = 4 + 8 * 12; // float offset of the env vec4 in sceneData
+constexpr VkFormat kEnvFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 
 // camPosLit packs the camera eye (xyz, world space, for the PBR view vector) and the lit flag
 // (w: 0 = line/flat, 1 = surface) into one vec4 so the push block stays 16-byte aligned.
@@ -56,6 +59,14 @@ struct Viewport {
     VkDeviceMemory        uboMem = VK_NULL_HANDLE;
     void*                 uboMapped = nullptr;
     float                 sceneData[kSceneFloats] = {0};
+
+    // Equirectangular HDR environment for image-based lighting (descriptor binding 1). A 1×1
+    // default is bound at init so the binding is always valid; obk_viewport_set_environment
+    // replaces it with a mip-mapped image and flips the env-enabled flag (ADR-0026 §4).
+    VkImage         envImage = VK_NULL_HANDLE;
+    VkDeviceMemory  envMem = VK_NULL_HANDLE;
+    VkImageView     envView = VK_NULL_HANDLE;
+    VkSampler       envSampler = VK_NULL_HANDLE;
 
     VkCommandPool   cmdPool = VK_NULL_HANDLE;
     VkCommandBuffer cmd = VK_NULL_HANDLE;
@@ -380,15 +391,20 @@ void default_headlight(float* d) {
 // create_scene_resources builds the lighting descriptor set: a fragment-stage UBO (binding 0)
 // backed by a small host-visible, persistently mapped buffer that render refreshes each frame.
 void create_scene_resources(HeadContext* c, Viewport* v) {
-    VkDescriptorSetLayoutBinding b{};
-    b.binding = 0;
-    b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    b.descriptorCount = 1;
-    b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    // Binding 0: the scene-lighting UBO. Binding 1: the equirect environment sampler (IBL).
+    VkDescriptorSetLayoutBinding binds[2]{};
+    binds[0].binding = 0;
+    binds[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    binds[0].descriptorCount = 1;
+    binds[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binds[1].binding = 1;
+    binds[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    binds[1].descriptorCount = 1;
+    binds[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     VkDescriptorSetLayoutCreateInfo lci{};
     lci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    lci.bindingCount = 1;
-    lci.pBindings = &b;
+    lci.bindingCount = 2;
+    lci.pBindings = binds;
     vkCreateDescriptorSetLayout(c->device, &lci, nullptr, &v->setLayout);
 
     VkBufferCreateInfo bi{};
@@ -409,12 +425,13 @@ void create_scene_resources(HeadContext* c, Viewport* v) {
     vkMapMemory(c->device, v->uboMem, 0, sizeof(v->sceneData), 0, &v->uboMapped);
     default_headlight(v->sceneData);
 
-    VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
+    VkDescriptorPoolSize ps[2] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
+                                  {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}};
     VkDescriptorPoolCreateInfo pci{};
     pci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pci.maxSets = 1;
-    pci.poolSizeCount = 1;
-    pci.pPoolSizes = &ps;
+    pci.poolSizeCount = 2;
+    pci.pPoolSizes = ps;
     vkCreateDescriptorPool(c->device, &pci, nullptr, &v->descPool);
     VkDescriptorSetAllocateInfo dai{};
     dai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -433,6 +450,152 @@ void create_scene_resources(HeadContext* c, Viewport* v) {
     vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
 }
 
+// img_barrier records a whole-image layout transition over all mip levels.
+void img_barrier(VkCommandBuffer cmd, VkImage img, uint32_t levels, VkImageLayout oldL,
+                 VkImageLayout newL, VkAccessFlags srcA, VkAccessFlags dstA,
+                 VkPipelineStageFlags srcS, VkPipelineStageFlags dstS) {
+    VkImageMemoryBarrier b{};
+    b.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    b.oldLayout = oldL;
+    b.newLayout = newL;
+    b.srcQueueFamilyIndex = b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.image = img;
+    b.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, levels, 0, 1};
+    b.srcAccessMask = srcA;
+    b.dstAccessMask = dstA;
+    vkCmdPipelineBarrier(cmd, srcS, dstS, 0, 0, nullptr, 0, nullptr, 1, &b);
+}
+
+// write_env_descriptor points descriptor binding 1 at the current environment image + sampler.
+void write_env_descriptor(HeadContext* c, Viewport* v) {
+    VkDescriptorImageInfo ii{v->envSampler, v->envView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkWriteDescriptorSet w{};
+    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    w.dstSet = v->sceneSet;
+    w.dstBinding = 1;
+    w.descriptorCount = 1;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    w.pImageInfo = &ii;
+    vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+}
+
+// destroy_env_image frees the current environment image/view/memory (the sampler persists).
+void destroy_env_image(HeadContext* c, Viewport* v) {
+    if (v->envView) vkDestroyImageView(c->device, v->envView, nullptr);
+    if (v->envImage) vkDestroyImage(c->device, v->envImage, nullptr);
+    if (v->envMem) vkFreeMemory(c->device, v->envMem, nullptr);
+    v->envView = VK_NULL_HANDLE;
+    v->envImage = VK_NULL_HANDLE;
+    v->envMem = VK_NULL_HANDLE;
+}
+
+// make_env_image (re)creates the equirect environment image from a packed CPU mip chain (RGBA
+// float32 levels concatenated; dims is w,h per level), uploads every level through a staging
+// buffer, and points binding 1 at the result. Synchronous (waits on the fence) — it is called
+// from the UI thread between frames, not in the render loop (ADR-0026 §4).
+void make_env_image(HeadContext* c, Viewport* v, const float* data, const int* dims, int levels) {
+    vkDeviceWaitIdle(c->device);
+    destroy_env_image(c, v);
+
+    VkImageCreateInfo ii{};
+    ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ii.imageType = VK_IMAGE_TYPE_2D;
+    ii.format = kEnvFormat;
+    ii.extent = {(uint32_t)dims[0], (uint32_t)dims[1], 1};
+    ii.mipLevels = (uint32_t)levels;
+    ii.arrayLayers = 1;
+    ii.samples = VK_SAMPLE_COUNT_1_BIT;
+    ii.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ii.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkCreateImage(c->device, &ii, nullptr, &v->envImage);
+    VkMemoryRequirements req;
+    vkGetImageMemoryRequirements(c->device, v->envImage, &req);
+    VkMemoryAllocateInfo ai{};
+    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    ai.allocationSize = req.size;
+    ai.memoryTypeIndex = obk_find_memory_type(c->physical, req.memoryTypeBits,
+                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkAllocateMemory(c->device, &ai, nullptr, &v->envMem);
+    vkBindImageMemory(c->device, v->envImage, v->envMem, 0);
+
+    uint64_t totalFloats = 0;
+    for (int l = 0; l < levels; l++) totalFloats += (uint64_t)dims[l * 2] * dims[l * 2 + 1] * 4;
+    GpuBuffer staging{};
+    upload(c, &staging, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, data, totalFloats * sizeof(float));
+
+    VkCommandBufferAllocateInfo cba{};
+    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cba.commandPool = v->cmdPool;
+    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cba.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(c->device, &cba, &cmd);
+    VkCommandBufferBeginInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &bi);
+    img_barrier(cmd, v->envImage, levels, VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    VkDeviceSize off = 0;
+    for (int l = 0; l < levels; l++) {
+        VkBufferImageCopy cp{};
+        cp.bufferOffset = off;
+        cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, (uint32_t)l, 0, 1};
+        cp.imageExtent = {(uint32_t)dims[l * 2], (uint32_t)dims[l * 2 + 1], 1};
+        vkCmdCopyBufferToImage(cmd, staging.buffer, v->envImage,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cp);
+        off += (VkDeviceSize)dims[l * 2] * dims[l * 2 + 1] * 4 * sizeof(float);
+    }
+    img_barrier(cmd, v->envImage, levels, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkResetFences(c->device, 1, &v->fence);
+    vkQueueSubmit(c->queue, 1, &submit, v->fence);
+    vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, UINT64_MAX);
+    vkFreeCommandBuffers(c->device, v->cmdPool, 1, &cmd);
+    vkDestroyBuffer(c->device, staging.buffer, nullptr);
+    vkFreeMemory(c->device, staging.memory, nullptr);
+
+    VkImageViewCreateInfo vi{};
+    vi.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vi.image = v->envImage;
+    vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vi.format = kEnvFormat;
+    vi.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, (uint32_t)levels, 0, 1};
+    vkCreateImageView(c->device, &vi, nullptr, &v->envView);
+    write_env_descriptor(c, v);
+}
+
+// create_env_sampler builds the IBL sampler: trilinear with azimuth wrap (U repeat) and a
+// clamped pole (V), full mip range for roughness-driven LOD.
+void create_env_sampler(HeadContext* c, Viewport* v) {
+    VkSamplerCreateInfo si{};
+    si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    si.magFilter = si.minFilter = VK_FILTER_LINEAR;
+    si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    si.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    si.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    si.maxLod = VK_LOD_CLAMP_NONE;
+    vkCreateSampler(c->device, &si, nullptr, &v->envSampler);
+}
+
+// init_default_env binds a 1×1 mid-grey image to binding 1 so the descriptor is valid before
+// any environment is set; the env-enabled flag stays 0, so IBL is off until requested.
+void init_default_env(HeadContext* c, Viewport* v) {
+    const float grey[4] = {0.05f, 0.05f, 0.05f, 1.0f};
+    const int dims[2] = {1, 1};
+    make_env_image(c, v, grey, dims, 1);
+}
+
 } // namespace
 
 extern "C" {
@@ -448,6 +611,7 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
 
     // The scene-lighting descriptor set must exist before the pipeline layout references it.
     create_scene_resources(c, v);
+    create_env_sampler(c, v);
 
     VkPushConstantRange pc{VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(PushConstants)};
@@ -492,6 +656,10 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     VkFenceCreateInfo fi{};
     fi.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     vkCreateFence(c->device, &fi, nullptr, &v->fence);
+
+    // Bind a 1×1 default to the environment sampler now that the transfer fence/command pool
+    // exist, so binding 1 is valid on the first frame (IBL stays off until an env is set).
+    init_default_env(c, v);
 }
 
 // obk_viewport_render uploads the flattened geometry, records the offscreen pass, and
@@ -622,6 +790,26 @@ void obk_viewport_set_lighting(void* h, const float* data, int n) {
     std::memcpy(c->viewport->sceneData, data, count * sizeof(float));
 }
 
+// obk_viewport_set_environment replaces the IBL environment with a CPU mip chain (RGBA float32
+// levels concatenated; dims = w,h per level) and enables image-based lighting with the given
+// azimuth rotation (radians) and intensity. A non-positive level count (or null data) disables
+// IBL, leaving the default image bound. A no-op before init. (ADR-0026 §4.)
+void obk_viewport_set_environment(void* h, const float* data, const int* dims, int levels,
+                                  float rotation, float intensity) {
+    HeadContext* c = (HeadContext*)h;
+    Viewport* v = c ? c->viewport : nullptr;
+    if (!v) return;
+    if (levels <= 0 || !data || !dims) {
+        v->sceneData[kEnvBlock] = 0.0f; // disable IBL
+        return;
+    }
+    make_env_image(c, v, data, dims, levels);
+    v->sceneData[kEnvBlock + 0] = 1.0f;             // enabled
+    v->sceneData[kEnvBlock + 1] = rotation;
+    v->sceneData[kEnvBlock + 2] = intensity;
+    v->sceneData[kEnvBlock + 3] = (float)(levels - 1); // max LOD for roughness sampling
+}
+
 // obk_viewport_set_clear sets the 3D pass background (themed). Takes effect on the next
 // render; a no-op before the viewport is initialized.
 void obk_viewport_set_clear(void* h, float r, float g, float b) {
@@ -648,6 +836,8 @@ void obk_viewport_destroy(HeadContext* c) {
     if (v->vbuf.memory) vkFreeMemory(c->device, v->vbuf.memory, nullptr);
     if (v->ibuf.buffer) vkDestroyBuffer(c->device, v->ibuf.buffer, nullptr);
     if (v->ibuf.memory) vkFreeMemory(c->device, v->ibuf.memory, nullptr);
+    destroy_env_image(c, v);
+    if (v->envSampler) vkDestroySampler(c->device, v->envSampler, nullptr);
     if (v->uboMapped) vkUnmapMemory(c->device, v->uboMem);
     if (v->uboBuf) vkDestroyBuffer(c->device, v->uboBuf, nullptr);
     if (v->uboMem) vkFreeMemory(c->device, v->uboMem, nullptr);

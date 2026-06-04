@@ -22,7 +22,11 @@ struct GpuLight {
 layout(std140, set = 0, binding = 0) uniform Scene {
     vec4     header; // x=ambience y=brightness z=exposure w=lightCount
     GpuLight lights[8];
+    vec4     env;    // x=enabled y=rotation(rad) z=iblIntensity w=maxLod
 } scene;
+// Equirectangular HDR environment (image-based lighting). Bound to a 1×1 default until an
+// environment is set, gated by scene.env.x (ADR-0026 §3,§4).
+layout(set = 0, binding = 1) uniform sampler2D envMap;
 
 layout(location = 0) in vec3      vNormal;
 layout(location = 1) in vec4      vColor;
@@ -57,6 +61,41 @@ float geomSmith(float NoV, float NoL, float a) {
     return gv * gl;
 }
 vec3 fresnel(float VoH, vec3 f0) { return f0 + (1.0 - f0) * pow(1.0 - VoH, 5.0); }
+
+// dirUV maps a world direction to equirectangular UV (our up is +Z), with an azimuth rotation.
+// U wraps (sampler REPEAT), V clamps; row 0 is the zenith, matching envimage's layout.
+vec2 dirUV(vec3 d, float rot) {
+    float u = atan(d.y, d.x) / (2.0 * PI) + 0.5 + rot / (2.0 * PI);
+    float v = acos(clamp(d.z, -1.0, 1.0)) / PI;
+    return vec2(u, v);
+}
+
+// envBRDFApprox is Karis' analytic split-sum environment BRDF (scale, bias), avoiding a LUT
+// texture (ADR-0026 §3). The specular IBL is prefiltered·(f0·scale + bias).
+vec2 envBRDFApprox(float NoV, float rough) {
+    const vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+    const vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+    vec4 r = rough * c0 + c1;
+    float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
+    return vec2(-1.04, 1.04) * a004 + r.zw;
+}
+
+// ambientTerm is the indirect light: image-based lighting sampled from the environment map when
+// one is active (the PBI-304 replacement for the analytic stand-in), else the ambience-scaled
+// analytic ambient so an environment-less scene is unchanged.
+vec3 ambientTerm(vec3 N, vec3 V, vec3 lin, vec3 f0, float metal, float rough, float NoV) {
+    if (scene.env.x < 0.5) {
+        return (lin + f0 * 0.44) * scene.header.x;
+    }
+    float rot = scene.env.y, intensity = scene.env.z, maxLod = scene.env.w;
+    vec3  R    = reflect(-V, N);
+    vec3  pref = textureLod(envMap, dirUV(R, rot), rough * maxLod).rgb;       // prefiltered specular
+    vec3  irr  = textureLod(envMap, dirUV(N, rot), max(maxLod - 1.0, 0.0)).rgb; // ~diffuse irradiance
+    vec2  ab   = envBRDFApprox(NoV, rough);
+    vec3  spec = pref * (f0 * ab.x + ab.y);
+    vec3  diff = irr * lin * (1.0 - f0) * (1.0 - metal);
+    return (diff + spec) * intensity;
+}
 
 // lightDirAndRadiance resolves a GpuLight at the shaded point: the unit direction toward it and
 // its incident radiance (color·intensity·brightness, with mild inverse-square falloff for
@@ -100,8 +139,7 @@ vec4 pbr(vec3 N, vec3 V, vec3 albedo, float metal, float rough, vec3 emissive, f
         vec3  diff = (1.0 - F) * (1.0 - metal) * lin / PI;
         color += (diff + spec) * radiance * NoL;
     }
-    vec3 amb = (lin + f0 * 0.44) * scene.header.x; // ambience-scaled analytic ambient
-    color += amb + toLinear(emissive);
+    color += ambientTerm(N, V, lin, f0, metal, rough, NoV) + toLinear(emissive);
     return vec4(toSRGB(aces(color * scene.header.z)), alpha); // header.z = exposure
 }
 

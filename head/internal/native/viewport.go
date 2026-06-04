@@ -15,6 +15,8 @@ void     obk_viewport_render(void* h, int w, int hh, const float* mvp, const flo
                              const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC);
 void     obk_viewport_set_clear(void* h, float r, float g, float b);
 void     obk_viewport_set_lighting(void* h, const float* data, int n);
+void     obk_viewport_set_environment(void* h, const float* data, const int* dims, int levels,
+                                      float rotation, float intensity);
 uint64_t obk_viewport_texture(void* h);
 
 void obk_ig_image(unsigned long long tex, float w, float h);
@@ -65,6 +67,20 @@ func (w *Window) SetViewportLighting(ubo []float32) {
 		return
 	}
 	C.obk_viewport_set_lighting(w.handle, floatPtr(ubo), C.int(len(ubo)))
+}
+
+// SetViewportEnvironment uploads the IBL environment as a CPU mip chain (data = all levels'
+// RGBA float32 concatenated; dims = w,h per level, so len(dims) == 2·levels) and enables
+// image-based lighting with the given azimuth rotation (radians) and intensity. An empty data
+// or dims slice disables IBL (the analytic ambient resumes). Takes effect next RenderViewport.
+func (w *Window) SetViewportEnvironment(data []float32, dims []int32, rotation, intensity float32) {
+	if len(data) == 0 || len(dims) < 2 {
+		C.obk_viewport_set_environment(w.handle, nil, nil, 0, 0, 0)
+		return
+	}
+	C.obk_viewport_set_environment(w.handle, floatPtr(data),
+		(*C.int)(unsafe.Pointer(&dims[0])), C.int(len(dims)/2),
+		C.float(rotation), C.float(intensity))
 }
 
 // ViewportTexture returns the ImGui texture handle for the last rendered frame.
