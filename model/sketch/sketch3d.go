@@ -24,9 +24,10 @@ import (
 //	s.Solve()
 type Sketch3D struct {
 	base
-	ents []Entity
-	pts  []*Point3D // every constrainable point (the solver's position variables)
-	byID map[ID]Entity
+	ents   []Entity
+	pts    []*Point3D // free constrainable points — the solver's position variables
+	refPts []*Point3D // fixed reference points (projected/included anchors): constrainable but not solved
+	byID   map[ID]Entity
 
 	dimensionsVisible bool
 
@@ -75,7 +76,21 @@ func (s *Sketch3D) PointByID(id ID) (*Point3D, bool) {
 			return p, true
 		}
 	}
+	for _, p := range s.refPts {
+		if p.id == id {
+			return p, true // a fixed reference anchor can be constrained to
+		}
+	}
 	return nil, false
+}
+
+// newRefPoint3D creates a fixed reference point (a projected/included anchor): a real
+// Point3D other geometry can be constrained to, but excluded from the solver's free
+// variables, so the solver holds it in place while other geometry moves to meet it.
+func (s *Sketch3D) newRefPoint3D(pos math.Point3) *Point3D {
+	p := NewPoint3D(pos)
+	s.refPts = append(s.refPts, p)
+	return p
 }
 
 // AllPoints3D returns every constrainable 3D point — endpoints, centers, and standalone

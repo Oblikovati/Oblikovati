@@ -67,6 +67,47 @@ func TestIncludePoint3DTracksSource(t *testing.T) {
 	}
 }
 
+// TestIncludedPointIsConstrainableAnchor proves you can construct on top of an included
+// point: a free line endpoint constrained coincident with the included point's anchor
+// snaps to it on solve, while the anchor itself stays fixed (it is not a free DOF).
+func TestIncludedPointIsConstrainableAnchor(t *testing.T) {
+	s := NewSketches3D().Add()
+	inc := s.IncludePoint3D(&fakePointSource{id: "v", pos: math.P3(5, 5, 5)})
+	l := s.AddLine3D(math.P3(0, 0, 0), math.P3(1, 0, 0))
+
+	// The line has 6 free DOF; the included anchor is a fixed reference (0 DOF added).
+	if dof := s.DegreesOfFreedom(); dof != 6 {
+		t.Fatalf("free DOF = %d, want 6 (the anchor is fixed, not a variable)", dof)
+	}
+	s.GeometricConstraints3D().Add(NewCoincident3D(l.A, inc.Anchor()))
+	if dof := s.DegreesOfFreedom(); dof != 3 {
+		t.Fatalf("DOF after coincident-to-anchor = %d, want 3", dof)
+	}
+	if res := s.Solve(); !res.Converged {
+		t.Fatalf("solve: %+v", res)
+	}
+	if l.A.Position().DistanceTo(math.P3(5, 5, 5)) > 1e-6 {
+		t.Errorf("line endpoint = %v, want it snapped to the included point (5,5,5)", l.A.Position())
+	}
+	if inc.Position() != math.P3(5, 5, 5) {
+		t.Errorf("the fixed anchor should not move, got %v", inc.Position())
+	}
+}
+
+// TestIncludedPointResolvableByID checks the included point's anchor is reachable by id
+// for constraint creation (PointByID), and the entity by the same id (EntityByID).
+func TestIncludedPointResolvableByID(t *testing.T) {
+	s := NewSketches3D().Add()
+	inc := s.IncludePoint3D(&fakePointSource{id: "v", pos: math.P3(1, 2, 3)})
+	id := inc.EntityID()
+	if p, ok := s.PointByID(id); !ok || p != inc.Anchor() {
+		t.Error("PointByID should resolve the included point's anchor")
+	}
+	if e, ok := s.EntityByID(id); !ok || e != inc {
+		t.Error("EntityByID should resolve the included point entity by the same id")
+	}
+}
+
 // TestIncludeLostReferenceFreezes checks that when a source's reference is lost, the next
 // UpdateIncluded breaks the link and freezes the last geometry (reference-lost behavior).
 func TestIncludeLostReferenceFreezes(t *testing.T) {

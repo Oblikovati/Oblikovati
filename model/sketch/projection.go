@@ -28,22 +28,25 @@ type CurveSource interface {
 	SamplePoints() ([]math.Point3, bool)
 }
 
-// ProjectedPoint is a sketch point projected from a model vertex. It caches the
-// sketch-space position and re-projects on [ProjectedPoint.Update] until the link
-// is broken.
+// ProjectedPoint is a sketch point projected from a model vertex. It owns a fixed
+// reference anchor (a Point in the sketch's refPts) so other sketch geometry can be
+// constrained to it; the projection re-derives the anchor's position on Update until the
+// link is broken. The anchor's id is the entity's id.
 type ProjectedPoint struct {
-	id        ID
-	source    PointSource
-	plane     Plane
-	sketchPos math.Point2
-	linked    bool
+	source PointSource
+	plane  Plane
+	anchor *Point
+	linked bool
 }
 
-// EntityID implements [Entity].
-func (p *ProjectedPoint) EntityID() ID { return p.id }
+// EntityID is the anchor's id — constraining to this id binds to the fixed anchor.
+func (p *ProjectedPoint) EntityID() ID { return p.anchor.id }
 
-// Position returns the cached sketch-space position.
-func (p *ProjectedPoint) Position() math.Point2 { return p.sketchPos }
+// Anchor returns the constrainable fixed reference point.
+func (p *ProjectedPoint) Anchor() *Point { return p.anchor }
+
+// Position returns the anchor's sketch-space position.
+func (p *ProjectedPoint) Position() math.Point2 { return p.anchor.Position() }
 
 // SourceID returns the projected source's identity, or "" if the link was broken.
 func (p *ProjectedPoint) SourceID() string {
@@ -71,7 +74,7 @@ func (p *ProjectedPoint) Update() {
 		p.linked = false
 		return
 	}
-	p.sketchPos = p.plane.ToSketch(pos)
+	p.anchor.SetPosition(p.plane.ToSketch(pos))
 }
 
 // BreakLink detaches the projection from its source, freezing its current geometry
@@ -131,10 +134,11 @@ func (c *ProjectedCurve) Update() {
 // BreakLink detaches the projection from its source, freezing the current polyline.
 func (c *ProjectedCurve) BreakLink() { c.linked = false }
 
-// ProjectPoint projects a model vertex into the sketch as reference geometry and
-// returns the associative projected point.
+// ProjectPoint projects a model vertex into the sketch as a fixed, constrainable reference
+// point and returns the associative projected point.
 func (s *Sketch) ProjectPoint(src PointSource) *ProjectedPoint {
-	p := &ProjectedPoint{id: nextID(), source: src, plane: s.plane, linked: true}
+	pos, _ := src.Position() // resolved now; a later lost reference freezes via Update
+	p := &ProjectedPoint{source: src, plane: s.plane, anchor: s.newRefPoint(s.plane.ToSketch(pos)), linked: true}
 	p.Update()
 	s.add(p)
 	return p

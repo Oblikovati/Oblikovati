@@ -93,9 +93,10 @@ func (b *base) SetDeferUpdates(d bool) { b.deferUpdates = d }
 // F03/F04) its constraints, and resolves to profiles/paths via the solver (F05/F06).
 type Sketch struct {
 	base
-	plane Plane
-	ents  []Entity
-	pts   []*Point // every constrainable point (endpoints, centers, standalone) — the solver's variables
+	plane  Plane
+	ents   []Entity
+	pts    []*Point // every constrainable point (endpoints, centers, standalone) — the solver's variables
+	refPts []*Point // fixed reference points (projected anchors): constrainable but not solved
 
 	lines    *Lines
 	arcs     *Arcs
@@ -145,6 +146,11 @@ func (s *Sketch) PointByID(id ID) (*Point, bool) {
 	for _, p := range s.pts {
 		if p.id == id {
 			return p, true
+		}
+	}
+	for _, p := range s.refPts {
+		if p.id == id {
+			return p, true // a fixed projected/reference anchor can be constrained to
 		}
 	}
 	return nil, false
@@ -234,6 +240,15 @@ func (s *Sketch) removeEntity(e Entity) bool {
 func (s *Sketch) newPoint(pos math.Point2) *Point {
 	p := &Point{id: nextID(), X: pos.X, Y: pos.Y}
 	s.pts = append(s.pts, p)
+	return p
+}
+
+// newRefPoint creates a fixed reference point (a projected anchor): a real Point other
+// geometry can be constrained to, but excluded from the solver's free variables, so the
+// solver holds it in place while other geometry moves to meet it.
+func (s *Sketch) newRefPoint(pos math.Point2) *Point {
+	p := &Point{id: nextID(), X: pos.X, Y: pos.Y}
+	s.refPts = append(s.refPts, p)
 	return p
 }
 

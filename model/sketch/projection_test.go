@@ -39,6 +39,32 @@ func (e *movableEdge) SamplePoints() ([]math.Point3, bool) {
 	return e.samples, true
 }
 
+// TestProjectedPointIsConstrainableAnchor proves a 2D sketch can be built on a projected
+// point: a free point constrained coincident with the projected anchor snaps to it on
+// solve, while the anchor stays fixed (it is not a free DOF).
+func TestProjectedPointIsConstrainableAnchor(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	pp := s.ProjectPoint(&movableVertex{id: "v1", pos: math.P3(4, 2, 0)}) // anchor at (4,2)
+	free := s.Points().Add(math.P2(0, 0))
+
+	if dof := s.DegreesOfFreedom(); dof != 2 {
+		t.Fatalf("free DOF = %d, want 2 (the projected anchor is fixed)", dof)
+	}
+	s.GeometricConstraints().AddCoincident(free, pp.Anchor())
+	if res := s.Solve(); !res.Converged {
+		t.Fatalf("solve: %+v", res)
+	}
+	if !free.Position().IsEqualTo(math.P2(4, 2), tol) {
+		t.Errorf("free point = %v, want snapped to the projected anchor (4,2)", free.Position())
+	}
+	if !pp.Position().IsEqualTo(math.P2(4, 2), tol) {
+		t.Errorf("projected anchor should stay fixed, got %v", pp.Position())
+	}
+	if p, ok := s.PointByID(pp.EntityID()); !ok || p != pp.Anchor() {
+		t.Error("PointByID should resolve the projected anchor by the entity id")
+	}
+}
+
 // TestProjectedLostReferenceFreezes checks UpdateProjections breaks the link and freezes
 // geometry when a projected source's reference is lost.
 func TestProjectedLostReferenceFreezes(t *testing.T) {
