@@ -3,7 +3,7 @@ milestone: M22
 feature: F03
 pbi: PBI-234
 title: 3D splines (interp/control/fixed) + equation curve
-status: planned
+status: done (model+API; UI in F12)
 estimate: M
 ---
 
