@@ -10,18 +10,14 @@ import (
 	"github.com/Oblikovati/oblikovati/head/viewport"
 )
 
-// applyShadow enables the sun shadow map when object shadows are on and the scene has a light
-// and geometry, fitting the light frustum to the drawn mesh's bounds (ADR-0026 §6). The primary
-// light (index 0) casts; density/softness come from the active shadow settings.
-func applyShadow(win *native.Window, s *app.Session, m viewport.Mesh) {
+// applyShadow enables the sun shadow map when object or ground shadows are on and the scene has
+// a light, fitting the light frustum to the model bounds (min/max, excluding the ground plane so
+// the shadow map stays high-resolution on the model). The primary light (index 0) casts;
+// density/softness come from the active shadow settings (ADR-0026 §6).
+func applyShadow(win *native.Window, s *app.Session, min, max [3]float32, ok bool) {
 	sh := s.ShadowSettings()
 	lights := s.SceneLighting().ActiveLights()
-	if !sh.ObjectShadows || len(lights) == 0 {
-		win.SetViewportShadow(nil, false, 0, 0)
-		return
-	}
-	min, max, ok := viewport.SceneBounds(m)
-	if !ok {
+	if !ok || (!sh.ObjectShadows && !sh.GroundShadows) || len(lights) == 0 {
 		win.SetViewportShadow(nil, false, 0, 0)
 		return
 	}

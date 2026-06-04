@@ -78,13 +78,19 @@ func updateViewportCamera(s *app.Session, pw, ph int) (scene.Camera, *feature.Wo
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
 func renderViewportImage(win *native.Window, s *app.Session, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
+	// Fit the shadow frustum to the model (before adding the ground), then drop in the ground
+	// plane so object shadows have a surface to land on.
+	min, max, hasGeom := viewport.SceneBounds(viewport.Flatten(list))
+	if hasGeom && wantGround(s) {
+		list.Items = append(list.Items, groundPlaneItem(min, max, renderer.PassSetFor(s.VisualStyle()).Faces))
+	}
 	m := viewport.Flatten(list)
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	applyEnvironment(win, s.Environment())
 	applySkybox(win, s.Environment(), mvp)
-	applyShadow(win, s, m)
+	applyShadow(win, s, min, max, hasGeom)
 	win.RenderViewport(pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
 		m.OccVerts, m.OccVCount, m.OccIndices,
