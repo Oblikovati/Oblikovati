@@ -576,6 +576,77 @@ func TestSketch3DIncludeUnknownRefIsUnhealthy(t *testing.T) {
 	}
 }
 
+// TestSketch3DSurfaceCurves builds a box and adds an intersection curve between two of
+// its faces and a silhouette of one face, by reference key.
+func TestSketch3DSurfaceCurves(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	faces := part.SurfaceBodies().All()[0].Faces()
+	if len(faces) < 2 {
+		t.Fatalf("box has %d faces, want ≥2", len(faces))
+	}
+	refA := string(faces[0].ReferenceKey())
+	refB := string(faces[1].ReferenceKey())
+
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	var isect wire.AddSketch3DSurfaceCurveResult
+	args, _ := json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "intersection", FaceRefs: []string{refA, refB},
+		GridUMin: -10, GridUMax: 10, GridVMin: -10, GridVMax: 10,
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &isect)
+	if !isect.Healthy || isect.EntityID == 0 {
+		t.Fatalf("intersection = %+v, want healthy with an id", isect)
+	}
+
+	var silh wire.AddSketch3DSurfaceCurveResult
+	args, _ = json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "silhouette", FaceRefs: []string{refA}, ViewDir: []float64{0, 0, 1},
+		GridUMin: -10, GridUMax: 10, GridVMin: -10, GridVMax: 10,
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &silh)
+	if !silh.Healthy {
+		t.Fatalf("silhouette = %+v, want healthy", silh)
+	}
+
+	var ents wire.EnumerateEntities3DResult
+	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &ents)
+	if len(ents.Entities) != 2 || ents.Entities[0].Kind != "intersection" || ents.Entities[1].Kind != "silhouette" {
+		t.Fatalf("entities = %+v, want intersection + silhouette", ents.Entities)
+	}
+}
+
+// TestSketch3DSurfaceCurveErrors covers the surface-curve validation + lost-ref paths.
+func TestSketch3DSurfaceCurveErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	// A lost face reference reports unhealthy (not an error).
+	var res wire.AddSketch3DSurfaceCurveResult
+	call(t, r, s, "sketch3d.addSurfaceCurve", `{"sketchIndex":0,"kind":"silhouette","faceRefs":["nope"],"viewDir":[0,0,1]}`, &res)
+	if res.Healthy {
+		t.Error("a lost face ref should report unhealthy")
+	}
+	// Wrong operand counts / unknown kind are errors.
+	bad := []string{
+		`{"sketchIndex":0,"kind":"intersection","faceRefs":["a"]}`,
+		`{"sketchIndex":0,"kind":"bogus","faceRefs":["a","b"]}`,
+	}
+	for _, b := range bad {
+		if _, err := r.Handle(s, "sketch3d.addSurfaceCurve", []byte(b)); err == nil {
+			t.Errorf("expected error for %s", b)
+		}
+	}
+}
+
 // TestConstraint3DKindMapping covers the constraint/entity wire mappings directly (the
 // wire path to add 3D constraints lands in M22-F05).
 func TestConstraint3DKindMapping(t *testing.T) {

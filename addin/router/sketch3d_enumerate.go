@@ -76,7 +76,33 @@ func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 		return info
 	}
 	fillRoundCurve3DInfo(&info, e)
+	if info.Kind == string(types.Sketch3DEntityUnknown) {
+		fillDerivedCurve3DInfo(&info, e)
+	}
 	return info
+}
+
+// fillDerivedCurve3DInfo renders the surface-derived curves (F11) and included reference
+// geometry (F08) by kind; their geometry is recompute-derived, so only identity is shown.
+func fillDerivedCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
+	switch v := e.(type) {
+	case *sketch.IntersectionCurve3D:
+		info.Kind, info.Construction = string(types.Sketch3DEntityIntersection), v.IsConstruction()
+	case *sketch.SilhouetteCurve3D:
+		info.Kind, info.Construction = string(types.Sketch3DEntitySilhouette), v.IsConstruction()
+	case *sketch.ProjectToSurfaceCurve3D:
+		info.Kind, info.Construction = string(types.Sketch3DEntityProjectToSurface), v.IsConstruction()
+	case *sketch.OnFaceCurve3D:
+		info.Kind, info.Construction = string(types.Sketch3DEntityOnFace), v.IsConstruction()
+	case *sketch.OffsetCurve3:
+		info.Kind, info.Construction = string(types.Sketch3DEntityOffset), v.IsConstruction()
+	case *sketch.IncludedPoint3D:
+		info.Kind, info.Construction = string(types.Sketch3DEntityPoint), true
+		info.Points = [][]float64{p3coords(v.Position())}
+	case *sketch.IncludedCurve3D:
+		info.Kind, info.Construction = string(types.Sketch3DEntityProjectToSurface), true
+		info.Points = point3sCoords(v.Points())
+	}
 }
 
 // fillSegmentCurve3DInfo renders the straight/poly curve families (line/arc) and the
