@@ -80,6 +80,23 @@ func (s *Session) OpenLightingPanel()      { s.lightingPanelOpen = true }
 func (s *Session) CloseLightingPanel()     { s.lightingPanelOpen = false }
 func (s *Session) LightingPanelOpen() bool { return s.lightingPanelOpen }
 
+// RequestLoadEnvironment flags that the user asked to load an HDR file; the head opens its file
+// dialog and TakeLoadEnvironmentRequest consumes the flag (one-shot, so the dialog opens once).
+func (s *Session) RequestLoadEnvironment() { s.loadEnvRequested = true }
+
+// TakeLoadEnvironmentRequest returns and clears the pending load-HDR request.
+func (s *Session) TakeLoadEnvironmentRequest() bool {
+	req := s.loadEnvRequested
+	s.loadEnvRequested = false
+	return req
+}
+
+// LoadEnvironmentFile sets a user HDR file as the active environment (shown as the background).
+// It is what the head calls when the load-HDR file dialog is confirmed.
+func (s *Session) LoadEnvironmentFile(path string) {
+	s.SetEnvironment(renderer.Environment{FilePath: path, Intensity: 1, ShowImage: true})
+}
+
 // Lights returns the live rig's lights.
 func (s *Session) Lights() []renderer.SceneLight { return s.lighting.Lights }
 

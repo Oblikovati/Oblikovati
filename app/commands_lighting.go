@@ -64,7 +64,10 @@ func environmentCommands() []*CommandDefinition {
 				return e.FilePath == "" && e.Preset == opt.Preset
 			}))
 	}
-	return cmds
+	return append(cmds, NewCommand("View.LoadHDR", "Load HDR…", "Environment",
+		func(s *Session) error { s.RequestLoadEnvironment(); return nil }).
+		WithTab("View").WithTooltip("Load HDR — use an equirectangular .hdr file as the environment.").
+		WithActive(func(s *Session) bool { return s.Environment().FilePath != "" }))
 }
 
 // shadowCommands are the View tab's Shadows toggles (object/ground/ambient). Turning object

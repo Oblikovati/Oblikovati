@@ -104,6 +104,25 @@ func TestLightingToneSetters(t *testing.T) {
 	}
 }
 
+// TestLoadHDRCommandRequestsDialog checks the "Load HDR…" command raises a one-shot request the
+// head consumes to open its file dialog, and that LoadEnvironmentFile sets a file environment.
+func TestLoadHDRCommandRequestsDialog(t *testing.T) {
+	s := registeredSession(t)
+	if err := s.Execute("View.LoadHDR"); err != nil {
+		t.Fatalf("execute LoadHDR: %v", err)
+	}
+	if !s.TakeLoadEnvironmentRequest() {
+		t.Fatal("Load HDR command should raise a load-environment request")
+	}
+	if s.TakeLoadEnvironmentRequest() {
+		t.Error("the request must be one-shot (cleared after taking)")
+	}
+	s.LoadEnvironmentFile("/tmp/studio.hdr")
+	if e := s.Environment(); e.FilePath != "/tmp/studio.hdr" || !e.ShowImage {
+		t.Errorf("LoadEnvironmentFile gave %+v, want the file shown", e)
+	}
+}
+
 // TestLightingPanelsOnViewTab checks the Lighting Style, Environment and Shadows panels are all
 // present on the View tab (the ribbon exposes the controls).
 func TestLightingPanelsOnViewTab(t *testing.T) {

@@ -9,9 +9,10 @@ import "bytes"
 type fileDialogMode int
 
 const (
-	dialogClosed fileDialogMode = iota
-	dialogOpen                  // File ▸ Open
-	dialogSaveAs                // File ▸ Save As
+	dialogClosed  fileDialogMode = iota
+	dialogOpen                   // File ▸ Open
+	dialogSaveAs                 // File ▸ Save As
+	dialogLoadHDR                // View ▸ Load HDR (environment image)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -46,10 +47,14 @@ func (d *fileDialog) isOpen() bool { return d.mode != dialogClosed }
 
 // title is the window heading for the current mode.
 func (d *fileDialog) title() string {
-	if d.mode == dialogSaveAs {
+	switch d.mode {
+	case dialogSaveAs:
 		return "Save As"
+	case dialogLoadHDR:
+		return "Load HDR"
+	default:
+		return "Open"
 	}
-	return "Open"
 }
 
 // text returns the NUL-trimmed path the user has typed into the buffer.
