@@ -2,7 +2,7 @@
 milestone: M22
 feature: F12
 name: UI Environment & Settings
-status: planned
+status: partial (app-layer env+tools+ribbon+e2e done; head/ui ImGui dialogs + more tools TODO)
 ---
 
 # M22 · F12 — UI Environment & Settings

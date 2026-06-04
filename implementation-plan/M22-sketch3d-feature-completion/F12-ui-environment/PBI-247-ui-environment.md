@@ -3,7 +3,7 @@ milestone: M22
 feature: F12
 pbi: PBI-247
 title: 3D Sketch ribbon + environment + Sketch3DSettings + e2e tests
-status: planned
+status: partial (app-layer env+tools+ribbon+e2e done; head/ui ImGui dialogs + more tools TODO)
 estimate: M
 ---
 
