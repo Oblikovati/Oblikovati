@@ -89,6 +89,9 @@ func panelCols(n int) int {
 // SeparatorText, which would stretch the group to the full window width and hide every
 // panel to its right). Returns the id of a clicked command, or "".
 func drawPanel(panel app.RibbonPanel) string {
+	if panel.Selector != nil {
+		return drawSelectorPanel(panel)
+	}
 	var activated string
 	cols := panelCols(len(panel.Buttons))
 	native.BeginGroup()
@@ -101,6 +104,39 @@ func drawPanel(panel app.RibbonPanel) string {
 		}
 	}
 	native.Text(panel.Name) // panel title under its buttons
+	native.EndGroup()
+	return activated
+}
+
+// selectorWidth is the pixel width of a ribbon selection-box (the Visual Style drop-down) —
+// wide enough for the longest label ("Wireframe with Visible Edges Only").
+const selectorWidth = 230
+
+// drawSelectorPanel renders a panel as a labelled selection box (Inventor's combo control):
+// a drop-down previewing the current choice with the panel title beneath, matching the button
+// panels' layout. Choosing an option returns its command id so the caller runs it (which sets
+// the new selection); the box reflects the session state on the next frame.
+func drawSelectorPanel(panel app.RibbonPanel) string {
+	sel := panel.Selector
+	preview := ""
+	if sel.SelectedIndex >= 0 && sel.SelectedIndex < len(sel.Options) {
+		preview = sel.Options[sel.SelectedIndex].Label
+	}
+	var activated string
+	native.BeginGroup()
+	native.SetNextItemWidth(selectorWidth)
+	if native.BeginCombo("##"+panel.Name, preview) {
+		for i, opt := range sel.Options {
+			if native.Selectable(opt.Label, i == sel.SelectedIndex) {
+				activated = opt.CommandID
+			}
+			if opt.Tooltip != "" {
+				native.SetItemTooltip(opt.Tooltip)
+			}
+		}
+		native.EndCombo()
+	}
+	native.Text(panel.Name) // panel title under the selection box
 	native.EndGroup()
 	return activated
 }

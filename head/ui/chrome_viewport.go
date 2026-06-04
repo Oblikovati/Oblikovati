@@ -80,9 +80,12 @@ func updateViewportCamera(s *app.Session, pw, ph int) (scene.Camera, *feature.Wo
 func renderViewportImage(win *native.Window, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
 	m := viewport.Flatten(list)
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
-	win.RenderViewport(pw, ph, mvp[:],
+	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
+	win.RenderViewport(pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
-		m.LineVerts, m.LineVCount, m.LineIndices)
+		m.OccVerts, m.OccVCount, m.OccIndices,
+		m.LineVerts, m.LineVCount, m.LineIndices,
+		m.HidVerts, m.HidVCount, m.HidIndices)
 	if tex := win.ViewportTexture(); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
 		native.Image(tex, float32(pw), float32(ph))

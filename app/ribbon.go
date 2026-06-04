@@ -23,10 +23,28 @@ type RibbonButton struct {
 	Enabled bool
 }
 
-// RibbonPanel groups the buttons of one command category within a tab.
+// RibbonPanel groups the buttons of one command category within a tab. When Selector is
+// non-nil the panel renders as a selection box (a drop-down) instead of a button grid — used
+// for mutually-exclusive choices like the View tab's Visual Style (Inventor's combo control).
 type RibbonPanel struct {
-	Name    string
-	Buttons []RibbonButton
+	Name     string
+	Buttons  []RibbonButton
+	Selector *RibbonSelector
+}
+
+// RibbonSelectOption is one entry of a [RibbonSelector] drop-down: the command it runs when
+// chosen and the label shown for it.
+type RibbonSelectOption struct {
+	CommandID string
+	Label     string
+	Tooltip   string
+}
+
+// RibbonSelector is a panel rendered as a drop-down list: its options and the index of the
+// currently-selected one (resolved from each command's IsActive predicate this frame).
+type RibbonSelector struct {
+	Options       []RibbonSelectOption
+	SelectedIndex int
 }
 
 // RibbonTab is one tab of the ribbon, holding the panels whose commands target it.
@@ -55,7 +73,35 @@ func BuildRibbon(s *Session) Ribbon {
 			b.add(c, c.IsEnabled(s))
 		}
 	}
+	finalizeSelectors(b.tabs, s)
 	return Ribbon{Key: key, Tabs: b.tabs}
+}
+
+// finalizeSelectors turns any panel whose commands are ComboControls into a selection box:
+// its options are the panel's commands and its SelectedIndex is the one whose IsActive
+// predicate holds this frame (default 0). A panel mixes buttons or combos, never both, so the
+// first button decides the panel's kind.
+func finalizeSelectors(tabs []RibbonTab, s *Session) {
+	for ti := range tabs {
+		for pi := range tabs[ti].Panels {
+			p := &tabs[ti].Panels[pi]
+			if len(p.Buttons) == 0 || p.Buttons[0].Command.Kind() != ComboControl {
+				continue
+			}
+			sel := &RibbonSelector{}
+			for _, btn := range p.Buttons {
+				if btn.Command.IsActive(s) {
+					sel.SelectedIndex = len(sel.Options)
+				}
+				sel.Options = append(sel.Options, RibbonSelectOption{
+					CommandID: btn.Command.ID(),
+					Label:     btn.Command.DisplayName(),
+					Tooltip:   btn.Command.Tooltip(),
+				})
+			}
+			p.Selector = sel
+		}
+	}
 }
 
 // ribbonBuilder accumulates commands into ordered tabs/panels, remembering first-seen
