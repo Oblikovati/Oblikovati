@@ -469,6 +469,60 @@ func TestSketch3DAddSplineErrors(t *testing.T) {
 	}
 }
 
+// TestSketch3DTransform exercises move/copy/rotate/delete over the router.
+func TestSketch3DTransform(t *testing.T) {
+	r, s := emptyPartSession(t)
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatalf("active part: %v", err)
+	}
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	var line wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[1,0,0]]}`, &line)
+
+	// Copy → a second line; entity count becomes 2.
+	var cp wire.Transform3DResult
+	call(t, r, s, "sketch3d.transform", fmt.Sprintf(`{"sketchIndex":0,"op":"copy","entities":[%d],"vector":[0,5,0]}`, line.EntityID), &cp)
+	if len(cp.Created) != 1 || cp.EntityCount != 2 {
+		t.Fatalf("copy = %+v, want 1 created / 2 entities", cp)
+	}
+
+	// Move the original line.
+	call(t, r, s, "sketch3d.transform", fmt.Sprintf(`{"sketchIndex":0,"op":"move","entities":[%d],"vector":[10,0,0]}`, line.EntityID), &wire.Transform3DResult{})
+	l := part.Sketches3D().Item(0).Entities()[0].(*sketch.Line3D)
+	if l.A.Position() != math.P3(10, 0, 0) {
+		t.Errorf("moved original A = %v, want (10,0,0)", l.A.Position())
+	}
+
+	// Rotate the copy 90° about +Z through the origin.
+	call(t, r, s, "sketch3d.transform", fmt.Sprintf(`{"sketchIndex":0,"op":"rotate","entities":[%d],"center":[0,0,0],"angle":"90 deg"}`, cp.Created[0]), &wire.Transform3DResult{})
+
+	// Delete the copy.
+	var del wire.Transform3DResult
+	call(t, r, s, "sketch3d.transform", fmt.Sprintf(`{"sketchIndex":0,"op":"delete","entities":[%d]}`, cp.Created[0]), &del)
+	if del.EntityCount != 1 {
+		t.Fatalf("after delete, entityCount = %d, want 1", del.EntityCount)
+	}
+}
+
+// TestSketch3DTransformErrors covers the transform validation error paths.
+func TestSketch3DTransformErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"point","points":[[0,0,0]]}`, &wire.AddSketch3DEntityResult{})
+	bad := []string{
+		`{"sketchIndex":0,"op":"move","entities":[999],"vector":[1,0,0]}`,
+		`{"sketchIndex":0,"op":"move","entities":[1],"vector":[1,0]}`,
+		`{"sketchIndex":0,"op":"bogus","entities":[1]}`,
+	}
+	for _, b := range bad {
+		if _, err := r.Handle(s, "sketch3d.transform", []byte(b)); err == nil {
+			t.Errorf("expected error for %s", b)
+		}
+	}
+}
+
 // TestConstraint3DKindMapping covers the constraint/entity wire mappings directly (the
 // wire path to add 3D constraints lands in M22-F05).
 func TestConstraint3DKindMapping(t *testing.T) {
