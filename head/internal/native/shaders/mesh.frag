@@ -24,7 +24,8 @@ layout(std140, set = 0, binding = 0) uniform Scene {
     GpuLight lights[8];
     vec4     env;     // x=enabled y=rotation(rad) z=iblIntensity w=maxLod
     mat4     lightVP; // light-space view-projection for the sun shadow map
-    vec4     shadow;  // x=enabled y=density z=softness w=texelSize
+    vec4     shadow;  // x=mapRendered y=density z=softness w=texelSize
+    vec4     shadow2; // x=castOnDirect y=occludeAmbient (else unused)
 } scene;
 // Equirectangular HDR environment (image-based lighting). Bound to a 1×1 default until an
 // environment is set, gated by scene.env.x (ADR-0026 §3,§4).
@@ -88,18 +89,29 @@ vec2 envBRDFApprox(float NoV, float rough) {
 // ambientTerm is the indirect light: image-based lighting sampled from the environment map when
 // one is active (the PBI-304 replacement for the analytic stand-in), else the ambience-scaled
 // analytic ambient so an environment-less scene is unchanged.
+float shadowVisibility(vec3 worldPos); // defined below; used by ambientTerm for ambient occlusion
+
 vec3 ambientTerm(vec3 N, vec3 V, vec3 lin, vec3 f0, float metal, float rough, float NoV) {
+    vec3 amb;
     if (scene.env.x < 0.5) {
-        return (lin + f0 * 0.44) * scene.header.x;
+        amb = (lin + f0 * 0.44) * scene.header.x;
+    } else {
+        float rot = scene.env.y, intensity = scene.env.z, maxLod = scene.env.w;
+        vec3  R    = reflect(-V, N);
+        vec3  pref = textureLod(envMap, dirUV(R, rot), rough * maxLod).rgb;       // prefiltered specular
+        vec3  irr  = textureLod(envMap, dirUV(N, rot), max(maxLod - 1.0, 0.0)).rgb; // ~diffuse irradiance
+        vec2  ab   = envBRDFApprox(NoV, rough);
+        vec3  spec = pref * (f0 * ab.x + ab.y);
+        vec3  diff = irr * lin * (1.0 - f0) * (1.0 - metal);
+        amb = (diff + spec) * intensity;
     }
-    float rot = scene.env.y, intensity = scene.env.z, maxLod = scene.env.w;
-    vec3  R    = reflect(-V, N);
-    vec3  pref = textureLod(envMap, dirUV(R, rot), rough * maxLod).rgb;       // prefiltered specular
-    vec3  irr  = textureLod(envMap, dirUV(N, rot), max(maxLod - 1.0, 0.0)).rgb; // ~diffuse irradiance
-    vec2  ab   = envBRDFApprox(NoV, rough);
-    vec3  spec = pref * (f0 * ab.x + ab.y);
-    vec3  diff = irr * lin * (1.0 - f0) * (1.0 - metal);
-    return (diff + spec) * intensity;
+    // Ambient shadows: regions the sun cannot reach also see less of the sky, so attenuate the
+    // ambient by the shadow-map visibility (a cheap occlusion approximation, not screen-space
+    // SSAO). Gated on the map being rendered + the Ambient Shadows toggle (ADR-0026 §6).
+    if (scene.shadow.x > 0.5 && scene.shadow2.y > 0.5) {
+        amb *= mix(1.0, shadowVisibility(vWorldPos), 0.6 * scene.shadow.y);
+    }
+    return amb;
 }
 
 // lightDirAndRadiance resolves a GpuLight at the shaded point: the unit direction toward it and
@@ -157,7 +169,7 @@ vec4 pbr(vec3 N, vec3 V, vec3 albedo, float metal, float rough, vec3 emissive, f
     // The primary light (index 0) casts the sun shadow map; its contribution is attenuated in
     // shadowed areas by the shadow density.
     float keyShadow = 1.0;
-    if (scene.shadow.x > 0.5 && count > 0) {
+    if (scene.shadow.x > 0.5 && scene.shadow2.x > 0.5 && count > 0) {
         keyShadow = mix(1.0, shadowVisibility(vWorldPos), scene.shadow.y);
     }
     for (int i = 0; i < count && i < 8; i++) {

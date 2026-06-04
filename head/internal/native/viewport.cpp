@@ -21,11 +21,13 @@ constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 //   [0..99]   header (vec4) + 8 lights (3 vec4 each) — written by viewport.PackLighting
 //   [100..103] env vec4    (enabled, rotation, iblIntensity, maxLod) — set_environment
 //   [104..119] lightVP mat4 (sun shadow light-space matrix)          — set_shadow
-//   [120..123] shadow vec4  (enabled, density, softness, texelSize)  — set_shadow
+//   [120..123] shadow vec4  (mapRendered, density, softness, texel)  — set_shadow
+//   [124..127] shadow2 vec4 (castOnDirect, occludeAmbient, _, _)     — set_shadow
 constexpr uint32_t kEnvBlock = 4 + 8 * 12; // 100
 constexpr uint32_t kShadowVP = kEnvBlock + 4; // 104
 constexpr uint32_t kShadowParams = kShadowVP + 16; // 120
-constexpr uint32_t kSceneFloats = kShadowParams + 4; // 124
+constexpr uint32_t kShadow2 = kShadowParams + 4; // 124
+constexpr uint32_t kSceneFloats = kShadow2 + 4; // 128
 constexpr VkFormat kEnvFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 constexpr uint32_t kShadowDim = 2048; // sun shadow map resolution
 
@@ -1135,14 +1137,16 @@ void obk_viewport_set_skybox(void* h, const float* invVP, int show) {
 // (column-major) plus density and softness ([0,1]). A null matrix or enabled==0 turns shadows
 // off. A no-op before init. (ADR-0026 §6.)
 void obk_viewport_set_shadow(void* h, const float* lightVP, int enabled, float density,
-                             float softness) {
+                             float softness, int castOnDirect, int occludeAmbient) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c ? c->viewport : nullptr;
     if (!v) return;
     bool on = (enabled != 0 && lightVP != nullptr);
-    v->sceneData[kShadowParams + 0] = on ? 1.0f : 0.0f;
+    v->sceneData[kShadowParams + 0] = on ? 1.0f : 0.0f; // map rendered this frame
     v->sceneData[kShadowParams + 1] = density;
     v->sceneData[kShadowParams + 2] = softness;
+    v->sceneData[kShadow2 + 0] = (on && castOnDirect) ? 1.0f : 0.0f;   // darken direct light
+    v->sceneData[kShadow2 + 1] = (on && occludeAmbient) ? 1.0f : 0.0f; // darken ambient
     if (on) std::memcpy(&v->sceneData[kShadowVP], lightVP, 16 * sizeof(float));
 }
 

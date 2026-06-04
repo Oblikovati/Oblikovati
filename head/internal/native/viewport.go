@@ -11,7 +11,7 @@ void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32
                            const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag, int skyFLen);
 void     obk_viewport_set_skybox(void* h, const float* invVP, int show);
 void     obk_viewport_set_shadow(void* h, const float* lightVP, int enabled, float density,
-                                 float softness);
+                                 float softness, int castOnDirect, int occludeAmbient);
 void     obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* camPos,
                              const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                              const float* occV, int occVC, const uint32_t* occIdx, int occIC,
@@ -105,15 +105,18 @@ func (w *Window) SetViewportEnvironment(data []float32, dims []int32, rotation, 
 		C.float(rotation), C.float(intensity))
 }
 
-// SetViewportShadow enables the sun shadow map with the given column-major light-space matrix
-// (16 floats), shadow density and softness ([0,1]). A nil/short matrix or enabled=false turns
-// shadows off (the scene renders unshadowed). Takes effect next RenderViewport.
-func (w *Window) SetViewportShadow(lightVP []float32, enabled bool, density, softness float32) {
+// SetViewportShadow renders the sun shadow map with the given column-major light-space matrix
+// (16 floats) and applies it: castOnDirect darkens direct light (object/ground shadows),
+// occludeAmbient attenuates the ambient term in shadowed regions (ambient occlusion). A
+// nil/short matrix or enabled=false disables the map. Takes effect next RenderViewport.
+func (w *Window) SetViewportShadow(lightVP []float32, enabled bool, density, softness float32,
+	castOnDirect, occludeAmbient bool) {
 	if !enabled || len(lightVP) != 16 {
-		C.obk_viewport_set_shadow(w.handle, nil, 0, 0, 0)
+		C.obk_viewport_set_shadow(w.handle, nil, 0, 0, 0, 0, 0)
 		return
 	}
-	C.obk_viewport_set_shadow(w.handle, floatPtr(lightVP), 1, C.float(density), C.float(softness))
+	C.obk_viewport_set_shadow(w.handle, floatPtr(lightVP), 1, C.float(density), C.float(softness),
+		cBool(castOnDirect), cBool(occludeAmbient))
 }
 
 // ViewportTexture returns the ImGui texture handle for the last rendered frame.

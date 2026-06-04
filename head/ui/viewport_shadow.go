@@ -17,10 +17,12 @@ import (
 func applyShadow(win *native.Window, s *app.Session, min, max [3]float32, ok bool) {
 	sh := s.ShadowSettings()
 	lights := s.SceneLighting().ActiveLights()
-	if !ok || (!sh.ObjectShadows && !sh.GroundShadows) || len(lights) == 0 {
-		win.SetViewportShadow(nil, false, 0, 0)
+	mapOn := sh.ObjectShadows || sh.GroundShadows || sh.AmbientShadows
+	if !ok || !mapOn || len(lights) == 0 {
+		win.SetViewportShadow(nil, false, 0, 0, false, false)
 		return
 	}
 	lvp := viewport.LightMatrix(min, max, lights[0].Direction)
-	win.SetViewportShadow(lvp[:], true, sh.Density, sh.Softness)
+	castDirect := sh.ObjectShadows || sh.GroundShadows
+	win.SetViewportShadow(lvp[:], true, sh.Density, sh.Softness, castDirect, sh.AmbientShadows)
 }

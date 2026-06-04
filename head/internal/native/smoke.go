@@ -65,7 +65,7 @@ func RunViewportSmoke(maxFrames int) int {
 		w.SetViewportEnvironment(u.Data, u.Dims, 0, 1)
 	}
 	lvp := viewport.LightMatrix(min, max, lightDir)
-	w.SetViewportShadow(lvp[:], true, 0.6, 0.3)
+	w.SetViewportShadow(lvp[:], true, 0.6, 0.3, true, true) // cast on direct + occlude ambient
 
 	cam := scene.NewCamera(1280, 720)
 	cam.Eye, cam.Target, cam.Up = math.P3(3.5, 3, 5), math.P3(0, 0.4, 0), math.V3(0, 1, 0)

@@ -76,12 +76,8 @@ func shadowCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		shadowToggle("View.ObjectShadows", "Object Shadows",
 			"Object Shadows — bodies cast shadows from the primary light.",
-			func(sh *renderer.ShadowSettings) {
-				sh.ObjectShadows = !sh.ObjectShadows
-				if sh.ObjectShadows && sh.Density == 0 {
-					sh.Density, sh.Softness = 0.6, 0.4
-				}
-			}, func(sh renderer.ShadowSettings) bool { return sh.ObjectShadows }),
+			func(sh *renderer.ShadowSettings) { sh.ObjectShadows = !sh.ObjectShadows },
+			func(sh renderer.ShadowSettings) bool { return sh.ObjectShadows }),
 		shadowToggle("View.GroundShadows", "Ground Shadows",
 			"Ground Shadows — shadows cast onto the ground plane.",
 			func(sh *renderer.ShadowSettings) { sh.GroundShadows = !sh.GroundShadows },
@@ -94,12 +90,16 @@ func shadowCommands() []*CommandDefinition {
 }
 
 // shadowToggle builds one Shadows-panel toggle: flip mutates the session's shadow settings and
-// checked reports the current state for the toggle button.
+// checked reports the current state. Enabling any shadow with a zero density seeds a visible
+// default so the toggle has an immediate effect.
 func shadowToggle(id, label, tip string, flip func(*renderer.ShadowSettings),
 	checked func(renderer.ShadowSettings) bool) *CommandDefinition {
 	return NewCommand(id, label, "Shadows", func(s *Session) error {
 		sh := s.ShadowSettings()
 		flip(&sh)
+		if (sh.ObjectShadows || sh.GroundShadows || sh.AmbientShadows) && sh.Density == 0 {
+			sh.Density, sh.Softness = 0.6, 0.4
+		}
 		s.SetShadowSettings(sh)
 		return nil
 	}).WithTab("View").WithKind(ToggleControl).WithTooltip(tip).
