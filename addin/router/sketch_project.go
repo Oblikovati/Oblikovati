@@ -9,6 +9,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
@@ -55,28 +56,46 @@ func projectRefs(part *compdef.PartComponentDefinition, sk *sketch.Sketch, refs 
 func projectRef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, ref string) (sketch.Entity, bool) {
 	key := []byte(ref)
 	for _, body := range part.SurfaceBodies().All() {
-		if edge, ok := body.FindEdgeByKey(key); ok {
-			return sk.ProjectCurve(edgeSource{ref: ref, edge: edge}), true
+		if _, ok := body.FindEdgeByKey(key); ok {
+			return sk.ProjectCurve(newEdgeSource(part, ref)), true
 		}
-		if vertex, ok := body.FindVertexByKey(key); ok {
-			return sk.ProjectPoint(vertexSource{ref: ref, vertex: vertex}), true
+		if _, ok := body.FindVertexByKey(key); ok {
+			return sk.ProjectPoint(newVertexSource(part, ref)), true
 		}
 	}
 	return nil, false
 }
 
-// edgeSource adapts a topo edge to a sketch CurveSource (sampling its 3D curve).
+// edgeSource adapts a topo edge to a sketch CurveSource. It is self-resolving — it re-finds
+// the edge by reference key among the part's current bodies on each sample — so a
+// projection/include stays associative across recompute (the rebuilt B-rep has fresh edge
+// pointers under the same keys), and reports lost when the key no longer resolves.
 type edgeSource struct {
-	ref  string
-	edge *topo.Edge
+	ref    string
+	bodies func() []*topo.Body
+}
+
+func newEdgeSource(part *compdef.PartComponentDefinition, ref string) edgeSource {
+	// A closure (not the bound All method) so it sees the bodies *replaced* by recompute.
+	return edgeSource{ref: ref, bodies: func() []*topo.Body { return part.SurfaceBodies().All() }}
 }
 
 func (s edgeSource) SourceID() string { return s.ref }
 
-// SamplePoints samples the edge's curve over its domain into a 3D polyline.
-func (s edgeSource) SamplePoints() []math.Point3 {
+// SamplePoints re-resolves the edge by key and samples its curve; ok=false when lost.
+func (s edgeSource) SamplePoints() ([]math.Point3, bool) {
+	key := []byte(s.ref)
+	for _, b := range s.bodies() {
+		if edge, ok := b.FindEdgeByKey(key); ok {
+			return sampleCurve3(edge.Geometry()), true
+		}
+	}
+	return nil, false
+}
+
+// sampleCurve3 samples a 3D curve over its domain into a polyline.
+func sampleCurve3(c geom.Curve3) []math.Point3 {
 	const n = 16
-	c := s.edge.Geometry()
 	lo, hi := c.Domain()
 	pts := make([]math.Point3, n+1)
 	for i := range pts {
@@ -85,11 +104,25 @@ func (s edgeSource) SamplePoints() []math.Point3 {
 	return pts
 }
 
-// vertexSource adapts a topo vertex to a sketch PointSource.
+// vertexSource adapts a topo vertex to a self-resolving sketch PointSource.
 type vertexSource struct {
 	ref    string
-	vertex *topo.Vertex
+	bodies func() []*topo.Body
 }
 
-func (s vertexSource) SourceID() string      { return s.ref }
-func (s vertexSource) Position() math.Point3 { return s.vertex.Point() }
+func newVertexSource(part *compdef.PartComponentDefinition, ref string) vertexSource {
+	return vertexSource{ref: ref, bodies: func() []*topo.Body { return part.SurfaceBodies().All() }}
+}
+
+func (s vertexSource) SourceID() string { return s.ref }
+
+// Position re-resolves the vertex by key; ok=false when lost.
+func (s vertexSource) Position() (math.Point3, bool) {
+	key := []byte(s.ref)
+	for _, b := range s.bodies() {
+		if v, ok := b.FindVertexByKey(key); ok {
+			return v.Point(), true
+		}
+	}
+	return math.Point3{}, false
+}

@@ -102,7 +102,22 @@ func (d *PartComponentDefinition) Recompute() {
 	for _, b := range d.features.Result() {
 		d.bodies.Add(b)
 	}
+	d.refreshSketchReferences()
 	d.MarkChanged()
+}
+
+// refreshSketchReferences re-projects each sketch's reference geometry (2D projections /
+// 3D includes) against the freshly rebuilt B-rep, so included geometry tracks the model
+// associatively (M22). Self-resolving sources re-bind by reference key; a lost reference
+// freezes its geometry. Surface-derived 3D curves are lazy (they re-resolve on Evaluate),
+// so they need no refresh here.
+func (d *PartComponentDefinition) refreshSketchReferences() {
+	for i := 0; i < d.sketches.Count(); i++ {
+		d.sketches.Item(i).UpdateProjections()
+	}
+	for i := 0; i < d.sketches3D.Count(); i++ {
+		d.sketches3D.Item(i).UpdateIncluded()
+	}
 }
 
 // DocumentType identifies this as part content, satisfying doc.Content.

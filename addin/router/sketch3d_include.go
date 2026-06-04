@@ -54,11 +54,11 @@ func includeRefs3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, r
 func includeRef3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, ref string) (sketch.Entity, bool) {
 	key := []byte(ref)
 	for _, body := range part.SurfaceBodies().All() {
-		if edge, ok := body.FindEdgeByKey(key); ok {
-			return sk.IncludeCurve3D(edgeSource{ref: ref, edge: edge}), true
+		if _, ok := body.FindEdgeByKey(key); ok {
+			return sk.IncludeCurve3D(newEdgeSource(part, ref)), true
 		}
-		if vertex, ok := body.FindVertexByKey(key); ok {
-			return sk.IncludePoint3D(vertexSource{ref: ref, vertex: vertex}), true
+		if _, ok := body.FindVertexByKey(key); ok {
+			return sk.IncludePoint3D(newVertexSource(part, ref)), true
 		}
 	}
 	return nil, false

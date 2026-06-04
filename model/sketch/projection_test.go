@@ -8,24 +8,55 @@ import (
 	"github.com/Oblikovati/oblikovati/math"
 )
 
-// movableVertex is a fake model vertex whose position can change, standing in for a
-// topo vertex (M07).
+// movableVertex is a fake model vertex whose position can change (and can be "lost"),
+// standing in for a topo vertex (M07).
 type movableVertex struct {
-	id  string
-	pos math.Point3
+	id   string
+	pos  math.Point3
+	lost bool
 }
 
-func (v *movableVertex) SourceID() string      { return v.id }
-func (v *movableVertex) Position() math.Point3 { return v.pos }
+func (v *movableVertex) SourceID() string { return v.id }
+func (v *movableVertex) Position() (math.Point3, bool) {
+	if v.lost {
+		return math.Point3{}, false
+	}
+	return v.pos, true
+}
 
-// movableEdge is a fake model edge yielding a sampled polyline.
+// movableEdge is a fake model edge yielding a sampled polyline (and can be "lost").
 type movableEdge struct {
 	id      string
 	samples []math.Point3
+	lost    bool
 }
 
-func (e *movableEdge) SourceID() string            { return e.id }
-func (e *movableEdge) SamplePoints() []math.Point3 { return e.samples }
+func (e *movableEdge) SourceID() string { return e.id }
+func (e *movableEdge) SamplePoints() ([]math.Point3, bool) {
+	if e.lost {
+		return nil, false
+	}
+	return e.samples, true
+}
+
+// TestProjectedLostReferenceFreezes checks UpdateProjections breaks the link and freezes
+// geometry when a projected source's reference is lost.
+func TestProjectedLostReferenceFreezes(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	v := &movableVertex{id: "v1", pos: math.P3(2, 3, 5)}
+	pp := s.ProjectPoint(v)
+	e := &movableEdge{id: "e1", samples: []math.Point3{{X: 0}, {X: 1}}}
+	pc := s.ProjectCurve(e)
+
+	v.lost, e.lost = true, true
+	s.UpdateProjections()
+	if pp.Linked() || pc.Linked() {
+		t.Error("lost references should break both projection links")
+	}
+	if !pp.Position().IsEqualTo(math.P2(2, 3), tol) || len(pc.Points()) != 2 {
+		t.Error("lost references should freeze the last projected geometry")
+	}
+}
 
 func TestProjectedPointUpdatesWhenSourceChanges(t *testing.T) {
 	s := NewSketches().Add(XYPlane())

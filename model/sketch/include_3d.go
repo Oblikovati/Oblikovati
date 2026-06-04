@@ -35,11 +35,18 @@ func (p *IncludedPoint3D) SourceID() string {
 // Linked reports whether the include still tracks its source.
 func (p *IncludedPoint3D) Linked() bool { return p.linked }
 
-// Update re-reads the source position; a no-op once the link is broken.
+// Update re-reads the source position; a no-op once the link is broken. A lost reference
+// breaks the link, freezing the last position.
 func (p *IncludedPoint3D) Update() {
-	if p.linked {
-		p.pos = p.source.Position()
+	if !p.linked {
+		return
 	}
+	pos, ok := p.source.Position()
+	if !ok {
+		p.linked = false
+		return
+	}
+	p.pos = pos
 }
 
 // BreakLink detaches the include from its source, freezing the current position.
@@ -71,12 +78,18 @@ func (c *IncludedCurve3D) SourceID() string {
 // Linked reports whether the include still tracks its source.
 func (c *IncludedCurve3D) Linked() bool { return c.linked }
 
-// Update re-reads the source's sample points; a no-op once the link is broken.
+// Update re-reads the source's sample points; a no-op once the link is broken. A lost
+// reference breaks the link, freezing the last polyline.
 func (c *IncludedCurve3D) Update() {
 	if !c.linked {
 		return
 	}
-	c.points = append(c.points[:0], c.source.SamplePoints()...)
+	pts, ok := c.source.SamplePoints()
+	if !ok {
+		c.linked = false
+		return
+	}
+	c.points = append(c.points[:0], pts...)
 }
 
 // BreakLink detaches the include from its source, freezing the current polyline.

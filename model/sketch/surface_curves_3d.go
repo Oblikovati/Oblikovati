@@ -18,6 +18,25 @@ import (
 // defaultCurveSamples is the sampling resolution for projecting/offsetting a source curve.
 const defaultCurveSamples = 64
 
+// SurfaceSource is a model entity that yields a surface to derive a curve from (e.g. a
+// part face), with a stable SourceID for associative re-derivation across recompute. The
+// kernel's faces adapt to this via a self-resolving source (keyed by reference), so a
+// surface-derived curve re-evaluates against the freshly rebuilt B-rep.
+type SurfaceSource interface {
+	SourceID() string
+	Surface() geom.Surface
+}
+
+// staticSurface wraps a fixed geom.Surface as a non-associative SurfaceSource (direct use
+// and tests; SourceID "" ⇒ no re-derivation).
+type staticSurface struct{ s geom.Surface }
+
+func (s staticSurface) SourceID() string      { return "" }
+func (s staticSurface) Surface() geom.Surface { return s.s }
+
+// StaticSurface adapts a geom.Surface to a SurfaceSource with no associativity.
+func StaticSurface(s geom.Surface) SurfaceSource { return staticSurface{s: s} }
+
 // isDerivedCurve3D reports whether an entity is a surface-derived curve. These are
 // recompute-derived from referenced geometry, so — like the realized B-rep — they are not
 // persisted as geometry; their references rebind on recompute (the integration layer), and
@@ -37,26 +56,37 @@ func isDerivedCurve3D(e Entity) bool {
 // faces), as one or more polylines on the first surface.
 type IntersectionCurve3D struct {
 	entityBase
-	A, B geom.Surface
+	A, B SurfaceSource
 	Grid geom.SurfaceGrid
 }
 
-// Evaluate returns the intersection polylines via the F10 surface↔surface tracer.
+// Evaluate returns the intersection polylines via the F10 surface↔surface tracer,
+// re-resolving both surfaces from their sources (so it tracks recompute). A lost reference
+// (nil surface) yields no geometry.
 func (c *IntersectionCurve3D) Evaluate() [][]math.Point3 {
-	return geom.IntersectSurfaceSurface(c.A, c.B, c.Grid)
+	a, b := c.A.Surface(), c.B.Surface()
+	if a == nil || b == nil {
+		return nil
+	}
+	return geom.IntersectSurfaceSurface(a, b, c.Grid)
 }
 
 // SilhouetteCurve3D is the contour generator of a referenced surface for a view direction.
 type SilhouetteCurve3D struct {
 	entityBase
-	Surface geom.Surface
+	Surface SurfaceSource
 	ViewDir math.Vector3
 	Grid    geom.SurfaceGrid
 }
 
-// Evaluate returns the silhouette polylines via the F10 silhouette tracer.
+// Evaluate returns the silhouette polylines via the F10 silhouette tracer (nil surface ⇒
+// no geometry).
 func (c *SilhouetteCurve3D) Evaluate() [][]math.Point3 {
-	return geom.Silhouette(c.Surface, c.ViewDir, c.Grid)
+	surface := c.Surface.Surface()
+	if surface == nil {
+		return nil
+	}
+	return geom.Silhouette(surface, c.ViewDir, c.Grid)
 }
 
 // ProjectToSurfaceCurve3D is a source curve projected onto a referenced surface (the
@@ -64,18 +94,19 @@ func (c *SilhouetteCurve3D) Evaluate() [][]math.Point3 {
 type ProjectToSurfaceCurve3D struct {
 	entityBase
 	Source  geom.Curve3
-	Surface geom.Surface
+	Surface SurfaceSource
 	Samples int
 }
 
 // Evaluate samples the source curve and projects each point onto the surface.
 func (c *ProjectToSurfaceCurve3D) Evaluate() []math.Point3 {
+	surface := c.Surface.Surface()
 	n := samplesOr(c.Samples)
 	lo, hi := c.Source.Domain()
 	out := make([]math.Point3, n+1)
 	for i := range out {
 		t := lo + (hi-lo)*float64(i)/float64(n)
-		_, _, foot := geom.ClosestPointOnSurface(c.Surface, c.Source.PointAt(t))
+		_, _, foot := geom.ClosestPointOnSurface(surface, c.Source.PointAt(t))
 		out[i] = foot
 	}
 	return out
@@ -85,15 +116,16 @@ func (c *ProjectToSurfaceCurve3D) Evaluate() []math.Point3 {
 // through the surface. UV are the (u, v) parameter samples.
 type OnFaceCurve3D struct {
 	entityBase
-	Surface geom.Surface
+	Surface SurfaceSource
 	UV      []math.Point2
 }
 
 // Evaluate maps the parameter samples onto the surface.
 func (c *OnFaceCurve3D) Evaluate() []math.Point3 {
+	surface := c.Surface.Surface()
 	out := make([]math.Point3, len(c.UV))
 	for i, uv := range c.UV {
-		out[i] = c.Surface.PointAt(float64(uv.X), float64(uv.Y))
+		out[i] = surface.PointAt(float64(uv.X), float64(uv.Y))
 	}
 	return out
 }
@@ -140,31 +172,42 @@ func samplesOr(n int) int {
 	return defaultCurveSamples
 }
 
-// AddIntersectionCurve3D adds the intersection of surfaces a and b (grid windows a's
-// parameter domain for an unbounded base — see kernel/geom.SurfaceGrid).
+// AddIntersectionCurve3D adds the intersection of fixed surfaces a and b (non-associative;
+// grid windows a's parameter domain for an unbounded base — see kernel/geom.SurfaceGrid).
 func (s *Sketch3D) AddIntersectionCurve3D(a, b geom.Surface, grid geom.SurfaceGrid) *IntersectionCurve3D {
+	return s.AddIntersectionCurve3DRef(StaticSurface(a), StaticSurface(b), grid)
+}
+
+// AddIntersectionCurve3DRef adds the intersection of two surface sources (associative:
+// the sources re-resolve their faces by reference key on recompute).
+func (s *Sketch3D) AddIntersectionCurve3DRef(a, b SurfaceSource, grid geom.SurfaceGrid) *IntersectionCurve3D {
 	c := &IntersectionCurve3D{entityBase: newEntity(), A: a, B: b, Grid: grid}
 	s.addEntity3D(c)
 	return c
 }
 
-// AddSilhouetteCurve3D adds the silhouette of surface for the given view direction.
+// AddSilhouetteCurve3D adds the silhouette of a fixed surface for the given view direction.
 func (s *Sketch3D) AddSilhouetteCurve3D(surface geom.Surface, viewDir math.Vector3, grid geom.SurfaceGrid) *SilhouetteCurve3D {
+	return s.AddSilhouetteCurve3DRef(StaticSurface(surface), viewDir, grid)
+}
+
+// AddSilhouetteCurve3DRef adds the silhouette of a surface source (associative).
+func (s *Sketch3D) AddSilhouetteCurve3DRef(surface SurfaceSource, viewDir math.Vector3, grid geom.SurfaceGrid) *SilhouetteCurve3D {
 	c := &SilhouetteCurve3D{entityBase: newEntity(), Surface: surface, ViewDir: viewDir, Grid: grid}
 	s.addEntity3D(c)
 	return c
 }
 
-// AddProjectToSurfaceCurve3D adds the projection of source onto surface.
+// AddProjectToSurfaceCurve3D adds the projection of source onto a fixed surface.
 func (s *Sketch3D) AddProjectToSurfaceCurve3D(source geom.Curve3, surface geom.Surface) *ProjectToSurfaceCurve3D {
-	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: surface}
+	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: StaticSurface(surface)}
 	s.addEntity3D(c)
 	return c
 }
 
-// AddOnFaceCurve3D adds a curve drawn in surface parameter space (the uv samples).
+// AddOnFaceCurve3D adds a curve drawn in a fixed surface's parameter space (the uv samples).
 func (s *Sketch3D) AddOnFaceCurve3D(surface geom.Surface, uv []math.Point2) *OnFaceCurve3D {
-	c := &OnFaceCurve3D{entityBase: newEntity(), Surface: surface, UV: append([]math.Point2(nil), uv...)}
+	c := &OnFaceCurve3D{entityBase: newEntity(), Surface: StaticSurface(surface), UV: append([]math.Point2(nil), uv...)}
 	s.addEntity3D(c)
 	return c
 }

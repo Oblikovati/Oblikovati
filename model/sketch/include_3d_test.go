@@ -8,23 +8,36 @@ import (
 	"github.com/Oblikovati/oblikovati/math"
 )
 
-// fakePointSource is a movable model vertex stand-in for testing 3D include.
+// fakePointSource is a movable model vertex stand-in for testing 3D include (lost ⇒ the
+// reference no longer resolves).
 type fakePointSource struct {
-	id  string
-	pos math.Point3
+	id   string
+	pos  math.Point3
+	lost bool
 }
 
-func (s *fakePointSource) SourceID() string      { return s.id }
-func (s *fakePointSource) Position() math.Point3 { return s.pos }
+func (s *fakePointSource) SourceID() string { return s.id }
+func (s *fakePointSource) Position() (math.Point3, bool) {
+	if s.lost {
+		return math.Point3{}, false
+	}
+	return s.pos, true
+}
 
 // fakeCurveSource is a movable model edge stand-in.
 type fakeCurveSource struct {
-	id  string
-	pts []math.Point3
+	id   string
+	pts  []math.Point3
+	lost bool
 }
 
-func (s *fakeCurveSource) SourceID() string            { return s.id }
-func (s *fakeCurveSource) SamplePoints() []math.Point3 { return s.pts }
+func (s *fakeCurveSource) SourceID() string { return s.id }
+func (s *fakeCurveSource) SamplePoints() ([]math.Point3, bool) {
+	if s.lost {
+		return nil, false
+	}
+	return s.pts, true
+}
 
 // TestIncludePoint3DTracksSource checks an included point starts at its source, is
 // reference geometry, re-projects on Update, and freezes on BreakLink.
@@ -51,6 +64,31 @@ func TestIncludePoint3DTracksSource(t *testing.T) {
 	s.UpdateIncluded()
 	if p.Position() != math.P3(4, 5, 6) || p.SourceID() != "" || p.Linked() {
 		t.Errorf("after break-link, point should freeze at (4,5,6) with no source, got %+v", p)
+	}
+}
+
+// TestIncludeLostReferenceFreezes checks that when a source's reference is lost, the next
+// UpdateIncluded breaks the link and freezes the last geometry (reference-lost behavior).
+func TestIncludeLostReferenceFreezes(t *testing.T) {
+	s := NewSketches3D().Add()
+	src := &fakePointSource{id: "v", pos: math.P3(1, 1, 1)}
+	p := s.IncludePoint3D(src)
+
+	src.lost = true
+	s.UpdateIncluded()
+	if p.Linked() || p.SourceID() != "" {
+		t.Errorf("a lost reference should break the link, got linked=%v id=%q", p.Linked(), p.SourceID())
+	}
+	if p.Position() != math.P3(1, 1, 1) {
+		t.Errorf("lost reference should freeze the last position, got %v", p.Position())
+	}
+	// A curve include behaves the same.
+	cs := &fakeCurveSource{id: "e", pts: []math.Point3{{X: 0}, {X: 1}}}
+	c := s.IncludeCurve3D(cs)
+	cs.lost = true
+	s.UpdateIncluded()
+	if c.Linked() || len(c.Points()) != 2 {
+		t.Errorf("lost curve reference should freeze 2 points, got linked=%v pts=%d", c.Linked(), len(c.Points()))
 	}
 }
 

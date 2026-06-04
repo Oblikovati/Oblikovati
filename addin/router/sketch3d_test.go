@@ -14,6 +14,7 @@ import (
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
@@ -562,6 +563,53 @@ func TestSketch3DInclude(t *testing.T) {
 	}
 	if _, ok := sk.Entities()[0].(*sketch.IncludedCurve3D); !ok {
 		t.Errorf("included entity is %T, want *IncludedCurve3D", sk.Entities()[0])
+	}
+}
+
+// TestSketch3DIncludeIsAssociative proves an included body vertex tracks the model: after
+// the extrude height changes and the part recomputes, the included point re-resolves to
+// the moved (top) vertex by reference key — it does not hold a stale topology pointer.
+func TestSketch3DIncludeIsAssociative(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+	part, _ := modelaccess.ActivePart(s)
+
+	// Pick a top vertex (z ≈ 5 cm) to include — its Z tracks the extrude height.
+	var topRef string
+	for _, v := range part.SurfaceBodies().All()[0].Vertices() {
+		if float64(v.Point().Z) > 4.9 {
+			topRef = string(v.ReferenceKey())
+			break
+		}
+	}
+	if topRef == "" {
+		t.Fatal("no top vertex found")
+	}
+
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	incArgs, _ := json.Marshal(wire.IncludeSketch3DArgs{SketchIndex: 0, Refs: []string{topRef}})
+	call(t, r, s, "sketch3d.include", string(incArgs), &wire.IncludeSketch3DResult{})
+
+	var before wire.EnumerateEntities3DResult
+	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &before)
+	if z := before.Entities[0].Points[0][2]; stdmath.Abs(z-5) > 1e-6 {
+		t.Fatalf("included top vertex Z = %v, want 5", z)
+	}
+
+	// Change the extrude height 50 → 80 mm; the top vertex moves to z = 8 cm.
+	pf := part.Features().Item(0)
+	pf.Definition().(*feature.ExtrudeFeature).SetDistance(8)
+	part.Features().MarkDirty(pf)
+	part.Recompute()
+
+	var after wire.EnumerateEntities3DResult
+	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &after)
+	if z := after.Entities[0].Points[0][2]; stdmath.Abs(z-8) > 1e-6 {
+		t.Fatalf("included vertex did not track the height change: Z = %v, want 8", z)
 	}
 }
 
