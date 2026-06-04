@@ -11,7 +11,9 @@ export GOTOOLCHAIN := go1.24.0
 shaders:
 	cd internal/native/shaders && \
 		glslangValidator -V mesh.vert -o mesh.vert.spv && \
-		glslangValidator -V mesh.frag -o mesh.frag.spv
+		glslangValidator -V mesh.frag -o mesh.frag.spv && \
+		glslangValidator -V skybox.vert -o skybox.vert.spv && \
+		glslangValidator -V skybox.frag -o skybox.frag.spv
 
 # build compiles every head command (proves the cgo/Vulkan stack links).
 build:

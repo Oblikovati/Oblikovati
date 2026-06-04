@@ -46,8 +46,11 @@ struct Viewport {
     VkPipeline      linePipeline = VK_NULL_HANDLE;
     VkPipeline      occluderPipeline = VK_NULL_HANDLE; // depth-only faces (hidden-line modes)
     VkPipeline      hiddenPipeline = VK_NULL_HANDLE;   // occluded edges (reversed depth test)
+    VkPipeline      skyboxPipeline = VK_NULL_HANDLE;   // HDR environment background (no depth)
     VkShaderModule  vertModule = VK_NULL_HANDLE;
     VkShaderModule  fragModule = VK_NULL_HANDLE;
+    VkShaderModule  skyVertModule = VK_NULL_HANDLE;
+    VkShaderModule  skyFragModule = VK_NULL_HANDLE;
     VkSampler       sampler = VK_NULL_HANDLE;
 
     // Scene-lighting descriptor set + its host-visible, persistently mapped UBO. sceneData is
@@ -67,6 +70,11 @@ struct Viewport {
     VkDeviceMemory  envMem = VK_NULL_HANDLE;
     VkImageView     envView = VK_NULL_HANDLE;
     VkSampler       envSampler = VK_NULL_HANDLE;
+
+    // Skybox draw state: the inverse view-projection (column-major) and whether to draw the
+    // environment background this frame, set per frame by obk_viewport_set_skybox.
+    float           skyboxInvVP[16] = {0};
+    bool            skyboxShow = false;
 
     VkCommandPool   cmdPool = VK_NULL_HANDLE;
     VkCommandBuffer cmd = VK_NULL_HANDLE;
@@ -249,6 +257,75 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
     cb.attachmentCount = 1;
     cb.pAttachments = &cba;
 
+    VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    VkPipelineDynamicStateCreateInfo dynState{};
+    dynState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynState.dynamicStateCount = 2;
+    dynState.pDynamicStates = dyn;
+
+    VkGraphicsPipelineCreateInfo ci{};
+    ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    ci.stageCount = 2;
+    ci.pStages = stages;
+    ci.pVertexInputState = &vi;
+    ci.pInputAssemblyState = &ia;
+    ci.pViewportState = &vp;
+    ci.pRasterizationState = &rs;
+    ci.pMultisampleState = &ms;
+    ci.pDepthStencilState = &ds;
+    ci.pColorBlendState = &cb;
+    ci.pDynamicState = &dynState;
+    ci.layout = v->layout;
+    ci.renderPass = v->renderPass;
+    VkPipeline p = VK_NULL_HANDLE;
+    vkCreateGraphicsPipelines(c->device, VK_NULL_HANDLE, 1, &ci, nullptr, &p);
+    return p;
+}
+
+// create_skybox_pipeline builds the background pipeline: a vertex-buffer-less fullscreen
+// triangle (positions from gl_VertexIndex), no depth test or write so it fills the cleared
+// background, opaque. It shares the mesh pipeline layout (same push range + descriptor set).
+VkPipeline create_skybox_pipeline(HeadContext* c, Viewport* v) {
+    VkPipelineShaderStageCreateInfo stages[2]{};
+    stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stages[0].module = v->skyVertModule;
+    stages[0].pName = "main";
+    stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stages[1].module = v->skyFragModule;
+    stages[1].pName = "main";
+
+    VkPipelineVertexInputStateCreateInfo vi{}; // no inputs — gl_VertexIndex drives the triangle
+    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    VkPipelineInputAssemblyStateCreateInfo ia{};
+    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    VkPipelineViewportStateCreateInfo vp{};
+    vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    vp.viewportCount = vp.scissorCount = 1;
+    VkPipelineRasterizationStateCreateInfo rs{};
+    rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rs.polygonMode = VK_POLYGON_MODE_FILL;
+    rs.cullMode = VK_CULL_MODE_NONE;
+    rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rs.lineWidth = 1.0f;
+    VkPipelineMultisampleStateCreateInfo ms{};
+    ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkPipelineDepthStencilStateCreateInfo ds{};
+    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds.depthTestEnable = VK_FALSE;
+    ds.depthWriteEnable = VK_FALSE;
+    ds.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+    VkPipelineColorBlendAttachmentState cba{};
+    cba.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    VkPipelineColorBlendStateCreateInfo cb{};
+    cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    cb.attachmentCount = 1;
+    cb.pAttachments = &cba;
     VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynState{};
     dynState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -600,14 +677,17 @@ void init_default_env(HeadContext* c, Viewport* v) {
 
 extern "C" {
 
-void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag,
-                       int flen) {
+void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen,
+                       const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag,
+                       int skyFLen) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = new Viewport();
     c->viewport = v;
     v->colorFormat = c->window_data.SurfaceFormat.format;
     v->vertModule = make_module(c->device, vert, vlen);
     v->fragModule = make_module(c->device, frag, flen);
+    v->skyVertModule = make_module(c->device, skyVert, skyVLen);
+    v->skyFragModule = make_module(c->device, skyFrag, skyFLen);
 
     // The scene-lighting descriptor set must exist before the pipeline layout references it.
     create_scene_resources(c, v);
@@ -635,6 +715,7 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
                                           VK_POLYGON_MODE_FILL, VK_FALSE, VK_COMPARE_OP_LESS_OR_EQUAL, VK_TRUE);
     v->hiddenPipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                                         VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE);
+    v->skyboxPipeline = create_skybox_pipeline(c, v);
 
     VkSamplerCreateInfo si{};
     si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -724,13 +805,30 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
     vkCmdSetViewport(v->cmd, 0, 1, &vpRect);
     vkCmdSetScissor(v->cmd, 0, 1, &scissor);
 
+    // The scene-lighting + environment set (set 0) is shared by the skybox and every geometry
+    // pipeline; bind it once, before any draw, so the background renders even with no geometry.
+    vkCmdBindDescriptorSets(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->layout, 0, 1,
+                            &v->sceneSet, 0, nullptr);
+
+    // Skybox background: drawn first (far plane, no depth write) so geometry overdraws it. The
+    // push block carries the inverse view-projection in the mvp slot for ray reconstruction.
+    if (v->skyboxShow) {
+        PushConstants sky{};
+        std::memcpy(sky.mvp, v->skyboxInvVP, sizeof(sky.mvp));
+        sky.camPosLit[0] = camPos ? camPos[0] : 0.0f;
+        sky.camPosLit[1] = camPos ? camPos[1] : 0.0f;
+        sky.camPosLit[2] = camPos ? camPos[2] : 0.0f;
+        sky.camPosLit[3] = 1.0f;
+        vkCmdPushConstants(v->cmd, v->layout,
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(sky), &sky);
+        vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->skyboxPipeline);
+        vkCmdDraw(v->cmd, 3, 1, 0, 0);
+    }
+
     if (!verts.empty()) {
         VkDeviceSize zero = 0;
         vkCmdBindVertexBuffers(v->cmd, 0, 1, &v->vbuf.buffer, &zero);
         vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
-        // The scene-lighting set is shared by every pipeline (set 0); bind it once.
-        vkCmdBindDescriptorSets(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->layout, 0, 1,
-                                &v->sceneSet, 0, nullptr);
         PushConstants push{};
         std::memcpy(push.mvp, mvp, sizeof(push.mvp));
         push.camPosLit[0] = camPos ? camPos[0] : 0.0f;
@@ -810,6 +908,17 @@ void obk_viewport_set_environment(void* h, const float* data, const int* dims, i
     v->sceneData[kEnvBlock + 3] = (float)(levels - 1); // max LOD for roughness sampling
 }
 
+// obk_viewport_set_skybox enables/disables drawing the environment as the background and stores
+// the inverse view-projection (column-major, 16 floats) used to reconstruct view rays. A null
+// matrix or show==0 disables it. A no-op before init. (ADR-0026 §5.)
+void obk_viewport_set_skybox(void* h, const float* invVP, int show) {
+    HeadContext* c = (HeadContext*)h;
+    Viewport* v = c ? c->viewport : nullptr;
+    if (!v) return;
+    v->skyboxShow = (show != 0 && invVP != nullptr);
+    if (v->skyboxShow) std::memcpy(v->skyboxInvVP, invVP, sizeof(v->skyboxInvVP));
+}
+
 // obk_viewport_set_clear sets the 3D pass background (themed). Takes effect on the next
 // render; a no-op before the viewport is initialized.
 void obk_viewport_set_clear(void* h, float r, float g, float b) {
@@ -850,10 +959,13 @@ void obk_viewport_destroy(HeadContext* c) {
     vkDestroyPipeline(c->device, v->linePipeline, nullptr);
     vkDestroyPipeline(c->device, v->occluderPipeline, nullptr);
     vkDestroyPipeline(c->device, v->hiddenPipeline, nullptr);
+    vkDestroyPipeline(c->device, v->skyboxPipeline, nullptr);
     vkDestroyPipelineLayout(c->device, v->layout, nullptr);
     vkDestroyRenderPass(c->device, v->renderPass, nullptr);
     vkDestroyShaderModule(c->device, v->vertModule, nullptr);
     vkDestroyShaderModule(c->device, v->fragModule, nullptr);
+    vkDestroyShaderModule(c->device, v->skyVertModule, nullptr);
+    vkDestroyShaderModule(c->device, v->skyFragModule, nullptr);
     delete v;
     c->viewport = nullptr;
 }

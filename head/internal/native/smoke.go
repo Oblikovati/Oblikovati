@@ -50,6 +50,7 @@ func RunViewportSmoke(maxFrames int) int {
 	if img, ok, _ := envimage.Resolve(renderer.Environment{Preset: renderer.EnvOutdoors, Intensity: 1}); ok {
 		u := envimage.Flatten(envimage.MipChain(img))
 		w.SetViewportEnvironment(u.Data, u.Dims, 0, 1)
+		w.SetViewportSkybox(identity4x4(), true) // identity is its own inverse; exercises the sky pass
 	}
 	tri, idx := smokeTriangle()
 	for i := 0; i < maxFrames && !w.ShouldClose(); i++ {

@@ -83,6 +83,7 @@ func renderViewportImage(win *native.Window, s *app.Session, cam scene.Camera, l
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	applyEnvironment(win, s.Environment())
+	applySkybox(win, s.Environment(), mvp)
 	win.RenderViewport(pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
 		m.OccVerts, m.OccVCount, m.OccIndices,

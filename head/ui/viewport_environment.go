@@ -10,6 +10,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/head/internal/envimage"
 	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"github.com/Oblikovati/oblikovati/head/viewport"
 	"github.com/Oblikovati/oblikovati/renderer"
 )
 
@@ -47,6 +48,22 @@ func applyEnvironment(win *native.Window, env renderer.Environment) {
 	}
 	win.SetViewportEnvironment(viewportEnv.upload.Data, viewportEnv.upload.Dims,
 		env.Rotation, env.Intensity)
+}
+
+// applySkybox enables the HDR sky background when the active environment has ShowImage set,
+// passing the inverse view-projection for view-ray reconstruction; otherwise the themed clear
+// color shows through (ADR-0026 §5).
+func applySkybox(win *native.Window, env renderer.Environment, mvp [16]float32) {
+	if !env.ShowImage || !env.IsActive() {
+		win.SetViewportSkybox(nil, false)
+		return
+	}
+	inv, ok := viewport.Invert4x4(mvp)
+	if !ok {
+		win.SetViewportSkybox(nil, false)
+		return
+	}
+	win.SetViewportSkybox(inv[:], true)
 }
 
 // resolve decodes/generates the environment image and builds its mip chain, caching the upload;

@@ -7,7 +7,9 @@ package native
 /*
 #include <stdint.h>
 
-void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen);
+void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen,
+                           const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag, int skyFLen);
+void     obk_viewport_set_skybox(void* h, const float* invVP, int show);
 void     obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* camPos,
                              const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                              const float* occV, int occVC, const uint32_t* occIdx, int occIC,
@@ -31,7 +33,24 @@ import "unsafe"
 func (w *Window) InitViewport() {
 	C.obk_viewport_init(w.handle,
 		(*C.uint32_t)(unsafe.Pointer(&meshVertSPV[0])), C.int(len(meshVertSPV)),
-		(*C.uint32_t)(unsafe.Pointer(&meshFragSPV[0])), C.int(len(meshFragSPV)))
+		(*C.uint32_t)(unsafe.Pointer(&meshFragSPV[0])), C.int(len(meshFragSPV)),
+		(*C.uint32_t)(unsafe.Pointer(&skyboxVertSPV[0])), C.int(len(skyboxVertSPV)),
+		(*C.uint32_t)(unsafe.Pointer(&skyboxFragSPV[0])), C.int(len(skyboxFragSPV)))
+}
+
+// SetViewportSkybox enables drawing the HDR environment as the viewport background, passing the
+// inverse view-projection (column-major, 16 floats) used to reconstruct view rays. A nil matrix
+// or show=false disables the skybox (the themed clear color shows through). Next RenderViewport.
+func (w *Window) SetViewportSkybox(invVP []float32, show bool) {
+	s := 0
+	if show && len(invVP) == 16 {
+		s = 1
+	}
+	if s == 0 {
+		C.obk_viewport_set_skybox(w.handle, nil, 0)
+		return
+	}
+	C.obk_viewport_set_skybox(w.handle, floatPtr(invVP), 1)
 }
 
 // RenderViewport renders the geometry into the offscreen target at (w,h) using the
