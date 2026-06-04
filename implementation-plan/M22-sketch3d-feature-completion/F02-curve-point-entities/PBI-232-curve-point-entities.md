@@ -3,7 +3,7 @@ milestone: M22
 feature: F02
 pbi: PBI-232
 title: 3D point/line/circle/arc entities + addEntity + tools
-status: planned
+status: done (model+API; UI in F12)
 estimate: M
 ---
 

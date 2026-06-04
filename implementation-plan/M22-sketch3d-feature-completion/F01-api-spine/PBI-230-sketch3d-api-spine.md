@@ -3,7 +3,7 @@ milestone: M22
 feature: F01
 pbi: PBI-230
 title: Sketch3D contract/wire/client spine + enumeration + router + part wiring + serialize
-status: planned
+status: done (model+API; UI in F12)
 estimate: M
 ---
 

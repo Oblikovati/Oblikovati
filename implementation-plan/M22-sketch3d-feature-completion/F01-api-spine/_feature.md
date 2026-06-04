@@ -2,7 +2,7 @@
 milestone: M22
 feature: F01
 name: API Spine & Properties (3D)
-status: planned
+status: done (model+API; UI in F12)
 ---
 
 # M22 · F01 — API Spine & Properties (3D)

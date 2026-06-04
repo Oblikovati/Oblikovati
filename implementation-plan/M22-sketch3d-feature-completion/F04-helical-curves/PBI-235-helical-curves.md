@@ -3,7 +3,7 @@ milestone: M22
 feature: F04
 pbi: PBI-235
 title: Helix3d kernel + HelicalCurve entity (4 modes) + constraint + tool
-status: planned
+status: done (model+API; UI in F12)
 estimate: M
 ---
 

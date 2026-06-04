@@ -2,7 +2,7 @@
 milestone: M22
 feature: F02
 name: Curve & Point Entities (3D)
-status: planned
+status: done (model+API; UI in F12)
 ---
 
 # M22 · F02 — Curve & Point Entities (3D)

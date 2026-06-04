@@ -2,7 +2,7 @@
 milestone: M22
 feature: F03
 name: Conics & Splines (3D)
-status: planned
+status: partial (conics done; splines TODO)
 ---
 
 # M22 · F03 — Conics & Splines (3D)

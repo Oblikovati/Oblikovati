@@ -2,7 +2,7 @@
 milestone: M22
 feature: F04
 name: Helical Curves
-status: planned
+status: done (model+API; UI in F12)
 ---
 
 # M22 · F04 — Helical Curves

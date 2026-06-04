@@ -3,7 +3,7 @@ milestone: M22
 feature: F01
 pbi: PBI-231
 title: Sketch3D properties (name/visible/dimensionsVisible/color/defer)
-status: planned
+status: done (model+API; UI in F12)
 estimate: S
 ---
 

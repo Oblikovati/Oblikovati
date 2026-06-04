@@ -3,7 +3,7 @@ milestone: M22
 feature: F03
 pbi: PBI-233
 title: 3D ellipse + elliptical arc entities + tools
-status: planned
+status: done (model+API; UI in F12)
 estimate: S
 ---
 
