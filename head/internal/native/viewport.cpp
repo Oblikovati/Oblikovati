@@ -53,6 +53,8 @@ struct Viewport {
     VkPipeline      linePipeline = VK_NULL_HANDLE;
     VkPipeline      occluderPipeline = VK_NULL_HANDLE; // depth-only faces (hidden-line modes)
     VkPipeline      hiddenPipeline = VK_NULL_HANDLE;   // occluded edges (reversed depth test)
+    VkPipeline      topTriPipeline = VK_NULL_HANDLE;   // on-top faces (depth test disabled, PBI-067)
+    VkPipeline      topLinePipeline = VK_NULL_HANDLE;  // on-top lines (depth test disabled, PBI-067)
     VkPipeline      skyboxPipeline = VK_NULL_HANDLE;   // HDR environment background (no depth)
     VkShaderModule  vertModule = VK_NULL_HANDLE;
     VkShaderModule  fragModule = VK_NULL_HANDLE;
@@ -898,6 +900,12 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
                                           VK_POLYGON_MODE_FILL, VK_FALSE, VK_COMPARE_OP_LESS_OR_EQUAL, VK_TRUE);
     v->hiddenPipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                                         VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE);
+    // On-top faces/lines: depth test always passes and depth is not written, so client-
+    // graphics overlay/burn-through geometry draws over the model (PBI-067).
+    v->topTriPipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                        VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_ALWAYS, VK_FALSE);
+    v->topLinePipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+                                         VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_ALWAYS, VK_FALSE);
     v->skyboxPipeline = create_skybox_pipeline(c, v);
     create_shadow_resources(c, v);
 
@@ -933,30 +941,38 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
                          const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                          const float* occV, int occVC, const uint32_t* occIdx, int occIC,
                          const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
-                         const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC) {
+                         const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
+                         const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
+                         const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
     ensure_target(c, v, w, hh);
 
-    // One interleaved vertex buffer and one index buffer hold the four streams back to back, in
-    // draw order: occluder faces, shaded tris, solid lines, hidden lines. Each stream's indices
-    // are 0-based within its own vertices, so each draw passes its vertexOffset (the stream's
-    // vertex base) and firstIndex (its offset in the index buffer).
+    // One interleaved vertex buffer and one index buffer hold the streams back to back, in
+    // draw order: occluder faces, shaded tris, solid lines, hidden lines, on-top tris, on-top
+    // lines. Each stream's indices are 0-based within its own vertices, so each draw passes its
+    // vertexOffset (the stream's vertex base) and firstIndex (its offset in the index buffer).
     const int occBase = 0, triBase = occVC, lineBase = occVC + triVC, hidBase = occVC + triVC + lineVC;
+    const int topTriBase = hidBase + hidVC, topLineBase = topTriBase + topTriVC;
     const int occFirst = 0, triFirst = occIC, lineFirst = occIC + triIC, hidFirst = occIC + triIC + lineIC;
+    const int topTriFirst = hidFirst + hidIC, topLineFirst = topTriFirst + topTriIC;
     std::vector<float> verts;
-    verts.reserve((size_t)(occVC + triVC + lineVC + hidVC) * kVertexFloats);
+    verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) * kVertexFloats);
     verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
     verts.insert(verts.end(), triV, triV + (size_t)triVC * kVertexFloats);
     verts.insert(verts.end(), lineV, lineV + (size_t)lineVC * kVertexFloats);
     verts.insert(verts.end(), hidV, hidV + (size_t)hidVC * kVertexFloats);
+    verts.insert(verts.end(), topTriV, topTriV + (size_t)topTriVC * kVertexFloats);
+    verts.insert(verts.end(), topLineV, topLineV + (size_t)topLineVC * kVertexFloats);
     std::vector<uint32_t> idx;
-    idx.reserve((size_t)(occIC + triIC + lineIC + hidIC));
+    idx.reserve((size_t)(occIC + triIC + lineIC + hidIC + topTriIC + topLineIC));
     idx.insert(idx.end(), occIdx, occIdx + occIC);
     idx.insert(idx.end(), triIdx, triIdx + triIC);
     idx.insert(idx.end(), lineIdx, lineIdx + lineIC);
     idx.insert(idx.end(), hidIdx, hidIdx + hidIC);
+    idx.insert(idx.end(), topTriIdx, topTriIdx + topTriIC);
+    idx.insert(idx.end(), topLineIdx, topLineIdx + topLineIC);
     upload(c, &v->vbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts.data(),
            verts.size() * sizeof(float));
     upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(),
@@ -1076,6 +1092,19 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
             pushLit(0.0f);
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->hiddenPipeline);
             vkCmdDrawIndexed(v->cmd, (uint32_t)hidIC, 1, (uint32_t)hidFirst, hidBase, 0);
+        }
+        // 5) on-top faces — depth test disabled, so client-graphics overlays draw over the
+        //    model. Drawn flat-lit (the overlay color is authoritative), after everything else.
+        if (topTriIC > 0) {
+            pushLit(0.0f);
+            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topTriPipeline);
+            vkCmdDrawIndexed(v->cmd, (uint32_t)topTriIC, 1, (uint32_t)topTriFirst, topTriBase, 0);
+        }
+        // 6) on-top lines — depth test disabled (burn-through markers/edges).
+        if (topLineIC > 0) {
+            pushLit(0.0f);
+            vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topLinePipeline);
+            vkCmdDrawIndexed(v->cmd, (uint32_t)topLineIC, 1, (uint32_t)topLineFirst, topLineBase, 0);
         }
     }
 
@@ -1255,6 +1284,8 @@ void obk_viewport_destroy(HeadContext* c) {
     vkDestroyPipeline(c->device, v->linePipeline, nullptr);
     vkDestroyPipeline(c->device, v->occluderPipeline, nullptr);
     vkDestroyPipeline(c->device, v->hiddenPipeline, nullptr);
+    vkDestroyPipeline(c->device, v->topTriPipeline, nullptr);
+    vkDestroyPipeline(c->device, v->topLinePipeline, nullptr);
     vkDestroyPipeline(c->device, v->skyboxPipeline, nullptr);
     vkDestroyPipelineLayout(c->device, v->layout, nullptr);
     vkDestroyRenderPass(c->device, v->renderPass, nullptr);

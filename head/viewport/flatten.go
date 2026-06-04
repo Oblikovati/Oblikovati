@@ -15,33 +15,46 @@ import "github.com/Oblikovati/oblikovati/renderer"
 // in one draw call (ADR-0023 §2).
 const VertexFloats = 16
 
-// Mesh is the flattened, GPU-ready geometry split into the four viewport streams: shaded
-// triangles, depth-only occluder triangles (hidden-line modes), solid edge lines, and dashed
-// hidden-edge lines (reversed depth test). Indices are 0-based within each stream's own vertex
-// array (the pipeline applies the vertex offset).
+// Mesh is the flattened, GPU-ready geometry split into the viewport streams: shaded
+// triangles, depth-only occluder triangles (hidden-line modes), solid edge lines, dashed
+// hidden-edge lines (reversed depth test), and the two on-top streams (triangles and lines
+// drawn with the depth test disabled — client-graphics overlay/burn-through, PBI-067).
+// Indices are 0-based within each stream's own vertex array (the pipeline applies the
+// vertex offset).
 type Mesh struct {
-	TriVerts    []float32
-	TriVCount   int
-	TriIndices  []uint32
-	OccVerts    []float32
-	OccVCount   int
-	OccIndices  []uint32
-	LineVerts   []float32
-	LineVCount  int
-	LineIndices []uint32
-	HidVerts    []float32
-	HidVCount   int
-	HidIndices  []uint32
+	TriVerts       []float32
+	TriVCount      int
+	TriIndices     []uint32
+	OccVerts       []float32
+	OccVCount      int
+	OccIndices     []uint32
+	LineVerts      []float32
+	LineVCount     int
+	LineIndices    []uint32
+	HidVerts       []float32
+	HidVCount      int
+	HidIndices     []uint32
+	TopTriVerts    []float32
+	TopTriVCount   int
+	TopTriIndices  []uint32
+	TopLineVerts   []float32
+	TopLineVCount  int
+	TopLineIndices []uint32
 }
 
-// Flatten splits a draw list into the four viewport streams, interleaving each vertex as
+// Flatten splits a draw list into the viewport streams, interleaving each vertex as
 // [pos.xyz, normal.xyz, color.rgba, metallic, roughness, emissive.rgb, mode] and rebasing
-// indices per item. Triangles route to the occluder stream when DrawItem.Occluder is set;
-// lines route to the hidden stream when DrawItem.Hidden is set.
+// indices per item. DrawItem.OnTop routes triangles/lines to the depth-disabled on-top
+// streams (drawn over the model); otherwise triangles route to the occluder stream when
+// Occluder is set, and lines to the hidden stream when Hidden is set.
 func Flatten(list renderer.DrawList) Mesh {
 	var m Mesh
 	for _, item := range list.Items {
 		switch {
+		case item.OnTop && item.Primitive == renderer.Triangles:
+			m.TopTriVCount = appendItem(&m.TopTriVerts, &m.TopTriIndices, m.TopTriVCount, item)
+		case item.OnTop:
+			m.TopLineVCount = appendItem(&m.TopLineVerts, &m.TopLineIndices, m.TopLineVCount, item)
 		case item.Primitive == renderer.Triangles && item.Occluder:
 			m.OccVCount = appendItem(&m.OccVerts, &m.OccIndices, m.OccVCount, item)
 		case item.Primitive == renderer.Triangles:
@@ -65,10 +78,11 @@ func appendItem(verts *[]float32, idx *[]uint32, base int, item renderer.DrawIte
 				float32(item.Normals[i].X), float32(item.Normals[i].Y), float32(item.Normals[i].Z),
 			}
 		}
+		c := vertexColor(item, i)
 		*verts = append(*verts,
 			float32(p.X), float32(p.Y), float32(p.Z),
 			n[0], n[1], n[2],
-			item.Color[0], item.Color[1], item.Color[2], item.Color[3],
+			c[0], c[1], c[2], c[3],
 			item.Metallic, item.Roughness,
 			item.Emissive[0], item.Emissive[1], item.Emissive[2],
 			float32(item.Shading))
@@ -77,4 +91,13 @@ func appendItem(verts *[]float32, idx *[]uint32, base int, item renderer.DrawIte
 		*idx = append(*idx, uint32(base+i))
 	}
 	return base + len(item.Positions)
+}
+
+// vertexColor returns vertex i's color: the per-vertex DrawItem.Colors entry when present
+// (client-graphics heatmaps / per-vertex binding), else the item's single broadcast Color.
+func vertexColor(item renderer.DrawItem, i int) [4]float32 {
+	if i < len(item.Colors) {
+		return item.Colors[i]
+	}
+	return item.Color
 }

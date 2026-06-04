@@ -36,6 +36,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerStandardHandlers()
 	r.registerMaterialHandlers()
 	r.registerLightingHandlers()
+	r.registerGraphicsHandlers()
 	return r
 }
 
@@ -178,6 +179,17 @@ func (r *Router) registerLightingHandlers() {
 	r.handlers[wire.MethodEnvironmentSet] = setEnvironment
 	r.handlers[wire.MethodEnvironmentListPresets] = listEnvironmentPresets
 	r.handlers[wire.MethodEnvironmentLoadImage] = loadEnvironmentImage
+}
+
+// registerGraphicsHandlers wires the client/interaction graphics methods — the add-in
+// overlay surface for drawing meshes, heatmaps, lines, markers and labels (M05-F05).
+func (r *Router) registerGraphicsHandlers() {
+	r.handlers[wire.MethodClientGraphicsSet] = setClientGraphics
+	r.handlers[wire.MethodClientGraphicsList] = listClientGraphics
+	r.handlers[wire.MethodClientGraphicsDelete] = deleteClientGraphics
+	r.handlers[wire.MethodClientGraphicsSetVisible] = setClientGraphicsVisible
+	r.handlers[wire.MethodInteractionGraphicsUpdate] = updateInteractionGraphics
+	r.handlers[wire.MethodInteractionGraphicsClear] = clearInteractionGraphics
 }
 
 // Handle dispatches method with its JSON args (empty args become {}), returning the

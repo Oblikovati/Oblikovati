@@ -89,6 +89,52 @@ func TestFlattenCarriesShadingAndMaterial(t *testing.T) {
 	}
 }
 
+// TestFlattenEmitsPerVertexColors checks that DrawItem.Colors overrides the single Color
+// per vertex — the client-graphics heatmap path. Vertex 0 stays red, vertex 1 turns blue.
+func TestFlattenEmitsPerVertexColors(t *testing.T) {
+	item := triItem(0)
+	item.Colors = [][4]float32{{1, 0, 0, 1}, {0, 0, 1, 1}, {0, 1, 0, 1}}
+	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{item}})
+	// color is floats 6..10 of each vertex.
+	v0 := m.TriVerts[6:10]
+	v1 := m.TriVerts[VertexFloats+6 : VertexFloats+10]
+	if v0[2] != 0 || v1[2] != 1 {
+		t.Errorf("per-vertex colors not applied: v0=%v v1=%v", v0, v1)
+	}
+}
+
+// TestFlattenFallsBackToBroadcastColor checks that without Colors the single Color still
+// broadcasts to every vertex (legacy behavior preserved).
+func TestFlattenFallsBackToBroadcastColor(t *testing.T) {
+	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{triItem(0)}})
+	for v := 0; v < 3; v++ {
+		c := m.TriVerts[v*VertexFloats+6 : v*VertexFloats+10]
+		if c[0] != 1 || c[1] != 0 || c[2] != 0 || c[3] != 1 {
+			t.Fatalf("vertex %d color = %v, want broadcast red", v, c)
+		}
+	}
+}
+
+// TestFlattenRoutesOnTopToTopStreams checks that DrawItem.OnTop triangles and lines route
+// to the depth-disabled on-top streams rather than the regular ones (PBI-067).
+func TestFlattenRoutesOnTopToTopStreams(t *testing.T) {
+	tri := triItem(0)
+	tri.OnTop = true
+	ln := lineItem()
+	ln.OnTop = true
+	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{tri, ln}})
+	if m.TopTriVCount != 3 || len(m.TopTriIndices) != 3 {
+		t.Errorf("on-top triangles: vcount=%d idx=%d, want 3/3", m.TopTriVCount, len(m.TopTriIndices))
+	}
+	if m.TopLineVCount != 2 || len(m.TopLineIndices) != 2 {
+		t.Errorf("on-top lines: vcount=%d idx=%d, want 2/2", m.TopLineVCount, len(m.TopLineIndices))
+	}
+	// They must NOT have leaked into the regular streams.
+	if m.TriVCount != 0 || m.LineVCount != 0 {
+		t.Errorf("on-top items leaked into regular streams: tri=%d line=%d", m.TriVCount, m.LineVCount)
+	}
+}
+
 func TestFlattenLinesTolerateMissingNormals(t *testing.T) {
 	m := Flatten(renderer.DrawList{Items: []renderer.DrawItem{lineItem()}})
 	// Normal slot (floats 3..6) should be zero, not a panic / garbage.

@@ -5,6 +5,7 @@ package app
 import (
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"github.com/Oblikovati/oblikovati/model/clientgraphics"
 	"github.com/Oblikovati/oblikovati/renderer"
 )
 
@@ -30,8 +31,20 @@ func (s *Session) Overlays() []renderer.DrawItem {
 	return out
 }
 
+// Graphics returns the add-in client/interaction graphics store (M05-F05), the seam the
+// router mutates from clientGraphics.* / interactionGraphics.* calls.
+func (s *Session) Graphics() *clientgraphics.Store { return s.graphics }
+
+// GraphicsLabels returns the world-anchored text labels of the live client graphics, for
+// the UI head to draw via its projected-ImGui label path (text is not draw-list geometry).
+func (s *Session) GraphicsLabels() []clientgraphics.Label {
+	_, labels := s.graphics.Build(s.camera)
+	return labels
+}
+
 // RenderFrame builds the frame draw list — the active part's bodies, the persistent
-// overlays, and the active tool's transient preview — and submits it to the backend.
+// overlays, the active tool's transient preview, and the add-in client/interaction
+// graphics — and submits it to the backend.
 func (s *Session) RenderFrame(backend renderer.Backend) {
 	list := renderer.BuildDrawListStyled(s.sceneBodies(), s.camera, ops.DefaultQuality(), s.SurfaceLookup(), s.visualStyle)
 	list.Items = append(list.Items, s.overlays...)
@@ -40,6 +53,8 @@ func (s *Session) RenderFrame(backend renderer.Backend) {
 			list.Items = append(list.Items, p.Preview(s)...)
 		}
 	}
+	graphics, _ := s.graphics.Build(s.camera)
+	list.Items = append(list.Items, graphics...)
 	backend.Render(list)
 }
 

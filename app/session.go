@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Oblikovati/oblikovati/event"
+	"github.com/Oblikovati/oblikovati/model/clientgraphics"
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/doc"
 	"github.com/Oblikovati/oblikovati/model/material"
@@ -38,6 +39,7 @@ type Session struct {
 	pendingDim         *sketch.DimensionConstraint
 	featureEdit        *featureEditState
 	overlays           []renderer.DrawItem
+	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins             *AddInManager
 	grid               *GridSettings
 	themes             *theme.Library
@@ -83,6 +85,7 @@ func newSession(store doc.Store) *Session {
 		bus:                event.NewBus(),
 		selection:          NewSelection(),
 		camera:             scene.NewCamera(800, 600),
+		graphics:           clientgraphics.NewStore(),
 		addins:             NewAddInManager(),
 		visualStyle:        renderer.ShadedWithEdges,
 		lightingStyle:      renderer.LightingDefault,

@@ -19,6 +19,7 @@ func (s *Session) SetPicker(p Picker) { s.picker = p }
 func (s *Session) StartTool(t Tool) {
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
+		s.graphics.ClearInteraction() // drop the previous tool's preview/overlay graphics
 	}
 	s.notice = ""
 	s.tool = &ToolInstance{tool: t}
@@ -52,6 +53,7 @@ func (s *Session) OK() error {
 	}
 	s.notice = ""
 	s.tool = nil
+	s.graphics.ClearInteraction() // a committed command's transient preview vanishes
 	return nil
 }
 
@@ -61,6 +63,7 @@ func (s *Session) CancelTool() {
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
 		s.tool = nil
+		s.graphics.ClearInteraction() // a cancelled command's transient preview vanishes
 	}
 }
 
