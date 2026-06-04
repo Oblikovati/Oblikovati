@@ -50,9 +50,116 @@ func buildSketch3DEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketc
 		return buildCircle3D(part, sk, in)
 	case types.Sketch3DEntityArc:
 		return buildArc3D(sk, in)
+	case types.Sketch3DEntityHelical:
+		return buildHelix3D(part, sk, in)
 	default:
 		return nil, fmt.Errorf("sketch3d.addEntity: unsupported kind %q", in.Kind)
 	}
+}
+
+// buildHelix3D resolves a helix from one of Inventor's four definition modes, converting
+// the given pair of {pitch, height, revolutions} into the canonical (pitch, turns).
+func buildHelix3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
+	origin, err := point3At(in.Points, 0)
+	if err != nil {
+		return nil, err
+	}
+	axis, err := axisOrZ(in.Axis)
+	if err != nil {
+		return nil, err
+	}
+	radius, err := lengthArg(part, "radius", in.Radius)
+	if err != nil {
+		return nil, err
+	}
+	pitch, turns, radial, err := helixShape(part, in)
+	if err != nil {
+		return nil, err
+	}
+	h := sk.AddHelix3D(origin, axis, radius, pitch, radial, turns, in.Clockwise)
+	h.SetConstruction(in.Construction)
+	return entityResult(uint64(h.EntityID()), in.Kind, h.Origin.EntityID())
+}
+
+// helixShape converts the request's mode + values into the canonical pitch (axial rise
+// per revolution), turn count, and per-revolution radial growth.
+func helixShape(part *compdef.PartComponentDefinition, in wire.AddSketch3DEntityArgs) (pitch, turns, radial float64, err error) {
+	if radial, err = lengthArg(part, "taper", in.Taper); err != nil {
+		return 0, 0, 0, err
+	}
+	switch in.Mode {
+	case "", "pitchRevolution":
+		pitch, err = lengthArg(part, "pitch", in.Pitch)
+		turns = in.Revolutions
+	case "pitchHeight":
+		pitch, turns, err = helixFromPitchHeight(part, in)
+	case "revolutionHeight":
+		pitch, turns, err = helixFromRevolutionHeight(part, in)
+	case "spiral":
+		pitch = 0 // a flat spiral has no axial advance
+		turns, radial, err = helixSpiral(part, in, radial)
+	default:
+		return 0, 0, 0, fmt.Errorf("sketch3d.addEntity: unknown helix mode %q", in.Mode)
+	}
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	if turns <= 0 {
+		return 0, 0, 0, fmt.Errorf("sketch3d.addEntity: helix needs revolutions > 0, got %g", turns)
+	}
+	return pitch, turns, radial, nil
+}
+
+// helixFromPitchHeight derives the turn count from pitch and total height.
+func helixFromPitchHeight(part *compdef.PartComponentDefinition, in wire.AddSketch3DEntityArgs) (pitch, turns float64, err error) {
+	height, err := lengthArg(part, "height", in.Height)
+	if err != nil {
+		return 0, 0, err
+	}
+	if pitch, err = lengthArg(part, "pitch", in.Pitch); err != nil {
+		return 0, 0, err
+	}
+	if pitch == 0 {
+		return 0, 0, fmt.Errorf("sketch3d.addEntity: helix pitchHeight needs a non-zero pitch")
+	}
+	return pitch, height / pitch, nil
+}
+
+// helixFromRevolutionHeight derives the pitch from total height and the turn count.
+func helixFromRevolutionHeight(part *compdef.PartComponentDefinition, in wire.AddSketch3DEntityArgs) (pitch, turns float64, err error) {
+	height, err := lengthArg(part, "height", in.Height)
+	if err != nil {
+		return 0, 0, err
+	}
+	turns = in.Revolutions
+	if turns <= 0 {
+		return 0, 0, fmt.Errorf("sketch3d.addEntity: helix revolutionHeight needs revolutions > 0, got %g", turns)
+	}
+	return height / turns, turns, nil
+}
+
+// helixSpiral resolves a flat spiral's turn count and radial growth per revolution (its
+// "pitch" is radial when no explicit taper was given). The axial pitch is always 0.
+func helixSpiral(part *compdef.PartComponentDefinition, in wire.AddSketch3DEntityArgs, radial float64) (turns, outRadial float64, err error) {
+	turns = in.Revolutions
+	if radial == 0 {
+		if radial, err = lengthArg(part, "pitch", in.Pitch); err != nil {
+			return 0, 0, err
+		}
+	}
+	return turns, radial, nil
+}
+
+// lengthArg parses an optional unit-bearing length ("" ⇒ 0).
+func lengthArg(part *compdef.PartComponentDefinition, name, expr string) (float64, error) {
+	if expr == "" {
+		return 0, nil
+	}
+	q, err := part.Units().Parse(expr, param.Length)
+	if err != nil {
+		return 0, fmt.Errorf("sketch3d.addEntity: %s %q: %w", name, expr, err)
+	}
+	return float64(q.Value), nil
 }
 
 func buildLine3D(sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {

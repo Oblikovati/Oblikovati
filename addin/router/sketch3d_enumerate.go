@@ -67,10 +67,18 @@ func enumerateDimensions3D(s *app.Session, raw json.RawMessage) (json.RawMessage
 // model cm, radius for circular kinds, construction flag).
 func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 	info := wire.Sketch3DEntityInfo{Index: index, ID: uint64(e.EntityID()), Kind: string(types.Sketch3DEntityUnknown)}
-	switch v := e.(type) {
-	case *sketch.Point3D:
+	if p, ok := e.(*sketch.Point3D); ok {
 		info.Kind = string(types.Sketch3DEntityPoint)
-		info.Points = [][]float64{p3coords(v.Position())}
+		info.Points = [][]float64{p3coords(p.Position())}
+		return info
+	}
+	fillCurve3DInfo(&info, e)
+	return info
+}
+
+// fillCurve3DInfo renders the curve entities (line/circle/arc/helix) into info.
+func fillCurve3DInfo(info *wire.Sketch3DEntityInfo, e sketch.Entity) {
+	switch v := e.(type) {
 	case *sketch.Line3D:
 		info.Kind = string(types.Sketch3DEntityLine)
 		info.Points = [][]float64{p3coords(v.A.Position()), p3coords(v.B.Position())}
@@ -85,8 +93,12 @@ func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 		info.Points = [][]float64{p3coords(v.Center.Position()), p3coords(v.Start.Position()), p3coords(v.End.Position())}
 		info.Radius = float64(v.Radius())
 		info.Construction = v.IsConstruction()
+	case *sketch.HelicalCurve3D:
+		info.Kind = string(types.Sketch3DEntityHelical)
+		info.Points = [][]float64{p3coords(v.Origin.Position())}
+		info.Radius = float64(v.StartRadius)
+		info.Construction = v.IsConstruction()
 	}
-	return info
 }
 
 // p3coords flattens a model point to [x,y,z].

@@ -3,6 +3,7 @@
 package router
 
 import (
+	stdmath "math"
 	"testing"
 
 	"github.com/Oblikovati/api/types"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
@@ -158,6 +160,71 @@ func kindAt(ents []wire.Sketch3DEntityInfo, i int) string {
 		return ""
 	}
 	return ents[i].Kind
+}
+
+// TestSketch3DAddHelix exercises the helix constructor's four definition modes over the
+// router and checks the resulting curve geometry.
+func TestSketch3DAddHelix(t *testing.T) {
+	r, s := emptyPartSession(t)
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatalf("active part: %v", err)
+	}
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	cases := []struct {
+		name      string
+		json      string
+		wantTurns float64
+		wantPitch float64
+	}{
+		{"pitchRevolution", `{"sketchIndex":0,"kind":"helical","points":[[0,0,0]],"radius":"4 mm","mode":"pitchRevolution","pitch":"10 mm","revolutions":3}`, 3, 1.0},
+		{"pitchHeight", `{"sketchIndex":0,"kind":"helical","points":[[0,0,0]],"radius":"4 mm","mode":"pitchHeight","pitch":"10 mm","height":"30 mm"}`, 3, 1.0},
+		{"revolutionHeight", `{"sketchIndex":0,"kind":"helical","points":[[0,0,0]],"radius":"4 mm","mode":"revolutionHeight","revolutions":3,"height":"30 mm"}`, 3, 1.0},
+		{"spiral", `{"sketchIndex":0,"kind":"helical","points":[[0,0,0]],"radius":"4 mm","mode":"spiral","pitch":"2 mm","revolutions":5}`, 5, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var res wire.AddSketch3DEntityResult
+			call(t, r, s, "sketch3d.addEntity", tc.json, &res)
+			h := lastHelix(t, part)
+			if h.Turns != tc.wantTurns {
+				t.Errorf("%s turns = %v, want %v", tc.name, h.Turns, tc.wantTurns)
+			}
+			if stdmath.Abs(h.AxialPerTurn-tc.wantPitch) > 1e-9 {
+				t.Errorf("%s pitch = %v cm, want %v", tc.name, h.AxialPerTurn, tc.wantPitch)
+			}
+		})
+	}
+}
+
+// lastHelix returns the most-recently-added helix in the active part's first 3D sketch.
+func lastHelix(t *testing.T, part *compdef.PartComponentDefinition) *sketch.HelicalCurve3D {
+	t.Helper()
+	ents := part.Sketches3D().Item(0).Entities()
+	for i := len(ents) - 1; i >= 0; i-- {
+		if h, ok := ents[i].(*sketch.HelicalCurve3D); ok {
+			return h
+		}
+	}
+	t.Fatal("no helix found")
+	return nil
+}
+
+// TestSketch3DAddHelixErrors covers the helix mode/validation error paths.
+func TestSketch3DAddHelixErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	bad := []string{
+		`{"sketchIndex":0,"kind":"helical","points":[[0,0,0]],"radius":"4 mm","mode":"bogus","revolutions":3}`,
+		`{"sketchIndex":0,"kind":"helical","points":[[0,0,0]],"radius":"4 mm","mode":"pitchHeight","pitch":"0 mm","height":"30 mm"}`,
+		`{"sketchIndex":0,"kind":"helical","points":[[0,0,0]],"radius":"4 mm","mode":"pitchRevolution","pitch":"10 mm","revolutions":0}`,
+	}
+	for _, b := range bad {
+		if _, err := r.Handle(s, "sketch3d.addEntity", []byte(b)); err == nil {
+			t.Errorf("expected error for %s", b)
+		}
+	}
 }
 
 // TestSketch3DAddEntityErrors covers the malformed-input paths of the constructor.

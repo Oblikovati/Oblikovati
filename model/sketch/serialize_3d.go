@@ -46,9 +46,15 @@ type Entity3DData struct {
 	Kind         string     `yaml:"kind"`
 	Points       []int      `yaml:"points,omitempty"`
 	Radius       float64    `yaml:"radius,omitempty"`
-	Axis         [3]float64 `yaml:"axis,omitempty"` // circle plane normal
+	Axis         [3]float64 `yaml:"axis,omitempty"` // circle/helix axis (plane normal / winding axis)
 	CCW          bool       `yaml:"ccw,omitempty"`  // arc sweep direction
 	Construction bool       `yaml:"construction,omitempty"`
+
+	// Helix-only fields (kind "helical").
+	Pitch         float64 `yaml:"pitch,omitempty"`         // axial rise per revolution
+	Turns         float64 `yaml:"turns,omitempty"`         // revolution count
+	RadialPerTurn float64 `yaml:"radialPerTurn,omitempty"` // per-revolution radial growth
+	Clockwise     bool    `yaml:"clockwise,omitempty"`     // helix handedness
 }
 
 // Constraint3DRow is one geometric 3D constraint: its kind and the point operand ids in
@@ -120,6 +126,13 @@ func serializeEntity3D(e Entity) (Entity3DData, error) {
 		return Entity3DData{
 			ID: int(v.id), Kind: "arc", Points: []int{int(v.Center.id), int(v.Start.id), int(v.End.id)},
 			CCW: v.CounterClockwise, Construction: v.construction,
+		}, nil
+	case *HelicalCurve3D:
+		return Entity3DData{
+			ID: int(v.id), Kind: "helical", Points: []int{int(v.Origin.id)},
+			Radius: float64(v.StartRadius), Axis: axisTriple(v.Axis),
+			Pitch: v.AxialPerTurn, Turns: v.Turns, RadialPerTurn: v.RadialPerTurn,
+			Clockwise: v.Clockwise, Construction: v.construction,
 		}, nil
 	default:
 		return Entity3DData{}, fmt.Errorf("cannot serialize 3D entity of type %T (no codec)", e)
@@ -203,6 +216,12 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) error
 		s.addCircle3DPts(pts[0], axis, ed.Radius).SetConstruction(ed.Construction)
 	case "arc":
 		s.addArc3DPts(pts[0], pts[1], pts[2], ed.CCW).SetConstruction(ed.Construction)
+	case "helical":
+		axis, aerr := math.NewUnitVector3(math.Scalar(ed.Axis[0]), math.Scalar(ed.Axis[1]), math.Scalar(ed.Axis[2]))
+		if aerr != nil {
+			return fmt.Errorf("helical entity: axis %v: %w", ed.Axis, aerr)
+		}
+		s.addHelix3DPt(pts[0], axis, ed.Radius, ed.Pitch, ed.RadialPerTurn, ed.Turns, ed.Clockwise).SetConstruction(ed.Construction)
 	default:
 		return fmt.Errorf("unknown 3D entity kind %q", ed.Kind)
 	}
