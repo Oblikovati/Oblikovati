@@ -3,7 +3,7 @@ milestone: M22
 feature: F08
 pbi: PBI-241
 title: Include part geometry + GetReferenceKey (3D)
-status: planned
+status: done (model+API; UI in F12; GetReferenceKey surfacing TODO)
 estimate: M
 ---
 
