@@ -68,6 +68,7 @@ func (t *FilletTool) Commit(s *Session) error {
 	r := t.radius
 	t.added = feature.NewDressUpFeatures(part.Features()).AddFillet(keys, func() float64 { return r })
 	part.Recompute()
+	s.recordEdit(part, "Fillet")
 	if !t.added.Health().OK() {
 		return errors.New("fillet: " + t.added.Health().Reason)
 	}

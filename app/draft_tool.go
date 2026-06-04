@@ -72,6 +72,7 @@ func (t *DraftTool) Commit(s *Session) error {
 	rad := t.angleDeg * degToRad
 	t.added = feature.NewDressUpFeatures(part.Features()).AddDraft(keys, func() float64 { return rad })
 	part.Recompute()
+	s.recordEdit(part, "Draft")
 	if !t.added.Health().OK() {
 		return errors.New("draft: " + t.added.Health().Reason)
 	}

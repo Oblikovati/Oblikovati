@@ -5,8 +5,10 @@ package compdef
 import (
 	"fmt"
 
+	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/model/doc"
 	"github.com/Oblikovati/oblikovati/model/feature"
+	"github.com/Oblikovati/oblikovati/model/identity"
 	"github.com/Oblikovati/oblikovati/model/material"
 	"github.com/Oblikovati/oblikovati/model/param"
 	"github.com/Oblikovati/oblikovati/model/sketch"
@@ -130,6 +132,35 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		r.EndOfPart = &eop
 	}
 	return yamlcodec.Marshal(r)
+}
+
+// RestoreRecipe replaces the part's entire recipe with the snapshot in model and
+// recomputes — the undo/redo restore path. Unlike [ApplyRecipe] (which loads onto a
+// fresh, empty definition and so merges additively), RestoreRecipe first resets the
+// definition to empty in place, so applying a snapshot to an already-populated part
+// yields exactly that snapshot rather than a union. The definition pointer is
+// preserved, so the document's Content and any held reference to it stay valid.
+func (d *PartComponentDefinition) RestoreRecipe(model []byte) error {
+	d.resetRecipe()
+	return d.ApplyRecipe(model)
+}
+
+// resetRecipe returns the definition's recipe-bearing state to the empty configuration
+// a freshly constructed part has (see [NewPartComponentDefinition]), reusing the
+// definition object so external references to it remain valid. Geometry is cleared too;
+// ApplyRecipe's recompute rebuilds it.
+func (d *PartComponentDefinition) resetRecipe() {
+	d.params = param.NewParameters()
+	d.keys = identity.NewKeyManager()
+	d.sketches = sketch.NewSketches()
+	d.sketches3D = sketch.NewSketches3D()
+	d.features = feature.NewPartFeatures(d.params, d.keys)
+	d.work = feature.NewWorkGeometry()
+	d.units = param.DefaultUnitsOfMeasure()
+	d.eop = endOfPartAtEnd
+	d.assignments = material.NewAssignmentStore()
+	d.assets = material.NewAssetSet()
+	d.bodies = topo.NewSurfaceBodies()
 }
 
 // ApplyRecipe restores the part from recipe YAML and recomputes (doc.RecipeContent).

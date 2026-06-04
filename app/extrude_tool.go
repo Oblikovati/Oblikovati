@@ -159,6 +159,7 @@ func (t *ExtrudeTool) Commit(s *Session) error {
 	t.added = feature.NewExtrudeFeatures(part.Features()).
 		AddExtrude(skt, indices, t.operation, t.buildExtent(), t.taper)
 	part.Recompute()
+	s.recordEdit(part, "Extrude")
 	if !t.added.Health().OK() {
 		return errors.New("extrude: " + t.added.Health().Reason)
 	}

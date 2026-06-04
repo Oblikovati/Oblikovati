@@ -34,6 +34,7 @@ type Router struct {
 func New(ops *opregistry.Registry) *Router {
 	r := &Router{ops: ops, handlers: map[string]handlerFunc{}}
 	r.registerStandardHandlers()
+	r.registerTransactionHandlers()
 	r.registerMaterialHandlers()
 	r.registerLightingHandlers()
 	r.registerGraphicsHandlers()
@@ -63,6 +64,14 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodViewGetDisplayMode] = getDisplayMode
 	r.handlers[wire.MethodViewSetDisplayMode] = setDisplayMode
 	r.handlers[wire.MethodViewListDisplayModes] = listDisplayModes
+}
+
+// registerTransactionHandlers wires the undo/redo control methods — navigate and query
+// the active document's transaction-event stream (transaction.undo/redo/state).
+func (r *Router) registerTransactionHandlers() {
+	r.handlers[wire.MethodTransactionUndo] = undoTransaction
+	r.handlers[wire.MethodTransactionRedo] = redoTransaction
+	r.handlers[wire.MethodTransactionState] = transactionState
 }
 
 // registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and

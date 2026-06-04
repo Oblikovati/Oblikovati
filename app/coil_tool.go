@@ -79,6 +79,7 @@ func (t *CoilTool) Commit(s *Session) error {
 	t.added = feature.NewCoilFeatures(part.Features()).Add(t.profile.Sketch, t.profile.ProfileIndex, axis,
 		func() float64 { return pitch }, func() float64 { return revs }, 0, t.operation)
 	part.Recompute()
+	s.recordEdit(part, "Coil")
 	if !t.added.Health().OK() {
 		return errors.New("coil: " + t.added.Health().Reason)
 	}

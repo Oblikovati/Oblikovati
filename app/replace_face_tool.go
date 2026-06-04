@@ -85,6 +85,7 @@ func (t *ReplaceFaceTool) Commit(s *Session) error {
 	}
 	t.added = feature.NewModifyFeatures(part.Features()).AddReplaceFace(keys, t.target.Face.ReferenceKey())
 	part.Recompute()
+	s.recordEdit(part, "Replace Face")
 	if !t.added.Health().OK() {
 		return errors.New("replace face: " + t.added.Health().Reason)
 	}

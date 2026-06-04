@@ -47,6 +47,21 @@ func (h *History) Do(c Command) error {
 	return nil
 }
 
+// Record appends an already-applied command as a new undo step *without* applying
+// it, then clears the redo stream and fires one coalesced change. Use it (rather
+// than [History.Do]) for snapshot events whose mutation has already happened in the
+// model — the app edits the model, captures the before/after recipe, and records
+// the resulting [RecipeEvent]. If a transaction is open, the command joins it.
+func (h *History) Record(c Command) {
+	if h.open != nil {
+		h.open.cmds = append(h.open.cmds, c)
+		return
+	}
+	h.done = append(h.done, c)
+	h.undone = nil
+	h.notify()
+}
+
 // Len returns the number of committed undo steps.
 func (h *History) Len() int { return len(h.done) }
 

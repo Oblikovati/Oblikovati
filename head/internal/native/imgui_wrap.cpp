@@ -14,6 +14,12 @@ void obk_ig_end_main_menu_bar(void)          { ImGui::EndMainMenuBar(); }
 int  obk_ig_begin_menu(const char* label)    { return ImGui::BeginMenu(label) ? 1 : 0; }
 void obk_ig_end_menu(void)                   { ImGui::EndMenu(); }
 int  obk_ig_menu_item(const char* label)     { return ImGui::MenuItem(label) ? 1 : 0; }
+// menu_item_ex adds a right-aligned shortcut hint and an enabled flag (a disabled item
+// greys out and cannot be clicked). A "" shortcut passes NULL so none is drawn.
+int  obk_ig_menu_item_ex(const char* label, const char* shortcut, int enabled) {
+    const char* sc = (shortcut && shortcut[0]) ? shortcut : nullptr;
+    return ImGui::MenuItem(label, sc, false, enabled != 0) ? 1 : 0;
+}
 
 void obk_ig_set_next_window_pos(float x, float y)  { ImGui::SetNextWindowPos(ImVec2(x, y)); }
 void obk_ig_set_next_window_size(float w, float h) { ImGui::SetNextWindowSize(ImVec2(w, h)); }
@@ -182,6 +188,13 @@ int  obk_ig_key_shift(void)                  { return ImGui::GetIO().KeyShift ? 
 int  obk_ig_key_ctrl(void)                   { return ImGui::GetIO().KeyCtrl ? 1 : 0; }
 // escape_pressed fires once on the frame Esc is pressed (cancel the active tool).
 int  obk_ig_escape_pressed(void)             { return ImGui::IsKeyPressed(ImGuiKey_Escape) ? 1 : 0; }
+// undo/redo_pressed fire once on the frame Z / Y is pressed; the Go side gates them on
+// Ctrl (and not WantTextInput) to form the global Ctrl+Z / Ctrl+Y shortcuts.
+int  obk_ig_undo_pressed(void)               { return ImGui::IsKeyPressed(ImGuiKey_Z) ? 1 : 0; }
+int  obk_ig_redo_pressed(void)               { return ImGui::IsKeyPressed(ImGuiKey_Y) ? 1 : 0; }
+// want_text_input is true while a text/number field is being edited, so global shortcuts
+// stand down and let the field keep the keystroke (incl. its own Ctrl+Z).
+int  obk_ig_want_text_input(void)            { return ImGui::GetIO().WantTextInput ? 1 : 0; }
 float obk_ig_mouse_wheel(void)               { return ImGui::GetIO().MouseWheel; }
 float obk_ig_delta_time(void)                { return ImGui::GetIO().DeltaTime; }
 void obk_ig_mouse_delta(float* dx, float* dy) {

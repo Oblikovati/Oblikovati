@@ -80,6 +80,7 @@ func (t *ChamferTool) Commit(s *Session) error {
 	d := t.distance
 	t.added = feature.NewDressUpFeatures(part.Features()).AddChamferCorners(keys, func() float64 { return d }, t.flatCorners)
 	part.Recompute()
+	s.recordEdit(part, "Chamfer")
 	if !t.added.Health().OK() {
 		return errors.New("chamfer: " + t.added.Health().Reason)
 	}

@@ -45,6 +45,7 @@ func (s *Session) DeleteSketch(sk *sketch.Sketch) error {
 	}
 	s.selection.Clear()
 	part.Recompute()
+	s.recordEdit(part, "Delete Sketch")
 	return nil
 }
 
@@ -63,6 +64,7 @@ func (s *Session) DeleteFeature(f *feature.PartFeature) error {
 	}
 	s.selection.Clear()
 	part.Recompute()
+	s.recordEdit(part, "Delete Feature")
 	return nil
 }
 
@@ -78,5 +80,6 @@ func (s *Session) ToggleFeatureSuppressed(f *feature.PartFeature) error {
 	}
 	f.SetSuppressed(!f.Suppressed())
 	part.Recompute()
+	s.recordEdit(part, "Suppress Feature")
 	return nil
 }

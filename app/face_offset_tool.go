@@ -67,6 +67,7 @@ func (t *FaceOffsetTool) Commit(s *Session) error {
 	}
 	t.added = feature.NewModifyFeatures(part.Features()).AddFaceOffset(keys, t.distance)
 	part.Recompute()
+	s.recordEdit(part, "Offset Face")
 	if !t.added.Health().OK() {
 		return errors.New("offset face: " + t.added.Health().Reason)
 	}

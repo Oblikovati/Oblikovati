@@ -85,6 +85,7 @@ func (t *RevolveTool) Commit(s *Session) error {
 	t.added = feature.NewRevolveFeatures(part.Features()).
 		Add(t.profile.Sketch, t.profile.ProfileIndex, axis, func() float64 { return angle }, t.operation)
 	part.Recompute()
+	s.recordEdit(part, "Revolve")
 	if !t.added.Health().OK() {
 		return errors.New("revolve: " + t.added.Health().Reason)
 	}

@@ -62,6 +62,7 @@ func (t *DeleteFaceTool) Commit(s *Session) error {
 	}
 	t.added = feature.NewModifyFeatures(part.Features()).AddDeleteFace(keys)
 	part.Recompute()
+	s.recordEdit(part, "Delete Face")
 	if !t.added.Health().OK() {
 		return errors.New("delete face: " + t.added.Health().Reason)
 	}

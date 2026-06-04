@@ -40,8 +40,9 @@ func (s *Session) CreateMidplaneWorkPlane() (*feature.WorkPlane, error) {
 	if len(planes) < 2 {
 		return nil, errors.New("app: select two work planes to make a midplane between them")
 	}
-	wp := part.WorkPlanes().AddByTwoPlanes(planes[0].Key(), planes[1].Key())
-	return finishWorkPlane(part, wp), nil
+	wp := finishWorkPlane(part, part.WorkPlanes().AddByTwoPlanes(planes[0].Key(), planes[1].Key()))
+	s.recordEdit(part, "Work Plane")
+	return wp, nil
 }
 
 // uniqueWorkPlaneName returns "Work Plane{n}" with the smallest n not already used by a
@@ -122,7 +123,9 @@ func (s *Session) CreateThreePointWorkPlane() (*feature.WorkPlane, error) {
 	if len(refs) < 3 {
 		return nil, errors.New("app: select three points (datum points or model vertices) for a three-point plane")
 	}
-	return finishWorkPlane(part, part.WorkPlanes().AddByThreePoints(refs[0], refs[1], refs[2])), nil
+	wp := finishWorkPlane(part, part.WorkPlanes().AddByThreePoints(refs[0], refs[1], refs[2]))
+	s.recordEdit(part, "Work Plane")
+	return wp, nil
 }
 
 // CreateNormalToAxisWorkPlane adds a work plane through the selected point, normal to the
@@ -136,7 +139,9 @@ func (s *Session) CreateNormalToAxisWorkPlane() (*feature.WorkPlane, error) {
 	if len(axes) < 1 || len(refs) < 1 {
 		return nil, errors.New("app: select an axis and a point for a normal-to-axis plane")
 	}
-	return finishWorkPlane(part, part.WorkPlanes().AddByNormalToCurve(axes[0].Key(), refs[0])), nil
+	wp := finishWorkPlane(part, part.WorkPlanes().AddByNormalToCurve(axes[0].Key(), refs[0]))
+	s.recordEdit(part, "Work Plane")
+	return wp, nil
 }
 
 // CreateTangentWorkPlane adds a work plane parallel to the selected plane and tangent to
@@ -151,8 +156,9 @@ func (s *Session) CreateTangentWorkPlane() (*feature.WorkPlane, error) {
 	if base == nil || !ok {
 		return nil, errors.New("app: select a plane and a face for a tangent plane")
 	}
-	wp := part.WorkPlanes().AddByPlaneAndTangent(base.Key(), feature.FaceRef(face.ReferenceKey()))
-	return finishWorkPlane(part, wp), nil
+	wp := finishWorkPlane(part, part.WorkPlanes().AddByPlaneAndTangent(base.Key(), feature.FaceRef(face.ReferenceKey())))
+	s.recordEdit(part, "Work Plane")
+	return wp, nil
 }
 
 // finishWorkPlane gives a freshly created datum a unique browser name and recomputes the

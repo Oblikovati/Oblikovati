@@ -92,6 +92,7 @@ func (s *Session) FinishSketch() error {
 	s.ExitSketch()
 	if part, err := activePart(s); err == nil {
 		part.Recompute()
+		s.recordEdit(part, "Sketch")
 	}
 	return nil
 }

@@ -88,6 +88,7 @@ func (t *SweepTool) Commit(s *Session) error {
 	t.added = feature.NewSweepFeatures(part.Features()).
 		Add(t.profile.Sketch, t.profile.ProfileIndex, path3d, func() float64 { return twist }, t.operation)
 	part.Recompute()
+	s.recordEdit(part, "Sweep")
 	if !t.added.Health().OK() {
 		return errors.New("sweep: " + t.added.Health().Reason)
 	}

@@ -65,6 +65,7 @@ func (s *Session) FinishSketch3D() error {
 	s.ExitSketch3D()
 	if part, err := activePart(s); err == nil {
 		part.Recompute()
+		s.recordEdit(part, "3D Sketch")
 	}
 	return nil
 }
