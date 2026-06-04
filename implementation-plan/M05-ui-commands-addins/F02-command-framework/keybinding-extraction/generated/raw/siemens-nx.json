@@ -1,0 +1,586 @@
+[
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "New",
+    "chord_raw": "Ctrl + N",
+    "chord": "Ctrl+N",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "Open",
+    "chord_raw": "Ctrl + O",
+    "chord": "Ctrl+O",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "Save",
+    "chord_raw": "Ctrl + S",
+    "chord": "Ctrl+S",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "Save As",
+    "chord_raw": "Ctrl + Shift + S",
+    "chord": "Ctrl+Shift+S",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "Plot",
+    "chord_raw": "Ctrl + P",
+    "chord": "Ctrl+P",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "Execute Grip",
+    "chord_raw": "Ctrl + G",
+    "chord": "Ctrl+G",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "Execute Debug Grip",
+    "chord_raw": "Ctrl + Shift + G",
+    "chord": "Ctrl+Shift+G",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Siemens NX File Menu Shortcuts",
+    "action": "Execute NX Open",
+    "chord_raw": "Ctrl + U",
+    "chord": "Ctrl+U",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Undo",
+    "chord_raw": "Ctrl + Z",
+    "chord": "Ctrl+Z",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Redo",
+    "chord_raw": "Ctrl + Y",
+    "chord": "Ctrl+Y",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Cut",
+    "chord_raw": "Ctrl + X",
+    "chord": "Ctrl+X",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Copy",
+    "chord_raw": "Ctrl + C",
+    "chord": "Ctrl+C",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Paste",
+    "chord_raw": "Ctrl + V",
+    "chord": "Ctrl+V",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Delete",
+    "chord_raw": "Ctrl + D",
+    "chord": "Ctrl+D",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Feature on Top Priority",
+    "chord_raw": "Shift + F",
+    "chord": "Shift+F",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Face on Top Priority",
+    "chord_raw": "Shift + G",
+    "chord": "Shift+G",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Body on Top Priority",
+    "chord_raw": "Shift + B",
+    "chord": "Shift+B",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Edge on Top Priority",
+    "chord_raw": "Shift + E",
+    "chord": "Shift+E",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Component on Top Priority",
+    "chord_raw": "Shift + C",
+    "chord": "Shift+C",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Select All",
+    "chord_raw": "Ctrl + A",
+    "chord": "Ctrl+A",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Object Display",
+    "chord_raw": "Ctrl + J",
+    "chord": "Ctrl+J",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Show or Hide",
+    "chord_raw": "Ctrl + W",
+    "chord": "Ctrl+W",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Immediate Hide",
+    "chord_raw": "Ctrl + Shift + I",
+    "chord": "Ctrl+Shift+I",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Hide",
+    "chord_raw": "Ctrl + B",
+    "chord": "Ctrl+B",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Show",
+    "chord_raw": "Ctrl + Shift + K",
+    "chord": "Ctrl+Shift+K",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Show All",
+    "chord_raw": "Ctrl + Shift + U",
+    "chord": "Ctrl+Shift+U",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Invert Shown and Hidden",
+    "chord_raw": "Ctrl + Shift + B",
+    "chord": "Ctrl+Shift+B",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit Menu Shortcuts",
+    "action": "Move Object",
+    "chord_raw": "Ctrl + T",
+    "chord": "Ctrl+T",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Fit",
+    "chord_raw": "Ctrl + F",
+    "chord": "Ctrl+F",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Zoom",
+    "chord_raw": "Ctrl + Shift + Z",
+    "chord": "Ctrl+Shift+Z",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Rotate",
+    "chord_raw": "Ctrl + R",
+    "chord": "Ctrl+R",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Edit Section",
+    "chord_raw": "Ctrl + H",
+    "chord": "Ctrl+H",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Ray Traced Studio",
+    "chord_raw": "Ctrl + Shift + W",
+    "chord": "Ctrl+Shift+W",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "High Quality Image",
+    "chord_raw": "Ctrl + Shift + H",
+    "chord": "Ctrl+Shift+H",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "New Layout",
+    "chord_raw": "Ctrl + Shift + N",
+    "chord": "Ctrl+Shift+N",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Open Layout",
+    "chord_raw": "Ctrl + Shift + O",
+    "chord": "Ctrl+Shift+O",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Fit All Views Layout",
+    "chord_raw": "Ctrl + Shift + F",
+    "chord": "Ctrl+Shift+F",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Information Window",
+    "chord_raw": "Ctrl + Shift + S",
+    "chord": "Ctrl+Shift+S",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Current Dialog Box",
+    "chord_raw": "F3",
+    "chord": "F3",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Move Clip Left",
+    "chord_raw": "Shift + F1",
+    "chord": "Shift+F1",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Full Screen",
+    "chord_raw": "Alt + Enter",
+    "chord": "Alt+Enter",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Maximize Resource Bar Tab",
+    "chord_raw": "F11",
+    "chord": "F11",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View Menu Shortcuts",
+    "action": "Reset Orientation",
+    "chord_raw": "Ctrl + F8",
+    "chord": "Ctrl+F8",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Expressions",
+    "chord_raw": "Ctrl + E",
+    "chord": "Ctrl+E",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Play Journal",
+    "chord_raw": "Alt + F8",
+    "chord": "Alt+F8",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Edit Journal",
+    "chord_raw": "Alt + F11",
+    "chord": "Alt+F11",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Macro-Start Record",
+    "chord_raw": "Ctrl + Shift + R",
+    "chord": "Ctrl+Shift+R",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Macro-Playback",
+    "chord_raw": "Ctrl + Shift + P",
+    "chord": "Ctrl+Shift+P",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Record Movie",
+    "chord_raw": "Alt + F5",
+    "chord": "Alt+F5",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Pause Movie",
+    "chord_raw": "Alt + F6",
+    "chord": "Alt+F6",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Stop Movie",
+    "chord_raw": "Alt + F7",
+    "chord": "Alt+F7",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools Menu Shortcuts",
+    "action": "Customize",
+    "chord_raw": "Ctrl + 1",
+    "chord": "Ctrl+1",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Application Menu Shortcuts",
+    "action": "Modelling",
+    "chord_raw": "Ctrl + M",
+    "chord": "Ctrl+M",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Application Menu Shortcuts",
+    "action": "Shape Studio",
+    "chord_raw": "Ctrl + Alt + S",
+    "chord": "Ctrl+Alt+S",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Application Menu Shortcuts",
+    "action": "Drafting",
+    "chord_raw": "Ctrl + Shift + D",
+    "chord": "Ctrl+Shift+D",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Application Menu Shortcuts",
+    "action": "Manufaturing",
+    "chord_raw": "Ctrl + Alt + M",
+    "chord": "Ctrl+Alt+M",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Application Menu Shortcuts",
+    "action": "Inspection",
+    "chord_raw": "Ctrl + Alt + I",
+    "chord": "Ctrl+Alt+I",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Application Menu Shortcuts",
+    "action": "Sheet Metal",
+    "chord_raw": "Ctrl + Shift + M",
+    "chord": "Ctrl+Shift+M",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Application Menu Shortcuts",
+    "action": "Flexible Printed Circuit Design",
+    "chord_raw": "Ctrl + Alt + P",
+    "chord": "Ctrl+Alt+P",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "Layer Settings",
+    "chord_raw": "Ctrl + L",
+    "chord": "Ctrl+L",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "WCS Display",
+    "chord_raw": "W",
+    "chord": "W",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "Finish Sketch",
+    "chord_raw": "Ctrl + Q",
+    "chord": "Ctrl+Q",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "Extrude",
+    "chord_raw": "X",
+    "chord": "X",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "Normal view to Sketch",
+    "chord_raw": "Shift + F8",
+    "chord": "Shift+F8",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "Move in Orthographic Direction",
+    "chord_raw": "Drag + Shift",
+    "chord": "Shift",
+    "gesture": true,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "Copy in another Position",
+    "chord_raw": "Drag + Ctrl",
+    "chord": "Ctrl",
+    "gesture": true,
+    "search": ""
+  },
+  {
+    "category": "Format Menu Shortcuts",
+    "action": "Copy Along Orthographic Direction",
+    "chord_raw": "Drag + Shift + Ctrl",
+    "chord": "Ctrl+Shift",
+    "gesture": true,
+    "search": ""
+  },
+  {
+    "category": "Others Shortcuts",
+    "action": "Context Help",
+    "chord_raw": "F1",
+    "chord": "F1",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others Shortcuts",
+    "action": "User Interface",
+    "chord_raw": "Ctrl + 2",
+    "chord": "Ctrl+2",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others Shortcuts",
+    "action": "Visualization",
+    "chord_raw": "Ctrl + Shift + V",
+    "chord": "Ctrl+Shift+V",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others Shortcuts",
+    "action": "Selection",
+    "chord_raw": "Ctrl + Shift + T",
+    "chord": "Ctrl+Shift+T",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others Shortcuts",
+    "action": "Object",
+    "chord_raw": "Ctrl + Shift + J",
+    "chord": "Ctrl+Shift+J",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others Shortcuts",
+    "action": "Refresh curvature Graphs",
+    "chord_raw": "Ctrl + Shift + C",
+    "chord": "Ctrl+Shift+C",
+    "gesture": false,
+    "search": ""
+  }
+]

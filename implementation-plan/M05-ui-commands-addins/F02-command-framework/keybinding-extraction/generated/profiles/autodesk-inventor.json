@@ -1,0 +1,400 @@
+{
+  "vendor": "autodesk-inventor",
+  "bindings": {
+    "kInsertBalloonAllCommand": {
+      "chord": "",
+      "alias": "BA",
+      "source": "Auto Balloon"
+    },
+    "kCreateAutoDimCommand": {
+      "chord": "",
+      "alias": "AD",
+      "source": "Auto Dimension"
+    },
+    "kCreateAuxiliaryViewCommand": {
+      "chord": "",
+      "alias": "AV",
+      "source": "Auxiliary View"
+    },
+    "kCreateBaselineDimensionCommand": {
+      "chord": "",
+      "alias": "BD",
+      "source": "Baseline Dimension"
+    },
+    "kCreateBendCommand": {
+      "chord": "",
+      "alias": "BE",
+      "source": "Bend"
+    },
+    "kCreateBrokenViewCommand": {
+      "chord": "",
+      "alias": "BRV",
+      "source": "Break"
+    },
+    "kCreateBreakoutViewCommand": {
+      "chord": "",
+      "alias": "BO",
+      "source": "Break Out"
+    },
+    "kCreateCaterpillarCommand": {
+      "chord": "",
+      "alias": "CAT",
+      "source": "Caterpillar"
+    },
+    "kCreateCenterMarkCommand": {
+      "chord": "",
+      "alias": "CM",
+      "source": "Center Mark"
+    },
+    "kCenterPointCircleCommand": {
+      "chord": "",
+      "alias": "CE",
+      "source": "Center Point Circle"
+    },
+    "kCreateCenterLineCommand": {
+      "chord": "",
+      "alias": "CL",
+      "source": "Centerline"
+    },
+    "kCreateCenterLineBisectorCommand": {
+      "chord": "",
+      "alias": "CB",
+      "source": "Centerline Bisector"
+    },
+    "kCreateCircularPatternCommand": {
+      "chord": "",
+      "alias": "CP",
+      "source": "Circular Pattern"
+    },
+    "kCreateContourFlangeCommand": {
+      "chord": "",
+      "alias": "CF",
+      "source": "Contour Flange"
+    },
+    "kCreateCornerChamferCommand": {
+      "chord": "",
+      "alias": "CC",
+      "source": "Corner Chamfer"
+    },
+    "kCreateCornerRoundCommand": {
+      "chord": "",
+      "alias": "CR",
+      "source": "Corner Round"
+    },
+    "kCreateCornerSeamCommand": {
+      "chord": "",
+      "alias": "CS",
+      "source": "Corner Seam"
+    },
+    "kCreateFoldCommand": {
+      "chord": "",
+      "alias": "CF",
+      "source": "Create Fold"
+    },
+    "kInsertDatumIdentifierCommand": {
+      "chord": "",
+      "alias": "DI",
+      "source": "Datum Identifier Symbol"
+    },
+    "kCreateDetailViewCommand": {
+      "chord": "",
+      "alias": "DV",
+      "source": "Detail View"
+    },
+    "kEllipseCommand": {
+      "chord": "",
+      "alias": "EL",
+      "source": "Ellipse"
+    },
+    "kSketchExtendCommand": {
+      "chord": "",
+      "alias": "EX",
+      "source": "Extend"
+    },
+    "kInsertFeatureIdentifierCommand": {
+      "chord": "",
+      "alias": "FI",
+      "source": "Feature Identifier Symbol"
+    },
+    "kCreateFilletCommand": {
+      "chord": "F",
+      "alias": "FI",
+      "source": "Fillet"
+    },
+    "kConsFixCommand": {
+      "chord": "X",
+      "alias": "CF",
+      "source": "Fixed Constraint"
+    },
+    "kCreateGroundedWorkPointCommand": {
+      "chord": ";",
+      "alias": "WT",
+      "source": "Grounded Work Point"
+    },
+    "kCreateHemCommand": {
+      "chord": "",
+      "alias": "HEM",
+      "source": "Hem"
+    },
+    "kCreateHoleCommand": {
+      "chord": "",
+      "alias": "HN",
+      "source": "Hole"
+    },
+    "kCreateSelectedHoleTableCommand": {
+      "chord": "",
+      "alias": "HTS",
+      "source": "Hole Table-Selection"
+    },
+    "kCreateHoleTableFromViewCommand": {
+      "chord": "",
+      "alias": "HTV",
+      "source": "Hole Table-View"
+    },
+    "kIncludeGeometry3DCommand": {
+      "chord": "",
+      "alias": "IG",
+      "source": "Include Geometry"
+    },
+    "kInsertLeaderTextCommand": {
+      "chord": "",
+      "alias": "LE",
+      "source": "Leader Text"
+    },
+    "kCreateLoftCommand": {
+      "chord": "",
+      "alias": "LO",
+      "source": "Loft"
+    },
+    "kCreateMirrorCommand": {
+      "chord": "",
+      "alias": "MI",
+      "source": "Mirror"
+    },
+    "kViewWireframeCommand": {
+      "chord": "N",
+      "alias": "NP",
+      "source": "No Shading"
+    },
+    "kCreateSingleOrdinateDimCommand": {
+      "chord": "",
+      "alias": "OD",
+      "source": "Ordinate Dimension"
+    },
+    "kInsertPartsListCommand": {
+      "chord": "",
+      "alias": "PL",
+      "source": "Parts List"
+    },
+    "kPatternComponentCommand": {
+      "chord": "",
+      "alias": "PC",
+      "source": "Pattern Component"
+    },
+    "kAddPointCommand": {
+      "chord": "",
+      "alias": "PO",
+      "source": "Point, Center Point"
+    },
+    "kCreateProjectedViewCommand": {
+      "chord": "",
+      "alias": "PV",
+      "source": "Projected View"
+    },
+    "kCreateRectPatternCommand": {
+      "chord": "",
+      "alias": "RP",
+      "source": "Rectangular Pattern"
+    },
+    "kReplaceAllComponentsCommand": {
+      "chord": "",
+      "alias": "RA",
+      "source": "Replace All"
+    },
+    "kCreateRevisionTableCommand": {
+      "chord": "",
+      "alias": "RTB",
+      "source": "Revision Table"
+    },
+    "kCreateRevisionTagCommand": {
+      "chord": "",
+      "alias": "RT",
+      "source": "Revision Tag"
+    },
+    "kRotateComponentCommand": {
+      "chord": "G",
+      "alias": "RO",
+      "source": "Rotate Component"
+    },
+    "kCreateShellCommand": {
+      "chord": "",
+      "alias": "SH",
+      "source": "Shell"
+    },
+    "kViewShadedCommand": {
+      "chord": "",
+      "alias": "SM",
+      "source": "Smooth Shading"
+    },
+    "kInsertSurfaceTextureCommand": {
+      "chord": "",
+      "alias": "ST",
+      "source": "Surface Texture Symbol"
+    },
+    "kCreateSweepCommand": {
+      "chord": "",
+      "alias": "CTRL-Y",
+      "source": "Sweep"
+    },
+    "kInsertTableCommand": {
+      "chord": "",
+      "alias": "TB",
+      "source": "Table"
+    },
+    "kTangentCircleCommand": {
+      "chord": "",
+      "alias": "TC",
+      "source": "Tangent Circle"
+    },
+    "kCreateThreadCommand": {
+      "chord": "",
+      "alias": "TH",
+      "source": "Thread"
+    },
+    "kThreePointArcCommand": {
+      "chord": "",
+      "alias": "A3",
+      "source": "Three Point Arc"
+    },
+    "kThreePointRectangleCommand": {
+      "chord": "",
+      "alias": "REC3",
+      "source": "Three Point Rectangle"
+    },
+    "kTwoPointRectangleCommand": {
+      "chord": "",
+      "alias": "REC",
+      "source": "Two Point Rectangle"
+    },
+    "kCreateWeldSymbolCommand": {
+      "chord": "",
+      "alias": "WS",
+      "source": "Welding Symbol"
+    },
+    "kInsertBalloonCommand": {
+      "chord": "B",
+      "alias": "",
+      "source": "Balloon, Bom"
+    },
+    "kPlaceConstraintCommand": {
+      "chord": "C",
+      "alias": "",
+      "source": "Constraints"
+    },
+    "kCreateComponentCommand": {
+      "chord": "N",
+      "alias": "",
+      "source": "Create Component"
+    },
+    "kInsertFeatureControlFrameCommand": {
+      "chord": "F",
+      "alias": "",
+      "source": "Feature Control Frame"
+    },
+    "kSketchGeneralDimCommand": {
+      "chord": "D",
+      "alias": "",
+      "source": "General Dimension"
+    },
+    "kMeasureCommand": {
+      "chord": "M",
+      "alias": "",
+      "source": "Measure Distance"
+    },
+    "kMoveComponentCommand": {
+      "chord": "V",
+      "alias": "",
+      "source": "Move Component"
+    },
+    "kSketchOffsetCommand": {
+      "chord": "O",
+      "alias": "",
+      "source": "Offset"
+    },
+    "kCreateOrdinateDimensionCommand": {
+      "chord": "O",
+      "alias": "",
+      "source": "Ordinate Dimension Set"
+    },
+    "kPanCommand": {
+      "chord": "F2",
+      "alias": "",
+      "source": "Pan"
+    },
+    "kPlaceComponentCommand": {
+      "chord": "P",
+      "alias": "",
+      "source": "Place Component"
+    },
+    "kRotateCommand": {
+      "chord": "F4",
+      "alias": "",
+      "source": "Rotate"
+    },
+    "kShowConstraintsCommand": {
+      "chord": "F8",
+      "alias": "",
+      "source": "Show All Constraints"
+    },
+    "kCreateTextCommand": {
+      "chord": "T",
+      "alias": "",
+      "source": "Text"
+    },
+    "kSketchTrimCommand": {
+      "chord": "X",
+      "alias": "",
+      "source": "Trim"
+    },
+    "kTweakComponentsCommand": {
+      "chord": "T",
+      "alias": "",
+      "source": "Tweak Components"
+    },
+    "kConsVerticalCommand": {
+      "chord": "I",
+      "alias": "",
+      "source": "Vertical"
+    },
+    "kCreateWorkAxisCommand": {
+      "chord": "/",
+      "alias": "",
+      "source": "Work Axis"
+    },
+    "kCreateWorkPlaneCommand": {
+      "chord": "]",
+      "alias": "",
+      "source": "Work Plane"
+    },
+    "kCreateWorkPointCommand": {
+      "chord": ".",
+      "alias": "",
+      "source": "Work Point"
+    },
+    "kZoomAllCommand": {
+      "chord": "HOME",
+      "alias": "",
+      "source": "Zoom All"
+    },
+    "kZoomSelectCommand": {
+      "chord": "END",
+      "alias": "",
+      "source": "Zoom Selected"
+    },
+    "kZoomWindowCommand": {
+      "chord": "Z",
+      "alias": "",
+      "source": "Zoom Window"
+    }
+  }
+}

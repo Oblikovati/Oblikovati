@@ -1,0 +1,10 @@
+{
+  "vendor": "solidedge",
+  "bindings": {
+    "kFileSaveCommand": {
+      "chord": "Ctrl+S",
+      "alias": "",
+      "source": "Save"
+    }
+  }
+}
