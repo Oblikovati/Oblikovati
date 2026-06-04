@@ -6,6 +6,9 @@ package native
 
 import (
 	"fmt"
+	"image"
+	"image/png"
+	"os"
 
 	"github.com/Oblikovati/oblikovati/head/internal/envimage"
 	"github.com/Oblikovati/oblikovati/head/viewport"
@@ -53,13 +56,40 @@ func RunViewportSmoke(maxFrames int) int {
 		w.SetViewportSkybox(identity4x4(), true) // identity is its own inverse; exercises the sky pass
 	}
 	tri, idx := smokeTriangle()
+	// Enable the sun shadow map (identity light matrix is enough to exercise the pass).
+	w.SetViewportShadow(identity4x4(), true, 0.6, 0.4)
 	for i := 0; i < maxFrames && !w.ShouldClose(); i++ {
 		w.BeginFrame()
 		w.RenderViewport(1280, 720, identity4x4(), []float32{0, 0, 3},
 			tri, 3, idx, nil, 0, nil, nil, 0, nil, nil, 0, nil)
 		w.EndFrame(0.10, 0.10, 0.12)
 	}
+	if path := os.Getenv("OBK_SMOKE_PNG"); path != "" {
+		if err := saveViewportPNG(w, path); err != nil {
+			fmt.Fprintf(os.Stderr, "smoke: save png: %v\n", err)
+		}
+	}
 	return 0
+}
+
+// saveViewportPNG reads the offscreen color image back and writes it as a PNG (swapping the
+// surface's BGRA byte order to RGBA), so the rendered lighting/IBL/shadow result can be
+// inspected headlessly.
+func saveViewportPNG(w *Window, path string) error {
+	px, width, height, ok := w.ReadbackViewport()
+	if !ok {
+		return fmt.Errorf("readback unavailable")
+	}
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	for i := 0; i+4 <= len(px); i += 4 {
+		img.Pix[i+0], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = px[i+2], px[i+1], px[i+0], 255
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return png.Encode(f, img)
 }
 
 // smokeTriangle returns one metallic PBR triangle in the 16-float vertex layout (mode 2 =

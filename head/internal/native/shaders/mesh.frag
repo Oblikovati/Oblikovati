@@ -20,13 +20,18 @@ struct GpuLight {
     vec4 pos;
 };
 layout(std140, set = 0, binding = 0) uniform Scene {
-    vec4     header; // x=ambience y=brightness z=exposure w=lightCount
+    vec4     header;  // x=ambience y=brightness z=exposure w=lightCount
     GpuLight lights[8];
-    vec4     env;    // x=enabled y=rotation(rad) z=iblIntensity w=maxLod
+    vec4     env;     // x=enabled y=rotation(rad) z=iblIntensity w=maxLod
+    mat4     lightVP; // light-space view-projection for the sun shadow map
+    vec4     shadow;  // x=enabled y=density z=softness w=texelSize
 } scene;
 // Equirectangular HDR environment (image-based lighting). Bound to a 1×1 default until an
 // environment is set, gated by scene.env.x (ADR-0026 §3,§4).
 layout(set = 0, binding = 1) uniform sampler2D envMap;
+// Sun shadow map (depth from the primary light's POV). 1×1 default until shadows are enabled,
+// gated by scene.shadow.x (ADR-0026 §6).
+layout(set = 0, binding = 2) uniform sampler2D shadowMap;
 
 layout(location = 0) in vec3      vNormal;
 layout(location = 1) in vec4      vColor;
@@ -113,6 +118,28 @@ void lightDirAndRadiance(GpuLight lt, float brightness, out vec3 L, out vec3 rad
     radiance = lt.color.rgb * lt.color.w * brightness * atten;
 }
 
+// shadowVisibility returns 1 (lit) → 0 (fully shadowed) for a world point, via 3×3 PCF against
+// the sun shadow map. Points outside the light frustum are lit. softness widens the PCF kernel
+// (ADR-0026 §6).
+float shadowVisibility(vec3 worldPos) {
+    vec4 lp = scene.lightVP * vec4(worldPos, 1.0);
+    vec3 proj = lp.xyz / lp.w;
+    vec2 uv = proj.xy * 0.5 + 0.5;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || proj.z > 1.0) {
+        return 1.0;
+    }
+    float bias  = 0.0025;
+    float step  = scene.shadow.w * (1.0 + scene.shadow.z * 3.0); // texel size widened by softness
+    float vis   = 0.0;
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            float d = texture(shadowMap, uv + vec2(float(x), float(y)) * step).r;
+            vis += (proj.z - bias > d) ? 0.0 : 1.0;
+        }
+    }
+    return vis / 9.0;
+}
+
 // pbr is the GGX metallic-roughness BRDF summed over the scene lights, with an analytic ambient
 // (the image-based-lighting stand-in PBI-304 / Phase 4 will replace) scaled by ambience, then
 // exposure + ACES tone map.
@@ -127,9 +154,18 @@ vec4 pbr(vec3 N, vec3 V, vec3 albedo, float metal, float rough, vec3 emissive, f
     int   count      = int(scene.header.w);
     float brightness = scene.header.y;
     vec3  color      = vec3(0.0);
+    // The primary light (index 0) casts the sun shadow map; its contribution is attenuated in
+    // shadowed areas by the shadow density.
+    float keyShadow = 1.0;
+    if (scene.shadow.x > 0.5 && count > 0) {
+        keyShadow = mix(1.0, shadowVisibility(vWorldPos), scene.shadow.y);
+    }
     for (int i = 0; i < count && i < 8; i++) {
         vec3 L, radiance;
         lightDirAndRadiance(scene.lights[i], brightness, L, radiance);
+        if (i == 0) {
+            radiance *= keyShadow;
+        }
         vec3  H   = normalize(L + V);
         float NoL = max(dot(N, L), 0.0);
         float NoH = max(dot(N, H), 0.0);

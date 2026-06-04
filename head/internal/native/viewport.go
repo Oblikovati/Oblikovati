@@ -10,6 +10,8 @@ package native
 void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* frag, int flen,
                            const uint32_t* skyVert, int skyVLen, const uint32_t* skyFrag, int skyFLen);
 void     obk_viewport_set_skybox(void* h, const float* invVP, int show);
+void     obk_viewport_set_shadow(void* h, const float* lightVP, int enabled, float density,
+                                 float softness);
 void     obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* camPos,
                              const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                              const float* occV, int occVC, const uint32_t* occIdx, int occIC,
@@ -20,6 +22,7 @@ void     obk_viewport_set_lighting(void* h, const float* data, int n);
 void     obk_viewport_set_environment(void* h, const float* data, const int* dims, int levels,
                                       float rotation, float intensity);
 uint64_t obk_viewport_texture(void* h);
+int      obk_viewport_readback(void* h, unsigned char* out, int cap, int* w, int* hh);
 
 void obk_ig_image(unsigned long long tex, float w, float h);
 void obk_ig_content_region_avail(float* w, float* h);
@@ -102,8 +105,36 @@ func (w *Window) SetViewportEnvironment(data []float32, dims []int32, rotation, 
 		C.float(rotation), C.float(intensity))
 }
 
+// SetViewportShadow enables the sun shadow map with the given column-major light-space matrix
+// (16 floats), shadow density and softness ([0,1]). A nil/short matrix or enabled=false turns
+// shadows off (the scene renders unshadowed). Takes effect next RenderViewport.
+func (w *Window) SetViewportShadow(lightVP []float32, enabled bool, density, softness float32) {
+	if !enabled || len(lightVP) != 16 {
+		C.obk_viewport_set_shadow(w.handle, nil, 0, 0, 0)
+		return
+	}
+	C.obk_viewport_set_shadow(w.handle, floatPtr(lightVP), 1, C.float(density), C.float(softness))
+}
+
 // ViewportTexture returns the ImGui texture handle for the last rendered frame.
 func (w *Window) ViewportTexture() uint64 { return uint64(C.obk_viewport_texture(w.handle)) }
+
+// ReadbackViewport copies the offscreen color image to host memory, returning the raw 8-bit
+// pixels (the surface's channel order, typically BGRA), width and height, and ok=false if the
+// target is not ready. For headless verification/screenshots, not the per-frame path.
+func (w *Window) ReadbackViewport() (pixels []byte, width, height int, ok bool) {
+	var cw, ch C.int
+	if C.obk_viewport_readback(w.handle, nil, 0, &cw, &ch) != 0 || cw <= 0 || ch <= 0 {
+		return nil, 0, 0, false
+	}
+	buf := make([]byte, int(cw)*int(ch)*4)
+	n := C.obk_viewport_readback(w.handle, (*C.uchar)(unsafe.Pointer(&buf[0])), C.int(len(buf)),
+		&cw, &ch)
+	if int(n) != len(buf) {
+		return nil, 0, 0, false
+	}
+	return buf, int(cw), int(ch), true
+}
 
 // Image draws a texture (e.g. the viewport) at the given size in the current window.
 func Image(tex uint64, w, h float32) {

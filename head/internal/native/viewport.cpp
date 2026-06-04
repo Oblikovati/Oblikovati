@@ -17,12 +17,17 @@ bool ok(VkResult r) { return r == VK_SUCCESS; }
 constexpr uint32_t kVertexFloats = 16;
 constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 
-// Scene-lighting UBO size in floats: a vec4 header + 8 lights × 3 vec4 + a vec4 environment
-// block. The first 100 floats match viewport.PackLighting; the trailing env vec4 (enabled,
-// rotation, iblIntensity, maxLod) is written by obk_viewport_set_environment — ADR-0026 §1,§3.
-constexpr uint32_t kSceneFloats = 4 + 8 * 12 + 4;
-constexpr uint32_t kEnvBlock = 4 + 8 * 12; // float offset of the env vec4 in sceneData
+// Scene UBO layout in floats (std140), matching the Scene block in mesh.frag:
+//   [0..99]   header (vec4) + 8 lights (3 vec4 each) — written by viewport.PackLighting
+//   [100..103] env vec4    (enabled, rotation, iblIntensity, maxLod) — set_environment
+//   [104..119] lightVP mat4 (sun shadow light-space matrix)          — set_shadow
+//   [120..123] shadow vec4  (enabled, density, softness, texelSize)  — set_shadow
+constexpr uint32_t kEnvBlock = 4 + 8 * 12; // 100
+constexpr uint32_t kShadowVP = kEnvBlock + 4; // 104
+constexpr uint32_t kShadowParams = kShadowVP + 16; // 120
+constexpr uint32_t kSceneFloats = kShadowParams + 4; // 124
 constexpr VkFormat kEnvFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+constexpr uint32_t kShadowDim = 2048; // sun shadow map resolution
 
 // camPosLit packs the camera eye (xyz, world space, for the PBR view vector) and the lit flag
 // (w: 0 = line/flat, 1 = surface) into one vec4 so the push block stays 16-byte aligned.
@@ -75,6 +80,16 @@ struct Viewport {
     // environment background this frame, set per frame by obk_viewport_set_skybox.
     float           skyboxInvVP[16] = {0};
     bool            skyboxShow = false;
+
+    // Sun shadow map (descriptor binding 2): a depth image rendered from the primary light's
+    // POV each frame when shadows are enabled, sampled with PCF in the surface shader.
+    VkRenderPass    shadowPass = VK_NULL_HANDLE;
+    VkImage         shadowImage = VK_NULL_HANDLE;
+    VkDeviceMemory  shadowMem = VK_NULL_HANDLE;
+    VkImageView     shadowView = VK_NULL_HANDLE;
+    VkSampler       shadowSampler = VK_NULL_HANDLE;
+    VkFramebuffer   shadowFB = VK_NULL_HANDLE;
+    VkPipeline      shadowPipeline = VK_NULL_HANDLE;
 
     VkCommandPool   cmdPool = VK_NULL_HANDLE;
     VkCommandBuffer cmd = VK_NULL_HANDLE;
@@ -374,6 +389,7 @@ void upload(HeadContext* c, GpuBuffer* b, VkBufferUsageFlags usage, const void* 
         vkBindBufferMemory(c->device, b->buffer, b->memory, 0);
         b->size = bytes;
     }
+    if (!data) return; // allocation only (e.g. a readback staging buffer filled by the GPU)
     void* mapped = nullptr;
     vkMapMemory(c->device, b->memory, 0, bytes, 0, &mapped);
     std::memcpy(mapped, data, (size_t)bytes);
@@ -437,7 +453,8 @@ void ensure_target(HeadContext* c, Viewport* v, int w, int h) {
     v->width = w;
     v->height = h;
     v->colorView = make_image(c, v->colorFormat,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT, // TRANSFER_SRC enables obk_viewport_readback
         VK_IMAGE_ASPECT_COLOR_BIT, w, h, &v->colorImage, &v->colorMem);
     v->depthView = make_image(c, kDepthFormat,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, w, h,
@@ -468,8 +485,9 @@ void default_headlight(float* d) {
 // create_scene_resources builds the lighting descriptor set: a fragment-stage UBO (binding 0)
 // backed by a small host-visible, persistently mapped buffer that render refreshes each frame.
 void create_scene_resources(HeadContext* c, Viewport* v) {
-    // Binding 0: the scene-lighting UBO. Binding 1: the equirect environment sampler (IBL).
-    VkDescriptorSetLayoutBinding binds[2]{};
+    // Binding 0: scene-lighting UBO. Binding 1: equirect environment (IBL). Binding 2: sun
+    // shadow map.
+    VkDescriptorSetLayoutBinding binds[3]{};
     binds[0].binding = 0;
     binds[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     binds[0].descriptorCount = 1;
@@ -478,9 +496,13 @@ void create_scene_resources(HeadContext* c, Viewport* v) {
     binds[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     binds[1].descriptorCount = 1;
     binds[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binds[2].binding = 2;
+    binds[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    binds[2].descriptorCount = 1;
+    binds[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     VkDescriptorSetLayoutCreateInfo lci{};
     lci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    lci.bindingCount = 2;
+    lci.bindingCount = 3;
     lci.pBindings = binds;
     vkCreateDescriptorSetLayout(c->device, &lci, nullptr, &v->setLayout);
 
@@ -503,7 +525,7 @@ void create_scene_resources(HeadContext* c, Viewport* v) {
     default_headlight(v->sceneData);
 
     VkDescriptorPoolSize ps[2] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
-                                  {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}};
+                                  {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2}};
     VkDescriptorPoolCreateInfo pci{};
     pci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pci.maxSets = 1;
@@ -673,6 +695,165 @@ void init_default_env(HeadContext* c, Viewport* v) {
     make_env_image(c, v, grey, dims, 1);
 }
 
+// create_shadow_pass builds the depth-only render pass for the sun shadow map: one depth
+// attachment cleared then stored and left readable by the surface shader.
+void create_shadow_pass(HeadContext* c, Viewport* v) {
+    VkAttachmentDescription att{};
+    att.format = kDepthFormat;
+    att.samples = VK_SAMPLE_COUNT_1_BIT;
+    att.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    att.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    att.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkAttachmentReference depthRef{0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription sub{};
+    sub.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sub.pDepthStencilAttachment = &depthRef;
+    // Order the depth write before the surface pass samples it, and after the previous frame's
+    // sample finished.
+    VkSubpassDependency deps[2]{};
+    deps[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    deps[0].dstSubpass = 0;
+    deps[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    deps[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    deps[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    deps[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    deps[1].srcSubpass = 0;
+    deps[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    deps[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    deps[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    deps[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    deps[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    VkRenderPassCreateInfo rp{};
+    rp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp.attachmentCount = 1;
+    rp.pAttachments = &att;
+    rp.subpassCount = 1;
+    rp.pSubpasses = &sub;
+    rp.dependencyCount = 2;
+    rp.pDependencies = deps;
+    vkCreateRenderPass(c->device, &rp, nullptr, &v->shadowPass);
+}
+
+// create_shadow_target allocates the shadow depth image, its sampling view, a border-white
+// sampler (so points outside the light frustum read as lit), and the framebuffer.
+void create_shadow_target(HeadContext* c, Viewport* v) {
+    v->shadowView = make_image(c, kDepthFormat,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_IMAGE_ASPECT_DEPTH_BIT, kShadowDim, kShadowDim, &v->shadowImage, &v->shadowMem);
+    VkSamplerCreateInfo si{};
+    si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    si.magFilter = si.minFilter = VK_FILTER_LINEAR;
+    si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    si.addressModeU = si.addressModeV = si.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    si.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    vkCreateSampler(c->device, &si, nullptr, &v->shadowSampler);
+    VkFramebufferCreateInfo fb{};
+    fb.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb.renderPass = v->shadowPass;
+    fb.attachmentCount = 1;
+    fb.pAttachments = &v->shadowView;
+    fb.width = fb.height = kShadowDim;
+    fb.layers = 1;
+    vkCreateFramebuffer(c->device, &fb, nullptr, &v->shadowFB);
+}
+
+// create_shadow_pipeline builds the depth-only caster pipeline: the mesh vertex shader (no
+// fragment stage), depth write with a slope-scaled bias to suppress shadow acne, into the
+// shadow pass. It reuses the mesh vertex layout + pipeline layout (the light matrix rides the
+// push-constant mvp slot for the shadow draw).
+void create_shadow_pipeline(HeadContext* c, Viewport* v) {
+    VkPipelineShaderStageCreateInfo stage{};
+    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage.module = v->vertModule;
+    stage.pName = "main";
+
+    VkVertexInputBindingDescription bind{0, kVertexFloats * sizeof(float),
+                                         VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attrs[7] = {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
+        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
+        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
+        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
+        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
+        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
+    };
+    VkPipelineVertexInputStateCreateInfo vi{};
+    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vi.vertexBindingDescriptionCount = 1;
+    vi.pVertexBindingDescriptions = &bind;
+    vi.vertexAttributeDescriptionCount = 7;
+    vi.pVertexAttributeDescriptions = attrs;
+    VkPipelineInputAssemblyStateCreateInfo ia{};
+    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    VkPipelineViewportStateCreateInfo vp{};
+    vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    vp.viewportCount = vp.scissorCount = 1;
+    VkPipelineRasterizationStateCreateInfo rs{};
+    rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rs.polygonMode = VK_POLYGON_MODE_FILL;
+    rs.cullMode = VK_CULL_MODE_NONE;
+    rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rs.lineWidth = 1.0f;
+    rs.depthBiasEnable = VK_TRUE;
+    rs.depthBiasConstantFactor = 1.5f;
+    rs.depthBiasSlopeFactor = 2.5f;
+    VkPipelineMultisampleStateCreateInfo ms{};
+    ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkPipelineDepthStencilStateCreateInfo ds{};
+    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds.depthTestEnable = VK_TRUE;
+    ds.depthWriteEnable = VK_TRUE;
+    ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    VkPipelineColorBlendStateCreateInfo cb{}; // no color attachments in the shadow pass
+    cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    VkPipelineDynamicStateCreateInfo dynState{};
+    dynState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynState.dynamicStateCount = 2;
+    dynState.pDynamicStates = dyn;
+    VkGraphicsPipelineCreateInfo ci{};
+    ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    ci.stageCount = 1;
+    ci.pStages = &stage;
+    ci.pVertexInputState = &vi;
+    ci.pInputAssemblyState = &ia;
+    ci.pViewportState = &vp;
+    ci.pRasterizationState = &rs;
+    ci.pMultisampleState = &ms;
+    ci.pDepthStencilState = &ds;
+    ci.pColorBlendState = &cb;
+    ci.pDynamicState = &dynState;
+    ci.layout = v->layout;
+    ci.renderPass = v->shadowPass;
+    vkCreateGraphicsPipelines(c->device, VK_NULL_HANDLE, 1, &ci, nullptr, &v->shadowPipeline);
+}
+
+// create_shadow_resources wires the whole shadow-map stack and points descriptor binding 2 at
+// the shadow image. Shadows stay off (scene.shadow.x == 0) until obk_viewport_set_shadow.
+void create_shadow_resources(HeadContext* c, Viewport* v) {
+    create_shadow_pass(c, v);
+    create_shadow_target(c, v);
+    create_shadow_pipeline(c, v);
+    VkDescriptorImageInfo ii{v->shadowSampler, v->shadowView,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkWriteDescriptorSet w{};
+    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    w.dstSet = v->sceneSet;
+    w.dstBinding = 2;
+    w.descriptorCount = 1;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    w.pImageInfo = &ii;
+    vkUpdateDescriptorSets(c->device, 1, &w, 0, nullptr);
+    v->sceneData[kShadowParams + 3] = 1.0f / float(kShadowDim); // texel size
+}
+
 } // namespace
 
 extern "C" {
@@ -716,6 +897,7 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
     v->hiddenPipeline = create_pipeline(c, v, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                                         VK_POLYGON_MODE_FILL, VK_TRUE, VK_COMPARE_OP_GREATER, VK_FALSE);
     v->skyboxPipeline = create_skybox_pipeline(c, v);
+    create_shadow_resources(c, v);
 
     VkSamplerCreateInfo si{};
     si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -787,6 +969,36 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
     bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(v->cmd, &bi);
+
+    // Shadow pass: render the casters' depth from the sun's POV into the shadow map, when
+    // shadows are enabled and there is geometry to cast. The light matrix rides the mvp slot.
+    if (v->sceneData[kShadowParams] > 0.5f && (occIC > 0 || triIC > 0)) {
+        VkClearValue sclear;
+        sclear.depthStencil = {1.0f, 0};
+        VkRenderPassBeginInfo srp{};
+        srp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        srp.renderPass = v->shadowPass;
+        srp.framebuffer = v->shadowFB;
+        srp.renderArea.extent = {kShadowDim, kShadowDim};
+        srp.clearValueCount = 1;
+        srp.pClearValues = &sclear;
+        vkCmdBeginRenderPass(v->cmd, &srp, VK_SUBPASS_CONTENTS_INLINE);
+        VkViewport sv{0, 0, (float)kShadowDim, (float)kShadowDim, 0.0f, 1.0f};
+        VkRect2D ss{{0, 0}, {kShadowDim, kShadowDim}};
+        vkCmdSetViewport(v->cmd, 0, 1, &sv);
+        vkCmdSetScissor(v->cmd, 0, 1, &ss);
+        VkDeviceSize zero = 0;
+        vkCmdBindVertexBuffers(v->cmd, 0, 1, &v->vbuf.buffer, &zero);
+        vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
+        PushConstants sp{};
+        std::memcpy(sp.mvp, &v->sceneData[kShadowVP], sizeof(sp.mvp));
+        vkCmdPushConstants(v->cmd, v->layout,
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(sp), &sp);
+        vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->shadowPipeline);
+        if (occIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
+        if (triIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+        vkCmdEndRenderPass(v->cmd);
+    }
 
     VkClearValue clears[2];
     clears[0].color = {{v->clearR, v->clearG, v->clearB, 1.0f}};
@@ -919,6 +1131,21 @@ void obk_viewport_set_skybox(void* h, const float* invVP, int show) {
     if (v->skyboxShow) std::memcpy(v->skyboxInvVP, invVP, sizeof(v->skyboxInvVP));
 }
 
+// obk_viewport_set_shadow enables/disables the sun shadow map and stores the light-space matrix
+// (column-major) plus density and softness ([0,1]). A null matrix or enabled==0 turns shadows
+// off. A no-op before init. (ADR-0026 §6.)
+void obk_viewport_set_shadow(void* h, const float* lightVP, int enabled, float density,
+                             float softness) {
+    HeadContext* c = (HeadContext*)h;
+    Viewport* v = c ? c->viewport : nullptr;
+    if (!v) return;
+    bool on = (enabled != 0 && lightVP != nullptr);
+    v->sceneData[kShadowParams + 0] = on ? 1.0f : 0.0f;
+    v->sceneData[kShadowParams + 1] = density;
+    v->sceneData[kShadowParams + 2] = softness;
+    if (on) std::memcpy(&v->sceneData[kShadowVP], lightVP, 16 * sizeof(float));
+}
+
 // obk_viewport_set_clear sets the 3D pass background (themed). Takes effect on the next
 // render; a no-op before the viewport is initialized.
 void obk_viewport_set_clear(void* h, float r, float g, float b) {
@@ -927,6 +1154,64 @@ void obk_viewport_set_clear(void* h, float r, float g, float b) {
     c->viewport->clearR = r;
     c->viewport->clearG = g;
     c->viewport->clearB = b;
+}
+
+// obk_viewport_readback copies the offscreen color image into out (BGRA/RGBA8, row-major, top
+// to bottom) for the current target size, returning the byte count written (0 if the target is
+// not ready or out is too small) and reporting the dimensions. It is a synchronous transfer for
+// headless verification/screenshots, not the per-frame path.
+int obk_viewport_readback(void* h, unsigned char* out, int cap, int* w, int* hh) {
+    HeadContext* c = (HeadContext*)h;
+    Viewport* v = c ? c->viewport : nullptr;
+    if (!v || v->colorImage == VK_NULL_HANDLE || v->width <= 0 || v->height <= 0) return 0;
+    int need = v->width * v->height * 4;
+    if (w) *w = v->width;
+    if (hh) *hh = v->height;
+    if (!out || cap < need) return 0;
+
+    GpuBuffer staging{};
+    upload(c, &staging, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, (VkDeviceSize)need);
+    VkCommandBufferAllocateInfo cba{};
+    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cba.commandPool = v->cmdPool;
+    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cba.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(c->device, &cba, &cmd);
+    VkCommandBufferBeginInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &bi);
+    img_barrier(cmd, v->colorImage, 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT);
+    VkBufferImageCopy cp{};
+    cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    cp.imageExtent = {(uint32_t)v->width, (uint32_t)v->height, 1};
+    vkCmdCopyImageToBuffer(cmd, v->colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           staging.buffer, 1, &cp);
+    img_barrier(cmd, v->colorImage, 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    vkEndCommandBuffer(cmd);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkResetFences(c->device, 1, &v->fence);
+    vkQueueSubmit(c->queue, 1, &submit, v->fence);
+    vkWaitForFences(c->device, 1, &v->fence, VK_TRUE, UINT64_MAX);
+    vkFreeCommandBuffers(c->device, v->cmdPool, 1, &cmd);
+
+    void* mapped = nullptr;
+    vkMapMemory(c->device, staging.memory, 0, need, 0, &mapped);
+    std::memcpy(out, mapped, need);
+    vkUnmapMemory(c->device, staging.memory);
+    vkDestroyBuffer(c->device, staging.buffer, nullptr);
+    vkFreeMemory(c->device, staging.memory, nullptr);
+    return need;
 }
 
 // obk_viewport_texture returns the ImGui texture handle for the rendered color image
@@ -947,6 +1232,13 @@ void obk_viewport_destroy(HeadContext* c) {
     if (v->ibuf.memory) vkFreeMemory(c->device, v->ibuf.memory, nullptr);
     destroy_env_image(c, v);
     if (v->envSampler) vkDestroySampler(c->device, v->envSampler, nullptr);
+    if (v->shadowFB) vkDestroyFramebuffer(c->device, v->shadowFB, nullptr);
+    if (v->shadowView) vkDestroyImageView(c->device, v->shadowView, nullptr);
+    if (v->shadowImage) vkDestroyImage(c->device, v->shadowImage, nullptr);
+    if (v->shadowMem) vkFreeMemory(c->device, v->shadowMem, nullptr);
+    if (v->shadowSampler) vkDestroySampler(c->device, v->shadowSampler, nullptr);
+    if (v->shadowPipeline) vkDestroyPipeline(c->device, v->shadowPipeline, nullptr);
+    if (v->shadowPass) vkDestroyRenderPass(c->device, v->shadowPass, nullptr);
     if (v->uboMapped) vkUnmapMemory(c->device, v->uboMem);
     if (v->uboBuf) vkDestroyBuffer(c->device, v->uboBuf, nullptr);
     if (v->uboMem) vkFreeMemory(c->device, v->uboMem, nullptr);
