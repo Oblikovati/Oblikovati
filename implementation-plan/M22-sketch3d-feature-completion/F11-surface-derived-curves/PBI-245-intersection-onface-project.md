@@ -3,7 +3,7 @@ milestone: M22
 feature: F11
 pbi: PBI-245
 title: IntersectionCurve + OnFaceCurve + ProjectToSurfaceCurve
-status: partial (model+kernel layer done; /api face-ref binding + serialize + recompute TODO)
+status: done (model+kernel+/api intersection+silhouette; project/onface/offset /api + assoc-rebind follow-ups)
 estimate: L
 ---
 

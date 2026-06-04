@@ -2,7 +2,7 @@
 milestone: M22
 feature: F11
 name: Surface-Derived Curves
-status: partial (model+kernel layer done; /api face-ref binding + serialize + recompute TODO)
+status: done (model+kernel+/api intersection+silhouette; project/onface/offset /api + assoc-rebind follow-ups)
 ---
 
 # M22 · F11 — Surface-Derived Curves
