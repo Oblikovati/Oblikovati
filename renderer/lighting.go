@@ -41,6 +41,7 @@ type SceneLight struct {
 // (ADR-0026 §6). Density is the shadow darkness [0,1]; Softness is the edge blur [0,1].
 type ShadowSettings struct {
 	GroundShadows  bool
+	GroundXRay     bool // ground shadow is the see-through (X-ray) style (Inventor kXRayGroundShadow)
 	ObjectShadows  bool
 	AmbientShadows bool
 	Density        float32

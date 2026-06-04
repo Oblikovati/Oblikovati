@@ -35,6 +35,7 @@ func New(ops *opregistry.Registry) *Router {
 	r := &Router{ops: ops, handlers: map[string]handlerFunc{}}
 	r.registerStandardHandlers()
 	r.registerMaterialHandlers()
+	r.registerLightingHandlers()
 	return r
 }
 
@@ -160,6 +161,23 @@ func (r *Router) registerMaterialHandlers() {
 	r.handlers[wire.MethodModelAssignMaterial] = assignMaterial
 	r.handlers[wire.MethodModelAssignAppearance] = assignAppearance
 	r.handlers[wire.MethodModelPhysicalProperties] = physicalProperties
+}
+
+// registerLightingHandlers wires the lighting-style, light, environment, and shadow methods
+// (M16/F03 PBI-155, ADR-0026).
+func (r *Router) registerLightingHandlers() {
+	r.handlers[wire.MethodLightingGetStyle] = getLightingStyle
+	r.handlers[wire.MethodLightingSetStyle] = setLightingStyle
+	r.handlers[wire.MethodLightingListStyles] = listLightingStyles
+	r.handlers[wire.MethodLightingListLights] = listLights
+	r.handlers[wire.MethodLightingAddLight] = addLight
+	r.handlers[wire.MethodLightingSetLight] = setLight
+	r.handlers[wire.MethodViewGetShadows] = getShadows
+	r.handlers[wire.MethodViewSetShadows] = setShadows
+	r.handlers[wire.MethodEnvironmentGet] = getEnvironment
+	r.handlers[wire.MethodEnvironmentSet] = setEnvironment
+	r.handlers[wire.MethodEnvironmentListPresets] = listEnvironmentPresets
+	r.handlers[wire.MethodEnvironmentLoadImage] = loadEnvironmentImage
 }
 
 // Handle dispatches method with its JSON args (empty args become {}), returning the
