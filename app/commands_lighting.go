@@ -35,7 +35,6 @@ func lightingSettingsCommand() *CommandDefinition {
 func lightingStyleCommands() []*CommandDefinition {
 	var cmds []*CommandDefinition
 	for _, opt := range renderer.LightingStyleGallery() {
-		opt := opt
 		cmds = append(cmds, NewCommand("View.Lighting."+opt.Name, opt.Name, "Lighting Style",
 			func(s *Session) error { return s.SetLightingStyle(opt.Name) }).
 			WithTab("View").WithKind(ComboControl).
@@ -50,7 +49,6 @@ func lightingStyleCommands() []*CommandDefinition {
 func environmentCommands() []*CommandDefinition {
 	var cmds []*CommandDefinition
 	for _, opt := range renderer.EnvironmentGallery() {
-		opt := opt
 		cmds = append(cmds, NewCommand("View.Environment."+opt.Name, opt.Name, "Environment",
 			func(s *Session) error {
 				s.SetEnvironment(renderer.Environment{
@@ -93,7 +91,8 @@ func shadowCommands() []*CommandDefinition {
 // checked reports the current state. Enabling any shadow with a zero density seeds a visible
 // default so the toggle has an immediate effect.
 func shadowToggle(id, label, tip string, flip func(*renderer.ShadowSettings),
-	checked func(renderer.ShadowSettings) bool) *CommandDefinition {
+	checked func(renderer.ShadowSettings) bool,
+) *CommandDefinition {
 	return NewCommand(id, label, "Shadows", func(s *Session) error {
 		sh := s.ShadowSettings()
 		flip(&sh)
