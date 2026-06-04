@@ -16,7 +16,9 @@ void     obk_viewport_render(void* h, int w, int hh, const float* mvp, const flo
                              const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                              const float* occV, int occVC, const uint32_t* occIdx, int occIC,
                              const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
-                             const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC);
+                             const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
+                             const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
+                             const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC);
 void     obk_viewport_set_clear(void* h, float r, float g, float b);
 void     obk_viewport_set_lighting(void* h, const float* data, int n);
 void     obk_viewport_set_environment(void* h, const float* data, const int* dims, int levels,
@@ -60,19 +62,24 @@ func (w *Window) SetViewportSkybox(invVP []float32, show bool) {
 // column-major MVP, with camPos (3 floats, world-space camera eye) supplying the PBR view
 // vector. Triangle and line vertices are interleaved as 16 floats [pos.xyz, normal.xyz,
 // color.rgba, metallic, roughness, emissive.rgb, mode]; indices are 0-based within their own
-// vertex array.
+// vertex array. The topTri/topLine streams are drawn last with the depth test disabled, so
+// client-graphics overlay/burn-through geometry stays visible over the model (PBI-067).
 func (win *Window) RenderViewport(w, h int, mvp []float32, camPos []float32,
 	triVerts []float32, triVCount int, triIdx []uint32,
 	occVerts []float32, occVCount int, occIdx []uint32,
 	lineVerts []float32, lineVCount int, lineIdx []uint32,
 	hidVerts []float32, hidVCount int, hidIdx []uint32,
+	topTriVerts []float32, topTriVCount int, topTriIdx []uint32,
+	topLineVerts []float32, topLineVCount int, topLineIdx []uint32,
 ) {
 	C.obk_viewport_render(win.handle, C.int(w), C.int(h),
 		(*C.float)(unsafe.Pointer(&mvp[0])), floatPtr(camPos),
 		floatPtr(triVerts), C.int(triVCount), uint32Ptr(triIdx), C.int(len(triIdx)),
 		floatPtr(occVerts), C.int(occVCount), uint32Ptr(occIdx), C.int(len(occIdx)),
 		floatPtr(lineVerts), C.int(lineVCount), uint32Ptr(lineIdx), C.int(len(lineIdx)),
-		floatPtr(hidVerts), C.int(hidVCount), uint32Ptr(hidIdx), C.int(len(hidIdx)))
+		floatPtr(hidVerts), C.int(hidVCount), uint32Ptr(hidIdx), C.int(len(hidIdx)),
+		floatPtr(topTriVerts), C.int(topTriVCount), uint32Ptr(topTriIdx), C.int(len(topTriIdx)),
+		floatPtr(topLineVerts), C.int(topLineVCount), uint32Ptr(topLineIdx), C.int(len(topLineIdx)))
 }
 
 // SetViewportClear sets the 3D pass background color (themed); it takes effect on the

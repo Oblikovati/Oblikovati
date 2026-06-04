@@ -44,7 +44,9 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			list = modelOverlays(s, cam, hovered, list)
 		}
+		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 		renderViewportImage(win, s, cam, list, pw, ph, cx, cy)
+		drawClientGraphicsLabels(cx, cy, cam, gfxLabels)
 		if s.InSketch() && len(dims) > 0 {
 			if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
 				s.BeginEditDimension(d) // double-clicked a dimension's value
@@ -95,7 +97,9 @@ func renderViewportImage(win *native.Window, s *app.Session, cam scene.Camera, l
 		m.TriVerts, m.TriVCount, m.TriIndices,
 		m.OccVerts, m.OccVCount, m.OccIndices,
 		m.LineVerts, m.LineVCount, m.LineIndices,
-		m.HidVerts, m.HidVCount, m.HidIndices)
+		m.HidVerts, m.HidVCount, m.HidIndices,
+		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
+		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices)
 	if tex := win.ViewportTexture(); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
 		native.Image(tex, float32(pw), float32(ph))
