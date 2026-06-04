@@ -26,7 +26,8 @@ func materialInfo(m *material.Material) wire.MaterialInfo {
 	return wire.MaterialInfo{
 		ID: m.ID(), DisplayName: m.DisplayName(), Source: string(m.Source()),
 		Density: m.Density(), Mechanical: m.Mechanical(), Thermal: m.Thermal(),
-		Electrical: m.Electrical(), AppearanceID: m.AppearanceID(),
+		Electrical: m.Electrical(), IsotropyClass: string(m.IsotropyClass()),
+		Anisotropic: m.Anisotropic(), AppearanceID: m.AppearanceID(),
 	}
 }
 
@@ -127,7 +128,9 @@ func updateMaterial(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 	}
 	s.UpdateMaterial(in.ID, material.MaterialSpec{
 		DisplayName: in.DisplayName, Density: in.Density, Mechanical: in.Mechanical,
-		Thermal: in.Thermal, Electrical: in.Electrical, AppearanceID: in.AppearanceID,
+		Thermal: in.Thermal, Electrical: in.Electrical,
+		IsotropyClass: material.IsotropyClass(in.IsotropyClass), Anisotropic: in.Anisotropic,
+		AppearanceID: in.AppearanceID,
 	})
 	m, ok := s.Materials().Material(in.ID)
 	if !ok {

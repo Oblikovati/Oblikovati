@@ -26,6 +26,8 @@ type (
 	Mechanical         = types.Mechanical
 	Thermal            = types.Thermal
 	Electrical         = types.Electrical
+	IsotropyClass      = types.IsotropyClass
+	AnisotropicElastic = types.AnisotropicElastic
 	PhysicalProperties = types.PhysicalProperties
 )
 
@@ -33,6 +35,10 @@ const (
 	SourceBuiltin  = types.AssetBuiltin
 	SourceProject  = types.AssetProject
 	SourceDocument = types.AssetDocument
+
+	Isotropic             = types.Isotropic
+	Orthotropic           = types.Orthotropic
+	TransverselyIsotropic = types.TransverselyIsotropic
 )
 
 // ParseColor parses a "#RRGGBBAA" (or "#RRGGBB") hex color into an Rgba — re-exported

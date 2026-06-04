@@ -1,0 +1,288 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: elemental metals industrially used, atomic number Z <= 83 (Bismuth).
+# Only elements with reliable mechanical, thermal AND electrical data are included; pure
+# reactive/liquid metals (Na, K, Ca, Hg) and metals without dependable structural data
+# (Mn, Ga, Tc, Tl) are intentionally omitted.
+#
+# Property sources (typical / annealed, room temperature):
+#   - Density, thermal conductivity, linear expansion, specific heat, electrical
+#     resistivity: CRC Handbook of Chemistry and Physics (97th ed.); ASM Metals
+#     Reference Book (3rd ed.); MatWeb element datasheets.
+#   - Young's modulus, Poisson's ratio, yield & ultimate tensile strength: ASM
+#     Metals Handbook Vol. 2; AZoM material profiles; MatWeb. Strength values are for
+#     commercially pure, annealed wrought form unless noted; brittle elements list an
+#     approximate tensile/flexural figure (no distinct yield) and are tagged "brittle".
+#
+# Appearance base colors (albedo) are physically-based metal F0 reflectance values in
+# sRGB, after the Lagarde/UE4/Filament metal reference chart; the Realistic shader
+# linearises them (mesh.frag: f0 = toLinear(albedo)). metallic = 1.0 for every pure
+# metal; roughness encodes a representative polished-to-satin finish.
+#
+# Units: density g/cm3 | youngsModulus GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
+
+appearances:
+  - {id: beryllium,  name: Beryllium,  albedo: "#c2c1baff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
+  - {id: magnesium,  name: Magnesium,  albedo: "#c6c4bdff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
+  - {id: aluminum,   name: Aluminum,   albedo: "#f4f5f5ff", metallic: 1.0, roughness: 0.30, opacity: 1.0}
+  - {id: titanium,   name: Titanium,   albedo: "#c3bab1ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
+  - {id: vanadium,   name: Vanadium,   albedo: "#c3c6c8ff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
+  - {id: chromium,   name: Chromium,   albedo: "#c4c5c5ff", metallic: 1.0, roughness: 0.22, opacity: 1.0}
+  - {id: iron,       name: Iron,       albedo: "#c4c7c7ff", metallic: 1.0, roughness: 0.42, opacity: 1.0}
+  - {id: cobalt,     name: Cobalt,     albedo: "#d2d2d0ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
+  - {id: nickel,     name: Nickel,     albedo: "#d4ccc0ff", metallic: 1.0, roughness: 0.32, opacity: 1.0}
+  - {id: copper,     name: Copper,     albedo: "#fad0c0ff", metallic: 1.0, roughness: 0.30, opacity: 1.0}
+  - {id: zinc,       name: Zinc,       albedo: "#d2d6d8ff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
+  - {id: zirconium,  name: Zirconium,  albedo: "#c9ccccff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
+  - {id: niobium,    name: Niobium,    albedo: "#c4c6c9ff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
+  - {id: molybdenum, name: Molybdenum, albedo: "#cdd0cfff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
+  - {id: ruthenium,  name: Ruthenium,  albedo: "#c8c7c2ff", metallic: 1.0, roughness: 0.35, opacity: 1.0}
+  - {id: rhodium,    name: Rhodium,    albedo: "#d8d6d2ff", metallic: 1.0, roughness: 0.20, opacity: 1.0}
+  - {id: palladium,  name: Palladium,  albedo: "#cfccc4ff", metallic: 1.0, roughness: 0.25, opacity: 1.0}
+  - {id: silver,     name: Silver,     albedo: "#fcfaf5ff", metallic: 1.0, roughness: 0.22, opacity: 1.0}
+  - {id: cadmium,    name: Cadmium,    albedo: "#cdd0d2ff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
+  - {id: indium,     name: Indium,     albedo: "#d3d6d8ff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
+  - {id: tin,        name: Tin,        albedo: "#d6d9dbff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
+  - {id: antimony,   name: Antimony,   albedo: "#c6c8cbff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
+  - {id: hafnium,    name: Hafnium,    albedo: "#c2c4c5ff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
+  - {id: tantalum,   name: Tantalum,   albedo: "#b8bcc4ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
+  - {id: tungsten,   name: Tungsten,   albedo: "#c9cbc9ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
+  - {id: rhenium,    name: Rhenium,    albedo: "#c4c4c2ff", metallic: 1.0, roughness: 0.38, opacity: 1.0}
+  - {id: osmium,     name: Osmium,     albedo: "#b8bcc6ff", metallic: 1.0, roughness: 0.35, opacity: 1.0}
+  - {id: iridium,    name: Iridium,    albedo: "#d0d1cfff", metallic: 1.0, roughness: 0.28, opacity: 1.0}
+  - {id: platinum,   name: Platinum,   albedo: "#d4cdc1ff", metallic: 1.0, roughness: 0.25, opacity: 1.0}
+  - {id: gold,       name: Gold,       albedo: "#ffe29bff", metallic: 1.0, roughness: 0.24, opacity: 1.0}
+  - {id: lead,       name: Lead,       albedo: "#9fa4adff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
+  - {id: bismuth,    name: Bismuth,    albedo: "#b9a9a0ff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
+
+materials:
+  - id: beryllium
+    name: Beryllium
+    density: 1.85
+    appearance: beryllium
+    mechanical: {youngsModulus: 287, poissonsRatio: 0.032, yieldStrength: 240, ultimateTensileStrength: 370}
+    thermal:    {conductivity: 200, expansionCoeff: 11.3e-6, specificHeat: 1825}
+    electrical: {resistivity: 3.6e-8, relativePermittivity: 1}
+  - id: magnesium
+    name: Magnesium
+    density: 1.74
+    appearance: magnesium
+    mechanical: {youngsModulus: 45, poissonsRatio: 0.29, yieldStrength: 40, ultimateTensileStrength: 160}
+    thermal:    {conductivity: 156, expansionCoeff: 24.8e-6, specificHeat: 1023}
+    electrical: {resistivity: 4.39e-8, relativePermittivity: 1}
+  - id: aluminum-1100
+    name: Aluminum (Pure, 1100)
+    density: 2.71
+    appearance: aluminum
+    mechanical: {youngsModulus: 69, poissonsRatio: 0.33, yieldStrength: 34, ultimateTensileStrength: 90}
+    thermal:    {conductivity: 222, expansionCoeff: 23.6e-6, specificHeat: 904}
+    electrical: {resistivity: 2.99e-8, relativePermittivity: 1}
+  - id: titanium-cp
+    name: Titanium (CP Grade 2)
+    density: 4.51
+    appearance: titanium
+    mechanical: {youngsModulus: 105, poissonsRatio: 0.34, yieldStrength: 275, ultimateTensileStrength: 345}
+    thermal:    {conductivity: 16.4, expansionCoeff: 8.6e-6, specificHeat: 523}
+    electrical: {resistivity: 4.2e-7, relativePermittivity: 1}
+  - id: vanadium
+    name: Vanadium
+    density: 6.11
+    appearance: vanadium
+    mechanical: {youngsModulus: 128, poissonsRatio: 0.37, yieldStrength: 380, ultimateTensileStrength: 460}
+    thermal:    {conductivity: 30.7, expansionCoeff: 8.4e-6, specificHeat: 489}
+    electrical: {resistivity: 1.97e-7, relativePermittivity: 1}
+  - id: chromium
+    name: Chromium
+    density: 7.19
+    appearance: chromium
+    # brittle at room temperature: yield/UTS are approximate tensile figures
+    mechanical: {youngsModulus: 279, poissonsRatio: 0.21, yieldStrength: 131, ultimateTensileStrength: 282}
+    thermal:    {conductivity: 93.9, expansionCoeff: 4.9e-6, specificHeat: 449}
+    electrical: {resistivity: 1.25e-7, relativePermittivity: 1}
+  - id: iron-pure
+    name: Iron (Pure)
+    density: 7.87
+    appearance: iron
+    mechanical: {youngsModulus: 211, poissonsRatio: 0.29, yieldStrength: 50, ultimateTensileStrength: 200}
+    thermal:    {conductivity: 80.4, expansionCoeff: 11.8e-6, specificHeat: 449}
+    electrical: {resistivity: 9.71e-8, relativePermittivity: 1}
+  - id: cobalt
+    name: Cobalt
+    density: 8.90
+    appearance: cobalt
+    mechanical: {youngsModulus: 209, poissonsRatio: 0.31, yieldStrength: 225, ultimateTensileStrength: 800}
+    thermal:    {conductivity: 100, expansionCoeff: 13.0e-6, specificHeat: 421}
+    electrical: {resistivity: 6.24e-8, relativePermittivity: 1}
+  - id: nickel
+    name: Nickel
+    density: 8.90
+    appearance: nickel
+    mechanical: {youngsModulus: 200, poissonsRatio: 0.31, yieldStrength: 148, ultimateTensileStrength: 462}
+    thermal:    {conductivity: 90.9, expansionCoeff: 13.4e-6, specificHeat: 444}
+    electrical: {resistivity: 6.99e-8, relativePermittivity: 1}
+  - id: copper-c110
+    name: Copper (C110)
+    density: 8.96
+    appearance: copper
+    mechanical: {youngsModulus: 128, poissonsRatio: 0.34, yieldStrength: 70, ultimateTensileStrength: 220}
+    thermal:    {conductivity: 391, expansionCoeff: 16.5e-6, specificHeat: 385}
+    electrical: {resistivity: 1.71e-8, relativePermittivity: 1}
+  - id: zinc
+    name: Zinc
+    density: 7.14
+    appearance: zinc
+    mechanical: {youngsModulus: 108, poissonsRatio: 0.25, yieldStrength: 110, ultimateTensileStrength: 150}
+    thermal:    {conductivity: 116, expansionCoeff: 30.2e-6, specificHeat: 388}
+    electrical: {resistivity: 5.9e-8, relativePermittivity: 1}
+  - id: zirconium
+    name: Zirconium
+    density: 6.52
+    appearance: zirconium
+    mechanical: {youngsModulus: 88, poissonsRatio: 0.34, yieldStrength: 230, ultimateTensileStrength: 330}
+    thermal:    {conductivity: 22.6, expansionCoeff: 5.7e-6, specificHeat: 278}
+    electrical: {resistivity: 4.21e-7, relativePermittivity: 1}
+  - id: niobium
+    name: Niobium
+    density: 8.57
+    appearance: niobium
+    mechanical: {youngsModulus: 105, poissonsRatio: 0.40, yieldStrength: 240, ultimateTensileStrength: 275}
+    thermal:    {conductivity: 53.7, expansionCoeff: 7.3e-6, specificHeat: 265}
+    electrical: {resistivity: 1.52e-7, relativePermittivity: 1}
+  - id: molybdenum
+    name: Molybdenum
+    density: 10.22
+    appearance: molybdenum
+    mechanical: {youngsModulus: 329, poissonsRatio: 0.31, yieldStrength: 415, ultimateTensileStrength: 690}
+    thermal:    {conductivity: 138, expansionCoeff: 4.8e-6, specificHeat: 251}
+    electrical: {resistivity: 5.34e-8, relativePermittivity: 1}
+  - id: ruthenium
+    name: Ruthenium
+    density: 12.37
+    appearance: ruthenium
+    # hard, low-ductility: strength figures approximate
+    mechanical: {youngsModulus: 447, poissonsRatio: 0.30, yieldStrength: 370, ultimateTensileStrength: 510}
+    thermal:    {conductivity: 117, expansionCoeff: 6.4e-6, specificHeat: 238}
+    electrical: {resistivity: 7.1e-8, relativePermittivity: 1}
+  - id: rhodium
+    name: Rhodium
+    density: 12.41
+    appearance: rhodium
+    mechanical: {youngsModulus: 380, poissonsRatio: 0.26, yieldStrength: 70, ultimateTensileStrength: 951}
+    thermal:    {conductivity: 150, expansionCoeff: 8.2e-6, specificHeat: 243}
+    electrical: {resistivity: 4.3e-8, relativePermittivity: 1}
+  - id: palladium
+    name: Palladium
+    density: 12.02
+    appearance: palladium
+    mechanical: {youngsModulus: 121, poissonsRatio: 0.39, yieldStrength: 55, ultimateTensileStrength: 180}
+    thermal:    {conductivity: 71.8, expansionCoeff: 11.8e-6, specificHeat: 244}
+    electrical: {resistivity: 1.05e-7, relativePermittivity: 1}
+  - id: silver
+    name: Silver
+    density: 10.49
+    appearance: silver
+    mechanical: {youngsModulus: 83, poissonsRatio: 0.37, yieldStrength: 55, ultimateTensileStrength: 170}
+    thermal:    {conductivity: 429, expansionCoeff: 18.9e-6, specificHeat: 235}
+    electrical: {resistivity: 1.59e-8, relativePermittivity: 1}
+  - id: cadmium
+    name: Cadmium
+    density: 8.65
+    appearance: cadmium
+    mechanical: {youngsModulus: 50, poissonsRatio: 0.30, yieldStrength: 28, ultimateTensileStrength: 71}
+    thermal:    {conductivity: 96.6, expansionCoeff: 30.8e-6, specificHeat: 232}
+    electrical: {resistivity: 7.27e-8, relativePermittivity: 1}
+  - id: indium
+    name: Indium
+    density: 7.31
+    appearance: indium
+    mechanical: {youngsModulus: 11, poissonsRatio: 0.45, yieldStrength: 2.5, ultimateTensileStrength: 4.5}
+    thermal:    {conductivity: 81.8, expansionCoeff: 32.1e-6, specificHeat: 233}
+    electrical: {resistivity: 8.37e-8, relativePermittivity: 1}
+  - id: tin
+    name: Tin
+    density: 7.27
+    appearance: tin
+    mechanical: {youngsModulus: 50, poissonsRatio: 0.36, yieldStrength: 11, ultimateTensileStrength: 15}
+    thermal:    {conductivity: 66.8, expansionCoeff: 22.0e-6, specificHeat: 228}
+    electrical: {resistivity: 1.15e-7, relativePermittivity: 1}
+  - id: antimony
+    name: Antimony
+    density: 6.68
+    appearance: antimony
+    # brittle metalloid: yield approximated to tensile strength
+    mechanical: {youngsModulus: 55, poissonsRatio: 0.25, yieldStrength: 11, ultimateTensileStrength: 11}
+    thermal:    {conductivity: 24.4, expansionCoeff: 11.0e-6, specificHeat: 207}
+    electrical: {resistivity: 4.0e-7, relativePermittivity: 1}
+  - id: hafnium
+    name: Hafnium
+    density: 13.31
+    appearance: hafnium
+    mechanical: {youngsModulus: 78, poissonsRatio: 0.37, yieldStrength: 240, ultimateTensileStrength: 450}
+    thermal:    {conductivity: 23.0, expansionCoeff: 5.9e-6, specificHeat: 144}
+    electrical: {resistivity: 3.31e-7, relativePermittivity: 1}
+  - id: tantalum
+    name: Tantalum
+    density: 16.69
+    appearance: tantalum
+    mechanical: {youngsModulus: 186, poissonsRatio: 0.34, yieldStrength: 180, ultimateTensileStrength: 205}
+    thermal:    {conductivity: 57.5, expansionCoeff: 6.3e-6, specificHeat: 140}
+    electrical: {resistivity: 1.31e-7, relativePermittivity: 1}
+  - id: tungsten
+    name: Tungsten
+    density: 19.25
+    appearance: tungsten
+    mechanical: {youngsModulus: 411, poissonsRatio: 0.28, yieldStrength: 750, ultimateTensileStrength: 980}
+    thermal:    {conductivity: 173, expansionCoeff: 4.5e-6, specificHeat: 132}
+    electrical: {resistivity: 5.28e-8, relativePermittivity: 1}
+  - id: rhenium
+    name: Rhenium
+    density: 21.02
+    appearance: rhenium
+    mechanical: {youngsModulus: 463, poissonsRatio: 0.30, yieldStrength: 290, ultimateTensileStrength: 1070}
+    thermal:    {conductivity: 48.0, expansionCoeff: 6.2e-6, specificHeat: 137}
+    electrical: {resistivity: 1.8e-7, relativePermittivity: 1}
+  - id: osmium
+    name: Osmium
+    density: 22.59
+    appearance: osmium
+    # hardest elemental metal, brittle: yield approximated to compressive/tensile figure
+    mechanical: {youngsModulus: 559, poissonsRatio: 0.25, yieldStrength: 1000, ultimateTensileStrength: 1000}
+    thermal:    {conductivity: 87.6, expansionCoeff: 5.1e-6, specificHeat: 130}
+    electrical: {resistivity: 8.1e-8, relativePermittivity: 1}
+  - id: iridium
+    name: Iridium
+    density: 22.56
+    appearance: iridium
+    mechanical: {youngsModulus: 528, poissonsRatio: 0.26, yieldStrength: 490, ultimateTensileStrength: 1100}
+    thermal:    {conductivity: 147, expansionCoeff: 6.4e-6, specificHeat: 131}
+    electrical: {resistivity: 4.71e-8, relativePermittivity: 1}
+  - id: platinum
+    name: Platinum
+    density: 21.45
+    appearance: platinum
+    mechanical: {youngsModulus: 168, poissonsRatio: 0.38, yieldStrength: 70, ultimateTensileStrength: 165}
+    thermal:    {conductivity: 71.6, expansionCoeff: 8.8e-6, specificHeat: 133}
+    electrical: {resistivity: 1.06e-7, relativePermittivity: 1}
+  - id: gold
+    name: Gold
+    density: 19.30
+    appearance: gold
+    mechanical: {youngsModulus: 79, poissonsRatio: 0.44, yieldStrength: 30, ultimateTensileStrength: 120}
+    thermal:    {conductivity: 318, expansionCoeff: 14.2e-6, specificHeat: 129}
+    electrical: {resistivity: 2.21e-8, relativePermittivity: 1}
+  - id: lead
+    name: Lead
+    density: 11.34
+    appearance: lead
+    mechanical: {youngsModulus: 16, poissonsRatio: 0.44, yieldStrength: 12, ultimateTensileStrength: 18}
+    thermal:    {conductivity: 35.3, expansionCoeff: 28.9e-6, specificHeat: 129}
+    electrical: {resistivity: 2.08e-7, relativePermittivity: 1}
+  - id: bismuth
+    name: Bismuth
+    density: 9.78
+    appearance: bismuth
+    # brittle: tensile figure approximate, no distinct yield
+    mechanical: {youngsModulus: 32, poissonsRatio: 0.33, yieldStrength: 70, ultimateTensileStrength: 70}
+    thermal:    {conductivity: 7.97, expansionCoeff: 13.4e-6, specificHeat: 122}
+    electrical: {resistivity: 1.29e-6, relativePermittivity: 1}
