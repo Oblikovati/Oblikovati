@@ -3,7 +3,7 @@ milestone: M22
 feature: F09
 pbi: PBI-242
 title: Profile3D/Profiles3D + path detection over /api
-status: planned
+status: done (model+API; UI in F12)
 estimate: M
 ---
 

@@ -2,7 +2,7 @@
 milestone: M22
 feature: F09
 name: Profiles & Paths (3D)
-status: planned
+status: done (model+API; UI in F12)
 ---
 
 # M22 · F09 — Profiles & Paths (3D)
