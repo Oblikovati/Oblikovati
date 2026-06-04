@@ -114,6 +114,7 @@ func (r *Router) registerSketch3DAuthoringHandlers() {
 	r.handlers[wire.MethodSketch3DPaths] = sketch3DPaths
 	r.handlers[wire.MethodSketch3DTransform] = transformSketch3D
 	r.handlers[wire.MethodSketch3DInclude] = includeSketch3D
+	r.handlers[wire.MethodSketch3DIncludeSketch] = includeSketch2DInto3D
 	r.handlers[wire.MethodSketch3DAddSurfaceCurve] = addSketch3DSurfaceCurve
 }
 

@@ -624,6 +624,65 @@ func TestSketch3DIncludeUnknownRefIsUnhealthy(t *testing.T) {
 	}
 }
 
+// TestSketch3DIncludeSketch2D builds a 2D sketch on the XZ plane, then includes one of its
+// points and one of its lines into a 3D sketch through sketch3d.includeSketch — the
+// geometry is lifted through the 2D sketch's host plane and tracks edits to the source.
+func TestSketch3DIncludeSketch2D(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XZ"}`, &wire.CreateSketchResult{})
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Author 2D geometry directly on the source sketch: a point at (3,4) and a line.
+	src := part.Sketches().Item(0)
+	p2d := src.Points().Add(math.P2(3, 4))
+	a := src.Points().Add(math.P2(0, 0))
+	b := src.Points().Add(math.P2(2, 6))
+	line := src.Lines().Add(a, b)
+
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var inc wire.IncludeSketch3DResult
+	args, _ := json.Marshal(wire.IncludeSketch2DArgs{
+		SketchIndex:       0,
+		SourceSketchIndex: 0,
+		EntityIDs:         []uint64{uint64(p2d.EntityID()), uint64(line.EntityID())},
+	})
+	call(t, r, s, "sketch3d.includeSketch", string(args), &inc)
+	if len(inc.Created) != 2 || !inc.Healthy {
+		t.Fatalf("includeSketch = %+v, want 2 created / healthy", inc)
+	}
+
+	sk := part.Sketches3D().Item(0)
+	if sk.EntityCount() != 2 {
+		t.Fatalf("3D sketch has %d entities, want 2 (1 point + 1 curve)", sk.EntityCount())
+	}
+	pt, ok := sk.Entities()[0].(*sketch.IncludedPoint3D)
+	if !ok {
+		t.Fatalf("first included entity is %T, want *IncludedPoint3D", sk.Entities()[0])
+	}
+	// XZ plane: sketch (3,4) lifts to model (3,0,4).
+	if got := pt.Position(); stdmath.Abs(got.X-3) > 1e-6 || stdmath.Abs(got.Z-4) > 1e-6 {
+		t.Errorf("included 2D point = %v, want (3,0,4)", got)
+	}
+	if _, ok := sk.Entities()[1].(*sketch.IncludedCurve3D); !ok {
+		t.Errorf("second included entity is %T, want *IncludedCurve3D", sk.Entities()[1])
+	}
+}
+
+// TestSketch3DIncludeSketch2DUnknownIsUnhealthy checks a missing source entity id is
+// reported, not fatal.
+func TestSketch3DIncludeSketch2DUnknownIsUnhealthy(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var inc wire.IncludeSketch3DResult
+	call(t, r, s, "sketch3d.includeSketch", `{"sketchIndex":0,"sourceSketchIndex":0,"entityIDs":[999999]}`, &inc)
+	if inc.Healthy || len(inc.Created) != 0 {
+		t.Fatalf("includeSketch of a bogus id = %+v, want unhealthy / nothing created", inc)
+	}
+}
+
 // TestSketch3DSurfaceCurves builds a box and adds an intersection curve between two of
 // its faces and a silhouette of one face, by reference key.
 func TestSketch3DSurfaceCurves(t *testing.T) {
