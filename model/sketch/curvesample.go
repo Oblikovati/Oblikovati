@@ -47,6 +47,12 @@ func naturalPolyline(e Entity) []math.Point2 {
 		return sampleSplineEntity(t)
 	case *EllipticalArc:
 		return sampleEllipticalArcEntity(t)
+	case *EquationCurve:
+		return t.Sample(curveSamples)
+	case *FixedSpline:
+		return t.Pts
+	case *OffsetSpline:
+		return t.Sample()
 	default:
 		a, b, ok := segmentEnds(e)
 		if !ok {

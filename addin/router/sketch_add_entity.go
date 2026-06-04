@@ -171,8 +171,49 @@ func buildCurvedEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch,
 	case "chamfer":
 		return buildChamfer(part, sk, in)
 	default:
-		return nil, nil, fmt.Errorf("sketch.addEntity: unknown kind %q (want line|point|circle|arc|ellipse|ellipticalArc|spline|fillet|chamfer)", in.Kind)
+		return buildDerivedCurve(part, sk, in, pts)
 	}
+}
+
+// buildDerivedCurve dispatches the M21 derived curves (equation/fixed/offset spline).
+func buildDerivedCurve(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) (sketch.Entity, []uint64, error) {
+	switch in.Kind {
+	case "equationCurve":
+		e, err := sk.EquationCurves().Add(in.XExpr, in.YExpr, in.T0, in.T1)
+		if err != nil {
+			return nil, nil, err
+		}
+		return e, nil, nil
+	case "fixedSpline":
+		if len(pts) < 2 {
+			return nil, nil, fmt.Errorf("sketch.addEntity: fixedSpline needs at least 2 points, got %d", len(pts))
+		}
+		return sk.FixedSplines().Add(pts), nil, nil
+	case "offsetSpline":
+		return buildOffsetSpline(part, sk, in)
+	default:
+		return nil, nil, fmt.Errorf("sketch.addEntity: unknown kind %q", in.Kind)
+	}
+}
+
+// buildOffsetSpline offsets a referenced parent spline by a unit-bearing distance.
+func buildOffsetSpline(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (sketch.Entity, []uint64, error) {
+	if len(in.EntityRefs) != 1 {
+		return nil, nil, fmt.Errorf("sketch.addEntity: offsetSpline needs 1 parent spline ref, got %d", len(in.EntityRefs))
+	}
+	e, ok := sk.EntityByID(sketch.ID(in.EntityRefs[0]))
+	if !ok {
+		return nil, nil, fmt.Errorf("sketch.addEntity: no entity with id %d", in.EntityRefs[0])
+	}
+	parent, ok := e.(*sketch.Spline)
+	if !ok {
+		return nil, nil, fmt.Errorf("sketch.addEntity: entity %d is %T, want a spline", in.EntityRefs[0], e)
+	}
+	d, err := part.Units().Parse(in.Radius, param.Length)
+	if err != nil {
+		return nil, nil, fmt.Errorf("sketch.addEntity: offset distance %q: %w", in.Radius, err)
+	}
+	return sk.OffsetSplines().Add(parent, d.Value), nil, nil
 }
 
 // buildFillet rounds the corner between two referenced lines with a tangent arc.

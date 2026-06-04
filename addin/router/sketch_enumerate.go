@@ -9,6 +9,7 @@ import (
 	"github.com/Oblikovati/api/wire"
 
 	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
@@ -110,9 +111,24 @@ func annotationShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, floa
 		return types.SketchEntityFillRegion, [][]float64{{float64(v.Seed.X), float64(v.Seed.Y)}}, 0
 	case *sketch.TextBox:
 		return types.SketchEntityText, [][]float64{{float64(v.Anchor.X), float64(v.Anchor.Y)}}, 0
+	case *sketch.EquationCurve:
+		return types.SketchEntityEquationCurve, nil, 0
+	case *sketch.FixedSpline:
+		return types.SketchEntityFixedSpline, point2Slice(v.Pts), 0
+	case *sketch.OffsetSpline:
+		return types.SketchEntityOffsetSpline, nil, 0
 	default:
 		return types.SketchEntityUnknown, nil, 0
 	}
+}
+
+// point2Slice renders model points as [x,y] pairs for the wire DTOs.
+func point2Slice(pts []math.Point2) [][]float64 {
+	out := make([][]float64, len(pts))
+	for i, p := range pts {
+		out[i] = []float64{float64(p.X), float64(p.Y)}
+	}
+	return out
 }
 
 // geometricShape returns a geometric constraint's wire kind and the ids of the entities

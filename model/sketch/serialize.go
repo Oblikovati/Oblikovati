@@ -76,6 +76,13 @@ type EntityData struct {
 	Justify      int       `yaml:"justify,omitempty"`    // text only
 	Seed         []float64 `yaml:"seed,omitempty"`       // fillRegion only: [x, y]
 	Style        string    `yaml:"style,omitempty"`      // fillRegion only
+	XExpr        string    `yaml:"xExpr,omitempty"`      // equationCurve only
+	YExpr        string    `yaml:"yExpr,omitempty"`      // equationCurve only
+	T0           float64   `yaml:"t0,omitempty"`         // equationCurve only
+	T1           float64   `yaml:"t1,omitempty"`         // equationCurve only
+	Coords       []float64 `yaml:"coords,omitempty"`     // fixedSpline only: flattened [x,y,…]
+	ParentID     int       `yaml:"parentId,omitempty"`   // offsetSpline only
+	OffsetDist   float64   `yaml:"offsetDist,omitempty"` // offsetSpline only
 }
 
 // ConstraintData is one geometric constraint: its kind plus operand ids split into
@@ -211,8 +218,32 @@ func serializeEntity(e Entity) (EntityData, error) {
 			TextHeight: float64(v.Height), Rotation: float64(v.Rotation), Justify: int(v.Justify),
 		}, nil
 	default:
+		return serializeDerivedCurve(e)
+	}
+}
+
+// serializeDerivedCurve handles the M21 derived curves (equation/fixed/offset spline);
+// split out of serializeEntity to keep that switch small.
+func serializeDerivedCurve(e Entity) (EntityData, error) {
+	switch v := e.(type) {
+	case *EquationCurve:
+		return EntityData{ID: int(v.id), Kind: "equationCurve", XExpr: v.XExpr, YExpr: v.YExpr, T0: v.T0, T1: v.T1}, nil
+	case *FixedSpline:
+		return EntityData{ID: int(v.id), Kind: "fixedSpline", Coords: flattenPoints(v.Pts)}, nil
+	case *OffsetSpline:
+		return EntityData{ID: int(v.id), Kind: "offsetSpline", ParentID: int(v.Parent.id), OffsetDist: v.Dist}, nil
+	default:
 		return EntityData{}, fmt.Errorf("cannot serialize entity of type %T (no codec)", e)
 	}
+}
+
+// flattenPoints flattens points to a [x,y,x,y,…] slice.
+func flattenPoints(pts []math.Point2) []float64 {
+	out := make([]float64, 0, len(pts)*2)
+	for _, p := range pts {
+		out = append(out, float64(p.X), float64(p.Y))
+	}
+	return out
 }
 
 func serializeConstraint(c Constraint) (ConstraintData, error) {

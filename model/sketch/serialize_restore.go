@@ -43,6 +43,35 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 	return r.restoreDimensions(sd.Dimensions)
 }
 
+// restoreDerivedCurve rebuilds the M21 derived curves (equation/fixed/offset spline);
+// split out of restoreEntity to keep that switch small. The offset spline's parent must
+// already be restored (entities are restored in order).
+func (r *sketchRestorer) restoreDerivedCurve(ed EntityData) (Entity, error) {
+	switch ed.Kind {
+	case "equationCurve":
+		return r.s.eqCurves.Add(ed.XExpr, ed.YExpr, ed.T0, ed.T1)
+	case "fixedSpline":
+		return r.s.fixedSpl.Add(unflattenPoints(ed.Coords)), nil
+	case "offsetSpline":
+		parent, ok := r.entityMap[ed.ParentID].(*Spline)
+		if !ok {
+			return nil, fmt.Errorf("offsetSpline parent %d is not a spline", ed.ParentID)
+		}
+		return r.s.offSpl.Add(parent, ed.OffsetDist), nil
+	default:
+		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
+	}
+}
+
+// unflattenPoints rebuilds points from a [x,y,x,y,…] slice (odd tails are ignored).
+func unflattenPoints(coords []float64) []math.Point2 {
+	out := make([]math.Point2, 0, len(coords)/2)
+	for i := 0; i+1 < len(coords); i += 2 {
+		out = append(out, math.P2(math.Scalar(coords[i]), math.Scalar(coords[i+1])))
+	}
+	return out
+}
+
 // restoreSketchProps reapplies the persisted name and display/solve overrides onto a
 // freshly-added sketch (sc.Add auto-named it; an empty persisted name keeps that).
 func restoreSketchProps(s *Sketch, sd SketchData) {
@@ -150,7 +179,7 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
 		return r.s.texts.Add(anchor, ed.Text, math.Scalar(ed.TextHeight), math.Scalar(ed.Rotation), TextHJustify(ed.Justify)), nil
 	default:
-		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
+		return r.restoreDerivedCurve(ed)
 	}
 }
 

@@ -107,6 +107,9 @@ type Sketch struct {
 	images   *SketchImages
 	fills    *FillRegions
 	texts    *TextBoxes
+	eqCurves *EquationCurves
+	fixedSpl *FixedSplines
+	offSpl   *OffsetSplines
 	blocks   *Blocks
 	geomCons *GeometricConstraints
 	dimCons  *DimensionConstraints
@@ -172,8 +175,13 @@ func (s *Sketch) Images() *SketchImages { return s.images }
 // FillRegions returns the fill-region collection; TextBoxes the sketch-text collection.
 func (s *Sketch) FillRegions() *FillRegions { return s.fills }
 func (s *Sketch) TextBoxes() *TextBoxes     { return s.texts }
-func (s *Sketch) Points() *Points           { return s.points }
-func (s *Sketch) Blocks() *Blocks           { return s.blocks }
+
+// EquationCurves/FixedSplines/OffsetSplines return the derived-curve collections.
+func (s *Sketch) EquationCurves() *EquationCurves { return s.eqCurves }
+func (s *Sketch) FixedSplines() *FixedSplines     { return s.fixedSpl }
+func (s *Sketch) OffsetSplines() *OffsetSplines   { return s.offSpl }
+func (s *Sketch) Points() *Points                 { return s.points }
+func (s *Sketch) Blocks() *Blocks                 { return s.blocks }
 
 // GeometricConstraints returns the sketch's geometric-constraint collection.
 func (s *Sketch) GeometricConstraints() *GeometricConstraints { return s.geomCons }
@@ -229,6 +237,9 @@ func (s *Sketch) initCollections() {
 	s.images = &SketchImages{s: s}
 	s.fills = &FillRegions{s: s}
 	s.texts = &TextBoxes{s: s}
+	s.eqCurves = &EquationCurves{s: s}
+	s.fixedSpl = &FixedSplines{s: s}
+	s.offSpl = &OffsetSplines{s: s}
 	s.blocks = &Blocks{s: s}
 	s.geomCons = &GeometricConstraints{}
 	s.params = param.NewParameters()

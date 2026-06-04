@@ -819,6 +819,39 @@ func TestSketchAdvancedDimensions(t *testing.T) {
 	}
 }
 
+// TestSketchDerivedCurves exercises equation/fixed/offset-spline curves through the API.
+func TestSketchDerivedCurves(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var res wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"equationCurve","xExpr":"cos(t)","yExpr":"sin(t)","t0":0,"t1":6.283185}`, &res)
+	if res.Kind != "equationCurve" {
+		t.Fatalf("kind = %q, want equationCurve", res.Kind)
+	}
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"fixedSpline","points":[[0,0],[1,1],[2,0]]}`, &res)
+
+	var parent wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"spline","points":[[5,5],[7,5]]}`, &parent)
+	call(t, r, s, "sketch.addEntity", fmt.Sprintf(`{"sketchIndex":0,"kind":"offsetSpline","entityRefs":[%d],"radius":"5 mm"}`, parent.EntityID), &res)
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	for _, k := range []string{"equationCurve", "fixedSpline", "offsetSpline"} {
+		if countKind(ents.Entities, k) != 1 {
+			t.Errorf("want one %s, got %+v", k, ents.Entities)
+		}
+	}
+}
+
+func TestSketchEquationCurveRejectsBadExpr(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.addEntity", []byte(`{"sketchIndex":0,"kind":"equationCurve","xExpr":"cos(u)","yExpr":"sin(t)","t0":0,"t1":1}`)); err == nil {
+		t.Fatal("expected error for unknown variable in equation curve")
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {
