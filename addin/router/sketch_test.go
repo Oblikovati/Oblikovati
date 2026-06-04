@@ -768,6 +768,57 @@ func TestSketchGroundNeedsOneRef(t *testing.T) {
 	}
 }
 
+// TestSketchAdvancedDimensions exercises offset/three-point-angle dims through the API.
+func TestSketchAdvancedDimensions(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var line, pt wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &line)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"point","points":[[2,3]]}`, &pt)
+
+	var dim wire.AddDimensionResult
+	args := fmt.Sprintf(`{"sketchIndex":0,"kind":"offsetDim","entities":[%d,%d],"expression":"30 mm"}`, pt.PointIDs[0], line.EntityID)
+	call(t, r, s, "sketch.addDimension", args, &dim)
+	if dim.Kind != "offsetDim" || math.Abs(dim.Value-3) > 1e-9 { // measured perp distance = 3
+		t.Fatalf("offset dim = %+v, want offsetDim / value 3", dim)
+	}
+
+	// Three-point angle on three points.
+	var pa, pb wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"point","points":[[5,4]]}`, &pa)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"point","points":[[4,5]]}`, &pb)
+	args = fmt.Sprintf(`{"sketchIndex":0,"kind":"threePointAngle","entities":[%d,%d,%d],"expression":"90 deg"}`, pt.PointIDs[0], pa.PointIDs[0], pb.PointIDs[0])
+	call(t, r, s, "sketch.addDimension", args, &dim)
+	if dim.Kind != "threePointAngle" {
+		t.Fatalf("kind = %q, want threePointAngle", dim.Kind)
+	}
+
+	// Ellipse-radius on an ellipse.
+	var el wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"ellipse","points":[[20,20]],"axis":[1,0],"majorRadius":"2 cm","minorRadius":"1 cm"}`, &el)
+	args = fmt.Sprintf(`{"sketchIndex":0,"kind":"ellipseRadius","entities":[%d],"expression":"3 cm"}`, el.EntityID)
+	call(t, r, s, "sketch.addDimension", args, &dim)
+	if dim.Kind != "ellipseRadius" {
+		t.Fatalf("kind = %q, want ellipseRadius", dim.Kind)
+	}
+
+	var dims wire.ListDimensionsResult
+	call(t, r, s, "sketch.dimensions", `{"sketchIndex":0}`, &dims)
+	if len(dims.Dimensions) != 3 {
+		t.Fatalf("dimensions = %d, want 3 (offset/angle/ellipse)", len(dims.Dimensions))
+	}
+
+	for _, bad := range []string{
+		`{"sketchIndex":0,"kind":"offsetDim","entities":[1],"expression":"1 cm"}`,          // wrong ref count
+		`{"sketchIndex":0,"kind":"threePointAngle","entities":[1,2],"expression":"1 deg"}`, // wrong ref count
+		`{"sketchIndex":0,"kind":"ellipseRadius","entities":[99999],"expression":"1 cm"}`,  // missing ellipse
+	} {
+		if _, err := r.Handle(s, "sketch.addDimension", []byte(bad)); err == nil {
+			t.Errorf("expected error for %s", bad)
+		}
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

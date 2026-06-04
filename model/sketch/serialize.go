@@ -274,8 +274,11 @@ func serializeDimension(d *DimensionConstraint) (DimensionData, error) {
 	dd.Kind = kind
 	// Split the dimensioned geometry into point and curve operands by kind.
 	switch d.kind {
-	case DistanceDim:
+	case DistanceDim, ThreePointAngleDim:
 		dd.Points = entityIDsOf(d.refs)
+	case OffsetDim:
+		dd.Points = entityIDsOf(d.refs[:1]) // the point
+		dd.Curves = entityIDsOf(d.refs[1:]) // the line
 	default:
 		dd.Curves = entityIDsOf(d.refs)
 	}
@@ -294,6 +297,12 @@ func dimKindName(k DimKind) (string, error) {
 		return "diameter", nil
 	case ArcLengthDim:
 		return "arcLength", nil
+	case OffsetDim:
+		return "offsetDim", nil
+	case ThreePointAngleDim:
+		return "threePointAngle", nil
+	case EllipseRadiusDim:
+		return "ellipseRadius", nil
 	default:
 		return "", fmt.Errorf("cannot serialize dimension of kind %d (no codec)", k)
 	}

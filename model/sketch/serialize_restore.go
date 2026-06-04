@@ -337,8 +337,52 @@ func (r *sketchRestorer) restoreDimension(dd DimensionData) (*DimensionConstrain
 		}
 		return dc.AddArcLength(a, dd.Expression)
 	default:
+		return r.restoreAdvancedDimension(dd)
+	}
+}
+
+// restoreAdvancedDimension rebuilds the M21 dimension kinds (offset/three-point-angle/
+// ellipse-radius); split out of restoreDimension to keep that switch small.
+func (r *sketchRestorer) restoreAdvancedDimension(dd DimensionData) (*DimensionConstraint, error) {
+	dc := r.s.dimCons
+	switch dd.Kind {
+	case "offsetDim":
+		p, err := r.point(dd.Points, 0)
+		if err != nil {
+			return nil, err
+		}
+		l, err := r.line(dd.Curves, 0)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddOffsetDim(p, l, dd.Expression)
+	case "threePointAngle":
+		pts, err := r.points(dd.Points, 3)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddThreePointAngle(pts[0], pts[1], pts[2], dd.Expression)
+	case "ellipseRadius":
+		e, err := r.ellipse(dd.Curves, 0)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddEllipseRadius(e, dd.Expression)
+	default:
 		return nil, fmt.Errorf("unknown dimension kind %q", dd.Kind)
 	}
+}
+
+// ellipse resolves the i-th id to a restored *Ellipse.
+func (r *sketchRestorer) ellipse(ids []int, i int) (*Ellipse, error) {
+	if i >= len(ids) {
+		return nil, fmt.Errorf("ellipse operand %d missing", i)
+	}
+	e, ok := r.entityMap[ids[i]].(*Ellipse)
+	if !ok {
+		return nil, fmt.Errorf("entity %d is not an ellipse", ids[i])
+	}
+	return e, nil
 }
 
 // --- operand resolution -------------------------------------------------------------

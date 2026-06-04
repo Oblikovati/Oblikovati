@@ -228,6 +228,12 @@ func dimensionKind(k sketch.DimKind) types.DimensionConstraintKind {
 		return types.DimConstraintDiameter
 	case sketch.ArcLengthDim:
 		return types.DimConstraintArcLength
+	case sketch.OffsetDim:
+		return types.DimConstraintOffset
+	case sketch.ThreePointAngleDim:
+		return types.DimConstraintThreePointAngle
+	case sketch.EllipseRadiusDim:
+		return types.DimConstraintEllipseRadius
 	default:
 		return types.DimConstraintUnknown
 	}

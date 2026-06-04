@@ -98,8 +98,84 @@ func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs 
 	case types.DimConstraintArcLength:
 		return arcLengthDimension(sk, refs, expr)
 	default:
+		return buildAdvancedDimension(sk, kind, refs, expr)
+	}
+}
+
+// buildAdvancedDimension handles the M21 dimension kinds (offset/three-point-angle/
+// ellipse-radius); split out of buildDimension to keep that switch small.
+func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+	dc := sk.DimensionConstraints()
+	switch kind {
+	case types.DimConstraintOffset:
+		return offsetDimension(sk, refs, expr)
+	case types.DimConstraintThreePointAngle:
+		v, a, b, err := threePointRefs(sk, refs)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddThreePointAngle(v, a, b, expr)
+	case types.DimConstraintEllipseRadius:
+		e, err := ellipseRef(sk, refs)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddEllipseRadius(e, expr)
+	default:
 		return nil, fmt.Errorf("sketch.addDimension: unsupported kind %q", kind)
 	}
+}
+
+// offsetDimension resolves a point + line ref and dimensions their perpendicular distance.
+func offsetDimension(sk *sketch.Sketch, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("sketch.addDimension: offsetDim needs a point + line ref, got %d", len(refs))
+	}
+	p, err := pointRef(sk, refs[0])
+	if err != nil {
+		return nil, err
+	}
+	l, err := lineRef(sk, refs[1])
+	if err != nil {
+		return nil, err
+	}
+	return sk.DimensionConstraints().AddOffsetDim(p, l, expr)
+}
+
+// threePointRefs resolves three point refs (vertex, a, b).
+func threePointRefs(sk *sketch.Sketch, refs []uint64) (*sketch.Point, *sketch.Point, *sketch.Point, error) {
+	if len(refs) != 3 {
+		return nil, nil, nil, fmt.Errorf("sketch.addDimension: threePointAngle needs 3 point refs, got %d", len(refs))
+	}
+	v, err := pointRef(sk, refs[0])
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	a, err := pointRef(sk, refs[1])
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	b, err := pointRef(sk, refs[2])
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return v, a, b, nil
+}
+
+// ellipseRef resolves a single ref to an *Ellipse.
+func ellipseRef(sk *sketch.Sketch, refs []uint64) (*sketch.Ellipse, error) {
+	if len(refs) != 1 {
+		return nil, fmt.Errorf("sketch.addDimension: ellipseRadius needs 1 ellipse ref, got %d", len(refs))
+	}
+	e, ok := sk.EntityByID(sketch.ID(refs[0]))
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: no entity with id %d", refs[0])
+	}
+	el, ok := e.(*sketch.Ellipse)
+	if !ok {
+		return nil, fmt.Errorf("sketch.addDimension: entity %d is %T, want an ellipse", refs[0], e)
+	}
+	return el, nil
 }
 
 // radiusDimension resolves a single circle ref and applies a radius/diameter factory.
