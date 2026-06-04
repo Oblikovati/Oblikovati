@@ -3,7 +3,7 @@ milestone: M22
 feature: F05
 pbi: PBI-236
 title: Core 3D constraints (parallel/perp/tangent/smooth/midpoint/ground) + API
-status: planned
+status: done
 estimate: M
 ---
 

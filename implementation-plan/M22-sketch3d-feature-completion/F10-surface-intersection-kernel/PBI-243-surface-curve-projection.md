@@ -3,7 +3,7 @@ milestone: M22
 feature: F10
 pbi: PBI-243
 title: Surface↔curve intersection + point projection to surface
-status: planned
+status: done
 estimate: L
 ---
 

@@ -2,7 +2,7 @@
 milestone: M22
 feature: F05
 name: Geometric Constraints (3D)
-status: planned
+status: done (model+API; UI in F12)
 ---
 
 # M22 · F05 — Geometric Constraints (3D)

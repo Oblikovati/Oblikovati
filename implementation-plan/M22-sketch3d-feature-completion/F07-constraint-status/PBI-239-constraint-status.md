@@ -3,7 +3,7 @@ milestone: M22
 feature: F07
 pbi: PBI-239
 title: ConstraintStatus + defer/solve + DimensionsVisible (3D)
-status: planned
+status: done
 estimate: S
 ---
 

@@ -3,7 +3,7 @@ milestone: M22
 feature: F05
 pbi: PBI-237
 title: Parallel-to-axis/plane, spline-fit-points, bend constraints + API + tools
-status: planned
+status: done
 estimate: M
 ---
 

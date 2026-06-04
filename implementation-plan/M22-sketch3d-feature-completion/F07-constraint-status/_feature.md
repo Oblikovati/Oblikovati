@@ -2,7 +2,7 @@
 milestone: M22
 feature: F07
 name: Constraint Status & DOF (3D)
-status: planned
+status: done (model+API; UI in F12)
 ---
 
 # M22 · F07 — Constraint Status & DOF (3D)
