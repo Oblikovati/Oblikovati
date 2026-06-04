@@ -1,0 +1,746 @@
+[
+  {
+    "category": "File",
+    "action": "New",
+    "chord_raw": "Ctrl+N",
+    "chord": "Ctrl+N",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "File",
+    "action": "Open",
+    "chord_raw": "Ctrl+O",
+    "chord": "Ctrl+O",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "File",
+    "action": "Browse Recent Documents",
+    "chord_raw": "R",
+    "chord": "R",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "File",
+    "action": "Close",
+    "chord_raw": "Ctrl+W",
+    "chord": "Ctrl+W",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "File",
+    "action": "Save",
+    "chord_raw": "Ctrl+S",
+    "chord": "Ctrl+S",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "File",
+    "action": "Print",
+    "chord_raw": "Ctrl+P",
+    "chord": "Ctrl+P",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Undo",
+    "chord_raw": "Ctrl+Z",
+    "chord": "Ctrl+Z",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Redo",
+    "chord_raw": "Ctrl+Y",
+    "chord": "Ctrl+Y",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Repeat Last Command",
+    "chord_raw": "Enter",
+    "chord": "Enter",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Select All",
+    "chord_raw": "Ctrl+A",
+    "chord": "Ctrl+A",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Cut",
+    "chord_raw": "Ctrl+X",
+    "chord": "Ctrl+X",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Copy",
+    "chord_raw": "Ctrl+C",
+    "chord": "Ctrl+C",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Paste",
+    "chord_raw": "Ctrl+V",
+    "chord": "Ctrl+V",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Delete",
+    "chord_raw": "Delete",
+    "chord": "Delete",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Rebuild",
+    "chord_raw": "Ctrl+B",
+    "chord": "Ctrl+B",
+    "gesture": false,
+    "search": "r"
+  },
+  {
+    "category": "Edit",
+    "action": "Material",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "ma"
+  },
+  {
+    "category": "Edit",
+    "action": "Copy Appearance",
+    "chord_raw": "Ctrl+Shift+C",
+    "chord": "Ctrl+Shift+C",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Edit",
+    "action": "Paste Appearance",
+    "chord_raw": "Ctrl+Shift+V",
+    "chord": "Ctrl+Shift+V",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View",
+    "action": "Redraw",
+    "chord_raw": "Ctrl+R",
+    "chord": "Ctrl+R",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View",
+    "action": "Section View",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "sec"
+  },
+  {
+    "category": "View",
+    "action": "Orientation",
+    "chord_raw": "SpaceBar",
+    "chord": "Space",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View",
+    "action": "Zoom to Fit",
+    "chord_raw": "F",
+    "chord": "F",
+    "gesture": false,
+    "search": "zf"
+  },
+  {
+    "category": "View",
+    "action": "Quick Snaps",
+    "chord_raw": "F3",
+    "chord": "F3",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View",
+    "action": "FeatureManager Tree Area",
+    "chord_raw": "F9",
+    "chord": "F9",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View",
+    "action": "Toolbars",
+    "chord_raw": "F10",
+    "chord": "F10",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View",
+    "action": "Task Pane",
+    "chord_raw": "Ctrl+F1",
+    "chord": "Ctrl+F1",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "View",
+    "action": "Full Screen",
+    "chord_raw": "F11",
+    "chord": "F11",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Insert",
+    "action": "Loft",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "lo"
+  },
+  {
+    "category": "Insert",
+    "action": "Fillet/Round",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "f"
+  },
+  {
+    "category": "Insert",
+    "action": "Move/Copy",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "m"
+  },
+  {
+    "category": "Insert",
+    "action": "Linear Pattern",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "pat"
+  },
+  {
+    "category": "Insert",
+    "action": "Mirror",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "mi"
+  },
+  {
+    "category": "Insert",
+    "action": "Fillet/Round",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "f"
+  },
+  {
+    "category": "Insert",
+    "action": "Move/Copy",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "m"
+  },
+  {
+    "category": "Insert",
+    "action": "Plane",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "pl"
+  },
+  {
+    "category": "Insert",
+    "action": "Coordinate System",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "cs"
+  },
+  {
+    "category": "Insert",
+    "action": "Bill of Materials",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "bom"
+  },
+  {
+    "category": "Tools",
+    "action": "Magnified Selection",
+    "chord_raw": "G",
+    "chord": "G",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools",
+    "action": "Select All",
+    "chord_raw": "Ctrl+A",
+    "chord": "Ctrl+A",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Tools",
+    "action": "Line",
+    "chord_raw": "L",
+    "chord": "L",
+    "gesture": false,
+    "search": "l"
+  },
+  {
+    "category": "Tools",
+    "action": "3 Point Arc",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "a"
+  },
+  {
+    "category": "Tools",
+    "action": "Ellipse",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "e"
+  },
+  {
+    "category": "Tools",
+    "action": "Offset Entities",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "o"
+  },
+  {
+    "category": "Tools",
+    "action": "Trim",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "tr"
+  },
+  {
+    "category": "Tools",
+    "action": "Make",
+    "chord_raw": "",
+    "chord": "",
+    "gesture": false,
+    "search": "b"
+  },
+  {
+    "category": "Help",
+    "action": "SOLIDWORKS Help",
+    "chord_raw": "H",
+    "chord": "H",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Help",
+    "action": "Commands",
+    "chord_raw": "W",
+    "chord": "W",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Help",
+    "action": "Files and Models",
+    "chord_raw": "I",
+    "chord": "I",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Help",
+    "action": "Knowledge Base",
+    "chord_raw": "K",
+    "chord": "K",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Help",
+    "action": "Community Forum",
+    "chord_raw": "O",
+    "chord": "O",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Front",
+    "chord_raw": "Ctrl+1",
+    "chord": "Ctrl+1",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Back",
+    "chord_raw": "Ctrl+2",
+    "chord": "Ctrl+2",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Left",
+    "chord_raw": "Ctrl+3",
+    "chord": "Ctrl+3",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Right",
+    "chord_raw": "Ctrl+4",
+    "chord": "Ctrl+4",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Top",
+    "chord_raw": "Ctrl+5",
+    "chord": "Ctrl+5",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Bottom",
+    "chord_raw": "Ctrl+6",
+    "chord": "Ctrl+6",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Isometric",
+    "chord_raw": "Ctrl+7",
+    "chord": "Ctrl+7",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Normal To",
+    "chord_raw": "Ctrl+8",
+    "chord": "Ctrl+8",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Command option toggle",
+    "chord_raw": "A",
+    "chord": "A",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Expand/Collapse Tree",
+    "chord_raw": "C",
+    "chord": "C",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Collapse all Items",
+    "chord_raw": "Shift+C",
+    "chord": "Shift+C",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Filter Edges",
+    "chord_raw": "E",
+    "chord": "E",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Find/Replace",
+    "chord_raw": "Ctrl+F",
+    "chord": "Ctrl+F",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Next Edge",
+    "chord_raw": "N",
+    "chord": "N",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Force Regen",
+    "chord_raw": "Ctrl+Q",
+    "chord": "Ctrl+Q",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Shortcut Bar",
+    "chord_raw": "S",
+    "chord": "S",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Show Flat Tree View",
+    "chord_raw": "Ctrl+T",
+    "chord": "Ctrl+T",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Filter Vertices",
+    "chord_raw": "V",
+    "chord": "V",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Scroll to FeatureManager tree bottom",
+    "chord_raw": "End",
+    "chord": "End",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Toggle Notes Upper Case",
+    "chord_raw": "Shift+F3",
+    "chord": "Shift+F3",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Toggle Selection Filter Toolbar",
+    "chord_raw": "F5",
+    "chord": "F5",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Toggle Selection Filters",
+    "chord_raw": "F6",
+    "chord": "F6",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Spell Checker",
+    "chord_raw": "F7",
+    "chord": "F7",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Hide/Show Display Pane",
+    "chord_raw": "F8",
+    "chord": "F8",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Scroll to FeatureManager tree top",
+    "chord_raw": "Home",
+    "chord": "Home",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Next Command Manager Tab",
+    "chord_raw": "Ctrl+Next",
+    "chord": "Ctrl+PageDown",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Select Annotation View",
+    "chord_raw": "SingleQuote",
+    "chord": "'",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Previous Command Manager Tab",
+    "chord_raw": "Ctrl+Prior",
+    "chord": "Ctrl+PageUp",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "View Selector",
+    "chord_raw": "Ctrl+SpaceBar",
+    "chord": "Ctrl+Space",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Filter Faces",
+    "chord_raw": "X",
+    "chord": "X",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Accept Edge",
+    "chord_raw": "Y",
+    "chord": "Y",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Zoom Out",
+    "chord_raw": "Z",
+    "chord": "Z",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Zoom In",
+    "chord_raw": "Shift+Z",
+    "chord": "Shift+Z",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Previous View",
+    "chord_raw": "Ctrl+Shift+Z",
+    "chord": "Ctrl+Shift+Z",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Move Controls to Pointer",
+    "chord_raw": "D",
+    "chord": "D",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Hide the Hovered-over Component/Bodies",
+    "chord_raw": "TAB",
+    "chord": "TAB",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Show the Hovered-over Component/Bodies",
+    "chord_raw": "Shift+TAB",
+    "chord": "Shift+TAB",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Others",
+    "action": "Show all the hidden Components/Bodies",
+    "chord_raw": "Ctrl+Shift+TAB",
+    "chord": "Ctrl+Shift+TAB",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Search",
+    "action": "Search SOLIDWORKS Help",
+    "chord_raw": "H",
+    "chord": "H",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Search",
+    "action": "Search Commands",
+    "chord_raw": "W",
+    "chord": "W",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Search",
+    "action": "Search Files and Models",
+    "chord_raw": "I",
+    "chord": "I",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Search",
+    "action": "Search Knowledge Base",
+    "chord_raw": "K",
+    "chord": "K",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "Search",
+    "action": "Search Community Forum",
+    "chord_raw": "O",
+    "chord": "O",
+    "gesture": false,
+    "search": ""
+  }
+]

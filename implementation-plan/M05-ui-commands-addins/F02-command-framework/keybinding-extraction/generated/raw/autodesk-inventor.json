@@ -1,0 +1,2762 @@
+[
+  {
+    "category": "",
+    "action": "Adjust Orientation",
+    "chord_raw": "AO",
+    "chord": "",
+    "alias": "AO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Adjust Position",
+    "chord_raw": "AP",
+    "chord": "",
+    "alias": "AP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Analyze Interference",
+    "chord_raw": "IA",
+    "chord": "",
+    "alias": "IA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Animate Results",
+    "chord_raw": "AM",
+    "chord": "",
+    "alias": "AM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Application Options",
+    "chord_raw": "OP",
+    "chord": "",
+    "alias": "OP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Assign Materials",
+    "chord_raw": "MAT",
+    "chord": "",
+    "alias": "MAT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Auto Balloon",
+    "chord_raw": "BA",
+    "chord": "",
+    "alias": "BA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Auto Dimension",
+    "chord_raw": "AD",
+    "chord": "",
+    "alias": "AD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Auto Runner Sketch",
+    "chord_raw": "AR",
+    "chord": "",
+    "alias": "AR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Automatic Contacts",
+    "chord_raw": "AC",
+    "chord": "",
+    "alias": "AC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Automatic Route",
+    "chord_raw": "AR",
+    "chord": "",
+    "alias": "AR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Auxiliary View",
+    "chord_raw": "AV",
+    "chord": "",
+    "alias": "AV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Baseline Dimension",
+    "chord_raw": "BD",
+    "chord": "",
+    "alias": "BD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Beam Detail",
+    "chord_raw": "BD",
+    "chord": "",
+    "alias": "BD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Beam Labels",
+    "chord_raw": "LB",
+    "chord": "",
+    "alias": "LB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Beam Materials",
+    "chord_raw": "MA",
+    "chord": "",
+    "alias": "MA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Bearing Load",
+    "chord_raw": "BE",
+    "chord": "",
+    "alias": "BE",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Bend",
+    "chord_raw": "BE",
+    "chord": "",
+    "alias": "BE",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Bend Notes",
+    "chord_raw": "BN",
+    "chord": "",
+    "alias": "BN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Bend Part",
+    "chord_raw": "BP",
+    "chord": "",
+    "alias": "BP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Bending Moment",
+    "chord_raw": "BM",
+    "chord": "",
+    "alias": "BM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Body Load",
+    "chord_raw": "BO",
+    "chord": "",
+    "alias": "BO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Boundary Conditions",
+    "chord_raw": "BC",
+    "chord": "",
+    "alias": "BC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Bounded Runoff Surface",
+    "chord_raw": "BR",
+    "chord": "",
+    "alias": "BR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Break",
+    "chord_raw": "BRV",
+    "chord": "",
+    "alias": "BRV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Break Out",
+    "chord_raw": "BO",
+    "chord": "",
+    "alias": "BO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Bridge Curve",
+    "chord_raw": "BC",
+    "chord": "",
+    "alias": "BC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Broken Sketch Entity",
+    "chord_raw": "BS",
+    "chord": "",
+    "alias": "BS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Caterpillar",
+    "chord_raw": "CAT",
+    "chord": "",
+    "alias": "CAT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Center Mark",
+    "chord_raw": "CM",
+    "chord": "",
+    "alias": "CM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Center Point Circle",
+    "chord_raw": "CE",
+    "chord": "",
+    "alias": "CE",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Centerline",
+    "chord_raw": "CL",
+    "chord": "",
+    "alias": "CL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Centerline Bisector",
+    "chord_raw": "CB",
+    "chord": "",
+    "alias": "CB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Chamfer Note",
+    "chord_raw": "CN",
+    "chord": "",
+    "alias": "CN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Check Bend Radius",
+    "chord_raw": "BR",
+    "chord": "",
+    "alias": "BR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Circular Pattern",
+    "chord_raw": "CP",
+    "chord": "",
+    "alias": "CP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Cold Well",
+    "chord_raw": "CW",
+    "chord": "",
+    "alias": "CW",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Color Bar",
+    "chord_raw": "CB",
+    "chord": "",
+    "alias": "CB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Color Bar",
+    "chord_raw": "CC",
+    "chord": "",
+    "alias": "CC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Combine Cores And Cavities",
+    "chord_raw": "CM",
+    "chord": "",
+    "alias": "CM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Connect Fittings",
+    "chord_raw": "CF",
+    "chord": "",
+    "alias": "CF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Connector Authoring",
+    "chord_raw": "CA",
+    "chord": "",
+    "alias": "CA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Continuous Load",
+    "chord_raw": "CL",
+    "chord": "",
+    "alias": "CL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Contour Flange",
+    "chord_raw": "CF",
+    "chord": "",
+    "alias": "CF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Contour Shading",
+    "chord_raw": "CT",
+    "chord": "",
+    "alias": "CT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Convergence Plot",
+    "chord_raw": "CP",
+    "chord": "",
+    "alias": "CP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Convert Assembly Constraints",
+    "chord_raw": "CC",
+    "chord": "",
+    "alias": "CC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Cooling Channel",
+    "chord_raw": "CH",
+    "chord": "",
+    "alias": "CH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Cooling Channel Check",
+    "chord_raw": "CC",
+    "chord": "",
+    "alias": "CC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Cooling Component",
+    "chord_raw": "CS",
+    "chord": "",
+    "alias": "CS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Copy Components",
+    "chord_raw": "CO",
+    "chord": "",
+    "alias": "CO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Core",
+    "chord_raw": "CD",
+    "chord": "",
+    "alias": "CD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Corner Chamfer",
+    "chord_raw": "CC",
+    "chord": "",
+    "alias": "CC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Corner Round",
+    "chord_raw": "CR",
+    "chord": "",
+    "alias": "CR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Corner Seam",
+    "chord_raw": "CS",
+    "chord": "",
+    "alias": "CS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Cable",
+    "chord_raw": "CC",
+    "chord": "",
+    "alias": "CC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Fold",
+    "chord_raw": "CF",
+    "chord": "",
+    "alias": "CF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Harness",
+    "chord_raw": "HA",
+    "chord": "",
+    "alias": "HA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Heel",
+    "chord_raw": "CH",
+    "chord": "",
+    "alias": "CH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Mold Design",
+    "chord_raw": "NM",
+    "chord": "",
+    "alias": "NM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Patching Surface",
+    "chord_raw": "PS",
+    "chord": "",
+    "alias": "PS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Planar Pitch",
+    "chord_raw": "PH",
+    "chord": "",
+    "alias": "PH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Ribbon Cable",
+    "chord_raw": "CR",
+    "chord": "",
+    "alias": "CR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Runoff Surface",
+    "chord_raw": "RS",
+    "chord": "",
+    "alias": "RS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Segment",
+    "chord_raw": "CS",
+    "chord": "",
+    "alias": "CS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Splice",
+    "chord_raw": "SP",
+    "chord": "",
+    "alias": "SP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create View",
+    "chord_raw": "CV",
+    "chord": "",
+    "alias": "CV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Wire",
+    "chord_raw": "CW",
+    "chord": "",
+    "alias": "CW",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Crop",
+    "chord_raw": "CR",
+    "chord": "",
+    "alias": "CR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Datum Identifier Symbol",
+    "chord_raw": "DI",
+    "chord": "",
+    "alias": "DI",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Define Workpiece Setting",
+    "chord_raw": "DW",
+    "chord": "",
+    "alias": "DW",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Derived Motion",
+    "chord_raw": "DR",
+    "chord": "",
+    "alias": "DR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Detail View",
+    "chord_raw": "DV",
+    "chord": "",
+    "alias": "DV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Direct Edit",
+    "chord_raw": "DE",
+    "chord": "",
+    "alias": "DE",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Dynamic Motion",
+    "chord_raw": "DM",
+    "chord": "",
+    "alias": "DM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Dynamic Simulation Settings",
+    "chord_raw": "SET",
+    "chord": "",
+    "alias": "SET",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Edit Base Sketch",
+    "chord_raw": "ES",
+    "chord": "",
+    "alias": "ES",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Edit Layers",
+    "chord_raw": "LA",
+    "chord": "",
+    "alias": "LA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Edit Moldable Part",
+    "chord_raw": "EM",
+    "chord": "",
+    "alias": "EM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Ejector",
+    "chord_raw": "EJ",
+    "chord": "",
+    "alias": "EJ",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Ellipse",
+    "chord_raw": "EL",
+    "chord": "",
+    "alias": "EL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "End Fill",
+    "chord_raw": "EF",
+    "chord": "",
+    "alias": "EF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Exit",
+    "chord_raw": "QUIT",
+    "chord": "",
+    "alias": "QUIT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Export",
+    "chord_raw": "EX",
+    "chord": "",
+    "alias": "EX",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Export Harness Data",
+    "chord_raw": "EH",
+    "chord": "",
+    "alias": "EH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Extend",
+    "chord_raw": "EX",
+    "chord": "",
+    "alias": "EX",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Extend Runoff Surface",
+    "chord_raw": "ET",
+    "chord": "",
+    "alias": "ET",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fan Out",
+    "chord_raw": "FO",
+    "chord": "",
+    "alias": "FO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Feature Identifier Symbol",
+    "chord_raw": "FI",
+    "chord": "",
+    "alias": "FI",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fillet",
+    "chord_raw": "FI",
+    "chord": "",
+    "alias": "FI",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Find",
+    "chord_raw": "CTRL-F",
+    "chord": "",
+    "alias": "CTRL-F",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fixed Constraint",
+    "chord_raw": "CF",
+    "chord": "",
+    "alias": "CF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Floating Pinned Constraint",
+    "chord_raw": "FL",
+    "chord": "",
+    "alias": "FL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fold",
+    "chord_raw": "FO",
+    "chord": "",
+    "alias": "FO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Force Load",
+    "chord_raw": "FO",
+    "chord": "",
+    "alias": "FO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Free Orbit",
+    "chord_raw": "ORBIT",
+    "chord": "",
+    "alias": "ORBIT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Frictionless Constraint",
+    "chord_raw": "CS",
+    "chord": "",
+    "alias": "CS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Generate Core And Cavity",
+    "chord_raw": "GC",
+    "chord": "",
+    "alias": "GC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Gravity Load",
+    "chord_raw": "GR",
+    "chord": "",
+    "alias": "GR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Groove Weld",
+    "chord_raw": "GW",
+    "chord": "",
+    "alias": "GW",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Grounded Work Point",
+    "chord_raw": "WT",
+    "chord": "",
+    "alias": "WT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Harness Dimension",
+    "chord_raw": "HD",
+    "chord": "",
+    "alias": "HD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Harness Properties",
+    "chord_raw": "HP",
+    "chord": "",
+    "alias": "HP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Hem",
+    "chord_raw": "HEM",
+    "chord": "",
+    "alias": "HEM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Hole",
+    "chord_raw": "HN",
+    "chord": "",
+    "alias": "HN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Hole Table-Features",
+    "chord_raw": "HTF",
+    "chord": "",
+    "alias": "HTF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Hole Table-Selection",
+    "chord_raw": "HTS",
+    "chord": "",
+    "alias": "HTS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Hole Table-View",
+    "chord_raw": "HTV",
+    "chord": "",
+    "alias": "HTV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Hose Length",
+    "chord_raw": "HL",
+    "chord": "",
+    "alias": "HL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Import Harness Data",
+    "chord_raw": "IH",
+    "chord": "",
+    "alias": "IH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Include Geometry",
+    "chord_raw": "IG",
+    "chord": "",
+    "alias": "IG",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Insert Node",
+    "chord_raw": "IN",
+    "chord": "",
+    "alias": "IN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Isogen Output",
+    "chord_raw": "IO",
+    "chord": "",
+    "alias": "IO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Job Manager",
+    "chord_raw": "JM",
+    "chord": "",
+    "alias": "JM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Leader Text",
+    "chord_raw": "LE",
+    "chord": "",
+    "alias": "LE",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Lifter",
+    "chord_raw": "LA",
+    "chord": "",
+    "alias": "LA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Load Values",
+    "chord_raw": "LV",
+    "chord": "",
+    "alias": "LV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Local Mesh Control",
+    "chord_raw": "ML",
+    "chord": "",
+    "alias": "ML",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Local Systems",
+    "chord_raw": "LS",
+    "chord": "",
+    "alias": "LS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Lock Set",
+    "chord_raw": "SL",
+    "chord": "",
+    "alias": "SL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Loft",
+    "chord_raw": "LO",
+    "chord": "",
+    "alias": "LO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Manual Contact",
+    "chord_raw": "MC",
+    "chord": "",
+    "alias": "MC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Manual Sketch",
+    "chord_raw": "MS",
+    "chord": "",
+    "alias": "MS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Maximum Result",
+    "chord_raw": "MAX",
+    "chord": "",
+    "alias": "MAX",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mesh Settings",
+    "chord_raw": "MS",
+    "chord": "",
+    "alias": "MS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mesh View",
+    "chord_raw": "MV",
+    "chord": "",
+    "alias": "MV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Minimum Result",
+    "chord_raw": "MIN",
+    "chord": "",
+    "alias": "MIN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mirror",
+    "chord_raw": "MI",
+    "chord": "",
+    "alias": "MI",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mirror Components",
+    "chord_raw": "MI",
+    "chord": "",
+    "alias": "MI",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mold Base",
+    "chord_raw": "MB",
+    "chord": "",
+    "alias": "MB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mold Base Author",
+    "chord_raw": "AU",
+    "chord": "",
+    "alias": "AU",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mold Boolean",
+    "chord_raw": "BL",
+    "chord": "",
+    "alias": "BL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mold Fill Analysis",
+    "chord_raw": "MF",
+    "chord": "",
+    "alias": "MF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mold Process Settings",
+    "chord_raw": "PS",
+    "chord": "",
+    "alias": "PS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Mold Shrinkage",
+    "chord_raw": "SK",
+    "chord": "",
+    "alias": "SK",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Moment",
+    "chord_raw": "MO",
+    "chord": "",
+    "alias": "MO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Moment Load",
+    "chord_raw": "MO",
+    "chord": "",
+    "alias": "MO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Move",
+    "chord_raw": "MO",
+    "chord": "",
+    "alias": "MO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Move Node",
+    "chord_raw": "MN",
+    "chord": "",
+    "alias": "MN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Move Segment",
+    "chord_raw": "MS",
+    "chord": "",
+    "alias": "MS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Nailboard",
+    "chord_raw": "NB",
+    "chord": "",
+    "alias": "NB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "New Route",
+    "chord_raw": "NR",
+    "chord": "",
+    "alias": "NR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "New Sketch",
+    "chord_raw": "S3",
+    "chord": "",
+    "alias": "S3",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "No Shading",
+    "chord_raw": "NP",
+    "chord": "",
+    "alias": "NP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Node Labels",
+    "chord_raw": "LN",
+    "chord": "",
+    "alias": "LN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Ordinate Dimension",
+    "chord_raw": "OD",
+    "chord": "",
+    "alias": "OD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Origin Points Visibility",
+    "chord_raw": "CTRL-.",
+    "chord": "",
+    "alias": "CTRL-.",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Output Grapher",
+    "chord_raw": "OG",
+    "chord": "",
+    "alias": "OG",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Part Fill Analysis",
+    "chord_raw": "PF",
+    "chord": "",
+    "alias": "PF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Part Process Settings",
+    "chord_raw": "MP",
+    "chord": "",
+    "alias": "MP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Part Shrinkage",
+    "chord_raw": "SK",
+    "chord": "",
+    "alias": "SK",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Parts List",
+    "chord_raw": "PL",
+    "chord": "",
+    "alias": "PL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Pattern",
+    "chord_raw": "PT",
+    "chord": "",
+    "alias": "PT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Pattern Component",
+    "chord_raw": "PC",
+    "chord": "",
+    "alias": "PC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Pin Constraint",
+    "chord_raw": "CP",
+    "chord": "",
+    "alias": "CP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Pinned Constraint",
+    "chord_raw": "PN",
+    "chord": "",
+    "alias": "PN",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Connector Views",
+    "chord_raw": "CV",
+    "chord": "",
+    "alias": "CV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Core And Cavity",
+    "chord_raw": "CC",
+    "chord": "",
+    "alias": "CC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Core Pin",
+    "chord_raw": "CP",
+    "chord": "",
+    "alias": "CP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Fitting",
+    "chord_raw": "PF",
+    "chord": "",
+    "alias": "PF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Insert",
+    "chord_raw": "PI",
+    "chord": "",
+    "alias": "PI",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Pin Group",
+    "chord_raw": "PG",
+    "chord": "",
+    "alias": "PG",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Plastic Part",
+    "chord_raw": "PP",
+    "chord": "",
+    "alias": "PP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Point, Center Point",
+    "chord_raw": "PO",
+    "chord": "",
+    "alias": "PO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Probe Labels",
+    "chord_raw": "LP",
+    "chord": "",
+    "alias": "LP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Probe Labels",
+    "chord_raw": "PL",
+    "chord": "",
+    "alias": "PL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Projected View",
+    "chord_raw": "PV",
+    "chord": "",
+    "alias": "PV",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Property Display",
+    "chord_raw": "PD",
+    "chord": "",
+    "alias": "PD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Publish To Studio",
+    "chord_raw": "CSA",
+    "chord": "",
+    "alias": "CSA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Punchtool",
+    "chord_raw": "PT",
+    "chord": "",
+    "alias": "PT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Radiate Runoff Surface",
+    "chord_raw": "RR",
+    "chord": "",
+    "alias": "RR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Reconnect Wire Pins",
+    "chord_raw": "RW",
+    "chord": "",
+    "alias": "RW",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Rectangular Pattern",
+    "chord_raw": "RP",
+    "chord": "",
+    "alias": "RP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Reference Frame",
+    "chord_raw": "RF",
+    "chord": "",
+    "alias": "RF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Release",
+    "chord_raw": "RE",
+    "chord": "",
+    "alias": "RE",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Remote Force Load",
+    "chord_raw": "RF",
+    "chord": "",
+    "alias": "RF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Replace All",
+    "chord_raw": "RA",
+    "chord": "",
+    "alias": "RA",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Report",
+    "chord_raw": "RG",
+    "chord": "",
+    "alias": "RG",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Result Displacement Scale",
+    "chord_raw": "SC",
+    "chord": "",
+    "alias": "SC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Retrieve Dimensions",
+    "chord_raw": "RD",
+    "chord": "",
+    "alias": "RD",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Review Harness Data",
+    "chord_raw": "RH",
+    "chord": "",
+    "alias": "RH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Revision Table",
+    "chord_raw": "RTB",
+    "chord": "",
+    "alias": "RTB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Revision Tag",
+    "chord_raw": "RT",
+    "chord": "",
+    "alias": "RT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Rigid Link",
+    "chord_raw": "RL",
+    "chord": "",
+    "alias": "RL",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Rotate Component",
+    "chord_raw": "RO",
+    "chord": "",
+    "alias": "RO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Route",
+    "chord_raw": "RT",
+    "chord": "",
+    "alias": "RT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Same Scale",
+    "chord_raw": "SS",
+    "chord": "",
+    "alias": "SS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Secondary Sprue",
+    "chord_raw": "SP",
+    "chord": "",
+    "alias": "SP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Select Material",
+    "chord_raw": "SM",
+    "chord": "",
+    "alias": "SM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Set Plot Property",
+    "chord_raw": "PR",
+    "chord": "",
+    "alias": "PR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Sheet Metal Defaults",
+    "chord_raw": "ST",
+    "chord": "",
+    "alias": "ST",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Shell",
+    "chord_raw": "SH",
+    "chord": "",
+    "alias": "SH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Smooth Shading",
+    "chord_raw": "SM",
+    "chord": "",
+    "alias": "SM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Sprue Bushing",
+    "chord_raw": "SB",
+    "chord": "",
+    "alias": "SB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Stress Analysis Settings",
+    "chord_raw": "SET",
+    "chord": "",
+    "alias": "SET",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Surface Texture Symbol",
+    "chord_raw": "ST",
+    "chord": "",
+    "alias": "ST",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Sweep",
+    "chord_raw": "CTRL-Y",
+    "chord": "",
+    "alias": "CTRL-Y",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Symbols",
+    "chord_raw": "SY",
+    "chord": "",
+    "alias": "SY",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Table",
+    "chord_raw": "TB",
+    "chord": "",
+    "alias": "TB",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Tangent Circle",
+    "chord_raw": "TC",
+    "chord": "",
+    "alias": "TC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Thread",
+    "chord_raw": "TH",
+    "chord": "",
+    "alias": "TH",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Three Point Arc",
+    "chord_raw": "A3",
+    "chord": "",
+    "alias": "A3",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Three Point Rectangle",
+    "chord_raw": "REC3",
+    "chord": "",
+    "alias": "REC3",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Torque",
+    "chord_raw": "TO",
+    "chord": "",
+    "alias": "TO",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Trace",
+    "chord_raw": "TR",
+    "chord": "",
+    "alias": "TR",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Tube & Pipe Authoring",
+    "chord_raw": "AT",
+    "chord": "",
+    "alias": "AT",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Tube And Pipe Styles",
+    "chord_raw": "ST",
+    "chord": "",
+    "alias": "ST",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Two Point Rectangle",
+    "chord_raw": "REC",
+    "chord": "",
+    "alias": "REC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Unknown Force",
+    "chord_raw": "UF",
+    "chord": "",
+    "alias": "UF",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Use Existing Surface",
+    "chord_raw": "ES",
+    "chord": "",
+    "alias": "ES",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "User Mold Base",
+    "chord_raw": "UM",
+    "chord": "",
+    "alias": "UM",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "User Work Axes Visibility",
+    "chord_raw": "ALT-/",
+    "chord": "",
+    "alias": "ALT-/",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "User Work Plane Visibility",
+    "chord_raw": "ALT-]",
+    "chord": "",
+    "alias": "ALT-]",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "User Work Points Visibility",
+    "chord_raw": "ALT-.",
+    "chord": "",
+    "alias": "ALT-.",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Viewcube",
+    "chord_raw": "VC",
+    "chord": "",
+    "alias": "VC",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Welding Symbol",
+    "chord_raw": "WS",
+    "chord": "",
+    "alias": "WS",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Workpiece Pocket",
+    "chord_raw": "WP",
+    "chord": "",
+    "alias": "WP",
+    "kind": "alias",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Animate Results",
+    "chord_raw": "A",
+    "chord": "A",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Assign Virtual Parts",
+    "chord_raw": "V",
+    "chord": "V",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Balloon, Bom",
+    "chord_raw": "B",
+    "chord": "B",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Baseline Set, Animate, Arc",
+    "chord_raw": "A",
+    "chord": "A",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Beam Properties",
+    "chord_raw": "P",
+    "chord": "P",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Cable & Harness Library",
+    "chord_raw": "L",
+    "chord": "L",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Cancel",
+    "chord_raw": "ESC",
+    "chord": "Esc",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Constraints",
+    "chord_raw": "C",
+    "chord": "C",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Component",
+    "chord_raw": "N",
+    "chord": "N",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Imate",
+    "chord_raw": "Q",
+    "chord": "Q",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Simulation",
+    "chord_raw": "C",
+    "chord": "C",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Create Simulation",
+    "chord_raw": "N",
+    "chord": "N",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Delete",
+    "chord_raw": "DELETE",
+    "chord": "DELETE",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Diagram",
+    "chord_raw": "D",
+    "chord": "D",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Edit Form",
+    "chord_raw": "E",
+    "chord": "E",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Equal",
+    "chord_raw": "=",
+    "chord": "=",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fan In",
+    "chord_raw": "F",
+    "chord": "F",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Feature Control Frame",
+    "chord_raw": "F",
+    "chord": "F",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fill",
+    "chord_raw": "H",
+    "chord": "H",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fillet",
+    "chord_raw": "F",
+    "chord": "F",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Finish Core",
+    "chord_raw": "F",
+    "chord": "F",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Fixed Constraint",
+    "chord_raw": "X",
+    "chord": "X",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Force",
+    "chord_raw": "F",
+    "chord": "F",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "General Dimension",
+    "chord_raw": "D",
+    "chord": "D",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Grounded Work Point",
+    "chord_raw": ";",
+    "chord": ";",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Hide All Constraints",
+    "chord_raw": "F9",
+    "chord": "F9",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Home View",
+    "chord_raw": "F6",
+    "chord": "F6",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Keyboard Stickers",
+    "chord_raw": ";",
+    "chord": ";",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Measure Distance",
+    "chord_raw": "M",
+    "chord": "M",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Move Component",
+    "chord_raw": "V",
+    "chord": "V",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "No Shading",
+    "chord_raw": "N",
+    "chord": "N",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Offset",
+    "chord_raw": "O",
+    "chord": "O",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Ordinate Dimension Set",
+    "chord_raw": "O",
+    "chord": "O",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Pan",
+    "chord_raw": "F2",
+    "chord": "F2",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Parametric Table",
+    "chord_raw": "T",
+    "chord": "T",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Pivot",
+    "chord_raw": "P",
+    "chord": "P",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Component",
+    "chord_raw": "P",
+    "chord": "P",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Place Pin",
+    "chord_raw": "P",
+    "chord": "P",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Previous View",
+    "chord_raw": "F5",
+    "chord": "F5",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Probe",
+    "chord_raw": "B",
+    "chord": "B",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Probe",
+    "chord_raw": "P",
+    "chord": "P",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Rotate",
+    "chord_raw": "F4",
+    "chord": "F4",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Rotate Component",
+    "chord_raw": "G",
+    "chord": "G",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Show All Constraints",
+    "chord_raw": "F8",
+    "chord": "F8",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Sketch Visibility",
+    "chord_raw": "F10",
+    "chord": "F10",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Slice Graphics",
+    "chord_raw": "F7",
+    "chord": "F7",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Text",
+    "chord_raw": "T",
+    "chord": "T",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Toggle Smooth",
+    "chord_raw": "1",
+    "chord": "1",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Trim",
+    "chord_raw": "X",
+    "chord": "X",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Tweak Components",
+    "chord_raw": "T",
+    "chord": "T",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Unroute",
+    "chord_raw": "U",
+    "chord": "U",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Vertical",
+    "chord_raw": "I",
+    "chord": "I",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Work Axis",
+    "chord_raw": "/",
+    "chord": "/",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Work Plane",
+    "chord_raw": "]",
+    "chord": "]",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Work Point",
+    "chord_raw": ".",
+    "chord": ".",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Zoom All",
+    "chord_raw": "HOME",
+    "chord": "HOME",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Zoom Selected",
+    "chord_raw": "END",
+    "chord": "END",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Zoom Selected",
+    "chord_raw": "F3",
+    "chord": "F3",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  },
+  {
+    "category": "",
+    "action": "Zoom Window",
+    "chord_raw": "Z",
+    "chord": "Z",
+    "alias": "",
+    "kind": "key",
+    "gesture": false,
+    "search": ""
+  }
+]
