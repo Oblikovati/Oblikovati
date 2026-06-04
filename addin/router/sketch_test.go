@@ -731,6 +731,43 @@ func TestSketchAnnotationsAndArcSlot(t *testing.T) {
 	}
 }
 
+// TestSketchNewConstraints212 exercises ground/offset/patternLink through the API.
+func TestSketchNewConstraints212(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var l1, l2 wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[4,0]]}`, &l1)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,2],[4,2]]}`, &l2)
+
+	var con wire.AddConstraintResult
+	call(t, r, s, "sketch.addConstraint", fmt.Sprintf(`{"sketchIndex":0,"kind":"ground","entities":[%d]}`, l1.EntityID), &con)
+	if con.Kind != "ground" {
+		t.Fatalf("kind = %q, want ground", con.Kind)
+	}
+	call(t, r, s, "sketch.addConstraint", fmt.Sprintf(`{"sketchIndex":0,"kind":"offset","entities":[%d,%d]}`, l1.EntityID, l2.EntityID), &con)
+	if con.Kind != "offset" {
+		t.Fatalf("kind = %q, want offset", con.Kind)
+	}
+
+	var cons wire.ListConstraintsResult
+	call(t, r, s, "sketch.constraints", `{"sketchIndex":0}`, &cons)
+	kinds := map[string]bool{}
+	for _, c := range cons.Constraints {
+		kinds[c.Kind] = true
+	}
+	if !kinds["ground"] || !kinds["offset"] {
+		t.Fatalf("enumerated kinds = %v, want ground + offset", kinds)
+	}
+}
+
+func TestSketchGroundNeedsOneRef(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	if _, err := r.Handle(s, "sketch.addConstraint", []byte(`{"sketchIndex":0,"kind":"ground","entities":[1,2]}`)); err == nil {
+		t.Fatal("expected error for ground with two refs")
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

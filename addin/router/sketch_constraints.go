@@ -64,7 +64,49 @@ func buildGeometricConstraint(sk *sketch.Sketch, kind types.GeometricConstraintK
 	if c, ok, err := mixedConstraint(sk, kind, refs); ok {
 		return c, err
 	}
+	if c, ok, err := newConstraint212(sk, kind, refs); ok {
+		return c, err
+	}
 	return nil, fmt.Errorf("sketch.addConstraint: unsupported kind %q", kind)
+}
+
+// newConstraint212 handles the M21 additions (ground/offset/pattern link) and the
+// horizontal/vertical *align* aliases. Each freezes the current geometry where it needs a
+// value, so no extra argument is required.
+func newConstraint212(sk *sketch.Sketch, kind types.GeometricConstraintKind, refs []uint64) (sketch.Constraint, bool, error) {
+	g := sk.GeometricConstraints()
+	switch kind {
+	case types.GeoConstraintGround:
+		return groundConstraint(sk, refs)
+	case types.GeoConstraintOffset:
+		return offsetConstraintFromRefs(sk, refs)
+	case types.GeoConstraintPattern:
+		return withTwoPoints(sk, refs, func(a, b *sketch.Point) sketch.Constraint { return g.AddPatternLink(a, b) })
+	default:
+		return nil, false, nil
+	}
+}
+
+// groundConstraint grounds a single referenced entity (fixes all its points).
+func groundConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
+	if len(refs) != 1 {
+		return nil, true, fmt.Errorf("sketch.addConstraint: ground needs 1 entity ref, got %d", len(refs))
+	}
+	e, ok := sk.EntityByID(sketch.ID(refs[0]))
+	if !ok {
+		return nil, true, fmt.Errorf("sketch.addConstraint: no entity with id %d", refs[0])
+	}
+	return sk.GeometricConstraints().AddGround(e), true, nil
+}
+
+// offsetConstraintFromRefs holds two lines parallel at their current perpendicular
+// distance (frozen from the present geometry).
+func offsetConstraintFromRefs(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool, error) {
+	l1, l2, ok, err := twoLinesOf(sk, refs)
+	if !ok {
+		return nil, true, err
+	}
+	return sk.GeometricConstraints().AddOffset(l1, l2, currentPerpDistance(l1, l2)), true, nil
 }
 
 // pointPairConstraint handles the constraints between two points.

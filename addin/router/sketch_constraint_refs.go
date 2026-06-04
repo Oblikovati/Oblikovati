@@ -4,9 +4,41 @@ package router
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
+
+// twoLinesOf resolves exactly two line refs, returning ok=false (with an error) on a bad
+// count so callers can surface it.
+func twoLinesOf(sk *sketch.Sketch, refs []uint64) (*sketch.Line, *sketch.Line, bool, error) {
+	if len(refs) != 2 {
+		return nil, nil, false, fmt.Errorf("sketch.addConstraint: need 2 line refs, got %d", len(refs))
+	}
+	l1, err := lineRef(sk, refs[0])
+	if err != nil {
+		return nil, nil, false, err
+	}
+	l2, err := lineRef(sk, refs[1])
+	if err != nil {
+		return nil, nil, false, err
+	}
+	return l1, l2, true, nil
+}
+
+// currentPerpDistance is the signed perpendicular distance of line l2's start point from
+// line l1 (using l1's left normal) — the value an offset constraint freezes.
+func currentPerpDistance(l1, l2 *sketch.Line) float64 {
+	a, b := l1.StartPoint().Position(), l1.EndPoint().Position()
+	dx, dy := float64(b.X-a.X), float64(b.Y-a.Y)
+	length := stdmath.Hypot(dx, dy)
+	if length == 0 {
+		return 0
+	}
+	nx, ny := -dy/length, dx/length
+	w := l2.StartPoint().Position()
+	return float64(w.X-a.X)*nx + float64(w.Y-a.Y)*ny
+}
 
 // withTwoPoints resolves two point refs and applies a two-point constraint factory.
 func withTwoPoints(sk *sketch.Sketch, refs []uint64, add func(a, b *sketch.Point) sketch.Constraint) (sketch.Constraint, bool, error) {

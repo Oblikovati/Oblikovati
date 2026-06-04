@@ -128,7 +128,33 @@ func geometricShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint6
 	if k, refs, ok := circularConstraintShape(c); ok {
 		return k, refs
 	}
+	if k, refs, ok := extraConstraintShape(c); ok {
+		return k, refs
+	}
 	return types.GeoConstraintUnknown, nil
+}
+
+// extraConstraintShape handles the M21 constraints (ground/offset/pattern link).
+func extraConstraintShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint64, bool) {
+	switch v := c.(type) {
+	case *sketch.GroundConstraint:
+		return types.GeoConstraintGround, ids(pointsAsEntities(v.Points())...), true
+	case *sketch.OffsetConstraint:
+		return types.GeoConstraintOffset, ids(v.L1, v.L2), true
+	case *sketch.PatternConstraint:
+		return types.GeoConstraintPattern, ids(v.Seed, v.Member), true
+	default:
+		return "", nil, false
+	}
+}
+
+// pointsAsEntities adapts a slice of points to the Entity interface for ids().
+func pointsAsEntities(pts []*sketch.Point) []sketch.Entity {
+	out := make([]sketch.Entity, len(pts))
+	for i, p := range pts {
+		out[i] = p
+	}
+	return out
 }
 
 // pointConstraintShape handles the constraints anchored on points (and point↔line).

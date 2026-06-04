@@ -254,6 +254,27 @@ func (r *sketchRestorer) restoreConstraint(cd ConstraintData) error {
 		g.AddSmooth(c1, c2, p1, p2)
 		return nil
 	default:
+		return r.restoreExtraConstraint(cd)
+	}
+}
+
+// restoreExtraConstraint rebuilds the M21 constraints (ground/offset/pattern link); split
+// out of restoreConstraint to keep that switch small.
+func (r *sketchRestorer) restoreExtraConstraint(cd ConstraintData) error {
+	g := r.s.geomCons
+	switch cd.Kind {
+	case "ground":
+		pts, err := r.points(cd.Points, len(cd.Points))
+		if err != nil {
+			return err
+		}
+		g.AddGroundPoints(pts...)
+		return nil
+	case "offset":
+		return r.twoLines(cd, func(a, b *Line) { g.AddOffset(a, b, cd.Value) })
+	case "patternLink":
+		return r.twoPoints(cd, func(a, b *Point) { g.AddPatternLink(a, b) })
+	default:
 		return fmt.Errorf("unknown constraint kind %q", cd.Kind)
 	}
 }

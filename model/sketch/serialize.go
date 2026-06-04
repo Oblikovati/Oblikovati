@@ -82,9 +82,10 @@ type EntityData struct {
 // Points (point operands) and Curves (line/circular/smooth entity operands), in the
 // order the constraint's factory expects.
 type ConstraintData struct {
-	Kind   string `yaml:"kind"`
-	Points []int  `yaml:"points,omitempty"`
-	Curves []int  `yaml:"curves,omitempty"`
+	Kind   string  `yaml:"kind"`
+	Points []int   `yaml:"points,omitempty"`
+	Curves []int   `yaml:"curves,omitempty"`
+	Value  float64 `yaml:"value,omitempty"` // offset constraint's signed distance
 }
 
 // DimensionData is one dimensional constraint: its kind, operand ids, the value
@@ -250,6 +251,12 @@ func serializeConstraint(c Constraint) (ConstraintData, error) {
 		return ConstraintData{Kind: "fix", Points: []int{int(v.P.id)}}, nil
 	case *SmoothConstraint:
 		return ConstraintData{Kind: "smooth", Points: []int{int(v.P1.id), int(v.P2.id)}, Curves: []int{int(v.C1.EntityID()), int(v.C2.EntityID())}}, nil
+	case *GroundConstraint:
+		return ConstraintData{Kind: "ground", Points: pointIDsOf(v.pts)}, nil
+	case *OffsetConstraint:
+		return ConstraintData{Kind: "offset", Curves: []int{int(v.L1.id), int(v.L2.id)}, Value: v.Dist}, nil
+	case *PatternConstraint:
+		return ConstraintData{Kind: "patternLink", Points: []int{int(v.Seed.id), int(v.Member.id)}}, nil
 	default:
 		return ConstraintData{}, fmt.Errorf("cannot serialize constraint of type %T (no codec)", c)
 	}
