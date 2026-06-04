@@ -51,14 +51,51 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodParametersSet] = setParameter
 	r.handlers[wire.MethodModelTree] = modelTree
 	r.handlers[wire.MethodModelSelection] = modelSelection
-	r.handlers[wire.MethodSketchCreate] = createSketch
-	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
+	r.registerSketchHandlers()
 	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
 	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
 	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodThemeActive] = themeActive
 	r.handlers[wire.MethodThemeList] = themeList
+}
+
+// registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and
+// the authoring (entity/constraint/dimension/edit/pattern) methods in the companion.
+func (r *Router) registerSketchHandlers() {
+	r.handlers[wire.MethodSketchCreate] = createSketch
+	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
+	r.handlers[wire.MethodSketchList] = listSketches
+	r.handlers[wire.MethodSketchGet] = getSketch
+	r.handlers[wire.MethodSketchEdit] = editSketch
+	r.handlers[wire.MethodSketchExitEdit] = exitEditSketch
+	r.handlers[wire.MethodSketchSolve] = solveSketch
+	r.handlers[wire.MethodSketchDelete] = deleteSketch
+	r.handlers[wire.MethodSketchEntities] = enumerateEntities
+	r.handlers[wire.MethodSketchConstraints] = enumerateConstraints
+	r.handlers[wire.MethodSketchDimensions] = enumerateDimensions
+	r.handlers[wire.MethodSketchConstraintStatus] = constraintStatus
+	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
+	r.registerSketchAuthoringHandlers()
+}
+
+// registerSketchAuthoringHandlers wires the sketch mutation methods: property edits,
+// entity/constraint/dimension creation, and the edit/pattern operations.
+func (r *Router) registerSketchAuthoringHandlers() {
+	r.handlers[wire.MethodSketchSetProperty] = setSketchProperty
+	r.handlers[wire.MethodSketchAddEntity] = addSketchEntity
+	r.handlers[wire.MethodSketchAddConstraint] = addConstraint
+	r.handlers[wire.MethodSketchDeleteConstraint] = deleteConstraint
+	r.handlers[wire.MethodSketchAddDimension] = addDimension
+	r.handlers[wire.MethodSketchDriveDimension] = driveDimension
+	r.handlers[wire.MethodSketchTransform] = transformSketch
+	r.handlers[wire.MethodSketchAddPattern] = addSketchPattern
+	r.handlers[wire.MethodSketchOffset] = offsetSketchEntity
+	r.handlers[wire.MethodSketchAddImage] = addSketchImage
+	r.handlers[wire.MethodSketchAddFillRegion] = addFillRegion
+	r.handlers[wire.MethodSketchAddText] = addText
+	r.handlers[wire.MethodSketchAutoDimension] = autoDimensionSketch
+	r.handlers[wire.MethodSketchProject] = projectGeometry
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface

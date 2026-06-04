@@ -266,6 +266,7 @@ func sweptSolidCommands() []*CommandDefinition {
 // dimension, and Finish Sketch — all gated on being in the sketch environment.
 func sketchTabCommands() []*CommandDefinition {
 	cmds := createCommands()
+	cmds = append(cmds, sketchModifyCommands()...)
 	cmds = append(cmds, constrainCommands()...)
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Dimension", func(s *Session) error {
 		s.StartTool(newDimensionTool())
@@ -278,6 +279,30 @@ func sketchTabCommands() []*CommandDefinition {
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
 		WithIcon("finish-sketch").WithButtonStyle(LargeIconButton).
 		WithTooltip("Finish Sketch — leave the sketch environment and update the part."))
+}
+
+// sketchModifyCommands are the Sketch tab's Modify panel — the operations that edit
+// existing sketch geometry (offset, mirror, sketch fillet). Each starts an interactive
+// tool that the user feeds geometry, mirroring the constraint tools' flow.
+func sketchModifyCommands() []*CommandDefinition {
+	mods := []struct {
+		id, name, alias, tip string
+		start                func() Tool
+	}{
+		{"Sketch.Offset", "Offset", "O", "Offset — pick a curve to offset by a distance.", func() Tool { return NewSketchOffsetTool(0.5) }},
+		{"Sketch.Mirror", "Mirror", "MI", "Mirror — pick geometry, then a mirror line.", func() Tool { return NewSketchMirrorTool() }},
+		{"Sketch.Fillet", "Sketch Fillet", "FF", "Sketch Fillet — pick two lines to round their corner.", func() Tool { return NewSketchFilletTool(0.5) }},
+	}
+	cmds := make([]*CommandDefinition, len(mods))
+	for i, m := range mods {
+		start := m.start
+		cmds[i] = NewCommand(m.id, m.name, "Modify", func(s *Session) error {
+			s.StartTool(start())
+			return nil
+		}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias(m.alias).WithEnable(inSketch).
+			WithTooltip(m.tip).WithIcon(strings.ToLower(m.name)).WithButtonStyle(SmallIconButton)
+	}
+	return cmds
 }
 
 // createCommands are the Sketch tab's Create panel — the geometry tools.

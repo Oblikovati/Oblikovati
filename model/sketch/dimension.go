@@ -19,6 +19,10 @@ const (
 	RadiusDim
 	DiameterDim
 	ArcLengthDim
+	// Appended for M21-F07 PBI-214 (do not reorder — iota ids are stable).
+	OffsetDim          // perpendicular distance from a point to a line
+	ThreePointAngleDim // angle a–vertex–b
+	EllipseRadiusDim   // an ellipse's major radius
 )
 
 // ConstraintLimits bounds a dimension's value for drive/animation. When Enabled,

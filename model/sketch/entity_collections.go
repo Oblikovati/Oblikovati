@@ -116,6 +116,38 @@ func (c *Ellipses) AddWithCenter(center *Point, majorAxis math.Vector2, majorR, 
 func (c *Ellipses) Count() int          { return len(c.items) }
 func (c *Ellipses) Item(i int) *Ellipse { return c.items[i] }
 
+// EllipticalArcs creates and tracks elliptical arcs.
+type EllipticalArcs struct {
+	s     *Sketch
+	items []*EllipticalArc
+}
+
+// Add creates an elliptical arc from a center, major-axis direction, the two radii, and
+// the parametric start/end angles (radians, in the major/minor frame).
+func (c *EllipticalArcs) Add(center math.Point2, majorAxis math.Vector2, majorR, minorR, start, end math.Scalar) *EllipticalArc {
+	return c.AddWithCenter(c.s.newPoint(center), majorAxis, majorR, minorR, start, end)
+}
+
+// AddWithCenter creates an elliptical arc around an existing center point. Used by restore.
+func (c *EllipticalArcs) AddWithCenter(center *Point, majorAxis math.Vector2, majorR, minorR, start, end math.Scalar) *EllipticalArc {
+	e := &EllipticalArc{
+		entityBase:  newEntity(),
+		Center:      center,
+		MajorAxis:   majorAxis,
+		MajorRadius: majorR,
+		MinorRadius: minorR,
+		StartAngle:  start,
+		EndAngle:    end,
+	}
+	c.s.add(e)
+	c.items = append(c.items, e)
+	return e
+}
+
+// Count returns the number of elliptical arcs; Item returns the i-th.
+func (c *EllipticalArcs) Count() int                { return len(c.items) }
+func (c *EllipticalArcs) Item(i int) *EllipticalArc { return c.items[i] }
+
 // Splines creates and tracks splines.
 type Splines struct {
 	s     *Sketch

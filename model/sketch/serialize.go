@@ -16,13 +16,21 @@ import (
 // where two lines meet *is* a coincidence — are preserved because every point is
 // recorded once and referenced by id.
 
-// SketchData is the serializable form of one sketch.
+// SketchData is the serializable form of one sketch. Hidden inverts Visible so the
+// common visible=true case omits the field (M21-F01 PBI-201 persists name/display props,
+// closing the previous name-not-persisted gap).
 type SketchData struct {
-	Plane       PlaneData        `yaml:"plane"`
-	Points      []PointData      `yaml:"points,omitempty"`
-	Entities    []EntityData     `yaml:"entities,omitempty"`
-	Constraints []ConstraintData `yaml:"constraints,omitempty"`
-	Dimensions  []DimensionData  `yaml:"dimensions,omitempty"`
+	Name         string           `yaml:"name,omitempty"`
+	Hidden       bool             `yaml:"hidden,omitempty"`
+	Color        string           `yaml:"color,omitempty"`
+	LineType     string           `yaml:"lineType,omitempty"`
+	LineWeight   float64          `yaml:"lineWeight,omitempty"`
+	DeferUpdates bool             `yaml:"deferUpdates,omitempty"`
+	Plane        PlaneData        `yaml:"plane"`
+	Points       []PointData      `yaml:"points,omitempty"`
+	Entities     []EntityData     `yaml:"entities,omitempty"`
+	Constraints  []ConstraintData `yaml:"constraints,omitempty"`
+	Dimensions   []DimensionData  `yaml:"dimensions,omitempty"`
 }
 
 // PlaneData is a sketch plane as an origin and two in-plane axes (model space).
@@ -50,21 +58,41 @@ type EntityData struct {
 	Points       []int     `yaml:"points,omitempty"`
 	Radius       float64   `yaml:"radius,omitempty"`
 	CCW          bool      `yaml:"ccw,omitempty"`
-	MajorAxis    []float64 `yaml:"majorAxis,omitempty"` // ellipse only: [x, y]
+	MajorAxis    []float64 `yaml:"majorAxis,omitempty"` // ellipse/ellipticalArc: [x, y]
 	MajorRadius  float64   `yaml:"majorRadius,omitempty"`
 	MinorRadius  float64   `yaml:"minorRadius,omitempty"`
+	StartAngle   float64   `yaml:"startAngle,omitempty"` // ellipticalArc only (radians)
+	EndAngle     float64   `yaml:"endAngle,omitempty"`   // ellipticalArc only (radians)
 	Closed       bool      `yaml:"closed,omitempty"`
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
+	ImageRef     string    `yaml:"imageRef,omitempty"`   // image only
+	Anchor       []float64 `yaml:"anchor,omitempty"`     // image/text: [x, y]
+	Size         []float64 `yaml:"size,omitempty"`       // image only: [w, h]
+	Rotation     float64   `yaml:"rotation,omitempty"`   // image/text (radians)
+	Opacity      float64   `yaml:"opacity,omitempty"`    // image only
+	Text         string    `yaml:"text,omitempty"`       // text only
+	TextHeight   float64   `yaml:"textHeight,omitempty"` // text only
+	Justify      int       `yaml:"justify,omitempty"`    // text only
+	Seed         []float64 `yaml:"seed,omitempty"`       // fillRegion only: [x, y]
+	Style        string    `yaml:"style,omitempty"`      // fillRegion only
+	XExpr        string    `yaml:"xExpr,omitempty"`      // equationCurve only
+	YExpr        string    `yaml:"yExpr,omitempty"`      // equationCurve only
+	T0           float64   `yaml:"t0,omitempty"`         // equationCurve only
+	T1           float64   `yaml:"t1,omitempty"`         // equationCurve only
+	Coords       []float64 `yaml:"coords,omitempty"`     // fixedSpline only: flattened [x,y,…]
+	ParentID     int       `yaml:"parentId,omitempty"`   // offsetSpline only
+	OffsetDist   float64   `yaml:"offsetDist,omitempty"` // offsetSpline only
 }
 
 // ConstraintData is one geometric constraint: its kind plus operand ids split into
 // Points (point operands) and Curves (line/circular/smooth entity operands), in the
 // order the constraint's factory expects.
 type ConstraintData struct {
-	Kind   string `yaml:"kind"`
-	Points []int  `yaml:"points,omitempty"`
-	Curves []int  `yaml:"curves,omitempty"`
+	Kind   string  `yaml:"kind"`
+	Points []int   `yaml:"points,omitempty"`
+	Curves []int   `yaml:"curves,omitempty"`
+	Value  float64 `yaml:"value,omitempty"` // offset constraint's signed distance
 }
 
 // DimensionData is one dimensional constraint: its kind, operand ids, the value
@@ -102,7 +130,15 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 	if len(s.blocks.defs) > 0 || len(s.blocks.instances) > 0 {
 		return SketchData{}, fmt.Errorf("block serialization is not yet supported (%d defs, %d instances)", len(s.blocks.defs), len(s.blocks.instances))
 	}
-	sd := SketchData{Plane: serializePlane(s.plane)}
+	sd := SketchData{
+		Name:         s.name,
+		Hidden:       !s.visible,
+		Color:        s.color,
+		LineType:     s.lineType,
+		LineWeight:   s.lineWeight,
+		DeferUpdates: s.deferUpdates,
+		Plane:        serializePlane(s.plane),
+	}
 	standalone := standalonePointIDs(s)
 	for _, p := range s.pts {
 		sd.Points = append(sd.Points, PointData{ID: int(p.id), X: float64(p.X), Y: float64(p.Y), Standalone: standalone[p.id]})
@@ -162,11 +198,52 @@ func serializeEntity(e Entity) (EntityData, error) {
 		return EntityData{ID: int(v.id), Kind: "arc", Points: []int{int(v.Center.id), int(v.Start.id), int(v.End.id)}, CCW: v.CounterClockwise, Construction: v.construction}, nil
 	case *Ellipse:
 		return EntityData{ID: int(v.id), Kind: "ellipse", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), Construction: v.construction}, nil
+	case *EllipticalArc:
+		return EntityData{ID: int(v.id), Kind: "ellipticalArc", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), StartAngle: float64(v.StartAngle), EndAngle: float64(v.EndAngle), Construction: v.construction}, nil
 	case *Spline:
 		return EntityData{ID: int(v.id), Kind: "spline", Points: pointIDsOf(v.Points), Closed: v.Closed, Fit: v.fit, Construction: v.construction}, nil
+	case *SketchImage:
+		return EntityData{
+			ID: int(v.id), Kind: "image", ImageRef: v.Ref,
+			Anchor:   []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
+			Size:     []float64{float64(v.Width), float64(v.Height)},
+			Rotation: float64(v.Rotation), Opacity: v.Opacity,
+		}, nil
+	case *FillRegion:
+		return EntityData{ID: int(v.id), Kind: "fillRegion", Seed: []float64{float64(v.Seed.X), float64(v.Seed.Y)}, Style: v.Style}, nil
+	case *TextBox:
+		return EntityData{
+			ID: int(v.id), Kind: "text", Text: v.Text,
+			Anchor:     []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
+			TextHeight: float64(v.Height), Rotation: float64(v.Rotation), Justify: int(v.Justify),
+		}, nil
+	default:
+		return serializeDerivedCurve(e)
+	}
+}
+
+// serializeDerivedCurve handles the M21 derived curves (equation/fixed/offset spline);
+// split out of serializeEntity to keep that switch small.
+func serializeDerivedCurve(e Entity) (EntityData, error) {
+	switch v := e.(type) {
+	case *EquationCurve:
+		return EntityData{ID: int(v.id), Kind: "equationCurve", XExpr: v.XExpr, YExpr: v.YExpr, T0: v.T0, T1: v.T1}, nil
+	case *FixedSpline:
+		return EntityData{ID: int(v.id), Kind: "fixedSpline", Coords: flattenPoints(v.Pts)}, nil
+	case *OffsetSpline:
+		return EntityData{ID: int(v.id), Kind: "offsetSpline", ParentID: int(v.Parent.id), OffsetDist: v.Dist}, nil
 	default:
 		return EntityData{}, fmt.Errorf("cannot serialize entity of type %T (no codec)", e)
 	}
+}
+
+// flattenPoints flattens points to a [x,y,x,y,…] slice.
+func flattenPoints(pts []math.Point2) []float64 {
+	out := make([]float64, 0, len(pts)*2)
+	for _, p := range pts {
+		out = append(out, float64(p.X), float64(p.Y))
+	}
+	return out
 }
 
 func serializeConstraint(c Constraint) (ConstraintData, error) {
@@ -205,6 +282,12 @@ func serializeConstraint(c Constraint) (ConstraintData, error) {
 		return ConstraintData{Kind: "fix", Points: []int{int(v.P.id)}}, nil
 	case *SmoothConstraint:
 		return ConstraintData{Kind: "smooth", Points: []int{int(v.P1.id), int(v.P2.id)}, Curves: []int{int(v.C1.EntityID()), int(v.C2.EntityID())}}, nil
+	case *GroundConstraint:
+		return ConstraintData{Kind: "ground", Points: pointIDsOf(v.pts)}, nil
+	case *OffsetConstraint:
+		return ConstraintData{Kind: "offset", Curves: []int{int(v.L1.id), int(v.L2.id)}, Value: v.Dist}, nil
+	case *PatternConstraint:
+		return ConstraintData{Kind: "patternLink", Points: []int{int(v.Seed.id), int(v.Member.id)}}, nil
 	default:
 		return ConstraintData{}, fmt.Errorf("cannot serialize constraint of type %T (no codec)", c)
 	}
@@ -222,8 +305,11 @@ func serializeDimension(d *DimensionConstraint) (DimensionData, error) {
 	dd.Kind = kind
 	// Split the dimensioned geometry into point and curve operands by kind.
 	switch d.kind {
-	case DistanceDim:
+	case DistanceDim, ThreePointAngleDim:
 		dd.Points = entityIDsOf(d.refs)
+	case OffsetDim:
+		dd.Points = entityIDsOf(d.refs[:1]) // the point
+		dd.Curves = entityIDsOf(d.refs[1:]) // the line
 	default:
 		dd.Curves = entityIDsOf(d.refs)
 	}
@@ -242,6 +328,12 @@ func dimKindName(k DimKind) (string, error) {
 		return "diameter", nil
 	case ArcLengthDim:
 		return "arcLength", nil
+	case OffsetDim:
+		return "offsetDim", nil
+	case ThreePointAngleDim:
+		return "threePointAngle", nil
+	case EllipseRadiusDim:
+		return "ellipseRadius", nil
 	default:
 		return "", fmt.Errorf("cannot serialize dimension of kind %d (no codec)", k)
 	}

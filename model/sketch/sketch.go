@@ -28,13 +28,19 @@ type Entity interface {
 	EntityID() ID
 }
 
-// base holds the identity and edit/visibility state common to every sketch kind.
+// base holds the identity and edit/visibility/display state common to every sketch kind.
 type base struct {
 	id      ID
 	name    string
 	editing bool
 	visible bool
 	health  health.Health
+
+	// Display + solve overrides (Inventor Sketch.Color/LineType/LineWeight/DeferUpdates).
+	color        string  // empty ⇒ inherit the document default
+	lineType     string  // empty ⇒ inherit (api/types.SketchLineType value)
+	lineWeight   float64 // 0 ⇒ inherit
+	deferUpdates bool    // true ⇒ batch edits, solve on resume (M21-F08)
 }
 
 func newBase(name string) base {
@@ -64,6 +70,25 @@ func (b *base) SetVisible(v bool) { b.visible = v }
 // Health returns the sketch's solve health (set by the solver, M06-F05).
 func (b *base) Health() health.Health { return b.health }
 
+// Color returns the sketch's color override ("" ⇒ inherit); SetColor sets it.
+func (b *base) Color() string     { return b.color }
+func (b *base) SetColor(c string) { b.color = c }
+
+// LineType returns the sketch's line-type override (api/types.SketchLineType value,
+// "" ⇒ inherit); SetLineType sets it.
+func (b *base) LineType() string     { return b.lineType }
+func (b *base) SetLineType(t string) { b.lineType = t }
+
+// LineWeight returns the sketch's line-weight override in cm (0 ⇒ inherit);
+// SetLineWeight sets it.
+func (b *base) LineWeight() float64     { return b.lineWeight }
+func (b *base) SetLineWeight(w float64) { b.lineWeight = w }
+
+// DeferUpdates reports whether the sketch batches edits (solving on resume);
+// SetDeferUpdates toggles it (the solve gate is wired in M21-F08).
+func (b *base) DeferUpdates() bool     { return b.deferUpdates }
+func (b *base) SetDeferUpdates(d bool) { b.deferUpdates = d }
+
 // Sketch is a planar 2D sketch hosted on a [Plane]. It owns its entities and (from
 // F03/F04) its constraints, and resolves to profiles/paths via the solver (F05/F06).
 type Sketch struct {
@@ -76,8 +101,15 @@ type Sketch struct {
 	arcs     *Arcs
 	circles  *Circles
 	ellipses *Ellipses
+	ellArcs  *EllipticalArcs
 	splines  *Splines
 	points   *Points
+	images   *SketchImages
+	fills    *FillRegions
+	texts    *TextBoxes
+	eqCurves *EquationCurves
+	fixedSpl *FixedSplines
+	offSpl   *OffsetSplines
 	blocks   *Blocks
 	geomCons *GeometricConstraints
 	dimCons  *DimensionConstraints
@@ -97,6 +129,27 @@ func (s *Sketch) Entities() []Entity {
 // EntityCount returns the number of entities.
 func (s *Sketch) EntityCount() int { return len(s.ents) }
 
+// EntityByID returns the entity with the given session id, or false if none matches.
+func (s *Sketch) EntityByID(id ID) (Entity, bool) {
+	for _, e := range s.ents {
+		if e.EntityID() == id {
+			return e, true
+		}
+	}
+	return nil, false
+}
+
+// PointByID returns the constrainable point with the given id — including curve
+// endpoints/centers, which are not standalone entities — or false if none matches.
+func (s *Sketch) PointByID(id ID) (*Point, bool) {
+	for _, p := range s.pts {
+		if p.id == id {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
 // AllPoints returns every constrainable point in the sketch — endpoints, centers,
 // and standalone points — which are the solver's position variables.
 func (s *Sketch) AllPoints() []*Point {
@@ -112,8 +165,23 @@ func (s *Sketch) Arcs() *Arcs         { return s.arcs }
 func (s *Sketch) Circles() *Circles   { return s.circles }
 func (s *Sketch) Ellipses() *Ellipses { return s.ellipses }
 func (s *Sketch) Splines() *Splines   { return s.splines }
-func (s *Sketch) Points() *Points     { return s.points }
-func (s *Sketch) Blocks() *Blocks     { return s.blocks }
+
+// EllipticalArcs returns the elliptical-arc collection.
+func (s *Sketch) EllipticalArcs() *EllipticalArcs { return s.ellArcs }
+
+// Images returns the sketch-image collection.
+func (s *Sketch) Images() *SketchImages { return s.images }
+
+// FillRegions returns the fill-region collection; TextBoxes the sketch-text collection.
+func (s *Sketch) FillRegions() *FillRegions { return s.fills }
+func (s *Sketch) TextBoxes() *TextBoxes     { return s.texts }
+
+// EquationCurves/FixedSplines/OffsetSplines return the derived-curve collections.
+func (s *Sketch) EquationCurves() *EquationCurves { return s.eqCurves }
+func (s *Sketch) FixedSplines() *FixedSplines     { return s.fixedSpl }
+func (s *Sketch) OffsetSplines() *OffsetSplines   { return s.offSpl }
+func (s *Sketch) Points() *Points                 { return s.points }
+func (s *Sketch) Blocks() *Blocks                 { return s.blocks }
 
 // GeometricConstraints returns the sketch's geometric-constraint collection.
 func (s *Sketch) GeometricConstraints() *GeometricConstraints { return s.geomCons }
@@ -149,6 +217,18 @@ func (s *Sketch) Constraints() []Constraint {
 // add appends an entity to the sketch's geometry list.
 func (s *Sketch) add(e Entity) { s.ents = append(s.ents, e) }
 
+// removeEntity drops an entity from the geometry list (used by delete/trim). It does not
+// touch constraints; callers handle those. Returns whether it was present.
+func (s *Sketch) removeEntity(e Entity) bool {
+	for i, x := range s.ents {
+		if x == e {
+			s.ents = append(s.ents[:i], s.ents[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 // newPoint creates a constrainable point at pos and registers it as a solver
 // variable. Curve factories use it for endpoints/centers (not added to Entities).
 func (s *Sketch) newPoint(pos math.Point2) *Point {
@@ -163,8 +243,15 @@ func (s *Sketch) initCollections() {
 	s.arcs = &Arcs{s: s}
 	s.circles = &Circles{s: s}
 	s.ellipses = &Ellipses{s: s}
+	s.ellArcs = &EllipticalArcs{s: s}
 	s.splines = &Splines{s: s}
 	s.points = &Points{s: s}
+	s.images = &SketchImages{s: s}
+	s.fills = &FillRegions{s: s}
+	s.texts = &TextBoxes{s: s}
+	s.eqCurves = &EquationCurves{s: s}
+	s.fixedSpl = &FixedSplines{s: s}
+	s.offSpl = &OffsetSplines{s: s}
 	s.blocks = &Blocks{s: s}
 	s.geomCons = &GeometricConstraints{}
 	s.params = param.NewParameters()

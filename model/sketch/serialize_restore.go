@@ -32,6 +32,7 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 		pointMap:  make(map[int]*Point, len(sd.Points)),
 		entityMap: make(map[int]Entity, len(sd.Entities)),
 	}
+	restoreSketchProps(r.s, sd)
 	r.restorePoints(sd.Points)
 	if err := r.restoreEntities(sd.Entities); err != nil {
 		return err
@@ -40,6 +41,48 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 		return err
 	}
 	return r.restoreDimensions(sd.Dimensions)
+}
+
+// restoreDerivedCurve rebuilds the M21 derived curves (equation/fixed/offset spline);
+// split out of restoreEntity to keep that switch small. The offset spline's parent must
+// already be restored (entities are restored in order).
+func (r *sketchRestorer) restoreDerivedCurve(ed EntityData) (Entity, error) {
+	switch ed.Kind {
+	case "equationCurve":
+		return r.s.eqCurves.Add(ed.XExpr, ed.YExpr, ed.T0, ed.T1)
+	case "fixedSpline":
+		return r.s.fixedSpl.Add(unflattenPoints(ed.Coords)), nil
+	case "offsetSpline":
+		parent, ok := r.entityMap[ed.ParentID].(*Spline)
+		if !ok {
+			return nil, fmt.Errorf("offsetSpline parent %d is not a spline", ed.ParentID)
+		}
+		return r.s.offSpl.Add(parent, ed.OffsetDist), nil
+	default:
+		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
+	}
+}
+
+// unflattenPoints rebuilds points from a [x,y,x,y,…] slice (odd tails are ignored).
+func unflattenPoints(coords []float64) []math.Point2 {
+	out := make([]math.Point2, 0, len(coords)/2)
+	for i := 0; i+1 < len(coords); i += 2 {
+		out = append(out, math.P2(math.Scalar(coords[i]), math.Scalar(coords[i+1])))
+	}
+	return out
+}
+
+// restoreSketchProps reapplies the persisted name and display/solve overrides onto a
+// freshly-added sketch (sc.Add auto-named it; an empty persisted name keeps that).
+func restoreSketchProps(s *Sketch, sd SketchData) {
+	if sd.Name != "" {
+		s.SetName(sd.Name)
+	}
+	s.SetVisible(!sd.Hidden)
+	s.SetColor(sd.Color)
+	s.SetLineType(sd.LineType)
+	s.SetLineWeight(sd.LineWeight)
+	s.SetDeferUpdates(sd.DeferUpdates)
 }
 
 // sketchRestorer carries the id→object maps while rebuilding one sketch.
@@ -102,14 +145,41 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 		}
 		axis := math.V2(ed.MajorAxis[0], ed.MajorAxis[1])
 		return r.s.ellipses.AddWithCenter(p[0], axis, math.Scalar(ed.MajorRadius), math.Scalar(ed.MinorRadius)), nil
+	case "ellipticalArc":
+		p, err := r.points(ed.Points, 1)
+		if err != nil {
+			return nil, err
+		}
+		if len(ed.MajorAxis) != 2 {
+			return nil, fmt.Errorf("ellipticalArc needs a 2-component majorAxis, got %d", len(ed.MajorAxis))
+		}
+		axis := math.V2(ed.MajorAxis[0], ed.MajorAxis[1])
+		return r.s.ellArcs.AddWithCenter(p[0], axis, math.Scalar(ed.MajorRadius), math.Scalar(ed.MinorRadius), math.Scalar(ed.StartAngle), math.Scalar(ed.EndAngle)), nil
 	case "spline":
 		p, err := r.points(ed.Points, len(ed.Points))
 		if err != nil {
 			return nil, err
 		}
 		return r.s.splines.AddWithPoints(p, ed.Closed, ed.Fit), nil
+	case "image":
+		if len(ed.Anchor) != 2 || len(ed.Size) != 2 {
+			return nil, fmt.Errorf("image needs a 2-component anchor and size")
+		}
+		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
+		return r.s.images.Add(ed.ImageRef, anchor, math.Scalar(ed.Size[0]), math.Scalar(ed.Size[1]), math.Scalar(ed.Rotation), ed.Opacity), nil
+	case "fillRegion":
+		if len(ed.Seed) != 2 {
+			return nil, fmt.Errorf("fillRegion needs a 2-component seed")
+		}
+		return r.s.fills.Add(math.P2(math.Scalar(ed.Seed[0]), math.Scalar(ed.Seed[1])), ed.Style), nil
+	case "text":
+		if len(ed.Anchor) != 2 {
+			return nil, fmt.Errorf("text needs a 2-component anchor")
+		}
+		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
+		return r.s.texts.Add(anchor, ed.Text, math.Scalar(ed.TextHeight), math.Scalar(ed.Rotation), TextHJustify(ed.Justify)), nil
 	default:
-		return nil, fmt.Errorf("unknown entity kind %q", ed.Kind)
+		return r.restoreDerivedCurve(ed)
 	}
 }
 
@@ -213,6 +283,27 @@ func (r *sketchRestorer) restoreConstraint(cd ConstraintData) error {
 		g.AddSmooth(c1, c2, p1, p2)
 		return nil
 	default:
+		return r.restoreExtraConstraint(cd)
+	}
+}
+
+// restoreExtraConstraint rebuilds the M21 constraints (ground/offset/pattern link); split
+// out of restoreConstraint to keep that switch small.
+func (r *sketchRestorer) restoreExtraConstraint(cd ConstraintData) error {
+	g := r.s.geomCons
+	switch cd.Kind {
+	case "ground":
+		pts, err := r.points(cd.Points, len(cd.Points))
+		if err != nil {
+			return err
+		}
+		g.AddGroundPoints(pts...)
+		return nil
+	case "offset":
+		return r.twoLines(cd, func(a, b *Line) { g.AddOffset(a, b, cd.Value) })
+	case "patternLink":
+		return r.twoPoints(cd, func(a, b *Point) { g.AddPatternLink(a, b) })
+	default:
 		return fmt.Errorf("unknown constraint kind %q", cd.Kind)
 	}
 }
@@ -275,8 +366,52 @@ func (r *sketchRestorer) restoreDimension(dd DimensionData) (*DimensionConstrain
 		}
 		return dc.AddArcLength(a, dd.Expression)
 	default:
+		return r.restoreAdvancedDimension(dd)
+	}
+}
+
+// restoreAdvancedDimension rebuilds the M21 dimension kinds (offset/three-point-angle/
+// ellipse-radius); split out of restoreDimension to keep that switch small.
+func (r *sketchRestorer) restoreAdvancedDimension(dd DimensionData) (*DimensionConstraint, error) {
+	dc := r.s.dimCons
+	switch dd.Kind {
+	case "offsetDim":
+		p, err := r.point(dd.Points, 0)
+		if err != nil {
+			return nil, err
+		}
+		l, err := r.line(dd.Curves, 0)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddOffsetDim(p, l, dd.Expression)
+	case "threePointAngle":
+		pts, err := r.points(dd.Points, 3)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddThreePointAngle(pts[0], pts[1], pts[2], dd.Expression)
+	case "ellipseRadius":
+		e, err := r.ellipse(dd.Curves, 0)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddEllipseRadius(e, dd.Expression)
+	default:
 		return nil, fmt.Errorf("unknown dimension kind %q", dd.Kind)
 	}
+}
+
+// ellipse resolves the i-th id to a restored *Ellipse.
+func (r *sketchRestorer) ellipse(ids []int, i int) (*Ellipse, error) {
+	if i >= len(ids) {
+		return nil, fmt.Errorf("ellipse operand %d missing", i)
+	}
+	e, ok := r.entityMap[ids[i]].(*Ellipse)
+	if !ok {
+		return nil, fmt.Errorf("entity %d is not an ellipse", ids[i])
+	}
+	return e, nil
 }
 
 // --- operand resolution -------------------------------------------------------------

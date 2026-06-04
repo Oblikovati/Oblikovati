@@ -63,6 +63,36 @@ func (p *Profile) InnerLoops() []Loop {
 // IsClosed reports whether the profile encloses a region (its outer loop is closed).
 func (p *Profile) IsClosed() bool { return p.outer.closed }
 
+// Area returns the profile's enclosed area: the outer loop's area minus its holes' (0 for
+// an open profile). Uses the loops' representative polygons (curves sampled), so it is the
+// tessellated area, accurate to the sampling density.
+func (p *Profile) Area() float64 {
+	if !p.outer.closed {
+		return 0
+	}
+	area := p.outer.Area()
+	for _, h := range p.inner {
+		area -= h.Area()
+	}
+	return area
+}
+
+// Area returns the loop's absolute enclosed area (shoelace over its polygon).
+func (l Loop) Area() float64 { return stdmath.Abs(signedPolygonArea(l.polygon)) }
+
+// signedPolygonArea returns the signed area of a polygon (positive for CCW winding).
+func signedPolygonArea(poly []math.Point2) float64 {
+	if len(poly) < 3 {
+		return 0
+	}
+	var sum float64
+	for i := range poly {
+		j := (i + 1) % len(poly)
+		sum += float64(poly[i].X*poly[j].Y - poly[j].X*poly[i].Y)
+	}
+	return sum / 2
+}
+
 // Contains reports whether the sketch-plane point q lies in the profile's region: inside
 // the (closed) outer loop and outside every inner-loop hole. Used to hit-test a click on
 // a profile so it can be picked for extrude/revolve. An open profile contains nothing.
