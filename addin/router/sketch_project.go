@@ -9,8 +9,6 @@ import (
 
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
@@ -53,43 +51,11 @@ func projectRefs(part *compdef.PartComponentDefinition, sk *sketch.Sketch, refs 
 // projectRef resolves one reference key to an edge or vertex among the part's bodies and
 // projects it, returning the created sketch entity.
 func projectRef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, ref string) (sketch.Entity, bool) {
-	key := []byte(ref)
-	for _, body := range part.SurfaceBodies().All() {
-		if edge, ok := body.FindEdgeByKey(key); ok {
-			return sk.ProjectCurve(edgeSource{ref: ref, edge: edge}), true
-		}
-		if vertex, ok := body.FindVertexByKey(key); ok {
-			return sk.ProjectPoint(vertexSource{ref: ref, vertex: vertex}), true
-		}
+	if part.EdgeKeyResolves(ref) {
+		return sk.ProjectCurve(compdef.NewEdgeRefSource(part, ref)), true
+	}
+	if part.VertexKeyResolves(ref) {
+		return sk.ProjectPoint(compdef.NewVertexRefSource(part, ref)), true
 	}
 	return nil, false
 }
-
-// edgeSource adapts a topo edge to a sketch CurveSource (sampling its 3D curve).
-type edgeSource struct {
-	ref  string
-	edge *topo.Edge
-}
-
-func (s edgeSource) SourceID() string { return s.ref }
-
-// SamplePoints samples the edge's curve over its domain into a 3D polyline.
-func (s edgeSource) SamplePoints() []math.Point3 {
-	const n = 16
-	c := s.edge.Geometry()
-	lo, hi := c.Domain()
-	pts := make([]math.Point3, n+1)
-	for i := range pts {
-		pts[i] = c.PointAt(lo + (hi-lo)*float64(i)/float64(n))
-	}
-	return pts
-}
-
-// vertexSource adapts a topo vertex to a sketch PointSource.
-type vertexSource struct {
-	ref    string
-	vertex *topo.Vertex
-}
-
-func (s vertexSource) SourceID() string      { return s.ref }
-func (s vertexSource) Position() math.Point3 { return s.vertex.Point() }

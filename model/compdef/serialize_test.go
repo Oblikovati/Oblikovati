@@ -52,6 +52,42 @@ func reopenThroughStore(t *testing.T, d *doc.Document) *compdef.PartComponentDef
 	return def
 }
 
+// TestSketch3DSurvivesRoundTrip checks a part's 3D sketches (points, properties, and a
+// geometric constraint) survive the real save→YAML→open path (M22-F01).
+func TestSketch3DSurvivesRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, err := compdef.AddPart(ws, "Part1", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := d.Content().(*compdef.PartComponentDefinition)
+	s := def.Sketches3D().Add()
+	s.SetColor("#abcdef")
+	s.SetDimensionsVisible(false)
+	a := s.AddPoint3D(math.P3(1, 2, 3))
+	b := s.AddPoint3D(math.P3(4, 5, 6))
+	s.GeometricConstraints3D().Add(sketch.NewCoincident3D(a, b))
+
+	reopened := reopenThroughStore(t, d)
+
+	if reopened.Sketches3D().Count() != 1 {
+		t.Fatalf("3D sketch count after reopen = %d, want 1", reopened.Sketches3D().Count())
+	}
+	got := reopened.Sketches3D().Item(0)
+	if got.Color() != "#abcdef" || got.DimensionsVisible() {
+		t.Errorf("3D sketch properties after reopen = %+v", got)
+	}
+	if got.EntityCount() != 2 {
+		t.Errorf("3D sketch entity count after reopen = %d, want 2", got.EntityCount())
+	}
+	if pts := got.AllPoints3D(); pts[0].Position() != math.P3(1, 2, 3) || pts[1].Position() != math.P3(4, 5, 6) {
+		t.Errorf("3D point positions after reopen = %v", pts)
+	}
+	if got.GeometricConstraints3D().Count() != 1 {
+		t.Errorf("3D constraint count after reopen = %d, want 1", got.GeometricConstraints3D().Count())
+	}
+}
+
 func TestParametersSurviveRoundTrip(t *testing.T) {
 	ws := doc.NewWorkspace(nil)
 	d, err := compdef.AddPart(ws, "Part1", true)

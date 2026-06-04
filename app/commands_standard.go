@@ -116,9 +116,62 @@ func modelTabCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("S").WithEnable(canCreateSketch).
 			WithIcon("create-sketch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Create 2D Sketch — pick a work plane or planar face to sketch on."),
+		NewCommand("Sketch.Create3D", "3D Sketch", "Sketch", func(s *Session) error {
+			_, err := s.CreateSketch3D()
+			return err
+		}).WithTab("3D Model").WithEnable(canCreateSketch3D).
+			WithIcon("create-sketch-3d").WithButtonStyle(LargeIconButton).
+			WithTooltip("3D Sketch — create a non-planar sketch (sweep/loft path, helix)."),
 	}
+	cmds = append(cmds, sketch3DToolCommands()...)
 	cmds = append(cmds, solidFeatureCommands()...)
 	return append(cmds, modifyFeatureCommands()...)
+}
+
+// sketch3DToolCommands are the contextual 3D-sketch tools, enabled only while a 3D sketch
+// is being edited (M22-F12): the geometry tools plus Finish.
+func sketch3DToolCommands() []*CommandDefinition {
+	finish := NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
+		return s.FinishSketch3D()
+	}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("finish-sketch").
+		WithTooltip("Finish the 3D sketch and return to the model.")
+	return append(sketch3DDrawCommands(), finish)
+}
+
+// sketch3DDrawCommands are the 3D-sketch geometry-placement tools (line/point/circle/arc/
+// helix), each starting its interactive tool.
+func sketch3DDrawCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		sketch3DToolCommand("Sketch3D.Line", "3D Line", "line",
+			"3D Line — place points in model space to build a polyline rail.",
+			func() Tool { return NewLine3DTool() }),
+		sketch3DToolCommand("Sketch3D.Point", "3D Point", "point",
+			"3D Point — place a point in model space.",
+			func() Tool { return NewPoint3DTool() }),
+		sketch3DToolCommand("Sketch3D.Circle", "3D Circle", "circle",
+			"3D Circle — a circle from a center, plane axis and radius.",
+			func() Tool { return NewCircle3DTool() }),
+		sketch3DToolCommand("Sketch3D.Arc", "3D Arc", "arc",
+			"3D Arc — an arc through center, start and end points.",
+			func() Tool { return NewArc3DTool() }),
+		sketch3DToolCommand("Sketch3D.Helix", "Helical Curve", "helix",
+			"Helical Curve — a spring/thread path from radius, pitch and turns.",
+			func() Tool { return NewHelix3DTool() }),
+		sketch3DToolCommand("Sketch3D.Include", "Include Geometry", "include",
+			"Include Geometry — pick part edges/vertices to reference in the 3D sketch.",
+			func() Tool { return NewIncludeGeometry3DTool() }),
+		sketch3DToolCommand("Sketch3D.SurfaceCurve", "Surface Curve", "surface-curve",
+			"Surface Curve — derive an intersection (2 faces) or silhouette (1 face) curve.",
+			func() Tool { return NewSurfaceCurve3DTool() }),
+	}
+}
+
+// sketch3DToolCommand builds a contextual 3D-sketch command that starts the tool from new.
+func sketch3DToolCommand(id, name, icon, tip string, newTool func() Tool) *CommandDefinition {
+	return NewCommand(id, name, "Sketch3D", func(s *Session) error {
+		s.StartTool(newTool())
+		return nil
+	}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon(icon).WithTooltip(tip)
 }
 
 // modifyFeatureCommands are the 3D Model tab's "Modify" panel: the material-cutting
@@ -268,6 +321,12 @@ func sketchTabCommands() []*CommandDefinition {
 	cmds := createCommands()
 	cmds = append(cmds, sketchModifyCommands()...)
 	cmds = append(cmds, constrainCommands()...)
+	cmds = append(cmds, NewCommand("Sketch.Project", "Project Geometry", "Draw", func(s *Session) error {
+		s.StartTool(NewProjectGeometryTool())
+		return nil
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
+		WithIcon("project-geometry").WithButtonStyle(SmallIconButton).
+		WithTooltip("Project Geometry — pick part edges/vertices to reference onto the sketch plane."))
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Dimension", func(s *Session) error {
 		s.StartTool(newDimensionTool())
 		return nil
@@ -407,6 +466,8 @@ func visualStyleCommands() []*CommandDefinition {
 }
 
 // Enable predicates shared by the standard commands.
-func inSketch(s *Session) bool        { return s.InSketch() }
-func notInSketch(s *Session) bool     { return !s.InSketch() }
-func canCreateSketch(s *Session) bool { return s.CanCreateSketch() }
+func inSketch(s *Session) bool          { return s.InSketch() }
+func notInSketch(s *Session) bool       { return !s.InSketch() }
+func canCreateSketch(s *Session) bool   { return s.CanCreateSketch() }
+func canCreateSketch3D(s *Session) bool { return s.CanCreateSketch3D() }
+func inSketch3D(s *Session) bool        { return s.InSketch3D() }

@@ -11,36 +11,42 @@ import "github.com/Oblikovati/oblikovati/math"
 // reference keys). Projected geometry is construction/reference by default.
 
 // PointSource is a model entity that yields a 3D position to project (e.g. a topo
-// vertex). SourceID is a stable identity used to recognize the source across
-// recompute for associative re-projection.
+// vertex). SourceID is a stable identity used to recognize the source across recompute
+// for associative re-projection. Position returns ok=false when the reference is lost
+// (the source no longer resolves against the current B-rep) so the projection can freeze
+// rather than jump.
 type PointSource interface {
 	SourceID() string
-	Position() math.Point3
+	Position() (math.Point3, bool)
 }
 
-// CurveSource is a model entity that yields a sampled 3D polyline to project (e.g.
-// a topo edge's tessellation, or a plane-cut edge).
+// CurveSource is a model entity that yields a sampled 3D polyline to project (e.g. a topo
+// edge's tessellation, or a plane-cut edge). SamplePoints returns ok=false when the
+// reference is lost.
 type CurveSource interface {
 	SourceID() string
-	SamplePoints() []math.Point3
+	SamplePoints() ([]math.Point3, bool)
 }
 
-// ProjectedPoint is a sketch point projected from a model vertex. It caches the
-// sketch-space position and re-projects on [ProjectedPoint.Update] until the link
-// is broken.
+// ProjectedPoint is a sketch point projected from a model vertex. It owns a fixed
+// reference anchor (a Point in the sketch's refPts) so other sketch geometry can be
+// constrained to it; the projection re-derives the anchor's position on Update until the
+// link is broken. The anchor's id is the entity's id.
 type ProjectedPoint struct {
-	id        ID
-	source    PointSource
-	plane     Plane
-	sketchPos math.Point2
-	linked    bool
+	source PointSource
+	plane  Plane
+	anchor *Point
+	linked bool
 }
 
-// EntityID implements [Entity].
-func (p *ProjectedPoint) EntityID() ID { return p.id }
+// EntityID is the anchor's id — constraining to this id binds to the fixed anchor.
+func (p *ProjectedPoint) EntityID() ID { return p.anchor.id }
 
-// Position returns the cached sketch-space position.
-func (p *ProjectedPoint) Position() math.Point2 { return p.sketchPos }
+// Anchor returns the constrainable fixed reference point.
+func (p *ProjectedPoint) Anchor() *Point { return p.anchor }
+
+// Position returns the anchor's sketch-space position.
+func (p *ProjectedPoint) Position() math.Point2 { return p.anchor.Position() }
 
 // SourceID returns the projected source's identity, or "" if the link was broken.
 func (p *ProjectedPoint) SourceID() string {
@@ -56,12 +62,19 @@ func (p *ProjectedPoint) IsReference() bool { return true }
 // Linked reports whether the projection still tracks its source.
 func (p *ProjectedPoint) Linked() bool { return p.linked }
 
-// Update re-projects from the current source position. It is a no-op once the link
-// is broken, so the last projected position is frozen.
+// Update re-projects from the current source position. It is a no-op once the link is
+// broken; if the source's reference is lost it breaks the link, freezing the last
+// projected position (the reference-lost behavior).
 func (p *ProjectedPoint) Update() {
-	if p.linked {
-		p.sketchPos = p.plane.ToSketch(p.source.Position())
+	if !p.linked {
+		return
 	}
+	pos, ok := p.source.Position()
+	if !ok {
+		p.linked = false
+		return
+	}
+	p.anchor.SetPosition(p.plane.ToSketch(pos))
 }
 
 // BreakLink detaches the projection from its source, freezing its current geometry
@@ -101,12 +114,17 @@ func (c *ProjectedCurve) IsReference() bool { return true }
 // Linked reports whether the projection still tracks its source.
 func (c *ProjectedCurve) Linked() bool { return c.linked }
 
-// Update re-projects the source's sample points onto the sketch plane.
+// Update re-projects the source's sample points onto the sketch plane. A lost reference
+// breaks the link, freezing the last polyline.
 func (c *ProjectedCurve) Update() {
 	if !c.linked {
 		return
 	}
-	src := c.source.SamplePoints()
+	src, ok := c.source.SamplePoints()
+	if !ok {
+		c.linked = false
+		return
+	}
 	c.points = c.points[:0]
 	for _, q := range src {
 		c.points = append(c.points, c.plane.ToSketch(q))
@@ -116,10 +134,11 @@ func (c *ProjectedCurve) Update() {
 // BreakLink detaches the projection from its source, freezing the current polyline.
 func (c *ProjectedCurve) BreakLink() { c.linked = false }
 
-// ProjectPoint projects a model vertex into the sketch as reference geometry and
-// returns the associative projected point.
+// ProjectPoint projects a model vertex into the sketch as a fixed, constrainable reference
+// point and returns the associative projected point.
 func (s *Sketch) ProjectPoint(src PointSource) *ProjectedPoint {
-	p := &ProjectedPoint{id: nextID(), source: src, plane: s.plane, linked: true}
+	pos, _ := src.Position() // resolved now; a later lost reference freezes via Update
+	p := &ProjectedPoint{source: src, plane: s.plane, anchor: s.newRefPoint(s.plane.ToSketch(pos)), linked: true}
 	p.Update()
 	s.add(p)
 	return p
@@ -142,4 +161,19 @@ func (s *Sketch) ProjectCutEdges(sources []CurveSource) []*ProjectedCurve {
 		out = append(out, s.ProjectCurve(src))
 	}
 	return out
+}
+
+// UpdateProjections re-projects every linked projected entity from its source — the hook a
+// recompute calls so projected (include) geometry tracks the model as it changes. With
+// self-resolving sources (keyed by reference) this re-binds the projection to the freshly
+// rebuilt B-rep, making projection associative.
+func (s *Sketch) UpdateProjections() {
+	for _, e := range s.ents {
+		switch v := e.(type) {
+		case *ProjectedPoint:
+			v.Update()
+		case *ProjectedCurve:
+			v.Update()
+		}
+	}
 }

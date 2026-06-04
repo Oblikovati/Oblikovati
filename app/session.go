@@ -34,6 +34,7 @@ type Session struct {
 	camTween           cameraTween
 	sketchReturnCam    scene.Camera
 	activeSketch       *sketch.Sketch
+	activeSketch3D     *sketch.Sketch3D
 	pendingDim         *sketch.DimensionConstraint
 	featureEdit        *featureEditState
 	overlays           []renderer.DrawItem
