@@ -172,22 +172,32 @@ func (s *Session) Pointer(e PointerEvent) {
 	}
 }
 
+// undoRedoShortcut handles the Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z navigators over the active
+// document's transaction stream, returning handled=true when the keystroke was one of
+// them. It is a no-op while an interactive tool is mid-operation — Inventor forbids undo
+// while a transaction is in progress; the head additionally gates it on no text field
+// having keyboard focus.
+func (s *Session) undoRedoShortcut(e KeyEvent) (bool, error) {
+	if !e.Mods.Has(CtrlMod) || s.tool != nil {
+		return false, nil
+	}
+	switch e.Key {
+	case "z", "Z":
+		if e.Mods.Has(ShiftMod) {
+			return true, s.Redo()
+		}
+		return true, s.Undo()
+	case "y", "Y":
+		return true, s.Redo()
+	}
+	return false, nil
+}
+
 // PressKey routes a key press: Escape cancels the active tool, Enter commits it, and
 // otherwise a registered command alias runs (Inventor command aliases).
 func (s *Session) PressKey(e KeyEvent) error {
-	// Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) navigate the active document's transaction stream.
-	// Only when no interactive tool is mid-operation — Inventor forbids undo while a
-	// transaction is in progress; the head also gates this on text fields not having focus.
-	if e.Mods.Has(CtrlMod) && s.tool == nil {
-		switch e.Key {
-		case "z", "Z":
-			if e.Mods.Has(ShiftMod) {
-				return s.Redo()
-			}
-			return s.Undo()
-		case "y", "Y":
-			return s.Redo()
-		}
+	if handled, err := s.undoRedoShortcut(e); handled {
+		return err
 	}
 	switch e.Key {
 	case "Escape":
