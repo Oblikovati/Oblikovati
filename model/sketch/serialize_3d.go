@@ -25,6 +25,19 @@ type SketchData3D struct {
 	Points       []Point3DData     `yaml:"points,omitempty"`
 	Entities     []Entity3DData    `yaml:"entities,omitempty"`
 	Constraints  []Constraint3DRow `yaml:"constraints,omitempty"`
+	Dimensions   []Dimension3DRow  `yaml:"dimensions,omitempty"`
+}
+
+// Dimension3DRow is one 3D dimensional constraint: its kind, point/curve operand ids, the
+// value expression, the driving/driven flag, and (for a point-plane distance) the origin
+// plane label.
+type Dimension3DRow struct {
+	Kind       string `yaml:"kind"`
+	Points     []int  `yaml:"points,omitempty"`
+	Curves     []int  `yaml:"curves,omitempty"`
+	Expression string `yaml:"expression"`
+	Driven     bool   `yaml:"driven,omitempty"`
+	Plane      string `yaml:"plane,omitempty"`
 }
 
 // Point3DData is one constrainable 3D point. Standalone marks a SketchPoint3D (a point
@@ -118,7 +131,46 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 		}
 		sd.Constraints = append(sd.Constraints, cd)
 	}
+	for _, d := range s.dimCons.items {
+		dd, err := serializeDimension3D(d)
+		if err != nil {
+			return SketchData3D{}, err
+		}
+		sd.Dimensions = append(sd.Dimensions, dd)
+	}
 	return sd, nil
+}
+
+// serializeDimension3D captures one 3D dimension: its kind, operands (points vs curves),
+// value expression, driving state, and the reference plane for a point-plane distance.
+func serializeDimension3D(d *DimensionConstraint3D) (Dimension3DRow, error) {
+	dr := Dimension3DRow{Kind: d.KindName(), Expression: d.param.Expression(), Driven: d.driven}
+	for _, ref := range d.refs {
+		if _, isPoint := ref.(*Point3D); isPoint {
+			dr.Points = append(dr.Points, int(ref.EntityID()))
+		} else {
+			dr.Curves = append(dr.Curves, int(ref.EntityID()))
+		}
+	}
+	if d.kind == PointPlaneDimKind3D {
+		dr.Plane = planeNameFromNormal(d.planeNormal)
+	}
+	if dr.Kind == "unknown" {
+		return Dimension3DRow{}, fmt.Errorf("cannot serialize 3D dimension of kind %d (no codec)", d.kind)
+	}
+	return dr, nil
+}
+
+// planeNameFromNormal maps an origin-plane normal to its label.
+func planeNameFromNormal(n math.Vector3) string {
+	switch {
+	case n.Z != 0:
+		return "XY"
+	case n.Y != 0:
+		return "XZ"
+	default:
+		return "YZ"
+	}
 }
 
 // serializeEntity3D captures one 3D curve entity by its kind, defining point ids, and
@@ -258,7 +310,86 @@ func (c *Sketches3D) restoreSketch3D(sd SketchData3D) error {
 			return err
 		}
 	}
+	for _, dr := range sd.Dimensions {
+		if err := restoreDimension3D(s, dr, idmap, entmap); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// restoreDimension3D re-adds one 3D dimension, binding operands through the id maps and
+// re-applying its value expression + driving state.
+func restoreDimension3D(s *Sketch3D, dr Dimension3DRow, idmap map[int]*Point3D, entmap map[int]Entity) error {
+	pts, err := lookupPoints3D(dr.Points, idmap)
+	if err != nil {
+		return fmt.Errorf("%s dimension: %w", dr.Kind, err)
+	}
+	d, err := buildRestoredDimension3D(s, dr, pts, entmap)
+	if err != nil {
+		return fmt.Errorf("%s dimension: %w", dr.Kind, err)
+	}
+	d.SetDriven(dr.Driven)
+	return nil
+}
+
+// buildRestoredDimension3D dispatches a serialized dimension kind to its factory.
+func buildRestoredDimension3D(s *Sketch3D, dr Dimension3DRow, pts []*Point3D, entmap map[int]Entity) (*DimensionConstraint3D, error) {
+	dc := s.DimensionConstraints3D()
+	switch dr.Kind {
+	case "distance":
+		return dc.AddDistance(pts[0], pts[1], dr.Expression)
+	case "lineLength":
+		l, err := lookupLines3D(dr.Curves, entmap)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddLineLength(l[0], dr.Expression)
+	case "radius":
+		c, err := lookupCircle3D(dr.Curves, entmap)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddRadius(c, dr.Expression)
+	case "pointPlaneDistance":
+		return dc.AddPointPlaneDistance(pts[0], planeNormalFromLabel(dr.Plane), dr.Expression)
+	case "twoLineAngle":
+		l, err := lookupLines3D(dr.Curves, entmap)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddTwoLineAngle(l[0], l[1], dr.Expression)
+	default:
+		return nil, fmt.Errorf("unknown 3D dimension kind %q", dr.Kind)
+	}
+}
+
+// planeNormalFromLabel maps an origin-plane label to its unit normal (default XY).
+func planeNormalFromLabel(plane string) math.Vector3 {
+	switch plane {
+	case "XZ":
+		return math.V3(0, 1, 0)
+	case "YZ":
+		return math.V3(1, 0, 0)
+	default:
+		return math.V3(0, 0, 1)
+	}
+}
+
+// lookupCircle3D resolves a single saved entity id to a live 3D circle.
+func lookupCircle3D(ids []int, entmap map[int]Entity) (*Circle3D, error) {
+	if len(ids) != 1 {
+		return nil, fmt.Errorf("radius needs 1 circle operand, got %d", len(ids))
+	}
+	e, ok := entmap[ids[0]]
+	if !ok {
+		return nil, fmt.Errorf("references unknown entity id %d", ids[0])
+	}
+	c, ok := e.(*Circle3D)
+	if !ok {
+		return nil, fmt.Errorf("entity id %d is %T, want a 3D circle", ids[0], e)
+	}
+	return c, nil
 }
 
 // restoreEntity3D re-creates one 3D curve entity over its already-restored points,

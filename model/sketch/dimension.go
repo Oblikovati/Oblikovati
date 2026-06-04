@@ -23,6 +23,9 @@ const (
 	OffsetDim          // perpendicular distance from a point to a line
 	ThreePointAngleDim // angle a–vertex–b
 	EllipseRadiusDim   // an ellipse's major radius
+	// Appended for M22-F06 (3D dimensions; do not reorder).
+	LengthDimKind3D     // a 3D line's length
+	PointPlaneDimKind3D // signed distance from a 3D point to an origin plane
 )
 
 // ConstraintLimits bounds a dimension's value for drive/animation. When Enabled,

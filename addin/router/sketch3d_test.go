@@ -337,6 +337,62 @@ func TestSketch3DAddConstraintErrors(t *testing.T) {
 	}
 }
 
+// TestSketch3DDimensions exercises the dimension constructors + drive over the router.
+func TestSketch3DDimensions(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	var line wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[2,0,0]]}`, &line)
+	var circle wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0,0]],"radius":"5 mm"}`, &circle)
+
+	var ll wire.AddSketch3DDimensionResult
+	call(t, r, s, "sketch3d.addDimension",
+		fmt.Sprintf(`{"sketchIndex":0,"kind":"lineLength","entities":[%d],"expression":"10 cm"}`, line.EntityID), &ll)
+	if ll.Kind != "lineLength" || ll.Parameter == "" {
+		t.Fatalf("lineLength dim = %+v", ll)
+	}
+
+	var rad wire.AddSketch3DDimensionResult
+	call(t, r, s, "sketch3d.addDimension",
+		fmt.Sprintf(`{"sketchIndex":0,"kind":"radius","entities":[%d],"expression":"3 cm"}`, circle.EntityID), &rad)
+	if rad.Index != 1 {
+		t.Fatalf("radius dim index = %d, want 1", rad.Index)
+	}
+
+	var dims wire.ListDimensions3DResult
+	call(t, r, s, "sketch3d.dimensions", `{"sketchIndex":0}`, &dims)
+	if len(dims.Dimensions) != 2 {
+		t.Fatalf("dimensions = %+v, want 2", dims.Dimensions)
+	}
+
+	var ok wire.OKResult
+	call(t, r, s, "sketch3d.driveDimension", `{"sketchIndex":0,"dimensionIndex":0,"expression":"15 cm","setDriven":true,"driven":true}`, &ok)
+	if !ok.OK {
+		t.Fatal("driveDimension should succeed")
+	}
+}
+
+// TestSketch3DDimensionErrors covers the dimension validation error paths.
+func TestSketch3DDimensionErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	bad := []string{
+		`{"sketchIndex":0,"kind":"radius","entities":[999],"expression":"3 cm"}`,
+		`{"sketchIndex":0,"kind":"distance","entities":[1],"expression":"3 cm"}`,
+		`{"sketchIndex":0,"kind":"bogus","entities":[1],"expression":"3 cm"}`,
+	}
+	for _, b := range bad {
+		if _, err := r.Handle(s, "sketch3d.addDimension", []byte(b)); err == nil {
+			t.Errorf("expected error for %s", b)
+		}
+	}
+	if _, err := r.Handle(s, "sketch3d.driveDimension", []byte(`{"sketchIndex":0,"dimensionIndex":7}`)); err == nil {
+		t.Error("driving an out-of-range dimension should error")
+	}
+}
+
 // TestConstraint3DKindMapping covers the constraint/entity wire mappings directly (the
 // wire path to add 3D constraints lands in M22-F05).
 func TestConstraint3DKindMapping(t *testing.T) {
