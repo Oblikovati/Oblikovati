@@ -60,9 +60,46 @@ func applyTransform(part *compdef.PartComponentDefinition, sk *sketch.Sketch, en
 		return nil, rotateOp(part, sk, ents, in)
 	case "mirror":
 		return mirrorOp(sk, ents, in.MirrorLine)
+	case "trim", "split", "extend":
+		return curveEditOp(sk, ents, in)
 	default:
-		return nil, fmt.Errorf("sketch.transform: unknown op %q (want move|copy|rotate|mirror)", in.Op)
+		return nil, fmt.Errorf("sketch.transform: unknown op %q (want move|copy|rotate|mirror|trim|split|extend)", in.Op)
 	}
+}
+
+// curveEditOp dispatches the single-curve edit ops (trim/split/extend), which act on the
+// first selected line at a pick point (Vector).
+func curveEditOp(sk *sketch.Sketch, ents []sketch.Entity, in wire.TransformSketchArgs) ([]sketch.Entity, error) {
+	l, ok := ents[0].(*sketch.Line)
+	if !ok {
+		return nil, fmt.Errorf("sketch.transform: %s currently supports lines only (got %T)", in.Op, ents[0])
+	}
+	pick, err := vector2AsPoint(in.Vector)
+	if err != nil {
+		return nil, err
+	}
+	switch in.Op {
+	case "trim":
+		return sk.TrimLine(l, pick)
+	case "split":
+		return sk.SplitLine(l, pick)
+	default: // extend
+		_, err := sk.ExtendLine(l, pickNearerEnd(l, pick))
+		return nil, err
+	}
+}
+
+// vector2AsPoint reads the [x,y] pick point from the transform's Vector field.
+func vector2AsPoint(v []float64) (math.Point2, error) {
+	if len(v) != 2 {
+		return math.Point2{}, fmt.Errorf("sketch.transform: pick point needs 2 components, got %d", len(v))
+	}
+	return math.P2(math.Scalar(v[0]), math.Scalar(v[1])), nil
+}
+
+// pickNearerEnd reports whether pick is closer to the line's B end (true) than its A end.
+func pickNearerEnd(l *sketch.Line, pick math.Point2) bool {
+	return pick.DistanceTo(l.EndPoint().Position()) < pick.DistanceTo(l.StartPoint().Position())
 }
 
 // rotateOp rotates the selection about a center by a unit-bearing angle.

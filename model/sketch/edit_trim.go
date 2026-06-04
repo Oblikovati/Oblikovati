@@ -1,0 +1,179 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package sketch
+
+import (
+	"fmt"
+	"sort"
+
+	"github.com/Oblikovati/oblikovati/math"
+)
+
+// SplitLine splits a line at the point nearest pick into two collinear lines sharing a
+// new midpoint, returning both. It errors if the pick is at (or beyond) an endpoint.
+func (s *Sketch) SplitLine(l *Line, pick math.Point2) ([]Entity, error) {
+	t := projectParamOnLine(l, pick)
+	if t <= 1e-9 || t >= 1-1e-9 {
+		return nil, fmt.Errorf("split: point projects to t=%.4g, not strictly inside the line", t)
+	}
+	mid := s.newPoint(lerpLine(l, t))
+	second := s.lines.Add(mid, l.B)
+	l.B = mid
+	return []Entity{l, second}, nil
+}
+
+// TrimLine removes the segment of l containing pick, cutting at the nearest intersections
+// with other lines (the most common case; curve intersections are a follow-up). Returns
+// the surviving line(s). If pick lies before any intersection, an end stub is removed.
+func (s *Sketch) TrimLine(l *Line, pick math.Point2) ([]Entity, error) {
+	cuts := append([]float64{0, 1}, s.lineCrossings(l)...)
+	sort.Float64s(cuts)
+	cuts = dedupeSorted(cuts)
+	lo, hi, ok := bracketParam(cuts, projectParamOnLine(l, pick))
+	if !ok {
+		return nil, fmt.Errorf("trim: no segment found for the pick point")
+	}
+	return s.reshapeTrimmed(l, lo, hi), nil
+}
+
+// reshapeTrimmed rebuilds line l with the [lo, hi] segment removed.
+func (s *Sketch) reshapeTrimmed(l *Line, lo, hi float64) []Entity {
+	a, b := l.A.Position(), l.B.Position()
+	switch {
+	case lo <= 1e-9 && hi >= 1-1e-9: // whole line removed
+		s.removeEntity(l)
+		return nil
+	case lo <= 1e-9: // trim the front: keep [hi, 1]
+		l.A = s.newPoint(lerp(a, b, hi))
+		return []Entity{l}
+	case hi >= 1-1e-9: // trim the tail: keep [0, lo]
+		l.B = s.newPoint(lerp(a, b, lo))
+		return []Entity{l}
+	default: // interior gap: keep [0, lo] and [hi, 1]
+		tail := s.lines.Add(s.newPoint(lerp(a, b, hi)), s.newPoint(b))
+		l.B = s.newPoint(lerp(a, b, lo))
+		return []Entity{l, tail}
+	}
+}
+
+// ExtendLine lengthens l past the picked end (true ⇒ the B end) to the nearest crossing
+// with another line's infinite support, returning l. It errors if nothing is reachable.
+func (s *Sketch) ExtendLine(l *Line, atEnd bool) (*Line, error) {
+	best, found := s.nearestExtension(l, atEnd)
+	if !found {
+		return nil, fmt.Errorf("extend: no line to extend to")
+	}
+	if atEnd {
+		l.B = s.newPoint(best)
+	} else {
+		l.A = s.newPoint(best)
+	}
+	return l, nil
+}
+
+// lineCrossings returns the parameters in (0,1) along l where it crosses another line.
+func (s *Sketch) lineCrossings(l *Line) []float64 {
+	var out []float64
+	for _, e := range s.ents {
+		m, ok := e.(*Line)
+		if !ok || m == l {
+			continue
+		}
+		if t, u, ok := lineLineParams(l, m); ok && u > -1e-9 && u < 1+1e-9 && t > 1e-9 && t < 1-1e-9 {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// nearestExtension returns the closest intersection of l's infinite support with another
+// line, lying beyond the picked end.
+func (s *Sketch) nearestExtension(l *Line, atEnd bool) (math.Point2, bool) {
+	bestT, found := 0.0, false
+	for _, e := range s.ents {
+		m, ok := e.(*Line)
+		if !ok || m == l {
+			continue
+		}
+		t, u, ok := lineLineParams(l, m)
+		if !ok || u < -1e-9 || u > 1+1e-9 {
+			continue
+		}
+		if beyond := pickBeyond(t, atEnd); beyond && (!found || closerParam(t, bestT, atEnd)) {
+			bestT, found = t, true
+		}
+	}
+	return lerpLine(l, bestT), found
+}
+
+// pickBeyond reports whether param t lies past the picked end of a [0,1] line.
+func pickBeyond(t float64, atEnd bool) bool {
+	if atEnd {
+		return t > 1+1e-9
+	}
+	return t < -1e-9
+}
+
+// closerParam reports whether candidate is nearer the picked end than current.
+func closerParam(candidate, current float64, atEnd bool) bool {
+	if atEnd {
+		return candidate < current
+	}
+	return candidate > current
+}
+
+// lineLineParams returns the parameters (t on l1, u on l2) of the support lines'
+// intersection, or ok=false when parallel.
+func lineLineParams(l1, l2 *Line) (float64, float64, bool) {
+	a, b := l1.A.Position(), l1.B.Position()
+	c, d := l2.A.Position(), l2.B.Position()
+	r := b.VectorTo(a).Negate() // a→b
+	sdir := d.VectorTo(c).Negate()
+	denom := float64(r.X*sdir.Y - r.Y*sdir.X)
+	if denom == 0 {
+		return 0, 0, false
+	}
+	acx, acy := float64(c.X-a.X), float64(c.Y-a.Y)
+	t := (acx*float64(sdir.Y) - acy*float64(sdir.X)) / denom
+	u := (acx*float64(r.Y) - acy*float64(r.X)) / denom
+	return t, u, true
+}
+
+// projectParamOnLine returns the parameter of pick projected onto the line a→b.
+func projectParamOnLine(l *Line, pick math.Point2) float64 {
+	a, b := l.A.Position(), l.B.Position()
+	dx, dy := float64(b.X-a.X), float64(b.Y-a.Y)
+	d2 := dx*dx + dy*dy
+	if d2 == 0 {
+		return 0
+	}
+	return (float64(pick.X-a.X)*dx + float64(pick.Y-a.Y)*dy) / d2
+}
+
+// lerp returns the point at parameter t along a→b; lerpLine does the same for a line.
+func lerp(a, b math.Point2, t float64) math.Point2 {
+	return math.P2(a.X+math.Scalar(t)*(b.X-a.X), a.Y+math.Scalar(t)*(b.Y-a.Y))
+}
+
+func lerpLine(l *Line, t float64) math.Point2 { return lerp(l.A.Position(), l.B.Position(), t) }
+
+// bracketParam returns the adjacent cut params surrounding t (the picked segment).
+func bracketParam(cuts []float64, t float64) (float64, float64, bool) {
+	for i := 0; i+1 < len(cuts); i++ {
+		if t >= cuts[i]-1e-9 && t <= cuts[i+1]+1e-9 {
+			return cuts[i], cuts[i+1], true
+		}
+	}
+	return 0, 0, false
+}
+
+// dedupeSorted removes near-equal neighbours from a sorted slice.
+func dedupeSorted(xs []float64) []float64 {
+	out := xs[:0]
+	for i, x := range xs {
+		if i == 0 || x-out[len(out)-1] > 1e-9 {
+			out = append(out, x)
+		}
+	}
+	return out
+}

@@ -852,6 +852,41 @@ func TestSketchEquationCurveRejectsBadExpr(t *testing.T) {
 	}
 }
 
+// TestSketchTrimSplitExtend exercises the F09 curve-edit ops through the API.
+func TestSketchTrimSplitExtend(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var l, v1, v2 wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0],[6,0]]}`, &l)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[2,-1],[2,1]]}`, &v1)
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[4,-1],[4,1]]}`, &v2)
+
+	// Trim the middle of the horizontal line → two stubs survive.
+	var res wire.TransformSketchResult
+	call(t, r, s, "sketch.transform", fmt.Sprintf(`{"sketchIndex":0,"op":"trim","entities":[%d],"vector":[3,0]}`, l.EntityID), &res)
+	if len(res.Created) != 2 {
+		t.Fatalf("trim returned %d lines, want 2 stubs", len(res.Created))
+	}
+
+	// Split a fresh line at its midpoint → 2.
+	var l2 wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,5],[4,5]]}`, &l2)
+	call(t, r, s, "sketch.transform", fmt.Sprintf(`{"sketchIndex":0,"op":"split","entities":[%d],"vector":[2,5]}`, l2.EntityID), &res)
+	if len(res.Created) != 2 {
+		t.Fatalf("split returned %d lines, want 2", len(res.Created))
+	}
+}
+
+func TestSketchTrimErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"1 cm"}`, &wire.AddSketchEntityResult{})
+	// Circle isn't a line → trim rejects it.
+	if _, err := r.Handle(s, "sketch.transform", []byte(`{"sketchIndex":0,"op":"trim","entities":[2],"vector":[0,0]}`)); err == nil {
+		t.Fatal("expected error trimming a non-line")
+	}
+}
+
 func TestSketchCreateUnknownPlane(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.create", []byte(`{"plane":"AB"}`)); err == nil {

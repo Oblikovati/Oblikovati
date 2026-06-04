@@ -217,6 +217,18 @@ func (s *Sketch) Constraints() []Constraint {
 // add appends an entity to the sketch's geometry list.
 func (s *Sketch) add(e Entity) { s.ents = append(s.ents, e) }
 
+// removeEntity drops an entity from the geometry list (used by delete/trim). It does not
+// touch constraints; callers handle those. Returns whether it was present.
+func (s *Sketch) removeEntity(e Entity) bool {
+	for i, x := range s.ents {
+		if x == e {
+			s.ents = append(s.ents[:i], s.ents[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 // newPoint creates a constrainable point at pos and registers it as a solver
 // variable. Curve factories use it for endpoints/centers (not added to Entities).
 func (s *Sketch) newPoint(pos math.Point2) *Point {
