@@ -30,6 +30,10 @@ type DrawItem struct {
 	Normals   []math.Vector3
 	Indices   []int
 	Color     [4]float32
+	// Colors, when non-nil, gives a per-vertex color (len == len(Positions)) that
+	// overrides the single Color at flatten time — the heatmap/per-vertex-binding path
+	// for client graphics. nil keeps the legacy "broadcast Color to every vertex" behavior.
+	Colors    [][4]float32
 	Metallic  float32
 	Roughness float32
 	Emissive  [3]float32
@@ -42,7 +46,12 @@ type DrawItem struct {
 	Occluder bool
 	// Hidden marks a line item drawn only where it is occluded (reversed depth test) in a
 	// dashed style — the hidden-edge half of the wireframe/shaded-with-hidden modes.
-	Hidden   bool
+	Hidden bool
+	// OnTop marks an item that should draw ignoring the depth test (always visible over the
+	// model) — the interaction-overlay lane and burn-through markers/labels of client
+	// graphics (Inventor's BurnThrough). The viewport routes these to the depth-disabled
+	// on-top pass (PBI-067); a headless NullBackend simply records them like any item.
+	OnTop    bool
 	ObjectID uint64
 }
 

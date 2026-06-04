@@ -34,3 +34,14 @@ F04.
 |-----|-------|
 | [PBI-064](PBI-064-client-graphics.md) | Client graphics datasets, nodes & primitives |
 | [PBI-065](PBI-065-interaction-graphics.md) | Interaction (preview) graphics |
+| [PBI-066](PBI-066-client-graphics-persistence.md) | Persist saveWithDocument client graphics in .obk |
+| [PBI-067](PBI-067-graphics-on-top-pass.md) | Native depth-disabled pass for on-top graphics |
+
+## Status
+
+PBI-065 + PBI-067 done; PBI-064 in progress (in-session object model + render + on-top
+pass delivered; only `.obk` persistence (PBI-066) remains). The model is **declarative
+bulk groups** over the wire (one `clientGraphics.set` per group) rather than Inventor's
+chatty mutable object model — the right shape for large simulation-result overlays.
+Surface/Curve-from-B-rep-body primitives (`SurfaceGraphics`/`CurveGraphics`) are out of
+scope for now.
