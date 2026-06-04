@@ -3,6 +3,7 @@
 package router
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
@@ -908,6 +909,56 @@ func TestSketchAutoDimensionAndChainOffset(t *testing.T) {
 	call(t, r, s, "sketch.offset", fmt.Sprintf(`{"sketchIndex":1,"entities":[%d,%d],"distance":"10 mm"}`, l1.EntityID, l2.EntityID), &off)
 	if len(off.Created) != 2 {
 		t.Fatalf("chain offset created %d lines, want 2", len(off.Created))
+	}
+}
+
+// TestSketchProjectGeometry extrudes a box, then projects one of its edges onto a new
+// sketch and checks a projected curve is created and enumerates.
+func TestSketchProjectGeometry(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+
+	// Grab a real edge reference key from the resulting body (white-box).
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bodies := part.SurfaceBodies().All()
+	if len(bodies) == 0 || len(bodies[0].Edges()) == 0 {
+		t.Fatal("extrude produced no body edges to project")
+	}
+	ref := string(bodies[0].Edges()[0].ReferenceKey())
+
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var proj wire.ProjectGeometryResult
+	// Reference keys carry binary bytes — marshal (don't hand-quote) the request.
+	argBytes, err := json.Marshal(wire.ProjectGeometryArgs{SketchIndex: 1, Refs: []string{ref}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	call(t, r, s, "sketch.project", string(argBytes), &proj)
+	if len(proj.Created) != 1 || !proj.Healthy {
+		t.Fatalf("project = %+v, want 1 created / healthy", proj)
+	}
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":1}`, &ents)
+	if countKind(ents.Entities, "projectedCurve") != 1 {
+		t.Fatalf("want 1 projectedCurve, got %+v", ents.Entities)
+	}
+}
+
+func TestSketchProjectUnknownRefIsUnhealthy(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var proj wire.ProjectGeometryResult
+	call(t, r, s, "sketch.project", `{"sketchIndex":0,"refs":["nope"]}`, &proj)
+	if proj.Healthy || len(proj.Created) != 0 {
+		t.Fatalf("project of a bogus ref = %+v, want unhealthy / nothing created", proj)
 	}
 }
 

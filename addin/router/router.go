@@ -95,6 +95,7 @@ func (r *Router) registerSketchAuthoringHandlers() {
 	r.handlers[wire.MethodSketchAddFillRegion] = addFillRegion
 	r.handlers[wire.MethodSketchAddText] = addText
 	r.handlers[wire.MethodSketchAutoDimension] = autoDimensionSketch
+	r.handlers[wire.MethodSketchProject] = projectGeometry
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface

@@ -117,6 +117,10 @@ func annotationShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, floa
 		return types.SketchEntityFixedSpline, point2Slice(v.Pts), 0
 	case *sketch.OffsetSpline:
 		return types.SketchEntityOffsetSpline, nil, 0
+	case *sketch.ProjectedPoint:
+		return types.SketchEntityProjectedPoint, [][]float64{{float64(v.Position().X), float64(v.Position().Y)}}, 0
+	case *sketch.ProjectedCurve:
+		return types.SketchEntityProjectedCurve, point2Slice(v.Points()), 0
 	default:
 		return types.SketchEntityUnknown, nil, 0
 	}
