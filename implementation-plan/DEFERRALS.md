@@ -1,6 +1,6 @@
 # Deferral Ledger
 
-_Generated 2026-06-04 during the audit (see [REPORT.md](../../REPORT.md) §6). This is the
+_Generated 2026-06-04 during the audit (see REPORT.md §6). This is the
 canonical, code-derived list of where "done" means "scaffolded": every
 `NotYetImplemented`, every `ErrDeferred` passthrough, and the in-code `follow-up` /
 `phase B/C/D` / `deferred` comments in non-test source._
