@@ -48,6 +48,8 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawBrowser(s)
 	drawViewportPanel(win, s)
 	drawDimensionPopup(s)
+	drawToolParamsDialog(s) // generic dialog for parameterized sketch tools
+	drawSketch3DSettings(s) // 3D-sketch settings while editing one
 	drawExtrudeDialog(s)
 	drawRevolveDialog(s)
 	drawCoilDialog(s)
@@ -62,6 +64,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawDeleteFaceDialog(s)
 	drawReplaceFaceDialog(s)
 	drawThickenDialog(s)
+	drawSplitDialog(s)
 	drawOffsetPlaneDialog(s)
 	drawFeatureEditDialog(s)
 	drawStatusBar(s)

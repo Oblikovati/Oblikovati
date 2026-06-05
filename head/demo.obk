@@ -1,0 +1,75 @@
+schemaVersion: 2
+documentType: 1
+displayName: demo
+model:
+    units:
+        angle: deg
+        area: mm^2
+        length: mm
+        mass: kg
+        time: s
+        volume: mm^3
+    parameters:
+        - name: width
+          kind: user
+          expression: 4 cm
+    sketches:
+        - plane:
+            origin:
+                - 0
+                - 0
+                - 0
+            xAxis:
+                - 1
+                - 0
+                - 0
+            yAxis:
+                - 0
+                - 1
+                - 0
+          points:
+            - id: 2
+              x: 0
+              "y": 0
+              standalone: true
+            - id: 3
+              x: 4
+              "y": 0
+              standalone: true
+            - id: 4
+              x: 4
+              "y": 3
+              standalone: true
+            - id: 5
+              x: 0
+              "y": 3
+              standalone: true
+          entities:
+            - id: 6
+              kind: line
+              points:
+                - 2
+                - 3
+            - id: 7
+              kind: line
+              points:
+                - 3
+                - 4
+            - id: 8
+              kind: line
+              points:
+                - 4
+                - 5
+            - id: 9
+              kind: line
+              points:
+                - 5
+                - 2
+    features:
+        - kind: extrude
+          name: extrude
+          extrude:
+            sketch: 0
+            profile: 0
+            operation: newBody
+            distance: 5

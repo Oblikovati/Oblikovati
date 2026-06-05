@@ -56,38 +56,109 @@ func useStart(u *topo.EdgeUse) math.Point3 {
 
 // buildPlanarBody builds a one-face planar surface body from an ordered model-space
 // polygon and a surface normal, with stable per-feature lineage.
-func buildPlanarBody(poly []math.Point3, normal math.Vector3, feat string) *topo.Body {
+// sheetPatch is one planar face of a surface body: its boundary polygon and outward normal.
+type sheetPatch struct {
+	poly   []math.Point3
+	normal math.Vector3
+}
+
+// buildSheet welds the patches into one planar-faced surface body: coincident boundary vertices
+// merge and faces sharing an edge reconnect (one edge per undirected vertex pair). A single
+// patch yields a one-face sheet; several patches yield a quilt. Patches with <3 points are
+// dropped.
+func buildSheet(patches []sheetPatch, feat string) *topo.Body {
+	w := &sheetWelder{index: map[[3]int64]int{}}
+	rings := make([][]int, 0, len(patches))
+	normals := make([]math.Vector3, 0, len(patches))
+	for _, p := range patches {
+		if r := w.ring(p.poly); len(r) >= 3 {
+			rings = append(rings, r)
+			normals = append(normals, p.normal)
+		}
+	}
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok(feat, "body", 0)))
-	surf, _ := geom.NewPlane(poly[0], normal)
-	n := len(poly)
-	v := make([]*topo.Vertex, n)
-	for i, p := range poly {
-		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(feat, "vertex", i)))
+	tv := make([]*topo.Vertex, len(w.points))
+	for i, pt := range w.points {
+		tv[i] = bld.AddVertex(pt, topo.NewLineage(topo.Tok(feat, "vertex", i)))
 	}
-	uses := make([]topo.Use, n)
-	for i := 0; i < n; i++ {
-		j := (i + 1) % n
-		e := bld.AddEdge(geom.NewLineSegment(poly[i], poly[j]), v[i], v[j], topo.NewLineage(topo.Tok(feat, "edge", i)))
-		uses[i] = topo.Fwd(e)
+	edges := map[[2]int]*topo.Edge{}
+	edge := func(a, b int) *topo.Edge {
+		k := [2]int{a, b}
+		if a > b {
+			k = [2]int{b, a}
+		}
+		if e, ok := edges[k]; ok {
+			return e
+		}
+		e := bld.AddEdge(geom.NewLineSegment(w.points[k[0]], w.points[k[1]]), tv[k[0]], tv[k[1]], topo.NewLineage(topo.Tok(feat, "edge", len(edges))))
+		edges[k] = e
+		return e
 	}
-	bld.AddFace(surf, topo.NewLineage(topo.Tok(feat, "patch", 0)), topo.OuterLoop(uses...))
+	for fi, r := range rings {
+		surf, _ := geom.NewPlane(w.points[r[0]], normals[fi])
+		uses := make([]topo.Use, len(r))
+		for i := range r {
+			a, b := r[i], r[(i+1)%len(r)]
+			uses[i] = topo.Use{Edge: edge(a, b), Reversed: a > b}
+		}
+		bld.AddFace(surf, topo.NewLineage(topo.Tok(feat, "patch", fi)), topo.OuterLoop(uses...))
+	}
 	return bld.Build()
 }
 
-// TrimByPlane trims a single-face planar surface body with a cutting plane, keeping
-// the half on the plane's positive (keepPositive) or negative side. It clips the
-// boundary polygon against the cutting plane and rebuilds the trimmed patch. General
-// surface–surface trimming (curved tools, multi-face splitting) is phase C.
+// sheetWelder merges coincident boundary points onto a shared index list (a fine grid snap).
+type sheetWelder struct {
+	index  map[[3]int64]int
+	points []math.Point3
+}
+
+func (w *sheetWelder) add(p math.Point3) int {
+	const grid = 1e-7
+	k := [3]int64{int64(stdmath.Round(float64(p.X) / grid)), int64(stdmath.Round(float64(p.Y) / grid)), int64(stdmath.Round(float64(p.Z) / grid))}
+	if i, ok := w.index[k]; ok {
+		return i
+	}
+	w.index[k] = len(w.points)
+	w.points = append(w.points, p)
+	return len(w.points) - 1
+}
+
+// ring welds a boundary polygon to vertex indices, dropping consecutive (and wrap-around) dups.
+func (w *sheetWelder) ring(poly []math.Point3) []int {
+	var out []int
+	for _, p := range poly {
+		i := w.add(p)
+		if len(out) == 0 || out[len(out)-1] != i {
+			out = append(out, i)
+		}
+	}
+	if len(out) > 1 && out[0] == out[len(out)-1] {
+		out = out[:len(out)-1]
+	}
+	return out
+}
+
+// TrimByPlane trims a planar surface body (single or multi-face) with a cutting plane, keeping
+// the half on the plane's positive (keepPositive) or negative side. Each face's boundary polygon
+// is clipped against the plane; kept faces are welded back into one sheet (a shared fold edge
+// clips identically on both faces, so it reconnects). Trimming a body with any curved face
+// (NURBS surface–surface trimming) is the remaining phase-C work.
 func TrimByPlane(body *topo.Body, origin math.Point3, normal math.Vector3, keepPositive bool, feat string) (*topo.Body, error) {
 	faces := planarFaces(body)
-	if len(faces) != 1 {
-		return nil, build.NotYetImplemented("PBI-111-trim-multiface-or-curved")
+	if len(faces) == 0 || len(faces) != len(body.Faces()) {
+		return nil, build.NotYetImplemented("PBI-111-trim-curved") // any curved face
 	}
-	clipped := clipHalfSpace(facePolygon(faces[0]), origin, normal, keepPositive)
-	if len(clipped) < 3 {
+	var patches []sheetPatch
+	for _, f := range faces {
+		clipped := clipHalfSpace(facePolygon(f), origin, normal, keepPositive)
+		if len(clipped) >= 3 {
+			patches = append(patches, sheetPatch{poly: clipped, normal: f.Geometry().(geom.Plane).Normal()})
+		}
+	}
+	if len(patches) == 0 {
 		return nil, errors.New("trim: nothing remains on the keep side of the cutting plane")
 	}
-	return buildPlanarBody(clipped, faces[0].Geometry().(geom.Plane).Normal(), feat), nil
+	return buildSheet(patches, feat), nil
 }
 
 // clipHalfSpace clips a planar polygon against one half-space (Sutherland–Hodgman),
@@ -130,17 +201,82 @@ func lerpToPlane(a, b math.Point3, da, db float64) math.Point3 {
 // normal, producing a new parallel surface body. Curved-face offset is phase C.
 func OffsetSurface(body *topo.Body, distance float64, feat string) (*topo.Body, error) {
 	faces := planarFaces(body)
+	if len(faces) == 0 || len(faces) != len(body.Faces()) {
+		return nil, build.NotYetImplemented("PBI-112-offset-curved") // any curved face
+	}
+	// Each face translates along its own normal. That reconnects only when faces sharing an edge
+	// have the same normal (a coplanar quilt or a single face); a folded sheet would split at the
+	// fold (its offset needs intersecting adjacent offset planes — a later refinement).
+	n0 := faces[0].Geometry().(geom.Plane).Normal()
+	patches := make([]sheetPatch, len(faces))
+	for i, f := range faces {
+		nrm := f.Geometry().(geom.Plane).Normal()
+		if i > 0 && !sameDirection(nrm, n0) {
+			return nil, build.NotYetImplemented("PBI-112-offset-folded-multiface")
+		}
+		shift := nrm.Scale(distance)
+		src := facePolygon(f)
+		moved := make([]math.Point3, len(src))
+		for j, p := range src {
+			moved[j] = p.TranslateBy(shift)
+		}
+		patches[i] = sheetPatch{poly: moved, normal: nrm}
+	}
+	return buildSheet(patches, feat), nil
+}
+
+// ExtendByEdge extends a planar surface's boundary edge outward by distance, growing the face:
+// the edge's two endpoints slide along the in-plane direction perpendicular to the edge, away
+// from the face. A multi-face body or a curved face is the remaining phase-C (NURBS) work.
+func ExtendByEdge(body *topo.Body, edgeKey []byte, distance float64, feat string) (*topo.Body, error) {
+	edge, ok := body.FindEdgeByKey(edgeKey)
+	if !ok {
+		return nil, errors.New("extend: edge reference lost")
+	}
+	faces := edge.Faces()
 	if len(faces) != 1 {
-		return nil, build.NotYetImplemented("PBI-112-offset-multiface-or-curved")
+		return nil, build.NotYetImplemented("PBI-111-extend-multiface")
 	}
-	normal := faces[0].Geometry().(geom.Plane).Normal()
-	shift := normal.Scale(distance)
-	src := facePolygon(faces[0])
-	moved := make([]math.Point3, len(src))
-	for i, p := range src {
-		moved[i] = p.TranslateBy(shift)
+	pl, ok := faces[0].Geometry().(geom.Plane)
+	if !ok {
+		return nil, build.NotYetImplemented("PBI-111-extend-curved")
 	}
-	return buildPlanarBody(moved, normal, feat), nil
+	poly := facePolygon(faces[0])
+	a, b := edge.StartVertex().Point(), edge.EndVertex().Point()
+	shift := extendDir(pl.Normal(), a, b, centroid(poly)).Scale(distance)
+	moved := make([]math.Point3, len(poly))
+	for i, p := range poly {
+		if coincidentPt(p, a) || coincidentPt(p, b) {
+			moved[i] = p.TranslateBy(shift)
+		} else {
+			moved[i] = p
+		}
+	}
+	return buildSheet([]sheetPatch{{poly: moved, normal: pl.Normal()}}, feat), nil
+}
+
+// extendDir is the in-plane unit direction perpendicular to edge a→b pointing away from the
+// face centroid c (so an extended boundary grows outward).
+func extendDir(normal math.Vector3, a, b, c math.Point3) math.Vector3 {
+	perp := unit3(normal.Cross(a.VectorTo(b)))
+	if float64(perp.Dot(a.Midpoint(b).VectorTo(c))) > 0 { // points toward the interior → flip
+		perp = perp.Scale(-1)
+	}
+	return perp
+}
+
+func coincidentPt(a, b math.Point3) bool { return float64(a.DistanceTo(b)) < 1e-7 }
+
+// sameDirection reports whether two normals point the same way (within tolerance).
+func sameDirection(a, b math.Vector3) bool {
+	return float64(unit3(a).Dot(unit3(b))) > 1-1e-7
+}
+
+func unit3(v math.Vector3) math.Vector3 {
+	if u, err := math.UnitVector3FromVector(v); err == nil {
+		return u.AsVector()
+	}
+	return v
 }
 
 // MidPatch is one extracted mid-surface: the surface body lying halfway between a
@@ -209,7 +345,7 @@ func midPatch(a, b *topo.Face, feat string, idx int) MidPatch {
 	for i, p := range polyA {
 		moved[i] = p.TranslateBy(shift)
 	}
-	return MidPatch{Body: buildPlanarBody(moved, na, feat+"-mid-"+strconv.Itoa(idx)), Thickness: sep}
+	return MidPatch{Body: buildSheet([]sheetPatch{{poly: moved, normal: na}}, feat+"-mid-"+strconv.Itoa(idx)), Thickness: sep}
 }
 
 // centroid returns the average of a polygon's vertices.

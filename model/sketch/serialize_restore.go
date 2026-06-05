@@ -110,6 +110,11 @@ func (r *sketchRestorer) restoreEntities(entities []EntityData) error {
 			return err
 		}
 		e.(interface{ SetConstruction(bool) }).SetConstruction(ed.Construction)
+		if ed.Centerline {
+			if cl, ok := e.(interface{ SetCenterline(bool) }); ok {
+				cl.SetCenterline(true)
+			}
+		}
 		r.entityMap[ed.ID] = e
 	}
 	return nil

@@ -54,6 +54,10 @@ func (t *LoftTool) Sections() []ProfileHandle {
 	return append([]ProfileHandle(nil), t.sections...)
 }
 
+// PickedProfiles is the unified-tool-highlight accessor; it aliases Sections so the head
+// outlines every picked cross-section the same way it does other profile-picking tools.
+func (t *LoftTool) PickedProfiles() []ProfileHandle { return t.Sections() }
+
 // CanCommit reports whether at least two cross-sections have been picked.
 func (t *LoftTool) CanCommit() bool { return len(t.sections) >= 2 }
 

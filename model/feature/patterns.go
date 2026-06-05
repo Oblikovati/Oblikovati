@@ -112,6 +112,70 @@ func appendCopies(bodies, copies []*topo.Body) []*topo.Body {
 	return append(out, copies...)
 }
 
+// replicate produces the patterned body state. When the single source feature added or
+// removed material (a cut/join/intersect), it re-applies that source's tool at each active
+// occurrence with the same boolean — so patterning a hole cuts N holes in one body, and
+// patterning a boss unions N bosses into one body. A boolean source whose tool cannot be
+// recovered (a deferred feature that built no geometry, or a degenerate delta) replicates
+// nothing — copying the whole running body would wrongly multiply it. Only a new-body/base
+// source falls back to placing whole-body copies as independent solids.
+func (p *patternBase) replicate(in Input, sources []ID, transforms []math.Matrix4, feat string) (Output, error) {
+	tool, op, ok := singleSourceTool(in, sources)
+	if booleanReplicable(op) {
+		if !ok {
+			return Output{Bodies: in.Bodies}, nil
+		}
+		return p.replicateTool(in.Bodies, tool, op, transforms, feat)
+	}
+	copies, err := p.placeCopies(in.Bodies, transforms, feat)
+	if err != nil {
+		return Output{}, err
+	}
+	return Output{Bodies: appendCopies(in.Bodies, copies)}, nil
+}
+
+// replicateTool re-applies the source tool, transformed by each active occurrence, against
+// the running result with the source operation (the original sits at occurrence 0 already).
+func (p *patternBase) replicateTool(bodies []*topo.Body, tool *topo.Body, op ops.PartFeatureOperation, transforms []math.Matrix4, feat string) (Output, error) {
+	if len(bodies) == 0 {
+		return Output{Bodies: bodies}, nil
+	}
+	running := append([]*topo.Body(nil), bodies...)
+	last := len(running) - 1
+	for k := 1; k < len(transforms); k++ {
+		if p.suppressed[k] {
+			continue
+		}
+		tk, err := ops.TransformBody(tool, transforms[k], copyLineage(feat, k, 0))
+		if err != nil {
+			return Output{}, err
+		}
+		res, err := ops.Boolean(op, running[last], tk)
+		if err != nil {
+			return Output{}, err
+		}
+		if res != nil && len(res.Faces()) > 0 {
+			running[last] = res
+		}
+	}
+	return Output{Bodies: running}, nil
+}
+
+// singleSourceTool returns the tool + operation of a lone source feature (the common case);
+// it declines multi-source patterns and missing resolvers, leaving them to the copy path.
+func singleSourceTool(in Input, sources []ID) (*topo.Body, ops.PartFeatureOperation, bool) {
+	if in.SourceTool == nil || len(sources) != 1 {
+		return nil, ops.NewBody, false
+	}
+	return in.SourceTool(sources[0])
+}
+
+// booleanReplicable reports whether an operation is one the pattern re-applies as a boolean
+// (a material change), as opposed to a new-body placement.
+func booleanReplicable(op ops.PartFeatureOperation) bool {
+	return op == ops.Cut || op == ops.Join || op == ops.Intersect
+}
+
 // RectangularPatternDefinition replicates the running solid in a 2D grid. StepX/StepY
 // are the per-occurrence offset vectors (direction × spacing); element (ix,iy) sits at
 // StepX·ix + StepY·iy, with (0,0) the original.
@@ -136,11 +200,7 @@ func (r *RectangularPatternFeature) Recompute(in Input) (Output, error) {
 	nx, ny := callOr1(r.def.CountX), callOr1(r.def.CountY)
 	r.rebuild(nx * ny)
 	transforms := rectTransforms(nx, ny, r.def.StepX, r.def.StepY)
-	copies, err := r.placeCopies(in.Bodies, transforms, "rect-pattern")
-	if err != nil {
-		return Output{}, err
-	}
-	return Output{Bodies: appendCopies(in.Bodies, copies)}, nil
+	return r.replicate(in, r.def.SourceFeatures, transforms, "rect-pattern")
 }
 
 // rectTransforms returns the grid of occurrence transforms in row-major (ix + iy·nx)
@@ -182,11 +242,7 @@ func (c *CircularPatternFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	copies, err := c.placeCopies(in.Bodies, transforms, "circ-pattern")
-	if err != nil {
-		return Output{}, err
-	}
-	return Output{Bodies: appendCopies(in.Bodies, copies)}, nil
+	return c.replicate(in, c.def.SourceFeatures, transforms, "circ-pattern")
 }
 
 // circTransforms returns count occurrence rotations about the axis at angle/count
@@ -224,11 +280,7 @@ func (s *SketchDrivenPatternFeature) Recompute(in Input) (Output, error) {
 	points := callPoints(s.def.Points)
 	s.rebuild(len(points))
 	transforms := sketchTransforms(points)
-	copies, err := s.placeCopies(in.Bodies, transforms, "sketch-pattern")
-	if err != nil {
-		return Output{}, err
-	}
-	return Output{Bodies: appendCopies(in.Bodies, copies)}, nil
+	return s.replicate(in, s.def.SourceFeatures, transforms, "sketch-pattern")
 }
 
 // sketchTransforms returns a translation per sketch point relative to the first point
@@ -270,11 +322,7 @@ func (m *MirrorFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	transforms := []math.Matrix4{math.Identity4(), math.Reflection4(m.def.Origin, normal)}
-	copies, err := m.placeCopies(in.Bodies, transforms, "mirror")
-	if err != nil {
-		return Output{}, err
-	}
-	return Output{Bodies: appendCopies(in.Bodies, copies)}, nil
+	return m.replicate(in, m.def.SourceFeatures, transforms, "mirror")
 }
 
 // PatternFeatures adds pattern/mirror features into the engine.

@@ -94,6 +94,23 @@ func (b Box) Union(o Box) Box {
 	return b.ExtendPoint(o.Min).ExtendPoint(o.Max)
 }
 
+// FarthestPoint returns the box corner farthest along dir — the box's support point in
+// that direction (Inventor's TransientGeometry.GetFarmostPoint). On each axis it takes Max
+// when dir's component is non-negative and Min when it is negative; dir need not be unit.
+// On the empty box the result is degenerate (Min>Max), like the box itself.
+func (b Box) FarthestPoint(dir Vector3) Point3 {
+	return Point3{farAxis(b.Min.X, b.Max.X, dir.X), farAxis(b.Min.Y, b.Max.Y, dir.Y), farAxis(b.Min.Z, b.Max.Z, dir.Z)}
+}
+
+// farAxis picks the box extent (lo or hi) farther along a single axis: hi when the
+// direction component points that way (>= 0), lo otherwise.
+func farAxis(lo, hi, d Scalar) Scalar {
+	if d < 0 {
+		return lo
+	}
+	return hi
+}
+
 // Corners returns the eight corner points, ordered by the bits of the index:
 // bit0=X, bit1=Y, bit2=Z choosing Min(0)/Max(1) on that axis.
 func (b Box) Corners() [8]Point3 {

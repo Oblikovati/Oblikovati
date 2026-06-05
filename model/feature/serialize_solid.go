@@ -12,12 +12,17 @@ import "fmt"
 // HoleData is a hole's recipe: the placement face (reference key), diameter/depth,
 // the hole geometry type, and optional tap data.
 type HoleData struct {
-	Face        string  `yaml:"face"`
-	Diameter    float64 `yaml:"diameter"`
-	Depth       float64 `yaml:"depth"`
-	Type        string  `yaml:"type"`
-	Tapped      bool    `yaml:"tapped,omitempty"`
-	Designation string  `yaml:"designation,omitempty"`
+	Face            string  `yaml:"face"`
+	Diameter        float64 `yaml:"diameter"`
+	Depth           float64 `yaml:"depth"`
+	ThroughAll      bool    `yaml:"throughAll,omitempty"`
+	CounterDiameter float64 `yaml:"counterDiameter,omitempty"`
+	CounterDepth    float64 `yaml:"counterDepth,omitempty"`
+	CounterAngle    float64 `yaml:"counterAngle,omitempty"`
+	PointAngle      float64 `yaml:"pointAngle,omitempty"`
+	Type            string  `yaml:"type"`
+	Tapped          bool    `yaml:"tapped,omitempty"`
+	Designation     string  `yaml:"designation,omitempty"`
 }
 
 // BossData is a boss's recipe: a raised cylinder on a placement face.
@@ -40,12 +45,17 @@ func serializeHole(def *HoleDefinition) (*HoleData, error) {
 		return nil, err
 	}
 	return &HoleData{
-		Face:        encodeKey(def.PlacementFaceKey),
-		Diameter:    evalFloat(def.Diameter),
-		Depth:       evalFloat(def.Depth),
-		Type:        kind,
-		Tapped:      def.Tap.Tapped,
-		Designation: def.Tap.Designation,
+		Face:            encodeKey(def.PlacementFaceKey),
+		Diameter:        evalFloat(def.Diameter),
+		Depth:           evalFloat(def.Depth),
+		ThroughAll:      def.ThroughAll,
+		CounterDiameter: evalFloat(def.CounterDiameter),
+		CounterDepth:    evalFloat(def.CounterDepth),
+		CounterAngle:    evalFloat(def.CounterAngle),
+		PointAngle:      evalFloat(def.PointAngle),
+		Type:            kind,
+		Tapped:          def.Tap.Tapped,
+		Designation:     def.Tap.Designation,
 	}, nil
 }
 
@@ -63,12 +73,22 @@ func restoreHole(fs *PartFeatures, h *HoleData) (*PartFeature, error) {
 	}
 	holes := NewHoleFeatures(fs)
 	var pf *PartFeature
-	if h.Tapped {
+	switch {
+	case h.Tapped:
 		pf = holes.AddTapped(key, constFloat(h.Diameter), constFloat(h.Depth), h.Designation)
-	} else {
+	case holeType == CounterboreHole:
+		pf = holes.AddCounterbore(key, constFloat(h.Diameter), constFloat(h.Depth), constFloat(h.CounterDiameter), constFloat(h.CounterDepth))
+	case holeType == CountersinkHole:
+		pf = holes.AddCountersink(key, constFloat(h.Diameter), constFloat(h.Depth), constFloat(h.CounterDiameter), constFloat(h.CounterAngle))
+	case h.ThroughAll:
+		pf = holes.AddDrilledThrough(key, constFloat(h.Diameter))
+	default:
 		pf = holes.AddDrilled(key, constFloat(h.Diameter), constFloat(h.Depth))
 	}
-	pf.feature.(*HoleFeature).def.Type = holeType
+	def := pf.feature.(*HoleFeature).def
+	def.Type = holeType
+	def.ThroughAll = h.ThroughAll
+	def.PointAngle = constFloat(h.PointAngle)
 	return pf, nil
 }
 

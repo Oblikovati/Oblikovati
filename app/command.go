@@ -53,6 +53,8 @@ type CommandDefinition struct {
 	enabled     func(*Session) bool
 	active      func(*Session) bool // for a ComboControl option: is this the current selection?
 	run         func(*Session) error
+	variants    []*CommandDefinition // split-button dropdown entries (Inventor's variant flyout)
+	isVariant   bool                 // true ⇒ reachable only via a head command's dropdown, never its own panel button
 }
 
 // NewCommand starts a command definition with the required fields. Use the With*
@@ -108,6 +110,24 @@ func (c *CommandDefinition) WithEnable(p func(*Session) bool) *CommandDefinition
 	c.enabled = p
 	return c
 }
+
+// WithVariants attaches a split-button dropdown to this command — Inventor's variant
+// flyout, where one ribbon head (e.g. "Rectangle") fronts a list of related geometry
+// tools (Three Point, Two Point Center, …). The head still runs its own action when
+// clicked; the variants appear only in its dropdown, never as standalone panel buttons,
+// so the canonical panel-head count is unchanged. Variants are registered for id lookup
+// (so [Session.Execute] can run them) by [RegisterStandardCommands].
+func (c *CommandDefinition) WithVariants(variants ...*CommandDefinition) *CommandDefinition {
+	for _, v := range variants {
+		v.isVariant = true
+	}
+	c.variants = variants
+	return c
+}
+
+// Variants returns this command's split-button dropdown entries (nil if it is a plain
+// button). The slice is the live backing array; callers must not mutate it.
+func (c *CommandDefinition) Variants() []*CommandDefinition { return c.variants }
 
 // WithActive sets the predicate that reports whether this command is the *current* selection
 // of its combo group — used to drive the highlighted item of a ribbon selection box (a panel

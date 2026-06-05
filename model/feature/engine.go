@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/model/health"
 	"github.com/Oblikovati/oblikovati/model/identity"
@@ -140,8 +141,93 @@ func (fs *PartFeatures) evaluate(pf *PartFeature, bodies []*topo.Body, sick map[
 		return bodies
 	}
 	pf.recomputes++
-	out, err := pf.feature.Recompute(Input{Bodies: bodies, Params: fs.params, Keys: fs.keys})
+	out, err := pf.feature.Recompute(Input{Bodies: bodies, Params: fs.params, Keys: fs.keys, SourceTool: fs.sourceTool})
 	return fs.classify(pf, bodies, out, err, sick)
+}
+
+// sourceTool resolves a source feature's geometric contribution for a pattern/mirror: the
+// tool body it added or removed (the before/after delta) and the operation it applied. A
+// new-body or undeterminable source returns ok=false, so the replicator copies the whole
+// body instead (the right behavior for placing independent solids).
+func (fs *PartFeatures) sourceTool(id ID) (*topo.Body, ops.PartFeatureOperation, bool) {
+	idx := -1
+	for i, it := range fs.items {
+		if it.id == id {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return nil, ops.NewBody, false
+	}
+	f := fs.items[idx].feature
+	op := operationOf(f)
+	// Prefer the source feature's own tool (a clean prism) over a before/after difference,
+	// which can degenerate on curved geometry.
+	if tf, ok := f.(ToolFeature); ok {
+		if tool := tf.ToolBody(); tool != nil {
+			return tool, op, true
+		}
+	}
+	tool, derr := sourceDelta(lastSolid(fs.prefixBodies(idx)), lastSolid(fs.items[idx].cached), op)
+	if derr != nil || tool == nil {
+		return nil, op, false
+	}
+	return tool, op, true
+}
+
+// operationOf returns a feature's boolean operation, or NewBody when it does not apply one
+// (so its replication falls back to copying whole bodies).
+func operationOf(f Feature) ops.PartFeatureOperation {
+	if of, ok := f.(OperationalFeature); ok {
+		return of.Operation()
+	}
+	return ops.NewBody
+}
+
+// sourceDelta returns the material a feature contributed: for a cut, before−after (the
+// removed chunk, the tool clipped to the body); for join/intersect, after−before (the added
+// chunk). NewBody, an absent state, or a feature that contributed nothing (a deferred feature,
+// before == after → an empty difference) yields no delta, so the caller adds nothing for that
+// source rather than copying the whole body.
+func sourceDelta(before, after *topo.Body, op ops.PartFeatureOperation) (*topo.Body, error) {
+	switch op {
+	case ops.Cut:
+		if before == nil || after == nil {
+			return nil, nil
+		}
+		d, err := ops.Boolean(ops.Cut, before, after)
+		return nonEmpty(d), err
+	case ops.Join, ops.Intersect:
+		if after == nil {
+			return nil, nil
+		}
+		if before == nil {
+			return after, nil
+		}
+		d, err := ops.Boolean(ops.Cut, after, before)
+		return nonEmpty(d), err
+	default:
+		return nil, nil
+	}
+}
+
+// nonEmpty returns b unless it is an empty body (no faces) — an empty difference means the
+// source contributed nothing to replicate, so the pattern adds nothing rather than copying.
+func nonEmpty(b *topo.Body) *topo.Body {
+	if b == nil || len(b.Faces()) == 0 {
+		return nil
+	}
+	return b
+}
+
+// lastBody returns the last body of a running state (the one a feature's boolean acts on),
+// or nil when empty.
+func lastSolid(bodies []*topo.Body) *topo.Body {
+	if len(bodies) == 0 {
+		return nil
+	}
+	return bodies[len(bodies)-1]
 }
 
 // classify turns a feature's recompute result into health + the running body state:

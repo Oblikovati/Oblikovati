@@ -13,11 +13,15 @@ package router
 import (
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"sort"
+	"strings"
+	"time"
 
 	"github.com/Oblikovati/api/wire"
 
 	"github.com/Oblikovati/oblikovati/addin/opregistry"
+	"github.com/Oblikovati/oblikovati/addin/trace"
 	"github.com/Oblikovati/oblikovati/app"
 )
 
@@ -28,18 +32,24 @@ type handlerFunc func(s *app.Session, args json.RawMessage) (json.RawMessage, er
 type Router struct {
 	ops      *opregistry.Registry
 	handlers map[string]handlerFunc
+	trace    *trace.Buffer
 }
 
 // New builds a router whose feature operations come from ops.
 func New(ops *opregistry.Registry) *Router {
-	r := &Router{ops: ops, handlers: map[string]handlerFunc{}}
+	r := &Router{ops: ops, handlers: map[string]handlerFunc{}, trace: trace.NewBuffer(0)}
 	r.registerStandardHandlers()
 	r.registerTransactionHandlers()
 	r.registerMaterialHandlers()
 	r.registerLightingHandlers()
 	r.registerGraphicsHandlers()
+	r.handlers[wire.MethodLogsTail] = r.logsTail
 	return r
 }
+
+// Trace returns the router's operation-trace buffer, so the host can install its slog handler
+// (slog.SetDefault) and have kernel logs land in the same stream the router fills.
+func (r *Router) Trace() *trace.Buffer { return r.trace }
 
 // registerStandardHandlers wires the command/document/parameter/model/sketch/feature/theme
 // methods.
@@ -54,6 +64,7 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodParametersSet] = setParameter
 	r.handlers[wire.MethodModelTree] = modelTree
 	r.handlers[wire.MethodModelSelection] = modelSelection
+	r.handlers[wire.MethodModelReferenceKeys] = referenceKeys
 	r.registerSketchHandlers()
 	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
 	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
@@ -203,7 +214,7 @@ func (r *Router) registerGraphicsHandlers() {
 
 // Handle dispatches method with its JSON args (empty args become {}), returning the
 // JSON result, or an error for an unknown method or a failed handler.
-func (r *Router) Handle(s *app.Session, method string, req []byte) ([]byte, error) {
+func (r *Router) Handle(s *app.Session, method string, req []byte) (resp []byte, err error) {
 	h, ok := r.handlers[method]
 	if !ok {
 		return nil, fmt.Errorf("router: unknown method %q", method)
@@ -212,7 +223,44 @@ func (r *Router) Handle(s *app.Session, method string, req []byte) ([]byte, erro
 	if len(req) == 0 {
 		args = json.RawMessage("{}")
 	}
-	return h(s, args)
+	// Recover any handler panic into a detailed error (method + value + stack) so a kernel bug
+	// hit by a driver is reported and traced, not fatal. logs.tail is not self-traced (a poll
+	// must not flood the very buffer it reads). See Workstream A/B of the diagnostics plan.
+	start := time.Now()
+	defer func() {
+		if rec := recover(); rec != nil {
+			stack := string(debug.Stack())
+			err = fmt.Errorf("%s: panic: %v", method, rec)
+			resp = nil
+			r.record(method, time.Since(start), false, "", err.Error(), stack)
+		}
+	}()
+	out, herr := h(s, args)
+	if herr != nil {
+		herr = methodError(method, herr)
+		r.record(method, time.Since(start), false, herr.Error(), "", "")
+		return nil, herr
+	}
+	r.record(method, time.Since(start), true, "", "", "")
+	return out, nil
+}
+
+// record appends an operation entry to the trace, except for logs.tail itself (so polling the
+// trace does not append to it).
+func (r *Router) record(method string, dur time.Duration, ok bool, errMsg, panicMsg, stack string) {
+	if method == wire.MethodLogsTail {
+		return
+	}
+	r.trace.RecordOp(method, dur, ok, errMsg, panicMsg, stack)
+}
+
+// methodError prefixes err with the method name when the handler did not already (so every
+// failure names the operation that produced it).
+func methodError(method string, err error) error {
+	if strings.HasPrefix(err.Error(), method) {
+		return err
+	}
+	return fmt.Errorf("%s: %w", method, err)
 }
 
 // Methods returns the supported method names, sorted — used by self-description.

@@ -25,7 +25,7 @@ rules (units, identity, transactions, events) that apply to every milestone.
 | **M02** | [Units, Parameters & Expressions](M02-units-parameters-expressions/_milestone.md) | 4 | 10 | M00 |
 | **M03** | [Documents, Persistence & Identity](M03-documents-persistence-identity/_milestone.md) | 6 | 13 | M00, M02 |
 | **M04** | [Transactions, Undo & Events](M04-transactions-undo-events/_milestone.md) | 4 | 8 | M03 |
-| **M05** | [Application UI, Commands, Interaction & Add-in Platform](M05-ui-commands-addins/_milestone.md) | 5 | 12 | M04 |
+| **M05** | [Application UI, Commands, Interaction & Add-in Platform](M05-ui-commands-addins/_milestone.md) | 6 | 21 | M04 |
 | **M06** | [2D/3D Sketching & Constraint Solver](M06-sketching-constraints/_milestone.md) | 6 | 13 | M01, M02, M05 |
 | **M07** | [B-Rep Modeling Kernel & Topology](M07-brep-kernel-topology/_milestone.md) | 4 | 8 | M01, M03 |
 | **M08** | [Part Modeling: Sketched & Work Features](M08-part-sketched-work-features/_milestone.md) | 4 | 12 | M06, M07 |
@@ -39,9 +39,16 @@ rules (units, identity, transactions, events) that apply to every milestone.
 | **M16** | [Visualization, Appearances, Styles & Presentations](M16-visualization-presentation/_milestone.md) | 4 | 7 | M07, M11 |
 | **M17** | [Interoperability & Translation](M17-interoperability-translation/_milestone.md) | 4 | 6 | M07 |
 | **M18** | [Analysis, Measurement & Simulation](M18-analysis-simulation/_milestone.md) | 5 | 7 | M07, M11, M16 |
+| **M19** | [Materials & Appearances](M19-materials-appearances/_milestone.md) | 7¹ | 7¹ | M07, M16 |
 | **M20** | [Feature Completion & Geometry Parity](M20-feature-completion-geometry/_milestone.md) | 15 | 24 | M08, M09, M10 |
 | **M21** | [Sketch2D Feature Completion (2D Parity)](M21-sketch2d-feature-completion/_milestone.md) | 11 | 22 | M06, M08 |
+| **M22** | [Sketch3D Feature Completion (3D Parity)](M22-sketch3d-feature-completion/_milestone.md) | 12 | 18 | M06, M07, M08 |
 | **M23** | [Renderer Display-Mode Parity & Realistic PBR](M23-renderer-display-modes/_milestone.md) | 4 | 12 | M07, M16, M19 |
+
+¹ M19 (Materials & Appearances) shipped real code (`model/material`, `app/materials*`,
+head Materials/Appearance windows) ahead of its plan files; its 7 feature/PBI files were
+**backfilled from the code on 2026-06-04** (see audit REPORT.md / ACTION-PLAN.md). The
+F07 (Materials UI) e2e grade is unverified pending a head-test CI gate.
 
 ## Dependency spine
 
@@ -75,6 +82,13 @@ generation for each modeling capability are delivered incrementally alongside M0
 
 ## Totals
 
-- Milestones: **19**
-- Features: **85**
-- PBIs: **170**
+_(Reconciled against the filesystem on 2026-06-04 — see audit REPORT.md. Counts are
+`_feature.md` / `PBI-*.md` file counts.)_
+
+- Milestones: **24** (M00–M23)
+- Features: **135** (incl. M19's 7 backfilled feature files — note ¹ above)
+- PBIs: **262** (incl. M19's 7 backfilled PBIs)
+
+> Note: these are *planned* counts (files that exist), not *done* counts. For actual
+> completion status — graded on the three axes Model / Geometry / UI+e2e
+> (see CONVENTIONS.md "Status model") — read [PROGRESS.md](PROGRESS.md).

@@ -33,6 +33,65 @@ func TestAutoDimensionIdempotentWhenFull(t *testing.T) {
 	}
 }
 
+// The improvement over grounding whole entities: AutoDimension leaves the sketch
+// WELL-constrained (0 DOF, no redundancy), never over-constrained.
+func TestAutoDimensionIsWellConstrainedNotRedundant(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	s.AddRectangleByCorners(gmath.P2(0, 0), gmath.P2(4, 3))
+	s.AutoDimension()
+	a := s.AnalyzeConstraints()
+	if a.DOF != 0 || a.Redundant != 0 || a.Status != WellConstrained {
+		t.Fatalf("after AutoDimension: DOF=%d Redundant=%d Status=%v, want 0/0/WellConstrained", a.DOF, a.Redundant, a.Status)
+	}
+}
+
+// AutoDimension prefers real, editable dimensions (not only grounds).
+func TestAutoDimensionAddsRealDimensions(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	s.AddRectangleByCorners(gmath.P2(0, 0), gmath.P2(4, 3))
+	s.AutoDimension()
+	if s.DimensionConstraints().Count() == 0 {
+		t.Error("AutoDimension added no dimensions (should place length dims, not only grounds)")
+	}
+}
+
+// A free circle (center + radius = 3 DOF) auto-dimensions to a well-constrained sketch
+// including a radius dimension.
+func TestAutoDimensionCircle(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	s.Circles().AddByCenterRadius(gmath.P2(1, 2), 2)
+	s.AutoDimension()
+	a := s.AnalyzeConstraints()
+	if a.DOF != 0 || a.Redundant != 0 {
+		t.Fatalf("circle AutoDimension: DOF=%d Redundant=%d, want 0/0", a.DOF, a.Redundant)
+	}
+	if s.DimensionConstraints().Count() == 0 {
+		t.Error("expected a radius dimension on the circle")
+	}
+}
+
+// Dimensions are placed at current values, so auto-dimensioning then solving does not move
+// the geometry.
+func TestAutoDimensionPreservesGeometry(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	s.AddRectangleByCorners(gmath.P2(0, 0), gmath.P2(4, 3))
+	s.AutoDimension()
+	s.Solve()
+	if !pointAt(s, gmath.P2(4, 3)) {
+		t.Error("AutoDimension + Solve moved the geometry; (4,3) corner is gone")
+	}
+}
+
+// pointAt reports whether any constrainable point sits at q.
+func pointAt(s *Sketch, q gmath.Point2) bool {
+	for _, p := range s.uniqueEntityPoints() {
+		if math.Abs(float64(p.X)-float64(q.X)) < 1e-6 && math.Abs(float64(p.Y)-float64(q.Y)) < 1e-6 {
+			return true
+		}
+	}
+	return false
+}
+
 func TestOffsetChainStaysConnected(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	// An L: (0,0)→(4,0)→(4,3), sharing the corner (4,0).

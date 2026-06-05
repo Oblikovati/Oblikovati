@@ -133,6 +133,27 @@ void obk_ig_set_style_color(const char* name, float r, float g, float b, float a
 int  obk_ig_color_edit4(const char* label, float* rgba) {
     return ImGui::ColorEdit4(label, rgba) ? 1 : 0;
 }
+
+// Window-draw-list primitives: free-form 2D shapes painted over the current window's
+// content (e.g. the viewport's axis-orientation gizmo). Coordinates are screen-space
+// pixels; colors are 0..1 RGBA packed to IM_COL32. Drawing happens within the current
+// window's clip rect, so callers must invoke these inside the window's Begin/End.
+static ImU32 obk_col32(float r, float g, float b, float a) {
+    return IM_COL32((int)(r * 255), (int)(g * 255), (int)(b * 255), (int)(a * 255));
+}
+void obk_ig_draw_line(float x1, float y1, float x2, float y2,
+                      float r, float g, float b, float a, float thickness) {
+    ImGui::GetWindowDrawList()->AddLine(ImVec2(x1, y1), ImVec2(x2, y2),
+                                        obk_col32(r, g, b, a), thickness);
+}
+void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x3, float y3,
+                                 float r, float g, float b, float a) {
+    ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(x1, y1), ImVec2(x2, y2),
+                                                  ImVec2(x3, y3), obk_col32(r, g, b, a));
+}
+void obk_ig_draw_text(float x, float y, float r, float g, float b, float a, const char* s) {
+    ImGui::GetWindowDrawList()->AddText(ImVec2(x, y), obk_col32(r, g, b, a), s);
+}
 int  obk_ig_begin_combo(const char* label, const char* preview) {
     return ImGui::BeginCombo(label, preview) ? 1 : 0;
 }

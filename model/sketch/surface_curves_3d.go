@@ -3,6 +3,8 @@
 package sketch
 
 import (
+	"fmt"
+
 	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/math"
 )
@@ -200,14 +202,57 @@ func (s *Sketch3D) AddSilhouetteCurve3DRef(surface SurfaceSource, viewDir math.V
 
 // AddProjectToSurfaceCurve3D adds the projection of source onto a fixed surface.
 func (s *Sketch3D) AddProjectToSurfaceCurve3D(source geom.Curve3, surface geom.Surface) *ProjectToSurfaceCurve3D {
-	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: StaticSurface(surface)}
+	return s.AddProjectToSurfaceCurve3DRef(source, StaticSurface(surface))
+}
+
+// AddProjectToSurfaceCurve3DRef projects a source curve onto a surface source (the surface
+// is associative and rebinds on recompute; the source curve is a fixed snapshot).
+func (s *Sketch3D) AddProjectToSurfaceCurve3DRef(source geom.Curve3, surface SurfaceSource) *ProjectToSurfaceCurve3D {
+	c := &ProjectToSurfaceCurve3D{entityBase: newEntity(), Source: source, Surface: surface}
 	s.addEntity3D(c)
 	return c
 }
 
+// SourceCurve3 resolves a curve entity in this sketch (by id) to its kernel curve — the
+// source for a project/offset surface curve. It errors if the id is unknown or the entity
+// is not a curve.
+func (s *Sketch3D) SourceCurve3(id ID) (geom.Curve3, error) {
+	e, ok := s.EntityByID(id)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+	}
+	return curve3OfEntity(e)
+}
+
+// curve3OfEntity maps a 3D-sketch entity to its kernel curve.
+func curve3OfEntity(e Entity) (geom.Curve3, error) {
+	switch v := e.(type) {
+	case *Line3D:
+		return geom.NewLineSegment(v.A.Position(), v.B.Position()), nil
+	case *Circle3D:
+		return v.Curve()
+	case *Arc3D:
+		return v.Curve()
+	case *Ellipse3D:
+		return v.Curve()
+	case *EllipticalArc3D:
+		return v.Curve()
+	case *HelicalCurve3D:
+		return v.Curve()
+	default:
+		return nil, fmt.Errorf("sketch3d: entity %T is not a source curve", e)
+	}
+}
+
 // AddOnFaceCurve3D adds a curve drawn in a fixed surface's parameter space (the uv samples).
 func (s *Sketch3D) AddOnFaceCurve3D(surface geom.Surface, uv []math.Point2) *OnFaceCurve3D {
-	c := &OnFaceCurve3D{entityBase: newEntity(), Surface: StaticSurface(surface), UV: append([]math.Point2(nil), uv...)}
+	return s.AddOnFaceCurve3DRef(StaticSurface(surface), uv)
+}
+
+// AddOnFaceCurve3DRef adds an on-face curve over a surface source (associative: it rebinds
+// to the referenced face's surface on recompute).
+func (s *Sketch3D) AddOnFaceCurve3DRef(surface SurfaceSource, uv []math.Point2) *OnFaceCurve3D {
+	c := &OnFaceCurve3D{entityBase: newEntity(), Surface: surface, UV: append([]math.Point2(nil), uv...)}
 	s.addEntity3D(c)
 	return c
 }

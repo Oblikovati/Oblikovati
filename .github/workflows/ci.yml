@@ -109,6 +109,46 @@ jobs:
       - run: go mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
       - run: go test -race ./...
 
+  # cgo GUI head (Vulkan + Dear ImGui). The PR test/race/build jobs above run `./...`
+  # on the ROOT module only and with CGO_ENABLED=0, so the head module was previously
+  # never compiled OR tested on a PR — its build could break and its end-to-end UI
+  # in-window tests never ran (they `t.Skip` when no Vulkan/display is present). This
+  # job closes that gap (REPORT.md §8 / DoD U-axis):
+  #   1. builds the whole head module (catches cgo/binding breakage on every PR);
+  #   2. runs head tests under a SOFTWARE Vulkan ICD (mesa lavapipe) + a virtual
+  #      display (xvfb) so the in-window e2e tests actually execute instead of
+  #      skipping. Tests still skip cleanly if lavapipe can't provide a device, so
+  #      the job never goes flaky — but on a healthy runner the UI tests run for real.
+  head:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Oblikovati/Oblikovati.API
+          ref: develop
+          path: _api
+      - uses: actions/setup-go@v5
+        with:
+          # Match build.yml's head-linux toolchain.
+          go-version: "1.24"
+          cache: false
+      - run: go -C head mod edit -replace github.com/Oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - name: Install cgo + headless-Vulkan deps
+        run: |
+          sudo apt-get update
+          # libglfw3-dev/libvulkan-dev/pkg-config: the cgo build (head/internal/native
+          # uses `#cgo pkg-config: glfw3 vulkan`). mesa-vulkan-drivers: lavapipe software
+          # ICD so a GPU-less runner still exposes a Vulkan 1.3 device. xvfb: a virtual
+          # X display so GLFW window creation succeeds headlessly.
+          sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config mesa-vulkan-drivers xvfb
+      - name: Build head
+        working-directory: head
+        run: CGO_ENABLED=1 go build ./...
+      - name: Test head (xvfb + lavapipe)
+        working-directory: head
+        run: xvfb-run -a go test ./...
+
   # Confirm the cgo-free core cross-compiles for every shipping target.
   build:
     runs-on: ubuntu-latest

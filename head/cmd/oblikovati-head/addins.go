@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -42,6 +43,9 @@ type addInHost struct {
 func startAddIns(session *app.Session) *addInHost {
 	d := dispatch.New(64)
 	rtr := router.New(opregistry.Default())
+	// Route kernel logs into the router's operation trace so a driver can read both the
+	// op-trace and any slog records over the bridge (logs.tail / tail_logs).
+	slog.SetDefault(slog.New(rtr.Trace().SlogHandler(slog.LevelInfo)))
 	addinhost.SetHost(d, func(method string, req []byte) ([]byte, error) {
 		return rtr.Handle(session, method, req)
 	}, hostCallTimeout)

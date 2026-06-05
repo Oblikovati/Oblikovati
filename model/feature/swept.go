@@ -4,6 +4,7 @@ package feature
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/subd"
@@ -74,13 +75,40 @@ func sectionMesh(sections [][]math.Point3, closedLoop bool) subd.Mesh {
 		ns := (s + 1) % k
 		for i := 0; i < n; i++ {
 			j := (i + 1) % n
-			faces = append(faces, []int{s*n + i, s*n + j, ns*n + j, ns*n + i})
+			a, b, c, d := s*n+i, s*n+j, ns*n+j, ns*n+i
+			faces = append(faces, sideQuad(verts, a, b, c, d)...)
 		}
 	}
 	if !closedLoop {
 		faces = append(faces, reversedRow(0, n), row(k-1, n))
 	}
 	return subd.Mesh{Verts: verts, Faces: faces}
+}
+
+// sideQuad emits a side face between two sections as a single quad when its four corners are
+// coplanar, or as two triangles when they are not. A twisted/lofted side is a warped (ruled,
+// non-planar) quad; left as one face the cage→B-rep converter fits it to an APPROXIMATING plane,
+// so the planar boolean's imprint segments land offset from the body's true edges and an imprint
+// loop fails to close (a partial-penetration union goes non-manifold — the deformed fan blade).
+// Splitting a warped quad into exact-planar triangles restores the planar-faceted invariant the
+// boolean relies on. (Twisted-loft boolean defect, 2026-06.)
+func sideQuad(verts []math.Point3, a, b, c, d int) [][]int {
+	if quadPlanar(verts[a], verts[b], verts[c], verts[d]) {
+		return [][]int{{a, b, c, d}}
+	}
+	return [][]int{{a, b, c}, {a, c, d}}
+}
+
+// quadPlanar reports whether the four corners lie in a common plane, within a tight absolute
+// tolerance (below the arrangement's weld grid, 1e-7, so any quad the boolean would mis-imprint
+// is triangulated). The deviation is the out-of-plane distance of d from the plane through a,b,c.
+func quadPlanar(a, b, c, d math.Point3) bool {
+	nrm := a.VectorTo(b).Cross(a.VectorTo(c))
+	mag := nrm.Length()
+	if mag < 1e-12 {
+		return true // a,b,c are collinear: no plane to deviate from (caller's quad is degenerate)
+	}
+	return stdmath.Abs(a.VectorTo(d).Dot(nrm)/mag) < 1e-8
 }
 
 // row returns the vertex indices of section s in order; reversedRow reverses them (the

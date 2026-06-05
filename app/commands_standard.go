@@ -3,8 +3,6 @@
 package app
 
 import (
-	"strings"
-
 	"github.com/Oblikovati/oblikovati/renderer"
 )
 
@@ -18,6 +16,13 @@ func RegisterStandardCommands(s *Session) error {
 	for _, c := range standardCommands() {
 		if err := s.Commands().Add(c); err != nil {
 			return err
+		}
+		// Variants are flyout-only (skipped by BuildRibbon), but must be registered so a
+		// dropdown selection can be dispatched by id through Session.Execute.
+		for _, v := range c.Variants() {
+			if err := s.Commands().Add(v); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -125,7 +130,70 @@ func modelTabCommands() []*CommandDefinition {
 	}
 	cmds = append(cmds, sketch3DToolCommands()...)
 	cmds = append(cmds, solidFeatureCommands()...)
-	return append(cmds, modifyFeatureCommands()...)
+	cmds = append(cmds, modifyFeatureCommands()...)
+	cmds = append(cmds, patternFeatureCommands()...)
+	return append(cmds, surfaceFeatureCommands()...)
+}
+
+// surfaceFeatureCommands are the 3D Model tab's Surface panel (canonical: Patch, Stitch, Sculpt,
+// Extend, Trim, Rule Fillet). Patch fills a closed sketch region with a surface.
+func surfaceFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Surface.Patch", "Patch", "Surface", func(s *Session) error {
+			s.StartTool(NewPatchTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(hasActivePart).
+			WithIcon("patch").WithButtonStyle(LargeIconButton).
+			WithTooltip("Patch — fill a closed sketch boundary with a surface."),
+		NewCommand("Surface.Trim", "Trim", "Surface", func(s *Session) error {
+			s.StartTool(NewSurfaceTrimTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(hasActivePart).
+			WithIcon("surface-trim").WithButtonStyle(LargeIconButton).
+			WithTooltip("Trim — cut a surface with a work plane and keep one side."),
+		NewCommand("Surface.Stitch", "Stitch", "Surface", func(s *Session) error {
+			s.StartTool(NewStitchTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(hasActivePart).
+			WithIcon("stitch").WithButtonStyle(LargeIconButton).
+			WithTooltip("Stitch — weld surface bodies into one quilt (a closed quilt becomes a solid)."),
+		NewCommand("Surface.Sculpt", "Sculpt", "Surface", func(s *Session) error {
+			s.StartTool(NewSculptTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(hasActivePart).
+			WithIcon("sculpt").WithButtonStyle(LargeIconButton).
+			WithTooltip("Sculpt — fill the volume bounded by surfaces into a solid."),
+		NewCommand("Surface.Extend", "Extend", "Surface", func(s *Session) error {
+			s.StartTool(NewExtendTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(hasActivePart).
+			WithIcon("surface-extend").WithButtonStyle(LargeIconButton).
+			WithTooltip("Extend — grow a surface outward along a boundary edge."),
+	}
+}
+
+// patternFeatureCommands are the 3D Model tab's Pattern panel: replicate selected features
+// as real placed copies (canonical ribbon: Rectangular, Circular, Sketch Driven, Mirror;
+// Sketch Driven is a follow-up). Each starts an interactive tool fed the source features.
+func patternFeatureCommands() []*CommandDefinition {
+	pats := []struct {
+		id, name, icon, tip string
+		start               func() Tool
+	}{
+		{"Modify.RectangularPattern", "Rectangular", "rectangular-pattern", "Rectangular Pattern — select features, set counts and spacing.", func() Tool { return NewFeatureRectPatternTool() }},
+		{"Modify.CircularPattern", "Circular", "circular-pattern", "Circular Pattern — select features, set count and angle.", func() Tool { return NewFeatureCircPatternTool() }},
+		{"Modify.Mirror", "Mirror", "mirror", "Mirror — select features, set the mirror-plane normal.", func() Tool { return NewFeatureMirrorTool() }},
+	}
+	cmds := make([]*CommandDefinition, len(pats))
+	for i, p := range pats {
+		start := p.start
+		cmds[i] = NewCommand(p.id, p.name, "Pattern", func(s *Session) error {
+			s.StartTool(start())
+			return nil
+		}).WithTab("3D Model").WithEnable(hasActivePart).WithTooltip(p.tip).
+			WithIcon(p.icon).WithButtonStyle(SmallIconButton)
+	}
+	return cmds
 }
 
 // sketch3DToolCommands are the contextual 3D-sketch tools, enabled only while a 3D sketch
@@ -179,7 +247,33 @@ func sketch3DToolCommand(id, name, icon, tip string, newTool func() Tool) *Comma
 // and surface→solid (thicken).
 func modifyFeatureCommands() []*CommandDefinition {
 	cmds := append(cutFeatureCommands(), localFaceCommands()...)
-	return append(cmds, surfaceSolidCommands()...)
+	cmds = append(cmds, surfaceSolidCommands()...)
+	return append(cmds, directEditCommands()...)
+}
+
+// directEditCommands are the Modify features that combine or relocate existing geometry:
+// Combine (boolean of two bodies), Move Face (direct edit), Move (relocate a body). They
+// were model-complete (M09/M20) but had no ribbon tool.
+func directEditCommands() []*CommandDefinition {
+	defs := []struct {
+		id, name, icon, tip string
+		start               func() Tool
+	}{
+		{"Modify.Combine", "Combine", "combine", "Combine — boolean two bodies (Join/Cut/Intersect).", func() Tool { return NewCombineTool() }},
+		{"Modify.Split", "Split", "split", "Split — divide the part by a work plane into two bodies, or trim one side away.", func() Tool { return NewSplitTool() }},
+		{"Modify.MoveFace", "Move Face", "move-face", "Move Face — translate picked faces, retopologizing the solid.", func() Tool { return NewMoveFaceTool() }},
+		{"Modify.MoveBodies", "Move Bodies", "move-bodies", "Move Bodies — relocate a body by a vector.", func() Tool { return NewMoveBodyTool() }},
+	}
+	cmds := make([]*CommandDefinition, len(defs))
+	for i, d := range defs {
+		start := d.start
+		cmds[i] = NewCommand(d.id, d.name, "Modify", func(s *Session) error {
+			s.StartTool(start())
+			return nil
+		}).WithTab("3D Model").WithEnable(hasActivePart).WithTooltip(d.tip).
+			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
+	}
+	return cmds
 }
 
 // surfaceSolidCommands are the Modify features that turn a surface body into a solid.
@@ -312,98 +406,25 @@ func sweptSolidCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithEnable(notInSketch).
 			WithIcon("coil").WithButtonStyle(LargeIconButton).
 			WithTooltip("Coil — sweep a sketch profile along a helix to create or modify a solid."),
-	}
-}
-
-// sketchTabCommands are the contextual Sketch tab: geometry creation, constraints,
-// dimension, and Finish Sketch — all gated on being in the sketch environment.
-func sketchTabCommands() []*CommandDefinition {
-	cmds := createCommands()
-	cmds = append(cmds, sketchModifyCommands()...)
-	cmds = append(cmds, constrainCommands()...)
-	cmds = append(cmds, NewCommand("Sketch.Project", "Project Geometry", "Draw", func(s *Session) error {
-		s.StartTool(NewProjectGeometryTool())
-		return nil
-	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
-		WithIcon("project-geometry").WithButtonStyle(SmallIconButton).
-		WithTooltip("Project Geometry — pick part edges/vertices to reference onto the sketch plane."))
-	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Dimension", func(s *Session) error {
-		s.StartTool(newDimensionTool())
-		return nil
-	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias("D").WithEnable(inSketch).
-		WithIcon("dimension").WithButtonStyle(SmallIconButton).
-		WithTooltip("Dimension — then pick points/a line/a circle/two lines to dimension."))
-	return append(cmds, NewCommand("Sketch.Finish", "Finish Sketch", "Exit", func(s *Session) error {
-		return s.FinishSketch()
-	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
-		WithIcon("finish-sketch").WithButtonStyle(LargeIconButton).
-		WithTooltip("Finish Sketch — leave the sketch environment and update the part."))
-}
-
-// sketchModifyCommands are the Sketch tab's Modify panel — the operations that edit
-// existing sketch geometry (offset, mirror, sketch fillet). Each starts an interactive
-// tool that the user feeds geometry, mirroring the constraint tools' flow.
-func sketchModifyCommands() []*CommandDefinition {
-	mods := []struct {
-		id, name, alias, tip string
-		start                func() Tool
-	}{
-		{"Sketch.Offset", "Offset", "O", "Offset — pick a curve to offset by a distance.", func() Tool { return NewSketchOffsetTool(0.5) }},
-		{"Sketch.Mirror", "Mirror", "MI", "Mirror — pick geometry, then a mirror line.", func() Tool { return NewSketchMirrorTool() }},
-		{"Sketch.Fillet", "Sketch Fillet", "FF", "Sketch Fillet — pick two lines to round their corner.", func() Tool { return NewSketchFilletTool(0.5) }},
-	}
-	cmds := make([]*CommandDefinition, len(mods))
-	for i, m := range mods {
-		start := m.start
-		cmds[i] = NewCommand(m.id, m.name, "Modify", func(s *Session) error {
-			s.StartTool(start())
+		NewCommand("Create.Rib", "Rib", "Create", func(s *Session) error {
+			s.StartTool(NewRibTool())
 			return nil
-		}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias(m.alias).WithEnable(inSketch).
-			WithTooltip(m.tip).WithIcon(strings.ToLower(m.name)).WithButtonStyle(SmallIconButton)
-	}
-	return cmds
-}
-
-// createCommands are the Sketch tab's Create panel — the geometry tools.
-func createCommands() []*CommandDefinition {
-	create := []struct {
-		id, name, alias, tip string
-		start                func() Tool
-	}{
-		{"Sketch.Line", "Line", "L", "Line — draw a line between two points.", func() Tool { return NewLineTool() }},
-		{"Sketch.Rectangle", "Rectangle", "REC", "Rectangle — draw a two-corner rectangle.", func() Tool { return NewRectangleTool() }},
-		{"Sketch.Circle", "Circle", "C", "Circle — draw a circle from its center and radius.", func() Tool { return NewCircleTool() }},
-		{"Sketch.Arc", "Arc", "A", "Arc — draw a three-point arc.", func() Tool { return NewArcTool() }},
-		{"Sketch.Spline", "Spline", "SPL", "Spline — draw an interpolated curve through fit points.", func() Tool { return NewSplineTool() }},
-		{"Sketch.Ellipse", "Ellipse", "EL", "Ellipse — draw an ellipse from center and axes.", func() Tool { return NewEllipseTool() }},
-		{"Sketch.Polygon", "Polygon", "POL", "Polygon — draw a regular inscribed polygon.", func() Tool { return NewPolygonTool(6) }},
-		{"Sketch.Point", "Point", "PT", "Point — place sketch points.", func() Tool { return NewPointTool() }},
-	}
-	cmds := make([]*CommandDefinition, len(create))
-	for i, c := range create {
-		start := c.start
-		cmds[i] = NewCommand(c.id, c.name, "Create", func(s *Session) error {
-			s.StartTool(start())
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("rib").WithButtonStyle(LargeIconButton).
+			WithTooltip("Rib — thicken an open sketch profile into a reinforcing wall joined to the part."),
+		NewCommand("Create.Emboss", "Emboss", "Create", func(s *Session) error {
+			s.StartTool(NewEmbossTool())
 			return nil
-		}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithAlias(c.alias).WithEnable(inSketch).WithTooltip(c.tip).
-			WithIcon(strings.ToLower(c.name)).WithButtonStyle(SmallIconButton)
-	}
-	return cmds
-}
-
-// constrainCommands are the Sketch tab's Constrain panel — each starts an interactive
-// constraint tool that the user then feeds geometry (Inventor's tool-first flow).
-func constrainCommands() []*CommandDefinition {
-	cmds := make([]*CommandDefinition, len(constraintToolDefs))
-	for i, d := range constraintToolDefs {
-		newTool := d.new
-		cmds[i] = NewCommand(d.id, d.name, "Constrain", func(s *Session) error {
-			s.StartTool(newTool())
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("emboss").WithButtonStyle(LargeIconButton).
+			WithTooltip("Emboss — raise or engrave a closed sketch profile on the part."),
+		NewCommand("Create.Decal", "Decal", "Create", func(s *Session) error {
+			s.StartTool(NewDecalTool())
 			return nil
-		}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).WithTooltip(d.tooltip).
-			WithIcon(strings.ToLower(d.name)).WithButtonStyle(SmallIconButton)
+		}).WithTab("3D Model").WithEnable(hasActivePart).
+			WithIcon("decal").WithButtonStyle(LargeIconButton).
+			WithTooltip("Decal — project an image onto a face (cosmetic)."),
 	}
-	return cmds
 }
 
 // viewTabCommands are the View tab commands: navigation, the Visual Style presets, and the

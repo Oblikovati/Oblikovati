@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
@@ -91,6 +92,154 @@ func TestHoleToolEndToEnd(t *testing.T) {
 	}
 	if s.ActiveTool() != nil {
 		t.Error("tool should have closed after OK")
+	}
+}
+
+// TestHoleToolThroughAll drives the Hole UI with the Through All option: pick the top face,
+// set the diameter, tick Through All (no depth needed), OK — and asserts the result has a
+// TRUE cylinder wall (one curved face) rather than a faceted prism.
+func TestHoleToolThroughAll(t *testing.T) {
+	s, block := newPartWithBlock(t, 4) // 4×4×2 block, vol 32
+	top := topFaceOf(t, block)
+	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
+
+	hole := NewHoleTool()
+	s.StartTool(hole)
+	s.Click(100, 100)
+	hole.SetDiameter(2)
+	hole.SetThroughAll(true) // no depth set on purpose
+	if !hole.CanCommit() {
+		t.Fatal("through-all hole not ready with face + diameter (depth not required)")
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("drilled body not a valid solid: %+v", r)
+	}
+	cyl := 0
+	for _, f := range body.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			cyl++
+		}
+	}
+	if cyl != 1 {
+		t.Errorf("through-all hole produced %d cylinder faces, want 1 (true wall)", cyl)
+	}
+}
+
+// TestHoleToolCounterbore drives the Hole UI in counterbore mode: pick the face, set bore +
+// recess, tick Through All, OK — and asserts two true cylinder walls (recess + bore).
+func TestHoleToolCounterbore(t *testing.T) {
+	s, block := newPartWithBlock(t, 8) // 8×8×2 block
+	top := topFaceOf(t, block)
+	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
+
+	hole := NewHoleTool()
+	s.StartTool(hole)
+	s.Click(100, 100)
+	hole.SetDiameter(2)
+	hole.SetCounterbore(true)
+	hole.SetCounterDiameter(4)
+	hole.SetCounterDepth(0.5)
+	hole.SetThroughAll(true)
+	if !hole.CanCommit() {
+		t.Fatal("counterbore not ready with face + bore + recess")
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("counterbored body not a valid solid: %+v", r)
+	}
+	cyl := 0
+	for _, f := range body.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			cyl++
+		}
+	}
+	if cyl != 2 {
+		t.Errorf("counterbore produced %d cylinder faces, want 2 (recess + bore)", cyl)
+	}
+}
+
+// TestHoleToolCountersink drives the Hole UI in countersink mode: pick the face, set bore +
+// sink Ø + angle, Through All, OK — and asserts a true cone wall plus a cylinder bore wall.
+func TestHoleToolCountersink(t *testing.T) {
+	s, block := newPartWithBlock(t, 10) // 10×10×2 block
+	top := topFaceOf(t, block)
+	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
+
+	hole := NewHoleTool()
+	s.StartTool(hole)
+	s.Click(100, 100)
+	hole.SetDiameter(1)
+	hole.SetCountersink(true)
+	hole.SetCounterDiameter(2)
+	hole.SetSinkAngle(stdmath.Pi / 2) // 90°
+	hole.SetThroughAll(true)
+	if !hole.CanCommit() {
+		t.Fatal("countersink not ready with face + bore + sink")
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("countersunk body not a valid solid: %+v", r)
+	}
+	cone, cyl := 0, 0
+	for _, f := range body.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cone:
+			cone++
+		case geom.Cylinder:
+			cyl++
+		}
+	}
+	if cone != 1 || cyl != 1 {
+		t.Errorf("countersink produced %d cone / %d cylinder faces, want 1 / 1", cone, cyl)
+	}
+}
+
+// TestHoleToolConicalPoint drives the Hole UI for a blind drilled hole with the default 118°
+// drill point: pick the face, set a depth shallower than the block, OK — and asserts a true
+// cone tip plus a cylinder bore.
+func TestHoleToolConicalPoint(t *testing.T) {
+	s, block := newPartWithBlock(t, 8) // 8×8×2 block
+	top := topFaceOf(t, block)
+	s.SetPicker(stubPicker{sel: FaceHandle{Face: top, Body: block}})
+
+	hole := NewHoleTool()
+	s.StartTool(hole)
+	s.Click(100, 100)
+	hole.SetDiameter(1)
+	hole.SetDepth(1) // blind (< thickness 2); default 118° point
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("conical-point body not a valid solid: %+v", r)
+	}
+	cone, cyl := 0, 0
+	for _, f := range body.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cone:
+			cone++
+		case geom.Cylinder:
+			cyl++
+		}
+	}
+	if cone != 1 || cyl != 1 {
+		t.Errorf("conical-point hole produced %d cone / %d cylinder faces, want 1 / 1", cone, cyl)
 	}
 }
 

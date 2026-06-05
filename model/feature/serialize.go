@@ -19,18 +19,21 @@ import (
 // FeatureData is the serializable form of one history feature. Exactly one payload
 // pointer is set, matching Kind.
 type FeatureData struct {
-	Kind       string         `yaml:"kind"`
-	Name       string         `yaml:"name,omitempty"`
-	Suppressed bool           `yaml:"suppressed,omitempty"`
-	Extrude    *ExtrudeData   `yaml:"extrude,omitempty"`
-	Fillet     *EdgeDressData `yaml:"fillet,omitempty"`
-	Chamfer    *EdgeDressData `yaml:"chamfer,omitempty"`
-	Shell      *FaceDressData `yaml:"shell,omitempty"`
-	Draft      *FaceDressData `yaml:"draft,omitempty"`
-	Thread     *ThreadData    `yaml:"thread,omitempty"`
-	Hole       *HoleData      `yaml:"hole,omitempty"`
-	Boss       *BossData      `yaml:"boss,omitempty"`
-	Combine    *CombineData   `yaml:"combine,omitempty"`
+	Kind       string          `yaml:"kind"`
+	Name       string          `yaml:"name,omitempty"`
+	Suppressed bool            `yaml:"suppressed,omitempty"`
+	Extrude    *ExtrudeData    `yaml:"extrude,omitempty"`
+	Fillet     *EdgeDressData  `yaml:"fillet,omitempty"`
+	Chamfer    *EdgeDressData  `yaml:"chamfer,omitempty"`
+	Shell      *FaceDressData  `yaml:"shell,omitempty"`
+	Draft      *FaceDressData  `yaml:"draft,omitempty"`
+	Thread     *ThreadData     `yaml:"thread,omitempty"`
+	Hole       *HoleData       `yaml:"hole,omitempty"`
+	Boss       *BossData       `yaml:"boss,omitempty"`
+	Rib        *RibData        `yaml:"rib,omitempty"`
+	Emboss     *EmbossData     `yaml:"emboss,omitempty"`
+	Combine    *CombineData    `yaml:"combine,omitempty"`
+	SplitSolid *SplitSolidData `yaml:"splitSolid,omitempty"`
 
 	RectPattern   *RectPatternData         `yaml:"rectangularPattern,omitempty"`
 	CircPattern   *CircPatternData         `yaml:"circularPattern,omitempty"`
@@ -115,6 +118,24 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Hole = h
 	case *BossFeature:
 		fd.Boss = &BossData{Face: encodeKey(f.def.PlacementFaceKey), Diameter: evalFloat(f.def.Diameter), Height: evalFloat(f.def.Height)}
+	case *RibFeature:
+		rd, err := serializeRib(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Rib = rd
+	case *EmbossFeature:
+		ed, err := serializeEmboss(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Emboss = ed
+	case *SplitSolidFeature:
+		sd, err := serializeSplitSolid(f.def)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.SplitSolid = sd
 	case *CombineFeature:
 		op, err := operationName(f.def.Operation)
 		if err != nil {
@@ -311,6 +332,12 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSweep(fs, fd.Sweep, sk)
 	case "loft":
 		return restoreLoft(fs, fd.Loft, sk)
+	case "rib":
+		return restoreRib(fs, fd.Rib, sk)
+	case "emboss":
+		return restoreEmboss(fs, fd.Emboss, sk)
+	case "splitSolid":
+		return restoreSplitSolid(fs, fd.SplitSolid, work)
 	case "move":
 		return restoreMove(fs, fd.Move)
 	case "decal", "reference", "client", "mark", "finish":

@@ -38,3 +38,13 @@ M07 (`kernel/ops`, `math/predicate`).
 |-----|-------|
 | [PBI-171](PBI-171-boolean-face-split.md) | Face-splitting solid/solid boolean |
 | [PBI-172](PBI-172-cut-split-combine-geometry.md) | Cut / Split / Combine real geometry |
+| [PBI-199](PBI-199-boolean-partial-penetration.md) | Boolean robustness — partial penetration & concave-wall crossing |
+
+## Known robustness gap (2026-06-05)
+
+The pipeline is correct for **clean through-overlaps** but not for **partial penetrations** or
+**concave faceted-wall crossings** — the 2D arrangement only cuts a face when imprint segments
+close a loop *on it*, so a tool that pokes part-way in / crosses a re-entrant wall leaves
+dangling segments and the overlap is left un-cut (non-manifold / inverted normals). Tracked as
+PBI-199; reproduced by the skipped fan e2e. A precondition (twisted-loft warped quads) was fixed
+in PBI-174.

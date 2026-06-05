@@ -139,6 +139,48 @@ func TestCircularAndSketchDrivenPlaceCopies(t *testing.T) {
 	}
 }
 
+// TestPatternOfCutKeepsOneBody: patterning a CUT feature must replicate the cut (one body
+// with N holes), not duplicate the whole body into N solids. (Regression for the wheel: a
+// circular pattern of a bolt-hole cut was producing N separate bodies.)
+func TestPatternOfCutKeepsOneBody(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	// A 10x10x5 base box.
+	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
+		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 5 }}, 0)
+	// A 2x2 hole cut through it near a corner.
+	cut := NewExtrudeFeatures(fs).AddExtrude(squareSketchAt(2, 1), []int{0}, ops.Cut,
+		Extent{Type: ThroughAllExtent, Direction: SymmetricDir, Distance: func() float64 { return 10 }}, 0)
+	// Pattern the cut three times along X — three holes, still one body.
+	NewPatternFeatures(fs).AddRectangular([]ID{cut.ID()},
+		func() int { return 3 }, func() int { return 1 }, math.V3(3, 0, 0), noStep)
+	fs.Recompute()
+
+	res := fs.Result()
+	if len(res) != 1 {
+		t.Fatalf("pattern of a cut → %d bodies, want 1 (one body with three holes)", len(res))
+	}
+	if !ops.Validate(res[0]).Valid {
+		t.Errorf("patterned-cut body is invalid: %v", ops.Validate(res[0]).Issues)
+	}
+}
+
+// TestPatternOfJoinMergesIntoOneBody: patterning a JOIN feature must union the copies into the
+// running body, not leave them as separate solids.
+func TestPatternOfJoinMergesIntoOneBody(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
+		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 5 }}, 0)
+	// A small boss joined on top, overlapping the base so the union is one body.
+	boss := NewExtrudeFeatures(fs).AddExtrude(squareSketchAt(2, 1), []int{0}, ops.Join,
+		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 8 }}, 0)
+	NewPatternFeatures(fs).AddRectangular([]ID{boss.ID()},
+		func() int { return 2 }, func() int { return 1 }, math.V3(3, 0, 0), noStep)
+	fs.Recompute()
+	if got := len(fs.Result()); got != 1 {
+		t.Fatalf("pattern of a join → %d bodies, want 1 merged body", got)
+	}
+}
+
 // patIDOf returns the engine id of a pattern feature (it is the last one added of
 // its source set — found by identity).
 func patIDOf(fs *PartFeatures, f Feature) ID {

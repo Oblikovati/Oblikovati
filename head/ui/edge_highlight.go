@@ -9,19 +9,13 @@ import (
 	"github.com/Oblikovati/oblikovati/renderer"
 )
 
-// Edge selection has no per-body recolor (an edge is not a body), so picked edges are
-// highlighted by drawing them as overlay lines in the selection colour. This covers the
-// edges an active edge tool (chamfer, fillet, …) has gathered and a lone selected edge, so
-// the user sees their pick land.
+// Edge selection has no per-body recolor (an edge is not a body), so a lone edge selected
+// outside any tool is highlighted by drawing it as an overlay line in the selection colour.
+// Edges gathered by an active tool (chamfer, fillet, …) are highlighted by the unified
+// toolSelectedHighlight (toolPicks/drawSelectable), so they are not handled here.
 
-// edgeLister is any tool that exposes the edges it has picked (e.g. the Chamfer tool).
-type edgeLister interface {
-	Edges() []app.EdgeHandle
-}
-
-// selectedEdgeOverlay draws the currently picked edges in the selection colour: the active
-// edge tool's gathered edges, or a single edge selected outside a tool. Returns nil when
-// there are none.
+// selectedEdgeOverlay draws a single edge selected outside a tool in the selection colour.
+// Returns nil when there is none.
 func selectedEdgeOverlay(s *app.Session) []renderer.DrawItem {
 	edges := highlightedEdges(s)
 	if len(edges) == 0 {
@@ -40,25 +34,15 @@ func selectedEdgeOverlay(s *app.Session) []renderer.DrawItem {
 	return []renderer.DrawItem{lineItem(acc, selectionHighlight)}
 }
 
-// highlightedEdges returns the edges to highlight: the active edge tool's picks, else a lone
-// selected edge.
+// highlightedEdges returns a lone selected edge (outside any tool) to highlight. An active
+// tool's gathered edges flow through the unified toolSelectedHighlight, so they are skipped
+// here to avoid drawing them twice.
 func highlightedEdges(s *app.Session) []*topo.Edge {
-	if at := s.ActiveTool(); at != nil {
-		if el, ok := at.Tool().(edgeLister); ok {
-			return edgesOf(el.Edges())
-		}
+	if s.ActiveTool() != nil {
+		return nil
 	}
 	if h, ok := s.Selection().First().(app.EdgeHandle); ok {
 		return []*topo.Edge{h.Edge}
 	}
 	return nil
-}
-
-// edgesOf unwraps edge handles to their topo edges.
-func edgesOf(handles []app.EdgeHandle) []*topo.Edge {
-	out := make([]*topo.Edge, 0, len(handles))
-	for _, h := range handles {
-		out = append(out, h.Edge)
-	}
-	return out
 }

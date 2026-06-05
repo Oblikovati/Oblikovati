@@ -29,13 +29,6 @@ type extrudeArgs struct {
 	Taper          string `json:"taper,omitempty"`          // draft angle, e.g. "3 deg"
 }
 
-// extrudeResult reports the created feature and the resulting body count.
-type extrudeResult struct {
-	Feature string `json:"feature"`
-	Kind    string `json:"kind"`
-	Bodies  int    `json:"bodies"`
-}
-
 const extrudeSchema = `{
   "type": "object",
   "properties": {
@@ -74,8 +67,9 @@ func applyExtrude(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	}
 	pf := feature.NewExtrudeFeatures(part.Features()).
 		AddExtrude(sk, []int{in.ProfileIndex}, op, extent, taper)
-	part.Recompute()
-	return json.Marshal(extrudeResult{Feature: pf.Name(), Kind: pf.Kind(), Bodies: len(part.SurfaceBodies().All())})
+	// Uniform feature result (feature/kind/bodies/healthy/reason), shared with every other
+	// operation so callers read one shape — and so an unhealthy extrude is reported, not hidden.
+	return recomputeResult(part, pf)
 }
 
 // resolveExtrude decodes and validates the extrude args against the part: the target

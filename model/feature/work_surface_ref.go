@@ -29,8 +29,20 @@ func (g *WorkGeometry) facePlane(ref WorkRef) (sketch.Plane, bool, error) {
 	if !ok {
 		return sketch.Plane{}, true, fmt.Errorf("work geometry: face %q is not planar", ref)
 	}
-	sp, err := sketch.NewPlane(pl.Origin, pl.UAxis, pl.VAxis)
+	// Origin the plane at the part origin projected onto it (Inventor's sketch-on-face
+	// convention), not the surface's parametric origin — which for an extruded/tessellated cap
+	// sits at a rim vertex, so a sketch on the plane would be positioned 2D-(0,0) at the rim
+	// (geometry placed there lands off the body). The projection keeps the in-plane axes.
+	sp, err := sketch.NewPlane(projectOntoPlane(math.P3(0, 0, 0), pl), pl.UAxis, pl.VAxis)
 	return sp, true, err
+}
+
+// projectOntoPlane returns the foot of the perpendicular from p to the plane pl (p moved
+// along the plane normal until it lies on the plane).
+func projectOntoPlane(p math.Point3, pl geom.Plane) math.Point3 {
+	n := pl.Normal()
+	dist := p.VectorTo(pl.Origin).Dot(n)
+	return p.TranslateBy(n.Scale(dist))
 }
 
 // Surface-tangent work planes are built on a B-rep face the user picked, not on

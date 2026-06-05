@@ -49,6 +49,11 @@ func (t *SketchFilletTool) Prompt(*Session) string        { return "Pick two lin
 // SetRadius sets the fillet radius.
 func (t *SketchFilletTool) SetRadius(r float64) { t.radius = math.Scalar(r) }
 
+// Params exposes the fillet radius to the generic property dialog.
+func (t *SketchFilletTool) Params() ToolParams {
+	return ToolParams{Floats: []FloatParam{scalarParam("Radius", &t.radius)}}
+}
+
 // Commit applies the fillet to the two picked lines.
 func (t *SketchFilletTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
@@ -84,6 +89,11 @@ func (t *SketchOffsetTool) Prompt(*Session) string        { return "Pick a curve
 
 // SetDistance sets the offset distance.
 func (t *SketchOffsetTool) SetDistance(d float64) { t.distance = math.Scalar(d) }
+
+// Params exposes the offset distance to the generic property dialog.
+func (t *SketchOffsetTool) Params() ToolParams {
+	return ToolParams{Floats: []FloatParam{scalarParam("Distance", &t.distance)}}
+}
 
 // Commit offsets the picked curve.
 func (t *SketchOffsetTool) Commit(s *Session) error {

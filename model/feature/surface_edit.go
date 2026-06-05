@@ -79,15 +79,19 @@ func (c *TrimFeatures) AddByPlane(origin math.Point3, normal math.Vector3, keepP
 	return pf
 }
 
-// ExtendDefinition is the recipe for extending a surface edge to a distance/target.
+// ExtendDefinition is the recipe for extending a planar surface's boundary edge outward by a
+// distance (the edge held by reference key, re-resolved each recompute).
 type ExtendDefinition struct {
-	Edge     Ref
+	EdgeKey  []byte
 	Distance func() float64
 }
 
-// ExtendFeature extends a surface edge (PBI-111). The edge-to-target geometry is a
-// later kernel phase; the feature validates a target surface exists then defers.
-type ExtendFeature struct{ def *ExtendDefinition }
+// ExtendFeature extends a planar surface body's boundary edge, growing the face (PBI-111).
+// Multi-face and curved-surface extension are the remaining phase-C (NURBS) work.
+type ExtendFeature struct {
+	def      *ExtendDefinition
+	featName string
+}
 
 // Definition returns the extend recipe.
 func (e *ExtendFeature) Definition() *ExtendDefinition { return e.def }
@@ -95,12 +99,17 @@ func (e *ExtendFeature) Definition() *ExtendDefinition { return e.def }
 // Kind implements [Feature].
 func (e *ExtendFeature) Kind() string { return "extend" }
 
-// Recompute checks a target surface exists, then defers the extension geometry.
+// Recompute resolves the boundary edge and extends its face outward; a lost edge → Sick.
 func (e *ExtendFeature) Recompute(in Input) (Output, error) {
-	if _, err := lastBody(in, "extend"); err != nil {
+	body, err := lastBody(in, "extend")
+	if err != nil {
 		return Output{}, err
 	}
-	return Output{Bodies: in.Bodies}, ErrDeferred
+	extended, err := ops.ExtendByEdge(body, e.def.EdgeKey, callOrZero(e.def.Distance), e.featName)
+	if err != nil {
+		return Output{}, err
+	}
+	return Output{Bodies: replaceLast(in.Bodies, extended)}, nil
 }
 
 // ExtendFeatures adds extend features into the engine.
@@ -109,9 +118,12 @@ type ExtendFeatures struct{ engine *PartFeatures }
 // NewExtendFeatures binds the collection to a feature engine.
 func NewExtendFeatures(engine *PartFeatures) *ExtendFeatures { return &ExtendFeatures{engine: engine} }
 
-// Add extends the edge by distance toward a target (geometry deferred to phase C).
-func (c *ExtendFeatures) Add(edge Ref, distance func() float64) *PartFeature {
-	return c.engine.Add(&ExtendFeature{def: &ExtendDefinition{Edge: edge, Distance: distance}})
+// Add extends the boundary edge (by reference key) outward by distance.
+func (c *ExtendFeatures) Add(edgeKey []byte, distance func() float64) *PartFeature {
+	ef := &ExtendFeature{def: &ExtendDefinition{EdgeKey: edgeKey, Distance: distance}, featName: "Extend"}
+	pf := c.engine.Add(ef)
+	ef.featName = pf.name
+	return pf
 }
 
 // SurfaceOffsetDefinition is the recipe for a surface offset: the distance along the

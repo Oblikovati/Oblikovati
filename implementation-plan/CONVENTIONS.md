@@ -110,7 +110,10 @@ user-facing feature ships **all four** of these, mirroring Extrude (the referenc
 1. **Model** (`model/feature`): the `Definition → Add → Feature` triangle, `.obk`
    serialize round-trip, and unit tests.
 2. **Command & interaction** (`app/`): a `CommandDefinition` ribbon button registered
-   in `app/commands_standard.go` (`NewCommand(id,name,panel,…).WithTab("3D Model")
+   in `app/commands_standard.go`. Its **tab and panel placement MUST match the canonical
+   ribbon tree** in
+   [`architecture/mapping/inventor-ribbon-structure.md`](../architecture/mapping/inventor-ribbon-structure.md)
+   — do not invent tabs/panels. (`NewCommand(id,name,panel,…).WithTab("3D Model")
    .WithIcon(…).WithTooltip(…)`), plus an interactive `Tool` (`app/<feat>_tool.go` —
    `Start`/`Pick`/`Set*`/`Commit`) and/or a settings window that edits the feature's
    inputs and writes them through to the definition.
@@ -124,6 +127,27 @@ user-facing feature ships **all four** of these, mirroring Extrude (the referenc
 
 A feature whose only entry point is a Go API call, with no ribbon button, no property
 window, and no UI-driven test, is **incomplete** regardless of model-layer coverage.
+
+## Status model — three axes, not one ✅ (MANDATORY for trackers)
+
+A single ✅ has historically hidden two failure modes: a feature with a complete model
+layer but no UI, and a feature whose `Recompute` resolves its inputs then returns the
+body **unchanged** (`ErrDeferred`/`NotYetImplemented`) — i.e. produces no geometry. To
+keep PROGRESS.md and milestone tables honest, every PBI is graded on **three
+independent axes**:
+
+- **M (Model):** the `Definition → Add → Feature` triangle + `.obk` serialize
+  round-trip + model unit tests are green.
+- **G (Geometry):** the feature produces **real geometry**. An `ErrDeferred` or
+  `NotYetImplemented` code path on the feature's primary case means **G ⬜**, no matter
+  how complete M is. (Passthrough-with-Warning is *not* G-done.)
+- **U (UI + e2e):** ribbon command + dialog/property window + preferences (where
+  Inventor exposes them) + an end-to-end test driving the UI to validated geometry,
+  per the Definition of Done above.
+
+Write the grade as `M✅ G✅ U⬜`. A PBI is **Done** only when **all three** are ✅;
+anything else is 🟦 and must show the per-axis flags so the gap is visible. A purely
+infrastructural PBI (no geometry, no UI) is exempt from G/U and says so explicitly.
 
 ## Naming (mirror the contract library)
 

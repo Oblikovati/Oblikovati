@@ -40,6 +40,83 @@ func TestTrimByPlaneKeepsHalf(t *testing.T) {
 	}
 }
 
+// twoQuadSheet is a 2-face coplanar quilt (two unit-deep quads sharing the x=2 edge on z=0).
+func twoQuadSheet(t *testing.T) *topo.Body {
+	t.Helper()
+	q1 := quadBody("q1", math.P3(0, 0, 0), math.P3(2, 0, 0), math.P3(2, 2, 0), math.P3(0, 2, 0))
+	q2 := quadBody("q2", math.P3(2, 0, 0), math.P3(4, 0, 0), math.P3(4, 2, 0), math.P3(2, 2, 0))
+	sheet, err := Stitch([]*topo.Body{q1, q2}, 0, true, "sheet")
+	if err != nil {
+		t.Fatalf("Stitch setup: %v", err)
+	}
+	if len(sheet.Faces()) != 2 {
+		t.Fatalf("setup sheet has %d faces, want 2", len(sheet.Faces()))
+	}
+	return sheet
+}
+
+// K5: trimming a MULTI-FACE planar sheet clips each face and welds the kept ones back.
+func TestTrimMultiFaceSheet(t *testing.T) {
+	trimmed, err := TrimByPlane(twoQuadSheet(t), math.P3(1, 0, 0), math.V3(1, 0, 0), true, "trim")
+	if err != nil {
+		t.Fatalf("TrimByPlane multi-face: %v", err)
+	}
+	if len(trimmed.Faces()) != 2 {
+		t.Errorf("trimmed sheet has %d faces, want 2 (clipped quad + whole quad)", len(trimmed.Faces()))
+	}
+	box := trimmed.RangeBox()
+	if !approx(box.Min.X, 1) || !approx(box.Max.X, 4) {
+		t.Errorf("trimmed x-span = [%v,%v], want [1,4]", box.Min.X, box.Max.X)
+	}
+}
+
+// K5: offsetting a MULTI-FACE coplanar quilt translates every face along the shared normal.
+func TestOffsetMultiFaceCoplanar(t *testing.T) {
+	off, err := OffsetSurface(twoQuadSheet(t), 0.5, "off")
+	if err != nil {
+		t.Fatalf("OffsetSurface multi-face: %v", err)
+	}
+	if len(off.Faces()) != 2 {
+		t.Errorf("offset quilt has %d faces, want 2", len(off.Faces()))
+	}
+	box := off.RangeBox()
+	if !approx(box.Min.Z, 0.5) || !approx(box.Max.Z, 0.5) {
+		t.Errorf("offset z = [%v,%v], want flat at 0.5", box.Min.Z, box.Max.Z)
+	}
+}
+
+// K5: extending a planar surface's boundary edge grows the face outward by the distance.
+func TestExtendByEdgeGrowsFace(t *testing.T) {
+	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
+	var key []byte // the bottom edge (both endpoints at y=0)
+	for _, e := range patch.Edges() {
+		if approx(float64(e.StartVertex().Point().Y), 0) && approx(float64(e.EndVertex().Point().Y), 0) {
+			key = e.ReferenceKey()
+		}
+	}
+	if key == nil {
+		t.Fatal("no bottom edge found")
+	}
+	ext, err := ExtendByEdge(patch, key, 2, "ext")
+	if err != nil {
+		t.Fatalf("ExtendByEdge: %v", err)
+	}
+	box := ext.RangeBox()
+	if !approx(box.Min.Y, -2) || !approx(box.Max.Y, 4) {
+		t.Errorf("extended y-span = [%v,%v], want [-2,4]", box.Min.Y, box.Max.Y)
+	}
+	if !approx(box.Min.X, 0) || !approx(box.Max.X, 4) {
+		t.Errorf("extended x-span = [%v,%v], want [0,4] (unchanged)", box.Min.X, box.Max.X)
+	}
+}
+
+func TestExtendByEdgeLostEdgeErrors(t *testing.T) {
+	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
+	if _, err := ExtendByEdge(patch, []byte("ghost"), 2, "ext"); err == nil {
+		t.Error("extending a lost edge should error")
+	}
+}
+
 func TestTrimByPlaneEmptyErrors(t *testing.T) {
 	patch := quadBody("p", math.P3(0, 0, 0), math.P3(4, 0, 0), math.P3(4, 4, 0), math.P3(0, 4, 0))
 	// Keep the x ≥ 10 side — nothing remains.

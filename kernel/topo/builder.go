@@ -71,6 +71,14 @@ func (bld *Builder) AddFace(surface geom.Surface, lineage Lineage, loops ...Loop
 	return f
 }
 
+// AddReversedFace adds a face whose outward (material) side is opposite its surface normal —
+// the cut wall a Difference carves (see Face.Reversed). Identical to AddFace but for the sense.
+func (bld *Builder) AddReversedFace(surface geom.Surface, lineage Lineage, loops ...LoopSpec) *Face {
+	f := bld.AddFace(surface, lineage, loops...)
+	f.reversed = true
+	return f
+}
+
 // buildLoop creates a loop and its edge-uses, linking each use back onto its edge.
 func (bld *Builder) buildLoop(f *Face, spec LoopSpec) *Loop {
 	loop := &Loop{id: nextID(), face: f, outer: spec.Outer}

@@ -4,7 +4,6 @@ package feature
 
 import (
 	"errors"
-	"fmt"
 	stdmath "math"
 
 	"github.com/Oblikovati/oblikovati/kernel/geom"
@@ -31,7 +30,13 @@ type ExtrudeDefinition struct {
 type ExtrudeFeature struct {
 	def      *ExtrudeDefinition
 	featName string
+	tool     *topo.Body // last prism built, exposed so a pattern can replicate this feature
 }
+
+// ToolBody returns the prism this feature last combined into the model — the clean tool a
+// pattern replicates at each occurrence (more robust than diffing before/after bodies,
+// especially for curved geometry). It is nil before the first recompute.
+func (e *ExtrudeFeature) ToolBody() *topo.Body { return e.tool }
 
 // Definition returns the extrude recipe (round-trippable, serializable).
 func (e *ExtrudeFeature) Definition() *ExtrudeDefinition { return e.def }
@@ -79,7 +84,8 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 	if sp.depth() == 0 {
 		return Output{}, errors.New("extrude: the extent has zero depth")
 	}
-	bodies, err := combine(in.Bodies, e.buildTool(profiles, plane, sp), e.def.Operation)
+	e.tool = e.buildTool(profiles, plane, sp)
+	bodies, err := combine(in.Bodies, e.tool, e.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -90,14 +96,7 @@ func (e *ExtrudeFeature) Recompute(in Input) (Output, error) {
 // prisms into one body. The regions are distinct cells of the same sketch, so they never
 // overlap — a shell merge is exactly their union and avoids the intersecting Join.
 func (e *ExtrudeFeature) buildTool(profiles []*sketch.Profile, plane sketch.Plane, sp span) *topo.Body {
-	prisms := make([]*topo.Body, len(profiles))
-	for i, p := range profiles {
-		prisms[i] = buildPrism(p.OuterLoop().Polygon(), plane, sp, e.def.Taper, e.prismFeat(i, len(profiles)))
-	}
-	if len(prisms) == 1 {
-		return prisms[0]
-	}
-	return topo.MergeBodies(topo.NewLineage(topo.Tok(e.featName, "merged", 0)), true, prisms...)
+	return buildProfilePrisms(profiles, plane, sp, e.def.Taper, e.featName)
 }
 
 // outerPolygons returns each profile's outer-loop polygon, the input the span resolver
@@ -110,34 +109,10 @@ func outerPolygons(profiles []*sketch.Profile) [][]math.Point2 {
 	return out
 }
 
-// prismFeat namespaces each region's prism lineage; a single-profile extrude keeps the
-// bare feature name so its persistent face IDs are unchanged.
-func (e *ExtrudeFeature) prismFeat(i, n int) string {
-	if n == 1 {
-		return e.featName
-	}
-	return fmt.Sprintf("%s/p%d", e.featName, i)
-}
-
-// resolveProfiles re-derives the selected closed regions from the sketch, erroring
-// (→ sick) when one is missing or open, or when none is selected.
+// resolveProfiles re-derives the selected closed regions from the sketch (the shared
+// resolver), erroring (→ sick) when one is missing or open, or when none is selected.
 func (e *ExtrudeFeature) resolveProfiles() ([]*sketch.Profile, error) {
-	all := e.def.Sketch.Profiles()
-	if len(e.def.ProfileIndices) == 0 {
-		return nil, errors.New("extrude: no profile selected")
-	}
-	out := make([]*sketch.Profile, 0, len(e.def.ProfileIndices))
-	for _, idx := range e.def.ProfileIndices {
-		if idx < 0 || idx >= all.Count() {
-			return nil, fmt.Errorf("extrude: profile %d not found (sketch has %d)", idx, all.Count())
-		}
-		p := all.Item(idx)
-		if !p.IsClosed() {
-			return nil, errors.New("extrude: profile is open (cannot form a solid)")
-		}
-		out = append(out, p)
-	}
-	return out, nil
+	return resolveClosedProfiles(e.def.Sketch, e.def.ProfileIndices, "extrude")
 }
 
 // ExtrudeFeatures is the collection of extrude features, adding into the engine.

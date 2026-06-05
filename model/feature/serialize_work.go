@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/sketch"
 )
 
 // This file serializes a part's USER work features (planes/axes/points) into the
@@ -232,11 +233,13 @@ func restorePointFeature(c *WorkPoints, d WorkFeatureData) error {
 // WorkRef, typically an origin axis or a user work axis), the swept angle, and the
 // boolean operation. Generation is still deferred, but the definition round-trips.
 type RevolveData struct {
-	Sketch    int     `yaml:"sketch"`
-	Profile   int     `yaml:"profile"`
-	Axis      string  `yaml:"axis"`
-	Angle     float64 `yaml:"angle,omitempty"` // 0 ⇒ full revolution
-	Operation string  `yaml:"operation"`
+	Sketch     int     `yaml:"sketch"`
+	Profile    int     `yaml:"profile"`
+	Axis       string  `yaml:"axis,omitempty"`       // a work-axis WorkRef; empty ⇒ centerline mode
+	AxisSketch int     `yaml:"axisSketch,omitempty"` // 1-based sketch index of a specific centerline (0 = none)
+	AxisLine   int     `yaml:"axisLine,omitempty"`   // that centerline's line index
+	Angle      float64 `yaml:"angle,omitempty"`      // 0 ⇒ full revolution
+	Operation  string  `yaml:"operation"`
 }
 
 func serializeRevolve(def *RevolveDefinition, sk SketchIndexer) (*RevolveData, error) {
@@ -244,20 +247,32 @@ func serializeRevolve(def *RevolveDefinition, sk SketchIndexer) (*RevolveData, e
 	if !ok {
 		return nil, fmt.Errorf("revolve references a sketch that is not in the part")
 	}
-	if def.Axis == nil {
-		return nil, fmt.Errorf("revolve has no axis")
-	}
 	op, err := operationName(def.Operation)
 	if err != nil {
 		return nil, err
 	}
-	return &RevolveData{
-		Sketch:    idx,
-		Profile:   def.ProfileIndex,
-		Axis:      string(def.Axis.Key()),
-		Angle:     evalFloat(def.Angle),
-		Operation: op,
-	}, nil
+	d := &RevolveData{Sketch: idx, Profile: def.ProfileIndex, Angle: evalFloat(def.Angle), Operation: op}
+	switch {
+	case def.Axis != nil:
+		d.Axis = string(def.Axis.Key())
+	case def.AxisCenterline != nil: // a specific centerline (1-based so 0 means "none")
+		asi, ok := sk.IndexOf(def.AxisCenterlineSketch)
+		if !ok {
+			return nil, fmt.Errorf("revolve axis centerline references a sketch not in the part")
+		}
+		d.AxisSketch, d.AxisLine = asi+1, lineIndexOf(def.AxisCenterlineSketch, def.AxisCenterline)
+	}
+	return d, nil // both empty ⇒ revolve about the profile sketch's own centerline
+}
+
+// lineIndexOf returns the position of line within the sketch's line collection (-1 if absent).
+func lineIndexOf(sk *sketch.Sketch, line *sketch.Line) int {
+	for i := 0; i < sk.Lines().Count(); i++ {
+		if sk.Lines().Item(i) == line {
+			return i
+		}
+	}
+	return -1
 }
 
 func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *WorkGeometry) (*PartFeature, error) {
@@ -268,6 +283,24 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	if !ok {
 		return nil, fmt.Errorf("revolve references sketch index %d, which does not exist", d.Sketch)
 	}
+	op, err := parseOperation(d.Operation)
+	if err != nil {
+		return nil, err
+	}
+	angle := d.Angle
+	if d.AxisSketch > 0 { // a specific centerline (1-based index)
+		axisSk, ok := sk.At(d.AxisSketch - 1)
+		if !ok {
+			return nil, fmt.Errorf("revolve axis centerline references sketch index %d, which does not exist", d.AxisSketch-1)
+		}
+		if d.AxisLine < 0 || d.AxisLine >= axisSk.Lines().Count() {
+			return nil, fmt.Errorf("revolve axis centerline references line %d out of range", d.AxisLine)
+		}
+		return NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, d.Profile, axisSk, axisSk.Lines().Item(d.AxisLine), func() float64 { return angle }, op), nil
+	}
+	if d.Axis == "" { // revolve about the profile sketch's own (single) centerline
+		return NewRevolveFeatures(fs).AddAboutCenterline(skt, d.Profile, func() float64 { return angle }, op), nil
+	}
 	if work == nil {
 		return nil, fmt.Errorf("revolve needs the part's work geometry to resolve its axis")
 	}
@@ -275,11 +308,6 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	if err != nil {
 		return nil, fmt.Errorf("revolve axis: %w", err)
 	}
-	op, err := parseOperation(d.Operation)
-	if err != nil {
-		return nil, err
-	}
-	angle := d.Angle
 	return NewRevolveFeatures(fs).Add(skt, d.Profile, axis, func() float64 { return angle }, op), nil
 }
 

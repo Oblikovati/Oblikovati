@@ -3,6 +3,13 @@
 Live tracker for building Oblikovati against [the roadmap](README.md). Updated as
 each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (green in CI).
 
+> **⚠ Audited 2026-06-04 (see [REPORT.md](../../REPORT.md)).** The milestone table below
+> was reconciled against the actual code. It had been wrong in both directions —
+> under-reporting shipped work (M16/M18/M19/M23) and over-stating completion against the
+> Definition of Done (M05/M09/M10/M21). Per CONVENTIONS.md "Status model", a feature is
+> **Done** only when **Model + Geometry + UI/e2e** are all green; ✅ here now means all
+> three, 🟦 means partial. Several rows previously ✅ are model-complete only.
+
 - **Code root:** `/source` (Go module `github.com/Oblikovati/oblikovati`, go 1.22).
 - **"Done" means:** acceptance criteria green via `make ci` (build + vet + lint +
   `CGO_ENABLED=0 go test ./...` + race), per [CONVENTIONS.md](CONVENTIONS.md).
@@ -19,24 +26,25 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 | M02 | Units, Parameters & Expressions | ✅ | All 4 features done → `model/param` (units, expression engine, parameter model, dependency graph). |
 | M03 | Documents, Persistence & Identity | ✅ | All 6 features done → `model/doc` (Document/Workspace/refs/FileManager), `persistence` (.obk), `model/identity` (reference keys), `model/health`, `model/attr` (attributes + iProperties). |
 | M04 | Transactions, Undo & Events | ✅ | All 4 features done → `command` (undo/redo/transactions/checkpoints) + `event` (typed bus) + `model/doc` core event sets & `ChangeManager`. |
-| M05 | UI, Commands, Add-ins | ✅ | Headless logic (pure-Go, 93.7%): command + interaction/selection framework, **end-to-end Extrude via synthetic clicks → solid**, ribbon/browser models, add-in platform (**sample add-in → ribbon button → interactive command** = exit criterion), client/preview graphics + null backend. **cgo head DONE** (`source/head`, separate module): vendored Dear ImGui 1.92.8 + GLFW + **Vulkan 1.3** — Go drives the frame loop and ImGui chrome (menu/ribbon/browser from the live Session) + a **3D Vulkan viewport** (offscreen color+depth, lit-triangle/flat-line pipelines) rendering `renderer.DrawList` of the extruded box. Runs with **zero Vulkan validation errors**. ADR-0004/0005 honored. |
+| M05 | UI, Commands, Add-ins | 🟦 | **[audit: ✅→🟦 — framework done; DoD UI exists for only 14/44 feature types, see REPORT.md §5]** Headless logic (pure-Go, 93.7%): command + interaction/selection framework, **end-to-end Extrude via synthetic clicks → solid**, ribbon/browser models, add-in platform (**sample add-in → ribbon button → interactive command** = exit criterion), client/preview graphics + null backend. **cgo head DONE** (`source/head`, separate module): vendored Dear ImGui 1.92.8 + GLFW + **Vulkan 1.3** — Go drives the frame loop and ImGui chrome (menu/ribbon/browser from the live Session) + a **3D Vulkan viewport** (offscreen color+depth, lit-triangle/flat-line pipelines) rendering `renderer.DrawList` of the extruded box. Runs with **zero Vulkan validation errors**. ADR-0004/0005 honored. |
 | M06 | Sketching & Constraint Solver | ✅ | All 6 features → `model/sketch`: sketches, entities, geometric/dimensional/3D constraints, inference, Newton/LM solver + DOF, profiles & paths. **Headless first (M05/M16 deferred).** |
 | M07 | B-Rep Kernel & Topology | ✅ | All 4 features → `kernel/topo` + `math/predicate` + `kernel/ops` (tessellation/validation/Phase-A booleans) + `model/compdef` (PartComponentDefinition). General intersecting booleans + tolerant sew deferred to kernel phase C/D. |
 | M08 | Part: Sketched & Work Features | ✅ | All 4 features → `model/feature` (recompute engine, datums/UCS, extrude solid generator + sketched-feature defs, derived/base features). Revolve+sweep/loft/coil generation deferred to kernel phase A/B. |
-| M09 | Part: Dress-up & Pattern | ✅ | All 4 features → `model/feature` (dress-up, hole/boss, patterns/mirror, modify/direct). Combine real (Phase-A booleans); fillet/hole/face-edit geometry deferred (phase B/C) with reference-key input resolution + Warning/Sick health; pattern element bookkeeping real. |
-| M10 | Surfacing & Freeform | ✅ | All 4 features done → `model/feature` (patch/ruled/sculpt/stitch/knit; trim/surface-offset/mid-surface; **sub-D freeform**; **mesh import + mold core/cavity**) + `kernel/ops` (`Stitch`, `TrimByPlane`, `OffsetSurface`, `MidSurfaces`) + new **`kernel/subd`** (Catmull–Clark). |
+| M09 | Part: Dress-up & Pattern | 🟦 | **[audit: ✅→🟦 — dress-up geometry landed in M20, but patterns/mirror/combine/face-edits have NO ribbon/dialog UI (U⬜) and boss/split still defer geometry (G⬜); see REPORT.md §5/§6]** All 4 features → `model/feature` (dress-up, hole/boss, patterns/mirror, modify/direct). Combine real (Phase-A booleans); fillet/hole/face-edit geometry deferred (phase B/C) with reference-key input resolution + Warning/Sick health; pattern element bookkeeping real. |
+| M10 | Surfacing & Freeform | 🟦 | **[audit: ✅→🟦 — model layer done but ZERO ribbon/dialog UI (U⬜) for any surfacing feature, and several ops defer geometry (extend, ruled-tangent/perp, curved trim/offset = G⬜); see REPORT.md §5/§6]** All 4 features done → `model/feature` (patch/ruled/sculpt/stitch/knit; trim/surface-offset/mid-surface; **sub-D freeform**; **mesh import + mold core/cavity**) + `kernel/ops` (`Stitch`, `TrimByPlane`, `OffsetSurface`, `MidSurfaces`) + new **`kernel/subd`** (Catmull–Clark). |
 | M11 | Assembly & Instancing | ⬜ | |
 | M12 | Assembly Constraints/Joints | ⬜ | |
 | M13 | Sheet Metal | ⬜ | |
 | M14 | Drawing & Documentation | ⬜ | |
 | M15 | Design Automation | ⬜ | |
-| M16 | Visualization & Presentation | ⬜ | |
-| M17 | Interoperability & Translation | ⬜ | |
-| M18 | Analysis & Simulation | ⬜ | |
+| M16 | Visualization & Presentation | 🟦 | **[audit: ⬜→🟦]** Lighting/IBL/shadows shipped: `app/lighting.go`, `renderer/{environment,lighting,lighting_styles}.go`, `View.*` ribbon (HDR/shadows). Presentations/animation not started. |
+| M17 | Interoperability & Translation | ⬜ | Only ASCII-STL parse (in `model/feature/mesh.go`). No translator framework / STEP / IGES / DWG. |
+| M18 | Analysis & Simulation | 🟦 | **[audit: ⬜→🟦]** `kernel/ops/massprops.go` (mass properties) exists. Measure/interference/FEA/dynamic/tolerance not started. |
+| M19 | Materials & Appearances | 🟦 | **[audit: added — was absent from this table]** Real: `model/material`, `app/materials*.go`, head Materials/Appearance/Preferences windows. `_milestone.md` exists but **PBI files to backfill**. Image textures + GGX/IBL out of scope. |
 | M20 | Feature Completion & Geometry Parity | 🟦 | Consolidated drive of every remaining Inventor `*Feature` to real geometry: kernel enablers (intersecting booleans, swept surfaces, fillet, local face ops, body transform) + sheet-metal + plastic + misc model features. |
-| M23 | Renderer Display-Mode Parity & Realistic PBR | ⬜ | Brings the viewport to full Inventor `DisplayModeEnum` parity (PBIs 300–311): the public `DisplayMode` contract + Visual Style gallery (F01), a **software PBR** Realistic mode (GGX + IBL + tone mapping, no hardware RT — F02), real-time **viewport hidden-line** removal feeding modes 8707/8711/8712 (F03), and an **NPR framework** + the four stylized modes Monochrome/Watercolor/Illustration/Technical-Illustration (F04). See [ADR-0023](../architecture/decisions/ADR-0023-viewport-display-modes.md). |
-| M21 | Sketch2D Feature Completion (2D Parity) | ✅ | **All 11 features + every follow-up done** (PBIs 200–221). Full Inventor 2D-sketch parity (ex-DWG) over `/api`: entities (lines/circles/arcs/points, ellipse, **elliptical arc**, splines incl. **control/fixed/offset/equation curve**, rectangles, polygons, **straight+arc slots**, **fillet/chamfer**, offset, image, **fill region**, **text**, **project geometry**), full geometric constraints (incl. **ground/offset/pattern**) + dimensional constraints (incl. **offset/3-point-angle/ellipse-radius**), constraint-status/DOF + **AutoDimension**, move/rotate/copy/mirror + **trim/extend/split**, rect/circular patterns, profiles. Discriminated `Kind`-keyed wire methods + typed `client.Sketch`; every PBI has model + dogfood e2e tests; new **Modify-panel UI tools** (offset/mirror/fillet) with e2e. lint/vet/**race** green; model cov 81%, router cov 72%. Minor residual follow-ups noted per-PBI (curve-trim, tangent/spline dims). |
-| M22 | Sketch3D Feature Completion (3D Parity) | 🟦 | Bring `Sketch3D` to full Inventor parity across API+kernel+UI, **including** surface-derived curves (new kernel surface-intersection machinery). 12 features (F01–F12), PBIs 230–247. **Done (model+API+kernel+router, all tested):** F01 spine (`contract.Sketch3D` + wire/client + router + `Sketches3D` in the part + `SketchData3D` round-trip), F02 base entities (point/line/circle/arc), F03 conics + splines (ellipse/elliptical-arc, interpolation/control/fixed splines + equation curve), F04 helical curves (new `kernel/geom.Helix3d`, 100%), F05 geometric constraints (parallel/perp/midpoint/ground/parallel-to-axis+plane), F06 dimensions (distance/line-length/radius/point-plane/two-line-angle + drive), F07 constraint status/DOF/defer, F09 profiles & paths (chain detection by endpoint coincidence; `Profile3D`/`Paths3D` over `sketch3d.profiles`/`paths`). **Kernel: F10 DONE (both PBIs)** — `kernel/geom` surface↔curve intersection + point projection (PBI-243: `ClosestPointOnSurface`/`SignedDistanceToSurface`/`IntersectCurveSurface`) and surface↔surface intersection + silhouette (PBI-244: marching-squares tracer → `IntersectSurfaceSurface`/`Silhouette`); 100% on new files, 98.9% package. F08 edit ops (move/rotate/copy/delete over `sketch3d.transform`) **and Include** (`sketch3d.include` links part edges/vertices by reference key as associative reference geometry via the PointSource/CurveSource seam). F11 surface-derived curves (Intersection/Silhouette/ProjectToSurface/OnFace/OffsetCurve3 over the F10 kernel; **intersection + silhouette over `/api`** via `sketch3d.addSurfaceCurve` resolving part faces by reference key; recompute-derived, serialize-skipped). F12 **app-layer UI** ("3D Sketch" ribbon + edit environment + interactive Line/Point/Circle/Arc/Helix tools + Finish, e2e-tested headless). **Pending (polish):** F08 GetReferenceKey surfacing; F11 associative rebind on recompute (SurfaceSource seam) + project/on-face/offset `/api`; F12 `head/ui` ImGui dialogs + `Sketch3DSettings`. |
+| M23 | Renderer Display-Mode Parity & Realistic PBR | 🟦 | **[audit: ⬜→🟦]** `renderer/visualstyle.go` + `View.{Realistic,Watercolor,Monochrome,Illustration,TechnicalIllustration,ShadedWithHiddenEdges,WireframeWithHiddenEdges,...}` ribbon commands shipped. Depth of software-PBR/NPR/hidden-line vs full parity unverified. Original scope: Brings the viewport to full Inventor `DisplayModeEnum` parity (PBIs 300–311): the public `DisplayMode` contract + Visual Style gallery (F01), a **software PBR** Realistic mode (GGX + IBL + tone mapping, no hardware RT — F02), real-time **viewport hidden-line** removal feeding modes 8707/8711/8712 (F03), and an **NPR framework** + the four stylized modes Monochrome/Watercolor/Illustration/Technical-Illustration (F04). See [ADR-0023](../architecture/decisions/ADR-0023-viewport-display-modes.md). |
+| M21 | Sketch2D Feature Completion (2D Parity) | 🟦 | **[audit: ✅→🟦 pending verification — model+API+dogfood e2e strong, but full head-UI parity per tool and residual follow-ups (curve-trim, tangent/spline dims) not independently confirmed; see REPORT.md §9]** **All 11 features + every follow-up done** (PBIs 200–221). Full Inventor 2D-sketch parity (ex-DWG) over `/api`: entities (lines/circles/arcs/points, ellipse, **elliptical arc**, splines incl. **control/fixed/offset/equation curve**, rectangles, polygons, **straight+arc slots**, **fillet/chamfer**, offset, image, **fill region**, **text**, **project geometry**), full geometric constraints (incl. **ground/offset/pattern**) + dimensional constraints (incl. **offset/3-point-angle/ellipse-radius**), constraint-status/DOF + **AutoDimension**, move/rotate/copy/mirror + **trim/extend/split**, rect/circular patterns, profiles. Discriminated `Kind`-keyed wire methods + typed `client.Sketch`; every PBI has model + dogfood e2e tests; new **Modify-panel UI tools** (offset/mirror/fillet) with e2e. lint/vet/**race** green; model cov 81%, router cov 72%. Minor residual follow-ups noted per-PBI (curve-trim, tangent/spline dims). |
+| M22 | Sketch3D Feature Completion (3D Parity) | ✅ | **[audit 2026-06-04: F08/F11/F12 residuals closed → feature-complete]** All surface-curve kinds on `/api` (intersection/silhouette/onFace/projectToSurface/offset) with associative rebind verified; `model.referenceKeys` surfacing (F08); head tool-param dialogs + Sketch3DSettings (F12). Bring `Sketch3D` to full Inventor parity across API+kernel+UI, **including** surface-derived curves (new kernel surface-intersection machinery). 12 features (F01–F12), PBIs 230–247. **Done (model+API+kernel+router, all tested):** F01 spine (`contract.Sketch3D` + wire/client + router + `Sketches3D` in the part + `SketchData3D` round-trip), F02 base entities (point/line/circle/arc), F03 conics + splines (ellipse/elliptical-arc, interpolation/control/fixed splines + equation curve), F04 helical curves (new `kernel/geom.Helix3d`, 100%), F05 geometric constraints (parallel/perp/midpoint/ground/parallel-to-axis+plane), F06 dimensions (distance/line-length/radius/point-plane/two-line-angle + drive), F07 constraint status/DOF/defer, F09 profiles & paths (chain detection by endpoint coincidence; `Profile3D`/`Paths3D` over `sketch3d.profiles`/`paths`). **Kernel: F10 DONE (both PBIs)** — `kernel/geom` surface↔curve intersection + point projection (PBI-243: `ClosestPointOnSurface`/`SignedDistanceToSurface`/`IntersectCurveSurface`) and surface↔surface intersection + silhouette (PBI-244: marching-squares tracer → `IntersectSurfaceSurface`/`Silhouette`); 100% on new files, 98.9% package. F08 edit ops (move/rotate/copy/delete over `sketch3d.transform`) **and Include** (`sketch3d.include` links part edges/vertices by reference key as associative reference geometry via the PointSource/CurveSource seam). F11 surface-derived curves (Intersection/Silhouette/ProjectToSurface/OnFace/OffsetCurve3 over the F10 kernel; **intersection + silhouette over `/api`** via `sketch3d.addSurfaceCurve` resolving part faces by reference key; recompute-derived, serialize-skipped). F12 **app-layer UI** ("3D Sketch" ribbon + edit environment + interactive Line/Point/Circle/Arc/Helix tools + Finish, e2e-tested headless). **Pending (polish):** F08 GetReferenceKey surfacing; F11 associative rebind on recompute (SurfaceSource seam) + project/on-face/offset `/api`; F12 `head/ui` ImGui dialogs + `Sketch3DSettings`. |
 
 ## PBI log (most recent first)
 
@@ -98,12 +106,13 @@ app-layer e2e tests driving command→tool→OK→validated solid).
 | 174-UI-loft | Loft UI (ribbon + property window + e2e) | ✅ | `app`, `head/ui` | `LoftTool` (each picked region → a `LoftSection`) + `Create.Loft` ribbon command + `head/ui/loft_dialog.go` (section count / output / closed-loop) + `loft.svg`. E2e: `TestLoftToolEndToEnd` (click two sections → OK → validated frustum V=140/3), `TestLoftViaRibbonCommand`, `TestLoftToolNeedsTwoSections`. New `seqPicker` test helper drives multi-section clicks. |
 | 173-UI-coil | Coil UI (ribbon + property window + e2e) | ✅ | `app`, `head/ui` | `CoilTool` + `Create.Coil` ribbon command + `head/ui/coil_dialog.go` property window (output/axis/pitch/revolutions) + `coil.svg`. E2e: `TestCoilToolEndToEnd` (click profile → pitch 2 × 3 revs → OK → valid helix climbing ≈7), `TestCoilViaRibbonCommand`, `TestCoilToolNeedsProfileAndRevolutions`. Solid-feature commands split into `solidFeatureCommands()`. |
 | 173-UI | Revolve UI (ribbon + property window + e2e) | ✅ | `app`, `head/ui`, `model/feature` | `RevolveTool` + `Create.Revolve` ribbon command (alias `R`) + `head/ui/revolve_dialog.go` property window (output/axis/angle) + `revolve.svg`. E2e: `TestRevolveToolEndToEnd` (click profile → full revolution → OK → validated 24π washer), `TestRevolveViaCommandAlias` (alias `R` → 90° quarter washer), `TestRevolveToolNeedsProfile`. `WorkGeometry.AxisByRef` added. **Reference for retrofitting the other M20 features' UI.** |
-| 174 | Sweep & loft bodies | ✅ | `model/feature` | `SweepFeature` (profile placed along a 3D path, oriented to the local tangent, optional twist) and `LoftFeature` (blend through ordered `(sketch,profile)` sections resampled to a common point count, optional closed) generate real faceted solids via the shared `sweptSolid` primitive. A 2×2 square swept along an L-path is a valid elbow; a 4×4→2×2 square loft is an exact frustum (V=140/3). New `SweepFeatures`/`LoftFeatures` collections + `SweepData`/`LoftData` `.obk` codecs (path as 3D points, sections as sketch+profile indices). `SweepDefinition.Path` is now a `Path3D`; `LoftDefinition` carries `LoftSection{Sketch,ProfileIndex}`. Guide rails, path-frame torsion-minimization and section alignment are follow-ups. |
+| 174 | Sweep & loft bodies | ✅ | `model/feature` | `SweepFeature` (profile placed along a 3D path, oriented to the local tangent, optional twist) and `LoftFeature` (blend through ordered `(sketch,profile)` sections resampled to a common point count, optional closed) generate real faceted solids via the shared `sweptSolid` primitive. A 2×2 square swept along an L-path is a valid elbow; a 4×4→2×2 square loft is an exact frustum (V=140/3). New `SweepFeatures`/`LoftFeatures` collections + `SweepData`/`LoftData` `.obk` codecs (path as 3D points, sections as sketch+profile indices). `SweepDefinition.Path` is now a `Path3D`; `LoftDefinition` carries `LoftSection{Sketch,ProfileIndex}`. Guide rails, path-frame torsion-minimization and section alignment are follow-ups. **Fix 2026-06-05:** a **twisted** loft/sweep makes warped (non-planar) quad side faces; emitted as single faces they broke the planar boolean (imprint offset → loop won't close → non-manifold). `sweptSolid` now triangulates a non-coplanar side quad (`sideQuad`/`quadPlanar`), restoring the planar-faceted invariant; regression `TestTwistedLoftUnionStaysManifold`. |
 | 173 | Revolve & coil surfaces of revolution | ✅ | `model/feature` | `RevolveFeature` and `CoilFeature` now generate **real faceted solids** via a shared `sweptSolid` primitive (cross-section loops → `subd.ToBody` cage → B-rep, re-oriented outward by signed volume). Revolve: full (closed, no caps) or partial (capped) about a `WorkAxis`; a square x∈[2,4]×y∈[0,2] revolved 360° about Y is a validated washer of volume 24π (±1%). Coil: helical placement (pitch/revolutions, taper recorded) capped at both ends; climbs pitch·revs + profile height. New `CoilFeatures` collection + `CoilData` `.obk` codec (axis by WorkRef like revolve). Curved profile edges and exact analytic surfaces are a later refinement; profiles must not touch the axis (pole handling pending). |
 | 189 | Decal, Reference, Client, Mark & Finish | ✅ | `model/feature` | Five cosmetic/reference parity features (`DecalFeature`/`ReferenceFeature`/`ClientFeature`/`MarkFeature`/`FinishFeature` + `*Definition` + `CosmeticFeatures` collection). Pass-through recompute (no geometry change) carrying their payload — decal image+face, reference label+source key, add-in id+attributes, mark faces+text, finish faces+spec — all round-tripping through `.obk`. Completes 5 more Inventor `*Feature` types toward parity. |
-| 191 | Pattern & mirror real duplication | ✅ | `model/feature`, `math` | Rectangular/Circular/SketchDriven patterns and Mirror now emit **real placed copies** via `ops.TransformBody` (distinct lineage per copy → independent reference keys), appended as validated solids; per-element suppression drops only that copy. Definitions carry the occurrence geometry (grid `StepX`/`StepY`, axis point+dir, sketch points, mirror plane origin+normal) and round-trip through `.obk`. `math.Reflection4(origin, normal)` (det −1) added for the mirror. A 1×3 pattern of a unit cube → 3 solids at x={0,2,4}; mirror across x=0 → reflected solid in x∈[−1,0]. Boolean-union into one body (vs. separate placed solids) and source-only (vs. whole-solid) replication await M20·F01. |
+| 191 | Pattern & mirror real duplication | ✅ | `model/feature`, `math` | Rectangular/Circular/SketchDriven patterns and Mirror now emit **real placed copies** via `ops.TransformBody` (distinct lineage per copy → independent reference keys), appended as validated solids; per-element suppression drops only that copy. Definitions carry the occurrence geometry (grid `StepX`/`StepY`, axis point+dir, sketch points, mirror plane origin+normal) and round-trip through `.obk`. `math.Reflection4(origin, normal)` (det −1) added for the mirror. A 1×3 pattern of a unit cube → 3 solids at x={0,2,4}; mirror across x=0 → reflected solid in x∈[−1,0]. **Source-only replication DONE 2026-06-05:** `ToolFeature`/`OperationalFeature` + `Input.SourceTool` make a pattern re-apply the source feature's cut/join per occurrence (one body with N holes/blades, not N copies); all boolean tool features incl. Hole carry the contract; a deferred source (Boss) replicates nothing. (See PBI-191 notes.) |
 | 190 | Body transform op & Move feature | ✅ | `kernel/geom`, `kernel/ops`, `model/feature`, `math` | `geom.TransformCurve`/`TransformSurface` (similarity-transform dispatchers over the analytic curve/surface types) + `ops.TransformBody` (clones a body's combinatorial topology, maps geometry, reverses winding on reflection so normals stay outward → stays a valid manifold under translate/rotate/reflect/uniform-scale; rejects non-uniform scale). A caller `derive` either preserves reference keys (in-place Move) or makes distinct-key copies (pattern/mirror). `MoveFeature`/`MoveDefinition` relocates a running body in place (keys survive); `math.Matrix4FromCells` persists the transform as 16 cells → `.obk` round-trips. The shared enabler for pattern/mirror geometry (PBI-191). |
-| 171 | Face-splitting solid/solid boolean | ⬜ | `kernel/ops` | Planned — the biggest unblocker (Cut/Split/Hole/Emboss/sheet-metal). |
+| 171 | Face-splitting solid/solid boolean | 🟡 | `kernel/brep`, `kernel/ops` | Planar imprint→split→classify→stitch pipeline works for **clean through-overlaps** (low-face-count, chain-exact, K1a key survival). **Robustness gap (2026-06-05):** partial penetrations / concave faceted-wall crossings leave dangling imprint segments the 2D arrangement won't cut → non-manifold / inverted normals (the lofted-fan deformity). Outstanding work tracked as **PBI-199**; precondition (twisted-loft warped quads) fixed in PBI-174. |
+| 199 | Boolean robustness — partial penetration & concave-wall crossing | ⬜ | `kernel/brep` | Planned (XL) — assemble imprint segments into closed loops across face boundaries, handle T-vertices / dangling edges so a tool poking part-way in or crossing a re-entrant faceted wall cuts correctly. Acceptance = the skipped fan e2e (`TestBladeJoinBooleanIsTheDefect`, `TestFanBodyStaysManifold`). Dead-end: post-stitch orientation repair does NOT fix it. |
 
 ### M10 — Surfacing & Freeform Modeling
 
@@ -257,6 +266,373 @@ app-layer e2e tests driving command→tool→OK→validated solid).
 
 ## Session log
 
+- **2026-06-05:** **Sketch construction lines + centerlines.** Construction geometry already
+  existed in the model (entity flag, excluded from `normalGeometry`/profiles, serialized) but had
+  no UI. Added **centerlines** (new): `entityBase.centerline` (implies construction, so it never
+  closes a profile), `Line.Axis3D(plane)` (model-space axis for revolve/mirror), `Sketch.Centerlines()`,
+  and serialization (`EntityData.Centerline`). UI: a Sketch-tab **Format panel** with `Sketch.
+  Construction` and `Sketch.Centerline` toggle commands (`Session.ToggleConstruction/ToggleCenterline`
+  over the sketch selection) — amended the canonical ribbon doc to add the Format panel it was
+  missing. The sketch **Mirror** tool already picks a `*Line` axis, so a centerline drives it with
+  no change. Tests: model (centerline excluded from profiles vs. a normal midline that splits;
+  axis derivation; mirror across a centerline; round-trip) + app e2e (toggle construction/centerline
+  on a selected midline → region count drops 2→1; ribbon Execute). Full suite + head + SPDX green.
+- **2026-06-05:** **Revolve centerline picker — Inventor-accurate selection.** Reworked the axis
+  selection to match Inventor: a separate centerline picker with smart **pre-selection** and
+  profile→axis **auto-advance**. `preselectCenterline` (pure, 5 cases tested): one centerline in
+  the profile's sketch → pre-select; several in it → user must pick; none in it but one visible
+  overall → that one; else none. On profile pick the tool auto-advances (filter → SketchEntity)
+  and pre-selects; the user can click any centerline to override. Model now revolves about a
+  **specific** centerline (`RevolveDefinition.AxisCenterline` + `AddAboutCenterlineLine`),
+  serialized by (sketch,line) index (1-based; empty = profile-sketch auto centerline; a WorkRef =
+  explicit work axis). The **ray picker** gained sketch-curve picking (`nearestSketchCurve`,
+  reusing `raySegmentDistance`) so a centerline is selectable in the part view. Head: profile-area
+  + centerline **hover highlights** (candidate colour) and picked-profile + chosen-centerline
+  highlights (selected colour), mirroring Extrude; "About sketch centerline" dialog checkbox.
+  Tests: preselect rules, tool pre-select + manual-pick flows, raypicker centerline pick, model
+  washer (= explicit-Y 24π), serialize round-trip. Full suite + head + SPDX green. Sketch mirror
+  already consumed centerlines; revolve now matches Inventor's picker UX.
+- **2026-06-05:** **Extend (Surface) — real geometry + full DoD (was G⬜).** `ops.ExtendByEdge`
+  grows a planar surface by sliding a boundary edge's endpoints outward (in-plane, perpendicular
+  to the edge, away from the face). Realigned the model `ExtendFeature` from the unused identity
+  `Ref` to a topo `[]byte` edge key (the proven chamfer pattern; re-resolved via FindEdgeByKey each
+  recompute) — so the deferred ErrDeferred path is gone. `ExtendTool` (pick a boundary edge +
+  distance) + `Surface.Extend` ribbon command. Tested kernel (grow + lost-edge), model (grow + sick
+  on lost edge, key survives recompute), app e2e (pick edge → y∈[-2,4]; ribbon). Multi-face and
+  curved-surface extend remain phase-C (NURBS). Full suite + head + SPDX green.
+- **2026-06-05:** **K5 — multi-face surface ops (Trim + Offset).** Generalized the surface-edit
+  kernel beyond single planar faces: `ops.TrimByPlane` now clips EACH planar face by the cutting
+  plane and welds the kept faces back into one sheet (folded sheets / stitched quilts trim
+  correctly), and `ops.OffsetSurface` offsets a multi-face **coplanar** quilt (translate each face
+  + weld). Shared a new `buildSheet` welder (coincident-vertex merge, one edge per pair); migrated
+  MidSurfaces to it; replaced the old single-face `buildPlanarBody`. The model Trim feature and
+  `SurfaceTrimTool` get multi-face for free. Tested (multi-face trim → 2 faces, x∈[1,4]; coplanar
+  offset → 2 faces flat). **Honest scope:** this completes the MULTI-FACE half of K5; the CURVED
+  half — NURBS surface–surface trim and parallel-surface offset of curved/folded faces — is
+  genuine NURBS work that remains (it needs a curved surface-trim engine, not a planar clip).
+  Full suite + head + SPDX green.
+- **2026-06-05:** **Decal — UI completion; Create panel now fully populated.** `DecalTool` places
+  an image (a resource id) on a picked face — cosmetic, no solid change. `Create.Decal` ribbon
+  command (the last canonical Create-panel button). `DecalFeature` already existed; adds the UI +
+  e2e (pick face → set image → decal recorded, body unchanged; ribbon Execute). **The canonical
+  3D-Model Create panel [Extrude, Revolve, Sweep, Loft, Coil, Rib, Emboss, Decal] is now all
+  wired.** Full suite + head + SPDX green.
+- **2026-06-05:** **Sculpt (Surface panel) — UI completion (geometry was already real).**
+  `SculptTool` fills the volume bounded by the running surface bodies into a solid (parameter-only:
+  closing tolerance). `Surface.Sculpt` ribbon command. `SculptFeature` already existed; adds the
+  UI + e2e (six cube-face sheets → unit-volume solid; ribbon Execute). The output operation
+  (Join/Cut vs new body) is stored but geometry-unwired in the model, so the tool defaults to a
+  new body and does not expose it (would mislead) — wiring it is a model refinement. Full suite +
+  head + SPDX green. **Surface panel UI now done for Patch/Trim/Stitch/Sculpt; the remaining
+  Surface tools (Extend, Rule Fillet) need kernel geometry (K5), not just UI.**
+- **2026-06-05:** **Stitch (Surface panel) — UI completion (geometry was already real).**
+  `StitchTool` welds the running surface bodies into one quilt (closed → solid unless "keep as
+  surface"); parameter-only (tolerance + keep-surface), no pick. `Surface.Stitch` ribbon command.
+  `StitchFeature`/`ops.Stitch` already existed; adds the UI + e2e (two adjacent patches → one
+  2-face quilt; ribbon Execute). Full suite + head + SPDX green. Tolerant (gap-band) sew is the
+  geometry refinement (K3); Extend/Sculpt/Rule-Fillet are the remaining Surface tools.
+- **2026-06-05:** **Surface Trim — UI completion (geometry was already real).** `SurfaceTrimTool`
+  cuts the running surface body with a picked work plane, keeping one side (ParameterizedTool: a
+  "keep positive side" bool). `Surface.Trim` ribbon command (Surface panel). `TrimFeature` +
+  `ops.TrimByPlane` geometry/serialize already existed; adds the UI + e2e (patch a 4×4 surface,
+  trim by an x=2 work plane → x∈[2,4]; ribbon Execute). Full suite + head + SPDX green. Curved/
+  multi-face trim (K5) is the geometry refinement; Extend/Stitch/Sculpt are the next Surface tools.
+- **2026-06-05:** **Patch (Surface panel) — UI completion (geometry was already real).** First of
+  the Surface-panel tools: `PatchTool` fills a closed sketch region with a boundary-patch surface,
+  auto-committing on the region pick (one-click surfacing). `Surface.Patch` ribbon command (the
+  canonical Surface panel, finally created in the 3D Model tab). `BoundaryPatchFeature` geometry +
+  serialization already existed; this adds the missing UI + e2e (surface sheet body, 1 face, not a
+  solid; ribbon Execute). Full suite + head + SPDX green. Next Surface tools: Trim, Extend, Stitch.
+- **2026-06-05:** **Emboss — new Create feature, full DoD.** `EmbossFeature` raises (Join) or
+  engraves (Cut) a closed sketch profile on the part: the region is extruded a shallow depth along
+  the sketch-plane normal. Built on the shared `buildPrism`+`combine` machinery — extracted two
+  package helpers (`resolveClosedProfiles`, `buildProfilePrisms`) now shared by Extrude and Emboss
+  (refactor of the touched extrude code; its tests confirm no regression). `EmbossFeatures.Add`,
+  serialize round-trip (`EmbossData`), `EmbossTool` (ParameterizedTool: Depth + Engrave, multi-
+  region pick) + `Create.Emboss` ribbon (canonical Create panel; generic dialog, no bespoke cgo).
+  Tests: model (raise → +vol, engrave → −vol, error), serialize round-trip, app e2e (raise/engrave/
+  ribbon). Full suite + head + SPDX green. Wrapping onto a curved face is the remaining refinement.
+- **2026-06-05:** **Split Solid / Trim Solid — new feature, full DoD (was G⬜).** `ops.SplitSolidByPlane`
+  divides a solid by an infinite plane into the pieces on each side (intersect with a large
+  half-space box per side, so each piece is capped by a clean planar cross-section). New
+  `SplitSolidFeature` (`AddSplitSolid(plane, keep)`, `SplitBoth`/`Positive`/`Negative` for split
+  vs trim) referencing a cutting **work plane**; serialize round-trip (`SplitSolidData`). UI:
+  `SplitTool` (pick a work plane, choose split/trim) + `Modify.Split` ribbon command (canonical
+  Modify panel) + head dialog. Tests at kernel (mid/oblique/miss, valid solids, volumes sum),
+  model (divide + trim + round-trip), app e2e (pick plane → OK → 2 bodies; trim → 1; ribbon).
+  Two bugs found & fixed building the half-space box WITHOUT subd (subd is unreachable from ops —
+  `subd_test`→`ops` would cycle): edges must be stored canonically (min→max) to match the
+  Reversed convention, and the negative-side box must swap U/V to stay right-handed (else the
+  canonical rings wind inward → inside-out box → broken boolean). Full suite + head + SPDX green.
+- **2026-06-04:** **Rib feature completed to full DoD (UI + persistence; geometry was already real).**
+  Rib had real geometry (`RibFeature.Recompute` thickens an open profile into a wall) but no
+  collection method, no serialization, and no UI — so it wasn't DoD-complete. Added: `RibFeatures.
+  Add` (named, engine-bound), `RibData` + serialize/restore wired into the recipe registry, an
+  interactive **`RibTool`** (a `ParameterizedTool` — resolves the open profile from the active or
+  most-recent open-path sketch at Start, exposes Thickness + Depth, joins the wall to the part),
+  and a **Create-panel ribbon command** `Create.Rib` (matching the canonical Inventor Create panel
+  [Extrude…Coil, **Rib**, Emboss, Decal]; the head renders the generic property dialog, no bespoke
+  cgo). Tests: model collection (named + vol), serialize round-trip, app e2e (tool flow + ribbon
+  Execute). Full suite + head + SPDX green. Rib's "to-next" part-bounding remains the only
+  refinement. **This closes the last Phase-3 UI gap for a real-geometry Create feature.**
+- **2026-06-04:** **Conical drill point — Hole feature reaches Inventor parity (step 4/4 DONE).**
+  `brep.CutBlindConicalHole`: a cylinder bore closed by a true CONE tip (the twist-drill shape;
+  118° included = 59° half-angle default). Needed a new tessellation primitive: **cone-apex
+  (pole) fan** — `ops.coneApexFan` meshes a cone whose only boundary is a single rim circle by
+  fanning to the apex pole (a geometric tip, not a topology vertex). It's tried before the band
+  path and guarded to fire only for a single-circle (constant-v) cone boundary, so a countersink
+  frustum (two rim circles) is still gridded as a band. Subtlety found & fixed: a lone full-
+  circle loop de-duplicates to a span just under 2π, so `toUVLoops` wrongly succeeded into a
+  degenerate iso-rectangle — the apex fan now runs first. Wired into the Hole feature via
+  `HoleDefinition.PointAngle` (0 = flat); the HoleTool defaults to 118° (Inventor's default), the
+  head dialog exposes the angle (0 = flat). Full DoD: kernel (1 cone + 1 cylinder, volume =
+  cylinder + ⅓cone, apex-exits rejection), ops (apex-fan area = π·r²/sin), model, app e2e, and
+  serialize round-trip. Full suite + head + SPDX green. **Hole feature now has all four profiles
+  (drilled flat/point, through, blind, counterbore, countersink) with real curved geometry.**
+- **2026-06-04:** **Cone-face support + countersink holes (Hole parity steps 2-3/4).** Confirmed
+  the periodic-band tessellator handles a CONE frustum (varying radius) — `ops` test, lateral
+  area π(r1+r2)·slant — the foundation. Then `brep.CutCountersinkHole`: a true cone frustum
+  recess widening to the sink Ø at the surface, sharing a transition circle directly with the
+  cylinder bore wall (no shoulder), built in one assembly. The cone widens toward the surface
+  (axis points back out, apex deep). Wired into the Hole feature as **exact-only** (a wrong
+  faceted cone is worse than a clear error for the rare unsupported shape): `HoleDefinition`
+  gained `CounterAngle` (included angle) reusing `CounterDiameter` for the sink Ø;
+  `AddCountersink`. Full DoD: Hole UI countersink toggle (mutually exclusive with counterbore,
+  sink Ø + angle in degrees, head dialog), persistence (`HoleData.CounterAngle`), and tests at
+  kernel (1 cone + 1 cylinder wall, volume = frustum + bore), model, app e2e, and serialize
+  round-trip. Full suite + head + SPDX green. **Remaining (step 4):** the 118° conical drill
+  point — needs cone-APEX (pole) tessellation, distinct from the band case.
+- **2026-06-04:** **Counterbore holes — exact stepped geometry, full DoD (Hole parity step 1/4).**
+  `brep.CutCounterboreHole`: a shallow recess (counterRadius × counterDepth) stepping via a flat
+  **annular shoulder** to a bore (through or blind), built in ONE assembly from the planar slab —
+  two true cylinder walls + the shoulder. Built directly (not by chaining two curved cuts, which
+  would feed a curved body to the planar-only boolean and produce a non-manifold mess — that's
+  the curved-input boolean, a later slice). `HoleFeature.cutCounterbore` prefers it, falling back
+  to sequential planar prism cuts (which stay planar, so they chain) for unsupported shapes. Full
+  DoD: model (`HoleDefinition.CounterDiameter/Depth` + `AddCounterbore`), Hole UI (counterbore
+  toggle + recess Ø/depth, head dialog fields), persistence (`HoleData.Counter*`), and tests at
+  kernel (through+blind, 2 cyl faces, volume), model, app e2e, and serialize round-trip levels.
+  Full suite + head + SPDX green. **Next (Hole parity 2-4):** cone-face support → countersink →
+  118° conical drill point.
+- **2026-06-04:** **Blind holes now drill an EXACT cylinder wall + flat bottom (K1b).**
+  `brep.CutBlindCylindricalHole`: a cylinder entering one planar face and stopping at depth
+  inside the material → entry face holed + true cylinder wall + a flat circular bottom disk
+  (facing the opening), watertight, vol = part − inscribed bore. Uses the same face-sense
+  primitive (reversed wall). Verified the pocket stays inside via `insideSolid` (else error).
+  `HoleFeature.drill` now prefers it for any blind hole, falling back to the faceted boolean
+  only for unsupported shapes (bore clips a face, depth exits) — so existing depth≥thickness
+  "through via depth" tests keep the faceted path unchanged. Tested at kernel (validity/
+  watertight/face-count 1 cyl + 7 planar/volume, through-depth rejection) and model (blind
+  depth<thickness → 1 cylinder face + flat bottom) levels. Full suite + head + SPDX green.
+  Follow-up: conical drill point (Inventor's default 118° tip).
+- **2026-06-04:** **Hole feature now drills a TRUE cylinder wall (K1b consumed end-to-end).**
+  Wired `brep.CutCylindricalHole` into the actual Hole feature as a full vertical slice:
+  `HoleDefinition.ThroughAll` + `HoleFeatures.AddDrilledThrough`; `HoleFeature.drill` routes a
+  Through-All hole on a planar slab to the exact curved boolean (one cylinder face, not a
+  32-gon prism), falling back to the faceted boolean (drilled `throughDepth`) for blind holes
+  and unsupported shapes. UI: `HoleTool` gained a Through-All option (depth not required when
+  set) and the head hole dialog a "Through All" checkbox (disables the depth field). Persisted
+  (`HoleData.ThroughAll`, round-trips). Tested across all layers — model (through hole → 1
+  cylinder face, vol = slab − π·r²·h), app e2e (pick face → tick Through All → OK → true wall),
+  serialize round-trip. Full headless suite + head build + SPDX green. Blind exact cylinders
+  and the general (non-slab) curved boolean remain later K1b slices.
+- **2026-06-04:** **K1b slice 3 — first end-to-end curved boolean: a clean drilled hole.**
+  `brep.CutCylindricalHole(slab, base, axis, radius)` drills a cylindrical through-hole in a
+  planar-faced slab: the two pierced faces gain a circular hole, a single TRUE cylinder face
+  forms the wall, and the result is a watertight solid with the correct volume (slab − inscribed
+  bore). This needed a new B-rep primitive — **face sense**: `topo.Face.Reversed` +
+  `topo.Builder.AddReversedFace`, honored by `ops.TessellateFace` (negates the mesh normals and
+  flips triangle winding). A Difference cut wall's surface normal points INTO the removed
+  material, so its face is "reversed"; the planar boolean fakes this by building a flipped
+  `Plane`, but a cylinder's normal is intrinsically outward-radial and can't be flipped — the
+  sense flag is the general fix (the planar path can adopt it later). Because copied + pierced
+  faces keep their source lineage, **every original face's reference key survives the curved
+  cut** (extends K1a to curved booleans). Partial/blind holes error (later slices). Tested at
+  topo (sense flag), ops (reversed mesh flip), and brep (validity/watertight/face-count, volume
+  = slab − π·r²·h, key survival, oversize rejection) levels. Full headless suite + head build
+  green. **Next:** slice 4 — sphere/cone + the general arrangement-based curved boolean.
+- **2026-06-04:** **K1b slices 2 + 2b — first analytic curved solid, correctly tessellated.**
+  Confirmed the topo model already supports analytic curved faces: `topo.AddEdge` allows
+  **closed-circle edges** (start==end) and `ops.Validate` counts edge *uses*, so a **periodic
+  cylinder side face** (seam edge with two opposite uses) is a valid manifold solid. Built
+  `brep.SolidCylinder` — one true cylinder face + two planar caps sharing two closed circles +
+  a seam. It validates AND is watertight. **Closed the tessellation gap (2b):** a full-2π side
+  loop can't be unwrapped, so it used to fall back to the surface's whole *unbounded* UV domain
+  → wrong area/volume (183.7 vs 62.8). New `ops.periodicBandGrid` grids a full-seam-wrap face
+  over its true trim — the whole period (reusing the boundary's own circle-edge samples so it
+  stays watertight with the caps) × the boundary's bounded range. Now face area = 2π·r·h and
+  solid volume = π·r²·h (inscribed, a hair under). Tested at ops + brep levels; ops/brep suites
+  green. **Next:** slice 3 — wire `SolidCylinder` as the cut tool → a clean drilled hole.
+- **2026-06-04:** **K1b started — curved-face boolean, slice 1: exact analytic surface
+  intersections.** New [ADR-0027](../architecture/decisions/ADR-0027-curved-face-boolean.md)
+  lays out the curved-boolean architecture (generalize the planar pipeline's face model to
+  `geom.Surface` + `geom.Curve3` loops; exact-curve imprints; param-space split; reuse K1a
+  lineage) and a 5-slice plan. Slice 1 landed: `geom.IntersectSurfacesAnalytic` returns
+  EXACT intersection curves for the pairs the boolean needs — plane∩plane → line, plane∩
+  cylinder → circle (⟂) / **ellipse** (oblique), plane∩sphere → circle, plane∩**cone** →
+  circle (⟂) — and reports `handled=false` for line-pair / curved-curved pairs so the
+  caller falls back to the numeric tracer. 10 tests (radius/center exactness incl. the
+  oblique ellipse minor=r / major=r√2, miss/parallel/tangent → no curve, order-
+  independence, parallel-cylinder defers). Core suite green. **Next slices:** curved face
+  model → plane∩cylinder boolean end-to-end (clean hole) → edge-key survival + retire BSP.
+- **2026-06-04:** **K1a unlock realized — boolean-output references proven at the feature
+  level.** `TestCombineFaceKeySurvivesIntoResultAndRecompute`: a face picked on box A keeps
+  its reference key after Combining with an overlapping box B (planar boolean carries the
+  lineage) AND after a height-driven recompute — so a downstream fillet/dimension/sketch on
+  a combined solid stays bound across edits. Reviewed the rest: the deferred boolean
+  features need MORE than K1a — **Split** needs a definition redesign (its `faceKeys` shape
+  doesn't model split-by-plane), and **Hole/Fillet** survival + exact chaining need the XL
+  curved-face boolean (**K1b**). So K1a's unlock = parametric robustness on the planar
+  Combine/Cut path, now validated end-to-end.
+- **2026-06-04:** **K1a — face reference-key survival through the planar boolean (G-09).**
+  The planar B-rep boolean re-synthesized lineage, so picks on Combine/Cut output were lost
+  on edit. Now the source face's lineage is threaded `planarFace → subFace → builtFace →
+  AddFace`: a face surviving whole keeps its **exact** reference key; a face split into
+  several pieces gets distinct child tokens (`…/brep:split#k`). Tested: Union and Cut both
+  keep an untouched face's key; disjoint union still valid (vol 16); no boolean-correctness
+  regressions. **Remaining K1:** edge/vertex key survival; the XL curved-face boolean (K1b)
+  replacing the BSP-CSG fallback so Hole/Fillet faces survive + chain exactly.
+- **2026-06-04:** **Phase 4 start — Rib geometry made real (was NotYetImplemented, G-01).**
+  `RibFeature.Recompute` now builds a wall: the open sketch path is offset ±Thickness/2 into
+  a closed band (`thickenPath` + vertex-normal averaging + CCW orient) and extruded by a
+  finite `Depth` along the plane normal via the shared `buildPrism`, then `combine`d with the
+  running body. Added `Depth` to `RibDefinition`; removed the NYI. Tests: straight rib vol=8
+  (4×1×2), L-path → one solid, needs-depth→sick. ("To-next" bounding + a ribbon tool are
+  follow-ups; core suite + vet green.)
+- **2026-06-04:** **Phase 3 start — feature Pattern & Mirror UI (closes finding U-01).**
+  The flagship gap: rectangular/circular/sketch-driven patterns + mirror had real geometry
+  (M20-191) but no ribbon tool. Added `app/feature_pattern_tools.go` — `FeatureRectPattern`/
+  `FeatureCircPattern`/`FeatureMirror` tools (select source features as `FeatureHandle`
+  picks, set params, commit via `feature.NewPatternFeatures(part.Features()).Add*` +
+  Recompute) + a **Pattern panel** in the 3D Model tab (canonical placement) + `Params()`
+  so they render in the generic property dialog. e2e: extrude→select feature→3×1 rect
+  pattern = 3 bodies; mirror = 2; circular > 1; needs-source guard; registration. Core
+  suite + head + vet green. (Sketch-driven pattern tool = follow-up.)
+- **2026-06-04:** **Phase 3 cont. — Combine / Move Face / Move Bodies UI (closes U-02).**
+  `app/feature_modify_tools.go` — `CombineTool` (pick two bodies + Join/Cut/Intersect),
+  `MoveFaceTool` (translate picked faces), `MoveBodyTool` (relocate a body); all on the
+  3D Model **Modify** panel via `directEditCommands()` + `Params()` dialogs. e2e: combine
+  join 2→1 body; move-face +Z grows volume; move-body shifts min.X by 10; registration.
+  Core suite + head + vet green. **Phase 3 UI-only features done** (patterns/mirror/combine/
+  move-face/move); remaining: Sketch-Driven pattern tool + Phase 4 deferred-geometry
+  features (Rib/Split/Emboss/Thread).
+- **2026-06-04:** **Phase 2 (Sketch3D) start — onFace surface curve over /api (M22-F11).**
+  The router exposed only intersection/silhouette surface curves; added **onFace** (a curve
+  in a referenced face's parameter space) end-to-end: `api/wire` UV field, new model
+  `Sketch3D.AddOnFaceCurve3DRef` (associative over a `SurfaceSource`), router dispatch with
+  a flat-UV→points parser (request-shape validated before ref-resolve), and typed client
+  `AddOnFaceCurve`. Dogfood router test (extrude→onFace on a face by ref key→healthy; lost
+  ref→unhealthy; bad UV→error) + client + model tests. **Then projectToSurface + offset**:
+  new `Sketch3D.SourceCurve3` resolver (sketch entity id → `geom.Curve3` for line/circle/
+  arc/ellipse/elliptical-arc/helix) + `AddProjectToSurfaceCurve3DRef` (associative surface)
+  + wire `SourceEntityID`/`OffsetDistance`/`Normal` + router project/offset cases + client
+  `AddProjectToSurfaceCurve`/`AddOffsetCurve`. Dogfood: extrude→add a 3D line→project it on
+  a face + offset it in-plane (both healthy); unknown source id→error. **All five surface-
+  curve kinds (intersection/silhouette/onFace/projectToSurface/offset) are now on /api —
+  the F11 /api gap is closed.** api module + core suite + vet + SPDX green.
+  **F11 associative rebind verified:** `TestSketch3DSurfaceCurveRebindsOnRecompute` — an
+  onFace curve bound to the top face by reference key follows it from z=5cm→8cm when the
+  extrude is grown and the part recomputes (the `FaceRefSource` re-resolves the regenerated
+  surface via `FindFaceByKey`). **M22-F11 is effectively complete** (all surface-curve
+  kinds + associativity); remaining Sketch3D residuals: F08 GetReferenceKey surfacing, F12
+  head dialogs/Sketch3DSettings.
+- **2026-06-04:** **Sketch3D F08 — reference-key surfacing (`model.referenceKeys`).** There
+  was no way over /api to *obtain* a part face/edge/vertex reference key (handlers only
+  *consumed* them), so the include/surface-curve/project workflow was unusable headlessly.
+  Added `model.referenceKeys` (wire `TopologyRef`/`BodyTopology`/`ReferenceKeysResult` +
+  router enumerating the part's bodies → faces/edges/vertices with key + representative
+  point + typed client `Model.ReferenceKeys`). Round-trip test: extrude→referenceKeys
+  returns a box's exact 6/12/8 topology with keys→a surfaced face key is consumable by
+  addSurfaceCurve. **M22-F08 done.** Remaining Sketch3D residual: F12 head dialogs +
+  Sketch3DSettings. api module + core suite + vet + SPDX green.
+- **2026-06-04:** **Sketch3D F12 — head dialogs + Sketch3DSettings → Phase 2 complete.**
+  Extended the generic tool-param framework with `BoolParam` (checkbox) and gave the
+  parameterized 3D tools `Params()`: Circle3D (radius), Helix3D (radius/pitch/turns +
+  clockwise), Arc3D (counter-clockwise) — so they render through the same
+  `head/ui/tool_params_dialog.go` (no bespoke cgo per tool). Added a **`Sketch3DSettings`**
+  head window (visible / show-dimensions / defer-updates over the active sketch's
+  accessors). Param labels + float/bool wiring tested headlessly; head builds + ui tests
+  green; core suite green. **M22 (Sketch3D) feature-complete (F01–F12) — PARTDOC-PLAN Phase
+  2 done.** (Head in-window e2e for the 3D dialogs runs under the new CI head job.)
+- **2026-06-04:** **Stretch tool + generic tool-parameter dialog (head DoD layer).**
+  (a) **Stretch** — new model `MovePoints` (moves only the listed vertices, deforming
+  shared geometry) + `SketchStretchTool` (picks vertices, sets a vector) → the last Sketch
+  Modify button; **the 2D Sketch tab is now at full button parity** with the canonical
+  ribbon. (b) **Generic parameter dialog** — an `app.ParameterizedTool` interface
+  (`tool_params.go`: Float/Int/Text param descriptors with get/set closures bound to the
+  tool's fields) implemented by all 11 param-bearing sketch tools (Move/Copy/Rotate/Scale/
+  Stretch, Rect/Circ pattern, Slot/Chamfer/Text/Fillet/Offset), rendered by ONE cgo dialog
+  (`head/ui/tool_params_dialog.go`) instead of 11 bespoke ones (core/09 reflection-driven
+  editing). Param wiring + labels tested headlessly; head builds + ui tests green; angles
+  surfaced in degrees. Core suite green.
+- **2026-06-04:** **Sketch Create tools completed — Slot, Chamfer, Text.** Added the
+  remaining Create-panel tools over existing model ops (`AddStraightSlot`/`AddChamfer`/
+  `TextBoxes.Add`): Slot (two centre clicks + width, auto-commits), Chamfer (two-line
+  bevel, sibling of Fillet), Text (anchor click + string, commits on OK). App e2e for each
+  + registration; Create-panel parity test bumped to 12 buttons. **The 2D Sketch tab is now
+  at button parity with the canonical ribbon** except Modify **Stretch** (deferred:
+  vertex-window selection). Core suite + head green.
+- **2026-06-04:** **Sketch Modify/Pattern tools built + commands refactored.** Added the
+  missing Sketch tools: **Move, Copy, Rotate, Scale** (Modify panel) and **Rectangular,
+  Circular** patterns (Pattern panel), each an app `Tool` over the existing model ops
+  (`MoveEntities`/`RotateEntities`/`CopyEntities`/`RectangularPattern`/`CircularPattern`)
+  plus new model **`ScaleEntities`** (scales points *and* circle/ellipse radii — the affine
+  path doesn't). Tools gather a selection (PickSnap) + parameters (setters) and apply on
+  `OK`; behavior tested headlessly (model + app e2e). **Refactor (per action plan):** split
+  the 2D-sketch ribbon out of the 507-line `commands_standard.go` into `commands_sketch.go`
+  (now 385/126 lines, both <500) and de-duplicated the three near-identical command-table
+  loops into one `buildToolCommands` helper. Panel placement locked by
+  `TestSketchTabPanelsMatchInventor`. Deferred: **Stretch** (vertex-window selection) and
+  the head ImGui param dialogs (thin layer over the setters). Core suite + head green.
+- **2026-06-04:** **Canonical Inventor ribbon structure documented (user direction).** Our
+  ribbon panels deviated from Inventor's; captured the authoritative tab→panel→button tree
+  in [`../architecture/mapping/inventor-ribbon-structure.md`](../architecture/mapping/inventor-ribbon-structure.md)
+  (2026.1 Default) as the source of truth, linked from CONVENTIONS (DoD) and core/09-ui.
+  Then aligned the whole **Sketch tab** to it: Dimension + Auto Dimension → **Constrain**
+  (no phantom "Dimension" panel), **Mirror → Pattern** (new panel), **Fillet → Create**;
+  Modify now = Offset/Trim/Extend/Split. Locked by `app.TestSketchTabPanelsMatchInventor`.
+  Remaining (missing *tools*, not misplacements): Create Slot/Chamfer/Text, Modify Move/
+  Copy/Rotate/Scale/Stretch, Pattern Rectangular/Circular; non-canonical `Draw` panel
+  (Project Geometry) under review. Part Pattern/Surface panels reserved for upcoming UI.
+  Core suite + head green.
+- **2026-06-04:** **Audit + PartDocument-completion kickoff (REPORT.md / PARTDOC-PLAN.md).**
+  Full code-vs-docs audit (REPORT.md at repo root); reconciled this tracker, README totals
+  (24 milestones / 135 features / 262 PBIs), and backfilled M19's missing feature/PBI
+  files; added the three-axis status model (Model/Geometry/UI+e2e) to CONVENTIONS.md and a
+  deferral ledger (DEFERRALS.md). Added a `head` cgo CI job (lavapipe+xvfb) so the e2e UI
+  tests finally run. **Phase 0 enablers:** fixed **T-01** (`TestAddInExtendsRibbonAndActsOnClick`
+  — a stale test driving a ZeroDoc session against a Part-ribbon-defaulted add-in button,
+  not a product bug) and **K2** (`geom.TransformCurve/Surface` now handle NURBS via
+  control-point transform — exact for affine; weights/knots/degree invariant; 5 tests).
+  **Phase 1 (Sketch2D) — curve trim/extend, two horizontal slices landed:**
+  (1) *kernel-shared* **2D analytic intersection** primitives — `LineCircle2dIntersection`,
+  `SegmentCircle2dIntersection`, `Circle2dCircle2dIntersection`, `Arc2d.ContainsAngle/
+  ContainsPoint` (`kernel/geom`, 100% on the intersection funcs);
+  (2) *model-domain* — `model/sketch` line **trim & extend now cut against circles and
+  arcs** (honoring arc sweep), via `edit_trim_curves.go` adapters + a generalized
+  crossing/extension engine, closing the line-only follow-up noted in `edit_trim.go`;
+  (3) *ui-domain* — **Trim / Extend / Split sketch tools** (`app/sketch_trim_tools.go`) +
+  ribbon commands (`Sketch.Trim`/`Extend`/`Split`, aliases X/EX/SX, Modify panel) + 6
+  headless e2e tests driving pick→commit→validated edit. **Curve-trim/extend now meets the
+  DoD** (model+geometry+UI+e2e) at the same bar as the offset/mirror tools (click tools,
+  no dialog); (4) *enhancement* — trimming a **circle or arc as the target**
+  (`edit_trim_curve_targets.go`): a trimmed circle becomes its complementary arc, a trimmed
+  arc keeps the remaining arc(s); Trim tool + router `sketch.transform` dispatch on
+  line/circle/arc. Also fixed a latent bug where `removeEntity` left a deleted curve in its
+  typed collection — new `deleteEntity` prunes both. **Curve trim/extend/split is now
+  complete across line/circle/arc.** K1 (boolean robustness) parked per user direction.
+  Core suite + head green.
+- **2026-06-04:** **Sketch2D residual — AutoDimension rewritten to be well-constrained +
+  given a ribbon command.** The old `AutoDimension` grounded whole *entities* until DOF=0,
+  which double-fixed shared points and left the sketch **over-constrained** (redundant). It
+  now greedily adds candidates — length/radius **dimensions** first, then per-**point**
+  grounds — each accepted only if it lowers DOF *without* raising redundancy (rank-guarded
+  via `AnalyzeConstraints`), so the result is **WellConstrained, 0 redundancy**, and
+  dimensions are real/editable + placed at current values (geometry-preserving). Added
+  `DimensionConstraints.Delete` (prunes the dim + its parameter) for the trials. UI:
+  `Sketch.AutoDimension` ribbon command (Dimension panel) + e2e; the `sketch.autoDimension`
+  wire method already existed. Tests assert well-constrained/no-redundancy/real-dims/
+  geometry-preserved. Core suite + head green.
 - **2026-06-02:** **Usable Extrude in the head: distance dialog + profile-pick feedback
   (M05 UI, user direction).** Even with finished sketches now pickable, the head had no
   way to *complete* an extrude — picking a profile stored it on the tool with no highlight,

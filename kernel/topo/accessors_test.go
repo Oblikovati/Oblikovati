@@ -79,6 +79,29 @@ func TestInnerLoopFace(t *testing.T) {
 	}
 }
 
+// AddFace yields a face whose sense agrees with its surface; AddReversedFace flags the sense
+// as opposite (a Difference cut wall), keeping every other property identical.
+func TestReversedFaceSense(t *testing.T) {
+	bld := NewBuilder(false, NewLineage(Tok("f", "body", 0)))
+	lin := NewLineage(Tok("f", "x", 0))
+	a := bld.AddVertex(math.P3(0, 0, 0), lin)
+	b := bld.AddVertex(math.P3(1, 0, 0), lin)
+	c := bld.AddVertex(math.P3(0, 1, 0), lin)
+	tri := func() LoopSpec {
+		ab := bld.AddEdge(geom.NewLineSegment(a.Point(), b.Point()), a, b, lin)
+		bc := bld.AddEdge(geom.NewLineSegment(b.Point(), c.Point()), b, c, lin)
+		ca := bld.AddEdge(geom.NewLineSegment(c.Point(), a.Point()), c, a, lin)
+		return OuterLoop(Fwd(ab), Fwd(bc), Fwd(ca))
+	}
+	pl, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	if bld.AddFace(pl, lin, tri()).Reversed() {
+		t.Error("AddFace produced a reversed face")
+	}
+	if !bld.AddReversedFace(pl, lin, tri()).Reversed() {
+		t.Error("AddReversedFace did not set the reversed sense")
+	}
+}
+
 func TestFindEdgeByBogusKey(t *testing.T) {
 	body := buildTetra()
 	bogus := referenceKey(KindEdge, NewLineage(Tok("ghost", "edge", 42)))

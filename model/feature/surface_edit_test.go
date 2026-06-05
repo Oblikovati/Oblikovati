@@ -40,17 +40,37 @@ func TestTrimFeatureGoesSickWhenNothingKept(t *testing.T) {
 	}
 }
 
-func TestExtendFeatureDefers(t *testing.T) {
+func TestExtendFeatureGrowsSurface(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	patchSurface(fs) // 4×4 patch on z=0
+	fs.Recompute()
+	var key []byte // the bottom boundary edge (both endpoints at y=0)
+	for _, e := range fs.Result()[0].Edges() {
+		if e.StartVertex().Point().Y == 0 && e.EndVertex().Point().Y == 0 {
+			key = e.ReferenceKey()
+		}
+	}
+	if key == nil {
+		t.Fatal("no bottom edge on the patch")
+	}
+	pf := NewExtendFeatures(fs).Add(key, func() float64 { return 2 })
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("extend went sick: %+v", pf.Health())
+	}
+	box := fs.Result()[0].RangeBox()
+	if !approxEq(box.Min.Y, -2) || !approxEq(box.Max.Y, 4) {
+		t.Errorf("extended y-span = [%v,%v], want [-2,4]", box.Min.Y, box.Max.Y)
+	}
+}
+
+func TestExtendFeatureSickOnLostEdge(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	patchSurface(fs)
-	pf := NewExtendFeatures(fs).Add(Ref{}, func() float64 { return 2 })
+	NewExtendFeatures(fs).Add([]byte("ghost"), func() float64 { return 2 })
 	fs.Recompute()
-	if pf.Health().Status != health.Warning {
-		t.Errorf("extend = %v, want warning (geometry deferred)", pf.Health().Status)
-	}
-	// The target surface passes through unchanged.
-	if len(fs.Result()) != 1 {
-		t.Errorf("extend passthrough has %d bodies, want 1", len(fs.Result()))
+	if fs.Item(fs.Count()-1).Health().Status != health.Sick {
+		t.Error("extend on a lost edge should be sick")
 	}
 }
 

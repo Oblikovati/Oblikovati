@@ -32,9 +32,15 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	if len(outer3D) < 3 {
 		return fullDomainGridMesh(s, q)
 	}
+	if m, isFan := coneApexFan(s, outer3D); isFan {
+		return m // a cone closing to its apex (a drill point): a fan from the apex to the rim
+	}
 	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
-		return fullDomainGridMesh(s, q) // seam-crossing periodic face
+		if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
+			return structuredGridMesh(s, us, vs) // full cylinder/cone side: exact area
+		}
+		return fullDomainGridMesh(s, q) // seam-crossing periodic face we can't reduce
 	}
 	if len(holesUV) == 0 {
 		if us, vs, isRect := isoRectangleGrid(outerUV); isRect {
@@ -199,6 +205,79 @@ func emitCellOutward(m *Mesh, s geom.Surface, u0, u1, v0, v1 float64, a, b, c, d
 func (m *Mesh) cellNormal(a, b, c int) math.Vector3 {
 	pa, pb, pc := m.Positions[a], m.Positions[b], m.Positions[c]
 	return pa.VectorTo(pb).Cross(pa.VectorTo(pc))
+}
+
+// periodicBandGrid handles a full-period curved band — a complete cylinder/cone side whose
+// loop runs up the seam, around a full circle, down the seam and back, so toUVLoops can't
+// unwrap it (the loop spans the whole 2π). Its trim is simply the entire period in the
+// periodic parameter and the boundary's own range in the other. The grid reuses the
+// boundary's parameter samples (the shared circle-edge discretization) so the band stays
+// watertight with its caps, and closes the period so the last cell wraps back to the seam.
+// ok=false when it isn't a single-periodic band or carries holes (those need a constrained
+// triangulation — still the full-domain fallback).
+func periodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (us, vs []float64, ok bool) {
+	uPer, vPer := isPeriodic(s.UDomain()), isPeriodic(s.VDomain())
+	if uPer == vPer || len(holes3D) != 0 {
+		return nil, nil, false // need exactly one periodic direction and no holes
+	}
+	uu := make([]float64, len(outer3D))
+	vv := make([]float64, len(outer3D))
+	for i, p := range outer3D {
+		uu[i], vv[i] = s.ParamAt(p)
+	}
+	if uPer {
+		us, vs = closePeriod(sortUnique(uu)), sortUnique(vv)
+	} else {
+		us, vs = sortUnique(uu), closePeriod(sortUnique(vv))
+	}
+	if len(us) < 2 || len(vs) < 2 {
+		return nil, nil, false // degenerate (e.g. a cone closing to its apex — one rim circle)
+	}
+	return us, vs, true
+}
+
+// coneApexFan tessellates a cone face that closes to its apex (a drill point): its single rim
+// circle (outer3D) fans to the apex pole, which is not a topology vertex but the surface's
+// geometric tip. Each triangle is wound to agree with the cone normal (a reversed face then
+// flips it). ok=false unless the surface is a cone whose boundary is a SINGLE circle at one
+// axial level (a frustum, with two rim circles, spans v and is handled as a band instead).
+func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
+	cone, ok := s.(geom.Cone)
+	if !ok || len(outer3D) < 3 {
+		return nil, false
+	}
+	vMin, vMax := stdmath.Inf(1), stdmath.Inf(-1)
+	for _, p := range outer3D {
+		_, v := cone.ParamAt(p)
+		vMin, vMax = stdmath.Min(vMin, v), stdmath.Max(vMax, v)
+	}
+	if vMax-vMin > trimBorderTol {
+		return nil, false // a frustum (two rim circles), not an apex cap
+	}
+	m := &Mesh{}
+	apex := m.addVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
+	rim := make([]int, len(outer3D))
+	for i, p := range outer3D {
+		u, v := cone.ParamAt(p)
+		rim[i] = m.addVertex(p, cone.NormalAt(u, v))
+	}
+	for i := range outer3D {
+		b, c := rim[i], rim[(i+1)%len(outer3D)]
+		if triangleFlipped(cone, cone.Apex, m.Positions[b], m.Positions[c]) {
+			b, c = c, b
+		}
+		m.addTriangle(apex, b, c)
+	}
+	return m, true
+}
+
+// closePeriod appends the 2π wrap line to a [0,2π) sample set so the band's final cell
+// closes back onto the seam (no-op if a 2π sample is already present).
+func closePeriod(g []float64) []float64 {
+	if len(g) == 0 || g[len(g)-1] < 2*stdmath.Pi-trimBorderTol {
+		return append(g, 2*stdmath.Pi)
+	}
+	return g
 }
 
 // toUVLoops maps the boundary loops to parameter space, unwrapping periodic parameters so

@@ -135,6 +135,20 @@ func (dc *DimensionConstraints) All() []*DimensionConstraint {
 func (dc *DimensionConstraints) Count() int                      { return len(dc.items) }
 func (dc *DimensionConstraints) Item(i int) *DimensionConstraint { return dc.items[i] }
 
+// Delete removes a dimension and its backing parameter (used when the user deletes a
+// dimension and by AutoDimension's rank trials). Returns whether it was present. The
+// parameter is just-created with no dependents in the trial case, so its removal is safe.
+func (dc *DimensionConstraints) Delete(d *DimensionConstraint) bool {
+	for i, x := range dc.items {
+		if x == d {
+			dc.items = append(dc.items[:i], dc.items[i+1:]...)
+			_ = dc.params.Delete(d.param.ID())
+			return true
+		}
+	}
+	return false
+}
+
 // AddDistance dimensions the distance between two points to expression (e.g. "25 mm").
 func (dc *DimensionConstraints) AddDistance(a, b *Point, expression string) (*DimensionConstraint, error) {
 	measure := func() float64 { return a.Position().DistanceTo(b.Position()) }
