@@ -26,9 +26,9 @@ func TestStandardRibbonHasSketchCreatePanel(t *testing.T) {
 	if !ok {
 		t.Fatal("Sketch tab has no Create panel")
 	}
-	// Line, Rectangle, Circle, Arc, Spline, Ellipse, Polygon, Point.
-	if len(panel.Buttons) != 8 {
-		t.Errorf("Sketch Create panel has %d tools, want 8", len(panel.Buttons))
+	// Line, Rectangle, Circle, Arc, Slot, Spline, Ellipse, Polygon, Fillet, Chamfer, Text, Point.
+	if len(panel.Buttons) != 12 {
+		t.Errorf("Sketch Create panel has %d tools, want 12", len(panel.Buttons))
 	}
 }
 

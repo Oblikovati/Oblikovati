@@ -93,6 +93,9 @@ int  obk_ig_is_item_deactivated_after_edit(void);
 // begin_combo/end_combo bracket the theme selector dropdown.
 void obk_ig_set_style_color(const char* name, float r, float g, float b, float a);
 int  obk_ig_color_edit4(const char* label, float* rgba);
+void obk_ig_draw_line(float x1, float y1, float x2, float y2, float r, float g, float b, float a, float thickness);
+void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
+void obk_ig_draw_text(float x, float y, float r, float g, float b, float a, const char* s);
 int  obk_ig_begin_combo(const char* label, const char* preview);
 void obk_ig_end_combo(void);
 
@@ -257,6 +260,29 @@ func ColorEdit4(label string, c *[4]float32) bool {
 	cl, free := cstr(label)
 	defer free()
 	return C.obk_ig_color_edit4(cl, (*C.float)(unsafe.Pointer(&c[0]))) != 0
+}
+
+// DrawLine draws a screen-space line in the current window's draw list (color is 0..1
+// RGBA). Used for free-form overlays like the viewport's axis-orientation gizmo; call it
+// inside the owning window's Begin/End so it clips to that window.
+func DrawLine(x1, y1, x2, y2 float32, c [4]float32, thickness float32) {
+	C.obk_ig_draw_line(C.float(x1), C.float(y1), C.float(x2), C.float(y2),
+		C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]), C.float(thickness))
+}
+
+// DrawTriangleFilled fills a screen-space triangle in the current window's draw list
+// (color is 0..1 RGBA) — e.g. the axis gizmo's arrowheads.
+func DrawTriangleFilled(x1, y1, x2, y2, x3, y3 float32, c [4]float32) {
+	C.obk_ig_draw_triangle_filled(C.float(x1), C.float(y1), C.float(x2), C.float(y2),
+		C.float(x3), C.float(y3), C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
+}
+
+// DrawText draws a screen-space text label at (x,y) in the current window's draw list
+// (color is 0..1 RGBA), using the default font — e.g. the axis gizmo's X/Y/Z letters.
+func DrawText(x, y float32, s string, c [4]float32) {
+	cs, free := cstr(s)
+	defer free()
+	C.obk_ig_draw_text(C.float(x), C.float(y), C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]), cs)
 }
 
 // BeginCombo / EndCombo bracket a dropdown showing preview as the closed value; when

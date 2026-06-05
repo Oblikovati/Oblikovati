@@ -176,42 +176,6 @@ func drawExtrudeButtons(s *app.Session, ext *app.ExtrudeTool) {
 	}
 }
 
-// extrudeProfileHighlight outlines every region picked for extrude (and their holes) in
-// the selection color, so the user sees what they have gathered. Returns nil when no
-// extrude tool is active or nothing is picked yet.
-func extrudeProfileHighlight(s *app.Session) []renderer.DrawItem {
-	ext := s.ActiveExtrude()
-	if ext == nil {
-		return nil
-	}
-	var items []renderer.DrawItem
-	for _, ph := range ext.PickedProfiles() {
-		items = append(items, profileOutline(ph, sketchSelectedColor)...)
-	}
-	return items
-}
-
-// extrudeHoverHighlight outlines the region under the cursor in the candidate color
-// while the Extrude tool is active, so the user sees which closed area a click would
-// pick. Returns nil when no extrude tool is active, the cursor is off any region, or
-// that region is already selected (it is then already drawn in the selected color).
-func extrudeHoverHighlight(s *app.Session) []renderer.DrawItem {
-	ext := s.ActiveExtrude()
-	if ext == nil || !native.IsItemHovered() {
-		return nil
-	}
-	x, y := viewportCursor()
-	sel, ok := s.PickAt(x, y, app.NewSelectionFilter(app.SelectProfile))
-	if !ok {
-		return nil
-	}
-	ph, isProfile := sel.(app.ProfileHandle)
-	if !isProfile || isPickedProfile(ext, ph) {
-		return nil
-	}
-	return profileOutline(ph, sketchCandidateColor)
-}
-
 // profileOutline returns the wireframe of a region's outer loop and holes in color.
 // Returns nil when the region index is stale (sketch edited under the selection).
 func profileOutline(ph app.ProfileHandle, color [4]float32) []renderer.DrawItem {
@@ -225,16 +189,6 @@ func profileOutline(ph app.ProfileHandle, color [4]float32) []renderer.DrawItem 
 		acc.polyline(ph.Sketch.Plane(), hole.Polygon(), true)
 	}
 	return appendGrid(nil, acc, color)
-}
-
-// isPickedProfile reports whether ph is already in the tool's selection.
-func isPickedProfile(ext *app.ExtrudeTool, ph app.ProfileHandle) bool {
-	for _, p := range ext.PickedProfiles() {
-		if p == ph {
-			return true
-		}
-	}
-	return false
 }
 
 // activeToolPreviewItems returns the active tool's transient preview (the Extrude prism

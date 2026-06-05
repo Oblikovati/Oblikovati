@@ -18,8 +18,9 @@ import (
 // picked region is outlined in the viewport by the tool's preview. The angle is shown
 // in degrees.
 var revolveUI = struct {
-	angleDeg float32
-	open     bool
+	angleDeg   float32
+	centerline bool
+	open       bool
 }{angleDeg: 360}
 
 // revolveAxes names each origin axis for the axis combo, paired with its work reference.
@@ -38,13 +39,18 @@ func drawRevolveDialog(s *app.Session) {
 	}
 	if !revolveUI.open {
 		revolveUI.angleDeg = seedRevolveAngle(rv)
+		revolveUI.centerline = rv.UseCenterline()
 		revolveUI.open = true
 	}
-	native.SetNextWindowSize(300, 240)
+	native.SetNextWindowSize(300, 270)
 	if native.Begin("Revolve") {
 		drawRevolveProfileText(rv)
 		revolveOperationCombo(rv)
+		native.Checkbox("About sketch centerline", &revolveUI.centerline)
+		rv.SetUseCenterline(revolveUI.centerline)
+		native.BeginDisabled(revolveUI.centerline) // the axis is the centerline now
 		revolveAxisCombo(rv)
+		native.EndDisabled()
 		drawRevolveAngle(rv)
 		drawRevolveButtons(s, rv)
 	}

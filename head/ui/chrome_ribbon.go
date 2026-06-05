@@ -143,7 +143,9 @@ func drawSelectorPanel(panel app.RibbonPanel) string {
 
 // drawRibbonButton renders one command in its configured style (text, small icon, or
 // large icon), greyed when its predicate is false, with the command tooltip on hover.
-// It returns the command id when clicked this frame, else "".
+// A command with variants renders as a split button: the head control plus a dropdown
+// arrow listing the variant tools (Inventor's variant flyout). It returns the id of the
+// command (head or chosen variant) clicked this frame, else "".
 func drawRibbonButton(btn app.RibbonButton) string {
 	native.BeginDisabled(!btn.Enabled)
 	clicked := drawButtonControl(btn)
@@ -151,7 +153,38 @@ func drawRibbonButton(btn app.RibbonButton) string {
 	if clicked {
 		return btn.Command.ID()
 	}
+	if len(btn.Variants) > 0 {
+		return drawVariantDropdown(btn)
+	}
 	return ""
+}
+
+// variantArrowWidth is the pixel width of a split button's dropdown arrow box — just wide
+// enough for the combo's caret, since its preview text is empty (the head shows the label).
+const variantArrowWidth = 18
+
+// drawVariantDropdown renders a split button's dropdown next to its head: a narrow combo
+// whose entries are the variant tools. Choosing one returns its command id so the caller
+// runs it; a disabled variant is shown greyed and is not selectable. Returns "" if nothing
+// was chosen this frame.
+func drawVariantDropdown(btn app.RibbonButton) string {
+	native.SameLine()
+	native.SetNextItemWidth(variantArrowWidth)
+	var chosen string
+	if native.BeginCombo("##"+btn.Command.ID()+"-variants", "") {
+		for _, v := range btn.Variants {
+			native.BeginDisabled(!v.Enabled)
+			if native.Selectable(v.Label, false) {
+				chosen = v.CommandID
+			}
+			native.EndDisabled()
+			if v.Tooltip != "" {
+				native.SetItemTooltip(v.Tooltip)
+			}
+		}
+		native.EndCombo()
+	}
+	return chosen
 }
 
 // drawButtonControl draws the command's clickable control and its tooltip, returning

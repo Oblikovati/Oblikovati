@@ -46,6 +46,10 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		}
 		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 		renderViewportImage(win, s, cam, list, pw, ph, cx, cy)
+		// Pinned to the corner over the freshly drawn image (ItemRectMin is its screen
+		// origin), before any label items so it reads the image rect, not a label's.
+		ox, oy := native.ItemRectMin()
+		drawAxisGizmo(cam, ox, oy, ph)
 		drawClientGraphicsLabels(cx, cy, cam, gfxLabels)
 		if s.InSketch() && len(dims) > 0 {
 			if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
@@ -136,8 +140,9 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, partSketchOverlays(s)...)
 	list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
-	list.Items = append(list.Items, extrudeHoverHighlight(s)...)
-	list.Items = append(list.Items, extrudeProfileHighlight(s)...)
+	list.Items = append(list.Items, toolHoverHighlight(s)...)
+	list.Items = append(list.Items, toolSelectedHighlight(s)...)
+	list.Items = append(list.Items, revolveCenterlineHighlight(s)...)
 	list.Items = append(list.Items, activeToolPreviewItems(s)...)
 	return list
 }

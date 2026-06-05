@@ -88,7 +88,34 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 	if sel, t, ok := p.nearestProfile(origin, dir, filter); ok {
 		cands = append(cands, pickCandidate{t, sel})
 	}
+	if sel, t, ok := p.nearestSketchCurve(origin, dir, filter); ok {
+		cands = append(cands, pickCandidate{t, sel})
+	}
 	return nearestCandidate(cands)
+}
+
+// nearestSketchCurve returns the sketch line the ray passes nearest (within the pick radius, in
+// any visible sketch), when the filter accepts sketch entities — so a sketch line/centerline can
+// be picked in the part view (e.g. a revolve axis). Lines only today (the kind used as an axis).
+func (p *RayPicker) nearestSketchCurve(origin math.Point3, dir math.Vector3, filter *SelectionFilter) (Selectable, float64, bool) {
+	if p.sketches == nil || !filter.Accepts(SelectSketchEntity) {
+		return nil, stdmath.Inf(1), false
+	}
+	tol := pickPixelRadius * p.camera.WorldPerPixel()
+	var hit Selectable
+	best := stdmath.Inf(1)
+	for _, sk := range p.sketches() {
+		plane := sk.Plane()
+		for i := 0; i < sk.Lines().Count(); i++ {
+			l := sk.Lines().Item(i)
+			a := plane.ToModel(l.StartPoint().Position())
+			b := plane.ToModel(l.EndPoint().Position())
+			if d, t, ok := raySegmentDistance(origin, dir, a, b); ok && d <= tol && t < best {
+				best, hit = t, SketchEntityHandle{Entity: l}
+			}
+		}
+	}
+	return hit, best, hit != nil
 }
 
 // snapPick returns the precise snap the cursor lands on — a datum point, datum axis, body

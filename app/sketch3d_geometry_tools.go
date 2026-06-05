@@ -223,11 +223,39 @@ func (t *Helix3DTool) Commit(s *Session) error {
 // Cancel implements [Tool].
 func (t *Helix3DTool) Cancel(*Session) {}
 
-// compile-time assertions that the 3D sketch tools satisfy the Tool interface.
+// --- Params (generic property dialog) -------------------------------------
+// The 3D tools take their points from viewport clicks; the dialog edits the scalar/bool
+// inputs (radius/pitch/turns/winding).
+
+func (t *Circle3DTool) Params() ToolParams {
+	return ToolParams{Floats: []FloatParam{{"Radius", func() float64 { return t.radius }, func(r float64) { t.radius = r }}}}
+}
+
+func (t *Helix3DTool) Params() ToolParams {
+	return ToolParams{
+		Floats: []FloatParam{
+			{"Radius", func() float64 { return t.radius }, func(r float64) { t.radius = r }},
+			{"Pitch", func() float64 { return t.pitch }, func(p float64) { t.pitch = p }},
+			{"Turns", func() float64 { return t.turns }, func(n float64) { t.turns = n }},
+		},
+		Bools: []BoolParam{{"Clockwise", func() bool { return t.clockwise }, func(b bool) { t.clockwise = b }}},
+	}
+}
+
+func (t *Arc3DTool) Params() ToolParams {
+	return ToolParams{Bools: []BoolParam{{"Counter-clockwise", func() bool { return t.ccw }, func(b bool) { t.ccw = b }}}}
+}
+
+// compile-time assertions that the 3D sketch tools satisfy the Tool interface (and that the
+// parameterized ones expose the property dialog).
 var (
 	_ Tool = (*Line3DTool)(nil)
 	_ Tool = (*Point3DTool)(nil)
 	_ Tool = (*Circle3DTool)(nil)
 	_ Tool = (*Arc3DTool)(nil)
 	_ Tool = (*Helix3DTool)(nil)
+
+	_ ParameterizedTool = (*Circle3DTool)(nil)
+	_ ParameterizedTool = (*Helix3DTool)(nil)
+	_ ParameterizedTool = (*Arc3DTool)(nil)
 )

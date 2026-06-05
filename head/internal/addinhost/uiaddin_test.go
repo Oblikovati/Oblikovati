@@ -14,6 +14,8 @@ import (
 	"github.com/Oblikovati/oblikovati/addin/opregistry"
 	"github.com/Oblikovati/oblikovati/addin/router"
 	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/model/compdef"
+	"github.com/Oblikovati/oblikovati/model/doc"
 )
 
 // TestAddInExtendsRibbonAndActsOnClick is the end-to-end proof of add-in UI
@@ -27,6 +29,17 @@ func TestAddInExtendsRibbonAndActsOnClick(t *testing.T) {
 	so := buildFixture(t, "uiaddin")
 
 	s := app.NewSession()
+	// The fixture creates its button with no explicit ribbon, which defaults to the
+	// Part ribbon (CommandDefinition.appearsOnRibbon). Open an active part document so
+	// BuildRibbon yields the Part ribbon — this mirrors how an add-in button is used in
+	// practice and the core router test's seededSession setup. Without it the session is
+	// on the ZeroDoc ribbon and the button is correctly excluded.
+	pd, err := s.Workspace().Add(doc.Part, "test.obk", true)
+	if err != nil {
+		t.Fatalf("add part document: %v", err)
+	}
+	pd.SetContent(compdef.NewPartComponentDefinition())
+
 	d := dispatch.New(8)
 	defer d.Close()
 	rtr := router.New(opregistry.Default())

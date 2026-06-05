@@ -38,6 +38,121 @@ func newPartWithOffsetSquare(t *testing.T, x0, side float64) (*Session, ProfileH
 	return s, ProfileHandle{Sketch: sk, ProfileIndex: 0}
 }
 
+// mkCenterlineSketch builds a sketch holding n vertical centerlines (no profile geometry).
+func mkCenterlineSketch(n int) *sketch.Sketch {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	for i := 0; i < n; i++ {
+		cl := sk.Lines().AddByTwoPoints(math.P2(math.Scalar(i), 0), math.P2(math.Scalar(i), 1))
+		cl.SetCenterline(true)
+	}
+	return sk
+}
+
+// TestPreselectCenterlineRules covers Inventor's pre-selection rules.
+func TestPreselectCenterlineRules(t *testing.T) {
+	one := mkCenterlineSketch(1) // one in the profile's sketch → pre-select it
+	if _, l, ok := preselectCenterline(one, []*sketch.Sketch{one}); !ok || l == nil {
+		t.Error("single in-sketch centerline should pre-select")
+	}
+	two := mkCenterlineSketch(2) // several in the profile's sketch → user must choose
+	if _, _, ok := preselectCenterline(two, []*sketch.Sketch{two}); ok {
+		t.Error("multiple in-sketch centerlines should NOT pre-select")
+	}
+	empty, elsewhere := mkCenterlineSketch(0), mkCenterlineSketch(1) // one visible elsewhere
+	if sk, _, ok := preselectCenterline(empty, []*sketch.Sketch{empty, elsewhere}); !ok || sk != elsewhere {
+		t.Error("single centerline elsewhere should pre-select")
+	}
+	same, other := mkCenterlineSketch(1), mkCenterlineSketch(1) // same-sketch one wins (rule 2)
+	if sk, _, ok := preselectCenterline(same, []*sketch.Sketch{same, other}); !ok || sk != same {
+		t.Error("the profile-sketch centerline should win over one elsewhere")
+	}
+	none, a, b := mkCenterlineSketch(0), mkCenterlineSketch(1), mkCenterlineSketch(1) // several elsewhere
+	if _, _, ok := preselectCenterline(none, []*sketch.Sketch{none, a, b}); ok {
+		t.Error("several elsewhere, none in-sketch → no pre-select")
+	}
+}
+
+// TestRevolveToolPreselectsCenterline: clicking the profile auto-advances and pre-selects the
+// sketch's single centerline as the axis (no axis pick, no toggle needed).
+func TestRevolveToolPreselectsCenterline(t *testing.T) {
+	s, profile := newPartWithOffsetSquare(t, 2, 2)
+	cl := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
+	cl.SetCenterline(true)
+	s.SetPicker(stubPicker{sel: profile})
+
+	rv := NewRevolveTool()
+	s.StartTool(rv)
+	s.Click(1, 1) // pick the profile → auto-advance + pre-select the centerline
+	if line, ok := rv.Centerline(); !ok || line != cl {
+		t.Fatal("profile pick should pre-select the sketch's centerline")
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	want := stdmath.Pi * (4*4 - 2*2) * 2
+	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
+		t.Errorf("pre-selected centerline washer = %g, want ≈%g", v, want)
+	}
+}
+
+// TestRevolveToolMultipleCenterlinesNeedsPick: two centerlines ⇒ no pre-select; the user clicks
+// the one to use and the revolve follows it.
+func TestRevolveToolMultipleCenterlinesNeedsPick(t *testing.T) {
+	s, profile := newPartWithOffsetSquare(t, 2, 2)
+	vert := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
+	vert.SetCenterline(true)
+	horiz := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(2, 0))
+	horiz.SetCenterline(true)
+	s.SetPicker(stubPicker{sel: profile})
+
+	rv := NewRevolveTool()
+	s.StartTool(rv)
+	s.Click(1, 1) // profile picked, but two centerlines ⇒ none pre-selected
+	if _, ok := rv.Centerline(); ok {
+		t.Fatal("two centerlines must not pre-select")
+	}
+	rv.Pick(s, SketchEntityHandle{Entity: vert}) // user picks the vertical one
+	if line, ok := rv.Centerline(); !ok || line != vert {
+		t.Fatal("picking a centerline should set it as the axis")
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	want := stdmath.Pi * (4*4 - 2*2) * 2
+	if v := ops.BodyGeometryProperties(def.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, want) > 0.01 {
+		t.Errorf("about the vertical centerline = %g, want ≈%g (24π)", v, want)
+	}
+}
+
+// TestRevolveToolAboutCenterline drives the Revolve UI with the "about centerline" option: the
+// profile sketch carries a vertical centerline (the Y axis), so revolving about it (no axis
+// pick) produces the same washer.
+func TestRevolveToolAboutCenterline(t *testing.T) {
+	s, profile := newPartWithOffsetSquare(t, 2, 2)
+	cl := profile.Sketch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
+	cl.SetCenterline(true)
+	s.SetPicker(stubPicker{sel: profile})
+
+	rv := NewRevolveTool()
+	s.StartTool(rv)
+	s.Click(120, 90)
+	rv.SetUseCenterline(true)
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("centerline-revolved body not a valid solid: %+v", r)
+	}
+	want := stdmath.Pi * (4*4 - 2*2) * 2
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.01 {
+		t.Errorf("centerline-revolved washer = %g, want ≈%g (24π)", got, want)
+	}
+}
+
 // TestRevolveToolEndToEnd drives the Revolve UI with synthetic input — start the tool,
 // click the profile, accept the default full revolution about Y, OK — and asserts a
 // validated washer solid (inner r=2, outer r=4, height 2 ⇒ 24π) lands in the part.

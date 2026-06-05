@@ -17,10 +17,22 @@ package app
 const DefaultTab = "Tools"
 
 // RibbonButton is a command rendered as a ribbon control, with its current enabled
-// state resolved from the command's predicate against the session.
+// state resolved from the command's predicate against the session. A button with a
+// non-empty Variants list renders as a split button (Inventor's variant flyout): the
+// command's own action on the button, the variants in a dropdown.
 type RibbonButton struct {
-	Command *CommandDefinition
-	Enabled bool
+	Command  *CommandDefinition
+	Enabled  bool
+	Variants []RibbonVariant
+}
+
+// RibbonVariant is one entry of a split button's dropdown: the command to run when chosen
+// and the label/tooltip to show for it, with its enabled state resolved this frame.
+type RibbonVariant struct {
+	CommandID string
+	Label     string
+	Tooltip   string
+	Enabled   bool
 }
 
 // RibbonPanel groups the buttons of one command category within a tab. When Selector is
@@ -69,12 +81,35 @@ func BuildRibbon(s *Session) Ribbon {
 	env := currentEnvironment(s)
 	b := ribbonBuilder{tabIndex: map[string]int{}, panelIndex: map[string]map[string]int{}}
 	for _, c := range s.commands.All() {
+		// Variant commands are flyout-only: they render inside their head's dropdown
+		// (resolveVariants below), never as their own panel button.
+		if c.isVariant {
+			continue
+		}
 		if c.appearsOnRibbon(key) && environmentShows(c.environment, env) {
-			b.add(c, c.IsEnabled(s))
+			b.add(RibbonButton{Command: c, Enabled: c.IsEnabled(s), Variants: resolveVariants(c, s)})
 		}
 	}
 	finalizeSelectors(b.tabs, s)
 	return Ribbon{Key: key, Tabs: b.tabs}
+}
+
+// resolveVariants turns a head command's variant definitions into dropdown entries with
+// each variant's enabled state resolved against the session this frame.
+func resolveVariants(c *CommandDefinition, s *Session) []RibbonVariant {
+	if len(c.variants) == 0 {
+		return nil
+	}
+	out := make([]RibbonVariant, len(c.variants))
+	for i, v := range c.variants {
+		out[i] = RibbonVariant{
+			CommandID: v.ID(),
+			Label:     v.DisplayName(),
+			Tooltip:   v.Tooltip(),
+			Enabled:   v.IsEnabled(s),
+		}
+	}
+	return out
 }
 
 // finalizeSelectors turns any panel whose commands are ComboControls into a selection box:
@@ -112,16 +147,14 @@ type ribbonBuilder struct {
 	panelIndex map[string]map[string]int // tab name → panel name → index within the tab
 }
 
-func (b *ribbonBuilder) add(c *CommandDefinition, enabled bool) {
-	tab := c.Tab()
+func (b *ribbonBuilder) add(btn RibbonButton) {
+	tab := btn.Command.Tab()
 	if tab == "" {
 		tab = DefaultTab
 	}
 	ti := b.tabAt(tab)
-	pi := b.panelAt(tab, ti, c.Category())
-	b.tabs[ti].Panels[pi].Buttons = append(
-		b.tabs[ti].Panels[pi].Buttons, RibbonButton{Command: c, Enabled: enabled},
-	)
+	pi := b.panelAt(tab, ti, btn.Command.Category())
+	b.tabs[ti].Panels[pi].Buttons = append(b.tabs[ti].Panels[pi].Buttons, btn)
 }
 
 func (b *ribbonBuilder) tabAt(name string) int {
