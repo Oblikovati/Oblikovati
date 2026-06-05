@@ -26,7 +26,7 @@ func (s *Sketch) SplitLine(l *Line, pick math.Point2) ([]Entity, error) {
 // with other lines (the most common case; curve intersections are a follow-up). Returns
 // the surviving line(s). If pick lies before any intersection, an end stub is removed.
 func (s *Sketch) TrimLine(l *Line, pick math.Point2) ([]Entity, error) {
-	cuts := append([]float64{0, 1}, s.lineCrossings(l)...)
+	cuts := append([]float64{0, 1}, s.lineEntityCrossings(l)...)
 	sort.Float64s(cuts)
 	cuts = dedupeSorted(cuts)
 	lo, hi, ok := bracketParam(cuts, projectParamOnLine(l, pick))
@@ -41,7 +41,7 @@ func (s *Sketch) reshapeTrimmed(l *Line, lo, hi float64) []Entity {
 	a, b := l.A.Position(), l.B.Position()
 	switch {
 	case lo <= 1e-9 && hi >= 1-1e-9: // whole line removed
-		s.removeEntity(l)
+		s.deleteEntity(l)
 		return nil
 	case lo <= 1e-9: // trim the front: keep [hi, 1]
 		l.A = s.newPoint(lerp(a, b, hi))
@@ -71,36 +71,24 @@ func (s *Sketch) ExtendLine(l *Line, atEnd bool) (*Line, error) {
 	return l, nil
 }
 
-// lineCrossings returns the parameters in (0,1) along l where it crosses another line.
-func (s *Sketch) lineCrossings(l *Line) []float64 {
-	var out []float64
-	for _, e := range s.ents {
-		m, ok := e.(*Line)
-		if !ok || m == l {
-			continue
-		}
-		if t, u, ok := lineLineParams(l, m); ok && u > -1e-9 && u < 1+1e-9 && t > 1e-9 && t < 1-1e-9 {
-			out = append(out, t)
-		}
-	}
-	return out
-}
-
 // nearestExtension returns the closest intersection of l's infinite support with another
-// line, lying beyond the picked end.
+// line, circle or arc, lying beyond the picked end. (Crossings are found via the kernel
+// 2D intersection primitives in edit_trim_curves.go.)
 func (s *Sketch) nearestExtension(l *Line, atEnd bool) (math.Point2, bool) {
+	support, err := entityLine2d(l)
+	if err != nil {
+		return math.Point2{}, false
+	}
 	bestT, found := 0.0, false
 	for _, e := range s.ents {
-		m, ok := e.(*Line)
-		if !ok || m == l {
+		if e == Entity(l) {
 			continue
 		}
-		t, u, ok := lineLineParams(l, m)
-		if !ok || u < -1e-9 || u > 1+1e-9 {
-			continue
-		}
-		if beyond := pickBeyond(t, atEnd); beyond && (!found || closerParam(t, bestT, atEnd)) {
-			bestT, found = t, true
+		for _, p := range supportEntityHits(support, e) {
+			t := projectParamOnLine(l, p)
+			if pickBeyond(t, atEnd) && (!found || closerParam(t, bestT, atEnd)) {
+				bestT, found = t, true
+			}
 		}
 	}
 	return lerpLine(l, bestT), found

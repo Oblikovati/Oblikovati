@@ -14,7 +14,9 @@ import (
 // stitch welds the kept sub-faces into a watertight B-rep: coincident vertices merge, one
 // shared edge per undirected vertex pair, and a face per sub-face (outer loop oriented CCW
 // about its normal, holes CW). The body is a solid when every edge is used exactly twice.
-// Lineage is freshly synthesized (operand reference-key survival is a follow-up).
+// Result faces carry their source face's lineage (K1a), so a face surviving the boolean
+// keeps its reference key; edges/vertices still get fresh lineage (edge-key survival is a
+// follow-up, as edges are routinely split by the operation).
 func stitch(faces []subFace) (*topo.Body, error) {
 	if len(faces) == 0 {
 		return nil, nil
@@ -28,7 +30,7 @@ func stitch(faces []subFace) (*topo.Body, error) {
 			rings = append(rings, w.ring(orientRing(h, sf.normal, false)))
 		}
 		surf, _ := geom.NewPlane(centroid3(sf.outer), sf.normal)
-		out[i] = builtFace{rings, surf}
+		out[i] = builtFace{rings: rings, surf: surf, lineage: sf.lineage}
 	}
 	// Pass 2: with all vertices known, split every loop edge at any welded vertex lying on
 	// it — propagating each imprint split-point to the neighbour face sharing that edge, so
@@ -114,10 +116,11 @@ func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[i
 }
 
 // builtFace is a welded sub-face ready for assembly: its loop rings (vertex indices, outer
-// first) and its planar surface.
+// first), its planar surface, and the source lineage to carry onto the result face (K1a).
 type builtFace struct {
-	rings [][]int
-	surf  geom.Plane
+	rings   [][]int
+	surf    geom.Plane
+	lineage topo.Lineage
 }
 
 // assemble builds the topo body from welded vertices, per-face loop rings, and the edge
@@ -134,9 +137,18 @@ func assemble(verts []math.Point3, faces []builtFace, edgeUse map[[2]int]int) *t
 		for ri, r := range f.rings {
 			specs[ri] = loopSpec(ri == 0, r, edges)
 		}
-		bld.AddFace(f.surf, topo.NewLineage(topo.Tok("brep", "face", fi)), specs...)
+		bld.AddFace(f.surf, faceLineage(f, fi), specs...)
 	}
 	return bld.Build()
+}
+
+// faceLineage uses the source face's carried lineage when present (K1a reference-key
+// survival), falling back to a synthesized one for any face without a source.
+func faceLineage(f builtFace, fi int) topo.Lineage {
+	if len(f.lineage.Tokens()) > 0 {
+		return f.lineage
+	}
+	return topo.NewLineage(topo.Tok("brep", "face", fi))
 }
 
 // allEdgesPaired reports whether every undirected edge is used exactly twice — the

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
@@ -32,10 +33,16 @@ type SweepDefinition struct {
 type SweepFeature struct {
 	def      *SweepDefinition
 	featName string
+	tool     *topo.Body // last swept solid, exposed so a pattern can replicate this feature
 }
 
 func (s *SweepFeature) Definition() *SweepDefinition { return s.def }
 func (s *SweepFeature) Kind() string                 { return "sweep" }
+
+// Operation and ToolBody expose this feature's boolean op and tool so a pattern/mirror can
+// replicate it correctly (cut/join the swept solid at each occurrence) — see [ToolFeature].
+func (s *SweepFeature) Operation() ops.PartFeatureOperation { return s.def.Operation }
+func (s *SweepFeature) ToolBody() *topo.Body                { return s.tool }
 
 // Recompute resolves the profile, places it along the path tangents into a faceted
 // solid, and applies the operation against the running bodies.
@@ -48,11 +55,11 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 		return Output{}, errors.New("sweep: path needs at least two points")
 	}
 	sections := sweepSections(prof, s.def.Sketch.Plane(), s.def.Path.Points(), callOrZero(s.def.Twist))
-	tool, err := sweptSolid(sections, s.def.Path.IsClosed(), featOr(s.featName, "sweep"))
+	s.tool, err = sweptSolid(sections, s.def.Path.IsClosed(), featOr(s.featName, "sweep"))
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err := combine(in.Bodies, tool, s.def.Operation)
+	bodies, err := combine(in.Bodies, s.tool, s.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}
@@ -141,10 +148,16 @@ type LoftDefinition struct {
 type LoftFeature struct {
 	def      *LoftDefinition
 	featName string
+	tool     *topo.Body // last lofted solid, exposed so a pattern can replicate this feature
 }
 
 func (l *LoftFeature) Definition() *LoftDefinition { return l.def }
 func (l *LoftFeature) Kind() string                { return "loft" }
+
+// Operation and ToolBody expose this feature's boolean op and tool so a pattern/mirror can
+// replicate it correctly (cut/join the lofted solid at each occurrence) — see [ToolFeature].
+func (l *LoftFeature) Operation() ops.PartFeatureOperation { return l.def.Operation }
+func (l *LoftFeature) ToolBody() *topo.Body                { return l.tool }
 
 // Recompute resolves each section profile, resamples them to a common point count, and
 // blends them into a faceted solid.
@@ -153,11 +166,11 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	tool, err := sweptSolid(sections, l.def.Closed, featOr(l.featName, "loft"))
+	l.tool, err = sweptSolid(sections, l.def.Closed, featOr(l.featName, "loft"))
 	if err != nil {
 		return Output{}, err
 	}
-	bodies, err := combine(in.Bodies, tool, l.def.Operation)
+	bodies, err := combine(in.Bodies, l.tool, l.def.Operation)
 	if err != nil {
 		return Output{}, err
 	}

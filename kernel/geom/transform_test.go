@@ -215,8 +215,20 @@ func TestTransformSurfaceRejectsNonUniform(t *testing.T) {
 	}
 }
 
+// unsupportedSurface is a Surface the transform dispatcher does not know about, used
+// to exercise the default (NotYetImplemented) branch — every concrete geom.Surface
+// (plane/cylinder/cone/sphere/torus/NURBS) is now transformable (NURBS via K2).
+type unsupportedSurface struct{}
+
+func (unsupportedSurface) PointAt(u, v float64) math.Point3                 { return math.P3(0, 0, 0) }
+func (unsupportedSurface) DerivativesAt(u, v float64) (du, dv math.Vector3) { return }
+func (unsupportedSurface) NormalAt(u, v float64) math.Vector3               { return math.V3(0, 0, 0) }
+func (unsupportedSurface) UDomain() (lo, hi float64)                        { return 0, 1 }
+func (unsupportedSurface) VDomain() (lo, hi float64)                        { return 0, 1 }
+func (unsupportedSurface) ParamAt(p math.Point3) (u, v float64)             { return 0, 0 }
+
 func TestTransformSurfaceUnsupportedType(t *testing.T) {
-	if _, err := TransformSurface(sampleBSplineSurface(t), math.Identity4()); err == nil {
+	if _, err := TransformSurface(unsupportedSurface{}, math.Identity4()); err == nil {
 		t.Error("an unsupported surface type should return NotYetImplemented")
 	}
 }
@@ -229,4 +241,104 @@ func unitZ(t *testing.T) math.UnitVector3 {
 		t.Fatal(err)
 	}
 	return u
+}
+
+// --- TransformCurve / TransformSurface: NURBS (K2) -------------------------
+
+// sameFloats reports element-wise scalar equality within tolerance.
+func sameFloats(a, b []float64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !near(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// nurbsTestSimilarity is a non-trivial similarity (scale ∘ rotate ∘ translate) that
+// exercises all three components of the affine map.
+func nurbsTestSimilarity(t *testing.T) math.Matrix4 {
+	t.Helper()
+	return math.Translation4(math.V3(3, -2, 5)).
+		Mul(math.Rotation4(stdmath.Pi/3, unitZ(t), math.P3(0, 0, 0))).
+		Mul(math.Scale4(2, 2, 2))
+}
+
+// TestTransformBSplineCurveMatchesAffineOnEval is the metamorphic identity: because the
+// rational basis is a partition of unity, transform-then-evaluate equals
+// evaluate-then-transform at every parameter.
+func TestTransformBSplineCurveMatchesAffineOnEval(t *testing.T) {
+	c := quarterCircleNURBS(t)
+	m := nurbsTestSimilarity(t)
+	got, err := TransformCurve(c, m)
+	if err != nil {
+		t.Fatalf("TransformCurve: %v", err)
+	}
+	for _, tt := range []float64{0, 0.25, 0.5, 0.75, 1} {
+		want := m.TransformPoint(c.PointAt(tt))
+		if !nearPoint(got.PointAt(tt), want) {
+			t.Errorf("t=%g: PointAt = %v, want %v", tt, got.PointAt(tt), want)
+		}
+	}
+}
+
+// TestTransformBSplineCurvePreservesWeightsKnotsDegree: only the control points move.
+func TestTransformBSplineCurvePreservesWeightsKnotsDegree(t *testing.T) {
+	c := quarterCircleNURBS(t)
+	out, err := TransformCurve(c, math.Translation4(math.V3(1, 2, 3)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	bc := out.(BSplineCurve)
+	if bc.Degree != c.Degree {
+		t.Errorf("degree = %d, want %d", bc.Degree, c.Degree)
+	}
+	if !sameFloats(bc.Weights, c.Weights) || !sameFloats(bc.Knots, c.Knots) {
+		t.Errorf("weights/knots changed: w=%v k=%v", bc.Weights, bc.Knots)
+	}
+	for i, p := range bc.Ctrl {
+		want := math.P3(c.Ctrl[i].X+1, c.Ctrl[i].Y+2, c.Ctrl[i].Z+3)
+		if !nearPoint(p, want) {
+			t.Errorf("ctrl[%d] = %v, want translated %v", i, p, want)
+		}
+	}
+}
+
+// TestTransformBSplineCurveDoesNotMutateInput: the input value stays immutable.
+func TestTransformBSplineCurveDoesNotMutateInput(t *testing.T) {
+	c := quarterCircleNURBS(t)
+	before := append([]math.Point3(nil), c.Ctrl...)
+	if _, err := TransformCurve(c, math.Scale4(2, 2, 2)); err != nil {
+		t.Fatal(err)
+	}
+	for i := range before {
+		if !nearPoint(c.Ctrl[i], before[i]) {
+			t.Errorf("input ctrl[%d] mutated to %v", i, c.Ctrl[i])
+		}
+	}
+}
+
+// TestTransformBSplineSurfaceMatchesAffineOnEval is the surface metamorphic identity.
+func TestTransformBSplineSurfaceMatchesAffineOnEval(t *testing.T) {
+	s := sampleBSplineSurface(t)
+	m := nurbsTestSimilarity(t)
+	got, err := TransformSurface(s, m)
+	if err != nil {
+		t.Fatalf("TransformSurface: %v", err)
+	}
+	bs := got.(BSplineSurface)
+	if bs.UDegree != s.UDegree || bs.VDegree != s.VDegree {
+		t.Errorf("degrees = (%d,%d), want (%d,%d)", bs.UDegree, bs.VDegree, s.UDegree, s.VDegree)
+	}
+	for _, u := range []float64{0, 0.5, 1} {
+		for _, v := range []float64{0, 0.5, 1} {
+			want := m.TransformPoint(s.PointAt(u, v))
+			if !nearPoint(bs.PointAt(u, v), want) {
+				t.Errorf("(u,v)=(%g,%g): %v, want %v", u, v, bs.PointAt(u, v), want)
+			}
+		}
+	}
 }

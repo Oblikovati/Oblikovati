@@ -113,11 +113,12 @@ func (l *Loop) Face() *Face { return l.face }
 
 // Face is a 2-dimensional entity: a bounded region of a surface, bounded by loops.
 type Face struct {
-	id      uint64
-	surface geom.Surface
-	loops   []*Loop
-	shell   *Shell
-	lineage Lineage
+	id       uint64
+	surface  geom.Surface
+	loops    []*Loop
+	shell    *Shell
+	lineage  Lineage
+	reversed bool
 }
 
 func (f *Face) ID() uint64           { return f.id }
@@ -127,6 +128,12 @@ func (f *Face) ReferenceKey() []byte { return referenceKey(KindFace, f.lineage) 
 
 // Geometry returns the face's underlying transient surface (a Plane/Cylinder…).
 func (f *Face) Geometry() geom.Surface { return f.surface }
+
+// Reversed reports whether the face's outward (material) side is OPPOSITE its surface
+// normal — true for the cut wall a Difference carves, where the surface (e.g. a cylinder's
+// outward-radial normal) points into the removed material. Tessellation and mass-properties
+// negate the surface normal for such faces. Most faces (sense agrees with surface) are false.
+func (f *Face) Reversed() bool { return f.reversed }
 
 // Loops returns the face's boundary loops (outer first by construction).
 func (f *Face) Loops() []*Loop { return append([]*Loop(nil), f.loops...) }

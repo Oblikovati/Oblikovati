@@ -32,6 +32,8 @@ func TransformCurve(c Curve3, m math.Matrix4) (Curve3, error) {
 		return transformCircle(g, m, scale)
 	case Arc3d:
 		return transformArc(g, m, scale)
+	case BSplineCurve:
+		return transformBSplineCurve(g, m), nil
 	default:
 		return nil, build.NotYetImplemented(fmt.Sprintf("geom.TransformCurve: %T", c))
 	}
@@ -56,6 +58,8 @@ func TransformSurface(s Surface, m math.Matrix4) (Surface, error) {
 		return NewSphere(m.TransformPoint(g.Center), g.Radius*scale)
 	case Torus:
 		return transformTorus(g, m, scale)
+	case BSplineSurface:
+		return transformBSplineSurface(g, m), nil
 	default:
 		return nil, build.NotYetImplemented(fmt.Sprintf("geom.TransformSurface: %T", s))
 	}
@@ -104,6 +108,49 @@ func transformTorus(t Torus, m math.Matrix4, scale float64) (Torus, error) {
 	out, err := NewTorus(m.TransformPoint(t.Center), m.TransformVector(t.AxisDir.AsVector()),
 		t.MajorRadius*scale, t.MinorRadius*scale)
 	return out, err
+}
+
+// transformBSplineCurve maps a rational B-spline by transforming its control points.
+// This is exact for any affine m: the rational basis functions are a partition of
+// unity, so T(C(t)) = Σ Rᵢ(t)·T(Pᵢ); weights, knots and degree are invariant. (The
+// public entry point still gates on similarity for consistency with the analytic
+// types, but the control-point map itself needs no such restriction.) It cannot
+// fail — the control count, weights and knots are unchanged, so the value stays valid.
+func transformBSplineCurve(c BSplineCurve, m math.Matrix4) BSplineCurve {
+	ctrl := make([]math.Point3, len(c.Ctrl))
+	for i, p := range c.Ctrl {
+		ctrl[i] = m.TransformPoint(p)
+	}
+	return BSplineCurve{
+		Degree:  c.Degree,
+		Ctrl:    ctrl,
+		Weights: append([]float64(nil), c.Weights...),
+		Knots:   append([]float64(nil), c.Knots...),
+	}
+}
+
+// transformBSplineSurface maps a rational B-spline surface by transforming its control
+// net; see [transformBSplineCurve] for why this is exact. Weights, knots and degrees
+// are invariant.
+func transformBSplineSurface(s BSplineSurface, m math.Matrix4) BSplineSurface {
+	ctrl := make([][]math.Point3, len(s.Ctrl))
+	for i, row := range s.Ctrl {
+		ctrl[i] = make([]math.Point3, len(row))
+		for j, p := range row {
+			ctrl[i][j] = m.TransformPoint(p)
+		}
+	}
+	weights := make([][]float64, len(s.Weights))
+	for i, row := range s.Weights {
+		weights[i] = append([]float64(nil), row...)
+	}
+	return BSplineSurface{
+		UDegree: s.UDegree, VDegree: s.VDegree,
+		Ctrl:    ctrl,
+		Weights: weights,
+		UKnots:  append([]float64(nil), s.UKnots...),
+		VKnots:  append([]float64(nil), s.VKnots...),
+	}
 }
 
 // similarityScale returns the uniform scale factor of m and rejects non-uniform

@@ -69,6 +69,23 @@ func TestBoxUnionAndCorners(t *testing.T) {
 	}
 }
 
+func TestBoxFarthestPoint(t *testing.T) {
+	b := NewBox(P3(-1, -2, -3), P3(4, 5, 6))
+	cases := []struct {
+		dir  Vector3
+		want Point3
+	}{
+		{V3(1, 1, 1), P3(4, 5, 6)},       // toward Max on every axis
+		{V3(-1, -1, -1), P3(-1, -2, -3)}, // toward Min on every axis
+		{V3(1, -1, 0), P3(4, -2, 6)},     // mixed; the zero component picks Max
+	}
+	for _, c := range cases {
+		if got := b.FarthestPoint(c.dir); got != c.want {
+			t.Errorf("FarthestPoint(%v) = %v, want %v", c.dir, got, c.want)
+		}
+	}
+}
+
 func TestBox2d(t *testing.T) {
 	b := Box2dFromPoints(P2(0, 0), P2(4, 2))
 	if got := b.Area(); got != 8 {

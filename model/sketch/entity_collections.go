@@ -31,6 +31,28 @@ func (c *Lines) Add(a, b *Point) *Line {
 // Count returns the number of lines; Item returns the i-th.
 func (c *Lines) Count() int       { return len(c.items) }
 func (c *Lines) Item(i int) *Line { return c.items[i] }
+func (c *Lines) remove(l *Line)   { c.items = removeItem(c.items, l) }
+
+// Centerlines returns the sketch's centerline lines (axes for revolve/mirror/symmetry).
+func (s *Sketch) Centerlines() []*Line {
+	var out []*Line
+	for _, l := range s.lines.items {
+		if l.IsCenterline() {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// removeItem drops the first occurrence of x from xs (used by the collections' remove).
+func removeItem[T comparable](xs []T, x T) []T {
+	for i, v := range xs {
+		if v == x {
+			return append(xs[:i], xs[i+1:]...)
+		}
+	}
+	return xs
+}
 
 // Circles creates and tracks circles.
 type Circles struct {
@@ -56,6 +78,7 @@ func (c *Circles) Add(center *Point, radius math.Scalar) *Circle {
 // Count returns the number of circles; Item returns the i-th.
 func (c *Circles) Count() int         { return len(c.items) }
 func (c *Circles) Item(i int) *Circle { return c.items[i] }
+func (c *Circles) remove(x *Circle)   { c.items = removeItem(c.items, x) }
 
 // Arcs creates and tracks arcs.
 type Arcs struct {
@@ -86,6 +109,7 @@ func (c *Arcs) Add(center, start, end *Point, ccw bool) *Arc {
 // Count returns the number of arcs; Item returns the i-th.
 func (c *Arcs) Count() int      { return len(c.items) }
 func (c *Arcs) Item(i int) *Arc { return c.items[i] }
+func (c *Arcs) remove(a *Arc)   { c.items = removeItem(c.items, a) }
 
 // Ellipses creates and tracks ellipses.
 type Ellipses struct {

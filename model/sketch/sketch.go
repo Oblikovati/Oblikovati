@@ -235,6 +235,21 @@ func (s *Sketch) removeEntity(e Entity) bool {
 	return false
 }
 
+// deleteEntity removes e from the entity list AND its typed collection, so an edit that
+// drops a curve (e.g. a whole-curve trim) leaves no dangling collection entry that
+// Count/Item/serialization would still report.
+func (s *Sketch) deleteEntity(e Entity) {
+	s.removeEntity(e)
+	switch t := e.(type) {
+	case *Line:
+		s.lines.remove(t)
+	case *Circle:
+		s.circles.remove(t)
+	case *Arc:
+		s.arcs.remove(t)
+	}
+}
+
 // newPoint creates a constrainable point at pos and registers it as a solver
 // variable. Curve factories use it for endpoints/centers (not added to Entities).
 func (s *Sketch) newPoint(pos math.Point2) *Point {

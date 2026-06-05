@@ -8,8 +8,41 @@ import (
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/health"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
+
+// TestRevolveAboutSketchCenterline spins a profile about the sketch's own centerline (Inventor's
+// common flow), producing the same washer as revolving about an explicit Y work axis.
+func TestRevolveAboutSketchCenterline(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	sk := offsetSquareSketch(2, 2)                                // square x∈[2,4], y∈[0,2]
+	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2)) // vertical centerline = Y axis
+	cl.SetCenterline(true)
+	pf := NewRevolveFeatures(fs).AddAboutCenterline(sk, 0, nil, ops.NewBody)
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("revolve about centerline sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("centerline-revolved body not a valid solid: %+v", r)
+	}
+	want := stdmath.Pi * (4*4 - 2*2) * 2 // 24π washer
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.01 {
+		t.Errorf("centerline-revolved washer = %g, want ≈%g (24π)", got, want)
+	}
+}
+
+// A revolve with neither an axis nor a sketch centerline is sick.
+func TestRevolveNoAxisOrCenterlineSick(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	pf := NewRevolveFeatures(fs).AddAboutCenterline(offsetSquareSketch(2, 2), 0, nil, ops.NewBody)
+	fs.Recompute()
+	if pf.Health().Status != health.Sick {
+		t.Errorf("revolve with no axis/centerline = %v, want sick", pf.Health().Status)
+	}
+}
 
 // offsetSquareSketch returns a sketch with a square in the XY plane spanning
 // x∈[x0,x0+side], y∈[0,side] — a profile offset from the Y axis for revolving.

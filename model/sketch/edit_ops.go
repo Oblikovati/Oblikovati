@@ -72,6 +72,60 @@ func (s *Sketch) MirrorEntities(ents []Entity, line *Line) []Entity {
 	return s.cloneEntities(ents, reflection(line.A.Position(), d))
 }
 
+// MovePoints translates a specific set of points by v — the primitive behind Stretch,
+// which moves only the selected vertices and leaves the rest, deforming the geometry that
+// shares them (a line with one endpoint stretched grows/angles). A point is moved once
+// even if listed twice; nil entries are skipped.
+func (s *Sketch) MovePoints(pts []*Point, v math.Vector2) {
+	seen := map[*Point]bool{}
+	for _, p := range pts {
+		if p == nil || seen[p] {
+			continue
+		}
+		p.SetPosition(p.Position().TranslateBy(v))
+		seen[p] = true
+	}
+}
+
+// ScaleEntities scales a selection in place about center by factor, enlarging both the
+// point positions and the explicit radii of circles/ellipses (arc radii follow their
+// points automatically). A non-positive factor is rejected as a no-op. Scale is not an
+// affine2 (which is rigid/reflection only — it would not touch the radius fields).
+func (s *Sketch) ScaleEntities(ents []Entity, center math.Point2, factor float64) {
+	if factor <= 0 {
+		return
+	}
+	seen := map[*Point]bool{}
+	for _, e := range ents {
+		for _, p := range entityPoints(e) {
+			if !seen[p] {
+				p.SetPosition(scaleAbout(center, p.Position(), factor))
+				seen[p] = true
+			}
+		}
+		scaleEntityRadius(e, factor)
+	}
+}
+
+// scaleAbout returns p scaled by f about center.
+func scaleAbout(center, p math.Point2, f float64) math.Point2 {
+	return math.P2(center.X+math.Scalar(f)*(p.X-center.X), center.Y+math.Scalar(f)*(p.Y-center.Y))
+}
+
+// scaleEntityRadius scales the explicit radius fields not derived from points.
+func scaleEntityRadius(e Entity, f float64) {
+	switch v := e.(type) {
+	case *Circle:
+		v.Radius *= math.Scalar(f)
+	case *Ellipse:
+		v.MajorRadius *= math.Scalar(f)
+		v.MinorRadius *= math.Scalar(f)
+	case *EllipticalArc:
+		v.MajorRadius *= math.Scalar(f)
+		v.MinorRadius *= math.Scalar(f)
+	}
+}
+
 // transformInPlace applies a to the unique points of the selection (and any ellipse axis
 // directions), mutating the existing geometry.
 func (s *Sketch) transformInPlace(ents []Entity, a affine2) {

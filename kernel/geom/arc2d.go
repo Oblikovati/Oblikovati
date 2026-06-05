@@ -69,3 +69,30 @@ func (a Arc2d) Domain() (lo, hi float64) { return 0, 1 }
 func (a Arc2d) Length() float64 {
 	return stdmath.Abs(a.Radius * a.SweepAngle)
 }
+
+// ContainsAngle reports whether the absolute angle theta lies within the arc's swept
+// range (inclusive, within tol radians), for either sweep direction. A full-circle arc
+// (|SweepAngle| ≥ 2π) contains every angle.
+func (a Arc2d) ContainsAngle(theta, tol float64) bool {
+	if tol < 0 {
+		tol = 0
+	}
+	if a.SweepAngle >= 0 {
+		return wrapPositive(theta-a.StartAngle) <= a.SweepAngle+tol
+	}
+	return wrapPositive(a.StartAngle-theta) <= -a.SweepAngle+tol
+}
+
+// ContainsPoint reports whether p — assumed on or near the arc's circle — lies within the
+// arc's angular sweep. The geometric tol is converted to an angular slack (tol/Radius) so
+// an endpoint touch still counts; used to filter circle-crossing points onto the arc.
+func (a Arc2d) ContainsPoint(p math.Point2, tol float64) bool {
+	if tol < 0 {
+		tol = 0
+	}
+	angTol := 0.0
+	if a.Radius > 0 {
+		angTol = tol / a.Radius
+	}
+	return a.ContainsAngle(angleOf2d(a.Center, p), angTol)
+}

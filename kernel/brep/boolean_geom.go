@@ -10,12 +10,14 @@ import (
 	"github.com/Oblikovati/oblikovati/math"
 )
 
-// planarFace is a planar face flattened for the boolean: its plane, outward normal, and
-// boundary loops as 3D point rings (loops[0] = outer, the rest = holes).
+// planarFace is a planar face flattened for the boolean: its plane, outward normal,
+// boundary loops as 3D point rings (loops[0] = outer, the rest = holes), and the source
+// face's lineage so a result face can carry it forward (reference-key survival, K1a).
 type planarFace struct {
-	plane  geom.Plane
-	normal math.Vector3
-	loops  [][]math.Point3
+	plane   geom.Plane
+	normal  math.Vector3
+	loops   [][]math.Point3
+	lineage topo.Lineage
 }
 
 // facesOf flattens a body's planar faces. A non-planar face makes it return ok=false (the
@@ -27,7 +29,7 @@ func facesOf(b *topo.Body) ([]planarFace, bool) {
 		if !ok {
 			return nil, false
 		}
-		out = append(out, planarFace{plane: pl, normal: f.Geometry().NormalAt(0, 0), loops: loopRings(f)})
+		out = append(out, planarFace{plane: pl, normal: f.Geometry().NormalAt(0, 0), loops: loopRings(f), lineage: f.Lineage()})
 	}
 	return out, true
 }

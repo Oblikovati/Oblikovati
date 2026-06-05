@@ -39,6 +39,18 @@ func NewPlaneFromAxes(origin math.Point3, uAxis, vAxis math.Vector3) (Plane, err
 	return Plane{Origin: origin, UAxis: u, VAxis: v}, nil
 }
 
+// PlaneByThreePoints builds the plane through three points (contract:
+// CreatePlaneByThreePoints): its origin is the first point, its U axis runs toward the
+// second, and its normal is (a→b)×(a→c). It errors when the points are collinear (they
+// span no plane).
+func PlaneByThreePoints(a, b, c math.Point3) (Plane, error) {
+	_, e1, e2, err := planarFrame(a, b, c)
+	if err != nil {
+		return Plane{}, err
+	}
+	return NewPlaneFromAxes(a, e1, e2)
+}
+
 // Normal returns the unit plane normal UAxis×VAxis.
 func (p Plane) Normal() math.Vector3 {
 	return p.UAxis.Cross(p.VAxis)

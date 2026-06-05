@@ -24,10 +24,11 @@ func (p *Point) Position() math.Point2 { return math.P2(p.X, p.Y) }
 // SetPosition moves the point (used by the solver and by drags).
 func (p *Point) SetPosition(q math.Point2) { p.X, p.Y = q.X, q.Y }
 
-// entityBase carries the id and construction flag shared by curve entities.
+// entityBase carries the id, construction flag, and centerline flag shared by curve entities.
 type entityBase struct {
 	id           ID
 	construction bool
+	centerline   bool
 }
 
 func newEntity() entityBase { return entityBase{id: nextID()} }
@@ -35,12 +36,20 @@ func newEntity() entityBase { return entityBase{id: nextID()} }
 // EntityID implements [Entity].
 func (e *entityBase) EntityID() ID { return e.id }
 
-// IsConstruction reports whether the entity is construction (reference) geometry —
-// it shapes constraints but is not part of a profile.
-func (e *entityBase) IsConstruction() bool { return e.construction }
+// IsConstruction reports whether the entity is construction (reference) geometry — it shapes
+// constraints but is not part of a profile. A centerline is always construction (an axis never
+// closes a profile).
+func (e *entityBase) IsConstruction() bool { return e.construction || e.centerline }
 
-// SetConstruction toggles construction geometry.
+// SetConstruction toggles plain construction geometry.
 func (e *entityBase) SetConstruction(c bool) { e.construction = c }
+
+// IsCenterline reports whether the entity is a centerline — construction geometry that also
+// serves as an axis (revolve axis, mirror/symmetry axis, diameter dimensions).
+func (e *entityBase) IsCenterline() bool { return e.centerline }
+
+// SetCenterline marks the entity as a centerline (implying construction; see IsConstruction).
+func (e *entityBase) SetCenterline(c bool) { e.centerline = c }
 
 // Line is a straight segment between two constrainable endpoints.
 type Line struct {
@@ -55,6 +64,13 @@ func (l *Line) EndPoint() *Point   { return l.B }
 
 // Direction returns the (unnormalized) vector from A to B.
 func (l *Line) Direction() math.Vector2 { return l.A.Position().VectorTo(l.B.Position()) }
+
+// Axis3D returns the line as a model-space axis (origin at A, direction A→B) on the given sketch
+// plane — used to drive a revolve/mirror axis from a centerline.
+func (l *Line) Axis3D(plane Plane) (origin math.Point3, dir math.Vector3) {
+	a, b := plane.ToModel(l.A.Position()), plane.ToModel(l.B.Position())
+	return a, a.VectorTo(b)
+}
 
 // Length returns the current endpoint distance.
 func (l *Line) Length() math.Scalar { return l.A.Position().DistanceTo(l.B.Position()) }

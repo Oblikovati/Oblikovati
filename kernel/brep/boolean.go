@@ -23,12 +23,14 @@ const (
 var ErrNonPlanar = errors.New("brep: boolean requires planar-faceted solids")
 
 // subFace is one region a face is split into, with an interior point for classification
-// and the outward normal it should carry in the result.
+// and the outward normal it should carry in the result. lineage carries the source face's
+// lineage forward so the result face's reference key survives the boolean (K1a).
 type subFace struct {
-	outer  []math.Point3
-	holes  [][]math.Point3
-	normal math.Vector3
-	point  math.Point3
+	outer   []math.Point3
+	holes   [][]math.Point3
+	normal  math.Vector3
+	point   math.Point3
+	lineage topo.Lineage
 }
 
 // Boolean computes A op B as a clean planar B-rep: it imprints the face–face intersection
@@ -121,13 +123,31 @@ func minf(a, b float64) float64 {
 func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Body, others []planarFace, op Op, isB bool) []subFace {
 	var kept []subFace
 	for i, f := range faces {
+		var fromFace []subFace
 		for _, sf := range splitFace(f, imprints[i]) {
 			if out, ok := classifySubFace(sf, f, other, others, op, isB); ok {
-				kept = append(kept, out)
+				fromFace = append(fromFace, out)
 			}
 		}
+		// A face that survives as a single piece carries its source lineage unchanged, so
+		// its reference key is identical after the boolean (K1a). A face split into several
+		// kept pieces gives each a distinct child lineage (parent + split#k).
+		for k := range fromFace {
+			if len(fromFace) == 1 {
+				fromFace[k].lineage = f.lineage
+			} else {
+				fromFace[k].lineage = splitLineage(f.lineage, k)
+			}
+		}
+		kept = append(kept, fromFace...)
 	}
 	return kept
+}
+
+// splitLineage derives a distinct child lineage for the k-th piece of a face split into
+// several by the boolean.
+func splitLineage(parent topo.Lineage, k int) topo.Lineage {
+	return topo.NewLineage(append(parent.Tokens(), topo.Tok("brep", "split", k))...)
 }
 
 // classifySubFace decides whether a sub-face survives. A fragment coplanar with a face of

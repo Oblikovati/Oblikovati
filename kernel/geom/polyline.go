@@ -89,6 +89,53 @@ func (p Polyline2d) Length() float64 {
 	return total
 }
 
+// PolylineFromCurve3 tessellates a 3D curve into a polyline of `segments` straight chords
+// (contract: CreatePolyline3dFromCurve), sampling the curve at segments+1 equally-spaced
+// parameters across its domain. It errors when segments < 1 or the curve's domain is
+// unbounded (an infinite line has no finite polyline form).
+func PolylineFromCurve3(c Curve3, segments int) (Polyline, error) {
+	ts, err := sampleParams(c.Domain, segments)
+	if err != nil {
+		return Polyline{}, err
+	}
+	verts := make([]math.Point3, len(ts))
+	for i, t := range ts {
+		verts[i] = c.PointAt(t)
+	}
+	return NewPolyline(verts)
+}
+
+// PolylineFromCurve2 is the 2D analogue of [PolylineFromCurve3] (contract:
+// CreatePolyline2dFromCurve).
+func PolylineFromCurve2(c Curve2, segments int) (Polyline2d, error) {
+	ts, err := sampleParams(c.Domain, segments)
+	if err != nil {
+		return Polyline2d{}, err
+	}
+	verts := make([]math.Point2, len(ts))
+	for i, t := range ts {
+		verts[i] = c.PointAt(t)
+	}
+	return NewPolyline2d(verts)
+}
+
+// sampleParams returns segments+1 equally-spaced parameters spanning the [lo, hi] domain,
+// validating the count and rejecting an unbounded domain (which has no finite tessellation).
+func sampleParams(domain func() (lo, hi float64), segments int) ([]float64, error) {
+	if segments < 1 {
+		return nil, fmt.Errorf("geom: polyline-from-curve needs >= 1 segment, got %d", segments)
+	}
+	lo, hi := domain()
+	if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+		return nil, fmt.Errorf("geom: cannot tessellate an unbounded curve (domain [%g, %g])", lo, hi)
+	}
+	ts := make([]float64, segments+1)
+	for i := range ts {
+		ts[i] = lo + (hi-lo)*float64(i)/float64(segments)
+	}
+	return ts, nil
+}
+
 // locateSegment maps parameter t∈[0,1] to a segment index and the local
 // fraction within it, clamping out-of-range t to the endpoints. vertexCount is
 // assumed >= 2 (enforced by the constructors).

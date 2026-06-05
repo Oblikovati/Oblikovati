@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sync/atomic"
 
+	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/kernel/topo"
 	"github.com/Oblikovati/oblikovati/model/identity"
 	"github.com/Oblikovati/oblikovati/model/param"
@@ -36,10 +37,33 @@ type Ref struct {
 // Input is what the engine hands a feature on recompute: the running body state
 // (the result of the clean prefix), the parameter set, and the key manager for
 // resolving [Ref] inputs.
+//
+// SourceTool lets a feature that replicates another (a pattern/mirror) recover the
+// geometric contribution of a source feature: the tool body it added or removed and the
+// boolean operation it used, computed from the source's cached before/after body state. A
+// pattern uses it to re-apply a cut/join at each occurrence (so patterning a hole cuts N
+// holes in one body) instead of duplicating the whole body. It is nil for features the
+// engine does not resolve sources for; ok is false when the id is unknown or has no delta.
 type Input struct {
-	Bodies []*topo.Body
-	Params *param.Parameters
-	Keys   *identity.KeyManager
+	Bodies     []*topo.Body
+	Params     *param.Parameters
+	Keys       *identity.KeyManager
+	SourceTool func(id ID) (tool *topo.Body, op ops.PartFeatureOperation, ok bool)
+}
+
+// OperationalFeature is a feature that applies a boolean operation against the running
+// bodies (extrude, the modify booleans, …). A pattern reads the source's operation through
+// it to decide how to replicate the source (cut/join/intersect vs a new-body copy).
+type OperationalFeature interface {
+	Operation() ops.PartFeatureOperation
+}
+
+// ToolFeature is an [OperationalFeature] that can hand a pattern the exact tool body it
+// combined (its prism/sweep solid). Replicating that clean tool is more robust than diffing
+// the running bodies — the difference can degenerate on curved geometry.
+type ToolFeature interface {
+	OperationalFeature
+	ToolBody() *topo.Body
 }
 
 // Output is what a feature produces: the new running body state.

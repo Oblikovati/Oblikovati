@@ -2,31 +2,112 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import (
+	"fmt"
 
-// AutoDimension fully constrains the sketch by grounding its under-constrained geometry in
-// insertion order until 0 DOF remains (Inventor's Auto Dimension reaching a fully-defined
-// sketch). It returns the number of ground constraints it added. A sketch that is already
-// fully constrained adds nothing.
+	"github.com/Oblikovati/oblikovati/math"
+)
+
+// AutoDimension fully constrains the sketch (Inventor's Auto Dimension): it greedily adds
+// constraints — real length/radius dimensions first, then point grounds to anchor the
+// rest — until 0 DOF remains. Each candidate is accepted only if it strictly reduces the
+// DOF *without* introducing redundancy, so the result is **well-constrained, never
+// over-constrained** (unlike grounding whole entities, which double-fixes shared points).
+// It returns the number of constraints added; an already-constrained sketch adds nothing.
 func (s *Sketch) AutoDimension() int {
-	count := 0
-	for _, e := range s.Entities() {
-		if s.DegreesOfFreedom() == 0 {
-			break
+	added := 0
+	for s.DegreesOfFreedom() > 0 {
+		if !s.applyOneAutoCandidate() {
+			break // no candidate can reduce DOF further without redundancy
 		}
-		if isAnnotation(e) {
-			continue
-		}
-		s.GeometricConstraints().AddGround(e)
-		count++
+		added++
 	}
-	return count
+	return added
 }
 
-// isAnnotation reports whether an entity carries no constrainable points (image/fill/text/
-// derived curves) and so cannot be grounded.
-func isAnnotation(e Entity) bool {
-	return len(entityPoints(e)) == 0
+// applyOneAutoCandidate adds the first candidate that strictly lowers DOF without adding
+// redundancy, returning whether one was applied. Candidates are trial-added and undone if
+// they don't help (the rank analysis is non-mutating, so trials don't move geometry).
+func (s *Sketch) applyOneAutoCandidate() bool {
+	before := s.AnalyzeConstraints()
+	for _, add := range s.autoCandidates() {
+		undo := add()
+		after := s.AnalyzeConstraints()
+		if after.DOF < before.DOF && after.Redundant <= before.Redundant {
+			return true
+		}
+		undo()
+	}
+	return false
+}
+
+// autoCandidates lists the constraints AutoDimension may add, each as an add→undo pair:
+// length dimensions on lines, radius dimensions on circles/arcs, then a ground per unique
+// point to anchor any remaining (translational/positional) freedom.
+func (s *Sketch) autoCandidates() []func() func() {
+	dc := s.DimensionConstraints()
+	var cs []func() func()
+	for _, e := range s.Entities() {
+		switch g := e.(type) {
+		case *Line:
+			line := g
+			cs = append(cs, dimCandidate(func() (*DimensionConstraint, error) {
+				return dc.AddDistance(line.A, line.B, lengthExpr(line.A.Position().DistanceTo(line.B.Position())))
+			}, dc))
+		case *Circle:
+			circ := g
+			cs = append(cs, dimCandidate(func() (*DimensionConstraint, error) {
+				return dc.AddRadius(circ, lengthExpr(circ.Radius))
+			}, dc))
+		case *Arc:
+			arc := g
+			cs = append(cs, dimCandidate(func() (*DimensionConstraint, error) {
+				return dc.AddDistance(arc.Center, arc.Start, lengthExpr(arc.Radius()))
+			}, dc))
+		}
+	}
+	for _, p := range s.uniqueEntityPoints() {
+		p := p
+		cs = append(cs, func() func() {
+			g := s.GeometricConstraints().AddGroundPoints(p)
+			return func() { s.GeometricConstraints().Delete(g) }
+		})
+	}
+	return cs
+}
+
+// dimCandidate wraps a dimension factory as an add→undo pair (a failed add is a no-op
+// candidate that the caller rejects via the unchanged DOF).
+func dimCandidate(add func() (*DimensionConstraint, error), dc *DimensionConstraints) func() func() {
+	return func() func() {
+		d, err := add()
+		if err != nil {
+			return func() {}
+		}
+		return func() { dc.Delete(d) }
+	}
+}
+
+// uniqueEntityPoints returns each distinct constrainable point referenced by the sketch's
+// entities, in first-seen order.
+func (s *Sketch) uniqueEntityPoints() []*Point {
+	seen := map[*Point]bool{}
+	var out []*Point
+	for _, e := range s.Entities() {
+		for _, p := range entityPoints(e) {
+			if !seen[p] {
+				seen[p] = true
+				out = append(out, p)
+			}
+		}
+	}
+	return out
+}
+
+// lengthExpr formats a database-unit (cm) length as a dimension expression at full
+// precision, so a dimension placed by AutoDimension pins the current geometry exactly.
+func lengthExpr(cm math.Scalar) string {
+	return fmt.Sprintf("%.12g cm", float64(cm))
 }
 
 // OffsetChain offsets a connected chain of lines (given in order, end-to-start) by signed

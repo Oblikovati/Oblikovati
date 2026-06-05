@@ -65,6 +65,33 @@ func perpAxis(n math.UnitVector3) math.UnitVector3 {
 	return u
 }
 
+// throughDepth returns a drill depth that fully exits the body along the inward axis: the
+// farthest extent of the body's range box from center, plus an overhang for a clean exit face.
+// Used as the faceted fallback when an exact through-hole isn't possible (see HoleFeature.drill).
+func throughDepth(body *topo.Body, center math.Point3, into math.UnitVector3) float64 {
+	axis := into.AsVector()
+	far := 0.0
+	for _, c := range boxCorners(body.RangeBox()) {
+		if d := float64(center.VectorTo(c).Dot(axis)); d > far {
+			far = d
+		}
+	}
+	return far + cutterOverhang
+}
+
+// boxCorners returns the eight corners of an axis-aligned box.
+func boxCorners(b math.Box) []math.Point3 {
+	out := make([]math.Point3, 0, 8)
+	for _, x := range [2]math.Scalar{b.Min.X, b.Max.X} {
+		for _, y := range [2]math.Scalar{b.Min.Y, b.Max.Y} {
+			for _, z := range [2]math.Scalar{b.Min.Z, b.Max.Z} {
+				out = append(out, math.Point3{X: x, Y: y, Z: z})
+			}
+		}
+	}
+	return out
+}
+
 // faceVertexPoints returns the positions of a face's bounding vertices.
 func faceVertexPoints(f *topo.Face) []math.Point3 {
 	vs := f.Vertices()

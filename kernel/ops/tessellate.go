@@ -77,10 +77,32 @@ func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
 // TessellateFace facets a face. Planar faces are triangulated exactly from their
 // outer boundary (watertight); curved faces are sampled on an adaptive UV grid.
 func TessellateFace(f *topo.Face, q Quality) *Mesh {
+	mesh := tessellateFaceSurface(f, q)
+	if f.Reversed() {
+		reverseMesh(mesh) // cut wall: surface normal points into the removed material
+	}
+	return mesh
+}
+
+// tessellateFaceSurface meshes a face by its surface kind, ignoring its sense.
+func tessellateFaceSurface(f *topo.Face, q Quality) *Mesh {
 	if _, planar := f.Geometry().(geom.Plane); planar {
 		return tessellatePlanarFace(f, q)
 	}
 	return tessellateCurvedFace(f, q)
+}
+
+// reverseMesh flips a reversed face's sense (see topo.Face.Reversed): every outward normal
+// negates and every triangle's winding reverses, so the face presents its true material side
+// to shading and to the divergence-theorem volume (mass-properties orient triangles by these
+// per-vertex normals — see meshGeometryProperties).
+func reverseMesh(m *Mesh) {
+	for i := range m.Normals {
+		m.Normals[i] = m.Normals[i].Scale(-1)
+	}
+	for t := 0; t+2 < len(m.Indices); t += 3 {
+		m.Indices[t+1], m.Indices[t+2] = m.Indices[t+2], m.Indices[t+1]
+	}
 }
 
 // mergeMesh appends src's geometry into dst, offsetting indices.

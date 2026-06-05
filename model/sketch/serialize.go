@@ -66,6 +66,7 @@ type EntityData struct {
 	Closed       bool      `yaml:"closed,omitempty"`
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
+	Centerline   bool      `yaml:"centerline,omitempty"` // line only: an axis
 	ImageRef     string    `yaml:"imageRef,omitempty"`   // image only
 	Anchor       []float64 `yaml:"anchor,omitempty"`     // image/text: [x, y]
 	Size         []float64 `yaml:"size,omitempty"`       // image only: [w, h]
@@ -191,7 +192,7 @@ func serializePlane(p Plane) PlaneData {
 func serializeEntity(e Entity) (EntityData, error) {
 	switch v := e.(type) {
 	case *Line:
-		return EntityData{ID: int(v.id), Kind: "line", Points: []int{int(v.A.id), int(v.B.id)}, Construction: v.construction}, nil
+		return EntityData{ID: int(v.id), Kind: "line", Points: []int{int(v.A.id), int(v.B.id)}, Construction: v.construction, Centerline: v.centerline}, nil
 	case *Circle:
 		return EntityData{ID: int(v.id), Kind: "circle", Points: []int{int(v.Center.id)}, Radius: float64(v.Radius), Construction: v.construction}, nil
 	case *Arc:
