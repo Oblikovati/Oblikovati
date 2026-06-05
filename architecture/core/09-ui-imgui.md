@@ -4,6 +4,11 @@
 (M05-F04). Implements ADR-0004. Borrows realtime-3d §10 (reflection-driven property
 editing) and §12 (one-window, no OS popups).*
 
+> **Ribbon layout is specified by [../mapping/inventor-ribbon-structure.md](../mapping/inventor-ribbon-structure.md)**
+> — the canonical tab→panel→button tree Oblikovati mirrors from Inventor. The ribbon is
+> *generated* from the command registry (below), but every command's tab/panel placement
+> must follow that document.
+
 ## Split of responsibilities
 
 - **ImGui owns the chrome**: ribbon/toolbars, browser tree, parameter table,

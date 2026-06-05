@@ -63,6 +63,21 @@ near degeneracies. `math/predicate` provides these in pure Go (they are integer/
 expansion arithmetic — no cgo needed). `ops` uses them for all branching decisions
 (which side of a plane, do these intersect) so topology stays consistent.
 
+**Known gap — partial penetration (2026-06-05).** The planar B-rep boolean
+(`kernel/brep`, the four-stage imprint → split → classify → stitch pipeline) is correct for
+**clean through-overlaps** but not yet for **partial penetrations** or **concave faceted-wall
+crossings**. The 2D arrangement (`Arrange`/`traceCycles`) only subdivides a face when the imprint
+segments **close a loop on that face**; a tool that pokes part-way in, or crosses a re-entrant
+faceted wall, leaves **dangling/partial segments** (the loop would close only across a face
+boundary) which `traceCycles` drops — so the overlap is left un-cut and the result goes
+**non-manifold / inverted-normal**. This surfaced as a deformed mesh on lofted-blade unions. The
+real fix assembles imprint segments into closed loops across faces and handles T-vertices /
+dangling edges (PBI-199). A *precondition* — twisted swept/loft bodies emitting **warped
+non-planar quad** faces (which the boolean imprinted against an approximating plane) — is fixed
+by triangulating those quads in `model/feature/swept.go` (PBI-174). Note also: a post-hoc
+orientation repair does **not** fix the inverted normals; the cut, not the winding, is what's
+wrong.
+
 ## Concurrency
 
 The kernel is **pure functions over immutable inputs** (ADR-0007): `Extrude(profile,
