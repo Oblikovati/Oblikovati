@@ -66,6 +66,8 @@ type sheetPatch struct {
 // merge and faces sharing an edge reconnect (one edge per undirected vertex pair). A single
 // patch yields a one-face sheet; several patches yield a quilt. Patches with <3 points are
 // dropped.
+//
+//nolint:funlen // assembles a sheet/quilt body element-by-element (verts, shared edges, faces); length is the geometry, not logic.
 func buildSheet(patches []sheetPatch, feat string) *topo.Body {
 	w := &sheetWelder{index: map[[3]int64]int{}}
 	rings := make([][]int, 0, len(patches))

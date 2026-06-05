@@ -17,6 +17,7 @@ package addinhost
 #include "oblikovati_addin.h"
 */
 import "C"
+
 import (
 	"context"
 	"sync"

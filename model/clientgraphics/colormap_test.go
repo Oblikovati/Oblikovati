@@ -19,10 +19,10 @@ func TestColorMapperInterpolatesMidpoint(t *testing.T) {
 
 func TestColorMapperClampsBelowAndAbove(t *testing.T) {
 	m := mapper()
-	if got := m.At(-3); got != (m.Colors[0]) {
+	if got := m.At(-3); got != m.Colors[0] {
 		t.Errorf("At(-3) = %v, want clamp to %v", got, m.Colors[0])
 	}
-	if got := m.At(9); got != (m.Colors[1]) {
+	if got := m.At(9); got != m.Colors[1] {
 		t.Errorf("At(9) = %v, want clamp to %v", got, m.Colors[1])
 	}
 }

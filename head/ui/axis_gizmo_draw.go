@@ -52,5 +52,6 @@ func drawArrowhead(cx, cy, tipX, tipY float32, color [4]float32) {
 		tipX, tipY,
 		bx+px*halfW, by+py*halfW,
 		bx-px*halfW, by-py*halfW,
-		color)
+		color,
+	)
 }

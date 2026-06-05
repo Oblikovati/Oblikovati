@@ -51,7 +51,8 @@ func (l *Library) Materials() []*Material {
 
 // Appearance / Material look up an asset by id.
 func (l *Library) Appearance(id string) (*Appearance, bool) { a, ok := l.appearances[id]; return a, ok }
-func (l *Library) Material(id string) (*Material, bool)     { m, ok := l.materials[id]; return m, ok }
+
+func (l *Library) Material(id string) (*Material, bool) { m, ok := l.materials[id]; return m, ok }
 
 // DefaultAppearance returns the neutral built-in appearance, the resolver's last resort.
 // It is always present (seeded by the built-in catalog). Part of [AssetLookup].

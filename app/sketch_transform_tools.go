@@ -82,6 +82,7 @@ func (t *SketchCopyTool) Name() string   { return "Copy" }
 func (t *SketchCopyTool) Prompt(*Session) string {
 	return "Select geometry, set the copy offset, then OK."
 }
+
 func (t *SketchCopyTool) SetVector(dx, dy float64) {
 	t.vector = math.V2(math.Scalar(dx), math.Scalar(dy))
 }
@@ -127,6 +128,7 @@ func (t *SketchStretchTool) PickSnap(ent sketch.Entity, _ SnapResult) {
 func (t *SketchStretchTool) SetVector(dx, dy float64) {
 	t.vector = math.V2(math.Scalar(dx), math.Scalar(dy))
 }
+
 func (t *SketchStretchTool) SetByPoints(base, target math.Point2) { t.vector = base.VectorTo(target) }
 
 func (t *SketchStretchTool) Commit(s *Session) error {
@@ -152,6 +154,7 @@ func (t *SketchRotateTool) Name() string     { return "Rotate" }
 func (t *SketchRotateTool) Prompt(*Session) string {
 	return "Select geometry, set the center and angle, then OK."
 }
+
 func (t *SketchRotateTool) SetCenter(x, y float64) {
 	t.center = math.P2(math.Scalar(x), math.Scalar(y))
 }
@@ -178,6 +181,7 @@ func (t *SketchScaleTool) Name() string    { return "Scale" }
 func (t *SketchScaleTool) Prompt(*Session) string {
 	return "Select geometry, set the center and factor, then OK."
 }
+
 func (t *SketchScaleTool) SetCenter(x, y float64) {
 	t.center = math.P2(math.Scalar(x), math.Scalar(y))
 }
@@ -214,9 +218,11 @@ func (t *SketchRectPatternTool) Name() string { return "Rectangular Pattern" }
 func (t *SketchRectPatternTool) Prompt(*Session) string {
 	return "Select geometry, set the two directions and counts, then OK."
 }
+
 func (t *SketchRectPatternTool) SetStep1(dx, dy float64) {
 	t.step1 = math.V2(math.Scalar(dx), math.Scalar(dy))
 }
+
 func (t *SketchRectPatternTool) SetStep2(dx, dy float64) {
 	t.step2 = math.V2(math.Scalar(dx), math.Scalar(dy))
 }
@@ -253,6 +259,7 @@ func (t *SketchCircPatternTool) Name() string { return "Circular Pattern" }
 func (t *SketchCircPatternTool) Prompt(*Session) string {
 	return "Select geometry, set the center, count and angle, then OK."
 }
+
 func (t *SketchCircPatternTool) SetCenter(x, y float64) {
 	t.center = math.P2(math.Scalar(x), math.Scalar(y))
 }

@@ -14,7 +14,8 @@ import (
 func quarterCircleNURBS(t *testing.T) BSplineCurve {
 	t.Helper()
 	w := stdmath.Sqrt2 / 2
-	c, err := NewBSplineCurve(2,
+	c, err := NewBSplineCurve(
+		2,
 		[]math.Point3{math.P3(1, 0, 0), math.P3(1, 1, 0), math.P3(0, 1, 0)},
 		[]float64{1, w, 1},
 		[]float64{0, 0, 0, 1, 1, 1},
@@ -56,7 +57,8 @@ func TestNURBSQuarterCircleStaysOnUnitCircle(t *testing.T) {
 }
 
 func TestNURBSDegree1ReproducesSegment(t *testing.T) {
-	c, err := NewBSplineCurveUniformWeights(1,
+	c, err := NewBSplineCurveUniformWeights(
+		1,
 		[]math.Point3{math.P3(0, 0, 0), math.P3(2, 0, 0)},
 		[]float64{0, 0, 1, 1},
 	)

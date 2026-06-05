@@ -241,6 +241,8 @@ func periodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Po
 // geometric tip. Each triangle is wound to agree with the cone normal (a reversed face then
 // flips it). ok=false unless the surface is a cone whose boundary is a SINGLE circle at one
 // axial level (a frustum, with two rim circles, spans v and is handled as a band instead).
+//
+//nolint:funlen // builds a triangle fan to the cone apex vertex-by-vertex; length is the tessellation, not logic.
 func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
 	cone, ok := s.(geom.Cone)
 	if !ok || len(outer3D) < 3 {

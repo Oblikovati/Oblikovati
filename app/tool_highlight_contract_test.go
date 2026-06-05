@@ -10,11 +10,13 @@ import "testing"
 // inconsistency. This test pins the contract: keep it green by giving any new view-picking tool
 // the matching accessor (Edges/Faces/PickedProfiles/PickedProfile/PickedFace).
 
-type edgesAccessor interface{ Edges() []EdgeHandle }
-type facesAccessor interface{ Faces() []FaceHandle }
-type profilesAccessor interface{ PickedProfiles() []ProfileHandle }
-type profileAccessor interface{ PickedProfile() (ProfileHandle, bool) }
-type faceAccessor interface{ PickedFace() (FaceHandle, bool) }
+type (
+	edgesAccessor    interface{ Edges() []EdgeHandle }
+	facesAccessor    interface{ Faces() []FaceHandle }
+	profilesAccessor interface{ PickedProfiles() []ProfileHandle }
+	profileAccessor  interface{ PickedProfile() (ProfileHandle, bool) }
+	faceAccessor     interface{ PickedFace() (FaceHandle, bool) }
+)
 
 // exposesPickAccessor mirrors the head's toolPicks: does the tool expose any pick accessor the
 // unified highlight can read?

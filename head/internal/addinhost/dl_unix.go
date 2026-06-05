@@ -31,6 +31,7 @@ static int  call_void(void* fn)                      { return ((voidFn)fn)(); }
 static int  call_notify(void* fn, const uint8_t* ev, int n) { return ((notifyFn)fn)(ev, n); }
 */
 import "C"
+
 import (
 	"fmt"
 	"unsafe"

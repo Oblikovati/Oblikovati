@@ -8,6 +8,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/kernel/ops"
 	"github.com/Oblikovati/oblikovati/math"
+	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/feature"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 	"github.com/Oblikovati/oblikovati/renderer"
@@ -208,19 +209,8 @@ func (t *RevolveTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	angle := t.angle
-	revolves := feature.NewRevolveFeatures(part.Features())
-	switch {
-	case t.centerline != nil: // a specific picked/pre-selected centerline
-		t.added = revolves.AddAboutCenterlineLine(t.profile.Sketch, t.profile.ProfileIndex, t.centerlineSk, t.centerline, func() float64 { return angle }, t.operation)
-	case t.useCenterln: // "about the sketch's own centerline" (auto, single)
-		t.added = revolves.AddAboutCenterline(t.profile.Sketch, t.profile.ProfileIndex, func() float64 { return angle }, t.operation)
-	default:
-		axis, ok := part.WorkGeometry().AxisByRef(t.axis)
-		if !ok {
-			return errors.New("revolve: axis " + string(t.axis) + " not found")
-		}
-		t.added = revolves.Add(t.profile.Sketch, t.profile.ProfileIndex, axis, func() float64 { return angle }, t.operation)
+	if t.added, err = t.addRevolve(part); err != nil {
+		return err
 	}
 	part.Recompute()
 	s.recordEdit(part, "Revolve")
@@ -229,6 +219,25 @@ func (t *RevolveTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// addRevolve adds the revolve feature about the tool's chosen axis: a specific picked centerline,
+// the sketch's own centerline, or a named work axis.
+func (t *RevolveTool) addRevolve(part *compdef.PartComponentDefinition) (*feature.PartFeature, error) {
+	angle := func() float64 { return t.angle }
+	revolves := feature.NewRevolveFeatures(part.Features())
+	switch {
+	case t.centerline != nil: // a specific picked/pre-selected centerline
+		return revolves.AddAboutCenterlineLine(t.profile.Sketch, t.profile.ProfileIndex, t.centerlineSk, t.centerline, angle, t.operation), nil
+	case t.useCenterln: // "about the sketch's own centerline" (auto, single)
+		return revolves.AddAboutCenterline(t.profile.Sketch, t.profile.ProfileIndex, angle, t.operation), nil
+	default:
+		axis, ok := part.WorkGeometry().AxisByRef(t.axis)
+		if !ok {
+			return nil, errors.New("revolve: axis " + string(t.axis) + " not found")
+		}
+		return revolves.Add(t.profile.Sketch, t.profile.ProfileIndex, axis, angle, t.operation), nil
+	}
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).

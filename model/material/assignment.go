@@ -40,8 +40,10 @@ func (s *AssignmentStore) SetPartAppearance(id string) { s.partAppearance = id }
 
 // SetBodyMaterial / SetBodyAppearance / SetFaceAppearance set an override for one
 // body/face key; an empty id removes the override.
-func (s *AssignmentStore) SetBodyMaterial(key, id string)   { setOrClear(s.bodyMaterial, key, id) }
+func (s *AssignmentStore) SetBodyMaterial(key, id string) { setOrClear(s.bodyMaterial, key, id) }
+
 func (s *AssignmentStore) SetBodyAppearance(key, id string) { setOrClear(s.bodyAppearance, key, id) }
+
 func (s *AssignmentStore) SetFaceAppearance(key, id string) { setOrClear(s.faceAppearance, key, id) }
 
 // PartMaterial / PartAppearance / BodyMaterials / BodyAppearances / FaceAppearances expose

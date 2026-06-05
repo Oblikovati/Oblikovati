@@ -117,7 +117,8 @@ func (w *Window) SetViewportEnvironment(data []float32, dims []int32, rotation, 
 // occludeAmbient attenuates the ambient term in shadowed regions (ambient occlusion). A
 // nil/short matrix or enabled=false disables the map. Takes effect next RenderViewport.
 func (w *Window) SetViewportShadow(lightVP []float32, enabled bool, density, softness float32,
-	castOnDirect, occludeAmbient bool) {
+	castOnDirect, occludeAmbient bool,
+) {
 	if !enabled || len(lightVP) != 16 {
 		C.obk_viewport_set_shadow(w.handle, nil, 0, 0, 0, 0, 0)
 		return

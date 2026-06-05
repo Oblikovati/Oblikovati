@@ -46,9 +46,10 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude-rules:
-    # Tests may be longer and print freely.
+    # Tests may be longer and print freely; test helpers carry general signatures
+    # even when current call sites happen to pass a constant (unparam).
     - path: _test\.go
-      linters: [funlen, gocyclo, forbidigo, dupl]
+      linters: [funlen, gocyclo, forbidigo, dupl, unparam]
     # The recipe codecs (ADR-0020 document persistence) are exhaustive, one-case-per
     # -kind dispatch switches — serializing/restoring every entity/constraint/feature
     # kind — so their statement count is inherent to the dispatch, not a smell.
@@ -58,3 +59,13 @@ issues:
     # readable cross-package use; the stutter is intentional, descriptive naming.
     - text: "stutters"
       linters: [revive]
+    # Ribbon command tables and the router/feature-descriptor registries are exhaustive
+    # one-entry-per-command/handler lists (same rationale as the serialize codecs): the
+    # length is the list, not branching logic.
+    - path: (app/commands_.*|addin/opregistry/registry|addin/router/router)\.go
+      linters: [funlen]
+    # The cylinder/drill files assemble a watertight B-rep body element-by-element (verts,
+    # edges, faces, stitch); the statement count is the geometry being built, not branching
+    # logic — same rationale as the serialize codecs.
+    - path: kernel/brep/(cylinder|drill).*\.go
+      linters: [funlen]

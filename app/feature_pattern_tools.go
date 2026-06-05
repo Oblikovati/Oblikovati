@@ -73,6 +73,7 @@ func (t *FeatureRectPatternTool) Name() string { return "Rectangular Pattern" }
 func (t *FeatureRectPatternTool) Prompt(*Session) string {
 	return "Select features, set the counts and spacing, then OK."
 }
+
 func (t *FeatureRectPatternTool) CanCommit() bool {
 	return len(t.sources) > 0 && t.countX >= 1 && t.countY >= 1 && t.countX*t.countY > 1
 }
@@ -135,8 +136,10 @@ func (t *FeatureCircPatternTool) Commit(s *Session) error {
 func (t *FeatureCircPatternTool) Params() ToolParams {
 	return ToolParams{
 		Ints: []IntParam{{"Count", func() int { return t.count }, func(n int) { t.count = n }}},
-		Floats: []FloatParam{{"Angle (deg)", func() float64 { return degFromRad(t.totalAngle) },
-			func(d float64) { t.totalAngle = radFromDeg(d) }}},
+		Floats: []FloatParam{{
+			"Angle (deg)", func() float64 { return degFromRad(t.totalAngle) },
+			func(d float64) { t.totalAngle = radFromDeg(d) },
+		}},
 	}
 }
 
@@ -156,6 +159,7 @@ func (t *FeatureMirrorTool) Name() string { return "Mirror" }
 func (t *FeatureMirrorTool) Prompt(*Session) string {
 	return "Select features, set the mirror-plane normal, then OK."
 }
+
 func (t *FeatureMirrorTool) CanCommit() bool {
 	return len(t.sources) > 0 && t.normal.Length() > 0
 }

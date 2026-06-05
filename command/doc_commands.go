@@ -11,7 +11,8 @@ import "github.com/Oblikovati/oblikovati/model/doc"
 // document state to act on.
 func Rename(d *doc.Document, name string) Command {
 	var previous string
-	return NewFunc("Rename to "+name,
+	return NewFunc(
+		"Rename to "+name,
 		func() error {
 			previous = d.DisplayName()
 			d.SetDisplayName(name)
@@ -31,7 +32,8 @@ func SetVisibility(d *doc.Document, visible bool) Command {
 	if visible {
 		label = "Show"
 	}
-	return NewFunc(label,
+	return NewFunc(
+		label,
 		func() error {
 			previous = d.Visible()
 			d.SetVisible(visible)

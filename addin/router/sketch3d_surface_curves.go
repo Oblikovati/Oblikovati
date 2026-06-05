@@ -20,6 +20,8 @@ import (
 // addSketch3DSurfaceCurve adds a surface-derived curve (intersection/silhouette) to a 3D
 // sketch, resolving the referenced part faces by reference key to their surfaces and
 // wrapping the F10 surface-intersection kernel (M22-F11).
+//
+//nolint:funlen // one-case-per-kind dispatch (intersection/silhouette/onFace/projectToSurface/offset); length is the dispatch, like the serialize codecs.
 func addSketch3DSurfaceCurve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {

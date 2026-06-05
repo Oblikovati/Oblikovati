@@ -73,6 +73,8 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 // buildHole dispatches on the hole type, resolving the extra dimensions each variant needs.
+//
+//nolint:funlen // one-case-per-hole-type dispatch switch (drilled/counterbore/countersink/tapped); length is the dispatch, like the serialize codecs.
 func buildHole(part *compdef.PartComponentDefinition, in holeArgs, dia float64) (*feature.PartFeature, error) {
 	holes := feature.NewHoleFeatures(part.Features())
 	key := []byte(in.FaceRef)

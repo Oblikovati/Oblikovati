@@ -116,7 +116,8 @@ func intersectionCuts(segs []taggedSeg) [][]cut {
 			}
 			pt, s, t, ok := geom.Segment2dIntersection(
 				geom.NewLineSegment2d(segs[i].a, segs[i].b),
-				geom.NewLineSegment2d(segs[j].a, segs[j].b), arrMergeTol)
+				geom.NewLineSegment2d(segs[j].a, segs[j].b), arrMergeTol,
+			)
 			if !ok {
 				continue
 			}
