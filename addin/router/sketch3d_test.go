@@ -12,6 +12,7 @@ import (
 	"github.com/Oblikovati/api/wire"
 
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
+	"github.com/Oblikovati/oblikovati/kernel/geom"
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/feature"
@@ -751,6 +752,235 @@ func TestSketch3DSurfaceCurveErrors(t *testing.T) {
 		if _, err := r.Handle(s, "sketch3d.addSurfaceCurve", []byte(b)); err == nil {
 			t.Errorf("expected error for %s", b)
 		}
+	}
+}
+
+// TestSketch3DOnFaceCurveOverAPI adds an on-face parameter-space curve via /api, resolving
+// the face ref to its surface (M22-F11).
+func TestSketch3DOnFaceCurveOverAPI(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref := string(part.SurfaceBodies().All()[0].Faces()[0].ReferenceKey())
+
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var res wire.AddSketch3DSurfaceCurveResult
+	args, _ := json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "onFace", FaceRefs: []string{ref}, UV: []float64{0, 0, 1, 0, 1, 1},
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &res)
+	if !res.Healthy || res.EntityID == 0 {
+		t.Fatalf("onFace = %+v, want healthy with an id", res)
+	}
+
+	var ents wire.EnumerateEntities3DResult
+	call(t, r, s, "sketch3d.entities", `{"sketchIndex":0}`, &ents)
+	if len(ents.Entities) != 1 || ents.Entities[0].Kind != "onFace" {
+		t.Fatalf("entities = %+v, want one onFace", ents.Entities)
+	}
+}
+
+// TestSketch3DOnFaceCurveErrors: a lost ref is unhealthy; a malformed UV is an error.
+func TestSketch3DOnFaceCurveErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+
+	var lost wire.AddSketch3DSurfaceCurveResult
+	call(t, r, s, "sketch3d.addSurfaceCurve", `{"sketchIndex":0,"kind":"onFace","faceRefs":["nope"],"uv":[0,0,1,1]}`, &lost)
+	if lost.Healthy {
+		t.Error("onFace with a lost face ref should report unhealthy")
+	}
+	// An odd-length UV is a request error.
+	if _, err := r.Handle(s, "sketch3d.addSurfaceCurve", []byte(`{"sketchIndex":0,"kind":"onFace","faceRefs":["a"],"uv":[0,0,1]}`)); err == nil {
+		t.Error("expected an error for an odd-length onFace uv")
+	}
+}
+
+// TestSketch3DProjectAndOffsetOverAPI adds project-to-surface and offset curves whose
+// source is an in-sketch line resolved by entity id (M22-F11).
+func TestSketch3DProjectAndOffsetOverAPI(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref := string(part.SurfaceBodies().All()[0].Faces()[0].ReferenceKey())
+
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var line wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[3,0,4]]}`, &line)
+	if line.EntityID == 0 {
+		t.Fatal("source line has no entity id")
+	}
+
+	// Project the source line onto a part face (associative surface).
+	var proj wire.AddSketch3DSurfaceCurveResult
+	args, _ := json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "projectToSurface", FaceRefs: []string{ref}, SourceEntityID: line.EntityID,
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &proj)
+	if !proj.Healthy || proj.EntityID == 0 {
+		t.Fatalf("projectToSurface = %+v, want healthy with an id", proj)
+	}
+
+	// Offset the source line in the XY plane.
+	var off wire.AddSketch3DSurfaceCurveResult
+	args, _ = json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "offset", SourceEntityID: line.EntityID, OffsetDistance: 2, Normal: []float64{0, 0, 1},
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &off)
+	if !off.Healthy || off.EntityID == 0 {
+		t.Fatalf("offset = %+v, want healthy with an id", off)
+	}
+
+	// An unknown source entity id is an error.
+	if _, err := r.Handle(s, "sketch3d.addSurfaceCurve", []byte(`{"sketchIndex":0,"kind":"offset","sourceEntityId":99999,"normal":[0,0,1]}`)); err == nil {
+		t.Error("expected an error for an unknown source entity id")
+	}
+}
+
+// TestSketch3DSurfaceCurveRebindsOnRecompute is the F11 keystone: a surface curve bound to
+// a part face by reference key FOLLOWS that face when the part recomputes (the associative
+// SurfaceSource re-resolves the moved surface). An onFace curve on the top face tracks the
+// extrude height as a driving parameter changes.
+func TestSketch3DSurfaceCurveRebindsOnRecompute(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref := topFaceKey(t, part)
+
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var res wire.AddSketch3DSurfaceCurveResult
+	args, _ := json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "onFace", FaceRefs: []string{ref}, UV: []float64{0, 0, 1, 0, 1, 1},
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &res)
+	if !res.Healthy {
+		t.Fatal("onFace curve not healthy")
+	}
+
+	z1 := onFaceMaxZ(t, part, res.EntityID) // top face at 50mm = 5cm
+	if stdmath.Abs(z1-5) > 0.5 {
+		t.Fatalf("initial curve z=%v cm, want ~5", z1)
+	}
+
+	// Grow the extrude and recompute (destroys + regenerates the body); the top face moves
+	// to z = 8cm and the same reference key rebinds to it.
+	setExtrudeDistance(t, part, 8)
+
+	z2 := onFaceMaxZ(t, part, res.EntityID)
+	if stdmath.Abs(z2-8) > 0.5 || z2 <= z1 {
+		t.Fatalf("after recompute curve z=%v cm, want ~8 (followed the moved face); z1=%v", z2, z1)
+	}
+}
+
+// setExtrudeDistance changes the part's extrude feature to distance d (db units) and
+// recomputes, so the body is regenerated.
+func setExtrudeDistance(t *testing.T, part *compdef.PartComponentDefinition, d float64) {
+	t.Helper()
+	feats := part.Features()
+	for i := 0; i < feats.Count(); i++ {
+		pf := feats.Item(i)
+		if ext, ok := pf.Definition().(*feature.ExtrudeFeature); ok {
+			ext.SetDistance(d)
+			feats.MarkDirty(pf)
+			part.Recompute()
+			return
+		}
+	}
+	t.Fatal("no extrude feature found")
+}
+
+// topFaceKey returns the reference key of the part's top (+Z normal) planar face.
+func topFaceKey(t *testing.T, part *compdef.PartComponentDefinition) string {
+	t.Helper()
+	for _, b := range part.SurfaceBodies().All() {
+		for _, f := range b.Faces() {
+			if pl, ok := f.Geometry().(geom.Plane); ok && float64(pl.Normal().Z) > 0.9 {
+				return string(f.ReferenceKey())
+			}
+		}
+	}
+	t.Fatal("no top (+Z) face found")
+	return ""
+}
+
+// onFaceMaxZ evaluates the onFace surface curve with the given entity id and returns the
+// maximum z of its points (the face's height).
+func onFaceMaxZ(t *testing.T, part *compdef.PartComponentDefinition, id uint64) float64 {
+	t.Helper()
+	sk := part.Sketches3D().Item(0)
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		t.Fatalf("no entity %d in the 3D sketch", id)
+	}
+	c, ok := e.(*sketch.OnFaceCurve3D)
+	if !ok {
+		t.Fatalf("entity %d is %T, want *OnFaceCurve3D", id, e)
+	}
+	maxZ := -1e18
+	for _, p := range c.Evaluate() {
+		if float64(p.Z) > maxZ {
+			maxZ = float64(p.Z)
+		}
+	}
+	return maxZ
+}
+
+// TestModelReferenceKeysSurfacesAndRoundTrips: model.referenceKeys exposes a box's
+// topology with keys, and a surfaced face key is consumable by a key consumer (the F08
+// round-trip that makes the whole reference-key workflow usable over the wire).
+func TestModelReferenceKeysSurfacesAndRoundTrips(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct {
+		Bodies int `json:"bodies"`
+	}{})
+
+	var keys wire.ReferenceKeysResult
+	call(t, r, s, "model.referenceKeys", `{}`, &keys)
+	if len(keys.Bodies) != 1 {
+		t.Fatalf("bodies = %d, want 1", len(keys.Bodies))
+	}
+	b := keys.Bodies[0]
+	if len(b.Faces) != 6 || len(b.Edges) != 12 || len(b.Vertices) != 8 {
+		t.Fatalf("box topology = %d faces / %d edges / %d vertices, want 6/12/8", len(b.Faces), len(b.Edges), len(b.Vertices))
+	}
+	for _, f := range b.Faces {
+		if f.Key == "" || len(f.Point) != 3 {
+			t.Fatalf("face ref = %+v, want a key and a 3-coord point", f)
+		}
+	}
+
+	// The surfaced key is consumable: feed it straight into a surface-curve constructor.
+	call(t, r, s, "sketch3d.create", `{}`, &wire.CreateSketch3DResult{})
+	var sc wire.AddSketch3DSurfaceCurveResult
+	args, _ := json.Marshal(wire.AddSketch3DSurfaceCurveArgs{
+		SketchIndex: 0, Kind: "onFace", FaceRefs: []string{b.Faces[0].Key}, UV: []float64{0, 0, 1, 0, 1, 1},
+	})
+	call(t, r, s, "sketch3d.addSurfaceCurve", string(args), &sc)
+	if !sc.Healthy {
+		t.Fatal("a surfaced face key should be consumable by addSurfaceCurve")
 	}
 }
 

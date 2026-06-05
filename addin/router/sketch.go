@@ -28,12 +28,28 @@ func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	plane, name, err := parsePlane(in.Plane)
+	plane, name, err := sketchCreatePlane(part, in)
 	if err != nil {
 		return nil, err
 	}
 	part.Sketches().Add(plane)
 	return json.Marshal(wire.CreateSketchResult{SketchIndex: part.Sketches().Count() - 1, Plane: name})
+}
+
+// sketchCreatePlane resolves the plane a new sketch starts on: a user work plane (when
+// WorkPlaneIndex is set — the way to sketch on a plane built on a feature-created face) or an
+// origin plane otherwise.
+func sketchCreatePlane(part *compdef.PartComponentDefinition, in wire.CreateSketchArgs) (sketch.Plane, string, error) {
+	if in.WorkPlaneIndex == nil {
+		return parsePlane(in.Plane)
+	}
+	planes := part.WorkPlanes()
+	i := *in.WorkPlaneIndex
+	if i < 0 || i >= planes.Count() {
+		return sketch.Plane{}, "", fmt.Errorf("sketch.create: work plane %d out of range (part has %d)", i, planes.Count())
+	}
+	wp := planes.Item(i)
+	return wp.Plane(), wp.Name(), nil
 }
 
 // sketchRectangle adds a closed rectangle (one profile) to a sketch, ready to extrude.

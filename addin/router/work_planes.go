@@ -5,6 +5,7 @@ package router
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/Oblikovati/api/types"
 	"github.com/Oblikovati/api/wire"
@@ -168,10 +169,19 @@ func addFixedWorkPlane(planes *feature.WorkPlanes, in wire.CreateWorkPlaneArgs) 
 }
 
 // toWorkRefs converts the request's reference strings to model work references.
+// toWorkRefs wraps reference strings as work refs. An origin reference ("origin/plane/xy",
+// "origin/axis/z", …) and a user work plane/axis name are plain plane/axis refs; any other
+// string is a B-rep topology reference key (from model.referenceKeys) and is tagged as a
+// FaceRef so the resolver builds the plane on that body face — the way a work plane lands on a
+// surface a feature created. (Edge/vertex-based kinds over the wire are a known limitation.)
 func toWorkRefs(refs []string) []feature.WorkRef {
 	out := make([]feature.WorkRef, len(refs))
 	for i, r := range refs {
-		out[i] = feature.WorkRef(r)
+		if strings.HasPrefix(r, "origin/") {
+			out[i] = feature.WorkRef(r)
+		} else {
+			out[i] = feature.FaceRef([]byte(r))
+		}
 	}
 	return out
 }

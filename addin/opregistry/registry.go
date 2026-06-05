@@ -75,8 +75,59 @@ func (r *Registry) All() []*OperationDescriptor {
 // if a built-in descriptor is malformed, since that is a programming error.
 func Default() *Registry {
 	r := New()
-	if err := r.Register(extrudeDescriptor()); err != nil {
-		panic(fmt.Sprintf("opregistry: seeding default registry: %v", err))
+	// The full built-in feature surface, so add_feature (and the MCP bridge) can drive every
+	// modeling operation: additive profile features, the subtractive/dress-up family (by edge/
+	// face reference key), direct edits, patterns, and freeform primitives.
+	for _, d := range []*OperationDescriptor{
+		// Additive profile features.
+		extrudeDescriptor(),
+		revolveDescriptor(),
+		ribDescriptor(),
+		embossDescriptor(),
+		coilDescriptor(),
+		loftDescriptor(),
+		// Subtractive / dress-up (edge & face reference keys).
+		filletDescriptor(),
+		chamferDescriptor(),
+		shellDescriptor(),
+		draftDescriptor(),
+		holeDescriptor(),
+		bossDescriptor(),
+		threadDescriptor(),
+		// Direct edits and booleans.
+		combineDescriptor(),
+		thickenDescriptor(),
+		trimDescriptor(),
+		moveFaceDescriptor(),
+		faceOffsetDescriptor(),
+		deleteFaceDescriptor(),
+		splitFaceDescriptor(),
+		replaceFaceDescriptor(),
+		moveBodyDescriptor(),
+		splitSolidDescriptor(),
+		coreCavityDescriptor(),
+		// Additive along a path / patterns.
+		sweepDescriptor(),
+		rectPatternDescriptor(),
+		circPatternDescriptor(),
+		mirrorDescriptor(),
+		sketchDrivenDescriptor(),
+		// Surfacing.
+		boundaryPatchDescriptor(),
+		ruledSurfaceDescriptor(),
+		surfaceOffsetDescriptor(),
+		extendDescriptor(),
+		midSurfaceDescriptor(),
+		stitchDescriptor(),
+		sculptDescriptor(),
+		// Freeform primitives.
+		freeformBoxDescriptor(),
+		freeformPlaneDescriptor(),
+		freeformQuadBallDescriptor(),
+	} {
+		if err := r.Register(d); err != nil {
+			panic(fmt.Sprintf("opregistry: seeding default registry: %v", err))
+		}
 	}
 	return r
 }

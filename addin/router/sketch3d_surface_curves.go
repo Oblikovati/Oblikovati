@@ -12,6 +12,7 @@ import (
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/app"
 	"github.com/Oblikovati/oblikovati/kernel/geom"
+	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/sketch"
 )
@@ -37,9 +38,76 @@ func addSketch3DSurfaceCurve(s *app.Session, raw json.RawMessage) (json.RawMessa
 		return intersectionCurve3D(part, sk, in)
 	case types.Sketch3DEntitySilhouette:
 		return silhouetteCurve3D(part, sk, in)
+	case types.Sketch3DEntityOnFace:
+		return onFaceCurve3D(part, sk, in)
+	case types.Sketch3DEntityProjectToSurface:
+		return projectToSurfaceCurve3D(part, sk, in)
+	case types.Sketch3DEntityOffset:
+		return offsetCurve3(sk, in)
 	default:
-		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: unsupported kind %q (want intersection|silhouette)", in.Kind)
+		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: unsupported kind %q (want intersection|silhouette|onFace|projectToSurface|offset)", in.Kind)
 	}
+}
+
+// projectToSurfaceCurve3D resolves an in-sketch source curve + a target face (associative)
+// and adds its perpendicular projection onto the face's surface.
+func projectToSurfaceCurve3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DSurfaceCurveArgs) (json.RawMessage, error) {
+	if len(in.FaceRefs) != 1 {
+		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: projectToSurface needs 1 face ref, got %d", len(in.FaceRefs))
+	}
+	src, err := sk.SourceCurve3(sketch.ID(in.SourceEntityID))
+	if err != nil {
+		return nil, err
+	}
+	if !part.FaceKeyResolves(in.FaceRefs[0]) {
+		return surfaceCurveUnhealthy(in.Kind)
+	}
+	c := sk.AddProjectToSurfaceCurve3DRef(src, compdef.NewFaceRefSource(part, in.FaceRefs[0]))
+	return surfaceCurveResult(c.EntityID(), in.Kind)
+}
+
+// offsetCurve3 resolves an in-sketch source curve and adds its offset by OffsetDistance in
+// the plane with the given Normal.
+func offsetCurve3(sk *sketch.Sketch3D, in wire.AddSketch3DSurfaceCurveArgs) (json.RawMessage, error) {
+	src, err := sk.SourceCurve3(sketch.ID(in.SourceEntityID))
+	if err != nil {
+		return nil, err
+	}
+	normal, err := vector3Arg(in.Normal)
+	if err != nil {
+		return nil, err
+	}
+	c := sk.AddOffsetCurve3(src, in.OffsetDistance, normal)
+	return surfaceCurveResult(c.EntityID(), in.Kind)
+}
+
+// onFaceCurve3D resolves one face ref and adds an (associative) curve in its parameter
+// space from the request's flat UV polyline.
+func onFaceCurve3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DSurfaceCurveArgs) (json.RawMessage, error) {
+	if len(in.FaceRefs) != 1 {
+		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: onFace needs 1 face ref, got %d", len(in.FaceRefs))
+	}
+	uv, err := uvPairs(in.UV) // validate the request shape before resolving the reference
+	if err != nil {
+		return nil, err
+	}
+	if !part.FaceKeyResolves(in.FaceRefs[0]) {
+		return surfaceCurveUnhealthy(in.Kind)
+	}
+	c := sk.AddOnFaceCurve3DRef(compdef.NewFaceRefSource(part, in.FaceRefs[0]), uv)
+	return surfaceCurveResult(c.EntityID(), in.Kind)
+}
+
+// uvPairs converts a flat [u0,v0,u1,v1,…] slice into parameter-space points (≥ 2 points).
+func uvPairs(flat []float64) ([]math.Point2, error) {
+	if len(flat) < 4 || len(flat)%2 != 0 {
+		return nil, fmt.Errorf("sketch3d.addSurfaceCurve: onFace uv needs an even count ≥ 4, got %d", len(flat))
+	}
+	out := make([]math.Point2, len(flat)/2)
+	for i := range out {
+		out[i] = math.P2(math.Scalar(flat[2*i]), math.Scalar(flat[2*i+1]))
+	}
+	return out, nil
 }
 
 // intersectionCurve3D resolves two face refs and adds their (associative) intersection.

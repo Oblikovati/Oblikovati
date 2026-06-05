@@ -9,19 +9,36 @@ import (
 	"github.com/Oblikovati/oblikovati/app"
 )
 
-func TestDefaultHasExtrude(t *testing.T) {
+// TestDefaultDescriptors checks the default registry exposes the additive extrude plus the
+// subtractive/dress-up family, and that each descriptor is complete with valid-JSON schema —
+// so add_feature (and the MCP bridge) can drive every one of them.
+func TestDefaultDescriptors(t *testing.T) {
 	r := Default()
-	d, ok := r.ByName("extrude")
-	if !ok {
-		t.Fatal("default registry missing extrude")
+	all := []string{
+		"extrude", "revolve", "rib", "emboss", "coil", "loft",
+		"fillet", "chamfer", "shell", "draft", "hole", "boss", "thread",
+		"combine", "thicken", "trim", "moveFace", "faceOffset", "deleteFace", "split",
+		"replaceFace", "moveBody", "splitSolid", "coreCavity",
+		"sweep", "patternRectangular", "patternCircular", "mirror", "patternSketchDriven",
+		"boundaryPatch", "ruledSurface", "surfaceOffset", "extend", "midSurface", "stitch", "sculpt",
+		"freeformBox", "freeformPlane", "freeformQuadBall",
 	}
-	if d.Summary == "" || len(d.Schema) == 0 || d.Apply == nil {
-		t.Fatalf("extrude descriptor incomplete: %+v", d)
+	if got := len(r.All()); got != len(all) {
+		t.Errorf("default registry has %d operations, want %d", got, len(all))
 	}
-	// Schema must be valid JSON so it can be served as-is to an LLM.
-	var schema map[string]any
-	if err := json.Unmarshal(d.Schema, &schema); err != nil {
-		t.Fatalf("extrude schema is not valid JSON: %v", err)
+	for _, name := range all {
+		d, ok := r.ByName(name)
+		if !ok {
+			t.Errorf("default registry missing %q", name)
+			continue
+		}
+		if d.Summary == "" || len(d.Schema) == 0 || d.Apply == nil {
+			t.Errorf("descriptor %q incomplete: %+v", name, d)
+		}
+		var schema map[string]any
+		if err := json.Unmarshal(d.Schema, &schema); err != nil {
+			t.Errorf("%q schema is not valid JSON: %v", name, err)
+		}
 	}
 }
 

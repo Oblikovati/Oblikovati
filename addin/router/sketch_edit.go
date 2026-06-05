@@ -70,23 +70,32 @@ func applyTransform(part *compdef.PartComponentDefinition, sk *sketch.Sketch, en
 // curveEditOp dispatches the single-curve edit ops (trim/split/extend), which act on the
 // first selected line at a pick point (Vector).
 func curveEditOp(sk *sketch.Sketch, ents []sketch.Entity, in wire.TransformSketchArgs) ([]sketch.Entity, error) {
-	l, ok := ents[0].(*sketch.Line)
-	if !ok {
-		return nil, fmt.Errorf("sketch.transform: %s currently supports lines only (got %T)", in.Op, ents[0])
-	}
 	pick, err := vector2AsPoint(in.Vector)
 	if err != nil {
 		return nil, err
 	}
-	switch in.Op {
-	case "trim":
-		return sk.TrimLine(l, pick)
-	case "split":
-		return sk.SplitLine(l, pick)
-	default: // extend
-		_, err := sk.ExtendLine(l, pickNearerEnd(l, pick))
-		return nil, err
+	// Trim accepts any curve target (line/circle/arc); split/extend act on lines.
+	if in.Op == "trim" {
+		switch e := ents[0].(type) {
+		case *sketch.Line:
+			return sk.TrimLine(e, pick)
+		case *sketch.Circle:
+			return sk.TrimCircle(e, pick)
+		case *sketch.Arc:
+			return sk.TrimArc(e, pick)
+		default:
+			return nil, fmt.Errorf("sketch.transform: trim unsupported target %T", ents[0])
+		}
 	}
+	l, ok := ents[0].(*sketch.Line)
+	if !ok {
+		return nil, fmt.Errorf("sketch.transform: %s currently supports lines only (got %T)", in.Op, ents[0])
+	}
+	if in.Op == "split" {
+		return sk.SplitLine(l, pick)
+	}
+	_, err = sk.ExtendLine(l, pickNearerEnd(l, pick)) // extend
+	return nil, err
 }
 
 // vector2AsPoint reads the [x,y] pick point from the transform's Vector field.
