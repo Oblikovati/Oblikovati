@@ -241,4 +241,5 @@ func environmentView(e renderer.Environment) wire.EnvironmentView {
 }
 
 func vec64(v [3]float32) [3]float64 { return [3]float64{float64(v[0]), float64(v[1]), float64(v[2])} }
+
 func vec32(v [3]float64) [3]float32 { return [3]float32{float32(v[0]), float32(v[1]), float32(v[2])} }

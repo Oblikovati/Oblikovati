@@ -65,11 +65,9 @@ func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	twist := 0.0
-	if strings.TrimSpace(in.Twist) != "" {
-		if twist, err = angleValue(part, in.Twist, "sweep: twist"); err != nil {
-			return nil, err
-		}
+	twist, err := optionalAngle(part, in.Twist, "sweep: twist")
+	if err != nil {
+		return nil, err
 	}
 	op, err := parseOperation(in.Operation)
 	if err != nil {

@@ -115,6 +115,7 @@ func (s *Session) Redo() error {
 // CanUndo / CanRedo report whether the active document has an event behind / ahead of
 // its cursor. They drive the ribbon Undo/Redo enable state. No active document ⇒ false.
 func (s *Session) CanUndo() bool { return s.activeStream() != nil && s.activeStream().hist.CanUndo() }
+
 func (s *Session) CanRedo() bool { return s.activeStream() != nil && s.activeStream().hist.CanRedo() }
 
 // UndoLabel / RedoLabel return the name of the step undo/redo would act on next, for

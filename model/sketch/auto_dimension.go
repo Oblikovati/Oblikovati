@@ -67,7 +67,6 @@ func (s *Sketch) autoCandidates() []func() func() {
 		}
 	}
 	for _, p := range s.uniqueEntityPoints() {
-		p := p
 		cs = append(cs, func() func() {
 			g := s.GeometricConstraints().AddGroundPoints(p)
 			return func() { s.GeometricConstraints().Delete(g) }

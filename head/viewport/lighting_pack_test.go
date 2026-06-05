@@ -15,8 +15,10 @@ func TestPackLightingLayout(t *testing.T) {
 	l := renderer.SceneLighting{
 		Ambience: 0.3, Brightness: 1.2, Exposure: 0.9,
 		Lights: []renderer.SceneLight{
-			{Kind: renderer.PointLight, Direction: [3]float32{0.1, 0.2, 0.3},
-				Color: [3]float32{0.4, 0.5, 0.6}, Intensity: 2, Position: [3]float32{7, 8, 9}, On: true},
+			{
+				Kind: renderer.PointLight, Direction: [3]float32{0.1, 0.2, 0.3},
+				Color: [3]float32{0.4, 0.5, 0.6}, Intensity: 2, Position: [3]float32{7, 8, 9}, On: true,
+			},
 		},
 	}
 	got := PackLighting(l)

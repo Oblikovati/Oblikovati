@@ -229,7 +229,7 @@ func TestSketch3DSerializeRoundTrip(t *testing.T) {
 		t.Fatalf("restored EntityCount = %d, want 3", got.EntityCount())
 	}
 	pts := got.AllPoints3D()
-	if pts[0].Position() != (math.P3(1, 2, 3)) || pts[1].Position() != (math.P3(-4, 5, -6)) {
+	if pts[0].Position() != math.P3(1, 2, 3) || pts[1].Position() != math.P3(-4, 5, -6) {
 		t.Errorf("restored point positions mismatch: %v, %v", pts[0].Position(), pts[1].Position())
 	}
 	if got.GeometricConstraints3D().Count() != 3 {

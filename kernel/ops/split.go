@@ -74,6 +74,8 @@ func halfSpaceBox(plane geom.Plane, ext float64, positive bool) *topo.Body {
 // away from the box centre, reversing the ring when needed so the loop winds CCW about that
 // outward normal (plane normal and winding stay consistent — the boolean and volume both rely on
 // it). (Lives here so the split has no dependency on the subd package.)
+//
+//nolint:funlen // assembles a box body element-by-element (8 verts, 12 edges, 6 faces); length is the geometry, not logic.
 func boxFromCorners(c [8]math.Point3) *topo.Body {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("split", "box", 0)))
 	tv := make([]*topo.Vertex, 8)

@@ -5,6 +5,7 @@ package opregistry
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/Oblikovati/oblikovati/math"
 	"github.com/Oblikovati/oblikovati/model/compdef"
@@ -44,6 +45,14 @@ func angleValue(part *compdef.PartComponentDefinition, expr, field string) (floa
 		return 0, fmt.Errorf("%s %q: %w", field, expr, err)
 	}
 	return v.Value, nil
+}
+
+// optionalAngle parses an optional angle expression, returning 0 when it is blank.
+func optionalAngle(part *compdef.PartComponentDefinition, expr, field string) (float64, error) {
+	if strings.TrimSpace(expr) == "" {
+		return 0, nil
+	}
+	return angleValue(part, expr, field)
 }
 
 // featureResult is the common reply for a feature operation: the created feature's name and

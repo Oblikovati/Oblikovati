@@ -123,7 +123,8 @@ func smokeScene() (verts []float32, idx []uint32, min, max [3]float32) {
 
 // box appends the six faces of an axis-aligned box as PBR quads.
 func box(v *[]float32, idx *[]uint32, base *uint32, x0, x1, y0, y1, z0, z1 float32,
-	col [3]float32, metal, rough float32) {
+	col [3]float32, metal, rough float32,
+) {
 	quad(v, idx, base, [4][3]float32{{x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}}, [3]float32{0, 0, 1}, col, metal, rough)
 	quad(v, idx, base, [4][3]float32{{x1, y0, z0}, {x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}}, [3]float32{0, 0, -1}, col, metal, rough)
 	quad(v, idx, base, [4][3]float32{{x1, y0, z1}, {x1, y0, z0}, {x1, y1, z0}, {x1, y1, z1}}, [3]float32{1, 0, 0}, col, metal, rough)
@@ -134,7 +135,8 @@ func box(v *[]float32, idx *[]uint32, base *uint32, x0, x1, y0, y1, z0, z1 float
 
 // quad appends one PBR quad (4 corners CCW + a normal) as two triangles in the 16-float layout.
 func quad(v *[]float32, idx *[]uint32, base *uint32, c [4][3]float32, n, col [3]float32,
-	metal, rough float32) {
+	metal, rough float32,
+) {
 	for _, p := range c {
 		*v = append(*v, p[0], p[1], p[2], n[0], n[1], n[2], col[0], col[1], col[2], 1, metal, rough, 0, 0, 0, 2)
 	}

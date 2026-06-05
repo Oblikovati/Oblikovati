@@ -104,13 +104,25 @@ func (t *HoleTool) CanCommit() bool {
 	if t.face == nil || t.diameter <= 0 || (!t.through && t.depth <= 0) {
 		return false
 	}
-	if t.counterbore && (t.cDiameter <= t.diameter || t.cDepth <= 0 || (!t.through && t.depth <= t.cDepth)) {
+	if t.counterbore && !t.counterboreValid() {
 		return false
 	}
-	if t.countersink && (t.cDiameter <= t.diameter || t.sinkAngle <= 0 || t.sinkAngle >= stdmath.Pi) {
+	if t.countersink && !t.countersinkValid() {
 		return false
 	}
 	return true
+}
+
+// counterboreValid reports whether the counterbore options are consistent: a wider recess than
+// the bore, a positive recess depth, and (for a blind hole) a bore deeper than the recess.
+func (t *HoleTool) counterboreValid() bool {
+	return t.cDiameter > t.diameter && t.cDepth > 0 && (t.through || t.depth > t.cDepth)
+}
+
+// countersinkValid reports whether the countersink options are consistent: a wider sink than the
+// bore and an included angle in (0, π).
+func (t *HoleTool) countersinkValid() bool {
+	return t.cDiameter > t.diameter && t.sinkAngle > 0 && t.sinkAngle < stdmath.Pi
 }
 
 // Commit drills the hole into the active part and recomputes; a sick feature (lost face,

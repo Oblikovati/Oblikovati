@@ -42,6 +42,7 @@ func (t *MoveFaceTool) Name() string { return "Move Face" }
 func (t *MoveFaceTool) Start(s *Session) {
 	s.Selection().SetFilter(NewSelectionFilter(SelectFace))
 }
+
 func (t *MoveFaceTool) Pick(_ *Session, sel Selectable) {
 	if f, ok := sel.(FaceHandle); ok {
 		t.faces = append(t.faces, f)
@@ -50,16 +51,19 @@ func (t *MoveFaceTool) Pick(_ *Session, sel Selectable) {
 
 // Faces returns the picked faces for the unified tool highlight.
 func (t *MoveFaceTool) Faces() []FaceHandle { return append([]FaceHandle(nil), t.faces...) }
+
 func (t *MoveFaceTool) Cancel(s *Session) {
 	s.Selection().SetFilter(NewSelectionFilter())
 	t.faces = nil
 }
+
 func (t *MoveFaceTool) Prompt(*Session) string {
 	if len(t.faces) == 0 {
 		return "Click the faces to move."
 	}
 	return "Set the move vector, then OK."
 }
+
 func (t *MoveFaceTool) CanCommit() bool {
 	return len(t.faces) > 0 && (t.dx != 0 || t.dy != 0 || t.dz != 0)
 }
@@ -106,15 +110,18 @@ func (t *CombineTool) Name() string { return "Combine" }
 func (t *CombineTool) Start(s *Session) {
 	s.Selection().SetFilter(NewSelectionFilter(SelectBody))
 }
+
 func (t *CombineTool) Pick(_ *Session, sel Selectable) {
 	if b, ok := sel.(BodyHandle); ok {
 		t.bodies = append(t.bodies, b.Body)
 	}
 }
+
 func (t *CombineTool) Cancel(s *Session) {
 	s.Selection().SetFilter(NewSelectionFilter())
 	t.bodies = nil
 }
+
 func (t *CombineTool) Prompt(*Session) string {
 	return "Pick the target body, then the tool body; set the operation; OK."
 }
@@ -162,21 +169,25 @@ func (t *MoveBodyTool) Name() string { return "Move Bodies" }
 func (t *MoveBodyTool) Start(s *Session) {
 	s.Selection().SetFilter(NewSelectionFilter(SelectBody))
 }
+
 func (t *MoveBodyTool) Pick(_ *Session, sel Selectable) {
 	if b, ok := sel.(BodyHandle); ok {
 		t.bodies = append(t.bodies, b.Body)
 	}
 }
+
 func (t *MoveBodyTool) Cancel(s *Session) {
 	s.Selection().SetFilter(NewSelectionFilter())
 	t.bodies = nil
 }
+
 func (t *MoveBodyTool) Prompt(*Session) string {
 	if len(t.bodies) == 0 {
 		return "Pick a body to move."
 	}
 	return "Set the move vector, then OK."
 }
+
 func (t *MoveBodyTool) CanCommit() bool {
 	return len(t.bodies) > 0 && (t.dx != 0 || t.dy != 0 || t.dz != 0)
 }

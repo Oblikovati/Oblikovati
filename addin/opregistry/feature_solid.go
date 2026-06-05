@@ -11,6 +11,7 @@ import (
 
 	"github.com/Oblikovati/oblikovati/addin/modelaccess"
 	"github.com/Oblikovati/oblikovati/app"
+	"github.com/Oblikovati/oblikovati/model/compdef"
 	"github.com/Oblikovati/oblikovati/model/feature"
 )
 
@@ -220,21 +221,13 @@ func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	axisRef := in.AxisRef
-	if axisRef == "" {
-		axisRef = string(feature.OriginZAxis)
-	}
-	axis, err := axisFromRef(part, axisRef)
+	axis, err := coilAxis(part, in.AxisRef)
 	if err != nil {
 		return nil, err
 	}
-	pitch, err := lengthValue(part, in.Pitch, "coil: pitch")
+	pitch, revs, err := coilPitchRevs(part, in)
 	if err != nil {
 		return nil, err
-	}
-	revs, err := strconv.ParseFloat(strings.TrimSpace(in.Revolutions), 64)
-	if err != nil {
-		return nil, fmt.Errorf("coil: revolutions %q must be a number: %w", in.Revolutions, err)
 	}
 	op, err := parseOperation(in.Operation)
 	if err != nil {
@@ -242,6 +235,28 @@ func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	}
 	pf := feature.NewCoilFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, constFn(pitch), constFn(revs), 0, op)
 	return recomputeResult(part, pf)
+}
+
+// coilAxis resolves the coil's work axis, defaulting to the Z origin axis when no ref is given
+// (a coil's natural axis), unlike the revolve default of Y.
+func coilAxis(part *compdef.PartComponentDefinition, ref string) (*feature.WorkAxis, error) {
+	if ref == "" {
+		ref = string(feature.OriginZAxis)
+	}
+	return axisFromRef(part, ref)
+}
+
+// coilPitchRevs resolves a coil's pitch (a unit-bearing length) and revolution count (a plain
+// number), naming the field on a parse error.
+func coilPitchRevs(part *compdef.PartComponentDefinition, in coilArgs) (pitch, revs float64, err error) {
+	if pitch, err = lengthValue(part, in.Pitch, "coil: pitch"); err != nil {
+		return 0, 0, err
+	}
+	revs, err = strconv.ParseFloat(strings.TrimSpace(in.Revolutions), 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("coil: revolutions %q must be a number: %w", in.Revolutions, err)
+	}
+	return pitch, revs, nil
 }
 
 // --- loft ------------------------------------------------------------------
