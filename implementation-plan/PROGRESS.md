@@ -3,7 +3,7 @@
 Live tracker for building Oblikovati against [the roadmap](README.md). Updated as
 each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (green in CI).
 
-> **⚠ Audited 2026-06-04 (see [REPORT.md](../../REPORT.md)).** The milestone table below
+> **⚠ Audited 2026-06-04 (see REPORT.md).** The milestone table below
 > was reconciled against the actual code. It had been wrong in both directions —
 > under-reporting shipped work (M16/M18/M19/M23) and over-stating completion against the
 > Definition of Done (M05/M09/M10/M21). Per CONVENTIONS.md "Status model", a feature is
