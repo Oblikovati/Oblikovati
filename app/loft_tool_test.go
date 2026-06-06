@@ -3,12 +3,14 @@
 package app
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati/kernel/ops"
 	"oblikovati/math"
 	"oblikovati/model/compdef"
 	"oblikovati/model/doc"
+	"oblikovati/model/feature"
 	"oblikovati/model/sketch"
 )
 
@@ -116,6 +118,42 @@ func TestLoftViaRibbonCommand(t *testing.T) {
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
 	if def.SurfaceBodies().Count() != 1 {
 		t.Error("ribbon-launched loft produced no body")
+	}
+}
+
+// TestLoftToolAngleConditionCurves drives the Loft UI with an Angle end condition on both
+// sections (two EQUAL squares) and asserts the body curves OUT past the ruled prism — the
+// end-to-end S2 behavior the dialog exposes (a Free loft of equal squares is a straight prism).
+func TestLoftToolAngleConditionCurves(t *testing.T) {
+	s := NewSession()
+	def := compdef.NewPartComponentDefinition()
+	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
+	if err != nil {
+		t.Fatalf("Add part: %v", err)
+	}
+	pd.SetContent(def)
+	bottom := ProfileHandle{Sketch: centeredSquareSketch(def, sketch.XYPlane(), 2), ProfileIndex: 0}
+	top := ProfileHandle{Sketch: centeredSquareSketch(def, planeAtZ(4), 2), ProfileIndex: 0}
+	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})
+
+	l := NewLoftTool()
+	s.StartTool(l)
+	s.Click(10, 10)
+	s.Click(10, 200)
+	// The dialog would set these from the condition controls; drive them directly here.
+	end := feature.LoftEnd{Condition: feature.LoftAngle, Angle: 45 * stdmath.Pi / 180, Impact: 1}
+	l.SetFirstCondition(end)
+	l.SetLastCondition(end)
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+
+	body := s.ActiveDocument().Content().(*compdef.PartComponentDefinition).SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("angled loft body not a valid solid: %+v", r)
+	}
+	if maxX := float64(body.RangeBox().Max.X); maxX < 2.15 {
+		t.Errorf("angled loft did not curve: max x = %.3f, want > 2.15 (ruled prism would be 2.0)", maxX)
 	}
 }
 

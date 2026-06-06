@@ -5,6 +5,7 @@ package opregistry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"oblikovati/addin/modelaccess"
 	"oblikovati/app"
@@ -262,10 +263,22 @@ type loftSectionRef struct {
 	ProfileIndex int `json:"profileIndex"`
 }
 
+// loftEndArgs is a loft end-section condition: how the surface leaves the first (or arrives at
+// the last) section. "angle"/"direction" tilt the takeoff at angle to the section's sketch
+// plane, weighted by impact, and curve a two-section loft; the default "free" is ruled.
+type loftEndArgs struct {
+	Condition string  `json:"condition,omitempty"`
+	Angle     string  `json:"angle,omitempty"`
+	Impact    float64 `json:"impact,omitempty"`
+	Reversed  bool    `json:"reversed,omitempty"`
+}
+
 type loftArgs struct {
 	Sections  []loftSectionRef `json:"sections"`
 	Closed    bool             `json:"closed,omitempty"`
 	Operation string           `json:"operation,omitempty"`
+	First     *loftEndArgs     `json:"first,omitempty"`
+	Last      *loftEndArgs     `json:"last,omitempty"`
 }
 
 const loftSchema = `{
@@ -273,7 +286,9 @@ const loftSchema = `{
   "properties": {
     "sections": {"type": "array", "minItems": 2, "items": {"type": "object", "properties": {"sketchIndex": {"type": "integer"}, "profileIndex": {"type": "integer"}}, "required": ["sketchIndex"]}, "description": "Ordered cross-section profiles (>= 2) to loft through."},
     "closed": {"type": "boolean", "default": false},
-    "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"}
+    "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
+    "first": {"type": "object", "description": "Start-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane, e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut)."}}},
+    "last": {"type": "object", "description": "End-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane, e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut)."}}}
   },
   "required": ["sections"]
 }`
@@ -306,6 +321,36 @@ func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewLoftFeatures(part.Features()).Add(sections, in.Closed, op)
+	first, err := loftEndProvider(part, in.First, "first")
+	if err != nil {
+		return nil, err
+	}
+	last, err := loftEndProvider(part, in.Last, "last")
+	if err != nil {
+		return nil, err
+	}
+	liveEnds := func() (feature.LoftEnd, feature.LoftEnd) { return first(), last() }
+	pf := feature.NewLoftFeatures(part.Features()).AddConditionedLive(sections, in.Closed, op, liveEnds)
 	return recomputeResult(part, pf)
+}
+
+// loftEndProvider turns an end-condition arg into a live LoftEnd provider (re-read each recompute
+// so a parameter-driven angle reshapes the loft). A nil/free condition yields a Free end; the
+// face/point conditions are not yet supported and are rejected with the offending value.
+func loftEndProvider(part *compdef.PartComponentDefinition, a *loftEndArgs, which string) (func() feature.LoftEnd, error) {
+	if a == nil || feature.LoftCondition(a.Condition).IsFree() {
+		return func() feature.LoftEnd { return feature.LoftEnd{} }, nil
+	}
+	cond := feature.LoftCondition(a.Condition)
+	if !cond.CurvesViaAngle() {
+		return nil, fmt.Errorf("loft: %s condition %q is not yet supported (use \"free\", \"angle\" or \"direction\")", which, a.Condition)
+	}
+	angle, err := optionalAngleClosure(part, a.Angle, "loft: "+which+" angle")
+	if err != nil {
+		return nil, err
+	}
+	impact, reversed := a.Impact, a.Reversed
+	return func() feature.LoftEnd {
+		return feature.LoftEnd{Condition: cond, Angle: angle(), Impact: impact, Reversed: reversed}
+	}, nil
 }

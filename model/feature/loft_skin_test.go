@@ -39,7 +39,7 @@ func TestAlignSectionsUntwists(t *testing.T) {
 func TestSplineTwoSectionsIsRuled(t *testing.T) {
 	tri0 := sq(0, [2]float64{0, 0}, [2]float64{2, 0}, [2]float64{1, 2})
 	tri1 := sq(3, [2]float64{0, 0}, [2]float64{2, 0}, [2]float64{1, 2})
-	out := splineSections([][]math.Point3{tri0, tri1}, false)
+	out := splineSections([][]math.Point3{tri0, tri1}, false, loftEnds{})
 	if len(out) < 6 {
 		t.Fatalf("2-section loft densified to %d sections, want many", len(out))
 	}
@@ -59,7 +59,7 @@ func TestSplineThreeSectionsBulges(t *testing.T) {
 	tri := func(z, dx float64) []math.Point3 {
 		return sq(z, [2]float64{dx, 0}, [2]float64{dx + 2, 0}, [2]float64{dx + 1, 2})
 	}
-	out := splineSections([][]math.Point3{tri(0, 0), tri(1, 1), tri(2, 0)}, false)
+	out := splineSections([][]math.Point3{tri(0, 0), tri(1, 1), tri(2, 0)}, false, loftEnds{})
 	// The end sections sit at dx=0; a ruled (straight) blend would keep x of point0 at 0
 	// throughout. The spline must reach the middle's dx=1 and stay between.
 	var maxX float64

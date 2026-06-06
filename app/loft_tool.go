@@ -16,10 +16,11 @@ import (
 // the loop, and OK to blend them into a solid. Each picked region maps directly to a
 // [feature.LoftSection], so no extra plumbing is needed beyond the profile picks.
 type LoftTool struct {
-	sections  []ProfileHandle
-	closed    bool
-	operation ops.PartFeatureOperation
-	added     *feature.PartFeature
+	sections    []ProfileHandle
+	closed      bool
+	operation   ops.PartFeatureOperation
+	first, last feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
+	added       *feature.PartFeature
 }
 
 // NewLoftTool returns a loft tool that creates a new body.
@@ -49,6 +50,14 @@ func (t *LoftTool) Closed() bool      { return t.closed }
 func (t *LoftTool) SetOperation(op ops.PartFeatureOperation) { t.operation = op }
 func (t *LoftTool) Operation() ops.PartFeatureOperation      { return t.operation }
 
+// SetFirstCondition/SetLastCondition set the start/end-section conditions (how the surface
+// leaves each end). An Angle/Direction condition curves a two-section loft; the zero value
+// is Free (ruled). Ignored when the loft is closed (no end sections).
+func (t *LoftTool) SetFirstCondition(e feature.LoftEnd) { t.first = e }
+func (t *LoftTool) SetLastCondition(e feature.LoftEnd)  { t.last = e }
+func (t *LoftTool) FirstCondition() feature.LoftEnd     { return t.first }
+func (t *LoftTool) LastCondition() feature.LoftEnd      { return t.last }
+
 // Sections returns the picked cross-sections in order (for the UI to highlight/list).
 func (t *LoftTool) Sections() []ProfileHandle {
 	return append([]ProfileHandle(nil), t.sections...)
@@ -72,7 +81,7 @@ func (t *LoftTool) Commit(s *Session) error {
 	for i, h := range t.sections {
 		sections[i] = feature.LoftSection{Sketch: h.Sketch, ProfileIndex: h.ProfileIndex}
 	}
-	t.added = feature.NewLoftFeatures(part.Features()).Add(sections, t.closed, t.operation)
+	t.added = feature.NewLoftFeatures(part.Features()).AddConditioned(sections, t.closed, t.operation, t.first, t.last)
 	part.Recompute()
 	s.recordEdit(part, "Loft")
 	if !t.added.Health().OK() {

@@ -16,14 +16,17 @@ import (
 //      point count; this rotates each section's start to the cyclic offset that best matches the
 //      previous one, so corresponding points track across sections instead of twisting (Inventor
 //      exposes this as MapPointCurves; the default is this automatic minimum-twist mapping).
-//   2. LONGITUDINAL BLEND (splineSections): corresponding points are joined by a Catmull-Rom
+//   2. LONGITUDINAL BLEND (splineSections): corresponding points are joined by a cubic Hermite
 //      spline and sampled densely, so a multi-section loft curves smoothly through its interior
-//      sections. With only two sections the spline reduces to the straight chord (a 2-section
-//      Free-condition loft is ruled in Inventor too) — but it is still sampled densely so a
-//      twisted ruled blade renders smooth rather than as a couple of facets.
+//      sections. Interior tangents are Catmull-Rom (half the prev→next chord); the first/last
+//      section tangents come from their END CONDITION (loftEnds). A Free end keeps the natural
+//      Catmull-Rom tangent, so a two-section Free loft is still ruled (the straight chord) but
+//      densely sampled. An Angle/Direction end tilts the takeoff at a chosen angle to the
+//      section plane (weighted by an impact), which is what lets a two-section loft curve —
+//      flare or neck — away from the ruled blend (e.g. a fan blade).
 //
-// (Curving a 2-section loft requires end-section tangency conditions — a later slice. Rails,
-// centerline and area-graph sections are the other LoftType modes, also later.)
+// (Tangent/Smooth conditions need adjacent faces and point-section cases need a tangent plane —
+// those, plus rails / centerline / area-graph LoftTypes, are later slices.)
 
 // loftSegmentSamples is how many sub-sections each consecutive section pair is sampled into
 // along the blend — the longitudinal resolution that makes the skinned surface read smooth.
@@ -69,20 +72,112 @@ func rotateToBestOffset(ref, cur []math.Point3) []math.Point3 {
 	return res
 }
 
-// splineSections inserts loftSegmentSamples Catmull-Rom-interpolated sub-sections between each
-// consecutive pair (periodic when closed), so the loft skins a smooth surface through the
-// sections. Corresponding points must already be aligned.
-func splineSections(sections [][]math.Point3, closed bool) [][]math.Point3 {
+// splineSections inserts loftSegmentSamples interpolated sub-sections between each consecutive
+// section pair (periodic when closed), so the loft skins a smooth surface through the sections.
+// Interior sections take Catmull-Rom tangents; the first and last sections take the tangent
+// dictated by their end condition (Free keeps the natural Catmull-Rom tangent, so an all-Free
+// loft is the same ruled/curved blend as before — see loftEnds). Corresponding points must
+// already be aligned.
+func splineSections(sections [][]math.Point3, closed bool, ends loftEnds) [][]math.Point3 {
 	m := len(sections)
 	if m < 2 || loftSegmentSamples < 2 {
 		return sections
 	}
+	return hermiteBlend(sections, sectionTangents(sections, closed, ends), closed)
+}
+
+// sectionTangents is the longitudinal tangent at every section point: a Catmull-Rom tangent
+// (half the chord from the previous to the next section) at interior sections, overridden at
+// the first/last section by an angled end condition. Feeding these to a Hermite blend with the
+// Catmull-Rom tangents reproduces the Catmull-Rom curve exactly, so Free ends are unchanged.
+func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds) [][]math.Vector3 {
+	m, n := len(sections), len(sections[0])
 	idx := func(i int) int {
 		if closed {
 			return ((i % m) + m) % m
 		}
 		return clampInt(i, 0, m-1)
 	}
+	tan := make([][]math.Vector3, m)
+	for i := 0; i < m; i++ {
+		tan[i] = make([]math.Vector3, n)
+		for j := 0; j < n; j++ {
+			tan[i][j] = sections[idx(i-1)][j].VectorTo(sections[idx(i+1)][j]).Scale(0.5)
+		}
+	}
+	if !closed {
+		fwdStart := loopCentroid(sections[0]).VectorTo(loopCentroid(sections[1]))
+		fwdEnd := loopCentroid(sections[m-2]).VectorTo(loopCentroid(sections[m-1]))
+		applyEndCondition(tan[0], sections[0], sections[1], ends.first, ends.firstN, fwdStart)
+		applyEndCondition(tan[m-1], sections[m-1], sections[m-2], ends.last, ends.lastN, fwdEnd)
+	}
+	return tan
+}
+
+// applyEndCondition overrides an end section's tangents for an angle/direction condition: the
+// surface leaves the section at end.Angle measured from its plane, with end.Impact scaling the
+// takeoff reach and Reversed flipping the through-plane direction (an undercut). neighbor is the
+// adjacent section, normal the section's plane normal, forward the +u (increasing-section)
+// direction here. Free and the face/point conditions keep the natural Catmull-Rom tangent.
+func applyEndCondition(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, forward math.Vector3) {
+	if !end.Condition.CurvesViaAngle() {
+		return
+	}
+	nf := alignToward(normal, forward)
+	if end.Reversed {
+		nf = nf.Negate()
+	}
+	impact := end.Impact
+	if impact <= 0 {
+		impact = 1
+	}
+	sa, ca := stdmath.Sin(end.Angle), stdmath.Cos(end.Angle)
+	c := centroidOf(sec)
+	for j := range sec {
+		r := radialDir(sec[j], c, normal)
+		base := float64(sec[j].DistanceTo(neighbor[j]))
+		dir := nf.AsVector().Scale(sa).Add(r.Scale(ca))
+		tangents[j] = unitOrFallback(dir, forward).Scale(impact * base)
+	}
+}
+
+// alignToward returns n flipped, if needed, to point into the same half-space as ref.
+func alignToward(n math.UnitVector3, ref math.Vector3) math.UnitVector3 {
+	if n.AsVector().Dot(ref) < 0 {
+		return n.Negate()
+	}
+	return n
+}
+
+// radialDir is the outward in-plane unit direction from the section centroid c to point p
+// (zero when p sits on the section axis, e.g. a point section).
+func radialDir(p, c math.Point3, normal math.UnitVector3) math.Vector3 {
+	nrm := normal.AsVector()
+	v := c.VectorTo(p)
+	v = v.Sub(nrm.Scale(v.Dot(nrm)))
+	l := v.Length()
+	if l < 1e-12 {
+		return math.V3(0, 0, 0)
+	}
+	return v.Scale(1 / l)
+}
+
+// unitOrFallback returns the unit of v, or the unit of fallback when v is ~zero.
+func unitOrFallback(v, fallback math.Vector3) math.Vector3 {
+	if v.Length() < 1e-12 {
+		v = fallback
+	}
+	l := v.Length()
+	if l == 0 {
+		return math.V3(0, 0, 0)
+	}
+	return v.Scale(1 / l)
+}
+
+// hermiteBlend samples a cubic Hermite spline through each corresponding-point track, using the
+// per-section tangents, into loftSegmentSamples sub-sections per segment (periodic when closed).
+func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool) [][]math.Point3 {
+	m := len(sections)
 	segs := m - 1
 	if closed {
 		segs = m
@@ -90,15 +185,44 @@ func splineSections(sections [][]math.Point3, closed bool) [][]math.Point3 {
 	out := make([][]math.Point3, 0, 1+segs*loftSegmentSamples)
 	out = append(out, sections[0])
 	for i := 0; i < segs; i++ {
-		p0, p1, p2, p3 := sections[idx(i-1)], sections[idx(i)], sections[idx(i+1)], sections[idx(i+2)]
+		i1 := (i + 1) % m
 		for s := 1; s <= loftSegmentSamples; s++ {
-			out = append(out, catmullSection(p0, p1, p2, p3, float64(s)/float64(loftSegmentSamples)))
+			out = append(out, hermiteSection(sections[i], sections[i1], tan[i], tan[i1], float64(s)/float64(loftSegmentSamples)))
 		}
 	}
 	if closed {
 		out = out[:len(out)-1] // the final sample equals sections[0]; drop it (sweptSolid closes the loop)
 	}
 	return out
+}
+
+// hermiteSection blends one sub-section: each point is the Hermite interpolant of the two
+// sections' corresponding points and their tangents at parameter t (t∈(0,1] along p0→p1).
+func hermiteSection(p0, p1 []math.Point3, m0, m1 []math.Vector3, t float64) []math.Point3 {
+	out := make([]math.Point3, len(p0))
+	for j := range p0 {
+		out[j] = hermite3(p0[j], p1[j], m0[j], m1[j], t)
+	}
+	return out
+}
+
+// hermite3 is the cubic Hermite interpolant of endpoints p0,p1 with tangents m0,m1 at t. With
+// m0==m1 parallel to p1−p0 (the Free/Catmull-Rom two-section case) the result stays on the
+// straight p0→p1 chord (ruled), so a Free loft is unchanged.
+func hermite3(p0, p1 math.Point3, m0, m1 math.Vector3, t float64) math.Point3 {
+	t2, t3 := t*t, t*t*t
+	h00 := 2*t3 - 3*t2 + 1
+	h10 := t3 - 2*t2 + t
+	h01 := -2*t3 + 3*t2
+	h11 := t3 - t2
+	axis := func(a0, d0, a1, d1 float64) float64 {
+		return h00*a0 + h10*d0 + h01*a1 + h11*d1
+	}
+	return math.P3(
+		axis(p0.X, m0.X, p1.X, m1.X),
+		axis(p0.Y, m0.Y, p1.Y, m1.Y),
+		axis(p0.Z, m0.Z, p1.Z, m1.Z),
+	)
 }
 
 // extendEnds pushes a hole loft's first and last sections slightly OUTWARD along the loft
@@ -167,28 +291,4 @@ func clampInt(v, lo, hi int) int {
 		return hi
 	}
 	return v
-}
-
-// catmullSection blends one sub-section: each point is the Catmull-Rom of the four sections'
-// corresponding points at parameter t (t∈(0,1] along p1→p2).
-func catmullSection(p0, p1, p2, p3 []math.Point3, t float64) []math.Point3 {
-	out := make([]math.Point3, len(p1))
-	for j := range p1 {
-		out[j] = catmullRom3(p0[j], p1[j], p2[j], p3[j], t)
-	}
-	return out
-}
-
-// catmullRom3 is the uniform Catmull-Rom interpolant of four points at t (segment p1→p2). With
-// p0==p1 and p3==p2 (the 2-section / end cases) it stays on the straight p1→p2 chord.
-func catmullRom3(p0, p1, p2, p3 math.Point3, t float64) math.Point3 {
-	t2, t3 := t*t, t*t*t
-	c := func(a, b, cc, d float64) math.Scalar {
-		return math.Scalar(0.5 * (2*b + (-a+cc)*t + (2*a-5*b+4*cc-d)*t2 + (-a+3*b-3*cc+d)*t3))
-	}
-	return math.P3(
-		c(float64(p0.X), float64(p1.X), float64(p2.X), float64(p3.X)),
-		c(float64(p0.Y), float64(p1.Y), float64(p2.Y), float64(p3.Y)),
-		c(float64(p0.Z), float64(p1.Z), float64(p2.Z), float64(p3.Z)),
-	)
 }

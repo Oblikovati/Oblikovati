@@ -6,11 +6,45 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati/api/types"
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
 	"oblikovati/model/sketch"
 )
+
+// LoftCondition is the boundary tangency control at a loft's end section; the canonical
+// definition lives in the Apache-2.0 api/types (see ADR-0018).
+type LoftCondition = types.LoftCondition
+
+// Loft end conditions (aliases of the canonical api/types values).
+const (
+	LoftFree           = types.LoftFree
+	LoftAngle          = types.LoftAngle
+	LoftDirection      = types.LoftDirection
+	LoftTangent        = types.LoftTangent
+	LoftSmooth         = types.LoftSmooth
+	LoftSharpPoint     = types.LoftSharpPoint
+	LoftTangentToPlane = types.LoftTangentToPlane
+)
+
+// LoftEnd is the end-section condition for a loft start or end: how the surface leaves that
+// section. Angle (radians, measured from the section's sketch plane) and Impact (takeoff
+// weight, default 1) drive the Angle/Direction condition; Reversed flips the takeoff through
+// the plane. The zero value is a Free end (the natural ruled/curved blend).
+type LoftEnd struct {
+	Condition LoftCondition
+	Angle     float64
+	Impact    float64
+	Reversed  bool
+}
+
+// loftEnds carries the resolved start/end conditions plus the section-plane normals the skinner
+// needs to build the angled takeoff tangents.
+type loftEnds struct {
+	first, last   LoftEnd
+	firstN, lastN math.UnitVector3
+}
 
 // Sweep and loft generate real (faceted) solids through the shared swept-solid
 // primitive. A sweep places the profile at each path point, oriented to the local
@@ -147,12 +181,20 @@ type LoftSection struct {
 	ProfileIndex int
 }
 
-// LoftDefinition is the recipe for a loft: a blend through ordered sections, optionally
-// closed (the last section blends back to the first).
+// LoftDefinition is the recipe for a loft: a blend through ordered sections, optionally closed
+// (the last section blends back to the first). First/Last carry the end-section conditions that
+// let the surface curve away from a flat ruled blend (ignored when Closed — a closed loft has
+// no end sections).
 type LoftDefinition struct {
 	Sections  []LoftSection
 	Closed    bool
 	Operation ops.PartFeatureOperation
+	First     LoftEnd
+	Last      LoftEnd
+	// LiveEnds, when set, supplies the start/end conditions afresh on every recompute so a
+	// parameter driving an end angle/impact reshapes the loft (the static First/Last are the
+	// snapshot used otherwise). Mirrors SweepDefinition.Twist's live-provider pattern.
+	LiveEnds func() (first, last LoftEnd)
 }
 
 // LoftFeature blends through sections.
@@ -178,7 +220,7 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	tool, err := l.skinTool(outers, inners)
+	tool, err := l.skinTool(outers, inners, l.resolveEnds())
 	if err != nil {
 		return Output{}, err
 	}
@@ -190,27 +232,43 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
+// resolveEnds pairs the definition's end conditions with the first/last section-plane normals
+// the skinner needs to aim the angled takeoff tangents.
+func (l *LoftFeature) resolveEnds() loftEnds {
+	secs := l.def.Sections
+	first, last := l.def.First, l.def.Last
+	if l.def.LiveEnds != nil {
+		first, last = l.def.LiveEnds()
+	}
+	return loftEnds{
+		first:  first,
+		last:   last,
+		firstN: secs[0].Sketch.Plane().Normal(),
+		lastN:  secs[len(secs)-1].Sketch.Plane().Normal(),
+	}
+}
+
 // skinTool builds the lofted solid for the resolved loops: a plain skin (no holes), a
 // directly-meshed tube (one hole — a pipe), or a multi-hole solid cut from the skin (rare). The
 // one-hole tube is meshed directly rather than via a bore Cut because a bore whose caps are
 // coplanar with the body's caps leaves the Difference open. See [tubeSolid] and [hollowByCut].
-func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3) (*topo.Body, error) {
+func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3, ends loftEnds) (*topo.Body, error) {
 	feat := featOr(l.featName, "loft")
 	switch numHoles(inners) {
 	case 0:
-		return skinLoops(outers, l.def.Closed, feat)
+		return skinLoops(outers, l.def.Closed, feat, ends)
 	case 1:
-		return tubeLoops(outers, holeRing(inners, 0), l.def.Closed, feat)
+		return tubeLoops(outers, holeRing(inners, 0), l.def.Closed, feat, ends)
 	default:
-		return hollowByCut(outers, inners, l.def.Closed, feat)
+		return hollowByCut(outers, inners, l.def.Closed, feat, ends)
 	}
 }
 
 // hollowByCut skins the outer body and cuts each bore out of it — the fallback for lofts with
 // more than one hole, where a multiply-connected end cap can't be a simple annular strip. Each
 // bore is extended past the body's end caps (extendEnds) so the through-cut is not coplanar.
-func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, feat string) (*topo.Body, error) {
-	tool, err := skinLoops(outers, closed, feat)
+func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, feat string, ends loftEnds) (*topo.Body, error) {
+	tool, err := skinLoops(outers, closed, feat, ends)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +278,7 @@ func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, 
 	}
 	for h := 0; h < numHoles(inners); h++ {
 		ring := extendEnds(holeRing(inners, h), eps)
-		hole, herr := skinLoops(ring, closed, feat+"-hole")
+		hole, herr := skinLoops(ring, closed, feat+"-hole", ends)
 		if herr != nil {
 			return nil, herr
 		}
@@ -287,27 +345,28 @@ func loopToModel(loop sketch.Loop, plane sketch.Plane) []math.Point3 {
 // skinLoops resamples a set of section loops to a common point count, corresponds them
 // (minimize twist), blends them with a Catmull-Rom spline (a loft is not a straight blend),
 // and meshes the swept solid. See loft_skin.go.
-func skinLoops(loops [][]math.Point3, closed bool, feat string) (*topo.Body, error) {
-	return sweptSolid(skinnedSections(loops, maxLoopCount(loops), closed), closed, feat)
+func skinLoops(loops [][]math.Point3, closed bool, feat string, ends loftEnds) (*topo.Body, error) {
+	return sweptSolid(skinnedSections(loops, maxLoopCount(loops), closed, ends), closed, feat)
 }
 
 // tubeLoops skins corresponding outer and inner section loops to a common point count, then
 // meshes them directly into a hollow tube. Outer and inner share that point count so their
 // rings pair up across the annular end caps; both run through the same correspondence + spline
 // blend, so the pipe wall reads as smooth as a solid loft.
-func tubeLoops(outers, inners [][]math.Point3, closed bool, feat string) (*topo.Body, error) {
+func tubeLoops(outers, inners [][]math.Point3, closed bool, feat string, ends loftEnds) (*topo.Body, error) {
 	n := maxLoopCount(outers, inners)
-	return tubeSolid(skinnedSections(outers, n, closed), skinnedSections(inners, n, closed), closed, feat)
+	return tubeSolid(skinnedSections(outers, n, closed, ends), skinnedSections(inners, n, closed, ends), closed, feat)
 }
 
 // skinnedSections resamples loops to n points, corresponds them (minimize twist), and blends
-// them with a Catmull-Rom spline — the densified section sequence ready to mesh. See loft_skin.go.
-func skinnedSections(loops [][]math.Point3, n int, closed bool) [][]math.Point3 {
+// them with a tangent-driven Hermite spline (Catmull-Rom interior, end conditions at the ends)
+// — the densified section sequence ready to mesh. See loft_skin.go.
+func skinnedSections(loops [][]math.Point3, n int, closed bool, ends loftEnds) [][]math.Point3 {
 	resampled := make([][]math.Point3, len(loops))
 	for i, lp := range loops {
 		resampled[i] = resampleLoop(lp, n)
 	}
-	return splineSections(alignSections(resampled), closed)
+	return splineSections(alignSections(resampled), closed, ends)
 }
 
 // maxLoopCount returns the largest point count across every loop in the given sets, the common
@@ -330,9 +389,26 @@ type LoftFeatures struct{ engine *PartFeatures }
 // NewLoftFeatures binds the collection to an engine.
 func NewLoftFeatures(engine *PartFeatures) *LoftFeatures { return &LoftFeatures{engine} }
 
-// Add adds a loft blending through the sections (optionally closed) under op.
+// Add adds a loft blending through the sections (optionally closed) under op, with Free end
+// conditions (a two-section loft is ruled).
 func (c *LoftFeatures) Add(sections []LoftSection, closed bool, op ops.PartFeatureOperation) *PartFeature {
-	def := &LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op}
+	return c.AddConditioned(sections, closed, op, LoftEnd{}, LoftEnd{})
+}
+
+// AddConditioned adds a loft with explicit start/end conditions, so the surface can curve away
+// from a flat ruled blend (e.g. an Angle takeoff on a two-section loft). The conditions are
+// ignored when closed (a closed loft has no end sections).
+func (c *LoftFeatures) AddConditioned(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd) *PartFeature {
+	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, First: first, Last: last})
+}
+
+// AddConditionedLive is AddConditioned with a live end-condition provider, re-read on every
+// recompute, so an end angle/impact driven by a parameter reshapes the loft.
+func (c *LoftFeatures) AddConditionedLive(sections []LoftSection, closed bool, op ops.PartFeatureOperation, liveEnds func() (first, last LoftEnd)) *PartFeature {
+	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, LiveEnds: liveEnds})
+}
+
+func (c *LoftFeatures) add(def *LoftDefinition) *PartFeature {
 	lf := &LoftFeature{def: def}
 	pf := c.engine.Add(lf)
 	pf.SetName(c.engine.UniqueName("Loft"))

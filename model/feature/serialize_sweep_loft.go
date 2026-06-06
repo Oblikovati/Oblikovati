@@ -31,11 +31,21 @@ type LoftSectionData struct {
 	Profile int `yaml:"profile"`
 }
 
-// LoftData is a loft's recipe.
+// LoftEndData is a loft end-section condition (omitted entirely when Free). Angle is in radians.
+type LoftEndData struct {
+	Condition string  `yaml:"condition"`
+	Angle     float64 `yaml:"angle,omitempty"`
+	Impact    float64 `yaml:"impact,omitempty"`
+	Reversed  bool    `yaml:"reversed,omitempty"`
+}
+
+// LoftData is a loft's recipe. First/Last persist the end conditions (nil when Free).
 type LoftData struct {
 	Sections  []LoftSectionData `yaml:"sections"`
 	Closed    bool              `yaml:"closed,omitempty"`
 	Operation string            `yaml:"operation"`
+	First     *LoftEndData      `yaml:"first,omitempty"`
+	Last      *LoftEndData      `yaml:"last,omitempty"`
 }
 
 func serializeSweep(def *SweepDefinition, sk SketchIndexer) (*SweepData, error) {
@@ -90,7 +100,28 @@ func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &LoftData{Sections: sections, Closed: def.Closed, Operation: op}, nil
+	first, last := def.First, def.Last
+	if def.LiveEnds != nil {
+		first, last = def.LiveEnds() // capture the current (evaluated) end values, like sweep's twist
+	}
+	return &LoftData{Sections: sections, Closed: def.Closed, Operation: op, First: encodeLoftEnd(first), Last: encodeLoftEnd(last)}, nil
+}
+
+// encodeLoftEnd serializes an end condition, returning nil for a Free end (the default) so a
+// plain loft persists no condition keys.
+func encodeLoftEnd(e LoftEnd) *LoftEndData {
+	if e.Condition.IsFree() {
+		return nil
+	}
+	return &LoftEndData{Condition: string(e.Condition), Angle: e.Angle, Impact: e.Impact, Reversed: e.Reversed}
+}
+
+// decodeLoftEnd is encodeLoftEnd's inverse (a nil payload is a Free end).
+func decodeLoftEnd(d *LoftEndData) LoftEnd {
+	if d == nil {
+		return LoftEnd{}
+	}
+	return LoftEnd{Condition: LoftCondition(d.Condition), Angle: d.Angle, Impact: d.Impact, Reversed: d.Reversed}
 }
 
 func restoreLoft(fs *PartFeatures, d *LoftData, sk SketchIndexer) (*PartFeature, error) {
@@ -109,7 +140,7 @@ func restoreLoft(fs *PartFeatures, d *LoftData, sk SketchIndexer) (*PartFeature,
 	if err != nil {
 		return nil, err
 	}
-	return NewLoftFeatures(fs).Add(sections, d.Closed, op), nil
+	return NewLoftFeatures(fs).AddConditioned(sections, d.Closed, op, decodeLoftEnd(d.First), decodeLoftEnd(d.Last)), nil
 }
 
 // point3DChain wraps model points as sketch 3D points for a restored sweep path.
