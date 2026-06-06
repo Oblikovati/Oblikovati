@@ -90,7 +90,7 @@ git clone https://github.com/Oblikovati/Oblikovati.git
 git clone https://github.com/Oblikovati/Oblikovati.API.git   # sibling
 cd Oblikovati
 go work init . ./head                                          # local workspace (go.work)
-go work edit -replace github.com/Oblikovati/api=../Oblikovati.API
+go work edit -replace oblikovati/api=../Oblikovati.API
 
 # Core + CLI (pure Go).
 make test        # fast, cgo-free unit tests

@@ -4,7 +4,7 @@
 # (architecture/ADR-0008). The race detector needs cgo, so `test-race` is separate.
 
 GO          ?= go
-MODULE      := github.com/Oblikovati/oblikovati
+MODULE      := oblikovati
 PKG         := ./...
 DIST        := dist
 
