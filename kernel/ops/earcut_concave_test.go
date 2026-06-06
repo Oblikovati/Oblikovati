@@ -9,20 +9,15 @@ import (
 	"oblikovati/math"
 )
 
-// TestEarcutConcaveOuterTwoHoles is the regression for the corner-bracket defect: a face whose
-// OUTER boundary is concave (an L, reflex corner) carrying TWO holes triangulated to the wrong
-// area — so a part's volume (a divergence sum over tessellated faces) was wrong after a second
-// hole was cut into a concave body. A convex outer with many holes (veroboard) was fine; the
-// concave outer + multiple holes is the trigger.
+// TestEarcutConcaveOuterTwoHoles is the regression for the concave-outer + multi-hole bug: a
+// face whose OUTER boundary is concave (an L, reflex corner) carrying TWO holes used to
+// triangulate to the wrong area (9.514 vs 9.030), so a part's volume (a divergence sum over
+// tessellated faces) was wrong after a second hole was cut into a concave body. Root cause: a
+// flipped comparison in findHoleBridge picked the larger-x edge endpoint as the bridge
+// candidate instead of the smaller-x one (Mapbox: m = p.x < p.next.x ? p : p.next), placing a
+// hole bridge that crossed the concave notch. A convex outer with many holes (veroboard) and a
+// concave outer with one hole both worked; only concave + multiple holes exposed it.
 func TestEarcutConcaveOuterTwoHoles(t *testing.T) {
-	t.Skip("DEFECT: earcut over-counts area for a CONCAVE (reflex) outer boundary carrying " +
-		"≥2 holes (L outer + 2 holes → 9.514, want 9.030). A convex outer with many holes " +
-		"(veroboard) and a concave outer with ONE hole both work; only concave-outer + multiple " +
-		"holes mis-triangulates (bridge/ear-clip interaction in the Mapbox port). It surfaces as " +
-		"a wrong VOLUME (divergence sum over tessellated faces) when a 2nd hole is cut into a " +
-		"concave body — found via the corner-bracket part. Unskip when the earcut hole-bridging " +
-		"is fixed for concave outers. Winding-insensitive (CW/CCW holes both fail).")
-
 	// L outer (CCW), area 4·4 − 2.5·2.5 = 9.75.
 	outer := []math.Point2{
 		math.P2(0, 0), math.P2(4, 0), math.P2(4, 1.5),
