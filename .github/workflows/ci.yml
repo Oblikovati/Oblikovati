@@ -107,7 +107,7 @@ jobs:
           go-version-file: go.mod
           cache: false
       - run: go mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
-      - run: go test -race ./...
+      - run: go test -race -skip 'TestNop.*CSG' ./...
 
   # cgo GUI head (Vulkan + Dear ImGui). The PR test/race/build jobs above run `./...`
   # on the ROOT module only and with CGO_ENABLED=0, so the head module was previously

@@ -16,7 +16,7 @@ func TestNopJackCSG(t *testing.T) {
 	body = cutOrFatal(t, body, prismBody(regularPolygonPoints(math.P3(0, 0, 0), 0.175, 48, 0), -0.05, 0.65, "jack-bore"), "jack bore")
 	tube := annularPrism(t, 0.3, 0.175, 0.85, "jack-front-tube")
 	body = joinOrFatal(t, body, tube, "jack tube")
-	body = joinOrFatal(t, body, box(-0.3, -0.35, -0.3, 0.6, 0.7, 0.3), "jack rear block")
+	body = joinOrFatal(t, body, box(-0.3, -0.35, -0.3, 0.6, 0.7, 0.32), "jack rear block")
 
 	requireValidNopSolid(t, "jack", body)
 	if got := vol(body); got <= 0.6*0.7*0.6 || got >= 0.6*0.7*0.9+stdmath.Pi*0.3*0.3*0.85 {

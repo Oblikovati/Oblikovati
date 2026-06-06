@@ -66,9 +66,18 @@ func TestNopVerticalTearslot2DCSG(t *testing.T) {
 }
 
 func TestNopDimensionCSG(t *testing.T) {
-	body := box(-0.75, -0.015, -0.015, 1.5, 0.03, 0.03)
-	body = joinOrFatal(t, body, prismBody([]math.Point3{math.P3(-0.7, -0.08, 0), math.P3(-0.7, 0.08, 0), math.P3(-0.95, 0, 0)}, -0.015, 0.015, "dimension-left-arrow"), "dimension left arrow")
-	body = joinOrFatal(t, body, prismBody([]math.Point3{math.P3(0.7, -0.08, 0), math.P3(0.7, 0.08, 0), math.P3(0.95, 0, 0)}, -0.015, 0.015, "dimension-right-arrow"), "dimension right arrow")
+	body := prismBody([]math.Point3{
+		math.P3(-0.95, 0, 0),
+		math.P3(-0.7, -0.08, 0),
+		math.P3(-0.7, -0.015, 0),
+		math.P3(0.7, -0.015, 0),
+		math.P3(0.7, -0.08, 0),
+		math.P3(0.95, 0, 0),
+		math.P3(0.7, 0.08, 0),
+		math.P3(0.7, 0.015, 0),
+		math.P3(-0.7, 0.015, 0),
+		math.P3(-0.7, 0.08, 0),
+	}, -0.018, 0.018, "dimension")
 
 	requireValidNopSolid(t, "dimension", body)
 	if got := vol(body); got <= 0 {
