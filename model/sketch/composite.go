@@ -31,6 +31,35 @@ func (s *Sketch) closedLoopPoints(pts []math.Point2) ([]Entity, []*Point) {
 	return out, pp
 }
 
+// AddPolyline connects the given points with straight lines that share endpoints (so the
+// chain is one connected profile). When closed it also joins the last point back to the
+// first, yielding a single closed profile (the way to author an arbitrary outline — an
+// L-bracket, a custom extrusion section — without hand-placing each line). An open polyline
+// needs ≥2 points; a closed one needs ≥3.
+//
+// Example: s.AddPolyline([]math.Point2{{0,0},{3,0},{3,1.5},{1.5,1.5},{1.5,3},{0,3}}, true)
+// builds a closed L-shaped profile.
+func (s *Sketch) AddPolyline(pts []math.Point2, closed bool) ([]Entity, error) {
+	if closed {
+		if len(pts) < 3 {
+			return nil, fmt.Errorf("polyline: a closed polyline needs at least 3 points, got %d", len(pts))
+		}
+		return s.closedLoop(pts), nil
+	}
+	if len(pts) < 2 {
+		return nil, fmt.Errorf("polyline: an open polyline needs at least 2 points, got %d", len(pts))
+	}
+	pp := make([]*Point, len(pts))
+	for i, p := range pts {
+		pp[i] = s.newPoint(p)
+	}
+	out := make([]Entity, 0, len(pp)-1)
+	for i := 0; i+1 < len(pp); i++ {
+		out = append(out, s.lines.Add(pp[i], pp[i+1]))
+	}
+	return out, nil
+}
+
 // AddRectangleByCorners builds an axis-aligned rectangle from two opposite corners,
 // returning its four lines.
 func (s *Sketch) AddRectangleByCorners(p0, opposite math.Point2) []Entity {

@@ -47,7 +47,7 @@ func addSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 // isCompositeKind reports whether a kind builds several entities at once.
 func isCompositeKind(kind string) bool {
 	switch kind {
-	case "rectangle", "polygon", "slot":
+	case "rectangle", "polygon", "slot", "polyline":
 		return true
 	default:
 		return false
@@ -124,9 +124,26 @@ func buildComposite(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in
 	case "slot":
 		ents, err := buildSlot(part, sk, in, pts)
 		return ents, nil, err
+	case "polyline":
+		ents, err := buildPolyline(sk, in, pts)
+		return ents, nil, err
 	default:
 		return nil, nil, fmt.Errorf("sketch.addEntity: %q is not a composite kind", in.Kind)
 	}
+}
+
+// buildPolyline connects the given points with shared-endpoint lines (Closed ⇒ a closed
+// profile). Unlike the regular polygon, the points are arbitrary — the way to author an
+// L-bracket, a custom extrusion section, or any non-rectilinear outline over the API.
+func buildPolyline(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) ([]sketch.Entity, error) {
+	min := 2
+	if in.Closed {
+		min = 3
+	}
+	if len(pts) < min {
+		return nil, fmt.Errorf("sketch.addEntity: polyline needs at least %d points, got %d", min, len(pts))
+	}
+	return sk.AddPolyline(pts, in.Closed)
 }
 
 // buildRectangle builds the two-corner (default), center, or three-point rectangle.
