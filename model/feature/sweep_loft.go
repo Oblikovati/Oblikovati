@@ -177,6 +177,10 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
+	// Skin a smooth surface through the sections: correspond points (minimize twist), then
+	// blend longitudinally with a Catmull-Rom spline densely sampled (a loft is not a straight
+	// blend). See loft_skin.go.
+	sections = splineSections(alignSections(sections), l.def.Closed)
 	l.tool, err = sweptSolid(sections, l.def.Closed, featOr(l.featName, "loft"))
 	if err != nil {
 		return Output{}, err
