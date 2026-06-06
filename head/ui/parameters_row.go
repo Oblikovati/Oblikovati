@@ -34,9 +34,9 @@ func drawParameterRow(s *app.Session, row app.ParameterRow) {
 	native.TableNextColumn()
 	native.Text(row.Tolerance)
 	native.TableNextColumn()
-	drawFlagCell(s, row, "##key", row.IsKey, s.SetParameterKey)
+	drawFlagCell(row, "##key", row.IsKey, s.SetParameterKey)
 	native.TableNextColumn()
-	drawFlagCell(s, row, "##export", row.Export, s.SetParameterExport)
+	drawFlagCell(row, "##export", row.Export, s.SetParameterExport)
 	native.TableNextColumn()
 	drawCommentCell(s, row)
 }
@@ -47,7 +47,7 @@ func drawNameCell(s *app.Session, row app.ParameterRow) {
 		native.Text(row.Name)
 		return
 	}
-	editCell(s, "name", row.ID, row.Name, func(v string) error { return s.SetParameterName(row.ID, v) })
+	editCell("name", row.ID, row.Name, func(v string) error { return s.SetParameterName(row.ID, v) })
 }
 
 // drawEquationCell edits the equation: a dropdown for multi-value, a checkbox for boolean,
@@ -63,7 +63,7 @@ func drawEquationCell(s *app.Session, row app.ParameterRow) {
 			_ = s.SetParameterBool(row.ID, v)
 		}
 	case row.Editable:
-		editCell(s, "eq", row.ID, row.Equation, func(v string) error { return s.SetParameterEquation(row.ID, v) })
+		editCell("eq", row.ID, row.Equation, func(v string) error { return s.SetParameterEquation(row.ID, v) })
 	default:
 		native.Text(row.Equation)
 	}
@@ -101,11 +101,11 @@ func drawCommentCell(s *app.Session, row app.ParameterRow) {
 		native.Text(row.Comment)
 		return
 	}
-	editCell(s, "comment", row.ID, row.Comment, func(v string) error { return s.SetParameterComment(row.ID, v) })
+	editCell("comment", row.ID, row.Comment, func(v string) error { return s.SetParameterComment(row.ID, v) })
 }
 
 // drawFlagCell draws a Key/Export checkbox (disabled for read-only parameters).
-func drawFlagCell(s *app.Session, row app.ParameterRow, id string, value bool, set func(param.ID, bool) error) {
+func drawFlagCell(row app.ParameterRow, id string, value bool, set func(param.ID, bool) error) {
 	v := value
 	native.BeginDisabled(!row.Editable)
 	if native.Checkbox(id, &v) {
@@ -116,7 +116,7 @@ func drawFlagCell(s *app.Session, row app.ParameterRow, id string, value bool, s
 
 // editCell draws a text field seeded once from value; on commit (focus loss) it calls set
 // and drops the buffer so the reformatted model value re-seeds it next frame.
-func editCell(s *app.Session, field string, id param.ID, value string, set func(string) error) {
+func editCell(field string, id param.ID, value string, set func(string) error) {
 	key := field + ":" + idKey(id)
 	buf := cellBuf(key, value)
 	native.SetNextItemWidth(-1)
@@ -152,16 +152,27 @@ func drawRowContextMenu(s *app.Session, row app.ParameterRow) {
 	if native.MenuItem("Add to Group…") {
 		openGroupDialog(row)
 	}
+	drawRowGroupMenuItems(s, row)
+	drawEditableRowMenuItems(s, row)
+	native.EndPopup()
+}
+
+func drawRowGroupMenuItems(s *app.Session, row app.ParameterRow) {
 	if row.Group != "" && native.MenuItem("Remove from Group") {
 		_ = s.RemoveParameterFromGroup(row.ID)
 	}
-	if row.Editable && row.ValueType != "boolean" {
+}
+
+func drawEditableRowMenuItems(s *app.Session, row app.ParameterRow) {
+	if !row.Editable {
+		return
+	}
+	if row.ValueType != "boolean" {
 		drawMultiValueMenuItems(s, row)
 	}
-	if row.Editable && row.ValueType == "numeric" && native.MenuItem("Edit Tolerance…") {
+	if row.ValueType == "numeric" && native.MenuItem("Edit Tolerance…") {
 		openToleranceDialog(row)
 	}
-	native.EndPopup()
 }
 
 // drawMultiValueMenuItems adds the make/edit/clear multi-value entries.

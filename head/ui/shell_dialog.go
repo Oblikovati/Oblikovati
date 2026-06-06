@@ -35,15 +35,7 @@ func drawShellDialog(s *app.Session) {
 		native.Text("Thickness (" + s.LengthUnitName() + ")")
 		native.InputFloat("##shell-thickness", &shellUI.thickness)
 		sh.SetThickness(float64(shellUI.thickness))
-		native.BeginDisabled(!sh.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		drawCommitCancelButtons(s, sh.CanCommit())
 	}
 	native.End()
 }

@@ -30,26 +30,53 @@ import (
 // function stays free of side effects on the model. The window is needed to render the
 // 3D viewport into its offscreen target.
 func DrawChrome(win *native.Window, s *app.Session) string {
+	prepareChromeFrame(win, s)
+	drawMenuBar(s)
+	activated := ""
+	if id := drawRibbon(s); id != "" {
+		activated = id
+	}
+	drawBrowser(s)
+	drawViewportIfPresent(win, s)
+	drawChromeDialogs(s)
+	drawStatusBar(s)
+	drawChromeWindows(s)
+	drawDocumentClosePrompt(s)
+	drawFileDialog(s)
+	return activated
+}
+
+func prepareChromeFrame(win *native.Window, s *app.Session) {
 	if icons == nil {
 		icons = newIconCache(win) // lazily bind the icon cache to this window
 	}
 	applyThemeIfChanged(win, s) // restyle ImGui + overlays when the theme changed (live preview)
 	handleKeyboard(s)
-	activated := drawMenuBar(s)
 	dockID := native.DockSpaceOverMain()
 	if !dockLaidOut {
 		native.DockDefaultLayout(dockID, "Ribbon", "Model", "Viewport", "Status")
 		dockLaidOut = true
 	}
 	followActiveDocument(s)
-	if id := drawRibbon(s); id != "" {
-		activated = id
+}
+
+func drawViewportIfPresent(win *native.Window, s *app.Session) {
+	if shouldDrawViewport(s) {
+		drawViewportPanel(win, s)
 	}
-	drawBrowser(s)
-	drawViewportPanel(win, s)
+}
+
+func drawChromeDialogs(s *app.Session) {
 	drawDimensionPopup(s)
 	drawToolParamsDialog(s) // generic dialog for parameterized sketch tools
 	drawSketch3DSettings(s) // 3D-sketch settings while editing one
+	drawSolidFeatureDialogs(s)
+	drawSurfaceFeatureDialogs(s)
+	drawOffsetPlaneDialog(s)
+	drawFeatureEditDialog(s)
+}
+
+func drawSolidFeatureDialogs(s *app.Session) {
 	drawExtrudeDialog(s)
 	drawRevolveDialog(s)
 	drawCoilDialog(s)
@@ -60,15 +87,18 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawThreadDialog(s)
 	drawFilletDialog(s)
 	drawShellDialog(s)
+	drawSplitDialog(s)
+}
+
+func drawSurfaceFeatureDialogs(s *app.Session) {
 	drawFaceOffsetDialog(s)
 	drawDraftDialog(s)
 	drawDeleteFaceDialog(s)
 	drawReplaceFaceDialog(s)
 	drawThickenDialog(s)
-	drawSplitDialog(s)
-	drawOffsetPlaneDialog(s)
-	drawFeatureEditDialog(s)
-	drawStatusBar(s)
+}
+
+func drawChromeWindows(s *app.Session) {
 	drawParametersWindow(s)
 	drawPreferencesWindow(s)
 	drawMaterialsWindow(s)
@@ -76,8 +106,6 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
 		fileModal.openFor(dialogLoadHDR)
 	}
-	drawFileDialog(s)
-	return activated
 }
 
 // handleKeyboard routes global shortcuts to the session. Esc cancels the active tool at
@@ -122,7 +150,7 @@ func activeBodies(s *app.Session) []*topo.Body {
 	if part == nil {
 		return nil
 	}
-	return part.SurfaceBodies().All()
+	return s.VisibleBodies()
 }
 
 // activePart returns the active document's part component definition, or nil.

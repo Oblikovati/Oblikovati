@@ -105,7 +105,7 @@ func (w *WorkPlane) IsCoordinateSystemElement() bool { return w.coordinateSystem
 func (w *WorkPlane) Grounded() bool                  { return w.grounded }
 
 // Visible reports whether the datum is drawn in the viewport; SetVisible toggles it
-// (Inventor's per-work-feature Visibility). New planes are visible by default.
+// (Inventor's per-work-feature Visibility). User planes are visible by default.
 func (w *WorkPlane) Visible() bool     { return w.visible }
 func (w *WorkPlane) SetVisible(v bool) { w.visible = v }
 
@@ -137,7 +137,7 @@ func newWorkPlanes(g *WorkGeometry) *WorkPlanes {
 func (c *WorkPlanes) addOrigin(key WorkRef, name string, plane sketch.Plane) {
 	w := &WorkPlane{
 		id: nextID(), key: key, name: name, def: fixedPlaneDef{plane: plane},
-		displaySize: defaultOriginPlaneSize, coordinateSystem: true, grounded: true, visible: true,
+		displaySize: defaultOriginPlaneSize, coordinateSystem: true, grounded: true,
 	}
 	c.track(w)
 }

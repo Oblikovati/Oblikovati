@@ -254,20 +254,20 @@ func TestToggleWorkPlaneVisibilitySessionAndKeyboard(t *testing.T) {
 	s, def := emptyPartSession(t)
 	xy := def.OriginPlanes()[0]
 	selectPlanes(s, xy)
-	if !xy.Visible() {
-		t.Fatal("plane should start visible")
+	if xy.Visible() {
+		t.Fatal("origin plane should start hidden")
 	}
 	// The session method toggles every selected plane.
 	s.ToggleSelectedWorkPlaneVisibility()
-	if xy.Visible() {
-		t.Error("ToggleSelectedWorkPlaneVisibility should hide the selected plane")
+	if !xy.Visible() {
+		t.Error("ToggleSelectedWorkPlaneVisibility should show the selected plane")
 	}
 	// The V keyboard shortcut toggles it back.
 	if err := s.PressKey(KeyEvent{Key: "V"}); err != nil {
 		t.Fatalf("PressKey V: %v", err)
 	}
-	if !xy.Visible() {
-		t.Error("V should toggle the selected plane's visibility back on")
+	if xy.Visible() {
+		t.Error("V should toggle the selected plane's visibility back off")
 	}
 }
 

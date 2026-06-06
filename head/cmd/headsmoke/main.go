@@ -27,5 +27,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "head smoke failed at init step %d\n", code)
 		os.Exit(code)
 	}
-	fmt.Printf("head smoke ok: rendered up to %d frames\n", *frames)
+	fmt.Fprintf(os.Stdout, "head smoke ok: rendered up to %d frames\n", *frames)
 }

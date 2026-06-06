@@ -22,67 +22,78 @@ func drawThreadDialog(s *app.Session) {
 	}
 	native.SetNextWindowSize(340, 300)
 	if native.Begin("Thread") {
-		if t.HasFace() {
-			native.Text("Cylindrical face: selected")
-		} else {
-			native.Text("Click a cylindrical face to thread.")
-		}
-		native.Separator()
-
-		standards := feature.ThreadStandards()
-		std := standards[clampIdx(t.StandardIndex(), len(standards))]
-		if native.BeginCombo("Standard", fmt.Sprintf("%s (%s)", std, feature.StandardSystem(std))) {
-			for i, st := range standards {
-				if native.Selectable(fmt.Sprintf("%s (%s)", st, feature.StandardSystem(st)), i == t.StandardIndex()) {
-					t.SetStandardIndex(i)
-				}
-			}
-			native.EndCombo()
-		}
-		std = standards[clampIdx(t.StandardIndex(), len(standards))]
-
-		sizes := feature.ThreadSizes(std)
-		size := sizes[clampIdx(t.SizeIndex(), len(sizes))]
-		if native.BeginCombo("Size", size.Name) {
-			for i, sz := range sizes {
-				if native.Selectable(sz.Name, i == t.SizeIndex()) {
-					t.SetSizeIndex(i)
-				}
-			}
-			native.EndCombo()
-		}
-		size = sizes[clampIdx(t.SizeIndex(), len(sizes))]
-
-		pitch := size.Pitches[clampIdx(t.PitchIndex(), len(size.Pitches))]
-		if native.BeginCombo("Pitch", pitchLabel(size, pitch)) {
-			for i, p := range size.Pitches {
-				if native.Selectable(pitchLabel(size, p), i == t.PitchIndex()) {
-					t.SetPitchIndex(i)
-				}
-			}
-			native.EndCombo()
-		}
-
-		cut := t.Cut()
-		if native.Checkbox("Model real cut thread (else cosmetic)", &cut) {
-			t.SetCut(cut)
-		}
-		native.Separator()
-		if d, err := t.Designation(); err == nil {
-			native.Text("Designation: " + d)
-		}
-
-		native.BeginDisabled(!t.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		drawThreadFaceStatus(t)
+		size := drawThreadStandardAndSize(t)
+		drawThreadPitch(t, size)
+		drawThreadCutAndDesignation(t)
+		drawCommitCancelButtons(s, t.CanCommit())
 	}
 	native.End()
+}
+
+func drawThreadFaceStatus(t *app.ThreadTool) {
+	if t.HasFace() {
+		native.Text("Cylindrical face: selected")
+	} else {
+		native.Text("Click a cylindrical face to thread.")
+	}
+	native.Separator()
+}
+
+func drawThreadStandardAndSize(t *app.ThreadTool) feature.ThreadSize {
+	standards := feature.ThreadStandards()
+	std := standards[clampIdx(t.StandardIndex(), len(standards))]
+	drawThreadStandardCombo(t, standards, std)
+	std = standards[clampIdx(t.StandardIndex(), len(standards))]
+	sizes := feature.ThreadSizes(std)
+	size := sizes[clampIdx(t.SizeIndex(), len(sizes))]
+	drawThreadSizeCombo(t, sizes, size)
+	return sizes[clampIdx(t.SizeIndex(), len(sizes))]
+}
+
+func drawThreadStandardCombo(t *app.ThreadTool, standards []feature.ThreadStandard, std feature.ThreadStandard) {
+	if native.BeginCombo("Standard", fmt.Sprintf("%s (%s)", std, feature.StandardSystem(std))) {
+		for i, st := range standards {
+			if native.Selectable(fmt.Sprintf("%s (%s)", st, feature.StandardSystem(st)), i == t.StandardIndex()) {
+				t.SetStandardIndex(i)
+			}
+		}
+		native.EndCombo()
+	}
+}
+
+func drawThreadSizeCombo(t *app.ThreadTool, sizes []feature.ThreadSize, size feature.ThreadSize) {
+	if native.BeginCombo("Size", size.Name) {
+		for i, sz := range sizes {
+			if native.Selectable(sz.Name, i == t.SizeIndex()) {
+				t.SetSizeIndex(i)
+			}
+		}
+		native.EndCombo()
+	}
+}
+
+func drawThreadPitch(t *app.ThreadTool, size feature.ThreadSize) {
+	pitch := size.Pitches[clampIdx(t.PitchIndex(), len(size.Pitches))]
+	if native.BeginCombo("Pitch", pitchLabel(size, pitch)) {
+		for i, p := range size.Pitches {
+			if native.Selectable(pitchLabel(size, p), i == t.PitchIndex()) {
+				t.SetPitchIndex(i)
+			}
+		}
+		native.EndCombo()
+	}
+}
+
+func drawThreadCutAndDesignation(t *app.ThreadTool) {
+	cut := t.Cut()
+	if native.Checkbox("Model real cut thread (else cosmetic)", &cut) {
+		t.SetCut(cut)
+	}
+	native.Separator()
+	if d, err := t.Designation(); err == nil {
+		native.Text("Designation: " + d)
+	}
 }
 
 // pitchLabel formats a pitch for the combo: "1.25 mm" (metric) or "20 TPI" (imperial).

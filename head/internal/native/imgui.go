@@ -26,11 +26,13 @@ void obk_ig_separator_vertical(void);
 int  obk_ig_mouse_double_clicked(int button);
 int  obk_ig_begin_tab_bar(const char* id);
 int  obk_ig_begin_tab_item_ex(const char* label, int setSelected);
+int  obk_ig_begin_tab_item_closable(const char* label, int setSelected, int* open);
 int  obk_ig_selectable(const char* label, int selected);
 void obk_ig_end_tab_bar(void);
 int  obk_ig_begin_tab_item(const char* label);
 void obk_ig_end_tab_item(void);
 int  obk_ig_collapsing_header(const char* l);
+void obk_ig_set_next_item_open(int open, int first_use);
 int  obk_ig_tree_node(const char* label);
 void obk_ig_tree_pop(void);
 void obk_ig_bullet_text(const char* s);
@@ -374,6 +376,16 @@ func BeginTabItemSelected(label string, setSelected bool) bool {
 	return C.obk_ig_begin_tab_item_ex(c, cBool(setSelected)) != 0
 }
 
+// BeginTabItemClosable is BeginTabItemSelected with ImGui's close button. It reports
+// whether the tab content is visible and whether the tab should remain open.
+func BeginTabItemClosable(label string, setSelected bool) (bool, bool) {
+	c, free := cstr(label)
+	defer free()
+	open := C.int(1)
+	visible := C.obk_ig_begin_tab_item_closable(c, cBool(setSelected), &open) != 0
+	return visible, open != 0
+}
+
 // Selectable draws a clickable, highlightable row (browser entries); returns true when
 // clicked this frame.
 func Selectable(label string, selected bool) bool {
@@ -391,6 +403,8 @@ func CollapsingHeader(label string) bool {
 
 // TreeNode / TreePop bracket a tree node; TreeNode reports whether it is expanded
 // (only call TreePop when it returned true).
+func SetNextItemOpen(open, firstUse bool) { C.obk_ig_set_next_item_open(cBool(open), cBool(firstUse)) }
+
 func TreeNode(label string) bool {
 	c, free := cstr(label)
 	defer free()

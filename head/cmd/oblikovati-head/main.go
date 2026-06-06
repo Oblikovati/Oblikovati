@@ -152,10 +152,7 @@ func seedPart(s *app.Session) {
 // activeBodies returns the active document's part bodies (nil if no active part), for
 // the picker's hit-test so it follows the current document.
 func activeBodies(s *app.Session) []*topo.Body {
-	if p, err := modelaccess.ActivePart(s); err == nil {
-		return p.SurfaceBodies().All()
-	}
-	return nil
+	return s.VisibleBodies()
 }
 
 // activeOriginPlanes returns the active part's origin work planes (nil if none), so
@@ -190,7 +187,9 @@ func activeWorkAxes(s *app.Session) []*feature.WorkAxis {
 	axes := p.WorkAxes()
 	out := make([]*feature.WorkAxis, 0, axes.Count())
 	for i := 0; i < axes.Count(); i++ {
-		out = append(out, axes.Item(i))
+		if ax := axes.Item(i); ax.Visible() {
+			out = append(out, ax)
+		}
 	}
 	return out
 }

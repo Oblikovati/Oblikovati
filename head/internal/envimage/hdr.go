@@ -76,14 +76,13 @@ func readHDRHeader(r *bufio.Reader) (int, int, error) {
 // 4-byte header marks it, else reading flat RGBE pixels.
 func readHDRScanline(r *bufio.Reader, row []byte, w int) error {
 	var hdr [4]byte
-	if _, err := readFull(r, hdr[:]); err != nil {
+	if err := readFull(r, hdr[:]); err != nil {
 		return err
 	}
 	rle := hdr[0] == 2 && hdr[1] == 2 && int(hdr[2])<<8|int(hdr[3]) == w && w >= 8 && w < 0x8000
 	if !rle { // flat: hdr is the first pixel, read the rest
 		copy(row[:4], hdr[:])
-		_, err := readFull(r, row[4:])
-		return err
+		return readFull(r, row[4:])
 	}
 	for ch := 0; ch < 4; ch++ { // four RLE-encoded channel planes
 		if err := decodeRLEChannel(r, row, ch, w); err != nil {
@@ -134,14 +133,14 @@ func rgbeToFloat(r, g, b, e byte) (float32, float32, float32) {
 
 // readFull reads len(buf) bytes or returns an error (bufio.Reader has no io.ReadFull shortcut
 // that surfaces short reads as cleanly here).
-func readFull(r *bufio.Reader, buf []byte) (int, error) {
+func readFull(r *bufio.Reader, buf []byte) error {
 	n := 0
 	for n < len(buf) {
 		m, err := r.Read(buf[n:])
 		n += m
 		if err != nil {
-			return n, err
+			return err
 		}
 	}
-	return n, nil
+	return nil
 }

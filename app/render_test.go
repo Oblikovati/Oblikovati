@@ -90,6 +90,17 @@ func TestRenderFrameNoActivePart(t *testing.T) {
 	}
 }
 
+func TestRenderFrameSkipsHiddenBody(t *testing.T) {
+	s := extrudedBox(t, 2, 4)
+	body := s.VisibleBodies()[0]
+	s.SetBodyVisible(body, false)
+	null := &renderer.NullBackend{}
+	s.RenderFrame(null)
+	if tris := null.LastFrame().Triangles(); tris != 0 {
+		t.Fatalf("hidden body rendered %d triangles, want 0", tris)
+	}
+}
+
 func frameItems(s *Session) int {
 	null := &renderer.NullBackend{}
 	s.RenderFrame(null)

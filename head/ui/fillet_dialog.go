@@ -35,15 +35,7 @@ func drawFilletDialog(s *app.Session) {
 		native.Text("Radius (" + s.LengthUnitName() + ")")
 		native.InputFloat("##fillet-radius", &filletUI.radius)
 		f.SetRadius(float64(filletUI.radius))
-		native.BeginDisabled(!f.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		drawCommitCancelButtons(s, f.CanCommit())
 	}
 	native.End()
 }

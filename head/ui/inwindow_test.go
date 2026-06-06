@@ -15,6 +15,7 @@ import (
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 	"oblikovati/math"
+	"oblikovati/model/compdef"
 	"oblikovati/scene"
 )
 
@@ -35,6 +36,7 @@ func newViewportWindow(t *testing.T) *native.Window {
 // framedSession is a session whose camera looks down −Z from a known distance.
 func framedSession() *app.Session {
 	s := app.NewSession()
+	_, _ = compdef.AddPart(s.Workspace(), "viewport-test.obk", true)
 	cam := scene.NewCamera(inWinW, inWinH)
 	cam.Eye, cam.Target, cam.Up = math.P3(0, 0, 10), math.P3(0, 0, 0), math.V3(0, 1, 0)
 	s.SetCamera(cam)

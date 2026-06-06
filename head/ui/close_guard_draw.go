@@ -10,6 +10,7 @@ import (
 
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
+	"oblikovati/model/doc"
 )
 
 // closeModal is the chrome's single graceful-close prompt (UI state, head-local).
@@ -43,26 +44,35 @@ func drawCloseModal(s *app.Session) bool {
 	}
 	exit := false
 	if native.Begin("Save changes?") {
-		native.Text(fmt.Sprintf("%d document(s) have unsaved changes:", len(dirty)))
-		for _, d := range dirty {
-			native.Text("   - " + d.FullDocumentName())
-		}
-		if native.Button("Save") {
-			saveAllDirty(s) // never-saved docs route to the Save As modal below
-		}
-		native.SameLine()
-		if native.Button("Don't Save") {
-			closeModal.prompting = false
-			exit = true
-		}
-		native.SameLine()
-		if native.Button("Cancel") {
-			closeModal.prompting = false
-		}
+		drawDirtyDocumentList(dirty)
+		exit = drawCloseModalButtons(s)
 	}
 	native.End()
 	drawFileDialog(s) // render the Save As modal if saveAllDirty armed it
 	return exit
+}
+
+func drawDirtyDocumentList(dirty []*doc.Document) {
+	native.Text(fmt.Sprintf("%d document(s) have unsaved changes:", len(dirty)))
+	for _, d := range dirty {
+		native.Text("   - " + d.FullDocumentName())
+	}
+}
+
+func drawCloseModalButtons(s *app.Session) bool {
+	if native.Button("Save") {
+		saveAllDirty(s) // never-saved docs route to the Save As modal below
+	}
+	native.SameLine()
+	if native.Button("Don't Save") {
+		closeModal.prompting = false
+		return true
+	}
+	native.SameLine()
+	if native.Button("Cancel") {
+		closeModal.prompting = false
+	}
+	return false
 }
 
 // saveAllDirty saves the active document through the session (a never-saved document

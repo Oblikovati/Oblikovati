@@ -9,6 +9,7 @@ import (
 	"oblikovati/head/internal/native"
 	"oblikovati/head/viewport"
 	"oblikovati/kernel/ops"
+	"oblikovati/model/clientgraphics"
 	"oblikovati/model/feature"
 	"oblikovati/model/sketch"
 	"oblikovati/renderer"
@@ -31,33 +32,34 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
 
 		cam, hovered := updateViewportCamera(s, pw, ph)
-
-		bodies := activeBodies(s)
-		list := renderer.BuildDrawListStyled(bodies, cam, ops.DefaultQuality(), s.SurfaceLookup(), s.VisualStyle())
-		// Paint the selected body cyan so a browser/viewport pick reads in the 3D view
-		// (a no-op in sketch mode, where the selection is sketch entities, not bodies).
-		list = highlightSelection(list, s.Selection().First(), bodies)
-		var dims []app.DimensionView
-		var sketchPlane sketch.Plane
-		if s.InSketch() {
-			list, sketchPlane, dims = sketchOverlays(s, cam, list)
-		} else {
-			list = modelOverlays(s, cam, hovered, list)
-		}
+		list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
 		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 		renderViewportImage(win, s, cam, list, pw, ph, cx, cy)
-		// Pinned to the corner over the freshly drawn image (ItemRectMin is its screen
-		// origin), before any label items so it reads the image rect, not a label's.
-		ox, oy := native.ItemRectMin()
-		drawAxisGizmo(cam, ox, oy, ph)
-		drawClientGraphicsLabels(cx, cy, cam, gfxLabels)
-		if s.InSketch() && len(dims) > 0 {
-			if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
-				s.BeginEditDimension(d) // double-clicked a dimension's value
-			}
-		}
+		drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 	}
 	native.End()
+}
+
+func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane) (renderer.DrawList, sketch.Plane, []app.DimensionView) {
+	bodies := activeBodies(s)
+	list := renderer.BuildDrawListStyled(bodies, cam, ops.DefaultQuality(), s.SurfaceLookup(), s.VisualStyle())
+	list = highlightSelection(list, s.Selection().First(), bodies)
+	if s.InSketch() {
+		list, sketchPlane, dims := sketchOverlays(s, cam, list)
+		return list, sketchPlane, dims
+	}
+	return modelOverlays(s, cam, hovered, list), sketch.Plane{}, nil
+}
+
+func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.Plane, dims []app.DimensionView, labels []clientgraphics.Label, cx, cy float32, ph int) {
+	ox, oy := native.ItemRectMin()
+	drawAxisGizmo(cam, ox, oy, ph)
+	drawClientGraphicsLabels(cx, cy, cam, labels)
+	if s.InSketch() && len(dims) > 0 {
+		if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
+			s.BeginEditDimension(d) // double-clicked a dimension's value
+		}
+	}
 }
 
 // updateViewportCamera sizes the camera to the panel and either advances the active camera
@@ -136,7 +138,9 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 // modelOverlays appends the 3D-model overlays (work planes, part sketches, selected edges, and
 // the extrude / active-tool previews) to list.
 func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane, list renderer.DrawList) renderer.DrawList {
-	list.Items = append(list.Items, planesOverlay(activePart(s), s.SelectedWorkPlane(), hovered)...)
+	part := activePart(s)
+	list.Items = append(list.Items, planesOverlay(part, s.SelectedWorkPlane(), hovered)...)
+	list.Items = append(list.Items, axesOverlay(part, selectedWorkAxis(s))...)
 	list.Items = append(list.Items, partSketchOverlays(s)...)
 	list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)

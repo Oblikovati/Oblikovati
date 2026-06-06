@@ -59,9 +59,22 @@ func applyThemeIfChanged(win *native.Window, s *app.Session) {
 // the overlay builders read each frame.
 func refreshThemeColors(t contract.Theme) {
 	arr := func(tok types.ThemeToken) [4]float32 { return t.Color(tok).Array() }
+	refreshGridThemeColors(arr)
+	refreshSketchThemeColors(arr)
+	refreshPlaneThemeColors(arr)
+	selectionHighlight = arr(types.TokenSelectionHighlight)
+	iconTint = arr(types.TokenIconTint)
+	c := t.Color(types.TokenChromeWindowBg)
+	windowClearColor = [3]float32{c.R, c.G, c.B}
+}
+
+func refreshGridThemeColors(arr func(types.ThemeToken) [4]float32) {
 	gridMinorColor = arr(types.TokenGridMinor)
 	gridMajorColor = arr(types.TokenGridMajor)
 	gridAxisColor = arr(types.TokenGridAxis)
+}
+
+func refreshSketchThemeColors(arr func(types.ThemeToken) [4]float32) {
 	sketchColor = arr(types.TokenSketchGeometry)
 	sketchSelectedColor = arr(types.TokenSketchSelected)
 	sketchCandidateColor = arr(types.TokenSketchCandidate)
@@ -70,14 +83,13 @@ func refreshThemeColors(t contract.Theme) {
 	dimensionDrivenColor = arr(types.TokenDimensionDriven)
 	snapGlyphColor = arr(types.TokenSnapGlyph)
 	pointMarkerColor = sketchColor // placed points match the sketch wireframe
+}
+
+func refreshPlaneThemeColors(arr func(types.ThemeToken) [4]float32) {
 	faintPlaneColor = arr(types.TokenPlaneFaint)
 	hoverPlaneColor = arr(types.TokenPlaneHover)
 	selectedPlaneColor = arr(types.TokenPlaneSelected)
 	planeFillColor = arr(types.TokenPlaneFill)
-	selectionHighlight = arr(types.TokenSelectionHighlight)
-	iconTint = arr(types.TokenIconTint)
-	c := t.Color(types.TokenChromeWindowBg)
-	windowClearColor = [3]float32{c.R, c.G, c.B}
 }
 
 // WindowClearColor is the themed background the frame loop clears the swapchain to (the

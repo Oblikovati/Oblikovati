@@ -46,15 +46,7 @@ func drawLoftDialog(s *app.Session) {
 		loftUI.open = false
 		return
 	}
-	if !loftUI.open { // entering the tool: seed the editors from the tool's state
-		loftUI.first = seedLoftEndUI(l.FirstCondition())
-		loftUI.last = seedLoftEndUI(l.LastCondition())
-		loftUI.areaMid = float32(l.AreaMidScale())
-		if loftUI.areaMid == 0 {
-			loftUI.areaMid = 1
-		}
-	}
-	loftUI.open = true
+	refreshLoftUI(l)
 	native.SetNextWindowSize(340, 460)
 	if native.Begin("Loft") {
 		native.Text("Sections: " + strconv.Itoa(l.SectionCount()) + " (regions, or a vertex/point for an apex, or a face for tangency)")
@@ -64,16 +56,34 @@ func drawLoftDialog(s *app.Session) {
 		if native.Checkbox("Closed loop", &closed) {
 			l.SetClosed(closed)
 		}
-		if !closed { // a closed loft has no end sections, so conditions don't apply
-			native.Separator()
-			drawLoftEndCondition("Start section", &loftUI.first)
-			drawLoftEndCondition("End section", &loftUI.last)
-			l.SetFirstCondition(loftUI.first.toEnd())
-			l.SetLastCondition(loftUI.last.toEnd())
-		}
+		drawOpenLoftConditions(l, closed)
 		drawLoftButtons(s, l)
 	}
 	native.End()
+}
+
+func refreshLoftUI(l *app.LoftTool) {
+	if loftUI.open {
+		return
+	}
+	loftUI.first = seedLoftEndUI(l.FirstCondition())
+	loftUI.last = seedLoftEndUI(l.LastCondition())
+	loftUI.areaMid = float32(l.AreaMidScale())
+	if loftUI.areaMid == 0 {
+		loftUI.areaMid = 1
+	}
+	loftUI.open = true
+}
+
+func drawOpenLoftConditions(l *app.LoftTool, closed bool) {
+	if closed {
+		return
+	}
+	native.Separator()
+	drawLoftEndCondition("Start section", &loftUI.first)
+	drawLoftEndCondition("End section", &loftUI.last)
+	l.SetFirstCondition(loftUI.first.toEnd())
+	l.SetLastCondition(loftUI.last.toEnd())
 }
 
 // drawLoftEndCondition renders one end's condition combo plus, for an angle/direction takeoff,

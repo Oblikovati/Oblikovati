@@ -33,30 +33,39 @@ func drawFeatureEditDialog(s *app.Session) {
 	}
 	nParams := s.EditFeatureParamCount()
 	nRefs := s.EditFeatureRefSlotCount()
-	if !featureEditUI.open { // edit just opened — seed the fields from the feature's values
-		featureEditUI.values = make([]float32, nParams)
-		for i := 0; i < nParams; i++ {
-			featureEditUI.values[i] = float32(s.EditFeatureParamValue(i))
-		}
-		featureEditUI.open = true
-	}
+	refreshFeatureEditUI(s, nParams)
 	native.SetNextWindowSize(320, float32(108+nParams*30+nRefs*30))
 	if native.Begin("Edit Feature") {
 		native.Text(s.EditingFeatureName())
 		drawEditParams(s, nParams)
 		drawEditRefSlots(s, nRefs)
-		if native.Button("OK") {
-			if err := s.OK(); err == nil { // a sick result keeps the dialog open
-				featureEditUI.open = false
-			}
-		}
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
+		drawFeatureEditButtons(s)
+	}
+	native.End()
+}
+
+func refreshFeatureEditUI(s *app.Session, nParams int) {
+	if featureEditUI.open {
+		return
+	}
+	featureEditUI.values = make([]float32, nParams)
+	for i := 0; i < nParams; i++ {
+		featureEditUI.values[i] = float32(s.EditFeatureParamValue(i))
+	}
+	featureEditUI.open = true
+}
+
+func drawFeatureEditButtons(s *app.Session) {
+	if native.Button("OK") {
+		if err := s.OK(); err == nil { // a sick result keeps the dialog open
 			featureEditUI.open = false
 		}
 	}
-	native.End()
+	native.SameLine()
+	if native.Button("Cancel") {
+		s.CancelTool()
+		featureEditUI.open = false
+	}
 }
 
 // drawEditParams renders one field per editable scalar (an integer field for whole-number

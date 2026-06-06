@@ -46,7 +46,7 @@ func (s *Session) GraphicsLabels() []clientgraphics.Label {
 // overlays, the active tool's transient preview, and the add-in client/interaction
 // graphics — and submits it to the backend.
 func (s *Session) RenderFrame(backend renderer.Backend) {
-	list := renderer.BuildDrawListStyled(s.sceneBodies(), s.camera, ops.DefaultQuality(), s.SurfaceLookup(), s.visualStyle)
+	list := renderer.BuildDrawListStyled(s.VisibleBodies(), s.camera, ops.DefaultQuality(), s.SurfaceLookup(), s.visualStyle)
 	list.Items = append(list.Items, s.overlays...)
 	if s.tool != nil {
 		if p, ok := s.tool.tool.(Previewable); ok {
@@ -59,10 +59,43 @@ func (s *Session) RenderFrame(backend renderer.Backend) {
 }
 
 // sceneBodies returns the bodies to draw — the active part's, if any.
-func (s *Session) sceneBodies() []*topo.Body {
+func (s *Session) sceneBodies() []*topo.Body { return s.VisibleBodies() }
+
+// VisibleBodies returns active-part bodies not hidden by browser visibility state.
+func (s *Session) VisibleBodies() []*topo.Body {
 	part, err := activePart(s)
 	if err != nil {
 		return nil
 	}
-	return part.SurfaceBodies().All()
+	var out []*topo.Body
+	for _, body := range part.SurfaceBodies().All() {
+		if s.BodyVisible(body) {
+			out = append(out, body)
+		}
+	}
+	return out
 }
+
+// BodyVisible reports whether body is included in the active scene body list.
+func (s *Session) BodyVisible(body *topo.Body) bool {
+	if body == nil {
+		return false
+	}
+	return !s.hiddenBodyKeys[string(body.ReferenceKey())]
+}
+
+// SetBodyVisible updates the browser-driven display state for one body.
+func (s *Session) SetBodyVisible(body *topo.Body, visible bool) {
+	if body == nil {
+		return
+	}
+	key := string(body.ReferenceKey())
+	if visible {
+		delete(s.hiddenBodyKeys, key)
+		return
+	}
+	s.hiddenBodyKeys[key] = true
+}
+
+// ToggleBodyVisibility flips the browser-driven display state for one body.
+func (s *Session) ToggleBodyVisibility(body *topo.Body) { s.SetBodyVisible(body, !s.BodyVisible(body)) }

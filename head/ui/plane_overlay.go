@@ -32,6 +32,28 @@ func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *fea
 	return items
 }
 
+func axesOverlay(part *compdef.PartComponentDefinition, selected *feature.WorkAxis) []renderer.DrawItem {
+	if part == nil {
+		return nil
+	}
+	axes := part.WorkAxes()
+	items := make([]renderer.DrawItem, 0, axes.Count())
+	for i := 0; i < axes.Count(); i++ {
+		axis := axes.Item(i)
+		if axis.Visible() {
+			items = append(items, axisLine(axis, axisColor(axis, selected)))
+		}
+	}
+	return items
+}
+
+func axisColor(axis, selected *feature.WorkAxis) [4]float32 {
+	if axis == selected {
+		return selectedPlaneColor
+	}
+	return faintPlaneColor
+}
+
 // planeColor chooses a plane border's draw color: selected wins, then hovered, then faint.
 func planeColor(wp, selected, hovered *feature.WorkPlane) [4]float32 {
 	switch wp {
@@ -80,4 +102,11 @@ func planeBorder(wp *feature.WorkPlane, color [4]float32) renderer.DrawItem {
 	pos := planeCorners(wp)
 	idx := []int{0, 1, 1, 2, 2, 3, 3, 0} // border 0-1-2-3-0
 	return renderer.DrawItem{Primitive: renderer.Lines, Positions: pos, Indices: idx, Color: color}
+}
+
+func axisLine(axis *feature.WorkAxis, color [4]float32) renderer.DrawItem {
+	const halfLen = 4.0
+	dir := axis.Direction().AsVector().Scale(halfLen)
+	pos := []math.Point3{axis.Origin().TranslateBy(dir.Scale(-1)), axis.Origin().TranslateBy(dir)}
+	return renderer.DrawItem{Primitive: renderer.Lines, Positions: pos, Indices: []int{0, 1}, Color: color, OnTop: true}
 }

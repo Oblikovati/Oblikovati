@@ -86,8 +86,42 @@ func TestBrowserMenuByKind(t *testing.T) {
 	if labels := menuLabels(BrowserMenu(findNode(t, root, "workplane"))); !equalStrings(labels, []string{"New Sketch", "Visibility"}) {
 		t.Errorf("workplane menu = %v", labels)
 	}
+	if labels := menuLabels(BrowserMenu(findNode(t, root, "workaxis"))); !equalStrings(labels, []string{"Visibility"}) {
+		t.Errorf("workaxis menu = %v", labels)
+	}
+	if labels := menuLabels(BrowserMenu(findNode(t, root, "body"))); !equalStrings(labels, []string{"Visibility"}) {
+		t.Errorf("body menu = %v", labels)
+	}
 	if m := BrowserMenu(findNode(t, root, "parameters")); m != nil {
 		t.Errorf("parameters folder should have no menu, got %v", menuLabels(m))
+	}
+}
+
+func TestBrowserMenuWorkAxisVisibilityToggles(t *testing.T) {
+	s, _ := extrudedBoxPart(t)
+	node := findNode(t, BuildBrowser(s), "workaxis")
+	axis := node.Select.(WorkAxisHandle).Axis
+	before := axis.Visible()
+	if err := menuItem(t, BrowserMenu(node), "Visibility").Invoke(s); err != nil {
+		t.Fatalf("Visibility: %v", err)
+	}
+	if axis.Visible() == before {
+		t.Error("axis Visibility menu item did not toggle visibility")
+	}
+}
+
+func TestBrowserMenuBodyVisibilityToggles(t *testing.T) {
+	s, _ := extrudedBoxPart(t)
+	node := findNode(t, BuildBrowser(s), "body")
+	body := node.Select.(BodyHandle).Body
+	if !s.BodyVisible(body) {
+		t.Fatal("body should start visible")
+	}
+	if err := menuItem(t, BrowserMenu(node), "Visibility").Invoke(s); err != nil {
+		t.Fatalf("Visibility: %v", err)
+	}
+	if s.BodyVisible(body) || len(s.VisibleBodies()) != 0 {
+		t.Fatal("body Visibility menu item did not hide the body from visible scene bodies")
 	}
 }
 

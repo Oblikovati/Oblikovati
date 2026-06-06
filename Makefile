@@ -56,6 +56,7 @@ vet: ## Run go vet (cgo-free)
 .PHONY: lint
 lint: ## Run golangci-lint (install with `make tools`)
 	golangci-lint run
+	$(MAKE) -C head lint
 
 .PHONY: docs-lint
 docs-lint: ## Lint the docs (markdownlint via npx; needs node). Link check runs in CI (lychee).

@@ -2,7 +2,11 @@
 
 package ui
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 // typePath simulates the user typing into the modal's in-place buffer — what
 // native.InputText writes each frame — so these tests exercise the state machine
@@ -12,16 +16,22 @@ func (d *fileDialog) typePath(s string) {
 	copy(d.path[:], s)
 }
 
+func (d *fileDialog) typeSearch(s string) {
+	d.search = [fileSearchBufferLen]byte{}
+	copy(d.search[:], s)
+}
+
 func TestFileDialogConfirmReturnsActionForMode(t *testing.T) {
 	var d fileDialog
 	d.openFor(dialogSaveAs)
 	if !d.isOpen() || d.title() != "Save As" {
 		t.Fatalf("openFor(SaveAs): isOpen=%v title=%q", d.isOpen(), d.title())
 	}
-	d.typePath("/models/part.obk")
+	path := filepath.Join(t.TempDir(), "part.obk")
+	d.typePath(path)
 	act := d.confirm()
-	if act.Kind != dialogSaveAs || act.Path != "/models/part.obk" {
-		t.Errorf("confirm() = %+v, want SaveAs /models/part.obk", act)
+	if act.Kind != dialogSaveAs || act.Path != path {
+		t.Errorf("confirm() = %+v, want SaveAs %q", act, path)
 	}
 	if d.isOpen() {
 		t.Error("dialog should be closed after confirm")
@@ -85,7 +95,80 @@ func TestFileDialogImportExportModes(t *testing.T) {
 	d.resolution = 2 // high
 	copy(d.path[:], "out.stl")
 	act := d.confirm()
-	if act.Kind != dialogExport || act.Path != "out.stl" || act.Resolution != "high" {
-		t.Errorf("export confirm = %+v, want {dialogExport, out.stl, high}", act)
+	want := filepath.Join(initialExplorerDir(), "out.stl")
+	if act.Kind != dialogExport || act.Path != want || act.Resolution != "high" {
+		t.Errorf("export confirm = %+v, want {dialogExport, %q, high}", act, want)
 	}
+}
+
+func TestFileDialogSearchFiltersAllowedFiles(t *testing.T) {
+	dir := t.TempDir()
+	writeDialogFile(t, filepath.Join(dir, "alpha.obk"))
+	writeDialogFile(t, filepath.Join(dir, "beta.stl"))
+	var d fileDialog
+	d.openFor(dialogOpen)
+	d.openDir(dir)
+	d.typeSearch("alpha")
+	got := d.visibleEntries()
+	if len(got) != 1 || got[0].Name != "alpha.obk" {
+		t.Fatalf("visibleEntries = %+v, want only alpha.obk", got)
+	}
+}
+
+func TestFileDialogChooseDirectoryAndFile(t *testing.T) {
+	dir := t.TempDir()
+	nested := filepath.Join(dir, "nested")
+	if err := os.Mkdir(nested, 0o755); err != nil {
+		t.Fatalf("mkdir nested: %v", err)
+	}
+	file := filepath.Join(nested, "part.obk")
+	writeDialogFile(t, file)
+	var d fileDialog
+	d.openFor(dialogOpen)
+	d.openDir(dir)
+	d.chooseEntry(findDialogEntry(t, d.visibleEntries(), "nested"))
+	d.chooseEntry(findDialogEntry(t, d.visibleEntries(), "part.obk"))
+	if act := d.confirm(); act.Path != file || act.Kind != dialogOpen {
+		t.Fatalf("confirm after choose = %+v, want open %q", act, file)
+	}
+}
+
+func TestFileDialogSaveJoinsDirectoryAndDefaultExt(t *testing.T) {
+	dir := t.TempDir()
+	var d fileDialog
+	d.openFor(dialogSaveAs)
+	d.openDir(dir)
+	d.typePath("bracket")
+	act := d.confirm()
+	want := filepath.Join(dir, "bracket.obk")
+	if act.Kind != dialogSaveAs || act.Path != want {
+		t.Fatalf("confirm save = %+v, want save %q", act, want)
+	}
+}
+
+func TestFileDialogRefreshReportsDirectoryErrors(t *testing.T) {
+	var d fileDialog
+	d.openFor(dialogOpen)
+	d.openDir(filepath.Join(t.TempDir(), "missing"))
+	if d.errorText == "" || len(d.visibleEntries()) != 0 {
+		t.Fatalf("missing directory error=%q entries=%d", d.errorText, len(d.visibleEntries()))
+	}
+}
+
+func writeDialogFile(t *testing.T, path string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte("x"), 0o644); err != nil {
+		t.Fatalf("write %q: %v", path, err)
+	}
+}
+
+func findDialogEntry(t *testing.T, entries []fileEntry, name string) fileEntry {
+	t.Helper()
+	for _, entry := range entries {
+		if entry.Name == name {
+			return entry
+		}
+	}
+	t.Fatalf("entry %q not found in %+v", name, entries)
+	return fileEntry{}
 }
