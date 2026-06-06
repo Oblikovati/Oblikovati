@@ -102,6 +102,82 @@ func sideQuad(verts []math.Point3, a, b, c, d int) [][]int {
 // quadPlanar reports whether the four corners lie in a common plane, within a tight absolute
 // tolerance (below the arrangement's weld grid, 1e-7, so any quad the boolean would mis-imprint
 // is triangulated). The deviation is the out-of-plane distance of d from the plane through a,b,c.
+// tubeSolid builds a hollow swept solid (a pipe) directly from corresponding OUTER and INNER
+// section rings: outer walls, inner walls (wound the opposite way so they face the bore), and —
+// for an open loft — annular end caps joining the two rings. It is meshed directly rather than
+// skinning the outer solid and cutting a bore, because a bore whose end caps are coplanar with
+// the body's end caps leaves a Difference open (the coplanar seam doesn't stitch). The whole
+// shell is built with one coherent winding, so the signed-volume flip alone picks the global
+// outward orientation (the input ring winding is unknown). outerSecs and innerSecs must share
+// section count and per-section point count.
+func tubeSolid(outerSecs, innerSecs [][]math.Point3, closedLoop bool, feat string) (*topo.Body, error) {
+	if err := validateTubeSections(outerSecs, innerSecs, closedLoop); err != nil {
+		return nil, err
+	}
+	mesh := tubeMesh(outerSecs, innerSecs, closedLoop)
+	body := subd.ToBody(mesh, feat)
+	if ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume < 0 {
+		body = subd.ToBody(reverseFaces(mesh), feat)
+	}
+	return body, nil
+}
+
+// tubeMesh connects nested outer/inner rings into a watertight tube. Inner-wall quads are the
+// reverse of the outer-wall winding so the two shells stay coherently oriented (their normals
+// end up pointing opposite ways); the annular caps are wound to agree with both rims (verified
+// by edge-direction cancellation along each rim).
+func tubeMesh(outerSecs, innerSecs [][]math.Point3, closedLoop bool) subd.Mesh {
+	k, n := len(outerSecs), len(outerSecs[0])
+	verts := make([]math.Point3, 0, 2*k*n)
+	for _, s := range outerSecs {
+		verts = append(verts, s...)
+	}
+	for _, s := range innerSecs {
+		verts = append(verts, s...)
+	}
+	oi := func(s, i int) int { return s*n + i }
+	ii := func(s, i int) int { return k*n + s*n + i }
+	segs := k - 1
+	if closedLoop {
+		segs = k
+	}
+	var faces [][]int
+	for s := 0; s < segs; s++ {
+		ns := (s + 1) % k
+		for i := 0; i < n; i++ {
+			j := (i + 1) % n
+			faces = append(faces, sideQuad(verts, oi(s, i), oi(s, j), oi(ns, j), oi(ns, i))...) // outer wall
+			faces = append(faces, sideQuad(verts, ii(s, i), ii(ns, i), ii(ns, j), ii(s, j))...) // inner wall (reversed)
+		}
+	}
+	if !closedLoop {
+		for i := 0; i < n; i++ {
+			j := (i + 1) % n
+			faces = append(faces, sideQuad(verts, oi(0, i), ii(0, i), ii(0, j), oi(0, j))...)         // start cap
+			faces = append(faces, sideQuad(verts, oi(k-1, i), oi(k-1, j), ii(k-1, j), ii(k-1, i))...) // end cap
+		}
+	}
+	return subd.Mesh{Verts: verts, Faces: faces}
+}
+
+// validateTubeSections checks the outer/inner section sequences are skinnable and aligned: the
+// outer set is a valid swept-section set, the inner set matches its section and point counts.
+func validateTubeSections(outerSecs, innerSecs [][]math.Point3, closedLoop bool) error {
+	if err := validateSections(outerSecs, closedLoop); err != nil {
+		return err
+	}
+	if len(innerSecs) != len(outerSecs) {
+		return fmt.Errorf("tube solid: %d inner sections, want %d (must match outer)", len(innerSecs), len(outerSecs))
+	}
+	n := len(outerSecs[0])
+	for s, sec := range innerSecs {
+		if len(sec) != n {
+			return fmt.Errorf("tube solid: inner section %d has %d points, want %d (must match outer)", s, len(sec), n)
+		}
+	}
+	return nil
+}
+
 func quadPlanar(a, b, c, d math.Point3) bool {
 	nrm := a.VectorTo(b).Cross(a.VectorTo(c))
 	mag := nrm.Length()

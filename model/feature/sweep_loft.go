@@ -170,21 +170,19 @@ func (l *LoftFeature) Kind() string                { return "loft" }
 func (l *LoftFeature) Operation() ops.PartFeatureOperation { return l.def.Operation }
 func (l *LoftFeature) ToolBody() *topo.Body                { return l.tool }
 
-// Recompute resolves each section profile, resamples them to a common point count, and
-// blends them into a faceted solid.
+// Recompute skins the loft solid through the sections. The outer loops skin the body; a single
+// inner loop per section (the common pipe) is meshed directly into a hollow tube, so a loft of
+// annulus sections is a watertight pipe rather than a filled cone.
 func (l *LoftFeature) Recompute(in Input) (Output, error) {
-	sections, err := l.resolveSections()
+	outers, inners, err := l.loopSets()
 	if err != nil {
 		return Output{}, err
 	}
-	// Skin a smooth surface through the sections: correspond points (minimize twist), then
-	// blend longitudinally with a Catmull-Rom spline densely sampled (a loft is not a straight
-	// blend). See loft_skin.go.
-	sections = splineSections(alignSections(sections), l.def.Closed)
-	l.tool, err = sweptSolid(sections, l.def.Closed, featOr(l.featName, "loft"))
+	tool, err := l.skinTool(outers, inners)
 	if err != nil {
 		return Output{}, err
 	}
+	l.tool = tool
 	bodies, err := combine(in.Bodies, l.tool, l.def.Operation)
 	if err != nil {
 		return Output{}, err
@@ -192,28 +190,138 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// resolveSections maps each loft section's profile into model space and resamples them
-// all to the largest section's point count so the blend connects matching points.
-func (l *LoftFeature) resolveSections() ([][]math.Point3, error) {
-	if len(l.def.Sections) < 2 {
-		return nil, fmt.Errorf("loft: %d sections, need at least 2", len(l.def.Sections))
+// skinTool builds the lofted solid for the resolved loops: a plain skin (no holes), a
+// directly-meshed tube (one hole — a pipe), or a multi-hole solid cut from the skin (rare). The
+// one-hole tube is meshed directly rather than via a bore Cut because a bore whose caps are
+// coplanar with the body's caps leaves the Difference open. See [tubeSolid] and [hollowByCut].
+func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3) (*topo.Body, error) {
+	feat := featOr(l.featName, "loft")
+	switch numHoles(inners) {
+	case 0:
+		return skinLoops(outers, l.def.Closed, feat)
+	case 1:
+		return tubeLoops(outers, holeRing(inners, 0), l.def.Closed, feat)
+	default:
+		return hollowByCut(outers, inners, l.def.Closed, feat)
 	}
-	raw := make([][]math.Point3, len(l.def.Sections))
-	n := 0
-	for i, s := range l.def.Sections {
-		prof, err := resolveSingleProfile(s.Sketch, s.ProfileIndex, "loft")
-		if err != nil {
+}
+
+// hollowByCut skins the outer body and cuts each bore out of it — the fallback for lofts with
+// more than one hole, where a multiply-connected end cap can't be a simple annular strip. Each
+// bore is extended past the body's end caps (extendEnds) so the through-cut is not coplanar.
+func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, feat string) (*topo.Body, error) {
+	tool, err := skinLoops(outers, closed, feat)
+	if err != nil {
+		return nil, err
+	}
+	eps := 0.0
+	if !closed {
+		eps = loftOvershoot(outers)
+	}
+	for h := 0; h < numHoles(inners); h++ {
+		ring := extendEnds(holeRing(inners, h), eps)
+		hole, herr := skinLoops(ring, closed, feat+"-hole")
+		if herr != nil {
+			return nil, herr
+		}
+		if tool, err = ops.Boolean(ops.Cut, tool, hole); err != nil {
 			return nil, err
 		}
-		raw[i] = modelPolygon(prof, s.Sketch.Plane())
-		if len(raw[i]) > n {
-			n = len(raw[i])
+	}
+	return tool, nil
+}
+
+// holeRing collects hole h's loop from every section into one section sequence.
+func holeRing(inners [][][]math.Point3, h int) [][]math.Point3 {
+	ring := make([][]math.Point3, len(inners))
+	for i := range inners {
+		ring[i] = inners[i][h]
+	}
+	return ring
+}
+
+// loopSets resolves each section into its outer loop and inner (hole) loops in model space. All
+// sections must have the same number of inner loops so holes correspond across the loft.
+func (l *LoftFeature) loopSets() (outers [][]math.Point3, inners [][][]math.Point3, err error) {
+	if len(l.def.Sections) < 2 {
+		return nil, nil, fmt.Errorf("loft: %d sections, need at least 2", len(l.def.Sections))
+	}
+	for _, s := range l.def.Sections {
+		prof, e := resolveSingleProfile(s.Sketch, s.ProfileIndex, "loft")
+		if e != nil {
+			return nil, nil, e
+		}
+		outers = append(outers, loopToModel(prof.OuterLoop(), s.Sketch.Plane()))
+		var holes [][]math.Point3
+		for _, il := range prof.InnerLoops() {
+			holes = append(holes, loopToModel(il, s.Sketch.Plane()))
+		}
+		inners = append(inners, holes)
+	}
+	for i, h := range inners {
+		if len(h) != len(inners[0]) {
+			return nil, nil, fmt.Errorf("loft: section %d has %d holes, want %d (hole counts must match across sections)", i, len(h), len(inners[0]))
 		}
 	}
-	for i := range raw {
-		raw[i] = resampleLoop(raw[i], n)
+	return outers, inners, nil
+}
+
+// numHoles returns the per-section inner-loop count (all sections share it).
+func numHoles(inners [][][]math.Point3) int {
+	if len(inners) == 0 {
+		return 0
 	}
-	return raw, nil
+	return len(inners[0])
+}
+
+// loopToModel maps a sketch loop's polygon into model space on the sketch plane.
+func loopToModel(loop sketch.Loop, plane sketch.Plane) []math.Point3 {
+	poly := loop.Polygon()
+	out := make([]math.Point3, len(poly))
+	for i, p := range poly {
+		out[i] = plane.ToModel(p)
+	}
+	return out
+}
+
+// skinLoops resamples a set of section loops to a common point count, corresponds them
+// (minimize twist), blends them with a Catmull-Rom spline (a loft is not a straight blend),
+// and meshes the swept solid. See loft_skin.go.
+func skinLoops(loops [][]math.Point3, closed bool, feat string) (*topo.Body, error) {
+	return sweptSolid(skinnedSections(loops, maxLoopCount(loops), closed), closed, feat)
+}
+
+// tubeLoops skins corresponding outer and inner section loops to a common point count, then
+// meshes them directly into a hollow tube. Outer and inner share that point count so their
+// rings pair up across the annular end caps; both run through the same correspondence + spline
+// blend, so the pipe wall reads as smooth as a solid loft.
+func tubeLoops(outers, inners [][]math.Point3, closed bool, feat string) (*topo.Body, error) {
+	n := maxLoopCount(outers, inners)
+	return tubeSolid(skinnedSections(outers, n, closed), skinnedSections(inners, n, closed), closed, feat)
+}
+
+// skinnedSections resamples loops to n points, corresponds them (minimize twist), and blends
+// them with a Catmull-Rom spline — the densified section sequence ready to mesh. See loft_skin.go.
+func skinnedSections(loops [][]math.Point3, n int, closed bool) [][]math.Point3 {
+	resampled := make([][]math.Point3, len(loops))
+	for i, lp := range loops {
+		resampled[i] = resampleLoop(lp, n)
+	}
+	return splineSections(alignSections(resampled), closed)
+}
+
+// maxLoopCount returns the largest point count across every loop in the given sets, the common
+// resample resolution so the densest section is not coarsened.
+func maxLoopCount(loopSets ...[][]math.Point3) int {
+	n := 0
+	for _, set := range loopSets {
+		for _, lp := range set {
+			if len(lp) > n {
+				n = len(lp)
+			}
+		}
+	}
+	return n
 }
 
 // LoftFeatures adds lofts into the engine.
