@@ -49,6 +49,15 @@ func (w *Writer) Add(keyword string, params ...string) int {
 	return id
 }
 
+// AddRaw appends a pre-formatted statement body verbatim (e.g. a complex instance
+// "(A()B()C())" that is not a single KEYWORD(params)), returning its id.
+func (w *Writer) AddRaw(body string) int {
+	id := w.next
+	w.next++
+	w.stmts = append(w.stmts, statement{id: id, body: body})
+	return id
+}
+
 // AddShared appends a statement only if an identical one was not already added,
 // returning the existing id on a hit. Used to share leaf geometry (points/dirs).
 func (w *Writer) AddShared(keyword string, params ...string) int {
