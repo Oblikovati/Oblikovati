@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // A sketch spline only stores its defining points; region detection and the faceted
 // extruded cross-section need a smooth polyline through them. Both fit and control

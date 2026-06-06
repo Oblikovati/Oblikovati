@@ -5,7 +5,7 @@ package doc
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/event"
+	"oblikovati/event"
 )
 
 // Workspace is the in-memory collection of open documents and the active one — it

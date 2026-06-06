@@ -5,9 +5,9 @@ package feature
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/health"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/health"
+	"oblikovati/model/sketch"
 )
 
 // axisDefinition computes a work axis (origin + unit direction) from its references.

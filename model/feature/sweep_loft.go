@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // Sweep and loft generate real (faceted) solids through the shared swept-solid
@@ -24,8 +24,8 @@ import (
 type SweepDefinition struct {
 	Sketch       *sketch.Sketch
 	ProfileIndex int
-	Path         *sketch.Path3D
-	Twist        func() float64 // total twist (radians) distributed along the path
+	Path         func() *sketch.Path3D // live path provider, re-derived each recompute
+	Twist        func() float64        // total twist (radians) distributed along the path
 	Operation    ops.PartFeatureOperation
 }
 
@@ -51,11 +51,15 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	if s.def.Path == nil || s.def.Path.Count() < 2 {
+	if s.def.Path == nil {
 		return Output{}, errors.New("sweep: path needs at least two points")
 	}
-	sections := sweepSections(prof, s.def.Sketch.Plane(), s.def.Path.Points(), callOrZero(s.def.Twist))
-	s.tool, err = sweptSolid(sections, s.def.Path.IsClosed(), featOr(s.featName, "sweep"))
+	path := s.def.Path()
+	if path == nil || path.Count() < 2 {
+		return Output{}, errors.New("sweep: path needs at least two points")
+	}
+	sections := sweepSections(prof, s.def.Sketch.Plane(), path.Points(), callOrZero(s.def.Twist))
+	s.tool, err = sweptSolid(sections, path.IsClosed(), featOr(s.featName, "sweep"))
 	if err != nil {
 		return Output{}, err
 	}
@@ -122,6 +126,13 @@ func NewSweepFeatures(engine *PartFeatures) *SweepFeatures { return &SweepFeatur
 
 // Add adds a sweep of the profile along path with the given total twist and operation.
 func (c *SweepFeatures) Add(skt *sketch.Sketch, profileIndex int, path *sketch.Path3D, twist func() float64, op ops.PartFeatureOperation) *PartFeature {
+	return c.AddLive(skt, profileIndex, func() *sketch.Path3D { return path }, twist, op)
+}
+
+// AddLive is Add with a live path provider, re-derived on every recompute, so a
+// parameter that drives the path sketch reshapes the sweep (the static Add snapshots
+// the path and does not track edits).
+func (c *SweepFeatures) AddLive(skt *sketch.Sketch, profileIndex int, path func() *sketch.Path3D, twist func() float64, op ops.PartFeatureOperation) *PartFeature {
 	def := &SweepDefinition{Sketch: skt, ProfileIndex: profileIndex, Path: path, Twist: twist, Operation: op}
 	sf := &SweepFeature{def: def}
 	pf := c.engine.Add(sf)

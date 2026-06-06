@@ -83,6 +83,24 @@ func (ps *Parameters) AddModelParameter(name, expression string) (*Parameter, er
 	return ps.addEditable(name, expression, ModelParam)
 }
 
+// AddAutoModelParameter adds a model parameter under a freshly minted unique name
+// ("d0", "d1", …) — used to back a feature's dimensional argument (extrude depth,
+// revolve angle) so the argument joins the dependency graph and may itself
+// reference other parameters, exactly like a sketch dimension.
+func (ps *Parameters) AddAutoModelParameter(expression string) (*Parameter, error) {
+	return ps.AddModelParameter(ps.uniqueName("d"), expression)
+}
+
+// uniqueName mints an unused parameter name with the given prefix.
+func (ps *Parameters) uniqueName(prefix string) string {
+	for i := 0; ; i++ {
+		name := fmt.Sprintf("%s%d", prefix, i)
+		if _, taken := ps.ByName(name); !taken {
+			return name
+		}
+	}
+}
+
 // AddTextUserParameter adds an editable user parameter holding a text literal. Text
 // parameters carry no expression and take no part in the dependency graph.
 func (ps *Parameters) AddTextUserParameter(name, value string) (*Parameter, error) {

@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Include links part geometry (edges/vertices) into a 3D sketch as associative reference
 // geometry — Inventor's "Include Geometry" for a 3D sketch. It reuses the model-side

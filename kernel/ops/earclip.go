@@ -5,9 +5,9 @@ package ops
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/math/predicate"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/math/predicate"
 )
 
 // tessellatePlanarFace triangulates a planar face's boundary by ear-clipping (using
@@ -21,17 +21,36 @@ func tessellatePlanarFace(f *topo.Face, q Quality) *Mesh {
 	boundary3D := faceOuterBoundary(f, q)
 	boundary2D := project2D(boundary3D, flat)
 	if holes3D := faceHoleBoundaries(f, q); len(holes3D) > 0 {
-		holes2D := make([][]math.Point2, len(holes3D))
-		for i, h := range holes3D {
-			holes2D[i] = project2D(h, flat)
-		}
-		boundary2D, boundary3D = mergeHoles(boundary2D, boundary3D, holes2D, holes3D)
+		return holedPlanarMesh(boundary2D, boundary3D, holes3D, flat, normal)
 	}
 	m := &Mesh{}
 	for _, p := range boundary3D {
 		m.addVertex(p, normal)
 	}
 	for _, tri := range earClip(boundary2D) {
+		m.addTriangle(tri[0], tri[1], tri[2])
+	}
+	return m
+}
+
+// holedPlanarMesh triangulates a planar face that has hole loops via earcut, whose indices
+// address the outer boundary followed by the holes concatenated — so the 3D vertex buffer is
+// built in that same order.
+func holedPlanarMesh(outer2D []math.Point2, outer3D []math.Point3, holes3D [][]math.Point3, flat func(math.Point3) math.Point2, normal math.Vector3) *Mesh {
+	holes2D := make([][]math.Point2, len(holes3D))
+	for i, h := range holes3D {
+		holes2D[i] = project2D(h, flat)
+	}
+	m := &Mesh{}
+	for _, p := range outer3D {
+		m.addVertex(p, normal)
+	}
+	for _, h := range holes3D {
+		for _, p := range h {
+			m.addVertex(p, normal)
+		}
+	}
+	for _, tri := range earcut(outer2D, holes2D) {
 		m.addTriangle(tri[0], tri[1], tri[2])
 	}
 	return m

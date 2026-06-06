@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"oblikovati/kernel/ops"
 )
 
 // filletBody rounds the selected convex edges of the running body to the given radius via

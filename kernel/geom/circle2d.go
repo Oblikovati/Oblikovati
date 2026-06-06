@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Circle2d is a full 2D circle (contract: Circle2d), parameterized t∈[0,1]
 // mapping to angle 2πt measured counter-clockwise from +X about Center.

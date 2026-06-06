@@ -5,8 +5,8 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
 
 // TestProjectOntoPlaneUsesPartOrigin: a sketch plane on a face is origined at the part origin

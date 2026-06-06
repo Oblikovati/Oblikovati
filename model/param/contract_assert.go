@@ -2,7 +2,7 @@
 
 package param
 
-import "github.com/Oblikovati/api/contract"
+import "oblikovati/api/contract"
 
 // Parameter implements the Apache-2.0 in-process contract. This assertion keeps the
 // implementation and the published interface honest at compile time (ADR-0018): if

@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/brep"
-	"github.com/Oblikovati/oblikovati/kernel/subd"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/brep"
+	"oblikovati/kernel/subd"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // boxNamed builds a box whose faces carry the given feature name in their lineage, so two

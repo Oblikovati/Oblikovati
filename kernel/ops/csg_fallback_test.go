@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // The B-rep boolean (kernel/brep) only handles planar-faceted solids; when an operand has a
@@ -23,9 +23,19 @@ import (
 // curved.
 
 // csgFallbackTol bounds the volume check. The CSG result re-tessellates the curved bar at
-// DefaultQuality, the same quality the bar is measured at, so the curved contribution cancels
-// and only float/weld noise remains; the planar overlap (1.0) is exact.
+// boolInputQuality (the faceting ops.Boolean meshes curved operands at — see
+// booleanInputQuality in csg_body.go), the same quality the expected bar volume is measured
+// at, so the curved contribution cancels and only float/weld noise remains; the planar
+// overlap (1.0) is exact.
 const csgFallbackTol = 1e-2
+
+// boolInputQuality mirrors the (unexported) faceting ops.Boolean meshes curved operands at:
+// the display chord tolerance with the angular refinement disabled. The fallback bakes the
+// curved operand as planar facets at THIS quality, so the expected result volume must measure
+// the curved bar here (not the finer DefaultQuality) for the curved part to cancel exactly.
+func boolInputQuality() ops.Quality {
+	return ops.Quality{ChordTolerance: ops.DefaultQuality().ChordTolerance, AngleTolerance: stdmath.Pi}
+}
 
 // curvedBarWithStraddlingTool builds a 4×3×2 bar with one vertical edge filleted (r=0.5) and a
 // 2×1×1 tool that pokes out the +X face — overlap [3,4]×[1,2]×[0.5,1.5] = 1, parked away from
@@ -41,7 +51,7 @@ func curvedBarWithStraddlingTool(t *testing.T) (bar, tool *topo.Body, barVol flo
 	if hasCylinderFaces(curved) == 0 {
 		t.Fatal("operand has no curved face — fallback would not be exercised")
 	}
-	return curved, csgBox(math.P3(3, 1, 0.5), 2, 1, 1), csgVolume(curved)
+	return curved, csgBox(math.P3(3, 1, 0.5), 2, 1, 1), ops.BodyGeometryProperties(curved, boolInputQuality()).Volume
 }
 
 // assertCSGSolid checks the fallback produced a valid solid whose faces are all planar (the

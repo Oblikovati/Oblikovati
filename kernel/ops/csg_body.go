@@ -6,21 +6,44 @@ import (
 	stdmath "math"
 	"sort"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // weldGrid is the coincidence grid for welding CSG output vertices (database units).
 const weldGrid = 1e-6
 
-// bodyTriangles returns a body's tessellation as CSG triangles (exact for the planar
-// faces our features generate, now consistently outward-wound).
+// booleanInputQuality is the faceting the BSP-tree CSG meshes its operands at. It keeps the
+// display chord tolerance but DISABLES the angular-deflection refinement (a huge angle bound
+// → chord-only), because the faceted CSG fallback is numerically fragile: feeding it the
+// finer angle-bounded display mesh (e.g. 32-facet small cylinders) makes BSP plane splits
+// leave hairline cracks (a few unshared boundary edges). The boolean is a geometry op with
+// its own robustness ceiling, separate from how smoothly we DISPLAY analytic surfaces — so it
+// pins its input to the proven-robust chord-only resolution. (Analytic faces, including
+// modeled threads and drilled holes, still render at full DefaultQuality smoothness.)
+func booleanInputQuality() Quality {
+	return Quality{ChordTolerance: DefaultQuality().ChordTolerance, AngleTolerance: stdmath.Pi}
+}
+
+// bodyTriangles returns a body's tessellation as CSG triangles, each oriented
+// outward. The BSP-tree CSG depends on globally consistent outward winding, but
+// TessellateBody does not guarantee it for curved faces (a cylinder's side
+// triangles can wind either way — the same reason meshGeometryProperties
+// re-orients before its volume sum). Trusting the raw winding silently breaks any
+// boolean whose minuend is a curved body: the BSP misclassifies inside/outside and
+// subtracts nothing (cylinder − tool returned the uncut cylinder). We fix the
+// winding here with the per-vertex shading normals, which point outward.
 func bodyTriangles(b *topo.Body) []tri {
-	mesh, _ := TessellateBody(b, DefaultQuality())
+	mesh, _ := TessellateBody(b, booleanInputQuality())
 	var out []tri
 	for i := 0; i+2 < len(mesh.Indices); i += 3 {
-		if t, ok := newTri(mesh.Positions[mesh.Indices[i]], mesh.Positions[mesh.Indices[i+1]], mesh.Positions[mesh.Indices[i+2]]); ok {
+		ia, ib, ic := mesh.Indices[i], mesh.Indices[i+1], mesh.Indices[i+2]
+		a, bb, c := mesh.Positions[ia], mesh.Positions[ib], mesh.Positions[ic]
+		if outwardRef(mesh, ia, ib, ic).Dot(a.VectorTo(bb).Cross(a.VectorTo(c))) < 0 {
+			bb, c = c, bb // flip to outward winding
+		}
+		if t, ok := newTri(a, bb, c); ok {
 			out = append(out, t)
 		}
 	}

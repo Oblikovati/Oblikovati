@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // FillRegion is a hatched/filled closed region of the sketch, identified by a seed point
 // inside the region (the click point) plus a fill-style name. It is annotative — it

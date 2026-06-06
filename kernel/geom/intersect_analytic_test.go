@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 func mustPlane(t *testing.T, ox, oy, oz, nx, ny, nz float64) Plane {

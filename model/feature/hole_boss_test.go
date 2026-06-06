@@ -6,11 +6,11 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/health"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/health"
+	"oblikovati/model/sketch"
 )
 
 func TestHoleGeneratesRealGeometryBossDefers(t *testing.T) {

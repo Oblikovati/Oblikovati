@@ -5,9 +5,9 @@ package ops
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Mesh is a triangle mesh for display/export: positions, per-vertex normals, and
@@ -33,14 +33,22 @@ func (m *Mesh) addVertex(p math.Point3, n math.Vector3) int {
 
 func (m *Mesh) addTriangle(i, j, k int) { m.Indices = append(m.Indices, i, j, k) }
 
-// Quality controls faceting density via a chordal tolerance: the maximum allowed
-// deviation between the facets and the true geometry.
+// Quality controls faceting density via two tolerances: a chordal deviation (max gap
+// between a facet and the true geometry) and an angular deflection (max turn per facet).
+// The angle bound guarantees small-radius curves still get enough facets to read as round
+// — a 4 mm bore would pass the chord test at 8 facets (an octagon) on chord tolerance
+// alone, so the angle bound forces the minimum segment count a circle needs.
 type Quality struct {
 	ChordTolerance float64
+	AngleTolerance float64 // max turning angle per facet, radians (0 → default)
 }
 
-// DefaultQuality returns a reasonable display tolerance.
-func DefaultQuality() Quality { return Quality{ChordTolerance: 0.05} }
+// DefaultQuality returns a reasonable display tolerance. The angle bound is a max
+// chord-to-chord deflection; with recursive bisection it gives a full circle 32 facets
+// regardless of radius, so even tiny holes (a 4 mm bore) render round, not polygonal.
+func DefaultQuality() Quality {
+	return Quality{ChordTolerance: 0.05, AngleTolerance: 10 * stdmath.Pi / 180}
+}
 
 func (q Quality) tol() float64 {
 	if q.ChordTolerance <= 0 {
@@ -49,11 +57,18 @@ func (q Quality) tol() float64 {
 	return q.ChordTolerance
 }
 
-// TessellateEdge facets an edge into a polyline honoring the chordal tolerance.
+func (q Quality) angleTol() float64 {
+	if q.AngleTolerance <= 0 {
+		return DefaultQuality().AngleTolerance
+	}
+	return q.AngleTolerance
+}
+
+// TessellateEdge facets an edge into a polyline honoring the chordal and angular tolerances.
 func TessellateEdge(e *topo.Edge, q Quality) []math.Point3 {
 	c := e.Geometry()
 	lo, hi := c.Domain()
-	params := adaptiveParams(c.PointAt, lo, hi, q.tol())
+	params := adaptiveParams(c.PointAt, lo, hi, q.tol(), q.angleTol())
 	pts := make([]math.Point3, len(params))
 	for i, t := range params {
 		pts[i] = c.PointAt(t)
@@ -86,10 +101,51 @@ func TessellateFace(f *topo.Face, q Quality) *Mesh {
 
 // tessellateFaceSurface meshes a face by its surface kind, ignoring its sense.
 func tessellateFaceSurface(f *topo.Face, q Quality) *Mesh {
-	if _, planar := f.Geometry().(geom.Plane); planar {
+	switch s := f.Geometry().(type) {
+	case geom.Plane:
 		return tessellatePlanarFace(f, q)
+	case geom.ThreadedCylinder:
+		return tessellateThreadedFace(f, s, q)
 	}
 	return tessellateCurvedFace(f, q)
+}
+
+// tessellateThreadedFace meshes a modeled thread as a height-field grid on the cylinder —
+// fine enough in v to resolve the thread profile, periodic in u. Per-vertex normals come from
+// the surface so shading and the divergence-theorem volume read the real threaded geometry.
+func tessellateThreadedFace(f *topo.Face, s geom.ThreadedCylinder, q Quality) *Mesh {
+	// The angular (u) samples come from the BASE cylinder's band path — they are the face's
+	// boundary-edge angles, so the threaded mesh shares those vertices with the adjacent caps
+	// (the runout makes v=ends the plain radius) → a watertight stitch. v is subdivided finely
+	// to resolve the thread. Positions follow the threaded surface, but cell orientation and
+	// shading normals come from the base cylinder (its analytic +radial normal is reliable;
+	// the threaded surface's numerical normal misleads the outward-winding test).
+	base := s.Cylinder
+	us, vsEnds, ok := periodicBandGrid(base, faceOuterBoundary(f, q), faceHoleBoundaries(f, q))
+	if !ok || len(vsEnds) < 2 {
+		return tessellateCurvedFace(f, q)
+	}
+	vMin, vMax := vsEnds[0], vsEnds[len(vsEnds)-1]
+	turns := (vMax - vMin) / s.Pitch
+	nv := int(stdmath.Max(8, stdmath.Round(turns*10)))
+	vs := make([]float64, nv+1)
+	for j := range vs {
+		vs[j] = vMin + (vMax-vMin)*float64(j)/float64(nv)
+	}
+	m := &Mesh{}
+	idx := make([][]int, len(us))
+	for i, u := range us {
+		idx[i] = make([]int, len(vs))
+		for j, v := range vs {
+			idx[i][j] = m.addVertex(s.PointAt(u, v), base.NormalAt(u, v))
+		}
+	}
+	for i := 0; i+1 < len(us); i++ {
+		for j := 0; j+1 < len(vs); j++ {
+			emitCellOutward(m, base, us[i], us[i+1], vs[j], vs[j+1], idx[i][j], idx[i+1][j], idx[i+1][j+1], idx[i][j+1])
+		}
+	}
+	return m
 }
 
 // reverseMesh flips a reversed face's sense (see topo.Face.Reversed): every outward normal
@@ -115,23 +171,45 @@ func mergeMesh(dst, src *Mesh) {
 	}
 }
 
-// adaptiveParams returns the parameter breakpoints (lo…hi inclusive) at which
-// eval's chord deviates from the true curve by no more than tol, by recursive
-// midpoint subdivision.
-func adaptiveParams(eval func(float64) math.Point3, lo, hi, tol float64) []float64 {
+// adaptiveParams returns the parameter breakpoints (lo…hi inclusive) at which eval's chord
+// both deviates from the true curve by no more than chordTol AND turns by no more than
+// angleTol per facet, by recursive midpoint subdivision.
+func adaptiveParams(eval func(float64) math.Point3, lo, hi, chordTol, angleTol float64) []float64 {
 	out := []float64{lo}
-	subdivide(eval, lo, hi, tol, 0, &out)
+	subdivide(eval, lo, hi, chordTol, angleTol, 0, &out)
 	return out
 }
 
-func subdivide(eval func(float64) math.Point3, lo, hi, tol float64, depth int, out *[]float64) {
+func subdivide(eval func(float64) math.Point3, lo, hi, chordTol, angleTol float64, depth int, out *[]float64) {
 	mid := (lo + hi) / 2
-	if depth >= 22 || pointToSegment(eval(mid), eval(lo), eval(hi)) <= tol {
+	pLo, pMid, pHi := eval(lo), eval(mid), eval(hi)
+	if depth >= 22 || (pointToSegment(pMid, pLo, pHi) <= chordTol && turnAngle(pLo, pMid, pHi) <= angleTol) {
 		*out = append(*out, hi)
 		return
 	}
-	subdivide(eval, lo, mid, tol, depth+1, out)
-	subdivide(eval, mid, hi, tol, depth+1, out)
+	subdivide(eval, lo, mid, chordTol, angleTol, depth+1, out)
+	subdivide(eval, mid, hi, chordTol, angleTol, depth+1, out)
+}
+
+// turnAngle returns the angle (radians) between the chords a→b and b→c — the curve's
+// turning across this span. Zero for a straight run (no over-faceting of lines).
+func turnAngle(a, b, c math.Point3) float64 {
+	d1, d2 := a.VectorTo(b), b.VectorTo(c)
+	if d1.LengthSquared() < math.DefaultTolerance || d2.LengthSquared() < math.DefaultTolerance {
+		return 0
+	}
+	cosA := clamp(d1.Dot(d2)/(d1.Length()*d2.Length()), -1, 1)
+	return stdmath.Acos(cosA)
+}
+
+func clamp(x, lo, hi float64) float64 {
+	if x < lo {
+		return lo
+	}
+	if x > hi {
+		return hi
+	}
+	return x
 }
 
 // pointToSegment returns the distance from p to segment [a, b].

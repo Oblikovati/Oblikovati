@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/subd"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/subd"
+	"oblikovati/kernel/topo"
 )
 
 // shellBox builds an axis-aligned box [0,sx]×[0,sy]×[0,sz].

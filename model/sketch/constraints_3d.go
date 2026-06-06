@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Point3D is a constrainable point in a 3D sketch: three solver variables. The
 // solver is dimension-agnostic — it sees [Constraint.Variables] as []*math.Scalar

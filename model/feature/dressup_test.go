@@ -6,11 +6,11 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/health"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/health"
+	"oblikovati/model/sketch"
 )
 
 // TestChamferBevelsEdgeForReal drills a real 45° chamfer on a box edge and checks the
@@ -199,20 +199,20 @@ func TestDressUpWithNoBodyIsSick(t *testing.T) {
 	}
 }
 
-// TestThreadResolvesThenDefers checks the thread feature (still deferred geometry) resolves
-// its face and reports Warning, and that a lost-face shell goes Sick. (Shell and draft are
-// real now — see their own tests.)
-func TestThreadResolvesThenDefers(t *testing.T) {
+// TestThreadRejectsPlanarFaceAndShellLostFace checks the cosmetic thread needs a cylindrical
+// face (a planar one is Sick — the healthy cylinder case is in thread_test.go) and that a
+// lost-face shell goes Sick.
+func TestThreadRejectsPlanarFaceAndShellLostFace(t *testing.T) {
 	body := prismBody()
 	face := body.Faces()[0].ReferenceKey()
 
 	fs := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fs).AddBase(body)
 	du := NewDressUpFeatures(fs)
-	th := du.AddThread(face, "M6x1")
+	th := du.AddThread(face, "M6x1", false)
 	fs.Recompute()
-	if th.Health().Status != health.Warning {
-		t.Errorf("thread health = %v, want warning (resolved + deferred)", th.Health().Status)
+	if th.Health().Status != health.Sick {
+		t.Errorf("thread on a planar face = %v, want sick", th.Health().Status)
 	}
 	if th.Kind() != "thread" {
 		t.Errorf("kind = %q, want thread", th.Kind())

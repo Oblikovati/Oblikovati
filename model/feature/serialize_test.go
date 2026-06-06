@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // oneSketch is a SketchIndexer over a single sketch at index 0 — enough to round-trip
@@ -61,7 +61,7 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	du.AddChamfer([][]byte{[]byte("edge-c")}, func() float64 { return 0.3 })
 	du.AddShell([][]byte{[]byte("face-a")}, func() float64 { return 2 })
 	du.AddDraft([][]byte{[]byte("face-b")}, func() float64 { return 0.1 })
-	du.AddThread([]byte("face-c"), "M6x1")
+	du.AddThread([]byte("face-c"), "M6x1", false)
 
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {

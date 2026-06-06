@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Curved edges must be sampled into the SAME chord polyline by every face that uses
@@ -20,7 +20,7 @@ import (
 func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
 	c := e.Geometry()
 	lo, hi := c.Domain()
-	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.tol())
+	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.tol(), q.angleTol())
 	pts := make([]math.Point3, len(ts))
 	for i, t := range ts {
 		pts[i] = c.PointAt(t)

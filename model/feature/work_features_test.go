@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 const wtol = 1e-9

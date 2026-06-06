@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Cylinder is an infinite circular cylinder (contract: Cylinder) about the axis
 // line through Origin along AxisDir, with the given Radius. Parameters are

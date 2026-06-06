@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/subd"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/subd"
+	"oblikovati/kernel/topo"
 )
 
 // midPlaneAt builds work geometry with an XY work plane offset to z, recomputed and ready.

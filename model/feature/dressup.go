@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Dress-up features operate on existing topology picked by the user — edges to
@@ -103,19 +105,68 @@ func (d *FaceDraftFeature) Recompute(in Input) (Output, error) {
 	return draftBody(in, d.def.FaceKeys, d.def.PullDir, callOrZero(d.def.Angle), "draft")
 }
 
-// ThreadDefinition applies thread data to a cylindrical face (cosmetic in phase A).
+// ThreadDefinition applies thread data to a cylindrical face. Cut=false is a cosmetic thread
+// (data + display, solid unchanged); Cut=true models a real thread (a helical groove cut).
 type ThreadDefinition struct {
 	FaceKey     []byte
 	Designation string
+	Cut         bool
 }
 
-// ThreadFeature tags a cylindrical face with thread data.
-type ThreadFeature struct{ def *ThreadDefinition }
+// ThreadFeature tags a cylindrical face with a cosmetic thread (Inventor's ThreadFeature): it
+// records the resolved thread data and leaves the solid unchanged. Cut-thread geometry (a real
+// helical groove) is a separate modeled feature; the cosmetic thread is the data + display.
+type ThreadFeature struct {
+	def  *ThreadDefinition
+	spec *ThreadSpec // resolved on the last recompute (nil until then)
+}
 
 func (t *ThreadFeature) Definition() *ThreadDefinition { return t.def }
 func (t *ThreadFeature) Kind() string                  { return "thread" }
+
+// Spec returns the thread data resolved on the last recompute (nil if it never bound).
+func (t *ThreadFeature) Spec() *ThreadSpec { return t.spec }
+
+// Recompute parses the designation, binds the cylindrical face, records the thread spec, and
+// passes the (unchanged) solid through. A bad designation, a lost face, or a non-cylindrical
+// face makes the feature Sick.
 func (t *ThreadFeature) Recompute(in Input) (Output, error) {
-	return resolveFacesThenDefer(in, [][]byte{t.def.FaceKey}, "thread")
+	spec, err := ParseThreadDesignation(t.def.Designation)
+	if err != nil {
+		return Output{}, err
+	}
+	body, err := runningBody(in)
+	if err != nil {
+		return Output{}, err
+	}
+	face, ok := body.FindFaceByKey(t.def.FaceKey)
+	if !ok {
+		return Output{}, fmt.Errorf("thread: face reference lost")
+	}
+	cyl, ok := face.Geometry().(geom.Cylinder)
+	if !ok {
+		return Output{}, fmt.Errorf("thread %q: face is not cylindrical (%T)", t.def.Designation, face.Geometry())
+	}
+	vMin, vMax := axialExtent(face.RangeBox(), cyl)
+	spec.Internal = bodyHasMaterialOutside(body, cyl, (vMin+vMax)/2, (spec.MajorDiameter-spec.MinorDiameter)/2/10)
+	t.spec = &spec
+	if !t.def.Cut {
+		return Output{Bodies: in.Bodies}, nil // cosmetic: solid unchanged
+	}
+	// Modeled (cut) thread: retype the cylindrical face to a threaded surface — O(1), no
+	// boolean — so it tessellates and measures as real threaded geometry.
+	threaded := geom.ThreadedCylinder{
+		Cylinder: cyl, Pitch: spec.Pitch / 10, Depth: (spec.MajorDiameter - spec.MinorDiameter) / 2 / 10,
+		Internal: spec.Internal, RightHanded: spec.RightHanded, VMin: vMin, VMax: vMax,
+	}
+	out := make([]*topo.Body, len(in.Bodies))
+	copy(out, in.Bodies)
+	threadedBody, err := ops.ReplaceFaceSurface(body, t.def.FaceKey, threaded)
+	if err != nil {
+		return Output{}, err
+	}
+	out[len(out)-1] = threadedBody // runningBody is the last body
+	return Output{Bodies: out}, nil
 }
 
 // resolveFacesThenDefer resolves face keys against the running body and, if all bind, defers
@@ -189,7 +240,8 @@ func (c *DressUpFeatures) AddDraftPull(faceKeys [][]byte, pull math.Vector3, ang
 	return c.engine.Add(&FaceDraftFeature{def: &FaceDraftDefinition{FaceKeys: faceKeys, PullDir: pull, Angle: angle}})
 }
 
-// AddThread tags a cylindrical face with thread data.
-func (c *DressUpFeatures) AddThread(faceKey []byte, designation string) *PartFeature {
-	return c.engine.Add(&ThreadFeature{def: &ThreadDefinition{FaceKey: faceKey, Designation: designation}})
+// AddThread tags a cylindrical face with thread data; cut=true models a real (cut) thread,
+// cut=false a cosmetic one.
+func (c *DressUpFeatures) AddThread(faceKey []byte, designation string, cut bool) *PartFeature {
+	return c.engine.Add(&ThreadFeature{def: &ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut}})
 }

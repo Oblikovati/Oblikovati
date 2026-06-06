@@ -5,7 +5,7 @@ package geom
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 func TestClosestPointAndDistanceToLine(t *testing.T) {

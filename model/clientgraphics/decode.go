@@ -5,10 +5,10 @@ package clientgraphics
 import (
 	"fmt"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // DecodeGroup converts a wire submit request into a kernel-typed Group, validating the

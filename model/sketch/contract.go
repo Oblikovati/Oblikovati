@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/api/contract"
+import "oblikovati/api/contract"
 
 // Compile-time assertion that a planar Sketch satisfies the public scalar contract
 // (api/contract.Sketch). The richer entity/constraint access travels as wire DTOs via

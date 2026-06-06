@@ -5,9 +5,9 @@ package feature
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/kernel/subd"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/subd"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Mold core/cavity tooling (M10-F04, PBI-116). Phase A splits the tooling block's
@@ -31,7 +31,7 @@ const (
 // and the shrinkage allowance (fractional oversize compensating part shrink).
 type CoreCavityDefinition struct {
 	Axis      PartingAxis
-	Position  float64
+	Position  func() float64
 	Shrinkage float64
 }
 
@@ -56,11 +56,12 @@ func (m *CoreCavityFeature) Recompute(in Input) (Output, error) {
 	}
 	box := block.RangeBox()
 	lo, hi := axisRange(box, m.def.Axis)
-	if m.def.Position <= lo || m.def.Position >= hi {
+	pos := m.def.Position()
+	if pos <= lo || pos >= hi {
 		return Output{}, errors.New("core-cavity: parting plane is outside the tooling block")
 	}
-	core := boxSolid(box, m.def.Axis, lo, m.def.Position, m.featName+"-core")
-	cavity := boxSolid(box, m.def.Axis, m.def.Position, hi, m.featName+"-cavity")
+	core := boxSolid(box, m.def.Axis, lo, pos, m.featName+"-core")
+	cavity := boxSolid(box, m.def.Axis, pos, hi, m.featName+"-cavity")
 	return Output{Bodies: []*topo.Body{core, cavity}}, nil
 }
 
@@ -74,6 +75,11 @@ func NewCoreCavityFeatures(engine *PartFeatures) *CoreCavityFeatures {
 
 // AddByPartingPlane splits the running block at position along axis, with shrinkage.
 func (c *CoreCavityFeatures) AddByPartingPlane(axis PartingAxis, position, shrinkage float64) *PartFeature {
+	return c.AddByPartingPlaneFn(axis, constFloat(position), shrinkage)
+}
+
+// AddByPartingPlaneFn is AddByPartingPlane with a live (parameter-driven) position.
+func (c *CoreCavityFeatures) AddByPartingPlaneFn(axis PartingAxis, position func() float64, shrinkage float64) *PartFeature {
 	def := &CoreCavityDefinition{Axis: axis, Position: position, Shrinkage: shrinkage}
 	mf := &CoreCavityFeature{def: def, featName: "Mold"}
 	pf := c.engine.Add(mf)

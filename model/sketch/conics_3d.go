@@ -3,8 +3,8 @@
 package sketch
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
 
 // This file holds the 3D-sketch conic entities (M22-F03): full and partial ellipses in

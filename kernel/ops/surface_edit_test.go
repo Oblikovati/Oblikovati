@@ -5,8 +5,8 @@ package ops
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 func approx(a, b float64) bool { return a-b < 1e-9 && b-a < 1e-9 }

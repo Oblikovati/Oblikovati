@@ -16,7 +16,7 @@
 // the renderer's PBR surface.
 package material
 
-import "github.com/Oblikovati/api/types"
+import "oblikovati/api/types"
 
 // Aliases of the canonical Apache-2.0 value types so callers program against the material
 // package without importing api/types directly (ADR-0018).

@@ -2,7 +2,7 @@
 
 package subd
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Primitive free-form starts (PBI-113). Each returns a control cage; callers refine
 // it with [SubdivideN] and convert with [ToBody].

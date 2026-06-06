@@ -3,8 +3,8 @@
 package feature
 
 import (
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // UserCoordinateSystem is a local modeling frame — a triad of origin, X/Y/Z axes

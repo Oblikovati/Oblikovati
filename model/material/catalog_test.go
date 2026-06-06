@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/persistence/yamlcodec"
+	"oblikovati/persistence/yamlcodec"
 )
 
 // TestCatalogPopulatesLibrary guards against a regression where an embedded file fails to

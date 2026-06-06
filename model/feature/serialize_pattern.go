@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // This file holds the YAML codecs for pattern features (rectangular/circular/

@@ -5,8 +5,8 @@ package sketch
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/param"
 )
 
 // Sketch3D is a non-planar sketch whose geometry lives directly in model 3D space (no

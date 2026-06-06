@@ -5,7 +5,7 @@ package geom
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // homog accumulates a weighted sum of control points in homogeneous form: the

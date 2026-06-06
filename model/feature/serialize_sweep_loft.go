@@ -5,8 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // YAML codecs for sweep and loft. A sweep persists its profile (sketch+index), its
@@ -46,13 +46,17 @@ func serializeSweep(def *SweepDefinition, sk SketchIndexer) (*SweepData, error) 
 	if def.Path == nil {
 		return nil, fmt.Errorf("sweep has no path")
 	}
+	path := def.Path() // serialize the current path geometry (evaluated, like other args)
+	if path == nil {
+		return nil, fmt.Errorf("sweep has no path")
+	}
 	op, err := operationName(def.Operation)
 	if err != nil {
 		return nil, err
 	}
 	return &SweepData{
-		Sketch: idx, Profile: def.ProfileIndex, Path: encodePoints(def.Path.Points()),
-		Closed: def.Path.IsClosed(), Twist: evalFloat(def.Twist), Operation: op,
+		Sketch: idx, Profile: def.ProfileIndex, Path: encodePoints(path.Points()),
+		Closed: path.IsClosed(), Twist: evalFloat(def.Twist), Operation: op,
 	}, nil
 }
 

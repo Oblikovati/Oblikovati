@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Path is a connected chain of sketch entities used as a sweep/loft rail or guide.
 // It may be open or closed; tangency continuity between consecutive entities is a

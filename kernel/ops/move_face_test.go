@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
 )
 
 // TestMoveFaceGrowsBox moves the top face of a 2×2×2 box up by 1: the solid grows to a

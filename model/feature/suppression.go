@@ -2,7 +2,7 @@
 
 package feature
 
-import "github.com/Oblikovati/oblikovati/model/param"
+import "oblikovati/model/param"
 
 // ComparisonType is the operator of a conditional-suppression test — the
 // ComparisonTypeEnum.

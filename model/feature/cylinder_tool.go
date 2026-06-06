@@ -5,9 +5,9 @@ package feature
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // holeFacets is the number of sides used to approximate a hole/boss cylinder as a prism

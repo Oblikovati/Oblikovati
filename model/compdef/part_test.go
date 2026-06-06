@@ -5,10 +5,10 @@ package compdef
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/doc"
 )
 
 // box builds a single-vertex solid stand-in body with a known range box corner, so

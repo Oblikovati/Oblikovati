@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // BSplineCurve2d is the 2D (sketch-space) NURBS curve (contract: BSplineCurve2d): a
 // rational B-spline of the given Degree over a 2D control polygon (Ctrl) with per-point

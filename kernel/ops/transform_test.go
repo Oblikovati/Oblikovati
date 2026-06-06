@@ -6,11 +6,110 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/subd"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/brep"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/subd"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
+
+// boredBlock builds a 3×3×1.5 block with a through bore (radius 0.4) and returns the body
+// plus the bore wall's reference key and analytic cylinder. The bore face is REVERSED — its
+// surface +radial normal points into the solid, so the face must carry the opposite sense.
+func boredBlock(t *testing.T) (*topo.Body, []byte, geom.Cylinder) {
+	t.Helper()
+	block := subd.ToBody(subd.Box(3, 3, 1.5), "blk")
+	bored, err := brep.CutCylindricalHole(block, math.P3(1.5, 1.5, -0.1), math.V3(0, 0, 1), 0.4)
+	if err != nil {
+		t.Fatalf("CutCylindricalHole: %v", err)
+	}
+	for _, f := range bored.Faces() {
+		if cyl, ok := f.Geometry().(geom.Cylinder); ok {
+			return bored, f.ReferenceKey(), cyl
+		}
+	}
+	t.Fatal("boredBlock: no cylindrical bore face")
+	return nil, nil, geom.Cylinder{}
+}
+
+// TestTransformedReflectedToolCuts pins the mirror bug the fixing-block part surfaced: a
+// reflected tool must REMOVE material when cut, not add it. geom.TransformSurface used to
+// rebuild a reflected plane's normal as (m·U)×(m·V) = −m·N (inward), and the planar B-rep
+// boolean trusts a face's surface normal as outward — so cutting a mirrored tool inverted
+// the classification and the volume went UP (a mirrored hole added material). The fix keeps
+// the reflected normal outward; here a tool reflected onto the block must cut a clean slot.
+func TestTransformedReflectedToolCuts(t *testing.T) {
+	block := subd.ToBody(subd.Box(4, 2, 2), "blk") // x∈[0,4], volume 16
+	tool := subd.ToBody(subd.Box(1, 2, 2), "tool") // volume 4
+	left, err := ops.TransformBody(tool, math.Translation4(math.V3(0.5, 0, 0)), keepLineage)
+	if err != nil {
+		t.Fatalf("translate tool: %v", err)
+	}
+	nrm, _ := math.UnitVector3FromVector(math.V3(1, 0, 0))
+	mirrored, err := ops.TransformBody(left, math.Reflection4(math.P3(2, 0, 0), nrm), keepLineage)
+	if err != nil {
+		t.Fatalf("reflect tool: %v", err)
+	}
+	res, err := ops.Boolean(ops.Cut, block, mirrored)
+	if err != nil {
+		t.Fatalf("cut mirrored tool: %v", err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("cut result not a valid solid: %+v", r)
+	}
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-12) > 1e-6 {
+		t.Fatalf("reflected-tool cut volume = %.4f, want 12 (16−4); >16 means the mirror added material", got)
+	}
+}
+
+// TestReplaceFaceSurfacePreservesReversedSense pins the bug where ReplaceFaceSurface dropped
+// a face's reversed sense: retyping a bored (reversed) wall to an internal threaded cylinder
+// that cuts OUTWARD must REMOVE material (volume drops). Before the fix the new face came out
+// un-reversed, flipping its divergence-theorem contribution and ADDING ~0.9 cm³ instead.
+func TestReplaceFaceSurfacePreservesReversedSense(t *testing.T) {
+	bored, key, cyl := boredBlock(t)
+	plainVol := ops.BodyGeometryProperties(bored, ops.DefaultQuality()).Volume
+
+	// Depth 0 → identical geometry to the plain bore: volume must be unchanged (a pure
+	// sense/tessellation-path check, isolated from any thread geometry).
+	flat := geom.ThreadedCylinder{Cylinder: cyl, Pitch: 0.125, Depth: 0, Internal: true, RightHanded: true, VMin: 0, VMax: 1.5}
+	flatBody, err := ops.ReplaceFaceSurface(bored, key, flat)
+	if err != nil {
+		t.Fatalf("ReplaceFaceSurface(depth0): %v", err)
+	}
+	if got := ops.BodyGeometryProperties(flatBody, ops.DefaultQuality()).Volume; stdmath.Abs(got-plainVol) > 1e-3 {
+		t.Fatalf("depth-0 retype changed volume: got %.4f want %.4f (sense not preserved)", got, plainVol)
+	}
+
+	// A real internal thread cuts outward → removes material → volume strictly below the bore.
+	cut := geom.ThreadedCylinder{Cylinder: cyl, Pitch: 0.125, Depth: 0.068, Internal: true, RightHanded: true, VMin: 0, VMax: 1.5}
+	cutBody, err := ops.ReplaceFaceSurface(bored, key, cut)
+	if err != nil {
+		t.Fatalf("ReplaceFaceSurface(cut): %v", err)
+	}
+	if r := ops.Validate(cutBody); !r.Valid || !r.Closed || !r.Manifold {
+		t.Fatalf("threaded body not a valid closed solid: %+v", r)
+	}
+	if got := ops.BodyGeometryProperties(cutBody, ops.DefaultQuality()).Volume; got >= plainVol {
+		t.Fatalf("internal thread volume = %.4f, must be < bore %.4f (it cuts outward)", got, plainVol)
+	}
+}
+
+// TestAngularDeflectionRoundsSmallHoles pins the facet floor: a small bore must not render as
+// a coarse polygon. The angular-deflection bound in DefaultQuality forces a full circle to at
+// least 24 facets regardless of radius (a chord tolerance alone left a 4 mm bore an octagon).
+func TestAngularDeflectionRoundsSmallHoles(t *testing.T) {
+	bored, _, _ := boredBlock(t)
+	for _, e := range bored.Edges() {
+		if _, ok := e.Geometry().(geom.Circle); !ok {
+			continue
+		}
+		if facets := len(ops.TessellateEdge(e, ops.DefaultQuality())) - 1; facets < 24 {
+			t.Fatalf("bore circle tessellated to %d facets, want ≥24 (looks polygonal)", facets)
+		}
+	}
+}
 
 // boxBody builds a validated 2×2×2 solid box at the origin via the sub-D primitive.
 func boxBody(t *testing.T) *topo.Body {

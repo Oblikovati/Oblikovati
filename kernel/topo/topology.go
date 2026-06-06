@@ -3,9 +3,39 @@
 package topo
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	stdmath "math"
+
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
+
+// curveSamplesPerEdge is how many points we evaluate along each edge's curve
+// when bounding a face or body. A curved edge is not bounded by its endpoints —
+// a full cylinder cap is a circle with a single seam vertex, so vertex-only
+// bounds collapse to that one point and report a wildly wrong (degenerate)
+// RangeBox. That silently broke boolean classification: a cylinder's box failed
+// to intersect a clearly-overlapping tool, so Cut returned the uncut target.
+// Sampling each edge across its Domain recovers the true silhouette extent; 32
+// samples land exactly on an axis-aligned circle's extrema and stay tight for
+// tilted ones. A conservative (slightly large) box is safe for broad-phase
+// classification; an undersized one is not.
+const curveSamplesPerEdge = 32
+
+// extendBoxByEdges grows box to enclose sampled points along every edge's curve.
+func extendBoxByEdges(box math.Box, edges []*Edge) math.Box {
+	for _, e := range edges {
+		lo, hi := e.curve.Domain()
+		if stdmath.IsInf(lo, 0) || stdmath.IsInf(hi, 0) {
+			box = box.ExtendPoint(e.start.point).ExtendPoint(e.end.point)
+			continue
+		}
+		for i := 0; i <= curveSamplesPerEdge; i++ {
+			t := lo + (hi-lo)*float64(i)/float64(curveSamplesPerEdge)
+			box = box.ExtendPoint(e.curve.PointAt(t))
+		}
+	}
+	return box
+}
 
 // Vertex is a 0-dimensional topological entity: a point with identity.
 type Vertex struct {
@@ -75,7 +105,9 @@ func (e *Edge) Faces() []*Face {
 }
 
 // RangeBox returns the bounding box of the edge's endpoints.
-func (e *Edge) RangeBox() math.Box { return math.BoxFromPoints(e.start.point, e.end.point) }
+func (e *Edge) RangeBox() math.Box {
+	return extendBoxByEdges(math.BoxFromPoints(e.start.point, e.end.point), []*Edge{e})
+}
 
 // EdgeUse is an oriented use of an [Edge] within a [Loop]; reversed when the loop
 // traverses the edge against its natural start→end direction (a half-edge / coedge).
@@ -168,13 +200,14 @@ func (f *Face) Vertices() []*Vertex {
 	return out
 }
 
-// RangeBox returns the bounding box of the face's vertices.
+// RangeBox returns the face's bounding box, accounting for curved edges (a
+// cylindrical or conical face's circular edges bulge well past their vertices).
 func (f *Face) RangeBox() math.Box {
 	box := math.EmptyBox()
 	for _, v := range f.Vertices() {
 		box = box.ExtendPoint(v.point)
 	}
-	return box
+	return extendBoxByEdges(box, f.Edges())
 }
 
 // Shell is a connected set of faces; a closed shell bounds a solid region.

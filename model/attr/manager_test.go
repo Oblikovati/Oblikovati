@@ -5,7 +5,7 @@ package attr
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/identity"
+	"oblikovati/model/identity"
 )
 
 // keyFor mints a reference key for a face with the given lineage, the way a

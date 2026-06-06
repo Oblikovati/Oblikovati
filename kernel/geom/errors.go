@@ -5,7 +5,7 @@ package geom
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // CollinearPointsError reports that three points expected to define a circle or

@@ -5,7 +5,7 @@ package predicate
 import (
 	"math/big"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // The exact paths evaluate the same determinants in exact rational arithmetic

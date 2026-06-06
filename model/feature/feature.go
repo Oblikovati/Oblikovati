@@ -6,10 +6,10 @@ import (
 	"errors"
 	"sync/atomic"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/identity"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/identity"
+	"oblikovati/model/param"
 )
 
 // ErrDeferred is returned by a feature whose inputs resolved successfully but whose

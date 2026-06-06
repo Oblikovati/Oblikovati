@@ -5,8 +5,8 @@ package renderer
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/math"
+	"oblikovati/scene"
 )
 
 // GPU-facing camera transforms in float32, column-major (the layout GLSL/SPIR-V

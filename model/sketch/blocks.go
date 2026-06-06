@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // BlockDefinition is a reusable named group of sketch entities. Instances
 // placed from it (see [BlockInstance]) read it live, so editing the

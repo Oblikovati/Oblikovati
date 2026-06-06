@@ -5,8 +5,8 @@ package topo
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
 
 // buildTetra assembles a tetrahedron A(0,0,0) B(1,0,0) C(0,1,0) D(0,0,1) with

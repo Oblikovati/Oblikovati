@@ -5,9 +5,10 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // EmbossDefinition is the recipe for an emboss: a closed sketch profile raised from (or engraved
@@ -114,10 +115,56 @@ func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span,
 		if len(profiles) > 1 {
 			name = fmt.Sprintf("%s/p%d", feat, i)
 		}
-		prisms[i] = buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, name)
+		prisms[i] = buildPrismWithHoles(p, plane, sp, taper, name)
 	}
 	if len(prisms) == 1 {
 		return prisms[0]
 	}
 	return topo.MergeBodies(topo.NewLineage(topo.Tok(feat, "merged", 0)), true, prisms...)
+}
+
+// buildPrismWithHoles extrudes a profile honoring its inner loops: the outer loop
+// becomes a solid prism, then each inner loop (a hole) is extruded over a span that
+// overshoots both caps and cut away, yielding a hollow prism (a tube for an annular
+// profile). Without this an annular profile extruded as a solid disk.
+func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)
+	inner := p.InnerLoops()
+	if len(inner) == 0 {
+		return solid
+	}
+	lo, hi := sp.near, sp.far
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+	margin := hi - lo // overshoot each cap by the full depth so the cut is clean
+	cut := span{near: lo - margin, far: hi + margin}
+	for j, loop := range inner {
+		// A hole loop winds opposite the outer (clockwise); buildPrism would then make
+		// an inverted tool whose boolean removes far more than the hole. Normalize the
+		// hole polygon to CCW so the cut tool is a valid outward solid.
+		poly := loop.Polygon()
+		if outwardSign(poly) < 0 {
+			poly = reversedPolygon2D(poly)
+		}
+		hole := buildPrism(poly, plane, cut, taper, fmt.Sprintf("%s/hole%d", feat, j))
+		// The exact planar B-rep boolean cuts each hole; earlier this used the faceted CSG
+		// fallback because multi-hole cap faces tessellated to the wrong area (half a hole
+		// grid went missing). That was the planar-face triangulator, now fixed (earcut), so
+		// the exact path is correct and faster.
+		if res, err := ops.Boolean(ops.Cut, solid, hole); err == nil && res != nil {
+			solid = res
+		}
+	}
+	return solid
+}
+
+// reversedPolygon2D returns the polygon with its vertex order reversed (flipping its
+// winding).
+func reversedPolygon2D(poly []math.Point2) []math.Point2 {
+	out := make([]math.Point2, len(poly))
+	for i, p := range poly {
+		out[len(poly)-1-i] = p
+	}
+	return out
 }

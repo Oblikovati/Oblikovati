@@ -5,7 +5,7 @@ package topo
 import (
 	"bytes"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Body (SurfaceBody) is the top of the topology graph: one or more shells. A solid
@@ -67,13 +67,15 @@ func (b *Body) Vertices() []*Vertex {
 	return out
 }
 
-// RangeBox returns the body's bounding box (union of all vertex positions).
+// RangeBox returns the body's bounding box, sampling curved edges so cylinders,
+// cones and arcs are bounded by their true silhouette rather than collapsing to
+// their seam vertices (see extendBoxByEdges).
 func (b *Body) RangeBox() math.Box {
 	box := math.EmptyBox()
 	for _, v := range b.Vertices() {
 		box = box.ExtendPoint(v.point)
 	}
-	return box
+	return extendBoxByEdges(box, b.Edges())
 }
 
 // FindFaceByKey re-binds a face reference key to the matching face by lineage,

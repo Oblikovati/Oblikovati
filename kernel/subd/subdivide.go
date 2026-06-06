@@ -5,7 +5,7 @@ package subd
 import (
 	"sort"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // SubdivideN applies n Catmull–Clark refinement steps (n ≤ 0 returns the cage).

@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"oblikovati/kernel/ops"
 )
 
 // shellBody hollows the running body to a wall thickness, opening the removed faces, via

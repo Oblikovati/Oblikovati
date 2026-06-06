@@ -2,7 +2,7 @@
 
 package ops
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Vertex/polygon classification for the BSP split (csg.js convention).
 const (

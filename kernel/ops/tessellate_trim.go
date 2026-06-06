@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"sort"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Trimmed curved-face tessellation (third piece of the curved-B-rep stack). A curved
@@ -59,16 +59,25 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // (corner blends); larger non-rectangular curved faces would want a refined triangulation.
 func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) *Mesh {
 	outer2D, holes2D := projectToPlane(outer3D, holes3D)
-	uv, pos := outer2D, outer3D
+	pos := outer3D
+	var tris [][3]int
 	if len(holes2D) > 0 {
-		uv, pos = mergeHoles(outer2D, outer3D, holes2D, holes3D)
+		// earcut's indices address the outer loop followed by the holes concatenated, so the
+		// 3D buffer is built in that same order (matches the robust planar path, see earcut.go).
+		pos = append([]math.Point3(nil), outer3D...)
+		for _, h := range holes3D {
+			pos = append(pos, h...)
+		}
+		tris = earcut(outer2D, holes2D)
+	} else {
+		tris = earClip(outer2D)
 	}
 	m := &Mesh{}
 	for _, p := range pos {
 		u, v := s.ParamAt(p)
 		m.addVertex(p, s.NormalAt(u, v))
 	}
-	for _, tri := range earClip(uv) {
+	for _, tri := range tris {
 		a, b, c := tri[0], tri[1], tri[2]
 		if triangleFlipped(s, pos[a], pos[b], pos[c]) {
 			b, c = c, b
@@ -399,7 +408,7 @@ func sameGrid(a, b []float64) bool {
 func fullDomainGridMesh(s geom.Surface, q Quality) *Mesh {
 	uLo, uHi := clampSpan(s.UDomain())
 	vLo, vHi := clampSpan(s.VDomain())
-	us := adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, (vLo+vHi)/2) }, uLo, uHi, q.tol())
-	vs := adaptiveParams(func(v float64) math.Point3 { return s.PointAt((uLo+uHi)/2, v) }, vLo, vHi, q.tol())
+	us := adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, (vLo+vHi)/2) }, uLo, uHi, q.tol(), q.angleTol())
+	vs := adaptiveParams(func(v float64) math.Point3 { return s.PointAt((uLo+uHi)/2, v) }, vLo, vHi, q.tol(), q.angleTol())
 	return gridMesh(s, us, vs)
 }
