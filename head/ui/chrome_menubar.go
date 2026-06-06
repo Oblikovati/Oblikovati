@@ -28,6 +28,13 @@ func drawMenuBar(s *app.Session) string {
 		if native.MenuItem("Save As") {
 			fileModal.openFor(dialogSaveAs)
 		}
+		native.Separator()
+		if native.MenuItem("Import") { // STL / OBJ / 3MF / STEP → an imported body
+			fileModal.openFor(dialogImport)
+		}
+		if native.MenuItem("Export") { // part bodies → STL / OBJ / 3MF / STEP
+			fileModal.openFor(dialogExport)
+		}
 		native.EndMenu()
 	}
 	if native.BeginMenu("Edit") {

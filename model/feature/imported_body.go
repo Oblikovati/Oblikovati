@@ -16,7 +16,8 @@ import "oblikovati/kernel/topo"
 type ImportedBodyFeature struct {
 	body   *topo.Body
 	Path   string // source file path (recorded in the recipe; re-imported on open)
-	Format string // source format ("stl"|"obj"|"3mf"), an api/types.ExchangeFormat string
+	Format string // source format ("stl"|"obj"|"3mf"|"step"), an api/types.ExchangeFormat string
+	Index  int    // which body of a multi-body file this is (a STEP file can hold several); 0 for mesh
 }
 
 // Body returns the imported body (the geometry injected into recompute).
@@ -38,7 +39,13 @@ type ImportedBodies struct{ engine *PartFeatures }
 // NewImportedBodies binds the collection to a feature engine.
 func NewImportedBodies(engine *PartFeatures) *ImportedBodies { return &ImportedBodies{engine} }
 
-// Add wraps a translated body with its source coordinates and records it as a feature.
+// Add wraps a translated body (the single body of a mesh file) and records it as a feature.
 func (c *ImportedBodies) Add(body *topo.Body, path, format string) *PartFeature {
-	return c.engine.Add(&ImportedBodyFeature{body: body, Path: path, Format: format})
+	return c.AddAt(body, path, format, 0)
+}
+
+// AddAt records body index of a (possibly multi-body) source file as a feature, so reopen
+// re-imports the same body from the file.
+func (c *ImportedBodies) AddAt(body *topo.Body, path, format string, index int) *PartFeature {
+	return c.engine.Add(&ImportedBodyFeature{body: body, Path: path, Format: format, Index: index})
 }

@@ -43,7 +43,7 @@ func cmdExport(args []string, out io.Writer) error {
 	if !ok {
 		return fmt.Errorf("export: %q is not a part document", src)
 	}
-	result, err := exchange.MeshExchange{}.ExportFrom(part, dst, format, res)
+	result, err := exchange.Export(part, dst, format, res)
 	if err != nil {
 		return err
 	}

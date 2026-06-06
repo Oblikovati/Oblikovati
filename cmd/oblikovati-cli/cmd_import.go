@@ -34,7 +34,7 @@ func cmdImport(args []string, out io.Writer) error {
 		return fmt.Errorf("import: %w", err)
 	}
 	part := d.Content().(*compdef.PartComponentDefinition)
-	res, err := exchange.MeshExchange{}.ImportInto(part, src, format)
+	res, err := exchange.Import(part, src, format)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,9 @@ func formatFromExt(path string) (types.ExchangeFormat, error) {
 		return types.FormatOBJ, nil
 	case ".3mf":
 		return types.Format3MF, nil
+	case ".step", ".stp":
+		return types.FormatSTEP, nil
 	default:
-		return "", fmt.Errorf("unsupported mesh extension %q (want .stl|.obj|.3mf)", ext)
+		return "", fmt.Errorf("unsupported extension %q (want .stl|.obj|.3mf|.step)", ext)
 	}
 }

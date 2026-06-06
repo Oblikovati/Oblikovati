@@ -69,3 +69,23 @@ func TestFileDialogTitleDefaultsToOpen(t *testing.T) {
 		t.Errorf("title() = %q, want Open", d.title())
 	}
 }
+
+// TestFileDialogImportExportModes covers the Import/Export modes: their titles and that a
+// confirmed Export carries the selected mesh resolution.
+func TestFileDialogImportExportModes(t *testing.T) {
+	var d fileDialog
+	d.openFor(dialogImport)
+	if d.title() != "Import (.stl/.obj/.3mf/.step)" {
+		t.Errorf("import title = %q", d.title())
+	}
+	d.openFor(dialogExport)
+	if d.resolution != 1 { // defaults to medium
+		t.Errorf("export default resolution = %d, want 1 (medium)", d.resolution)
+	}
+	d.resolution = 2 // high
+	copy(d.path[:], "out.stl")
+	act := d.confirm()
+	if act.Kind != dialogExport || act.Path != "out.stl" || act.Resolution != "high" {
+		t.Errorf("export confirm = %+v, want {dialogExport, out.stl, high}", act)
+	}
+}

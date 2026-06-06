@@ -21,7 +21,8 @@ func (r *Router) registerExchangeHandlers() {
 	r.handlers[wire.MethodDocumentsExport] = exportDocument
 }
 
-// importDocument reads a mesh file (STL/OBJ/3MF) into the active part as an imported-body
+// importDocument reads a foreign file (STL/OBJ/3MF mesh, or STEP B-rep) into the active part as
+// imported-body
 // feature — a watertight mesh becomes a solid downstream features can operate on.
 func importDocument(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	part, err := modelaccess.ActivePart(s)
@@ -32,15 +33,15 @@ func importDocument(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	res, err := exchange.MeshExchange{}.ImportInto(part, in.Path, types.ExchangeFormat(in.Format))
+	res, err := exchange.Import(part, in.Path, types.ExchangeFormat(in.Format))
 	if err != nil {
 		return nil, fmt.Errorf("documents.import: %w", err)
 	}
 	return json.Marshal(wire.ImportResponse{BodyCount: res.BodyCount, Solid: res.Solid, Warnings: res.Warnings})
 }
 
-// exportDocument writes the active part's bodies to a mesh file at the requested
-// resolution (the tessellation-density knob).
+// exportDocument writes the active part's bodies to a foreign file: a mesh format tessellates at
+// the requested resolution (the tessellation-density knob); STEP writes the exact B-rep.
 func exportDocument(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -50,7 +51,7 @@ func exportDocument(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	res, err := exchange.MeshExchange{}.ExportFrom(part, in.Path, types.ExchangeFormat(in.Format), types.MeshResolution(in.Resolution))
+	res, err := exchange.Export(part, in.Path, types.ExchangeFormat(in.Format), types.MeshResolution(in.Resolution))
 	if err != nil {
 		return nil, fmt.Errorf("documents.export: %w", err)
 	}
