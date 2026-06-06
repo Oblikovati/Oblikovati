@@ -25,10 +25,13 @@ type SweepData struct {
 	Operation string      `yaml:"operation"`
 }
 
-// LoftSectionData is one section of a loft (a profile on a sketch).
+// LoftSectionData is one section of a loft: a profile on a sketch, or — when Point is set — an
+// apex (a point section). Point is model-space [x,y,z]; Sketch still gives the apex's plane (the
+// tangent plane a TangentToPlane condition domes against).
 type LoftSectionData struct {
-	Sketch  int `yaml:"sketch"`
-	Profile int `yaml:"profile"`
+	Sketch  int       `yaml:"sketch"`
+	Profile int       `yaml:"profile"`
+	Point   []float64 `yaml:"point,omitempty"`
 }
 
 // LoftEndData is a loft end-section condition (omitted entirely when Free). Angle is in radians.
@@ -94,7 +97,11 @@ func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {
 		if !ok {
 			return nil, fmt.Errorf("loft section %d references a sketch that is not in the part", i)
 		}
-		sections[i] = LoftSectionData{Sketch: idx, Profile: s.ProfileIndex}
+		sd := LoftSectionData{Sketch: idx, Profile: s.ProfileIndex}
+		if s.IsPoint() {
+			sd.Point = []float64{s.Point.X, s.Point.Y, s.Point.Z}
+		}
+		sections[i] = sd
 	}
 	op, err := operationName(def.Operation)
 	if err != nil {
@@ -134,7 +141,12 @@ func restoreLoft(fs *PartFeatures, d *LoftData, sk SketchIndexer) (*PartFeature,
 		if !ok {
 			return nil, fmt.Errorf("loft section %d references sketch index %d, which does not exist", i, s.Sketch)
 		}
-		sections[i] = LoftSection{Sketch: skt, ProfileIndex: s.Profile}
+		ls := LoftSection{Sketch: skt, ProfileIndex: s.Profile}
+		if len(s.Point) == 3 {
+			p := math.P3(s.Point[0], s.Point[1], s.Point[2])
+			ls.Point = &p
+		}
+		sections[i] = ls
 	}
 	op, err := parseOperation(d.Operation)
 	if err != nil {

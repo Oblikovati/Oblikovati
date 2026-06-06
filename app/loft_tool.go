@@ -11,17 +11,24 @@ import (
 	"oblikovati/renderer"
 )
 
-// LoftTool is the interactive Loft command: activate it, click two or more sketch
-// regions in order (each on its own plane) to be the cross-sections, optionally close
-// the loop, and OK to blend them into a solid. Each picked region maps directly to a
-// [feature.LoftSection], so no extra plumbing is needed beyond the profile picks.
+// LoftTool is the interactive Loft command: activate it, click two or more cross-sections in
+// order — each a sketch region, or a vertex/work point to taper the loft to an apex (a cone or
+// dome) — optionally close the loop, set the end conditions, and OK to blend them into a solid.
 type LoftTool struct {
-	sections    []ProfileHandle
+	sections    []loftPick
 	closed      bool
 	operation   ops.PartFeatureOperation
 	first, last feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
 	added       *feature.PartFeature
 }
+
+// loftPick is one picked cross-section: a profile region, or — when apex is set — a point.
+type loftPick struct {
+	profile ProfileHandle
+	apex    *math.Point3
+}
+
+func (p loftPick) isPoint() bool { return p.apex != nil }
 
 // NewLoftTool returns a loft tool that creates a new body.
 func NewLoftTool() *LoftTool { return &LoftTool{operation: ops.NewBody} }
@@ -29,17 +36,37 @@ func NewLoftTool() *LoftTool { return &LoftTool{operation: ops.NewBody} }
 // Name implements [Tool].
 func (t *LoftTool) Name() string { return "Loft" }
 
-// Start sets the selection filter to profiles so clicks pick regions.
-func (t *LoftTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectProfile)) }
+// Start lets clicks pick sketch regions (profiles) or points (vertices / work points) as sections.
+func (t *LoftTool) Start(s *Session) {
+	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectVertex, SelectWorkPoint))
+}
 
-// Pick appends the clicked region as the next cross-section (ignoring a region already
+// Pick appends the clicked profile or point as the next cross-section (ignoring a profile already
 // in the list, so a double-click does not duplicate a section).
 func (t *LoftTool) Pick(_ *Session, sel Selectable) {
-	p, ok := sel.(ProfileHandle)
-	if !ok || indexOfProfile(t.sections, p) >= 0 {
-		return
+	switch h := sel.(type) {
+	case ProfileHandle:
+		if t.hasProfile(h) {
+			return
+		}
+		t.sections = append(t.sections, loftPick{profile: h})
+	case VertexHandle:
+		p := h.Vertex.Point()
+		t.sections = append(t.sections, loftPick{apex: &p})
+	case WorkPointHandle:
+		p := h.Point.Point()
+		t.sections = append(t.sections, loftPick{apex: &p})
 	}
-	t.sections = append(t.sections, p)
+}
+
+// hasProfile reports whether profile h is already a picked section.
+func (t *LoftTool) hasProfile(h ProfileHandle) bool {
+	for _, s := range t.sections {
+		if !s.isPoint() && s.profile == h {
+			return true
+		}
+	}
+	return false
 }
 
 // SetClosed toggles a closed loft (the last section blends back to the first).
@@ -58,14 +85,20 @@ func (t *LoftTool) SetLastCondition(e feature.LoftEnd)  { t.last = e }
 func (t *LoftTool) FirstCondition() feature.LoftEnd     { return t.first }
 func (t *LoftTool) LastCondition() feature.LoftEnd      { return t.last }
 
-// Sections returns the picked cross-sections in order (for the UI to highlight/list).
-func (t *LoftTool) Sections() []ProfileHandle {
-	return append([]ProfileHandle(nil), t.sections...)
-}
+// SectionCount returns how many cross-sections (profiles + points) have been picked.
+func (t *LoftTool) SectionCount() int { return len(t.sections) }
 
-// PickedProfiles is the unified-tool-highlight accessor; it aliases Sections so the head
-// outlines every picked cross-section the same way it does other profile-picking tools.
-func (t *LoftTool) PickedProfiles() []ProfileHandle { return t.Sections() }
+// PickedProfiles is the unified-tool-highlight accessor: the head outlines every picked PROFILE
+// cross-section (point sections have nothing to outline).
+func (t *LoftTool) PickedProfiles() []ProfileHandle {
+	var out []ProfileHandle
+	for _, s := range t.sections {
+		if !s.isPoint() {
+			out = append(out, s.profile)
+		}
+	}
+	return out
+}
 
 // CanCommit reports whether at least two cross-sections have been picked.
 func (t *LoftTool) CanCommit() bool { return len(t.sections) >= 2 }
@@ -79,7 +112,11 @@ func (t *LoftTool) Commit(s *Session) error {
 	}
 	sections := make([]feature.LoftSection, len(t.sections))
 	for i, h := range t.sections {
-		sections[i] = feature.LoftSection{Sketch: h.Sketch, ProfileIndex: h.ProfileIndex}
+		if h.isPoint() {
+			sections[i] = feature.LoftSection{Point: h.apex}
+			continue
+		}
+		sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
 	}
 	t.added = feature.NewLoftFeatures(part.Features()).AddConditioned(sections, t.closed, t.operation, t.first, t.last)
 	part.Recompute()
@@ -97,15 +134,20 @@ func (t *LoftTool) AddedFeature() *feature.PartFeature { return t.added }
 // Prompt guides the user through the loft steps.
 func (t *LoftTool) Prompt(*Session) string {
 	if len(t.sections) < 2 {
-		return "Click two or more cross-section regions to loft (in order)"
+		return "Click two or more cross-sections to loft (regions, or a vertex/point for an apex)"
 	}
 	return "Add more sections or click OK"
 }
 
-// Preview outlines each picked cross-section so the user sees what will be blended.
+// Preview outlines each picked profile cross-section so the user sees what will be blended (a
+// point section is a single vertex, already drawn by the selection highlight).
 func (t *LoftTool) Preview(*Session) []renderer.DrawItem {
 	var items []renderer.DrawItem
-	for _, h := range t.sections {
+	for _, s := range t.sections {
+		if s.isPoint() {
+			continue
+		}
+		h := s.profile
 		if h.ProfileIndex >= h.Sketch.Profiles().Count() {
 			continue
 		}

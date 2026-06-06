@@ -76,7 +76,7 @@ func capIssues3(s []string) []string {
 	return s
 }
 
-func sec(s *sketch.Sketch) LoftSection { return LoftSection{s, 0} }
+func sec(s *sketch.Sketch) LoftSection { return LoftSection{Sketch: s, ProfileIndex: 0} }
 
 func TestLoftShapeCylindrical(t *testing.T) {
 	// circle→circle = a cone frustum. V = πh/3·(R²+Rr+r²).
@@ -134,7 +134,7 @@ func TestLoftShapePipe(t *testing.T) {
 	// inner loops skin a bore that is cut out. Volume = outer cone frustum − inner cone frustum.
 	sb, ib := annulusOn(sketch.XYPlane(), 2.0, 1.5)
 	st, it := annulusOn(planeAtZ(4), 1.4, 1.0)
-	body := loftSolid(t, []LoftSection{{sb, ib}, {st, it}}, false)
+	body := loftSolid(t, []LoftSection{{Sketch: sb, ProfileIndex: ib}, {Sketch: st, ProfileIndex: it}}, false)
 	cone := func(rr, r, h float64) float64 { return stdmath.Pi * h / 3 * (rr*rr + rr*r + r*r) }
 	want := cone(2.0, 1.4, 4) - cone(1.5, 1.0, 4)
 	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, want) > 0.05 {

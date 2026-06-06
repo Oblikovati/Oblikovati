@@ -106,12 +106,65 @@ func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds) [][]m
 		}
 	}
 	if !closed {
-		fwdStart := loopCentroid(sections[0]).VectorTo(loopCentroid(sections[1]))
-		fwdEnd := loopCentroid(sections[m-2]).VectorTo(loopCentroid(sections[m-1]))
-		applyEndCondition(tan[0], sections[0], sections[1], ends.first, ends.firstN, fwdStart)
-		applyEndCondition(tan[m-1], sections[m-1], sections[m-2], ends.last, ends.lastN, fwdEnd)
+		applyEnd(tan[0], sections, 0, 1, ends.first, ends.firstN)
+		applyEnd(tan[m-1], sections, m-1, m-2, ends.last, ends.lastN)
 	}
 	return tan
+}
+
+// applyEnd overrides one end section's tangents from its condition, dispatching on whether the
+// section is a point (apex) or a profile. endIdx is the end section, neighIdx its neighbour.
+func applyEnd(tangents []math.Vector3, sections [][]math.Point3, endIdx, neighIdx int, end LoftEnd, normal math.UnitVector3) {
+	sec, neighbor := sections[endIdx], sections[neighIdx]
+	if collapsedLoop(sec) {
+		applyApexCondition(tangents, sec, neighbor, end, normal, endIdx < neighIdx)
+		return
+	}
+	var forward math.Vector3 // the +section (increasing-index) direction at this end
+	if endIdx < neighIdx {
+		forward = loopCentroid(sec).VectorTo(loopCentroid(neighbor))
+	} else {
+		forward = loopCentroid(neighbor).VectorTo(loopCentroid(sec))
+	}
+	applyEndCondition(tangents, sec, neighbor, end, normal, forward)
+}
+
+// collapsedLoop reports whether every point of a section coincides — a point (apex) section.
+func collapsedLoop(sec []math.Point3) bool {
+	for _, p := range sec[1:] {
+		if p.DistanceTo(sec[0]) > 1e-9 {
+			return false
+		}
+	}
+	return true
+}
+
+// applyApexCondition shapes how the loft meets a point (apex) section. Sharp/Free keep the
+// natural Catmull-Rom tangent — a straight taper (a cone). TangentToPlane makes the surface leave
+// the apex tangent to its plane (normal), so each meridian's apex tangent lies in that plane,
+// pointing along the neighbour point's radial direction — a rounded dome. Impact scales the dome
+// reach; Reversed flips it to a concave (dished) apex.
+func applyApexCondition(tangents []math.Vector3, apexSec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, isStart bool) {
+	if !end.Condition.IsTangentToPlane() {
+		return
+	}
+	impact := end.Impact
+	if impact <= 0 {
+		impact = 1
+	}
+	sign := 1.0 // a start apex leaves outward (+u toward the neighbour); an end apex arrives inward
+	if !isStart {
+		sign = -1
+	}
+	if end.Reversed {
+		sign = -sign
+	}
+	apex, nc := apexSec[0], centroidOf(neighbor)
+	for j := range apexSec {
+		r := radialDir(neighbor[j], nc, normal)
+		chord := float64(apex.DistanceTo(neighbor[j]))
+		tangents[j] = unitOrFallback(r.Scale(sign), normal.AsVector()).Scale(impact * chord)
+	}
 }
 
 // applyEndCondition overrides an end section's tangents for an angle/direction condition: the

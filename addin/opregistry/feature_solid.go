@@ -9,6 +9,7 @@ import (
 
 	"oblikovati/addin/modelaccess"
 	"oblikovati/app"
+	"oblikovati/math"
 	"oblikovati/model/compdef"
 	"oblikovati/model/feature"
 )
@@ -259,8 +260,9 @@ func coilPitchRevs(part *compdef.PartComponentDefinition, in coilArgs) (pitch, r
 // --- loft ------------------------------------------------------------------
 
 type loftSectionRef struct {
-	SketchIndex  int `json:"sketchIndex"`
-	ProfileIndex int `json:"profileIndex"`
+	SketchIndex  int       `json:"sketchIndex"`
+	ProfileIndex int       `json:"profileIndex"`
+	Point        []float64 `json:"point,omitempty"` // [x,y] on the sketch plane → an apex (point) section
 }
 
 // loftEndArgs is a loft end-section condition: how the surface leaves the first (or arrives at
@@ -284,11 +286,11 @@ type loftArgs struct {
 const loftSchema = `{
   "type": "object",
   "properties": {
-    "sections": {"type": "array", "minItems": 2, "items": {"type": "object", "properties": {"sketchIndex": {"type": "integer"}, "profileIndex": {"type": "integer"}}, "required": ["sketchIndex"]}, "description": "Ordered cross-section profiles (>= 2) to loft through."},
+    "sections": {"type": "array", "minItems": 2, "items": {"type": "object", "properties": {"sketchIndex": {"type": "integer"}, "profileIndex": {"type": "integer"}, "point": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "[x,y] on the sketch plane → an apex (point) section so the loft tapers to a tip; only valid first or last."}}, "required": ["sketchIndex"]}, "description": "Ordered cross-section profiles (>= 2) to loft through."},
     "closed": {"type": "boolean", "default": false},
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
-    "first": {"type": "object", "description": "Start-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane, e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut)."}}},
-    "last": {"type": "object", "description": "End-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane, e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut)."}}}
+    "first": {"type": "object", "description": "Start-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}},
+    "last": {"type": "object", "description": "End-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}}
   },
   "required": ["sections"]
 }`
@@ -315,7 +317,12 @@ func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		if serr != nil {
 			return nil, serr
 		}
-		sections[i] = feature.LoftSection{Sketch: sk, ProfileIndex: r.ProfileIndex}
+		ls := feature.LoftSection{Sketch: sk, ProfileIndex: r.ProfileIndex}
+		if len(r.Point) == 2 { // an apex section: [x,y] on the sketch plane
+			mp := sk.Plane().ToModel(math.P2(r.Point[0], r.Point[1]))
+			ls.Point = &mp
+		}
+		sections[i] = ls
 	}
 	op, err := parseOperation(in.Operation)
 	if err != nil {
@@ -342,15 +349,21 @@ func loftEndProvider(part *compdef.PartComponentDefinition, a *loftEndArgs, whic
 		return func() feature.LoftEnd { return feature.LoftEnd{} }, nil
 	}
 	cond := feature.LoftCondition(a.Condition)
-	if !cond.CurvesViaAngle() {
-		return nil, fmt.Errorf("loft: %s condition %q is not yet supported (use \"free\", \"angle\" or \"direction\")", which, a.Condition)
-	}
-	angle, err := optionalAngleClosure(part, a.Angle, "loft: "+which+" angle")
-	if err != nil {
-		return nil, err
-	}
 	impact, reversed := a.Impact, a.Reversed
-	return func() feature.LoftEnd {
-		return feature.LoftEnd{Condition: cond, Angle: angle(), Impact: impact, Reversed: reversed}
-	}, nil
+	switch {
+	case cond.CurvesViaAngle(): // angle/direction takeoff on a profile section
+		angle, err := optionalAngleClosure(part, a.Angle, "loft: "+which+" angle")
+		if err != nil {
+			return nil, err
+		}
+		return func() feature.LoftEnd {
+			return feature.LoftEnd{Condition: cond, Angle: angle(), Impact: impact, Reversed: reversed}
+		}, nil
+	case cond.IsPointCondition(): // sharp / tangent-to-plane on an apex section
+		return func() feature.LoftEnd {
+			return feature.LoftEnd{Condition: cond, Impact: impact, Reversed: reversed}
+		}, nil
+	default: // tangent / smooth need an adjacent face (not yet supported)
+		return nil, fmt.Errorf("loft: %s condition %q is not yet supported (use \"free\", \"angle\", \"direction\", \"sharp\" or \"tangent-to-plane\")", which, a.Condition)
+	}
 }

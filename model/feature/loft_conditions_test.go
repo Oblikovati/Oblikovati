@@ -111,7 +111,7 @@ func TestLoftConditionAnglePipe(t *testing.T) {
 	sb, ib := annulusOn(sketch.XYPlane(), 2.0, 1.4)
 	st, it := annulusOn(planeAtZ(4), 2.0, 1.4)
 	end := LoftEnd{Condition: LoftAngle, Angle: rad(45)}
-	b := conditionedLoft(t, []LoftSection{{sb, ib}, {st, it}}, false, end, end)
+	b := conditionedLoft(t, []LoftSection{{Sketch: sb, ProfileIndex: ib}, {Sketch: st, ProfileIndex: it}}, false, end, end)
 	// Hollow: volume must be well below the solid bounding cylinder (a filled body would be ~π·2²·4).
 	if v := ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume; v > stdmath.Pi*2*2*4*0.85 {
 		t.Errorf("angled pipe looks filled (bore lost): volume = %.3f", v)

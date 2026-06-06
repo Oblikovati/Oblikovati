@@ -31,7 +31,9 @@ type loftEndUI struct {
 	reversed bool
 }
 
-var loftCondLabels = []string{"Free", "Angle", "Direction"}
+// Condition combo entries: 0 Free, 1 Angle, 2 Direction (profile takeoff), 3 Sharp,
+// 4 Tangent to plane (point/apex sections).
+var loftCondLabels = []string{"Free", "Angle", "Direction", "Sharp", "Tangent to plane"}
 
 // drawLoftDialog shows the loft options window while the Loft tool is active.
 func drawLoftDialog(s *app.Session) {
@@ -47,7 +49,7 @@ func drawLoftDialog(s *app.Session) {
 	loftUI.open = true
 	native.SetNextWindowSize(320, 380)
 	if native.Begin("Loft") {
-		native.Text("Sections: " + strconv.Itoa(len(l.Sections())) + " (click regions in order)")
+		native.Text("Sections: " + strconv.Itoa(l.SectionCount()) + " (click regions in order)")
 		loftOperationCombo(l)
 		closed := l.Closed()
 		if native.Checkbox("Closed loop", &closed) {
@@ -77,12 +79,14 @@ func drawLoftEndCondition(title string, u *loftEndUI) {
 		}
 		native.EndCombo()
 	}
-	if u.cond == 0 { // Free: no further controls
+	if u.cond == 0 || u.cond == 3 { // Free / Sharp: no further controls (sharp = a straight apex)
 		return
 	}
-	native.Text("  Angle (deg)")
-	native.InputFloat(title+"##angle", &u.angleDeg)
-	native.Text("  Impact")
+	if u.cond == 1 || u.cond == 2 { // Angle / Direction: takeoff angle on a profile section
+		native.Text("  Angle (deg)")
+		native.InputFloat(title+"##angle", &u.angleDeg)
+	}
+	native.Text("  Impact") // weight for angle/direction and the tangent-to-plane dome
 	native.InputFloat(title+"##impact", &u.impact)
 	rev := u.reversed
 	if native.Checkbox(title+" reversed", &rev) {
@@ -144,6 +148,10 @@ func loftCondAt(i int) feature.LoftCondition {
 		return feature.LoftAngle
 	case 2:
 		return feature.LoftDirection
+	case 3:
+		return feature.LoftSharpPoint
+	case 4:
+		return feature.LoftTangentToPlane
 	default:
 		return feature.LoftFree
 	}
@@ -155,6 +163,10 @@ func loftCondIndex(c feature.LoftCondition) int {
 		return 1
 	case feature.LoftDirection:
 		return 2
+	case feature.LoftSharpPoint:
+		return 3
+	case feature.LoftTangentToPlane:
+		return 4
 	default:
 		return 0
 	}

@@ -76,7 +76,7 @@ func TestLoftToolEndToEnd(t *testing.T) {
 	s.Click(10, 10)  // viewport: click the bottom section
 	s.Click(10, 200) // viewport: click the top section
 	if !l.CanCommit() {
-		t.Fatalf("loft not ready with %d sections", len(l.Sections()))
+		t.Fatalf("loft not ready with %d sections", l.SectionCount())
 	}
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)
@@ -154,6 +154,44 @@ func TestLoftToolAngleConditionCurves(t *testing.T) {
 	}
 	if maxX := float64(body.RangeBox().Max.X); maxX < 2.15 {
 		t.Errorf("angled loft did not curve: max x = %.3f, want > 2.15 (ruled prism would be 2.0)", maxX)
+	}
+}
+
+// TestLoftToolPointSectionCone drives the Loft UI picking a circle region then a WORK POINT as
+// an apex (Sharp condition) — the tool must build a cone (V = πr²h/3), exercising point-section
+// picking end to end.
+func TestLoftToolPointSectionCone(t *testing.T) {
+	s := NewSession()
+	def := compdef.NewPartComponentDefinition()
+	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
+	if err != nil {
+		t.Fatalf("Add part: %v", err)
+	}
+	pd.SetContent(def)
+	base := def.Sketches().Add(sketch.XYPlane())
+	base.Circles().AddByCenterRadius(math.P2(0, 0), 2)
+	apex := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 4) })
+	s.SetPicker(&seqPicker{sels: []Selectable{ProfileHandle{Sketch: base, ProfileIndex: 0}, WorkPointHandle{Point: apex}}})
+
+	l := NewLoftTool()
+	s.StartTool(l)
+	s.Click(10, 10) // the circle region
+	s.Click(0, 200) // the apex work point
+	if l.SectionCount() != 2 {
+		t.Fatalf("loft has %d sections, want 2 (a profile + an apex)", l.SectionCount())
+	}
+	l.SetLastCondition(feature.LoftEnd{Condition: feature.LoftSharpPoint})
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+
+	body := s.ActiveDocument().Content().(*compdef.PartComponentDefinition).SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("cone body not a valid solid: %+v", r)
+	}
+	want := stdmath.Pi * 4 / 3 * 4 // πr²h/3, r=2 h=4
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErrApp(got, want) > 0.03 {
+		t.Errorf("cone volume = %g, want ≈%g", got, want)
 	}
 }
 

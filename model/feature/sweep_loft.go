@@ -175,11 +175,17 @@ func (c *SweepFeatures) AddLive(skt *sketch.Sketch, profileIndex int, path func(
 	return pf
 }
 
-// LoftSection identifies one cross-section of a loft: a closed profile on a sketch.
+// LoftSection identifies one cross-section of a loft: a closed profile on a sketch, or — when
+// Point is set — a single point (an apex), so the loft tapers to a cone or a domed tip. A point
+// section is only valid as the first or last section.
 type LoftSection struct {
 	Sketch       *sketch.Sketch
 	ProfileIndex int
+	Point        *math.Point3
 }
+
+// IsPoint reports whether this section is a point (apex) rather than a profile.
+func (s LoftSection) IsPoint() bool { return s.Point != nil }
 
 // LoftDefinition is the recipe for a loft: a blend through ordered sections, optionally closed
 // (the last section blends back to the first). First/Last carry the end-section conditions that
@@ -243,9 +249,19 @@ func (l *LoftFeature) resolveEnds() loftEnds {
 	return loftEnds{
 		first:  first,
 		last:   last,
-		firstN: secs[0].Sketch.Plane().Normal(),
-		lastN:  secs[len(secs)-1].Sketch.Plane().Normal(),
+		firstN: sectionPlaneNormal(secs[0]),
+		lastN:  sectionPlaneNormal(secs[len(secs)-1]),
 	}
+}
+
+// sectionPlaneNormal is a section's sketch-plane normal — for a point (apex) section this is the
+// tangent plane a TangentToPlane condition domes against. Falls back to +Z if the section carries
+// no sketch (a bare 3D point), so resolveEnds never dereferences a nil sketch.
+func sectionPlaneNormal(s LoftSection) math.UnitVector3 {
+	if s.Sketch != nil {
+		return s.Sketch.Plane().Normal()
+	}
+	return math.V3(0, 0, 1).AsUnit()
 }
 
 // skinTool builds the lofted solid for the resolved loops: a plain skin (no holes), a
@@ -298,13 +314,23 @@ func holeRing(inners [][][]math.Point3, h int) [][]math.Point3 {
 	return ring
 }
 
-// loopSets resolves each section into its outer loop and inner (hole) loops in model space. All
-// sections must have the same number of inner loops so holes correspond across the loft.
+// loopSets resolves each section into its outer loop and inner (hole) loops in model space. A
+// point (apex) section resolves to a single-point loop with no holes; it is only valid at an end,
+// and at least one section must be a real profile. All profile sections must have the same number
+// of inner loops so holes correspond across the loft.
 func (l *LoftFeature) loopSets() (outers [][]math.Point3, inners [][][]math.Point3, err error) {
 	if len(l.def.Sections) < 2 {
 		return nil, nil, fmt.Errorf("loft: %d sections, need at least 2", len(l.def.Sections))
 	}
+	if err := l.validatePointSections(); err != nil {
+		return nil, nil, err
+	}
 	for _, s := range l.def.Sections {
+		if s.IsPoint() {
+			outers = append(outers, []math.Point3{*s.Point})
+			inners = append(inners, nil)
+			continue
+		}
 		prof, e := resolveSingleProfile(s.Sketch, s.ProfileIndex, "loft")
 		if e != nil {
 			return nil, nil, e
@@ -318,10 +344,30 @@ func (l *LoftFeature) loopSets() (outers [][]math.Point3, inners [][][]math.Poin
 	}
 	for i, h := range inners {
 		if len(h) != len(inners[0]) {
-			return nil, nil, fmt.Errorf("loft: section %d has %d holes, want %d (hole counts must match across sections)", i, len(h), len(inners[0]))
+			return nil, nil, fmt.Errorf("loft: section %d has %d holes, want %d (hole counts must match across sections; a point section cannot pair with a hollow one)", i, len(h), len(inners[0]))
 		}
 	}
 	return outers, inners, nil
+}
+
+// validatePointSections enforces that point (apex) sections only sit at the ends and that the
+// loft still has at least one real profile to skin from (a loft of only points is a line).
+func (l *LoftFeature) validatePointSections() error {
+	secs := l.def.Sections
+	profiles := 0
+	for i, s := range secs {
+		if !s.IsPoint() {
+			profiles++
+			continue
+		}
+		if i != 0 && i != len(secs)-1 {
+			return fmt.Errorf("loft: section %d is a point; point sections are only allowed first or last", i)
+		}
+	}
+	if profiles == 0 {
+		return fmt.Errorf("loft: every section is a point; need at least one profile section")
+	}
+	return nil
 }
 
 // numHoles returns the per-section inner-loop count (all sections share it).
@@ -426,12 +472,18 @@ func centroidOf(pts []math.Point3) math.Point3 {
 	return math.P3(sx/n, sy/n, sz/n)
 }
 
-// resampleLoop returns n points spaced evenly by arc length around the closed polygon,
-// so sections of differing vertex counts blend point-for-point.
+// resampleLoop returns n points spaced evenly by arc length around the closed polygon, so
+// sections of differing vertex counts blend point-for-point. A degenerate loop (a point section,
+// or all-coincident points) expands to n copies of its point — an apex the mesher welds to one
+// vertex, so a loft to a point skins a cone/dome.
 func resampleLoop(poly []math.Point3, n int) []math.Point3 {
 	segLen, total := loopSegmentLengths(poly)
 	if total == 0 {
-		return poly
+		out := make([]math.Point3, n)
+		for k := range out {
+			out[k] = poly[0]
+		}
+		return out
 	}
 	m := len(poly)
 	out := make([]math.Point3, n)

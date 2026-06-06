@@ -80,7 +80,7 @@ func TestLoftBetweenSquaresIsFrustum(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZ(5), 1)
-	pf := NewLoftFeatures(fs).Add([]LoftSection{{bottom, 0}, {top, 0}}, false, ops.NewBody)
+	pf := NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
 	fs.Recompute()
 
 	if !pf.Health().OK() {
@@ -106,7 +106,7 @@ func TestSweepAndLoftRoundTrip(t *testing.T) {
 		sketch.NewPoint3D(math.P3(0, 0, 0)), sketch.NewPoint3D(math.P3(0, 0, 5)),
 	}, false)
 	NewSweepFeatures(fs).Add(prof, 0, path, func() float64 { return 0.3 }, ops.Join)
-	NewLoftFeatures(fs).Add([]LoftSection{{bottom, 0}, {top, 0}}, false, ops.NewBody)
+	NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
 
 	data, err := fs.MarshalRecipe(idx)
 	if err != nil {
@@ -137,7 +137,7 @@ func TestLoftConditionsRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	first := LoftEnd{Condition: LoftAngle, Angle: 0.6, Impact: 1.5}
 	last := LoftEnd{Condition: LoftDirection, Angle: 0.3, Impact: 2, Reversed: true}
-	NewLoftFeatures(fs).AddConditioned([]LoftSection{{bottom, 0}, {top, 0}}, false, ops.NewBody, first, last)
+	NewLoftFeatures(fs).AddConditioned([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody, first, last)
 
 	data, err := fs.MarshalRecipe(idx)
 	if err != nil {
