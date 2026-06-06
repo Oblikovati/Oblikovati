@@ -5,6 +5,7 @@ package router
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"oblikovati/api/wire"
 
@@ -14,6 +15,7 @@ import (
 	"oblikovati/model/compdef"
 	"oblikovati/model/param"
 	"oblikovati/model/sketch"
+	"oblikovati/model/text"
 )
 
 // offsetSketchEntity offsets a single line/circle/arc by a unit-bearing distance.
@@ -173,8 +175,38 @@ func addText(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	if in.Font != "" {
+		return addTextGeometry(sk, anchor, in.Text, float64(h), in.Font)
+	}
 	t := sk.TextBoxes().Add(anchor, in.Text, h, rot, parseJustify(in.Justify))
 	return json.Marshal(wire.AddEntityIDResult{EntityID: uint64(t.EntityID())})
+}
+
+// addTextGeometry renders the string's true-type glyph outlines (from the host-side font
+// file) into closed sketch polylines anchored at anchor, so the text becomes real,
+// embossable/extrudable geometry (each letter's counter is a profile hole).
+func addTextGeometry(sk *sketch.Sketch, anchor math.Point2, s string, height float64, fontPath string) (json.RawMessage, error) {
+	data, err := os.ReadFile(fontPath)
+	if err != nil {
+		return nil, fmt.Errorf("sketch.addText: read font %q: %w", fontPath, err)
+	}
+	ft, err := text.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	contours, err := ft.Outlines(s, height)
+	if err != nil {
+		return nil, err
+	}
+	ents := sk.AddTextOutlines(anchor, contours)
+	if len(ents) == 0 {
+		return nil, fmt.Errorf("sketch.addText: text %q produced no glyph geometry", s)
+	}
+	ids := make([]uint64, len(ents))
+	for i, e := range ents {
+		ids[i] = uint64(e.EntityID())
+	}
+	return json.Marshal(wire.AddSketchEntityResult{EntityID: ids[0], Kind: "text", EntityIDs: ids})
 }
 
 // textMetrics parses a text box's unit-bearing height and optional rotation.

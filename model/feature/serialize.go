@@ -54,6 +54,7 @@ type FeatureData struct {
 	Client        *ClientData        `yaml:"client,omitempty"`
 	Mark          *MarkData          `yaml:"mark,omitempty"`
 	Finish        *FinishData        `yaml:"finish,omitempty"`
+	Import        *ImportData        `yaml:"import,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -223,6 +224,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Mark = &MarkData{Faces: encodeKeys(f.def.FaceKeys), Text: f.def.Text}
 	case *FinishFeature:
 		fd.Finish = &FinishData{Faces: encodeKeys(f.def.FaceKeys), Spec: f.def.Spec}
+	case *ImportedBodyFeature:
+		fd.Import = serializeImportedBody(f)
 	case *MoveFaceFeature:
 		t := f.Translation()
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Translation: []float64{t.X, t.Y, t.Z}}
@@ -340,6 +343,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSplitSolid(fs, fd.SplitSolid, work)
 	case "move":
 		return restoreMove(fs, fd.Move)
+	case "importedBody":
+		return restoreImportedBody(fs, fd.Import)
 	case "decal", "reference", "client", "mark", "finish":
 		return restoreCosmetic(fs, fd)
 	default:

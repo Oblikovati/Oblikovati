@@ -80,7 +80,7 @@ func TestLoftBetweenSquaresIsFrustum(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	bottom := centeredSquareOn(sketch.XYPlane(), 2)
 	top := centeredSquareOn(planeAtZ(5), 1)
-	pf := NewLoftFeatures(fs).Add([]LoftSection{{bottom, 0}, {top, 0}}, false, ops.NewBody)
+	pf := NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
 	fs.Recompute()
 
 	if !pf.Health().OK() {
@@ -106,7 +106,7 @@ func TestSweepAndLoftRoundTrip(t *testing.T) {
 		sketch.NewPoint3D(math.P3(0, 0, 0)), sketch.NewPoint3D(math.P3(0, 0, 5)),
 	}, false)
 	NewSweepFeatures(fs).Add(prof, 0, path, func() float64 { return 0.3 }, ops.Join)
-	NewLoftFeatures(fs).Add([]LoftSection{{bottom, 0}, {top, 0}}, false, ops.NewBody)
+	NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
 
 	data, err := fs.MarshalRecipe(idx)
 	if err != nil {
@@ -123,5 +123,35 @@ func TestSweepAndLoftRoundTrip(t *testing.T) {
 	loft := fresh.Item(1).Definition().(*LoftFeature).Definition()
 	if len(loft.Sections) != 2 || loft.Sections[1].Sketch != top {
 		t.Errorf("loft round-trip lost sections: %+v", loft.Sections)
+	}
+}
+
+// TestLoftConditionsRoundTrip checks the S2 end conditions persist: a loft saved with an Angle
+// start and a reversed-Direction end restores with the same conditions, angles, impacts and
+// reversed flags (so a reopened .obk rebuilds the curved loft, not a ruled one).
+func TestLoftConditionsRoundTrip(t *testing.T) {
+	bottom := centeredSquareOn(sketch.XYPlane(), 2)
+	top := centeredSquareOn(planeAtZ(5), 1)
+	idx := sketchList{sks: []*sketch.Sketch{bottom, top}}
+
+	fs := NewPartFeatures(nil, nil)
+	first := LoftEnd{Condition: LoftAngle, Angle: 0.6, Impact: 1.5}
+	last := LoftEnd{Condition: LoftDirection, Angle: 0.3, Impact: 2, Reversed: true}
+	NewLoftFeatures(fs).AddConditioned([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody, first, last)
+
+	data, err := fs.MarshalRecipe(idx)
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, idx, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	got := fresh.Item(0).Definition().(*LoftFeature).Definition()
+	if got.First != first {
+		t.Errorf("first condition round-trip = %+v, want %+v", got.First, first)
+	}
+	if got.Last != last {
+		t.Errorf("last condition round-trip = %+v, want %+v", got.Last, last)
 	}
 }

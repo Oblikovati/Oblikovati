@@ -272,7 +272,7 @@ func (tc *triContext) findHoleBridge(h, outerNode *triNode) *triNode {
 						return p.next
 					}
 				}
-				if px > nx {
+				if px < nx {
 					m = p
 				} else {
 					m = p.next

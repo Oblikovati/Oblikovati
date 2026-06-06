@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 
+	"oblikovati/api/types"
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 )
@@ -28,6 +29,9 @@ func drawFileDialog(s *app.Session) {
 	if native.Begin(fileModal.title()) {
 		native.Text("File path:")
 		native.InputText("##file-path", fileModal.path[:])
+		if fileModal.mode == dialogExport { // mesh export density (ignored for STEP)
+			drawExportResolution()
+		}
 		if native.Button("OK") {
 			act = fileModal.confirm()
 		}
@@ -40,8 +44,21 @@ func drawFileDialog(s *app.Session) {
 	applyFileAction(s, act)
 }
 
+// drawExportResolution renders the mesh-export resolution selector (low/medium/high).
+func drawExportResolution() {
+	if native.BeginCombo("Mesh resolution", exportResolutionNames[fileModal.resolution]) {
+		for i, name := range exportResolutionNames {
+			if native.Selectable(name, i == fileModal.resolution) {
+				fileModal.resolution = i
+			}
+		}
+		native.EndCombo()
+	}
+}
+
 // applyFileAction performs the confirmed file operation. A successful Save As becomes
-// the document's path, so a later File ▸ Save writes straight through.
+// the document's path, so a later File ▸ Save writes straight through. Import/Export route a
+// foreign format (STL/OBJ/3MF/STEP) by extension; failures go to stderr (no message box yet).
 func applyFileAction(s *app.Session, act fileAction) {
 	switch act.Kind {
 	case dialogOpen:
@@ -54,6 +71,14 @@ func applyFileAction(s *app.Session, act fileAction) {
 		}
 	case dialogLoadHDR:
 		s.LoadEnvironmentFile(act.Path) // the decode happens lazily on the next viewport frame
+	case dialogImport:
+		if _, err := s.ImportFile(act.Path); err != nil {
+			fmt.Fprintf(os.Stderr, "import %q: %v\n", act.Path, err)
+		}
+	case dialogExport:
+		if _, err := s.ExportFile(act.Path, types.MeshResolution(act.Resolution)); err != nil {
+			fmt.Fprintf(os.Stderr, "export %q: %v\n", act.Path, err)
+		}
 	}
 }
 

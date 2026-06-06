@@ -14,8 +14,10 @@ import (
 // operation. Each selected face is rotated about its hinge (the line where it meets the
 // neutral plane perpendicular to pull through the face's lowest vertex along pull), so the
 // face tilts by angle while its base stays put, and the neighbours retrim (via
-// [rebuildWithPlanes]). Faces perpendicular to pull (no hinge) are left unchanged. Positive
-// angle leans the face toward the pull axis (draws material in going along pull).
+// [rebuildWithPlanes]). Faces perpendicular to pull (no hinge) are left unchanged. Sign:
+// a NEGATIVE angle leans the face inward going along pull (the mould-release draft — removes
+// material toward the far end); a POSITIVE angle leans it outward (adds material). See the
+// convention pinned by TestDraftTapersSideFace, which drafts inward with a negative angle.
 func DraftFaces(solid *topo.Body, faceKeys [][]byte, pull math.Vector3, angle float64) (*topo.Body, error) {
 	sel, err := resolveFaceSet(solid, faceKeys)
 	if err != nil {

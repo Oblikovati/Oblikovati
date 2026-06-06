@@ -78,8 +78,26 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	if body == nil {
 		return topo.MergeBodies(lin, true), nil
 	}
+	// Guard: the exact planar boolean can still produce an INVALID (non-manifold) result on a
+	// degenerate arrangement — notably a coplanar flush face combined with an oblique partial
+	// penetration (the "V2" oblique-into-corner-with-flush-bottom case), where the coplanar
+	// seam doesn't stitch. Validate is cheap (edge-use counts, no tessellation); only when it
+	// fails do we fall back to the robust triangle CSG, and only adopt that if IT is valid —
+	// so every case the planar path already handles is untouched. The fallback is gated on a
+	// modest operand size: triangle CSG on a large body is expensive and rarely recovers it,
+	// so above the limit we keep the (fast) planar result rather than pay a big CSG attempt.
+	if !Validate(body).Valid && len(target.Faces())+len(tool.Faces()) <= csgFallbackFaceLimit {
+		if csg, cerr := booleanCSG(op, target, tool, lin); cerr == nil && csg != nil && Validate(csg).Valid {
+			return csg, nil
+		}
+	}
 	return body, nil
 }
+
+// csgFallbackFaceLimit bounds the operand size for the invalid-result CSG fallback (see
+// booleanGeneral): small degenerate cases (the V2 flush-bottom oblique penetration) recover
+// cheaply, while a huge body's CSG attempt is costly and seldom valid.
+const csgFallbackFaceLimit = 256
 
 // toBrepOp maps the feature-level operation to the B-rep boolean operation (NewBody has no
 // B-rep analogue — it is handled before this point).

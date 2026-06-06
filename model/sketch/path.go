@@ -2,7 +2,15 @@
 
 package sketch
 
-import "oblikovati/math"
+import (
+	stdmath "math"
+
+	"oblikovati/math"
+)
+
+// arcSampleStep bounds the angle of each polyline segment an arc path is sampled into
+// (~10°), so a curved sweep/loft rail follows the arc instead of collapsing to its chord.
+const arcSampleStep = stdmath.Pi / 18
 
 // Path is a connected chain of sketch entities used as a sweep/loft rail or guide.
 // It may be open or closed; tangency continuity between consecutive entities is a
@@ -24,25 +32,71 @@ func (p *Path) Count() int { return len(p.entities) }
 // IsClosed reports whether the path forms a closed loop.
 func (p *Path) IsClosed() bool { return p.closed }
 
-// Points returns the path's ordered vertices in sketch space — the endpoint chain of
-// its segments, honoring each segment's traversal direction. A sweep maps these through
-// the path's sketch plane to a 3D rail. (Curved segments contribute only their
-// endpoints in phase A; sampling arcs into a polyline is a later refinement.)
+// Points returns the path's ordered vertices in sketch space, honoring each segment's
+// traversal direction. A sweep maps these through the path's sketch plane to a 3D rail.
+// A curved segment (arc) is sampled into a polyline (arcSampleStep) so a curved rail
+// follows the curve instead of collapsing to its chord; lines and splines contribute
+// their endpoints.
 func (p *Path) Points() []math.Point2 {
 	var pts []math.Point2
 	for i, pe := range p.entities {
-		a, b, ok := segmentEnds(pe.Entity)
+		seg, ok := segmentPolyline(pe.Entity, pe.reversed)
 		if !ok {
 			continue
 		}
-		if pe.reversed {
-			a, b = b, a
-		}
 		if i == 0 {
-			pts = append(pts, a.Position())
+			pts = append(pts, seg...)
+		} else {
+			pts = append(pts, seg[1:]...) // drop the point shared with the previous segment's end
 		}
-		pts = append(pts, b.Position())
 	}
+	return pts
+}
+
+// segmentPolyline returns a path segment's points in traversal order (reversed flips it).
+// An arc is sampled into a polyline; other segments return their two endpoints.
+func segmentPolyline(e Entity, reversed bool) ([]math.Point2, bool) {
+	a, b, ok := segmentEnds(e)
+	if !ok {
+		return nil, false
+	}
+	pts := []math.Point2{a.Position(), b.Position()}
+	if arc, isArc := e.(*Arc); isArc {
+		pts = arcPolyline(arc)
+	}
+	if reversed {
+		for l, r := 0, len(pts)-1; l < r; l, r = l+1, r-1 {
+			pts[l], pts[r] = pts[r], pts[l]
+		}
+	}
+	return pts, true
+}
+
+// arcPolyline samples an arc from its start to its end into a polyline, ~arcSampleStep per
+// segment, with the exact stored endpoints at the ends.
+func arcPolyline(a *Arc) []math.Point2 {
+	c, s, e := a.Center.Position(), a.Start.Position(), a.End.Position()
+	r := float64(c.DistanceTo(s))
+	angS := stdmath.Atan2(float64(s.Y-c.Y), float64(s.X-c.X))
+	angE := stdmath.Atan2(float64(e.Y-c.Y), float64(e.X-c.X))
+	sweep := angE - angS
+	if a.CounterClockwise {
+		if sweep <= 1e-12 {
+			sweep += 2 * stdmath.Pi
+		}
+	} else if sweep >= -1e-12 {
+		sweep -= 2 * stdmath.Pi
+	}
+	n := int(stdmath.Ceil(stdmath.Abs(sweep) / arcSampleStep))
+	if n < 1 {
+		n = 1
+	}
+	pts := make([]math.Point2, n+1)
+	for i := 0; i <= n; i++ {
+		ang := angS + sweep*float64(i)/float64(n)
+		pts[i] = math.P2(c.X+math.Scalar(r*stdmath.Cos(ang)), c.Y+math.Scalar(r*stdmath.Sin(ang)))
+	}
+	pts[0], pts[n] = s, e // exact endpoints (avoid sampling drift)
 	return pts
 }
 

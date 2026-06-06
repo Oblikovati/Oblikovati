@@ -40,13 +40,17 @@ func run(args []string, out io.Writer) error {
 		return cmdInfo(args[1:], out)
 	case "save-as":
 		return cmdSaveAs(args[1:], out)
+	case "import":
+		return cmdImport(args[1:], out)
+	case "export":
+		return cmdExport(args[1:], out)
 	case "version":
 		return cmdVersion(out)
 	case "help", "-h", "--help":
 		fmt.Fprintln(out, usage)
 		return nil
 	default:
-		return fmt.Errorf("oblikovati-cli: unknown command %q (want new|open|info|save-as|version)", args[0])
+		return fmt.Errorf("oblikovati-cli: unknown command %q (want new|open|info|save-as|import|export|version)", args[0])
 	}
 }
 
@@ -58,4 +62,6 @@ usage:
   oblikovati-cli open <path>
   oblikovati-cli info <path> [--json]
   oblikovati-cli save-as <src> <dst>
+  oblikovati-cli import <mesh-file.stl|.obj|.3mf> <dst.obk>
+  oblikovati-cli export <src.obk> <mesh-file.stl|.obj|.3mf> [low|medium|high]
   oblikovati-cli version`

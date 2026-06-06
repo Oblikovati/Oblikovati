@@ -13,6 +13,8 @@ const (
 	dialogOpen                   // File ▸ Open
 	dialogSaveAs                 // File ▸ Save As
 	dialogLoadHDR                // View ▸ Load HDR (environment image)
+	dialogImport                 // File ▸ Import (STL/OBJ/3MF/STEP → imported body)
+	dialogExport                 // File ▸ Export (part bodies → STL/OBJ/3MF/STEP)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -24,22 +26,28 @@ const pathBufferLen = 512
 // open→type→confirm/cancel transitions are unit-testable; the draw method that renders
 // it lives in the cgo file file_dialog_draw.go (the navigate.go split, ADR-0014).
 type fileDialog struct {
-	mode fileDialogMode
-	path [pathBufferLen]byte
+	mode       fileDialogMode
+	path       [pathBufferLen]byte
+	resolution int // export mesh resolution: 0 low, 1 medium, 2 high
 }
 
 // fileAction is what a confirmed dialog asks the chrome to perform. Kind ==
 // dialogClosed means "nothing this frame" (a cancel, or OK on an empty path).
 type fileAction struct {
-	Kind fileDialogMode
-	Path string
+	Kind       fileDialogMode
+	Path       string
+	Resolution string // export mesh resolution ("low"|"medium"|"high")
 }
 
-// openFor arms the dialog for mode with an empty path. Calling it again re-arms the
-// dialog (e.g. switching from Open to Save As) and clears any prior text.
+// exportResolutionNames maps the resolution index to its api/types.MeshResolution string.
+var exportResolutionNames = []string{"low", "medium", "high"}
+
+// openFor arms the dialog for mode with an empty path (export defaults to medium resolution).
+// Calling it again re-arms the dialog (e.g. switching from Open to Save As) and clears prior text.
 func (d *fileDialog) openFor(mode fileDialogMode) {
 	d.mode = mode
 	d.path = [pathBufferLen]byte{}
+	d.resolution = 1
 }
 
 // isOpen reports whether the modal should render this frame.
@@ -52,6 +60,10 @@ func (d *fileDialog) title() string {
 		return "Save As"
 	case dialogLoadHDR:
 		return "Load HDR"
+	case dialogImport:
+		return "Import (.stl/.obj/.3mf/.step)"
+	case dialogExport:
+		return "Export (.stl/.obj/.3mf/.step)"
 	default:
 		return "Open"
 	}
@@ -70,11 +82,12 @@ func (d *fileDialog) text() string {
 func (d *fileDialog) confirm() fileAction {
 	path := d.text()
 	mode := d.mode
+	res := exportResolutionNames[d.resolution]
 	d.cancel()
 	if path == "" {
 		return fileAction{Kind: dialogClosed}
 	}
-	return fileAction{Kind: mode, Path: path}
+	return fileAction{Kind: mode, Path: path, Resolution: res}
 }
 
 // cancel dismisses the dialog without an action and clears the typed path.

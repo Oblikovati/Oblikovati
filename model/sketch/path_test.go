@@ -28,6 +28,34 @@ func TestConnectedChainYieldsSweepPath(t *testing.T) {
 	}
 }
 
+// TestArcPathIsSampledNotChorded is the regression for the curved-sweep-rail bug: an arc
+// path used to contribute only its two endpoints, so a sweep along it collapsed to the
+// chord (an 11% under-volume on a 90° bend). Path.Points() now samples the arc into a
+// polyline that traces the curve.
+func TestArcPathIsSampledNotChorded(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	// 90° arc: centre (2,0), start (0,0), end (2,2) → radius 2, clockwise.
+	s.Arcs().AddByCenterStartEnd(math.P2(2, 0), math.P2(0, 0), math.P2(2, 2), false)
+	paths := s.Paths()
+	if len(paths) != 1 {
+		t.Fatalf("expected 1 arc path, got %d", len(paths))
+	}
+	pts := paths[0].Points()
+	if len(pts) < 6 {
+		t.Fatalf("arc path sampled to %d points, want many (was collapsing to 2 = the chord)", len(pts))
+	}
+	// The sampled polyline length must approach the arc length (π·R/2 ≈ 3.1416), not the
+	// chord (√8 ≈ 2.828).
+	var length float64
+	for i := 1; i < len(pts); i++ {
+		length += float64(pts[i-1].DistanceTo(pts[i]))
+	}
+	const arcLen = 3.14159
+	if d := length - arcLen; d < -0.05 || d > 0.001 {
+		t.Errorf("sampled arc-path length = %.5f, want ≈ %.5f (chord √8=2.828 would be the bug)", length, arcLen)
+	}
+}
+
 func TestClosedLoopIsAlsoAPath(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	addRectangle(s, 0, 0, 1, 1)
