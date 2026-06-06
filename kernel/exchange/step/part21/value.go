@@ -98,6 +98,23 @@ func (v Value) AsList() ([]Value, error) {
 	return v.List, nil
 }
 
+// TypedArgs returns the arguments of a ValTyped value (a KEYWORD(args) parameter,
+// e.g. LENGTH_MEASURE(0.0254)). Returns nil for any other kind.
+func (v Value) TypedArgs() []Value {
+	if v.Kind != ValTyped {
+		return nil
+	}
+	return v.List
+}
+
+// TypedKeyword returns the keyword of a ValTyped value, or "" for other kinds.
+func (v Value) TypedKeyword() string {
+	if v.Kind != ValTyped {
+		return ""
+	}
+	return v.Keyword
+}
+
 // AsBool decodes a .T./.F. boolean enumeration.
 func (v Value) AsBool() (bool, error) {
 	e, err := v.AsEnum()
