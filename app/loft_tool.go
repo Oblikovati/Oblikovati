@@ -16,6 +16,7 @@ import (
 // dome) — optionally close the loop, set the end conditions, and OK to blend them into a solid.
 type LoftTool struct {
 	sections    []loftPick
+	rails       []PathHandle // guide curves (kLoftWithRails) — picked sketch paths
 	closed      bool
 	operation   ops.PartFeatureOperation
 	first, last feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
@@ -40,13 +41,14 @@ func NewLoftTool() *LoftTool { return &LoftTool{operation: ops.NewBody} }
 func (t *LoftTool) Name() string { return "Loft" }
 
 // Start lets clicks pick sketch regions (profiles), points (vertices / work points) for an apex,
-// or a body face the loft can leave tangent.
+// a body face the loft can leave tangent, or an open sketch path as a guide rail.
 func (t *LoftTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectVertex, SelectWorkPoint, SelectFace))
+	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectVertex, SelectWorkPoint, SelectFace, SelectPath))
 }
 
-// Pick appends the clicked profile, point, or face as the next cross-section (ignoring a profile
-// already in the list, so a double-click does not duplicate a section).
+// Pick routes the clicked entity: a profile/point/face is the next cross-section (a profile
+// already in the list is ignored so a double-click doesn't duplicate it); an open path is a
+// guide rail.
 func (t *LoftTool) Pick(_ *Session, sel Selectable) {
 	switch h := sel.(type) {
 	case ProfileHandle:
@@ -62,8 +64,13 @@ func (t *LoftTool) Pick(_ *Session, sel Selectable) {
 		t.sections = append(t.sections, loftPick{apex: &p})
 	case FaceHandle:
 		t.sections = append(t.sections, loftPick{faceKey: h.Face.ReferenceKey()})
+	case PathHandle:
+		t.rails = append(t.rails, h)
 	}
 }
+
+// RailCount returns how many guide rails have been picked.
+func (t *LoftTool) RailCount() int { return len(t.rails) }
 
 // hasProfile reports whether profile h is already a picked section.
 func (t *LoftTool) hasProfile(h ProfileHandle) bool {
@@ -127,7 +134,7 @@ func (t *LoftTool) Commit(s *Session) error {
 			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
 		}
 	}
-	t.added = feature.NewLoftFeatures(part.Features()).AddConditioned(sections, t.closed, t.operation, t.first, t.last)
+	t.added = feature.NewLoftFeatures(part.Features()).AddRailed(sections, t.closed, t.operation, t.first, t.last, t.railProviders())
 	part.Recompute()
 	s.recordEdit(part, "Loft")
 	if !t.added.Health().OK() {
@@ -135,6 +142,23 @@ func (t *LoftTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// railProviders turns the picked guide-rail paths into live model-space polyline providers
+// (re-derived each recompute, like the sweep path), for AddRailed.
+func (t *LoftTool) railProviders() []func() []math.Point3 {
+	var rails []func() []math.Point3
+	for _, h := range t.rails {
+		ph := h
+		rails = append(rails, func() []math.Point3 {
+			p, err := resolveSweepPath(&ph)
+			if err != nil || p == nil {
+				return nil
+			}
+			return p.Points()
+		})
+	}
+	return rails
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).

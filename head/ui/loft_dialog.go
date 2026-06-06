@@ -50,6 +50,7 @@ func drawLoftDialog(s *app.Session) {
 	native.SetNextWindowSize(320, 380)
 	if native.Begin("Loft") {
 		native.Text("Sections: " + strconv.Itoa(l.SectionCount()) + " (click regions in order)")
+		native.Text("Rails: " + strconv.Itoa(l.RailCount()) + " (click open paths to guide)")
 		loftOperationCombo(l)
 		closed := l.Closed()
 		if native.Checkbox("Closed loop", &closed) {

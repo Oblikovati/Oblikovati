@@ -44,9 +44,11 @@ type LoftEndData struct {
 	Reversed  bool    `yaml:"reversed,omitempty"`
 }
 
-// LoftData is a loft's recipe. First/Last persist the end conditions (nil when Free).
+// LoftData is a loft's recipe. First/Last persist the end conditions (nil when Free); Rails are
+// the guide-curve polylines (model space, evaluated like the sweep path).
 type LoftData struct {
 	Sections  []LoftSectionData `yaml:"sections"`
+	Rails     [][][]float64     `yaml:"rails,omitempty"`
 	Closed    bool              `yaml:"closed,omitempty"`
 	Operation string            `yaml:"operation"`
 	First     *LoftEndData      `yaml:"first,omitempty"`
@@ -116,7 +118,16 @@ func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {
 	if def.LiveEnds != nil {
 		first, last = def.LiveEnds() // capture the current (evaluated) end values, like sweep's twist
 	}
-	return &LoftData{Sections: sections, Closed: def.Closed, Operation: op, First: encodeLoftEnd(first), Last: encodeLoftEnd(last)}, nil
+	var rails [][][]float64
+	for _, r := range def.Rails {
+		if r == nil {
+			continue
+		}
+		if pts := r(); len(pts) >= 2 {
+			rails = append(rails, encodePoints(pts))
+		}
+	}
+	return &LoftData{Sections: sections, Rails: rails, Closed: def.Closed, Operation: op, First: encodeLoftEnd(first), Last: encodeLoftEnd(last)}, nil
 }
 
 // encodeLoftEnd serializes an end condition, returning nil for a Free end (the default) so a
@@ -160,7 +171,12 @@ func restoreLoft(fs *PartFeatures, d *LoftData, sk SketchIndexer) (*PartFeature,
 	if err != nil {
 		return nil, err
 	}
-	return NewLoftFeatures(fs).AddConditioned(sections, d.Closed, op, decodeLoftEnd(d.First), decodeLoftEnd(d.Last)), nil
+	var rails []func() []math.Point3
+	for _, rp := range d.Rails {
+		pts := decodePoints(rp)
+		rails = append(rails, func() []math.Point3 { return pts })
+	}
+	return NewLoftFeatures(fs).AddRailed(sections, d.Closed, op, decodeLoftEnd(d.First), decodeLoftEnd(d.Last), rails), nil
 }
 
 // point3DChain wraps model points as sketch 3D points for a restored sweep path.

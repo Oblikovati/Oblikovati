@@ -86,6 +86,110 @@ func splineSections(sections [][]math.Point3, closed bool, ends loftEnds) [][]ma
 	return hermiteBlend(sections, sectionTangents(sections, closed, ends), closed)
 }
 
+// railGuide deforms the densified sections so the loft follows guide rails (the kLoftWithRails
+// mode): each rail pulls the nearest point-track onto it, with a smooth angular falloff to the
+// neighbouring tracks, so the loft bulges toward the rail BETWEEN sections while the end sections
+// stay put (the rail's ends are snapped to the section corner it tracks). Rails are model-space
+// polylines; multiple rails' pulls sum. A no-op without rails.
+func railGuide(sections [][]math.Point3, rails [][]math.Point3) [][]math.Point3 {
+	levels := len(sections)
+	if len(rails) == 0 || levels < 2 {
+		return sections
+	}
+	n := len(sections[0])
+	// Every rail's pull is measured against the ORIGINAL sections and the pulls are summed before
+	// being applied, so multiple rails don't cross-talk (a sequential apply would let one rail's
+	// deformation skew the next rail's measured displacement).
+	disp := make([][]math.Vector3, levels)
+	for s := range disp {
+		disp[s] = make([]math.Vector3, n)
+	}
+	for _, rail := range rails {
+		if len(rail) < 2 {
+			continue
+		}
+		samples := resamplePath(rail, levels)
+		jr := nearestTrack(sections[0], samples[0])
+		samples[0], samples[levels-1] = sections[0][jr], sections[levels-1][jr] // pin the ends
+		for s := 0; s < levels; s++ {
+			d := sections[s][jr].VectorTo(samples[s])
+			for j := 0; j < n; j++ {
+				disp[s][j] = disp[s][j].Add(d.Scale(railFalloff(j, jr, n)))
+			}
+		}
+	}
+	for s := 0; s < levels; s++ {
+		for j := 0; j < n; j++ {
+			sections[s][j] = sections[s][j].TranslateBy(disp[s][j])
+		}
+	}
+	return sections
+}
+
+// nearestTrack returns the index of the section point closest to p.
+func nearestTrack(section []math.Point3, p math.Point3) int {
+	best, bestD := 0, stdmath.Inf(1)
+	for j, q := range section {
+		if d := float64(q.DistanceTo(p)); d < bestD {
+			best, bestD = j, d
+		}
+	}
+	return best
+}
+
+// railFalloff weights a rail's pull on track j: 1 at the rail's track jr, falling on a raised
+// cosine to 0 at the diametrically opposite track (a localized, smooth bulge).
+func railFalloff(j, jr, n int) float64 {
+	d := j - jr
+	if d < 0 {
+		d = -d
+	}
+	if n-d < d {
+		d = n - d
+	}
+	frac := float64(d) / (float64(n) / 2)
+	if frac >= 1 {
+		return 0
+	}
+	return 0.5 * (1 + stdmath.Cos(stdmath.Pi*frac))
+}
+
+// resamplePath returns count points spaced evenly by arc length along an OPEN polyline (endpoints
+// included). A zero-length path yields count copies of its first point.
+func resamplePath(poly []math.Point3, count int) []math.Point3 {
+	if count < 2 || len(poly) < 2 {
+		return poly
+	}
+	segLen := make([]float64, len(poly)-1)
+	total := 0.0
+	for i := range segLen {
+		segLen[i] = float64(poly[i].DistanceTo(poly[i+1]))
+		total += segLen[i]
+	}
+	out := make([]math.Point3, count)
+	if total == 0 {
+		for k := range out {
+			out[k] = poly[0]
+		}
+		return out
+	}
+	out[0], out[count-1] = poly[0], poly[len(poly)-1]
+	step, seg, acc := total/float64(count-1), 0, 0.0
+	for k := 1; k < count-1; k++ {
+		target := step * float64(k)
+		for seg < len(segLen)-1 && acc+segLen[seg] < target {
+			acc += segLen[seg]
+			seg++
+		}
+		f := 0.0
+		if segLen[seg] > 0 {
+			f = (target - acc) / segLen[seg]
+		}
+		out[k] = poly[seg].TranslateBy(poly[seg].VectorTo(poly[seg+1]).Scale(f))
+	}
+	return out
+}
+
 // sectionTangents is the longitudinal tangent at every section point: a Catmull-Rom tangent
 // (half the chord from the previous to the next section) at interior sections, overridden at
 // the first/last section by an angled end condition. Feeding these to a Hermite blend with the

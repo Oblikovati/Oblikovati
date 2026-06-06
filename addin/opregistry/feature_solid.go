@@ -276,12 +276,19 @@ type loftEndArgs struct {
 	Reversed  bool    `json:"reversed,omitempty"`
 }
 
+// loftRailRef points at an open path (in a sketch) used as a loft guide rail.
+type loftRailRef struct {
+	PathSketchIndex int `json:"pathSketchIndex"`
+	PathIndex       int `json:"pathIndex"`
+}
+
 type loftArgs struct {
 	Sections  []loftSectionRef `json:"sections"`
 	Closed    bool             `json:"closed,omitempty"`
 	Operation string           `json:"operation,omitempty"`
 	First     *loftEndArgs     `json:"first,omitempty"`
 	Last      *loftEndArgs     `json:"last,omitempty"`
+	Rails     []loftRailRef    `json:"rails,omitempty"`
 }
 
 const loftSchema = `{
@@ -290,6 +297,7 @@ const loftSchema = `{
     "sections": {"type": "array", "minItems": 2, "items": {"type": "object", "properties": {"sketchIndex": {"type": "integer"}, "profileIndex": {"type": "integer"}, "point": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "[x,y] on the sketch plane → an apex (point) section so the loft tapers to a tip; only valid first or last."}, "faceRef": {"type": "string", "description": "A body-face reference key (get_reference_keys) → a face section the loft can leave Tangent/Smooth."}}, "required": ["sketchIndex"]}, "description": "Ordered cross-section profiles (>= 2) to loft through."},
     "closed": {"type": "boolean", "default": false},
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
+    "rails": {"type": "array", "items": {"type": "object", "properties": {"pathSketchIndex": {"type": "integer"}, "pathIndex": {"type": "integer", "default": 0}}, "required": ["pathSketchIndex"]}, "description": "Optional guide rails: open paths the loft surface follows between sections (each touches the end sections)."},
     "first": {"type": "object", "description": "Start-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane", "tangent", "smooth"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}},
     "last": {"type": "object", "description": "End-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane", "tangent", "smooth"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}}
   },
@@ -342,8 +350,32 @@ func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return nil, err
 	}
 	liveEnds := func() (feature.LoftEnd, feature.LoftEnd) { return first(), last() }
-	pf := feature.NewLoftFeatures(part.Features()).AddConditionedLive(sections, in.Closed, op, liveEnds)
+	rails, err := loftRailProviders(part, in.Rails)
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewLoftFeatures(part.Features()).AddConditionedLiveRailed(sections, in.Closed, op, liveEnds, rails)
 	return recomputeResult(part, pf)
+}
+
+// loftRailProviders validates each rail path up front and returns live polyline providers that
+// re-derive from the path sketch each recompute (so a parameter driving a rail reshapes the loft).
+func loftRailProviders(part *compdef.PartComponentDefinition, refs []loftRailRef) ([]func() []math.Point3, error) {
+	var rails []func() []math.Point3
+	for _, rr := range refs {
+		if _, err := pathFromSketch(part, rr.PathSketchIndex, rr.PathIndex); err != nil {
+			return nil, fmt.Errorf("loft rail: %w", err)
+		}
+		r := rr
+		rails = append(rails, func() []math.Point3 {
+			p, err := pathFromSketch(part, r.PathSketchIndex, r.PathIndex)
+			if err != nil || p == nil {
+				return nil
+			}
+			return p.Points()
+		})
+	}
+	return rails, nil
 }
 
 // loftEndProvider turns an end-condition arg into a live LoftEnd provider (re-read each recompute

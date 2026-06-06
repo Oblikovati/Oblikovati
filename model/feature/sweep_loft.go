@@ -208,6 +208,18 @@ type LoftDefinition struct {
 	// parameter driving an end angle/impact reshapes the loft (the static First/Last are the
 	// snapshot used otherwise). Mirrors SweepDefinition.Twist's live-provider pattern.
 	LiveEnds func() (first, last LoftEnd)
+	// Rails are optional guide curves (the kLoftWithRails mode): live providers of model-space
+	// polylines that touch the end sections; the loft's outer surface is pulled to follow them.
+	Rails []func() []math.Point3
+}
+
+// LoftType reports the loft mode derived from the definition — the analogue of Inventor's
+// LoftTypeEnum (a regular loft, or one guided by rails).
+func (d *LoftDefinition) LoftType() types.LoftType {
+	if len(d.Rails) > 0 {
+		return types.LoftWithRails
+	}
+	return types.RegularLoft
 }
 
 // LoftFeature blends through sections.
@@ -233,7 +245,7 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	tool, err := l.skinTool(outers, inners, l.endsWith(normals))
+	tool, err := l.skinTool(outers, inners, l.endsWith(normals), l.resolveRails())
 	if err != nil {
 		return Output{}, err
 	}
@@ -255,27 +267,43 @@ func (l *LoftFeature) endsWith(normals []math.UnitVector3) loftEnds {
 	return loftEnds{first: first, last: last, firstN: normals[0], lastN: normals[len(normals)-1]}
 }
 
+// resolveRails evaluates the definition's rail providers into model-space polylines (dropping
+// empty/degenerate ones), so a parameter driving a rail reshapes the loft each recompute.
+func (l *LoftFeature) resolveRails() [][]math.Point3 {
+	var rails [][]math.Point3
+	for _, r := range l.def.Rails {
+		if r == nil {
+			continue
+		}
+		if pts := r(); len(pts) >= 2 {
+			rails = append(rails, pts)
+		}
+	}
+	return rails
+}
+
 // skinTool builds the lofted solid for the resolved loops: a plain skin (no holes), a
-// directly-meshed tube (one hole — a pipe), or a multi-hole solid cut from the skin (rare). The
-// one-hole tube is meshed directly rather than via a bore Cut because a bore whose caps are
-// coplanar with the body's caps leaves the Difference open. See [tubeSolid] and [hollowByCut].
-func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3, ends loftEnds) (*topo.Body, error) {
+// directly-meshed tube (one hole — a pipe), or a multi-hole solid cut from the skin (rare). Guide
+// rails apply to the OUTER surface only. The one-hole tube is meshed directly rather than via a
+// bore Cut because a bore whose caps are coplanar with the body's caps leaves the Difference open.
+func (l *LoftFeature) skinTool(outers [][]math.Point3, inners [][][]math.Point3, ends loftEnds, rails [][]math.Point3) (*topo.Body, error) {
 	feat := featOr(l.featName, "loft")
 	switch numHoles(inners) {
 	case 0:
-		return skinLoops(outers, l.def.Closed, feat, ends)
+		return skinLoops(outers, l.def.Closed, feat, ends, rails)
 	case 1:
-		return tubeLoops(outers, holeRing(inners, 0), l.def.Closed, feat, ends)
+		return tubeLoops(outers, holeRing(inners, 0), l.def.Closed, feat, ends, rails)
 	default:
-		return hollowByCut(outers, inners, l.def.Closed, feat, ends)
+		return hollowByCut(outers, inners, l.def.Closed, feat, ends, rails)
 	}
 }
 
 // hollowByCut skins the outer body and cuts each bore out of it — the fallback for lofts with
 // more than one hole, where a multiply-connected end cap can't be a simple annular strip. Each
-// bore is extended past the body's end caps (extendEnds) so the through-cut is not coplanar.
-func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, feat string, ends loftEnds) (*topo.Body, error) {
-	tool, err := skinLoops(outers, closed, feat, ends)
+// bore is extended past the body's end caps (extendEnds) so the through-cut is not coplanar. Rails
+// guide the outer skin only (the bores skin unguided).
+func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, feat string, ends loftEnds, rails [][]math.Point3) (*topo.Body, error) {
+	tool, err := skinLoops(outers, closed, feat, ends, rails)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +313,7 @@ func hollowByCut(outers [][]math.Point3, inners [][][]math.Point3, closed bool, 
 	}
 	for h := 0; h < numHoles(inners); h++ {
 		ring := extendEnds(holeRing(inners, h), eps)
-		hole, herr := skinLoops(ring, closed, feat+"-hole", ends)
+		hole, herr := skinLoops(ring, closed, feat+"-hole", ends, nil)
 		if herr != nil {
 			return nil, herr
 		}
@@ -472,28 +500,29 @@ func loopToModel(loop sketch.Loop, plane sketch.Plane) []math.Point3 {
 // skinLoops resamples a set of section loops to a common point count, corresponds them
 // (minimize twist), blends them with a Catmull-Rom spline (a loft is not a straight blend),
 // and meshes the swept solid. See loft_skin.go.
-func skinLoops(loops [][]math.Point3, closed bool, feat string, ends loftEnds) (*topo.Body, error) {
-	return sweptSolid(skinnedSections(loops, maxLoopCount(loops), closed, ends), closed, feat)
+func skinLoops(loops [][]math.Point3, closed bool, feat string, ends loftEnds, rails [][]math.Point3) (*topo.Body, error) {
+	return sweptSolid(skinnedSections(loops, maxLoopCount(loops), closed, ends, rails), closed, feat)
 }
 
 // tubeLoops skins corresponding outer and inner section loops to a common point count, then
 // meshes them directly into a hollow tube. Outer and inner share that point count so their
 // rings pair up across the annular end caps; both run through the same correspondence + spline
-// blend, so the pipe wall reads as smooth as a solid loft.
-func tubeLoops(outers, inners [][]math.Point3, closed bool, feat string, ends loftEnds) (*topo.Body, error) {
+// blend, so the pipe wall reads as smooth as a solid loft. Rails guide the outer wall only.
+func tubeLoops(outers, inners [][]math.Point3, closed bool, feat string, ends loftEnds, rails [][]math.Point3) (*topo.Body, error) {
 	n := maxLoopCount(outers, inners)
-	return tubeSolid(skinnedSections(outers, n, closed, ends), skinnedSections(inners, n, closed, ends), closed, feat)
+	return tubeSolid(skinnedSections(outers, n, closed, ends, rails), skinnedSections(inners, n, closed, ends, nil), closed, feat)
 }
 
-// skinnedSections resamples loops to n points, corresponds them (minimize twist), and blends
-// them with a tangent-driven Hermite spline (Catmull-Rom interior, end conditions at the ends)
-// — the densified section sequence ready to mesh. See loft_skin.go.
-func skinnedSections(loops [][]math.Point3, n int, closed bool, ends loftEnds) [][]math.Point3 {
+// skinnedSections resamples loops to n points, corresponds them (minimize twist), blends them
+// with a tangent-driven Hermite spline (Catmull-Rom interior, end conditions at the ends), and
+// pulls the result toward any guide rails — the densified section sequence ready to mesh. See
+// loft_skin.go.
+func skinnedSections(loops [][]math.Point3, n int, closed bool, ends loftEnds, rails [][]math.Point3) [][]math.Point3 {
 	resampled := make([][]math.Point3, len(loops))
 	for i, lp := range loops {
 		resampled[i] = resampleLoop(lp, n)
 	}
-	return splineSections(alignSections(resampled), closed, ends)
+	return railGuide(splineSections(alignSections(resampled), closed, ends), rails)
 }
 
 // maxLoopCount returns the largest point count across every loop in the given sets, the common
@@ -532,7 +561,20 @@ func (c *LoftFeatures) AddConditioned(sections []LoftSection, closed bool, op op
 // AddConditionedLive is AddConditioned with a live end-condition provider, re-read on every
 // recompute, so an end angle/impact driven by a parameter reshapes the loft.
 func (c *LoftFeatures) AddConditionedLive(sections []LoftSection, closed bool, op ops.PartFeatureOperation, liveEnds func() (first, last LoftEnd)) *PartFeature {
-	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, LiveEnds: liveEnds})
+	return c.AddConditionedLiveRailed(sections, closed, op, liveEnds, nil)
+}
+
+// AddConditionedLiveRailed is AddConditionedLive plus live guide rails (the parametric entry used
+// by the op handler — both the end angles and the rails re-derive on each recompute).
+func (c *LoftFeatures) AddConditionedLiveRailed(sections []LoftSection, closed bool, op ops.PartFeatureOperation, liveEnds func() (first, last LoftEnd), rails []func() []math.Point3) *PartFeature {
+	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, LiveEnds: liveEnds, Rails: rails})
+}
+
+// AddRailed is AddConditioned plus guide rails (the kLoftWithRails mode): each rail is a live
+// provider of a model-space polyline that touches the end sections; the loft's outer surface is
+// pulled to follow them.
+func (c *LoftFeatures) AddRailed(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd, rails []func() []math.Point3) *PartFeature {
+	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, First: first, Last: last, Rails: rails})
 }
 
 func (c *LoftFeatures) add(def *LoftDefinition) *PartFeature {

@@ -254,6 +254,53 @@ func TestLoftToolFaceSectionTangent(t *testing.T) {
 	}
 }
 
+// TestLoftToolRailGuides drives the Loft UI picking two circle sections plus an open PATH (a rail
+// that bulges to x=3.5) — the loft must follow the rail and bulge past the ruled radius.
+func TestLoftToolRailGuides(t *testing.T) {
+	s := NewSession()
+	def := compdef.NewPartComponentDefinition()
+	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
+	if err != nil {
+		t.Fatalf("Add part: %v", err)
+	}
+	pd.SetContent(def)
+	base := def.Sketches().Add(sketch.XYPlane())
+	base.Circles().AddByCenterRadius(math.P2(0, 0), 2)
+	top := def.Sketches().Add(planeAtZ(4))
+	top.Circles().AddByCenterRadius(math.P2(0, 0), 2)
+	// Rail on XZ: (u,v)→(u,0,v), bulging to x=3.5 at mid height; touches both circle +X corners.
+	railSketch := def.Sketches().Add(sketch.XZPlane())
+	a := railSketch.Points().Add(math.P2(2, 0))
+	mid := railSketch.Points().Add(math.P2(3.5, 2))
+	b := railSketch.Points().Add(math.P2(2, 4))
+	railSketch.Lines().Add(a, mid)
+	railSketch.Lines().Add(mid, b)
+
+	s.SetPicker(&seqPicker{sels: []Selectable{
+		ProfileHandle{Sketch: base, ProfileIndex: 0},
+		ProfileHandle{Sketch: top, ProfileIndex: 0},
+		PathHandle{Sketch: railSketch, PathIndex: 0},
+	}})
+	l := NewLoftTool()
+	s.StartTool(l)
+	s.Click(0, 0) // base circle
+	s.Click(0, 0) // top circle
+	s.Click(0, 0) // the rail path
+	if l.SectionCount() != 2 || l.RailCount() != 1 {
+		t.Fatalf("loft picks: %d sections, %d rails; want 2 + 1", l.SectionCount(), l.RailCount())
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("railed loft not a valid solid: %+v", r)
+	}
+	if maxX := float64(body.RangeBox().Max.X); maxX < 3.4 {
+		t.Errorf("loft did not follow the rail: max x = %.3f, want ≈3.5 (ruled would be 2.0)", maxX)
+	}
+}
+
 func TestLoftToolNeedsTwoSections(t *testing.T) {
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})

@@ -36,7 +36,7 @@ func tubeRings(ccw bool) (outer, inner [][]math.Point3) {
 // cylindrical pair skins a watertight pipe whose volume is the annulus area × height.
 func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
 	outer, inner := tubeRings(true)
-	body, err := tubeSolid(skinnedSections(outer, 48, false, loftEnds{}), skinnedSections(inner, 48, false, loftEnds{}), false, "tube")
+	body, err := tubeSolid(skinnedSections(outer, 48, false, loftEnds{}, nil), skinnedSections(inner, 48, false, loftEnds{}, nil), false, "tube")
 	if err != nil {
 		t.Fatalf("tubeSolid: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestTubeSolidIsWatertightWithCorrectVolume(t *testing.T) {
 func TestTubeSolidWindingInvariant(t *testing.T) {
 	for _, ccw := range []bool{true, false} {
 		outer, inner := tubeRings(ccw)
-		body, err := tubeSolid(skinnedSections(outer, 48, false, loftEnds{}), skinnedSections(inner, 48, false, loftEnds{}), false, "tube")
+		body, err := tubeSolid(skinnedSections(outer, 48, false, loftEnds{}, nil), skinnedSections(inner, 48, false, loftEnds{}, nil), false, "tube")
 		if err != nil {
 			t.Fatalf("ccw=%v tubeSolid: %v", ccw, err)
 		}
