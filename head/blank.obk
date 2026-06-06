@@ -1,0 +1,26 @@
+schemaVersion: 2
+documentType: 1
+displayName: blank
+model:
+    units:
+        angle: deg
+        area: mm^2
+        length: mm
+        mass: kg
+        time: s
+        volume: mm^3
+    sketches:
+        - name: Sketch1
+          plane:
+            origin:
+                - 0
+                - 0
+                - 0
+            xAxis:
+                - 1
+                - 0
+                - 0
+            yAxis:
+                - 0
+                - 0
+                - 1

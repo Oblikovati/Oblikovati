@@ -139,11 +139,10 @@ func TestWorkFeatureNamesAndKeys(t *testing.T) {
 	}
 }
 
-func TestWorkPlaneVisibilityDefaultsTrueAndToggles(t *testing.T) {
+func TestWorkPlaneVisibilityDefaultsAndToggles(t *testing.T) {
 	g := NewWorkGeometry()
-	// Origin planes and user planes are visible by default.
-	if !g.WorkPlanes().Item(0).Visible() {
-		t.Error("origin plane should be visible by default")
+	if g.WorkPlanes().Item(0).Visible() {
+		t.Error("origin plane should be hidden by default")
 	}
 	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
 	if !wp.Visible() {

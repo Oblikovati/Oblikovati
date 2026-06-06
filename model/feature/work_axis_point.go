@@ -73,6 +73,7 @@ type WorkAxis struct {
 	origin           math.Point3
 	dir              math.UnitVector3
 	health           health.Health
+	visible          bool
 	coordinateSystem bool
 	grounded         bool
 }
@@ -85,6 +86,12 @@ func (w *WorkAxis) Origin() math.Point3             { return w.origin }
 func (w *WorkAxis) Direction() math.UnitVector3     { return w.dir }
 func (w *WorkAxis) IsCoordinateSystemElement() bool { return w.coordinateSystem }
 func (w *WorkAxis) Grounded() bool                  { return w.grounded }
+
+// Visible reports whether the datum axis is drawn in the viewport.
+func (w *WorkAxis) Visible() bool { return w.visible }
+
+// SetVisible toggles the datum axis viewport visibility.
+func (w *WorkAxis) SetVisible(v bool) { w.visible = v }
 
 // recompute re-derives the axis, going sick on a degenerate definition.
 func (w *WorkAxis) recompute(r workResolver) {
@@ -127,7 +134,7 @@ func (c *WorkAxes) AddByPlaneIntersection(p1, p2 WorkRef) *WorkAxis {
 }
 
 func (c *WorkAxes) addUser(def axisDefinition) *WorkAxis {
-	w := &WorkAxis{id: nextID(), key: userRef("axis", len(c.items)), name: "WorkAxis", def: def}
+	w := &WorkAxis{id: nextID(), key: userRef("axis", len(c.items)), name: "WorkAxis", def: def, visible: true}
 	c.track(w)
 	c.g.recordUser("axis", len(c.items)-1)
 	return w

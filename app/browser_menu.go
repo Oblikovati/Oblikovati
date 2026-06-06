@@ -25,6 +25,10 @@ func BrowserMenu(n BrowserNode) []BrowserMenuItem {
 		return featureMenu(n.Select)
 	case "workplane":
 		return workPlaneMenu(n.Select)
+	case "workaxis":
+		return workAxisMenu(n.Select)
+	case "body":
+		return bodyMenu(n.Select)
 	default:
 		return nil
 	}
@@ -81,4 +85,26 @@ func workPlaneMenu(sel Selectable) []BrowserMenuItem {
 			return nil
 		}},
 	}
+}
+
+func workAxisMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(WorkAxisHandle)
+	if !ok {
+		return nil
+	}
+	return []BrowserMenuItem{{Label: "Visibility", Enabled: true, Invoke: func(*Session) error {
+		h.Axis.SetVisible(!h.Axis.Visible())
+		return nil
+	}}}
+}
+
+func bodyMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(BodyHandle)
+	if !ok {
+		return nil
+	}
+	return []BrowserMenuItem{{Label: "Visibility", Enabled: true, Invoke: func(s *Session) error {
+		s.ToggleBodyVisibility(h.Body)
+		return nil
+	}}}
 }

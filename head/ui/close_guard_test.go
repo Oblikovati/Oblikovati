@@ -38,3 +38,70 @@ func TestDirtyDocuments(t *testing.T) {
 		t.Errorf("after clearing both, dirtyDocuments = %d, want 0", len(got))
 	}
 }
+
+func TestDocumentCloseGuardRequestsPromptOnlyForDirtyDocument(t *testing.T) {
+	s := app.NewSession()
+	d, err := compdef.AddPart(s.Workspace(), "dirty.obk", true)
+	if err != nil {
+		t.Fatalf("AddPart dirty: %v", err)
+	}
+	var guard documentCloseGuard
+	if guard.request(d) || guard.pending != d {
+		t.Fatalf("request dirty = close-now with pending %+v, want prompt", guard.pending)
+	}
+	d.ClearDirty()
+	guard.cancel()
+	if !guard.request(d) || guard.pending != nil {
+		t.Fatalf("request clean pending=%+v, want close-now and no prompt", guard.pending)
+	}
+}
+
+func TestDocumentCloseGuardDiscardClosesWithoutSaving(t *testing.T) {
+	s := app.NewSession()
+	d, err := compdef.AddPart(s.Workspace(), "dirty.obk", true)
+	if err != nil {
+		t.Fatalf("AddPart dirty: %v", err)
+	}
+	guard := documentCloseGuard{pending: d}
+	guard.discard(s)
+	if guard.pending != nil {
+		t.Fatalf("discard left pending %+v", guard.pending)
+	}
+	if got := len(s.Workspace().Documents()); got != 0 {
+		t.Fatalf("documents after discard = %d, want 0", got)
+	}
+}
+
+func TestDocumentCloseGuardCloseIfCleanWaitsUntilSaved(t *testing.T) {
+	s := app.NewSession()
+	d, err := compdef.AddPart(s.Workspace(), "dirty.obk", true)
+	if err != nil {
+		t.Fatalf("AddPart dirty: %v", err)
+	}
+	guard := documentCloseGuard{pending: d}
+	if guard.closeIfClean(s) {
+		t.Fatal("closeIfClean closed dirty document")
+	}
+	d.ClearDirty()
+	if !guard.closeIfClean(s) || guard.pending != nil {
+		t.Fatalf("closeIfClean pending=%+v, want closed clean document", guard.pending)
+	}
+}
+
+func TestDocumentNeedsSaveAsForUnsavedPartName(t *testing.T) {
+	s := app.NewSession()
+	unsaved, err := compdef.AddPart(s.Workspace(), "Part1", true)
+	if err != nil {
+		t.Fatalf("AddPart unsaved: %v", err)
+	}
+	if !documentNeedsSaveAs(unsaved) {
+		t.Fatal("documentNeedsSaveAs(Part1) = false, want true")
+	}
+	savedName, err := compdef.AddPart(s.Workspace(), "saved.obk", true)
+	if err != nil {
+		t.Fatalf("AddPart saved-name: %v", err)
+	}
+	if documentNeedsSaveAs(savedName) {
+		t.Fatal("documentNeedsSaveAs(saved.obk) = true, want false")
+	}
+}

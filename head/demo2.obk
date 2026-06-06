@@ -1,6 +1,6 @@
 schemaVersion: 2
 documentType: 1
-displayName: demo
+displayName: demo2
 model:
     units:
         angle: deg

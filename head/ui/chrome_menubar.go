@@ -11,10 +11,17 @@ import (
 
 // drawMenuBar renders the top menu bar. Only the few items that map to real session
 // verbs are wired; the rest grow with the feature set.
-func drawMenuBar(s *app.Session) string {
+func drawMenuBar(s *app.Session) {
 	if !native.BeginMainMenuBar() {
-		return ""
+		return
 	}
+	drawFileMenu(s)
+	drawEditMenu(s)
+	drawToolsMenu()
+	native.EndMainMenuBar()
+}
+
+func drawFileMenu(s *app.Session) {
 	if native.BeginMenu("File") {
 		if native.MenuItem("New Part") {
 			_, _ = s.NewPart()
@@ -37,6 +44,9 @@ func drawMenuBar(s *app.Session) string {
 		}
 		native.EndMenu()
 	}
+}
+
+func drawEditMenu(s *app.Session) {
 	if native.BeginMenu("Edit") {
 		// Undo/Redo name the step they act on (Inventor's "Undo Extrude") and grey out
 		// when the stream cursor is at an end. Keyboard equivalents: Ctrl+Z / Ctrl+Y.
@@ -52,6 +62,9 @@ func drawMenuBar(s *app.Session) string {
 		}
 		native.EndMenu()
 	}
+}
+
+func drawToolsMenu() {
 	if native.BeginMenu("Tools") {
 		if native.MenuItem("Materials") {
 			showMaterials = !showMaterials
@@ -61,8 +74,6 @@ func drawMenuBar(s *app.Session) string {
 		}
 		native.EndMenu()
 	}
-	native.EndMainMenuBar()
-	return ""
 }
 
 // undoLabel builds an Edit-menu label that names the step undo/redo would act on (e.g.

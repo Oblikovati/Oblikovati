@@ -51,24 +51,9 @@ func RunViewportSmoke(maxFrames int) int {
 	}
 	defer w.Destroy()
 	w.InitViewport()
-
-	// A representative scene: a metallic cube on a matte ground plane, lit by a strong sun with
-	// the Outdoors HDR sky — so the readback PNG shows IBL reflections, the skybox, and a cast
-	// shadow on the ground.
 	verts, idx, min, max := smokeScene()
-	lightDir := [3]float32{0.5, 0.85, 0.4}
-	rig := renderer.SceneLightingFor(renderer.LightingSun)
-	rig.Lights[0].Direction = lightDir
-	w.SetViewportLighting(viewport.PackLighting(rig))
-	if img, ok, _ := envimage.Resolve(renderer.Environment{Preset: renderer.EnvOutdoors, Intensity: 1}); ok {
-		u := envimage.Flatten(envimage.MipChain(img))
-		w.SetViewportEnvironment(u.Data, u.Dims, 0, 1)
-	}
-	lvp := viewport.LightMatrix(min, max, lightDir)
-	w.SetViewportShadow(lvp[:], true, 0.6, 0.3, true, true) // cast on direct + occlude ambient
-
-	cam := scene.NewCamera(1280, 720)
-	cam.Eye, cam.Target, cam.Up = math.P3(3.5, 3, 5), math.P3(0, 0.4, 0), math.V3(0, 1, 0)
+	configureViewportSmokeLighting(w, min, max)
+	cam := smokeCamera()
 	mvp := renderer.ViewProjection(cam, 0.1, 100)
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	if inv, ok := viewport.Invert4x4(mvp); ok {
@@ -87,6 +72,25 @@ func RunViewportSmoke(maxFrames int) int {
 		}
 	}
 	return 0
+}
+
+func configureViewportSmokeLighting(w *Window, min, max [3]float32) {
+	lightDir := [3]float32{0.5, 0.85, 0.4}
+	rig := renderer.SceneLightingFor(renderer.LightingSun)
+	rig.Lights[0].Direction = lightDir
+	w.SetViewportLighting(viewport.PackLighting(rig))
+	if img, ok, _ := envimage.Resolve(renderer.Environment{Preset: renderer.EnvOutdoors, Intensity: 1}); ok {
+		u := envimage.Flatten(envimage.MipChain(img))
+		w.SetViewportEnvironment(u.Data, u.Dims, 0, 1)
+	}
+	lvp := viewport.LightMatrix(min, max, lightDir)
+	w.SetViewportShadow(lvp[:], true, 0.6, 0.3, true, true) // cast on direct + occlude ambient
+}
+
+func smokeCamera() scene.Camera {
+	cam := scene.NewCamera(1280, 720)
+	cam.Eye, cam.Target, cam.Up = math.P3(3.5, 3, 5), math.P3(0, 0.4, 0), math.V3(0, 1, 0)
+	return cam
 }
 
 // saveViewportPNG reads the offscreen color image back and writes it as a PNG (swapping the

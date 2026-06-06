@@ -24,7 +24,7 @@ func tinyBody() *topo.Body {
 
 func TestHighlightSelectionRecolorsOnlyTheSelectedBody(t *testing.T) {
 	b := tinyBody()
-	other := uint64(b.ID() + 1)
+	other := b.ID() + 1
 	base := [4]float32{0.5, 0.5, 0.5, 1}
 	list := renderer.DrawList{Items: []renderer.DrawItem{
 		{ObjectID: b.ID(), Color: base},

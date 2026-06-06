@@ -39,6 +39,7 @@ type Session struct {
 	activeSketch3D     *sketch.Sketch3D
 	pendingDim         *sketch.DimensionConstraint
 	overlays           []renderer.DrawItem
+	hiddenBodyKeys     map[string]bool
 	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins             *AddInManager
 	grid               *GridSettings
@@ -86,6 +87,7 @@ func newSession(store doc.Store) *Session {
 		bus:                event.NewBus(),
 		selection:          NewSelection(),
 		camera:             scene.NewCamera(800, 600),
+		hiddenBodyKeys:     map[string]bool{},
 		graphics:           clientgraphics.NewStore(),
 		addins:             NewAddInManager(),
 		visualStyle:        renderer.ShadedWithEdges,

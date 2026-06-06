@@ -25,11 +25,7 @@ func drawCoilDialog(s *app.Session) {
 		coilUI.open = false
 		return
 	}
-	if !coilUI.open {
-		coilUI.pitch = float32(c.Pitch())
-		coilUI.revolutions = float32(c.Revolutions())
-		coilUI.open = true
-	}
+	refreshCoilUI(c)
 	native.SetNextWindowSize(300, 240)
 	if native.Begin("Coil") {
 		if _, ok := c.PickedProfile(); !ok {
@@ -46,6 +42,15 @@ func drawCoilDialog(s *app.Session) {
 		drawCoilButtons(s, c)
 	}
 	native.End()
+}
+
+func refreshCoilUI(c *app.CoilTool) {
+	if coilUI.open {
+		return
+	}
+	coilUI.pitch = float32(c.Pitch())
+	coilUI.revolutions = float32(c.Revolutions())
+	coilUI.open = true
 }
 
 func coilOperationCombo(c *app.CoilTool) {

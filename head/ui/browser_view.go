@@ -76,6 +76,9 @@ func openFeatureEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
 // drawBranchNode draws a collapsible folder and recurses into its children when open. A
 // branch may still carry a context menu (e.g. a work-plane row that owns children later).
 func drawBranchNode(s *app.Session, n app.BrowserNode) {
+	if n.Kind == "document" {
+		native.SetNextItemOpen(true, true)
+	}
 	open := native.TreeNode(n.Label)
 	drawNodeMenu(s, n)
 	if !open {

@@ -8,7 +8,10 @@ import (
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 	"oblikovati/math"
+	"oblikovati/model/doc"
 )
+
+var closeDocumentModal documentCloseGuard
 
 // prevFramedDoc tracks which document the camera was last framed to, so switching
 // the active document (New Part, a tab, an add-in) reframes the view to the new one.
@@ -70,20 +73,22 @@ func drawDocumentTabs(s *app.Session) {
 
 	if native.BeginTabBar("##doc-tabs") {
 		for _, d := range docs {
-			selected := force && active != nil && d.ID() == active.ID()
-			open := native.BeginTabItemSelected(d.DisplayName(), selected)
-			// Only treat a tab as a user click on non-force frames. On a force frame we
-			// are asserting the active tab via SetSelected, which ImGui applies on the
-			// NEXT frame — so this frame BeginTabItem still reports the OLD visible tab.
-			// Acting on that would call SetActiveDocument for the old document and flip
-			// the active doc back, oscillating every frame.
-			if open && !force && (active == nil || d.ID() != active.ID()) {
-				_ = s.Workspace().SetActiveDocument(d)
-			}
-			if open {
-				native.EndTabItem()
-			}
+			drawDocumentTab(s, d, active, force)
 		}
 		native.EndTabBar()
+	}
+}
+
+func drawDocumentTab(s *app.Session, d *doc.Document, active *doc.Document, force bool) {
+	selected := force && active != nil && d.ID() == active.ID()
+	open, keep := native.BeginTabItemClosable(d.DisplayName(), selected)
+	if open && keep && !force && (active == nil || d.ID() != active.ID()) {
+		_ = s.Workspace().SetActiveDocument(d)
+	}
+	if open {
+		native.EndTabItem()
+	}
+	if !keep && closeDocumentModal.request(d) {
+		closeDocumentNow(s, d, false)
 	}
 }

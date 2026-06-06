@@ -2,7 +2,17 @@
 
 package ui
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
+	"strings"
+	"time"
+)
 
 // fileDialogMode is which file operation the path modal will perform on confirm. The
 // zero value (dialogClosed) means the modal is not showing.
@@ -18,8 +28,20 @@ const (
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
-// so it is a fixed array, not a growable slice; 512 covers any realistic file path.
-const pathBufferLen = 512
+// so it is a fixed array, not a growable slice; 1024 covers long Windows paths and
+// deep Unix project trees without making each dialog state large.
+const pathBufferLen = 1024
+
+const fileSearchBufferLen = 128
+
+// fileEntry is one row in the dialog's cross-platform directory browser.
+type fileEntry struct {
+	Name    string
+	Path    string
+	Dir     bool
+	Size    int64
+	ModTime time.Time
+}
 
 // fileDialog is the head's path-entry modal state: which operation is pending and the
 // path being typed. It is deliberately free of any native/cgo dependency so the
@@ -28,6 +50,11 @@ const pathBufferLen = 512
 type fileDialog struct {
 	mode       fileDialogMode
 	path       [pathBufferLen]byte
+	search     [fileSearchBufferLen]byte
+	cwd        string
+	entries    []fileEntry
+	roots      []string
+	errorText  string
 	resolution int // export mesh resolution: 0 low, 1 medium, 2 high
 }
 
@@ -47,7 +74,10 @@ var exportResolutionNames = []string{"low", "medium", "high"}
 func (d *fileDialog) openFor(mode fileDialogMode) {
 	d.mode = mode
 	d.path = [pathBufferLen]byte{}
+	d.search = [fileSearchBufferLen]byte{}
 	d.resolution = 1
+	d.roots = explorerRoots()
+	d.openDir(initialExplorerDir())
 }
 
 // isOpen reports whether the modal should render this frame.
@@ -69,6 +99,11 @@ func (d *fileDialog) title() string {
 	}
 }
 
+// filterHint names the file family surfaced by the browser for this operation.
+func (d *fileDialog) filterHint() string {
+	return strings.Join(d.allowedExts(), ", ")
+}
+
 // text returns the NUL-trimmed path the user has typed into the buffer.
 func (d *fileDialog) text() string {
 	if i := bytes.IndexByte(d.path[:], 0); i >= 0 {
@@ -77,10 +112,22 @@ func (d *fileDialog) text() string {
 	return string(d.path[:])
 }
 
+// searchText returns the NUL-trimmed explorer search text.
+func (d *fileDialog) searchText() string { return bufString(d.search[:]) }
+
+// targetPath resolves the typed/selected target against the current directory.
+func (d *fileDialog) targetPath() string {
+	text := strings.TrimSpace(d.text())
+	if text == "" {
+		return ""
+	}
+	return d.withDefaultExt(resolveExplorerPath(d.cwd, text))
+}
+
 // confirm dismisses the dialog and returns the action for its mode and typed path. A
 // blank path yields a dialogClosed action so the caller never acts on "".
 func (d *fileDialog) confirm() fileAction {
-	path := d.text()
+	path := d.targetPath()
 	mode := d.mode
 	res := exportResolutionNames[d.resolution]
 	d.cancel()
@@ -94,4 +141,198 @@ func (d *fileDialog) confirm() fileAction {
 func (d *fileDialog) cancel() {
 	d.mode = dialogClosed
 	d.path = [pathBufferLen]byte{}
+	d.search = [fileSearchBufferLen]byte{}
+	d.entries = nil
+	d.errorText = ""
+}
+
+// openDir changes the browser directory and refreshes its rows.
+func (d *fileDialog) openDir(dir string) {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		d.errorText = fmt.Sprintf("open %q: %v", dir, err)
+		return
+	}
+	d.cwd = filepath.Clean(abs)
+	d.refresh()
+}
+
+// refresh reloads the current directory snapshot, preserving the current target path.
+func (d *fileDialog) refresh() {
+	entries, err := readExplorerDir(d.cwd)
+	if err != nil {
+		d.entries = nil
+		d.errorText = fmt.Sprintf("read %q: %v", d.cwd, err)
+		return
+	}
+	d.entries = entries
+	d.errorText = ""
+}
+
+// goParent moves to the containing directory when the platform path has one.
+func (d *fileDialog) goParent() {
+	parent := filepath.Dir(d.cwd)
+	if parent != d.cwd {
+		d.openDir(parent)
+	}
+}
+
+// chooseEntry selects a file target or enters a directory row.
+func (d *fileDialog) chooseEntry(e fileEntry) {
+	if e.Dir {
+		d.openDir(e.Path)
+		return
+	}
+	d.setTarget(e.Path)
+}
+
+// visibleEntries returns directory rows plus files matching search/filter state.
+func (d *fileDialog) visibleEntries() []fileEntry {
+	needle := strings.ToLower(strings.TrimSpace(d.searchText()))
+	var out []fileEntry
+	for _, e := range d.entries {
+		if d.entryVisible(e, needle) {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func (d *fileDialog) entryVisible(e fileEntry, needle string) bool {
+	if needle != "" && !strings.Contains(strings.ToLower(e.Name), needle) {
+		return false
+	}
+	return e.Dir || d.allowsFile(e.Name)
+}
+
+func (d *fileDialog) allowsFile(name string) bool {
+	exts := d.allowedExts()
+	if len(exts) == 0 {
+		return true
+	}
+	ext := strings.ToLower(filepath.Ext(name))
+	return containsString(exts, ext)
+}
+
+func (d *fileDialog) allowedExts() []string {
+	switch d.mode {
+	case dialogOpen, dialogSaveAs:
+		return []string{".obk"}
+	case dialogLoadHDR:
+		return []string{".hdr"}
+	case dialogImport, dialogExport:
+		return []string{".stl", ".obj", ".3mf", ".step", ".stp"}
+	default:
+		return nil
+	}
+}
+
+func (d *fileDialog) withDefaultExt(path string) string {
+	if d.mode == dialogSaveAs && filepath.Ext(path) == "" {
+		return path + ".obk"
+	}
+	return path
+}
+
+func (d *fileDialog) setTarget(path string) { copyText(d.path[:], path) }
+
+func readExplorerDir(dir string) ([]fileEntry, error) {
+	rows, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	entries := make([]fileEntry, 0, len(rows))
+	for _, row := range rows {
+		entries = append(entries, explorerEntry(dir, row))
+	}
+	sortExplorerEntries(entries)
+	return entries, nil
+}
+
+func explorerEntry(dir string, row fs.DirEntry) fileEntry {
+	info, _ := row.Info()
+	entry := fileEntry{Name: row.Name(), Path: filepath.Join(dir, row.Name()), Dir: row.IsDir()}
+	if info != nil {
+		entry.Size = info.Size()
+		entry.ModTime = info.ModTime()
+	}
+	return entry
+}
+
+func sortExplorerEntries(entries []fileEntry) {
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Dir != entries[j].Dir {
+			return entries[i].Dir
+		}
+		return strings.ToLower(entries[i].Name) < strings.ToLower(entries[j].Name)
+	})
+}
+
+func initialExplorerDir() string {
+	if wd, err := os.Getwd(); err == nil {
+		return wd
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		return home
+	}
+	return string(filepath.Separator)
+}
+
+func explorerRoots() []string {
+	if runtime.GOOS == "windows" {
+		return windowsRoots()
+	}
+	return uniquePaths([]string{string(filepath.Separator), homeDir()})
+}
+
+func windowsRoots() []string {
+	var roots []string
+	for drive := 'A'; drive <= 'Z'; drive++ {
+		root := string(drive) + `:\`
+		if _, err := os.Stat(root); err == nil {
+			roots = append(roots, root)
+		}
+	}
+	return roots
+}
+
+func homeDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return home
+}
+
+func uniquePaths(paths []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, p := range paths {
+		if p != "" && !seen[p] {
+			out = append(out, p)
+			seen[p] = true
+		}
+	}
+	return out
+}
+
+func resolveExplorerPath(cwd, text string) string {
+	if filepath.IsAbs(text) {
+		return filepath.Clean(text)
+	}
+	return filepath.Clean(filepath.Join(cwd, text))
+}
+
+func containsString(values []string, needle string) bool {
+	for _, value := range values {
+		if value == needle {
+			return true
+		}
+	}
+	return false
+}
+
+func copyText(dst []byte, text string) {
+	clearBuf(dst)
+	copy(dst, text)
 }

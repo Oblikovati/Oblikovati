@@ -40,15 +40,7 @@ func drawChamferDialog(s *app.Session) {
 		if native.Checkbox("Flat corner (3 edges)", &chamferUI.flatCorners) {
 			c.SetFlatCorners(chamferUI.flatCorners)
 		}
-		native.BeginDisabled(!c.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		drawCommitCancelButtons(s, c.CanCommit())
 	}
 	native.End()
 }

@@ -1,6 +1,6 @@
 schemaVersion: 2
 documentType: 1
-displayName: demo
+displayName: Part1
 model:
     units:
         angle: deg
@@ -9,10 +9,6 @@ model:
         mass: kg
         time: s
         volume: mm^3
-    parameters:
-        - name: width
-          kind: user
-          expression: 4 cm
     sketches:
         - name: Sketch1
           plane:
@@ -21,51 +17,51 @@ model:
                 - 0
                 - 0
             xAxis:
-                - 1
                 - 0
+                - 1
                 - 0
             yAxis:
                 - 0
-                - 1
                 - 0
+                - 1
           points:
-            - id: 2
-              x: 0
-              "y": 0
+            - id: 11
+              x: -2.570897720126885
+              "y": 5.03803723630246
               standalone: true
-            - id: 3
-              x: 4
-              "y": 0
+            - id: 12
+              x: 3.0551026718996614
+              "y": 5.03803723630246
               standalone: true
-            - id: 4
-              x: 4
-              "y": 3
+            - id: 13
+              x: 3.0551026718996614
+              "y": -3.3202625264418963
               standalone: true
-            - id: 5
-              x: 0
-              "y": 3
+            - id: 14
+              x: -2.570897720126885
+              "y": -3.3202625264418963
               standalone: true
           entities:
-            - id: 6
+            - id: 15
               kind: line
               points:
-                - 2
-                - 3
-            - id: 7
+                - 11
+                - 12
+            - id: 16
               kind: line
               points:
-                - 3
-                - 4
-            - id: 8
+                - 12
+                - 13
+            - id: 17
               kind: line
               points:
-                - 4
-                - 5
-            - id: 9
+                - 13
+                - 14
+            - id: 18
               kind: line
               points:
-                - 5
-                - 2
+                - 14
+                - 11
     features:
         - kind: extrude
           name: Extrusion1
@@ -76,4 +72,4 @@ model:
             operation: newBody
             extent: distance
             direction: positive
-            distance: 5
+            distance: 10

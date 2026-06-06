@@ -52,6 +52,15 @@ int  obk_ig_begin_tab_item_ex(const char* l, int setSelected) {
     ImGuiTabItemFlags f = setSelected ? ImGuiTabItemFlags_SetSelected : 0;
     return ImGui::BeginTabItem(l, nullptr, f) ? 1 : 0;
 }
+// begin_tab_item_closable is the same tab primitive with ImGui's close affordance.
+// It writes open=0 on the frame the close button is clicked.
+int  obk_ig_begin_tab_item_closable(const char* l, int setSelected, int* open) {
+    bool p_open = (*open != 0);
+    ImGuiTabItemFlags f = setSelected ? ImGuiTabItemFlags_SetSelected : 0;
+    bool visible = ImGui::BeginTabItem(l, &p_open, f);
+    *open = p_open ? 1 : 0;
+    return visible ? 1 : 0;
+}
 void obk_ig_end_tab_item(void)               { ImGui::EndTabItem(); }
 // selectable is a clickable browser row; returns 1 on click. selected draws it
 // highlighted (the current selection).
@@ -60,6 +69,9 @@ int  obk_ig_selectable(const char* label, int selected) {
 }
 
 int  obk_ig_collapsing_header(const char* l) { return ImGui::CollapsingHeader(l) ? 1 : 0; }
+void obk_ig_set_next_item_open(int open, int first_use) {
+    ImGui::SetNextItemOpen(open != 0, first_use != 0 ? ImGuiCond_FirstUseEver : ImGuiCond_Always);
+}
 int  obk_ig_tree_node(const char* label)     { return ImGui::TreeNode(label) ? 1 : 0; }
 void obk_ig_tree_pop(void)                   { ImGui::TreePop(); }
 void obk_ig_bullet_text(const char* s)       { ImGui::BulletText("%s", s); }

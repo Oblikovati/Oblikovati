@@ -92,30 +92,44 @@ func drawDimensionPopup(s *app.Session) {
 		dimEdit.dim = nil
 		return
 	}
-	if d != dimEdit.dim { // a new edit opened — seed the buffer + remember the cursor
-		seedEditBuf(s.PendingDimensionExpression())
-		dimEdit.dim = d
-		mx, my := native.MousePos()
-		dimEdit.posX, dimEdit.posY = mx+dimPopupCursorOffset, my+dimPopupCursorOffset
-		dimEdit.place = true
-	}
-	if dimEdit.place { // position once at the cursor, then let the user drag it
-		native.SetNextWindowPos(dimEdit.posX, dimEdit.posY)
-		dimEdit.place = false
-	}
+	refreshDimensionEdit(s, d)
+	placeDimensionEditOnce()
 	native.SetNextWindowSize(260, 96)
 	if native.Begin("Edit Dimension") {
-		native.Text("Value")
-		native.InputText("##dim-value", dimEdit.buf)
-		if native.Button("OK") {
-			_ = s.CommitPendingDimension(editBufText()) // keeps box open on parse error
-		}
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelPendingDimension()
-		}
+		drawDimensionEditContents(s)
 	}
 	native.End()
+}
+
+func refreshDimensionEdit(s *app.Session, d *sketch.DimensionConstraint) {
+	if d == dimEdit.dim {
+		return
+	}
+	seedEditBuf(s.PendingDimensionExpression())
+	dimEdit.dim = d
+	mx, my := native.MousePos()
+	dimEdit.posX, dimEdit.posY = mx+dimPopupCursorOffset, my+dimPopupCursorOffset
+	dimEdit.place = true
+}
+
+func placeDimensionEditOnce() {
+	if !dimEdit.place {
+		return
+	}
+	native.SetNextWindowPos(dimEdit.posX, dimEdit.posY)
+	dimEdit.place = false
+}
+
+func drawDimensionEditContents(s *app.Session) {
+	native.Text("Value")
+	native.InputText("##dim-value", dimEdit.buf)
+	if native.Button("OK") {
+		_ = s.CommitPendingDimension(editBufText()) // keeps box open on parse error
+	}
+	native.SameLine()
+	if native.Button("Cancel") {
+		s.CancelPendingDimension()
+	}
 }
 
 // seedEditBuf copies expr into the edit buffer, NUL-terminated and zero-padded.

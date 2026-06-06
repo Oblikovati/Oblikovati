@@ -81,6 +81,11 @@ func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candida
 	if sk == nil {
 		return nil
 	}
+	normal, sel, cand := sketchSegmentsFor(sk, selected, candidate)
+	return sketchItems(normal, sel, cand)
+}
+
+func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) (*segAccum, *segAccum, *segAccum) {
 	normal, sel, cand := &segAccum{}, &segAccum{}, &segAccum{}
 	plane := sk.Plane()
 	pick := func(e sketch.Entity) *segAccum {
@@ -98,6 +103,10 @@ func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candida
 	addArcs(pick, plane, sk)
 	addEllipses(pick, plane, sk)
 	addSplines(pick, plane, sk)
+	return normal, sel, cand
+}
+
+func sketchItems(normal, sel, cand *segAccum) []renderer.DrawItem {
 	var items []renderer.DrawItem
 	items = appendGrid(items, normal, sketchColor)
 	items = appendGrid(items, sel, sketchSelectedColor)

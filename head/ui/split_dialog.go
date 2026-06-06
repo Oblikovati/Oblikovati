@@ -33,15 +33,7 @@ func drawSplitDialog(s *app.Session) {
 		if native.Button("Trim — keep back side") {
 			t.SetKeepNegative()
 		}
-		native.BeginDisabled(!t.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		drawCommitCancelButtons(s, t.CanCommit())
 	}
 	native.End()
 }

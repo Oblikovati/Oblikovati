@@ -118,6 +118,7 @@ ipch/
 
 # Visual Studio profiler
 *.psess
+.local-native-lib/
 *.vsp
 *.vspx
 *.sap

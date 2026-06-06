@@ -35,15 +35,7 @@ func drawFaceOffsetDialog(s *app.Session) {
 		native.Text("Distance (" + s.LengthUnitName() + ", +out / −in)")
 		native.InputFloat("##face-offset-distance", &faceOffsetUI.distance)
 		o.SetDistance(float64(faceOffsetUI.distance))
-		native.BeginDisabled(!o.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		drawCommitCancelButtons(s, o.CanCommit())
 	}
 	native.End()
 }

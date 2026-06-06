@@ -15,8 +15,21 @@ func TestPartHasThreeOriginPlanes(t *testing.T) {
 		if planes[i].Name() != n {
 			t.Errorf("origin plane %d = %q, want %q", i, planes[i].Name(), n)
 		}
+		if planes[i].Visible() {
+			t.Errorf("origin plane %q visible by default", n)
+		}
 		if planes[i].DisplaySize() <= 0 {
 			t.Errorf("%s has non-positive display size", n)
+		}
+	}
+}
+
+func TestPartOriginAxesStartInvisible(t *testing.T) {
+	d := NewPartComponentDefinition()
+	for i := 0; i < d.WorkAxes().Count(); i++ {
+		axis := d.WorkAxes().Item(i)
+		if axis.Visible() {
+			t.Errorf("origin axis %q visible by default", axis.Name())
 		}
 	}
 }

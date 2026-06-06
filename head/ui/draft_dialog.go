@@ -35,15 +35,7 @@ func drawDraftDialog(s *app.Session) {
 		native.Text("Angle (degrees, +out / −in)")
 		native.InputFloat("##draft-angle", &draftUI.angle)
 		d.SetAngleDegrees(float64(draftUI.angle))
-		native.BeginDisabled(!d.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		drawCommitCancelButtons(s, d.CanCommit())
 	}
 	native.End()
 }
