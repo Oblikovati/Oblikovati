@@ -123,7 +123,7 @@ func TestContextCarriesPhaseAndDeadline(t *testing.T) {
 		return Continue()
 	})
 	ctx := context.WithValue(context.Background(), ctxKey("k"), "v")
-	EmitContext(b, ctx, Before, docClosing{})
+	EmitContext(ctx, b, Before, docClosing{})
 	if gotPhase != Before {
 		t.Errorf("handler phase = %v, want Before", gotPhase)
 	}
@@ -132,7 +132,7 @@ func TestContextCarriesPhaseAndDeadline(t *testing.T) {
 	}
 }
 
-func TestHandlerMaySubscribeDuringEmit(t *testing.T) {
+func TestHandlerMaySubscribeDuringEmit(_ *testing.T) {
 	b := NewBus()
 	added := false
 	Subscribe(b, After, func(_ Context, _ docSaved) Outcome {

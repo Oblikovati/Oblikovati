@@ -8,9 +8,9 @@ import (
 	"io"
 	"strconv"
 
-	stdmath "math"
-
 	"oblikovati/math"
+
+	stdmath "math"
 )
 
 // Mesh features (M10-F04, PBI-115) wrap imported tessellated geometry (e.g. an STL)

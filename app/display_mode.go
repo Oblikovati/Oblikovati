@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"oblikovati/api/types"
-
 	"oblikovati/renderer"
 )
 

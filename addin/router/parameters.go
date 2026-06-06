@@ -6,9 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"oblikovati/api/wire"
-
 	"oblikovati/addin/modelaccess"
+	"oblikovati/api/wire"
 	"oblikovati/app"
 	"oblikovati/model/compdef"
 	"oblikovati/model/param"

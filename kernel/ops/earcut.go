@@ -253,36 +253,10 @@ func (tc *triContext) eliminateHole(h, outerNode *triNode) *triNode {
 // findHoleBridge finds an outer-ring node mutually visible from hole vertex h (leftmost),
 // casting a ray toward −X and resolving reflex blockers (Eberly §4).
 func (tc *triContext) findHoleBridge(h, outerNode *triNode) *triNode {
-	p := outerNode
 	hx, hy := tc.x[h.i], tc.y[h.i]
-	qx := stdmath.Inf(-1)
-	var m *triNode
-	for {
-		px, py := tc.x[p.i], tc.y[p.i]
-		nx := tc.x[p.next.i]
-		if hy <= py && hy >= tc.y[p.next.i] && tc.y[p.next.i] != py {
-			x := px + (hy-py)*(nx-px)/(tc.y[p.next.i]-py)
-			if x <= hx && x > qx {
-				qx = x
-				if x == hx {
-					if hy == py {
-						return p
-					}
-					if hy == tc.y[p.next.i] {
-						return p.next
-					}
-				}
-				if px < nx {
-					m = p
-				} else {
-					m = p.next
-				}
-			}
-		}
-		p = p.next
-		if p == outerNode {
-			break
-		}
+	qx, m, exact := tc.bridgeRayHit(hx, hy, outerNode)
+	if exact != nil {
+		return exact
 	}
 	if m == nil {
 		return nil
@@ -293,7 +267,7 @@ func (tc *triContext) findHoleBridge(h, outerNode *triNode) *triNode {
 	stop := m
 	mx, my := tc.x[m.i], tc.y[m.i]
 	tanMin := stdmath.Inf(1)
-	p = m
+	p := m
 	for {
 		px, py := tc.x[p.i], tc.y[p.i]
 		// A reflex vertex p inside the candidate region (h, q, m) can block visibility;
@@ -314,6 +288,39 @@ func (tc *triContext) findHoleBridge(h, outerNode *triNode) *triNode {
 		}
 	}
 	return m
+}
+
+func (tc *triContext) bridgeRayHit(hx, hy float64, outerNode *triNode) (float64, *triNode, *triNode) {
+	p := outerNode
+	qx := stdmath.Inf(-1)
+	var m *triNode
+	for {
+		px, py := tc.x[p.i], tc.y[p.i]
+		nx := tc.x[p.next.i]
+		if hy <= py && hy >= tc.y[p.next.i] && tc.y[p.next.i] != py {
+			x := px + (hy-py)*(nx-px)/(tc.y[p.next.i]-py)
+			if x <= hx && x > qx {
+				qx = x
+				if x == hx {
+					if hy == py {
+						return qx, m, p
+					}
+					if hy == tc.y[p.next.i] {
+						return qx, m, p.next
+					}
+				}
+				if px < nx {
+					m = p
+				} else {
+					m = p.next
+				}
+			}
+		}
+		p = p.next
+		if p == outerNode {
+			return qx, m, nil
+		}
+	}
 }
 
 // sectorContains breaks ties in findHoleBridge: whether m lies in p's sector toward the hole.

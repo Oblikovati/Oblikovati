@@ -75,13 +75,13 @@ func convexHull3D(points []math.Point3) ([]math.Point3, [][3]int, error) {
 func insertPoint(pts []math.Point3, faces [][3]int, pi int, tol float64) [][3]int {
 	p := pts[pi]
 	visible := make([]bool, len(faces))
-	any := false
+	anyVisible := false
 	for fi, f := range faces {
 		if faceVisible(pts, f, p, tol) {
-			visible[fi], any = true, true
+			visible[fi], anyVisible = true, true
 		}
 	}
-	if !any {
+	if !anyVisible {
 		return faces
 	}
 	seen := visibleEdgeSet(faces, visible)

@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati/addin/modelaccess"
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
-	"oblikovati/addin/modelaccess"
 	"oblikovati/app"
 	"oblikovati/model/exchange"
 )

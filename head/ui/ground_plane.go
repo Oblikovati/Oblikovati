@@ -8,8 +8,9 @@ import (
 	"math"
 
 	"oblikovati/app"
-	gmath "oblikovati/math"
 	"oblikovati/renderer"
+
+	gmath "oblikovati/math"
 )
 
 // groundAlbedo is the neutral matte grey of the shadow-catching ground plane.

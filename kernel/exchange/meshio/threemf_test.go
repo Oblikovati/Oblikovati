@@ -83,7 +83,7 @@ func TestExport3MFCurvedResolutionIsMonotonic(t *testing.T) {
 		}
 		return n
 	}
-	if l, m, h := count(types.ResolutionLow), count(types.ResolutionMedium), count(types.ResolutionHigh); !(l < m && m < h) {
+	if l, m, h := count(types.ResolutionLow), count(types.ResolutionMedium), count(types.ResolutionHigh); l >= m || m >= h {
 		t.Errorf("3MF triangle count not strictly increasing: %d %d %d", l, m, h)
 	}
 }

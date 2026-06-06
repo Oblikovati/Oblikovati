@@ -9,10 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati/addin/opregistry"
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
-	"oblikovati/addin/opregistry"
 	"oblikovati/app"
 	"oblikovati/event"
 	"oblikovati/math"

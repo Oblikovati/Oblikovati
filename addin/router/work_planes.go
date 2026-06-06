@@ -7,10 +7,9 @@ import (
 	"fmt"
 	"strings"
 
+	"oblikovati/addin/modelaccess"
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
-	"oblikovati/addin/modelaccess"
 	"oblikovati/app"
 	"oblikovati/math"
 	"oblikovati/model/compdef"

@@ -49,34 +49,7 @@ func ParseThreadDesignation(s string) (ThreadSpec, error) {
 	if body[0] != 'M' && body[0] != 'm' {
 		return ThreadSpec{}, fmt.Errorf("thread: unrecognised designation %q (want metric M8x1.25 or inch 1/4-20)", s)
 	}
-	body = body[1:]
-	var pitchStr string
-	if i := strings.IndexAny(body, "xX"); i >= 0 {
-		body, pitchStr = body[:i], body[i+1:]
-	}
-	major, err := strconv.ParseFloat(strings.TrimSpace(body), 64)
-	if err != nil || major <= 0 {
-		return ThreadSpec{}, fmt.Errorf("thread: bad nominal diameter in %q: %v", s, err)
-	}
-	spec.MajorDiameter = major
-	if pitchStr == "" {
-		p, ok := coarsePitch[major]
-		if !ok {
-			return ThreadSpec{}, fmt.Errorf("thread: no coarse pitch for M%g; give an explicit pitch (e.g. M%gx1.0)", major, major)
-		}
-		spec.Pitch = p
-	} else {
-		p, err := strconv.ParseFloat(strings.TrimSpace(pitchStr), 64)
-		if err != nil || p <= 0 {
-			return ThreadSpec{}, fmt.Errorf("thread: bad pitch in %q: %v", s, err)
-		}
-		spec.Pitch = p
-	}
-	spec.MinorDiameter = major - 1.0825*spec.Pitch
-	if spec.MinorDiameter <= 0 {
-		return ThreadSpec{}, fmt.Errorf("thread: pitch %g too coarse for M%g (minor diameter ≤ 0)", spec.Pitch, major)
-	}
-	return spec, nil
+	return parseMetric(body[1:], spec)
 }
 
 // inchPerMM is mm per inch, for Unified inch threads.
@@ -108,12 +81,54 @@ func parseImperial(body string, spec ThreadSpec) (ThreadSpec, error) {
 	return spec, nil
 }
 
+func parseMetric(body string, spec ThreadSpec) (ThreadSpec, error) {
+	major, pitchStr, err := parseMetricMajorAndPitch(body)
+	if err != nil {
+		return ThreadSpec{}, err
+	}
+	spec.MajorDiameter = major
+	spec.Pitch, err = metricPitch(major, pitchStr)
+	if err != nil {
+		return ThreadSpec{}, err
+	}
+	spec.MinorDiameter = major - 1.0825*spec.Pitch
+	if spec.MinorDiameter <= 0 {
+		return ThreadSpec{}, fmt.Errorf("thread: pitch %g too coarse for M%g (minor diameter ≤ 0)", spec.Pitch, major)
+	}
+	return spec, nil
+}
+
+func parseMetricMajorAndPitch(body string) (float64, string, error) {
+	pitchStr := ""
+	if i := strings.IndexAny(body, "xX"); i >= 0 {
+		body, pitchStr = body[:i], body[i+1:]
+	}
+	major, err := strconv.ParseFloat(strings.TrimSpace(body), 64)
+	if err != nil || major <= 0 {
+		return 0, "", fmt.Errorf("thread: bad nominal diameter in %q: %v", body, err)
+	}
+	return major, pitchStr, nil
+}
+
+func metricPitch(major float64, pitchStr string) (float64, error) {
+	if pitchStr == "" {
+		p, ok := coarsePitch[major]
+		if !ok {
+			return 0, fmt.Errorf("thread: no coarse pitch for M%g; give an explicit pitch (e.g. M%gx1.0)", major, major)
+		}
+		return p, nil
+	}
+	p, err := strconv.ParseFloat(strings.TrimSpace(pitchStr), 64)
+	if err != nil || p <= 0 {
+		return 0, fmt.Errorf("thread: bad pitch %q: %v", pitchStr, err)
+	}
+	return p, nil
+}
+
 // inchSize parses a fraction ("1/4", "5/16") or numbered gauge ("#8", "8") to inches. Gauge N
 // has major diameter 0.060 + 0.013·N inch.
 func inchSize(s string) (float64, error) {
-	if strings.HasPrefix(s, "#") {
-		s = s[1:]
-	}
+	s = strings.TrimPrefix(s, "#")
 	if j := strings.Index(s, "/"); j >= 0 {
 		num, err1 := strconv.ParseFloat(s[:j], 64)
 		den, err2 := strconv.ParseFloat(s[j+1:], 64)

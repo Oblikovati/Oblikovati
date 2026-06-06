@@ -6,7 +6,6 @@ import (
 	stdmath "math"
 
 	"oblikovati/api/types"
-
 	"oblikovati/math"
 	"oblikovati/scene"
 )

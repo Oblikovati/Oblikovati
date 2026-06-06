@@ -18,10 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"oblikovati/api/wire"
-
 	"oblikovati/addin/opregistry"
 	"oblikovati/addin/trace"
+	"oblikovati/api/wire"
 	"oblikovati/app"
 )
 

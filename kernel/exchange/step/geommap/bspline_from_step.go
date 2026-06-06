@@ -46,7 +46,7 @@ func degreePair(params []part21.Value) (uDeg, vDeg int, err error) {
 
 // surfaceKnots reads and expands the u/v knot vectors (multiplicities at 7/8,
 // distinct knots at 9/10).
-func surfaceKnots(params []part21.Value, uDeg, vDeg int) (uKnots, vKnots []float64, err error) {
+func surfaceKnots(params []part21.Value, _, _ int) (uKnots, vKnots []float64, err error) {
 	if uKnots, err = expandedKnots(params, 7, 9); err != nil {
 		return nil, nil, fmt.Errorf("geommap: B_SPLINE_SURFACE u knots: %w", err)
 	}

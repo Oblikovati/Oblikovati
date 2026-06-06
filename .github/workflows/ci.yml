@@ -31,9 +31,9 @@ jobs:
           go-version-file: go.mod
           cache: false
       - run: go mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.59.1
+          version: v2.1.0
 
   # Lint the architecture/design docs. Config: .markdownlint-cli2.jsonc at the root.
   docs-lint:

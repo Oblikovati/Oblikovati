@@ -4,7 +4,6 @@ package clientgraphics
 
 import (
 	"oblikovati/api/types"
-
 	"oblikovati/math"
 	"oblikovati/renderer"
 	"oblikovati/scene"

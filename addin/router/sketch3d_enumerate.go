@@ -7,7 +7,6 @@ import (
 
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
 	"oblikovati/app"
 	"oblikovati/math"
 	"oblikovati/model/sketch"

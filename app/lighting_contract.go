@@ -5,7 +5,6 @@ package app
 import (
 	"oblikovati/api/contract"
 	"oblikovati/api/types"
-
 	"oblikovati/renderer"
 )
 

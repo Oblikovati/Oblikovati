@@ -9,11 +9,11 @@ package text
 import (
 	"fmt"
 
+	"oblikovati/math"
+
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
-
-	"oblikovati/math"
 )
 
 // curveFlattenSteps is how many line segments each quadratic/cubic glyph curve is flattened

@@ -4,7 +4,6 @@ package app
 
 import (
 	"oblikovati/api/types"
-
 	"oblikovati/model/doc"
 )
 

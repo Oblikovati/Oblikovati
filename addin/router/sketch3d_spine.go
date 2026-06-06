@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"oblikovati/api/wire"
-
 	"oblikovati/addin/modelaccess"
+	"oblikovati/api/wire"
 	"oblikovati/app"
 	"oblikovati/model/compdef"
 	"oblikovati/model/sketch"

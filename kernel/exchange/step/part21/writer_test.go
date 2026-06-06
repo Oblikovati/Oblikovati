@@ -47,7 +47,9 @@ func TestWriterEmitIsByteStable(t *testing.T) {
 		w.Add("DIRECTION", QuoteString(""), FormatList(FormatReal(0), FormatReal(0), FormatReal(1)))
 		return w.Emit(Header{SchemaIdentifiers: []string{"CONFIG_CONTROL_DESIGN"}})
 	}
-	if string(build()) != string(build()) {
+	first := string(build())
+	second := string(build())
+	if first != second {
 		t.Error("emit is not byte-stable across runs")
 	}
 }

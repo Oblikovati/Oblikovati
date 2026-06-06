@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"oblikovati/api/types"
-
 	"oblikovati/kernel/geom"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"

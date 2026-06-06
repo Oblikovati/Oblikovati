@@ -108,7 +108,7 @@ func TestExportTriangleCountIncreasesWithResolutionForCurvedBody(t *testing.T) {
 	low := triCountForFormat(t, cyl, types.ResolutionLow)
 	med := triCountForFormat(t, cyl, types.ResolutionMedium)
 	high := triCountForFormat(t, cyl, types.ResolutionHigh)
-	if !(low < med && med < high) {
+	if low >= med || med >= high {
 		t.Errorf("triangle count not strictly increasing low<med<high: %d %d %d", low, med, high)
 	}
 }

@@ -20,9 +20,7 @@ type Library struct {
 // falls back to Dark, so a corrupt preference never leaves the UI unstyled.
 func NewLibrary(customs []*Theme, active string) *Library {
 	lib := &Library{themes: Builtins(), active: active, revision: 1}
-	for _, c := range customs {
-		lib.themes = append(lib.themes, c)
-	}
+	lib.themes = append(lib.themes, customs...)
 	if _, ok := lib.find(active); !ok {
 		lib.active = "Dark"
 	}

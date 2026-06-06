@@ -5,10 +5,10 @@ package feature
 import (
 	"sort"
 
-	stdmath "math"
-
 	"oblikovati/api/types"
 	"oblikovati/math"
+
+	stdmath "math"
 )
 
 // Loft skinning (the non-naive part). A faithful loft is NOT a straight blend between the user

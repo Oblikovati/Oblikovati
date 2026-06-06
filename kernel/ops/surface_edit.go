@@ -6,12 +6,12 @@ import (
 	"errors"
 	"strconv"
 
-	stdmath "math"
-
 	"oblikovati/build"
 	"oblikovati/kernel/geom"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
+
+	stdmath "math"
 )
 
 // Surface-editing geometry (M10-F02). Phase A operates on planar surface bodies: a

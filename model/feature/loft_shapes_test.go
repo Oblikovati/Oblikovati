@@ -104,10 +104,9 @@ func TestLoftShapeTwistedSquares(t *testing.T) {
 func TestLoftShapeMultiSectionBulges(t *testing.T) {
 	// 3 circles whose MIDDLE is shifted +X: the spline blend must curve through it, so the
 	// body's +X extent exceeds the straight-loft bound (the end circles reach only x=+2).
-	mid := circleOn(planeAtZ(2), 2)
 	// shift the middle section sketch's plane origin +X by 3 (a banana).
 	midPlane, _ := sketch.NewPlane(math.P3(3, 0, 2), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
-	mid = circleOn(midPlane, 2)
+	mid := circleOn(midPlane, 2)
 	body := loftSolid(t, []LoftSection{sec(circleOn(sketch.XYPlane(), 2)), sec(mid), sec(circleOn(planeAtZ(4), 2))}, false)
 	maxX := body.RangeBox().Max.X
 	if float64(maxX) < 3.5 {

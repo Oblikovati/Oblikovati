@@ -7,7 +7,6 @@ package ui
 import (
 	"oblikovati/api/contract"
 	"oblikovati/api/types"
-
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 	"oblikovati/theme"
