@@ -8,10 +8,9 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati/addin/modelaccess"
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
-	"oblikovati/addin/modelaccess"
 	"oblikovati/kernel/geom"
 	"oblikovati/math"
 	"oblikovati/model/compdef"

@@ -16,7 +16,7 @@ func (lx *lexer) skipTrivia() error {
 			lx.advance()
 			continue
 		}
-		if c == '/' && lx.peek(1) == '*' {
+		if c == '/' && lx.peek() == '*' {
 			if err := lx.skipComment(); err != nil {
 				return err
 			}
@@ -33,7 +33,7 @@ func (lx *lexer) skipComment() error {
 	lx.advance() // '/'
 	lx.advance() // '*'
 	for lx.pos < len(lx.src) {
-		if lx.src[lx.pos] == '*' && lx.peek(1) == '/' {
+		if lx.src[lx.pos] == '*' && lx.peek() == '/' {
 			lx.advance() // '*'
 			lx.advance() // '/'
 			return nil
@@ -56,7 +56,7 @@ func (lx *lexer) lexKeyword() (Token, error) {
 			lx.advance()
 			continue
 		}
-		if c == '-' && isKeywordPart(lx.peek(1)) {
+		if c == '-' && isKeywordPart(lx.peek()) {
 			lx.advance()
 			continue
 		}
@@ -110,7 +110,7 @@ func (lx *lexer) lexString() (Token, error) {
 	for lx.pos < len(lx.src) {
 		c := lx.src[lx.pos]
 		if c == '\'' {
-			if lx.peek(1) == '\'' { // doubled quote ⇒ literal quote
+			if lx.peek() == '\'' { // doubled quote ⇒ literal quote
 				b.WriteByte('\'')
 				lx.advance()
 				lx.advance()

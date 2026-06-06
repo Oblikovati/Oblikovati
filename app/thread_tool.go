@@ -50,6 +50,7 @@ func (t *ThreadTool) HasFace() bool { return t.face != nil }
 
 // Standard accessors (by index into feature.ThreadStandards).
 func (t *ThreadTool) StandardIndex() int { return t.standardIdx }
+
 func (t *ThreadTool) SetStandardIndex(i int) {
 	if i != t.standardIdx {
 		t.standardIdx, t.sizeIdx, t.pitchIdx = i, 0, 0
@@ -58,6 +59,7 @@ func (t *ThreadTool) SetStandardIndex(i int) {
 
 // SizeIndex / SetSizeIndex select the size within the current standard.
 func (t *ThreadTool) SizeIndex() int { return t.sizeIdx }
+
 func (t *ThreadTool) SetSizeIndex(i int) {
 	if i != t.sizeIdx {
 		t.sizeIdx, t.pitchIdx = i, 0

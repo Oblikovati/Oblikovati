@@ -10,7 +10,6 @@ import (
 
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
 	"oblikovati/kernel/exchange/meshio"
 	"oblikovati/kernel/ops"
 	"oblikovati/math"

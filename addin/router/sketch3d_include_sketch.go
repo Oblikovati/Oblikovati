@@ -5,9 +5,8 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/wire"
-
 	"oblikovati/addin/modelaccess"
+	"oblikovati/api/wire"
 	"oblikovati/app"
 	"oblikovati/model/sketch"
 )

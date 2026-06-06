@@ -6,11 +6,11 @@ import (
 	"errors"
 	"sort"
 
-	stdmath "math"
-
 	"oblikovati/kernel/geom"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
+
+	stdmath "math"
 )
 
 // defaultStitchTolerance is the coincidence grid used when a feature passes 0.

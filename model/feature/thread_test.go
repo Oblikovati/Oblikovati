@@ -5,14 +5,13 @@ package feature
 import (
 	stdmath "math"
 	"testing"
+	"time"
 
 	"oblikovati/kernel/brep"
 	"oblikovati/kernel/geom"
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
-	"time"
-
 	"oblikovati/model/health"
 )
 

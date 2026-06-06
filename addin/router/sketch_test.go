@@ -8,10 +8,9 @@ import (
 	"math"
 	"testing"
 
-	"oblikovati/api/wire"
-
 	"oblikovati/addin/modelaccess"
 	"oblikovati/addin/opregistry"
+	"oblikovati/api/wire"
 	"oblikovati/app"
 	"oblikovati/model/compdef"
 )

@@ -149,10 +149,10 @@ func pathTangents(path []math.Point3) []math.UnitVector3 {
 	out := make([]math.UnitVector3, n)
 	for k := range path {
 		var v math.Vector3
-		switch {
-		case k == 0:
+		switch k {
+		case 0:
 			v = path[0].VectorTo(path[1])
-		case k == n-1:
+		case n - 1:
 			v = path[n-2].VectorTo(path[n-1])
 		default:
 			v = path[k-1].VectorTo(path[k]).Add(path[k].VectorTo(path[k+1]))

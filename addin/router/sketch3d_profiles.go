@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 
 	"oblikovati/api/wire"
-
 	"oblikovati/app"
 	"oblikovati/model/sketch"
 )

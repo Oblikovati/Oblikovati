@@ -8,7 +8,6 @@ import (
 	"bytes"
 
 	"oblikovati/api/types"
-
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 	"oblikovati/theme"

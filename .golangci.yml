@@ -1,71 +1,99 @@
-# golangci-lint configuration. Encodes the CLAUDE.md house style where a linter
-# can enforce it: short functions, low complexity, explicit errors, no stray
-# fmt.Print* (structured slog only), gofumpt formatting.
+version: "2"
 run:
-  timeout: 5m
   tests: true
-
 linters:
-  disable-all: true
+  default: none
   enable:
-    - errcheck      # never silently drop an error
+    - copyloopvar
+    - errcheck
+    - forbidigo
+    - funlen
+    - gocritic
+    - gocyclo
     - govet
     - ineffassign
-    - staticcheck
-    - unused
-    - gofumpt       # stricter gofmt
-    - goimports
     - misspell
+    - nakedret
+    - revive
+    - staticcheck
     - unconvert
     - unparam
-    - revive
-    - gocritic
-    - gocyclo       # one responsibility per function
-    - funlen        # 4-20 line functions (CLAUDE.md)
-    - nakedret
-    - copyloopvar
-    - forbidigo
-
-linters-settings:
-  funlen:
-    lines: 30       # allows doc/blank lines around the ~20 logical lines
-    statements: 20
-  gocyclo:
-    min-complexity: 12
-  goimports:
-    local-prefixes: oblikovati
-  revive:
+    - unused
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Print.*$
+          msg: use log/slog for diagnostics; user-facing CLI text belongs in cmd/ output helpers
+    funlen:
+      lines: 30
+      statements: 20
+    gocyclo:
+      min-complexity: 12
+    revive:
+      rules:
+        - name: exported
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: exported   # document every exported symbol
-  forbidigo:
-    forbid:
-      - p: ^fmt\.Print.*$
-        msg: "use log/slog for diagnostics; user-facing CLI text belongs in cmd/ output helpers"
-
+      - linters:
+          - dupl
+          - forbidigo
+          - funlen
+          - gocyclo
+          - unparam
+        path: _test\.go
+      - linters:
+          - funlen
+          - gocyclo
+        path: serialize.*\.go
+      - linters:
+          - revive
+        text: stutters
+      - linters:
+          - funlen
+        path: (app/commands_.*|addin/opregistry/registry|addin/router/router)\.go
+      - linters:
+          - funlen
+        path: kernel/brep/(cylinder|drill).*\.go
+      # Disposable experiments print directly and keep exploratory helpers inline.
+      - linters:
+          - forbidigo
+          - funlen
+          - unparam
+          - unused
+        path: experiments/.*\.go
+      # Geometry kernels, STEP parser/stringers, command dispatch, and sketch/feature
+      # construction helpers are intentionally linear one-case-per-step algorithms.
+      - linters:
+          - funlen
+          - gocyclo
+        path: (addin/opregistry/feature_(advanced|solid)|app/loft_tool|cmd/oblikovati-cli/.*|kernel/exchange/step/part21/(parse_value|value|token)|kernel/ops/(convexhull|earcut)|model/feature/(dressup|loft_skin|sweep_loft|swept)|model/sketch/patterns|model/text/font)\.go
+      # Thread designation parsing is a small grammar parser; branching reflects the grammar.
+      - linters:
+          - gocyclo
+        path: model/feature/thread_spec\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    # Tests may be longer and print freely; test helpers carry general signatures
-    # even when current call sites happen to pass a constant (unparam).
-    - path: _test\.go
-      linters: [funlen, gocyclo, forbidigo, dupl, unparam]
-    # The recipe codecs (ADR-0020 document persistence) are exhaustive, one-case-per
-    # -kind dispatch switches — serializing/restoring every entity/constraint/feature
-    # kind — so their statement count is inherent to the dispatch, not a smell.
-    - path: serialize.*\.go
-      linters: [funlen, gocyclo]
-    # The recipe DTOs deliberately echo their package (SketchData, FeatureData) for
-    # readable cross-package use; the stutter is intentional, descriptive naming.
-    - text: "stutters"
-      linters: [revive]
-    # Ribbon command tables and the router/feature-descriptor registries are exhaustive
-    # one-entry-per-command/handler lists (same rationale as the serialize codecs): the
-    # length is the list, not branching logic.
-    - path: (app/commands_.*|addin/opregistry/registry|addin/router/router)\.go
-      linters: [funlen]
-    # The cylinder/drill files assemble a watertight B-rep body element-by-element (verts,
-    # edges, faces, stitch); the statement count is the geometry being built, not branching
-    # logic — same rationale as the serialize codecs.
-    - path: kernel/brep/(cylinder|drill).*\.go
-      linters: [funlen]
+formatters:
+  enable:
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - oblikovati
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

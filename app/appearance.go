@@ -4,7 +4,6 @@ package app
 
 import (
 	"oblikovati/api/contract"
-
 	"oblikovati/theme"
 )
 

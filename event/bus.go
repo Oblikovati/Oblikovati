@@ -71,14 +71,14 @@ func (s Subscription) Cancel() bool {
 // Emit delivers e to every Before-or-After handler for its type and returns the
 // aggregate outcome. It uses a background context; see [EmitContext] for deadlines.
 func Emit[E Event](b *Bus, p Phase, e E) Outcome {
-	return EmitContext(b, context.Background(), p, e)
+	return EmitContext(context.Background(), b, p, e)
 }
 
 // EmitContext delivers e with an explicit context (e.g. a veto deadline for
 // add-ins). Every handler runs; the aggregate outcome is the strongest disposition
 // any handler returned (Abort > Handled > NotHandled), carrying the first veto
 // reason. A vetoing Before outcome tells the caller to cancel the operation.
-func EmitContext[E Event](b *Bus, ctx context.Context, p Phase, e E) Outcome {
+func EmitContext[E Event](ctx context.Context, b *Bus, p Phase, e E) Outcome {
 	handlers := b.snapshot(subKey{typ: typeOf[E](), phase: p})
 	result := Continue()
 	for _, entry := range handlers {

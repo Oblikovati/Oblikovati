@@ -8,7 +8,6 @@ import (
 
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
 	"oblikovati/app"
 	"oblikovati/model/sketch"
 )

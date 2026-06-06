@@ -90,6 +90,6 @@ func (w *Writer) writeStatements(b *strings.Builder) {
 	stmts := append([]statement(nil), w.stmts...)
 	sort.Slice(stmts, func(i, j int) bool { return stmts[i].id < stmts[j].id })
 	for _, s := range stmts {
-		b.WriteString(fmt.Sprintf("#%d=%s;\n", s.id, s.body))
+		fmt.Fprintf(b, "#%d=%s;\n", s.id, s.body)
 	}
 }

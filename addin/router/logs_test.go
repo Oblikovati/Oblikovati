@@ -7,9 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/api/wire"
-
 	"oblikovati/addin/opregistry"
+	"oblikovati/api/wire"
 	"oblikovati/app"
 )
 

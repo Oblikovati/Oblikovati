@@ -63,6 +63,6 @@ func BoundaryEdges(b *topo.Body) []*topo.Edge {
 // needs the tolerant-topology machinery of kernel phase D; until then Validate +
 // BoundaryEdges report the open edges precisely, which is the documented
 // "or reported precisely" path (PBI-084).
-func Sew(b *topo.Body, tolerance float64) (*topo.Body, error) {
+func Sew(_ *topo.Body, _ float64) (*topo.Body, error) {
 	return nil, build.NotYetImplemented("PBI-084-sew")
 }

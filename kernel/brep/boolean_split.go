@@ -115,7 +115,7 @@ func pointInTriangle2D(p, a, b, c math.Point2) bool {
 	d3 := turn2D(c, a, p)
 	hasNeg := d1 < -arrTol || d2 < -arrTol || d3 < -arrTol
 	hasPos := d1 > arrTol || d2 > arrTol || d3 > arrTol
-	return !(hasNeg && hasPos)
+	return !hasNeg || !hasPos
 }
 
 // inHoles2D reports whether p lies in any hole loop.

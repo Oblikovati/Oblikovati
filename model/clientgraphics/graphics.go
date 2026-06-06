@@ -14,7 +14,6 @@ package clientgraphics
 
 import (
 	"oblikovati/api/types"
-
 	"oblikovati/math"
 )
 

@@ -2,10 +2,7 @@
 
 package feature
 
-import (
-	"fmt"
-	"sort"
-)
+import "fmt"
 
 // Thread standards and the size/pitch tables behind the thread tool's preferences. A standard
 // (ISO/ANSI/JIS) groups sizes under a system (metric or imperial); each size offers one or more
@@ -123,11 +120,4 @@ func hasPitch(ps []float64, p float64) bool {
 		}
 	}
 	return false
-}
-
-// sortedPitches returns a size's pitches descending (coarse → fine) for stable UI display.
-func sortedPitches(ps []float64) []float64 {
-	out := append([]float64(nil), ps...)
-	sort.Sort(sort.Reverse(sort.Float64Slice(out)))
-	return out
 }

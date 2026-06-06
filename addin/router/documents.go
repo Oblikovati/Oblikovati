@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"oblikovati/api/wire"
-
 	"oblikovati/app"
 	"oblikovati/model/compdef"
 	"oblikovati/model/doc"

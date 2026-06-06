@@ -5,10 +5,9 @@ package router
 import (
 	"testing"
 
+	"oblikovati/addin/opregistry"
 	"oblikovati/api/types"
 	"oblikovati/api/wire"
-
-	"oblikovati/addin/opregistry"
 	"oblikovati/app"
 )
 

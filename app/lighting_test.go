@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"oblikovati/api/types"
-
 	"oblikovati/renderer"
 )
 

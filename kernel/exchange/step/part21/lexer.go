@@ -94,9 +94,9 @@ func (lx *lexer) advance() {
 	lx.pos++
 }
 
-// peek returns the byte at offset ahead of the cursor, or 0 past the end.
-func (lx *lexer) peek(offset int) byte {
-	i := lx.pos + offset
+// peek returns the next byte ahead of the cursor, or 0 past the end.
+func (lx *lexer) peek() byte {
+	i := lx.pos + 1
 	if i >= len(lx.src) {
 		return 0
 	}
