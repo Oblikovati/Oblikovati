@@ -18,6 +18,7 @@
 # Usage:  python3 render_goldens.py [module ...]   (default: all declared)
 
 import os
+import shutil
 import subprocess
 import sys
 
@@ -53,7 +54,7 @@ def render(module: str, body: str) -> bool:
     with open(scad, "w") as f:
         f.write(HEADER + body + "\n")
     try:
-        subprocess.run(["openscad", "-o", stl, scad],
+        subprocess.run(openscad_cmd() + ["-o", stl, scad],
                        check=True, capture_output=True, text=True, timeout=300)
     except subprocess.CalledProcessError as e:
         print(f"  FAIL {module}: {e.stderr.strip().splitlines()[-1:]}", file=sys.stderr)
@@ -64,6 +65,17 @@ def render(module: str, body: str) -> bool:
     size = os.path.getsize(stl)
     print(f"  ok   {module}  ({size} bytes)")
     return True
+
+
+def openscad_cmd() -> list[str]:
+    env = os.environ.get("OPENSCAD")
+    if env:
+        return env.split()
+    if shutil.which("openscad"):
+        return ["openscad"]
+    if shutil.which("flatpak-spawn"):
+        return ["flatpak-spawn", "--host", "openscad"]
+    return ["openscad"]
 
 
 def main(argv):

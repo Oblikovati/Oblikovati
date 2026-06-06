@@ -8,6 +8,7 @@ import (
 
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/subd"
+	"oblikovati/kernel/topo"
 	"oblikovati/math"
 )
 
@@ -48,4 +49,52 @@ func TestTessellationWindingIsOutwardAndTranslationInvariant(t *testing.T) {
 			t.Errorf("box at %v: tessellated volume = %g, want 8 (inconsistent winding?)", off, got)
 		}
 	}
+}
+
+func TestConcaveSingleLoopPlanarFaceVolume(t *testing.T) {
+	section := []math.Point3{
+		math.P3(-0.55, 2.0, 0), math.P3(-0.8, 2.5, 0), math.P3(-2.0, 2.5, 0),
+		math.P3(-2.0, 2.0, 0), math.P3(-1.025, 2.0, 0), math.P3(-0.4, 0.55, 0),
+		math.P3(0.4, 0.55, 0), math.P3(1.025, 2.0, 0), math.P3(2.0, 2.0, 0),
+		math.P3(2.0, 2.5, 0), math.P3(0.8, 2.5, 0), math.P3(0.55, 2.0, 0),
+	}
+	body := concavePrismBody(section, 3.5)
+	want := polygonAreaXY(section) * 3.5
+	got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+	if stdmath.Abs(got-want) > 1e-9 {
+		t.Errorf("concave prism volume = %.6f, want %.6f", got, want)
+	}
+}
+
+func concavePrismBody(points []math.Point3, height float64) *topo.Body {
+	verts := make([]math.Point3, 0, len(points)*2)
+	for _, p := range points {
+		verts = append(verts, math.P3(p.X, p.Y, 0))
+	}
+	for _, p := range points {
+		verts = append(verts, math.P3(p.X, p.Y, height))
+	}
+
+	bottom := make([]int, len(points))
+	top := make([]int, len(points))
+	for i := range points {
+		bottom[i] = len(points) - 1 - i
+		top[i] = len(points) + i
+	}
+	faces := [][]int{bottom, top}
+	for i := range points {
+		next := (i + 1) % len(points)
+		faces = append(faces, []int{i, next, next + len(points), i + len(points)})
+	}
+	return subd.ToBody(subd.Mesh{Verts: verts, Faces: faces}, "concave-prism")
+}
+
+func polygonAreaXY(points []math.Point3) float64 {
+	var area float64
+	for i := range points {
+		j := (i + 1) % len(points)
+		area += points[i].X * points[j].Y
+		area -= points[j].X * points[i].Y
+	}
+	return stdmath.Abs(area) / 2
 }

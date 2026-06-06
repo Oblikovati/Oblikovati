@@ -27,7 +27,8 @@ func tessellatePlanarFace(f *topo.Face, q Quality) *Mesh {
 	for _, p := range boundary3D {
 		m.addVertex(p, normal)
 	}
-	for _, tri := range earClip(boundary2D) {
+	tris := bestSingleLoopTriangulation(boundary2D)
+	for _, tri := range tris {
 		m.addTriangle(tri[0], tri[1], tri[2])
 	}
 	return m
@@ -177,6 +178,29 @@ func reverse(idx []int) {
 	for i, j := 0, len(idx)-1; i < j; i, j = i+1, j-1 {
 		idx[i], idx[j] = idx[j], idx[i]
 	}
+}
+
+func bestSingleLoopTriangulation(poly []math.Point2) [][3]int {
+	clip := earClip(poly)
+	cut := earcut(poly, nil)
+	want := stdmath.Abs(signedArea(poly))
+	if areaError(poly, cut, want) < areaError(poly, clip, want) {
+		return cut
+	}
+	return clip
+}
+
+func areaError(poly []math.Point2, tris [][3]int, want float64) float64 {
+	return stdmath.Abs(triangleArea2D(poly, tris) - want)
+}
+
+func triangleArea2D(poly []math.Point2, tris [][3]int) float64 {
+	var area float64
+	for _, tri := range tris {
+		a, b, c := poly[tri[0]], poly[tri[1]], poly[tri[2]]
+		area += stdmath.Abs(predicate.Orient2D(a, b, c)) / 2
+	}
+	return area
 }
 
 // planeProjector returns a 2D projection that drops the normal's dominant axis,
