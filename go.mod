@@ -3,8 +3,10 @@ module oblikovati
 go 1.22
 
 require (
-	oblikovati/api v0.0.0
+	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
+	golang.org/x/text v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
+	oblikovati/api v0.0.0
 )
 
 // oblikovati/api is the Apache-2.0 contract, now a sibling repo

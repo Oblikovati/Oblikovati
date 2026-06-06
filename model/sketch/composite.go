@@ -60,6 +60,28 @@ func (s *Sketch) AddPolyline(pts []math.Point2, closed bool) ([]Entity, error) {
 	return out, nil
 }
 
+// AddTextOutlines adds rendered text glyph contours (from package text) as closed polylines,
+// each translated by anchor — every contour is one glyph loop, and a letter's counter (the
+// hole in A/O/B) is a nested contour the profile detector turns into a hole. Degenerate
+// contours (<3 points) are skipped. Returns all created line entities. This is how real
+// true-type text becomes embossable/extrudable sketch geometry.
+func (s *Sketch) AddTextOutlines(anchor math.Point2, contours [][]math.Point2) []Entity {
+	var out []Entity
+	for _, c := range contours {
+		if len(c) < 3 {
+			continue
+		}
+		moved := make([]math.Point2, len(c))
+		for i, p := range c {
+			moved[i] = math.P2(anchor.X+p.X, anchor.Y+p.Y)
+		}
+		if lines, err := s.AddPolyline(moved, true); err == nil {
+			out = append(out, lines...)
+		}
+	}
+	return out
+}
+
 // AddRectangleByCorners builds an axis-aligned rectangle from two opposite corners,
 // returning its four lines.
 func (s *Sketch) AddRectangleByCorners(p0, opposite math.Point2) []Entity {
