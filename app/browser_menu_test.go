@@ -5,11 +5,11 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
 )
 
 // extrudedBoxPart builds a part with one sketch profile extruded into one solid, so the
@@ -80,7 +80,7 @@ func TestBrowserMenuByKind(t *testing.T) {
 	if labels := menuLabels(BrowserMenu(findNode(t, root, "sketch"))); !equalStrings(labels, []string{"Edit Sketch", "Visibility", "Delete"}) {
 		t.Errorf("sketch menu = %v", labels)
 	}
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "feature"))); !equalStrings(labels, []string{"Suppress", "Delete"}) {
+	if labels := menuLabels(BrowserMenu(findNode(t, root, "feature"))); !equalStrings(labels, []string{"Edit", "Suppress", "Delete"}) {
 		t.Errorf("feature menu = %v", labels)
 	}
 	if labels := menuLabels(BrowserMenu(findNode(t, root, "workplane"))); !equalStrings(labels, []string{"New Sketch", "Visibility"}) {

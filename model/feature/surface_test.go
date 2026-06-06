@@ -5,10 +5,10 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/health"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/health"
+	"oblikovati/model/sketch"
 )
 
 // squareWithHoleSketch returns a sketch with an outer square and a concentric inner
@@ -33,6 +33,28 @@ func squareWithHoleSketch(side, hole float64) *sketch.Sketch {
 	s.Lines().Add(i1, i2)
 	s.Lines().Add(i2, i3)
 	s.Lines().Add(i3, i0)
+	return s
+}
+
+// plateWithHolesSketch returns a w×h rectangle (corner at the origin) with one square hole
+// of the given side at each requested centre, so the detected profile carries one outer and
+// len(centres) inner loops — the multi-hole cap case.
+func plateWithHolesSketch(w, h, hole float64, centres [][2]float64) *sketch.Sketch {
+	s := sketch.NewSketches().Add(sketch.XYPlane())
+	addLoop := func(pts [][2]float64) {
+		ids := make([]*sketch.Point, len(pts))
+		for i, p := range pts {
+			ids[i] = s.Points().Add(math.P2(p[0], p[1]))
+		}
+		for i := range ids {
+			s.Lines().Add(ids[i], ids[(i+1)%len(ids)])
+		}
+	}
+	addLoop([][2]float64{{0, 0}, {w, 0}, {w, h}, {0, h}})
+	r := hole / 2
+	for _, c := range centres {
+		addLoop([][2]float64{{c[0] - r, c[1] - r}, {c[0] + r, c[1] - r}, {c[0] + r, c[1] + r}, {c[0] - r, c[1] + r}})
+	}
 	return s
 }
 

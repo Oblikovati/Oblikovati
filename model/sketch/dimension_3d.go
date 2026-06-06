@@ -6,8 +6,8 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/param"
 )
 
 // DimensionConstraint3D sizes a 3D sketch, backed by a model parameter like its 2D
@@ -32,7 +32,7 @@ func (d *DimensionConstraint3D) Parameter() *param.Parameter { return d.param }
 func (d *DimensionConstraint3D) Measured() float64           { return d.measure() }
 
 // KindName returns the wire/types name of this 3D dimension's kind
-// ([github.com/Oblikovati/api/types.Dimension3DConstraintKind]). The set grows with the
+// ([oblikovati/api/types.Dimension3DConstraintKind]). The set grows with the
 // 3D dimension factories (M22-F06); unmapped kinds report "unknown".
 func (d *DimensionConstraint3D) KindName() string {
 	switch d.kind {

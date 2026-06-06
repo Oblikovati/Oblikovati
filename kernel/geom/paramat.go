@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // ParamAt inversions for the analytic surfaces are closed-form: each undoes its

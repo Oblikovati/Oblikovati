@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // This file defines the git-friendly YAML projection of a sketch (ADR-0020) and the

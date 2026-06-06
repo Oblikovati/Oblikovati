@@ -5,11 +5,11 @@ package router
 import (
 	"testing"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
 )
 
 func TestModelSelectionReportsReferences(t *testing.T) {

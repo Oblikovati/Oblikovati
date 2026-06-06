@@ -5,7 +5,7 @@ package router
 import (
 	"testing"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 )
 
 func TestWorkPlanesListIncludesOriginFrame(t *testing.T) {

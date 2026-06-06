@@ -12,10 +12,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/math"
+	"oblikovati/scene"
 )
 
 const inWinW, inWinH = 800, 600

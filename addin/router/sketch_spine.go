@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/sketch"
 )
 
 // listSketches enumerates the active part's sketches with their identity and solve state.

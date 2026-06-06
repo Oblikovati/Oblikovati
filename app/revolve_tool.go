@@ -6,12 +6,12 @@ import (
 	"errors"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
+	"oblikovati/renderer"
 )
 
 // preselectCenterline chooses the centerline a revolve should auto-select once a profile is

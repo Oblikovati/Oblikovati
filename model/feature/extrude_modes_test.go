@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // bodyZRange returns the min and max Z of a body's vertices — the extrude reach.

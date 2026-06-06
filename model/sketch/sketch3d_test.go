@@ -5,8 +5,8 @@ package sketch
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/param"
 )
 
 // TestSketch3DAddPointEntities checks standalone points are both solver variables and

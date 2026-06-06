@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // EllipseFull is a full 3D ellipse (contract: EllipseFull) in the plane through
 // Center with unit Normal. MajorAxis (unit, in-plane) is the direction of the

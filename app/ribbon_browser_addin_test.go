@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/model/sketch"
 )
 
 func TestBuildRibbonFromCommands(t *testing.T) {
@@ -154,6 +154,35 @@ func TestAddInManagerLifecycle(t *testing.T) {
 	}
 	if len(s.AddIns().Registered()) != 1 {
 		t.Errorf("Registered = %v, want 1", s.AddIns().Registered())
+	}
+}
+
+// TestAddInUnregisterEnablesReload covers the hot-reload path: an active add-in
+// cannot be unregistered, but once deactivated it can be removed and a replacement
+// re-registered under the same id.
+func TestAddInUnregisterEnablesReload(t *testing.T) {
+	s := NewSession()
+	a := sampleAddIn{id: "acme.extrude"}
+	_ = s.AddIns().Register(a)
+	_ = s.AddIns().Activate(s, a.id)
+
+	if err := s.AddIns().Unregister(a.id); err == nil {
+		t.Error("unregistering an active add-in should error (handlers would leak)")
+	}
+	_ = s.AddIns().Deactivate(s, a.id)
+	if err := s.AddIns().Unregister(a.id); err != nil {
+		t.Fatalf("Unregister after Deactivate: %v", err)
+	}
+	if len(s.AddIns().Registered()) != 0 {
+		t.Errorf("Registered = %v, want empty after Unregister", s.AddIns().Registered())
+	}
+	if err := s.AddIns().Unregister(a.id); err == nil {
+		t.Error("unregistering an unknown add-in should error")
+	}
+	// The id is free again, so a replacement library registers under it — the reload
+	// outcome (re-registration is what hot-reload needs the manager to permit).
+	if err := s.AddIns().Register(sampleAddIn{id: a.id}); err != nil {
+		t.Fatalf("re-register after Unregister: %v", err)
 	}
 }
 

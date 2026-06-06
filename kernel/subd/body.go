@@ -3,9 +3,9 @@
 package subd
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // ToBody converts a (refined) control cage into a B-rep body: one shared vertex per

@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // Surface-creation features (M10-F01) turn curves into surface bodies (open

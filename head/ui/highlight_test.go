@@ -5,11 +5,11 @@ package ui
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/app"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/renderer"
 )
 
 // tinyBody builds the smallest valid body so its ObjectID can be matched in a draw list.

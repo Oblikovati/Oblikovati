@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // curveSurfaceSamples is the initial bracketing resolution: the curve is sampled this many

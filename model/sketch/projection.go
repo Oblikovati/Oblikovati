@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Projection links model geometry into a sketch as reference geometry that updates
 // when the source changes. The model side is reached through a seam — [PointSource]

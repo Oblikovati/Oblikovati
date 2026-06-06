@@ -5,8 +5,8 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
 )
 
 // The sketch environment — Inventor's "Create 2D Sketch" → edit → "Finish Sketch"

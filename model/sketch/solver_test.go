@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/param"
 )
 
 func TestFullyConstrainedSketchSolvesToUniqueSolution(t *testing.T) {

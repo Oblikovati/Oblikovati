@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
 )
 
 // chamferFaceHandleOf returns a handle to the body's chamfer (diagonal-normal) face.

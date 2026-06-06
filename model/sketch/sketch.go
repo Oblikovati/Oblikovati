@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/health"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/health"
+	"oblikovati/model/param"
 )
 
 // ID is the session-stable handle of a sketch or sketch entity, used by
@@ -93,10 +93,11 @@ func (b *base) SetDeferUpdates(d bool) { b.deferUpdates = d }
 // F03/F04) its constraints, and resolves to profiles/paths via the solver (F05/F06).
 type Sketch struct {
 	base
-	plane  Plane
-	ents   []Entity
-	pts    []*Point // every constrainable point (endpoints, centers, standalone) — the solver's variables
-	refPts []*Point // fixed reference points (projected anchors): constrainable but not solved
+	plane     Plane
+	planeHost func() Plane // when set, RefreshPlane re-reads the host (e.g. a work plane)
+	ents      []Entity
+	pts       []*Point // every constrainable point (endpoints, centers, standalone) — the solver's variables
+	refPts    []*Point // fixed reference points (projected anchors): constrainable but not solved
 
 	lines    *Lines
 	arcs     *Arcs
@@ -119,6 +120,26 @@ type Sketch struct {
 
 // Plane returns the sketch's host plane.
 func (s *Sketch) Plane() Plane { return s.plane }
+
+// SetPlaneHost makes the sketch track a host plane (a work plane): RefreshPlane will
+// re-read it on each recompute so the sketch — and anything built on it — follows the
+// work plane when it moves. A nil host detaches (the plane stays fixed). The current
+// plane is updated immediately.
+func (s *Sketch) SetPlaneHost(host func() Plane) {
+	s.planeHost = host
+	if host != nil {
+		s.plane = host()
+	}
+}
+
+// RefreshPlane re-reads the host plane if the sketch tracks one (no-op otherwise).
+// Called by the part recompute after work geometry is recomputed, so a moved work
+// plane carries its sketch (and dependent features) with it.
+func (s *Sketch) RefreshPlane() {
+	if s.planeHost != nil {
+		s.plane = s.planeHost()
+	}
+}
 
 // Entities returns the sketch's geometry in insertion order.
 func (s *Sketch) Entities() []Entity {

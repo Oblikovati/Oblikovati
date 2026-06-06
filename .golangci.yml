@@ -33,7 +33,7 @@ linters-settings:
   gocyclo:
     min-complexity: 12
   goimports:
-    local-prefixes: github.com/Oblikovati/oblikovati
+    local-prefixes: oblikovati
   revive:
     rules:
       - name: exported   # document every exported symbol

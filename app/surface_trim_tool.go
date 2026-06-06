@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/model/feature"
 )
 
 // SurfaceTrimTool is the interactive Trim command (Surface panel): pick a work plane to cut the

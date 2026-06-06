@@ -5,9 +5,9 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Modify / direct-edit features operate on whole bodies or picked faces. Combine is
@@ -82,13 +82,13 @@ func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
 type SplitFeature struct{ faceEditFeature }
 
 // ThickenFeature turns the running surface (sheet) body into a solid of a wall thickness.
-type ThickenFeature struct{ thickness float64 }
+type ThickenFeature struct{ thickness func() float64 }
 
 // Kind implements [Feature].
 func (f *ThickenFeature) Kind() string { return "thicken" }
 
 // Thickness returns the wall thickness (for the UI / serialization).
-func (f *ThickenFeature) Thickness() float64 { return f.thickness }
+func (f *ThickenFeature) Thickness() float64 { return f.thickness() }
 
 // Recompute thickens the running surface body into a solid (see kernel/ops/thicken.go); a
 // non-surface or non-thickenable body makes the feature go Sick.
@@ -97,7 +97,7 @@ func (f *ThickenFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	result, err := ops.Thicken(body, f.thickness)
+	result, err := ops.Thicken(body, f.thickness())
 	if err != nil {
 		return Output{}, fmt.Errorf("thicken: %w", err)
 	}
@@ -153,16 +153,16 @@ func (f *MoveFaceFeature) Recompute(in Input) (Output, error) {
 // FaceOffsetFeature moves the picked faces along their own normals by a distance.
 type FaceOffsetFeature struct {
 	faceEditFeature
-	distance float64
+	distance func() float64
 }
 
 // Distance returns the face-offset distance (for the UI / serialization).
-func (f *FaceOffsetFeature) Distance() float64 { return f.distance }
+func (f *FaceOffsetFeature) Distance() float64 { return f.distance() }
 
 // Recompute offsets the picked faces on the running body (see kernel/ops/move_face.go).
 func (f *FaceOffsetFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
-		return ops.OffsetFaces(b, keys, f.distance)
+		return ops.OffsetFaces(b, keys, f.distance())
 	})
 }
 
@@ -202,6 +202,11 @@ func (c *ModifyFeatures) AddMoveFace(faceKeys [][]byte, translation math.Vector3
 }
 
 func (c *ModifyFeatures) AddFaceOffset(faceKeys [][]byte, distance float64) *PartFeature {
+	return c.AddFaceOffsetFn(faceKeys, constFloat(distance))
+}
+
+// AddFaceOffsetFn is AddFaceOffset with a live (parameter-driven) distance.
+func (c *ModifyFeatures) AddFaceOffsetFn(faceKeys [][]byte, distance func() float64) *PartFeature {
 	return c.engine.Add(&FaceOffsetFeature{faceEditFeature: faceEditFeature{kind: "face-offset", faceKeys: faceKeys}, distance: distance})
 }
 
@@ -215,5 +220,10 @@ func (c *ModifyFeatures) AddReplaceFace(faceKeys [][]byte, targetKey []byte) *Pa
 
 // AddThicken thickens the running surface body into a solid of the given wall thickness.
 func (c *ModifyFeatures) AddThicken(thickness float64) *PartFeature {
+	return c.AddThickenFn(constFloat(thickness))
+}
+
+// AddThickenFn is AddThicken with a live (parameter-driven) thickness.
+func (c *ModifyFeatures) AddThickenFn(thickness func() float64) *PartFeature {
 	return c.engine.Add(&ThickenFeature{thickness: thickness})
 }

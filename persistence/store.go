@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/model/doc"
 )
 
 // PackageStore is the [doc.Store] backed by .obk packages on disk. Injected into a

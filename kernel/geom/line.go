@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Line is an infinite 3D line through Origin along the unit direction Dir

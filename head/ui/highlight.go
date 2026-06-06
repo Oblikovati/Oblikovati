@@ -3,9 +3,9 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/app"
+	"oblikovati/kernel/topo"
+	"oblikovati/renderer"
 )
 
 // Viewport highlight of the active selection. A draw item is tagged with its body's

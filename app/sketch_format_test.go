@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // squareWithMidline draws a 4×4 square plus a midline (which, as normal geometry, splits it into

@@ -13,18 +13,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/head/ui"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/persistence"
-	"github.com/Oblikovati/oblikovati/theme"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/head/ui"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
+	"oblikovati/persistence"
+	"oblikovati/theme"
 )
 
 func main() {
@@ -54,7 +54,7 @@ func run(session *app.Session, maxFrames int) error {
 	addins := startAddIns(session)
 	defer addins.stop(session)
 
-	for frame := 0; !win.ShouldClose(); frame++ {
+	for frame := 0; ; frame++ {
 		if maxFrames > 0 && frame >= maxFrames {
 			break
 		}
@@ -65,7 +65,15 @@ func run(session *app.Session, maxFrames int) error {
 			}
 		}
 		addins.drain()
+		// Graceful close: a window-close request with unsaved documents shows a
+		// "save changes?" prompt instead of exiting; HandleClose reports the verdict.
+		exit := ui.HandleClose(win, session)
 		win.EndFrame(ui.WindowClearColor()) // themed swapchain background (ADR-0021)
+		// A rebuilt add-in on disk means exit so the supervisor relaunches with it
+		// (a Go c-shared cannot be hot-swapped in-process); only under run-watch.
+		if exit || addins.addInChanged() {
+			break
+		}
 	}
 	return nil
 }

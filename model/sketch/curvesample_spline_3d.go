@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // 3D spline sampling mirrors the 2D approach (curvesample_spline.go): a spline stores only
 // its defining points, and a representative smooth polyline through them is produced with

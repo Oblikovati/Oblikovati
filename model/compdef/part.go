@@ -5,14 +5,14 @@ package compdef
 import (
 	"strconv"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/doc"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/identity"
-	"github.com/Oblikovati/oblikovati/model/material"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/doc"
+	"oblikovati/model/feature"
+	"oblikovati/model/identity"
+	"oblikovati/model/material"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // endOfPartAtEnd is the EOP marker value meaning "evaluate the whole feature program".
@@ -90,20 +90,46 @@ func (d *PartComponentDefinition) Features() *feature.PartFeatures { return d.fe
 // SurfaceBodies, advancing the geometry version. This is the part-level
 // orchestration that turns the feature history into the evaluated result.
 func (d *PartComponentDefinition) Recompute() {
+	// Re-solve sketches first so dimension expressions that reference parameters
+	// (e.g. "od/2") propagate into the geometry: a parameter edit updates the
+	// dimension's target value, and only a solve moves the profile to match.
+	// Without this, features downstream rebuild on stale, pre-edit geometry.
+	d.solveSketches()
 	// Two passes around the feature program: the first so features can reference work
 	// axes/planes (e.g. a revolve axis); the second so surface-tangent work planes can
 	// resolve their picked faces against the freshly built body. The first pass sees the
 	// previous result, which is correct for body-independent work features and harmless
 	// for body-dependent ones (refreshed by the second pass).
 	d.work.Recompute(d.features.Result())
+	// Carry sketches with their host work planes before features consume them, so a
+	// moved work plane (e.g. its offset parameter changed) reshapes dependent features.
+	d.refreshSketchPlanes()
 	d.features.Recompute()
 	d.work.Recompute(d.features.Result())
+	d.refreshSketchPlanes()
 	d.bodies = topo.NewSurfaceBodies()
 	for _, b := range d.features.Result() {
 		d.bodies.Add(b)
 	}
 	d.refreshSketchReferences()
 	d.MarkChanged()
+}
+
+// refreshSketchPlanes re-reads each sketch's host work plane (if any), so sketches on
+// datum planes follow them when they move.
+func (d *PartComponentDefinition) refreshSketchPlanes() {
+	for i := 0; i < d.sketches.Count(); i++ {
+		d.sketches.Item(i).RefreshPlane()
+	}
+}
+
+// solveSketches re-solves every 2D sketch so parameter-driven dimensions move the
+// geometry on recompute. Solving a fully-constrained sketch is idempotent; an
+// under-constrained one keeps its free DOFs.
+func (d *PartComponentDefinition) solveSketches() {
+	for i := 0; i < d.sketches.Count(); i++ {
+		d.sketches.Item(i).Solve()
+	}
 }
 
 // refreshSketchReferences re-projects each sketch's reference geometry (2D projections /

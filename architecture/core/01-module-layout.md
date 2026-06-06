@@ -61,7 +61,7 @@ the GPU exists. This is what keeps the kernel cgo-free and headless-testable.
 
 ### The `/api` contract module (separate, Apache-2.0)
 
-The public API is its own module, **`github.com/Oblikovati/api`** at the repo root
+The public API is its own module, **`oblikovati/api`** at the repo root
 (`/api`, sibling to `/source`), licensed Apache-2.0 so add-ins — including
 closed-source ones — can build against it ([ADR-0018](../decisions/ADR-0018-apache-api-contract-module.md)).
 It has four packages: `types` (enums/value types — the canonical definitions

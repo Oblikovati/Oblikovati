@@ -5,9 +5,9 @@ package app
 import (
 	"fmt"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/renderer"
 )
 
 // Public lighting/shadow enums are defined once in the Apache-2.0 contract and aliased here so

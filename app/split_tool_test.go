@@ -5,9 +5,9 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
 )
 
 // partWithMidPlane builds a side×side×2 block and a work plane at z=1 cutting through it.

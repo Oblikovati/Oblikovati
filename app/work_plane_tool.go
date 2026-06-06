@@ -2,7 +2,7 @@
 
 package app
 
-import "github.com/Oblikovati/oblikovati/model/feature"
+import "oblikovati/model/feature"
 
 // WorkPlaneTool is the guided-pick interaction behind every Work Features ribbon button:
 // activated with nothing pre-selected, it restricts the selection filter to the kinds the

@@ -8,7 +8,7 @@
 package subd
 
 import (
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Mesh is a sub-D control cage: vertices, polygon faces (ordered vertex indices,

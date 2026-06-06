@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"oblikovati/kernel/ops"
 )
 
 // TestFaceOffsetToolEndToEnd drives the Offset Face UI: start the tool, click the block's

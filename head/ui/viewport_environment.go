@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Oblikovati/oblikovati/head/internal/envimage"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/head/viewport"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/head/internal/envimage"
+	"oblikovati/head/internal/native"
+	"oblikovati/head/viewport"
+	"oblikovati/renderer"
 )
 
 // envCache memoizes the uploaded IBL environment so the (expensive) decode + mip + GPU upload

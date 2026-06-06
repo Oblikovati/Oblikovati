@@ -5,8 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // This file serializes a part's USER work features (planes/axes/points) into the

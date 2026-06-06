@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
 )
 
 // TestFilletToolEndToEnd drives the Fillet UI: start the tool, click a vertical edge of a

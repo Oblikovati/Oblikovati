@@ -2,7 +2,7 @@
 
 package viewport
 
-import "github.com/Oblikovati/oblikovati/renderer"
+import "oblikovati/renderer"
 
 // SceneUBOFloats is the size, in float32s, of the scene-lighting uniform buffer the mesh
 // pipeline binds — its std140 layout must match the Scene block in mesh.frag exactly:

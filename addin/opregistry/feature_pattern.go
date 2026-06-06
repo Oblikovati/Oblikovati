@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
 )
 
 // The pattern features replicate one or more existing features (referenced by name, as shown
@@ -120,11 +120,11 @@ func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err != nil {
 		return nil, err
 	}
-	angle, err := angleValue(part, in.Angle, "patternCircular: angle")
+	angle, err := angleClosure(part, in.Angle, "patternCircular: angle")
 	if err != nil {
 		return nil, err
 	}
-	feature.NewPatternFeatures(part.Features()).AddCircular(ids, constIntFn(defaultInt(in.Count, 4)), constFn(angle), originOr(in.AxisPoint), zAxisOr(in.AxisDir))
+	feature.NewPatternFeatures(part.Features()).AddCircular(ids, constIntFn(defaultInt(in.Count, 4)), angle, originOr(in.AxisPoint), zAxisOr(in.AxisDir))
 	return lastFeatureResult(part)
 }
 

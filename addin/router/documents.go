@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/doc"
 )
 
 // docInfo marshals a model document into the wire DTO, flagging whether it is the
@@ -72,6 +72,42 @@ func activateDocument(s *app.Session, args json.RawMessage) (json.RawMessage, er
 		}
 	}
 	return nil, fmt.Errorf("documents.activate: no open document with id %d", in.ID)
+}
+
+// closeDocument closes the identified document, discarding unsaved changes when
+// force is set (otherwise it is saved first, which fails without a store).
+func closeDocument(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var in wire.CloseDocumentArgs
+	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	for _, d := range s.Workspace().Documents() {
+		if uint64(d.ID()) == in.ID {
+			if err := s.Workspace().Close(d, in.Force); err != nil {
+				return nil, err
+			}
+			return json.Marshal(wire.CloseDocumentsResult{Closed: 1})
+		}
+	}
+	return nil, fmt.Errorf("documents.close: no open document with id %d", in.ID)
+}
+
+// closeAllDocuments closes every open document — the way to start a clean session.
+// Force discards unsaved changes. It closes a snapshot of the list so mutating the
+// workspace mid-iteration is safe.
+func closeAllDocuments(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var in wire.CloseAllDocumentsArgs
+	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	closed := 0
+	for _, d := range s.Workspace().Documents() {
+		if err := s.Workspace().Close(d, in.Force); err != nil {
+			return nil, fmt.Errorf("documents.closeAll: closing %d: %w", d.ID(), err)
+		}
+		closed++
+	}
+	return json.Marshal(wire.CloseDocumentsResult{Closed: closed})
 }
 
 // newDocumentOfType adds a document of kind t. A part gets a realized component

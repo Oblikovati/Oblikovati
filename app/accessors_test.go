@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/event"
+	"oblikovati/event"
 )
 
 func TestCommandMetadataAccessors(t *testing.T) {

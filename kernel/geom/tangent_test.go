@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // The analytic TangentAt of every curve must agree with a central finite

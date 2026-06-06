@@ -3,8 +3,8 @@
 package feature
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/subd"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/subd"
+	"oblikovati/math"
 )
 
 // Free-form (sub-D) features (M10-F03) wrap a Catmull–Clark control cage (kernel/subd):

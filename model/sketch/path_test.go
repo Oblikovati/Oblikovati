@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 func TestConnectedChainYieldsSweepPath(t *testing.T) {

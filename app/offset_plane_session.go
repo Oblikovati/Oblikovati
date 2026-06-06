@@ -2,7 +2,7 @@
 
 package app
 
-import "github.com/Oblikovati/oblikovati/model/param"
+import "oblikovati/model/param"
 
 // Session bridge for the Offset Plane tool's UI: the head reads/sets the offset in the
 // document's display unit (e.g. mm) without touching database units or the tool's

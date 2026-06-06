@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Oblikovati/oblikovati/persistence/yamlcodec"
+	"oblikovati/persistence/yamlcodec"
 )
 
 // FileSystem is the small filesystem seam the project [Store] depends on, so library IO is

@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
+	gmath "oblikovati/math"
 )
 
 func TestSplitLineMakesTwoAtPoint(t *testing.T) {

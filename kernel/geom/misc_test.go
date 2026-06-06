@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 func TestLineThrough(t *testing.T) {

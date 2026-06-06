@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/health"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/health"
 )
 
 // tetraSTL is a tiny ASCII STL of a tetrahedron (4 facets, 4 shared corners).

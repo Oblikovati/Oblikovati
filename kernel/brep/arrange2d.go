@@ -12,8 +12,8 @@ import (
 	stdmath "math"
 	"sort"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
 
 // arrTol is the planar-arrangement coincidence/intersection tolerance (database units).

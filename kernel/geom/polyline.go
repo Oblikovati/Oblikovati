@@ -6,7 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Polyline is a connected chain of straight 3D segments through Vertices

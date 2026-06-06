@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // affine2 is a 2D affine transform (linear part m + translation t) used by the sketch
@@ -144,6 +144,13 @@ func (s *Sketch) transformInPlace(ents []Entity, a affine2) {
 // cloneEntities duplicates the selection under transform a, sharing new points across
 // entities that shared originals so the copy stays a connected whole.
 func (s *Sketch) cloneEntities(ents []Entity, a affine2) []Entity {
+	out, _ := s.cloneEntitiesMapped(ents, a)
+	return out
+}
+
+// cloneEntitiesMapped is cloneEntities that also returns the seed→clone point map, so
+// a caller (a parametric pattern) can link each clone point back to its seed.
+func (s *Sketch) cloneEntitiesMapped(ents []Entity, a affine2) ([]Entity, map[*Point]*Point) {
 	pmap := map[*Point]*Point{}
 	mapped := func(p *Point) *Point {
 		if np, ok := pmap[p]; ok {
@@ -159,7 +166,7 @@ func (s *Sketch) cloneEntities(ents []Entity, a affine2) []Entity {
 			out = append(out, c)
 		}
 	}
-	return out
+	return out, pmap
 }
 
 // cloneEntity duplicates one entity, resolving its points through mapped and transforming

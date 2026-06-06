@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // centeredSquareOn returns a sketch on plane with a centered square of the given half
@@ -117,8 +117,8 @@ func TestSweepAndLoftRoundTrip(t *testing.T) {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	sweep := fresh.Item(0).Definition().(*SweepFeature).Definition()
-	if sweep.Path.Count() != 2 || sweep.Twist() != 0.3 || sweep.Operation != ops.Join {
-		t.Errorf("sweep round-trip lost data: pts=%d twist=%g op=%v", sweep.Path.Count(), sweep.Twist(), sweep.Operation)
+	if sweep.Path().Count() != 2 || sweep.Twist() != 0.3 || sweep.Operation != ops.Join {
+		t.Errorf("sweep round-trip lost data: pts=%d twist=%g op=%v", sweep.Path().Count(), sweep.Twist(), sweep.Operation)
 	}
 	loft := fresh.Item(1).Definition().(*LoftFeature).Definition()
 	if len(loft.Sections) != 2 || loft.Sections[1].Sketch != top {

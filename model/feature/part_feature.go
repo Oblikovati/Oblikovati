@@ -3,8 +3,8 @@
 package feature
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/health"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/health"
 )
 
 // PartFeature wraps a [Feature] with the engine's per-feature state: identity,

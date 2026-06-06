@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/compdef"
+	"oblikovati/model/compdef"
 )
 
 // ProjectGeometryTool is the interactive 2D "Project Geometry" command: while editing a

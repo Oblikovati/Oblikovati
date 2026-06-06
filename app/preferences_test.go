@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/model/param"
 )
 
 func TestDefaultGridSettings(t *testing.T) {

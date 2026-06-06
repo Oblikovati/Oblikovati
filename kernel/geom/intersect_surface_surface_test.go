@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // allPoints flattens traced polylines into a single point slice, failing if empty.

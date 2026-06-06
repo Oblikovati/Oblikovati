@@ -7,8 +7,8 @@ package ui
 import (
 	"bytes"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
 // One generic property dialog serves every tool that exposes parameters

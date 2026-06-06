@@ -24,7 +24,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/Oblikovati/oblikovati/addin/dispatch"
+	"oblikovati/addin/dispatch"
 )
 
 // Handler runs a host API method given its JSON request, returning a JSON result.

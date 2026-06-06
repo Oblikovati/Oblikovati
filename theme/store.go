@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/persistence/yamlcodec"
+	"oblikovati/persistence/yamlcodec"
 )
 
 // FileSystem is the thin filesystem seam the [Store] depends on, so theme IO is testable

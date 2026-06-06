@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // GroundConstraint freezes every point of an entity at its current position — the
@@ -93,9 +93,10 @@ type PatternConstraint struct {
 	constraintBase
 	Seed, Member *Point
 	dx, dy       float64
+	live         func() (float64, float64) // parametric offset (spacing-driven); nil ⇒ frozen dx,dy
 }
 
-// AddPatternLink links member to seed at their current offset.
+// AddPatternLink links member to seed at their current (frozen) offset.
 func (g *GeometricConstraints) AddPatternLink(seed, member *Point) *PatternConstraint {
 	c := &PatternConstraint{
 		constraintBase: newConstraint(), Seed: seed, Member: member,
@@ -105,11 +106,23 @@ func (g *GeometricConstraints) AddPatternLink(seed, member *Point) *PatternConst
 	return c
 }
 
-// Residuals reports the member's drift from seed + the frozen offset.
+// AddPatternLinkLive links member to seed at a live offset, so a parameter driving the
+// offset (a pattern's spacing) repositions the member on each solve.
+func (g *GeometricConstraints) AddPatternLinkLive(seed, member *Point, offset func() (float64, float64)) *PatternConstraint {
+	c := &PatternConstraint{constraintBase: newConstraint(), Seed: seed, Member: member, live: offset}
+	g.add(c)
+	return c
+}
+
+// Residuals reports the member's drift from seed + the (frozen or live) offset.
 func (c *PatternConstraint) Residuals() []float64 {
+	dx, dy := c.dx, c.dy
+	if c.live != nil {
+		dx, dy = c.live()
+	}
 	return []float64{
-		float64(c.Member.X-c.Seed.X) - c.dx,
-		float64(c.Member.Y-c.Seed.Y) - c.dy,
+		float64(c.Member.X-c.Seed.X) - dx,
+		float64(c.Member.Y-c.Seed.Y) - dy,
 	}
 }
 

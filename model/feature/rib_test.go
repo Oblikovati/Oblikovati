@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // A rib over a straight open path is a wall of length×thickness×depth.

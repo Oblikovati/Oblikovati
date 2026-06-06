@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // seg is a terse segment constructor for tests.

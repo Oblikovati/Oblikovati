@@ -7,9 +7,9 @@ package ui
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/model/material"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/model/material"
 )
 
 // showMaterials toggles the Materials window (Tools ▸ Materials). UI state, so it lives in

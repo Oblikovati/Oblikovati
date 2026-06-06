@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // MoveData is the serialized form of a MoveFeature: the target body index and the

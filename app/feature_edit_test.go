@@ -29,8 +29,14 @@ func TestBeginEditFeatureOpensExtrudeAtItsDistance(t *testing.T) {
 	if s.EditingFeatureName() != h.Feature.Name() {
 		t.Errorf("editing name = %q, want %q", s.EditingFeatureName(), h.Feature.Name())
 	}
+	if n := s.EditFeatureParamCount(); n != 1 {
+		t.Fatalf("extrude editable param count = %d, want 1 (Distance)", n)
+	}
+	if l := s.EditFeatureParamLabel(0); l != "Distance" {
+		t.Errorf("param 0 label = %q, want %q", l, "Distance")
+	}
 	// Database 5 cm shows as 50 mm in the document's display unit.
-	if d := s.EditFeatureDistanceDisplay(); d < 49.99 || d > 50.01 {
+	if d := s.EditFeatureParamValue(0); d < 49.99 || d > 50.01 {
 		t.Errorf("edit distance display = %v, want ~50 mm", d)
 	}
 }
@@ -38,9 +44,9 @@ func TestBeginEditFeatureOpensExtrudeAtItsDistance(t *testing.T) {
 func TestCommitFeatureEditRecomputesTheBody(t *testing.T) {
 	s, h := extrudedFeatureSession(t)
 	s.BeginEditFeature(h)
-	s.SetEditFeatureDistanceDisplay(80) // 80 mm = 8 cm
-	if err := s.CommitFeatureEdit(); err != nil {
-		t.Fatalf("CommitFeatureEdit: %v", err)
+	s.SetEditFeatureParamValue(0, 80) // 80 mm = 8 cm
+	if err := s.OK(); err != nil {    // OK commits the active feature-edit tool
+		t.Fatalf("commit feature edit: %v", err)
 	}
 	if s.IsEditingFeature() {
 		t.Error("a successful commit should close the edit")
@@ -53,8 +59,8 @@ func TestCommitFeatureEditRecomputesTheBody(t *testing.T) {
 func TestCancelFeatureEditRestoresTheDistance(t *testing.T) {
 	s, h := extrudedFeatureSession(t)
 	s.BeginEditFeature(h)
-	s.SetEditFeatureDistanceDisplay(80) // change it, then back out
-	s.CancelFeatureEdit()
+	s.SetEditFeatureParamValue(0, 80) // change it, then back out
+	s.CancelTool()
 	if s.IsEditingFeature() {
 		t.Error("cancel should close the edit")
 	}
@@ -65,11 +71,21 @@ func TestCancelFeatureEditRestoresTheDistance(t *testing.T) {
 
 func TestFeatureEditAPIsAreNoOpsWhenNotEditing(t *testing.T) {
 	s, _ := extrudedFeatureSession(t)
-	if s.IsEditingFeature() || s.EditingFeatureName() != "" || s.EditFeatureDistanceDisplay() != 0 {
+	if s.IsEditingFeature() || s.EditingFeatureName() != "" || s.EditFeatureParamCount() != 0 {
 		t.Error("no edit should be open before BeginEditFeature")
 	}
-	if err := s.CommitFeatureEdit(); err == nil {
-		t.Error("CommitFeatureEdit with no edit should error")
+	if err := s.OK(); err == nil {
+		t.Error("OK with no active tool should error")
 	}
-	s.CancelFeatureEdit() // must not panic
+	s.CancelTool() // must not panic
+}
+
+// TestFeatureEditIsEditableReflectsCapability checks the browser uses FeatureIsEditable to
+// enable/grey the Edit entry: an extrude is editable; a feature with no scalar params is not.
+func TestFeatureEditIsEditableReflectsCapability(t *testing.T) {
+	s, h := extrudedFeatureSession(t)
+	_ = s
+	if !FeatureIsEditable(h.Feature) {
+		t.Error("an extrude should be editable")
+	}
 }

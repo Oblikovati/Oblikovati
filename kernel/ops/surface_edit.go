@@ -8,10 +8,10 @@ import (
 
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/build"
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/build"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Surface-editing geometry (M10-F02). Phase A operates on planar surface bodies: a

@@ -4,7 +4,7 @@
 // shell styles itself from, the shipped Light and Dark built-ins, the in-memory library
 // of built-ins plus user customs with an active selection, and load/save of customs to
 // the user config directory. It is the GPL implementation of the Apache-2.0
-// [github.com/Oblikovati/api/contract.Theme] contract (ADR-0021).
+// [oblikovati/api/contract.Theme] contract (ADR-0021).
 //
 // Themes cover the application shell only — window, menus, viewport 2D overlays, and 3D
 // gizmos. 3D body appearance belongs to the (future) material/appearance subsystem.
@@ -14,7 +14,7 @@
 // renderer's overlay colors.
 package theme
 
-import "github.com/Oblikovati/api/types"
+import "oblikovati/api/types"
 
 // Token, Rgba, and Kind alias the canonical Apache-2.0 definitions so callers program
 // against the theme package without importing api/types directly (the rest of this

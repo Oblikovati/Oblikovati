@@ -7,8 +7,8 @@ package ui
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
 // The Sweep flow in the head: while the Sweep tool runs, a modeless options window shows

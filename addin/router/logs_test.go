@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/opregistry"
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/addin/opregistry"
+	"oblikovati/app"
 )
 
 // TestHandleRecoversPanicIntoError: a panicking handler does not crash the host — Handle

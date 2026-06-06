@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Segment2dIntersection is the one intersection primitive the sketch region detector
 // needs: because every sketch curve (line, arc, spline, circle, ellipse) is faceted

@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // perpendicularToSurface asserts the residual p−foot is perpendicular to both surface

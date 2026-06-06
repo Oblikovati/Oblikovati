@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // GeometryProperties is the density-independent mass-properties of a closed body: the

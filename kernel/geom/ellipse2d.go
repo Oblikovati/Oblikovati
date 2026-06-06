@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // EllipseFull2d is a full 2D ellipse (contract: EllipseFull2d). MajorAxis (unit)
 // is the major-radius direction; the minor axis is its +90° rotation. Angle 2πt

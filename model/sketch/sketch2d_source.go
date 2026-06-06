@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Including a 2D sketch's geometry into a 3D sketch (Inventor "Include Geometry" with a

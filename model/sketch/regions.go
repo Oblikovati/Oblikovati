@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // faces.go's job: turn the planar graph (arrangement.go) into the minimal closed cells

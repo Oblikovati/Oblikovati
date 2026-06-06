@@ -5,9 +5,9 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // MoveFeature rigidly relocates a running body by a transform (translate / rotate /

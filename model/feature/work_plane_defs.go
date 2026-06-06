@@ -5,8 +5,8 @@ package feature
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // These are the work-plane definitions that build on other work features (planes,

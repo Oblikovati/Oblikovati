@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/head/internal/native"
 )
 
 func main() {

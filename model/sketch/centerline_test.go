@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
+	gmath "oblikovati/math"
 )
 
 // squareSk draws a side×side square (a closed region) on the sketch.

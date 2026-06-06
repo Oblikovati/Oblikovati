@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // This file holds the line/point-based 3D geometric constraints (M22-F05) that extend the
 // point-only set in constraints_3d.go: parallel, perpendicular, midpoint, ground, and the

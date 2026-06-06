@@ -5,7 +5,7 @@ package doc
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/event"
+	"oblikovati/event"
 )
 
 // The core event types fired by the workspace. They are grouped into the COM

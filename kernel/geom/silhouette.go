@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Silhouette traces the silhouette (contour generator) of a surface for a given view
 // direction as polylines: the locus where the surface normal is perpendicular to the view

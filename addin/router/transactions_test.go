@@ -5,10 +5,10 @@ package router
 import (
 	"testing"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/opregistry"
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/addin/opregistry"
+	"oblikovati/app"
 )
 
 // TestTransactionUndoRedoOverTheAPI drives the transaction.* control surface against a

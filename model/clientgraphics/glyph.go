@@ -5,10 +5,10 @@ package clientgraphics
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/math"
+	"oblikovati/scene"
 )
 
 // defaultPointPixels is the on-screen half-size of a point glyph when the primitive gives

@@ -5,10 +5,10 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/renderer"
 )
 
 // planesOverlay draws the part's work planes — the origin frame AND user-created datums —

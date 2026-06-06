@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
+	gmath "oblikovati/math"
 )
 
 // cornerLines builds two lines meeting at the origin: (0,0)→(4,0) and (0,0)→(0,4).

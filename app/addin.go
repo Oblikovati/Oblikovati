@@ -67,6 +67,27 @@ func (m *AddInManager) Deactivate(s *Session, id string) error {
 	return nil
 }
 
+// Unregister removes a deactivated add-in from the registry so a replacement can
+// register under the same id (hot-reload). It errors if the add-in is still active —
+// its commands and event handlers would leak — so callers Deactivate first.
+func (m *AddInManager) Unregister(id string) error {
+	if _, ok := m.addins[id]; !ok {
+		return fmt.Errorf("app: no add-in %q", id)
+	}
+	if m.active[id] {
+		return fmt.Errorf("app: add-in %q is active; deactivate before unregister", id)
+	}
+	delete(m.addins, id)
+	delete(m.active, id)
+	for i, x := range m.order {
+		if x == id {
+			m.order = append(m.order[:i], m.order[i+1:]...)
+			break
+		}
+	}
+	return nil
+}
+
 // IsActive reports whether an add-in is currently active.
 func (m *AddInManager) IsActive(id string) bool { return m.active[id] }
 

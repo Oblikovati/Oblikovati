@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Insert/verify the GPL-2.0-only SPDX header on every Go file in this repo.
 
-This is the GPL application (module github.com/Oblikovati/oblikovati) plus its cgo
+This is the GPL application (module oblikovati) plus its cgo
 `head` submodule — all GPL-2.0-only. After the repo split (ADR-0018) the Go sources
 live at the repo root rather than under `source/`, so the mapping is simply
 "every tracked *.go -> GPL-2.0-only". The Apache-2.0 contract now lives in its own

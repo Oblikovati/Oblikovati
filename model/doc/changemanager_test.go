@@ -5,7 +5,7 @@ package doc
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/event"
+	"oblikovati/event"
 )
 
 // recordingProcessor captures the change batches it is given.

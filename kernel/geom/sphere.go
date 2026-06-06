@@ -6,7 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Sphere is a sphere surface (contract: Sphere) of the given Center and Radius.

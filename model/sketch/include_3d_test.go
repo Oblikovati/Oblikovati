@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // fakePointSource is a movable model vertex stand-in for testing 3D include (lost ⇒ the

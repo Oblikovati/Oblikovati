@@ -3,8 +3,8 @@
 package topo
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
 
 // Builder assembles a [Body] with fully-wired adjacency. Modeling operations

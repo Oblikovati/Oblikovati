@@ -7,9 +7,9 @@ package ui
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/model/feature"
 )
 
 // The Revolve flow in the head: while the Revolve tool runs, a modeless options window

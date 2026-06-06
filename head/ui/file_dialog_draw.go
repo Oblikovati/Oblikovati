@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
 // fileModal is the chrome's single path-entry dialog (UI state, not model state, so it

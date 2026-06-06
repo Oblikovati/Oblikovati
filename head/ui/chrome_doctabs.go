@@ -5,9 +5,9 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/math"
 )
 
 // prevFramedDoc tracks which document the camera was last framed to, so switching

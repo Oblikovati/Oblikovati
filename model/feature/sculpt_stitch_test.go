@@ -5,11 +5,11 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/health"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/health"
 )
 
 // cubeFaceBody builds one outward-oriented quad surface body of the unit cube.

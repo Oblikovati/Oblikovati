@@ -5,8 +5,8 @@ package sketch
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
 
 // This file holds the surface-derived 3D-sketch curves (M22-F11): curves computed from

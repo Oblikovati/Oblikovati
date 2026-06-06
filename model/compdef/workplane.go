@@ -2,7 +2,7 @@
 
 package compdef
 
-import "github.com/Oblikovati/oblikovati/model/feature"
+import "oblikovati/model/feature"
 
 // The part's datum geometry — the origin coordinate system (XY/XZ/YZ planes, X/Y/Z
 // axes, center point) plus user-created work planes/axes/points — lives in one

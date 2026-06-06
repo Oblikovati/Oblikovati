@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/math"
+	"oblikovati/scene"
 )
 
 // TestRayPickerSelectsEdge aims a ray straight at a vertical edge of a box and checks the

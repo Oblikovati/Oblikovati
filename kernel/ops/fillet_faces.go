@@ -3,9 +3,9 @@
 package ops
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // filletResultFaces builds the faces of the filleted body: every original face transformed

@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"sort"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
 )
 
 // Region detection is a planar-subdivision problem: the regions a feature can extrude

@@ -5,10 +5,10 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/app"
+	"oblikovati/model/sketch"
 )
 
 // sketch3DProfiles enumerates the closed planar loops of a 3D sketch.

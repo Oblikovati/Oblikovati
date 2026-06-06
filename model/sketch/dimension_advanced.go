@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // AddOffsetDim dimensions the perpendicular distance from point p to line l.

@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // addDimension adds a dimensional constraint of the requested kind and reports the
@@ -178,9 +178,13 @@ func ellipseRef(sk *sketch.Sketch, refs []uint64) (*sketch.Ellipse, error) {
 	return el, nil
 }
 
-// radiusDimension resolves a single circle ref and applies a radius/diameter factory.
-func radiusDimension(sk *sketch.Sketch, add func(*sketch.Circle, string) (*sketch.DimensionConstraint, error), refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
-	c, err := circleRef(sk, refs)
+// radiusDimension resolves a single circle-or-arc ref and applies a radius/diameter
+// factory. Inventor dimensions the radius/diameter of arcs as well as circles.
+func radiusDimension(sk *sketch.Sketch, add func(sketch.CircularCurve, string) (*sketch.DimensionConstraint, error), refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+	if len(refs) != 1 {
+		return nil, fmt.Errorf("sketch.addDimension: radius/diameter needs 1 circle or arc ref, got %d", len(refs))
+	}
+	c, err := circularRef(sk, refs[0])
 	if err != nil {
 		return nil, err
 	}
@@ -201,22 +205,6 @@ func arcLengthDimension(sk *sketch.Sketch, refs []uint64, expr string) (*sketch.
 		return nil, fmt.Errorf("sketch.addDimension: entity %d is %T, want an arc", refs[0], e)
 	}
 	return sk.DimensionConstraints().AddArcLength(a, expr)
-}
-
-// circleRef resolves a single ref to a *Circle.
-func circleRef(sk *sketch.Sketch, refs []uint64) (*sketch.Circle, error) {
-	if len(refs) != 1 {
-		return nil, fmt.Errorf("sketch.addDimension: needs 1 circle ref, got %d", len(refs))
-	}
-	e, ok := sk.EntityByID(sketch.ID(refs[0]))
-	if !ok {
-		return nil, fmt.Errorf("sketch.addDimension: no entity with id %d", refs[0])
-	}
-	c, ok := e.(*sketch.Circle)
-	if !ok {
-		return nil, fmt.Errorf("sketch.addDimension: entity %d is %T, want a circle", refs[0], e)
-	}
-	return c, nil
 }
 
 // dimensionAt returns the dimensional constraint at (sketchIndex, dimIndex).

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
 // The model browser tree (Inventor's browser): each frame it reads app.BuildBrowser and
@@ -98,7 +98,7 @@ func drawNodeMenu(s *app.Session, n app.BrowserNode) {
 		return
 	}
 	for _, it := range items {
-		if native.MenuItem(it.Label) && it.Invoke != nil {
+		if native.MenuItemEx(it.Label, "", it.Enabled) && it.Invoke != nil {
 			if err := it.Invoke(s); err != nil {
 				fmt.Fprintf(os.Stderr, "browser %q: %v\n", it.Label, err)
 			}

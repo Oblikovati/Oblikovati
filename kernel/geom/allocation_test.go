@@ -5,7 +5,7 @@ package geom
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // PBI-020 (the COM TransientGeometry "single construction point") is satisfied

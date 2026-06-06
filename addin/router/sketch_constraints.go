@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/app"
+	"oblikovati/model/sketch"
 )
 
 // addConstraint applies a geometric constraint of the requested kind to the referenced
@@ -92,9 +92,17 @@ func groundConstraint(sk *sketch.Sketch, refs []uint64) (sketch.Constraint, bool
 	if len(refs) != 1 {
 		return nil, true, fmt.Errorf("sketch.addConstraint: ground needs 1 entity ref, got %d", len(refs))
 	}
+	// Accept a top-level entity (line/circle/standalone point) or a sub-point such
+	// as a circle's center or a line endpoint — a *Point is itself an Entity, and
+	// pinning a single defining point is a common, valid ground. EntityByID only
+	// sees top-level entities, so fall back to PointByID.
 	e, ok := sk.EntityByID(sketch.ID(refs[0]))
 	if !ok {
-		return nil, true, fmt.Errorf("sketch.addConstraint: no entity with id %d", refs[0])
+		if p, pok := sk.PointByID(sketch.ID(refs[0])); pok {
+			e = p
+		} else {
+			return nil, true, fmt.Errorf("sketch.addConstraint: no entity or point with id %d", refs[0])
+		}
 	}
 	return sk.GeometricConstraints().AddGround(e), true, nil
 }

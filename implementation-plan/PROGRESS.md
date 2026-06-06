@@ -10,7 +10,7 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 > **Done** only when **Model + Geometry + UI/e2e** are all green; ✅ here now means all
 > three, 🟦 means partial. Several rows previously ✅ are model-complete only.
 
-- **Code root:** `/source` (Go module `github.com/Oblikovati/oblikovati`, go 1.22).
+- **Code root:** `/source` (Go module `oblikovati`, go 1.22).
 - **"Done" means:** acceptance criteria green via `make ci` (build + vet + lint +
   `CGO_ENABLED=0 go test ./...` + race), per [CONVENTIONS.md](CONVENTIONS.md).
 - **Architecture mapping:** plan milestones map onto the modernized Go packages in

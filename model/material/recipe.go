@@ -5,7 +5,7 @@ package material
 import (
 	"sort"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 )
 
 // AppearanceRecipe / MaterialRecipe / AssignmentRecipe are the persisted YAML shapes of

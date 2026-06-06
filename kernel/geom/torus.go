@@ -5,7 +5,7 @@ package geom
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Torus is a torus surface (contract: Torus) centered at Center about AxisDir.

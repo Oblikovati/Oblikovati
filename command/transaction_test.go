@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/model/doc"
 )
 
 func newPart(t *testing.T) *doc.Document {

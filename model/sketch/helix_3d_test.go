@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
+	gmath "oblikovati/math"
 )
 
 // TestHelicalCurve3D checks a helix's DOFs (origin + radius), kernel curve, and total

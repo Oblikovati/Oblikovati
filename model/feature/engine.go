@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/health"
-	"github.com/Oblikovati/oblikovati/model/identity"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/health"
+	"oblikovati/model/identity"
+	"oblikovati/model/param"
 )
 
 // eopAll means the end-of-part marker is at the end (evaluate the whole program).
@@ -102,6 +102,19 @@ func (fs *PartFeatures) Result() []*topo.Body { return fs.result }
 
 // MarkDirty flags a feature for re-evaluation on the next recompute.
 func (fs *PartFeatures) MarkDirty(f *PartFeature) { f.dirty = true }
+
+// MarkAllDirty flags every feature for re-evaluation. A parameter edit can change
+// any feature's inputs — a dimension expression a sketch profile is built from, or
+// a feature's own value closure (extrude distance, revolve angle) — but those
+// inputs are read live and are not tracked as feature dependencies, so the engine
+// would otherwise see nothing dirty and return the cached bodies. Invalidating the
+// whole program on a parameter change keeps the model correct (a full parametric
+// rebuild, as Inventor does).
+func (fs *PartFeatures) MarkAllDirty() {
+	for _, pf := range fs.items {
+		pf.dirty = true
+	}
+}
 
 // Recompute replays the dirty tail: it finds the earliest dirty feature, reuses the
 // cached body state before it, and evaluates forward to the end-of-part marker.

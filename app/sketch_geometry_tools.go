@@ -6,8 +6,8 @@ import (
 	"errors"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // The sketch geometry tools — Inventor's Sketch tab "Create" panel. Each is an

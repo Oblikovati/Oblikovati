@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/subd"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/subd"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // csgBox builds a validated solid box of the given size with its near corner at p.

@@ -2,7 +2,7 @@
 
 package feature
 
-import "github.com/Oblikovati/oblikovati/kernel/topo"
+import "oblikovati/kernel/topo"
 
 // BodySource is the consumer-side view of a part's evaluated content that a derived
 // feature pulls from — defined here so feature does not import compdef (avoiding a

@@ -10,7 +10,7 @@ import (
 
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Mesh features (M10-F04, PBI-115) wrap imported tessellated geometry (e.g. an STL)

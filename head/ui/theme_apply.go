@@ -5,12 +5,12 @@
 package ui
 
 import (
-	"github.com/Oblikovati/api/contract"
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/contract"
+	"oblikovati/api/types"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/theme"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/theme"
 )
 
 // Theme-driven colors for the viewport overlays and ribbon icons. They live here in one

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/param"
 )
 
 // DimKind classifies a dimensional constraint.
@@ -156,14 +156,16 @@ func (dc *DimensionConstraints) AddDistance(a, b *Point, expression string) (*Di
 	return dc.create(DistanceDim, expression, []Entity{a, b}, measure, vars)
 }
 
-// AddRadius dimensions a circle's radius.
-func (dc *DimensionConstraints) AddRadius(c *Circle, expression string) (*DimensionConstraint, error) {
-	return dc.create(RadiusDim, expression, []Entity{c}, func() float64 { return c.Radius }, []*math.Scalar{&c.Radius})
+// AddRadius dimensions the radius of a circle or an arc (Inventor allows both). For
+// a circle the radius is a stored DOF; for an arc it is the center-to-start distance,
+// so the solver drives the center/start points (circularVars) to satisfy the target.
+func (dc *DimensionConstraints) AddRadius(c CircularCurve, expression string) (*DimensionConstraint, error) {
+	return dc.create(RadiusDim, expression, []Entity{c}, func() float64 { return float64(c.CurveRadius()) }, c.circularVars())
 }
 
-// AddDiameter dimensions a circle's diameter.
-func (dc *DimensionConstraints) AddDiameter(c *Circle, expression string) (*DimensionConstraint, error) {
-	return dc.create(DiameterDim, expression, []Entity{c}, func() float64 { return 2 * c.Radius }, []*math.Scalar{&c.Radius})
+// AddDiameter dimensions the diameter of a circle or an arc.
+func (dc *DimensionConstraints) AddDiameter(c CircularCurve, expression string) (*DimensionConstraint, error) {
+	return dc.create(DiameterDim, expression, []Entity{c}, func() float64 { return 2 * float64(c.CurveRadius()) }, c.circularVars())
 }
 
 // AddAngle dimensions the angle (radians, in [0,π]) between two lines.

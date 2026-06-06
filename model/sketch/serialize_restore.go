@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // ApplyRecipe rebuilds the sketches from their serialized form, in order. It is the

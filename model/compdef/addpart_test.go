@@ -5,7 +5,7 @@ package compdef
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/model/doc"
 )
 
 func TestAddPartInstallsRealizedContentAndActivates(t *testing.T) {

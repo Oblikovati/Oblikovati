@@ -17,4 +17,13 @@
 //
 // Everything is pure and headless: PartFeatures.Recompute is a pure function of the
 // feature list + parameters, fully unit-testable.
+//
+// Numeric definition fields are live values (func() float64), not frozen floats, so
+// a parameter-driven dimension is re-read on every recompute (the recompute is what
+// turns a parameter edit into new geometry). New features MUST follow this: store
+// each dimensional argument as a func() float64 and call it inside Recompute. Where a
+// constructor takes a plain float64 for convenience, wrap it with constFloat and also
+// expose a func() variant for the parameter-aware caller (see AddThicken/AddThickenFn).
+// The only fields that may stay plain floats are non-dimensional ones — solver
+// tolerances and free-form sculpt sizes that are not meant to track parameters.
 package feature

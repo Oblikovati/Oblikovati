@@ -5,9 +5,9 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/model/param"
 )
 
 // The Parameters dialog (Manage ▸ Parameters): a search box, the Model and User

@@ -5,8 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
 )
 
 // draftBody tapers the picked faces of the running body about the pull direction by angle

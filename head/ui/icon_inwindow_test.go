@@ -7,7 +7,7 @@ package ui
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/app"
 )
 
 // TestInWindowRibbonUploadsIconTextures drives the real chrome for a few frames and

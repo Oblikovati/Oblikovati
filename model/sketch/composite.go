@@ -6,13 +6,20 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // closedLoop mints a shared point for each position and connects them with lines in a
 // closed loop (last → first), returning the created lines. Sharing endpoints keeps the
 // loop a single closed profile.
 func (s *Sketch) closedLoop(pts []math.Point2) []Entity {
+	lines, _ := s.closedLoopPoints(pts)
+	return lines
+}
+
+// closedLoopPoints is closedLoop that also returns the shared corner points, so a
+// caller (the regular polygon) can constrain them.
+func (s *Sketch) closedLoopPoints(pts []math.Point2) ([]Entity, []*Point) {
 	pp := make([]*Point, len(pts))
 	for i, p := range pts {
 		pp[i] = s.newPoint(p)
@@ -21,7 +28,7 @@ func (s *Sketch) closedLoop(pts []math.Point2) []Entity {
 	for i := range pp {
 		out[i] = s.lines.Add(pp[i], pp[(i+1)%len(pp)])
 	}
-	return out
+	return out, pp
 }
 
 // AddRectangleByCorners builds an axis-aligned rectangle from two opposite corners,
@@ -59,17 +66,33 @@ func (s *Sketch) AddRectangleByThreePoints(p0, p1, p2 math.Point2) ([]Entity, er
 // AddPolygon builds a regular n-gon centered at center. The through point lies on a
 // vertex when inscribed, or on an edge midpoint (the apothem) when circumscribed. It
 // errors for fewer than 3 sides or a zero radius.
-func (s *Sketch) AddPolygon(center, through math.Point2, sides int, inscribed bool) ([]Entity, error) {
+func (s *Sketch) AddPolygon(center, through math.Point2, sides int, inscribed bool) ([]Entity, *Point, error) {
 	if sides < 3 {
-		return nil, fmt.Errorf("polygon: needs at least 3 sides, got %d", sides)
+		return nil, nil, fmt.Errorf("polygon: needs at least 3 sides, got %d", sides)
 	}
 	v := center.VectorTo(through)
 	r := v.Length()
 	if r == 0 {
-		return nil, fmt.Errorf("polygon: through point coincides with center")
+		return nil, nil, fmt.Errorf("polygon: through point coincides with center")
 	}
 	pts := polygonVertices(center, stdmath.Atan2(float64(v.Y), float64(v.X)), float64(r), sides, inscribed)
-	return s.closedLoop(pts), nil
+	lines, verts := s.closedLoopPoints(pts)
+
+	// Make it a rigid REGULAR polygon (Inventor auto-adds these), so it is fully
+	// determined by centre + circumradius + rotation. A construction circumscribed
+	// circle pins every vertex to a common radius, and equal consecutive edges make
+	// the chords equal — equal chords on one circle are equally spaced, i.e. regular.
+	centerPt := s.newPoint(center)
+	circ := s.circles.Add(centerPt, centerPt.Position().DistanceTo(verts[0].Position()))
+	circ.SetConstruction(true)
+	g := s.GeometricConstraints()
+	for _, vtx := range verts {
+		g.AddPointOnCircle(vtx, circ)
+	}
+	for i := 0; i+1 < len(lines); i++ {
+		g.AddEqualLength(lines[i].(*Line), lines[i+1].(*Line))
+	}
+	return lines, centerPt, nil
 }
 
 // AddStraightSlot builds a center-to-center straight slot of the given width: two

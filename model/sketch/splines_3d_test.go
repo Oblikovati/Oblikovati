@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
+	gmath "oblikovati/math"
 )
 
 // TestSpline3DInterpolatesPoints checks an open fit spline passes through its defining

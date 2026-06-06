@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
 )
 
 // verticalEdgeKey returns a vertical edge (start/end share X,Y) of a box.

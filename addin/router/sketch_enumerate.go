@@ -5,12 +5,12 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // enumerateEntities lists a sketch's geometry: kind, construction flag, points, radius.

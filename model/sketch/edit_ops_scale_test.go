@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
+	gmath "oblikovati/math"
 )
 
 // Scaling a circle about the origin scales both its center position and its radius.

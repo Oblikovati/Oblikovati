@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
 )
 
 // The direct-edit / modify features: combine (boolean two bodies), thicken (a surface body),
@@ -80,11 +80,11 @@ func applyThicken(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
-	th, err := lengthValue(part, in.Thickness, "thicken: thickness")
+	th, err := lengthClosure(part, in.Thickness, "thicken: thickness")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewModifyFeatures(part.Features()).AddThicken(th)
+	pf := feature.NewModifyFeatures(part.Features()).AddThickenFn(th)
 	return recomputeResult(part, pf)
 }
 
@@ -203,11 +203,11 @@ func applyFaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	d, err := lengthValue(part, in.Distance, "faceOffset: distance")
+	d, err := lengthClosure(part, in.Distance, "faceOffset: distance")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewModifyFeatures(part.Features()).AddFaceOffset(refKeys(in.FaceRefs), d)
+	pf := feature.NewModifyFeatures(part.Features()).AddFaceOffsetFn(refKeys(in.FaceRefs), d)
 	return recomputeResult(part, pf)
 }
 

@@ -18,10 +18,10 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/compdef"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/compdef"
 )
 
 // DrawChrome renders one frame of chrome for the session. Call it between
@@ -57,6 +57,7 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawSweepDialog(s)
 	drawHoleDialog(s)
 	drawChamferDialog(s)
+	drawThreadDialog(s)
 	drawFilletDialog(s)
 	drawShellDialog(s)
 	drawFaceOffsetDialog(s)

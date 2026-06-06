@@ -5,7 +5,7 @@ package app
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/model/param"
 )
 
 // Edit verbs for the Parameters dialog. Each resolves the active part, mutates its

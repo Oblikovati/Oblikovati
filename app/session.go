@@ -8,15 +8,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/event"
-	"github.com/Oblikovati/oblikovati/model/clientgraphics"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/doc"
-	"github.com/Oblikovati/oblikovati/model/material"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/renderer"
-	"github.com/Oblikovati/oblikovati/scene"
-	"github.com/Oblikovati/oblikovati/theme"
+	"oblikovati/event"
+	"oblikovati/model/clientgraphics"
+	"oblikovati/model/compdef"
+	"oblikovati/model/doc"
+	"oblikovati/model/material"
+	"oblikovati/model/sketch"
+	"oblikovati/renderer"
+	"oblikovati/scene"
+	"oblikovati/theme"
 )
 
 // Session is the running application state and the seam tests drive synthetically.
@@ -38,7 +38,6 @@ type Session struct {
 	activeSketch       *sketch.Sketch
 	activeSketch3D     *sketch.Sketch3D
 	pendingDim         *sketch.DimensionConstraint
-	featureEdit        *featureEditState
 	overlays           []renderer.DrawItem
 	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins             *AddInManager

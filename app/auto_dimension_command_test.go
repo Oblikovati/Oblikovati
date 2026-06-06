@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	gmath "oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // TestAutoDimensionCommandConstrainsSketch drives the Auto Dimension ribbon command

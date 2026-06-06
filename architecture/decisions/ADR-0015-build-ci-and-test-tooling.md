@@ -20,7 +20,7 @@ and the [testing strategy](../testing/README.md).
 ## Decision
 
 Stand up the toolchain now, rooted at `/source` (per CLAUDE.md), module
-`github.com/Oblikovati/oblikovati`:
+`oblikovati`:
 
 - **Task runner: `make`.** A single `Makefile` is the one command surface for
   build/test/lint/cover/release, so humans and CI invoke identical steps. No

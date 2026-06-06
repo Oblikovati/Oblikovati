@@ -3,7 +3,7 @@
 package app
 
 import (
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/model/feature"
 )
 
 // DecalTool is the interactive Decal command (Create panel): click a face, give an image

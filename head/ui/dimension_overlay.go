@@ -7,11 +7,11 @@ package ui
 import (
 	"bytes"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/renderer"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/model/sketch"
+	"oblikovati/renderer"
+	"oblikovati/scene"
 )
 
 // Dimension display: the lines (extension/dimension/arc leaders) are 3D line items in

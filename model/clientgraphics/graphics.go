@@ -13,9 +13,9 @@
 package clientgraphics
 
 import (
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Lane is the display lane of a graphics group (a types.GraphicsLane value, kept as a

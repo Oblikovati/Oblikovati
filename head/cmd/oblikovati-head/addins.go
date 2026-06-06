@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Oblikovati/oblikovati/addin/dispatch"
-	"github.com/Oblikovati/oblikovati/addin/events"
-	"github.com/Oblikovati/oblikovati/addin/opregistry"
-	"github.com/Oblikovati/oblikovati/addin/router"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/event"
-	"github.com/Oblikovati/oblikovati/head/internal/addinhost"
+	"oblikovati/addin/dispatch"
+	"oblikovati/addin/events"
+	"oblikovati/addin/opregistry"
+	"oblikovati/addin/router"
+	"oblikovati/app"
+	"oblikovati/event"
+	"oblikovati/head/internal/addinhost"
 )
 
 // addInDrainPerFrame bounds how many queued add-in calls run per frame, so a burst
@@ -33,6 +33,9 @@ type addInHost struct {
 	dispatcher *dispatch.Dispatcher
 	loaded     []*addinhost.LoadedAddIn
 	subs       []event.Subscription
+	dir        string        // watched add-ins directory
+	watchDone  chan struct{} // closed by stop() to end the watcher goroutine
+	changed    int32         // set by the watcher when a library is replaced on disk
 }
 
 // startAddIns wires the add-in subsystem: it installs the router as the host call
@@ -50,8 +53,9 @@ func startAddIns(session *app.Session) *addInHost {
 		return rtr.Handle(session, method, req)
 	}, hostCallTimeout)
 
-	h := &addInHost{dispatcher: d}
-	libs, err := addinhost.LoadDir(addInsDir())
+	dir := addInsDir()
+	h := &addInHost{dispatcher: d, dir: dir, watchDone: make(chan struct{})}
+	libs, err := addinhost.LoadDir(dir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
 	}
@@ -62,8 +66,13 @@ func startAddIns(session *app.Session) *addInHost {
 		}
 		h.loaded = append(h.loaded, lib)
 	}
-	if len(h.loaded) > 0 {
-		h.subs = events.Subscribe(session, h.notifyAll)
+	h.subs = events.Subscribe(session, h.notifyAll)
+	// Under a supervisor (make run-watch sets OBK_ADDIN_AUTORESTART=1), watch the
+	// add-ins dir so a rebuilt library makes the app exit-and-relaunch — the safe way
+	// to pick up a new add-in (a Go c-shared cannot be hot-swapped in-process). Plain
+	// `make run` never auto-exits.
+	if os.Getenv("OBK_ADDIN_AUTORESTART") == "1" {
+		go h.watchAddIns()
 	}
 	return h
 }
@@ -86,14 +95,16 @@ func (h *addInHost) notifyAll(ev []byte) {
 // drain runs pending add-in calls on the (session) goroutine. Call once per frame.
 func (h *addInHost) drain() { h.dispatcher.Drain(addInDrainPerFrame) }
 
-// stop deactivates and unloads the add-ins and closes the dispatcher.
+// stop deactivates the add-ins and closes the dispatcher. It does NOT dlclose the
+// libraries: a Go c-shared keeps runtime threads (sysmon/GC) alive, and unmapping its
+// code with dlclose crashes the host. The process is exiting, so the OS reclaims them.
 func (h *addInHost) stop(session *app.Session) {
+	close(h.watchDone)
 	for _, s := range h.subs {
 		s.Cancel()
 	}
 	for _, lib := range h.loaded {
 		_ = session.AddIns().Deactivate(session, lib.ID())
-		_ = lib.Close()
 	}
 	h.dispatcher.Close()
 }

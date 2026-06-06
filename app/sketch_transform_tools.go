@@ -6,8 +6,8 @@ import (
 	"errors"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // The sketch transform/pattern tools (Move, Copy, Rotate, Scale; Rectangular, Circular

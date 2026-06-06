@@ -5,8 +5,8 @@ package ops
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // Thicken turns a planar surface (sheet) body into a solid of wall thickness t: each face is

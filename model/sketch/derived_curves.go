@@ -4,10 +4,9 @@ package sketch
 
 import (
 	"fmt"
-	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/param"
 )
 
 // tParamID is the synthetic parameter id the equation-curve parameter "t" binds to.
@@ -160,35 +159,4 @@ func (c *OffsetSplines) Item(i int) *OffsetSpline { return c.items[i] }
 // Sample returns the parent's sampled polyline offset by Dist along its left normal.
 func (o *OffsetSpline) Sample() []math.Point2 {
 	return offsetPolyline(sampleSplineEntity(o.Parent), o.Dist)
-}
-
-// offsetPolyline offsets a polyline by signed distance d along each vertex's left normal
-// (estimated from the neighbouring segments).
-func offsetPolyline(pts []math.Point2, d float64) []math.Point2 {
-	out := make([]math.Point2, len(pts))
-	for i := range pts {
-		tx, ty := polylineTangent(pts, i)
-		length := stdmath.Hypot(tx, ty)
-		if length == 0 {
-			out[i] = pts[i]
-			continue
-		}
-		nx, ny := -ty/length, tx/length
-		out[i] = math.P2(pts[i].X+math.Scalar(nx*d), pts[i].Y+math.Scalar(ny*d))
-	}
-	return out
-}
-
-// polylineTangent estimates the tangent at vertex i from its neighbouring segments.
-func polylineTangent(pts []math.Point2, i int) (float64, float64) {
-	var tx, ty float64
-	if i > 0 {
-		tx += float64(pts[i].X - pts[i-1].X)
-		ty += float64(pts[i].Y - pts[i-1].Y)
-	}
-	if i < len(pts)-1 {
-		tx += float64(pts[i+1].X - pts[i].X)
-		ty += float64(pts[i+1].Y - pts[i].Y)
-	}
-	return tx, ty
 }

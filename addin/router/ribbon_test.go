@@ -5,11 +5,11 @@ package router
 import (
 	"testing"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/opregistry"
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/addin/opregistry"
+	"oblikovati/app"
 )
 
 // hasTab reports whether the ribbon result carries a tab of the given name.

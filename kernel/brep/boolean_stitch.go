@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"sort"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // stitch welds the kept sub-faces into a watertight B-rep: coincident vertices merge, one

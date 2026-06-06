@@ -5,8 +5,8 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
 )
 
 func TestFreeformPrimitiveConvertsToBRep(t *testing.T) {

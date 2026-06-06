@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 )
 
 // fakeFS is an in-memory FileSystem for store tests — no real disk IO, so the tests are

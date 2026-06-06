@@ -3,9 +3,9 @@
 package app
 
 import (
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/model/doc"
 )
 
 // RibbonKey is the internal name of one of the seven ribbons — there is one ribbon per

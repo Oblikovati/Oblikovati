@@ -2,7 +2,7 @@
 
 package app
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Tool parameter descriptors: a Tool may expose a set of editable parameters (a label +
 // a bound get/set per value) so the head can render ONE generic property dialog for any

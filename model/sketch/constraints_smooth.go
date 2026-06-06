@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // The Smooth (G2) constraint makes two curves curvature-continuous where they join.

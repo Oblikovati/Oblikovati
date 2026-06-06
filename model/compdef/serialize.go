@@ -5,14 +5,14 @@ package compdef
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/doc"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/identity"
-	"github.com/Oblikovati/oblikovati/model/material"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/persistence/yamlcodec"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/doc"
+	"oblikovati/model/feature"
+	"oblikovati/model/identity"
+	"oblikovati/model/material"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
+	"oblikovati/persistence/yamlcodec"
 )
 
 // init registers the real part content with the document layer so opening a part

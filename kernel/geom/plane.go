@@ -2,7 +2,7 @@
 
 package geom
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // Plane is an unbounded planar surface (contract: Plane) through Origin with the
 // orthonormal in-plane basis (UAxis, VAxis); its Normal is UAxis×VAxis.

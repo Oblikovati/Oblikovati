@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // The constraint solver (ADR-0009). This is the whole-system numerical core:

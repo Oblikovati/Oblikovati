@@ -5,7 +5,7 @@ package geom
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 func TestSegment2dIntersection(t *testing.T) {

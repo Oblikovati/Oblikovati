@@ -6,8 +6,8 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/build"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/build"
+	"oblikovati/math"
 )
 
 // TransformCurve maps a curve by m, which must be a similarity transform
@@ -48,8 +48,7 @@ func TransformSurface(s Surface, m math.Matrix4) (Surface, error) {
 	}
 	switch g := s.(type) {
 	case Plane:
-		return NewPlaneFromAxes(m.TransformPoint(g.Origin),
-			m.TransformVector(g.UAxis.AsVector()), m.TransformVector(g.VAxis.AsVector()))
+		return transformPlane(g, m)
 	case Cylinder:
 		return transformCylinder(g, m, scale)
 	case Cone:
@@ -63,6 +62,23 @@ func TransformSurface(s Surface, m math.Matrix4) (Surface, error) {
 	default:
 		return nil, build.NotYetImplemented(fmt.Sprintf("geom.TransformSurface: %T", s))
 	}
+}
+
+// transformPlane maps a plane by m, keeping its NormalAt OUTWARD-consistent. A plane's
+// normal is UAxis×VAxis, so the naive (m·U)×(m·V) = det(m)·m·(U×V) — for a REFLECTION
+// (det<0) that is −m·N, i.e. the normal flips to point inward. Since the planar B-rep boolean
+// trusts a face's surface normal as outward (boolean_geom.go), an inward-normal mirrored face
+// makes every cut/join mis-classify (a mirror of a hole would ADD material). We negate one
+// in-plane axis when det<0 so UAxis×VAxis stays the correctly-reflected outward normal m·N;
+// TransformBody's matching loop-winding reversal then keeps the 2D loop CCW — both consistent.
+func transformPlane(p Plane, m math.Matrix4) (Plane, error) {
+	origin := m.TransformPoint(p.Origin)
+	u := m.TransformVector(p.UAxis.AsVector())
+	v := m.TransformVector(p.VAxis.AsVector())
+	if m.Determinant() < 0 {
+		v = v.Scale(-1)
+	}
+	return NewPlaneFromAxes(origin, u, v)
 }
 
 // transformCircle preserves the circle's reference frame (Normal, RefDir) so its

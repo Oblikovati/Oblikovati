@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // extrudeArgs is the argument shape for the "extrude" operation (mirrors the schema).
@@ -110,20 +110,20 @@ func buildExtent(part *compdef.PartComponentDefinition, in extrudeArgs) (feature
 	if etype != feature.DistanceExtent {
 		return ext, nil // through-all / to-next are gauged from the model, not a distance
 	}
-	d, err := part.Units().Parse(in.Distance, param.Length)
+	dist, err := lengthClosure(part, in.Distance, "extrude: distance")
 	if err != nil {
-		return feature.Extent{}, fmt.Errorf("extrude: distance %q: %w", in.Distance, err)
+		return feature.Extent{}, err
 	}
-	if d.Value == 0 {
+	if dist() == 0 {
 		return feature.Extent{}, errors.New("extrude: distance is zero")
 	}
-	ext.Distance = func() float64 { return d.Value }
+	ext.Distance = dist
 	if in.SecondDistance != "" {
-		d2, err := part.Units().Parse(in.SecondDistance, param.Length)
+		d2, err := lengthClosure(part, in.SecondDistance, "extrude: secondDistance")
 		if err != nil {
-			return feature.Extent{}, fmt.Errorf("extrude: secondDistance %q: %w", in.SecondDistance, err)
+			return feature.Extent{}, err
 		}
-		ext.Distance2 = func() float64 { return d2.Value }
+		ext.Distance2 = d2
 	}
 	return ext, nil
 }

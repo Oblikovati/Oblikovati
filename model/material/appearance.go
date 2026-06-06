@@ -2,7 +2,7 @@
 
 package material
 
-import "github.com/Oblikovati/api/contract"
+import "oblikovati/api/contract"
 
 // AppearanceSpec is the editable content of an appearance — everything but its identity
 // and source. Carrying the editable fields as one value keeps construction and edits

@@ -5,9 +5,9 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/sketch"
 )
 
 // partWithSquareRegion gives an empty part with a 4×4 closed region sketched on XY.

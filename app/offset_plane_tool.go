@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/model/feature"
 )
 
 // OffsetWorkPlaneTool is Inventor's Plane-and-Offset work-plane interaction: pick the

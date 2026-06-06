@@ -5,8 +5,8 @@ package feature
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/health"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/model/health"
+	"oblikovati/model/param"
 )
 
 func TestExplicitSuppressionPassesBodiesThrough(t *testing.T) {

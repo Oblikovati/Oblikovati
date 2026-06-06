@@ -3,11 +3,12 @@
 package ops
 
 import (
+	"bytes"
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // TransformBody returns a copy of b mapped by the similarity transform m
@@ -85,4 +86,42 @@ func reverseWinding(uses []topo.Use) []topo.Use {
 		out[len(uses)-1-i] = topo.Use{Edge: u.Edge, Reversed: !u.Reversed}
 	}
 	return out
+}
+
+// ReplaceFaceSurface clones a body, swapping the surface of the face with the given reference
+// key for `surf` and leaving every vertex/edge/face topology intact — the cheap (no-boolean)
+// way to retype a face, e.g. plain cylinder → threaded cylinder. The new surface must still
+// pass through the face's boundary edges (a thread's runout ensures this at the end circles).
+func ReplaceFaceSurface(b *topo.Body, faceKey []byte, surf geom.Surface) (*topo.Body, error) {
+	if n := len(b.Shells()); n != 1 {
+		return nil, fmt.Errorf("ops.ReplaceFaceSurface: %d shells; only single-shell bodies are supported", n)
+	}
+	bld := topo.NewBuilder(b.IsSolid(), b.Lineage())
+	verts := make(map[*topo.Vertex]*topo.Vertex, len(b.Vertices()))
+	for _, v := range b.Vertices() {
+		verts[v] = bld.AddVertex(v.Point(), v.Lineage())
+	}
+	edges := make(map[*topo.Edge]*topo.Edge, len(b.Edges()))
+	for _, e := range b.Edges() {
+		edges[e] = bld.AddEdge(e.Geometry(), verts[e.StartVertex()], verts[e.EndVertex()], e.Lineage())
+	}
+	found := false
+	for _, f := range b.Faces() {
+		s := f.Geometry()
+		if bytes.Equal(f.ReferenceKey(), faceKey) {
+			s, found = surf, true
+		}
+		// Preserve the face's sense: a reversed face (e.g. a bore wall, whose outward-from-solid
+		// normal opposes its surface's +radial normal) must stay reversed, or its tessellation
+		// winds the wrong way and the divergence-theorem volume flips sign on that face.
+		if f.Reversed() {
+			bld.AddReversedFace(s, f.Lineage(), loopSpecs(f, edges, false)...)
+		} else {
+			bld.AddFace(s, f.Lineage(), loopSpecs(f, edges, false)...)
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("ops.ReplaceFaceSurface: no face with the given key")
+	}
+	return bld.Build(), nil
 }

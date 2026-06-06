@@ -2,7 +2,7 @@
 
 package sketch
 
-import "github.com/Oblikovati/oblikovati/math"
+import "oblikovati/math"
 
 // SketchImage is a raster image placed on the sketch plane (the underlay used for
 // tracing): a reference to the image data, an anchor point, a size, a rotation, and an

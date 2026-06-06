@@ -5,8 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/sketch"
 )
 
 // This file serializes the ordered feature program into the git-friendly YAML recipe
@@ -109,7 +109,7 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		p := f.def.PullDir
 		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle), Pull: []float64{p.X, p.Y, p.Z}}
 	case *ThreadFeature:
-		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation}
+		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut}
 	case *HoleFeature:
 		h, err := serializeHole(f.def)
 		if err != nil {
@@ -298,7 +298,7 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		return du.AddThread(key, fd.Thread.Designation), nil
+		return du.AddThread(key, fd.Thread.Designation, fd.Thread.Cut), nil
 	case "hole":
 		return restoreHole(fs, fd.Hole)
 	case "boss":

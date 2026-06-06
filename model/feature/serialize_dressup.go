@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // draftPull reads a serialized pull direction [dx,dy,dz], defaulting to +Z when absent
@@ -45,6 +45,7 @@ type FaceDressData struct {
 type ThreadData struct {
 	Face        string `yaml:"face"`
 	Designation string `yaml:"designation"`
+	Cut         bool   `yaml:"cut,omitempty"`
 }
 
 // dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups.

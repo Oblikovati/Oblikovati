@@ -3,9 +3,9 @@
 package app
 
 import (
-	"github.com/Oblikovati/oblikovati/event"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/event"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // In the sketch environment a plain click selects the nearest sketch entity (a point,
