@@ -2,7 +2,7 @@
 
 package app
 
-import "github.com/Oblikovati/oblikovati/scene"
+import "oblikovati/scene"
 
 // Camera transitions: entering a sketch swings the view to face the sketch plane
 // head-on (Inventor's behavior), and finishing restores the prior view. The motion is

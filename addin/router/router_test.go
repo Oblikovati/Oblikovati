@@ -9,16 +9,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/opregistry"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/event"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/doc"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/opregistry"
+	"oblikovati/app"
+	"oblikovati/event"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/doc"
+	"oblikovati/model/sketch"
 )
 
 // seededSession builds a router and a session with an active part that has a "width"

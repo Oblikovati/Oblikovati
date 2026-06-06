@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/param"
 )
 
 // Shared plumbing for the topology-referencing feature operations (fillet, chamfer, shell,
@@ -38,21 +38,55 @@ func lengthValue(part *compdef.PartComponentDefinition, expr, field string) (flo
 	return v.Value, nil
 }
 
-// angleValue parses a unit-bearing angle ("3 deg") in database units (radians), naming field.
-func angleValue(part *compdef.PartComponentDefinition, expr, field string) (float64, error) {
-	v, err := part.Units().Parse(expr, param.Angle)
-	if err != nil {
-		return 0, fmt.Errorf("%s %q: %w", field, expr, err)
-	}
-	return v.Value, nil
+// lengthClosure turns a length argument into a live value closure. A plain literal
+// ("10 mm") becomes a constant; anything else (a parameter reference like "h" or an
+// expression like "h+2 mm") is backed by an auto-named model parameter so the
+// feature argument joins the parameter DAG and tracks edits — the same mechanism
+// that makes sketch dimensions parametric. The closure re-reads the parameter, so a
+// recompute after a parameter change rebuilds the feature at the new size.
+func lengthClosure(part *compdef.PartComponentDefinition, expr, field string) (func() float64, error) {
+	return valueClosure(part, expr, field, param.Length)
 }
 
-// optionalAngle parses an optional angle expression, returning 0 when it is blank.
-func optionalAngle(part *compdef.PartComponentDefinition, expr, field string) (float64, error) {
+// angleClosure is lengthClosure for an angle argument (revolve angle, taper).
+func angleClosure(part *compdef.PartComponentDefinition, expr, field string) (func() float64, error) {
+	return valueClosure(part, expr, field, param.Angle)
+}
+
+// numberClosure turns a unitless argument (a count like coil revolutions or pattern
+// occurrences) into a live value closure, parameter-aware like lengthClosure.
+func numberClosure(part *compdef.PartComponentDefinition, expr, field string) (func() float64, error) {
+	return valueClosure(part, expr, field, param.Unitless)
+}
+
+// optionalAngleClosure is angleClosure that yields a constant 0 for a blank argument.
+func optionalAngleClosure(part *compdef.PartComponentDefinition, expr, field string) (func() float64, error) {
 	if strings.TrimSpace(expr) == "" {
-		return 0, nil
+		return func() float64 { return 0 }, nil
 	}
-	return angleValue(part, expr, field)
+	return angleClosure(part, expr, field)
+}
+
+// valueClosure is the shared core of the *Closure helpers: a plain unit literal
+// ("10 mm") becomes a constant closure; any expression (a parameter reference like
+// "h", or "h+2 mm") is backed by an auto-named model parameter so the argument joins
+// the parameter DAG and tracks edits — set_parameter marks features dirty and the
+// next recompute re-reads the closure at the new value. EVERY feature/tool numeric
+// argument must flow through one of these so it is both parameter-aware and
+// dirty-recompute-correct (see addin/opregistry/doc.go).
+func valueClosure(part *compdef.PartComponentDefinition, expr, field string, unit param.Unit) (func() float64, error) {
+	if v, err := part.Units().Parse(expr, unit); err == nil {
+		val := v.Value
+		return func() float64 { return val }, nil
+	}
+	p, err := part.Parameters().AddAutoModelParameter(expr)
+	if err != nil {
+		return nil, fmt.Errorf("%s %q: %w", field, expr, err)
+	}
+	if h := p.Health(); !h.OK() {
+		return nil, fmt.Errorf("%s %q: %s", field, expr, h.Reason)
+	}
+	return func() float64 { return p.ModelValue() }, nil
 }
 
 // featureResult is the common reply for a feature operation: the created feature's name and
@@ -87,9 +121,6 @@ func recomputeResult(part *compdef.PartComponentDefinition, pf *feature.PartFeat
 		Healthy: h.OK(), Reason: h.Reason,
 	})
 }
-
-// constFn wraps a constant as the func() float64 the model builders take for live parameters.
-func constFn(v float64) func() float64 { return func() float64 { return v } }
 
 // constIntFn wraps a constant as the func() int the pattern builders take for live counts.
 func constIntFn(v int) func() int { return func() int { return v } }

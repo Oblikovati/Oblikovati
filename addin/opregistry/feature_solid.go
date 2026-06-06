@@ -5,14 +5,11 @@ package opregistry
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strconv"
-	"strings"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
 )
 
 // The additive sketch-profile solid features beyond extrude: revolve, rib, emboss, coil, and
@@ -62,7 +59,7 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	angle, err := angleValue(part, in.Angle, "revolve: angle")
+	angle, err := angleClosure(part, in.Angle, "revolve: angle")
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +67,7 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, constFn(angle), op)
+	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, angle, op)
 	return recomputeResult(part, pf)
 }
 
@@ -113,11 +110,11 @@ func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	th, err := lengthValue(part, in.Thickness, "rib: thickness")
+	th, err := lengthClosure(part, in.Thickness, "rib: thickness")
 	if err != nil {
 		return nil, err
 	}
-	depth, err := lengthValue(part, in.Depth, "rib: depth")
+	depth, err := lengthClosure(part, in.Depth, "rib: depth")
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +122,7 @@ func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewRibFeatures(part.Features()).Add(sk, in.ProfileIndex, constFn(th), constFn(depth), op)
+	pf := feature.NewRibFeatures(part.Features()).Add(sk, in.ProfileIndex, th, depth, op)
 	return recomputeResult(part, pf)
 }
 
@@ -168,7 +165,7 @@ func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	depth, err := lengthValue(part, in.Depth, "emboss: depth")
+	depth, err := lengthClosure(part, in.Depth, "emboss: depth")
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +173,7 @@ func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if len(profiles) == 0 {
 		profiles = []int{in.ProfileIndex}
 	}
-	pf := feature.NewEmbossFeatures(part.Features()).Add(sk, profiles, constFn(depth), in.Engrave, 0)
+	pf := feature.NewEmbossFeatures(part.Features()).Add(sk, profiles, depth, in.Engrave, 0)
 	return recomputeResult(part, pf)
 }
 
@@ -233,7 +230,7 @@ func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewCoilFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, constFn(pitch), constFn(revs), 0, op)
+	pf := feature.NewCoilFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, pitch, revs, 0, op)
 	return recomputeResult(part, pf)
 }
 
@@ -248,13 +245,12 @@ func coilAxis(part *compdef.PartComponentDefinition, ref string) (*feature.WorkA
 
 // coilPitchRevs resolves a coil's pitch (a unit-bearing length) and revolution count (a plain
 // number), naming the field on a parse error.
-func coilPitchRevs(part *compdef.PartComponentDefinition, in coilArgs) (pitch, revs float64, err error) {
-	if pitch, err = lengthValue(part, in.Pitch, "coil: pitch"); err != nil {
-		return 0, 0, err
+func coilPitchRevs(part *compdef.PartComponentDefinition, in coilArgs) (pitch, revs func() float64, err error) {
+	if pitch, err = lengthClosure(part, in.Pitch, "coil: pitch"); err != nil {
+		return nil, nil, err
 	}
-	revs, err = strconv.ParseFloat(strings.TrimSpace(in.Revolutions), 64)
-	if err != nil {
-		return 0, 0, fmt.Errorf("coil: revolutions %q must be a number: %w", in.Revolutions, err)
+	if revs, err = numberClosure(part, in.Revolutions, "coil: revolutions"); err != nil {
+		return nil, nil, err
 	}
 	return pitch, revs, nil
 }

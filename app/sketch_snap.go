@@ -5,7 +5,7 @@ package app
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // snapPixels is the screen-space radius (in pixels) within which a sketch click snaps

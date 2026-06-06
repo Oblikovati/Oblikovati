@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // entList collects sketch entities into the slice the apply* functions take.

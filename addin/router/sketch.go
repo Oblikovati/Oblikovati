@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // createSketch adds a sketch on an origin plane of the active part and returns its
@@ -28,28 +28,40 @@ func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	plane, name, err := sketchCreatePlane(part, in)
+	plane, name, host, err := sketchCreatePlane(part, in)
 	if err != nil {
 		return nil, err
 	}
-	part.Sketches().Add(plane)
+	sk := part.Sketches().Add(plane)
+	// Share the part's parameter DAG so dimension expressions can reference user
+	// parameters (e.g. "od/2") and the dimension's own d0,d1… parameters live in
+	// the part's table — the way Inventor sketch dimensions work. Without this the
+	// sketch keeps an isolated param store and "od/2" resolves to 0, collapsing
+	// the geometry.
+	sk.SetParameters(part.Parameters())
+	// On a work plane, track it so the sketch follows when the plane moves.
+	if host != nil {
+		sk.SetPlaneHost(host)
+	}
 	return json.Marshal(wire.CreateSketchResult{SketchIndex: part.Sketches().Count() - 1, Plane: name})
 }
 
 // sketchCreatePlane resolves the plane a new sketch starts on: a user work plane (when
 // WorkPlaneIndex is set — the way to sketch on a plane built on a feature-created face) or an
 // origin plane otherwise.
-func sketchCreatePlane(part *compdef.PartComponentDefinition, in wire.CreateSketchArgs) (sketch.Plane, string, error) {
+func sketchCreatePlane(part *compdef.PartComponentDefinition, in wire.CreateSketchArgs) (sketch.Plane, string, func() sketch.Plane, error) {
 	if in.WorkPlaneIndex == nil {
-		return parsePlane(in.Plane)
+		plane, name, err := parsePlane(in.Plane)
+		return plane, name, nil, err // origin planes are fixed, no host to track
 	}
 	planes := part.WorkPlanes()
 	i := *in.WorkPlaneIndex
 	if i < 0 || i >= planes.Count() {
-		return sketch.Plane{}, "", fmt.Errorf("sketch.create: work plane %d out of range (part has %d)", i, planes.Count())
+		return sketch.Plane{}, "", nil, fmt.Errorf("sketch.create: work plane %d out of range (part has %d)", i, planes.Count())
 	}
 	wp := planes.Item(i)
-	return wp.Plane(), wp.Name(), nil
+	// The host re-reads the work plane (recomputed in place) so the sketch tracks it.
+	return wp.Plane(), wp.Name(), func() sketch.Plane { return wp.Plane() }, nil
 }
 
 // sketchRectangle adds a closed rectangle (one profile) to a sketch, ready to extrude.

@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Line3DTool is the 3D-sketch line interaction: the user places points in model space and

@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/model/feature"
 )
 
 // FaceOffsetTool is the interactive Offset Face command: activate it, click one or more

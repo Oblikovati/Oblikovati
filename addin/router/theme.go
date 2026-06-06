@@ -5,10 +5,10 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/app"
 )
 
 // themeActive returns the host's active theme — name, kind, and every semantic color as

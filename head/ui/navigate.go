@@ -8,7 +8,7 @@ package ui
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/scene"
 )
 
 const (

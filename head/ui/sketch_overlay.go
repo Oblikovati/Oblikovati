@@ -7,10 +7,10 @@ package ui
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
+	"oblikovati/renderer"
 )
 
 // partSketchOverlays renders the active part's finished, visible sketches in the 3D

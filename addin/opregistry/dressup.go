@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/feature"
 )
 
 // The dress-up (subtractive/modifying) feature operations — fillet, chamfer, shell, draft.
@@ -61,11 +61,11 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("fillet: edgeRefs is empty")
 	}
-	r, err := lengthValue(part, in.Radius, "fillet: radius")
+	r, err := lengthClosure(part, in.Radius, "fillet: radius")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddFillet(refKeys(in.EdgeRefs), constFn(r))
+	pf := feature.NewDressUpFeatures(part.Features()).AddFillet(refKeys(in.EdgeRefs), r)
 	return recomputeResult(part, pf)
 }
 
@@ -81,11 +81,11 @@ func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("chamfer: edgeRefs is empty")
 	}
-	d, err := lengthValue(part, in.Distance, "chamfer: distance")
+	d, err := lengthClosure(part, in.Distance, "chamfer: distance")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddChamfer(refKeys(in.EdgeRefs), constFn(d))
+	pf := feature.NewDressUpFeatures(part.Features()).AddChamfer(refKeys(in.EdgeRefs), d)
 	return recomputeResult(part, pf)
 }
 
@@ -134,11 +134,11 @@ func applyShell(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if len(in.FaceRefs) == 0 {
 		return nil, errors.New("shell: faceRefs is empty")
 	}
-	th, err := lengthValue(part, in.Thickness, "shell: thickness")
+	th, err := lengthClosure(part, in.Thickness, "shell: thickness")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddShell(refKeys(in.FaceRefs), constFn(th))
+	pf := feature.NewDressUpFeatures(part.Features()).AddShell(refKeys(in.FaceRefs), th)
 	return recomputeResult(part, pf)
 }
 
@@ -154,10 +154,10 @@ func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if len(in.FaceRefs) == 0 {
 		return nil, errors.New("draft: faceRefs is empty")
 	}
-	a, err := angleValue(part, in.Angle, "draft: angle")
+	a, err := angleClosure(part, in.Angle, "draft: angle")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddDraft(refKeys(in.FaceRefs), constFn(a))
+	pf := feature.NewDressUpFeatures(part.Features()).AddDraft(refKeys(in.FaceRefs), a)
 	return recomputeResult(part, pf)
 }

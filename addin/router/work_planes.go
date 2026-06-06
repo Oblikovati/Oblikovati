@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/param"
 )
 
 // listWorkPlanes enumerates the active part's datum planes (origin frame first, then
@@ -131,11 +131,11 @@ func addOffsetPlane(part *compdef.PartComponentDefinition, refs []feature.WorkRe
 	if len(refs) != 1 {
 		return nil, fmt.Errorf("workPlanes.create: %s needs 1 reference, got %d", in.Kind, len(refs))
 	}
-	d, err := modelLength(part, in.Offset)
+	off, err := modelLengthClosure(part, in.Offset)
 	if err != nil {
 		return nil, err
 	}
-	return part.WorkPlanes().AddByPlaneAndOffset(refs[0], func() float64 { return d }), nil
+	return part.WorkPlanes().AddByPlaneAndOffset(refs[0], off), nil
 }
 
 // addAnglePlane builds the line-plane-angle kind: a line + a plane reference + an angle.
@@ -186,13 +186,24 @@ func toWorkRefs(refs []string) []feature.WorkRef {
 	return out
 }
 
-// modelLength parses a unit-bearing distance ("10 mm") into a model value (cm).
-func modelLength(part *compdef.PartComponentDefinition, expr string) (float64, error) {
-	q, err := part.Units().Parse(expr, param.Length)
-	if err != nil {
-		return 0, fmt.Errorf("workPlanes.create: offset %q: %w", expr, err)
+// modelLengthClosure turns a distance argument into a live, parameter-aware value: a
+// plain literal is constant; an expression ("h", "h/2") is backed by an auto model
+// parameter, so editing the parameter and recomputing re-reads it (a work plane is
+// re-evaluated by part.Recompute). Mirrors opregistry's lengthClosure for the router
+// args that feed func() float64 (work-plane offset).
+func modelLengthClosure(part *compdef.PartComponentDefinition, expr string) (func() float64, error) {
+	if q, err := part.Units().Parse(expr, param.Length); err == nil {
+		v := q.Value
+		return func() float64 { return v }, nil
 	}
-	return q.Value, nil
+	p, err := part.Parameters().AddAutoModelParameter(expr)
+	if err != nil {
+		return nil, fmt.Errorf("workPlanes.create: offset %q: %w", expr, err)
+	}
+	if h := p.Health(); !h.OK() {
+		return nil, fmt.Errorf("workPlanes.create: offset %q: %s", expr, h.Reason)
+	}
+	return func() float64 { return p.ModelValue() }, nil
 }
 
 // modelAngle parses a unit-bearing angle ("45 deg") into a model value (radians).

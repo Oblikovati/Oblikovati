@@ -46,7 +46,9 @@ func sketchMenu(sel Selectable) []BrowserMenuItem {
 	}
 }
 
-// featureMenu offers a Suppress/Unsuppress toggle (label reflects current state) and Delete.
+// featureMenu offers Edit (opens the parameter editor, like double-click), a
+// Suppress/Unsuppress toggle (label reflects current state), and Delete. Edit is greyed for a
+// feature with no editable parameters (e.g. a mirror, which has only geometric references).
 func featureMenu(sel Selectable) []BrowserMenuItem {
 	h, ok := sel.(FeatureHandle)
 	if !ok {
@@ -57,6 +59,7 @@ func featureMenu(sel Selectable) []BrowserMenuItem {
 		suppressLabel = "Unsuppress"
 	}
 	return []BrowserMenuItem{
+		{Label: "Edit", Enabled: FeatureIsEditable(h.Feature), Invoke: func(s *Session) error { s.BeginEditFeature(h); return nil }},
 		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleFeatureSuppressed(h.Feature) }},
 		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteFeature(h.Feature) }},
 	}

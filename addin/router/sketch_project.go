@@ -5,12 +5,12 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/sketch"
 )
 
 // projectGeometry projects the referenced part edges/vertices onto the sketch plane as

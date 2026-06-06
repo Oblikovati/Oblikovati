@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/material"
+	"oblikovati/app"
+	"oblikovati/model/material"
 )
 
 // appearanceInfo marshals a model appearance into its wire DTO.

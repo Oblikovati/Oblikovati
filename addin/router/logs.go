@@ -5,9 +5,9 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/app"
 )
 
 // logsTail serves wire.MethodLogsTail: a cursor-paged tail of the operation trace. It reads

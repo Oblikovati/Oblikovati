@@ -7,9 +7,9 @@ package ui
 import (
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/model/param"
 )
 
 // The Parameters dialog's three small popups: the Value List Editor (multi-value), the

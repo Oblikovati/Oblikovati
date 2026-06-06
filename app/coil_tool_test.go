@@ -5,9 +5,9 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
 )
 
 // TestCoilToolEndToEnd drives the Coil UI: start the tool, click the profile, set pitch

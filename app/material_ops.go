@@ -5,11 +5,11 @@ package app
 import (
 	"fmt"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/material"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/compdef"
+	"oblikovati/model/material"
 )
 
 // AppearanceScope names where an appearance override applies (the wire "scope" values).

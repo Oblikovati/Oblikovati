@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/model/feature"
 )
 
 // ShellTool is the interactive Shell command: activate it, click the faces to remove

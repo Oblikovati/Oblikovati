@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/app"
 )
 
 // listCommands returns every registered command and whether it can run now.

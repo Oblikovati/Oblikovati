@@ -5,50 +5,98 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"fmt"
+
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
-// The feature-edit flow in the head: double-clicking a feature in the model browser
-// opens this dialog bound to the feature's parameters (today an extrude's distance). OK
-// recomputes the part with the new values; Cancel restores the values captured when the
-// edit opened. The distance is in the document's length unit (e.g. mm), matching the
-// extrude tool's dialog.
+// The feature-edit flow in the head: double-clicking a feature in the model browser (or its
+// "Edit" context-menu entry) opens this dialog. It shows one field per editable scalar
+// parameter (distance, radius, angle, diameter …) AND a row per geometric reference slot
+// (the fillet's edges, a hole's placement face …) with Select (re-pick in the viewport) and
+// Clear buttons. Editing is an interactive tool, so OK = s.OK() (commit), Cancel =
+// s.CancelTool() (restore). Each field shows the document's unit for that quantity.
 
-// featureEditUI holds the dialog's distance field across frames and whether it was open
-// last frame (so it seeds the field once when the edit opens).
+// featureEditUI holds the dialog's per-parameter field values across frames and whether it was
+// open last frame (so it seeds the fields once when the edit opens).
 var featureEditUI struct {
-	distance float32
-	open     bool
+	values []float32
+	open   bool
 }
 
-// drawFeatureEditDialog shows the parameter editor while a feature edit is open and keeps
-// the feature's distance in sync with the field each frame; OK commits, Cancel reverts.
+// drawFeatureEditDialog shows the parameter + reference editor while a feature edit is open.
 func drawFeatureEditDialog(s *app.Session) {
 	if !s.IsEditingFeature() {
 		featureEditUI.open = false
 		return
 	}
-	if !featureEditUI.open { // edit just opened — seed the field from the feature's value
-		featureEditUI.distance = float32(s.EditFeatureDistanceDisplay())
+	nParams := s.EditFeatureParamCount()
+	nRefs := s.EditFeatureRefSlotCount()
+	if !featureEditUI.open { // edit just opened — seed the fields from the feature's values
+		featureEditUI.values = make([]float32, nParams)
+		for i := 0; i < nParams; i++ {
+			featureEditUI.values[i] = float32(s.EditFeatureParamValue(i))
+		}
 		featureEditUI.open = true
 	}
-	native.SetNextWindowSize(280, 132)
+	native.SetNextWindowSize(320, float32(108+nParams*30+nRefs*30))
 	if native.Begin("Edit Feature") {
 		native.Text(s.EditingFeatureName())
-		native.Text("Distance (" + s.LengthUnitName() + ")")
-		native.InputFloat("##edit-feature-distance", &featureEditUI.distance)
-		s.SetEditFeatureDistanceDisplay(float64(featureEditUI.distance)) // keep the feature in sync
+		drawEditParams(s, nParams)
+		drawEditRefSlots(s, nRefs)
 		if native.Button("OK") {
-			if err := s.CommitFeatureEdit(); err == nil { // a sick result keeps the dialog open
+			if err := s.OK(); err == nil { // a sick result keeps the dialog open
 				featureEditUI.open = false
 			}
 		}
 		native.SameLine()
 		if native.Button("Cancel") {
-			s.CancelFeatureEdit()
+			s.CancelTool()
 			featureEditUI.open = false
 		}
 	}
 	native.End()
+}
+
+// drawEditParams renders one field per editable scalar (an integer field for whole-number
+// inputs like a pattern count), syncing it to the feature.
+func drawEditParams(s *app.Session, n int) {
+	for i := 0; i < n && i < len(featureEditUI.values); i++ {
+		label := s.EditFeatureParamLabel(i)
+		if u := s.EditFeatureParamUnitName(i); u != "" {
+			label += " (" + u + ")"
+		}
+		native.Text(label)
+		if s.EditFeatureParamIsInteger(i) {
+			iv := int32(featureEditUI.values[i] + 0.5)
+			native.InputInt(fmt.Sprintf("##edit-feature-param-%d", i), &iv)
+			featureEditUI.values[i] = float32(iv)
+		} else {
+			native.InputFloat(fmt.Sprintf("##edit-feature-param-%d", i), &featureEditUI.values[i])
+		}
+		s.SetEditFeatureParamValue(i, float64(featureEditUI.values[i])) // keep the feature in sync
+	}
+}
+
+// drawEditRefSlots renders one row per reference slot: a count, a Select button that arms the
+// slot for viewport picking (highlighted while armed), and a Clear button.
+func drawEditRefSlots(s *app.Session, n int) {
+	for i := 0; i < n; i++ {
+		native.Text(fmt.Sprintf("%s: %d selected", s.EditFeatureRefSlotLabel(i), s.EditFeatureRefSlotRefCount(i)))
+		native.SameLine()
+		selectLabel := "Select"
+		if s.EditFeatureRefSlotArmed(i) {
+			selectLabel = "Selecting… (click geometry)"
+		}
+		if native.Button(fmt.Sprintf("%s##edit-ref-select-%d", selectLabel, i)) {
+			s.EditFeatureArmRefSlot(i)
+		}
+		if s.EditFeatureRefSlotClearable(i) {
+			native.SameLine()
+			if native.Button(fmt.Sprintf("Clear##edit-ref-clear-%d", i)) {
+				s.EditFeatureClearRefSlot(i)
+			}
+		}
+	}
 }

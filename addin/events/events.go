@@ -12,9 +12,9 @@ package events
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/event"
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/app"
+	"oblikovati/event"
+	"oblikovati/model/doc"
 )
 
 // Sink receives one serialized event. It must be safe to call from event-emitting

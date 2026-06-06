@@ -5,8 +5,8 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
 // drawSplitDialog shows the Split options while the Split tool is active: the user picks a work

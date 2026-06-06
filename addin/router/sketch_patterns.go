@@ -6,14 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/sketch"
 )
 
 // addSketchPattern duplicates a selection in a rectangular grid or circular array.
@@ -55,15 +54,34 @@ func buildPattern(part *compdef.PartComponentDefinition, sk *sketch.Sketch, ents
 
 // rectangularPattern builds the grid step vectors (direction×spacing) and patterns.
 func rectangularPattern(part *compdef.PartComponentDefinition, sk *sketch.Sketch, ents []sketch.Entity, in wire.AddSketchPatternArgs) ([]sketch.Entity, error) {
-	step1, err := stepVector(part, in.Dir1, []float64{1, 0}, in.Spacing1)
+	step1, err := stepVectorClosure(part, in.Dir1, []float64{1, 0}, in.Spacing1)
 	if err != nil {
 		return nil, err
 	}
-	step2, err := stepVector(part, in.Dir2, []float64{0, 1}, in.Spacing2)
+	step2, err := stepVectorClosure(part, in.Dir2, []float64{0, 1}, in.Spacing2)
 	if err != nil {
 		return nil, err
 	}
-	return sk.RectangularPattern(ents, step1, in.Count1, step2, in.Count2)
+	return sk.RectangularPatternLive(ents, step1, in.Count1, step2, in.Count2)
+}
+
+// stepVectorClosure is stepVector returning a live provider: the (defaulted, normalized)
+// direction scaled by a parameter-aware spacing, so editing the spacing parameter
+// re-spaces the pattern on the next solve.
+func stepVectorClosure(part *compdef.PartComponentDefinition, dir, fallback []float64, spacing string) (func() math.Vector2, error) {
+	if len(dir) != 2 {
+		dir = fallback
+	}
+	d := math.V2(math.Scalar(dir[0]), math.Scalar(dir[1]))
+	if d.Length() == 0 {
+		return nil, fmt.Errorf("sketch.addPattern: zero direction vector")
+	}
+	unit := d.Scale(1 / d.Length())
+	spc, err := modelLengthClosure(part, spacing)
+	if err != nil {
+		return nil, fmt.Errorf("sketch.addPattern: spacing %q: %w", spacing, err)
+	}
+	return func() math.Vector2 { return unit.Scale(spc()) }, nil
 }
 
 // circularPattern resolves the center and total angle and patterns around it.
@@ -77,21 +95,4 @@ func circularPattern(part *compdef.PartComponentDefinition, sk *sketch.Sketch, e
 		return nil, err
 	}
 	return sk.CircularPattern(ents, center, in.Count, angle)
-}
-
-// stepVector returns a grid step: the (defaulted, normalized) direction scaled by the
-// unit-bearing spacing.
-func stepVector(part *compdef.PartComponentDefinition, dir, fallback []float64, spacing string) (math.Vector2, error) {
-	if len(dir) != 2 {
-		dir = fallback
-	}
-	d := math.V2(math.Scalar(dir[0]), math.Scalar(dir[1]))
-	if d.Length() == 0 {
-		return math.Vector2{}, fmt.Errorf("sketch.addPattern: zero direction vector")
-	}
-	q, err := part.Units().Parse(spacing, param.Length)
-	if err != nil {
-		return math.Vector2{}, fmt.Errorf("sketch.addPattern: spacing %q: %w", spacing, err)
-	}
-	return d.Scale(float64(q.Value) / d.Length()), nil
 }

@@ -18,6 +18,7 @@ package native
 
 void* obk_head_create(int width, int height, const char* title);
 int   obk_head_should_close(void* h);
+void  obk_head_set_should_close(void* h, int v);
 void  obk_head_begin_frame(void* h);
 void  obk_head_end_frame(void* h, float r, float g, float b);
 void  obk_head_destroy(void* h);
@@ -50,6 +51,16 @@ func CreateWindow(width, height int, title string) (*Window, error) {
 
 // ShouldClose reports whether the user asked to close the window.
 func (w *Window) ShouldClose() bool { return C.obk_head_should_close(w.handle) != 0 }
+
+// SetShouldClose overrides the close flag: false cancels a pending close (e.g. while a
+// "save changes?" prompt is up), true confirms one.
+func (w *Window) SetShouldClose(v bool) {
+	n := C.int(0)
+	if v {
+		n = 1
+	}
+	C.obk_head_set_should_close(w.handle, n)
+}
 
 // BeginFrame pumps window events, recreates the swapchain if needed, and starts a new
 // Dear ImGui frame. Build the chrome after this, then call EndFrame.

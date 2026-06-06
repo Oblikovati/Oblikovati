@@ -5,9 +5,9 @@ package app
 import (
 	"fmt"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/renderer"
 )
 
 // DisplayModeEnum is the public viewport display mode (Inventor's DisplayModeEnum), defined

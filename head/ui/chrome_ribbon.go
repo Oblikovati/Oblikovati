@@ -5,8 +5,8 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
 // prevInSketch tracks the sketch-environment state across frames so the ribbon can

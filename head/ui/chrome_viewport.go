@@ -5,14 +5,14 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/head/viewport"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/renderer"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/head/viewport"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
+	"oblikovati/renderer"
+	"oblikovati/scene"
 )
 
 // drawViewportPanel renders the active part's geometry through the Vulkan viewport and
@@ -140,6 +140,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, partSketchOverlays(s)...)
 	list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
+	list.Items = append(list.Items, threadOverlay(s)...)
 	list.Items = append(list.Items, toolHoverHighlight(s)...)
 	list.Items = append(list.Items, toolSelectedHighlight(s)...)
 	list.Items = append(list.Items, revolveCenterlineHighlight(s)...)

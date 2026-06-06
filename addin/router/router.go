@@ -18,11 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/opregistry"
-	"github.com/Oblikovati/oblikovati/addin/trace"
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/addin/opregistry"
+	"oblikovati/addin/trace"
+	"oblikovati/app"
 )
 
 // handlerFunc handles one method: decode args, read/mutate the session, return JSON.
@@ -58,6 +58,8 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodDocumentsList] = listDocuments
 	r.handlers[wire.MethodDocumentsCreate] = createDocument
 	r.handlers[wire.MethodDocumentsActivate] = activateDocument
+	r.handlers[wire.MethodDocumentsClose] = closeDocument
+	r.handlers[wire.MethodDocumentsCloseAll] = closeAllDocuments
 	r.handlers[wire.MethodParametersList] = listParameters
 	r.handlers[wire.MethodParametersGet] = getParameter
 	r.handlers[wire.MethodParametersAdd] = addParameter

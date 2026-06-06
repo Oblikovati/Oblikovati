@@ -5,12 +5,12 @@ package app
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
+	"oblikovati/scene"
 )
 
 // RayPicker is the real headless hit-test: it casts a camera ray through the clicked

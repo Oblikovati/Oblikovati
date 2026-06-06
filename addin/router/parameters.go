@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/param"
 )
 
 // paramInfo marshals a model parameter into the wire DTO: its authored expression
@@ -82,9 +82,16 @@ func setParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 	if !ok {
 		return nil, errors.New("parameters.set: no parameter named " + in.Name)
 	}
-	if err := p.SetExpression(in.Expression); err != nil {
+	// Edit through the Parameters graph (not p.SetExpression, which only updates
+	// this parameter): the graph rewires edges and recomputes transitive
+	// dependents, so a dimension like "od/2" follows when od changes.
+	if err := part.Parameters().SetExpression(p.ID(), in.Expression); err != nil {
 		return nil, err
 	}
+	// A parameter edit can change any feature's live inputs (sketch dimensions,
+	// value closures), which the engine does not track as dependencies, so force a
+	// full parametric rebuild.
+	part.Features().MarkAllDirty()
 	part.Recompute()
 	return json.Marshal(paramInfo(part, p))
 }

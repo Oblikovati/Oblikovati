@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // addSketchEntity creates a sketch entity of the requested kind/variant and returns its
@@ -57,7 +57,7 @@ func isCompositeKind(kind string) bool {
 // addCompositeEntity builds a multi-entity composite (rectangle/polygon/slot), applies
 // the construction flag to every created entity, and returns all their ids.
 func addCompositeEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (json.RawMessage, error) {
-	ents, err := buildComposite(part, sk, in)
+	ents, center, err := buildComposite(part, sk, in)
 	if err != nil {
 		return nil, err
 	}
@@ -66,24 +66,66 @@ func addCompositeEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch
 		applyConstruction(e, in.Construction)
 		ids[i] = uint64(e.EntityID())
 	}
-	return json.Marshal(wire.AddSketchEntityResult{EntityID: ids[0], Kind: in.Kind, EntityIDs: ids})
+	// For a polygon the centre point (the construction-circle centre) follows the
+	// vertices in PointIDs, so a caller can ground it and dimension the circumradius.
+	points := compositePointIDs(ents)
+	if center != nil {
+		points = append(points, uint64(center.EntityID()))
+	}
+	return json.Marshal(wire.AddSketchEntityResult{
+		EntityID: ids[0], Kind: in.Kind, EntityIDs: ids, PointIDs: points,
+	})
+}
+
+// pointBearer is the subset of line-like entities that expose their two defining
+// endpoints — the corners a composite (rectangle/polygon) is built from.
+type pointBearer interface {
+	StartPoint() *sketch.Point
+	EndPoint() *sketch.Point
+}
+
+// compositePointIDs collects the unique defining-point ids of a composite's
+// member entities, in first-seen order. Without these a rectangle/polygon cannot
+// be dimensioned or geometrically constrained over the API (constraints and 2D
+// dimensions reference points), which blocked fully-constrained parametric
+// sketches. Member entities that are not line-like (a slot's arcs) contribute no
+// points here.
+func compositePointIDs(ents []sketch.Entity) []uint64 {
+	seen := map[sketch.ID]bool{}
+	var out []uint64
+	add := func(p *sketch.Point) {
+		if p == nil || seen[p.EntityID()] {
+			return
+		}
+		seen[p.EntityID()] = true
+		out = append(out, uint64(p.EntityID()))
+	}
+	for _, e := range ents {
+		if pb, ok := e.(pointBearer); ok {
+			add(pb.StartPoint())
+			add(pb.EndPoint())
+		}
+	}
+	return out
 }
 
 // buildComposite dispatches a composite create request to its model builder.
-func buildComposite(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) ([]sketch.Entity, error) {
+func buildComposite(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) ([]sketch.Entity, *sketch.Point, error) {
 	pts, err := toPoint2s(in.Points)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	switch in.Kind {
 	case "rectangle":
-		return buildRectangle(sk, in.Variant, pts)
+		ents, err := buildRectangle(sk, in.Variant, pts)
+		return ents, nil, err
 	case "polygon":
 		return buildPolygon(sk, in, pts)
 	case "slot":
-		return buildSlot(part, sk, in, pts)
+		ents, err := buildSlot(part, sk, in, pts)
+		return ents, nil, err
 	default:
-		return nil, fmt.Errorf("sketch.addEntity: %q is not a composite kind", in.Kind)
+		return nil, nil, fmt.Errorf("sketch.addEntity: %q is not a composite kind", in.Kind)
 	}
 }
 
@@ -109,9 +151,9 @@ func buildRectangle(sk *sketch.Sketch, variant string, pts []math.Point2) ([]ske
 }
 
 // buildPolygon builds a regular polygon (variant "circumscribed" ⇒ apothem, else inscribed).
-func buildPolygon(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) ([]sketch.Entity, error) {
+func buildPolygon(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) ([]sketch.Entity, *sketch.Point, error) {
 	if err := wantPoints("polygon", pts, 2); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return sk.AddPolygon(pts[0], pts[1], in.Sides, in.Variant != "circumscribed")
 }

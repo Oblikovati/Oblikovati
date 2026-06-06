@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/model/feature"
 )
 
 // FilletTool is the interactive Fillet command: activate it, click one or more convex edges,

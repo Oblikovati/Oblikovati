@@ -3,9 +3,9 @@
 package app
 
 import (
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/material"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/material"
+	"oblikovati/renderer"
 )
 
 // Materials returns the session's appearance/material library (built-ins on first use;

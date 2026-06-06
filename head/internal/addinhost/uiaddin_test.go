@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Oblikovati/oblikovati/addin/dispatch"
-	"github.com/Oblikovati/oblikovati/addin/events"
-	"github.com/Oblikovati/oblikovati/addin/opregistry"
-	"github.com/Oblikovati/oblikovati/addin/router"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/addin/dispatch"
+	"oblikovati/addin/events"
+	"oblikovati/addin/opregistry"
+	"oblikovati/addin/router"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/doc"
 )
 
 // TestAddInExtendsRibbonAndActsOnClick is the end-to-end proof of add-in UI

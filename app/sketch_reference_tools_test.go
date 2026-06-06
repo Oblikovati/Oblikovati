@@ -5,11 +5,11 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
 )
 
 // boxForRefs builds a 2×2×3 extruded box on the part so its edges/vertices/faces carry

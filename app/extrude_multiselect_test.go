@@ -5,10 +5,10 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/doc"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/doc"
+	"oblikovati/model/sketch"
 )
 
 // newPartWithTwoSquares sets up a part whose sketch holds two disjoint square regions

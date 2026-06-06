@@ -7,11 +7,11 @@ package ui
 import (
 	"strconv"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/feature"
+	"oblikovati/renderer"
 )
 
 // The Extrude flow in the head: while the Extrude tool runs, a modeless options window

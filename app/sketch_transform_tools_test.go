@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	gmath "github.com/Oblikovati/oblikovati/math"
+	gmath "oblikovati/math"
 )
 
 // near2 asserts a 2D point within tolerance.

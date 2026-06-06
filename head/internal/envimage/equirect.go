@@ -9,7 +9,7 @@ package envimage
 import (
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/renderer"
 )
 
 // Equirect is an equirectangular HDR image in linear RGB, row-major, interleaved RGBA float32

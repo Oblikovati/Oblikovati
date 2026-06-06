@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
+	"oblikovati/kernel/ops"
 )
 
 // TestReplaceFaceToolEndToEnd drives the Replace Face UI: click the top face to replace,

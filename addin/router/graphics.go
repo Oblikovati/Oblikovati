@@ -5,10 +5,10 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/clientgraphics"
+	"oblikovati/app"
+	"oblikovati/model/clientgraphics"
 )
 
 // setClientGraphics submits or replaces a named client-graphics group (idempotent by

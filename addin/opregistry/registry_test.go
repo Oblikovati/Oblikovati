@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/app"
 )
 
 // TestDefaultDescriptors checks the default registry exposes the additive extrude plus the
@@ -18,7 +18,7 @@ func TestDefaultDescriptors(t *testing.T) {
 		"extrude", "revolve", "rib", "emboss", "coil", "loft",
 		"fillet", "chamfer", "shell", "draft", "hole", "boss", "thread",
 		"combine", "thicken", "trim", "moveFace", "faceOffset", "deleteFace", "split",
-		"replaceFace", "moveBody", "splitSolid", "coreCavity",
+		"replaceFace", "moveBody", "splitSolid", "coreCavity", "hull",
 		"sweep", "patternRectangular", "patternCircular", "mirror", "patternSketchDriven",
 		"boundaryPatch", "ruledSurface", "surfaceOffset", "extend", "midSurface", "stitch", "sculpt",
 		"freeformBox", "freeformPlane", "freeformQuadBall",

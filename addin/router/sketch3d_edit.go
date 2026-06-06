@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // transformSketch3D applies a move/copy/rotate/delete edit to a 3D-sketch selection.

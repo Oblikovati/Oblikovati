@@ -8,15 +8,15 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/api/types"
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/types"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
 )
 
 // TestSketch3DSpine exercises the M22-F01 API spine end-to-end through the router:

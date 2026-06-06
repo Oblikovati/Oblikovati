@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/compdef"
+	"oblikovati/model/compdef"
 )
 
 func TestMaterialsLibrarySeeded(t *testing.T) {

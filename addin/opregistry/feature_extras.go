@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/feature"
 )
 
 // Two more face-referenced features: a boss (a cylindrical stud raised from a face) and a
@@ -46,34 +46,36 @@ func applyBoss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if in.FaceRef == "" {
 		return nil, errors.New("boss: faceRef is empty")
 	}
-	dia, err := lengthValue(part, in.Diameter, "boss: diameter")
+	dia, err := lengthClosure(part, in.Diameter, "boss: diameter")
 	if err != nil {
 		return nil, err
 	}
-	h, err := lengthValue(part, in.Height, "boss: height")
+	h, err := lengthClosure(part, in.Height, "boss: height")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewBossFeatures(part.Features()).Add([]byte(in.FaceRef), constFn(dia), constFn(h))
+	pf := feature.NewBossFeatures(part.Features()).Add([]byte(in.FaceRef), dia, h)
 	return recomputeResult(part, pf)
 }
 
 type threadArgs struct {
 	FaceRef     string `json:"faceRef"`
 	Designation string `json:"designation"`
+	Cut         bool   `json:"cut,omitempty"`
 }
 
 const threadSchema = `{
   "type": "object",
   "properties": {
     "faceRef": {"type": "string", "description": "Reference key of the cylindrical face to thread (get_reference_keys)."},
-    "designation": {"type": "string", "description": "Thread designation, e.g. \"M8x1.25\"."}
+    "designation": {"type": "string", "description": "Thread designation, e.g. \"M8x1.25\"."},
+    "cut": {"type": "boolean", "default": false, "description": "false = cosmetic thread (display only); true = model a real cut thread (the face becomes a threaded surface)."}
   },
   "required": ["faceRef", "designation"]
 }`
 
 func threadDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "thread", Summary: "Apply a cosmetic thread to a cylindrical face.", Schema: json.RawMessage(threadSchema), Apply: applyThread}
+	return &OperationDescriptor{Name: "thread", Summary: "Thread a cylindrical face — cosmetic (display) or a real modeled cut (cut:true).", Schema: json.RawMessage(threadSchema), Apply: applyThread}
 }
 
 func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -88,6 +90,6 @@ func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if in.FaceRef == "" || in.Designation == "" {
 		return nil, errors.New("thread: faceRef and designation are required")
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddThread([]byte(in.FaceRef), in.Designation)
+	pf := feature.NewDressUpFeatures(part.Features()).AddThread([]byte(in.FaceRef), in.Designation, in.Cut)
 	return recomputeResult(part, pf)
 }

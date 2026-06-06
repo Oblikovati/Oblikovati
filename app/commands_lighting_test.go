@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/renderer"
 )
 
 // TestLightingStyleCommandsSetRig checks the View-tab Lighting Style options activate the rig

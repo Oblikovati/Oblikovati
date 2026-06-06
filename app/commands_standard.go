@@ -3,7 +3,7 @@
 package app
 
 import (
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/renderer"
 )
 
 // RegisterStandardCommands wires Inventor's standard ribbon for a session: the 3D Model
@@ -309,6 +309,12 @@ func cutFeatureCommands() []*CommandDefinition {
 		}).WithTab("3D Model").WithAlias("F").WithEnable(notInSketch).
 			WithIcon("fillet").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fillet — round selected convex edges with a rolling-ball radius."),
+		NewCommand("Modify.Thread", "Thread", "Modify", func(s *Session) error {
+			s.StartTool(NewThreadTool())
+			return nil
+		}).WithTab("3D Model").WithEnable(notInSketch).
+			WithIcon("thread").WithButtonStyle(LargeIconButton).
+			WithTooltip("Thread — apply a cosmetic or modeled-cut thread to a cylindrical face (ISO/ANSI/JIS)."),
 	}
 }
 

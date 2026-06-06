@@ -5,11 +5,11 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/model/clientgraphics"
-	"github.com/Oblikovati/oblikovati/renderer"
-	"github.com/Oblikovati/oblikovati/scene"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/model/clientgraphics"
+	"oblikovati/renderer"
+	"oblikovati/scene"
 )
 
 // Add-in client/interaction graphics display (M05-F05): the geometry (meshes, heatmaps,

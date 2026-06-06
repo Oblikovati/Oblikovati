@@ -5,7 +5,7 @@ package app
 import (
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/model/param"
+	"oblikovati/model/param"
 )
 
 // The Manage ▸ Parameters dialog is driven through the session: the head asks for

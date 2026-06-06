@@ -3,8 +3,8 @@
 package app
 
 import (
-	"github.com/Oblikovati/oblikovati/event"
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/event"
+	"oblikovati/model/doc"
 )
 
 // Application UI events on the session bus. Stable TypeIDs (0x05xx = M05 UI).

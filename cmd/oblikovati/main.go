@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/Oblikovati/oblikovati/build"
+	"oblikovati/build"
 )
 
 func main() {

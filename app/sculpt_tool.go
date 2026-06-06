@@ -5,8 +5,8 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/kernel/ops"
+	"oblikovati/model/feature"
 )
 
 // SculptTool is the interactive Sculpt command (Surface panel): fill the volume bounded by the

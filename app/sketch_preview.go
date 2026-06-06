@@ -5,7 +5,7 @@ package app
 import (
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Live preview: while a geometry tool has some clicks but not enough to commit, it

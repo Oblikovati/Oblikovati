@@ -5,9 +5,9 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/kernel/geom"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
+	"oblikovati/kernel/geom"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
 )
 
 // IncludeGeometry3DTool is the interactive 3D-sketch "Include Geometry" command: while

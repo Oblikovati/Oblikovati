@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/param"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/param"
+	"oblikovati/model/sketch"
 )
 
 // offsetSketchEntity offsets a single line/circle/arc by a unit-bearing distance.
@@ -34,10 +34,35 @@ func offsetSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, fmt.Errorf("sketch.offset: distance %q: %w", in.Distance, err)
 	}
+	if in.ProfileIndex != nil {
+		return offsetProfileRegion(sk, *in.ProfileIndex, d.Value, in.ArcSegments)
+	}
 	if len(in.Entities) > 0 {
 		return offsetChain(sk, in.Entities, math.Scalar(d.Value))
 	}
 	return offsetSingle(sk, in.Entity, math.Scalar(d.Value))
+}
+
+// offsetProfileRegion offsets a profile's whole closed boundary (OpenSCAD offset(r)) — convex
+// corners rounded — and returns the created lines of the new loop.
+func offsetProfileRegion(sk *sketch.Sketch, profIdx int, d float64, arcSegs int) (json.RawMessage, error) {
+	profs := sk.Profiles()
+	if profIdx < 0 || profIdx >= profs.Count() {
+		return nil, fmt.Errorf("sketch.offset: profile %d not found (sketch has %d)", profIdx, profs.Count())
+	}
+	poly := profs.Item(profIdx).OuterLoop().Polygon()
+	if len(poly) < 3 {
+		return nil, fmt.Errorf("sketch.offset: profile %d is not a closed region", profIdx)
+	}
+	ents := sk.OffsetClosedLoop(poly, d, arcSegs)
+	if len(ents) == 0 {
+		return nil, fmt.Errorf("sketch.offset: region offset collapsed (distance %.4g too negative?)", d)
+	}
+	created := make([]uint64, len(ents))
+	for i, e := range ents {
+		created[i] = uint64(e.EntityID())
+	}
+	return json.Marshal(wire.OffsetSketchResult{EntityID: created[0], Kind: "line", Created: created})
 }
 
 // offsetSingle offsets one referenced line/circle/arc.

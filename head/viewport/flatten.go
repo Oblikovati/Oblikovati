@@ -6,7 +6,7 @@
 // the result to the GPU.
 package viewport
 
-import "github.com/Oblikovati/oblikovati/renderer"
+import "oblikovati/renderer"
 
 // VertexFloats is the per-vertex layout the mesh pipeline expects: position (xyz),
 // normal (xyz), color/albedo (rgba), metallic, roughness, emissive (rgb), and the shading

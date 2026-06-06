@@ -32,5 +32,19 @@ smoke:
 run:
 	OBK_ADDINS_DIR=$(CURDIR)/addins go run ./cmd/oblikovati-head
 
+# run-watch launches the app under a relaunch loop with OBK_ADDIN_AUTORESTART=1, so a
+# rebuilt add-in (`make install` in the bridge) makes the app exit cleanly and come
+# straight back with the new library — the safe stand-in for in-process hot-reload (a
+# Go c-shared add-in cannot be swapped in a live process). The head binary is built
+# ONCE and the prebuilt binary is relaunched, so a .so swap restarts in ~1s (no cgo
+# recompile). Re-run this target after changing head source. Ctrl-C twice to stop.
+run-watch:
+	go build -o oblikovati-head ./cmd/oblikovati-head
+	@while true; do \
+		OBK_ADDINS_DIR=$(CURDIR)/addins OBK_ADDIN_AUTORESTART=1 ./oblikovati-head || true; \
+		echo "oblikovati-head exited; relaunching (Ctrl-C to stop)"; \
+		sleep 1; \
+	done
+
 clean:
 	go clean ./...

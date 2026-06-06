@@ -6,7 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/model/sketch"
 )
 
 // twoLinesOf resolves exactly two line refs, returning ok=false (with an error) on a bad

@@ -5,11 +5,11 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/sketch"
 )
 
 // includeSketch2DInto3D links geometry of an existing 2D sketch (points/curves, by session

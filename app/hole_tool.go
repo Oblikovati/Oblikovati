@@ -6,7 +6,7 @@ import (
 	"errors"
 	stdmath "math"
 
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/model/feature"
 )
 
 // HoleTool is the interactive Hole command: activate it, click a planar face, set the

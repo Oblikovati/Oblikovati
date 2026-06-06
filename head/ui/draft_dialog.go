@@ -7,8 +7,8 @@ package ui
 import (
 	"strconv"
 
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
 )
 
 // The Draft flow in the head: while the Draft tool runs, a modeless options window shows

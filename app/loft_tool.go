@@ -5,10 +5,10 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/feature"
+	"oblikovati/renderer"
 )
 
 // LoftTool is the interactive Loft command: activate it, click two or more sketch

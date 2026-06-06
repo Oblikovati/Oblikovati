@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 func TestSketchFilletToolRoundsCorner(t *testing.T) {

@@ -5,11 +5,11 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/renderer"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
+	"oblikovati/renderer"
 )
 
 // Unified tool highlighting: every interactive tool gives the SAME feedback — the selectable

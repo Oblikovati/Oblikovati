@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Oblikovati/oblikovati/model/doc"
-	"github.com/Oblikovati/oblikovati/persistence"
+	"oblikovati/model/doc"
+	"oblikovati/persistence"
 )
 
 // cmdSaveAs opens src and re-saves it under dst, exercising the open→save-as

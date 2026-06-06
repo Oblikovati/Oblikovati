@@ -7,13 +7,32 @@
 // an Apply func over the live session. Adding a feature kind to the MCP surface is
 // "register one descriptor" — features.list and the schema resources read this
 // registry, mirroring the future core registry (ADR-0003).
+//
+// # Parameter-aware arguments (MANDATORY for every new operation)
+//
+// Every numeric argument of a feature or tool MUST be parameter-aware and survive
+// parameter edits. Do not parse an argument to a frozen float64; resolve it through
+// one of the *Closure helpers (lengthClosure, angleClosure, numberClosure, and
+// optionalAngleClosure in feature_refs.go) and pass the returned func() value to the
+// model builder. A plain literal ("10 mm") becomes a constant;
+// any expression ("h", "od/2") is backed by an auto model parameter so it joins the
+// dependency graph. set_parameter then marks features dirty and the next recompute
+// re-reads the closure at the new value (see addin/router/parameters.go and
+// compdef.PartComponentDefinition.Recompute). The model feature/tool field MUST be a
+// func() float64 (not a float64) so the value is read live on every recompute.
+//
+// The only permitted exceptions, which take a literal value, are non-dimensional
+// arguments: solver tolerances (stitch tolerance, mid-surface thin-wall threshold)
+// and free-form primitive sizes (the subdivision cage is generated once at creation
+// and then sculpted, so it has no live size). Integer-count arguments declared as
+// JSON ints (pattern occurrences) are a known gap pending a string-expression DTO.
 package opregistry
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/app"
 )
 
 // ApplyFunc performs an operation against the session, given its JSON arguments,
@@ -106,6 +125,7 @@ func Default() *Registry {
 		moveBodyDescriptor(),
 		splitSolidDescriptor(),
 		coreCavityDescriptor(),
+		hullDescriptor(),
 		// Additive along a path / patterns.
 		sweepDescriptor(),
 		rectPatternDescriptor(),

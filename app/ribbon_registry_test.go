@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/model/doc"
 )
 
 // zeroDocSession returns a session with the standard commands wired but no document open, so

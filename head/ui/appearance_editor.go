@@ -5,9 +5,9 @@
 package ui
 
 import (
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/head/internal/native"
-	"github.com/Oblikovati/oblikovati/model/material"
+	"oblikovati/app"
+	"oblikovati/head/internal/native"
+	"oblikovati/model/material"
 )
 
 // drawAppearanceTabContent renders the appearance selector, actions, and PBR editor inside

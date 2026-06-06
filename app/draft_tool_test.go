@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/kernel/topo"
+	"oblikovati/kernel/ops"
+	"oblikovati/kernel/topo"
 )
 
 // plusXFaceOf returns the body's +X-facing planar face (a vertical side of the block).

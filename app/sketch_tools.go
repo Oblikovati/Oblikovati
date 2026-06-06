@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"github.com/Oblikovati/oblikovati/math"
+	"oblikovati/math"
 )
 
 // Sketch tools place 2D geometry by clicking in the active sketch's plane: a click

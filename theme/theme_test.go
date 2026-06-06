@@ -5,7 +5,7 @@ package theme
 import (
 	"testing"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 )
 
 // TestDefaultsComplete guards the contract that a built-in defines every token — the

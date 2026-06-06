@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
 )
 
 // The remaining feature operations that need a custom resolver: sweep (a profile along a path
@@ -61,11 +61,17 @@ func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	path, err := pathFromSketch(part, in.PathSketchIndex, in.PathIndex)
-	if err != nil {
+	// Validate the path once up front, then hand the feature a live provider that
+	// re-derives it from the path sketch each recompute, so a parameter driving the
+	// rail reshapes the sweep (a snapshot would freeze it at apply time).
+	if _, err := pathFromSketch(part, in.PathSketchIndex, in.PathIndex); err != nil {
 		return nil, err
 	}
-	twist, err := optionalAngle(part, in.Twist, "sweep: twist")
+	pathFn := func() *sketch.Path3D {
+		p, _ := pathFromSketch(part, in.PathSketchIndex, in.PathIndex)
+		return p
+	}
+	twist, err := optionalAngleClosure(part, in.Twist, "sweep: twist")
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +79,7 @@ func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewSweepFeatures(part.Features()).Add(profileSk, in.ProfileIndex, path, constFn(twist), op)
+	pf := feature.NewSweepFeatures(part.Features()).AddLive(profileSk, in.ProfileIndex, pathFn, twist, op)
 	return recomputeResult(part, pf)
 }
 
@@ -202,11 +208,11 @@ func applyCoreCavity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
-	pos, err := lengthValue(part, in.Position, "coreCavity: position")
+	pos, err := lengthClosure(part, in.Position, "coreCavity: position")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewCoreCavityFeatures(part.Features()).AddByPartingPlane(partingAxis(in.Axis), pos, in.Shrinkage)
+	pf := feature.NewCoreCavityFeatures(part.Features()).AddByPartingPlaneFn(partingAxis(in.Axis), pos, in.Shrinkage)
 	return recomputeResult(part, pf)
 }
 

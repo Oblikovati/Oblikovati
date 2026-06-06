@@ -6,8 +6,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/Oblikovati/oblikovati/kernel/topo"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/kernel/topo"
+	"oblikovati/model/feature"
 )
 
 // Work-plane creation from the 3D Model ribbon's Work Features panel. These mirror the

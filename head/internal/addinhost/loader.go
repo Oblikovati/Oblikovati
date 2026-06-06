@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/app"
 )
 
 // addInLib is the platform-specific handle to a loaded shared-library add-in. The
@@ -78,6 +78,17 @@ func LoadDir(dir string) ([]*LoadedAddIn, error) {
 		out = append(out, &LoadedAddIn{lib: l, id: l.id(), path: path})
 	}
 	return out, nil
+}
+
+// Open loads a single shared-library add-in from path and wraps it for
+// registration — the single-file counterpart of LoadDir, used by hot-reload to
+// pick up a replaced .so/.dll without restarting the host.
+func Open(path string) (*LoadedAddIn, error) {
+	l, err := openLibrary(path)
+	if err != nil {
+		return nil, err
+	}
+	return &LoadedAddIn{lib: l, id: l.id(), path: path}, nil
 }
 
 // isSharedLib reports whether name has a loadable shared-library extension.

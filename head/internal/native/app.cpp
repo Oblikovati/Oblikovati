@@ -254,6 +254,13 @@ int obk_head_should_close(void* h) {
     return glfwWindowShouldClose(c->window) ? 1 : 0;
 }
 
+// obk_head_set_should_close overrides the window close flag — used to CANCEL a close
+// (v=0) while a "save changes?" prompt is shown, or to confirm one (v=1).
+void obk_head_set_should_close(void* h, int v) {
+    HeadContext* c = (HeadContext*)h;
+    glfwSetWindowShouldClose(c->window, v);
+}
+
 // --- synthetic input injection (for in-window UI tests) ---
 // Production never calls the obk_inject_* setters, so g_inject stays inactive and the
 // real GLFW input flows untouched. When a test sets state, obk_apply_inject pushes it

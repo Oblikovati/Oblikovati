@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
 )
 
 // The hole operation — a subtractive drilled hole on a picked face, referenced by key
@@ -61,7 +61,7 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if in.FaceRef == "" {
 		return nil, errors.New("hole: faceRef is empty")
 	}
-	dia, err := lengthValue(part, in.Diameter, "hole: diameter")
+	dia, err := lengthClosure(part, in.Diameter, "hole: diameter")
 	if err != nil {
 		return nil, err
 	}
@@ -75,69 +75,69 @@ func applyHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 // buildHole dispatches on the hole type, resolving the extra dimensions each variant needs.
 //
 //nolint:funlen // one-case-per-hole-type dispatch switch (drilled/counterbore/countersink/tapped); length is the dispatch, like the serialize codecs.
-func buildHole(part *compdef.PartComponentDefinition, in holeArgs, dia float64) (*feature.PartFeature, error) {
+func buildHole(part *compdef.PartComponentDefinition, in holeArgs, dia func() float64) (*feature.PartFeature, error) {
 	holes := feature.NewHoleFeatures(part.Features())
 	key := []byte(in.FaceRef)
 	switch in.Type {
 	case "", "drilled":
 		if in.Depth == "" {
-			return holes.AddDrilledThrough(key, constFn(dia)), nil
+			return holes.AddDrilledThrough(key, dia), nil
 		}
-		depth, err := lengthValue(part, in.Depth, "hole: depth")
+		depth, err := lengthClosure(part, in.Depth, "hole: depth")
 		if err != nil {
 			return nil, err
 		}
-		return holes.AddDrilled(key, constFn(dia), constFn(depth)), nil
+		return holes.AddDrilled(key, dia, depth), nil
 	case "counterbore":
 		depth, cdia, cdepth, err := threeLengths(part, in.Depth, in.CounterDiameter, in.CounterDepth, "hole counterbore")
 		if err != nil {
 			return nil, err
 		}
-		return holes.AddCounterbore(key, constFn(dia), constFn(depth), constFn(cdia), constFn(cdepth)), nil
+		return holes.AddCounterbore(key, dia, depth, cdia, cdepth), nil
 	case "countersink":
 		depth, sdia, err := twoLengths(part, in.Depth, in.SinkDiameter, "hole countersink")
 		if err != nil {
 			return nil, err
 		}
-		angle, err := angleValue(part, in.IncludedAngle, "hole: includedAngle")
+		angle, err := angleClosure(part, in.IncludedAngle, "hole: includedAngle")
 		if err != nil {
 			return nil, err
 		}
-		return holes.AddCountersink(key, constFn(dia), constFn(depth), constFn(sdia), constFn(angle)), nil
+		return holes.AddCountersink(key, dia, depth, sdia, angle), nil
 	case "tapped":
-		depth, err := lengthValue(part, in.Depth, "hole: depth")
+		depth, err := lengthClosure(part, in.Depth, "hole: depth")
 		if err != nil {
 			return nil, err
 		}
 		if in.Designation == "" {
 			return nil, errors.New("hole: tapped needs a designation, e.g. \"M5x0.8\"")
 		}
-		return holes.AddTapped(key, constFn(dia), constFn(depth), in.Designation), nil
+		return holes.AddTapped(key, dia, depth, in.Designation), nil
 	default:
 		return nil, fmt.Errorf("hole: unknown type %q (want drilled|counterbore|countersink|tapped)", in.Type)
 	}
 }
 
-func twoLengths(part *compdef.PartComponentDefinition, a, b, ctx string) (float64, float64, error) {
-	av, err := lengthValue(part, a, ctx+": depth")
+func twoLengths(part *compdef.PartComponentDefinition, a, b, ctx string) (func() float64, func() float64, error) {
+	av, err := lengthClosure(part, a, ctx+": depth")
 	if err != nil {
-		return 0, 0, err
+		return nil, nil, err
 	}
-	bv, err := lengthValue(part, b, ctx+": diameter")
+	bv, err := lengthClosure(part, b, ctx+": diameter")
 	if err != nil {
-		return 0, 0, err
+		return nil, nil, err
 	}
 	return av, bv, nil
 }
 
-func threeLengths(part *compdef.PartComponentDefinition, a, b, c, ctx string) (float64, float64, float64, error) {
+func threeLengths(part *compdef.PartComponentDefinition, a, b, c, ctx string) (func() float64, func() float64, func() float64, error) {
 	av, bv, err := twoLengths(part, a, b, ctx)
 	if err != nil {
-		return 0, 0, 0, err
+		return nil, nil, nil, err
 	}
-	cv, err := lengthValue(part, c, ctx+": counterDepth")
+	cv, err := lengthClosure(part, c, ctx+": counterDepth")
 	if err != nil {
-		return 0, 0, 0, err
+		return nil, nil, nil, err
 	}
 	return av, bv, cv, nil
 }

@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // sketchSession returns a session in the sketch environment on the XY plane (the

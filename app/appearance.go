@@ -3,9 +3,9 @@
 package app
 
 import (
-	"github.com/Oblikovati/api/contract"
+	"oblikovati/api/contract"
 
-	"github.com/Oblikovati/oblikovati/theme"
+	"oblikovati/theme"
 )
 
 // Themes returns the session's UI theme library (built-ins plus the user's customs with

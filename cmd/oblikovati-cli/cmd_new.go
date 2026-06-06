@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/kernel/ops"
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/doc"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
-	"github.com/Oblikovati/oblikovati/persistence"
+	"oblikovati/kernel/ops"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/doc"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
+	"oblikovati/persistence"
 )
 
 // cmdNew creates a document of the named kind and saves it as an .obk package at

@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
 )
 
 // The surfacing features: build surface bodies (boundary patch, ruled surface), modify them
@@ -99,11 +99,11 @@ func applyRuledSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	if err != nil {
 		return nil, err
 	}
-	dist, err := lengthValue(part, in.Distance, "ruledSurface: distance")
+	dist, err := lengthClosure(part, in.Distance, "ruledSurface: distance")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewRuledSurfaceFeatures(part.Features()).AddByDistance(sk, in.ProfileIndex, ruledType(in.Type), constFn(dist))
+	pf := feature.NewRuledSurfaceFeatures(part.Features()).AddByDistance(sk, in.ProfileIndex, ruledType(in.Type), dist)
 	return recomputeResult(part, pf)
 }
 
@@ -191,11 +191,11 @@ func applySurfaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
-	d, err := lengthValue(part, in.Distance, "surfaceOffset: distance")
+	d, err := lengthClosure(part, in.Distance, "surfaceOffset: distance")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewSurfaceOffsetFeatures(part.Features()).AddByDistance(constFn(d))
+	pf := feature.NewSurfaceOffsetFeatures(part.Features()).AddByDistance(d)
 	return recomputeResult(part, pf)
 }
 
@@ -207,11 +207,11 @@ func applyExtend(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if in.EdgeRef == "" {
 		return nil, errors.New("extend: edgeRef is empty")
 	}
-	d, err := lengthValue(part, in.Distance, "extend: distance")
+	d, err := lengthClosure(part, in.Distance, "extend: distance")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewExtendFeatures(part.Features()).Add([]byte(in.EdgeRef), constFn(d))
+	pf := feature.NewExtendFeatures(part.Features()).Add([]byte(in.EdgeRef), d)
 	return recomputeResult(part, pf)
 }
 

@@ -5,10 +5,10 @@ package router
 import (
 	"encoding/json"
 
-	"github.com/Oblikovati/api/wire"
+	"oblikovati/api/wire"
 
-	"github.com/Oblikovati/oblikovati/addin/modelaccess"
-	"github.com/Oblikovati/oblikovati/app"
+	"oblikovati/addin/modelaccess"
+	"oblikovati/app"
 )
 
 // modelTree returns a read-only snapshot of the active part: parameter names, sketch

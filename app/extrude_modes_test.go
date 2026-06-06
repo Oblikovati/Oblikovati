@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"github.com/Oblikovati/oblikovati/math"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/feature"
-	"github.com/Oblikovati/oblikovati/model/sketch"
+	"oblikovati/math"
+	"oblikovati/model/compdef"
+	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
 )
 
 // squareRegion adds a 2×2 square sketch to the part and recomputes so its profile is

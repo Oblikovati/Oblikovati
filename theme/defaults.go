@@ -5,7 +5,7 @@ package theme
 import (
 	"fmt"
 
-	"github.com/Oblikovati/api/types"
+	"oblikovati/api/types"
 )
 
 // DefaultDark is the shipped dark theme. Its colors follow Autodesk Inventor's dark

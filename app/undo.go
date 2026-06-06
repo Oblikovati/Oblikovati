@@ -5,10 +5,10 @@ package app
 import (
 	"bytes"
 
-	"github.com/Oblikovati/oblikovati/command"
-	"github.com/Oblikovati/oblikovati/event"
-	"github.com/Oblikovati/oblikovati/model/compdef"
-	"github.com/Oblikovati/oblikovati/model/doc"
+	"oblikovati/command"
+	"oblikovati/event"
+	"oblikovati/model/compdef"
+	"oblikovati/model/doc"
 )
 
 // The part definition is the concrete RecipeStore a snapshot event navigates.
