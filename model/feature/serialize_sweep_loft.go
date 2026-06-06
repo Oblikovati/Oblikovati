@@ -47,12 +47,13 @@ type LoftEndData struct {
 // LoftData is a loft's recipe. First/Last persist the end conditions (nil when Free); Rails are
 // the guide-curve polylines (model space, evaluated like the sweep path).
 type LoftData struct {
-	Sections  []LoftSectionData `yaml:"sections"`
-	Rails     [][][]float64     `yaml:"rails,omitempty"`
-	Closed    bool              `yaml:"closed,omitempty"`
-	Operation string            `yaml:"operation"`
-	First     *LoftEndData      `yaml:"first,omitempty"`
-	Last      *LoftEndData      `yaml:"last,omitempty"`
+	Sections   []LoftSectionData `yaml:"sections"`
+	Rails      [][][]float64     `yaml:"rails,omitempty"`
+	Centerline [][]float64       `yaml:"centerline,omitempty"`
+	Closed     bool              `yaml:"closed,omitempty"`
+	Operation  string            `yaml:"operation"`
+	First      *LoftEndData      `yaml:"first,omitempty"`
+	Last       *LoftEndData      `yaml:"last,omitempty"`
 }
 
 func serializeSweep(def *SweepDefinition, sk SketchIndexer) (*SweepData, error) {
@@ -127,7 +128,13 @@ func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {
 			rails = append(rails, encodePoints(pts))
 		}
 	}
-	return &LoftData{Sections: sections, Rails: rails, Closed: def.Closed, Operation: op, First: encodeLoftEnd(first), Last: encodeLoftEnd(last)}, nil
+	var centerline [][]float64
+	if def.Centerline != nil {
+		if pts := def.Centerline(); len(pts) >= 2 {
+			centerline = encodePoints(pts)
+		}
+	}
+	return &LoftData{Sections: sections, Rails: rails, Centerline: centerline, Closed: def.Closed, Operation: op, First: encodeLoftEnd(first), Last: encodeLoftEnd(last)}, nil
 }
 
 // encodeLoftEnd serializes an end condition, returning nil for a Free end (the default) so a
@@ -171,12 +178,17 @@ func restoreLoft(fs *PartFeatures, d *LoftData, sk SketchIndexer) (*PartFeature,
 	if err != nil {
 		return nil, err
 	}
+	first, last := decodeLoftEnd(d.First), decodeLoftEnd(d.Last)
+	if len(d.Centerline) >= 2 {
+		cl := decodePoints(d.Centerline)
+		return NewLoftFeatures(fs).AddCenterlined(sections, d.Closed, op, first, last, func() []math.Point3 { return cl }), nil
+	}
 	var rails []func() []math.Point3
 	for _, rp := range d.Rails {
 		pts := decodePoints(rp)
 		rails = append(rails, func() []math.Point3 { return pts })
 	}
-	return NewLoftFeatures(fs).AddRailed(sections, d.Closed, op, decodeLoftEnd(d.First), decodeLoftEnd(d.Last), rails), nil
+	return NewLoftFeatures(fs).AddRailed(sections, d.Closed, op, first, last, rails), nil
 }
 
 // point3DChain wraps model points as sketch 3D points for a restored sweep path.

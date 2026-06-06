@@ -283,12 +283,13 @@ type loftRailRef struct {
 }
 
 type loftArgs struct {
-	Sections  []loftSectionRef `json:"sections"`
-	Closed    bool             `json:"closed,omitempty"`
-	Operation string           `json:"operation,omitempty"`
-	First     *loftEndArgs     `json:"first,omitempty"`
-	Last      *loftEndArgs     `json:"last,omitempty"`
-	Rails     []loftRailRef    `json:"rails,omitempty"`
+	Sections   []loftSectionRef `json:"sections"`
+	Closed     bool             `json:"closed,omitempty"`
+	Operation  string           `json:"operation,omitempty"`
+	First      *loftEndArgs     `json:"first,omitempty"`
+	Last       *loftEndArgs     `json:"last,omitempty"`
+	Rails      []loftRailRef    `json:"rails,omitempty"`
+	Centerline *loftRailRef     `json:"centerline,omitempty"`
 }
 
 const loftSchema = `{
@@ -298,6 +299,7 @@ const loftSchema = `{
     "closed": {"type": "boolean", "default": false},
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
     "rails": {"type": "array", "items": {"type": "object", "properties": {"pathSketchIndex": {"type": "integer"}, "pathIndex": {"type": "integer", "default": 0}}, "required": ["pathSketchIndex"]}, "description": "Optional guide rails: open paths the loft surface follows between sections (each touches the end sections)."},
+    "centerline": {"type": "object", "properties": {"pathSketchIndex": {"type": "integer"}, "pathIndex": {"type": "integer", "default": 0}}, "required": ["pathSketchIndex"], "description": "Optional spine path the section centroids follow (the loft bends along it); mutually exclusive with rails."},
     "first": {"type": "object", "description": "Start-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane", "tangent", "smooth"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}},
     "last": {"type": "object", "description": "End-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane", "tangent", "smooth"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}}
   },
@@ -354,8 +356,31 @@ func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewLoftFeatures(part.Features()).AddConditionedLiveRailed(sections, in.Closed, op, liveEnds, rails)
+	centerline, err := loftCenterlineProvider(part, in.Centerline)
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewLoftFeatures(part.Features()).AddConditionedLiveGuided(sections, in.Closed, op, liveEnds, rails, centerline)
 	return recomputeResult(part, pf)
+}
+
+// loftCenterlineProvider validates the centerline path up front (nil when absent) and returns a
+// live polyline provider, like the rails.
+func loftCenterlineProvider(part *compdef.PartComponentDefinition, ref *loftRailRef) (func() []math.Point3, error) {
+	if ref == nil {
+		return nil, nil
+	}
+	if _, err := pathFromSketch(part, ref.PathSketchIndex, ref.PathIndex); err != nil {
+		return nil, fmt.Errorf("loft centerline: %w", err)
+	}
+	r := *ref
+	return func() []math.Point3 {
+		p, err := pathFromSketch(part, r.PathSketchIndex, r.PathIndex)
+		if err != nil || p == nil {
+			return nil
+		}
+		return p.Points()
+	}, nil
 }
 
 // loftRailProviders validates each rail path up front and returns live polyline providers that

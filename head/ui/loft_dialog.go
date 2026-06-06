@@ -49,8 +49,8 @@ func drawLoftDialog(s *app.Session) {
 	loftUI.open = true
 	native.SetNextWindowSize(320, 380)
 	if native.Begin("Loft") {
-		native.Text("Sections: " + strconv.Itoa(l.SectionCount()) + " (click regions in order)")
-		native.Text("Rails: " + strconv.Itoa(l.RailCount()) + " (click open paths to guide)")
+		native.Text("Sections: " + strconv.Itoa(l.SectionCount()) + " (regions, or a vertex/point for an apex, or a face for tangency)")
+		drawLoftGuides(l)
 		loftOperationCombo(l)
 		closed := l.Closed()
 		if native.Checkbox("Closed loop", &closed) {
@@ -93,6 +93,25 @@ func drawLoftEndCondition(title string, u *loftEndUI) {
 	if native.Checkbox(title+" reversed", &rev) {
 		u.reversed = rev
 	}
+}
+
+// drawLoftGuides shows the guide-curve controls: a centerline-vs-rails toggle and the count/status
+// of whichever is active. Picked open paths become the centerline (spine) when the toggle is on,
+// otherwise rails.
+func drawLoftGuides(l *app.LoftTool) {
+	useCL := l.UseCenterline()
+	if native.Checkbox("Guide path is a centerline (spine)", &useCL) {
+		l.SetUseCenterline(useCL)
+	}
+	if useCL {
+		status := "none"
+		if l.HasCenterline() {
+			status = "set"
+		}
+		native.Text("Centerline: " + status + " (click an open path)")
+		return
+	}
+	native.Text("Rails: " + strconv.Itoa(l.RailCount()) + " (click open paths to guide)")
 }
 
 func loftOperationCombo(l *app.LoftTool) {

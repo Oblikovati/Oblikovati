@@ -301,6 +301,54 @@ func TestLoftToolRailGuides(t *testing.T) {
 	}
 }
 
+// TestLoftToolCenterlineBends drives the Loft UI in centerline mode: two circle sections plus a
+// spine PATH that bows to x=2 — the loft must bend along it (its centroid moves off-axis).
+func TestLoftToolCenterlineBends(t *testing.T) {
+	s := NewSession()
+	def := compdef.NewPartComponentDefinition()
+	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
+	if err != nil {
+		t.Fatalf("Add part: %v", err)
+	}
+	pd.SetContent(def)
+	base := def.Sketches().Add(sketch.XYPlane())
+	base.Circles().AddByCenterRadius(math.P2(0, 0), 2)
+	top := def.Sketches().Add(planeAtZ(4))
+	top.Circles().AddByCenterRadius(math.P2(0, 0), 2)
+	// Spine on XZ: (u,v)→(u,0,v), bowing to x=2 at mid; touches both circle centres.
+	spine := def.Sketches().Add(sketch.XZPlane())
+	a := spine.Points().Add(math.P2(0, 0))
+	mid := spine.Points().Add(math.P2(2, 2))
+	b := spine.Points().Add(math.P2(0, 4))
+	spine.Lines().Add(a, mid)
+	spine.Lines().Add(mid, b)
+
+	s.SetPicker(&seqPicker{sels: []Selectable{
+		ProfileHandle{Sketch: base, ProfileIndex: 0},
+		ProfileHandle{Sketch: top, ProfileIndex: 0},
+		PathHandle{Sketch: spine, PathIndex: 0},
+	}})
+	l := NewLoftTool()
+	s.StartTool(l)
+	s.Click(0, 0) // base circle
+	s.Click(0, 0) // top circle
+	l.SetUseCenterline(true)
+	s.Click(0, 0) // the spine path → centerline
+	if l.SectionCount() != 2 || !l.HasCenterline() {
+		t.Fatalf("loft picks: %d sections, centerline=%v; want 2 + a centerline", l.SectionCount(), l.HasCenterline())
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	body := def.SurfaceBodies().Item(0)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("centerlined loft not a valid solid: %+v", r)
+	}
+	if cx := float64(ops.BodyGeometryProperties(body, ops.DefaultQuality()).Centroid.X); cx < 0.5 {
+		t.Errorf("loft did not bend along the centerline: centroid x = %.3f, want > 0.5", cx)
+	}
+}
+
 func TestLoftToolNeedsTwoSections(t *testing.T) {
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})

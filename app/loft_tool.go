@@ -15,12 +15,14 @@ import (
 // order — each a sketch region, or a vertex/work point to taper the loft to an apex (a cone or
 // dome) — optionally close the loop, set the end conditions, and OK to blend them into a solid.
 type LoftTool struct {
-	sections    []loftPick
-	rails       []PathHandle // guide curves (kLoftWithRails) — picked sketch paths
-	closed      bool
-	operation   ops.PartFeatureOperation
-	first, last feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
-	added       *feature.PartFeature
+	sections      []loftPick
+	rails         []PathHandle // guide curves (kLoftWithRails) — picked sketch paths
+	centerline    *PathHandle  // spine curve (kLoftWithCenterline); set when picking in centerline mode
+	useCenterline bool         // route the next path pick to the centerline rather than rails
+	closed        bool
+	operation     ops.PartFeatureOperation
+	first, last   feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
+	added         *feature.PartFeature
 }
 
 // loftPick is one picked cross-section: a profile region, a point (apex), or a body face (by
@@ -65,12 +67,24 @@ func (t *LoftTool) Pick(_ *Session, sel Selectable) {
 	case FaceHandle:
 		t.sections = append(t.sections, loftPick{faceKey: h.Face.ReferenceKey()})
 	case PathHandle:
-		t.rails = append(t.rails, h)
+		if t.useCenterline {
+			ph := h
+			t.centerline = &ph
+		} else {
+			t.rails = append(t.rails, h)
+		}
 	}
 }
 
 // RailCount returns how many guide rails have been picked.
 func (t *LoftTool) RailCount() int { return len(t.rails) }
+
+// SetUseCenterline routes path picks to the centerline (the spine, kLoftWithCenterline) instead of
+// rails; HasCenterline reports whether a centerline has been picked. Centerline and rails are
+// mutually exclusive (as in Inventor) — a centerline takes precedence on commit.
+func (t *LoftTool) SetUseCenterline(on bool) { t.useCenterline = on }
+func (t *LoftTool) UseCenterline() bool      { return t.useCenterline }
+func (t *LoftTool) HasCenterline() bool      { return t.centerline != nil }
 
 // hasProfile reports whether profile h is already a picked section.
 func (t *LoftTool) hasProfile(h ProfileHandle) bool {
@@ -134,7 +148,12 @@ func (t *LoftTool) Commit(s *Session) error {
 			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
 		}
 	}
-	t.added = feature.NewLoftFeatures(part.Features()).AddRailed(sections, t.closed, t.operation, t.first, t.last, t.railProviders())
+	lofts := feature.NewLoftFeatures(part.Features())
+	if t.centerline != nil { // a centerline (spine) takes precedence over rails
+		t.added = lofts.AddCenterlined(sections, t.closed, t.operation, t.first, t.last, t.centerlineProvider())
+	} else {
+		t.added = lofts.AddRailed(sections, t.closed, t.operation, t.first, t.last, t.railProviders())
+	}
 	part.Recompute()
 	s.recordEdit(part, "Loft")
 	if !t.added.Health().OK() {
@@ -159,6 +178,18 @@ func (t *LoftTool) railProviders() []func() []math.Point3 {
 		})
 	}
 	return rails
+}
+
+// centerlineProvider turns the picked spine path into a live model-space polyline provider.
+func (t *LoftTool) centerlineProvider() func() []math.Point3 {
+	ph := *t.centerline
+	return func() []math.Point3 {
+		p, err := resolveSweepPath(&ph)
+		if err != nil || p == nil {
+			return nil
+		}
+		return p.Points()
+	}
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).

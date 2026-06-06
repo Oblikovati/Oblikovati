@@ -126,6 +126,27 @@ func railGuide(sections [][]math.Point3, rails [][]math.Point3) [][]math.Point3 
 	return sections
 }
 
+// centerlineGuide bends the loft's spine (the kLoftWithCenterline mode): each densified
+// sub-section is translated bodily so its centroid lies on the centerline curve, so the loft
+// follows a curved path while keeping its cross-sections. Unlike a rail (which pulls one side with
+// falloff), the whole section moves. The centerline's ends are pinned to the end-section
+// centroids. A no-op without a centerline.
+func centerlineGuide(sections [][]math.Point3, centerline []math.Point3) [][]math.Point3 {
+	levels := len(sections)
+	if len(centerline) < 2 || levels < 2 {
+		return sections
+	}
+	samples := resamplePath(centerline, levels)
+	samples[0], samples[levels-1] = centroidOf(sections[0]), centroidOf(sections[levels-1]) // pin ends
+	for s := 0; s < levels; s++ {
+		d := centroidOf(sections[s]).VectorTo(samples[s])
+		for j := range sections[s] {
+			sections[s][j] = sections[s][j].TranslateBy(d)
+		}
+	}
+	return sections
+}
+
 // nearestTrack returns the index of the section point closest to p.
 func nearestTrack(section []math.Point3, p math.Point3) int {
 	best, bestD := 0, stdmath.Inf(1)
