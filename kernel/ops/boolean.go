@@ -86,12 +86,54 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	// so every case the planar path already handles is untouched. The fallback is gated on a
 	// modest operand size: triangle CSG on a large body is expensive and rarely recovers it,
 	// so above the limit we keep the (fast) planar result rather than pay a big CSG attempt.
-	if !Validate(body).Valid && len(target.Faces())+len(tool.Faces()) <= csgFallbackFaceLimit {
+	if shouldFallbackBoolean(op, target, tool, body) && len(target.Faces())+len(tool.Faces()) <= csgFallbackFaceLimit {
 		if csg, cerr := booleanCSG(op, target, tool, lin); cerr == nil && csg != nil && Validate(csg).Valid {
 			return csg, nil
 		}
 	}
 	return body, nil
+}
+
+func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {
+	if !validBooleanSolid(body) {
+		return true
+	}
+	return invalidBooleanVolume(op, target, tool, body)
+}
+
+func validBooleanSolid(body *topo.Body) bool {
+	r := Validate(body)
+	return r.Valid && r.Closed && r.Manifold && body.IsSolid()
+}
+
+func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body) bool {
+	const tol = 1e-6
+	targetVol := BodyGeometryProperties(target, DefaultQuality()).Volume
+	toolVol := BodyGeometryProperties(tool, DefaultQuality()).Volume
+	bodyVol := BodyGeometryProperties(body, DefaultQuality()).Volume
+	switch op {
+	case Join:
+		return bodyVol+tol < maxFloat(targetVol, toolVol)
+	case Cut:
+		return bodyVol > targetVol+tol
+	case Intersect:
+		return bodyVol > minFloat(targetVol, toolVol)+tol
+	}
+	return false
+}
+
+func minFloat(a, b float64) float64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxFloat(a, b float64) float64 {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 // csgFallbackFaceLimit bounds the operand size for the invalid-result CSG fallback (see
