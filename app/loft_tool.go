@@ -22,13 +22,16 @@ type LoftTool struct {
 	added       *feature.PartFeature
 }
 
-// loftPick is one picked cross-section: a profile region, or — when apex is set — a point.
+// loftPick is one picked cross-section: a profile region, a point (apex), or a body face (by
+// reference key) the loft can leave tangent.
 type loftPick struct {
 	profile ProfileHandle
 	apex    *math.Point3
+	faceKey []byte
 }
 
 func (p loftPick) isPoint() bool { return p.apex != nil }
+func (p loftPick) isFace() bool  { return len(p.faceKey) > 0 }
 
 // NewLoftTool returns a loft tool that creates a new body.
 func NewLoftTool() *LoftTool { return &LoftTool{operation: ops.NewBody} }
@@ -36,13 +39,14 @@ func NewLoftTool() *LoftTool { return &LoftTool{operation: ops.NewBody} }
 // Name implements [Tool].
 func (t *LoftTool) Name() string { return "Loft" }
 
-// Start lets clicks pick sketch regions (profiles) or points (vertices / work points) as sections.
+// Start lets clicks pick sketch regions (profiles), points (vertices / work points) for an apex,
+// or a body face the loft can leave tangent.
 func (t *LoftTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectVertex, SelectWorkPoint))
+	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectVertex, SelectWorkPoint, SelectFace))
 }
 
-// Pick appends the clicked profile or point as the next cross-section (ignoring a profile already
-// in the list, so a double-click does not duplicate a section).
+// Pick appends the clicked profile, point, or face as the next cross-section (ignoring a profile
+// already in the list, so a double-click does not duplicate a section).
 func (t *LoftTool) Pick(_ *Session, sel Selectable) {
 	switch h := sel.(type) {
 	case ProfileHandle:
@@ -56,6 +60,8 @@ func (t *LoftTool) Pick(_ *Session, sel Selectable) {
 	case WorkPointHandle:
 		p := h.Point.Point()
 		t.sections = append(t.sections, loftPick{apex: &p})
+	case FaceHandle:
+		t.sections = append(t.sections, loftPick{faceKey: h.Face.ReferenceKey()})
 	}
 }
 
@@ -93,7 +99,7 @@ func (t *LoftTool) SectionCount() int { return len(t.sections) }
 func (t *LoftTool) PickedProfiles() []ProfileHandle {
 	var out []ProfileHandle
 	for _, s := range t.sections {
-		if !s.isPoint() {
+		if !s.isPoint() && !s.isFace() {
 			out = append(out, s.profile)
 		}
 	}
@@ -112,11 +118,14 @@ func (t *LoftTool) Commit(s *Session) error {
 	}
 	sections := make([]feature.LoftSection, len(t.sections))
 	for i, h := range t.sections {
-		if h.isPoint() {
+		switch {
+		case h.isPoint():
 			sections[i] = feature.LoftSection{Point: h.apex}
-			continue
+		case h.isFace():
+			sections[i] = feature.LoftSection{FaceKey: h.faceKey}
+		default:
+			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
 		}
-		sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
 	}
 	t.added = feature.NewLoftFeatures(part.Features()).AddConditioned(sections, t.closed, t.operation, t.first, t.last)
 	part.Recompute()
@@ -144,8 +153,8 @@ func (t *LoftTool) Prompt(*Session) string {
 func (t *LoftTool) Preview(*Session) []renderer.DrawItem {
 	var items []renderer.DrawItem
 	for _, s := range t.sections {
-		if s.isPoint() {
-			continue
+		if s.isPoint() || s.isFace() {
+			continue // a point/face section has no profile polygon to outline
 		}
 		h := s.profile
 		if h.ProfileIndex >= h.Sketch.Profiles().Count() {

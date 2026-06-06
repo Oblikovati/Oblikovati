@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati/api/types"
+	"oblikovati/kernel/geom"
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
@@ -175,17 +176,23 @@ func (c *SweepFeatures) AddLive(skt *sketch.Sketch, profileIndex int, path func(
 	return pf
 }
 
-// LoftSection identifies one cross-section of a loft: a closed profile on a sketch, or — when
-// Point is set — a single point (an apex), so the loft tapers to a cone or a domed tip. A point
-// section is only valid as the first or last section.
+// LoftSection identifies one cross-section of a loft: a closed profile on a sketch; or — when
+// Point is set — a single point (an apex), so the loft tapers to a cone or a domed tip (valid
+// only first or last); or — when FaceKey is set — an existing body face, so the loft can leave
+// it tangent (Tangent/Smooth conditions). The face's boundary is the section geometry and its
+// surface gives the takeoff; the key is resolved against the running bodies each recompute.
 type LoftSection struct {
 	Sketch       *sketch.Sketch
 	ProfileIndex int
 	Point        *math.Point3
+	FaceKey      []byte
 }
 
 // IsPoint reports whether this section is a point (apex) rather than a profile.
 func (s LoftSection) IsPoint() bool { return s.Point != nil }
+
+// IsFace reports whether this section is an existing body face (resolved by FaceKey).
+func (s LoftSection) IsFace() bool { return len(s.FaceKey) > 0 }
 
 // LoftDefinition is the recipe for a loft: a blend through ordered sections, optionally closed
 // (the last section blends back to the first). First/Last carry the end-section conditions that
@@ -222,11 +229,11 @@ func (l *LoftFeature) ToolBody() *topo.Body                { return l.tool }
 // inner loop per section (the common pipe) is meshed directly into a hollow tube, so a loft of
 // annulus sections is a watertight pipe rather than a filled cone.
 func (l *LoftFeature) Recompute(in Input) (Output, error) {
-	outers, inners, err := l.loopSets()
+	outers, inners, normals, err := l.resolveSections(in.Bodies)
 	if err != nil {
 		return Output{}, err
 	}
-	tool, err := l.skinTool(outers, inners, l.resolveEnds())
+	tool, err := l.skinTool(outers, inners, l.endsWith(normals))
 	if err != nil {
 		return Output{}, err
 	}
@@ -238,30 +245,14 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// resolveEnds pairs the definition's end conditions with the first/last section-plane normals
-// the skinner needs to aim the angled takeoff tangents.
-func (l *LoftFeature) resolveEnds() loftEnds {
-	secs := l.def.Sections
+// endsWith pairs the definition's end conditions with the first/last section normals (a sketch
+// plane, an apex tangent plane, or a source-face normal) the skinner needs to aim the takeoff.
+func (l *LoftFeature) endsWith(normals []math.UnitVector3) loftEnds {
 	first, last := l.def.First, l.def.Last
 	if l.def.LiveEnds != nil {
 		first, last = l.def.LiveEnds()
 	}
-	return loftEnds{
-		first:  first,
-		last:   last,
-		firstN: sectionPlaneNormal(secs[0]),
-		lastN:  sectionPlaneNormal(secs[len(secs)-1]),
-	}
-}
-
-// sectionPlaneNormal is a section's sketch-plane normal — for a point (apex) section this is the
-// tangent plane a TangentToPlane condition domes against. Falls back to +Z if the section carries
-// no sketch (a bare 3D point), so resolveEnds never dereferences a nil sketch.
-func sectionPlaneNormal(s LoftSection) math.UnitVector3 {
-	if s.Sketch != nil {
-		return s.Sketch.Plane().Normal()
-	}
-	return math.V3(0, 0, 1).AsUnit()
+	return loftEnds{first: first, last: last, firstN: normals[0], lastN: normals[len(normals)-1]}
 }
 
 // skinTool builds the lofted solid for the resolved loops: a plain skin (no holes), a
@@ -314,40 +305,130 @@ func holeRing(inners [][][]math.Point3, h int) [][]math.Point3 {
 	return ring
 }
 
-// loopSets resolves each section into its outer loop and inner (hole) loops in model space. A
-// point (apex) section resolves to a single-point loop with no holes; it is only valid at an end,
-// and at least one section must be a real profile. All profile sections must have the same number
-// of inner loops so holes correspond across the loft.
-func (l *LoftFeature) loopSets() (outers [][]math.Point3, inners [][][]math.Point3, err error) {
+// resolveSections resolves each section into its outer loop, inner (hole) loops, and plane/face
+// normal in model space. A section is a sketch profile, a point (apex; single-point loop, no
+// holes, valid only at an end), or an existing body face (resolved against bodies — its boundary
+// is the loop, its surface gives the normal for Tangent/Smooth). At least one section must be a
+// real profile/face, and all sections must share their inner-loop count.
+func (l *LoftFeature) resolveSections(bodies []*topo.Body) (outers [][]math.Point3, inners [][][]math.Point3, normals []math.UnitVector3, err error) {
 	if len(l.def.Sections) < 2 {
-		return nil, nil, fmt.Errorf("loft: %d sections, need at least 2", len(l.def.Sections))
+		return nil, nil, nil, fmt.Errorf("loft: %d sections, need at least 2", len(l.def.Sections))
 	}
 	if err := l.validatePointSections(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	for _, s := range l.def.Sections {
-		if s.IsPoint() {
-			outers = append(outers, []math.Point3{*s.Point})
-			inners = append(inners, nil)
-			continue
+	for i, s := range l.def.Sections {
+		outer, holes, n, e := resolveSection(s, bodies)
+		if e != nil {
+			return nil, nil, nil, fmt.Errorf("loft section %d: %w", i, e)
 		}
+		outers, inners, normals = append(outers, outer), append(inners, holes), append(normals, n)
+	}
+	for i, h := range inners {
+		if len(h) != len(inners[0]) {
+			return nil, nil, nil, fmt.Errorf("loft: section %d has %d holes, want %d (hole counts must match across sections; a point section cannot pair with a hollow one)", i, len(h), len(inners[0]))
+		}
+	}
+	return outers, inners, normals, nil
+}
+
+// resolveSection resolves one section's outer loop, inner (hole) loops, and normal.
+func resolveSection(s LoftSection, bodies []*topo.Body) ([]math.Point3, [][]math.Point3, math.UnitVector3, error) {
+	switch {
+	case s.IsPoint():
+		return []math.Point3{*s.Point}, nil, sectionNormal(s), nil
+	case s.IsFace():
+		f, ok := findFace(bodies, s.FaceKey)
+		if !ok {
+			return nil, nil, math.UnitVector3{}, fmt.Errorf("face reference is lost (no running body has it)")
+		}
+		outer, holes := faceLoopsModel(f)
+		if len(outer) < 3 {
+			return nil, nil, math.UnitVector3{}, fmt.Errorf("face has a degenerate boundary (%d points)", len(outer))
+		}
+		return outer, holes, faceNormal(f, outer), nil
+	default:
 		prof, e := resolveSingleProfile(s.Sketch, s.ProfileIndex, "loft")
 		if e != nil {
-			return nil, nil, e
+			return nil, nil, math.UnitVector3{}, e
 		}
-		outers = append(outers, loopToModel(prof.OuterLoop(), s.Sketch.Plane()))
+		outer := loopToModel(prof.OuterLoop(), s.Sketch.Plane())
 		var holes [][]math.Point3
 		for _, il := range prof.InnerLoops() {
 			holes = append(holes, loopToModel(il, s.Sketch.Plane()))
 		}
-		inners = append(inners, holes)
+		return outer, holes, s.Sketch.Plane().Normal(), nil
 	}
-	for i, h := range inners {
-		if len(h) != len(inners[0]) {
-			return nil, nil, fmt.Errorf("loft: section %d has %d holes, want %d (hole counts must match across sections; a point section cannot pair with a hollow one)", i, len(h), len(inners[0]))
+}
+
+// sectionNormal is a sketch/point section's plane normal — for a point (apex) section the tangent
+// plane a TangentToPlane condition domes against. Falls back to +Z for a bare 3D point.
+func sectionNormal(s LoftSection) math.UnitVector3 {
+	if s.Sketch != nil {
+		return s.Sketch.Plane().Normal()
+	}
+	return math.V3(0, 0, 1).AsUnit()
+}
+
+// findFace resolves a face reference key against the running bodies (persistent naming).
+func findFace(bodies []*topo.Body, key []byte) (*topo.Face, bool) {
+	for _, b := range bodies {
+		if f, ok := b.FindFaceByKey(key); ok {
+			return f, true
 		}
 	}
-	return outers, inners, nil
+	return nil, false
+}
+
+// faceLoopsModel returns a face's outer boundary loop and its inner (hole) loops as ordered
+// model-space polygons (the "from" vertex of each oriented edge use).
+func faceLoopsModel(f *topo.Face) (outer []math.Point3, inners [][]math.Point3) {
+	for _, l := range f.Loops() {
+		poly := loopUseStarts(l)
+		if l.IsOuter() {
+			outer = poly
+		} else if len(poly) >= 3 {
+			inners = append(inners, poly)
+		}
+	}
+	return outer, inners
+}
+
+// loopUseStarts is the ordered start points of a loop's oriented edge uses.
+func loopUseStarts(l *topo.Loop) []math.Point3 {
+	var pts []math.Point3
+	for _, u := range l.EdgeUses() {
+		v := u.Edge().StartVertex()
+		if u.Reversed() {
+			v = u.Edge().EndVertex()
+		}
+		pts = append(pts, v.Point())
+	}
+	return pts
+}
+
+// faceNormal is the source face's surface normal used to aim a Tangent/Smooth takeoff: exact for
+// a planar face (its plane normal), otherwise the boundary's best-fit (Newell) normal — so face
+// continuity is exact for planar source faces and a sensible approximation for curved ones. Sign
+// is irrelevant (the takeoff is re-oriented outward by the skinner).
+func faceNormal(f *topo.Face, outer []math.Point3) math.UnitVector3 {
+	if pl, ok := f.Geometry().(geom.Plane); ok {
+		return pl.Normal().AsUnit()
+	}
+	return boundaryNormal(outer)
+}
+
+// boundaryNormal is the Newell normal of a (near-)planar polygon (+Z when degenerate).
+func boundaryNormal(poly []math.Point3) math.UnitVector3 {
+	var n math.Vector3
+	for i, a := range poly {
+		b := poly[(i+1)%len(poly)]
+		n = n.Add(math.V3((a.Y-b.Y)*(a.Z+b.Z), (a.Z-b.Z)*(a.X+b.X), (a.X-b.X)*(a.Y+b.Y)))
+	}
+	if n.Length() < 1e-12 {
+		return math.V3(0, 0, 1).AsUnit()
+	}
+	return n.AsUnit()
 }
 
 // validatePointSections enforces that point (apex) sections only sit at the ends and that the

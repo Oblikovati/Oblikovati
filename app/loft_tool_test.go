@@ -195,6 +195,65 @@ func TestLoftToolPointSectionCone(t *testing.T) {
 	}
 }
 
+// TestLoftToolFaceSectionTangent drives the Loft UI picking a body FACE (a cylinder's top) then a
+// circle above, with a Tangent condition on the face — the loft must flare out tangent to the
+// planar top (exact G1), beyond the ruled radius. Exercises face-section picking end to end.
+func TestLoftToolFaceSectionTangent(t *testing.T) {
+	s := NewSession()
+	def := compdef.NewPartComponentDefinition()
+	pd, err := s.Workspace().Add(doc.Part, "part.obk", true)
+	if err != nil {
+		t.Fatalf("Add part: %v", err)
+	}
+	pd.SetContent(def)
+	base := def.Sketches().Add(sketch.XYPlane())
+	base.Circles().AddByCenterRadius(math.P2(0, 0), 2)
+	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(base, 0, ops.NewBody, func() float64 { return 3 })
+	def.Recompute()
+	cyl := def.SurfaceBodies().Item(0)
+
+	var topKey []byte
+	bestZ := -1e30
+	for _, f := range cyl.Faces() {
+		bb := f.RangeBox()
+		if float64(bb.Max.Z-bb.Min.Z) < 1e-6 {
+			if zc := float64(bb.Min.Z+bb.Max.Z) / 2; zc > bestZ {
+				bestZ, topKey = zc, f.ReferenceKey()
+			}
+		}
+	}
+	topFace, ok := cyl.FindFaceByKey(topKey)
+	if !ok {
+		t.Fatal("could not re-find the cylinder top face by key")
+	}
+	topSketch := def.Sketches().Add(planeAtZ(6))
+	topSketch.Circles().AddByCenterRadius(math.P2(0, 0), 1)
+	def.Recompute()
+
+	s.SetPicker(&seqPicker{sels: []Selectable{
+		FaceHandle{Face: topFace, Body: cyl},
+		ProfileHandle{Sketch: topSketch, ProfileIndex: 0},
+	}})
+	l := NewLoftTool()
+	s.StartTool(l)
+	s.Click(0, 0)   // the cylinder top face
+	s.Click(10, 10) // the small circle
+	if l.SectionCount() != 2 {
+		t.Fatalf("loft has %d sections, want 2 (face + profile)", l.SectionCount())
+	}
+	l.SetFirstCondition(feature.LoftEnd{Condition: feature.LoftTangent})
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	loft := def.SurfaceBodies().Item(def.SurfaceBodies().Count() - 1)
+	if r := ops.Validate(loft); !r.Valid || !loft.IsSolid() {
+		t.Fatalf("face-section loft not a valid solid: %+v", r)
+	}
+	if maxX := float64(loft.RangeBox().Max.X); maxX < 2.15 {
+		t.Errorf("tangent face loft did not flare: max x = %.3f, want > 2.15 (ruled would be 2.0)", maxX)
+	}
+}
+
 func TestLoftToolNeedsTwoSections(t *testing.T) {
 	s, bottom, top := newPartWithStackedSquares(t)
 	s.SetPicker(&seqPicker{sels: []Selectable{bottom, top}})

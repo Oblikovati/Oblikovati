@@ -25,13 +25,15 @@ type SweepData struct {
 	Operation string      `yaml:"operation"`
 }
 
-// LoftSectionData is one section of a loft: a profile on a sketch, or — when Point is set — an
-// apex (a point section). Point is model-space [x,y,z]; Sketch still gives the apex's plane (the
-// tangent plane a TangentToPlane condition domes against).
+// LoftSectionData is one section of a loft: a profile on a sketch; a point (apex) section
+// (Point = model [x,y,z]); or a body-face section (FaceKey = the face reference key, resolved
+// against the running bodies). Sketch is -1 when the section carries no sketch (a face section,
+// or a bare 3D point).
 type LoftSectionData struct {
 	Sketch  int       `yaml:"sketch"`
 	Profile int       `yaml:"profile"`
 	Point   []float64 `yaml:"point,omitempty"`
+	FaceKey []byte    `yaml:"faceKey,omitempty"`
 }
 
 // LoftEndData is a loft end-section condition (omitted entirely when Free). Angle is in radians.
@@ -93,11 +95,14 @@ func restoreSweep(fs *PartFeatures, d *SweepData, sk SketchIndexer) (*PartFeatur
 func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {
 	sections := make([]LoftSectionData, len(def.Sections))
 	for i, s := range def.Sections {
-		idx, ok := sk.IndexOf(s.Sketch)
-		if !ok {
-			return nil, fmt.Errorf("loft section %d references a sketch that is not in the part", i)
+		idx := -1 // a face section (and a bare 3D point) carries no sketch
+		if s.Sketch != nil {
+			var ok bool
+			if idx, ok = sk.IndexOf(s.Sketch); !ok {
+				return nil, fmt.Errorf("loft section %d references a sketch that is not in the part", i)
+			}
 		}
-		sd := LoftSectionData{Sketch: idx, Profile: s.ProfileIndex}
+		sd := LoftSectionData{Sketch: idx, Profile: s.ProfileIndex, FaceKey: s.FaceKey}
 		if s.IsPoint() {
 			sd.Point = []float64{s.Point.X, s.Point.Y, s.Point.Z}
 		}
@@ -137,11 +142,14 @@ func restoreLoft(fs *PartFeatures, d *LoftData, sk SketchIndexer) (*PartFeature,
 	}
 	sections := make([]LoftSection, len(d.Sections))
 	for i, s := range d.Sections {
-		skt, ok := sk.At(s.Sketch)
-		if !ok {
-			return nil, fmt.Errorf("loft section %d references sketch index %d, which does not exist", i, s.Sketch)
+		ls := LoftSection{ProfileIndex: s.Profile, FaceKey: s.FaceKey}
+		if s.Sketch >= 0 { // a face section (and a bare 3D point) has no sketch (-1)
+			skt, ok := sk.At(s.Sketch)
+			if !ok {
+				return nil, fmt.Errorf("loft section %d references sketch index %d, which does not exist", i, s.Sketch)
+			}
+			ls.Sketch = skt
 		}
-		ls := LoftSection{Sketch: skt, ProfileIndex: s.Profile}
 		if len(s.Point) == 3 {
 			p := math.P3(s.Point[0], s.Point[1], s.Point[2])
 			ls.Point = &p

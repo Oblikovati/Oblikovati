@@ -167,15 +167,23 @@ func applyApexCondition(tangents []math.Vector3, apexSec, neighbor []math.Point3
 	}
 }
 
-// applyEndCondition overrides an end section's tangents for an angle/direction condition: the
-// surface leaves the section at end.Angle measured from its plane, with end.Impact scaling the
-// takeoff reach and Reversed flipping the through-plane direction (an undercut). neighbor is the
-// adjacent section, normal the section's plane normal, forward the +u (increasing-section)
-// direction here. Free and the face/point conditions keep the natural Catmull-Rom tangent.
+// applyEndCondition overrides a profile end section's tangents from its condition: an
+// angle/direction takeoff (a chosen angle to the section plane) or a face-continuity takeoff
+// (Tangent/Smooth — leave the source face tangent to its surface). Free keeps the natural
+// Catmull-Rom tangent. neighbor is the adjacent section, normal the section's plane/face normal,
+// forward the +u (increasing-section) direction here.
 func applyEndCondition(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, forward math.Vector3) {
-	if !end.Condition.CurvesViaAngle() {
-		return
+	switch {
+	case end.Condition.CurvesViaAngle():
+		applyAngleTakeoff(tangents, sec, neighbor, end, normal, forward)
+	case end.Condition.IsFaceContinuity():
+		applyFaceTangent(tangents, sec, neighbor, end, normal)
 	}
+}
+
+// applyAngleTakeoff aims each tangent at end.Angle from the section plane (sin·normal + cos·
+// radial), scaled by impact·chord; Reversed flips the through-plane component (an undercut).
+func applyAngleTakeoff(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3, forward math.Vector3) {
 	nf := alignToward(normal, forward)
 	if end.Reversed {
 		nf = nf.Negate()
@@ -192,6 +200,36 @@ func applyEndCondition(tangents []math.Vector3, sec, neighbor []math.Point3, end
 		dir := nf.AsVector().Scale(sa).Add(r.Scale(ca))
 		tangents[j] = unitOrFallback(dir, forward).Scale(impact * base)
 	}
+}
+
+// applyFaceTangent makes the loft leave the source face tangent to its surface: each tangent is
+// the in-surface direction perpendicular to the boundary edge (normal × edgeDir), oriented
+// outward, scaled by impact·chord. For a planar source face the loft's tangent plane along the
+// shared edge equals the face plane — exact G1 continuity. Smooth (G2) reuses this as a faceted-
+// kernel approximation. Reversed flips the takeoff inward.
+func applyFaceTangent(tangents []math.Vector3, sec, neighbor []math.Point3, end LoftEnd, normal math.UnitVector3) {
+	impact := end.Impact
+	if impact <= 0 {
+		impact = 1
+	}
+	c, n := centroidOf(sec), normal.AsVector()
+	for j := range sec {
+		t := n.Cross(edgeDirAt(sec, j))
+		if t.Dot(c.VectorTo(sec[j])) < 0 { // orient outward (away from the section centroid)
+			t = t.Negate()
+		}
+		if end.Reversed {
+			t = t.Negate()
+		}
+		base := float64(sec[j].DistanceTo(neighbor[j]))
+		tangents[j] = unitOrFallback(t, c.VectorTo(sec[j])).Scale(impact * base)
+	}
+}
+
+// edgeDirAt is the boundary direction at loop point j (the chord from the previous to the next).
+func edgeDirAt(loop []math.Point3, j int) math.Vector3 {
+	n := len(loop)
+	return loop[(j-1+n)%n].VectorTo(loop[(j+1)%n])
 }
 
 // alignToward returns n flipped, if needed, to point into the same half-space as ref.
