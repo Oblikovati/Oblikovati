@@ -20,7 +20,11 @@ import (
 var loftUI = struct {
 	open        bool
 	first, last loftEndUI
+	areaMid     float32 // area-graph mid-height area scale (1 = off)
 }{}
+
+// loftGuideLabels are the path-pick routing choices (rails / centerline / map curves).
+var loftGuideLabels = []string{"Rails", "Centerline", "Map curves"}
 
 // loftEndUI is the editable degree-state for one end condition (imgui needs stable field
 // pointers across frames, so the dialog edits this and pushes it to the tool each frame).
@@ -42,12 +46,16 @@ func drawLoftDialog(s *app.Session) {
 		loftUI.open = false
 		return
 	}
-	if !loftUI.open { // entering the tool: seed the condition editors from the tool's state
+	if !loftUI.open { // entering the tool: seed the editors from the tool's state
 		loftUI.first = seedLoftEndUI(l.FirstCondition())
 		loftUI.last = seedLoftEndUI(l.LastCondition())
+		loftUI.areaMid = float32(l.AreaMidScale())
+		if loftUI.areaMid == 0 {
+			loftUI.areaMid = 1
+		}
 	}
 	loftUI.open = true
-	native.SetNextWindowSize(320, 380)
+	native.SetNextWindowSize(340, 460)
 	if native.Begin("Loft") {
 		native.Text("Sections: " + strconv.Itoa(l.SectionCount()) + " (regions, or a vertex/point for an apex, or a face for tangency)")
 		drawLoftGuides(l)
@@ -95,23 +103,33 @@ func drawLoftEndCondition(title string, u *loftEndUI) {
 	}
 }
 
-// drawLoftGuides shows the guide-curve controls: a centerline-vs-rails toggle and the count/status
-// of whichever is active. Picked open paths become the centerline (spine) when the toggle is on,
-// otherwise rails.
+// drawLoftGuides shows the guide controls: which kind a picked open path becomes (rails /
+// centerline / map curves), the active kind's count/status, and the area-graph mid scale.
 func drawLoftGuides(l *app.LoftTool) {
-	useCL := l.UseCenterline()
-	if native.Checkbox("Guide path is a centerline (spine)", &useCL) {
-		l.SetUseCenterline(useCL)
+	kind := l.GuideKind()
+	if native.BeginCombo("Guide path", loftGuideLabels[kind]) {
+		for i, lbl := range loftGuideLabels {
+			if native.Selectable(lbl, i == kind) {
+				l.SetGuideKind(i)
+			}
+		}
+		native.EndCombo()
 	}
-	if useCL {
+	switch kind {
+	case 1: // centerline
 		status := "none"
 		if l.HasCenterline() {
 			status = "set"
 		}
-		native.Text("Centerline: " + status + " (click an open path)")
-		return
+		native.Text("  Centerline: " + status + " (click an open path)")
+	case 2: // map curves
+		native.Text("  Map curves: " + strconv.Itoa(l.MapCurveCount()) + " (a path of anchors, one per section)")
+	default: // rails
+		native.Text("  Rails: " + strconv.Itoa(l.RailCount()) + " (click open paths to guide)")
 	}
-	native.Text("Rails: " + strconv.Itoa(l.RailCount()) + " (click open paths to guide)")
+	native.Text("Area-graph mid scale (1 = off)")
+	native.InputFloat("##loft-area-mid", &loftUI.areaMid)
+	l.SetAreaMidScale(float64(loftUI.areaMid))
 }
 
 func loftOperationCombo(l *app.LoftTool) {

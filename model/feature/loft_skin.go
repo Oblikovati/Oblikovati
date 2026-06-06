@@ -3,8 +3,11 @@
 package feature
 
 import (
+	"sort"
+
 	stdmath "math"
 
+	"oblikovati/api/types"
 	"oblikovati/math"
 )
 
@@ -124,6 +127,105 @@ func railGuide(sections [][]math.Point3, rails [][]math.Point3) [][]math.Point3 
 		}
 	}
 	return sections
+}
+
+// mapAlign sets the point correspondence. With no map curves it falls back to the automatic
+// minimum-twist alignment (alignSections). With explicit map curves (the MapPointCurves mode) the
+// first curve gives one anchor point per section; each section is rotated so the vertex nearest its
+// anchor becomes index 0, so the anchors correspond across sections — letting the user pin (or
+// deliberately twist) the correspondence the auto-alignment would otherwise choose.
+func mapAlign(sections [][]math.Point3, mapCurves [][]math.Point3) [][]math.Point3 {
+	if len(mapCurves) == 0 || len(mapCurves[0]) == 0 {
+		return alignSections(sections)
+	}
+	mc := mapCurves[0]
+	out := make([][]math.Point3, len(sections))
+	for i, sec := range sections {
+		if i >= len(mc) {
+			out[i] = sec
+			continue
+		}
+		out[i] = rotateLoop(sec, nearestTrack(sec, mc[i]))
+	}
+	return out
+}
+
+// rotateLoop returns sec cyclically shifted so index off becomes index 0.
+func rotateLoop(sec []math.Point3, off int) []math.Point3 {
+	if off == 0 {
+		return sec
+	}
+	n := len(sec)
+	out := make([]math.Point3, n)
+	for k := 0; k < n; k++ {
+		out[k] = sec[(k+off)%n]
+	}
+	return out
+}
+
+// areaGraphScale resizes each densified section about its centroid so the loft's cross-sectional
+// area follows the area graph (the kLoftWithAreaGraphSections mode): at longitudinal fraction t the
+// section is scaled by sqrt(graph(t)), so its area becomes graph(t)× the blended area. The end
+// sections (t=0,1) are pinned to scale 1 so the user's profiles are preserved. No-op without stops.
+func areaGraphScale(sections [][]math.Point3, stops []types.LoftAreaStop) [][]math.Point3 {
+	levels := len(sections)
+	if len(stops) == 0 || levels < 2 {
+		return sections
+	}
+	graph := pinnedAreaStops(stops)
+	for s := 1; s < levels-1; s++ { // ends stay scale 1 (the real sections)
+		k := stdmath.Sqrt(areaGraphAt(float64(s)/float64(levels-1), graph))
+		if k == 1 {
+			continue
+		}
+		c := centroidOf(sections[s])
+		for j := range sections[s] {
+			sections[s][j] = c.TranslateBy(c.VectorTo(sections[s][j]).Scale(k))
+		}
+	}
+	return sections
+}
+
+// pinnedAreaStops returns the stops sorted by T with implicit scale-1 endpoints added at T=0/1 (so
+// the graph pins to the unscaled end sections unless the user overrode those positions).
+func pinnedAreaStops(stops []types.LoftAreaStop) []types.LoftAreaStop {
+	out := append([]types.LoftAreaStop(nil), stops...)
+	has := func(t float64) bool {
+		for _, s := range out {
+			if stdmath.Abs(s.T-t) < 1e-9 {
+				return true
+			}
+		}
+		return false
+	}
+	if !has(0) {
+		out = append(out, types.LoftAreaStop{T: 0, Scale: 1})
+	}
+	if !has(1) {
+		out = append(out, types.LoftAreaStop{T: 1, Scale: 1})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].T < out[j].T })
+	return out
+}
+
+// areaGraphAt linearly interpolates the area scale at fraction t over the (sorted, end-pinned)
+// stops; clamped to the first/last stop outside their range.
+func areaGraphAt(t float64, sorted []types.LoftAreaStop) float64 {
+	if t <= sorted[0].T {
+		return sorted[0].Scale
+	}
+	last := sorted[len(sorted)-1]
+	if t >= last.T {
+		return last.Scale
+	}
+	for i := 1; i < len(sorted); i++ {
+		if t <= sorted[i].T {
+			a, b := sorted[i-1], sorted[i]
+			f := (t - a.T) / (b.T - a.T)
+			return a.Scale + f*(b.Scale-a.Scale)
+		}
+	}
+	return last.Scale
 }
 
 // centerlineGuide bends the loft's spine (the kLoftWithCenterline mode): each densified

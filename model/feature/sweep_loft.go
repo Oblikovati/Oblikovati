@@ -18,6 +18,9 @@ import (
 // definition lives in the Apache-2.0 api/types (see ADR-0018).
 type LoftCondition = types.LoftCondition
 
+// LoftAreaStop is one control point of a loft area graph (canonical in api/types).
+type LoftAreaStop = types.LoftAreaStop
+
 // Loft end conditions (aliases of the canonical api/types values).
 const (
 	LoftFree           = types.LoftFree
@@ -47,9 +50,12 @@ type loftEnds struct {
 	firstN, lastN math.UnitVector3
 }
 
-// loftGuides carries the resolved guide curves (model-space polylines) that shape the OUTER skin:
-// rails (local pulls) and an optional centerline (bends the whole spine). Empty for the bore.
+// loftGuides carries everything that shapes the OUTER skin beyond the plain blend: an explicit
+// point correspondence (mapCurves; one anchor point per section), an area graph (cross-section
+// area along the loft), rails (local pulls), and a centerline (bends the spine). Empty for the bore.
 type loftGuides struct {
+	mapCurves  [][]math.Point3
+	areaGraph  []types.LoftAreaStop
 	rails      [][]math.Point3
 	centerline []math.Point3
 }
@@ -222,12 +228,21 @@ type LoftDefinition struct {
 	// model-space polyline the section centroids follow, so the loft bends along it. Mutually
 	// exclusive with Rails (as in Inventor); if both are set the centerline is applied first.
 	Centerline func() []math.Point3
+	// AreaGraph is an optional cross-section area graph (the kLoftWithAreaGraphSections mode): area
+	// scale stops along the loft; the section areas are scaled to follow it.
+	AreaGraph []types.LoftAreaStop
+	// MapCurves is an optional explicit point correspondence (MapPointCurves): live providers of one
+	// anchor point per section; the first overrides the automatic minimum-twist alignment.
+	MapCurves []func() []math.Point3
 }
 
 // LoftType reports the loft mode derived from the definition — the analogue of Inventor's
-// LoftTypeEnum (a regular loft, or one guided by a centerline or rails).
+// LoftTypeEnum (regular, or guided by an area graph, centerline, or rails). MapCurves is a
+// correspondence override, not a type, so it does not change this.
 func (d *LoftDefinition) LoftType() types.LoftType {
 	switch {
+	case len(d.AreaGraph) > 0:
+		return types.LoftWithAreaGraphSections
 	case d.Centerline != nil:
 		return types.LoftWithCenterline
 	case len(d.Rails) > 0:
@@ -297,6 +312,15 @@ func (l *LoftFeature) resolveGuides() loftGuides {
 	if l.def.Centerline != nil {
 		if pts := l.def.Centerline(); len(pts) >= 2 {
 			g.centerline = pts
+		}
+	}
+	g.areaGraph = l.def.AreaGraph
+	for _, m := range l.def.MapCurves {
+		if m == nil {
+			continue
+		}
+		if pts := m(); len(pts) >= 2 {
+			g.mapCurves = append(g.mapCurves, pts)
 		}
 	}
 	return g
@@ -542,7 +566,8 @@ func skinnedSections(loops [][]math.Point3, n int, closed bool, ends loftEnds, g
 	for i, lp := range loops {
 		resampled[i] = resampleLoop(lp, n)
 	}
-	secs := splineSections(alignSections(resampled), closed, ends)
+	secs := splineSections(mapAlign(resampled, guides.mapCurves), closed, ends)
+	secs = areaGraphScale(secs, guides.areaGraph)
 	secs = centerlineGuide(secs, guides.centerline)
 	return railGuide(secs, guides.rails)
 }
@@ -583,26 +608,42 @@ func (c *LoftFeatures) AddConditioned(sections []LoftSection, closed bool, op op
 // AddConditionedLive is AddConditioned with a live end-condition provider, re-read on every
 // recompute, so an end angle/impact driven by a parameter reshapes the loft.
 func (c *LoftFeatures) AddConditionedLive(sections []LoftSection, closed bool, op ops.PartFeatureOperation, liveEnds func() (first, last LoftEnd)) *PartFeature {
-	return c.AddConditionedLiveGuided(sections, closed, op, liveEnds, nil, nil)
+	return c.AddConditionedLiveGuided(sections, closed, op, liveEnds, LoftGuideSet{})
 }
 
-// AddConditionedLiveGuided is AddConditionedLive plus live guides — rails and/or a centerline (the
-// parametric entry used by the op handler; the end angles and guides re-derive on each recompute).
-func (c *LoftFeatures) AddConditionedLiveGuided(sections []LoftSection, closed bool, op ops.PartFeatureOperation, liveEnds func() (first, last LoftEnd), rails []func() []math.Point3, centerline func() []math.Point3) *PartFeature {
-	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, LiveEnds: liveEnds, Rails: rails, Centerline: centerline})
+// LoftGuideSet bundles every optional loft guide so the general constructors take one argument
+// rather than a growing parameter list: rails, a centerline, an area graph, and explicit map
+// curves (all the guides beyond the end conditions).
+type LoftGuideSet struct {
+	Rails      []func() []math.Point3
+	Centerline func() []math.Point3
+	AreaGraph  []types.LoftAreaStop
+	MapCurves  []func() []math.Point3
+}
+
+// AddConditionedLiveGuided is AddConditionedLive plus the full live guide set (the parametric entry
+// used by the op handler; the end angles and guides re-derive on each recompute).
+func (c *LoftFeatures) AddConditionedLiveGuided(sections []LoftSection, closed bool, op ops.PartFeatureOperation, liveEnds func() (first, last LoftEnd), g LoftGuideSet) *PartFeature {
+	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, LiveEnds: liveEnds, Rails: g.Rails, Centerline: g.Centerline, AreaGraph: g.AreaGraph, MapCurves: g.MapCurves})
+}
+
+// AddGuided is AddConditioned plus the full guide set (static ends) — the general builder the tool
+// and tests use; AddRailed/AddCenterlined are thin wrappers for the single-guide cases.
+func (c *LoftFeatures) AddGuided(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd, g LoftGuideSet) *PartFeature {
+	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, First: first, Last: last, Rails: g.Rails, Centerline: g.Centerline, AreaGraph: g.AreaGraph, MapCurves: g.MapCurves})
 }
 
 // AddRailed is AddConditioned plus guide rails (the kLoftWithRails mode): each rail is a live
 // provider of a model-space polyline that touches the end sections; the loft's outer surface is
 // pulled to follow them.
 func (c *LoftFeatures) AddRailed(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd, rails []func() []math.Point3) *PartFeature {
-	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, First: first, Last: last, Rails: rails})
+	return c.AddGuided(sections, closed, op, first, last, LoftGuideSet{Rails: rails})
 }
 
 // AddCenterlined is AddConditioned plus a centerline spine (the kLoftWithCenterline mode): a live
 // provider of a model-space polyline the section centroids follow, so the loft bends along it.
 func (c *LoftFeatures) AddCenterlined(sections []LoftSection, closed bool, op ops.PartFeatureOperation, first, last LoftEnd, centerline func() []math.Point3) *PartFeature {
-	return c.add(&LoftDefinition{Sections: append([]LoftSection(nil), sections...), Closed: closed, Operation: op, First: first, Last: last, Centerline: centerline})
+	return c.AddGuided(sections, closed, op, first, last, LoftGuideSet{Centerline: centerline})
 }
 
 func (c *LoftFeatures) add(def *LoftDefinition) *PartFeature {

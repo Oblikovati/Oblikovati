@@ -276,20 +276,32 @@ type loftEndArgs struct {
 	Reversed  bool    `json:"reversed,omitempty"`
 }
 
-// loftRailRef points at an open path (in a sketch) used as a loft guide rail.
+// loftRailRef identifies a loft guide polyline (a rail, centerline, or map curve): either an open
+// path in a sketch, or an explicit model-space [x,y,z] point list (Points, which overrides the
+// path — handy for map-curve anchors that lie off any single sketch plane).
 type loftRailRef struct {
-	PathSketchIndex int `json:"pathSketchIndex"`
-	PathIndex       int `json:"pathIndex"`
+	PathSketchIndex int         `json:"pathSketchIndex"`
+	PathIndex       int         `json:"pathIndex"`
+	Points          [][]float64 `json:"points,omitempty"`
 }
 
 type loftArgs struct {
-	Sections   []loftSectionRef `json:"sections"`
-	Closed     bool             `json:"closed,omitempty"`
-	Operation  string           `json:"operation,omitempty"`
-	First      *loftEndArgs     `json:"first,omitempty"`
-	Last       *loftEndArgs     `json:"last,omitempty"`
-	Rails      []loftRailRef    `json:"rails,omitempty"`
-	Centerline *loftRailRef     `json:"centerline,omitempty"`
+	Sections   []loftSectionRef  `json:"sections"`
+	Closed     bool              `json:"closed,omitempty"`
+	Operation  string            `json:"operation,omitempty"`
+	First      *loftEndArgs      `json:"first,omitempty"`
+	Last       *loftEndArgs      `json:"last,omitempty"`
+	Rails      []loftRailRef     `json:"rails,omitempty"`
+	Centerline *loftRailRef      `json:"centerline,omitempty"`
+	AreaGraph  []loftAreaStopArg `json:"areaGraph,omitempty"`
+	MapCurves  []loftRailRef     `json:"mapCurves,omitempty"`
+}
+
+// loftAreaStopArg is one area-graph control point: at fraction t (0..1 along the loft) the
+// cross-section area is scaled by scale.
+type loftAreaStopArg struct {
+	T     float64 `json:"t"`
+	Scale float64 `json:"scale"`
 }
 
 const loftSchema = `{
@@ -300,6 +312,8 @@ const loftSchema = `{
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"},
     "rails": {"type": "array", "items": {"type": "object", "properties": {"pathSketchIndex": {"type": "integer"}, "pathIndex": {"type": "integer", "default": 0}}, "required": ["pathSketchIndex"]}, "description": "Optional guide rails: open paths the loft surface follows between sections (each touches the end sections)."},
     "centerline": {"type": "object", "properties": {"pathSketchIndex": {"type": "integer"}, "pathIndex": {"type": "integer", "default": 0}}, "required": ["pathSketchIndex"], "description": "Optional spine path the section centroids follow (the loft bends along it); mutually exclusive with rails."},
+    "areaGraph": {"type": "array", "items": {"type": "object", "properties": {"t": {"type": "number"}, "scale": {"type": "number"}}, "required": ["t", "scale"]}, "description": "Optional cross-section area graph: stops {t (0..1 along the loft), scale} the section areas follow (ends pinned to 1)."},
+    "mapCurves": {"type": "array", "items": {"type": "object", "properties": {"pathSketchIndex": {"type": "integer"}, "pathIndex": {"type": "integer", "default": 0}}, "required": ["pathSketchIndex"]}, "description": "Optional explicit point correspondence (MapPointCurves): each path gives one anchor point per section, overriding the automatic min-twist alignment."},
     "first": {"type": "object", "description": "Start-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane", "tangent", "smooth"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}},
     "last": {"type": "object", "description": "End-section condition (curves the loft).", "properties": {"condition": {"type": "string", "enum": ["free", "angle", "direction", "sharp", "tangent-to-plane", "tangent", "smooth"], "default": "free"}, "angle": {"type": "string", "description": "Takeoff angle to the section plane (angle/direction), e.g. \"45 deg\"."}, "impact": {"type": "number", "description": "Takeoff weight (default 1); larger curves more."}, "reversed": {"type": "boolean", "description": "Flip the takeoff through the section plane (undercut/dish)."}}}
   },
@@ -360,8 +374,25 @@ func applyLoft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewLoftFeatures(part.Features()).AddConditionedLiveGuided(sections, in.Closed, op, liveEnds, rails, centerline)
+	mapCurves, err := loftRailProviders(part, in.MapCurves)
+	if err != nil {
+		return nil, err
+	}
+	guides := feature.LoftGuideSet{Rails: rails, Centerline: centerline, AreaGraph: areaStops(in.AreaGraph), MapCurves: mapCurves}
+	pf := feature.NewLoftFeatures(part.Features()).AddConditionedLiveGuided(sections, in.Closed, op, liveEnds, guides)
 	return recomputeResult(part, pf)
+}
+
+// areaStops converts the area-graph args into model area stops.
+func areaStops(args []loftAreaStopArg) []feature.LoftAreaStop {
+	if len(args) == 0 {
+		return nil
+	}
+	out := make([]feature.LoftAreaStop, len(args))
+	for i, a := range args {
+		out[i] = feature.LoftAreaStop{T: a.T, Scale: a.Scale}
+	}
+	return out
 }
 
 // loftCenterlineProvider validates the centerline path up front (nil when absent) and returns a
@@ -370,10 +401,29 @@ func loftCenterlineProvider(part *compdef.PartComponentDefinition, ref *loftRail
 	if ref == nil {
 		return nil, nil
 	}
-	if _, err := pathFromSketch(part, ref.PathSketchIndex, ref.PathIndex); err != nil {
-		return nil, fmt.Errorf("loft centerline: %w", err)
+	prov, err := loftGuideProvider(part, *ref, "loft centerline")
+	if err != nil {
+		return nil, err
 	}
-	r := *ref
+	return prov, nil
+}
+
+// loftGuideProvider turns one guide ref into a live polyline provider: explicit Points when given,
+// otherwise the sketch path (validated up front).
+func loftGuideProvider(part *compdef.PartComponentDefinition, r loftRailRef, what string) (func() []math.Point3, error) {
+	if len(r.Points) > 0 {
+		pts := make([]math.Point3, 0, len(r.Points))
+		for _, p := range r.Points {
+			if len(p) != 3 {
+				return nil, fmt.Errorf("%s: each point needs [x,y,z], got %v", what, p)
+			}
+			pts = append(pts, math.P3(p[0], p[1], p[2]))
+		}
+		return func() []math.Point3 { return pts }, nil
+	}
+	if _, err := pathFromSketch(part, r.PathSketchIndex, r.PathIndex); err != nil {
+		return nil, fmt.Errorf("%s: %w", what, err)
+	}
 	return func() []math.Point3 {
 		p, err := pathFromSketch(part, r.PathSketchIndex, r.PathIndex)
 		if err != nil || p == nil {
@@ -383,22 +433,15 @@ func loftCenterlineProvider(part *compdef.PartComponentDefinition, ref *loftRail
 	}, nil
 }
 
-// loftRailProviders validates each rail path up front and returns live polyline providers that
-// re-derive from the path sketch each recompute (so a parameter driving a rail reshapes the loft).
+// loftRailProviders returns a live polyline provider per ref (paths or explicit points).
 func loftRailProviders(part *compdef.PartComponentDefinition, refs []loftRailRef) ([]func() []math.Point3, error) {
 	var rails []func() []math.Point3
 	for _, rr := range refs {
-		if _, err := pathFromSketch(part, rr.PathSketchIndex, rr.PathIndex); err != nil {
-			return nil, fmt.Errorf("loft rail: %w", err)
+		prov, err := loftGuideProvider(part, rr, "loft rail")
+		if err != nil {
+			return nil, err
 		}
-		r := rr
-		rails = append(rails, func() []math.Point3 {
-			p, err := pathFromSketch(part, r.PathSketchIndex, r.PathIndex)
-			if err != nil || p == nil {
-				return nil
-			}
-			return p.Points()
-		})
+		rails = append(rails, prov)
 	}
 	return rails, nil
 }

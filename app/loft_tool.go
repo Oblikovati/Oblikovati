@@ -15,15 +15,24 @@ import (
 // order — each a sketch region, or a vertex/work point to taper the loft to an apex (a cone or
 // dome) — optionally close the loop, set the end conditions, and OK to blend them into a solid.
 type LoftTool struct {
-	sections      []loftPick
-	rails         []PathHandle // guide curves (kLoftWithRails) — picked sketch paths
-	centerline    *PathHandle  // spine curve (kLoftWithCenterline); set when picking in centerline mode
-	useCenterline bool         // route the next path pick to the centerline rather than rails
-	closed        bool
-	operation     ops.PartFeatureOperation
-	first, last   feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
-	added         *feature.PartFeature
+	sections     []loftPick
+	rails        []PathHandle // guide curves (kLoftWithRails) — picked sketch paths
+	centerline   *PathHandle  // spine curve (kLoftWithCenterline)
+	mapCurves    []PathHandle // explicit correspondence anchors (MapPointCurves)
+	guideKind    int          // where a path pick goes: 0 rail, 1 centerline, 2 map curve
+	areaMidScale float64      // area-graph: cross-section area scale at mid height (0/1 = off)
+	closed       bool
+	operation    ops.PartFeatureOperation
+	first, last  feature.LoftEnd // end-section conditions (zero value = Free); see SetFirstCondition
+	added        *feature.PartFeature
 }
+
+// Loft guide-path kinds: where a picked open path is routed.
+const (
+	loftGuideRail = iota
+	loftGuideCenterline
+	loftGuideMapCurve
+)
 
 // loftPick is one picked cross-section: a profile region, a point (apex), or a body face (by
 // reference key) the loft can leave tangent.
@@ -67,24 +76,41 @@ func (t *LoftTool) Pick(_ *Session, sel Selectable) {
 	case FaceHandle:
 		t.sections = append(t.sections, loftPick{faceKey: h.Face.ReferenceKey()})
 	case PathHandle:
-		if t.useCenterline {
+		switch t.guideKind {
+		case loftGuideCenterline:
 			ph := h
 			t.centerline = &ph
-		} else {
+		case loftGuideMapCurve:
+			t.mapCurves = append(t.mapCurves, h)
+		default:
 			t.rails = append(t.rails, h)
 		}
 	}
 }
 
-// RailCount returns how many guide rails have been picked.
-func (t *LoftTool) RailCount() int { return len(t.rails) }
+// RailCount / MapCurveCount / HasCenterline report what guides have been picked.
+func (t *LoftTool) RailCount() int      { return len(t.rails) }
+func (t *LoftTool) MapCurveCount() int  { return len(t.mapCurves) }
+func (t *LoftTool) HasCenterline() bool { return t.centerline != nil }
 
-// SetUseCenterline routes path picks to the centerline (the spine, kLoftWithCenterline) instead of
-// rails; HasCenterline reports whether a centerline has been picked. Centerline and rails are
-// mutually exclusive (as in Inventor) — a centerline takes precedence on commit.
-func (t *LoftTool) SetUseCenterline(on bool) { t.useCenterline = on }
-func (t *LoftTool) UseCenterline() bool      { return t.useCenterline }
-func (t *LoftTool) HasCenterline() bool      { return t.centerline != nil }
+// SetGuideKind routes subsequent path picks to rails (0), the centerline (1), or map curves (2);
+// GuideKind reports the current routing. Centerline and rails are mutually exclusive on commit (a
+// centerline takes precedence). See the loftGuide* constants.
+func (t *LoftTool) SetGuideKind(kind int) { t.guideKind = kind }
+func (t *LoftTool) GuideKind() int        { return t.guideKind }
+
+// SetUseCenterline is a convenience over SetGuideKind for the rails/centerline toggle.
+func (t *LoftTool) SetUseCenterline(on bool) {
+	if on {
+		t.guideKind = loftGuideCenterline
+	} else {
+		t.guideKind = loftGuideRail
+	}
+}
+
+// SetAreaMidScale sets the area-graph mid-height area scale (a barrel/waist); 0 or 1 disables it.
+func (t *LoftTool) SetAreaMidScale(s float64) { t.areaMidScale = s }
+func (t *LoftTool) AreaMidScale() float64     { return t.areaMidScale }
 
 // hasProfile reports whether profile h is already a picked section.
 func (t *LoftTool) hasProfile(h ProfileHandle) bool {
@@ -148,12 +174,15 @@ func (t *LoftTool) Commit(s *Session) error {
 			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
 		}
 	}
-	lofts := feature.NewLoftFeatures(part.Features())
-	if t.centerline != nil { // a centerline (spine) takes precedence over rails
-		t.added = lofts.AddCenterlined(sections, t.closed, t.operation, t.first, t.last, t.centerlineProvider())
-	} else {
-		t.added = lofts.AddRailed(sections, t.closed, t.operation, t.first, t.last, t.railProviders())
+	guides := feature.LoftGuideSet{
+		Rails:     t.railProviders(),
+		MapCurves: t.mapCurveProviders(),
+		AreaGraph: t.areaStops(),
 	}
+	if t.centerline != nil { // a centerline (spine) is exclusive with rails
+		guides.Rails, guides.Centerline = nil, t.centerlineProvider()
+	}
+	t.added = feature.NewLoftFeatures(part.Features()).AddGuided(sections, t.closed, t.operation, t.first, t.last, guides)
 	part.Recompute()
 	s.recordEdit(part, "Loft")
 	if !t.added.Health().OK() {
@@ -178,6 +207,30 @@ func (t *LoftTool) railProviders() []func() []math.Point3 {
 		})
 	}
 	return rails
+}
+
+// mapCurveProviders turns the picked map-curve paths into live anchor-per-section providers.
+func (t *LoftTool) mapCurveProviders() []func() []math.Point3 {
+	var out []func() []math.Point3
+	for _, h := range t.mapCurves {
+		ph := h
+		out = append(out, func() []math.Point3 {
+			p, err := resolveSweepPath(&ph)
+			if err != nil || p == nil {
+				return nil
+			}
+			return p.Points()
+		})
+	}
+	return out
+}
+
+// areaStops builds the area graph from the mid-scale control (one mid stop; off at 0/1).
+func (t *LoftTool) areaStops() []feature.LoftAreaStop {
+	if t.areaMidScale <= 0 || t.areaMidScale == 1 {
+		return nil
+	}
+	return []feature.LoftAreaStop{{T: 0.5, Scale: t.areaMidScale}}
 }
 
 // centerlineProvider turns the picked spine path into a live model-space polyline provider.

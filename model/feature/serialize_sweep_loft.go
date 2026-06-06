@@ -44,16 +44,25 @@ type LoftEndData struct {
 	Reversed  bool    `yaml:"reversed,omitempty"`
 }
 
-// LoftData is a loft's recipe. First/Last persist the end conditions (nil when Free); Rails are
-// the guide-curve polylines (model space, evaluated like the sweep path).
+// LoftAreaStopData is one area-graph control point (t, scale).
+type LoftAreaStopData struct {
+	T     float64 `yaml:"t"`
+	Scale float64 `yaml:"scale"`
+}
+
+// LoftData is a loft's recipe. First/Last persist the end conditions (nil when Free); Rails,
+// Centerline, AreaGraph and MapCurves persist the guides (model-space polylines / scale stops,
+// evaluated like the sweep path).
 type LoftData struct {
-	Sections   []LoftSectionData `yaml:"sections"`
-	Rails      [][][]float64     `yaml:"rails,omitempty"`
-	Centerline [][]float64       `yaml:"centerline,omitempty"`
-	Closed     bool              `yaml:"closed,omitempty"`
-	Operation  string            `yaml:"operation"`
-	First      *LoftEndData      `yaml:"first,omitempty"`
-	Last       *LoftEndData      `yaml:"last,omitempty"`
+	Sections   []LoftSectionData  `yaml:"sections"`
+	Rails      [][][]float64      `yaml:"rails,omitempty"`
+	Centerline [][]float64        `yaml:"centerline,omitempty"`
+	AreaGraph  []LoftAreaStopData `yaml:"areaGraph,omitempty"`
+	MapCurves  [][][]float64      `yaml:"mapCurves,omitempty"`
+	Closed     bool               `yaml:"closed,omitempty"`
+	Operation  string             `yaml:"operation"`
+	First      *LoftEndData       `yaml:"first,omitempty"`
+	Last       *LoftEndData       `yaml:"last,omitempty"`
 }
 
 func serializeSweep(def *SweepDefinition, sk SketchIndexer) (*SweepData, error) {
@@ -134,7 +143,20 @@ func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {
 			centerline = encodePoints(pts)
 		}
 	}
-	return &LoftData{Sections: sections, Rails: rails, Centerline: centerline, Closed: def.Closed, Operation: op, First: encodeLoftEnd(first), Last: encodeLoftEnd(last)}, nil
+	var area []LoftAreaStopData
+	for _, st := range def.AreaGraph {
+		area = append(area, LoftAreaStopData{T: st.T, Scale: st.Scale})
+	}
+	var maps [][][]float64
+	for _, m := range def.MapCurves {
+		if m == nil {
+			continue
+		}
+		if pts := m(); len(pts) >= 2 {
+			maps = append(maps, encodePoints(pts))
+		}
+	}
+	return &LoftData{Sections: sections, Rails: rails, Centerline: centerline, AreaGraph: area, MapCurves: maps, Closed: def.Closed, Operation: op, First: encodeLoftEnd(first), Last: encodeLoftEnd(last)}, nil
 }
 
 // encodeLoftEnd serializes an end condition, returning nil for a Free end (the default) so a
@@ -179,16 +201,23 @@ func restoreLoft(fs *PartFeatures, d *LoftData, sk SketchIndexer) (*PartFeature,
 		return nil, err
 	}
 	first, last := decodeLoftEnd(d.First), decodeLoftEnd(d.Last)
-	if len(d.Centerline) >= 2 {
-		cl := decodePoints(d.Centerline)
-		return NewLoftFeatures(fs).AddCenterlined(sections, d.Closed, op, first, last, func() []math.Point3 { return cl }), nil
-	}
-	var rails []func() []math.Point3
+	var g LoftGuideSet
 	for _, rp := range d.Rails {
 		pts := decodePoints(rp)
-		rails = append(rails, func() []math.Point3 { return pts })
+		g.Rails = append(g.Rails, func() []math.Point3 { return pts })
 	}
-	return NewLoftFeatures(fs).AddRailed(sections, d.Closed, op, first, last, rails), nil
+	if len(d.Centerline) >= 2 {
+		cl := decodePoints(d.Centerline)
+		g.Centerline = func() []math.Point3 { return cl }
+	}
+	for _, st := range d.AreaGraph {
+		g.AreaGraph = append(g.AreaGraph, LoftAreaStop{T: st.T, Scale: st.Scale})
+	}
+	for _, mp := range d.MapCurves {
+		pts := decodePoints(mp)
+		g.MapCurves = append(g.MapCurves, func() []math.Point3 { return pts })
+	}
+	return NewLoftFeatures(fs).AddGuided(sections, d.Closed, op, first, last, g), nil
 }
 
 // point3DChain wraps model points as sketch 3D points for a restored sweep path.
