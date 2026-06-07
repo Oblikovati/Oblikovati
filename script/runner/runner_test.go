@@ -63,6 +63,26 @@ func assertParameter(t *testing.T, r *ScriptRunner, name, wantValue string) {
 	}
 }
 
+// TestTypedGroupSugarAffectsModel proves the auto-derived group tables
+// (oblikovati.documents.create{…}) drive the real model end to end, identical to the
+// generic oblikovati.call path (ADR-0028 §4.1).
+func TestTypedGroupSugarAffectsModel(t *testing.T) {
+	r, s := newRealRunner()
+	src := `oblikovati.documents.create{ type = "part", name = "block" }
+	        oblikovati.parameters.add{ name = "depth", expression = "5 cm" }`
+	res, err := r.Run(context.Background(), src, fastLimits(), nil)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if res.Err != nil {
+		t.Fatalf("script: %v", res.Err)
+	}
+	if s.ActiveDocument() == nil {
+		t.Fatal("typed-group script did not create a document")
+	}
+	assertParameter(t, r, "depth", "50 mm")
+}
+
 func TestRunInfiniteLoopReturnsErrorHostSurvives(t *testing.T) {
 	r, _ := newRealRunner()
 	res, err := r.Run(context.Background(), "while true do end", script.Limits{Wall: 150 * time.Millisecond}, nil)

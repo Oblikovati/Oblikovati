@@ -49,6 +49,9 @@ func joinPrintArgs(s *lua.LState) string {
 // bridge marshals onto the session goroutine (ADR-0028 §3).
 func installOblikovati(l *lua.LState, g script.Globals) {
 	tb := l.NewTable()
+	// Typed group sugar first, so the reserved call/methods entries below can never be
+	// shadowed by a (hypothetical) method whose group segment is "call" or "methods".
+	installTypedGroups(l, tb, g)
 	l.SetField(tb, "call", l.NewFunction(callBinding(g.Call)))
 	l.SetField(tb, "methods", l.NewFunction(methodsBinding(g.Methods)))
 	l.SetGlobal("oblikovati", tb)
@@ -63,20 +66,77 @@ func callBinding(call script.CallFunc) lua.LGFunction {
 	return func(l *lua.LState) int {
 		method := l.CheckString(1)
 		args := l.OptTable(2, l.NewTable())
-		argsJSON, err := tableToJSON(args)
-		if err != nil {
-			l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
-		}
-		resJSON, err := callHost(call, method, argsJSON)
-		if err != nil {
-			l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
-		}
-		result, err := jsonToTable(l, resJSON)
-		if err != nil {
-			l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
-		}
-		l.Push(result)
-		return 1
+		return invokeMethod(l, call, method, args)
+	}
+}
+
+// invokeMethod marshals args→JSON, calls the host method, and pushes the JSON reply as a
+// Lua table; any conversion or call failure is raised as a Lua error naming the method so
+// the script can pcall it. Shared by oblikovati.call and the typed group leaves.
+func invokeMethod(l *lua.LState, call script.CallFunc, method string, args *lua.LTable) int {
+	argsJSON, err := tableToJSON(args)
+	if err != nil {
+		l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
+	}
+	resJSON, err := callHost(call, method, argsJSON)
+	if err != nil {
+		l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
+	}
+	result, err := jsonToTable(l, resJSON)
+	if err != nil {
+		l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
+	}
+	l.Push(result)
+	return 1
+}
+
+// installTypedGroups builds the ergonomic grouped tables — oblikovati.documents.activate{…},
+// oblikovati.sketch.rectangle{…}, … — as thin sugar over the generic call door. Each
+// registered method name (group.method, from g.Methods) becomes a nested function that
+// forwards to g.Call with that fixed method, so the sugar stays in lockstep with the
+// contract by construction: a new wire method is callable both as oblikovati.call("g.m", …)
+// and oblikovati.g.m{…} with zero code change here (ADR-0028 §4.1).
+func installTypedGroups(l *lua.LState, root *lua.LTable, g script.Globals) {
+	if g.Methods == nil || g.Call == nil {
+		return
+	}
+	for _, method := range g.Methods() {
+		installTypedMethod(l, root, g.Call, method)
+	}
+}
+
+// installTypedMethod places one method's leaf function under its dotted namespace, creating
+// intermediate group tables as needed. A name with no dot has no group and is skipped (the
+// generic oblikovati.call still reaches it).
+func installTypedMethod(l *lua.LState, root *lua.LTable, call script.CallFunc, method string) {
+	segs := strings.Split(method, ".")
+	if len(segs) < 2 {
+		return
+	}
+	parent := root
+	for _, seg := range segs[:len(segs)-1] {
+		parent = subTable(l, parent, seg)
+	}
+	l.SetField(parent, segs[len(segs)-1], l.NewFunction(groupLeaf(call, method)))
+}
+
+// subTable returns parent[name] as a table, creating it when absent (or when a non-table
+// value somehow sits there), so the group namespace can grow incrementally.
+func subTable(l *lua.LState, parent *lua.LTable, name string) *lua.LTable {
+	if existing, ok := l.GetField(parent, name).(*lua.LTable); ok {
+		return existing
+	}
+	t := l.NewTable()
+	l.SetField(parent, name, t)
+	return t
+}
+
+// groupLeaf is a typed-group entry — oblikovati.<group>.<method>(argsTable) → result — with
+// the method name fixed at install time, so args is the sole optional argument.
+func groupLeaf(call script.CallFunc, method string) lua.LGFunction {
+	return func(l *lua.LState) int {
+		args := l.OptTable(1, l.NewTable())
+		return invokeMethod(l, call, method, args)
 	}
 }
 

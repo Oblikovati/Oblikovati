@@ -1,9 +1,9 @@
 # ADR-0028 — Embedded Lua scripting runtime (pure-Go, sandboxed, wire-mirrored)
 
 **Status:** Accepted (2026-06-07) — Phase 1 (runtime + sandbox + generic bridge + CLI)
-shipped in PR #75; the Phase 2 GUI Script Console shipped in PR #82 (typed sugar tables
-still outstanding); Phase 3 (events, persistence, MCP `script.run`) is parked. Per-phase
-status: [lua-scripting-plan.md §11](../lua-scripting-plan.md#11-phased-rollout).
+shipped in PR #75; Phase 2 (GUI Script Console PR #82 + typed convenience tables)
+shipped; Phase 3 (events, persistence, MCP `script.run`) is parked. Per-phase status:
+[lua-scripting-plan.md §11](../lua-scripting-plan.md#11-phased-rollout).
 **Context:** First-party, integral scripting in the GPL-v2 app (not an add-in).
 Implementation plan: [lua-scripting-plan.md](../lua-scripting-plan.md).
 **Builds on / refines:** [ADR-0013](ADR-0013-ilogic-embedded-scripting.md) (embedded

@@ -1,8 +1,8 @@
 # Lua Scripting — Implementation Plan
 
-**Status:** Phase 1 shipped (PR #75); Phase 2 in progress — the GUI Script Console
-shipped (PR #82, merged to `develop` 2026-06-07), typed sugar tables outstanding;
-Phase 3 parked. See [§11 Phased rollout](#11-phased-rollout) for the per-phase status.
+**Status:** Phase 1 shipped (PR #75); Phase 2 shipped (GUI Script Console PR #82 +
+typed convenience tables, merged to `develop` 2026-06-07); Phase 3 parked. See
+[§11 Phased rollout](#11-phased-rollout) for the per-phase status.
 **Scope:** Integral, first-party Lua scripting in the GPL-v2 application (`/source`,
 i.e. this `oblikovati` module). **Not** an add-in.
 **Companion ADR:** [ADR-0028 — Embedded Lua scripting runtime](decisions/ADR-0028-embedded-lua-scripting.md)
@@ -381,10 +381,12 @@ backstopped by a **bounded registry / call-stack** for the memory cap.
 future hooked VM — or a swapped `Engine` — would wire a real opcode counter onto;
 `script/gopherlua/quota.go: instructionBudget` is its single anchor point.
 
-**Phase 2 — typed sugar + GUI console. 🔄 IN PROGRESS (the GUI console shipped; typed
-sugar outstanding).** The GUI Script Console shipped in PR #82 (merged to `develop`
-2026-06-07); the typed convenience tables are the remaining Phase-2 item:
-1. ⏳ `oblikovati.documents.*` / typed tables auto-derived from `api/wire` groups.
+**Phase 2 — typed sugar + GUI console. ✅ SHIPPED.** The GUI Script Console shipped in
+PR #82 and the typed convenience tables completed it (both merged to `develop`
+2026-06-07):
+1. ✅ `oblikovati.documents.*` / typed tables auto-derived from `api/wire` method names
+   (`oblikovati.methods()`): each `group.method` becomes `oblikovati.group.method{…}`,
+   thin sugar over `oblikovati.call`, in lockstep with the contract by construction.
 2. ✅ `script/console` state (Console + async Controller) + the head Script Console
    panel (source editor, Run/Stop/Clear, output pane, status) on the **Manage ▸
    Scripts** ribbon panel; Stop/cancel. The panel drives the `DispatchedCaller` over
