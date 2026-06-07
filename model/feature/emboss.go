@@ -9,13 +9,21 @@ import (
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
 	"oblikovati/model/sketch"
+	"oblikovati/model/text"
 )
 
 // EmbossDefinition is the recipe for an emboss: a closed sketch profile raised from (or engraved
 // into) the part by a depth along the sketch-plane normal. Engrave cuts; raise joins.
+//
+// The profile source is EITHER closed sketch geometry (Sketch + ProfileIndices) OR a sketch
+// TEXT entity (Text). When Text is set, the emboss reads the text entity's derived glyph
+// profiles on every recompute — so it stores a REFERENCE to the text, not baked outline
+// geometry, and editing/moving the text re-shapes the emboss (Inventor's text-emboss model).
 type EmbossDefinition struct {
 	Sketch         *sketch.Sketch
 	ProfileIndices []int
+	Text           *sketch.TextBox   // when set, the profile source is this text entity
+	Fonts          text.FontResolver // font catalogue for Text (defaults to the embedded faces)
 	Depth          func() float64
 	Engrave        bool    // cut into the face instead of raising from it
 	Taper          float64 // draft angle (radians)
@@ -48,7 +56,7 @@ func (f *EmbossFeature) ToolBody() *topo.Body { return f.tool }
 
 // Recompute extrudes the profile(s) by the depth and joins (raise) or cuts (engrave) the part.
 func (f *EmbossFeature) Recompute(in Input) (Output, error) {
-	profiles, err := resolveClosedProfiles(f.def.Sketch, f.def.ProfileIndices, "emboss")
+	profiles, err := f.resolveProfiles()
 	if err != nil {
 		return Output{}, err
 	}
@@ -68,6 +76,32 @@ func (f *EmbossFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
+// resolveProfiles returns the emboss's source profiles: the referenced text entity's
+// derived glyph profiles when Text is set, otherwise the selected closed sketch profiles.
+// Reading text geometry here (not at Add time) is what makes the emboss reference the text
+// rather than bake its outlines.
+func (f *EmbossFeature) resolveProfiles() ([]*sketch.Profile, error) {
+	if f.def.Text == nil {
+		return resolveClosedProfiles(f.def.Sketch, f.def.ProfileIndices, "emboss")
+	}
+	profs, err := f.def.Text.TextProfiles(f.fonts())
+	if err != nil {
+		return nil, fmt.Errorf("emboss: derive text geometry: %w", err)
+	}
+	if len(profs) == 0 {
+		return nil, fmt.Errorf("emboss: text %q produced no glyph geometry", f.def.Text.Text)
+	}
+	return profs, nil
+}
+
+// fonts returns the emboss's font resolver, defaulting to the embedded faces.
+func (f *EmbossFeature) fonts() text.FontResolver {
+	if f.def.Fonts != nil {
+		return f.def.Fonts
+	}
+	return text.DefaultResolver()
+}
+
 // EmbossFeatures adds emboss features into the engine.
 type EmbossFeatures struct{ engine *PartFeatures }
 
@@ -77,6 +111,19 @@ func NewEmbossFeatures(engine *PartFeatures) *EmbossFeatures { return &EmbossFea
 // Add adds an emboss of the sketch's closed profile(s); engrave cuts instead of raising.
 func (c *EmbossFeatures) Add(skt *sketch.Sketch, profileIndices []int, depth func() float64, engrave bool, taper float64) *PartFeature {
 	def := &EmbossDefinition{Sketch: skt, ProfileIndices: profileIndices, Depth: depth, Engrave: engrave, Taper: taper}
+	return c.add(def)
+}
+
+// AddText adds an emboss of a sketch TEXT entity: the recipe stores a reference to tb (in
+// sketch skt) and derives its glyph profiles on each recompute, so no outline geometry is
+// baked into the document and editing the text re-shapes the emboss.
+func (c *EmbossFeatures) AddText(skt *sketch.Sketch, tb *sketch.TextBox, depth func() float64, engrave bool, taper float64) *PartFeature {
+	def := &EmbossDefinition{Sketch: skt, Text: tb, Depth: depth, Engrave: engrave, Taper: taper}
+	return c.add(def)
+}
+
+// add registers an emboss feature definition and gives it a unique name.
+func (c *EmbossFeatures) add(def *EmbossDefinition) *PartFeature {
 	ef := &EmbossFeature{def: def}
 	pf := c.engine.Add(ef)
 	pf.SetName(c.engine.UniqueName("Emboss"))

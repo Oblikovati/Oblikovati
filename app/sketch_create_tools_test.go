@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	gmath "oblikovati/math"
+	"oblikovati/model/sketch"
 )
 
 // Chamfer bevels the corner of two picked lines, adding the bevel line.
@@ -57,6 +58,33 @@ func TestSketchTextTool(t *testing.T) {
 	}
 	if sk.TextBoxes().Count() != 1 {
 		t.Fatalf("text boxes = %d, want 1", sk.TextBoxes().Count())
+	}
+}
+
+// The text window's font + alignment choices wire through to the committed entity.
+func TestSketchTextToolStyleWiresThrough(t *testing.T) {
+	s, sk := sketchSession(t)
+	tool := NewSketchTextTool()
+	s.StartTool(tool)
+	s.Click(100, 100)
+	tool.SetText("HI")
+
+	choices := tool.Params().Choices
+	if len(choices) != 3 {
+		t.Fatalf("text tool choices = %d, want 3 (font, alignment, vertical)", len(choices))
+	}
+	choices[1].Set(int(sketch.TextCenter)) // Alignment → Center
+	choices[2].Set(int(sketch.TextMiddle)) // Vertical → Middle
+
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	tb := sk.TextBoxes().Item(0)
+	if tb.Justify != sketch.TextCenter || tb.VJustify != sketch.TextMiddle {
+		t.Errorf("committed text = %+v, want center/middle alignment", tb)
+	}
+	if tb.Family != "Liberation Sans" {
+		t.Errorf("committed font = %q, want Liberation Sans (default choice)", tb.Family)
 	}
 }
 
