@@ -16,6 +16,7 @@ import (
 	"oblikovati/addin/modelaccess"
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
+	"oblikovati/head/internal/windowstate"
 	"oblikovati/head/ui"
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/topo"
@@ -42,11 +43,22 @@ func main() {
 // run opens the window and pumps the frame loop. maxFrames > 0 bounds it (so a smoke
 // invocation cannot hang); 0 runs until the user closes the window.
 func run(session *app.Session, maxFrames int) error {
-	win, err := native.CreateWindow(1440, 900, "Oblikovati")
+	// Reopen at the last session's size/position/monitor (per-user, in the OS config dir),
+	// falling back to a sensible default the first time.
+	width, height := 1440, 900
+	saved, hasSaved := windowstate.Load()
+	if hasSaved {
+		width, height = saved.Width, saved.Height
+	}
+	win, err := native.CreateWindow(width, height, "Oblikovati")
 	if err != nil {
 		return err
 	}
 	defer win.Destroy()
+	if hasSaved {
+		win.ApplyWindowState(saved.X, saved.Y, saved.Maximized) // restore position + maximized
+	}
+	defer saveWindowState(win) // runs before Destroy (LIFO): capture the placement on exit
 	win.InitViewport()
 
 	// Load shared-library add-ins (e.g. oblikovati-mcp-bridge) and drain their queued
@@ -77,6 +89,13 @@ func run(session *app.Session, maxFrames int) error {
 		}
 	}
 	return nil
+}
+
+// saveWindowState persists the window's current placement so the next session reopens in
+// the same spot. Best-effort: a settings-write failure must not crash shutdown.
+func saveWindowState(win *native.Window) {
+	x, y, w, h, maximized := win.WindowState()
+	_ = windowstate.Save(windowstate.State{X: x, Y: y, Width: w, Height: h, Maximized: maximized})
 }
 
 // newDemoSession wires the standard commands and a small part so the chrome shows real

@@ -276,6 +276,30 @@ void obk_head_set_should_close(void* h, int v) {
     glfwSetWindowShouldClose(c->window, v);
 }
 
+// obk_head_get_window_state reports the window's current position (virtual-screen
+// coordinates, so the value encodes which monitor it's on), size, and maximized flag, for
+// persisting the placement across sessions.
+void obk_head_get_window_state(void* h, int* x, int* y, int* w, int* hh, int* maximized) {
+    HeadContext* c = (HeadContext*)h;
+    int px = 0, py = 0, pw = 0, ph = 0;
+    glfwGetWindowPos(c->window, &px, &py);
+    glfwGetWindowSize(c->window, &pw, &ph);
+    if (x) *x = px;
+    if (y) *y = py;
+    if (w) *w = pw;
+    if (hh) *hh = ph;
+    if (maximized) *maximized = glfwGetWindowAttrib(c->window, GLFW_MAXIMIZED);
+}
+
+// obk_head_apply_window_state restores a saved placement: move the window to (x,y) — which
+// puts it back on the same monitor — and maximize it if it was maximized. The size is set
+// at creation (obk_head_create) from the saved width/height.
+void obk_head_apply_window_state(void* h, int x, int y, int maximized) {
+    HeadContext* c = (HeadContext*)h;
+    glfwSetWindowPos(c->window, x, y);
+    if (maximized) glfwMaximizeWindow(c->window);
+}
+
 // --- synthetic input injection (for in-window UI tests) ---
 // Production never calls the obk_inject_* setters, so g_inject stays inactive and the
 // real GLFW input flows untouched. When a test sets state, obk_apply_inject pushes it
