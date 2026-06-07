@@ -2,7 +2,8 @@
 
 **Status:** Accepted (2026-06-07) — Phase 1 (runtime + sandbox + generic bridge + CLI)
 shipped in PR #75; Phase 2 (GUI Script Console PR #82 + typed convenience tables)
-shipped; Phase 3 (events, persistence, MCP `script.run`) is parked. Per-phase status:
+shipped; Phase 3 in progress — the MCP `scripts.run` method shipped (Oblikovati.API #27
++ Oblikovati #85 + AddIns #20), events + persistence outstanding. Per-phase status:
 [lua-scripting-plan.md §11](../lua-scripting-plan.md#11-phased-rollout).
 **Context:** First-party, integral scripting in the GPL-v2 app (not an add-in).
 Implementation plan: [lua-scripting-plan.md](../lua-scripting-plan.md).
