@@ -20,6 +20,13 @@ func addPart(t *testing.T, s *Session, name string) *doc.Document {
 	return d
 }
 
+func activate(t *testing.T, s *Session, d *doc.Document) {
+	t.Helper()
+	if err := s.Workspace().SetActiveDocument(d); err != nil {
+		t.Fatalf("activate %s: %v", d.DisplayName(), err)
+	}
+}
+
 // TestCameraIsPerDocumentAcrossSwitch is the regression for the reported bug: switching
 // the active document must restore that document's camera, not reset it.
 func TestCameraIsPerDocumentAcrossSwitch(t *testing.T) {
@@ -27,21 +34,21 @@ func TestCameraIsPerDocumentAcrossSwitch(t *testing.T) {
 	a := addPart(t, s, "a.obk")
 	b := addPart(t, s, "b.obk")
 
-	s.Workspace().SetActiveDocument(a)
+	activate(t, s, a)
 	ca := s.Camera()
 	ca.Eye = math.P3(11, 0, 0)
 	s.SetCamera(ca)
 
-	s.Workspace().SetActiveDocument(b)
+	activate(t, s, b)
 	cb := s.Camera()
 	cb.Eye = math.P3(0, 22, 0)
 	s.SetCamera(cb)
 
-	s.Workspace().SetActiveDocument(a)
+	activate(t, s, a)
 	if got := s.Camera().Eye; got != math.P3(11, 0, 0) {
 		t.Fatalf("doc A camera not restored after switch: eye=%v, want (11,0,0)", got)
 	}
-	s.Workspace().SetActiveDocument(b)
+	activate(t, s, b)
 	if got := s.Camera().Eye; got != math.P3(0, 22, 0) {
 		t.Fatalf("doc B camera not restored after switch: eye=%v, want (0,22,0)", got)
 	}
@@ -50,7 +57,7 @@ func TestCameraIsPerDocumentAcrossSwitch(t *testing.T) {
 func TestAddViewAndDocumentByID(t *testing.T) {
 	s := NewSession()
 	a := addPart(t, s, "a.obk")
-	s.Workspace().SetActiveDocument(a)
+	activate(t, s, a)
 
 	// Distinct active-view camera, then a copied view should start at it.
 	ca := s.Camera()

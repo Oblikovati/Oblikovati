@@ -118,17 +118,29 @@ func UnmarshalDocument(raw []byte) (Document, error) {
 		d.Model = b
 	}
 	d.Views = od.Views
-	if len(od.Data) > 0 {
-		d.Data = make(map[string][]byte, len(od.Data))
-		for name, enc := range od.Data {
-			b, err := base64.StdEncoding.DecodeString(enc)
-			if err != nil {
-				return Document{}, fmt.Errorf("yamlcodec: data section %q is not valid base64: %w", name, err)
-			}
-			d.Data[name] = b
-		}
+	data, err := decodeDataSections(od.Data)
+	if err != nil {
+		return Document{}, err
 	}
+	d.Data = data
 	return d, nil
+}
+
+// decodeDataSections base64-decodes the on-disk data sections into raw bytes, or nil when
+// there are none.
+func decodeDataSections(enc map[string]string) (map[string][]byte, error) {
+	if len(enc) == 0 {
+		return nil, nil
+	}
+	out := make(map[string][]byte, len(enc))
+	for name, s := range enc {
+		b, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			return nil, fmt.Errorf("yamlcodec: data section %q is not valid base64: %w", name, err)
+		}
+		out[name] = b
+	}
+	return out, nil
 }
 
 // modelNode parses recipe YAML bytes into the mapping node to embed under `model:`.
