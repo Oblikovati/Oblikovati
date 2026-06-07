@@ -99,14 +99,14 @@ func renderViewportImage(win *native.Window, s *app.Session, cam scene.Camera, l
 	applyEnvironment(win, s.Environment())
 	applySkybox(win, s.Environment(), mvp)
 	applyShadow(win, s, min, max, hasGeom)
-	win.RenderViewport(pw, ph, mvp[:], eye,
+	win.RenderViewport(0, pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
 		m.OccVerts, m.OccVCount, m.OccIndices,
 		m.LineVerts, m.LineVCount, m.LineIndices,
 		m.HidVerts, m.HidVCount, m.HidIndices,
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices)
-	if tex := win.ViewportTexture(); tex != 0 {
+	if tex := win.ViewportTexture(0); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
 		native.Image(tex, float32(pw), float32(ph))
 	}

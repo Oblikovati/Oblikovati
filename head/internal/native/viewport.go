@@ -12,7 +12,7 @@ void     obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32
 void     obk_viewport_set_skybox(void* h, const float* invVP, int show);
 void     obk_viewport_set_shadow(void* h, const float* lightVP, int enabled, float density,
                                  float softness, int castOnDirect, int occludeAmbient);
-void     obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* camPos,
+void     obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, const float* camPos,
                              const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                              const float* occV, int occVC, const uint32_t* occIdx, int occIC,
                              const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
@@ -23,8 +23,8 @@ void     obk_viewport_set_clear(void* h, float r, float g, float b);
 void     obk_viewport_set_lighting(void* h, const float* data, int n);
 void     obk_viewport_set_environment(void* h, const float* data, const int* dims, int levels,
                                       float rotation, float intensity);
-uint64_t obk_viewport_texture(void* h);
-int      obk_viewport_readback(void* h, unsigned char* out, int cap, int* w, int* hh);
+uint64_t obk_viewport_texture(void* h, int slot);
+int      obk_viewport_readback(void* h, int slot, unsigned char* out, int cap, int* w, int* hh);
 
 void obk_ig_image(unsigned long long tex, float w, float h);
 void obk_ig_content_region_avail(float* w, float* h);
@@ -64,7 +64,9 @@ func (w *Window) SetViewportSkybox(invVP []float32, show bool) {
 // color.rgba, metallic, roughness, emissive.rgb, mode]; indices are 0-based within their own
 // vertex array. The topTri/topLine streams are drawn last with the depth test disabled, so
 // client-graphics overlay/burn-through geometry stays visible over the model (PBI-067).
-func (win *Window) RenderViewport(w, h int, mvp []float32, camPos []float32,
+// slot selects which offscreen tile target to render into (0 for the single view; 0..3
+// for the tiled layouts). Each slot keeps its own image, so tiles show distinct cameras.
+func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float32,
 	triVerts []float32, triVCount int, triIdx []uint32,
 	occVerts []float32, occVCount int, occIdx []uint32,
 	lineVerts []float32, lineVCount int, lineIdx []uint32,
@@ -72,7 +74,7 @@ func (win *Window) RenderViewport(w, h int, mvp []float32, camPos []float32,
 	topTriVerts []float32, topTriVCount int, topTriIdx []uint32,
 	topLineVerts []float32, topLineVCount int, topLineIdx []uint32,
 ) {
-	C.obk_viewport_render(win.handle, C.int(w), C.int(h),
+	C.obk_viewport_render(win.handle, C.int(slot), C.int(w), C.int(h),
 		(*C.float)(unsafe.Pointer(&mvp[0])), floatPtr(camPos),
 		floatPtr(triVerts), C.int(triVCount), uint32Ptr(triIdx), C.int(len(triIdx)),
 		floatPtr(occVerts), C.int(occVCount), uint32Ptr(occIdx), C.int(len(occIdx)),
@@ -127,19 +129,21 @@ func (w *Window) SetViewportShadow(lightVP []float32, enabled bool, density, sof
 		cBool(castOnDirect), cBool(occludeAmbient))
 }
 
-// ViewportTexture returns the ImGui texture handle for the last rendered frame.
-func (w *Window) ViewportTexture() uint64 { return uint64(C.obk_viewport_texture(w.handle)) }
+// ViewportTexture returns the ImGui texture handle for tile slot's last rendered frame.
+func (w *Window) ViewportTexture(slot int) uint64 {
+	return uint64(C.obk_viewport_texture(w.handle, C.int(slot)))
+}
 
 // ReadbackViewport copies the offscreen color image to host memory, returning the raw 8-bit
 // pixels (the surface's channel order, typically BGRA), width and height, and ok=false if the
 // target is not ready. For headless verification/screenshots, not the per-frame path.
-func (w *Window) ReadbackViewport() (pixels []byte, width, height int, ok bool) {
+func (w *Window) ReadbackViewport(slot int) (pixels []byte, width, height int, ok bool) {
 	var cw, ch C.int
-	if C.obk_viewport_readback(w.handle, nil, 0, &cw, &ch) != 0 || cw <= 0 || ch <= 0 {
+	if C.obk_viewport_readback(w.handle, C.int(slot), nil, 0, &cw, &ch) != 0 || cw <= 0 || ch <= 0 {
 		return nil, 0, 0, false
 	}
 	buf := make([]byte, int(cw)*int(ch)*4)
-	n := C.obk_viewport_readback(w.handle, (*C.uchar)(unsafe.Pointer(&buf[0])), C.int(len(buf)),
+	n := C.obk_viewport_readback(w.handle, C.int(slot), (*C.uchar)(unsafe.Pointer(&buf[0])), C.int(len(buf)),
 		&cw, &ch)
 	if int(n) != len(buf) {
 		return nil, 0, 0, false
