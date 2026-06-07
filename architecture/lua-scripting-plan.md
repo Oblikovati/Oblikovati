@@ -323,7 +323,7 @@ GPL-2.0-only` (run `scripts/add-spdx-headers.py`).
 All Phase-1/2 logic is pure Go → fully unit-testable with no GPU and no cgo.
 
 **Model-effect tests (`script/runner` + `script/bridge`).**
-- Run a script that calls `documents.*` / `sketch.* `/ `parameters.*` against a real
+- Run a script that calls `documents.*` / `sketch.*` / `parameters.*` against a real
   `*app.Session` (in-proc `ScriptCaller` over `router.Handle`) and assert the model
   changed (e.g. a rectangle exists, a parameter equals the set value). This proves the
   table↔JSON↔router round-trip end to end.

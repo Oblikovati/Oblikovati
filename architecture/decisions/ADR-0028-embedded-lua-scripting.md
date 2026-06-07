@@ -23,7 +23,7 @@ hard constraints:
 
 ## Decision
 
-### 1. Runtime: `github.com/yuin/gopher-lua` (pure-Go Lua 5.1 VM, MIT), behind a seam.
+### 1. Runtime: `github.com/yuin/gopher-lua` (pure-Go Lua 5.1 VM, MIT), behind a seam
 
 Pure Go means **no cgo**, so a script bug is a Go panic we `recover()` — not a
 segfault that kills the process. This is the only runtime choice that can *guarantee*
@@ -37,7 +37,7 @@ The VM is wrapped behind a project-owned `script.Engine` interface (the only
 `gopher-lua` importer is `script/gopherlua`), so the engine is swappable later **only
 if** the crash/quota guarantees can be re-proven on the new path.
 
-### 2. Safety / sandbox model.
+### 2. Safety / sandbox model
 
 - **Opt-in stdlib.** The VM starts with nothing; we open only `base` (with
   `dofile/loadfile/load/loadstring/require/collectgarbage/print` stripped), `table`,
@@ -58,7 +58,7 @@ if** the crash/quota guarantees can be re-proven on the new path.
   time on the host-call side. Script errors are surfaced to the console/CLI/slog,
   **never fatal to the app.**
 
-### 3. API exposure: auto-mirror the wire surface via one generic bridge.
+### 3. API exposure: auto-mirror the wire surface via one generic bridge
 
 A single global `oblikovati.call(method, argsTable) -> resultTable` marshals the Lua
 table → JSON → `Router.Handle` (over the session-goroutine dispatcher) → JSON → Lua
@@ -69,7 +69,7 @@ Phase-2 typed convenience tables (`oblikovati.documents.*`, mirroring `api/clien
 groups) are thin sugar **auto-derived** from the `api/wire` constants, not hand-written.
 `oblikovati.methods()` exposes the registered method list for discoverability.
 
-### 4. Concurrency model: script on a worker, host calls dispatched to the session.
+### 4. Concurrency model: script on a worker, host calls dispatched to the session
 
 The script runs on its **own worker goroutine** (it may loop/compute freely — that
 never touches the model). Each `oblikovati.call` blocks the worker and **submits a job
