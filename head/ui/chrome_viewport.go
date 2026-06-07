@@ -50,12 +50,38 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	// Reserve the region with an input-capturing button, then read navigation from it.
 	cx, cy := native.GetCursorPos()
 	native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
+	bx, by := native.ItemRectMin()
 
-	cam, hovered := updateViewportCamera(s, pw, ph)
+	// ViewCube (top-right): when the cursor is over it, it owns the click — no orbit/pick.
+	cubeCx, cubeCy := bx+float32(pw)-viewCubeMargin, by+viewCubeMargin
+	cam := s.Camera()
+	cam.Width, cam.Height = pw, ph
+	var cubeRegion *Region
+	var homeHit bool
+	if s.ShowViewCube() && native.IsItemHovered() {
+		mx, my := native.MousePos()
+		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam)
+		homeHit = overHomeButton(mx, my, cubeCx, cubeCy)
+	}
+	overCube := cubeRegion != nil || homeHit
+	if overCube && native.IsItemClicked(native.MouseLeft) {
+		if homeHit {
+			s.HomeView()
+		} else {
+			start := s.Camera()
+			start.Width, start.Height = pw, ph
+			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target), viewCubeSnapSecs)
+		}
+	}
+
+	cam, hovered := updateViewportCamera(s, pw, ph, overCube)
 	list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
 	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
+	if s.ShowViewCube() {
+		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit)
+	}
 }
 
 // planTiles returns the tile rectangles for the active document's view layout and the
@@ -267,7 +293,7 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 // tween (ignoring user input, e.g. while entering/exiting a sketch) or applies this frame's
 // navigation and resolves click/hover so the picker hit-tests against the current view. It
 // returns the camera to render with and the work plane under the cursor (nil while animating).
-func updateViewportCamera(s *app.Session, pw, ph int) (scene.Camera, *feature.WorkPlane) {
+func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Camera, *feature.WorkPlane) {
 	cam := s.Camera()
 	cam.Width, cam.Height = pw, ph
 	if s.CameraAnimating() {
@@ -276,6 +302,9 @@ func updateViewportCamera(s *app.Session, pw, ph int) (scene.Camera, *feature.Wo
 		cam = s.Camera()
 		cam.Width, cam.Height = pw, ph
 		return cam, nil
+	}
+	if overCube {
+		return cam, nil // the ViewCube owns the cursor this frame: no orbit, no pick
 	}
 	cam = ApplyNavigation(cam, readNavInput(isPlacingTool(s)))
 	s.SetCamera(cam)
