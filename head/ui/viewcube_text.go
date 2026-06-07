@@ -49,27 +49,40 @@ func faceLabelSegments(f cubeFace, cam scene.Camera, o doc.CubeOrient, radius fl
 	if label == "" {
 		return nil
 	}
-	right, up, fwd := cubeBasis(cam, o)
-	center, uAxis, vAxis := faceTextFrame(f.region)
-
 	scale := 1.0
-	total := float64(len(label)) * labelAdvance
-	if total > labelMaxWidth {
+	if total := float64(len(label)) * labelAdvance; total > labelMaxWidth {
 		scale = labelMaxWidth / total
 	}
-	adv, gw, gh := labelAdvance*scale, labelGlyphW*scale, labelGlyphH*scale
+	adv := labelAdvance * scale
+	right, up, fwd := cubeBasis(cam, o)
+	center, uAxis, vAxis := faceTextFrame(f.region)
+	lay := labelLayout{center, uAxis, vAxis, right, up, fwd, radius, labelGlyphW * scale, labelGlyphH * scale}
 	startU := -float64(len(label)) * adv / 2 // left edge of the word, centered on the face
-
 	var segs [][4]float32
 	for i, r := range label {
-		baseU := startU + float64(i)*adv + (adv-gw)/2 // glyph cell left + side bearing
-		for _, s := range glyphStrokes(r) {
-			p0 := facePoint(center, uAxis, vAxis, baseU+s[0]*gw, (s[1]-0.5)*gh)
-			p1 := facePoint(center, uAxis, vAxis, baseU+s[2]*gw, (s[3]-0.5)*gh)
-			c0 := project(p0, right, up, fwd, radius)
-			c1 := project(p1, right, up, fwd, radius)
-			segs = append(segs, [4]float32{c0.sx, c0.sy, c1.sx, c1.sy})
-		}
+		baseU := startU + float64(i)*adv + (adv-lay.gw)/2 // glyph cell left + side bearing
+		segs = append(segs, lay.glyphSegs(baseU, r)...)
+	}
+	return segs
+}
+
+// labelLayout holds the resolved frame + scale for projecting a face label's glyph strokes.
+type labelLayout struct {
+	center, uAxis, vAxis math.Vector3
+	right, up, fwd       math.Vector3
+	radius               float32
+	gw, gh               float64
+}
+
+// glyphSegs projects one glyph's strokes (at cell-left baseU) into screen-space segments.
+func (l labelLayout) glyphSegs(baseU float64, r rune) [][4]float32 {
+	var segs [][4]float32
+	for _, s := range glyphStrokes(r) {
+		p0 := facePoint(l.center, l.uAxis, l.vAxis, baseU+s[0]*l.gw, (s[1]-0.5)*l.gh)
+		p1 := facePoint(l.center, l.uAxis, l.vAxis, baseU+s[2]*l.gw, (s[3]-0.5)*l.gh)
+		c0 := project(p0, l.right, l.up, l.fwd, l.radius)
+		c1 := project(p1, l.right, l.up, l.fwd, l.radius)
+		segs = append(segs, [4]float32{c0.sx, c0.sy, c1.sx, c1.sy})
 	}
 	return segs
 }

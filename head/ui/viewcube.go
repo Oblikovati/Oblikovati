@@ -190,34 +190,40 @@ func rayUnitCube(o, d math.Vector3) (math.Vector3, bool) {
 // is ±1 on is that face's sign; the other axes count as ±1 when the coordinate is past the
 // edge zone, promoting the hit to an edge (one extra) or corner (two extra).
 func classify(p math.Vector3) *Region {
-	c := []float64{p.X, p.Y, p.Z}
-	// The entry face axis is the one with |coord| closest to 1.
-	face := 0
-	for i := 1; i < 3; i++ {
-		if stdmath.Abs(c[i]) > stdmath.Abs(c[face]) {
-			face = i
-		}
-	}
-	var s [3]int
-	for i := 0; i < 3; i++ {
-		switch {
-		case i == face:
-			s[i] = sign(c[i])
-		case stdmath.Abs(c[i]) >= edgeZone:
-			s[i] = sign(c[i])
-		default:
-			s[i] = 0
-		}
-	}
+	c := [3]float64{p.X, p.Y, p.Z}
+	s := zoneSigns(c, faceAxis(c))
 	if s == [3]int{0, 0, 0} {
 		return nil
 	}
 	n := abs(s[0]) + abs(s[1]) + abs(s[2])
 	r := Region{X: s[0], Y: s[1], Z: s[2], Kind: RegionKind(n - 1)}
 	if n == 1 {
-		r.Label = faceLabels[[3]int{s[0], s[1], s[2]}]
+		r.Label = faceLabels[s]
 	}
 	return &r
+}
+
+// faceAxis returns the index (0/1/2) of the coordinate closest to ±1 — the entry face's axis.
+func faceAxis(c [3]float64) int {
+	face := 0
+	for i := 1; i < 3; i++ {
+		if stdmath.Abs(c[i]) > stdmath.Abs(c[face]) {
+			face = i
+		}
+	}
+	return face
+}
+
+// zoneSigns assigns each axis its sign on the entry face (always) and where the coordinate
+// is past the edge zone (promoting a face hit to an edge/corner), else 0.
+func zoneSigns(c [3]float64, face int) [3]int {
+	var s [3]int
+	for i := 0; i < 3; i++ {
+		if i == face || stdmath.Abs(c[i]) >= edgeZone {
+			s[i] = sign(c[i])
+		}
+	}
+	return s
 }
 
 // cubeFace is a projected, visible cube face for painting: its four screen-corner offsets
@@ -228,52 +234,61 @@ type cubeFace struct {
 	depth  float64
 }
 
+// faceDef is a unit-cube face: its outward-normal axis (0/1/2) + sign, and the four corners
+// in CCW order.
+type faceDef struct {
+	axis int
+	sign int
+	quad [4][3]float64
+}
+
+// cubeFaceDefs are the six unit-cube faces (normal axis/sign + CCW corners).
+var cubeFaceDefs = []faceDef{
+	{2, 1, [4][3]float64{{-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1}}},      // TOP +Z
+	{2, -1, [4][3]float64{{-1, 1, -1}, {1, 1, -1}, {1, -1, -1}, {-1, -1, -1}}}, // BOTTOM -Z
+	{1, -1, [4][3]float64{{-1, -1, -1}, {1, -1, -1}, {1, -1, 1}, {-1, -1, 1}}}, // FRONT -Y
+	{1, 1, [4][3]float64{{1, 1, -1}, {-1, 1, -1}, {-1, 1, 1}, {1, 1, 1}}},      // BACK +Y
+	{0, 1, [4][3]float64{{1, -1, -1}, {1, 1, -1}, {1, 1, 1}, {1, -1, 1}}},      // RIGHT +X
+	{0, -1, [4][3]float64{{-1, 1, -1}, {-1, -1, -1}, {-1, -1, 1}, {-1, 1, 1}}}, // LEFT -X
+}
+
+// normal is the face's outward unit normal in cube-local space.
+func (d faceDef) normal() math.Vector3 {
+	switch d.axis {
+	case 0:
+		return math.V3(float64(d.sign), 0, 0)
+	case 1:
+		return math.V3(0, float64(d.sign), 0)
+	default:
+		return math.V3(0, 0, float64(d.sign))
+	}
+}
+
+// project returns the face projected for painting, or ok=false when it is back-facing (its
+// normal points away from the viewer along the cube-local forward).
+func (d faceDef) project(right, up, fwd math.Vector3, radius float32) (cubeFace, bool) {
+	nrm := d.normal()
+	if nrm.Dot(fwd) >= -1e-6 {
+		return cubeFace{}, false
+	}
+	f := cubeFace{depth: nrm.Dot(fwd)}
+	key := [3]int{int(nrm.X), int(nrm.Y), int(nrm.Z)}
+	f.region = Region{X: key[0], Y: key[1], Z: key[2], Kind: RegionFace, Label: faceLabels[key]}
+	for i, q := range d.quad {
+		f.corner[i] = project(math.V3(q[0], q[1], q[2]), right, up, fwd, radius)
+	}
+	return f, true
+}
+
 // visibleFaces returns the cube's front-facing faces (those whose outward normal points
 // toward the viewer), projected and sorted back-to-front, for the painter.
 func visibleFaces(cam scene.Camera, o doc.CubeOrient, radius float32) []cubeFace {
 	right, up, fwd := cubeBasis(cam, o)
-	// Unit-cube face definitions: axis index, sign, and the 4 corners in CCW order.
-	defs := []struct {
-		axis int
-		sign int
-		quad [4][3]float64
-	}{
-		{2, 1, [4][3]float64{{-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1}}},      // TOP +Z
-		{2, -1, [4][3]float64{{-1, 1, -1}, {1, 1, -1}, {1, -1, -1}, {-1, -1, -1}}}, // BOTTOM -Z
-		{1, -1, [4][3]float64{{-1, -1, -1}, {1, -1, -1}, {1, -1, 1}, {-1, -1, 1}}}, // FRONT -Y
-		{1, 1, [4][3]float64{{1, 1, -1}, {-1, 1, -1}, {-1, 1, 1}, {1, 1, 1}}},      // BACK +Y
-		{0, 1, [4][3]float64{{1, -1, -1}, {1, 1, -1}, {1, 1, 1}, {1, -1, 1}}},      // RIGHT +X
-		{0, -1, [4][3]float64{{-1, 1, -1}, {-1, -1, -1}, {-1, -1, 1}, {-1, 1, 1}}}, // LEFT -X
-	}
 	var faces []cubeFace
-	for _, d := range defs {
-		var nrm math.Vector3
-		switch d.axis {
-		case 0:
-			nrm = math.V3(float64(d.sign), 0, 0)
-		case 1:
-			nrm = math.V3(0, float64(d.sign), 0)
-		default:
-			nrm = math.V3(0, 0, float64(d.sign))
+	for _, d := range cubeFaceDefs {
+		if f, ok := d.project(right, up, fwd, radius); ok {
+			faces = append(faces, f)
 		}
-		if nrm.Dot(fwd) >= -1e-6 { // normal points away from the viewer ⇒ back face
-			continue
-		}
-		var f cubeFace
-		f.region = Region{Kind: RegionFace, Label: faceLabels[[3]int{int(nrm.X), int(nrm.Y), int(nrm.Z)}]}
-		switch d.axis {
-		case 0:
-			f.region.X = d.sign
-		case 1:
-			f.region.Y = d.sign
-		default:
-			f.region.Z = d.sign
-		}
-		for i, q := range d.quad {
-			f.corner[i] = project(math.V3(q[0], q[1], q[2]), right, up, fwd, radius)
-		}
-		f.depth = nrm.Dot(fwd)
-		faces = append(faces, f)
 	}
 	sort.SliceStable(faces, func(i, j int) bool { return faces[i].depth > faces[j].depth })
 	return faces

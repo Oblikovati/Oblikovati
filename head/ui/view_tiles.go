@@ -24,13 +24,7 @@ const tileGutter = 6
 // splitter handle. Arrangements: two = left|right (or top/bottom for the vertical layout),
 // three = a tall left pane plus two stacked on the right, four = a 2×2 grid.
 func tileRects(layout types.ViewLayout, w, h float32, viewCount int, splitX, splitY float32) []TileRect {
-	t := layout.Tiles()
-	if viewCount < t {
-		t = viewCount
-	}
-	if t < 1 {
-		t = 1
-	}
+	t := tileCount(layout, viewCount)
 	g := float32(tileGutter)
 	vx, vy := w*splitX, h*splitY // divider centres
 	lw, rx := vx-g/2, vx+g/2     // left width, right column x
@@ -50,6 +44,19 @@ func tileRects(layout types.ViewLayout, w, h float32, viewCount int, splitX, spl
 	default:
 		return []TileRect{{0, 0, w, h}}
 	}
+}
+
+// tileCount is how many tiles to draw: the layout's tile count, capped by the available
+// views and clamped to at least 1 (so fewer views than the layout wants falls back simply).
+func tileCount(layout types.ViewLayout, viewCount int) int {
+	t := layout.Tiles()
+	if viewCount < t {
+		t = viewCount
+	}
+	if t < 1 {
+		t = 1
+	}
+	return t
 }
 
 // tileAt returns the index of the tile whose rect contains (x,y), or -1. Used to route a

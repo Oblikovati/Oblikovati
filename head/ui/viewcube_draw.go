@@ -24,6 +24,18 @@ func viewCubeContextMenu(s *app.Session) {
 	if !native.BeginPopup(viewCubeMenuID) {
 		return
 	}
+	homeMenuItems(s)
+	native.Separator()
+	projectionMenuItems(s)
+	native.Separator()
+	frontMenuItems(s)
+	native.Separator()
+	viewCubeToggleItems(s)
+	native.EndPopup()
+}
+
+// homeMenuItems renders Go Home + the two "Set Current View as Home" rows.
+func homeMenuItems(s *app.Session) {
 	if native.MenuItem("Go Home") {
 		s.GoHome()
 	}
@@ -33,25 +45,20 @@ func viewCubeContextMenu(s *app.Session) {
 	if native.MenuItem("Set Current View as Home (Fit to View)") {
 		s.SetActiveViewHome(true)
 	}
-	native.Separator()
-	cur := s.ActiveViewProjection()
-	if native.MenuItem(projItemLabel("Orthographic", cur == doc.ProjOrthographic)) {
-		s.SetActiveViewProjection(doc.ProjOrthographic)
-	}
-	if native.MenuItem(projItemLabel("Perspective", cur == doc.ProjPerspective)) {
-		s.SetActiveViewProjection(doc.ProjPerspective)
-	}
-	if native.MenuItem(projItemLabel("Perspective with Ortho Faces", cur == doc.ProjPerspectiveOrthoFaces)) {
-		s.SetActiveViewProjection(doc.ProjPerspectiveOrthoFaces)
-	}
-	native.Separator()
+}
+
+// frontMenuItems renders the Set/Reset Front rows.
+func frontMenuItems(s *app.Session) {
 	if native.MenuItem("Set Current View as Front") {
 		s.SetActiveViewAsFront()
 	}
 	if native.MenuItem("Reset Front") {
 		s.ResetFront()
 	}
-	native.Separator()
+}
+
+// viewCubeToggleItems renders Lock to Selection, Show Compass, and Options….
+func viewCubeToggleItems(s *app.Session) {
 	if native.MenuItem(projItemLabel("Lock to Current Selection", s.LockToSelection())) {
 		s.SetLockToSelection(!s.LockToSelection())
 	}
@@ -61,7 +68,6 @@ func viewCubeContextMenu(s *app.Session) {
 	if native.MenuItem("Options...") {
 		showViewCubeOptions = true
 	}
-	native.EndPopup()
 }
 
 // showViewCubeOptions tracks whether the ViewCube Options window is open (toggled from the
@@ -133,6 +139,21 @@ func drawCompass(cam scene.Camera, o doc.CubeOrient, cx, cy, r float32) {
 	native.DrawText(cx+n.sx-3, cy+n.sy-7, "N", viewCubeCompassColor)
 }
 
+// projectionMenuItems renders the three projection-mode rows (radio-marked) for the active
+// view's current mode.
+func projectionMenuItems(s *app.Session) {
+	cur := s.ActiveViewProjection()
+	if native.MenuItem(projItemLabel("Orthographic", cur == doc.ProjOrthographic)) {
+		s.SetActiveViewProjection(doc.ProjOrthographic)
+	}
+	if native.MenuItem(projItemLabel("Perspective", cur == doc.ProjPerspective)) {
+		s.SetActiveViewProjection(doc.ProjPerspective)
+	}
+	if native.MenuItem(projItemLabel("Perspective with Ortho Faces", cur == doc.ProjPerspectiveOrthoFaces)) {
+		s.SetActiveViewProjection(doc.ProjPerspectiveOrthoFaces)
+	}
+}
+
 // projItemLabel prefixes the active mode with a filled dot so the current projection reads
 // as checked (the MenuItem binding has no built-in radio state).
 func projItemLabel(name string, active bool) string {
@@ -197,6 +218,50 @@ func placeViewCube(bx, by float32, pw, ph int, r float32, corner int) cubePlacem
 	homeR := r * viewCubeHomeRRatio
 	homeOff := r*viewCubeReachRatio + r*viewCubeHomeGapRatio + homeR
 	return cubePlacement{cx: cx, cy: cy, r: r, homeX: cx + sx*r, homeY: cy + sy*homeOff, homeR: homeR}
+}
+
+// viewCubeHit is the per-frame ViewCube hit state for a viewport.
+type viewCubeHit struct {
+	region   *Region
+	homeHit  bool
+	overCube bool // cursor is over the cube/home — caller suppresses orbit/pick
+}
+
+// viewCubeHover hit-tests the ViewCube at placement p for camera cam (read-only).
+func viewCubeHover(s *app.Session, p cubePlacement, cam scene.Camera) viewCubeHit {
+	var h viewCubeHit
+	if s.ShowViewCube() && native.IsItemHovered() {
+		mx, my := native.MousePos()
+		h.region = HitTest(mx-p.cx, my-p.cy, p.r, cam, s.CubeOrientation())
+		h.homeHit = overHomeButton(mx, my, p)
+	}
+	h.overCube = h.region != nil || h.homeHit
+	return h
+}
+
+// viewCubeClick acts on a click over the cube: left snaps the view (or Go Home), right opens
+// the menu. onActivate (may be nil) makes the owning view active first; pw/ph size the snap
+// camera. A no-op when the cursor is not over the cube.
+func viewCubeClick(s *app.Session, h viewCubeHit, pw, ph int, onActivate func()) {
+	if !h.overCube {
+		return
+	}
+	left := native.IsItemClicked(native.MouseLeft)
+	right := h.region != nil && native.IsItemClicked(native.MouseRight)
+	if (left || right) && onActivate != nil {
+		onActivate()
+	}
+	switch {
+	case left && h.homeHit:
+		s.GoHome()
+	case left:
+		start := s.Camera()
+		start.Width, start.Height = pw, ph
+		s.SetCamera(start) // sync the tween's start to this view
+		s.AnimateCameraTo(h.region.SnapCamera(start, s.ViewCubePivot(), s.CubeOrientation()), viewCubeSnapSecs)
+	case right:
+		native.OpenPopup(viewCubeMenuID)
+	}
 }
 
 // ViewCube colors. Faces are a light translucent panel; the hovered region's faces tint to

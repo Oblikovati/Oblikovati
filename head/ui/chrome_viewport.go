@@ -54,38 +54,21 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
 	bx, by := native.ItemRectMin()
 
-	// ViewCube (top-right): when the cursor is over it, it owns the click — no orbit/pick.
-	p := placeViewCube(bx, by, pw, ph, s.CubeSize(), s.CubeCorner())
 	cam := s.Camera()
 	cam.Width, cam.Height = pw, ph
-	var cubeRegion *Region
-	var homeHit bool
-	if s.ShowViewCube() && native.IsItemHovered() {
-		mx, my := native.MousePos()
-		cubeRegion = HitTest(mx-p.cx, my-p.cy, p.r, cam, s.CubeOrientation())
-		homeHit = overHomeButton(mx, my, p)
-	}
-	overCube := cubeRegion != nil || homeHit
-	if overCube && native.IsItemClicked(native.MouseLeft) {
-		if homeHit {
-			s.GoHome()
-		} else {
-			start := s.Camera()
-			start.Width, start.Height = pw, ph
-			s.AnimateCameraTo(cubeRegion.SnapCamera(start, s.ViewCubePivot(), s.CubeOrientation()), viewCubeSnapSecs)
-		}
-	}
-	if cubeRegion != nil && native.IsItemClicked(native.MouseRight) {
-		native.OpenPopup(viewCubeMenuID) // right-click the cube → projection menu
-	}
+	// ViewCube: when the cursor is over it, it owns the click (no orbit/pick) and a click
+	// snaps / homes / opens the menu. Single view is already the active view (no activate).
+	p := placeViewCube(bx, by, pw, ph, s.CubeSize(), s.CubeCorner())
+	hit := viewCubeHover(s, p, cam)
+	viewCubeClick(s, hit, pw, ph, nil)
 
-	cam, hovered := updateViewportCamera(s, pw, ph, overCube)
+	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
 	list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
 	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 	if s.ShowViewCube() {
-		drawViewCube(cam, s.CubeOrientation(), p, cubeRegion, homeHit, s.ShowCompass(), s.InactiveOpacity())
+		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
 	}
 }
 
@@ -181,77 +164,79 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 	native.InvisibleButton("##tile-"+strconv.Itoa(i), float32(pw), float32(ph))
 	bx, by := native.ItemRectMin() // tile's screen rect, for the active-tile border
 
-	cam, ok := s.ViewCameraAt(i)
+	cam, ok := sizedViewCamera(s, i, pw, ph)
 	if !ok {
 		return
 	}
-	cam.Width, cam.Height = pw, ph
 
-	// ViewCube hit-test (top-right corner, screen space). When the cursor is over the cube
-	// it owns the input this frame: no orbit, no model pick — a click snaps the view.
+	// ViewCube owns the cursor when hovered (no orbit/pick); a click snaps this tile's view.
 	p := placeViewCube(bx, by, pw, ph, s.CubeSize(), s.CubeCorner())
-	var cubeRegion *Region
-	var homeHit bool
-	if s.ShowViewCube() && native.IsItemHovered() {
-		mx, my := native.MousePos()
-		cubeRegion = HitTest(mx-p.cx, my-p.cy, p.r, cam, s.CubeOrientation())
-		homeHit = overHomeButton(mx, my, p)
-	}
-	overCube := cubeRegion != nil || homeHit
-
-	switch {
-	case isActive && s.CameraAnimating():
-		// Advance a running snap/sketch tween on the focused tile.
-		s.TickCameraAnimation(float64(native.DeltaTime()))
-	case overCube && native.IsItemClicked(native.MouseLeft):
-		_ = s.ActivateView(i)
-		isActive = true
-		start, _ := s.ViewCameraAt(i)
-		start.Width, start.Height = pw, ph
-		s.SetCamera(start) // sync the tween's start to this view
-		if homeHit {
-			s.GoHome()
-		} else {
-			s.AnimateCameraTo(cubeRegion.SnapCamera(start, s.ViewCubePivot(), s.CubeOrientation()), viewCubeSnapSecs)
-		}
-	case cubeRegion != nil && native.IsItemClicked(native.MouseRight):
-		_ = s.ActivateView(i) // right-click the cube → projection menu acts on this view
-		isActive = true
-		native.OpenPopup(viewCubeMenuID)
-	case !overCube:
-		// Per-tile navigation: hover/drag/wheel orbits THIS view; on a non-active tile it
-		// also makes it the active view so picking/commands follow.
-		nav := readNavInput(isPlacingTool(s) && isActive)
-		if nav.Hovered && navInteracted(nav) && !isActive {
-			_ = s.ActivateView(i)
-			isActive = true
-		}
-		if nav.Hovered || nav.Active {
-			cam = ApplyNavigation(cam, nav)
-			s.SetViewCameraAt(i, cam)
-		}
-	}
-	if c, ok := s.ViewCameraAt(i); ok { // re-read after nav/animation/snap
-		c.Width, c.Height = pw, ph
+	hit := viewCubeHover(s, p, cam)
+	isActive = tileInput(s, i, hit, &cam, pw, ph, isActive)
+	if c, ok := sizedViewCamera(s, i, pw, ph); ok { // re-read after nav/animation/snap
 		cam = c
 	}
 
 	if isActive {
-		if !overCube {
+		if !hit.overCube {
 			handleViewportClick(s)
 		}
-		hovered := hoveredPlane(s)
-		list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
-		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
-		renderViewportImage(win, s, i, cam, list, pw, ph, tx, ty)
-		drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, tx, ty, ph)
-		drawActiveTileBorder(bx, by, float32(pw), float32(ph))
+		renderActiveTile(win, s, i, cam, pw, ph, tx, ty, bx, by)
 	} else {
 		renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
 	}
 	if s.ShowViewCube() {
-		drawViewCube(cam, s.CubeOrientation(), p, cubeRegion, homeHit, s.ShowCompass(), s.InactiveOpacity())
+		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
 	}
+}
+
+// sizedViewCamera returns tile i's camera sized to the tile (pw×ph), or ok=false if there
+// is no such view.
+func sizedViewCamera(s *app.Session, i, pw, ph int) (scene.Camera, bool) {
+	c, ok := s.ViewCameraAt(i)
+	if ok {
+		c.Width, c.Height = pw, ph
+	}
+	return c, ok
+}
+
+// tileInput processes this frame's input for tile i — advancing a running tween, handling a
+// ViewCube click, or navigating — and returns whether the tile is the active view afterward.
+func tileInput(s *app.Session, i int, hit viewCubeHit, cam *scene.Camera, pw, ph int, isActive bool) bool {
+	switch {
+	case isActive && s.CameraAnimating():
+		s.TickCameraAnimation(float64(native.DeltaTime())) // advance a running snap/sketch tween
+	case hit.overCube:
+		viewCubeClick(s, hit, pw, ph, func() { _ = s.ActivateView(i); isActive = true })
+	default:
+		isActive = tileNavigate(s, i, cam, isActive)
+	}
+	return isActive
+}
+
+// tileNavigate applies hover/drag/wheel to tile i's camera; on a non-active tile a real
+// manipulation (drag/wheel) makes it the active view. Returns the (possibly updated) active.
+func tileNavigate(s *app.Session, i int, cam *scene.Camera, isActive bool) bool {
+	nav := readNavInput(isPlacingTool(s) && isActive)
+	if nav.Hovered && navInteracted(nav) && !isActive {
+		_ = s.ActivateView(i)
+		isActive = true
+	}
+	if nav.Hovered || nav.Active {
+		*cam = ApplyNavigation(*cam, nav)
+		s.SetViewCameraAt(i, *cam)
+	}
+	return isActive
+}
+
+// renderActiveTile renders the focused tile's scene with overlays and the active-tile border.
+func renderActiveTile(win *native.Window, s *app.Session, i int, cam scene.Camera, pw, ph int, tx, ty, bx, by float32) {
+	hovered := hoveredPlane(s)
+	list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
+	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
+	renderViewportImage(win, s, i, cam, list, pw, ph, tx, ty)
+	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, tx, ty, ph)
+	drawActiveTileBorder(bx, by, float32(pw), float32(ph))
 }
 
 // drawActiveTileBorder strokes a dark border just inside the active tile's screen rect so
