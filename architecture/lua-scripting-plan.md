@@ -1,6 +1,7 @@
 # Lua Scripting — Implementation Plan
 
-**Status:** Proposed (planning only — no code yet)
+**Status:** Phase 1 shipped (PR #75, merged to `develop` 2026-06-07); Phases 2–3
+parked. See [§11 Phased rollout](#11-phased-rollout) for the per-phase status.
 **Scope:** Integral, first-party Lua scripting in the GPL-v2 application (`/source`,
 i.e. this `oblikovati` module). **Not** an add-in.
 **Companion ADR:** [ADR-0028 — Embedded Lua scripting runtime](decisions/ADR-0028-embedded-lua-scripting.md)
@@ -355,28 +356,48 @@ stubs.
 
 ## 11. Phased rollout
 
-**Phase 1 — runtime + generic bridge + sandbox + CLI (no UI, no contract change).**
-1. `script.Engine` interface + `script/gopherlua` impl (sandbox + quota + convert).
-2. `script/bridge` (`oblikovati.call`, `ScriptCaller`, in-proc caller over `router.Handle`).
-3. `script/runner` (worker goroutine, limits, ctx, recover).
-4. `oblikovati-cli script run`.
-5. Full headless test suite (§10), especially the containment spec.
-6. ADR-0028 → Accepted.
+**Phase 1 — runtime + generic bridge + sandbox + CLI (no UI, no contract change).
+✅ SHIPPED (PR #75, merged to `develop` 2026-06-07).**
+1. ✅ `script.Engine` interface (`script/engine.go`) + `script/gopherlua` impl
+   (`vm.go`/`sandbox.go`/`quota.go`/`convert.go`/`host.go`): the only importer of
+   `yuin/gopher-lua v1.1.1`.
+2. ✅ `script/bridge` — the generic `oblikovati.call`/`oblikovati.methods` door
+   (`call.go`/`host.go`) + a `DirectCaller` (CLI, synchronous) and a
+   `DispatchedCaller` (head, over `addin/dispatch`), both `client.Caller`.
+3. ✅ `script/runner` (worker goroutine, one-script-per-session run lock, default
+   CLI/GUI `Limits`, ctx).
+4. ✅ `oblikovati-cli script run <file.lua> [--doc] [--save]`.
+5. ✅ Full headless test suite (§10): model-effect round-trip, conversion, and the
+   complete containment spec (loop/error/panic/denied-globals/cancel).
+6. ✅ ADR-0028 → Accepted.
 
-**Phase 2 — typed sugar + GUI console.**
-1. `oblikovati.documents.*` / typed tables auto-derived from `api/wire` groups.
-2. `script/console` state + head Script Console panel + "Run Script…" command on the
+**Implementation note — instruction quota.** `gopher-lua` exposes **no public opcode
+hook**, and its `SetMx` memory guard calls `os.Exit` on breach (which would crash the
+host, violating requirement #1), so neither is used. The enforced runaway guard is the
+**wall-clock `context`** (checked per opcode by the VM's context-aware main loop),
+backstopped by a **bounded registry / call-stack** for the memory cap.
+`Limits.Instructions` is kept in the contract (recorded in `Result.Op`) as the seam a
+future hooked VM — or a swapped `Engine` — would wire a real opcode counter onto;
+`script/gopherlua/quota.go: instructionBudget` is its single anchor point.
+
+**Phase 2 — typed sugar + GUI console. ⏸ PARKED (outstanding).**
+The `DispatchedCaller` seam (Phase 1) is built and tested so the head can plug in
+directly; the rest is not yet started:
+1. ⏳ `oblikovati.documents.*` / typed tables auto-derived from `api/wire` groups.
+2. ⏳ `script/console` state + head Script Console panel + "Run Script…" command on the
    Tools/Manage ribbon panel; Stop/cancel.
-3. `oblikovati.methods()` discoverability; output/error pane wiring.
-4. UI e2e tests (per the project's "DoD = UI + e2e" rule).
+3. ⏳ output/error pane wiring (the `oblikovati.methods()` discoverability primitive
+   itself already ships in Phase 1).
+4. ⏳ UI e2e tests (per the project's "DoD = UI + e2e" rule).
 
-**Phase 3 — events, library, persistence, MCP.**
-1. Event/callback hooks so scripts can subscribe to the event bus (foundation for
+**Phase 3 — events, library, persistence, MCP. ⏸ PARKED (outstanding).**
+1. ⏳ Event/callback hooks so scripts can subscribe to the event bus (foundation for
    ADR-0013 rules: `on("parameterChanged", fn)`).
-2. A bundled script library / examples; saved scripts; (later) document-embedded
+2. ⏳ A bundled script library / examples; saved scripts; (later) document-embedded
    rules persisted in the model (ADR-0013 territory).
-3. Contract-first `script.run` wire method + `client.Scripts()` so the MCP bridge can
-   run whole programs.
+3. ⏳ Contract-first `script.run` wire method + `client.Scripts()` so the MCP bridge can
+   run whole programs — the only contract-first (`api/wire` + `api/client`) addition the
+   whole effort needs.
 
 ---
 
