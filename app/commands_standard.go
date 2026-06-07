@@ -55,8 +55,9 @@ func getStartedCommands() []*CommandDefinition {
 	}
 }
 
-// manageTabCommands are the Manage tab's Parameters panel: open the Parameters dialog
-// (Inventor's Manage ▸ Parameters). Enabled whenever a part is active.
+// manageTabCommands are the Manage tab: the Parameters panel (Inventor's Manage ▸
+// Parameters, needs an active part) and the Scripts panel (the Script Console — our
+// equivalent of Manage ▸ iLogic, ADR-0028).
 func manageTabCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Manage.Parameters", "Parameters", "Parameters", func(s *Session) error {
@@ -65,6 +66,7 @@ func manageTabCommands() []*CommandDefinition {
 		}).WithTab("Manage").WithEnable(hasActivePart).
 			WithIcon("parameters").WithButtonStyle(LargeIconButton).
 			WithTooltip("Parameters — add, edit, and organize the model and user parameters that drive the part."),
+		scriptConsoleCommand(),
 	}
 }
 

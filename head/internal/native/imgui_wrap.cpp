@@ -93,6 +93,13 @@ int  obk_ig_input_float(const char* label, float* v) { return ImGui::InputFloat(
 int  obk_ig_input_double(const char* label, double* v) { return ImGui::InputDouble(label, v) ? 1 : 0; }
 int  obk_ig_input_int(const char* label, int* v)     { return ImGui::InputInt(label, v) ? 1 : 0; }
 int  obk_ig_input_text(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size) ? 1 : 0; }
+int  obk_ig_input_text_multiline(const char* label, char* buf, int buf_size, float w, float h) {
+    return ImGui::InputTextMultiline(label, buf, (size_t)buf_size, ImVec2(w, h)) ? 1 : 0;
+}
+int  obk_ig_begin_child(const char* id, float w, float h, int border) {
+    return ImGui::BeginChild(id, ImVec2(w, h), border ? ImGuiChildFlags_Borders : 0) ? 1 : 0;
+}
+void obk_ig_end_child(void) { ImGui::EndChild(); }
 int  obk_ig_checkbox(const char* label, int* v) {
     bool b = (*v != 0);
     bool changed = ImGui::Checkbox(label, &b);

@@ -46,6 +46,9 @@ int  obk_ig_input_float(const char* label, float* v);
 int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
+int  obk_ig_input_text_multiline(const char* label, char* buf, int buf_size, float w, float h);
+int  obk_ig_begin_child(const char* id, float w, float h, int border);
+void obk_ig_end_child(void);
 int  obk_ig_checkbox(const char* label, int* v);
 int  obk_ig_slider_float(const char* label, float* v, float lo, float hi);
 void obk_ig_begin_disabled(int disabled);
@@ -228,6 +231,30 @@ func InputText(label string, buf []byte) bool {
 	defer free()
 	return C.obk_ig_input_text(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))) != 0
 }
+
+// InputTextMultiline draws a multi-line text editor over buf (NUL-terminated, edited in
+// place up to len(buf)-1 bytes) sized w×h logical pixels (0 ⇒ fill the available content
+// region). Returns true on the frame buf changed. The Script Console source pane uses it.
+func InputTextMultiline(label string, buf []byte, w, h float32) bool {
+	if len(buf) == 0 {
+		return false
+	}
+	c, free := cstr(label)
+	defer free()
+	return C.obk_ig_input_text_multiline(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf)), C.float(w), C.float(h)) != 0
+}
+
+// BeginChild opens a scrollable child region id sized w×h (0 ⇒ fill the remaining space);
+// border draws a frame. Always pair with EndChild even when it returns false — ImGui
+// requires the matching call regardless (used for the console's output pane).
+func BeginChild(id string, w, h float32, border bool) bool {
+	c, free := cstr(id)
+	defer free()
+	return C.obk_ig_begin_child(c, C.float(w), C.float(h), cBool(border)) != 0
+}
+
+// EndChild closes the region opened by BeginChild.
+func EndChild() { C.obk_ig_end_child() }
 
 // Checkbox draws a checkbox; returns true (and writes *v) when toggled.
 func Checkbox(label string, v *bool) bool {

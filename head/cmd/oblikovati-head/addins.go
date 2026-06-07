@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -16,6 +17,10 @@ import (
 	"oblikovati/app"
 	"oblikovati/event"
 	"oblikovati/head/internal/addinhost"
+	"oblikovati/script/bridge"
+	"oblikovati/script/console"
+	"oblikovati/script/gopherlua"
+	"oblikovati/script/runner"
 )
 
 // addInDrainPerFrame bounds how many queued add-in calls run per frame, so a burst
@@ -33,9 +38,10 @@ type addInHost struct {
 	dispatcher *dispatch.Dispatcher
 	loaded     []*addinhost.LoadedAddIn
 	subs       []event.Subscription
-	dir        string        // watched add-ins directory
-	watchDone  chan struct{} // closed by stop() to end the watcher goroutine
-	changed    int32         // set by the watcher when a library is replaced on disk
+	dir        string              // watched add-ins directory
+	watchDone  chan struct{}       // closed by stop() to end the watcher goroutine
+	changed    int32               // set by the watcher when a library is replaced on disk
+	script     *console.Controller // the Script Console runtime (Lua over the dispatched router)
 }
 
 // startAddIns wires the add-in subsystem: it installs the router as the host call
@@ -55,6 +61,9 @@ func startAddIns(session *app.Session) *addInHost {
 
 	dir := addInsDir()
 	h := &addInHost{dispatcher: d, dir: dir, watchDone: make(chan struct{})}
+	// The Script Console runs Lua over the SAME router + dispatcher add-ins use, so its
+	// host calls serialize onto the session goroutine and never freeze the UI (ADR-0028 §5).
+	h.script = newScriptController(rtr, session, d)
 	libs, err := addinhost.LoadDir(dir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
@@ -75,6 +84,16 @@ func startAddIns(session *app.Session) *addInHost {
 		go h.watchAddIns()
 	}
 	return h
+}
+
+// newScriptController builds the Script Console runtime: a gopher-lua engine whose host
+// calls are marshalled onto the session goroutine via the dispatched caller (the same
+// dispatcher the frame loop drains), under the GUI resource limits. oblikovati.methods()
+// is backed by the router's registered method list for discoverability (ADR-0028).
+func newScriptController(rtr *router.Router, session *app.Session, d *dispatch.Dispatcher) *console.Controller {
+	caller := bridge.NewDispatchedCaller(rtr.Handle, session, d, context.Background())
+	run := runner.New(gopherlua.New(), caller, rtr.Methods)
+	return console.NewController(run, runner.DefaultGUILimits)
 }
 
 // activate registers and activates one loaded add-in.
