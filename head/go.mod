@@ -14,9 +14,10 @@ require (
 	oblikovati/api v0.0.0
 )
 
+require golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // icon glyph normalization (x/image/draw)
+
 require (
 	github.com/yuin/gopher-lua v1.1.1 // indirect
-	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
 	golang.org/x/net v0.0.0-20211118161319-6a13c67c3ce4 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
