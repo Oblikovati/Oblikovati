@@ -15,11 +15,7 @@ type Migration func(*Package) error
 // version. It is empty at the v2 (YAML) baseline: the pre-v2 ZIP format is not
 // migrated (ADR-0020). Register a step here whenever [CurrentSchemaVersion] is bumped
 // past 2; never remove one — it is the only path forward for files in the wild.
-var migrations = map[int]Migration{
-	// v2 → v3 added the optional `views:` section. It is additive: a v2 file carries no
-	// views, and the host seeds a default view on open, so there is nothing to transform.
-	2: func(*Package) error { return nil },
-}
+var migrations = map[int]Migration{}
 
 // Migrate upgrades a document to [CurrentSchemaVersion], applying each registered step
 // in order and stamping the new version into the manifest. A document with no manifest

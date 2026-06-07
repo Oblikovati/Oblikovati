@@ -24,6 +24,7 @@ var (
 	previewColor                                           [4]float32 // rubber-band preview
 	dimensionColor, dimensionDrivenColor                   [4]float32
 	snapGlyphColor, pointMarkerColor                       [4]float32
+	activeViewportBorderColor                              [4]float32 // focused split-view tile outline
 	faintPlaneColor, hoverPlaneColor, selectedPlaneColor   [4]float32
 	planeFillColor                                         [4]float32 // translucent plane fill (alpha = opacity)
 	selectionHighlight                                     [4]float32 // picked-body highlight
@@ -82,6 +83,7 @@ func refreshSketchThemeColors(arr func(types.ThemeToken) [4]float32) {
 	dimensionColor = arr(types.TokenDimensionDriving)
 	dimensionDrivenColor = arr(types.TokenDimensionDriven)
 	snapGlyphColor = arr(types.TokenSnapGlyph)
+	activeViewportBorderColor = arr(types.TokenViewportActiveBorder)
 	pointMarkerColor = sketchColor // placed points match the sketch wireframe
 }
 

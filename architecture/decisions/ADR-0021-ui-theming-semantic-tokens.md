@@ -41,10 +41,13 @@ the future material/appearance subsystem owns.
    the custom theme; it is self-contained (no base inheritance to resolve) and keeps its
    look even if a built-in's defaults later change.
 
-5. **YAML files in the user config dir.** Customs persist as readable YAML under
-   `os.UserConfigDir()/oblikovati/themes/*.yaml`, the selected theme under
-   `.../preferences.yaml`, through the existing `persistence/yamlcodec` seam (ADR-0020),
-   behind a `theme.FileSystem` interface (in-memory fake in tests).
+5. **YAML files in the shared user config dir.** Customs persist as readable YAML under
+   `<userconfig>/themes/*.yaml`, the selected theme under `<userconfig>/preferences.yaml`,
+   through the existing `persistence/yamlcodec` seam (ADR-0020), behind a
+   `theme.FileSystem` interface (in-memory fake in tests). `<userconfig>` is the single
+   per-user directory shared by every store — `~/.oblikovati` (Linux/macOS) or
+   `%AppData%\oblikovati` (Windows) — resolved via `oblikovati/userconfig`
+   ([ADR-0029](ADR-0029-user-config-location.md)).
 
 6. **Live apply via a revision counter.** `theme.Library` bumps a monotonic revision on
    any select/edit/add/remove. `head/ui` re-pushes the chrome colors into Dear ImGui's

@@ -23,6 +23,11 @@ type Camera struct {
 	FOV    float64 // vertical field of view, radians
 	Width  int
 	Height int
+	// Orthographic selects a parallel projection (no perspective foreshortening) instead
+	// of the FOV perspective. The ortho extent is sized from FOV at the target depth so
+	// toggling modes keeps the model at the same on-screen scale. Set per view by the
+	// ViewCube projection-mode menu.
+	Orthographic bool
 }
 
 // NewCamera returns a camera with a 45° vertical FOV looking down −Z by default; set

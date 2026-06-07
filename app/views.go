@@ -4,10 +4,383 @@ package app
 
 import (
 	"fmt"
+	stdmath "math"
 
+	"oblikovati/api/types"
+	"oblikovati/math"
 	"oblikovati/model/doc"
+	"oblikovati/persistence/userprefs"
+	"oblikovati/persistence/viewstate"
 	"oblikovati/scene"
 )
+
+// faceAlignTol is the minimum |cosine| between the view direction and a principal axis for
+// a view to count as a "face" view (a ViewCube face snap) under ProjPerspectiveOrthoFaces.
+const faceAlignTol = 0.999
+
+// orthoForView resolves whether a view renders orthographically: always for
+// ProjOrthographic, never for ProjPerspective, and for ProjPerspectiveOrthoFaces only when
+// the view direction is aligned to a principal axis (a straight-on face view).
+func orthoForView(v *doc.View) bool {
+	switch v.Projection {
+	case doc.ProjOrthographic:
+		return true
+	case doc.ProjPerspectiveOrthoFaces:
+		return faceAligned(v.Eye, v.Target)
+	default:
+		return false
+	}
+}
+
+// faceAligned reports whether the eye→target direction is (near) parallel to a principal
+// axis (±X/±Y/±Z) — i.e. a straight-on face view.
+func faceAligned(eye, target math.Point3) bool {
+	d := eye.VectorTo(target)
+	l := d.Length()
+	if l < 1e-9 {
+		return false
+	}
+	d = d.Scale(1 / l)
+	m := stdmath.Abs(d.X)
+	if a := stdmath.Abs(d.Y); a > m {
+		m = a
+	}
+	if a := stdmath.Abs(d.Z); a > m {
+		m = a
+	}
+	return m >= faceAlignTol
+}
+
+// SetActiveViewHome stores the active view's current camera as its Home (ViewCube "Set
+// Current View as Home"). fitToView keeps only the viewing direction, re-fitting to the
+// model on each Go Home; otherwise the exact framing is restored.
+func (s *Session) SetActiveViewHome(fitToView bool) {
+	v := s.ActiveView()
+	if v == nil {
+		return
+	}
+	c := s.Camera()
+	v.Home = &doc.ViewHome{Eye: c.Eye, Target: c.Target, Up: c.Up, FOV: c.FOV, FitToView: fitToView}
+}
+
+// GoHome animates the active view to its Home: its custom Home if set (ViewCube "Set
+// Current View as Home"), else the default iso Home (model framed from (1,1,1)). It backs
+// the ViewCube Home button.
+func (s *Session) GoHome() {
+	v := s.ActiveView()
+	if v == nil || v.Home == nil {
+		s.animateCameraTo(s.Camera().Home(s.modelBounds()), sketchViewTweenSeconds)
+		return
+	}
+	s.animateCameraTo(s.homeCamera(v.Home), sketchViewTweenSeconds)
+}
+
+// homeCamera builds the scene camera for a saved Home: the exact frame for Fixed Distance,
+// or that direction re-fitted to the model extents for Fit to View.
+func (s *Session) homeCamera(h *doc.ViewHome) scene.Camera {
+	c := s.Camera() // carry the transient viewport pixel size
+	c.Eye, c.Target, c.Up, c.FOV = h.Eye, h.Target, h.Up, h.FOV
+	if h.FitToView {
+		c = c.Fit(s.modelBounds())
+	}
+	return c
+}
+
+// homeFrameOf projects a view's custom Home onto its persisted form (nil ⇒ nil).
+func homeFrameOf(h *doc.ViewHome) *viewstate.HomeFrame {
+	if h == nil {
+		return nil
+	}
+	return &viewstate.HomeFrame{
+		Eye:       [3]float64{h.Eye.X, h.Eye.Y, h.Eye.Z},
+		Target:    [3]float64{h.Target.X, h.Target.Y, h.Target.Z},
+		Up:        [3]float64{h.Up.X, h.Up.Y, h.Up.Z},
+		FOV:       h.FOV,
+		FitToView: h.FitToView,
+	}
+}
+
+// viewHomeOf rebuilds a view's custom Home from its persisted form (nil ⇒ nil).
+func viewHomeOf(f *viewstate.HomeFrame) *doc.ViewHome {
+	if f == nil {
+		return nil
+	}
+	return &doc.ViewHome{
+		Eye:       math.P3(f.Eye[0], f.Eye[1], f.Eye[2]),
+		Target:    math.P3(f.Target[0], f.Target[1], f.Target[2]),
+		Up:        math.V3(f.Up[0], f.Up[1], f.Up[2]),
+		FOV:       f.FOV,
+		FitToView: f.FitToView,
+	}
+}
+
+// LockToSelection reports whether the ViewCube orbits around the current selection.
+func (s *Session) LockToSelection() bool { return s.prefs.LockToSelection }
+
+// SetLockToSelection toggles whether ViewCube reorientations pivot around the selected
+// objects' center (Inventor's "Lock to Current Selection") rather than the view target,
+// persisted as a global user preference.
+func (s *Session) SetLockToSelection(v bool) {
+	s.prefs.LockToSelection = v
+	s.savePrefs()
+}
+
+// ViewCubePivot is the point the ViewCube snaps orbit around: the selection's bounding-box
+// center when Lock to Current Selection is on and something pickable is selected, otherwise
+// the active view's current target.
+func (s *Session) ViewCubePivot() math.Point3 {
+	if s.prefs.LockToSelection {
+		if c, ok := s.selectionCenter(); ok {
+			return c
+		}
+	}
+	return s.Camera().Target
+}
+
+// selectionCenter is the center of the selection's combined range box, or ok=false when no
+// selected item exposes geometry.
+func (s *Session) selectionCenter() (math.Point3, bool) {
+	box := math.EmptyBox()
+	for _, it := range s.selection.Items() {
+		switch h := it.(type) {
+		case FaceHandle:
+			box = box.Union(h.Face.RangeBox())
+		case EdgeHandle:
+			box = box.Union(h.Edge.RangeBox())
+		case VertexHandle:
+			box = box.Union(h.Vertex.RangeBox())
+		case BodyHandle:
+			box = box.Union(h.Body.RangeBox())
+		case WorkPointHandle:
+			box = box.Union(math.BoxFromPoints(h.Point.Point()))
+		}
+	}
+	if box.IsEmpty() {
+		return math.Point3{}, false
+	}
+	return box.Center(), true
+}
+
+// InactiveOpacity is the ViewCube's face opacity when not hovered (a global preference;
+// default 1.0 = opaque). Lower values let the model show through the inactive cube.
+func (s *Session) InactiveOpacity() float32 {
+	if s.prefs.InactiveOpacity <= 0 || s.prefs.InactiveOpacity > 1 {
+		return 1.0
+	}
+	return float32(s.prefs.InactiveOpacity)
+}
+
+// SetInactiveOpacity sets and persists the ViewCube inactive face opacity (clamped 0.1–1.0).
+func (s *Session) SetInactiveOpacity(v float32) {
+	if v < 0.1 {
+		v = 0.1
+	} else if v > 1 {
+		v = 1
+	}
+	s.prefs.InactiveOpacity = float64(v)
+	s.savePrefs()
+}
+
+// ViewCube placement preference bounds.
+const (
+	defaultCubeSizePx = 36
+	minCubeSizePx     = 20
+	maxCubeSizePx     = 80
+)
+
+// CubeSize is the ViewCube radius in pixels (global preference; default 36).
+func (s *Session) CubeSize() float32 {
+	if s.prefs.CubeSizePx < minCubeSizePx || s.prefs.CubeSizePx > maxCubeSizePx {
+		return defaultCubeSizePx
+	}
+	return float32(s.prefs.CubeSizePx)
+}
+
+// SetCubeSize sets and persists the ViewCube radius (clamped to the supported range).
+func (s *Session) SetCubeSize(px int) {
+	if px < minCubeSizePx {
+		px = minCubeSizePx
+	} else if px > maxCubeSizePx {
+		px = maxCubeSizePx
+	}
+	s.prefs.CubeSizePx = px
+	s.savePrefs()
+}
+
+// CubeCorner is the viewport corner the ViewCube anchors to (0=TR, 1=TL, 2=BR, 3=BL).
+func (s *Session) CubeCorner() int {
+	if s.prefs.CubeCorner < 0 || s.prefs.CubeCorner > 3 {
+		return 0
+	}
+	return s.prefs.CubeCorner
+}
+
+// SetCubeCorner sets and persists the ViewCube anchor corner (0=TR, 1=TL, 2=BR, 3=BL).
+func (s *Session) SetCubeCorner(corner int) {
+	if corner < 0 || corner > 3 {
+		return
+	}
+	s.prefs.CubeCorner = corner
+	s.savePrefs()
+}
+
+// savePrefs persists the global preferences if a store is installed (best-effort).
+func (s *Session) savePrefs() {
+	if s.prefsStore != nil {
+		_ = s.prefsStore.Save(s.prefs)
+	}
+}
+
+// CubeOrientation returns the active document's ViewCube orientation (front redefinition),
+// or the identity when there is no active document.
+func (s *Session) CubeOrientation() doc.CubeOrient {
+	if d := s.ActiveDocument(); d != nil {
+		return d.Views().Front()
+	}
+	return doc.IdentityCubeOrient()
+}
+
+// SetActiveViewAsFront redefines the active document's ViewCube front so the current view
+// becomes the front view (ViewCube "Set Current View as Front"), axis-snapped.
+func (s *Session) SetActiveViewAsFront() {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	c := s.Camera()
+	d.Views().SetFront(doc.FrontFromView(c.Eye.VectorTo(c.Target), c.Up))
+}
+
+// ResetFront restores the active document's default ViewCube front (ViewCube "Reset Front").
+func (s *Session) ResetFront() {
+	if d := s.ActiveDocument(); d != nil {
+		d.Views().SetFront(doc.IdentityCubeOrient())
+	}
+}
+
+// ActiveViewProjection returns the active view's projection mode (perspective by default).
+func (s *Session) ActiveViewProjection() doc.ProjectionMode {
+	if v := s.ActiveView(); v != nil {
+		return v.Projection
+	}
+	return doc.ProjPerspective
+}
+
+// SetActiveViewProjection sets the active view's projection mode (the ViewCube projection
+// menu). An invalid mode is ignored.
+func (s *Session) SetActiveViewProjection(m doc.ProjectionMode) {
+	if v := s.ActiveView(); v != nil && m.IsValid() {
+		v.Projection = m
+	}
+}
+
+// SetViewStateStore installs the per-user store that persists each document's view/camera
+// configuration outside the .obk (so a camera move never dirties the document). The head
+// and CLI inject a file-backed store; without one, view state is purely in-session.
+func (s *Session) SetViewStateStore(store viewstate.Store) { s.viewState = store }
+
+// saveViewState writes a document's current view configuration to the per-user store,
+// keyed by its file path. Called when the document is saved. A no-op without a store or a
+// path (an unsaved document has no key yet).
+func (s *Session) saveViewState(d *doc.Document) {
+	if s.viewState == nil || d == nil || d.FullFileName() == "" {
+		return
+	}
+	vs := d.Views()
+	st := viewstate.ViewState{Active: vs.ActiveIndex(), Layout: int32(vs.Layout())}
+	st.SplitX, st.SplitY = vs.Split()
+	if f := vs.Front(); !f.IsIdentity() {
+		st.Front = &viewstate.OrientFrame{
+			X: [3]float64{f.X.X, f.X.Y, f.X.Z},
+			Y: [3]float64{f.Y.X, f.Y.Y, f.Y.Z},
+			Z: [3]float64{f.Z.X, f.Z.Y, f.Z.Z},
+		}
+	}
+	for _, v := range vs.All() {
+		st.Views = append(st.Views, viewstate.ViewFrame{
+			Name:       v.Name,
+			Eye:        [3]float64{v.Eye.X, v.Eye.Y, v.Eye.Z},
+			Target:     [3]float64{v.Target.X, v.Target.Y, v.Target.Z},
+			Up:         [3]float64{v.Up.X, v.Up.Y, v.Up.Z},
+			FOV:        v.FOV,
+			Projection: int(v.Projection),
+			Home:       homeFrameOf(v.Home),
+		})
+	}
+	_ = s.viewState.Save(d.FullFileName(), st) // best-effort; a settings-write failure must not block saving the model
+}
+
+// loadViewState restores a document's view configuration from the per-user store after it
+// is opened. A no-op without a store or a stored entry (the document keeps its default view).
+func (s *Session) loadViewState(d *doc.Document) {
+	if s.viewState == nil || d == nil {
+		return
+	}
+	st, ok, err := s.viewState.Load(d.FullFileName())
+	if err != nil || !ok || len(st.Views) == 0 {
+		return
+	}
+	views := make([]*doc.View, len(st.Views))
+	for i, f := range st.Views {
+		views[i] = &doc.View{
+			Name:       f.Name,
+			Eye:        math.P3(f.Eye[0], f.Eye[1], f.Eye[2]),
+			Target:     math.P3(f.Target[0], f.Target[1], f.Target[2]),
+			Up:         math.V3(f.Up[0], f.Up[1], f.Up[2]),
+			FOV:        f.FOV,
+			Framed:     true,
+			Projection: doc.ProjectionMode(f.Projection),
+			Home:       viewHomeOf(f.Home),
+		}
+	}
+	d.RestoreViews(views, st.Active, types.ViewLayout(st.Layout))
+	d.Views().SetSplit(st.SplitX, st.SplitY)
+	if f := st.Front; f != nil {
+		d.Views().SetFront(doc.CubeOrient{
+			X: math.V3(f.X[0], f.X[1], f.X[2]),
+			Y: math.V3(f.Y[0], f.Y[1], f.Y[2]),
+			Z: math.V3(f.Z[0], f.Z[1], f.Z[2]),
+		})
+	}
+}
+
+// SetViewLayout sets how the active document tiles its views and ensures it has enough
+// views to fill the layout, creating any missing ones from the current view's camera so
+// the choice takes visible effect immediately (e.g. "Four Views" shows four tiles even
+// from a single view). It never removes views — switching back to a smaller layout keeps
+// the extras for later. View-tab Windows panel.
+func (s *Session) SetViewLayout(l types.ViewLayout) error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	vs := d.Views()
+	vs.SetLayout(l)
+	for vs.Count() < l.Tiles() {
+		cur := vs.Active()
+		nv := doc.DefaultView(fmt.Sprintf("View %d", vs.Count()+1))
+		nv.Eye, nv.Target, nv.Up, nv.FOV, nv.Framed = cur.Eye, cur.Target, cur.Up, cur.FOV, cur.Framed
+		vs.Add(nv)
+	}
+	return nil
+}
+
+// NewView adds a view to the active document (copying the current view's camera) and makes
+// it active — the View-tab "New View" command.
+func (s *Session) NewView() error {
+	_, err := s.AddView(0, "", true)
+	return err
+}
+
+// CloseActiveView removes the active document's active view (the last view is kept).
+func (s *Session) CloseActiveView() error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	vs := d.Views()
+	return vs.Close(vs.ActiveIndex())
+}
 
 // DocumentByID resolves a document by its session id; id 0 means the active document. It
 // is the entry point for the document-addressed view/camera API (a Document field of 0
@@ -77,4 +450,84 @@ func (s *Session) SetViewCamera(docID uint64, c scene.Camera) error {
 	v := d.Views().Active()
 	v.Eye, v.Target, v.Up, v.FOV, v.Framed = c.Eye, c.Target, c.Up, c.FOV, true
 	return nil
+}
+
+// ViewCameraAt returns the active document's view i camera, sized to the current viewport.
+// ok is false when there is no active document or i is out of range. Used by the tiled
+// viewport to render each tile from its own view's camera.
+func (s *Session) ViewCameraAt(i int) (scene.Camera, bool) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return scene.Camera{}, false
+	}
+	vs := d.Views()
+	if i < 0 || i >= vs.Count() {
+		return scene.Camera{}, false
+	}
+	v := vs.All()[i]
+	c := s.camera // carry the transient viewport pixel size
+	c.Eye, c.Target, c.Up, c.FOV = v.Eye, v.Target, v.Up, v.FOV
+	c.Orthographic = orthoForView(v)
+	return c, true
+}
+
+// SetViewCameraAt writes c to the active document's view i (marking it framed). When i is
+// the active view it routes through SetCamera (picker + cache sync); otherwise it writes
+// the view frame directly. Out-of-range or no-active-document is a no-op.
+func (s *Session) SetViewCameraAt(i int, c scene.Camera) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	vs := d.Views()
+	if i < 0 || i >= vs.Count() {
+		return
+	}
+	if i == vs.ActiveIndex() {
+		s.SetCamera(c)
+		return
+	}
+	v := vs.All()[i]
+	v.Eye, v.Target, v.Up, v.FOV, v.Framed = c.Eye, c.Target, c.Up, c.FOV, true
+}
+
+// ShowViewCube reports whether the navigation cube is shown in viewports (default true).
+func (s *Session) ShowViewCube() bool { return !s.prefs.CubeHidden }
+
+// SetShowViewCube shows or hides the navigation cube (View-tab toggle), persisted as a
+// global user preference.
+func (s *Session) SetShowViewCube(show bool) {
+	s.prefs.CubeHidden = !show
+	s.savePrefs()
+}
+
+// SetUserPrefsStore installs the global-preferences store and loads its current values
+// into the session, so a preference like compass visibility survives across sessions. The
+// head/CLI inject a file-backed store; without one, preferences are in-session only.
+func (s *Session) SetUserPrefsStore(store userprefs.Store) {
+	s.prefsStore = store
+	if p, ok, err := store.Load(); err == nil && ok {
+		s.prefs = p
+	}
+}
+
+// ShowCompass reports whether the ViewCube compass (the North ring) is shown — a global
+// user preference (default true).
+func (s *Session) ShowCompass() bool { return !s.prefs.CompassHidden }
+
+// SetShowCompass shows or hides the ViewCube compass and persists the choice as a global
+// user preference (its right-click menu toggle). A settings-write failure is non-fatal.
+func (s *Session) SetShowCompass(show bool) {
+	s.prefs.CompassHidden = !show
+	s.savePrefs()
+}
+
+// ActivateView makes view i of the active document the active view (so picking, sketch and
+// commands target it). Used when the user interacts with a tile.
+func (s *Session) ActivateView(i int) error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	return d.Views().Activate(i)
 }

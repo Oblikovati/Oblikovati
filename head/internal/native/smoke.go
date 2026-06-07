@@ -62,7 +62,7 @@ func RunViewportSmoke(maxFrames int) int {
 
 	for i := 0; i < maxFrames && !w.ShouldClose(); i++ {
 		w.BeginFrame()
-		w.RenderViewport(1280, 720, mvp[:], eye, verts, len(verts)/16, idx,
+		w.RenderViewport(0, 1280, 720, mvp[:], eye, verts, len(verts)/16, idx,
 			nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil, nil, 0, nil)
 		w.EndFrame(0.10, 0.10, 0.12)
 	}
@@ -97,7 +97,7 @@ func smokeCamera() scene.Camera {
 // surface's BGRA byte order to RGBA), so the rendered lighting/IBL/shadow result can be
 // inspected headlessly.
 func saveViewportPNG(w *Window, path string) error {
-	px, width, height, ok := w.ReadbackViewport()
+	px, width, height, ok := w.ReadbackViewport(0)
 	if !ok {
 		return fmt.Errorf("readback unavailable")
 	}

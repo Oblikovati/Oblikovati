@@ -22,6 +22,8 @@ void  obk_head_set_should_close(void* h, int v);
 void  obk_head_begin_frame(void* h);
 void  obk_head_end_frame(void* h, float r, float g, float b);
 void  obk_head_destroy(void* h);
+void  obk_head_get_window_state(void* h, int* x, int* y, int* w, int* hh, int* maximized);
+void  obk_head_apply_window_state(void* h, int x, int y, int maximized);
 */
 import "C"
 
@@ -46,7 +48,28 @@ func CreateWindow(width, height int, title string) (*Window, error) {
 	if h == nil {
 		return nil, errors.New("native: head window/Vulkan/ImGui init failed (no display or no Vulkan driver?)")
 	}
-	return &Window{handle: h}, nil
+	w := &Window{handle: h}
+	w.SetUIFont(uiFontSizePx) // embedded Helvetica-metric UI font (before the first frame)
+	return w, nil
+}
+
+// WindowState returns the window's current placement: position (virtual-screen
+// coordinates, which encode the monitor), size, and whether it is maximized — for saving
+// across sessions.
+func (w *Window) WindowState() (x, y, width, height int, maximized bool) {
+	var cx, cy, cw, ch, cm C.int
+	C.obk_head_get_window_state(w.handle, &cx, &cy, &cw, &ch, &cm)
+	return int(cx), int(cy), int(cw), int(ch), cm != 0
+}
+
+// ApplyWindowState restores a saved placement: move to (x,y) (same monitor) and maximize
+// if it was. Size is set at CreateWindow.
+func (w *Window) ApplyWindowState(x, y int, maximized bool) {
+	m := C.int(0)
+	if maximized {
+		m = 1
+	}
+	C.obk_head_apply_window_state(w.handle, C.int(x), C.int(y), m)
 }
 
 // ShouldClose reports whether the user asked to close the window.

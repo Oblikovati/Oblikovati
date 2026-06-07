@@ -45,6 +45,25 @@ struct GpuBuffer {
 };
 } // namespace
 
+// kMaxTiles bounds how many views can render at once (the quad layout); each gets its own
+// offscreen Target so simultaneous tiles show distinct cameras (ImGui draws are deferred,
+// so they cannot share one image). See ADR — per-document multiple views.
+static const int kMaxTiles = 4;
+
+// Target is one size-dependent offscreen render target: a color+depth image, its
+// framebuffer, and the ImGui sampled-image set that draws it into a panel. One per tile.
+struct Target {
+    int             width = 0, height = 0;
+    VkImage         colorImage = VK_NULL_HANDLE;
+    VkDeviceMemory  colorMem = VK_NULL_HANDLE;
+    VkImageView     colorView = VK_NULL_HANDLE;
+    VkImage         depthImage = VK_NULL_HANDLE;
+    VkDeviceMemory  depthMem = VK_NULL_HANDLE;
+    VkImageView     depthView = VK_NULL_HANDLE;
+    VkFramebuffer   framebuffer = VK_NULL_HANDLE;
+    VkDescriptorSet texture = VK_NULL_HANDLE; // ImGui sampled-image set
+};
+
 struct Viewport {
     VkFormat        colorFormat = VK_FORMAT_UNDEFINED;
     VkRenderPass    renderPass = VK_NULL_HANDLE;
@@ -99,16 +118,9 @@ struct Viewport {
     VkCommandBuffer cmd = VK_NULL_HANDLE;
     VkFence         fence = VK_NULL_HANDLE;
 
-    // Size-dependent target (recreated on resize).
-    int             width = 0, height = 0;
-    VkImage         colorImage = VK_NULL_HANDLE;
-    VkDeviceMemory  colorMem = VK_NULL_HANDLE;
-    VkImageView     colorView = VK_NULL_HANDLE;
-    VkImage         depthImage = VK_NULL_HANDLE;
-    VkDeviceMemory  depthMem = VK_NULL_HANDLE;
-    VkImageView     depthView = VK_NULL_HANDLE;
-    VkFramebuffer   framebuffer = VK_NULL_HANDLE;
-    VkDescriptorSet texture = VK_NULL_HANDLE; // ImGui sampled-image set
+    // Size-dependent targets, one per tile (recreated on resize). targets[0] is the
+    // single-view target; the quad layout uses up to kMaxTiles.
+    Target          targets[kMaxTiles];
 
     GpuBuffer       vbuf, ibuf;
 
@@ -435,35 +447,37 @@ VkImageView make_image(HeadContext* c, VkFormat fmt, VkImageUsageFlags usage,
     return view;
 }
 
-void destroy_target(HeadContext* c, Viewport* v) {
-    if (v->texture) { ImGui_ImplVulkan_RemoveTexture(v->texture); v->texture = VK_NULL_HANDLE; }
-    if (v->framebuffer) vkDestroyFramebuffer(c->device, v->framebuffer, nullptr);
-    if (v->colorView) vkDestroyImageView(c->device, v->colorView, nullptr);
-    if (v->colorImage) vkDestroyImage(c->device, v->colorImage, nullptr);
-    if (v->colorMem) vkFreeMemory(c->device, v->colorMem, nullptr);
-    if (v->depthView) vkDestroyImageView(c->device, v->depthView, nullptr);
-    if (v->depthImage) vkDestroyImage(c->device, v->depthImage, nullptr);
-    if (v->depthMem) vkFreeMemory(c->device, v->depthMem, nullptr);
-    v->framebuffer = VK_NULL_HANDLE;
-    v->colorView = v->depthView = VK_NULL_HANDLE;
-    v->colorImage = v->depthImage = VK_NULL_HANDLE;
-    v->colorMem = v->depthMem = VK_NULL_HANDLE;
+void destroy_target(HeadContext* c, Target* t) {
+    if (t->texture) { ImGui_ImplVulkan_RemoveTexture(t->texture); t->texture = VK_NULL_HANDLE; }
+    if (t->framebuffer) vkDestroyFramebuffer(c->device, t->framebuffer, nullptr);
+    if (t->colorView) vkDestroyImageView(c->device, t->colorView, nullptr);
+    if (t->colorImage) vkDestroyImage(c->device, t->colorImage, nullptr);
+    if (t->colorMem) vkFreeMemory(c->device, t->colorMem, nullptr);
+    if (t->depthView) vkDestroyImageView(c->device, t->depthView, nullptr);
+    if (t->depthImage) vkDestroyImage(c->device, t->depthImage, nullptr);
+    if (t->depthMem) vkFreeMemory(c->device, t->depthMem, nullptr);
+    t->framebuffer = VK_NULL_HANDLE;
+    t->colorView = t->depthView = VK_NULL_HANDLE;
+    t->colorImage = t->depthImage = VK_NULL_HANDLE;
+    t->colorMem = t->depthMem = VK_NULL_HANDLE;
 }
 
-void ensure_target(HeadContext* c, Viewport* v, int w, int h) {
-    if (w == v->width && h == v->height && v->framebuffer != VK_NULL_HANDLE) return;
+// ensure_target (re)creates target t at w×h, reusing the viewport's shared render pass and
+// sampler. A no-op when t already matches the size.
+void ensure_target(HeadContext* c, Viewport* v, Target* t, int w, int h) {
+    if (w == t->width && h == t->height && t->framebuffer != VK_NULL_HANDLE) return;
     vkDeviceWaitIdle(c->device);
-    destroy_target(c, v);
-    v->width = w;
-    v->height = h;
-    v->colorView = make_image(c, v->colorFormat,
+    destroy_target(c, t);
+    t->width = w;
+    t->height = h;
+    t->colorView = make_image(c, v->colorFormat,
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT, // TRANSFER_SRC enables obk_viewport_readback
-        VK_IMAGE_ASPECT_COLOR_BIT, w, h, &v->colorImage, &v->colorMem);
-    v->depthView = make_image(c, kDepthFormat,
+        VK_IMAGE_ASPECT_COLOR_BIT, w, h, &t->colorImage, &t->colorMem);
+    t->depthView = make_image(c, kDepthFormat,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, w, h,
-        &v->depthImage, &v->depthMem);
-    VkImageView atts[2] = {v->colorView, v->depthView};
+        &t->depthImage, &t->depthMem);
+    VkImageView atts[2] = {t->colorView, t->depthView};
     VkFramebufferCreateInfo fb{};
     fb.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     fb.renderPass = v->renderPass;
@@ -472,9 +486,16 @@ void ensure_target(HeadContext* c, Viewport* v, int w, int h) {
     fb.width = (uint32_t)w;
     fb.height = (uint32_t)h;
     fb.layers = 1;
-    vkCreateFramebuffer(c->device, &fb, nullptr, &v->framebuffer);
-    v->texture = ImGui_ImplVulkan_AddTexture(v->sampler, v->colorView,
+    vkCreateFramebuffer(c->device, &fb, nullptr, &t->framebuffer);
+    t->texture = ImGui_ImplVulkan_AddTexture(v->sampler, t->colorView,
                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+// slotIndex clamps an external slot id into the valid tile range.
+int slotIndex(int slot) {
+    if (slot < 0) return 0;
+    if (slot >= kMaxTiles) return kMaxTiles - 1;
+    return slot;
 }
 
 // default_headlight fills the scene UBO with the LightingDefault rig (one directional
@@ -937,7 +958,7 @@ void obk_viewport_init(void* h, const uint32_t* vert, int vlen, const uint32_t* 
 
 // obk_viewport_render uploads the flattened geometry, records the offscreen pass, and
 // submits it (waiting on a fence so the color image is ready to sample this frame).
-void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* camPos,
+void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, const float* camPos,
                          const float* triV, int triVC, const uint32_t* triIdx, int triIC,
                          const float* occV, int occVC, const uint32_t* occIdx, int occIC,
                          const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
@@ -947,7 +968,8 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
-    ensure_target(c, v, w, hh);
+    Target* t = &v->targets[slotIndex(slot)];
+    ensure_target(c, v, t, w, hh);
 
     // One interleaved vertex buffer and one index buffer hold the streams back to back, in
     // draw order: occluder faces, shaded tris, solid lines, hidden lines, on-top tris, on-top
@@ -1024,7 +1046,7 @@ void obk_viewport_render(void* h, int w, int hh, const float* mvp, const float* 
     VkRenderPassBeginInfo rp{};
     rp.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rp.renderPass = v->renderPass;
-    rp.framebuffer = v->framebuffer;
+    rp.framebuffer = t->framebuffer;
     rp.renderArea.extent = {(uint32_t)w, (uint32_t)hh};
     rp.clearValueCount = 2;
     rp.pClearValues = clears;
@@ -1193,13 +1215,15 @@ void obk_viewport_set_clear(void* h, float r, float g, float b) {
 // to bottom) for the current target size, returning the byte count written (0 if the target is
 // not ready or out is too small) and reporting the dimensions. It is a synchronous transfer for
 // headless verification/screenshots, not the per-frame path.
-int obk_viewport_readback(void* h, unsigned char* out, int cap, int* w, int* hh) {
+int obk_viewport_readback(void* h, int slot, unsigned char* out, int cap, int* w, int* hh) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c ? c->viewport : nullptr;
-    if (!v || v->colorImage == VK_NULL_HANDLE || v->width <= 0 || v->height <= 0) return 0;
-    int need = v->width * v->height * 4;
-    if (w) *w = v->width;
-    if (hh) *hh = v->height;
+    if (!v) return 0;
+    Target* t = &v->targets[slotIndex(slot)];
+    if (t->colorImage == VK_NULL_HANDLE || t->width <= 0 || t->height <= 0) return 0;
+    int need = t->width * t->height * 4;
+    if (w) *w = t->width;
+    if (hh) *hh = t->height;
     if (!out || cap < need) return 0;
 
     GpuBuffer staging{};
@@ -1215,16 +1239,16 @@ int obk_viewport_readback(void* h, unsigned char* out, int cap, int* w, int* hh)
     bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(cmd, &bi);
-    img_barrier(cmd, v->colorImage, 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    img_barrier(cmd, t->colorImage, 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT);
     VkBufferImageCopy cp{};
     cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    cp.imageExtent = {(uint32_t)v->width, (uint32_t)v->height, 1};
-    vkCmdCopyImageToBuffer(cmd, v->colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    cp.imageExtent = {(uint32_t)t->width, (uint32_t)t->height, 1};
+    vkCmdCopyImageToBuffer(cmd, t->colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                            staging.buffer, 1, &cp);
-    img_barrier(cmd, v->colorImage, 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    img_barrier(cmd, t->colorImage, 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT,
                 VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
@@ -1249,16 +1273,16 @@ int obk_viewport_readback(void* h, unsigned char* out, int cap, int* w, int* hh)
 
 // obk_viewport_texture returns the ImGui texture handle for the rendered color image
 // (0 before the first render), to be drawn with ImGui::Image.
-uint64_t obk_viewport_texture(void* h) {
+uint64_t obk_viewport_texture(void* h, int slot) {
     HeadContext* c = (HeadContext*)h;
     if (!c->viewport) return 0;
-    return (uint64_t)c->viewport->texture;
+    return (uint64_t)c->viewport->targets[slotIndex(slot)].texture;
 }
 
 void obk_viewport_destroy(HeadContext* c) {
     Viewport* v = c->viewport;
     if (!v) return;
-    destroy_target(c, v);
+    for (int i = 0; i < kMaxTiles; i++) destroy_target(c, &v->targets[i]);
     if (v->vbuf.buffer) vkDestroyBuffer(c->device, v->vbuf.buffer, nullptr);
     if (v->vbuf.memory) vkFreeMemory(c->device, v->vbuf.memory, nullptr);
     if (v->ibuf.buffer) vkDestroyBuffer(c->device, v->ibuf.buffer, nullptr);

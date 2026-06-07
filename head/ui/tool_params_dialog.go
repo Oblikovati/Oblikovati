@@ -27,23 +27,13 @@ var toolText = struct {
 
 // drawToolParamsDialog shows the generic parameter dialog while a parameterized tool runs.
 func drawToolParamsDialog(s *app.Session) {
-	ti := s.ActiveTool()
-	if ti == nil {
-		toolText.open = false
-		return
-	}
-	pt, ok := ti.Tool().(app.ParameterizedTool)
+	title, params, ok := activeToolParams(s)
 	if !ok {
 		toolText.open = false
 		return
 	}
-	params := pt.Params()
-	if params.Empty() {
-		toolText.open = false
-		return
-	}
 	native.SetNextWindowSize(280, 240)
-	if native.Begin(ti.Name()) {
+	if native.Begin(title) {
 		drawToolFloatParams(params)
 		drawToolIntParams(params)
 		drawToolBoolParams(params)
@@ -52,6 +42,24 @@ func drawToolParamsDialog(s *app.Session) {
 		drawToolParamButtons(s)
 	}
 	native.End()
+}
+
+// activeToolParams returns the active parameterized tool's title + params, or ok=false when
+// there is no active tool, it is not parameterized, or it exposes no parameters.
+func activeToolParams(s *app.Session) (string, app.ToolParams, bool) {
+	ti := s.ActiveTool()
+	if ti == nil {
+		return "", app.ToolParams{}, false
+	}
+	pt, ok := ti.Tool().(app.ParameterizedTool)
+	if !ok {
+		return "", app.ToolParams{}, false
+	}
+	params := pt.Params()
+	if params.Empty() {
+		return "", app.ToolParams{}, false
+	}
+	return ti.Name(), params, true
 }
 
 func drawToolBoolParams(params app.ToolParams) {

@@ -82,6 +82,8 @@ void obk_ig_set_item_tooltip(const char* s)  { ImGui::SetItemTooltip("%s", s); }
 // it with menu_items, then calls end_popup. set_scroll_here_y scrolls the current window
 // so the last item is centered — used to reveal the browser node synced to the selection.
 int  obk_ig_begin_popup_context_item(const char* id) { return ImGui::BeginPopupContextItem(id) ? 1 : 0; }
+void obk_ig_open_popup(const char* id)       { ImGui::OpenPopup(id); }
+int  obk_ig_begin_popup(const char* id)      { return ImGui::BeginPopup(id) ? 1 : 0; }
 void obk_ig_end_popup(void)                  { ImGui::EndPopup(); }
 void obk_ig_set_scroll_here_y(void)          { ImGui::SetScrollHereY(0.5f); }
 
@@ -162,6 +164,13 @@ void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x
                                  float r, float g, float b, float a) {
     ImGui::GetWindowDrawList()->AddTriangleFilled(ImVec2(x1, y1), ImVec2(x2, y2),
                                                   ImVec2(x3, y3), obk_col32(r, g, b, a));
+}
+// AddQuadFilled fills the quad as one convex polygon (a single anti-aliased outline), so a
+// semi-transparent fill has no internal diagonal seam the way two triangles would.
+void obk_ig_draw_quad_filled(float x0, float y0, float x1, float y1, float x2, float y2,
+                             float x3, float y3, float r, float g, float b, float a) {
+    ImGui::GetWindowDrawList()->AddQuadFilled(ImVec2(x0, y0), ImVec2(x1, y1), ImVec2(x2, y2),
+                                              ImVec2(x3, y3), obk_col32(r, g, b, a));
 }
 void obk_ig_draw_text(float x, float y, float r, float g, float b, float a, const char* s) {
     ImGui::GetWindowDrawList()->AddText(ImVec2(x, y), obk_col32(r, g, b, a), s);

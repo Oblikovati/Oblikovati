@@ -16,6 +16,7 @@ import (
 	"oblikovati/addin/modelaccess"
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
+	"oblikovati/head/internal/windowstate"
 	"oblikovati/head/ui"
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/topo"
@@ -24,6 +25,8 @@ import (
 	"oblikovati/model/feature"
 	"oblikovati/model/sketch"
 	"oblikovati/persistence"
+	"oblikovati/persistence/userprefs"
+	"oblikovati/persistence/viewstate"
 	"oblikovati/theme"
 )
 
@@ -41,11 +44,12 @@ func main() {
 // run opens the window and pumps the frame loop. maxFrames > 0 bounds it (so a smoke
 // invocation cannot hang); 0 runs until the user closes the window.
 func run(session *app.Session, maxFrames int) error {
-	win, err := native.CreateWindow(1440, 900, "Oblikovati")
+	win, err := openMainWindow()
 	if err != nil {
 		return err
 	}
 	defer win.Destroy()
+	defer saveWindowState(win) // runs before Destroy (LIFO): capture the placement on exit
 	win.InitViewport()
 
 	// Load shared-library add-ins (e.g. oblikovati-mcp-bridge) and drain their queued
@@ -58,24 +62,53 @@ func run(session *app.Session, maxFrames int) error {
 		if maxFrames > 0 && frame >= maxFrames {
 			break
 		}
-		win.BeginFrame()
-		if id := ui.DrawChrome(win, session); id != "" {
-			if execErr := session.Execute(id); execErr != nil {
-				fmt.Fprintf(os.Stderr, "command %q: %v\n", id, execErr)
-			}
-		}
-		addins.drain()
-		// Graceful close: a window-close request with unsaved documents shows a
-		// "save changes?" prompt instead of exiting; HandleClose reports the verdict.
-		exit := ui.HandleClose(win, session)
-		win.EndFrame(ui.WindowClearColor()) // themed swapchain background (ADR-0021)
-		// A rebuilt add-in on disk means exit so the supervisor relaunches with it
-		// (a Go c-shared cannot be hot-swapped in-process); only under run-watch.
-		if exit || addins.addInChanged() {
+		if pumpFrame(win, session, addins) {
 			break
 		}
 	}
 	return nil
+}
+
+// pumpFrame renders one frame: chrome (+ executing a clicked command), draining add-in
+// calls, and the close prompt. It returns true when the loop should exit — the user closed
+// the window, or a rebuilt add-in on disk needs the supervisor to relaunch (a Go c-shared
+// cannot be hot-swapped in-process).
+func pumpFrame(win *native.Window, session *app.Session, addins *addInHost) bool {
+	win.BeginFrame()
+	if id := ui.DrawChrome(win, session); id != "" {
+		if execErr := session.Execute(id); execErr != nil {
+			fmt.Fprintf(os.Stderr, "command %q: %v\n", id, execErr)
+		}
+	}
+	addins.drain()
+	exit := ui.HandleClose(win, session)
+	win.EndFrame(ui.WindowClearColor()) // themed swapchain background (ADR-0021)
+	return exit || addins.addInChanged()
+}
+
+// openMainWindow creates the window, reopening at the last session's size/position/monitor
+// (per-user, in the OS config dir) and falling back to a sensible default the first time.
+func openMainWindow() (*native.Window, error) {
+	width, height := 1440, 900
+	saved, hasSaved := windowstate.Load()
+	if hasSaved {
+		width, height = saved.Width, saved.Height
+	}
+	win, err := native.CreateWindow(width, height, "Oblikovati")
+	if err != nil {
+		return nil, err
+	}
+	if hasSaved {
+		win.ApplyWindowState(saved.X, saved.Y, saved.Maximized) // restore position + maximized
+	}
+	return win, nil
+}
+
+// saveWindowState persists the window's current placement so the next session reopens in
+// the same spot. Best-effort: a settings-write failure must not crash shutdown.
+func saveWindowState(win *native.Window) {
+	x, y, w, h, maximized := win.WindowState()
+	_ = windowstate.Save(windowstate.State{X: x, Y: y, Width: w, Height: h, Maximized: maximized})
 }
 
 // newDemoSession wires the standard commands and a small part so the chrome shows real
@@ -86,6 +119,15 @@ func newDemoSession() *app.Session {
 	// nil-store NewSession). The head injects the concrete store; app depends only on the
 	// doc.Store interface.
 	s := app.NewSessionWithStore(persistence.NewPackageStore())
+	if path, err := viewstate.DefaultPath(); err == nil {
+		// Per-user camera/view layout, stored outside the .obk so it never dirties the
+		// document in git; written when the user saves, restored on open.
+		s.SetViewStateStore(viewstate.NewFileStore(path))
+	}
+	if path, err := userprefs.DefaultPath(); err == nil {
+		// Global UI preferences (e.g. ViewCube compass visibility), persisted across sessions.
+		s.SetUserPrefsStore(userprefs.NewFileStore(path))
+	}
 	registerCommands(s)
 	seedPart(s)
 	loadThemes(s)

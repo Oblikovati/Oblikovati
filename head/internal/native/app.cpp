@@ -249,6 +249,21 @@ void* obk_head_create(int width, int height, const char* title) {
     return c;
 }
 
+// obk_head_set_ui_font replaces ImGui's built-in default with a UI font from in-memory
+// TTF bytes (the Go-embedded Helvetica-metric face). The bytes are copied into
+// ImGui-owned memory, so the caller's buffer need not outlive this call; the atlas frees
+// the copy on shutdown. Call once after obk_head_create, before the first frame.
+void obk_head_set_ui_font(const unsigned char* data, int len, float sizePx) {
+    if (!data || len <= 0) return;
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    void* copy = IM_ALLOC((size_t)len);
+    std::memcpy(copy, data, (size_t)len);
+    ImFontConfig cfg;
+    cfg.FontDataOwnedByAtlas = true; // ImGui owns + frees `copy` (matches IM_ALLOC)
+    io.Fonts->AddFontFromMemoryTTF(copy, len, sizePx, &cfg);
+}
+
 int obk_head_should_close(void* h) {
     HeadContext* c = (HeadContext*)h;
     return glfwWindowShouldClose(c->window) ? 1 : 0;
@@ -259,6 +274,30 @@ int obk_head_should_close(void* h) {
 void obk_head_set_should_close(void* h, int v) {
     HeadContext* c = (HeadContext*)h;
     glfwSetWindowShouldClose(c->window, v);
+}
+
+// obk_head_get_window_state reports the window's current position (virtual-screen
+// coordinates, so the value encodes which monitor it's on), size, and maximized flag, for
+// persisting the placement across sessions.
+void obk_head_get_window_state(void* h, int* x, int* y, int* w, int* hh, int* maximized) {
+    HeadContext* c = (HeadContext*)h;
+    int px = 0, py = 0, pw = 0, ph = 0;
+    glfwGetWindowPos(c->window, &px, &py);
+    glfwGetWindowSize(c->window, &pw, &ph);
+    if (x) *x = px;
+    if (y) *y = py;
+    if (w) *w = pw;
+    if (hh) *hh = ph;
+    if (maximized) *maximized = glfwGetWindowAttrib(c->window, GLFW_MAXIMIZED);
+}
+
+// obk_head_apply_window_state restores a saved placement: move the window to (x,y) — which
+// puts it back on the same monitor — and maximize it if it was maximized. The size is set
+// at creation (obk_head_create) from the saved width/height.
+void obk_head_apply_window_state(void* h, int x, int y, int maximized) {
+    HeadContext* c = (HeadContext*)h;
+    glfwSetWindowPos(c->window, x, y);
+    if (maximized) glfwMaximizeWindow(c->window);
 }
 
 // --- synthetic input injection (for in-window UI tests) ---

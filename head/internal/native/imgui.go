@@ -38,6 +38,8 @@ void obk_ig_tree_pop(void);
 void obk_ig_bullet_text(const char* s);
 void obk_ig_set_item_tooltip(const char* s);
 int  obk_ig_begin_popup_context_item(const char* id);
+void obk_ig_open_popup(const char* id);
+int  obk_ig_begin_popup(const char* id);
 void obk_ig_end_popup(void);
 void obk_ig_set_scroll_here_y(void);
 int  obk_ig_input_float(const char* label, float* v);
@@ -97,6 +99,7 @@ void obk_ig_set_style_color(const char* name, float r, float g, float b, float a
 int  obk_ig_color_edit4(const char* label, float* rgba);
 void obk_ig_draw_line(float x1, float y1, float x2, float y2, float r, float g, float b, float a, float thickness);
 void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
+void obk_ig_draw_quad_filled(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
 void obk_ig_draw_text(float x, float y, float r, float g, float b, float a, const char* s);
 int  obk_ig_begin_combo(const char* label, const char* preview);
 void obk_ig_end_combo(void);
@@ -279,6 +282,14 @@ func DrawTriangleFilled(x1, y1, x2, y2, x3, y3 float32, c [4]float32) {
 		C.float(x3), C.float(y3), C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
 }
 
+// DrawQuadFilled fills a screen-space quad (corners in order) as a single convex polygon,
+// so a translucent fill shows no internal diagonal seam (unlike two triangles).
+func DrawQuadFilled(x0, y0, x1, y1, x2, y2, x3, y3 float32, c [4]float32) {
+	C.obk_ig_draw_quad_filled(C.float(x0), C.float(y0), C.float(x1), C.float(y1),
+		C.float(x2), C.float(y2), C.float(x3), C.float(y3),
+		C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
+}
+
 // DrawText draws a screen-space text label at (x,y) in the current window's draw list
 // (color is 0..1 RGBA), using the default font — e.g. the axis gizmo's X/Y/Z letters.
 func DrawText(x, y float32, s string, c [4]float32) {
@@ -439,7 +450,25 @@ func BeginPopupContextItem(id string) bool {
 	return C.obk_ig_begin_popup_context_item(c) != 0
 }
 
-// EndPopup closes a popup begun by BeginPopupContextItem (call only when it returned true).
+// OpenPopup marks the popup with id to open on this frame (pair with BeginPopup). Use it to
+// open a popup from arbitrary logic (e.g. a right-click on a custom-drawn region) rather
+// than tying it to the last widget like BeginPopupContextItem.
+func OpenPopup(id string) {
+	c, free := cstr(id)
+	defer free()
+	C.obk_ig_open_popup(c)
+}
+
+// BeginPopup returns true while the popup with id (opened via OpenPopup) is showing; fill
+// it with MenuItem rows and call EndPopup only when this returned true.
+func BeginPopup(id string) bool {
+	c, free := cstr(id)
+	defer free()
+	return C.obk_ig_begin_popup(c) != 0
+}
+
+// EndPopup closes a popup begun by BeginPopupContextItem/BeginPopup (call only when it
+// returned true).
 func EndPopup() { C.obk_ig_end_popup() }
 
 // SetScrollHereY scrolls the current window to center the most recently drawn item — used

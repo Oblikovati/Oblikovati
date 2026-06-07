@@ -39,6 +39,42 @@ type View struct {
 	// shown; a saved/loaded or user-navigated view is framed, so switching to it restores
 	// its camera instead of resetting the view (the per-document camera fix).
 	Framed bool
+	// Projection is the view's camera projection (ViewCube projection menu). Per-view, so
+	// each tile can be perspective or orthographic independently. Defaults to perspective.
+	Projection ProjectionMode
+	// Home is this view's custom Home camera (ViewCube "Set Current View as Home"); nil ⇒
+	// the default iso Home. Go Home / the Home button restore it.
+	Home *ViewHome
+}
+
+// ViewHome is a view's saved Home camera. FitToView keeps only the viewing direction,
+// re-fitting to the model extents on each Go Home (Inventor's "Fit to View"); otherwise
+// the exact framing (Fixed Distance) is restored.
+type ViewHome struct {
+	Eye       math.Point3
+	Target    math.Point3
+	Up        math.Vector3
+	FOV       float64
+	FitToView bool
+}
+
+// ProjectionMode is a view's camera projection, matching Inventor's ViewCube projection
+// menu (Orthographic / Perspective / Perspective with Ortho Faces).
+type ProjectionMode int
+
+const (
+	// ProjPerspective is FOV perspective (the default).
+	ProjPerspective ProjectionMode = iota
+	// ProjOrthographic is a parallel projection (no foreshortening).
+	ProjOrthographic
+	// ProjPerspectiveOrthoFaces is perspective, switching to orthographic only when the
+	// view is aligned to a principal axis (a ViewCube face view).
+	ProjPerspectiveOrthoFaces
+)
+
+// IsValid reports whether m is a defined projection mode.
+func (m ProjectionMode) IsValid() bool {
+	return m >= ProjPerspective && m <= ProjPerspectiveOrthoFaces
 }
 
 // DefaultView is the framing a brand-new view starts at (matching scene.NewCamera): an
@@ -61,6 +97,54 @@ type DocumentViews struct {
 	views  []*View
 	active int
 	layout types.ViewLayout
+	// splitX/splitY are the divider positions (0..1) for split layouts: splitX is the
+	// vertical divider (left|right), splitY the horizontal one (top/bottom). Zero means
+	// "use the default 0.5" so a freshly-seeded collection needs no initialization.
+	splitX float32
+	splitY float32
+	front  CubeOrient // ViewCube orientation (Set/Reset Front); zero value ⇒ identity
+}
+
+// Front returns the document's ViewCube orientation, defaulting to the identity (the
+// un-redefined front) for a zero/unset value.
+func (vs *DocumentViews) Front() CubeOrient {
+	if vs.front == (CubeOrient{}) {
+		return IdentityCubeOrient()
+	}
+	return vs.front
+}
+
+// SetFront redefines (or resets, with IdentityCubeOrient) the document's ViewCube front.
+func (vs *DocumentViews) SetFront(o CubeOrient) { vs.front = o }
+
+const minSplit, maxSplit = 0.1, 0.9
+
+// Split returns the divider positions (0..1), defaulting an unset (zero) value to centre.
+func (vs *DocumentViews) Split() (x, y float32) {
+	x, y = vs.splitX, vs.splitY
+	if x == 0 {
+		x = 0.5
+	}
+	if y == 0 {
+		y = 0.5
+	}
+	return x, y
+}
+
+// SetSplit sets the divider positions, clamped to [0.1, 0.9] so no tile collapses.
+func (vs *DocumentViews) SetSplit(x, y float32) {
+	vs.splitX = clampSplit(x)
+	vs.splitY = clampSplit(y)
+}
+
+func clampSplit(v float32) float32 {
+	if v < minSplit {
+		return minSplit
+	}
+	if v > maxSplit {
+		return maxSplit
+	}
+	return v
 }
 
 // Views returns the document's view collection, seeding a single default view on first
