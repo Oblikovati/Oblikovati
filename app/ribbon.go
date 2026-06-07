@@ -16,6 +16,14 @@ package app
 // tab, so an under-specified or add-in command is still reachable.
 const DefaultTab = "Tools"
 
+// Standard ribbon tab and panel names, mirroring Inventor's layout. Centralized here so
+// the command registrations reference one source instead of repeating the display strings.
+const (
+	tab3DModel        = "3D Model"
+	tab3DSketch       = "3D Sketch"
+	panelWorkFeatures = "Work Features"
+)
+
 // RibbonButton is a command rendered as a ribbon control, with its current enabled
 // state resolved from the command's predicate against the session. A button with a
 // non-empty Variants list renders as a split button (Inventor's variant flyout): the

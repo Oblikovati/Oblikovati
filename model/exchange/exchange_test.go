@@ -104,7 +104,7 @@ func TestFeatureOnTopOfImportedBody(t *testing.T) {
 		t.Fatalf("cut result on imported body is not a solid")
 	}
 	volAfter := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality()).Volume
-	if !(volAfter < volBefore) {
+	if volAfter >= volBefore {
 		t.Errorf("cut did not remove material: before=%v after=%v", volBefore, volAfter)
 	}
 }

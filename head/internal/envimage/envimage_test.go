@@ -3,6 +3,7 @@
 package envimage
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -28,7 +29,7 @@ func TestResolvePresetsProduceImages(t *testing.T) {
 			t.Fatalf("%v has %d floats, want %d", opt.Preset, len(img.Pixels), img.W*img.H*4)
 		}
 		for i, p := range img.Pixels {
-			if p < 0 || p != p { // negative or NaN
+			if p < 0 || math.IsNaN(float64(p)) {
 				t.Fatalf("%v pixel %d = %g (want finite ≥ 0)", opt.Preset, i, p)
 			}
 		}

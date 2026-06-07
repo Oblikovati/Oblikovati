@@ -120,7 +120,7 @@ func TestSurfaceDomainsAreOrdered(t *testing.T) {
 	for _, c := range sampleSurfaces(t) {
 		ulo, uhi := c.s.UDomain()
 		vlo, vhi := c.s.VDomain()
-		if !(ulo < uhi) || !(vlo < vhi) {
+		if ulo >= uhi || vlo >= vhi {
 			t.Errorf("%s: domains U[%v,%v] V[%v,%v] must each have lo < hi", c.name, ulo, uhi, vlo, vhi)
 		}
 	}

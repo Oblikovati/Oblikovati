@@ -139,7 +139,7 @@ func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
 	}
 	volFlat := ops.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
 	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
-	if !(volFlat < volPointy) {
+	if volFlat >= volPointy {
 		t.Errorf("flat corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
 	}
 }

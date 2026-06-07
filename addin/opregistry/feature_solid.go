@@ -464,11 +464,9 @@ func loftEndProvider(part *compdef.PartComponentDefinition, a *loftEndArgs, whic
 		return func() feature.LoftEnd {
 			return feature.LoftEnd{Condition: cond, Angle: angle(), Impact: impact, Reversed: reversed}
 		}, nil
-	case cond.IsPointCondition(): // sharp / tangent-to-plane on an apex section
-		return func() feature.LoftEnd {
-			return feature.LoftEnd{Condition: cond, Impact: impact, Reversed: reversed}
-		}, nil
-	case cond.IsFaceContinuity(): // tangent / smooth — leave a body-face section tangent to it
+	// Apex (sharp / tangent-to-plane) and face-continuity (tangent / smooth) conditions both
+	// carry only impact + reversed — no angle — so they build the same end-condition closure.
+	case cond.IsPointCondition(), cond.IsFaceContinuity():
 		return func() feature.LoftEnd {
 			return feature.LoftEnd{Condition: cond, Impact: impact, Reversed: reversed}
 		}, nil

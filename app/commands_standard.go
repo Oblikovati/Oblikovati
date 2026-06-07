@@ -81,26 +81,26 @@ func hasActivePart(s *Session) bool {
 // they are gathered. So a click is never inert, whether or not anything was pre-selected.
 func workFeatureCommands() []*CommandDefinition {
 	return []*CommandDefinition{
-		NewCommand("WorkPlane.Offset", "Offset Plane", "Work Features", func(s *Session) error {
+		NewCommand("WorkPlane.Offset", "Offset Plane", panelWorkFeatures, func(s *Session) error {
 			s.StartTool(NewOffsetWorkPlaneTool()) // always opens the distance dialog (Inventor's flow)
 			return nil
-		}).WithTab("3D Model").WithEnable(canStartWorkPlane).
+		}).WithTab(tab3DModel).WithEnable(canStartWorkPlane).
 			WithIcon("work-plane-offset").WithButtonStyle(LargeIconButton).
 			WithTooltip("Offset Plane — a work plane parallel to a plane, offset by a distance. Pick a plane, then enter the offset."),
-		NewCommand("WorkPlane.Midplane", "Midplane", "Work Features", startWorkPlane(newMidplaneWorkPlaneTool)).
-			WithTab("3D Model").WithEnable(canStartWorkPlane).
+		NewCommand("WorkPlane.Midplane", "Midplane", panelWorkFeatures, startWorkPlane(newMidplaneWorkPlaneTool)).
+			WithTab(tab3DModel).WithEnable(canStartWorkPlane).
 			WithIcon("work-plane-midplane").WithButtonStyle(SmallIconButton).
 			WithTooltip("Midplane — a work plane bisecting two planes. Pick two planes when prompted."),
-		NewCommand("WorkPlane.ThreePoints", "Three Points", "Work Features", startWorkPlane(newThreePointWorkPlaneTool)).
-			WithTab("3D Model").WithEnable(canStartWorkPlane).
+		NewCommand("WorkPlane.ThreePoints", "Three Points", panelWorkFeatures, startWorkPlane(newThreePointWorkPlaneTool)).
+			WithTab(tab3DModel).WithEnable(canStartWorkPlane).
 			WithIcon("work-plane-3pt").WithButtonStyle(SmallIconButton).
 			WithTooltip("Three Points — a work plane through three points or model vertices. Pick three when prompted."),
-		NewCommand("WorkPlane.Tangent", "Tangent to Face", "Work Features", startWorkPlane(newTangentWorkPlaneTool)).
-			WithTab("3D Model").WithEnable(canStartWorkPlane).
+		NewCommand("WorkPlane.Tangent", "Tangent to Face", panelWorkFeatures, startWorkPlane(newTangentWorkPlaneTool)).
+			WithTab(tab3DModel).WithEnable(canStartWorkPlane).
 			WithIcon("work-plane-tangent").WithButtonStyle(SmallIconButton).
 			WithTooltip("Tangent to Face — a work plane parallel to a plane and tangent to a cylindrical/spherical face. Pick a plane then a face."),
-		NewCommand("WorkPlane.NormalToAxis", "Normal to Axis", "Work Features", startWorkPlane(newNormalToAxisWorkPlaneTool)).
-			WithTab("3D Model").WithEnable(canStartWorkPlane).
+		NewCommand("WorkPlane.NormalToAxis", "Normal to Axis", panelWorkFeatures, startWorkPlane(newNormalToAxisWorkPlaneTool)).
+			WithTab(tab3DModel).WithEnable(canStartWorkPlane).
 			WithIcon("work-plane-normal").WithButtonStyle(SmallIconButton).
 			WithTooltip("Normal to Axis — a work plane through a point, normal to an axis. Pick an axis then a point."),
 	}
@@ -118,13 +118,13 @@ func modelTabCommands() []*CommandDefinition {
 			}
 			s.StartTool(NewCreateSketchTool())
 			return nil
-		}).WithTab("3D Model").WithAlias("S").WithEnable(canCreateSketch).
+		}).WithTab(tab3DModel).WithAlias("S").WithEnable(canCreateSketch).
 			WithIcon("create-sketch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Create 2D Sketch — pick a work plane or planar face to sketch on."),
 		NewCommand("Sketch.Create3D", "3D Sketch", "Sketch", func(s *Session) error {
 			_, err := s.CreateSketch3D()
 			return err
-		}).WithTab("3D Model").WithEnable(canCreateSketch3D).
+		}).WithTab(tab3DModel).WithEnable(canCreateSketch3D).
 			WithIcon("create-sketch-3d").WithButtonStyle(LargeIconButton).
 			WithTooltip("3D Sketch — create a non-planar sketch (sweep/loft path, helix)."),
 	}
@@ -142,31 +142,31 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		NewCommand("Surface.Patch", "Patch", "Surface", func(s *Session) error {
 			s.StartTool(NewPatchTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("patch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Patch — fill a closed sketch boundary with a surface."),
 		NewCommand("Surface.Trim", "Trim", "Surface", func(s *Session) error {
 			s.StartTool(NewSurfaceTrimTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("surface-trim").WithButtonStyle(LargeIconButton).
 			WithTooltip("Trim — cut a surface with a work plane and keep one side."),
 		NewCommand("Surface.Stitch", "Stitch", "Surface", func(s *Session) error {
 			s.StartTool(NewStitchTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("stitch").WithButtonStyle(LargeIconButton).
 			WithTooltip("Stitch — weld surface bodies into one quilt (a closed quilt becomes a solid)."),
 		NewCommand("Surface.Sculpt", "Sculpt", "Surface", func(s *Session) error {
 			s.StartTool(NewSculptTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("sculpt").WithButtonStyle(LargeIconButton).
 			WithTooltip("Sculpt — fill the volume bounded by surfaces into a solid."),
 		NewCommand("Surface.Extend", "Extend", "Surface", func(s *Session) error {
 			s.StartTool(NewExtendTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("surface-extend").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extend — grow a surface outward along a boundary edge."),
 	}
@@ -190,7 +190,7 @@ func patternFeatureCommands() []*CommandDefinition {
 		cmds[i] = NewCommand(p.id, p.name, "Pattern", func(s *Session) error {
 			s.StartTool(start())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).WithTooltip(p.tip).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).WithTooltip(p.tip).
 			WithIcon(p.icon).WithButtonStyle(SmallIconButton)
 	}
 	return cmds
@@ -201,7 +201,7 @@ func patternFeatureCommands() []*CommandDefinition {
 func sketch3DToolCommands() []*CommandDefinition {
 	finish := NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
 		return s.FinishSketch3D()
-	}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon("finish-sketch").
+	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon("finish-sketch").
 		WithTooltip("Finish the 3D sketch and return to the model.")
 	return append(sketch3DDrawCommands(), finish)
 }
@@ -239,7 +239,7 @@ func sketch3DToolCommand(id, name, icon, tip string, newTool func() Tool) *Comma
 	return NewCommand(id, name, "Sketch3D", func(s *Session) error {
 		s.StartTool(newTool())
 		return nil
-	}).WithTab("3D Sketch").WithEnable(inSketch3D).WithIcon(icon).WithTooltip(tip)
+	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon(icon).WithTooltip(tip)
 }
 
 // modifyFeatureCommands are the 3D Model tab's "Modify" panel: the material-cutting
@@ -270,7 +270,7 @@ func directEditCommands() []*CommandDefinition {
 		cmds[i] = NewCommand(d.id, d.name, "Modify", func(s *Session) error {
 			s.StartTool(start())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).WithTooltip(d.tip).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).WithTooltip(d.tip).
 			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
 	}
 	return cmds
@@ -282,7 +282,7 @@ func surfaceSolidCommands() []*CommandDefinition {
 		NewCommand("Modify.Thicken", "Thicken", "Modify", func(s *Session) error {
 			s.StartTool(NewThickenTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("thicken").WithButtonStyle(LargeIconButton).
 			WithTooltip("Thicken — turn the active surface body into a solid of a wall thickness."),
 	}
@@ -294,25 +294,25 @@ func cutFeatureCommands() []*CommandDefinition {
 		NewCommand("Modify.Hole", "Hole", "Modify", func(s *Session) error {
 			s.StartTool(NewHoleTool())
 			return nil
-		}).WithTab("3D Model").WithAlias("H").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithAlias("H").WithEnable(notInSketch).
 			WithIcon("hole").WithButtonStyle(LargeIconButton).
 			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
 		NewCommand("Modify.Chamfer", "Chamfer", "Modify", func(s *Session) error {
 			s.StartTool(NewChamferTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("chamfer").WithButtonStyle(LargeIconButton).
 			WithTooltip("Chamfer — bevel selected edges by a setback distance."),
 		NewCommand("Modify.Fillet", "Fillet", "Modify", func(s *Session) error {
 			s.StartTool(NewFilletTool())
 			return nil
-		}).WithTab("3D Model").WithAlias("F").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithAlias("F").WithEnable(notInSketch).
 			WithIcon("fillet").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fillet — round selected convex edges with a rolling-ball radius."),
 		NewCommand("Modify.Thread", "Thread", "Modify", func(s *Session) error {
 			s.StartTool(NewThreadTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("thread").WithButtonStyle(LargeIconButton).
 			WithTooltip("Thread — apply a cosmetic or modeled-cut thread to a cylindrical face (ISO/ANSI/JIS)."),
 	}
@@ -330,19 +330,19 @@ func faceMetricCommands() []*CommandDefinition {
 		NewCommand("Modify.Shell", "Shell", "Modify", func(s *Session) error {
 			s.StartTool(NewShellTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("shell").WithButtonStyle(LargeIconButton).
 			WithTooltip("Shell — hollow the solid to a wall thickness, removing the selected faces."),
 		NewCommand("Modify.FaceOffset", "Offset Face", "Modify", func(s *Session) error {
 			s.StartTool(NewFaceOffsetTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("face-offset").WithButtonStyle(LargeIconButton).
 			WithTooltip("Offset Face — move selected faces along their normal, retrimming neighbours."),
 		NewCommand("Modify.Draft", "Draft", "Modify", func(s *Session) error {
 			s.StartTool(NewDraftTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("draft").WithButtonStyle(LargeIconButton).
 			WithTooltip("Draft — taper selected faces by an angle about the pull direction."),
 	}
@@ -354,13 +354,13 @@ func faceTopologyCommands() []*CommandDefinition {
 		NewCommand("Modify.DeleteFace", "Delete Face", "Modify", func(s *Session) error {
 			s.StartTool(NewDeleteFaceTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("delete-face").WithButtonStyle(LargeIconButton).
 			WithTooltip("Delete Face — remove selected faces and heal the openings."),
 		NewCommand("Modify.ReplaceFace", "Replace Face", "Modify", func(s *Session) error {
 			s.StartTool(NewReplaceFaceTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("replace-face").WithButtonStyle(LargeIconButton).
 			WithTooltip("Replace Face — move selected faces onto a target face's plane."),
 	}
@@ -379,13 +379,13 @@ func profileSolidCommands() []*CommandDefinition {
 		NewCommand("Create.Extrude", "Extrude", "Create", func(s *Session) error {
 			s.StartTool(NewExtrudeTool())
 			return nil
-		}).WithTab("3D Model").WithAlias("E").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithAlias("E").WithEnable(notInSketch).
 			WithIcon("extrude").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extrude — add depth to a sketch profile to create or modify a solid."),
 		NewCommand("Create.Revolve", "Revolve", "Create", func(s *Session) error {
 			s.StartTool(NewRevolveTool())
 			return nil
-		}).WithTab("3D Model").WithAlias("R").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithAlias("R").WithEnable(notInSketch).
 			WithIcon("revolve").WithButtonStyle(LargeIconButton).
 			WithTooltip("Revolve — spin a sketch profile about an axis to create or modify a solid."),
 	}
@@ -397,37 +397,37 @@ func sweptSolidCommands() []*CommandDefinition {
 		NewCommand("Create.Sweep", "Sweep", "Create", func(s *Session) error {
 			s.StartTool(NewSweepTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("sweep").WithButtonStyle(LargeIconButton).
 			WithTooltip("Sweep — run a sketch profile along a path to create or modify a solid."),
 		NewCommand("Create.Loft", "Loft", "Create", func(s *Session) error {
 			s.StartTool(NewLoftTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("loft").WithButtonStyle(LargeIconButton).
 			WithTooltip("Loft — blend two or more sketch sections into a solid."),
 		NewCommand("Create.Coil", "Coil", "Create", func(s *Session) error {
 			s.StartTool(NewCoilTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("coil").WithButtonStyle(LargeIconButton).
 			WithTooltip("Coil — sweep a sketch profile along a helix to create or modify a solid."),
 		NewCommand("Create.Rib", "Rib", "Create", func(s *Session) error {
 			s.StartTool(NewRibTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("rib").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rib — thicken an open sketch profile into a reinforcing wall joined to the part."),
 		NewCommand("Create.Emboss", "Emboss", "Create", func(s *Session) error {
 			s.StartTool(NewEmbossTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(notInSketch).
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("emboss").WithButtonStyle(LargeIconButton).
 			WithTooltip("Emboss — raise or engrave a closed sketch profile on the part."),
 		NewCommand("Create.Decal", "Decal", "Create", func(s *Session) error {
 			s.StartTool(NewDecalTool())
 			return nil
-		}).WithTab("3D Model").WithEnable(hasActivePart).
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("decal").WithButtonStyle(LargeIconButton).
 			WithTooltip("Decal — project an image onto a face (cosmetic)."),
 	}

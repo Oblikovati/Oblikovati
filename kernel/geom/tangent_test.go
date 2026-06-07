@@ -42,12 +42,12 @@ func curve2Samples(t *testing.T) []Curve2 {
 
 func TestAllDomainsAreOrdered(t *testing.T) {
 	for i, c := range curve3Samples(t) {
-		if lo, hi := c.Domain(); !(lo < hi) {
+		if lo, hi := c.Domain(); lo >= hi {
 			t.Errorf("curve3[%d] Domain = [%v,%v], want lo < hi", i, lo, hi)
 		}
 	}
 	for i, c := range curve2Samples(t) {
-		if lo, hi := c.Domain(); !(lo < hi) {
+		if lo, hi := c.Domain(); lo >= hi {
 			t.Errorf("curve2[%d] Domain = [%v,%v], want lo < hi", i, lo, hi)
 		}
 	}
