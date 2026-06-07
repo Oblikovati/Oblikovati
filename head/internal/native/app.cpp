@@ -249,6 +249,21 @@ void* obk_head_create(int width, int height, const char* title) {
     return c;
 }
 
+// obk_head_set_ui_font replaces ImGui's built-in default with a UI font from in-memory
+// TTF bytes (the Go-embedded Helvetica-metric face). The bytes are copied into
+// ImGui-owned memory, so the caller's buffer need not outlive this call; the atlas frees
+// the copy on shutdown. Call once after obk_head_create, before the first frame.
+void obk_head_set_ui_font(const unsigned char* data, int len, float sizePx) {
+    if (!data || len <= 0) return;
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    void* copy = IM_ALLOC((size_t)len);
+    std::memcpy(copy, data, (size_t)len);
+    ImFontConfig cfg;
+    cfg.FontDataOwnedByAtlas = true; // ImGui owns + frees `copy` (matches IM_ALLOC)
+    io.Fonts->AddFontFromMemoryTTF(copy, len, sizePx, &cfg);
+}
+
 int obk_head_should_close(void* h) {
     HeadContext* c = (HeadContext*)h;
     return glfwWindowShouldClose(c->window) ? 1 : 0;

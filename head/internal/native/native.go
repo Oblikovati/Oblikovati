@@ -46,7 +46,9 @@ func CreateWindow(width, height int, title string) (*Window, error) {
 	if h == nil {
 		return nil, errors.New("native: head window/Vulkan/ImGui init failed (no display or no Vulkan driver?)")
 	}
-	return &Window{handle: h}, nil
+	w := &Window{handle: h}
+	w.SetUIFont(uiFontSizePx) // embedded Helvetica-metric UI font (before the first frame)
+	return w, nil
 }
 
 // ShouldClose reports whether the user asked to close the window.
