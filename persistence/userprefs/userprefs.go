@@ -20,6 +20,8 @@ import (
 type Prefs struct {
 	// CompassHidden hides the ViewCube compass when true (default false ⇒ shown).
 	CompassHidden bool `yaml:"compassHidden,omitempty"`
+	// InactiveOpacity is the ViewCube's face opacity when not hovered (0 ⇒ default 1.0).
+	InactiveOpacity float64 `yaml:"inactiveOpacity,omitempty"`
 }
 
 // Store loads and saves the global preferences.

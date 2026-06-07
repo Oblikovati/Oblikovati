@@ -52,10 +52,43 @@ func viewCubeContextMenu(s *app.Session) {
 		s.ResetFront()
 	}
 	native.Separator()
+	if native.MenuItem(projItemLabel("Lock to Current Selection", s.LockToSelection())) {
+		s.SetLockToSelection(!s.LockToSelection())
+	}
 	if native.MenuItem(projItemLabel("Show Compass", s.ShowCompass())) {
 		s.SetShowCompass(!s.ShowCompass())
 	}
+	if native.MenuItem("Options...") {
+		showViewCubeOptions = true
+	}
 	native.EndPopup()
+}
+
+// showViewCubeOptions tracks whether the ViewCube Options window is open (toggled from the
+// right-click menu's "Options…").
+var showViewCubeOptions bool
+
+// drawViewCubeOptions renders the ViewCube Options window (size/opacity/compass) when open.
+// Settings persist as global user preferences. Call once per frame.
+func drawViewCubeOptions(s *app.Session) {
+	if !showViewCubeOptions {
+		return
+	}
+	native.SetNextWindowSizeOnce(300, 130)
+	if native.Begin("ViewCube Options") {
+		compass := s.ShowCompass()
+		if native.Checkbox("Show compass", &compass) {
+			s.SetShowCompass(compass)
+		}
+		op := s.InactiveOpacity()
+		if native.SliderFloat("Inactive opacity", &op, 0.1, 1.0) {
+			s.SetInactiveOpacity(op)
+		}
+		if native.Button("Close") {
+			showViewCubeOptions = false
+		}
+	}
+	native.End()
 }
 
 // drawCompass paints a North ring in the cube's ground plane (z = −1), projected with the
@@ -112,7 +145,7 @@ var (
 // drawViewCube paints the navigation cube centered at screen (cx,cy) for the camera, with
 // the hovered region (if any) tinted and the home button highlighted when homeHovered.
 // Drawn after the tile image so it sits on top; uses screen coordinates (ImGui draw list).
-func drawViewCube(cam scene.Camera, o doc.CubeOrient, cx, cy float32, hovered *Region, homeHovered, compass bool) {
+func drawViewCube(cam scene.Camera, o doc.CubeOrient, cx, cy float32, hovered *Region, homeHovered, compass bool, opacity float32) {
 	if compass {
 		drawCompass(cam, o, cx, cy) // under the cube faces
 	}
@@ -120,6 +153,8 @@ func drawViewCube(cam scene.Camera, o doc.CubeOrient, cx, cy float32, hovered *R
 		col := viewCubeFaceColor
 		if hovered != nil && faceInRegion(f.region, hovered) {
 			col = viewCubeHoverColor
+		} else {
+			col[3] = opacity // inactive faces honor the user's opacity preference
 		}
 		x0, y0 := cx+f.corner[0].sx, cy+f.corner[0].sy
 		x1, y1 := cx+f.corner[1].sx, cy+f.corner[1].sy

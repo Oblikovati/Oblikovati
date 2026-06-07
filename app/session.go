@@ -32,6 +32,7 @@ type Session struct {
 	histories          map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState          viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
 	viewCubeHidden     bool                   // ViewCube shown unless hidden (zero value = shown)
+	lockToSelection    bool                   // ViewCube orbits around the selection when set
 	prefs              userprefs.Prefs        // global user preferences (e.g. compass visibility)
 	prefsStore         userprefs.Store        // persists prefs to the user config dir (nil ⇒ in-session only)
 	bus                *event.Bus

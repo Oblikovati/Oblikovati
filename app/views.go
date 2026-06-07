@@ -114,6 +114,71 @@ func viewHomeOf(f *viewstate.HomeFrame) *doc.ViewHome {
 	}
 }
 
+// LockToSelection reports whether the ViewCube orbits around the current selection.
+func (s *Session) LockToSelection() bool { return s.lockToSelection }
+
+// SetLockToSelection toggles whether ViewCube reorientations pivot around the selected
+// objects' center (Inventor's "Lock to Current Selection") rather than the view target.
+func (s *Session) SetLockToSelection(v bool) { s.lockToSelection = v }
+
+// ViewCubePivot is the point the ViewCube snaps orbit around: the selection's bounding-box
+// center when Lock to Current Selection is on and something pickable is selected, otherwise
+// the active view's current target.
+func (s *Session) ViewCubePivot() math.Point3 {
+	if s.lockToSelection {
+		if c, ok := s.selectionCenter(); ok {
+			return c
+		}
+	}
+	return s.Camera().Target
+}
+
+// selectionCenter is the center of the selection's combined range box, or ok=false when no
+// selected item exposes geometry.
+func (s *Session) selectionCenter() (math.Point3, bool) {
+	box := math.EmptyBox()
+	for _, it := range s.selection.Items() {
+		switch h := it.(type) {
+		case FaceHandle:
+			box = box.Union(h.Face.RangeBox())
+		case EdgeHandle:
+			box = box.Union(h.Edge.RangeBox())
+		case VertexHandle:
+			box = box.Union(h.Vertex.RangeBox())
+		case BodyHandle:
+			box = box.Union(h.Body.RangeBox())
+		case WorkPointHandle:
+			box = box.Union(math.BoxFromPoints(h.Point.Point()))
+		}
+	}
+	if box.IsEmpty() {
+		return math.Point3{}, false
+	}
+	return box.Center(), true
+}
+
+// InactiveOpacity is the ViewCube's face opacity when not hovered (a global preference;
+// default 1.0 = opaque). Lower values let the model show through the inactive cube.
+func (s *Session) InactiveOpacity() float32 {
+	if s.prefs.InactiveOpacity <= 0 || s.prefs.InactiveOpacity > 1 {
+		return 1.0
+	}
+	return float32(s.prefs.InactiveOpacity)
+}
+
+// SetInactiveOpacity sets and persists the ViewCube inactive face opacity (clamped 0.1–1.0).
+func (s *Session) SetInactiveOpacity(v float32) {
+	if v < 0.1 {
+		v = 0.1
+	} else if v > 1 {
+		v = 1
+	}
+	s.prefs.InactiveOpacity = float64(v)
+	if s.prefsStore != nil {
+		_ = s.prefsStore.Save(s.prefs)
+	}
+}
+
 // CubeOrientation returns the active document's ViewCube orientation (front redefinition),
 // or the identity when there is no active document.
 func (s *Session) CubeOrientation() doc.CubeOrient {
