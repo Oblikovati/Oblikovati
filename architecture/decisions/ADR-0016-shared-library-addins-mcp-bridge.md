@@ -64,9 +64,10 @@ running GUI in real time.
 
 - We accept the costs ADR-0003 named for in-process loading: the add-in **shares
   the host address space** (a crashing add-in can take the host down — no crash
-  isolation), and the c-shared library is coupled to a compatible toolchain. These
-  are acceptable for a first-party, trusted automation add-in; untrusted add-ins
-  would argue for the out-of-process path.
+  isolation; see *Known gap — add-in panic recovery* below), and the c-shared
+  library is coupled to a compatible toolchain. These are acceptable for a
+  first-party, trusted automation add-in; untrusted add-ins would argue for the
+  out-of-process path.
 - **Thread safety** is handled by a dispatch queue: add-in calls arrive on the MCP
   server's goroutines and are marshaled onto the host's single session goroutine
   (drained once per frame). The session is never touched concurrently.
@@ -75,6 +76,38 @@ running GUI in real time.
   recorded but not enforced yet.
 - The risky two-runtime assumption was validated by a disposable spike before
   building on it (`experiments/cshared-seam/`, gitignored).
+
+### Known gap — add-in panic recovery (`defer recover`), NOT YET IMPLEMENTED
+
+The **inbound** path (add-in → host) is guarded: `addin/router.Handle` wraps every
+handler in `defer recover()`, turning a kernel/handler panic triggered by an add-in
+request into a returned error (method + value + stack), and the dispatcher copies the
+request bytes and confines model access to the single session goroutine. A buggy
+add-in *request* cannot corrupt the model or panic-kill the host.
+
+The **outbound** path (host → add-in) is **not** guarded, and the add-in SDK has no
+boundary recovery:
+
+- the host invokes the add-in's `Activate`/`Deactivate`/`Notify` exports through raw
+  cgo trampolines (`head/internal/addinhost/dl_unix.go`) on the frame goroutine, with
+  no `recover` and no timeout;
+- the add-in SDK's exported functions and the goroutines it spawns
+  (`oblikovati-mcp-bridge/export.go`) carry **no `defer recover()`**.
+
+Because this is one OS process with two Go runtimes, the host cannot recover a panic
+raised in the add-in's runtime: an unrecovered panic *anywhere* in an add-in's own
+code crashes the whole process, and a hang in `Activate`/`Notify` freezes the frame
+loop.
+
+**Gap to close (cheapest in-process win):** the add-in SDK must `defer recover()` in
+**every exported function and every spawned goroutine**, converting an add-in panic
+into an error return / `OBK_ERR` instead of a process kill. This does **not** cover
+segfaults, stack overflows, or hangs — those require the out-of-process path (a
+subprocess speaking the same JSON C-ABI over a pipe/socket), the real fix for
+untrusted add-ins. **Deferred** while add-ins remain first-party and trusted; tracked
+here as a known gap. (For contrast, the embedded Lua runtime
+([ADR-0028](ADR-0028-embedded-lua-scripting.md)) is panic-recoverable in the host's
+*own* runtime precisely because it avoids this foreign-runtime crash surface.)
 
 ## Shape / layering
 
