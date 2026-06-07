@@ -44,11 +44,12 @@ func projItemLabel(name string, active bool) string {
 }
 
 const (
-	viewCubeRadius   = 24  // cube half-size projected, px (center → face)
-	viewCubeMargin   = 44  // cube-center inset from the tile's top-right corner, px
-	viewCubeEdgeW    = 1.5 // cube edge line thickness, px
-	viewCubeHomeR    = 9   // home-button half-size, px
-	viewCubeHomeGap  = 16  // gap from cube bottom to the home button, px
+	viewCubeRadius   = 36  // cube half-size projected, px (center → face)
+	viewCubeMargin   = 64  // cube-center inset from the tile's top-right corner, px
+	viewCubeEdgeW    = 1.6 // cube edge line thickness, px
+	viewCubeLabelW   = 1.4 // face-label stroke thickness, px
+	viewCubeHomeR    = 13  // home-button half-size, px
+	viewCubeHomeGap  = 22  // gap from cube bottom to the home button, px
 	viewCubeSnapSecs = 0.35
 )
 
@@ -81,8 +82,10 @@ func drawViewCube(cam scene.Camera, cx, cy float32, hovered *Region, homeHovered
 		native.DrawLine(x1, y1, x2, y2, viewCubeEdgeColor, viewCubeEdgeW)
 		native.DrawLine(x2, y2, x3, y3, viewCubeEdgeColor, viewCubeEdgeW)
 		native.DrawLine(x3, y3, x0, y0, viewCubeEdgeColor, viewCubeEdgeW)
-		lx, ly := (x0+x2)/2, (y0+y2)/2 // face center
-		native.DrawText(lx-float32(len(f.region.Label))*3, ly-7, f.region.Label, viewCubeTextColor)
+		// Label painted IN the face plane (projected with the cube), not screen-aligned.
+		for _, s := range faceLabelSegments(f, cam, viewCubeRadius) {
+			native.DrawLine(cx+s[0], cy+s[1], cx+s[2], cy+s[3], viewCubeTextColor, viewCubeLabelW)
+		}
 	}
 	hx, hy := homeCenter(cx, cy)
 	drawHomeButton(hx, hy, homeHovered)
