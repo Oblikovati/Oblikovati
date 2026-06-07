@@ -5,6 +5,8 @@
 package ui
 
 import (
+	"strconv"
+
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 	"oblikovati/head/viewport"
@@ -24,31 +26,129 @@ import (
 func drawViewportPanel(win *native.Window, s *app.Session) {
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
-		w, h := native.ContentRegionAvail()
-		pw, ph := clampDim(w), clampDim(h)
-
-		// Reserve the region with an input-capturing button, then read navigation from it.
-		cx, cy := native.GetCursorPos()
-		native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
-
-		cam, hovered := updateViewportCamera(s, pw, ph)
-		list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
-		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
-		renderViewportImage(win, s, cam, list, pw, ph, cx, cy)
-		drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
+		// Per-document views can tile (split layouts); a single view takes the classic
+		// full-panel path. Each visible tile renders its own view's camera into its own
+		// offscreen slot, so tiles show distinct cameras simultaneously.
+		if rects, active := planTiles(s); len(rects) > 1 {
+			drawTiledViewports(win, s, rects, active)
+		} else {
+			drawSingleViewport(win, s)
+		}
 	}
 	native.End()
 }
 
+// drawSingleViewport renders the active view filling the whole panel (slot 0) — the
+// classic single-view path: navigation, picking, overlays and client graphics.
+func drawSingleViewport(win *native.Window, s *app.Session) {
+	w, h := native.ContentRegionAvail()
+	pw, ph := clampDim(w), clampDim(h)
+
+	// Reserve the region with an input-capturing button, then read navigation from it.
+	cx, cy := native.GetCursorPos()
+	native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
+
+	cam, hovered := updateViewportCamera(s, pw, ph)
+	list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
+	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
+	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
+	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
+}
+
+// planTiles returns the tile rectangles for the active document's view layout and the
+// index of the active (focused) tile. It returns nil when there is no active document or
+// the layout resolves to a single view (the caller then takes the single-view path).
+func planTiles(s *app.Session) (rects []TileRect, active int) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, 0
+	}
+	vs := d.Views()
+	w, h := native.ContentRegionAvail()
+	rects = tileRects(vs.Layout(), w, h, vs.Count())
+	if len(rects) <= 1 {
+		return nil, 0
+	}
+	active = vs.ActiveIndex()
+	if active >= len(rects) {
+		active = 0
+	}
+	return rects, active
+}
+
+// drawTiledViewports lays out one tile per visible view from the panel content origin,
+// each rendering its own view camera into its own slot. The focused tile is interactive
+// (navigation, picking, overlays); the others render their cameras and accept a click or
+// drag to become the active view.
+func drawTiledViewports(win *native.Window, s *app.Session, rects []TileRect, active int) {
+	ox, oy := native.GetCursorPos()
+	for i, r := range rects {
+		drawViewTile(win, s, i, r, ox, oy, i == active)
+	}
+}
+
+// drawViewTile renders view i into tile slot i. tx,ty is the tile's top-left in the
+// panel's cursor space (so the rendered image is drawn back exactly over the tile's
+// input button).
+func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy float32, isActive bool) {
+	tx, ty := ox+r.X, oy+r.Y
+	pw, ph := clampDim(r.W), clampDim(r.H)
+	native.SetCursorPos(tx, ty)
+	native.InvisibleButton("##tile-"+strconv.Itoa(i), float32(pw), float32(ph))
+
+	cam, ok := s.ViewCameraAt(i)
+	if !ok {
+		return
+	}
+	cam.Width, cam.Height = pw, ph
+
+	// Per-tile navigation: a hover/drag/wheel on the tile orbits THIS view's camera and,
+	// on a non-active tile, makes it the active view so picking/commands follow.
+	nav := readNavInput(isPlacingTool(s) && isActive)
+	if nav.Hovered && navInteracted(nav) && !isActive {
+		_ = s.ActivateView(i)
+		isActive = true
+	}
+	if nav.Hovered || nav.Active {
+		cam = ApplyNavigation(cam, nav)
+		s.SetViewCameraAt(i, cam)
+		if c, ok := s.ViewCameraAt(i); ok { // re-read (active view routes through SetCamera)
+			c.Width, c.Height = pw, ph
+			cam = c
+		}
+	}
+
+	if isActive {
+		handleViewportClick(s)
+		hovered := hoveredPlane(s)
+		list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
+		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
+		renderViewportImage(win, s, i, cam, list, pw, ph, tx, ty)
+		drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, tx, ty, ph)
+		return
+	}
+	renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
+}
+
+// navInteracted reports whether this frame's input is an active manipulation (a drag or a
+// wheel), as opposed to mere hovering — the signal to claim a tile as the active view.
+func navInteracted(n NavInput) bool { return n.Active || n.Wheel != 0 }
+
 func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane) (renderer.DrawList, sketch.Plane, []app.DimensionView) {
-	bodies := activeBodies(s)
-	list := renderer.BuildDrawListStyled(bodies, cam, ops.DefaultQuality(), s.SurfaceLookup(), s.VisualStyle())
-	list = highlightSelection(list, s.Selection().First(), bodies)
+	list := baseDrawList(s, cam)
 	if s.InSketch() {
 		list, sketchPlane, dims := sketchOverlays(s, cam, list)
 		return list, sketchPlane, dims
 	}
 	return modelOverlays(s, cam, hovered, list), sketch.Plane{}, nil
+}
+
+// baseDrawList is the model geometry (styled) with the current selection highlighted, with
+// no environment overlays — what a passive (non-focused) tile shows for its view's camera.
+func baseDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
+	bodies := activeBodies(s)
+	list := renderer.BuildDrawListStyled(bodies, cam, ops.DefaultQuality(), s.SurfaceLookup(), s.VisualStyle())
+	return highlightSelection(list, s.Selection().First(), bodies)
 }
 
 func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.Plane, dims []app.DimensionView, labels []clientgraphics.Label, cx, cy float32, ph int) {
@@ -85,7 +185,7 @@ func updateViewportCamera(s *app.Session, pw, ph int) (scene.Camera, *feature.Wo
 // renderViewportImage flattens the draw list, renders it into the window's offscreen target
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
-func renderViewportImage(win *native.Window, s *app.Session, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
+func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
 	// Fit the shadow frustum to the model (before adding the ground), then drop in the ground
 	// plane so object shadows have a surface to land on.
 	min, max, hasGeom := viewport.SceneBounds(viewport.Flatten(list))
@@ -99,14 +199,14 @@ func renderViewportImage(win *native.Window, s *app.Session, cam scene.Camera, l
 	applyEnvironment(win, s.Environment())
 	applySkybox(win, s.Environment(), mvp)
 	applyShadow(win, s, min, max, hasGeom)
-	win.RenderViewport(0, pw, ph, mvp[:], eye,
+	win.RenderViewport(slot, pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
 		m.OccVerts, m.OccVCount, m.OccIndices,
 		m.LineVerts, m.LineVCount, m.LineIndices,
 		m.HidVerts, m.HidVCount, m.HidIndices,
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices)
-	if tex := win.ViewportTexture(0); tex != 0 {
+	if tex := win.ViewportTexture(slot); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
 		native.Image(tex, float32(pw), float32(ph))
 	}

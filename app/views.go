@@ -78,3 +78,51 @@ func (s *Session) SetViewCamera(docID uint64, c scene.Camera) error {
 	v.Eye, v.Target, v.Up, v.FOV, v.Framed = c.Eye, c.Target, c.Up, c.FOV, true
 	return nil
 }
+
+// ViewCameraAt returns the active document's view i camera, sized to the current viewport.
+// ok is false when there is no active document or i is out of range. Used by the tiled
+// viewport to render each tile from its own view's camera.
+func (s *Session) ViewCameraAt(i int) (scene.Camera, bool) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return scene.Camera{}, false
+	}
+	vs := d.Views()
+	if i < 0 || i >= vs.Count() {
+		return scene.Camera{}, false
+	}
+	v := vs.All()[i]
+	c := s.camera // carry the transient viewport pixel size
+	c.Eye, c.Target, c.Up, c.FOV = v.Eye, v.Target, v.Up, v.FOV
+	return c, true
+}
+
+// SetViewCameraAt writes c to the active document's view i (marking it framed). When i is
+// the active view it routes through SetCamera (picker + cache sync); otherwise it writes
+// the view frame directly. Out-of-range or no-active-document is a no-op.
+func (s *Session) SetViewCameraAt(i int, c scene.Camera) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	vs := d.Views()
+	if i < 0 || i >= vs.Count() {
+		return
+	}
+	if i == vs.ActiveIndex() {
+		s.SetCamera(c)
+		return
+	}
+	v := vs.All()[i]
+	v.Eye, v.Target, v.Up, v.FOV, v.Framed = c.Eye, c.Target, c.Up, c.FOV, true
+}
+
+// ActivateView makes view i of the active document the active view (so picking, sketch and
+// commands target it). Used when the user interacts with a tile.
+func (s *Session) ActivateView(i int) error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	return d.Views().Activate(i)
+}
