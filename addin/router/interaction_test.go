@@ -32,3 +32,14 @@ func TestInteractionStateIdleVsInTransaction(t *testing.T) {
 		t.Fatalf("inside a transaction state should be busy/inTransaction, got %+v", st)
 	}
 }
+
+// TestInteractionSetNotice checks an add-in can post a transient status-bar message, so a
+// collaboration add-in's connection state is visible to the user (not just in logs).
+func TestInteractionSetNotice(t *testing.T) {
+	r := New(opregistry.Default())
+	s := app.NewSession()
+	call(t, r, s, "interaction.setNotice", `{"message":"Meeting: connected"}`, nil)
+	if s.Notice() != "Meeting: connected" {
+		t.Errorf("notice = %q, want %q", s.Notice(), "Meeting: connected")
+	}
+}

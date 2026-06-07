@@ -24,3 +24,14 @@ func interactionState(s *app.Session, _ json.RawMessage) (json.RawMessage, error
 	st.Busy = st.ActiveTool != "" || st.InTransaction
 	return json.Marshal(st)
 }
+
+// interactionSetNotice puts a transient add-in message in the status bar
+// (wire.MethodInteractionSetNotice) — e.g. a collaboration add-in's connection status.
+func interactionSetNotice(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var a wire.SetNoticeArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return nil, err
+	}
+	s.SetNotice(a.Message)
+	return json.Marshal(wire.OKResult{OK: true})
+}
