@@ -148,6 +148,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 	pw, ph := clampDim(r.W), clampDim(r.H)
 	native.SetCursorPos(tx, ty)
 	native.InvisibleButton("##tile-"+strconv.Itoa(i), float32(pw), float32(ph))
+	bx, by := native.ItemRectMin() // tile's screen rect, for the active-tile border
 
 	cam, ok := s.ViewCameraAt(i)
 	if !ok {
@@ -178,9 +179,22 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 		renderViewportImage(win, s, i, cam, list, pw, ph, tx, ty)
 		drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, tx, ty, ph)
+		drawActiveTileBorder(bx, by, float32(pw), float32(ph))
 		return
 	}
 	renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
+}
+
+// drawActiveTileBorder strokes a dark border just inside the active tile's screen rect so
+// the user can tell which view is focused (drawn after the image, so it sits on top).
+func drawActiveTileBorder(x, y, w, h float32) {
+	const thickness = 3
+	c := [4]float32{0.02, 0.03, 0.05, 1} // near-black, darker than any tile background
+	x0, y0, x1, y1 := x+1.5, y+1.5, x+w-1.5, y+h-1.5
+	native.DrawLine(x0, y0, x1, y0, c, thickness)
+	native.DrawLine(x1, y0, x1, y1, c, thickness)
+	native.DrawLine(x1, y1, x0, y1, c, thickness)
+	native.DrawLine(x0, y1, x0, y0, c, thickness)
 }
 
 // navInteracted reports whether this frame's input is an active manipulation (a drag or a
