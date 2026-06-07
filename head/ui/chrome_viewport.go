@@ -55,15 +55,15 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	bx, by := native.ItemRectMin()
 
 	// ViewCube (top-right): when the cursor is over it, it owns the click — no orbit/pick.
-	cubeCx, cubeCy := bx+float32(pw)-viewCubeMargin, by+viewCubeMargin
+	p := placeViewCube(bx, by, pw, ph, s.CubeSize(), s.CubeCorner())
 	cam := s.Camera()
 	cam.Width, cam.Height = pw, ph
 	var cubeRegion *Region
 	var homeHit bool
 	if s.ShowViewCube() && native.IsItemHovered() {
 		mx, my := native.MousePos()
-		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam, s.CubeOrientation())
-		homeHit = overHomeButton(mx, my, cubeCx, cubeCy)
+		cubeRegion = HitTest(mx-p.cx, my-p.cy, p.r, cam, s.CubeOrientation())
+		homeHit = overHomeButton(mx, my, p)
 	}
 	overCube := cubeRegion != nil || homeHit
 	if overCube && native.IsItemClicked(native.MouseLeft) {
@@ -85,7 +85,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 	if s.ShowViewCube() {
-		drawViewCube(cam, s.CubeOrientation(), cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass(), s.InactiveOpacity())
+		drawViewCube(cam, s.CubeOrientation(), p, cubeRegion, homeHit, s.ShowCompass(), s.InactiveOpacity())
 	}
 }
 
@@ -189,13 +189,13 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 
 	// ViewCube hit-test (top-right corner, screen space). When the cursor is over the cube
 	// it owns the input this frame: no orbit, no model pick — a click snaps the view.
-	cubeCx, cubeCy := bx+float32(pw)-viewCubeMargin, by+viewCubeMargin
+	p := placeViewCube(bx, by, pw, ph, s.CubeSize(), s.CubeCorner())
 	var cubeRegion *Region
 	var homeHit bool
 	if s.ShowViewCube() && native.IsItemHovered() {
 		mx, my := native.MousePos()
-		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam, s.CubeOrientation())
-		homeHit = overHomeButton(mx, my, cubeCx, cubeCy)
+		cubeRegion = HitTest(mx-p.cx, my-p.cy, p.r, cam, s.CubeOrientation())
+		homeHit = overHomeButton(mx, my, p)
 	}
 	overCube := cubeRegion != nil || homeHit
 
@@ -250,7 +250,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
 	}
 	if s.ShowViewCube() {
-		drawViewCube(cam, s.CubeOrientation(), cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass(), s.InactiveOpacity())
+		drawViewCube(cam, s.CubeOrientation(), p, cubeRegion, homeHit, s.ShowCompass(), s.InactiveOpacity())
 	}
 }
 

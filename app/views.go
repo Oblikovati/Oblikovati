@@ -174,6 +174,54 @@ func (s *Session) SetInactiveOpacity(v float32) {
 		v = 1
 	}
 	s.prefs.InactiveOpacity = float64(v)
+	s.savePrefs()
+}
+
+// ViewCube placement preference bounds.
+const (
+	defaultCubeSizePx = 36
+	minCubeSizePx     = 20
+	maxCubeSizePx     = 80
+)
+
+// CubeSize is the ViewCube radius in pixels (global preference; default 36).
+func (s *Session) CubeSize() float32 {
+	if s.prefs.CubeSizePx < minCubeSizePx || s.prefs.CubeSizePx > maxCubeSizePx {
+		return defaultCubeSizePx
+	}
+	return float32(s.prefs.CubeSizePx)
+}
+
+// SetCubeSize sets and persists the ViewCube radius (clamped to the supported range).
+func (s *Session) SetCubeSize(px int) {
+	if px < minCubeSizePx {
+		px = minCubeSizePx
+	} else if px > maxCubeSizePx {
+		px = maxCubeSizePx
+	}
+	s.prefs.CubeSizePx = px
+	s.savePrefs()
+}
+
+// CubeCorner is the viewport corner the ViewCube anchors to (0=TR, 1=TL, 2=BR, 3=BL).
+func (s *Session) CubeCorner() int {
+	if s.prefs.CubeCorner < 0 || s.prefs.CubeCorner > 3 {
+		return 0
+	}
+	return s.prefs.CubeCorner
+}
+
+// SetCubeCorner sets and persists the ViewCube anchor corner (0=TR, 1=TL, 2=BR, 3=BL).
+func (s *Session) SetCubeCorner(corner int) {
+	if corner < 0 || corner > 3 {
+		return
+	}
+	s.prefs.CubeCorner = corner
+	s.savePrefs()
+}
+
+// savePrefs persists the global preferences if a store is installed (best-effort).
+func (s *Session) savePrefs() {
 	if s.prefsStore != nil {
 		_ = s.prefsStore.Save(s.prefs)
 	}
@@ -463,9 +511,7 @@ func (s *Session) ShowCompass() bool { return !s.prefs.CompassHidden }
 // user preference (its right-click menu toggle). A settings-write failure is non-fatal.
 func (s *Session) SetShowCompass(show bool) {
 	s.prefs.CompassHidden = !show
-	if s.prefsStore != nil {
-		_ = s.prefsStore.Save(s.prefs)
-	}
+	s.savePrefs()
 }
 
 // ActivateView makes view i of the active document the active view (so picking, sketch and

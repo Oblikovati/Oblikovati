@@ -22,6 +22,11 @@ type Prefs struct {
 	CompassHidden bool `yaml:"compassHidden,omitempty"`
 	// InactiveOpacity is the ViewCube's face opacity when not hovered (0 ⇒ default 1.0).
 	InactiveOpacity float64 `yaml:"inactiveOpacity,omitempty"`
+	// CubeSizePx is the ViewCube radius in pixels (0 ⇒ default).
+	CubeSizePx int `yaml:"cubeSizePx,omitempty"`
+	// CubeCorner is the viewport corner the cube anchors to (0=top-right, 1=top-left,
+	// 2=bottom-right, 3=bottom-left).
+	CubeCorner int `yaml:"cubeCorner,omitempty"`
 }
 
 // Store loads and saves the global preferences.
