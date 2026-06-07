@@ -5,10 +5,34 @@ package app
 import (
 	"testing"
 
+	"oblikovati/api/types"
 	"oblikovati/math"
 	"oblikovati/model/compdef"
 	"oblikovati/model/doc"
 )
+
+func TestSetViewLayoutCreatesAndKeepsViews(t *testing.T) {
+	s := NewSession()
+	a := addPart(t, s, "a.obk")
+	activate(t, s, a)
+
+	if err := s.SetViewLayout(types.LayoutFour); err != nil {
+		t.Fatalf("SetViewLayout(Four): %v", err)
+	}
+	if got := a.Views().Count(); got < 4 {
+		t.Fatalf("after Four layout, view count = %d, want >= 4", got)
+	}
+	if a.Views().Layout() != types.LayoutFour {
+		t.Errorf("layout = %v, want four", a.Views().Layout())
+	}
+	// Switching to a smaller layout keeps the extra views for later.
+	if err := s.SetViewLayout(types.LayoutSingle); err != nil {
+		t.Fatalf("SetViewLayout(Single): %v", err)
+	}
+	if a.Views().Count() < 4 {
+		t.Errorf("single layout dropped views: count = %d, want >= 4", a.Views().Count())
+	}
+}
 
 func addPart(t *testing.T, s *Session, name string) *doc.Document {
 	t.Helper()

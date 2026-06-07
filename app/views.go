@@ -10,13 +10,24 @@ import (
 	"oblikovati/scene"
 )
 
-// SetViewLayout sets how the active document tiles its views (View-tab Windows panel).
+// SetViewLayout sets how the active document tiles its views and ensures it has enough
+// views to fill the layout, creating any missing ones from the current view's camera so
+// the choice takes visible effect immediately (e.g. "Four Views" shows four tiles even
+// from a single view). It never removes views — switching back to a smaller layout keeps
+// the extras for later. View-tab Windows panel.
 func (s *Session) SetViewLayout(l types.ViewLayout) error {
 	d := s.ActiveDocument()
 	if d == nil {
 		return ErrNoActiveDoc
 	}
-	d.Views().SetLayout(l)
+	vs := d.Views()
+	vs.SetLayout(l)
+	for vs.Count() < l.Tiles() {
+		cur := vs.Active()
+		nv := doc.DefaultView(fmt.Sprintf("View %d", vs.Count()+1))
+		nv.Eye, nv.Target, nv.Up, nv.FOV, nv.Framed = cur.Eye, cur.Target, cur.Up, cur.FOV, cur.Framed
+		vs.Add(nv)
+	}
 	return nil
 }
 
