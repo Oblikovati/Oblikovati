@@ -68,6 +68,10 @@ The three defining choices, plus the derived ones, are recorded as ADRs:
 | [0015](decisions/ADR-0015-build-ci-and-test-tooling.md) | Build, CI/CD, and test tooling foundation *(tooling)* |
 | [0016](decisions/ADR-0016-shared-library-addins-mcp-bridge.md) | **In-process shared-library add-ins (C ABI) + MCP automation bridge** — amends 0003 |
 | [0017](decisions/ADR-0017-release-pipeline.md) | **Channel-based release pipeline** (nightly + stable; GUI head + CLI) — supersedes 0015's CD |
+| [0029](decisions/ADR-0029-user-config-location.md) | **Unified per-user config location** (`~/.oblikovati`; `%AppData%\oblikovati` on Windows) via `oblikovati/userconfig` |
+
+> Note: ADRs 0018–0028 exist under `decisions/` but predate the last index refresh; this
+> table is being backfilled separately.
 
 ## The modern stack at a glance
 
