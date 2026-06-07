@@ -99,6 +99,7 @@ void obk_ig_set_style_color(const char* name, float r, float g, float b, float a
 int  obk_ig_color_edit4(const char* label, float* rgba);
 void obk_ig_draw_line(float x1, float y1, float x2, float y2, float r, float g, float b, float a, float thickness);
 void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
+void obk_ig_draw_quad_filled(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
 void obk_ig_draw_text(float x, float y, float r, float g, float b, float a, const char* s);
 int  obk_ig_begin_combo(const char* label, const char* preview);
 void obk_ig_end_combo(void);
@@ -279,6 +280,14 @@ func DrawLine(x1, y1, x2, y2 float32, c [4]float32, thickness float32) {
 func DrawTriangleFilled(x1, y1, x2, y2, x3, y3 float32, c [4]float32) {
 	C.obk_ig_draw_triangle_filled(C.float(x1), C.float(y1), C.float(x2), C.float(y2),
 		C.float(x3), C.float(y3), C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
+}
+
+// DrawQuadFilled fills a screen-space quad (corners in order) as a single convex polygon,
+// so a translucent fill shows no internal diagonal seam (unlike two triangles).
+func DrawQuadFilled(x0, y0, x1, y1, x2, y2, x3, y3 float32, c [4]float32) {
+	C.obk_ig_draw_quad_filled(C.float(x0), C.float(y0), C.float(x1), C.float(y1),
+		C.float(x2), C.float(y2), C.float(x3), C.float(y3),
+		C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
 }
 
 // DrawText draws a screen-space text label at (x,y) in the current window's draw list

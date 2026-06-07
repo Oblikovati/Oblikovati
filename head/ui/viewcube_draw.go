@@ -228,8 +228,7 @@ func drawViewCube(cam scene.Camera, o doc.CubeOrient, p cubePlacement, hovered *
 		x1, y1 := p.cx+f.corner[1].sx, p.cy+f.corner[1].sy
 		x2, y2 := p.cx+f.corner[2].sx, p.cy+f.corner[2].sy
 		x3, y3 := p.cx+f.corner[3].sx, p.cy+f.corner[3].sy
-		native.DrawTriangleFilled(x0, y0, x1, y1, x2, y2, col)
-		native.DrawTriangleFilled(x0, y0, x2, y2, x3, y3, col)
+		native.DrawQuadFilled(x0, y0, x1, y1, x2, y2, x3, y3, col) // single convex fill (no diagonal seam)
 		native.DrawLine(x0, y0, x1, y1, viewCubeEdgeColor, viewCubeEdgeW)
 		native.DrawLine(x1, y1, x2, y2, viewCubeEdgeColor, viewCubeEdgeW)
 		native.DrawLine(x2, y2, x3, y3, viewCubeEdgeColor, viewCubeEdgeW)
