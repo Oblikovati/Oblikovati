@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 
 	"oblikovati/persistence/yamlcodec"
+	"oblikovati/userconfig"
 )
 
 // ViewFrame is one view's persisted camera: a name and a look-at frame (eye, target, up in
@@ -63,13 +64,10 @@ type file struct {
 // FileStore persists view state to one YAML file under the user config directory.
 type FileStore struct{ path string }
 
-// DefaultPath is the per-user view-state file (e.g. ~/.config/oblikovati/view-state.yaml).
+// DefaultPath is the per-user view-state file in the shared config dir (userconfig):
+// ~/.oblikovati/view-state.yaml on Linux/macOS, %AppData%\oblikovati\view-state.yaml on Windows.
 func DefaultPath() (string, error) {
-	cfg, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("viewstate: locate user config dir: %w", err)
-	}
-	return filepath.Join(cfg, "oblikovati", "view-state.yaml"), nil
+	return userconfig.File("view-state.yaml")
 }
 
 // NewFileStore returns a store backed by the file at path.

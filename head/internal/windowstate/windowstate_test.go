@@ -8,10 +8,10 @@ import (
 )
 
 func TestSaveLoadRoundTrip(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("uses XDG_CONFIG_HOME to redirect the config dir; Linux only")
+	if runtime.GOOS == "windows" {
+		t.Skip("overrides $HOME to redirect the config dir; Unix only")
 	}
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
 
 	want := State{X: 120, Y: 64, Width: 1600, Height: 1000, Maximized: true}
 	if err := Save(want); err != nil {
@@ -27,10 +27,10 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 }
 
 func TestLoadMissingIsNotOK(t *testing.T) {
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS == "windows" {
 		t.Skip("Linux only")
 	}
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
 	if _, ok := Load(); ok {
 		t.Error("Load on empty config should report not-found")
 	}

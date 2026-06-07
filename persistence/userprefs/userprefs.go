@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 
 	"oblikovati/persistence/yamlcodec"
+	"oblikovati/userconfig"
 )
 
 // Prefs is the set of global user preferences.
@@ -30,13 +31,12 @@ type Store interface {
 // FileStore persists the preferences to a YAML file under the user config directory.
 type FileStore struct{ path string }
 
-// DefaultPath is the per-user preferences file (e.g. ~/.config/oblikovati/preferences.yaml).
+// DefaultPath is the per-user preferences file in the shared config dir (userconfig). Named
+// distinctly from the theme store's preferences.yaml (which holds the selected theme) to
+// avoid clobbering it in the same directory: ~/.oblikovati/ui-preferences.yaml on
+// Linux/macOS, %AppData%\oblikovati\ui-preferences.yaml on Windows.
 func DefaultPath() (string, error) {
-	cfg, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("userprefs: locate user config dir: %w", err)
-	}
-	return filepath.Join(cfg, "oblikovati", "preferences.yaml"), nil
+	return userconfig.File("ui-preferences.yaml")
 }
 
 // NewFileStore returns a store backed by the file at path.

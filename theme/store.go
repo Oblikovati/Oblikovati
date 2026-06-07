@@ -4,12 +4,12 @@ package theme
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"oblikovati/persistence/yamlcodec"
+	"oblikovati/userconfig"
 )
 
 // FileSystem is the thin filesystem seam the [Store] depends on, so theme IO is testable
@@ -34,15 +34,10 @@ type Store struct {
 // NewStore builds a store rooted at dir, backed by fs.
 func NewStore(dir string, fs FileSystem) *Store { return &Store{root: dir, fs: fs} }
 
-// DefaultRoot is the per-user config directory the app stores themes under
-// (e.g. ~/.config/oblikovati on Linux, %AppData%\oblikovati on Windows). It defers to
-// os.UserConfigDir so the location is the OS-native one.
+// DefaultRoot is the shared per-user Oblikovati config directory the app stores themes
+// under (~/.oblikovati on Linux/macOS, %AppData%\oblikovati on Windows) — see userconfig.
 func DefaultRoot() (string, error) {
-	cfg, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("theme: locate user config dir: %w", err)
-	}
-	return filepath.Join(cfg, "oblikovati"), nil
+	return userconfig.Dir()
 }
 
 // themeFile is the on-disk YAML shape of one custom theme: a name and the full color

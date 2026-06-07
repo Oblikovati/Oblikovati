@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	"oblikovati/persistence/yamlcodec"
+	"oblikovati/userconfig"
 )
 
 // State is the saved window placement.
@@ -27,13 +28,10 @@ type State struct {
 // the app falls back to its default geometry).
 func (s State) Valid() bool { return s.Width > 0 && s.Height > 0 }
 
-// FilePath is the per-user window-state file (e.g. ~/.config/oblikovati/window.yaml).
+// FilePath is the per-user window-state file in the shared config dir (userconfig):
+// ~/.oblikovati/window.yaml on Linux/macOS, %AppData%\oblikovati\window.yaml on Windows.
 func FilePath() (string, error) {
-	cfg, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("windowstate: locate user config dir: %w", err)
-	}
-	return filepath.Join(cfg, "oblikovati", "window.yaml"), nil
+	return userconfig.File("window.yaml")
 }
 
 // Load reads the saved placement; ok is false when there is no (or an unreadable) file.
