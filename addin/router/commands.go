@@ -54,6 +54,27 @@ func createCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error
 	return ok()
 }
 
+// setCommandState updates one of an add-in's commands' live ribbon state: its active
+// (highlighted/accent) flag and an optional relabel (wire.MethodCommandsSetState).
+func setCommandState(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var in wire.SetCommandStateArgs
+	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	if in.ID == "" {
+		return nil, errors.New("commands.setState: id is required")
+	}
+	cmd, found := s.Commands().ByID(in.ID)
+	if !found {
+		return nil, fmt.Errorf("commands.setState: unknown command %q", in.ID)
+	}
+	cmd.SetActiveState(in.Active)
+	if in.DisplayName != "" {
+		cmd.SetDisplayName(in.DisplayName)
+	}
+	return ok()
+}
+
 // executeCommand runs the command with the given id (the same path a ribbon click
 // takes), surfacing a disabled/unknown command as an error.
 func executeCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
