@@ -12,6 +12,7 @@ import (
 	"oblikovati/math"
 	"oblikovati/model/compdef"
 	"oblikovati/model/feature"
+	"oblikovati/model/sketch"
 )
 
 // The additive sketch-profile solid features beyond extrude: revolve, rib, emboss, coil, and
@@ -134,6 +135,7 @@ type embossArgs struct {
 	SketchIndex    int    `json:"sketchIndex"`
 	ProfileIndices []int  `json:"profileIndices,omitempty"`
 	ProfileIndex   int    `json:"profileIndex"`
+	TextEntity     uint64 `json:"textEntity,omitempty"`
 	Depth          string `json:"depth"`
 	Engrave        bool   `json:"engrave,omitempty"`
 }
@@ -144,6 +146,7 @@ const embossSchema = `{
     "sketchIndex": {"type": "integer", "minimum": 0},
     "profileIndices": {"type": "array", "items": {"type": "integer", "minimum": 0}, "description": "Profiles to emboss; omit to use profileIndex."},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
+    "textEntity": {"type": "integer", "minimum": 1, "description": "Sketch text entity id to emboss BY REFERENCE; takes precedence over profile indices (text geometry is derived, never baked)."},
     "depth": {"type": "string", "description": "Raise (or, with engrave, cut) depth, e.g. \"1 mm\"."},
     "engrave": {"type": "boolean", "default": false, "description": "Cut into the face instead of raising from it."}
   },
@@ -171,12 +174,33 @@ func applyEmboss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	pf, err := buildEmboss(part, sk, in, depth)
+	if err != nil {
+		return nil, err
+	}
+	return recomputeResult(part, pf)
+}
+
+// buildEmboss adds either a by-reference text emboss (when textEntity is set) or a
+// profile-region emboss, so a text emboss never bakes glyph geometry into the document.
+func buildEmboss(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in embossArgs, depth func() float64) (*feature.PartFeature, error) {
+	embs := feature.NewEmbossFeatures(part.Features())
+	if in.TextEntity != 0 {
+		e, ok := sk.EntityByID(sketch.ID(in.TextEntity))
+		if !ok {
+			return nil, fmt.Errorf("emboss: no entity with id %d", in.TextEntity)
+		}
+		tb, ok := e.(*sketch.TextBox)
+		if !ok {
+			return nil, fmt.Errorf("emboss: entity %d is a %T, not a text box", in.TextEntity, e)
+		}
+		return embs.AddText(sk, tb, depth, in.Engrave, 0), nil
+	}
 	profiles := in.ProfileIndices
 	if len(profiles) == 0 {
 		profiles = []int{in.ProfileIndex}
 	}
-	pf := feature.NewEmbossFeatures(part.Features()).Add(sk, profiles, depth, in.Engrave, 0)
-	return recomputeResult(part, pf)
+	return embs.Add(sk, profiles, depth, in.Engrave, 0), nil
 }
 
 // --- coil ------------------------------------------------------------------
