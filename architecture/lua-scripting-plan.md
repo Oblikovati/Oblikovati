@@ -1,7 +1,8 @@
 # Lua Scripting — Implementation Plan
 
-**Status:** Phase 1 shipped (PR #75, merged to `develop` 2026-06-07); Phases 2–3
-parked. See [§11 Phased rollout](#11-phased-rollout) for the per-phase status.
+**Status:** Phase 1 shipped (PR #75); Phase 2 in progress — the GUI Script Console
+shipped (PR #82, merged to `develop` 2026-06-07), typed sugar tables outstanding;
+Phase 3 parked. See [§11 Phased rollout](#11-phased-rollout) for the per-phase status.
 **Scope:** Integral, first-party Lua scripting in the GPL-v2 application (`/source`,
 i.e. this `oblikovati` module). **Not** an add-in.
 **Companion ADR:** [ADR-0028 — Embedded Lua scripting runtime](decisions/ADR-0028-embedded-lua-scripting.md)
@@ -380,15 +381,18 @@ backstopped by a **bounded registry / call-stack** for the memory cap.
 future hooked VM — or a swapped `Engine` — would wire a real opcode counter onto;
 `script/gopherlua/quota.go: instructionBudget` is its single anchor point.
 
-**Phase 2 — typed sugar + GUI console. ⏸ PARKED (outstanding).**
-The `DispatchedCaller` seam (Phase 1) is built and tested so the head can plug in
-directly; the rest is not yet started:
+**Phase 2 — typed sugar + GUI console. 🔄 IN PROGRESS (the GUI console shipped; typed
+sugar outstanding).** The GUI Script Console shipped in PR #82 (merged to `develop`
+2026-06-07); the typed convenience tables are the remaining Phase-2 item:
 1. ⏳ `oblikovati.documents.*` / typed tables auto-derived from `api/wire` groups.
-2. ⏳ `script/console` state + head Script Console panel + "Run Script…" command on the
-   Tools/Manage ribbon panel; Stop/cancel.
-3. ⏳ output/error pane wiring (the `oblikovati.methods()` discoverability primitive
-   itself already ships in Phase 1).
-4. ⏳ UI e2e tests (per the project's "DoD = UI + e2e" rule).
+2. ✅ `script/console` state (Console + async Controller) + the head Script Console
+   panel (source editor, Run/Stop/Clear, output pane, status) on the **Manage ▸
+   Scripts** ribbon panel; Stop/cancel. The panel drives the `DispatchedCaller` over
+   the same router + dispatcher add-ins use, so a looping script never freezes the UI.
+3. ✅ output/error pane wiring (streamed `print()` lines + last-run status; the
+   `oblikovati.methods()` discoverability primitive shipped in Phase 1).
+4. ✅ UI e2e tests — headless `script/console` unit tests + in-window cgo render/run
+   tests that open the real Vulkan window and assert streamed output reaches the panel.
 
 **Phase 3 — events, library, persistence, MCP. ⏸ PARKED (outstanding).**
 1. ⏳ Event/callback hooks so scripts can subscribe to the event bus (foundation for
