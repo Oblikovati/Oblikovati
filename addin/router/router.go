@@ -170,6 +170,8 @@ func (r *Router) registerSketchAuthoringHandlers() {
 	r.handlers[wire.MethodSketchAddImage] = addSketchImage
 	r.handlers[wire.MethodSketchAddFillRegion] = addFillRegion
 	r.handlers[wire.MethodSketchAddText] = addText
+	r.handlers[wire.MethodSketchEditText] = editText
+	r.handlers[wire.MethodSketchGetText] = getText
 	r.handlers[wire.MethodSketchAutoDimension] = autoDimensionSketch
 	r.handlers[wire.MethodSketchProject] = projectGeometry
 }
