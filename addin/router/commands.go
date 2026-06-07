@@ -69,6 +69,9 @@ func setCommandState(s *app.Session, args json.RawMessage) (json.RawMessage, err
 		return nil, fmt.Errorf("commands.setState: unknown command %q", in.ID)
 	}
 	cmd.SetActiveState(in.Active)
+	if in.Enabled != nil {
+		cmd.SetEnabledState(*in.Enabled)
+	}
 	if in.DisplayName != "" {
 		cmd.SetDisplayName(in.DisplayName)
 	}

@@ -52,8 +52,10 @@ type CommandDefinition struct {
 	environment Environment // ribbon environment; BaseEnvironment ⇒ always shown
 	enabled     func(*Session) bool
 	active      func(*Session) bool // for a ComboControl option: is this the current selection?
-	forcedActive    bool            // runtime active flag (commands.setState); see hasForcedActive
-	hasForcedActive bool            // true ⇒ forcedActive overrides the active predicate
+	forcedActive     bool           // runtime active flag (commands.setState); see hasForcedActive
+	hasForcedActive  bool           // true ⇒ forcedActive overrides the active predicate
+	forcedEnabled    bool           // runtime enabled flag (commands.setState); see hasForcedEnabled
+	hasForcedEnabled bool           // true ⇒ forcedEnabled overrides the enabled predicate
 	run         func(*Session) error
 	variants    []*CommandDefinition // split-button dropdown entries (Inventor's variant flyout)
 	isVariant   bool                 // true ⇒ reachable only via a head command's dropdown, never its own panel button
@@ -197,7 +199,18 @@ func (c *CommandDefinition) Environment() Environment { return c.environment }
 // IsEnabled reports whether the command may run in the given session (predicate true
 // or absent).
 func (c *CommandDefinition) IsEnabled(s *Session) bool {
+	if c.hasForcedEnabled {
+		return c.forcedEnabled
+	}
 	return c.enabled == nil || c.enabled(s)
+}
+
+// SetEnabledState sets a runtime enabled flag (overriding any WithEnabled predicate) so an
+// add-in can grey out or restore its commands via commands.setState — e.g. disabling its
+// presenter/follow controls until the user joins a session.
+func (c *CommandDefinition) SetEnabledState(enabled bool) {
+	c.forcedEnabled = enabled
+	c.hasForcedEnabled = true
 }
 
 // CommandManager is the registry of command definitions — Inventor's CommandManager
