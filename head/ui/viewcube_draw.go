@@ -57,10 +57,10 @@ const (
 // ViewCube colors. Faces are a light translucent panel; the hovered region's faces tint to
 // the accent. (Theming via tokens is a Phase-C follow-up.)
 var (
-	viewCubeFaceColor  = [4]float32{0.82, 0.85, 0.90, 0.55}
-	viewCubeHoverColor = [4]float32{0.36, 0.66, 0.96, 0.85}
-	viewCubeEdgeColor  = [4]float32{0.20, 0.24, 0.30, 0.90}
-	viewCubeTextColor  = [4]float32{0.12, 0.14, 0.18, 1}
+	viewCubeFaceColor  = [4]float32{0.85, 0.86, 0.88, 1.0}  // opaque light gray
+	viewCubeHoverColor = [4]float32{0.36, 0.66, 0.96, 0.95} // accent on hover
+	viewCubeEdgeColor  = [4]float32{0.50, 0.52, 0.56, 1.0}  // medium gray, not black
+	viewCubeTextColor  = [4]float32{0.20, 0.22, 0.26, 1}
 	viewCubeHomeColor  = [4]float32{0.62, 0.66, 0.72, 0.95}
 )
 
