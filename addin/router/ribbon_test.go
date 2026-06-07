@@ -136,4 +136,17 @@ func TestSetCommandState(t *testing.T) {
 	if cmd.DisplayName() != "On" {
 		t.Errorf("empty displayName should keep the label, got %q", cmd.DisplayName())
 	}
+
+	// enabled is an optional override: present ⇒ applied, absent ⇒ unchanged.
+	if !cmd.IsEnabled(s) {
+		t.Fatal("command should start enabled")
+	}
+	call(t, r, s, "commands.setState", `{"id":"acme.toggle","active":false,"enabled":false}`, nil)
+	if cmd.IsEnabled(s) {
+		t.Error("setState enabled=false should disable the command")
+	}
+	call(t, r, s, "commands.setState", `{"id":"acme.toggle","active":false,"enabled":true}`, nil)
+	if !cmd.IsEnabled(s) {
+		t.Error("setState enabled=true should re-enable the command")
+	}
 }
