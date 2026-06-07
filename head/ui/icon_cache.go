@@ -17,7 +17,7 @@ import (
 // large icons head a panel (Inventor's two button sizes). Glyphs are size-normalized at
 // raster time (see icon.Rasterize), so these are the on-screen icon sizes directly.
 const (
-	smallIconPx = 24
+	smallIconPx = 30
 	largeIconPx = 40
 )
 
