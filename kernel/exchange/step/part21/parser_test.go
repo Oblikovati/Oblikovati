@@ -53,6 +53,25 @@ func TestParseHeaderFields(t *testing.T) {
 	}
 }
 
+func TestParseHeaderNullOptionalStrings(t *testing.T) {
+	src := `ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION((''),$);
+FILE_NAME($,$,('me'),('acme'),$,$,$);
+FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));
+ENDSEC;
+DATA;
+ENDSEC;
+END-ISO-10303-21;`
+	f, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("Parse null header: %v", err)
+	}
+	if f.Header.ImplementationLevel != "" || f.Header.Name != "" || f.Header.TimeStamp != "" || f.Header.Authorization != "" {
+		t.Fatalf("null optional header fields were not decoded as empty strings: %#v", f.Header)
+	}
+}
+
 func TestParseResolvesReferences(t *testing.T) {
 	f, _ := Parse([]byte(tinyFile))
 	placement, _ := f.Graph.Lookup(3)
@@ -125,6 +144,30 @@ func TestParseDuplicateIDErrors(t *testing.T) {
 	src := wrapData("#1=DIRECTION('',(0.,0.,1.));\n#1=DIRECTION('',(1.,0.,0.));")
 	if _, err := Parse([]byte(src)); err == nil {
 		t.Error("duplicate entity id should error")
+	}
+}
+
+func TestParseMalformedHeaderRecordsError(t *testing.T) {
+	for _, src := range []string{
+		"ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION((''));\n",
+		"ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION((''),'');\nFILE_NAME('too-few');\n",
+		"ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION((''),'');\nFILE_NAME('','',(''),(''),'','','');\nFILE_SCHEMA(('A'),('B'));\n",
+	} {
+		if _, err := Parse([]byte(src)); err == nil {
+			t.Fatalf("malformed header parsed successfully:\n%s", src)
+		}
+	}
+}
+
+func TestParseMalformedDataSectionErrors(t *testing.T) {
+	if _, err := Parse([]byte("ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION((''),'');\nFILE_NAME('','',(''),(''),'','','');\nFILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));\nENDSEC;\nDATA;\n#1=DIRECTION('',(0.,0.,1.));")); err == nil {
+		t.Fatal("unterminated DATA section parsed successfully")
+	}
+	if _, err := Parse([]byte(wrapData("#1=();"))); err == nil {
+		t.Fatal("empty complex instance parsed successfully")
+	}
+	if _, err := Parse([]byte(wrapData("DIRECTION('',(0.,0.,1.));"))); err == nil {
+		t.Fatal("DATA instance without #id parsed successfully")
 	}
 }
 

@@ -54,3 +54,29 @@ func TestCutCountersinkThrough(t *testing.T) {
 		t.Errorf("removed volume = %g, want a hair under %g (frustum + bore)", removed, want)
 	}
 }
+
+func TestCutCountersinkRejectsInvalidInputs(t *testing.T) {
+	slab := box(0, 0, 0, 10, 10, 6)
+	for _, tc := range []struct {
+		name       string
+		axis       math.Vector3
+		boreRadius float64
+		boreLen    float64
+		sinkRadius float64
+		half       float64
+		through    bool
+	}{
+		{"bad radii", math.V3(0, 0, -1), 2, 1, 1, stdmath.Pi / 4, false},
+		{"bad half low", math.V3(0, 0, -1), 1, 1, 2, 0, false},
+		{"bad half high", math.V3(0, 0, -1), 1, 1, 2, stdmath.Pi / 2, false},
+		{"zero axis", math.V3(0, 0, 0), 1, 1, 2, stdmath.Pi / 4, false},
+		{"no entry face", math.V3(0, 0, 1), 1, 1, 2, stdmath.Pi / 4, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := brep.CutCountersinkHole(slab, math.P3(5, 5, 6), tc.axis, tc.boreRadius, tc.boreLen, tc.sinkRadius, tc.half, tc.through)
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+		})
+	}
+}

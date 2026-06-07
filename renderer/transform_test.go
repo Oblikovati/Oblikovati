@@ -63,7 +63,7 @@ func TestNearerIsCloserInDepth(t *testing.T) {
 	vp := ViewProjection(testCamera(), 0.1, 1000)
 	near, _ := project(vp, math.P3(0, 0, 5)) // closer to the eye at z=10
 	far, _ := project(vp, math.P3(0, 0, -5)) // farther away
-	if !(near[2] < far[2]) {
+	if near[2] >= far[2] {
 		t.Errorf("depth not monotonic: near=%g should be < far=%g", near[2], far[2])
 	}
 }
@@ -77,7 +77,7 @@ func TestAspectRatioScalesX(t *testing.T) {
 	wx, _ := project(ViewProjection(wide, 0.1, 1000), p)
 	tx, _ := project(ViewProjection(tall, 0.1, 1000), p)
 	// Same world X spans less NDC on a wider viewport.
-	if !(wx[0] < tx[0]) {
+	if wx[0] >= tx[0] {
 		t.Errorf("aspect not applied: wide NDC x=%g should be < tall NDC x=%g", wx[0], tx[0])
 	}
 }

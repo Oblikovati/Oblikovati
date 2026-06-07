@@ -3,9 +3,14 @@
 package topomap
 
 import (
+	stdmath "math"
 	"testing"
 
+	"oblikovati/kernel/exchange/step/geommap"
 	"oblikovati/kernel/exchange/step/part21"
+	"oblikovati/kernel/geom"
+	"oblikovati/kernel/topo"
+	"oblikovati/math"
 )
 
 // tetraShell is a minimal CLOSED_SHELL: a tetrahedron (4 triangular planar faces,
@@ -108,5 +113,187 @@ func TestSolidFromShellSharesEdges(t *testing.T) {
 	}
 	if got := len(body.Edges()); got != 6 {
 		t.Errorf("tetra has %d shared edges, want 6", got)
+	}
+}
+
+func TestTopologyMalformedRecordsError(t *testing.T) {
+	g := graphOfTopomap(t, "#1=CARTESIAN_POINT('',(0.,0.,0.));\n"+
+		"#2=DIRECTION('',(0.,0.,1.));\n"+
+		"#3=VERTEX_POINT('',#1);\n"+
+		"#4=EDGE_CURVE('',#3,#3,#2,.T.);\n"+
+		"#5=CLOSED_SHELL('');\n"+
+		"#6=EDGE_LOOP('',());\n"+
+		"#7=FACE_OUTER_BOUND('',#6,.T.);")
+	if ent, _ := g.Lookup(1); func() bool { _, err := shellFaceRefs(ent); return err == nil }() {
+		t.Fatal("shellFaceRefs accepted a non-shell entity")
+	}
+	if ent, _ := g.Lookup(5); func() bool { _, err := shellFaceRefs(ent); return err == nil }() {
+		t.Fatal("shellFaceRefs accepted a shell missing a face list")
+	}
+	a := newAssembler(g, 1.0, "test", false)
+	if _, err := a.buildVertex(1); err == nil {
+		t.Fatal("buildVertex accepted a CARTESIAN_POINT as VERTEX_POINT")
+	}
+	if _, err := a.readEdgeCurve(3); err == nil {
+		t.Fatal("readEdgeCurve accepted a VERTEX_POINT")
+	}
+	if _, err := parseEdgeCurve(&part21.RawEntity{ID: 9, Keyword: "EDGE_CURVE", Params: nil}); err == nil {
+		t.Fatal("parseEdgeCurve accepted too few params")
+	}
+	if _, err := a.buildBound(6); err == nil {
+		t.Fatal("buildBound accepted EDGE_LOOP as FACE_BOUND")
+	}
+	if _, err := a.buildLoopUses(7, false); err == nil {
+		t.Fatal("buildLoopUses accepted FACE_OUTER_BOUND as EDGE_LOOP")
+	}
+	if _, err := refParam(nil, 0); err == nil {
+		t.Fatal("refParam accepted missing parameter")
+	}
+}
+
+func TestCircleEdgeTrimsArcAndFullCircle(t *testing.T) {
+	circle := geommap.CircleParams{
+		Center: math.P3(0, 0, 0),
+		Normal: math.V3(0, 0, 1),
+		RefDir: math.V3(1, 0, 0),
+		Radius: 2,
+	}
+	start := math.P3(2, 0, 0)
+	end := math.P3(0, 2, 0)
+	curve, err := circleEdge(circle, start, end, true)
+	if err != nil {
+		t.Fatalf("circleEdge arc: %v", err)
+	}
+	arc, ok := curve.(geom.Arc3d)
+	if !ok {
+		t.Fatalf("circleEdge returned %T, want Arc3d", curve)
+	}
+	if stdmath.Abs(arc.SweepAngle-stdmath.Pi/2) > 1e-12 {
+		t.Fatalf("CCW sweep = %g, want pi/2", arc.SweepAngle)
+	}
+	curve, err = circleEdge(circle, start, end, false)
+	if err != nil {
+		t.Fatalf("circleEdge reversed arc: %v", err)
+	}
+	arc, ok = curve.(geom.Arc3d)
+	if !ok {
+		t.Fatalf("reversed circleEdge returned %T, want Arc3d", curve)
+	}
+	if stdmath.Abs(arc.SweepAngle+3*stdmath.Pi/2) > 1e-12 {
+		t.Fatalf("CW sweep = %g, want -3*pi/2", arc.SweepAngle)
+	}
+	curve, err = circleEdge(circle, start, start, true)
+	if err != nil {
+		t.Fatalf("circleEdge full circle: %v", err)
+	}
+	if _, ok := curve.(geom.Circle); !ok {
+		t.Fatalf("full circle returned %T, want Circle", curve)
+	}
+}
+
+func TestReverseUsesFlipsOrder(t *testing.T) {
+	uses := []topo.Use{{Reversed: false}, {Reversed: true}}
+	reverseUses(uses)
+	if !uses[0].Reversed || uses[1].Reversed {
+		t.Fatalf("reverseUses order = %+v", uses)
+	}
+}
+
+func TestUnsupportedSurfaceWarnsAndSkipsFace(t *testing.T) {
+	g := graphOfTopomap(t, "#1=SURFACE_OF_REVOLUTION('',*,*);\n"+
+		"#2=ADVANCED_FACE('',(),#1,.T.);\n"+
+		"#3=OPEN_SHELL('',(#2));")
+	body, warns, err := SolidFromShell(g, 3, false, 1.0, "test")
+	if err != nil {
+		t.Fatalf("SolidFromShell unsupported surface: %v", err)
+	}
+	if len(warns) != 1 || warns[0] != "skipped face #2: geommap: unsupported surface SURFACE_OF_REVOLUTION (#1)" {
+		t.Fatalf("warnings = %v", warns)
+	}
+	if got := len(body.Faces()); got != 0 {
+		t.Fatalf("skipped body faces = %d, want 0", got)
+	}
+}
+
+func graphOfTopomap(t *testing.T, stmts string) *part21.EntityGraph {
+	t.Helper()
+	src := "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION((''),'');\n" +
+		"FILE_NAME('','',(''),(''),'','','');\nFILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));\n" +
+		"ENDSEC;\nDATA;\n" + stmts + "\nENDSEC;\nEND-ISO-10303-21;\n"
+	f, err := part21.Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	return f.Graph
+}
+
+func TestBodyToStepEmitsSharedTopology(t *testing.T) {
+	f, err := part21.Parse([]byte(tetraShell))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	body, warns, err := SolidFromShell(f.Graph, 200, true, 1.0, "test")
+	if err != nil {
+		t.Fatalf("SolidFromShell: %v", err)
+	}
+	if len(warns) != 0 {
+		t.Fatalf("unexpected warnings: %v", warns)
+	}
+	w := part21.NewWriter()
+	emit := geommap.NewEmitter(w, 1.0)
+	id, err := BodyToStep(emit, body)
+	if err != nil {
+		t.Fatalf("BodyToStep solid: %v", err)
+	}
+	out, err := part21.Parse(w.Emit(part21.Header{SchemaIdentifiers: []string{"CONFIG_CONTROL_DESIGN"}}))
+	if err != nil {
+		t.Fatalf("parse emitted solid: %v", err)
+	}
+	ent, err := out.Graph.Lookup(id)
+	if err != nil {
+		t.Fatalf("lookup emitted brep: %v", err)
+	}
+	if ent.Keyword != "MANIFOLD_SOLID_BREP" {
+		t.Fatalf("emitted root = %s, want MANIFOLD_SOLID_BREP", ent.Keyword)
+	}
+	if got := len(out.Graph.EntitiesOfType("EDGE_CURVE")); got != 6 {
+		t.Fatalf("EDGE_CURVE count = %d, want shared tetra edges 6", got)
+	}
+	if got := len(out.Graph.EntitiesOfType("ADVANCED_FACE")); got != 4 {
+		t.Fatalf("ADVANCED_FACE count = %d, want 4", got)
+	}
+}
+
+func TestBodyToStepEmitsSurfaceModelForOpenBody(t *testing.T) {
+	f, err := part21.Parse([]byte(tetraShell))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	body, warns, err := SolidFromShell(f.Graph, 200, false, 1.0, "test")
+	if err != nil {
+		t.Fatalf("SolidFromShell surface: %v", err)
+	}
+	if len(warns) != 0 {
+		t.Fatalf("unexpected warnings: %v", warns)
+	}
+	w := part21.NewWriter()
+	emit := geommap.NewEmitter(w, 1.0)
+	id, err := BodyToStep(emit, body)
+	if err != nil {
+		t.Fatalf("BodyToStep surface: %v", err)
+	}
+	out, err := part21.Parse(w.Emit(part21.Header{SchemaIdentifiers: []string{"CONFIG_CONTROL_DESIGN"}}))
+	if err != nil {
+		t.Fatalf("parse emitted surface: %v", err)
+	}
+	ent, err := out.Graph.Lookup(id)
+	if err != nil {
+		t.Fatalf("lookup emitted surface root: %v", err)
+	}
+	if ent.Keyword != "SHELL_BASED_SURFACE_MODEL" {
+		t.Fatalf("emitted root = %s, want SHELL_BASED_SURFACE_MODEL", ent.Keyword)
+	}
+	if got := len(out.Graph.EntitiesOfType("OPEN_SHELL")); got != 1 {
+		t.Fatalf("OPEN_SHELL count = %d, want 1", got)
 	}
 }

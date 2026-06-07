@@ -22,6 +22,22 @@ func TestDetectProtocols(t *testing.T) {
 	}
 }
 
+func TestApProtocolString(t *testing.T) {
+	for _, tc := range []struct {
+		ap   ApProtocol
+		want string
+	}{
+		{AP203, "AP203"},
+		{AP214, "AP214"},
+		{AP242, "AP242"},
+		{ApUnknown, "unknown"},
+	} {
+		if got := tc.ap.String(); got != tc.want {
+			t.Fatalf("%d.String() = %q, want %q", tc.ap, got, tc.want)
+		}
+	}
+}
+
 func TestSchemaIdentifierRoundTrips(t *testing.T) {
 	for _, ap := range []ApProtocol{AP203, AP214, AP242} {
 		id, err := SchemaIdentifier(ap)

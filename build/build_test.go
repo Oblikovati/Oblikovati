@@ -28,5 +28,5 @@ func TestVersionMetadataHasDefaults(t *testing.T) {
 // Referencing the mode flags keeps them part of the compiled API surface and
 // documents that they are build-time constants, not runtime configuration.
 func TestModeFlagsAreCompileTimeConstants(_ *testing.T) {
-	const _ = Debug && Profile && Editor || true
+	const _ = Debug && Profile && Editor
 }
