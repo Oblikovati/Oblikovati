@@ -352,7 +352,7 @@ extern "C" void obk_ig_dock_default_layout(unsigned int dockId, const char* ribb
     ImGui::DockBuilderAddNode(dockId, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodeSize(dockId, ImGui::GetMainViewport()->Size);
     ImGuiID center = dockId;
-    ImGuiID top = ImGui::DockBuilderSplitNode(center, ImGuiDir_Up, 0.16f, NULL, &center);
+    ImGuiID top = ImGui::DockBuilderSplitNode(center, ImGuiDir_Up, 0.18f, NULL, &center);
     ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.22f, NULL, &center);
     ImGuiID bottom = ImGui::DockBuilderSplitNode(center, ImGuiDir_Down, 0.07f, NULL, &center);
     ImGui::DockBuilderDockWindow(ribbon, top);

@@ -27,6 +27,33 @@ func TestRasterizeProducesTintableMask(t *testing.T) {
 	}
 }
 
+// TestRasterizeNormalizesGlyphSize checks that glyphs with very different internal
+// margins (a tall block, a wide stadium, a thin centreline, a small offset face) all
+// rasterize to the same visual size: each one's longest drawn side fills ~contentFraction
+// of the output. This is the regression guard for "some icons are too small".
+func TestRasterizeNormalizesGlyphSize(t *testing.T) {
+	px := 64
+	want := int(contentFraction * float64(px))
+	for _, key := range []string{"extrude", "slot", "centerline", "move-face", "combine"} {
+		svg, ok := SVG(key)
+		if !ok {
+			t.Fatalf("bundled icon %q missing", key)
+		}
+		img, err := Rasterize(svg, px)
+		if err != nil {
+			t.Fatalf("Rasterize(%q): %v", key, err)
+		}
+		b := alphaBounds(img)
+		longest := b.Dx()
+		if b.Dy() > longest {
+			longest = b.Dy()
+		}
+		if diff := longest - want; diff < -5 || diff > 5 {
+			t.Errorf("%q glyph longest side = %d px, want ~%d (normalized to contentFraction)", key, longest, want)
+		}
+	}
+}
+
 func TestRasterizeRejectsNonPositivePx(t *testing.T) {
 	if _, err := Rasterize([]byte(tinySVG), 0); err == nil {
 		t.Error("Rasterize(px=0) returned nil error, want failure")

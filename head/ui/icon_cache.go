@@ -14,10 +14,11 @@ import (
 // all of them when the theme changes (ADR-0021).
 
 // Rasterization sizes per button style. Small icons fill the dense sketch tool grids;
-// large icons head a panel (Inventor's two button sizes).
+// large icons head a panel (Inventor's two button sizes). Glyphs are size-normalized at
+// raster time (see icon.Rasterize), so these are the on-screen icon sizes directly.
 const (
-	smallIconPx = 18
-	largeIconPx = 32
+	smallIconPx = 30
+	largeIconPx = 40
 )
 
 // icons is the chrome's icon texture cache, lazily created from the window on the first
