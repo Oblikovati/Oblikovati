@@ -11,8 +11,9 @@ import (
 )
 
 // bsplineSurfaceFromStep maps B_SPLINE_SURFACE_WITH_KNOTS into a geom.BSplineSurface.
-// Parameters: u_degree, v_degree, control_points_list, surface_form, u_closed,
-// v_closed, self_intersect, u_multiplicities, v_multiplicities, u_knots, v_knots.
+// Parameters (0-indexed, including the leading entity name): 0 name, 1 u_degree,
+// 2 v_degree, 3 control_points_list, 4 surface_form, 5 u_closed, 6 v_closed,
+// 7 self_intersect, 8 u_multiplicities, 9 v_multiplicities, 10 u_knots, 11 v_knots.
 // Knots are expanded from the (knot, multiplicity) compact form the kernel does not
 // use. Weights are unit (non-rational); RATIONAL surfaces are deferred (warned by
 // the caller via the unsupported path until the rational complex form is handled).
@@ -21,7 +22,7 @@ func bsplineSurfaceFromStep(g *part21.EntityGraph, ent *part21.RawEntity, scale 
 	if err != nil {
 		return nil, err
 	}
-	ctrl, err := controlNet(g, ent.Params, 2, scale)
+	ctrl, err := controlNet(g, ent.Params, 3, scale)
 	if err != nil {
 		return nil, err
 	}
@@ -33,24 +34,24 @@ func bsplineSurfaceFromStep(g *part21.EntityGraph, ent *part21.RawEntity, scale 
 	return geom.NewBSplineSurface(uDeg, vDeg, ctrl, weights, uKnots, vKnots)
 }
 
-// degreePair reads the u/v degrees (parameters 0 and 1).
+// degreePair reads the u/v degrees (parameters 1 and 2, after the entity name).
 func degreePair(params []part21.Value) (uDeg, vDeg int, err error) {
-	if uDeg, err = intParam(params, 0); err != nil {
+	if uDeg, err = intParam(params, 1); err != nil {
 		return 0, 0, fmt.Errorf("geommap: B_SPLINE_SURFACE u_degree: %w", err)
 	}
-	if vDeg, err = intParam(params, 1); err != nil {
+	if vDeg, err = intParam(params, 2); err != nil {
 		return 0, 0, fmt.Errorf("geommap: B_SPLINE_SURFACE v_degree: %w", err)
 	}
 	return uDeg, vDeg, nil
 }
 
-// surfaceKnots reads and expands the u/v knot vectors (multiplicities at 7/8,
-// distinct knots at 9/10).
+// surfaceKnots reads and expands the u/v knot vectors (multiplicities at 8/9,
+// distinct knots at 10/11 — after the leading entity name).
 func surfaceKnots(params []part21.Value, _, _ int) (uKnots, vKnots []float64, err error) {
-	if uKnots, err = expandedKnots(params, 7, 9); err != nil {
+	if uKnots, err = expandedKnots(params, 8, 10); err != nil {
 		return nil, nil, fmt.Errorf("geommap: B_SPLINE_SURFACE u knots: %w", err)
 	}
-	if vKnots, err = expandedKnots(params, 8, 10); err != nil {
+	if vKnots, err = expandedKnots(params, 9, 11); err != nil {
 		return nil, nil, fmt.Errorf("geommap: B_SPLINE_SURFACE v knots: %w", err)
 	}
 	return uKnots, vKnots, nil

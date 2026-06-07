@@ -30,6 +30,9 @@ func Surface(g *part21.EntityGraph, id int, scale float64) (geom.Surface, error)
 	if err != nil {
 		return nil, err
 	}
+	if len(ent.Components) > 0 { // complex instance, e.g. a rational (weighted) B-spline
+		return rationalBSplineSurface(g, ent, scale)
+	}
 	switch ent.Keyword {
 	case "PLANE":
 		return planeFromStep(g, ent, scale)

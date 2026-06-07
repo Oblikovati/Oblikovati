@@ -39,7 +39,7 @@ func TestCurveBSplineWithKnots(t *testing.T) {
 	g := graphOf(t, "#1=CARTESIAN_POINT('',(0.,0.,0.));\n"+
 		"#2=CARTESIAN_POINT('',(1.,0.,0.));\n"+
 		"#3=CARTESIAN_POINT('',(1.,1.,0.));\n"+
-		"#4=B_SPLINE_CURVE_WITH_KNOTS(2,(#1,#2,#3),.UNSPECIFIED.,.F.,.F.,(3,3),(0.,1.),.UNSPECIFIED.);")
+		"#4=B_SPLINE_CURVE_WITH_KNOTS('NONE',2,(#1,#2,#3),.UNSPECIFIED.,.F.,.F.,(3,3),(0.,1.),.UNSPECIFIED.);")
 	mc, err := Curve(g, 4, 5.0)
 	if err != nil {
 		t.Fatalf("Curve B_SPLINE_CURVE_WITH_KNOTS: %v", err)
@@ -59,7 +59,7 @@ func TestCurveBSplineRejectsMalformedKnots(t *testing.T) {
 	g := graphOf(t, "#1=CARTESIAN_POINT('',(0.,0.,0.));\n"+
 		"#2=CARTESIAN_POINT('',(1.,0.,0.));\n"+
 		"#3=CARTESIAN_POINT('',(1.,1.,0.));\n"+
-		"#4=B_SPLINE_CURVE_WITH_KNOTS(2,(#1,#2,#3),.UNSPECIFIED.,.F.,.F.,(3),(0.,1.),.UNSPECIFIED.);")
+		"#4=B_SPLINE_CURVE_WITH_KNOTS('NONE',2,(#1,#2,#3),.UNSPECIFIED.,.F.,.F.,(3),(0.,1.),.UNSPECIFIED.);")
 	if _, err := Curve(g, 4, 1.0); err == nil {
 		t.Fatal("B_SPLINE_CURVE_WITH_KNOTS accepted mismatched knot multiplicities")
 	}

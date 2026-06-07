@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"oblikovati/api/types"
 	"oblikovati/app"
@@ -204,30 +205,57 @@ func drawExportResolution() {
 	}
 }
 
-// applyFileAction performs the confirmed file operation. A successful Save As becomes
-// the document's path, so a later File ▸ Save writes straight through. Import/Export route a
-// foreign format (STL/OBJ/3MF/STEP) by extension; failures go to stderr (no message box yet).
+// applyFileAction performs the confirmed file operation and reports the outcome — success
+// or the underlying (kernel) error — in the status bar so the user always knows what
+// happened, instead of an import/export silently doing nothing. A successful Save As
+// becomes the document's path, so a later File ▸ Save writes straight through.
 func applyFileAction(s *app.Session, act fileAction) {
+	name := filepath.Base(act.Path)
 	switch act.Kind {
 	case dialogOpen:
 		if _, err := s.OpenDocument(act.Path); err != nil {
-			fmt.Fprintf(os.Stderr, "open %q: %v\n", act.Path, err)
+			fileNotice(s, "Open failed: %v", err)
+		} else {
+			fileNotice(s, "Opened %s", name)
 		}
 	case dialogSaveAs:
 		if err := s.SaveActiveDocumentAs(act.Path); err != nil {
-			fmt.Fprintf(os.Stderr, "save as %q: %v\n", act.Path, err)
+			fileNotice(s, "Save failed: %v", err)
+		} else {
+			fileNotice(s, "Saved %s", name)
 		}
 	case dialogLoadHDR:
 		s.LoadEnvironmentFile(act.Path) // the decode happens lazily on the next viewport frame
 	case dialogImport:
-		if _, err := s.ImportFile(act.Path); err != nil {
-			fmt.Fprintf(os.Stderr, "import %q: %v\n", act.Path, err)
+		if res, err := s.ImportFile(act.Path); err != nil {
+			fileNotice(s, "Import failed: %v", err)
+		} else {
+			fileNotice(s, "Imported %s (%d %s)", name, res.BodyCount, plural(res.BodyCount, "body", "bodies"))
 		}
 	case dialogExport:
 		if _, err := s.ExportFile(act.Path, types.MeshResolution(act.Resolution)); err != nil {
-			fmt.Fprintf(os.Stderr, "export %q: %v\n", act.Path, err)
+			fileNotice(s, "Export failed: %v", err)
+		} else {
+			fileNotice(s, "Exported %s", name)
 		}
 	}
+}
+
+// fileNotice shows a file-operation outcome in the status bar (s.Notice) and mirrors it to
+// stderr for the logs. The status bar is the user-facing channel — a kernel import error
+// (e.g. an unsupported STEP entity) now surfaces here rather than vanishing to stderr.
+func fileNotice(s *app.Session, format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	s.SetNotice(msg)
+	fmt.Fprintln(os.Stderr, msg)
+}
+
+// plural picks the singular or plural word for n.
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
 }
 
 // saveActive saves the active document in place, falling back to the Save As modal when
@@ -239,6 +267,8 @@ func saveActive(s *app.Session) {
 		return
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "save: %v\n", err)
+		fileNotice(s, "Save failed: %v", err)
+		return
 	}
+	fileNotice(s, "Saved")
 }

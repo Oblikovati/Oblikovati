@@ -59,6 +59,9 @@ func Curve(g *part21.EntityGraph, id int, scale float64) (MappedCurve, error) {
 	if err != nil {
 		return MappedCurve{}, err
 	}
+	if len(ent.Components) > 0 { // complex instance, e.g. a rational (weighted) B-spline
+		return rationalBSplineCurve(g, ent, scale)
+	}
 	switch ent.Keyword {
 	case "LINE":
 		return MappedCurve{Kind: CurveLine}, nil
@@ -91,18 +94,19 @@ func circleFromStep(g *part21.EntityGraph, ent *part21.RawEntity, scale float64)
 }
 
 // bsplineCurveFromStep maps B_SPLINE_CURVE_WITH_KNOTS into a bounded geom.BSplineCurve.
-// Parameters: degree, control_points_list, curve_form, closed, self_intersect,
-// knot_multiplicities, knots. Non-rational (unit weights); RATIONAL is deferred.
+// Parameters (0-indexed, including the leading entity name): 0 name, 1 degree,
+// 2 control_points_list, 3 curve_form, 4 closed, 5 self_intersect, 6 knot_multiplicities,
+// 7 knots. Non-rational (unit weights); RATIONAL is deferred.
 func bsplineCurveFromStep(g *part21.EntityGraph, ent *part21.RawEntity, scale float64) (MappedCurve, error) {
-	degree, err := intParam(ent.Params, 0)
+	degree, err := intParam(ent.Params, 1)
 	if err != nil {
 		return MappedCurve{}, fmt.Errorf("geommap: B_SPLINE_CURVE degree: %w", err)
 	}
-	ctrl, err := pointRefList(g, ent.Params, 1, scale)
+	ctrl, err := pointRefList(g, ent.Params, 2, scale)
 	if err != nil {
 		return MappedCurve{}, err
 	}
-	knots, err := expandedKnots(ent.Params, 5, 6)
+	knots, err := expandedKnots(ent.Params, 6, 7)
 	if err != nil {
 		return MappedCurve{}, fmt.Errorf("geommap: B_SPLINE_CURVE knots: %w", err)
 	}
