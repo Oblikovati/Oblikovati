@@ -27,6 +27,10 @@ type Prefs struct {
 	// CubeCorner is the viewport corner the cube anchors to (0=top-right, 1=top-left,
 	// 2=bottom-right, 3=bottom-left).
 	CubeCorner int `yaml:"cubeCorner,omitempty"`
+	// CubeHidden hides the ViewCube entirely when true (the View-tab toggle; default shown).
+	CubeHidden bool `yaml:"cubeHidden,omitempty"`
+	// LockToSelection makes the ViewCube orbit around the current selection when true.
+	LockToSelection bool `yaml:"lockToSelection,omitempty"`
 }
 
 // Store loads and saves the global preferences.

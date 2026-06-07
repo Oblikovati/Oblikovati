@@ -39,3 +39,23 @@ func TestShowCompassNoStoreIsInSession(t *testing.T) {
 		t.Error("in-session toggle should still apply")
 	}
 }
+
+// TestViewCubeTogglesPersist confirms the ViewCube show/hide and Lock-to-Selection toggles
+// are now global preferences that survive across sessions.
+func TestViewCubeTogglesPersist(t *testing.T) {
+	store := userprefs.NewMemStore()
+
+	s1 := NewSession()
+	s1.SetUserPrefsStore(store)
+	s1.SetShowViewCube(false)
+	s1.SetLockToSelection(true)
+
+	s2 := NewSession()
+	s2.SetUserPrefsStore(store)
+	if s2.ShowViewCube() {
+		t.Error("ViewCube show/hide did not persist")
+	}
+	if !s2.LockToSelection() {
+		t.Error("Lock to Selection did not persist")
+	}
+}

@@ -115,17 +115,21 @@ func viewHomeOf(f *viewstate.HomeFrame) *doc.ViewHome {
 }
 
 // LockToSelection reports whether the ViewCube orbits around the current selection.
-func (s *Session) LockToSelection() bool { return s.lockToSelection }
+func (s *Session) LockToSelection() bool { return s.prefs.LockToSelection }
 
 // SetLockToSelection toggles whether ViewCube reorientations pivot around the selected
-// objects' center (Inventor's "Lock to Current Selection") rather than the view target.
-func (s *Session) SetLockToSelection(v bool) { s.lockToSelection = v }
+// objects' center (Inventor's "Lock to Current Selection") rather than the view target,
+// persisted as a global user preference.
+func (s *Session) SetLockToSelection(v bool) {
+	s.prefs.LockToSelection = v
+	s.savePrefs()
+}
 
 // ViewCubePivot is the point the ViewCube snaps orbit around: the selection's bounding-box
 // center when Lock to Current Selection is on and something pickable is selected, otherwise
 // the active view's current target.
 func (s *Session) ViewCubePivot() math.Point3 {
-	if s.lockToSelection {
+	if s.prefs.LockToSelection {
 		if c, ok := s.selectionCenter(); ok {
 			return c
 		}
@@ -488,10 +492,14 @@ func (s *Session) SetViewCameraAt(i int, c scene.Camera) {
 }
 
 // ShowViewCube reports whether the navigation cube is shown in viewports (default true).
-func (s *Session) ShowViewCube() bool { return !s.viewCubeHidden }
+func (s *Session) ShowViewCube() bool { return !s.prefs.CubeHidden }
 
-// SetShowViewCube shows or hides the navigation cube (View-tab toggle).
-func (s *Session) SetShowViewCube(show bool) { s.viewCubeHidden = !show }
+// SetShowViewCube shows or hides the navigation cube (View-tab toggle), persisted as a
+// global user preference.
+func (s *Session) SetShowViewCube(show bool) {
+	s.prefs.CubeHidden = !show
+	s.savePrefs()
+}
 
 // SetUserPrefsStore installs the global-preferences store and loads its current values
 // into the session, so a preference like compass visibility survives across sessions. The
