@@ -52,6 +52,8 @@ type CommandDefinition struct {
 	environment Environment // ribbon environment; BaseEnvironment ⇒ always shown
 	enabled     func(*Session) bool
 	active      func(*Session) bool // for a ComboControl option: is this the current selection?
+	forcedActive    bool            // runtime active flag (commands.setState); see hasForcedActive
+	hasForcedActive bool            // true ⇒ forcedActive overrides the active predicate
 	run         func(*Session) error
 	variants    []*CommandDefinition // split-button dropdown entries (Inventor's variant flyout)
 	isVariant   bool                 // true ⇒ reachable only via a head command's dropdown, never its own panel button
@@ -137,10 +139,25 @@ func (c *CommandDefinition) WithActive(p func(*Session) bool) *CommandDefinition
 	return c
 }
 
-// IsActive reports whether this command is its combo group's current selection.
+// IsActive reports whether this command renders as active/selected: a runtime flag set via
+// SetActiveState (an add-in's commands.setState) wins, else the WithActive predicate.
 func (c *CommandDefinition) IsActive(s *Session) bool {
+	if c.hasForcedActive {
+		return c.forcedActive
+	}
 	return c.active != nil && c.active(s)
 }
+
+// SetActiveState sets the runtime active flag (overriding any WithActive predicate) so an
+// add-in can toggle a stateful button's highlighted look via commands.setState.
+func (c *CommandDefinition) SetActiveState(active bool) {
+	c.forcedActive = active
+	c.hasForcedActive = true
+}
+
+// SetDisplayName relabels the command at runtime (commands.setState), e.g. a toggle button
+// switching between "Presenter" and "Presenting".
+func (c *CommandDefinition) SetDisplayName(name string) { c.displayName = name }
 
 // Ribbons returns the ribbons the command appears on, resolving the default (the Part ribbon)
 // so a caller always sees the effective placement. The slice is a copy.

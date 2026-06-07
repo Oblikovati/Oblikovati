@@ -31,6 +31,7 @@ const (
 type RibbonButton struct {
 	Command  *CommandDefinition
 	Enabled  bool
+	Active   bool // renders highlighted (accent) — a stateful toggle that is currently on
 	Variants []RibbonVariant
 }
 
@@ -95,7 +96,7 @@ func BuildRibbon(s *Session) Ribbon {
 			continue
 		}
 		if c.appearsOnRibbon(key) && environmentShows(c.environment, env) {
-			b.add(RibbonButton{Command: c, Enabled: c.IsEnabled(s), Variants: resolveVariants(c, s)})
+			b.add(RibbonButton{Command: c, Enabled: c.IsEnabled(s), Active: c.IsActive(s), Variants: resolveVariants(c, s)})
 		}
 	}
 	finalizeSelectors(b.tabs, s)

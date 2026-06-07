@@ -29,6 +29,7 @@ var (
 	planeFillColor                                         [4]float32 // translucent plane fill (alpha = opacity)
 	selectionHighlight                                     [4]float32 // picked-body highlight
 	iconTint                                               [4]float32 // ribbon glyph tint
+	accentColor                                            [4]float32 // active/toggled ribbon button
 	windowClearColor                                       [3]float32 // swapchain (chrome) clear
 )
 
@@ -65,6 +66,7 @@ func refreshThemeColors(t contract.Theme) {
 	refreshPlaneThemeColors(arr)
 	selectionHighlight = arr(types.TokenSelectionHighlight)
 	iconTint = arr(types.TokenIconTint)
+	accentColor = arr(types.TokenChromeAccent)
 	c := t.Color(types.TokenChromeWindowBg)
 	windowClearColor = [3]float32{c.R, c.G, c.B}
 }

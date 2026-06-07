@@ -109,3 +109,31 @@ func TestCommandsListReportsRibbonAndEnvironment(t *testing.T) {
 		t.Errorf("Sketch.Line = %+v, want sketch environment", line)
 	}
 }
+
+// TestSetCommandState checks an add-in can toggle its command's active flag and relabel it
+// (the meeting add-in's Presenter/Follow toggles) via commands.setState.
+func TestSetCommandState(t *testing.T) {
+	s := app.NewSession()
+	r := New(opregistry.Default())
+	call(t, r, s, "commands.create",
+		`{"id":"acme.toggle","displayName":"Toggle","ribbon":"Part","tab":"Add-Ins","category":"Acme"}`, nil)
+	call(t, r, s, "commands.setState", `{"id":"acme.toggle","active":true,"displayName":"On"}`, nil)
+
+	cmd, ok := s.Commands().ByID("acme.toggle")
+	if !ok {
+		t.Fatal("acme.toggle should exist")
+	}
+	if !cmd.IsActive(s) {
+		t.Error("setState active=true should make IsActive true")
+	}
+	if cmd.DisplayName() != "On" {
+		t.Errorf("displayName = %q, want On", cmd.DisplayName())
+	}
+	call(t, r, s, "commands.setState", `{"id":"acme.toggle","active":false}`, nil)
+	if cmd.IsActive(s) {
+		t.Error("setState active=false should clear IsActive")
+	}
+	if cmd.DisplayName() != "On" {
+		t.Errorf("empty displayName should keep the label, got %q", cmd.DisplayName())
+	}
+}

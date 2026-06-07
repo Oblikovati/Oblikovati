@@ -192,6 +192,12 @@ func drawVariantDropdown(btn app.RibbonButton) string {
 // when its glyph texture is unavailable (missing asset or upload failure), so a missing
 // icon never hides the command.
 func drawButtonControl(btn app.RibbonButton) bool {
+	if btn.Active { // a toggled-on stateful control renders in the accent color
+		native.PushStyleColor("Button", accentColor)
+		native.PushStyleColor("ButtonHovered", accentColor)
+		native.PushStyleColor("ButtonActive", accentColor)
+		defer native.PopStyleColor(3)
+	}
 	if px, ok := iconSizeFor(btn.Command.ButtonStyle()); ok {
 		if tex, ok := icons.texture(btn.Command.Icon(), px); ok {
 			return drawIconButton(btn, tex, float32(px))

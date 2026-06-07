@@ -144,6 +144,15 @@ void obk_ig_set_style_color(const char* name, float r, float g, float b, float a
     ImGui::GetStyle().Colors[idx] = ImVec4(r, g, b, a);
 }
 
+// Scoped color override: pushes onto ImGui's style stack until obk_ig_pop_style_color.
+void obk_ig_push_style_color(const char* name, float r, float g, float b, float a) {
+    int idx = obk_col_index(name);
+    if (idx < 0) return;
+    ImGui::PushStyleColor((ImGuiCol)idx, ImVec4(r, g, b, a));
+}
+
+void obk_ig_pop_style_color(int n) { ImGui::PopStyleColor(n); }
+
 int  obk_ig_color_edit4(const char* label, float* rgba) {
     return ImGui::ColorEdit4(label, rgba) ? 1 : 0;
 }

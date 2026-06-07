@@ -96,6 +96,8 @@ int  obk_ig_is_item_deactivated_after_edit(void);
 // color_edit4 is the swatch+picker editing a 4-float RGBA in place (1 on change).
 // begin_combo/end_combo bracket the theme selector dropdown.
 void obk_ig_set_style_color(const char* name, float r, float g, float b, float a);
+void obk_ig_push_style_color(const char* name, float r, float g, float b, float a);
+void obk_ig_pop_style_color(int n);
 int  obk_ig_color_edit4(const char* label, float* rgba);
 void obk_ig_draw_line(float x1, float y1, float x2, float y2, float r, float g, float b, float a, float thickness);
 void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
@@ -257,6 +259,18 @@ func SetStyleColor(name string, c [4]float32) {
 	defer free()
 	C.obk_ig_set_style_color(cn, C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
 }
+
+// PushStyleColor overrides one Dear ImGui style color (by ImGui name, e.g. "Button") for
+// the widgets drawn until the matching PopStyleColor — so a single control can render in,
+// say, the accent color without disturbing the global theme. Pair every push with a pop.
+func PushStyleColor(name string, c [4]float32) {
+	cn, free := cstr(name)
+	defer free()
+	C.obk_ig_push_style_color(cn, C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
+}
+
+// PopStyleColor undoes the last n PushStyleColor calls.
+func PopStyleColor(n int) { C.obk_ig_pop_style_color(C.int(n)) }
 
 // ColorEdit4 draws a color swatch that opens a picker, editing the RGBA in place and
 // returning true on the frame the color changed — the per-token control in the
