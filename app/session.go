@@ -66,6 +66,11 @@ type Session struct {
 // the status bar so a failed OK is not silent.
 func (s *Session) Notice() string { return s.notice }
 
+// SetNotice puts a transient user-facing message in the status bar — used by an add-in to
+// surface state the user can't otherwise see (e.g. a collaboration add-in's connection
+// status). Cleared on the next user input, like any notice.
+func (s *Session) SetNotice(msg string) { s.notice = msg }
+
 // VisualStyle returns the active scene visual style (default Shaded with Edges).
 func (s *Session) VisualStyle() renderer.VisualStyle { return s.visualStyle }
 
