@@ -104,9 +104,10 @@ func faceInRegion(f Region, h *Region) bool {
 	}
 }
 
-// homeCenter is the home button's screen center, below the cube.
+// homeCenter is the home button's screen center: below and to the LEFT of the cube
+// (bottom-left), so it sits clear of the cube's projected footprint.
 func homeCenter(cx, cy float32) (float32, float32) {
-	return cx, cy + viewCubeRadius + viewCubeHomeGap
+	return cx - viewCubeRadius, cy + viewCubeRadius + viewCubeHomeGap
 }
 
 // drawHomeButton paints a small house glyph (roof triangle + body) at (hx,hy).
