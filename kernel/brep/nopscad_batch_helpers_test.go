@@ -4,11 +4,12 @@ package brep_test
 
 import (
 	stdmath "math"
+	"testing"
+
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/subd"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
-	"testing"
 )
 
 func annularPrism(t *testing.T, outerR, innerR, height float64, feat string) *topo.Body {

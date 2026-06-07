@@ -3,9 +3,10 @@
 package brep_test
 
 import (
-	"oblikovati/math"
 	"runtime"
 	"testing"
+
+	"oblikovati/math"
 )
 
 func TestNopIDCTransitionCSG(t *testing.T) {

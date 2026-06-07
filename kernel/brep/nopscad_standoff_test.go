@@ -3,9 +3,10 @@
 package brep_test
 
 import (
+	"testing"
+
 	"oblikovati/kernel/ops"
 	"oblikovati/math"
-	"testing"
 )
 
 func TestNopStandoffCSG(t *testing.T) {

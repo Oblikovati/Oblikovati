@@ -4,8 +4,9 @@ package brep_test
 
 import (
 	stdmath "math"
-	"oblikovati/math"
 	"testing"
+
+	"oblikovati/math"
 )
 
 // TestNopLightStripClipCSG pins the raw CSG footprint behind light_strip_clip: a

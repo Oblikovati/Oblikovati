@@ -4,8 +4,9 @@ package brep_test
 
 import (
 	stdmath "math"
-	"oblikovati/math"
 	"testing"
+
+	"oblikovati/math"
 )
 
 // TestNopSemiTeardropCSG pins the kernel unit shape for NopSCADlib's semi_teardrop:

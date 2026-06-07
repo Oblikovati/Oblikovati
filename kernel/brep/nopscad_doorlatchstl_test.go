@@ -4,8 +4,9 @@ package brep_test
 
 import (
 	stdmath "math"
-	"oblikovati/math"
 	"testing"
+
+	"oblikovati/math"
 )
 
 func TestNopDoorLatchStlCSG(t *testing.T) {

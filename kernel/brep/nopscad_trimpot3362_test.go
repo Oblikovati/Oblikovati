@@ -3,8 +3,9 @@
 package brep_test
 
 import (
-	"oblikovati/math"
 	"testing"
+
+	"oblikovati/math"
 )
 
 func TestNopTrimpot3362CSG(t *testing.T) {

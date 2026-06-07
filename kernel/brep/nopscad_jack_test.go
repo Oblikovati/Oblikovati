@@ -4,9 +4,10 @@ package brep_test
 
 import (
 	stdmath "math"
-	"oblikovati/math"
 	"runtime"
 	"testing"
+
+	"oblikovati/math"
 )
 
 func TestNopJackCSG(t *testing.T) {

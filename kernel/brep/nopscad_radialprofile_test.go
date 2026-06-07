@@ -3,8 +3,9 @@
 package brep_test
 
 import (
-	"oblikovati/math"
 	"testing"
+
+	"oblikovati/math"
 )
 
 func TestNopRadialProfileCSG(t *testing.T) {

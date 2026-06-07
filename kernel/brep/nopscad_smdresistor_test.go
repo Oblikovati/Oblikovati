@@ -4,9 +4,10 @@ package brep_test
 
 import (
 	stdmath "math"
+	"testing"
+
 	"oblikovati/kernel/ops"
 	"oblikovati/kernel/topo"
-	"testing"
 )
 
 // TestNopSmdResistorCSG pins smd_resistor as the union of its ceramic body and

@@ -3,9 +3,10 @@
 package brep_test
 
 import (
+	"testing"
+
 	"oblikovati/kernel/ops"
 	"oblikovati/math"
-	"testing"
 )
 
 // TestNopSbrRailCSG pins the SBR16S source geometry: the translated concave rail

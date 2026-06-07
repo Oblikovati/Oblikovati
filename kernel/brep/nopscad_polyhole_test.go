@@ -4,8 +4,9 @@ package brep_test
 
 import (
 	stdmath "math"
-	"oblikovati/math"
 	"testing"
+
+	"oblikovati/math"
 )
 
 // TestNopPolyholeCSG pins NopSCADlib's polyhole helper as an eight-sided through

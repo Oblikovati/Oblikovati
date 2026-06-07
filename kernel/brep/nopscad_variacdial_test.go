@@ -4,9 +4,10 @@ package brep_test
 
 import (
 	stdmath "math"
+	"testing"
+
 	"oblikovati/kernel/ops"
 	"oblikovati/math"
-	"testing"
 )
 
 // TestNopVariacDialCSG pins variac_dial as a round dial with one shaft hole and

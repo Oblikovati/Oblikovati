@@ -4,9 +4,10 @@ package brep_test
 
 import (
 	stdmath "math"
+	"testing"
+
 	"oblikovati/kernel/ops"
 	"oblikovati/math"
-	"testing"
 )
 
 // TestNopNutTrapCSG pins the vertical nut_trap construction shape: a tall screw

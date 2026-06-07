@@ -4,9 +4,10 @@ package brep_test
 
 import (
 	stdmath "math"
+	"testing"
+
 	"oblikovati/kernel/ops"
 	"oblikovati/math"
-	"testing"
 )
 
 // TestNopOpengrabTargetCSG pins the target plate as a square slab with six circular
