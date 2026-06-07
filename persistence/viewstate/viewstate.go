@@ -21,11 +21,12 @@ import (
 // ViewFrame is one view's persisted camera: a name and a look-at frame (eye, target, up in
 // model units; fov in radians).
 type ViewFrame struct {
-	Name   string     `yaml:"name,omitempty"`
-	Eye    [3]float64 `yaml:"eye"`
-	Target [3]float64 `yaml:"target"`
-	Up     [3]float64 `yaml:"up"`
-	FOV    float64    `yaml:"fov"`
+	Name       string     `yaml:"name,omitempty"`
+	Eye        [3]float64 `yaml:"eye"`
+	Target     [3]float64 `yaml:"target"`
+	Up         [3]float64 `yaml:"up"`
+	FOV        float64    `yaml:"fov"`
+	Projection int        `yaml:"projection,omitempty"` // doc.ProjectionMode (0=perspective)
 }
 
 // ViewState is a document's full view configuration: its views' cameras, which is active,

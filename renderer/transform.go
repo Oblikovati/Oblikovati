@@ -60,6 +60,9 @@ func view(cam scene.Camera) [16]float32 {
 // flipped (clip-space y points down) and depth maps to [0, 1]. Column-major.
 func projection(cam scene.Camera, near, far float64) [16]float32 {
 	aspect := float64(cam.Width) / float64(cam.Height)
+	if cam.Orthographic {
+		return orthographic(cam, aspect, near, far)
+	}
 	g := 1 / stdmath.Tan(cam.FOV/2) // focal length from vertical FOV
 	zr := far / (near - far)
 	return [16]float32{
@@ -67,6 +70,30 @@ func projection(cam scene.Camera, near, far float64) [16]float32 {
 		0, f32(-g), 0, 0,
 		0, 0, f32(zr), -1,
 		0, 0, f32(near * zr), 0,
+	}
+}
+
+// orthographic is a right-handed parallel projection with Vulkan conventions (y-down,
+// depth 0..1), column-major. The extent is sized from the perspective FOV at the target
+// depth — half-height = dist·tan(FOV/2) — so toggling perspective↔ortho keeps the model
+// at the same on-screen scale. Unlike perspective, clip.w is a constant 1 (no
+// foreshortening, no behind-camera w-clip).
+func orthographic(cam scene.Camera, aspect, near, far float64) [16]float32 {
+	dist := cam.Eye.DistanceTo(cam.Target)
+	if dist < 1e-6 {
+		dist = 1
+	}
+	halfH := dist * stdmath.Tan(cam.FOV/2)
+	if halfH < 1e-6 {
+		halfH = 1
+	}
+	halfW := halfH * aspect
+	zr := 1 / (near - far)
+	return [16]float32{
+		f32(1 / halfW), 0, 0, 0,
+		0, f32(-1 / halfH), 0, 0,
+		0, 0, f32(zr), 0,
+		0, 0, f32(near * zr), 1,
 	}
 }
 

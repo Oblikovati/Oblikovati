@@ -112,6 +112,7 @@ func (s *Session) Camera() scene.Camera {
 	if v := s.ActiveView(); v != nil {
 		c := s.camera // carry the transient viewport pixel size (Width/Height)
 		c.Eye, c.Target, c.Up, c.FOV = v.Eye, v.Target, v.Up, v.FOV
+		c.Orthographic = orthoForView(v)
 		return c
 	}
 	return s.camera

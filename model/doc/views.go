@@ -39,6 +39,28 @@ type View struct {
 	// shown; a saved/loaded or user-navigated view is framed, so switching to it restores
 	// its camera instead of resetting the view (the per-document camera fix).
 	Framed bool
+	// Projection is the view's camera projection (ViewCube projection menu). Per-view, so
+	// each tile can be perspective or orthographic independently. Defaults to perspective.
+	Projection ProjectionMode
+}
+
+// ProjectionMode is a view's camera projection, matching Inventor's ViewCube projection
+// menu (Orthographic / Perspective / Perspective with Ortho Faces).
+type ProjectionMode int
+
+const (
+	// ProjPerspective is FOV perspective (the default).
+	ProjPerspective ProjectionMode = iota
+	// ProjOrthographic is a parallel projection (no foreshortening).
+	ProjOrthographic
+	// ProjPerspectiveOrthoFaces is perspective, switching to orthographic only when the
+	// view is aligned to a principal axis (a ViewCube face view).
+	ProjPerspectiveOrthoFaces
+)
+
+// IsValid reports whether m is a defined projection mode.
+func (m ProjectionMode) IsValid() bool {
+	return m >= ProjPerspective && m <= ProjPerspectiveOrthoFaces
 }
 
 // DefaultView is the framing a brand-new view starts at (matching scene.NewCamera): an

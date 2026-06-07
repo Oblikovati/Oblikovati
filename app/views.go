@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"oblikovati/api/types"
 	"oblikovati/math"
@@ -11,6 +12,59 @@ import (
 	"oblikovati/persistence/viewstate"
 	"oblikovati/scene"
 )
+
+// faceAlignTol is the minimum |cosine| between the view direction and a principal axis for
+// a view to count as a "face" view (a ViewCube face snap) under ProjPerspectiveOrthoFaces.
+const faceAlignTol = 0.999
+
+// orthoForView resolves whether a view renders orthographically: always for
+// ProjOrthographic, never for ProjPerspective, and for ProjPerspectiveOrthoFaces only when
+// the view direction is aligned to a principal axis (a straight-on face view).
+func orthoForView(v *doc.View) bool {
+	switch v.Projection {
+	case doc.ProjOrthographic:
+		return true
+	case doc.ProjPerspectiveOrthoFaces:
+		return faceAligned(v.Eye, v.Target)
+	default:
+		return false
+	}
+}
+
+// faceAligned reports whether the eye→target direction is (near) parallel to a principal
+// axis (±X/±Y/±Z) — i.e. a straight-on face view.
+func faceAligned(eye, target math.Point3) bool {
+	d := eye.VectorTo(target)
+	l := d.Length()
+	if l < 1e-9 {
+		return false
+	}
+	d = d.Scale(1 / l)
+	m := stdmath.Abs(d.X)
+	if a := stdmath.Abs(d.Y); a > m {
+		m = a
+	}
+	if a := stdmath.Abs(d.Z); a > m {
+		m = a
+	}
+	return m >= faceAlignTol
+}
+
+// ActiveViewProjection returns the active view's projection mode (perspective by default).
+func (s *Session) ActiveViewProjection() doc.ProjectionMode {
+	if v := s.ActiveView(); v != nil {
+		return v.Projection
+	}
+	return doc.ProjPerspective
+}
+
+// SetActiveViewProjection sets the active view's projection mode (the ViewCube projection
+// menu). An invalid mode is ignored.
+func (s *Session) SetActiveViewProjection(m doc.ProjectionMode) {
+	if v := s.ActiveView(); v != nil && m.IsValid() {
+		v.Projection = m
+	}
+}
 
 // SetViewStateStore installs the per-user store that persists each document's view/camera
 // configuration outside the .obk (so a camera move never dirties the document). The head
@@ -29,11 +83,12 @@ func (s *Session) saveViewState(d *doc.Document) {
 	st.SplitX, st.SplitY = vs.Split()
 	for _, v := range vs.All() {
 		st.Views = append(st.Views, viewstate.ViewFrame{
-			Name:   v.Name,
-			Eye:    [3]float64{v.Eye.X, v.Eye.Y, v.Eye.Z},
-			Target: [3]float64{v.Target.X, v.Target.Y, v.Target.Z},
-			Up:     [3]float64{v.Up.X, v.Up.Y, v.Up.Z},
-			FOV:    v.FOV,
+			Name:       v.Name,
+			Eye:        [3]float64{v.Eye.X, v.Eye.Y, v.Eye.Z},
+			Target:     [3]float64{v.Target.X, v.Target.Y, v.Target.Z},
+			Up:         [3]float64{v.Up.X, v.Up.Y, v.Up.Z},
+			FOV:        v.FOV,
+			Projection: int(v.Projection),
 		})
 	}
 	_ = s.viewState.Save(d.FullFileName(), st) // best-effort; a settings-write failure must not block saving the model
@@ -52,12 +107,13 @@ func (s *Session) loadViewState(d *doc.Document) {
 	views := make([]*doc.View, len(st.Views))
 	for i, f := range st.Views {
 		views[i] = &doc.View{
-			Name:   f.Name,
-			Eye:    math.P3(f.Eye[0], f.Eye[1], f.Eye[2]),
-			Target: math.P3(f.Target[0], f.Target[1], f.Target[2]),
-			Up:     math.V3(f.Up[0], f.Up[1], f.Up[2]),
-			FOV:    f.FOV,
-			Framed: true,
+			Name:       f.Name,
+			Eye:        math.P3(f.Eye[0], f.Eye[1], f.Eye[2]),
+			Target:     math.P3(f.Target[0], f.Target[1], f.Target[2]),
+			Up:         math.V3(f.Up[0], f.Up[1], f.Up[2]),
+			FOV:        f.FOV,
+			Framed:     true,
+			Projection: doc.ProjectionMode(f.Projection),
 		}
 	}
 	d.RestoreViews(views, st.Active, types.ViewLayout(st.Layout))
@@ -187,6 +243,7 @@ func (s *Session) ViewCameraAt(i int) (scene.Camera, bool) {
 	v := vs.All()[i]
 	c := s.camera // carry the transient viewport pixel size
 	c.Eye, c.Target, c.Up, c.FOV = v.Eye, v.Target, v.Up, v.FOV
+	c.Orthographic = orthoForView(v)
 	return c, true
 }
 

@@ -38,6 +38,8 @@ void obk_ig_tree_pop(void);
 void obk_ig_bullet_text(const char* s);
 void obk_ig_set_item_tooltip(const char* s);
 int  obk_ig_begin_popup_context_item(const char* id);
+void obk_ig_open_popup(const char* id);
+int  obk_ig_begin_popup(const char* id);
 void obk_ig_end_popup(void);
 void obk_ig_set_scroll_here_y(void);
 int  obk_ig_input_float(const char* label, float* v);
@@ -439,7 +441,25 @@ func BeginPopupContextItem(id string) bool {
 	return C.obk_ig_begin_popup_context_item(c) != 0
 }
 
-// EndPopup closes a popup begun by BeginPopupContextItem (call only when it returned true).
+// OpenPopup marks the popup with id to open on this frame (pair with BeginPopup). Use it to
+// open a popup from arbitrary logic (e.g. a right-click on a custom-drawn region) rather
+// than tying it to the last widget like BeginPopupContextItem.
+func OpenPopup(id string) {
+	c, free := cstr(id)
+	defer free()
+	C.obk_ig_open_popup(c)
+}
+
+// BeginPopup returns true while the popup with id (opened via OpenPopup) is showing; fill
+// it with MenuItem rows and call EndPopup only when this returned true.
+func BeginPopup(id string) bool {
+	c, free := cstr(id)
+	defer free()
+	return C.obk_ig_begin_popup(c) != 0
+}
+
+// EndPopup closes a popup begun by BeginPopupContextItem/BeginPopup (call only when it
+// returned true).
 func EndPopup() { C.obk_ig_end_popup() }
 
 // SetScrollHereY scrolls the current window to center the most recently drawn item — used

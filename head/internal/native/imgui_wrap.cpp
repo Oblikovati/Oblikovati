@@ -82,6 +82,8 @@ void obk_ig_set_item_tooltip(const char* s)  { ImGui::SetItemTooltip("%s", s); }
 // it with menu_items, then calls end_popup. set_scroll_here_y scrolls the current window
 // so the last item is centered — used to reveal the browser node synced to the selection.
 int  obk_ig_begin_popup_context_item(const char* id) { return ImGui::BeginPopupContextItem(id) ? 1 : 0; }
+void obk_ig_open_popup(const char* id)       { ImGui::OpenPopup(id); }
+int  obk_ig_begin_popup(const char* id)      { return ImGui::BeginPopup(id) ? 1 : 0; }
 void obk_ig_end_popup(void)                  { ImGui::EndPopup(); }
 void obk_ig_set_scroll_here_y(void)          { ImGui::SetScrollHereY(0.5f); }
 

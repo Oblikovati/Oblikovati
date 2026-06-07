@@ -37,6 +37,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			drawSingleViewport(win, s)
 		}
+		viewCubeProjectionMenu(s) // the ViewCube right-click menu (opened from a tile/single path)
 	}
 	native.End()
 }
@@ -72,6 +73,9 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 			start.Width, start.Height = pw, ph
 			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target), viewCubeSnapSecs)
 		}
+	}
+	if cubeRegion != nil && native.IsItemClicked(native.MouseRight) {
+		native.OpenPopup(viewCubeMenuID) // right-click the cube → projection menu
 	}
 
 	cam, hovered := updateViewportCamera(s, pw, ph, overCube)
@@ -209,6 +213,10 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		} else {
 			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target), viewCubeSnapSecs)
 		}
+	case cubeRegion != nil && native.IsItemClicked(native.MouseRight):
+		_ = s.ActivateView(i) // right-click the cube → projection menu acts on this view
+		isActive = true
+		native.OpenPopup(viewCubeMenuID)
 	case !overCube:
 		// Per-tile navigation: hover/drag/wheel orbits THIS view; on a non-active tile it
 		// also makes it the active view so picking/commands follow.

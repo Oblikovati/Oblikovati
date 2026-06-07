@@ -5,9 +5,43 @@
 package ui
 
 import (
+	"oblikovati/app"
 	"oblikovati/head/internal/native"
+	"oblikovati/model/doc"
 	"oblikovati/scene"
 )
+
+// viewCubeMenuID is the ImGui id of the ViewCube right-click projection menu.
+const viewCubeMenuID = "##viewcube-projection"
+
+// viewCubeProjectionMenu renders the ViewCube right-click menu when open (opened via
+// OpenPopup at the cube right-click sites): a radio set of projection modes acting on the
+// active view. Call once per frame inside the viewport window.
+func viewCubeProjectionMenu(s *app.Session) {
+	if !native.BeginPopup(viewCubeMenuID) {
+		return
+	}
+	cur := s.ActiveViewProjection()
+	if native.MenuItem(projItemLabel("Orthographic", cur == doc.ProjOrthographic)) {
+		s.SetActiveViewProjection(doc.ProjOrthographic)
+	}
+	if native.MenuItem(projItemLabel("Perspective", cur == doc.ProjPerspective)) {
+		s.SetActiveViewProjection(doc.ProjPerspective)
+	}
+	if native.MenuItem(projItemLabel("Perspective with Ortho Faces", cur == doc.ProjPerspectiveOrthoFaces)) {
+		s.SetActiveViewProjection(doc.ProjPerspectiveOrthoFaces)
+	}
+	native.EndPopup()
+}
+
+// projItemLabel prefixes the active mode with a filled dot so the current projection reads
+// as checked (the MenuItem binding has no built-in radio state).
+func projItemLabel(name string, active bool) string {
+	if active {
+		return "● " + name
+	}
+	return "    " + name
+}
 
 const (
 	viewCubeRadius   = 24  // cube half-size projected, px (center → face)
