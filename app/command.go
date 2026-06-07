@@ -39,26 +39,26 @@ const (
 // CommandManager entry. Its Run is invoked when the button is clicked or the alias is
 // typed; Enabled greys it out. State lives in the [Session] it acts on, not here.
 type CommandDefinition struct {
-	id          string
-	displayName string
-	tab         string // ribbon tab (e.g. "3D Model"); empty ⇒ the default "Tools" tab
-	category    string // ribbon panel within the tab (e.g. "Create")
-	kind        ControlKind
-	alias       string // typed command alias (e.g. "E" → Extrude), Inventor-style
-	tooltip     string
-	iconKey     string      // icon asset key (e.g. "extrude"); empty ⇒ no icon
-	buttonStyle ButtonStyle // ribbon render style; zero value ⇒ text-only
-	ribbons     []RibbonKey // ribbons this command appears on; empty ⇒ the Part ribbon
-	environment Environment // ribbon environment; BaseEnvironment ⇒ always shown
-	enabled     func(*Session) bool
-	active      func(*Session) bool // for a ComboControl option: is this the current selection?
-	forcedActive     bool           // runtime active flag (commands.setState); see hasForcedActive
-	hasForcedActive  bool           // true ⇒ forcedActive overrides the active predicate
-	forcedEnabled    bool           // runtime enabled flag (commands.setState); see hasForcedEnabled
-	hasForcedEnabled bool           // true ⇒ forcedEnabled overrides the enabled predicate
-	run         func(*Session) error
-	variants    []*CommandDefinition // split-button dropdown entries (Inventor's variant flyout)
-	isVariant   bool                 // true ⇒ reachable only via a head command's dropdown, never its own panel button
+	id               string
+	displayName      string
+	tab              string // ribbon tab (e.g. "3D Model"); empty ⇒ the default "Tools" tab
+	category         string // ribbon panel within the tab (e.g. "Create")
+	kind             ControlKind
+	alias            string // typed command alias (e.g. "E" → Extrude), Inventor-style
+	tooltip          string
+	iconKey          string      // icon asset key (e.g. "extrude"); empty ⇒ no icon
+	buttonStyle      ButtonStyle // ribbon render style; zero value ⇒ text-only
+	ribbons          []RibbonKey // ribbons this command appears on; empty ⇒ the Part ribbon
+	environment      Environment // ribbon environment; BaseEnvironment ⇒ always shown
+	enabled          func(*Session) bool
+	active           func(*Session) bool // for a ComboControl option: is this the current selection?
+	forcedActive     bool                // runtime active flag (commands.setState); see hasForcedActive
+	hasForcedActive  bool                // true ⇒ forcedActive overrides the active predicate
+	forcedEnabled    bool                // runtime enabled flag (commands.setState); see hasForcedEnabled
+	hasForcedEnabled bool                // true ⇒ forcedEnabled overrides the enabled predicate
+	run              func(*Session) error
+	variants         []*CommandDefinition // split-button dropdown entries (Inventor's variant flyout)
+	isVariant        bool                 // true ⇒ reachable only via a head command's dropdown, never its own panel button
 }
 
 // NewCommand starts a command definition with the required fields. Use the With*
