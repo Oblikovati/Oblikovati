@@ -44,12 +44,13 @@ func projItemLabel(name string, active bool) string {
 }
 
 const (
-	viewCubeRadius   = 36  // cube half-size projected, px (center → face)
-	viewCubeMargin   = 64  // cube-center inset from the tile's top-right corner, px
-	viewCubeEdgeW    = 1.6 // cube edge line thickness, px
-	viewCubeLabelW   = 1.4 // face-label stroke thickness, px
-	viewCubeHomeR    = 13  // home-button half-size, px
-	viewCubeHomeGap  = 22  // gap from cube bottom to the home button, px
+	viewCubeRadius   = 36   // cube half-size projected, px (center → face)
+	viewCubeMargin   = 64   // cube-center inset from the tile's top-right corner, px
+	viewCubeEdgeW    = 1.6  // cube edge line thickness, px
+	viewCubeLabelW   = 1.4  // face-label stroke thickness, px
+	viewCubeHomeR    = 13   // home-button half-size, px
+	viewCubeReach    = 62.4 // max projected half-extent of the rotating cube (√3·radius), px
+	viewCubeHomeGap  = 16   // clear margin between the cube's reach and the home button, px
 	viewCubeSnapSecs = 0.35
 )
 
@@ -105,9 +106,11 @@ func faceInRegion(f Region, h *Region) bool {
 }
 
 // homeCenter is the home button's screen center: below and to the LEFT of the cube
-// (bottom-left), so it sits clear of the cube's projected footprint.
+// (bottom-left). The vertical offset clears the cube's FULL rotational reach (√3·radius,
+// a corner pointing at the viewer) plus a margin + the button radius, so the cube never
+// touches the button at any orientation.
 func homeCenter(cx, cy float32) (float32, float32) {
-	return cx - viewCubeRadius, cy + viewCubeRadius + viewCubeHomeGap
+	return cx - viewCubeRadius, cy + viewCubeReach + viewCubeHomeGap + viewCubeHomeR
 }
 
 // drawHomeButton paints a small house glyph (roof triangle + body) at (hx,hy).
