@@ -1,8 +1,10 @@
 # Lua Scripting — Implementation Plan
 
 **Status:** Phase 1 shipped (PR #75); Phase 2 shipped (GUI Script Console PR #82 +
-typed convenience tables, merged to `develop` 2026-06-07); Phase 3 parked. See
-[§11 Phased rollout](#11-phased-rollout) for the per-phase status.
+typed convenience tables); Phase 3 in progress — MCP `scripts.run` shipped
+(Oblikovati.API #27 + Oblikovati #85 + AddIns #20), events + persistence outstanding.
+All merged to `develop` 2026-06-07. See [§11 Phased rollout](#11-phased-rollout) for the
+per-phase status.
 **Scope:** Integral, first-party Lua scripting in the GPL-v2 application (`/source`,
 i.e. this `oblikovati` module). **Not** an add-in.
 **Companion ADR:** [ADR-0028 — Embedded Lua scripting runtime](decisions/ADR-0028-embedded-lua-scripting.md)
@@ -396,14 +398,22 @@ PR #82 and the typed convenience tables completed it (both merged to `develop`
 4. ✅ UI e2e tests — headless `script/console` unit tests + in-window cgo render/run
    tests that open the real Vulkan window and assert streamed output reaches the panel.
 
-**Phase 3 — events, library, persistence, MCP. ⏸ PARKED (outstanding).**
+**Phase 3 — events, library, persistence, MCP. 🔄 IN PROGRESS (MCP `scripts.run`
+shipped; events + persistence outstanding).**
 1. ⏳ Event/callback hooks so scripts can subscribe to the event bus (foundation for
-   ADR-0013 rules: `on("parameterChanged", fn)`).
-2. ⏳ A bundled script library / examples; saved scripts; (later) document-embedded
-   rules persisted in the model (ADR-0013 territory).
-3. ⏳ Contract-first `script.run` wire method + `client.Scripts()` so the MCP bridge can
-   run whole programs — the only contract-first (`api/wire` + `api/client`) addition the
-   whole effort needs.
+   ADR-0013 rules: `on("parameterChanged", fn)`). The hard part is a *persistent* VM
+   lifecycle (the one-shot runner closes the VM after the main chunk), so this is a
+   dedicated subsystem, not a small slice.
+2. ⏳ A bundled script library / examples; saved scripts (console Open/Save + a
+   "Run Script…" command); (later) document-embedded rules persisted in the model
+   (ADR-0013 territory; overlaps the .obk persistence effort).
+3. ✅ Contract-first `scripts.run` wire method + `client.Scripts()` so the MCP bridge
+   can run whole programs in one call (Oblikovati.API #27 + Oblikovati #85 + the
+   `run_script` bridge tool, AddIns #20; merged 2026-06-07). The handler runs the source
+   **inline** through the sandboxed runtime with a host door that calls `router.Handle`
+   **re-entrantly** (no lock ⇒ deadlock-free, inner mutations still emit `edit.committed`);
+   a per-run wall-clock (default 10s, cap 60s) bounds a runaway. Live-verified via the
+   bridge driving the model. This was the only contract-first addition the effort needed.
 
 ---
 
