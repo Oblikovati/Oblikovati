@@ -148,7 +148,7 @@ func TestBSplineSurfaceWithKnotsFromStep(t *testing.T) {
 		"#2=CARTESIAN_POINT('',(1.,0.,0.));\n"+
 		"#3=CARTESIAN_POINT('',(0.,1.,0.));\n"+
 		"#4=CARTESIAN_POINT('',(1.,1.,1.));\n"+
-		"#5=B_SPLINE_SURFACE_WITH_KNOTS(1,1,((#1,#2),(#3,#4)),.UNSPECIFIED.,.F.,.F.,.F.,(2,2),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.);")
+		"#5=B_SPLINE_SURFACE_WITH_KNOTS('NONE',1,1,((#1,#2),(#3,#4)),.UNSPECIFIED.,.F.,.F.,.F.,(2,2),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.);")
 	s, err := Surface(g, 5, 10.0)
 	if err != nil {
 		t.Fatalf("Surface B_SPLINE_SURFACE_WITH_KNOTS: %v", err)
@@ -170,7 +170,7 @@ func TestBSplineSurfaceFromStepRejectsMalformedKnots(t *testing.T) {
 		"#2=CARTESIAN_POINT('',(1.,0.,0.));\n"+
 		"#3=CARTESIAN_POINT('',(0.,1.,0.));\n"+
 		"#4=CARTESIAN_POINT('',(1.,1.,1.));\n"+
-		"#5=B_SPLINE_SURFACE_WITH_KNOTS(1,1,((#1,#2),(#3,#4)),.UNSPECIFIED.,.F.,.F.,.F.,(2),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.);")
+		"#5=B_SPLINE_SURFACE_WITH_KNOTS('NONE',1,1,((#1,#2),(#3,#4)),.UNSPECIFIED.,.F.,.F.,.F.,(2),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.);")
 	if _, err := Surface(g, 5, 1.0); err == nil {
 		t.Fatal("B_SPLINE_SURFACE_WITH_KNOTS accepted mismatched u knot multiplicities")
 	}
