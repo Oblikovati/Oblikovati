@@ -67,8 +67,8 @@ func TestInfoJSONIsParseable(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &report); err != nil {
 		t.Fatalf("info --json emitted invalid JSON %q: %v", out, err)
 	}
-	if report.Type != "part" || report.Name != "plate" || report.SchemaVersion != 3 {
-		t.Errorf("report = %+v, want {3 part plate}", report)
+	if report.Type != "part" || report.Name != "plate" || report.SchemaVersion != 2 {
+		t.Errorf("report = %+v, want {2 part plate}", report)
 	}
 }
 

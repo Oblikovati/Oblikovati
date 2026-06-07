@@ -14,6 +14,7 @@ import (
 	"oblikovati/model/doc"
 	"oblikovati/model/material"
 	"oblikovati/model/sketch"
+	"oblikovati/persistence/viewstate"
 	"oblikovati/renderer"
 	"oblikovati/scene"
 	"oblikovati/theme"
@@ -28,6 +29,7 @@ type Session struct {
 	workspace          *doc.Workspace
 	commands           *CommandManager
 	histories          map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
+	viewState          viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
 	bus                *event.Bus
 	selection          *Selection
 	tool               *ToolInstance
@@ -216,6 +218,7 @@ func (s *Session) OpenDocument(path string) (*doc.Document, error) {
 		return nil, err
 	}
 	s.documentHistory(d) // open the event stream now so the first edit's before-snapshot is the open state
+	s.loadViewState(d)   // restore this user's saved camera/view layout (kept outside the .obk)
 	return d, nil
 }
 
@@ -258,7 +261,11 @@ func (s *Session) SaveActiveDocument() error {
 	if !strings.HasSuffix(d.FullFileName(), doc.PackageExtension) {
 		return ErrNeedsPath
 	}
-	return s.workspace.Save(d)
+	if err := s.workspace.Save(d); err != nil {
+		return err
+	}
+	s.saveViewState(d) // persist this user's camera/view layout alongside (not inside) the document
+	return nil
 }
 
 // SaveActiveDocumentAs writes the active document to path, which becomes its new
@@ -268,5 +275,9 @@ func (s *Session) SaveActiveDocumentAs(path string) error {
 	if d == nil {
 		return ErrNoActiveDoc
 	}
-	return s.workspace.SaveAs(d, path)
+	if err := s.workspace.SaveAs(d, path); err != nil {
+		return err
+	}
+	s.saveViewState(d) // persist under the new path (camera/view layout stays out of the .obk)
+	return nil
 }

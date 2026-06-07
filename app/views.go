@@ -6,9 +6,63 @@ import (
 	"fmt"
 
 	"oblikovati/api/types"
+	"oblikovati/math"
 	"oblikovati/model/doc"
+	"oblikovati/persistence/viewstate"
 	"oblikovati/scene"
 )
+
+// SetViewStateStore installs the per-user store that persists each document's view/camera
+// configuration outside the .obk (so a camera move never dirties the document). The head
+// and CLI inject a file-backed store; without one, view state is purely in-session.
+func (s *Session) SetViewStateStore(store viewstate.Store) { s.viewState = store }
+
+// saveViewState writes a document's current view configuration to the per-user store,
+// keyed by its file path. Called when the document is saved. A no-op without a store or a
+// path (an unsaved document has no key yet).
+func (s *Session) saveViewState(d *doc.Document) {
+	if s.viewState == nil || d == nil || d.FullFileName() == "" {
+		return
+	}
+	vs := d.Views()
+	st := viewstate.ViewState{Active: vs.ActiveIndex(), Layout: int32(vs.Layout())}
+	st.SplitX, st.SplitY = vs.Split()
+	for _, v := range vs.All() {
+		st.Views = append(st.Views, viewstate.ViewFrame{
+			Name:   v.Name,
+			Eye:    [3]float64{v.Eye.X, v.Eye.Y, v.Eye.Z},
+			Target: [3]float64{v.Target.X, v.Target.Y, v.Target.Z},
+			Up:     [3]float64{v.Up.X, v.Up.Y, v.Up.Z},
+			FOV:    v.FOV,
+		})
+	}
+	_ = s.viewState.Save(d.FullFileName(), st) // best-effort; a settings-write failure must not block saving the model
+}
+
+// loadViewState restores a document's view configuration from the per-user store after it
+// is opened. A no-op without a store or a stored entry (the document keeps its default view).
+func (s *Session) loadViewState(d *doc.Document) {
+	if s.viewState == nil || d == nil {
+		return
+	}
+	st, ok, err := s.viewState.Load(d.FullFileName())
+	if err != nil || !ok || len(st.Views) == 0 {
+		return
+	}
+	views := make([]*doc.View, len(st.Views))
+	for i, f := range st.Views {
+		views[i] = &doc.View{
+			Name:   f.Name,
+			Eye:    math.P3(f.Eye[0], f.Eye[1], f.Eye[2]),
+			Target: math.P3(f.Target[0], f.Target[1], f.Target[2]),
+			Up:     math.V3(f.Up[0], f.Up[1], f.Up[2]),
+			FOV:    f.FOV,
+			Framed: true,
+		}
+	}
+	d.RestoreViews(views, st.Active, types.ViewLayout(st.Layout))
+	d.Views().SetSplit(st.SplitX, st.SplitY)
+}
 
 // SetViewLayout sets how the active document tiles its views and ensures it has enough
 // views to fill the layout, creating any missing ones from the current view's camera so

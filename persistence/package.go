@@ -2,11 +2,7 @@
 
 package persistence
 
-import (
-	"errors"
-
-	"oblikovati/persistence/yamlcodec"
-)
+import "errors"
 
 // errNoManifest reports a document with no manifest — not a valid document file
 // (though still a valid container of arbitrary data sections, e.g. for DataIO).
@@ -25,18 +21,11 @@ type StreamStat struct {
 // file (ADR-0020). Stream bytes are copied in and out so a Package never shares
 // backing arrays with its callers.
 type Package struct {
-	manifest Manifest                // identity; the zero value means "no manifest"
-	model    []byte                  // recipe YAML bytes; nil ⇒ no model
-	views    *yamlcodec.ViewsSection // per-document view collection (cameras); nil ⇒ none
-	streams  map[string][]byte       // named binary data sections
-	order    []string                // data-section insertion order, for stable enumeration
+	manifest Manifest          // identity; the zero value means "no manifest"
+	model    []byte            // recipe YAML bytes; nil ⇒ no model
+	streams  map[string][]byte // named binary data sections
+	order    []string          // data-section insertion order, for stable enumeration
 }
-
-// Views returns the package's view collection (cameras), or nil if it carries none.
-func (p *Package) Views() *yamlcodec.ViewsSection { return p.views }
-
-// SetViews stores the document's view collection to be written under the `views:` section.
-func (p *Package) SetViews(v *yamlcodec.ViewsSection) { p.views = v }
 
 // NewPackage returns an empty package.
 func NewPackage() *Package {

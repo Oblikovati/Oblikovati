@@ -24,6 +24,7 @@ import (
 	"oblikovati/model/feature"
 	"oblikovati/model/sketch"
 	"oblikovati/persistence"
+	"oblikovati/persistence/viewstate"
 	"oblikovati/theme"
 )
 
@@ -86,6 +87,11 @@ func newDemoSession() *app.Session {
 	// nil-store NewSession). The head injects the concrete store; app depends only on the
 	// doc.Store interface.
 	s := app.NewSessionWithStore(persistence.NewPackageStore())
+	if path, err := viewstate.DefaultPath(); err == nil {
+		// Per-user camera/view layout, stored outside the .obk so it never dirties the
+		// document in git; written when the user saves, restored on open.
+		s.SetViewStateStore(viewstate.NewFileStore(path))
+	}
 	registerCommands(s)
 	seedPart(s)
 	loadThemes(s)
