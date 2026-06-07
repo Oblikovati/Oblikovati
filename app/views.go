@@ -9,6 +9,7 @@ import (
 	"oblikovati/api/types"
 	"oblikovati/math"
 	"oblikovati/model/doc"
+	"oblikovati/persistence/userprefs"
 	"oblikovati/persistence/viewstate"
 	"oblikovati/scene"
 )
@@ -338,11 +339,28 @@ func (s *Session) ShowViewCube() bool { return !s.viewCubeHidden }
 // SetShowViewCube shows or hides the navigation cube (View-tab toggle).
 func (s *Session) SetShowViewCube(show bool) { s.viewCubeHidden = !show }
 
-// ShowCompass reports whether the ViewCube compass (the North ring) is shown (default true).
-func (s *Session) ShowCompass() bool { return !s.compassHidden }
+// SetUserPrefsStore installs the global-preferences store and loads its current values
+// into the session, so a preference like compass visibility survives across sessions. The
+// head/CLI inject a file-backed store; without one, preferences are in-session only.
+func (s *Session) SetUserPrefsStore(store userprefs.Store) {
+	s.prefsStore = store
+	if p, ok, err := store.Load(); err == nil && ok {
+		s.prefs = p
+	}
+}
 
-// SetShowCompass shows or hides the ViewCube compass (its right-click menu toggle).
-func (s *Session) SetShowCompass(show bool) { s.compassHidden = !show }
+// ShowCompass reports whether the ViewCube compass (the North ring) is shown — a global
+// user preference (default true).
+func (s *Session) ShowCompass() bool { return !s.prefs.CompassHidden }
+
+// SetShowCompass shows or hides the ViewCube compass and persists the choice as a global
+// user preference (its right-click menu toggle). A settings-write failure is non-fatal.
+func (s *Session) SetShowCompass(show bool) {
+	s.prefs.CompassHidden = !show
+	if s.prefsStore != nil {
+		_ = s.prefsStore.Save(s.prefs)
+	}
+}
 
 // ActivateView makes view i of the active document the active view (so picking, sketch and
 // commands target it). Used when the user interacts with a tile.

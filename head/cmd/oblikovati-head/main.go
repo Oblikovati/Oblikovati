@@ -25,6 +25,7 @@ import (
 	"oblikovati/model/feature"
 	"oblikovati/model/sketch"
 	"oblikovati/persistence"
+	"oblikovati/persistence/userprefs"
 	"oblikovati/persistence/viewstate"
 	"oblikovati/theme"
 )
@@ -110,6 +111,10 @@ func newDemoSession() *app.Session {
 		// Per-user camera/view layout, stored outside the .obk so it never dirties the
 		// document in git; written when the user saves, restored on open.
 		s.SetViewStateStore(viewstate.NewFileStore(path))
+	}
+	if path, err := userprefs.DefaultPath(); err == nil {
+		// Global UI preferences (e.g. ViewCube compass visibility), persisted across sessions.
+		s.SetUserPrefsStore(userprefs.NewFileStore(path))
 	}
 	registerCommands(s)
 	seedPart(s)

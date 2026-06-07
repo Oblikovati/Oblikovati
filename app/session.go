@@ -14,6 +14,7 @@ import (
 	"oblikovati/model/doc"
 	"oblikovati/model/material"
 	"oblikovati/model/sketch"
+	"oblikovati/persistence/userprefs"
 	"oblikovati/persistence/viewstate"
 	"oblikovati/renderer"
 	"oblikovati/scene"
@@ -31,7 +32,8 @@ type Session struct {
 	histories          map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState          viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
 	viewCubeHidden     bool                   // ViewCube shown unless hidden (zero value = shown)
-	compassHidden      bool                   // ViewCube compass shown unless hidden (zero value = shown)
+	prefs              userprefs.Prefs        // global user preferences (e.g. compass visibility)
+	prefsStore         userprefs.Store        // persists prefs to the user config dir (nil ⇒ in-session only)
 	bus                *event.Bus
 	selection          *Selection
 	tool               *ToolInstance
