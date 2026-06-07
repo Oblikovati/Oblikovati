@@ -4,6 +4,7 @@ package app
 
 import (
 	"bytes"
+	"errors"
 
 	"oblikovati/command"
 	"oblikovati/event"
@@ -24,6 +25,14 @@ var _ command.RecipeStore = (*compdef.PartComponentDefinition)(nil)
 type docHistory struct {
 	hist     *command.History
 	snapshot []byte
+
+	// groupDepth > 0 means a bounded transaction is open: per-edit recording is
+	// suppressed and the whole delta is recorded as one event when the outermost
+	// EndTransaction runs. groupLabel names that single coalesced step (the outermost
+	// Begin's label wins). While open, snapshot stays at the pre-group state, so it is
+	// exactly the "before" for the group. See BeginTransaction/EndTransaction.
+	groupDepth int
+	groupLabel string
 }
 
 // resync sets snapshot to the recipe the document now holds — called after undo/redo
@@ -67,12 +76,75 @@ func (s *Session) recordEdit(part *compdef.PartComponentDefinition, label string
 		return
 	}
 	dh := s.documentHistory(d)
+	if dh.groupDepth > 0 {
+		// Inside a bounded transaction: defer recording so the whole batch becomes one
+		// undo step at EndTransaction. snapshot is intentionally left untouched.
+		return
+	}
 	after, err := part.MarshalRecipe()
 	if err != nil || bytes.Equal(after, dh.snapshot) {
 		return
 	}
 	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, part))
 	dh.snapshot = after
+}
+
+// ErrNoOpenTransaction is returned by EndTransaction when no bounded transaction is open.
+var ErrNoOpenTransaction = errors.New("app: no open transaction to end")
+
+// BeginTransaction opens a bounded transaction on the active document: every edit
+// recorded until the matching EndTransaction is coalesced into a single undo step named
+// label. Begin/End nest; the outermost Begin's label names the step and only the
+// outermost End commits it. A collaboration add-in wraps a drained batch of remote
+// operations in one Begin/End so the batch is one team-shared undo step (ADR-0005).
+func (s *Session) BeginTransaction(label string) error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	dh := s.documentHistory(d)
+	if dh.groupDepth == 0 {
+		dh.groupLabel = label
+	}
+	dh.groupDepth++
+	return nil
+}
+
+// EndTransaction closes the innermost open bounded transaction. At depth 0 (the
+// outermost End) it records the whole accumulated delta as one event and advances the
+// cursor; a no-op group (before == after) records nothing.
+func (s *Session) EndTransaction() error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	dh := s.documentHistory(d)
+	if dh.groupDepth == 0 {
+		return ErrNoOpenTransaction
+	}
+	dh.groupDepth--
+	if dh.groupDepth > 0 {
+		return nil // inner end: keep accumulating until the outermost End
+	}
+	label := dh.groupLabel
+	dh.groupLabel = ""
+	part, ok := d.Content().(*compdef.PartComponentDefinition)
+	if !ok {
+		return nil
+	}
+	after, err := part.MarshalRecipe()
+	if err != nil || bytes.Equal(after, dh.snapshot) {
+		return nil
+	}
+	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, part))
+	dh.snapshot = after
+	return nil
+}
+
+// InTransaction reports whether a bounded transaction is open on the active document.
+func (s *Session) InTransaction() bool {
+	st := s.activeStream()
+	return st != nil && st.groupDepth > 0
 }
 
 // Undo moves the active document's cursor back one transaction event, restoring the

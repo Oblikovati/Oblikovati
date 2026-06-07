@@ -13,6 +13,7 @@ const (
 	tidCommandEnded      event.TypeID = 0x0502
 	tidSelectionChanged  event.TypeID = 0x0503
 	tidTransactionChange event.TypeID = 0x0504
+	tidEditCommitted     event.TypeID = 0x0505
 )
 
 // CommandStarted fires (Before) when a command begins — Inventor's
@@ -48,3 +49,31 @@ type TransactionChanged struct{ Document doc.ID }
 
 // EventID implements event.Event.
 func (TransactionChanged) EventID() event.TypeID { return tidTransactionChange }
+
+// EditCommitted fires (After) when a document mutation is applied through the method
+// router, carrying the very wire request that produced it (Method + raw Args). It is the
+// basis for operational replication in a collaboration add-in (oblikovati-meeting
+// ADR-0004): a remote peer replays Method/Args through its own client. Distinct from
+// TransactionChanged (which only signals "the model moved" with no payload).
+//
+// v1 scope: only router-path edits are emitted; edits made directly in the UI are not yet
+// captured. Args is the raw JSON request bytes (may be nil for a no-arg method).
+type EditCommitted struct {
+	Document doc.ID
+	Method   string
+	Args     []byte
+}
+
+// EventID implements event.Event.
+func (EditCommitted) EventID() event.TypeID { return tidEditCommitted }
+
+// EmitEditCommitted publishes an EditCommitted event for a router-applied mutation,
+// tagged with the active document's id (0 when none). The router calls this after a
+// mutating method succeeds.
+func (s *Session) EmitEditCommitted(method string, args []byte) {
+	var id doc.ID
+	if d := s.ActiveDocument(); d != nil {
+		id = d.ID()
+	}
+	event.Emit(s.bus, event.After, EditCommitted{Document: id, Method: method, Args: args})
+}

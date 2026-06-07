@@ -12,6 +12,7 @@ package events
 import (
 	"encoding/json"
 
+	"oblikovati/api/wire"
 	"oblikovati/app"
 	"oblikovati/event"
 	"oblikovati/model/doc"
@@ -49,7 +50,26 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.CommandEnded) event.Outcome {
 			return relay(sink, wireEvent{Type: "command.ended", Command: e.ID, Failed: e.Failed})
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
+			return relayEdit(sink, e)
+		}),
 	}
+}
+
+// relayEdit serializes a committed edit as the contract's [wire.EditCommittedEvent] (the
+// mutation expressed as the wire request that produced it) and hands it to sink, so a
+// collaboration add-in can replay it on remote peers (ADR-0004).
+func relayEdit(sink Sink, e app.EditCommitted) event.Outcome {
+	ev := wire.EditCommittedEvent{
+		Type:     wire.EventEditCommitted,
+		Document: uint64(e.Document),
+		Method:   e.Method,
+		Args:     json.RawMessage(e.Args),
+	}
+	if b, err := json.Marshal(ev); err == nil {
+		sink(b)
+	}
+	return event.Continue()
 }
 
 // relay serializes ev and hands it to sink; it never vetoes (passive listener).

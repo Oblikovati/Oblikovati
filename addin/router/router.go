@@ -77,14 +77,20 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodViewGetDisplayMode] = getDisplayMode
 	r.handlers[wire.MethodViewSetDisplayMode] = setDisplayMode
 	r.handlers[wire.MethodViewListDisplayModes] = listDisplayModes
+	r.handlers[wire.MethodViewGetCamera] = getCamera
+	r.handlers[wire.MethodViewSetCamera] = setCamera
+	r.handlers[wire.MethodInteractionState] = interactionState
 }
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query
-// the active document's transaction-event stream (transaction.undo/redo/state).
+// the active document's transaction-event stream (transaction.undo/redo/state), plus the
+// bounded transaction.begin/end that coalesce a batch into one undo step.
 func (r *Router) registerTransactionHandlers() {
 	r.handlers[wire.MethodTransactionUndo] = undoTransaction
 	r.handlers[wire.MethodTransactionRedo] = redoTransaction
 	r.handlers[wire.MethodTransactionState] = transactionState
+	r.handlers[wire.MethodTransactionBegin] = beginTransaction
+	r.handlers[wire.MethodTransactionEnd] = endTransaction
 }
 
 // registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and
@@ -244,7 +250,47 @@ func (r *Router) Handle(s *app.Session, method string, req []byte) (resp []byte,
 		return nil, herr
 	}
 	r.record(method, time.Since(start), true, "", "", "")
+	// A document-mutating method that succeeded is a committed edit: emit it as the wire
+	// request that produced it, so a collaboration add-in can replicate it (ADR-0004).
+	// First cut: only router-path edits; local UI edits are not yet captured.
+	if mutatingMethods[method] {
+		s.EmitEditCommitted(method, req)
+	}
 	return out, nil
+}
+
+// mutatingMethods is the set of router methods that commit a document mutation worth
+// replicating to collaboration peers as an edit.committed event. It is a curated
+// allowlist: a method missing here simply is not broadcast (a known first-cut gap,
+// failing safe), whereas a read-only method must never appear (it would broadcast noise).
+var mutatingMethods = map[string]bool{
+	wire.MethodDocumentsCreate:        true,
+	wire.MethodDocumentsImport:        true,
+	wire.MethodParametersAdd:          true,
+	wire.MethodParametersSet:          true,
+	wire.MethodFeaturesAdd:            true,
+	wire.MethodWorkPlanesCreate:       true,
+	wire.MethodModelAssignMaterial:    true,
+	wire.MethodModelAssignAppearance:  true,
+	wire.MethodSketchCreate:           true,
+	wire.MethodSketchRectangle:        true,
+	wire.MethodSketchDelete:           true,
+	wire.MethodSketchEdit:             true,
+	wire.MethodSketchExitEdit:         true,
+	wire.MethodSketchSolve:            true,
+	wire.MethodSketchAddEntity:        true,
+	wire.MethodSketchAddConstraint:    true,
+	wire.MethodSketchDeleteConstraint: true,
+	wire.MethodSketchAddDimension:     true,
+	wire.MethodSketchDriveDimension:   true,
+	wire.MethodSketchSetProperty:      true,
+	wire.MethodSketchTransform:        true,
+	wire.MethodSketchAddPattern:       true,
+	wire.MethodSketchOffset:           true,
+	wire.MethodSketchProject:          true,
+	wire.MethodTransactionUndo:        true,
+	wire.MethodTransactionRedo:        true,
+	wire.MethodTransactionEnd:         true,
 }
 
 // record appends an operation entry to the trace, except for logs.tail itself (so polling the
