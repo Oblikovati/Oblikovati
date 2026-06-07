@@ -61,3 +61,34 @@ func TestCutCounterboreBlind(t *testing.T) {
 		t.Errorf("blind counterbore has %d cylinder faces, want 2", n)
 	}
 }
+
+func TestCutCounterboreRejectsInvalidInputs(t *testing.T) {
+	slab := box(0, 0, 0, 8, 8, 4)
+	for _, tc := range []struct {
+		name         string
+		axis         math.Vector3
+		boreRadius   float64
+		boreLen      float64
+		counterRad   float64
+		counterDepth float64
+		through      bool
+	}{
+		{"bad radii", math.V3(0, 0, -1), 2, 1, 1, 1, false},
+		{"blind no length", math.V3(0, 0, -1), 1, 0, 2, 1, false},
+		{"zero axis", math.V3(0, 0, 0), 1, 1, 2, 1, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := brep.CutCounterboreHole(slab, math.P3(4, 4, 4), tc.axis, tc.boreRadius, tc.boreLen, tc.counterRad, tc.counterDepth, tc.through)
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+		})
+	}
+}
+
+func TestCutCounterboreThroughRejectsNoExitFace(t *testing.T) {
+	_, err := brep.CutCounterboreHole(box(0, 0, 0, 8, 8, 4), math.P3(4, 4, 4), math.V3(1, 0, 0), 1, 0, 2, 1, true)
+	if err == nil {
+		t.Fatal("expected through counterbore with side axis to miss an exit face")
+	}
+}

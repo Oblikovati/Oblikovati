@@ -54,3 +54,27 @@ func TestCutBlindRejectsThroughDepth(t *testing.T) {
 		t.Error("expected an error for a blind depth that exits the part, got nil")
 	}
 }
+
+func TestCutBlindCylindricalRejectsInvalidInputs(t *testing.T) {
+	slab := box(0, 0, 0, 10, 10, 4)
+	for _, tc := range []struct {
+		name  string
+		axis  math.Vector3
+		r     float64
+		depth float64
+		base  math.Point3
+	}{
+		{"bad radius", math.V3(0, 0, 1), 0, 1, math.P3(5, 5, 0)},
+		{"bad depth", math.V3(0, 0, 1), 1, 0, math.P3(5, 5, 0)},
+		{"zero axis", math.V3(0, 0, 0), 1, 1, math.P3(5, 5, 0)},
+		{"no entry face", math.V3(1, 0, 0), 1, 1, math.P3(5, 5, 0)},
+		{"does not fit entry face", math.V3(0, 0, 1), 6, 1, math.P3(5, 5, 0)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := brep.CutBlindCylindricalHole(slab, tc.base, tc.axis, tc.r, tc.depth)
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+		})
+	}
+}

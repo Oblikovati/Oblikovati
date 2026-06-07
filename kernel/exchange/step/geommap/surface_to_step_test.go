@@ -3,6 +3,7 @@
 package geommap
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati/kernel/exchange/step/part21"
@@ -57,6 +58,62 @@ func TestCylinderRadiusRoundTrips(t *testing.T) {
 	}
 	if cyl, ok := s.(geom.Cylinder); !ok || cyl.Radius != 4.5 {
 		t.Errorf("cylinder radius round-trip = %v, want 4.5", s)
+	}
+}
+
+func TestEmitterWriterScalingAndSharing(t *testing.T) {
+	w := part21.NewWriter()
+	e := NewEmitter(w, 2.0)
+	if e.Writer() != w {
+		t.Fatal("Writer did not expose the backing writer")
+	}
+	if got := e.LengthValue(6); got != "3." {
+		t.Fatalf("LengthValue with 2mm units = %q, want 3.", got)
+	}
+	p1 := e.Point(math.P3(2, 4, 6))
+	p2 := e.Point(math.P3(2, 4, 6))
+	if p1 != p2 {
+		t.Fatalf("Point did not share identical coordinates: %d vs %d", p1, p2)
+	}
+	d1 := e.Direction(math.V3(0, 0, 2))
+	d2 := e.Direction(math.V3(0, 0, 4))
+	if d1 != d2 {
+		t.Fatalf("Direction did not share normalized directions: %d vs %d", d1, d2)
+	}
+	fallback := NewEmitter(part21.NewWriter(), 0)
+	if got := fallback.LengthValue(6); got != "6." {
+		t.Fatalf("LengthValue with zero unit fallback = %q, want 6.", got)
+	}
+}
+
+func TestAnalyticSurfacesExportThroughPublicDispatcher(t *testing.T) {
+	cone, _ := geom.NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
+	sphere, _ := geom.NewSphere(math.P3(1, 2, 3), 4)
+	torus, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1)
+	for _, tc := range []struct {
+		name string
+		s    geom.Surface
+		want string
+	}{
+		{"cone", cone, "CONICAL_SURFACE"},
+		{"sphere", sphere, "SPHERICAL_SURFACE"},
+		{"torus", torus, "TOROIDAL_SURFACE"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ent, g := emitAndReparse(t, func(e *Emitter) int {
+				id, err := e.SurfaceToStep(tc.s)
+				if err != nil {
+					t.Fatalf("SurfaceToStep(%s): %v", tc.name, err)
+				}
+				return id
+			})
+			if ent.Keyword != tc.want {
+				t.Fatalf("emitted keyword = %q, want %s", ent.Keyword, tc.want)
+			}
+			if _, err := Surface(g, ent.ID, 1.0); err != nil {
+				t.Fatalf("re-read %s: %v", tc.name, err)
+			}
+		})
 	}
 }
 

@@ -48,3 +48,27 @@ func TestCutBlindConicalRejectsDeepTip(t *testing.T) {
 		t.Error("expected an error for a conical hole that exits the part, got nil")
 	}
 }
+
+func TestCutBlindConicalRejectsInvalidInputs(t *testing.T) {
+	slab := box(0, 0, 0, 10, 10, 6)
+	for _, tc := range []struct {
+		name  string
+		axis  math.Vector3
+		r     float64
+		depth float64
+		half  float64
+	}{
+		{"bad radius", math.V3(0, 0, -1), 0, 1, 59 * stdmath.Pi / 180},
+		{"bad depth", math.V3(0, 0, -1), 1, 0, 59 * stdmath.Pi / 180},
+		{"bad half angle low", math.V3(0, 0, -1), 1, 1, 0},
+		{"bad half angle high", math.V3(0, 0, -1), 1, 1, stdmath.Pi / 2},
+		{"zero axis", math.V3(0, 0, 0), 1, 1, 59 * stdmath.Pi / 180},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := brep.CutBlindConicalHole(slab, math.P3(5, 5, 6), tc.axis, tc.r, tc.depth, tc.half)
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+		})
+	}
+}
