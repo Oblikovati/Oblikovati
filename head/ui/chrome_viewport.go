@@ -7,6 +7,7 @@ package ui
 import (
 	"strconv"
 
+	"oblikovati/api/types"
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 	"oblikovati/head/viewport"
@@ -26,6 +27,7 @@ import (
 func drawViewportPanel(win *native.Window, s *app.Session) {
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
+		drawViewToolbar(s)
 		// Per-document views can tile (split layouts); a single view takes the classic
 		// full-panel path. Each visible tile renders its own view's camera into its own
 		// offscreen slot, so tiles show distinct cameras simultaneously.
@@ -53,6 +55,33 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
+}
+
+// drawViewToolbar shows the active document's view controls: a layout picker and add/close
+// buttons. Driving the same Views collection the API and persistence use, so changes here
+// tile the viewport and are saved with the document.
+func drawViewToolbar(s *app.Session) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	vs := d.Views()
+	if native.BeginCombo("##view-layout", vs.Layout().String()) {
+		for _, l := range types.AllViewLayouts() {
+			if native.Selectable(l.String(), l == vs.Layout()) {
+				vs.SetLayout(l)
+			}
+		}
+		native.EndCombo()
+	}
+	native.SameLine()
+	if native.Button("New View") {
+		_, _ = s.AddView(0, "", true)
+	}
+	native.SameLine()
+	if native.Button("Close View") {
+		_ = vs.Close(vs.ActiveIndex())
+	}
 }
 
 // planTiles returns the tile rectangles for the active document's view layout and the
