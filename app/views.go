@@ -50,6 +50,69 @@ func faceAligned(eye, target math.Point3) bool {
 	return m >= faceAlignTol
 }
 
+// SetActiveViewHome stores the active view's current camera as its Home (ViewCube "Set
+// Current View as Home"). fitToView keeps only the viewing direction, re-fitting to the
+// model on each Go Home; otherwise the exact framing is restored.
+func (s *Session) SetActiveViewHome(fitToView bool) {
+	v := s.ActiveView()
+	if v == nil {
+		return
+	}
+	c := s.Camera()
+	v.Home = &doc.ViewHome{Eye: c.Eye, Target: c.Target, Up: c.Up, FOV: c.FOV, FitToView: fitToView}
+}
+
+// GoHome animates the active view to its Home: its custom Home if set (ViewCube "Set
+// Current View as Home"), else the default iso Home (model framed from (1,1,1)). It backs
+// the ViewCube Home button.
+func (s *Session) GoHome() {
+	v := s.ActiveView()
+	if v == nil || v.Home == nil {
+		s.animateCameraTo(s.Camera().Home(s.modelBounds()), sketchViewTweenSeconds)
+		return
+	}
+	s.animateCameraTo(s.homeCamera(v.Home), sketchViewTweenSeconds)
+}
+
+// homeCamera builds the scene camera for a saved Home: the exact frame for Fixed Distance,
+// or that direction re-fitted to the model extents for Fit to View.
+func (s *Session) homeCamera(h *doc.ViewHome) scene.Camera {
+	c := s.Camera() // carry the transient viewport pixel size
+	c.Eye, c.Target, c.Up, c.FOV = h.Eye, h.Target, h.Up, h.FOV
+	if h.FitToView {
+		c = c.Fit(s.modelBounds())
+	}
+	return c
+}
+
+// homeFrameOf projects a view's custom Home onto its persisted form (nil ⇒ nil).
+func homeFrameOf(h *doc.ViewHome) *viewstate.HomeFrame {
+	if h == nil {
+		return nil
+	}
+	return &viewstate.HomeFrame{
+		Eye:       [3]float64{h.Eye.X, h.Eye.Y, h.Eye.Z},
+		Target:    [3]float64{h.Target.X, h.Target.Y, h.Target.Z},
+		Up:        [3]float64{h.Up.X, h.Up.Y, h.Up.Z},
+		FOV:       h.FOV,
+		FitToView: h.FitToView,
+	}
+}
+
+// viewHomeOf rebuilds a view's custom Home from its persisted form (nil ⇒ nil).
+func viewHomeOf(f *viewstate.HomeFrame) *doc.ViewHome {
+	if f == nil {
+		return nil
+	}
+	return &doc.ViewHome{
+		Eye:       math.P3(f.Eye[0], f.Eye[1], f.Eye[2]),
+		Target:    math.P3(f.Target[0], f.Target[1], f.Target[2]),
+		Up:        math.V3(f.Up[0], f.Up[1], f.Up[2]),
+		FOV:       f.FOV,
+		FitToView: f.FitToView,
+	}
+}
+
 // ActiveViewProjection returns the active view's projection mode (perspective by default).
 func (s *Session) ActiveViewProjection() doc.ProjectionMode {
 	if v := s.ActiveView(); v != nil {
@@ -89,6 +152,7 @@ func (s *Session) saveViewState(d *doc.Document) {
 			Up:         [3]float64{v.Up.X, v.Up.Y, v.Up.Z},
 			FOV:        v.FOV,
 			Projection: int(v.Projection),
+			Home:       homeFrameOf(v.Home),
 		})
 	}
 	_ = s.viewState.Save(d.FullFileName(), st) // best-effort; a settings-write failure must not block saving the model
@@ -114,6 +178,7 @@ func (s *Session) loadViewState(d *doc.Document) {
 			FOV:        f.FOV,
 			Framed:     true,
 			Projection: doc.ProjectionMode(f.Projection),
+			Home:       viewHomeOf(f.Home),
 		}
 	}
 	d.RestoreViews(views, st.Active, types.ViewLayout(st.Layout))
@@ -272,6 +337,12 @@ func (s *Session) ShowViewCube() bool { return !s.viewCubeHidden }
 
 // SetShowViewCube shows or hides the navigation cube (View-tab toggle).
 func (s *Session) SetShowViewCube(show bool) { s.viewCubeHidden = !show }
+
+// ShowCompass reports whether the ViewCube compass (the North ring) is shown (default true).
+func (s *Session) ShowCompass() bool { return !s.compassHidden }
+
+// SetShowCompass shows or hides the ViewCube compass (its right-click menu toggle).
+func (s *Session) SetShowCompass(show bool) { s.compassHidden = !show }
 
 // ActivateView makes view i of the active document the active view (so picking, sketch and
 // commands target it). Used when the user interacts with a tile.

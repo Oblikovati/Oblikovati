@@ -42,6 +42,20 @@ type View struct {
 	// Projection is the view's camera projection (ViewCube projection menu). Per-view, so
 	// each tile can be perspective or orthographic independently. Defaults to perspective.
 	Projection ProjectionMode
+	// Home is this view's custom Home camera (ViewCube "Set Current View as Home"); nil ⇒
+	// the default iso Home. Go Home / the Home button restore it.
+	Home *ViewHome
+}
+
+// ViewHome is a view's saved Home camera. FitToView keeps only the viewing direction,
+// re-fitting to the model extents on each Go Home (Inventor's "Fit to View"); otherwise
+// the exact framing (Fixed Distance) is restored.
+type ViewHome struct {
+	Eye       math.Point3
+	Target    math.Point3
+	Up        math.Vector3
+	FOV       float64
+	FitToView bool
 }
 
 // ProjectionMode is a view's camera projection, matching Inventor's ViewCube projection

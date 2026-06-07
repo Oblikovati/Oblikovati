@@ -5,22 +5,35 @@
 package ui
 
 import (
+	stdmath "math"
+
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
+	"oblikovati/math"
 	"oblikovati/model/doc"
 	"oblikovati/scene"
 )
 
-// viewCubeMenuID is the ImGui id of the ViewCube right-click projection menu.
-const viewCubeMenuID = "##viewcube-projection"
+// viewCubeMenuID is the ImGui id of the ViewCube right-click menu.
+const viewCubeMenuID = "##viewcube-menu"
 
-// viewCubeProjectionMenu renders the ViewCube right-click menu when open (opened via
-// OpenPopup at the cube right-click sites): a radio set of projection modes acting on the
-// active view. Call once per frame inside the viewport window.
-func viewCubeProjectionMenu(s *app.Session) {
+// viewCubeContextMenu renders the ViewCube right-click menu when open (opened via OpenPopup
+// at the cube right-click sites): Home actions, projection modes, and the compass toggle —
+// all acting on the active view. Call once per frame inside the viewport window.
+func viewCubeContextMenu(s *app.Session) {
 	if !native.BeginPopup(viewCubeMenuID) {
 		return
 	}
+	if native.MenuItem("Go Home") {
+		s.GoHome()
+	}
+	if native.MenuItem("Set Current View as Home (Fixed Distance)") {
+		s.SetActiveViewHome(false)
+	}
+	if native.MenuItem("Set Current View as Home (Fit to View)") {
+		s.SetActiveViewHome(true)
+	}
+	native.Separator()
 	cur := s.ActiveViewProjection()
 	if native.MenuItem(projItemLabel("Orthographic", cur == doc.ProjOrthographic)) {
 		s.SetActiveViewProjection(doc.ProjOrthographic)
@@ -31,7 +44,31 @@ func viewCubeProjectionMenu(s *app.Session) {
 	if native.MenuItem(projItemLabel("Perspective with Ortho Faces", cur == doc.ProjPerspectiveOrthoFaces)) {
 		s.SetActiveViewProjection(doc.ProjPerspectiveOrthoFaces)
 	}
+	native.Separator()
+	if native.MenuItem(projItemLabel("Show Compass", s.ShowCompass())) {
+		s.SetShowCompass(!s.ShowCompass())
+	}
 	native.EndPopup()
+}
+
+// drawCompass paints a North ring in the cube's ground plane (z = −1), projected with the
+// cube so it foreshortens at its base, with an "N" tick at world +Y. Conveys the model's
+// heading as the view orbits.
+func drawCompass(cam scene.Camera, cx, cy float32) {
+	right, up, fwd := camBasis(cam)
+	const rc, segs = 1.5, 48 // ring radius in cube units, just outside the base
+	var px, py float32
+	for i := 0; i <= segs; i++ {
+		t := float64(i) / segs * 2 * stdmath.Pi
+		c := project(math.V3(rc*stdmath.Cos(t), rc*stdmath.Sin(t), -1), right, up, fwd, viewCubeRadius)
+		x, y := cx+c.sx, cy+c.sy
+		if i > 0 {
+			native.DrawLine(px, py, x, y, viewCubeCompassColor, 1.4)
+		}
+		px, py = x, y
+	}
+	n := project(math.V3(0, rc, -1), right, up, fwd, viewCubeRadius) // +Y = North
+	native.DrawText(cx+n.sx-3, cy+n.sy-7, "N", viewCubeCompassColor)
 }
 
 // projItemLabel prefixes the active mode with a filled dot so the current projection reads
@@ -57,17 +94,21 @@ const (
 // ViewCube colors. Faces are a light translucent panel; the hovered region's faces tint to
 // the accent. (Theming via tokens is a Phase-C follow-up.)
 var (
-	viewCubeFaceColor  = [4]float32{0.85, 0.86, 0.88, 1.0}  // opaque light gray
-	viewCubeHoverColor = [4]float32{0.36, 0.66, 0.96, 0.95} // accent on hover
-	viewCubeEdgeColor  = [4]float32{0.50, 0.52, 0.56, 1.0}  // medium gray, not black
-	viewCubeTextColor  = [4]float32{0.20, 0.22, 0.26, 1}
-	viewCubeHomeColor  = [4]float32{0.62, 0.66, 0.72, 0.95}
+	viewCubeFaceColor    = [4]float32{0.85, 0.86, 0.88, 1.0}  // opaque light gray
+	viewCubeHoverColor   = [4]float32{0.36, 0.66, 0.96, 0.95} // accent on hover
+	viewCubeEdgeColor    = [4]float32{0.50, 0.52, 0.56, 1.0}  // medium gray, not black
+	viewCubeTextColor    = [4]float32{0.20, 0.22, 0.26, 1}
+	viewCubeHomeColor    = [4]float32{0.62, 0.66, 0.72, 0.95}
+	viewCubeCompassColor = [4]float32{0.46, 0.52, 0.60, 0.95}
 )
 
 // drawViewCube paints the navigation cube centered at screen (cx,cy) for the camera, with
 // the hovered region (if any) tinted and the home button highlighted when homeHovered.
 // Drawn after the tile image so it sits on top; uses screen coordinates (ImGui draw list).
-func drawViewCube(cam scene.Camera, cx, cy float32, hovered *Region, homeHovered bool) {
+func drawViewCube(cam scene.Camera, cx, cy float32, hovered *Region, homeHovered, compass bool) {
+	if compass {
+		drawCompass(cam, cx, cy) // under the cube faces
+	}
 	for _, f := range visibleFaces(cam, viewCubeRadius) {
 		col := viewCubeFaceColor
 		if hovered != nil && faceInRegion(f.region, hovered) {

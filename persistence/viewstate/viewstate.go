@@ -27,6 +27,16 @@ type ViewFrame struct {
 	Up         [3]float64 `yaml:"up"`
 	FOV        float64    `yaml:"fov"`
 	Projection int        `yaml:"projection,omitempty"` // doc.ProjectionMode (0=perspective)
+	Home       *HomeFrame `yaml:"home,omitempty"`       // custom Home; nil ⇒ default iso Home
+}
+
+// HomeFrame is a view's persisted custom Home camera (ViewCube "Set Current View as Home").
+type HomeFrame struct {
+	Eye       [3]float64 `yaml:"eye"`
+	Target    [3]float64 `yaml:"target"`
+	Up        [3]float64 `yaml:"up"`
+	FOV       float64    `yaml:"fov"`
+	FitToView bool       `yaml:"fitToView,omitempty"`
 }
 
 // ViewState is a document's full view configuration: its views' cameras, which is active,

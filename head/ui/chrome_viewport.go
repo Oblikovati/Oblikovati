@@ -37,7 +37,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			drawSingleViewport(win, s)
 		}
-		viewCubeProjectionMenu(s) // the ViewCube right-click menu (opened from a tile/single path)
+		viewCubeContextMenu(s) // the ViewCube right-click menu (opened from a tile/single path)
 	}
 	native.End()
 }
@@ -67,7 +67,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	overCube := cubeRegion != nil || homeHit
 	if overCube && native.IsItemClicked(native.MouseLeft) {
 		if homeHit {
-			s.HomeView()
+			s.GoHome()
 		} else {
 			start := s.Camera()
 			start.Width, start.Height = pw, ph
@@ -84,7 +84,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 	if s.ShowViewCube() {
-		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit)
+		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass())
 	}
 }
 
@@ -209,7 +209,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		start.Width, start.Height = pw, ph
 		s.SetCamera(start) // sync the tween's start to this view
 		if homeHit {
-			s.HomeView()
+			s.GoHome()
 		} else {
 			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target), viewCubeSnapSecs)
 		}
@@ -249,7 +249,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
 	}
 	if s.ShowViewCube() {
-		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit)
+		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass())
 	}
 }
 

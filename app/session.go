@@ -31,6 +31,7 @@ type Session struct {
 	histories          map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState          viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
 	viewCubeHidden     bool                   // ViewCube shown unless hidden (zero value = shown)
+	compassHidden      bool                   // ViewCube compass shown unless hidden (zero value = shown)
 	bus                *event.Bus
 	selection          *Selection
 	tool               *ToolInstance
