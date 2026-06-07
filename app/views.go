@@ -5,9 +5,37 @@ package app
 import (
 	"fmt"
 
+	"oblikovati/api/types"
 	"oblikovati/model/doc"
 	"oblikovati/scene"
 )
+
+// SetViewLayout sets how the active document tiles its views (View-tab Windows panel).
+func (s *Session) SetViewLayout(l types.ViewLayout) error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	d.Views().SetLayout(l)
+	return nil
+}
+
+// NewView adds a view to the active document (copying the current view's camera) and makes
+// it active — the View-tab "New View" command.
+func (s *Session) NewView() error {
+	_, err := s.AddView(0, "", true)
+	return err
+}
+
+// CloseActiveView removes the active document's active view (the last view is kept).
+func (s *Session) CloseActiveView() error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	vs := d.Views()
+	return vs.Close(vs.ActiveIndex())
+}
 
 // DocumentByID resolves a document by its session id; id 0 means the active document. It
 // is the entry point for the document-addressed view/camera API (a Document field of 0

@@ -27,7 +27,8 @@ import (
 func drawViewportPanel(win *native.Window, s *app.Session) {
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
-		drawViewToolbar(s)
+		// View configuration (layout, new/close view) lives on the View ribbon tab's
+		// Windows panel — see app.windowsViewCommands.
 		// Per-document views can tile (split layouts); a single view takes the classic
 		// full-panel path. Each visible tile renders its own view's camera into its own
 		// offscreen slot, so tiles show distinct cameras simultaneously.
@@ -57,33 +58,6 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 }
 
-// drawViewToolbar shows the active document's view controls: a layout picker and add/close
-// buttons. Driving the same Views collection the API and persistence use, so changes here
-// tile the viewport and are saved with the document.
-func drawViewToolbar(s *app.Session) {
-	d := s.ActiveDocument()
-	if d == nil {
-		return
-	}
-	vs := d.Views()
-	if native.BeginCombo("##view-layout", vs.Layout().String()) {
-		for _, l := range types.AllViewLayouts() {
-			if native.Selectable(l.String(), l == vs.Layout()) {
-				vs.SetLayout(l)
-			}
-		}
-		native.EndCombo()
-	}
-	native.SameLine()
-	if native.Button("New View") {
-		_, _ = s.AddView(0, "", true)
-	}
-	native.SameLine()
-	if native.Button("Close View") {
-		_ = vs.Close(vs.ActiveIndex())
-	}
-}
-
 // planTiles returns the tile rectangles for the active document's view layout and the
 // index of the active (focused) tile. It returns nil when there is no active document or
 // the layout resolves to a single view (the caller then takes the single-view path).
@@ -94,7 +68,8 @@ func planTiles(s *app.Session) (rects []TileRect, active int) {
 	}
 	vs := d.Views()
 	w, h := native.ContentRegionAvail()
-	rects = tileRects(vs.Layout(), w, h, vs.Count())
+	sx, sy := vs.Split()
+	rects = tileRects(vs.Layout(), w, h, vs.Count(), sx, sy)
 	if len(rects) <= 1 {
 		return nil, 0
 	}
@@ -110,10 +85,59 @@ func planTiles(s *app.Session) (rects []TileRect, active int) {
 // (navigation, picking, overlays); the others render their cameras and accept a click or
 // drag to become the active view.
 func drawTiledViewports(win *native.Window, s *app.Session, rects []TileRect, active int) {
+	w, h := native.ContentRegionAvail()
 	ox, oy := native.GetCursorPos()
 	for i, r := range rects {
 		drawViewTile(win, s, i, r, ox, oy, i == active)
 	}
+	drawSplitters(s, ox, oy, w, h, len(rects))
+}
+
+// drawSplitters places draggable handles in the gutters between tiles so the user can
+// resize the views. Dragging updates the document's split fractions (Views.SetSplit),
+// which re-tile next frame. A vertical handle adjusts the left|right divider; a horizontal
+// handle adjusts the top/bottom divider (full width for the quad/two-V layout, only the
+// right column for the three-up layout).
+func drawSplitters(s *app.Session, ox, oy, w, h float32, tiles int) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	vs := d.Views()
+	layout := vs.Layout()
+	sx, sy := vs.Split()
+	g := float32(tileGutter)
+	vx, vy := w*sx, h*sy
+
+	hasVert := tiles >= 3 || (tiles == 2 && layout != types.LayoutTwoV)
+	hasHorz := tiles >= 3 || (tiles == 2 && layout == types.LayoutTwoV)
+
+	if hasVert {
+		if dx, _, dragging := dragSplit("##split-v", ox+vx-g/2, oy, g, h); dragging {
+			vs.SetSplit(sx+dx/w, sy)
+		}
+	}
+	if hasHorz {
+		hx, hw := float32(0), w
+		if tiles == 3 { // only the right column is split top/bottom
+			hx, hw = vx+g/2, w-(vx+g/2)
+		}
+		if _, dy, dragging := dragSplit("##split-h", ox+hx, oy+vy-g/2, hw, g); dragging {
+			vs.SetSplit(sx, sy+dy/h)
+		}
+	}
+}
+
+// dragSplit draws an invisible splitter handle over a gutter rect (at panel-cursor px,py,
+// size pw×ph) and reports the mouse delta while it is being dragged.
+func dragSplit(id string, px, py, pw, ph float32) (dx, dy float32, dragging bool) {
+	native.SetCursorPos(px, py)
+	native.InvisibleButton(id, pw, ph)
+	if native.IsItemActive() {
+		mdx, mdy := native.MouseDelta()
+		return mdx, mdy, true
+	}
+	return 0, 0, false
 }
 
 // drawViewTile renders view i into tile slot i. tx,ty is the tile's top-left in the

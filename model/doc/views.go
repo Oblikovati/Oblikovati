@@ -61,6 +61,41 @@ type DocumentViews struct {
 	views  []*View
 	active int
 	layout types.ViewLayout
+	// splitX/splitY are the divider positions (0..1) for split layouts: splitX is the
+	// vertical divider (left|right), splitY the horizontal one (top/bottom). Zero means
+	// "use the default 0.5" so a freshly-seeded collection needs no initialization.
+	splitX float32
+	splitY float32
+}
+
+const minSplit, maxSplit = 0.1, 0.9
+
+// Split returns the divider positions (0..1), defaulting an unset (zero) value to centre.
+func (vs *DocumentViews) Split() (x, y float32) {
+	x, y = vs.splitX, vs.splitY
+	if x == 0 {
+		x = 0.5
+	}
+	if y == 0 {
+		y = 0.5
+	}
+	return x, y
+}
+
+// SetSplit sets the divider positions, clamped to [0.1, 0.9] so no tile collapses.
+func (vs *DocumentViews) SetSplit(x, y float32) {
+	vs.splitX = clampSplit(x)
+	vs.splitY = clampSplit(y)
+}
+
+func clampSplit(v float32) float32 {
+	if v < minSplit {
+		return minSplit
+	}
+	if v > maxSplit {
+		return maxSplit
+	}
+	return v
 }
 
 // Views returns the document's view collection, seeding a single default view on first

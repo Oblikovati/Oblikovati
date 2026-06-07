@@ -3,6 +3,7 @@
 package app
 
 import (
+	"oblikovati/api/types"
 	"oblikovati/renderer"
 )
 
@@ -437,7 +438,36 @@ func sweptSolidCommands() []*CommandDefinition {
 // lighting/environment/shadow controls (M16/F03).
 func viewTabCommands() []*CommandDefinition {
 	cmds := append(viewNavigateCommands(), visualStyleCommands()...)
-	return append(cmds, lightingViewCommands()...)
+	cmds = append(cmds, lightingViewCommands()...)
+	return append(cmds, windowsViewCommands()...)
+}
+
+// windowsViewCommands is the View tab's "Windows" panel (Inventor's window-tiling home):
+// add/close a view of the active document and choose how its views tile the viewport.
+// A document owns a collection of views, each with its own camera (Document → Views →
+// Camera); these drive the same Views collection the API and .obk persistence use.
+func windowsViewCommands() []*CommandDefinition {
+	layout := func(id, name, icon string, l types.ViewLayout) *CommandDefinition {
+		return NewCommand(id, name, "Windows", func(s *Session) error {
+			return s.SetViewLayout(l)
+		}).WithTab("View").WithEnable(hasActivePart).WithIcon(icon).WithButtonStyle(SmallIconButton).
+			WithTooltip(name + " — tile the active document's views this way.")
+	}
+	return []*CommandDefinition{
+		NewCommand("View.New", "New View", "Windows", func(s *Session) error {
+			return s.NewView()
+		}).WithTab("View").WithEnable(hasActivePart).WithIcon("view-new").WithButtonStyle(LargeIconButton).
+			WithTooltip("New View — add another view of this document, with its own camera."),
+		NewCommand("View.Close", "Close View", "Windows", func(s *Session) error {
+			return s.CloseActiveView()
+		}).WithTab("View").WithEnable(hasActivePart).WithIcon("view-close").WithButtonStyle(SmallIconButton).
+			WithTooltip("Close View — remove the active view (a document keeps at least one)."),
+		layout("View.LayoutSingle", "Single View", "layout-single", types.LayoutSingle),
+		layout("View.LayoutTwoH", "Two Views (Side by Side)", "layout-two-h", types.LayoutTwoH),
+		layout("View.LayoutTwoV", "Two Views (Stacked)", "layout-two-v", types.LayoutTwoV),
+		layout("View.LayoutThree", "Three Views", "layout-three", types.LayoutThree),
+		layout("View.LayoutFour", "Four Views", "layout-four", types.LayoutFour),
+	}
 }
 
 // viewNavigateCommands are the View tab's Navigate panel.
