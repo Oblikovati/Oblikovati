@@ -25,7 +25,7 @@ func lightingSettingsCommand() *CommandDefinition {
 			s.OpenLightingPanel()
 		}
 		return nil
-	}).WithTab("View").
+	}).WithTab("View").WithIcon("lighting").WithButtonStyle(SmallIconButton).
 		WithTooltip("Lighting settings — exposure, brightness, ambience, and per-light controls.").
 		WithActive(func(s *Session) bool { return s.LightingPanelOpen() })
 }
@@ -64,7 +64,8 @@ func environmentCommands() []*CommandDefinition {
 	}
 	return append(cmds, NewCommand("View.LoadHDR", "Load HDR…", "Environment",
 		func(s *Session) error { s.RequestLoadEnvironment(); return nil }).
-		WithTab("View").WithTooltip("Load HDR — use an equirectangular .hdr file as the environment.").
+		WithTab("View").WithIcon("load-hdr").WithButtonStyle(SmallIconButton).
+		WithTooltip("Load HDR — use an equirectangular .hdr file as the environment.").
 		WithActive(func(s *Session) bool { return s.Environment().FilePath != "" }))
 }
 
@@ -72,15 +73,15 @@ func environmentCommands() []*CommandDefinition {
 // shadows on with a zero density seeds a visible default so the toggle has an immediate effect.
 func shadowCommands() []*CommandDefinition {
 	return []*CommandDefinition{
-		shadowToggle("View.ObjectShadows", "Object Shadows",
+		shadowToggle("View.ObjectShadows", "Object Shadows", "shadow-object",
 			"Object Shadows — bodies cast shadows from the primary light.",
 			func(sh *renderer.ShadowSettings) { sh.ObjectShadows = !sh.ObjectShadows },
 			func(sh renderer.ShadowSettings) bool { return sh.ObjectShadows }),
-		shadowToggle("View.GroundShadows", "Ground Shadows",
+		shadowToggle("View.GroundShadows", "Ground Shadows", "shadow-ground",
 			"Ground Shadows — shadows cast onto the ground plane.",
 			func(sh *renderer.ShadowSettings) { sh.GroundShadows = !sh.GroundShadows },
 			func(sh renderer.ShadowSettings) bool { return sh.GroundShadows }),
-		shadowToggle("View.AmbientShadows", "Ambient Shadows",
+		shadowToggle("View.AmbientShadows", "Ambient Shadows", "shadow-ambient",
 			"Ambient Shadows — contact ambient occlusion.",
 			func(sh *renderer.ShadowSettings) { sh.AmbientShadows = !sh.AmbientShadows },
 			func(sh renderer.ShadowSettings) bool { return sh.AmbientShadows }),
@@ -90,7 +91,7 @@ func shadowCommands() []*CommandDefinition {
 // shadowToggle builds one Shadows-panel toggle: flip mutates the session's shadow settings and
 // checked reports the current state. Enabling any shadow with a zero density seeds a visible
 // default so the toggle has an immediate effect.
-func shadowToggle(id, label, tip string, flip func(*renderer.ShadowSettings),
+func shadowToggle(id, label, icon, tip string, flip func(*renderer.ShadowSettings),
 	checked func(renderer.ShadowSettings) bool,
 ) *CommandDefinition {
 	return NewCommand(id, label, "Shadows", func(s *Session) error {
@@ -101,6 +102,6 @@ func shadowToggle(id, label, tip string, flip func(*renderer.ShadowSettings),
 		}
 		s.SetShadowSettings(sh)
 		return nil
-	}).WithTab("View").WithKind(ToggleControl).WithTooltip(tip).
+	}).WithTab("View").WithKind(ToggleControl).WithIcon(icon).WithButtonStyle(SmallIconButton).WithTooltip(tip).
 		WithActive(func(s *Session) bool { return checked(s.ShadowSettings()) })
 }
