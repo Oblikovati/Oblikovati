@@ -43,6 +43,22 @@ func TestRefreshThemeColorsReadsActiveTheme(t *testing.T) {
 	refreshThemeColors(theme.DefaultDark()) // restore the package default for other tests
 }
 
+// TestInputTextCursorBoundToText guards the light-mode caret fix: ImGui 1.92 draws the
+// InputText caret with the dedicated ImGuiCol_InputTextCursor (not ImGuiCol_Text), so it
+// must be remapped with the text color — otherwise it keeps the dark-theme default and is
+// invisible on a light background.
+func TestInputTextCursorBoundToText(t *testing.T) {
+	bound := false
+	for _, slot := range chromeBinding[types.TokenChromeText] {
+		if slot == "InputTextCursor" {
+			bound = true
+		}
+	}
+	if !bound {
+		t.Error("InputTextCursor must be bound to TokenChromeText so the caret is visible in light themes")
+	}
+}
+
 func TestBufString(t *testing.T) {
 	buf := make([]byte, 16)
 	copy(buf, "My Dark\x00garbage")

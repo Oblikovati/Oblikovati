@@ -121,6 +121,7 @@ void obk_ig_end_disabled(void)               { ImGui::EndDisabled(); }
 static int obk_col_index(const char* name) {
     struct { const char* n; int c; } table[] = {
         {"Text", ImGuiCol_Text}, {"TextDisabled", ImGuiCol_TextDisabled},
+        {"InputTextCursor", ImGuiCol_InputTextCursor},
         {"WindowBg", ImGuiCol_WindowBg}, {"ChildBg", ImGuiCol_ChildBg},
         {"PopupBg", ImGuiCol_PopupBg}, {"Border", ImGuiCol_Border},
         {"FrameBg", ImGuiCol_FrameBg}, {"FrameBgHovered", ImGuiCol_FrameBgHovered},

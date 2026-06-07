@@ -113,7 +113,7 @@ var chromeBinding = map[types.ThemeToken][]string{
 	types.TokenChromePopupBg:       {"PopupBg"},
 	types.TokenChromeMenuBarBg:     {"MenuBarBg"},
 	types.TokenChromeHeaderBg:      {"TitleBg", "TitleBgCollapsed", "Header"},
-	types.TokenChromeText:          {"Text"},
+	types.TokenChromeText:          {"Text", "InputTextCursor"},
 	types.TokenChromeTextDisabled:  {"TextDisabled"},
 	types.TokenChromeBorder:        {"Border", "Separator"},
 	types.TokenChromeControlBg:     {"FrameBg"},
