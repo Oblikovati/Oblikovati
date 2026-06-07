@@ -20,6 +20,12 @@ type cameraTween struct {
 	active   bool
 }
 
+// AnimateCameraTo starts an eased transition of the active view's camera to target over
+// duration seconds — the exported entry the head uses (e.g. ViewCube snaps).
+func (s *Session) AnimateCameraTo(target scene.Camera, duration float64) {
+	s.animateCameraTo(target, duration)
+}
+
 // animateCameraTo starts an eased transition of the camera to target over duration
 // seconds; a non-positive duration snaps immediately.
 func (s *Session) animateCameraTo(target scene.Camera, duration float64) {

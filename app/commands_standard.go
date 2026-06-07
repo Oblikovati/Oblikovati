@@ -462,6 +462,12 @@ func windowsViewCommands() []*CommandDefinition {
 			return s.CloseActiveView()
 		}).WithTab("View").WithEnable(hasActivePart).WithIcon("view-close").WithButtonStyle(SmallIconButton).
 			WithTooltip("Close View — remove the active view (a document keeps at least one)."),
+		NewCommand("View.ViewCube", "ViewCube", "Windows", func(s *Session) error {
+			s.SetShowViewCube(!s.ShowViewCube())
+			return nil
+		}).WithTab("View").WithEnable(hasActivePart).WithIcon("view-cube").WithButtonStyle(SmallIconButton).
+			WithActive(func(s *Session) bool { return s.ShowViewCube() }).
+			WithTooltip("ViewCube — show or hide the navigation cube in each viewport."),
 		layout("View.LayoutSingle", "Single View", "layout-single", types.LayoutSingle),
 		layout("View.LayoutTwoH", "Two Views (Side by Side)", "layout-two-h", types.LayoutTwoH),
 		layout("View.LayoutTwoV", "Two Views (Stacked)", "layout-two-v", types.LayoutTwoV),

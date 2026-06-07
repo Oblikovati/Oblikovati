@@ -210,6 +210,12 @@ func (s *Session) SetViewCameraAt(i int, c scene.Camera) {
 	v.Eye, v.Target, v.Up, v.FOV, v.Framed = c.Eye, c.Target, c.Up, c.FOV, true
 }
 
+// ShowViewCube reports whether the navigation cube is shown in viewports (default true).
+func (s *Session) ShowViewCube() bool { return !s.viewCubeHidden }
+
+// SetShowViewCube shows or hides the navigation cube (View-tab toggle).
+func (s *Session) SetShowViewCube(show bool) { s.viewCubeHidden = !show }
+
 // ActivateView makes view i of the active document the active view (so picking, sketch and
 // commands target it). Used when the user interacts with a tile.
 func (s *Session) ActivateView(i int) error {

@@ -156,33 +156,67 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 	}
 	cam.Width, cam.Height = pw, ph
 
-	// Per-tile navigation: a hover/drag/wheel on the tile orbits THIS view's camera and,
-	// on a non-active tile, makes it the active view so picking/commands follow.
-	nav := readNavInput(isPlacingTool(s) && isActive)
-	if nav.Hovered && navInteracted(nav) && !isActive {
+	// ViewCube hit-test (top-right corner, screen space). When the cursor is over the cube
+	// it owns the input this frame: no orbit, no model pick — a click snaps the view.
+	cubeCx, cubeCy := bx+float32(pw)-viewCubeMargin, by+viewCubeMargin
+	var cubeRegion *Region
+	var homeHit bool
+	if s.ShowViewCube() && native.IsItemHovered() {
+		mx, my := native.MousePos()
+		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam)
+		homeHit = overHomeButton(mx, my, cubeCx, cubeCy)
+	}
+	overCube := cubeRegion != nil || homeHit
+
+	switch {
+	case isActive && s.CameraAnimating():
+		// Advance a running snap/sketch tween on the focused tile.
+		s.TickCameraAnimation(float64(native.DeltaTime()))
+	case overCube && native.IsItemClicked(native.MouseLeft):
 		_ = s.ActivateView(i)
 		isActive = true
-	}
-	if nav.Hovered || nav.Active {
-		cam = ApplyNavigation(cam, nav)
-		s.SetViewCameraAt(i, cam)
-		if c, ok := s.ViewCameraAt(i); ok { // re-read (active view routes through SetCamera)
-			c.Width, c.Height = pw, ph
-			cam = c
+		start, _ := s.ViewCameraAt(i)
+		start.Width, start.Height = pw, ph
+		s.SetCamera(start) // sync the tween's start to this view
+		if homeHit {
+			s.HomeView()
+		} else {
+			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target), viewCubeSnapSecs)
 		}
+	case !overCube:
+		// Per-tile navigation: hover/drag/wheel orbits THIS view; on a non-active tile it
+		// also makes it the active view so picking/commands follow.
+		nav := readNavInput(isPlacingTool(s) && isActive)
+		if nav.Hovered && navInteracted(nav) && !isActive {
+			_ = s.ActivateView(i)
+			isActive = true
+		}
+		if nav.Hovered || nav.Active {
+			cam = ApplyNavigation(cam, nav)
+			s.SetViewCameraAt(i, cam)
+		}
+	}
+	if c, ok := s.ViewCameraAt(i); ok { // re-read after nav/animation/snap
+		c.Width, c.Height = pw, ph
+		cam = c
 	}
 
 	if isActive {
-		handleViewportClick(s)
+		if !overCube {
+			handleViewportClick(s)
+		}
 		hovered := hoveredPlane(s)
 		list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
 		list, gfxLabels := clientGraphicsOverlay(s, cam, list)
 		renderViewportImage(win, s, i, cam, list, pw, ph, tx, ty)
 		drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, tx, ty, ph)
 		drawActiveTileBorder(bx, by, float32(pw), float32(ph))
-		return
+	} else {
+		renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
 	}
-	renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
+	if s.ShowViewCube() {
+		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit)
+	}
 }
 
 // drawActiveTileBorder strokes a dark border just inside the active tile's screen rect so
