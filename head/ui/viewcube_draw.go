@@ -50,7 +50,7 @@ const (
 	viewCubeLabelW   = 1.4  // face-label stroke thickness, px
 	viewCubeHomeR    = 13   // home-button half-size, px
 	viewCubeReach    = 62.4 // max projected half-extent of the rotating cube (√3·radius), px
-	viewCubeHomeGap  = 16   // clear margin between the cube's reach and the home button, px
+	viewCubeHomeGap  = 8    // clear margin between the cube's reach and the home button, px
 	viewCubeSnapSecs = 0.35
 )
 
