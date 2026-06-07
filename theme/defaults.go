@@ -50,17 +50,18 @@ var darkHex = map[string]string{
 	string(types.TokenChromeAccent):        autodeskBlue500, // On/Active/Selected/Focus (§2)
 	string(types.TokenChromeScrollbar):     "#3b4453ff",
 	// Viewport 2D (§4 Dark canvas, §5 interactive/constraint states)
-	string(types.TokenViewportBg):       "#1e232bff", // "Dark" scheme solid canvas
-	string(types.TokenGridMinor):        "#3a424eff",
-	string(types.TokenGridMajor):        "#55606eff",
-	string(types.TokenGridAxis):         "#8c99adff",
-	string(types.TokenSketchGeometry):   "#5fb158ff", // under-constrained green (§5.2)
-	string(types.TokenSketchSelected):   "#00bfffff", // selection deep cyan (§5.1)
-	string(types.TokenSketchCandidate):  "#00ffffff", // pre-highlight bright cyan (§5.1)
-	string(types.TokenSketchPreview):    "#d1deeeff", // focus light (§2)
-	string(types.TokenDimensionDriving): "#c5cad3ff", // legible neutral annotation
-	string(types.TokenDimensionDriven):  "#8d96a3ff", // driven/reference indigo gray (§5.2)
-	string(types.TokenSnapGlyph):        "#ffffffff",
+	string(types.TokenViewportBg):           "#1e232bff", // "Dark" scheme solid canvas
+	string(types.TokenGridMinor):            "#3a424eff",
+	string(types.TokenGridMajor):            "#55606eff",
+	string(types.TokenGridAxis):             "#8c99adff",
+	string(types.TokenSketchGeometry):       "#5fb158ff", // under-constrained green (§5.2)
+	string(types.TokenSketchSelected):       "#00bfffff", // selection deep cyan (§5.1)
+	string(types.TokenSketchCandidate):      "#00ffffff", // pre-highlight bright cyan (§5.1)
+	string(types.TokenSketchPreview):        "#d1deeeff", // focus light (§2)
+	string(types.TokenDimensionDriving):     "#c5cad3ff", // legible neutral annotation
+	string(types.TokenDimensionDriven):      "#8d96a3ff", // driven/reference indigo gray (§5.2)
+	string(types.TokenSnapGlyph):            "#ffffffff",
+	string(types.TokenViewportActiveBorder): "#11151cff", // a touch darker than the dark canvas (#1e232b)
 	// Gizmos 3D (§5.3 reference infrastructure)
 	string(types.TokenPlaneFaint):         "#e37a22ff", // translucent-orange work plane border
 	string(types.TokenPlaneHover):         "#f09d4fff", // brighter surface orange on hover
@@ -95,17 +96,18 @@ var lightHex = map[string]string{
 	string(types.TokenChromeAccent):        autodeskBlue500, // primary accent (§2)
 	string(types.TokenChromeScrollbar):     "#c7ccd3ff",
 	// Viewport 2D
-	string(types.TokenViewportBg):       "#d4dce4ff", // light blue-gray "Sky"-style canvas
-	string(types.TokenGridMinor):        "#c2c7cfff",
-	string(types.TokenGridMajor):        "#a8aeb8ff",
-	string(types.TokenGridAxis):         "#7f8794ff",
-	string(types.TokenSketchGeometry):   "#4f9e48ff", // under-constrained green (toned)
-	string(types.TokenSketchSelected):   "#0098ccff", // selection cyan (toned for light)
-	string(types.TokenSketchCandidate):  "#00b3b3ff", // pre-highlight cyan (toned for light)
-	string(types.TokenSketchPreview):    "#5a6b85ff",
-	string(types.TokenDimensionDriving): "#404652ff",
-	string(types.TokenDimensionDriven):  "#8d96a3ff", // driven/reference indigo gray (§5.2)
-	string(types.TokenSnapGlyph):        "#1c1f24ff",
+	string(types.TokenViewportBg):           "#d4dce4ff", // light blue-gray "Sky"-style canvas
+	string(types.TokenGridMinor):            "#c2c7cfff",
+	string(types.TokenGridMajor):            "#a8aeb8ff",
+	string(types.TokenGridAxis):             "#7f8794ff",
+	string(types.TokenSketchGeometry):       "#4f9e48ff", // under-constrained green (toned)
+	string(types.TokenSketchSelected):       "#0098ccff", // selection cyan (toned for light)
+	string(types.TokenSketchCandidate):      "#00b3b3ff", // pre-highlight cyan (toned for light)
+	string(types.TokenSketchPreview):        "#5a6b85ff",
+	string(types.TokenDimensionDriving):     "#404652ff",
+	string(types.TokenDimensionDriven):      "#8d96a3ff", // driven/reference indigo gray (§5.2)
+	string(types.TokenSnapGlyph):            "#1c1f24ff",
+	string(types.TokenViewportActiveBorder): "#b4bec9ff", // a touch darker than the light canvas (#d4dce4)
 	// Gizmos 3D
 	string(types.TokenPlaneFaint):         "#e37a22ff", // work plane orange
 	string(types.TokenPlaneHover):         "#e08a2aff",

@@ -188,9 +188,9 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 // drawActiveTileBorder strokes a dark border just inside the active tile's screen rect so
 // the user can tell which view is focused (drawn after the image, so it sits on top).
 func drawActiveTileBorder(x, y, w, h float32) {
-	const thickness = 3
-	c := [4]float32{0.02, 0.03, 0.05, 1} // near-black, darker than any tile background
-	x0, y0, x1, y1 := x+1.5, y+1.5, x+w-1.5, y+h-1.5
+	const thickness = 2
+	c := activeViewportBorderColor // themed (types.TokenViewportActiveBorder)
+	x0, y0, x1, y1 := x+1, y+1, x+w-1, y+h-1
 	native.DrawLine(x0, y0, x1, y0, c, thickness)
 	native.DrawLine(x1, y0, x1, y1, c, thickness)
 	native.DrawLine(x1, y1, x0, y1, c, thickness)
