@@ -105,9 +105,9 @@ into an error return / `OBK_ERR` instead of a process kill. This does **not** co
 segfaults, stack overflows, or hangs — those require the out-of-process path (a
 subprocess speaking the same JSON C-ABI over a pipe/socket), the real fix for
 untrusted add-ins. **Deferred** while add-ins remain first-party and trusted; tracked
-here as a known gap. (For contrast, the embedded Lua runtime
-([ADR-0028](ADR-0028-embedded-lua-scripting.md)) is panic-recoverable in the host's
-*own* runtime precisely because it avoids this foreign-runtime crash surface.)
+here as a known gap. (For contrast, the embedded Lua runtime — ADR-0028, proposed —
+is panic-recoverable in the host's *own* runtime precisely because it avoids this
+foreign-runtime crash surface.)
 
 ## Shape / layering
 
