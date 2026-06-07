@@ -33,10 +33,10 @@ func faceTextFrame(r Region) (center, u, v math.Vector3) {
 		return math.V3(0, -1, 0), math.V3(1, 0, 0), math.V3(0, 0, 1)
 	case r.Y == 1: // BACK
 		return math.V3(0, 1, 0), math.V3(-1, 0, 0), math.V3(0, 0, 1)
-	case r.X == 1: // RIGHT
-		return math.V3(1, 0, 0), math.V3(0, -1, 0), math.V3(0, 0, 1)
-	default: // LEFT (X == -1)
-		return math.V3(-1, 0, 0), math.V3(0, 1, 0), math.V3(0, 0, 1)
+	case r.X == 1: // RIGHT — viewed from +X, screen-right is +Y
+		return math.V3(1, 0, 0), math.V3(0, 1, 0), math.V3(0, 0, 1)
+	default: // LEFT (X == -1) — viewed from −X, screen-right is −Y
+		return math.V3(-1, 0, 0), math.V3(0, -1, 0), math.V3(0, 0, 1)
 	}
 }
 
