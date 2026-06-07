@@ -34,6 +34,12 @@ func followActiveDocument(s *app.Session) {
 	if active == nil || s.CameraAnimating() {
 		return
 	}
+	// Camera state is per-view now: a view that has already been framed (saved, loaded, or
+	// navigated) keeps its camera, so switching documents restores each one's view instead
+	// of resetting it. Only a brand-new, never-framed view is Home-fit on first show.
+	if v := s.ActiveView(); v == nil || v.Framed {
+		return
+	}
 	// Frame the geometry if there is any; otherwise center on the model origin so the
 	// part's coordinate planes are visible rather than a void (Home keeps the current
 	// target on an empty model, so point it at the origin first).

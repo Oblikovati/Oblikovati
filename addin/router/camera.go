@@ -13,14 +13,24 @@ import (
 	"oblikovati/scene"
 )
 
-// getCamera returns the viewport camera as a look-at frame (wire.MethodViewGetCamera).
-func getCamera(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	return json.Marshal(cameraView(s.Camera()))
+// getCamera returns a document's active-view camera as a look-at frame (Document 0 ⇒ the
+// active document) — wire.MethodViewGetCamera.
+func getCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var a wire.GetCameraArgs
+	if err := decode(args, &a); err != nil {
+		return nil, err
+	}
+	cam, err := s.ViewCamera(a.Document)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(cameraView(cam))
 }
 
-// setCamera moves the viewport camera to the requested look-at frame, keeping the
-// camera's viewport size, and echoes the result (wire.MethodViewSetCamera). It rejects a
-// non-finite or degenerate frame so a bad presenter packet can never corrupt the view.
+// setCamera moves a document's active-view camera to the requested look-at frame, keeping
+// the viewport size, and echoes the result (Document 0 ⇒ active document) —
+// wire.MethodViewSetCamera. It rejects a non-finite or degenerate frame so a bad presenter
+// packet can never corrupt the view.
 func setCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	var a wire.SetCameraArgs
 	if err := decode(args, &a); err != nil {
@@ -29,13 +39,22 @@ func setCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err := validateCameraArgs(a); err != nil {
 		return nil, err
 	}
-	cam := s.Camera() // preserve Width/Height; override only the look-at frame + fov
+	cam, err := s.ViewCamera(a.Document) // preserve Width/Height; override the look-at frame
+	if err != nil {
+		return nil, err
+	}
 	cam.Eye = math.P3(a.Eye[0], a.Eye[1], a.Eye[2])
 	cam.Target = math.P3(a.Target[0], a.Target[1], a.Target[2])
 	cam.Up = math.V3(a.Up[0], a.Up[1], a.Up[2])
 	cam.FOV = a.FOV
-	s.SetCamera(cam)
-	return json.Marshal(cameraView(s.Camera()))
+	if err := s.SetViewCamera(a.Document, cam); err != nil {
+		return nil, err
+	}
+	out, err := s.ViewCamera(a.Document)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(cameraView(out))
 }
 
 // cameraView projects a scene.Camera onto the wire look-at DTO.

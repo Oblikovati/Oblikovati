@@ -39,7 +39,8 @@ type Document struct {
 	open             bool
 	visible          bool
 	compacted        bool
-	referencedBy     int // how many open documents reference this one (maintained by the graph, M03-F04)
+	referencedBy     int            // how many open documents reference this one (maintained by the graph, M03-F04)
+	views            *DocumentViews // per-document view collection (cameras); lazily seeded by Views()
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;

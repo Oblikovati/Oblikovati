@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package doc
+
+import (
+	"errors"
+	"fmt"
+	stdmath "math"
+
+	"oblikovati/api/types"
+	"oblikovati/math"
+)
+
+// ErrLastView is returned by [DocumentViews.Close] when asked to remove the only view —
+// a document must always retain at least one view.
+var ErrLastView = errors.New("doc: cannot close the last view of a document")
+
+// viewIndexError reports an out-of-range view index, naming the operation and bounds.
+func viewIndexError(op string, i, n int) error {
+	return fmt.Errorf("doc: %s view index %d out of range [0,%d)", op, i, n)
+}
+
+// View is one view of a document: a named camera frame (Inventor's View.Camera). A
+// document owns a collection of views and each has its own camera, which is why
+// switching documents (or views) restores that view's camera rather than resetting it.
+//
+// The frame is stored as math value types (not the renderer's scene.Camera) so the model
+// layer carries no rendering dependency; the session converts to/from scene.Camera and
+// supplies the transient viewport pixel size. Eye/Target are points, Up a vector, FOV the
+// vertical field of view in radians.
+type View struct {
+	Name   string
+	Eye    math.Point3
+	Target math.Point3
+	Up     math.Vector3
+	FOV    float64
+	// Framed reports whether this view's camera has been fitted to the model yet. A
+	// brand-new default view starts unframed so the UI Home-fits it the first time it is
+	// shown; a saved/loaded or user-navigated view is framed, so switching to it restores
+	// its camera instead of resetting the view (the per-document camera fix).
+	Framed bool
+}
+
+// DefaultView is the framing a brand-new view starts at (matching scene.NewCamera): an
+// eye on +Z looking at the origin, Y up, 45° vertical FOV. The session re-frames it to
+// the model the first time the view is shown.
+func DefaultView(name string) *View {
+	return &View{
+		Name:   name,
+		Eye:    math.P3(0, 0, 10),
+		Target: math.P3(0, 0, 0),
+		Up:     math.V3(0, 1, 0),
+		FOV:    stdmath.Pi / 4,
+	}
+}
+
+// DocumentViews is a document's view collection (Inventor's Document.Views): the ordered
+// views, which one is active, and how they tile in the viewport. A document always has at
+// least one view — the zero collection lazily seeds a default via [Document.Views].
+type DocumentViews struct {
+	views  []*View
+	active int
+	layout types.ViewLayout
+}
+
+// Views returns the document's view collection, seeding a single default view on first
+// use so a document is never viewless (Inventor: a document always has ≥1 view).
+func (d *Document) Views() *DocumentViews {
+	if d.views == nil {
+		d.views = &DocumentViews{views: []*View{DefaultView("View 1")}, layout: types.LayoutSingle}
+	}
+	return d.views
+}
+
+// RestoreViews replaces the document's collection with views loaded from disk (each is
+// already framed), the active index, and the layout. An empty set is ignored so the lazy
+// default view stands; an out-of-range active index is clamped. Used by persistence on open.
+func (d *Document) RestoreViews(views []*View, active int, layout types.ViewLayout) {
+	if len(views) == 0 {
+		return
+	}
+	if active < 0 || active >= len(views) {
+		active = 0
+	}
+	if !layout.IsValid() {
+		layout = types.LayoutSingle
+	}
+	d.views = &DocumentViews{views: views, active: active, layout: layout}
+}
+
+// All returns the views in order (do not mutate the slice).
+func (vs *DocumentViews) All() []*View { return vs.views }
+
+// Count is the number of views.
+func (vs *DocumentViews) Count() int { return len(vs.views) }
+
+// ActiveIndex is the index of the active view.
+func (vs *DocumentViews) ActiveIndex() int { return vs.active }
+
+// Active returns the active view (never nil — the collection always holds ≥1 view).
+func (vs *DocumentViews) Active() *View { return vs.views[vs.active] }
+
+// Layout returns the current tiling layout.
+func (vs *DocumentViews) Layout() types.ViewLayout { return vs.layout }
+
+// SetLayout sets the tiling layout, ignoring an undefined value.
+func (vs *DocumentViews) SetLayout(l types.ViewLayout) {
+	if l.IsValid() {
+		vs.layout = l
+	}
+}
+
+// Add appends v and makes it the active view, returning its index.
+func (vs *DocumentViews) Add(v *View) int {
+	vs.views = append(vs.views, v)
+	vs.active = len(vs.views) - 1
+	return vs.active
+}
+
+// Activate makes the view at index i active. Out-of-range is an error.
+func (vs *DocumentViews) Activate(i int) error {
+	if i < 0 || i >= len(vs.views) {
+		return viewIndexError("activate", i, len(vs.views))
+	}
+	vs.active = i
+	return nil
+}
+
+// Rename sets the name of the view at index i.
+func (vs *DocumentViews) Rename(i int, name string) error {
+	if i < 0 || i >= len(vs.views) {
+		return viewIndexError("rename", i, len(vs.views))
+	}
+	vs.views[i].Name = name
+	return nil
+}
+
+// Close removes the view at index i. Closing the last remaining view is refused (a
+// document always has ≥1 view); the active index is kept in range.
+func (vs *DocumentViews) Close(i int) error {
+	if i < 0 || i >= len(vs.views) {
+		return viewIndexError("close", i, len(vs.views))
+	}
+	if len(vs.views) == 1 {
+		return ErrLastView
+	}
+	vs.views = append(vs.views[:i], vs.views[i+1:]...)
+	if vs.active >= len(vs.views) {
+		vs.active = len(vs.views) - 1
+	}
+	return nil
+}
