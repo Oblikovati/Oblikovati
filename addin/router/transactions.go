@@ -31,6 +31,28 @@ func transactionState(s *app.Session, _ json.RawMessage) (json.RawMessage, error
 	return marshalUndoState(s)
 }
 
+// beginTransaction opens a bounded transaction so a batch of edits coalesces into one
+// undo step (wire.MethodTransactionBegin).
+func beginTransaction(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var a wire.TransactionBeginArgs
+	if err := decode(args, &a); err != nil {
+		return nil, err
+	}
+	if err := s.BeginTransaction(a.Label); err != nil {
+		return nil, err
+	}
+	return json.Marshal(wire.OKResult{OK: true})
+}
+
+// endTransaction closes the innermost open transaction and returns the resulting state
+// (wire.MethodTransactionEnd).
+func endTransaction(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	if err := s.EndTransaction(); err != nil {
+		return nil, err
+	}
+	return marshalUndoState(s)
+}
+
 // marshalUndoState renders the active document's cursor state into the wire DTO.
 func marshalUndoState(s *app.Session) (json.RawMessage, error) {
 	return json.Marshal(wire.UndoState{
