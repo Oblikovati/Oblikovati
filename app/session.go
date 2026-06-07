@@ -100,16 +100,41 @@ func newSession(store doc.Store) *Session {
 // AddIns returns the add-in registry (ApplicationAddIns).
 func (s *Session) AddIns() *AddInManager { return s.addins }
 
-// Camera returns the viewport camera (used by picking and sketch tools); SetCamera
-// updates it (the window feeds orbit/zoom in production) and keeps the picker's view in
-// sync so a click hit-tests against the current camera.
-func (s *Session) Camera() scene.Camera { return s.camera }
+// Camera returns the active view's camera sized to the current viewport. Camera state is
+// per-view — a document owns a Views collection and each view owns a camera — so switching
+// documents or views shows that view's saved camera rather than resetting it. The
+// transient viewport pixel size is carried on the session's cached frame; with no active
+// document the cached frame is returned as a fallback.
+func (s *Session) Camera() scene.Camera {
+	if v := s.ActiveView(); v != nil {
+		c := s.camera // carry the transient viewport pixel size (Width/Height)
+		c.Eye, c.Target, c.Up, c.FOV = v.Eye, v.Target, v.Up, v.FOV
+		return c
+	}
+	return s.camera
+}
 
+// SetCamera applies c to the active view (the per-view source of truth), caches the frame
+// (for the no-document fallback and the pixel size), marks the view framed, and keeps the
+// picker's view in sync so a click hit-tests against the current camera.
 func (s *Session) SetCamera(c scene.Camera) {
 	s.camera = c
+	if v := s.ActiveView(); v != nil {
+		v.Eye, v.Target, v.Up, v.FOV = c.Eye, c.Target, c.Up, c.FOV
+		v.Framed = true
+	}
 	if ca, ok := s.picker.(interface{ SetCamera(scene.Camera) }); ok {
 		ca.SetCamera(c)
 	}
+}
+
+// ActiveView returns the active document's active view, or nil when no document is active.
+func (s *Session) ActiveView() *doc.View {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil
+	}
+	return d.Views().Active()
 }
 
 // EnterSketch activates a sketch for editing (the Sketch environment); ExitSketch

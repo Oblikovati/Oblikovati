@@ -36,6 +36,27 @@ type Document struct {
 	DisplayName   string
 	Model         []byte
 	Data          map[string][]byte
+	Views         *ViewsSection
+}
+
+// ViewFrame is the persisted camera of one view: a name and a look-at frame (eye, target,
+// up in model units; fov in radians). Stored natively (not base64) so the saved view is
+// readable in the YAML file.
+type ViewFrame struct {
+	Name   string     `yaml:"name,omitempty"`
+	Eye    [3]float64 `yaml:"eye"`
+	Target [3]float64 `yaml:"target"`
+	Up     [3]float64 `yaml:"up"`
+	FOV    float64    `yaml:"fov"`
+}
+
+// ViewsSection is a document's persisted view collection: the views, the active index, and
+// the tiling layout. A loaded view is, by definition, framed — the framed flag is not
+// persisted; the host marks loaded views framed on restore.
+type ViewsSection struct {
+	Views  []ViewFrame `yaml:"views"`
+	Active int         `yaml:"active,omitempty"`
+	Layout int32       `yaml:"layout,omitempty"`
 }
 
 // onDisk is the YAML projection of a Document: manifest at top level, recipe as a
@@ -45,6 +66,7 @@ type onDisk struct {
 	DocumentType  uint32            `yaml:"documentType,omitempty"`
 	DisplayName   string            `yaml:"displayName,omitempty"`
 	Model         yaml.Node         `yaml:"model,omitempty"`
+	Views         *ViewsSection     `yaml:"views,omitempty"`
 	Data          map[string]string `yaml:"data,omitempty"`
 }
 
@@ -63,6 +85,7 @@ func MarshalDocument(d Document) ([]byte, error) {
 		}
 		od.Model = *node
 	}
+	od.Views = d.Views
 	if len(d.Data) > 0 {
 		od.Data = make(map[string]string, len(d.Data))
 		for name, raw := range d.Data {
@@ -94,6 +117,7 @@ func UnmarshalDocument(raw []byte) (Document, error) {
 		}
 		d.Model = b
 	}
+	d.Views = od.Views
 	if len(od.Data) > 0 {
 		d.Data = make(map[string][]byte, len(od.Data))
 		for name, enc := range od.Data {

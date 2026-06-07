@@ -1,0 +1,80 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package app
+
+import (
+	"fmt"
+
+	"oblikovati/model/doc"
+	"oblikovati/scene"
+)
+
+// DocumentByID resolves a document by its session id; id 0 means the active document. It
+// is the entry point for the document-addressed view/camera API (a Document field of 0
+// targets the active document).
+func (s *Session) DocumentByID(id uint64) (*doc.Document, error) {
+	if id == 0 {
+		d := s.ActiveDocument()
+		if d == nil {
+			return nil, ErrNoActiveDoc
+		}
+		return d, nil
+	}
+	for _, d := range s.Workspace().Documents() {
+		if uint64(d.ID()) == id {
+			return d, nil
+		}
+	}
+	return nil, fmt.Errorf("app: no document with id %d", id)
+}
+
+// AddView adds a new view to a document (id 0 = active) and makes it active, returning its
+// index. With copyActiveCamera the new view starts at the document's current active-view
+// camera; otherwise it gets a default view that the UI Home-fits the first time it is
+// shown. An empty name is auto-numbered ("View N").
+func (s *Session) AddView(docID uint64, name string, copyActiveCamera bool) (int, error) {
+	d, err := s.DocumentByID(docID)
+	if err != nil {
+		return 0, err
+	}
+	vs := d.Views()
+	if name == "" {
+		name = fmt.Sprintf("View %d", vs.Count()+1)
+	}
+	nv := doc.DefaultView(name)
+	if copyActiveCamera {
+		cur := vs.Active()
+		nv.Eye, nv.Target, nv.Up, nv.FOV, nv.Framed = cur.Eye, cur.Target, cur.Up, cur.FOV, cur.Framed
+	}
+	return vs.Add(nv), nil
+}
+
+// ViewCamera returns a document's active-view camera (id 0 = active document), sized to
+// the current viewport.
+func (s *Session) ViewCamera(docID uint64) (scene.Camera, error) {
+	d, err := s.DocumentByID(docID)
+	if err != nil {
+		return scene.Camera{}, err
+	}
+	v := d.Views().Active()
+	c := s.camera // carry the transient viewport pixel size
+	c.Eye, c.Target, c.Up, c.FOV = v.Eye, v.Target, v.Up, v.FOV
+	return c, nil
+}
+
+// SetViewCamera applies c to a document's active view (id 0 = active document). When the
+// addressed document is the active one this routes through SetCamera (picker + cache
+// sync); otherwise it writes the off-screen document's view frame directly.
+func (s *Session) SetViewCamera(docID uint64, c scene.Camera) error {
+	d, err := s.DocumentByID(docID)
+	if err != nil {
+		return err
+	}
+	if d == s.ActiveDocument() {
+		s.SetCamera(c)
+		return nil
+	}
+	v := d.Views().Active()
+	v.Eye, v.Target, v.Up, v.FOV, v.Framed = c.Eye, c.Target, c.Up, c.FOV, true
+	return nil
+}

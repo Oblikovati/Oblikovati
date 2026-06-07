@@ -80,6 +80,13 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodViewGetCamera] = getCamera
 	r.handlers[wire.MethodViewSetCamera] = setCamera
 	r.handlers[wire.MethodInteractionState] = interactionState
+	r.handlers[wire.MethodViewsList] = listViews
+	r.handlers[wire.MethodViewsAdd] = addView
+	r.handlers[wire.MethodViewsActivate] = activateView
+	r.handlers[wire.MethodViewsClose] = closeView
+	r.handlers[wire.MethodViewsRename] = renameView
+	r.handlers[wire.MethodViewsGetLayout] = getLayout
+	r.handlers[wire.MethodViewsSetLayout] = setLayout
 }
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query

@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"os"
 
+	"oblikovati/api/types"
+	"oblikovati/math"
 	"oblikovati/model/doc"
+	"oblikovati/persistence/yamlcodec"
 )
 
 // PackageStore is the [doc.Store] backed by .obk packages on disk. Injected into a
@@ -43,6 +46,7 @@ func (s *PackageStore) Save(d *doc.Document) error {
 		}
 		pkg.SetModelYAML(model)
 	}
+	pkg.SetViews(viewsSection(d))
 	return pkg.Save(d.FullFileName())
 }
 
@@ -70,7 +74,44 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 			return nil, fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
 		}
 	}
+	restoreViews(d, pkg.Views())
 	return d, nil
+}
+
+// viewsSection projects a document's view collection (cameras) onto the persisted section.
+func viewsSection(d *doc.Document) *yamlcodec.ViewsSection {
+	vs := d.Views()
+	sec := &yamlcodec.ViewsSection{Active: vs.ActiveIndex(), Layout: int32(vs.Layout())}
+	for _, v := range vs.All() {
+		sec.Views = append(sec.Views, yamlcodec.ViewFrame{
+			Name:   v.Name,
+			Eye:    [3]float64{v.Eye.X, v.Eye.Y, v.Eye.Z},
+			Target: [3]float64{v.Target.X, v.Target.Y, v.Target.Z},
+			Up:     [3]float64{v.Up.X, v.Up.Y, v.Up.Z},
+			FOV:    v.FOV,
+		})
+	}
+	return sec
+}
+
+// restoreViews rebuilds a document's view collection from the persisted section (each
+// loaded view is framed). A nil/empty section leaves the lazily-seeded default view.
+func restoreViews(d *doc.Document, sec *yamlcodec.ViewsSection) {
+	if sec == nil || len(sec.Views) == 0 {
+		return
+	}
+	views := make([]*doc.View, len(sec.Views))
+	for i, f := range sec.Views {
+		views[i] = &doc.View{
+			Name:   f.Name,
+			Eye:    math.P3(f.Eye[0], f.Eye[1], f.Eye[2]),
+			Target: math.P3(f.Target[0], f.Target[1], f.Target[2]),
+			Up:     math.V3(f.Up[0], f.Up[1], f.Up[2]),
+			FOV:    f.FOV,
+			Framed: true,
+		}
+	}
+	d.RestoreViews(views, sec.Active, types.ViewLayout(sec.Layout))
 }
 
 // Exists reports whether a package file is present at fullDocumentName.
