@@ -47,6 +47,7 @@ func drawToolParamsDialog(s *app.Session) {
 		drawToolFloatParams(params)
 		drawToolIntParams(params)
 		drawToolBoolParams(params)
+		drawToolChoiceParams(params)
 		drawToolTextParams(params)
 		drawToolParamButtons(s)
 	}
@@ -60,6 +61,31 @@ func drawToolBoolParams(params app.ToolParams) {
 			b.Set(v)
 		}
 	}
+}
+
+// drawToolChoiceParams renders each one-of-N parameter (e.g. text alignment, font) as a
+// dropdown bound to the tool's selected index.
+func drawToolChoiceParams(params app.ToolParams) {
+	for _, c := range params.Choices {
+		drawToolChoice(c)
+	}
+}
+
+func drawToolChoice(c app.ChoiceParam) {
+	cur := c.Get()
+	preview := ""
+	if cur >= 0 && cur < len(c.Options) {
+		preview = c.Options[cur]
+	}
+	if !native.BeginCombo(c.Label, preview) {
+		return
+	}
+	for i, opt := range c.Options {
+		if native.Selectable(opt, i == cur) {
+			c.Set(i)
+		}
+	}
+	native.EndCombo()
 }
 
 func drawToolFloatParams(params app.ToolParams) {

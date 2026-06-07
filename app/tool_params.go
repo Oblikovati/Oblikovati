@@ -39,18 +39,29 @@ type BoolParam struct {
 	Set   func(bool)
 }
 
+// ChoiceParam is a one-of-N tool parameter (e.g. text alignment), rendered as a dropdown.
+// Get/Set carry the selected index into Options.
+type ChoiceParam struct {
+	Label   string
+	Options []string
+	Get     func() int
+	Set     func(int)
+}
+
 // ToolParams is the set of editable parameters a tool exposes; the head renders each
 // non-empty group as a labelled input row.
 type ToolParams struct {
-	Floats []FloatParam
-	Ints   []IntParam
-	Texts  []TextParam
-	Bools  []BoolParam
+	Floats  []FloatParam
+	Ints    []IntParam
+	Texts   []TextParam
+	Bools   []BoolParam
+	Choices []ChoiceParam
 }
 
 // Empty reports whether the tool exposes no parameters (so the head shows no dialog).
 func (p ToolParams) Empty() bool {
-	return len(p.Floats) == 0 && len(p.Ints) == 0 && len(p.Texts) == 0 && len(p.Bools) == 0
+	return len(p.Floats) == 0 && len(p.Ints) == 0 && len(p.Texts) == 0 &&
+		len(p.Bools) == 0 && len(p.Choices) == 0
 }
 
 // ParameterizedTool is a Tool that exposes editable parameters for the property dialog.
