@@ -103,6 +103,7 @@ func drawChromeWindows(s *app.Session) {
 	drawPreferencesWindow(s)
 	drawMaterialsWindow(s)
 	drawLightingWindow(s)
+	drawScriptConsole(s)
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
 		fileModal.openFor(dialogLoadHDR)
 	}

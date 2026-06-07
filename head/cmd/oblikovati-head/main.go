@@ -57,6 +57,7 @@ func run(session *app.Session, maxFrames int) error {
 	// safely while the window stays responsive.
 	addins := startAddIns(session)
 	defer addins.stop(session)
+	ui.SetScriptController(addins.script) // the Manage ▸ Script Console panel drives this runtime
 
 	for frame := 0; ; frame++ {
 		if maxFrames > 0 && frame >= maxFrames {

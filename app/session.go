@@ -60,6 +60,7 @@ type Session struct {
 	paramsDialogOpen   bool                     // the Manage ▸ Parameters dialog is open
 	lightingPanelOpen  bool                     // the View ▸ Lighting settings panel is open
 	loadEnvRequested   bool                     // a "Load HDR…" was requested; the head opens the file dialog
+	scriptConsoleOpen  bool                     // the Manage ▸ Scripts ▸ Script Console panel is open
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
