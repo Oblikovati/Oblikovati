@@ -203,17 +203,25 @@ func (t *ThreePointArcSlotTool) Params() ToolParams {
 	return ToolParams{Floats: []FloatParam{scalarParam("Width", &t.width)}}
 }
 
-// SketchTextTool places a text box at a clicked anchor; the string and height are set
-// before committing (Inventor's text dialog). It does not auto-commit — the user enters
-// the text first.
+// SketchTextTool places a sketch text entity at a clicked anchor; its content, font and
+// alignment are set in the text window before committing (Inventor's text dialog). It does
+// not auto-commit — the user enters the text first. The created entity keeps its content +
+// font and derives its glyph geometry on demand (by reference), so it is embossable without
+// baking outlines.
 type SketchTextTool struct {
-	anchor *math.Point2
-	text   string
-	height math.Scalar
+	anchor   *math.Point2
+	text     string
+	height   math.Scalar
+	family   string
+	fontSize math.Scalar
+	hAlign   sketch.TextHJustify
+	vAlign   sketch.TextVJustify
 }
 
-// NewSketchTextTool makes a text tool with a default height.
-func NewSketchTextTool() *SketchTextTool { return &SketchTextTool{height: 1} }
+// NewSketchTextTool makes a text tool with a default height and the default font family.
+func NewSketchTextTool() *SketchTextTool {
+	return &SketchTextTool{height: 1, family: textFontFamilies[0]}
+}
 
 func (t *SketchTextTool) Name() string              { return "Text" }
 func (t *SketchTextTool) Start(*Session)            {}
@@ -234,11 +242,17 @@ func (t *SketchTextTool) ClickAt(s *Session, px, py float64) {
 	}
 }
 
-// SetText and SetHeight set the string and character height.
-func (t *SketchTextTool) SetText(text string) { t.text = text }
-func (t *SketchTextTool) SetHeight(h float64) { t.height = math.Scalar(h) }
+// SetText, SetHeight, SetFont, SetAlignment set the editable text fields (used by the
+// text window and headless tests).
+func (t *SketchTextTool) SetText(text string)   { t.text = text }
+func (t *SketchTextTool) SetHeight(h float64)   { t.height = math.Scalar(h) }
+func (t *SketchTextTool) SetFont(family string) { t.family = family }
+func (t *SketchTextTool) SetFontSize(s float64) { t.fontSize = math.Scalar(s) }
+func (t *SketchTextTool) SetAlignment(h sketch.TextHJustify, v sketch.TextVJustify) {
+	t.hAlign, t.vAlign = h, v
+}
 
-// Commit creates the text box.
+// Commit creates the by-reference sketch text entity.
 func (t *SketchTextTool) Commit(s *Session) error {
 	sk := s.ActiveSketch()
 	if sk == nil {
@@ -247,7 +261,7 @@ func (t *SketchTextTool) Commit(s *Session) error {
 	if t.anchor == nil || t.text == "" {
 		return errors.New("text: needs an anchor and a non-empty string")
 	}
-	sk.TextBoxes().Add(*t.anchor, t.text, t.height, 0, sketch.TextLeft)
+	sk.TextBoxes().AddStyled(*t.anchor, t.text, t.height, 0, t.hAlign, t.vAlign, t.family, t.fontSize)
 	return nil
 }
 
@@ -261,9 +275,42 @@ func (t *SketchSlotTool) Params() ToolParams {
 	return ToolParams{Floats: []FloatParam{scalarParam("Width", &t.width)}}
 }
 
+// textFontFamilies are the font families offered in the text window; the first is the
+// default. (Liberation Sans is the embedded face; more can be vendored later.)
+var textFontFamilies = []string{"Liberation Sans"}
+
+var hAlignLabels = []string{"Left", "Center", "Right"}
+var vAlignLabels = []string{"Baseline", "Lower", "Middle", "Upper"}
+
 func (t *SketchTextTool) Params() ToolParams {
 	return ToolParams{
-		Texts:  []TextParam{{"Text", func() string { return t.text }, func(s string) { t.text = s }}},
-		Floats: []FloatParam{scalarParam("Height", &t.height)},
+		Texts:   []TextParam{{"Text", func() string { return t.text }, func(s string) { t.text = s }}},
+		Floats:  []FloatParam{scalarParam("Height", &t.height), scalarParam("Font Size", &t.fontSize)},
+		Choices: t.alignmentChoices(),
+	}
+}
+
+// alignmentChoices exposes the font family + horizontal/vertical alignment dropdowns.
+func (t *SketchTextTool) alignmentChoices() []ChoiceParam {
+	return []ChoiceParam{
+		{"Font", textFontFamilies, t.fontIndex, t.setFontIndex},
+		{"Alignment", hAlignLabels, func() int { return int(t.hAlign) }, func(i int) { t.hAlign = sketch.TextHJustify(i) }},
+		{"Vertical", vAlignLabels, func() int { return int(t.vAlign) }, func(i int) { t.vAlign = sketch.TextVJustify(i) }},
+	}
+}
+
+// fontIndex returns the index of the tool's font family in textFontFamilies (0 default).
+func (t *SketchTextTool) fontIndex() int {
+	for i, f := range textFontFamilies {
+		if f == t.family {
+			return i
+		}
+	}
+	return 0
+}
+
+func (t *SketchTextTool) setFontIndex(i int) {
+	if i >= 0 && i < len(textFontFamilies) {
+		t.family = textFontFamilies[i]
 	}
 }

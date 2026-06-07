@@ -54,7 +54,7 @@ func TestToolParamsLabels(t *testing.T) {
 		{NewSketchCircPatternTool(), []string{"Center X", "Center Y", "Angle (deg)"}, []string{"Count"}, 0},
 		{NewSketchSlotTool(1), []string{"Width"}, nil, 0},
 		{NewSketchChamferTool(0.5), []string{"Distance"}, nil, 0},
-		{NewSketchTextTool(), []string{"Height"}, nil, 1},
+		{NewSketchTextTool(), []string{"Height", "Font Size"}, nil, 1},
 		{NewSketchFilletTool(0.5), []string{"Radius"}, nil, 0},
 		{NewSketchOffsetTool(0.5), []string{"Distance"}, nil, 0},
 	}

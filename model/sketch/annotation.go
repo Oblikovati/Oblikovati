@@ -42,7 +42,9 @@ func (f *FillRegion) Region(s *Sketch) *Profile {
 	return nil
 }
 
-// TextHJustify is a text box's horizontal justification.
+// TextHJustify is a text box's horizontal justification. It mirrors
+// [oblikovati/api/types.TextHorizontalAlign] but stays an int enum here so existing
+// call sites and the document codec are unchanged.
 type TextHJustify uint8
 
 const (
@@ -51,8 +53,23 @@ const (
 	TextRight
 )
 
-// TextBox is sketch text: a string anchored at a point, with a height (cm), rotation
-// (radians CCW about the anchor), and horizontal justification. Annotative.
+// TextVJustify is a text box's vertical justification (mirrors
+// [oblikovati/api/types.TextVerticalAlign]). Baseline is the sketch-text default.
+type TextVJustify uint8
+
+const (
+	TextBaseline TextVJustify = iota
+	TextLower
+	TextMiddle
+	TextUpper
+)
+
+// TextBox is sketch text: a string anchored at a point, with a character Height (cm),
+// Rotation (radians CCW about the anchor), horizontal + vertical justification, and a font
+// (Family name + FontSize cm; FontSize 0 tracks Height). It is NOT baked geometry — it
+// keeps its content/font and DERIVES its glyph outlines on demand (Outlines/Region), so
+// editing it re-derives the geometry and an emboss that references it recomputes. This is
+// the by-reference text model (Inventor: TextBox.ConvertToGeometry, edited via the sketch).
 type TextBox struct {
 	entityBase
 	Anchor   math.Point2
@@ -60,6 +77,9 @@ type TextBox struct {
 	Height   math.Scalar
 	Rotation math.Scalar
 	Justify  TextHJustify
+	VJustify TextVJustify
+	Family   string
+	FontSize math.Scalar
 }
 
 // TextBoxes creates and tracks sketch text.
@@ -68,9 +88,19 @@ type TextBoxes struct {
 	items []*TextBox
 }
 
-// Add places text at anchor with the given content, height, rotation, and justification.
+// Add places text at anchor with the given content, height, rotation, and horizontal
+// justification (left-justified vertical baseline, default font). Use AddStyled for the
+// full field set.
 func (c *TextBoxes) Add(anchor math.Point2, text string, height, rotation math.Scalar, justify TextHJustify) *TextBox {
-	t := &TextBox{entityBase: newEntity(), Anchor: anchor, Text: text, Height: height, Rotation: rotation, Justify: justify}
+	return c.AddStyled(anchor, text, height, rotation, justify, TextBaseline, "", 0)
+}
+
+// AddStyled places text with the full type-setting field set.
+func (c *TextBoxes) AddStyled(anchor math.Point2, text string, height, rotation math.Scalar, hjust TextHJustify, vjust TextVJustify, family string, fontSize math.Scalar) *TextBox {
+	t := &TextBox{
+		entityBase: newEntity(), Anchor: anchor, Text: text, Height: height,
+		Rotation: rotation, Justify: hjust, VJustify: vjust, Family: family, FontSize: fontSize,
+	}
 	c.s.add(t)
 	c.items = append(c.items, t)
 	return t

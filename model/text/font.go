@@ -66,6 +66,27 @@ func (ft *Font) Outlines(s string, height float64) ([][]math.Point2, error) {
 	return out, nil
 }
 
+// Advance returns the total pen advance (string width) of s laid out at the given em
+// height, in model units — used to horizontally align text about its anchor.
+func (ft *Font) Advance(s string, height float64) (float64, error) {
+	scale := height / ft.upem
+	ppem := fixed.Int26_6(int(ft.upem) << 6)
+	var buf sfnt.Buffer
+	total := 0.0
+	for _, r := range s {
+		idx, err := ft.f.GlyphIndex(&buf, r)
+		if err != nil {
+			return 0, fmt.Errorf("text: glyph index %q: %w", r, err)
+		}
+		adv, err := ft.f.GlyphAdvance(&buf, idx, ppem, font.HintingNone)
+		if err != nil {
+			return 0, fmt.Errorf("text: advance %q: %w", r, err)
+		}
+		total += f26(adv) * scale
+	}
+	return total, nil
+}
+
 // scaleContour offsets a design-unit contour by penX and scales it into model units. sfnt
 // uses Y-DOWN (raster) coordinates, so Y is negated to put text upright in the Y-up sketch
 // (the baseline stays at y=0; cap height becomes positive).

@@ -44,13 +44,15 @@ func run(args []string, out io.Writer) error {
 		return cmdImport(args[1:], out)
 	case "export":
 		return cmdExport(args[1:], out)
+	case "script":
+		return cmdScript(args[1:], out)
 	case "version":
 		return cmdVersion(out)
 	case "help", "-h", "--help":
 		fmt.Fprintln(out, usage)
 		return nil
 	default:
-		return fmt.Errorf("oblikovati-cli: unknown command %q (want new|open|info|save-as|import|export|version)", args[0])
+		return fmt.Errorf("oblikovati-cli: unknown command %q (want new|open|info|save-as|import|export|script|version)", args[0])
 	}
 }
 
@@ -64,4 +66,5 @@ usage:
   oblikovati-cli save-as <src> <dst>
   oblikovati-cli import <mesh-file.stl|.obj|.3mf> <dst.obk>
   oblikovati-cli export <src.obk> <mesh-file.stl|.obj|.3mf> [low|medium|high]
+  oblikovati-cli script run <file.lua> [--doc in.obk] [--save out.obk]
   oblikovati-cli version`
