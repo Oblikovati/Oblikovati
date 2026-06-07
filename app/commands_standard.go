@@ -205,6 +205,7 @@ func sketch3DToolCommands() []*CommandDefinition {
 	finish := NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
 		return s.FinishSketch3D()
 	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon("finish-sketch").
+		WithButtonStyle(LargeIconButton).
 		WithTooltip("Finish the 3D sketch and return to the model.")
 	return append(sketch3DDrawCommands(), finish)
 }
@@ -242,7 +243,8 @@ func sketch3DToolCommand(id, name, icon, tip string, newTool func() Tool) *Comma
 	return NewCommand(id, name, "Sketch3D", func(s *Session) error {
 		s.StartTool(newTool())
 		return nil
-	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon(icon).WithTooltip(tip)
+	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon(icon).
+		WithButtonStyle(SmallIconButton).WithTooltip(tip)
 }
 
 // modifyFeatureCommands are the 3D Model tab's "Modify" panel: the material-cutting
