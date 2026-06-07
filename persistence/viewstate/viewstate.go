@@ -43,11 +43,20 @@ type HomeFrame struct {
 // ViewState is a document's full view configuration: its views' cameras, which is active,
 // how they tile, and the divider positions.
 type ViewState struct {
-	Views  []ViewFrame `yaml:"views"`
-	Active int         `yaml:"active,omitempty"`
-	Layout int32       `yaml:"layout,omitempty"`
-	SplitX float32     `yaml:"splitX,omitempty"`
-	SplitY float32     `yaml:"splitY,omitempty"`
+	Views  []ViewFrame  `yaml:"views"`
+	Active int          `yaml:"active,omitempty"`
+	Layout int32        `yaml:"layout,omitempty"`
+	SplitX float32      `yaml:"splitX,omitempty"`
+	SplitY float32      `yaml:"splitY,omitempty"`
+	Front  *OrientFrame `yaml:"front,omitempty"` // ViewCube front redefinition; nil ⇒ default
+}
+
+// OrientFrame is a persisted ViewCube orientation: the three column vectors of the
+// rotation (cube-local +X/+Y/+Z mapped to world).
+type OrientFrame struct {
+	X [3]float64 `yaml:"x"`
+	Y [3]float64 `yaml:"y"`
+	Z [3]float64 `yaml:"z"`
 }
 
 // Store reads and writes per-document view state, keyed by the document's full file path.

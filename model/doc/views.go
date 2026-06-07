@@ -102,7 +102,20 @@ type DocumentViews struct {
 	// "use the default 0.5" so a freshly-seeded collection needs no initialization.
 	splitX float32
 	splitY float32
+	front  CubeOrient // ViewCube orientation (Set/Reset Front); zero value ⇒ identity
 }
+
+// Front returns the document's ViewCube orientation, defaulting to the identity (the
+// un-redefined front) for a zero/unset value.
+func (vs *DocumentViews) Front() CubeOrient {
+	if vs.front == (CubeOrient{}) {
+		return IdentityCubeOrient()
+	}
+	return vs.front
+}
+
+// SetFront redefines (or resets, with IdentityCubeOrient) the document's ViewCube front.
+func (vs *DocumentViews) SetFront(o CubeOrient) { vs.front = o }
 
 const minSplit, maxSplit = 0.1, 0.9
 

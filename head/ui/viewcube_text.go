@@ -8,6 +8,7 @@ package ui
 
 import (
 	"oblikovati/math"
+	"oblikovati/model/doc"
 	"oblikovati/scene"
 )
 
@@ -43,12 +44,12 @@ func faceTextFrame(r Region) (center, u, v math.Vector3) {
 // faceLabelSegments projects a labeled face's word into the face plane and returns the
 // screen-space line segments (offsets from the cube center, px) that draw it. Empty for an
 // unlabeled face.
-func faceLabelSegments(f cubeFace, cam scene.Camera, radius float32) [][4]float32 {
+func faceLabelSegments(f cubeFace, cam scene.Camera, o doc.CubeOrient, radius float32) [][4]float32 {
 	label := f.region.Label
 	if label == "" {
 		return nil
 	}
-	right, up, fwd := camBasis(cam)
+	right, up, fwd := cubeBasis(cam, o)
 	center, uAxis, vAxis := faceTextFrame(f.region)
 
 	scale := 1.0

@@ -15,8 +15,18 @@ import (
 	"sort"
 
 	"oblikovati/math"
+	"oblikovati/model/doc"
 	"oblikovati/scene"
 )
+
+// cubeBasis is the camera's screen basis expressed in the cube's local frame: the camera
+// right/up/forward rotated by the document's ViewCube orientation (Set Front). With the
+// identity orientation it equals camBasis, so the cube math below stays axis-aligned and a
+// front redefinition is a pure pre-rotation here — nothing else changes.
+func cubeBasis(cam scene.Camera, o doc.CubeOrient) (right, up, fwd math.Vector3) {
+	r, u, f := camBasis(cam)
+	return o.ToLocal(r), o.ToLocal(u), o.ToLocal(f)
+}
 
 // edgeZone is the fraction of a face (from its edge inward) that counts as an edge/corner
 // region rather than the face center, when classifying a hit. 0.5 splits each axis into
@@ -89,14 +99,14 @@ func (r Region) up() math.Vector3 {
 // SnapCamera returns cur reframed to look at center from this region's direction, keeping
 // the current eye→target distance (zoom). The eye is forced onto the region's side (unlike
 // scene.Camera.Facing, which preserves the current side).
-func (r Region) SnapCamera(cur scene.Camera, center math.Point3) scene.Camera {
+func (r Region) SnapCamera(cur scene.Camera, center math.Point3, o doc.CubeOrient) scene.Camera {
 	dist := cur.Eye.DistanceTo(cur.Target)
 	if dist < 1 {
 		dist = 1
 	}
 	cur.Target = center
-	cur.Eye = center.TranslateBy(r.dir().Scale(dist))
-	cur.Up = normVec(r.up())
+	cur.Eye = center.TranslateBy(o.ToWorld(r.dir()).Scale(dist)) // local dir → world via the front orientation
+	cur.Up = normVec(o.ToWorld(r.up()))
 	return cur
 }
 
@@ -129,8 +139,8 @@ func project(p math.Vector3, right, up, fwd math.Vector3, radius float32) cubeCo
 // center, for a cube drawn at the given radius and camera, or nil for a miss. It casts a
 // ray (along the camera forward) from the cursor into the world-axis-aligned unit cube and
 // classifies the entry point into a face/edge/corner zone.
-func HitTest(localX, localY, radius float32, cam scene.Camera) *Region {
-	right, up, fwd := camBasis(cam)
+func HitTest(localX, localY, radius float32, cam scene.Camera, o doc.CubeOrient) *Region {
+	right, up, fwd := cubeBasis(cam, o)
 	sx, sy := float64(localX/radius), float64(localY/radius)
 	if stdmath.Abs(sx) > 1.6 || stdmath.Abs(sy) > 1.6 { // outside the cube's projected reach
 		return nil
@@ -220,8 +230,8 @@ type cubeFace struct {
 
 // visibleFaces returns the cube's front-facing faces (those whose outward normal points
 // toward the viewer), projected and sorted back-to-front, for the painter.
-func visibleFaces(cam scene.Camera, radius float32) []cubeFace {
-	right, up, fwd := camBasis(cam)
+func visibleFaces(cam scene.Camera, o doc.CubeOrient, radius float32) []cubeFace {
+	right, up, fwd := cubeBasis(cam, o)
 	// Unit-cube face definitions: axis index, sign, and the 4 corners in CCW order.
 	defs := []struct {
 		axis int

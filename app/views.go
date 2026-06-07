@@ -114,6 +114,33 @@ func viewHomeOf(f *viewstate.HomeFrame) *doc.ViewHome {
 	}
 }
 
+// CubeOrientation returns the active document's ViewCube orientation (front redefinition),
+// or the identity when there is no active document.
+func (s *Session) CubeOrientation() doc.CubeOrient {
+	if d := s.ActiveDocument(); d != nil {
+		return d.Views().Front()
+	}
+	return doc.IdentityCubeOrient()
+}
+
+// SetActiveViewAsFront redefines the active document's ViewCube front so the current view
+// becomes the front view (ViewCube "Set Current View as Front"), axis-snapped.
+func (s *Session) SetActiveViewAsFront() {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	c := s.Camera()
+	d.Views().SetFront(doc.FrontFromView(c.Eye.VectorTo(c.Target), c.Up))
+}
+
+// ResetFront restores the active document's default ViewCube front (ViewCube "Reset Front").
+func (s *Session) ResetFront() {
+	if d := s.ActiveDocument(); d != nil {
+		d.Views().SetFront(doc.IdentityCubeOrient())
+	}
+}
+
 // ActiveViewProjection returns the active view's projection mode (perspective by default).
 func (s *Session) ActiveViewProjection() doc.ProjectionMode {
 	if v := s.ActiveView(); v != nil {
@@ -145,6 +172,13 @@ func (s *Session) saveViewState(d *doc.Document) {
 	vs := d.Views()
 	st := viewstate.ViewState{Active: vs.ActiveIndex(), Layout: int32(vs.Layout())}
 	st.SplitX, st.SplitY = vs.Split()
+	if f := vs.Front(); !f.IsIdentity() {
+		st.Front = &viewstate.OrientFrame{
+			X: [3]float64{f.X.X, f.X.Y, f.X.Z},
+			Y: [3]float64{f.Y.X, f.Y.Y, f.Y.Z},
+			Z: [3]float64{f.Z.X, f.Z.Y, f.Z.Z},
+		}
+	}
 	for _, v := range vs.All() {
 		st.Views = append(st.Views, viewstate.ViewFrame{
 			Name:       v.Name,
@@ -184,6 +218,13 @@ func (s *Session) loadViewState(d *doc.Document) {
 	}
 	d.RestoreViews(views, st.Active, types.ViewLayout(st.Layout))
 	d.Views().SetSplit(st.SplitX, st.SplitY)
+	if f := st.Front; f != nil {
+		d.Views().SetFront(doc.CubeOrient{
+			X: math.V3(f.X[0], f.X[1], f.X[2]),
+			Y: math.V3(f.Y[0], f.Y[1], f.Y[2]),
+			Z: math.V3(f.Z[0], f.Z[1], f.Z[2]),
+		})
+	}
 }
 
 // SetViewLayout sets how the active document tiles its views and ensures it has enough

@@ -61,7 +61,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	var homeHit bool
 	if s.ShowViewCube() && native.IsItemHovered() {
 		mx, my := native.MousePos()
-		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam)
+		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam, s.CubeOrientation())
 		homeHit = overHomeButton(mx, my, cubeCx, cubeCy)
 	}
 	overCube := cubeRegion != nil || homeHit
@@ -71,7 +71,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 		} else {
 			start := s.Camera()
 			start.Width, start.Height = pw, ph
-			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target), viewCubeSnapSecs)
+			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target, s.CubeOrientation()), viewCubeSnapSecs)
 		}
 	}
 	if cubeRegion != nil && native.IsItemClicked(native.MouseRight) {
@@ -84,7 +84,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 	if s.ShowViewCube() {
-		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass())
+		drawViewCube(cam, s.CubeOrientation(), cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass())
 	}
 }
 
@@ -193,7 +193,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 	var homeHit bool
 	if s.ShowViewCube() && native.IsItemHovered() {
 		mx, my := native.MousePos()
-		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam)
+		cubeRegion = HitTest(mx-cubeCx, my-cubeCy, viewCubeRadius, cam, s.CubeOrientation())
 		homeHit = overHomeButton(mx, my, cubeCx, cubeCy)
 	}
 	overCube := cubeRegion != nil || homeHit
@@ -211,7 +211,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		if homeHit {
 			s.GoHome()
 		} else {
-			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target), viewCubeSnapSecs)
+			s.AnimateCameraTo(cubeRegion.SnapCamera(start, start.Target, s.CubeOrientation()), viewCubeSnapSecs)
 		}
 	case cubeRegion != nil && native.IsItemClicked(native.MouseRight):
 		_ = s.ActivateView(i) // right-click the cube → projection menu acts on this view
@@ -249,7 +249,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
 	}
 	if s.ShowViewCube() {
-		drawViewCube(cam, cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass())
+		drawViewCube(cam, s.CubeOrientation(), cubeCx, cubeCy, cubeRegion, homeHit, s.ShowCompass())
 	}
 }
 

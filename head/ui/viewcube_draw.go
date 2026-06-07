@@ -45,6 +45,13 @@ func viewCubeContextMenu(s *app.Session) {
 		s.SetActiveViewProjection(doc.ProjPerspectiveOrthoFaces)
 	}
 	native.Separator()
+	if native.MenuItem("Set Current View as Front") {
+		s.SetActiveViewAsFront()
+	}
+	if native.MenuItem("Reset Front") {
+		s.ResetFront()
+	}
+	native.Separator()
 	if native.MenuItem(projItemLabel("Show Compass", s.ShowCompass())) {
 		s.SetShowCompass(!s.ShowCompass())
 	}
@@ -54,8 +61,8 @@ func viewCubeContextMenu(s *app.Session) {
 // drawCompass paints a North ring in the cube's ground plane (z = −1), projected with the
 // cube so it foreshortens at its base, with an "N" tick at world +Y. Conveys the model's
 // heading as the view orbits.
-func drawCompass(cam scene.Camera, cx, cy float32) {
-	right, up, fwd := camBasis(cam)
+func drawCompass(cam scene.Camera, o doc.CubeOrient, cx, cy float32) {
+	right, up, fwd := cubeBasis(cam, o)
 	const rc, segs = 1.5, 48 // ring radius in cube units, just outside the base
 	var px, py float32
 	for i := 0; i <= segs; i++ {
@@ -105,11 +112,11 @@ var (
 // drawViewCube paints the navigation cube centered at screen (cx,cy) for the camera, with
 // the hovered region (if any) tinted and the home button highlighted when homeHovered.
 // Drawn after the tile image so it sits on top; uses screen coordinates (ImGui draw list).
-func drawViewCube(cam scene.Camera, cx, cy float32, hovered *Region, homeHovered, compass bool) {
+func drawViewCube(cam scene.Camera, o doc.CubeOrient, cx, cy float32, hovered *Region, homeHovered, compass bool) {
 	if compass {
-		drawCompass(cam, cx, cy) // under the cube faces
+		drawCompass(cam, o, cx, cy) // under the cube faces
 	}
-	for _, f := range visibleFaces(cam, viewCubeRadius) {
+	for _, f := range visibleFaces(cam, o, viewCubeRadius) {
 		col := viewCubeFaceColor
 		if hovered != nil && faceInRegion(f.region, hovered) {
 			col = viewCubeHoverColor
@@ -125,7 +132,7 @@ func drawViewCube(cam scene.Camera, cx, cy float32, hovered *Region, homeHovered
 		native.DrawLine(x2, y2, x3, y3, viewCubeEdgeColor, viewCubeEdgeW)
 		native.DrawLine(x3, y3, x0, y0, viewCubeEdgeColor, viewCubeEdgeW)
 		// Label painted IN the face plane (projected with the cube), not screen-aligned.
-		for _, s := range faceLabelSegments(f, cam, viewCubeRadius) {
+		for _, s := range faceLabelSegments(f, cam, o, viewCubeRadius) {
 			native.DrawLine(cx+s[0], cy+s[1], cx+s[2], cy+s[3], viewCubeTextColor, viewCubeLabelW)
 		}
 	}
