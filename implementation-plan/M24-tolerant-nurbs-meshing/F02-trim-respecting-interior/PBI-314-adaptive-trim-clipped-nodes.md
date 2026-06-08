@@ -3,7 +3,7 @@ milestone: M24
 feature: F02
 pbi: PBI-314
 title: Deflection-adaptive, strictly trim-clipped interior nodes
-status: planned
+status: done
 estimate: L
 ---
 
