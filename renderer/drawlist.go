@@ -143,6 +143,11 @@ func BuildDrawListStyled(bodies []*topo.Body, cam scene.Camera, q ops.Quality, l
 			continue
 		}
 		mesh, edges := ops.TessellateBody(b, q)
+		// Crease-angle smooth shading (display only): a loft/sweep skin is built as many planar
+		// facets, which flat-shade into stripes; average normals across facets meeting below the
+		// crease angle so they read smooth while sharp edges stay crisp. Mass properties keep the
+		// raw per-face normals (BodyGeometryProperties calls TessellateBody directly).
+		mesh.Normals = ops.SmoothShadeNormals(mesh, ops.DefaultCreaseAngle())
 		items = appendBodyItems(items, b.ID(), mesh, edges, surfaceFor(b, lookup), pass, dashWorld)
 	}
 	return DrawList{Items: items}
