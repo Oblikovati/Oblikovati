@@ -44,8 +44,15 @@ F01 (pcurves), `kernel/ops/{cdt,refined_patch,tessellate_trim}.go`, the OCC orac
 
 ## Backlog items
 
-| PBI | Title |
-|-----|-------|
-| [PBI-314](PBI-314-adaptive-trim-clipped-nodes.md) | Deflection-adaptive, strictly trim-clipped interior nodes |
-| [PBI-315](PBI-315-curvature-aware-no-fold.md) | Curvature-aware triangulation with fold detection + repair |
-| [PBI-316](PBI-316-wire-nurbs-face-mesher.md) | Wire the NURBS face mesher (oracle-gated) |
+| PBI | Title | Status |
+|-----|-------|--------|
+| [PBI-314](PBI-314-adaptive-trim-clipped-nodes.md) | Deflection-adaptive, strictly trim-clipped interior nodes | done (merged) |
+| [PBI-315](PBI-315-curvature-aware-no-fold.md) | Curvature-aware triangulation with fold detection + repair | done (merged) |
+| [PBI-316](PBI-316-wire-nurbs-face-mesher.md) | Wire the NURBS face mesher — **BLOCKED**: (u,v) interior is non-conformal on imported faces | superseded |
+| [PBI-321](PBI-321-3d-space-refinement.md) | 3D-space interior refinement (replaces the (u,v) grid) | planned |
+
+> **Finding (PBI-316):** the `(u,v)`-grid interior cannot refine imported NURBS — their
+> parameterization is non-conformal (interior `(u,v)` maps ~15% of the face off the trim →
+> +33% volume). F01 pcurve + PBI-314 density + PBI-315 fold-repair stay valid; only the interior
+> *sampling* moves from `(u,v)` to **3D space** (PBI-321). PBI-314/315 are merged but not yet
+> production-wired (their tests exercise them); PBI-321 wires the 3D-refined mesher.
