@@ -11,7 +11,6 @@ import (
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 	"oblikovati/head/viewport"
-	"oblikovati/kernel/ops"
 	"oblikovati/model/clientgraphics"
 	"oblikovati/model/feature"
 	"oblikovati/model/sketch"
@@ -269,9 +268,8 @@ func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPla
 // baseDrawList is the model geometry (styled) with the current selection highlighted, with
 // no environment overlays — what a passive (non-focused) tile shows for its view's camera.
 func baseDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
-	bodies := activeBodies(s)
-	list := renderer.BuildDrawListStyled(bodies, cam, ops.DefaultQuality(), s.SurfaceLookup(), s.VisualStyle())
-	return highlightSelection(list, s.Selection().First(), bodies)
+	list := cachedBodyDrawList(s, cam) // a per-frame copy of the cached tessellation (see viewport_cache.go)
+	return highlightSelection(list, s.Selection().First(), activeBodies(s))
 }
 
 func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.Plane, dims []app.DimensionView, labels []clientgraphics.Label, cx, cy float32, ph int) {
@@ -314,11 +312,11 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
 	// Fit the shadow frustum to the model (before adding the ground), then drop in the ground
 	// plane so object shadows have a surface to land on.
-	min, max, hasGeom := viewport.SceneBounds(viewport.Flatten(list))
+	min, max, hasGeom := viewport.DrawListBounds(list) // bounds without a throwaway Flatten
 	if hasGeom && wantGround(s) {
 		list.Items = append(list.Items, groundPlaneItem(min, max, renderer.PassSetFor(s.VisualStyle()).Faces))
 	}
-	m := viewport.Flatten(list)
+	m := viewport.Flatten(list) // the single Flatten, now with the ground plane included
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))

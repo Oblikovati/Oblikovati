@@ -2,7 +2,11 @@
 
 package viewport
 
-import "math"
+import (
+	"math"
+
+	"oblikovati/renderer"
+)
 
 // SceneBounds returns the axis-aligned min/max of a flattened mesh's shaded + occluder triangle
 // positions, and ok=false when there is no geometry. The shadow pass fits its light frustum to
@@ -14,6 +18,36 @@ func SceneBounds(m Mesh) (min, max [3]float32, ok bool) {
 	accumulatePositions(m.TriVerts, &min, &max)
 	accumulatePositions(m.OccVerts, &min, &max)
 	return min, max, min[0] <= max[0]
+}
+
+// DrawListBounds returns the shadow bounds directly from a draw list — the min/max of every
+// non-on-top triangle item's positions, the same set SceneBounds reads from a flattened mesh. It
+// lets the viewport size the shadow frustum without a throwaway Flatten (which is then done once,
+// after the ground plane is appended).
+func DrawListBounds(list renderer.DrawList) (min, max [3]float32, ok bool) {
+	min = [3]float32{math.MaxFloat32, math.MaxFloat32, math.MaxFloat32}
+	max = [3]float32{-math.MaxFloat32, -math.MaxFloat32, -math.MaxFloat32}
+	for _, it := range list.Items {
+		if it.Primitive != renderer.Triangles || it.OnTop {
+			continue
+		}
+		for _, p := range it.Positions {
+			widen(&min, &max, float32(p.X), float32(p.Y), float32(p.Z))
+		}
+	}
+	return min, max, min[0] <= max[0]
+}
+
+// widen expands the min/max box to include (x,y,z).
+func widen(min, max *[3]float32, x, y, z float32) {
+	for i, v := range [3]float32{x, y, z} {
+		if v < min[i] {
+			min[i] = v
+		}
+		if v > max[i] {
+			max[i] = v
+		}
+	}
 }
 
 // accumulatePositions widens min/max by every vertex position (the first 3 of each 16-float
