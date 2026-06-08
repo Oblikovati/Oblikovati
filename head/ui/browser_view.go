@@ -24,10 +24,15 @@ type browserSelectionSync struct{ last app.Selectable }
 
 var browserSync browserSelectionSync
 
+// browserNodeSeq numbers nodes in pre-order each frame so every row gets a unique Dear
+// ImGui id (see drawNode). Reset at the top of each browser draw.
+var browserNodeSeq int
+
 // drawBrowser renders the model browser tree from the active document, then records the
 // selection so the next frame can detect a change for scroll-sync.
 func drawBrowser(s *app.Session) {
 	if native.Begin("Model") {
+		browserNodeSeq = 0
 		drawNode(s, app.BuildBrowser(s))
 		browserSync.last = s.Selection().First()
 	}
@@ -36,7 +41,15 @@ func drawBrowser(s *app.Session) {
 
 // drawNode renders a browser node and its children: a selectable node as a clickable,
 // highlightable row; a branch as a collapsible tree node; a plain leaf as a bullet row.
+//
+// Each node pushes a unique id (its pre-order number) so two rows with the SAME display
+// label — several imported bodies, or two features of the same kind — never collide on one
+// Dear ImGui id, which would break the row's selection, expansion, and context menu. The
+// label is still what's shown; only the id is disambiguated.
 func drawNode(s *app.Session, n app.BrowserNode) {
+	browserNodeSeq++
+	native.PushIDInt(browserNodeSeq)
+	defer native.PopID()
 	switch {
 	case n.Select != nil:
 		drawSelectableNode(s, n)
