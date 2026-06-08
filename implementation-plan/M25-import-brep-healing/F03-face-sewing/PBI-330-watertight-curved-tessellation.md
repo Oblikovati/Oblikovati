@@ -11,6 +11,18 @@ estimate: L
 
 **Milestone:** M25 Imported B-Rep Healing  ·  **Feature:** F03 Face sewing into watertight shells
 
+## UPDATE (2026-06-08): test-first narrowed the fix to edge snapping (PBI-324), not mesher rewrite
+
+A committed test (`TestCleanCurvedSolidIsWatertight`, kernel/ops) proves a **clean** curved solid
+tessellates **watertight (0 free edges)** — the grid meshers already share boundaries when the edge
+lies on the surface (a face's `PointAt(ParamAt(edge))` equals the shared edge point). So the meshers
+are NOT buggy; the EDF leak is purely that imported edges sit ~mm OFF their surfaces, so the projected
+boundary diverges from the shared edge point. Free-edge partner gaps measured 0.017–8.56 mm (real, not
+weldable). **Therefore the fix is [PBI-324 edge snapping](../F02-edge-surface-snapping/PBI-324-edge-onto-surface.md)**
+— snap imported edges onto their surfaces so the proven-watertight meshers work — NOT conforming the
+meshers (this PBI). Keep this PBI only as a fallback if snapping can't reconcile an edge that's off
+BOTH adjacent surfaces. Status: superseded-by PBI-324 for the EDF case.
+
 ## Why (measured root cause, 2026-06-08)
 
 The tessellated body is **not watertight** on bodies with curved analytic faces — EDF body3 (the duct)
