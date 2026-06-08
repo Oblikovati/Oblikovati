@@ -100,24 +100,15 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 	} else {
 		tris = earClip(outer2D)
 	}
-	m := &Mesh{}
-	for _, p := range pos {
+	// The ear-clip output is consistently oriented in the projection plane; patchMeshFrom keeps that
+	// winding and flips the whole patch once if it faces inward overall. Winding each triangle to its
+	// own vertex normals instead flips slivers inconsistently — the back-facing hole walls in Normal-Debug.
+	nrm := make([]math.Vector3, len(pos))
+	for i, p := range pos {
 		u, v := s.ParamAt(p)
-		m.addVertex(p, s.NormalAt(u, v))
+		nrm[i] = s.NormalAt(u, v)
 	}
-	for _, tri := range tris {
-		a, b, c := tri[0], tri[1], tri[2]
-		// Wind each triangle to agree with its OWN vertices' surface normals (what shading and
-		// mass-props read), not the surface normal at the triangle centroid: on a curved patch
-		// the flat-triangle centroid lies off the surface, so ParamAt(centroid) returns a wrong
-		// (u,v) and flips some triangles inconsistently — the back-facing patches seen in
-		// Normal-Debug. Averaging the three vertex normals is consistent for every triangle.
-		if windingOpposesNormals(pos[a], pos[b], pos[c], m.Normals[a], m.Normals[b], m.Normals[c]) {
-			b, c = c, b
-		}
-		m.addTriangle(a, b, c)
-	}
-	return m
+	return patchMeshFrom(pos, nrm, tris)
 }
 
 // patchProjection picks the 2D embedding to ear-clip a curved patch's boundary in. A B-spline
