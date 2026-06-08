@@ -3,8 +3,7 @@ milestone: M24
 feature: F02
 pbi: PBI-316
 title: Wire the NURBS face mesher (oracle-gated)
-status: planned
-estimate: M
+status: blocked
 ---
 
 # PBI-316 — Wire the NURBS face mesher (oracle-gated)
@@ -13,37 +12,34 @@ estimate: M
 
 ## Goal
 
-Route B-spline faces through the new on-surface interior-node mesher (pcurve boundary + adaptive
+Route B-spline faces through an on-surface interior-node mesher (pcurve boundary + adaptive
 trim-clipped interior + non-folding triangulation), replacing `trimmedPatchMesh`, **only if** it
 holds the volume oracle.
 
-## Scope / work
+## BLOCKED — finding (2026-06-08): the (u,v)-interior approach is a dead end for imported faces
 
-- Assemble F01+F02 into `nurbsPatchMesh(s, outer3D, holes3D)`: march-projected pcurves → adaptive
-  trim-clipped interior nodes → CDT → fold-repair → mesh. Boundary nodes lifted **on-surface**
-  (`PointAt` of the pcurve), interior likewise — consistent, so no exact-vs-on-surface overlap.
-  (F03 then makes the on-surface boundary consistent across faces.)
-- Route `geom.BSplineSurface` non-rectangular faces to it in `tessellate_trim.go`
-  (`nonRectangularMesh`); analytic faces unchanged.
-- **Gate on the oracle**: measure EDF total volume and per-face folds. This PBI may still leave a
-  per-face seam (F03 fixes that) but must NOT over-enclose — the volume must be within tolerance
-  of OCC (no +20–70%). If a face inflates, fall back to the boundary-only path for that face
-  (a guard) so the milestone never regresses volume.
+Assembled `nurbsPatchMesh` (F01 marchUV pcurve + F02 PBI-314 interior grid + PBI-315 fold repair)
+and wired it; measured on EDF.STEP. It **inflated the body volume +33%** (281k vs the 210k baseline,
+OCC truth 207k). Diagnosis (all measured, then reverted):
 
-## API contracts (interfaces / enums / collections)
+- The marchUV pcurves are **clean** (0 self-intersections on every EDF face) and per-face areas
+  match the boundary-only mesh (~1.0 ratio) — F01 works.
+- But the interior `(u,v)` nodes' `PointAt` lands **~15% of the face size off** the true trim
+  surface (13–25 mm on faces 61–147 mm across), **uniformly**, on every imported face. The
+  imported rational-NURBS **parameterization is non-conformal**: a `(u,v)` point inside the trim's
+  `(u,v)` boundary does NOT map to a 3D point inside the trim. So a `(u,v)` interior grid cannot
+  refine these faces — it samples the wrong part of the surface and over-encloses.
+- A `ParamAt`-vs-pcurve **branch mismatch** also flipped boundary normals against the interior
+  (fixed by `nurbsBoundaryLoops`), but that was secondary; the parameterization is the wall.
+- A **deviation guard** (fall back if interior nodes stray from the boundary-only mesh) cannot
+  distinguish a non-conformal error from a **legitimate bulge** — both deviate from the flat
+  boundary-only mesh — so it falls back even a correct conformal dome. No usable guard on this path.
 
-- (internal) `ops.nurbsPatchMesh`; dispatch in `tessellateCurvedFace`/`nonRectangularMesh`.
+**Conclusion:** F02's `(u,v)`-grid interior is the wrong primitive for imported non-conformal
+NURBS. The mesher must refine in **3D space**, not `(u,v)`. The F01 pcurve, PBI-314 adaptive
+density, and PBI-315 fold repair stay valid + tested; only the interior *sampling* changes. Reverted
+the wiring; develop stays at the correct boundary-only baseline (210k). See PBI-321.
 
-## Acceptance criteria
+## Superseded by
 
-- EDF.STEP external freeform faces are **fold-free** (committed detector) and the total volume is
-  **within tolerance of OCC** (no inflation) — the per-face inflation guard ensures no regression.
-- The OCC oracle suite stays green; the EDF volume does not regress below the current 101.5%
-  baseline beyond the stated tolerance.
-- Live confirmation (shaded + Normal-Debug, Save-Viewport-PNG): the staircase is gone on the
-  external faces.
-- `go test ./kernel/...` green; lint clean.
-
-## Depends on
-
-F01 (pcurves), PBI-314 (interior), PBI-315 (no-fold), the OCC oracle.
+[PBI-321 — 3D-space interior refinement](PBI-321-3d-space-refinement.md).
