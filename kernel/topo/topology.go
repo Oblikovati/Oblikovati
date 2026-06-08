@@ -115,12 +115,22 @@ type EdgeUse struct {
 	edge     *Edge
 	loop     *Loop
 	reversed bool
+	pcurve   []math.Point2
 }
 
 // Edge returns the used edge; Reversed reports traversal direction; Loop the owner.
 func (u *EdgeUse) Edge() *Edge    { return u.edge }
 func (u *EdgeUse) Reversed() bool { return u.reversed }
 func (u *EdgeUse) Loop() *Loop    { return u.loop }
+
+// Pcurve returns this use's PCURVE: the edge's (u, v) curve on the loop's face surface, in the use's
+// traversal order. It is nil until import healing reconstructs it (M25) — SolidWorks STEP omits
+// pcurves — and, once present, gives the face's trim boundary exactly in parameter space (what the
+// NURBS mesher needs). Returned directly (not copied); callers must not mutate it.
+func (u *EdgeUse) Pcurve() []math.Point2 { return u.pcurve }
+
+// SetPcurve attaches the reconstructed pcurve (see [EdgeUse.Pcurve]).
+func (u *EdgeUse) SetPcurve(pc []math.Point2) { u.pcurve = pc }
 
 // Loop (EdgeLoop) is an ordered cycle of edge-uses bounding a face — the outer
 // boundary or an inner hole.

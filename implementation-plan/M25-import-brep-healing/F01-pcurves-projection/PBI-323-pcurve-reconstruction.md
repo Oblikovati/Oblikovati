@@ -3,7 +3,7 @@ milestone: M25
 feature: F01
 pbi: PBI-323
 title: Reconstruct + attach per-edge pcurves bounding each trim
-status: planned
+status: done
 estimate: L
 ---
 
