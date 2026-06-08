@@ -566,7 +566,12 @@ func skinnedSections(loops [][]math.Point3, n int, closed bool, ends loftEnds, g
 	for i, lp := range loops {
 		resampled[i] = resampleLoop(lp, n)
 	}
-	secs := splineSections(mapAlign(resampled, guides.mapCurves), closed, ends)
+	aligned := mapAlign(resampled, guides.mapCurves)
+	// A twisting loft's skin quads are a full section-edge wide, so they warp steeply and facet
+	// even when finely sampled along the length. Subdivide each section edge (corner-preserving)
+	// proportional to the twist, so the skin is narrow enough across its width to read smooth.
+	aligned = densifyAround(aligned, aroundSubdivisions(aligned, closed))
+	secs := splineSections(aligned, closed, ends)
 	secs = areaGraphScale(secs, guides.areaGraph)
 	secs = centerlineGuide(secs, guides.centerline)
 	return railGuide(secs, guides.rails)

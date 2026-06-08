@@ -44,6 +44,15 @@ const loftMaxStepDeg = 5.0
 // explode the section count.
 const loftMaxSegmentSamples = 64
 
+// loftAroundStepDeg bounds the twist a single across-the-width skin facet may span: a loft
+// twisting θ° subdivides each section edge ≈ θ/loftAroundStepDeg times. 15° keeps the warped
+// quads' fold below the renderer's crease angle so the skin reads smooth.
+const loftAroundStepDeg = 15.0
+
+// loftMaxAroundSubdiv caps the across-width subdivision so an extreme twist cannot explode the
+// section point count.
+const loftMaxAroundSubdiv = 16
+
 // alignSections rotates each section's point order to the cyclic start offset that minimizes the
 // summed squared distance to the previous section's corresponding points. Winding is assumed
 // consistent (sketch profiles are CCW), so it never flips a section — that would invert the
@@ -543,6 +552,63 @@ func segmentSamples(p0, p1 []math.Point3, m0, m1 []math.Vector3) int {
 		n = loftMaxSegmentSamples
 	}
 	return n
+}
+
+// aroundSubdivisions is how many times to split each section edge across the loft's width: 1
+// (no extra) for an untwisted loft, more as the loft twists, so the skin's warped quads stay
+// narrow enough to read smooth (a wide quad on a twisting surface folds steeply when split into
+// triangles, regardless of longitudinal density). Proportional to the max inter-section twist.
+func aroundSubdivisions(sections [][]math.Point3, closed bool) int {
+	if len(sections) < 2 {
+		return 1
+	}
+	var maxTwist float64
+	for i := 0; i+1 < len(sections); i++ {
+		if a := segmentTwist(sections[i], sections[i+1]); a > maxTwist {
+			maxTwist = a
+		}
+	}
+	if closed {
+		if a := segmentTwist(sections[len(sections)-1], sections[0]); a > maxTwist {
+			maxTwist = a
+		}
+	}
+	k := int(stdmath.Ceil(maxTwist / (loftAroundStepDeg * stdmath.Pi / 180)))
+	if k < 1 {
+		k = 1
+	}
+	if k > loftMaxAroundSubdiv {
+		k = loftMaxAroundSubdiv
+	}
+	return k
+}
+
+// densifyAround subdivides every section edge into k, preserving the original vertices (corners)
+// and inserting collinear points along each edge — so the section shape (and volume) is
+// unchanged, only sampled finer across its width. All sections subdivide identically, preserving
+// the point correspondence the blend relies on. k≤1 is a no-op.
+func densifyAround(sections [][]math.Point3, k int) [][]math.Point3 {
+	if k <= 1 {
+		return sections
+	}
+	out := make([][]math.Point3, len(sections))
+	for s, sec := range sections {
+		m := len(sec)
+		if m < 2 {
+			out[s] = sec // a point/degenerate section — nothing to subdivide
+			continue
+		}
+		dense := make([]math.Point3, 0, m*k)
+		for j := 0; j < m; j++ {
+			a, b := sec[j], sec[(j+1)%m]
+			for t := 0; t < k; t++ {
+				f := math.Scalar(float64(t) / float64(k))
+				dense = append(dense, a.TranslateBy(a.VectorTo(b).Scale(f)))
+			}
+		}
+		out[s] = dense
+	}
+	return out
 }
 
 // segmentTwist is the largest angle by which a section point rotates about the loft axis
