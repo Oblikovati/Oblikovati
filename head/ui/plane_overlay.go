@@ -93,6 +93,7 @@ func planeFill(wp *feature.WorkPlane) renderer.DrawItem {
 		Indices:   []int{0, 1, 2, 0, 2, 3},
 		Color:     planeFillColor,
 		Opacity:   planeFillColor[3],
+		Biased:    true, // a reference overlay: depth-bias it so a coplanar body face wins (no z-fight)
 	}
 }
 

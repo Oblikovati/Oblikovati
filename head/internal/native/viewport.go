@@ -18,7 +18,8 @@ void     obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp,
                              const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
                              const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                              const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
-                             const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC);
+                             const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
+                             int triBiasFirst);
 void     obk_viewport_set_clear(void* h, float r, float g, float b);
 void     obk_viewport_set_normal_debug(void* h, int on);
 void     obk_viewport_set_lighting(void* h, const float* data, int n);
@@ -74,6 +75,7 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 	hidVerts []float32, hidVCount int, hidIdx []uint32,
 	topTriVerts []float32, topTriVCount int, topTriIdx []uint32,
 	topLineVerts []float32, topLineVCount int, topLineIdx []uint32,
+	triBiasFirst int,
 ) {
 	C.obk_viewport_render(win.handle, C.int(slot), C.int(w), C.int(h),
 		(*C.float)(unsafe.Pointer(&mvp[0])), floatPtr(camPos),
@@ -82,7 +84,8 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 		floatPtr(lineVerts), C.int(lineVCount), uint32Ptr(lineIdx), C.int(len(lineIdx)),
 		floatPtr(hidVerts), C.int(hidVCount), uint32Ptr(hidIdx), C.int(len(hidIdx)),
 		floatPtr(topTriVerts), C.int(topTriVCount), uint32Ptr(topTriIdx), C.int(len(topTriIdx)),
-		floatPtr(topLineVerts), C.int(topLineVCount), uint32Ptr(topLineIdx), C.int(len(topLineIdx)))
+		floatPtr(topLineVerts), C.int(topLineVCount), uint32Ptr(topLineIdx), C.int(len(topLineIdx)),
+		C.int(triBiasFirst))
 }
 
 // SetViewportClear sets the 3D pass background color (themed); it takes effect on the
