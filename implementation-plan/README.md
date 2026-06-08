@@ -45,6 +45,7 @@ rules (units, identity, transactions, events) that apply to every milestone.
 | **M22** | [Sketch3D Feature Completion (3D Parity)](M22-sketch3d-feature-completion/_milestone.md) | 12 | 18 | M06, M07, M08 |
 | **M23** | [Renderer Display-Mode Parity & Realistic PBR](M23-renderer-display-modes/_milestone.md) | 4 | 12 | M07, M16, M19 |
 | **M24** | [Tolerant NURBS Surface Meshing (imported B-rep)](M24-tolerant-nurbs-meshing/_milestone.md) | 4 | 9 | M07, M17 |
+| **M25** | [Imported B-Rep Healing (pcurves, snapping, sewing)](M25-import-brep-healing/_milestone.md) | 4 | 8 | M07, M17, M24 |
 
 ¹ M19 (Materials & Appearances) shipped real code (`model/material`, `app/materials*`,
 head Materials/Appearance windows) ahead of its plan files; its 7 feature/PBI files were
@@ -86,9 +87,9 @@ generation for each modeling capability are delivered incrementally alongside M0
 _(Reconciled against the filesystem on 2026-06-04 — see audit REPORT.md. Counts are
 `_feature.md` / `PBI-*.md` file counts.)_
 
-- Milestones: **25** (M00–M24)
-- Features: **139** (incl. M19's 7 backfilled feature files — note ¹ above)
-- PBIs: **271** (incl. M19's 7 backfilled PBIs)
+- Milestones: **26** (M00–M25)
+- Features: **143** (incl. M19's 7 backfilled feature files — note ¹ above)
+- PBIs: **279** (incl. M19's 7 backfilled PBIs)
 
 > Note: these are *planned* counts (files that exist), not *done* counts. For actual
 > completion status — graded on the three axes Model / Geometry / UI+e2e
