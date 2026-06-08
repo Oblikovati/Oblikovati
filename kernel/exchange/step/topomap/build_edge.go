@@ -55,9 +55,42 @@ func (a *assembler) trimmedCurve(refs edgeCurveRefs, start, end math.Point3) (ge
 		return geom.NewLineSegment(start, end), nil
 	case geommap.CurveCircle:
 		return circleEdge(mapped.Circle, start, end, refs.sameSense)
+	case geommap.CurveEllipse:
+		return ellipseEdge(mapped.Ellipse, start, end, refs.sameSense)
+	case geommap.CurvePolyline:
+		return mapped.Polyline, nil
 	default:
 		return mapped.BSpline, nil
 	}
+}
+
+// ellipseEdge trims an ELLIPSE to the elliptical arc/full ellipse between two vertices,
+// mirroring circleEdge: coincident endpoints (a seam) keep the full ellipse; otherwise it
+// builds an EllipticalArc whose parametric sweep runs start→end in the sense same_sense implies.
+func ellipseEdge(e geommap.EllipseParams, start, end math.Point3, sameSense bool) (geom.Curve3, error) {
+	if start.DistanceTo(end) < seamTol {
+		return geom.NewEllipseFull(e.Center, e.Normal, e.RefDir, e.Major, e.Minor)
+	}
+	startAng := ellipseAngle(e, start)
+	ccw := positiveSweep(startAng, ellipseAngle(e, end))
+	sweep := ccw
+	if !sameSense {
+		sweep = ccw - twoPi
+	}
+	return geom.NewEllipticalArc(e.Center, e.Normal, e.RefDir, e.Major, e.Minor, startAng, sweep)
+}
+
+// ellipseAngle returns the parametric angle of p on the ellipse (point = center +
+// Major·cosθ·RefDir + Minor·sinθ·(Normal×RefDir)), the convention geom EllipticalArc uses.
+func ellipseAngle(e geommap.EllipseParams, p math.Point3) float64 {
+	ref := unit(e.RefDir)
+	bi := unit(cross(e.Normal, e.RefDir))
+	d := e.Center.VectorTo(p)
+	ang := stdmath.Atan2(d.Dot(bi)/e.Minor, d.Dot(ref)/e.Major)
+	if ang < 0 {
+		ang += twoPi
+	}
+	return ang
 }
 
 // circleEdge trims a CIRCLE to the arc/circle between two vertices. Coincident

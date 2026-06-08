@@ -1,0 +1,66 @@
+{
+ "box": {
+  "solids": 1,
+  "volume": 6000.0
+ },
+ "box_with_boss": {
+  "solids": 1,
+  "volume": 1226.1947
+ },
+ "chamfered_box": {
+  "solids": 1,
+  "volume": 7850.6667
+ },
+ "cone_frustum": {
+  "solids": 1,
+  "volume": 1523.6724
+ },
+ "cone_sharp": {
+  "solids": 1,
+  "volume": 452.3893
+ },
+ "cylinder": {
+  "solids": 1,
+  "volume": 1570.7963
+ },
+ "drilled_box": {
+  "solids": 1,
+  "volume": 1748.6726
+ },
+ "filleted_box": {
+  "solids": 1,
+  "volume": 7572.6194
+ },
+ "fused_boxes": {
+  "solids": 1,
+  "volume": 1875.0
+ },
+ "partial_cylinder": {
+  "solids": 1,
+  "volume": 187.5
+ },
+ "partial_sphere": {
+  "solids": 1,
+  "volume": 341.3333
+ },
+ "partial_torus": {
+  "solids": 1,
+  "volume": 888.2636
+ },
+ "sphere": {
+  "solids": 1,
+  "volume": 1436.755
+ },
+ "torus": {
+  "solids": 1,
+  "volume": 1776.5288
+ },
+ "two_solids": {
+  "solids": 2,
+  "volume": 250.0
+ },
+ "wedge": {
+  "solids": 1,
+  "volume": 500.0
+ }
+}

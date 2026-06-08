@@ -72,6 +72,35 @@ END-ISO-10303-21;`
 	}
 }
 
+// TestParseHeaderAnyRecordOrder guards real-world header tolerance: OpenCASCADE writes
+// FILE_NAME before FILE_DESCRIPTION and may add optional records (here FILE_POPULATION),
+// which a fixed-order parser would reject. All three standard records must still be decoded.
+func TestParseHeaderAnyRecordOrder(t *testing.T) {
+	src := `ISO-10303-21;
+HEADER;
+FILE_NAME('occ.step','2026-01-01T00:00:00',('a'),(''),'occ','occ','');
+FILE_DESCRIPTION(('occ model'),'2;1');
+FILE_POPULATION(('ignored'),'whatever');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN'));
+ENDSEC;
+DATA;
+ENDSEC;
+END-ISO-10303-21;`
+	f, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("Parse reordered header: %v", err)
+	}
+	if f.Header.Name != "occ.step" {
+		t.Errorf("name = %q, want occ.step", f.Header.Name)
+	}
+	if got := f.Header.Description; len(got) != 1 || got[0] != "occ model" {
+		t.Errorf("description = %v, want [occ model]", got)
+	}
+	if got := f.Header.SchemaIdentifiers; len(got) != 1 || got[0] != "AUTOMOTIVE_DESIGN" {
+		t.Errorf("schema = %v, want [AUTOMOTIVE_DESIGN]", got)
+	}
+}
+
 func TestParseResolvesReferences(t *testing.T) {
 	f, _ := Parse([]byte(tinyFile))
 	placement, _ := f.Graph.Lookup(3)

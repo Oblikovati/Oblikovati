@@ -22,7 +22,10 @@ type Header struct {
 	SchemaIdentifiers []string
 }
 
-// parseHeader parses HEADER … ENDSEC; with its three required records.
+// parseHeader parses HEADER … ENDSEC;. The standard records are FILE_DESCRIPTION,
+// FILE_NAME, FILE_SCHEMA, but exporters vary: OpenCASCADE writes FILE_NAME first, and some
+// add optional records (FILE_POPULATION, SECTION_*). So records are read in ANY order and
+// any unrecognized one is skipped, rather than demanding a fixed sequence.
 func (p *parser) parseHeader() (Header, error) {
 	if err := p.expectKeyword("HEADER"); err != nil {
 		return Header{}, err
@@ -31,16 +34,38 @@ func (p *parser) parseHeader() (Header, error) {
 		return Header{}, err
 	}
 	var h Header
-	if err := p.parseFileDescription(&h); err != nil {
-		return Header{}, err
-	}
-	if err := p.parseFileName(&h); err != nil {
-		return Header{}, err
-	}
-	if err := p.parseFileSchema(&h); err != nil {
-		return Header{}, err
+	for p.cur.Kind == TokKeyword && p.cur.Text != "ENDSEC" {
+		if err := p.parseHeaderRecord(&h); err != nil {
+			return Header{}, err
+		}
 	}
 	return h, p.endSection()
+}
+
+// parseHeaderRecord reads one HEADER record by its keyword, skipping any record this
+// importer does not consume so an optional/vendor record never aborts the import.
+func (p *parser) parseHeaderRecord(h *Header) error {
+	switch p.cur.Text {
+	case "FILE_DESCRIPTION":
+		return p.parseFileDescription(h)
+	case "FILE_NAME":
+		return p.parseFileName(h)
+	case "FILE_SCHEMA":
+		return p.parseFileSchema(h)
+	default:
+		return p.skipHeaderRecord()
+	}
+}
+
+// skipHeaderRecord consumes an unrecognized `KEYWORD( … );` record verbatim.
+func (p *parser) skipHeaderRecord() error {
+	if err := p.advance(); err != nil { // past the keyword
+		return err
+	}
+	if _, err := p.parseParamList(); err != nil {
+		return err
+	}
+	return p.expect(TokSemicolon)
 }
 
 // headerRecord consumes `KEYWORD( … );` and returns its parameter list.
