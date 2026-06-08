@@ -3,7 +3,7 @@ milestone: M24
 feature: F02
 pbi: PBI-315
 title: Curvature-aware triangulation with fold detection + repair
-status: planned
+status: done
 estimate: L
 ---
 
