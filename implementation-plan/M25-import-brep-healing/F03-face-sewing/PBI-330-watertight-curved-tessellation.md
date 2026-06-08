@@ -23,6 +23,20 @@ weldable). **Therefore the fix is [PBI-324 edge snapping](../F02-edge-surface-sn
 meshers (this PBI). Keep this PBI only as a fallback if snapping can't reconcile an edge that's off
 BOTH adjacent surfaces. Status: superseded-by PBI-324 for the EDF case.
 
+## CORRECTION (2026-06-08, after PBI-324 shipped + was verified on EDF): the premise above was WRONG
+
+PBI-324 (edge snapping) is **done, wired into import, and DOES NOT fix EDF** — reopening this PBI as the
+real fix. The "imported edges sit ~mm off their surfaces" claim conflated two quantities: the **free-edge
+partner gap** (0.017–8.56 mm, the distance between unpaired mesh edges) is NOT the **edge-off-surface
+residual** — measured directly, EDF's edges sit ~0.3 µm (median) ON their surfaces. Snapping them
+therefore does nothing for watertightness (EDF body3 stayed 69 free edges), and snapping the B-spline-
+adjacent ones made it WORSE (69→75) by folding the NURBS CDT. **So the EDF leak IS mesher-internal**, as
+this PBI originally said: (1) the grid meshers (`structuredGridMesh`/`gridPatchMesh`) vs the NURBS CDT
+sample shared edges differently, and (2) the NURBS metric CDT itself leaves T-junctions/folds on body3.
+The fix is this PBI's "conform the meshers to the shared `discretizeEdge` boundary" OR a mesh-sew
+post-process — independent of edge snapping. (Also: `TessellateBody` free-edge counts are
+non-deterministic on some imported solids — fix that first so the metric is reproducible.)
+
 ## Why (measured root cause, 2026-06-08)
 
 The tessellated body is **not watertight** on bodies with curved analytic faces — EDF body3 (the duct)

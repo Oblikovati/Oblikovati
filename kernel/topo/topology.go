@@ -63,12 +63,14 @@ func (v *Vertex) RangeBox() math.Box { return math.BoxFromPoints(v.point) }
 // Edge is a 1-dimensional entity bounded by two vertices, carrying its curve
 // geometry and the oriented uses that bind it into loops.
 type Edge struct {
-	id      uint64
-	curve   geom.Curve3
-	start   *Vertex
-	end     *Vertex
-	uses    []*EdgeUse
-	lineage Lineage
+	id        uint64
+	curve     geom.Curve3
+	start     *Vertex
+	end       *Vertex
+	uses      []*EdgeUse
+	lineage   Lineage
+	snapped   []math.Point3
+	tolerance float64
 }
 
 func (e *Edge) ID() uint64           { return e.id }
@@ -78,6 +80,21 @@ func (e *Edge) ReferenceKey() []byte { return referenceKey(KindEdge, e.lineage) 
 
 // Geometry returns the edge's underlying transient curve (a Circle/Arc3d/Line…).
 func (e *Edge) Geometry() geom.Curve3 { return e.curve }
+
+// SnappedCurve returns the edge's healed, on-surface discretization (import healing, M25 PBI-324),
+// or nil for a native edge sampled directly from its curve. Both faces of the edge share this exact
+// polyline, so their tessellation boundaries are identical. Returned directly; callers must not mutate.
+func (e *Edge) SnappedCurve() []math.Point3 { return e.snapped }
+
+// SetSnappedCurve stores the healed polyline and the residual (the max distance the original imported
+// edge sat off its adjacent surfaces) — see [Edge.SnappedCurve]. Pass nil to clear (revert to native).
+func (e *Edge) SetSnappedCurve(polyline []math.Point3, residual float64) {
+	e.snapped, e.tolerance = polyline, residual
+}
+
+// Tolerance returns the edge's recorded healing residual in model units (0 for a native/clean edge
+// whose curve already lies on its surfaces).
+func (e *Edge) Tolerance() float64 { return e.tolerance }
 
 // StartVertex and EndVertex return the bounding vertices.
 func (e *Edge) StartVertex() *Vertex { return e.start }
