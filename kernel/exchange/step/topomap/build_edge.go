@@ -94,11 +94,16 @@ func ellipseAngle(e geommap.EllipseParams, p math.Point3) float64 {
 }
 
 // circleEdge trims a CIRCLE to the arc/circle between two vertices. Coincident
-// endpoints (a seam vertex) keep the full Circle; otherwise it builds an Arc3d whose
+// endpoints (a seam vertex) keep the full circle; otherwise it builds an Arc3d whose
 // sweep runs start→end in the sense the circle's frame (and same_sense) imply.
 func circleEdge(c geommap.CircleParams, start, end math.Point3, sameSense bool) (geom.Curve3, error) {
 	if start.DistanceTo(end) < seamTol {
-		return geom.NewCircle(c.Center, c.Normal, c.Radius)
+		// A full-circle seam. Parametrize the circle FROM the seam vertex (RefDir aimed at
+		// `start`), so PointAt(0) == the vertex and discretizeEdge's endpoint snap is a no-op.
+		// A plain NewCircle uses an arbitrary RefDir, so PointAt(0) lands elsewhere and snapping
+		// both endpoints to the seam vertex yields a self-touching ring — which earcut fills with
+		// a stray wedge across the hole on the planar face that borders this loop.
+		return geom.NewArc3d(c.Center, c.Normal, c.Center.VectorTo(start), c.Radius, 0, twoPi)
 	}
 	startAng := circleAngle(c, start)
 	ccw := positiveSweep(startAng, circleAngle(c, end)) // CCW arc start→end

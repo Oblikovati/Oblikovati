@@ -182,12 +182,24 @@ func TestCircleEdgeTrimsArcAndFullCircle(t *testing.T) {
 	if stdmath.Abs(arc.SweepAngle+3*stdmath.Pi/2) > 1e-12 {
 		t.Fatalf("CW sweep = %g, want -3*pi/2", arc.SweepAngle)
 	}
-	curve, err = circleEdge(circle, start, start, true)
+	// A full-circle seam parametrizes FROM the seam vertex: PointAt(0) must equal the vertex, so
+	// discretizeEdge's endpoint snap is a no-op and the boundary ring is a clean simple ring (not
+	// the self-touching ring that produced a stray wedge across a bordering hole). Use a seam
+	// vertex NOT at the circle's natural RefDir (+X) to exercise the alignment.
+	seam := math.P3(0, 2, 0)
+	curve, err = circleEdge(circle, seam, seam, true)
 	if err != nil {
 		t.Fatalf("circleEdge full circle: %v", err)
 	}
-	if _, ok := curve.(geom.Circle); !ok {
-		t.Fatalf("full circle returned %T, want Circle", curve)
+	full, ok := curve.(geom.Arc3d)
+	if !ok {
+		t.Fatalf("full circle returned %T, want Arc3d", curve)
+	}
+	if stdmath.Abs(full.SweepAngle-2*stdmath.Pi) > 1e-12 {
+		t.Fatalf("full-circle sweep = %g, want 2*pi", full.SweepAngle)
+	}
+	if p := full.PointAt(0); p.DistanceTo(seam) > 1e-9 {
+		t.Fatalf("full circle PointAt(0) = %v, want the seam vertex %v", p, seam)
 	}
 }
 
