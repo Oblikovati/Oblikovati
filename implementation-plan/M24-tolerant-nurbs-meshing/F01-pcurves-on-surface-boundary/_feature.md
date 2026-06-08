@@ -2,7 +2,7 @@
 milestone: M24
 feature: F01
 name: On-surface pcurves & boundary
-status: planned
+status: in-progress
 ---
 
 # M24 · F01 — On-surface pcurves & boundary

@@ -3,7 +3,7 @@ milestone: M24
 feature: F01
 pbi: PBI-313
 title: March-projected per-edge pcurves (non-self-intersecting boundary)
-status: planned
+status: done
 estimate: M
 ---
 
