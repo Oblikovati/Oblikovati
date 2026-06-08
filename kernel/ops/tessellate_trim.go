@@ -79,7 +79,12 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 	}
 	for _, tri := range tris {
 		a, b, c := tri[0], tri[1], tri[2]
-		if triangleFlipped(s, pos[a], pos[b], pos[c]) {
+		// Wind each triangle to agree with its OWN vertices' surface normals (what shading and
+		// mass-props read), not the surface normal at the triangle centroid: on a curved patch
+		// the flat-triangle centroid lies off the surface, so ParamAt(centroid) returns a wrong
+		// (u,v) and flips some triangles inconsistently — the back-facing patches seen in
+		// Normal-Debug. Averaging the three vertex normals is consistent for every triangle.
+		if windingOpposesNormals(pos[a], pos[b], pos[c], m.Normals[a], m.Normals[b], m.Normals[c]) {
 			b, c = c, b
 		}
 		m.addTriangle(a, b, c)
@@ -149,6 +154,15 @@ func triangleFlipped(s geom.Surface, a, b, c math.Point3) bool {
 	cen := math.P3((a.X+b.X+c.X)/3, (a.Y+b.Y+c.Y)/3, (a.Z+b.Z+c.Z)/3)
 	u, v := s.ParamAt(cen)
 	return n.Dot(s.NormalAt(u, v)) < 0
+}
+
+// windingOpposesNormals reports whether triangle abc's geometric (cross-product) normal opposes
+// the triangle's per-vertex shading normals (their sum). Used to wind a patch consistently with
+// the normals each vertex actually carries — robust on a curved patch where the flat triangle's
+// centroid is off the surface (unlike triangleFlipped's centroid sample).
+func windingOpposesNormals(a, b, c math.Point3, na, nb, nc math.Vector3) bool {
+	gn := a.VectorTo(b).Cross(a.VectorTo(c))
+	return gn.Dot(na.Add(nb).Add(nc)) < 0
 }
 
 // isoRectangleGrid returns the sorted u and v grid lines when the UV boundary is an
