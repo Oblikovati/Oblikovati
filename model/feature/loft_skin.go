@@ -31,9 +31,18 @@ import (
 // (Tangent/Smooth conditions need adjacent faces and point-section cases need a tangent plane —
 // those, plus rails / centerline / area-graph LoftTypes, are later slices.)
 
-// loftSegmentSamples is how many sub-sections each consecutive section pair is sampled into
-// along the blend — the longitudinal resolution that makes the skinned surface read smooth.
+// loftSegmentSamples is the MINIMUM number of sub-sections each consecutive section pair is
+// sampled into along the blend — the baseline longitudinal resolution. A segment that twists or
+// curves a lot gets more (see segmentSamples), so a 90° twist reads smooth instead of faceted.
 const loftSegmentSamples = 8
+
+// loftMaxStepDeg bounds how much twist/curvature one densified sub-section may span: a segment
+// whose point-tracks turn by θ° gets ≈ θ/loftMaxStepDeg sub-sections (never below the floor).
+const loftMaxStepDeg = 5.0
+
+// loftMaxSegmentSamples caps the adaptive count so a near-degenerate (very tight) blend cannot
+// explode the section count.
+const loftMaxSegmentSamples = 64
 
 // alignSections rotates each section's point order to the cyclic start offset that minimizes the
 // summed squared distance to the previous section's corresponding points. Winding is assumed
@@ -504,14 +513,128 @@ func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool) [
 	out = append(out, sections[0])
 	for i := 0; i < segs; i++ {
 		i1 := (i + 1) % m
-		for s := 1; s <= loftSegmentSamples; s++ {
-			out = append(out, hermiteSection(sections[i], sections[i1], tan[i], tan[i1], float64(s)/float64(loftSegmentSamples)))
+		n := segmentSamples(sections[i], sections[i1], tan[i], tan[i1])
+		for s := 1; s <= n; s++ {
+			out = append(out, hermiteSection(sections[i], sections[i1], tan[i], tan[i1], float64(s)/float64(n)))
 		}
 	}
 	if closed {
 		out = out[:len(out)-1] // the final sample equals sections[0]; drop it (sweptSolid closes the loop)
 	}
 	return out
+}
+
+// segmentSamples is how many sub-sections to blend a section pair into: at least
+// loftSegmentSamples, more when the segment twists or curves so each longitudinal facet spans no
+// more than loftMaxStepDeg. It accounts for the two ways a lofted segment is non-planar:
+//   - twist: the cross-section ROTATES about the loft axis (rulings stay straight, so a 90° twist
+//     between two squares looks faceted) — measured as the max rotation of a point about the axis;
+//   - curvature: the corresponding-point tracks bend (a tangent/smooth end condition) — measured
+//     by probing each Hermite track's turning.
+//
+// A 90° twist → ~18 sub-sections (smooth); a straight, ruled segment → the floor.
+func segmentSamples(p0, p1 []math.Point3, m0, m1 []math.Vector3) int {
+	turn := stdmath.Max(segmentTwist(p0, p1), segmentTrackTurn(p0, p1, m0, m1))
+	n := int(stdmath.Ceil(turn / (loftMaxStepDeg * stdmath.Pi / 180)))
+	if n < loftSegmentSamples {
+		n = loftSegmentSamples
+	}
+	if n > loftMaxSegmentSamples {
+		n = loftMaxSegmentSamples
+	}
+	return n
+}
+
+// segmentTwist is the largest angle by which a section point rotates about the loft axis
+// (centroid c0→c1) going from p0 to p1 — the cross-section's twist over the segment.
+func segmentTwist(p0, p1 []math.Point3) float64 {
+	c0, c1 := sectionCentroid(p0), sectionCentroid(p1)
+	axis := unit3(c0.VectorTo(c1))
+	var maxTwist float64
+	for j := range p0 {
+		r0 := perpTo(c0.VectorTo(p0[j]), axis)
+		r1 := perpTo(c1.VectorTo(p1[j]), axis)
+		if a := angleBetween(r0, r1); a > maxTwist {
+			maxTwist = a
+		}
+	}
+	return maxTwist
+}
+
+// segmentTrackTurn is the most any corresponding-point Hermite track bends across the segment
+// (zero for straight rulings, nonzero for a curved/tangent blend).
+func segmentTrackTurn(p0, p1 []math.Point3, m0, m1 []math.Vector3) float64 {
+	const probes = 12
+	sec := make([][]math.Point3, probes+1)
+	for s := 0; s <= probes; s++ {
+		sec[s] = hermiteSection(p0, p1, m0, m1, float64(s)/float64(probes))
+	}
+	var maxTurn float64
+	for j := range p0 {
+		var turn float64
+		for s := 1; s < probes; s++ {
+			turn += turnAngle(sec[s-1][j], sec[s][j], sec[s+1][j])
+		}
+		if turn > maxTurn {
+			maxTurn = turn
+		}
+	}
+	return maxTurn
+}
+
+// sectionCentroid averages a section's points.
+func sectionCentroid(p []math.Point3) math.Point3 {
+	var x, y, z math.Scalar
+	for _, q := range p {
+		x, y, z = x+q.X, y+q.Y, z+q.Z
+	}
+	n := math.Scalar(len(p))
+	return math.P3(x/n, y/n, z/n)
+}
+
+// perpTo returns the component of v perpendicular to the unit axis a.
+func perpTo(v math.Vector3, a math.Vector3) math.Vector3 {
+	return v.Add(a.Scale(-v.Dot(a)))
+}
+
+// unit3 normalizes v, or returns +Z when degenerate (coincident centroids).
+func unit3(v math.Vector3) math.Vector3 {
+	if l := v.Length(); l > 1e-12 {
+		return v.Scale(1 / l)
+	}
+	return math.V3(0, 0, 1)
+}
+
+// angleBetween is the unsigned angle (radians) between two vectors, 0 if either is degenerate.
+func angleBetween(a, b math.Vector3) float64 {
+	la, lb := float64(a.Length()), float64(b.Length())
+	if la < 1e-12 || lb < 1e-12 {
+		return 0
+	}
+	cos := float64(a.Dot(b)) / (la * lb)
+	if cos < -1 {
+		cos = -1
+	} else if cos > 1 {
+		cos = 1
+	}
+	return stdmath.Acos(cos)
+}
+
+// turnAngle is the angle (radians) between the chords a→b and b→c — how much a point-track bends
+// at b. Zero on a straight run, so a ruled (straight) loft adds no extra sub-sections.
+func turnAngle(a, b, c math.Point3) float64 {
+	d1, d2 := a.VectorTo(b), b.VectorTo(c)
+	l1, l2 := float64(d1.Length()), float64(d2.Length())
+	if l1 < 1e-12 || l2 < 1e-12 {
+		return 0
+	}
+	cos := float64(d1.Dot(d2)) / (l1 * l2)
+	if cos < -1 {
+		cos = -1
+	} else if cos > 1 {
+		cos = 1
+	}
+	return stdmath.Acos(cos)
 }
 
 // hermiteSection blends one sub-section: each point is the Hermite interpolant of the two

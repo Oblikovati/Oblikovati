@@ -75,3 +75,38 @@ func TestSplineThreeSectionsBulges(t *testing.T) {
 		t.Errorf("3-section loft overshoots the middle: max x = %.3f, want ≈1", maxX)
 	}
 }
+
+// TestSegmentSamplesDensifiesTwist guards the adaptive longitudinal density: a ruled (no-twist)
+// segment stays at the floor, while a 90° cross-section twist gets enough sub-sections to keep
+// each facet below loftMaxStepDeg — so a twisted loft reads smooth instead of faceted.
+func TestSegmentSamplesDensifiesTwist(t *testing.T) {
+	rot90 := func(p []math.Point3, z float64) []math.Point3 {
+		out := make([]math.Point3, len(p))
+		for i, q := range p {
+			out[i] = math.P3(-q.Y, q.X, math.Scalar(z)) // 90° about +Z
+		}
+		return out
+	}
+	base := sq(0, [2]float64{1, 1}, [2]float64{-1, 1}, [2]float64{-1, -1}, [2]float64{1, -1})
+	same := sq(4, [2]float64{1, 1}, [2]float64{-1, 1}, [2]float64{-1, -1}, [2]float64{1, -1})
+	twisted := rot90(base, 4)
+	chord := func(a, b []math.Point3) []math.Vector3 { // straight (ruled) tangents
+		out := make([]math.Vector3, len(a))
+		for i := range a {
+			out[i] = a[i].VectorTo(b[i])
+		}
+		return out
+	}
+
+	straightN := segmentSamples(base, same, chord(base, same), chord(base, same))
+	if straightN != loftSegmentSamples {
+		t.Errorf("ruled segment sampled into %d sub-sections, want the floor %d", straightN, loftSegmentSamples)
+	}
+	twistN := segmentSamples(base, twisted, chord(base, twisted), chord(base, twisted))
+	if twistN <= loftSegmentSamples {
+		t.Errorf("90° twist sampled into %d sub-sections, want > floor %d (smooth)", twistN, loftSegmentSamples)
+	}
+	if got := segmentTwist(base, twisted); stdmath.Abs(got-stdmath.Pi/2) > 0.05 {
+		t.Errorf("segmentTwist of a 90° rotation = %.3f rad, want ~pi/2", got)
+	}
+}
