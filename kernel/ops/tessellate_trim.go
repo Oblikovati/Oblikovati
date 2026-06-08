@@ -58,7 +58,7 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // outward. A coarse but watertight covering of the exact trim region — right for small patches
 // (corner blends); larger non-rectangular curved faces would want a refined triangulation.
 func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) *Mesh {
-	outer2D, holes2D := projectToPlane(outer3D, holes3D)
+	outer2D, holes2D := patchProjection(s, outer3D, holes3D)
 	pos := outer3D
 	var tris [][3]int
 	if len(holes2D) > 0 {
@@ -90,6 +90,30 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 		m.addTriangle(a, b, c)
 	}
 	return m
+}
+
+// patchProjection picks the 2D embedding to ear-clip a curved patch's boundary in. A B-spline
+// patch is flattened in its OWN (u,v) parameter space, where the trim loops are a simple polygon;
+// the best-fit PLANE projection (used for the analytic surfaces, whose (u,v) can be degenerate at
+// a pole/seam) self-intersects for a large freeform patch and makes ear-clipping bail partway,
+// tearing the surface (the jagged duct lips). Lifting uses the exact 3D boundary points either way.
+func patchProjection(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) ([]math.Point2, [][]math.Point2) {
+	if _, isSpline := s.(geom.BSplineSurface); !isSpline {
+		return projectToPlane(outer3D, holes3D)
+	}
+	uv := func(pts []math.Point3) []math.Point2 {
+		out := make([]math.Point2, len(pts))
+		for i, p := range pts {
+			u, v := s.ParamAt(p)
+			out[i] = math.P2(math.Scalar(u), math.Scalar(v))
+		}
+		return out
+	}
+	holes2D := make([][]math.Point2, len(holes3D))
+	for i, h := range holes3D {
+		holes2D[i] = uv(h)
+	}
+	return uv(outer3D), holes2D
 }
 
 // projectToPlane flattens the boundary loops onto the outer loop's best-fit plane (Newell
