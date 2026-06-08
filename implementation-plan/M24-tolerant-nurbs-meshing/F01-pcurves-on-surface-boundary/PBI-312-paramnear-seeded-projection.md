@@ -3,7 +3,7 @@ milestone: M24
 feature: F01
 pbi: PBI-312
 title: ParamNear seeded surface projection + ADR
-status: planned
+status: done
 estimate: S
 ---
 
@@ -21,7 +21,7 @@ a single smooth branch, and record the milestone's approach in an ADR.
 - `func (s BSplineSurface) ParamNear(q math.Point3, u0, v0 float64) (u, v float64)` in
   `kernel/geom/paramat.go`: start from `(u0,v0)` (clamped to domain), run the existing
   `surfaceProjectStep` to convergence — no `surfaceGridSeed`. Reuse the existing step.
-- Write **ADR-00XX — Tolerant NURBS surface meshing**: imported edge curves lie ~mm off their
+- Write **ADR-0030 — Tolerant NURBS surface meshing**: imported edge curves lie ~mm off their
   surfaces (a tolerance reality, not a bug); we mesh each face *on its surface* with interior
   nodes and **stitch shared edges within tolerance** rather than re-project the off-surface
   boundary (which inflates volume). Records the measured failure table from the milestone.
@@ -37,7 +37,7 @@ a single smooth branch, and record the milestone's approach in an ADR.
 - For two nearby points straddling a near-fold, `ParamNear` (seeded from the same prior `(u,v)`)
   returns **nearby** `(u,v)` for both, where independent `ParamAt` returns far-apart `(u,v)`
   (the branch-jump). Unit-tested on a constructed folded patch.
-- ADR-00XX committed and linked from the milestone.
+- ADR-0030 committed and linked from the milestone.
 - `go test ./kernel/geom/...` green; lint clean.
 
 ## Depends on

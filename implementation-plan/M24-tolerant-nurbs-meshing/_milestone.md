@@ -97,7 +97,7 @@ faces' folds — it is the foundation this milestone builds on.
 M07 (B-rep topology + tessellation, `kernel/ops`), M17 (STEP import, `kernel/exchange/step`),
 the curved-face chain in `kernel/ops/{tessellate_trim,cdt,refined_patch}.go`, the OCC oracle
 (`kernel/exchange/step/occ_oracle_test.go` + gmsh SDK ground truth). A new
-**ADR-00XX (tolerant NURBS meshing)** records the on-surface-with-tolerance approach (F01).
+**ADR-0030 (tolerant NURBS meshing)** records the on-surface-with-tolerance approach (F01).
 
 ## Features
 
