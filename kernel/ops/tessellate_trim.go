@@ -47,7 +47,14 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 			return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 		}
 	}
-	// A non-rectangular trim (e.g. a corner sphere patch): triangulate the boundary.
+	// A non-rectangular trim. A B-spline patch is meshed with a constrained Delaunay triangulation
+	// in (u,v) — interior grid points for smoothness, the trim loops as hard constraints — which is
+	// robust to the slightly self-intersecting (u,v) boundary that ParamAt inversion produces on a
+	// rational patch (where boundary-only ear-clipping tears). Analytic patches keep the boundary
+	// ear-clip (their (u,v) can be degenerate at a pole/seam, where the best-fit plane is safer).
+	if _, isSpline := s.(geom.BSplineSurface); isSpline {
+		return refinedTrimmedMesh(s, outer3D, holes3D)
+	}
 	return boundaryPatchMesh(s, outer3D, holes3D)
 }
 
