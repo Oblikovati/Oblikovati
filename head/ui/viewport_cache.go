@@ -33,6 +33,9 @@ var bodyGeometryCache struct {
 // place) and the overlays (which append) never corrupt the cached list.
 func cachedBodyDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
 	build := func() renderer.DrawList {
+		if on, perTri := s.MeshColors(); on { // each face/triangle a distinct color (viewport.setMeshColors)
+			return renderer.BuildDrawListMeshColors(activeBodies(s), cam, ops.DefaultQuality(), perTri)
+		}
 		return renderer.BuildDrawListStyled(activeBodies(s), cam, ops.DefaultQuality(), s.SurfaceLookup(), s.VisualStyle())
 	}
 	key := bodyGeometryKey(s)
@@ -57,6 +60,13 @@ func bodyGeometryKey(s *app.Session) string {
 	b.WriteString(part.ModelGeometryVersion())
 	b.WriteByte('|')
 	b.WriteString(strconv.Itoa(int(s.VisualStyle())))
+	if on, perTri := s.MeshColors(); on { // mesh-debug-colors uses a different builder; key it apart
+		if perTri {
+			b.WriteString("|tricolors")
+		} else {
+			b.WriteString("|facecolors")
+		}
+	}
 	for _, body := range s.VisibleBodies() {
 		b.WriteByte('|')
 		b.WriteString(strconv.FormatUint(body.ID(), 10))
