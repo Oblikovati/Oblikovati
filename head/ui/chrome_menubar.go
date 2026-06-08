@@ -76,6 +76,9 @@ func drawToolsMenu() {
 		if native.MenuItem(checkLabel("Normal Debug (front green / back red)", normalDebugOn)) {
 			normalDebugOn = !normalDebugOn
 		}
+		if native.MenuItem("Save Viewport PNG") {
+			screenshotRequested = true
+		}
 		native.EndMenu()
 	}
 }

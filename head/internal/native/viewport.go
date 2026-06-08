@@ -91,6 +91,12 @@ func (w *Window) SetViewportClear(r, g, b float32) {
 	C.obk_viewport_set_clear(w.handle, C.float(r), C.float(g), C.float(b))
 }
 
+// SaveViewportPNG reads back the current single-view (slot 0) offscreen image and writes it as
+// a PNG — a screenshot of exactly what the viewport shows, for inspecting render defects.
+func (w *Window) SaveViewportPNG(path string) error {
+	return saveViewportPNG(w, path)
+}
+
 // SetViewportNormalDebug toggles the normal-debug render: shaded triangles draw front-facing
 // green / back-facing red so inverted-winding / flipped-normal triangles stand out. Takes
 // effect on the next RenderViewport.
