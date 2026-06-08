@@ -1,3 +1,14 @@
+## Priorities
+
+- **Tessellation correctness is the highest priority — above any feature.** The kernel
+  may build a perfect B-rep, but the user only ever sees the *tessellated mesh*; a winding/
+  hole/trim defect makes correct geometry look broken and corrupts every downstream
+  consumer (render, mass properties, export, boolean input). So a tessellation bug
+  (`kernel/ops/tessellate*.go`) preempts feature work: stop and fix it first, and gate it
+  with a volume/area/manifold regression test (compare against the analytic value or an
+  external kernel such as gmsh/OpenCASCADE `getMass`). Never ship a feature on top of a
+  known-bad mesh.
+
 ## Code style
 
 - Functions: 4-20 lines. Split if longer.
