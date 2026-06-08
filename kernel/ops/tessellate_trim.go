@@ -40,20 +40,28 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 		if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
 			return structuredGridMesh(s, us, vs) // full cylinder/cone side: exact area
 		}
-		return fullDomainGridMesh(s, q) // seam-crossing periodic face we can't reduce
+		// A SINGLY-periodic surface (a sphere: periodic longitude, bounded latitude) whose (u,v)
+		// degenerates here is a cap straddling the pole — mesh its real boundary trim via the CDT in
+		// the best-fit plane, not the whole sphere (fullDomainGridMesh gave the torn radiating fan).
+		// A doubly-periodic surface (a torus) keeps the full-domain grid: its seam boundary bounds no
+		// planar trim, so the CDT would be meaningless.
+		if isPeriodic(s.UDomain()) != isPeriodic(s.VDomain()) {
+			return trimmedPatchMesh(s, outer3D, holes3D)
+		}
+		return fullDomainGridMesh(s, q) // doubly-periodic / aperiodic seam face we can't reduce
 	}
 	if len(holesUV) == 0 {
 		if us, vs, isRect := isoRectangleGrid(outerUV); isRect {
 			return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 		}
 	}
-	// A non-rectangular trim. A B-spline patch is meshed with a constrained Delaunay triangulation
-	// in (u,v) — interior grid points for smoothness, the trim loops as hard constraints — which is
-	// robust to the slightly self-intersecting (u,v) boundary that ParamAt inversion produces on a
-	// rational patch (where boundary-only ear-clipping tears). Analytic patches keep the boundary
-	// ear-clip (their (u,v) can be degenerate at a pole/seam, where the best-fit plane is safer).
+	// A non-rectangular trim. A B-spline patch is meshed by a constrained Delaunay triangulation in
+	// its own (u,v), robust to the slightly self-intersecting boundary ParamAt inversion produces on
+	// a rational patch (where boundary-only ear-clipping tears). Analytic patches keep the boundary
+	// ear-clip: their (u,v) can be degenerate at a pole/seam, and a wrapping wall folds onto itself
+	// in the best-fit plane (where the CDT can't recover the crossing constraints).
 	if _, isSpline := s.(geom.BSplineSurface); isSpline {
-		return refinedTrimmedMesh(s, outer3D, holes3D)
+		return trimmedPatchMesh(s, outer3D, holes3D)
 	}
 	return boundaryPatchMesh(s, outer3D, holes3D)
 }
@@ -286,6 +294,13 @@ func periodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Po
 	}
 	if len(us) < 2 || len(vs) < 2 {
 		return nil, nil, false // degenerate (e.g. a cone closing to its apex — one rim circle)
+	}
+	// A genuine band's boundary is two full-period edge circles, so the NON-periodic direction has
+	// exactly two distinct values. More than two means the boundary wanders in that direction (a
+	// sphere cap straddling the pole, not a latitude band): gridding its full us×vs bounding box
+	// would cover non-trim area and tear at the pole, so reject it for the boundary triangulator.
+	if (uPer && len(vs) != 2) || (vPer && len(us) != 2) {
+		return nil, nil, false
 	}
 	return us, vs, true
 }
