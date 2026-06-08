@@ -45,7 +45,11 @@ func (c *ImportedBodies) Add(body *topo.Body, path, format string) *PartFeature 
 }
 
 // AddAt records body index of a (possibly multi-body) source file as a feature, so reopen
-// re-imports the same body from the file.
+// re-imports the same body from the file. Each body gets a unique, readable name ("Imported
+// Body 1", "Imported Body 2", …) so a multi-solid STEP doesn't fill the browser with
+// identically-named rows (which would collide as Dear ImGui ids).
 func (c *ImportedBodies) AddAt(body *topo.Body, path, format string, index int) *PartFeature {
-	return c.engine.Add(&ImportedBodyFeature{body: body, Path: path, Format: format, Index: index})
+	pf := c.engine.Add(&ImportedBodyFeature{body: body, Path: path, Format: format, Index: index})
+	pf.SetName(c.engine.UniqueName("Imported Body"))
+	return pf
 }
