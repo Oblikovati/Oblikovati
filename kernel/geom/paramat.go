@@ -65,6 +65,23 @@ func (s BSplineSurface) ParamAt(q math.Point3) (u, v float64) {
 	return u, v
 }
 
+// ParamNear projects q onto the NURBS surface starting from the seed (u0, v0) instead of a fresh
+// grid search. Marching along an edge with each point seeded from the previous one keeps the (u,v)
+// on a single smooth branch — a pcurve free of the jitter independent ParamAt calls produce where
+// the surface nearly folds (different points snapping to different local minima). It is the
+// foundation for the tolerant NURBS mesher (ADR-0030, M24 F01): a smooth, non-self-intersecting
+// boundary is the prerequisite for a non-folding interior triangulation and a reliable
+// point-in-trim test.
+func (s BSplineSurface) ParamNear(q math.Point3, u0, v0 float64) (u, v float64) {
+	uLo, uHi := s.UDomain()
+	vLo, vHi := s.VDomain()
+	u, v = clampTo(u0, uLo, uHi), clampTo(v0, vLo, vHi)
+	for i := 0; i < 24; i++ {
+		u, v = surfaceProjectStep(s, q, u, v, uLo, uHi, vLo, vHi)
+	}
+	return u, v
+}
+
 // surfaceGridSeed returns the sampled (u, v) over a coarse grid whose point is
 // nearest q — the starting guess for the Gauss–Newton refinement.
 func surfaceGridSeed(s Surface, q math.Point3, uLo, uHi, vLo, vHi float64) (float64, float64) {
