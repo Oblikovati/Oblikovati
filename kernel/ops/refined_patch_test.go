@@ -12,7 +12,7 @@ import (
 
 // unitPatch is a flat bilinear B-spline surface over the unit square in z=0 (PointAt(u,v)=(u,v,0)),
 // so an L-shaped trim on it has a known 3D area — a controlled stand-in for an imported freeform
-// face that exercises refinedTrimmedMesh end to end (ParamAt → CDT → 3D mesh).
+// face that exercises trimmedPatchMesh end to end (ParamAt → CDT → 3D mesh).
 func unitPatch(t *testing.T) geom.BSplineSurface {
 	t.Helper()
 	ctrl := [][]math.Point3{
@@ -35,7 +35,7 @@ func TestRefinedTrimmedMeshConcavePatch(t *testing.T) {
 		math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(1, 0.5, 0),
 		math.P3(0.5, 0.5, 0), math.P3(0.5, 1, 0), math.P3(0, 1, 0),
 	}
-	m := refinedTrimmedMesh(s, outer, nil)
+	m := trimmedPatchMesh(s, outer, nil)
 	if m.TriangleCount() == 0 {
 		t.Fatal("patch produced no triangles")
 	}

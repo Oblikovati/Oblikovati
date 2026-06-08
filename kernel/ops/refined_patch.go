@@ -7,22 +7,20 @@ import (
 	"oblikovati/math"
 )
 
-// refinedTrimmedMesh meshes a non-rectangular curved patch with INTERIOR points, not just its
-// boundary. The trim loops are mapped to the surface's (u,v) and meshed with a constrained
-// Delaunay triangulation (the loop edges are hard constraints; an interior (u,v) grid refines the
-// patch). This is robust where boundary-only ear-clipping fails — a slightly self-intersecting
-// (u,v) boundary (from ParamAt inversion on a rational patch) no longer tears, the CDT respects
-// concave trims exactly (no triangle bridges a notch), and the interior points make a strongly
-// curved patch read smooth. Boundary points keep their exact 3D positions (shared with the
-// neighbour face, so the patch stays watertight). Used for B-spline faces (their (u,v) is
-// well-behaved); analytic patches keep boundaryPatchMesh (their (u,v) degenerates at a pole/seam).
-// Falls back to boundaryPatchMesh if the CDT yields nothing.
-func refinedTrimmedMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) *Mesh {
-	// No interior Steiner points: ParamAt on a rational patch returns a distorted (u,v), so PointAt
-	// of a freshly sampled interior (u,v) lands off the trimmed region and inflates the mesh. We
-	// mesh only the boundary loops (their exact 3D points), relying on the CDT's constraint recovery
-	// + domain flood to stay watertight where boundary-only ear-clipping tears.
-	uv, pos, nrm, loops := patchBoundaryUV(s, outer3D, holes3D)
+// trimmedPatchMesh meshes a non-rectangular curved patch via a constrained Delaunay triangulation
+// of its boundary loops. The 2D embedding to triangulate in is chosen by patchProjection: the
+// surface's own (u,v) for a B-spline (where the trim loops are a simple polygon), or the boundary's
+// best-fit plane for an analytic surface (whose (u,v) degenerates at a pole/seam). The CDT is robust
+// where boundary-only ear-clipping tears (boundary segments are recovered by edge flips) and exact
+// on concave trims and holes (the domain flood respects the constrained edges); it meshes the real
+// trim region, not the surface's whole UV domain (which fullDomainGridMesh did — the torn full-sphere
+// fan). No interior Steiner points: ParamAt's distorted (u,v) makes a freshly sampled interior
+// point's PointAt land off the patch and inflate the mesh, so refinement stays boundary-only and the
+// exact 3D boundary points are kept (watertight with neighbour faces). Falls back to
+// boundaryPatchMesh if the CDT yields nothing.
+func trimmedPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) *Mesh {
+	outer2D, holes2D := patchProjection(s, outer3D, holes3D)
+	uv, pos, nrm, loops := patchLoops2D(s, outer3D, holes3D, outer2D, holes2D)
 	tris := constrainedDelaunay(uv, loops)
 	if len(tris) == 0 {
 		return boundaryPatchMesh(s, outer3D, holes3D)
@@ -30,23 +28,22 @@ func refinedTrimmedMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.
 	return patchMeshFrom(pos, nrm, tris)
 }
 
-// patchBoundaryUV maps each boundary loop into (u,v) (keeping its exact 3D points + normals) and
-// returns the (u,v) coords, parallel 3D positions and normals, and the loops as index sequences.
-func patchBoundaryUV(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (uv [][2]float64, pos []math.Point3, nrm []math.Vector3, loops [][]int) {
-	addLoop := func(loop []math.Point3) []int {
+// patchLoops2D pairs each boundary loop's chosen 2D embedding (outer2D/holes2D) with its exact 3D
+// point and surface normal, returning the (u,v/plane) coords, parallel positions and normals, and
+// the loops as index sequences for the CDT.
+func patchLoops2D(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outer2D []math.Point2, holes2D [][]math.Point2) (uv [][2]float64, pos []math.Point3, nrm []math.Vector3, loops [][]int) {
+	loops3D := append([][]math.Point3{outer3D}, holes3D...)
+	loops2D := append([][]math.Point2{outer2D}, holes2D...)
+	for li, loop := range loops3D {
 		idx := make([]int, len(loop))
 		for i, p := range loop {
 			u, v := s.ParamAt(p)
 			idx[i] = len(uv)
-			uv = append(uv, [2]float64{u, v})
+			uv = append(uv, [2]float64{float64(loops2D[li][i].X), float64(loops2D[li][i].Y)})
 			pos = append(pos, p)
 			nrm = append(nrm, s.NormalAt(u, v))
 		}
-		return idx
-	}
-	loops = [][]int{addLoop(outer3D)}
-	for _, h := range holes3D {
-		loops = append(loops, addLoop(h))
+		loops = append(loops, idx)
 	}
 	return uv, pos, nrm, loops
 }
