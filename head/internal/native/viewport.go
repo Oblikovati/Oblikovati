@@ -20,6 +20,7 @@ void     obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp,
                              const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                              const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC);
 void     obk_viewport_set_clear(void* h, float r, float g, float b);
+void     obk_viewport_set_normal_debug(void* h, int on);
 void     obk_viewport_set_lighting(void* h, const float* data, int n);
 void     obk_viewport_set_environment(void* h, const float* data, const int* dims, int levels,
                                       float rotation, float intensity);
@@ -88,6 +89,23 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 // next RenderViewport.
 func (w *Window) SetViewportClear(r, g, b float32) {
 	C.obk_viewport_set_clear(w.handle, C.float(r), C.float(g), C.float(b))
+}
+
+// SaveViewportPNG reads back the current single-view (slot 0) offscreen image and writes it as
+// a PNG — a screenshot of exactly what the viewport shows, for inspecting render defects.
+func (w *Window) SaveViewportPNG(path string) error {
+	return saveViewportPNG(w, path)
+}
+
+// SetViewportNormalDebug toggles the normal-debug render: shaded triangles draw front-facing
+// green / back-facing red so inverted-winding / flipped-normal triangles stand out. Takes
+// effect on the next RenderViewport.
+func (w *Window) SetViewportNormalDebug(on bool) {
+	v := 0
+	if on {
+		v = 1
+	}
+	C.obk_viewport_set_normal_debug(w.handle, C.int(v))
 }
 
 // SetViewportLighting uploads the packed scene-lighting UBO (viewport.PackLighting's std140

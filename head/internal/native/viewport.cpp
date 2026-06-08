@@ -127,6 +127,10 @@ struct Viewport {
     // Background the 3D pass clears to (themed; ADR-0021). Defaults reproduce the
     // pre-theming look so an un-themed build is unchanged.
     float           clearR = 0.10f, clearG = 0.11f, clearB = 0.13f;
+
+    // Normal-debug: when on, shaded triangles render front-facing green / back-facing red
+    // (gl_FrontFacing) instead of lit, to spot inverted-winding / flipped-normal triangles.
+    bool            normalDebug = false;
 };
 
 namespace {
@@ -1097,9 +1101,10 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->occluderPipeline);
             vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
         }
-        // 2) shaded triangles — color + depth, per-vertex shading mode.
+        // 2) shaded triangles — color + depth, per-vertex shading mode. In normal-debug mode
+        //    (lit flag 2.0) the shader colors them by raw facing (front green / back red).
         if (triIC > 0) {
-            pushLit(1.0f);
+            pushLit(v->normalDebug ? 2.0f : 1.0f);
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
             vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
         }
@@ -1209,6 +1214,14 @@ void obk_viewport_set_clear(void* h, float r, float g, float b) {
     c->viewport->clearR = r;
     c->viewport->clearG = g;
     c->viewport->clearB = b;
+}
+
+// obk_viewport_set_normal_debug toggles front-green/back-red facing visualization for shaded
+// triangles (a tessellation debugging aid). Takes effect on the next render.
+void obk_viewport_set_normal_debug(void* h, int on) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c->viewport) return;
+    c->viewport->normalDebug = (on != 0);
 }
 
 // obk_viewport_readback copies the offscreen color image into out (BGRA/RGBA8, row-major, top

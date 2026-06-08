@@ -72,8 +72,24 @@ func drawToolsMenu() {
 		if native.MenuItem("Preferences") {
 			showPreferences = !showPreferences
 		}
+		native.Separator()
+		if native.MenuItem(checkLabel("Normal Debug (front green / back red)", normalDebugOn)) {
+			normalDebugOn = !normalDebugOn
+		}
+		if native.MenuItem("Save Viewport PNG") {
+			screenshotRequested = true
+		}
 		native.EndMenu()
 	}
+}
+
+// checkLabel prefixes a menu label with a check mark when the toggle is on (Dear ImGui's
+// MenuItem has no built-in checkbox variant here).
+func checkLabel(label string, on bool) string {
+	if on {
+		return "[x] " + label
+	}
+	return "[ ] " + label
 }
 
 // undoLabel builds an Edit-menu label that names the step undo/redo would act on (e.g.

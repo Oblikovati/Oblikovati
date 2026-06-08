@@ -25,6 +25,7 @@ import (
 // the scene — rebuilt from the model each frame (renderer.BuildDrawList) and projected
 // with the navigated camera — always reflects current model and view state (ADR-0004).
 func drawViewportPanel(win *native.Window, s *app.Session) {
+	win.SetViewportNormalDebug(normalDebugOn) // Tools ▸ Normal Debug (front green / back red)
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
 		// View configuration (layout, new/close view) lives on the View ribbon tab's
@@ -37,8 +38,9 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			drawSingleViewport(win, s)
 		}
-		viewCubeContextMenu(s) // the ViewCube right-click menu (opened from a tile/single path)
-		drawViewCubeOptions(s) // the ViewCube Options window (toggled from that menu)
+		viewCubeContextMenu(s)    // the ViewCube right-click menu (opened from a tile/single path)
+		drawViewCubeOptions(s)    // the ViewCube Options window (toggled from that menu)
+		serviceScreenshot(win, s) // Tools ▸ Save Viewport PNG, after the viewport rendered
 	}
 	native.End()
 }
