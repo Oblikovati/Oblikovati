@@ -3,9 +3,24 @@ milestone: M24
 feature: F02
 pbi: PBI-321
 title: 3D-space interior refinement (replaces the (u,v) grid)
-status: planned
+status: blocked
 estimate: L
 ---
+
+> **BLOCKED (2026-06-08): the imported surfaces are unsamplable, not just non-conformal.**
+> Implemented 3D-space refinement — split bulging interior edges, projecting the chord MIDPOINT
+> onto the surface (`PointAt(ParamAt(mid))`). On EDF it was WORSE: 1369 folds, +33% volume. The
+> midpoints lie between trim points, yet `ParamAt(midpoint)` STILL lands far off — the imported
+> rational-NURBS surfaces are pathological (non-conformal AND `ParamAt` finds a distant closest
+> point), so **no interior sampling via the surface is reliable**. Even edge-flip repair on the
+> boundary-only mesh (no new samples) only goes 13→12 folds — the fold is inherent to a
+> boundary-only triangulation of a curved face and there are no trustworthy interior points to
+> flip with. **Only the edge curves (the boundary) are reliable; the surface interior is not.**
+> This is an **import-quality** blocker, not a mesher one. M24 cannot mesh these faces fold-free
+> from the available data. The real fix is **import healing** — reparameterize the imported NURBS
+> (or compute reliable pcurves) so the surface can be sampled — a separate effort upstream of the
+> mesher. F01 (pcurves) + PBI-314 (adaptive density) + PBI-315 (fold repair) stay merged + tested,
+> ready to use once the surface is reliable. Reverted to the boundary-only baseline (210k).
 
 # PBI-321 — 3D-space interior refinement (replaces the (u,v) grid)
 
