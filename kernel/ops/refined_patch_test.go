@@ -124,3 +124,21 @@ func TestPatchIsManifoldTolerance(t *testing.T) {
 		t.Error("free edges (3) exceeding the loop (2) should be rejected as torn")
 	}
 }
+
+// TestMetricScaleCylinder pins the metric generalisation to analytic surfaces: a cylinder's (u,v) is
+// anisotropic — a unit step in u (angle) spans R in 3D, in v (axial) spans 1 — and its v-domain is
+// INFINITE, which metricScale must clamp instead of sampling ±Inf. So su≈R, sv≈1.
+func TestMetricScaleCylinder(t *testing.T) {
+	const r = 7.0
+	cyl, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r)
+	if err != nil {
+		t.Fatalf("NewCylinder: %v", err)
+	}
+	su, sv := metricScale(cyl)
+	if stdmath.Abs(su-r) > 1e-9 {
+		t.Errorf("su = %g; want the radius %g (3D length of a unit angular step)", su, r)
+	}
+	if stdmath.Abs(sv-1) > 1e-9 {
+		t.Errorf("sv = %g; want 1 (3D length of a unit axial step)", sv)
+	}
+}

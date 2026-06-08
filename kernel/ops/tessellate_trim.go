@@ -58,20 +58,24 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 	}
-	return nonRectangularMesh(s, outer3D, holes3D, outerUV, holesUV)
+	return nonRectangularMesh(s, outer3D, holes3D, outerUV, holesUV, q)
 }
 
-// nonRectangularMesh meshes a non-iso-rectangular curved trim. A sphere cap is meshed over its own
-// (u,v) with interior nodes so the curved cap reads smooth (not the flat radiating fan a boundary
-// triangulation gives — the inner bell-mouth slivers). A B-spline patch is constrained-Delaunay
-// triangulated in its (u,v), robust to the slightly self-intersecting boundary ParamAt inversion
-// produces. Other analytic patches keep the boundary ear-clip: their (u,v) can be degenerate at a
-// pole/seam and a wrapping wall folds onto itself in any single embedding.
-func nonRectangularMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
-	if _, isSphere := s.(geom.Sphere); isSphere {
-		return gridPatchMesh(s, outer3D, holes3D, outerUV, holesUV)
-	}
-	if _, isSpline := s.(geom.BSplineSurface); isSpline {
+// nonRectangularMesh meshes a non-iso-rectangular curved trim in the surface's OWN (u,v): a sphere,
+// cylinder or cone unrolls to a non-degenerate (u,v) here (toUVLoops already unwrapped the seam and
+// rejected pole-straddling loops), so a constrained-Delaunay triangulation with interior nodes
+// (gridPatchMesh) conforms to the exact boundary AND reads smooth — where the best-fit-plane ear-clip
+// (boundaryPatchMesh) tore a curved wall that lies in no single plane (the EDF trimmed-cylinder leaks).
+// A B-spline uses the same CDT without interior Steiner points (trimmedPatchMesh). gridPatchMesh's
+// manifold check still falls back to the plane ear-clip if a particular (u,v) defeats the CDT. A torus
+// keeps the ear-clip: its (u,v) is doubly periodic, so no single embedding is non-degenerate.
+func nonRectangularMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2, q Quality) *Mesh {
+	switch s.(type) {
+	case geom.Sphere:
+		return gridPatchMesh(s, outer3D, holes3D, outerUV, holesUV) // isotropic (u,v): interior nodes for smoothness
+	case geom.Cylinder, geom.Cone:
+		return metricWallMesh(s, outer3D, holes3D, outerUV, holesUV, q) // anisotropic (u,v): metric-scaled CDT
+	case geom.BSplineSurface:
 		return trimmedPatchMesh(s, outer3D, holes3D)
 	}
 	return boundaryPatchMesh(s, outer3D, holes3D)
