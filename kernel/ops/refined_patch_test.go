@@ -81,17 +81,32 @@ func TestGridPatchMeshAddsInteriorNodes(t *testing.T) {
 	if m.TriangleCount() <= n {
 		t.Errorf("expected interior refinement, got %d triangles (no interior nodes added)", m.TriangleCount())
 	}
-	bad := 0
+	// The patch must be CONSISTENTLY oriented — no shared edge traversed the same direction by both its
+	// triangles (that is a fold / back-face) — and wound outward in aggregate. A per-triangle normal test
+	// is too strict: a thin sliver's flat geometric normal can oppose its averaged vertex normals while
+	// the triangle is correctly wound with its neighbours (see patchMeshFrom's global winding).
+	dir := map[[2]int]int{}
+	var agree float64
 	for i := 0; i+2 < len(m.Indices); i += 3 {
-		a, b, c := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]
+		ia, ib, ic := m.Indices[i], m.Indices[i+1], m.Indices[i+2]
+		dir[[2]int{ia, ib}]++
+		dir[[2]int{ib, ic}]++
+		dir[[2]int{ic, ia}]++
+		a, b, c := m.Positions[ia], m.Positions[ib], m.Positions[ic]
 		gn := a.VectorTo(b).Cross(a.VectorTo(c))
-		sn := m.Normals[m.Indices[i]].Add(m.Normals[m.Indices[i+1]]).Add(m.Normals[m.Indices[i+2]])
-		if gn.Dot(sn) < 0 {
-			bad++
+		agree += float64(gn.Dot(m.Normals[ia].Add(m.Normals[ib]).Add(m.Normals[ic])))
+	}
+	folds := 0
+	for _, c := range dir {
+		if c > 1 {
+			folds++
 		}
 	}
-	if bad > 0 {
-		t.Errorf("%d of %d triangles wind against their vertex normals", bad, m.TriangleCount())
+	if folds > 0 {
+		t.Errorf("%d shared edges traversed the same direction by both triangles (fold/back-face)", folds)
+	}
+	if agree <= 0 {
+		t.Errorf("patch winds inward overall (aggregate gn·normal = %g)", agree)
 	}
 }
 

@@ -238,19 +238,37 @@ func patchLoops2D(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3
 	return uv, pos, nrm, loops
 }
 
-// patchMeshFrom builds the 3D mesh from the CDT triangles, winding each to agree with its own
-// vertex normals (consistent on a curved patch — see windingOpposesNormals).
+// patchMeshFrom builds the 3D mesh from a CDT's triangles, winding each CONSISTENTLY by its 2D (u,v)
+// orientation: a triangle wound CCW in (u,v) faces +NormalAt in 3D (the surface contract is NormalAt ≡
+// du×dv normalised, and a CCW (u,v) triangle's geometric normal lies along +du×dv), so the whole patch
+// is oriented one way and TessellateFace flips it once for a reversed face. Winding per-triangle by the
+// 3D vertex normals instead (windingOpposesNormals) flips UNRELIABLY on a high-curvature freeform patch,
+// where a flat triangle's geometric normal is nearly perpendicular to its averaged vertex normals — the
+// back-facing red triangles seen on the EDF duct's NURBS walls. uv is the same 2D space the CDT ran in
+// (the surface (u,v) or a positively-scaled metric (u,v), so its orientation matches (u,v)).
 func patchMeshFrom(pos []math.Point3, nrm []math.Vector3, tris [][3]int) *Mesh {
 	m := &Mesh{}
 	for i := range pos {
 		m.addVertex(pos[i], nrm[i])
 	}
+	// The CDT returns a CONSISTENTLY-oriented triangulation (every interior edge traversed once each way).
+	// Re-winding per-triangle to agree with its vertex normals BREAKS that consistency on a curved patch:
+	// a thin sliver's flat geometric normal opposes its smooth vertex normals, so it flips and folds
+	// against its neighbours — the back-facing red triangles on the EDF duct's NURBS walls. So keep the
+	// CDT's winding and flip the WHOLE patch ONCE if it faces inward overall (an aggregate, area-weighted
+	// vote that no single sliver can sway). TessellateFace flips again for a reversed face.
+	var agree float64
 	for _, t := range tris {
-		a, b, c := t[0], t[1], t[2]
-		if windingOpposesNormals(pos[a], pos[b], pos[c], nrm[a], nrm[b], nrm[c]) {
-			b, c = c, b
+		gn := pos[t[0]].VectorTo(pos[t[1]]).Cross(pos[t[0]].VectorTo(pos[t[2]]))
+		agree += float64(gn.Dot(nrm[t[0]].Add(nrm[t[1]]).Add(nrm[t[2]])))
+	}
+	flip := agree < 0
+	for _, t := range tris {
+		if flip {
+			m.addTriangle(t[0], t[2], t[1])
+		} else {
+			m.addTriangle(t[0], t[1], t[2])
 		}
-		m.addTriangle(a, b, c)
 	}
 	return m
 }
