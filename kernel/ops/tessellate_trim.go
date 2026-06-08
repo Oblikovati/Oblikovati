@@ -27,6 +27,11 @@ const trimBorderTol = 1e-6
 // tessellateCurvedFace meshes a curved face's trimmed region (see file doc).
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	s := f.Geometry()
+	if _, isSpline := s.(geom.BSplineSurface); isSpline {
+		if m := nurbsPcurveMesh(f, q); m != nil { // M25: metric-aware (u,v) triangulation
+			return m
+		}
+	}
 	outer3D := faceOuterBoundary(f, q)
 	holes3D := faceHoleBoundaries(f, q)
 	if len(outer3D) < 3 {
