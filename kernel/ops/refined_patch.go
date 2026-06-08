@@ -3,9 +3,115 @@
 package ops
 
 import (
+	stdmath "math"
+
 	"oblikovati/kernel/geom"
 	"oblikovati/math"
 )
+
+// gridPatchMesh meshes an analytic curved patch (a sphere cap) over its OWN (u,v) parameter space
+// with INTERIOR nodes, not just a boundary fan. The trim loops (exact 3D points, so the patch stays
+// watertight with its neighbours) plus a staggered interior (u,v) grid are constrained-Delaunay
+// triangulated in (u,v); interior points + per-vertex surface normals make the cap read as a smooth
+// curved surface instead of the flat radiating fan a boundary-only triangulation produces (the EDF
+// inner bell-mouth slivers). Mirrors OpenCASCADE's BRepMesh range-splitter approach (interior nodes
+// on a deflection-spaced staggered grid within the trimmed range). Caller must have a valid (u,v)
+// (toUVLoops ok) — i.e. the patch does not straddle a pole/seam.
+func gridPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+	uv, pos, nrm, loops := patchLoops2D(s, outer3D, holes3D, outerUV, holesUV)
+	for _, g := range interiorUVGrid(outerUV, holesUV) {
+		uv = append(uv, g)
+		pos = append(pos, s.PointAt(g[0], g[1]))
+		nrm = append(nrm, s.NormalAt(g[0], g[1]))
+	}
+	tris := constrainedDelaunay(uv, loops)
+	if len(tris) == 0 {
+		return boundaryPatchMesh(s, outer3D, holes3D)
+	}
+	return patchMeshFrom(pos, nrm, tris)
+}
+
+// interiorUVGrid returns staggered (u,v) points strictly inside the trim (inside the outer loop,
+// outside the holes), on a grid sized to the outer loop's median edge length so the interior density
+// matches the boundary's. Alternate rows are offset half a step for better-shaped triangles.
+func interiorUVGrid(outer []math.Point2, holes [][]math.Point2) [][2]float64 {
+	umin, umax, vmin, vmax, step := uvBounds(outer)
+	if step <= 0 {
+		return nil
+	}
+	var pts [][2]float64
+	row := 0
+	for v := vmin + step/2; v < vmax; v += step {
+		off := 0.0
+		if row%2 == 1 {
+			off = step / 2
+		}
+		row++
+		for u := umin + step/2 + off; u < umax; u += step {
+			p := [2]float64{u, v}
+			if insideUVTrim(outer, holes, p) {
+				pts = append(pts, p)
+			}
+		}
+	}
+	return pts
+}
+
+func uvBounds(outer []math.Point2) (umin, umax, vmin, vmax, step float64) {
+	umin, vmin = stdmath.Inf(1), stdmath.Inf(1)
+	umax, vmax = stdmath.Inf(-1), stdmath.Inf(-1)
+	var lens []float64
+	for i, p := range outer {
+		x, y := float64(p.X), float64(p.Y)
+		umin, umax = stdmath.Min(umin, x), stdmath.Max(umax, x)
+		vmin, vmax = stdmath.Min(vmin, y), stdmath.Max(vmax, y)
+		q := outer[(i+1)%len(outer)]
+		lens = append(lens, stdmath.Hypot(float64(q.X)-x, float64(q.Y)-y))
+	}
+	return umin, umax, vmin, vmax, medianLen(lens)
+}
+
+func medianLen(xs []float64) float64 {
+	if len(xs) == 0 {
+		return 0
+	}
+	c := append([]float64(nil), xs...)
+	for i := range c {
+		for j := i + 1; j < len(c); j++ {
+			if c[j] < c[i] {
+				c[i], c[j] = c[j], c[i]
+			}
+		}
+	}
+	return c[len(c)/2]
+}
+
+func insideUVTrim(outer []math.Point2, holes [][]math.Point2, p [2]float64) bool {
+	if !pointInUVPoly(outer, p) {
+		return false
+	}
+	for _, h := range holes {
+		if pointInUVPoly(h, p) {
+			return false
+		}
+	}
+	return true
+}
+
+func pointInUVPoly(poly []math.Point2, p [2]float64) bool {
+	in := false
+	n := len(poly)
+	for i, j := 0, n-1; i < n; j, i = i, i+1 {
+		yi, yj := float64(poly[i].Y), float64(poly[j].Y)
+		if (yi > p[1]) != (yj > p[1]) {
+			xi, xj := float64(poly[i].X), float64(poly[j].X)
+			if p[0] < (xj-xi)*(p[1]-yi)/(yj-yi)+xi {
+				in = !in
+			}
+		}
+	}
+	return in
+}
 
 // trimmedPatchMesh meshes a non-rectangular curved patch via a constrained Delaunay triangulation
 // of its boundary loops. The 2D embedding to triangulate in is chosen by patchProjection: the

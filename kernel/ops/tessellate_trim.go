@@ -50,16 +50,22 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 		}
 		return fullDomainGridMesh(s, q) // doubly-periodic / aperiodic seam face we can't reduce
 	}
-	if len(holesUV) == 0 {
-		if us, vs, isRect := isoRectangleGrid(outerUV); isRect {
-			return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
-		}
+	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
+		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 	}
-	// A non-rectangular trim. A B-spline patch is meshed by a constrained Delaunay triangulation in
-	// its own (u,v), robust to the slightly self-intersecting boundary ParamAt inversion produces on
-	// a rational patch (where boundary-only ear-clipping tears). Analytic patches keep the boundary
-	// ear-clip: their (u,v) can be degenerate at a pole/seam, and a wrapping wall folds onto itself
-	// in the best-fit plane (where the CDT can't recover the crossing constraints).
+	return nonRectangularMesh(s, outer3D, holes3D, outerUV, holesUV)
+}
+
+// nonRectangularMesh meshes a non-iso-rectangular curved trim. A sphere cap is meshed over its own
+// (u,v) with interior nodes so the curved cap reads smooth (not the flat radiating fan a boundary
+// triangulation gives — the inner bell-mouth slivers). A B-spline patch is constrained-Delaunay
+// triangulated in its (u,v), robust to the slightly self-intersecting boundary ParamAt inversion
+// produces. Other analytic patches keep the boundary ear-clip: their (u,v) can be degenerate at a
+// pole/seam and a wrapping wall folds onto itself in any single embedding.
+func nonRectangularMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+	if _, isSphere := s.(geom.Sphere); isSphere {
+		return gridPatchMesh(s, outer3D, holes3D, outerUV, holesUV)
+	}
 	if _, isSpline := s.(geom.BSplineSurface); isSpline {
 		return trimmedPatchMesh(s, outer3D, holes3D)
 	}
