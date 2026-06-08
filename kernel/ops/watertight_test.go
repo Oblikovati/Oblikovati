@@ -73,20 +73,28 @@ func TestCleanCurvedSolidIsWatertight(t *testing.T) {
 // self-proximal NURBS face (the EDF bell-mouth lip) no longer lands edge-starts on the wrong sheet,
 // self-intersect in (u,v) and make the CDT silently drop boundary constraints — which used to crack
 // the duct body (28 free edges) against its cone/cylinder/plane neighbours. Env-gated on the heavy
-// model (not a committed fixture; same OBK_PERF_STEP convention as TestHeavyModelBudget). Per-body free
-// edges before the fix: 4/0/4/28/0/0; after: 4/0/4/0/0/0 — so no body may exceed a small bound, which
-// regresses hard (to 28) if per-edge pcurve projection returns. The residual 4+4 on the auxiliary
-// bodies is a separate analytic grid-conformance issue (not this fix).
+// model (not a committed fixture; same OBK_PERF_STEP convention as TestHeavyModelBudget). It also guards
+// the cross-face conformance repair (conformCylConeFaces): a trimmed cyl/cone whose plane ear-clip
+// absorbed a rim-arc point is re-meshed with the metric-(u,v) CDT so it conforms to its neighbour.
+// Per-body free edges across the M25 fixes: pcurve continuity 4/0/4/28/0/0 → conformance repair
+// 4/0/0/0/0/0 (total 4). The remaining 4 are body0's plane-side absorber (a separate future pass). Assert
+// the TOTAL stays ≤4 — it regresses hard (to 8, then 36) if either fix is lost.
 func TestImportedNurbsDuctWatertight(t *testing.T) {
 	path := os.Getenv("OBK_PERF_STEP")
 	if path == "" {
 		t.Skip("set OBK_PERF_STEP=/path/EDF.STEP to run the imported-NURBS watertightness guard")
 	}
+	total := 0
 	for i, body := range stepBodies(t, path) {
 		mesh, _ := TessellateBody(body, DefaultQuality())
-		if free := freeEdgeCount(mesh); free > 8 {
-			t.Errorf("imported body %d tessellated with %d free edges; want ≤8 "+
-				"(a NURBS-face pcurve conformance regression cracks the duct body to ~28)", i, free)
+		free := freeEdgeCount(mesh)
+		total += free
+		if free > 4 {
+			t.Errorf("imported body %d tessellated with %d free edges; want ≤4 "+
+				"(a pcurve-continuity or cyl/cone conformance regression cracks a body)", i, free)
 		}
+	}
+	if total > 4 {
+		t.Errorf("imported model total free edges = %d; want ≤4 (watertightness regression)", total)
 	}
 }
