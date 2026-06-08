@@ -233,25 +233,6 @@ func clamp01(x float64) float64 {
 	return x
 }
 
-// gridMesh builds a mesh from a UV breakpoint grid.
-func gridMesh(s geom.Surface, us, vs []float64) *Mesh {
-	m := &Mesh{}
-	idx := make([][]int, len(us))
-	for i, u := range us {
-		idx[i] = make([]int, len(vs))
-		for j, v := range vs {
-			idx[i][j] = m.addVertex(s.PointAt(u, v), s.NormalAt(u, v))
-		}
-	}
-	for i := 0; i+1 < len(us); i++ {
-		for j := 0; j+1 < len(vs); j++ {
-			m.addTriangle(idx[i][j], idx[i+1][j], idx[i+1][j+1])
-			m.addTriangle(idx[i][j], idx[i+1][j+1], idx[i][j+1])
-		}
-	}
-	return m
-}
-
 // clampSpan replaces infinite domain bounds with a finite window.
 func clampSpan(lo, hi float64) (float64, float64) {
 	const window = 10

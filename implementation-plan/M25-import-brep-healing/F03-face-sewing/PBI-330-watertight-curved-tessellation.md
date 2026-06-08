@@ -23,6 +23,47 @@ weldable). **Therefore the fix is [PBI-324 edge snapping](../F02-edge-surface-sn
 meshers (this PBI). Keep this PBI only as a fallback if snapping can't reconcile an edge that's off
 BOTH adjacent surfaces. Status: superseded-by PBI-324 for the EDF case.
 
+## CORRECTION (2026-06-08, after PBI-324 shipped + was verified on EDF): the premise above was WRONG
+
+PBI-324 (edge snapping) is **done, wired into import, and DOES NOT fix EDF** — reopening this PBI as the
+real fix. The "imported edges sit ~mm off their surfaces" claim conflated two quantities: the **free-edge
+partner gap** (0.017–8.56 mm, the distance between unpaired mesh edges) is NOT the **edge-off-surface
+residual** — measured directly, EDF's edges sit ~0.3 µm (median) ON their surfaces. Snapping them
+therefore does nothing for watertightness (EDF body3 stayed 69 free edges), and snapping the B-spline-
+adjacent ones made it WORSE (69→75) by folding the NURBS CDT. **So the EDF leak IS mesher-internal**, as
+this PBI originally said: (1) the grid meshers (`structuredGridMesh`/`gridPatchMesh`) vs the NURBS CDT
+sample shared edges differently, and (2) the NURBS metric CDT itself leaves T-junctions/folds on body3.
+The fix is this PBI's "conform the meshers to the shared `discretizeEdge` boundary" OR a mesh-sew
+post-process — independent of edge snapping. (Also: `TessellateBody` free-edge counts are
+non-deterministic on some imported solids — fix that first so the metric is reproducible.)
+
+## Phased plan + progress (2026-06-08, after determinism fix landed)
+
+Prerequisite DONE: `TessellateBody` is now deterministic (CDT cavity + fold-repair map order), so
+free-edge counts are stable, measurable numbers. Per-face diagnosis split the leaks into two
+mechanisms, tackled in phases:
+
+- **Phase 1 — closed-surface watertightness (DONE).** A bare closed surface (OCC's whole sphere = 1
+  face, 0 seam edges) fell to the full-domain grid, which duplicated the periodic seam (u=0≡2π → welded
+  degree-4 edges) and degenerated the poles (zero-area quads → degree-32). `kernel/ops/closed_surface_mesh.go`
+  (`closedDomainMesh`, replacing the naive `gridMesh` in `fullDomainGridMesh`) wraps the seam onto the
+  first column and shares one vertex per pole row, fanning its ring. **sphere 66→0 free edges**, area
+  ≈4πr²; tests in `closed_surface_mesh_test.go`; OCC oracle + full kernel suite green.
+- **Phase 2a — periodic band seam (DONE).** A full cylinder/cone side (`periodicBandGrid`) dropped one
+  cell at the seam: the seam vertex's angle read back as ~2π−ε (tiny negative coordinate), so `us`
+  landed only at ~2π with no 0 column → 31 cells for a 32-segment circle → a one-cell crack against the
+  caps (the leak appears one cell in, not at the seam, because the cap polygon and band grid misalign by
+  one). Fix: `bracketPeriod` snaps the seam sample to 0 and brackets a closed [0, 2π], and the band now
+  routes through `closedDomainMesh` (wraps the seam onto one column). **cylinder 4→0, cone_frustum 0,
+  cone_sharp 33→0** — the apex cone too (NOTE: this also subsumed the planned Phase 3). Edges are
+  exactly on-surface (residual ~3e-15 mm) — this is a grid-conformance bug, not off-surface.
+- **Phase 2b — sphere-cap / gridPatchMesh conformance (NEXT).** Remaining: filleted_box 36 (the sphere
+  corner-fillets' `gridPatchMesh` boundary), EDF body0 4 / body2 8. Same class — make the sphere-cap
+  CDT boundary the exact shared `discretizeEdge` polyline.
+- **Phase 4 — NURBS CDT watertightness (EDF body3 = 69).** The metric pcurve mesher leaves
+  T-junctions/folds at face boundaries shared with grid faces; needs the boundary to be a hard shared
+  polyline AND the interior CDT to not subdivide boundary segments. Hardest; do last.
+
 ## Why (measured root cause, 2026-06-08)
 
 The tessellated body is **not watertight** on bodies with curved analytic faces — EDF body3 (the duct)

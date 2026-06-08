@@ -43,7 +43,7 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
 		if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
-			return structuredGridMesh(s, us, vs) // full cylinder/cone side: exact area
+			return closedDomainMesh(s, us, vs) // full cylinder/cone side: wraps the seam watertight
 		}
 		// A SINGLY-periodic surface (a sphere: periodic longitude, bounded latitude) whose (u,v)
 		// degenerates here is a cap straddling the pole — mesh its real boundary trim via the CDT in
@@ -299,9 +299,9 @@ func periodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Po
 		uu[i], vv[i] = s.ParamAt(p)
 	}
 	if uPer {
-		us, vs = closePeriod(sortUnique(uu)), sortUnique(vv)
+		us, vs = bracketPeriod(uu), sortUnique(vv)
 	} else {
-		us, vs = sortUnique(uu), closePeriod(sortUnique(vv))
+		us, vs = sortUnique(uu), bracketPeriod(vv)
 	}
 	if len(us) < 2 || len(vs) < 2 {
 		return nil, nil, false // degenerate (e.g. a cone closing to its apex — one rim circle)
@@ -353,13 +353,22 @@ func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
 	return m, true
 }
 
-// closePeriod appends the 2π wrap line to a [0,2π) sample set so the band's final cell
-// closes back onto the seam (no-op if a 2π sample is already present).
-func closePeriod(g []float64) []float64 {
-	if len(g) == 0 || g[len(g)-1] < 2*stdmath.Pi-trimBorderTol {
-		return append(g, 2*stdmath.Pi)
+// bracketPeriod normalises a periodic direction's samples to span a CLOSED [0, 2π]: a seam sample whose
+// angle wrapped to just under 2π (a seam vertex at angle 0 read back as 2π−ε from a tiny negative
+// coordinate) is snapped to 0 — it is the 0 column — and an explicit 2π closer is appended. So the
+// first and last columns are the shared seam and EVERY segment, including the one across the seam, is a
+// grid cell. Without this the seam column landed only at ~2π, dropping the [0, first-sample] cell and
+// leaving a one-cell crack against the caps. closedDomainMesh then wraps [0, 2π] onto one seam column.
+func bracketPeriod(g []float64) []float64 {
+	out := make([]float64, 0, len(g)+1)
+	for _, x := range g {
+		if x > 2*stdmath.Pi-trimBorderTol {
+			x = 0 // a seam sample read back as ~2π is the 0 column
+		}
+		out = append(out, x)
 	}
-	return g
+	out = sortUnique(out)
+	return append(out, 2*stdmath.Pi)
 }
 
 // toUVLoops maps the boundary loops to parameter space, unwrapping periodic parameters so
@@ -481,5 +490,5 @@ func fullDomainGridMesh(s geom.Surface, q Quality) *Mesh {
 	vLo, vHi := clampSpan(s.VDomain())
 	us := adaptiveParams(func(u float64) math.Point3 { return s.PointAt(u, (vLo+vHi)/2) }, uLo, uHi, q.tol(), q.angleTol())
 	vs := adaptiveParams(func(v float64) math.Point3 { return s.PointAt((uLo+uHi)/2, v) }, vLo, vHi, q.tol(), q.angleTol())
-	return gridMesh(s, us, vs)
+	return closedDomainMesh(s, us, vs) // watertight on a closed surface (periodic seam + poles); else == gridMesh
 }
