@@ -25,6 +25,7 @@ import (
 // the scene — rebuilt from the model each frame (renderer.BuildDrawList) and projected
 // with the navigated camera — always reflects current model and view state (ADR-0004).
 func drawViewportPanel(win *native.Window, s *app.Session) {
+	win.SetViewportNormalDebug(normalDebugOn) // Tools ▸ Normal Debug (front green / back red)
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
 		// View configuration (layout, new/close view) lives on the View ribbon tab's

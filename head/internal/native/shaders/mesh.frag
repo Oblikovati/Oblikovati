@@ -204,6 +204,14 @@ void main() {
     // Lines / flat overlays: emit the unlit color.
     if (pc.camPosLit.w < 0.5) { outColor = vColor; return; }
 
+    // Normal-debug mode (camPosLit.w >= 1.5): color by raw triangle facing — front green, back
+    // red — so inverted-winding / flipped-normal triangles are obvious. Uses gl_FrontFacing
+    // (the rasterizer's winding test) BEFORE the two-sided flip below, which would hide them.
+    if (pc.camPosLit.w >= 1.5) {
+        outColor = gl_FrontFacing ? vec4(0.10, 0.75, 0.25, 1.0) : vec4(0.90, 0.15, 0.15, 1.0);
+        return;
+    }
+
     vec3 N = normalize(vNormal);
     vec3 V = normalize(pc.camPosLit.xyz - vWorldPos);
     if (dot(N, V) < 0.0) N = -N; // two-sided shading (CAD faces can present either way)
