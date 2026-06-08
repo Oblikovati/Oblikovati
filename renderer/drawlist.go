@@ -51,7 +51,12 @@ type DrawItem struct {
 	// model) — the interaction-overlay lane and burn-through markers/labels of client
 	// graphics (Inventor's BurnThrough). The viewport routes these to the depth-disabled
 	// on-top pass (PBI-067); a headless NullBackend simply records them like any item.
-	OnTop    bool
+	OnTop bool
+	// Biased marks a translucent reference overlay (a work-plane / ground-plane fill) that should
+	// render with a small depth bias, so where it is coplanar with solid geometry the solid wins
+	// the depth test instead of z-fighting. Display only; routed to the biased tail of the
+	// triangle stream (see viewport.Flatten).
+	Biased   bool
 	ObjectID uint64
 }
 

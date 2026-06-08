@@ -263,6 +263,10 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
     rs.cullMode = VK_CULL_MODE_NONE;
     rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.lineWidth = 1.0f;
+    // Depth bias is dynamic (set per draw via vkCmdSetDepthBias): zero for solid geometry, a
+    // small push-back for coplanar reference overlays (work-plane fills) so the solid wins the
+    // depth test instead of z-fighting. Enabled here so the dynamic state takes effect.
+    rs.depthBiasEnable = VK_TRUE;
 
     VkPipelineMultisampleStateCreateInfo ms{};
     ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -292,10 +296,11 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
     cb.attachmentCount = 1;
     cb.pAttachments = &cba;
 
-    VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
+                            VK_DYNAMIC_STATE_DEPTH_BIAS};
     VkPipelineDynamicStateCreateInfo dynState{};
     dynState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynState.dynamicStateCount = 2;
+    dynState.dynamicStateCount = 3;
     dynState.pDynamicStates = dyn;
 
     VkGraphicsPipelineCreateInfo ci{};
@@ -968,7 +973,8 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* lineV, int lineVC, const uint32_t* lineIdx, int lineIC,
                          const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
-                         const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC) {
+                         const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
+                         int triBiasFirst) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
@@ -1060,6 +1066,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     VkRect2D scissor{{0, 0}, {(uint32_t)w, (uint32_t)hh}};
     vkCmdSetViewport(v->cmd, 0, 1, &vpRect);
     vkCmdSetScissor(v->cmd, 0, 1, &scissor);
+    vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f); // default: solid geometry draws at zero bias
 
     // The scene-lighting + environment set (set 0) is shared by the skybox and every geometry
     // pipeline; bind it once, before any draw, so the background renders even with no geometry.
@@ -1106,7 +1113,19 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         if (triIC > 0) {
             pushLit(v->normalDebug ? 2.0f : 1.0f);
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->triPipeline);
-            vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+            int opaque = triBiasFirst;
+            if (opaque < 0 || opaque > triIC) opaque = triIC; // guard against a bad split index
+            if (opaque > 0) {
+                vkCmdDrawIndexed(v->cmd, (uint32_t)opaque, 1, (uint32_t)triFirst, triBase, 0);
+            }
+            // Reference-overlay fills (work planes) draw last with a small depth push-back so a
+            // coplanar solid face wins the depth test (no z-fighting); reset after.
+            if (triIC - opaque > 0) {
+                vkCmdSetDepthBias(v->cmd, 2.0f, 0.0f, 2.0f);
+                vkCmdDrawIndexed(v->cmd, (uint32_t)(triIC - opaque), 1,
+                                 (uint32_t)(triFirst + opaque), triBase, 0);
+                vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
+            }
         }
         // 3) solid edges — depth-tested, so only the visible portions appear.
         if (lineIC > 0) {

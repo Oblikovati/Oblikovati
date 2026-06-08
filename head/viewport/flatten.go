@@ -22,9 +22,14 @@ const VertexFloats = 16
 // Indices are 0-based within each stream's own vertex array (the pipeline applies the
 // vertex offset).
 type Mesh struct {
-	TriVerts       []float32
-	TriVCount      int
-	TriIndices     []uint32
+	TriVerts   []float32
+	TriVCount  int
+	TriIndices []uint32
+	// TriBiasFirst is the index into TriIndices at which the depth-biased triangles begin
+	// (Biased items — work-plane/ground-plane fills — are appended after the opaque triangles).
+	// The native pass draws [0,TriBiasFirst) at zero bias and [TriBiasFirst,len) with a small
+	// bias so coplanar reference overlays do not z-fight solid geometry.
+	TriBiasFirst   int
 	OccVerts       []float32
 	OccVCount      int
 	OccIndices     []uint32
@@ -49,6 +54,7 @@ type Mesh struct {
 // Occluder is set, and lines to the hidden stream when Hidden is set.
 func Flatten(list renderer.DrawList) Mesh {
 	var m Mesh
+	var biased []renderer.DrawItem
 	for _, item := range list.Items {
 		switch {
 		case item.OnTop && item.Primitive == renderer.Triangles:
@@ -57,6 +63,8 @@ func Flatten(list renderer.DrawList) Mesh {
 			m.TopLineVCount = appendItem(&m.TopLineVerts, &m.TopLineIndices, m.TopLineVCount, item)
 		case item.Primitive == renderer.Triangles && item.Occluder:
 			m.OccVCount = appendItem(&m.OccVerts, &m.OccIndices, m.OccVCount, item)
+		case item.Primitive == renderer.Triangles && item.Biased:
+			biased = append(biased, item) // appended after the opaque triangles, below
 		case item.Primitive == renderer.Triangles:
 			m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
 		case item.Hidden:
@@ -64,6 +72,12 @@ func Flatten(list renderer.DrawList) Mesh {
 		default:
 			m.LineVCount = appendItem(&m.LineVerts, &m.LineIndices, m.LineVCount, item)
 		}
+	}
+	// Biased reference overlays go at the tail of the triangle stream so the native pass can draw
+	// them with a depth bias (after the opaque triangles at zero bias).
+	m.TriBiasFirst = len(m.TriIndices)
+	for _, item := range biased {
+		m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
 	}
 	return m
 }
