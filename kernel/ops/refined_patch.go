@@ -86,35 +86,6 @@ func weldedFreeEdgeCount(m *Mesh) int {
 	return free
 }
 
-// metricWallMesh triangulates a trimmed analytic wall (a cylinder/cone) in its METRIC-SCALED (u,v) —
-// each axis scaled by its mean 3D length (√E, √G) so the strongly anisotropic parameter space (u angle,
-// v length) becomes ≈isometric to 3D. That gives a well-shaped, deflection-bounded interior (the same
-// metric triangulation the NURBS mesher uses), where the best-fit-plane ear-clip tore a curved wall
-// that lies in no plane (the EDF trimmed-cylinder leaks) and the ISOTROPIC interior grid exploded the
-// node count. Exact 3D boundary points keep it watertight with neighbours; folds are repaired; falls
-// back to the plane ear-clip if the CDT is empty or tears (patchIsManifold).
-func metricWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2, q Quality) *Mesh {
-	su, sv := metricScale(s)
-	b := newPatchBuilder(s, su, sv)
-	loops := [][]int{b.addLoop(outer3D, outerUV)}
-	for i := range holes3D {
-		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
-	}
-	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q) {
-		b.addInterior(g)
-	}
-	tris := constrainedDelaunay(b.scaled, loops)
-	if len(tris) == 0 {
-		return boundaryPatchMesh(s, outer3D, holes3D)
-	}
-	m := patchMeshFrom(b.pos, b.nrm, tris)
-	repairFolds(m, 8)
-	if !patchIsManifold(m, loops) {
-		return boundaryPatchMesh(s, outer3D, holes3D)
-	}
-	return m
-}
-
 // interiorUVGrid returns staggered (u,v) points strictly inside the trim (inside the outer loop,
 // outside the holes), on a grid sized to the outer loop's median edge length so the interior density
 // matches the boundary's. Alternate rows are offset half a step for better-shaped triangles.
