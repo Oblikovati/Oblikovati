@@ -16,8 +16,18 @@ import (
 
 // discretizeEdge samples an edge's curve into a chord polyline (start vertex → end
 // vertex) meeting the chordal tolerance. Endpoints are snapped to the edge's vertices
-// so adjacent edges share exact points.
+// so adjacent edges share exact points. A healed (imported) edge returns its stored
+// on-surface polyline verbatim (M25 PBI-324) so both faces mesh the identical boundary.
 func discretizeEdge(e *topo.Edge, q Quality) []math.Point3 {
+	if snapped := e.SnappedCurve(); snapped != nil {
+		return snapped
+	}
+	return sampleEdgeCurve(e, q)
+}
+
+// sampleEdgeCurve samples an edge's curve into a chord polyline directly (ignoring any healing
+// snap) — the raw discretization [discretizeEdge] derives from, and what [snapEdge] re-projects.
+func sampleEdgeCurve(e *topo.Edge, q Quality) []math.Point3 {
 	c := e.Geometry()
 	lo, hi := c.Domain()
 	ts := adaptiveParams(func(t float64) math.Point3 { return c.PointAt(t) }, lo, hi, q.tol(), q.angleTol())
