@@ -37,6 +37,40 @@ The fix is this PBI's "conform the meshers to the shared `discretizeEdge` bounda
 post-process — independent of edge snapping. (Also: `TessellateBody` free-edge counts are
 non-deterministic on some imported solids — fix that first so the metric is reproducible.)
 
+## Phased plan + progress (2026-06-08, after determinism fix landed)
+
+Prerequisite DONE: `TessellateBody` is now deterministic (CDT cavity + fold-repair map order), so
+free-edge counts are stable, measurable numbers. Per-face diagnosis split the leaks into two
+mechanisms, tackled in phases:
+
+- **Phase 1 — closed-surface watertightness (DONE).** A bare closed surface (OCC's whole sphere = 1
+  face, 0 seam edges) fell to the full-domain grid, which duplicated the periodic seam (u=0≡2π → welded
+  degree-4 edges) and degenerated the poles (zero-area quads → degree-32). `kernel/ops/closed_surface_mesh.go`
+  (`closedDomainMesh`, replacing the naive `gridMesh` in `fullDomainGridMesh`) wraps the seam onto the
+  first column and shares one vertex per pole row, fanning its ring. **sphere 66→0 free edges**, area
+  ≈4πr²; tests in `closed_surface_mesh_test.go`; OCC oracle + full kernel suite green.
+- **Phase 2a — periodic band seam (DONE).** A full cylinder/cone side (`periodicBandGrid`) dropped one
+  cell at the seam: the seam vertex's angle read back as ~2π−ε (tiny negative coordinate), so `us`
+  landed only at ~2π with no 0 column → 31 cells for a 32-segment circle → a one-cell crack against the
+  caps (the leak appears one cell in, not at the seam, because the cap polygon and band grid misalign by
+  one). Fix: `bracketPeriod` snaps the seam sample to 0 and brackets a closed [0, 2π], and the band now
+  routes through `closedDomainMesh` (wraps the seam onto one column). **cylinder 4→0, cone_frustum 0,
+  cone_sharp 33→0** — the apex cone too (NOTE: this also subsumed the planned Phase 3). Edges are
+  exactly on-surface (residual ~3e-15 mm) — this is a grid-conformance bug, not off-surface.
+- **Phase 2b — sphere-cap / gridPatchMesh robustness (DONE).** filleted_box 36 was the sphere corner-
+  fillet caps whose `(u,v)` reaches the pole (v=±π/2, all u collapse) or wraps the seam: the CDT tore
+  them into a non-manifold mesh (interior holes / pole overlaps, visible only after a 3D weld). The cap
+  boundary was already the exact shared edge points, so the fix is robustness, not conformance:
+  `gridPatchMesh` now checks the result (`patchIsManifold` = welded free edges ≤ loop boundary) and
+  falls back to the plane-based `boundaryPatchMesh` (watertight, boundary-only) when the CDT tore. Only
+  torn caps fall back; smooth caps (and the refinement test patch) keep their interior nodes.
+  **filleted_box 36→0; EDF total 81→44** (the fallback fixed EDF's pole-degenerate caps too). Guard:
+  filleted_box added to `TestImportedAnalyticPrimitivesWatertight` + `weldedFreeEdgeCount`/
+  `patchIsManifold` unit tests.
+- **Phase 4 — NURBS CDT watertightness (EDF remaining ≈44).** The metric pcurve mesher (and the few
+  remaining grid↔NURBS edges) leave T-junctions/folds at face boundaries; needs the boundary to be a
+  hard shared polyline AND the interior CDT to not subdivide boundary segments. Hardest; do last.
+
 ## Why (measured root cause, 2026-06-08)
 
 The tessellated body is **not watertight** on bodies with curved analytic faces — EDF body3 (the duct)

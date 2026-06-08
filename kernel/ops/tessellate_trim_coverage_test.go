@@ -46,12 +46,14 @@ func TestUVLoopHelpersAndPeriodClosure(t *testing.T) {
 	if _, ok := unwrap([]float64{0, stdmath.Pi, 2 * stdmath.Pi}); ok {
 		t.Fatal("unwrap accepted a full-period loop")
 	}
-	closed := closePeriod([]float64{0, stdmath.Pi})
-	if len(closed) != 3 || stdmath.Abs(closed[2]-2*stdmath.Pi) > 1e-12 {
-		t.Fatalf("closePeriod = %v", closed)
+	closed := bracketPeriod([]float64{0, stdmath.Pi})
+	if len(closed) != 3 || stdmath.Abs(closed[0]) > 1e-12 || stdmath.Abs(closed[2]-2*stdmath.Pi) > 1e-12 {
+		t.Fatalf("bracketPeriod = %v; want [0, π, 2π]", closed)
 	}
-	alreadyClosed := closePeriod([]float64{0, 2 * stdmath.Pi})
-	if len(alreadyClosed) != 2 {
-		t.Fatalf("closePeriod appended to already closed grid: %v", alreadyClosed)
+	// A seam sample read back as ~2π−ε must snap to the 0 column, so the period brackets [0, 2π] with the
+	// seam shared at both ends — the fix for the dropped seam cell (a one-cell crack against the caps).
+	seam := bracketPeriod([]float64{0.5, 1.0, 2*stdmath.Pi - 1e-9})
+	if len(seam) != 4 || stdmath.Abs(seam[0]) > 1e-12 || stdmath.Abs(seam[3]-2*stdmath.Pi) > 1e-12 {
+		t.Fatalf("bracketPeriod(seam≈2π) = %v; want [0, 0.5, 1, 2π]", seam)
 	}
 }

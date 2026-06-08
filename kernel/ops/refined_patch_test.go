@@ -94,3 +94,33 @@ func TestGridPatchMeshAddsInteriorNodes(t *testing.T) {
 		t.Errorf("%d of %d triangles wind against their vertex normals", bad, m.TriangleCount())
 	}
 }
+
+// TestWeldedFreeEdgeCount pins the watertightness metric the sphere-cap fallback decision uses: a
+// closed tetrahedron welds to 0 free edges; dropping a face exposes 3 boundary edges.
+func TestWeldedFreeEdgeCount(t *testing.T) {
+	m := &Mesh{
+		Positions: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0), math.P3(0, 0, 1)},
+		Indices:   []int{0, 2, 1, 0, 1, 3, 1, 2, 3, 0, 3, 2}, // all 4 faces: closed
+	}
+	if free := weldedFreeEdgeCount(m); free != 0 {
+		t.Errorf("closed tetrahedron has %d free edges; want 0", free)
+	}
+	m.Indices = m.Indices[:9] // drop one face → an open shell with a 3-edge boundary
+	if free := weldedFreeEdgeCount(m); free != 3 {
+		t.Errorf("tetrahedron missing one face has %d free edges; want 3", free)
+	}
+}
+
+// TestPatchIsManifoldTolerance pins the fallback threshold: a patch whose welded free edges do not
+// exceed its loop boundary is kept (manifold), one that exceeds it (a torn cap) is rejected.
+func TestPatchIsManifoldTolerance(t *testing.T) {
+	// one triangle, loop of its 3 vertices: 3 boundary edges == want 3 → kept.
+	tri := &Mesh{Positions: []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)}, Indices: []int{0, 1, 2}}
+	if !patchIsManifold(tri, [][]int{{0, 1, 2}}) {
+		t.Error("a single triangle with a 3-vertex loop should be manifold (3 free == want 3)")
+	}
+	// same triangle but claim a smaller loop (want 2) → 3 free > 2 → rejected (a torn patch).
+	if patchIsManifold(tri, [][]int{{0, 1}}) {
+		t.Error("free edges (3) exceeding the loop (2) should be rejected as torn")
+	}
+}
