@@ -123,6 +123,7 @@ func facePcurveLoops(f *topo.Face, q Quality) (outerUV []math.Point2, outer3D []
 }
 
 func concatLoopPcurve(s geom.Surface, l *topo.Loop, q Quality) (uv []math.Point2, p3 []math.Point3) {
+	needProject := false
 	for _, u := range l.EdgeUses() {
 		pts := discretizeEdge(u.Edge(), q)
 		if u.Reversed() {
@@ -130,6 +131,7 @@ func concatLoopPcurve(s geom.Surface, l *topo.Loop, q Quality) (uv []math.Point2
 		}
 		pc := u.Pcurve()
 		if len(pc) != len(pts) {
+			needProject = true
 			pc = geom.ProjectCurveToSurface(s, pts) // no/stale pcurve: reconstruct on the fly
 		}
 		if len(p3) > 0 {
@@ -140,6 +142,16 @@ func concatLoopPcurve(s geom.Surface, l *topo.Loop, q Quality) (uv []math.Point2
 	}
 	if n := len(p3); n > 1 && p3[0].DistanceTo(p3[n-1]) < weldPointTol {
 		uv, p3 = uv[:n-1], p3[:n-1]
+	}
+	// Per-edge projection re-seeds a fresh GLOBAL closest point at each edge's start; on a self-proximal
+	// NURBS (the EDF bell-mouth lip) that start can snap to the wrong sheet, so the concatenated (u,v)
+	// loop self-intersects — and constrainedDelaunay then silently drops those crossing boundary
+	// constraints (insertConstraint gives up), cracking the face against its neighbours. When any edge
+	// had to be projected, re-derive the WHOLE loop's (u,v) in ONE continuous march (each point seeded
+	// from the previous, so it stays on one sheet across edge joins). Stored pcurves (a healed body,
+	// every edge with a matching pcurve) are kept verbatim.
+	if needProject {
+		uv = geom.ProjectCurveToSurface(s, p3)
 	}
 	return uv, p3
 }

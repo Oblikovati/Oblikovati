@@ -3,6 +3,7 @@
 package ops
 
 import (
+	"os"
 	"testing"
 
 	"oblikovati/kernel/brep"
@@ -64,5 +65,28 @@ func TestCleanCurvedSolidIsWatertight(t *testing.T) {
 	mesh, _ := TessellateBody(cyl, DefaultQuality())
 	if free := freeEdgeCount(mesh); free != 0 {
 		t.Errorf("clean cylinder solid tessellated with %d free edges; want 0 (watertight)", free)
+	}
+}
+
+// TestImportedNurbsDuctWatertight guards the M25 fix that made imported NURBS faces conform to their
+// neighbours: concatLoopPcurve projects each boundary loop's pcurve in ONE continuous march, so a
+// self-proximal NURBS face (the EDF bell-mouth lip) no longer lands edge-starts on the wrong sheet,
+// self-intersect in (u,v) and make the CDT silently drop boundary constraints — which used to crack
+// the duct body (28 free edges) against its cone/cylinder/plane neighbours. Env-gated on the heavy
+// model (not a committed fixture; same OBK_PERF_STEP convention as TestHeavyModelBudget). Per-body free
+// edges before the fix: 4/0/4/28/0/0; after: 4/0/4/0/0/0 — so no body may exceed a small bound, which
+// regresses hard (to 28) if per-edge pcurve projection returns. The residual 4+4 on the auxiliary
+// bodies is a separate analytic grid-conformance issue (not this fix).
+func TestImportedNurbsDuctWatertight(t *testing.T) {
+	path := os.Getenv("OBK_PERF_STEP")
+	if path == "" {
+		t.Skip("set OBK_PERF_STEP=/path/EDF.STEP to run the imported-NURBS watertightness guard")
+	}
+	for i, body := range stepBodies(t, path) {
+		mesh, _ := TessellateBody(body, DefaultQuality())
+		if free := freeEdgeCount(mesh); free > 8 {
+			t.Errorf("imported body %d tessellated with %d free edges; want ≤8 "+
+				"(a NURBS-face pcurve conformance regression cracks the duct body to ~28)", i, free)
+		}
 	}
 }
