@@ -3,7 +3,7 @@ milestone: M25
 feature: F01
 pbi: PBI-322
 title: Robust point/curve-to-surface projection API
-status: planned
+status: done
 estimate: M
 ---
 
