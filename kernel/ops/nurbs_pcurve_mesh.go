@@ -45,9 +45,11 @@ func nurbsPcurveMesh(f *topo.Face, q Quality) *Mesh {
 
 // metricScale returns the mean 3D length of a unit step in u and in v (√E, √G of the first
 // fundamental form), sampled over the domain — the per-axis scale that makes (u,v) ≈ isometric to 3D.
-func metricScale(s geom.BSplineSurface) (su, sv float64) {
-	ulo, uhi := s.UDomain()
-	vlo, vhi := s.VDomain()
+// Generalised from B-splines to any surface (a cylinder/cone has a strongly anisotropic (u,v): u is an
+// angle, v a length). Infinite analytic domains (a cylinder's axial v) are clamped to a finite window.
+func metricScale(s geom.Surface) (su, sv float64) {
+	ulo, uhi := clampSpan(s.UDomain())
+	vlo, vhi := clampSpan(s.VDomain())
 	var sumU, sumV float64
 	const n = 4
 	for i := 0; i <= n; i++ {
@@ -70,14 +72,14 @@ func metricScale(s geom.BSplineSurface) (su, sv float64) {
 // patchBuilder accumulates the mesh vertices: exact/ on-surface 3D positions + normals, plus the
 // metric-scaled (u,v) coordinates the CDT triangulates in.
 type patchBuilder struct {
-	s      geom.BSplineSurface
+	s      geom.Surface
 	su, sv float64
 	pos    []math.Point3
 	nrm    []math.Vector3
 	scaled [][2]float64
 }
 
-func newPatchBuilder(s geom.BSplineSurface, su, sv float64) *patchBuilder {
+func newPatchBuilder(s geom.Surface, su, sv float64) *patchBuilder {
 	return &patchBuilder{s: s, su: su, sv: sv}
 }
 

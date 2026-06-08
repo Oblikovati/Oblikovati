@@ -62,16 +62,18 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 }
 
 // nonRectangularMesh meshes a non-iso-rectangular curved trim. A sphere cap is meshed over its own
-// (u,v) with interior nodes so the curved cap reads smooth (not the flat radiating fan a boundary
-// triangulation gives — the inner bell-mouth slivers). A B-spline patch is constrained-Delaunay
-// triangulated in its (u,v), robust to the slightly self-intersecting boundary ParamAt inversion
-// produces. Other analytic patches keep the boundary ear-clip: their (u,v) can be degenerate at a
-// pole/seam and a wrapping wall folds onto itself in any single embedding.
+// (u,v) with interior nodes (gridPatchMesh) so it reads smooth; a B-spline uses the same CDT without
+// interior Steiner points (trimmedPatchMesh). Everything else — cylinder, cone, torus — keeps the
+// best-fit-plane boundary ear-clip (boundaryPatchMesh): it is coarse and can leave a small watertight
+// gap on a trimmed wall, but it is O(boundary) fast. (Routing cyl/cone through the (u,v) CDT closed
+// those gaps but made a few large cone trims pathologically slow — a 122-triangle face took 2.4s,
+// because the O(n²) CDT chokes on ~120 boundary constraints + interior nodes — freezing import. The
+// watertightness gain there is not worth the freeze; a faster constrained triangulation is the fix.)
 func nonRectangularMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
-	if _, isSphere := s.(geom.Sphere); isSphere {
+	switch s.(type) {
+	case geom.Sphere:
 		return gridPatchMesh(s, outer3D, holes3D, outerUV, holesUV)
-	}
-	if _, isSpline := s.(geom.BSplineSurface); isSpline {
+	case geom.BSplineSurface:
 		return trimmedPatchMesh(s, outer3D, holes3D)
 	}
 	return boundaryPatchMesh(s, outer3D, holes3D)
@@ -98,24 +100,15 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 	} else {
 		tris = earClip(outer2D)
 	}
-	m := &Mesh{}
-	for _, p := range pos {
+	// The ear-clip output is consistently oriented in the projection plane; patchMeshFrom keeps that
+	// winding and flips the whole patch once if it faces inward overall. Winding each triangle to its
+	// own vertex normals instead flips slivers inconsistently — the back-facing hole walls in Normal-Debug.
+	nrm := make([]math.Vector3, len(pos))
+	for i, p := range pos {
 		u, v := s.ParamAt(p)
-		m.addVertex(p, s.NormalAt(u, v))
+		nrm[i] = s.NormalAt(u, v)
 	}
-	for _, tri := range tris {
-		a, b, c := tri[0], tri[1], tri[2]
-		// Wind each triangle to agree with its OWN vertices' surface normals (what shading and
-		// mass-props read), not the surface normal at the triangle centroid: on a curved patch
-		// the flat-triangle centroid lies off the surface, so ParamAt(centroid) returns a wrong
-		// (u,v) and flips some triangles inconsistently — the back-facing patches seen in
-		// Normal-Debug. Averaging the three vertex normals is consistent for every triangle.
-		if windingOpposesNormals(pos[a], pos[b], pos[c], m.Normals[a], m.Normals[b], m.Normals[c]) {
-			b, c = c, b
-		}
-		m.addTriangle(a, b, c)
-	}
-	return m
+	return patchMeshFrom(pos, nrm, tris)
 }
 
 // patchProjection picks the 2D embedding to ear-clip a curved patch's boundary in. A B-spline

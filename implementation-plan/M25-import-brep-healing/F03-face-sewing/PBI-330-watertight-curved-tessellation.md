@@ -67,9 +67,18 @@ mechanisms, tackled in phases:
   **filleted_box 36→0; EDF total 81→44** (the fallback fixed EDF's pole-degenerate caps too). Guard:
   filleted_box added to `TestImportedAnalyticPrimitivesWatertight` + `weldedFreeEdgeCount`/
   `patchIsManifold` unit tests.
-- **Phase 4 — NURBS CDT watertightness (EDF remaining ≈44).** The metric pcurve mesher (and the few
-  remaining grid↔NURBS edges) leave T-junctions/folds at face boundaries; needs the boundary to be a
-  hard shared polyline AND the interior CDT to not subdivide boundary segments. Hardest; do last.
+- **Phase 4 — remaining EDF leaks (IN PROGRESS; 44→36).** Diagnosis: the remaining leaks are NOT mainly
+  NURBS — they are trimmed analytic walls + a mixed grid↔NURBS↔plane core.
+  - **Done (body2 8→0):** a non-iso-rectangular trimmed cylinder/cone wall fell to `boundaryPatchMesh`
+    (best-fit-plane ear-clip), which tears a curved wall that lies in no plane. `nonRectangularMesh` now
+    routes cyl/cone to `metricWallMesh` — a CDT in METRIC-SCALED (u,v) (√E,√G, generalising the NURBS
+    metric mesher; `metricScale` now clamps the cylinder's infinite v-domain). Isotropic interior grids
+    explode on a cylinder's anisotropic (u,v); the metric scaling + deflection-bounded interior fixes
+    both correctness and the node-count blow-up. EDF total 44→36; all OCC fixtures still 0.
+  - **Remaining (body3 32, body0 4):** distributed across band/iso-rectangle cyl/cone (`structuredGridMesh`
+    re-sampling its own grid lines, not the shared `discretizeEdge`) + B-spline + plane edges. Likely
+    needs the band/iso-rectangle grid to emit its boundary ROW as the exact edge points, OR a
+    `TessellateBody` mesh-sew (weld + zip T-junctions) for the mixed remainder. Hardest; next.
 
 ## Why (measured root cause, 2026-06-08)
 
