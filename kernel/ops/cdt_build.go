@@ -14,6 +14,14 @@ func (m *cdt) insert(ip int) {
 	m.fanCavity(ip, m.collectCavity(seed, m.pts[ip]))
 }
 
+// cavity is a Bowyer–Watson cavity: the triangles to retriangulate, kept BOTH as a BFS-ordered slice
+// (so the boundary scan and triangle creation are deterministic — ranging a Go map is randomized,
+// which made the whole triangulation non-reproducible) and as a membership set for the inside test.
+type cavity struct {
+	order []int
+	in    map[int]bool
+}
+
 // firstBad returns any live triangle whose circumcircle strictly contains p (the triangle that
 // contains p always qualifies), or -1 if none.
 func (m *cdt) firstBad(p [2]float64) int {
@@ -26,33 +34,35 @@ func (m *cdt) firstBad(p [2]float64) int {
 }
 
 // collectCavity grows the connected set of triangles whose circumcircle contains p, starting from
-// a known-bad seed (the Delaunay cavity is connected, so a BFS finds all of it).
-func (m *cdt) collectCavity(seed int, p [2]float64) map[int]bool {
-	cavity := map[int]bool{seed: true}
+// a known-bad seed (the Delaunay cavity is connected, so a BFS finds all of it). The BFS visit order
+// is recorded so downstream processing is deterministic (see [cavity]).
+func (m *cdt) collectCavity(seed int, p [2]float64) cavity {
+	c := cavity{order: []int{seed}, in: map[int]bool{seed: true}}
 	for queue := []int{seed}; len(queue) > 0; {
 		t := queue[0]
 		queue = queue[1:]
 		for i := 0; i < 3; i++ {
 			ne := m.tris[t].n[i]
-			if ne < 0 || cavity[ne] {
+			if ne < 0 || c.in[ne] {
 				continue
 			}
 			if inCircle(m.pts[m.tris[ne].v[0]], m.pts[m.tris[ne].v[1]], m.pts[m.tris[ne].v[2]], p) > 0 {
-				cavity[ne] = true
+				c.in[ne] = true
+				c.order = append(c.order, ne)
 				queue = append(queue, ne)
 			}
 		}
 	}
-	return cavity
+	return c
 }
 
 type cavityEdge struct{ a, b, ne int }
 
 // fanCavity deletes the cavity triangles and creates one new triangle per cavity-boundary edge,
 // fanning to the inserted point ip; it relinks outside neighbours and stitches the new fan.
-func (m *cdt) fanCavity(ip int, cavity map[int]bool) {
-	bnd := m.cavityBoundary(cavity)
-	for t := range cavity {
+func (m *cdt) fanCavity(ip int, c cavity) {
+	bnd := m.cavityBoundary(c)
+	for _, t := range c.order {
 		m.dead[t] = true
 	}
 	pending := map[int][2]int{} // shared (ip,x) edges: other-vertex x → first (tri, localIndex)
@@ -75,13 +85,14 @@ func (m *cdt) fanCavity(ip int, cavity map[int]bool) {
 }
 
 // cavityBoundary returns the directed CCW edges on the boundary of the cavity (edges whose other
-// side is outside the cavity), each tagged with the outside neighbour triangle.
-func (m *cdt) cavityBoundary(cavity map[int]bool) []cavityEdge {
+// side is outside the cavity), each tagged with the outside neighbour triangle. It scans the cavity
+// triangles in BFS order so the boundary (and the fan built from it) is deterministic.
+func (m *cdt) cavityBoundary(c cavity) []cavityEdge {
 	var bnd []cavityEdge
-	for t := range cavity {
+	for _, t := range c.order {
 		for i := 0; i < 3; i++ {
 			ne := m.tris[t].n[i]
-			if ne >= 0 && cavity[ne] {
+			if ne >= 0 && c.in[ne] {
 				continue
 			}
 			bnd = append(bnd, cavityEdge{m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3], ne})
