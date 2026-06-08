@@ -56,22 +56,7 @@ func Flatten(list renderer.DrawList) Mesh {
 	var m Mesh
 	var biased []renderer.DrawItem
 	for _, item := range list.Items {
-		switch {
-		case item.OnTop && item.Primitive == renderer.Triangles:
-			m.TopTriVCount = appendItem(&m.TopTriVerts, &m.TopTriIndices, m.TopTriVCount, item)
-		case item.OnTop:
-			m.TopLineVCount = appendItem(&m.TopLineVerts, &m.TopLineIndices, m.TopLineVCount, item)
-		case item.Primitive == renderer.Triangles && item.Occluder:
-			m.OccVCount = appendItem(&m.OccVerts, &m.OccIndices, m.OccVCount, item)
-		case item.Primitive == renderer.Triangles && item.Biased:
-			biased = append(biased, item) // appended after the opaque triangles, below
-		case item.Primitive == renderer.Triangles:
-			m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
-		case item.Hidden:
-			m.HidVCount = appendItem(&m.HidVerts, &m.HidIndices, m.HidVCount, item)
-		default:
-			m.LineVCount = appendItem(&m.LineVerts, &m.LineIndices, m.LineVCount, item)
-		}
+		biased = routeItem(&m, item, biased)
 	}
 	// Biased reference overlays go at the tail of the triangle stream so the native pass can draw
 	// them with a depth bias (after the opaque triangles at zero bias).
@@ -80,6 +65,28 @@ func Flatten(list renderer.DrawList) Mesh {
 		m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
 	}
 	return m
+}
+
+// routeItem appends one draw item to the stream its flags select, returning the (possibly grown)
+// list of biased items, which are held back and appended to the triangle stream's tail by Flatten.
+func routeItem(m *Mesh, item renderer.DrawItem, biased []renderer.DrawItem) []renderer.DrawItem {
+	switch {
+	case item.OnTop && item.Primitive == renderer.Triangles:
+		m.TopTriVCount = appendItem(&m.TopTriVerts, &m.TopTriIndices, m.TopTriVCount, item)
+	case item.OnTop:
+		m.TopLineVCount = appendItem(&m.TopLineVerts, &m.TopLineIndices, m.TopLineVCount, item)
+	case item.Primitive == renderer.Triangles && item.Occluder:
+		m.OccVCount = appendItem(&m.OccVerts, &m.OccIndices, m.OccVCount, item)
+	case item.Primitive == renderer.Triangles && item.Biased:
+		biased = append(biased, item) // appended after the opaque triangles (depth-biased tail)
+	case item.Primitive == renderer.Triangles:
+		m.TriVCount = appendItem(&m.TriVerts, &m.TriIndices, m.TriVCount, item)
+	case item.Hidden:
+		m.HidVCount = appendItem(&m.HidVerts, &m.HidIndices, m.HidVCount, item)
+	default:
+		m.LineVCount = appendItem(&m.LineVerts, &m.LineIndices, m.LineVCount, item)
+	}
+	return biased
 }
 
 // appendItem appends one item's interleaved vertices and rebased indices, returning
