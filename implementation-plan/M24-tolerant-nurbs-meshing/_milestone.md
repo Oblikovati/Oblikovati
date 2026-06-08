@@ -1,10 +1,23 @@
 ---
 milestone: M24
 name: Tolerant NURBS Surface Meshing (imported B-rep)
-status: planned
+status: blocked
 ---
 
 # M24 — Tolerant NURBS Surface Meshing (imported B-rep)
+
+> **STATUS — blocked by import quality (2026-06-08).** F01 (on-surface pcurves) + F02 PBI-314/315
+> (adaptive interior nodes + fold repair) are built, merged, and unit-tested. But wiring them
+> (PBI-316) and the 3D-space fallback (PBI-321) both proved the EDF's imported rational-NURBS faces
+> **cannot be meshed fold-free from the available data**: the parameterization is non-conformal AND
+> `Surface.ParamAt` of any interior point (a `(u,v)` grid node OR a 3D chord midpoint) lands ~15% of
+> the face size OFF the trim, so every interior sample over-encloses (+33% volume). Only the edge
+> curves are reliable; the surface interior is not. The chord-fold is then inherent to a
+> boundary-only triangulation and edge flips alone barely move it (13→12). **The real fix is
+> upstream: import healing** — reparameterize the imported NURBS / compute reliable pcurves so the
+> surface can be sampled (a separate milestone). develop stays at the correct boundary-only baseline
+> (~101.5% of OCC); the F01/PBI-314/315 blocks remain ready for when the surface is reliable. Full
+> evidence: PBI-316, PBI-321, and the `step-import-status` / `m24-tolerant-nurbs-mesher` memories.
 
 Mesh trimmed **freeform (B-spline/NURBS) faces** of imported B-reps so curved external
 surfaces render **smooth, fold-free, and volume-correct**. Today
