@@ -33,6 +33,11 @@ func Surface(g *part21.EntityGraph, id int, scale float64) (geom.Surface, error)
 	if len(ent.Components) > 0 { // complex instance, e.g. a rational (weighted) B-spline
 		return rationalBSplineSurface(g, ent, scale)
 	}
+	return surfaceByKeyword(g, ent, id, scale)
+}
+
+// surfaceByKeyword dispatches a simple (non-complex-instance) surface entity by its keyword.
+func surfaceByKeyword(g *part21.EntityGraph, ent *part21.RawEntity, id int, scale float64) (geom.Surface, error) {
 	switch ent.Keyword {
 	case "PLANE":
 		return planeFromStep(g, ent, scale)
@@ -46,6 +51,12 @@ func Surface(g *part21.EntityGraph, id int, scale float64) (geom.Surface, error)
 		return torusFromStep(g, ent, scale)
 	case "B_SPLINE_SURFACE_WITH_KNOTS":
 		return bsplineSurfaceFromStep(g, ent, scale)
+	case "B_SPLINE_SURFACE", "BEZIER_SURFACE", "UNIFORM_SURFACE", "QUASI_UNIFORM_SURFACE":
+		return plainBSplineSurfaceFromStep(g, ent, scale)
+	case "RECTANGULAR_TRIMMED_SURFACE", "CURVE_BOUNDED_SURFACE":
+		// Carrier surfaces: the real geometry is the basis surface at parameter 1;
+		// the face's boundary loops do the trimming.
+		return wrappedSurface(g, ent, 1, scale)
 	default:
 		return nil, ErrUnsupportedSurface{Keyword: ent.Keyword, ID: id}
 	}

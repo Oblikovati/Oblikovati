@@ -66,13 +66,16 @@ func TestCurveBSplineRejectsMalformedKnots(t *testing.T) {
 }
 
 func TestCurveUnsupported(t *testing.T) {
-	g := graphOf(t, "#1=CARTESIAN_POINT('',(0.,0.,0.));\n#2=POLYLINE('',(#1,#1));")
-	_, err := Curve(g, 2, 1.0)
+	// PARABOLA has no kernel curve analogue (unlike LINE/CIRCLE/ELLIPSE/B-spline/POLYLINE,
+	// which geommap now maps), so it is the canonical still-unsupported curve.
+	g := graphOf(t, "#1=AXIS2_PLACEMENT_3D('',#2,#3,#4);\n#2=CARTESIAN_POINT('',(0.,0.,0.));\n"+
+		"#3=DIRECTION('',(0.,0.,1.));\n#4=DIRECTION('',(1.,0.,0.));\n#5=PARABOLA('',#1,1.);")
+	_, err := Curve(g, 5, 1.0)
 	var unsup ErrUnsupportedCurve
 	if !errors.As(err, &unsup) {
 		t.Fatalf("got %v, want ErrUnsupportedCurve", err)
 	}
-	if got := unsup.Error(); got != "geommap: unsupported curve POLYLINE (#2)" {
+	if got := unsup.Error(); got != "geommap: unsupported curve PARABOLA (#5)" {
 		t.Fatalf("unsupported error = %q", got)
 	}
 }

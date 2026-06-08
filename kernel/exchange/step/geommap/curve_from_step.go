@@ -19,8 +19,12 @@ const (
 	CurveLine CurveKind = iota
 	// CurveCircle is a STEP CIRCLE — trimmed to an Arc3d (or kept full) by vertices.
 	CurveCircle
-	// CurveBSpline is a STEP B_SPLINE_CURVE_WITH_KNOTS — already bounded.
+	// CurveBSpline is a STEP B_SPLINE_CURVE* — already bounded.
 	CurveBSpline
+	// CurveEllipse is a STEP ELLIPSE — trimmed to an EllipticalArc (or kept full) by vertices.
+	CurveEllipse
+	// CurvePolyline is a STEP POLYLINE — a fully-bounded point polyline.
+	CurvePolyline
 )
 
 // MappedCurve carries a STEP curve's analytic parameters so the topology layer can
@@ -29,8 +33,12 @@ type MappedCurve struct {
 	Kind CurveKind
 	// CurveCircle: defining frame + radius (Center=Frame.Origin, Normal=AxisZ, Ref=AxisX).
 	Circle CircleParams
+	// CurveEllipse: defining frame + the two semi-axes.
+	Ellipse EllipseParams
 	// CurveBSpline: the fully-bounded curve (no trimming needed).
 	BSpline geom.BSplineCurve
+	// CurvePolyline: the fully-bounded polyline.
+	Polyline geom.Polyline
 }
 
 // CircleParams holds a STEP CIRCLE's geometry for arc trimming.
@@ -39,6 +47,16 @@ type CircleParams struct {
 	Normal math.Vector3
 	RefDir math.Vector3
 	Radius float64
+}
+
+// EllipseParams holds a STEP ELLIPSE's geometry for elliptical-arc trimming. RefDir is the
+// major-axis direction; Major/Minor are the semi-axis lengths.
+type EllipseParams struct {
+	Center math.Point3
+	Normal math.Vector3
+	RefDir math.Vector3
+	Major  float64
+	Minor  float64
 }
 
 // ErrUnsupportedCurve signals a STEP curve type with no kernel analogue.
@@ -62,13 +80,27 @@ func Curve(g *part21.EntityGraph, id int, scale float64) (MappedCurve, error) {
 	if len(ent.Components) > 0 { // complex instance, e.g. a rational (weighted) B-spline
 		return rationalBSplineCurve(g, ent, scale)
 	}
+	return curveByKeyword(g, ent, id, scale)
+}
+
+// curveByKeyword dispatches a simple (non-complex-instance) curve entity by its STEP keyword.
+func curveByKeyword(g *part21.EntityGraph, ent *part21.RawEntity, id int, scale float64) (MappedCurve, error) {
 	switch ent.Keyword {
 	case "LINE":
 		return MappedCurve{Kind: CurveLine}, nil
 	case "CIRCLE":
 		return circleFromStep(g, ent, scale)
+	case "ELLIPSE":
+		return ellipseFromStep(g, ent, scale)
 	case "B_SPLINE_CURVE_WITH_KNOTS":
 		return bsplineCurveFromStep(g, ent, scale)
+	case "B_SPLINE_CURVE", "BEZIER_CURVE", "UNIFORM_CURVE", "QUASI_UNIFORM_CURVE":
+		return plainBSplineCurveFromStep(g, ent, scale)
+	case "POLYLINE":
+		return polylineFromStep(g, ent, scale)
+	case "SURFACE_CURVE", "SEAM_CURVE", "INTERSECTION_CURVE", "TRIMMED_CURVE":
+		// Carrier curves: the real geometry is the basis curve at parameter 1.
+		return wrappedCurve(g, ent, 1, scale)
 	default:
 		return MappedCurve{}, ErrUnsupportedCurve{Keyword: ent.Keyword, ID: id}
 	}
