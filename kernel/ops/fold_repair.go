@@ -4,6 +4,7 @@ package ops
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati/math"
 )
@@ -32,11 +33,14 @@ func repairFolds(m *Mesh, maxPasses int) int {
 
 // repairFoldPass flips every flippable fold edge once, skipping edges whose triangles were already
 // flipped this pass (their adjacency is stale until the next pass rebuilds it). Returns the flips.
+// Edges are visited in sorted order, not Go's randomized map order, so the flip set — and thus the
+// repaired mesh — is reproducible (which edge flips first changes which triangles become dirty).
 func repairFoldPass(m *Mesh) int {
 	adj := edgeTriMap(m)
 	dirty := map[int]bool{}
 	flips := 0
-	for e, ts := range adj {
+	for _, e := range sortedEdgeKeys(adj) {
+		ts := adj[e]
 		if len(ts) != 2 || dirty[ts[0]] || dirty[ts[1]] {
 			continue
 		}
@@ -46,6 +50,21 @@ func repairFoldPass(m *Mesh) int {
 		}
 	}
 	return flips
+}
+
+// sortedEdgeKeys returns adj's edge keys in ascending (a, b) order — a deterministic visit order.
+func sortedEdgeKeys(adj map[edgeKey][]int) []edgeKey {
+	keys := make([]edgeKey, 0, len(adj))
+	for e := range adj {
+		keys = append(keys, e)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i].a != keys[j].a {
+			return keys[i].a < keys[j].a
+		}
+		return keys[i].b < keys[j].b
+	})
+	return keys
 }
 
 // tryFlipFold flips edge e (shared by t0,t1) to the quad's other diagonal if t0,t1 fold and the
