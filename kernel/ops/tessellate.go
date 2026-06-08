@@ -76,11 +76,22 @@ func TessellateEdge(e *topo.Edge, q Quality) []math.Point3 {
 	return pts
 }
 
-// TessellateBody facets every face into one mesh and every edge into a polyline.
+// TessellateBody facets every face into one mesh and every edge into a polyline. After the per-face
+// meshing it runs a cross-face conformance repair (conformCylConeFaces) that re-meshes only the
+// cyl/cone faces touching a crack so a trimmed wall conforms to its planar neighbour; a watertight body
+// has no cracks and is untouched.
 func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
+	faces := b.Faces()
+	fm := make([]*Mesh, len(faces))
+	idx := make(map[*topo.Face]int, len(faces))
+	for i, f := range faces {
+		fm[i] = TessellateFace(f, q)
+		idx[f] = i
+	}
+	conformCylConeFaces(faces, idx, fm, q)
 	mesh := &Mesh{}
-	for _, f := range b.Faces() {
-		mergeMesh(mesh, TessellateFace(f, q))
+	for _, m := range fm {
+		mergeMesh(mesh, m)
 	}
 	var edges [][]math.Point3
 	for _, e := range b.Edges() {
