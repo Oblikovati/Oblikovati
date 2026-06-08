@@ -9,32 +9,57 @@ import (
 	"oblikovati/kernel/topo"
 )
 
-// buildBound maps a FACE_OUTER_BOUND/FACE_BOUND to a LoopSpec. The bound's
-// orientation flag flips the whole loop traversal when false; it composes with each
-// oriented-edge orientation. FACE_OUTER_BOUND is the outer loop; FACE_BOUND an inner
-// (hole) loop.
-func (a *assembler) buildBound(boundID int) (topo.LoopSpec, error) {
+// boundLoop is one face bound before outer/inner is finalized: the oriented edge uses and
+// whether the STEP keyword (FACE_OUTER_BOUND) declared it the outer loop. A degenerate bound
+// is a VERTEX_LOOP — a single point at a parametric singularity (a sphere pole, a cone apex)
+// that carries no edges and so imposes no boundary; it is dropped from the face's loops.
+type boundLoop struct {
+	outer      bool
+	degenerate bool
+	uses       []topo.Use
+}
+
+// buildBound maps a FACE_OUTER_BOUND/FACE_BOUND to a boundLoop. The bound's orientation
+// flag flips the whole loop traversal when false; it composes with each oriented-edge
+// orientation. FACE_OUTER_BOUND declares the outer loop; FACE_BOUND a (possibly outer —
+// see ensureOuterLoop) bound. The outer/inner decision is finalized by the caller.
+func (a *assembler) buildBound(boundID int) (boundLoop, error) {
 	ent, err := a.g.Lookup(boundID)
 	if err != nil {
-		return topo.LoopSpec{}, err
+		return boundLoop{}, err
 	}
 	outer := ent.Keyword == "FACE_OUTER_BOUND"
 	if !outer && ent.Keyword != "FACE_BOUND" {
-		return topo.LoopSpec{}, fmt.Errorf("topomap: #%d is %s, want FACE_(OUTER_)BOUND", boundID, ent.Keyword)
+		return boundLoop{}, fmt.Errorf("topomap: #%d is %s, want FACE_(OUTER_)BOUND", boundID, ent.Keyword)
 	}
 	loopID, err := refParam(ent.Params, 1)
 	if err != nil {
-		return topo.LoopSpec{}, err
+		return boundLoop{}, err
+	}
+	uses, degenerate, err := a.boundUses(ent, loopID)
+	if err != nil {
+		return boundLoop{}, err
+	}
+	return boundLoop{outer: outer, degenerate: degenerate, uses: uses}, nil
+}
+
+// boundUses resolves a bound's oriented edge uses, applying the bound's orientation flag. A
+// VERTEX_LOOP (a singular point — a sphere pole / cone apex) carries no edges and is reported
+// as degenerate so the caller drops it from the face's loops.
+func (a *assembler) boundUses(ent *part21.RawEntity, loopID int) (uses []topo.Use, degenerate bool, err error) {
+	loopEnt, err := a.g.Lookup(loopID)
+	if err != nil {
+		return nil, false, err
+	}
+	if loopEnt.Keyword == "VERTEX_LOOP" {
+		return nil, true, nil
 	}
 	flip, err := ent.Params[2].AsBool()
 	if err != nil {
-		return topo.LoopSpec{}, err
+		return nil, false, err
 	}
-	uses, err := a.buildLoopUses(loopID, !flip)
-	if err != nil {
-		return topo.LoopSpec{}, err
-	}
-	return loopSpec(outer, uses), nil
+	uses, err = a.buildLoopUses(loopID, !flip)
+	return uses, false, err
 }
 
 // loopSpec wraps oriented uses as an outer or inner loop spec.
