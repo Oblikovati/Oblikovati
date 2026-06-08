@@ -89,6 +89,7 @@ func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
 		idx[f] = i
 	}
 	conformCylConeFaces(faces, idx, fm, q)
+	orientFacesOutward(fm) // re-orient imported faces whose B-rep sense came in inverted (Normal-Debug red)
 	mesh := &Mesh{}
 	for _, m := range fm {
 		mergeMesh(mesh, m)
