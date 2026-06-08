@@ -57,3 +57,40 @@ func TestRefinedTrimmedMeshConcavePatch(t *testing.T) {
 		t.Errorf("%d triangles wind against their vertex normals", bad)
 	}
 }
+
+// TestGridPatchMeshAddsInteriorNodes guards the sphere-cap smoothness fix: a curved sphere patch
+// must mesh with INTERIOR (u,v) nodes (a refined surface), not a boundary-only fan of long flat
+// triangles (the inner-bell-mouth slivers), and every triangle must agree with its vertex normals.
+func TestGridPatchMeshAddsInteriorNodes(t *testing.T) {
+	s, err := geom.NewSphere(math.P3(0, 0, 0), 10)
+	if err != nil {
+		t.Fatalf("NewSphere: %v", err)
+	}
+	// A 16-gon patch in (u,v) away from the pole/seam (a closed non-iso-rectangular trim).
+	const n = 16
+	cu, cv, r := 1.0, 0.4, 0.4
+	var uv []math.Point2
+	var p3 []math.Point3
+	for k := 0; k < n; k++ {
+		a := 2 * stdmath.Pi * float64(k) / n
+		u, v := cu+r*stdmath.Cos(a), cv+r*stdmath.Sin(a)
+		uv = append(uv, math.P2(math.Scalar(u), math.Scalar(v)))
+		p3 = append(p3, s.PointAt(u, v))
+	}
+	m := gridPatchMesh(s, p3, nil, uv, nil)
+	if m.TriangleCount() <= n {
+		t.Errorf("expected interior refinement, got %d triangles (no interior nodes added)", m.TriangleCount())
+	}
+	bad := 0
+	for i := 0; i+2 < len(m.Indices); i += 3 {
+		a, b, c := m.Positions[m.Indices[i]], m.Positions[m.Indices[i+1]], m.Positions[m.Indices[i+2]]
+		gn := a.VectorTo(b).Cross(a.VectorTo(c))
+		sn := m.Normals[m.Indices[i]].Add(m.Normals[m.Indices[i+1]]).Add(m.Normals[m.Indices[i+2]])
+		if gn.Dot(sn) < 0 {
+			bad++
+		}
+	}
+	if bad > 0 {
+		t.Errorf("%d of %d triangles wind against their vertex normals", bad, m.TriangleCount())
+	}
+}
