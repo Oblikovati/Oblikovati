@@ -61,6 +61,10 @@ type Session struct {
 	lightingPanelOpen  bool                     // the View ▸ Lighting settings panel is open
 	loadEnvRequested   bool                     // a "Load HDR…" was requested; the head opens the file dialog
 	scriptConsoleOpen  bool                     // the Manage ▸ Scripts ▸ Script Console panel is open
+	capturePath        string                   // a requested viewport PNG capture path; the head writes it after render
+	normalDebug        bool                     // viewport normal-debug render (front green / back red); head reads each frame
+	meshColors         bool                     // viewport mesh-debug-colors render (each face/triangle a distinct color)
+	meshColorsPerTri   bool                     // when meshColors: color per TRIANGLE (else per B-rep face)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in

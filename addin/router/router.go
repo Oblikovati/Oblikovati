@@ -80,6 +80,9 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodViewListDisplayModes] = listDisplayModes
 	r.handlers[wire.MethodViewGetCamera] = getCamera
 	r.handlers[wire.MethodViewSetCamera] = setCamera
+	r.handlers[wire.MethodViewportCapture] = captureViewport
+	r.handlers[wire.MethodViewportSetNormalDebug] = setNormalDebug
+	r.handlers[wire.MethodViewportSetMeshColors] = setMeshColors
 	r.handlers[wire.MethodInteractionState] = interactionState
 	r.handlers[wire.MethodInteractionSetNotice] = interactionSetNotice
 	r.handlers[wire.MethodViewsList] = listViews

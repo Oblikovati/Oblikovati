@@ -5,6 +5,8 @@
 package ui
 
 import (
+	"os"
+
 	"oblikovati/app"
 	"oblikovati/head/internal/native"
 )
@@ -20,6 +22,15 @@ var screenshotRequested bool
 // the end of drawViewportPanel — AFTER the viewport has rendered this frame, so the offscreen
 // image readback reflects exactly what is on screen.
 func serviceScreenshot(win *native.Window, s *app.Session) {
+	if path, ok := s.TakeViewportCapture(); ok { // viewport.capture wire method / MCP bridge
+		// Write atomically (temp + rename) so a remote reader polling the path never sees the PNG
+		// mid-write (it was reading a 33-byte header-only file before the IDAT landed).
+		if tmp := path + ".tmp"; win.SaveViewportPNG(tmp) != nil {
+			fileNotice(s, "viewport.capture failed to render")
+		} else if err := os.Rename(tmp, path); err != nil {
+			fileNotice(s, "viewport.capture failed: %v", err)
+		}
+	}
 	if !screenshotRequested {
 		return
 	}
