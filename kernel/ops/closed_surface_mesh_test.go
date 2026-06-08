@@ -56,15 +56,17 @@ func TestClosedDomainMeshSphereArea(t *testing.T) {
 	}
 }
 
-// TestImportedAnalyticPrimitivesWatertight pins M25 PBI-330 Phases 1–2: every imported solid bounded by
+// TestImportedAnalyticPrimitivesWatertight pins M25 PBI-330 Phases 1–2b: every imported solid bounded by
 // closed/periodic analytic faces tessellates watertight (0 free edges). Each previously leaked — sphere
-// 66 (seam+poles, Phase 1), cylinder 4 and cone_sharp 33 (the band dropped its seam cell, Phase 2) —
-// and the cone/cylinder caps must still pair with the band. Boundary-trimmed primitives (partial_*,
-// drilled/chamfered box) guard that the fixes did not break the non-closed paths.
+// 66 (seam+poles, Phase 1), cylinder 4 and cone_sharp 33 (the band dropped its seam cell, Phase 2a),
+// filleted_box 36 (pole-degenerate sphere corner-fillet caps the CDT tore, Phase 2b) — and the caps must
+// still pair with their neighbours. Boundary-trimmed primitives (partial_*, drilled/chamfered box) guard
+// that the fixes did not break the non-closed paths.
 func TestImportedAnalyticPrimitivesWatertight(t *testing.T) {
 	for _, name := range []string{
 		"sphere", "cylinder", "cone_frustum", "cone_sharp", "torus",
 		"partial_cylinder", "drilled_box", "chamfered_box", "box_with_boss",
+		"filleted_box", "partial_sphere",
 	} {
 		data, err := os.ReadFile(filepath.Join("..", "exchange", "step", "testdata", "occ", name+".step"))
 		if err != nil {

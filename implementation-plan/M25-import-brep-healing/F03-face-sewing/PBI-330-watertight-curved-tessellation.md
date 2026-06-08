@@ -57,12 +57,19 @@ mechanisms, tackled in phases:
   routes through `closedDomainMesh` (wraps the seam onto one column). **cylinder 4→0, cone_frustum 0,
   cone_sharp 33→0** — the apex cone too (NOTE: this also subsumed the planned Phase 3). Edges are
   exactly on-surface (residual ~3e-15 mm) — this is a grid-conformance bug, not off-surface.
-- **Phase 2b — sphere-cap / gridPatchMesh conformance (NEXT).** Remaining: filleted_box 36 (the sphere
-  corner-fillets' `gridPatchMesh` boundary), EDF body0 4 / body2 8. Same class — make the sphere-cap
-  CDT boundary the exact shared `discretizeEdge` polyline.
-- **Phase 4 — NURBS CDT watertightness (EDF body3 = 69).** The metric pcurve mesher leaves
-  T-junctions/folds at face boundaries shared with grid faces; needs the boundary to be a hard shared
-  polyline AND the interior CDT to not subdivide boundary segments. Hardest; do last.
+- **Phase 2b — sphere-cap / gridPatchMesh robustness (DONE).** filleted_box 36 was the sphere corner-
+  fillet caps whose `(u,v)` reaches the pole (v=±π/2, all u collapse) or wraps the seam: the CDT tore
+  them into a non-manifold mesh (interior holes / pole overlaps, visible only after a 3D weld). The cap
+  boundary was already the exact shared edge points, so the fix is robustness, not conformance:
+  `gridPatchMesh` now checks the result (`patchIsManifold` = welded free edges ≤ loop boundary) and
+  falls back to the plane-based `boundaryPatchMesh` (watertight, boundary-only) when the CDT tore. Only
+  torn caps fall back; smooth caps (and the refinement test patch) keep their interior nodes.
+  **filleted_box 36→0; EDF total 81→44** (the fallback fixed EDF's pole-degenerate caps too). Guard:
+  filleted_box added to `TestImportedAnalyticPrimitivesWatertight` + `weldedFreeEdgeCount`/
+  `patchIsManifold` unit tests.
+- **Phase 4 — NURBS CDT watertightness (EDF remaining ≈44).** The metric pcurve mesher (and the few
+  remaining grid↔NURBS edges) leave T-junctions/folds at face boundaries; needs the boundary to be a
+  hard shared polyline AND the interior CDT to not subdivide boundary segments. Hardest; do last.
 
 ## Why (measured root cause, 2026-06-08)
 

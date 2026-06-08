@@ -28,7 +28,62 @@ func gridPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point
 	if len(tris) == 0 {
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}
-	return patchMeshFrom(pos, nrm, tris)
+	m := patchMeshFrom(pos, nrm, tris)
+	if !patchIsManifold(m, loops) {
+		// The cap's (u,v) is degenerate — it reaches the sphere pole (v=±π/2, where all u collapse) or
+		// wraps the seam — so the CDT in that distorted space tears the interior into a non-manifold
+		// mesh (the filleted_box corner caps). Fall back to the best-fit-plane boundary triangulation,
+		// which is watertight (no interior nodes, but a small corner octant reads fine).
+		return boundaryPatchMesh(s, outer3D, holes3D)
+	}
+	return m
+}
+
+// patchIsManifold reports whether the patch mesh is no LESS watertight than its input boundary: after
+// welding coincident 3D vertices, its unpaired (degree≠2) edges must not EXCEED the loops' edge count
+// (a clean cap's only unpaired edges ARE its boundary, == the loops). A pole/seam-degenerate cap whose
+// CDT tore leaves interior holes (extra unpaired edges) or pole overlaps (degree>2) — both push the
+// count over the boundary and trigger the fallback. Welds because the tear shows only in 3D: distinct
+// (u,v) nodes coincide at the sphere pole. (A benign over-extraction, count < boundary, is kept.)
+func patchIsManifold(m *Mesh, loops [][]int) bool {
+	want := 0
+	for _, l := range loops {
+		want += len(l)
+	}
+	return weldedFreeEdgeCount(m) <= want
+}
+
+// weldedFreeEdgeCount welds coincident vertices (by [weldKey]) and counts edges not shared by exactly
+// two triangles — the watertightness metric for a single mesh.
+func weldedFreeEdgeCount(m *Mesh) int {
+	canon := map[[3]int64]int{}
+	weld := make([]int, len(m.Positions))
+	for i, p := range m.Positions {
+		k := weldKey(p)
+		if c, ok := canon[k]; ok {
+			weld[i] = c
+		} else {
+			canon[k], weld[i] = i, i
+		}
+	}
+	deg := map[[2]int]int{}
+	for t := 0; 3*t+2 < len(m.Indices); t++ {
+		v := [3]int{weld[m.Indices[3*t]], weld[m.Indices[3*t+1]], weld[m.Indices[3*t+2]]}
+		for k := 0; k < 3; k++ {
+			a, b := v[k], v[(k+1)%3]
+			if a > b {
+				a, b = b, a
+			}
+			deg[[2]int{a, b}]++
+		}
+	}
+	free := 0
+	for _, d := range deg {
+		if d != 2 {
+			free++
+		}
+	}
+	return free
 }
 
 // interiorUVGrid returns staggered (u,v) points strictly inside the trim (inside the outer loop,
