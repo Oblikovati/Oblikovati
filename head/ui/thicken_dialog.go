@@ -5,8 +5,8 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // The Thicken flow in the head: while the tool runs, a modeless options window takes the

@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/sketch"
 )
 
 // Loft FACE-section matrix (Slice 2c): a section can be an existing body face, and Tangent/Smooth

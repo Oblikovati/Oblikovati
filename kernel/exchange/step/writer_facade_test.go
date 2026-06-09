@@ -5,10 +5,10 @@ package step
 import (
 	"testing"
 
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/exchange/step/schema"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/exchange/step/schema"
+	"oblikovati.org/kernel/topo"
 )
 
 func TestExportedFileDeclaresAP203(t *testing.T) {

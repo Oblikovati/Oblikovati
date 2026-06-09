@@ -2,7 +2,7 @@
 
 package geom
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // ProjectPointToSurface returns the parameters (u, v) of the point on s closest to p, plus the
 // residual distance |s.PointAt(u,v) − p|. It builds on each surface's ParamAt — closed-form for the

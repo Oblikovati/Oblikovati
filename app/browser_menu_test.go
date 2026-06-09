@@ -5,11 +5,11 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // extrudedBoxPart builds a part with one sketch profile extruded into one solid, so the

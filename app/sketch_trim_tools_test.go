@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // nearXY asserts a point's X within tolerance (the trim tools move endpoints along X here).

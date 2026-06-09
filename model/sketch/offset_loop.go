@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // OffsetClosedLoop adds the rounded offset of a closed boundary polygon as a new closed loop

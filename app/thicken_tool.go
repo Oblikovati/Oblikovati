@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // ThickenTool is the interactive Thicken command: with a surface (sheet) body active, set

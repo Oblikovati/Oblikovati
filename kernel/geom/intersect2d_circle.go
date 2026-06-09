@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Analytic 2D line/segment↔circle and circle↔circle intersection. Unlike

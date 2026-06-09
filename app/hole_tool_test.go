@@ -6,14 +6,14 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // newPartWithBlock sets up a part whose active body is a side×side×2 block (built by an

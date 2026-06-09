@@ -5,9 +5,9 @@ package geommap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // CurveToStep emits the STEP curve for a kernel edge curve and returns its id plus

@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/event"
+	"oblikovati.org/event"
 )
 
 // Input routing — the methods a viewport (or a test) calls to drive the session.

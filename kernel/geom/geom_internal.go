@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 const twoPi = 2 * stdmath.Pi

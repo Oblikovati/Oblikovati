@@ -5,12 +5,12 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // planePicker builds a RayPicker over a part's bodies and origin planes.

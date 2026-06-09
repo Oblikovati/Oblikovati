@@ -5,9 +5,9 @@ package app
 import (
 	"errors"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // RibTool is the interactive Rib command: with an open sketch profile (the active sketch, or

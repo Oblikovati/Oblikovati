@@ -20,7 +20,7 @@ features, batch operations — from the GUI, the CLI, and (later) the MCP bridge
 hard constraints:
 
 1. **A buggy or malicious script must NEVER crash, hang, or escape the host.**
-2. **Everything in `oblikovati/api` must be callable** from a script, and stay callable
+2. **Everything in `oblikovati.org/api` must be callable** from a script, and stay callable
    automatically as the contract grows — no per-method scripting glue.
 3. The model is **not goroutine-safe**; API calls must run on the **session
    goroutine** (ADR-0016), yet a looping script must not freeze the UI.

@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestCreateSketch3DEnterAddLineFinish drives the full 3D-sketch UI flow end to end: the

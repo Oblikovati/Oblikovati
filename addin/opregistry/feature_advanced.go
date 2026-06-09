@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // The remaining feature operations that need a custom resolver: sweep (a profile along a path

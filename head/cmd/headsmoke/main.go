@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati/head/internal/native"
+	"oblikovati.org/head/internal/native"
 )
 
 func main() {

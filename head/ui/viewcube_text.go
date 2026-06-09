@@ -7,9 +7,9 @@
 package ui
 
 import (
-	"oblikovati/math"
-	"oblikovati/model/doc"
-	"oblikovati/scene"
+	"oblikovati.org/math"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/scene"
 )
 
 // Label layout within a face, in unit-cube face units (the face spans [-1,1]); chosen so a

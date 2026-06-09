@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/model/health"
+	"oblikovati.org/model/health"
 )
 
 // fakeConsumer stands in for a feature/dimension that depends on a referenced

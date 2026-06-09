@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // polygonArea is the shoelace area (absolute) of a closed polygon.

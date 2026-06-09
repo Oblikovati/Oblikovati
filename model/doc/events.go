@@ -5,7 +5,7 @@ package doc
 import (
 	"fmt"
 
-	"oblikovati/event"
+	"oblikovati.org/event"
 )
 
 // The core event types fired by the workspace. They are grouped into the COM

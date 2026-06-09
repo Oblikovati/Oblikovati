@@ -5,8 +5,8 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // ribbonList returns the ribbon currently shown for the active document (wire ribbon.list /

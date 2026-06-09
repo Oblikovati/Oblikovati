@@ -5,10 +5,10 @@ package feature
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // ThreadDisplayCurves returns one helix polyline (model units) per cosmetic thread in the

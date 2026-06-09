@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // cubeSoup returns a watertight 12-triangle triangle soup of an s-sided axis-aligned

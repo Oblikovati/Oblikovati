@@ -7,7 +7,7 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 
-	"oblikovati/script"
+	"oblikovati.org/script"
 )
 
 // outputSink accumulates a script's print() output for Result.Stdout. It is also

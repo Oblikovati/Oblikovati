@@ -5,9 +5,9 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/math/predicate"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/math/predicate"
 )
 
 // tessellatePlanarFace triangulates a planar face's boundary by ear-clipping (using
@@ -27,8 +27,7 @@ func tessellatePlanarFace(f *topo.Face, q Quality) *Mesh {
 	for _, p := range boundary3D {
 		m.addVertex(p, normal)
 	}
-	tris := bestSingleLoopTriangulation(boundary2D)
-	for _, tri := range tris {
+	for _, tri := range planarTris(boundary2D, nil) {
 		m.addTriangle(tri[0], tri[1], tri[2])
 	}
 	return m
@@ -51,7 +50,7 @@ func holedPlanarMesh(outer2D []math.Point2, outer3D []math.Point3, holes3D [][]m
 			m.addVertex(p, normal)
 		}
 	}
-	for _, tri := range earcut(outer2D, holes2D) {
+	for _, tri := range planarTris(outer2D, holes2D) {
 		m.addTriangle(tri[0], tri[1], tri[2])
 	}
 	return m

@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
+	"oblikovati.org/kernel/ops"
 )
 
 // TestShellToolEndToEnd drives the Shell UI: start the tool, click the block's top face

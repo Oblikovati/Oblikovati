@@ -5,7 +5,7 @@ package viewport
 import (
 	"testing"
 
-	"oblikovati/renderer"
+	"oblikovati.org/renderer"
 )
 
 // TestPackLightingLayout pins the std140 layout the scene UBO depends on: the header floats and

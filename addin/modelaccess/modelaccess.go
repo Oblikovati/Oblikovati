@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/app"
-	"oblikovati/model/compdef"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 )
 
 // ErrNoActiveDocument is returned when an operation needs a document but none is open.

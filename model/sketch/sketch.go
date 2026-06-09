@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"oblikovati/math"
-	"oblikovati/model/health"
-	"oblikovati/model/param"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
+	"oblikovati.org/model/param"
 )
 
 // ID is the session-stable handle of a sketch or sketch entity, used by

@@ -5,7 +5,7 @@ package predicate
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func sign(v float64) int {

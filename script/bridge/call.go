@@ -3,8 +3,8 @@
 package bridge
 
 import (
-	"oblikovati/api/client"
-	"oblikovati/script"
+	"oblikovati.org/api/client"
+	"oblikovati.org/script"
 )
 
 // CallFuncOf adapts a client.Caller into the script.CallFunc that backs

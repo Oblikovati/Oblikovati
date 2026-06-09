@@ -5,9 +5,9 @@ package app
 import (
 	stdmath "math"
 
-	"oblikovati/math"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // SketchDimensions turns the active sketch's dimensional constraints into render-ready

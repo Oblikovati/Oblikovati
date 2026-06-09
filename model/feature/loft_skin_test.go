@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func sq(z float64, pts ...[2]float64) []math.Point3 {

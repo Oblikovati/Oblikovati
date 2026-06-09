@@ -5,11 +5,11 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
-	"oblikovati/model/text"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/model/text"
 )
 
 // EmbossDefinition is the recipe for an emboss: a closed sketch profile raised from (or engraved
@@ -180,30 +180,39 @@ func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span,
 // overshoots both caps and cut away, yielding a hollow prism (a tube for an annular
 // profile). Without this an annular profile extruded as a solid disk.
 func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
-	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)
-	inner := p.InnerLoops()
-	if len(inner) == 0 {
-		return solid
+	// A full-circle profile with no holes and no taper extrudes to a TRUE cylinder (analytic side
+	// face), so thread/chamfer/fillet on it work (#129). Booleans re-facet it on demand (combine →
+	// planarized). Other shapes fall through to the faceted prism.
+	if taper == 0 && len(p.InnerLoops()) == 0 {
+		if c := circleLoop(p.OuterLoop()); c != nil {
+			if cyl := buildAnalyticCylinder(c, plane, sp, feat); cyl != nil {
+				return cyl
+			}
+		}
 	}
+	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)
+	if inner := p.InnerLoops(); len(inner) > 0 {
+		return drillProfileHoles(solid, inner, plane, sp, taper, feat)
+	}
+	return solid
+}
+
+// drillProfileHoles cuts each inner loop out of the solid prism, yielding a hollow prism. Each hole
+// tool overshoots both caps by the full depth so the cut is clean; a clockwise hole loop is
+// normalized to CCW so buildPrism makes a valid outward cut tool (not an inverted one).
+func drillProfileHoles(solid *topo.Body, inner []sketch.Loop, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
 	lo, hi := sp.near, sp.far
 	if lo > hi {
 		lo, hi = hi, lo
 	}
-	margin := hi - lo // overshoot each cap by the full depth so the cut is clean
+	margin := hi - lo
 	cut := span{near: lo - margin, far: hi + margin}
 	for j, loop := range inner {
-		// A hole loop winds opposite the outer (clockwise); buildPrism would then make
-		// an inverted tool whose boolean removes far more than the hole. Normalize the
-		// hole polygon to CCW so the cut tool is a valid outward solid.
 		poly := loop.Polygon()
 		if outwardSign(poly) < 0 {
 			poly = reversedPolygon2D(poly)
 		}
 		hole := buildPrism(poly, plane, cut, taper, fmt.Sprintf("%s/hole%d", feat, j))
-		// The exact planar B-rep boolean cuts each hole; earlier this used the faceted CSG
-		// fallback because multi-hole cap faces tessellated to the wrong area (half a hole
-		// grid went missing). That was the planar-face triangulator, now fixed (earcut), so
-		// the exact path is correct and faster.
 		if res, err := ops.Boolean(ops.Cut, solid, hole); err == nil && res != nil {
 			solid = res
 		}

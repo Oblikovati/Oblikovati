@@ -5,7 +5,7 @@ package geom
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // rectangularDims validates that the control net and weight net are non-empty,

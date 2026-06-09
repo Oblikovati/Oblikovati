@@ -5,7 +5,7 @@ package geom
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // BSplineSurface is a NURBS surface (contract: BSplineSurface): a rational

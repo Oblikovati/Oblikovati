@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Trimmed curved-face tessellation (third piece of the curved-B-rep stack). A curved

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Cone is a circular cone (contract: Cone) with its Apex on the axis along
@@ -34,6 +34,27 @@ func NewCone(apex math.Point3, axisDir math.Vector3, halfAngle float64) (Cone, e
 	}
 	ref, bi := axisFrame(a)
 	return Cone{Apex: apex, AxisDir: a, Ref: ref.AsUnit(), HalfAngle: halfAngle, binormal: bi}, nil
+}
+
+// NewConeWithRef builds a cone whose angle-zero reference is refHint (projected perpendicular to
+// the axis), rather than an arbitrary axis-derived frame — so a cone face in a solid of revolution
+// shares the exact frame of its neighbouring cylinder/circle faces and their seams line up at angle
+// 0 (Oblikovati/Oblikovati#129). Mirrors NewCylinderWithRef. Errors on a degenerate axis/half angle
+// or a refHint parallel to the axis.
+func NewConeWithRef(apex math.Point3, axisDir, refHint math.Vector3, halfAngle float64) (Cone, error) {
+	if halfAngle <= 0 || halfAngle >= stdmath.Pi/2 {
+		return Cone{}, fmt.Errorf("geom: cone half angle %g out of range (0, π/2)", halfAngle)
+	}
+	a, err := math.UnitVector3FromVector(axisDir)
+	if err != nil {
+		return Cone{}, err
+	}
+	av := a.AsVector()
+	ref, err := math.UnitVector3FromVector(refHint.Sub(av.Scale(refHint.Dot(av))))
+	if err != nil {
+		return Cone{}, fmt.Errorf("geom: cone refHint %v is parallel to axis %v", refHint, axisDir)
+	}
+	return Cone{Apex: apex, AxisDir: a, Ref: ref, HalfAngle: halfAngle, binormal: a.Cross(ref)}, nil
 }
 
 // radial returns the outward in-plane unit direction at angle u.

@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // WorkRef is a stable, serializable reference to a work feature or origin element —

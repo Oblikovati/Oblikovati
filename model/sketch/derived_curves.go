@@ -5,8 +5,8 @@ package sketch
 import (
 	"fmt"
 
-	"oblikovati/math"
-	"oblikovati/model/param"
+	"oblikovati.org/math"
+	"oblikovati.org/model/param"
 )
 
 // tParamID is the synthetic parameter id the equation-curve parameter "t" binds to.

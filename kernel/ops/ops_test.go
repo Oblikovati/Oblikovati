@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // tetra builds a unit tetrahedron scaled by s and translated by off, with lineage.

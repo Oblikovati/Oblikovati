@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/model/doc"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/doc"
 )
 
 // closeModal is the chrome's single graceful-close prompt (UI state, head-local).

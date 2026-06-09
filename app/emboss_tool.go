@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // EmbossTool is the interactive Emboss command: pick one or more closed sketch regions, set the

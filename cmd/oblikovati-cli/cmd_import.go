@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 
-	"oblikovati/api/types"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/model/exchange"
-	"oblikovati/persistence"
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/exchange"
+	"oblikovati.org/persistence"
 )
 
 // cmdImport creates a new part, imports a mesh file (STL/OBJ/3MF) into it as a solid (or

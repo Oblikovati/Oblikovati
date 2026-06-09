@@ -6,7 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // closedLoop mints a shared point for each position and connects them with lines in a

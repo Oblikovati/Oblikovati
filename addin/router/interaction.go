@@ -5,8 +5,8 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // interactionState reports whether the local user is mid-action, so a collaboration

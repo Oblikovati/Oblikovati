@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // weldGrid is the coincidence grid for welding CSG output vertices (database units).
@@ -24,6 +24,15 @@ const weldGrid = 1e-6
 // modeled threads and drilled holes, still render at full DefaultQuality smoothness.)
 func booleanInputQuality() Quality {
 	return Quality{ChordTolerance: DefaultQuality().ChordTolerance, AngleTolerance: stdmath.Pi}
+}
+
+// Facet converts a body with analytic curved faces (a cylinder, cone, surface of revolution)
+// into an all-planar, watertight triangle-cage B-rep — its tessellation welded back into topology.
+// The exact planar B-rep boolean hangs on a full periodic curved face, so a curved operand must be
+// faceted before ops.Boolean (Oblikovati/Oblikovati#129); this is the general fallback for bodies
+// the feature layer's analytic-cylinder re-faceter doesn't special-case. Returns nil when empty.
+func Facet(b *topo.Body, feat string) *topo.Body {
+	return trianglesToBody(bodyTriangles(b), feat)
 }
 
 // bodyTriangles returns a body's tessellation as CSG triangles, each oriented

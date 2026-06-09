@@ -5,7 +5,7 @@ package doc
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // CubeOrient is a document's ViewCube orientation: the world-space images of the cube's

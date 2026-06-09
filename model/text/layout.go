@@ -3,8 +3,8 @@
 package text
 
 import (
-	"oblikovati/api/types"
-	"oblikovati/math"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
 )
 
 // Request is one piece of sketch text to lay out: its content, em Height (model units),

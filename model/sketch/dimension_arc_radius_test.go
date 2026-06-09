@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestAddRadiusOnArc verifies a radius dimension drives an arc (not just a circle),

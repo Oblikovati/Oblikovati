@@ -5,8 +5,8 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // showPreferences toggles the Preferences window (Tools ▸ Preferences). It is UI state,

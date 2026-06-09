@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // GroundConstraint freezes every point of an entity at its current position — the

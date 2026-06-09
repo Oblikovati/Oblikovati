@@ -6,7 +6,7 @@
 
 package ui
 
-import "oblikovati/api/types"
+import "oblikovati.org/api/types"
 
 // TileRect is one view tile's pixel rectangle, relative to the viewport content region's
 // top-left.

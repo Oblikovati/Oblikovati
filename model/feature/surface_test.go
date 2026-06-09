@@ -5,10 +5,10 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/health"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
+	"oblikovati.org/model/sketch"
 )
 
 // squareWithHoleSketch returns a sketch with an outer square and a concentric inner

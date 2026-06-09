@@ -5,8 +5,8 @@ package ops
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // foldSurface folds exactly in v: PointAt(u,v) = (u, 2v(1−v), 0), so v and 1−v map to the SAME 3D

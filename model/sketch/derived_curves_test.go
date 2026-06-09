@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 func TestEquationCurveSamplesUnitCircle(t *testing.T) {

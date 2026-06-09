@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"oblikovati/api/wire"
+	"oblikovati.org/api/wire"
 )
 
 // TestCloseAllDocuments verifies the documents.closeAll endpoint clears the

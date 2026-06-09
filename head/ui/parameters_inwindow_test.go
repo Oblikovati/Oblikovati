@@ -7,8 +7,8 @@ package ui
 import (
 	"testing"
 
-	"oblikovati/app"
-	"oblikovati/model/compdef"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 )
 
 // TestInWindowParametersDialogDraws drives the real chrome with the Parameters dialog

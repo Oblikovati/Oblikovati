@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // triAreaSum sums the unsigned areas of triangles addressing the combined vertex list.

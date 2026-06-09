@@ -3,9 +3,9 @@
 package feature
 
 import (
-	"oblikovati/math"
-	"oblikovati/model/health"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
+	"oblikovati.org/model/sketch"
 )
 
 // Work features are parametric construction geometry — datum planes, axes and points

@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // centeredSquareOn returns a sketch on plane with a centered square of the given half

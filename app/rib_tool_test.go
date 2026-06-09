@@ -5,10 +5,10 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/sketch"
 )
 
 // ribbedPart builds a 6×6×2 block and adds a sketch with an open line within the footprint

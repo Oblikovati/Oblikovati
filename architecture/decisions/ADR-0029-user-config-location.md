@@ -15,7 +15,7 @@ and hard to find on macOS, and risked subtle drift as each store re-derived the 
 
 ## Decision
 
-One source of truth, the **`oblikovati/userconfig`** package, resolves the per-user config
+One source of truth, the **`oblikovati.org/userconfig`** package, resolves the per-user config
 directory; every store routes through `userconfig.Dir()` / `userconfig.File(name)` and none
 calls `os.UserConfigDir` directly (the build is grepped to keep it that way):
 

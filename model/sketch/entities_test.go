@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestCreateCurvesAndCounts(t *testing.T) {

@@ -2,7 +2,7 @@
 
 package app
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // View navigation commands operate on the session camera. FitView frames the active
 // part in the viewport keeping the current orientation (Inventor's Zoom All); HomeView

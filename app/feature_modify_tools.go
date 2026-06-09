@@ -5,11 +5,11 @@ package app
 import (
 	"errors"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // Modify-panel tools whose geometry already existed but had no UI: Move Face (a direct

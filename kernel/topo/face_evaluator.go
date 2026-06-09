@@ -5,8 +5,8 @@ package topo
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // FaceEvaluator adds face-level queries (area, containment) to the surface

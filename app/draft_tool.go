@@ -6,7 +6,7 @@ import (
 	"errors"
 	stdmath "math"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // degToRad converts the draft angle the UI takes in degrees to the radians the feature uses.

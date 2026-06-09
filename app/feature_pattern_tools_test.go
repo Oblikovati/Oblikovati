@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/model/compdef"
+	"oblikovati.org/model/compdef"
 )
 
 // extrudedPart builds a part with one extrude feature (the source to pattern) and returns

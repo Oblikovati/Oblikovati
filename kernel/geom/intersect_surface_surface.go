@@ -2,7 +2,7 @@
 
 package geom
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // IntersectSurfaceSurface traces the intersection curve(s) of two surfaces as polylines on
 // the base surface. It marches the zero set of the signed distance from base's points to

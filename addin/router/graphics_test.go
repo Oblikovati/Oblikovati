@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/renderer"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/renderer"
 )
 
 // callGraphics dispatches a graphics method through the router and fails on error.

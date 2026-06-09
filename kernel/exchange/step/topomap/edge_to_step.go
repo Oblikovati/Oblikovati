@@ -3,8 +3,8 @@
 package topomap
 
 import (
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/topo"
 )
 
 // edge returns the shared EDGE_CURVE id for a kernel edge, emitting it (and its

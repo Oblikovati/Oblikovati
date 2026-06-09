@@ -5,8 +5,8 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // The Offset Plane flow in the head: while the Offset Plane tool runs, a small dialog

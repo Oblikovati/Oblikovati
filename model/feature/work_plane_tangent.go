@@ -6,9 +6,9 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // These are the surface-tangent work-plane definitions — Inventor's WorkPlanes

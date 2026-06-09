@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"oblikovati/app"
+	"oblikovati.org/app"
 )
 
 // TestDefaultDescriptors checks the default registry exposes the additive extrude plus the

@@ -5,7 +5,7 @@ package step
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/exchange/step/part21"
 )
 
 // conversionUnitScale resolves mm-per-unit for a CONVERSION_BASED_UNIT (e.g. inch).

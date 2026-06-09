@@ -5,11 +5,11 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/scene"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/scene"
 )
 
 // extrudedBox returns a session whose active part holds a real extruded box solid,

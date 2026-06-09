@@ -8,11 +8,11 @@ import (
 	"math"
 	"testing"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/addin/opregistry"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 )
 
 // emptyPartSession returns a router and a session with one active, empty part.

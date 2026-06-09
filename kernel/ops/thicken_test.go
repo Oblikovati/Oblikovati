@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // planarPatch builds a one-face surface (non-solid) body: the rectangle [0,w]×[0,h] in the

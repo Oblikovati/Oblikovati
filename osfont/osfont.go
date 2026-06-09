@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"oblikovati/model/text"
+	"oblikovati.org/model/text"
 )
 
 // Face is one installed font face the picker can offer: its family + style and the file it

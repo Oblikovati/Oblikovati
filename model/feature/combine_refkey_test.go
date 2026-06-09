@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // negXFaceKey returns the reference key of the body's first face whose outward normal is −X.

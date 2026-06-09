@@ -2,7 +2,7 @@
 
 package geom
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // Curve3 is a parametrically evaluable 3D curve. Implementations map a parameter
 // t in their [Curve3.Domain] to a point and a tangent (the derivative dP/dt,

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/script/console"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/script/console"
 )
 
 // scriptController is the head's live Script Console runtime (engine + dispatched caller),

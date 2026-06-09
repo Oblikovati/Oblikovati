@@ -30,7 +30,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.0
@@ -82,7 +82,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - run: go install gotest.tools/gotestsum@v1.12.0
       - name: Test
         run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count ./...
@@ -106,7 +106,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - run: go test -race -skip 'TestNop.*CSG' ./...
 
   # cgo GUI head (Vulkan + Dear ImGui). The PR test/race/build jobs above run `./...`
@@ -133,7 +133,7 @@ jobs:
           # Match build.yml's head-linux toolchain.
           go-version: "1.24"
           cache: false
-      - run: go -C head mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - name: Install cgo + headless-Vulkan deps
         run: |
           sudo apt-get update
@@ -168,7 +168,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - name: Cross-compile
         run: |
           GOOS=$(echo "${{ matrix.target }}" | cut -d/ -f1)

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"oblikovati/app"
+	"oblikovati.org/app"
 )
 
 // addInLib is the platform-specific handle to a loaded shared-library add-in. The

@@ -5,8 +5,8 @@ package ops
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // uvSquare returns a densified square loop in (u,v) from (lo,lo) to (hi,hi), n points per side.

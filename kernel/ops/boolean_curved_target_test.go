@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // TestBooleanCutCurvedTargetRemovesTunnel is a regression for the boolean that

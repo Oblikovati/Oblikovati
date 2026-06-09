@@ -8,17 +8,17 @@ import (
 	"strconv"
 	"strings"
 
-	"oblikovati/event"
-	"oblikovati/model/clientgraphics"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/model/material"
-	"oblikovati/model/sketch"
-	"oblikovati/persistence/userprefs"
-	"oblikovati/persistence/viewstate"
-	"oblikovati/renderer"
-	"oblikovati/scene"
-	"oblikovati/theme"
+	"oblikovati.org/event"
+	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/material"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/persistence/userprefs"
+	"oblikovati.org/persistence/viewstate"
+	"oblikovati.org/renderer"
+	"oblikovati.org/scene"
+	"oblikovati.org/theme"
 )
 
 // Session is the running application state and the seam tests drive synthetically.

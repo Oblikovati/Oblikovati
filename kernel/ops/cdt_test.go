@@ -99,3 +99,78 @@ func TestCDTInteriorSteinerPoints(t *testing.T) {
 		t.Errorf("interior points should refine the mesh, got only %d triangles", len(tris))
 	}
 }
+
+// TestCDTCocircularNgon pins the exact-predicate robustness fix: a convex N-gon whose vertices lie
+// (near-)exactly on a circle is the worst case for the float in-circle determinant — the radius²
+// terms swamp their tiny difference, the naive sign flips, and the Bowyer–Watson cavity grabs the
+// wrong triangles, emitting inverted/overlapping triangles (area far exceeding the polygon). With the
+// adaptive-exact predicate the triangulation is exactly N-2 triangles whose areas sum to the polygon
+// area, with none inverted. This is the degeneracy a planar face's circular bore hole hits.
+func TestCDTCocircularNgon(t *testing.T) {
+	for _, n := range []int{6, 8, 12, 20, 32, 64} {
+		var pts [][2]float64
+		var loop []int
+		for i := 0; i < n; i++ {
+			a := 2 * stdmath.Pi * float64(i) / float64(n)
+			pts = append(pts, [2]float64{25 * stdmath.Cos(a), 25 * stdmath.Sin(a)})
+			loop = append(loop, i)
+		}
+		tris := constrainedDelaunay(pts, [][]int{loop})
+		if len(tris) != n-2 {
+			t.Errorf("n=%d: %d triangles, want %d (cocircular degeneracy tangled the mesh)", n, len(tris), n-2)
+		}
+		neg := 0
+		for _, tr := range tris {
+			if orient2d(pts[tr[0]], pts[tr[1]], pts[tr[2]]) <= 0 {
+				neg++
+			}
+		}
+		if neg != 0 {
+			t.Errorf("n=%d: %d inverted/degenerate triangles, want 0", n, neg)
+		}
+		want := cdtPolyArea(pts, loop)
+		if got := cdtAreaSum(pts, tris); stdmath.Abs(got-want) > 1e-6*want {
+			t.Errorf("n=%d: area %g, want %g", n, got, want)
+		}
+	}
+}
+
+// TestCDTCocircularNgonWithHoles guards the full planar-face shape that broke before: a cocircular
+// outer ring plus two cocircular bore holes. The holes must be excluded (domain area = outer − holes)
+// and no triangle may fall inside a hole.
+func TestCDTCocircularNgonWithHoles(t *testing.T) {
+	circle := func(cx, cy, r float64, n int, start int) ([][2]float64, []int) {
+		var pts [][2]float64
+		var idx []int
+		for i := 0; i < n; i++ {
+			a := 2 * stdmath.Pi * float64(i) / float64(n)
+			pts = append(pts, [2]float64{cx + r*stdmath.Cos(a), cy + r*stdmath.Sin(a)})
+			idx = append(idx, start+i)
+		}
+		return pts, idx
+	}
+	outerPts, outer := circle(0, 0, 25, 30, 0)
+	pts := outerPts
+	loops := [][]int{outer}
+	holeArea := 0.0
+	for _, c := range [][2]float64{{8, 5}, {-10, -6}} {
+		hp, hi := circle(c[0], c[1], 1.75, 32, len(pts))
+		pts = append(pts, hp...)
+		loops = append(loops, hi)
+		holeArea += cdtPolyArea(pts, hi)
+	}
+	tris := constrainedDelaunay(pts, loops)
+	want := cdtPolyArea(pts, outer) - holeArea
+	if got := cdtAreaSum(pts, tris); stdmath.Abs(got-want) > 1e-6*want {
+		t.Errorf("area %g, want %g (holes filled or mesh tangled)", got, want)
+	}
+	for _, c := range [][2]float64{{8, 5}, {-10, -6}} {
+		for _, tr := range tris {
+			cx := (pts[tr[0]][0] + pts[tr[1]][0] + pts[tr[2]][0]) / 3
+			cy := (pts[tr[0]][1] + pts[tr[1]][1] + pts[tr[2]][1]) / 3
+			if (cx-c[0])*(cx-c[0])+(cy-c[1])*(cy-c[1]) < 1.0 {
+				t.Errorf("triangle centroid (%.2f,%.2f) lies inside hole at %v", cx, cy, c)
+			}
+		}
+	}
+}

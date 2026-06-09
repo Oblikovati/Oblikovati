@@ -3,9 +3,9 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // rebuildWithPlanes clones a planar solid's topology, replacing each face's surface with

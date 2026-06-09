@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati/persistence/yamlcodec"
-	"oblikovati/userconfig"
+	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/userconfig"
 )
 
 // State is the saved window placement.

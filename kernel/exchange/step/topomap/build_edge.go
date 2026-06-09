@@ -5,10 +5,10 @@ package topomap
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/exchange/step/geommap"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/geommap"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // buildEdge constructs the shared kernel Edge for an EDGE_CURVE, with its curve

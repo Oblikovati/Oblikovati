@@ -5,9 +5,9 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // themeActive returns the host's active theme — name, kind, and every semantic color as

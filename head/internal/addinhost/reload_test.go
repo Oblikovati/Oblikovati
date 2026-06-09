@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/addin/dispatch"
+	"oblikovati.org/addin/dispatch"
 )
 
 // TestOpenReloadCycle proves the hot-reload core: a single library can be Open'd,

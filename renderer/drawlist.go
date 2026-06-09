@@ -3,10 +3,10 @@
 package renderer
 
 import (
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/scene"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 // Primitive is the topology of a draw item.

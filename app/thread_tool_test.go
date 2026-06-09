@@ -5,14 +5,14 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/model/feature"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
 )
 
 // newPartWithCylinder sets up a part whose active body is an analytic solid cylinder (which

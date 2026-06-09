@@ -5,10 +5,10 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // Loft CENTERLINE matrix (Slice 4, kLoftWithCenterline): a spine curve the section centroids

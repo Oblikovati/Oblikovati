@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/ops"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 )
 
 // sessionWithPart returns a session whose active document is an empty part.

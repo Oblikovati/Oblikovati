@@ -5,9 +5,9 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Mesh is a triangle mesh for display/export: positions, per-vertex normals, and

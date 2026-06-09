@@ -5,14 +5,14 @@ package compdef
 import (
 	"strconv"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/doc"
-	"oblikovati/model/feature"
-	"oblikovati/model/identity"
-	"oblikovati/model/material"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/identity"
+	"oblikovati.org/model/material"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // endOfPartAtEnd is the EOP marker value meaning "evaluate the whole feature program".

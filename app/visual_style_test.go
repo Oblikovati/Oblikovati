@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/renderer"
+	"oblikovati.org/renderer"
 )
 
 // TestVisualStyleDefault checks a new session draws Shaded with Edges (so model edges are

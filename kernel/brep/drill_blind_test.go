@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // A blind hole (depth less than the thickness) is a clean watertight solid: a cylinder wall

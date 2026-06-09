@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 func TestMoveEntitiesTranslatesSharedPointsOnce(t *testing.T) {

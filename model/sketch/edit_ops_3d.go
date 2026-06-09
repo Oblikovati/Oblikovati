@@ -2,7 +2,7 @@
 
 package sketch
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // This file holds the 3D-sketch editing operations (M22-F08): move, rotate, copy and
 // delete over a selection of entities. Transforms apply a [math.Matrix4] to the unique

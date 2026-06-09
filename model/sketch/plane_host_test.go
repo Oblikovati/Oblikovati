@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestSketchTracksPlaneHost verifies a sketch with a plane host re-reads it on

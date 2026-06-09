@@ -5,8 +5,8 @@ package brep_test
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 func TestNopSingleCableClipCSG(t *testing.T) {

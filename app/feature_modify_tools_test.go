@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	"oblikovati/kernel/ops"
+	"oblikovati.org/kernel/ops"
 )
 
 // Moving the top face of a block outward grows its volume.

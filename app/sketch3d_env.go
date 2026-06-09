@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/sketch"
+	"oblikovati.org/model/sketch"
 )
 
 // The 3D-sketch environment — Inventor's "3D Sketch" → edit → "Finish Sketch" flow. A 3D

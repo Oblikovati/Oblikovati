@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati/model/sketch"
+	"oblikovati.org/model/sketch"
 )
 
 // EmbossData is an emboss's recipe: its profile SOURCE (either closed sketch regions —

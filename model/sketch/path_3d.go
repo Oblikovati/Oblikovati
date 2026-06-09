@@ -2,7 +2,7 @@
 
 package sketch
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // This file detects connected chains in a 3D sketch (M22-F09): the open paths a sweep/
 // loft consumes as a rail, and the planar closed loops that bound a Profile3D. Unlike a

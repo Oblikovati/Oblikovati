@@ -3,9 +3,9 @@
 package ops
 
 import (
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // PartFeatureOperation is the boolean a feature applies to existing material — the

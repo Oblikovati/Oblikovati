@@ -12,8 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati/persistence/yamlcodec"
-	"oblikovati/userconfig"
+	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/userconfig"
 )
 
 // Prefs is the set of global user preferences.

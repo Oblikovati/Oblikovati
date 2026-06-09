@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // roundTrip serializes sc and rebuilds it in a fresh collection, returning the

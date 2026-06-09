@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/renderer"
+	"oblikovati.org/api/types"
+	"oblikovati.org/renderer"
 )
 
 // TestNewSessionStartsOnDefaultLighting asserts a fresh session has the Default rig so

@@ -2,7 +2,7 @@
 
 package geom
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // This file holds the package-level geometric queries (the modern form of the
 // COM GeometryUtilities / TransientGeometry intersection methods — plain

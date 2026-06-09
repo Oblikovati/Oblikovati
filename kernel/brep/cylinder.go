@@ -3,9 +3,9 @@
 package brep
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // SolidCylinder builds a closed analytic cylinder B-rep (K1b): one true cylindrical side

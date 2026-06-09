@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // radiusXY is the distance of p from the z axis — the invariant a point on a z-axis cylinder holds.

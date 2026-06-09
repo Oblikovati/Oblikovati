@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // OffsetEntity creates a copy of a single line/circle/arc offset by signed distance d:

@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // addDimension adds a dimensional constraint of the requested kind and reports the

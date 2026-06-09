@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/script"
-	"oblikovati/script/console"
-	"oblikovati/script/runner"
+	"oblikovati.org/script"
+	"oblikovati.org/script/console"
+	"oblikovati.org/script/runner"
 )
 
 // scriptedEngine is a fake script.Engine whose behaviour is the injected fn, so a

@@ -7,8 +7,8 @@ package ui
 import (
 	"os"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // screenshotPath is where Tools ▸ Save Viewport PNG writes the current viewport image. A fixed

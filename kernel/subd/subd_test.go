@@ -5,8 +5,8 @@ package subd
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 func approx(a, b, tol float64) bool { return a-b < tol && b-a < tol }

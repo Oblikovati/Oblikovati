@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // The surfacing features: build surface bodies (boundary patch, ruled surface), modify them

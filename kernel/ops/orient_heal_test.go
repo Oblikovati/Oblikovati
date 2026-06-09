@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/math"
 )
 
 // bodyVolume sums the divergence-theorem volume of a merged mesh (positive = outward-oriented closed).

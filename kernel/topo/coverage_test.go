@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 func TestUnitOfZeroVectorIsZero(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"oblikovati/api/wire"
+	"oblikovati.org/api/wire"
 )
 
 // SlogHandler returns a [slog.Handler] that appends every record at or above min into this

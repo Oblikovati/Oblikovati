@@ -5,8 +5,8 @@ package viewport
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/renderer"
+	"oblikovati.org/math"
+	"oblikovati.org/renderer"
 )
 
 func triItem(z float64) renderer.DrawItem {

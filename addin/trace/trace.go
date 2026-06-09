@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"oblikovati/api/wire"
+	"oblikovati.org/api/wire"
 )
 
 // DefaultCapacity is the ring size when [NewBuffer] is given a non-positive capacity — large

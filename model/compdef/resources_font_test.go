@@ -5,8 +5,8 @@ package compdef
 import (
 	"testing"
 
-	"oblikovati/model/doc"
-	"oblikovati/model/text"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/text"
 )
 
 // TestEmbedAndResolveFonts covers ADR-0031 font resources: an OS font is embedded by bytes

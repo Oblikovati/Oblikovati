@@ -7,7 +7,7 @@
 // contract/wire/CLI surface is PBI-D, deferred). See ADR-0018 and the M17 plan.
 package exchange
 
-import "oblikovati/kernel/topo"
+import "oblikovati.org/kernel/topo"
 
 // TranslationOptions tunes a translation independent of the concrete format. The
 // zero value is valid: a millimeter target, default chord tolerance, no warnings

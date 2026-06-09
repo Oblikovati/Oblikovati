@@ -5,7 +5,7 @@ package compdef
 import (
 	"testing"
 
-	"oblikovati/model/param"
+	"oblikovati.org/model/param"
 )
 
 func TestPartDefaultsToMetricUnits(t *testing.T) {

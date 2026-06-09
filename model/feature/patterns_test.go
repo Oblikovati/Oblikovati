@@ -7,10 +7,10 @@ import (
 	"sort"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/health"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
 )
 
 // noStep is a zero grid step for the bookkeeping-only tests (geometry coincides).

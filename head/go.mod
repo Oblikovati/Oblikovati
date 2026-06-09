@@ -3,15 +3,15 @@
 // headless-tested core. Dear ImGui is vendored (third_party/imgui, MIT) and compiled
 // here with our own imconfig, so the ABI is fully under our control; the core is
 // consumed via the replace directive below.
-module oblikovati/head
+module oblikovati.org/head
 
 go 1.22
 
 require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef
-	oblikovati v0.0.0
-	oblikovati/api v0.0.0
+	oblikovati.org v0.0.0
+	oblikovati.org/api v0.0.0
 )
 
 require golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // icon glyph normalization (x/image/draw)
@@ -27,4 +27,4 @@ require (
 // `../` is the repo root regardless of where the repo is checked out. The
 // Apache-2.0 api contract (sibling repo ../../Oblikovati.API) is resolved via the
 // go.work workspace at the app repo root instead of a committed replace.
-replace oblikovati => ../
+replace oblikovati.org => ../

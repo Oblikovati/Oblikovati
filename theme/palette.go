@@ -2,7 +2,7 @@
 
 package theme
 
-import "oblikovati/api/types"
+import "oblikovati.org/api/types"
 
 // Palette is a full-snapshot color map: every theme stores a color for every token, so
 // there is no inheritance to resolve at read time (the user chose self-contained custom
@@ -33,7 +33,7 @@ func (p Palette) Clone() Palette {
 }
 
 // Hex renders the palette as the token→"#RRGGBBAA" map used in theme files and on the
-// wire ([oblikovati/api/wire.ThemeView]).
+// wire ([oblikovati.org/api/wire.ThemeView]).
 func (p Palette) Hex() map[string]string {
 	out := make(map[string]string, len(p))
 	for t, c := range p {

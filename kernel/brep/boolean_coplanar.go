@@ -5,7 +5,7 @@ package brep
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Coplanar (ON/ON) face fragments — where a face of A lies in the same plane as a face of B

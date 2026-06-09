@@ -5,10 +5,10 @@ package ops_test
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // unitQuadFace builds a unit square on z=0 with surface normal +Z, optionally with reversed

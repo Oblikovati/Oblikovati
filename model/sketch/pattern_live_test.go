@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestRectangularPatternLiveTracksSpacing verifies a pattern clone follows a live

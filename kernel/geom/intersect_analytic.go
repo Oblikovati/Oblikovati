@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // IntersectSurfacesAnalytic returns the EXACT intersection curves of two analytic surfaces

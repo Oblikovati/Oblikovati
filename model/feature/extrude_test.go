@@ -5,11 +5,11 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/health"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // squareSketch returns a sketch with one closed square profile of the given side.

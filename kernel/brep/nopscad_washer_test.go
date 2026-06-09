@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/test-utilities/nopscad"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/nopscad"
 )
 
 // TestNopWasherCSG re-models NopSCADlib's washer the OpenSCAD-CSG way — a solid

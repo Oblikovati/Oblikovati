@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // TestNopOpengrabTargetCSG pins the target plate as a square slab with six circular

@@ -2,7 +2,7 @@
 
 package sketch
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // Constraint is one relation the solver must satisfy. It exposes residual
 // equations (each zero when satisfied) and the scalar variables it reads, as

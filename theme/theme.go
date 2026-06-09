@@ -2,7 +2,7 @@
 
 package theme
 
-import "oblikovati/api/contract"
+import "oblikovati.org/api/contract"
 
 // Theme is one named UI color theme: a display name, a kind (light/dark/custom), and a
 // full-snapshot [Palette]. It is the GPL implementation of [contract.Theme].

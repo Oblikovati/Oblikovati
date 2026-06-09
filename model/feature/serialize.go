@@ -5,8 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/sketch"
 )
 
 // This file serializes the ordered feature program into the git-friendly YAML recipe

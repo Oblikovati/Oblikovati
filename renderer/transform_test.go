@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/scene"
+	"oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 // project applies a column-major view-projection to a world point, returning NDC

@@ -7,9 +7,9 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"oblikovati/model/doc"
-	"oblikovati/model/feature"
-	"oblikovati/model/text"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/text"
 )
 
 // A part definition owns the document resource table and exposes it three ways: to persistence

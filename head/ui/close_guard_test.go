@@ -5,8 +5,8 @@ package ui
 import (
 	"testing"
 
-	"oblikovati/app"
-	"oblikovati/model/compdef"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 )
 
 // TestDirtyDocuments checks the graceful-close core lists exactly the documents with

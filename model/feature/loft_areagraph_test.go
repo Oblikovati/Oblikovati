@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/sketch"
 )
 
 // Loft AREA-GRAPH matrix (Slice 5, kLoftWithAreaGraphSections): the cross-section area along the

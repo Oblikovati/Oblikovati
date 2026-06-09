@@ -3,8 +3,8 @@
 package brep
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // splitFace splits a face by its imprint segments via the 2D arrangement and returns the

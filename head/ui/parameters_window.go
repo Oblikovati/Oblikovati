@@ -5,9 +5,9 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/model/param"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/param"
 )
 
 // The Parameters dialog (Manage ▸ Parameters): a search box, the Model and User

@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/api/client"
-	"oblikovati/script"
-	"oblikovati/script/examples"
-	"oblikovati/script/gopherlua"
-	"oblikovati/script/runner"
+	"oblikovati.org/api/client"
+	"oblikovati.org/script"
+	"oblikovati.org/script/examples"
+	"oblikovati.org/script/gopherlua"
+	"oblikovati.org/script/runner"
 )
 
 // exampleMethods is the wire surface the bundled examples touch. It backs both the typed

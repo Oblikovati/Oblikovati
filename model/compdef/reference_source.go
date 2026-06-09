@@ -3,9 +3,9 @@
 package compdef
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Projecting/including part geometry into a sketch (2D or 3D) and deriving surface curves

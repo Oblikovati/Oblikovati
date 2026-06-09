@@ -5,8 +5,8 @@ package meshio
 import (
 	stdmath "math"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/ops"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
 )
 
 // QualityFor maps an export resolution preset to the kernel facetting tolerances.

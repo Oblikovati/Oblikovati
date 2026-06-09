@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"oblikovati/kernel/ops"
+	"oblikovati.org/kernel/ops"
 )
 
 // The OPC scaffolding 3MF requires: a content-types map and a root relationship pointing

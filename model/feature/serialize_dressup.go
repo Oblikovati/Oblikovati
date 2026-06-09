@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // draftPull reads a serialized pull direction [dx,dy,dz], defaulting to +Z when absent

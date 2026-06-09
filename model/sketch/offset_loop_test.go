@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func polyAbsArea(p []math.Point2) float64 { return stdmath.Abs(polygonSignedArea(p)) }

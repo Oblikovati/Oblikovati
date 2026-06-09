@@ -5,7 +5,7 @@ package attr
 import (
 	"testing"
 
-	"oblikovati/model/param"
+	"oblikovati.org/model/param"
 )
 
 func TestStandardPropertySetsExist(t *testing.T) {

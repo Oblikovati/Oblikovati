@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // foldDihedralTol: two triangles sharing an edge are a FOLD when their geometric (cross-product)

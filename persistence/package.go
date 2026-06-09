@@ -5,7 +5,7 @@ package persistence
 import (
 	"errors"
 
-	"oblikovati/persistence/yamlcodec"
+	"oblikovati.org/persistence/yamlcodec"
 )
 
 // errNoManifest reports a document with no manifest — not a valid document file

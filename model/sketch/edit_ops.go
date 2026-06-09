@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // affine2 is a 2D affine transform (linear part m + translation t) used by the sketch

@@ -6,7 +6,7 @@ architecture lives in [`architecture/`](architecture); the backlog lives in
 the code in this repository.
 
 - **Module:** `oblikovati` (GPL-2.0). It `require`s the
-  Apache-2.0 contract module `oblikovati/api` — now the sibling repo
+  Apache-2.0 contract module `oblikovati.org/api` — now the sibling repo
   [`../Oblikovati.API`](../Oblikovati.API) — and **implements** it. The dependency
   is resolved for local development by the `go.work` workspace at the repo root
   (sibling checkouts), not a committed `replace`; see
@@ -26,7 +26,7 @@ git clone https://github.com/Oblikovati/Oblikovati.git
 git clone https://github.com/Oblikovati/Oblikovati.API.git   # sibling
 cd Oblikovati
 go work init . ./head
-go work edit -replace oblikovati/api=../Oblikovati.API
+go work edit -replace oblikovati.org/api=../Oblikovati.API
 ```
 
 (The sibling contract is wired in via `replace` rather than `use` so resolution

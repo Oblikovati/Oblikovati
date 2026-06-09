@@ -2,7 +2,7 @@
 
 package app
 
-import "oblikovati/model/param"
+import "oblikovati.org/model/param"
 
 // Session bridge for the Extrude tool's UI: the head reads/sets the distance in the
 // document's display unit (e.g. mm) without touching database units or the tool's

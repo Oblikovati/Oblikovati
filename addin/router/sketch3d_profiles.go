@@ -5,9 +5,9 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/sketch"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/sketch"
 )
 
 // sketch3DProfiles enumerates the closed planar loops of a 3D sketch.

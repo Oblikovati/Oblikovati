@@ -6,9 +6,9 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // CutCountersinkHole drills a countersink (K1b): a conical recess that widens to sinkRadius at

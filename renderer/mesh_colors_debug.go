@@ -5,10 +5,10 @@ package renderer
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/scene"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 // BuildDrawListMeshColors builds a SHADED draw list where each mesh primitive is painted a distinct,

@@ -5,7 +5,7 @@ package material
 import (
 	"fmt"
 
-	"oblikovati/api/types"
+	"oblikovati.org/api/types"
 )
 
 // DefaultAppearanceID is the neutral appearance applied when a body has no material or

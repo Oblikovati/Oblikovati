@@ -5,8 +5,8 @@ package ops
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 func plane(t *testing.T, o math.Point3, n math.Vector3) geom.Plane {

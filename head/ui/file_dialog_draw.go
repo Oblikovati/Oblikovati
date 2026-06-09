@@ -10,9 +10,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati/api/types"
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/api/types"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // fileModal is the chrome's single file explorer (UI state, not model state, so it lives

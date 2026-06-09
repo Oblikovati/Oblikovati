@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/step"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/step"
 )
 
 // Tessellation must be a PURE function of the body: the same body re-tessellated must give a byte-for-

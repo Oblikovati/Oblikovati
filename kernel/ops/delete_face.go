@@ -7,9 +7,9 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // DeleteFaces removes the selected faces from a planar solid and heals the openings by

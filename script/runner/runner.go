@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"oblikovati/api/client"
-	"oblikovati/script"
-	"oblikovati/script/bridge"
+	"oblikovati.org/api/client"
+	"oblikovati.org/script"
+	"oblikovati.org/script/bridge"
 )
 
 // ErrBusy is returned when a Run is requested while another is in flight on the same

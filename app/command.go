@@ -5,7 +5,7 @@ package app
 import (
 	"fmt"
 
-	"oblikovati/api/types"
+	"oblikovati.org/api/types"
 )
 
 // ButtonStyle is how a command renders in the ribbon (text, small icon, large icon).

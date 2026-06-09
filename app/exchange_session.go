@@ -5,8 +5,8 @@ package app
 import (
 	"fmt"
 
-	"oblikovati/api/types"
-	"oblikovati/model/exchange"
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/exchange"
 )
 
 // ImportFile imports a foreign file (STL/OBJ/3MF mesh, or STEP B-rep) into the active part as

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/scene"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 // getCamera returns a document's active-view camera as a look-at frame (Document 0 ⇒ the

@@ -3,9 +3,9 @@
 package app
 
 import (
-	"oblikovati/kernel/topo"
-	"oblikovati/model/material"
-	"oblikovati/renderer"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/material"
+	"oblikovati.org/renderer"
 )
 
 // Materials returns the session's appearance/material library (built-ins on first use;

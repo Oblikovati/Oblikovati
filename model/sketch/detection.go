@@ -2,7 +2,7 @@
 
 package sketch
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // Region/chain detection walks the sketch's segment connectivity. It assumes the
 // well-formed degree-2 case (each junction joins two segments), which covers normal

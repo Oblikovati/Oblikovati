@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
 )
 
 // Rational (weighted) B-splines arrive as STEP complex instances — a single #id that

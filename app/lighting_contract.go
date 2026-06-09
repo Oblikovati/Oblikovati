@@ -3,9 +3,9 @@
 package app
 
 import (
-	"oblikovati/api/contract"
-	"oblikovati/api/types"
-	"oblikovati/renderer"
+	"oblikovati.org/api/contract"
+	"oblikovati.org/api/types"
+	"oblikovati.org/renderer"
 )
 
 // lightView adapts a renderer.SceneLight to the contract.Light interface so the in-process Go

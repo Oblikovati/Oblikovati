@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // defaultCapturePath is where viewport.capture writes when no Path is given — distinct from the

@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // RectangularPattern duplicates a selection on a grid: count1 columns stepped by step1

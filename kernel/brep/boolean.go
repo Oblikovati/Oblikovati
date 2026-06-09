@@ -5,8 +5,8 @@ package brep
 import (
 	"errors"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Op is a boolean operation between two solids.

@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // A blind hole with a conical drill point: a Ø2 bore 2 deep closed by a 118° cone tip in a

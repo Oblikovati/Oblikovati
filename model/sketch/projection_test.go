@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // movableVertex is a fake model vertex whose position can change (and can be "lost"),

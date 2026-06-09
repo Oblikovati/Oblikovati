@@ -3,12 +3,12 @@
 package step
 
 import (
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/step/geommap"
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/exchange/step/schema"
-	"oblikovati/kernel/exchange/step/topomap"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/step/geommap"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/exchange/step/schema"
+	"oblikovati.org/kernel/exchange/step/topomap"
+	"oblikovati.org/kernel/topo"
 )
 
 // Writer exports kernel bodies as a minimal valid AP203 (CONFIG_CONTROL_DESIGN)

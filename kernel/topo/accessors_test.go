@@ -5,8 +5,8 @@ package topo
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 func TestEntityAccessors(t *testing.T) {

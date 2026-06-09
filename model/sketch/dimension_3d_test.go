@@ -5,8 +5,8 @@ package sketch
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/model/param"
+	"oblikovati.org/math"
+	"oblikovati.org/model/param"
 )
 
 func TestDimension3DDistance(t *testing.T) {

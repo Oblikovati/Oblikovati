@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // CreateSketchTool is Inventor's "Create 2D Sketch" interaction: after the command

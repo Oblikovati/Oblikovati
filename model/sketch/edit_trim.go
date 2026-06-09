@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sort"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // SplitLine splits a line at the point nearest pick into two collinear lines sharing a

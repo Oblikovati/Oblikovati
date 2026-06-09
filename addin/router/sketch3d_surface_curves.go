@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/sketch"
 )
 
 // addSketch3DSurfaceCurve adds a surface-derived curve (intersection/silhouette) to a 3D

@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // TestNopVariacDialCSG pins variac_dial as a round dial with one shaft hole and

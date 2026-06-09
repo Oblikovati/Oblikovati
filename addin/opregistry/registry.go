@@ -32,7 +32,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/app"
+	"oblikovati.org/app"
 )
 
 // ApplyFunc performs an operation against the session, given its JSON arguments,

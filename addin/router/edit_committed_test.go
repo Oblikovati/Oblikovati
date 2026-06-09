@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/event"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/event"
 )
 
 // TestEditCommittedEmittedForMutationsOnly checks the router emits an EditCommitted event

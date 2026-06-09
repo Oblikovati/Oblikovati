@@ -5,7 +5,7 @@ package ui
 import (
 	"testing"
 
-	"oblikovati/model/doc"
+	"oblikovati.org/model/doc"
 )
 
 func TestStrokeFontCoversFaceWords(t *testing.T) {

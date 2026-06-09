@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/renderer"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/renderer"
 )
 
 // getLightingStyle returns the active lighting style's global controls

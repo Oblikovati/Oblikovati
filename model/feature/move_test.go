@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/health"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
 )
 
 func TestMoveTranslatesRunningBody(t *testing.T) {

@@ -3,7 +3,7 @@
 package app
 
 import (
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // The variant geometry tools — the entries of the Sketch tab's split-button dropdowns

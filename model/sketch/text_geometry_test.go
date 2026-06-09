@@ -5,8 +5,8 @@ package sketch
 import (
 	"testing"
 
-	gmath "oblikovati/math"
-	"oblikovati/model/text"
+	gmath "oblikovati.org/math"
+	"oblikovati.org/model/text"
 )
 
 func TestTextBoxDerivesGlyphProfiles(t *testing.T) {

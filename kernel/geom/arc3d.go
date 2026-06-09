@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Arc3d is a 3D circular arc (contract: Arc3d) on the circle defined by Center,

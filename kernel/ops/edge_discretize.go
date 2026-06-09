@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Curved edges must be sampled into the SAME chord polyline by every face that uses

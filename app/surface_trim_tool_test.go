@@ -6,10 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // patchedPartWithCutPlane gives a part holding a 4×4 surface patch (on XY) and a work plane at

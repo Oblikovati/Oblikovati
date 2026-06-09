@@ -2,7 +2,7 @@
 
 package command
 
-import "oblikovati/model/doc"
+import "oblikovati.org/model/doc"
 
 // Rename returns a command that sets a document's display name, capturing the
 // previous name at Apply time so redo is correct after intervening edits. It is a

@@ -5,7 +5,7 @@ package ui
 import (
 	"testing"
 
-	"oblikovati/api/types"
+	"oblikovati.org/api/types"
 )
 
 func TestTileRectsCounts(t *testing.T) {

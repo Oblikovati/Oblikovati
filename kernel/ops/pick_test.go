@@ -5,7 +5,7 @@ package ops
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestRayCastFacesHitsNearestFace(t *testing.T) {

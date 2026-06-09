@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/addin/trace"
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/addin/trace"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // handlerFunc handles one method: decode args, read/mutate the session, return JSON.

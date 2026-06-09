@@ -7,8 +7,8 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // Constraint and dimension application. The interactive tools (sketch_constraint_tools.go)

@@ -5,7 +5,7 @@ package geommap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/exchange/step/part21"
 )
 
 // STEP wraps the real edge geometry inside several "carrier" curve entities that add no

@@ -5,11 +5,11 @@ package renderer
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/scene"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 // box builds an axis-aligned box solid [off, off+size]³-ish via a tetra-free prism:

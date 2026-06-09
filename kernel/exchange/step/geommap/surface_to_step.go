@@ -6,9 +6,9 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // SurfaceToStep emits a STEP surface entity for s, returning its id. The analytic

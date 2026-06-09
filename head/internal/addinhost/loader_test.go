@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/addin/dispatch"
+	"oblikovati.org/addin/dispatch"
 )
 
 // buildFixture compiles the echo test fixture (testdata/echoaddin) as a c-shared

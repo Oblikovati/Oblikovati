@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 func floatLabels(p ToolParams) []string {

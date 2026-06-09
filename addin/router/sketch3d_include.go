@@ -5,11 +5,11 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/sketch"
 )
 
 // includeSketch3D links referenced part edges/vertices into a 3D sketch as associative

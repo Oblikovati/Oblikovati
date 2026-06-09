@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/addin/dispatch"
-	"oblikovati/app"
+	"oblikovati.org/addin/dispatch"
+	"oblikovati.org/app"
 )
 
 // recordingRoute is a named fake RouteFunc that records the method it saw and returns a

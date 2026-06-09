@@ -5,8 +5,8 @@ package topo
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // Evaluators are the numeric services snapping, measurement, and downstream

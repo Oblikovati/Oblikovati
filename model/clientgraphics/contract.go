@@ -2,7 +2,7 @@
 
 package clientgraphics
 
-import "oblikovati/api/contract"
+import "oblikovati.org/api/contract"
 
 // A Group satisfies the public scalar view of a client-graphics group (api/contract.
 // ClientGraphics). Richer access (the geometry itself) travels as wire DTOs, decoded by

@@ -5,10 +5,10 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // activePartDef returns the active document's part component definition.

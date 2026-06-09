@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 )
 
 // docInfo marshals a model document into the wire DTO, flagging whether it is the

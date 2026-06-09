@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/kernel/exchange/meshio"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/meshio"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // writeCLICubeSTL writes a watertight cube STL fixture for the CLI tests.

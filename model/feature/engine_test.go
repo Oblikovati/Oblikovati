@@ -6,10 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/health"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
 )
 
 // addBody is a fake feature that appends one new body to the running state.

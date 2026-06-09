@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/step"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/topo"
 )
 
 // Performance accountability for tessellation — the import→render hot path. TessellateBody runs in the

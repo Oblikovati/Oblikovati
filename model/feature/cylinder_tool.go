@@ -5,9 +5,9 @@ package feature
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // holeFacets is the number of sides used to approximate a hole/boss cylinder as a prism
@@ -48,9 +48,17 @@ func regularPolygonArea(radius float64, n int) float64 {
 // planePerp returns the sketch plane through origin whose normal is axisInto, so a prism
 // extruded along the plane normal drills in the axisInto direction.
 func planePerp(origin math.Point3, axisInto math.UnitVector3) sketch.Plane {
-	x := perpAxis(axisInto)
-	y, _ := math.UnitVector3FromVector(axisInto.Cross(x)) // axisInto × x ⇒ x × y = axisInto
-	p, _ := sketch.NewPlane(origin, x, y)
+	return planeFromFrame(origin, axisInto, perpAxis(axisInto))
+}
+
+// planeFromFrame returns the sketch plane through origin with an EXPLICIT in-plane X axis
+// (ref) and normal (axisInto); Y = axisInto × ref, so plane.Normal() == axisInto. Unlike
+// planePerp (which picks an arbitrary ref), this preserves a caller-supplied phase — used to
+// re-facet an analytic cylinder back into a prism in its original generating frame so facet
+// identity stays stable (#129). ref must be perpendicular to axisInto.
+func planeFromFrame(origin math.Point3, axisInto, ref math.UnitVector3) sketch.Plane {
+	y, _ := math.UnitVector3FromVector(axisInto.Cross(ref)) // axisInto × ref ⇒ ref × y = axisInto
+	p, _ := sketch.NewPlane(origin, ref, y)
 	return p
 }
 

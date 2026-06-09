@@ -8,9 +8,9 @@ import (
 	"math"
 	"strconv"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/model/feature"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/feature"
 )
 
 // The Loft flow in the head: while the Loft tool runs, a modeless options window shows the

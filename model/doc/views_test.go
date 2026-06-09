@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"oblikovati/api/types"
+	"oblikovati.org/api/types"
 )
 
 func TestDocumentSeedsOneDefaultView(t *testing.T) {

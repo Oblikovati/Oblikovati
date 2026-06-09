@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/model/text"
+	"oblikovati.org/model/text"
 )
 
 // TestScanDirsEnumeratesFonts checks ScanDirs finds .ttf/.otf files recursively, reads each

@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Arc2d is a 2D circular arc (contract: Arc2d): the locus from StartAngle

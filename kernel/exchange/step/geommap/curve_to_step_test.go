@@ -5,9 +5,9 @@ package geommap
 import (
 	"testing"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 func TestLineSegmentExportsAsLine(t *testing.T) {

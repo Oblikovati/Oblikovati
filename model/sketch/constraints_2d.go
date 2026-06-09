@@ -5,7 +5,7 @@ package sketch
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // This file defines the 2D geometric constraints and their factory methods on

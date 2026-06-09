@@ -2,7 +2,7 @@
 
 package ops
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // orientFacesOutward flips per-face meshes so every face of the body winds consistently outward (a
 // positive enclosed volume) — the M25 import-orientation heal for faces whose B-rep sense came in

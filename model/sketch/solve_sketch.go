@@ -3,8 +3,8 @@
 package sketch
 
 import (
-	"oblikovati/math"
-	"oblikovati/model/health"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
 )
 
 // variables returns the full DOF universe of the planar sketch: every point's X,Y

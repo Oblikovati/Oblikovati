@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // The pattern features replicate one or more existing features (referenced by name, as shown

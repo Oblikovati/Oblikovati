@@ -6,9 +6,9 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // CutBlindCylindricalHole drills a flat-bottomed blind hole (K1b): the cylinder enters one

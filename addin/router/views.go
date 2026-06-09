@@ -5,9 +5,9 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/doc"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/doc"
 )
 
 // listViews enumerates a document's views with their cameras, the active index, and the

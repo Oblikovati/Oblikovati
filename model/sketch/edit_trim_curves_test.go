@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 // nearX asserts a point's X coordinate.

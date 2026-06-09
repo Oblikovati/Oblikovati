@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/addin/router"
-	"oblikovati/api/client"
-	"oblikovati/app"
-	"oblikovati/script"
-	"oblikovati/script/bridge"
-	"oblikovati/script/gopherlua"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/addin/router"
+	"oblikovati.org/api/client"
+	"oblikovati.org/app"
+	"oblikovati.org/script"
+	"oblikovati.org/script/bridge"
+	"oblikovati.org/script/gopherlua"
 )
 
 // newRealRunner builds a runner over a real Session + router (the in-proc CLI wiring),

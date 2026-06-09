@@ -72,7 +72,7 @@ This repo's top-level layout:
 - the Go application module at the root — `kernel/`, `model/`, `app/`, `command/`,
   `event/`, `persistence/`, `renderer/`, `scene/`, `addin/` (incl. `addin/router`,
   which serves `api/wire`), and `cmd/` (the `oblikovati` and `oblikovati-cli`
-  binaries). It `require`s `oblikovati/api` and implements its contracts.
+  binaries). It `require`s `oblikovati.org/api` and implements its contracts.
 - /head -> the cgo Vulkan + Dear ImGui windowed app, a separate submodule so the
   cgo build never touches the headless-tested core. It vendors the C ABI header at
   `head/internal/addinhost/include/oblikovati_addin.h` (the contract an add-in's
@@ -88,7 +88,7 @@ NOT in this repo — it lives, read-only, in the archived monorepo
 
 Sibling repo (checked out alongside this one; tied together by `go.work`):
 - ../Oblikovati.API -> the public API contract, a standalone Go module
-  (`oblikovati/api`), **Apache-2.0**. Four packages: `types` (enums, ids,
+  (`oblikovati.org/api`), **Apache-2.0**. Four packages: `types` (enums, ids,
   value structs), `contract` (in-proc Go interfaces), `wire` (method-name constants
   + JSON DTOs), `client` (a `Transport` + typed client for add-ins). The source of
   truth for the API; it must NEVER import this application module (the dependency

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // drawDocumentClosePrompt asks how to handle one dirty document whose tab close button

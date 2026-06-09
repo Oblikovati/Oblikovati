@@ -3,10 +3,10 @@
 package clientgraphics
 
 import (
-	"oblikovati/api/types"
-	"oblikovati/math"
-	"oblikovati/renderer"
-	"oblikovati/scene"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
+	"oblikovati.org/renderer"
+	"oblikovati.org/scene"
 )
 
 // Build turns every visible group in the store into frame geometry and labels: a flat

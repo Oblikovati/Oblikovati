@@ -5,8 +5,8 @@ package router
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 )
 
 // TestViewsLifecycleOverTheAPI drives the views.* surface against a live session: a fresh

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/param"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/param"
 )
 
 // Shared plumbing for the topology-referencing feature operations (fillet, chamfer, shell,

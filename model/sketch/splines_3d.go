@@ -3,8 +3,8 @@
 package sketch
 
 import (
-	"oblikovati/math"
-	"oblikovati/model/param"
+	"oblikovati.org/math"
+	"oblikovati.org/model/param"
 )
 
 // This file holds the 3D-sketch spline family (M22-F03): interpolation/control-point

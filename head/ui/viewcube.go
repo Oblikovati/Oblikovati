@@ -14,9 +14,9 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/math"
-	"oblikovati/model/doc"
-	"oblikovati/scene"
+	"oblikovati.org/math"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/scene"
 )
 
 // cubeBasis is the camera's screen basis expressed in the cube's local frame: the camera

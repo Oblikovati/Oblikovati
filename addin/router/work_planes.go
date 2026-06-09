@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/param"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/param"
 )
 
 // listWorkPlanes enumerates the active part's datum planes (origin frame first, then

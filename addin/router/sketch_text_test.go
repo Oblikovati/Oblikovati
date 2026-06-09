@@ -5,7 +5,7 @@ package router
 import (
 	"testing"
 
-	"oblikovati/api/wire"
+	"oblikovati.org/api/wire"
 )
 
 // TestSketchTextAddEditGet drives the by-reference text methods end to end: add a styled

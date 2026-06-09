@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/math"
 )
 
 // freeEdgeCount welds coincident vertices, then counts edges not shared by exactly two triangles —
@@ -76,9 +76,12 @@ func TestCleanCurvedSolidIsWatertight(t *testing.T) {
 // model (not a committed fixture; same OBK_PERF_STEP convention as TestHeavyModelBudget). It also guards
 // the cross-face conformance repair (conformCylConeFaces): a trimmed cyl/cone whose plane ear-clip
 // absorbed a rim-arc point is re-meshed with the metric-(u,v) CDT so it conforms to its neighbour.
-// Per-body free edges across the M25 fixes: pcurve continuity 4/0/4/28/0/0 → conformance repair
-// 4/0/0/0/0/0 (total 4). The remaining 4 are body0's plane-side absorber (a separate future pass). Assert
-// the TOTAL stays ≤4 — it regresses hard (to 8, then 36) if either fix is lost.
+// Per-body free edges across the fixes: pcurve continuity 4/0/4/28/0/0 → conformance repair
+// 4/0/0/0/0/0 (total 4) → the planar-faithful CDT fallback (planarTris) + exact CDT predicates closed
+// body0's plane-side crack to 0/0/0/0/0/0. The plane crack was an earcut hole-bridging defect on the
+// top cap (a complex outer loop + two circular bores); detecting it by area mismatch and re-meshing
+// with the now-cocircular-robust constrainedDelaunay makes it watertight. Assert the model is now FULLY
+// watertight (total 0) — it regresses hard (to 4, 8, then 36) if any of those fixes is lost.
 func TestImportedNurbsDuctWatertight(t *testing.T) {
 	path := os.Getenv("OBK_PERF_STEP")
 	if path == "" {
@@ -89,12 +92,12 @@ func TestImportedNurbsDuctWatertight(t *testing.T) {
 		mesh, _ := TessellateBody(body, DefaultQuality())
 		free := freeEdgeCount(mesh)
 		total += free
-		if free > 4 {
-			t.Errorf("imported body %d tessellated with %d free edges; want ≤4 "+
-				"(a pcurve-continuity or cyl/cone conformance regression cracks a body)", i, free)
+		if free != 0 {
+			t.Errorf("imported body %d tessellated with %d free edges; want 0 "+
+				"(a pcurve-continuity, conformance, or planar-faithful regression cracks a body)", i, free)
 		}
 	}
-	if total > 4 {
-		t.Errorf("imported model total free edges = %d; want ≤4 (watertightness regression)", total)
+	if total != 0 {
+		t.Errorf("imported model total free edges = %d; want 0 (watertightness regression)", total)
 	}
 }

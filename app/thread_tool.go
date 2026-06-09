@@ -5,8 +5,8 @@ package app
 import (
 	"errors"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/model/feature"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/model/feature"
 )
 
 // ThreadTool is the interactive Thread command (3D Model ▸ Modify): activate it, click a

@@ -5,7 +5,7 @@ package geom
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestPolylineEvaluationAndLength(t *testing.T) {

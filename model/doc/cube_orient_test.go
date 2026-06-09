@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	obkmath "oblikovati/math"
+	obkmath "oblikovati.org/math"
 )
 
 func TestIdentityCubeOrientIsNoOp(t *testing.T) {

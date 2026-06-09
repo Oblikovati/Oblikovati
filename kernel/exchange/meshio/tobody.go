@@ -5,9 +5,9 @@ package meshio
 import (
 	"fmt"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/subd"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/subd"
+	"oblikovati.org/kernel/topo"
 )
 
 // SolidOrSurface welds a triangle soup and converts it to a B-rep body via subd.ToBody:

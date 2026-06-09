@@ -5,8 +5,8 @@ package ops
 import (
 	"fmt"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 )
 
 // Shell hollows a planar-faceted solid to wall thickness t, leaving the removed faces as

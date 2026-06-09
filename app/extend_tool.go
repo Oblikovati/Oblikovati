@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // ExtendTool is the interactive Extend command (Surface panel): click a surface's boundary edge

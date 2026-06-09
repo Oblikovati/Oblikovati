@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/step"
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // sphereGrid builds the full-domain (u,v) breakpoints a bare sphere face tessellates over, matching

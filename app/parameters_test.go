@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	"oblikovati/model/compdef"
-	"oblikovati/model/param"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/param"
 )
 
 // newSessionWithPart returns a session whose active document is an empty part — enough to

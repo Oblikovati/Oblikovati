@@ -6,9 +6,9 @@ import (
 	"errors"
 	"path/filepath"
 
-	"oblikovati/math"
-	"oblikovati/model/sketch"
-	"oblikovati/osfont"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/osfont"
 )
 
 // Additional Create-panel tools: Chamfer (two-line bevel, sibling of Fillet), Slot (a

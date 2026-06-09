@@ -3,8 +3,8 @@
 package sketch
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // HelicalCurve3D is a 3D-sketch helical curve (M22-F04): the canonical sweep path for

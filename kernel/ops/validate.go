@@ -5,8 +5,8 @@ package ops
 import (
 	"fmt"
 
-	"oblikovati/build"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/build"
+	"oblikovati.org/kernel/topo"
 )
 
 // ValidationReport is the outcome of [Validate]: whether the body is a valid

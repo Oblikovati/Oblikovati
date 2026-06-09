@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // DeleteFaceTool is the interactive Delete Face command: activate it, click the faces to

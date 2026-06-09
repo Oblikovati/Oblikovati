@@ -2,7 +2,7 @@
 
 package geom
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // BSplineCurve is a NURBS curve (contract: BSplineCurve): a rational B-spline of
 // the given Degree over a control polygon (Ctrl) with per-point Weights and a

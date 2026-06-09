@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/meshio"
-	"oblikovati/kernel/exchange/step"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/meshio"
+	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // Import reads path as format into the part as imported-body features — routing mesh formats

@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // The hole operation — a subtractive drilled hole on a picked face, referenced by key

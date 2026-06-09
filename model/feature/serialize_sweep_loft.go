@@ -5,8 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // YAML codecs for sweep and loft. A sweep persists its profile (sketch+index), its

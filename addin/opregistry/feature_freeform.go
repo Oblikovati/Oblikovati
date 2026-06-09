@@ -5,10 +5,10 @@ package opregistry
 import (
 	"encoding/json"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // The freeform (T-spline) primitive features: a box, a plane, and a quadball, each a

@@ -5,8 +5,8 @@ package ops
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // TestMetricScaleReflectsAnisotropy: a patch 10 units long in u and 1 in v must report su≈10·sv, so

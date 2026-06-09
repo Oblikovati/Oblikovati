@@ -6,10 +6,10 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Hole and boss features place parametric cylindrical cuts/bosses on a picked placement

@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // readFixture loads a hand-authored .step file from testdata, failing on I/O error.

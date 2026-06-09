@@ -5,9 +5,9 @@ package ops
 import (
 	"fmt"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // FilletEdges rounds the selected convex straight edges of a planar solid with a constant-

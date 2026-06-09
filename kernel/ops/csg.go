@@ -2,7 +2,7 @@
 
 package ops
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // General intersecting boolean (PBI-171). Our solids are planar-faceted, so the robust
 // path is a BSP-tree CSG (the Thibault–Naylor / csg.js algorithm) over the triangles of

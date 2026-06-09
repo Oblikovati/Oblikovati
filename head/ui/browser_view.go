@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // The model browser tree (Inventor's browser): each frame it reads app.BuildBrowser and

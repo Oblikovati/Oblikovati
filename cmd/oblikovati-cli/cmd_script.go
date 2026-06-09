@@ -10,14 +10,14 @@ import (
 	"os"
 	"strings"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/addin/router"
-	"oblikovati/app"
-	"oblikovati/persistence"
-	"oblikovati/script"
-	"oblikovati/script/bridge"
-	"oblikovati/script/gopherlua"
-	"oblikovati/script/runner"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/addin/router"
+	"oblikovati.org/app"
+	"oblikovati.org/persistence"
+	"oblikovati.org/script"
+	"oblikovati.org/script/bridge"
+	"oblikovati.org/script/gopherlua"
+	"oblikovati.org/script/runner"
 )
 
 // cmdScript runs a Lua script against a headless session. It links no native code, so

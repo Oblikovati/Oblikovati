@@ -5,7 +5,7 @@ package app
 import (
 	"strings"
 
-	"oblikovati/model/param"
+	"oblikovati.org/model/param"
 )
 
 // The Manage ▸ Parameters dialog is driven through the session: the head asks for

@@ -2,13 +2,20 @@
 
 package ops
 
+import (
+	"oblikovati.org/math"
+	"oblikovati.org/math/predicate"
+)
+
 // 2D constrained Delaunay triangulation (CDT) of a planar polygon (outer loop minus holes) with
 // optional interior Steiner points. Built for trimmed curved-face tessellation in (u,v): the trim
 // boundary loops become hard constraints, interior grid points refine the patch, and the domain is
 // extracted by flooding across the constrained edges — so a CONCAVE trim is respected exactly (no
 // triangles bridge a concavity) and a slightly self-intersecting boundary still meshes (the
-// boundary segments are recovered by edge flips, then walls for the flood). Float64 predicates with
-// a tolerance — adequate for tessellation; this is not exact-arithmetic robust.
+// boundary segments are recovered by edge flips, then walls for the flood). The orientation and
+// in-circle tests use the adaptive-EXACT predicates (see [orient2d]/[inCircle]): a planar face's
+// boundary is sampled into near-collinear and near-cocircular points where a naive float determinant
+// mis-signs and tangles the mesh.
 //
 // Algorithm: Bowyer–Watson incremental Delaunay over all points (connected-cavity insertion, which
 // is robust to circumcircle round-off), then each boundary segment is recovered by flipping the
@@ -37,20 +44,24 @@ func conKey(a, b int) [2]int {
 	return [2]int{a, b}
 }
 
-// orient2d > 0 when c is left of the directed line a→b (triangle abc is CCW).
+// orient2d > 0 when c is left of the directed line a→b (triangle abc is CCW). It delegates to the
+// adaptive-exact predicate: the naive float determinant suffers catastrophic cancellation on near-
+// collinear points (e.g. a face boundary discretized into many almost-straight samples), returning the
+// WRONG sign — which made the Bowyer–Watson cavity collection grab the wrong triangles and emit
+// inverted/overlapping triangles. The exact predicate's sign is always correct.
 func orient2d(a, b, c [2]float64) float64 {
-	return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0])
+	return predicate.Orient2D(p2(a), p2(b), p2(c))
 }
 
-// inCircle > 0 when d is strictly inside the circumcircle of CCW triangle abc.
+// inCircle > 0 when d is strictly inside the circumcircle of CCW triangle abc. Delegates to the
+// adaptive-exact predicate for the same reason as orient2d: a planar face's circular hole is sampled
+// into (near-)cocircular points, where the naive float in-circle determinant (radius² terms swamping
+// their tiny difference) returns the wrong sign and tangles the triangulation.
 func inCircle(a, b, c, d [2]float64) float64 {
-	ax, ay := a[0]-d[0], a[1]-d[1]
-	bx, by := b[0]-d[0], b[1]-d[1]
-	cx, cy := c[0]-d[0], c[1]-d[1]
-	return (ax*ax+ay*ay)*(bx*cy-cx*by) -
-		(bx*bx+by*by)*(ax*cy-cx*ay) +
-		(cx*cx+cy*cy)*(ax*by-bx*ay)
+	return predicate.InCircle(p2(a), p2(b), p2(c), p2(d))
 }
+
+func p2(p [2]float64) math.Point2 { return math.Point2{X: p[0], Y: p[1]} }
 
 // newCDT builds the initial triangulation: a single super-triangle large enough to contain every
 // input point (the 3 super vertices are appended to pts at indices nsup, nsup+1, nsup+2).

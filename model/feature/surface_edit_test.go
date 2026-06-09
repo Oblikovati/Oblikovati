@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/health"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
 )
 
 // patchSurface seeds the running state with a 4×4 planar surface patch (at z=0) via

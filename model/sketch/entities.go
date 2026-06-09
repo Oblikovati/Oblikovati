@@ -2,7 +2,7 @@
 
 package sketch
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // Point is a constrainable sketch point and the solver's variable carrier: its X,Y
 // are the DOFs the solver reads and writes. Entities share points by pointer, so a

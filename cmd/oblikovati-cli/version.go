@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"oblikovati/build"
+	"oblikovati.org/build"
 )
 
 // cmdVersion prints the build identity as plain text (CLAUDE.md: plain text for

@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/kernel/exchange/meshio"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/kernel/exchange/meshio"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // cubeSTLFixture writes a watertight cube STL to a temp dir and returns its path.

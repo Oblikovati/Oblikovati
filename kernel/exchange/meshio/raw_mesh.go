@@ -8,7 +8,7 @@
 // seam), mirroring kernel/exchange/step. Pure Go, headless (ADR-0008).
 package meshio
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // RawMesh is a decoded triangle soup straight from a file, BEFORE welding: a flat list
 // of triangles each naming three vertex indices into Verts. STL/3MF emit per-triangle

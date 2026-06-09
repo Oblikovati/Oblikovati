@@ -3,8 +3,8 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/model/doc"
+	"oblikovati.org/app"
+	"oblikovati.org/model/doc"
 )
 
 // closeGuard is the head's graceful-close state: whether the "save changes?" prompt

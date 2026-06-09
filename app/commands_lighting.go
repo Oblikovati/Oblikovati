@@ -2,7 +2,7 @@
 
 package app
 
-import "oblikovati/renderer"
+import "oblikovati.org/renderer"
 
 // lightingViewCommands are the View-tab lighting controls (M16/F03, ADR-0026): a Lighting Style
 // gallery, an Environment picker, and the shadow toggles. They mirror the Visual Style panel's

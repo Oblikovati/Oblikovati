@@ -9,8 +9,8 @@ package ui
 import (
 	"sort"
 
-	"oblikovati/math"
-	"oblikovati/scene"
+	"oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 // Axis-triad colors follow the universal CAD convention (X red, Y green, Z blue) and are

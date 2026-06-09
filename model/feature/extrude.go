@@ -6,11 +6,11 @@ import (
 	"errors"
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // ExtrudeDefinition is the recipe for an extrude (the Definition of the triangle):
@@ -159,7 +159,11 @@ func combine(running []*topo.Body, body *topo.Body, op ops.PartFeatureOperation)
 	if len(running) == 0 || op == ops.NewBody {
 		return append(append([]*topo.Body(nil), running...), body), nil
 	}
-	target := running[len(running)-1]
+	// The planar B-rep boolean cannot consume a curved face (it hangs on one), so re-facet any
+	// analytic cylinder/cone into a planar B-rep before combining (#129). A standalone cylinder that
+	// is never combined keeps its analytic face for thread/chamfer/fillet.
+	target := planarized(running[len(running)-1], "combine-target")
+	body = planarized(body, "combine-tool")
 	res, err := ops.Boolean(op, target, body)
 	if err != nil {
 		return nil, err

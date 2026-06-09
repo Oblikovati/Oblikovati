@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // AutoDimension fully constrains the sketch (Inventor's Auto Dimension): it greedily adds

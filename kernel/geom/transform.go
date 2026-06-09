@@ -6,8 +6,8 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/build"
-	"oblikovati/math"
+	"oblikovati.org/build"
+	"oblikovati.org/math"
 )
 
 // TransformCurve maps a curve by m, which must be a similarity transform

@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 )
 
 // ReconstructFacePcurves computes and attaches the PCURVE to every edge-use of f: each edge is

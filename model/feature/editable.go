@@ -5,9 +5,9 @@ package feature
 import (
 	"bytes"
 
-	"oblikovati/math"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // In-place editing of a placed feature's scalar parameters (Inventor's double-click / Edit

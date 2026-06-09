@@ -6,8 +6,8 @@ import (
 	"math"
 	"testing"
 
-	obkmath "oblikovati/math"
-	"oblikovati/scene"
+	obkmath "oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 func orthoTestCamera() scene.Camera {

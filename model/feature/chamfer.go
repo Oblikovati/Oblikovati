@@ -7,10 +7,10 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // singularDetTol is the magnitude below which a normal determinant (three planes' triple
@@ -42,6 +42,14 @@ func chamferEdges(in Input, keys [][]byte, dist float64, feat string, flatCorner
 	if err != nil {
 		return Output{}, err
 	}
+	// A rim of a simple analytic cylinder gets a TRUE conical chamfer (one geom.Cone face) by
+	// rebuilding the body as a surface of revolution (#127). Anything else falls through.
+	if res, ok := analyticCylinderChamfer(body, edges, dist, feat); ok {
+		return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+	}
+	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
+	// segments, so the wedge cut works instead of hitting a degenerate closed edge (#129/#127).
+	work, edges := planarizeForEdges(body, edges, feat)
 	tools, err := chamferWedges(edges, dist, feat)
 	if err != nil {
 		return Output{}, err
@@ -49,13 +57,24 @@ func chamferEdges(in Input, keys [][]byte, dist float64, feat string, flatCorner
 	if flatCorners {
 		tools = append(tools, cornerCutTools(edges, dist, feat)...)
 	}
-	result := body
-	for _, tool := range tools {
-		if result, err = ops.Boolean(ops.Cut, result, tool); err != nil {
-			return Output{}, err
-		}
+	result, err := cutAll(work, tools)
+	if err != nil {
+		return Output{}, err
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+}
+
+// cutAll subtracts each tool from work in turn, returning the carved body.
+func cutAll(work *topo.Body, tools []*topo.Body) (*topo.Body, error) {
+	result := work
+	for _, tool := range tools {
+		r, err := ops.Boolean(ops.Cut, result, tool)
+		if err != nil {
+			return nil, err
+		}
+		result = r
+	}
+	return result, nil
 }
 
 // resolveEdges binds every edge key against the original body, erroring if a key is lost

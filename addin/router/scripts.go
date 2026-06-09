@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/script"
-	"oblikovati/script/gopherlua"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/script"
+	"oblikovati.org/script/gopherlua"
 )
 
 // Script-run budgets. The wall-clock bounds a runaway (the only enforced guard, since

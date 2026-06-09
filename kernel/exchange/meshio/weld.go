@@ -5,8 +5,8 @@ package meshio
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/subd"
-	"oblikovati/math"
+	"oblikovati.org/kernel/subd"
+	"oblikovati.org/math"
 )
 
 // DefaultWeldTolerance is the grid cell (mm) on which coincident vertices are merged.

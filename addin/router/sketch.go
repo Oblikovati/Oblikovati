@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // createSketch adds a sketch on an origin plane of the active part and returns its

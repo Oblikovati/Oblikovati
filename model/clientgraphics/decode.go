@@ -5,9 +5,9 @@ package clientgraphics
 import (
 	"fmt"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/math"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/math"
 )
 
 // DecodeGroup converts a wire submit request into a kernel-typed Group, validating the

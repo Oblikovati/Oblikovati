@@ -7,10 +7,11 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // The remaining sketched features carry their full Definition (the triangle) and
@@ -62,8 +63,7 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	sections, closed := revolveSections(prof, r.def.Sketch.Plane(), axis, callOrZero(r.def.Angle))
-	r.tool, err = sweptSolid(sections, closed, featOr(r.featName, "revolve"))
+	r.tool, err = r.buildRevolveTool(prof, axis)
 	if err != nil {
 		return Output{}, err
 	}
@@ -72,6 +72,58 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// buildRevolveTool spins the profile into the solid of revolution. Behind OBK_ANALYTIC_CURVES a
+// full 360° revolve of a rectilinear profile becomes a TRUE analytic solid (cylinder walls + disk/
+// annulus caps) so thread/chamfer/fillet attach to its revolved cylindrical faces (#129); every
+// other case (partial angle, an oblique/curved profile edge, or the gate off) keeps the faceted
+// swept solid. Booleans re-facet an analytic revolve body on demand (combine → planarized).
+func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) (*topo.Body, error) {
+	angle := callOrZero(r.def.Angle)
+	feat := featOr(r.featName, "revolve")
+	// Analytic only for a full revolve of a STRAIGHT-edged profile: those edges revolve to exact
+	// cylinder/cone/plane faces. A profile with an arc/spline (e.g. a sphere) would have its sampled
+	// chords turn into many tiny cone facets — worse than the faceted swept solid — so it stays
+	// faceted until curved meridian edges (torus, #129 follow-up) are supported.
+	if fullRevolution(angle) && isStraightLoop(prof.OuterLoop()) {
+		mer := meridianFromProfile(prof, r.def.Sketch.Plane(), axis)
+		if body, err := brep.SolidOfRevolution(axis.Origin(), axis.Direction().AsVector(), mer, feat); err == nil && body != nil {
+			return body, nil
+		}
+	}
+	sections, closed := revolveSections(prof, r.def.Sketch.Plane(), axis, angle)
+	return sweptSolid(sections, closed, feat)
+}
+
+// isStraightLoop reports whether every entity of a profile loop is a straight line segment (so its
+// revolution is an exact cylinder/cone/plane), as opposed to an arc/spline/circle.
+func isStraightLoop(l sketch.Loop) bool {
+	for _, pe := range l.Entities() {
+		if _, ok := pe.Entity.(*sketch.Line); !ok {
+			return false
+		}
+	}
+	return len(l.Entities()) > 0
+}
+
+// fullRevolution reports whether an angle is a complete turn (0 ⇒ full, like revolveSections).
+func fullRevolution(angle float64) bool { return angle <= 0 || angle >= 2*stdmath.Pi-1e-9 }
+
+// meridianFromProfile projects the profile's outer loop into the axis's (radius, height) half-plane
+// — radius = perpendicular distance from the axis, height = signed distance along it — the
+// cross-section brep.SolidOfRevolution revolves.
+func meridianFromProfile(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis) []math.Point2 {
+	o, a := axis.Origin(), axis.Direction().AsVector()
+	poly := modelPolygon(prof, plane)
+	out := make([]math.Point2, len(poly))
+	for i, p := range poly {
+		v := o.VectorTo(p)
+		z := v.Dot(a)
+		radial := v.Sub(a.Scale(z))
+		out[i] = math.P2(radial.Length(), z)
+	}
+	return out
 }
 
 // revolveAxis resolves the axis of revolution: an explicit work axis if set, otherwise the

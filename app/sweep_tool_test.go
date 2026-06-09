@@ -5,11 +5,11 @@ package app
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/sketch"
 )
 
 // newPartWithProfileAndPath sets up a part with a 2×2 square on XY (the profile) and a

@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // PatchTool is the interactive Patch command (Surface panel): click a closed sketch region to

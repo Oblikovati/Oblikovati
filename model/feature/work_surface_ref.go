@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // facePlane resolves a planar B-rep face WorkRef to a sketch plane, so a picked planar face

@@ -6,11 +6,11 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/subd"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/subd"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // box builds a solid box [px,px+sx]×… by offsetting the cage vertices.

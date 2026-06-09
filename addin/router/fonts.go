@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/text"
-	"oblikovati/osfont"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/text"
+	"oblikovati.org/osfont"
 )
 
 // registerFontHandlers wires the font-picker methods: list the selectable faces, and set a

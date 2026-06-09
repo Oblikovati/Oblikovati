@@ -2,7 +2,7 @@
 
 package ui
 
-import "oblikovati/app"
+import "oblikovati.org/app"
 
 func shouldDrawViewport(s *app.Session) bool {
 	return s != nil && s.Workspace().Count() > 0

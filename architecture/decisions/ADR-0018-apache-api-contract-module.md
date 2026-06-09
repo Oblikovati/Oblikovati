@@ -19,7 +19,7 @@ artifact a closed add-in could compile against, and "the surface is defined twic
 ## Decision
 
 Extract the public API into its own **Apache-2.0 Go module**,
-`oblikovati/api` (`/api`), as the single source of truth that both
+`oblikovati.org/api` (`/api`), as the single source of truth that both
 `/source` and add-ins depend on. The dependency only ever flows **toward** `/api`;
 `/api` never imports `/source` (CI-enforced).
 
@@ -84,7 +84,7 @@ Deferred (grow milestone-by-milestone, not a rewrite of the 2200+ C# interfaces)
 ## Shape / layering
 
 ```
-api/  (Apache-2.0, oblikovati/api)
+api/  (Apache-2.0, oblikovati.org/api)
   types/  contract/  wire/  client/
 source/  (GPL-2.0)  requires + implements api; serves api/wire via addin/router
 add-in/  (vendor-licensed)  imports only api/{types,wire,client}

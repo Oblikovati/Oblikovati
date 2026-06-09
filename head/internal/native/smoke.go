@@ -10,11 +10,11 @@ import (
 	"image/png"
 	"os"
 
-	"oblikovati/head/internal/envimage"
-	"oblikovati/head/viewport"
-	"oblikovati/math"
-	"oblikovati/renderer"
-	"oblikovati/scene"
+	"oblikovati.org/head/internal/envimage"
+	"oblikovati.org/head/viewport"
+	"oblikovati.org/math"
+	"oblikovati.org/renderer"
+	"oblikovati.org/scene"
 )
 
 // RunSmoke opens the real window and renders up to maxFrames Dear ImGui frames, then
