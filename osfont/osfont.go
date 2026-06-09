@@ -5,6 +5,11 @@
 // touches the host font directories; the headless model never does (model/text stays pure),
 // and a selected OS font is embedded into the document as bytes (ADR-0031), after which
 // reopening no longer needs the host font at all.
+//
+// Testing: do NOT depend on host-installed fonts — CI, dev, macOS, Linux and Windows machines
+// differ. Drive these enumeration tests off the application's vendored face
+// (text.EmbeddedFontBytes) written into a temp dir. If a test must name a system font, use only
+// faces present by default on macOS, Linux AND Windows.
 package osfont
 
 import (

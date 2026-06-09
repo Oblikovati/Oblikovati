@@ -175,6 +175,13 @@ the font `fontFamily`/host-catalogue lookup is replaced (for imported faces) by 
   single place that learns to write `resources`, and `restoreImportedBody` /
   text-emboss-restore read from it instead of the filesystem.
 
+- **Testing (fonts).** Tests must NOT depend on whatever fonts happen to be installed on the
+  host — CI, dev, macOS, Linux and Windows machines all differ. Prefer the application's
+  vendored face (`model/text` embedded) for deterministic font tests (e.g. write its bytes to a
+  temp dir to exercise OS enumeration). If a test genuinely must reference a system font by
+  family, restrict it to faces present by default on **macOS, Linux AND Windows**; never assume
+  a host-specific font.
+
 ## Shape
 
 ```
