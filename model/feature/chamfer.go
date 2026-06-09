@@ -42,6 +42,9 @@ func chamferEdges(in Input, keys [][]byte, dist float64, feat string, flatCorner
 	if err != nil {
 		return Output{}, err
 	}
+	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
+	// segments, so the wedge cut works instead of hitting a degenerate closed edge (#129/#127).
+	work, edges := planarizeForEdges(body, edges, feat)
 	tools, err := chamferWedges(edges, dist, feat)
 	if err != nil {
 		return Output{}, err
@@ -49,7 +52,7 @@ func chamferEdges(in Input, keys [][]byte, dist float64, feat string, flatCorner
 	if flatCorners {
 		tools = append(tools, cornerCutTools(edges, dist, feat)...)
 	}
-	result := body
+	result := work
 	for _, tool := range tools {
 		if result, err = ops.Boolean(ops.Cut, result, tool); err != nil {
 			return Output{}, err

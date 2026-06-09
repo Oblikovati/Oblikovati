@@ -466,17 +466,36 @@ func faceLoopsModel(f *topo.Face) (outer []math.Point3, inners [][]math.Point3) 
 	return outer, inners
 }
 
-// loopUseStarts is the ordered start points of a loop's oriented edge uses.
+// loopUseStarts is the loop's boundary as an ordered point ring, each oriented edge sampled in
+// traversal order. A straight edge contributes just its start point (the polygon corner); a curved
+// edge (a circle/arc — e.g. the rim of an analytic cylinder cap) is sampled into many points so the
+// ring is a real polygon, not a single vertex. The closing point is dropped (it equals the next
+// edge's start).
 func loopUseStarts(l *topo.Loop) []math.Point3 {
 	var pts []math.Point3
 	for _, u := range l.EdgeUses() {
-		v := u.Edge().StartVertex()
-		if u.Reversed() {
-			v = u.Edge().EndVertex()
+		c := u.Edge().Geometry()
+		lo, hi := c.Domain()
+		n := edgeRingSamples(c)
+		for i := 0; i < n; i++ { // [0,n): exclude the endpoint shared with the next edge's start
+			f := float64(i) / float64(n)
+			t := lo + (hi-lo)*f
+			if u.Reversed() {
+				t = hi - (hi-lo)*f
+			}
+			pts = append(pts, c.PointAt(t))
 		}
-		pts = append(pts, v.Point())
 	}
 	return pts
+}
+
+// edgeRingSamples is how many points to sample an edge into for a loop ring: 1 for a straight
+// segment (the start corner), more for a curved edge so it reads as a polygon.
+func edgeRingSamples(c geom.Curve3) int {
+	if _, ok := c.(geom.LineSegment); ok {
+		return 1
+	}
+	return 48
 }
 
 // faceNormal is the source face's surface normal used to aim a Tangent/Smooth takeoff: exact for

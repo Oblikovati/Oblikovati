@@ -180,6 +180,16 @@ func buildProfilePrisms(profiles []*sketch.Profile, plane sketch.Plane, sp span,
 // overshoots both caps and cut away, yielding a hollow prism (a tube for an annular
 // profile). Without this an annular profile extruded as a solid disk.
 func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
+	// A full-circle profile with no holes and no taper extrudes to a TRUE cylinder (analytic side
+	// face), so thread/chamfer/fillet on it work (#129). Booleans re-facet it on demand (combine →
+	// planarized). Other shapes fall through to the faceted prism.
+	if analyticCurvesEnabled() && taper == 0 && len(p.InnerLoops()) == 0 {
+		if c := circleLoop(p.OuterLoop()); c != nil {
+			if cyl := buildAnalyticCylinder(c, plane, sp, feat); cyl != nil {
+				return cyl
+			}
+		}
+	}
 	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)
 	inner := p.InnerLoops()
 	if len(inner) == 0 {

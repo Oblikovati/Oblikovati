@@ -27,6 +27,11 @@ func (f *HullFeature) Recompute(in Input) (Output, error) {
 	if len(solids) == 0 {
 		return Output{}, fmt.Errorf("hull: no solid bodies to hull (have %d)", len(in.Bodies))
 	}
+	// The hull reads body vertices; an analytic cylinder has only its 2 seam vertices, so re-facet any
+	// curved solid into a planar B-rep first (#129).
+	for i, s := range solids {
+		solids[i] = planarized(s, featOr(f.featName, "hull"))
+	}
 	hull, err := ops.ConvexHullOf(featOr(f.featName, "hull"), solids...)
 	if err != nil {
 		return Output{}, err

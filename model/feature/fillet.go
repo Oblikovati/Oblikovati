@@ -20,7 +20,21 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, feat string) (Outpu
 	if radius <= 0 {
 		return Output{}, fmt.Errorf("%s: radius %g must be > 0", feat, radius)
 	}
-	result, err := ops.FilletEdges(body, edgeKeys, radius)
+	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
+	// segments, so the rolling-ball blend works instead of failing on a degenerate closed edge
+	// (#129/#127). A planar body is unchanged (work==body, same keys).
+	work, keys := body, edgeKeys
+	if origEdges, e := resolveEdges(body, edgeKeys); e == nil {
+		pb, mapped := planarizeForEdges(body, origEdges, feat)
+		if pb != body {
+			work = pb
+			keys = make([][]byte, len(mapped))
+			for i, me := range mapped {
+				keys[i] = me.ReferenceKey()
+			}
+		}
+	}
+	result, err := ops.FilletEdges(work, keys, radius)
 	if err != nil {
 		return Output{}, err
 	}
