@@ -73,6 +73,37 @@ func TestOffsetWorkPlaneToolWaitsForDistanceThenCreates(t *testing.T) {
 	}
 }
 
+// TestPickableWorkPlanesIncludesVisibleUserPlanes is the issue-#132 regression: the viewport
+// picker must offer ribbon-created user planes (not only the origin frame), so a new sketch
+// can be hosted on one by clicking it in the 3D view. A hidden user plane drops out.
+func TestPickableWorkPlanesIncludesVisibleUserPlanes(t *testing.T) {
+	s, def := emptyPartSession(t)
+	origin := len(def.OriginPlanes()) // the always-pickable coordinate-system planes
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+
+	got := s.PickableWorkPlanes()
+	if len(got) != origin+1 {
+		t.Fatalf("PickableWorkPlanes = %d, want %d (origin) + 1 user plane", len(got), origin)
+	}
+	if !containsPlane(got, wp) {
+		t.Errorf("PickableWorkPlanes omitted the visible user plane %p", wp)
+	}
+
+	wp.SetVisible(false)
+	if got := s.PickableWorkPlanes(); len(got) != origin || containsPlane(got, wp) {
+		t.Errorf("a hidden user plane must not be pickable: got %d planes (want %d)", len(got), origin)
+	}
+}
+
+func containsPlane(planes []*feature.WorkPlane, want *feature.WorkPlane) bool {
+	for _, p := range planes {
+		if p == want {
+			return true
+		}
+	}
+	return false
+}
+
 func TestOffsetWorkPlaneToolNotCommittableWithoutBase(t *testing.T) {
 	s, _ := emptyPartSession(t)
 	tool := NewOffsetWorkPlaneTool()
