@@ -10,6 +10,15 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 > **Done** only when **Model + Geometry + UI/e2e** are all green; ✅ here now means all
 > three, 🟦 means partial. Several rows previously ✅ are model-complete only.
 
+> **▶ NEXT PRIORITY (set 2026-06-09): analytic-cylinder feature faces — [#129](https://github.com/Oblikovati/Oblikovati/issues/129).**
+> The revolve/extrude feature builders pre-facet circular profiles, so a feature-modeled "cylinder"
+> is a 64-gon prism of planar faces, not an analytic `Cylinder`. Consequence: `thread` can't attach
+> (`face is not cylindrical`) and chamfer/fillet on round rims go non-manifold ([#127](https://github.com/Oblikovati/Oblikovati/issues/127)).
+> **Fix:** emit analytic `Cylinder`/`Cone`/`Torus` faces when a generating profile edge is a
+> circle/arc/axis-parallel line (M07/M20). One change unblocks `thread` + curved-face chamfer/fillet.
+> Executable spec pinned by `Oblikovati.AddIns/oblikovati-mcp-bridge/bridge/nopscad_threadedspacer_test.go`
+> (goes red the moment it lands). Surfaced by the NopSCADlib re-modelling integration suite.
+
 - **Code root:** `/source` (Go module `oblikovati`, go 1.22).
 - **"Done" means:** acceptance criteria green via `make ci` (build + vet + lint +
   `CGO_ENABLED=0 go test ./...` + race), per [CONVENTIONS.md](CONVENTIONS.md).
