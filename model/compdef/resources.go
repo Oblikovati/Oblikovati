@@ -9,14 +9,18 @@ import (
 
 	"oblikovati/model/doc"
 	"oblikovati/model/feature"
+	"oblikovati/model/text"
 )
 
-// A part definition owns the document resource table and exposes it both ways: to persistence
-// as a [doc.ResourceBearer] (save/restore the table) and to its feature engine as a
-// [feature.ResourceStore] (re-derive imported bodies from embedded bytes on open) — ADR-0031.
+// A part definition owns the document resource table and exposes it three ways: to persistence
+// as a [doc.ResourceBearer] (save/restore the table), to its feature engine as a
+// [feature.ResourceStore] (re-derive imported bodies from embedded bytes), and as a
+// [text.FontResolver] (resolve a text/emboss font from an embedded or app-provided resource) —
+// ADR-0031.
 var (
 	_ doc.ResourceBearer    = (*PartComponentDefinition)(nil)
 	_ feature.ResourceStore = (*PartComponentDefinition)(nil)
+	_ text.FontResolver     = (*PartComponentDefinition)(nil)
 )
 
 // AddResource embeds an imported file in the document, returning the freshly minted UUID a
@@ -31,15 +35,50 @@ func (d *PartComponentDefinition) AddResource(r doc.Resource) string {
 	return id
 }
 
-// findResource returns the UUID of an entry byte-identical to r (same type/encoding/value), so
-// repeated imports of one file dedup to a single resource.
+// findResource returns the UUID of an entry equal to r (same type/encoding/origin/value), so
+// repeated imports of one file — or repeated use of one app-provided font (which has no bytes,
+// only an origin) — dedup to a single resource.
 func (d *PartComponentDefinition) findResource(r doc.Resource) (string, bool) {
 	for id, existing := range d.resources {
-		if existing.Type == r.Type && existing.Encoding == r.Encoding && bytes.Equal(existing.Value, r.Value) {
+		if existing.Type == r.Type && existing.Encoding == r.Encoding && existing.Origin == r.Origin && bytes.Equal(existing.Value, r.Value) {
 			return id, true
 		}
 	}
 	return "", false
+}
+
+// EmbedSystemFont stores an OS/host font file's bytes in the document as a TrueTypeFont resource
+// (base64) and returns its UUID — the value a text/emboss entity cites so reopening needs no host
+// font (ADR-0031). origin is the source filename (display only).
+func (d *PartComponentDefinition) EmbedSystemFont(data []byte, origin string) string {
+	return d.AddResource(doc.Resource{Type: "TrueTypeFont", Encoding: doc.EncodingBase64, Value: data, Origin: origin})
+}
+
+// UseEmbeddedFont records that the document uses an APP-PROVIDED font face (family), returning a
+// TrueTypeFont resource UUID with NO bytes — the application supplies the face on open. Lets the
+// resource table list every font a document uses uniformly, app-bundled or host-embedded.
+func (d *PartComponentDefinition) UseEmbeddedFont(family string) string {
+	return d.AddResource(doc.Resource{Type: "TrueTypeFont", Encoding: doc.EncodingEmbedded, Origin: family})
+}
+
+// Resolve turns a text/emboss font reference into a parsed font (text.FontResolver). A ref that
+// is a TrueTypeFont resource UUID resolves from the document — embedded bytes, or the app's
+// bundled face for an app-provided entry; anything else falls back to the default resolver
+// (treating the ref as a family name), so plain family-named text still renders.
+func (d *PartComponentDefinition) Resolve(ref string) (*text.Font, error) {
+	r, ok := d.resources[ref]
+	if !ok || r.Type != "TrueTypeFont" {
+		return text.DefaultResolver().Resolve(ref)
+	}
+	data := r.Value
+	if r.Encoding == doc.EncodingEmbedded {
+		b, ok := text.EmbeddedFontBytes(r.Origin)
+		if !ok {
+			return nil, fmt.Errorf("compdef: app-provided font %q (resource %q) is not bundled", r.Origin, ref)
+		}
+		data = b
+	}
+	return text.Parse(data)
 }
 
 // Resource returns the resource stored under id, if present.

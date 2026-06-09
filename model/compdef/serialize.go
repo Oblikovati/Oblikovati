@@ -156,6 +156,7 @@ func (d *PartComponentDefinition) resetRecipe() {
 	d.sketches3D = sketch.NewSketches3D()
 	d.features = feature.NewPartFeatures(d.params, d.keys)
 	d.features.SetResourceStore(d) // re-wire after the engine is recreated; resources survive the reset
+	d.features.SetFontResolver(d)  // re-wire the document font resolver too
 	d.work = feature.NewWorkGeometry()
 	d.units = param.DefaultUnitsOfMeasure()
 	d.eop = endOfPartAtEnd

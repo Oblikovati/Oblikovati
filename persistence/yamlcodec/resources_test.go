@@ -23,6 +23,9 @@ func TestResourceRoundTrip(t *testing.T) {
 				Type: "TrueTypeFont", Encoding: EncodingBase64, Origin: "Arial.ttf",
 				Value: []byte{0x00, 0x01, 0x00, 0x00, 0xFF, 0xAB},
 			},
+			"7c4a1b00-0000-4000-8000-000000000001": {
+				Type: "TrueTypeFont", Encoding: EncodingEmbedded, Origin: "Liberation Sans",
+			},
 		},
 	}
 	raw, err := MarshalDocument(in)

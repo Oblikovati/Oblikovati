@@ -72,14 +72,25 @@ const (
 // the by-reference text model (Inventor: TextBox.ConvertToGeometry, edited via the sketch).
 type TextBox struct {
 	entityBase
-	Anchor   math.Point2
-	Text     string
-	Height   math.Scalar
-	Rotation math.Scalar
-	Justify  TextHJustify
-	VJustify TextVJustify
-	Family   string
-	FontSize math.Scalar
+	Anchor       math.Point2
+	Text         string
+	Height       math.Scalar
+	Rotation     math.Scalar
+	Justify      TextHJustify
+	VJustify     TextVJustify
+	Family       string
+	FontResource string // document font resource UUID (ADR-0031); when set, overrides Family
+	FontSize     math.Scalar
+}
+
+// FontRef is the string the font resolver resolves the text's face by: the document font
+// resource UUID when one was chosen (an embedded OS font or an app-provided face), else the
+// family name (legacy/default). See compdef's text.FontResolver.
+func (t *TextBox) FontRef() string {
+	if t.FontResource != "" {
+		return t.FontResource
+	}
+	return t.Family
 }
 
 // TextBoxes creates and tracks sketch text.

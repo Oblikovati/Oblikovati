@@ -97,11 +97,21 @@ Rules:
 
 3. **Each entry has an `encoding` tag — `value` is decoded by `encoding`, never inferred from
    `type`.** `utf8` means `value` is the file's text embedded verbatim in the document
-   encoding; `base64` means `value` is the file's bytes base64-encoded. This is a separate
-   field because a `type` does **not** fix the encoding: an STL may be ASCII *or* binary under
-   one `StlFile` tag, and a 3MF (a ZIP) is always binary. A writer may also choose `base64` for
+   encoding; `base64` means `value` is the file's bytes base64-encoded; `embedded` marks an
+   APP-PROVIDED resource that carries **no `value`** (see rule 3a). This is a separate field
+   because a `type` does **not** fix the encoding: an STL may be ASCII *or* binary under one
+   `StlFile` tag, and a 3MF (a ZIP) is always binary. A writer may also choose `base64` for
    text that would not round-trip cleanly through a YAML block scalar (trailing whitespace,
    tabs, unusual bytes); readers always honour `encoding`.
+
+3a. **`encoding: embedded` records an app-provided resource without its bytes.** When the
+   application itself bundles the bytes — e.g. a vendored font face the build always ships — a
+   document that uses it stores only the entry (`type`, `encoding: embedded`, and `origin` = the
+   face id/family), **no `value`**. The resolver supplies the bytes from the application by
+   `origin`. This keeps the resource table the single, uniform place every imported dependency
+   is listed (so the document records *which* bundled face it relies on) while not bloating the
+   file with bytes the app already has. A host-installed (non-bundled) font, by contrast, is
+   embedded as a normal `base64` resource so the document stays self-contained.
 
 4. **`value` carries the bytes.** For `encoding: utf8`, a multi-line block scalar embedded
    verbatim — OBJ, ASCII STL, STEP stay human-readable and line-diffable, the same reasoning

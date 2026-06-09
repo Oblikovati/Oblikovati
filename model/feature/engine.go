@@ -12,6 +12,7 @@ import (
 	"oblikovati/model/health"
 	"oblikovati/model/identity"
 	"oblikovati/model/param"
+	"oblikovati/model/text"
 )
 
 // eopAll means the end-of-part marker is at the end (evaluate the whole program).
@@ -29,6 +30,7 @@ type PartFeatures struct {
 	eop       int
 	result    []*topo.Body
 	resources ResourceStore
+	fonts     text.FontResolver
 }
 
 // ResourceStore reads embedded imported-file bytes by their document resource UUID
@@ -42,6 +44,20 @@ type ResourceStore interface {
 // read imported files by UUID. Set by the owning content after construction (the engine is
 // recreated on a recipe reset, so this must be re-wired each time).
 func (fs *PartFeatures) SetResourceStore(rs ResourceStore) { fs.resources = rs }
+
+// SetFontResolver wires the document's font resolver (resource-aware) into the engine so a
+// text/emboss feature resolves its font from the document's embedded/app-provided faces. Like
+// the resource store, it is re-wired after a recipe reset (the engine is recreated).
+func (fs *PartFeatures) SetFontResolver(r text.FontResolver) { fs.fonts = r }
+
+// FontResolver returns the engine's document font resolver, or the embedded-faces default when
+// none was wired (a bare engine still resolves plain family-named text).
+func (fs *PartFeatures) FontResolver() text.FontResolver {
+	if fs.fonts != nil {
+		return fs.fonts
+	}
+	return text.DefaultResolver()
+}
 
 // NewPartFeatures creates an empty feature program. params drives expressions and
 // conditional suppression; keys resolves topology input refs (either may be nil

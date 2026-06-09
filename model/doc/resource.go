@@ -19,6 +19,10 @@ const (
 	EncodingUTF8 = "utf8"
 	// EncodingBase64 stores a resource's bytes base64-encoded (binary files).
 	EncodingBase64 = "base64"
+	// EncodingEmbedded marks an APP-PROVIDED resource: the application bundles the bytes (e.g. a
+	// vendored font face), so the document records only that it is used (Type + Origin = the face
+	// id) and stores NO bytes. Value is empty; the resolver supplies the bytes from the app.
+	EncodingEmbedded = "embedded"
 )
 
 // ResourceBearer is the optional interface content implements when it owns a resource table

@@ -65,6 +65,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		resources:   map[string]doc.Resource{},
 	}
 	d.features.SetResourceStore(d) // re-derive imported bodies from the resource table on open
+	d.features.SetFontResolver(d)  // resolve text/emboss fonts from embedded/app-provided resources
 	return d
 }
 
