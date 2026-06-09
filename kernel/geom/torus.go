@@ -35,6 +35,26 @@ func NewTorus(center math.Point3, axisDir math.Vector3, majorR, minorR float64) 
 	return Torus{Center: center, AxisDir: a, Ref: ref.AsUnit(), MajorRadius: majorR, MinorRadius: minorR, binormal: bi}, nil
 }
 
+// NewTorusWithRef builds a torus whose angle-zero reference is refHint (projected perpendicular to
+// the axis) rather than an arbitrary axis-derived frame — so a toroidal fillet face shares the frame
+// of its neighbouring cylinder/cap/circle faces and the seams line up at angle 0
+// (Oblikovati/Oblikovati#129). Mirrors NewCylinderWithRef / NewConeWithRef.
+func NewTorusWithRef(center math.Point3, axisDir, refHint math.Vector3, majorR, minorR float64) (Torus, error) {
+	if majorR <= 0 || minorR <= 0 {
+		return Torus{}, fmt.Errorf("geom: torus radii (major %g, minor %g) must be > 0", majorR, minorR)
+	}
+	a, err := math.UnitVector3FromVector(axisDir)
+	if err != nil {
+		return Torus{}, err
+	}
+	av := a.AsVector()
+	ref, err := math.UnitVector3FromVector(refHint.Sub(av.Scale(refHint.Dot(av))))
+	if err != nil {
+		return Torus{}, fmt.Errorf("geom: torus refHint %v is parallel to axis %v", refHint, axisDir)
+	}
+	return Torus{Center: center, AxisDir: a, Ref: ref, MajorRadius: majorR, MinorRadius: minorR, binormal: a.Cross(ref)}, nil
+}
+
 // radial returns the in-plane unit direction toward the tube center at angle u.
 func (t Torus) radial(u float64) math.Vector3 {
 	cos, sin := cosSin(u)

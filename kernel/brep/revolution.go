@@ -27,22 +27,45 @@ const revTol = 1e-7
 // revolved cylindrical face (Oblikovati/Oblikovati#129).
 //
 // An OBLIQUE meridian edge becomes a true analytic geom.Cone frustum. It returns (nil, nil) — a
-// signal to fall back to the faceted revolve — only for fewer than 3 vertices (a CURVED meridian
-// edge, e.g. a fillet arc → torus, is a follow-up; this constructor takes a polygonal meridian).
+// signal to fall back to the faceted revolve — only for fewer than 3 vertices. For a CURVED meridian
+// edge (a fillet arc → torus) use SolidOfRevolutionMeridian with an arc vertex.
 func SolidOfRevolution(axisOrigin math.Point3, axisDir math.Vector3, meridian []math.Point2, feat string) (*topo.Body, error) {
 	if len(meridian) < 3 {
+		return nil, nil
+	}
+	mer := ccwMeridian(meridian)
+	verts := make([]RevolveVertex, len(mer))
+	for i := range mer {
+		verts[i] = RevolveVertex{P: mer[i]}
+	}
+	return SolidOfRevolutionMeridian(axisOrigin, axisDir, verts, feat)
+}
+
+// RevolveVertex is one meridian vertex at (radius, height). When ArcCenter is non-nil the edge from
+// the PREVIOUS vertex to this one is a circular ARC about that (radius, height) centre — revolving
+// to a geom.Torus face (a fillet) — otherwise a straight line (cylinder/cone/plane).
+type RevolveVertex struct {
+	P         math.Point2
+	ArcCenter *math.Point2
+}
+
+// SolidOfRevolutionMeridian is the general builder: it revolves a meridian whose edges may be lines
+// OR arcs 360° about the axis. The meridian must be wound counter-clockwise in (r,z) (positive area)
+// so each face's right-hand normal points out of the solid; arc edges are assumed convex (a fillet).
+// Returns (nil,nil) for fewer than 3 vertices.
+func SolidOfRevolutionMeridian(axisOrigin math.Point3, axisDir math.Vector3, verts []RevolveVertex, feat string) (*topo.Body, error) {
+	if len(verts) < 3 {
 		return nil, nil
 	}
 	a, err := math.UnitVector3FromVector(axisDir)
 	if err != nil {
 		return nil, err
 	}
-	mer := ccwMeridian(meridian)
 	refCircle, err := geom.NewCircle(axisOrigin, a.AsVector(), 1) // borrow geom's angle-0 frame
 	if err != nil {
 		return nil, err
 	}
-	return buildRevolution(axisOrigin, a, refCircle.RefDir, mer, feat), nil
+	return buildRevolution(axisOrigin, a, refCircle.RefDir, verts, feat), nil
 }
 
 // ccwMeridian returns the meridian wound counter-clockwise in (r,z) (positive signed area), so a
@@ -78,15 +101,20 @@ type revNode struct {
 }
 
 // buildRevolution assembles the body: one circle per off-axis vertex, then one face per meridian
-// edge (cylinder for axis-parallel, disk/annulus for axis-perpendicular; on-axis edges skipped).
-func buildRevolution(axisOrigin math.Point3, a, ref math.UnitVector3, mer []math.Point2, feat string) *topo.Body {
+// edge (cylinder for axis-parallel, disk/annulus for axis-perpendicular, cone for oblique, torus for
+// an arc; on-axis line edges skipped).
+func buildRevolution(axisOrigin math.Point3, a, ref math.UnitVector3, verts []RevolveVertex, feat string) *topo.Body {
 	bld := topo.NewBuilder(true, revLin(feat, "body", 0))
-	nodes := make([]revNode, len(mer))
-	for i, m := range mer {
-		nodes[i] = makeRevNode(bld, axisOrigin, a, ref, float64(m.X), float64(m.Y), feat, i)
+	nodes := make([]revNode, len(verts))
+	for i, vrt := range verts {
+		nodes[i] = makeRevNode(bld, axisOrigin, a, ref, float64(vrt.P.X), float64(vrt.P.Y), feat, i)
 	}
-	for i := range mer {
-		j := (i + 1) % len(mer)
+	for i := range verts {
+		j := (i + 1) % len(verts)
+		if verts[j].ArcCenter != nil {
+			addRevolutionTorus(bld, nodes[i], nodes[j], *verts[j].ArcCenter, axisOrigin, a, ref, feat, i)
+			continue
+		}
 		addRevolutionFace(bld, nodes[i], nodes[j], a, ref, feat, i)
 	}
 	return bld.Build()
@@ -167,6 +195,52 @@ func addRevolutionCone(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVector
 		return
 	}
 	bld.AddReversedFace(cone, revLin(feat, "cone", i), loop)
+}
+
+// addRevolutionTorus adds the periodic toroidal wall for an ARC meridian edge (a fillet): the arc
+// (radius = minor) revolves to a geom.Torus whose tube centre circle is the arc centre revolved
+// (major = arc-centre radius). The seam is the arc itself at angle 0, traversed twice between the two
+// shared circles — the cylinder idiom with a curved seam. Both endpoints are off-axis (a fillet).
+func addRevolutionTorus(bld *topo.Builder, ni, nj revNode, arcCenter math.Point2, axisOrigin math.Point3, a, ref math.UnitVector3, feat string, i int) {
+	rc, zc := float64(arcCenter.X), float64(arcCenter.Y)
+	zi := float64(axisOrigin.VectorTo(ni.center).Dot(a.AsVector()))
+	zj := float64(axisOrigin.VectorTo(nj.center).Dot(a.AsVector()))
+	minor := stdmath.Hypot(ni.r-rc, zi-zc)
+	torusCenter := axisOrigin.TranslateBy(a.AsVector().Scale(math.Scalar(zc)))
+	torus, err := geom.NewTorusWithRef(torusCenter, a.AsVector(), ref.AsVector(), rc, minor)
+	if err != nil {
+		return
+	}
+	mid := arcMidpoint(axisOrigin, a, ref, arcCenter, minor, ni.r, zi, nj.r, zj)
+	seamArc, err := geom.Arc3dByThreePoints(ni.v.Point(), mid, nj.v.Point())
+	if err != nil {
+		return
+	}
+	seam := bld.AddEdge(seamArc, ni.v, nj.v, revLin(feat, "fillet-seam", i))
+	loop := topo.OuterLoop(topo.Fwd(ni.circle), topo.Fwd(seam), topo.Rev(nj.circle), topo.Rev(seam))
+	if axialGap(ni, nj, a) > 0 { // dz>0: convex fillet faces outward (AddFace), like cylinder/cone
+		bld.AddFace(torus, revLin(feat, "fillet", i), loop)
+		return
+	}
+	bld.AddReversedFace(torus, revLin(feat, "fillet", i), loop)
+}
+
+// arcMidpoint returns the 3D point at the middle of the meridian arc (centre (rc,zc) in (r,z),
+// radius minor, from (ri,zi) to (rj,zj)), placed at angle 0 in the (ref, axis) half-plane — the
+// third point that pins the seam arc's plane and sweep.
+func arcMidpoint(axisOrigin math.Point3, a, ref math.UnitVector3, c math.Point2, minor, ri, zi, rj, zj float64) math.Point3 {
+	rc, zc := float64(c.X), float64(c.Y)
+	sx, sy := ri-rc, zi-zc // start direction from centre
+	ex, ey := rj-rc, zj-zc // end direction from centre
+	bx, by := sx+ex, sy+ey // bisector (mid direction for a ≤180° arc)
+	bl := stdmath.Hypot(bx, by)
+	if bl == 0 { // 180° arc: bisector degenerate — use the perpendicular of the chord
+		bx, by = -sy, sx
+		bl = stdmath.Hypot(bx, by)
+	}
+	midR := rc + minor*bx/bl
+	midZ := zc + minor*by/bl
+	return axisOrigin.TranslateBy(a.AsVector().Scale(math.Scalar(midZ))).TranslateBy(ref.AsVector().Scale(math.Scalar(midR)))
 }
 
 // coneApex returns the point where the meridian edge's slant line meets the axis (r=0). An endpoint

@@ -116,6 +116,43 @@ func TestRevolutionChamferedCylinder(t *testing.T) {
 	}
 }
 
+// TestRevolutionFilletedCylinder revolves a cylinder profile with a quarter-round on the top rim —
+// the analytic TORUS a true fillet of a circular edge produces (#127). It must be a valid solid with
+// one torus face, one cylinder wall, and the expected (cylinder − rounded-corner) volume.
+func TestRevolutionFilletedCylinder(t *testing.T) {
+	const r, h, f = 5.0, 10.0, 2.0
+	// Meridian: base disk, wall up to h-f, ARC (about (r-f, h-f)) to (r-f, h), top disk, axis.
+	center := math.P2(r-f, h-f)
+	verts := []brep.RevolveVertex{
+		{P: math.P2(0, 0)},
+		{P: math.P2(r, 0)},
+		{P: math.P2(r, h-f)},
+		{P: math.P2(r-f, h), ArcCenter: &center},
+		{P: math.P2(0, h)},
+	}
+	body, err := brep.SolidOfRevolutionMeridian(math.P3(0, 0, 0), math.V3(0, 0, 1), verts, "fil")
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolutionMeridian(filleted) = %v, %v; want a body", body, err)
+	}
+	got := revVolume(t, body)
+	// Full cylinder minus the revolved rounded-corner sliver (the rim square minus its quarter-disc),
+	// by Pappus: removed = 2π·(first moment of area about the axis). The sliver = the f×f corner
+	// square at (r−f..r, h−f..h) minus the quarter-disc of radius f about (r−f, h−f).
+	sqMoment := (r - f/2) * (f * f)                                       // square centroid-r × area
+	qdMoment := ((r - f) + 4*f/(3*stdmath.Pi)) * (stdmath.Pi * f * f / 4) // quarter-disc moment
+	removed := 2 * stdmath.Pi * (sqMoment - qdMoment)
+	want := stdmath.Pi*r*r*h - removed
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("filleted cylinder volume = %.4f, want ≈%.4f (rel %.4f > 3%%)", got, want, rel)
+	}
+	if torus, cyl := torusFaceCount(body), cylFaceCount(body); torus != 1 || cyl != 1 {
+		t.Errorf("filleted cylinder has %d torus + %d cylinder faces, want 1 + 1", torus, cyl)
+	}
+}
+
+func torusFaceCount(b *topo.Body) int {
+	return surfFaceCount(b, func(g geom.Surface) bool { _, ok := g.(geom.Torus); return ok })
+}
 func coneFaceCount(b *topo.Body) int {
 	return surfFaceCount(b, func(g geom.Surface) bool { _, ok := g.(geom.Cone); return ok })
 }

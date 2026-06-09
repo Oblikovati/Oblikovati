@@ -20,6 +20,15 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, feat string) (Outpu
 	if radius <= 0 {
 		return Output{}, fmt.Errorf("%s: radius %g must be > 0", feat, radius)
 	}
+	// A rim of a simple analytic cylinder gets a TRUE toroidal fillet (one geom.Torus face) by
+	// rebuilding the body as a surface of revolution (#127). Anything else falls through.
+	if analyticCurvesEnabled() {
+		if origEdges, e := resolveEdges(body, edgeKeys); e == nil {
+			if res, ok := analyticCylinderFillet(body, origEdges, radius, feat); ok {
+				return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+			}
+		}
+	}
 	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
 	// segments, so the rolling-ball blend works instead of failing on a degenerate closed edge
 	// (#129/#127). A planar body is unchanged (work==body, same keys).
