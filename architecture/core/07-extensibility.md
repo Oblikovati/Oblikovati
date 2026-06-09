@@ -24,7 +24,7 @@ func init() { registry.Features.Register(extrudeKind) }   // ← adding extrude 
 ```
 
 ```go
-// cmd/oblikovati.org/features.go — the host imports for side effects only
+// cmd/oblikovati/features.go — the host imports for side effects only
 import (
     _ "oblikovati.org/model/feature/extrude"
     _ "oblikovati.org/model/feature/revolve"
