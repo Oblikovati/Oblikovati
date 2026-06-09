@@ -156,7 +156,8 @@ func (m *cdt) flip(t, i int) bool {
 
 // insertConstraint forces edge (a,b) into the triangulation (flipping the edges it crosses) and
 // marks it constrained. A non-flippable (non-convex) crossing is retried after others resolve it;
-// it gives up if no progress is possible (a degenerate, near-collinear boundary).
+// it gives up if no progress is possible (a degenerate, near-collinear boundary). The flips rely on
+// the now-exact orient2d, so a near-collinear boundary no longer mis-signs and tangles the mesh.
 func (m *cdt) insertConstraint(a, b int) {
 	for tries := 0; !m.hasEdge(a, b) && tries < 4*len(m.tris)+8; tries++ {
 		if !m.flipOneCrossing(a, b) {
