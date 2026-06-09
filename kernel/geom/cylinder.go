@@ -2,7 +2,11 @@
 
 package geom
 
-import "oblikovati/math"
+import (
+	"fmt"
+
+	"oblikovati/math"
+)
 
 // Cylinder is an infinite circular cylinder (contract: Cylinder) about the axis
 // line through Origin along AxisDir, with the given Radius. Parameters are
@@ -25,6 +29,27 @@ func NewCylinder(origin math.Point3, axisDir math.Vector3, radius float64) (Cyli
 	}
 	ref, bi := axisFrame(a)
 	return Cylinder{Origin: origin, AxisDir: a, Ref: ref.AsUnit(), Radius: radius, binormal: bi}, nil
+}
+
+// NewCylinderWithRef builds a cylinder whose angle-zero reference direction is refHint
+// (projected onto the plane perpendicular to the axis, then normalized) rather than an
+// arbitrary axis-derived frame. This lets a caller pin the cylinder's parameterization to
+// a known frame — e.g. an extruded circle records its generating sketch X axis, so the
+// cylinder can later be re-faceted into a prism whose facet phase matches a direct faceted
+// extrude (Oblikovati/Oblikovati#129). Errors on a zero axis direction or a refHint that
+// is parallel to the axis (no in-plane component to use as a reference).
+func NewCylinderWithRef(origin math.Point3, axisDir, refHint math.Vector3, radius float64) (Cylinder, error) {
+	a, err := math.UnitVector3FromVector(axisDir)
+	if err != nil {
+		return Cylinder{}, err
+	}
+	av := a.AsVector()
+	inPlane := refHint.Sub(av.Scale(refHint.Dot(av))) // drop the axial component
+	ref, err := math.UnitVector3FromVector(inPlane)
+	if err != nil {
+		return Cylinder{}, fmt.Errorf("geom: cylinder refHint %v is parallel to axis %v", refHint, axisDir)
+	}
+	return Cylinder{Origin: origin, AxisDir: a, Ref: ref, Radius: radius, binormal: a.Cross(ref)}, nil
 }
 
 // PointAt returns the point at (u, v).

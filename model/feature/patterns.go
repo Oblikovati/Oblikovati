@@ -140,8 +140,14 @@ func (p *patternBase) replicateTool(bodies []*topo.Body, tool *topo.Body, op ops
 	if len(bodies) == 0 {
 		return Output{Bodies: bodies}, nil
 	}
+	// Re-facet a curved tool (an extruded-circle ANALYTIC cylinder, #129) into a planar B-rep
+	// before the boolean — exactly as combine() does. The planar B-rep boolean hangs/explodes on
+	// a full periodic cylinder face, so a circular pattern of a Ø-hole cut used to blow up into
+	// tens of thousands of edges (Oblikovati/Oblikovati#129). A faceted tool is left unchanged.
+	tool = planarized(tool, feat)
 	running := append([]*topo.Body(nil), bodies...)
 	last := len(running) - 1
+	running[last] = planarized(running[last], feat) // ditto for a curved running target
 	for k := 1; k < len(transforms); k++ {
 		if p.suppressed[k] {
 			continue

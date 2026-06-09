@@ -49,18 +49,19 @@ func buildAnalyticCylinder(c *sketch.Circle, plane sketch.Plane, sp span, feat s
 		return nil
 	}
 	normal := plane.Normal().AsVector()
+	refDir := plane.XAxis() // angle-0 = sketch +X, so this cylinder records its generating frame (#129)
 	lo := stdmath.Min(sp.near, sp.far)
 	base := plane.ToModel(c.Center.Position()).TranslateBy(normal.Scale(math.Scalar(lo)))
 	topCenter := base.TranslateBy(normal.Scale(math.Scalar(height)))
 
 	lin := func(kind string, i int) topo.Lineage { return topo.NewLineage(topo.Tok(feat, kind, i)) }
-	bottom, err := geom.NewCircle(base, normal, radius)
-	if err != nil {
-		return nil
-	}
+	// Pin the analytic frame to the sketch plane (RefDir = sketch +X, winding CCW about the
+	// normal) so it matches sampleCircle's faceted phase. planarizeSimpleCylinder then re-facets
+	// this cylinder into a prism topologically identical to a direct faceted extrude (#129).
+	bottom := geom.Circle{Center: base, Normal: plane.Normal(), RefDir: refDir, Radius: radius}
 	// Share the bottom circle's frame so the seam is a single vertical line at angle 0.
 	top := geom.Circle{Center: topCenter, Normal: bottom.Normal, RefDir: bottom.RefDir, Radius: radius}
-	side, err := geom.NewCylinder(base, normal, radius)
+	side, err := geom.NewCylinderWithRef(base, normal, refDir.AsVector(), radius)
 	if err != nil {
 		return nil
 	}

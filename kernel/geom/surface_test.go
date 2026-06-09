@@ -93,6 +93,32 @@ func TestCylinderRadiusAndNormal(t *testing.T) {
 	}
 }
 
+// TestCylinderWithRefPinsAngleZero proves NewCylinderWithRef parameterizes angle 0 along the
+// in-plane projection of refHint (the axial component dropped), so an extruded circle can record
+// its generating sketch +X and be re-faceted in that exact frame (#129).
+func TestCylinderWithRefPinsAngleZero(t *testing.T) {
+	// refHint tilted out of the axis plane: its axial (+Z) component must be dropped.
+	c, err := NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 5), 3)
+	if err != nil {
+		t.Fatalf("NewCylinderWithRef: %v", err)
+	}
+	p0 := c.PointAt(0, 0) // angle 0 ⇒ Origin + Radius·Ref
+	approxScalar(t, p0.X, 3, "angle-0 lies on +X (refHint projection)")
+	approxScalar(t, p0.Y, 0, "angle-0 has no Y component")
+	approxScalar(t, p0.Z, 0, "angle-0 has no axial component")
+	if !c.Ref.AsVector().IsPerpendicularTo(c.AxisDir.AsVector(), 1e-9) {
+		t.Errorf("Ref not perpendicular to axis: %v", c.Ref)
+	}
+}
+
+// TestCylinderWithRefParallelHintErrors guards the degenerate case: a refHint parallel to the axis
+// has no in-plane component to use as angle 0.
+func TestCylinderWithRefParallelHintErrors(t *testing.T) {
+	if _, err := NewCylinderWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(0, 0, 2), 3); err == nil {
+		t.Fatal("expected an error for a refHint parallel to the axis")
+	}
+}
+
 func TestConeRadiusGrowsWithDistance(t *testing.T) {
 	half := 0.6
 	c, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), half)

@@ -84,7 +84,25 @@ func planarizeSimpleCylinder(b *topo.Body, feat string) *topo.Body {
 		return nil
 	}
 	base := cyl.Origin.TranslateBy(axis.AsVector().Scale(math.Scalar(lo)))
-	return buildPrism(regularPolygon(cyl.Radius, 24), planePerp(base, axis), span{near: 0, far: height}, 0, feat)
+	// Re-facet in the cylinder's ORIGINAL generating frame (Ref = the sketch +X recorded at
+	// extrude time) AND under its ORIGINAL feature lineage, not an arbitrary axis-derived frame /
+	// synthetic feature name. Reference keys are lineage-derived, so reproducing both makes this
+	// prism byte-identical (geometry + keys) to a direct faceted extrude of the same circle —
+	// keeping edge/face identity stable for downstream dress-up and boolean (#129).
+	feat = originalFeature(b, feat)
+	return buildPrism(regularPolygon(cyl.Radius, 24), planeFromFrame(base, axis, cyl.Ref), span{near: 0, far: height}, 0, feat)
+}
+
+// originalFeature recovers the name of the feature that generated body b from its body-level
+// lineage token, falling back to fallback when the lineage is empty. A re-faceted prism reuses
+// this so its entities carry the SAME lineage (and reference keys) a direct faceted extrude
+// would mint (#129); the synthetic "combine-*"/"…-planar" names broke that, shifting edge[0].
+func originalFeature(b *topo.Body, fallback string) string {
+	toks := b.Lineage().Tokens()
+	if len(toks) == 0 || toks[0].Feature == "" {
+		return fallback
+	}
+	return toks[0].Feature
 }
 
 // planarizeForEdges re-facets a simple cylinder body for an edge op (chamfer/fillet) and maps each
