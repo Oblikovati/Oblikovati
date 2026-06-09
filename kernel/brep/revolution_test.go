@@ -73,12 +73,61 @@ func TestRevolutionDiscIsSolidCylinder(t *testing.T) {
 	}
 }
 
-// TestRevolutionObliqueEdgeFallsBack pins the documented limit: an oblique (cone) meridian edge
-// returns (nil,nil) so the caller uses the faceted path until analytic cones land.
-func TestRevolutionObliqueEdgeFallsBack(t *testing.T) {
-	mer := []math.Point2{math.P2(2, 0), math.P2(6, 0), math.P2(2, 10)} // a cone: oblique hypotenuse
+// TestRevolutionFullConeApex revolves a right triangle touching the axis into a SOLID CONE: an
+// apex (r=0), a base disk, and one analytic cone wall.
+func TestRevolutionFullConeApex(t *testing.T) {
+	const r, h = 4.0, 9.0
+	mer := []math.Point2{math.P2(0, 0), math.P2(r, 0), math.P2(0, h)} // base, rim, apex on axis
 	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "cone")
-	if err != nil || body != nil {
-		t.Fatalf("oblique meridian: got (%v,%v), want (nil,nil) fallback", body, err)
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolution(cone) = %v, %v; want a body", body, err)
 	}
+	got := revVolume(t, body)
+	want := stdmath.Pi * r * r * h / 3
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("cone volume = %.4f, want analytic %.4f (rel %.4f > 3%% band)", got, want, rel)
+	}
+	if n := coneFaceCount(body); n != 1 {
+		t.Errorf("solid cone has %d analytic cone faces, want 1", n)
+	}
+}
+
+// TestRevolutionChamferedCylinder revolves a cylinder profile with a 45° bevel on the top rim — the
+// analytic CONE FRUSTUM a true chamfer of a circular edge produces (#127). It must be a valid solid
+// with one cone face, one cylinder wall, and the expected (cylinder − corner-wedge-of-revolution)
+// volume.
+func TestRevolutionChamferedCylinder(t *testing.T) {
+	const r, h, d = 5.0, 10.0, 2.0
+	mer := []math.Point2{math.P2(0, 0), math.P2(r, 0), math.P2(r, h-d), math.P2(r-d, h), math.P2(0, h)}
+	body, err := brep.SolidOfRevolution(math.P3(0, 0, 0), math.V3(0, 0, 1), mer, "cham")
+	if err != nil || body == nil {
+		t.Fatalf("SolidOfRevolution(chamfered) = %v, %v; want a body", body, err)
+	}
+	got := revVolume(t, body)
+	// Pappus: full cylinder minus the revolved corner triangle's removed solid.
+	full := stdmath.Pi * r * r * h
+	removed := stdmath.Pi*r*r*d - stdmath.Pi*d*(3*r*r-3*r*d+d*d)/3 // ∫ frustum
+	want := full - removed
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("chamfered cylinder volume = %.4f, want ≈%.4f (rel %.4f > 3%%)", got, want, rel)
+	}
+	if c, k := coneFaceCount(body), cylFaceCount(body); c != 1 || k != 1 {
+		t.Errorf("chamfered cylinder has %d cone + %d cylinder faces, want 1 + 1", c, k)
+	}
+}
+
+func coneFaceCount(b *topo.Body) int {
+	return surfFaceCount(b, func(g geom.Surface) bool { _, ok := g.(geom.Cone); return ok })
+}
+func cylFaceCount(b *topo.Body) int {
+	return surfFaceCount(b, func(g geom.Surface) bool { _, ok := g.(geom.Cylinder); return ok })
+}
+func surfFaceCount(b *topo.Body, pred func(geom.Surface) bool) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if pred(f.Geometry()) {
+			n++
+		}
+	}
+	return n
 }

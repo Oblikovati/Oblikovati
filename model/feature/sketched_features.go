@@ -82,7 +82,11 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) (*topo.Body, error) {
 	angle := callOrZero(r.def.Angle)
 	feat := featOr(r.featName, "revolve")
-	if analyticCurvesEnabled() && fullRevolution(angle) {
+	// Analytic only for a full revolve of a STRAIGHT-edged profile: those edges revolve to exact
+	// cylinder/cone/plane faces. A profile with an arc/spline (e.g. a sphere) would have its sampled
+	// chords turn into many tiny cone facets — worse than the faceted swept solid — so it stays
+	// faceted until curved meridian edges (torus, #129 follow-up) are supported.
+	if analyticCurvesEnabled() && fullRevolution(angle) && isStraightLoop(prof.OuterLoop()) {
 		mer := meridianFromProfile(prof, r.def.Sketch.Plane(), axis)
 		if body, err := brep.SolidOfRevolution(axis.Origin(), axis.Direction().AsVector(), mer, feat); err == nil && body != nil {
 			return body, nil
@@ -90,6 +94,17 @@ func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) 
 	}
 	sections, closed := revolveSections(prof, r.def.Sketch.Plane(), axis, angle)
 	return sweptSolid(sections, closed, feat)
+}
+
+// isStraightLoop reports whether every entity of a profile loop is a straight line segment (so its
+// revolution is an exact cylinder/cone/plane), as opposed to an arc/spline/circle.
+func isStraightLoop(l sketch.Loop) bool {
+	for _, pe := range l.Entities() {
+		if _, ok := pe.Entity.(*sketch.Line); !ok {
+			return false
+		}
+	}
+	return len(l.Entities()) > 0
 }
 
 // fullRevolution reports whether an angle is a complete turn (0 ⇒ full, like revolveSections).

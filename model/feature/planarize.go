@@ -49,56 +49,60 @@ func planarized(b *topo.Body, feat string) *topo.Body {
 // topology matches a faceted extrude of the same circle) with the same axis/radius/extent. nil if the
 // body is not that simple shape.
 func planarizeSimpleCylinder(b *topo.Body, feat string) *topo.Body {
-	if b == nil {
+	cyl, base, height, ok := simpleCylinderParams(b)
+	if !ok {
 		return nil
 	}
-	faces := b.Faces()
-	if len(faces) != 3 {
-		return nil
-	}
-	var cyl geom.Cylinder
-	haveCyl := false
-	for _, f := range faces {
-		switch g := f.Geometry().(type) {
-		case geom.Cylinder:
-			if haveCyl {
-				return nil
-			}
-			cyl, haveCyl = g, true
-		case geom.Plane:
-		default:
-			return nil
-		}
-	}
-	if !haveCyl || cyl.Radius <= 0 {
-		return nil
-	}
-	axis := cyl.AxisDir
-	var proj []float64
-	for _, f := range faces {
-		if pl, ok := f.Geometry().(geom.Plane); ok {
-			proj = append(proj, cyl.Origin.VectorTo(pl.Origin).Dot(axis.AsVector()))
-		}
-	}
-	if len(proj) != 2 {
-		return nil
-	}
-	lo, hi := proj[0], proj[1]
-	if lo > hi {
-		lo, hi = hi, lo
-	}
-	height := hi - lo
-	if height <= 0 {
-		return nil
-	}
-	base := cyl.Origin.TranslateBy(axis.AsVector().Scale(math.Scalar(lo)))
 	// Re-facet in the cylinder's ORIGINAL generating frame (Ref = the sketch +X recorded at
 	// extrude time) AND under its ORIGINAL feature lineage, not an arbitrary axis-derived frame /
 	// synthetic feature name. Reference keys are lineage-derived, so reproducing both makes this
 	// prism byte-identical (geometry + keys) to a direct faceted extrude of the same circle —
 	// keeping edge/face identity stable for downstream dress-up and boolean (#129).
 	feat = originalFeature(b, feat)
-	return buildPrism(regularPolygon(cyl.Radius, 24), planeFromFrame(base, axis, cyl.Ref), span{near: 0, far: height}, 0, feat)
+	return buildPrism(regularPolygon(cyl.Radius, 24), planeFromFrame(base, cyl.AxisDir, cyl.Ref), span{near: 0, far: height}, 0, feat)
+}
+
+// simpleCylinderParams returns the geometry of a body that is EXACTLY one analytic cylinder (1
+// geom.Cylinder side face + 2 planar caps) — the extrude-circle / revolved-disc result: the cylinder
+// surface, the base centre (lower cap, on the axis), and the height between caps. ok is false for any
+// other shape (already planar, a tube, a fillet/cone, a partially-cut cylinder, …).
+func simpleCylinderParams(b *topo.Body) (cyl geom.Cylinder, base math.Point3, height float64, ok bool) {
+	if b == nil || len(b.Faces()) != 3 {
+		return geom.Cylinder{}, math.Point3{}, 0, false
+	}
+	haveCyl := false
+	var proj []float64
+	for _, f := range b.Faces() {
+		switch g := f.Geometry().(type) {
+		case geom.Cylinder:
+			if haveCyl {
+				return geom.Cylinder{}, math.Point3{}, 0, false
+			}
+			cyl, haveCyl = g, true
+		case geom.Plane:
+			proj = append(proj, 0) // placeholder; projected below once the cylinder is known
+		default:
+			return geom.Cylinder{}, math.Point3{}, 0, false
+		}
+	}
+	if !haveCyl || cyl.Radius <= 0 || len(proj) != 2 {
+		return geom.Cylinder{}, math.Point3{}, 0, false
+	}
+	axis := cyl.AxisDir.AsVector()
+	proj = proj[:0]
+	for _, f := range b.Faces() {
+		if pl, ok := f.Geometry().(geom.Plane); ok {
+			proj = append(proj, float64(cyl.Origin.VectorTo(pl.Origin).Dot(axis)))
+		}
+	}
+	lo, hi := proj[0], proj[1]
+	if lo > hi {
+		lo, hi = hi, lo
+	}
+	if hi-lo <= 0 {
+		return geom.Cylinder{}, math.Point3{}, 0, false
+	}
+	return cyl, cyl.Origin.TranslateBy(axis.Scale(math.Scalar(lo))), hi - lo, true
 }
 
 // originalFeature recovers the name of the feature that generated body b from its body-level

@@ -26,8 +26,9 @@ const revTol = 1e-7
 // same periodic-face idiom as SolidCylinder). This is what lets thread/chamfer/fillet attach to a
 // revolved cylindrical face (Oblikovati/Oblikovati#129).
 //
-// It returns (nil, nil) — a signal to fall back to the faceted revolve — when the meridian has an
-// OBLIQUE edge (a cone frustum; analytic cone support is a follow-up) or fewer than 3 vertices.
+// An OBLIQUE meridian edge becomes a true analytic geom.Cone frustum. It returns (nil, nil) — a
+// signal to fall back to the faceted revolve — only for fewer than 3 vertices (a CURVED meridian
+// edge, e.g. a fillet arc → torus, is a follow-up; this constructor takes a polygonal meridian).
 func SolidOfRevolution(axisOrigin math.Point3, axisDir math.Vector3, meridian []math.Point2, feat string) (*topo.Body, error) {
 	if len(meridian) < 3 {
 		return nil, nil
@@ -36,30 +37,12 @@ func SolidOfRevolution(axisOrigin math.Point3, axisDir math.Vector3, meridian []
 	if err != nil {
 		return nil, err
 	}
-	if hasObliqueEdge(meridian) {
-		return nil, nil // a cone frustum — caller uses the faceted path until analytic cones land
-	}
 	mer := ccwMeridian(meridian)
 	refCircle, err := geom.NewCircle(axisOrigin, a.AsVector(), 1) // borrow geom's angle-0 frame
 	if err != nil {
 		return nil, err
 	}
 	return buildRevolution(axisOrigin, a, refCircle.RefDir, mer, feat), nil
-}
-
-// hasObliqueEdge reports whether any meridian edge is neither axis-parallel nor axis-perpendicular
-// (i.e. a cone), and whether any edge lies on the axis at both ends (skippable, not oblique).
-func hasObliqueEdge(mer []math.Point2) bool {
-	n := len(mer)
-	for i := 0; i < n; i++ {
-		dr := mer[(i+1)%n].X - mer[i].X
-		dz := mer[(i+1)%n].Y - mer[i].Y
-		onAxis := mer[i].X <= revTol && mer[(i+1)%n].X <= revTol
-		if !onAxis && stdmath.Abs(float64(dr)) > revTol && stdmath.Abs(float64(dz)) > revTol {
-			return true
-		}
-	}
-	return false
 }
 
 // ccwMeridian returns the meridian wound counter-clockwise in (r,z) (positive signed area), so a
@@ -121,17 +104,26 @@ func makeRevNode(bld *topo.Builder, axisOrigin math.Point3, a, ref math.UnitVect
 	return revNode{center: center, r: r, circle: bld.AddEdge(c, v, v, revLin(feat, "circle", i)), v: v}
 }
 
-// addRevolutionFace adds the surface-of-revolution face for one meridian edge (skipping an edge
-// that lies on the axis, which traces no surface).
+// addRevolutionFace adds the surface-of-revolution face for one meridian edge: a cylinder (axis-
+// parallel), a planar disk/annulus (axis-perpendicular), or a cone frustum (oblique). An edge that
+// lies on the axis traces no surface and is skipped.
 func addRevolutionFace(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVector3, feat string, i int) {
 	if ni.r <= revTol && nj.r <= revTol {
 		return // edge on the axis: no face
 	}
-	if stdmath.Abs(ni.r-nj.r) <= revTol {
+	switch {
+	case stdmath.Abs(ni.r-nj.r) <= revTol:
 		addRevolutionCylinder(bld, ni, nj, a, ref, feat, i)
-		return
+	case stdmath.Abs(axialGap(ni, nj, a)) <= revTol:
+		addRevolutionPlane(bld, ni, nj, a, feat, i)
+	default:
+		addRevolutionCone(bld, ni, nj, a, ref, feat, i)
 	}
-	addRevolutionPlane(bld, ni, nj, a, feat, i)
+}
+
+// axialGap is the signed distance from node i to node j along the axis (z_j − z_i).
+func axialGap(ni, nj revNode, a math.UnitVector3) float64 {
+	return float64(ni.center.VectorTo(nj.center).Dot(a.AsVector()))
 }
 
 // addRevolutionCylinder adds the periodic cylindrical wall for an axis-parallel edge: a seam
@@ -150,6 +142,57 @@ func addRevolutionCylinder(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVe
 		return
 	}
 	bld.AddReversedFace(cyl, revLin(feat, "wall", i), loop)
+}
+
+// addRevolutionCone adds the periodic conical wall for an oblique edge: a slant ruling (the seam)
+// traversed twice between the shared circles, exactly like the cylinder but on a geom.Cone. The
+// cone shares the meridian frame (NewConeWithRef) so its seam lines up with the neighbouring faces.
+// An endpoint on the axis (r=0) is the cone apex — that end contributes no circle, just the seam.
+func addRevolutionCone(bld *topo.Builder, ni, nj revNode, a, ref math.UnitVector3, feat string, i int) {
+	apex := coneApex(ni, nj)
+	base := ni
+	if ni.r <= revTol {
+		base = nj
+	}
+	axisDir := apex.VectorTo(base.center) // along the axis, apex → base (increasing radius)
+	half := stdmath.Atan2(base.r, stdmath.Abs(float64(axisDir.Dot(a.AsVector()))))
+	cone, err := geom.NewConeWithRef(apex, axisDir, ref.AsVector(), half)
+	if err != nil {
+		return
+	}
+	seam := bld.AddEdge(geom.NewLineSegment(ni.v.Point(), nj.v.Point()), ni.v, nj.v, revLin(feat, "cone-seam", i))
+	loop := coneLoop(ni, nj, seam)
+	if axialGap(ni, nj, a) > 0 { // dz>0: outward-facing cone (AddFace), like the cylinder rule
+		bld.AddFace(cone, revLin(feat, "cone", i), loop)
+		return
+	}
+	bld.AddReversedFace(cone, revLin(feat, "cone", i), loop)
+}
+
+// coneApex returns the point where the meridian edge's slant line meets the axis (r=0). An endpoint
+// already on the axis IS the apex; otherwise it is the linear extrapolation to zero radius.
+func coneApex(ni, nj revNode) math.Point3 {
+	if ni.r <= revTol {
+		return ni.v.Point()
+	}
+	if nj.r <= revTol {
+		return nj.v.Point()
+	}
+	t := ni.r / (ni.r - nj.r) // r(t)=ni.r+t(nj.r-ni.r)=0
+	return ni.v.Point().TranslateBy(ni.v.Point().VectorTo(nj.v.Point()).Scale(math.Scalar(t)))
+}
+
+// coneLoop builds the cone face loop: the same seam-doubled periodic loop as a cylinder for a
+// frustum (both circles present), collapsing the apex end to just the seam when one radius is 0.
+func coneLoop(ni, nj revNode, seam *topo.Edge) topo.LoopSpec {
+	switch {
+	case ni.circle == nil: // apex at i
+		return topo.OuterLoop(topo.Fwd(seam), topo.Rev(nj.circle), topo.Rev(seam))
+	case nj.circle == nil: // apex at j
+		return topo.OuterLoop(topo.Fwd(ni.circle), topo.Fwd(seam), topo.Rev(seam))
+	default: // frustum
+		return topo.OuterLoop(topo.Fwd(ni.circle), topo.Fwd(seam), topo.Rev(nj.circle), topo.Rev(seam))
+	}
 }
 
 // addRevolutionPlane adds the planar disk/annulus for an axis-perpendicular edge. The outward
