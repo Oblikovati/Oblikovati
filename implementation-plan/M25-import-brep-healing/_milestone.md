@@ -8,8 +8,8 @@ status: planned
 
 Heal imported B-reps so their geometry is **self-consistent and meshable/operable** — the missing
 foundation that blocks [M24](../M24-tolerant-nurbs-meshing/_milestone.md) (tolerant NURBS meshing).
-This is the equivalent of OpenCASCADE's **`ShapeHealing` / `ShapeFix`** (reference checkout at
-[`OCCT/src/ModelingData/TKShHealing`](../../../OCCT/src) and `ModelingAlgorithms`): the pass every
+This is the equivalent of OpenCASCADE's **`ShapeHealing` / `ShapeFix`** (reference source at
+[`OCCT/src/ModelingData/TKShHealing`](https://github.com/Open-Cascade-SAS/OCCT/tree/master/src) and `ModelingAlgorithms`): the pass every
 robust kernel runs on imported STEP/IGES before meshing or modelling.
 
 ## Why (the M24 finding)

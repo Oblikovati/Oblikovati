@@ -104,14 +104,14 @@ Rules:
    text that would not round-trip cleanly through a YAML block scalar (trailing whitespace,
    tabs, unusual bytes); readers always honour `encoding`.
 
-3a. **`encoding: embedded` records an app-provided resource without its bytes.** When the
-   application itself bundles the bytes — e.g. a vendored font face the build always ships — a
-   document that uses it stores only the entry (`type`, `encoding: embedded`, and `origin` = the
-   face id/family), **no `value`**. The resolver supplies the bytes from the application by
-   `origin`. This keeps the resource table the single, uniform place every imported dependency
-   is listed (so the document records *which* bundled face it relies on) while not bloating the
-   file with bytes the app already has. A host-installed (non-bundled) font, by contrast, is
-   embedded as a normal `base64` resource so the document stays self-contained.
+   - **Rule 3a — `encoding: embedded` records an app-provided resource without its bytes.** When
+     the application itself bundles the bytes — e.g. a vendored font face the build always ships —
+     a document that uses it stores only the entry (`type`, `encoding: embedded`, and `origin` =
+     the face id/family), **no `value`**. The resolver supplies the bytes from the application by
+     `origin`. This keeps the resource table the single, uniform place every imported dependency
+     is listed (so the document records *which* bundled face it relies on) while not bloating the
+     file with bytes the app already has. A host-installed (non-bundled) font, by contrast, is
+     embedded as a normal `base64` resource so the document stays self-contained.
 
 4. **`value` carries the bytes.** For `encoding: utf8`, a multi-line block scalar embedded
    verbatim — OBJ, ASCII STL, STEP stay human-readable and line-diffable, the same reasoning
