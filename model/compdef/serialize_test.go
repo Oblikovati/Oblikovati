@@ -277,6 +277,58 @@ func rectangle(s *sketch.Sketch, w, h float64) {
 	s.Lines().Add(c3, c0)
 }
 
+// TestCreationOrderAndSharedSurviveRoundTrip is the issue-#132 persistence regression: the
+// global creation stamps that interleave sketches/work planes/features, and a sketch's
+// Shared flag, must round-trip so a reopened browser shows the same chronological tree.
+func TestCreationOrderAndSharedSurviveRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+
+	// Build in a deliberate order: sketch1 → extrude → work plane → sketch2 (shared).
+	sk1 := def.Sketches().Add(sketch.XYPlane())
+	rectangle(sk1, 4, 3)
+	ext := feature.NewExtrudeFeatures(def.Features()).
+		AddByDistanceExtent(sk1, 0, ops.NewBody, func() float64 { return 5 })
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	sk2 := def.Sketches().Add(sketch.XYPlane())
+	sk2.SetShared(true)
+	def.Recompute()
+
+	// The stamps must reflect creation order before saving.
+	if !strictlyAscending(sk1.Seq(), ext.Seq(), wp.Seq(), sk2.Seq()) {
+		t.Fatalf("pre-save creation order wrong: sk1=%d ext=%d wp=%d sk2=%d",
+			sk1.Seq(), ext.Seq(), wp.Seq(), sk2.Seq())
+	}
+
+	reopened := reopenThroughStore(t, d)
+	rs1, rs2 := reopened.Sketches().Item(0), reopened.Sketches().Item(1)
+	rext := reopened.Features().Item(0)
+	rwp := reopened.WorkPlanes().Item(reopened.WorkPlanes().Count() - 1)
+
+	if !strictlyAscending(rs1.Seq(), rext.Seq(), rwp.Seq(), rs2.Seq()) {
+		t.Errorf("reopened creation order wrong: sk1=%d ext=%d wp=%d sk2=%d",
+			rs1.Seq(), rext.Seq(), rwp.Seq(), rs2.Seq())
+	}
+	if rs1.Shared() {
+		t.Error("sketch1 must not be shared after reopen")
+	}
+	if !rs2.Shared() {
+		t.Error("sketch2's Shared flag was lost on reopen")
+	}
+}
+
+// strictlyAscending reports whether the creation stamps increase at every step (the
+// chronological order the browser interleaves by).
+func strictlyAscending(seqs ...uint64) bool {
+	for i := 1; i < len(seqs); i++ {
+		if seqs[i] <= seqs[i-1] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestFilletEdgeKeyRebindsAfterReopen(t *testing.T) {
 	ws := doc.NewWorkspace(nil)
 	d, _ := compdef.AddPart(ws, "Part1", true)

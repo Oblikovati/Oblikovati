@@ -34,6 +34,7 @@ void obk_ig_end_tab_item(void);
 int  obk_ig_collapsing_header(const char* l);
 void obk_ig_set_next_item_open(int open, int first_use);
 int  obk_ig_tree_node(const char* label);
+int  obk_ig_tree_node_selectable(const char* label, int selected);
 void obk_ig_tree_pop(void);
 void obk_ig_bullet_text(const char* s);
 void obk_ig_set_item_tooltip(const char* s);
@@ -461,6 +462,17 @@ func TreeNode(label string) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_tree_node(c) != 0
+}
+
+// TreeNodeSelectable draws a tree node that is BOTH expandable and selectable (a browser
+// feature row that nests its consumed sketch): the disclosure arrow toggles it open, while
+// a click on the label selects rather than expands. selected draws it highlighted. Returns
+// whether it is expanded (call TreePop only when true). Pair with IsItemClicked for the
+// click and IsItemHovered/IsMouseDoubleClicked for edit-on-double-click.
+func TreeNodeSelectable(label string, selected bool) bool {
+	c, free := cstr(label)
+	defer free()
+	return C.obk_ig_tree_node_selectable(c, cBool(selected)) != 0
 }
 func TreePop() { C.obk_ig_tree_pop() }
 

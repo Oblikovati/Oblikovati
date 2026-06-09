@@ -74,6 +74,7 @@ func drawChromeDialogs(s *app.Session) {
 	drawSurfaceFeatureDialogs(s)
 	drawOffsetPlaneDialog(s)
 	drawFeatureEditDialog(s)
+	drawWorkPlaneEditDialog(s)
 }
 
 func drawSolidFeatureDialogs(s *app.Session) {

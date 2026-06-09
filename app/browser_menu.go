@@ -34,14 +34,22 @@ func BrowserMenu(n BrowserNode) []BrowserMenuItem {
 	}
 }
 
-// sketchMenu offers Edit Sketch, a Visibility toggle, and Delete.
+// sketchMenu offers Edit Sketch, a Share/Unshare toggle, a Visibility toggle, and Delete.
+// Share Sketch (Inventor's command) keeps the sketch at the browser's top level even after a
+// feature consumes it, and lets several features consume it (issue #132); the label reflects
+// the current state.
 func sketchMenu(sel Selectable) []BrowserMenuItem {
 	h, ok := sel.(SketchHandle)
 	if !ok {
 		return nil
 	}
+	shareLabel := "Share Sketch"
+	if h.Sketch.Shared() {
+		shareLabel = "Unshare Sketch"
+	}
 	return []BrowserMenuItem{
 		{Label: "Edit Sketch", Enabled: true, Invoke: func(s *Session) error { return s.EditSketch(h.Sketch) }},
+		{Label: shareLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleSketchShared(h.Sketch) }},
 		{Label: "Visibility", Enabled: true, Invoke: func(*Session) error {
 			h.Sketch.SetVisible(!h.Sketch.Visible())
 			return nil

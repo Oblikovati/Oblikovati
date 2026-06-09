@@ -179,7 +179,7 @@ func seedPart(s *app.Session) {
 	// staying bound to this seeded part.
 	s.SetPicker(app.NewRayPicker(s.Camera(),
 		func() []*topo.Body { return activeBodies(s) }).
-		WithPlanes(func() []*feature.WorkPlane { return activeOriginPlanes(s) }).
+		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }).
 		WithPoints(func() []*feature.WorkPoint { return activeWorkPoints(s) }).
 		WithAxes(func() []*feature.WorkAxis { return activeWorkAxes(s) }).
 		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }))
@@ -196,15 +196,6 @@ func seedPart(s *app.Session) {
 // the picker's hit-test so it follows the current document.
 func activeBodies(s *app.Session) []*topo.Body {
 	return s.VisibleBodies()
-}
-
-// activeOriginPlanes returns the active part's origin work planes (nil if none), so
-// the picker can hit-test the current document's planes.
-func activeOriginPlanes(s *app.Session) []*feature.WorkPlane {
-	if p, err := modelaccess.ActivePart(s); err == nil {
-		return p.OriginPlanes()
-	}
-	return nil
 }
 
 // activeWorkPoints / activeWorkAxes return the active part's datum points/axes (origin

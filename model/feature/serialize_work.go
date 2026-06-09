@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/seq"
 	"oblikovati.org/model/sketch"
 )
 
@@ -21,6 +22,7 @@ import (
 type WorkFeatureData struct {
 	Collection string    `yaml:"collection"` // plane | axis | point
 	Kind       string    `yaml:"kind"`
+	Seq        uint64    `yaml:"seq,omitempty"` // global creation stamp; see model/seq
 	Refs       []string  `yaml:"refs,omitempty"`
 	Offset     float64   `yaml:"offset,omitempty"`   // plane-offset
 	Angle      float64   `yaml:"angle,omitempty"`    // line-plane-angle
@@ -43,23 +45,40 @@ func MarshalWork(g *WorkGeometry) ([]WorkFeatureData, error) {
 }
 
 func serializeWorkFeature(g *WorkGeometry, e userEntry) (WorkFeatureData, error) {
+	d, s, err := serializeWorkDef(g, e)
+	if err != nil {
+		return WorkFeatureData{}, err
+	}
+	d.Seq = s
+	return d, nil
+}
+
+// serializeWorkDef encodes the work feature's definition and returns its creation stamp,
+// so MarshalWork can persist the global order shared with sketches/features (issue #132).
+func serializeWorkDef(g *WorkGeometry, e userEntry) (WorkFeatureData, uint64, error) {
 	switch e.collection {
 	case "plane":
-		return serializePlaneDef(g.planes.Item(e.index).def)
+		w := g.planes.Item(e.index)
+		d, err := serializePlaneDef(w.def)
+		return d, w.seq, err
 	case "axis":
-		return serializeAxisDef(g.axes.Item(e.index).def)
+		w := g.axes.Item(e.index)
+		d, err := serializeAxisDef(w.def)
+		return d, w.seq, err
 	case "point":
-		return serializePointDef(g.points.Item(e.index).def)
+		w := g.points.Item(e.index)
+		d, err := serializePointDef(w.def)
+		return d, w.seq, err
 	default:
-		return WorkFeatureData{}, fmt.Errorf("unknown work collection %q", e.collection)
+		return WorkFeatureData{}, 0, fmt.Errorf("unknown work collection %q", e.collection)
 	}
 }
 
 func serializePlaneDef(def planeDefinition) (WorkFeatureData, error) {
 	d := WorkFeatureData{Collection: "plane", Kind: def.kindName(), Refs: refStrings(def.refs())}
 	switch v := def.(type) {
-	case offsetPlaneDef:
-		d.Offset = v.offset()
+	case *offsetPlaneDef:
+		d.Offset = v.distance() // persist the effective distance, including any browser edit
 	case fixedFramePlaneDef:
 		p := v.origin()
 		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
@@ -106,8 +125,27 @@ func ApplyWork(g *WorkGeometry, data []WorkFeatureData) error {
 		if err := restoreWorkFeature(g, d); err != nil {
 			return fmt.Errorf("work feature %d (%s/%s): %w", i, d.Collection, d.Kind, err)
 		}
+		restoreWorkSeq(g, d)
 	}
 	return nil
+}
+
+// restoreWorkSeq pins the just-restored work feature's creation stamp to its saved value
+// (the Add* call above gave it a fresh one), so a reopened document keeps the original
+// sketch/feature/work interleaving. The restored feature is the last in its collection.
+func restoreWorkSeq(g *WorkGeometry, d WorkFeatureData) {
+	if d.Seq == 0 {
+		return
+	}
+	switch d.Collection {
+	case "plane":
+		g.planes.Item(g.planes.Count() - 1).seq = d.Seq
+	case "axis":
+		g.axes.Item(g.axes.Count() - 1).seq = d.Seq
+	case "point":
+		g.points.Item(g.points.Count() - 1).seq = d.Seq
+	}
+	seq.Bump(d.Seq)
 }
 
 func restoreWorkFeature(g *WorkGeometry, d WorkFeatureData) error {

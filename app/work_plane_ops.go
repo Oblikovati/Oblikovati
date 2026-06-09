@@ -29,6 +29,26 @@ func (s *Session) SelectedWorkPlanes() []*feature.WorkPlane {
 	return planes
 }
 
+// PickableWorkPlanes returns the work planes the viewport hit-test should offer: every
+// origin plane (always pickable as a sketch host — Inventor's Origin folder — even though
+// origin planes default to hidden) plus every VISIBLE user-created datum. User planes were
+// previously absent from the picker, so a ribbon-created plane could not be clicked as a
+// new sketch's reference in the 3D view (issue #132); the head feeds this to the RayPicker.
+func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
+	part, err := activePart(s)
+	if err != nil {
+		return nil
+	}
+	planes := part.WorkPlanes()
+	out := make([]*feature.WorkPlane, 0, planes.Count())
+	for i := 0; i < planes.Count(); i++ {
+		if wp := planes.Item(i); wp.IsCoordinateSystemElement() || wp.Visible() {
+			out = append(out, wp)
+		}
+	}
+	return out
+}
+
 // CreateMidplaneWorkPlane adds a work plane bisecting the two selected planes, then
 // recomputes. It errors when fewer than two work planes are selected.
 func (s *Session) CreateMidplaneWorkPlane() (*feature.WorkPlane, error) {

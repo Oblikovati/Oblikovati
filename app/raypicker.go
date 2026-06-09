@@ -37,8 +37,9 @@ func NewRayPicker(camera scene.Camera, bodies func() []*topo.Body) *RayPicker {
 	return &RayPicker{camera: camera, bodies: bodies}
 }
 
-// WithPlanes adds a provider of selectable work planes (the part's origin planes), so
-// the picker can resolve a click on a datum plane in empty space.
+// WithPlanes adds a provider of selectable work planes (origin AND visible user datums),
+// so the picker can resolve a click on a datum plane in empty space — e.g. to pick a
+// ribbon-created plane as a new sketch's host.
 func (p *RayPicker) WithPlanes(planes func() []*feature.WorkPlane) *RayPicker {
 	p.planes = planes
 	return p

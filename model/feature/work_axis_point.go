@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
+	"oblikovati.org/model/seq"
 	"oblikovati.org/model/sketch"
 )
 
@@ -76,9 +77,11 @@ type WorkAxis struct {
 	visible          bool
 	coordinateSystem bool
 	grounded         bool
+	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
 }
 
 func (w *WorkAxis) ID() ID                          { return w.id }
+func (w *WorkAxis) Seq() uint64                     { return w.seq }
 func (w *WorkAxis) Key() WorkRef                    { return w.key }
 func (w *WorkAxis) Name() string                    { return w.name }
 func (w *WorkAxis) Health() health.Health           { return w.health }
@@ -134,7 +137,7 @@ func (c *WorkAxes) AddByPlaneIntersection(p1, p2 WorkRef) *WorkAxis {
 }
 
 func (c *WorkAxes) addUser(def axisDefinition) *WorkAxis {
-	w := &WorkAxis{id: nextID(), key: userRef("axis", len(c.items)), name: "WorkAxis", def: def, visible: true}
+	w := &WorkAxis{id: nextID(), key: userRef("axis", len(c.items)), name: "WorkAxis", def: def, visible: true, seq: seq.Next()}
 	c.track(w)
 	c.g.recordUser("axis", len(c.items)-1)
 	return w
@@ -208,9 +211,11 @@ type WorkPoint struct {
 	health           health.Health
 	coordinateSystem bool
 	grounded         bool
+	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
 }
 
 func (w *WorkPoint) ID() ID                          { return w.id }
+func (w *WorkPoint) Seq() uint64                     { return w.seq }
 func (w *WorkPoint) Key() WorkRef                    { return w.key }
 func (w *WorkPoint) Name() string                    { return w.name }
 func (w *WorkPoint) Health() health.Health           { return w.health }
@@ -260,7 +265,7 @@ func (c *WorkPoints) AddByPlaneAndAxisIntersection(plane, axis WorkRef) *WorkPoi
 }
 
 func (c *WorkPoints) addUser(def pointDefinition) *WorkPoint {
-	w := &WorkPoint{id: nextID(), key: userRef("point", len(c.items)), name: "WorkPoint", def: def}
+	w := &WorkPoint{id: nextID(), key: userRef("point", len(c.items)), name: "WorkPoint", def: def, seq: seq.Next()}
 	c.track(w)
 	c.g.recordUser("point", len(c.items)-1)
 	return w

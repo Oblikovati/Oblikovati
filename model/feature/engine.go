@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/identity"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/seq"
 	"oblikovati.org/model/text"
 )
 
@@ -68,7 +69,7 @@ func NewPartFeatures(params *param.Parameters, keys *identity.KeyManager) *PartF
 
 // Add appends a feature (initially dirty) with its dependency feature ids.
 func (fs *PartFeatures) Add(f Feature, deps ...ID) *PartFeature {
-	pf := &PartFeature{id: nextID(), name: f.Kind(), feature: f, deps: deps, dirty: true, health: health.Healthy}
+	pf := &PartFeature{id: nextID(), name: f.Kind(), feature: f, deps: deps, dirty: true, health: health.Healthy, seq: seq.Next()}
 	fs.items = append(fs.items, pf)
 	fs.byID[pf.id] = pf
 	return pf

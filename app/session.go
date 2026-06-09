@@ -65,6 +65,7 @@ type Session struct {
 	normalDebug        bool                     // viewport normal-debug render (front green / back red); head reads each frame
 	meshColors         bool                     // viewport mesh-debug-colors render (each face/triangle a distinct color)
 	meshColorsPerTri   bool                     // when meshColors: color per TRIANGLE (else per B-rep face)
+	editScope          editScope                // while editing a node, hide everything created after it (issue #132)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
@@ -160,6 +161,7 @@ func (s *Session) ActiveView() *doc.View {
 func (s *Session) EnterSketch(sk *sketch.Sketch) {
 	s.activeSketch = sk
 	sk.Edit()
+	s.beginEditScope(sk.Seq()) // hide features/datums created after this sketch while editing it
 	s.sketchReturnCam = s.camera
 	s.animateCameraTo(s.camera.Facing(
 		sk.Plane().Origin(), sk.Plane().Normal().AsVector(), sk.Plane().YAxis().AsVector(),
@@ -172,6 +174,7 @@ func (s *Session) ExitSketch() {
 		s.activeSketch.ExitEdit()
 		s.activeSketch = nil
 		s.pendingDim = nil // no dangling edit box after leaving the sketch
+		s.endEditScope()   // restore the rolled-back features (caller recomputes)
 		s.animateCameraTo(s.sketchReturnCam, sketchViewTweenSeconds)
 	}
 }

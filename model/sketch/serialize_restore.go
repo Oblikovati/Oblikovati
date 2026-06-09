@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/seq"
 )
 
 // ApplyRecipe rebuilds the sketches from their serialized form, in order. It is the
@@ -79,10 +80,24 @@ func restoreSketchProps(s *Sketch, sd SketchData) {
 		s.SetName(sd.Name)
 	}
 	s.SetVisible(!sd.Hidden)
+	s.SetShared(sd.Shared)
+	restoreSeq(s, sd.Seq)
 	s.SetColor(sd.Color)
 	s.SetLineType(sd.LineType)
 	s.SetLineWeight(sd.LineWeight)
 	s.SetDeferUpdates(sd.DeferUpdates)
+}
+
+// restoreSeq pins the sketch's creation stamp to its saved value (so reopened documents
+// keep the original sketch/feature/work-feature interleaving) and raises the global clock
+// past it. A legacy recipe with no stamp keeps the fresh one sc.Add assigned, which still
+// orders sketches among themselves by load order.
+func restoreSeq(s *Sketch, saved uint64) {
+	if saved == 0 {
+		return
+	}
+	s.SetSeq(saved)
+	seq.Bump(saved)
 }
 
 // sketchRestorer carries the id→object maps while rebuilding one sketch.

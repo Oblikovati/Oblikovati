@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/seq"
 	"oblikovati.org/model/sketch"
 )
 
@@ -22,6 +23,7 @@ type FeatureData struct {
 	Kind       string          `yaml:"kind"`
 	Name       string          `yaml:"name,omitempty"`
 	Suppressed bool            `yaml:"suppressed,omitempty"`
+	Seq        uint64          `yaml:"seq,omitempty"` // global creation stamp; see model/seq
 	Extrude    *ExtrudeData    `yaml:"extrude,omitempty"`
 	Fillet     *EdgeDressData  `yaml:"fillet,omitempty"`
 	Chamfer    *EdgeDressData  `yaml:"chamfer,omitempty"`
@@ -91,7 +93,7 @@ func (fs *PartFeatures) indexByID() map[ID]int {
 }
 
 func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (FeatureData, error) {
-	fd := FeatureData{Kind: pf.Kind(), Name: pf.name, Suppressed: pf.suppress}
+	fd := FeatureData{Kind: pf.Kind(), Name: pf.name, Suppressed: pf.suppress, Seq: pf.seq}
 	switch f := pf.feature.(type) {
 	case *ExtrudeFeature:
 		ed, err := serializeExtrude(f.def, sk)
@@ -362,13 +364,18 @@ func evalInt(fn func() int) int {
 
 func constInt(v int) func() int { return func() int { return v } }
 
-// applyFeatureState restores the per-feature engine state (name, suppression).
+// applyFeatureState restores the per-feature engine state (name, suppression, and the
+// global creation stamp so a reopened document keeps its sketch/feature/work interleaving).
 func applyFeatureState(pf *PartFeature, fd FeatureData) {
 	if fd.Name != "" {
 		pf.SetName(fd.Name)
 	}
 	if fd.Suppressed {
 		pf.SetSuppressed(true)
+	}
+	if fd.Seq != 0 {
+		pf.setSeq(fd.Seq)
+		seq.Bump(fd.Seq)
 	}
 }
 

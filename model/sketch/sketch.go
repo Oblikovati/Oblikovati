@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/seq"
 )
 
 // ID is the session-stable handle of a sketch or sketch entity, used by
@@ -34,6 +35,8 @@ type base struct {
 	name    string
 	editing bool
 	visible bool
+	shared  bool   // Inventor PlanarSketch.Shared: stays visible at top level, may feed many features
+	seq     uint64 // global creation stamp, shared with features/work features; see model/seq
 	health  health.Health
 
 	// Display + solve overrides (Inventor Sketch.Color/LineType/LineWeight/DeferUpdates).
@@ -44,7 +47,7 @@ type base struct {
 }
 
 func newBase(name string) base {
-	return base{id: nextID(), name: name, visible: true, health: health.Healthy}
+	return base{id: nextID(), name: name, visible: true, seq: seq.Next(), health: health.Healthy}
 }
 
 // ID returns the sketch's session id.
@@ -66,6 +69,17 @@ func (b *base) ExitEdit() { b.editing = false }
 // Visible reports whether the sketch is shown; SetVisible toggles it.
 func (b *base) Visible() bool     { return b.visible }
 func (b *base) SetVisible(v bool) { b.visible = v }
+
+// Shared reports whether the sketch is shared (Inventor PlanarSketch.Shared): a shared
+// sketch stays at the browser's top level even after a feature consumes it, and may be
+// consumed by several features. SetShared toggles it (browser "Share Sketch", issue #132).
+func (b *base) Shared() bool     { return b.shared }
+func (b *base) SetShared(s bool) { b.shared = s }
+
+// Seq returns the sketch's global creation stamp; SetSeq overrides it when restoring a
+// saved recipe so reopened documents keep their original interleaving.
+func (b *base) Seq() uint64     { return b.seq }
+func (b *base) SetSeq(v uint64) { b.seq = v }
 
 // Health returns the sketch's solve health (set by the solver, M06-F05).
 func (b *base) Health() health.Health { return b.health }

@@ -75,8 +75,10 @@ func TestBrowserReflectsPartStructure(t *testing.T) {
 	for _, c := range root.Children {
 		byKind[c.Kind]++
 	}
-	if byKind["parameters"] != 1 || byKind["sketches"] != 1 {
-		t.Errorf("browser branches = %v, want parameters+sketches", byKind)
+	// The special "sketches" branch is gone (issue #132): an unconsumed sketch is a top-level
+	// timeline node, alongside the Parameters folder.
+	if byKind["parameters"] != 1 || byKind["sketches"] != 0 || byKind["sketch"] != 1 {
+		t.Errorf("browser branches = %v, want parameters + one top-level sketch, no sketches folder", byKind)
 	}
 	// The parameter we added shows under Parameters.
 	for _, c := range root.Children {

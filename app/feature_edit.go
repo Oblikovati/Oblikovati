@@ -88,6 +88,7 @@ func (t *FeatureEditTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
+	s.endEditScope() // restore full evaluation before the final rebuild
 	part.Features().MarkDirty(t.feature)
 	part.Recompute()
 	s.recordEdit(part, "Edit "+t.feature.Name())
@@ -108,6 +109,7 @@ func (t *FeatureEditTool) Cancel(s *Session) {
 			restore()
 		}
 	}
+	s.endEditScope() // restore full evaluation before rebuilding with the reverted values
 	if part, err := activePart(s); err == nil {
 		part.Features().MarkDirty(t.feature)
 		part.Recompute()
@@ -169,6 +171,7 @@ func (s *Session) BeginEditFeature(h FeatureHandle) {
 	if !t.editable() {
 		return
 	}
+	s.beginEditScope(h.Feature.Seq()) // roll back to this feature: hide everything after it
 	s.StartTool(t)
 }
 

@@ -364,8 +364,9 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 // the extrude / active-tool previews) to list.
 func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane, list renderer.DrawList) renderer.DrawList {
 	part := activePart(s)
-	list.Items = append(list.Items, planesOverlay(part, s.SelectedWorkPlane(), hovered)...)
-	list.Items = append(list.Items, axesOverlay(part, selectedWorkAxis(s))...)
+	hidden := s.EditScopeHides // hide datums created after the node being edited (issue #132)
+	list.Items = append(list.Items, planesOverlay(part, s.SelectedWorkPlane(), hovered, hidden)...)
+	list.Items = append(list.Items, axesOverlay(part, selectedWorkAxis(s), hidden)...)
 	list.Items = append(list.Items, partSketchOverlays(s)...)
 	list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
