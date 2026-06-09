@@ -3,9 +3,9 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // filletLoop is one boundary loop of a face as a ring of points with the curve along each

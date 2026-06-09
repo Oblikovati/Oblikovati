@@ -5,9 +5,9 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/math/predicate"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/math/predicate"
 )
 
 // tessellatePlanarFace triangulates a planar face's boundary by ear-clipping (using

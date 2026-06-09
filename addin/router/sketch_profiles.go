@@ -5,8 +5,8 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // sketchProfiles enumerates the closed regions (profiles) a sketch yields, with their

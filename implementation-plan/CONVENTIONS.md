@@ -12,7 +12,7 @@ last evaluation, never the source of truth.
 
 ## Public API contract (/api) ↔ implementation (/source)
 
-The public API lives in its own Apache-2.0 module, **`oblikovati/api`**
+The public API lives in its own Apache-2.0 module, **`oblikovati.org/api`**
 (`/api`); the GPL application (`/source`) implements it (ADR-0018). Every PBI that
 touches the public surface ships **the contract and the implementation together**:
 

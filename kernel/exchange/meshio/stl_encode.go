@@ -7,9 +7,9 @@ import (
 	"encoding/binary"
 	stdmath "math"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // stlErr builds an STL decode error naming the offending value (per CLAUDE.md).

@@ -7,15 +7,15 @@ package ui
 import (
 	"strconv"
 
-	"oblikovati/api/types"
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/head/viewport"
-	"oblikovati/model/clientgraphics"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
-	"oblikovati/renderer"
-	"oblikovati/scene"
+	"oblikovati.org/api/types"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/head/viewport"
+	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/renderer"
+	"oblikovati.org/scene"
 )
 
 // drawViewportPanel renders the active part's geometry through the Vulkan viewport and

@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // The Trim/Extend/Split tools are single-pick sketch-entity tools: the user clicks a

@@ -2,7 +2,7 @@
 
 package app
 
-import "oblikovati/model/sketch"
+import "oblikovati.org/model/sketch"
 
 // Constraint and dimension tools follow Inventor's tool-first flow: the user activates
 // the tool, then picks the sketch geometry. Each tool accepts only the entity kinds

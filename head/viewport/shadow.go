@@ -5,7 +5,7 @@ package viewport
 import (
 	"math"
 
-	"oblikovati/renderer"
+	"oblikovati.org/renderer"
 )
 
 // SceneBounds returns the axis-aligned min/max of a flattened mesh's shaded + occluder triangle

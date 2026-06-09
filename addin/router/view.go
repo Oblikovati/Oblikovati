@@ -5,9 +5,9 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // getDisplayMode returns the viewport's current display mode and label

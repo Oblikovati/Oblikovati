@@ -5,9 +5,9 @@ package brep
 import (
 	"fmt"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // CutCounterboreHole drills a counterbore (K1b): a shallow recess of counterRadius × counterDepth

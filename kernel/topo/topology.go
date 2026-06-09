@@ -5,8 +5,8 @@ package topo
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // curveSamplesPerEdge is how many points we evaluate along each edge's curve

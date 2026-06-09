@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
 )
 
 // dipOctagon is the NopSCADlib DIP cross-section (vitamins/dip.scad dip(), pdip(8) ⇒

@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	m "oblikovati/math"
+	m "oblikovati.org/math"
 )
 
 // A corner tetrahedron with legs s has volume s³/6 and centroid (s/4,s/4,s/4) — an

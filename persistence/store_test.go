@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/model/doc"
+	"oblikovati.org/model/doc"
 )
 
 func TestWorkspaceRoundTripsThroughPackageStore(t *testing.T) {

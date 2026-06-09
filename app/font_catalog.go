@@ -5,8 +5,8 @@ package app
 import (
 	"sync"
 
-	"oblikovati/model/text"
-	"oblikovati/osfont"
+	"oblikovati.org/model/text"
+	"oblikovati.org/osfont"
 )
 
 // fontChoice is one selectable face in the text tool's Font dropdown: a display Label, the

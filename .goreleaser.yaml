@@ -14,9 +14,9 @@ builds:
     goarch: [amd64, arm64]
     ldflags:
       - -s -w
-      - -X oblikovati/build.Version={{ .Version }}
-      - -X oblikovati/build.Commit={{ .ShortCommit }}
-      - -X oblikovati/build.Date={{ .Date }}
+      - -X oblikovati.org/build.Version={{ .Version }}
+      - -X oblikovati.org/build.Commit={{ .ShortCommit }}
+      - -X oblikovati.org/build.Date={{ .Date }}
 
   - id: oblikovati
     main: ./cmd/oblikovati
@@ -26,9 +26,9 @@ builds:
     goarch: [amd64, arm64]
     ldflags:
       - -s -w
-      - -X oblikovati/build.Version={{ .Version }}
-      - -X oblikovati/build.Commit={{ .ShortCommit }}
-      - -X oblikovati/build.Date={{ .Date }}
+      - -X oblikovati.org/build.Version={{ .Version }}
+      - -X oblikovati.org/build.Commit={{ .ShortCommit }}
+      - -X oblikovati.org/build.Date={{ .Date }}
 
 archives:
   - id: default

@@ -5,8 +5,8 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // HullFeature replaces the running solids with their single convex hull — OpenSCAD's hull()

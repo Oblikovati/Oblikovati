@@ -5,7 +5,7 @@ package app
 import (
 	"fmt"
 
-	"oblikovati/model/compdef"
+	"oblikovati.org/model/compdef"
 )
 
 // The browser tree reflects the active document's structure — parameters, sketches,

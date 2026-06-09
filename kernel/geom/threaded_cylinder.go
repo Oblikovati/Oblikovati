@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // ThreadedCylinder is a cylinder whose surface carries a real machined thread: the radius is

@@ -2,7 +2,7 @@
 
 package attr
 
-import "oblikovati/model/identity"
+import "oblikovati.org/model/identity"
 
 // AttributeManager holds the attribute sets of every object in a document, anchored
 // by reference key. Anchoring by [identity.RefKey] — not by pointer or id — is what

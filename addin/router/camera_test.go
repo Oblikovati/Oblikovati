@@ -5,7 +5,7 @@ package router
 import (
 	"testing"
 
-	"oblikovati/api/wire"
+	"oblikovati.org/api/wire"
 )
 
 // TestCameraRoundTrips drives view.setCamera then view.getCamera and asserts the look-at

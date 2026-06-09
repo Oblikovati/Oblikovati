@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/math"
 )
 
 // TestSolidCylinderRangeBoxSpansRadius is a regression for the vertex-only

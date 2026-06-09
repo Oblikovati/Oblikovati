@@ -3,9 +3,9 @@
 package app
 
 import (
-	"oblikovati/kernel/topo"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // SelectionKind classifies what is selected — Inventor's selection-filter

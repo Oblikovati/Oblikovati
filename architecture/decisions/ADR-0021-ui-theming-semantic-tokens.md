@@ -46,7 +46,7 @@ the future material/appearance subsystem owns.
    through the existing `persistence/yamlcodec` seam (ADR-0020), behind a
    `theme.FileSystem` interface (in-memory fake in tests). `<userconfig>` is the single
    per-user directory shared by every store — `~/.oblikovati` (Linux/macOS) or
-   `%AppData%\oblikovati` (Windows) — resolved via `oblikovati/userconfig`
+   `%AppData%\oblikovati` (Windows) — resolved via `oblikovati.org/userconfig`
    ([ADR-0029](ADR-0029-user-config-location.md)).
 
 6. **Live apply via a revision counter.** `theme.Library` bumps a monotonic revision on

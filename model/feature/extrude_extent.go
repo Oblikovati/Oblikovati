@@ -7,10 +7,10 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // span is the pair of signed offsets (along the sketch-plane normal) the extrude sweeps

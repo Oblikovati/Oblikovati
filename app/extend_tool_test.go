@@ -6,11 +6,11 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // patchWithBottomEdge gives a part holding a 4×4 surface patch and its bottom boundary edge.

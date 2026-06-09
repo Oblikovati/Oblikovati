@@ -6,9 +6,9 @@ import (
 	"math"
 	"testing"
 
-	"oblikovati/scene"
+	"oblikovati.org/scene"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 // frontCamera looks straight down −Z (Inventor's default), so +X points screen-right,

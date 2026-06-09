@@ -6,10 +6,10 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/subd"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/subd"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // sweptSolid builds a watertight solid from a sequence of cross-section loops — each

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"unicode/utf8"
 
-	"oblikovati/api/types"
-	"oblikovati/model/doc"
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/doc"
 )
 
 // resourceFor packages an imported file's bytes as an embedded document resource (ADR-0031):

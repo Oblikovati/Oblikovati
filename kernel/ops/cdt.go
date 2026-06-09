@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"oblikovati/math"
-	"oblikovati/math/predicate"
+	"oblikovati.org/math"
+	"oblikovati.org/math/predicate"
 )
 
 // 2D constrained Delaunay triangulation (CDT) of a planar polygon (outer loop minus holes) with

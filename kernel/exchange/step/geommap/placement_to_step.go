@@ -3,8 +3,8 @@
 package geommap
 
 import (
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/math"
 )
 
 // Emitter writes kernel geometry into a part21.Writer, sharing identical leaf

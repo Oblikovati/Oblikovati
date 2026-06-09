@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/sketch"
 )
 
 // createSketch3D adds an empty 3D sketch to the active part and returns its index.

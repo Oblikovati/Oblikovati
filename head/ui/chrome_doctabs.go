@@ -5,10 +5,10 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/math"
-	"oblikovati/model/doc"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/math"
+	"oblikovati.org/model/doc"
 )
 
 var closeDocumentModal documentCloseGuard

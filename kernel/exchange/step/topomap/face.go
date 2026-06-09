@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/geommap"
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/geommap"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // addFace maps one ADVANCED_FACE onto the builder. An unsupported surface is a

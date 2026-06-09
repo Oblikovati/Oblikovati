@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 )
 
 // argJSON marshals a request value to the JSON string the router test harness passes as args.

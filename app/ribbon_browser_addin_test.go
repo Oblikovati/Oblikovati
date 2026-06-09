@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/model/sketch"
+	"oblikovati.org/model/sketch"
 )
 
 func TestBuildRibbonFromCommands(t *testing.T) {

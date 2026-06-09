@@ -7,7 +7,7 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 
-	"oblikovati/script"
+	"oblikovati.org/script"
 )
 
 // runDeadline derives the effective wall-clock deadline for one run from the caller's

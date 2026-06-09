@@ -7,8 +7,8 @@ package ui
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/theme"
+	"oblikovati.org/api/types"
+	"oblikovati.org/theme"
 )
 
 // TestChromeBindingSlotsUnique guards the apply contract that each Dear ImGui color slot

@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"io"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // modelPartPath is the OPC part the 3MF spec mandates for the 3D model XML.

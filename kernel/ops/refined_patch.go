@@ -5,8 +5,8 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // gridPatchMesh meshes an analytic curved patch (a sphere cap) over its OWN (u,v) parameter space

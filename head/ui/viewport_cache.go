@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"oblikovati/app"
-	"oblikovati/kernel/ops"
-	"oblikovati/renderer"
-	"oblikovati/scene"
+	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/renderer"
+	"oblikovati.org/scene"
 )
 
 // bodyGeometryCache memoises the tessellated, styled body draw list. Without it the viewport reran

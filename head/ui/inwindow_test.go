@@ -12,11 +12,11 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/scene"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/scene"
 )
 
 const inWinW, inWinH = 800, 600

@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestNopSemiTeardropCSG pins the kernel unit shape for NopSCADlib's semi_teardrop:

@@ -5,8 +5,8 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 func drawCommitCancelButtons(s *app.Session, canCommit bool) {

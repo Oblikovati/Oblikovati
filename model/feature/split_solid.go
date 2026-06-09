@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // SplitSide selects which side(s) of the cutting plane a solid split keeps: both pieces (a true

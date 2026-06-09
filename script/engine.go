@@ -2,7 +2,7 @@
 
 // Package script is the embedded-scripting seam for the GPL application: it lets a
 // user run a Lua program that drives the live model through the exact same wire
-// method surface (oblikovati/api/wire) that add-ins and the MCP bridge use, under a
+// method surface (oblikovati.org/api/wire) that add-ins and the MCP bridge use, under a
 // sandbox so a buggy or malicious script can never crash, hang, or escape the host
 // (ADR-0028).
 //

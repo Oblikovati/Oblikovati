@@ -7,8 +7,8 @@ package ui
 import (
 	"fmt"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // The feature-edit flow in the head: double-clicking a feature in the model browser (or its

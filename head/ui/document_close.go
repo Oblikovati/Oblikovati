@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"oblikovati/app"
-	"oblikovati/model/doc"
+	"oblikovati.org/app"
+	"oblikovati.org/model/doc"
 )
 
 func closeDocumentNow(s *app.Session, d *doc.Document, skipSave bool) {

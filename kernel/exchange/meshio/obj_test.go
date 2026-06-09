@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/ops"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
 )
 
 // objTetra is a hand-authored OBJ tetrahedron (independent of our encoder), proving the

@@ -6,11 +6,11 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/health"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/health"
+	"oblikovati.org/model/sketch"
 )
 
 // TestChamferBevelsEdgeForReal drills a real 45° chamfer on a box edge and checks the

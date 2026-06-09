@@ -7,8 +7,8 @@ package ui
 import (
 	"strconv"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // The Fillet flow in the head: while the Fillet tool runs, a modeless options window shows

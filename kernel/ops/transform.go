@@ -6,9 +6,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // TransformBody returns a copy of b mapped by the similarity transform m

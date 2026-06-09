@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // StitchTool is the interactive Stitch command (Surface panel): weld the running surface bodies

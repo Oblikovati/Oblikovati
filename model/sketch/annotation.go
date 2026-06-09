@@ -2,7 +2,7 @@
 
 package sketch
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // FillRegion is a hatched/filled closed region of the sketch, identified by a seed point
 // inside the region (the click point) plus a fill-style name. It is annotative — it
@@ -43,7 +43,7 @@ func (f *FillRegion) Region(s *Sketch) *Profile {
 }
 
 // TextHJustify is a text box's horizontal justification. It mirrors
-// [oblikovati/api/types.TextHorizontalAlign] but stays an int enum here so existing
+// [oblikovati.org/api/types.TextHorizontalAlign] but stays an int enum here so existing
 // call sites and the document codec are unchanged.
 type TextHJustify uint8
 
@@ -54,7 +54,7 @@ const (
 )
 
 // TextVJustify is a text box's vertical justification (mirrors
-// [oblikovati/api/types.TextVerticalAlign]). Baseline is the sketch-text default.
+// [oblikovati.org/api/types.TextVerticalAlign]). Baseline is the sketch-text default.
 type TextVJustify uint8
 
 const (

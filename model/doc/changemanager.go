@@ -2,7 +2,7 @@
 
 package doc
 
-import "oblikovati/event"
+import "oblikovati.org/event"
 
 // ChangeKind classifies a model change so a processor can react selectively.
 type ChangeKind uint8

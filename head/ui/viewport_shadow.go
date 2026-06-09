@@ -5,9 +5,9 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/head/viewport"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/head/viewport"
 )
 
 // applyShadow enables the sun shadow map when object or ground shadows are on and the scene has

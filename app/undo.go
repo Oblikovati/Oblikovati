@@ -6,10 +6,10 @@ import (
 	"bytes"
 	"errors"
 
-	"oblikovati/command"
-	"oblikovati/event"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
+	"oblikovati.org/command"
+	"oblikovati.org/event"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 )
 
 // The part definition is the concrete RecipeStore a snapshot event navigates.

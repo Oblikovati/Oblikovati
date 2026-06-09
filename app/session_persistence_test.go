@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/persistence"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/persistence"
 )
 
 // storeBackedSession wires a real .obk PackageStore into a session rooted at dir, so

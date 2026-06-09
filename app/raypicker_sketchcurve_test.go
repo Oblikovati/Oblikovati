@@ -5,9 +5,9 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/model/sketch"
-	"oblikovati/scene"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/scene"
 )
 
 // TestRayPickerSelectsSketchCenterline checks the part-view ray picker can hit a sketch line

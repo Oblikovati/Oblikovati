@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // addRectangle adds a closed 4-line rectangle [x0,y0]–[x1,y1] sharing corner points.

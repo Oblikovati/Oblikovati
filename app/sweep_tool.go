@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
-	"oblikovati/renderer"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/renderer"
 )
 
 // SweepTool is the interactive Sweep command: activate it, click a sketch region (the

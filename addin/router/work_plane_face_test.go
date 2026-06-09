@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"oblikovati/api/wire"
+	"oblikovati.org/api/wire"
 )
 
 // TestWorkPlaneOnFaceThenSketch covers the feature-interaction path: a work plane built on a

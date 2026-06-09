@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/model/feature"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/model/feature"
 )
 
 // Two more face-referenced features: a boss (a cylindrical stud raised from a face) and a

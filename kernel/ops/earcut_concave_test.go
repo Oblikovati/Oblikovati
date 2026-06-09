@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestEarcutConcaveOuterTwoHoles is the regression for the concave-outer + multi-hole bug: a

@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestNopIDCTransitionCSG(t *testing.T) {

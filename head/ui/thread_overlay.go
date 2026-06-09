@@ -3,9 +3,9 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/model/feature"
-	"oblikovati/renderer"
+	"oblikovati.org/app"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/renderer"
 )
 
 // threadColor: a muted gold so a cosmetic thread's helix reads distinctly from the body edges.

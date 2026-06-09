@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/model/compdef"
+	"oblikovati.org/model/compdef"
 )
 
 // partOf returns the active part definition — the geometry/recipe under test.

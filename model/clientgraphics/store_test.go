@@ -5,8 +5,8 @@ package clientgraphics
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 )
 
 // meshArgs is a minimal one-triangle persistent group submitted under clientID.

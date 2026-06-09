@@ -5,7 +5,7 @@ package geommap
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
+	"oblikovati.org/kernel/geom"
 )
 
 // TestRationalBSplineCurveFromComplexInstance maps a SolidWorks-style rational b-spline

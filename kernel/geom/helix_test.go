@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // zHelix builds a helix about +Z with RefDir +X for the given parameters.

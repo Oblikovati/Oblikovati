@@ -6,10 +6,10 @@ import (
 	"errors"
 	"strconv"
 
-	"oblikovati/build"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/build"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 
 	stdmath "math"
 )

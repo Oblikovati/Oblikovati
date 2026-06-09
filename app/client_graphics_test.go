@@ -5,9 +5,9 @@ package app
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/model/clientgraphics"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/model/clientgraphics"
 )
 
 // noopTool is a minimal Tool that commits on demand — enough to drive the tool-teardown

@@ -3,8 +3,8 @@
 package sketch
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // This file holds the 3D-sketch curve entities (M22-F02): straight lines, circles and

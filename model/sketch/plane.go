@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Plane is a planar sketch's host coordinate system in model space: an origin and

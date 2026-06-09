@@ -5,11 +5,11 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // enumerateEntities3D lists a 3D sketch's geometry (kind, construction, points, radius).

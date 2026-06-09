@@ -3,9 +3,9 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // SplitSolidByPlane divides a solid into the pieces lying on each side of an infinite plane,

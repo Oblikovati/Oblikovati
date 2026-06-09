@@ -6,7 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Fitted (interpolating) B-splines pass *through* their input points, unlike the

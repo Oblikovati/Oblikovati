@@ -5,7 +5,7 @@ package sketch
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // AddByThreePoints creates a circle through three points (the circumcircle). It errors

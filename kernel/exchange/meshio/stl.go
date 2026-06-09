@@ -9,7 +9,7 @@ import (
 	stdmath "math"
 	"strconv"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // DecodeSTL decodes an STL file (binary or ASCII, auto-detected) into a triangle soup.

@@ -2,7 +2,7 @@
 
 package geom
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // Circle is a full 3D circle (contract: Circle) lying in the plane through
 // Center with the given unit Normal. RefDir is a unit vector in that plane

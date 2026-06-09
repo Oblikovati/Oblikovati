@@ -5,10 +5,10 @@ package feature
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // analyticChamferTol is the axial tolerance matching a selected circular edge to a cylinder rim.

@@ -5,9 +5,9 @@ package renderer
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // TestPassSetForIsTotal asserts every style in the gallery resolves to a deliberate pass set

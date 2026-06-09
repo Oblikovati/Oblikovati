@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // TestHandleRecoversPanicIntoError: a panicking handler does not crash the host — Handle

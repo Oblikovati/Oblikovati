@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 // dims3D returns a fresh 3D sketch backed by a shared parameter store so dimensions can

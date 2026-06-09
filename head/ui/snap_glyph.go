@@ -7,10 +7,10 @@ package ui
 import (
 	stdmath "math"
 
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
-	"oblikovati/renderer"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/renderer"
 )
 
 const (

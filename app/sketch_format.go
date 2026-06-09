@@ -2,7 +2,7 @@
 
 package app
 
-import "oblikovati/model/sketch"
+import "oblikovati.org/model/sketch"
 
 // The Sketch tab's Format panel: toggle the selected sketch geometry between normal and
 // construction, or mark/unmark selected lines as centerlines (an axis for revolve/mirror).

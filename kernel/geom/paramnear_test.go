@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // cProfileSurface extrudes a C-shaped quadratic profile (in y,z) along x: both arm ends sit at

@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/ops"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
 )
 
 func TestDecode3MFHandAuthoredTetrahedronIsWatertightSolid(t *testing.T) {

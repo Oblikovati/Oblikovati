@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/api/wire"
+	"oblikovati.org/api/wire"
 )
 
 // argsJSON marshals a request struct to the JSON string the call helper expects.

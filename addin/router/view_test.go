@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 )
 
 // TestViewDisplayModeRoundTrips drives view.setDisplayMode then view.getDisplayMode for every

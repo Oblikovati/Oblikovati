@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // The additive sketch-profile solid features beyond extrude: revolve, rib, emboss, coil, and

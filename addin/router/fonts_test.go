@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/wire"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
-	"oblikovati/model/text"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/model/text"
 )
 
 // TestFontsListIncludesEmbedded checks fonts.list always offers the application's bundled face

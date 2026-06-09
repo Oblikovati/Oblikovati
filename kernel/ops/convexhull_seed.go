@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"strconv"
 
-	"oblikovati/math"
-	"oblikovati/math/predicate"
+	"oblikovati.org/math"
+	"oblikovati.org/math/predicate"
 )
 
 // initialTetra picks four affinely-independent seed points: two extremes along the widest

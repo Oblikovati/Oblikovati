@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/renderer"
+	"oblikovati.org/renderer"
 )
 
 // TestResolvePresetsProduceImages checks every non-None preset resolves to a correctly-sized,

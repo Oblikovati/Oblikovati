@@ -10,7 +10,7 @@ package scene
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Camera is a perspective viewport camera: an eye looking at a target, a vertical

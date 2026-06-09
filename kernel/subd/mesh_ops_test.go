@@ -5,7 +5,7 @@ package subd
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestQuadBall projects a twice-subdivided box onto a sphere; every vertex must then sit at

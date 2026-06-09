@@ -5,10 +5,10 @@ package app
 import (
 	"testing"
 
-	"oblikovati/event"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/event"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // stubPicker returns a fixed selectable for any in-range click, honoring the filter

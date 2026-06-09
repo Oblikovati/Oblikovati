@@ -5,8 +5,8 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // VisibleEdges returns a body's display edge polylines with TANGENT edges suppressed: an edge

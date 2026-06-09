@@ -7,8 +7,8 @@ package ui
 import (
 	"strconv"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // drawStatusBar renders Inventor's status bar: the active command's step prompt and the

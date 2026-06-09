@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/addin/router"
-	"oblikovati/app"
-	"oblikovati/script"
-	"oblikovati/script/bridge"
-	"oblikovati/script/examples"
-	"oblikovati/script/gopherlua"
-	"oblikovati/script/runner"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/addin/router"
+	"oblikovati.org/app"
+	"oblikovati.org/script"
+	"oblikovati.org/script/bridge"
+	"oblikovati.org/script/examples"
+	"oblikovati.org/script/gopherlua"
+	"oblikovati.org/script/runner"
 )
 
 // runExample runs a bundled example against a real Session + router (the in-proc CLI

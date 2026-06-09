@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestNopRj45CSG models the NopSCADlib RJ45 Ethernet connector's silver metal shell

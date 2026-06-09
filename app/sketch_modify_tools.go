@@ -5,8 +5,8 @@ package app
 import (
 	"errors"
 
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // pickCollector gathers sketch-entity picks for the modify/pattern tools. It mirrors the

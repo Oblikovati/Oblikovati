@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestNopPolyholeCSG pins NopSCADlib's polyhole helper as an eight-sided through

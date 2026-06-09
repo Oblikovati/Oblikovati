@@ -5,10 +5,10 @@ package app
 import (
 	"errors"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/feature"
-	"oblikovati/renderer"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/renderer"
 )
 
 // LoftTool is the interactive Loft command: activate it, click two or more cross-sections in

@@ -5,7 +5,7 @@ package topo
 import (
 	"bytes"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Body (SurfaceBody) is the top of the topology graph: one or more shells. A solid

@@ -7,8 +7,8 @@ package ui
 import (
 	"fmt"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // drawLightingWindow renders the Lighting settings panel while it is open: global exposure /

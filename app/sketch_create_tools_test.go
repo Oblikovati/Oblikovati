@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	gmath "oblikovati/math"
-	"oblikovati/model/sketch"
+	gmath "oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // Chamfer bevels the corner of two picked lines, adding the bevel line.

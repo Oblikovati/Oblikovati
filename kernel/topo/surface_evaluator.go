@@ -5,8 +5,8 @@ package topo
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // SurfaceEvaluator evaluates a surface: point, partial tangents, normal, and a

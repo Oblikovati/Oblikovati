@@ -5,7 +5,7 @@ package brep
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // These ear-clip predicates back interiorPoint2D's fallback for sliver regions where no edge

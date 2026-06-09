@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/app"
+	"oblikovati.org/app"
 )
 
 // TestApplyFileActionSurfacesImportError guards that a failed import reports the underlying

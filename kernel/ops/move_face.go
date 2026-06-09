@@ -3,9 +3,9 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // MoveFaces translates the selected faces of a planar solid by delta, retrimming the

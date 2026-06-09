@@ -6,12 +6,12 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/api/types"
-	"oblikovati/math"
-	"oblikovati/model/doc"
-	"oblikovati/persistence/userprefs"
-	"oblikovati/persistence/viewstate"
-	"oblikovati/scene"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/persistence/userprefs"
+	"oblikovati.org/persistence/viewstate"
+	"oblikovati.org/scene"
 )
 
 // faceAlignTol is the minimum |cosine| between the view direction and a principal axis for

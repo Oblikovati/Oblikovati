@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // unitPatch is a flat bilinear B-spline surface over the unit square in z=0 (PointAt(u,v)=(u,v,0)),

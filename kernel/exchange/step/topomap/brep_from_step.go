@@ -10,8 +10,8 @@ package topomap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/topo"
 )
 
 // SolidFromShell builds a kernel Body from a CLOSED_SHELL (solid=true) or an

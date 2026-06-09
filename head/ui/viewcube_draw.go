@@ -7,11 +7,11 @@ package ui
 import (
 	stdmath "math"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/math"
-	"oblikovati/model/doc"
-	"oblikovati/scene"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/math"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/scene"
 )
 
 // viewCubeMenuID is the ImGui id of the ViewCube right-click menu.

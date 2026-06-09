@@ -17,7 +17,7 @@ automation surface), ADR-0008 (cgo confined to the platform edge).
 ## 1. Goal & non-goals
 
 **Goal.** Let a user run a Lua script that drives the live model through the exact
-same method surface (`oblikovati/api/wire`) that add-ins and the MCP bridge use, from
+same method surface (`oblikovati.org/api/wire`) that add-ins and the MCP bridge use, from
 the GUI (a script console), from the CLI (`oblikovati-cli script run file.lua`), and
 (later) from the MCP bridge — with a sandbox so a buggy or malicious script can never
 crash, hang, or exfiltrate from the host.

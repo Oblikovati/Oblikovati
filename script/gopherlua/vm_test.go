@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/script"
+	"oblikovati.org/script"
 )
 
 // errBoom is a sentinel host-call error used by the pcall containment test.

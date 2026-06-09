@@ -5,10 +5,10 @@ package app
 import (
 	"errors"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/feature"
-	"oblikovati/renderer"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/renderer"
 )
 
 // CoilTool is the interactive Coil command: activate it, click a sketch region, choose

@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"oblikovati/model/param"
+	"oblikovati.org/model/param"
 )
 
 // The standard document property sets (iProperties). Their names are stable

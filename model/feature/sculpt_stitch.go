@@ -5,8 +5,8 @@ package feature
 import (
 	"errors"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // Stitch/knit and sculpt (M10-F01, PBI-110) combine the surface bodies accumulated

@@ -2,7 +2,7 @@
 
 package feature
 
-import "oblikovati/kernel/topo"
+import "oblikovati.org/kernel/topo"
 
 // ImportedBodyFeature wraps a body translated from a foreign mesh file (STL/OBJ/3MF,
 // M17-F04) as a feature-tree participant, so downstream parametric features (fillet,

@@ -5,8 +5,8 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // Session actions invoked from the model browser's right-click menu. Each mutates the

@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"log"
 
-	"oblikovati/head/internal/envimage"
-	"oblikovati/head/internal/native"
-	"oblikovati/head/viewport"
-	"oblikovati/renderer"
+	"oblikovati.org/head/internal/envimage"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/head/viewport"
+	"oblikovati.org/renderer"
 )
 
 // envCache memoizes the uploaded IBL environment so the (expensive) decode + mip + GPU upload

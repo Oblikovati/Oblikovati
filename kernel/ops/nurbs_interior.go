@@ -5,8 +5,8 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // maxInteriorCells bounds the grid so a pathological curvature estimate cannot explode the node

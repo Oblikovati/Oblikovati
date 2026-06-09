@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/material"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/material"
 )
 
 // appearanceInfo marshals a model appearance into its wire DTO.

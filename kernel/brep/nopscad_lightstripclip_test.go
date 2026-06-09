@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestNopLightStripClipCSG pins the raw CSG footprint behind light_strip_clip: a

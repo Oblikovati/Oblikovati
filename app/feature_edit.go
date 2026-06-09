@@ -5,9 +5,9 @@ package app
 import (
 	"errors"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/model/feature"
-	"oblikovati/model/param"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/param"
 )
 
 // Editing a placed feature — Inventor's double-click / browser "Edit". It re-opens the feature

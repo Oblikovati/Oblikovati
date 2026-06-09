@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/param"
+	"oblikovati.org/model/param"
 )
 
 // GridSettings is the sketch-grid preference: the spacing between grid lines (a length

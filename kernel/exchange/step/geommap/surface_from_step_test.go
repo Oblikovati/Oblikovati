@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
 )
 
 // graphOf parses DATA statements into an EntityGraph for mapper tests.

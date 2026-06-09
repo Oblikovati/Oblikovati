@@ -5,10 +5,10 @@ package clientgraphics
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/renderer"
-	"oblikovati/scene"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/renderer"
+	"oblikovati.org/scene"
 )
 
 func testCamera() scene.Camera { return scene.NewCamera(100, 100) }

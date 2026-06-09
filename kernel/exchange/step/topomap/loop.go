@@ -5,8 +5,8 @@ package topomap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/topo"
 )
 
 // boundLoop is one face bound before outer/inner is finalized: the oriented edge uses and

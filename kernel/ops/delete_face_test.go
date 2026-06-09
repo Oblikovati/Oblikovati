@@ -6,9 +6,9 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/model/feature"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/feature"
 )
 
 // chamferedBox bevels one vertical edge of a 2×2×2 box (setback 0.5) via the chamfer

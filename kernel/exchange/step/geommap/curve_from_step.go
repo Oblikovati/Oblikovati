@@ -5,9 +5,9 @@ package geommap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // CurveKind discriminates a mapped STEP curve so the topology layer can trim it to

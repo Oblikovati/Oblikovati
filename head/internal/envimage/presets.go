@@ -2,7 +2,7 @@
 
 package envimage
 
-import "oblikovati/renderer"
+import "oblikovati.org/renderer"
 
 // presetRes is the resolution of the generated presets. A modest lat-long map is plenty for
 // IBL (the shader blurs it by roughness via mips); the skybox samples the same texture.

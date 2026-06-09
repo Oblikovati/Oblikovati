@@ -16,7 +16,7 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 
-	"oblikovati/script"
+	"oblikovati.org/script"
 )
 
 // Engine is the gopher-lua-backed script.Engine. It holds no per-run state — each Run

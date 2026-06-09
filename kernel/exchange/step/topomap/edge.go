@@ -5,8 +5,8 @@ package topomap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/topo"
 )
 
 // orientedEdge maps ORIENTED_EDGE(name, *, *, edge_element, orientation) to a kernel

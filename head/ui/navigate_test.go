@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/scene"
+	"oblikovati.org/scene"
 )
 
 func dist(c scene.Camera) float64 { return float64(c.Eye.DistanceTo(c.Target)) }

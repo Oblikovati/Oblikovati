@@ -5,7 +5,7 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati/model/sketch"
+	"oblikovati.org/model/sketch"
 )
 
 // This file holds the YAML codecs for the sketch-based surface features — boundary

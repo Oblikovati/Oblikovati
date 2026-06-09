@@ -5,9 +5,9 @@ package step
 import (
 	"testing"
 
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // roundTrip imports a fixture, exports it, and re-imports the exported bytes,

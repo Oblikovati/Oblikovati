@@ -2,7 +2,7 @@
 
 package doc
 
-import "oblikovati/api/contract"
+import "oblikovati.org/api/contract"
 
 // Document implements the Apache-2.0 in-process contract. This assertion keeps the
 // implementation and the published interface honest at compile time (ADR-0018): if

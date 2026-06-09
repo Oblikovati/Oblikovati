@@ -7,9 +7,9 @@ import (
 	"sort"
 	"testing"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // facetedDiscPolygon replicates sketch.sampleCircle (24 pts, CCW from sketch +X, centered on

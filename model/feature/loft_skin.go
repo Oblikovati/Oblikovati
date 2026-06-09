@@ -5,8 +5,8 @@ package feature
 import (
 	"sort"
 
-	"oblikovati/api/types"
-	"oblikovati/math"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
 
 	stdmath "math"
 )

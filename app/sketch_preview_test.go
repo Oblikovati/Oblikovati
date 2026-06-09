@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestLinePreviewFollowsCursor(t *testing.T) {

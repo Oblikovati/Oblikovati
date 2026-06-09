@@ -6,7 +6,7 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // EllipticalCone is a cone of elliptical cross-section (contract: EllipticalCone) with its

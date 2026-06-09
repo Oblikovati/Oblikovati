@@ -5,7 +5,7 @@ package brep_test
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestNopTransformerCSG(t *testing.T) {

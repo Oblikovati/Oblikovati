@@ -5,7 +5,7 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // DefaultCreaseAngle is the dihedral threshold for SmoothShadeNormals: facets meeting at a

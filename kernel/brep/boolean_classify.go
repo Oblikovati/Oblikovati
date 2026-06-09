@@ -5,8 +5,8 @@ package brep
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // insideSolid reports whether p is inside the solid b, by casting a skewed ray from p and

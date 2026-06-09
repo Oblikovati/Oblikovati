@@ -5,7 +5,7 @@ package compdef
 import (
 	"testing"
 
-	"oblikovati/model/material"
+	"oblikovati.org/model/material"
 )
 
 // Assignments are keyed by persistent reference keys, so Recompute (which regenerates the

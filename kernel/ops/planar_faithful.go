@@ -5,7 +5,7 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // A planar face's triangulation must cover the face exactly: every loop segment (outer + each hole) is

@@ -6,9 +6,9 @@ import (
 	"math"
 	"testing"
 
-	"oblikovati/kernel/geom"
+	"oblikovati.org/kernel/geom"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 func plane(t *testing.T, origin, normal gmath.Vector3) geom.Surface {

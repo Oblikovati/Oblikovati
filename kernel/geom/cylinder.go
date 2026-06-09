@@ -5,7 +5,7 @@ package geom
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // Cylinder is an infinite circular cylinder (contract: Cylinder) about the axis

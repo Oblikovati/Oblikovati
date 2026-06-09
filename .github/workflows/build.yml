@@ -38,7 +38,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - name: Cross-build CLI
         run: |
           set -euo pipefail
@@ -70,7 +70,7 @@ jobs:
         with:
           go-version: "1.24"
           cache: false
-      - run: go -C head mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - name: Install build + packaging deps
         run: |
           sudo apt-get update
@@ -118,7 +118,7 @@ jobs:
             mingw-w64-x86_64-vulkan-loader
             mingw-w64-x86_64-vulkan-headers
             zip
-      - run: go -C head mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - name: Build head
         working-directory: head
         run: |
@@ -191,7 +191,7 @@ jobs:
         with:
           go-version: "1.24"
           cache: false
-      - run: go -C head mod edit -replace oblikovati/api="$GITHUB_WORKSPACE/_api"
+      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
       - name: Install deps
         run: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config
       - name: Build head

@@ -3,8 +3,8 @@
 package app
 
 import (
-	"oblikovati/api/types"
-	"oblikovati/renderer"
+	"oblikovati.org/api/types"
+	"oblikovati.org/renderer"
 )
 
 // RegisterStandardCommands wires Inventor's standard ribbon for a session: the 3D Model

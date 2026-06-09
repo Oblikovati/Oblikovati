@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"oblikovati/app"
-	"oblikovati/model/doc"
+	"oblikovati.org/app"
+	"oblikovati.org/model/doc"
 )
 
 // recorder collects forwarded events (thread-safe; events may fire from any goroutine).

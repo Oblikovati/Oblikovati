@@ -7,8 +7,8 @@ package ui
 import (
 	"strconv"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 )
 
 // The Chamfer flow in the head: while the Chamfer tool runs, a modeless options window

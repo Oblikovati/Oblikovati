@@ -5,9 +5,9 @@ package feature
 import (
 	"errors"
 
-	"oblikovati/kernel/subd"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/subd"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Mold core/cavity tooling (M10-F04, PBI-116). Phase A splits the tooling block's

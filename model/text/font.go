@@ -9,7 +9,7 @@ package text
 import (
 	"fmt"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/sfnt"

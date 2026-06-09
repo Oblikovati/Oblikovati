@@ -5,10 +5,10 @@ package app
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 )
 
 func TestSetViewLayoutCreatesAndKeepsViews(t *testing.T) {

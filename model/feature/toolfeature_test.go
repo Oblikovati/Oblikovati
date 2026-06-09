@@ -5,7 +5,7 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
+	"oblikovati.org/kernel/ops"
 )
 
 // Every boolean (material-changing) feature must expose its tool and operation via

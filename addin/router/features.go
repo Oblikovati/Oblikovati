@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // listFeatureKinds returns every feature operation the bridge can create, from the

@@ -7,7 +7,7 @@
 // oblikovati.call adapter that turns a client.Caller into a script.CallFunc.
 //
 // The bridge is method-name- and schema-agnostic by construction: it forwards
-// (method, JSON) pairs verbatim, so every oblikovati/api/wire method is callable from
+// (method, JSON) pairs verbatim, so every oblikovati.org/api/wire method is callable from
 // Lua the instant it is registered in addin/router, with zero per-method code
 // (ADR-0028 §3).
 package bridge
@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	"oblikovati/addin/dispatch"
-	"oblikovati/api/client"
-	"oblikovati/app"
+	"oblikovati.org/addin/dispatch"
+	"oblikovati.org/api/client"
+	"oblikovati.org/app"
 )
 
 // RouteFunc is the host's method router as a bare function: addin/router's

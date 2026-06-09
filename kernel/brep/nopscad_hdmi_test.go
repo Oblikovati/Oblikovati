@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // offsetConvexCCW grows a CCW convex polygon outward by d with mitred (sharp) corners: each
@@ -59,9 +59,9 @@ func TestNopHdmiCSG(t *testing.T) {
 		math.P3(-0.7, 0.6, 0), math.P3(-0.7, 0.3, 0), math.P3(-0.5, 0.15, 0),
 		math.P3(0.5, 0.15, 0), math.P3(0.7, 0.3, 0), math.P3(0.7, 0.6, 0),
 	}
-	const wallT = 0.05  // t = 0.5 mm
-	const depth = 1.2   // l = 12 mm
-	const capT = 0.1    // 1 mm solid flange/cap at the bottom end
+	const wallT = 0.05 // t = 0.5 mm
+	const depth = 1.2  // l = 12 mm
+	const capT = 0.1   // 1 mm solid flange/cap at the bottom end
 	outer := offsetConvexCCW(inner, wallT)
 
 	body := prismBody(outer, 0, depth, "hdmi-shell")

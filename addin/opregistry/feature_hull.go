@@ -5,9 +5,9 @@ package opregistry
 import (
 	"encoding/json"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/model/feature"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/model/feature"
 )
 
 // hull replaces the part's running solids with their single convex hull — OpenSCAD's hull().

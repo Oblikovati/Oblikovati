@@ -5,10 +5,10 @@
 package ui
 
 import (
-	"oblikovati/api/types"
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/theme"
+	"oblikovati.org/api/types"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/theme"
 )
 
 // themeNameBuf backs the "new theme name" field across frames (ImGui edits it in place);

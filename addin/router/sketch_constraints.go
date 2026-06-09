@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/sketch"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/sketch"
 )
 
 // addConstraint applies a geometric constraint of the requested kind to the referenced

@@ -10,17 +10,17 @@ import (
 	"path/filepath"
 	"time"
 
-	"oblikovati/addin/dispatch"
-	"oblikovati/addin/events"
-	"oblikovati/addin/opregistry"
-	"oblikovati/addin/router"
-	"oblikovati/app"
-	"oblikovati/event"
-	"oblikovati/head/internal/addinhost"
-	"oblikovati/script/bridge"
-	"oblikovati/script/console"
-	"oblikovati/script/gopherlua"
-	"oblikovati/script/runner"
+	"oblikovati.org/addin/dispatch"
+	"oblikovati.org/addin/events"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/addin/router"
+	"oblikovati.org/app"
+	"oblikovati.org/event"
+	"oblikovati.org/head/internal/addinhost"
+	"oblikovati.org/script/bridge"
+	"oblikovati.org/script/console"
+	"oblikovati.org/script/gopherlua"
+	"oblikovati.org/script/runner"
 )
 
 // addInDrainPerFrame bounds how many queued add-in calls run per frame, so a burst

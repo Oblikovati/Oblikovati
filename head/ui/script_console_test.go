@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/addin/router"
-	"oblikovati/script"
-	"oblikovati/script/bridge"
-	"oblikovati/script/console"
-	"oblikovati/script/gopherlua"
-	"oblikovati/script/runner"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/addin/router"
+	"oblikovati.org/script"
+	"oblikovati.org/script/bridge"
+	"oblikovati.org/script/console"
+	"oblikovati.org/script/gopherlua"
+	"oblikovati.org/script/runner"
 )
 
 // directConsoleController builds a Script Console controller over a synchronous in-proc

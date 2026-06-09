@@ -5,10 +5,10 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
 
 // patchRect adds a boundary-patch surface over the rectangle [x0,x1]×[0,2] on XY.

@@ -5,8 +5,8 @@ package app
 import (
 	"errors"
 
-	"oblikovati/math"
-	"oblikovati/model/feature"
+	"oblikovati.org/math"
+	"oblikovati.org/model/feature"
 )
 
 // The feature-level Pattern and Mirror tools replicate one or more source features (picked

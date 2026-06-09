@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/exchange"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/exchange"
 )
 
 // registerExchangeHandlers wires the foreign mesh-format import/export methods

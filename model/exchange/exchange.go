@@ -12,11 +12,11 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati/api/contract"
-	"oblikovati/api/types"
-	"oblikovati/kernel/exchange/meshio"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/api/contract"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange/meshio"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // MeshExchange is the model-layer mesh translator. The zero value is ready to use.

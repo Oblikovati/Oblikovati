@@ -5,11 +5,11 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
-	"oblikovati/model/text"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/model/text"
 )
 
 // EmbossDefinition is the recipe for an emboss: a closed sketch profile raised from (or engraved

@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/scene"
+	"oblikovati.org/math"
+	"oblikovati.org/scene"
 )
 
 // extrudedBoxSession builds a part with a real solid via the synthetic-input extrude

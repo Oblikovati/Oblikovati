@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
 )
 
 // ellipseFromStep maps ELLIPSE(name, position, semi_axis_1, semi_axis_2) to its analytic

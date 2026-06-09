@@ -6,8 +6,8 @@ import (
 	"context"
 	"sync"
 
-	"oblikovati/script"
-	"oblikovati/script/runner"
+	"oblikovati.org/script"
+	"oblikovati.org/script/runner"
 )
 
 // Controller drives one Script Console: it starts a Lua source on a background

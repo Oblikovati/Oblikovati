@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // ConvexHull returns the convex hull of a point set as a closed, triangulated solid body.

@@ -3,8 +3,8 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/model/feature"
+	"oblikovati.org/app"
+	"oblikovati.org/model/feature"
 )
 
 func selectedWorkAxis(s *app.Session) *feature.WorkAxis {

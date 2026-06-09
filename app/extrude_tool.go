@@ -5,12 +5,12 @@ package app
 import (
 	"errors"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/sketch"
-	"oblikovati/renderer"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/renderer"
 )
 
 // ExtrudeTool is the interactive Extrude command: activate it, hover a sketch region

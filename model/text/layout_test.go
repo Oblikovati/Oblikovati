@@ -5,7 +5,7 @@ package text
 import (
 	"testing"
 
-	"oblikovati/api/types"
+	"oblikovati.org/api/types"
 )
 
 // boundsOf returns the [minX,maxX,minY,maxY] of a set of contours.

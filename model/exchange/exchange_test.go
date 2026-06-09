@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/exchange/meshio"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange/meshio"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 )
 
 // cubeSoup returns a watertight 12-triangle triangle soup of an s-sided axis-aligned cube

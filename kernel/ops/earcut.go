@@ -5,7 +5,7 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // earcut triangulates a planar polygon with holes, returning triangles as index triples into

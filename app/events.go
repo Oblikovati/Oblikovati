@@ -3,8 +3,8 @@
 package app
 
 import (
-	"oblikovati/event"
-	"oblikovati/model/doc"
+	"oblikovati.org/event"
+	"oblikovati.org/model/doc"
 )
 
 // Application UI events on the session bus. Stable TypeIDs (0x05xx = M05 UI).

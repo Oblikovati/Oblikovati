@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"oblikovati/model/health"
+	"oblikovati.org/model/health"
 )
 
 // ErrReferenceLost is the standard error behind a lost-reference health state. A

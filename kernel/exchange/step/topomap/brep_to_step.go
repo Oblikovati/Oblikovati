@@ -3,9 +3,9 @@
 package topomap
 
 import (
-	"oblikovati/kernel/exchange/step/geommap"
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange/step/geommap"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/topo"
 )
 
 // disassembler emits a kernel Body as STEP topology, sharing one STEP entity per

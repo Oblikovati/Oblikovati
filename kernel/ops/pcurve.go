@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // marchUV builds a face boundary's pcurve in the surface's (u,v): the first point is projected

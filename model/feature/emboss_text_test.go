@@ -8,9 +8,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"oblikovati/kernel/ops"
-	gmath "oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/ops"
+	gmath "oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // textOn builds a sketch on the given plane carrying one text box at (dx,dy).

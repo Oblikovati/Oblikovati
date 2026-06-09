@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/sketch"
+	"oblikovati.org/model/sketch"
 )
 
 // Editing a dimension's value — Inventor's edit-on-place flow. When the Dimension tool

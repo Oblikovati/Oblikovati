@@ -7,8 +7,8 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // Trimming a circle or arc as the target (not just a cutting curve). A circle trimmed at

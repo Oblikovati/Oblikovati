@@ -5,7 +5,7 @@ package geom
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // EllipticalCylinder is an infinite cylinder of elliptical cross-section (contract:

@@ -8,7 +8,7 @@ import (
 	"io"
 	"strconv"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 
 	stdmath "math"
 )

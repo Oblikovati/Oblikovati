@@ -5,10 +5,10 @@ package feature
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // Analytic curved geometry (#129) is now ALWAYS ON: an extruded circle / straight-edged revolve is a

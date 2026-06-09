@@ -5,7 +5,7 @@ package predicate
 import (
 	stdmath "math"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // errScale is a conservative multiple of the float64 unit roundoff (2⁻⁵³). When a

@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati/api/types"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/sketch"
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/sketch"
 )
 
 // addSketch3DConstraint is the discriminated 3D geometric-constraint constructor.

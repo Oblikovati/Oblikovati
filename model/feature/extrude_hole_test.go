@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/model/param"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/param"
 )
 
 // TestExtrudeHonorsHole is a regression for the prism builder ignoring a profile's

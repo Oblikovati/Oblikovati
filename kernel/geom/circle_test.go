@@ -5,7 +5,7 @@ package geom
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestCircleOnPlaneAndRadius(t *testing.T) {

@@ -4,7 +4,7 @@ package build
 
 // Build metadata, overridden at link time by the Makefile / goreleaser:
 //
-//	-ldflags "-X oblikovati/build.Version=v0.1.0"
+//	-ldflags "-X oblikovati.org/build.Version=v0.1.0"
 //
 // They are vars (not consts) precisely so the linker can set them.
 var (

@@ -5,9 +5,9 @@ package meshio
 import (
 	"fmt"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 )
 
 // Decode parses mesh bytes of the given format into a triangle soup. It is the single

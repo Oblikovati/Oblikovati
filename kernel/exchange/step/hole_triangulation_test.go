@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/step"
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // TestImportedHoleNotTriangulatedOver guards the full-circle seam fix: a planar face bordering a

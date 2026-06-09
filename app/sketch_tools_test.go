@@ -5,11 +5,11 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/model/sketch"
-	"oblikovati/scene"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/scene"
 )
 
 // emptyPartSession returns a session whose active document is an empty part, with a

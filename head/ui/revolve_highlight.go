@@ -5,9 +5,9 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/renderer"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/renderer"
 )
 
 // revolveCenterlineHighlight draws the Revolve axis centerline — a sketch line, which the generic

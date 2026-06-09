@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/exchange"
-	"oblikovati/kernel/exchange/meshio"
-	"oblikovati/kernel/exchange/step"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange"
+	"oblikovati.org/kernel/exchange/meshio"
+	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/topo"
 )
 
 // ImportBodies reads path and translates it via [ImportBodiesFromData]. The interactive

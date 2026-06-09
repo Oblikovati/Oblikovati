@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/kernel/exchange/meshio"
-	"oblikovati/kernel/ops"
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange/meshio"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // emptySketches is a SketchIndexer with no sketches — an imported body consumes none.

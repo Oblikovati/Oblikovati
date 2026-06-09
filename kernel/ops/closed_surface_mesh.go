@@ -2,7 +2,7 @@
 
 package ops
 
-import "oblikovati/kernel/geom"
+import "oblikovati.org/kernel/geom"
 
 // A bare closed surface — a whole sphere imported as ONE face with no seam edge (0 loops) — has no
 // trim to reduce, so it falls to the full-domain grid. A naive UV grid is NOT watertight on a closed

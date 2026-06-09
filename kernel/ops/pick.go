@@ -5,8 +5,8 @@ package ops
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // RayCastFaces returns the nearest face of a body hit by a ray, with the hit

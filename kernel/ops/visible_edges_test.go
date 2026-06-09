@@ -5,10 +5,10 @@ package ops_test
 import (
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/subd"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/subd"
+	"oblikovati.org/math"
 )
 
 // A box has only sharp (90°) edges, so tangent-edge suppression must keep every one.

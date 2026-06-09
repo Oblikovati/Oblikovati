@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/exchange/step/part21"
 )
 
 // parseUnits parses a DATA-only fixture and returns its length scale to mm.

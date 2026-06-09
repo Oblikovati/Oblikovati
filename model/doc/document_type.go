@@ -2,7 +2,7 @@
 
 package doc
 
-import "oblikovati/api/types"
+import "oblikovati.org/api/types"
 
 // DocumentType discriminates the four document kinds plus an unknown sentinel. The
 // type and its stable values are defined once in the Apache-2.0 contract

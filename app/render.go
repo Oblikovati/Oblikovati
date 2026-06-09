@@ -3,10 +3,10 @@
 package app
 
 import (
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/model/clientgraphics"
-	"oblikovati/renderer"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/renderer"
 )
 
 // Client/preview graphics (M05-F05) + frame assembly. The session collects overlay

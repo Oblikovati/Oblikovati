@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/model/health"
-	"oblikovati/model/identity"
-	"oblikovati/model/param"
-	"oblikovati/model/text"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/health"
+	"oblikovati.org/model/identity"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/text"
 )
 
 // eopAll means the end-of-part marker is at the end (evaluate the whole program).

@@ -5,7 +5,7 @@ package geommap
 import (
 	"testing"
 
-	"oblikovati/kernel/geom"
+	"oblikovati.org/kernel/geom"
 )
 
 // A SURFACE_CURVE/SEAM_CURVE/INTERSECTION_CURVE/TRIMMED_CURVE is a carrier: Curve must unwrap

@@ -5,8 +5,8 @@ package sketch
 import (
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // curveHitTol is the angular/positional slack used when filtering a circle crossing onto

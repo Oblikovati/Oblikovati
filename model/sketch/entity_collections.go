@@ -2,7 +2,7 @@
 
 package sketch
 
-import "oblikovati/math"
+import "oblikovati.org/math"
 
 // The typed entity collections are factories bound to a sketch: an Add* call
 // creates the entity (minting its shared points), registers it with the sketch, and

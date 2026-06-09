@@ -15,8 +15,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"oblikovati/persistence/yamlcodec"
-	"oblikovati/userconfig"
+	"oblikovati.org/persistence/yamlcodec"
+	"oblikovati.org/userconfig"
 )
 
 // ViewFrame is one view's persisted camera: a name and a look-at frame (eye, target, up in

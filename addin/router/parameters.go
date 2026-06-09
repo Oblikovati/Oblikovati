@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/compdef"
-	"oblikovati/model/param"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/param"
 )
 
 // paramInfo marshals a model parameter into the wire DTO: its authored expression

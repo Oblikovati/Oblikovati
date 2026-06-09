@@ -7,9 +7,9 @@ package ui
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/app"
-	"oblikovati/head/icon"
+	"oblikovati.org/api/types"
+	"oblikovati.org/app"
+	"oblikovati.org/head/icon"
 )
 
 // TestRibbonCommandIconsResolve guards that every standard ribbon command which names an

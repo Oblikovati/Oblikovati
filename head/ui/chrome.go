@@ -18,10 +18,10 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/kernel/topo"
-	"oblikovati/model/compdef"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/compdef"
 )
 
 // DrawChrome renders one frame of chrome for the session. Call it between

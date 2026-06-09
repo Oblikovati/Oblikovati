@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // SplitTool is the interactive Split command: pick a work plane to cut with, choose whether to

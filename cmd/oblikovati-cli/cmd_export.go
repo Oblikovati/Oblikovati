@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"oblikovati/api/types"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/model/exchange"
-	"oblikovati/persistence"
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/model/exchange"
+	"oblikovati.org/persistence"
 )
 
 // cmdExport opens an .obk part and writes its bodies to a mesh file (STL/OBJ/3MF) at the

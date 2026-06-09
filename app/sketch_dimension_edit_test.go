@@ -5,8 +5,8 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // placeDistanceDim drives the Dimension tool over two points and returns the sketch.

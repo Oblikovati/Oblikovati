@@ -2,7 +2,7 @@
 
 package material
 
-import "oblikovati/api/contract"
+import "oblikovati.org/api/contract"
 
 // MaterialSpec is the editable content of a material — density, the property groups, and
 // the id of the appearance it renders with.

@@ -9,8 +9,8 @@ import (
 	"io"
 	"strings"
 
-	"oblikovati/model/doc"
-	"oblikovati/persistence"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/persistence"
 )
 
 // cmdOpen loads the package at path through the real open flow (the store-backed

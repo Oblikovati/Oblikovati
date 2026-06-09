@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // DecodeOBJ decodes a Wavefront OBJ into a triangle soup, reading only `v` (vertex) and

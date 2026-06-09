@@ -5,7 +5,7 @@ package geom
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestParamAtInvertsPointAt checks ParamAt is a right inverse of PointAt in point

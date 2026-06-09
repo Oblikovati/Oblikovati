@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // twoFacets builds two triangles that share an edge (as a faceted mesh does: each facet has its

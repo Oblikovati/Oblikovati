@@ -5,9 +5,9 @@ package router
 import (
 	"encoding/json"
 
-	"oblikovati/api/wire"
-	"oblikovati/app"
-	"oblikovati/model/clientgraphics"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/clientgraphics"
 )
 
 // setClientGraphics submits or replaces a named client-graphics group (idempotent by

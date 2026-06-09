@@ -5,8 +5,8 @@
 package ui
 
 import (
-	"oblikovati/head/icon"
-	"oblikovati/head/internal/native"
+	"oblikovati.org/head/icon"
+	"oblikovati.org/head/internal/native"
 )
 
 // iconTint (the color every ribbon glyph is drawn with) is now theme-driven and lives in

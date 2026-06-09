@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/persistence/userprefs"
+	"oblikovati.org/persistence/userprefs"
 )
 
 // TestShowCompassPersistsAndLoads checks the compass preference is global: toggling it

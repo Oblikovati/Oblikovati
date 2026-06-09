@@ -5,9 +5,9 @@
 package ui
 
 import (
-	"oblikovati/math"
-	"oblikovati/model/sketch"
-	"oblikovati/renderer"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+	"oblikovati.org/renderer"
 )
 
 // gridCells is how many grid cells extend from the origin in each direction (so the

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"oblikovati/script"
+	"oblikovati.org/script"
 )
 
 // globalsWithMethods builds Globals exposing both the fake call door and a fixed method

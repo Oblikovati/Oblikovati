@@ -5,7 +5,7 @@ package app
 import (
 	"errors"
 
-	"oblikovati/model/feature"
+	"oblikovati.org/model/feature"
 )
 
 // ReplaceFaceTool is the interactive Replace Face command: click the faces to replace, then

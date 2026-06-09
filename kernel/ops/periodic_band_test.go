@@ -6,8 +6,8 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // TestPeriodicBandGridRejectsNonBand guards the sphere-cap-over-the-pole fix: periodicBandGrid must

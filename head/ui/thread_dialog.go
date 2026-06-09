@@ -7,9 +7,9 @@ package ui
 import (
 	"fmt"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/model/feature"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/feature"
 )
 
 // drawThreadDialog shows the Thread tool's property window while the Thread tool is active: pick

@@ -3,9 +3,9 @@
 package feature
 
 import (
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Pattern and mirror features replicate the running solid into placed copies. Each

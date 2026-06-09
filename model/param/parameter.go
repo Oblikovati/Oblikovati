@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"oblikovati/api/types"
+	"oblikovati.org/api/types"
 )
 
 // ParameterKind is a parameter's category. The type, its stable ids, String, and

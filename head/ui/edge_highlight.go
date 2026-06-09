@@ -3,10 +3,10 @@
 package ui
 
 import (
-	"oblikovati/app"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/renderer"
+	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/renderer"
 )
 
 // Edge selection has no per-body recolor (an edge is not a body), so a lone edge selected

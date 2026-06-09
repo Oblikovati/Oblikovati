@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestSketchDimensionsNilOutsideSketch(t *testing.T) {

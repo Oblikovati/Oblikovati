@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/model/compdef"
-	"oblikovati/model/doc"
-	"oblikovati/persistence"
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/persistence"
 )
 
 // TestImportedDocumentReopensWithoutSourceFile is the ADR-0031 acceptance test: after importing

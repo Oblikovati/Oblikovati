@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 )
 
 // ReplaceFaces replaces the surface of each selected face with the target plane and retrims

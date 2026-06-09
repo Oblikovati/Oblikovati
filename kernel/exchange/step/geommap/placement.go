@@ -5,8 +5,8 @@ package geommap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/math"
 )
 
 // Frame is the orthonormal coordinate frame an AXIS2_PLACEMENT_3D names: its

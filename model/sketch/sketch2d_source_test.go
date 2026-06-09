@@ -5,7 +5,7 @@ package sketch
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestIncludeSketch2DPointInto3D proves a 2D sketch point can be included into a 3D sketch:

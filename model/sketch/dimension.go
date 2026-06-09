@@ -6,8 +6,8 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/math"
-	"oblikovati/model/param"
+	"oblikovati.org/math"
+	"oblikovati.org/model/param"
 )
 
 // DimKind classifies a dimensional constraint.

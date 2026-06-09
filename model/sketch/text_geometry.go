@@ -5,9 +5,9 @@ package sketch
 import (
 	stdmath "math"
 
-	"oblikovati/api/types"
-	"oblikovati/math"
-	"oblikovati/model/text"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
+	"oblikovati.org/model/text"
 )
 
 // Outlines derives the text box's glyph contours (closed polylines in sketch-plane

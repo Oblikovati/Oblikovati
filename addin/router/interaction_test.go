@@ -5,9 +5,9 @@ package router
 import (
 	"testing"
 
-	"oblikovati/addin/opregistry"
-	"oblikovati/api/wire"
-	"oblikovati/app"
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // TestInteractionStateIdleVsInTransaction checks interaction.state reports idle on a fresh

@@ -5,9 +5,9 @@ package app
 import (
 	"testing"
 
-	"oblikovati/api/types"
-	"oblikovati/math"
-	"oblikovati/persistence/viewstate"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
+	"oblikovati.org/persistence/viewstate"
 )
 
 // TestViewStateSavedAndRestoredViaStore checks that the per-user view-state store captures

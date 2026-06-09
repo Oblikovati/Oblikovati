@@ -5,8 +5,8 @@ package geommap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/geom"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/geom"
 )
 
 // plainBSplineSurfaceFromStep maps the knot-less B-spline surface forms — B_SPLINE_SURFACE,

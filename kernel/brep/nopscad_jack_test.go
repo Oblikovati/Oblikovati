@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestNopJackCSG(t *testing.T) {

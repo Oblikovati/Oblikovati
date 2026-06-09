@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"oblikovati/event"
+	"oblikovati.org/event"
 )
 
 func TestCommandRegistrationAndLookup(t *testing.T) {

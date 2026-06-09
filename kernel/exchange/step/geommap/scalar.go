@@ -9,8 +9,8 @@ package geommap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/math"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/math"
 )
 
 // CartesianPoint reads a CARTESIAN_POINT entity into a Point3, applying the unit

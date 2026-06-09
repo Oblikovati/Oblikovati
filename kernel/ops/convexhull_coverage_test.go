@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 func TestConvexHullDegenerateDiagnostics(t *testing.T) {

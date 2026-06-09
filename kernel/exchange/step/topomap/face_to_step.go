@@ -3,8 +3,8 @@
 package topomap
 
 import (
-	"oblikovati/kernel/exchange/step/part21"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange/step/part21"
+	"oblikovati.org/kernel/topo"
 )
 
 // emitFace emits an ADVANCED_FACE for f: its surface, its FACE_(OUTER_)BOUND loops,

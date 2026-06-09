@@ -3,10 +3,10 @@
 package feature
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Extruding a circle now yields a TRUE cylinder (an analytic geom.Cylinder side face) so thread works

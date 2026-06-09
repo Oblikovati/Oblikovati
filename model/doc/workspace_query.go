@@ -5,7 +5,7 @@ package doc
 import (
 	"fmt"
 
-	"oblikovati/event"
+	"oblikovati.org/event"
 )
 
 // Count returns the number of documents in the workspace, including unopened

@@ -19,7 +19,7 @@ import (
 	"runtime"
 	"strings"
 
-	omath "oblikovati/math"
+	omath "oblikovati.org/math"
 )
 
 // Metrics is the density-independent geometry summary of a closed mesh, the

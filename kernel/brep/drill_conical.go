@@ -6,9 +6,9 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // CutBlindConicalHole drills a blind hole with a conical drill point (K1b): a cylinder bore of

@@ -5,8 +5,8 @@ package topomap
 import (
 	"fmt"
 
-	"oblikovati/kernel/exchange/step/geommap"
-	"oblikovati/kernel/topo"
+	"oblikovati.org/kernel/exchange/step/geommap"
+	"oblikovati.org/kernel/topo"
 )
 
 // vertex returns the shared kernel Vertex for a VERTEX_POINT id, building it once so

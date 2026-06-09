@@ -7,8 +7,8 @@ import (
 	"fmt"
 	stdmath "math"
 
-	"oblikovati/api/types"
-	"oblikovati/math"
+	"oblikovati.org/api/types"
+	"oblikovati.org/math"
 )
 
 // ErrLastView is returned by [DocumentViews.Close] when asked to remove the only view —

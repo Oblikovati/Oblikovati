@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati/addin/modelaccess"
-	"oblikovati/app"
-	"oblikovati/kernel/ops"
-	"oblikovati/model/compdef"
-	"oblikovati/model/feature"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // extrudeArgs is the argument shape for the "extrude" operation (mirrors the schema).

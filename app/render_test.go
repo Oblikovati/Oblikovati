@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/renderer"
+	"oblikovati.org/renderer"
 )
 
 func TestRenderFrameDrawsTheModeledSolid(t *testing.T) {

@@ -3,9 +3,9 @@
 package feature
 
 import (
-	"oblikovati/kernel/brep"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // analyticCylinderFillet rounds the rim(s) of a SIMPLE analytic cylinder (an extruded circle /

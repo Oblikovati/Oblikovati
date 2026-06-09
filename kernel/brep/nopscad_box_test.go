@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
-	"oblikovati/kernel/ops"
+	"oblikovati.org/kernel/ops"
 )
 
 // TestNopBoxTrayCSG re-models a printed box base (NopSCADlib printed/box.scad) the

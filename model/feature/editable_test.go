@@ -5,9 +5,9 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/math"
-	"oblikovati/model/param"
-	"oblikovati/model/sketch"
+	"oblikovati.org/math"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // constVal is a settable scalar closure for building feature definitions in tests.

@@ -6,7 +6,7 @@ import (
 	stdmath "math"
 	"sort"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // halfEdge is a directed use of an elementary edge (from→to); faces lie to its left.

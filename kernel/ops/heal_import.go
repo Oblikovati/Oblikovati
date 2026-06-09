@@ -2,7 +2,7 @@
 
 package ops
 
-import "oblikovati/kernel/topo"
+import "oblikovati.org/kernel/topo"
 
 // HealImportedBody repairs an imported B-rep (M25) so it tessellates watertight and its faces carry
 // the parameter-space trim the NURBS mesher needs. Order matters: SnapEdgesToSurfaces runs FIRST so

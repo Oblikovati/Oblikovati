@@ -7,10 +7,10 @@ package ui
 import (
 	"math"
 
-	"oblikovati/app"
-	"oblikovati/renderer"
+	"oblikovati.org/app"
+	"oblikovati.org/renderer"
 
-	gmath "oblikovati/math"
+	gmath "oblikovati.org/math"
 )
 
 // groundAlbedo is the neutral matte grey of the shadow-catching ground plane.

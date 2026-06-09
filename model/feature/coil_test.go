@@ -5,7 +5,7 @@ package feature
 import (
 	"testing"
 
-	"oblikovati/kernel/ops"
+	"oblikovati.org/kernel/ops"
 )
 
 func TestCoilSweepsValidHelix(t *testing.T) {

@@ -3,9 +3,9 @@
 package ops
 
 import (
-	"oblikovati/kernel/geom"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Imported B-rep edges (SolidWorks STEP, ADR-0030) sit up to several mm OFF their adjacent faces'

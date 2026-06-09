@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/model/compdef"
+	"oblikovati.org/model/compdef"
 )
 
 // TestDecalToolEndToEnd drives the Decal UI: pick a face, set an image, OK — and asserts the

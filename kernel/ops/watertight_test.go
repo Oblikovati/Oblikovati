@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"oblikovati/kernel/brep"
-	"oblikovati/math"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/math"
 )
 
 // freeEdgeCount welds coincident vertices, then counts edges not shared by exactly two triangles —

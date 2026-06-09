@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"oblikovati/model/doc"
-	"oblikovati/persistence/yamlcodec"
+	"oblikovati.org/model/doc"
+	"oblikovati.org/persistence/yamlcodec"
 )
 
 // PackageStore is the [doc.Store] backed by .obk packages on disk. Injected into a

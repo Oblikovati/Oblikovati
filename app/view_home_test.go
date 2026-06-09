@@ -5,7 +5,7 @@ package app
 import (
 	"testing"
 
-	"oblikovati/math"
+	"oblikovati.org/math"
 )
 
 // TestSetActiveViewHomeCapturesAndGoHomeRestores checks the ViewCube "Set Current View as

@@ -7,9 +7,9 @@ package ui
 import (
 	"strconv"
 
-	"oblikovati/app"
-	"oblikovati/head/internal/native"
-	"oblikovati/model/param"
+	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/param"
 )
 
 // One parameter row and the popups it can open. Editable cells commit on focus loss

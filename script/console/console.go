@@ -13,7 +13,7 @@ package console
 import (
 	"sync"
 
-	"oblikovati/script"
+	"oblikovati.org/script"
 )
 
 // maxOutputLines caps the retained output so a chatty or runaway script (which the

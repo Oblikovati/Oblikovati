@@ -5,9 +5,9 @@ package feature
 import (
 	"errors"
 
-	"oblikovati/kernel/ops"
-	"oblikovati/kernel/topo"
-	"oblikovati/math"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Surface-editing features (M10-F02) act on the most recent body in the running
