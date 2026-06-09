@@ -296,7 +296,7 @@ func TestCreationOrderAndSharedSurviveRoundTrip(t *testing.T) {
 	def.Recompute()
 
 	// The stamps must reflect creation order before saving.
-	if !(sk1.Seq() < ext.Seq() && ext.Seq() < wp.Seq() && wp.Seq() < sk2.Seq()) {
+	if !strictlyAscending(sk1.Seq(), ext.Seq(), wp.Seq(), sk2.Seq()) {
 		t.Fatalf("pre-save creation order wrong: sk1=%d ext=%d wp=%d sk2=%d",
 			sk1.Seq(), ext.Seq(), wp.Seq(), sk2.Seq())
 	}
@@ -306,7 +306,7 @@ func TestCreationOrderAndSharedSurviveRoundTrip(t *testing.T) {
 	rext := reopened.Features().Item(0)
 	rwp := reopened.WorkPlanes().Item(reopened.WorkPlanes().Count() - 1)
 
-	if !(rs1.Seq() < rext.Seq() && rext.Seq() < rwp.Seq() && rwp.Seq() < rs2.Seq()) {
+	if !strictlyAscending(rs1.Seq(), rext.Seq(), rwp.Seq(), rs2.Seq()) {
 		t.Errorf("reopened creation order wrong: sk1=%d ext=%d wp=%d sk2=%d",
 			rs1.Seq(), rext.Seq(), rwp.Seq(), rs2.Seq())
 	}
@@ -316,6 +316,17 @@ func TestCreationOrderAndSharedSurviveRoundTrip(t *testing.T) {
 	if !rs2.Shared() {
 		t.Error("sketch2's Shared flag was lost on reopen")
 	}
+}
+
+// strictlyAscending reports whether the creation stamps increase at every step (the
+// chronological order the browser interleaves by).
+func strictlyAscending(seqs ...uint64) bool {
+	for i := 1; i < len(seqs); i++ {
+		if seqs[i] <= seqs[i-1] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestFilletEdgeKeyRebindsAfterReopen(t *testing.T) {

@@ -107,7 +107,6 @@ type WorkPlane struct {
 func (w *WorkPlane) ID() ID                { return w.id }
 func (w *WorkPlane) Key() WorkRef          { return w.key }
 func (w *WorkPlane) Seq() uint64           { return w.seq }
-func (w *WorkPlane) setSeq(v uint64)       { w.seq = v }
 func (w *WorkPlane) Name() string          { return w.name }
 func (w *WorkPlane) SetName(n string)      { w.name = n }
 func (w *WorkPlane) Health() health.Health { return w.health }
