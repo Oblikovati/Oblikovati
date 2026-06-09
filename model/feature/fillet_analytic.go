@@ -21,27 +21,19 @@ func analyticCylinderFillet(body *topo.Body, edges []*topo.Edge, radius float64,
 	if !ok || radius <= 0 || radius >= cyl.Radius {
 		return nil, false
 	}
-	axis := cyl.AxisDir
-	filletBottom, filletTop := false, false
-	for _, e := range edges {
-		switch cylinderRim(e, base, axis, height) {
-		case rimBottom:
-			filletBottom = true
-		case rimTop:
-			filletTop = true
-		default:
-			return nil, false
-		}
+	bottom, top, ok := selectedRims(edges, base, cyl.AxisDir, height)
+	if !ok {
+		return nil, false
 	}
 	used := radius
-	if filletBottom && filletTop {
+	if bottom && top {
 		used *= 2 // both rims consume the wall from each end
 	}
 	if used >= height {
 		return nil, false
 	}
-	verts := filletedCylinderMeridian(cyl.Radius, height, radius, filletBottom, filletTop)
-	out, err := brep.SolidOfRevolutionMeridian(base, axis.AsVector(), verts, originalFeature(body, feat))
+	verts := filletedCylinderMeridian(cyl.Radius, height, radius, bottom, top)
+	out, err := brep.SolidOfRevolutionMeridian(base, cyl.AxisDir.AsVector(), verts, originalFeature(body, feat))
 	if err != nil || out == nil {
 		return nil, false
 	}

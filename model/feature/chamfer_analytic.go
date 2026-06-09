@@ -27,20 +27,12 @@ func analyticCylinderChamfer(body *topo.Body, edges []*topo.Edge, dist float64, 
 	if !ok || dist <= 0 || dist >= height || dist >= cyl.Radius {
 		return nil, false
 	}
-	axis := cyl.AxisDir
-	chamferBottom, chamferTop := false, false
-	for _, e := range edges {
-		switch rim := cylinderRim(e, base, axis, height); rim {
-		case rimBottom:
-			chamferBottom = true
-		case rimTop:
-			chamferTop = true
-		default:
-			return nil, false // a non-rim edge: not an analytic-cylinder chamfer
-		}
+	bottom, top, ok := selectedRims(edges, base, cyl.AxisDir, height)
+	if !ok {
+		return nil, false // a non-rim edge: not an analytic-cylinder chamfer
 	}
-	mer := chamferedCylinderMeridian(cyl.Radius, height, dist, chamferBottom, chamferTop)
-	out, err := brep.SolidOfRevolution(base, axis.AsVector(), mer, originalFeature(body, feat))
+	mer := chamferedCylinderMeridian(cyl.Radius, height, dist, bottom, top)
+	out, err := brep.SolidOfRevolution(base, cyl.AxisDir.AsVector(), mer, originalFeature(body, feat))
 	if err != nil || out == nil {
 		return nil, false
 	}
@@ -54,6 +46,23 @@ const (
 	rimBottom
 	rimTop
 )
+
+// selectedRims classifies the selected edges as the bottom and/or top circular rims of the cylinder.
+// ok is false if any edge is not one of the two rims, so the analytic chamfer/fillet fast path
+// declines and the caller keeps the general wedge/blend.
+func selectedRims(edges []*topo.Edge, base math.Point3, axis math.UnitVector3, height float64) (bottom, top, ok bool) {
+	for _, e := range edges {
+		switch cylinderRim(e, base, axis, height) {
+		case rimBottom:
+			bottom = true
+		case rimTop:
+			top = true
+		default:
+			return false, false, false
+		}
+	}
+	return bottom, top, true
+}
 
 // cylinderRim classifies a selected edge as the bottom (z≈0) or top (z≈height) circular rim of the
 // cylinder, or rimNone if it is not a circle on a rim.

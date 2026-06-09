@@ -67,42 +67,48 @@ func planarizeSimpleCylinder(b *topo.Body, feat string) *topo.Body {
 // surface, the base centre (lower cap, on the axis), and the height between caps. ok is false for any
 // other shape (already planar, a tube, a fillet/cone, a partially-cut cylinder, …).
 func simpleCylinderParams(b *topo.Body) (cyl geom.Cylinder, base math.Point3, height float64, ok bool) {
-	if b == nil || len(b.Faces()) != 3 {
-		return geom.Cylinder{}, math.Point3{}, 0, false
-	}
-	haveCyl := false
-	var proj []float64
-	for _, f := range b.Faces() {
-		switch g := f.Geometry().(type) {
-		case geom.Cylinder:
-			if haveCyl {
-				return geom.Cylinder{}, math.Point3{}, 0, false
-			}
-			cyl, haveCyl = g, true
-		case geom.Plane:
-			proj = append(proj, 0) // placeholder; projected below once the cylinder is known
-		default:
-			return geom.Cylinder{}, math.Point3{}, 0, false
-		}
-	}
-	if !haveCyl || cyl.Radius <= 0 || len(proj) != 2 {
+	cyl, caps, ok := soleCylinderAndCaps(b)
+	if !ok {
 		return geom.Cylinder{}, math.Point3{}, 0, false
 	}
 	axis := cyl.AxisDir.AsVector()
-	proj = proj[:0]
-	for _, f := range b.Faces() {
-		if pl, ok := f.Geometry().(geom.Plane); ok {
-			proj = append(proj, float64(cyl.Origin.VectorTo(pl.Origin).Dot(axis)))
-		}
-	}
-	lo, hi := proj[0], proj[1]
-	if lo > hi {
-		lo, hi = hi, lo
-	}
+	lo, hi := capExtents(cyl.Origin, axis, caps)
 	if hi-lo <= 0 {
 		return geom.Cylinder{}, math.Point3{}, 0, false
 	}
 	return cyl, cyl.Origin.TranslateBy(axis.Scale(math.Scalar(lo))), hi - lo, true
+}
+
+// soleCylinderAndCaps returns the body's single geom.Cylinder face and its two planar cap faces,
+// or ok=false unless the body is EXACTLY one cylinder (radius>0) plus two planes.
+func soleCylinderAndCaps(b *topo.Body) (cyl geom.Cylinder, caps []*topo.Face, ok bool) {
+	if b == nil || len(b.Faces()) != 3 {
+		return geom.Cylinder{}, nil, false
+	}
+	for _, f := range b.Faces() {
+		switch g := f.Geometry().(type) {
+		case geom.Cylinder:
+			if ok {
+				return geom.Cylinder{}, nil, false // a second cylinder: not a simple cylinder
+			}
+			cyl, ok = g, true
+		case geom.Plane:
+			caps = append(caps, f)
+		default:
+			return geom.Cylinder{}, nil, false
+		}
+	}
+	if !ok || cyl.Radius <= 0 || len(caps) != 2 {
+		return geom.Cylinder{}, nil, false
+	}
+	return cyl, caps, true
+}
+
+// capExtents returns the min and max axial offset (from origin along axis) of the two cap planes.
+func capExtents(origin math.Point3, axis math.Vector3, caps []*topo.Face) (lo, hi float64) {
+	p0 := float64(origin.VectorTo(caps[0].Geometry().(geom.Plane).Origin).Dot(axis))
+	p1 := float64(origin.VectorTo(caps[1].Geometry().(geom.Plane).Origin).Dot(axis))
+	return min(p0, p1), max(p0, p1)
 }
 
 // originalFeature recovers the name of the feature that generated body b from its body-level

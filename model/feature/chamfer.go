@@ -57,13 +57,24 @@ func chamferEdges(in Input, keys [][]byte, dist float64, feat string, flatCorner
 	if flatCorners {
 		tools = append(tools, cornerCutTools(edges, dist, feat)...)
 	}
-	result := work
-	for _, tool := range tools {
-		if result, err = ops.Boolean(ops.Cut, result, tool); err != nil {
-			return Output{}, err
-		}
+	result, err := cutAll(work, tools)
+	if err != nil {
+		return Output{}, err
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+}
+
+// cutAll subtracts each tool from work in turn, returning the carved body.
+func cutAll(work *topo.Body, tools []*topo.Body) (*topo.Body, error) {
+	result := work
+	for _, tool := range tools {
+		r, err := ops.Boolean(ops.Cut, result, tool)
+		if err != nil {
+			return nil, err
+		}
+		result = r
+	}
+	return result, nil
 }
 
 // resolveEdges binds every edge key against the original body, erroring if a key is lost

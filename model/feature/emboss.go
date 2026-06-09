@@ -191,29 +191,28 @@ func buildPrismWithHoles(p *sketch.Profile, plane sketch.Plane, sp span, taper f
 		}
 	}
 	solid := buildPrism(p.OuterLoop().Polygon(), plane, sp, taper, feat)
-	inner := p.InnerLoops()
-	if len(inner) == 0 {
-		return solid
+	if inner := p.InnerLoops(); len(inner) > 0 {
+		return drillProfileHoles(solid, inner, plane, sp, taper, feat)
 	}
+	return solid
+}
+
+// drillProfileHoles cuts each inner loop out of the solid prism, yielding a hollow prism. Each hole
+// tool overshoots both caps by the full depth so the cut is clean; a clockwise hole loop is
+// normalized to CCW so buildPrism makes a valid outward cut tool (not an inverted one).
+func drillProfileHoles(solid *topo.Body, inner []sketch.Loop, plane sketch.Plane, sp span, taper float64, feat string) *topo.Body {
 	lo, hi := sp.near, sp.far
 	if lo > hi {
 		lo, hi = hi, lo
 	}
-	margin := hi - lo // overshoot each cap by the full depth so the cut is clean
+	margin := hi - lo
 	cut := span{near: lo - margin, far: hi + margin}
 	for j, loop := range inner {
-		// A hole loop winds opposite the outer (clockwise); buildPrism would then make
-		// an inverted tool whose boolean removes far more than the hole. Normalize the
-		// hole polygon to CCW so the cut tool is a valid outward solid.
 		poly := loop.Polygon()
 		if outwardSign(poly) < 0 {
 			poly = reversedPolygon2D(poly)
 		}
 		hole := buildPrism(poly, plane, cut, taper, fmt.Sprintf("%s/hole%d", feat, j))
-		// The exact planar B-rep boolean cuts each hole; earlier this used the faceted CSG
-		// fallback because multi-hole cap faces tessellated to the wrong area (half a hole
-		// grid went missing). That was the planar-face triangulator, now fixed (earcut), so
-		// the exact path is correct and faster.
 		if res, err := ops.Boolean(ops.Cut, solid, hole); err == nil && res != nil {
 			solid = res
 		}

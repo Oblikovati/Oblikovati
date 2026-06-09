@@ -51,26 +51,39 @@ func buildAnalyticCylinder(c *sketch.Circle, plane sketch.Plane, sp span, feat s
 	base := plane.ToModel(c.Center.Position()).TranslateBy(normal.Scale(math.Scalar(lo)))
 	topCenter := base.TranslateBy(normal.Scale(math.Scalar(height)))
 
-	lin := func(kind string, i int) topo.Lineage { return topo.NewLineage(topo.Tok(feat, kind, i)) }
 	// Pin the analytic frame to the sketch plane (RefDir = sketch +X, winding CCW about the
 	// normal) so it matches sampleCircle's faceted phase. planarizeSimpleCylinder then re-facets
 	// this cylinder into a prism topologically identical to a direct faceted extrude (#129).
 	bottom := geom.Circle{Center: base, Normal: plane.Normal(), RefDir: refDir, Radius: radius}
 	// Share the bottom circle's frame so the seam is a single vertical line at angle 0.
 	top := geom.Circle{Center: topCenter, Normal: bottom.Normal, RefDir: bottom.RefDir, Radius: radius}
+	side, capBottom, capTop, ok := analyticCylinderFaces(base, topCenter, normal, refDir, radius)
+	if !ok {
+		return nil
+	}
+	return assembleAnalyticCylinder(bottom, top, side, capBottom, capTop, feat)
+}
+
+// analyticCylinderFaces builds the side cylinder (sharing refDir's angle-0 frame) and the two
+// outward-facing planar caps. ok is false if any surface is degenerate.
+func analyticCylinderFaces(base, topCenter math.Point3, normal math.Vector3, refDir math.UnitVector3, radius float64) (side geom.Cylinder, capBottom, capTop geom.Plane, ok bool) {
 	side, err := geom.NewCylinderWithRef(base, normal, refDir.AsVector(), radius)
 	if err != nil {
-		return nil
+		return geom.Cylinder{}, geom.Plane{}, geom.Plane{}, false
 	}
-	capBottom, err := geom.NewPlane(base, normal.Scale(-1)) // outward = −axis
-	if err != nil {
-		return nil
+	if capBottom, err = geom.NewPlane(base, normal.Scale(-1)); err != nil { // outward = −axis
+		return geom.Cylinder{}, geom.Plane{}, geom.Plane{}, false
 	}
-	capTop, err := geom.NewPlane(topCenter, normal) // outward = +axis
-	if err != nil {
-		return nil
+	if capTop, err = geom.NewPlane(topCenter, normal); err != nil { // outward = +axis
+		return geom.Cylinder{}, geom.Plane{}, geom.Plane{}, false
 	}
+	return side, capBottom, capTop, true
+}
 
+// assembleAnalyticCylinder wires the two closed circle edges, the vertical seam, the two disk caps,
+// and the periodic side face into the watertight cylinder body (the SolidCylinder topology).
+func assembleAnalyticCylinder(bottom, top geom.Circle, side geom.Cylinder, capBottom, capTop geom.Plane, feat string) *topo.Body {
+	lin := func(kind string, i int) topo.Lineage { return topo.NewLineage(topo.Tok(feat, kind, i)) }
 	vbp, vtp := bottom.PointAt(0), top.PointAt(0)
 	bld := topo.NewBuilder(true, lin("body", 0))
 	vb := bld.AddVertex(vbp, lin("vertex", 0))
