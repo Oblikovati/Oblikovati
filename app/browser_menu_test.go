@@ -77,7 +77,7 @@ func TestBrowserMenuByKind(t *testing.T) {
 	s, _ := extrudedBoxPart(t)
 	root := BuildBrowser(s)
 
-	if labels := menuLabels(BrowserMenu(findNode(t, root, "sketch"))); !equalStrings(labels, []string{"Edit Sketch", "Visibility", "Delete"}) {
+	if labels := menuLabels(BrowserMenu(findNode(t, root, "sketch"))); !equalStrings(labels, []string{"Edit Sketch", "Share Sketch", "Visibility", "Delete"}) {
 		t.Errorf("sketch menu = %v", labels)
 	}
 	if labels := menuLabels(BrowserMenu(findNode(t, root, "feature"))); !equalStrings(labels, []string{"Edit", "Suppress", "Delete"}) {

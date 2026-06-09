@@ -26,7 +26,7 @@ func partSketchOverlays(s *app.Session) []renderer.DrawItem {
 	var items []renderer.DrawItem
 	for i := 0; i < part.Sketches().Count(); i++ {
 		sk := part.Sketches().Item(i)
-		if !sk.Visible() || sk.IsEditing() {
+		if !sk.Visible() || sk.IsEditing() || s.EditScopeHides(sk.Seq()) {
 			continue
 		}
 		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil)...)
@@ -45,7 +45,7 @@ func partSketchPoints(s *app.Session, hWorld float64) []renderer.DrawItem {
 	var items []renderer.DrawItem
 	for i := 0; i < part.Sketches().Count(); i++ {
 		sk := part.Sketches().Item(i)
-		if !sk.Visible() || sk.IsEditing() {
+		if !sk.Visible() || sk.IsEditing() || s.EditScopeHides(sk.Seq()) {
 			continue
 		}
 		if item, ok := pointsOverlay(sk.Plane(), sk, hWorld); ok {

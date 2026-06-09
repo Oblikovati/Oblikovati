@@ -73,6 +73,14 @@ void obk_ig_set_next_item_open(int open, int first_use) {
     ImGui::SetNextItemOpen(open != 0, first_use != 0 ? ImGuiCond_FirstUseEver : ImGuiCond_Always);
 }
 int  obk_ig_tree_node(const char* label)     { return ImGui::TreeNode(label) ? 1 : 0; }
+// tree_node_selectable is an expandable AND clickable row: OpenOnArrow keeps the label
+// click free for selection (the caller reads IsItemClicked), the arrow toggles open, and
+// SpanAvailWidth makes the whole row the hit target. Selected draws it highlighted.
+int  obk_ig_tree_node_selectable(const char* label, int selected) {
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (selected != 0) flags |= ImGuiTreeNodeFlags_Selected;
+    return ImGui::TreeNodeEx(label, flags) ? 1 : 0;
+}
 void obk_ig_tree_pop(void)                   { ImGui::TreePop(); }
 void obk_ig_bullet_text(const char* s)       { ImGui::BulletText("%s", s); }
 void obk_ig_set_item_tooltip(const char* s)  { ImGui::SetItemTooltip("%s", s); }

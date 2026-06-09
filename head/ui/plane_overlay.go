@@ -16,7 +16,7 @@ import (
 // look), so a created work plane is visible and can be clicked. Hidden planes (Visibility
 // toggled off) are skipped. The selected plane's border is highlighted; the plane under
 // the cursor uses the hover color. Shown outside the sketch environment.
-func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *feature.WorkPlane) []renderer.DrawItem {
+func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *feature.WorkPlane, hidden scopeFilter) []renderer.DrawItem {
 	if part == nil {
 		return nil
 	}
@@ -24,7 +24,7 @@ func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *fea
 	planes := part.WorkPlanes()
 	for i := 0; i < planes.Count(); i++ {
 		wp := planes.Item(i)
-		if !wp.Visible() {
+		if !wp.Visible() || hidden(wp.Seq()) {
 			continue
 		}
 		items = append(items, planeFill(wp), planeBorder(wp, planeColor(wp, selected, hovered)))
@@ -32,7 +32,7 @@ func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *fea
 	return items
 }
 
-func axesOverlay(part *compdef.PartComponentDefinition, selected *feature.WorkAxis) []renderer.DrawItem {
+func axesOverlay(part *compdef.PartComponentDefinition, selected *feature.WorkAxis, hidden scopeFilter) []renderer.DrawItem {
 	if part == nil {
 		return nil
 	}
@@ -40,12 +40,17 @@ func axesOverlay(part *compdef.PartComponentDefinition, selected *feature.WorkAx
 	items := make([]renderer.DrawItem, 0, axes.Count())
 	for i := 0; i < axes.Count(); i++ {
 		axis := axes.Item(i)
-		if axis.Visible() {
+		if axis.Visible() && !hidden(axis.Seq()) {
 			items = append(items, axisLine(axis, axisColor(axis, selected)))
 		}
 	}
 	return items
 }
+
+// scopeFilter reports whether a node with the given creation stamp is hidden by an active
+// edit (created after the edited node). It is [app.Session.EditScopeHides], passed in so the
+// overlay stays decoupled from the session type.
+type scopeFilter func(seq uint64) bool
 
 func axisColor(axis, selected *feature.WorkAxis) [4]float32 {
 	if axis == selected {

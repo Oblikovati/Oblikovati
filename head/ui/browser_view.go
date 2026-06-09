@@ -51,6 +51,8 @@ func drawNode(s *app.Session, n app.BrowserNode) {
 	native.PushIDInt(browserNodeSeq)
 	defer native.PopID()
 	switch {
+	case n.Select != nil && len(n.Children) > 0:
+		drawSelectableBranchNode(s, n)
 	case n.Select != nil:
 		drawSelectableNode(s, n)
 	case len(n.Children) == 0:
@@ -60,6 +62,29 @@ func drawNode(s *app.Session, n app.BrowserNode) {
 	}
 }
 
+// drawSelectableBranchNode draws a node that is both selectable and a parent — a feature row
+// that nests its consumed sketch. The disclosure arrow toggles it open; a click on the label
+// selects it (and a double-click opens its editor), so expansion and selection don't fight.
+func drawSelectableBranchNode(s *app.Session, n app.BrowserNode) {
+	current := s.Selection().First()
+	open := native.TreeNodeSelectable(n.Label, current == n.Select)
+	if native.IsItemClicked(native.MouseLeft) {
+		s.SelectBrowserNode(n)
+	}
+	openEditOnDoubleClick(s, n)
+	drawNodeMenu(s, n)
+	if current != nil && n.Select == current && current != browserSync.last {
+		native.SetScrollHereY()
+	}
+	if !open {
+		return
+	}
+	for _, child := range n.Children {
+		drawNode(s, child)
+	}
+	native.TreePop()
+}
+
 // drawSelectableNode draws a clickable row that selects the node, offers its context menu,
 // and scrolls itself into view when it is the node the selection just changed to.
 func drawSelectableNode(s *app.Session, n app.BrowserNode) {
@@ -67,22 +92,28 @@ func drawSelectableNode(s *app.Session, n app.BrowserNode) {
 	if native.Selectable(n.Label, current == n.Select) {
 		s.SelectBrowserNode(n)
 	}
-	openFeatureEditOnDoubleClick(s, n)
+	openEditOnDoubleClick(s, n)
 	drawNodeMenu(s, n)
 	if current != nil && n.Select == current && current != browserSync.last {
 		native.SetScrollHereY()
 	}
 }
 
-// openFeatureEditOnDoubleClick re-opens a feature node's parameter editor when its row is
-// double-clicked (Inventor's edit-on-double-click). Only feature nodes carry an editor;
-// double-clicking other nodes does nothing.
-func openFeatureEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
+// openEditOnDoubleClick opens the edit mode for the double-clicked node (Inventor's
+// edit-on-double-click), dispatching by node type: a feature opens its parameter editor, a
+// sketch re-enters the sketch environment, and a user work plane opens its redefine tool.
+// A node with nothing to edit (the origin frame, a non-editable feature) does nothing.
+func openEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
 	if !native.IsItemHovered() || !native.IsMouseDoubleClicked(native.MouseLeft) {
 		return
 	}
-	if h, ok := n.Select.(app.FeatureHandle); ok {
+	switch h := n.Select.(type) {
+	case app.FeatureHandle:
 		s.BeginEditFeature(h)
+	case app.SketchHandle:
+		s.BeginEditSketch(h)
+	case app.WorkPlaneHandle:
+		s.BeginEditWorkPlane(h)
 	}
 }
 
