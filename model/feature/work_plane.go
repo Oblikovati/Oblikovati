@@ -5,6 +5,7 @@ package feature
 import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
+	"oblikovati.org/model/seq"
 	"oblikovati.org/model/sketch"
 )
 
@@ -34,20 +35,35 @@ func (d fixedPlaneDef) refs() []WorkRef                         { return nil }
 func (d fixedPlaneDef) eval(workResolver) (sketch.Plane, error) { return d.plane, nil }
 
 // offsetPlaneDef is a plane parallel to a base plane, offset along its normal by a
-// (parametric) distance — Inventor's PlaneAndOffset definition.
+// (parametric) distance — Inventor's PlaneAndOffset definition. The distance comes from the
+// offset closure (a constant or a parameter), unless an explicit edited value overrides it
+// (the browser's "edit work plane", issue #132). It is stored behind a pointer so an edit
+// mutates the live definition.
 type offsetPlaneDef struct {
 	base   WorkRef
 	offset func() float64
+	edited *float64 // explicit edited distance (model units); wins over offset when set
 }
 
-func (d offsetPlaneDef) kindName() string { return "plane-offset" }
-func (d offsetPlaneDef) refs() []WorkRef  { return []WorkRef{d.base} }
-func (d offsetPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *offsetPlaneDef) kindName() string { return "plane-offset" }
+func (d *offsetPlaneDef) refs() []WorkRef  { return []WorkRef{d.base} }
+
+// distance returns the offset currently in effect (the edited value if one was set, else the
+// closure's value); setDistance pins an explicit edited distance.
+func (d *offsetPlaneDef) distance() float64 {
+	if d.edited != nil {
+		return *d.edited
+	}
+	return d.offset()
+}
+func (d *offsetPlaneDef) setDistance(v float64) { d.edited = &v }
+
+func (d *offsetPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	base, err := r.plane(d.base)
 	if err != nil {
 		return sketch.Plane{}, err
 	}
-	origin := base.Origin().TranslateBy(base.Normal().AsVector().Scale(d.offset()))
+	origin := base.Origin().TranslateBy(base.Normal().AsVector().Scale(d.distance()))
 	return sketch.NewPlane(origin, base.XAxis(), base.YAxis())
 }
 
@@ -84,11 +100,14 @@ type WorkPlane struct {
 	coordinateSystem bool
 	grounded         bool
 	visible          bool
+	seq              uint64 // global creation stamp (0 for the origin frame); see model/seq
 }
 
 // ID/Key/Name identify the datum; Health reports its last recompute state.
 func (w *WorkPlane) ID() ID                { return w.id }
 func (w *WorkPlane) Key() WorkRef          { return w.key }
+func (w *WorkPlane) Seq() uint64           { return w.seq }
+func (w *WorkPlane) setSeq(v uint64)       { w.seq = v }
 func (w *WorkPlane) Name() string          { return w.name }
 func (w *WorkPlane) SetName(n string)      { w.name = n }
 func (w *WorkPlane) Health() health.Health { return w.health }
@@ -108,6 +127,28 @@ func (w *WorkPlane) Grounded() bool                  { return w.grounded }
 // (Inventor's per-work-feature Visibility). User planes are visible by default.
 func (w *WorkPlane) Visible() bool     { return w.visible }
 func (w *WorkPlane) SetVisible(v bool) { w.visible = v }
+
+// OffsetDistance returns the plane's offset distance in model units and true when this is a
+// plane-and-offset datum (the editable kind, Inventor's most common parametric work plane);
+// ok is false for every other plane kind, which has no single scalar to edit.
+func (w *WorkPlane) OffsetDistance() (float64, bool) {
+	if d, ok := w.def.(*offsetPlaneDef); ok {
+		return d.distance(), true
+	}
+	return 0, false
+}
+
+// SetOffsetDistance pins an offset plane's distance to v (model units) and re-derives the
+// plane, returning true on success. It is a no-op (false) for non-offset planes. The owning
+// part must recompute afterward so dependent sketches/features follow the moved plane.
+func (w *WorkPlane) SetOffsetDistance(v float64) bool {
+	d, ok := w.def.(*offsetPlaneDef)
+	if !ok {
+		return false
+	}
+	d.setDistance(v)
+	return true
+}
 
 // recompute re-derives the plane from its definition, going sick on failure (e.g.
 // degenerate three points) rather than producing garbage.
@@ -145,7 +186,7 @@ func (c *WorkPlanes) addOrigin(key WorkRef, name string, plane sketch.Plane) {
 // AddByPlaneAndOffset creates a user plane parallel to base, offset by the value the
 // closure returns (typically a parameter), so the datum moves when that param changes.
 func (c *WorkPlanes) AddByPlaneAndOffset(base WorkRef, offset func() float64) *WorkPlane {
-	return c.addUser(offsetPlaneDef{base: base, offset: offset})
+	return c.addUser(&offsetPlaneDef{base: base, offset: offset})
 }
 
 // AddByThreePoints creates a user plane through three referenced points.
@@ -159,7 +200,7 @@ func (c *WorkPlanes) AddByThreePoints(a, b, cc WorkRef) *WorkPlane {
 func (c *WorkPlanes) addUser(def planeDefinition) *WorkPlane {
 	w := &WorkPlane{
 		id: nextID(), key: userRef("plane", len(c.items)), name: "WorkPlane", def: def,
-		displaySize: defaultOriginPlaneSize, visible: true,
+		displaySize: defaultOriginPlaneSize, visible: true, seq: seq.Next(),
 	}
 	c.track(w)
 	c.g.recordUser("plane", len(c.items)-1)

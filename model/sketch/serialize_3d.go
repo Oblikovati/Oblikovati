@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/seq"
 )
 
 // This file defines the git-friendly YAML projection of a 3D sketch (ADR-0020) and its
@@ -20,6 +21,8 @@ type SketchData3D struct {
 	Name         string            `yaml:"name,omitempty"`
 	Hidden       bool              `yaml:"hidden,omitempty"`
 	DimsHidden   bool              `yaml:"dimsHidden,omitempty"`
+	Shared       bool              `yaml:"shared,omitempty"` // Inventor Sketch3D.Shared (issue #132)
+	Seq          uint64            `yaml:"seq,omitempty"`    // global creation stamp; see model/seq
 	Color        string            `yaml:"color,omitempty"`
 	DeferUpdates bool              `yaml:"deferUpdates,omitempty"`
 	Points       []Point3DData     `yaml:"points,omitempty"`
@@ -116,6 +119,8 @@ func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 		Name:         s.name,
 		Hidden:       !s.visible,
 		DimsHidden:   !s.dimensionsVisible,
+		Shared:       s.shared,
+		Seq:          s.seq,
 		Color:        s.color,
 		DeferUpdates: s.deferUpdates,
 	}
@@ -343,8 +348,13 @@ func (c *Sketches3D) restoreSketch3D(sd SketchData3D) error {
 	s := c.AddNamed(sd.Name)
 	s.visible = !sd.Hidden
 	s.dimensionsVisible = !sd.DimsHidden
+	s.shared = sd.Shared
 	s.color = sd.Color
 	s.deferUpdates = sd.DeferUpdates
+	if sd.Seq != 0 {
+		s.seq = sd.Seq
+		seq.Bump(sd.Seq)
+	}
 	// Re-create points, mapping their saved ids onto the freshly minted ones so
 	// constraints can re-bind by id.
 	idmap := make(map[int]*Point3D, len(sd.Points))
