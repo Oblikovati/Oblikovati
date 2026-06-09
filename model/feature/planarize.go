@@ -4,6 +4,7 @@ package feature
 
 import (
 	"oblikovati/kernel/geom"
+	"oblikovati/kernel/ops"
 	"oblikovati/kernel/topo"
 	"oblikovati/math"
 )
@@ -26,12 +27,19 @@ func hasCurvedFace(b *topo.Body) bool {
 	return false
 }
 
-// planarized re-facets a SIMPLE cylinder body (the extrude-circle result) into a clean N-gon prism, or
-// returns b unchanged when it is not exactly that shape (already planar, a fillet blend, a cone, a
-// partially-cut cylinder, …). nil-safe.
+// planarized converts a body with analytic curved faces into a planar B-rep the exact boolean can
+// consume (it hangs on a full periodic curved face, #129). A SIMPLE extrude-circle cylinder becomes
+// a clean, key-stable N-gon prism (the fast path that keeps downstream edge identity); any OTHER
+// curved body (a revolved tube/shaft, a multi-segment surface of revolution) is faceted into a
+// triangle cage via ops.Facet. An already-planar body is returned unchanged. nil-safe.
 func planarized(b *topo.Body, feat string) *topo.Body {
 	if prism := planarizeSimpleCylinder(b, feat+"/planar"); prism != nil {
 		return prism
+	}
+	if b != nil && hasCurvedFace(b) {
+		if faceted := ops.Facet(b, originalFeature(b, feat)); faceted != nil {
+			return faceted
+		}
 	}
 	return b
 }

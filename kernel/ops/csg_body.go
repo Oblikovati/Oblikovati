@@ -26,6 +26,15 @@ func booleanInputQuality() Quality {
 	return Quality{ChordTolerance: DefaultQuality().ChordTolerance, AngleTolerance: stdmath.Pi}
 }
 
+// Facet converts a body with analytic curved faces (a cylinder, cone, surface of revolution)
+// into an all-planar, watertight triangle-cage B-rep — its tessellation welded back into topology.
+// The exact planar B-rep boolean hangs on a full periodic curved face, so a curved operand must be
+// faceted before ops.Boolean (Oblikovati/Oblikovati#129); this is the general fallback for bodies
+// the feature layer's analytic-cylinder re-faceter doesn't special-case. Returns nil when empty.
+func Facet(b *topo.Body, feat string) *topo.Body {
+	return trianglesToBody(bodyTriangles(b), feat)
+}
+
 // bodyTriangles returns a body's tessellation as CSG triangles, each oriented
 // outward. The BSP-tree CSG depends on globally consistent outward winding, but
 // TessellateBody does not guarantee it for curved faces (a cylinder's side
