@@ -168,15 +168,21 @@ func orderedSpan(a, b float64) span {
 	return span{near: b, far: a}
 }
 
-// normalExtent returns the min and max projection of all body vertices onto the sketch
-// normal, measured from the sketch-plane origin — the material's reach along the extrude.
+// normalExtent returns the min and max projection of the bodies onto the sketch normal, measured
+// from the sketch-plane origin — the material's reach along the extrude (for a through-all cut).
+//
+// It measures the RANGE BOX corners, not the vertices: an ANALYTIC body (a true cylinder / surface
+// of revolution) has only a couple of seam vertices that don't span its swept surface, so a
+// vertex-based extent collapsed a through-all cut to a near-zero-depth slab that barely cut the body
+// (Oblikovati/Oblikovati#129). The range box is computed from the actual surfaces, so its
+// axis-aligned corners bound the body — slightly conservative, which only lengthens a through cut.
 func normalExtent(bodies []*topo.Body, plane sketch.Plane) (lo, hi float64) {
 	n := plane.Normal().AsVector()
 	o := plane.Origin()
 	lo, hi = stdmath.Inf(1), stdmath.Inf(-1)
 	for _, b := range bodies {
-		for _, v := range b.Vertices() {
-			t := o.VectorTo(v.Point()).Dot(n)
+		for _, c := range boxCorners(b.RangeBox()) {
+			t := o.VectorTo(c).Dot(n)
 			lo, hi = stdmath.Min(lo, t), stdmath.Max(hi, t)
 		}
 	}

@@ -65,17 +65,13 @@ func TestGatedRevolveStaysFaceted(t *testing.T) {
 	}
 }
 
-// TestAnalyticRevolveTubeBooleanDoesNotExplode is the regression for the curved-tool explosion
-// (#129, analogous to the patterned-cut blow-up): a boolean against an analytic revolve tube must
-// re-facet it (planarized → ops.Facet) so brep.Boolean never sees a full periodic cylinder face and
-// hangs / blows the body up to tens of thousands of edges. It asserts the operation COMPLETES into
-// one bounded-size body that removed material.
-//
-// It deliberately does NOT assert an exact post-cut volume: booleans on a SOLID OF REVOLUTION are a
-// pre-existing weak spot — the faceted revolve (gate off) itself yields an invalid/inexact cut here
-// (a faceted-revolve winding bug), so revolve+boolean exactness is its own follow-up, separate from
-// emitting the analytic faces thread attaches to (this step's goal).
-func TestAnalyticRevolveTubeBooleanDoesNotExplode(t *testing.T) {
+// TestAnalyticRevolveTubeBooleanCutsHalf is the revolve+boolean EXACTNESS regression: a through-all
+// cut of an analytic revolve donut must (a) not explode/hang (the curved-tool guard, planarized →
+// ops.Facet), AND (b) remove the right amount. The bug was a through-all extent measured from body
+// VERTICES — an analytic body has only sparse seam vertices, so the slab collapsed to near-zero
+// depth and barely cut. normalExtent now measures the range box, so the slab spans the body
+// (Oblikovati/Oblikovati#129).
+func TestAnalyticRevolveTubeBooleanCutsHalf(t *testing.T) {
 	os.Setenv("OBK_ANALYTIC_CURVES", "1")
 	defer os.Unsetenv("OBK_ANALYTIC_CURVES")
 
@@ -85,7 +81,7 @@ func TestAnalyticRevolveTubeBooleanDoesNotExplode(t *testing.T) {
 	cl.SetCenterline(true)
 	NewRevolveFeatures(fs).AddAboutCenterline(sk, 0, nil, ops.NewBody)
 
-	// A symmetric through-all slab removing the tube's top half (y>1).
+	// A symmetric through-all slab removing the donut's top half (y>1 of the y∈[0,2] section).
 	clip := sketch.NewSketches().Add(sketch.XYPlane())
 	q0 := clip.Points().Add(math.P2(-10, 1))
 	q1 := clip.Points().Add(math.P2(10, 1))
@@ -106,8 +102,13 @@ func TestAnalyticRevolveTubeBooleanDoesNotExplode(t *testing.T) {
 	if n := len(body.Edges()); n > 2000 {
 		t.Fatalf("revolve+cut exploded to %d edges (curved tool not re-faceted before the boolean?)", n)
 	}
-	full := stdmath.Pi * (4*4 - 2*2) * 2
-	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; got >= full || got <= 0 {
-		t.Fatalf("revolve+cut volume %g not in (0, %g): the clip removed no material", got, full)
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("revolve+cut is not a valid solid: %+v", r.Issues)
+	}
+	// The donut is uniform in y over [0,2]; removing y>1 leaves the bottom half: 2π·R̄·A with the
+	// section now 2 wide (r∈[2,4]) × 1 tall, R̄=3 ⇒ 2π·3·2 = 12π.
+	want := 2 * stdmath.Pi * 3 * 2
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+		t.Fatalf("revolve+cut volume = %g, want ≈%g (12π half-donut) — extent too small?", got, want)
 	}
 }
