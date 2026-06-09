@@ -182,8 +182,10 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 			return nil, fmt.Errorf("text needs a 2-component anchor")
 		}
 		anchor := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
-		return r.s.texts.AddStyled(anchor, ed.Text, math.Scalar(ed.TextHeight), math.Scalar(ed.Rotation),
-			TextHJustify(ed.Justify), TextVJustify(ed.VJustify), ed.FontFamily, math.Scalar(ed.FontSize)), nil
+		tb := r.s.texts.AddStyled(anchor, ed.Text, math.Scalar(ed.TextHeight), math.Scalar(ed.Rotation),
+			TextHJustify(ed.Justify), TextVJustify(ed.VJustify), ed.FontFamily, math.Scalar(ed.FontSize))
+		tb.FontResource = ed.FontResource
+		return tb, nil
 	default:
 		return r.restoreDerivedCurve(ed)
 	}

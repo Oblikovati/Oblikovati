@@ -66,27 +66,28 @@ type EntityData struct {
 	Closed       bool      `yaml:"closed,omitempty"`
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
-	Centerline   bool      `yaml:"centerline,omitempty"` // line only: an axis
-	ImageRef     string    `yaml:"imageRef,omitempty"`   // image only
-	Anchor       []float64 `yaml:"anchor,omitempty"`     // image/text: [x, y]
-	Size         []float64 `yaml:"size,omitempty"`       // image only: [w, h]
-	Rotation     float64   `yaml:"rotation,omitempty"`   // image/text (radians)
-	Opacity      float64   `yaml:"opacity,omitempty"`    // image only
-	Text         string    `yaml:"text,omitempty"`       // text only
-	TextHeight   float64   `yaml:"textHeight,omitempty"` // text only
-	Justify      int       `yaml:"justify,omitempty"`    // text only: horizontal
-	VJustify     int       `yaml:"vJustify,omitempty"`   // text only: vertical
-	FontFamily   string    `yaml:"fontFamily,omitempty"` // text only
-	FontSize     float64   `yaml:"fontSize,omitempty"`   // text only (cm; 0 ⇒ track height)
-	Seed         []float64 `yaml:"seed,omitempty"`       // fillRegion only: [x, y]
-	Style        string    `yaml:"style,omitempty"`      // fillRegion only
-	XExpr        string    `yaml:"xExpr,omitempty"`      // equationCurve only
-	YExpr        string    `yaml:"yExpr,omitempty"`      // equationCurve only
-	T0           float64   `yaml:"t0,omitempty"`         // equationCurve only
-	T1           float64   `yaml:"t1,omitempty"`         // equationCurve only
-	Coords       []float64 `yaml:"coords,omitempty"`     // fixedSpline only: flattened [x,y,…]
-	ParentID     int       `yaml:"parentId,omitempty"`   // offsetSpline only
-	OffsetDist   float64   `yaml:"offsetDist,omitempty"` // offsetSpline only
+	Centerline   bool      `yaml:"centerline,omitempty"`   // line only: an axis
+	ImageRef     string    `yaml:"imageRef,omitempty"`     // image only
+	Anchor       []float64 `yaml:"anchor,omitempty"`       // image/text: [x, y]
+	Size         []float64 `yaml:"size,omitempty"`         // image only: [w, h]
+	Rotation     float64   `yaml:"rotation,omitempty"`     // image/text (radians)
+	Opacity      float64   `yaml:"opacity,omitempty"`      // image only
+	Text         string    `yaml:"text,omitempty"`         // text only
+	TextHeight   float64   `yaml:"textHeight,omitempty"`   // text only
+	Justify      int       `yaml:"justify,omitempty"`      // text only: horizontal
+	VJustify     int       `yaml:"vJustify,omitempty"`     // text only: vertical
+	FontFamily   string    `yaml:"fontFamily,omitempty"`   // text only
+	FontResource string    `yaml:"fontResource,omitempty"` // text only: document font resource UUID (ADR-0031)
+	FontSize     float64   `yaml:"fontSize,omitempty"`     // text only (cm; 0 ⇒ track height)
+	Seed         []float64 `yaml:"seed,omitempty"`         // fillRegion only: [x, y]
+	Style        string    `yaml:"style,omitempty"`        // fillRegion only
+	XExpr        string    `yaml:"xExpr,omitempty"`        // equationCurve only
+	YExpr        string    `yaml:"yExpr,omitempty"`        // equationCurve only
+	T0           float64   `yaml:"t0,omitempty"`           // equationCurve only
+	T1           float64   `yaml:"t1,omitempty"`           // equationCurve only
+	Coords       []float64 `yaml:"coords,omitempty"`       // fixedSpline only: flattened [x,y,…]
+	ParentID     int       `yaml:"parentId,omitempty"`     // offsetSpline only
+	OffsetDist   float64   `yaml:"offsetDist,omitempty"`   // offsetSpline only
 }
 
 // ConstraintData is one geometric constraint: its kind plus operand ids split into
@@ -221,7 +222,7 @@ func serializeEntity(e Entity) (EntityData, error) {
 			Anchor:     []float64{float64(v.Anchor.X), float64(v.Anchor.Y)},
 			TextHeight: float64(v.Height), Rotation: float64(v.Rotation),
 			Justify: int(v.Justify), VJustify: int(v.VJustify),
-			FontFamily: v.Family, FontSize: float64(v.FontSize),
+			FontFamily: v.Family, FontResource: v.FontResource, FontSize: float64(v.FontSize),
 		}, nil
 	default:
 		return serializeDerivedCurve(e)

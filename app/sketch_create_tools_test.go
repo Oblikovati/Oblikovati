@@ -88,6 +88,34 @@ func TestSketchTextToolStyleWiresThrough(t *testing.T) {
 	}
 }
 
+// The committed text embeds its chosen font as a document resource (ADR-0031): the default is
+// a bundled face, recorded as a bytes-less "embedded" resource the text resolves by.
+func TestSketchTextToolEmbedsFontResource(t *testing.T) {
+	s, sk := sketchSession(t)
+	tool := NewSketchTextTool()
+	s.StartTool(tool)
+	s.Click(100, 100)
+	tool.SetText("HI")
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	tb := sk.TextBoxes().Item(0)
+	if tb.FontResource == "" {
+		t.Fatal("committed text has no font resource (ADR-0031 embed-on-commit)")
+	}
+	part, err := activePart(s)
+	if err != nil {
+		t.Fatalf("active part: %v", err)
+	}
+	r, ok := part.Resource(tb.FontResource)
+	if !ok || r.Type != "TrueTypeFont" || r.Encoding != "embedded" || len(r.Value) != 0 {
+		t.Errorf("font resource = %+v, want a bytes-less embedded TrueTypeFont (bundled face)", r)
+	}
+	if ft, err := part.Resolve(tb.FontResource); err != nil || ft == nil {
+		t.Errorf("Resolve(font resource) = %v, %v", ft, err)
+	}
+}
+
 // Text with no string is not ready to commit.
 func TestSketchTextToolNeedsString(t *testing.T) {
 	s, _ := sketchSession(t)

@@ -122,8 +122,13 @@ func (c *EmbossFeatures) AddText(skt *sketch.Sketch, tb *sketch.TextBox, depth f
 	return c.add(def)
 }
 
-// add registers an emboss feature definition and gives it a unique name.
+// add registers an emboss feature definition and gives it a unique name. It binds the engine's
+// document font resolver (resource-aware) unless the caller already chose one, so text emboss
+// resolves a font embedded in the document (ADR-0031), not just the bundled faces.
 func (c *EmbossFeatures) add(def *EmbossDefinition) *PartFeature {
+	if def.Fonts == nil {
+		def.Fonts = c.engine.FontResolver()
+	}
 	ef := &EmbossFeature{def: def}
 	pf := c.engine.Add(ef)
 	pf.SetName(c.engine.UniqueName("Emboss"))

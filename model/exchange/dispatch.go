@@ -26,16 +26,23 @@ import (
 //
 //	res, err := exchange.Import(part, "bracket.step", types.FormatSTEP)
 func Import(part *compdef.PartComponentDefinition, path string, format types.ExchangeFormat) (ImportResult, error) {
-	bodies, warns, err := feature.ImportBodies(format, path)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import: read %q: %w", path, err)
+	}
+	bodies, warns, err := feature.ImportBodiesFromData(format, data)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import %q: %w", path, err)
 	}
 	if len(bodies) == 0 {
 		return ImportResult{}, fmt.Errorf("import %q: no bodies found", path)
 	}
+	// Embed the source bytes in the document once and cite that resource from every body, so a
+	// reopened .obk re-derives the bodies from itself — no external file path (ADR-0031).
+	id := part.AddResource(resourceFor(format, path, data))
 	imp := feature.NewImportedBodies(part.Features())
 	for i, b := range bodies {
-		imp.AddAt(b, path, string(format), i)
+		imp.AddAt(b, id, string(format), i)
 	}
 	part.Recompute()
 	return ImportResult{BodyCount: len(bodies), Solid: bodies[0].IsSolid(), Warnings: warns}, nil

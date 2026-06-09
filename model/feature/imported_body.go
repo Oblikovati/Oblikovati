@@ -14,10 +14,10 @@ import "oblikovati/kernel/topo"
 // The wrapped body is frozen (non-parametric): editing the file and re-importing is a
 // new import; this feature just injects the body it was built with.
 type ImportedBodyFeature struct {
-	body   *topo.Body
-	Path   string // source file path (recorded in the recipe; re-imported on open)
-	Format string // source format ("stl"|"obj"|"3mf"|"step"), an api/types.ExchangeFormat string
-	Index  int    // which body of a multi-body file this is (a STEP file can hold several); 0 for mesh
+	body     *topo.Body
+	Resource string // document resource UUID holding the source bytes (ADR-0031); re-imported on open
+	Format   string // source format ("stl"|"obj"|"3mf"|"step"), an api/types.ExchangeFormat string
+	Index    int    // which body of a multi-body file this is (a STEP file can hold several); 0 for mesh
 }
 
 // Body returns the imported body (the geometry injected into recompute).
@@ -39,17 +39,18 @@ type ImportedBodies struct{ engine *PartFeatures }
 // NewImportedBodies binds the collection to a feature engine.
 func NewImportedBodies(engine *PartFeatures) *ImportedBodies { return &ImportedBodies{engine} }
 
-// Add wraps a translated body (the single body of a mesh file) and records it as a feature.
-func (c *ImportedBodies) Add(body *topo.Body, path, format string) *PartFeature {
-	return c.AddAt(body, path, format, 0)
+// Add wraps a translated body (the single body of a mesh file) and records it as a feature,
+// citing the document resource (UUID) that holds its source bytes (ADR-0031).
+func (c *ImportedBodies) Add(body *topo.Body, resource, format string) *PartFeature {
+	return c.AddAt(body, resource, format, 0)
 }
 
 // AddAt records body index of a (possibly multi-body) source file as a feature, so reopen
-// re-imports the same body from the file. Each body gets a unique, readable name ("Imported
-// Body 1", "Imported Body 2", …) so a multi-solid STEP doesn't fill the browser with
+// re-imports the same body from the embedded resource. Each body gets a unique, readable name
+// ("Imported Body 1", "Imported Body 2", …) so a multi-solid STEP doesn't fill the browser with
 // identically-named rows (which would collide as Dear ImGui ids).
-func (c *ImportedBodies) AddAt(body *topo.Body, path, format string, index int) *PartFeature {
-	pf := c.engine.Add(&ImportedBodyFeature{body: body, Path: path, Format: format, Index: index})
+func (c *ImportedBodies) AddAt(body *topo.Body, resource, format string, index int) *PartFeature {
+	pf := c.engine.Add(&ImportedBodyFeature{body: body, Resource: resource, Format: format, Index: index})
 	pf.SetName(c.engine.UniqueName("Imported Body"))
 	return pf
 }

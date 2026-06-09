@@ -43,6 +43,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerLightingHandlers()
 	r.registerGraphicsHandlers()
 	r.registerExchangeHandlers()
+	r.registerFontHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r

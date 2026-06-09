@@ -65,7 +65,9 @@ func (MeshExchange) ImportInto(part *compdef.PartComponentDefinition, path strin
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import %q: %w", path, err)
 	}
-	feature.NewImportedBodies(part.Features()).Add(body, path, string(format))
+	// Embed the source bytes and cite them by UUID so the document is self-contained (ADR-0031).
+	id := part.AddResource(resourceFor(format, path, data))
+	feature.NewImportedBodies(part.Features()).Add(body, id, string(format))
 	part.Recompute()
 	return ImportResult{BodyCount: 1, Solid: body.IsSolid(), Warnings: warns}, nil
 }

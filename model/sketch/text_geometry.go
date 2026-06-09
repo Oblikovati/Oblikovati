@@ -21,7 +21,7 @@ func (t *TextBox) Outlines(fonts text.FontResolver) ([][]math.Point2, error) {
 		return nil, nil
 	}
 	req := text.Request{
-		Content: t.Text, Family: t.Family,
+		Content: t.Text, Family: t.FontRef(),
 		Height: float64(t.Height), FontSize: float64(t.FontSize),
 		HAlign: hAlignOf(t.Justify), VAlign: vAlignOf(t.VJustify),
 	}
