@@ -44,10 +44,8 @@ func chamferEdges(in Input, keys [][]byte, dist float64, feat string, flatCorner
 	}
 	// A rim of a simple analytic cylinder gets a TRUE conical chamfer (one geom.Cone face) by
 	// rebuilding the body as a surface of revolution (#127). Anything else falls through.
-	if analyticCurvesEnabled() {
-		if res, ok := analyticCylinderChamfer(body, edges, dist, feat); ok {
-			return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
-		}
+	if res, ok := analyticCylinderChamfer(body, edges, dist, feat); ok {
+		return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
 	}
 	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
 	// segments, so the wedge cut works instead of hitting a degenerate closed edge (#129/#127).

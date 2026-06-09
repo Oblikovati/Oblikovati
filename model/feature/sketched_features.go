@@ -86,7 +86,7 @@ func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) 
 	// cylinder/cone/plane faces. A profile with an arc/spline (e.g. a sphere) would have its sampled
 	// chords turn into many tiny cone facets — worse than the faceted swept solid — so it stays
 	// faceted until curved meridian edges (torus, #129 follow-up) are supported.
-	if analyticCurvesEnabled() && fullRevolution(angle) && isStraightLoop(prof.OuterLoop()) {
+	if fullRevolution(angle) && isStraightLoop(prof.OuterLoop()) {
 		mer := meridianFromProfile(prof, r.def.Sketch.Plane(), axis)
 		if body, err := brep.SolidOfRevolution(axis.Origin(), axis.Direction().AsVector(), mer, feat); err == nil && body != nil {
 			return body, nil

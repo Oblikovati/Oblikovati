@@ -4,7 +4,6 @@ package feature
 
 import (
 	stdmath "math"
-	"os"
 	"testing"
 
 	"oblikovati/kernel/geom"
@@ -23,12 +22,9 @@ func bodyTorusCount(b *topo.Body) int {
 }
 
 // TestAnalyticFilletOfCylinderRimIsATorus is the #127 fix for fillet: filleting the rim of an
-// extruded circle (an analytic cylinder) under OBK_ANALYTIC_CURVES yields a TRUE toroidal fillet —
+// extruded circle (an analytic cylinder) yields a TRUE toroidal fillet —
 // one geom.Torus face on a valid watertight solid — rather than a faceted rolling-ball blend.
 func TestAnalyticFilletOfCylinderRimIsATorus(t *testing.T) {
-	os.Setenv("OBK_ANALYTIC_CURVES", "1")
-	defer os.Unsetenv("OBK_ANALYTIC_CURVES")
-
 	const r, h, f = 5.0, 10.0, 2.0
 	fs, rim := extrudedCylinderTopRim(t, r, h)
 	pf := NewDressUpFeatures(fs).AddFillet([][]byte{rim}, func() float64 { return f })

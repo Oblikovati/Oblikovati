@@ -4,7 +4,6 @@ package feature
 
 import (
 	stdmath "math"
-	"os"
 
 	"oblikovati/kernel/geom"
 	"oblikovati/kernel/topo"
@@ -12,13 +11,11 @@ import (
 	"oblikovati/model/sketch"
 )
 
-// analyticCurvesEnabled gates the analytic-cylinder extrude (#129) behind OBK_ANALYTIC_CURVES while the
-// downstream stack is finished. ON, an extruded circle is a TRUE cylinder (thread/chamfer/fillet on it
-// work) and curved bodies are re-faceted on demand for the planar boolean/hull/dress-up; OFF (default),
-// extrude stays faceted exactly as before — so the feature lands incrementally without regressing
-// topology-index-sensitive callers. Remove the gate once topology-stable re-faceting + curved-aware
-// dress-up are complete (see #127/#129).
-func analyticCurvesEnabled() bool { return os.Getenv("OBK_ANALYTIC_CURVES") != "" }
+// Analytic curved geometry (#129) is now ALWAYS ON: an extruded circle / straight-edged revolve is a
+// TRUE cylinder/cone/plane/torus B-rep (thread + analytic chamfer/fillet attach to it), and a curved
+// body is re-faceted on demand for the planar boolean/hull (combine → planarized). The migration ran
+// behind an OBK_ANALYTIC_CURVES gate through steps 1–3; the gate was removed once topology-stable
+// re-faceting, analytic dress-up (#127), and through-all extent were all in place.
 
 // Extruding a circular profile used to produce a faceted prism (a 64-gon), so the "cylinder"
 // had only planar faces — which blocks thread (no cylindrical face to attach) and makes

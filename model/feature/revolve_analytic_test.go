@@ -4,7 +4,6 @@ package feature
 
 import (
 	stdmath "math"
-	"os"
 	"testing"
 
 	"oblikovati/kernel/geom"
@@ -36,13 +35,10 @@ func cylinderFaceCount(b *topo.Body) int {
 	return n
 }
 
-// TestAnalyticRevolveHasCylinderWalls proves #129 step 2: under OBK_ANALYTIC_CURVES a full revolve
-// of a rectilinear (tube) profile yields TRUE cylindrical faces — the bore + outer wall that
-// thread/chamfer/fillet attach to — instead of a faceted prism.
+// TestAnalyticRevolveHasCylinderWalls proves #129 step 2: a full revolve of a rectilinear (tube)
+// profile yields TRUE cylindrical faces — the bore + outer wall that thread/chamfer/fillet attach to
+// — instead of a faceted prism.
 func TestAnalyticRevolveHasCylinderWalls(t *testing.T) {
-	os.Setenv("OBK_ANALYTIC_CURVES", "1")
-	defer os.Unsetenv("OBK_ANALYTIC_CURVES")
-
 	body := revolveTubeBody(t)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
 		t.Fatalf("analytic revolved tube is not a valid solid: %+v", r.Issues)
@@ -56,12 +52,30 @@ func TestAnalyticRevolveHasCylinderWalls(t *testing.T) {
 	}
 }
 
-// TestGatedRevolveStaysFaceted pins the gate-off default: the same revolve has NO analytic cylinder
-// faces (the faceted prism path), so the analytic surface is opt-in until the gate is flipped.
-func TestGatedRevolveStaysFaceted(t *testing.T) {
-	os.Unsetenv("OBK_ANALYTIC_CURVES")
-	if got := cylinderFaceCount(revolveTubeBody(t)); got != 0 {
-		t.Fatalf("gate-off revolve has %d cylinder faces, want 0 (faceted)", got)
+// TestArcProfileRevolveStaysFaceted pins the analytic boundary: a profile with a CURVED edge (a
+// half-disc → sphere) is NOT made analytic — its sampled chords would shatter into tiny cone facets,
+// worse than the faceted swept solid — so it revolves to a valid faceted sphere with no analytic
+// cylinder/cone faces (the isStraightLoop guard; curved meridian edges remain a follow-up).
+func TestArcProfileRevolveStaysFaceted(t *testing.T) {
+	s := sketch.NewSketches().Add(sketch.XYPlane())
+	top := s.Points().Add(math.P2(0, 2))
+	bot := s.Points().Add(math.P2(0, -2))
+	s.Lines().Add(top, bot)                                                          // flat side on the Y axis
+	s.Arcs().AddByCenterStartEnd(math.P2(0, 0), math.P2(0, -2), math.P2(0, 2), true) // bulge +X through (2,0)
+
+	fs := NewPartFeatures(nil, nil)
+	NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
+	fs.Recompute()
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("faceted sphere revolve is not a valid solid: %+v", r.Issues)
+	}
+	if c, k := cylinderFaceCount(body), bodyConeCount(body); c != 0 || k != 0 {
+		t.Fatalf("arc-profile revolve has %d cylinder + %d cone faces, want 0 (faceted sphere)", c, k)
+	}
+	want := 4.0 / 3.0 * stdmath.Pi * 8 // (4/3)πR³, R=2
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+		t.Errorf("faceted sphere volume = %g, want ≈%g", got, want)
 	}
 }
 
@@ -72,9 +86,6 @@ func TestGatedRevolveStaysFaceted(t *testing.T) {
 // depth and barely cut. normalExtent now measures the range box, so the slab spans the body
 // (Oblikovati/Oblikovati#129).
 func TestAnalyticRevolveTubeBooleanCutsHalf(t *testing.T) {
-	os.Setenv("OBK_ANALYTIC_CURVES", "1")
-	defer os.Unsetenv("OBK_ANALYTIC_CURVES")
-
 	fs := NewPartFeatures(nil, nil)
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))

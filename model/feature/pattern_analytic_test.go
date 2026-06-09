@@ -3,8 +3,7 @@
 package feature
 
 import (
-	"os"
-	"sort"
+	stdmath "math"
 	"testing"
 
 	"oblikovati/kernel/ops"
@@ -14,9 +13,9 @@ import (
 )
 
 // discThenCutPatterned models the wheel core: a Ø60 disc, one Ø6 bolt-hole cut, then a 5-up
-// circular pattern of that cut. Under OBK_ANALYTIC_CURVES the disc and bolt are analytic
-// cylinders; the pattern boolean must re-facet the curved tool (#129) or it explodes (the raw
-// periodic-cylinder face used to blow the body up to tens of thousands of edges and hang).
+// circular pattern of that cut. The disc and bolt are analytic cylinders; the pattern boolean must
+// re-facet the curved tool (#129) or it explodes (the raw periodic-cylinder face used to blow the
+// body up to tens of thousands of edges and hang).
 func discThenCutPatterned(t *testing.T) *topo.Body {
 	t.Helper()
 	fs := NewPartFeatures(nil, nil)
@@ -39,35 +38,22 @@ func discThenCutPatterned(t *testing.T) *topo.Body {
 	return bodies[0]
 }
 
-func sortedEdgeKeys(b *topo.Body) []string {
-	es := b.Edges()
-	out := make([]string, len(es))
-	for i, e := range es {
-		out[i] = string(e.ReferenceKey())
+// TestAnalyticPatternedCutDoesNotExplode is the #129 regression for the curved-tool pattern blow-up:
+// the patterned bolt cut must re-facet the analytic bolt before each boolean, leaving ONE valid solid
+// of bounded size with five holes removed — not a tens-of-thousands-of-edges (multi-minute) explosion
+// from feeding a raw periodic cylinder to the planar boolean. (Disc-level reference-key stability vs a
+// direct faceted extrude is pinned separately by TestPlanarizedDiscMatchesFacetedExtrude.)
+func TestAnalyticPatternedCutDoesNotExplode(t *testing.T) {
+	body := discThenCutPatterned(t)
+	if vr := ops.Validate(body); !vr.Valid || !body.IsSolid() {
+		t.Fatalf("patterned cut is not a valid solid: %+v", vr.Issues)
 	}
-	sort.Strings(out)
-	return out
-}
-
-// TestAnalyticPatternedCutMatchesFaceted is the decisive #129 check: the patterned-cut body must
-// have the SAME sorted edge reference keys with OBK_ANALYTIC_CURVES on as off, so topology()-style
-// "smallest key" selection picks the same physical edge (the invariant the wheel/box-bosses suites
-// depend on) AND so the pattern boolean does not explode on a curved tool. The equal-count check
-// alone is the regression for the tens-of-thousands-of-edges blow-up.
-func TestAnalyticPatternedCutMatchesFaceted(t *testing.T) {
-	os.Unsetenv("OBK_ANALYTIC_CURVES")
-	off := sortedEdgeKeys(discThenCutPatterned(t))
-
-	os.Setenv("OBK_ANALYTIC_CURVES", "1")
-	defer os.Unsetenv("OBK_ANALYTIC_CURVES")
-	on := sortedEdgeKeys(discThenCutPatterned(t))
-
-	if len(off) != len(on) {
-		t.Fatalf("edge count: off=%d on=%d", len(off), len(on))
+	if n := len(body.Edges()); n > 2000 {
+		t.Fatalf("patterned cut exploded to %d edges (curved tool not re-faceted before the boolean?)", n)
 	}
-	for i := range off {
-		if off[i] != on[i] {
-			t.Fatalf("edge key %d differs:\n off=%q\n  on=%q", i, off[i], on[i])
-		}
+	disc := stdmath.Pi * 30 * 30 * 10
+	holes := 5 * stdmath.Pi * 3 * 3 * 10 // five Ø6 through-holes
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, disc-holes) > 0.03 {
+		t.Fatalf("patterned-cut volume = %g, want ≈%g (disc − 5 holes)", got, disc-holes)
 	}
 }

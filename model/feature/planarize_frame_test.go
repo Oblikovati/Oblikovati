@@ -42,7 +42,7 @@ func sortedVertexPoints(pts []math.Point3) []math.Point3 {
 // TestPlanarizedDiscMatchesFacetedExtrude pins #129's topology-stable re-faceting: planarizing
 // the analytic cylinder built from an extruded circle must yield the SAME vertex order, edge
 // order, and positions as a direct faceted extrude of that circle — otherwise downstream
-// dress-up (chamfer/fillet/shell) selects a different physical edge under OBK_ANALYTIC_CURVES.
+// dress-up (chamfer/fillet/shell) selects a different physical edge (analytic-cylinder re-faceting).
 func TestPlanarizedDiscMatchesFacetedExtrude(t *testing.T) {
 	plane := sketch.XYPlane()
 	circle := &sketch.Circle{Center: &sketch.Point{X: 0, Y: 0}, Radius: 30}
