@@ -13,14 +13,21 @@ import (
 	"oblikovati/kernel/topo"
 )
 
-// ImportBodies reads path and translates it into kernel bodies, routing by format: a mesh format
-// (STL/OBJ/3MF) yields one welded body; STEP yields every B-rep solid in the file. It is the shared
-// reader used by both an interactive import and a recipe re-import.
+// ImportBodies reads path and translates it via [ImportBodiesFromData]. The interactive
+// importer uses it to read a file once before embedding its bytes as a document resource.
 func ImportBodies(format types.ExchangeFormat, path string) ([]*topo.Body, []string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("import: read %q: %w", path, err)
 	}
+	return ImportBodiesFromData(format, data)
+}
+
+// ImportBodiesFromData translates raw file bytes into kernel bodies, routing by format: a mesh
+// format (STL/OBJ/3MF) yields one welded body; STEP yields every B-rep solid in the file. It is
+// the shared reader for both an interactive import and a recipe re-import-from-resource — the
+// bytes come from the file the first time and from the embedded document resource on reopen.
+func ImportBodiesFromData(format types.ExchangeFormat, data []byte) ([]*topo.Body, []string, error) {
 	switch {
 	case format == types.FormatSTEP:
 		return step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: 1})
@@ -35,35 +42,42 @@ func ImportBodies(format types.ExchangeFormat, path string) ([]*topo.Body, []str
 	}
 }
 
-// ImportData is an imported-body feature's recipe: the SOURCE file path + format. The
-// translated *topo.Body itself is not serialized (it cannot round-trip through YAML); on
-// open the file is re-imported from these coordinates, so editing the source file and
-// reopening pulls the new geometry — the associative-import story (M17-F04, plan §4).
+// ImportData is an imported-body feature's recipe: the document resource UUID holding the source
+// bytes + the format + which body (multi-body STEP). The translated *topo.Body itself is not
+// serialized (it cannot round-trip through YAML); on open the body is re-derived from the
+// embedded resource (ADR-0031), so the document is self-contained — no external file path.
 type ImportData struct {
-	Path   string `yaml:"path"`
-	Format string `yaml:"format"`
-	Index  int    `yaml:"index,omitempty"` // which body of a multi-body (STEP) file
+	Resource string `yaml:"resource"`
+	Format   string `yaml:"format"`
+	Index    int    `yaml:"index,omitempty"` // which body of a multi-body (STEP) file
 }
 
 // serializeImportedBody projects an imported-body feature to its source recipe.
 func serializeImportedBody(f *ImportedBodyFeature) *ImportData {
-	return &ImportData{Path: f.Path, Format: f.Format, Index: f.Index}
+	return &ImportData{Resource: f.Resource, Format: f.Format, Index: f.Index}
 }
 
-// restoreImportedBody re-imports the source file recorded in the recipe and wraps the recorded
-// body (by index, for multi-body STEP files) as a feature. A missing/unreadable file, a bad
-// format, or a now-missing body index errors (no silent body loss), matching the no-silent-drop
-// policy of the recipe codec.
+// restoreImportedBody re-derives the body from the document resource the recipe cites and wraps
+// it (by index, for multi-body STEP files) as a feature. A missing resource, a bad format, or a
+// now-missing body index errors (no silent body loss), matching the recipe codec's no-silent-drop
+// policy. The bytes come from the document itself, so reopening needs no external source file.
 func restoreImportedBody(fs *PartFeatures, d *ImportData) (*PartFeature, error) {
 	if d == nil {
 		return nil, fmt.Errorf("imported-body feature is missing its payload")
 	}
-	bodies, _, err := ImportBodies(types.ExchangeFormat(d.Format), d.Path)
+	if fs.resources == nil {
+		return nil, fmt.Errorf("imported-body re-import: no resource store wired into the engine")
+	}
+	data, ok := fs.resources.ResourceBytes(d.Resource)
+	if !ok {
+		return nil, fmt.Errorf("imported-body re-import: resource %q not present in the document", d.Resource)
+	}
+	bodies, _, err := ImportBodiesFromData(types.ExchangeFormat(d.Format), data)
 	if err != nil {
-		return nil, fmt.Errorf("imported-body re-import %q: %w", d.Path, err)
+		return nil, fmt.Errorf("imported-body re-import (resource %q): %w", d.Resource, err)
 	}
 	if d.Index < 0 || d.Index >= len(bodies) {
-		return nil, fmt.Errorf("imported-body re-import %q: body %d no longer present (file has %d)", d.Path, d.Index, len(bodies))
+		return nil, fmt.Errorf("imported-body re-import (resource %q): body %d no longer present (file has %d)", d.Resource, d.Index, len(bodies))
 	}
-	return NewImportedBodies(fs).AddAt(bodies[d.Index], d.Path, d.Format, d.Index), nil
+	return NewImportedBodies(fs).AddAt(bodies[d.Index], d.Resource, d.Format, d.Index), nil
 }

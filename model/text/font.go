@@ -35,6 +35,24 @@ func Parse(data []byte) (*Font, error) {
 	return &Font{f: f, upem: float64(f.UnitsPerEm())}, nil
 }
 
+// Family returns the font's family name (sfnt name-table ID 1, e.g. "Liberation Sans"), or ""
+// if absent — used to label a face in the font picker.
+func (ft *Font) Family() string { return ft.name(sfnt.NameIDFamily) }
+
+// Subfamily returns the font's style/subfamily name (ID 2, e.g. "Regular"/"Bold Italic").
+func (ft *Font) Subfamily() string { return ft.name(sfnt.NameIDSubfamily) }
+
+// name reads one sfnt name-table entry, returning "" on any error (a missing name is not fatal
+// to enumeration).
+func (ft *Font) name(id sfnt.NameID) string {
+	var buf sfnt.Buffer
+	s, err := ft.f.Name(&buf, id)
+	if err != nil {
+		return ""
+	}
+	return s
+}
+
 // Outlines returns the closed polygon contours of the text laid out along the baseline
 // (y up, first glyph starting at x=0), scaled so one em is `height` model units. Each contour
 // is one glyph loop — a letter's outer boundary and its counters (the hole in A/O/B) come

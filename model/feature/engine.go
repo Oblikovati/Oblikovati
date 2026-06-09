@@ -12,6 +12,7 @@ import (
 	"oblikovati/model/health"
 	"oblikovati/model/identity"
 	"oblikovati/model/param"
+	"oblikovati/model/text"
 )
 
 // eopAll means the end-of-part marker is at the end (evaluate the whole program).
@@ -22,12 +23,40 @@ const eopAll = -1
 // the clean prefix, isolates failures as feature health, and supports
 // reorder/rename/suppression and the end-of-part marker (ADR-0010).
 type PartFeatures struct {
-	items  []*PartFeature
-	byID   map[ID]*PartFeature
-	params *param.Parameters
-	keys   *identity.KeyManager
-	eop    int
-	result []*topo.Body
+	items     []*PartFeature
+	byID      map[ID]*PartFeature
+	params    *param.Parameters
+	keys      *identity.KeyManager
+	eop       int
+	result    []*topo.Body
+	resources ResourceStore
+	fonts     text.FontResolver
+}
+
+// ResourceStore reads embedded imported-file bytes by their document resource UUID
+// (ADR-0031). The owning content (model/compdef) implements it and wires it into the engine
+// so an imported-body feature can re-derive its body from the document instead of from disk.
+type ResourceStore interface {
+	ResourceBytes(id string) ([]byte, bool)
+}
+
+// SetResourceStore wires the document's resource table into the engine so feature restore can
+// read imported files by UUID. Set by the owning content after construction (the engine is
+// recreated on a recipe reset, so this must be re-wired each time).
+func (fs *PartFeatures) SetResourceStore(rs ResourceStore) { fs.resources = rs }
+
+// SetFontResolver wires the document's font resolver (resource-aware) into the engine so a
+// text/emboss feature resolves its font from the document's embedded/app-provided faces. Like
+// the resource store, it is re-wired after a recipe reset (the engine is recreated).
+func (fs *PartFeatures) SetFontResolver(r text.FontResolver) { fs.fonts = r }
+
+// FontResolver returns the engine's document font resolver, or the embedded-faces default when
+// none was wired (a bare engine still resolves plain family-named text).
+func (fs *PartFeatures) FontResolver() text.FontResolver {
+	if fs.fonts != nil {
+		return fs.fonts
+	}
+	return text.DefaultResolver()
 }
 
 // NewPartFeatures creates an empty feature program. params drives expressions and

@@ -4,9 +4,11 @@ package app
 
 import (
 	"errors"
+	"path/filepath"
 
 	"oblikovati/math"
 	"oblikovati/model/sketch"
+	"oblikovati/osfont"
 )
 
 // Additional Create-panel tools: Chamfer (two-line bevel, sibling of Fillet), Slot (a
@@ -213,14 +215,16 @@ type SketchTextTool struct {
 	text     string
 	height   math.Scalar
 	family   string
+	fontPath string // host font file to embed on commit; "" ⇒ an application-bundled face
 	fontSize math.Scalar
 	hAlign   sketch.TextHJustify
 	vAlign   sketch.TextVJustify
 }
 
-// NewSketchTextTool makes a text tool with a default height and the default font family.
+// NewSketchTextTool makes a text tool with a default height and the first catalogue face (a
+// bundled face).
 func NewSketchTextTool() *SketchTextTool {
-	return &SketchTextTool{height: 1, family: textFontFamilies[0]}
+	return &SketchTextTool{height: 1, family: fontCatalog()[0].Family}
 }
 
 func (t *SketchTextTool) Name() string              { return "Text" }
@@ -261,8 +265,29 @@ func (t *SketchTextTool) Commit(s *Session) error {
 	if t.anchor == nil || t.text == "" {
 		return errors.New("text: needs an anchor and a non-empty string")
 	}
-	sk.TextBoxes().AddStyled(*t.anchor, t.text, t.height, 0, t.hAlign, t.vAlign, t.family, t.fontSize)
+	tb := sk.TextBoxes().AddStyled(*t.anchor, t.text, t.height, 0, t.hAlign, t.vAlign, t.family, t.fontSize)
+	t.embedFont(s, tb)
 	return nil
+}
+
+// embedFont points the new text at a document font resource so the chosen face travels with the
+// document (ADR-0031): a host font's bytes are embedded, a bundled face is recorded without
+// bytes. Best-effort — on any failure the text keeps its family name and resolves to the
+// default face, so the text still renders.
+func (t *SketchTextTool) embedFont(s *Session, tb *sketch.TextBox) {
+	part, err := activePart(s)
+	if err != nil {
+		return
+	}
+	if t.fontPath != "" {
+		data, rerr := osfont.ReadFont(t.fontPath)
+		if rerr != nil {
+			return
+		}
+		tb.FontResource = part.EmbedSystemFont(data, filepath.Base(t.fontPath))
+		return
+	}
+	tb.FontResource = part.UseEmbeddedFont(t.family)
 }
 
 // --- Params (generic property dialog) -------------------------------------
@@ -274,10 +299,6 @@ func (t *SketchChamferTool) Params() ToolParams {
 func (t *SketchSlotTool) Params() ToolParams {
 	return ToolParams{Floats: []FloatParam{scalarParam("Width", &t.width)}}
 }
-
-// textFontFamilies are the font families offered in the text window; the first is the
-// default. (Liberation Sans is the embedded face; more can be vendored later.)
-var textFontFamilies = []string{"Liberation Sans"}
 
 var hAlignLabels = []string{"Left", "Center", "Right"}
 var vAlignLabels = []string{"Baseline", "Lower", "Middle", "Upper"}
@@ -293,24 +314,27 @@ func (t *SketchTextTool) Params() ToolParams {
 // alignmentChoices exposes the font family + horizontal/vertical alignment dropdowns.
 func (t *SketchTextTool) alignmentChoices() []ChoiceParam {
 	return []ChoiceParam{
-		{"Font", textFontFamilies, t.fontIndex, t.setFontIndex},
+		{"Font", fontCatalogLabels(), t.fontIndex, t.setFontIndex},
 		{"Alignment", hAlignLabels, func() int { return int(t.hAlign) }, func(i int) { t.hAlign = sketch.TextHJustify(i) }},
 		{"Vertical", vAlignLabels, func() int { return int(t.vAlign) }, func(i int) { t.vAlign = sketch.TextVJustify(i) }},
 	}
 }
 
-// fontIndex returns the index of the tool's font family in textFontFamilies (0 default).
+// fontIndex returns the catalogue index of the tool's chosen face (matched on family + path),
+// defaulting to 0 (the first bundled face).
 func (t *SketchTextTool) fontIndex() int {
-	for i, f := range textFontFamilies {
-		if f == t.family {
+	for i, f := range fontCatalog() {
+		if f.Family == t.family && f.Path == t.fontPath {
 			return i
 		}
 	}
 	return 0
 }
 
+// setFontIndex selects the catalogue face at i, capturing its family and (host) file path.
 func (t *SketchTextTool) setFontIndex(i int) {
-	if i >= 0 && i < len(textFontFamilies) {
-		t.family = textFontFamilies[i]
+	faces := fontCatalog()
+	if i >= 0 && i < len(faces) {
+		t.family, t.fontPath = faces[i].Family, faces[i].Path
 	}
 }

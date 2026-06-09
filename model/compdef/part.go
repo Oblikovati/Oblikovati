@@ -39,6 +39,10 @@ type PartComponentDefinition struct {
 	// assets are the document's embedded appearance/material copies (the non-built-in
 	// assets it uses), making the .obk self-contained (ADR-0022).
 	assets *material.AssetSet
+	// resources are the document's embedded imported files (meshes, STEP, fonts), keyed by a
+	// per-import UUID that features cite, making the .obk self-contained (ADR-0031). Document-
+	// level input, NOT part of the recipe — it survives a recipe reset (undo/reopen).
+	resources map[string]doc.Resource
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
@@ -46,7 +50,7 @@ type PartComponentDefinition struct {
 func NewPartComponentDefinition() *PartComponentDefinition {
 	params := param.NewParameters()
 	keys := identity.NewKeyManager()
-	return &PartComponentDefinition{
+	d := &PartComponentDefinition{
 		bodies:      topo.NewSurfaceBodies(),
 		params:      params,
 		sketches:    sketch.NewSketches(),
@@ -58,7 +62,11 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		eop:         endOfPartAtEnd,
 		assignments: material.NewAssignmentStore(),
 		assets:      material.NewAssetSet(),
+		resources:   map[string]doc.Resource{},
 	}
+	d.features.SetResourceStore(d) // re-derive imported bodies from the resource table on open
+	d.features.SetFontResolver(d)  // resolve text/emboss fonts from embedded/app-provided resources
+	return d
 }
 
 // Assignments returns the part's material/appearance assignment store. It is keyed by
