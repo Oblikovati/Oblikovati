@@ -36,6 +36,9 @@ type Document struct {
 	DisplayName   string
 	Model         []byte
 	Data          map[string][]byte
+	// Resources is the root resource table (ADR-0031): imported files embedded in the
+	// document, keyed by a per-import UUID and referenced from the recipe by that key.
+	Resources map[string]Resource
 }
 
 // onDisk is the YAML projection of a Document: manifest at top level, recipe as a
@@ -44,6 +47,7 @@ type onDisk struct {
 	SchemaVersion int               `yaml:"schemaVersion,omitempty"`
 	DocumentType  uint32            `yaml:"documentType,omitempty"`
 	DisplayName   string            `yaml:"displayName,omitempty"`
+	Resources     yaml.Node         `yaml:"resources,omitempty"`
 	Model         yaml.Node         `yaml:"model,omitempty"`
 	Data          map[string]string `yaml:"data,omitempty"`
 }
@@ -55,6 +59,13 @@ func MarshalDocument(d Document) ([]byte, error) {
 		SchemaVersion: d.SchemaVersion,
 		DocumentType:  d.DocumentType,
 		DisplayName:   d.DisplayName,
+	}
+	if len(d.Resources) > 0 {
+		node, err := resourcesNode(d.Resources)
+		if err != nil {
+			return nil, err
+		}
+		od.Resources = *node
 	}
 	if len(d.Model) > 0 {
 		node, err := modelNode(d.Model)
@@ -87,6 +98,11 @@ func UnmarshalDocument(raw []byte) (Document, error) {
 		DocumentType:  od.DocumentType,
 		DisplayName:   od.DisplayName,
 	}
+	resources, err := decodeResources(&od.Resources)
+	if err != nil {
+		return Document{}, err
+	}
+	d.Resources = resources
 	if od.Model.Kind != 0 {
 		b, err := yaml.Marshal(&od.Model)
 		if err != nil {

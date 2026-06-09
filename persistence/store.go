@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"oblikovati/model/doc"
+	"oblikovati/persistence/yamlcodec"
 )
 
 // PackageStore is the [doc.Store] backed by .obk packages on disk. Injected into a
@@ -43,6 +44,9 @@ func (s *PackageStore) Save(d *doc.Document) error {
 		}
 		pkg.SetModelYAML(model)
 	}
+	if rb, ok := d.Content().(doc.ResourceBearer); ok {
+		pkg.SetResources(toCodecResources(rb.Resources()))
+	}
 	return pkg.Save(d.FullFileName())
 }
 
@@ -61,6 +65,11 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Resources must be restored BEFORE the recipe is applied, so a feature that re-derives
+	// geometry from an embedded resource (e.g. an imported body) can read its bytes (ADR-0031).
+	if rb, ok := d.Content().(doc.ResourceBearer); ok {
+		rb.SetResources(fromCodecResources(pkg.Resources()))
+	}
 	if model, ok := pkg.ModelYAML(); ok {
 		rc, ok := d.Content().(doc.RecipeContent)
 		if !ok {
@@ -71,6 +80,31 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 		}
 	}
 	return d, nil
+}
+
+// toCodecResources / fromCodecResources bridge the document-layer resource table (doc.Resource)
+// and the on-disk serialization type (yamlcodec.Resource); the fields are identical, this keeps
+// the layers decoupled (persistence is the only package that knows both).
+func toCodecResources(in map[string]doc.Resource) map[string]yamlcodec.Resource {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]yamlcodec.Resource, len(in))
+	for id, r := range in {
+		out[id] = yamlcodec.Resource{Type: r.Type, Encoding: r.Encoding, Value: r.Value, Origin: r.Origin}
+	}
+	return out
+}
+
+func fromCodecResources(in map[string]yamlcodec.Resource) map[string]doc.Resource {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]doc.Resource, len(in))
+	for id, r := range in {
+		out[id] = doc.Resource{Type: r.Type, Encoding: r.Encoding, Value: r.Value, Origin: r.Origin}
+	}
+	return out
 }
 
 // Exists reports whether a package file is present at fullDocumentName.

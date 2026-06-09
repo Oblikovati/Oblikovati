@@ -22,13 +22,26 @@ const eopAll = -1
 // the clean prefix, isolates failures as feature health, and supports
 // reorder/rename/suppression and the end-of-part marker (ADR-0010).
 type PartFeatures struct {
-	items  []*PartFeature
-	byID   map[ID]*PartFeature
-	params *param.Parameters
-	keys   *identity.KeyManager
-	eop    int
-	result []*topo.Body
+	items     []*PartFeature
+	byID      map[ID]*PartFeature
+	params    *param.Parameters
+	keys      *identity.KeyManager
+	eop       int
+	result    []*topo.Body
+	resources ResourceStore
 }
+
+// ResourceStore reads embedded imported-file bytes by their document resource UUID
+// (ADR-0031). The owning content (model/compdef) implements it and wires it into the engine
+// so an imported-body feature can re-derive its body from the document instead of from disk.
+type ResourceStore interface {
+	ResourceBytes(id string) ([]byte, bool)
+}
+
+// SetResourceStore wires the document's resource table into the engine so feature restore can
+// read imported files by UUID. Set by the owning content after construction (the engine is
+// recreated on a recipe reset, so this must be re-wired each time).
+func (fs *PartFeatures) SetResourceStore(rs ResourceStore) { fs.resources = rs }
 
 // NewPartFeatures creates an empty feature program. params drives expressions and
 // conditional suppression; keys resolves topology input refs (either may be nil

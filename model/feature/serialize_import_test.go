@@ -20,6 +20,15 @@ type emptySketches struct{}
 func (emptySketches) IndexOf(*sketch.Sketch) (int, bool) { return 0, false }
 func (emptySketches) At(int) (*sketch.Sketch, bool)      { return nil, false }
 
+// fakeResources is a named ResourceStore fake: imported file bytes keyed by resource UUID,
+// standing in for the document's embedded resource table (ADR-0031).
+type fakeResources map[string][]byte
+
+func (f fakeResources) ResourceBytes(id string) ([]byte, bool) {
+	b, ok := f[id]
+	return b, ok
+}
+
 func writeCubeSTL(t *testing.T, dir string) string {
 	t.Helper()
 	body, _, err := meshio.SolidOrSurface(unitCubeSoup(2), "fixture#0", meshio.DefaultWeldTolerance)
@@ -51,12 +60,17 @@ func unitCubeSoup(s float64) meshio.RawMesh {
 func TestImportedBodyFeatureRoundTripsViaReImport(t *testing.T) {
 	dir := t.TempDir()
 	path := writeCubeSTL(t, dir)
-	body, _, err := meshio.ImportBody(types.FormatSTL, mustRead(t, path), "import:stl#0", 0)
+	raw := mustRead(t, path)
+	body, _, err := meshio.ImportBody(types.FormatSTL, raw, "import:stl#0", 0)
 	if err != nil {
 		t.Fatalf("ImportBody: %v", err)
 	}
+	// The source bytes live in the document resource table, cited by UUID (ADR-0031).
+	const resID = "11111111-2222-3333-4444-555555555555"
+	store := fakeResources{resID: raw}
 	fs := NewPartFeatures(nil, nil)
-	NewImportedBodies(fs).Add(body, path, "stl")
+	fs.SetResourceStore(store)
+	NewImportedBodies(fs).Add(body, resID, "stl")
 
 	data, err := fs.MarshalRecipe(emptySketches{})
 	if err != nil {
@@ -65,12 +79,14 @@ func TestImportedBodyFeatureRoundTripsViaReImport(t *testing.T) {
 	if len(data) != 1 || data[0].Kind != "importedBody" || data[0].Import == nil {
 		t.Fatalf("marshaled = %+v, want one importedBody with payload", data)
 	}
-	if data[0].Import.Path != path || data[0].Import.Format != "stl" {
-		t.Errorf("import payload = %+v, want path=%q format=stl", data[0].Import, path)
+	if data[0].Import.Resource != resID || data[0].Import.Format != "stl" {
+		t.Errorf("import payload = %+v, want resource=%q format=stl", data[0].Import, resID)
 	}
 
-	// Rebuild from the recipe (re-imports from disk) into a fresh engine and recompute.
+	// Rebuild from the recipe (re-derives the body from the embedded resource, NOT from disk —
+	// the source file path is never consulted) into a fresh engine and recompute.
 	restored := NewPartFeatures(nil, nil)
+	restored.SetResourceStore(store)
 	if err := restored.ApplyRecipe(data, emptySketches{}, NewWorkGeometry()); err != nil {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}

@@ -2,7 +2,11 @@
 
 package persistence
 
-import "errors"
+import (
+	"errors"
+
+	"oblikovati/persistence/yamlcodec"
+)
 
 // errNoManifest reports a document with no manifest — not a valid document file
 // (though still a valid container of arbitrary data sections, e.g. for DataIO).
@@ -21,16 +25,23 @@ type StreamStat struct {
 // file (ADR-0020). Stream bytes are copied in and out so a Package never shares
 // backing arrays with its callers.
 type Package struct {
-	manifest Manifest          // identity; the zero value means "no manifest"
-	model    []byte            // recipe YAML bytes; nil ⇒ no model
-	streams  map[string][]byte // named binary data sections
-	order    []string          // data-section insertion order, for stable enumeration
+	manifest  Manifest                      // identity; the zero value means "no manifest"
+	model     []byte                        // recipe YAML bytes; nil ⇒ no model
+	streams   map[string][]byte             // named binary data sections
+	order     []string                      // data-section insertion order, for stable enumeration
+	resources map[string]yamlcodec.Resource // embedded imported files, keyed by UUID (ADR-0031)
 }
 
 // NewPackage returns an empty package.
 func NewPackage() *Package {
 	return &Package{streams: map[string][]byte{}}
 }
+
+// SetResources stores the document's embedded resource table (ADR-0031), keyed by UUID.
+func (p *Package) SetResources(r map[string]yamlcodec.Resource) { p.resources = r }
+
+// Resources returns the document's embedded resource table, or nil if there are none.
+func (p *Package) Resources() map[string]yamlcodec.Resource { return p.resources }
 
 // WriteStream stores data under name, replacing any existing section of that name.
 // The bytes are copied; later mutations by the caller do not affect the package.
