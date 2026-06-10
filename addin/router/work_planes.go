@@ -44,6 +44,7 @@ func workPlaneInfo(part *compdef.PartComponentDefinition, wp *feature.WorkPlane,
 		Normal:   vector3Slice(wp.Plane().Normal().AsVector()),
 		IsOrigin: wp.IsCoordinateSystemElement(),
 		Healthy:  wp.Health().OK(),
+		Reason:   wp.Health().Reason, // empty when healthy
 		Kind:     wp.Kind(),
 		Scalars:  workPlaneScalars(part, wp),
 		Slots:    workPlaneSlots(wp),
@@ -99,10 +100,13 @@ func redefineWorkPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	if err != nil {
 		return nil, err
 	}
+	restore := wp.SnapshotDefinition() // an error mid-batch must not leave earlier edits applied
 	if err := applyScalarEdits(part, wp, in.Scalars); err != nil {
+		restore()
 		return nil, err
 	}
 	if err := applyRepicks(wp, in.Repick); err != nil {
+		restore()
 		return nil, err
 	}
 	part.Recompute()
@@ -140,14 +144,17 @@ func applyScalarEdits(part *compdef.PartComponentDefinition, wp *feature.WorkPla
 }
 
 // applyRepicks re-points the plane's reference slots at the requested references (origin
-// constants / list refs / face keys, via toWorkRefs).
+// constants / list refs / face keys, via toWorkRef). A reference the model refuses — one that
+// would create a reference cycle, or names a work feature that does not exist — fails the call.
 func applyRepicks(wp *feature.WorkPlane, repicks []wire.SlotRepick) error {
 	slots := wp.RedefineSlots()
 	for _, rp := range repicks {
 		if rp.Slot < 0 || rp.Slot >= len(slots) {
 			return fmt.Errorf("workPlanes.redefine: slot %d out of range (%d slots)", rp.Slot, len(slots))
 		}
-		slots[rp.Slot].Set(toWorkRefs([]string{rp.Ref})[0])
+		if err := slots[rp.Slot].Set(toWorkRef(rp.Ref)); err != nil {
+			return fmt.Errorf("workPlanes.redefine: slot %d: %w", rp.Slot, err)
+		}
 	}
 	return nil
 }
@@ -189,7 +196,7 @@ func createWorkPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	at, err := parseCoords(in.At, "at")
+	at, err := parseCoords(in.At, "workPoints.create: at")
 	if err != nil {
 		return nil, err
 	}
@@ -288,15 +295,15 @@ func addAnglePlane(part *compdef.PartComponentDefinition, refs []feature.WorkRef
 
 // addFixedWorkPlane builds an AddFixed plane from its origin point and two axis vectors.
 func addFixedWorkPlane(planes *feature.WorkPlanes, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, error) {
-	origin, err := parseCoords(in.Origin, "origin")
+	origin, err := parseCoords(in.Origin, "workPlanes.create: origin")
 	if err != nil {
 		return nil, err
 	}
-	x, err := parseAxisVector(in.XAxis, "xaxis")
+	x, err := parseAxisVector(in.XAxis, "workPlanes.create: xaxis")
 	if err != nil {
 		return nil, err
 	}
-	y, err := parseAxisVector(in.YAxis, "yaxis")
+	y, err := parseAxisVector(in.YAxis, "workPlanes.create: yaxis")
 	if err != nil {
 		return nil, err
 	}
@@ -304,23 +311,27 @@ func addFixedWorkPlane(planes *feature.WorkPlanes, in wire.CreateWorkPlaneArgs) 
 	return planes.AddFixed(func() math.Point3 { return o }, x, y), nil
 }
 
-// toWorkRefs converts the request's reference strings to model work references. A work-feature
-// reference — an origin constant ("origin/plane/xy", "origin/axis/z", …), a user plane/axis/
-// point/ucs ref ("plane/3", "point/0", from a create/list result), or an encoded vertex ref
-// ("vertex/…") — is passed through verbatim; any other string is a B-rep topology reference key
-// (from model.referenceKeys) and is tagged as a FaceRef so the resolver builds the plane on that
-// body face. This lets a user work point/plane/axis feed another work feature over the wire
-// (e.g. a three-point plane through three created points, or a redefine re-pick).
+// toWorkRefs converts the request's reference strings to model work references.
 func toWorkRefs(refs []string) []feature.WorkRef {
 	out := make([]feature.WorkRef, len(refs))
 	for i, r := range refs {
-		if isWorkFeatureRef(r) {
-			out[i] = feature.WorkRef(r)
-		} else {
-			out[i] = feature.FaceRef([]byte(r))
-		}
+		out[i] = toWorkRef(r)
 	}
 	return out
+}
+
+// toWorkRef wraps one reference string as a work ref. A work-feature reference — an origin
+// constant ("origin/plane/xy", "origin/axis/z", …), a user plane/axis/point/ucs ref
+// ("plane/3", "point/0" — the Ref strings create/list return), or an encoded vertex ref
+// ("vertex/…") — passes through verbatim; any other string is a B-rep topology reference key
+// (from model.referenceKeys) and is tagged as a FaceRef so the resolver builds the plane on
+// that body face. This lets a user work point/plane/axis feed another work feature over the
+// wire (e.g. a three-point plane through three created points, or a redefine re-pick).
+func toWorkRef(r string) feature.WorkRef {
+	if isWorkFeatureRef(r) {
+		return feature.WorkRef(r)
+	}
+	return feature.FaceRef([]byte(r))
 }
 
 // workFeatureRefPrefixes are the reference-string prefixes that name a work feature (an origin
@@ -368,10 +379,11 @@ func modelAngle(part *compdef.PartComponentDefinition, expr string) (float64, er
 	return q.Value, nil
 }
 
-// parseCoords requires a 3-component coordinate slice, naming what for errors.
+// parseCoords requires a 3-component coordinate slice, naming what (including the wire
+// method, e.g. "workPlanes.create: origin") for errors.
 func parseCoords(s []float64, what string) ([]float64, error) {
 	if len(s) != 3 {
-		return nil, fmt.Errorf("workPlanes.create: %s needs 3 components, got %d", what, len(s))
+		return nil, fmt.Errorf("%s needs 3 components, got %d", what, len(s))
 	}
 	return s, nil
 }

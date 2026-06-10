@@ -200,3 +200,133 @@ func TestWorkPlanesRedefineThreePointRepick(t *testing.T) {
 		t.Errorf("after re-picking point 3 above the plane, normal = %v, want tilted off ±Z", rd.Plane.Normal)
 	}
 }
+
+// TestWorkPlanesRedefineRepickAcceptsListRef: a repick with the Ref string workPlanes.list
+// returns for a user plane ("plane/3") binds to that plane — it was once misread as a B-rep
+// face key, silently sickening the plane.
+func TestWorkPlanesRedefineRepickAcceptsListRef(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var first, second wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &first)
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xz"],"offset":"10 mm"}`, &second)
+
+	// Re-base the second plane onto the first (its list ref): both offsets stack along +Z.
+	var rd wire.RedefineWorkPlaneResult
+	call(t, r, s, "workPlanes.redefine", `{"index":4,"repick":[{"slot":0,"ref":"`+first.Ref+`"}]}`, &rd)
+	if !rd.Plane.Healthy {
+		t.Fatalf("repick onto a user-plane list ref produced an unhealthy plane: %+v", rd.Plane)
+	}
+	if rd.Plane.Origin[2] != 2 { // 1 cm (first) + 1 cm (second) above XY
+		t.Errorf("re-based plane origin = %v, want z=2 (stacked offsets)", rd.Plane.Origin)
+	}
+}
+
+// TestWorkPlanesRedefineRejectsSelfReference: re-picking a plane's base to its own ref must
+// fail the call — it once stayed healthy while the plane drifted on every recompute.
+func TestWorkPlanesRedefineRejectsSelfReference(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var res wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
+	if _, err := r.Handle(s, "workPlanes.redefine",
+		[]byte(`{"index":3,"repick":[{"slot":0,"ref":"`+res.Ref+`"}]}`)); err == nil {
+		t.Error("a self-referential repick must error")
+	}
+}
+
+// TestWorkPlanesRedefineAppliesScalarsAndRepickTogether: the wire doc promises scalars and
+// repicks are applied together; the angle edit must survive the line re-pick (value-typed
+// definitions once dropped it).
+func TestWorkPlanesRedefineAppliesScalarsAndRepickTogether(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var res wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create",
+		`{"kind":"line-plane-angle","refs":["origin/axis/x","origin/plane/xy"],"angle":"0 deg"}`, &res)
+
+	var rd wire.RedefineWorkPlaneResult
+	call(t, r, s, "workPlanes.redefine",
+		`{"index":3,"scalars":[{"index":0,"value":"45 deg"}],"repick":[{"slot":0,"ref":"origin/axis/y"}]}`, &rd)
+	if !rd.Plane.Healthy {
+		t.Fatalf("combined redefine produced an unhealthy plane: %+v", rd.Plane)
+	}
+	if rd.Plane.Scalars[0].Value != 45 {
+		t.Errorf("angle after combined redefine = %v deg, want 45 — the scalar edit was lost", rd.Plane.Scalars[0].Value)
+	}
+}
+
+// TestWorkPlanesRedefineRejectsBadEdits: every malformed edit fails the call (it does not
+// silently skip or partially apply).
+func TestWorkPlanesRedefineRejectsBadEdits(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var res wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
+
+	for name, req := range map[string]string{
+		"scalar index out of range": `{"index":3,"scalars":[{"index":5,"value":"1 mm"}]}`,
+		"unparseable scalar value":  `{"index":3,"scalars":[{"index":0,"value":"garbage"}]}`,
+		"slot out of range":         `{"index":3,"repick":[{"slot":5,"ref":"origin/plane/xz"}]}`,
+		"nonexistent work ref":      `{"index":3,"repick":[{"slot":0,"ref":"plane/99"}]}`,
+	} {
+		if _, err := r.Handle(s, "workPlanes.redefine", []byte(req)); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+}
+
+// TestWorkPlanesCreateKindRoundTripsToList pins the create-kind ↔ list Kind vocabulary: the
+// types.WorkPlaneKind a plane is created as must be the Kind workPlanes.list reports (the
+// model's kindName strings and the api/types constants are coupled by convention only).
+func TestWorkPlanesCreateKindRoundTripsToList(t *testing.T) {
+	r, s := emptyPartSession(t)
+	for i, req := range []struct{ kind, body string }{
+		{"plane-offset", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`},
+		{"three-points", `{"kind":"three-points","refs":["origin/point/center","origin/point/center","origin/point/center"]}`},
+		{"plane-point", `{"kind":"plane-point","refs":["origin/plane/xy","origin/point/center"]}`},
+		{"two-planes", `{"kind":"two-planes","refs":["origin/plane/xy","origin/plane/xz"]}`},
+		{"line-plane-angle", `{"kind":"line-plane-angle","refs":["origin/axis/x","origin/plane/xy"],"angle":"45 deg"}`},
+		{"two-lines", `{"kind":"two-lines","refs":["origin/axis/x","origin/axis/y"]}`},
+		{"normal-to-curve", `{"kind":"normal-to-curve","refs":["origin/axis/z","origin/point/center"]}`},
+	} {
+		var res wire.CreateWorkPlaneResult
+		call(t, r, s, "workPlanes.create", req.body, &res)
+		var list wire.ListWorkPlanesResult
+		call(t, r, s, "workPlanes.list", "{}", &list)
+		if got := list.Planes[3+i].Kind; got != req.kind {
+			t.Errorf("plane created as %q lists Kind %q", req.kind, got)
+		}
+	}
+}
+
+// TestWorkPlanesRedefineReportsSickReason: an unsatisfiable (but well-formed) redefine reports
+// healthy=false with the reason, so a remote client can diagnose what went wrong.
+func TestWorkPlanesRedefineReportsSickReason(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var res wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
+
+	var rd wire.RedefineWorkPlaneResult
+	call(t, r, s, "workPlanes.redefine", `{"index":3,"repick":[{"slot":0,"ref":"bogus-face-key"}]}`, &rd)
+	if rd.Plane.Healthy {
+		t.Fatal("a repick to a dangling face key must report healthy=false")
+	}
+	if rd.Plane.Reason == "" {
+		t.Error("an unhealthy plane must report the reason it is sick")
+	}
+}
+
+// TestWorkPlanesRedefineRollsBackOnError: when one edit of a batch fails, earlier edits of
+// the same call must not stick (the definition is snapshotted and restored).
+func TestWorkPlanesRedefineRollsBackOnError(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var res wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
+
+	if _, err := r.Handle(s, "workPlanes.redefine",
+		[]byte(`{"index":3,"scalars":[{"index":0,"value":"50 mm"}],"repick":[{"slot":9,"ref":"origin/plane/xz"}]}`)); err == nil {
+		t.Fatal("an out-of-range slot must fail the call")
+	}
+	var list wire.ListWorkPlanesResult
+	call(t, r, s, "workPlanes.list", "{}", &list)
+	if got := list.Planes[3].Scalars[0].Value; got != 10 {
+		t.Errorf("offset after a failed batch = %v mm, want 10 (rolled back)", got)
+	}
+}
