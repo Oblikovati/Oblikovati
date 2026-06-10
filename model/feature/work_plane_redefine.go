@@ -27,6 +27,22 @@ const (
 	WorkRefFace
 )
 
+// String renders the slot kind as the stable wire token ("plane"|"axis"|"point"|"face").
+func (k WorkRefKind) String() string {
+	switch k {
+	case WorkRefPlane:
+		return "plane"
+	case WorkRefAxis:
+		return "axis"
+	case WorkRefPoint:
+		return "point"
+	case WorkRefFace:
+		return "face"
+	default:
+		return "unknown"
+	}
+}
+
 // WorkRefSlot is one re-pickable reference of a placed work plane. Set rebinds the slot to a
 // new reference: it mutates the definition and swaps it back into the plane, so the next
 // recompute re-derives the plane from the chosen geometry. The editor arms a slot, resolves a
