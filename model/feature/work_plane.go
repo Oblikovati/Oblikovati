@@ -67,12 +67,14 @@ func (d *offsetPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	return sketch.NewPlane(origin, base.XAxis(), base.YAxis())
 }
 
-// threePointPlaneDef builds a plane through three referenced points.
+// threePointPlaneDef builds a plane through three referenced points. Like every user plane
+// definition it is held behind a pointer, so a redefine slot's Set mutates the live definition
+// and composes with a concurrent scalar edit (a value copy would silently drop one of them).
 type threePointPlaneDef struct{ a, b, c WorkRef }
 
-func (d threePointPlaneDef) kindName() string { return "three-points" }
-func (d threePointPlaneDef) refs() []WorkRef  { return []WorkRef{d.a, d.b, d.c} }
-func (d threePointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *threePointPlaneDef) kindName() string { return "three-points" }
+func (d *threePointPlaneDef) refs() []WorkRef  { return []WorkRef{d.a, d.b, d.c} }
+func (d *threePointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	a, err := r.point(d.a)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -93,6 +95,7 @@ type WorkPlane struct {
 	id               ID
 	key              WorkRef
 	name             string
+	g                *WorkGeometry // owning frame, so redefine slots validate references
 	def              planeDefinition
 	plane            sketch.Plane
 	health           health.Health
@@ -131,28 +134,6 @@ func (w *WorkPlane) Grounded() bool                  { return w.grounded }
 // (Inventor's per-work-feature Visibility). User planes are visible by default.
 func (w *WorkPlane) Visible() bool     { return w.visible }
 func (w *WorkPlane) SetVisible(v bool) { w.visible = v }
-
-// OffsetDistance returns the plane's offset distance in model units and true when this is a
-// plane-and-offset datum (the editable kind, Inventor's most common parametric work plane);
-// ok is false for every other plane kind, which has no single scalar to edit.
-func (w *WorkPlane) OffsetDistance() (float64, bool) {
-	if d, ok := w.def.(*offsetPlaneDef); ok {
-		return d.distance(), true
-	}
-	return 0, false
-}
-
-// SetOffsetDistance pins an offset plane's distance to v (model units) and re-derives the
-// plane, returning true on success. It is a no-op (false) for non-offset planes. The owning
-// part must recompute afterward so dependent sketches/features follow the moved plane.
-func (w *WorkPlane) SetOffsetDistance(v float64) bool {
-	d, ok := w.def.(*offsetPlaneDef)
-	if !ok {
-		return false
-	}
-	d.setDistance(v)
-	return true
-}
 
 // recompute re-derives the plane from its definition, going sick on failure (e.g.
 // degenerate three points) rather than producing garbage.
@@ -195,7 +176,7 @@ func (c *WorkPlanes) AddByPlaneAndOffset(base WorkRef, offset func() float64) *W
 
 // AddByThreePoints creates a user plane through three referenced points.
 func (c *WorkPlanes) AddByThreePoints(a, b, cc WorkRef) *WorkPlane {
-	return c.addUser(threePointPlaneDef{a: a, b: b, c: cc})
+	return c.addUser(&threePointPlaneDef{a: a, b: b, c: cc})
 }
 
 // addUser adds a user datum plane, keying it by its position so references stay stable,
@@ -212,6 +193,7 @@ func (c *WorkPlanes) addUser(def planeDefinition) *WorkPlane {
 }
 
 func (c *WorkPlanes) track(w *WorkPlane) {
+	w.g = c.g
 	w.recompute(c.g)
 	c.items = append(c.items, w)
 	c.byID[w.id] = w

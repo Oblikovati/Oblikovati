@@ -395,6 +395,59 @@ func TestWorkFeaturesSurviveRoundTrip(t *testing.T) {
 	}
 }
 
+// TestEditedWorkPlaneScalarSurvivesRoundTrip: an offset edited through the redefine seam
+// (browser dialog / workPlanes.redefine) severs the creation-time closure with an explicit
+// value; the serializer must persist the EFFECTIVE distance, and the reopened plane must sit
+// at the edited offset.
+func TestEditedWorkPlaneScalarSurvivesRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	def.Recompute()
+
+	wp.EditableScalars()[0].Set(7) // the browser edit overrides the closure's 2
+	def.Recompute()
+
+	reopened := reopenThroughStore(t, d)
+	user := reopened.WorkPlanes().Item(3)
+	if !user.Plane().Origin().IsEqualTo(math.P3(0, 0, 7), 1e-9) {
+		t.Errorf("reopened edited plane origin = %v, want (0,0,7) — the edited offset was lost", user.Plane().Origin())
+	}
+	if got := user.EditableScalars()[0].Get(); got != 7 {
+		t.Errorf("reopened edited offset reads %v, want 7", got)
+	}
+}
+
+// TestNodesCreatedAfterReopenSortLast: the whole point of seq.Restore's clock bump — a node
+// added to a reopened document must sort after every restored node, or the browser timeline
+// would interleave new work into the middle of the restored history.
+func TestNodesCreatedAfterReopenSortLast(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	sk1 := def.Sketches().Add(sketch.XYPlane())
+	rectangle(sk1, 4, 3)
+	feature.NewExtrudeFeatures(def.Features()).
+		AddByDistanceExtent(sk1, 0, ops.NewBody, func() float64 { return 5 })
+	def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	def.Recompute()
+
+	reopened := reopenThroughStore(t, d)
+	maxRestored := reopened.Sketches().Item(0).Seq()
+	if s := reopened.Features().Item(0).Seq(); s > maxRestored {
+		maxRestored = s
+	}
+	if s := reopened.WorkPlanes().Item(3).Seq(); s > maxRestored {
+		maxRestored = s
+	}
+
+	fresh := reopened.Sketches().Add(sketch.XYPlane())
+	if fresh.Seq() <= maxRestored {
+		t.Errorf("sketch created after reopen has stamp %d ≤ restored max %d — it would sort into the restored history", fresh.Seq(), maxRestored)
+	}
+}
+
 func TestRevolveAxisRebindsAfterReopen(t *testing.T) {
 	ws := doc.NewWorkspace(nil)
 	d, _ := compdef.AddPart(ws, "Part1", true)

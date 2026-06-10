@@ -24,9 +24,9 @@ import (
 // (Inventor's AddByTorusMidPlane).
 type torusMidPlaneDef struct{ face WorkRef }
 
-func (d torusMidPlaneDef) kindName() string { return "torus-midplane" }
-func (d torusMidPlaneDef) refs() []WorkRef  { return []WorkRef{d.face} }
-func (d torusMidPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *torusMidPlaneDef) kindName() string { return "torus-midplane" }
+func (d *torusMidPlaneDef) refs() []WorkRef  { return []WorkRef{d.face} }
+func (d *torusMidPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	s, err := r.surface(d.face)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -42,9 +42,9 @@ func (d torusMidPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 // AddByPointAndTangent): through the point, normal = the surface normal there.
 type pointAndTangentPlaneDef struct{ point, face WorkRef }
 
-func (d pointAndTangentPlaneDef) kindName() string { return "point-tangent" }
-func (d pointAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.point, d.face} }
-func (d pointAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *pointAndTangentPlaneDef) kindName() string { return "point-tangent" }
+func (d *pointAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.point, d.face} }
+func (d *pointAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	p, err := r.point(d.point)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -65,9 +65,9 @@ func (d pointAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 // surfaces report a Sick reason.
 type planeAndTangentPlaneDef struct{ base, face WorkRef }
 
-func (d planeAndTangentPlaneDef) kindName() string { return "plane-tangent" }
-func (d planeAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.base, d.face} }
-func (d planeAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *planeAndTangentPlaneDef) kindName() string { return "plane-tangent" }
+func (d *planeAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.base, d.face} }
+func (d *planeAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	base, err := r.plane(d.base)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -85,9 +85,9 @@ func (d planeAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 // configurations report a Sick reason.
 type lineAndTangentPlaneDef struct{ line, face WorkRef }
 
-func (d lineAndTangentPlaneDef) kindName() string { return "line-tangent" }
-func (d lineAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.line, d.face} }
-func (d lineAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *lineAndTangentPlaneDef) kindName() string { return "line-tangent" }
+func (d *lineAndTangentPlaneDef) refs() []WorkRef  { return []WorkRef{d.line, d.face} }
+func (d *lineAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	line, err := r.axis(d.line)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -103,14 +103,14 @@ func (d lineAndTangentPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 //
 //	wp := planes.AddByTorusMidPlane(feature.FaceRef(torusFace.ReferenceKey()))
 func (c *WorkPlanes) AddByTorusMidPlane(face WorkRef) *WorkPlane {
-	return c.addUser(torusMidPlaneDef{face: face})
+	return c.addUser(&torusMidPlaneDef{face: face})
 }
 
 // AddByPointAndTangent creates the tangent plane of a surface at a point on it.
 //
 //	wp := planes.AddByPointAndTangent(p.Key(), feature.FaceRef(cylFace.ReferenceKey()))
 func (c *WorkPlanes) AddByPointAndTangent(point, face WorkRef) *WorkPlane {
-	return c.addUser(pointAndTangentPlaneDef{point: point, face: face})
+	return c.addUser(&pointAndTangentPlaneDef{point: point, face: face})
 }
 
 // AddByPlaneAndTangent creates a plane parallel to base and tangent to the surface
@@ -118,7 +118,7 @@ func (c *WorkPlanes) AddByPointAndTangent(point, face WorkRef) *WorkPlane {
 //
 //	wp := planes.AddByPlaneAndTangent(feature.OriginXZPlane, feature.FaceRef(cylKey))
 func (c *WorkPlanes) AddByPlaneAndTangent(base, face WorkRef) *WorkPlane {
-	return c.addUser(planeAndTangentPlaneDef{base: base, face: face})
+	return c.addUser(&planeAndTangentPlaneDef{base: base, face: face})
 }
 
 // AddByLineAndTangent creates a plane through line and tangent to the surface (a
@@ -126,7 +126,7 @@ func (c *WorkPlanes) AddByPlaneAndTangent(base, face WorkRef) *WorkPlane {
 //
 //	wp := planes.AddByLineAndTangent(edgeAxis.Key(), feature.FaceRef(cylKey))
 func (c *WorkPlanes) AddByLineAndTangent(line, face WorkRef) *WorkPlane {
-	return c.addUser(lineAndTangentPlaneDef{line: line, face: face})
+	return c.addUser(&lineAndTangentPlaneDef{line: line, face: face})
 }
 
 // FaceRef encodes a B-rep face's persistent reference key as a WorkRef, for the

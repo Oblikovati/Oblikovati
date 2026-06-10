@@ -35,3 +35,16 @@ func Bump(v uint64) {
 		}
 	}
 }
+
+// Restore pins a just-restored node's stamp to its saved value and bumps the clock past it —
+// the one idiom every deserializer needs (sketches, work features, part features). A zero
+// saved stamp (a legacy recipe predating the creation clock) leaves the node's fresh stamp.
+//
+// Example: seq.Restore(&sk.seq, data.Seq) — after the node was recreated with a fresh stamp.
+func Restore(dst *uint64, saved uint64) {
+	if saved == 0 {
+		return
+	}
+	*dst = saved
+	Bump(saved)
+}

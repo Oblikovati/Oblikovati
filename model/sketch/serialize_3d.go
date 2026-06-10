@@ -21,7 +21,7 @@ type SketchData3D struct {
 	Name         string            `yaml:"name,omitempty"`
 	Hidden       bool              `yaml:"hidden,omitempty"`
 	DimsHidden   bool              `yaml:"dimsHidden,omitempty"`
-	Shared       bool              `yaml:"shared,omitempty"` // Inventor Sketch3D.Shared (issue #132)
+	Shared       bool              `yaml:"shared,omitempty"` // Inventor Sketch3D.Shared — always false today (3D sketches are not in the browser timeline yet); round-tripped for forward compatibility (issue #132)
 	Seq          uint64            `yaml:"seq,omitempty"`    // global creation stamp; see model/seq
 	Color        string            `yaml:"color,omitempty"`
 	DeferUpdates bool              `yaml:"deferUpdates,omitempty"`
@@ -351,10 +351,7 @@ func (c *Sketches3D) restoreSketch3D(sd SketchData3D) error {
 	s.shared = sd.Shared
 	s.color = sd.Color
 	s.deferUpdates = sd.DeferUpdates
-	if sd.Seq != 0 {
-		s.seq = sd.Seq
-		seq.Bump(sd.Seq)
-	}
+	seq.Restore(&s.seq, sd.Seq)
 	// Re-create points, mapping their saved ids onto the freshly minted ones so
 	// constraints can re-bind by id.
 	idmap := make(map[int]*Point3D, len(sd.Points))

@@ -373,10 +373,7 @@ func applyFeatureState(pf *PartFeature, fd FeatureData) {
 	if fd.Suppressed {
 		pf.SetSuppressed(true)
 	}
-	if fd.Seq != 0 {
-		pf.setSeq(fd.Seq)
-		seq.Bump(fd.Seq)
-	}
+	seq.Restore(&pf.seq, fd.Seq)
 }
 
 // operationName / parseOperation map the boolean operation to/from a stable name.

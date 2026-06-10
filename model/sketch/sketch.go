@@ -76,10 +76,9 @@ func (b *base) SetVisible(v bool) { b.visible = v }
 func (b *base) Shared() bool     { return b.shared }
 func (b *base) SetShared(s bool) { b.shared = s }
 
-// Seq returns the sketch's global creation stamp; SetSeq overrides it when restoring a
-// saved recipe so reopened documents keep their original interleaving.
-func (b *base) Seq() uint64     { return b.seq }
-func (b *base) SetSeq(v uint64) { b.seq = v }
+// Seq returns the sketch's global creation stamp (restoring a saved recipe pins it via
+// seq.Restore so reopened documents keep their original interleaving).
+func (b *base) Seq() uint64 { return b.seq }
 
 // Health returns the sketch's solve health (set by the solver, M06-F05).
 func (b *base) Health() health.Health { return b.health }

@@ -93,11 +93,7 @@ func restoreSketchProps(s *Sketch, sd SketchData) {
 // past it. A legacy recipe with no stamp keeps the fresh one sc.Add assigned, which still
 // orders sketches among themselves by load order.
 func restoreSeq(s *Sketch, saved uint64) {
-	if saved == 0 {
-		return
-	}
-	s.SetSeq(saved)
-	seq.Bump(saved)
+	seq.Restore(&s.seq, saved)
 }
 
 // sketchRestorer carries the id→object maps while rebuilding one sketch.

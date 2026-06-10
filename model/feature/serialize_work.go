@@ -79,15 +79,15 @@ func serializePlaneDef(def planeDefinition) (WorkFeatureData, error) {
 	switch v := def.(type) {
 	case *offsetPlaneDef:
 		d.Offset = v.distance() // persist the effective distance, including any browser edit
-	case fixedFramePlaneDef:
+	case *fixedFramePlaneDef:
 		p := v.origin()
 		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
 		d.XAxis, d.YAxis = unitSlice(v.x), unitSlice(v.y)
-	case linePlaneAnglePlaneDef:
+	case *linePlaneAnglePlaneDef:
 		d.Angle = v.angle()
-	case threePointPlaneDef, planeAndPointPlaneDef, twoPlanesPlaneDef, twoLinesPlaneDef,
-		normalToCurvePlaneDef, torusMidPlaneDef, pointAndTangentPlaneDef,
-		planeAndTangentPlaneDef, lineAndTangentPlaneDef:
+	case *threePointPlaneDef, *planeAndPointPlaneDef, *twoPlanesPlaneDef, *twoLinesPlaneDef,
+		*normalToCurvePlaneDef, *torusMidPlaneDef, *pointAndTangentPlaneDef,
+		*planeAndTangentPlaneDef, *lineAndTangentPlaneDef:
 		// references only
 	default:
 		return WorkFeatureData{}, fmt.Errorf("no codec for work plane definition %q", def.kindName())
@@ -134,18 +134,14 @@ func ApplyWork(g *WorkGeometry, data []WorkFeatureData) error {
 // (the Add* call above gave it a fresh one), so a reopened document keeps the original
 // sketch/feature/work interleaving. The restored feature is the last in its collection.
 func restoreWorkSeq(g *WorkGeometry, d WorkFeatureData) {
-	if d.Seq == 0 {
-		return
-	}
 	switch d.Collection {
 	case "plane":
-		g.planes.Item(g.planes.Count() - 1).seq = d.Seq
+		seq.Restore(&g.planes.Item(g.planes.Count()-1).seq, d.Seq)
 	case "axis":
-		g.axes.Item(g.axes.Count() - 1).seq = d.Seq
+		seq.Restore(&g.axes.Item(g.axes.Count()-1).seq, d.Seq)
 	case "point":
-		g.points.Item(g.points.Count() - 1).seq = d.Seq
+		seq.Restore(&g.points.Item(g.points.Count()-1).seq, d.Seq)
 	}
-	seq.Bump(d.Seq)
 }
 
 func restoreWorkFeature(g *WorkGeometry, d WorkFeatureData) error {

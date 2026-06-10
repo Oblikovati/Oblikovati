@@ -31,9 +31,6 @@ func (f *PartFeature) ID() ID { return f.id }
 // features so the browser interleaves all three by creation order (issue #132).
 func (f *PartFeature) Seq() uint64 { return f.seq }
 
-// setSeq overrides the creation stamp (used when restoring a saved recipe).
-func (f *PartFeature) setSeq(v uint64) { f.seq = v }
-
 // Name/SetName get and set the display name; the id is stable across renames.
 func (f *PartFeature) Name() string     { return f.name }
 func (f *PartFeature) SetName(n string) { f.name = n }

@@ -44,20 +44,33 @@ func (k WorkRefKind) String() string {
 }
 
 // WorkRefSlot is one re-pickable reference of a placed work plane. Set rebinds the slot to a
-// new reference: it mutates the definition and swaps it back into the plane, so the next
-// recompute re-derives the plane from the chosen geometry. The editor arms a slot, resolves a
-// pick to a [WorkRef] of the slot's Kind, and calls Set.
+// new reference, so the next recompute re-derives the plane from the chosen geometry. It
+// errors (leaving the definition untouched) when the reference is rejected — it would create
+// a reference cycle, or it names a work feature that does not exist; see
+// [WorkGeometry.validateRedefineRef]. The editor arms a slot, resolves a pick to a [WorkRef]
+// of the slot's Kind, and calls Set.
 type WorkRefSlot struct {
 	Label string
 	Kind  WorkRefKind
-	Set   func(WorkRef)
+	Set   func(WorkRef) error
+}
+
+// slot wraps assign into a [WorkRefSlot] whose Set validates the reference (no cycles, no
+// dangling user refs) before rebinding. The definitions are held behind pointers, so assign
+// mutates the live definition in place and composes with scalar edits applied through
+// [EditableScalars] (a value copy here once silently dropped a concurrent angle edit).
+func (w *WorkPlane) slot(label string, kind WorkRefKind, assign func(WorkRef)) WorkRefSlot {
+	return WorkRefSlot{Label: label, Kind: kind, Set: func(r WorkRef) error {
+		if err := w.g.validateRedefineRef(r, w.key); err != nil {
+			return err
+		}
+		assign(r)
+		return nil
+	}}
 }
 
 // RedefineSlots returns the plane's re-pickable reference inputs in display order, or nil when
-// the definition has none (the origin frame, fixed-geometry planes). Each slot's Set captures a
-// copy of the current definition, replaces the one reference, and reassigns w.def — so the
-// definition value structs need no pointer plumbing (offsetPlaneDef, already a pointer, is
-// handled by mutating it directly).
+// the definition has none (the origin frame, fixed-geometry planes).
 func (w *WorkPlane) RedefineSlots() []WorkRefSlot {
 	if slots := w.pointPlaneSlots(); slots != nil {
 		return slots
@@ -73,22 +86,22 @@ func (w *WorkPlane) RedefineSlots() []WorkRefSlot {
 func (w *WorkPlane) pointPlaneSlots() []WorkRefSlot {
 	switch d := w.def.(type) {
 	case *offsetPlaneDef:
-		return []WorkRefSlot{{"Base plane", WorkRefPlane, func(r WorkRef) { d.base = r }}}
-	case threePointPlaneDef:
+		return []WorkRefSlot{w.slot("Base plane", WorkRefPlane, func(r WorkRef) { d.base = r })}
+	case *threePointPlaneDef:
 		return []WorkRefSlot{
-			{"Point 1", WorkRefPoint, func(r WorkRef) { d.a = r; w.def = d }},
-			{"Point 2", WorkRefPoint, func(r WorkRef) { d.b = r; w.def = d }},
-			{"Point 3", WorkRefPoint, func(r WorkRef) { d.c = r; w.def = d }},
+			w.slot("Point 1", WorkRefPoint, func(r WorkRef) { d.a = r }),
+			w.slot("Point 2", WorkRefPoint, func(r WorkRef) { d.b = r }),
+			w.slot("Point 3", WorkRefPoint, func(r WorkRef) { d.c = r }),
 		}
-	case planeAndPointPlaneDef:
+	case *planeAndPointPlaneDef:
 		return []WorkRefSlot{
-			{"Base plane", WorkRefPlane, func(r WorkRef) { d.base = r; w.def = d }},
-			{"Through point", WorkRefPoint, func(r WorkRef) { d.point = r; w.def = d }},
+			w.slot("Base plane", WorkRefPlane, func(r WorkRef) { d.base = r }),
+			w.slot("Through point", WorkRefPoint, func(r WorkRef) { d.point = r }),
 		}
-	case twoPlanesPlaneDef:
+	case *twoPlanesPlaneDef:
 		return []WorkRefSlot{
-			{"Plane 1", WorkRefPlane, func(r WorkRef) { d.p1 = r; w.def = d }},
-			{"Plane 2", WorkRefPlane, func(r WorkRef) { d.p2 = r; w.def = d }},
+			w.slot("Plane 1", WorkRefPlane, func(r WorkRef) { d.p1 = r }),
+			w.slot("Plane 2", WorkRefPlane, func(r WorkRef) { d.p2 = r }),
 		}
 	default:
 		return nil
@@ -99,20 +112,20 @@ func (w *WorkPlane) pointPlaneSlots() []WorkRefSlot {
 // two-lines, normal-to-curve); nil for the other kinds.
 func (w *WorkPlane) linePlaneSlots() []WorkRefSlot {
 	switch d := w.def.(type) {
-	case linePlaneAnglePlaneDef:
+	case *linePlaneAnglePlaneDef:
 		return []WorkRefSlot{
-			{"Line", WorkRefAxis, func(r WorkRef) { d.line = r; w.def = d }},
-			{"Plane", WorkRefPlane, func(r WorkRef) { d.base = r; w.def = d }},
+			w.slot("Line", WorkRefAxis, func(r WorkRef) { d.line = r }),
+			w.slot("Plane", WorkRefPlane, func(r WorkRef) { d.base = r }),
 		}
-	case twoLinesPlaneDef:
+	case *twoLinesPlaneDef:
 		return []WorkRefSlot{
-			{"Line 1", WorkRefAxis, func(r WorkRef) { d.l1 = r; w.def = d }},
-			{"Line 2", WorkRefAxis, func(r WorkRef) { d.l2 = r; w.def = d }},
+			w.slot("Line 1", WorkRefAxis, func(r WorkRef) { d.l1 = r }),
+			w.slot("Line 2", WorkRefAxis, func(r WorkRef) { d.l2 = r }),
 		}
-	case normalToCurvePlaneDef:
+	case *normalToCurvePlaneDef:
 		return []WorkRefSlot{
-			{"Curve", WorkRefAxis, func(r WorkRef) { d.curve = r; w.def = d }},
-			{"Point", WorkRefPoint, func(r WorkRef) { d.point = r; w.def = d }},
+			w.slot("Curve", WorkRefAxis, func(r WorkRef) { d.curve = r }),
+			w.slot("Point", WorkRefPoint, func(r WorkRef) { d.point = r }),
 		}
 	default:
 		return nil
@@ -123,22 +136,22 @@ func (w *WorkPlane) linePlaneSlots() []WorkRefSlot {
 // of which exposes that face as a re-pickable WorkRefFace; nil for every other kind.
 func (w *WorkPlane) tangentSlots() []WorkRefSlot {
 	switch d := w.def.(type) {
-	case torusMidPlaneDef:
-		return []WorkRefSlot{{"Torus face", WorkRefFace, func(r WorkRef) { d.face = r; w.def = d }}}
-	case pointAndTangentPlaneDef:
+	case *torusMidPlaneDef:
+		return []WorkRefSlot{w.slot("Torus face", WorkRefFace, func(r WorkRef) { d.face = r })}
+	case *pointAndTangentPlaneDef:
 		return []WorkRefSlot{
-			{"Point", WorkRefPoint, func(r WorkRef) { d.point = r; w.def = d }},
-			{"Tangent face", WorkRefFace, func(r WorkRef) { d.face = r; w.def = d }},
+			w.slot("Point", WorkRefPoint, func(r WorkRef) { d.point = r }),
+			w.slot("Tangent face", WorkRefFace, func(r WorkRef) { d.face = r }),
 		}
-	case planeAndTangentPlaneDef:
+	case *planeAndTangentPlaneDef:
 		return []WorkRefSlot{
-			{"Parallel plane", WorkRefPlane, func(r WorkRef) { d.base = r; w.def = d }},
-			{"Tangent face", WorkRefFace, func(r WorkRef) { d.face = r; w.def = d }},
+			w.slot("Parallel plane", WorkRefPlane, func(r WorkRef) { d.base = r }),
+			w.slot("Tangent face", WorkRefFace, func(r WorkRef) { d.face = r }),
 		}
-	case lineAndTangentPlaneDef:
+	case *lineAndTangentPlaneDef:
 		return []WorkRefSlot{
-			{"Line", WorkRefAxis, func(r WorkRef) { d.line = r; w.def = d }},
-			{"Tangent face", WorkRefFace, func(r WorkRef) { d.face = r; w.def = d }},
+			w.slot("Line", WorkRefAxis, func(r WorkRef) { d.line = r }),
+			w.slot("Tangent face", WorkRefFace, func(r WorkRef) { d.face = r }),
 		}
 	default:
 		return nil
@@ -147,7 +160,8 @@ func (w *WorkPlane) tangentSlots() []WorkRefSlot {
 
 // EditableScalars returns the plane's editable scalar inputs in display order, or nil when it
 // has none. Reuses the feature [EditableParam] shape (get/set in database units), so the head
-// renders and the session converts them exactly like a feature's scalar fields.
+// renders and the session converts them exactly like a feature's scalar fields. Set mutates
+// the pointer-held definition, so a scalar edit and a slot re-pick compose in either order.
 func (w *WorkPlane) EditableScalars() []EditableParam {
 	switch d := w.def.(type) {
 	case *offsetPlaneDef:
@@ -156,13 +170,11 @@ func (w *WorkPlane) EditableScalars() []EditableParam {
 			Get: func() float64 { return d.distance() },
 			Set: func(v float64) { d.setDistance(v) },
 		}}
-	case linePlaneAnglePlaneDef:
-		// d is a copy of the value-typed def, so Set must reassign w.def for the edit to stick
-		// (unlike *offsetPlaneDef above, which is mutated through its pointer).
+	case *linePlaneAnglePlaneDef:
 		return []EditableParam{{
 			Label: "Angle", Unit: param.Angle,
 			Get: func() float64 { return d.angle() },
-			Set: func(v float64) { d.angle = func() float64 { return v }; w.def = d },
+			Set: func(v float64) { d.angle = func() float64 { return v } },
 		}}
 	default:
 		return nil
@@ -177,13 +189,40 @@ func (w *WorkPlane) IsRedefinable() bool {
 
 // SnapshotDefinition captures the plane's current definition and returns a closure that
 // restores it — an edit's Cancel calls it to undo any re-picked references and scalar changes
-// in one step. The offset plane is a pointer (mutated in place), so its value is snapshotted;
-// every other kind is restored by swapping the captured definition value back.
+// in one step. Every user definition is held behind a pointer (slots and scalar edits mutate
+// one shared instance), so the snapshot copies the pointee and the restore copies it back.
 func (w *WorkPlane) SnapshotDefinition() func() {
-	saved := w.def
-	if op, ok := saved.(*offsetPlaneDef); ok {
-		cp := *op
-		return func() { *op = cp; w.def = op }
+	switch d := w.def.(type) {
+	case *offsetPlaneDef:
+		return snapshotPointee(d)
+	case *threePointPlaneDef:
+		return snapshotPointee(d)
+	case *planeAndPointPlaneDef:
+		return snapshotPointee(d)
+	case *twoPlanesPlaneDef:
+		return snapshotPointee(d)
+	case *linePlaneAnglePlaneDef:
+		return snapshotPointee(d)
+	case *twoLinesPlaneDef:
+		return snapshotPointee(d)
+	case *normalToCurvePlaneDef:
+		return snapshotPointee(d)
+	case *torusMidPlaneDef:
+		return snapshotPointee(d)
+	case *pointAndTangentPlaneDef:
+		return snapshotPointee(d)
+	case *planeAndTangentPlaneDef:
+		return snapshotPointee(d)
+	case *lineAndTangentPlaneDef:
+		return snapshotPointee(d)
+	default:
+		return func() {} // grounded kinds (fixed, fixed-frame) expose nothing to redefine
 	}
-	return func() { w.def = saved }
+}
+
+// snapshotPointee copies *d and returns a closure that copies it back — the restore half of
+// [WorkPlane.SnapshotDefinition] for the pointer-held definitions.
+func snapshotPointee[T any](d *T) func() {
+	cp := *d
+	return func() { *d = cp }
 }

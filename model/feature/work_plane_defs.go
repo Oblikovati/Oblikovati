@@ -24,9 +24,9 @@ type fixedFramePlaneDef struct {
 	x, y   math.UnitVector3
 }
 
-func (d fixedFramePlaneDef) kindName() string { return "fixed-frame" }
-func (d fixedFramePlaneDef) refs() []WorkRef  { return nil }
-func (d fixedFramePlaneDef) eval(workResolver) (sketch.Plane, error) {
+func (d *fixedFramePlaneDef) kindName() string { return "fixed-frame" }
+func (d *fixedFramePlaneDef) refs() []WorkRef  { return nil }
+func (d *fixedFramePlaneDef) eval(workResolver) (sketch.Plane, error) {
 	return sketch.NewPlane(d.origin(), d.x, d.y)
 }
 
@@ -37,9 +37,9 @@ type planeAndPointPlaneDef struct {
 	point WorkRef
 }
 
-func (d planeAndPointPlaneDef) kindName() string { return "plane-point" }
-func (d planeAndPointPlaneDef) refs() []WorkRef  { return []WorkRef{d.base, d.point} }
-func (d planeAndPointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *planeAndPointPlaneDef) kindName() string { return "plane-point" }
+func (d *planeAndPointPlaneDef) refs() []WorkRef  { return []WorkRef{d.base, d.point} }
+func (d *planeAndPointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	base, err := r.plane(d.base)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -55,9 +55,9 @@ func (d planeAndPointPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 // bisector through their intersection line, or the mid-plane when they are parallel.
 type twoPlanesPlaneDef struct{ p1, p2 WorkRef }
 
-func (d twoPlanesPlaneDef) kindName() string { return "two-planes" }
-func (d twoPlanesPlaneDef) refs() []WorkRef  { return []WorkRef{d.p1, d.p2} }
-func (d twoPlanesPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *twoPlanesPlaneDef) kindName() string { return "two-planes" }
+func (d *twoPlanesPlaneDef) refs() []WorkRef  { return []WorkRef{d.p1, d.p2} }
+func (d *twoPlanesPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	p1, err := r.plane(d.p1)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -78,9 +78,9 @@ type linePlaneAnglePlaneDef struct {
 	angle func() float64
 }
 
-func (d linePlaneAnglePlaneDef) kindName() string { return "line-plane-angle" }
-func (d linePlaneAnglePlaneDef) refs() []WorkRef  { return []WorkRef{d.line, d.base} }
-func (d linePlaneAnglePlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *linePlaneAnglePlaneDef) kindName() string { return "line-plane-angle" }
+func (d *linePlaneAnglePlaneDef) refs() []WorkRef  { return []WorkRef{d.line, d.base} }
+func (d *linePlaneAnglePlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	line, err := r.axis(d.line)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -97,9 +97,9 @@ func (d linePlaneAnglePlaneDef) eval(r workResolver) (sketch.Plane, error) {
 // coplanar, Line2 as well.
 type twoLinesPlaneDef struct{ l1, l2 WorkRef }
 
-func (d twoLinesPlaneDef) kindName() string { return "two-lines" }
-func (d twoLinesPlaneDef) refs() []WorkRef  { return []WorkRef{d.l1, d.l2} }
-func (d twoLinesPlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *twoLinesPlaneDef) kindName() string { return "two-lines" }
+func (d *twoLinesPlaneDef) refs() []WorkRef  { return []WorkRef{d.l1, d.l2} }
+func (d *twoLinesPlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	l1, err := r.axis(d.l1)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -128,9 +128,9 @@ type normalToCurvePlaneDef struct {
 	point WorkRef
 }
 
-func (d normalToCurvePlaneDef) kindName() string { return "normal-to-curve" }
-func (d normalToCurvePlaneDef) refs() []WorkRef  { return []WorkRef{d.curve, d.point} }
-func (d normalToCurvePlaneDef) eval(r workResolver) (sketch.Plane, error) {
+func (d *normalToCurvePlaneDef) kindName() string { return "normal-to-curve" }
+func (d *normalToCurvePlaneDef) refs() []WorkRef  { return []WorkRef{d.curve, d.point} }
+func (d *normalToCurvePlaneDef) eval(r workResolver) (sketch.Plane, error) {
 	axis, err := r.axis(d.curve)
 	if err != nil {
 		return sketch.Plane{}, err
@@ -148,21 +148,21 @@ func (d normalToCurvePlaneDef) eval(r workResolver) (sketch.Plane, error) {
 //	y, _ := math.NewUnitVector3(0, 1, 0)
 //	wp := planes.AddFixed(func() math.Point3 { return math.P3(0, 0, 5) }, x, y)
 func (c *WorkPlanes) AddFixed(origin func() math.Point3, x, y math.UnitVector3) *WorkPlane {
-	return c.addUser(fixedFramePlaneDef{origin: origin, x: x, y: y})
+	return c.addUser(&fixedFramePlaneDef{origin: origin, x: x, y: y})
 }
 
 // AddByPlaneAndPoint creates a plane parallel to base passing through point.
 //
 //	wp := planes.AddByPlaneAndPoint(feature.OriginXYPlane, apex.Key())
 func (c *WorkPlanes) AddByPlaneAndPoint(base, point WorkRef) *WorkPlane {
-	return c.addUser(planeAndPointPlaneDef{base: base, point: point})
+	return c.addUser(&planeAndPointPlaneDef{base: base, point: point})
 }
 
 // AddByTwoPlanes creates the bisecting plane of p1 and p2.
 //
 //	wp := planes.AddByTwoPlanes(feature.OriginXYPlane, feature.OriginXZPlane)
 func (c *WorkPlanes) AddByTwoPlanes(p1, p2 WorkRef) *WorkPlane {
-	return c.addUser(twoPlanesPlaneDef{p1: p1, p2: p2})
+	return c.addUser(&twoPlanesPlaneDef{p1: p1, p2: p2})
 }
 
 // AddByLinePlaneAndAngle creates a plane through line at angle (radians) from base.
@@ -170,21 +170,21 @@ func (c *WorkPlanes) AddByTwoPlanes(p1, p2 WorkRef) *WorkPlane {
 //	wp := planes.AddByLinePlaneAndAngle(feature.OriginXAxis, feature.OriginXYPlane,
 //		func() float64 { return 0.7853981633974483 }) // 45° in radians
 func (c *WorkPlanes) AddByLinePlaneAndAngle(line, base WorkRef, angle func() float64) *WorkPlane {
-	return c.addUser(linePlaneAnglePlaneDef{line: line, base: base, angle: angle})
+	return c.addUser(&linePlaneAnglePlaneDef{line: line, base: base, angle: angle})
 }
 
 // AddByTwoLines creates a plane from two lines (l1 is the X axis).
 //
 //	wp := planes.AddByTwoLines(feature.OriginXAxis, feature.OriginYAxis)
 func (c *WorkPlanes) AddByTwoLines(l1, l2 WorkRef) *WorkPlane {
-	return c.addUser(twoLinesPlaneDef{l1: l1, l2: l2})
+	return c.addUser(&twoLinesPlaneDef{l1: l1, l2: l2})
 }
 
 // AddByNormalToCurve creates a plane through point, normal to the curve (a work axis).
 //
 //	wp := planes.AddByNormalToCurve(feature.OriginZAxis, top.Key())
 func (c *WorkPlanes) AddByNormalToCurve(curve, point WorkRef) *WorkPlane {
-	return c.addUser(normalToCurvePlaneDef{curve: curve, point: point})
+	return c.addUser(&normalToCurvePlaneDef{curve: curve, point: point})
 }
 
 // bisectingPlane returns the plane that bisects p1 and p2. Intersecting planes give the

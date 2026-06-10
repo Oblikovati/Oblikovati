@@ -103,3 +103,68 @@ func TestOriginPlaneNotRedefinable(t *testing.T) {
 		t.Error("an origin plane must not be redefinable")
 	}
 }
+
+// TestRedefineRejectsSelfReference is the silent-drift regression: re-picking an offset
+// plane's base to the plane itself once stayed healthy=true while the plane moved by its
+// offset on EVERY recompute. The slot must refuse the reference and leave the plane stable.
+func TestRedefineRejectsSelfReference(t *testing.T) {
+	g := NewWorkGeometry()
+	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 2 })
+	g.Recompute(nil)
+
+	if err := wp.RedefineSlots()[0].Set(wp.Key()); err == nil {
+		t.Fatal("re-picking a plane's base to the plane itself must be rejected")
+	}
+	for i := 0; i < 3; i++ { // the old bug compounded per recompute (z = 2, 4, 6, …)
+		g.Recompute(nil)
+	}
+	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 2), wtol) {
+		t.Errorf("origin after refused self-reference = %v, want stable (0,0,2)", wp.Plane().Origin())
+	}
+}
+
+// TestRedefineRejectsReferenceCycle: with B offset from A, re-picking A's base to B would make
+// A depend on itself through B — the validation walks the reference graph, not just one edge.
+func TestRedefineRejectsReferenceCycle(t *testing.T) {
+	g := NewWorkGeometry()
+	a := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 1 })
+	b := g.WorkPlanes().AddByPlaneAndOffset(a.Key(), func() float64 { return 1 })
+	g.Recompute(nil)
+
+	if err := a.RedefineSlots()[0].Set(b.Key()); err == nil {
+		t.Fatal("a redefine that closes a reference cycle must be rejected")
+	}
+}
+
+// TestRedefineRejectsDanglingReference: a repick naming a work feature that does not exist
+// fails loudly (the wire path once turned this into a silently sick plane).
+func TestRedefineRejectsDanglingReference(t *testing.T) {
+	g := NewWorkGeometry()
+	wp := g.WorkPlanes().AddByPlaneAndOffset(OriginXYPlane, func() float64 { return 2 })
+	if err := wp.RedefineSlots()[0].Set(WorkRef("plane/99")); err == nil {
+		t.Fatal("a repick to a nonexistent work plane must be rejected")
+	}
+}
+
+// TestRedefineScalarAndRepickCompose is the lost-update regression: the angle edit and the
+// line re-pick of a line-plane-angle plane mutate one shared (pointer-held) definition, so
+// applying both keeps both. The definitions were once value types whose slot closures each
+// captured their own copy — the re-pick then silently discarded the angle edit.
+func TestRedefineScalarAndRepickCompose(t *testing.T) {
+	g := NewWorkGeometry()
+	wp := g.WorkPlanes().AddByLinePlaneAndAngle(OriginXAxis, OriginXYPlane, func() float64 { return 0 })
+	g.Recompute(nil)
+
+	slots := wp.RedefineSlots() // captured before the scalar edit, like the edit tool does
+	wp.EditableScalars()[0].Set(stdmath.Pi / 4)
+	if err := slots[0].Set(OriginYAxis); err != nil {
+		t.Fatalf("re-picking the line: %v", err)
+	}
+	g.Recompute(nil)
+	if got := wp.EditableScalars()[0].Get(); got != stdmath.Pi/4 {
+		t.Errorf("angle after the re-pick = %v, want pi/4 — the scalar edit was lost", got)
+	}
+	if got := wp.def.refs()[0]; got != OriginYAxis {
+		t.Errorf("line ref after the scalar edit = %q, want %q", got, OriginYAxis)
+	}
+}

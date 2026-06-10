@@ -214,6 +214,68 @@ func (g *WorkGeometry) point(ref WorkRef) (math.Point3, error) {
 	return w.Point(), nil
 }
 
+// validateRedefineRef rejects ref as a redefine input for the work feature keyed self when
+// binding it would create a reference cycle: the feature depending on itself, directly or
+// through other work features. A cyclic definition re-derives from its own previous result
+// and drifts on EVERY recompute — an offset plane offset from itself moves by the offset
+// each pass — silently corrupting geometry. It also rejects a user reference that names no
+// existing work feature, so a typo'd wire repick fails loudly instead of leaving a silently
+// sick plane. Origin elements and B-rep face/vertex references are terminal (a cycle through
+// the feature program, e.g. tangent to a face extruded off this plane, is out of this walk's
+// scope — the same exposure the creation flow has).
+func (g *WorkGeometry) validateRedefineRef(ref WorkRef, self WorkRef) error {
+	seen := map[WorkRef]bool{}
+	var walk func(r WorkRef) error
+	walk = func(r WorkRef) error {
+		if r == self {
+			return fmt.Errorf("work geometry: %q would make %q depend on itself (a cyclic definition drifts on every recompute)", ref, self)
+		}
+		if seen[r] {
+			return nil
+		}
+		seen[r] = true
+		refs, isUser, err := g.userFeatureRefs(r)
+		if err != nil {
+			return err
+		}
+		if !isUser {
+			return nil
+		}
+		for _, rr := range refs {
+			if err := walk(rr); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return walk(ref)
+}
+
+// userFeatureRefs returns the definition references of the user work feature ref names;
+// isUser is false for anything else (origin elements, B-rep faces/vertices). A user
+// reference whose index does not exist is an error naming the offending ref.
+func (g *WorkGeometry) userFeatureRefs(ref WorkRef) (refs []WorkRef, isUser bool, err error) {
+	if i, ok := userIndex(ref, "plane"); ok {
+		if i < 0 || i >= g.planes.Count() {
+			return nil, true, fmt.Errorf("work geometry: no work plane %q", ref)
+		}
+		return g.planes.Item(i).def.refs(), true, nil
+	}
+	if i, ok := userIndex(ref, "axis"); ok {
+		if i < 0 || i >= g.axes.Count() {
+			return nil, true, fmt.Errorf("work geometry: no work axis %q", ref)
+		}
+		return g.axes.Item(i).def.refs(), true, nil
+	}
+	if i, ok := userIndex(ref, "point"); ok {
+		if i < 0 || i >= g.points.Count() {
+			return nil, true, fmt.Errorf("work geometry: no work point %q", ref)
+		}
+		return g.points.Item(i).def.refs(), true, nil
+	}
+	return nil, false, nil
+}
+
 // userIndex parses a "<collection>/<i>" user-feature reference into its index.
 func userIndex(ref WorkRef, collection string) (int, bool) {
 	prefix := collection + "/"

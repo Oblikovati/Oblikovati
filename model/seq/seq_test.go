@@ -28,3 +28,24 @@ func TestBumpRaisesFloorButNeverLowersIt(t *testing.T) {
 		t.Fatalf("Bump(1) rewound the clock: before=%d after=%d", before, got)
 	}
 }
+
+func TestRestorePinsStampAndBumpsClock(t *testing.T) {
+	dst := Next()
+	saved := dst + 500
+	Restore(&dst, saved)
+	if dst != saved {
+		t.Fatalf("Restore left dst=%d, want the saved stamp %d", dst, saved)
+	}
+	if got := Next(); got <= saved {
+		t.Fatalf("after Restore(%d), Next=%d; new nodes must sort after restored ones", saved, got)
+	}
+}
+
+func TestRestoreKeepsFreshStampForLegacyZero(t *testing.T) {
+	fresh := Next()
+	dst := fresh
+	Restore(&dst, 0) // a legacy recipe with no stamp
+	if dst != fresh {
+		t.Fatalf("Restore(0) overwrote the fresh stamp: %d → %d", fresh, dst)
+	}
+}
