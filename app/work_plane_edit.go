@@ -9,82 +9,176 @@ import (
 	"oblikovati.org/model/param"
 )
 
-// Editing a placed work plane — Inventor's double-click / browser "Edit" on a datum plane.
-// Only the plane-and-offset kind carries a single scalar to edit (its offset distance); the
-// other plane kinds (three-point, tangent, …) are defined purely by references and have no
-// value to type, so they are not opened for edit here (a follow-up redefine flow). Each
-// change recomputes live; OK keeps it, Cancel restores the distance captured when editing
-// opened. See issue #132.
+// Editing / redefining a placed work plane — Inventor's double-click / browser "Edit" on a
+// datum plane. An offset plane edits its distance; a reference-built plane (three points, two
+// planes, a tangent face, …) re-picks those references; a line-plane-angle plane edits its
+// angle. This mirrors the feature-edit flow (app/feature_edit.go): scalar fields plus armed
+// reference slots that route viewport/browser picks. Each change recomputes live; OK keeps it,
+// Cancel restores the definition captured when editing opened. See issue #132.
 
-// WorkPlaneEditTool edits one offset work plane's distance in place.
+// WorkPlaneEditTool edits one placed work plane: its scalar inputs (offset/angle) and its
+// re-pickable reference slots. armed is the index of the slot currently collecting picks (-1
+// when none is armed and clicks are ignored).
 type WorkPlaneEditTool struct {
-	plane    *feature.WorkPlane
-	distance float64 // current edited offset, model units
-	original float64 // offset captured at open, for Cancel
+	plane      *feature.WorkPlane
+	scalars    []feature.EditableParam
+	origScalar []float64
+	slots      []feature.WorkRefSlot
+	restoreDef func() // restores the whole definition (refs + scalars) on Cancel
+	armed      int
 }
 
-// newWorkPlaneEditTool captures the plane's current offset as the edit's starting value.
 func newWorkPlaneEditTool(wp *feature.WorkPlane) *WorkPlaneEditTool {
-	d, _ := wp.OffsetDistance()
-	return &WorkPlaneEditTool{plane: wp, distance: d, original: d}
+	t := &WorkPlaneEditTool{
+		plane:      wp,
+		scalars:    wp.EditableScalars(),
+		slots:      wp.RedefineSlots(),
+		restoreDef: wp.SnapshotDefinition(),
+		armed:      -1,
+	}
+	t.origScalar = make([]float64, len(t.scalars))
+	for i, p := range t.scalars {
+		t.origScalar[i] = p.Get()
+	}
+	return t
 }
+
+func (t *WorkPlaneEditTool) editable() bool { return len(t.scalars) > 0 || len(t.slots) > 0 }
 
 // Name implements [Tool].
 func (t *WorkPlaneEditTool) Name() string { return "Edit " + t.plane.Name() }
 
-// Start is a no-op: the plane is already chosen, the dialog only edits its distance.
-func (t *WorkPlaneEditTool) Start(*Session) {}
+// Start clears any armed slot (clicks do nothing until the user presses a slot's Select).
+func (t *WorkPlaneEditTool) Start(*Session) { t.armed = -1 }
 
-// Pick ignores viewport picks: an offset edit takes only a typed distance, no geometry.
-func (t *WorkPlaneEditTool) Pick(*Session, Selectable) {}
+// Pick routes a viewport/browser pick to the armed reference slot: it maps the pick to a
+// WorkRef of the slot's kind, re-points the plane, and recomputes so the change is immediate.
+func (t *WorkPlaneEditTool) Pick(s *Session, sel Selectable) {
+	if t.armed < 0 || t.armed >= len(t.slots) {
+		return
+	}
+	slot := t.slots[t.armed]
+	ref, ok := workRefOf(sel, slot.Kind)
+	if !ok {
+		return
+	}
+	slot.Set(ref)
+	t.disarm(s) // a single-reference slot is satisfied by one pick
+	t.recompute(s)
+}
 
-// SetDistance / Distance hold the offset in model units (the head's dialog reads/sets these
-// through the session bridge, converting to/from the document's length unit).
-func (t *WorkPlaneEditTool) SetDistance(d float64) { t.distance = d }
-func (t *WorkPlaneEditTool) Distance() float64     { return t.distance }
-
-// CanCommit allows committing any distance (including 0 — a coincident plane is valid).
+// CanCommit reports the edit is always committable (an invalid redefinition goes Sick and
+// keeps the dialog open via Commit's error).
 func (t *WorkPlaneEditTool) CanCommit() bool { return true }
 
-// Commit writes the edited distance onto the plane, recomputes, and records the edit.
+// Commit recomputes with the edited scalars/references, ends the edit scope, and records the
+// edit. A sick plane returns an error so the dialog stays open for correction.
 func (t *WorkPlaneEditTool) Commit(s *Session) error {
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	if !t.plane.SetOffsetDistance(t.distance) {
-		return errors.New("work plane edit: plane is not an editable offset plane")
-	}
 	s.endEditScope()
 	part.Recompute()
 	s.recordEdit(part, "Edit "+t.plane.Name())
+	s.Selection().SetFilter(NewSelectionFilter())
+	if !t.plane.Health().OK() {
+		return errors.New("work plane edit: " + t.plane.Health().Reason)
+	}
 	return nil
 }
 
-// Cancel restores the offset captured at open and recomputes.
+// Cancel restores the snapshotted scalars and definition, recomputes, and clears the filter.
 func (t *WorkPlaneEditTool) Cancel(s *Session) {
-	t.plane.SetOffsetDistance(t.original)
+	for i, p := range t.scalars {
+		p.Set(t.origScalar[i])
+	}
+	t.restoreDef()
 	s.endEditScope()
+	if part, err := activePart(s); err == nil {
+		part.Recompute()
+	}
+	s.Selection().SetFilter(NewSelectionFilter())
+}
+
+// Arm puts the i-th reference slot into pick mode (its kind's filter).
+func (t *WorkPlaneEditTool) Arm(s *Session, i int) {
+	if i < 0 || i >= len(t.slots) {
+		return
+	}
+	t.armed = i
+	s.Selection().SetFilter(NewSelectionFilter(workRefFilterKinds(t.slots[i].Kind)...))
+}
+
+// ArmedSlot returns the index of the reference slot currently collecting picks, or -1.
+func (t *WorkPlaneEditTool) ArmedSlot() int { return t.armed }
+
+func (t *WorkPlaneEditTool) disarm(s *Session) {
+	t.armed = -1
+	s.Selection().SetFilter(NewSelectionFilter())
+}
+
+func (t *WorkPlaneEditTool) recompute(s *Session) {
 	if part, err := activePart(s); err == nil {
 		part.Recompute()
 	}
 }
 
-// BeginEditWorkPlane opens an offset work plane for distance editing (browser double-click /
-// Edit menu). Origin coordinate-system planes and non-offset plane kinds have nothing to
-// edit, so they are a no-op (matching a feature with no editable parameters).
+// workRefOf maps a viewport/browser pick to a feature.WorkRef of the slot's kind: a work plane
+// or planar face for a plane slot, a work axis for an axis slot, a work point for a point slot,
+// a B-rep face for a face slot. ok=false for a mismatched pick.
+func workRefOf(sel Selectable, kind feature.WorkRefKind) (feature.WorkRef, bool) {
+	switch kind {
+	case feature.WorkRefPlane:
+		if h, ok := sel.(WorkPlaneHandle); ok {
+			return h.Plane.Key(), true
+		}
+		if h, ok := sel.(FaceHandle); ok {
+			return feature.FaceRef(h.Face.ReferenceKey()), true
+		}
+	case feature.WorkRefAxis:
+		if h, ok := sel.(WorkAxisHandle); ok {
+			return h.Axis.Key(), true
+		}
+	case feature.WorkRefPoint:
+		if h, ok := sel.(WorkPointHandle); ok {
+			return h.Point.Key(), true
+		}
+	case feature.WorkRefFace:
+		if h, ok := sel.(FaceHandle); ok {
+			return feature.FaceRef(h.Face.ReferenceKey()), true
+		}
+	}
+	return "", false
+}
+
+// workRefFilterKinds maps a redefine slot's kind to the selection-filter kinds that pick it.
+func workRefFilterKinds(kind feature.WorkRefKind) []SelectionKind {
+	switch kind {
+	case feature.WorkRefPlane:
+		return []SelectionKind{SelectWorkPlane, SelectFace} // a planar face is a valid plane ref
+	case feature.WorkRefAxis:
+		return []SelectionKind{SelectWorkAxis}
+	case feature.WorkRefPoint:
+		return []SelectionKind{SelectWorkPoint}
+	default: // WorkRefFace
+		return []SelectionKind{SelectFace}
+	}
+}
+
+// BeginEditWorkPlane opens a work plane for editing (browser double-click / Edit menu). Origin
+// coordinate-system planes and plane kinds with nothing to edit (fixed-frame) are a no-op.
 func (s *Session) BeginEditWorkPlane(h WorkPlaneHandle) {
 	if h.Plane == nil || h.Plane.IsCoordinateSystemElement() {
 		return
 	}
-	if _, ok := h.Plane.OffsetDistance(); !ok {
+	t := newWorkPlaneEditTool(h.Plane)
+	if !t.editable() {
 		return
 	}
 	s.beginEditScope(h.Plane.Seq())
-	s.StartTool(newWorkPlaneEditTool(h.Plane))
+	s.StartTool(t)
 }
-
-// --- session bridge for the head dialog (offset in the document's length unit) ---
 
 // ActiveWorkPlaneEdit returns the running work-plane edit tool, or nil.
 func (s *Session) ActiveWorkPlaneEdit() *WorkPlaneEditTool {
@@ -95,6 +189,9 @@ func (s *Session) ActiveWorkPlaneEdit() *WorkPlaneEditTool {
 	return t
 }
 
+// IsEditingWorkPlane reports whether a work-plane edit dialog should be open.
+func (s *Session) IsEditingWorkPlane() bool { return s.ActiveWorkPlaneEdit() != nil }
+
 // EditPlaneName returns the name of the work plane being edited (the dialog title), or "".
 func (s *Session) EditPlaneName() string {
 	if t := s.ActiveWorkPlaneEdit(); t != nil {
@@ -103,18 +200,100 @@ func (s *Session) EditPlaneName() string {
 	return ""
 }
 
-// EditPlaneOffsetDisplay returns the edited offset in the document's length unit.
-func (s *Session) EditPlaneOffsetDisplay() float64 {
-	t := s.ActiveWorkPlaneEdit()
-	if t == nil {
-		return 0
+// --- scalar accessors (the dialog reads/writes in the document's units) ---
+
+// EditPlaneScalarCount returns how many editable scalar fields the open edit has.
+func (s *Session) EditPlaneScalarCount() int {
+	if t := s.ActiveWorkPlaneEdit(); t != nil {
+		return len(t.scalars)
 	}
-	return s.DocumentUnits().ToPreferred(param.Q(t.Distance(), param.Length))
+	return 0
 }
 
-// SetEditPlaneOffsetDisplay sets the edited offset from a value in the document's length unit.
-func (s *Session) SetEditPlaneOffsetDisplay(value float64) {
+// EditPlaneScalarLabel returns the i-th scalar field's label.
+func (s *Session) EditPlaneScalarLabel(i int) string {
+	if p, ok := s.editPlaneScalar(i); ok {
+		return p.Label
+	}
+	return ""
+}
+
+// EditPlaneScalarUnitName returns the i-th scalar field's unit name ("mm", "deg", …), or "".
+func (s *Session) EditPlaneScalarUnitName(i int) string {
+	p, ok := s.editPlaneScalar(i)
+	if !ok {
+		return ""
+	}
+	switch p.Unit {
+	case param.Length:
+		return s.LengthUnitName()
+	case param.Angle:
+		return s.AngleUnitName()
+	default:
+		return ""
+	}
+}
+
+// EditPlaneScalarValue returns the i-th scalar in the document's preferred unit.
+func (s *Session) EditPlaneScalarValue(i int) float64 {
+	p, ok := s.editPlaneScalar(i)
+	if !ok {
+		return 0
+	}
+	if p.Unit == param.Unitless {
+		return p.Get()
+	}
+	return s.DocumentUnits().ToPreferred(param.Q(p.Get(), p.Unit))
+}
+
+// SetEditPlaneScalarValue sets the i-th scalar from a value in the document's preferred unit.
+func (s *Session) SetEditPlaneScalarValue(i int, value float64) {
+	p, ok := s.editPlaneScalar(i)
+	if !ok {
+		return
+	}
+	if p.Unit == param.Unitless {
+		p.Set(value)
+		return
+	}
+	p.Set(s.DocumentUnits().FromPreferred(value, p.Unit).Value)
+}
+
+func (s *Session) editPlaneScalar(i int) (feature.EditableParam, bool) {
+	t := s.ActiveWorkPlaneEdit()
+	if t == nil || i < 0 || i >= len(t.scalars) {
+		return feature.EditableParam{}, false
+	}
+	return t.scalars[i], true
+}
+
+// --- reference-slot accessors (re-pick geometry) ---
+
+// EditPlaneRefSlotCount returns how many reference slots the open edit has.
+func (s *Session) EditPlaneRefSlotCount() int {
 	if t := s.ActiveWorkPlaneEdit(); t != nil {
-		t.SetDistance(s.DocumentUnits().FromPreferred(value, param.Length).Value)
+		return len(t.slots)
+	}
+	return 0
+}
+
+// EditPlaneRefSlotLabel returns the i-th slot's label (e.g. "Tangent face").
+func (s *Session) EditPlaneRefSlotLabel(i int) string {
+	if t := s.ActiveWorkPlaneEdit(); t != nil && i >= 0 && i < len(t.slots) {
+		return t.slots[i].Label
+	}
+	return ""
+}
+
+// EditPlaneRefSlotArmed reports whether the i-th slot is currently collecting picks.
+func (s *Session) EditPlaneRefSlotArmed(i int) bool {
+	t := s.ActiveWorkPlaneEdit()
+	return t != nil && t.ArmedSlot() == i
+}
+
+// EditPlaneArmRefSlot arms the i-th reference slot for picking (sets the pick filter).
+func (s *Session) EditPlaneArmRefSlot(i int) {
+	if t := s.ActiveWorkPlaneEdit(); t != nil {
+		t.Arm(s, i)
 	}
 }

@@ -37,7 +37,8 @@ func TestOriginPlaneIsNotOffsetEditable(t *testing.T) {
 }
 
 // TestBeginEditWorkPlaneOpensOffsetEditor: double-clicking a user offset plane opens the edit
-// tool seeded with its current offset, and OK writes the new distance; origin planes are a no-op.
+// tool seeded with its current offset (in the document's mm), and OK writes the new distance;
+// origin planes are a no-op.
 func TestBeginEditWorkPlaneOpensOffsetEditor(t *testing.T) {
 	s, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
@@ -50,23 +51,26 @@ func TestBeginEditWorkPlaneOpensOffsetEditor(t *testing.T) {
 	}
 
 	s.BeginEditWorkPlane(WorkPlaneHandle{Plane: wp})
-	tool := s.ActiveWorkPlaneEdit()
-	if tool == nil {
+	if s.ActiveWorkPlaneEdit() == nil {
 		t.Fatal("editing a user offset plane should open the work-plane edit tool")
 	}
-	if tool.Distance() != 2 {
-		t.Errorf("edit tool seeded distance = %v, want 2", tool.Distance())
+	if s.EditPlaneScalarCount() != 1 || s.EditPlaneScalarLabel(0) != "Offset" {
+		t.Fatalf("offset edit should expose one Offset scalar, got count=%d label=%q",
+			s.EditPlaneScalarCount(), s.EditPlaneScalarLabel(0))
+	}
+	if got := s.EditPlaneScalarValue(0); got != 20 { // 2 cm shown as 20 mm
+		t.Errorf("seeded offset = %v mm, want 20", got)
 	}
 	if _, active := s.EditScopeSeq(); !active {
 		t.Error("editing a work plane should engage the edit scope")
 	}
 
-	tool.SetDistance(7)
+	s.SetEditPlaneScalarValue(0, 70) // 70 mm = 7 cm
 	if err := s.OK(); err != nil {
 		t.Fatalf("commit work-plane edit: %v", err)
 	}
 	if d, _ := wp.OffsetDistance(); d != 7 {
-		t.Errorf("committed offset = %v, want 7", d)
+		t.Errorf("committed offset = %v, want 7 cm", d)
 	}
 	if _, active := s.EditScopeSeq(); active {
 		t.Error("edit scope must clear after committing the work-plane edit")
@@ -80,10 +84,65 @@ func TestBeginEditWorkPlaneCancelRestoresOffset(t *testing.T) {
 	def.Recompute()
 
 	s.BeginEditWorkPlane(WorkPlaneHandle{Plane: wp})
-	s.ActiveWorkPlaneEdit().SetDistance(9)
+	s.SetEditPlaneScalarValue(0, 90)
 	s.CancelTool()
 	if d, _ := wp.OffsetDistance(); d != 2 {
 		t.Errorf("offset after cancel = %v, want 2 (restored)", d)
+	}
+}
+
+// TestRedefineThreePointPlaneViaPick: double-clicking a three-point plane opens a redefine with
+// three point slots; arming one and feeding a point pick re-points the plane and recomputes.
+func TestRedefineThreePointPlaneViaPick(t *testing.T) {
+	s, def := emptyPartSession(t)
+	a := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
+	b := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 0, 0) })
+	c := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 1, 0) })
+	wp := def.WorkPlanes().AddByThreePoints(a.Key(), b.Key(), c.Key())
+	def.Recompute()
+
+	s.BeginEditWorkPlane(WorkPlaneHandle{Plane: wp})
+	tool := s.ActiveWorkPlaneEdit()
+	if tool == nil {
+		t.Fatal("a three-point plane should be redefinable")
+	}
+	if s.EditPlaneRefSlotCount() != 3 {
+		t.Fatalf("three-point redefine slots = %d, want 3", s.EditPlaneRefSlotCount())
+	}
+
+	// Re-point the third corner above the plane → it tilts off +Z.
+	up := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 1, 1) })
+	s.EditPlaneArmRefSlot(2)
+	if !s.EditPlaneRefSlotArmed(2) {
+		t.Fatal("slot 2 should be armed after EditPlaneArmRefSlot(2)")
+	}
+	tool.Pick(s, WorkPointHandle{Point: up})
+	if wp.Plane().Normal().AsVector().IsEqualTo(math.V3(0, 0, 1), 1e-6) {
+		t.Error("re-picking point 3 did not re-tilt the plane")
+	}
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit redefine: %v", err)
+	}
+}
+
+// TestRedefineCancelRestoresReference: cancelling a redefine restores the original references.
+func TestRedefineCancelRestoresReference(t *testing.T) {
+	s, def := emptyPartSession(t)
+	a := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 0, 0) })
+	b := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 0, 0) })
+	c := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 1, 0) })
+	wp := def.WorkPlanes().AddByThreePoints(a.Key(), b.Key(), c.Key())
+	def.Recompute()
+	want := wp.Plane().Normal().AsVector()
+
+	s.BeginEditWorkPlane(WorkPlaneHandle{Plane: wp})
+	up := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 1, 1) })
+	s.EditPlaneArmRefSlot(2)
+	s.ActiveWorkPlaneEdit().Pick(s, WorkPointHandle{Point: up})
+	s.CancelTool()
+	def.Recompute()
+	if !wp.Plane().Normal().AsVector().IsEqualTo(want, 1e-9) {
+		t.Errorf("after cancel, plane normal = %v, want restored %v", wp.Plane().Normal(), want)
 	}
 }
 
