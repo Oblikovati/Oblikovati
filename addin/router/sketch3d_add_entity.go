@@ -68,9 +68,38 @@ func buildCurve3DEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch
 		return buildFixedSpline3D(sk, in)
 	case types.Sketch3DEntityEquationCurve:
 		return buildEquationCurve3D(sk, in)
+	case types.Sketch3DEntityBend:
+		return buildBend3D(part, sk, in)
 	default:
 		return nil, fmt.Errorf("sketch3d.addEntity: unsupported kind %q", in.Kind)
 	}
+}
+
+// buildBend3D fills the corner of two connected lines with a tangent arc (Inventor's
+// SketchArcs3D.AddAsBend, issue #143): the lines are trimmed to the tangent points
+// and the maintaining bend constraint is auto-added by the model.
+func buildBend3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in wire.AddSketch3DEntityArgs) (json.RawMessage, error) {
+	if len(in.Lines) != 2 {
+		return nil, fmt.Errorf("sketch3d.addEntity: bend needs lines:[l1,l2] (2 line ids), got %d", len(in.Lines))
+	}
+	l1, err := lineRef3D(sk, in.Lines[0])
+	if err != nil {
+		return nil, err
+	}
+	l2, err := lineRef3D(sk, in.Lines[1])
+	if err != nil {
+		return nil, err
+	}
+	radius, err := lengthArg(part, "radius", in.Radius)
+	if err != nil {
+		return nil, err
+	}
+	arc, err := sk.AddBend3D(l1, l2, radius)
+	if err != nil {
+		return nil, fmt.Errorf("sketch3d.addEntity: %w", err)
+	}
+	arc.SetConstruction(in.Construction)
+	return entityResult(uint64(arc.EntityID()), in.Kind, arc.Center.EntityID(), arc.Start.EntityID(), arc.End.EntityID())
 }
 
 // buildHelix3D resolves a helix from one of Inventor's four definition modes, converting

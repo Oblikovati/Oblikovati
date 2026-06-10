@@ -235,6 +235,8 @@ func curveConstraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind
 		return types.Geo3DSplineFitPoints, []uint64{uint64(v.Spline.EntityID()), uint64(v.P.EntityID())}
 	case *sketch.Helical3D:
 		return types.Geo3DHelical, []uint64{uint64(v.H.EntityID()), uint64(v.C.EntityID())}
+	case *sketch.Bend3D:
+		return types.Geo3DBend, []uint64{uint64(v.Arc.EntityID()), uint64(v.L1.EntityID()), uint64(v.L2.EntityID())}
 	default:
 		return types.Geo3DUnknown, nil
 	}

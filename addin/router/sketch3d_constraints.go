@@ -52,6 +52,8 @@ func buildSketch3DConstraint(sk *sketch.Sketch3D, kind types.Geometric3DConstrai
 		return helicalConstraint3D(sk, refs)
 	case types.Geo3DEqual:
 		return equalConstraint3D(sk, refs)
+	case types.Geo3DBend:
+		return bendConstraint3D(sk, refs)
 	default:
 		return orientationConstraint3D(sk, kind, refs)
 	}
@@ -132,6 +134,37 @@ func helicalConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint,
 func isSpline3D(c sketch.SmoothCurve3D) bool {
 	_, ok := c.(*sketch.Spline3D)
 	return ok
+}
+
+// bendConstraint3D binds an existing arc as the bend between two lines (the join
+// endpoints are chosen nearest the arc's start/end; the radius is captured from the
+// arc's current geometry). The addEntity bend path auto-adds this constraint — this
+// case serves restore-like wire flows building the pieces explicitly.
+func bendConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, error) {
+	if len(refs) != 3 {
+		return nil, fmt.Errorf("sketch3d.addConstraint: bend needs an arc + 2 lines, got %d refs", len(refs))
+	}
+	e, ok := sk.EntityByID(sketch.ID(refs[0]))
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: no entity with id %d", refs[0])
+	}
+	arc, ok := e.(*sketch.Arc3D)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a 3D arc", refs[0], e)
+	}
+	l1, err := lineRef3D(sk, refs[1])
+	if err != nil {
+		return nil, err
+	}
+	l2, err := lineRef3D(sk, refs[2])
+	if err != nil {
+		return nil, err
+	}
+	c, err := sketch.NewBend3D(arc, l1, l2)
+	if err != nil {
+		return nil, fmt.Errorf("sketch3d.addConstraint: %w", err)
+	}
+	return c, nil
 }
 
 // equalConstraint3D forces two radius DOFs equal — the operands are circle (radius) or

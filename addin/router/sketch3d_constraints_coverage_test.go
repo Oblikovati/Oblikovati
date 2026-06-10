@@ -76,6 +76,17 @@ func splineAndPoint3D(t *testing.T, r *Router, s *app.Session) []uint64 {
 	return []uint64{sp.EntityID, p.EntityID}
 }
 
+// bendPieces3D builds two L-corner lines and a near-fillet arc, returning
+// [arc, l1, l2] — the bend constraint binds them and pulls the join tight on solve.
+func bendPieces3D(t *testing.T, r *Router, s *app.Session) []uint64 {
+	t.Helper()
+	var l1, l2, a wire.AddSketch3DEntityResult
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[0,0,0],[0.75,0,0]]}`, &l1)
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"line","points":[[1,0.25,0],[1,1,0]]}`, &l2)
+	call(t, r, s, "sketch3d.addEntity", `{"sketchIndex":0,"kind":"arc","points":[[0.75,0.25,0],[0.75,0,0],[1,0.25,0]],"ccw":true}`, &a)
+	return []uint64{a.EntityID, l1.EntityID, l2.EntityID}
+}
+
 // twoCircles3D builds two circles of different radii and returns their ids.
 func twoCircles3D(t *testing.T, r *Router, s *app.Session) []uint64 {
 	t.Helper()
@@ -96,8 +107,6 @@ func helixAndCircle3D(t *testing.T, r *Router, s *app.Session) []uint64 {
 }
 
 // declared3DConstraintFixtures maps EVERY declared kind to its minimal fixture.
-// Geo3DBend is the one tracked exception: entity + constraint are unimplemented and
-// tracked by issue #143 — remove the exclusion when it lands.
 var declared3DConstraintFixtures = map[types.Geometric3DConstraintKind]constraint3DFixture{
 	types.Geo3DCoincident:    nPoints3D(2),
 	types.Geo3DCollinear:     nPoints3D(3),
@@ -120,14 +129,14 @@ var declared3DConstraintFixtures = map[types.Geometric3DConstraintKind]constrain
 	types.Geo3DSplineFitPoints:   splineAndPoint3D,
 	types.Geo3DHelical:           helixAndCircle3D,
 	types.Geo3DEqual:             twoCircles3D,
+	types.Geo3DBend:              bendPieces3D,
 }
 
 // trackedUnimplemented3DKinds are declared kinds knowingly absent from the solver,
 // each requiring an open issue. The completeness check fails when a kind is neither
-// covered nor tracked here.
-var trackedUnimplemented3DKinds = map[types.Geometric3DConstraintKind]string{
-	types.Geo3DBend: "issue #143 (bend entity + constraint)",
-}
+// covered nor tracked here. Currently empty — every declared kind is implemented
+// (#142 closed the gap; #143 added bend) — and kept so the next gap must be tracked.
+var trackedUnimplemented3DKinds = map[types.Geometric3DConstraintKind]string{}
 
 // allDeclared3DConstraintKinds mirrors the const block in api/types/sketch3d.go
 // (Go cannot enumerate constants); keep in sync when the API grows.
