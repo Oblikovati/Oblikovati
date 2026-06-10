@@ -95,12 +95,14 @@ type Entity3DData struct {
 // Constraint3DRow is one geometric 3D constraint: its kind plus operand ids split into
 // Points (point operands) and Curves (line/curve entity operands), in the order the
 // constraint's factory expects. Index is the splineFitPoints fit-point index (the
-// constraint binds a specific fit point, not a re-derived nearest one).
+// constraint binds a specific fit point, not a re-derived nearest one); Radius is the
+// bend's held radius.
 type Constraint3DRow struct {
-	Kind   string `yaml:"kind"`
-	Points []int  `yaml:"points,omitempty"`
-	Curves []int  `yaml:"curves,omitempty"`
-	Index  int    `yaml:"index,omitempty"`
+	Kind   string  `yaml:"kind"`
+	Points []int   `yaml:"points,omitempty"`
+	Curves []int   `yaml:"curves,omitempty"`
+	Index  int     `yaml:"index,omitempty"`
+	Radius float64 `yaml:"radius,omitempty"`
 }
 
 // MarshalRecipe3D projects every 3D sketch into its serializable form, in order.
@@ -315,6 +317,11 @@ func serializeConstraint3D(c Constraint) (Constraint3DRow, error) {
 		return Constraint3DRow{Kind: "splineFitPoints", Curves: []int{int(v.Spline.id)}, Points: []int{int(v.P.id)}, Index: v.FitIndex}, nil
 	case *Helical3D:
 		return Constraint3DRow{Kind: "helical", Curves: []int{int(v.H.id), int(v.C.id)}}, nil
+	case *Bend3D:
+		return Constraint3DRow{
+			Kind: "bend", Curves: []int{int(v.Arc.id), int(v.L1.id), int(v.L2.id)},
+			Points: []int{int(v.P1.id), int(v.P2.id)}, Radius: v.Radius,
+		}, nil
 	default:
 		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint of type %T (no codec yet)", c)
 	}
@@ -571,6 +578,9 @@ func curveConstraint3DFromRow(cd Constraint3DRow, pts []*Point3D, entmap map[int
 	case "helical":
 		c, err := restoreHelical3D(cd, entmap)
 		return c, true, err
+	case "bend":
+		c, err := restoreBend3D(cd, pts, entmap)
+		return c, true, err
 	default:
 		return nil, false, nil
 	}
@@ -594,6 +604,23 @@ func restoreSmoothJoin3D(cd Constraint3DRow, pts []*Point3D, entmap map[int]Enti
 		return NewTangent3D(c1, c2, pts[0], pts[1]), nil
 	}
 	return NewSmooth3D(c1, c2, pts[0], pts[1]), nil
+}
+
+// restoreBend3D rebuilds a bend from its arc + two lines, re-binding the exact saved
+// join endpoints and held radius.
+func restoreBend3D(cd Constraint3DRow, pts []*Point3D, entmap map[int]Entity) (Constraint, error) {
+	if len(cd.Curves) != 3 || len(pts) != 2 {
+		return nil, fmt.Errorf("needs an arc + 2 lines + 2 join points, got %d/%d", len(cd.Curves), len(pts))
+	}
+	arc, ok := entmap[cd.Curves[0]].(*Arc3D)
+	if !ok {
+		return nil, fmt.Errorf("entity id %d is %T, want a 3D arc", cd.Curves[0], entmap[cd.Curves[0]])
+	}
+	lines, err := lookupLines3D(cd.Curves[1:], entmap)
+	if err != nil {
+		return nil, err
+	}
+	return newBend3DBound(arc, lines[0], lines[1], pts[0], pts[1], cd.Radius), nil
 }
 
 // restoreHelical3D rebuilds a helix-on-circle constraint from its two curve operands.
