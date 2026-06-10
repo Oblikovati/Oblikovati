@@ -3,6 +3,7 @@
 package router
 
 import (
+	"fmt"
 	"testing"
 
 	"oblikovati.org/api/wire"
@@ -137,5 +138,65 @@ func TestWorkPlanesRedefineRejectsOriginAndBadIndex(t *testing.T) {
 	}
 	if _, err := r.Handle(s, "workPlanes.redefine", []byte(`{"index":99}`)); err == nil {
 		t.Error("redefining an out-of-range index should error")
+	}
+}
+
+func TestWorkPointsCreateAndThreePointPlane(t *testing.T) {
+	r, s := emptyPartSession(t)
+	// Three created points define a plane tilted off the principal planes.
+	var p0, p1, p2 wire.CreateWorkPointResult
+	call(t, r, s, "workPoints.create", `{"at":[0,0,0]}`, &p0)
+	call(t, r, s, "workPoints.create", `{"at":[4,0,0]}`, &p1)
+	call(t, r, s, "workPoints.create", `{"at":[0,4,2]}`, &p2)
+	// The origin center point occupies index 0, so user points start at point/1.
+	if p0.Ref != "point/1" || p1.Ref != "point/2" || p2.Ref != "point/3" {
+		t.Fatalf("point refs = %q,%q,%q, want point/1..3", p0.Ref, p1.Ref, p2.Ref)
+	}
+
+	var res wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create",
+		`{"kind":"three-points","refs":["`+p0.Ref+`","`+p1.Ref+`","`+p2.Ref+`"]}`, &res)
+	if !res.Healthy {
+		t.Fatalf("three-point plane not healthy (user point refs must resolve): %+v", res)
+	}
+
+	// Its three slots are point slots.
+	var list wire.ListWorkPlanesResult
+	call(t, r, s, "workPlanes.list", "{}", &list)
+	p := list.Planes[res.Index]
+	if p.Kind != "three-points" || len(p.Slots) != 3 || p.Slots[2].Kind != "point" {
+		t.Errorf("three-point plane slots = %+v (kind %q), want 3 point slots", p.Slots, p.Kind)
+	}
+}
+
+func TestWorkPlanesRedefineThreePointRepick(t *testing.T) {
+	r, s := emptyPartSession(t)
+	var a, b, c wire.CreateWorkPointResult
+	call(t, r, s, "workPoints.create", `{"at":[0,0,0]}`, &a)
+	call(t, r, s, "workPoints.create", `{"at":[4,0,0]}`, &b)
+	call(t, r, s, "workPoints.create", `{"at":[0,4,0]}`, &c) // all in the XY plane → ±Z normal
+	var plane wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create",
+		`{"kind":"three-points","refs":["`+a.Ref+`","`+b.Ref+`","`+c.Ref+`"]}`, &plane)
+	if !plane.Healthy {
+		t.Fatalf("three-point plane from user points should be healthy: %+v", plane)
+	}
+	// The fresh plane lies in XY, so its normal is vertical (±Z).
+	var list wire.ListWorkPlanesResult
+	call(t, r, s, "workPlanes.list", "{}", &list)
+	if z := list.Planes[plane.Index].Normal[2]; z != 1 && z != -1 {
+		t.Fatalf("initial three-point plane normal = %v, want vertical ±Z", list.Planes[plane.Index].Normal)
+	}
+
+	// A fourth point above the XY plane; re-point slot 2 at it → the plane tilts off ±Z.
+	var d wire.CreateWorkPointResult
+	call(t, r, s, "workPoints.create", `{"at":[0,4,3]}`, &d)
+	var rd wire.RedefineWorkPlaneResult
+	call(t, r, s, "workPlanes.redefine", fmt.Sprintf(`{"index":%d,"repick":[{"slot":2,"ref":%q}]}`, plane.Index, d.Ref), &rd)
+	if !rd.Plane.Healthy {
+		t.Fatalf("redefined three-point plane not healthy: %+v", rd.Plane)
+	}
+	if z := rd.Plane.Normal[2]; z == 1 || z == -1 {
+		t.Errorf("after re-picking point 3 above the plane, normal = %v, want tilted off ±Z", rd.Plane.Normal)
 	}
 }

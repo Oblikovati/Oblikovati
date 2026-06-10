@@ -75,6 +75,7 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
 	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodWorkPlanesRedefine] = redefineWorkPlane
+	r.handlers[wire.MethodWorkPointsCreate] = createWorkPoint
 	r.handlers[wire.MethodThemeActive] = themeActive
 	r.handlers[wire.MethodThemeList] = themeList
 	r.handlers[wire.MethodViewGetDisplayMode] = getDisplayMode
@@ -288,6 +289,7 @@ var mutatingMethods = map[string]bool{
 	wire.MethodFeaturesAdd:            true,
 	wire.MethodWorkPlanesCreate:       true,
 	wire.MethodWorkPlanesRedefine:     true,
+	wire.MethodWorkPointsCreate:       true,
 	wire.MethodModelAssignMaterial:    true,
 	wire.MethodModelAssignAppearance:  true,
 	wire.MethodSketchCreate:           true,

@@ -177,6 +177,32 @@ func createWorkPlanes(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	})
 }
 
+// createWorkPoint adds a datum point fixed at the requested position to the active part and
+// recomputes, returning its index and reference (usable as a point input to a work plane or a
+// redefine re-pick).
+func createWorkPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.CreateWorkPointArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	at, err := parseCoords(in.At, "at")
+	if err != nil {
+		return nil, err
+	}
+	p := math.P3(at[0], at[1], at[2])
+	wp := part.WorkPoints().AddByPosition(func() math.Point3 { return p })
+	part.Recompute()
+	return json.Marshal(wire.CreateWorkPointResult{
+		Index: part.WorkPoints().Count() - 1,
+		Ref:   string(wp.Key()),
+		Name:  wp.Name(),
+	})
+}
+
 // refPlaneCtor builds a work plane from exactly its references (no scalar parameters);
 // refPlaneCtors is the table of the kinds that need only references, keeping
 // buildWorkPlane's body to the kinds with extra inputs (offset, angle, fixed frame).
@@ -278,22 +304,39 @@ func addFixedWorkPlane(planes *feature.WorkPlanes, in wire.CreateWorkPlaneArgs) 
 	return planes.AddFixed(func() math.Point3 { return o }, x, y), nil
 }
 
-// toWorkRefs converts the request's reference strings to model work references.
-// toWorkRefs wraps reference strings as work refs. An origin reference ("origin/plane/xy",
-// "origin/axis/z", …) and a user work plane/axis name are plain plane/axis refs; any other
-// string is a B-rep topology reference key (from model.referenceKeys) and is tagged as a
-// FaceRef so the resolver builds the plane on that body face — the way a work plane lands on a
-// surface a feature created. (Edge/vertex-based kinds over the wire are a known limitation.)
+// toWorkRefs converts the request's reference strings to model work references. A work-feature
+// reference — an origin constant ("origin/plane/xy", "origin/axis/z", …), a user plane/axis/
+// point/ucs ref ("plane/3", "point/0", from a create/list result), or an encoded vertex ref
+// ("vertex/…") — is passed through verbatim; any other string is a B-rep topology reference key
+// (from model.referenceKeys) and is tagged as a FaceRef so the resolver builds the plane on that
+// body face. This lets a user work point/plane/axis feed another work feature over the wire
+// (e.g. a three-point plane through three created points, or a redefine re-pick).
 func toWorkRefs(refs []string) []feature.WorkRef {
 	out := make([]feature.WorkRef, len(refs))
 	for i, r := range refs {
-		if strings.HasPrefix(r, "origin/") {
+		if isWorkFeatureRef(r) {
 			out[i] = feature.WorkRef(r)
 		} else {
 			out[i] = feature.FaceRef([]byte(r))
 		}
 	}
 	return out
+}
+
+// workFeatureRefPrefixes are the reference-string prefixes that name a work feature (an origin
+// element, a user plane/axis/point/coordinate-system, or an encoded vertex) rather than a raw
+// B-rep face key.
+var workFeatureRefPrefixes = []string{"origin/", "plane/", "axis/", "point/", "ucs/", "vertex/"}
+
+// isWorkFeatureRef reports whether r names a work feature (so it is passed through as a plane/
+// axis/point ref) rather than a raw face key.
+func isWorkFeatureRef(r string) bool {
+	for _, p := range workFeatureRefPrefixes {
+		if strings.HasPrefix(r, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // modelLengthClosure turns a distance argument into a live, parameter-aware value: a
