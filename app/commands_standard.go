@@ -200,14 +200,31 @@ func patternFeatureCommands() []*CommandDefinition {
 }
 
 // sketch3DToolCommands are the contextual 3D-sketch tools, enabled only while a 3D sketch
-// is being edited (M22-F12): the geometry tools plus Finish.
+// is being edited (M22-F12): the geometry tools, the Constrain panel, plus Finish.
 func sketch3DToolCommands() []*CommandDefinition {
 	finish := NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
 		return s.FinishSketch3D()
 	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon("finish-sketch").
 		WithButtonStyle(LargeIconButton).
 		WithTooltip("Finish the 3D sketch and return to the model.")
-	return append(sketch3DDrawCommands(), finish)
+	cmds := append(sketch3DDrawCommands(), sketch3DConstrainCommands()...)
+	return append(cmds, finish)
+}
+
+// sketch3DConstrainCommands are the 3D Sketch tab's Constrain panel (issue #142) —
+// each starts an interactive constraint tool the user then feeds 3D geometry, the
+// same tool-first flow as the 2D Constrain panel.
+func sketch3DConstrainCommands() []*CommandDefinition {
+	cmds := make([]*CommandDefinition, len(sketch3DConstraintToolDefs))
+	for i, d := range sketch3DConstraintToolDefs {
+		newTool := d.new
+		cmds[i] = NewCommand(d.id, d.name, "Constrain", func(s *Session) error {
+			s.StartTool(newTool())
+			return nil
+		}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithTooltip(d.tooltip).
+			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
+	}
+	return cmds
 }
 
 // sketch3DDrawCommands are the 3D-sketch geometry-placement tools (line/point/circle/arc/

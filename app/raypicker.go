@@ -19,12 +19,13 @@ import (
 // [Picker], so a test "clicks on" a modeled solid or a datum plane — screen coordinate
 // → ray → face/plane — with no GPU.
 type RayPicker struct {
-	camera   scene.Camera
-	bodies   func() []*topo.Body
-	planes   func() []*feature.WorkPlane
-	points   func() []*feature.WorkPoint
-	axes     func() []*feature.WorkAxis
-	sketches func() []*sketch.Sketch
+	camera     scene.Camera
+	bodies     func() []*topo.Body
+	planes     func() []*feature.WorkPlane
+	points     func() []*feature.WorkPoint
+	axes       func() []*feature.WorkAxis
+	sketches   func() []*sketch.Sketch
+	sketches3D func() []*sketch.Sketch3D
 }
 
 // pickPixelRadius is how close (in pixels) the cursor must be to a datum point or axis to
@@ -49,6 +50,14 @@ func (p *RayPicker) WithPlanes(planes func() []*feature.WorkPlane) *RayPicker {
 // resolve a click inside a sketch profile region — what an extrude/revolve consumes.
 func (p *RayPicker) WithSketches(sketches func() []*sketch.Sketch) *RayPicker {
 	p.sketches = sketches
+	return p
+}
+
+// WithSketches3D adds a provider of the part's (visible) 3D sketches, so the picker can
+// resolve a click on a 3D-sketch curve or point — what the 3D constraint tools consume
+// (issue #142).
+func (p *RayPicker) WithSketches3D(sketches3D func() []*sketch.Sketch3D) *RayPicker {
+	p.sketches3D = sketches3D
 	return p
 }
 
@@ -92,8 +101,65 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 	if sel, t, ok := p.nearestSketchCurve(origin, dir, filter); ok {
 		cands = append(cands, pickCandidate{t, sel})
 	}
+	if sel, t, ok := p.nearestSketch3DEntity(origin, dir, filter); ok {
+		cands = append(cands, pickCandidate{t, sel})
+	}
 	return nearestCandidate(cands)
 }
+
+// nearestSketch3DEntity returns the 3D-sketch entity (curve or standalone point) the
+// ray passes nearest within the pick radius, in any visible 3D sketch, when the
+// filter accepts sketch entities — how the 3D constraint tools receive their picks
+// (issue #142). Curves test against the same sampled polyline the overlay draws.
+func (p *RayPicker) nearestSketch3DEntity(origin math.Point3, dir math.Vector3, filter *SelectionFilter) (Selectable, float64, bool) {
+	if p.sketches3D == nil || !filter.Accepts(SelectSketchEntity) {
+		return nil, stdmath.Inf(1), false
+	}
+	tol := pickPixelRadius * p.camera.WorldPerPixel()
+	var hit Selectable
+	best := stdmath.Inf(1)
+	for _, sk := range p.sketches3D() {
+		for _, e := range sk.Entities() {
+			if d, t, ok := raySketch3DEntityDistance(origin, dir, e); ok && d <= tol && t < best {
+				best, hit = t, SketchEntityHandle{Entity: e}
+			}
+		}
+	}
+	return hit, best, hit != nil
+}
+
+// raySketch3DEntityDistance returns the closest approach between the ray and an
+// entity's sampled polyline (a standalone point is its single sample).
+func raySketch3DEntityDistance(origin math.Point3, dir math.Vector3, e sketch.Entity) (dist, t float64, ok bool) {
+	pts := sketch.SamplePolyline3D(e, pick3DCurveSegments)
+	if len(pts) == 0 {
+		return 0, 0, false
+	}
+	if len(pts) == 1 {
+		return rayPointDistance(origin, dir, pts[0])
+	}
+	dist, t = stdmath.Inf(1), stdmath.Inf(1)
+	for i := 0; i+1 < len(pts); i++ {
+		if d, s, segOK := raySegmentDistance(origin, dir, pts[i], pts[i+1]); segOK && d < dist {
+			dist, t, ok = d, s, true
+		}
+	}
+	return dist, t, ok
+}
+
+// rayPointDistance returns the distance from the forward ray to a point and the ray
+// parameter of the closest approach; ok is false behind the ray origin.
+func rayPointDistance(origin math.Point3, dir math.Vector3, pt math.Point3) (dist, t float64, ok bool) {
+	t = float64(origin.VectorTo(pt).Dot(dir))
+	if t <= 0 {
+		return 0, 0, false
+	}
+	return float64(origin.TranslateBy(dir.Scale(math.Scalar(t))).DistanceTo(pt)), t, true
+}
+
+// pick3DCurveSegments is the sample budget for picking curved 3D entities — matches
+// the overlay's draw sampling so what you see is what you pick.
+const pick3DCurveSegments = 48
 
 // nearestSketchCurve returns the sketch line the ray passes nearest (within the pick radius, in
 // any visible sketch), when the filter accepts sketch entities — so a sketch line/centerline can
