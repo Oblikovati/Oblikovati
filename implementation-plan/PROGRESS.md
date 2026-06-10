@@ -275,6 +275,24 @@ app-layer e2e tests driving command→tool→OK→validated solid).
 
 ## Session log
 
+- **2026-06-10:** **Browser timeline, edit scope & work-plane redefine (issue #132, PRs #133–#135).**
+  The model browser is now one **chronological tree**: a process-wide creation clock (new
+  `model/seq`) stamps every sketch, part feature, and user work plane/axis/point (persisted in
+  the recipes, clock bumped on load; origin frame stamps 0), so sketches/work features/features
+  interleave by creation order instead of a separate Sketches branch. A sketch consumed by
+  exactly one feature **nests under that feature** (`SketchConsumer`); a **Shared** sketch (new
+  Share/Unshare Sketch menu, Inventor `PlanarSketch.Shared`) stays top-level. **Double-click
+  edits** dispatch by node type (feature → parameter editor, sketch → sketch environment, work
+  plane → edit dialog) with **edit-scope visibility**: everything created after the edited node
+  hides — the feature engine rolls back via its end-of-part marker and the head overlays skip
+  stamps past the edit cutoff — restored on commit/cancel/finish. User work planes are now
+  **pickable in the viewport** (`Session.PickableWorkPlanes` feeds the ray picker). **Redefine:**
+  the model exposes each plane's `RedefineSlots` (re-pickable references) + `EditableScalars`
+  (offset/angle); `WorkPlaneEditTool` arms a slot's pick filter and re-points it live (Cancel
+  restores the snapshotted definition); the head dialog renders scalar fields + reference rows.
+  Over the wire: **`workPlanes.redefine`** + a self-describing `workPlanes.list` (kind, scalars,
+  slots — API #31), **`workPoints.create`** (API #32), and the **`redefine_work_plane`** MCP
+  tool (AddIns #23). Full suite + head + SPDX green.
 - **2026-06-05:** **Sketch construction lines + centerlines.** Construction geometry already
   existed in the model (entity flag, excluded from `normalGeometry`/profiles, serialized) but had
   no UI. Added **centerlines** (new): `entityBase.centerline` (implies construction, so it never

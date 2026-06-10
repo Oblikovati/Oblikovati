@@ -60,6 +60,19 @@ The browser tree reflects the document's feature history, parameters, sketches, 
 Node actions (rename, suppress, delete, reorder) issue **commands** (core/06), so
 they are undoable for free. Replaces COM `BrowserPane`/`BrowserNode` retained nodes.
 
+The part tree is **chronological** (issue #132): sketches, user work features, and
+features interleave in one timeline ordered by a global creation stamp (`model/seq`,
+persisted in the recipes so a reopened document keeps its order); a sketch consumed
+by exactly one feature nests under that feature, while a **Shared** sketch
+(Share/Unshare Sketch in the node menu, Inventor's `PlanarSketch.Shared`) stays at
+top level and may feed several features. **Double-click** dispatches by node type:
+a feature opens its parameter editor, a sketch re-enters the sketch environment, and
+a user work plane opens its scalar/reference redefine dialog. While such an edit is
+open, **edit-scope visibility** hides everything created after the edited node — the
+feature engine rolls back via its end-of-part marker and the head's plane/axis/sketch
+overlays skip nodes whose creation stamp exceeds the edit cutoff — restored on
+commit/cancel/finish.
+
 ## Reflection-driven inspector (realtime-3d §10)
 
 The biggest leverage point. Every feature carries a `Definition` struct (the
