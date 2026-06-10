@@ -81,26 +81,22 @@ func TestHullWithSingleFlushCutStaysValid(t *testing.T) {
 	}
 }
 
-// TestHullWithChainedFlushCutsKnownIssue documents the open singlecableclip defect: chaining
-// a SECOND flush-bottomed cut onto the already-cut hull produces a non-manifold, non-closed
-// body — visible as openings around the screw hole in the viewport. Tracked as issue #137.
-//
-// Root cause chain (diagnosed 2026-06-10): the slot tool's bottom cap is coplanar with the
-// hull's bottom face and its stadium boundary exits the hull silhouette; the planar B-rep
-// boolean classifies that flush/tangent seam incompletely (its result is manifold but not
-// CLOSED — coplanar handling is the documented follow-up in kernel/brep/boolean.go), so
-// ops.booleanGeneral falls back to the triangle CSG. The CSG result Validates, but carries
-// near-duplicate vertices (~1e-5 apart, from BSP splits computing the same point by
-// different routes) along the seam. The NEXT cut's CSG then fractures those slivers into
-// 3-to-8-face edges and unpaired boundary edges. Widening the weld tolerances alone does not
-// recover it — the fix is proper coplanar/flush classification in the planar B-rep boolean.
-func TestHullWithChainedFlushCutsKnownIssue(t *testing.T) {
+// TestHullWithChainedFlushCutsStaysValid is the issue-#137 regression gate: chaining a
+// SECOND flush-bottomed cut onto the already-cut hull once produced a non-manifold, open
+// shell — visible as openings around the screw hole in the viewport. Root cause: a tool
+// wall whose bottom edge lies exactly in the target's bottom plane imprinted that plane
+// with a float-wobbled near-duplicate of the coplanar cap edge (and imprinted itself with
+// its own boundary), destabilizing the planar boolean's 2D arrangement; the rejected
+// result then fell back to the sliver-laden triangle CSG, which the next cut fractured.
+// Fixed by filtering boundary-coincident imprints (kernel/brep imprintAll).
+func TestHullWithChainedFlushCutsStaysValid(t *testing.T) {
 	body := buildClip(t, true, true)
 	if r := ops.Validate(body); !r.Valid {
-		t.Skipf("known issue (flush-cut chaining): %v", r.Issues)
+		t.Errorf("chained flush cuts produced an invalid body: %v", r.Issues)
 	}
-	// When the skip above stops firing, the brep coplanar handling has landed: delete the
-	// skip so this becomes the regression gate.
+	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; v <= 0 || stdmath.IsNaN(v) {
+		t.Errorf("volume = %v, want positive", v)
+	}
 }
 
 func clipRect(sk *sketch.Sketch, x0, y0, x1, y1 float64) {

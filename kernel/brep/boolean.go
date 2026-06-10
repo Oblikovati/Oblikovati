@@ -53,20 +53,25 @@ func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 }
 
 // imprintAll computes, for every crossing face pair, the shared intersection segment and
-// records it on both faces (by index).
+// records it on both faces (by index). A segment lying along a face's own boundary is NOT
+// recorded on that face: it splits nothing (the arrangement already contains the boundary),
+// and a float-wobbled near-copy of a boundary edge destabilizes the 2D arrangement. The
+// flush-cut case (#137) hits this constantly — a tool wall whose bottom edge lies exactly in
+// the target's bottom plane imprints that plane with a near-duplicate of the coplanar cap
+// edge, and imprints ITSELF with its own bottom edge.
 func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
 	impA = make([][][2]math.Point3, len(fa))
 	impB = make([][][2]math.Point3, len(fb))
 	for i := range fa {
 		for j := range fb {
 			if coplanar(fa[i], fb[j]) {
-				impA[i] = append(impA[i], faceEdges3D(fb[j])...)
-				impB[j] = append(impB[j], faceEdges3D(fa[i])...)
+				impA[i] = append(impA[i], interiorSegments(fa[i], faceEdges3D(fb[j]))...)
+				impB[j] = append(impB[j], interiorSegments(fb[j], faceEdges3D(fa[i]))...)
 				continue
 			}
 			segs := imprint(fa[i], fb[j])
-			impA[i] = append(impA[i], segs...)
-			impB[j] = append(impB[j], segs...)
+			impA[i] = append(impA[i], interiorSegments(fa[i], segs)...)
+			impB[j] = append(impB[j], interiorSegments(fb[j], segs)...)
 		}
 	}
 	return impA, impB
@@ -200,4 +205,59 @@ func reverseRing(r []math.Point3) []math.Point3 {
 		out[len(r)-1-i] = p
 	}
 	return out
+}
+
+// boundaryImprintTol is the distance at which an imprint point counts as lying on a face's
+// boundary. The wobble between a boundary edge and its imprint re-derivation is float noise
+// (~1e-15), far below it; genuinely interior imprints sit at feature scale, far above it.
+const boundaryImprintTol = 1e-7
+
+// interiorSegments filters out the segments that lie along f's boundary, keeping only the
+// ones that can actually split the face's interior.
+func interiorSegments(f planarFace, segs [][2]math.Point3) [][2]math.Point3 {
+	out := segs[:0:0]
+	for _, s := range segs {
+		if !segmentOnFaceBoundary(f, s) {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// segmentOnFaceBoundary reports whether the whole segment lies on f's boundary (within
+// [boundaryImprintTol]). Endpoints AND midpoint are tested, so a segment that runs along a
+// boundary edge's line but crosses the interior elsewhere (a concave face) is kept.
+func segmentOnFaceBoundary(f planarFace, s [2]math.Point3) bool {
+	mid := math.P3((s[0].X+s[1].X)/2, (s[0].Y+s[1].Y)/2, (s[0].Z+s[1].Z)/2)
+	return pointOnFaceBoundary(f, s[0]) && pointOnFaceBoundary(f, mid) && pointOnFaceBoundary(f, s[1])
+}
+
+// pointOnFaceBoundary reports whether p lies within [boundaryImprintTol] of any of f's
+// boundary edges.
+func pointOnFaceBoundary(f planarFace, p math.Point3) bool {
+	for _, ring := range f.loops {
+		n := len(ring)
+		for i := 0; i < n; i++ {
+			if distPointSegment(p, ring[i], ring[(i+1)%n]) < boundaryImprintTol {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// distPointSegment returns the distance from p to segment ab.
+func distPointSegment(p, a, b math.Point3) float64 {
+	ab := a.VectorTo(b)
+	lenSq := ab.LengthSquared()
+	if lenSq == 0 {
+		return a.VectorTo(p).Length()
+	}
+	t := a.VectorTo(p).Dot(ab) / lenSq
+	if t < 0 {
+		t = 0
+	} else if t > 1 {
+		t = 1
+	}
+	return p.VectorTo(a.TranslateBy(ab.Scale(t))).Length()
 }
