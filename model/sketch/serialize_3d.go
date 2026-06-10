@@ -446,6 +446,12 @@ func buildRestoredDimension3D(s *Sketch3D, dr Dimension3DRow, pts []*Point3D, en
 			return nil, err
 		}
 		return dc.AddTwoLineAngle(l[0], l[1], dr.Expression)
+	case "splineLength":
+		sp, err := lookupSpline3D(dr.Curves, entmap)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddSplineLength(sp, dr.Expression)
 	default:
 		return nil, fmt.Errorf("unknown 3D dimension kind %q", dr.Kind)
 	}
