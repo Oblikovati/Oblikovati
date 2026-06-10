@@ -18,17 +18,18 @@ import (
 // Select button that arms it for viewport/browser picking. While it is open the model is
 // rolled back to the plane (edit-scope, issue #132). Scalars are in the document's unit.
 
-// workPlaneEditUI holds the dialog's per-scalar field values across frames and whether it was
-// open last frame (so it seeds the fields once when the edit opens).
+// workPlaneEditUI holds the dialog's per-scalar field values across frames, keyed by the
+// plane being edited — so switching directly from one plane's edit to another's reseeds the
+// fields (a bare "was open" bool would carry the first plane's stale values over).
 var workPlaneEditUI struct {
-	values []float32
-	open   bool
+	values  []float32
+	editing string // EditPlaneName of the plane the fields were seeded from ("" = none)
 }
 
 // drawWorkPlaneEditDialog shows the scalar + reference editor while a work-plane edit is open.
 func drawWorkPlaneEditDialog(s *app.Session) {
 	if !s.IsEditingWorkPlane() {
-		workPlaneEditUI.open = false
+		workPlaneEditUI.editing = ""
 		return
 	}
 	nScalars := s.EditPlaneScalarCount()
@@ -45,14 +46,14 @@ func drawWorkPlaneEditDialog(s *app.Session) {
 }
 
 func refreshWorkPlaneEditUI(s *app.Session, nScalars int) {
-	if workPlaneEditUI.open {
+	if workPlaneEditUI.editing == s.EditPlaneName() {
 		return
 	}
 	workPlaneEditUI.values = make([]float32, nScalars)
 	for i := 0; i < nScalars; i++ {
 		workPlaneEditUI.values[i] = float32(s.EditPlaneScalarValue(i))
 	}
-	workPlaneEditUI.open = true
+	workPlaneEditUI.editing = s.EditPlaneName()
 }
 
 // drawWorkPlaneScalars renders one field per editable scalar (offset/angle), syncing it to the
@@ -88,12 +89,12 @@ func drawWorkPlaneRefSlots(s *app.Session, n int) {
 func drawWorkPlaneEditButtons(s *app.Session) {
 	if native.Button("OK") {
 		if err := s.OK(); err == nil { // a sick result keeps the dialog open
-			workPlaneEditUI.open = false
+			workPlaneEditUI.editing = ""
 		}
 	}
 	native.SameLine()
 	if native.Button("Cancel") {
 		s.CancelTool()
-		workPlaneEditUI.open = false
+		workPlaneEditUI.editing = ""
 	}
 }

@@ -6,15 +6,15 @@ import (
 	"errors"
 
 	"oblikovati.org/model/feature"
-	"oblikovati.org/model/param"
 )
 
 // Editing / redefining a placed work plane — Inventor's double-click / browser "Edit" on a
 // datum plane. An offset plane edits its distance; a reference-built plane (three points, two
 // planes, a tangent face, …) re-picks those references; a line-plane-angle plane edits its
 // angle. This mirrors the feature-edit flow (app/feature_edit.go): scalar fields plus armed
-// reference slots that route viewport/browser picks. Each change recomputes live; OK keeps it,
-// Cancel restores the definition captured when editing opened. See issue #132.
+// reference slots that route viewport/browser picks. A re-pick recomputes immediately; scalar
+// edits land on OK, which keeps the result — Cancel restores the definition captured when
+// editing opened. See issue #132.
 
 // WorkPlaneEditTool edits one placed work plane: its scalar inputs (offset/angle) and its
 // re-pickable reference slots. armed is the index of the slot currently collecting picks (-1
@@ -43,8 +43,6 @@ func newWorkPlaneEditTool(wp *feature.WorkPlane) *WorkPlaneEditTool {
 	return t
 }
 
-func (t *WorkPlaneEditTool) editable() bool { return len(t.scalars) > 0 || len(t.slots) > 0 }
-
 // Name implements [Tool].
 func (t *WorkPlaneEditTool) Name() string { return "Edit " + t.plane.Name() }
 
@@ -62,7 +60,10 @@ func (t *WorkPlaneEditTool) Pick(s *Session, sel Selectable) {
 	if !ok {
 		return
 	}
-	slot.Set(ref)
+	if err := slot.Set(ref); err != nil {
+		s.notice = err.Error() // a refused reference (it would create a cycle); the slot stays armed
+		return
+	}
 	t.disarm(s) // a single-reference slot is satisfied by one pick
 	t.recompute(s)
 }
@@ -128,13 +129,15 @@ func (t *WorkPlaneEditTool) recompute(s *Session) {
 // or planar face for a plane slot, a work axis for an axis slot, a work point for a point slot,
 // a B-rep face for a face slot. ok=false for a mismatched pick.
 func workRefOf(sel Selectable, kind feature.WorkRefKind) (feature.WorkRef, bool) {
+	// A B-rep face satisfies both a face slot and a plane slot (a planar face is a valid
+	// plane reference — offset-from-face and friends).
+	if h, ok := sel.(FaceHandle); ok && (kind == feature.WorkRefFace || kind == feature.WorkRefPlane) {
+		return feature.FaceRef(h.Face.ReferenceKey()), true
+	}
 	switch kind {
 	case feature.WorkRefPlane:
 		if h, ok := sel.(WorkPlaneHandle); ok {
 			return h.Plane.Key(), true
-		}
-		if h, ok := sel.(FaceHandle); ok {
-			return feature.FaceRef(h.Face.ReferenceKey()), true
 		}
 	case feature.WorkRefAxis:
 		if h, ok := sel.(WorkAxisHandle); ok {
@@ -143,10 +146,6 @@ func workRefOf(sel Selectable, kind feature.WorkRefKind) (feature.WorkRef, bool)
 	case feature.WorkRefPoint:
 		if h, ok := sel.(WorkPointHandle); ok {
 			return h.Point.Key(), true
-		}
-	case feature.WorkRefFace:
-		if h, ok := sel.(FaceHandle); ok {
-			return feature.FaceRef(h.Face.ReferenceKey()), true
 		}
 	}
 	return "", false
@@ -169,15 +168,14 @@ func workRefFilterKinds(kind feature.WorkRefKind) []SelectionKind {
 // BeginEditWorkPlane opens a work plane for editing (browser double-click / Edit menu). Origin
 // coordinate-system planes and plane kinds with nothing to edit (fixed-frame) are a no-op.
 func (s *Session) BeginEditWorkPlane(h WorkPlaneHandle) {
-	if h.Plane == nil || h.Plane.IsCoordinateSystemElement() {
+	if h.Plane == nil || h.Plane.IsCoordinateSystemElement() || !h.Plane.IsRedefinable() {
 		return
 	}
 	t := newWorkPlaneEditTool(h.Plane)
-	if !t.editable() {
-		return
-	}
-	s.beginEditScope(h.Plane.Seq())
+	// StartTool first — its cancel of a previous edit tool restores that edit's scope (see
+	// BeginEditFeature); only then is it safe to capture the marker for this scope.
 	s.StartTool(t)
+	s.beginEditScope(h.Plane.Seq())
 }
 
 // ActiveWorkPlaneEdit returns the running work-plane edit tool, or nil.
@@ -224,14 +222,7 @@ func (s *Session) EditPlaneScalarUnitName(i int) string {
 	if !ok {
 		return ""
 	}
-	switch p.Unit {
-	case param.Length:
-		return s.LengthUnitName()
-	case param.Angle:
-		return s.AngleUnitName()
-	default:
-		return ""
-	}
+	return s.paramUnitName(p)
 }
 
 // EditPlaneScalarValue returns the i-th scalar in the document's preferred unit.
@@ -240,23 +231,14 @@ func (s *Session) EditPlaneScalarValue(i int) float64 {
 	if !ok {
 		return 0
 	}
-	if p.Unit == param.Unitless {
-		return p.Get()
-	}
-	return s.DocumentUnits().ToPreferred(param.Q(p.Get(), p.Unit))
+	return s.paramDisplayValue(p)
 }
 
 // SetEditPlaneScalarValue sets the i-th scalar from a value in the document's preferred unit.
 func (s *Session) SetEditPlaneScalarValue(i int, value float64) {
-	p, ok := s.editPlaneScalar(i)
-	if !ok {
-		return
+	if p, ok := s.editPlaneScalar(i); ok {
+		s.setParamDisplayValue(p, value)
 	}
-	if p.Unit == param.Unitless {
-		p.Set(value)
-		return
-	}
-	p.Set(s.DocumentUnits().FromPreferred(value, p.Unit).Value)
 }
 
 func (s *Session) editPlaneScalar(i int) (feature.EditableParam, bool) {

@@ -95,6 +95,24 @@ func TestPickableWorkPlanesIncludesVisibleUserPlanes(t *testing.T) {
 	}
 }
 
+// TestPickableWorkPlanesHonorsEditScope: a user plane created after the node being edited is
+// hidden by the edit scope, so it must drop out of the picker too — geometry the overlays do
+// not draw must not be clickable.
+func TestPickableWorkPlanesHonorsEditScope(t *testing.T) {
+	s, def, f1, _ := twoExtrudePart(t)
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	def.Recompute()
+
+	s.BeginEditFeature(FeatureHandle{Feature: f1})
+	if containsPlane(s.PickableWorkPlanes(), wp) {
+		t.Error("a plane hidden by the edit scope must not be pickable")
+	}
+	s.CancelTool()
+	if !containsPlane(s.PickableWorkPlanes(), wp) {
+		t.Error("the plane must be pickable again after the edit closes")
+	}
+}
+
 func containsPlane(planes []*feature.WorkPlane, want *feature.WorkPlane) bool {
 	for _, p := range planes {
 		if p == want {

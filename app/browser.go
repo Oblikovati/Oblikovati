@@ -11,17 +11,18 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// The browser tree reflects the active document's structure — parameters, sketches,
-// and the feature history — read directly from the model each frame (no parallel
-// retained tree). Node actions (rename/suppress/delete) issue commands, so they are
-// undoable; here we build the structure that ImGui renders.
+// The browser tree reflects the active document's structure — parameters, bodies, and the
+// chronological model timeline (work features, sketches, and the feature history,
+// interleaved by creation stamp; issue #132) — read directly from the model each frame (no
+// parallel retained tree). Node actions (rename/suppress/delete, share, edit) issue
+// commands, so they are undoable; here we build the structure that ImGui renders.
 
 // BrowserNode is a node in the model browser tree. A node with a non-nil Select is
 // clickable: selecting it puts that handle in the session's selection set (so e.g.
 // clicking "XY Plane" selects the plane to sketch on).
 type BrowserNode struct {
 	Label    string
-	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketches" | "sketch" | "feature"
+	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "feature"
 	Select   Selectable
 	Children []BrowserNode
 }
@@ -81,8 +82,8 @@ func addPartBranches(root *BrowserNode, part *compdef.PartComponentDefinition) {
 // timelineEntry is one node placed in the part's chronological tree: the global creation
 // stamp it sorts by, and a builder that appends it (with any nested children) under root.
 type timelineEntry struct {
-	seq    uint64
-	append func(root *BrowserNode)
+	seq   uint64
+	build func(root *BrowserNode)
 }
 
 // addModelTimeline appends the user work features, top-level sketches, and features in
@@ -98,7 +99,7 @@ func addModelTimeline(root *BrowserNode, part *compdef.PartComponentDefinition) 
 
 	sort.SliceStable(entries, func(i, j int) bool { return entries[i].seq < entries[j].seq })
 	for _, e := range entries {
-		e.append(root)
+		e.build(root)
 	}
 }
 

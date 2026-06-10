@@ -31,9 +31,11 @@ func (s *Session) SelectedWorkPlanes() []*feature.WorkPlane {
 
 // PickableWorkPlanes returns the work planes the viewport hit-test should offer: every
 // origin plane (always pickable as a sketch host — Inventor's Origin folder — even though
-// origin planes default to hidden) plus every VISIBLE user-created datum. User planes were
-// previously absent from the picker, so a ribbon-created plane could not be clicked as a
-// new sketch's reference in the 3D view (issue #132); the head feeds this to the RayPicker.
+// origin planes default to hidden) plus every VISIBLE user-created datum not hidden by the
+// active edit scope (a plane the overlays don't draw must not be clickable either). User
+// planes were previously absent from the picker, so a ribbon-created plane could not be
+// clicked as a new sketch's reference in the 3D view (issue #132); the head feeds this to
+// the RayPicker.
 func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
 	part, err := activePart(s)
 	if err != nil {
@@ -42,7 +44,8 @@ func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
 	planes := part.WorkPlanes()
 	out := make([]*feature.WorkPlane, 0, planes.Count())
 	for i := 0; i < planes.Count(); i++ {
-		if wp := planes.Item(i); wp.IsCoordinateSystemElement() || wp.Visible() {
+		wp := planes.Item(i)
+		if wp.IsCoordinateSystemElement() || (wp.Visible() && !s.EditScopeHides(wp.Seq())) {
 			out = append(out, wp)
 		}
 	}

@@ -199,7 +199,9 @@ func activeBodies(s *app.Session) []*topo.Body {
 }
 
 // activeWorkPoints / activeWorkAxes return the active part's datum points/axes (origin
-// and user), so the picker can snap a click to them as work-plane reference inputs.
+// and user), so the picker can snap a click to them as work-plane reference inputs. Nodes
+// hidden by the active edit scope are excluded, matching the overlays — geometry the
+// viewport does not draw must not be clickable.
 func activeWorkPoints(s *app.Session) []*feature.WorkPoint {
 	p, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -208,7 +210,9 @@ func activeWorkPoints(s *app.Session) []*feature.WorkPoint {
 	points := p.WorkPoints()
 	out := make([]*feature.WorkPoint, 0, points.Count())
 	for i := 0; i < points.Count(); i++ {
-		out = append(out, points.Item(i))
+		if pt := points.Item(i); !s.EditScopeHides(pt.Seq()) {
+			out = append(out, pt)
+		}
 	}
 	return out
 }
@@ -221,7 +225,7 @@ func activeWorkAxes(s *app.Session) []*feature.WorkAxis {
 	axes := p.WorkAxes()
 	out := make([]*feature.WorkAxis, 0, axes.Count())
 	for i := 0; i < axes.Count(); i++ {
-		if ax := axes.Item(i); ax.Visible() {
+		if ax := axes.Item(i); ax.Visible() && !s.EditScopeHides(ax.Seq()) {
 			out = append(out, ax)
 		}
 	}
@@ -230,6 +234,7 @@ func activeWorkAxes(s *app.Session) []*feature.WorkAxis {
 
 // activeSketches returns the active part's visible sketches (nil if none), so the picker
 // can resolve a click inside a finished sketch's profile region (for extrude/revolve).
+// Scope-hidden sketches are excluded like the overlays exclude them.
 func activeSketches(s *app.Session) []*sketch.Sketch {
 	p, err := modelaccess.ActivePart(s)
 	if err != nil {
@@ -237,7 +242,7 @@ func activeSketches(s *app.Session) []*sketch.Sketch {
 	}
 	var out []*sketch.Sketch
 	for i := 0; i < p.Sketches().Count(); i++ {
-		if sk := p.Sketches().Item(i); sk.Visible() {
+		if sk := p.Sketches().Item(i); sk.Visible() && !s.EditScopeHides(sk.Seq()) {
 			out = append(out, sk)
 		}
 	}

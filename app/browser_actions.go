@@ -15,7 +15,9 @@ import (
 // the undo-friendly seam between the menu (app/browser_menu.go) and the model.
 
 // EditSketch opens an existing sketch for editing (the menu's "Edit Sketch"). It errors
-// when a sketch is already being edited, since Inventor forbids nesting sketch edits.
+// when a sketch is already being edited (Inventor forbids nesting sketch edits) or while a
+// feature/work-plane edit is open — entering a sketch then would overwrite that edit's
+// scope, and the open dialog's later exit would clear the sketch's.
 func (s *Session) EditSketch(sk *sketch.Sketch) error {
 	if sk == nil {
 		return errors.New("app: EditSketch with nil sketch")
@@ -23,17 +25,23 @@ func (s *Session) EditSketch(sk *sketch.Sketch) error {
 	if s.activeSketch != nil {
 		return errors.New("app: already editing a sketch (finish it first)")
 	}
+	if s.tool != nil && s.editScope.active {
+		return errors.New("app: an edit is already open (finish it first)")
+	}
 	s.EnterSketch(sk)
 	return nil
 }
 
 // BeginEditSketch re-enters a sketch for geometry editing (browser double-click). It mirrors
-// the "Edit Sketch" menu action; a nil/missing sketch or an already-open editor is a no-op.
+// the "Edit Sketch" menu action; a nil sketch is a no-op, and a refused edit (another edit is
+// open) surfaces its reason as the session notice instead of silently doing nothing.
 func (s *Session) BeginEditSketch(h SketchHandle) {
 	if h.Sketch == nil {
 		return
 	}
-	_ = s.EditSketch(h.Sketch)
+	if err := s.EditSketch(h.Sketch); err != nil {
+		s.notice = err.Error()
+	}
 }
 
 // DeleteSketch removes a sketch from the active part. If it is the one being edited the

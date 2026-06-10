@@ -19,6 +19,15 @@ func childrenKinds(n BrowserNode) []string {
 }
 
 // topLevelKind reports whether the part root has a direct child of the given kind.
+func containsLabel(labels []string, want string) bool {
+	for _, l := range labels {
+		if l == want {
+			return true
+		}
+	}
+	return false
+}
+
 func hasTopLevelKind(root BrowserNode, kind string) bool {
 	for _, c := range root.Children {
 		if c.Kind == kind {
@@ -117,15 +126,15 @@ func TestToggleSketchSharedRoundTripsThroughMenu(t *testing.T) {
 		t.Error("shared sketch should be top level after toggle")
 	}
 	labels := menuLabels(BrowserMenu(findNode(t, root, "sketch")))
-	if len(labels) < 2 || labels[1] != "Unshare Sketch" {
-		t.Errorf("shared sketch menu = %v, want Unshare Sketch entry", labels)
+	if !containsLabel(labels, "Unshare Sketch") {
+		t.Errorf("shared sketch menu = %v, want an Unshare Sketch entry", labels)
 	}
 
 	// Unshare → the sketch is absorbed again.
 	if err := s.ToggleSketchShared(sk); err != nil {
 		t.Fatalf("ToggleSketchShared(unshare): %v", err)
 	}
-	if BuildBrowser(s); hasTopLevelKind(BuildBrowser(s), "sketch") {
+	if hasTopLevelKind(BuildBrowser(s), "sketch") {
 		t.Error("unshared consumed sketch should nest under its feature again")
 	}
 }

@@ -9,19 +9,19 @@ import (
 	"oblikovati.org/model/feature"
 )
 
-// TestWorkPlaneOffsetIsEditable: an offset plane exposes its distance and re-derives when set,
-// so the plane (and anything built on it) follows the edited value after recompute.
+// TestWorkPlaneOffsetIsEditable: an offset plane exposes its distance via EditableScalars
+// (the seam the edit tool, router, and serializer all drive) and re-derives when set, so the
+// plane (and anything built on it) follows the edited value after recompute.
 func TestWorkPlaneOffsetIsEditable(t *testing.T) {
 	_, def := emptyPartSession(t)
 	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
 	def.Recompute()
 
-	if d, ok := wp.OffsetDistance(); !ok || d != 2 {
-		t.Fatalf("OffsetDistance = (%v,%v), want (2,true)", d, ok)
+	sc := wp.EditableScalars()
+	if len(sc) != 1 || sc[0].Get() != 2 {
+		t.Fatalf("offset plane EditableScalars = %+v, want one scalar reading 2", sc)
 	}
-	if !wp.SetOffsetDistance(5) {
-		t.Fatal("SetOffsetDistance should succeed for an offset plane")
-	}
+	sc[0].Set(5)
 	def.Recompute()
 	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 5), 1e-9) {
 		t.Errorf("edited offset plane origin = %v, want (0,0,5)", wp.Plane().Origin())
@@ -31,7 +31,7 @@ func TestWorkPlaneOffsetIsEditable(t *testing.T) {
 // TestOriginPlaneIsNotOffsetEditable: an origin coordinate-system plane has no offset to edit.
 func TestOriginPlaneIsNotOffsetEditable(t *testing.T) {
 	_, def := emptyPartSession(t)
-	if _, ok := def.OriginPlanes()[0].OffsetDistance(); ok {
+	if sc := def.OriginPlanes()[0].EditableScalars(); len(sc) != 0 {
 		t.Error("an origin plane must not report an editable offset")
 	}
 }
@@ -69,7 +69,7 @@ func TestBeginEditWorkPlaneOpensOffsetEditor(t *testing.T) {
 	if err := s.OK(); err != nil {
 		t.Fatalf("commit work-plane edit: %v", err)
 	}
-	if d, _ := wp.OffsetDistance(); d != 7 {
+	if d := wp.EditableScalars()[0].Get(); d != 7 {
 		t.Errorf("committed offset = %v, want 7 cm", d)
 	}
 	if _, active := s.EditScopeSeq(); active {
@@ -86,7 +86,7 @@ func TestBeginEditWorkPlaneCancelRestoresOffset(t *testing.T) {
 	s.BeginEditWorkPlane(WorkPlaneHandle{Plane: wp})
 	s.SetEditPlaneScalarValue(0, 90)
 	s.CancelTool()
-	if d, _ := wp.OffsetDistance(); d != 2 {
+	if d := wp.EditableScalars()[0].Get(); d != 2 {
 		t.Errorf("offset after cancel = %v, want 2 (restored)", d)
 	}
 }
@@ -143,6 +143,55 @@ func TestRedefineCancelRestoresReference(t *testing.T) {
 	def.Recompute()
 	if !wp.Plane().Normal().AsVector().IsEqualTo(want, 1e-9) {
 		t.Errorf("after cancel, plane normal = %v, want restored %v", wp.Plane().Normal(), want)
+	}
+}
+
+// TestEditPlaneDialogAccessors covers the session seam the (untestable, cgo) head dialog
+// renders from: the dialog title, slot labels, and per-unit scalar names for both the
+// length (offset) and angle (line-plane-angle) cases.
+func TestEditPlaneDialogAccessors(t *testing.T) {
+	s, def := emptyPartSession(t)
+	angle := def.WorkPlanes().AddByLinePlaneAndAngle(
+		feature.OriginXAxis, feature.OriginXYPlane, func() float64 { return 0 })
+	def.Recompute()
+
+	if s.IsEditingWorkPlane() || s.EditPlaneName() != "" || s.EditPlaneScalarUnitName(0) != "" {
+		t.Fatal("accessors must report empty state while no edit is open")
+	}
+	s.BeginEditWorkPlane(WorkPlaneHandle{Plane: angle})
+	if !s.IsEditingWorkPlane() || s.EditPlaneName() != angle.Name() {
+		t.Fatalf("dialog title = %q, want %q", s.EditPlaneName(), angle.Name())
+	}
+	if got := s.EditPlaneScalarUnitName(0); got != s.AngleUnitName() {
+		t.Errorf("angle scalar unit = %q, want the document's angle unit %q", got, s.AngleUnitName())
+	}
+	if got := s.EditPlaneRefSlotLabel(0); got != "Line" {
+		t.Errorf("slot 0 label = %q, want Line", got)
+	}
+	s.CancelTool()
+}
+
+// TestRedefineSelfPickRefused: picking the edited plane itself for its base slot is refused
+// (it would self-reference and drift), surfaces a notice, and leaves the slot armed so the
+// user can pick something else.
+func TestRedefineSelfPickRefused(t *testing.T) {
+	s, def := emptyPartSession(t)
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	def.Recompute()
+
+	s.BeginEditWorkPlane(WorkPlaneHandle{Plane: wp})
+	s.EditPlaneArmRefSlot(0)
+	s.ActiveWorkPlaneEdit().Pick(s, WorkPlaneHandle{Plane: wp})
+	if s.Notice() == "" {
+		t.Error("a refused self-reference pick must surface a notice")
+	}
+	if !s.EditPlaneRefSlotArmed(0) {
+		t.Error("the slot must stay armed after a refused pick")
+	}
+	s.CancelTool()
+	def.Recompute()
+	if !wp.Plane().Origin().IsEqualTo(math.P3(0, 0, 2), 1e-9) {
+		t.Errorf("plane moved after a refused self-pick: origin = %v, want (0,0,2)", wp.Plane().Origin())
 	}
 }
 

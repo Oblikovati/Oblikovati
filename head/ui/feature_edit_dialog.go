@@ -18,17 +18,18 @@ import (
 // Clear buttons. Editing is an interactive tool, so OK = s.OK() (commit), Cancel =
 // s.CancelTool() (restore). Each field shows the document's unit for that quantity.
 
-// featureEditUI holds the dialog's per-parameter field values across frames and whether it was
-// open last frame (so it seeds the fields once when the edit opens).
+// featureEditUI holds the dialog's per-parameter field values across frames, keyed by the
+// feature being edited — so switching directly from one feature's edit to another's reseeds
+// the fields (a bare "was open" bool would carry the first feature's stale values over).
 var featureEditUI struct {
-	values []float32
-	open   bool
+	values  []float32
+	editing string // EditingFeatureName of the feature the fields were seeded from ("" = none)
 }
 
 // drawFeatureEditDialog shows the parameter + reference editor while a feature edit is open.
 func drawFeatureEditDialog(s *app.Session) {
 	if !s.IsEditingFeature() {
-		featureEditUI.open = false
+		featureEditUI.editing = ""
 		return
 	}
 	nParams := s.EditFeatureParamCount()
@@ -45,26 +46,26 @@ func drawFeatureEditDialog(s *app.Session) {
 }
 
 func refreshFeatureEditUI(s *app.Session, nParams int) {
-	if featureEditUI.open {
+	if featureEditUI.editing == s.EditingFeatureName() {
 		return
 	}
 	featureEditUI.values = make([]float32, nParams)
 	for i := 0; i < nParams; i++ {
 		featureEditUI.values[i] = float32(s.EditFeatureParamValue(i))
 	}
-	featureEditUI.open = true
+	featureEditUI.editing = s.EditingFeatureName()
 }
 
 func drawFeatureEditButtons(s *app.Session) {
 	if native.Button("OK") {
 		if err := s.OK(); err == nil { // a sick result keeps the dialog open
-			featureEditUI.open = false
+			featureEditUI.editing = ""
 		}
 	}
 	native.SameLine()
 	if native.Button("Cancel") {
 		s.CancelTool()
-		featureEditUI.open = false
+		featureEditUI.editing = ""
 	}
 }
 

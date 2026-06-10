@@ -97,3 +97,56 @@ func TestEditScopeHidesTrailingSketch(t *testing.T) {
 		t.Error("a sketch created after the edited feature must be hidden")
 	}
 }
+
+// TestSecondEditRestoresFirstScopeMarker is the scope-nesting regression: switching to a
+// second edit without closing the first once captured the first edit's rolled-back marker as
+// "the value to restore" and then had its scope cleared by the first tool's cancel — leaving
+// the part permanently rolled back (later features never evaluated again) after commit.
+func TestSecondEditRestoresFirstScopeMarker(t *testing.T) {
+	s, def, f1, f2 := twoExtrudePart(t)
+	s.BeginEditFeature(FeatureHandle{Feature: f1}) // rolls back: f2 excluded
+	s.BeginEditFeature(FeatureHandle{Feature: f2}) // switch edits without closing the first
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit the second edit: %v", err)
+	}
+	if _, active := s.EditScopeSeq(); active {
+		t.Error("edit scope must clear after the second edit commits")
+	}
+	if got := def.Features().EndOfPartIndex(); got != -1 {
+		t.Errorf("EOP after switching edits = %d, want -1 — the first edit's marker leaked", got)
+	}
+}
+
+// TestEditScopeRestoresMidHistoryMarker: a user's own end-of-part marker, parked mid-history
+// before the edit opened, is restored by identity when the edit closes — not rolled to the end.
+func TestEditScopeRestoresMidHistoryMarker(t *testing.T) {
+	s, def, f1, f2 := twoExtrudePart(t)
+	if err := def.Features().SetEndOfPart(f2); err != nil {
+		t.Fatalf("park the marker at f2: %v", err)
+	}
+	def.Recompute()
+
+	s.BeginEditFeature(FeatureHandle{Feature: f1})
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit the edit: %v", err)
+	}
+	if got := def.Features().EndOfPartIndex(); got != 1 {
+		t.Errorf("EOP after the edit = %d, want 1 (the user's mid-history marker)", got)
+	}
+}
+
+// TestEditSketchRefusedDuringOpenEdit: entering a sketch while a feature edit is open would
+// overwrite that edit's scope, so it is refused — and the refusal surfaces as the notice
+// instead of a silent no-op.
+func TestEditSketchRefusedDuringOpenEdit(t *testing.T) {
+	s, def, f1, _ := twoExtrudePart(t)
+	s.BeginEditFeature(FeatureHandle{Feature: f1})
+
+	s.BeginEditSketch(SketchHandle{Sketch: def.Sketches().Item(0)})
+	if s.InSketch() {
+		t.Error("entering a sketch while a feature edit is open must be refused")
+	}
+	if s.Notice() == "" {
+		t.Error("the refused sketch edit must surface a notice explaining why")
+	}
+}

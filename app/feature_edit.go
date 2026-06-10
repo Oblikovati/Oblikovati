@@ -7,7 +7,6 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/model/param"
 )
 
 // Editing a placed feature — Inventor's double-click / browser "Edit". It re-opens the feature
@@ -171,8 +170,11 @@ func (s *Session) BeginEditFeature(h FeatureHandle) {
 	if !t.editable() {
 		return
 	}
-	s.beginEditScope(h.Feature.Seq()) // roll back to this feature: hide everything after it
+	// StartTool first: it cancels any previous edit tool, whose Cancel restores that edit's
+	// scope — beginning our scope before that would capture the rolled-back marker and then
+	// have it cleared out from under us (the part would stay stuck mid-history after commit).
 	s.StartTool(t)
+	s.beginEditScope(h.Feature.Seq()) // roll back to this feature: hide everything after it
 }
 
 // FeatureIsEditable reports whether a feature exposes editable parameters or references (so the
@@ -232,14 +234,7 @@ func (s *Session) EditFeatureParamUnitName(i int) string {
 	if !ok {
 		return ""
 	}
-	switch p.Unit {
-	case param.Length:
-		return s.LengthUnitName()
-	case param.Angle:
-		return s.AngleUnitName()
-	default:
-		return ""
-	}
+	return s.paramUnitName(p)
 }
 
 // EditFeatureParamIsInteger reports whether the i-th field is a whole number (a pattern count),
@@ -255,23 +250,14 @@ func (s *Session) EditFeatureParamValue(i int) float64 {
 	if !ok {
 		return 0
 	}
-	if p.Unit == param.Unitless {
-		return p.Get()
-	}
-	return s.DocumentUnits().ToPreferred(param.Q(p.Get(), p.Unit))
+	return s.paramDisplayValue(p)
 }
 
 // SetEditFeatureParamValue sets the i-th field from a value in the document's preferred unit.
 func (s *Session) SetEditFeatureParamValue(i int, value float64) {
-	p, ok := s.editScalarParam(i)
-	if !ok {
-		return
+	if p, ok := s.editScalarParam(i); ok {
+		s.setParamDisplayValue(p, value)
 	}
-	if p.Unit == param.Unitless {
-		p.Set(value)
-		return
-	}
-	p.Set(s.DocumentUnits().FromPreferred(value, p.Unit).Value)
 }
 
 func (s *Session) editScalarParam(i int) (feature.EditableParam, bool) {
