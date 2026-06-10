@@ -211,18 +211,23 @@ func sketch3DToolCommands() []*CommandDefinition {
 	return append(cmds, finish)
 }
 
-// sketch3DConstrainCommands are the 3D Sketch tab's Constrain panel (issue #142) —
-// each starts an interactive constraint tool the user then feeds 3D geometry, the
-// same tool-first flow as the 2D Constrain panel.
+// sketch3DConstrainCommands are the 3D Sketch tab's Constrain panel (issues #142 and
+// #144): Dimension first (Inventor's panel order), then the constraint tools — each
+// starts an interactive tool the user feeds 3D geometry, the same tool-first flow as
+// the 2D Constrain panel.
 func sketch3DConstrainCommands() []*CommandDefinition {
-	cmds := make([]*CommandDefinition, len(sketch3DConstraintToolDefs))
-	for i, d := range sketch3DConstraintToolDefs {
+	cmds := []*CommandDefinition{NewCommand("Sketch3D.Dimension", "Dimension", "Constrain", func(s *Session) error {
+		s.StartTool(newDimension3DTool())
+		return nil
+	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon("dimension").WithButtonStyle(SmallIconButton).
+		WithTooltip("Dimension — pick a spline, a circle, a line, or two points to dimension.")}
+	for _, d := range sketch3DConstraintToolDefs {
 		newTool := d.new
-		cmds[i] = NewCommand(d.id, d.name, "Constrain", func(s *Session) error {
+		cmds = append(cmds, NewCommand(d.id, d.name, "Constrain", func(s *Session) error {
 			s.StartTool(newTool())
 			return nil
 		}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithTooltip(d.tooltip).
-			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
+			WithIcon(d.icon).WithButtonStyle(SmallIconButton))
 	}
 	return cmds
 }
