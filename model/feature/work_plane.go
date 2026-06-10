@@ -117,6 +117,11 @@ func (w *WorkPlane) Plane() sketch.Plane { return w.plane }
 // DisplaySize is the half-edge length of the square the plane is drawn/picked as.
 func (w *WorkPlane) DisplaySize() float64 { return w.displaySize }
 
+// Kind returns the plane's constructor name (its definition's kind: "plane-offset",
+// "three-points", "plane-tangent", …) — the same vocabulary as the api/types WorkPlane*
+// constants, for read-back over the wire.
+func (w *WorkPlane) Kind() string { return w.def.kindName() }
+
 // IsCoordinateSystemElement reports whether this is one of the origin frame's planes;
 // Grounded reports whether its geometry is fixed (the absolute document frame).
 func (w *WorkPlane) IsCoordinateSystemElement() bool { return w.coordinateSystem }

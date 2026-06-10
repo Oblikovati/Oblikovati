@@ -27,18 +27,129 @@ func listWorkPlanes(s *app.Session, _ json.RawMessage) (json.RawMessage, error) 
 	planes := part.WorkPlanes()
 	out := make([]wire.WorkPlaneInfo, planes.Count())
 	for i := 0; i < planes.Count(); i++ {
-		wp := planes.Item(i)
-		out[i] = wire.WorkPlaneInfo{
-			Index:    i,
-			Name:     wp.Name(),
-			Ref:      string(wp.Key()),
-			Origin:   point3Slice(wp.Plane().Origin()),
-			Normal:   vector3Slice(wp.Plane().Normal().AsVector()),
-			IsOrigin: wp.IsCoordinateSystemElement(),
-			Healthy:  wp.Health().OK(),
-		}
+		out[i] = workPlaneInfo(part, planes.Item(i), i)
 	}
 	return json.Marshal(wire.ListWorkPlanesResult{Planes: out})
+}
+
+// workPlaneInfo renders one plane as the wire DTO, including the editable inputs a redefine
+// accepts: its scalars (offset/angle, in the document's preferred unit) and its re-pickable
+// reference slots (each tagged plane|axis|point|face). Origin planes report neither.
+func workPlaneInfo(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, index int) wire.WorkPlaneInfo {
+	return wire.WorkPlaneInfo{
+		Index:    index,
+		Name:     wp.Name(),
+		Ref:      string(wp.Key()),
+		Origin:   point3Slice(wp.Plane().Origin()),
+		Normal:   vector3Slice(wp.Plane().Normal().AsVector()),
+		IsOrigin: wp.IsCoordinateSystemElement(),
+		Healthy:  wp.Health().OK(),
+		Kind:     wp.Kind(),
+		Scalars:  workPlaneScalars(part, wp),
+		Slots:    workPlaneSlots(wp),
+	}
+}
+
+// workPlaneScalars renders the plane's editable scalars with their value in the document's
+// preferred unit (mm/deg), so a client reads the current value and can set a new one.
+func workPlaneScalars(part *compdef.PartComponentDefinition, wp *feature.WorkPlane) []wire.WorkPlaneScalar {
+	scalars := wp.EditableScalars()
+	if len(scalars) == 0 {
+		return nil
+	}
+	out := make([]wire.WorkPlaneScalar, len(scalars))
+	for i, sc := range scalars {
+		out[i] = wire.WorkPlaneScalar{
+			Index: i,
+			Label: sc.Label,
+			Unit:  part.Units().PreferredName(sc.Unit),
+			Value: part.Units().ToPreferred(param.Q(sc.Get(), sc.Unit)),
+		}
+	}
+	return out
+}
+
+// workPlaneSlots renders the plane's re-pickable reference slots (label + kind token).
+func workPlaneSlots(wp *feature.WorkPlane) []wire.WorkPlaneRefSlot {
+	slots := wp.RedefineSlots()
+	if len(slots) == 0 {
+		return nil
+	}
+	out := make([]wire.WorkPlaneRefSlot, len(slots))
+	for i, sl := range slots {
+		out[i] = wire.WorkPlaneRefSlot{Index: i, Label: sl.Label, Kind: sl.Kind.String()}
+	}
+	return out
+}
+
+// redefineWorkPlane edits a placed user work plane in place: it applies the requested scalar
+// edits (offset/angle, parsed in the document's units) and reference re-picks, then recomputes
+// and returns the plane's refreshed info. It fails on a bad index, an origin plane, or an
+// out-of-range scalar/slot; an unsatisfiable result is reported healthy=false, not an error.
+func redefineWorkPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.RedefineWorkPlaneArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	wp, err := userWorkPlane(part, in.Index)
+	if err != nil {
+		return nil, err
+	}
+	if err := applyScalarEdits(part, wp, in.Scalars); err != nil {
+		return nil, err
+	}
+	if err := applyRepicks(wp, in.Repick); err != nil {
+		return nil, err
+	}
+	part.Recompute()
+	return json.Marshal(wire.RedefineWorkPlaneResult{Plane: workPlaneInfo(part, wp, in.Index)})
+}
+
+// userWorkPlane resolves a redefine index to a user (non-origin) work plane.
+func userWorkPlane(part *compdef.PartComponentDefinition, index int) (*feature.WorkPlane, error) {
+	planes := part.WorkPlanes()
+	if index < 0 || index >= planes.Count() {
+		return nil, fmt.Errorf("workPlanes.redefine: index %d out of range (%d planes)", index, planes.Count())
+	}
+	wp := planes.Item(index)
+	if wp.IsCoordinateSystemElement() {
+		return nil, fmt.Errorf("workPlanes.redefine: plane %d is an origin plane and cannot be redefined", index)
+	}
+	return wp, nil
+}
+
+// applyScalarEdits sets the plane's scalars from unit-bearing strings, parsed by each scalar's
+// quantity kind (length or angle) into the database units its Set expects.
+func applyScalarEdits(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, edits []wire.ScalarEdit) error {
+	scalars := wp.EditableScalars()
+	for _, e := range edits {
+		if e.Index < 0 || e.Index >= len(scalars) {
+			return fmt.Errorf("workPlanes.redefine: scalar index %d out of range (%d scalars)", e.Index, len(scalars))
+		}
+		q, err := part.Units().Parse(e.Value, scalars[e.Index].Unit)
+		if err != nil {
+			return fmt.Errorf("workPlanes.redefine: scalar %d value %q: %w", e.Index, e.Value, err)
+		}
+		scalars[e.Index].Set(q.Value)
+	}
+	return nil
+}
+
+// applyRepicks re-points the plane's reference slots at the requested references (origin
+// constants / list refs / face keys, via toWorkRefs).
+func applyRepicks(wp *feature.WorkPlane, repicks []wire.SlotRepick) error {
+	slots := wp.RedefineSlots()
+	for _, rp := range repicks {
+		if rp.Slot < 0 || rp.Slot >= len(slots) {
+			return fmt.Errorf("workPlanes.redefine: slot %d out of range (%d slots)", rp.Slot, len(slots))
+		}
+		slots[rp.Slot].Set(toWorkRefs([]string{rp.Ref})[0])
+	}
+	return nil
 }
 
 // createWorkPlanes adds a datum plane of the requested kind to the active part and
