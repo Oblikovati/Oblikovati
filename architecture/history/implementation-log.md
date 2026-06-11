@@ -4,8 +4,7 @@
 > roadmap tracking moved to GitHub milestones/issues. Frozen as a historical record —
 > current status lives on the issue tracker.
 
-
-Live tracker for building Oblikovati against [the roadmap](README.md). Updated as
+Live tracker for building Oblikovati against [the roadmap](https://github.com/Oblikovati/Oblikovati/milestones). Updated as
 each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (green in CI).
 
 > **⚠ Audited 2026-06-04 (see REPORT.md).** The milestone table below
@@ -14,6 +13,8 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 > Definition of Done (M05/M09/M10/M21). Per CONVENTIONS.md "Status model", a feature is
 > **Done** only when **Model + Geometry + UI/e2e** are all green; ✅ here now means all
 > three, 🟦 means partial. Several rows previously ✅ are model-complete only.
+
+<!-- -->
 
 > **▶ NEXT PRIORITY (set 2026-06-09): analytic-cylinder feature faces — [#129](https://github.com/Oblikovati/Oblikovati/issues/129).**
 > The revolve/extrude feature builders pre-facet circular profiles, so a feature-modeled "cylinder"
@@ -26,7 +27,7 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 
 - **Code root:** `/source` (Go module `oblikovati`, go 1.22).
 - **"Done" means:** acceptance criteria green via `make ci` (build + vet + lint +
-  `CGO_ENABLED=0 go test ./...` + race), per [CONVENTIONS.md](CONVENTIONS.md).
+  `CGO_ENABLED=0 go test ./...` + race), per [CONVENTIONS.md](../implementation-conventions.md).
 - **Architecture mapping:** plan milestones map onto the modernized Go packages in
   `../architecture/core/01-module-layout.md`. M00 (COM interop) is deleted in the
   Go design; implementation begins at M01.
@@ -56,7 +57,7 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 | M18 | Analysis & Simulation | 🟦 | **[audit: ⬜→🟦]** `kernel/ops/massprops.go` (mass properties) exists. Measure/interference/FEA/dynamic/tolerance not started. |
 | M19 | Materials & Appearances | 🟦 | **[audit: added — was absent from this table]** Real: `model/material`, `app/materials*.go`, head Materials/Appearance/Preferences windows. `_milestone.md` exists but **PBI files to backfill**. Image textures + GGX/IBL out of scope. |
 | M20 | Feature Completion & Geometry Parity | 🟦 | Consolidated drive of every remaining the reference platform `*Feature` to real geometry: kernel enablers (intersecting booleans, swept surfaces, fillet, local face ops, body transform) + sheet-metal + plastic + misc model features. |
-| M23 | Renderer Display-Mode Parity & Realistic PBR | 🟦 | **[audit: ⬜→🟦]** `renderer/visualstyle.go` + `View.{Realistic,Watercolor,Monochrome,Illustration,TechnicalIllustration,ShadedWithHiddenEdges,WireframeWithHiddenEdges,...}` ribbon commands shipped. Depth of software-PBR/NPR/hidden-line vs full parity unverified. Original scope: Brings the viewport to full the reference platform `DisplayModeEnum` parity (PBIs 300–311): the public `DisplayMode` contract + Visual Style gallery (F01), a **software PBR** Realistic mode (GGX + IBL + tone mapping, no hardware RT — F02), real-time **viewport hidden-line** removal feeding modes 8707/8711/8712 (F03), and an **NPR framework** + the four stylized modes Monochrome/Watercolor/Illustration/Technical-Illustration (F04). See [ADR-0023](../architecture/decisions/ADR-0023-viewport-display-modes.md). |
+| M23 | Renderer Display-Mode Parity & Realistic PBR | 🟦 | **[audit: ⬜→🟦]** `renderer/visualstyle.go` + `View.{Realistic,Watercolor,Monochrome,Illustration,TechnicalIllustration,ShadedWithHiddenEdges,WireframeWithHiddenEdges,...}` ribbon commands shipped. Depth of software-PBR/NPR/hidden-line vs full parity unverified. Original scope: Brings the viewport to full the reference platform `DisplayModeEnum` parity (PBIs 300–311): the public `DisplayMode` contract + Visual Style gallery (F01), a **software PBR** Realistic mode (GGX + IBL + tone mapping, no hardware RT — F02), real-time **viewport hidden-line** removal feeding modes 8707/8711/8712 (F03), and an **NPR framework** + the four stylized modes Monochrome/Watercolor/Illustration/Technical-Illustration (F04). See [ADR-0023](../decisions/ADR-0023-viewport-display-modes.md). |
 | M21 | Sketch2D Feature Completion (2D Parity) | 🟦 | **[audit: ✅→🟦 pending verification — model+API+dogfood e2e strong, but full head-UI parity per tool and residual follow-ups (curve-trim, tangent/spline dims) not independently confirmed; see REPORT.md §9]** **All 11 features + every follow-up done** (PBIs 200–221). Full the reference platform 2D-sketch parity (ex-DWG) over `/api`: entities (lines/circles/arcs/points, ellipse, **elliptical arc**, splines incl. **control/fixed/offset/equation curve**, rectangles, polygons, **straight+arc slots**, **fillet/chamfer**, offset, image, **fill region**, **text**, **project geometry**), full geometric constraints (incl. **ground/offset/pattern**) + dimensional constraints (incl. **offset/3-point-angle/ellipse-radius**), constraint-status/DOF + **AutoDimension**, move/rotate/copy/mirror + **trim/extend/split**, rect/circular patterns, profiles. Discriminated `Kind`-keyed wire methods + typed `client.Sketch`; every PBI has model + dogfood e2e tests; new **Modify-panel UI tools** (offset/mirror/fillet) with e2e. lint/vet/**race** green; model cov 81%, router cov 72%. Minor residual follow-ups noted per-PBI (curve-trim, tangent/spline dims). |
 | M22 | Sketch3D Feature Completion (3D Parity) | ✅ | **[audit 2026-06-04: F08/F11/F12 residuals closed → feature-complete]** All surface-curve kinds on `/api` (intersection/silhouette/onFace/projectToSurface/offset) with associative rebind verified; `model.referenceKeys` surfacing (F08); head tool-param dialogs + Sketch3DSettings (F12). Bring `Sketch3D` to full the reference platform parity across API+kernel+UI, **including** surface-derived curves (new kernel surface-intersection machinery). 12 features (F01–F12), PBIs 230–247. **Done (model+API+kernel+router, all tested):** F01 spine (`contract.Sketch3D` + wire/client + router + `Sketches3D` in the part + `SketchData3D` round-trip), F02 base entities (point/line/circle/arc), F03 conics + splines (ellipse/elliptical-arc, interpolation/control/fixed splines + equation curve), F04 helical curves (new `kernel/geom.Helix3d`, 100%), F05 geometric constraints (parallel/perp/midpoint/ground/parallel-to-axis+plane), F06 dimensions (distance/line-length/radius/point-plane/two-line-angle + drive), F07 constraint status/DOF/defer, F09 profiles & paths (chain detection by endpoint coincidence; `Profile3D`/`Paths3D` over `sketch3d.profiles`/`paths`). **Kernel: F10 DONE (both PBIs)** — `kernel/geom` surface↔curve intersection + point projection (PBI-243: `ClosestPointOnSurface`/`SignedDistanceToSurface`/`IntersectCurveSurface`) and surface↔surface intersection + silhouette (PBI-244: marching-squares tracer → `IntersectSurfaceSurface`/`Silhouette`); 100% on new files, 98.9% package. F08 edit ops (move/rotate/copy/delete over `sketch3d.transform`) **and Include** (`sketch3d.include` links part edges/vertices by reference key as associative reference geometry via the PointSource/CurveSource seam). F11 surface-derived curves (Intersection/Silhouette/ProjectToSurface/OnFace/OffsetCurve3 over the F10 kernel; **intersection + silhouette over `/api`** via `sketch3d.addSurfaceCurve` resolving part faces by reference key; recompute-derived, serialize-skipped). F12 **app-layer UI** ("3D Sketch" ribbon + edit environment + interactive Line/Point/Circle/Arc/Helix tools + Finish, e2e-tested headless). **Pending (polish):** F08 GetReferenceKey surfacing; F11 associative rebind on recompute (SurfaceSource seam) + project/on-face/offset `/api`; F12 `head/ui` ImGui dialogs + `Sketch3DSettings`. |
 
@@ -496,7 +497,7 @@ app-layer e2e tests driving command→tool→OK→validated solid).
   solid volume = π·r²·h (inscribed, a hair under). Tested at ops + brep levels; ops/brep suites
   green. **Next:** slice 3 — wire `SolidCylinder` as the cut tool → a clean drilled hole.
 - **2026-06-04:** **K1b started — curved-face boolean, slice 1: exact analytic surface
-  intersections.** New [ADR-0027](../architecture/decisions/ADR-0027-curved-face-boolean.md)
+  intersections.** New [ADR-0027](../decisions/ADR-0027-curved-face-boolean.md)
   lays out the curved-boolean architecture (generalize the planar pipeline's face model to
   `geom.Surface` + `geom.Curve3` loops; exact-curve imprints; param-space split; reuse K1a
   lineage) and a 5-slice plan. Slice 1 landed: `geom.IntersectSurfacesAnalytic` returns
@@ -618,7 +619,7 @@ app-layer e2e tests driving command→tool→OK→validated solid).
   the head ImGui param dialogs (thin layer over the setters). Core suite + head green.
 - **2026-06-04:** **Canonical the reference platform ribbon structure documented (user direction).** Our
   ribbon panels deviated from the reference platform's; captured the authoritative tab→panel→button tree
-  in [`../architecture/mapping/inventor-ribbon-structure.md`](../architecture/mapping/inventor-ribbon-structure.md)
+  in [`../mapping/inventor-ribbon-structure.md`](../mapping/inventor-ribbon-structure.md)
   (2026.1 Default) as the source of truth, linked from CONVENTIONS (DoD) and core/09-ui.
   Then aligned the whole **Sketch tab** to it: Dimension + Auto Dimension → **Constrain**
   (no phantom "Dimension" panel), **Mirror → Pattern** (new panel), **Fillet → Create**;

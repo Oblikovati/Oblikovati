@@ -50,7 +50,8 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 	if icons == nil {
 		icons = newIconCache(win) // lazily bind the icon cache to this window
 	}
-	applyThemeIfChanged(win, s) // restyle ImGui + overlays when the theme changed (live preview)
+	icons.beginFrame(s.ThemeRevision()) // free retired textures; flush composes on theme change
+	applyThemeIfChanged(win, s)         // restyle ImGui + overlays when the theme changed (live preview)
 	handleKeyboard(s)
 	dockID := native.DockSpaceOverMain()
 	if !dockLaidOut {

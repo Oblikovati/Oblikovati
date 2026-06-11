@@ -118,18 +118,72 @@ func TestStoreRemoveTheme(t *testing.T) {
 	}
 }
 
-func TestStoreThemeFileIsReadableYAML(t *testing.T) {
+// A saved custom must be a Blender theme document (.xml with the <bpy><Theme> shape)
+// carrying the oblikovati token snapshot with the theme's name (ADR-0032).
+func TestStoreThemeFileIsBlenderXML(t *testing.T) {
 	fs := newFakeFS()
 	store := NewStore("/cfg/oblikovati", fs)
 	custom, _ := NewLibrary(nil, "Dark").Duplicate("Dark", "My Dark")
-	_ = store.SaveTheme(custom)
-	for path, data := range fs.files {
-		if strings.HasSuffix(path, ".yaml") {
-			if !strings.Contains(string(data), "name: My Dark") {
-				t.Errorf("theme file %q not human-readable YAML:\n%s", path, data)
-			}
+	if err := store.SaveTheme(custom); err != nil {
+		t.Fatalf("SaveTheme: %v", err)
+	}
+	data, err := fs.ReadFile(filepath.Join("/cfg/oblikovati", "themes", "my-dark.xml"))
+	if err != nil {
+		t.Fatalf("expected my-dark.xml to exist: %v", err)
+	}
+	text := string(data)
+	for _, want := range []string{"<bpy>", "<Theme>", `name="My Dark"`, "<" + tokenSnapshotElem} {
+		if !strings.Contains(text, want) {
+			t.Errorf("saved theme file lacks %q:\n%.200s", want, text)
 		}
 	}
+}
+
+// A plain Blender theme export dropped into the themes directory must load as a custom
+// named after its file base — no oblikovati section required.
+func TestStoreLoadsForeignBlenderTheme(t *testing.T) {
+	fs := newFakeFS()
+	fs.files[filepath.Join("/cfg/oblikovati", "themes", "nord-deep.xml")] = lightXML
+	store := NewStore("/cfg/oblikovati", fs)
+	customs, _, err := store.Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(customs) != 1 || customs[0].Name() != "nord-deep" {
+		t.Fatalf("loaded %d customs (first name %q), want 1 named \"nord-deep\"",
+			len(customs), firstName(customs))
+	}
+	if customs[0].Kind() != KindCustom {
+		t.Errorf("foreign theme kind = %q, want custom", customs[0].Kind())
+	}
+}
+
+// Non-theme files in the directory (notes, editor droppings) are ignored, and a
+// malformed .xml is skipped with its error reported while good themes still load.
+func TestStoreSkipsUnrelatedAndMalformedFiles(t *testing.T) {
+	// filepath.Join keeps the fake paths OS-correct — on Windows the store joins with
+	// backslashes, so a hardcoded forward-slash key would never match (CI caught this).
+	fs := newFakeFS()
+	themesDir := filepath.Join("/cfg/oblikovati", "themes")
+	fs.files[filepath.Join(themesDir, "readme.txt")] = []byte("not a theme")
+	fs.files[filepath.Join(themesDir, "broken.xml")] = []byte("<bpy><Theme></bpy>")
+	fs.files[filepath.Join(themesDir, "good.xml")] = darkXML
+	store := NewStore("/cfg/oblikovati", fs)
+	customs, _, err := store.Load()
+	if err == nil {
+		t.Error("Load should surface the malformed file's error")
+	}
+	if len(customs) != 1 || customs[0].Name() != "good" {
+		t.Errorf("loaded %d customs (first name %q), want just \"good\"",
+			len(customs), firstName(customs))
+	}
+}
+
+func firstName(themes []*Theme) string {
+	if len(themes) == 0 {
+		return ""
+	}
+	return themes[0].Name()
 }
 
 func mustParse(t *testing.T, hex string) Rgba {
