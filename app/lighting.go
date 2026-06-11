@@ -35,8 +35,14 @@ func (s *Session) SetLightingStyle(name string) error {
 	if !ok {
 		return fmt.Errorf("app: unknown lighting style %q", name)
 	}
+	prevEnv := s.lighting.Environment
 	s.lightingStyle = id
 	s.lighting = renderer.SceneLightingFor(id)
+	if !s.lighting.Environment.IsActive() {
+		// A style without its own environment keeps the current one — switching the
+		// lighting rig must not silently drop the chosen (or default Sky) skymap.
+		s.lighting.Environment = prevEnv
+	}
 	return nil
 }
 

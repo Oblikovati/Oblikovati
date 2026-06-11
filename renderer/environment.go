@@ -20,6 +20,10 @@ const (
 	EnvOvercast
 	// EnvSunset is a warm low-sun gradient (orange horizon, deep blue zenith).
 	EnvSunset
+	// EnvSky is the embedded photographic skymap — "Qwantani (Pure Sky)" by Greg Zaal /
+	// Jarod Guest (Poly Haven, CC0) — a clear midday sky, and the default environment of
+	// a fresh session (the one preset backed by a real HDR asset, not a gradient).
+	EnvSky
 )
 
 // environmentNames is the user-facing label for each preset (the Environment gallery).
@@ -29,6 +33,13 @@ var environmentNames = map[EnvironmentPreset]string{
 	EnvOutdoors: "Outdoors",
 	EnvOvercast: "Overcast",
 	EnvSunset:   "Sunset",
+	EnvSky:      "Sky",
+}
+
+// DefaultEnvironment is a fresh session's environment: the embedded Sky map drawn as the
+// viewport background at full IBL intensity.
+func DefaultEnvironment() Environment {
+	return Environment{Preset: EnvSky, Intensity: 1, ShowImage: true}
 }
 
 // Environment is the image-based-lighting source the scene reflects — either a built-in
@@ -85,7 +96,7 @@ type EnvironmentOption struct {
 // EnvironmentGallery returns every built-in preset with its label, in picker order — the
 // source list for the View-tab Environment selection box.
 func EnvironmentGallery() []EnvironmentOption {
-	order := []EnvironmentPreset{EnvNone, EnvStudio, EnvOutdoors, EnvOvercast, EnvSunset}
+	order := []EnvironmentPreset{EnvNone, EnvSky, EnvStudio, EnvOutdoors, EnvOvercast, EnvSunset}
 	opts := make([]EnvironmentOption, len(order))
 	for i, p := range order {
 		opts[i] = EnvironmentOption{Preset: p, Name: p.String()}

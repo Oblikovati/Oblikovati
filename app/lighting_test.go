@@ -89,3 +89,31 @@ func TestLightKindDefinitionBijection(t *testing.T) {
 		}
 	}
 }
+
+// TestNewSessionDefaultsToSkyEnvironment asserts a fresh session shows the embedded Sky
+// environment (IBL + sky background) — the default skymap (ADR-0026 §8).
+func TestNewSessionDefaultsToSkyEnvironment(t *testing.T) {
+	env := NewSession().Environment()
+	if env.Preset != renderer.EnvSky || !env.ShowImage || env.Intensity != 1 {
+		t.Errorf("default environment = %+v, want EnvSky shown at intensity 1", env)
+	}
+}
+
+// TestSetLightingStyleKeepsEnvironment asserts switching the lighting rig preserves the
+// active environment unless the style brings its own (Outdoors) — the skymap must not be
+// silently dropped by a lighting change.
+func TestSetLightingStyleKeepsEnvironment(t *testing.T) {
+	s := NewSession()
+	if err := s.SetLightingStyle("Sun"); err != nil {
+		t.Fatalf("SetLightingStyle(Sun): %v", err)
+	}
+	if got := s.Environment().Preset; got != renderer.EnvSky {
+		t.Errorf("environment after Sun = %v, want the Sky default kept", got)
+	}
+	if err := s.SetLightingStyle("Outdoors"); err != nil {
+		t.Fatalf("SetLightingStyle(Outdoors): %v", err)
+	}
+	if got := s.Environment().Preset; got != renderer.EnvOutdoors {
+		t.Errorf("environment after Outdoors = %v, want the style's own EnvOutdoors", got)
+	}
+}

@@ -96,7 +96,7 @@ func NewSession() *Session { return newSession(nil) }
 func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
-	return &Session{
+	s := &Session{
 		workspace:      doc.NewWorkspace(store),
 		commands:       NewCommandManager(),
 		histories:      map[doc.ID]*docHistory{},
@@ -114,6 +114,10 @@ func newSession(store doc.Store) *Session {
 		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
+	// The embedded Sky map is the default environment for every visual style — IBL plus
+	// the sky as the viewport background (ADR-0026 §8).
+	s.lighting.Environment = renderer.DefaultEnvironment()
+	return s
 }
 
 // AddIns returns the add-in registry (ApplicationAddIns).
