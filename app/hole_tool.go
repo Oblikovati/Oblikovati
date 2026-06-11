@@ -14,17 +14,19 @@ import (
 // the face centroid along the inward normal) into the active part. Diameter and depth are
 // in database units; the property window converts to the document's display unit.
 type HoleTool struct {
-	face        *FaceHandle
-	diameter    float64
-	depth       float64
-	through     bool // Through All: drill through the part with a true cylinder wall
-	counterbore bool // counterbore: a flat recess above the bore
-	countersink bool // countersink: a conical recess above the bore
-	cDiameter   float64
-	cDepth      float64
-	sinkAngle   float64 // countersink included angle (radians)
-	pointAngle  float64 // drilled blind-hole drill point: included angle (radians; 0 = flat)
-	added       *feature.PartFeature
+	featureEditMode             // set ⇒ this panel re-edits a committed hole (see editHoleTool)
+	face            *FaceHandle // placement face picked this session
+	seededFaceKey   []byte      // edit mode: the feature's existing placement-face key
+	diameter        float64
+	depth           float64
+	through         bool // Through All: drill through the part with a true cylinder wall
+	counterbore     bool // counterbore: a flat recess above the bore
+	countersink     bool // countersink: a conical recess above the bore
+	cDiameter       float64
+	cDepth          float64
+	sinkAngle       float64 // countersink included angle (radians)
+	pointAngle      float64 // drilled blind-hole drill point: included angle (radians; 0 = flat)
+	added           *feature.PartFeature
 }
 
 // NewHoleTool returns a hole tool with a default Ø1 × 2 drilled hole and a 118° drill point
@@ -89,9 +91,25 @@ func (t *HoleTool) SinkAngle() float64     { return t.sinkAngle }
 func (t *HoleTool) SetPointAngle(a float64) { t.pointAngle = a }
 func (t *HoleTool) PointAngle() float64     { return t.pointAngle }
 
-// ClearFace empties the picked placement face — the property panel's selector clear
-// (⊗) — returning the tool to its pick-a-face step.
-func (t *HoleTool) ClearFace() { t.face = nil }
+// ClearFace empties the placement face — the picked one and, in edit mode, the
+// feature's retained key — returning the tool to its pick-a-face step.
+func (t *HoleTool) ClearFace() {
+	t.face = nil
+	t.seededFaceKey = nil
+}
+
+// HasPlacement reports whether a placement face is set: picked this session or, in
+// edit mode, retained from the feature's definition. The property panel's chip state.
+func (t *HoleTool) HasPlacement() bool { return t.face != nil || len(t.seededFaceKey) > 0 }
+
+// placementKey is the reference key the commit writes: a fresh pick wins over the
+// retained one.
+func (t *HoleTool) placementKey() []byte {
+	if t.face != nil {
+		return t.face.Face.ReferenceKey()
+	}
+	return t.seededFaceKey
+}
 
 // PickedFace returns the placement face (and true), or false when none picked yet.
 func (t *HoleTool) PickedFace() (FaceHandle, bool) {
@@ -105,7 +123,7 @@ func (t *HoleTool) PickedFace() (FaceHandle, bool) {
 // (unless Through All), and — for a counterbore — the recess is larger than the bore and shallow
 // enough to leave bore below it.
 func (t *HoleTool) CanCommit() bool {
-	if t.face == nil || t.diameter <= 0 || (!t.through && t.depth <= 0) {
+	if !t.HasPlacement() || t.diameter <= 0 || (!t.through && t.depth <= 0) {
 		return false
 	}
 	if t.counterbore && !t.counterboreValid() {
@@ -132,6 +150,9 @@ func (t *HoleTool) countersinkValid() bool {
 // Commit drills the hole into the active part and recomputes; a sick feature (lost face,
 // boolean failure) keeps the tool open by returning an error.
 func (t *HoleTool) Commit(s *Session) error {
+	if t.IsEditing() {
+		return t.commitEdit(s)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
@@ -169,6 +190,31 @@ func (t *HoleTool) addFeature(holes *feature.HoleFeatures) *feature.PartFeature 
 	}
 }
 
+// commitEdit writes the panel state back into the committed hole's definition — the
+// same properties the create path captures, including a seat-type change.
+func (t *HoleTool) commitEdit(s *Session) error {
+	def := t.target.Definition().(*feature.HoleFeature).Definition()
+	def.PlacementFaceKey = t.placementKey()
+	def.Diameter, def.Depth = konst(t.diameter), konst(t.depth)
+	def.ThroughAll = t.through
+	def.PointAngle = konst(t.pointAngle)
+	def.CounterDiameter, def.CounterDepth, def.CounterAngle = konst(t.cDiameter), konst(t.cDepth), konst(t.sinkAngle)
+	def.Type = t.holeType()
+	return commitFeatureEdit(s, t.target)
+}
+
+// holeType maps the tool's mutually-exclusive seat flags onto the definition's type.
+func (t *HoleTool) holeType() feature.HoleType {
+	switch {
+	case t.counterbore:
+		return feature.CounterboreHole
+	case t.countersink:
+		return feature.CountersinkHole
+	default:
+		return feature.DrilledHole
+	}
+}
+
 // konst wraps a captured value as a parameter closure.
 func konst(v float64) func() float64 { return func() float64 { return v } }
 
@@ -184,4 +230,10 @@ func (t *HoleTool) Prompt(*Session) string {
 }
 
 // Cancel restores the default selection filter.
-func (t *HoleTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *HoleTool) Cancel(s *Session) {
+	if t.IsEditing() {
+		cancelFeatureEdit(s, t.target, t.restoreDef)
+		return
+	}
+	s.Selection().SetFilter(NewSelectionFilter())
+}

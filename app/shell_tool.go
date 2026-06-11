@@ -12,9 +12,11 @@ import (
 // (the openings), set the wall thickness in the property window, and OK to hollow the
 // active part to that thickness.
 type ShellTool struct {
-	faces     []FaceHandle
-	thickness float64
-	added     *feature.PartFeature
+	featureEditMode // set ⇒ this panel re-edits a committed shell (see editShellTool)
+	faces           []FaceHandle
+	seededFaceKeys  [][]byte // edit mode: the feature's existing removed-face keys
+	thickness       float64
+	added           *feature.PartFeature
 }
 
 // NewShellTool returns a shell tool with a default 1-unit wall thickness.
@@ -55,21 +57,34 @@ func (t *ShellTool) Faces() []FaceHandle { return append([]FaceHandle(nil), t.fa
 // CanCommit reports whether at least one face is picked and the thickness is positive.
 // (A shell with no removed faces hollows to a closed void, which our planar engine does
 // not yet build, so we require at least one opening.)
-func (t *ShellTool) CanCommit() bool { return len(t.faces) > 0 && t.thickness > 0 }
+func (t *ShellTool) CanCommit() bool { return t.FaceCount() > 0 && t.thickness > 0 }
+
+// FaceCount counts the selection the panel shows: faces picked this session plus, in
+// edit mode, the feature's retained faces.
+func (t *ShellTool) FaceCount() int { return len(t.seededFaceKeys) + len(t.faces) }
+
+// selectedFaceKeys is the reference-key set a commit writes: the retained keys plus
+// this session's picks.
+func (t *ShellTool) selectedFaceKeys() [][]byte {
+	keys := cloneKeys(t.seededFaceKeys)
+	for _, f := range t.faces {
+		keys = append(keys, f.Face.ReferenceKey())
+	}
+	return keys
+}
 
 // Commit hollows the active part to the wall thickness, opening the picked faces, and
 // recomputes; a sick feature keeps the tool open by returning an error.
 func (t *ShellTool) Commit(s *Session) error {
+	if t.IsEditing() {
+		return t.commitEdit(s)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	keys := make([][]byte, len(t.faces))
-	for i, f := range t.faces {
-		keys[i] = f.Face.ReferenceKey()
-	}
 	th := t.thickness
-	t.added = feature.NewDressUpFeatures(part.Features()).AddShell(keys, func() float64 { return th })
+	t.added = feature.NewDressUpFeatures(part.Features()).AddShell(t.selectedFaceKeys(), func() float64 { return th })
 	part.Recompute()
 	s.recordEdit(part, "Shell")
 	if !t.added.Health().OK() {
@@ -91,8 +106,25 @@ func (t *ShellTool) Prompt(*Session) string {
 }
 
 // Cancel restores the default selection filter.
-func (t *ShellTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *ShellTool) Cancel(s *Session) {
+	if t.IsEditing() {
+		cancelFeatureEdit(s, t.target, t.restoreDef)
+		return
+	}
+	s.Selection().SetFilter(NewSelectionFilter())
+}
 
-// ClearFaces empties the picked faces — the property panel's selector clear (⊗) —
-// returning the tool to its pick-faces step.
-func (t *ShellTool) ClearFaces() { t.faces = nil }
+// commitEdit writes the panel state back into the committed shell's definition.
+func (t *ShellTool) commitEdit(s *Session) error {
+	def := t.target.Definition().(*feature.ShellFeature).Definition()
+	def.RemovedFaceKeys = t.selectedFaceKeys()
+	def.Thickness = konst(t.thickness)
+	return commitFeatureEdit(s, t.target)
+}
+
+// ClearFaces empties the face selection — the picks and, in edit mode, the feature's
+// retained keys — returning the tool to its pick-faces step.
+func (t *ShellTool) ClearFaces() {
+	t.faces = nil
+	t.seededFaceKeys = nil
+}

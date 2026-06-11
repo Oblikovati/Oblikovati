@@ -16,9 +16,11 @@ const degToRad = stdmath.Pi / 180
 // draft angle (degrees) in the property window, and OK to taper them about the +Z pull
 // direction (the mould-pull default). Negative angle leans the face in, positive out.
 type DraftTool struct {
-	faces    []FaceHandle
-	angleDeg float64
-	added    *feature.PartFeature
+	featureEditMode // set ⇒ this panel re-edits a committed draft (see editDraftTool)
+	faces           []FaceHandle
+	seededFaceKeys  [][]byte // edit mode: the feature's existing face keys
+	angleDeg        float64
+	added           *feature.PartFeature
 }
 
 // NewDraftTool returns a draft tool with a default 3° angle.
@@ -55,22 +57,35 @@ func (t *DraftTool) AngleDegrees() float64     { return t.angleDeg }
 // Faces returns the picked faces (for the UI to list/highlight).
 func (t *DraftTool) Faces() []FaceHandle { return append([]FaceHandle(nil), t.faces...) }
 
-// CanCommit reports whether at least one face is picked and the angle is non-zero.
-func (t *DraftTool) CanCommit() bool { return len(t.faces) > 0 && t.angleDeg != 0 }
+// FaceCount counts the selection the panel shows: faces picked this session plus, in
+// edit mode, the feature's retained faces.
+func (t *DraftTool) FaceCount() int { return len(t.seededFaceKeys) + len(t.faces) }
+
+// selectedFaceKeys is the reference-key set a commit writes: the retained keys plus
+// this session's picks.
+func (t *DraftTool) selectedFaceKeys() [][]byte {
+	keys := cloneKeys(t.seededFaceKeys)
+	for _, f := range t.faces {
+		keys = append(keys, f.Face.ReferenceKey())
+	}
+	return keys
+}
+
+// CanCommit reports whether at least one face is selected and the angle is non-zero.
+func (t *DraftTool) CanCommit() bool { return t.FaceCount() > 0 && t.angleDeg != 0 }
 
 // Commit tapers the picked faces on the active part and recomputes; a sick feature keeps
 // the tool open by returning an error.
 func (t *DraftTool) Commit(s *Session) error {
+	if t.IsEditing() {
+		return t.commitEdit(s)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
 	}
-	keys := make([][]byte, len(t.faces))
-	for i, f := range t.faces {
-		keys[i] = f.Face.ReferenceKey()
-	}
 	rad := t.angleDeg * degToRad
-	t.added = feature.NewDressUpFeatures(part.Features()).AddDraft(keys, func() float64 { return rad })
+	t.added = feature.NewDressUpFeatures(part.Features()).AddDraft(t.selectedFaceKeys(), func() float64 { return rad })
 	part.Recompute()
 	s.recordEdit(part, "Draft")
 	if !t.added.Health().OK() {
@@ -92,8 +107,25 @@ func (t *DraftTool) Prompt(*Session) string {
 }
 
 // Cancel restores the default selection filter.
-func (t *DraftTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *DraftTool) Cancel(s *Session) {
+	if t.IsEditing() {
+		cancelFeatureEdit(s, t.target, t.restoreDef)
+		return
+	}
+	s.Selection().SetFilter(NewSelectionFilter())
+}
 
-// ClearFaces empties the picked faces — the property panel's selector clear (⊗) —
-// returning the tool to its pick-faces step.
-func (t *DraftTool) ClearFaces() { t.faces = nil }
+// commitEdit writes the panel state back into the committed draft's definition.
+func (t *DraftTool) commitEdit(s *Session) error {
+	def := t.target.Definition().(*feature.FaceDraftFeature).Definition()
+	def.FaceKeys = t.selectedFaceKeys()
+	def.Angle = konst(t.angleDeg * degToRad)
+	return commitFeatureEdit(s, t.target)
+}
+
+// ClearFaces empties the face selection — the picks and, in edit mode, the feature's
+// retained keys — returning the tool to its pick-faces step.
+func (t *DraftTool) ClearFaces() {
+	t.faces = nil
+	t.seededFaceKeys = nil
+}

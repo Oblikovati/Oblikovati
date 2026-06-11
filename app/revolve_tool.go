@@ -49,14 +49,15 @@ func preselectCenterline(profileSketch *sketch.Sketch, sketches []*sketch.Sketch
 // add a revolve feature to the active part. It mirrors [ExtrudeTool] and is driven
 // entirely by session input so a test exercises the full flow with synthetic clicks.
 type RevolveTool struct {
-	profile      *ProfileHandle
-	axis         feature.WorkRef // origin axis (X/Y/Z) or a user work axis (fallback)
-	useCenterln  bool            // revolve about the sketch's own (single) centerline
-	centerline   *sketch.Line    // a specific centerline picked/pre-selected as the axis
-	centerlineSk *sketch.Sketch  // the centerline's sketch
-	angle        float64         // swept angle in radians; 0 ⇒ full revolution
-	operation    ops.PartFeatureOperation
-	added        *feature.PartFeature
+	featureEditMode // set ⇒ this panel re-edits a committed revolve (see editRevolveTool)
+	profile         *ProfileHandle
+	axis            feature.WorkRef // origin axis (X/Y/Z) or a user work axis (fallback)
+	useCenterln     bool            // revolve about the sketch's own (single) centerline
+	centerline      *sketch.Line    // a specific centerline picked/pre-selected as the axis
+	centerlineSk    *sketch.Sketch  // the centerline's sketch
+	angle           float64         // swept angle in radians; 0 ⇒ full revolution
+	operation       ops.PartFeatureOperation
+	added           *feature.PartFeature
 }
 
 // NewRevolveTool returns a revolve tool defaulting to a full revolution about the Y
@@ -223,6 +224,9 @@ func (t *RevolveTool) SourceSketchName() string {
 // Commit adds the revolve feature to the active part and recomputes; a sick feature
 // (open profile, missing axis) keeps the tool open by returning an error.
 func (t *RevolveTool) Commit(s *Session) error {
+	if t.IsEditing() {
+		return t.commitEdit(s)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
@@ -236,6 +240,42 @@ func (t *RevolveTool) Commit(s *Session) error {
 		return errors.New("revolve: " + t.added.Health().Reason)
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
+	return nil
+}
+
+// commitEdit writes the panel state back into the committed revolve's definition,
+// mirroring the create path's axis precedence (explicit axis / picked centerline / the
+// sketch's own centerline).
+func (t *RevolveTool) commitEdit(s *Session) error {
+	def := t.target.Definition().(*feature.RevolveFeature).Definition()
+	def.Sketch, def.ProfileIndex = t.profile.Sketch, t.profile.ProfileIndex
+	angle := t.angle
+	def.Angle = func() float64 { return angle }
+	def.Operation = t.operation
+	if err := t.writeEditAxis(s, def); err != nil {
+		return err
+	}
+	return commitFeatureEdit(s, t.target)
+}
+
+// writeEditAxis maps the tool's axis choice back onto the definition's precedence trio.
+func (t *RevolveTool) writeEditAxis(s *Session, def *feature.RevolveDefinition) error {
+	def.Axis, def.AxisCenterline, def.AxisCenterlineSketch = nil, nil, nil
+	switch {
+	case t.centerline != nil:
+		def.AxisCenterline, def.AxisCenterlineSketch = t.centerline, t.centerlineSk
+	case t.useCenterln: // the definition's auto case: all three axis fields nil
+	default:
+		part, err := activePart(s)
+		if err != nil {
+			return err
+		}
+		axis, ok := part.WorkGeometry().AxisByRef(t.axis)
+		if !ok {
+			return errors.New("revolve edit: axis " + string(t.axis) + " not found")
+		}
+		def.Axis = axis
+	}
 	return nil
 }
 
@@ -287,7 +327,13 @@ func (t *RevolveTool) Preview(*Session) []renderer.DrawItem {
 }
 
 // Cancel restores the default selection filter.
-func (t *RevolveTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *RevolveTool) Cancel(s *Session) {
+	if t.IsEditing() {
+		cancelFeatureEdit(s, t.target, t.restoreDef)
+		return
+	}
+	s.Selection().SetFilter(NewSelectionFilter())
+}
 
 // FullTurn is the swept angle of a complete revolution, for the property window's
 // "Full" button to set an explicit angle when the user switches to a partial angle.
