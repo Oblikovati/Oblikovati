@@ -74,6 +74,9 @@ const (
 // the router can serve ui.listEnvironments from the same resolution the shell uses
 // (M05-F03, #247).
 func CurrentEnvironment(s *Session) Environment {
+	if s.activeAddInEnv != BaseEnvironment { // an entered add-in environment wins (M05-F16)
+		return s.activeAddInEnv
+	}
 	if s.InSketch() {
 		return SketchEnvironment
 	}

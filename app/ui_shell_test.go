@@ -135,3 +135,46 @@ func TestEnterExitSketchEmitsEnvironmentChanged(t *testing.T) {
 		t.Fatalf("events = %+v, want sketch then base", got)
 	}
 }
+
+func TestAddInEnvironmentLifecycle(t *testing.T) {
+	s := NewSession()
+	var changes []EnvironmentChanged
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, e EnvironmentChanged) event.Outcome {
+		changes = append(changes, e)
+		return event.Continue()
+	})
+
+	if err := s.RegisterEnvironment(SketchEnvironment, "Bad"); err == nil {
+		t.Error("the reserved values must be rejected")
+	}
+	if err := s.RegisterEnvironment(7, "Weldment"); err != nil {
+		t.Fatalf("RegisterEnvironment: %v", err)
+	}
+	if err := s.ActivateEnvironment(9); err == nil {
+		t.Error("an unregistered environment must refuse activation")
+	}
+
+	noop := func(*Session) error { return nil }
+	_ = s.Commands().Add(NewCommand("Weld.Bead", "Weld Bead", "Weld", noop).
+		WithTab("Weldment").WithEnvironment(7).WithRibbons(ZeroDocRibbon))
+
+	if err := s.ActivateEnvironment(7); err != nil {
+		t.Fatalf("ActivateEnvironment: %v", err)
+	}
+	if CurrentEnvironment(s) != 7 {
+		t.Fatalf("CurrentEnvironment = %v, want the weldment environment", CurrentEnvironment(s))
+	}
+	if _, ok := BuildRibbon(s).Tab("Weldment"); !ok {
+		t.Error("the entered environment's contextual tab should appear on the ribbon")
+	}
+
+	if err := s.ActivateEnvironment(BaseEnvironment); err != nil {
+		t.Fatalf("ActivateEnvironment(base): %v", err)
+	}
+	if _, ok := BuildRibbon(s).Tab("Weldment"); ok {
+		t.Error("leaving the environment should remove its tab")
+	}
+	if len(changes) != 2 || changes[0].Environment != 7 || changes[1].Environment != BaseEnvironment {
+		t.Fatalf("events = %+v, want enter then leave", changes)
+	}
+}

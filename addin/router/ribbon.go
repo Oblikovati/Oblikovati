@@ -82,13 +82,41 @@ func selectorInfo(sel *app.RibbonSelector) *wire.RibbonSelectorInfo {
 	return &wire.RibbonSelectorInfo{Options: options, SelectedIndex: sel.SelectedIndex}
 }
 
-// listEnvironments returns the UI environments the command framework scopes by,
-// flagging the active one (wire ui.listEnvironments; add-in environments: #667).
+// listEnvironments returns the UI environments the command framework scopes by —
+// the built-ins plus every registered add-in environment — flagging the active one
+// (wire ui.listEnvironments, M05-F12/F16).
 func listEnvironments(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	active := app.CurrentEnvironment(s)
 	envs := []wire.EnvironmentInfo{
 		{Environment: types.BaseEnvironment, Name: "Base", Active: active == types.BaseEnvironment},
 		{Environment: types.SketchEnvironment, Name: "Sketch", Active: active == types.SketchEnvironment},
 	}
+	for env, name := range s.AddInEnvironments() {
+		envs = append(envs, wire.EnvironmentInfo{Environment: env, Name: name, Active: active == env})
+	}
 	return json.Marshal(wire.ListEnvironmentsResult{Environments: envs})
+}
+
+// registerEnvironment declares an add-in environment (wire ui.registerEnvironment).
+func registerEnvironment(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var req wire.RegisterEnvironmentArgs
+	if err := decode(args, &req); err != nil {
+		return nil, err
+	}
+	if err := s.RegisterEnvironment(req.Environment, req.Name); err != nil {
+		return nil, err
+	}
+	return ok()
+}
+
+// activateEnvironment enters/leaves an add-in environment (wire ui.activateEnvironment).
+func activateEnvironment(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var req wire.ActivateEnvironmentArgs
+	if err := decode(args, &req); err != nil {
+		return nil, err
+	}
+	if err := s.ActivateEnvironment(req.Environment); err != nil {
+		return nil, err
+	}
+	return ok()
 }

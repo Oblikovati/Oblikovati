@@ -149,3 +149,52 @@ func (s *Session) ObjectVisibility() wire.ObjectVisibilityView { return s.object
 // SetObjectVisibility writes the toggles; hidden geometry also stops being
 // pickable (the accessors the overlays and pickers share consult these flags).
 func (s *Session) SetObjectVisibility(v wire.ObjectVisibilityView) { s.objectVisibility = v }
+
+// Add-in UI environments (M05-F16, #667): an add-in registers its own contextual
+// environment (values ≥ 2; the built-in base/sketch stay 0/1) and activates it;
+// commands registered with the value form its tabs, exactly like the sketch
+// environment. The active add-in environment overrides the sketch resolution.
+
+// RegisterEnvironment declares an add-in environment.
+func (s *Session) RegisterEnvironment(env Environment, name string) error {
+	if env <= SketchEnvironment {
+		return fmt.Errorf("app: environment %d is reserved (0 base, 1 sketch); add-in environments start at 2", env)
+	}
+	if name == "" {
+		return fmt.Errorf("app: environment %d needs a display name", env)
+	}
+	s.addinEnvironments[env] = name
+	return nil
+}
+
+// AddInEnvironments returns the registered add-in environments.
+func (s *Session) AddInEnvironments() map[Environment]string {
+	out := make(map[Environment]string, len(s.addinEnvironments))
+	for env, name := range s.addinEnvironments {
+		out[env] = name
+	}
+	return out
+}
+
+// ActivateEnvironment enters a registered add-in environment; BaseEnvironment
+// leaves it. The switch reaches observers as EnvironmentChanged.
+func (s *Session) ActivateEnvironment(env Environment) error {
+	if env == BaseEnvironment {
+		if s.activeAddInEnv != BaseEnvironment {
+			s.activeAddInEnv = BaseEnvironment
+			event.Emit(s.bus, event.After, EnvironmentChanged{Environment: CurrentEnvironment(s)})
+		}
+		return nil
+	}
+	if _, ok := s.addinEnvironments[env]; !ok {
+		return fmt.Errorf("app: environment %d is not registered", env)
+	}
+	if s.activeAddInEnv != env {
+		s.activeAddInEnv = env
+		event.Emit(s.bus, event.After, EnvironmentChanged{Environment: env})
+	}
+	return nil
+}
+
+// ActiveAddInEnvironment returns the active add-in environment (base when none).
+func (s *Session) ActiveAddInEnvironment() Environment { return s.activeAddInEnv }

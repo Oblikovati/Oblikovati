@@ -61,3 +61,26 @@ func TestUIContextMenuAndVisibilityOverWire(t *testing.T) {
 		t.Errorf("hidden planes still pickable (%d)", got)
 	}
 }
+
+func TestAddInEnvironmentsOverWire(t *testing.T) {
+	r, s := seededSession(t)
+	call(t, r, s, "ui.registerEnvironment", `{"environment":7,"name":"Weldment"}`, nil)
+	call(t, r, s, "ui.activateEnvironment", `{"environment":7}`, nil)
+
+	var envs wire.ListEnvironmentsResult
+	call(t, r, s, "ui.listEnvironments", "{}", &envs)
+	foundActive := false
+	for _, e := range envs.Environments {
+		if e.Name == "Weldment" && e.Active {
+			foundActive = true
+		}
+	}
+	if !foundActive {
+		t.Fatalf("environments = %+v, want the active Weldment entry", envs.Environments)
+	}
+
+	call(t, r, s, "ui.activateEnvironment", `{"environment":0}`, nil)
+	if _, err := r.Handle(s, "ui.registerEnvironment", []byte(`{"environment":1,"name":"X"}`)); err == nil {
+		t.Error("the reserved sketch value must be rejected over the wire")
+	}
+}

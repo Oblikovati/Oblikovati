@@ -74,6 +74,8 @@ type Session struct {
 	helpInterceptor      HelpInterceptor               // before-help veto hook (M05-F14)
 	documentSubTypes     map[string]DocumentSubType    // registered flavors (M05-F15)
 	documentSubTypeOrder []string
+	addinEnvironments    map[Environment]string                           // registered add-in environments (M05-F16)
+	activeAddInEnv       Environment                                      // the entered add-in environment (base when none)
 	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
 	contextMenus         map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
 	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
@@ -173,6 +175,7 @@ func (s *Session) initShellSurfaces() {
 	}
 	s.helpSources = map[string]string{}
 	s.documentSubTypes = map[string]DocumentSubType{}
+	s.addinEnvironments = map[Environment]string{}
 }
 
 // AddIns returns the add-in registry (ApplicationAddIns).

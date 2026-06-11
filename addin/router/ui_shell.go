@@ -18,6 +18,8 @@ func (r *Router) registerUIShellHandlers() {
 	r.handlers[wire.MethodUISetContextMenu] = setContextMenu
 	r.handlers[wire.MethodUIGetObjectVisibility] = getObjectVisibility
 	r.handlers[wire.MethodUISetObjectVisibility] = setObjectVisibility
+	r.handlers[wire.MethodUIRegisterEnvironment] = registerEnvironment
+	r.handlers[wire.MethodUIActivateEnvironment] = activateEnvironment
 }
 
 // searchCommands finds registered commands matching the query (wire ui.search).
