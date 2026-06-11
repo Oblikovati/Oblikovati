@@ -220,6 +220,22 @@ func lineConstraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind,
 	case *sketch.ParallelToPlane3D:
 		return planeConstraintKind(v), []uint64{uint64(v.L.EntityID())}
 	default:
+		return curveConstraint3DKind(c)
+	}
+}
+
+// curveConstraint3DKind maps the curve-join constraints (issue #142) to their kind.
+func curveConstraint3DKind(c sketch.Constraint) (types.Geometric3DConstraintKind, []uint64) {
+	switch v := c.(type) {
+	case *sketch.Tangent3D:
+		return types.Geo3DTangent, []uint64{uint64(v.C1.EntityID()), uint64(v.C2.EntityID())}
+	case *sketch.Smooth3D:
+		return types.Geo3DSmooth, []uint64{uint64(v.C1.EntityID()), uint64(v.C2.EntityID())}
+	case *sketch.SplineFitPoints3D:
+		return types.Geo3DSplineFitPoints, []uint64{uint64(v.Spline.EntityID()), uint64(v.P.EntityID())}
+	case *sketch.Helical3D:
+		return types.Geo3DHelical, []uint64{uint64(v.H.EntityID()), uint64(v.C.EntityID())}
+	default:
 		return types.Geo3DUnknown, nil
 	}
 }

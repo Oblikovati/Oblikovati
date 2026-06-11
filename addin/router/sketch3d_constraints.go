@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
 
@@ -43,8 +44,127 @@ func buildSketch3DConstraint(sk *sketch.Sketch3D, kind types.Geometric3DConstrai
 		return midpointConstraint3D(sk, refs)
 	case types.Geo3DGround:
 		return groundConstraint3D(sk, refs)
+	case types.Geo3DTangent, types.Geo3DSmooth:
+		return smoothJoinConstraint3D(sk, kind, refs)
+	case types.Geo3DSplineFitPoints:
+		return splineFitConstraint3D(sk, refs)
+	case types.Geo3DHelical:
+		return helicalConstraint3D(sk, refs)
+	case types.Geo3DEqual:
+		return equalConstraint3D(sk, refs)
 	default:
 		return orientationConstraint3D(sk, kind, refs)
+	}
+}
+
+// smoothJoinConstraint3D builds the tangent (G1) / smooth (G2) join between two curves
+// (line/arc/spline), joining at their nearest endpoints — the same choice the 2D Smooth
+// tool makes. Smooth requires at least one spline: two analytic curves can only be G2
+// when cocircular, so anything else would over-constrain unsolvably.
+func smoothJoinConstraint3D(sk *sketch.Sketch3D, kind types.Geometric3DConstraintKind, refs []uint64) (sketch.Constraint, error) {
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("sketch3d.addConstraint: %s needs 2 curve refs (line/arc/spline), got %d", kind, len(refs))
+	}
+	c1, err := smoothCurveRef3D(sk, refs[0])
+	if err != nil {
+		return nil, err
+	}
+	c2, err := smoothCurveRef3D(sk, refs[1])
+	if err != nil {
+		return nil, err
+	}
+	p1, p2, ok := sketch.NearestEndpointPair3D(c1, c2)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d.addConstraint: %s: a picked curve has no free endpoint (closed spline?)", kind)
+	}
+	if kind == types.Geo3DTangent {
+		return sketch.NewTangent3D(c1, c2, p1, p2), nil
+	}
+	if !isSpline3D(c1) && !isSpline3D(c2) {
+		return nil, fmt.Errorf("sketch3d.addConstraint: smooth needs at least one spline (got %T and %T)", c1, c2)
+	}
+	return sketch.NewSmooth3D(c1, c2, p1, p2), nil
+}
+
+// splineFitConstraint3D attaches a point to the nearest fit point of a fit spline.
+func splineFitConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, error) {
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("sketch3d.addConstraint: splineFitPoints needs a spline + point, got %d refs", len(refs))
+	}
+	sp, err := splineRef3D(sk, refs[0])
+	if err != nil {
+		return nil, err
+	}
+	p, err := pointRef3D(sk, refs[1])
+	if err != nil {
+		return nil, err
+	}
+	c, err := sketch.NewSplineFitPoints3D(sp, p)
+	if err != nil {
+		return nil, fmt.Errorf("sketch3d.addConstraint: %w", err)
+	}
+	return c, nil
+}
+
+// helicalConstraint3D ties a helix to the circle it starts on (coincident origin/center,
+// equal start radius/circle radius).
+func helicalConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, error) {
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("sketch3d.addConstraint: helical needs a helix + circle, got %d refs", len(refs))
+	}
+	h, err := helixRef3D(sk, refs[0])
+	if err != nil {
+		return nil, err
+	}
+	circle, err := circleRef3D(sk, refs[1])
+	if err != nil {
+		return nil, err
+	}
+	c, err := sketch.NewHelical3D(h, circle)
+	if err != nil {
+		return nil, fmt.Errorf("sketch3d.addConstraint: %w", err)
+	}
+	return c, nil
+}
+
+// isSpline3D reports whether a smooth-capable curve is a spline (the side whose end
+// curvature the solver can adjust for a G2 join).
+func isSpline3D(c sketch.SmoothCurve3D) bool {
+	_, ok := c.(*sketch.Spline3D)
+	return ok
+}
+
+// equalConstraint3D forces two radius DOFs equal — the operands are circle (radius) or
+// helix (start radius) entities. Surfaced by the issue-#142 kind-coverage guard:
+// Geo3DEqual was declared and Equal3D implemented, but no router case existed.
+func equalConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, error) {
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("sketch3d.addConstraint: equal needs 2 circle/helix refs, got %d", len(refs))
+	}
+	a, err := radiusScalar3D(sk, refs[0])
+	if err != nil {
+		return nil, err
+	}
+	b, err := radiusScalar3D(sk, refs[1])
+	if err != nil {
+		return nil, err
+	}
+	return sketch.NewEqual3D(a, b), nil
+}
+
+// radiusScalar3D resolves an entity id to its radius solver DOF.
+func radiusScalar3D(sk *sketch.Sketch3D, id uint64) (*math.Scalar, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+	}
+	switch v := e.(type) {
+	case *sketch.Circle3D:
+		return &v.Radius, nil
+	case *sketch.HelicalCurve3D:
+		return &v.StartRadius, nil
+	default:
+		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a circle or helix (radius DOF)", id, e)
 	}
 }
 
@@ -202,4 +322,57 @@ func lineRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Line3D, error) {
 		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a 3D line", id, e)
 	}
 	return l, nil
+}
+
+// smoothCurveRef3D resolves a session id to a tangent/smooth-capable curve
+// (line/arc/spline).
+func smoothCurveRef3D(sk *sketch.Sketch3D, id uint64) (sketch.SmoothCurve3D, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+	}
+	c, ok := e.(sketch.SmoothCurve3D)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a line/arc/spline", id, e)
+	}
+	return c, nil
+}
+
+// splineRef3D resolves a session id to a 3D spline entity.
+func splineRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Spline3D, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+	}
+	sp, ok := e.(*sketch.Spline3D)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a 3D spline", id, e)
+	}
+	return sp, nil
+}
+
+// helixRef3D resolves a session id to a helical curve entity.
+func helixRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.HelicalCurve3D, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+	}
+	h, ok := e.(*sketch.HelicalCurve3D)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a helical curve", id, e)
+	}
+	return h, nil
+}
+
+// circleRef3D resolves a session id to a 3D circle entity.
+func circleRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Circle3D, error) {
+	e, ok := sk.EntityByID(sketch.ID(id))
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+	}
+	c, ok := e.(*sketch.Circle3D)
+	if !ok {
+		return nil, fmt.Errorf("sketch3d: entity %d is %T, want a 3D circle", id, e)
+	}
+	return c, nil
 }

@@ -94,11 +94,13 @@ type Entity3DData struct {
 
 // Constraint3DRow is one geometric 3D constraint: its kind plus operand ids split into
 // Points (point operands) and Curves (line/curve entity operands), in the order the
-// constraint's factory expects.
+// constraint's factory expects. Index is the splineFitPoints fit-point index (the
+// constraint binds a specific fit point, not a re-derived nearest one).
 type Constraint3DRow struct {
 	Kind   string `yaml:"kind"`
 	Points []int  `yaml:"points,omitempty"`
 	Curves []int  `yaml:"curves,omitempty"`
+	Index  int    `yaml:"index,omitempty"`
 }
 
 // MarshalRecipe3D projects every 3D sketch into its serializable form, in order.
@@ -305,10 +307,21 @@ func serializeConstraint3D(c Constraint) (Constraint3DRow, error) {
 		return Constraint3DRow{Kind: axisRowKind(v.Axis), Curves: []int{int(v.L.id)}}, nil
 	case *ParallelToPlane3D:
 		return Constraint3DRow{Kind: planeRowKind(v.Normal), Curves: []int{int(v.L.id)}}, nil
+	case *Tangent3D:
+		return Constraint3DRow{Kind: "tangent", Curves: entity3DIDPair(v.C1, v.C2), Points: []int{int(v.P1.id), int(v.P2.id)}}, nil
+	case *Smooth3D:
+		return Constraint3DRow{Kind: "smooth", Curves: entity3DIDPair(v.C1, v.C2), Points: []int{int(v.P1.id), int(v.P2.id)}}, nil
+	case *SplineFitPoints3D:
+		return Constraint3DRow{Kind: "splineFitPoints", Curves: []int{int(v.Spline.id)}, Points: []int{int(v.P.id)}, Index: v.FitIndex}, nil
+	case *Helical3D:
+		return Constraint3DRow{Kind: "helical", Curves: []int{int(v.H.id), int(v.C.id)}}, nil
 	default:
 		return Constraint3DRow{}, fmt.Errorf("cannot serialize 3D constraint of type %T (no codec yet)", c)
 	}
 }
+
+// entity3DIDPair returns two curve entities' ids in order.
+func entity3DIDPair(a, b Entity) []int { return []int{int(a.EntityID()), int(b.EntityID())} }
 
 // axisRowKind names a parallel-to-axis constraint for serialization by its axis vector.
 func axisRowKind(axis math.Vector3) string {
@@ -514,11 +527,20 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Enti
 }
 
 // restoreConstraint3D re-adds one geometric 3D constraint, binding its point operands
-// through idmap and its line operands through entmap.
+// through idmap and its line operands through entmap. The curve-join kinds (tangent/
+// smooth/splineFitPoints/helical, issue #142) dispatch first — their Curves are not
+// necessarily lines, so they resolve against the full entity map.
 func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D, entmap map[int]Entity) error {
 	pts, err := lookupPoints3D(cd.Points, idmap)
 	if err != nil {
 		return fmt.Errorf("%s constraint: %w", cd.Kind, err)
+	}
+	if c, handled, err := curveConstraint3DFromRow(cd, pts, entmap); handled {
+		if err != nil {
+			return fmt.Errorf("%s constraint: %w", cd.Kind, err)
+		}
+		s.geomCons.add(c)
+		return nil
 	}
 	lines, err := lookupLines3D(cd.Curves, entmap)
 	if err != nil {
@@ -530,6 +552,89 @@ func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D
 	}
 	s.geomCons.add(c)
 	return nil
+}
+
+// curveConstraint3DFromRow rebuilds the curve-join constraint kinds; handled is false
+// for every other kind (which restoreConstraint3D resolves over line operands).
+func curveConstraint3DFromRow(cd Constraint3DRow, pts []*Point3D, entmap map[int]Entity) (Constraint, bool, error) {
+	switch cd.Kind {
+	case "tangent", "smooth":
+		c, err := restoreSmoothJoin3D(cd, pts, entmap)
+		return c, true, err
+	case "splineFitPoints":
+		sp, err := lookupSpline3D(cd.Curves, entmap)
+		if err != nil {
+			return nil, true, err
+		}
+		c, err := NewSplineFitPoints3DAt(sp, pts[0], cd.Index)
+		return c, true, err
+	case "helical":
+		c, err := restoreHelical3D(cd, entmap)
+		return c, true, err
+	default:
+		return nil, false, nil
+	}
+}
+
+// restoreSmoothJoin3D rebuilds a tangent or smooth join from its two curves and their
+// serialized join endpoints.
+func restoreSmoothJoin3D(cd Constraint3DRow, pts []*Point3D, entmap map[int]Entity) (Constraint, error) {
+	if len(cd.Curves) != 2 || len(pts) != 2 {
+		return nil, fmt.Errorf("needs 2 curves + 2 points, got %d/%d", len(cd.Curves), len(pts))
+	}
+	c1, err := lookupSmoothCurve3D(cd.Curves[0], entmap)
+	if err != nil {
+		return nil, err
+	}
+	c2, err := lookupSmoothCurve3D(cd.Curves[1], entmap)
+	if err != nil {
+		return nil, err
+	}
+	if cd.Kind == "tangent" {
+		return NewTangent3D(c1, c2, pts[0], pts[1]), nil
+	}
+	return NewSmooth3D(c1, c2, pts[0], pts[1]), nil
+}
+
+// restoreHelical3D rebuilds a helix-on-circle constraint from its two curve operands.
+func restoreHelical3D(cd Constraint3DRow, entmap map[int]Entity) (Constraint, error) {
+	if len(cd.Curves) != 2 {
+		return nil, fmt.Errorf("needs a helix + circle, got %d curves", len(cd.Curves))
+	}
+	h, ok := entmap[cd.Curves[0]].(*HelicalCurve3D)
+	if !ok {
+		return nil, fmt.Errorf("entity id %d is %T, want a helical curve", cd.Curves[0], entmap[cd.Curves[0]])
+	}
+	circle, ok := entmap[cd.Curves[1]].(*Circle3D)
+	if !ok {
+		return nil, fmt.Errorf("entity id %d is %T, want a 3D circle", cd.Curves[1], entmap[cd.Curves[1]])
+	}
+	return NewHelical3D(h, circle)
+}
+
+// lookupSmoothCurve3D resolves a saved entity id to a tangent/smooth-capable curve.
+func lookupSmoothCurve3D(id int, entmap map[int]Entity) (SmoothCurve3D, error) {
+	e, ok := entmap[id]
+	if !ok {
+		return nil, fmt.Errorf("references unknown entity id %d", id)
+	}
+	c, ok := e.(SmoothCurve3D)
+	if !ok {
+		return nil, fmt.Errorf("entity id %d is %T, want a line/arc/spline", id, e)
+	}
+	return c, nil
+}
+
+// lookupSpline3D resolves a single saved entity id to a live 3D spline.
+func lookupSpline3D(ids []int, entmap map[int]Entity) (*Spline3D, error) {
+	if len(ids) != 1 {
+		return nil, fmt.Errorf("needs 1 spline operand, got %d", len(ids))
+	}
+	sp, ok := entmap[ids[0]].(*Spline3D)
+	if !ok {
+		return nil, fmt.Errorf("entity id %d is %T, want a 3D spline", ids[0], entmap[ids[0]])
+	}
+	return sp, nil
 }
 
 // constraint3DFromRow builds the constraint for a serialized kind from its resolved
