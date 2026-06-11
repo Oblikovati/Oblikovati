@@ -70,6 +70,8 @@ type Session struct {
 	windowFrame        WindowFrameStatus                                // mirrored host-window state (M05-F10)
 	triad              TriadGizmo                                       // the move/rotate triad (M05-F13)
 	manipulators       *ManipulatorBoard                                // add-in drag handles (M05-F13)
+	helpSources        map[string]string                                // add-in help bases by source (M05-F14)
+	helpInterceptor    HelpInterceptor                                  // before-help veto hook (M05-F14)
 	markingMenus       map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
 	contextMenus       map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
 	objectVisibility   wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
@@ -167,6 +169,7 @@ func (s *Session) initShellSurfaces() {
 	s.objectVisibility = wire.ObjectVisibilityView{
 		WorkPlanes: true, WorkAxes: true, WorkPoints: true, Sketches: true,
 	}
+	s.helpSources = map[string]string{}
 }
 
 // AddIns returns the add-in registry (ApplicationAddIns).

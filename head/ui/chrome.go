@@ -155,6 +155,9 @@ func handleKeyboard(s *app.Session) {
 	if native.EscapePressed() {
 		_ = s.PressKey(app.KeyEvent{Key: "Escape"})
 	}
+	if native.F1Pressed() { // F1 opens the host documentation (M05-F14)
+		_ = s.DisplayHelpTopic("", "")
+	}
 	if !native.KeyCtrl() || native.WantTextInput() {
 		return
 	}
