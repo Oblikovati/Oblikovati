@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
+	"oblikovati.org/model/linetype"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/seq"
 )
@@ -44,6 +46,12 @@ type base struct {
 	lineType     string  // empty ⇒ inherit (api/types.SketchLineType value)
 	lineWeight   float64 // 0 ⇒ inherit
 	deferUpdates bool    // true ⇒ batch edits, solve on resume (M21-F08)
+
+	// Custom line type loaded from a .lin definition file (issue #161); non-nil
+	// exactly when lineType is "custom". The pattern persists with the document;
+	// the source file path is kept only for reporting.
+	customLineType     *linetype.Definition
+	customLineTypeFile string
 }
 
 func newBase(name string) base {
@@ -88,9 +96,33 @@ func (b *base) Color() string     { return b.color }
 func (b *base) SetColor(c string) { b.color = c }
 
 // LineType returns the sketch's line-type override (api/types.SketchLineType value,
-// "" ⇒ inherit); SetLineType sets it.
-func (b *base) LineType() string     { return b.lineType }
-func (b *base) SetLineType(t string) { b.lineType = t }
+// "" ⇒ inherit); SetLineType sets it and drops any loaded custom definition when
+// moving to a non-custom style.
+func (b *base) LineType() string { return b.lineType }
+func (b *base) SetLineType(t string) {
+	b.lineType = t
+	if t != string(types.SketchLineCustom) {
+		b.customLineType, b.customLineTypeFile = nil, ""
+	}
+}
+
+// SetCustomLineType installs a loaded .lin definition as the sketch's line style
+// (lineType becomes "custom"); from is the source file, kept for reporting.
+//
+//	sk.SetCustomLineType(def, "styles.lin")
+func (b *base) SetCustomLineType(d linetype.Definition, from string) {
+	b.customLineType, b.customLineTypeFile = &d, from
+	b.lineType = string(types.SketchLineCustom)
+}
+
+// CustomLineType returns the loaded custom definition, its source file, and
+// whether one is present.
+func (b *base) CustomLineType() (linetype.Definition, string, bool) {
+	if b.customLineType == nil {
+		return linetype.Definition{}, "", false
+	}
+	return *b.customLineType, b.customLineTypeFile, true
+}
 
 // LineWeight returns the sketch's line-weight override in cm (0 ⇒ inherit);
 // SetLineWeight sets it.

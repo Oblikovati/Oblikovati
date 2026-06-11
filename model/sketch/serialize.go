@@ -20,19 +20,24 @@ import (
 // common visible=true case omits the field (M21-F01 PBI-201 persists name/display props,
 // closing the previous name-not-persisted gap).
 type SketchData struct {
-	Name         string           `yaml:"name,omitempty"`
-	Hidden       bool             `yaml:"hidden,omitempty"`
-	Shared       bool             `yaml:"shared,omitempty"` // Inventor PlanarSketch.Shared (issue #132)
-	Seq          uint64           `yaml:"seq,omitempty"`    // global creation stamp; see model/seq
-	Color        string           `yaml:"color,omitempty"`
-	LineType     string           `yaml:"lineType,omitempty"`
-	LineWeight   float64          `yaml:"lineWeight,omitempty"`
-	DeferUpdates bool             `yaml:"deferUpdates,omitempty"`
-	Plane        PlaneData        `yaml:"plane"`
-	Points       []PointData      `yaml:"points,omitempty"`
-	Entities     []EntityData     `yaml:"entities,omitempty"`
-	Constraints  []ConstraintData `yaml:"constraints,omitempty"`
-	Dimensions   []DimensionData  `yaml:"dimensions,omitempty"`
+	Name         string  `yaml:"name,omitempty"`
+	Hidden       bool    `yaml:"hidden,omitempty"`
+	Shared       bool    `yaml:"shared,omitempty"` // Inventor PlanarSketch.Shared (issue #132)
+	Seq          uint64  `yaml:"seq,omitempty"`    // global creation stamp; see model/seq
+	Color        string  `yaml:"color,omitempty"`
+	LineType     string  `yaml:"lineType,omitempty"`
+	LineWeight   float64 `yaml:"lineWeight,omitempty"`
+	DeferUpdates bool    `yaml:"deferUpdates,omitempty"`
+	// Custom line type (issue #161): the pattern is stored so reopening never
+	// needs the original .lin file.
+	CustomLineName    string           `yaml:"customLineName,omitempty"`
+	CustomLineFile    string           `yaml:"customLineFile,omitempty"`
+	CustomLinePattern []float64        `yaml:"customLinePattern,omitempty,flow"`
+	Plane             PlaneData        `yaml:"plane"`
+	Points            []PointData      `yaml:"points,omitempty"`
+	Entities          []EntityData     `yaml:"entities,omitempty"`
+	Constraints       []ConstraintData `yaml:"constraints,omitempty"`
+	Dimensions        []DimensionData  `yaml:"dimensions,omitempty"`
 }
 
 // PlaneData is a sketch plane as an origin and two in-plane axes (model space).
@@ -147,6 +152,9 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 		LineWeight:   s.lineWeight,
 		DeferUpdates: s.deferUpdates,
 		Plane:        serializePlane(s.plane),
+	}
+	if d, file, ok := s.CustomLineType(); ok {
+		sd.CustomLineName, sd.CustomLineFile, sd.CustomLinePattern = d.Name, file, d.Pattern
 	}
 	standalone := standalonePointIDs(s)
 	for _, p := range s.pts {

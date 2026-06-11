@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/linetype"
 	"oblikovati.org/model/seq"
 )
 
@@ -84,6 +85,9 @@ func restoreSketchProps(s *Sketch, sd SketchData) {
 	restoreSeq(s, sd.Seq)
 	s.SetColor(sd.Color)
 	s.SetLineType(sd.LineType)
+	if sd.CustomLineName != "" {
+		s.SetCustomLineType(linetype.Definition{Name: sd.CustomLineName, Pattern: sd.CustomLinePattern}, sd.CustomLineFile)
+	}
 	s.SetLineWeight(sd.LineWeight)
 	s.SetDeferUpdates(sd.DeferUpdates)
 }
