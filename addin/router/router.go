@@ -48,6 +48,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerUISurfaceHandlers()
 	r.registerOptionHandlers()
 	r.registerMessagingHandlers()
+	r.registerMiniToolbarHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r

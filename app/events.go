@@ -9,16 +9,18 @@ import (
 
 // Application UI events on the session bus. Stable TypeIDs (0x05xx = M05 UI).
 const (
-	tidCommandStarted     event.TypeID = 0x0501
-	tidCommandEnded       event.TypeID = 0x0502
-	tidSelectionChanged   event.TypeID = 0x0503
-	tidTransactionChange  event.TypeID = 0x0504
-	tidEditCommitted      event.TypeID = 0x0505
-	tidBrowserPaneNode    event.TypeID = 0x0506 // app/browser_panes.go (M05-F03)
-	tidDockableWinChanged event.TypeID = 0x0507 // app/dockwindow_store.go (M05-F03)
-	tidProgressCancelled  event.TypeID = 0x0508 // app/progress_ledger.go (M05-F09)
-	tidBalloonClicked     event.TypeID = 0x0509 // app/balloon_tips.go (M05-F09)
-	tidPromptAnswered     event.TypeID = 0x050a // app/prompt_center.go (M05-F09)
+	tidCommandStarted       event.TypeID = 0x0501
+	tidCommandEnded         event.TypeID = 0x0502
+	tidSelectionChanged     event.TypeID = 0x0503
+	tidTransactionChange    event.TypeID = 0x0504
+	tidEditCommitted        event.TypeID = 0x0505
+	tidBrowserPaneNode      event.TypeID = 0x0506 // app/browser_panes.go (M05-F03)
+	tidDockableWinChanged   event.TypeID = 0x0507 // app/dockwindow_store.go (M05-F03)
+	tidProgressCancelled    event.TypeID = 0x0508 // app/progress_ledger.go (M05-F09)
+	tidBalloonClicked       event.TypeID = 0x0509 // app/balloon_tips.go (M05-F09)
+	tidPromptAnswered       event.TypeID = 0x050a // app/prompt_center.go (M05-F09)
+	tidMiniToolbarChanged   event.TypeID = 0x050b // app/minitoolbar_store.go (M05-F07)
+	tidMiniToolbarCommitted event.TypeID = 0x050c // app/minitoolbar_store.go (M05-F07)
 )
 
 // CommandStarted fires (Before) when a command begins — Inventor's

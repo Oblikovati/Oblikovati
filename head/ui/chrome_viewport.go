@@ -276,6 +276,7 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 	ox, oy := native.ItemRectMin()
 	drawAxisGizmo(cam, ox, oy, ph)
 	drawClientGraphicsLabels(cx, cy, cam, labels)
+	drawMiniToolbars(s, cam, ox, oy) // in-canvas mini-toolbars (M05-F07)
 	if s.InSketch() && len(dims) > 0 {
 		if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {
 			s.BeginEditDimension(d) // double-clicked a dimension's value

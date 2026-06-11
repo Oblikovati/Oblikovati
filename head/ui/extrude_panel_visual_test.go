@@ -105,6 +105,13 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		showPreferences = true
 	case "messaging": // M05-F09 surfaces: progress bar, balloon toast, prompt, messages
 		seedMessagingSurfaces(s)
+	case "minitoolbar": // M05-F07: an anchored in-canvas mini-toolbar over a solid
+		ext := app.NewExtrudeTool()
+		s.StartTool(ext)
+		ext.Pick(s, profile)
+		ext.SetDistance(3)
+		_ = s.OK()
+		seedMiniToolbar(s)
 	default:
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)
@@ -161,6 +168,21 @@ func seedMessagingSurfaces(s *app.Session) {
 	s.Messages().AddMessage("degenerate face at fillet F7", types.SeverityWarning)
 	_ = s.Messages().EndSection(sec)
 	s.SetMessageCenterOpen(true)
+}
+
+// seedMiniToolbar declares an anchored mini-toolbar the way a command would (M05-F07).
+func seedMiniToolbar(s *app.Session) {
+	anchor := [3]float64{2, 3, 2.5}
+	_ = s.SetMiniToolbar(wire.MiniToolbarSpec{
+		ID: "demo.probe", Visible: true, HeadsUpText: "Probe depth", Anchor: &anchor,
+		ShowOK: true, ShowApply: true, ShowCancel: true,
+		Controls: []wire.MiniToolbarControlSpec{
+			{Kind: types.MiniToolbarValueEditor, ID: "depth", Label: "Depth", Value: "10 mm"},
+			{Kind: types.MiniToolbarSlider, ID: "blend", Label: "Blend", Number: 0.4, Min: 0, Max: 1},
+			{Kind: types.MiniToolbarCombo, ID: "dir", Label: "Direction", Options: []string{"Normal", "Reversed"}},
+			{Kind: types.MiniToolbarCheckbox, ID: "sym", Label: "Symmetric", Checked: true},
+		},
+	})
 }
 
 // applyVisualOverrides applies the OBK_VISUAL_* renderer knobs through the View-tab
