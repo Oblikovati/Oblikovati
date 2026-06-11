@@ -105,6 +105,15 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		showPreferences = true
 	case "messaging": // M05-F09 surfaces: progress bar, balloon toast, prompt, messages
 		seedMessagingSurfaces(s)
+	case "dialogs": // M05-F08: an add-in file dialog + a docked web view
+		_ = s.ShowWebDialog(wire.WebDialogSpec{
+			ID: "docs", Title: "Documentation", URL: "https://docs.example.org/bracket",
+			Dock: types.DockRight, Visible: true,
+		})
+		_ = s.RequestFileDialog(app.FileDialogRequest{
+			ID: "sim.report", Title: "Save simulation report", Save: true,
+			Filter: "HTML (*.html)|*.html",
+		})
 	case "minitoolbar": // M05-F07: an anchored in-canvas mini-toolbar over a solid
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)

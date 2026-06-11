@@ -122,6 +122,7 @@ func drawChromeWindows(s *app.Session) {
 	drawScriptConsole(s)
 	drawAddInPanels(s)                  // add-in dockable windows (M05-F03)
 	drawMessagingSurfaces(s)            // toasts, prompt modal, message center (M05-F09)
+	drawWebViews(s)                     // web dialogs/views (M05-F08)
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
 		fileModal.openFor(dialogLoadHDR)
 	}

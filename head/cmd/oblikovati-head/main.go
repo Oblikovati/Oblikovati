@@ -18,6 +18,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/app/options"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/head/internal/sysopen"
 	"oblikovati.org/head/internal/windowstate"
 	"oblikovati.org/head/ui"
 	"oblikovati.org/kernel/ops"
@@ -132,6 +133,7 @@ func newDemoSession() *app.Session {
 		s.SetUserPrefsStore(userprefs.NewFileStore(path))
 	}
 	registerCommands(s)
+	s.SetURLOpener(sysopen.SystemOpener{}) // web-view fallback (M05-F08)
 	loadAppOptions(s)
 	// StartupAction (M05-F11): the historical default seeds a demo part; the user can
 	// opt into an empty workspace (the Get Started ribbon) in Preferences ▸ General.

@@ -20,10 +20,17 @@ import (
 var fileModal fileDialog
 
 // drawFileDialog renders the file explorer and applies a confirmed file operation.
+// A pending add-in ask (dialogs.showFileDialog) arms the modal when it is free.
 func drawFileDialog(s *app.Session) {
 	if !fileModal.isOpen() {
-		return
+		if req, ok := s.PendingFileDialog(); ok {
+			fileModal.openForRequest(req)
+		} else {
+			return
+		}
 	}
+	wasAddIn := fileModal.mode == dialogAddIn
+	request := fileModal.request
 	var act fileAction
 	native.SetNextWindowSizeOnce(760, 520)
 	if native.Begin(fileModal.title()) {
@@ -34,6 +41,20 @@ func drawFileDialog(s *app.Session) {
 	}
 	native.End()
 	applyFileAction(s, act)
+	resolveAddInDialog(s, wasAddIn, request, act)
+}
+
+// resolveAddInDialog answers the add-in's ask: a confirmed path resolves it; the
+// modal closing any other way (Cancel, X, empty confirm) is a cancel.
+func resolveAddInDialog(s *app.Session, wasAddIn bool, request app.FileDialogRequest, act fileAction) {
+	if !wasAddIn || fileModal.isOpen() {
+		return
+	}
+	if act.Kind == dialogAddIn && act.Path != "" {
+		_ = s.ResolveFileDialog(request.ID, []string{act.Path}, false)
+		return
+	}
+	_ = s.ResolveFileDialog(request.ID, nil, true)
 }
 
 // drawExplorerHeader renders navigation, root selection, and search controls.
@@ -182,6 +203,11 @@ func drawExplorerActions(act fileAction) fileAction {
 
 func fileConfirmLabel() string {
 	switch fileModal.mode {
+	case dialogAddIn:
+		if fileModal.request.Save {
+			return "Save"
+		}
+		return "Open"
 	case dialogSaveAs:
 		return "Save"
 	case dialogImport:
