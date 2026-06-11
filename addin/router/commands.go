@@ -20,6 +20,7 @@ func listCommands(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 			ID: c.ID(), DisplayName: c.DisplayName(), Ribbon: c.Ribbons()[0],
 			Tab: c.Tab(), Category: c.Category(), Environment: c.Environment(),
 			Alias: c.Alias(), Tooltip: c.Tooltip(),
+			TooltipTitle: c.TooltipTitle(), TooltipExpanded: c.TooltipExpanded(),
 			Icon: c.Icon(), ButtonStyle: c.ButtonStyle(),
 			Enabled: c.IsEnabled(s),
 		}
@@ -44,7 +45,8 @@ func createCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error
 	}
 	cmd := app.NewCommand(in.ID, in.DisplayName, in.Category, func(*app.Session) error { return nil }).
 		WithTab(in.Tab).WithEnvironment(in.Environment).WithAlias(in.Alias).WithTooltip(in.Tooltip).
-		WithIcon(in.Icon).WithButtonStyle(in.ButtonStyle).WithKind(in.Kind)
+		WithIcon(in.Icon).WithButtonStyle(in.ButtonStyle).WithKind(in.Kind).
+		WithTooltipDetail(in.TooltipTitle, in.TooltipExpanded)
 	if in.Ribbon != "" {
 		cmd.WithRibbons(in.Ribbon)
 	}

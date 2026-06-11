@@ -46,6 +46,8 @@ type CommandDefinition struct {
 	kind             ControlKind
 	alias            string // typed command alias (e.g. "E" → Extrude), Inventor-style
 	tooltip          string
+	tooltipTitle     string      // progressive tooltip title (M05-F09)
+	tooltipExpanded  string      // progressive tooltip long text, shown after a longer hover
 	iconKey          string      // icon asset key (e.g. "extrude"); empty ⇒ no icon
 	buttonStyle      ButtonStyle // ribbon render style; zero value ⇒ text-only
 	ribbons          []RibbonKey // ribbons this command appears on; empty ⇒ the Part ribbon
@@ -81,6 +83,17 @@ func (c *CommandDefinition) WithKind(k ControlKind) *CommandDefinition { c.kind 
 
 // WithTooltip sets the hover tooltip.
 func (c *CommandDefinition) WithTooltip(t string) *CommandDefinition { c.tooltip = t; return c }
+
+// WithTooltipDetail sets the progressive tooltip (M05-F09): title heads the hover
+// tip; expanded appears after a longer hover — the ProgressiveToolTip equivalent.
+func (c *CommandDefinition) WithTooltipDetail(title, expanded string) *CommandDefinition {
+	c.tooltipTitle, c.tooltipExpanded = title, expanded
+	return c
+}
+
+// TooltipTitle / TooltipExpanded are the progressive-tooltip parts ("" when unset).
+func (c *CommandDefinition) TooltipTitle() string    { return c.tooltipTitle }
+func (c *CommandDefinition) TooltipExpanded() string { return c.tooltipExpanded }
 
 // WithIcon sets the command's icon asset key (resolved by the head to an SVG glyph).
 // Pair it with WithButtonStyle to make the ribbon show the icon; a key with the

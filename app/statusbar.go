@@ -16,18 +16,25 @@ type Prompted interface {
 
 // StatusBar is the status-bar model for a frame.
 type StatusBar struct {
-	Prompt         string // guidance text shown to the user
-	ToolName       string // active tool's name, or "" when idle
-	ToolActive     bool   // whether a tool is running (so OK/Cancel show)
-	CanCommit      bool   // whether OK should be enabled
-	SelectionCount int    // size of the current selection set
-	Notice         string // last user-facing notice (a failed-commit reason), or ""
+	Prompt         string       // guidance text shown to the user
+	ToolName       string       // active tool's name, or "" when idle
+	ToolActive     bool         // whether a tool is running (so OK/Cancel show)
+	CanCommit      bool         // whether OK should be enabled
+	SelectionCount int          // size of the current selection set
+	Notice         string       // last user-facing notice (a failed-commit reason), or ""
+	StatusText     string       // wire-set status message (status.setText, M05-F09), or ""
+	Progress       ProgressView // the innermost live progress bar (M05-F09)
+	HasProgress    bool         // whether Progress is live (so the bar renders)
+	MessageBadge   bool         // the message center holds errors/warnings (panel indicator)
 }
 
 // BuildStatus assembles the status bar from the session: the active tool's prompt and
 // commit-readiness, or "Ready" when idle, plus the selection count and any notice.
 func BuildStatus(s *Session) StatusBar {
 	sb := StatusBar{Prompt: "Ready", SelectionCount: s.Selection().Count(), Notice: s.Notice()}
+	sb.StatusText = s.StatusText()
+	sb.Progress, sb.HasProgress = s.Progress().Innermost()
+	sb.MessageBadge = s.Messages().HasErrors() || s.Messages().HasWarnings()
 	ti := s.ActiveTool()
 	if ti == nil {
 		return sb
@@ -50,3 +57,10 @@ func toolPrompt(s *Session, t Tool) string {
 	}
 	return "Select or specify input for " + t.Name()
 }
+
+// StatusText returns the wire-set status message (status.getText).
+func (s *Session) StatusText() string { return s.statusText }
+
+// SetStatusText puts (or, with "", clears) a status-bar message — the status.setText
+// surface an add-in narrates long operations with (M05-F09).
+func (s *Session) SetStatusText(text string) { s.statusText = text }

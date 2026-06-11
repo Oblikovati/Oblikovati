@@ -299,7 +299,7 @@ func drawButtonControl(btn app.RibbonButton) bool {
 		}
 	}
 	clicked := native.Button(btn.Command.DisplayName())
-	native.SetItemTooltip(btn.Command.Tooltip())
+	setCommandTooltip(btn.Command)
 	return clicked
 }
 
@@ -331,7 +331,7 @@ func drawIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
 		return drawLabeledIconButton(btn, tex, px)
 	default: // CompactIconButton
 		clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
-		native.SetItemTooltip(btn.Command.Tooltip())
+		setCommandTooltip(btn.Command)
 		return clicked
 	}
 }
@@ -342,7 +342,7 @@ func drawLabeledIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
 	m := native.Metrics()
 	native.BeginGroup()
 	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
-	native.SetItemTooltip(btn.Command.Tooltip())
+	setCommandTooltip(btn.Command)
 	native.SameLine()
 	x, y := native.GetCursorScreenPos()
 	native.SetCursorScreenPos(x, y+(px+2*m.FramePadY-native.TextLineHeight())/2)
@@ -366,10 +366,34 @@ func drawLargeIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
 	x, y := native.GetCursorScreenPos()
 	native.SetCursorScreenPos(x+(cellW-frameW)/2, y)
 	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
-	native.SetItemTooltip(btn.Command.Tooltip())
+	setCommandTooltip(btn.Command)
 	_, captionY := native.GetCursorScreenPos()
 	native.SetCursorScreenPos(x+(cellW-textW)/2, captionY)
 	native.Text(btn.Command.DisplayName())
 	native.EndGroup()
 	return clicked
+}
+
+// progressiveHoverDelay is how long a hover lasts (seconds) before the expanded
+// text joins the tooltip — the ProgressiveToolTip behavior (M05-F09).
+const progressiveHoverDelay = 1.2
+
+// setCommandTooltip renders the command's tooltip for the last item: the optional
+// title heads it, and the expanded text appears after a longer hover.
+func setCommandTooltip(c *app.CommandDefinition) {
+	text := c.Tooltip()
+	if title := c.TooltipTitle(); title != "" {
+		if text == "" {
+			text = title
+		} else {
+			text = title + "\n" + text
+		}
+	}
+	if expanded := c.TooltipExpanded(); expanded != "" && native.HoverSeconds() > progressiveHoverDelay {
+		if text != "" {
+			text += "\n\n"
+		}
+		text += expanded
+	}
+	native.SetItemTooltip(text)
 }

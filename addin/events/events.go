@@ -32,12 +32,12 @@ type wireEvent struct {
 	Failed   bool   `json:"failed,omitempty"`
 }
 
-// Subscribe wires the session's document and command events to sink and returns the
-// subscriptions so the caller can cancel them on shutdown.
+// Subscribe wires the session's document, command, and UI-surface events to sink
+// and returns the subscriptions so the caller can cancel them on shutdown.
 func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 	ws := s.Workspace().Events()
 	bus := s.Events()
-	return []event.Subscription{
+	subs := []event.Subscription{
 		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentCreated) event.Outcome {
 			return relay(sink, wireEvent{Type: "document.created", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
 		}),
@@ -53,6 +53,14 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
 			return relayEdit(sink, e)
 		}),
+	}
+	return append(subs, subscribeUISurfaces(bus, sink)...)
+}
+
+// subscribeUISurfaces wires the M05 UI-surface events: browser panes and dockable
+// windows (F03), progress/balloon/prompt feedback (F09).
+func subscribeUISurfaces(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.BrowserPaneNodeActivated) event.Outcome {
 			return relayJSON(sink, wire.BrowserNodeEvent{
 				Type: wire.EventBrowserNode, Pane: e.Pane, Node: e.Node, Gesture: e.Gesture,
@@ -63,12 +71,24 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 				Type: wire.EventDockableWindowChanged, ID: e.ID, Visible: e.Visible,
 			})
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.ProgressCancelled) event.Outcome {
+			return relayJSON(sink, wire.ProgressCancelledEvent{Type: wire.EventProgressCancelled, ID: e.ID})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.BalloonTipClicked) event.Outcome {
+			return relayJSON(sink, wire.BalloonTipClickedEvent{Type: wire.EventBalloonTipClicked, ID: e.ID})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.PromptAnswered) event.Outcome {
+			return relayJSON(sink, wire.PromptAnsweredEvent{
+				Type: wire.EventPromptAnswered, ID: e.ID, Answer: e.Answer, Remembered: e.Remembered,
+			})
+		}),
 	}
 }
 
 // relayJSON serializes a wire event DTO and hands it to sink (passive listener).
 // Generic so each call site stays statically typed (the house no-`any` rule).
-func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent](sink Sink, ev E) event.Outcome {
+func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
+	wire.ProgressCancelledEvent | wire.BalloonTipClickedEvent | wire.PromptAnsweredEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}

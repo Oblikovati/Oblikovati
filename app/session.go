@@ -15,6 +15,7 @@ import (
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/sketch"
+	"oblikovati.org/persistence/dialogmemory"
 	"oblikovati.org/persistence/userprefs"
 	"oblikovati.org/persistence/viewstate"
 	"oblikovati.org/renderer"
@@ -53,6 +54,13 @@ type Session struct {
 	dockableWindows    *AddInDockableWindows      // add-in dockable windows (M05-F03)
 	appOptions         options.All                // typed per-user option groups (M05-F11)
 	optionsStore       options.Store              // persists appOptions (nil ⇒ in-session only)
+	statusText         string                     // wire-set status-bar message (M05-F09)
+	messageCenter      *MessageCenter             // sectioned errors/warnings tree (M05-F09)
+	messageCenterOpen  bool                       // the Messages panel is open
+	progress           *ProgressLedger            // live progress bars (M05-F09)
+	balloonTips        *BalloonTipCenter          // notification balloons (M05-F09)
+	prompts            *PromptCenter              // declarative prompts (M05-F09)
+	dialogMemoryStore  dialogmemory.Store         // persists suppressions + remembered answers
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
@@ -116,6 +124,10 @@ func newSession(store doc.Store) *Session {
 		browserPanes:    NewAddInBrowserPanes(),
 		dockableWindows: NewAddInDockableWindows(),
 		appOptions:      options.Defaults(),
+		messageCenter:   NewMessageCenter(),
+		progress:        NewProgressLedger(),
+		balloonTips:     NewBalloonTipCenter(),
+		prompts:         NewPromptCenter(),
 		visualStyle:     renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now

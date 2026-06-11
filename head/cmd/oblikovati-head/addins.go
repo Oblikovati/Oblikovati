@@ -18,6 +18,7 @@ import (
 	"oblikovati.org/event"
 	"oblikovati.org/head/internal/addinhost"
 	"oblikovati.org/persistence/addinstate"
+	"oblikovati.org/persistence/dialogmemory"
 	"oblikovati.org/script/bridge"
 	"oblikovati.org/script/console"
 	"oblikovati.org/script/gopherlua"
@@ -66,6 +67,7 @@ func startAddIns(session *app.Session) *addInHost {
 	// host calls serialize onto the session goroutine and never freeze the UI (ADR-0028 §5).
 	h.script = newScriptController(rtr, session, d)
 	useBehaviorStore(session)
+	useDialogMemoryStore(session)
 	libs, err := addinhost.LoadDir(dir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
@@ -109,6 +111,19 @@ func useBehaviorStore(session *app.Session) {
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "add-in behaviors: %v\n", err)
+	}
+}
+
+// useDialogMemoryStore wires the per-user remembered dialog choices (suppressed
+// balloon tips, remembered prompt answers — M05-F09). A failure costs only
+// persistence.
+func useDialogMemoryStore(session *app.Session) {
+	path, err := dialogmemory.DefaultPath()
+	if err == nil {
+		err = session.UseDialogMemoryStore(dialogmemory.NewFileStore(path))
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "dialog memory: %v\n", err)
 	}
 }
 

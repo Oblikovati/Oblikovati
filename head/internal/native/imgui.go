@@ -39,6 +39,9 @@ int  obk_ig_tree_node_selectable(const char* label, int selected);
 void obk_ig_tree_pop(void);
 void obk_ig_bullet_text(const char* s);
 void obk_ig_set_item_tooltip(const char* s);
+void obk_ig_progress_bar(float fraction, float w, const char* overlay);
+void obk_ig_main_viewport_size(float* w, float* h);
+float obk_ig_hover_seconds(void);
 int  obk_ig_begin_popup_context_item(const char* id);
 void obk_ig_open_popup(const char* id);
 int  obk_ig_begin_popup(const char* id);
@@ -523,6 +526,26 @@ func BulletText(s string) {
 
 // SetItemTooltip shows a hover tooltip for the most recently drawn item (the ribbon
 // button), matching Inventor's on-hover command tooltips. No-op if the text is empty.
+// ProgressBar draws a determinate progress bar of the given pixel width with an
+// optional overlay text (M05-F09 status-bar progress).
+func ProgressBar(fraction, width float32, overlay string) {
+	c, free := cstr(overlay)
+	defer free()
+	C.obk_ig_progress_bar(C.float(fraction), C.float(width), c)
+}
+
+// MainViewportSize reports the main viewport's pixel size — used to anchor the
+// balloon toasts and the prompt modal (M05-F09).
+func MainViewportSize() (w, h float32) {
+	var cw, ch C.float
+	C.obk_ig_main_viewport_size(&cw, &ch)
+	return float32(cw), float32(ch)
+}
+
+// HoverSeconds reports how long the last item has been hovered — drives the
+// progressive tooltip's expanded text (M05-F09).
+func HoverSeconds() float32 { return float32(C.obk_ig_hover_seconds()) }
+
 func SetItemTooltip(s string) {
 	if s == "" {
 		return
