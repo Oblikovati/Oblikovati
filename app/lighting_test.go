@@ -9,15 +9,16 @@ import (
 	"oblikovati.org/renderer"
 )
 
-// TestNewSessionStartsOnDefaultLighting asserts a fresh session has the Default rig so
-// Realistic looks unchanged until the user picks a style (ADR-0026 §7).
-func TestNewSessionStartsOnDefaultLighting(t *testing.T) {
+// TestNewSessionStartsOnThreePointLighting asserts a fresh session has the Three Point
+// studio rig — the out-of-the-box lighting for every visual style now that the whole rig
+// lights every shaded mode (ADR-0026 §8).
+func TestNewSessionStartsOnThreePointLighting(t *testing.T) {
 	s := NewSession()
-	if s.LightingStyleName() != "Default" {
-		t.Errorf("new session style = %q, want Default", s.LightingStyleName())
+	if s.LightingStyleName() != "Three Point" {
+		t.Errorf("new session style = %q, want Three Point", s.LightingStyleName())
 	}
-	if len(s.SceneLighting().Lights) != 1 {
-		t.Errorf("default rig has %d lights, want 1 headlight", len(s.SceneLighting().Lights))
+	if len(s.SceneLighting().Lights) != 3 {
+		t.Errorf("default rig has %d lights, want the key/fill/back trio", len(s.SceneLighting().Lights))
 	}
 }
 

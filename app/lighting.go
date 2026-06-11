@@ -21,7 +21,7 @@ type (
 
 // SceneLighting returns the session's live lighting rig (lights + ambient/exposure +
 // environment + shadows) — what the renderer hands the GPU each frame. It is never empty: the
-// session starts on [renderer.DefaultSceneLighting].
+// session starts on the Three Point studio rig ([renderer.LightingThreePoint]).
 func (s *Session) SceneLighting() renderer.SceneLighting { return s.lighting }
 
 // LightingStyleName returns the active lighting style's user-facing name.

@@ -92,6 +92,25 @@ from the light's point of view.
    hardcoded values — so an un-themed, un-configured Realistic frame is unchanged
    until the user selects a style/environment or enables shadows.
 
+8. **Amendment (2026-06-11): the rig and environment light every visual style, and
+   Three Point is the session default.** Originally only Realistic (mode 2)
+   consumed the scene UBO; the Shaded family used a fixed headlight Lambert and the
+   NPR ramps a fixed key direction, so the Lighting Style and Environment selectors
+   appeared dead outside Realistic. Now: mode 1 (Shaded/Shaded with Edges/Shaded
+   with Hidden Edges) shades as diffuse-only PBR — the full rig, environment IBL,
+   key-light shadow, exposure/ACES, with metallic/specular response forced off so
+   materials keep the classic flat read; the NPR ramps (Monochrome, Illustration,
+   Watercolor) are driven by `sceneLambert`, the rig's luminance-weighted Lambert
+   sum plus the ambient/IBL floor, normalized so the legacy Default rig reproduces
+   the original `NoL·0.8+0.2` curve bit-for-bit; Technical Illustration stays
+   direction-driven (Gooch is an illumination-direction visualization) but follows
+   the rig's key light. Mode 0 keeps the legacy headlight for UI overlays
+   (work-plane fills). Wireframe styles draw no faces, so the rig shows there only
+   through the skybox background, which was already style-independent. With the
+   whole rig visible everywhere, a fresh session now starts on **Three Point**
+   (key/fill/back studio rig, soft object+ambient shadows) instead of the single
+   headlight; the "Default" preset remains in the gallery for the §7 look.
+
 ## Consequences
 
 - The viewport gains its first descriptor set; the four existing pipelines and the

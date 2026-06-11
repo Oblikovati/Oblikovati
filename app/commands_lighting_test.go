@@ -46,28 +46,29 @@ func TestEnvironmentCommandsSetEnvironment(t *testing.T) {
 }
 
 // TestShadowToggleCommands checks each Shadows toggle flips its setting and reports its checked
-// state, and that enabling object shadows seeds a visible density.
+// state, and that enabling object shadows seeds a visible density. A fresh session starts with
+// object shadows ON — the Three Point default rig casts soft studio shadows (ADR-0026 §8).
 func TestShadowToggleCommands(t *testing.T) {
 	s := registeredSession(t)
-	if s.ShadowSettings().ObjectShadows {
-		t.Fatal("object shadows should start off")
+	if !s.ShadowSettings().ObjectShadows {
+		t.Fatal("object shadows should start on (the Three Point default rig casts them)")
 	}
-	if err := s.Execute("View.ObjectShadows"); err != nil {
+	if err := s.Execute("View.ObjectShadows"); err != nil { // toggle off
 		t.Fatalf("execute ObjectShadows: %v", err)
+	}
+	if s.ShadowSettings().ObjectShadows {
+		t.Errorf("object shadows should be off after the first toggle")
+	}
+	if err := s.Execute("View.ObjectShadows"); err != nil { // back on
+		t.Fatalf("re-toggle: %v", err)
 	}
 	sh := s.ShadowSettings()
 	if !sh.ObjectShadows || sh.Density == 0 {
-		t.Errorf("after toggle, object shadows = %v density = %g, want on with density", sh.ObjectShadows, sh.Density)
+		t.Errorf("after re-enable, object shadows = %v density = %g, want on with density", sh.ObjectShadows, sh.Density)
 	}
 	cmd, _ := s.Commands().ByID("View.ObjectShadows")
 	if !cmd.IsActive(s) {
 		t.Errorf("ObjectShadows toggle should be active after enabling")
-	}
-	if err := s.Execute("View.ObjectShadows"); err != nil { // toggle back off
-		t.Fatalf("re-toggle: %v", err)
-	}
-	if s.ShadowSettings().ObjectShadows {
-		t.Errorf("object shadows should be off after second toggle")
 	}
 }
 

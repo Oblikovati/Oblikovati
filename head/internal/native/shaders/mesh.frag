@@ -1,8 +1,11 @@
 #version 450
 // Surface shading for the viewport. Lines (camPosLit.w == 0) draw flat. Surfaces pick a
-// shader from the per-vertex mode (mirrors renderer.Shading): 1 flat Lambert, 2 GGX PBR
-// (Realistic), 3 Monochrome, 4 Cel/Illustration, 5 Gooch/Technical, 6 Watercolor. Modes 0/1
-// keep the original headlight Lambert so UI overlays are unchanged (ADR-0023 §2,§4).
+// shader from the per-vertex mode (mirrors renderer.Shading): 1 scene-lit Lambert (Shaded
+// family), 2 GGX PBR (Realistic), 3 Monochrome, 4 Cel/Illustration, 5 Gooch/Technical,
+// 6 Watercolor. The lighting rig and environment apply to EVERY shaded mode (ADR-0026 §8):
+// mode 1 is diffuse-only PBR (full rig + IBL, no metallic response) and the NPR ramps are
+// driven by the rig's diffuse term. Mode 0 keeps the original headlight Lambert so UI
+// overlays (work-plane fills) are unchanged (ADR-0023 §2,§4).
 //
 // Lighting comes from the scene UBO (set 0, binding 0): a header (ambience/brightness/exposure/
 // lightCount) plus an array of lights. The std140 layout here must match viewport.PackLighting
@@ -192,12 +195,44 @@ vec4 pbr(vec3 N, vec3 V, vec3 albedo, float metal, float rough, vec3 emissive, f
 }
 
 // headlightDir is the first scene light's direction (the key), or a constant fallback when the
-// scene has no lights — used by the flat/NPR modes that want a single light vector.
+// scene has no lights — used by mode 0 (overlays) and the direction-driven Gooch mode.
 vec3 headlightDir() {
     if (int(scene.header.w) > 0 && int(scene.lights[0].dir.w) == 0) {
         return normalize(scene.lights[0].dir.xyz);
     }
     return normalize(FALLBACK_DIR);
+}
+
+// sceneLambert is the scalar diffuse term driving the NPR ramps: the rig's Lambert sum
+// (every light's luminance, key shadowed) plus the indirect floor (environment irradiance
+// when active, else ambience). Normalized so the legacy Default rig (one white headlight,
+// intensity 3, ambience 0.18) reproduces the original NoL·0.8+0.2 curve exactly — the NPR
+// looks are unchanged until the user picks a different rig or environment (ADR-0026 §8).
+float sceneLambert(vec3 N, vec3 V) {
+    const vec3 LUMA = vec3(0.299, 0.587, 0.114);
+    int   count      = int(scene.header.w);
+    float brightness = scene.header.y;
+    float keyShadow  = 1.0;
+    if (scene.shadow.x > 0.5 && scene.shadow2.x > 0.5 && count > 0) {
+        keyShadow = mix(1.0, shadowVisibility(vWorldPos), scene.shadow.y);
+    }
+    float sum = 0.0;
+    for (int i = 0; i < count && i < 8; i++) {
+        vec3 L, radiance;
+        lightDirAndRadiance(scene.lights[i], brightness, L, radiance);
+        if (i == 0) {
+            radiance *= keyShadow;
+        }
+        sum += dot(radiance, LUMA) * max(dot(N, L), 0.0);
+    }
+    if (count == 0) { // no rig: the legacy headlight keeps an empty scene lit
+        sum = 3.0 * max(dot(N, headlightDir()), 0.0);
+    }
+    float NoV = max(dot(N, V), 1e-3);
+    float amb = dot(ambientTerm(N, V, vec3(1.0), vec3(0.04), 0.0, 1.0, NoV), LUMA);
+    // 0.8/3: the legacy 0.8 diffuse weight over the Default key's intensity 3.
+    // 0.2/0.1832: the legacy 0.2 floor over the Default rig's analytic ambient term.
+    return clamp(sum * (0.8 / 3.0) + amb * (0.2 / 0.1832), 0.0, 1.0);
 }
 
 void main() {
@@ -220,11 +255,14 @@ void main() {
         outColor = pbr(N, V, vColor.rgb, vMetallic, vRoughness, vEmissive, vColor.a);
         return;
     }
+    if (vMode == 1) { // Shaded family — scene-lit diffuse: the full rig + environment,
+        // forced dielectric/rough so materials read flat (no metallic/specular response).
+        outColor = pbr(N, V, vColor.rgb, 0.0, 1.0, vEmissive, vColor.a);
+        return;
+    }
 
-    vec3  L = headlightDir();
-    float NoL = max(dot(N, L), 0.0);
     vec3  albedo = vColor.rgb;
-    float lambert = NoL * 0.8 + 0.2; // the original headlight term
+    float lambert = sceneLambert(N, V); // the rig-driven diffuse term behind every NPR ramp
 
     if (vMode == 3) { // Monochrome — desaturate + posterize, warm-paper tint
         float lum = dot(albedo, vec3(0.299, 0.587, 0.114)) * lambert;
@@ -234,15 +272,16 @@ void main() {
         outColor = vec4(mix(ink, paper, lum), vColor.a);
         return;
     }
-    if (vMode == 4) { // Illustration — cel / flat banded
-        float band = NoL <= 0.25 ? 0.45 : (NoL <= 0.6 ? 0.72 : 1.0);
+    if (vMode == 4) { // Illustration — cel / flat banded (thresholds on the legacy curve:
+        // NoL 0.25/0.6 map to 0.4/0.68 after the 0.8·NoL+0.2 normalization)
+        float band = lambert <= 0.4 ? 0.45 : (lambert <= 0.68 ? 0.72 : 1.0);
         outColor = vec4(albedo * band, vColor.a);
         return;
     }
-    if (vMode == 5) { // Technical Illustration — Gooch cool-to-warm
+    if (vMode == 5) { // Technical Illustration — Gooch cool-to-warm about the rig's key light
         vec3 cool = vec3(0.0, 0.0, 0.40) + 0.25 * albedo;
         vec3 warm = vec3(0.40, 0.30, 0.0) + 0.50 * albedo;
-        float t = (dot(N, L) + 1.0) * 0.5;
+        float t = (dot(N, headlightDir()) + 1.0) * 0.5;
         outColor = vec4(clamp(mix(cool, warm, t), 0.0, 1.0), vColor.a);
         return;
     }
@@ -253,6 +292,7 @@ void main() {
         outColor = vec4(wash * (0.72 + 0.28 * w), vColor.a * 0.95);
         return;
     }
-    // Modes 0/1 — original headlight Lambert (Shaded / overlays).
-    outColor = vec4(albedo * lambert, vColor.a);
+    // Mode 0 — original headlight Lambert (UI overlays: work-plane fills, ground plane).
+    float NoL = max(dot(N, headlightDir()), 0.0);
+    outColor = vec4(albedo * (NoL * 0.8 + 0.2), vColor.a);
 }

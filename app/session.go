@@ -97,18 +97,21 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	return &Session{
-		workspace:          doc.NewWorkspace(store),
-		commands:           NewCommandManager(),
-		histories:          map[doc.ID]*docHistory{},
-		bus:                event.NewBus(),
-		selection:          NewSelection(),
-		camera:             scene.NewCamera(800, 600),
-		hiddenBodyKeys:     map[string]bool{},
-		graphics:           clientgraphics.NewStore(),
-		addins:             NewAddInManager(),
-		visualStyle:        renderer.ShadedWithEdges,
-		lightingStyle:      renderer.LightingDefault,
-		lighting:           renderer.DefaultSceneLighting(),
+		workspace:      doc.NewWorkspace(store),
+		commands:       NewCommandManager(),
+		histories:      map[doc.ID]*docHistory{},
+		bus:            event.NewBus(),
+		selection:      NewSelection(),
+		camera:         scene.NewCamera(800, 600),
+		hiddenBodyKeys: map[string]bool{},
+		graphics:       clientgraphics.NewStore(),
+		addins:         NewAddInManager(),
+		visualStyle:    renderer.ShadedWithEdges,
+		// Three Point is the out-of-the-box rig for every visual style: a studio
+		// key/fill/back setup reads far better than the legacy single headlight now
+		// that the whole rig lights every shaded mode (ADR-0026 §8).
+		lightingStyle:      renderer.LightingThreePoint,
+		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
 }
