@@ -18,6 +18,7 @@ Usage: python3 scripts/add-spdx-headers.py [--check]
   --check exits non-zero if any file would change (for CI), without writing.
 """
 import sys
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -65,10 +66,13 @@ def go_files() -> list[Path]:
 def inside_root(path: Path) -> Path:
     """Re-anchor path under the repository root, refusing anything that escapes
     it — a symlinked .go file pointing outside the repo must never be rewritten.
-    The returned path is constructed from ROOT plus the validated relative part,
-    so every later read/write is provably root-anchored (S2083)."""
-    relative = path.resolve().relative_to(ROOT)  # raises ValueError outside ROOT
-    return ROOT.joinpath(relative)
+    Canonicalize-then-prefix-check is the sanitization shape the path-injection
+    rule (S2083) documents as compliant."""
+    real = os.path.realpath(path)
+    root = os.path.realpath(ROOT)
+    if os.path.commonpath((real, root)) != root:
+        raise ValueError(f"refusing to touch {real}: outside the repository root {root}")
+    return Path(real)
 
 
 def main() -> int:
