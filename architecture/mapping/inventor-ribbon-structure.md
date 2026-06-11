@@ -210,11 +210,11 @@ fix as the affected features are touched (the commands work; they're in the wron
 | Sketch `Auto Dimension` | `Dimension` | **`Constrain`** | ✅ fixed 2026-06-04 |
 | Sketch `Mirror` | `Modify` | **`Pattern`** | ✅ fixed 2026-06-04 |
 | Sketch `Fillet` | `Modify` | **`Create`** | ✅ fixed 2026-06-04 |
-| Sketch `Project Geometry` | `Draw` | (not in this tree's Sketch tab; verify) | review |
+| Sketch `Project Geometry` | `Draw` | **`Create`** (large button, per the 2020 Sketch-tab screenshot) | ✅ fixed 2026-06-11 |
 | Part `Offset Face`/`Thicken` | `Modify` | `Modify` has **`Thicken/Offset`** (combined) | ok-ish |
 
 The Sketch tab now matches the tree (panels: Create, Modify, Pattern, Constrain, Exit;
-plus a non-canonical `Draw` panel holding Project Geometry — under review). Locked by
+the former non-canonical `Draw` panel was merged into Create 2026-06-11). Locked by
 `app.TestSketchTabPanelsMatchInventor`. **Modify** = Move/Copy/Rotate/Scale/Stretch/Trim/
 Extend/Split/Offset; **Pattern** = Rectangular/Circular/Mirror; **Create** = the full
 canonical set incl. Slot/Fillet/Chamfer/Text (plus Ellipse/Polygon extras); **Constrain** =

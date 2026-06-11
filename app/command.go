@@ -8,16 +8,17 @@ import (
 	"oblikovati.org/api/types"
 )
 
-// ButtonStyle is how a command renders in the ribbon (text, small icon, large icon).
-// The type and its values are defined once in the Apache-2.0 contract
-// ([types.ButtonStyle]); this alias keeps the app.ButtonStyle / app.LargeIconButton
-// spelling local to the implementation (ADR-0018).
+// ButtonStyle is how a command renders in the ribbon (text, small icon with label,
+// large icon, compact icon-only). The type and its values are defined once in the
+// Apache-2.0 contract ([types.ButtonStyle]); this alias keeps the app.ButtonStyle /
+// app.LargeIconButton spelling local to the implementation (ADR-0018).
 type ButtonStyle = types.ButtonStyle
 
 const (
-	TextOnlyButton  = types.TextOnlyButton
-	SmallIconButton = types.SmallIconButton
-	LargeIconButton = types.LargeIconButton
+	TextOnlyButton    = types.TextOnlyButton
+	SmallIconButton   = types.SmallIconButton
+	LargeIconButton   = types.LargeIconButton
+	CompactIconButton = types.CompactIconButton
 )
 
 // ControlKind is the UI control a command presents as — Inventor's ControlDefinition

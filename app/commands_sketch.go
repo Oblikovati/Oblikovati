@@ -37,11 +37,13 @@ func sketchTabCommands() []*CommandDefinition {
 		WithIcon("auto-dimension").WithButtonStyle(SmallIconButton).
 		WithTooltip("Auto Dimension — fully constrain the sketch with dimensions and grounds."))
 	cmds = append(cmds, constrainCommands()...)
-	cmds = append(cmds, NewCommand("Sketch.Project", "Project Geometry", "Draw", func(s *Session) error {
+	// Project Geometry lives in Create as a large button (the canonical ribbon has no
+	// "Draw" panel — see architecture/mapping/inventor-ribbon-structure.md).
+	cmds = append(cmds, NewCommand("Sketch.Project", "Project Geometry", "Create", func(s *Session) error {
 		s.StartTool(NewProjectGeometryTool())
 		return nil
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
-		WithIcon("project-geometry").WithButtonStyle(SmallIconButton).
+		WithIcon("project-geometry").WithButtonStyle(LargeIconButton).
 		WithTooltip("Project Geometry — pick part edges/vertices to reference onto the sketch plane."))
 	return append(cmds, NewCommand("Sketch.Finish", "Finish Sketch", "Exit", func(s *Session) error {
 		return s.FinishSketch()
@@ -53,10 +55,13 @@ func sketchTabCommands() []*CommandDefinition {
 // sketchToolEntry is one tool-launching command (id/label/alias/tooltip + factory).
 // variants, when present, become the entry's split-button dropdown (Inventor's variant
 // flyout): sibling tools reachable from the head's arrow, not their own panel buttons.
+// large marks the panel's headline tools (Line, Circle, …) that render as large
+// captioned buttons; the rest stack as small labeled rows.
 type sketchToolEntry struct {
 	id, name, alias, tip string
 	start                func() Tool
 	variants             []sketchToolEntry
+	large                bool
 }
 
 // newToolCommand builds one tool-launching command (no alias/icon for variants, which only
@@ -74,8 +79,12 @@ func newToolCommand(panel string, e sketchToolEntry) *CommandDefinition {
 func buildToolCommands(panel string, entries []sketchToolEntry) []*CommandDefinition {
 	cmds := make([]*CommandDefinition, len(entries))
 	for i, e := range entries {
+		style := SmallIconButton
+		if e.large {
+			style = LargeIconButton
+		}
 		cmd := newToolCommand(panel, e).WithAlias(e.alias).
-			WithIcon(strings.ToLower(e.name)).WithButtonStyle(SmallIconButton)
+			WithIcon(strings.ToLower(e.name)).WithButtonStyle(style)
 		if len(e.variants) > 0 {
 			variants := make([]*CommandDefinition, len(e.variants))
 			for j, v := range e.variants {
@@ -118,15 +127,15 @@ func sketchPatternCommands() []*CommandDefinition {
 // which Inventor places in Create, not Modify).
 func createCommands() []*CommandDefinition {
 	return buildToolCommands("Create", []sketchToolEntry{
-		{id: "Sketch.Line", name: "Line", alias: "L", tip: "Line — draw a line between two points.", start: func() Tool { return NewLineTool() }},
-		{id: "Sketch.Rectangle", name: "Rectangle", alias: "REC", tip: "Rectangle — draw a two-corner rectangle.", start: func() Tool { return NewRectangleTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.Line", name: "Line", alias: "L", large: true, tip: "Line — draw a line between two points.", start: func() Tool { return NewLineTool() }},
+		{id: "Sketch.Rectangle", name: "Rectangle", alias: "REC", large: true, tip: "Rectangle — draw a two-corner rectangle.", start: func() Tool { return NewRectangleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Rectangle.ThreePoint", name: "Three Point Rectangle", tip: "Three Point Rectangle — base edge then width.", start: func() Tool { return NewThreePointRectangleTool() }},
 			{id: "Sketch.Rectangle.Center", name: "Two Point Center Rectangle", tip: "Two Point Center Rectangle — center then a corner.", start: func() Tool { return NewCenterRectangleTool() }},
 		}},
-		{id: "Sketch.Circle", name: "Circle", alias: "C", tip: "Circle — draw a circle from its center and radius.", start: func() Tool { return NewCircleTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.Circle", name: "Circle", alias: "C", large: true, tip: "Circle — draw a circle from its center and radius.", start: func() Tool { return NewCircleTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Circle.ThreePoint", name: "Three Point Circle", tip: "Three Point Circle — the circle through three points.", start: func() Tool { return NewThreePointCircleTool() }},
 		}},
-		{id: "Sketch.Arc", name: "Arc", alias: "A", tip: "Arc — draw a three-point arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.Arc", name: "Arc", alias: "A", large: true, tip: "Arc — draw a three-point arc.", start: func() Tool { return NewArcTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.Arc.CenterPoint", name: "Center Point Arc", tip: "Center Point Arc — center, start, then end.", start: func() Tool { return NewCenterPointArcTool() }},
 		}},
 		{id: "Sketch.Slot", name: "Slot", tip: "Slot — click two centre points for a straight slot.", start: func() Tool { return NewSketchSlotTool(1) }, variants: []sketchToolEntry{
@@ -155,7 +164,7 @@ func constrainCommands() []*CommandDefinition {
 			s.StartTool(newTool())
 			return nil
 		}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).WithTooltip(d.tooltip).
-			WithIcon(strings.ToLower(d.name)).WithButtonStyle(SmallIconButton)
+			WithIcon(strings.ToLower(d.name)).WithButtonStyle(CompactIconButton)
 	}
 	return cmds
 }

@@ -26,9 +26,10 @@ func TestStandardRibbonHasSketchCreatePanel(t *testing.T) {
 	if !ok {
 		t.Fatal("Sketch tab has no Create panel")
 	}
-	// Line, Rectangle, Circle, Arc, Slot, Spline, Ellipse, Polygon, Fillet, Chamfer, Text, Point.
-	if len(panel.Buttons) != 12 {
-		t.Errorf("Sketch Create panel has %d tools, want 12", len(panel.Buttons))
+	// Line, Rectangle, Circle, Arc, Slot, Spline, Ellipse, Polygon, Fillet, Chamfer, Text,
+	// Point, plus Project Geometry (merged from the non-canonical Draw panel 2026-06-11).
+	if len(panel.Buttons) != 13 {
+		t.Errorf("Sketch Create panel has %d tools, want 13", len(panel.Buttons))
 	}
 }
 
@@ -46,9 +47,11 @@ func TestIconCommandsCarryIconAndStyle(t *testing.T) {
 		icon  string
 		style ButtonStyle
 	}{
-		"Create.Extrude": {"extrude", LargeIconButton},
-		"Sketch.Line":    {"line", SmallIconButton},
-		"Sketch.Finish":  {"finish-sketch", LargeIconButton},
+		"Create.Extrude":    {"extrude", LargeIconButton},
+		"Sketch.Line":       {"line", LargeIconButton}, // headline Create tool (2020 ribbon look)
+		"Sketch.Fillet":     {"fillet", SmallIconButton},
+		"Sketch.Coincident": {"coincident", CompactIconButton},
+		"Sketch.Finish":     {"finish-sketch", LargeIconButton},
 	}
 	for id, w := range want {
 		c, ok := s.Commands().ByID(id)
