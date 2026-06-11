@@ -127,7 +127,7 @@ func TestStoreThemeFileIsBlenderXML(t *testing.T) {
 	if err := store.SaveTheme(custom); err != nil {
 		t.Fatalf("SaveTheme: %v", err)
 	}
-	data, err := fs.ReadFile("/cfg/oblikovati/themes/my-dark.xml")
+	data, err := fs.ReadFile(filepath.Join("/cfg/oblikovati", "themes", "my-dark.xml"))
 	if err != nil {
 		t.Fatalf("expected my-dark.xml to exist: %v", err)
 	}
@@ -143,7 +143,7 @@ func TestStoreThemeFileIsBlenderXML(t *testing.T) {
 // named after its file base — no oblikovati section required.
 func TestStoreLoadsForeignBlenderTheme(t *testing.T) {
 	fs := newFakeFS()
-	fs.files["/cfg/oblikovati/themes/nord-deep.xml"] = lightXML
+	fs.files[filepath.Join("/cfg/oblikovati", "themes", "nord-deep.xml")] = lightXML
 	store := NewStore("/cfg/oblikovati", fs)
 	customs, _, err := store.Load()
 	if err != nil {
@@ -161,10 +161,13 @@ func TestStoreLoadsForeignBlenderTheme(t *testing.T) {
 // Non-theme files in the directory (notes, editor droppings) are ignored, and a
 // malformed .xml is skipped with its error reported while good themes still load.
 func TestStoreSkipsUnrelatedAndMalformedFiles(t *testing.T) {
+	// filepath.Join keeps the fake paths OS-correct — on Windows the store joins with
+	// backslashes, so a hardcoded forward-slash key would never match (CI caught this).
 	fs := newFakeFS()
-	fs.files["/cfg/oblikovati/themes/readme.txt"] = []byte("not a theme")
-	fs.files["/cfg/oblikovati/themes/broken.xml"] = []byte("<bpy><Theme></bpy>")
-	fs.files["/cfg/oblikovati/themes/good.xml"] = darkXML
+	themesDir := filepath.Join("/cfg/oblikovati", "themes")
+	fs.files[filepath.Join(themesDir, "readme.txt")] = []byte("not a theme")
+	fs.files[filepath.Join(themesDir, "broken.xml")] = []byte("<bpy><Theme></bpy>")
+	fs.files[filepath.Join(themesDir, "good.xml")] = darkXML
 	store := NewStore("/cfg/oblikovati", fs)
 	customs, _, err := store.Load()
 	if err == nil {
