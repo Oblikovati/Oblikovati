@@ -33,9 +33,12 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	prepareChromeFrame(win, s)
 	drawMenuBar(s)
 	activated := ""
+	// The ribbon band must be drawn after the menu bar (it stacks beneath it in the
+	// viewport work area) and before the dockspace (which fills what remains).
 	if id := drawRibbon(s); id != "" {
 		activated = id
 	}
+	layoutDockedPanels()
 	drawBrowser(s)
 	drawViewportIfPresent(win, s)
 	drawChromeDialogs(s)
@@ -53,12 +56,18 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 	icons.beginFrame(s.ThemeRevision()) // free retired textures; flush composes on theme change
 	applyThemeIfChanged(win, s)         // restyle ImGui + overlays when the theme changed (live preview)
 	handleKeyboard(s)
+	followActiveDocument(s)
+}
+
+// layoutDockedPanels hosts the dockspace under the fixed chrome (menu bar + ribbon
+// band) and builds the one-time default arrangement of the dockable panels. The ribbon
+// is intentionally absent: it is fixed chrome, not a dockable panel.
+func layoutDockedPanels() {
 	dockID := native.DockSpaceOverMain()
 	if !dockLaidOut {
-		native.DockDefaultLayout(dockID, "Ribbon", "Model", "Viewport", "Status")
+		native.DockDefaultLayout(dockID, "Model", "Viewport", "Status")
 		dockLaidOut = true
 	}
-	followActiveDocument(s)
 }
 
 func drawViewportIfPresent(win *native.Window, s *app.Session) {
