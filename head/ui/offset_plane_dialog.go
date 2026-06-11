@@ -9,21 +9,21 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// The Offset Plane flow in the head: while the Offset Plane tool runs, a small dialog
-// prompts for the base plane (picked in the view/browser) and then an editable offset
-// distance, OK/Cancel. Without it the tool could pick a plane but never get a distance, so
-// OK stayed disabled — Inventor asks for the distance rather than dropping a plane at a
-// fixed offset. The distance is in the document's length unit (e.g. mm).
+// The Offset Plane flow in the head: while the Offset Plane tool runs, a modeless
+// property panel (the reference panel schema) shows the base-plane chip and an editable
+// offset distance, then OK/Cancel. Without it the tool could pick a plane but never get
+// a distance, so OK stayed disabled. The distance is in the document's length unit.
 
-// offsetPlaneUI holds the dialog's distance field across frames and whether the dialog was
-// open last frame (so it seeds the field once when the tool opens).
+// offsetPlaneUI holds the panel's distance field across frames and whether the panel
+// was open last frame (so it seeds the field once when the tool opens).
 var offsetPlaneUI = struct {
 	distance float32
 	open     bool
 }{distance: 10}
 
-// drawOffsetPlaneDialog shows the offset editor while the Offset Plane tool is active and
-// keeps the tool's distance in sync with the field each frame; OK commits, Cancel aborts.
+// drawOffsetPlaneDialog shows the offset editor while the Offset Plane tool is active
+// and keeps the tool's distance in sync with the field each frame; OK commits, Cancel
+// aborts.
 func drawOffsetPlaneDialog(s *app.Session) {
 	t := s.ActiveOffsetPlane()
 	if t == nil {
@@ -36,24 +36,29 @@ func drawOffsetPlaneDialog(s *app.Session) {
 		}
 		offsetPlaneUI.open = true
 	}
-	native.SetNextWindowSize(300, 124)
+	native.SetNextWindowSizeOnce(340, 210)
 	if native.Begin("Offset Plane") {
-		if !t.BasePicked() {
-			native.Text("Select a plane or planar face to offset from")
-		} else {
-			native.Text("Offset (" + s.LengthUnitName() + ")")
-			native.InputFloat("##offset-distance", &offsetPlaneUI.distance)
-			s.SetOffsetDistanceDisplay(float64(offsetPlaneUI.distance)) // keep the tool in sync
+		drawFeatureBreadcrumb("Offset Plane", "")
+		if propertySection("Input Geometry") {
+			drawPickChipRow("From", "offset-plane-base", pickChipText(t.BasePicked(), "1 Plane", "Select Plane"),
+				t.BasePicked(), "Click the plane or planar face to offset from", t.ClearBase)
 		}
-		native.BeginDisabled(!t.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK() // a failed commit keeps the tool open
+		if propertySection("Behavior") {
+			drawOffsetPlaneDistanceRow(s, t)
 		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		native.Separator()
+		drawCommitCancelButtons(s, t.CanCommit())
 	}
 	native.End()
+}
+
+// drawOffsetPlaneDistanceRow renders the offset field, greyed until the base is picked
+// (the offset has no meaning without a plane to measure from).
+func drawOffsetPlaneDistanceRow(s *app.Session, t *app.OffsetWorkPlaneTool) {
+	native.BeginDisabled(!t.BasePicked())
+	propertyFloatRow("Offset", "offset-plane-distance", s.LengthUnitName(), &offsetPlaneUI.distance)
+	native.EndDisabled()
+	if t.BasePicked() {
+		s.SetOffsetDistanceDisplay(float64(offsetPlaneUI.distance)) // keep the tool in sync
+	}
 }

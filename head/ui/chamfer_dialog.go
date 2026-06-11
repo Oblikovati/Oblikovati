@@ -5,21 +5,20 @@
 package ui
 
 import (
-	"strconv"
-
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
 
-// The Chamfer flow in the head: while the Chamfer tool runs, a modeless options window
-// shows the picked-edge count and the setback distance (database units), then OK/Cancel.
+// The Chamfer flow in the head: while the Chamfer tool runs, a modeless property panel
+// (the reference panel schema) shows the picked-edges chip, the setback distance, and
+// the flat-corner toggle, then OK/Cancel.
 var chamferUI = struct {
 	distance    float32
 	flatCorners bool
 	open        bool
 }{distance: 1, flatCorners: true}
 
-// drawChamferDialog shows the chamfer options window while the Chamfer tool is active.
+// drawChamferDialog shows the Chamfer property panel while the Chamfer tool is active.
 func drawChamferDialog(s *app.Session) {
 	c := s.ActiveChamfer()
 	if c == nil {
@@ -31,16 +30,28 @@ func drawChamferDialog(s *app.Session) {
 		chamferUI.flatCorners = c.FlatCorners()
 		chamferUI.open = true
 	}
-	native.SetNextWindowSize(300, 190)
+	native.SetNextWindowSizeOnce(340, 250)
 	if native.Begin("Chamfer") {
-		native.Text("Edges: " + strconv.Itoa(len(c.Edges())) + " (click edges to bevel)")
-		native.Text("Distance (" + s.LengthUnitName() + ")")
-		native.InputFloat("##chamfer-distance", &chamferUI.distance)
-		c.SetDistance(float64(chamferUI.distance))
-		if native.Checkbox("Flat corner (3 edges)", &chamferUI.flatCorners) {
-			c.SetFlatCorners(chamferUI.flatCorners)
+		drawFeatureBreadcrumb("Chamfer", "")
+		if propertySection("Input Geometry") {
+			drawPickChipRow("Edges", "chamfer-edges", countChipText(len(c.Edges()), "Edge", "Select Edges"),
+				len(c.Edges()) > 0, "Click edges in the viewport to bevel", c.ClearEdges)
 		}
+		if propertySection("Behavior") {
+			drawChamferBehaviorRows(s, c)
+		}
+		native.Separator()
 		drawCommitCancelButtons(s, c.CanCommit())
 	}
 	native.End()
+}
+
+// drawChamferBehaviorRows renders the setback distance and the flat-corner toggle.
+func drawChamferBehaviorRows(s *app.Session, c *app.ChamferTool) {
+	propertyFloatRow("Distance", "chamfer-distance", s.LengthUnitName(), &chamferUI.distance)
+	c.SetDistance(float64(chamferUI.distance))
+	propertyRow("")
+	if native.Checkbox("Flat corner (3 edges)", &chamferUI.flatCorners) {
+		c.SetFlatCorners(chamferUI.flatCorners)
+	}
 }

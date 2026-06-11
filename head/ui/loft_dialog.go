@@ -6,16 +6,15 @@ package ui
 
 import (
 	"math"
-	"strconv"
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/model/feature"
 )
 
-// The Loft flow in the head: while the Loft tool runs, a modeless options window shows the
-// picked cross-sections, the output operation, a closed-loop toggle, and the start/end-section
-// conditions (Free / Angle / Direction — the takeoff that curves a two-section loft), then
+// The Loft flow in the head: while the Loft tool runs, a modeless property panel (the
+// reference panel schema) drives the tool — the cross-section and guide chips, the
+// closed-loop / area-graph / end-condition behavior, and the boolean output — then
 // OK/Cancel. The picked sections are outlined by the tool's preview.
 var loftUI = struct {
 	open        bool
@@ -27,7 +26,7 @@ var loftUI = struct {
 var loftGuideLabels = []string{"Rails", "Centerline", "Map curves"}
 
 // loftEndUI is the editable degree-state for one end condition (imgui needs stable field
-// pointers across frames, so the dialog edits this and pushes it to the tool each frame).
+// pointers across frames, so the panel edits this and pushes it to the tool each frame).
 type loftEndUI struct {
 	cond     int // index into loftCondLabels: 0 Free, 1 Angle, 2 Direction
 	angleDeg float32
@@ -39,7 +38,7 @@ type loftEndUI struct {
 // 4 Tangent to plane (point/apex sections), 5 Tangent, 6 Smooth (face sections).
 var loftCondLabels = []string{"Free", "Angle", "Direction", "Sharp", "Tangent to plane", "Tangent", "Smooth"}
 
-// drawLoftDialog shows the loft options window while the Loft tool is active.
+// drawLoftDialog shows the Loft property panel while the Loft tool is active.
 func drawLoftDialog(s *app.Session) {
 	l := s.ActiveLoft()
 	if l == nil {
@@ -47,17 +46,14 @@ func drawLoftDialog(s *app.Session) {
 		return
 	}
 	refreshLoftUI(l)
-	native.SetNextWindowSize(340, 460)
+	native.SetNextWindowSizeOnce(360, 500)
 	if native.Begin("Loft") {
-		native.Text("Sections: " + strconv.Itoa(l.SectionCount()) + " (regions, or a vertex/point for an apex, or a face for tangency)")
-		drawLoftGuides(l)
-		loftOperationCombo(l)
-		closed := l.Closed()
-		if native.Checkbox("Closed loop", &closed) {
-			l.SetClosed(closed)
-		}
-		drawOpenLoftConditions(l, closed)
-		drawLoftButtons(s, l)
+		drawFeatureBreadcrumb("Loft", "")
+		drawLoftInputGeometry(l)
+		drawLoftBehavior(l)
+		drawLoftOutput(l)
+		native.Separator()
+		drawCommitCancelButtons(s, l.CanCommit())
 	}
 	native.End()
 }
@@ -75,49 +71,47 @@ func refreshLoftUI(l *app.LoftTool) {
 	loftUI.open = true
 }
 
-func drawOpenLoftConditions(l *app.LoftTool, closed bool) {
-	if closed {
+// drawLoftInputGeometry is the Input Geometry section: the required Sections chip, the
+// optional Guides chip, and the routing combo that says what kind of guide the next
+// open-path pick becomes.
+func drawLoftInputGeometry(l *app.LoftTool) {
+	if !propertySection("Input Geometry") {
 		return
 	}
-	native.Separator()
-	drawLoftEndCondition("Start section", &loftUI.first)
-	drawLoftEndCondition("End section", &loftUI.last)
-	l.SetFirstCondition(loftUI.first.toEnd())
-	l.SetLastCondition(loftUI.last.toEnd())
+	drawPickChipRow("Sections", "loft-sections", countChipText(l.SectionCount(), "Section", "Select Sections"),
+		l.SectionCount() > 0, "Click regions in order (or a vertex/point for an apex, a face for tangency)", l.ClearSections)
+	drawLoftGuidesChip(l)
+	propertyRow("Pick as")
+	native.SetNextItemWidth(propertyFieldWidth)
+	drawLoftGuideKindCombo(l)
 }
 
-// drawLoftEndCondition renders one end's condition combo plus, for an angle/direction takeoff,
-// its angle (degrees), impact (takeoff weight) and reversed flag.
-func drawLoftEndCondition(title string, u *loftEndUI) {
-	native.Text(title)
-	if native.BeginCombo(title+"##cond", loftCondLabels[u.cond]) {
-		for i, lbl := range loftCondLabels {
-			if native.Selectable(lbl, i == u.cond) {
-				u.cond = i
-			}
-		}
-		native.EndCombo()
+// drawLoftGuidesChip shows the active guide kind's pick state. Guides are optional, so
+// an empty chip renders the plain prompt rather than the red required state.
+func drawLoftGuidesChip(l *app.LoftTool) {
+	propertyRow("Guides")
+	text, filled := loftGuideChipState(l)
+	if propertySelectorChip("loft-guides", text, filled, false) {
+		l.ClearGuides()
 	}
-	if u.cond == 0 || u.cond == 3 { // Free / Sharp: no further controls (sharp = a straight apex)
-		return
-	}
-	if u.cond == 1 || u.cond == 2 { // Angle / Direction: takeoff angle on a profile section
-		native.Text("  Angle (deg)")
-		native.InputFloat(title+"##angle", &u.angleDeg)
-	}
-	native.Text("  Impact") // weight for angle/direction and the tangent-to-plane dome
-	native.InputFloat(title+"##impact", &u.impact)
-	rev := u.reversed
-	if native.Checkbox(title+" reversed", &rev) {
-		u.reversed = rev
+	native.SetItemTooltip("Open sketch paths guiding the loft (rails, a centerline, or map curves)")
+}
+
+// loftGuideChipState is the Guides chip caption + filled flag for the active kind.
+func loftGuideChipState(l *app.LoftTool) (string, bool) {
+	switch l.GuideKind() {
+	case 1: // centerline
+		return pickChipText(l.HasCenterline(), "1 Centerline", "Select Path"), l.HasCenterline()
+	case 2: // map curves
+		return countChipText(l.MapCurveCount(), "Map Curve", "Select Paths"), l.MapCurveCount() > 0
+	default: // rails
+		return countChipText(l.RailCount(), "Rail", "Select Paths"), l.RailCount() > 0
 	}
 }
 
-// drawLoftGuides shows the guide controls: which kind a picked open path becomes (rails /
-// centerline / map curves), the active kind's count/status, and the area-graph mid scale.
-func drawLoftGuides(l *app.LoftTool) {
+func drawLoftGuideKindCombo(l *app.LoftTool) {
 	kind := l.GuideKind()
-	if native.BeginCombo("Guide path", loftGuideLabels[kind]) {
+	if native.BeginCombo("##loft-guide-kind", loftGuideLabels[kind]) {
 		for i, lbl := range loftGuideLabels {
 			if native.Selectable(lbl, i == kind) {
 				l.SetGuideKind(i)
@@ -125,50 +119,74 @@ func drawLoftGuides(l *app.LoftTool) {
 		}
 		native.EndCombo()
 	}
-	switch kind {
-	case 1: // centerline
-		status := "none"
-		if l.HasCenterline() {
-			status = "set"
-		}
-		native.Text("  Centerline: " + status + " (click an open path)")
-	case 2: // map curves
-		native.Text("  Map curves: " + strconv.Itoa(l.MapCurveCount()) + " (a path of anchors, one per section)")
-	default: // rails
-		native.Text("  Rails: " + strconv.Itoa(l.RailCount()) + " (click open paths to guide)")
-	}
-	native.Text("Area-graph mid scale (1 = off)")
-	native.InputFloat("##loft-area-mid", &loftUI.areaMid)
-	l.SetAreaMidScale(float64(loftUI.areaMid))
 }
 
-func loftOperationCombo(l *app.LoftTool) {
-	preview := "New Solid"
-	for _, o := range extrudeOperations {
-		if o.op == l.Operation() {
-			preview = o.label
-		}
+// drawLoftBehavior is the Behavior section: the closed-loop toggle, the area-graph mid
+// scale, and — for an open loft — the start/end section conditions.
+func drawLoftBehavior(l *app.LoftTool) {
+	if !propertySection("Behavior") {
+		return
 	}
-	if native.BeginCombo("Output", preview) {
-		for _, o := range extrudeOperations {
-			if native.Selectable(o.label, o.op == l.Operation()) {
-				l.SetOperation(o.op)
+	propertyRow("")
+	closed := l.Closed()
+	if native.Checkbox("Closed loop", &closed) {
+		l.SetClosed(closed)
+	}
+	propertyFloatRow("Area Mid", "loft-area-mid", "× (1 = off)", &loftUI.areaMid)
+	l.SetAreaMidScale(float64(loftUI.areaMid))
+	drawOpenLoftConditions(l, closed)
+}
+
+func drawOpenLoftConditions(l *app.LoftTool, closed bool) {
+	if closed {
+		return
+	}
+	drawLoftEndConditionRows("Start", "loft-start", &loftUI.first)
+	drawLoftEndConditionRows("End", "loft-end", &loftUI.last)
+	l.SetFirstCondition(loftUI.first.toEnd())
+	l.SetLastCondition(loftUI.last.toEnd())
+}
+
+// drawLoftEndConditionRows renders one end's condition combo plus, for an angle/
+// direction takeoff, its angle (degrees), impact (takeoff weight) and reversed flag.
+func drawLoftEndConditionRows(title, id string, u *loftEndUI) {
+	propertyRow(title)
+	native.SetNextItemWidth(propertyComboWidth)
+	if native.BeginCombo("##"+id+"-cond", loftCondLabels[u.cond]) {
+		for i, lbl := range loftCondLabels {
+			if native.Selectable(lbl, i == u.cond) {
+				u.cond = i
 			}
 		}
 		native.EndCombo()
 	}
+	drawLoftEndConditionParams(id, u)
 }
 
-func drawLoftButtons(s *app.Session, l *app.LoftTool) {
-	native.BeginDisabled(!l.CanCommit())
-	if native.Button("OK") {
-		_ = s.OK()
+// drawLoftEndConditionParams renders the condition's dependent fields: nothing for
+// Free/Sharp, a takeoff angle for Angle/Direction, and the impact weight + reversed
+// flag for every shaped condition.
+func drawLoftEndConditionParams(id string, u *loftEndUI) {
+	if u.cond == 0 || u.cond == 3 { // Free / Sharp: no further controls (sharp = a straight apex)
+		return
 	}
-	native.EndDisabled()
-	native.SameLine()
-	if native.Button("Cancel") {
-		s.CancelTool()
+	if u.cond == 1 || u.cond == 2 { // Angle / Direction: takeoff angle on a profile section
+		propertyFloatRow("  Angle", id+"-angle", "deg", &u.angleDeg)
 	}
+	propertyFloatRow("  Impact", id+"-impact", "", &u.impact)
+	propertyRow("")
+	rev := u.reversed
+	if native.Checkbox("Reversed##"+id, &rev) {
+		u.reversed = rev
+	}
+}
+
+// drawLoftOutput is the Output section: the shared Boolean toggle row.
+func drawLoftOutput(l *app.LoftTool) {
+	if !propertySection("Output") {
+		return
+	}
+	drawBooleanPropertyRow("loft-boolean", l.Operation(), l.SetOperation)
 }
 
 // seedLoftEndUI builds the degree-state editor for an end condition (impact defaults to 1).

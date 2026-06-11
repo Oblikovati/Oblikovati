@@ -16,7 +16,7 @@ import (
 func TestPropertyToggleIconsResolve(t *testing.T) {
 	sets := []propertyToggleSet{
 		extrudeDirectionToggles, extrudeExtentToggles, booleanToggles,
-		holeSeatToggles, holeTerminationToggles, holeDrillPointToggles,
+		holeSeatToggles, holeTerminationToggles, holeDrillPointToggles, splitModeToggles,
 		{keys: []string{"angle-full"}, tips: []string{"Full"}}, // the revolve full toggle's lone glyph
 	}
 	for _, set := range sets {

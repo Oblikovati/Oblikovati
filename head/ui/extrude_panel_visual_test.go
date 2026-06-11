@@ -62,6 +62,22 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		h := app.NewHoleTool()
 		s.StartTool(h)
 		h.SetCounterbore(true) // show the seat dimension rows
+	case "coil":
+		co := app.NewCoilTool()
+		s.StartTool(co)
+		if pick {
+			co.Pick(s, profile)
+		}
+	case "loft":
+		lf := app.NewLoftTool()
+		s.StartTool(lf)
+		if pick {
+			lf.Pick(s, profile)
+		}
+	case "split":
+		s.StartTool(app.NewSplitTool())
+	case "fillet":
+		s.StartTool(app.NewFilletTool())
 	default:
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)

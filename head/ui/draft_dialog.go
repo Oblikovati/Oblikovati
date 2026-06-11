@@ -5,20 +5,19 @@
 package ui
 
 import (
-	"strconv"
-
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
 
-// The Draft flow in the head: while the Draft tool runs, a modeless options window shows
-// the picked-face count and the draft angle (degrees, signed), then OK/Cancel.
+// The Draft flow in the head: while the Draft tool runs, a modeless property panel
+// (the reference panel schema) shows the picked-faces chip and the signed draft angle,
+// then OK/Cancel.
 var draftUI = struct {
 	angle float32
 	open  bool
 }{angle: 3}
 
-// drawDraftDialog shows the draft options window while the Draft tool is active.
+// drawDraftDialog shows the Draft property panel while the Draft tool is active.
 func drawDraftDialog(s *app.Session) {
 	d := s.ActiveDraft()
 	if d == nil {
@@ -29,12 +28,18 @@ func drawDraftDialog(s *app.Session) {
 		draftUI.angle = float32(d.AngleDegrees())
 		draftUI.open = true
 	}
-	native.SetNextWindowSize(300, 160)
+	native.SetNextWindowSizeOnce(340, 230)
 	if native.Begin("Draft") {
-		native.Text("Faces: " + strconv.Itoa(len(d.Faces())) + " (click faces to draft)")
-		native.Text("Angle (degrees, +out / −in)")
-		native.InputFloat("##draft-angle", &draftUI.angle)
-		d.SetAngleDegrees(float64(draftUI.angle))
+		drawFeatureBreadcrumb("Draft", "")
+		if propertySection("Input Geometry") {
+			drawPickChipRow("Faces", "draft-faces", countChipText(len(d.Faces()), "Face", "Select Faces"),
+				len(d.Faces()) > 0, "Click faces in the viewport to draft", d.ClearFaces)
+		}
+		if propertySection("Behavior") {
+			propertyFloatRow("Angle", "draft-angle", "deg (+out / −in)", &draftUI.angle)
+			d.SetAngleDegrees(float64(draftUI.angle))
+		}
+		native.Separator()
 		drawCommitCancelButtons(s, d.CanCommit())
 	}
 	native.End()

@@ -9,16 +9,17 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// The Coil flow in the head: while the Coil tool runs, a modeless options window lets
-// the user choose the output operation, the helix axis, the pitch and the number of
-// revolutions, then OK/Cancel. The picked region is outlined by the tool's preview.
+// The Coil flow in the head: while the Coil tool runs, a modeless property panel (the
+// reference panel schema) drives the tool — the profile chip, the helix axis, the
+// pitch and revolutions, and the boolean output — then OK/Cancel. The picked region is
+// outlined by the tool's preview.
 var coilUI = struct {
 	pitch, revolutions float32
 	open               bool
 }{pitch: 1, revolutions: 3}
 
-// drawCoilDialog shows the coil options window while the Coil tool is active, syncing
-// each control with the tool every frame; OK commits, Cancel aborts.
+// drawCoilDialog shows the Coil property panel while the Coil tool is active, syncing
+// every control with the tool each frame; OK commits, Cancel aborts.
 func drawCoilDialog(s *app.Session) {
 	c := s.ActiveCoil()
 	if c == nil {
@@ -26,20 +27,14 @@ func drawCoilDialog(s *app.Session) {
 		return
 	}
 	refreshCoilUI(c)
-	native.SetNextWindowSize(300, 240)
+	native.SetNextWindowSizeOnce(340, 340)
 	if native.Begin("Coil") {
-		if _, ok := c.PickedProfile(); !ok {
-			native.Text("Click a region to coil")
-		}
-		coilOperationCombo(c)
-		coilAxisCombo(c)
-		native.Text("Pitch (" + s.LengthUnitName() + ")")
-		native.InputFloat("##coil-pitch", &coilUI.pitch)
-		c.SetPitch(float64(coilUI.pitch))
-		native.Text("Revolutions")
-		native.InputFloat("##coil-revolutions", &coilUI.revolutions)
-		c.SetRevolutions(float64(coilUI.revolutions))
-		drawCoilButtons(s, c)
+		drawFeatureBreadcrumb("Coil", c.SourceSketchName())
+		drawCoilInputGeometry(c)
+		drawCoilBehavior(s, c)
+		drawCoilOutput(c)
+		native.Separator()
+		drawCommitCancelButtons(s, c.CanCommit())
 	}
 	native.End()
 }
@@ -53,21 +48,18 @@ func refreshCoilUI(c *app.CoilTool) {
 	coilUI.open = true
 }
 
-func coilOperationCombo(c *app.CoilTool) {
-	preview := "New Solid"
-	for _, o := range extrudeOperations {
-		if o.op == c.Operation() {
-			preview = o.label
-		}
+// drawCoilInputGeometry is the Input Geometry section: the required Profiles chip and
+// the helix-axis combo.
+func drawCoilInputGeometry(c *app.CoilTool) {
+	if !propertySection("Input Geometry") {
+		return
 	}
-	if native.BeginCombo("Output", preview) {
-		for _, o := range extrudeOperations {
-			if native.Selectable(o.label, o.op == c.Operation()) {
-				c.SetOperation(o.op)
-			}
-		}
-		native.EndCombo()
-	}
+	_, picked := c.PickedProfile()
+	drawPickChipRow("Profiles", "coil-profiles", pickChipText(picked, "1 Profile", "Select Profile"),
+		picked, "Click a region in the viewport to coil", c.ClearProfile)
+	propertyRow("Axis")
+	native.SetNextItemWidth(propertyFieldWidth)
+	coilAxisCombo(c)
 }
 
 func coilAxisCombo(c *app.CoilTool) {
@@ -77,7 +69,7 @@ func coilAxisCombo(c *app.CoilTool) {
 			preview = a.label
 		}
 	}
-	if native.BeginCombo("Axis", preview) {
+	if native.BeginCombo("##coil-axis", preview) {
 		for _, a := range revolveAxes {
 			if native.Selectable(a.label, a.ref == c.Axis()) {
 				c.SetAxis(a.ref)
@@ -87,14 +79,21 @@ func coilAxisCombo(c *app.CoilTool) {
 	}
 }
 
-func drawCoilButtons(s *app.Session, c *app.CoilTool) {
-	native.BeginDisabled(!c.CanCommit())
-	if native.Button("OK") {
-		_ = s.OK()
+// drawCoilBehavior is the Behavior section: the helix pitch and revolutions.
+func drawCoilBehavior(s *app.Session, c *app.CoilTool) {
+	if !propertySection("Behavior") {
+		return
 	}
-	native.EndDisabled()
-	native.SameLine()
-	if native.Button("Cancel") {
-		s.CancelTool()
+	propertyFloatRow("Pitch", "coil-pitch", s.LengthUnitName(), &coilUI.pitch)
+	c.SetPitch(float64(coilUI.pitch))
+	propertyFloatRow("Revolutions", "coil-revolutions", "", &coilUI.revolutions)
+	c.SetRevolutions(float64(coilUI.revolutions))
+}
+
+// drawCoilOutput is the Output section: the shared Boolean toggle row.
+func drawCoilOutput(c *app.CoilTool) {
+	if !propertySection("Output") {
+		return
 	}
+	drawBooleanPropertyRow("coil-boolean", c.Operation(), c.SetOperation)
 }
