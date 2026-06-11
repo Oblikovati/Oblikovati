@@ -34,6 +34,8 @@ func addSketch3DConstraint(s *app.Session, raw json.RawMessage) (json.RawMessage
 }
 
 // buildSketch3DConstraint resolves the operands and applies the matching constraint factory.
+//
+//nolint:funlen // one-case-per-kind dispatch; length is the dispatch, like the serialize codecs.
 func buildSketch3DConstraint(sk *sketch.Sketch3D, kind types.Geometric3DConstraintKind, refs []uint64) (sketch.Constraint, error) {
 	switch kind {
 	case types.Geo3DCoincident, types.Geo3DCollinear, types.Geo3DConcentric:

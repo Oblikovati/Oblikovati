@@ -233,7 +233,7 @@ func sketch3DConstrainCommands() []*CommandDefinition {
 }
 
 // sketch3DDrawCommands are the 3D-sketch geometry-placement tools (line/point/circle/arc/
-// helix), each starting its interactive tool.
+// splines/equation curve/helix), each starting its interactive tool.
 func sketch3DDrawCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		sketch3DToolCommand("Sketch3D.Line", "3D Line", "line",
@@ -248,6 +248,15 @@ func sketch3DDrawCommands() []*CommandDefinition {
 		sketch3DToolCommand("Sketch3D.Arc", "3D Arc", "arc",
 			"3D Arc — an arc through center, start and end points.",
 			func() Tool { return NewArc3DTool() }),
+		sketch3DToolCommand("Sketch3D.Spline", "3D Spline", "spline",
+			"3D Spline — a smooth curve interpolating clicked points.",
+			func() Tool { return NewSpline3DTool() }),
+		sketch3DToolCommand("Sketch3D.ControlPointSpline", "Control Point Spline", "spline-control",
+			"Control Point Spline — a smooth curve shaped by its clicked control polygon.",
+			func() Tool { return NewControlPointSpline3DTool() }),
+		sketch3DToolCommand("Sketch3D.EquationCurve", "Equation Curve", "equation-curve",
+			"Equation Curve — a parametric curve from x(t), y(t), z(t) over a t range.",
+			func() Tool { return NewEquationCurve3DTool() }),
 		sketch3DToolCommand("Sketch3D.Helix", "Helical Curve", "helix",
 			"Helical Curve — a spring/thread path from radius, pitch and turns.",
 			func() Tool { return NewHelix3DTool() }),

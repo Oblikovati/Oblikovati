@@ -52,40 +52,60 @@ func buildSketch3DDimension(sk *sketch.Sketch3D, kind types.Dimension3DConstrain
 	}
 }
 
-// lineDimension3D builds the line/circle dimensions (lineLength/radius/twoLineAngle).
+// lineDimension3D dispatches the entity-scalar dimensions (lineLength/radius/
+// twoLineAngle/splineLength) to their per-kind builders.
 func lineDimension3D(sk *sketch.Sketch3D, kind types.Dimension3DConstraintKind, in wire.AddSketch3DDimensionArgs) (*sketch.DimensionConstraint3D, error) {
-	dc := sk.DimensionConstraints3D()
 	switch kind {
 	case types.Dim3DLineLength:
-		l, err := lines3D(sk, in.Entities, 1)
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddLineLength(l[0], in.Expression)
+		return lineLengthDimension3D(sk, in)
 	case types.Dim3DRadius:
-		c, err := circle3DRef(sk, in.Entities)
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddRadius(c, in.Expression)
+		return radiusDimension3D(sk, in)
 	case types.Dim3DTwoLineAngle:
-		l, err := lines3D(sk, in.Entities, 2)
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddTwoLineAngle(l[0], l[1], in.Expression)
+		return twoLineAngleDimension3D(sk, in)
 	case types.Dim3DSplineLength:
-		if len(in.Entities) != 1 {
-			return nil, fmt.Errorf("sketch3d.addDimension: splineLength needs 1 spline ref, got %d", len(in.Entities))
-		}
-		sp, err := splineRef3D(sk, in.Entities[0])
-		if err != nil {
-			return nil, err
-		}
-		return dc.AddSplineLength(sp, in.Expression)
+		return splineLengthDimension3D(sk, in)
 	default:
 		return nil, fmt.Errorf("sketch3d.addDimension: unsupported kind %q", in.Kind)
 	}
+}
+
+// lineLengthDimension3D dimensions one line's endpoint-to-endpoint length.
+func lineLengthDimension3D(sk *sketch.Sketch3D, in wire.AddSketch3DDimensionArgs) (*sketch.DimensionConstraint3D, error) {
+	l, err := lines3D(sk, in.Entities, 1)
+	if err != nil {
+		return nil, err
+	}
+	return sk.DimensionConstraints3D().AddLineLength(l[0], in.Expression)
+}
+
+// radiusDimension3D dimensions a circle's (or arc's) radius scalar.
+func radiusDimension3D(sk *sketch.Sketch3D, in wire.AddSketch3DDimensionArgs) (*sketch.DimensionConstraint3D, error) {
+	c, err := circle3DRef(sk, in.Entities)
+	if err != nil {
+		return nil, err
+	}
+	return sk.DimensionConstraints3D().AddRadius(c, in.Expression)
+}
+
+// twoLineAngleDimension3D dimensions the angle between two lines.
+func twoLineAngleDimension3D(sk *sketch.Sketch3D, in wire.AddSketch3DDimensionArgs) (*sketch.DimensionConstraint3D, error) {
+	l, err := lines3D(sk, in.Entities, 2)
+	if err != nil {
+		return nil, err
+	}
+	return sk.DimensionConstraints3D().AddTwoLineAngle(l[0], l[1], in.Expression)
+}
+
+// splineLengthDimension3D dimensions a spline's arc length (#144).
+func splineLengthDimension3D(sk *sketch.Sketch3D, in wire.AddSketch3DDimensionArgs) (*sketch.DimensionConstraint3D, error) {
+	if len(in.Entities) != 1 {
+		return nil, fmt.Errorf("sketch3d.addDimension: splineLength needs 1 spline ref, got %d", len(in.Entities))
+	}
+	sp, err := splineRef3D(sk, in.Entities[0])
+	if err != nil {
+		return nil, err
+	}
+	return sk.DimensionConstraints3D().AddSplineLength(sp, in.Expression)
 }
 
 // pointPlaneDimension3D builds a point-to-origin-plane distance dimension.
