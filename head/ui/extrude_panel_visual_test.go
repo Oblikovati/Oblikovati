@@ -101,6 +101,8 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		_ = s.OK()
 	case "addin-ui": // M05-F03 surfaces: browser pane tab, dockable window, popup button
 		seedAddInSurfaces(s)
+	case "preferences": // the Preferences window (General/Sketch Grid/Modeling/Theme tabs)
+		showPreferences = true
 	default:
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)

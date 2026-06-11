@@ -4,6 +4,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 
 	"oblikovati.org/model/param"
 )
@@ -40,6 +41,16 @@ func NewGridSettings() *GridSettings {
 // SpacingModel returns the grid spacing in model/database units (cm) — what the grid
 // geometry is laid out with.
 func (g *GridSettings) SpacingModel() float64 { return g.spacing.Value }
+
+// SetSpacingModel sets the spacing directly in model/database units (cm) — the
+// unit-independent value the persisted sketch options carry (M05-F11).
+func (g *GridSettings) SetSpacingModel(cm float64) error {
+	if cm <= 0 {
+		return fmt.Errorf("app: grid spacing %v cm is not positive", cm)
+	}
+	g.spacing = param.Quantity{Value: cm, Unit: param.Length}
+	return nil
+}
 
 // Spacing returns the grid spacing as a length quantity.
 func (g *GridSettings) Spacing() param.Quantity { return g.spacing }

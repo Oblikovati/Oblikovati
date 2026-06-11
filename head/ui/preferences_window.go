@@ -5,6 +5,10 @@
 package ui
 
 import (
+	"fmt"
+	"os"
+
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
@@ -23,6 +27,10 @@ func drawPreferencesWindow(s *app.Session) {
 	}
 	native.SetNextWindowSizeOnce(640, 480) // sensible default; the user can still resize
 	if native.Begin("Preferences") && native.BeginTabBar("##prefs-tabs") {
+		if native.BeginTabItem("General") {
+			drawGeneralTab(s)
+			native.EndTabItem()
+		}
 		if native.BeginTabItem("Sketch Grid") {
 			drawGridTab(s)
 			native.EndTabItem()
@@ -46,6 +54,41 @@ func drawModelingTab(s *app.Session) {
 	flat := s.ChamferFlatCorners()
 	if native.Checkbox("Chamfer: flat triangular face at 3-edge corners", &flat) {
 		s.SetChamferFlatCorners(flat)
+		persistOptions(s)
+	}
+}
+
+// drawGeneralTab renders application-level options: what opens at startup (M05-F11).
+func drawGeneralTab(s *app.Session) {
+	current := s.Options().General.StartupAction
+	native.Text("On startup")
+	if native.BeginCombo("##startup-action", startupActionLabel(current)) {
+		for _, action := range []types.StartupActionType{types.StartupNewPart, types.StartupEmptyWorkspace} {
+			if native.Selectable(startupActionLabel(action), action == current) && action != current {
+				general := s.Options().General
+				general.StartupAction = action
+				reportPrefError(s.SetGeneralOptions(general))
+			}
+		}
+		native.EndCombo()
+	}
+}
+
+// startupActionLabel is the user-facing name of a startup action.
+func startupActionLabel(a types.StartupActionType) string {
+	if a == types.StartupEmptyWorkspace {
+		return "Empty workspace"
+	}
+	return "New part"
+}
+
+// persistOptions saves the live, tab-edited state into the per-user options file.
+func persistOptions(s *app.Session) { reportPrefError(s.PersistLiveOptions()) }
+
+// reportPrefError surfaces a failed preference save without interrupting the UI.
+func reportPrefError(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "preferences: %v\n", err)
 	}
 }
 
@@ -61,7 +104,9 @@ func editGridSpacing(s *app.Session) {
 	value, unit := s.GridSpacingDisplay()
 	v := float32(value)
 	if native.InputFloat("Grid spacing ("+unit+")", &v) {
-		_ = s.SetGridSpacingDisplay(float64(v)) // ignore non-positive entries
+		if s.SetGridSpacingDisplay(float64(v)) == nil { // ignore non-positive entries
+			persistOptions(s)
+		}
 	}
 }
 
@@ -70,6 +115,7 @@ func editGridVisibility(s *app.Session) {
 	vis := s.Grid().Visible
 	if native.Checkbox("Show grid in sketch", &vis) {
 		s.Grid().Visible = vis
+		persistOptions(s)
 	}
 }
 
@@ -78,5 +124,6 @@ func editGridMajor(s *app.Session) {
 	major := int32(s.Grid().MajorEvery)
 	if native.InputInt("Major line every N", &major) && major >= 1 {
 		s.Grid().MajorEvery = int(major)
+		persistOptions(s)
 	}
 }

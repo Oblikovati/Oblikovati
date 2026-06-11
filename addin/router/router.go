@@ -46,6 +46,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerFontHandlers()
 	r.registerAddInHandlers()
 	r.registerUISurfaceHandlers()
+	r.registerOptionHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r
