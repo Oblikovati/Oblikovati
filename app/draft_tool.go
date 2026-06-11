@@ -93,3 +93,7 @@ func (t *DraftTool) Prompt(*Session) string {
 
 // Cancel restores the default selection filter.
 func (t *DraftTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+
+// ClearFaces empties the picked faces — the property panel's selector clear (⊗) —
+// returning the tool to its pick-faces step.
+func (t *DraftTool) ClearFaces() { t.faces = nil }

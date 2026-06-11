@@ -116,3 +116,16 @@ func (t *CoilTool) Preview(*Session) []renderer.DrawItem {
 
 // Cancel restores the default selection filter.
 func (t *CoilTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+
+// ClearProfile empties the picked profile — the property panel's selector clear (⊗) —
+// returning the tool to its select-a-region step.
+func (t *CoilTool) ClearProfile() { t.profile = nil }
+
+// SourceSketchName returns the sketch the picked profile comes from, for the property
+// panel's breadcrumb; "" until a profile is picked.
+func (t *CoilTool) SourceSketchName() string {
+	if t.profile == nil {
+		return ""
+	}
+	return t.profile.Sketch.Name()
+}

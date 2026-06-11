@@ -101,3 +101,7 @@ func (t *ChamferTool) Prompt(*Session) string {
 
 // Cancel restores the default selection filter.
 func (t *ChamferTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+
+// ClearEdges empties the picked edges — the property panel's selector clear (⊗) —
+// returning the tool to its pick-edges step.
+func (t *ChamferTool) ClearEdges() { t.edges = nil }

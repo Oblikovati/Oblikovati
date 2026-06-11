@@ -283,3 +283,15 @@ func (t *LoftTool) Preview(*Session) []renderer.DrawItem {
 
 // Cancel restores the default selection filter.
 func (t *LoftTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+
+// ClearSections empties the picked cross-sections — the property panel's selector
+// clear (⊗) on the Sections chip.
+func (t *LoftTool) ClearSections() { t.sections = nil }
+
+// ClearGuides drops every guide pick — rails, centerline, and map curves — the
+// property panel's selector clear (⊗) on the Guides chip.
+func (t *LoftTool) ClearGuides() {
+	t.rails = nil
+	t.centerline = nil
+	t.mapCurves = nil
+}
