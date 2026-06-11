@@ -85,7 +85,11 @@ def main() -> int:
             continue
         changed.append(path.relative_to(ROOT))
         if not check:
-            path.write_text(out)
+            # An explicit open() keeps the (root-anchored) path and the written
+            # content as separate arguments — Path.write_text models the content
+            # as a path in S2083's taint engine and false-positives.
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(out)
     if check and changed:
         print("missing SPDX header:")
         for p in changed:
