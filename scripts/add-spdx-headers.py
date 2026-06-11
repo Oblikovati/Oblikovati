@@ -63,12 +63,12 @@ def go_files() -> list[Path]:
 
 
 def inside_root(path: Path) -> Path:
-    """Resolve path and refuse anything that escapes the repository root — a
-    symlinked .go file pointing outside the repo must never be rewritten."""
-    resolved = path.resolve()
-    if not resolved.is_relative_to(ROOT):
-        raise ValueError(f"refusing to touch {resolved}: outside the repository root {ROOT}")
-    return resolved
+    """Re-anchor path under the repository root, refusing anything that escapes
+    it — a symlinked .go file pointing outside the repo must never be rewritten.
+    The returned path is constructed from ROOT plus the validated relative part,
+    so every later read/write is provably root-anchored (S2083)."""
+    relative = path.resolve().relative_to(ROOT)  # raises ValueError outside ROOT
+    return ROOT.joinpath(relative)
 
 
 def main() -> int:
