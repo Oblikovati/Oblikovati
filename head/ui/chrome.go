@@ -18,6 +18,7 @@
 package ui
 
 import (
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/kernel/topo"
@@ -53,6 +54,7 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 	if icons == nil {
 		icons = newIconCache(win) // lazily bind the icon cache to this window
 	}
+	reportWindowFrame(win, s)
 	icons.beginFrame(s.ThemeRevision()) // free retired textures; flush composes on theme change
 	applyThemeIfChanged(win, s)         // restyle ImGui + overlays when the theme changed (live preview)
 	handleKeyboard(s)
@@ -74,6 +76,22 @@ func layoutDockedPanels() {
 // dockSideNodes remembers the default arrangement's node ids so add-in dockable
 // windows can be docked beside the built-in panels on first show (M05-F03).
 var dockSideNodes native.DockSideNodes
+
+// reportWindowFrame mirrors the GLFW window's live state into the session so
+// windows.listFrames serves real geometry (M05-F10). The caption follows the
+// active document, like a document-centric title bar.
+func reportWindowFrame(win *native.Window, s *app.Session) {
+	_, _, w, h, maximized := win.WindowState()
+	state := types.WindowNormal
+	if maximized {
+		state = types.WindowMaximized
+	}
+	caption := "Oblikovati"
+	if d := s.ActiveDocument(); d != nil {
+		caption = d.DisplayName() + " — Oblikovati"
+	}
+	s.SetWindowFrameStatus(app.WindowFrameStatus{Caption: caption, State: state, Width: w, Height: h})
+}
 
 func drawViewportIfPresent(win *native.Window, s *app.Session) {
 	if shouldDrawViewport(s) {
