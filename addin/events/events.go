@@ -100,6 +100,16 @@ func subscribeMiniToolbars(bus *event.Bus, sink Sink) []event.Subscription {
 				Type: wire.EventMiniToolbarCommitted, Toolbar: e.Toolbar, Gesture: e.Gesture,
 			})
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.FileDialogChosen) event.Outcome {
+			return relayJSON(sink, wire.FileDialogChosenEvent{
+				Type: wire.EventFileDialogChosen, ID: e.ID, Paths: e.Paths, Cancelled: e.Cancelled,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.WebDialogChanged) event.Outcome {
+			return relayJSON(sink, wire.WebDialogChangedEvent{
+				Type: wire.EventWebDialogChanged, ID: e.ID, Visible: e.Visible,
+			})
+		}),
 	}
 }
 
@@ -107,7 +117,8 @@ func subscribeMiniToolbars(bus *event.Bus, sink Sink) []event.Subscription {
 // Generic so each call site stays statically typed (the house no-`any` rule).
 func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.ProgressCancelledEvent | wire.BalloonTipClickedEvent | wire.PromptAnsweredEvent |
-	wire.MiniToolbarChangedEvent | wire.MiniToolbarCommittedEvent](sink Sink, ev E) event.Outcome {
+	wire.MiniToolbarChangedEvent | wire.MiniToolbarCommittedEvent |
+	wire.FileDialogChosenEvent | wire.WebDialogChangedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}

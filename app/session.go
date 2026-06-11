@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"oblikovati.org/api/wire"
 	"oblikovati.org/app/options"
 	"oblikovati.org/event"
 	"oblikovati.org/model/clientgraphics"
@@ -49,19 +50,23 @@ type Session struct {
 	hiddenBodyKeys     map[string]bool
 	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins             *AddInManager
-	clientApps         *ClientApplicationRegistry // external automation drivers (M05-F01)
-	browserPanes       *AddInBrowserPanes         // add-in browser panes (M05-F03)
-	dockableWindows    *AddInDockableWindows      // add-in dockable windows (M05-F03)
-	appOptions         options.All                // typed per-user option groups (M05-F11)
-	optionsStore       options.Store              // persists appOptions (nil ⇒ in-session only)
-	statusText         string                     // wire-set status-bar message (M05-F09)
-	messageCenter      *MessageCenter             // sectioned errors/warnings tree (M05-F09)
-	messageCenterOpen  bool                       // the Messages panel is open
-	progress           *ProgressLedger            // live progress bars (M05-F09)
-	balloonTips        *BalloonTipCenter          // notification balloons (M05-F09)
-	prompts            *PromptCenter              // declarative prompts (M05-F09)
-	dialogMemoryStore  dialogmemory.Store         // persists suppressions + remembered answers
-	miniToolbars       *MiniToolbarRack           // in-canvas mini-toolbars (M05-F07)
+	clientApps         *ClientApplicationRegistry    // external automation drivers (M05-F01)
+	browserPanes       *AddInBrowserPanes            // add-in browser panes (M05-F03)
+	dockableWindows    *AddInDockableWindows         // add-in dockable windows (M05-F03)
+	appOptions         options.All                   // typed per-user option groups (M05-F11)
+	optionsStore       options.Store                 // persists appOptions (nil ⇒ in-session only)
+	statusText         string                        // wire-set status-bar message (M05-F09)
+	messageCenter      *MessageCenter                // sectioned errors/warnings tree (M05-F09)
+	messageCenterOpen  bool                          // the Messages panel is open
+	progress           *ProgressLedger               // live progress bars (M05-F09)
+	balloonTips        *BalloonTipCenter             // notification balloons (M05-F09)
+	prompts            *PromptCenter                 // declarative prompts (M05-F09)
+	dialogMemoryStore  dialogmemory.Store            // persists suppressions + remembered answers
+	miniToolbars       *MiniToolbarRack              // in-canvas mini-toolbars (M05-F07)
+	fileDialogQueue    []FileDialogRequest           // pending add-in file-dialog asks (M05-F08)
+	webViews           map[string]wire.WebDialogSpec // presented web views (M05-F08)
+	webViewOrder       []string                      // web views in creation order
+	urlOpener          URLOpener                     // platform URL opener (head-injected)
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
@@ -130,6 +135,7 @@ func newSession(store doc.Store) *Session {
 		balloonTips:     NewBalloonTipCenter(),
 		prompts:         NewPromptCenter(),
 		miniToolbars:    NewMiniToolbarRack(),
+		webViews:        map[string]wire.WebDialogSpec{},
 		visualStyle:     renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now

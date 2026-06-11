@@ -21,6 +21,8 @@ const (
 	tidPromptAnswered       event.TypeID = 0x050a // app/prompt_center.go (M05-F09)
 	tidMiniToolbarChanged   event.TypeID = 0x050b // app/minitoolbar_store.go (M05-F07)
 	tidMiniToolbarCommitted event.TypeID = 0x050c // app/minitoolbar_store.go (M05-F07)
+	tidFileDialogChosen     event.TypeID = 0x050d // app/dialog_requests.go (M05-F08)
+	tidWebDialogChanged     event.TypeID = 0x050e // app/dialog_requests.go (M05-F08)
 )
 
 // CommandStarted fires (Before) when a command begins — Inventor's

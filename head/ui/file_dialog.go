@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
+	"oblikovati.org/app"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -25,6 +26,7 @@ const (
 	dialogLoadHDR                // View ▸ Load HDR (environment image)
 	dialogImport                 // File ▸ Import (STL/OBJ/3MF/STEP → imported body)
 	dialogExport                 // File ▸ Export (part bodies → STL/OBJ/3MF/STEP)
+	dialogAddIn                  // an add-in's dialogs.showFileDialog request (M05-F08)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -55,7 +57,8 @@ type fileDialog struct {
 	entries    []fileEntry
 	roots      []string
 	errorText  string
-	resolution int // export mesh resolution: 0 low, 1 medium, 2 high
+	resolution int                   // export mesh resolution: 0 low, 1 medium, 2 high
+	request    app.FileDialogRequest // the add-in ask behind dialogAddIn mode
 }
 
 // fileAction is what a confirmed dialog asks the chrome to perform. Kind ==
@@ -80,6 +83,16 @@ func (d *fileDialog) openFor(mode fileDialogMode) {
 	d.openDir(initialExplorerDir())
 }
 
+// openForRequest arms the dialog for an add-in's ask (M05-F08): the request's
+// title heads the window and its initial directory seeds the browser.
+func (d *fileDialog) openForRequest(req app.FileDialogRequest) {
+	d.openFor(dialogAddIn)
+	d.request = req
+	if req.InitialDir != "" {
+		d.openDir(req.InitialDir)
+	}
+}
+
 // isOpen reports whether the modal should render this frame.
 func (d *fileDialog) isOpen() bool { return d.mode != dialogClosed }
 
@@ -94,6 +107,14 @@ func (d *fileDialog) title() string {
 		return "Import (.stl/.obj/.3mf/.step)"
 	case dialogExport:
 		return "Export (.stl/.obj/.3mf/.step)"
+	case dialogAddIn:
+		if d.request.Title != "" {
+			return d.request.Title
+		}
+		if d.request.Save {
+			return "Save As"
+		}
+		return "Open"
 	default:
 		return "Open"
 	}
@@ -222,9 +243,26 @@ func (d *fileDialog) allowedExts() []string {
 		return []string{".hdr"}
 	case dialogImport, dialogExport:
 		return []string{".stl", ".obj", ".3mf", ".step", ".stp"}
+	case dialogAddIn:
+		return filterExtensions(d.request.Filter)
 	default:
 		return nil
 	}
+}
+
+// filterExtensions pulls the extensions out of a display-name|pattern filter like
+// "Meshes (*.stl *.obj)|*.stl;*.obj" — the browser narrows to them; an empty or
+// pattern-less filter shows everything.
+func filterExtensions(filter string) []string {
+	parts := strings.Split(filter, "|")
+	patterns := parts[len(parts)-1]
+	var exts []string
+	for _, pattern := range strings.FieldsFunc(patterns, func(r rune) bool { return r == ';' || r == ' ' }) {
+		if ext := filepath.Ext(strings.TrimSpace(pattern)); ext != "" && ext != "." {
+			exts = append(exts, strings.ToLower(ext))
+		}
+	}
+	return exts
 }
 
 func (d *fileDialog) withDefaultExt(path string) string {
