@@ -76,6 +76,10 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		}
 	case "split":
 		s.StartTool(app.NewSplitTool())
+	case "sketch-text":
+		s.StartTool(app.NewSketchTextTool()) // a parameterized sketch tool: text + choices
+	case "sketch-polygon":
+		s.StartTool(app.NewPolygonTool(6)) // a parameterized sketch tool: int + float
 	case "fillet":
 		s.StartTool(app.NewFilletTool())
 	case "edit-extrude": // commit an extrude, then re-open it for editing (the unified flow)

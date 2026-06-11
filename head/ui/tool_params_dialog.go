@@ -11,12 +11,13 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// One generic property dialog serves every tool that exposes parameters
+// One generic property panel serves every tool that exposes parameters
 // (app.ParameterizedTool) — the sketch Move/Copy/Rotate/Scale/Stretch, the rectangular/
-// circular patterns, Slot/Chamfer/Text/Fillet/Offset — instead of a bespoke cgo dialog per
-// tool (core/09 reflection-driven editing). It renders each parameter as a labelled input
-// bound to the tool's field; OK commits, Cancel aborts. Modeless: the user still picks
-// geometry in the viewport.
+// circular patterns, Slot/Chamfer/Text/Fillet/Offset, the feature pattern/modify tools —
+// instead of a bespoke cgo dialog per tool (core/09 reflection-driven editing). It
+// follows the property-panel schema: a breadcrumb naming the tool and a Behavior section
+// of label/control rows, one per parameter, with OK/Cancel beneath. Modeless: the user
+// still picks geometry in the viewport.
 
 // toolText is the persistent edit buffer for a tool's text parameter (Dear ImGui's
 // InputText needs a stable buffer across frames).
@@ -25,21 +26,25 @@ var toolText = struct {
 	open bool
 }{buf: make([]byte, 256)}
 
-// drawToolParamsDialog shows the generic parameter dialog while a parameterized tool runs.
+// drawToolParamsDialog shows the generic parameter panel while a parameterized tool runs.
 func drawToolParamsDialog(s *app.Session) {
 	title, params, ok := activeToolParams(s)
 	if !ok {
 		toolText.open = false
 		return
 	}
-	native.SetNextWindowSize(280, 240)
+	native.SetNextWindowSizeOnce(320, 280)
 	if native.Begin(title) {
-		drawToolFloatParams(params)
-		drawToolIntParams(params)
-		drawToolBoolParams(params)
-		drawToolChoiceParams(params)
-		drawToolTextParams(params)
-		drawToolParamButtons(s)
+		drawFeatureBreadcrumb(title, "")
+		if propertySection("Behavior") {
+			drawToolFloatParams(params)
+			drawToolIntParams(params)
+			drawToolBoolParams(params)
+			drawToolChoiceParams(params)
+			drawToolTextParams(params)
+		}
+		native.Separator()
+		drawCommitCancelButtons(s, s.ActiveTool().Tool().CanCommit())
 	}
 	native.End()
 }
@@ -64,6 +69,7 @@ func activeToolParams(s *app.Session) (string, app.ToolParams, bool) {
 
 func drawToolBoolParams(params app.ToolParams) {
 	for _, b := range params.Bools {
+		propertyRow("")
 		v := b.Get()
 		if native.Checkbox(b.Label, &v) {
 			b.Set(v)
@@ -72,7 +78,7 @@ func drawToolBoolParams(params app.ToolParams) {
 }
 
 // drawToolChoiceParams renders each one-of-N parameter (e.g. text alignment, font) as a
-// dropdown bound to the tool's selected index.
+// labelled dropdown row bound to the tool's selected index.
 func drawToolChoiceParams(params app.ToolParams) {
 	for _, c := range params.Choices {
 		drawToolChoice(c)
@@ -80,12 +86,14 @@ func drawToolChoiceParams(params app.ToolParams) {
 }
 
 func drawToolChoice(c app.ChoiceParam) {
+	propertyRow(c.Label)
+	native.SetNextItemWidth(propertyFieldWidth)
 	cur := c.Get()
 	preview := ""
 	if cur >= 0 && cur < len(c.Options) {
 		preview = c.Options[cur]
 	}
-	if !native.BeginCombo(c.Label, preview) {
+	if !native.BeginCombo("##tool-param-"+c.Label, preview) {
 		return
 	}
 	for i, opt := range c.Options {
@@ -98,8 +106,10 @@ func drawToolChoice(c app.ChoiceParam) {
 
 func drawToolFloatParams(params app.ToolParams) {
 	for _, f := range params.Floats {
+		propertyRow(f.Label)
+		native.SetNextItemWidth(propertyFieldWidth)
 		v := float32(f.Get())
-		if native.InputFloat(f.Label, &v) {
+		if native.InputFloat("##tool-param-"+f.Label, &v) {
 			f.Set(float64(v))
 		}
 	}
@@ -107,8 +117,10 @@ func drawToolFloatParams(params app.ToolParams) {
 
 func drawToolIntParams(params app.ToolParams) {
 	for _, n := range params.Ints {
+		propertyRow(n.Label)
+		native.SetNextItemWidth(propertyFieldWidth)
 		v := int32(n.Get())
-		if native.InputInt(n.Label, &v) {
+		if native.InputInt("##tool-param-"+n.Label, &v) {
 			n.Set(int(v))
 		}
 	}
@@ -126,21 +138,10 @@ func drawToolTextParams(params app.ToolParams) {
 		seedToolText(tp.Get())
 		toolText.open = true
 	}
-	if native.InputText(tp.Label, toolText.buf) {
+	propertyRow(tp.Label)
+	native.SetNextItemWidth(propertyComboWidth)
+	if native.InputText("##tool-param-"+tp.Label, toolText.buf) {
 		tp.Set(string(bytes.TrimRight(toolText.buf, "\x00")))
-	}
-}
-
-// drawToolParamButtons draws OK/Cancel; OK is disabled until the tool is ready.
-func drawToolParamButtons(s *app.Session) {
-	native.BeginDisabled(!s.ActiveTool().Tool().CanCommit())
-	if native.Button("OK") {
-		_ = s.OK()
-	}
-	native.EndDisabled()
-	native.SameLine()
-	if native.Button("Cancel") {
-		s.CancelTool()
 	}
 }
 
