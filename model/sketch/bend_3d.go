@@ -118,8 +118,8 @@ func unitAndLength(a, b math.Point3) (math.Vector3, float64) {
 
 // Bend3D keeps a bend's arc joined to (G0) and tangent to (G1) its two trimmed
 // lines, at the bend radius captured when it was created. The joined endpoints P1/P2
-// are usually the very point objects the arc shares with the lines (their G0
-// residuals are then identically zero), but the constraint also accepts split
+// are usually the very point objects the arc shares with the lines (no G0 rows are
+// emitted then — see appendBendJoin3D), but the constraint also accepts split
 // points — the wire addConstraint path — which it pulls together on solve.
 type Bend3D struct {
 	constraintBase
@@ -162,13 +162,25 @@ func (c *Bend3D) Residuals() []float64 {
 	re := c.Arc.End.Position().VectorTo(center)
 	d1 := c.L1.A.Position().VectorTo(c.L1.B.Position())
 	d2 := c.L2.A.Position().VectorTo(c.L2.B.Position())
-	return []float64{
-		float64(c.P1.X - c.Arc.Start.X), float64(c.P1.Y - c.Arc.Start.Y), float64(c.P1.Z - c.Arc.Start.Z), // G0 line1↔start
-		float64(c.P2.X - c.Arc.End.X), float64(c.P2.Y - c.Arc.End.Y), float64(c.P2.Z - c.Arc.End.Z), // G0 line2↔end
+	out := appendBendJoin3D(nil, c.P1, c.Arc.Start) // G0 line1↔start
+	out = appendBendJoin3D(out, c.P2, c.Arc.End)    // G0 line2↔end
+	return append(out,
 		float64(d1.Dot(rs)), float64(d2.Dot(re)), // tangency at each join
-		float64(re.LengthSquared() - rs.LengthSquared()), // end on the same circle as start
-		float64(rs.Length()) - c.Radius,                  // hold the bend radius
+		float64(re.LengthSquared()-rs.LengthSquared()), // end on the same circle as start
+		float64(rs.Length())-c.Radius,                  // hold the bend radius
+	)
+}
+
+// appendBendJoin3D appends the G0 rows pulling a split join endpoint onto its arc
+// endpoint, skipping them when both are the same point object (the AddBend3D
+// sharing): identically-zero rows carry no Jacobian rank, so they only inflated
+// the redundancy count and flagged a fresh bend over-constrained (#145 audit
+// finding on the #143 bend).
+func appendBendJoin3D(out []float64, p, arcEnd *Point3D) []float64 {
+	if p == arcEnd {
+		return out
 	}
+	return append(out, float64(p.X-arcEnd.X), float64(p.Y-arcEnd.Y), float64(p.Z-arcEnd.Z))
 }
 
 func (c *Bend3D) Variables() []*math.Scalar {

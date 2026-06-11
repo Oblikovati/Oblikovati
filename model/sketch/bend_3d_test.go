@@ -138,3 +138,37 @@ func TestBend3DRoundTrip(t *testing.T) {
 		t.Fatalf("restored sketch does not solve: %+v", res)
 	}
 }
+
+// TestAddBend3DIsNotRedundant is the regression for the #145 audit finding: a
+// fresh AddBend3D shares its join points with the arc, and the constraint used to
+// emit six identically-zero G0 rows for them — zero Jacobian rank, so the DOF
+// analysis reported the sketch over-constrained and the solve left it unhealthy.
+func TestAddBend3DIsNotRedundant(t *testing.T) {
+	s, l1, l2 := rightAngleRails(t)
+	if _, err := s.AddBend3D(l1, l2, 0.25); err != nil {
+		t.Fatalf("AddBend3D: %v", err)
+	}
+	if a := s.AnalyzeConstraints(); a.Redundant != 0 || a.Status == OverConstrained {
+		t.Errorf("DOF analysis = %+v, want no redundant equations", a)
+	}
+	if res := s.Solve(); !res.Converged || res.Status == OverConstrained {
+		t.Errorf("solve = %+v, want converged and not over-constrained", res)
+	}
+}
+
+// TestBend3DSplitJoinKeepsG0Rows pins the wire-addConstraint shape: when the join
+// endpoints are split points (not the arc's own), the two G0 rows per join must
+// stay, or the constraint could no longer pull a split bend together on solve.
+func TestBend3DSplitJoinKeepsG0Rows(t *testing.T) {
+	s := NewSketches3D().Add()
+	l1 := s.AddLine3D(gmath.P3(0, 0, 0), gmath.P3(0.75, 0, 0))
+	l2 := s.AddLine3D(gmath.P3(1, 0.25, 0), gmath.P3(1, 1, 0))
+	arc := s.AddArc3D(gmath.P3(0.75, 0.25, 0), gmath.P3(0.76, 0, 0), gmath.P3(1, 0.26, 0), true)
+	bend, err := NewBend3D(arc, l1, l2)
+	if err != nil {
+		t.Fatalf("NewBend3D: %v", err)
+	}
+	if n := len(bend.Residuals()); n != 10 {
+		t.Errorf("split-join residual rows = %d, want 10 (2×3 G0 + 2 tangency + circle + radius)", n)
+	}
+}
