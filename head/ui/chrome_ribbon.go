@@ -212,6 +212,9 @@ func drawSelectorPanel(panel app.RibbonPanel, labelY float32) string {
 // arrow listing the variant tools (the variant flyout). It returns the id of the
 // command (head or chosen variant) clicked this frame, else "".
 func drawRibbonButton(btn app.RibbonButton) string {
+	if btn.Command.Kind() == app.PopupControl {
+		return drawPopupMenuButton(btn)
+	}
 	native.BeginDisabled(!btn.Enabled)
 	clicked := drawButtonControl(btn)
 	native.EndDisabled()
@@ -222,6 +225,33 @@ func drawRibbonButton(btn app.RibbonButton) string {
 		return drawVariantDropdown(btn)
 	}
 	return ""
+}
+
+// drawPopupMenuButton renders a PopupControl (M05-F03): the button itself runs nothing —
+// it opens a menu of the control's resolved items, and choosing one returns that item's
+// command id. Unlike a split button there is no head action, so the whole face is the
+// menu trigger.
+func drawPopupMenuButton(btn app.RibbonButton) string {
+	native.BeginDisabled(!btn.Enabled)
+	if drawButtonControl(btn) {
+		native.OpenPopup(btn.Command.ID() + "##popup")
+	}
+	native.EndDisabled()
+	var chosen string
+	if native.BeginPopup(btn.Command.ID() + "##popup") {
+		for _, v := range btn.Variants {
+			native.BeginDisabled(!v.Enabled)
+			if native.Selectable(v.Label, false) {
+				chosen = v.CommandID
+			}
+			native.EndDisabled()
+			if v.Tooltip != "" {
+				native.SetItemTooltip(v.Tooltip)
+			}
+		}
+		native.EndPopup()
+	}
+	return chosen
 }
 
 // variantArrowWidth is the pixel width of a split button's dropdown arrow box — just wide

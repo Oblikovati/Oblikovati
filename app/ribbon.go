@@ -104,8 +104,13 @@ func BuildRibbon(s *Session) Ribbon {
 }
 
 // resolveVariants turns a head command's variant definitions into dropdown entries with
-// each variant's enabled state resolved against the session this frame.
+// each variant's enabled state resolved against the session this frame. A PopupControl's
+// entries come from the registry instead — its menu lists other registered commands by id
+// (M05-F03, #247).
 func resolveVariants(c *CommandDefinition, s *Session) []RibbonVariant {
+	if c.kind == PopupControl {
+		return resolvePopupItems(c, s)
+	}
 	if len(c.variants) == 0 {
 		return nil
 	}
@@ -117,6 +122,25 @@ func resolveVariants(c *CommandDefinition, s *Session) []RibbonVariant {
 			Tooltip:   v.Tooltip(),
 			Enabled:   v.IsEnabled(s),
 		}
+	}
+	return out
+}
+
+// resolvePopupItems looks a popup's item ids up in the registry, skipping unknown ids so
+// the menu shows what exists (an add-in may declare items before registering them all).
+func resolvePopupItems(c *CommandDefinition, s *Session) []RibbonVariant {
+	var out []RibbonVariant
+	for _, id := range c.popupItems {
+		item, ok := s.commands.ByID(id)
+		if !ok {
+			continue
+		}
+		out = append(out, RibbonVariant{
+			CommandID: item.ID(),
+			Label:     item.DisplayName(),
+			Tooltip:   item.Tooltip(),
+			Enabled:   item.IsEnabled(s),
+		})
 	}
 	return out
 }

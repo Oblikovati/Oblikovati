@@ -53,7 +53,26 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
 			return relayEdit(sink, e)
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.BrowserPaneNodeActivated) event.Outcome {
+			return relayJSON(sink, wire.BrowserNodeEvent{
+				Type: wire.EventBrowserNode, Pane: e.Pane, Node: e.Node, Gesture: e.Gesture,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.DockableWindowChanged) event.Outcome {
+			return relayJSON(sink, wire.DockableWindowChangedEvent{
+				Type: wire.EventDockableWindowChanged, ID: e.ID, Visible: e.Visible,
+			})
+		}),
 	}
+}
+
+// relayJSON serializes a wire event DTO and hands it to sink (passive listener).
+// Generic so each call site stays statically typed (the house no-`any` rule).
+func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent](sink Sink, ev E) event.Outcome {
+	if b, err := json.Marshal(ev); err == nil {
+		sink(b)
+	}
+	return event.Continue()
 }
 
 // relayEdit serializes a committed edit as the contract's [wire.EditCommittedEvent] (the

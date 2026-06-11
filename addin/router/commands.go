@@ -44,9 +44,14 @@ func createCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error
 	}
 	cmd := app.NewCommand(in.ID, in.DisplayName, in.Category, func(*app.Session) error { return nil }).
 		WithTab(in.Tab).WithEnvironment(in.Environment).WithAlias(in.Alias).WithTooltip(in.Tooltip).
-		WithIcon(in.Icon).WithButtonStyle(in.ButtonStyle)
+		WithIcon(in.Icon).WithButtonStyle(in.ButtonStyle).WithKind(in.Kind)
 	if in.Ribbon != "" {
 		cmd.WithRibbons(in.Ribbon)
+	}
+	// A PopupControl lists other registered commands by id (the CommandBarPopUp
+	// equivalent, M05-F03); unknown ids are skipped at ribbon-build time.
+	if in.Kind == app.PopupControl || len(in.Items) > 0 {
+		cmd.WithPopupItems(in.Items...)
 	}
 	if err := s.Commands().Add(cmd); err != nil {
 		return nil, err

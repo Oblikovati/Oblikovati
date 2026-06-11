@@ -14,6 +14,7 @@ void obk_ig_end_menu(void);
 int  obk_ig_menu_item(const char* label);
 int  obk_ig_menu_item_ex(const char* label, const char* shortcut, int enabled);
 int  obk_ig_begin(const char* name);
+int  obk_ig_begin_closable(const char* name, int* open);
 void obk_ig_end(void);
 void obk_ig_text(const char* s);
 int  obk_ig_button(const char* label);
@@ -99,6 +100,8 @@ int  obk_ig_table_next_column(void);
 void obk_ig_end_table(void);
 void obk_ig_set_next_item_width(float w);
 void obk_ig_push_id_int(int id);
+void obk_ig_push_id_str(const char* id);
+int  obk_ig_is_item_toggled_open(void);
 void obk_ig_pop_id(void);
 int  obk_ig_is_item_deactivated_after_edit(void);
 
@@ -119,7 +122,9 @@ int  obk_ig_begin_combo(const char* label, const char* preview);
 void obk_ig_end_combo(void);
 
 unsigned int obk_ig_dockspace_over_main(void);
-void obk_ig_dock_default_layout(unsigned int dockId, const char* model, const char* viewport, const char* status);
+void obk_ig_dock_default_layout(unsigned int dockId, const char* model, const char* viewport, const char* status, unsigned int* outLeft, unsigned int* outBottom, unsigned int* outCenter);
+unsigned int obk_ig_dock_split(unsigned int* nodeId, int dir, float ratio);
+void obk_ig_set_next_window_dock(unsigned int nodeId);
 
 // Synthetic-input injection for in-window UI tests (defined in app.cpp).
 void obk_inject_mouse_pos(float x, float y);
@@ -179,6 +184,18 @@ func Begin(name string) bool {
 	return C.obk_ig_begin(c) != 0
 }
 func End() { C.obk_ig_end() }
+
+// BeginClosable is Begin with ImGui's title-bar close button: it reports whether
+// the content is visible and whether the window is still open (false the frame the
+// user clicks the X) — used by add-in dockable windows so closing reaches the
+// owning add-in as a visibility event (M05-F03). Pair with End like Begin.
+func BeginClosable(name string) (visible, open bool) {
+	c, free := cstr(name)
+	defer free()
+	cOpen := C.int(1)
+	v := C.obk_ig_begin_closable(c, &cOpen)
+	return v != 0, cOpen != 0
+}
 
 // Text draws a line of unformatted text.
 func Text(s string) {
@@ -396,7 +413,20 @@ func SetNextItemWidth(w float32) { C.obk_ig_set_next_item_width(C.float(w)) }
 // PushIDInt / PopID scope an integer id (a parameter's id) so identical cell-widget
 // labels across rows do not collide. Pair every PushIDInt with a PopID.
 func PushIDInt(id int) { C.obk_ig_push_id_int(C.int(id)) }
-func PopID()           { C.obk_ig_pop_id() }
+
+// PushID pushes a string id onto ImGui's id stack — for rows whose ids come from
+// declared data (add-in pane nodes) rather than a frame-local counter.
+func PushID(id string) {
+	c, free := cstr(id)
+	defer free()
+	C.obk_ig_push_id_str(c)
+}
+
+// IsItemToggledOpen reports whether the last tree node was opened or closed by this
+// frame's interaction — how the browser detects an expand/collapse gesture to report
+// to the owning add-in (M05-F03).
+func IsItemToggledOpen() bool { return C.obk_ig_is_item_toggled_open() != 0 }
+func PopID()                  { C.obk_ig_pop_id() }
 
 // IsItemDeactivatedAfterEdit reports whether the most recent item was edited and then
 // committed this frame (Enter or focus loss) — so a text cell commits once the user is
@@ -656,19 +686,39 @@ func SetNextWindowSizeOnce(w, h float32) {
 // below the fixed chrome. Call it once per frame before the panels.
 func DockSpaceOverMain() uint32 { return uint32(C.obk_ig_dockspace_over_main()) }
 
+// DockSideNodes are the dock-node ids of the default arrangement, so late-created
+// windows (add-in dockable windows, M05-F03) can be docked beside the built-ins.
+type DockSideNodes struct{ Left, Bottom, Center uint32 }
+
 // DockDefaultLayout arranges the named panels once: model left, status bottom, viewport
-// filling the center. Call it a single time after the first DockSpaceOverMain (the
-// names must match the panels' Begin() titles). The ribbon is not docked — it is a
-// fixed band drawn with BeginRibbonBand.
-func DockDefaultLayout(dockID uint32, model, viewport, status string) {
+// filling the center, returning the side node ids. Call it a single time after the
+// first DockSpaceOverMain (the names must match the panels' Begin() titles). The
+// ribbon is not docked — it is a fixed band drawn with BeginRibbonBand.
+func DockDefaultLayout(dockID uint32, model, viewport, status string) DockSideNodes {
 	cm, fm := cstr(model)
 	defer fm()
 	cv, fv := cstr(viewport)
 	defer fv()
 	cs, fs := cstr(status)
 	defer fs()
-	C.obk_ig_dock_default_layout(C.uint(dockID), cm, cv, cs)
+	var left, bottom, center C.uint
+	C.obk_ig_dock_default_layout(C.uint(dockID), cm, cv, cs, &left, &bottom, &center)
+	return DockSideNodes{Left: uint32(left), Bottom: uint32(bottom), Center: uint32(center)}
 }
+
+// DockSplit carves a new node off *node (ImGuiDir: 0=left, 1=right, 2=up, 3=down)
+// at the given ratio, returning the new node's id; *node becomes the remainder.
+// Used to create a band on demand for an add-in window.
+func DockSplit(node *uint32, dir int, ratio float32) uint32 {
+	cNode := C.uint(*node)
+	fresh := C.obk_ig_dock_split(&cNode, C.int(dir), C.float(ratio))
+	*node = uint32(cNode)
+	return uint32(fresh)
+}
+
+// SetNextWindowDock docks the next Begin'd window into the given node on its first
+// appearance; the user's later re-docking wins.
+func SetNextWindowDock(nodeID uint32) { C.obk_ig_set_next_window_dock(C.uint(nodeID)) }
 
 // BeginRibbonBand pins a full-width band of the given height across the top of the main
 // viewport, under the menu bar. The band is fixed chrome: not movable, resizable, or

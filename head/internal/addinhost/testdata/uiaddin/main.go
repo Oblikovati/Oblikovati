@@ -68,6 +68,17 @@ func ObkAddInActivate(call C.HostCall, free C.HostFree) C.int {
 	if _, ok := callHost("commands.create", req); !ok {
 		return C.OBK_ERR
 	}
+	// Extend the browser: declare a pane with one clickable node (M05-F03 #256).
+	pane, _ := json.Marshal(map[string]any{
+		"pane": map[string]any{
+			"id":    "fixture-pane",
+			"title": "Fixture",
+			"nodes": []map[string]any{{"id": "ping-node", "label": "Ping Node"}},
+		},
+	})
+	if _, ok := callHost("browser.setPane", pane); !ok {
+		return C.OBK_ERR
+	}
 	return C.OBK_OK
 }
 
@@ -78,6 +89,9 @@ func ObkAddInDeactivate() C.int { return C.OBK_OK }
 type hostEvent struct {
 	Type    string `json:"type"`
 	Command string `json:"command"`
+	Pane    string `json:"pane"`
+	Node    string `json:"node"`
+	Gesture string `json:"gesture"`
 }
 
 //export ObkAddInNotify
@@ -89,7 +103,17 @@ func ObkAddInNotify(ev *C.uint8_t, n C.int) C.int {
 	if e.Type == "command.ended" && e.Command == buttonID {
 		go runButtonAction() // off the session goroutine — see the package comment
 	}
+	if e.Type == "browser.node" && e.Node == "ping-node" && e.Gesture == "select" {
+		go runPaneNodeAction() // the #256 acceptance: a custom node responding to clicks
+	}
 	return C.OBK_OK
+}
+
+// runPaneNodeAction is the pane node's click behavior: create a document so the test
+// can observe the round trip pane-click → browser.node event → host call.
+func runPaneNodeAction() {
+	req, _ := json.Marshal(map[string]any{"type": "part", "name": "FromPaneClick"})
+	callHost("documents.create", req)
 }
 
 // runButtonAction is the button's behavior: create a part document through the host

@@ -27,6 +27,12 @@ void obk_ig_set_next_window_size_first_use(float w, float h) {
     ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver);
 }
 int  obk_ig_begin(const char* name)          { return ImGui::Begin(name) ? 1 : 0; }
+int  obk_ig_begin_closable(const char* name, int* open) {
+    bool p_open = (*open != 0);
+    int visible = ImGui::Begin(name, &p_open) ? 1 : 0;
+    *open = p_open ? 1 : 0;
+    return visible;
+}
 void obk_ig_end(void)                        { ImGui::End(); }
 void obk_ig_text(const char* s)              { ImGui::TextUnformatted(s); }
 int  obk_ig_button(const char* label)        { return ImGui::Button(label) ? 1 : 0; }
@@ -255,6 +261,8 @@ int  obk_ig_table_next_column(void)                    { return ImGui::TableNext
 void obk_ig_end_table(void)                            { ImGui::EndTable(); }
 void obk_ig_set_next_item_width(float w)               { ImGui::SetNextItemWidth(w); }
 void obk_ig_push_id_int(int id)                        { ImGui::PushID(id); }
+void obk_ig_push_id_str(const char* id)                { ImGui::PushID(id); }
+int  obk_ig_is_item_toggled_open(void)                 { return ImGui::IsItemToggledOpen() ? 1 : 0; }
 void obk_ig_pop_id(void)                               { ImGui::PopID(); }
 int  obk_ig_is_item_deactivated_after_edit(void)       { return ImGui::IsItemDeactivatedAfterEdit() ? 1 : 0; }
 

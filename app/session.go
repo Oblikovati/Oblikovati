@@ -48,6 +48,8 @@ type Session struct {
 	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins             *AddInManager
 	clientApps         *ClientApplicationRegistry // external automation drivers (M05-F01)
+	browserPanes       *AddInBrowserPanes         // add-in browser panes (M05-F03)
+	dockableWindows    *AddInDockableWindows      // add-in dockable windows (M05-F03)
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
@@ -98,17 +100,19 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	s := &Session{
-		workspace:      doc.NewWorkspace(store),
-		commands:       NewCommandManager(),
-		histories:      map[doc.ID]*docHistory{},
-		bus:            event.NewBus(),
-		selection:      NewSelection(),
-		camera:         scene.NewCamera(800, 600),
-		hiddenBodyKeys: map[string]bool{},
-		graphics:       clientgraphics.NewStore(),
-		addins:         NewAddInManager(),
-		clientApps:     NewClientApplicationRegistry(),
-		visualStyle:    renderer.ShadedWithEdges,
+		workspace:       doc.NewWorkspace(store),
+		commands:        NewCommandManager(),
+		histories:       map[doc.ID]*docHistory{},
+		bus:             event.NewBus(),
+		selection:       NewSelection(),
+		camera:          scene.NewCamera(800, 600),
+		hiddenBodyKeys:  map[string]bool{},
+		graphics:        clientgraphics.NewStore(),
+		addins:          NewAddInManager(),
+		clientApps:      NewClientApplicationRegistry(),
+		browserPanes:    NewAddInBrowserPanes(),
+		dockableWindows: NewAddInDockableWindows(),
+		visualStyle:     renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now
 		// that the whole rig lights every shaded mode (ADR-0026 §8).

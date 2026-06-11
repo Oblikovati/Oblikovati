@@ -65,10 +65,15 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 func layoutDockedPanels() {
 	dockID := native.DockSpaceOverMain()
 	if !dockLaidOut {
-		native.DockDefaultLayout(dockID, "Model", "Viewport", "Status")
+		dockSideNodes = native.DockDefaultLayout(dockID, "Model", "Viewport", "Status")
+		addInDockRightNode = 0 // any lazily split right band died with the old layout
 		dockLaidOut = true
 	}
 }
+
+// dockSideNodes remembers the default arrangement's node ids so add-in dockable
+// windows can be docked beside the built-in panels on first show (M05-F03).
+var dockSideNodes native.DockSideNodes
 
 func drawViewportIfPresent(win *native.Window, s *app.Session) {
 	if shouldDrawViewport(s) {
@@ -115,6 +120,7 @@ func drawChromeWindows(s *app.Session) {
 	drawMaterialsWindow(s)
 	drawLightingWindow(s)
 	drawScriptConsole(s)
+	drawAddInPanels(s)                  // add-in dockable windows (M05-F03)
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
 		fileModal.openFor(dialogLoadHDR)
 	}

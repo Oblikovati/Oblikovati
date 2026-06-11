@@ -21,19 +21,18 @@ const (
 	CompactIconButton = types.CompactIconButton
 )
 
-// ControlKind is the UI control a command presents as — Inventor's ControlDefinition
-// kinds. The ribbon (ImGui) renders the right widget per kind; the logic is identical.
-type ControlKind uint8
+// ControlKind is the UI control a command presents as — the ControlDefinition
+// kinds. Defined once in the Apache-2.0 contract ([types.ControlKind], M05-F03);
+// this alias keeps the app.ButtonControl spelling local to the implementation
+// (ADR-0018). The ribbon (ImGui) renders the right widget per kind.
+type ControlKind = types.ControlKind
 
 const (
-	// ButtonControl: a one-shot command button (the default).
-	ButtonControl ControlKind = iota
-	// ToggleControl: a checkbox/toggle button.
-	ToggleControl
-	// ComboControl: a drop-down list.
-	ComboControl
-	// SpinnerControl: a numeric spinner.
-	SpinnerControl
+	ButtonControl  = types.ButtonControl
+	ToggleControl  = types.ToggleControl
+	ComboControl   = types.ComboControl
+	SpinnerControl = types.SpinnerControl
+	PopupControl   = types.PopupControl
 )
 
 // CommandDefinition is a registered command — Inventor's ControlDefinition plus its
@@ -60,6 +59,7 @@ type CommandDefinition struct {
 	run              func(*Session) error
 	variants         []*CommandDefinition // split-button dropdown entries (Inventor's variant flyout)
 	isVariant        bool                 // true ⇒ reachable only via a head command's dropdown, never its own panel button
+	popupItems       []string             // for PopupControl: ids of the registered commands its menu lists (M05-F03)
 }
 
 // NewCommand starts a command definition with the required fields. Use the With*
@@ -133,6 +133,20 @@ func (c *CommandDefinition) WithVariants(variants ...*CommandDefinition) *Comman
 // Variants returns this command's split-button dropdown entries (nil if it is a plain
 // button). The slice is the live backing array; callers must not mutate it.
 func (c *CommandDefinition) Variants() []*CommandDefinition { return c.variants }
+
+// WithPopupItems makes this command a PopupControl listing other REGISTERED commands
+// by id — the CommandBarPopUp equivalent (M05-F03, #247). Unlike WithVariants, the
+// items are ordinary commands resolved from the registry at ribbon-build time, so an
+// add-in can group its existing buttons under one menu without re-declaring them.
+// Unknown ids are skipped at build time (the menu shows what exists).
+func (c *CommandDefinition) WithPopupItems(ids ...string) *CommandDefinition {
+	c.kind = PopupControl
+	c.popupItems = ids
+	return c
+}
+
+// PopupItems returns the command ids a PopupControl lists (nil otherwise).
+func (c *CommandDefinition) PopupItems() []string { return c.popupItems }
 
 // WithActive sets the predicate that reports whether this command is the *current* selection
 // of its combo group — used to drive the highlighted item of a ribbon selection box (a panel
