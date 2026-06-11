@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-// Package blenderxml reads and writes Blender theme XML documents (`<bpy><Theme>…`) as a
-// generic element tree. The Blender schema is huge and versioned, so we never model it
-// with structs: every element/attribute is kept verbatim, which lets a theme file
-// round-trip through load → edit → save without losing the hundreds of attributes the
-// application does not map (ADR-0032). The theme package addresses colors inside the
-// tree by element path + attribute name.
+// Package blenderxml reads and writes attribute-carrying XML documents as a generic
+// element tree. It was built for Blender theme files (`<bpy><Theme>…`): the Blender
+// schema is huge and versioned, so we never model it with structs — every element and
+// attribute is kept verbatim, which lets a theme file round-trip through load → edit →
+// save without losing the hundreds of attributes the application does not map
+// (ADR-0032). The theme package addresses colors inside the tree by element path +
+// attribute name; the head's icon package reuses the same tree to split SVG glyphs
+// into color-role layers (ADR-0033).
 package blenderxml
 
 import (

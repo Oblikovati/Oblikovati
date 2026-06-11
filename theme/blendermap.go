@@ -75,8 +75,14 @@ var directBindings = map[Token]directBinding{
 	types.TokenPlaneSelected:      {pathView3D, "object_active", false},
 	types.TokenPlaneFill:          {pathView3D, "face", false},
 	types.TokenSelectionHighlight: {pathView3D, "object_selected", false},
-	// Icons ← toolbar button text (Blender tints mono icons with widget text).
-	types.TokenIconTint: {wcol("wcol_toolbar_item"), "text", false},
+	// Icons ← Blender's own icon category colors (ThemeUserInterface icon_* slots):
+	// the neutral collection gray is the main linework, the object color the accent,
+	// the modifier color the detail layer; the plate reuses the translucent sub-panel
+	// backdrop, the closest thing Blender has to an "behind a glyph" surface.
+	types.TokenIconPrimary:    {pathUI, "icon_collection", false},
+	types.TokenIconSecondary:  {pathUI, "icon_object", false},
+	types.TokenIconTertiary:   {pathUI, "icon_modifier", false},
+	types.TokenIconBackground: {pathUI, "panel_sub_back", false},
 }
 
 // derivedBinding computes a token from an already-resolved base token: mix blends the
@@ -98,7 +104,6 @@ var derivedBindings = map[Token]derivedBinding{
 	types.TokenChromeButtonHover:   {base: types.TokenChromeButton, mix: 0.10},
 	types.TokenGridMajor:           {base: types.TokenGridMinor, alphaScale: 2},
 	types.TokenGridAxis:            {base: types.TokenGridMinor, alphaScale: 3},
-	types.TokenIconDisabled:        {base: types.TokenIconTint, alphaScale: 0.5},
 }
 
 // resolvePalette extracts a complete palette from a Blender theme document: direct

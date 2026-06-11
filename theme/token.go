@@ -86,8 +86,10 @@ var tokenInfos = map[Token]TokenInfo{
 	types.TokenPlaneSelected:        {types.TokenPlaneSelected, "Work plane (selected)", GroupGizmos},
 	types.TokenPlaneFill:            {types.TokenPlaneFill, "Work plane fill (alpha = opacity)", GroupGizmos},
 	types.TokenSelectionHighlight:   {types.TokenSelectionHighlight, "Selection highlight", GroupGizmos},
-	types.TokenIconTint:             {types.TokenIconTint, "Icon tint", GroupIcons},
-	types.TokenIconDisabled:         {types.TokenIconDisabled, "Icon (disabled)", GroupIcons},
+	types.TokenIconPrimary:          {types.TokenIconPrimary, "Icon (primary linework)", GroupIcons},
+	types.TokenIconSecondary:        {types.TokenIconSecondary, "Icon (secondary accent)", GroupIcons},
+	types.TokenIconTertiary:         {types.TokenIconTertiary, "Icon (tertiary detail)", GroupIcons},
+	types.TokenIconBackground:       {types.TokenIconBackground, "Icon background plate", GroupIcons},
 }
 
 // InfoFor returns the editor metadata for a token, falling back to a self-labeled entry
