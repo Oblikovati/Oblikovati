@@ -50,6 +50,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerMessagingHandlers()
 	r.registerMiniToolbarHandlers()
 	r.registerDialogHandlers()
+	r.registerWindowHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r

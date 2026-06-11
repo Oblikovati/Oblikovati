@@ -67,6 +67,7 @@ type Session struct {
 	webViews           map[string]wire.WebDialogSpec // presented web views (M05-F08)
 	webViewOrder       []string                      // web views in creation order
 	urlOpener          URLOpener                     // platform URL opener (head-injected)
+	windowFrame        WindowFrameStatus             // mirrored host-window state (M05-F10)
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
