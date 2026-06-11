@@ -40,23 +40,16 @@ func DefaultRoot() (string, error) {
 	return userconfig.Dir()
 }
 
-// themeFile is the on-disk YAML shape of one custom theme: a name and the full color
-// snapshot as "#RRGGBBAA" hex. Kind is always custom (built-ins are not saved), so it is
-// not stored.
-type themeFile struct {
-	Name   string            `yaml:"name"`
-	Colors map[string]string `yaml:"colors"`
-}
-
 // prefsFile is the tiny preferences document holding the selected theme's name.
 type prefsFile struct {
 	ActiveTheme string `yaml:"activeTheme"`
 }
 
-// Load reads the active-theme preference and every custom theme file. A missing config
-// dir (first run) yields no customs and an empty active name — [NewLibrary] then falls
-// back to the Dark default. A single malformed theme file is skipped (its error is
-// returned alongside the good ones) rather than aborting the whole load.
+// Load reads the active-theme preference and every custom theme file — Blender XML
+// documents (ADR-0032). A missing config dir (first run) yields no customs and an
+// empty active name — [NewLibrary] then falls back to the Dark default. A single
+// malformed theme file is skipped (its error is returned alongside the good ones)
+// rather than aborting the whole load.
 func (s *Store) Load() (customs []*Theme, active string, err error) {
 	active = s.loadActive()
 	names, derr := s.fs.ReadDir(s.themesDir())
@@ -65,7 +58,7 @@ func (s *Store) Load() (customs []*Theme, active string, err error) {
 	}
 	sort.Strings(names) // deterministic load order
 	for _, name := range names {
-		if !strings.HasSuffix(name, ".yaml") {
+		if !strings.HasSuffix(name, ".xml") {
 			continue
 		}
 		t, lerr := s.loadTheme(filepath.Join(s.themesDir(), name))
@@ -78,15 +71,15 @@ func (s *Store) Load() (customs []*Theme, active string, err error) {
 	return customs, active, err
 }
 
-// SaveTheme writes one custom theme to its file. It errors (rather than silently
-// skipping) when asked to persist a built-in, which has no business on disk.
+// SaveTheme writes one custom theme to its Blender XML file. It errors (rather than
+// silently skipping) when asked to persist a built-in, which has no business on disk.
 func (s *Store) SaveTheme(t *Theme) error {
 	if t.Kind() != KindCustom {
 		return fmt.Errorf("theme: refusing to save built-in %q", t.Name())
 	}
-	data, err := yamlcodec.Marshal(themeFile{Name: t.Name(), Colors: t.Palette().Hex()})
+	data, err := encodeThemeXML(t)
 	if err != nil {
-		return fmt.Errorf("theme: marshal %q: %w", t.Name(), err)
+		return err
 	}
 	return s.fs.WriteFile(s.themePath(t.Name()), data)
 }
@@ -119,30 +112,26 @@ func (s *Store) loadActive() string {
 	return p.ActiveTheme
 }
 
-// loadTheme decodes one custom theme file into a Theme, naming the file on any error.
+// loadTheme decodes one Blender XML theme file into a Theme, naming the file on any
+// error. A plain Blender export (no oblikovati_tokens section) is named after its file
+// base — that is how a downloaded Blender theme dropped into the directory gets a name.
 func (s *Store) loadTheme(path string) (*Theme, error) {
 	data, err := s.fs.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("theme: read %q: %w", path, err)
 	}
-	var tf themeFile
-	if err := yamlcodec.Unmarshal(data, &tf); err != nil {
-		return nil, fmt.Errorf("theme: parse %q: %w", path, err)
-	}
-	if tf.Name == "" {
-		return nil, fmt.Errorf("theme: %q has no name", path)
-	}
-	palette, err := NewPalette(tf.Colors)
+	base := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	t, err := decodeThemeXML(data, base, KindCustom)
 	if err != nil {
 		return nil, fmt.Errorf("theme: %q: %w", path, err)
 	}
-	return New(tf.Name, KindCustom, palette), nil
+	return t, nil
 }
 
 func (s *Store) themesDir() string { return filepath.Join(s.root, "themes") }
 func (s *Store) prefsPath() string { return filepath.Join(s.root, "preferences.yaml") }
 func (s *Store) themePath(n string) string {
-	return filepath.Join(s.themesDir(), slug(n)+".yaml")
+	return filepath.Join(s.themesDir(), slug(n)+".xml")
 }
 
 // slug turns a theme name into a safe file base: lower-case, non-alphanumerics collapsed
