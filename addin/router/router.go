@@ -70,8 +70,7 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodModelSelection] = modelSelection
 	r.handlers[wire.MethodModelReferenceKeys] = referenceKeys
 	r.registerSketchHandlers()
-	r.handlers[wire.MethodFeaturesList] = r.listFeatureKinds
-	r.handlers[wire.MethodFeaturesAdd] = r.addFeature
+	r.registerFeatureHandlers()
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
 	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodWorkPlanesRedefine] = redefineWorkPlane
@@ -287,6 +286,11 @@ var mutatingMethods = map[string]bool{
 	wire.MethodParametersAdd:          true,
 	wire.MethodParametersSet:          true,
 	wire.MethodFeaturesAdd:            true,
+	wire.MethodFeaturesEdit:           true,
+	wire.MethodFeaturesDelete:         true,
+	wire.MethodFeaturesRename:         true,
+	wire.MethodFeaturesSetSuppressed:  true,
+	wire.MethodFeaturesReorder:        true,
 	wire.MethodWorkPlanesCreate:       true,
 	wire.MethodWorkPlanesRedefine:     true,
 	wire.MethodWorkPointsCreate:       true,

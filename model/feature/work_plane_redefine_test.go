@@ -33,7 +33,9 @@ func TestRedefineThreePointPlaneRepicksPoint(t *testing.T) {
 
 	// Re-point the third corner above the XY plane so the plane tilts off +Z.
 	up := g.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(0, 1, 1) })
-	slots[2].Set(up.Key())
+	if err := slots[2].Set(up.Key()); err != nil {
+		t.Fatalf("re-pick point 3: %v", err)
+	}
 	g.Recompute(nil)
 	if wp.Plane().Normal().AsVector().IsEqualTo(math.V3(0, 0, 1), wtol) {
 		t.Errorf("after re-picking point 3, plane normal still +Z (%v) — redefine did not take", wp.Plane().Normal())

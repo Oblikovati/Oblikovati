@@ -25,12 +25,7 @@ func modelTree(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	feats := part.Features()
 	fis := make([]wire.FeatureInfo, feats.Count())
 	for i := 0; i < feats.Count(); i++ {
-		f := feats.Item(i)
-		fi := wire.FeatureInfo{ID: uint64(f.ID()), Name: f.Name(), Kind: f.Kind(), Suppressed: f.Suppressed()}
-		if h := f.Health(); !h.OK() {
-			fi.Health = h.Reason
-		}
-		fis[i] = fi
+		fis[i] = featureInfo(feats.Item(i))
 	}
 	return json.Marshal(wire.ModelTreeResult{
 		Document:   s.ActiveDocument().DisplayName(),

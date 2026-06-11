@@ -105,15 +105,8 @@ func (s *Session) ToggleSketchShared(sk *sketch.Sketch) error {
 // ToggleFeatureSuppressed flips a feature's explicit suppression and recomputes, so the
 // part rebuilds with or without that feature's contribution.
 func (s *Session) ToggleFeatureSuppressed(f *feature.PartFeature) error {
-	part, err := activePart(s)
-	if err != nil {
-		return err
-	}
 	if f == nil {
 		return errors.New("app: ToggleFeatureSuppressed with nil feature")
 	}
-	f.SetSuppressed(!f.Suppressed())
-	part.Recompute()
-	s.recordEdit(part, "Suppress Feature")
-	return nil
+	return s.SetFeatureSuppressed(f, !f.Suppressed())
 }
