@@ -44,9 +44,14 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       version: ${{ needs.guard.outputs.version }}
-    # macOS signing/notarization reads MACOS_* repo secrets; without inherit the
-    # reusable workflow can't see them and skips the macOS release.
-    secrets: inherit
+    # macOS signing/notarization reads exactly these MACOS_* repo secrets — passed
+    # explicitly (not inherit) so the reusable workflow sees nothing else.
+    secrets:
+      MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+      MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+      MACOS_AC_APPLE_ID: ${{ secrets.MACOS_AC_APPLE_ID }}
+      MACOS_AC_PASSWORD: ${{ secrets.MACOS_AC_PASSWORD }}
+      MACOS_AC_TEAM_ID: ${{ secrets.MACOS_AC_TEAM_ID }}
 
   publish:
     needs: [guard, build]
