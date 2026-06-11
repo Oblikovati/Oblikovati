@@ -24,11 +24,15 @@ typedef const char* (*strFn)(void);
 typedef int  (*activateFn)(ObkHostCall, ObkHostFree);
 typedef int  (*voidFn)(void);
 typedef int  (*notifyFn)(const uint8_t*, int);
+typedef int  (*automationFn)(const char*, const uint8_t*, int, uint8_t**, int*);
+typedef void (*freeFn)(uint8_t*);
 
 static const char* call_str(void* fn)               { return ((strFn)fn)(); }
 static int  call_activate(void* fn)                  { return ((activateFn)fn)((ObkHostCall)ObkHostDispatch, (ObkHostFree)ObkHostReleaseBuf); }
 static int  call_void(void* fn)                      { return ((voidFn)fn)(); }
 static int  call_notify(void* fn, const uint8_t* ev, int n) { return ((notifyFn)fn)(ev, n); }
+static int  call_automation(void* fn, const char* method, const uint8_t* req, int n, uint8_t** resp, int* respLen) { return ((automationFn)fn)(method, req, n, resp, respLen); }
+static void call_addin_free(void* fn, uint8_t* p)    { ((freeFn)fn)(p); }
 */
 import "C"
 
@@ -37,7 +41,10 @@ import (
 	"unsafe"
 )
 
-// unixLib is a dlopen'd add-in with its resolved C entry points.
+// unixLib is a dlopen'd add-in with its resolved C entry points. autoSym is the
+// OPTIONAL ObkAddInAutomation export (nil when the add-in has no automation
+// surface, M05-F01 #252); freeSym is the add-in's ObkFree, which releases the
+// buffers automation hands back across the runtime boundary.
 type unixLib struct {
 	handle   unsafe.Pointer
 	idSym    unsafe.Pointer
@@ -45,6 +52,8 @@ type unixLib struct {
 	actSym   unsafe.Pointer
 	deactSym unsafe.Pointer
 	notifSym unsafe.Pointer
+	freeSym  unsafe.Pointer
+	autoSym  unsafe.Pointer
 	path     string
 }
 
@@ -66,6 +75,7 @@ func openLibrary(path string) (addInLib, error) {
 		{"ObkAddInActivate", &l.actSym},
 		{"ObkAddInDeactivate", &l.deactSym},
 		{"ObkAddInNotify", &l.notifSym},
+		{"ObkFree", &l.freeSym},
 	}
 	for _, s := range syms {
 		p, err := resolve(h, s.name)
@@ -75,7 +85,16 @@ func openLibrary(path string) (addInLib, error) {
 		}
 		*s.dst = p
 	}
+	// Automation is an optional export: absence just means hasAutomation() is false.
+	l.autoSym = resolveOptional(h, "ObkAddInAutomation")
 	return l, nil
+}
+
+// resolveOptional looks up a symbol the contract marks optional; nil means absent.
+func resolveOptional(h unsafe.Pointer, name string) unsafe.Pointer {
+	cn := C.CString(name)
+	defer C.free(unsafe.Pointer(cn))
+	return C.dlsym(h, cn)
 }
 
 // resolve looks up a required symbol, returning a descriptive error if absent.
@@ -115,6 +134,35 @@ func (l *unixLib) notify(b []byte) error {
 		return fmt.Errorf("addinhost: ObkAddInNotify %q returned %d", l.path, int(rc))
 	}
 	return nil
+}
+
+func (l *unixLib) hasAutomation() bool { return l.autoSym != nil }
+
+// automation invokes the add-in's optional ObkAddInAutomation export. The reply
+// buffer is allocated by the add-in's runtime, so it is copied out and released
+// through the add-in's own ObkFree (the cross-runtime ownership rule of the header).
+func (l *unixLib) automation(method string, req []byte) ([]byte, error) {
+	if l.autoSym == nil {
+		return nil, fmt.Errorf("addinhost: add-in %q exports no ObkAddInAutomation", l.path)
+	}
+	cm := C.CString(method)
+	defer C.free(unsafe.Pointer(cm))
+	var reqPtr *C.uint8_t
+	if len(req) > 0 {
+		reqPtr = (*C.uint8_t)(unsafe.Pointer(&req[0]))
+	}
+	var resp *C.uint8_t
+	var respLen C.int
+	rc := C.call_automation(l.autoSym, cm, reqPtr, C.int(len(req)), &resp, &respLen) //nolint:gocritic // dupSubExpr false positive from cgo's generated call site
+	var out []byte
+	if resp != nil {
+		out = C.GoBytes(unsafe.Pointer(resp), respLen)
+		C.call_addin_free(l.freeSym, resp)
+	}
+	if rc != C.int(C.OBK_OK) {
+		return nil, fmt.Errorf("addinhost: automation %q on %q failed: %s", method, l.path, string(out))
+	}
+	return out, nil
 }
 
 func (l *unixLib) close() error {

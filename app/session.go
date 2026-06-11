@@ -47,6 +47,7 @@ type Session struct {
 	hiddenBodyKeys     map[string]bool
 	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins             *AddInManager
+	clientApps         *ClientApplicationRegistry // external automation drivers (M05-F01)
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
@@ -106,6 +107,7 @@ func newSession(store doc.Store) *Session {
 		hiddenBodyKeys: map[string]bool{},
 		graphics:       clientgraphics.NewStore(),
 		addins:         NewAddInManager(),
+		clientApps:     NewClientApplicationRegistry(),
 		visualStyle:    renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now
@@ -122,6 +124,9 @@ func newSession(store doc.Store) *Session {
 
 // AddIns returns the add-in registry (ApplicationAddIns).
 func (s *Session) AddIns() *AddInManager { return s.addins }
+
+// ClientApps returns the external-client registry (ClientApplications).
+func (s *Session) ClientApps() *ClientApplicationRegistry { return s.clientApps }
 
 // Camera returns the active view's camera sized to the current viewport. Camera state is
 // per-view — a document owns a Views collection and each view owns a camera — so switching

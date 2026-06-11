@@ -61,4 +61,21 @@ func ObkAddInNotify(ev *C.uint8_t, n C.int) C.int { return C.OBK_OK }
 //export ObkFree
 func ObkFree(p *C.uint8_t) { C.free(unsafe.Pointer(p)) }
 
+// ObkAddInAutomation is the OPTIONAL automation export (M05-F01 #252): it echoes
+// the method and payload back as JSON so the host-side automation round-trip test
+// can assert the buffer crossed both runtimes intact. Allocated with C.CBytes so
+// the host's release through ObkFree (C.free) matches.
+//
+//export ObkAddInAutomation
+func ObkAddInAutomation(method *C.char, req *C.uint8_t, n C.int, resp **C.uint8_t, respLen *C.int) C.int {
+	var payload []byte
+	if req != nil {
+		payload = C.GoBytes(unsafe.Pointer(req), n)
+	}
+	out := []byte(`{"method":"` + C.GoString(method) + `","payload":"` + string(payload) + `"}`)
+	*resp = (*C.uint8_t)(C.CBytes(out))
+	*respLen = C.int(len(out))
+	return C.OBK_OK
+}
+
 func main() {}
