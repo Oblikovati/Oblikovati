@@ -62,10 +62,20 @@ def go_files() -> list[Path]:
     ]
 
 
+def inside_root(path: Path) -> Path:
+    """Resolve path and refuse anything that escapes the repository root — a
+    symlinked .go file pointing outside the repo must never be rewritten."""
+    resolved = path.resolve()
+    if not resolved.is_relative_to(ROOT):
+        raise ValueError(f"refusing to touch {resolved}: outside the repository root {ROOT}")
+    return resolved
+
+
 def main() -> int:
     check = "--check" in sys.argv[1:]
     changed = []
     for path in go_files():
+        path = inside_root(path)
         out = patched(path.read_text(), IDENTIFIER)
         if out is None:
             continue
