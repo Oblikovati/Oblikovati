@@ -26,6 +26,8 @@ const (
 	// Appended for M22-F06 (3D dimensions; do not reorder).
 	LengthDimKind3D     // a 3D line's length
 	PointPlaneDimKind3D // signed distance from a 3D point to an origin plane
+	// Appended for issue #144 (do not reorder).
+	SplineLengthDimKind3D // a 3D spline's sampled arc length
 )
 
 // ConstraintLimits bounds a dimension's value for drive/animation. When Enabled,

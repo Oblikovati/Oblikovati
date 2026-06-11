@@ -182,7 +182,8 @@ func seedPart(s *app.Session) {
 		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }).
 		WithPoints(func() []*feature.WorkPoint { return activeWorkPoints(s) }).
 		WithAxes(func() []*feature.WorkAxis { return activeWorkAxes(s) }).
-		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }))
+		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }).
+		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }))
 
 	// Frame the box (centered ~(2,1.5,2.5)) from a three-quarter view.
 	cam := s.Camera()
@@ -243,6 +244,23 @@ func activeSketches(s *app.Session) []*sketch.Sketch {
 	var out []*sketch.Sketch
 	for i := 0; i < p.Sketches().Count(); i++ {
 		if sk := p.Sketches().Item(i); sk.Visible() && !s.EditScopeHides(sk.Seq()) {
+			out = append(out, sk)
+		}
+	}
+	return out
+}
+
+// activeSketches3D returns the active part's visible 3D sketches (nil if none), so the
+// picker can resolve a click on a 3D-sketch curve or point for the 3D constraint
+// tools (issue #142).
+func activeSketches3D(s *app.Session) []*sketch.Sketch3D {
+	p, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil
+	}
+	var out []*sketch.Sketch3D
+	for i := 0; i < p.Sketches3D().Count(); i++ {
+		if sk := p.Sketches3D().Item(i); sk.Visible() {
 			out = append(out, sk)
 		}
 	}

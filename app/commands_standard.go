@@ -200,18 +200,40 @@ func patternFeatureCommands() []*CommandDefinition {
 }
 
 // sketch3DToolCommands are the contextual 3D-sketch tools, enabled only while a 3D sketch
-// is being edited (M22-F12): the geometry tools plus Finish.
+// is being edited (M22-F12): the geometry tools, the Constrain panel, plus Finish.
 func sketch3DToolCommands() []*CommandDefinition {
 	finish := NewCommand("Sketch3D.Finish", "Finish 3D Sketch", "Sketch3D", func(s *Session) error {
 		return s.FinishSketch3D()
 	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon("finish-sketch").
 		WithButtonStyle(LargeIconButton).
 		WithTooltip("Finish the 3D sketch and return to the model.")
-	return append(sketch3DDrawCommands(), finish)
+	cmds := append(sketch3DDrawCommands(), sketch3DConstrainCommands()...)
+	return append(cmds, finish)
+}
+
+// sketch3DConstrainCommands are the 3D Sketch tab's Constrain panel (issues #142 and
+// #144): Dimension first (Inventor's panel order), then the constraint tools — each
+// starts an interactive tool the user feeds 3D geometry, the same tool-first flow as
+// the 2D Constrain panel.
+func sketch3DConstrainCommands() []*CommandDefinition {
+	cmds := []*CommandDefinition{NewCommand("Sketch3D.Dimension", "Dimension", "Constrain", func(s *Session) error {
+		s.StartTool(newDimension3DTool())
+		return nil
+	}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithIcon("dimension").WithButtonStyle(SmallIconButton).
+		WithTooltip("Dimension — pick a spline, a circle, a line, or two points to dimension.")}
+	for _, d := range sketch3DConstraintToolDefs {
+		newTool := d.new
+		cmds = append(cmds, NewCommand(d.id, d.name, "Constrain", func(s *Session) error {
+			s.StartTool(newTool())
+			return nil
+		}).WithTab(tab3DSketch).WithEnable(inSketch3D).WithTooltip(d.tooltip).
+			WithIcon(d.icon).WithButtonStyle(SmallIconButton))
+	}
+	return cmds
 }
 
 // sketch3DDrawCommands are the 3D-sketch geometry-placement tools (line/point/circle/arc/
-// helix), each starting its interactive tool.
+// splines/equation curve/helix), each starting its interactive tool.
 func sketch3DDrawCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		sketch3DToolCommand("Sketch3D.Line", "3D Line", "line",
@@ -226,9 +248,21 @@ func sketch3DDrawCommands() []*CommandDefinition {
 		sketch3DToolCommand("Sketch3D.Arc", "3D Arc", "arc",
 			"3D Arc — an arc through center, start and end points.",
 			func() Tool { return NewArc3DTool() }),
+		sketch3DToolCommand("Sketch3D.Spline", "3D Spline", "spline",
+			"3D Spline — a smooth curve interpolating clicked points.",
+			func() Tool { return NewSpline3DTool() }),
+		sketch3DToolCommand("Sketch3D.ControlPointSpline", "Control Point Spline", "spline-control",
+			"Control Point Spline — a smooth curve shaped by its clicked control polygon.",
+			func() Tool { return NewControlPointSpline3DTool() }),
+		sketch3DToolCommand("Sketch3D.EquationCurve", "Equation Curve", "equation-curve",
+			"Equation Curve — a parametric curve from x(t), y(t), z(t) over a t range.",
+			func() Tool { return NewEquationCurve3DTool() }),
 		sketch3DToolCommand("Sketch3D.Helix", "Helical Curve", "helix",
 			"Helical Curve — a spring/thread path from radius, pitch and turns.",
 			func() Tool { return NewHelix3DTool() }),
+		sketch3DToolCommand("Sketch3D.Bend", "Bend", "fillet",
+			"Bend — set a radius, then pick two connected lines to round their corner with a tangent arc.",
+			func() Tool { return NewBend3DTool() }),
 		sketch3DToolCommand("Sketch3D.Include", "Include Geometry", "include",
 			"Include Geometry — pick part edges/vertices to reference in the 3D sketch.",
 			func() Tool { return NewIncludeGeometry3DTool() }),

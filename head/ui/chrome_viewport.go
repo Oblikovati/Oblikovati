@@ -369,6 +369,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, axesOverlay(part, selectedWorkAxis(s), hidden)...)
 	list.Items = append(list.Items, partSketchOverlays(s)...)
 	list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
+	list.Items = append(list.Items, sketch3DOverlays(s, pointMarkerPixels*cam.WorldPerPixel())...)
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
 	list.Items = append(list.Items, threadOverlay(s)...)
 	list.Items = append(list.Items, toolHoverHighlight(s)...)
