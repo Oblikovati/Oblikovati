@@ -34,7 +34,7 @@ anyone can extend Oblikovati, including with closed-source add-ins (see
 > **Status — early/foundational.** Part modeling works today (sketches, parameters,
 > the constraint solver, a B-rep kernel, and features such as extrude), along with
 > the GUI head and the CLI. Assemblies, drawings, sheet-metal, and
-> the rest are on the [roadmap](implementation-plan/). Expect rapid change.
+> the rest are on the [roadmap](https://github.com/Oblikovati/Oblikovati/milestones). Expect rapid change.
 
 ## Repositories
 
@@ -116,7 +116,7 @@ link-checks the docs. House style and conventions live in [CLAUDE.md](CLAUDE.md)
 | Area | Where | What it covers |
 |------|-------|----------------|
 | **Architecture** | [`architecture/`](architecture/README.md) | How the system is built: `core/` (runtime, object model, kernel, params, persistence, events, renderer, UI), `modeling/`, `assembly/`, `apps/`, `testing/`, and the **ADRs** in `decisions/`. |
-| **Roadmap** | [`implementation-plan/`](implementation-plan/) | The 19-milestone / 170-PBI feature plan and live `PROGRESS.md`. |
+| **Roadmap** | [GitHub milestones](https://github.com/Oblikovati/Oblikovati/milestones) | Milestones M00–M25 with Feature/Task issues; the historical progress log is [`architecture/history/implementation-log.md`](architecture/history/implementation-log.md). |
 | **Dev workflow** | [`DEVELOPMENT.md`](DEVELOPMENT.md) | Module layout, `go.work` setup, `make` targets, build-time gating, code conventions. |
 | **Public API** | [`Oblikovati.API`](https://github.com/Oblikovati/Oblikovati.API) | The Apache-2.0 contract module (`types`, `contract`, `wire`, `client`) the app implements and add-ins build on — [ADR-0018](architecture/decisions/ADR-0018-apache-api-contract-module.md). |
 | **Releasing** | [`RELEASING.md`](RELEASING.md) | The nightly + stable channels and the `MAJOR.MINOR.PATCH` versioning rules. |

@@ -1,6 +1,6 @@
 # ADR-0030 — Tolerant NURBS surface meshing (on-surface interior nodes + shared-edge stitching)
 
-**Status:** Accepted (2026-06-08) — milestone [M24](../../implementation-plan/M24-tolerant-nurbs-meshing/_milestone.md).
+**Status:** Accepted (2026-06-08) — milestone [M24](https://github.com/Oblikovati/Oblikovati/milestone/26).
 F01 (on-surface pcurves) in progress.
 **Context:** Tessellating trimmed freeform (B-spline/NURBS) faces of *imported* B-reps.
 **Builds on / refines:** [ADR-0027](ADR-0027-curved-face-boolean.md) and the curved-face

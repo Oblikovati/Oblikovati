@@ -11,7 +11,7 @@ availability is incremental (see PROGRESS.md), but placement must follow this st
 
 > See also: [core/09-ui-imgui.md](../core/09-ui-imgui.md) (how the ribbon is built from the
 > command registry) and the per-feature DoD in
-> [implementation-plan/CONVENTIONS.md](../../implementation-plan/CONVENTIONS.md).
+> [architecture/implementation-conventions.md](../implementation-conventions.md).
 
 ## Canonical structure
 

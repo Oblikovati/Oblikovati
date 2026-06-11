@@ -1,6 +1,6 @@
 # ADR-0002 — Go-native geometry kernel (no cgo in the kernel)
 
-**Status:** accepted (user decision) · **Supersedes:** the implementation-plan's
+**Status:** accepted (user decision) · **Supersedes:** the original plan's
 "thin managed API over a native kernel" assumption (M00/M07).
 
 ## Decision

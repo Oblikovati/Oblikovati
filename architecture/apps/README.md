@@ -2,7 +2,7 @@
 
 The closing iteration. These are the capability domains built *on* the modeling +
 assembly spine — documentation, automation, visualization, interoperability, and
-analysis. They complete the modernization of all 19 implementation-plan milestones.
+analysis. They complete the modernization of all 19 roadmap milestones.
 
 The recurring theme of iteration 4: **almost everything here is a client of the core
 spine, not new plumbing.** Drawing is a DAG-dependent projection of the model;
