@@ -105,6 +105,16 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		showPreferences = true
 	case "messaging": // M05-F09 surfaces: progress bar, balloon toast, prompt, messages
 		seedMessagingSurfaces(s)
+	case "triad": // M05-F13: the move/rotate triad over a solid, with a manipulator handle
+		ext := app.NewExtrudeTool()
+		s.StartTool(ext)
+		ext.Pick(s, profile)
+		ext.SetDistance(3)
+		_ = s.OK()
+		_ = s.ShowTriad(wire.TriadSpec{Position: [3]float64{2, 3, 1}, Visible: true})
+		_ = s.SetManipulators("demo", []wire.ManipulatorHandleSpec{
+			{ID: "tip", Position: [3]float64{0, 0, 2.5}, RadiusPx: 10},
+		}, "")
 	case "marking-menu": // M05-F12: the radial marking menu, opened as if right-clicked
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)

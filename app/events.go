@@ -24,6 +24,9 @@ const (
 	tidFileDialogChosen     event.TypeID = 0x050d // app/dialog_requests.go (M05-F08)
 	tidWebDialogChanged     event.TypeID = 0x050e // app/dialog_requests.go (M05-F08)
 	tidEnvironmentChanged   event.TypeID = 0x050f // app/ui_shell.go (M05-F12)
+	tidTriadSegment         event.TypeID = 0x0510 // app/triad.go (M05-F13)
+	tidTriadDrag            event.TypeID = 0x0511 // app/triad.go (M05-F13)
+	tidManipulatorDrag      event.TypeID = 0x0512 // app/manipulators.go (M05-F13)
 )
 
 // CommandStarted fires (Before) when a command begins — Inventor's
