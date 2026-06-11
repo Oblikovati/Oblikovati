@@ -109,3 +109,10 @@ func (t *ReplaceFaceTool) Prompt(*Session) string {
 
 // Cancel restores the default selection filter.
 func (t *ReplaceFaceTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+
+// ClearFaces / ClearTarget empty one pick set each — the property panel's selector
+// clear (⊗) affordances on the replace-faces and target chips.
+func (t *ReplaceFaceTool) ClearFaces() { t.faces = nil }
+
+// ClearTarget drops the picked target face.
+func (t *ReplaceFaceTool) ClearTarget() { t.target = nil }

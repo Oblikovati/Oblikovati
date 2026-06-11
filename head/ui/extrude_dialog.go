@@ -5,8 +5,6 @@
 package ui
 
 import (
-	"strconv"
-
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/kernel/ops"
@@ -85,14 +83,7 @@ func drawExtrudeInputGeometry(ext *app.ExtrudeTool) {
 
 // extrudeProfileChipText is the Profiles chip caption: the pick prompt, or the count.
 func extrudeProfileChipText(ext *app.ExtrudeTool) string {
-	switch n := len(ext.PickedProfiles()); n {
-	case 0:
-		return "Select Profile"
-	case 1:
-		return "1 Profile"
-	default:
-		return strconv.Itoa(n) + " Profiles"
-	}
+	return countChipText(len(ext.PickedProfiles()), "Profile", "Select Profile")
 }
 
 // drawExtrudeFromChip names the plane the extrusion starts from. Phase A always starts

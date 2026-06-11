@@ -147,3 +147,7 @@ func clampRange(i, n int) int {
 	}
 	return i
 }
+
+// ClearFace empties the picked cylindrical face — the property panel's selector clear
+// (⊗) — returning the tool to its pick-a-face step.
+func (t *ThreadTool) ClearFace() { t.face = nil }

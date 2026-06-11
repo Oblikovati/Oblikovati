@@ -5,6 +5,8 @@
 package ui
 
 import (
+	"strconv"
+
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/kernel/ops"
 )
@@ -16,10 +18,12 @@ import (
 // panel, labels sit in a left column, controls align in a right column.
 
 // propertyLabelWidth is the left label column width; propertyFieldWidth sizes numeric
-// inputs in the control column so unit suffixes fit beside them.
+// inputs in the control column so unit suffixes fit beside them; propertyComboWidth
+// sizes dropdowns whose entries run longer than a number (thread designations).
 const (
 	propertyLabelWidth = 95
 	propertyFieldWidth = 110
+	propertyComboWidth = 170
 )
 
 // drawFeatureBreadcrumb renders a property panel's header trail: the feature name and,
@@ -40,6 +44,19 @@ func pickChipText(picked bool, filled, prompt string) string {
 		return filled
 	}
 	return prompt
+}
+
+// countChipText is the chip caption for a multi-pick selector: the pick count with its
+// noun ("3 Edges"), or the prompt while empty.
+func countChipText(n int, noun, prompt string) string {
+	switch n {
+	case 0:
+		return prompt
+	case 1:
+		return "1 " + noun
+	default:
+		return strconv.Itoa(n) + " " + noun + "s"
+	}
 }
 
 // propertySection draws a full-width collapsible section header, open by default the
@@ -70,6 +87,17 @@ func propertyFloatRow(label, id, suffix string, v *float32) bool {
 		native.Text(suffix)
 	}
 	return changed
+}
+
+// drawPickChipRow draws one Input Geometry pick row — label, selection chip, hover tip —
+// invoking onClear when the chip's clear (×) is clicked. The pick itself always happens
+// in the viewport; the chip only shows the state.
+func drawPickChipRow(label, id, text string, filled bool, tip string, onClear func()) {
+	propertyRow(label)
+	if propertySelectorChip(id, text, filled, true) {
+		onClear()
+	}
+	native.SetItemTooltip(tip)
 }
 
 // propertySelectorChip draws a selection chip showing a pick's state: filled renders in

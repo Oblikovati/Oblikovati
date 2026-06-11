@@ -5,17 +5,16 @@
 package ui
 
 import (
-	"strconv"
-
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
 
-// The Replace Face flow in the head: while the tool runs, a modeless options window lists
-// the picked faces, a toggle to pick the target face, and the chosen target, then OK/Cancel.
+// The Replace Face flow in the head: while the tool runs, a modeless property panel
+// (the reference panel schema) shows the faces-to-replace chip, the target-face chip,
+// and the toggle routing the next viewport pick to the target, then OK/Cancel.
 var replaceFaceUI = struct{ open bool }{}
 
-// drawReplaceFaceDialog shows the replace-face options window while the tool is active.
+// drawReplaceFaceDialog shows the Replace Face property panel while the tool is active.
 func drawReplaceFaceDialog(s *app.Session) {
 	r := s.ActiveReplaceFace()
 	if r == nil {
@@ -23,31 +22,29 @@ func drawReplaceFaceDialog(s *app.Session) {
 		return
 	}
 	replaceFaceUI.open = true
-	native.SetNextWindowSize(320, 170)
+	native.SetNextWindowSizeOnce(340, 230)
 	if native.Begin("Replace Face") {
-		native.Text("Faces to replace: " + strconv.Itoa(len(r.Faces())))
-		pickTarget := r.PickingTarget()
-		if native.Checkbox("Pick target face", &pickTarget) {
-			r.SetPickingTarget(pickTarget)
+		drawFeatureBreadcrumb("Replace Face", "")
+		if propertySection("Input Geometry") {
+			drawReplaceFacePicks(r)
 		}
-		native.Text("Target: " + targetLabel(r))
-		native.BeginDisabled(!r.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
-		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		native.Separator()
+		drawCommitCancelButtons(s, r.CanCommit())
 	}
 	native.End()
 }
 
-// targetLabel reports whether a target face has been chosen.
-func targetLabel(r *app.ReplaceFaceTool) string {
-	if _, ok := r.PickedTarget(); ok {
-		return "selected"
+// drawReplaceFacePicks renders the two pick chips and the toggle that routes the next
+// viewport click to the target face instead of the replace set.
+func drawReplaceFacePicks(r *app.ReplaceFaceTool) {
+	drawPickChipRow("Faces", "replace-faces", countChipText(len(r.Faces()), "Face", "Select Faces"),
+		len(r.Faces()) > 0, "Click the faces to replace", r.ClearFaces)
+	_, hasTarget := r.PickedTarget()
+	drawPickChipRow("Target", "replace-target", pickChipText(hasTarget, "1 Face", "Select Face"),
+		hasTarget, "The face the picked set is replaced with", r.ClearTarget)
+	propertyRow("")
+	pickTarget := r.PickingTarget()
+	if native.Checkbox("Pick target face", &pickTarget) {
+		r.SetPickingTarget(pickTarget)
 	}
-	return "none"
 }

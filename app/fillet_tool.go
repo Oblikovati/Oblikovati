@@ -89,3 +89,7 @@ func (t *FilletTool) Prompt(*Session) string {
 
 // Cancel restores the default selection filter.
 func (t *FilletTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+
+// ClearEdges empties the picked edges — the property panel's selector clear (⊗) —
+// returning the tool to its pick-edges step.
+func (t *FilletTool) ClearEdges() { t.edges = nil }

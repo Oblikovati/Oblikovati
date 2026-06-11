@@ -5,20 +5,19 @@
 package ui
 
 import (
-	"strconv"
-
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
 
-// The Fillet flow in the head: while the Fillet tool runs, a modeless options window shows
-// the picked-edge count and the blend radius (database units), then OK/Cancel.
+// The Fillet flow in the head: while the Fillet tool runs, a modeless property panel
+// (the reference panel schema) shows the picked-edges chip and the blend radius, then
+// OK/Cancel.
 var filletUI = struct {
 	radius float32
 	open   bool
 }{radius: 1}
 
-// drawFilletDialog shows the fillet options window while the Fillet tool is active.
+// drawFilletDialog shows the Fillet property panel while the Fillet tool is active.
 func drawFilletDialog(s *app.Session) {
 	f := s.ActiveFillet()
 	if f == nil {
@@ -29,12 +28,18 @@ func drawFilletDialog(s *app.Session) {
 		filletUI.radius = float32(f.Radius())
 		filletUI.open = true
 	}
-	native.SetNextWindowSize(300, 160)
+	native.SetNextWindowSizeOnce(340, 230)
 	if native.Begin("Fillet") {
-		native.Text("Edges: " + strconv.Itoa(len(f.Edges())) + " (click convex edges to round)")
-		native.Text("Radius (" + s.LengthUnitName() + ")")
-		native.InputFloat("##fillet-radius", &filletUI.radius)
-		f.SetRadius(float64(filletUI.radius))
+		drawFeatureBreadcrumb("Fillet", "")
+		if propertySection("Input Geometry") {
+			drawPickChipRow("Edges", "fillet-edges", countChipText(len(f.Edges()), "Edge", "Select Edges"),
+				len(f.Edges()) > 0, "Click convex edges in the viewport to round", f.ClearEdges)
+		}
+		if propertySection("Behavior") {
+			propertyFloatRow("Radius", "fillet-radius", s.LengthUnitName(), &filletUI.radius)
+			f.SetRadius(float64(filletUI.radius))
+		}
+		native.Separator()
 		drawCommitCancelButtons(s, f.CanCommit())
 	}
 	native.End()

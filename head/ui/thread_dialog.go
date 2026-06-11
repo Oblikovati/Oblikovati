@@ -12,32 +12,48 @@ import (
 	"oblikovati.org/model/feature"
 )
 
-// drawThreadDialog shows the Thread tool's property window while the Thread tool is active: pick
-// the standard (ISO/ANSI/JIS), then the size and pitch it offers, choose cosmetic vs a modeled
-// cut, and OK to thread the picked cylindrical face.
+// The Thread flow in the head: while the Thread tool runs, a modeless property panel
+// (the reference panel schema) drives the tool — the cylindrical-face chip, the
+// standard/size/pitch designation in a Type section, and the cosmetic-vs-cut toggle —
+// then OK to thread the picked face.
 func drawThreadDialog(s *app.Session) {
 	t := s.ActiveThread()
 	if t == nil {
 		return
 	}
-	native.SetNextWindowSize(340, 300)
+	native.SetNextWindowSizeOnce(360, 360)
 	if native.Begin("Thread") {
-		drawThreadFaceStatus(t)
-		size := drawThreadStandardAndSize(t)
-		drawThreadPitch(t, size)
-		drawThreadCutAndDesignation(t)
+		drawFeatureBreadcrumb("Thread", "")
+		drawThreadInputGeometry(t)
+		drawThreadType(t)
+		drawThreadBehavior(t)
+		native.Separator()
 		drawCommitCancelButtons(s, t.CanCommit())
 	}
 	native.End()
 }
 
-func drawThreadFaceStatus(t *app.ThreadTool) {
-	if t.HasFace() {
-		native.Text("Cylindrical face: selected")
-	} else {
-		native.Text("Click a cylindrical face to thread.")
+// drawThreadInputGeometry is the Input Geometry section: the required cylindrical-face chip.
+func drawThreadInputGeometry(t *app.ThreadTool) {
+	if !propertySection("Input Geometry") {
+		return
 	}
-	native.Separator()
+	drawPickChipRow("Face", "thread-face", pickChipText(t.HasFace(), "1 Face", "Select Face"),
+		t.HasFace(), "Click a cylindrical face in the viewport to thread", t.ClearFace)
+}
+
+// drawThreadType is the Type section: the standard / size / pitch combos and the
+// resulting designation row.
+func drawThreadType(t *app.ThreadTool) {
+	if !propertySection("Type") {
+		return
+	}
+	size := drawThreadStandardAndSize(t)
+	drawThreadPitch(t, size)
+	if d, err := t.Designation(); err == nil {
+		propertyRow("Designation")
+		native.Text(d)
+	}
 }
 
 func drawThreadStandardAndSize(t *app.ThreadTool) feature.ThreadSize {
@@ -52,7 +68,9 @@ func drawThreadStandardAndSize(t *app.ThreadTool) feature.ThreadSize {
 }
 
 func drawThreadStandardCombo(t *app.ThreadTool, standards []feature.ThreadStandard, std feature.ThreadStandard) {
-	if native.BeginCombo("Standard", fmt.Sprintf("%s (%s)", std, feature.StandardSystem(std))) {
+	propertyRow("Standard")
+	native.SetNextItemWidth(propertyComboWidth)
+	if native.BeginCombo("##thread-standard", fmt.Sprintf("%s (%s)", std, feature.StandardSystem(std))) {
 		for i, st := range standards {
 			if native.Selectable(fmt.Sprintf("%s (%s)", st, feature.StandardSystem(st)), i == t.StandardIndex()) {
 				t.SetStandardIndex(i)
@@ -63,7 +81,9 @@ func drawThreadStandardCombo(t *app.ThreadTool, standards []feature.ThreadStanda
 }
 
 func drawThreadSizeCombo(t *app.ThreadTool, sizes []feature.ThreadSize, size feature.ThreadSize) {
-	if native.BeginCombo("Size", size.Name) {
+	propertyRow("Size")
+	native.SetNextItemWidth(propertyComboWidth)
+	if native.BeginCombo("##thread-size", size.Name) {
 		for i, sz := range sizes {
 			if native.Selectable(sz.Name, i == t.SizeIndex()) {
 				t.SetSizeIndex(i)
@@ -74,8 +94,10 @@ func drawThreadSizeCombo(t *app.ThreadTool, sizes []feature.ThreadSize, size fea
 }
 
 func drawThreadPitch(t *app.ThreadTool, size feature.ThreadSize) {
+	propertyRow("Pitch")
+	native.SetNextItemWidth(propertyComboWidth)
 	pitch := size.Pitches[clampIdx(t.PitchIndex(), len(size.Pitches))]
-	if native.BeginCombo("Pitch", pitchLabel(size, pitch)) {
+	if native.BeginCombo("##thread-pitch", pitchLabel(size, pitch)) {
 		for i, p := range size.Pitches {
 			if native.Selectable(pitchLabel(size, p), i == t.PitchIndex()) {
 				t.SetPitchIndex(i)
@@ -85,14 +107,15 @@ func drawThreadPitch(t *app.ThreadTool, size feature.ThreadSize) {
 	}
 }
 
-func drawThreadCutAndDesignation(t *app.ThreadTool) {
+// drawThreadBehavior is the Behavior section: the cosmetic-vs-modeled-cut toggle.
+func drawThreadBehavior(t *app.ThreadTool) {
+	if !propertySection("Behavior") {
+		return
+	}
+	propertyRow("")
 	cut := t.Cut()
 	if native.Checkbox("Model real cut thread (else cosmetic)", &cut) {
 		t.SetCut(cut)
-	}
-	native.Separator()
-	if d, err := t.Designation(); err == nil {
-		native.Text("Designation: " + d)
 	}
 }
 

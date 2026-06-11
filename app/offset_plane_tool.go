@@ -91,3 +91,7 @@ func (t *OffsetWorkPlaneTool) Prompt(*Session) string {
 
 // AddedPlane returns the plane created on commit (for inspection/tests).
 func (t *OffsetWorkPlaneTool) AddedPlane() *feature.WorkPlane { return t.added }
+
+// ClearBase drops the picked base plane/face — the property panel's selector clear
+// (⊗) — returning the tool to its pick step (the stale reference is guarded by hasBase).
+func (t *OffsetWorkPlaneTool) ClearBase() { t.hasBase = false }

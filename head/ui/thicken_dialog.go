@@ -9,14 +9,15 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// The Thicken flow in the head: while the tool runs, a modeless options window takes the
-// wall thickness applied to the active surface body, then OK/Cancel.
+// The Thicken flow in the head: while the tool runs, a modeless property panel (the
+// reference panel schema) takes the wall thickness applied to the active surface body,
+// then OK/Cancel. There is no pick — the tool operates on the active surface.
 var thickenUI = struct {
 	thickness float32
 	open      bool
 }{thickness: 1}
 
-// drawThickenDialog shows the thicken options window while the Thicken tool is active.
+// drawThickenDialog shows the Thicken property panel while the Thicken tool is active.
 func drawThickenDialog(s *app.Session) {
 	th := s.ActiveThicken()
 	if th == nil {
@@ -27,20 +28,15 @@ func drawThickenDialog(s *app.Session) {
 		thickenUI.thickness = float32(th.Thickness())
 		thickenUI.open = true
 	}
-	native.SetNextWindowSize(300, 140)
+	native.SetNextWindowSizeOnce(340, 170)
 	if native.Begin("Thicken") {
-		native.Text("Thickness (" + s.LengthUnitName() + ")")
-		native.InputFloat("##thicken-thickness", &thickenUI.thickness)
-		th.SetThickness(float64(thickenUI.thickness))
-		native.BeginDisabled(!th.CanCommit())
-		if native.Button("OK") {
-			_ = s.OK()
+		drawFeatureBreadcrumb("Thicken", "")
+		if propertySection("Behavior") {
+			propertyFloatRow("Thickness", "thicken-thickness", s.LengthUnitName(), &thickenUI.thickness)
+			th.SetThickness(float64(thickenUI.thickness))
 		}
-		native.EndDisabled()
-		native.SameLine()
-		if native.Button("Cancel") {
-			s.CancelTool()
-		}
+		native.Separator()
+		drawCommitCancelButtons(s, th.CanCommit())
 	}
 	native.End()
 }

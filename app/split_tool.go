@@ -85,3 +85,7 @@ func (t *SplitTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFil
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SplitTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// ClearPlane empties the picked cutting plane — the property panel's selector clear
+// (⊗) — returning the tool to its pick-a-plane step.
+func (t *SplitTool) ClearPlane() { t.plane = nil }

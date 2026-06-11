@@ -71,3 +71,40 @@ func TestPickChipText(t *testing.T) {
 		t.Errorf("picked chip text = %q, want \"1 Path\"", got)
 	}
 }
+
+// TestSplitModeToggleRoundTrip locks the Mode row's mapping onto the tool's keep side.
+func TestSplitModeToggleRoundTrip(t *testing.T) {
+	st := app.NewSplitTool()
+	for i, side := range splitModeSides {
+		st.SetKeep(side)
+		if got := splitModeIndex(st); got != i {
+			t.Errorf("keep side %v maps to toggle %d, want %d", side, got, i)
+		}
+	}
+}
+
+// TestCountChipText locks the multi-pick chip captions.
+func TestCountChipText(t *testing.T) {
+	cases := []struct {
+		n    int
+		want string
+	}{{0, "Select Edges"}, {1, "1 Edge"}, {3, "3 Edges"}}
+	for _, c := range cases {
+		if got := countChipText(c.n, "Edge", "Select Edges"); got != c.want {
+			t.Errorf("countChipText(%d) = %q, want %q", c.n, got, c.want)
+		}
+	}
+}
+
+// TestLoftGuideChipState locks the Guides chip caption per routing kind.
+func TestLoftGuideChipState(t *testing.T) {
+	l := app.NewLoftTool()
+	l.SetGuideKind(0)
+	if text, filled := loftGuideChipState(l); filled || text != "Select Paths" {
+		t.Errorf("empty rails chip = (%q, %v), want (\"Select Paths\", false)", text, filled)
+	}
+	l.SetGuideKind(1)
+	if text, filled := loftGuideChipState(l); filled || text != "Select Path" {
+		t.Errorf("empty centerline chip = (%q, %v), want (\"Select Path\", false)", text, filled)
+	}
+}

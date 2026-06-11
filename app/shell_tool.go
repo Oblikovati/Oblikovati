@@ -92,3 +92,7 @@ func (t *ShellTool) Prompt(*Session) string {
 
 // Cancel restores the default selection filter.
 func (t *ShellTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+
+// ClearFaces empties the picked faces — the property panel's selector clear (⊗) —
+// returning the tool to its pick-faces step.
+func (t *ShellTool) ClearFaces() { t.faces = nil }
