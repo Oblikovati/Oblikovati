@@ -6,17 +6,18 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
 
-// The feature-edit flow in the head: double-clicking a feature in the model browser (or its
-// "Edit" context-menu entry) opens this dialog. It shows one field per editable scalar
-// parameter (distance, radius, angle, diameter …) AND a row per geometric reference slot
-// (the fillet's edges, a hole's placement face …) with Select (re-pick in the viewport) and
-// Clear buttons. Editing is an interactive tool, so OK = s.OK() (commit), Cancel =
-// s.CancelTool() (restore). Each field shows the document's unit for that quantity.
+// The generic feature editor: features whose creation panel can round-trip their
+// definition re-open that panel instead (app.BeginEditFeature dispatch); this dialog
+// serves the rest (patterns, mirror, rib, emboss). It follows the same property-panel
+// schema — an Input Geometry section of armable reference-slot chips and a Behavior
+// section of scalar rows — so editing looks the same everywhere. OK = s.OK() (commit),
+// Cancel = s.CancelTool() (restore). Each field shows the document's unit.
 
 // featureEditUI holds the dialog's per-parameter field values across frames, keyed by the
 // feature being edited — so switching directly from one feature's edit to another's reseeds
@@ -26,7 +27,8 @@ var featureEditUI struct {
 	editing string // EditingFeatureName of the feature the fields were seeded from ("" = none)
 }
 
-// drawFeatureEditDialog shows the parameter + reference editor while a feature edit is open.
+// drawFeatureEditDialog shows the parameter + reference editor while a generic feature
+// edit is open.
 func drawFeatureEditDialog(s *app.Session) {
 	if !s.IsEditingFeature() {
 		featureEditUI.editing = ""
@@ -35,11 +37,12 @@ func drawFeatureEditDialog(s *app.Session) {
 	nParams := s.EditFeatureParamCount()
 	nRefs := s.EditFeatureRefSlotCount()
 	refreshFeatureEditUI(s, nParams)
-	native.SetNextWindowSize(320, float32(108+nParams*30+nRefs*30))
+	native.SetNextWindowSizeOnce(340, float32(150+nParams*28+nRefs*28))
 	if native.Begin("Edit Feature") {
-		native.Text(s.EditingFeatureName())
-		drawEditParams(s, nParams)
+		drawFeatureBreadcrumb(s.EditingFeatureName(), "")
 		drawEditRefSlots(s, nRefs)
+		drawEditParams(s, nParams)
+		native.Separator()
 		drawFeatureEditButtons(s)
 	}
 	native.End()
@@ -69,44 +72,61 @@ func drawFeatureEditButtons(s *app.Session) {
 	}
 }
 
-// drawEditParams renders one field per editable scalar (an integer field for whole-number
-// inputs like a pattern count), syncing it to the feature.
+// drawEditRefSlots is the Input Geometry section: one armable chip per reference slot.
+// Clicking a chip arms its slot for viewport picking; × clears a clearable slot.
+func drawEditRefSlots(s *app.Session, n int) {
+	if n == 0 || !propertySection("Input Geometry") {
+		return
+	}
+	for i := 0; i < n; i++ {
+		label := s.EditFeatureRefSlotLabel(i)
+		propertyRow(label)
+		text := editSlotChipText(s.EditFeatureRefSlotRefCount(i), label)
+		arm, clear := propertyArmableSlotChip(fmt.Sprintf("edit-ref-%d", i), text,
+			s.EditFeatureRefSlotRefCount(i) > 0, s.EditFeatureRefSlotArmed(i), s.EditFeatureRefSlotClearable(i))
+		if arm {
+			s.EditFeatureArmRefSlot(i)
+		}
+		if clear {
+			s.EditFeatureClearRefSlot(i)
+		}
+	}
+}
+
+// editSlotChipText is the slot chip caption: the reference panel's generic "N Selected"
+// once filled, the slot's own prompt while empty.
+func editSlotChipText(count int, label string) string {
+	if count == 0 {
+		return "Select " + label
+	}
+	return strconv.Itoa(count) + " Selected"
+}
+
+// drawEditParams is the Behavior section: one row per editable scalar (an integer field
+// for whole-number inputs like a pattern count), synced to the feature each frame.
 func drawEditParams(s *app.Session, n int) {
+	if n == 0 || !propertySection("Behavior") {
+		return
+	}
 	for i := 0; i < n && i < len(featureEditUI.values); i++ {
-		label := s.EditFeatureParamLabel(i)
-		if u := s.EditFeatureParamUnitName(i); u != "" {
-			label += " (" + u + ")"
-		}
-		native.Text(label)
-		if s.EditFeatureParamIsInteger(i) {
-			iv := int32(featureEditUI.values[i] + 0.5)
-			native.InputInt(fmt.Sprintf("##edit-feature-param-%d", i), &iv)
-			featureEditUI.values[i] = float32(iv)
-		} else {
-			native.InputFloat(fmt.Sprintf("##edit-feature-param-%d", i), &featureEditUI.values[i])
-		}
+		drawEditParamRow(s, i)
 		s.SetEditFeatureParamValue(i, float64(featureEditUI.values[i])) // keep the feature in sync
 	}
 }
 
-// drawEditRefSlots renders one row per reference slot: a count, a Select button that arms the
-// slot for viewport picking (highlighted while armed), and a Clear button.
-func drawEditRefSlots(s *app.Session, n int) {
-	for i := 0; i < n; i++ {
-		native.Text(fmt.Sprintf("%s: %d selected", s.EditFeatureRefSlotLabel(i), s.EditFeatureRefSlotRefCount(i)))
+// drawEditParamRow renders one scalar row: label, value field, unit suffix.
+func drawEditParamRow(s *app.Session, i int) {
+	propertyRow(s.EditFeatureParamLabel(i))
+	native.SetNextItemWidth(propertyFieldWidth)
+	if s.EditFeatureParamIsInteger(i) {
+		iv := int32(featureEditUI.values[i] + 0.5)
+		native.InputInt(fmt.Sprintf("##edit-feature-param-%d", i), &iv)
+		featureEditUI.values[i] = float32(iv)
+	} else {
+		native.InputFloat(fmt.Sprintf("##edit-feature-param-%d", i), &featureEditUI.values[i])
+	}
+	if u := s.EditFeatureParamUnitName(i); u != "" {
 		native.SameLine()
-		selectLabel := "Select"
-		if s.EditFeatureRefSlotArmed(i) {
-			selectLabel = "Selecting… (click geometry)"
-		}
-		if native.Button(fmt.Sprintf("%s##edit-ref-select-%d", selectLabel, i)) {
-			s.EditFeatureArmRefSlot(i)
-		}
-		if s.EditFeatureRefSlotClearable(i) {
-			native.SameLine()
-			if native.Button(fmt.Sprintf("Clear##edit-ref-clear-%d", i)) {
-				s.EditFeatureClearRefSlot(i)
-			}
-		}
+		native.Text(u)
 	}
 }

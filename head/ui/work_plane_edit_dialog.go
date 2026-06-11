@@ -11,12 +11,13 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// Editing / redefining a placed work plane (browser double-click): an offset plane edits its
-// distance, a line-plane-angle plane edits its angle, and a reference-built plane (three
-// points, two planes, a tangent face, …) re-picks its references. The dialog mirrors the
-// feature-edit dialog — one field per editable scalar, one row per reference slot with a
-// Select button that arms it for viewport/browser picking. While it is open the model is
-// rolled back to the plane (edit-scope, issue #132). Scalars are in the document's unit.
+// Editing / redefining a placed work plane (browser double-click): an offset plane edits
+// its distance, a line-plane-angle plane edits its angle, and a reference-built plane
+// (three points, two planes, a tangent face, …) re-picks its references. The dialog
+// follows the property-panel schema like the feature editors — an Input Geometry section
+// of armable reference-slot chips and a Behavior section of scalar rows. While it is
+// open the model is rolled back to the plane (edit-scope, issue #132). Scalars are in
+// the document's unit.
 
 // workPlaneEditUI holds the dialog's per-scalar field values across frames, keyed by the
 // plane being edited — so switching directly from one plane's edit to another's reseeds the
@@ -35,11 +36,12 @@ func drawWorkPlaneEditDialog(s *app.Session) {
 	nScalars := s.EditPlaneScalarCount()
 	nRefs := s.EditPlaneRefSlotCount()
 	refreshWorkPlaneEditUI(s, nScalars)
-	native.SetNextWindowSize(320, float32(104+nScalars*30+nRefs*30))
+	native.SetNextWindowSizeOnce(340, float32(150+nScalars*28+nRefs*28))
 	if native.Begin("Edit Work Plane") {
-		native.Text(s.EditPlaneName())
-		drawWorkPlaneScalars(s, nScalars)
+		drawFeatureBreadcrumb(s.EditPlaneName(), "")
 		drawWorkPlaneRefSlots(s, nRefs)
+		drawWorkPlaneScalars(s, nScalars)
+		native.Separator()
 		drawWorkPlaneEditButtons(s)
 	}
 	native.End()
@@ -56,31 +58,37 @@ func refreshWorkPlaneEditUI(s *app.Session, nScalars int) {
 	workPlaneEditUI.editing = s.EditPlaneName()
 }
 
-// drawWorkPlaneScalars renders one field per editable scalar (offset/angle), syncing it to the
-// plane each frame.
+// drawWorkPlaneScalars is the Behavior section: one row per editable scalar
+// (offset/angle), synced to the plane each frame.
 func drawWorkPlaneScalars(s *app.Session, n int) {
+	if n == 0 || !propertySection("Behavior") {
+		return
+	}
 	for i := 0; i < n && i < len(workPlaneEditUI.values); i++ {
-		label := s.EditPlaneScalarLabel(i)
-		if u := s.EditPlaneScalarUnitName(i); u != "" {
-			label += " (" + u + ")"
-		}
-		native.Text(label)
+		propertyRow(s.EditPlaneScalarLabel(i))
+		native.SetNextItemWidth(propertyFieldWidth)
 		native.InputFloat(fmt.Sprintf("##edit-plane-scalar-%d", i), &workPlaneEditUI.values[i])
+		if u := s.EditPlaneScalarUnitName(i); u != "" {
+			native.SameLine()
+			native.Text(u)
+		}
 		s.SetEditPlaneScalarValue(i, float64(workPlaneEditUI.values[i])) // keep the plane in sync
 	}
 }
 
-// drawWorkPlaneRefSlots renders one row per reference slot: a label and a Select button that
-// arms the slot for viewport/browser picking (highlighted while armed).
+// drawWorkPlaneRefSlots is the Input Geometry section: one armable chip per reference
+// slot — clicking it arms the slot for viewport/browser picking (plane slots have no
+// clear: a plane always needs its references).
 func drawWorkPlaneRefSlots(s *app.Session, n int) {
+	if n == 0 || !propertySection("Input Geometry") {
+		return
+	}
 	for i := 0; i < n; i++ {
-		native.Text(s.EditPlaneRefSlotLabel(i))
-		native.SameLine()
-		selectLabel := "Select"
-		if s.EditPlaneRefSlotArmed(i) {
-			selectLabel = "Selecting… (click geometry)"
-		}
-		if native.Button(fmt.Sprintf("%s##edit-plane-ref-%d", selectLabel, i)) {
+		label := s.EditPlaneRefSlotLabel(i)
+		propertyRow(label)
+		arm, _ := propertyArmableSlotChip(fmt.Sprintf("edit-plane-ref-%d", i), label,
+			true, s.EditPlaneRefSlotArmed(i), false)
+		if arm {
 			s.EditPlaneArmRefSlot(i)
 		}
 	}

@@ -15,27 +15,32 @@ import (
 var chamferUI = struct {
 	distance    float32
 	flatCorners bool
-	open        bool
+	seeded      *app.ChamferTool // the tool the fields were seeded from (nil = none)
 }{distance: 1, flatCorners: true}
 
-// drawChamferDialog shows the Chamfer property panel while the Chamfer tool is active.
+// drawChamferDialog shows the Chamfer property panel while the Chamfer tool is active —
+// creating a chamfer or re-editing a committed one (the same panel serves both).
 func drawChamferDialog(s *app.Session) {
 	c := s.ActiveChamfer()
 	if c == nil {
-		chamferUI.open = false
+		chamferUI.seeded = nil
 		return
 	}
-	if !chamferUI.open {
+	if chamferUI.seeded != c {
 		chamferUI.distance = float32(c.Distance())
 		chamferUI.flatCorners = c.FlatCorners()
-		chamferUI.open = true
+		chamferUI.seeded = c
 	}
 	native.SetNextWindowSizeOnce(340, 250)
 	if native.Begin("Chamfer") {
-		drawFeatureBreadcrumb("Chamfer", "")
+		title := "Chamfer"
+		if name := c.EditingName(); name != "" {
+			title = name // re-editing a committed chamfer: the breadcrumb names it
+		}
+		drawFeatureBreadcrumb(title, "")
 		if propertySection("Input Geometry") {
-			drawPickChipRow("Edges", "chamfer-edges", countChipText(len(c.Edges()), "Edge", "Select Edges"),
-				len(c.Edges()) > 0, "Click edges in the viewport to bevel", c.ClearEdges)
+			drawPickChipRow("Edges", "chamfer-edges", countChipText(c.EdgeCount(), "Edge", "Select Edges"),
+				c.EdgeCount() > 0, "Click edges in the viewport to bevel", c.ClearEdges)
 		}
 		if propertySection("Behavior") {
 			drawChamferBehaviorRows(s, c)

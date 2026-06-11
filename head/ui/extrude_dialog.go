@@ -18,24 +18,26 @@ import (
 // picked profile is highlighted in the viewport with a live prism preview. Distances
 // are in the document's length unit (e.g. mm), the taper in its angle unit (e.g. deg).
 
-// extrudeUI holds the panel's editable fields across frames and whether the panel was
-// open last frame (so it seeds the fields once when the tool opens).
+// extrudeUI holds the panel's editable fields across frames, keyed by the tool they
+// were seeded from — so switching straight from one extrude (or one feature edit) to
+// another reseeds instead of carrying stale values into the new tool.
 var extrudeUI = struct {
 	distance, second, taper float32
-	open                    bool
+	seeded                  *app.ExtrudeTool
 }{distance: 10}
 
 // drawExtrudeDialog shows the Extrusion property panel while the Extrude tool is
-// active, syncing every control with the tool each frame; OK commits, Cancel aborts.
+// active — creating a feature or re-editing a committed one (the same panel serves
+// both) — syncing every control with the tool each frame; OK commits, Cancel aborts.
 func drawExtrudeDialog(s *app.Session) {
 	ext := s.ActiveExtrude()
 	if ext == nil {
-		extrudeUI.open = false
+		extrudeUI.seeded = nil
 		return
 	}
-	if !extrudeUI.open { // tool just opened — seed the fields from its current state
+	if extrudeUI.seeded != ext { // tool just opened — seed the fields from its state
 		seedExtrudeFields(s)
-		extrudeUI.open = true
+		extrudeUI.seeded = ext
 	}
 	native.SetNextWindowSizeOnce(340, 430)
 	if native.Begin("Extrusion") {
@@ -61,8 +63,13 @@ func seedExtrudeFields(s *app.Session) {
 
 // drawExtrudeHeader renders the panel breadcrumb — the feature name and, once a profile
 // is picked, the sketch it extrudes (the reference panel's "Extrusion > Sketch" trail).
+// Re-editing a committed extrude names that feature instead.
 func drawExtrudeHeader(ext *app.ExtrudeTool) {
-	drawFeatureBreadcrumb("Extrusion", ext.SourceSketchName())
+	title := "Extrusion"
+	if name := ext.EditingName(); name != "" {
+		title = name
+	}
+	drawFeatureBreadcrumb(title, ext.SourceSketchName())
 }
 
 // drawExtrudeInputGeometry is the Input Geometry section: the Profiles selection chip

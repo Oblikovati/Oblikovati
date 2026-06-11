@@ -21,7 +21,7 @@ import (
 var revolveUI = struct {
 	angleDeg   float32
 	centerline bool
-	open       bool
+	seeded     *app.RevolveTool // the tool the fields were seeded from (nil = none)
 }{angleDeg: 360}
 
 // revolveAxes names each origin axis for the axis combo, paired with its work reference.
@@ -35,17 +35,21 @@ var revolveAxes = []struct {
 func drawRevolveDialog(s *app.Session) {
 	rv := s.ActiveRevolve()
 	if rv == nil {
-		revolveUI.open = false
+		revolveUI.seeded = nil
 		return
 	}
-	if !revolveUI.open {
+	if revolveUI.seeded != rv {
 		revolveUI.angleDeg = seedRevolveAngle(rv)
 		revolveUI.centerline = rv.UseCenterline()
-		revolveUI.open = true
+		revolveUI.seeded = rv
 	}
 	native.SetNextWindowSizeOnce(340, 360)
 	if native.Begin("Revolve") {
-		drawFeatureBreadcrumb("Revolve", rv.SourceSketchName())
+		title := "Revolve"
+		if name := rv.EditingName(); name != "" {
+			title = name // re-editing a committed revolve: the breadcrumb names it
+		}
+		drawFeatureBreadcrumb(title, rv.SourceSketchName())
 		drawRevolveInputGeometry(rv)
 		drawRevolveBehavior(rv)
 		drawRevolveOutput(rv)

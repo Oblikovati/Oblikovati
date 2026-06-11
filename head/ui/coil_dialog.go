@@ -15,7 +15,7 @@ import (
 // outlined by the tool's preview.
 var coilUI = struct {
 	pitch, revolutions float32
-	open               bool
+	seeded             *app.CoilTool // the tool the fields were seeded from (nil = none)
 }{pitch: 1, revolutions: 3}
 
 // drawCoilDialog shows the Coil property panel while the Coil tool is active, syncing
@@ -23,13 +23,17 @@ var coilUI = struct {
 func drawCoilDialog(s *app.Session) {
 	c := s.ActiveCoil()
 	if c == nil {
-		coilUI.open = false
+		coilUI.seeded = nil
 		return
 	}
 	refreshCoilUI(c)
 	native.SetNextWindowSizeOnce(340, 340)
 	if native.Begin("Coil") {
-		drawFeatureBreadcrumb("Coil", c.SourceSketchName())
+		title := "Coil"
+		if name := c.EditingName(); name != "" {
+			title = name // re-editing a committed coil: the breadcrumb names it
+		}
+		drawFeatureBreadcrumb(title, c.SourceSketchName())
 		drawCoilInputGeometry(c)
 		drawCoilBehavior(s, c)
 		drawCoilOutput(c)
@@ -40,12 +44,12 @@ func drawCoilDialog(s *app.Session) {
 }
 
 func refreshCoilUI(c *app.CoilTool) {
-	if coilUI.open {
+	if coilUI.seeded == c {
 		return
 	}
 	coilUI.pitch = float32(c.Pitch())
 	coilUI.revolutions = float32(c.Revolutions())
-	coilUI.open = true
+	coilUI.seeded = c
 }
 
 // drawCoilInputGeometry is the Input Geometry section: the required Profiles chip and
