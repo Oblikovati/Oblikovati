@@ -70,6 +70,7 @@ void obk_ig_mouse_pos(float* x, float* y);
 int  obk_ig_key_shift(void);
 int  obk_ig_key_ctrl(void);
 int  obk_ig_escape_pressed(void);
+int  obk_ig_f1_pressed(void);
 int  obk_ig_undo_pressed(void);
 int  obk_ig_redo_pressed(void);
 int  obk_ig_want_text_input(void);
@@ -661,6 +662,9 @@ func KeyShift() bool { return C.obk_ig_key_shift() != 0 }
 func KeyCtrl() bool { return C.obk_ig_key_ctrl() != 0 }
 
 // EscapePressed reports whether Esc was pressed this frame (cancel the active tool).
+// F1Pressed fires once on the frame F1 is pressed — the host help shortcut (M05-F14).
+func F1Pressed() bool { return C.obk_ig_f1_pressed() != 0 }
+
 func EscapePressed() bool { return C.obk_ig_escape_pressed() != 0 }
 
 // UndoPressed / RedoPressed report whether the Z / Y key was pressed this frame (the

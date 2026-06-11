@@ -53,6 +53,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerWindowHandlers()
 	r.registerUIShellHandlers()
 	r.registerTriadHandlers()
+	r.registerHelpHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r

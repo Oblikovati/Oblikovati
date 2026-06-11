@@ -315,6 +315,7 @@ int  obk_ig_key_shift(void)                  { return ImGui::GetIO().KeyShift ? 
 int  obk_ig_key_ctrl(void)                   { return ImGui::GetIO().KeyCtrl ? 1 : 0; }
 // escape_pressed fires once on the frame Esc is pressed (cancel the active tool).
 int  obk_ig_escape_pressed(void)             { return ImGui::IsKeyPressed(ImGuiKey_Escape) ? 1 : 0; }
+int  obk_ig_f1_pressed(void)                 { return ImGui::IsKeyPressed(ImGuiKey_F1) ? 1 : 0; }
 // undo/redo_pressed fire once on the frame Z / Y is pressed; the Go side gates them on
 // Ctrl (and not WantTextInput) to form the global Ctrl+Z / Ctrl+Y shortcuts.
 int  obk_ig_undo_pressed(void)               { return ImGui::IsKeyPressed(ImGuiKey_Z) ? 1 : 0; }
