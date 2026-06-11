@@ -61,6 +61,7 @@ type Session struct {
 	balloonTips        *BalloonTipCenter          // notification balloons (M05-F09)
 	prompts            *PromptCenter              // declarative prompts (M05-F09)
 	dialogMemoryStore  dialogmemory.Store         // persists suppressions + remembered answers
+	miniToolbars       *MiniToolbarRack           // in-canvas mini-toolbars (M05-F07)
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
@@ -128,6 +129,7 @@ func newSession(store doc.Store) *Session {
 		progress:        NewProgressLedger(),
 		balloonTips:     NewBalloonTipCenter(),
 		prompts:         NewPromptCenter(),
+		miniToolbars:    NewMiniToolbarRack(),
 		visualStyle:     renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now

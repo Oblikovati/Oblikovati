@@ -58,9 +58,9 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 }
 
 // subscribeUISurfaces wires the M05 UI-surface events: browser panes and dockable
-// windows (F03), progress/balloon/prompt feedback (F09).
+// windows (F03), progress/balloon/prompt feedback (F09), mini-toolbars (F07).
 func subscribeUISurfaces(bus *event.Bus, sink Sink) []event.Subscription {
-	return []event.Subscription{
+	subs := []event.Subscription{
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.BrowserPaneNodeActivated) event.Outcome {
 			return relayJSON(sink, wire.BrowserNodeEvent{
 				Type: wire.EventBrowserNode, Pane: e.Pane, Node: e.Node, Gesture: e.Gesture,
@@ -83,12 +83,31 @@ func subscribeUISurfaces(bus *event.Bus, sink Sink) []event.Subscription {
 			})
 		}),
 	}
+	return append(subs, subscribeMiniToolbars(bus, sink)...)
+}
+
+// subscribeMiniToolbars wires the mini-toolbar edit/commit events (M05-F07).
+func subscribeMiniToolbars(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.MiniToolbarControlChanged) event.Outcome {
+			return relayJSON(sink, wire.MiniToolbarChangedEvent{
+				Type: wire.EventMiniToolbarChanged, Toolbar: e.Toolbar, Control: e.Control,
+				Value: e.Value, Checked: e.Checked, Number: e.Number, Selected: e.Selected,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.MiniToolbarCommitted) event.Outcome {
+			return relayJSON(sink, wire.MiniToolbarCommittedEvent{
+				Type: wire.EventMiniToolbarCommitted, Toolbar: e.Toolbar, Gesture: e.Gesture,
+			})
+		}),
+	}
 }
 
 // relayJSON serializes a wire event DTO and hands it to sink (passive listener).
 // Generic so each call site stays statically typed (the house no-`any` rule).
 func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
-	wire.ProgressCancelledEvent | wire.BalloonTipClickedEvent | wire.PromptAnsweredEvent](sink Sink, ev E) event.Outcome {
+	wire.ProgressCancelledEvent | wire.BalloonTipClickedEvent | wire.PromptAnsweredEvent |
+	wire.MiniToolbarChangedEvent | wire.MiniToolbarCommittedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}
