@@ -128,6 +128,37 @@ func drawEmptySelectorChip(id, text string, required bool) {
 	native.Button(text + "##" + id)
 }
 
+// propertyArmableSlotChip draws the generic editors' reference-slot chip: clicking the
+// chip arms the slot for viewport picking (the reference panel's Active selector state —
+// it reads "Selecting…" while armed), and the clear (×) empties it when clearable.
+// Returns (armClicked, clearClicked).
+func propertyArmableSlotChip(id, text string, filled, armed, clearable bool) (bool, bool) {
+	if armed {
+		text = "Selecting…"
+	}
+	armClicked := drawArmableChipButton(id, text, filled, armed)
+	if !clearable {
+		return armClicked, false
+	}
+	native.SameLine()
+	return armClicked, native.Button("×##" + id + "-clear")
+}
+
+// drawArmableChipButton renders the chip body: accent while armed or filled, the danger
+// prompt while empty (a slot always names required geometry).
+func drawArmableChipButton(id, text string, filled, armed bool) bool {
+	if armed || filled {
+		native.PushStyleColor("Button", accentColor)
+		native.PushStyleColor("ButtonHovered", accentColor)
+		native.PushStyleColor("ButtonActive", accentColor)
+		defer native.PopStyleColor(3)
+	} else {
+		native.PushStyleColor("Text", dangerColor)
+		defer native.PopStyleColor(1)
+	}
+	return native.Button(text + "##" + id)
+}
+
 // propertyIconToggles draws a row of icon toggle buttons (the reference panel's
 // Direction and Boolean rows), highlighting the active index in the accent color.
 // Each option is an icon key + tooltip; a missing glyph falls back to its tooltip's

@@ -108,3 +108,14 @@ func TestLoftGuideChipState(t *testing.T) {
 		t.Errorf("empty centerline chip = (%q, %v), want (\"Select Path\", false)", text, filled)
 	}
 }
+
+// TestEditSlotChipText locks the generic editor's slot chip captions: the reference
+// sheet's "N Selected" once filled, the slot's prompt while empty.
+func TestEditSlotChipText(t *testing.T) {
+	if got := editSlotChipText(0, "Edges"); got != "Select Edges" {
+		t.Errorf("empty slot chip = %q, want \"Select Edges\"", got)
+	}
+	if got := editSlotChipText(2, "Edges"); got != "2 Selected" {
+		t.Errorf("filled slot chip = %q, want \"2 Selected\"", got)
+	}
+}

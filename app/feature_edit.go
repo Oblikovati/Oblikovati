@@ -3,8 +3,6 @@
 package app
 
 import (
-	"errors"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
 )
@@ -83,37 +81,21 @@ func (t *FeatureEditTool) CanCommit() bool { return true }
 // Commit recomputes with the edited parameters/references and records the edit. A sick result
 // returns an error so the dialog stays open for correction.
 func (t *FeatureEditTool) Commit(s *Session) error {
-	part, err := activePart(s)
-	if err != nil {
-		return err
-	}
-	s.endEditScope() // restore full evaluation before the final rebuild
-	part.Features().MarkDirty(t.feature)
-	part.Recompute()
-	s.recordEdit(part, "Edit "+t.feature.Name())
-	s.Selection().SetFilter(NewSelectionFilter())
-	if !t.feature.Health().OK() {
-		return errors.New("feature edit: " + t.feature.Health().Reason)
-	}
-	return nil
+	return commitFeatureEdit(s, t.feature)
 }
 
 // Cancel restores the snapshotted parameters and references, recomputes, and clears the filter.
 func (t *FeatureEditTool) Cancel(s *Session) {
-	for i, p := range t.params {
-		p.Set(t.origP[i])
-	}
-	for _, restore := range t.restore {
-		if restore != nil {
-			restore()
+	cancelFeatureEdit(s, t.feature, func() {
+		for i, p := range t.params {
+			p.Set(t.origP[i])
 		}
-	}
-	s.endEditScope() // restore full evaluation before rebuilding with the reverted values
-	if part, err := activePart(s); err == nil {
-		part.Features().MarkDirty(t.feature)
-		part.Recompute()
-	}
-	s.Selection().SetFilter(NewSelectionFilter())
+		for _, restore := range t.restore {
+			if restore != nil {
+				restore()
+			}
+		}
+	})
 }
 
 // Arm puts the i-th reference slot into pick mode (its kind's filter); ClearSlot empties it.
@@ -163,17 +145,24 @@ func (t *FeatureEditTool) recompute(s *Session) {
 	}
 }
 
-// BeginEditFeature opens a feature for editing (browser double-click / Edit menu). A feature
-// with no editable parameters or references is a no-op.
+// BeginEditFeature opens a feature for editing (browser double-click / Edit menu). A
+// feature whose creation tool can round-trip its definition re-opens that tool — the
+// SAME property panel serves creation and editing, with every creation property
+// available (editToolFor). Other editable features open the generic parameter/
+// reference editor; a feature with neither is a no-op.
 func (s *Session) BeginEditFeature(h FeatureHandle) {
-	t := newFeatureEditTool(h.Feature)
-	if !t.editable() {
-		return
+	tool, ok := editToolFor(s, h.Feature)
+	if !ok {
+		t := newFeatureEditTool(h.Feature)
+		if !t.editable() {
+			return
+		}
+		tool = t
 	}
 	// StartTool first: it cancels any previous edit tool, whose Cancel restores that edit's
 	// scope — beginning our scope before that would capture the rolled-back marker and then
 	// have it cleared out from under us (the part would stay stuck mid-history after commit).
-	s.StartTool(t)
+	s.StartTool(tool)
 	s.beginEditScope(h.Feature.Seq()) // roll back to this feature: hide everything after it
 }
 

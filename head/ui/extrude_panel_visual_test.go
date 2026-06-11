@@ -78,6 +78,14 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		s.StartTool(app.NewSplitTool())
 	case "fillet":
 		s.StartTool(app.NewFilletTool())
+	case "edit-extrude": // commit an extrude, then re-open it for editing (the unified flow)
+		ext := app.NewExtrudeTool()
+		s.StartTool(ext)
+		ext.Pick(s, profile)
+		ext.SetDistance(3)
+		if err := s.OK(); err == nil {
+			s.BeginEditFeature(app.FeatureHandle{Feature: ext.AddedFeature()})
+		}
 	default:
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)

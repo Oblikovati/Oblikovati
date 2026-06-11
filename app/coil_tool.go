@@ -15,12 +15,13 @@ import (
 // the helix axis, pitch, number of revolutions and operation in the property window,
 // and OK to add a coil feature to the active part. It mirrors [RevolveTool].
 type CoilTool struct {
-	profile     *ProfileHandle
-	axis        feature.WorkRef
-	pitch       float64
-	revolutions float64
-	operation   ops.PartFeatureOperation
-	added       *feature.PartFeature
+	featureEditMode // set ⇒ this panel re-edits a committed coil (see editCoilTool)
+	profile         *ProfileHandle
+	axis            feature.WorkRef
+	pitch           float64
+	revolutions     float64
+	operation       ops.PartFeatureOperation
+	added           *feature.PartFeature
 }
 
 // NewCoilTool returns a coil tool defaulting to a single-pitch, 3-revolution helix about
@@ -67,6 +68,9 @@ func (t *CoilTool) CanCommit() bool { return t.profile != nil && t.revolutions >
 // Commit adds the coil feature to the active part and recomputes; a sick feature keeps
 // the tool open by returning an error.
 func (t *CoilTool) Commit(s *Session) error {
+	if t.IsEditing() {
+		return t.commitEdit(s)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
@@ -85,6 +89,24 @@ func (t *CoilTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// commitEdit writes the panel state back into the committed coil's definition — the
+// same properties the create path passes to Add.
+func (t *CoilTool) commitEdit(s *Session) error {
+	part, err := activePart(s)
+	if err != nil {
+		return err
+	}
+	axis, ok := part.WorkGeometry().AxisByRef(t.axis)
+	if !ok {
+		return errors.New("coil edit: axis " + string(t.axis) + " not found")
+	}
+	def := t.target.Definition().(*feature.CoilFeature).Definition()
+	def.Sketch, def.ProfileIndex, def.Axis = t.profile.Sketch, t.profile.ProfileIndex, axis
+	def.Pitch, def.Revolutions = konst(t.pitch), konst(t.revolutions)
+	def.Operation = t.operation
+	return commitFeatureEdit(s, t.target)
 }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
@@ -115,7 +137,13 @@ func (t *CoilTool) Preview(*Session) []renderer.DrawItem {
 }
 
 // Cancel restores the default selection filter.
-func (t *CoilTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *CoilTool) Cancel(s *Session) {
+	if t.IsEditing() {
+		cancelFeatureEdit(s, t.target, t.restoreDef)
+		return
+	}
+	s.Selection().SetFilter(NewSelectionFilter())
+}
 
 // ClearProfile empties the picked profile — the property panel's selector clear (⊗) —
 // returning the tool to its select-a-region step.

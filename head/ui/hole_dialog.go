@@ -23,20 +23,24 @@ var holeUI = struct {
 	cDiameter, cDepth        float32
 	sinkAngleDeg             float32
 	pointAngleDeg            float32
-	open                     bool
+	seeded                   *app.HoleTool // the tool the fields were seeded from (nil = none)
 }{diameter: 1, depth: 2, cDiameter: 2, cDepth: 0.5, sinkAngleDeg: 90, pointAngleDeg: 118}
 
 // drawHoleDialog shows the Hole property panel while the Hole tool is active.
 func drawHoleDialog(s *app.Session) {
 	h := s.ActiveHole()
 	if h == nil {
-		holeUI.open = false
+		holeUI.seeded = nil
 		return
 	}
 	refreshHoleUI(h)
 	native.SetNextWindowSizeOnce(360, 460)
 	if native.Begin("Hole") {
-		drawFeatureBreadcrumb("Hole", "")
+		title := "Hole"
+		if name := h.EditingName(); name != "" {
+			title = name // re-editing a committed hole: the breadcrumb names it
+		}
+		drawFeatureBreadcrumb(title, "")
 		drawHoleInputGeometry(h)
 		drawHoleType(s, h)
 		drawHoleBehavior(s, h)
@@ -47,7 +51,7 @@ func drawHoleDialog(s *app.Session) {
 }
 
 func refreshHoleUI(h *app.HoleTool) {
-	if holeUI.open {
+	if holeUI.seeded == h {
 		return
 	}
 	holeUI.diameter = float32(h.Diameter())
@@ -59,7 +63,7 @@ func refreshHoleUI(h *app.HoleTool) {
 	holeUI.cDepth = float32(h.CounterDepth())
 	holeUI.sinkAngleDeg = float32(h.SinkAngle() * 180 / stdmath.Pi)
 	holeUI.pointAngleDeg = float32(h.PointAngle() * 180 / stdmath.Pi)
-	holeUI.open = true
+	holeUI.seeded = h
 }
 
 // drawHoleInputGeometry is the Input Geometry section: the required placement-face chip.
@@ -68,7 +72,7 @@ func drawHoleInputGeometry(h *app.HoleTool) {
 		return
 	}
 	propertyRow("Position")
-	_, picked := h.PickedFace()
+	picked := h.HasPlacement() // a fresh pick, or the edited feature's retained face
 	if propertySelectorChip("hole-position", pickChipText(picked, "1 Face", "Select Face"), picked, true) {
 		h.ClearFace()
 	}

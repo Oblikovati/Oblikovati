@@ -19,15 +19,16 @@ import (
 // Inventor extrude flow, driven entirely by session input so a test exercises it with
 // synthetic clicks. It is the worked example proving geometry flows end to end.
 type ExtrudeTool struct {
-	profiles   []ProfileHandle
-	distance   float64 // primary depth, model units
-	distance2  float64 // asymmetric second-direction depth, model units
-	taper      float64 // draft angle, radians
-	extent     feature.ExtentType
-	direction  feature.ExtentDirection
-	asymmetric bool
-	operation  ops.PartFeatureOperation
-	added      *feature.PartFeature
+	featureEditMode // set ⇒ this panel re-edits a committed extrude (see editExtrudeTool)
+	profiles        []ProfileHandle
+	distance        float64 // primary depth, model units
+	distance2       float64 // asymmetric second-direction depth, model units
+	taper           float64 // draft angle, radians
+	extent          feature.ExtentType
+	direction       feature.ExtentDirection
+	asymmetric      bool
+	operation       ops.PartFeatureOperation
+	added           *feature.PartFeature
 }
 
 // NewExtrudeTool returns an extrude tool defaulting to a positive distance extrusion that
@@ -163,6 +164,9 @@ func (t *ExtrudeTool) CanCommit() bool {
 // must lie on one sketch (a single extrude consumes one sketch's regions); picks on
 // other sketches are ignored.
 func (t *ExtrudeTool) Commit(s *Session) error {
+	if t.IsEditing() {
+		return t.commitEdit(s)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return err
@@ -178,6 +182,16 @@ func (t *ExtrudeTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// commitEdit writes the panel state back into the committed extrude's definition —
+// the same properties the create path passes to AddExtrude.
+func (t *ExtrudeTool) commitEdit(s *Session) error {
+	skt := t.profiles[0].Sketch
+	def := t.target.Definition().(*feature.ExtrudeFeature).Definition()
+	def.Sketch, def.ProfileIndices = skt, profileIndicesOn(t.profiles, skt)
+	def.Operation, def.Extent, def.Taper = t.operation, t.buildExtent(), t.taper
+	return commitFeatureEdit(s, t.target)
 }
 
 // profileIndicesOn returns the region indices among handles that belong to sketch skt.
@@ -250,7 +264,13 @@ func prismWireframe(plane sketch.Plane, poly []math.Point2, dist float64) render
 }
 
 // Cancel restores the default selection filter.
-func (t *ExtrudeTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *ExtrudeTool) Cancel(s *Session) {
+	if t.IsEditing() {
+		cancelFeatureEdit(s, t.target, t.restoreDef)
+		return
+	}
+	s.Selection().SetFilter(NewSelectionFilter())
+}
 
 // activePart returns the active document's part component definition, or an error.
 func activePart(s *Session) (*compdef.PartComponentDefinition, error) {
