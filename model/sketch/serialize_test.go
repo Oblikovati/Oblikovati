@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/linetype"
 )
 
 // roundTrip serializes sc and rebuilds it in a fresh collection, returning the
@@ -50,6 +51,28 @@ func TestSketchPropertiesSurvive(t *testing.T) {
 	}
 	if !out.DeferUpdates() {
 		t.Error("deferUpdates = false, want true")
+	}
+}
+
+// TestCustomLineTypeSurvives proves a loaded .lin definition round-trips with its
+// pattern (issue #161) — reopening must not need the original .lin file — and that
+// switching back to a built-in style drops it.
+func TestCustomLineTypeSurvives(t *testing.T) {
+	sc := NewSketches()
+	s := sc.Add(XYPlane())
+	s.SetCustomLineType(linetype.Definition{Name: "DASHDOT", Pattern: []float64{0.5, -0.25, 0, -0.25}}, "styles.lin")
+
+	out := roundTrip(t, sc)
+	if out.LineType() != "custom" {
+		t.Fatalf("lineType = %q, want custom", out.LineType())
+	}
+	d, file, ok := out.CustomLineType()
+	if !ok || d.Name != "DASHDOT" || file != "styles.lin" || len(d.Pattern) != 4 {
+		t.Errorf("custom line type = %+v/%q/%v, want DASHDOT from styles.lin with 4 elements", d, file, ok)
+	}
+	out.SetLineType("dashed")
+	if _, _, still := out.CustomLineType(); still {
+		t.Error("custom definition must drop when a built-in style is set")
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/linetype"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
 )
@@ -88,14 +89,17 @@ func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candida
 func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) (*segAccum, *segAccum, *segAccum) {
 	normal, sel, cand := &segAccum{}, &segAccum{}, &segAccum{}
 	plane := sk.Plane()
-	pick := func(e sketch.Entity) *segAccum {
+	// Selected/candidate geometry stays solid so picks read clearly; normal-state
+	// geometry carries its line type (construction dashed, centerlines center
+	// pattern, sketch override otherwise — issue #161).
+	pick := func(e sketch.Entity) (*segAccum, []float64) {
 		switch {
 		case candidate != nil && e == candidate:
-			return cand // the geometry the active constraint tool would accept on hover
+			return cand, nil // the geometry the active constraint tool would accept on hover
 		case selected != nil && selected(e):
-			return sel
+			return sel, nil
 		default:
-			return normal
+			return normal, app.SketchEntityPattern(sk, e)
 		}
 	}
 	addLines(pick, plane, sk)
@@ -117,20 +121,23 @@ func sketchItems(normal, sel, cand *segAccum) []renderer.DrawItem {
 // sketchSegments is the polyline resolution for sampling sketch curves.
 const sketchSegments = 64
 
-// accumFor is the per-entity accumulator chooser passed to the add* helpers.
-type accumFor func(sketch.Entity) *segAccum
+// accumFor is the per-entity accumulator + dash-pattern chooser passed to the add*
+// helpers (a nil pattern draws solid).
+type accumFor func(sketch.Entity) (*segAccum, []float64)
 
 func addLines(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	for i := 0; i < sk.Lines().Count(); i++ {
 		l := sk.Lines().Item(i)
-		pick(l).seg(plane, l.A.Position(), l.B.Position())
+		acc, pat := pick(l)
+		acc.patterned(plane, []math.Point2{l.A.Position(), l.B.Position()}, false, pat)
 	}
 }
 
 func addCircles(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	for i := 0; i < sk.Circles().Count(); i++ {
 		c := sk.Circles().Item(i)
-		pick(c).polyline(plane, sampleArc(c.Center.Position(), c.Radius, 0, 2*stdmath.Pi), true)
+		acc, pat := pick(c)
+		acc.patterned(plane, sampleArc(c.Center.Position(), c.Radius, 0, 2*stdmath.Pi), true, pat)
 	}
 }
 
@@ -146,14 +153,16 @@ func addArcs(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 		if !a.CounterClockwise && end > start {
 			end -= 2 * stdmath.Pi
 		}
-		pick(a).polyline(plane, sampleArc(c, a.Radius(), start, end), false)
+		acc, pat := pick(a)
+		acc.patterned(plane, sampleArc(c, a.Radius(), start, end), false, pat)
 	}
 }
 
 func addEllipses(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	for i := 0; i < sk.Ellipses().Count(); i++ {
 		e := sk.Ellipses().Item(i)
-		pick(e).polyline(plane, sampleEllipse(e), true)
+		acc, pat := pick(e)
+		acc.patterned(plane, sampleEllipse(e), true, pat)
 	}
 }
 
@@ -164,7 +173,8 @@ func addSplines(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 		for j, p := range sp.Points {
 			pts[j] = p.Position()
 		}
-		pick(sp).polyline(plane, pts, sp.Closed)
+		acc, pat := pick(sp)
+		acc.patterned(plane, pts, sp.Closed, pat)
 	}
 }
 
@@ -225,6 +235,19 @@ func (a *segAccum) seg(plane sketch.Plane, p, q math.Point2) {
 func (a *segAccum) addSegment(p, q math.Point3) {
 	i, j := a.add(p), a.add(q)
 	a.idx = append(a.idx, i, j)
+}
+
+// patterned adds a polyline either solid or split into its line-type dashes
+// (issue #161); a nil/degenerate pattern falls back to the solid polyline.
+func (a *segAccum) patterned(plane sketch.Plane, pts []math.Point2, closed bool, pattern []float64) {
+	segs := linetype.DashPolyline(pts, closed, pattern)
+	if segs == nil {
+		a.polyline(plane, pts, closed)
+		return
+	}
+	for _, s := range segs {
+		a.seg(plane, s[0], s[1])
+	}
 }
 
 // polyline adds a connected chain (optionally closed) of plane points.
