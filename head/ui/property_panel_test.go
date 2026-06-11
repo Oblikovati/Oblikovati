@@ -14,7 +14,12 @@ import (
 // property panels names only bundled glyphs — a missing asset degrades the toggle to a
 // text button, so a typo'd key fails the build instead of shipping a mixed-looking row.
 func TestPropertyToggleIconsResolve(t *testing.T) {
-	for _, set := range []propertyToggleSet{extrudeDirectionToggles, extrudeExtentToggles, extrudeBooleanToggles} {
+	sets := []propertyToggleSet{
+		extrudeDirectionToggles, extrudeExtentToggles, booleanToggles,
+		holeSeatToggles, holeTerminationToggles, holeDrillPointToggles,
+		{keys: []string{"angle-full"}, tips: []string{"Full"}}, // the revolve full toggle's lone glyph
+	}
+	for _, set := range sets {
 		if len(set.keys) != len(set.tips) {
 			t.Errorf("toggle set %v: %d keys but %d tips", set.keys, len(set.keys), len(set.tips))
 		}

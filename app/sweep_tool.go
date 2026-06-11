@@ -73,6 +73,20 @@ func (t *SweepTool) PickedPath() (PathHandle, bool) {
 // CanCommit reports whether both a profile and a path have been picked.
 func (t *SweepTool) CanCommit() bool { return t.profile != nil && t.path != nil }
 
+// ClearProfile / ClearPath empty one pick each — the property panel's selector clear
+// (⊗) affordances on the Profiles and Path chips.
+func (t *SweepTool) ClearProfile() { t.profile = nil }
+func (t *SweepTool) ClearPath()    { t.path = nil }
+
+// SourceSketchName returns the sketch the picked profile comes from, for the property
+// panel's breadcrumb; "" until a profile is picked.
+func (t *SweepTool) SourceSketchName() string {
+	if t.profile == nil {
+		return ""
+	}
+	return t.profile.Sketch.Name()
+}
+
 // Commit resolves the path to a 3D rail, adds the sweep feature, and recomputes; a sick
 // feature keeps the tool open by returning an error.
 func (t *SweepTool) Commit(s *Session) error {

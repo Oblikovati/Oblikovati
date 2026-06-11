@@ -202,6 +202,24 @@ func (t *RevolveTool) PickedProfile() (ProfileHandle, bool) {
 // CanCommit reports whether a region has been picked (the axis has a default).
 func (t *RevolveTool) CanCommit() bool { return t.profile != nil }
 
+// ClearProfile empties the picked profile — the property panel's selector clear (⊗) —
+// dropping any centerline that was auto-selected from it, so the tool returns to its
+// select-a-region step.
+func (t *RevolveTool) ClearProfile() {
+	t.profile = nil
+	t.centerline = nil
+	t.centerlineSk = nil
+}
+
+// SourceSketchName returns the sketch the picked profile comes from, for the property
+// panel's breadcrumb; "" until a profile is picked.
+func (t *RevolveTool) SourceSketchName() string {
+	if t.profile == nil {
+		return ""
+	}
+	return t.profile.Sketch.Name()
+}
+
 // Commit adds the revolve feature to the active part and recomputes; a sick feature
 // (open profile, missing axis) keeps the tool open by returning an error.
 func (t *RevolveTool) Commit(s *Session) error {

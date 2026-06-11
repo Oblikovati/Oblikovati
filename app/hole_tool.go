@@ -89,6 +89,10 @@ func (t *HoleTool) SinkAngle() float64     { return t.sinkAngle }
 func (t *HoleTool) SetPointAngle(a float64) { t.pointAngle = a }
 func (t *HoleTool) PointAngle() float64     { return t.pointAngle }
 
+// ClearFace empties the picked placement face — the property panel's selector clear
+// (⊗) — returning the tool to its pick-a-face step.
+func (t *HoleTool) ClearFace() { t.face = nil }
+
 // PickedFace returns the placement face (and true), or false when none picked yet.
 func (t *HoleTool) PickedFace() (FaceHandle, bool) {
 	if t.face == nil {

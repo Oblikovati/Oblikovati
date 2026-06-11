@@ -11,15 +11,17 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// The Sweep flow in the head: while the Sweep tool runs, a modeless options window shows
-// the profile/path pick state, the output operation and a twist field (degrees), then
-// OK/Cancel. The picked profile is outlined by the tool's preview.
+// The Sweep flow in the head: while the Sweep tool runs, a modeless property panel
+// (the reference panel schema) drives the tool — the Profiles and Path chips, the
+// twist, and the boolean output — then OK/Cancel. The picked profile is outlined by
+// the tool's preview.
 var sweepUI = struct {
 	twistDeg float32
 	open     bool
 }{}
 
-// drawSweepDialog shows the sweep options window while the Sweep tool is active.
+// drawSweepDialog shows the Sweep property panel while the Sweep tool is active,
+// syncing every control with the tool each frame; OK commits, Cancel aborts.
 func drawSweepDialog(s *app.Session) {
 	sw := s.ActiveSweep()
 	if sw == nil {
@@ -30,56 +32,51 @@ func drawSweepDialog(s *app.Session) {
 		sweepUI.twistDeg = float32(sw.Twist() * 180 / stdmath.Pi)
 		sweepUI.open = true
 	}
-	native.SetNextWindowSize(300, 220)
+	native.SetNextWindowSizeOnce(340, 320)
 	if native.Begin("Sweep") {
-		native.Text(sweepPickStatus(sw))
-		sweepOperationCombo(sw)
-		native.Text("Twist (deg)")
-		native.InputFloat("##sweep-twist", &sweepUI.twistDeg)
-		sw.SetTwist(float64(sweepUI.twistDeg) * stdmath.Pi / 180)
-		drawSweepButtons(s, sw)
+		drawFeatureBreadcrumb("Sweep", sw.SourceSketchName())
+		drawSweepInputGeometry(sw)
+		drawSweepBehavior(sw)
+		drawSweepOutput(sw)
+		native.Separator()
+		drawCommitCancelButtons(s, sw.CanCommit())
 	}
 	native.End()
 }
 
-func sweepPickStatus(sw *app.SweepTool) string {
+// drawSweepInputGeometry is the Input Geometry section: the required Profiles chip and
+// the required Path chip, each clearable on its own.
+func drawSweepInputGeometry(sw *app.SweepTool) {
+	if !propertySection("Input Geometry") {
+		return
+	}
+	propertyRow("Profiles")
 	_, hasProfile := sw.PickedProfile()
+	if propertySelectorChip("sweep-profiles", pickChipText(hasProfile, "1 Profile", "Select Profile"), hasProfile, true) {
+		sw.ClearProfile()
+	}
+	native.SetItemTooltip("Click a region in the viewport to sweep")
+	propertyRow("Path")
 	_, hasPath := sw.PickedPath()
-	switch {
-	case !hasProfile:
-		return "Click a region to sweep"
-	case !hasPath:
-		return "Click a path to sweep along"
-	default:
-		return "Profile and path selected"
+	if propertySelectorChip("sweep-path", pickChipText(hasPath, "1 Path", "Select Path"), hasPath, true) {
+		sw.ClearPath()
 	}
+	native.SetItemTooltip("Click the curve to sweep along")
 }
 
-func sweepOperationCombo(sw *app.SweepTool) {
-	preview := "New Solid"
-	for _, o := range extrudeOperations {
-		if o.op == sw.Operation() {
-			preview = o.label
-		}
+// drawSweepBehavior is the Behavior section: the twist spread along the path.
+func drawSweepBehavior(sw *app.SweepTool) {
+	if !propertySection("Behavior") {
+		return
 	}
-	if native.BeginCombo("Output", preview) {
-		for _, o := range extrudeOperations {
-			if native.Selectable(o.label, o.op == sw.Operation()) {
-				sw.SetOperation(o.op)
-			}
-		}
-		native.EndCombo()
-	}
+	propertyFloatRow("Twist", "sweep-twist", "deg", &sweepUI.twistDeg)
+	sw.SetTwist(float64(sweepUI.twistDeg) * stdmath.Pi / 180)
 }
 
-func drawSweepButtons(s *app.Session, sw *app.SweepTool) {
-	native.BeginDisabled(!sw.CanCommit())
-	if native.Button("OK") {
-		_ = s.OK()
+// drawSweepOutput is the Output section: the shared Boolean toggle row.
+func drawSweepOutput(sw *app.SweepTool) {
+	if !propertySection("Output") {
+		return
 	}
-	native.EndDisabled()
-	native.SameLine()
-	if native.Button("Cancel") {
-		s.CancelTool()
-	}
+	drawBooleanPropertyRow("sweep-boolean", sw.Operation(), sw.SetOperation)
 }
