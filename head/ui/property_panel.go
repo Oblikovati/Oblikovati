@@ -4,7 +4,10 @@
 
 package ui
 
-import "oblikovati.org/head/internal/native"
+import (
+	"oblikovati.org/head/internal/native"
+	"oblikovati.org/kernel/ops"
+)
 
 // The feature property panels (the Extrusion panel first) share this widget kit: a
 // breadcrumb header, collapsible sections, label/control rows on a fixed column grid,
@@ -18,6 +21,26 @@ const (
 	propertyLabelWidth = 95
 	propertyFieldWidth = 110
 )
+
+// drawFeatureBreadcrumb renders a property panel's header trail: the feature name and,
+// once known, the sketch it consumes (the reference panel's "Feature > Sketch" line).
+func drawFeatureBreadcrumb(featureName, sketchName string) {
+	native.Text(featureName)
+	if sketchName != "" {
+		native.SameLine()
+		native.Text("> " + sketchName)
+	}
+	native.Separator()
+}
+
+// pickChipText is the chip caption for a single-pick selector: the filled text once
+// picked, the required prompt until then.
+func pickChipText(picked bool, filled, prompt string) string {
+	if picked {
+		return filled
+	}
+	return prompt
+}
 
 // propertySection draws a full-width collapsible section header, open by default the
 // first time it is shown. Draw the section's rows only when it returns true.
@@ -106,6 +129,42 @@ func drawPropertyToggle(group, key, tip string, selected bool) bool {
 	clicked := drawPropertyToggleControl(group, key, tip)
 	native.SetItemTooltip(tip)
 	return clicked
+}
+
+// propertyToggleSet bundles an icon-toggle row's glyph keys with their tooltips.
+type propertyToggleSet struct{ keys, tips []string }
+
+// booleanToggles / booleanToggleOps are the Output section's Boolean row, shared by the
+// volumetric feature panels (Extrude, Revolve, Sweep) in the reference panel's order.
+var booleanToggles = propertyToggleSet{
+	keys: []string{"bool-join", "bool-cut", "bool-intersect", "bool-new-solid"},
+	tips: []string{
+		"Join — merge the feature into the body",
+		"Cut — remove the feature from the body",
+		"Intersect — keep only the overlapping material",
+		"New Solid — create a separate body",
+	},
+}
+
+var booleanToggleOps = []ops.PartFeatureOperation{ops.Join, ops.Cut, ops.Intersect, ops.NewBody}
+
+// booleanToggleIndex maps a feature operation onto the Boolean toggle row.
+func booleanToggleIndex(op ops.PartFeatureOperation) int {
+	for i, o := range booleanToggleOps {
+		if o == op {
+			return i
+		}
+	}
+	return 3 // New Solid, the tools' default
+}
+
+// drawBooleanPropertyRow renders the Output section's Boolean toggle row, writing a
+// clicked operation through set.
+func drawBooleanPropertyRow(id string, current ops.PartFeatureOperation, set func(ops.PartFeatureOperation)) {
+	propertyRow("Boolean")
+	if i := propertyIconToggles(id, booleanToggles.keys, booleanToggles.tips, booleanToggleIndex(current)); i >= 0 {
+		set(booleanToggleOps[i])
+	}
 }
 
 // drawPropertyToggleControl draws the toggle's clickable control: the icon at the small

@@ -11,9 +11,11 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// The Hole flow in the head: while the Hole tool runs, a modeless options window lets
-// the user set the diameter and depth (database units), then OK/Cancel. The placement
-// face is the one clicked in the viewport.
+// The Hole flow in the head: while the Hole tool runs, a modeless property panel (the
+// reference panel schema: Input Geometry / Type / Behavior sections) drives the tool —
+// the placement-face chip, the seat (none / counterbore / countersink) with its
+// dimensions, the termination, the hole size, and the drill point — then OK/Cancel.
+// Lengths are in the document's length unit, angles in degrees.
 var holeUI = struct {
 	diameter, depth          float32
 	through                  bool
@@ -24,7 +26,7 @@ var holeUI = struct {
 	open                     bool
 }{diameter: 1, depth: 2, cDiameter: 2, cDepth: 0.5, sinkAngleDeg: 90, pointAngleDeg: 118}
 
-// drawHoleDialog shows the hole options window while the Hole tool is active.
+// drawHoleDialog shows the Hole property panel while the Hole tool is active.
 func drawHoleDialog(s *app.Session) {
 	h := s.ActiveHole()
 	if h == nil {
@@ -32,11 +34,14 @@ func drawHoleDialog(s *app.Session) {
 		return
 	}
 	refreshHoleUI(h)
-	native.SetNextWindowSize(300, 390)
+	native.SetNextWindowSizeOnce(360, 460)
 	if native.Begin("Hole") {
-		drawHoleBody(s, h)
-		drawRecess(s, h)
-		drawHoleButtons(s, h)
+		drawFeatureBreadcrumb("Hole", "")
+		drawHoleInputGeometry(h)
+		drawHoleType(s, h)
+		drawHoleBehavior(s, h)
+		native.Separator()
+		drawCommitCancelButtons(s, h.CanCommit())
 	}
 	native.End()
 }
@@ -57,76 +62,173 @@ func refreshHoleUI(h *app.HoleTool) {
 	holeUI.open = true
 }
 
-func drawHoleBody(s *app.Session, h *app.HoleTool) {
-	if _, ok := h.PickedFace(); !ok {
-		native.Text("Click a planar face to place the hole on")
+// drawHoleInputGeometry is the Input Geometry section: the required placement-face chip.
+func drawHoleInputGeometry(h *app.HoleTool) {
+	if !propertySection("Input Geometry") {
+		return
 	}
-	drawHoleSize(s, h)
-	drawHoleDepth(s, h)
-	drawHolePointAngle(h)
+	propertyRow("Position")
+	_, picked := h.PickedFace()
+	if propertySelectorChip("hole-position", pickChipText(picked, "1 Face", "Select Face"), picked, true) {
+		h.ClearFace()
+	}
+	native.SetItemTooltip("Click a planar face in the viewport to place the hole on")
 }
 
-func drawHoleSize(s *app.Session, h *app.HoleTool) {
-	native.Text("Diameter (" + s.LengthUnitName() + ")")
-	native.InputFloat("##hole-diameter", &holeUI.diameter)
+// holeSeatToggles is the Type section's Seat row (the reference panel's seat shapes we
+// support: plain, counterbore, countersink).
+var holeSeatToggles = propertyToggleSet{
+	keys: []string{"seat-none", "seat-counterbore", "seat-countersink"},
+	tips: []string{
+		"None — a plain drilled hole",
+		"Counterbore — a flat-bottomed recess above the hole",
+		"Countersink — a conical recess above the hole",
+	},
+}
+
+// drawHoleType is the Type section: the Seat toggle row and the selected seat's
+// dimension rows.
+func drawHoleType(s *app.Session, h *app.HoleTool) {
+	if !propertySection("Type") {
+		return
+	}
+	propertyRow("Seat")
+	if i := propertyIconToggles("hole-seat", holeSeatToggles.keys, holeSeatToggles.tips, holeSeatIndex(h)); i >= 0 {
+		applyHoleSeat(h, i)
+	}
+	drawHoleSeatParams(s, h)
+}
+
+// holeSeatIndex maps the tool's mutually-exclusive seat flags onto the Seat row.
+func holeSeatIndex(h *app.HoleTool) int {
+	switch {
+	case h.Counterbore():
+		return 1
+	case h.Countersink():
+		return 2
+	default:
+		return 0
+	}
+}
+
+// applyHoleSeat writes one Seat toggle back to the tool (the tool keeps the two seat
+// profiles mutually exclusive) and re-syncs the panel's flags from it.
+func applyHoleSeat(h *app.HoleTool, index int) {
+	h.SetCounterbore(index == 1)
+	h.SetCountersink(index == 2)
+	holeUI.counterbore = h.Counterbore()
+	holeUI.countersink = h.Countersink()
+}
+
+// drawHoleSeatParams renders the selected seat's dimensions: a counterbore's recess
+// Ø + depth, or a countersink's sink Ø + included angle.
+func drawHoleSeatParams(s *app.Session, h *app.HoleTool) {
+	if h.Counterbore() {
+		propertyFloatRow("Seat Ø", "hole-cdia", s.LengthUnitName(), &holeUI.cDiameter)
+		propertyFloatRow("Seat Depth", "hole-cdepth", s.LengthUnitName(), &holeUI.cDepth)
+		h.SetCounterDiameter(float64(holeUI.cDiameter))
+		h.SetCounterDepth(float64(holeUI.cDepth))
+	}
+	if h.Countersink() {
+		propertyFloatRow("Seat Ø", "hole-sdia", s.LengthUnitName(), &holeUI.cDiameter)
+		propertyFloatRow("Seat Angle", "hole-sang", "deg", &holeUI.sinkAngleDeg)
+		h.SetCounterDiameter(float64(holeUI.cDiameter))
+		h.SetSinkAngle(float64(holeUI.sinkAngleDeg) * stdmath.Pi / 180)
+	}
+}
+
+// holeTerminationToggles / holeDrillPointToggles are the Behavior section's toggle rows.
+var holeTerminationToggles = propertyToggleSet{
+	keys: []string{"extent-distance", "extent-through-all"},
+	tips: []string{
+		"Distance — drill exactly Depth deep",
+		"Through All — drill through all existing material",
+	},
+}
+
+var holeDrillPointToggles = propertyToggleSet{
+	keys: []string{"drill-flat", "drill-angle"},
+	tips: []string{
+		"Flat — a flat-bottomed hole",
+		"Angle — a conical drill point of the given included angle",
+	},
+}
+
+// drawHoleBehavior is the Behavior section: termination, hole size, and drill point.
+func drawHoleBehavior(s *app.Session, h *app.HoleTool) {
+	if !propertySection("Behavior") {
+		return
+	}
+	drawHoleTerminationRow(h)
+	propertyFloatRow("Diameter", "hole-diameter", s.LengthUnitName(), &holeUI.diameter)
 	h.SetDiameter(float64(holeUI.diameter))
-	native.Checkbox("Through All", &holeUI.through)
-	h.SetThroughAll(holeUI.through)
+	drawHoleDepthRow(s, h)
+	drawHoleDrillPointRow(h)
 }
 
-func drawHoleDepth(s *app.Session, h *app.HoleTool) {
-	native.BeginDisabled(holeUI.through) // depth is ignored when drilling through
-	native.Text("Depth (" + s.LengthUnitName() + ")")
-	native.InputFloat("##hole-depth", &holeUI.depth)
+// drawHoleTerminationRow renders the Termination toggles (distance / through-all).
+func drawHoleTerminationRow(h *app.HoleTool) {
+	propertyRow("Termination")
+	active := 0
+	if h.ThroughAll() {
+		active = 1
+	}
+	tt := holeTerminationToggles
+	if i := propertyIconToggles("hole-termination", tt.keys, tt.tips, active); i >= 0 {
+		holeUI.through = i == 1
+		h.SetThroughAll(holeUI.through)
+	}
+}
+
+// drawHoleDepthRow renders the Depth field, greyed while drilling through everything.
+func drawHoleDepthRow(s *app.Session, h *app.HoleTool) {
+	native.BeginDisabled(holeUI.through)
+	propertyFloatRow("Depth", "hole-depth", s.LengthUnitName(), &holeUI.depth)
 	native.EndDisabled()
 	h.SetDepth(float64(holeUI.depth))
 }
 
-func drawHolePointAngle(h *app.HoleTool) {
+// drawHoleDrillPointRow renders the Drill Point toggles with the included-angle field
+// beside them in angle mode. The row greys out when the bottom shape is moot: a
+// through hole has no bottom, and a seated hole's recess owns the profile.
+func drawHoleDrillPointRow(h *app.HoleTool) {
 	native.BeginDisabled(holeUI.through || holeUI.counterbore || holeUI.countersink)
-	native.Text("Drill point angle (deg, 0 = flat)")
+	propertyRow("Drill Point")
+	active := 0
+	if h.PointAngle() > 0 {
+		active = 1
+	}
+	dt := holeDrillPointToggles
+	if i := propertyIconToggles("hole-drill", dt.keys, dt.tips, active); i >= 0 {
+		applyHoleDrillPoint(h, i)
+	}
+	drawHolePointAngleField(h)
+	native.EndDisabled()
+}
+
+// drawHolePointAngleField is the included-angle input shown beside the toggles while a
+// conical drill point is selected.
+func drawHolePointAngleField(h *app.HoleTool) {
+	if h.PointAngle() <= 0 {
+		return
+	}
+	native.SameLine()
+	native.SetNextItemWidth(60)
 	native.InputFloat("##hole-pang", &holeUI.pointAngleDeg)
+	native.SameLine()
+	native.Text("deg")
 	h.SetPointAngle(float64(holeUI.pointAngleDeg) * stdmath.Pi / 180)
-	native.EndDisabled()
 }
 
-// drawRecess renders the counterbore/countersink toggles (mutually exclusive) and their
-// parameters: a counterbore's recess Ø + depth, or a countersink's sink Ø + included angle.
-func drawRecess(s *app.Session, h *app.HoleTool) {
-	drawCounterbore(s, h)
-	drawCountersink(s, h)
-	h.SetCounterDiameter(float64(holeUI.cDiameter)) // shared recess/sink diameter
-}
-
-func drawCounterbore(s *app.Session, h *app.HoleTool) {
-	if native.Checkbox("Counterbore", &holeUI.counterbore) {
-		h.SetCounterbore(holeUI.counterbore)
-		holeUI.countersink = h.Countersink() // the tool clears the other profile
+// applyHoleDrillPoint writes one Drill Point toggle back to the tool: flat zeroes the
+// angle; angle mode restores the panel's angle (falling back to the 118° drill default).
+func applyHoleDrillPoint(h *app.HoleTool, index int) {
+	if index == 0 {
+		h.SetPointAngle(0)
+		return
 	}
-	native.BeginDisabled(!holeUI.counterbore)
-	native.Text("Counterbore Ø (" + s.LengthUnitName() + ")")
-	native.InputFloat("##hole-cdia", &holeUI.cDiameter)
-	native.Text("Counterbore depth (" + s.LengthUnitName() + ")")
-	native.InputFloat("##hole-cdepth", &holeUI.cDepth)
-	h.SetCounterDepth(float64(holeUI.cDepth))
-	native.EndDisabled()
-
-}
-
-func drawCountersink(s *app.Session, h *app.HoleTool) {
-	if native.Checkbox("Countersink", &holeUI.countersink) {
-		h.SetCountersink(holeUI.countersink)
-		holeUI.counterbore = h.Counterbore()
+	if holeUI.pointAngleDeg <= 0 {
+		holeUI.pointAngleDeg = 118
 	}
-	native.BeginDisabled(!holeUI.countersink)
-	native.Text("Countersink Ø (" + s.LengthUnitName() + ")")
-	native.InputFloat("##hole-sdia", &holeUI.cDiameter)
-	native.Text("Countersink angle (deg)")
-	native.InputFloat("##hole-sang", &holeUI.sinkAngleDeg)
-	h.SetSinkAngle(float64(holeUI.sinkAngleDeg) * stdmath.Pi / 180)
-	native.EndDisabled()
-}
-
-func drawHoleButtons(s *app.Session, h *app.HoleTool) {
-	drawCommitCancelButtons(s, h.CanCommit())
+	h.SetPointAngle(float64(holeUI.pointAngleDeg) * stdmath.Pi / 180)
 }

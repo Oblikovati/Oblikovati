@@ -32,15 +32,42 @@ func TestInWindowExtrudePanelVisualHold(t *testing.T) {
 	dockLaidOut = false
 	icons = nil
 	s, profile := extrudeReadySession(t)
-	ext := app.NewExtrudeTool()
-	s.StartTool(ext)
-	if os.Getenv("OBK_VISUAL_EMPTY") == "" { // EMPTY=1 shows the required/empty selector state
-		ext.Pick(s, profile)
-	}
+	startVisualFeatureTool(s, profile)
 	for i := 0; i < 6000; i++ { // long enough to screenshot even uncapped (~30s+)
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)
+	}
+}
+
+// startVisualFeatureTool starts the tool OBK_VISUAL_TOOL names (extrude by default;
+// revolve / sweep / hole) and seeds its picks unless OBK_VISUAL_EMPTY=1, which leaves
+// every selector in its required/empty state instead.
+func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
+	pick := os.Getenv("OBK_VISUAL_EMPTY") == ""
+	switch os.Getenv("OBK_VISUAL_TOOL") {
+	case "revolve":
+		rv := app.NewRevolveTool()
+		s.StartTool(rv)
+		if pick {
+			rv.Pick(s, profile)
+		}
+	case "sweep":
+		sw := app.NewSweepTool()
+		s.StartTool(sw)
+		if pick {
+			sw.Pick(s, profile) // the path chip stays empty: its required state shows
+		}
+	case "hole":
+		h := app.NewHoleTool()
+		s.StartTool(h)
+		h.SetCounterbore(true) // show the seat dimension rows
+	default:
+		ext := app.NewExtrudeTool()
+		s.StartTool(ext)
+		if pick {
+			ext.Pick(s, profile)
+		}
 	}
 }
 

@@ -64,12 +64,7 @@ func seedExtrudeFields(s *app.Session) {
 // drawExtrudeHeader renders the panel breadcrumb — the feature name and, once a profile
 // is picked, the sketch it extrudes (the reference panel's "Extrusion > Sketch" trail).
 func drawExtrudeHeader(ext *app.ExtrudeTool) {
-	native.Text("Extrusion")
-	if name := ext.SourceSketchName(); name != "" {
-		native.SameLine()
-		native.Text("> " + name)
-	}
-	native.Separator()
+	drawFeatureBreadcrumb("Extrusion", ext.SourceSketchName())
 }
 
 // drawExtrudeInputGeometry is the Input Geometry section: the Profiles selection chip
@@ -131,22 +126,6 @@ var extrudeExtentToggles = propertyToggleSet{
 		"To Next — extrude up to the next face",
 	},
 }
-
-var extrudeBooleanToggles = propertyToggleSet{
-	keys: []string{"bool-join", "bool-cut", "bool-intersect", "bool-new-solid"},
-	tips: []string{
-		"Join — merge the extrusion into the body",
-		"Cut — remove the extrusion from the body",
-		"Intersect — keep only the overlapping material",
-		"New Solid — create a separate body",
-	},
-}
-
-// propertyToggleSet bundles an icon-toggle row's glyph keys with their tooltips.
-type propertyToggleSet struct{ keys, tips []string }
-
-// extrudeBooleanOps lists the operations in the Boolean toggle row's order.
-var extrudeBooleanOps = []ops.PartFeatureOperation{ops.Join, ops.Cut, ops.Intersect, ops.NewBody}
 
 // extrudeExtentTypes lists the extents in the extent toggle row's order.
 var extrudeExtentTypes = []feature.ExtentType{feature.DistanceExtent, feature.ThroughAllExtent, feature.ToNextExtent}
@@ -236,26 +215,12 @@ func drawExtrudeSecondDistanceRow(s *app.Session) {
 	native.SetItemTooltip("Distance B (" + s.LengthUnitName() + ")")
 }
 
-// drawExtrudeOutput is the Output section: the Boolean toggle row.
+// drawExtrudeOutput is the Output section: the shared Boolean toggle row.
 func drawExtrudeOutput(ext *app.ExtrudeTool) {
 	if !propertySection("Output") {
 		return
 	}
-	propertyRow("Boolean")
-	b := extrudeBooleanToggles
-	if i := propertyIconToggles("extrude-boolean", b.keys, b.tips, extrudeBooleanIndex(ext)); i >= 0 {
-		ext.SetOperation(extrudeBooleanOps[i])
-	}
-}
-
-// extrudeBooleanIndex maps the tool's operation onto the Boolean toggle row.
-func extrudeBooleanIndex(ext *app.ExtrudeTool) int {
-	for i, op := range extrudeBooleanOps {
-		if op == ext.Operation() {
-			return i
-		}
-	}
-	return 3 // New Solid, the tool's default
+	drawBooleanPropertyRow("extrude-boolean", ext.Operation(), ext.SetOperation)
 }
 
 // drawExtrudeAdvanced is the Advanced Properties section: the Taper A draft angle.

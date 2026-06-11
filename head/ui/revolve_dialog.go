@@ -12,11 +12,12 @@ import (
 	"oblikovati.org/model/feature"
 )
 
-// The Revolve flow in the head: while the Revolve tool runs, a modeless options window
-// (Inventor's Revolve property panel) lets the user choose the output operation, the
-// axis of revolution and the swept angle (or a full revolution), then OK/Cancel. The
-// picked region is outlined in the viewport by the tool's preview. The angle is shown
-// in degrees.
+// The Revolve flow in the head: while the Revolve tool runs, a modeless property panel
+// (the reference panel schema: Input Geometry / Behavior / Output sections over a
+// label/control grid) drives the tool — the profile chip, the axis of revolution, the
+// swept angle with its full-revolution toggle, and the boolean output — then OK/Cancel.
+// The picked region is outlined in the viewport by the tool's preview. The angle is
+// shown in degrees.
 var revolveUI = struct {
 	angleDeg   float32
 	centerline bool
@@ -29,8 +30,8 @@ var revolveAxes = []struct {
 	ref   feature.WorkRef
 }{{"X Axis", feature.OriginXAxis}, {"Y Axis", feature.OriginYAxis}, {"Z Axis", feature.OriginZAxis}}
 
-// drawRevolveDialog shows the revolve options window while the Revolve tool is active,
-// syncing each control with the tool every frame; OK commits, Cancel aborts.
+// drawRevolveDialog shows the Revolve property panel while the Revolve tool is active,
+// syncing every control with the tool each frame; OK commits, Cancel aborts.
 func drawRevolveDialog(s *app.Session) {
 	rv := s.ActiveRevolve()
 	if rv == nil {
@@ -42,22 +43,19 @@ func drawRevolveDialog(s *app.Session) {
 		revolveUI.centerline = rv.UseCenterline()
 		revolveUI.open = true
 	}
-	native.SetNextWindowSize(300, 270)
+	native.SetNextWindowSizeOnce(340, 360)
 	if native.Begin("Revolve") {
-		drawRevolveProfileText(rv)
-		revolveOperationCombo(rv)
-		native.Checkbox("About sketch centerline", &revolveUI.centerline)
-		rv.SetUseCenterline(revolveUI.centerline)
-		native.BeginDisabled(revolveUI.centerline) // the axis is the centerline now
-		revolveAxisCombo(rv)
-		native.EndDisabled()
-		drawRevolveAngle(rv)
-		drawRevolveButtons(s, rv)
+		drawFeatureBreadcrumb("Revolve", rv.SourceSketchName())
+		drawRevolveInputGeometry(rv)
+		drawRevolveBehavior(rv)
+		drawRevolveOutput(rv)
+		native.Separator()
+		drawCommitCancelButtons(s, rv.CanCommit())
 	}
 	native.End()
 }
 
-// seedRevolveAngle returns the dialog's initial angle in degrees from the tool (a full
+// seedRevolveAngle returns the panel's initial angle in degrees from the tool (a full
 // revolution shows 360).
 func seedRevolveAngle(rv *app.RevolveTool) float32 {
 	if rv.IsFullRevolution() {
@@ -66,27 +64,34 @@ func seedRevolveAngle(rv *app.RevolveTool) float32 {
 	return float32(rv.Angle() * 180 / stdmath.Pi)
 }
 
-func drawRevolveProfileText(rv *app.RevolveTool) {
-	if _, ok := rv.PickedProfile(); !ok {
-		native.Text("Click a region to revolve")
+// drawRevolveInputGeometry is the Input Geometry section: the required Profiles chip
+// and the Axis row (origin-axis combo, swapped for the sketch's centerline when that
+// toggle is on).
+func drawRevolveInputGeometry(rv *app.RevolveTool) {
+	if !propertySection("Input Geometry") {
+		return
 	}
+	propertyRow("Profiles")
+	_, picked := rv.PickedProfile()
+	if propertySelectorChip("revolve-profiles", pickChipText(picked, "1 Profile", "Select Profile"), picked, true) {
+		rv.ClearProfile()
+	}
+	native.SetItemTooltip("Click a region in the viewport")
+	propertyRow("Axis")
+	drawRevolveAxisControls(rv)
 }
 
-func revolveOperationCombo(rv *app.RevolveTool) {
-	preview := "New Solid"
-	for _, o := range extrudeOperations {
-		if o.op == rv.Operation() {
-			preview = o.label
-		}
-	}
-	if native.BeginCombo("Output", preview) {
-		for _, o := range extrudeOperations {
-			if native.Selectable(o.label, o.op == rv.Operation()) {
-				rv.SetOperation(o.op)
-			}
-		}
-		native.EndCombo()
-	}
+// drawRevolveAxisControls renders the axis combo (greyed while the centerline drives
+// the revolution) with the about-centerline toggle beneath it, aligned to the control
+// column.
+func drawRevolveAxisControls(rv *app.RevolveTool) {
+	native.BeginDisabled(revolveUI.centerline)
+	native.SetNextItemWidth(propertyFieldWidth)
+	revolveAxisCombo(rv)
+	native.EndDisabled()
+	propertyRow("")
+	native.Checkbox("About sketch centerline", &revolveUI.centerline)
+	rv.SetUseCenterline(revolveUI.centerline)
 }
 
 func revolveAxisCombo(rv *app.RevolveTool) {
@@ -96,7 +101,7 @@ func revolveAxisCombo(rv *app.RevolveTool) {
 			preview = a.label
 		}
 	}
-	if native.BeginCombo("Axis", preview) {
+	if native.BeginCombo("##revolve-axis", preview) {
 		for _, a := range revolveAxes {
 			if native.Selectable(a.label, a.ref == rv.Axis()) {
 				rv.SetAxis(a.ref)
@@ -106,33 +111,44 @@ func revolveAxisCombo(rv *app.RevolveTool) {
 	}
 }
 
-// drawRevolveAngle offers a full-revolution checkbox and, when unchecked, an angle field
-// in degrees written back to the tool as radians.
-func drawRevolveAngle(rv *app.RevolveTool) {
-	full := rv.IsFullRevolution()
-	if native.Checkbox("Full revolution", &full) {
-		if full {
-			rv.SetFullRevolution()
-		} else {
-			rv.SetAngle(float64(revolveUI.angleDeg) * stdmath.Pi / 180)
-		}
-	}
-	if full {
+// drawRevolveBehavior is the Behavior section: the Angle A field (greyed during a full
+// revolution) with the full-revolution toggle beside it.
+func drawRevolveBehavior(rv *app.RevolveTool) {
+	if !propertySection("Behavior") {
 		return
 	}
-	native.Text("Angle (deg)")
+	propertyRow("Angle A")
+	native.BeginDisabled(rv.IsFullRevolution())
+	native.SetNextItemWidth(propertyFieldWidth)
 	native.InputFloat("##revolve-angle", &revolveUI.angleDeg)
+	if !rv.IsFullRevolution() {
+		rv.SetAngle(float64(revolveUI.angleDeg) * stdmath.Pi / 180)
+	}
+	native.SetItemTooltip("Angle A (deg)")
+	native.EndDisabled()
+	native.SameLine()
+	if drawPropertyToggle("revolve-full", "angle-full", "Full — revolve the whole 360°", rv.IsFullRevolution()) {
+		toggleRevolveFull(rv)
+	}
+}
+
+// toggleRevolveFull flips the full-revolution mode: leaving it restores the swept angle
+// from the panel field (a non-positive field falls back to 360°).
+func toggleRevolveFull(rv *app.RevolveTool) {
+	if !rv.IsFullRevolution() {
+		rv.SetFullRevolution()
+		return
+	}
+	if revolveUI.angleDeg <= 0 {
+		revolveUI.angleDeg = 360
+	}
 	rv.SetAngle(float64(revolveUI.angleDeg) * stdmath.Pi / 180)
 }
 
-func drawRevolveButtons(s *app.Session, rv *app.RevolveTool) {
-	native.BeginDisabled(!rv.CanCommit())
-	if native.Button("OK") {
-		_ = s.OK() // a failed commit (e.g. open profile) keeps the tool open
+// drawRevolveOutput is the Output section: the shared Boolean toggle row.
+func drawRevolveOutput(rv *app.RevolveTool) {
+	if !propertySection("Output") {
+		return
 	}
-	native.EndDisabled()
-	native.SameLine()
-	if native.Button("Cancel") {
-		s.CancelTool()
-	}
+	drawBooleanPropertyRow("revolve-boolean", rv.Operation(), rv.SetOperation)
 }

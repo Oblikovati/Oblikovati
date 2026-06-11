@@ -42,13 +42,11 @@ func TestExtrudeExtentIndexMapping(t *testing.T) {
 	}
 }
 
-// TestExtrudeBooleanIndexMapping locks the Boolean toggle order (Join, Cut, Intersect,
-// New Solid — the reference panel's order) against the tool's operation.
-func TestExtrudeBooleanIndexMapping(t *testing.T) {
-	ext := app.NewExtrudeTool()
-	for i, op := range extrudeBooleanOps {
-		ext.SetOperation(op)
-		if got := extrudeBooleanIndex(ext); got != i {
+// TestBooleanToggleIndexMapping locks the shared Boolean toggle order (Join, Cut,
+// Intersect, New Solid — the reference panel's order) against the feature operation.
+func TestBooleanToggleIndexMapping(t *testing.T) {
+	for i, op := range booleanToggleOps {
+		if got := booleanToggleIndex(op); got != i {
 			t.Errorf("operation %v maps to toggle %d, want %d", op, got, i)
 		}
 	}
