@@ -341,21 +341,20 @@ extern "C" unsigned int obk_ig_dockspace_over_main(void) {
     return ImGui::DockSpaceOverViewport(0, NULL, ImGuiDockNodeFlags_PassthruCentralNode);
 }
 
-// obk_ig_dock_default_layout builds the initial panel arrangement once: ribbon docked
-// across the top, the model browser left, the status bar bottom, and the 3D viewport
-// filling the central node. The window names come from Go (it owns panel identity); the
-// split structure is the default layout. Without this the panels float and auto-size to
-// nothing, so the viewport collapses to a sliver.
-extern "C" void obk_ig_dock_default_layout(unsigned int dockId, const char* ribbon,
-        const char* model, const char* viewport, const char* status) {
+// obk_ig_dock_default_layout builds the initial panel arrangement once: the model
+// browser left, the status bar bottom, and the 3D viewport filling the central node.
+// The ribbon is no longer part of the dockspace — it is a fixed band pinned above it
+// (obk_ig_begin_ribbon_band). The window names come from Go (it owns panel identity);
+// the split structure is the default layout. Without this the panels float and
+// auto-size to nothing, so the viewport collapses to a sliver.
+extern "C" void obk_ig_dock_default_layout(unsigned int dockId, const char* model,
+        const char* viewport, const char* status) {
     ImGui::DockBuilderRemoveNode(dockId);
     ImGui::DockBuilderAddNode(dockId, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodeSize(dockId, ImGui::GetMainViewport()->Size);
     ImGuiID center = dockId;
-    ImGuiID top = ImGui::DockBuilderSplitNode(center, ImGuiDir_Up, 0.18f, NULL, &center);
     ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.22f, NULL, &center);
     ImGuiID bottom = ImGui::DockBuilderSplitNode(center, ImGuiDir_Down, 0.07f, NULL, &center);
-    ImGui::DockBuilderDockWindow(ribbon, top);
     ImGui::DockBuilderDockWindow(model, left);
     ImGui::DockBuilderDockWindow(status, bottom);
     ImGui::DockBuilderDockWindow(viewport, center);

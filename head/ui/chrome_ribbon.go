@@ -14,15 +14,16 @@ import (
 // only on the transition frame, so the user can still pick tabs by hand afterwards.
 var prevInSketch bool
 
-// drawRibbon renders the ribbon as Inventor's two-level layout: a tab bar of command
-// tabs, each tab holding its panels of command buttons. A disabled command renders a
-// disabled button (its predicate is re-evaluated every frame). The contextual Sketch
-// tab is auto-selected when entering the sketch environment. Returns the id of a
-// clicked command, or "".
+// drawRibbon renders the ribbon as a fixed band pinned across the top of the window,
+// directly under the menu bar — classic CAD ribbons are window chrome, not dockable
+// palettes, so the band claims its slice of the work area each frame and the dockspace
+// lays out beneath it. Inside the band: a tab strip, then each tab's panels of command
+// buttons. A disabled command renders a disabled button (its predicate is re-evaluated
+// every frame). Returns the id of a clicked command, or "".
 func drawRibbon(s *app.Session) string {
 	force := contextualTab(s)
 	var activated string
-	if native.Begin("Ribbon") && native.BeginTabBar("##ribbon-tabs") {
+	if native.BeginRibbonBand("##ribbon", ribbonBandHeight()) && native.BeginTabBar("##ribbon-tabs") {
 		for _, tab := range app.BuildRibbon(s).Tabs {
 			if native.BeginTabItemSelected(tab.Name, tab.Name == force) {
 				if id := drawTabPanels(tab.Panels); id != "" {
@@ -37,10 +38,34 @@ func drawRibbon(s *app.Session) string {
 	return activated
 }
 
+// ribbonMaxRows is how many small buttons stack in one panel column before the next
+// column starts (the classic ribbon stacks its small buttons three deep).
+const ribbonMaxRows = 3
+
+// ribbonGridHeight is the height of the band's button-grid area: the tallest column
+// shape, ribbonMaxRows rows of small icon buttons.
+func ribbonGridHeight(m native.StyleMetrics) float32 {
+	row := smallIconPx + 2*m.FramePadY
+	return ribbonMaxRows*row + (ribbonMaxRows-1)*m.ItemSpacingY
+}
+
+// ribbonBandHeight is the fixed height of the ribbon band: the tab strip, the button
+// grid, and the panel-name strip, plus the paddings between them. Computed from the
+// live style so a font or padding change can never clip the band's content.
+func ribbonBandHeight() float32 {
+	m := native.Metrics()
+	content := ribbonGridHeight(m) + m.ItemSpacingY + native.TextLineHeight()
+	return 2*m.WindowPadY + native.FrameHeight() + m.ItemSpacingY + content
+}
+
 // drawTabPanels lays the tab's panels out horizontally — each panel is a layout group
-// (button row + title) and panels sit SameLine with a vertical divider between them, so
-// no panel is pushed off-screen the way a vertical stack hid the Sketch tab's Exit panel.
+// (button columns + name strip) separated by a full-height vertical divider. Every
+// panel pins its name at the same band-bottom Y (labelY), which both matches the
+// reference ribbon's footer strip and makes the dividers span the full band.
 func drawTabPanels(panels []app.RibbonPanel) string {
+	m := native.Metrics()
+	_, gridTop := native.GetCursorScreenPos()
+	labelY := gridTop + ribbonGridHeight(m) + m.ItemSpacingY
 	var activated string
 	for i, panel := range panels {
 		if i > 0 {
@@ -48,7 +73,7 @@ func drawTabPanels(panels []app.RibbonPanel) string {
 			native.SeparatorVertical()
 			native.SameLine()
 		}
-		if id := drawPanel(panel); id != "" {
+		if id := drawPanel(panel, labelY); id != "" {
 			activated = id
 		}
 	}
@@ -69,54 +94,94 @@ func contextualTab(s *app.Session) string {
 	return "3D Model"
 }
 
-// ribbonMaxRows caps how many button rows a panel uses (Inventor stacks small buttons a
-// few rows deep); the column count grows to fit, keeping each panel narrow so panels sit
-// side-by-side without running off the ribbon.
-const ribbonMaxRows = 3
-
-// panelCols returns how many columns to wrap a panel's n buttons into, bounded so the
-// panel is at most ribbonMaxRows tall.
-func panelCols(n int) int {
-	if n <= ribbonMaxRows {
-		return 1
+// packPanelColumns lays a panel's buttons into the ribbon's column-major flow: a large
+// button stands alone as its own full-height column, while small/compact/text buttons
+// stack up to ribbonMaxRows deep before the next column starts — so a registration
+// order of Move, Copy, Rotate, Trim, … reads down each column like the reference ribbon.
+func packPanelColumns(buttons []app.RibbonButton) [][]app.RibbonButton {
+	var cols [][]app.RibbonButton
+	var stack []app.RibbonButton
+	flush := func() {
+		if len(stack) > 0 {
+			cols = append(cols, stack)
+			stack = nil
+		}
 	}
-	return (n + ribbonMaxRows - 1) / ribbonMaxRows
+	for _, b := range buttons {
+		if b.Command.ButtonStyle() == app.LargeIconButton {
+			flush()
+			cols = append(cols, []app.RibbonButton{b})
+			continue
+		}
+		stack = append(stack, b)
+		if len(stack) == ribbonMaxRows {
+			flush()
+		}
+	}
+	flush()
+	return cols
 }
 
-// drawPanel renders one ribbon panel as a self-contained layout group: a compact grid of
-// command buttons with the panel title beneath them (Inventor's panel layout), so the
-// whole panel is one narrow, horizontally-placeable unit. The title uses plain Text (not
-// SeparatorText, which would stretch the group to the full window width and hide every
-// panel to its right). Returns the id of a clicked command, or "".
-func drawPanel(panel app.RibbonPanel) string {
+// drawPanel renders one ribbon panel as a self-contained layout group — its button
+// columns with the panel name centered beneath in the band's footer strip — so the
+// whole panel is one narrow, horizontally-placeable unit. Returns the id of a clicked
+// command, or "".
+func drawPanel(panel app.RibbonPanel, labelY float32) string {
 	if panel.Selector != nil {
-		return drawSelectorPanel(panel)
+		return drawSelectorPanel(panel, labelY)
 	}
-	var activated string
-	cols := panelCols(len(panel.Buttons))
 	native.BeginGroup()
-	for i, btn := range panel.Buttons {
-		if i > 0 && i%cols != 0 {
-			native.SameLine() // continue the current row; a new row starts at each multiple of cols
-		}
-		if id := drawRibbonButton(btn); id != "" {
-			activated = id
-		}
-	}
-	native.Text(panel.Name) // panel title under its buttons
+	activated := drawPanelColumns(packPanelColumns(panel.Buttons))
+	drawPanelName(panel.Name, labelY)
 	native.EndGroup()
 	return activated
+}
+
+// drawPanelColumns draws the packed columns side by side, each column a vertical group
+// of its buttons, and leaves the whole block as the last item so the caller can measure
+// it (ItemRectMin/Max) to center the panel name.
+func drawPanelColumns(cols [][]app.RibbonButton) string {
+	var activated string
+	native.BeginGroup()
+	for i, col := range cols {
+		if i > 0 {
+			native.SameLine()
+		}
+		native.BeginGroup()
+		for _, btn := range col {
+			if id := drawRibbonButton(btn); id != "" {
+				activated = id
+			}
+		}
+		native.EndGroup()
+	}
+	native.EndGroup()
+	return activated
+}
+
+// drawPanelName centers the panel name under the button block just drawn, pinned at
+// the shared band-bottom labelY — the reference ribbon's panel-name footer strip.
+func drawPanelName(name string, labelY float32) {
+	x0, _ := native.ItemRectMin()
+	x1, _ := native.ItemRectMax()
+	off := ((x1 - x0) - native.CalcTextWidth(name)) / 2
+	if off < 0 {
+		off = 0
+	}
+	native.SetCursorScreenPos(x0+off, labelY)
+	native.Text(name)
 }
 
 // selectorWidth is the pixel width of a ribbon selection-box (the Visual Style drop-down) —
 // wide enough for the longest label ("Wireframe with Visible Edges Only").
 const selectorWidth = 230
 
-// drawSelectorPanel renders a panel as a labelled selection box (Inventor's combo control):
-// a drop-down previewing the current choice with the panel title beneath, matching the button
-// panels' layout. Choosing an option returns its command id so the caller runs it (which sets
-// the new selection); the box reflects the session state on the next frame.
-func drawSelectorPanel(panel app.RibbonPanel) string {
+// drawSelectorPanel renders a panel as a labelled selection box (a ribbon combo
+// control): a drop-down previewing the current choice with the panel name beneath,
+// matching the button panels' layout. Choosing an option returns its command id so the
+// caller runs it (which sets the new selection); the box reflects the session state on
+// the next frame.
+func drawSelectorPanel(panel app.RibbonPanel, labelY float32) string {
 	sel := panel.Selector
 	preview := ""
 	if sel.SelectedIndex >= 0 && sel.SelectedIndex < len(sel.Options) {
@@ -136,15 +201,15 @@ func drawSelectorPanel(panel app.RibbonPanel) string {
 		}
 		native.EndCombo()
 	}
-	native.Text(panel.Name) // panel title under the selection box
+	drawPanelName(panel.Name, labelY)
 	native.EndGroup()
 	return activated
 }
 
-// drawRibbonButton renders one command in its configured style (text, small icon, or
-// large icon), greyed when its predicate is false, with the command tooltip on hover.
+// drawRibbonButton renders one command in its configured style (text, small, large, or
+// compact icon), greyed when its predicate is false, with the command tooltip on hover.
 // A command with variants renders as a split button: the head control plus a dropdown
-// arrow listing the variant tools (Inventor's variant flyout). It returns the id of the
+// arrow listing the variant tools (the variant flyout). It returns the id of the
 // command (head or chosen variant) clicked this frame, else "".
 func drawRibbonButton(btn app.RibbonButton) string {
 	native.BeginDisabled(!btn.Enabled)
@@ -212,7 +277,7 @@ func drawButtonControl(btn app.RibbonButton) bool {
 // text-only command.
 func iconSizeFor(s app.ButtonStyle) (int, bool) {
 	switch s {
-	case app.SmallIconButton:
+	case app.SmallIconButton, app.CompactIconButton:
 		return smallIconPx, true
 	case app.LargeIconButton:
 		return largeIconPx, true
@@ -225,18 +290,55 @@ func iconSizeFor(s app.ButtonStyle) (int, bool) {
 // baked in by iconCache.compose from the icon.* tokens, so no per-draw tinting.
 var identityTint = [4]float32{1, 1, 1, 1}
 
-// drawIconButton renders an icon button: small ones are icon-only (dense tool grids),
-// large ones place the name as a caption beneath the icon (the classic two CAD ribbon
-// button sizes). The icon is the click target either way.
+// drawIconButton renders an icon button in its style: large is a captioned panel
+// heading, small is an icon with its name beside it, and compact is the bare icon for
+// dense grids like the constraint palette. The icon is the click target in every style.
 func drawIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
-	if btn.Command.ButtonStyle() != app.LargeIconButton {
+	switch btn.Command.ButtonStyle() {
+	case app.LargeIconButton:
+		return drawLargeIconButton(btn, tex, px)
+	case app.SmallIconButton:
+		return drawLabeledIconButton(btn, tex, px)
+	default: // CompactIconButton
 		clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
 		native.SetItemTooltip(btn.Command.Tooltip())
 		return clicked
 	}
+}
+
+// drawLabeledIconButton renders a small button as icon + name side by side, the label
+// vertically centered on the icon row — the stacked rows of a ribbon panel column.
+func drawLabeledIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
+	m := native.Metrics()
 	native.BeginGroup()
 	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
 	native.SetItemTooltip(btn.Command.Tooltip())
+	native.SameLine()
+	x, y := native.GetCursorScreenPos()
+	native.SetCursorScreenPos(x, y+(px+2*m.FramePadY-native.TextLineHeight())/2)
+	native.Text(btn.Command.DisplayName())
+	native.EndGroup()
+	return clicked
+}
+
+// drawLargeIconButton renders a large button as a panel heading: the icon centered over
+// its caption, the cell as wide as the wider of the two — so "Start 2D Sketch" doesn't
+// hang off a 40px icon.
+func drawLargeIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
+	m := native.Metrics()
+	frameW := px + 2*m.FramePadX // ImageButton draws its frame padding around the glyph
+	textW := native.CalcTextWidth(btn.Command.DisplayName())
+	cellW := frameW
+	if textW > cellW {
+		cellW = textW
+	}
+	native.BeginGroup()
+	x, y := native.GetCursorScreenPos()
+	native.SetCursorScreenPos(x+(cellW-frameW)/2, y)
+	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
+	native.SetItemTooltip(btn.Command.Tooltip())
+	_, captionY := native.GetCursorScreenPos()
+	native.SetCursorScreenPos(x+(cellW-textW)/2, captionY)
 	native.Text(btn.Command.DisplayName())
 	native.EndGroup()
 	return clicked

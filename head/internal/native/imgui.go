@@ -73,6 +73,14 @@ float obk_ig_delta_time(void);
 void obk_ig_mouse_delta(float* dx, float* dy);
 void obk_ig_get_cursor_pos(float* x, float* y);
 void obk_ig_set_cursor_pos(float x, float y);
+int  obk_ig_begin_ribbon_band(const char* name, float height);
+void obk_ig_get_cursor_screen_pos(float* x, float* y);
+void obk_ig_set_cursor_screen_pos(float x, float y);
+void obk_ig_item_rect_max(float* x, float* y);
+float obk_ig_calc_text_width(const char* s);
+float obk_ig_frame_height(void);
+float obk_ig_text_line_height(void);
+void obk_ig_style_metrics(float* fpx, float* fpy, float* isx, float* isy, float* wpx, float* wpy);
 void obk_ig_set_next_window_pos(float x, float y);
 void obk_ig_set_next_window_size(float w, float h);
 void obk_ig_set_next_window_size_first_use(float w, float h);
@@ -111,7 +119,7 @@ int  obk_ig_begin_combo(const char* label, const char* preview);
 void obk_ig_end_combo(void);
 
 unsigned int obk_ig_dockspace_over_main(void);
-void obk_ig_dock_default_layout(unsigned int dockId, const char* ribbon, const char* model, const char* viewport, const char* status);
+void obk_ig_dock_default_layout(unsigned int dockId, const char* model, const char* viewport, const char* status);
 
 // Synthetic-input injection for in-window UI tests (defined in app.cpp).
 void obk_inject_mouse_pos(float x, float y);
@@ -642,23 +650,85 @@ func SetNextWindowSizeOnce(w, h float32) {
 	C.obk_ig_set_next_window_size_first_use(C.float(w), C.float(h))
 }
 
-// DockSpaceOverMain hosts a full-window dockspace each frame and returns its stable id.
-// Call it once per frame before the panels; the panels then dock into it.
+// DockSpaceOverMain hosts a dockspace over the main viewport's work area each frame and
+// returns its stable id. The work area excludes the menu bar and the ribbon band (both
+// claim their slice via the viewport side-bar mechanism), so the docked panels lay out
+// below the fixed chrome. Call it once per frame before the panels.
 func DockSpaceOverMain() uint32 { return uint32(C.obk_ig_dockspace_over_main()) }
 
-// DockDefaultLayout arranges the named panels once: ribbon top, model left, status
-// bottom, viewport filling the center. Call it a single time after the first
-// DockSpaceOverMain (the names must match the panels' Begin() titles).
-func DockDefaultLayout(dockID uint32, ribbon, model, viewport, status string) {
-	cr, fr := cstr(ribbon)
-	defer fr()
+// DockDefaultLayout arranges the named panels once: model left, status bottom, viewport
+// filling the center. Call it a single time after the first DockSpaceOverMain (the
+// names must match the panels' Begin() titles). The ribbon is not docked — it is a
+// fixed band drawn with BeginRibbonBand.
+func DockDefaultLayout(dockID uint32, model, viewport, status string) {
 	cm, fm := cstr(model)
 	defer fm()
 	cv, fv := cstr(viewport)
 	defer fv()
 	cs, fs := cstr(status)
 	defer fs()
-	C.obk_ig_dock_default_layout(C.uint(dockID), cr, cm, cv, cs)
+	C.obk_ig_dock_default_layout(C.uint(dockID), cm, cv, cs)
+}
+
+// BeginRibbonBand pins a full-width band of the given height across the top of the main
+// viewport, under the menu bar. The band is fixed chrome: not movable, resizable, or
+// dockable, and the dockspace lays out beneath it. Reports whether the content is
+// visible; pair with End regardless.
+func BeginRibbonBand(name string, height float32) bool {
+	c, free := cstr(name)
+	defer free()
+	return C.obk_ig_begin_ribbon_band(c, C.float(height)) != 0
+}
+
+// GetCursorScreenPos / SetCursorScreenPos read and write the layout cursor in screen
+// space — for pinning the ribbon's panel-name strip at a fixed band Y.
+func GetCursorScreenPos() (float32, float32) {
+	var x, y C.float
+	C.obk_ig_get_cursor_screen_pos(&x, &y)
+	return float32(x), float32(y)
+}
+func SetCursorScreenPos(x, y float32) { C.obk_ig_set_cursor_screen_pos(C.float(x), C.float(y)) }
+
+// ItemRectMax returns the screen-space bottom-right of the last item (pairs with
+// ItemRectMin to measure a just-drawn group, e.g. a ribbon panel's button block).
+func ItemRectMax() (float32, float32) {
+	var x, y C.float
+	C.obk_ig_item_rect_max(&x, &y)
+	return float32(x), float32(y)
+}
+
+// CalcTextWidth returns the rendered width of s in the current font (for centering
+// ribbon captions and panel names).
+func CalcTextWidth(s string) float32 {
+	c, free := cstr(s)
+	defer free()
+	return float32(C.obk_ig_calc_text_width(c))
+}
+
+// FrameHeight is the height of a framed widget row (font size + frame padding) — the
+// tab-strip height the ribbon band budget builds on.
+func FrameHeight() float32 { return float32(C.obk_ig_frame_height()) }
+
+// TextLineHeight is the height of one line of text in the current font.
+func TextLineHeight() float32 { return float32(C.obk_ig_text_line_height()) }
+
+// StyleMetrics are the live ImGui style paddings/spacings, so Go layout math (the
+// ribbon band height, caption centering) tracks the style instead of hardcoding pixels.
+type StyleMetrics struct {
+	FramePadX, FramePadY       float32
+	ItemSpacingX, ItemSpacingY float32
+	WindowPadX, WindowPadY     float32
+}
+
+// Metrics reads the current style's paddings and spacings.
+func Metrics() StyleMetrics {
+	var fpx, fpy, isx, isy, wpx, wpy C.float
+	C.obk_ig_style_metrics(&fpx, &fpy, &isx, &isy, &wpx, &wpy)
+	return StyleMetrics{
+		FramePadX: float32(fpx), FramePadY: float32(fpy),
+		ItemSpacingX: float32(isx), ItemSpacingY: float32(isy),
+		WindowPadX: float32(wpx), WindowPadY: float32(wpy),
+	}
 }
 
 // Inject* feed synthetic pointer/keyboard input into the next frame's ImGui IO, winning

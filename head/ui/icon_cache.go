@@ -9,11 +9,14 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// Rasterization sizes per button style. Small icons fill the dense sketch tool grids;
-// large icons head a panel (two button sizes). Glyphs are size-normalized at raster
-// time (see icon.RasterizeRoles), so these are the on-screen icon sizes directly.
+// Rasterization sizes per button style. Small icons sit beside their label in a panel
+// column's stacked rows (and alone in compact grids); large icons head a panel over a
+// caption. Glyphs are size-normalized at raster time (see icon.RasterizeRoles), so
+// these are the on-screen icon sizes directly. Small dropped from 30 when small
+// buttons gained side labels: three 18px rows + labels match a large captioned button,
+// the classic two ribbon button sizes.
 const (
-	smallIconPx = 30
+	smallIconPx = 18
 	largeIconPx = 40
 )
 

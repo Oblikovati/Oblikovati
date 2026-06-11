@@ -39,6 +39,41 @@ void obk_ig_begin_group(void)                { ImGui::BeginGroup(); }
 void obk_ig_end_group(void)                  { ImGui::EndGroup(); }
 // separator_vertical draws a vertical divider between two horizontally-laid panels.
 void obk_ig_separator_vertical(void)         { ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical); }
+
+// begin_ribbon_band pins a full-width, fixed-height band to the top of the main
+// viewport (under the menu bar) via BeginViewportSideBar — the side-bar claims its
+// slice of the viewport work area, so the dockspace created afterwards lays out below
+// it. The band cannot be moved, resized, collapsed, or docked: the ribbon is window
+// chrome, not a palette. Pair with obk_ig_end regardless of the return value.
+int  obk_ig_begin_ribbon_band(const char* name, float height) {
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
+    return ImGui::BeginViewportSideBar(name, ImGui::GetMainViewport(), ImGuiDir_Up,
+        height, flags) ? 1 : 0;
+}
+
+// Cursor/layout probes for the ribbon's manual placement (screen space): the panel
+// name strip is pinned at a fixed band Y and centered under its button block, which
+// needs the block's rect, the text width, and a screen-space cursor write.
+void obk_ig_get_cursor_screen_pos(float* x, float* y) {
+    ImVec2 p = ImGui::GetCursorScreenPos();
+    *x = p.x; *y = p.y;
+}
+void obk_ig_set_cursor_screen_pos(float x, float y) { ImGui::SetCursorScreenPos(ImVec2(x, y)); }
+void obk_ig_item_rect_max(float* x, float* y) {
+    ImVec2 p = ImGui::GetItemRectMax();
+    *x = p.x; *y = p.y;
+}
+float obk_ig_calc_text_width(const char* s)  { return ImGui::CalcTextSize(s).x; }
+float obk_ig_frame_height(void)              { return ImGui::GetFrameHeight(); }
+float obk_ig_text_line_height(void)          { return ImGui::GetTextLineHeight(); }
+// style_metrics reports the paddings/spacings the Go layout math needs (frame padding,
+// item spacing, window padding) so pixel constants in Go stay in sync with the style.
+void obk_ig_style_metrics(float* fpx, float* fpy, float* isx, float* isy, float* wpx, float* wpy) {
+    const ImGuiStyle& st = ImGui::GetStyle();
+    *fpx = st.FramePadding.x; *fpy = st.FramePadding.y;
+    *isx = st.ItemSpacing.x;  *isy = st.ItemSpacing.y;
+    *wpx = st.WindowPadding.x; *wpy = st.WindowPadding.y;
+}
 // mouse_double_clicked reports a double-click of the given button this frame (used to
 // re-open a dimension for editing).
 int  obk_ig_mouse_double_clicked(int button) { return ImGui::IsMouseDoubleClicked(button) ? 1 : 0; }
