@@ -15,17 +15,24 @@ type AddIn interface {
 	Deactivate(*Session) error
 }
 
-// AddInManager loads and tracks add-ins — Inventor's ApplicationAddIns. Activation
-// is idempotent per add-in.
+// AddInManager loads and tracks add-ins — the ApplicationAddIns registry.
+// Activation is idempotent per add-in. Load behaviors and the automation routing
+// live in addin_registry.go (M05-F01).
 type AddInManager struct {
-	addins map[string]AddIn
-	active map[string]bool
-	order  []string
+	addins        map[string]AddIn
+	active        map[string]bool
+	order         []string
+	behaviors     map[string]AddInLoadBehavior
+	behaviorStore AddInBehaviorStore
 }
 
 // NewAddInManager returns an empty add-in registry.
 func NewAddInManager() *AddInManager {
-	return &AddInManager{addins: map[string]AddIn{}, active: map[string]bool{}}
+	return &AddInManager{
+		addins:    map[string]AddIn{},
+		active:    map[string]bool{},
+		behaviors: map[string]AddInLoadBehavior{},
+	}
 }
 
 // Register makes an add-in known (not yet activated), erroring on a duplicate id.
@@ -38,11 +45,15 @@ func (m *AddInManager) Register(a AddIn) error {
 	return nil
 }
 
-// Activate runs an add-in's Activate (no-op if already active).
+// Activate runs an add-in's Activate (no-op if already active). A LoadDisabled
+// add-in refuses: it is listed but never runs until its behavior changes (#251).
 func (m *AddInManager) Activate(s *Session, id string) error {
 	a, ok := m.addins[id]
 	if !ok {
 		return fmt.Errorf("app: no add-in %q", id)
+	}
+	if m.behaviors[id] == LoadDisabled {
+		return fmt.Errorf("app: add-in %q is disabled; set its load behavior to startup or demand first", id)
 	}
 	if m.active[id] {
 		return nil

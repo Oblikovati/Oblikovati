@@ -1,6 +1,11 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /*
  * oblikovati_addin.h — the C ABI between the Oblikovati host and a shared-library
  * add-in (built with `go build -buildmode=c-shared`, producing .so/.dll).
+ *
+ * This header is part of the public, Apache-2.0 automation contract: it is the
+ * single source of truth for the host<->add-in boundary. Add-ins compile against
+ * it; the host vendors a copy of it. Keep it self-contained (C primitives only).
  *
  * WHY a C ABI and not Go types: a Go c-shared library loaded into the Go host runs
  * its OWN Go runtime (two heaps, two GCs in one process). Go pointers must not cross
@@ -69,6 +74,22 @@ extern int ObkAddInActivate(ObkHostCall call, ObkHostFree freeFn);
 extern int ObkAddInDeactivate(void);
 extern int ObkAddInNotify(const uint8_t *ev, int len);
 extern void ObkFree(uint8_t *p);
+
+/*
+ * OPTIONAL export: the add-in's automation surface (ApplicationAddIn.Automation,
+ * M05-F01 #252). The host resolves it leniently after load — an add-in without it
+ * simply reports hasAutomation:false in the registry. When present, the host routes
+ * addins.callAutomation requests here: `method` plus a JSON `req` chosen by THIS
+ * add-in's own contract (the host passes both through opaquely). On OBK_OK the
+ * add-in sets *resp/*respLen to a buffer it allocated, which the host copies and
+ * then releases via ObkFree; on OBK_ERR *resp is a UTF-8 error message (same
+ * ownership). Constraints: the call arrives on the host's session goroutine, so the
+ * handler must return promptly and must NOT call ObkHostCall synchronously — the
+ * dispatcher that would run it is the one waiting on this very call.
+ */
+extern int ObkAddInAutomation(const char *method,
+                              const uint8_t *req, int reqLen,
+                              uint8_t **resp, int *respLen);
 #endif /* OBK_BUILDING_ADDIN */
 
 #ifdef __cplusplus

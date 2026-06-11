@@ -19,6 +19,8 @@ type addInLib interface {
 	activate() error
 	deactivate() error
 	notify(b []byte) error
+	hasAutomation() bool
+	automation(method string, req []byte) ([]byte, error)
 	close() error
 }
 
@@ -49,6 +51,16 @@ func (a *LoadedAddIn) Deactivate(*app.Session) error { return a.lib.deactivate()
 
 // Notify pushes a serialized host event to the add-in (ObkAddInNotify).
 func (a *LoadedAddIn) Notify(b []byte) error { return a.lib.notify(b) }
+
+// HasAutomation reports whether the add-in exports the optional ObkAddInAutomation
+// entry (app.AddInAutomationProbe), so the registry lists hasAutomation truthfully.
+func (a *LoadedAddIn) HasAutomation() bool { return a.lib.hasAutomation() }
+
+// CallAutomation routes an automation request to the add-in's optional
+// ObkAddInAutomation export (contract.AddInAutomation).
+func (a *LoadedAddIn) CallAutomation(method string, args []byte) ([]byte, error) {
+	return a.lib.automation(method, args)
+}
 
 // Close unloads the shared library (dlclose/FreeLibrary).
 func (a *LoadedAddIn) Close() error { return a.lib.close() }

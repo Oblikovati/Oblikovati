@@ -17,6 +17,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/event"
 	"oblikovati.org/head/internal/addinhost"
+	"oblikovati.org/persistence/addinstate"
 	"oblikovati.org/script/bridge"
 	"oblikovati.org/script/console"
 	"oblikovati.org/script/gopherlua"
@@ -64,18 +65,19 @@ func startAddIns(session *app.Session) *addInHost {
 	// The Script Console runs Lua over the SAME router + dispatcher add-ins use, so its
 	// host calls serialize onto the session goroutine and never freeze the UI (ADR-0028 §5).
 	h.script = newScriptController(rtr, session, d)
+	useBehaviorStore(session)
 	libs, err := addinhost.LoadDir(dir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
 	}
 	for _, lib := range libs {
-		if err := activate(session, lib); err != nil {
+		if err := registerAndMaybeActivate(session, lib); err != nil {
 			fmt.Fprintf(os.Stderr, "add-in %q: %v\n", lib.ID(), err)
 			continue
 		}
 		h.loaded = append(h.loaded, lib)
 	}
-	h.subs = events.Subscribe(session, h.notifyAll)
+	h.subs = events.Subscribe(session, func(ev []byte) { h.notifyActive(session, ev) })
 	// Under a supervisor (make run-watch sets OBK_ADDIN_AUTORESTART=1), watch the
 	// add-ins dir so a rebuilt library makes the app exit-and-relaunch — the safe way
 	// to pick up a new add-in (a Go c-shared cannot be hot-swapped in-process). Plain
@@ -96,18 +98,39 @@ func newScriptController(rtr *router.Router, session *app.Session, d *dispatch.D
 	return console.NewController(run, runner.DefaultGUILimits)
 }
 
-// activate registers and activates one loaded add-in.
-func activate(session *app.Session, lib *addinhost.LoadedAddIn) error {
+// useBehaviorStore wires the per-user load-behavior preferences into the registry,
+// so a demand/disabled add-in registers (it lists in addins.list) but is not
+// activated at startup (M05-F01, #251). A store failure costs only persistence —
+// the session still runs with the default behaviors.
+func useBehaviorStore(session *app.Session) {
+	path, err := addinstate.DefaultPath()
+	if err == nil {
+		err = session.AddIns().UseBehaviorStore(addinstate.NewFileStore(path))
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "add-in behaviors: %v\n", err)
+	}
+}
+
+// registerAndMaybeActivate registers one loaded add-in, activating it only when its
+// stored load behavior says so; demand/disabled entries wait for addins.activate.
+func registerAndMaybeActivate(session *app.Session, lib *addinhost.LoadedAddIn) error {
 	if err := session.AddIns().Register(lib); err != nil {
 		return err
+	}
+	if session.AddIns().LoadBehavior(lib.ID()) != app.LoadOnStartup {
+		return nil
 	}
 	return session.AddIns().Activate(session, lib.ID())
 }
 
-// notifyAll forwards a serialized event to every active add-in.
-func (h *addInHost) notifyAll(ev []byte) {
+// notifyActive forwards a serialized event to every ACTIVE add-in — a registered
+// but deactivated add-in must not keep observing the session.
+func (h *addInHost) notifyActive(session *app.Session, ev []byte) {
 	for _, lib := range h.loaded {
-		_ = lib.Notify(ev)
+		if session.AddIns().IsActive(lib.ID()) {
+			_ = lib.Notify(ev)
+		}
 	}
 }
 
