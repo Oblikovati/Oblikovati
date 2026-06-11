@@ -22,7 +22,7 @@ import (
 type SketchData struct {
 	Name         string  `yaml:"name,omitempty"`
 	Hidden       bool    `yaml:"hidden,omitempty"`
-	Shared       bool    `yaml:"shared,omitempty"` // Inventor PlanarSketch.Shared (issue #132)
+	Shared       bool    `yaml:"shared,omitempty"` // shared sketch stays at top level (issue #132)
 	Seq          uint64  `yaml:"seq,omitempty"`    // global creation stamp; see model/seq
 	Color        string  `yaml:"color,omitempty"`
 	LineType     string  `yaml:"lineType,omitempty"`
