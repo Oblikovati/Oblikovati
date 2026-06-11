@@ -221,17 +221,21 @@ func iconSizeFor(s app.ButtonStyle) (int, bool) {
 	}
 }
 
+// identityTint draws an icon texture exactly as composed — the glyph's colors are
+// baked in by iconCache.compose from the icon.* tokens, so no per-draw tinting.
+var identityTint = [4]float32{1, 1, 1, 1}
+
 // drawIconButton renders an icon button: small ones are icon-only (dense tool grids),
-// large ones place the name as a caption beneath the icon (Inventor's large button).
-// The icon is the click target either way.
+// large ones place the name as a caption beneath the icon (the classic two CAD ribbon
+// button sizes). The icon is the click target either way.
 func drawIconButton(btn app.RibbonButton, tex uint64, px float32) bool {
 	if btn.Command.ButtonStyle() != app.LargeIconButton {
-		clicked := native.ImageButton(btn.Command.ID(), tex, px, px, iconTint)
+		clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
 		native.SetItemTooltip(btn.Command.Tooltip())
 		return clicked
 	}
 	native.BeginGroup()
-	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, iconTint)
+	clicked := native.ImageButton(btn.Command.ID(), tex, px, px, identityTint)
 	native.SetItemTooltip(btn.Command.Tooltip())
 	native.Text(btn.Command.DisplayName())
 	native.EndGroup()

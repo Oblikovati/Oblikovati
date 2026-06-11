@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-// Package icon turns the embedded ribbon SVG glyphs into tintable RGBA bitmaps the
+// Package icon turns the embedded ribbon SVG glyphs into themable RGBA bitmaps the
 // head can upload as ImGui textures. It is the ONLY importer of the third-party SVG
 // rasterizer (oksvg/rasterx), so the rest of the head depends on this thin seam
 // rather than the library (CLAUDE.md: wrap third-party libs behind our own interface).
 //
-// Glyphs are rasterized as a MONOCHROME alpha mask: the coverage the SVG produces
-// becomes the alpha channel and RGB is forced to white, so a theme can tint the icon
-// at draw time (ImGui's ImageButton tint color) without re-rasterizing it.
+// Glyphs are rasterized into one COVERAGE MASK PER COLOR ROLE (ADR-0033): an asset
+// assigns elements to the primary/secondary/tertiary/background roles by painting them
+// with sentinel colors, each role renders alone into an alpha mask, and Compose layers
+// the masks with the active theme's icon colors into the final image — so the whole
+// set recolors with the theme without touching the SVGs.
 //
-// Every glyph is also size-NORMALIZED: its drawn content is cropped to its tight
-// bounding box and rescaled to fill a fixed fraction of the output, centred. The hand-
-// authored SVGs carry inconsistent internal margins, so without this a glyph that
-// happens to sit in a small part of its 24x24 viewBox would render much smaller than one
-// that fills it. Normalizing makes every ribbon icon the same visual size regardless of
-// how its source art is laid out.
+// Every glyph is also size-NORMALIZED: the full glyph's drawn content is cropped to
+// its tight bounding box and rescaled to fill a fixed fraction of the output, centred.
+// The bounds come from rendering ALL roles together and the identical crop/scale is
+// applied to every role's pass, so the color layers stay registered.
 package icon
 
 import (
@@ -26,6 +26,8 @@ import (
 	"github.com/srwiley/oksvg"
 	"github.com/srwiley/rasterx"
 	xdraw "golang.org/x/image/draw"
+
+	"oblikovati.org/theme/blenderxml"
 )
 
 const (
@@ -41,35 +43,111 @@ const (
 	alphaThreshold = 16
 )
 
-// Rasterize renders svg into a px×px tintable, size-normalized RGBA glyph (RGB=white,
-// A=coverage).
+// RoleMasks is one glyph rasterized as a px×px coverage mask per color role — the
+// theme-independent form the icon cache keeps, recoloring it via [RoleMasks.Compose]
+// whenever the theme changes.
+type RoleMasks struct {
+	px    int
+	cover [RoleCount][]uint8 // row-major px×px coverage, indexed by Role
+}
+
+// Px returns the mask edge length in pixels.
+func (m *RoleMasks) Px() int { return m.px }
+
+// RasterizeRoles renders svg into px×px size-normalized coverage masks, one per role.
 //
-//	img, err := icon.Rasterize(svgBytes, 32) // 32px large-button glyph
-func Rasterize(svg []byte, px int) (*image.RGBA, error) {
+//	masks, err := icon.RasterizeRoles(svgBytes, 32) // 32px large-button glyph
+func RasterizeRoles(svg []byte, px int) (*RoleMasks, error) {
 	if px <= 0 {
 		return nil, fmt.Errorf("icon: rasterize px must be > 0, got %d", px)
 	}
-	parsed, err := oksvg.ReadIconStream(bytes.NewReader(svg))
+	doc, err := parseSVG(svg)
+	if err != nil {
+		return nil, err
+	}
+	content, err := fullContentBounds(doc, px)
+	if err != nil {
+		return nil, err
+	}
+	masks := &RoleMasks{px: px}
+	for r := Role(0); r < RoleCount; r++ {
+		big, err := renderDoc(filterForRole(doc, r), px*supersample)
+		if err != nil {
+			return nil, fmt.Errorf("icon: role %s: %w", r, err)
+		}
+		masks.cover[r] = normalizedAlpha(big, content, px)
+	}
+	return masks, nil
+}
+
+// parseSVG reads an SVG into a generic element tree with namespaces flattened — the
+// xmlns URI stays as a literal root attribute, but element names drop their namespace
+// so re-marshaling never emits duplicate xmlns declarations.
+func parseSVG(svg []byte) (*blenderxml.Node, error) {
+	doc, err := blenderxml.Parse(svg)
 	if err != nil {
 		return nil, fmt.Errorf("icon: parse SVG (%d bytes): %w", len(svg), err)
 	}
-	hi := px * supersample
-	parsed.SetTarget(0, 0, float64(hi), float64(hi))
-	big := image.NewRGBA(image.Rect(0, 0, hi, hi))
-	scanner := rasterx.NewScannerGV(hi, hi, big, big.Bounds())
-	parsed.Draw(rasterx.NewDasher(hi, hi, scanner), 1.0)
-	return whiteWithCoverageAlpha(normalizeContent(big, px)), nil
+	stripNamespace(doc)
+	return doc, nil
 }
 
-// normalizeContent crops src to its drawn content and rescales that into a px×px image so
-// the glyph's longest side spans contentFraction of the output, centred. An empty (blank)
-// source yields a blank output.
-func normalizeContent(src *image.RGBA, px int) *image.RGBA {
-	out := image.NewRGBA(image.Rect(0, 0, px, px))
-	content := alphaBounds(src)
-	if content.Empty() {
-		return out
+// stripNamespace clears the namespace from every element and attribute name in place.
+func stripNamespace(n *blenderxml.Node) {
+	n.XMLName.Space = ""
+	for i := range n.Attrs {
+		n.Attrs[i].Name.Space = ""
 	}
+	for _, c := range n.Children {
+		stripNamespace(c)
+	}
+}
+
+// fullContentBounds renders the document with every role drawn and measures the tight
+// content box all role passes share, so layers stay registered after normalization.
+func fullContentBounds(doc *blenderxml.Node, px int) (image.Rectangle, error) {
+	big, err := renderDoc(doc, px*supersample)
+	if err != nil {
+		return image.Rectangle{}, fmt.Errorf("icon: bounds pass: %w", err)
+	}
+	return alphaBounds(big), nil
+}
+
+// renderDoc serializes the element tree and rasterizes it into a hi×hi RGBA image.
+func renderDoc(doc *blenderxml.Node, hi int) (*image.RGBA, error) {
+	data, err := doc.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	parsed, err := oksvg.ReadIconStream(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	parsed.SetTarget(0, 0, float64(hi), float64(hi))
+	img := image.NewRGBA(image.Rect(0, 0, hi, hi))
+	scanner := rasterx.NewScannerGV(hi, hi, img, img.Bounds())
+	parsed.Draw(rasterx.NewDasher(hi, hi, scanner), 1.0)
+	return img, nil
+}
+
+// normalizedAlpha crops content out of the supersampled render, rescales it into a
+// px×px box (longest side = contentFraction, centred) and returns the alpha channel.
+// An empty content box (nothing drawn anywhere in the glyph) yields a blank mask.
+func normalizedAlpha(src *image.RGBA, content image.Rectangle, px int) []uint8 {
+	out := image.NewRGBA(image.Rect(0, 0, px, px))
+	if !content.Empty() {
+		xdraw.CatmullRom.Scale(out, normalizedDst(content, px), src, content, xdraw.Src, nil)
+	}
+	alpha := make([]uint8, px*px)
+	for i := range alpha {
+		alpha[i] = out.Pix[i*4+3]
+	}
+	return alpha
+}
+
+// normalizedDst is the centred destination rectangle the shared content box scales
+// into — computed from the box alone, so every role pass lands identically.
+func normalizedDst(content image.Rectangle, px int) image.Rectangle {
 	longest := content.Dx()
 	if content.Dy() > longest {
 		longest = content.Dy()
@@ -77,9 +155,7 @@ func normalizeContent(src *image.RGBA, px int) *image.RGBA {
 	scale := contentFraction * float64(px) / float64(longest)
 	dw := clampDim(float64(content.Dx()) * scale)
 	dh := clampDim(float64(content.Dy()) * scale)
-	dst := image.Rect(0, 0, dw, dh).Add(image.Pt((px-dw)/2, (px-dh)/2)) // centred
-	xdraw.CatmullRom.Scale(out, dst, src, content, xdraw.Src, nil)
-	return out
+	return image.Rect(0, 0, dw, dh).Add(image.Pt((px-dw)/2, (px-dh)/2))
 }
 
 // clampDim rounds a scaled dimension to at least one pixel.
@@ -112,19 +188,4 @@ func alphaBounds(img *image.RGBA) image.Rectangle {
 		return image.Rectangle{}
 	}
 	return image.Rect(minX, minY, maxX+1, maxY+1)
-}
-
-// whiteWithCoverageAlpha rewrites every pixel to straight-alpha white (RGB=255),
-// keeping the coverage in the alpha channel. ImGui blends with straight (non-
-// premultiplied) src-alpha and multiplies by the per-vertex tint, so a white mask tints
-// cleanly to any theme color: result = tint × (white, coverage). Go's image.RGBA is
-// alpha-premultiplied, but for a white fill RGB already equals coverage, so only the
-// (cropped/rescaled, possibly non-white) RGB needs forcing.
-func whiteWithCoverageAlpha(img *image.RGBA) *image.RGBA {
-	for i := 0; i < len(img.Pix); i += 4 {
-		img.Pix[i] = 255
-		img.Pix[i+1] = 255
-		img.Pix[i+2] = 255
-	}
-	return img
 }
