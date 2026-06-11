@@ -69,6 +69,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
 	list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
 	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
+	list = gizmoOverlays(s, cam, list)
 	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 	if s.ShowViewCube() {
@@ -304,9 +305,14 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 	if overCube {
 		return cam, nil // the ViewCube owns the cursor this frame: no orbit, no pick
 	}
-	cam = ApplyNavigation(cam, readNavInput(isPlacingTool(s)))
+	gizmoActive := s.TriadDragging() || s.ManipulatorDragging()
+	cam = ApplyNavigation(cam, readNavInput(isPlacingTool(s) || gizmoActive))
 	s.SetCamera(cam)
-	handleViewportClick(s)
+	// The triad/manipulators own the pointer when hovered or mid-drag (M05-F13);
+	// picking and tool clicks stand down for the frame.
+	if !routeGizmoInput(s, cam) {
+		handleViewportClick(s)
+	}
 	return cam, hoveredPlane(s)
 }
 
@@ -388,6 +394,12 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, revolveCenterlineHighlight(s)...)
 	list.Items = append(list.Items, activeToolPreviewItems(s)...)
 	return list
+}
+
+// gizmoOverlays appends the triad and manipulator-handle geometry (M05-F13).
+func gizmoOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) renderer.DrawList {
+	list = triadOverlay(s, cam, list)
+	return manipulatorOverlay(s, cam, list)
 }
 
 // isPlacingTool reports whether the active tool consumes plane-point clicks (a sketch

@@ -21,6 +21,7 @@ func (s *Session) StartTool(t Tool) {
 		s.tool.tool.Cancel(s)
 		s.graphics.ClearInteraction() // drop the previous tool's preview/overlay graphics
 		s.dropCommandMiniToolbars()   // and its mini-toolbars (M05-F07)
+		s.dropCommandGizmos()         // and its triad/manipulators (M05-F13)
 	}
 	s.notice = ""
 	s.tool = &ToolInstance{tool: t}
@@ -56,6 +57,7 @@ func (s *Session) OK() error {
 	s.tool = nil
 	s.graphics.ClearInteraction() // a committed command's transient preview vanishes
 	s.dropCommandMiniToolbars()   // command-bound mini-toolbars die with the tool (M05-F07)
+	s.dropCommandGizmos()         // and the command-bound triad/manipulators (M05-F13)
 	return nil
 }
 
@@ -67,6 +69,7 @@ func (s *Session) CancelTool() {
 		s.tool = nil
 		s.graphics.ClearInteraction() // a cancelled command's transient preview vanishes
 		s.dropCommandMiniToolbars()   // command-bound mini-toolbars die with the tool (M05-F07)
+		s.dropCommandGizmos()         // and the command-bound triad/manipulators (M05-F13)
 	}
 }
 

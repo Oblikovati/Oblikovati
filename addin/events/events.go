@@ -95,9 +95,9 @@ func subscribeUISurfaces(bus *event.Bus, sink Sink) []event.Subscription {
 	return append(subs, subscribeMiniToolbars(bus, sink)...)
 }
 
-// subscribeMiniToolbars wires the mini-toolbar edit/commit events (M05-F07).
+// subscribeMiniToolbars wires the mini-toolbar and dialog events (M05-F07/F08).
 func subscribeMiniToolbars(bus *event.Bus, sink Sink) []event.Subscription {
-	return []event.Subscription{
+	subs := []event.Subscription{
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.MiniToolbarControlChanged) event.Outcome {
 			return relayJSON(sink, wire.MiniToolbarChangedEvent{
 				Type: wire.EventMiniToolbarChanged, Toolbar: e.Toolbar, Control: e.Control,
@@ -120,6 +120,30 @@ func subscribeMiniToolbars(bus *event.Bus, sink Sink) []event.Subscription {
 			})
 		}),
 	}
+	return append(subs, subscribeGizmos(bus, sink)...)
+}
+
+// subscribeGizmos wires the triad/manipulator events (M05-F13).
+func subscribeGizmos(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.TriadDragged) event.Outcome {
+			return relayJSON(sink, wire.TriadDragEvent{
+				Type: wire.EventTriadDrag, Phase: e.Phase, Segment: e.Segment,
+				MoveType: e.MoveType, Delta: e.Delta, Context: e.Context,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.TriadSegmentChanged) event.Outcome {
+			return relayJSON(sink, wire.TriadSegmentEvent{
+				Type: wire.EventTriadSegment, Segment: e.Segment, Hovered: e.Hovered,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.ManipulatorDragged) event.Outcome {
+			return relayJSON(sink, wire.ManipulatorDragEvent{
+				Type: wire.EventManipulatorDrag, Gizmo: e.Gizmo, Handle: e.Handle,
+				Phase: e.Phase, Position: e.Position, Context: e.Context,
+			})
+		}),
+	}
 }
 
 // relayJSON serializes a wire event DTO and hands it to sink (passive listener).
@@ -128,7 +152,8 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.ProgressCancelledEvent | wire.BalloonTipClickedEvent | wire.PromptAnsweredEvent |
 	wire.MiniToolbarChangedEvent | wire.MiniToolbarCommittedEvent |
 	wire.FileDialogChosenEvent | wire.WebDialogChangedEvent |
-	wire.SelectionChangedEvent | wire.EnvironmentChangedEvent](sink Sink, ev E) event.Outcome {
+	wire.SelectionChangedEvent | wire.EnvironmentChangedEvent |
+	wire.TriadDragEvent | wire.TriadSegmentEvent | wire.ManipulatorDragEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}

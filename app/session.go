@@ -68,6 +68,8 @@ type Session struct {
 	webViewOrder       []string                                         // web views in creation order
 	urlOpener          URLOpener                                        // platform URL opener (head-injected)
 	windowFrame        WindowFrameStatus                                // mirrored host-window state (M05-F10)
+	triad              TriadGizmo                                       // the move/rotate triad (M05-F13)
+	manipulators       *ManipulatorBoard                                // add-in drag handles (M05-F13)
 	markingMenus       map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
 	contextMenus       map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
 	objectVisibility   wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
@@ -139,6 +141,7 @@ func newSession(store doc.Store) *Session {
 		balloonTips:     NewBalloonTipCenter(),
 		prompts:         NewPromptCenter(),
 		miniToolbars:    NewMiniToolbarRack(),
+		manipulators:    NewManipulatorBoard(),
 		visualStyle:     renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now
