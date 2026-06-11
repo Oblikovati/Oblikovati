@@ -53,6 +53,9 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	// Reserve the region with an input-capturing button, then read navigation from it.
 	cx, cy := native.GetCursorPos()
 	native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
+	if native.IsItemClicked(native.MouseRight) {
+		openMarkingMenu() // the radial marking menu (M05-F12)
+	}
 	bx, by := native.ItemRectMin()
 
 	cam := s.Camera()
@@ -365,12 +368,19 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 // the extrude / active-tool previews) to list.
 func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane, list renderer.DrawList) renderer.DrawList {
 	part := activePart(s)
-	hidden := s.EditScopeHides // hide datums created after the node being edited (issue #132)
-	list.Items = append(list.Items, planesOverlay(part, s.SelectedWorkPlane(), hovered, hidden)...)
-	list.Items = append(list.Items, axesOverlay(part, selectedWorkAxis(s), hidden)...)
-	list.Items = append(list.Items, partSketchOverlays(s)...)
-	list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
-	list.Items = append(list.Items, sketch3DOverlays(s, pointMarkerPixels*cam.WorldPerPixel())...)
+	hidden := s.EditScopeHides  // hide datums created after the node being edited (issue #132)
+	vis := s.ObjectVisibility() // View ▸ Object visibility (M05-F12): hidden kinds neither draw nor pick
+	if vis.WorkPlanes {
+		list.Items = append(list.Items, planesOverlay(part, s.SelectedWorkPlane(), hovered, hidden)...)
+	}
+	if vis.WorkAxes {
+		list.Items = append(list.Items, axesOverlay(part, selectedWorkAxis(s), hidden)...)
+	}
+	if vis.Sketches {
+		list.Items = append(list.Items, partSketchOverlays(s)...)
+		list.Items = append(list.Items, partSketchPoints(s, pointMarkerPixels*cam.WorldPerPixel())...)
+		list.Items = append(list.Items, sketch3DOverlays(s, pointMarkerPixels*cam.WorldPerPixel())...)
+	}
 	list.Items = append(list.Items, selectedEdgeOverlay(s)...)
 	list.Items = append(list.Items, threadOverlay(s)...)
 	list.Items = append(list.Items, toolHoverHighlight(s)...)

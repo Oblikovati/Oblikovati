@@ -50,24 +50,27 @@ type Session struct {
 	hiddenBodyKeys     map[string]bool
 	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins             *AddInManager
-	clientApps         *ClientApplicationRegistry    // external automation drivers (M05-F01)
-	browserPanes       *AddInBrowserPanes            // add-in browser panes (M05-F03)
-	dockableWindows    *AddInDockableWindows         // add-in dockable windows (M05-F03)
-	appOptions         options.All                   // typed per-user option groups (M05-F11)
-	optionsStore       options.Store                 // persists appOptions (nil ⇒ in-session only)
-	statusText         string                        // wire-set status-bar message (M05-F09)
-	messageCenter      *MessageCenter                // sectioned errors/warnings tree (M05-F09)
-	messageCenterOpen  bool                          // the Messages panel is open
-	progress           *ProgressLedger               // live progress bars (M05-F09)
-	balloonTips        *BalloonTipCenter             // notification balloons (M05-F09)
-	prompts            *PromptCenter                 // declarative prompts (M05-F09)
-	dialogMemoryStore  dialogmemory.Store            // persists suppressions + remembered answers
-	miniToolbars       *MiniToolbarRack              // in-canvas mini-toolbars (M05-F07)
-	fileDialogQueue    []FileDialogRequest           // pending add-in file-dialog asks (M05-F08)
-	webViews           map[string]wire.WebDialogSpec // presented web views (M05-F08)
-	webViewOrder       []string                      // web views in creation order
-	urlOpener          URLOpener                     // platform URL opener (head-injected)
-	windowFrame        WindowFrameStatus             // mirrored host-window state (M05-F10)
+	clientApps         *ClientApplicationRegistry                       // external automation drivers (M05-F01)
+	browserPanes       *AddInBrowserPanes                               // add-in browser panes (M05-F03)
+	dockableWindows    *AddInDockableWindows                            // add-in dockable windows (M05-F03)
+	appOptions         options.All                                      // typed per-user option groups (M05-F11)
+	optionsStore       options.Store                                    // persists appOptions (nil ⇒ in-session only)
+	statusText         string                                           // wire-set status-bar message (M05-F09)
+	messageCenter      *MessageCenter                                   // sectioned errors/warnings tree (M05-F09)
+	messageCenterOpen  bool                                             // the Messages panel is open
+	progress           *ProgressLedger                                  // live progress bars (M05-F09)
+	balloonTips        *BalloonTipCenter                                // notification balloons (M05-F09)
+	prompts            *PromptCenter                                    // declarative prompts (M05-F09)
+	dialogMemoryStore  dialogmemory.Store                               // persists suppressions + remembered answers
+	miniToolbars       *MiniToolbarRack                                 // in-canvas mini-toolbars (M05-F07)
+	fileDialogQueue    []FileDialogRequest                              // pending add-in file-dialog asks (M05-F08)
+	webViews           map[string]wire.WebDialogSpec                    // presented web views (M05-F08)
+	webViewOrder       []string                                         // web views in creation order
+	urlOpener          URLOpener                                        // platform URL opener (head-injected)
+	windowFrame        WindowFrameStatus                                // mirrored host-window state (M05-F10)
+	markingMenus       map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
+	contextMenus       map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
+	objectVisibility   wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
@@ -136,7 +139,6 @@ func newSession(store doc.Store) *Session {
 		balloonTips:     NewBalloonTipCenter(),
 		prompts:         NewPromptCenter(),
 		miniToolbars:    NewMiniToolbarRack(),
-		webViews:        map[string]wire.WebDialogSpec{},
 		visualStyle:     renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now
@@ -148,7 +150,20 @@ func newSession(store doc.Store) *Session {
 	// The embedded Sky map is the default environment for every visual style — IBL plus
 	// the sky as the viewport background (ADR-0026 §8).
 	s.lighting.Environment = renderer.DefaultEnvironment()
+	s.initShellSurfaces()
 	return s
+}
+
+// initShellSurfaces seeds the M05 add-in UI-shell state: web views, the default
+// radial marking menus, context-menu injections, and the object-visibility
+// toggles (everything toggleable starts shown).
+func (s *Session) initShellSurfaces() {
+	s.webViews = map[string]wire.WebDialogSpec{}
+	s.markingMenus = defaultMarkingMenus()
+	s.contextMenus = map[string]map[string][]wire.ContextMenuItemSpec{}
+	s.objectVisibility = wire.ObjectVisibilityView{
+		WorkPlanes: true, WorkAxes: true, WorkPoints: true, Sketches: true,
+	}
 }
 
 // AddIns returns the add-in registry (ApplicationAddIns).
@@ -201,6 +216,8 @@ func (s *Session) ActiveView() *doc.View {
 // it back — the head ticks these transitions (TickCameraAnimation).
 func (s *Session) EnterSketch(sk *sketch.Sketch) {
 	s.activeSketch = sk
+	// The contextual environment switched: add-ins re-aim their UI (M05-F12).
+	event.Emit(s.bus, event.After, EnvironmentChanged{Environment: SketchEnvironment})
 	sk.Edit()
 	s.beginEditScope(sk.Seq()) // hide features/datums created after this sketch while editing it
 	s.sketchReturnCam = s.camera
@@ -214,6 +231,7 @@ func (s *Session) ExitSketch() {
 	if s.activeSketch != nil {
 		s.activeSketch.ExitEdit()
 		s.activeSketch = nil
+		event.Emit(s.bus, event.After, EnvironmentChanged{Environment: BaseEnvironment})
 		s.pendingDim = nil // no dangling edit box after leaving the sketch
 		s.endEditScope()   // restore the rolled-back features (caller recomputes)
 		s.animateCameraTo(s.sketchReturnCam, sketchViewTweenSeconds)

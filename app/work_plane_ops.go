@@ -37,6 +37,9 @@ func (s *Session) SelectedWorkPlanes() []*feature.WorkPlane {
 // clicked as a new sketch's reference in the 3D view (issue #132); the head feeds this to
 // the RayPicker.
 func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
+	if !s.objectVisibility.WorkPlanes { // hidden kinds are not pickable (M05-F12)
+		return nil
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return nil

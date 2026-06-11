@@ -45,6 +45,7 @@ float obk_ig_hover_seconds(void);
 int  obk_ig_begin_popup_context_item(const char* id);
 void obk_ig_open_popup(const char* id);
 int  obk_ig_begin_popup(const char* id);
+void obk_ig_close_current_popup(void);
 void obk_ig_end_popup(void);
 void obk_ig_set_scroll_here_y(void);
 int  obk_ig_input_float(const char* label, float* v);
@@ -584,6 +585,9 @@ func BeginPopup(id string) bool {
 // EndPopup closes a popup begun by BeginPopupContextItem/BeginPopup (call only when it
 // returned true).
 func EndPopup() { C.obk_ig_end_popup() }
+
+// CloseCurrentPopup closes the popup being drawn (a marking-menu pick).
+func CloseCurrentPopup() { C.obk_ig_close_current_popup() }
 
 // SetScrollHereY scrolls the current window to center the most recently drawn item — used
 // to reveal the browser node that just synced to the active selection.

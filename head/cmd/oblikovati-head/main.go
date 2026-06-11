@@ -203,7 +203,12 @@ func installPicker(s *app.Session) {
 		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }).
 		WithPoints(func() []*feature.WorkPoint { return activeWorkPoints(s) }).
 		WithAxes(func() []*feature.WorkAxis { return activeWorkAxes(s) }).
-		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }).
+		WithSketches(func() []*sketch.Sketch {
+			if !s.ObjectVisibility().Sketches {
+				return nil
+			}
+			return activeSketches(s)
+		}).
 		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }))
 }
 
@@ -230,6 +235,9 @@ func activeBodies(s *app.Session) []*topo.Body {
 // hidden by the active edit scope are excluded, matching the overlays — geometry the
 // viewport does not draw must not be clickable.
 func activeWorkPoints(s *app.Session) []*feature.WorkPoint {
+	if !s.ObjectVisibility().WorkPoints { // hidden kinds are not pickable (M05-F12)
+		return nil
+	}
 	p, err := modelaccess.ActivePart(s)
 	if err != nil {
 		return nil
@@ -245,6 +253,9 @@ func activeWorkPoints(s *app.Session) []*feature.WorkPoint {
 }
 
 func activeWorkAxes(s *app.Session) []*feature.WorkAxis {
+	if !s.ObjectVisibility().WorkAxes { // hidden kinds are not pickable (M05-F12)
+		return nil
+	}
 	p, err := modelaccess.ActivePart(s)
 	if err != nil {
 		return nil

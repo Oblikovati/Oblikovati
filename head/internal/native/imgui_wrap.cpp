@@ -149,6 +149,7 @@ float obk_ig_hover_seconds(void) {
 int  obk_ig_begin_popup_context_item(const char* id) { return ImGui::BeginPopupContextItem(id) ? 1 : 0; }
 void obk_ig_open_popup(const char* id)       { ImGui::OpenPopup(id); }
 int  obk_ig_begin_popup(const char* id)      { return ImGui::BeginPopup(id) ? 1 : 0; }
+void obk_ig_close_current_popup(void)               { ImGui::CloseCurrentPopup(); }
 void obk_ig_end_popup(void)                  { ImGui::EndPopup(); }
 void obk_ig_set_scroll_here_y(void)          { ImGui::SetScrollHereY(0.5f); }
 

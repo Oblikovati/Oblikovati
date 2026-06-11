@@ -18,6 +18,7 @@ func drawMenuBar(s *app.Session) {
 	drawFileMenu(s)
 	drawEditMenu(s)
 	drawToolsMenu()
+	drawCommandSearch(s) // the command search box (M05-F12)
 	native.EndMainMenuBar()
 }
 

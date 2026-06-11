@@ -47,8 +47,17 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentActivate) event.Outcome {
 			return relay(sink, wireEvent{Type: "document.activated", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
 		}),
+		event.Subscribe(bus, event.Before, func(_ event.Context, e app.CommandStarted) event.Outcome {
+			return relay(sink, wireEvent{Type: wire.EventCommandStarted, Command: e.ID})
+		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.CommandEnded) event.Outcome {
 			return relay(sink, wireEvent{Type: "command.ended", Command: e.ID, Failed: e.Failed})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.SelectionChanged) event.Outcome {
+			return relayJSON(sink, wire.SelectionChangedEvent{Type: wire.EventSelectionChanged, Count: e.Count})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.EnvironmentChanged) event.Outcome {
+			return relayJSON(sink, wire.EnvironmentChangedEvent{Type: wire.EventEnvironmentChanged, Environment: e.Environment})
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
 			return relayEdit(sink, e)
@@ -118,7 +127,8 @@ func subscribeMiniToolbars(bus *event.Bus, sink Sink) []event.Subscription {
 func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.ProgressCancelledEvent | wire.BalloonTipClickedEvent | wire.PromptAnsweredEvent |
 	wire.MiniToolbarChangedEvent | wire.MiniToolbarCommittedEvent |
-	wire.FileDialogChosenEvent | wire.WebDialogChangedEvent](sink Sink, ev E) event.Outcome {
+	wire.FileDialogChosenEvent | wire.WebDialogChangedEvent |
+	wire.SelectionChangedEvent | wire.EnvironmentChangedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}
