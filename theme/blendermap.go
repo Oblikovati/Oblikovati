@@ -58,6 +58,9 @@ var directBindings = map[Token]directBinding{
 	types.TokenChromeButtonActive: {wcol("wcol_tool"), "inner_sel", false},
 	types.TokenChromeAccent:       {wcol("wcol_regular"), "inner_sel", true},
 	types.TokenChromeScrollbar:    {wcol("wcol_scroll"), "item", false},
+	// Danger reads the console's error-line red — the only legible per-theme red the
+	// Blender document authors (wcol_state's `error` is a dark fill, not a text/outline).
+	types.TokenChromeDanger: {[]string{"Theme", "console", "ThemeConsole"}, "line_error", true},
 	// Viewport 2D ← view_3d editor slots (sketch == Blender edit-mode geometry).
 	types.TokenViewportBg:           {append(append([]string(nil), pathV3Space...), "gradients", "ThemeGradientColors"), "high_gradient", true},
 	types.TokenGridMinor:            {pathView3D, "grid", false},

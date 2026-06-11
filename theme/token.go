@@ -69,6 +69,7 @@ var tokenInfos = map[Token]TokenInfo{
 	types.TokenChromeButtonActive:   {types.TokenChromeButtonActive, "Button (active)", GroupChrome},
 	types.TokenChromeAccent:         {types.TokenChromeAccent, "Accent", GroupChrome},
 	types.TokenChromeScrollbar:      {types.TokenChromeScrollbar, "Scrollbar", GroupChrome},
+	types.TokenChromeDanger:         {types.TokenChromeDanger, "Danger / required", GroupChrome},
 	types.TokenViewportBg:           {types.TokenViewportBg, "Background", GroupViewport},
 	types.TokenGridMinor:            {types.TokenGridMinor, "Grid (minor)", GroupViewport},
 	types.TokenGridMajor:            {types.TokenGridMajor, "Grid (major)", GroupViewport},
