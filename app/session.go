@@ -30,70 +30,72 @@ import (
 // it through Execute / the input methods (Click, PressKey…) — there is no GPU or
 // window involved, so "operating the UI" is fully unit-testable (ADR-0014/0004).
 type Session struct {
-	workspace          *doc.Workspace
-	commands           *CommandManager
-	histories          map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
-	viewState          viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
-	prefs              userprefs.Prefs        // global user preferences (ViewCube show/lock/compass/size/…)
-	prefsStore         userprefs.Store        // persists prefs to the user config dir (nil ⇒ in-session only)
-	bus                *event.Bus
-	selection          *Selection
-	tool               *ToolInstance
-	picker             Picker
-	camera             scene.Camera
-	camTween           cameraTween
-	sketchReturnCam    scene.Camera
-	activeSketch       *sketch.Sketch
-	activeSketch3D     *sketch.Sketch3D
-	pendingDim         *sketch.DimensionConstraint
-	overlays           []renderer.DrawItem
-	hiddenBodyKeys     map[string]bool
-	graphics           *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
-	addins             *AddInManager
-	clientApps         *ClientApplicationRegistry                       // external automation drivers (M05-F01)
-	browserPanes       *AddInBrowserPanes                               // add-in browser panes (M05-F03)
-	dockableWindows    *AddInDockableWindows                            // add-in dockable windows (M05-F03)
-	appOptions         options.All                                      // typed per-user option groups (M05-F11)
-	optionsStore       options.Store                                    // persists appOptions (nil ⇒ in-session only)
-	statusText         string                                           // wire-set status-bar message (M05-F09)
-	messageCenter      *MessageCenter                                   // sectioned errors/warnings tree (M05-F09)
-	messageCenterOpen  bool                                             // the Messages panel is open
-	progress           *ProgressLedger                                  // live progress bars (M05-F09)
-	balloonTips        *BalloonTipCenter                                // notification balloons (M05-F09)
-	prompts            *PromptCenter                                    // declarative prompts (M05-F09)
-	dialogMemoryStore  dialogmemory.Store                               // persists suppressions + remembered answers
-	miniToolbars       *MiniToolbarRack                                 // in-canvas mini-toolbars (M05-F07)
-	fileDialogQueue    []FileDialogRequest                              // pending add-in file-dialog asks (M05-F08)
-	webViews           map[string]wire.WebDialogSpec                    // presented web views (M05-F08)
-	webViewOrder       []string                                         // web views in creation order
-	urlOpener          URLOpener                                        // platform URL opener (head-injected)
-	windowFrame        WindowFrameStatus                                // mirrored host-window state (M05-F10)
-	triad              TriadGizmo                                       // the move/rotate triad (M05-F13)
-	manipulators       *ManipulatorBoard                                // add-in drag handles (M05-F13)
-	helpSources        map[string]string                                // add-in help bases by source (M05-F14)
-	helpInterceptor    HelpInterceptor                                  // before-help veto hook (M05-F14)
-	markingMenus       map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
-	contextMenus       map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
-	objectVisibility   wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
-	grid               *GridSettings
-	themes             *theme.Library
-	themeStore         *theme.Store
-	materials          *material.Library
-	materialStore      *material.Store
-	notice             string                   // last user-facing notice (e.g. a failed-commit reason)
-	visualStyle        renderer.VisualStyle     // how the scene is drawn (View tab's Visual Style)
-	lightingStyle      renderer.LightingStyleID // active lighting preset (View tab's Lighting Style)
-	lighting           renderer.SceneLighting   // the live lighting rig (resolved from the style, then edited)
-	chamferFlatCorners bool                     // default three-edge-corner treatment for new chamfers
-	paramsDialogOpen   bool                     // the Manage ▸ Parameters dialog is open
-	lightingPanelOpen  bool                     // the View ▸ Lighting settings panel is open
-	loadEnvRequested   bool                     // a "Load HDR…" was requested; the head opens the file dialog
-	scriptConsoleOpen  bool                     // the Manage ▸ Scripts ▸ Script Console panel is open
-	capturePath        string                   // a requested viewport PNG capture path; the head writes it after render
-	normalDebug        bool                     // viewport normal-debug render (front green / back red); head reads each frame
-	meshColors         bool                     // viewport mesh-debug-colors render (each face/triangle a distinct color)
-	meshColorsPerTri   bool                     // when meshColors: color per TRIANGLE (else per B-rep face)
-	editScope          editScope                // while editing a node, hide everything created after it (issue #132)
+	workspace            *doc.Workspace
+	commands             *CommandManager
+	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
+	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
+	prefs                userprefs.Prefs        // global user preferences (ViewCube show/lock/compass/size/…)
+	prefsStore           userprefs.Store        // persists prefs to the user config dir (nil ⇒ in-session only)
+	bus                  *event.Bus
+	selection            *Selection
+	tool                 *ToolInstance
+	picker               Picker
+	camera               scene.Camera
+	camTween             cameraTween
+	sketchReturnCam      scene.Camera
+	activeSketch         *sketch.Sketch
+	activeSketch3D       *sketch.Sketch3D
+	pendingDim           *sketch.DimensionConstraint
+	overlays             []renderer.DrawItem
+	hiddenBodyKeys       map[string]bool
+	graphics             *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
+	addins               *AddInManager
+	clientApps           *ClientApplicationRegistry    // external automation drivers (M05-F01)
+	browserPanes         *AddInBrowserPanes            // add-in browser panes (M05-F03)
+	dockableWindows      *AddInDockableWindows         // add-in dockable windows (M05-F03)
+	appOptions           options.All                   // typed per-user option groups (M05-F11)
+	optionsStore         options.Store                 // persists appOptions (nil ⇒ in-session only)
+	statusText           string                        // wire-set status-bar message (M05-F09)
+	messageCenter        *MessageCenter                // sectioned errors/warnings tree (M05-F09)
+	messageCenterOpen    bool                          // the Messages panel is open
+	progress             *ProgressLedger               // live progress bars (M05-F09)
+	balloonTips          *BalloonTipCenter             // notification balloons (M05-F09)
+	prompts              *PromptCenter                 // declarative prompts (M05-F09)
+	dialogMemoryStore    dialogmemory.Store            // persists suppressions + remembered answers
+	miniToolbars         *MiniToolbarRack              // in-canvas mini-toolbars (M05-F07)
+	fileDialogQueue      []FileDialogRequest           // pending add-in file-dialog asks (M05-F08)
+	webViews             map[string]wire.WebDialogSpec // presented web views (M05-F08)
+	webViewOrder         []string                      // web views in creation order
+	urlOpener            URLOpener                     // platform URL opener (head-injected)
+	windowFrame          WindowFrameStatus             // mirrored host-window state (M05-F10)
+	triad                TriadGizmo                    // the move/rotate triad (M05-F13)
+	manipulators         *ManipulatorBoard             // add-in drag handles (M05-F13)
+	helpSources          map[string]string             // add-in help bases by source (M05-F14)
+	helpInterceptor      HelpInterceptor               // before-help veto hook (M05-F14)
+	documentSubTypes     map[string]DocumentSubType    // registered flavors (M05-F15)
+	documentSubTypeOrder []string
+	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
+	contextMenus         map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
+	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
+	grid                 *GridSettings
+	themes               *theme.Library
+	themeStore           *theme.Store
+	materials            *material.Library
+	materialStore        *material.Store
+	notice               string                   // last user-facing notice (e.g. a failed-commit reason)
+	visualStyle          renderer.VisualStyle     // how the scene is drawn (View tab's Visual Style)
+	lightingStyle        renderer.LightingStyleID // active lighting preset (View tab's Lighting Style)
+	lighting             renderer.SceneLighting   // the live lighting rig (resolved from the style, then edited)
+	chamferFlatCorners   bool                     // default three-edge-corner treatment for new chamfers
+	paramsDialogOpen     bool                     // the Manage ▸ Parameters dialog is open
+	lightingPanelOpen    bool                     // the View ▸ Lighting settings panel is open
+	loadEnvRequested     bool                     // a "Load HDR…" was requested; the head opens the file dialog
+	scriptConsoleOpen    bool                     // the Manage ▸ Scripts ▸ Script Console panel is open
+	capturePath          string                   // a requested viewport PNG capture path; the head writes it after render
+	normalDebug          bool                     // viewport normal-debug render (front green / back red); head reads each frame
+	meshColors           bool                     // viewport mesh-debug-colors render (each face/triangle a distinct color)
+	meshColorsPerTri     bool                     // when meshColors: color per TRIANGLE (else per B-rep face)
+	editScope            editScope                // while editing a node, hide everything created after it (issue #132)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
@@ -170,6 +172,7 @@ func (s *Session) initShellSurfaces() {
 		WorkPlanes: true, WorkAxes: true, WorkPoints: true, Sketches: true,
 	}
 	s.helpSources = map[string]string{}
+	s.documentSubTypes = map[string]DocumentSubType{}
 }
 
 // AddIns returns the add-in registry (ApplicationAddIns).

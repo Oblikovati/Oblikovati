@@ -154,3 +154,44 @@ func TestForwardsBrowserPaneAndDockableWindowEvents(t *testing.T) {
 		t.Errorf("dockableWindow.changed = %+v (found=%v), want visible w", win, found)
 	}
 }
+
+// TestClientOperationServicesFlavoredDocuments checks a subtyped document's
+// lifecycle additionally reaches its owner as client.operation (M05-F15).
+func TestClientOperationServicesFlavoredDocuments(t *testing.T) {
+	s := app.NewSession()
+	if err := s.RegisterDocumentSubType(app.DocumentSubType{ID: "com.x.study", BaseType: doc.Part}); err != nil {
+		t.Fatalf("RegisterDocumentSubType: %v", err)
+	}
+	var rec rawRecorder
+	subs := Subscribe(s, rec.sink)
+	defer func() {
+		for _, sub := range subs {
+			sub.Cancel()
+		}
+	}()
+
+	d, err := s.Workspace().Add(doc.Part, "study.obk", true)
+	if err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := s.StampDocumentSubType(d, "com.x.study"); err != nil {
+		t.Fatalf("Stamp: %v", err)
+	}
+	if err := s.Workspace().SetActiveDocument(d); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+
+	rec.mu.Lock()
+	defer rec.mu.Unlock()
+	var op wire.ClientOperationEvent
+	found := false
+	for _, raw := range rec.got {
+		if json.Unmarshal([]byte(raw), &op) == nil && op.Type == wire.EventClientOperation {
+			found = true
+			break
+		}
+	}
+	if !found || op.SubType != "com.x.study" {
+		t.Fatalf("client.operation = (%+v, found=%v), want the study serviced", op, found)
+	}
+}

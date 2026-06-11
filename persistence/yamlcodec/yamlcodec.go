@@ -33,6 +33,7 @@ func Unmarshal(data []byte, v any) error { return yaml.Unmarshal(data, v) }
 type Document struct {
 	SchemaVersion int
 	DocumentType  uint32
+	SubType       string // add-in flavored subtype id (M05-F15)
 	DisplayName   string
 	Model         []byte
 	Data          map[string][]byte
@@ -46,6 +47,7 @@ type Document struct {
 type onDisk struct {
 	SchemaVersion int               `yaml:"schemaVersion,omitempty"`
 	DocumentType  uint32            `yaml:"documentType,omitempty"`
+	SubType       string            `yaml:"subType,omitempty"`
 	DisplayName   string            `yaml:"displayName,omitempty"`
 	Resources     yaml.Node         `yaml:"resources,omitempty"`
 	Model         yaml.Node         `yaml:"model,omitempty"`
@@ -58,6 +60,7 @@ func MarshalDocument(d Document) ([]byte, error) {
 	od := onDisk{
 		SchemaVersion: d.SchemaVersion,
 		DocumentType:  d.DocumentType,
+		SubType:       d.SubType,
 		DisplayName:   d.DisplayName,
 	}
 	if len(d.Resources) > 0 {
@@ -93,11 +96,7 @@ func UnmarshalDocument(raw []byte) (Document, error) {
 	if err := yaml.Unmarshal(raw, &od); err != nil {
 		return Document{}, fmt.Errorf("yamlcodec: parse document: %w", err)
 	}
-	d := Document{
-		SchemaVersion: od.SchemaVersion,
-		DocumentType:  od.DocumentType,
-		DisplayName:   od.DisplayName,
-	}
+	d := documentHeader(od)
 	resources, err := decodeResources(&od.Resources)
 	if err != nil {
 		return Document{}, err
@@ -116,6 +115,16 @@ func UnmarshalDocument(raw []byte) (Document, error) {
 	}
 	d.Data = data
 	return d, nil
+}
+
+// documentHeader copies the manifest fields off the on-disk projection.
+func documentHeader(od onDisk) Document {
+	return Document{
+		SchemaVersion: od.SchemaVersion,
+		DocumentType:  od.DocumentType,
+		SubType:       od.SubType,
+		DisplayName:   od.DisplayName,
+	}
 }
 
 // decodeDataSections base64-decodes the on-disk data sections into raw bytes, or nil when

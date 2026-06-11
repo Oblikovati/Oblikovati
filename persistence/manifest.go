@@ -17,5 +17,6 @@ const CurrentSchemaVersion = 2
 type Manifest struct {
 	SchemaVersion int
 	DocumentType  uint32
+	SubType       string // add-in flavored subtype id (M05-F15)
 	DisplayName   string
 }

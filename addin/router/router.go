@@ -72,6 +72,8 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodDocumentsActivate] = activateDocument
 	r.handlers[wire.MethodDocumentsClose] = closeDocument
 	r.handlers[wire.MethodDocumentsCloseAll] = closeAllDocuments
+	r.handlers[wire.MethodDocumentsRegisterSubType] = registerDocumentSubType
+	r.handlers[wire.MethodDocumentsListSubTypes] = listDocumentSubTypes
 	r.handlers[wire.MethodParametersList] = listParameters
 	r.handlers[wire.MethodParametersGet] = getParameter
 	r.handlers[wire.MethodParametersAdd] = addParameter
