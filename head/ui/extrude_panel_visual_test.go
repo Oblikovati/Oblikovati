@@ -103,6 +103,8 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		seedAddInSurfaces(s)
 	case "preferences": // the Preferences window (General/Sketch Grid/Modeling/Theme tabs)
 		showPreferences = true
+	case "messaging": // M05-F09 surfaces: progress bar, balloon toast, prompt, messages
+		seedMessagingSurfaces(s)
 	default:
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)
@@ -136,6 +138,29 @@ func seedAddInSurfaces(s *app.Session) {
 			{Kind: types.PanelButton, Text: "Run Study", CommandID: "demo.alpha"},
 		},
 	})
+}
+
+// seedMessagingSurfaces stages every M05-F09 feedback surface the way an add-in
+// would over the wire: a half-done progress bar, a status text, a balloon toast, a
+// pending prompt, and message-center content (so the badge shows).
+func seedMessagingSurfaces(s *app.Session) {
+	s.SetStatusText("Solving load case 2 of 5")
+	if id, err := s.Progress().Begin(10, "Meshing bracket…"); err == nil {
+		_, _ = s.Progress().Update(id, 6, "")
+	}
+	_ = s.BalloonTips().Register(app.BalloonTipSpec{
+		ID: "sim.done", Title: "Simulation finished", Text: "Study 'Bracket' converged in 42 s.",
+	})
+	_, _ = s.ShowBalloonTip("sim.done")
+	_, _, _ = s.ShowPrompt(app.PromptSpec{
+		ID: "sim.replace", Message: "Replace the existing results?",
+		Buttons: []string{"Replace", "Keep both"}, Restriction: types.PromptAllowRemember,
+	})
+	sec := s.Messages().BeginSection("Meshing")
+	s.Messages().AddMessage("12 thin faces refined", types.SeverityInfo)
+	s.Messages().AddMessage("degenerate face at fillet F7", types.SeverityWarning)
+	_ = s.Messages().EndSection(sec)
+	s.SetMessageCenterOpen(true)
 }
 
 // applyVisualOverrides applies the OBK_VISUAL_* renderer knobs through the View-tab

@@ -15,7 +15,10 @@ const (
 	tidTransactionChange  event.TypeID = 0x0504
 	tidEditCommitted      event.TypeID = 0x0505
 	tidBrowserPaneNode    event.TypeID = 0x0506 // app/browser_panes.go (M05-F03)
-	tidDockableWinChanged event.TypeID = 0x0507 // app/dockable_windows.go (M05-F03)
+	tidDockableWinChanged event.TypeID = 0x0507 // app/dockwindow_store.go (M05-F03)
+	tidProgressCancelled  event.TypeID = 0x0508 // app/progress_ledger.go (M05-F09)
+	tidBalloonClicked     event.TypeID = 0x0509 // app/balloon_tips.go (M05-F09)
+	tidPromptAnswered     event.TypeID = 0x050a // app/prompt_center.go (M05-F09)
 )
 
 // CommandStarted fires (Before) when a command begins — Inventor's

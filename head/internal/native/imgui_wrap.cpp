@@ -125,6 +125,22 @@ int  obk_ig_tree_node_selectable(const char* label, int selected) {
 void obk_ig_tree_pop(void)                   { ImGui::TreePop(); }
 void obk_ig_bullet_text(const char* s)       { ImGui::BulletText("%s", s); }
 void obk_ig_set_item_tooltip(const char* s)  { ImGui::SetItemTooltip("%s", s); }
+// progress_bar draws a determinate bar of the given pixel width; overlay text ("")
+// falls back to ImGui's percentage.
+void obk_ig_progress_bar(float fraction, float w, const char* overlay) {
+    const char* ov = (overlay && overlay[0]) ? overlay : NULL;
+    ImGui::ProgressBar(fraction, ImVec2(w, 0.0f), ov);
+}
+// main_viewport_size reports the main viewport's size (toast/modal placement).
+void obk_ig_main_viewport_size(float* w, float* h) {
+    ImVec2 sz = ImGui::GetMainViewport()->Size;
+    *w = sz.x; *h = sz.y;
+}
+// hover_seconds reports how long the last item has been hovered (the progressive
+// tooltip's expand timer).
+float obk_ig_hover_seconds(void) {
+    return ImGui::IsItemHovered() ? ImGui::GetCurrentContext()->HoveredIdTimer : 0.0f;
+}
 
 // begin_popup_context_item opens (on right-click of the just-drawn item) and begins a
 // context-menu popup keyed by id; returns 1 while the popup is open so the caller fills

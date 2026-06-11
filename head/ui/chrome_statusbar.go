@@ -36,8 +36,47 @@ func drawStatusBar(s *app.Session) {
 			native.SameLine()
 			native.Text("— " + sb.Notice)
 		}
+		if sb.StatusText != "" {
+			native.SameLine()
+			native.Text("· " + sb.StatusText)
+		}
+		drawStatusProgress(s, sb)
+		drawMessagesBadge(s, sb)
 	}
 	native.End()
+}
+
+// drawStatusProgress renders the innermost live progress bar with its cancel
+// control (M05-F09). Cancel marks the bar; the owner observes it in its next
+// update reply and as a progress.cancelled event.
+func drawStatusProgress(s *app.Session, sb app.StatusBar) {
+	if !sb.HasProgress {
+		return
+	}
+	native.SameLine()
+	fraction := float32(0)
+	if sb.Progress.Steps > 0 {
+		fraction = float32(sb.Progress.Step) / float32(sb.Progress.Steps)
+	}
+	native.ProgressBar(fraction, 160, sb.Progress.Message)
+	if !sb.Progress.Cancelled {
+		native.SameLine()
+		if native.Button("Cancel##progress") {
+			_ = s.CancelProgress(sb.Progress.ID)
+		}
+	}
+}
+
+// drawMessagesBadge renders the message-center indicator when it holds
+// errors/warnings; clicking opens the Messages panel.
+func drawMessagesBadge(s *app.Session, sb app.StatusBar) {
+	if !sb.MessageBadge {
+		return
+	}
+	native.SameLine()
+	if native.Button("Messages…") {
+		s.SetMessageCenterOpen(true)
+	}
 }
 
 // selectionText renders the selection count as a short status (e.g. "1 selected").
