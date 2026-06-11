@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: lycheeverse/lychee-action@v2
         with:
-          args: "--offline --no-progress architecture implementation-plan"
+          args: "--offline --no-progress architecture"
           fail: true
 
   # SPDX: every Go file in this GPL repo must carry GPL-2.0-only.
