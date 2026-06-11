@@ -18,7 +18,7 @@ import (
 func docInfo(d *doc.Document, active *doc.Document) wire.DocumentInfo {
 	return wire.DocumentInfo{
 		ID: uint64(d.ID()), Name: d.DisplayName(), Type: d.DocumentType().String(),
-		Dirty: d.Dirty(), Visible: d.Visible(), Active: d == active,
+		SubType: d.SubType(), Dirty: d.Dirty(), Visible: d.Visible(), Active: d == active,
 	}
 }
 
@@ -53,7 +53,36 @@ func createDocument(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
+	// A requested flavor must be registered with a matching base type (M05-F15).
+	if in.SubType != "" {
+		if err := s.StampDocumentSubType(d, in.SubType); err != nil {
+			return nil, err
+		}
+	}
 	return json.Marshal(docInfo(d, d))
+}
+
+// registerDocumentSubType declares an add-in flavor (wire documents.registerSubType).
+func registerDocumentSubType(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var in wire.RegisterDocumentSubTypeArgs
+	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	base, err := app.ParseDocTypeName(in.BaseType)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.RegisterDocumentSubType(app.DocumentSubType{
+		ID: in.ID, BaseType: base, DisplayName: in.DisplayName,
+	}); err != nil {
+		return nil, err
+	}
+	return ok()
+}
+
+// listDocumentSubTypes returns the registered flavors (wire documents.listSubTypes).
+func listDocumentSubTypes(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	return json.Marshal(wire.ListDocumentSubTypesResult{SubTypes: s.SubTypeInfos()})
 }
 
 // activateDocument makes the identified document the active one.

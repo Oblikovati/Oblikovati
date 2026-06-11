@@ -48,6 +48,7 @@ func (p *Package) marshal() ([]byte, error) {
 	return yamlcodec.MarshalDocument(yamlcodec.Document{
 		SchemaVersion: p.manifest.SchemaVersion,
 		DocumentType:  p.manifest.DocumentType,
+		SubType:       p.manifest.SubType,
 		DisplayName:   p.manifest.DisplayName,
 		Model:         p.model,
 		Data:          p.streams,
@@ -66,6 +67,7 @@ func decode(raw []byte) (*Package, error) {
 		p.manifest = Manifest{
 			SchemaVersion: doc.SchemaVersion,
 			DocumentType:  doc.DocumentType,
+			SubType:       doc.SubType,
 			DisplayName:   doc.DisplayName,
 		}
 	}

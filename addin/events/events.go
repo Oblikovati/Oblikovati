@@ -35,18 +35,9 @@ type wireEvent struct {
 // Subscribe wires the session's document, command, and UI-surface events to sink
 // and returns the subscriptions so the caller can cancel them on shutdown.
 func Subscribe(s *app.Session, sink Sink) []event.Subscription {
-	ws := s.Workspace().Events()
 	bus := s.Events()
-	subs := []event.Subscription{
-		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentCreated) event.Outcome {
-			return relay(sink, wireEvent{Type: "document.created", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
-		}),
-		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentSave) event.Outcome {
-			return relay(sink, wireEvent{Type: "document.saved", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
-		}),
-		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentActivate) event.Outcome {
-			return relay(sink, wireEvent{Type: "document.activated", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
-		}),
+	subs := subscribeDocuments(s.Workspace().Events(), sink)
+	subs = append(subs,
 		event.Subscribe(bus, event.Before, func(_ event.Context, e app.CommandStarted) event.Outcome {
 			return relay(sink, wireEvent{Type: wire.EventCommandStarted, Command: e.ID})
 		}),
@@ -62,8 +53,27 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
 			return relayEdit(sink, e)
 		}),
-	}
+	)
 	return append(subs, subscribeUISurfaces(bus, sink)...)
+}
+
+// subscribeDocuments wires the workspace document events; a flavored document's
+// lifecycle additionally services its owner via client.operation (M05-F15).
+func subscribeDocuments(ws *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentCreated) event.Outcome {
+			relayClientOperation(sink, e.Document, "created")
+			return relay(sink, wireEvent{Type: "document.created", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
+		}),
+		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentSave) event.Outcome {
+			relayClientOperation(sink, e.Document, "saved")
+			return relay(sink, wireEvent{Type: "document.saved", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
+		}),
+		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentActivate) event.Outcome {
+			relayClientOperation(sink, e.Document, "activated")
+			return relay(sink, wireEvent{Type: "document.activated", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
+		}),
+	}
 }
 
 // subscribeUISurfaces wires the M05 UI-surface events: browser panes and dockable
@@ -153,11 +163,24 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.MiniToolbarChangedEvent | wire.MiniToolbarCommittedEvent |
 	wire.FileDialogChosenEvent | wire.WebDialogChangedEvent |
 	wire.SelectionChangedEvent | wire.EnvironmentChangedEvent |
-	wire.TriadDragEvent | wire.TriadSegmentEvent | wire.ManipulatorDragEvent](sink Sink, ev E) event.Outcome {
+	wire.TriadDragEvent | wire.TriadSegmentEvent | wire.ManipulatorDragEvent |
+	wire.ClientOperationEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}
 	return event.Continue()
+}
+
+// relayClientOperation services a flavored document's owner: a subtyped document's
+// lifecycle additionally emits client.operation (M05-F15, Oblikovati#665).
+func relayClientOperation(sink Sink, d *doc.Document, operation string) {
+	if d.SubType() == "" {
+		return
+	}
+	relayJSON(sink, wire.ClientOperationEvent{
+		Type: wire.EventClientOperation, Document: uint64(d.ID()),
+		SubType: d.SubType(), Operation: operation,
+	})
 }
 
 // relayEdit serializes a committed edit as the contract's [wire.EditCommittedEvent] (the
