@@ -29,6 +29,32 @@ func TestExtrudeDistanceDisplayRoundTripsThroughDocUnit(t *testing.T) {
 	}
 }
 
+// TestExtrudeClearProfilesEmptiesSelection covers the property panel's selector clear:
+// ⊗ drops every picked region (the tool returns to its select step) and the source
+// sketch name tracks the selection (named while filled, empty after clearing).
+func TestExtrudeClearProfilesEmptiesSelection(t *testing.T) {
+	s := topDownPickerOverSquare(t)
+	s.StartTool(NewExtrudeTool())
+	s.Click(200, 200)
+	ext := s.ActiveExtrude()
+	if _, picked := ext.PickedProfile(); !picked {
+		t.Fatal("clicking inside the square should pick its profile")
+	}
+	if name := ext.SourceSketchName(); name == "" {
+		t.Error("SourceSketchName() = \"\" with a picked profile, want the sketch's name")
+	}
+	ext.ClearProfiles()
+	if n := len(ext.PickedProfiles()); n != 0 {
+		t.Errorf("after ClearProfiles, %d profiles remain, want 0", n)
+	}
+	if ext.CanCommit() {
+		t.Error("an extrude with no profiles must not be committable")
+	}
+	if name := ext.SourceSketchName(); name != "" {
+		t.Errorf("SourceSketchName() = %q with no profiles, want \"\"", name)
+	}
+}
+
 func TestExtrudeDialogPathBuildsSolid(t *testing.T) {
 	s := topDownPickerOverSquare(t) // 2×2 square at origin, top-down camera
 	s.StartTool(NewExtrudeTool())

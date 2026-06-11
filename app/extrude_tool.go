@@ -69,6 +69,19 @@ func (t *ExtrudeTool) PickWithMods(s *Session, sel Selectable, mods Modifier) {
 	t.profiles = append(t.profiles, p)
 }
 
+// ClearProfiles empties the picked-profile selection — the property panel's selector
+// clear (⊗) affordance, returning the tool to its select-a-region step.
+func (t *ExtrudeTool) ClearProfiles() { t.profiles = nil }
+
+// SourceSketchName returns the sketch the picked profiles come from, for the property
+// panel's breadcrumb and From row; "" until a profile is picked.
+func (t *ExtrudeTool) SourceSketchName() string {
+	if len(t.profiles) == 0 {
+		return ""
+	}
+	return t.profiles[0].Sketch.Name()
+}
+
 // indexOfProfile returns the position of p in handles, or -1. ProfileHandle is
 // comparable (sketch pointer + region index), so equality identifies the same region.
 func indexOfProfile(handles []ProfileHandle, p ProfileHandle) int {

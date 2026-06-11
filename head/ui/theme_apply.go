@@ -31,6 +31,7 @@ var (
 	selectionHighlight                                     [4]float32      // picked-body highlight
 	iconColors                                             icon.RoleColors // glyph layer colors (icon.* tokens)
 	accentColor                                            [4]float32      // active/toggled ribbon button
+	dangerColor                                            [4]float32      // required-but-empty selector / error affordances
 	windowClearColor                                       [3]float32      // swapchain (chrome) clear
 )
 
@@ -68,6 +69,7 @@ func refreshThemeColors(t contract.Theme) {
 	refreshIconThemeColors(arr)
 	selectionHighlight = arr(types.TokenSelectionHighlight)
 	accentColor = arr(types.TokenChromeAccent)
+	dangerColor = arr(types.TokenChromeDanger)
 	c := t.Color(types.TokenChromeWindowBg)
 	windowClearColor = [3]float32{c.R, c.G, c.B}
 }
