@@ -46,6 +46,8 @@ func (d *DimensionConstraint3D) KindName() string {
 		return "pointPlaneDistance"
 	case AngleDim:
 		return "twoLineAngle"
+	case SplineLengthDimKind3D:
+		return "splineLength"
 	default:
 		return "unknown"
 	}
@@ -150,6 +152,27 @@ func (dc *DimensionConstraints3D) AddTwoLineAngle(l1, l2 *Line3D, expression str
 	return dc.create(AngleDim, expression, []Entity{l1, l2},
 		func() float64 { return angleBetweenLines3D(l1, l2) },
 		append(line3DVars(l1), line3DVars(l2)...))
+}
+
+// AddSplineLength dimensions a 3D spline's arc length, measured over the same
+// representative Catmull-Rom polyline the spline draws and picks with (issue #144 —
+// the last declared 3D dimension kind without a factory).
+func (dc *DimensionConstraints3D) AddSplineLength(sp *Spline3D, expression string) (*DimensionConstraint3D, error) {
+	if len(sp.Points) < 2 {
+		return nil, fmt.Errorf("sketch: splineLength: spline %d has %d points, need at least 2", sp.EntityID(), len(sp.Points))
+	}
+	return dc.create(SplineLengthDimKind3D, expression, []Entity{sp},
+		func() float64 { return splineLength3D(sp) }, sp.smoothVars3D())
+}
+
+// splineLength3D returns the arc length of the spline's representative polyline.
+func splineLength3D(sp *Spline3D) float64 {
+	pts := sp.Sample()
+	total := 0.0
+	for i := 0; i+1 < len(pts); i++ {
+		total += float64(pts[i].DistanceTo(pts[i+1]))
+	}
+	return total
 }
 
 // angleBetweenLines3D returns the unsigned angle (radians) between two 3D line directions.

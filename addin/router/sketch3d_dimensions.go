@@ -74,6 +74,15 @@ func lineDimension3D(sk *sketch.Sketch3D, kind types.Dimension3DConstraintKind, 
 			return nil, err
 		}
 		return dc.AddTwoLineAngle(l[0], l[1], in.Expression)
+	case types.Dim3DSplineLength:
+		if len(in.Entities) != 1 {
+			return nil, fmt.Errorf("sketch3d.addDimension: splineLength needs 1 spline ref, got %d", len(in.Entities))
+		}
+		sp, err := splineRef3D(sk, in.Entities[0])
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddSplineLength(sp, in.Expression)
 	default:
 		return nil, fmt.Errorf("sketch3d.addDimension: unsupported kind %q", in.Kind)
 	}
