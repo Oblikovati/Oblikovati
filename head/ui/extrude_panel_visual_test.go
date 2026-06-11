@@ -105,6 +105,13 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		showPreferences = true
 	case "messaging": // M05-F09 surfaces: progress bar, balloon toast, prompt, messages
 		seedMessagingSurfaces(s)
+	case "marking-menu": // M05-F12: the radial marking menu, opened as if right-clicked
+		ext := app.NewExtrudeTool()
+		s.StartTool(ext)
+		ext.Pick(s, profile)
+		ext.SetDistance(3)
+		_ = s.OK()
+		openMarkingMenuOnFirstFrame = true
 	case "dialogs": // M05-F08: an add-in file dialog + a docked web view
 		_ = s.ShowWebDialog(wire.WebDialogSpec{
 			ID: "docs", Title: "Documentation", URL: "https://docs.example.org/bracket",

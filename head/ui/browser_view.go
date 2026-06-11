@@ -220,7 +220,7 @@ func drawBranchNode(s *app.Session, n app.BrowserNode) {
 // drawNodeMenu opens the node's right-click context menu (if it has any entries) and runs
 // the action behind a clicked item. Nodes whose kind has no menu draw nothing.
 func drawNodeMenu(s *app.Session, n app.BrowserNode) {
-	items := app.BrowserMenu(n)
+	items := app.BrowserMenuFor(s, n) // built-ins + add-in injections (M05-F12)
 	if len(items) == 0 {
 		return
 	}
