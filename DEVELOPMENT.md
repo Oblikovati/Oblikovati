@@ -1,8 +1,9 @@
 # Oblikovati — developer guide
 
 The Go implementation of the Oblikovati parametric CAD application. The
-architecture lives in [`architecture/`](architecture); the backlog lives in
-[`implementation-plan/`](implementation-plan). This is the developer workflow for
+architecture lives in [`architecture/`](architecture); the backlog lives on the
+[GitHub issue tracker](https://github.com/Oblikovati/Oblikovati/issues) (milestones M00–M25,
+issues typed Feature/Task). This is the developer workflow for
 the code in this repository.
 
 - **Module:** `oblikovati` (GPL-2.0). It `require`s the

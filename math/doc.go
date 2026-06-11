@@ -11,7 +11,7 @@
 // to run in parallel over shared inputs (ADR-0007).
 //
 // All coordinates are float64 in canonical database units (centimetres for
-// length, radians for angle); see implementation-plan/CONVENTIONS.md. The
+// length, radians for angle); see architecture/implementation-conventions.md. The
 // renderer narrows to float32 only at the GPU boundary, never here.
 //
 // Naming maps to the public contract (ADR-0006) as: Point3→Point, Vector3→Vector,

@@ -80,7 +80,10 @@ This repo's top-level layout:
 - /test-utilities -> utilities and artifacts to help us test the code (e.g. blender projects).
 - /architecture -> HOW we want to build; Documentation for architecture, ADRs.
 - /experiments -> disposable experiments to validate things quickly before implementation (git-ignored).
-- /implementation-plan -> WHAT we want to build; A roadmap with milestones, features and pbis.
+- WHAT we want to build is tracked on GitHub: milestones (M00–M25 capability blocks)
+  and issues (type Feature / Task, `area/*` labels). Conventions for that work live in
+  /architecture/implementation-conventions.md; the pre-migration progress log is
+  /architecture/history/implementation-log.md.
 
 The Autodesk Inventor C# API reference (Oblikovati.Contracts.CSharp) is intentionally
 NOT in this repo — it lives, read-only, in the archived monorepo

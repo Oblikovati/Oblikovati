@@ -6,7 +6,7 @@ targeting **Linux, macOS, and Windows**.
 
 It is a *modernization* of two existing artifacts in this repo, not a fresh idea:
 
-- **`../implementation-plan/`** — the 19-milestone / 170-PBI feature roadmap
+- **[GitHub milestones](https://github.com/Oblikovati/Oblikovati/milestones)** — the M00–M25 feature roadmap
   derived from the Inventor-class `Oblikovati.Contracts` surface. That defines
   *what* to build. This folder defines *how* to build it on a modern stack.
 - The **`parametric-cad-architecture`** skill (the domain/model patterns) and the
@@ -167,7 +167,7 @@ The capability domains on the spine. See [apps/README.md](apps/README.md).
   automation/iLogic (M15), visualization/presentations (M16), interop (M17),
   analysis/simulation incl. contact & dynamics (M18). ✅
 
-**All 19 implementation-plan milestones (M00–M18) now have a modern-architecture
+**All 19 roadmap milestones (M00–M18) now have a modern-architecture
 treatment on the Go + Vulkan stack.** The recurring result: after the iteration-1
 core was laid down, each later domain was overwhelmingly *reuse* — only six genuinely
 new engines were needed across the whole modeler (geometry kernel, reference keys,
