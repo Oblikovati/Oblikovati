@@ -191,6 +191,8 @@ func (w *WorkPlane) IsRedefinable() bool {
 // restores it — an edit's Cancel calls it to undo any re-picked references and scalar changes
 // in one step. Every user definition is held behind a pointer (slots and scalar edits mutate
 // one shared instance), so the snapshot copies the pointee and the restore copies it back.
+//
+//nolint:funlen // one-case-per-definition-kind dispatch; each case only names the concrete type snapshotPointee needs.
 func (w *WorkPlane) SnapshotDefinition() func() {
 	switch d := w.def.(type) {
 	case *offsetPlaneDef:
