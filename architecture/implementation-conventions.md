@@ -4,7 +4,6 @@
 > the Definition→Add→Feature pattern, cross-cutting rules) remain in force for work
 > tracked on GitHub.
 
-
 This document defines the cross-cutting rules every milestone and PBI obeys.
 Read it once; it removes repetition from the individual files.
 

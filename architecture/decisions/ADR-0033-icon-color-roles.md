@@ -31,6 +31,7 @@ palette we had no way to use.
    | secondary | `#ff0000` |
    | tertiary | `#0000ff` |
    | background | `#00ff00` |
+
    Every asset must use only sentinel paints, and must have a plate and primary
    content (`TestAssetsConformToColorRoles` fails the build otherwise).
 3. **One coverage mask per role, composed on the CPU.** `icon.RasterizeRoles` filters

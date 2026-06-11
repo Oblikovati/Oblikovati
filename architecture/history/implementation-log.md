@@ -4,7 +4,6 @@
 > roadmap tracking moved to GitHub milestones/issues. Frozen as a historical record —
 > current status lives on the issue tracker.
 
-
 Live tracker for building Oblikovati against [the roadmap](README.md). Updated as
 each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (green in CI).
 
@@ -14,6 +13,8 @@ each PBI lands. Status legend: ⬜ not started · 🟦 in progress · ✅ done (
 > Definition of Done (M05/M09/M10/M21). Per CONVENTIONS.md "Status model", a feature is
 > **Done** only when **Model + Geometry + UI/e2e** are all green; ✅ here now means all
 > three, 🟦 means partial. Several rows previously ✅ are model-complete only.
+
+<!-- -->
 
 > **▶ NEXT PRIORITY (set 2026-06-09): analytic-cylinder feature faces — [#129](https://github.com/Oblikovati/Oblikovati/issues/129).**
 > The revolve/extrude feature builders pre-facet circular profiles, so a feature-modeled "cylinder"
