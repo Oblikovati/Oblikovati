@@ -14,7 +14,9 @@ import (
 	"os"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
+	"oblikovati.org/app/options"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/internal/windowstate"
 	"oblikovati.org/head/ui"
@@ -130,7 +132,14 @@ func newDemoSession() *app.Session {
 		s.SetUserPrefsStore(userprefs.NewFileStore(path))
 	}
 	registerCommands(s)
-	seedPart(s)
+	loadAppOptions(s)
+	// StartupAction (M05-F11): the historical default seeds a demo part; the user can
+	// opt into an empty workspace (the Get Started ribbon) in Preferences ▸ General.
+	if s.Options().General.StartupAction != types.StartupEmptyWorkspace {
+		seedPart(s)
+	} else {
+		installPicker(s)
+	}
 	loadThemes(s)
 	return s
 }
@@ -172,18 +181,7 @@ func seedPart(s *app.Session) {
 	feature.NewExtrudeFeatures(def.Features()).
 		AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	def.Recompute()
-
-	// Install the hit-test so viewport clicks select faces and origin work planes.
-	// The closures read the ACTIVE document's part, so picking follows whichever
-	// document is current (New Part, a tab, an add-in's activate_document) rather than
-	// staying bound to this seeded part.
-	s.SetPicker(app.NewRayPicker(s.Camera(),
-		func() []*topo.Body { return activeBodies(s) }).
-		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }).
-		WithPoints(func() []*feature.WorkPoint { return activeWorkPoints(s) }).
-		WithAxes(func() []*feature.WorkAxis { return activeWorkAxes(s) }).
-		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }).
-		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }))
+	installPicker(s)
 
 	// Frame the box (centered ~(2,1.5,2.5)) from a three-quarter view.
 	cam := s.Camera()
@@ -191,6 +189,32 @@ func seedPart(s *app.Session) {
 	cam.Target = math.P3(2, 1.5, 2.5)
 	cam.Up = math.V3(0, 1, 0)
 	s.SetCamera(cam)
+}
+
+// installPicker installs the hit-test so viewport clicks select faces and origin work
+// planes. The closures read the ACTIVE document's part, so picking follows whichever
+// document is current (New Part, a tab, an add-in's activate_document) — and works
+// even when startup opened an empty workspace (StartupEmptyWorkspace, M05-F11).
+func installPicker(s *app.Session) {
+	s.SetPicker(app.NewRayPicker(s.Camera(),
+		func() []*topo.Body { return activeBodies(s) }).
+		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }).
+		WithPoints(func() []*feature.WorkPoint { return activeWorkPoints(s) }).
+		WithAxes(func() []*feature.WorkAxis { return activeWorkAxes(s) }).
+		WithSketches(func() []*sketch.Sketch { return activeSketches(s) }).
+		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }))
+}
+
+// loadAppOptions wires the per-user options file (M05-F11) and applies the stored
+// groups; a store failure costs only persistence (defaults still apply).
+func loadAppOptions(s *app.Session) {
+	path, err := options.DefaultPath()
+	if err == nil {
+		err = s.UseOptionsStore(options.NewFileStore(path))
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "options: %v\n", err)
+	}
 }
 
 // activeBodies returns the active document's part bodies (nil if no active part), for

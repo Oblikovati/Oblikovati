@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"oblikovati.org/app/options"
 	"oblikovati.org/event"
 	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/model/compdef"
@@ -50,6 +51,8 @@ type Session struct {
 	clientApps         *ClientApplicationRegistry // external automation drivers (M05-F01)
 	browserPanes       *AddInBrowserPanes         // add-in browser panes (M05-F03)
 	dockableWindows    *AddInDockableWindows      // add-in dockable windows (M05-F03)
+	appOptions         options.All                // typed per-user option groups (M05-F11)
+	optionsStore       options.Store              // persists appOptions (nil ⇒ in-session only)
 	grid               *GridSettings
 	themes             *theme.Library
 	themeStore         *theme.Store
@@ -112,6 +115,7 @@ func newSession(store doc.Store) *Session {
 		clientApps:      NewClientApplicationRegistry(),
 		browserPanes:    NewAddInBrowserPanes(),
 		dockableWindows: NewAddInDockableWindows(),
+		appOptions:      options.Defaults(),
 		visualStyle:     renderer.ShadedWithEdges,
 		// Three Point is the out-of-the-box rig for every visual style: a studio
 		// key/fill/back setup reads far better than the legacy single headlight now
