@@ -103,10 +103,12 @@ polarity-correct way: dark themes lighten, light themes darken.
 ## Consequences
 
 - The shell's look is now authored in Blender's theme editor; the Go side only maps.
-- The shipped dark theme inherits its source file's choices verbatim — notably
-  `gizmo_primary`/`gizmo_hi` are `#000000` in `dark.xml`, so work-plane borders render
-  near-invisible on the dark canvas until the asset is tuned (an XML edit, tracked
-  separately).
+- The shipped themes inherit their source file's choices verbatim; visual fixes are
+  asset edits. The dark file as exported had `#000000` gizmo borders and a near-zero
+  `face` fill (work planes invisible on the dark canvas), tuned in place to the
+  theme's fourth-axis gold (`gizmo_primary` `#edba18`, `gizmo_hi` `#ffd75e`, `face`
+  `#edba1840`) — gold echoes the pre-migration translucent-orange planes and stays
+  distinct from the purple selected state (`object_active`).
 - `theme.New` remains as a palette-only seam for tests; such themes cannot be saved
   (no document) and the store rejects them loudly.
 - Completeness is enforced twice: `TestEmbeddedThemesResolveCompletely` (every direct
