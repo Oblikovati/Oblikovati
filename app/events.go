@@ -9,11 +9,13 @@ import (
 
 // Application UI events on the session bus. Stable TypeIDs (0x05xx = M05 UI).
 const (
-	tidCommandStarted    event.TypeID = 0x0501
-	tidCommandEnded      event.TypeID = 0x0502
-	tidSelectionChanged  event.TypeID = 0x0503
-	tidTransactionChange event.TypeID = 0x0504
-	tidEditCommitted     event.TypeID = 0x0505
+	tidCommandStarted     event.TypeID = 0x0501
+	tidCommandEnded       event.TypeID = 0x0502
+	tidSelectionChanged   event.TypeID = 0x0503
+	tidTransactionChange  event.TypeID = 0x0504
+	tidEditCommitted      event.TypeID = 0x0505
+	tidBrowserPaneNode    event.TypeID = 0x0506 // app/browser_panes.go (M05-F03)
+	tidDockableWinChanged event.TypeID = 0x0507 // app/dockable_windows.go (M05-F03)
 )
 
 // CommandStarted fires (Before) when a command begins — Inventor's

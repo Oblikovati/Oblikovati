@@ -7,6 +7,7 @@ import (
 	"sync"
 	"testing"
 
+	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/doc"
 )
@@ -88,4 +89,68 @@ func has(s []string, v string) bool {
 		}
 	}
 	return false
+}
+
+// rawRecorder collects the raw JSON the sink receives, for events whose shapes are
+// wire DTOs rather than the package's own wireEvent (M05-F03 push events).
+type rawRecorder struct {
+	mu  sync.Mutex
+	got []string
+}
+
+func (r *rawRecorder) sink(b []byte) {
+	r.mu.Lock()
+	r.got = append(r.got, string(b))
+	r.mu.Unlock()
+}
+
+// TestForwardsBrowserPaneAndDockableWindowEvents checks the M05-F03 UI events reach
+// the sink as their wire DTOs: a pane-node gesture as browser.node and a window
+// visibility change as dockableWindow.changed.
+func TestForwardsBrowserPaneAndDockableWindowEvents(t *testing.T) {
+	s := app.NewSession()
+	var rec rawRecorder
+	subs := Subscribe(s, rec.sink)
+	defer func() {
+		for _, sub := range subs {
+			sub.Cancel()
+		}
+	}()
+
+	if err := s.BrowserPanes().Set(wire.BrowserPaneSpec{
+		ID: "sim", Title: "Simulation",
+		Nodes: []wire.BrowserNodeSpec{{ID: "f1", Label: "Force"}},
+	}); err != nil {
+		t.Fatalf("Set pane: %v", err)
+	}
+	if err := s.ActivateBrowserPaneNode("sim", "f1", app.BrowserGestureSelect); err != nil {
+		t.Fatalf("ActivateBrowserPaneNode: %v", err)
+	}
+	if err := s.SetDockableWindow(wire.DockableWindowSpec{ID: "w", Title: "W", Visible: true}); err != nil {
+		t.Fatalf("SetDockableWindow: %v", err)
+	}
+
+	rec.mu.Lock()
+	defer rec.mu.Unlock()
+	var node wire.BrowserNodeEvent
+	var win wire.DockableWindowChangedEvent
+	for _, raw := range rec.got {
+		_ = json.Unmarshal([]byte(raw), &node)
+		if node.Type == wire.EventBrowserNode {
+			break
+		}
+	}
+	if node.Pane != "sim" || node.Node != "f1" || node.Gesture != "select" {
+		t.Errorf("browser.node = %+v, want sim/f1/select", node)
+	}
+	found := false
+	for _, raw := range rec.got {
+		if json.Unmarshal([]byte(raw), &win) == nil && win.Type == wire.EventDockableWindowChanged {
+			found = true
+			break
+		}
+	}
+	if !found || win.ID != "w" || !win.Visible {
+		t.Errorf("dockableWindow.changed = %+v (found=%v), want visible w", win, found)
+	}
 }

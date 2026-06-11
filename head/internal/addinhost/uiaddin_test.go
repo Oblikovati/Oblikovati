@@ -83,6 +83,20 @@ func TestAddInExtendsRibbonAndActsOnClick(t *testing.T) {
 	if !drainUntilDocument(t, d, s, "FromAddIn") {
 		t.Fatal("add-in did not create its document in response to the button click")
 	}
+
+	// (3) The browser is extended (M05-F03 #256): the add-in's pane was declared on
+	// Activate, and "clicking" its node (what the head's browser does) routes the
+	// browser.node event to the add-in, which reacts with another host call.
+	panes := s.BrowserPanes().List()
+	if len(panes) != 1 || panes[0].ID != "fixture-pane" || panes[0].Nodes[0].ID != "ping-node" {
+		t.Fatalf("add-in did not declare its browser pane: %+v", panes)
+	}
+	if err := s.ActivateBrowserPaneNode("fixture-pane", "ping-node", app.BrowserGestureSelect); err != nil {
+		t.Fatalf("activate pane node: %v", err)
+	}
+	if !drainUntilDocument(t, d, s, "FromPaneClick") {
+		t.Fatal("add-in did not react to its browser pane node click")
+	}
 }
 
 // drainUntil drains d on this goroutine until done yields (returning its value) or a

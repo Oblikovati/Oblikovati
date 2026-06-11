@@ -8,6 +8,8 @@ import (
 	"os"
 	"testing"
 
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/math"
@@ -97,6 +99,8 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		ext.Pick(s, profile)
 		ext.SetDistance(3)
 		_ = s.OK()
+	case "addin-ui": // M05-F03 surfaces: browser pane tab, dockable window, popup button
+		seedAddInSurfaces(s)
 	default:
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)
@@ -104,6 +108,32 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 			ext.Pick(s, profile)
 		}
 	}
+}
+
+// seedAddInSurfaces declares the M05-F03 add-in UI surfaces the way an add-in would
+// over the wire: a popup ribbon control, a browser pane, and a visible dockable
+// window — so a screenshot shows all three rendered by the head.
+func seedAddInSurfaces(s *app.Session) {
+	noop := func(*app.Session) error { return nil }
+	_ = s.Commands().Add(app.NewCommand("demo.alpha", "Alpha", "Add-In Demo", noop))
+	_ = s.Commands().Add(app.NewCommand("demo.beta", "Beta", "Add-In Demo", noop))
+	_ = s.Commands().Add(app.NewCommand("demo.menu", "Demo Menu", "Add-In Demo", noop).
+		WithTab("Tools").WithPopupItems("demo.alpha", "demo.beta"))
+	_ = s.BrowserPanes().Set(wire.BrowserPaneSpec{
+		ID: "sim", Title: "Simulation",
+		Nodes: []wire.BrowserNodeSpec{{
+			ID: "loads", Label: "Loads", Expanded: true,
+			Children: []wire.BrowserNodeSpec{{ID: "f1", Label: "Force 10N"}, {ID: "f2", Label: "Pressure 2bar"}},
+		}, {ID: "mesh", Label: "Mesh"}},
+	})
+	_ = s.SetDockableWindow(wire.DockableWindowSpec{
+		ID: "sim.panel", Title: "Simulation", Dock: types.DockRight, Visible: true,
+		Controls: []wire.PanelControlSpec{
+			{Kind: types.PanelLabel, Text: "Mesh: 12,480 elements"},
+			{Kind: types.PanelSeparator},
+			{Kind: types.PanelButton, Text: "Run Study", CommandID: "demo.alpha"},
+		},
+	})
 }
 
 // applyVisualOverrides applies the OBK_VISUAL_* renderer knobs through the View-tab

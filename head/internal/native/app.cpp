@@ -348,7 +348,8 @@ extern "C" unsigned int obk_ig_dockspace_over_main(void) {
 // the split structure is the default layout. Without this the panels float and
 // auto-size to nothing, so the viewport collapses to a sliver.
 extern "C" void obk_ig_dock_default_layout(unsigned int dockId, const char* model,
-        const char* viewport, const char* status) {
+        const char* viewport, const char* status,
+        unsigned int* outLeft, unsigned int* outBottom, unsigned int* outCenter) {
     ImGui::DockBuilderRemoveNode(dockId);
     ImGui::DockBuilderAddNode(dockId, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodeSize(dockId, ImGui::GetMainViewport()->Size);
@@ -359,6 +360,26 @@ extern "C" void obk_ig_dock_default_layout(unsigned int dockId, const char* mode
     ImGui::DockBuilderDockWindow(status, bottom);
     ImGui::DockBuilderDockWindow(viewport, center);
     ImGui::DockBuilderFinish(dockId);
+    // Report the side node ids so late-created windows (add-in dockable windows,
+    // M05-F03) can be docked into the arrangement with SetNextWindowDockID.
+    *outLeft = left; *outBottom = bottom; *outCenter = center;
+}
+
+// obk_ig_dock_split carves a new node off an existing one at runtime (e.g. a right
+// band for an add-in window when none exists yet), returning the new node id and
+// updating *nodeId to the remainder.
+extern "C" unsigned int obk_ig_dock_split(unsigned int* nodeId, int dir, float ratio) {
+    ImGuiID remain = *nodeId;
+    ImGuiID fresh = ImGui::DockBuilderSplitNode(remain, (ImGuiDir)dir, ratio, NULL, &remain);
+    ImGui::DockBuilderFinish(remain);
+    *nodeId = remain;
+    return fresh;
+}
+
+// obk_ig_set_next_window_dock docks the NEXT Begin'd window into the given node the
+// first time it appears; afterwards the user's own re-docking wins (FirstUseEver).
+extern "C" void obk_ig_set_next_window_dock(unsigned int nodeId) {
+    ImGui::SetNextWindowDockID(nodeId, ImGuiCond_FirstUseEver);
 }
 
 void obk_head_begin_frame(void* h) {

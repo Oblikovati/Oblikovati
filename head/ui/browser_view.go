@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 
+	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
@@ -29,14 +30,96 @@ var browserSync browserSelectionSync
 var browserNodeSeq int
 
 // drawBrowser renders the model browser tree from the active document, then records the
-// selection so the next frame can detect a change for scroll-sync.
+// selection so the next frame can detect a change for scroll-sync. When add-ins have
+// declared browser panes (M05-F03 #256), the window becomes a tab bar: the Model tree
+// first, then one tab per add-in pane.
 func drawBrowser(s *app.Session) {
 	if native.Begin("Model") {
-		browserNodeSeq = 0
-		drawNode(s, app.BuildBrowser(s))
-		browserSync.last = s.Selection().First()
+		if panes := s.BrowserPanes().List(); len(panes) > 0 {
+			drawBrowserPaneTabs(s, panes)
+		} else {
+			drawModelTree(s)
+		}
 	}
 	native.End()
+}
+
+// drawModelTree renders the built-in document tree (the Model pane's content).
+func drawModelTree(s *app.Session) {
+	browserNodeSeq = 0
+	drawNode(s, app.BuildBrowser(s))
+	browserSync.last = s.Selection().First()
+}
+
+// drawBrowserPaneTabs renders the Model tree and the add-in panes as tabs.
+func drawBrowserPaneTabs(s *app.Session, panes []wire.BrowserPaneSpec) {
+	if !native.BeginTabBar("##browser-panes") {
+		return
+	}
+	if native.BeginTabItem("Model") {
+		drawModelTree(s)
+		native.EndTabItem()
+	}
+	for _, pane := range panes {
+		if native.BeginTabItem(pane.Title + "##" + pane.ID) {
+			for _, n := range pane.Nodes {
+				drawAddInPaneNode(s, pane.ID, n)
+			}
+			native.EndTabItem()
+		}
+	}
+	native.EndTabBar()
+}
+
+// drawAddInPaneNode renders one declared node: a leaf as a clickable row, a parent as a
+// tree node. Every gesture (select, double-click, expand, collapse) is reported to the
+// session so the owning add-in receives it as a browser.node event — the #256 acceptance:
+// an add-in node that responds to clicks.
+func drawAddInPaneNode(s *app.Session, paneID string, n wire.BrowserNodeSpec) {
+	native.PushID("addin-node-" + n.ID)
+	defer native.PopID()
+	if len(n.Children) == 0 {
+		if native.Selectable(n.Label, false) {
+			_ = s.ActivateBrowserPaneNode(paneID, n.ID, app.BrowserGestureSelect)
+		}
+		reportDoubleClick(s, paneID, n.ID)
+		return
+	}
+	drawAddInPaneBranch(s, paneID, n)
+}
+
+// drawAddInPaneBranch renders a parent node, reporting expand/collapse and select
+// gestures, and recurses into its children while open.
+func drawAddInPaneBranch(s *app.Session, paneID string, n wire.BrowserNodeSpec) {
+	if n.Expanded {
+		native.SetNextItemOpen(true, true)
+	}
+	open := native.TreeNode(n.Label)
+	if native.IsItemToggledOpen() {
+		gesture := app.BrowserGestureCollapse
+		if open {
+			gesture = app.BrowserGestureExpand
+		}
+		_ = s.ActivateBrowserPaneNode(paneID, n.ID, gesture)
+	}
+	if native.IsItemClicked(native.MouseLeft) {
+		_ = s.ActivateBrowserPaneNode(paneID, n.ID, app.BrowserGestureSelect)
+	}
+	reportDoubleClick(s, paneID, n.ID)
+	if !open {
+		return
+	}
+	for _, child := range n.Children {
+		drawAddInPaneNode(s, paneID, child)
+	}
+	native.TreePop()
+}
+
+// reportDoubleClick reports a double-click gesture on the last item.
+func reportDoubleClick(s *app.Session, paneID, nodeID string) {
+	if native.IsItemHovered() && native.IsMouseDoubleClicked(native.MouseLeft) {
+		_ = s.ActivateBrowserPaneNode(paneID, nodeID, app.BrowserGestureDouble)
+	}
 }
 
 // drawNode renders a browser node and its children: a selectable node as a clickable,

@@ -70,13 +70,18 @@ const (
 	SketchEnvironment = types.SketchEnvironment
 )
 
-// currentEnvironment reports the session's active ribbon environment.
-func currentEnvironment(s *Session) Environment {
+// CurrentEnvironment reports the session's active ribbon environment — exported so
+// the router can serve ui.listEnvironments from the same resolution the shell uses
+// (M05-F03, #247).
+func CurrentEnvironment(s *Session) Environment {
 	if s.InSketch() {
 		return SketchEnvironment
 	}
 	return BaseEnvironment
 }
+
+// currentEnvironment keeps the historical package-internal spelling.
+func currentEnvironment(s *Session) Environment { return CurrentEnvironment(s) }
 
 // environmentShows reports whether a command scoped to cmdEnv appears in the current
 // environment: base-environment commands always show; a contextual command shows only in its
