@@ -33,6 +33,7 @@ func TestInWindowExtrudePanelVisualHold(t *testing.T) {
 	icons = nil
 	s, profile := extrudeReadySession(t)
 	startVisualFeatureTool(s, profile)
+	applyVisualOverrides(t, s)
 	for i := 0; i < 6000; i++ { // long enough to screenshot even uncapped (~30s+)
 		win.BeginFrame()
 		DrawChrome(win, s)
@@ -90,11 +91,40 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		if err := s.OK(); err == nil {
 			s.BeginEditFeature(app.FeatureHandle{Feature: ext.AddedFeature()})
 		}
+	case "solid": // a committed solid with no tool — for renderer (lighting/style) checks
+		ext := app.NewExtrudeTool()
+		s.StartTool(ext)
+		ext.Pick(s, profile)
+		ext.SetDistance(3)
+		_ = s.OK()
 	default:
 		ext := app.NewExtrudeTool()
 		s.StartTool(ext)
 		if pick {
 			ext.Pick(s, profile)
+		}
+	}
+}
+
+// applyVisualOverrides applies the OBK_VISUAL_* renderer knobs through the View-tab
+// commands, so a screenshot can compare looks: OBK_VISUAL_STYLE (a View.<Style> command
+// suffix, e.g. Shaded, Realistic, Monochrome), OBK_VISUAL_LIGHTING (a Lighting Style
+// gallery name, e.g. Sun), OBK_VISUAL_ENV (an Environment gallery name, e.g. Studio).
+func applyVisualOverrides(t *testing.T, s *app.Session) {
+	t.Helper()
+	if style := os.Getenv("OBK_VISUAL_STYLE"); style != "" {
+		if err := s.Execute("View." + style); err != nil {
+			t.Fatalf("set visual style %q: %v", style, err)
+		}
+	}
+	if name := os.Getenv("OBK_VISUAL_LIGHTING"); name != "" {
+		if err := s.Execute("View.Lighting." + name); err != nil {
+			t.Fatalf("set lighting style %q: %v", name, err)
+		}
+	}
+	if name := os.Getenv("OBK_VISUAL_ENV"); name != "" {
+		if err := s.Execute("View.Environment." + name); err != nil {
+			t.Fatalf("set environment %q: %v", name, err)
 		}
 	}
 }

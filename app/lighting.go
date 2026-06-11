@@ -21,7 +21,7 @@ type (
 
 // SceneLighting returns the session's live lighting rig (lights + ambient/exposure +
 // environment + shadows) — what the renderer hands the GPU each frame. It is never empty: the
-// session starts on [renderer.DefaultSceneLighting].
+// session starts on the Three Point studio rig ([renderer.LightingThreePoint]).
 func (s *Session) SceneLighting() renderer.SceneLighting { return s.lighting }
 
 // LightingStyleName returns the active lighting style's user-facing name.
@@ -35,8 +35,14 @@ func (s *Session) SetLightingStyle(name string) error {
 	if !ok {
 		return fmt.Errorf("app: unknown lighting style %q", name)
 	}
+	prevEnv := s.lighting.Environment
 	s.lightingStyle = id
 	s.lighting = renderer.SceneLightingFor(id)
+	if !s.lighting.Environment.IsActive() {
+		// A style without its own environment keeps the current one — switching the
+		// lighting rig must not silently drop the chosen (or default Sky) skymap.
+		s.lighting.Environment = prevEnv
+	}
 	return nil
 }
 

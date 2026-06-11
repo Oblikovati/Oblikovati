@@ -4,6 +4,7 @@ package envimage
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"math"
 	"os"
@@ -20,7 +21,17 @@ func DecodeHDR(path string) (Equirect, error) {
 		return Equirect{}, err
 	}
 	defer f.Close()
-	r := bufio.NewReader(f)
+	return decodeHDRStream(bufio.NewReader(f))
+}
+
+// DecodeHDRBytes decodes an in-memory Radiance RGBE image — the embedded Sky asset's path
+// (no filesystem involved); same format support as [DecodeHDR].
+func DecodeHDRBytes(data []byte) (Equirect, error) {
+	return decodeHDRStream(bufio.NewReader(bytes.NewReader(data)))
+}
+
+// decodeHDRStream parses one Radiance image from a buffered reader (header + scanlines).
+func decodeHDRStream(r *bufio.Reader) (Equirect, error) {
 	w, h, err := readHDRHeader(r)
 	if err != nil {
 		return Equirect{}, err

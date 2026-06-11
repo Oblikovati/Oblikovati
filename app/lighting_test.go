@@ -9,15 +9,16 @@ import (
 	"oblikovati.org/renderer"
 )
 
-// TestNewSessionStartsOnDefaultLighting asserts a fresh session has the Default rig so
-// Realistic looks unchanged until the user picks a style (ADR-0026 §7).
-func TestNewSessionStartsOnDefaultLighting(t *testing.T) {
+// TestNewSessionStartsOnThreePointLighting asserts a fresh session has the Three Point
+// studio rig — the out-of-the-box lighting for every visual style now that the whole rig
+// lights every shaded mode (ADR-0026 §8).
+func TestNewSessionStartsOnThreePointLighting(t *testing.T) {
 	s := NewSession()
-	if s.LightingStyleName() != "Default" {
-		t.Errorf("new session style = %q, want Default", s.LightingStyleName())
+	if s.LightingStyleName() != "Three Point" {
+		t.Errorf("new session style = %q, want Three Point", s.LightingStyleName())
 	}
-	if len(s.SceneLighting().Lights) != 1 {
-		t.Errorf("default rig has %d lights, want 1 headlight", len(s.SceneLighting().Lights))
+	if len(s.SceneLighting().Lights) != 3 {
+		t.Errorf("default rig has %d lights, want the key/fill/back trio", len(s.SceneLighting().Lights))
 	}
 }
 
@@ -86,5 +87,33 @@ func TestLightKindDefinitionBijection(t *testing.T) {
 		if got := DefinitionForLightKind(LightKindForDefinition(d)); got != d {
 			t.Errorf("definition %v round-tripped to %v", d, got)
 		}
+	}
+}
+
+// TestNewSessionDefaultsToSkyEnvironment asserts a fresh session shows the embedded Sky
+// environment (IBL + sky background) — the default skymap (ADR-0026 §8).
+func TestNewSessionDefaultsToSkyEnvironment(t *testing.T) {
+	env := NewSession().Environment()
+	if env.Preset != renderer.EnvSky || !env.ShowImage || env.Intensity != 1 {
+		t.Errorf("default environment = %+v, want EnvSky shown at intensity 1", env)
+	}
+}
+
+// TestSetLightingStyleKeepsEnvironment asserts switching the lighting rig preserves the
+// active environment unless the style brings its own (Outdoors) — the skymap must not be
+// silently dropped by a lighting change.
+func TestSetLightingStyleKeepsEnvironment(t *testing.T) {
+	s := NewSession()
+	if err := s.SetLightingStyle("Sun"); err != nil {
+		t.Fatalf("SetLightingStyle(Sun): %v", err)
+	}
+	if got := s.Environment().Preset; got != renderer.EnvSky {
+		t.Errorf("environment after Sun = %v, want the Sky default kept", got)
+	}
+	if err := s.SetLightingStyle("Outdoors"); err != nil {
+		t.Fatalf("SetLightingStyle(Outdoors): %v", err)
+	}
+	if got := s.Environment().Preset; got != renderer.EnvOutdoors {
+		t.Errorf("environment after Outdoors = %v, want the style's own EnvOutdoors", got)
 	}
 }

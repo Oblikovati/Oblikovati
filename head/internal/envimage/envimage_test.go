@@ -22,8 +22,13 @@ func TestResolvePresetsProduceImages(t *testing.T) {
 		if err != nil || !ok {
 			t.Fatalf("Resolve(%v) ok=%v err=%v", opt.Preset, ok, err)
 		}
-		if img.W != 2*img.H || img.W != presetW {
-			t.Errorf("%v size = %dx%d, want %dx%d (2:1)", opt.Preset, img.W, img.H, presetW, presetH)
+		if img.W != 2*img.H {
+			t.Errorf("%v size = %dx%d, want a 2:1 equirect", opt.Preset, img.W, img.H)
+		}
+		// The generated gradients share one resolution; Sky is the embedded photographic
+		// asset and carries its own (pinned by TestSkyPresetResolvesEmbeddedHDR).
+		if opt.Preset != renderer.EnvSky && img.W != presetW {
+			t.Errorf("%v size = %dx%d, want %dx%d", opt.Preset, img.W, img.H, presetW, presetH)
 		}
 		if len(img.Pixels) != img.W*img.H*4 {
 			t.Fatalf("%v has %d floats, want %d", opt.Preset, len(img.Pixels), img.W*img.H*4)
@@ -91,5 +96,18 @@ func TestResolveFileDecodes(t *testing.T) {
 	img, ok, err := Resolve(renderer.Environment{FilePath: path})
 	if err != nil || !ok || img.W != 2 {
 		t.Fatalf("Resolve(file) ok=%v err=%v w=%d", ok, err, img.W)
+	}
+}
+
+// TestSkyPresetResolvesEmbeddedHDR guards the embedded default skymap: the Sky preset
+// must decode the bundled Radiance file (1024×512 at 1k) rather than fall back to the
+// studio gradient, so a fresh session's default environment is the photographic sky.
+func TestSkyPresetResolvesEmbeddedHDR(t *testing.T) {
+	img, active, err := Resolve(renderer.Environment{Preset: renderer.EnvSky, Intensity: 1})
+	if err != nil || !active {
+		t.Fatalf("Resolve(EnvSky) = (active=%v, err=%v), want active embedded sky", active, err)
+	}
+	if img.W != 1024 || img.H != 512 {
+		t.Errorf("embedded sky decoded to %dx%d, want 1024x512 (the 1k asset)", img.W, img.H)
 	}
 }

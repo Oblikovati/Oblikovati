@@ -8,10 +8,13 @@ import "oblikovati.org/renderer"
 // IBL (the shader blurs it by roughness via mips); the skybox samples the same texture.
 const presetW, presetH = 256, 128
 
-// presetEquirect generates the built-in HDR sky for a preset. Each is a vertical gradient by
-// "topness" (+1 zenith → −1 nadir), some with a sun disk; values are linear and may exceed 1.
+// presetEquirect resolves the built-in HDR sky for a preset: the embedded photographic
+// skymap for Sky, else a generated vertical gradient by "topness" (+1 zenith → −1 nadir),
+// some with a sun disk; values are linear and may exceed 1.
 func presetEquirect(p renderer.EnvironmentPreset) Equirect {
 	switch p {
+	case renderer.EnvSky:
+		return skyOrStudio()
 	case renderer.EnvOutdoors:
 		return generate(outdoorsShade)
 	case renderer.EnvOvercast:
