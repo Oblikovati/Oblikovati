@@ -136,7 +136,21 @@ func modelTabCommands() []*CommandDefinition {
 	cmds = append(cmds, modifyFeatureCommands()...)
 	cmds = append(cmds, patternFeatureCommands()...)
 	cmds = append(cmds, surfaceFeatureCommands()...)
-	return append(cmds, freeformFeatureCommands()...)
+	cmds = append(cmds, freeformFeatureCommands()...)
+	return append(cmds, moldFeatureCommands()...)
+}
+
+// moldFeatureCommands are the 3D Model tab's Mold panel: the core/cavity tooling split
+// (M10-F04, #701).
+func moldFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Mold.CoreCavity", "Core/Cavity", "Mold", func(s *Session) error {
+			s.StartTool(NewCoreCavityTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("core-cavity").WithButtonStyle(LargeIconButton).
+			WithTooltip("Core/Cavity — split the tooling block at a parting plane into core and cavity solids."),
+	}
 }
 
 // freeformFeatureCommands are the 3D Model tab's Freeform panel: the sub-D primitives
