@@ -23,6 +23,9 @@ type Parameters struct {
 	// group-key memberships (a parameter may sit in several groups). See group.go.
 	groups      []*ParameterGroup
 	memberships map[ID]map[string]bool
+
+	// settings are the document-level parameter settings (M02-F07); see settings.go.
+	settings CollectionSettings
 }
 
 // idSet is a set of parameter ids.
@@ -34,6 +37,7 @@ func NewParameters() *Parameters {
 		byID: map[ID]*Parameter{}, byName: map[string]ID{}, nextID: 1,
 		drivenBy: map[ID]idSet{}, dependents: map[ID]idSet{},
 		memberships: map[ID]map[string]bool{},
+		settings:    DefaultCollectionSettings(),
 	}
 }
 
