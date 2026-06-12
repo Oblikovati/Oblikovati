@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package router
+
+import (
+	"encoding/json"
+
+	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/model/param"
+)
+
+// Derived parameter tables over the wire (M02-F06, Oblikovati#605):
+// parameters.derivedTables.list/add/setLinked/delete. Mutations go through
+// the session seams, which resolve the source document, keep the workspace
+// reference graph current, and record one undo step each.
+
+// derivedTableInfo marshals one table, resolving the live candidate list from
+// the source document (empty when the source is not reachable).
+func derivedTableInfo(s *app.Session, t *param.DerivedParameterTable) wire.DerivedParameterTableInfo {
+	info := wire.DerivedParameterTableInfo{
+		ID: t.ID(), SourceDocument: t.SourceDocument(), Linked: t.Linked(),
+		Health: t.Health().Reason,
+	}
+	if source, ok := s.LinkableSourceParameters(t.SourceDocument()); ok {
+		for _, sv := range source {
+			info.Available = append(info.Available, sv.Name)
+		}
+	} else if info.Health == "" {
+		info.Health = "source document " + t.SourceDocument() + " is unavailable"
+	}
+	return info
+}
+
+// listDerivedTables returns the active part's tables with live candidates.
+func listDerivedTables(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var out wire.ListDerivedParameterTablesResult
+	for _, t := range part.Parameters().DerivedTables() {
+		out.Tables = append(out.Tables, derivedTableInfo(s, t))
+	}
+	return json.Marshal(out)
+}
+
+// addDerivedTable links parameters from another open document into this one.
+func addDerivedTable(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var in wire.DerivedParameterTableAddArgs
+	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	t, err := s.AddDerivedParameterTable(in.SourceDocument, in.Linked)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(derivedTableInfo(s, t))
+}
+
+// setDerivedTableLinked replaces a table's linked subset.
+func setDerivedTableLinked(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var in wire.DerivedParameterTableSetLinkedArgs
+	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	if err := s.SetDerivedTableLinked(in.ID, in.Linked); err != nil {
+		return nil, err
+	}
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	t, ok := part.Parameters().DerivedTableByID(in.ID)
+	if !ok {
+		return json.Marshal(struct{}{})
+	}
+	return json.Marshal(derivedTableInfo(s, t))
+}
+
+// deleteDerivedTable removes a table and its derived parameters.
+func deleteDerivedTable(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	var in wire.DerivedParameterTableDeleteArgs
+	if err := decode(args, &in); err != nil {
+		return nil, err
+	}
+	if err := s.DeleteDerivedParameterTable(in.ID); err != nil {
+		return nil, err
+	}
+	return json.Marshal(struct{}{})
+}
