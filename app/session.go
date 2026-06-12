@@ -84,20 +84,22 @@ type Session struct {
 	themeStore           *theme.Store
 	materials            *material.Library
 	materialStore        *material.Store
-	notice               string                   // last user-facing notice (e.g. a failed-commit reason)
-	visualStyle          renderer.VisualStyle     // how the scene is drawn (View tab's Visual Style)
-	lightingStyle        renderer.LightingStyleID // active lighting preset (View tab's Lighting Style)
-	lighting             renderer.SceneLighting   // the live lighting rig (resolved from the style, then edited)
-	chamferFlatCorners   bool                     // default three-edge-corner treatment for new chamfers
-	paramsDialogOpen     bool                     // the Manage ▸ Parameters dialog is open
-	lightingPanelOpen    bool                     // the View ▸ Lighting settings panel is open
-	loadEnvRequested     bool                     // a "Load HDR…" was requested; the head opens the file dialog
-	scriptConsoleOpen    bool                     // the Manage ▸ Scripts ▸ Script Console panel is open
-	capturePath          string                   // a requested viewport PNG capture path; the head writes it after render
-	normalDebug          bool                     // viewport normal-debug render (front green / back red); head reads each frame
-	meshColors           bool                     // viewport mesh-debug-colors render (each face/triangle a distinct color)
-	meshColorsPerTri     bool                     // when meshColors: color per TRIANGLE (else per B-rep face)
-	editScope            editScope                // while editing a node, hide everything created after it (issue #132)
+	recentDocuments      []string                       // recently opened/saved paths, most recent first (M04-F05)
+	fileMetadata         map[doc.ID][]FileMetadataValue // last save's PopulateFileMetadata harvest (M04-F05)
+	notice               string                         // last user-facing notice (e.g. a failed-commit reason)
+	visualStyle          renderer.VisualStyle           // how the scene is drawn (View tab's Visual Style)
+	lightingStyle        renderer.LightingStyleID       // active lighting preset (View tab's Lighting Style)
+	lighting             renderer.SceneLighting         // the live lighting rig (resolved from the style, then edited)
+	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
+	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
+	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
+	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
+	scriptConsoleOpen    bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
+	capturePath          string                         // a requested viewport PNG capture path; the head writes it after render
+	normalDebug          bool                           // viewport normal-debug render (front green / back red); head reads each frame
+	meshColors           bool                           // viewport mesh-debug-colors render (each face/triangle a distinct color)
+	meshColorsPerTri     bool                           // when meshColors: color per TRIANGLE (else per B-rep face)
+	editScope            editScope                      // while editing a node, hide everything created after it (issue #132)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
@@ -308,6 +310,7 @@ func (s *Session) OpenDocument(path string) (*doc.Document, error) {
 	}
 	s.documentHistory(d) // open the event stream now so the first edit's before-snapshot is the open state
 	s.loadViewState(d)   // restore this user's saved camera/view layout (kept outside the .obk)
+	s.rememberRecentDocument(path)
 	return d, nil
 }
 
@@ -317,11 +320,17 @@ func (s *Session) OpenDocument(path string) (*doc.Document, error) {
 //
 //	d, err := session.NewPart()
 func (s *Session) NewPart() (*doc.Document, error) {
+	ev := FileNew{DocumentType: doc.Part}
+	if out := event.Emit(s.bus, event.Before, ev); out.Vetoed() {
+		s.notice = out.Reason
+		return nil, &doc.VetoError{Operation: "new part", Reason: out.Reason}
+	}
 	d, err := compdef.AddPart(s.workspace, s.uniquePartName(), true)
 	if err != nil {
 		return nil, err
 	}
 	s.documentHistory(d) // open the event stream now so the first edit is undoable to the empty part
+	event.Emit(s.bus, event.After, ev)
 	return d, nil
 }
 
@@ -350,6 +359,7 @@ func (s *Session) SaveActiveDocument() error {
 	if !strings.HasSuffix(d.FullFileName(), doc.PackageExtension) {
 		return ErrNeedsPath
 	}
+	s.collectFileMetadata(d) // the PopulateFileMetadata hook gathers file properties around the save
 	if err := s.workspace.Save(d); err != nil {
 		return err
 	}
@@ -364,9 +374,11 @@ func (s *Session) SaveActiveDocumentAs(path string) error {
 	if d == nil {
 		return ErrNoActiveDoc
 	}
+	s.collectFileMetadata(d) // the PopulateFileMetadata hook gathers file properties around the save
 	if err := s.workspace.SaveAs(d, path); err != nil {
 		return err
 	}
-	s.saveViewState(d) // persist under the new path (camera/view layout stays out of the .obk)
+	s.saveViewState(d)             // persist under the new path (camera/view layout stays out of the .obk)
+	s.rememberRecentDocument(path) // a save-as destination is recent file activity
 	return nil
 }
