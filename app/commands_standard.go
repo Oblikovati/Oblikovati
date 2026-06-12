@@ -232,8 +232,8 @@ func surfaceFeatureCommands() []*CommandDefinition {
 }
 
 // patternFeatureCommands are the 3D Model tab's Pattern panel: replicate selected features
-// as real placed copies (canonical ribbon: Rectangular, Circular, Sketch Driven, Mirror;
-// Sketch Driven is a follow-up). Each starts an interactive tool fed the source features.
+// as real placed copies (canonical ribbon: Rectangular, Circular, Sketch Driven, Mirror).
+// Each starts an interactive tool fed the source features.
 func patternFeatureCommands() []*CommandDefinition {
 	pats := []struct {
 		id, name, icon, tip string
@@ -242,6 +242,7 @@ func patternFeatureCommands() []*CommandDefinition {
 		{"Modify.RectangularPattern", "Rectangular", "rectangular-pattern", "Rectangular Pattern — select features, set counts and spacing.", func() Tool { return NewFeatureRectPatternTool() }},
 		{"Modify.CircularPattern", "Circular", "circular-pattern", "Circular Pattern — select features, set count and angle.", func() Tool { return NewFeatureCircPatternTool() }},
 		{"Modify.Mirror", "Mirror", "mirror", "Mirror — select features, set the mirror-plane normal.", func() Tool { return NewFeatureMirrorTool() }},
+		{"Modify.SketchDrivenPattern", "Sketch Driven", "sketch-driven-pattern", "Sketch-Driven Pattern — select features, then the sketch whose points place the copies.", func() Tool { return NewFeatureSketchDrivenPatternTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(pats))
 	for i, p := range pats {
@@ -358,6 +359,8 @@ func directEditCommands() []*CommandDefinition {
 		{"Modify.Split", "Split", "split", "Split — divide the part by a work plane into two bodies, or trim one side away.", func() Tool { return NewSplitTool() }},
 		{"Modify.MoveFace", "Move Face", "move-face", "Move Face — translate picked faces, retopologizing the solid.", func() Tool { return NewMoveFaceTool() }},
 		{"Modify.MoveBodies", "Move Bodies", "move-bodies", "Move Bodies — relocate a body by a vector.", func() Tool { return NewMoveBodyTool() }},
+		{"Modify.DirectEdit", "Direct Edit", "direct-edit", "Direct Edit — move, push/pull, rotate, delete or scale picked geometry (#332).", func() Tool { return NewDirectEditTool() }},
+		{"Modify.Hull", "Hull", "hull", "Hull — wrap the part's solids into one convex solid.", func() Tool { return NewHullTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(defs))
 	for i, d := range defs {
@@ -392,6 +395,12 @@ func cutFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithAlias("H").WithEnable(notInSketch).
 			WithIcon("hole").WithButtonStyle(LargeIconButton).
 			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
+		NewCommand("Modify.Boss", "Boss", "Modify", func(s *Session) error {
+			s.StartTool(NewBossTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
+			WithIcon("boss").WithButtonStyle(LargeIconButton).
+			WithTooltip("Boss — raise a cylindrical stud on a planar face (the join-side mirror of Hole)."),
 		NewCommand("Modify.Chamfer", "Chamfer", "Modify", func(s *Session) error {
 			s.StartTool(NewChamferTool())
 			return nil
