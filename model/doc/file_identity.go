@@ -90,6 +90,23 @@ func recipeDigest(d *Document) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// CopyIdentity mints the identity of a fresh copy of a file (SaveCopyAs,
+// M03-F09): a copy is a NEW file — two files must never share an internal
+// name — but its model content is the source's, so the database revision and
+// digest carry over (a derived part keyed on them still matches).
+func CopyIdentity(src FileIdentity) FileIdentity {
+	id := newFileIdentity()
+	id.RevisionID = mintFileGUID()
+	id.SaveCounter = 1
+	id.VersionSaved = build.Version
+	id.DatabaseRevisionID = src.DatabaseRevisionID
+	id.ModelDigest = src.ModelDigest
+	if id.DatabaseRevisionID == "" {
+		id.DatabaseRevisionID = mintFileGUID()
+	}
+	return id
+}
+
 // FileIdentity returns the document file's identity block.
 func (d *Document) FileIdentity() FileIdentity { return d.identity }
 

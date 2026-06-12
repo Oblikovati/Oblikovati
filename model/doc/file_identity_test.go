@@ -68,6 +68,9 @@ func TestFailedSaveRollsIdentityBack(t *testing.T) {
 type failingStore struct{}
 
 func (s *failingStore) Save(*Document) error { return errNotStored{"write failed"} }
+func (s *failingStore) SaveCopy(*Document, string, CopyMetadata) error {
+	return errNotStored{"write failed"}
+}
 func (s *failingStore) Load(name string) (*Document, error) {
 	return nil, errNotStored{name}
 }

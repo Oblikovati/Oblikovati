@@ -17,7 +17,9 @@ import (
 // package whose manifest carries the document kind and display name. The richer
 // model streams (parameters, features, sketches) join the manifest once that data
 // exists on the content objects (M07+); today the manifest is the persisted recipe.
-type PackageStore struct{}
+type PackageStore struct {
+	oldVersionsToKeep int // prior versions retained in OldVersions/ on save; 0 = off (M03-F09)
+}
 
 // NewPackageStore returns a store that reads and writes .obk packages.
 func NewPackageStore() *PackageStore {
@@ -26,35 +28,73 @@ func NewPackageStore() *PackageStore {
 
 var _ doc.Store = (*PackageStore)(nil)
 
+// SetOldVersionsToKeep configures save-time retention: the prior file moves
+// into an OldVersions sibling directory, pruned to count (M03-F09, #610).
+func (s *PackageStore) SetOldVersionsToKeep(count int) { s.oldVersionsToKeep = count }
+
+// OldVersionsToKeep returns the retention count, 0 when retention is off.
+func (s *PackageStore) OldVersionsToKeep() int { return s.oldVersionsToKeep }
+
 // Save writes the document's manifest and — when its content carries a recipe — the
 // model recipe into a fresh package, and saves it atomically at the document's file
 // name. The realized geometry is never written; it is recomputed on open (ADR-0020).
 func (s *PackageStore) Save(d *doc.Document) error {
+	pkg, err := s.buildPackage(d, d.DisplayName(), string(d.SubType()), d.FileIdentity())
+	if err != nil {
+		return err
+	}
+	if err := retainOldVersion(d.FullFileName(), s.oldVersionsToKeep); err != nil {
+		return fmt.Errorf("persistence: retain old version of %q: %w", d.FullFileName(), err)
+	}
+	return pkg.Save(d.FullFileName())
+}
+
+// SaveCopy writes a copy of the document at targetFullFileName: same content,
+// fresh file identity (two files must never share an internal name), with
+// optional display-name/subtype overrides (M03-F09).
+func (s *PackageStore) SaveCopy(d *doc.Document, targetFullFileName string, meta doc.CopyMetadata) error {
+	displayName, subType := d.DisplayName(), string(d.SubType())
+	if meta.DisplayName != "" {
+		displayName = meta.DisplayName
+	}
+	if meta.SubType != "" {
+		subType = string(meta.SubType)
+	}
+	pkg, err := s.buildPackage(d, displayName, subType, doc.CopyIdentity(d.FileIdentity()))
+	if err != nil {
+		return err
+	}
+	return pkg.Save(targetFullFileName)
+}
+
+// buildPackage renders the document into a fresh package under the given
+// manifest fields and identity.
+func (s *PackageStore) buildPackage(d *doc.Document, displayName, subType string, identity doc.FileIdentity) (*Package, error) {
 	pkg := NewPackage()
 	manifest := Manifest{
 		SchemaVersion: CurrentSchemaVersion,
 		DocumentType:  uint32(d.DocumentType()),
-		SubType:       string(d.SubType()),
-		DisplayName:   d.DisplayName(),
+		SubType:       subType,
+		DisplayName:   displayName,
 	}
 	if err := pkg.SetManifest(manifest); err != nil {
-		return err
+		return nil, err
 	}
-	pkg.SetIdentity(toCodecIdentity(d.FileIdentity()))
+	pkg.SetIdentity(toCodecIdentity(identity))
 	pkg.SetFileReferences(toCodecFileReferences(d.FileReferenceRecords()))
 	pkg.SetAttachments(toCodecAttachments(d.AttachmentRecords()))
 	pkg.SetInterests(toCodecInterests(d.InterestRecords()))
 	if rc, ok := d.Content().(doc.RecipeContent); ok {
 		model, err := rc.MarshalRecipe()
 		if err != nil {
-			return fmt.Errorf("persistence: save %q: marshal recipe: %w", d.FullFileName(), err)
+			return nil, fmt.Errorf("persistence: save %q: marshal recipe: %w", d.FullFileName(), err)
 		}
 		pkg.SetModelYAML(model)
 	}
 	if rb, ok := d.Content().(doc.ResourceBearer); ok {
 		pkg.SetResources(toCodecResources(rb.Resources()))
 	}
-	return pkg.Save(d.FullFileName())
+	return pkg, nil
 }
 
 // Load opens the package at fullDocumentName, migrates it, and reconstructs the
@@ -81,16 +121,27 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	if rb, ok := d.Content().(doc.ResourceBearer); ok {
 		rb.SetResources(fromCodecResources(pkg.Resources()))
 	}
-	if model, ok := pkg.ModelYAML(); ok {
-		rc, ok := d.Content().(doc.RecipeContent)
-		if !ok {
-			return nil, fmt.Errorf("persistence: load %q: file has a model recipe but %v content cannot restore it (is its package imported?)", fullDocumentName, d.DocumentType())
-		}
-		if err := rc.ApplyRecipe(model); err != nil {
-			return nil, fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
-		}
+	if err := applyModelRecipe(d, pkg, fullDocumentName); err != nil {
+		return nil, err
 	}
 	return d, nil
+}
+
+// applyModelRecipe replays the persisted recipe into the document's content,
+// failing loud when the content kind cannot restore one.
+func applyModelRecipe(d *doc.Document, pkg *Package, fullDocumentName string) error {
+	model, ok := pkg.ModelYAML()
+	if !ok {
+		return nil
+	}
+	rc, ok := d.Content().(doc.RecipeContent)
+	if !ok {
+		return fmt.Errorf("persistence: load %q: file has a model recipe but %v content cannot restore it (is its package imported?)", fullDocumentName, d.DocumentType())
+	}
+	if err := rc.ApplyRecipe(model); err != nil {
+		return fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
+	}
+	return nil
 }
 
 // restoreIdentity puts the persisted identity block, reference records and

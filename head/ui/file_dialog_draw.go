@@ -249,6 +249,7 @@ func applyFileAction(s *app.Session, act fileAction) {
 			fileNotice(s, "Save failed: %v", err)
 		} else {
 			fileNotice(s, "Saved %s", name)
+			queueSaveThumbnail(s, act.Path)
 		}
 	case dialogLoadHDR:
 		s.LoadEnvironmentFile(act.Path) // the decode happens lazily on the next viewport frame
@@ -297,4 +298,7 @@ func saveActive(s *app.Session) {
 		return
 	}
 	fileNotice(s, "Saved")
+	if d := s.Workspace().ActiveDocument(); d != nil {
+		queueSaveThumbnail(s, d.FullFileName())
+	}
 }

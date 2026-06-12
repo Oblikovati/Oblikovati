@@ -124,6 +124,11 @@ func (r *Router) registerFileHandlers() {
 	r.handlers[wire.MethodDocumentsAddInterest] = addDocumentInterest
 	r.handlers[wire.MethodDocumentsRemoveInterest] = removeDocumentInterest
 	r.handlers[wire.MethodDocumentsHasInterest] = hasDocumentInterest
+	r.handlers[wire.MethodDocumentsOpen] = openDocument
+	r.handlers[wire.MethodDocumentsSave] = saveDocument
+	r.handlers[wire.MethodDocumentsSaveAs] = saveDocumentAs
+	r.handlers[wire.MethodDocumentsSaveCopyAs] = saveDocumentCopyAs
+	r.handlers[wire.MethodDocumentsBatchSave] = batchSave
 }
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query

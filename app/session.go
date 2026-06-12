@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app/options"
@@ -31,6 +30,7 @@ import (
 // window involved, so "operating the UI" is fully unit-testable (ADR-0014/0004).
 type Session struct {
 	workspace            *doc.Workspace
+	store                doc.Store // the workspace's persistence backend; nil for in-memory sessions
 	commands             *CommandManager
 	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
@@ -131,6 +131,7 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	s := &Session{
+		store:           store,
 		workspace:       doc.NewWorkspace(store),
 		commands:        NewCommandManager(),
 		histories:       map[doc.ID]*docHistory{},
@@ -354,33 +355,11 @@ func (s *Session) uniquePartName() string {
 // the [doc.PackageExtension] suffix, since new documents are minted with bare names
 // like "Part1" — and return [ErrNeedsPath] so the UI can prompt via Save As.
 func (s *Session) SaveActiveDocument() error {
-	d := s.workspace.ActiveDocument()
-	if d == nil {
-		return ErrNoActiveDoc
-	}
-	if !strings.HasSuffix(d.FullFileName(), doc.PackageExtension) {
-		return ErrNeedsPath
-	}
-	s.collectFileMetadata(d) // the PopulateFileMetadata hook gathers file properties around the save
-	if err := s.workspace.Save(d); err != nil {
-		return err
-	}
-	s.saveViewState(d) // persist this user's camera/view layout alongside (not inside) the document
-	return nil
+	return s.SaveDocument(s.workspace.ActiveDocument())
 }
 
 // SaveActiveDocumentAs writes the active document to path, which becomes its new
 // identity. It is the core of File ▸ Save As and the CLI save-as command.
 func (s *Session) SaveActiveDocumentAs(path string) error {
-	d := s.workspace.ActiveDocument()
-	if d == nil {
-		return ErrNoActiveDoc
-	}
-	s.collectFileMetadata(d) // the PopulateFileMetadata hook gathers file properties around the save
-	if err := s.workspace.SaveAs(d, path); err != nil {
-		return err
-	}
-	s.saveViewState(d)             // persist under the new path (camera/view layout stays out of the .obk)
-	s.rememberRecentDocument(path) // a save-as destination is recent file activity
-	return nil
+	return s.SaveDocumentAs(s.workspace.ActiveDocument(), path)
 }

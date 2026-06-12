@@ -16,11 +16,24 @@ type Store interface {
 	// Save writes the document's current state, overwriting any prior version at
 	// its full document name. It must be atomic from a reader's point of view.
 	Save(d *Document) error
+	// SaveCopy writes a copy of the document at targetFullFileName without
+	// touching the document's binding or dirty state (M03-F09). The copy is a
+	// NEW file: the implementation mints it a fresh identity ([CopyIdentity]).
+	SaveCopy(d *Document, targetFullFileName string, meta CopyMetadata) error
 	// Load reads the document at the given full document name and returns it open
 	// (content paged in). It returns an error if nothing is stored there.
 	Load(fullDocumentName string) (*Document, error)
 	// Exists reports whether a document is stored at the given full document name.
 	Exists(fullDocumentName string) bool
+}
+
+// CopyMetadata customizes the file a SaveCopy mints (the typed "new file"
+// descriptor of M03-F09); zero-value fields inherit from the source document.
+type CopyMetadata struct {
+	// DisplayName overrides the copy's display name.
+	DisplayName string
+	// SubType re-stamps the copy's flavored subtype id.
+	SubType SubTypeID
 }
 
 // newContent builds the content object for a document kind. It prefers a real content

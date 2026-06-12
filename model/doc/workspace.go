@@ -168,6 +168,27 @@ func (ws *Workspace) Save(d *Document) error {
 	return nil
 }
 
+// SaveCopy writes a copy of the document to targetFullFileName without
+// retargeting the in-memory document (M03-F09, #610) — the export/archival
+// workhorse: the document keeps its binding, dirty state and identity; the
+// copy on disk gets a fresh one. The target must differ from the source and
+// must not be open in this workspace.
+func (ws *Workspace) SaveCopy(d *Document, targetFullFileName string, meta CopyMetadata) error {
+	if ws.store == nil {
+		return fmt.Errorf("doc: cannot save a copy of %q: no store configured", d.fullDocumentName)
+	}
+	if targetFullFileName == "" || targetFullFileName == d.fullDocumentName {
+		return fmt.Errorf("doc: copy target %q must name a different file", targetFullFileName)
+	}
+	if _, open := ws.byName[targetFullFileName]; open {
+		return fmt.Errorf("doc: cannot copy over %q: it is open in this workspace", targetFullFileName)
+	}
+	if err := ws.store.SaveCopy(d, targetFullFileName, meta); err != nil {
+		return fmt.Errorf("doc: save copy %q: %w", targetFullFileName, err)
+	}
+	return nil
+}
+
 // SaveAs writes the document under a new full document name, which becomes its
 // identity. The new name must not collide with another open document.
 func (ws *Workspace) SaveAs(d *Document, newFullDocumentName string) error {

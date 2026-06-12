@@ -38,6 +38,15 @@ type Part struct {
 	ChamferFlatCorners bool `yaml:"chamferFlatCorners"`
 }
 
+// Save is the save policy (M03-F09, #610): thumbnail capture on save (read by
+// the head's save path), dependent saving (read by the session's save flow),
+// and old-version retention (read by the package store).
+type Save struct {
+	Thumbnail         types.ThumbnailSaveOption `yaml:"thumbnail,omitempty"`
+	SaveDependents    bool                      `yaml:"saveDependents,omitempty"`
+	OldVersionsToKeep int                       `yaml:"oldVersionsToKeep,omitempty"`
+}
+
 // All is every persisted option group. The ViewCube/display preferences live in
 // their own store (persistence/userprefs) and the color scheme in the theme store —
 // the options surface proxies those rather than duplicating their persistence.
@@ -45,6 +54,7 @@ type All struct {
 	General General `yaml:"general"`
 	Sketch  Sketch  `yaml:"sketch"`
 	Part    Part    `yaml:"part"`
+	Save    Save    `yaml:"save"`
 }
 
 // Defaults returns the out-of-the-box options, mirroring the session's historical
@@ -55,6 +65,7 @@ func Defaults() All {
 		General: General{StartupAction: types.StartupNewPart},
 		Sketch:  Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true},
 		Part:    Part{ChamferFlatCorners: true},
+		Save:    Save{Thumbnail: types.ThumbnailNone},
 	}
 }
 

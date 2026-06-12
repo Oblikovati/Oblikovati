@@ -126,19 +126,8 @@ func MarshalDocument(d Document) ([]byte, error) {
 		Attachments:   d.Attachments,
 		Interests:     d.Interests,
 	}
-	if len(d.Resources) > 0 {
-		node, err := resourcesNode(d.Resources)
-		if err != nil {
-			return nil, err
-		}
-		od.Resources = *node
-	}
-	if len(d.Model) > 0 {
-		node, err := modelNode(d.Model)
-		if err != nil {
-			return nil, err
-		}
-		od.Model = *node
+	if err := embedNativeNodes(&od, d); err != nil {
+		return nil, err
 	}
 	if len(d.Data) > 0 {
 		od.Data = make(map[string]string, len(d.Data))
@@ -147,6 +136,26 @@ func MarshalDocument(d Document) ([]byte, error) {
 		}
 	}
 	return yaml.Marshal(od)
+}
+
+// embedNativeNodes parses the resource table and the recipe into native YAML
+// nodes so both read as real nested YAML on disk, not escaped strings.
+func embedNativeNodes(od *onDisk, d Document) error {
+	if len(d.Resources) > 0 {
+		node, err := resourcesNode(d.Resources)
+		if err != nil {
+			return err
+		}
+		od.Resources = *node
+	}
+	if len(d.Model) > 0 {
+		node, err := modelNode(d.Model)
+		if err != nil {
+			return err
+		}
+		od.Model = *node
+	}
+	return nil
 }
 
 // UnmarshalDocument decodes a .obk file's bytes. It rejects a legacy ZIP package with

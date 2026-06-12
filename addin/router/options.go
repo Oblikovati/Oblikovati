@@ -21,6 +21,7 @@ func (r *Router) registerOptionHandlers() {
 // optionGroupNames is the stable group order of options.listGroups.
 var optionGroupNames = []string{
 	wire.OptionGroupGeneral, wire.OptionGroupDisplay, wire.OptionGroupSketch, wire.OptionGroupPart,
+	wire.OptionGroupSave,
 }
 
 // listOptionGroups returns the available group names (wire options.listGroups).
@@ -49,16 +50,7 @@ func optionGroupView(s *app.Session, group string) (wire.OptionGroupView, error)
 	case wire.OptionGroupGeneral:
 		view.General = &wire.GeneralOptionsView{StartupAction: s.Options().General.StartupAction}
 	case wire.OptionGroupDisplay:
-		p := s.ViewCubePrefs()
-		view.Display = &wire.DisplayOptionsView{
-			ColorScheme:         s.Themes().ActiveName(),
-			ViewCubeHidden:      p.CubeHidden,
-			CompassHidden:       p.CompassHidden,
-			LockToSelection:     p.LockToSelection,
-			CubeInactiveOpacity: p.InactiveOpacity,
-			CubeSizePx:          p.CubeSizePx,
-			CubeCorner:          p.CubeCorner,
-		}
+		view.Display = displayOptionsView(s)
 	case wire.OptionGroupSketch:
 		o := s.Options().Sketch
 		view.Sketch = &wire.SketchOptionsView{
@@ -67,10 +59,29 @@ func optionGroupView(s *app.Session, group string) (wire.OptionGroupView, error)
 		}
 	case wire.OptionGroupPart:
 		view.Part = &wire.PartOptionsView{ChamferFlatCorners: s.Options().Part.ChamferFlatCorners}
+	case wire.OptionGroupSave:
+		o := s.Options().Save
+		view.Save = &wire.SaveOptionsView{
+			Thumbnail: o.Thumbnail, SaveDependents: o.SaveDependents, OldVersionsToKeep: o.OldVersionsToKeep,
+		}
 	default:
-		return view, fmt.Errorf("unknown option group %q (one of general/display/sketch/part)", group)
+		return view, fmt.Errorf("unknown option group %q (one of general/display/sketch/part/save)", group)
 	}
 	return view, nil
+}
+
+// displayOptionsView assembles the display group from its proxied stores.
+func displayOptionsView(s *app.Session) *wire.DisplayOptionsView {
+	p := s.ViewCubePrefs()
+	return &wire.DisplayOptionsView{
+		ColorScheme:         s.Themes().ActiveName(),
+		ViewCubeHidden:      p.CubeHidden,
+		CompassHidden:       p.CompassHidden,
+		LockToSelection:     p.LockToSelection,
+		CubeInactiveOpacity: p.InactiveOpacity,
+		CubeSizePx:          p.CubeSizePx,
+		CubeCorner:          p.CubeCorner,
+	}
 }
 
 // setOptionGroup writes one group (wire options.setGroup): the request names the
@@ -101,6 +112,12 @@ func applyOptionGroup(s *app.Session, req wire.OptionGroupView) error {
 		})
 	case req.Group == wire.OptionGroupPart && req.Part != nil:
 		return s.SetPartOptions(options.Part{ChamferFlatCorners: req.Part.ChamferFlatCorners})
+	case req.Group == wire.OptionGroupSave && req.Save != nil:
+		return s.SetSaveOptions(options.Save{
+			Thumbnail:         req.Save.Thumbnail,
+			SaveDependents:    req.Save.SaveDependents,
+			OldVersionsToKeep: req.Save.OldVersionsToKeep,
+		})
 	default:
 		return fmt.Errorf("option group %q carries no matching payload (set exactly the named group's field)", req.Group)
 	}

@@ -13,8 +13,8 @@ func TestOptionsListGroups(t *testing.T) {
 	r, s := seededSession(t)
 	var res wire.ListOptionGroupsResult
 	call(t, r, s, "options.listGroups", "{}", &res)
-	if len(res.Groups) != 4 || res.Groups[0] != "general" || res.Groups[3] != "part" {
-		t.Fatalf("groups = %v, want general/display/sketch/part", res.Groups)
+	if len(res.Groups) != 5 || res.Groups[0] != "general" || res.Groups[4] != "save" {
+		t.Fatalf("groups = %v, want general/display/sketch/part/save", res.Groups)
 	}
 }
 
