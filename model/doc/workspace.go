@@ -101,14 +101,34 @@ func (ws *Workspace) OpenWithOptions(fullDocumentName string, opts OpenOptions) 
 	if err := vetoed(ws.bus, "open", DocumentOpened{FullDocumentName: fullDocumentName}); err != nil {
 		return nil, err
 	}
-	d, err := ws.store.Load(fullDocumentName)
+	d, err := ws.loadResolving(fullDocumentName)
 	if err != nil {
-		return nil, fmt.Errorf("doc: open %q: %w", fullDocumentName, err)
+		return nil, err
 	}
 	d.visible = opts.Visible
 	ws.register(d)
 	event.Emit(ws.bus, event.After, DocumentOpened{FullDocumentName: fullDocumentName})
 	return d, nil
+}
+
+// loadResolving loads a document from the store, giving [FileResolution]
+// subscribers one chance to supply a substitute path when the name fails to
+// load (a moved or renamed reference, M04-F05). The After phase reports the
+// outcome to passive observers whether or not anything resolved it.
+func (ws *Workspace) loadResolving(fullDocumentName string) (*Document, error) {
+	d, err := ws.store.Load(fullDocumentName)
+	if err == nil {
+		return d, nil
+	}
+	resolution := newFileResolution(fullDocumentName)
+	event.Emit(ws.bus, event.Before, resolution)
+	defer event.Emit(ws.bus, event.After, resolution)
+	if substitute := resolution.Resolved(); substitute != "" {
+		if d, retryErr := ws.store.Load(substitute); retryErr == nil {
+			return d, nil
+		}
+	}
+	return nil, fmt.Errorf("doc: open %q: %w", fullDocumentName, err)
 }
 
 // openStub registers an unopened reference stub. The kind is unknown until the

@@ -55,6 +55,9 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 			return relayEdit(sink, e)
 		}),
 	)
+	subs = append(subs, subscribeTransactions(bus, sink)...)
+	subs = append(subs, subscribeFileAccess(s.Workspace().Events(), sink)...)
+	subs = append(subs, subscribeFileUIHooks(bus, sink)...)
 	return append(subs, subscribeUISurfaces(bus, sink)...)
 }
 
@@ -165,7 +168,9 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.FileDialogChosenEvent | wire.WebDialogChangedEvent |
 	wire.SelectionChangedEvent | wire.EnvironmentChangedEvent |
 	wire.TriadDragEvent | wire.TriadSegmentEvent | wire.ManipulatorDragEvent |
-	wire.ClientOperationEvent](sink Sink, ev E) event.Outcome {
+	wire.ClientOperationEvent | wire.TransactionEventPayload |
+	wire.FileResolutionEventPayload | wire.FileDirtyEventPayload |
+	wire.FileDialogHookPayload](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}

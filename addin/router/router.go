@@ -111,13 +111,14 @@ func (r *Router) registerStandardHandlers() {
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query
 // the active document's transaction-event stream (transaction.undo/redo/state), plus the
-// bounded transaction.begin/end that coalesce a batch into one undo step.
+// bounded transaction.begin/end/abort that make a batch one undo step or discard it.
 func (r *Router) registerTransactionHandlers() {
 	r.handlers[wire.MethodTransactionUndo] = undoTransaction
 	r.handlers[wire.MethodTransactionRedo] = redoTransaction
 	r.handlers[wire.MethodTransactionState] = transactionState
 	r.handlers[wire.MethodTransactionBegin] = beginTransaction
 	r.handlers[wire.MethodTransactionEnd] = endTransaction
+	r.handlers[wire.MethodTransactionAbort] = abortTransaction
 }
 
 // registerParameterDetailHandlers wires the member-level parameter surface —
@@ -395,6 +396,7 @@ var mutatingMethods = map[string]bool{
 	wire.MethodTransactionUndo:                  true,
 	wire.MethodTransactionRedo:                  true,
 	wire.MethodTransactionEnd:                   true,
+	wire.MethodTransactionAbort:                 true,
 }
 
 // record appends an operation entry to the trace, except for logs.tail itself (so polling the

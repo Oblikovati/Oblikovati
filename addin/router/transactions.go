@@ -53,6 +53,16 @@ func endTransaction(s *app.Session, _ json.RawMessage) (json.RawMessage, error) 
 	return marshalUndoState(s)
 }
 
+// abortTransaction discards the open bounded transaction — the model reverts to the
+// group's pre-Begin state and no undo step is recorded (wire.MethodTransactionAbort,
+// M04-F05): an add-in whose batch failed partway does not leave the document half-edited.
+func abortTransaction(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	if err := s.AbortTransaction(); err != nil {
+		return nil, err
+	}
+	return marshalUndoState(s)
+}
+
 // marshalUndoState renders the active document's cursor state into the wire DTO.
 func marshalUndoState(s *app.Session) (json.RawMessage, error) {
 	return json.Marshal(wire.UndoState{

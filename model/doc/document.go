@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+
+	"oblikovati.org/event"
 )
 
 // ID is a document's session-stable handle. Like entity ids (core/02), it is a
@@ -123,8 +125,16 @@ func (d *Document) SetDisplayName(name string) { d.displayName = name }
 func (d *Document) Dirty() bool { return d.dirty }
 
 // MarkDirty flags the document as having unsaved changes. Editing operations
-// call this; saving clears it via [Document.ClearDirty].
-func (d *Document) MarkDirty() { d.dirty = true }
+// call this; saving clears it via [Document.ClearDirty]. The clean→dirty
+// transition announces a [FileDirty] event (M04-F05); re-marking an already
+// dirty document is silent.
+func (d *Document) MarkDirty() {
+	wasDirty := d.dirty
+	d.dirty = true
+	if !wasDirty && d.graph != nil {
+		event.Emit(d.graph.ws.bus, event.After, FileDirty{Document: d})
+	}
+}
 
 // ClearDirty records that the document's on-disk state matches memory, e.g.
 // right after a successful save.

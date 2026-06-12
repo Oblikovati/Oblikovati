@@ -28,13 +28,14 @@ func drawFileMenu(s *app.Session) {
 			_, _ = s.NewPart()
 		}
 		if native.MenuItem("Open") {
-			fileModal.openFor(dialogOpen)
+			openViaHookOrDialog(s)
 		}
+		drawOpenRecentMenu(s)
 		if native.MenuItem("Save") {
 			saveActive(s)
 		}
 		if native.MenuItem("Save As") {
-			fileModal.openFor(dialogSaveAs)
+			saveAsViaHookOrDialog(s)
 		}
 		native.Separator()
 		if native.MenuItem("Import") { // STL / OBJ / 3MF / STEP → an imported body
@@ -45,6 +46,44 @@ func drawFileMenu(s *app.Session) {
 		}
 		native.EndMenu()
 	}
+}
+
+// openViaHookOrDialog consults the FileOpenDialog hook before presenting the
+// explorer (M04-F05): an add-in that supplies a path replaces the dialog.
+func openViaHookOrDialog(s *app.Session) {
+	if path, ok := s.HookFileOpenDialog(); ok {
+		applyFileAction(s, fileAction{Kind: dialogOpen, Path: path})
+		return
+	}
+	fileModal.openFor(dialogOpen)
+}
+
+// saveAsViaHookOrDialog consults the FileSaveAsDialog hook before presenting
+// the explorer; a supplied destination saves directly.
+func saveAsViaHookOrDialog(s *app.Session) {
+	if path, ok := s.HookFileSaveAsDialog(false); ok {
+		applyFileAction(s, fileAction{Kind: dialogSaveAs, Path: path})
+		return
+	}
+	fileModal.openFor(dialogSaveAs)
+}
+
+// drawOpenRecentMenu lists the session's recent documents (File ▸ Open Recent);
+// each entry opens behind the vetoable FileOpenFromMRU hook.
+func drawOpenRecentMenu(s *app.Session) {
+	recent := s.RecentDocuments()
+	if len(recent) == 0 {
+		return
+	}
+	if !native.BeginMenu("Open Recent") {
+		return
+	}
+	for _, path := range recent {
+		if native.MenuItem(path) {
+			_, _ = s.OpenDocumentFromMRU(path)
+		}
+	}
+	native.EndMenu()
 }
 
 func drawEditMenu(s *app.Session) {
