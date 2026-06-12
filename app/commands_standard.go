@@ -135,7 +135,31 @@ func modelTabCommands() []*CommandDefinition {
 	cmds = append(cmds, solidFeatureCommands()...)
 	cmds = append(cmds, modifyFeatureCommands()...)
 	cmds = append(cmds, patternFeatureCommands()...)
-	return append(cmds, surfaceFeatureCommands()...)
+	cmds = append(cmds, surfaceFeatureCommands()...)
+	return append(cmds, freeformFeatureCommands()...)
+}
+
+// freeformFeatureCommands are the 3D Model tab's Freeform panel: the sub-D primitives
+// (M10-F03, #698). Cage editing on the placed feature is the freeform.* wire surface.
+func freeformFeatureCommands() []*CommandDefinition {
+	prims := []struct {
+		id, name, icon, tip string
+		start               func() Tool
+	}{
+		{"Freeform.Box", "Box", "freeform-box", "Freeform Box — place a sub-D box cage and smooth it by subdivision level.", func() Tool { return NewFreeformBoxTool() }},
+		{"Freeform.Plane", "Plane", "freeform-plane", "Freeform Plane — place an open sub-D plane cage (a surface body).", func() Tool { return NewFreeformPlaneTool() }},
+		{"Freeform.QuadBall", "Quad Ball", "freeform-quadball", "Freeform Quad Ball — place a closed sphere-like sub-D cage.", func() Tool { return NewFreeformQuadBallTool() }},
+	}
+	cmds := make([]*CommandDefinition, len(prims))
+	for i, d := range prims {
+		start := d.start
+		cmds[i] = NewCommand(d.id, d.name, "Freeform", func(s *Session) error {
+			s.StartTool(start())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).WithTooltip(d.tip).
+			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
+	}
+	return cmds
 }
 
 // surfaceFeatureCommands are the 3D Model tab's Surface panel (canonical: Patch, Stitch, Sculpt,
