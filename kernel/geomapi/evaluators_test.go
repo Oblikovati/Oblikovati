@@ -98,7 +98,8 @@ func TestSurfaceEvaluatorThroughContract(t *testing.T) {
 		t.Errorf("sphere area = %g, want 4πR²", got)
 	}
 	_, kMax, kMin := ev.Curvatures(0.7, 0.2)
-	if stdmath.Abs(kMax-kMin) > 1e-9 || stdmath.Abs(stdmath.Abs(kMax)-0.5) > 1e-9 {
+	// Loose umbilic tolerance: see TestSurfaceCurvaturesClosedForms in kernel/geom.
+	if stdmath.Abs(kMax-kMin) > 1e-6 || stdmath.Abs(stdmath.Abs(kMax)-0.5) > 1e-7 {
 		t.Errorf("sphere curvatures = (%g, %g)", kMax, kMin)
 	}
 	box := ev.RangeBox()

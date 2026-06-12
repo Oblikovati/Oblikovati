@@ -115,7 +115,9 @@ func TestSurfacePartialsMatchFiniteDifferences(t *testing.T) {
 func TestSurfaceCurvaturesClosedForms(t *testing.T) {
 	sphere, _ := NewSphere(math.P3(0, 0, 0), 2)
 	_, kMax, kMin := SurfaceCurvatures(sphere, 0.7, 0.3)
-	if stdmath.Abs(kMax-kMin) > 1e-9 || stdmath.Abs(stdmath.Abs(kMax)-0.5) > 1e-9 {
+	// Umbilic split tolerance is loose: √(H²−K) amplifies ~1e-17 rounding into
+	// a ~1e-8 kMax/kMin split, and the FMA contraction differs per platform.
+	if stdmath.Abs(kMax-kMin) > 1e-6 || stdmath.Abs(stdmath.Abs(kMax)-0.5) > 1e-7 {
 		t.Errorf("sphere curvatures = (%g, %g), want equal magnitude 1/R", kMax, kMin)
 	}
 
