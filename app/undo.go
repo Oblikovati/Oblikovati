@@ -86,15 +86,34 @@ func (s *Session) recordEdit(part *compdef.PartComponentDefinition, label string
 
 // commitRecipeDelta records the part's recipe delta as one undo event and
 // pushes values other documents derive from through the reference graph
-// (M02-F06). A no-op delta (before == after) records nothing.
+// (M02-F06). A no-op delta (before == after) records nothing. A Before
+// TransactionCommitted handler may veto, which reverts the part to the
+// pre-edit snapshot and reports the commit as an abort (M04-F05).
 func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, part *compdef.PartComponentDefinition, label string) {
 	after, err := part.MarshalRecipe()
 	if err != nil || bytes.Equal(after, dh.snapshot) {
 		return
 	}
+	if out := event.Emit(s.bus, event.Before, TransactionCommitted{Document: d.ID(), Label: label}); out.Vetoed() {
+		s.revertVetoedCommit(d, dh, part, label, out.Reason)
+		return
+	}
 	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, part))
 	dh.snapshot = after
 	s.resyncDerivedTables(d, map[string]bool{})
+	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: label})
+}
+
+// revertVetoedCommit rolls the part back to the stream's snapshot after a Before
+// handler vetoed the commit, surfacing the veto reason in the status bar.
+func (s *Session) revertVetoedCommit(d *doc.Document, dh *docHistory, part *compdef.PartComponentDefinition, label, reason string) {
+	if err := part.RestoreRecipe(dh.snapshot); err != nil {
+		s.notice = err.Error()
+		return
+	}
+	s.notice = reason
+	s.resyncDerivedTables(d, map[string]bool{})
+	event.Emit(s.bus, event.After, TransactionAborted{Document: d.ID(), Label: label})
 }
 
 // RecordAddInEdit finalizes a router-applied mutation as one undo step: the
@@ -106,6 +125,19 @@ func (s *Session) RecordAddInEdit(part *compdef.PartComponentDefinition, label s
 
 // ErrNoOpenTransaction is returned by EndTransaction when no bounded transaction is open.
 var ErrNoOpenTransaction = errors.New("app: no open transaction to end")
+
+// watchDocumentCloses discards a closed document's transaction stream and
+// announces the deletion (M04-F05): the undo steps die with the document, and
+// dropping the map entry keeps closed documents from leaking histories.
+func (s *Session) watchDocumentCloses() {
+	event.Subscribe(s.workspace.Events(), event.After, func(_ event.Context, e doc.DocumentClose) event.Outcome {
+		if _, ok := s.histories[e.Document.ID()]; ok {
+			delete(s.histories, e.Document.ID())
+			event.Emit(s.bus, event.After, TransactionDeleted{Document: e.Document.ID()})
+		}
+		return event.Continue()
+	})
+}
 
 // BeginTransaction opens a bounded transaction on the active document: every edit
 // recorded until the matching EndTransaction is coalesced into a single undo step named
@@ -151,6 +183,32 @@ func (s *Session) EndTransaction() error {
 	return nil
 }
 
+// AbortTransaction discards the open bounded transaction instead of committing
+// it: the part reverts to the group's pre-Begin snapshot (whatever the nesting
+// depth — an abort cancels the whole group, there is no partial abort) and no
+// undo step is recorded. The seam behind wire transaction.abort, so an add-in
+// whose batch fails partway does not leave the document half-edited (M04-F05).
+func (s *Session) AbortTransaction() error {
+	d := s.ActiveDocument()
+	if d == nil {
+		return ErrNoActiveDoc
+	}
+	dh := s.documentHistory(d)
+	if dh.groupDepth == 0 {
+		return ErrNoOpenTransaction
+	}
+	label := dh.groupLabel
+	dh.groupDepth, dh.groupLabel = 0, ""
+	if part, ok := d.Content().(*compdef.PartComponentDefinition); ok {
+		if err := part.RestoreRecipe(dh.snapshot); err != nil {
+			return err
+		}
+		s.resyncDerivedTables(d, map[string]bool{})
+	}
+	event.Emit(s.bus, event.After, TransactionAborted{Document: d.ID(), Label: label})
+	return nil
+}
+
 // InTransaction reports whether a bounded transaction is open on the active document.
 func (s *Session) InTransaction() bool {
 	st := s.activeStream()
@@ -168,12 +226,11 @@ func (s *Session) Undo() error {
 		return ErrNoActiveDoc
 	}
 	dh := s.documentHistory(d)
-	if err := dh.hist.Undo(); err != nil {
-		s.notice = err.Error()
+	ev := TransactionUndone{Document: d.ID(), Label: s.UndoLabel()}
+	if err := cursorMove(s, d, dh, ev, dh.hist.Undo); err != nil {
 		return err
 	}
-	dh.resync(d)
-	s.notice = ""
+	event.Emit(s.bus, event.After, ev)
 	return nil
 }
 
@@ -185,7 +242,25 @@ func (s *Session) Redo() error {
 		return ErrNoActiveDoc
 	}
 	dh := s.documentHistory(d)
-	if err := dh.hist.Redo(); err != nil {
+	ev := TransactionRedone{Document: d.ID(), Label: s.RedoLabel()}
+	if err := cursorMove(s, d, dh, ev, dh.hist.Redo); err != nil {
+		return err
+	}
+	event.Emit(s.bus, event.After, ev)
+	return nil
+}
+
+// cursorMove runs one undo/redo navigation behind its Before event: a handler may
+// veto the move (e.g. external state cannot roll back, M04-F05), and a failed
+// move surfaces in the status bar. The caller emits the matching After event.
+// Generic (and free, since methods cannot be) because the bus dispatches on the
+// event's static type — an interface-typed emit would reach no subscriber.
+func cursorMove[E event.Event](s *Session, d *doc.Document, dh *docHistory, ev E, move func() error) error {
+	if out := event.Emit(s.bus, event.Before, ev); out.Vetoed() {
+		s.notice = out.Reason
+		return &doc.VetoError{Operation: "transaction", Reason: out.Reason}
+	}
+	if err := move(); err != nil {
 		s.notice = err.Error()
 		return err
 	}

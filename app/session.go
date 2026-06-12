@@ -160,6 +160,7 @@ func newSession(store doc.Store) *Session {
 	// the sky as the viewport background (ADR-0026 §8).
 	s.lighting.Environment = renderer.DefaultEnvironment()
 	s.initShellSurfaces()
+	s.watchDocumentCloses()
 	return s
 }
 
