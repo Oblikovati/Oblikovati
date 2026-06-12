@@ -243,6 +243,37 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 	_ = flag
 }
 
+// TestDerivedTableSurvivesRoundTrip checks a derived parameter table restores
+// with its id, source link, and produced parameters reconnected by name.
+func TestDerivedTableSurvivesRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	ps := d.Content().(*compdef.PartComponentDefinition).Parameters()
+	src := []param.SourceParameterValue{{Name: "module", Value: param.Quantity{Value: 0.2, Unit: param.Length}}}
+	table, err := ps.AddDerivedTable("gears.obk", []string{"module"}, src)
+	if err != nil {
+		t.Fatalf("AddDerivedTable: %v", err)
+	}
+
+	r := reopenThroughStore(t, d).Parameters()
+	rt, ok := r.DerivedTableByID(table.ID())
+	if !ok || rt.SourceDocument() != "gears.obk" || len(rt.Linked()) != 1 {
+		t.Fatalf("restored table = %+v, want gears.obk linking module under id %d", rt, table.ID())
+	}
+	p, ok := r.ByName("module")
+	if !ok || p.Kind() != param.DerivedParam {
+		t.Fatalf("restored derived parameter = %+v, want read-only module", p)
+	}
+	// The reconnected link must sync — proof the produced map rebuilt by name.
+	changed := []param.SourceParameterValue{{Name: "module", Value: param.Quantity{Value: 0.4, Unit: param.Length}}}
+	if err := r.SyncDerivedTable(rt.ID(), changed, true); err != nil {
+		t.Fatalf("sync after reload: %v", err)
+	}
+	if p.Value().Value != 0.4 {
+		t.Errorf("synced reloaded value = %v, want 0.4", p.Value().Value)
+	}
+}
+
 func TestSketchGeometrySurvivesRoundTrip(t *testing.T) {
 	ws := doc.NewWorkspace(nil)
 	d, _ := compdef.AddPart(ws, "Part1", true)
