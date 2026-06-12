@@ -145,6 +145,9 @@ func drawChromeWindows(s *app.Session) {
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
 		fileModal.openFor(dialogLoadHDR)
 	}
+	if s.TakeImportMeshRequest() { // the Mesh ▸ Place Mesh ribbon button arms the file modal (#700)
+		fileModal.openFor(dialogMeshRef)
+	}
 }
 
 // handleKeyboard routes global shortcuts to the session. Esc cancels the active tool at

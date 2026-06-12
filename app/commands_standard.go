@@ -137,7 +137,22 @@ func modelTabCommands() []*CommandDefinition {
 	cmds = append(cmds, patternFeatureCommands()...)
 	cmds = append(cmds, surfaceFeatureCommands()...)
 	cmds = append(cmds, freeformFeatureCommands()...)
-	return append(cmds, moldFeatureCommands()...)
+	cmds = append(cmds, moldFeatureCommands()...)
+	return append(cmds, meshFeatureCommands()...)
+}
+
+// meshFeatureCommands are the 3D Model tab's Mesh panel: place an STL as mesh reference
+// geometry (M10-F04, #700). The command arms the head's file dialog; the import itself is
+// Session.ImportMeshFile.
+func meshFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Mesh.Place", "Place Mesh", "Mesh", func(s *Session) error {
+			s.RequestImportMesh()
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("mesh-place").WithButtonStyle(LargeIconButton).
+			WithTooltip("Place Mesh — load an ASCII STL as selectable mesh reference geometry."),
+	}
 }
 
 // moldFeatureCommands are the 3D Model tab's Mold panel: the core/cavity tooling split

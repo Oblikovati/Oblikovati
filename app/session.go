@@ -99,6 +99,7 @@ type Session struct {
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
 	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
 	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
+	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
 	scriptConsoleOpen    bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
 	capturePath          string                         // a requested viewport PNG capture path; the head writes it after render
 	normalDebug          bool                           // viewport normal-debug render (front green / back red); head reads each frame

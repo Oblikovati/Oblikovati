@@ -253,6 +253,12 @@ func applyFileAction(s *app.Session, act fileAction) {
 		}
 	case dialogLoadHDR:
 		s.LoadEnvironmentFile(act.Path) // the decode happens lazily on the next viewport frame
+	case dialogMeshRef:
+		if _, err := s.ImportMeshFile(act.Path); err != nil {
+			fileNotice(s, "Place Mesh failed: %v", err)
+		} else {
+			fileNotice(s, "Placed mesh %s", name)
+		}
 	case dialogImport:
 		if res, err := s.ImportFile(act.Path); err != nil {
 			fileNotice(s, "Import failed: %v", err)
