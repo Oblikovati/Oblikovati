@@ -39,9 +39,12 @@ func addSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 		return nil, err
 	}
 	applyConstruction(ent, in.Construction)
-	return json.Marshal(wire.AddSketchEntityResult{
+	out := wire.AddSketchEntityResult{
 		EntityID: uint64(ent.EntityID()), Kind: in.Kind, PointIDs: pointIDs,
-	})
+	}
+	// Inference runs on commit and reports what it applied (M06-F10, #625).
+	applyEntityInference(s, sk, ent, &out)
+	return json.Marshal(out)
 }
 
 // isCompositeKind reports whether a kind builds several entities at once.

@@ -118,13 +118,16 @@ func (t *LineTool) ClickAt(s *Session, px, py float64) {
 // CanCommit is true once both endpoints are placed.
 func (t *LineTool) CanCommit() bool { return len(t.points) == 2 }
 
-// Commit adds the line to the active sketch.
+// Commit adds the line to the active sketch and runs constraint inference on
+// it (M06-F10, #625): a near-axis line picks up its horizontal/vertical (or
+// parallel/perpendicular, per the session preference) automatically.
 func (t *LineTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errors.New("line: no active sketch")
 	}
 	sk := s.activeSketch
-	sk.Lines().Add(sk.Points().Add(t.points[0]), sk.Points().Add(t.points[1]))
+	l := sk.Lines().Add(sk.Points().Add(t.points[0]), sk.Points().Add(t.points[1]))
+	sk.ApplyLineInference(l, s.SketchInferenceOptions())
 	return nil
 }
 

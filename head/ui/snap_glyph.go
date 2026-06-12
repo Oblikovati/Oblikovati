@@ -18,6 +18,8 @@ const (
 	snapGlyphPixels = 7.0
 	// pointMarkerPixels is the persistent marker half-size for placed sketch points.
 	pointMarkerPixels = 4.0
+	// glyphPixels is the inference glyph half-size beside the cursor (M06-F10).
+	glyphPixels = 5.0
 	// Equilateral-triangle midpoint marker: an apex pointing up, its base below the
 	// center. The base half-width is cos(30°)·h and the base sits sin(30°)·h below.
 	triBaseHalfWidth = 0.8660254 // cos(30°) = √3/2
