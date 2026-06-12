@@ -2,56 +2,127 @@
 
 package param
 
-// ModelValueType selects which value within an engineering tolerance band the
-// model actually consumes (contract: ModelValueTypeEnum). Stable explicit ids.
-type ModelValueType uint8
+import (
+	"fmt"
 
-const (
-	// Nominal uses the authored value, ignoring the tolerance band.
-	Nominal ModelValueType = 0
-	// Upper uses nominal + the upper deviation.
-	Upper ModelValueType = 1
-	// Lower uses nominal + the lower deviation.
-	Lower ModelValueType = 2
-	// Median uses nominal + the midpoint of the deviation band.
-	Median ModelValueType = 3
+	"oblikovati.org/api/types"
 )
 
-// Tolerance is an engineering tolerance: a deviation band (Upper, Lower, in
-// database units) plus the [ModelValueType] that decides which value the model
-// uses. The zero Tolerance is symmetric-zero with type Nominal — i.e. model
-// value equals nominal.
+// ToleranceType is the engineering-tolerance flavor. The type, its frozen ids,
+// String, and ParseToleranceType live in the Apache-2.0 contract
+// ([types.ToleranceType]); this alias keeps param spellings working (ADR-0018).
+type ToleranceType = types.ToleranceType
+
+// ModelValueType selects which value within the tolerance band the model
+// consumes. Aliased from the contract; the historical param.Nominal /
+// param.Upper / param.Lower / param.Median spellings are preserved below.
+type ModelValueType = types.ModelValueType
+
+const (
+	Nominal = types.ModelValueNominal
+	Upper   = types.ModelValueUpper
+	Lower   = types.ModelValueLower
+	Median  = types.ModelValueMedian
+)
+
+// ParameterDisplayFormat is how a parameter's numeric value is rendered
+// (decimal, fractional, architectural). Aliased from the contract.
+type ParameterDisplayFormat = types.ParameterDisplayFormat
+
+const (
+	DisplayFormatDecimal       = types.DisplayFormatDecimal
+	DisplayFormatFractional    = types.DisplayFormatFractional
+	DisplayFormatArchitectural = types.DisplayFormatArchitectural
+)
+
+// Tolerance is an engineering tolerance: a flavor plus the deviation band from
+// the nominal value (Upper, Lower, database units). The zero Tolerance means
+// "standard/default tolerance, no explicit band" — [Tolerance.Kind] maps the
+// zero Type onto [types.ToleranceDefault] so existing `t != Tolerance{}`
+// has-explicit-tolerance checks keep working. Which value within the band the
+// model consumes is the parameter's [Parameter.ModelValueType], per the
+// reference API's split between Tolerance.ToleranceType and
+// Parameter.ModelValueType (Oblikovati#607).
 type Tolerance struct {
+	Type  ToleranceType
 	Upper float64
 	Lower float64
-	Type  ModelValueType
 }
 
-// ModelValue applies the tolerance to a nominal value, returning the value the
-// model consumes (all in database units).
-func (t Tolerance) ModelValue(nominal float64) float64 {
-	switch t.Type {
-	case Upper:
-		return nominal + t.Upper
-	case Lower:
-		return nominal + t.Lower
-	case Median:
-		return nominal + (t.Upper+t.Lower)/2
-	default:
-		return nominal
+// Kind returns the tolerance flavor, mapping the zero value to ToleranceDefault.
+func (t Tolerance) Kind() ToleranceType {
+	if t.Type == 0 {
+		return types.ToleranceDefault
 	}
+	return t.Type
 }
 
-// ParameterDisplayFormat controls how a parameter is presented (contract:
-// ParameterDisplayFormatEnum). It affects display only, never the stored or
-// model value.
-type ParameterDisplayFormat uint8
+// SetToleranceDefault reverts the parameter to the standard/default tolerance
+// (no explicit band; the model value follows the nominal).
+func (p *Parameter) SetToleranceDefault() error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	p.tol = Tolerance{}
+	return nil
+}
 
-const (
-	// ShowExpression displays the authored expression text.
-	ShowExpression ParameterDisplayFormat = 0
-	// ShowValue displays the evaluated value in the preferred unit.
-	ShowValue ParameterDisplayFormat = 1
-	// ShowTolerance displays the value with its tolerance band.
-	ShowTolerance ParameterDisplayFormat = 2
-)
+// SetToleranceDeviation sets an asymmetric deviation band: upper and lower are
+// deviations from nominal in database units, upper ≥ lower.
+func (p *Parameter) SetToleranceDeviation(upper, lower float64) error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	if upper < lower {
+		return fmt.Errorf("param: deviation upper %g < lower %g for %q; want upper ≥ lower", upper, lower, p.name)
+	}
+	p.tol = Tolerance{Type: types.ToleranceDeviation, Upper: upper, Lower: lower}
+	return nil
+}
+
+// SetToleranceSymmetric sets a symmetric ± band: band ≥ 0, in database units.
+func (p *Parameter) SetToleranceSymmetric(band float64) error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	if band < 0 {
+		return fmt.Errorf("param: symmetric tolerance band %g for %q must be ≥ 0", band, p.name)
+	}
+	p.tol = Tolerance{Type: types.ToleranceSymmetric, Upper: band, Lower: -band}
+	return nil
+}
+
+// SetToleranceLimits sets a limits tolerance from absolute limit values (in
+// database units): the band is stored as deviations from the current nominal.
+func (p *Parameter) SetToleranceLimits(upperLimit, lowerLimit float64) error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	if upperLimit < lowerLimit {
+		return fmt.Errorf("param: limits upper %g < lower %g for %q; want upper ≥ lower", upperLimit, lowerLimit, p.name)
+	}
+	nominal := p.value.Value
+	p.tol = Tolerance{Type: types.ToleranceLimitsStacked, Upper: upperLimit - nominal, Lower: lowerLimit - nominal}
+	return nil
+}
+
+// SetToleranceMinMax marks the value as a MIN or MAX tolerance (no band).
+func (p *Parameter) SetToleranceMinMax(t ToleranceType) error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	if t != types.ToleranceMin && t != types.ToleranceMax {
+		return fmt.Errorf("param: SetToleranceMinMax(%s) for %q; want min or max", t, p.name)
+	}
+	p.tol = Tolerance{Type: t}
+	return nil
+}
+
+// requireNumericTolerance rejects tolerance edits on text and true/false
+// parameters, which carry no tolerance.
+func (p *Parameter) requireNumericTolerance() error {
+	if !p.IsNumeric() {
+		return fmt.Errorf("param: %q is a %s parameter; only numeric parameters carry a tolerance", p.name, p.value.Unit)
+	}
+	return nil
+}

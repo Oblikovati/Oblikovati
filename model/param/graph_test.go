@@ -150,3 +150,25 @@ func TestDeleteDriverSickensDependents(t *testing.T) {
 		t.Errorf("dependent health after driver delete = %+v, want Failed", h.Health())
 	}
 }
+
+func TestInUseFollowsDependentsAndModelKind(t *testing.T) {
+	ps := NewParameters()
+	free, _ := ps.AddUserParameter("free", "1 mm")
+	driver, _ := ps.AddUserParameter("od", "10 mm")
+	dependent, _ := ps.AddUserParameter("wall", "od / 5")
+	dim, _ := ps.AddModelParameter("d0", "2 mm")
+
+	if ps.InUse(free.ID()) {
+		t.Error("an unreferenced user parameter is not in use")
+	}
+	if !ps.InUse(driver.ID()) {
+		t.Error("a parameter read by another is in use")
+	}
+	if ps.InUse(dependent.ID()) {
+		t.Error("a leaf dependent is not in use")
+	}
+	// Model parameters belong to a feature dimension, so they are always in use.
+	if !ps.InUse(dim.ID()) {
+		t.Error("a model parameter is in use by construction")
+	}
+}

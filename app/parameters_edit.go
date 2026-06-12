@@ -74,11 +74,14 @@ func (s *Session) SetParameterExport(id param.ID, export bool) error {
 	return s.editParam(id, func(p *param.Parameter) error { p.ExposedAsProperty = export; return nil })
 }
 
-// SetParameterTolerance sets a numeric parameter's engineering tolerance band.
+// SetParameterTolerance sets a numeric parameter's engineering tolerance band
+// (stored as a deviation tolerance) and which value within it the model uses.
 func (s *Session) SetParameterTolerance(id param.ID, upper, lower float64, kind param.ModelValueType) error {
 	return s.editParam(id, func(p *param.Parameter) error {
-		p.SetTolerance(param.Tolerance{Upper: upper, Lower: lower, Type: kind})
-		return nil
+		if err := p.SetToleranceDeviation(upper, lower); err != nil {
+			return err
+		}
+		return p.SetModelValueType(kind)
 	})
 }
 
