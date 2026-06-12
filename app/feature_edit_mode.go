@@ -87,7 +87,7 @@ func editToolFor(s *Session, f *feature.PartFeature) (Tool, bool) {
 	case *feature.HoleFeature:
 		return editHoleTool(f, d), true
 	case *feature.FilletFeature:
-		return editFilletTool(f, d), true
+		return editFilletToolOr(f, d)
 	case *feature.ChamferFeature:
 		return editChamferTool(f, d), true
 	case *feature.ShellFeature:
@@ -241,13 +241,42 @@ func snapshotHoleDef(def *feature.HoleDefinition) func() {
 // tools: the definition's reference keys are retained as the seeded selection (live
 // handles cannot exist — the feature consumed that geometry), so the panel shows the
 // count, the clear empties it, and new viewport picks extend it.
+// editFilletToolOr opens the fillet panel over the feature, or defers to the generic
+// editor for shapes the single-radius panel can't show (multi-set fillets).
+func editFilletToolOr(f *feature.PartFeature, fl *feature.FilletFeature) (Tool, bool) {
+	if t := editFilletTool(f, fl); t != nil {
+		return t, true
+	}
+	return nil, false
+}
+
 func editFilletTool(f *feature.PartFeature, fl *feature.FilletFeature) *FilletTool {
 	def := fl.Definition()
+	if len(def.EdgeSets) > 1 {
+		return nil // a multi-set fillet doesn't fit the single-radius panel
+	}
 	t := NewFilletTool()
-	t.seededEdgeKeys = cloneKeys(def.EdgeKeys)
-	t.radius = callOrZeroFn(def.Radius)
+	if len(def.EdgeSets) == 1 {
+		seedFilletSet(t, def.EdgeSets[0])
+	} else {
+		t.seededEdgeKeys = cloneKeys(def.EdgeKeys)
+		t.radius = callOrZeroFn(def.Radius)
+	}
 	t.bindEdit(f, snapshotFilletDef(def))
 	return t
+}
+
+// seedFilletSet seeds the panel from a single edge set: constant (Radius) or variable
+// (start→end, #323).
+func seedFilletSet(t *FilletTool, set feature.FilletEdgeSet) {
+	t.seededEdgeKeys = cloneKeys(set.EdgeKeys)
+	if set.Radius != nil {
+		t.radius = callOrZeroFn(set.Radius)
+		return
+	}
+	t.variable = true
+	t.startRadius = callOrZeroFn(set.StartRadius)
+	t.endRadius = callOrZeroFn(set.EndRadius)
 }
 
 func snapshotFilletDef(def *feature.FilletDefinition) func() {

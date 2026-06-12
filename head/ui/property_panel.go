@@ -89,6 +89,24 @@ func propertyFloatRow(label, id, suffix string, v *float32) bool {
 	return changed
 }
 
+// propertyComboRow draws one one-of-N property row — label + dropdown — returning the
+// newly chosen index, or -1 when the selection did not change this frame.
+func propertyComboRow(label, id string, options []string, selected int) int {
+	propertyRow(label)
+	native.SetNextItemWidth(propertyComboWidth)
+	chosen := -1
+	if len(options) == 0 || !native.BeginCombo("##"+id, options[clampIdx(selected, len(options))]) {
+		return chosen
+	}
+	for i, opt := range options {
+		if native.Selectable(opt, i == selected) {
+			chosen = i
+		}
+	}
+	native.EndCombo()
+	return chosen
+}
+
 // drawPickChipRow draws one Input Geometry pick row — label, selection chip, hover tip —
 // invoking onClear when the chip's clear (×) is clicked. The pick itself always happens
 // in the viewport; the chip only shows the state.

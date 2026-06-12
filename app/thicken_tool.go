@@ -13,6 +13,7 @@ import (
 // face picks — it thickens the running surface body.
 type ThickenTool struct {
 	thickness float64
+	approxIdx int // index into ApproximationOptions (#331; 0 = exact)
 	added     *feature.PartFeature
 }
 
@@ -32,6 +33,13 @@ func (t *ThickenTool) Pick(*Session, Selectable) {}
 func (t *ThickenTool) SetThickness(d float64) { t.thickness = d }
 func (t *ThickenTool) Thickness() float64     { return t.thickness }
 
+// ApproximationIndex / SetApproximationIndex select the #331 approximation request
+// (index into ApproximationOptions).
+func (t *ThickenTool) ApproximationIndex() int { return t.approxIdx }
+func (t *ThickenTool) SetApproximationIndex(i int) {
+	t.approxIdx = clampRange(i, len(featureApproximations))
+}
+
 // CanCommit reports whether the thickness is positive.
 func (t *ThickenTool) CanCommit() bool { return t.thickness > 0 }
 
@@ -43,6 +51,7 @@ func (t *ThickenTool) Commit(s *Session) error {
 		return err
 	}
 	t.added = feature.NewModifyFeatures(part.Features()).AddThicken(t.thickness)
+	t.added.Definition().(*feature.ThickenFeature).SetApproximation(approximationAt(t.approxIdx))
 	part.Recompute()
 	s.recordEdit(part, "Thicken")
 	if !t.added.Health().OK() {
