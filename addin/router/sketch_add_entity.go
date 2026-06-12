@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -461,6 +462,13 @@ func buildSpline(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Poin
 		sp = sk.Splines().AddByControlPoints(pts, in.Closed)
 	} else {
 		sp = sk.Splines().AddByPoints(pts, in.Closed)
+	}
+	if in.FitMethod != "" {
+		m, ok := types.ParseSplineFitMethod(in.FitMethod)
+		if !ok {
+			return nil, nil, fmt.Errorf("sketch.addEntity: unknown fit method %q (want smooth|sweet|chord)", in.FitMethod)
+		}
+		sp.FitMethod = m
 	}
 	ids := make([]uint64, len(sp.Points))
 	for i, p := range sp.Points {

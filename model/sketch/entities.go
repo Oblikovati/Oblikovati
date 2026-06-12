@@ -168,6 +168,9 @@ type Spline struct {
 	Closed    bool
 	FitMethod SplineFitMethod
 	fit       bool
+	// handles are the active tangency handles keyed by fit-point index
+	// (M06-F11; see spline_handles.go).
+	handles map[int]*SplineHandle
 }
 
 // IsFitType reports whether the spline interpolates its points (fit) rather than

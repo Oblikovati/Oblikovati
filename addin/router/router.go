@@ -207,6 +207,8 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
 	r.handlers[wire.MethodSketchRegionProperties] = sketchRegionProperties
 	r.handlers[wire.MethodSketch3DRegionProperties] = sketch3DRegionProperties
+	r.handlers[wire.MethodSketchSetSplineHandle] = setSplineHandle
+	r.handlers[wire.MethodSketch3DSetSplineHandle] = setSplineHandle3D
 	r.registerSketchAuthoringHandlers()
 	r.registerSketch3DHandlers()
 }
@@ -407,6 +409,8 @@ var mutatingMethods = map[string]bool{
 	wire.MethodSketchExitEdit:                   true,
 	wire.MethodSketchSolve:                      true,
 	wire.MethodSketchAddEntity:                  true,
+	wire.MethodSketchSetSplineHandle:            true,
+	wire.MethodSketch3DSetSplineHandle:          true,
 	wire.MethodSketchAddConstraint:              true,
 	wire.MethodSketchDeleteConstraint:           true,
 	wire.MethodSketchAddDimension:               true,

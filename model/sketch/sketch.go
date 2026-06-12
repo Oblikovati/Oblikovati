@@ -144,23 +144,24 @@ type Sketch struct {
 	pts       []*Point // every constrainable point (endpoints, centers, standalone) — the solver's variables
 	refPts    []*Point // fixed reference points (projected anchors): constrainable but not solved
 
-	lines    *Lines
-	arcs     *Arcs
-	circles  *Circles
-	ellipses *Ellipses
-	ellArcs  *EllipticalArcs
-	splines  *Splines
-	points   *Points
-	images   *SketchImages
-	fills    *FillRegions
-	texts    *TextBoxes
-	eqCurves *EquationCurves
-	fixedSpl *FixedSplines
-	offSpl   *OffsetSplines
-	blocks   *Blocks
-	geomCons *GeometricConstraints
-	dimCons  *DimensionConstraints
-	params   *param.Parameters
+	lines         *Lines
+	arcs          *Arcs
+	circles       *Circles
+	ellipses      *Ellipses
+	ellArcs       *EllipticalArcs
+	splines       *Splines
+	points        *Points
+	images        *SketchImages
+	fills         *FillRegions
+	texts         *TextBoxes
+	eqCurves      *EquationCurves
+	fixedSpl      *FixedSplines
+	offSpl        *OffsetSplines
+	blocks        *Blocks
+	splineHandles *SplineHandles
+	geomCons      *GeometricConstraints
+	dimCons       *DimensionConstraints
+	params        *param.Parameters
 }
 
 // Plane returns the sketch's host plane.
@@ -255,6 +256,9 @@ func (s *Sketch) OffsetSplines() *OffsetSplines   { return s.offSpl }
 func (s *Sketch) Points() *Points                 { return s.points }
 func (s *Sketch) Blocks() *Blocks                 { return s.blocks }
 
+// SplineHandles returns the sketch's active spline tangency handles (M06-F11).
+func (s *Sketch) SplineHandles() *SplineHandles { return s.splineHandles }
+
 // GeometricConstraints returns the sketch's geometric-constraint collection.
 func (s *Sketch) GeometricConstraints() *GeometricConstraints { return s.geomCons }
 
@@ -313,6 +317,9 @@ func (s *Sketch) deleteEntity(e Entity) {
 		s.circles.remove(t)
 	case *Arc:
 		s.arcs.remove(t)
+	case *TextBox:
+		s.texts.remove(t)
+		s.deleteTextBoxAnchor(t) // the anchor record dies with its text (M06-F11)
 	}
 }
 
@@ -322,6 +329,18 @@ func (s *Sketch) newPoint(pos math.Point2) *Point {
 	p := &Point{id: nextID(), X: pos.X, Y: pos.Y}
 	s.pts = append(s.pts, p)
 	return p
+}
+
+// removePoint drops a solver point (a deactivated spline-handle end). Reports
+// whether it was present.
+func (s *Sketch) removePoint(p *Point) bool {
+	for i, x := range s.pts {
+		if x == p {
+			s.pts = append(s.pts[:i], s.pts[i+1:]...)
+			return true
+		}
+	}
+	return false
 }
 
 // newRefPoint creates a fixed reference point (a projected anchor): a real Point other
@@ -349,6 +368,7 @@ func (s *Sketch) initCollections() {
 	s.fixedSpl = &FixedSplines{s: s}
 	s.offSpl = &OffsetSplines{s: s}
 	s.blocks = &Blocks{s: s}
+	s.splineHandles = &SplineHandles{s: s}
 	s.geomCons = &GeometricConstraints{}
 	s.params = param.NewParameters()
 	s.dimCons = &DimensionConstraints{params: s.params}

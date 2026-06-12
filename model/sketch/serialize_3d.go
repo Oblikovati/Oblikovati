@@ -90,6 +90,14 @@ type Entity3DData struct {
 	ZExpr  string    `yaml:"zExpr,omitempty"`
 	T0     float64   `yaml:"t0,omitempty"`
 	T1     float64   `yaml:"t1,omitempty"`
+	// Spline only (M06-F11, #626): the active tangency handles.
+	Handles []SplineHandle3DData `yaml:"handles,omitempty"`
+}
+
+// SplineHandle3DData is one active 3D spline tangency handle.
+type SplineHandle3DData struct {
+	FitIndex int        `yaml:"fitIndex"`
+	End      [3]float64 `yaml:"end"`
 }
 
 // Constraint3DRow is one geometric 3D constraint: its kind plus operand ids split into
@@ -239,7 +247,7 @@ func serializeEntity3D(e Entity) (Entity3DData, error) {
 		}
 		return Entity3DData{
 			ID: int(v.id), Kind: kind, Points: point3DIDs(v.Points),
-			Closed: v.Closed, Construction: v.construction,
+			Closed: v.Closed, Handles: serializeSplineHandles3D(v), Construction: v.construction,
 		}, nil
 	case *FixedSpline3D:
 		return Entity3DData{
@@ -522,6 +530,13 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Enti
 	case "spline", "controlPointSpline":
 		sp := s.addSpline3DPts(pts, ed.Closed, ed.Kind == "spline")
 		sp.SetConstruction(ed.Construction)
+		for _, hd := range ed.Handles {
+			h, err := s.ActivateSplineHandle3D(sp, hd.FitIndex)
+			if err != nil {
+				return nil, err
+			}
+			h.End.SetPosition(math.P3(math.Scalar(hd.End[0]), math.Scalar(hd.End[1]), math.Scalar(hd.End[2])))
+		}
 		return sp, nil
 	case "fixedSpline":
 		sp := s.AddFixedSpline3D(unflattenPoint3s(ed.Coords), ed.Closed)
@@ -766,4 +781,19 @@ func lookupPoints3D(ids []int, idmap map[int]*Point3D) ([]*Point3D, error) {
 		out[i] = p
 	}
 	return out, nil
+}
+
+// serializeSplineHandles3D renders a 3D spline's active handles in fit order
+// (M06-F11, #626).
+func serializeSplineHandles3D(sp *Spline3D) []SplineHandle3DData {
+	handles := sp.Handles()
+	if len(handles) == 0 {
+		return nil
+	}
+	out := make([]SplineHandle3DData, len(handles))
+	for i, h := range handles {
+		p := h.End.Position()
+		out[i] = SplineHandle3DData{FitIndex: h.FitIndex, End: [3]float64{float64(p.X), float64(p.Y), float64(p.Z)}}
+	}
+	return out
 }

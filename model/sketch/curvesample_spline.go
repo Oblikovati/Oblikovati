@@ -37,6 +37,9 @@ func sampleSplineEntityN(sp *Spline, perSpan int) []math.Point2 {
 		return pts
 	}
 	if sp.IsFitType() {
+		if sp.hasActiveHandles() {
+			return sampleHandledSpline(sp, perSpan)
+		}
 		return sampleFitSpline(pts, sp.Closed, fitParameterization(sp.FitMethod), perSpan)
 	}
 	return sampleControlSpline(pts, sp.Closed, perSpan)

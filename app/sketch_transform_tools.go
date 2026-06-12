@@ -4,8 +4,10 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -67,7 +69,25 @@ func (t *SketchMoveTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
+	if err := rejectUnmoveablePicks(sk, t.picks, "move"); err != nil {
+		return err
+	}
 	sk.MoveEntities(t.picks, t.vector)
+	return nil
+}
+
+// rejectUnmoveablePicks refuses dragging geometry the solver classifies as
+// not draggable, naming the entity and the precise reason (M06-F11, #626).
+func rejectUnmoveablePicks(sk *sketch.Sketch, picks []sketch.Entity, op string) error {
+	moveable := sk.MoveableClassifier()
+	for _, e := range picks {
+		switch moveable.Of(e) {
+		case types.MoveableFixed:
+			return fmt.Errorf("%s: entity %d is fixed (grounded or reference geometry) and cannot move", op, e.EntityID())
+		case types.MoveableByDimensionChange:
+			return fmt.Errorf("%s: entity %d is fully dimensioned; relax a driving dimension to move it", op, e.EntityID())
+		}
+	}
 	return nil
 }
 

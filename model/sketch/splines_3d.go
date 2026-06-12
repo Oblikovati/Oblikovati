@@ -20,6 +20,9 @@ type Spline3D struct {
 	Points []*Point3D
 	Closed bool
 	fit    bool
+	// handles are the active tangency handles keyed by fit-point index
+	// (M06-F11; see spline_handles_3d.go).
+	handles map[int]*SplineHandle3D
 }
 
 // IsFitType reports whether the spline interpolates its points (fit) rather than
@@ -29,6 +32,9 @@ func (s *Spline3D) PointCount() int { return len(s.Points) }
 
 // Sample returns the spline's representative polyline in model space.
 func (s *Spline3D) Sample() []math.Point3 {
+	if len(s.handles) > 0 && s.fit {
+		return sampleHandledSpline3D(s, splineSamplesPerSpan)
+	}
 	pts := make([]math.Point3, len(s.Points))
 	for i, p := range s.Points {
 		pts[i] = p.Position()
