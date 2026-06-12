@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -23,6 +24,21 @@ type SweepData struct {
 	Closed    bool        `yaml:"closed,omitempty"`
 	Twist     float64     `yaml:"twist,omitempty"`
 	Operation string      `yaml:"operation"`
+	// The definition union (M08 PBI-094, #314):
+	Orientation   string                  `yaml:"orientation,omitempty"` // SweepProfileOrientation spelling
+	AlignVector   []float64               `yaml:"alignVector,omitempty"`
+	Taper         float64                 `yaml:"taper,omitempty"`
+	TwistStations []SweepTwistStationData `yaml:"twistStations,omitempty"`
+	Rail          [][]float64             `yaml:"rail,omitempty"`
+	Scaling       string                  `yaml:"scaling,omitempty"` // SweepProfileScaling spelling
+	GuideFace     []byte                  `yaml:"guideFace,omitempty"`
+	SolidTool     *int                    `yaml:"solidTool,omitempty"` // running-body index of the tool
+}
+
+// SweepTwistStationData is one persisted twist station.
+type SweepTwistStationData struct {
+	T     float64 `yaml:"t"`
+	Angle float64 `yaml:"angle"`
 }
 
 // LoftSectionData is one section of a loft: a profile on a sketch; a point (apex) section
@@ -66,9 +82,12 @@ type LoftData struct {
 }
 
 func serializeSweep(def *SweepDefinition, sk SketchIndexer) (*SweepData, error) {
-	idx, ok := sk.IndexOf(def.Sketch)
-	if !ok {
-		return nil, fmt.Errorf("sweep references a sketch that is not in the part")
+	idx := -1 // a solid sweep carries no profile sketch
+	if def.Sketch != nil {
+		var ok bool
+		if idx, ok = sk.IndexOf(def.Sketch); !ok {
+			return nil, fmt.Errorf("sweep references a sketch that is not in the part")
+		}
 	}
 	if def.Path == nil {
 		return nil, fmt.Errorf("sweep has no path")
@@ -81,27 +100,98 @@ func serializeSweep(def *SweepDefinition, sk SketchIndexer) (*SweepData, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &SweepData{
+	d := &SweepData{
 		Sketch: idx, Profile: def.ProfileIndex, Path: encodePoints(path.Points()),
 		Closed: path.IsClosed(), Twist: evalFloat(def.Twist), Operation: op,
-	}, nil
+	}
+	return d, serializeSweepUnion(d, def)
+}
+
+// serializeSweepUnion persists the M08 union fields (#314).
+func serializeSweepUnion(d *SweepData, def *SweepDefinition) error {
+	if def.Orientation != 0 {
+		d.Orientation = def.Orientation.String()
+	}
+	if float64(def.AlignVector.Length()) > 0 {
+		d.AlignVector = []float64{float64(def.AlignVector.X), float64(def.AlignVector.Y), float64(def.AlignVector.Z)}
+	}
+	d.Taper = evalFloat(def.Taper)
+	for _, st := range def.TwistStations {
+		d.TwistStations = append(d.TwistStations, SweepTwistStationData(st))
+	}
+	if def.GuideRail != nil {
+		rail := def.GuideRail()
+		if rail == nil {
+			return fmt.Errorf("sweep guide rail provider returned nothing")
+		}
+		d.Rail = encodePoints(rail.Points())
+	}
+	if def.Scaling != 0 {
+		d.Scaling = def.Scaling.String()
+	}
+	d.GuideFace = def.GuideFaceKey
+	d.SolidTool = def.SolidToolIndex
+	return nil
 }
 
 func restoreSweep(fs *PartFeatures, d *SweepData, sk SketchIndexer) (*PartFeature, error) {
 	if d == nil {
 		return nil, fmt.Errorf("sweep feature is missing its payload")
 	}
-	skt, ok := sk.At(d.Sketch)
-	if !ok {
-		return nil, fmt.Errorf("sweep references sketch index %d, which does not exist", d.Sketch)
+	var skt *sketch.Sketch
+	if d.Sketch >= 0 { // -1 = a solid sweep (no profile sketch)
+		var ok bool
+		if skt, ok = sk.At(d.Sketch); !ok {
+			return nil, fmt.Errorf("sweep references sketch index %d, which does not exist", d.Sketch)
+		}
 	}
 	op, err := parseOperation(d.Operation)
 	if err != nil {
 		return nil, err
 	}
 	path := sketch.NewPath3D(point3DChain(decodePoints(d.Path)), d.Closed)
-	twist := d.Twist
-	return NewSweepFeatures(fs).Add(skt, d.Profile, path, func() float64 { return twist }, op), nil
+	def := &SweepDefinition{
+		Sketch: skt, ProfileIndex: d.Profile,
+		Path:      func() *sketch.Path3D { return path },
+		Twist:     constFloat(d.Twist),
+		Operation: op,
+	}
+	if err := restoreSweepUnion(def, d); err != nil {
+		return nil, err
+	}
+	return NewSweepFeatures(fs).AddDefinition(def), nil
+}
+
+// restoreSweepUnion rebuilds the M08 union fields (#314).
+func restoreSweepUnion(def *SweepDefinition, d *SweepData) error {
+	if d.Orientation != "" {
+		o, ok := types.ParseSweepProfileOrientation(d.Orientation)
+		if !ok {
+			return fmt.Errorf("sweep: unknown orientation %q", d.Orientation)
+		}
+		def.Orientation = o
+	}
+	if len(d.AlignVector) == 3 {
+		def.AlignVector = math.V3(math.Scalar(d.AlignVector[0]), math.Scalar(d.AlignVector[1]), math.Scalar(d.AlignVector[2]))
+	}
+	def.Taper = constFloat(d.Taper)
+	for _, st := range d.TwistStations {
+		def.TwistStations = append(def.TwistStations, SweepTwistStation(st))
+	}
+	if len(d.Rail) > 0 {
+		rail := sketch.NewPath3D(point3DChain(decodePoints(d.Rail)), false)
+		def.GuideRail = func() *sketch.Path3D { return rail }
+	}
+	if d.Scaling != "" {
+		sc, ok := types.ParseSweepProfileScaling(d.Scaling)
+		if !ok {
+			return fmt.Errorf("sweep: unknown scaling %q", d.Scaling)
+		}
+		def.Scaling = sc
+	}
+	def.GuideFaceKey = d.GuideFace
+	def.SolidToolIndex = d.SolidTool
+	return nil
 }
 
 func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {

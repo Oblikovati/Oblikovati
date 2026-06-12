@@ -75,6 +75,18 @@ type SweepDefinition struct {
 	Path         func() *sketch.Path3D // live path provider, re-derived each recompute
 	Twist        func() float64        // total twist (radians) distributed along the path
 	Operation    ops.PartFeatureOperation
+
+	// The definition union (M08 PBI-094, #314) — see DefinitionType():
+	Orientation   types.SweepProfileOrientation // 0 ⇒ normal to path
+	AlignVector   math.Vector3                  // AlignToVector's fixed profile normal
+	Taper         func() float64                // draft angle (radians) along the path
+	TwistStations []SweepTwistStation           // pathAndSectionTwists rows (override Twist)
+	GuideRail     func() *sketch.Path3D         // pathAndGuideRail steering/scaling rail
+	Scaling       types.SweepProfileScaling     // rail scaling mode (0 ⇒ xy)
+	GuideFaceKey  []byte                        // pathAndGuideSurface face (running bodies)
+	// SolidToolIndex sweeps the running body at this index along the path
+	// instead of a profile (the reference SolidSweepDefinition).
+	SolidToolIndex *int
 }
 
 // SweepFeature sweeps a profile along a path.
@@ -92,9 +104,14 @@ func (s *SweepFeature) Kind() string                 { return "sweep" }
 func (s *SweepFeature) Operation() ops.PartFeatureOperation { return s.def.Operation }
 func (s *SweepFeature) ToolBody() *topo.Body                { return s.tool }
 
-// Recompute resolves the profile, places it along the path tangents into a faceted
-// solid, and applies the operation against the running bodies.
+// Recompute resolves the profile, places it along the path under the
+// definition union's behavior (orientation, twist, rail, surface, taper) into
+// a faceted solid, and applies the operation against the running bodies. A
+// solid sweep instead drags a tool body along the path.
 func (s *SweepFeature) Recompute(in Input) (Output, error) {
+	if s.def.SolidToolIndex != nil {
+		return s.recomputeSolidSweep(in)
+	}
 	prof, err := resolveSingleProfile(s.def.Sketch, s.def.ProfileIndex, "sweep")
 	if err != nil {
 		return Output{}, err
@@ -106,7 +123,14 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 	if path == nil || path.Count() < 2 {
 		return Output{}, errors.New("sweep: path needs at least two points")
 	}
-	sections := sweepSections(prof, s.def.Sketch.Plane(), path.Points(), callOrZero(s.def.Twist))
+	cfg, err := s.resolveSweepConfig(in, path.Points())
+	if err != nil {
+		return Output{}, err
+	}
+	sections, err := sweepSectionsCfg(prof, s.def.Sketch.Plane(), path.Points(), cfg)
+	if err != nil {
+		return Output{}, err
+	}
 	s.tool, err = sweptSolid(sections, path.IsClosed(), featOr(s.featName, "sweep"))
 	if err != nil {
 		return Output{}, err
@@ -116,30 +140,6 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
-}
-
-// sweepSections places the profile (recentered onto each path point) rotated so its
-// normal follows the path tangent, with the total twist spread along the path.
-func sweepSections(prof *sketch.Profile, plane sketch.Plane, path []math.Point3, twist float64) [][]math.Point3 {
-	base := modelPolygon(prof, plane)
-	centroid := centroidOf(base)
-	normal := plane.Normal()
-	tangents := pathTangents(path)
-	sections := make([][]math.Point3, len(path))
-	for k, pt := range path {
-		align := math.RotateBetween(normal, tangents[k])
-		sec := make([]math.Point3, len(base))
-		for i, p := range base {
-			v := align.TransformVector(centroid.VectorTo(p))
-			if twist != 0 {
-				frac := float64(k) / float64(len(path)-1)
-				v = math.Rotation4(twist*frac, tangents[k], math.P3(0, 0, 0)).TransformVector(v)
-			}
-			sec[i] = pt.TranslateBy(v)
-		}
-		sections[k] = sec
-	}
-	return sections
 }
 
 // pathTangents returns a unit tangent at each path point: the forward segment at the
@@ -175,6 +175,16 @@ func NewSweepFeatures(engine *PartFeatures) *SweepFeatures { return &SweepFeatur
 // Add adds a sweep of the profile along path with the given total twist and operation.
 func (c *SweepFeatures) Add(skt *sketch.Sketch, profileIndex int, path *sketch.Path3D, twist func() float64, op ops.PartFeatureOperation) *PartFeature {
 	return c.AddLive(skt, profileIndex, func() *sketch.Path3D { return path }, twist, op)
+}
+
+// AddDefinition adds a sweep from a fully-populated definition — the union
+// variants (#314) construct through this.
+func (c *SweepFeatures) AddDefinition(def *SweepDefinition) *PartFeature {
+	sf := &SweepFeature{def: def}
+	pf := c.engine.Add(sf)
+	pf.SetName(c.engine.UniqueName("Sweep"))
+	sf.featName = pf.name
+	return pf
 }
 
 // AddLive is Add with a live path provider, re-derived on every recompute, so a

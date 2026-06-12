@@ -10,7 +10,8 @@ type RibData struct {
 	Sketch    int     `yaml:"sketch"`
 	Profile   int     `yaml:"profile"`
 	Thickness float64 `yaml:"thickness"`
-	Depth     float64 `yaml:"depth"`
+	Depth     float64 `yaml:"depth,omitempty"`
+	ToNext    bool    `yaml:"toNext,omitempty"` // extend to the existing material (#316)
 	Operation string  `yaml:"operation"`
 }
 
@@ -25,7 +26,8 @@ func serializeRib(def *RibDefinition, sk SketchIndexer) (*RibData, error) {
 	}
 	return &RibData{
 		Sketch: idx, Profile: def.ProfileIndex,
-		Thickness: evalFloat(def.Thickness), Depth: evalFloat(def.Depth), Operation: op,
+		Thickness: evalFloat(def.Thickness), Depth: evalFloat(def.Depth),
+		ToNext: def.ToNext, Operation: op,
 	}, nil
 }
 
@@ -41,5 +43,10 @@ func restoreRib(fs *PartFeatures, d *RibData, sk SketchIndexer) (*PartFeature, e
 	if err != nil {
 		return nil, err
 	}
-	return NewRibFeatures(fs).Add(skt, d.Profile, constFloat(d.Thickness), constFloat(d.Depth), op), nil
+	def := &RibDefinition{
+		Sketch: skt, ProfileIndex: d.Profile,
+		Thickness: constFloat(d.Thickness), Depth: constFloat(d.Depth),
+		ToNext: d.ToNext, Operation: op,
+	}
+	return NewRibFeatures(fs).AddDefinition(def), nil
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -29,19 +30,46 @@ type sweepArgs struct {
 	PathIndex       int    `json:"pathIndex"`
 	Twist           string `json:"twist,omitempty"`
 	Operation       string `json:"operation,omitempty"`
+	// The definition union (M08 PBI-094, #314), discriminated by the frozen
+	// api/types sweep spellings:
+	DefinitionType  string              `json:"definitionType,omitempty"` // path (default) | pathAndGuideRail | pathAndGuideSurface | pathAndSectionTwists | solid
+	Orientation     string              `json:"orientation,omitempty"`    // normalToPath (default) | parallelToOriginalProfile | alignToVector
+	AlignVector     []float64           `json:"alignVector,omitempty"`
+	Taper           string              `json:"taper,omitempty"`
+	TwistStations   []sweepTwistStation `json:"twistStations,omitempty"`
+	RailSketchIndex int                 `json:"railSketchIndex,omitempty"`
+	RailIndex       int                 `json:"railIndex,omitempty"`
+	Scaling         string              `json:"scaling,omitempty"` // xy (default) | x | none
+	GuideFaceKey    string              `json:"guideFaceKey,omitempty"`
+	ToolBodyIndex   *int                `json:"toolBodyIndex,omitempty"`
+}
+
+type sweepTwistStation struct {
+	T     float64 `json:"t"`
+	Angle string  `json:"angle"`
 }
 
 const sweepSchema = `{
   "type": "object",
   "properties": {
-    "sketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the profile to sweep."},
+    "sketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the profile to sweep (omit for definitionType \"solid\")."},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
     "pathSketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the open path (rail) to sweep along."},
     "pathIndex": {"type": "integer", "minimum": 0, "default": 0, "description": "Which open path of the path sketch (see list_sketch_profiles / the sketch's chains)."},
-    "twist": {"type": "string", "description": "Optional twist along the path, e.g. \"90 deg\"."},
+    "definitionType": {"type": "string", "enum": ["path", "pathAndGuideRail", "pathAndGuideSurface", "pathAndSectionTwists", "solid"], "default": "path", "description": "The sweep definition union discriminator."},
+    "orientation": {"type": "string", "enum": ["normalToPath", "parallelToOriginalProfile", "alignToVector"], "default": "normalToPath"},
+    "alignVector": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Fixed profile normal for orientation alignToVector."},
+    "twist": {"type": "string", "description": "Optional total twist along the path, e.g. \"90 deg\"."},
+    "taper": {"type": "string", "description": "Optional draft angle along the path, e.g. \"3 deg\" (constant wall draft)."},
+    "twistStations": {"type": "array", "items": {"type": "object", "properties": {"t": {"type": "number"}, "angle": {"type": "string"}}, "required": ["t", "angle"]}, "description": "pathAndSectionTwists rows: twist angle at normalized arclength t."},
+    "railSketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the guide rail (pathAndGuideRail)."},
+    "railIndex": {"type": "integer", "minimum": 0, "default": 0},
+    "scaling": {"type": "string", "enum": ["xy", "x", "none"], "default": "xy", "description": "How the guide rail scales the profile."},
+    "guideFaceKey": {"type": "string", "description": "Reference key of the guide face (pathAndGuideSurface)."},
+    "toolBodyIndex": {"type": "integer", "minimum": 0, "description": "Running-body index of the tool to drag (definitionType \"solid\")."},
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"}
   },
-  "required": ["sketchIndex", "pathSketchIndex"]
+  "required": ["pathSketchIndex"]
 }`
 
 func sweepDescriptor() *OperationDescriptor {
@@ -57,30 +85,142 @@ func applySweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
-	profileSk, err := sketchAt(part, in.SketchIndex)
+	def, err := sweepDefinitionFromArgs(part, in)
 	if err != nil {
 		return nil, err
 	}
+	pf := feature.NewSweepFeatures(part.Features()).AddDefinition(def)
+	return recomputeResult(part, pf)
+}
+
+// sweepDefinitionFromArgs builds the union definition from the wire args,
+// validating the discriminator's required fields.
+func sweepDefinitionFromArgs(part *compdef.PartComponentDefinition, in sweepArgs) (*feature.SweepDefinition, error) {
 	// Validate the path once up front, then hand the feature a live provider that
 	// re-derives it from the path sketch each recompute, so a parameter driving the
 	// rail reshapes the sweep (a snapshot would freeze it at apply time).
 	if _, err := pathFromSketch(part, in.PathSketchIndex, in.PathIndex); err != nil {
 		return nil, err
 	}
-	pathFn := func() *sketch.Path3D {
-		p, _ := pathFromSketch(part, in.PathSketchIndex, in.PathIndex)
-		return p
+	def := &feature.SweepDefinition{
+		ProfileIndex: in.ProfileIndex,
+		Path: func() *sketch.Path3D {
+			p, _ := pathFromSketch(part, in.PathSketchIndex, in.PathIndex)
+			return p
+		},
+	}
+	if err := sweepScalars(part, in, def); err != nil {
+		return nil, err
+	}
+	return def, sweepVariantFields(part, in, def)
+}
+
+// sweepScalars resolves the profile sketch, twist, taper, orientation and
+// operation (the fields every profile variant shares).
+func sweepScalars(part *compdef.PartComponentDefinition, in sweepArgs, def *feature.SweepDefinition) error {
+	if in.DefinitionType != "solid" {
+		sk, err := sketchAt(part, in.SketchIndex)
+		if err != nil {
+			return err
+		}
+		def.Sketch = sk
 	}
 	twist, err := optionalAngleClosure(part, in.Twist, "sweep: twist")
 	if err != nil {
-		return nil, err
+		return err
 	}
+	def.Twist = twist
+	taper, err := optionalAngleClosure(part, in.Taper, "sweep: taper")
+	if err != nil {
+		return err
+	}
+	def.Taper = taper
 	op, err := parseOperation(in.Operation)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	pf := feature.NewSweepFeatures(part.Features()).AddLive(profileSk, in.ProfileIndex, pathFn, twist, op)
-	return recomputeResult(part, pf)
+	def.Operation = op
+	return sweepOrientation(in, def)
+}
+
+func sweepOrientation(in sweepArgs, def *feature.SweepDefinition) error {
+	if in.Orientation == "" {
+		return nil
+	}
+	o, ok := types.ParseSweepProfileOrientation(in.Orientation)
+	if !ok {
+		return fmt.Errorf("sweep: unknown orientation %q (want normalToPath, parallelToOriginalProfile or alignToVector)", in.Orientation)
+	}
+	def.Orientation = o
+	if o == types.AlignToVector {
+		if len(in.AlignVector) != 3 {
+			return fmt.Errorf("sweep: alignToVector needs alignVector as [x, y, z], got %v", in.AlignVector)
+		}
+		def.AlignVector = math.V3(math.Scalar(in.AlignVector[0]), math.Scalar(in.AlignVector[1]), math.Scalar(in.AlignVector[2]))
+	}
+	return nil
+}
+
+// sweepVariantFields applies the discriminated union variant.
+func sweepVariantFields(part *compdef.PartComponentDefinition, in sweepArgs, def *feature.SweepDefinition) error {
+	switch in.DefinitionType {
+	case "", "path":
+		return nil
+	case "pathAndGuideRail":
+		if _, err := pathFromSketch(part, in.RailSketchIndex, in.RailIndex); err != nil {
+			return fmt.Errorf("sweep guide rail: %w", err)
+		}
+		def.GuideRail = func() *sketch.Path3D {
+			p, _ := pathFromSketch(part, in.RailSketchIndex, in.RailIndex)
+			return p
+		}
+		return sweepScaling(in, def)
+	case "pathAndGuideSurface":
+		if in.GuideFaceKey == "" {
+			return fmt.Errorf("sweep: pathAndGuideSurface needs guideFaceKey")
+		}
+		def.GuideFaceKey = []byte(in.GuideFaceKey)
+		return nil
+	case "pathAndSectionTwists":
+		return sweepStations(part, in, def)
+	case "solid":
+		if in.ToolBodyIndex == nil {
+			return fmt.Errorf("sweep: definitionType solid needs toolBodyIndex")
+		}
+		def.SolidToolIndex = in.ToolBodyIndex
+		return nil
+	default:
+		return fmt.Errorf("sweep: unknown definitionType %q", in.DefinitionType)
+	}
+}
+
+func sweepScaling(in sweepArgs, def *feature.SweepDefinition) error {
+	if in.Scaling == "" {
+		return nil
+	}
+	sc, ok := types.ParseSweepProfileScaling(in.Scaling)
+	if !ok {
+		return fmt.Errorf("sweep: unknown scaling %q (want xy, x or none)", in.Scaling)
+	}
+	def.Scaling = sc
+	return nil
+}
+
+func sweepStations(part *compdef.PartComponentDefinition, in sweepArgs, def *feature.SweepDefinition) error {
+	if len(in.TwistStations) < 2 {
+		return fmt.Errorf("sweep: pathAndSectionTwists needs 2+ twistStations, got %d", len(in.TwistStations))
+	}
+	for i, st := range in.TwistStations {
+		angle, err := angleClosure(part, st.Angle, "sweep: twist station angle")
+		if err != nil {
+			return err
+		}
+		if i > 0 && st.T <= in.TwistStations[i-1].T {
+			return fmt.Errorf("sweep: twist stations must have ascending t (station %d: %g after %g)", i, st.T, in.TwistStations[i-1].T)
+		}
+		def.TwistStations = append(def.TwistStations, feature.SweepTwistStation{T: st.T, Angle: angle()})
+	}
+	return nil
 }
 
 // pathFromSketch lifts a 2D sketch's open path (chain) to a 3D sweep rail via the sketch's

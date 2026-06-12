@@ -26,6 +26,7 @@ type revolveArgs struct {
 	ProfileIndex int    `json:"profileIndex"`
 	AxisRef      string `json:"axisRef,omitempty"`
 	Angle        string `json:"angle"`
+	Angle2       string `json:"angle2,omitempty"` // second-direction sweep (#313)
 	Operation    string `json:"operation,omitempty"`
 }
 
@@ -36,6 +37,7 @@ const revolveSchema = `{
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
     "axisRef": {"type": "string", "description": "Work-axis reference to revolve about, e.g. \"origin/axis/y\" (default). See get_reference_keys / list_work_planes."},
     "angle": {"type": "string", "description": "Revolve angle with units, e.g. \"360 deg\"."},
+    "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new"}
   },
   "required": ["sketchIndex", "angle"]
@@ -70,6 +72,14 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
+	if in.Angle2 != "" {
+		angle2, err := angleClosure(part, in.Angle2, "revolve: angle2")
+		if err != nil {
+			return nil, err
+		}
+		pf := feature.NewRevolveFeatures(part.Features()).AddTwoDirectional(sk, in.ProfileIndex, axis, angle, angle2, op)
+		return recomputeResult(part, pf)
+	}
 	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, angle, op)
 	return recomputeResult(part, pf)
 }
@@ -80,7 +90,8 @@ type ribArgs struct {
 	SketchIndex  int    `json:"sketchIndex"`
 	ProfileIndex int    `json:"profileIndex"`
 	Thickness    string `json:"thickness"`
-	Depth        string `json:"depth"`
+	Depth        string `json:"depth,omitempty"`
+	ToNext       bool   `json:"toNext,omitempty"` // extend to the existing material (#316)
 	Operation    string `json:"operation,omitempty"`
 }
 
@@ -90,10 +101,11 @@ const ribSchema = `{
     "sketchIndex": {"type": "integer", "minimum": 0},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
     "thickness": {"type": "string", "description": "Rib wall thickness, e.g. \"2 mm\"."},
-    "depth": {"type": "string", "description": "How far the rib grows toward the body, e.g. \"10 mm\"."},
+    "depth": {"type": "string", "description": "How far the rib grows toward the body, e.g. \"10 mm\" (sign picks the direction; omit with toNext)."},
+    "toNext": {"type": "boolean", "default": false, "description": "Extend the wall until it fully lands on the existing material (the to-next rib)."},
     "operation": {"type": "string", "enum": ["new", "join"], "default": "join"}
   },
-  "required": ["sketchIndex", "thickness", "depth"]
+  "required": ["sketchIndex", "thickness"]
 }`
 
 func ribDescriptor() *OperationDescriptor {
@@ -117,15 +129,23 @@ func applyRib(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	depth, err := lengthClosure(part, in.Depth, "rib: depth")
-	if err != nil {
-		return nil, err
+	var depth func() float64
+	if in.Depth != "" {
+		if depth, err = lengthClosure(part, in.Depth, "rib: depth"); err != nil {
+			return nil, err
+		}
+	} else if !in.ToNext {
+		return nil, errors.New("rib: give depth or toNext")
 	}
 	op, err := parseOperation(in.Operation)
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewRibFeatures(part.Features()).Add(sk, in.ProfileIndex, th, depth, op)
+	def := &feature.RibDefinition{
+		Sketch: sk, ProfileIndex: in.ProfileIndex,
+		Thickness: th, Depth: depth, ToNext: in.ToNext, Operation: op,
+	}
+	pf := feature.NewRibFeatures(part.Features()).AddDefinition(def)
 	return recomputeResult(part, pf)
 }
 
@@ -209,8 +229,10 @@ type coilArgs struct {
 	SketchIndex  int    `json:"sketchIndex"`
 	ProfileIndex int    `json:"profileIndex"`
 	AxisRef      string `json:"axisRef,omitempty"`
-	Pitch        string `json:"pitch"`
-	Revolutions  string `json:"revolutions"`
+	Pitch        string `json:"pitch,omitempty"`
+	Revolutions  string `json:"revolutions,omitempty"`
+	Height       string `json:"height,omitempty"` // two-of-three shape spec (#316)
+	Taper        string `json:"taper,omitempty"`
 	Operation    string `json:"operation,omitempty"`
 }
 
@@ -220,11 +242,13 @@ const coilSchema = `{
     "sketchIndex": {"type": "integer", "minimum": 0},
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
     "axisRef": {"type": "string", "description": "Work-axis reference to coil about, e.g. \"origin/axis/z\" (default)."},
-    "pitch": {"type": "string", "description": "Axial rise per revolution, e.g. \"5 mm\"."},
+    "pitch": {"type": "string", "description": "Axial rise per revolution, e.g. \"5 mm\". Give exactly two of pitch/revolutions/height."},
     "revolutions": {"type": "string", "description": "Number of turns, e.g. \"4\"."},
+    "height": {"type": "string", "description": "Total axial rise, e.g. \"30 mm\" — combines with pitch OR revolutions."},
+    "taper": {"type": "string", "description": "Optional taper angle, e.g. \"5 deg\" — the helix radius grows with height."},
     "operation": {"type": "string", "enum": ["new", "join", "cut"], "default": "new"}
   },
-  "required": ["sketchIndex", "pitch", "revolutions"]
+  "required": ["sketchIndex"]
 }`
 
 func coilDescriptor() *OperationDescriptor {
@@ -248,7 +272,11 @@ func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pitch, revs, err := coilPitchRevs(part, in)
+	pitch, revs, height, err := coilShapeArgs(part, in)
+	if err != nil {
+		return nil, err
+	}
+	taper, err := optionalAngleClosure(part, in.Taper, "coil: taper")
 	if err != nil {
 		return nil, err
 	}
@@ -256,8 +284,21 @@ func applyCoil(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewCoilFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, pitch, revs, 0, op)
+	def := &feature.CoilDefinition{
+		Sketch: sk, ProfileIndex: in.ProfileIndex, Axis: axis,
+		Pitch: pitch, Revolutions: revs, Height: height,
+		Taper: callOrZeroF(taper), Operation: op,
+	}
+	pf := feature.NewCoilFeatures(part.Features()).AddDefinition(def)
 	return recomputeResult(part, pf)
+}
+
+// callOrZeroF evaluates an optional closure (nil ⇒ 0).
+func callOrZeroF(f func() float64) float64 {
+	if f == nil {
+		return 0
+	}
+	return f()
 }
 
 // coilAxis resolves the coil's work axis, defaulting to the Z origin axis when no ref is given
@@ -269,16 +310,26 @@ func coilAxis(part *compdef.PartComponentDefinition, ref string) (*feature.WorkA
 	return axisFromRef(part, ref)
 }
 
-// coilPitchRevs resolves a coil's pitch (a unit-bearing length) and revolution count (a plain
-// number), naming the field on a parse error.
-func coilPitchRevs(part *compdef.PartComponentDefinition, in coilArgs) (pitch, revs func() float64, err error) {
-	if pitch, err = lengthClosure(part, in.Pitch, "coil: pitch"); err != nil {
-		return nil, nil, err
+// coilShapeArgs resolves the two-of-three coil shape spec (#316): pitch and
+// height are unit-bearing lengths, revolutions a plain number; absent fields
+// stay nil (the model validates the combination).
+func coilShapeArgs(part *compdef.PartComponentDefinition, in coilArgs) (pitch, revs, height func() float64, err error) {
+	if in.Pitch != "" {
+		if pitch, err = lengthClosure(part, in.Pitch, "coil: pitch"); err != nil {
+			return nil, nil, nil, err
+		}
 	}
-	if revs, err = numberClosure(part, in.Revolutions, "coil: revolutions"); err != nil {
-		return nil, nil, err
+	if in.Revolutions != "" {
+		if revs, err = numberClosure(part, in.Revolutions, "coil: revolutions"); err != nil {
+			return nil, nil, nil, err
+		}
 	}
-	return pitch, revs, nil
+	if in.Height != "" {
+		if height, err = lengthClosure(part, in.Height, "coil: height"); err != nil {
+			return nil, nil, nil, err
+		}
+	}
+	return pitch, revs, height, nil
 }
 
 // --- loft ------------------------------------------------------------------
