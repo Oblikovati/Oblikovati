@@ -372,19 +372,21 @@ func partingAxis(name string) feature.PartingAxis {
 type splitSolidArgs struct {
 	WorkPlaneIndex int    `json:"workPlaneIndex"`
 	Keep           string `json:"keep,omitempty"`
+	Type           string `json:"type,omitempty"` // frozen types.SplitType spelling (#330)
 }
 
 const splitSolidSchema = `{
   "type": "object",
   "properties": {
     "workPlaneIndex": {"type": "integer", "minimum": 0, "description": "Index of the work plane to split along (see list_work_planes)."},
-    "keep": {"type": "string", "enum": ["both", "positive", "negative"], "default": "both", "description": "Which side(s) of the plane to keep."}
+    "keep": {"type": "string", "enum": ["both", "positive", "negative"], "default": "both", "description": "Which side(s) of the plane to keep (trim modes)."},
+    "type": {"type": "string", "enum": ["trimSolid", "splitFaces", "splitBody"], "description": "Split kind: trimSolid keeps one side (per keep, default positive); splitFaces imprints the plane onto the faces without removing material; splitBody keeps both pieces as separate solids. Absent: derived from keep."}
   },
   "required": ["workPlaneIndex"]
 }`
 
 func splitSolidDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "splitSolid", Summary: "Split the solid along a work plane, keeping one or both halves.", Schema: json.RawMessage(splitSolidSchema), Apply: applySplitSolid}
+	return &OperationDescriptor{Name: "splitSolid", Summary: "Split the solid along a work plane: trim one side, split into bodies, or split faces only.", Schema: json.RawMessage(splitSolidSchema), Apply: applySplitSolid}
 }
 
 func applySplitSolid(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -400,8 +402,36 @@ func applySplitSolid(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if in.WorkPlaneIndex < 0 || in.WorkPlaneIndex >= planes.Count() {
 		return nil, fmt.Errorf("splitSolid: work plane %d out of range (part has %d)", in.WorkPlaneIndex, planes.Count())
 	}
-	pf := feature.NewModifyFeatures(part.Features()).AddSplitSolid(planes.Item(in.WorkPlaneIndex), splitSide(in.Keep))
+	pf, err := addSplitOfType(part, planes.Item(in.WorkPlaneIndex), in)
+	if err != nil {
+		return nil, err
+	}
 	return recomputeResult(part, pf)
+}
+
+// addSplitOfType dispatches on the frozen split-type spelling; absent keeps the original
+// keep-driven behavior (both sides by default).
+func addSplitOfType(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, in splitSolidArgs) (*feature.PartFeature, error) {
+	mods := feature.NewModifyFeatures(part.Features())
+	if in.Type == "" {
+		return mods.AddSplitSolid(wp, splitSide(in.Keep)), nil
+	}
+	st, ok := types.ParseSplitType(in.Type)
+	if !ok {
+		return nil, fmt.Errorf("splitSolid: unknown type %q (want trimSolid/splitFaces/splitBody)", in.Type)
+	}
+	switch st {
+	case types.SplitFacesSplit:
+		return mods.AddSplitFaces(wp), nil
+	case types.SplitBodySplit:
+		return mods.AddSplitSolid(wp, feature.SplitBoth), nil
+	default: // trimSolid keeps one side; "both" makes no sense here, default positive
+		side := splitSide(in.Keep)
+		if side == feature.SplitBoth {
+			side = feature.SplitPositive
+		}
+		return mods.AddSplitSolid(wp, side), nil
+	}
 }
 
 func splitSide(name string) feature.SplitSide {

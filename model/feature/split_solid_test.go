@@ -80,3 +80,54 @@ func TestSplitSolidRoundTrip(t *testing.T) {
 		t.Errorf("restored split = keep %d plane %v, want positive + the z=2 plane", def.Keep, def.Plane)
 	}
 }
+
+// The Split Faces mode (#330): the plane imprints onto the box's faces — same
+// volume, same single body, four more faces (each crossing side wall splits in
+// two), and the discriminator reports splitFaces.
+func TestSplitFacesImprintsWithoutRemovingMaterial(t *testing.T) {
+	_, wp := midPlaneAt(2)
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(boxBody())
+	split := NewModifyFeatures(fs).AddSplitFaces(wp)
+	fs.Recompute()
+
+	if !split.Health().OK() {
+		t.Fatalf("split-faces went sick: %+v", split.Health())
+	}
+	pieces := fs.Result()
+	if len(pieces) != 1 {
+		t.Fatalf("split-faces result = %d bodies, want 1 (no material removed)", len(pieces))
+	}
+	if r := ops.Validate(pieces[0]); !r.Valid || !pieces[0].IsSolid() {
+		t.Fatalf("imprinted body not a valid solid: %+v", r)
+	}
+	if v := ops.BodyGeometryProperties(pieces[0], ops.DefaultQuality()).Volume; stdmath.Abs(v-64) > 1e-9 {
+		t.Errorf("imprinted volume = %g, want 64 (unchanged)", v)
+	}
+	if n := len(pieces[0].Faces()); n != 10 {
+		t.Errorf("imprinted box has %d faces, want 10 (4 side walls split)", n)
+	}
+	if split.Definition().(*SplitSolidFeature).SplitType() != 32770 {
+		t.Error("split type discriminator != splitFaces")
+	}
+}
+
+// The faces-only flag round-trips through the recipe.
+func TestSplitFacesRoundTrip(t *testing.T) {
+	g, wp := midPlaneAt(2)
+	fs := NewPartFeatures(nil, nil)
+	NewModifyFeatures(fs).AddSplitFaces(wp)
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, g); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	def := fresh.Item(0).Definition().(*SplitSolidFeature).Definition()
+	if !def.FacesOnly || def.Plane == nil {
+		t.Errorf("restored split = %+v, want facesOnly with its plane", def)
+	}
+}

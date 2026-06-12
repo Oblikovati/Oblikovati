@@ -3,6 +3,9 @@
 package ops
 
 import (
+	"fmt"
+
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -26,6 +29,19 @@ func SplitSolidByPlane(body *topo.Body, plane geom.Plane) ([]*topo.Body, error) 
 		}
 	}
 	return pieces, nil
+}
+
+// SplitFacesByPlane imprints the plane's section curves onto the body's faces (the
+// reference's Split Faces mode, #330): faces crossing the plane split along it, NO material
+// is removed, and the volume is unchanged. Built on the body imprint (M07) against a
+// half-space box whose near face lies exactly on the plane.
+func SplitFacesByPlane(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
+	tool := halfSpaceBox(plane, splitExtent(body, plane.Origin), true)
+	ra, _, err := brep.ImprintBodies(body, tool)
+	if err != nil {
+		return nil, fmt.Errorf("split faces: %w", err)
+	}
+	return ra.Body, nil
 }
 
 // splitExtent returns a half-width large enough for a cutting half-space anchored at the plane

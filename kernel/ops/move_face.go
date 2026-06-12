@@ -43,8 +43,34 @@ func OffsetFaces(solid *topo.Body, faceKeys [][]byte, dist float64) (*topo.Body,
 	}), nil
 }
 
+// RotateFaces rotates the selected faces' planes by angle about an axis (point + unit
+// direction), retrimming the neighbours — the rotate arm of the move-face direct edit
+// (#331). Same contract as [MoveFaces]: topology is preserved, so a rotation large enough
+// to collapse or invert a face is a follow-up needing retopology.
+func RotateFaces(solid *topo.Body, faceKeys [][]byte, axisPoint math.Point3, axisDir math.UnitVector3, angle float64) (*topo.Body, error) {
+	sel, err := resolveFaceSet(solid, faceKeys)
+	if err != nil {
+		return nil, err
+	}
+	rot := math.Rotation4(angle, axisDir, axisPoint)
+	return rebuildWithPlanes(solid, "rotate-face", func(f *topo.Face) geom.Plane {
+		pl := f.Geometry().(geom.Plane)
+		if !sel[f.ID()] {
+			return pl
+		}
+		return rotatePlane(pl, rot)
+	}), nil
+}
+
 // shiftPlane returns the plane translated by delta (origin moved, basis/normal unchanged).
 func shiftPlane(pl geom.Plane, delta math.Vector3) geom.Plane {
 	moved, _ := geom.NewPlaneFromAxes(pl.Origin.TranslateBy(delta), pl.UAxis.AsVector(), pl.VAxis.AsVector())
+	return moved
+}
+
+// rotatePlane returns the plane mapped through the rotation (origin and basis rotated).
+func rotatePlane(pl geom.Plane, rot math.Matrix4) geom.Plane {
+	moved, _ := geom.NewPlaneFromAxes(rot.TransformPoint(pl.Origin),
+		rot.TransformVector(pl.UAxis.AsVector()), rot.TransformVector(pl.VAxis.AsVector()))
 	return moved
 }

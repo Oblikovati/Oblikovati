@@ -83,6 +83,8 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodModelTree] = modelTree
 	r.handlers[wire.MethodModelSelection] = modelSelection
 	r.handlers[wire.MethodModelReferenceKeys] = referenceKeys
+	r.handlers[wire.MethodThreadsTableQuery] = threadsTableQuery
+	r.handlers[wire.MethodThreadsResolve] = threadsResolve
 	r.registerSketchHandlers()
 	r.registerFeatureHandlers()
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes

@@ -13,10 +13,10 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-func TestHoleGeneratesRealGeometryBossDefers(t *testing.T) {
-	// A drilled hole now generates real geometry (healthy). Each feature is tested on its
-	// own body: a boolean rebuilds the topology with new lineage, so a reference to a
-	// pre-cut face does not survive (chaining across a boolean is a follow-up).
+func TestHoleAndBossGenerateRealGeometry(t *testing.T) {
+	// A drilled hole and a boss both generate real geometry (healthy). Each feature is
+	// tested on its own body: a boolean rebuilds the topology with new lineage, so a
+	// reference to a pre-cut face does not survive (chaining across a boolean is a follow-up).
 	hb := prismBody()
 	fsHole := NewPartFeatures(nil, nil)
 	NewBaseFeatures(fsHole).AddBase(hb)
@@ -31,13 +31,75 @@ func TestHoleGeneratesRealGeometryBossDefers(t *testing.T) {
 	NewBaseFeatures(fsBoss).AddBase(bb)
 	boss := NewBossFeatures(fsBoss).Add(bb.Faces()[0].ReferenceKey(), func() float64 { return 0.5 }, func() float64 { return 1 })
 	fsBoss.Recompute()
-	if boss.Health().Status != health.Warning {
-		t.Errorf("boss health = %v, want warning (geometry deferred)", boss.Health().Status)
+	if !boss.Health().OK() {
+		t.Errorf("boss health = %v, want OK (real stud, #327)", boss.Health())
 	}
 
 	tapped := NewHoleFeatures(NewPartFeatures(nil, nil)).AddTapped([]byte("f"), func() float64 { return 0.2 }, func() float64 { return 0.4 }, "M5x0.8")
 	if tap := tapped.Definition().(*HoleFeature).Definition().Tap; !tap.Tapped || tap.Designation != "M5x0.8" {
 		t.Errorf("tap info = %+v, want tapped M5x0.8", tap)
+	}
+}
+
+// TestBossRaisesStudOfExactVolume: a boss on a block's top adds exactly the stud's prism
+// volume (the entry overhang overlaps the block, so it adds nothing) — #327.
+func TestBossRaisesStudOfExactVolume(t *testing.T) {
+	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
+	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
+
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(block)
+	boss := NewBossFeatures(fs).Add(top, func() float64 { return 1 }, func() float64 { return 1.5 })
+	fs.Recompute()
+	if !boss.Health().OK() {
+		t.Fatalf("boss sick: %+v", boss.Health())
+	}
+	res := fs.Result()
+	if len(res) != 1 {
+		t.Fatalf("boss result = %d bodies, want 1 (joined)", len(res))
+	}
+	if r := ops.Validate(res[0]); !r.Valid || !res[0].IsSolid() {
+		t.Fatalf("bossed body not a valid solid: %+v", r)
+	}
+	want := 32 + regularPolygonArea(0.5, holeFacets)*1.5
+	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+		t.Errorf("bossed volume = %g, want %g (block + Ø1×1.5 stud)", got, want)
+	}
+}
+
+// TestBossLostFaceSick: a boss whose placement face vanished goes Sick.
+func TestBossLostFaceSick(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(prismBody())
+	boss := NewBossFeatures(fs).Add([]byte("gone"), func() float64 { return 1 }, func() float64 { return 1 })
+	fs.Recompute()
+	if boss.Health().Status != health.Sick {
+		t.Errorf("boss health = %v, want Sick (lost placement face)", boss.Health().Status)
+	}
+}
+
+// TestPatternOfBossReplicatesStuds: a rectangular pattern of a boss re-joins the clean stud
+// (ToolBody) at each occurrence — one body whose volume grows by N−1 extra studs.
+func TestPatternOfBossReplicatesStuds(t *testing.T) {
+	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 4, Y: 4}, {X: 0, Y: 4}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
+	top := block.Faces()[1].ReferenceKey()
+
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(block)
+	boss := NewBossFeatures(fs).Add(top, func() float64 { return 1 }, func() float64 { return 1.5 })
+	// Step 1.2 keeps the copy fully on the block (a step to the rim would leave half the
+	// entry overhang unsupported and add half a sliver of volume).
+	NewPatternFeatures(fs).AddRectangular([]ID{boss.ID()},
+		func() int { return 2 }, func() int { return 1 }, math.V3(1.2, 0, 0), noStep)
+	fs.Recompute()
+	res := fs.Result()
+	if len(res) != 1 {
+		t.Fatalf("pattern of a boss → %d bodies, want 1", len(res))
+	}
+	stud := regularPolygonArea(0.5, holeFacets) * 1.5
+	want := 32 + 2*stud
+	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-6 {
+		t.Errorf("patterned-boss volume = %g, want %g (block + 2 studs)", got, want)
 	}
 }
 

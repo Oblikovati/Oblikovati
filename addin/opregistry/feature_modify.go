@@ -5,8 +5,10 @@ package opregistry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -58,12 +60,16 @@ func applyCombine(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 // --- thicken ---------------------------------------------------------------
 
 type thickenArgs struct {
-	Thickness string `json:"thickness"`
+	Thickness     string `json:"thickness"`
+	Approximation string `json:"approximation,omitempty"`
 }
 
 const thickenSchema = `{
   "type": "object",
-  "properties": {"thickness": {"type": "string", "description": "Wall thickness to add to the surface body, e.g. \"2 mm\"."}},
+  "properties": {
+    "thickness": {"type": "string", "description": "Wall thickness to add to the surface body, e.g. \"2 mm\"."},
+    "approximation": {"type": "string", "enum": ["none", "mean", "neverTooThick", "neverTooThin"], "description": "Accepted approximation (#331 parity); the kernel computes the exact offset, which satisfies every bound."}
+  },
   "required": ["thickness"]
 }`
 
@@ -84,8 +90,25 @@ func applyThicken(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
+	approx, err := approximationArg(in.Approximation, "thicken")
+	if err != nil {
+		return nil, err
+	}
 	pf := feature.NewModifyFeatures(part.Features()).AddThickenFn(th)
+	pf.Definition().(*feature.ThickenFeature).SetApproximation(approx)
 	return recomputeResult(part, pf)
+}
+
+// approximationArg parses the optional #331 approximation spelling (empty = none/exact).
+func approximationArg(s, op string) (types.FeatureApproximationType, error) {
+	if s == "" {
+		return 0, nil
+	}
+	a, ok := types.ParseFeatureApproximationType(s)
+	if !ok {
+		return 0, fmt.Errorf("%s: unknown approximation %q (want none/mean/neverTooThick/neverTooThin)", op, s)
+	}
+	return a, nil
 }
 
 // --- trim ------------------------------------------------------------------
@@ -134,25 +157,33 @@ func applyTrim(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 // --- face direct edits (move / offset / delete / split) --------------------
 
 type faceEditArgs struct {
-	FaceRefs    []string  `json:"faceRefs"`
-	Translation []float64 `json:"translation,omitempty"` // moveFace
-	Distance    string    `json:"distance,omitempty"`    // faceOffset
+	FaceRefs      []string  `json:"faceRefs"`
+	Translation   []float64 `json:"translation,omitempty"`   // moveFace translate
+	AxisPoint     []float64 `json:"axisPoint,omitempty"`     // moveFace rotate (#331)
+	AxisDir       []float64 `json:"axisDir,omitempty"`       // moveFace rotate
+	Angle         string    `json:"angle,omitempty"`         // moveFace rotate
+	Distance      string    `json:"distance,omitempty"`      // faceOffset
+	Approximation string    `json:"approximation,omitempty"` // faceOffset (#331)
 }
 
 const moveFaceSchema = `{
   "type": "object",
   "properties": {
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to move (get_reference_keys)."},
-    "translation": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Move vector [x,y,z] in cm."}
+    "translation": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Translate mode: move vector [x,y,z] in cm."},
+    "axisPoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Rotate mode: a point on the rotation axis [x,y,z] in cm."},
+    "axisDir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Rotate mode: the rotation axis direction [x,y,z]."},
+    "angle": {"type": "string", "description": "Rotate mode: rotation angle with units, e.g. \"10 deg\"."}
   },
-  "required": ["faceRefs", "translation"]
+  "required": ["faceRefs"]
 }`
 
 const faceOffsetSchema = `{
   "type": "object",
   "properties": {
     "faceRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the faces to offset (get_reference_keys)."},
-    "distance": {"type": "string", "description": "Offset distance with units, e.g. \"2 mm\"."}
+    "distance": {"type": "string", "description": "Offset distance with units, e.g. \"2 mm\"."},
+    "approximation": {"type": "string", "enum": ["none", "mean", "neverTooThick", "neverTooThin"], "description": "Accepted approximation (#331 parity); the kernel computes the exact offset, which satisfies every bound."}
   },
   "required": ["faceRefs", "distance"]
 }`
@@ -190,11 +221,32 @@ func applyMoveFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	if err != nil {
 		return nil, err
 	}
+	if in.Angle != "" || len(in.AxisDir) > 0 {
+		return applyMoveFaceRotate(part, in)
+	}
 	t, err := vec3(in.Translation, "moveFace: translation")
 	if err != nil {
 		return nil, err
 	}
 	pf := feature.NewModifyFeatures(part.Features()).AddMoveFace(refKeys(in.FaceRefs), t)
+	return recomputeResult(part, pf)
+}
+
+// applyMoveFaceRotate is the rotate arm (#331): axisPoint + axisDir + angle.
+func applyMoveFaceRotate(part *compdef.PartComponentDefinition, in faceEditArgs) (json.RawMessage, error) {
+	p, err := point3(in.AxisPoint, "moveFace: axisPoint")
+	if err != nil {
+		return nil, err
+	}
+	dir, err := vec3(in.AxisDir, "moveFace: axisDir")
+	if err != nil {
+		return nil, err
+	}
+	angle, err := angleClosure(part, in.Angle, "moveFace: angle")
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewModifyFeatures(part.Features()).AddMoveFaceRotate(refKeys(in.FaceRefs), p, dir, angle)
 	return recomputeResult(part, pf)
 }
 
@@ -207,7 +259,11 @@ func applyFaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewModifyFeatures(part.Features()).AddFaceOffsetFn(refKeys(in.FaceRefs), d)
+	approx, err := approximationArg(in.Approximation, "faceOffset")
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewModifyFeatures(part.Features()).AddFaceOffsetApprox(refKeys(in.FaceRefs), d, approx)
 	return recomputeResult(part, pf)
 }
 

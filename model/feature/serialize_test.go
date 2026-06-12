@@ -5,6 +5,7 @@ package feature
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -411,5 +412,40 @@ func TestUncodedFeatureErrorsRatherThanDrops(t *testing.T) {
 	fs.Add(fakeFeature{})
 	if _, err := fs.MarshalRecipe(oneSketch{}); err == nil {
 		t.Error("MarshalRecipe silently accepted a feature with no codec; it must error")
+	}
+}
+
+// TestThreadParityFieldsRoundTrip: the #325 thread fields (class / tapered /
+// modelDiameter) survive the recipe codec, and a legacy thread without them
+// restores with the defaults.
+func TestThreadParityFieldsRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewDressUpFeatures(fs).AddThreadDef(&ThreadDefinition{
+		FaceKey: []byte("face-1"), Designation: "M8x1.25", Cut: false,
+		Class: "6H", Tapered: true, ModelDiameter: types.ThreadTapDrillDiameter,
+	})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if d := data[0].Thread; d.Class != "6H" || !d.Tapered || d.ModelDiameter != "tapDrill" {
+		t.Fatalf("serialized thread = %+v, want class/tapered/modelDiameter carried", d)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	def := fresh.Item(0).Definition().(*ThreadFeature).Definition()
+	if def.Class != "6H" || !def.Tapered || def.ModelDiameter != types.ThreadTapDrillDiameter {
+		t.Errorf("restored thread = %+v, want the parity fields back", def)
+	}
+
+	legacy := []FeatureData{{Kind: "thread", Thread: &ThreadData{Face: "ZmFjZQ==", Designation: "M6x1"}}}
+	old := NewPartFeatures(nil, nil)
+	if err := old.ApplyRecipe(legacy, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe(legacy): %v", err)
+	}
+	if d := old.Item(0).Definition().(*ThreadFeature).Definition(); d.Class != "" || d.Tapered || d.ModelDiameter != 0 {
+		t.Errorf("legacy thread restored with non-defaults: %+v", d)
 	}
 }

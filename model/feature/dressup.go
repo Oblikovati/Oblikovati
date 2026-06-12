@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -21,13 +22,34 @@ import (
 // (rolling-ball fillets), so once inputs resolve these features report
 // [ErrDeferred] (→ health.Warning) and pass the body through unchanged.
 
-// FilletDefinition rounds selected edges to a radius.
+// FilletEdgeSet is one edge set of a fillet definition (the reference's
+// FilletConstantRadiusEdgeSet / FilletVariableRadiusEdgeSet): a constant Radius over the
+// whole set, or — when Radius is nil — a variable StartRadius→EndRadius over a single edge
+// (radius runs linearly from the edge's start vertex to its end vertex).
+type FilletEdgeSet struct {
+	EdgeKeys    [][]byte
+	Radius      func() float64
+	StartRadius func() float64
+	EndRadius   func() float64
+}
+
+// variable reports whether the set carries a start→end radius instead of a constant one.
+func (s FilletEdgeSet) variable() bool { return s.Radius == nil }
+
+// FilletDefinition rounds selected edges. EdgeKeys+Radius is the original single
+// constant-radius form; EdgeSets (when non-empty) takes precedence and carries any mix of
+// constant and variable sets (#323).
 type FilletDefinition struct {
 	EdgeKeys [][]byte
 	Radius   func() float64
+	EdgeSets []FilletEdgeSet
 }
 
-// FilletFeature is a constant-radius edge fillet.
+// FilletType reports the definition's discriminator: always an edge fillet for now (the
+// reference's face and full-round fillets are follow-ups tracked on #323).
+func (d *FilletDefinition) FilletType() types.FilletType { return types.EdgeFillet }
+
+// FilletFeature is an edge fillet over one or more constant/variable radius edge sets.
 type FilletFeature struct{ def *FilletDefinition }
 
 // Definition returns the fillet recipe.
@@ -37,8 +59,11 @@ func (f *FilletFeature) Definition() *FilletDefinition { return f.def }
 func (f *FilletFeature) Kind() string { return "fillet" }
 
 // Recompute rounds the picked convex edges on the running body with a real rolling-ball
-// blend (cylinder faces). See fillet.go.
+// blend (cylinder faces; planar ruling strips for variable sets). See fillet.go.
 func (f *FilletFeature) Recompute(in Input) (Output, error) {
+	if len(f.def.EdgeSets) > 0 {
+		return filletBodySets(in, f.def.EdgeSets, "fillet")
+	}
 	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), "fillet")
 }
 
@@ -107,10 +132,17 @@ func (d *FaceDraftFeature) Recompute(in Input) (Output, error) {
 
 // ThreadDefinition applies thread data to a cylindrical face. Cut=false is a cosmetic thread
 // (data + display, solid unchanged); Cut=true models a real thread (a helical groove cut).
+// Class, Tapered, and ModelDiameter are the #325 parity fields: the tolerance class recorded
+// on the spec, the pipe-thread flag (the reference's TaperedThreadInfo split — data-only, a
+// cut tapered thread needs a conical face and errors), and which thread diameter the modeled
+// cylindrical face represents (zero value = major, the common case).
 type ThreadDefinition struct {
-	FaceKey     []byte
-	Designation string
-	Cut         bool
+	FaceKey       []byte
+	Designation   string
+	Cut           bool
+	Class         string
+	Tapered       bool
+	ModelDiameter types.ModelDiameterFromThread
 }
 
 // ThreadFeature tags a cylindrical face with a cosmetic thread (Inventor's ThreadFeature): it
@@ -129,11 +161,20 @@ func (t *ThreadFeature) Spec() *ThreadSpec { return t.spec }
 
 // Recompute parses the designation, binds the cylindrical face, records the thread spec, and
 // passes the (unchanged) solid through. A bad designation, a lost face, or a non-cylindrical
-// face makes the feature Sick.
+// face makes the feature Sick — as does cutting a tapered (pipe) thread, which would need a
+// conical face the feature doesn't model yet.
 func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	spec, err := ParseThreadDesignation(t.def.Designation)
 	if err != nil {
 		return Output{}, err
+	}
+	spec.Class, spec.Tapered = t.def.Class, t.def.Tapered
+	spec.ModelDiameter = t.def.ModelDiameter
+	if spec.ModelDiameter == 0 {
+		spec.ModelDiameter = types.ThreadMajorDiameter
+	}
+	if t.def.Tapered && t.def.Cut {
+		return Output{}, fmt.Errorf("thread %q: a cut tapered (pipe) thread needs a conical face; model it cosmetic", t.def.Designation)
 	}
 	body, err := runningBody(in)
 	if err != nil {
@@ -205,6 +246,12 @@ func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *P
 	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius}})
 }
 
+// AddFilletSets rounds any mix of constant and variable radius edge sets in one feature
+// (the reference's FilletDefinition edge-set model, #323).
+func (c *DressUpFeatures) AddFilletSets(sets []FilletEdgeSet) *PartFeature {
+	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeSets: sets}})
+}
+
 // AddChamfer bevels the given edges by distance, blending three-edge corners flat (the
 // default treatment). Use [AddChamferCorners] to choose the pointy corner instead.
 func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64) *PartFeature {
@@ -243,5 +290,10 @@ func (c *DressUpFeatures) AddDraftPull(faceKeys [][]byte, pull math.Vector3, ang
 // AddThread tags a cylindrical face with thread data; cut=true models a real (cut) thread,
 // cut=false a cosmetic one.
 func (c *DressUpFeatures) AddThread(faceKey []byte, designation string, cut bool) *PartFeature {
-	return c.engine.Add(&ThreadFeature{def: &ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut}})
+	return c.AddThreadDef(&ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut})
+}
+
+// AddThreadDef adds a thread from a full definition (class / tapered / model diameter, #325).
+func (c *DressUpFeatures) AddThreadDef(def *ThreadDefinition) *PartFeature {
+	return c.engine.Add(&ThreadFeature{def: def})
 }

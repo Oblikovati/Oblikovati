@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -82,13 +83,23 @@ func (f *faceEditFeature) FaceKeys() [][]byte { return f.faceKeys }
 type SplitFeature struct{ faceEditFeature }
 
 // ThickenFeature turns the running surface (sheet) body into a solid of a wall thickness.
-type ThickenFeature struct{ thickness func() float64 }
+// Approximation mirrors FaceOffsetFeature's (#331): carried, exact path computed.
+type ThickenFeature struct {
+	thickness     func() float64
+	approximation types.FeatureApproximationType
+}
 
 // Kind implements [Feature].
 func (f *ThickenFeature) Kind() string { return "thicken" }
 
 // Thickness returns the wall thickness (for the UI / serialization).
 func (f *ThickenFeature) Thickness() float64 { return f.thickness() }
+
+// Approximation returns the requested approximation (zero value = none/exact).
+func (f *ThickenFeature) Approximation() types.FeatureApproximationType { return f.approximation }
+
+// SetApproximation records the approximation request (the kernel still computes exact).
+func (f *ThickenFeature) SetApproximation(a types.FeatureApproximationType) { f.approximation = a }
 
 // Recompute thickens the running surface body into a solid (see kernel/ops/thicken.go); a
 // non-surface or non-thickenable body makes the feature go Sick.
@@ -134,30 +145,57 @@ func (f *DeleteFaceFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, ops.DeleteFaces)
 }
 
-// MoveFaceFeature translates the picked faces by a vector, retrimming the neighbours.
+// MoveFaceFeature translates the picked faces by a vector — or, in rotate mode (#331),
+// rotates them about an axis — retrimming the neighbours.
 type MoveFaceFeature struct {
 	faceEditFeature
 	translation math.Vector3
+	axisPoint   math.Point3
+	axisDir     math.Vector3 // zero = translate mode
+	angle       func() float64
 }
 
 // Translation returns the move-face displacement (for the UI / serialization).
 func (f *MoveFaceFeature) Translation() math.Vector3 { return f.translation }
 
-// Recompute moves the picked faces on the running body (see kernel/ops/move_face.go).
+// Rotation returns the rotate-mode axis and angle; rotating reports false in translate mode.
+func (f *MoveFaceFeature) Rotation() (point math.Point3, dir math.Vector3, angle float64, rotating bool) {
+	if f.angle == nil {
+		return math.Point3{}, math.Vector3{}, 0, false
+	}
+	return f.axisPoint, f.axisDir, f.angle(), true
+}
+
+// Recompute moves (or rotates) the picked faces on the running body (see
+// kernel/ops/move_face.go).
 func (f *MoveFaceFeature) Recompute(in Input) (Output, error) {
 	return retopoFacesBody(in, f.faceKeys, f.kind, func(b *topo.Body, keys [][]byte) (*topo.Body, error) {
-		return ops.MoveFaces(b, keys, f.translation)
+		if f.angle == nil {
+			return ops.MoveFaces(b, keys, f.translation)
+		}
+		dir, err := math.UnitVector3FromVector(f.axisDir)
+		if err != nil {
+			return nil, fmt.Errorf("rotate axis %v is degenerate", f.axisDir)
+		}
+		return ops.RotateFaces(b, keys, f.axisPoint, dir, f.angle())
 	})
 }
 
 // FaceOffsetFeature moves the picked faces along their own normals by a distance.
+// Approximation is the #331 parity input: the kernel computes the EXACT offset, which
+// satisfies every approximation bound, so the choice is carried for the API/UI without
+// changing geometry.
 type FaceOffsetFeature struct {
 	faceEditFeature
-	distance func() float64
+	distance      func() float64
+	approximation types.FeatureApproximationType
 }
 
 // Distance returns the face-offset distance (for the UI / serialization).
 func (f *FaceOffsetFeature) Distance() float64 { return f.distance() }
+
+// Approximation returns the requested approximation (zero value = none/exact).
+func (f *FaceOffsetFeature) Approximation() types.FeatureApproximationType { return f.approximation }
 
 // Recompute offsets the picked faces on the running body (see kernel/ops/move_face.go).
 func (f *FaceOffsetFeature) Recompute(in Input) (Output, error) {
@@ -201,6 +239,15 @@ func (c *ModifyFeatures) AddMoveFace(faceKeys [][]byte, translation math.Vector3
 	return c.engine.Add(&MoveFaceFeature{faceEditFeature: faceEditFeature{kind: "move-face", faceKeys: faceKeys}, translation: translation})
 }
 
+// AddMoveFaceRotate is the rotate arm of move-face (#331): the picked faces rotate by angle
+// about the axis (point + direction).
+func (c *ModifyFeatures) AddMoveFaceRotate(faceKeys [][]byte, axisPoint math.Point3, axisDir math.Vector3, angle func() float64) *PartFeature {
+	return c.engine.Add(&MoveFaceFeature{
+		faceEditFeature: faceEditFeature{kind: "move-face", faceKeys: faceKeys},
+		axisPoint:       axisPoint, axisDir: axisDir, angle: angle,
+	})
+}
+
 func (c *ModifyFeatures) AddFaceOffset(faceKeys [][]byte, distance float64) *PartFeature {
 	return c.AddFaceOffsetFn(faceKeys, constFloat(distance))
 }
@@ -208,6 +255,15 @@ func (c *ModifyFeatures) AddFaceOffset(faceKeys [][]byte, distance float64) *Par
 // AddFaceOffsetFn is AddFaceOffset with a live (parameter-driven) distance.
 func (c *ModifyFeatures) AddFaceOffsetFn(faceKeys [][]byte, distance func() float64) *PartFeature {
 	return c.engine.Add(&FaceOffsetFeature{faceEditFeature: faceEditFeature{kind: "face-offset", faceKeys: faceKeys}, distance: distance})
+}
+
+// AddFaceOffsetApprox is AddFaceOffsetFn carrying the #331 approximation request (the kernel
+// computes the exact offset, which satisfies every approximation bound).
+func (c *ModifyFeatures) AddFaceOffsetApprox(faceKeys [][]byte, distance func() float64, approx types.FeatureApproximationType) *PartFeature {
+	return c.engine.Add(&FaceOffsetFeature{
+		faceEditFeature: faceEditFeature{kind: "face-offset", faceKeys: faceKeys},
+		distance:        distance, approximation: approx,
+	})
 }
 
 func (c *ModifyFeatures) AddDeleteFace(faceKeys [][]byte) *PartFeature {

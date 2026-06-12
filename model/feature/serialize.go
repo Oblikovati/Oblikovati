@@ -36,6 +36,7 @@ type FeatureData struct {
 	Emboss     *EmbossData     `yaml:"emboss,omitempty"`
 	Combine    *CombineData    `yaml:"combine,omitempty"`
 	SplitSolid *SplitSolidData `yaml:"splitSolid,omitempty"`
+	DirectEdit *DirectEditData `yaml:"directEdit,omitempty"`
 
 	RectPattern   *RectPatternData         `yaml:"rectangularPattern,omitempty"`
 	CircPattern   *CircPatternData         `yaml:"circularPattern,omitempty"`
@@ -102,6 +103,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		}
 		fd.Extrude = ed
 	case *FilletFeature:
+		if len(f.def.EdgeSets) > 0 {
+			fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(f.def.EdgeSets)}
+			break
+		}
 		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius)}
 	case *ChamferFeature:
 		flat := f.def.FlatCorners
@@ -112,7 +117,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		p := f.def.PullDir
 		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle), Pull: []float64{p.X, p.Y, p.Z}}
 	case *ThreadFeature:
-		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut}
+		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut,
+			Class: f.def.Class, Tapered: f.def.Tapered, ModelDiameter: threadModelDiameterName(f.def.ModelDiameter)}
 	case *HoleFeature:
 		h, err := serializeHole(f.def)
 		if err != nil {
@@ -228,15 +234,17 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Finish = &FinishData{Faces: encodeKeys(f.def.FaceKeys), Spec: f.def.Spec}
 	case *ImportedBodyFeature:
 		fd.Import = serializeImportedBody(f)
+	case *DirectEditFeature:
+		fd.DirectEdit = serializeDirectEdit(f.def)
 	case *MoveFaceFeature:
-		t := f.Translation()
-		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Translation: []float64{t.X, t.Y, t.Z}}
+		fd.FaceEdit = serializeMoveFace(f)
 	case *FaceOffsetFeature:
-		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Distance: f.Distance()}
+		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Distance: f.Distance(),
+			Approximation: approximationName(f.Approximation())}
 	case *ReplaceFaceFeature:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Target: encodeKey(f.TargetKey())}
 	case *ThickenFeature:
-		fd.Thicken = &ThickenData{Value: f.Thickness()}
+		fd.Thicken = &ThickenData{Value: f.Thickness(), Approximation: approximationName(f.Approximation())}
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:
@@ -272,6 +280,13 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 	case "extrude":
 		return requireExtrude(fs, fd.Extrude, sk, work)
 	case "fillet":
+		if fd.Fillet != nil && len(fd.Fillet.Sets) > 0 {
+			sets, err := restoreFilletSets(fd.Fillet.Sets)
+			if err != nil {
+				return nil, err
+			}
+			return du.AddFilletSets(sets), nil
+		}
 		d, err := requireEdgeDress(fd.Fillet, "fillet")
 		if err != nil {
 			return nil, err
@@ -303,13 +318,20 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		return du.AddThread(key, fd.Thread.Designation, fd.Thread.Cut), nil
+		md, err := threadModelDiameterOf(fd.Thread.ModelDiameter)
+		if err != nil {
+			return nil, err
+		}
+		return du.AddThreadDef(&ThreadDefinition{FaceKey: key, Designation: fd.Thread.Designation,
+			Cut: fd.Thread.Cut, Class: fd.Thread.Class, Tapered: fd.Thread.Tapered, ModelDiameter: md}), nil
 	case "hole":
 		return restoreHole(fs, fd.Hole)
 	case "boss":
 		return restoreBoss(fs, fd.Boss)
 	case "combine":
 		return restoreCombine(fs, fd.Combine)
+	case "directEdit":
+		return restoreDirectEdit(fs, fd.DirectEdit)
 	case "rectangular-pattern":
 		return restoreRectPattern(fs, fd.RectPattern, restored)
 	case "circular-pattern":
@@ -328,7 +350,13 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if fd.Thicken == nil {
 			return nil, fmt.Errorf("thicken feature is missing its payload")
 		}
-		return NewModifyFeatures(fs).AddThicken(fd.Thicken.Value), nil
+		approx, err := approximationOf(fd.Thicken.Approximation)
+		if err != nil {
+			return nil, err
+		}
+		pf := NewModifyFeatures(fs).AddThicken(fd.Thicken.Value)
+		pf.Definition().(*ThickenFeature).SetApproximation(approx)
+		return pf, nil
 	case "revolve":
 		return restoreRevolve(fs, fd.Revolve, sk, work)
 	case "coil":

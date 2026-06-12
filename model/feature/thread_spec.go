@@ -6,19 +6,40 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"oblikovati.org/api/types"
 )
 
-// ThreadSpec is the resolved geometry of a thread designation (the cosmetic-thread data
-// Inventor records on a face): pitch and the major/minor diameters, handedness, and whether it
-// is an internal (hole) or external (shaft) thread. A cosmetic thread does not cut the solid;
-// this is the data that drives the thread display and downstream fit checks.
+// ThreadSpec is the resolved geometry of a thread designation (the cosmetic-thread data the
+// reference records on a face): pitch and the basic-profile diameters, handedness, the
+// tolerance class, and whether it is an internal (hole) or external (shaft) thread. A
+// cosmetic thread does not cut the solid; this is the data that drives the thread display,
+// hole tables (M14), and downstream fit checks — one source of truth per the #325 audit.
 type ThreadSpec struct {
-	Designation   string
-	Pitch         float64 // mm between crests
-	MajorDiameter float64 // mm (nominal)
-	MinorDiameter float64 // mm (root)
-	Internal      bool
-	RightHanded   bool
+	Designation      string
+	ThreadType       string  // catalog standard ("ISO" for metric, "ANSI" for Unified inch)
+	NominalSize      string  // "M8", "1/4", "#8"
+	Class            string  // tolerance class ("6H", "2A", …); empty = unspecified
+	Pitch            float64 // mm between crests
+	MajorDiameter    float64 // mm (nominal)
+	MinorDiameter    float64 // mm (root, ISO basic d − 1.0825·P)
+	PitchDiameter    float64 // mm (ISO basic d − 0.6495·P)
+	TapDrillDiameter float64 // mm (standard tap drill, d − P)
+	Metric           bool
+	Internal         bool
+	RightHanded      bool
+	Tapered          bool // pipe thread (the reference's TaperedThreadInfo split)
+	// ModelDiameter declares which thread diameter the modeled cylindrical face
+	// represents (major when unset) — consumed by drawings/hole tables, not geometry.
+	ModelDiameter types.ModelDiameterFromThread
+}
+
+// fillDerivedDiameters computes the ISO-basic pitch diameter and the standard tap drill from
+// the major diameter and pitch (shared by the metric and Unified parsers — the Unified basic
+// profile uses the same 60° relations, in mm).
+func (s *ThreadSpec) fillDerivedDiameters() {
+	s.PitchDiameter = s.MajorDiameter - 0.6495*s.Pitch
+	s.TapDrillDiameter = s.MajorDiameter - s.Pitch
 }
 
 // coarsePitch is the ISO metric coarse-pitch table for common nominal diameters (mm).
@@ -78,6 +99,8 @@ func parseImperial(body string, spec ThreadSpec) (ThreadSpec, error) {
 	if spec.MinorDiameter <= 0 {
 		return ThreadSpec{}, fmt.Errorf("thread: %s too coarse (minor diameter ≤ 0)", spec.Designation)
 	}
+	spec.ThreadType, spec.NominalSize = string(StandardANSI), sizeStr
+	spec.fillDerivedDiameters()
 	return spec, nil
 }
 
@@ -95,6 +118,8 @@ func parseMetric(body string, spec ThreadSpec) (ThreadSpec, error) {
 	if spec.MinorDiameter <= 0 {
 		return ThreadSpec{}, fmt.Errorf("thread: pitch %g too coarse for M%g (minor diameter ≤ 0)", spec.Pitch, major)
 	}
+	spec.Metric, spec.ThreadType, spec.NominalSize = true, string(StandardISO), fmt.Sprintf("M%g", major)
+	spec.fillDerivedDiameters()
 	return spec, nil
 }
 
