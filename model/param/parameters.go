@@ -183,7 +183,11 @@ func (ps *Parameters) add(name string, kind ParameterKind) (*Parameter, error) {
 	if _, exists := ps.byName[name]; exists {
 		return nil, fmt.Errorf("param: a parameter named %q already exists", name)
 	}
-	p := &Parameter{id: ps.nextID, name: name, kind: kind, Visible: true}
+	p := &Parameter{
+		id: ps.nextID, name: name, kind: kind, Visible: true,
+		DisplayFormat: DisplayFormatDecimal, modelValueType: Nominal,
+		CustomProperty: DefaultCustomPropertyFormat(),
+	}
 	ps.nextID++
 	ps.byID[p.id] = p
 	ps.byName[name] = p.id

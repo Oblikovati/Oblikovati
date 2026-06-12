@@ -89,6 +89,13 @@ func (s *Session) recordEdit(part *compdef.PartComponentDefinition, label string
 	dh.snapshot = after
 }
 
+// RecordAddInEdit finalizes a router-applied mutation as one undo step: the
+// add-in wire path has no interactive tool to call recordEdit, so its handlers
+// call this exported seam after their recompute (M02-F08, Oblikovati#607).
+func (s *Session) RecordAddInEdit(part *compdef.PartComponentDefinition, label string) {
+	s.recordEdit(part, label)
+}
+
 // ErrNoOpenTransaction is returned by EndTransaction when no bounded transaction is open.
 var ErrNoOpenTransaction = errors.New("app: no open transaction to end")
 

@@ -2,9 +2,12 @@
 
 package param
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
-// Multi-value parameters (Inventor's ExpressionList): a parameter can offer a fixed list
+// Multi-value parameters (the reference API's ExpressionList): a parameter can offer a fixed list
 // of allowed expressions chosen from a dropdown, optionally accepting one custom value
 // outside the list. The current selection is just the parameter's expression — the
 // dropdown the UI shows is the list plus the current value when it is a custom one, so
@@ -12,20 +15,35 @@ import "fmt"
 
 // SetExpressionList makes the parameter multi-value with the given choices. allowCustom
 // permits selecting a value outside the list. An empty list clears the multi-value state.
-// It does not change the current value.
+// It does not change the current value. The authored order is kept (CustomOrder becomes
+// true, per the reference ExpressionList); SetCustomOrder(false) re-enables sorting.
 func (p *Parameter) SetExpressionList(list []string, allowCustom bool) error {
 	if !p.kind.Editable() {
 		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
 	}
 	p.exprList = append([]string(nil), list...)
 	p.allowCustom = allowCustom && len(list) > 0
+	p.customOrder = len(list) > 0
 	return nil
 }
 
 // ClearExpressionList drops the multi-value choices, returning the parameter to a plain
 // single value (its current value is kept).
 func (p *Parameter) ClearExpressionList() {
-	p.exprList, p.allowCustom = nil, false
+	p.exprList, p.allowCustom, p.customOrder = nil, false, false
+}
+
+// CustomOrder reports whether the multi-value choices stay in authored order
+// (true) instead of being kept sorted (false).
+func (p *Parameter) CustomOrder() bool { return p.customOrder }
+
+// SetCustomOrder toggles authored-order presentation; turning it off sorts the
+// current choices alphabetically (the reference behavior of CustomOrder=False).
+func (p *Parameter) SetCustomOrder(custom bool) {
+	p.customOrder = custom && p.IsMultiValue()
+	if !custom {
+		sort.Strings(p.exprList)
+	}
 }
 
 // ExpressionList returns the multi-value choices (empty when single-valued).

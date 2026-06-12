@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -177,7 +178,11 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 
 	num, _ := ps.AddUserParameter("len", "10 mm")
 	num.Comment, num.IsKey, num.ExposedAsProperty = "the length", true, true
-	num.SetTolerance(param.Tolerance{Upper: 0.01, Lower: -0.02, Type: param.Median})
+	_ = num.SetToleranceDeviation(0.01, -0.02)
+	_ = num.SetModelValueType(param.Median)
+	num.DisplayFormat = param.DisplayFormatFractional
+	num.Visible = false
+	num.CustomProperty.PropertyType, num.CustomProperty.ShowTrailingZeros = types.CustomPropertyNumber, true
 	_ = num.SetExpressionList([]string{"10 mm", "20 mm"}, true)
 	txt, _ := ps.AddTextUserParameter("material", "steel")
 	flag, _ := ps.AddBooleanUserParameter("vented", true)
@@ -190,8 +195,20 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 	if rl.Comment != "the length" || !rl.IsKey || !rl.ExposedAsProperty {
 		t.Errorf("len comment/key/export not restored: %+v", rl)
 	}
-	if tol := rl.Tolerance(); tol.Upper != 0.01 || tol.Lower != -0.02 || tol.Type != param.Median {
-		t.Errorf("tolerance = %+v, want {0.01 -0.02 Median}", tol)
+	if tol := rl.Tolerance(); tol.Upper != 0.01 || tol.Lower != -0.02 || tol.Type != types.ToleranceDeviation {
+		t.Errorf("tolerance = %+v, want deviation {0.01 -0.02}", tol)
+	}
+	if rl.ModelValueType() != param.Median {
+		t.Errorf("model value type = %s, want median", rl.ModelValueType())
+	}
+	if rl.DisplayFormat != param.DisplayFormatFractional || rl.Visible {
+		t.Errorf("display format/visibility not restored: %s visible=%v", rl.DisplayFormat, rl.Visible)
+	}
+	if cp := rl.CustomProperty; cp.PropertyType != types.CustomPropertyNumber || !cp.ShowTrailingZeros || !cp.ShowLeadingZeros {
+		t.Errorf("custom property format not restored: %+v", cp)
+	}
+	if !rl.CustomOrder() {
+		t.Error("multi-value list must restore as authored-order")
 	}
 	if !rl.IsMultiValue() || !rl.AllowsCustomValue() || len(rl.ExpressionList()) != 2 {
 		t.Errorf("multi-value not restored: %v custom=%v", rl.ExpressionList(), rl.AllowsCustomValue())

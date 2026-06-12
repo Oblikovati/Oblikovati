@@ -61,6 +61,11 @@ type Parameter struct {
 
 	exprList    []string // multi-value choices (empty ⇒ single-valued); see expression_list.go
 	allowCustom bool     // a value outside exprList is accepted (the one custom value)
+	customOrder bool     // keep exprList in authored order instead of sorting it
+
+	// modelValueType selects which value within the tolerance band the model
+	// consumes; the zero value reads as Nominal (see ModelValueType).
+	modelValueType ModelValueType
 
 	Comment           string
 	IsKey             bool
@@ -68,6 +73,7 @@ type Parameter struct {
 	Precision         int
 	DisplayFormat     ParameterDisplayFormat
 	ExposedAsProperty bool
+	CustomProperty    CustomPropertyFormat
 }
 
 // ID returns the parameter's stable identity.
@@ -98,9 +104,44 @@ func (p *Parameter) Bool() bool { return p.IsBoolean() && p.value.Value != 0 }
 // Value returns the evaluated quantity (database units).
 func (p *Parameter) Value() Quantity { return p.value }
 
-// ModelValue returns the value the model consumes after the tolerance is
-// applied (database units).
-func (p *Parameter) ModelValue() float64 { return p.tol.ModelValue(p.value.Value) }
+// ModelValue returns the value the model consumes after the tolerance band and
+// the parameter's model-value selection are applied (database units).
+func (p *Parameter) ModelValue() float64 {
+	switch p.ModelValueType() {
+	case Upper:
+		return p.value.Value + p.tol.Upper
+	case Lower:
+		return p.value.Value + p.tol.Lower
+	case Median:
+		return p.value.Value + (p.tol.Upper+p.tol.Lower)/2
+	default:
+		return p.value.Value
+	}
+}
+
+// ModelValueType returns which value within the tolerance band the model
+// consumes; the zero value reads as Nominal.
+func (p *Parameter) ModelValueType() ModelValueType {
+	if p.modelValueType == 0 {
+		return Nominal
+	}
+	return p.modelValueType
+}
+
+// SetModelValueType selects which value within the tolerance band the model
+// consumes. It errors for non-numeric parameters and unknown selections.
+func (p *Parameter) SetModelValueType(m ModelValueType) error {
+	if err := p.requireNumericTolerance(); err != nil {
+		return err
+	}
+	switch m {
+	case Nominal, Upper, Lower, Median:
+		p.modelValueType = m
+		return nil
+	default:
+		return fmt.Errorf("param: unknown model value type %d for %q; want nominal/lower/upper/median", int32(m), p.name)
+	}
+}
 
 // Expression returns the authored expression source.
 func (p *Parameter) Expression() string { return p.expr.Source() }

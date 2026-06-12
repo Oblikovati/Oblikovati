@@ -66,3 +66,20 @@ func TestClearExpressionList(t *testing.T) {
 		t.Error("ClearExpressionList should make the parameter single-valued")
 	}
 }
+
+func TestCustomOrderKeepsAuthoredOrderUntilDisabled(t *testing.T) {
+	ps := NewParameters()
+	p, _ := ps.AddUserParameter("d", "10 mm")
+	_ = p.SetExpressionList([]string{"20 mm", "10 mm"}, false)
+	if !p.CustomOrder() {
+		t.Fatal("SetExpressionList must keep authored order (CustomOrder=true)")
+	}
+	if l := p.ExpressionList(); l[0] != "20 mm" {
+		t.Errorf("list = %v, want authored order [20 mm, 10 mm]", l)
+	}
+	// Turning custom order off sorts the choices (the reference CustomOrder=False).
+	p.SetCustomOrder(false)
+	if l := p.ExpressionList(); l[0] != "10 mm" || p.CustomOrder() {
+		t.Errorf("after SetCustomOrder(false): list = %v custom=%v, want sorted/false", l, p.CustomOrder())
+	}
+}

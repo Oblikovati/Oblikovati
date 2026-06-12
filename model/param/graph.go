@@ -59,6 +59,17 @@ func (ps *Parameters) DrivenBy(id ID) []ID { return ps.orderedSet(ps.drivenBy[id
 // Dependents returns the parameters that read this one, in insertion order.
 func (ps *Parameters) Dependents(id ID) []ID { return ps.orderedSet(ps.dependents[id]) }
 
+// InUse reports whether the parameter currently drives anything: another
+// parameter reads it, or it is a model parameter (owned by a feature/dimension,
+// which consumes its model value by construction).
+func (ps *Parameters) InUse(id ID) bool {
+	if len(ps.dependents[id]) > 0 {
+		return true
+	}
+	p, ok := ps.byID[id]
+	return ok && p.kind == ModelParam
+}
+
 // rebind resolves the parameter's references to ids, rejects a resulting cycle,
 // rewires its edges, and recomputes it together with its dependents.
 func (ps *Parameters) rebind(id ID) error {

@@ -5,6 +5,8 @@ package compdef
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
+
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
@@ -68,29 +70,55 @@ func (si sketchIndex) At(i int) (*sketch.Sketch, bool) {
 // the shared presentation/behavior state (comment, key, export, precision, tolerance,
 // multi-value list, group membership).
 type parameterRecipe struct {
-	Name        string           `yaml:"name"`
-	Kind        string           `yaml:"kind"`
-	ValueType   string           `yaml:"valueType,omitempty"` // "text" | "boolean"; numeric when empty
-	Expression  string           `yaml:"expression,omitempty"`
-	Text        string           `yaml:"text,omitempty"`
-	Bool        bool             `yaml:"bool,omitempty"`
-	Value       float64          `yaml:"value,omitempty"`
-	Unit        string           `yaml:"unit,omitempty"`
-	Comment     string           `yaml:"comment,omitempty"`
-	Key         bool             `yaml:"key,omitempty"`
-	Export      bool             `yaml:"export,omitempty"`
-	Precision   int              `yaml:"precision,omitempty"`
-	Tolerance   *toleranceRecipe `yaml:"tolerance,omitempty"`
-	ExprList    []string         `yaml:"expressionList,omitempty"`
-	AllowCustom bool             `yaml:"allowCustomValue,omitempty"`
-	Group       string           `yaml:"group,omitempty"`
+	Name       string           `yaml:"name"`
+	Kind       string           `yaml:"kind"`
+	ValueType  string           `yaml:"valueType,omitempty"` // "text" | "boolean"; numeric when empty
+	Expression string           `yaml:"expression,omitempty"`
+	Text       string           `yaml:"text,omitempty"`
+	Bool       bool             `yaml:"bool,omitempty"`
+	Value      float64          `yaml:"value,omitempty"`
+	Unit       string           `yaml:"unit,omitempty"`
+	Comment    string           `yaml:"comment,omitempty"`
+	Key        bool             `yaml:"key,omitempty"`
+	Export     bool             `yaml:"export,omitempty"`
+	Precision  int              `yaml:"precision,omitempty"`
+	Tolerance  *toleranceRecipe `yaml:"tolerance,omitempty"`
+	// ModelValueType is the tolerance-band selection's wire spelling; empty
+	// means nominal (Oblikovati#607).
+	ModelValueType string   `yaml:"modelValueType,omitempty"`
+	ExprList       []string `yaml:"expressionList,omitempty"`
+	AllowCustom    bool     `yaml:"allowCustomValue,omitempty"`
+	// SortedValueList is the inverse of the in-memory CustomOrder flag: a saved
+	// multi-value list is authored-order by default, so only auto-sorted lists
+	// persist a marker.
+	SortedValueList bool   `yaml:"sortedValueList,omitempty"`
+	Group           string `yaml:"group,omitempty"`
+	// Hidden is the inverse of Visible (parameters default to visible, and the
+	// recipe omits zero values).
+	Hidden bool `yaml:"hidden,omitempty"`
+	// DisplayFormat is the wire spelling; empty means decimal.
+	DisplayFormat  string                `yaml:"displayFormat,omitempty"`
+	CustomProperty *customPropertyRecipe `yaml:"customProperty,omitempty"`
 }
 
-// toleranceRecipe is the persisted form of a non-zero engineering tolerance.
+// toleranceRecipe is the persisted form of a non-zero engineering tolerance:
+// the flavor's wire spelling plus the deviation band in database units.
 type toleranceRecipe struct {
+	Type  string  `yaml:"type,omitempty"`
 	Upper float64 `yaml:"upper,omitempty"`
 	Lower float64 `yaml:"lower,omitempty"`
-	Type  uint8   `yaml:"type,omitempty"`
+}
+
+// customPropertyRecipe persists a non-default custom-property format (the
+// formatting of a parameter exposed as a document property). Enum fields carry
+// wire spellings.
+type customPropertyRecipe struct {
+	PropertyType      string `yaml:"propertyType,omitempty"`
+	Units             string `yaml:"units,omitempty"`
+	Precision         string `yaml:"precision,omitempty"`
+	ShowLeadingZeros  bool   `yaml:"showLeadingZeros,omitempty"`
+	ShowTrailingZeros bool   `yaml:"showTrailingZeros,omitempty"`
+	ShowUnitsString   bool   `yaml:"showUnitsString,omitempty"`
 }
 
 // unitCategories are the display-unit categories a document persists, in a stable
@@ -267,13 +295,28 @@ func (d *PartComponentDefinition) parameterRecipeOf(p *param.Parameter) paramete
 		pr.Value, pr.Unit = p.Value().Value, p.Value().Unit.String()
 	}
 	if t := p.Tolerance(); t != (param.Tolerance{}) {
-		pr.Tolerance = &toleranceRecipe{Upper: t.Upper, Lower: t.Lower, Type: uint8(t.Type)}
+		pr.Tolerance = &toleranceRecipe{Type: t.Kind().String(), Upper: t.Upper, Lower: t.Lower}
+	}
+	if m := p.ModelValueType(); m != param.Nominal {
+		pr.ModelValueType = m.String()
 	}
 	if p.IsMultiValue() {
 		pr.ExprList, pr.AllowCustom = p.ExpressionList(), p.AllowsCustomValue()
+		pr.SortedValueList = !p.CustomOrder()
 	}
 	if g, ok := d.params.GroupOf(p.ID()); ok {
 		pr.Group = g
+	}
+	pr.Hidden = !p.Visible
+	if p.DisplayFormat != param.DisplayFormatDecimal {
+		pr.DisplayFormat = p.DisplayFormat.String()
+	}
+	if cp := p.CustomProperty; cp != param.DefaultCustomPropertyFormat() {
+		pr.CustomProperty = &customPropertyRecipe{
+			PropertyType: cp.PropertyType.String(), Units: cp.Units, Precision: cp.Precision.String(),
+			ShowLeadingZeros: cp.ShowLeadingZeros, ShowTrailingZeros: cp.ShowTrailingZeros,
+			ShowUnitsString: cp.ShowUnitsString,
+		}
 	}
 	return pr
 }
@@ -325,19 +368,101 @@ func (d *PartComponentDefinition) addParameter(pr parameterRecipe) (*param.Param
 }
 
 // applyParameterState restores the shared presentation/behavior fields onto a freshly
-// re-added parameter: comment, key, export, precision, tolerance, multi-value list, group.
+// re-added parameter: comment, key, export, precision, visibility, display format,
+// tolerance, multi-value list, custom-property format, group.
 func (d *PartComponentDefinition) applyParameterState(p *param.Parameter, pr parameterRecipe) error {
 	p.Comment, p.IsKey, p.ExposedAsProperty, p.Precision = pr.Comment, pr.Key, pr.Export, pr.Precision
-	if pr.Tolerance != nil {
-		p.SetTolerance(param.Tolerance{Upper: pr.Tolerance.Upper, Lower: pr.Tolerance.Lower, Type: param.ModelValueType(pr.Tolerance.Type)})
+	p.Visible = !pr.Hidden
+	if err := applyParameterFormats(p, pr); err != nil {
+		return err
 	}
-	if len(pr.ExprList) > 0 {
-		if err := p.SetExpressionList(pr.ExprList, pr.AllowCustom); err != nil {
-			return err
-		}
+	if err := applyParameterTolerance(p, pr); err != nil {
+		return err
+	}
+	if err := applyParameterValueList(p, pr); err != nil {
+		return err
 	}
 	if pr.Group != "" {
 		return d.params.AddToGroup(p.ID(), pr.Group)
+	}
+	return nil
+}
+
+// applyParameterFormats restores the display format and custom-property format
+// from their persisted wire spellings.
+func applyParameterFormats(p *param.Parameter, pr parameterRecipe) error {
+	if pr.DisplayFormat != "" {
+		f, ok := types.ParseParameterDisplayFormat(pr.DisplayFormat)
+		if !ok {
+			return fmt.Errorf("unknown display format %q (want decimal|fractional|architectural)", pr.DisplayFormat)
+		}
+		p.DisplayFormat = f
+	}
+	if pr.CustomProperty == nil {
+		return nil
+	}
+	cp, err := customPropertyFromRecipe(*pr.CustomProperty)
+	if err != nil {
+		return err
+	}
+	p.CustomProperty = cp
+	return nil
+}
+
+// customPropertyFromRecipe parses one persisted custom-property format,
+// defaulting absent enum spellings to the new-parameter defaults.
+func customPropertyFromRecipe(cr customPropertyRecipe) (param.CustomPropertyFormat, error) {
+	cp := param.DefaultCustomPropertyFormat()
+	cp.Units, cp.ShowLeadingZeros, cp.ShowTrailingZeros, cp.ShowUnitsString =
+		cr.Units, cr.ShowLeadingZeros, cr.ShowTrailingZeros, cr.ShowUnitsString
+	if cr.PropertyType != "" {
+		t, ok := types.ParseCustomPropertyType(cr.PropertyType)
+		if !ok {
+			return cp, fmt.Errorf("unknown custom property type %q (want text|number)", cr.PropertyType)
+		}
+		cp.PropertyType = t
+	}
+	if cr.Precision != "" {
+		prec, ok := types.ParseCustomPropertyPrecision(cr.Precision)
+		if !ok {
+			return cp, fmt.Errorf("unknown custom property precision %q", cr.Precision)
+		}
+		cp.Precision = prec
+	}
+	return cp, nil
+}
+
+// applyParameterTolerance restores the tolerance band and the model-value
+// selection from their persisted wire spellings.
+func applyParameterTolerance(p *param.Parameter, pr parameterRecipe) error {
+	if pr.Tolerance != nil {
+		t, ok := types.ParseToleranceType(pr.Tolerance.Type)
+		if !ok {
+			return fmt.Errorf("unknown tolerance type %q", pr.Tolerance.Type)
+		}
+		p.SetTolerance(param.Tolerance{Type: t, Upper: pr.Tolerance.Upper, Lower: pr.Tolerance.Lower})
+	}
+	if pr.ModelValueType == "" {
+		return nil
+	}
+	m, ok := types.ParseModelValueType(pr.ModelValueType)
+	if !ok {
+		return fmt.Errorf("unknown model value type %q (want nominal|lower|upper|median)", pr.ModelValueType)
+	}
+	return p.SetModelValueType(m)
+}
+
+// applyParameterValueList restores the multi-value choices, re-sorting when the
+// list was saved as auto-sorted.
+func applyParameterValueList(p *param.Parameter, pr parameterRecipe) error {
+	if len(pr.ExprList) == 0 {
+		return nil
+	}
+	if err := p.SetExpressionList(pr.ExprList, pr.AllowCustom); err != nil {
+		return err
+	}
+	if pr.SortedValueList {
+		p.SetCustomOrder(false)
 	}
 	return nil
 }
