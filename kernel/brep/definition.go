@@ -104,10 +104,7 @@ func CompileSurfaceBodyDefinition(def SurfaceBodyDefinition, feat string) (*topo
 	if len(issues) > 0 {
 		return nil, issues
 	}
-	issues = compileFaces(bld, def, edges, feat)
-	if len(issues) > 0 {
-		return nil, issues
-	}
+	compileFaces(bld, def, edges, feat)
 	body := bld.Build()
 	compileWires(body, def, edges, feat)
 	return body, nil
@@ -203,8 +200,9 @@ func compileEdges(bld *topo.Builder, def SurfaceBodyDefinition, verts []*topo.Ve
 	return out, issues
 }
 
-func compileFaces(bld *topo.Builder, def SurfaceBodyDefinition, edges []*topo.Edge, feat string) []DefinitionIssue {
-	var issues []DefinitionIssue
+// compileFaces builds the faces (index validity was established up front, so
+// this stage cannot fail).
+func compileFaces(bld *topo.Builder, def SurfaceBodyDefinition, edges []*topo.Edge, feat string) {
 	for i, f := range def.Faces {
 		specs := make([]topo.LoopSpec, len(f.Loops))
 		for j, l := range f.Loops {
@@ -225,7 +223,6 @@ func compileFaces(bld *topo.Builder, def SurfaceBodyDefinition, edges []*topo.Ed
 			bld.AddFace(f.Surface, lin, specs...)
 		}
 	}
-	return issues
 }
 
 func compileWires(body *topo.Body, def SurfaceBodyDefinition, edges []*topo.Edge, feat string) {

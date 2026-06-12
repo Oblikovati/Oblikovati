@@ -200,4 +200,3 @@ func raySegmentApproach(origin math.Point3, dir math.Vector3, a, b math.Point3) 
 	onRay := origin.TranslateBy(dir.Scale(math.Scalar(t)))
 	return t, onSeg, float64(onRay.DistanceTo(onSeg))
 }
-

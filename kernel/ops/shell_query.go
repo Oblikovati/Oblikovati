@@ -156,14 +156,32 @@ func (d triDots) vertexRegion() (math.Point3, bool) {
 
 // edgeRegion returns the closest point when p projects onto an edge band.
 func (d triDots) edgeRegion() (math.Point3, bool) {
+	if v, hit := d.abRegion(); hit {
+		return v, true
+	}
+	if v, hit := d.acRegion(); hit {
+		return v, true
+	}
+	return d.bcRegion()
+}
+
+func (d triDots) abRegion() (math.Point3, bool) {
 	if vc := d.d1*d.d4 - d.d3*d.d2; vc <= 0 && d.d1 >= 0 && d.d3 <= 0 && d.d1-d.d3 > 0 {
 		t := math.Scalar(d.d1 / (d.d1 - d.d3))
 		return d.a.TranslateBy(d.ab.Scale(t)), true
 	}
+	return math.Point3{}, false
+}
+
+func (d triDots) acRegion() (math.Point3, bool) {
 	if vb := d.d5*d.d2 - d.d1*d.d6; vb <= 0 && d.d2 >= 0 && d.d6 <= 0 && d.d2-d.d6 > 0 {
 		t := math.Scalar(d.d2 / (d.d2 - d.d6))
 		return d.a.TranslateBy(d.ac.Scale(t)), true
 	}
+	return math.Point3{}, false
+}
+
+func (d triDots) bcRegion() (math.Point3, bool) {
 	if va := d.d3*d.d6 - d.d5*d.d4; va <= 0 && d.d4-d.d3 >= 0 && d.d5-d.d6 >= 0 && (d.d4-d.d3)+(d.d5-d.d6) > 0 {
 		t := math.Scalar((d.d4 - d.d3) / ((d.d4 - d.d3) + (d.d5 - d.d6)))
 		return d.b.TranslateBy(d.b.VectorTo(d.c).Scale(t)), true

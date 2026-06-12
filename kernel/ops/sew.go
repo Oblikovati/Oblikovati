@@ -118,7 +118,7 @@ func clusterCentroids(pts []math.Point3, cluster []int) *boundaryClusters {
 	for i, p := range pts {
 		r := find(cluster, i)
 		sums[r] = sums[r].Add(p.AsVector())
-		counts[r] = counts[r] + 1
+		counts[r]++
 	}
 	bc := &boundaryClusters{grid: defaultStitchTolerance, centers: map[vKey]math.Point3{}}
 	for i, p := range pts {

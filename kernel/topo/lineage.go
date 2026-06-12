@@ -36,6 +36,8 @@ func (k EntityKind) String() string {
 		return "shell"
 	case KindBody:
 		return "body"
+	case KindWire:
+		return "wire"
 	default:
 		return "unknown"
 	}

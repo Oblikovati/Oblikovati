@@ -56,4 +56,3 @@ func BoundaryEdges(b *topo.Body) []*topo.Edge {
 	}
 	return open
 }
-

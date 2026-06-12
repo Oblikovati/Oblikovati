@@ -85,7 +85,7 @@ func alignRail(r1, r2 []math.Point3, closed bool) []math.Point3 {
 		best, bestCost = rev, c
 	}
 	if closed {
-		best, bestCost = bestPhase(r1, best, bestCost)
+		best, _ = bestPhase(r1, best, bestCost)
 	}
 	return best
 }
