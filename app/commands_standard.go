@@ -172,6 +172,24 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("surface-extend").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extend — grow a surface outward along a boundary edge."),
+		NewCommand("Surface.Ruled", "Ruled Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewRuledSurfaceTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("ruled-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Ruled Surface — sweep a closed profile's edges by straight rulings into a band."),
+		NewCommand("Surface.Offset", "Offset Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewSurfaceOffsetTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("surface-offset").WithButtonStyle(LargeIconButton).
+			WithTooltip("Offset Surface — copy the running surface along its normal by a distance."),
+		NewCommand("Surface.MidSurface", "Mid-Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewMidSurfaceTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("mid-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Mid-Surface — extract mid-plane patches from the solid's thin walls (for FEA)."),
 	}
 }
 
