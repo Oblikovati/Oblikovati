@@ -32,7 +32,7 @@ func (s *PackageStore) Save(d *doc.Document) error {
 	manifest := Manifest{
 		SchemaVersion: CurrentSchemaVersion,
 		DocumentType:  uint32(d.DocumentType()),
-		SubType:       d.SubType(),
+		SubType:       string(d.SubType()),
 		DisplayName:   d.DisplayName(),
 	}
 	if err := pkg.SetManifest(manifest); err != nil {
@@ -66,7 +66,7 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.SetSubType(manifest.SubType) // restore the add-in flavor (M05-F15)
+	d.SetSubType(doc.SubTypeID(manifest.SubType)) // restore the flavor (M05-F15)
 	// Resources must be restored BEFORE the recipe is applied, so a feature that re-derives
 	// geometry from an embedded resource (e.g. an imported body) can read its bytes (ADR-0031).
 	if rb, ok := d.Content().(doc.ResourceBearer); ok {

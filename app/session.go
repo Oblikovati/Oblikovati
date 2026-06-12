@@ -72,8 +72,8 @@ type Session struct {
 	manipulators         *ManipulatorBoard             // add-in drag handles (M05-F13)
 	helpSources          map[string]string             // add-in help bases by source (M05-F14)
 	helpInterceptor      HelpInterceptor               // before-help veto hook (M05-F14)
-	documentSubTypes     map[string]DocumentSubType    // registered flavors (M05-F15)
-	documentSubTypeOrder []string
+	documentSubTypes     map[doc.SubTypeID]DocumentSubType // registered flavors (M05-F15)
+	documentSubTypeOrder []doc.SubTypeID
 	addinEnvironments    map[Environment]string                           // registered add-in environments (M05-F16)
 	activeAddInEnv       Environment                                      // the entered add-in environment (base when none)
 	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
@@ -177,7 +177,8 @@ func (s *Session) initShellSurfaces() {
 		WorkPlanes: true, WorkAxes: true, WorkPoints: true, Sketches: true,
 	}
 	s.helpSources = map[string]string{}
-	s.documentSubTypes = map[string]DocumentSubType{}
+	s.documentSubTypes = map[doc.SubTypeID]DocumentSubType{}
+	s.registerBuiltInSubTypes()
 	s.addinEnvironments = map[Environment]string{}
 }
 

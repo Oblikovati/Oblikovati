@@ -41,7 +41,7 @@ type Document struct {
 	open             bool
 	visible          bool
 	compacted        bool
-	subType          string         // add-in flavored document subtype id, "" for plain (M05-F15)
+	subType          SubTypeID      // flavored document subtype id, "" for plain (M05-F15, M03-F11)
 	referencedBy     int            // how many open documents reference this one (maintained by the graph, M03-F04)
 	views            *DocumentViews // per-document view collection (cameras); lazily seeded by Views()
 }
@@ -73,12 +73,13 @@ func (d *Document) ID() ID { return d.id }
 // DocumentType returns the kind discriminator.
 func (d *Document) DocumentType() DocumentType { return d.docType }
 
-// SubType returns the add-in flavored subtype id ("" for a plain document) — the
-// DocumentSubType discriminator (M05-F15); persisted in the manifest.
-func (d *Document) SubType() string { return d.subType }
+// SubType returns the flavored subtype id ("" for a plain document) — the
+// DocumentSubType discriminator (M05-F15, typed in M03-F11); persisted in the
+// manifest.
+func (d *Document) SubType() SubTypeID { return d.subType }
 
 // SetSubType stamps the flavored subtype id.
-func (d *Document) SetSubType(id string) { d.subType = id }
+func (d *Document) SetSubType(id SubTypeID) { d.subType = id }
 
 // Content returns the modeling payload, or nil if this is an unopened reference
 // stub. Callers needing a typed view use the specialization accessors

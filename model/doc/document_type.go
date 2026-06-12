@@ -12,6 +12,12 @@ import "oblikovati.org/api/types"
 // reference graph and must never be renumbered — see [types.DocumentType].
 type DocumentType = types.DocumentType
 
+// SubTypeID refines the base DocumentType with a flavored sub-type — the
+// persisted discriminator behind sheet-metal parts and add-in flavors
+// (M03-F11, #612). Defined once in the contract ([types.DocumentSubTypeID]);
+// this alias keeps doc-layer spellings short.
+type SubTypeID = types.DocumentSubTypeID
+
 const (
 	// Unknown is the zero value: a document whose kind has not been resolved
 	// (e.g. an unresolved reference stub before its manifest is read).

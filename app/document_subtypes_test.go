@@ -36,3 +36,19 @@ func TestRegisterDocumentSubTypeNeedsID(t *testing.T) {
 		t.Error("a subtype without an id must fail")
 	}
 }
+
+// TestBuiltInSubTypesSeededAndReserved pins the M03-F11 invariants: the
+// sheet-metal flavor exists from session start (so .obk files persist the
+// discriminator before M20 ships its environment), and clients cannot claim
+// ids under the reserved prefix.
+func TestBuiltInSubTypesSeededAndReserved(t *testing.T) {
+	s := NewSession()
+	flavors := s.DocumentSubTypes()
+	if len(flavors) == 0 || flavors[0].ID != "org.oblikovati.part.sheetMetal" {
+		t.Fatalf("flavors = %+v, want the built-in sheet-metal flavor seeded first", flavors)
+	}
+	err := s.RegisterDocumentSubType(DocumentSubType{ID: "org.oblikovati.part.weldment", BaseType: doc.Part})
+	if err == nil {
+		t.Error("registering under the reserved org.oblikovati. prefix must fail")
+	}
+}

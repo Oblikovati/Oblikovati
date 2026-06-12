@@ -5,6 +5,7 @@ package app
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/model/doc"
 )
@@ -16,22 +17,41 @@ import (
 
 // DocumentSubType is one registered flavor.
 type DocumentSubType struct {
-	ID          string
+	ID          doc.SubTypeID
 	BaseType    doc.DocumentType
 	DisplayName string
 }
 
 // RegisterDocumentSubType declares a flavor; re-registering the same id replaces
-// its declaration (an add-in updating its display name on reload).
+// its declaration (an add-in updating its display name on reload). Ids under the
+// reserved built-in prefix cannot be claimed by clients (M03-F11, #612).
 func (s *Session) RegisterDocumentSubType(st DocumentSubType) error {
 	if st.ID == "" {
 		return fmt.Errorf("app: document subtype needs an id")
 	}
+	if st.ID.BuiltIn() {
+		return fmt.Errorf("app: subtype id %q is under the reserved %q prefix", st.ID, types.ReservedSubTypePrefix)
+	}
+	s.recordDocumentSubType(st)
+	return nil
+}
+
+// recordDocumentSubType writes the registry entry; the built-in flavors use it
+// directly to bypass the reserved-prefix guard.
+func (s *Session) recordDocumentSubType(st DocumentSubType) {
 	if _, exists := s.documentSubTypes[st.ID]; !exists {
 		s.documentSubTypeOrder = append(s.documentSubTypeOrder, st.ID)
 	}
 	s.documentSubTypes[st.ID] = st
-	return nil
+}
+
+// registerBuiltInSubTypes seeds the host-reserved flavors at session start:
+// the sheet-metal part discriminator is persisted from the first .obk files so
+// it never needs retrofitting; its environment lands with M20 (M03-F11, #612).
+func (s *Session) registerBuiltInSubTypes() {
+	s.recordDocumentSubType(DocumentSubType{
+		ID: types.SubTypeSheetMetalPart, BaseType: doc.Part, DisplayName: "Sheet Metal Part",
+	})
 }
 
 // DocumentSubTypes returns the registered flavors in registration order.
@@ -45,7 +65,7 @@ func (s *Session) DocumentSubTypes() []DocumentSubType {
 
 // StampDocumentSubType marks a document with a REGISTERED flavor whose base type
 // matches — the documents.create path calls it for a requested subType.
-func (s *Session) StampDocumentSubType(d *doc.Document, subType string) error {
+func (s *Session) StampDocumentSubType(d *doc.Document, subType doc.SubTypeID) error {
 	st, ok := s.documentSubTypes[subType]
 	if !ok {
 		return fmt.Errorf("app: document subtype %q is not registered", subType)
@@ -63,7 +83,7 @@ func (s *Session) SubTypeInfos() []wire.DocumentSubTypeInfo {
 	out := make([]wire.DocumentSubTypeInfo, len(flavors))
 	for i, st := range flavors {
 		out[i] = wire.DocumentSubTypeInfo{
-			ID: st.ID, BaseType: docTypeName(st.BaseType), DisplayName: st.DisplayName,
+			ID: string(st.ID), BaseType: docTypeName(st.BaseType), DisplayName: st.DisplayName,
 		}
 	}
 	return out

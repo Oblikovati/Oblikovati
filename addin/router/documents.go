@@ -18,7 +18,7 @@ import (
 func docInfo(d *doc.Document, active *doc.Document) wire.DocumentInfo {
 	return wire.DocumentInfo{
 		ID: uint64(d.ID()), Name: d.DisplayName(), Type: d.DocumentType().String(),
-		SubType: d.SubType(), Dirty: d.Dirty(), Visible: d.Visible(), Active: d == active,
+		SubType: string(d.SubType()), Dirty: d.Dirty(), Visible: d.Visible(), Active: d == active,
 	}
 }
 
@@ -55,7 +55,7 @@ func createDocument(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 	}
 	// A requested flavor must be registered with a matching base type (M05-F15).
 	if in.SubType != "" {
-		if err := s.StampDocumentSubType(d, in.SubType); err != nil {
+		if err := s.StampDocumentSubType(d, doc.SubTypeID(in.SubType)); err != nil {
 			return nil, err
 		}
 	}
@@ -73,7 +73,7 @@ func registerDocumentSubType(s *app.Session, args json.RawMessage) (json.RawMess
 		return nil, err
 	}
 	if err := s.RegisterDocumentSubType(app.DocumentSubType{
-		ID: in.ID, BaseType: base, DisplayName: in.DisplayName,
+		ID: doc.SubTypeID(in.ID), BaseType: base, DisplayName: in.DisplayName,
 	}); err != nil {
 		return nil, err
 	}
