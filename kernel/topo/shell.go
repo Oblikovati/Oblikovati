@@ -133,7 +133,12 @@ func groupClosed(faces []*Face) bool {
 			return false
 		}
 	}
-	return len(uses) > 0
+	if len(uses) == 0 {
+		// No edges at all: a boundary-less face is a closed surface (a whole
+		// sphere or torus carried as one loop-less face) — closed by definition.
+		return len(faces) > 0
+	}
+	return true
 }
 
 // union and find are the package's shared union-find primitives.

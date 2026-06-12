@@ -123,9 +123,24 @@ func appendCross(pts []math.Point3, s Surface, f scalarField, ua, va, fa, ub, vb
 // straddlesZero reports a sign change between two field samples, classifying an exact
 // zero with the negative side (a <= 0). This consistent tie-break is what lets the tracer
 // capture a contour that lies exactly on grid lines (e.g. an equator on a parameter row),
-// the classic marching-squares degeneracy, without double-counting it.
+// the classic marching-squares degeneracy, without double-counting it. Samples within
+// floating noise of zero snap to exact zero first: a node sitting ON the contour evaluates
+// to ±1e-16 with a sign that varies row to row (numerically-derived normals), and without
+// the snap adjacent columns alternate crossings, doubling the contour as a zigzag
+// (M07-F07 silhouette wires, Oblikovati/Oblikovati#630).
 func straddlesZero(a, b float64) bool {
-	return (a <= 0) != (b <= 0)
+	return (snapTinyToZero(a) <= 0) != (snapTinyToZero(b) <= 0)
+}
+
+// traceFieldEps is the field magnitude treated as exactly zero (fields here are
+// unit-vector dots, so 1e-12 is far below any genuine sample).
+const traceFieldEps = 1e-12
+
+func snapTinyToZero(v float64) float64 {
+	if stdmath.Abs(v) < traceFieldEps {
+		return 0
+	}
+	return v
 }
 
 // bisectEdge refines the zero crossing along a cell edge in parameter space and returns
