@@ -65,7 +65,7 @@ func (s *Session) ParameterRows(filter string) (model, user []ParameterRow) {
 
 // parameterRow projects one parameter into its presentation row.
 func (s *Session) parameterRow(ps *param.Parameters, p *param.Parameter) ParameterRow {
-	group, _ := ps.GroupOf(p.ID())
+	group := firstGroupDisplayName(ps, p.ID())
 	row := ParameterRow{
 		ID: p.ID(), Name: p.Name(), ValueType: valueTypeName(p), Equation: p.Expression(),
 		Comment: p.Comment, Group: group, IsKey: p.IsKey, Export: p.ExposedAsProperty,
@@ -77,6 +77,20 @@ func (s *Session) parameterRow(ps *param.Parameters, p *param.Parameter) Paramet
 		row.Options = multiValueOptions(p)
 	}
 	return row
+}
+
+// firstGroupDisplayName names the row's group column: the display name of the
+// parameter's first group (creation order) — the head UI shows one group per
+// row even though the model allows several (M02-F05).
+func firstGroupDisplayName(ps *param.Parameters, id param.ID) string {
+	keys := ps.GroupsOf(id)
+	if len(keys) == 0 {
+		return ""
+	}
+	if g, ok := ps.GroupByKey(keys[0]); ok {
+		return g.DisplayName
+	}
+	return keys[0]
 }
 
 // fillRowValue formats the unit name, displayed value, and tolerance for a row, branching

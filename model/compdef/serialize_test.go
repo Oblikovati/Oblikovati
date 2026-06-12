@@ -186,8 +186,9 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 	_ = num.SetExpressionList([]string{"10 mm", "20 mm"}, true)
 	txt, _ := ps.AddTextUserParameter("material", "steel")
 	flag, _ := ps.AddBooleanUserParameter("vented", true)
-	_ = ps.AddToGroup(num.ID(), "Frame")
-	_ = ps.AddToGroup(txt.ID(), "Frame")
+	_, _ = ps.AddGroup("com.example:frame", "Frame", "com.example")
+	_ = ps.AddToGroup(num.ID(), "com.example:frame")
+	_ = ps.AddToGroup(txt.ID(), "com.example:frame")
 
 	r := reopenThroughStore(t, d).Parameters()
 
@@ -213,8 +214,12 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 	if !rl.IsMultiValue() || !rl.AllowsCustomValue() || len(rl.ExpressionList()) != 2 {
 		t.Errorf("multi-value not restored: %v custom=%v", rl.ExpressionList(), rl.AllowsCustomValue())
 	}
-	if g, _ := r.GroupOf(rl.ID()); g != "Frame" {
-		t.Errorf("len group = %q, want Frame", g)
+	rg, ok := r.GroupByKey("com.example:frame")
+	if !ok || rg.DisplayName != "Frame" || rg.ClientID != "com.example" {
+		t.Errorf("group record = %+v, want key/display/client restored", rg)
+	}
+	if got := r.GroupsOf(rl.ID()); len(got) != 1 || got[0] != "com.example:frame" {
+		t.Errorf("len groups = %v, want [com.example:frame]", got)
 	}
 
 	rt, _ := r.ByName("material")
@@ -225,8 +230,8 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 	if !rf.IsBoolean() || !rf.Bool() {
 		t.Errorf("boolean parameter not restored: isBool=%v val=%v", rf.IsBoolean(), rf.Bool())
 	}
-	if g, _ := r.GroupOf(rt.ID()); g != "Frame" {
-		t.Errorf("material group = %q, want Frame", g)
+	if got := r.GroupsOf(rt.ID()); len(got) != 1 || got[0] != "com.example:frame" {
+		t.Errorf("material groups = %v, want [com.example:frame]", got)
 	}
 	_ = flag
 }
