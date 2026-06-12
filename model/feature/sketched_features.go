@@ -295,8 +295,12 @@ type CoilDefinition struct {
 	Axis         *WorkAxis
 	Pitch        func() float64
 	Revolutions  func() float64
-	Taper        float64
-	Operation    ops.PartFeatureOperation
+	// Height is the total axial rise — any TWO of pitch/revolutions/height
+	// specify the coil (the reference's pitch+height and revolution+height
+	// modes, M08 PBI-096 #316); all three is overdetermined.
+	Height    func() float64
+	Taper     float64
+	Operation ops.PartFeatureOperation
 	// Variable-pitch rail + end conditions (M06-F09, #624; coil_variable.go).
 	PitchRows []CoilPitchRow
 	StartEnd  CoilEndCondition
@@ -331,7 +335,7 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	sections := coilSections(prof, c.def.Sketch.Plane(), c.def.Axis, rise, totalTurns)
+	sections := coilSections(prof, c.def.Sketch.Plane(), c.def.Axis, rise, totalTurns, c.def.Taper)
 	c.tool, err = sweptSolid(sections, false, featOr(c.featName, "coil"))
 	if err != nil {
 		return Output{}, err
@@ -347,7 +351,7 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 // rotated about the axis by the running angle and translated along the axis
 // by the rail's rise at that angle (constant pitch or the M06-F09 pitch
 // table — the rise closure carries either).
-func coilSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, rise func(float64) float64, revolutions float64) [][]math.Point3 {
+func coilSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, rise func(float64) float64, revolutions, taper float64) [][]math.Point3 {
 	base := modelPolygon(prof, plane)
 	axisVec := axis.Direction().AsVector()
 	k := int(stdmath.Max(3, stdmath.Round(revolveSegments*revolutions)))
@@ -356,13 +360,33 @@ func coilSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, rise
 	for s := 0; s <= k; s++ {
 		angle := total * float64(s) / float64(k)
 		rot := math.Rotation4(angle, axis.Direction(), axis.Origin())
+		h := rise(angle)
 		sec := make([]math.Point3, len(base))
 		for i, p := range base {
-			sec[i] = rot.TransformPoint(p).TranslateBy(axisVec.Scale(math.Scalar(rise(angle))))
+			q := rot.TransformPoint(p).TranslateBy(axisVec.Scale(math.Scalar(h)))
+			sec[i] = coilTaperPoint(q, axis, taper, h)
 		}
 		sections[s] = sec
 	}
 	return sections
+}
+
+// coilTaperPoint moves a section point radially away from the axis by
+// tan(taper)·rise — the tapered coil whose helix radius grows with height
+// (M08 PBI-096, #316). Zero taper or zero rise is the identity.
+func coilTaperPoint(p math.Point3, axis *WorkAxis, taper, rise float64) math.Point3 {
+	if taper == 0 || rise == 0 {
+		return p
+	}
+	a := axis.Direction().AsVector()
+	v := axis.Origin().VectorTo(p)
+	radial := v.Sub(a.Scale(v.Dot(a)))
+	l := float64(radial.Length())
+	if l == 0 {
+		return p // a point ON the axis has no radial direction to taper along
+	}
+	off := stdmath.Tan(taper) * rise
+	return p.TranslateBy(radial.Scale(math.Scalar(off / l)))
 }
 
 // CoilFeatures adds coils into the engine.
@@ -370,6 +394,16 @@ type CoilFeatures struct{ engine *PartFeatures }
 
 // NewCoilFeatures binds the collection to an engine.
 func NewCoilFeatures(engine *PartFeatures) *CoilFeatures { return &CoilFeatures{engine} }
+
+// AddDefinition adds a coil from a fully-populated definition (height mode,
+// taper, variable pitch — #316/#624).
+func (c *CoilFeatures) AddDefinition(def *CoilDefinition) *PartFeature {
+	cf := &CoilFeature{def: def}
+	pf := c.engine.Add(cf)
+	pf.SetName(c.engine.UniqueName("Coil"))
+	cf.featName = pf.name
+	return pf
+}
 
 // Add adds a coil of the profile about axis with the given pitch (per revolution),
 // number of revolutions, taper, and boolean operation.
@@ -391,7 +425,11 @@ type RibDefinition struct {
 	ProfileIndex int            // index into the sketch's open paths
 	Thickness    func() float64 // wall thickness, centered on the path
 	Depth        func() float64 // signed extent along the sketch-plane normal
-	Operation    ops.PartFeatureOperation
+	// ToNext extends the wall until it fully lands on the existing material
+	// (the reference "to-next" rib, M08 PBI-096 #316); Depth then only picks
+	// the direction (its sign; nil/0 ⇒ +normal).
+	ToNext    bool
+	Operation ops.PartFeatureOperation
 }
 
 // RibFeature thickens an open sketch profile (a path) into a wall: the path is offset by
@@ -415,12 +453,16 @@ func (r *RibFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	if r.def.Thickness == nil || r.def.Depth == nil {
-		return Output{}, errors.New("rib: thickness and depth must be set")
+	if r.def.Thickness == nil {
+		return Output{}, errors.New("rib: thickness must be set")
 	}
-	t, d := r.def.Thickness(), r.def.Depth()
-	if t <= 0 || d == 0 {
-		return Output{}, fmt.Errorf("rib: need positive thickness and non-zero depth, got t=%g d=%g", t, d)
+	t := r.def.Thickness()
+	if t <= 0 {
+		return Output{}, fmt.Errorf("rib: need positive thickness, got t=%g", t)
+	}
+	d, err := r.ribDepth(in, pts)
+	if err != nil {
+		return Output{}, err
 	}
 	band := ensureCCW2(thickenPath(pts, t))
 	r.tool = buildPrism(band, r.def.Sketch.Plane(), orderedSpan(0, d), 0, "rib")
@@ -429,6 +471,59 @@ func (r *RibFeature) Recompute(in Input) (Output, error) {
 		return Output{}, err
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// ribDepth resolves the wall extent: the explicit signed depth, or with
+// ToNext the distance to the FARTHEST first-hit of the existing material
+// among the path's points — the wall must fully land, so the deepest ray
+// governs (extrude's to-next takes the nearest; a rib that stopped there
+// would leave part of the wall hanging).
+func (r *RibFeature) ribDepth(in Input, pts []math.Point2) (float64, error) {
+	if !r.def.ToNext {
+		d := callOrZero(r.def.Depth)
+		if d == 0 {
+			return 0, errors.New("rib: need a non-zero depth (or set toNext)")
+		}
+		return d, nil
+	}
+	sign := 1.0
+	if callOrZero(r.def.Depth) < 0 {
+		sign = -1
+	}
+	return ribToNextDepth(in.Bodies, r.def.Sketch.Plane(), pts, sign)
+}
+
+// ribToNextDepth ray-casts each path point along the (signed) plane normal
+// into the existing material and returns the farthest first-hit as the signed
+// depth; a point with no material ahead is a precise error.
+func ribToNextDepth(bodies []*topo.Body, plane sketch.Plane, pts []math.Point2, sign float64) (float64, error) {
+	if len(bodies) == 0 {
+		return 0, errors.New("rib: to-next needs existing material")
+	}
+	dir := plane.Normal().AsVector().Scale(math.Scalar(sign))
+	deepest := 0.0
+	for i, p := range pts {
+		origin := plane.ToModel(p)
+		hit, ok := nearestBodyHit(bodies, origin, dir)
+		if !ok {
+			return 0, fmt.Errorf("rib: to-next found no material ahead of path point %d (%v)", i, p)
+		}
+		if hit > deepest {
+			deepest = hit
+		}
+	}
+	return sign * deepest, nil
+}
+
+// nearestBodyHit is the closest positive ray hit over all bodies.
+func nearestBodyHit(bodies []*topo.Body, origin math.Point3, dir math.Vector3) (float64, bool) {
+	best, found := stdmath.Inf(1), false
+	for _, b := range bodies {
+		if _, t, ok := ops.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t > math.DefaultTolerance && t < best {
+			best, found = t, true
+		}
+	}
+	return best, found
 }
 
 // pathPoints resolves the rib's open profile (a sketch path) to its ordered points.
@@ -449,6 +544,13 @@ type RibFeatures struct{ engine *PartFeatures }
 
 // NewRibFeatures binds the collection to an engine.
 func NewRibFeatures(engine *PartFeatures) *RibFeatures { return &RibFeatures{engine} }
+
+// AddDefinition adds a rib from a fully-populated definition (to-next, #316).
+func (c *RibFeatures) AddDefinition(def *RibDefinition) *PartFeature {
+	pf := c.engine.Add(&RibFeature{def: def})
+	pf.SetName(c.engine.UniqueName("Rib"))
+	return pf
+}
 
 // Add adds a rib that thickens the sketch's open profile (by index) into a wall of the given
 // thickness, extruded the signed depth along the sketch-plane normal, joined to the part.

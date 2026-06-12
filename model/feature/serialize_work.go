@@ -371,8 +371,9 @@ type CoilData struct {
 	Sketch      int     `yaml:"sketch"`
 	Profile     int     `yaml:"profile"`
 	Axis        string  `yaml:"axis"`
-	Pitch       float64 `yaml:"pitch"`
-	Revolutions float64 `yaml:"revolutions"`
+	Pitch       float64 `yaml:"pitch,omitempty"`
+	Revolutions float64 `yaml:"revolutions,omitempty"`
+	Height      float64 `yaml:"height,omitempty"` // two-of-three shape spec (#316)
 	Taper       float64 `yaml:"taper,omitempty"`
 	Operation   string  `yaml:"operation"`
 	// Variable-pitch rail + end conditions (M06-F09, #624).
@@ -408,7 +409,7 @@ func serializeCoil(def *CoilDefinition, sk SketchIndexer) (*CoilData, error) {
 	d := &CoilData{
 		Sketch: idx, Profile: def.ProfileIndex, Axis: string(def.Axis.Key()),
 		Pitch: evalFloat(def.Pitch), Revolutions: evalFloat(def.Revolutions),
-		Taper: def.Taper, Operation: op,
+		Height: evalFloat(def.Height), Taper: def.Taper, Operation: op,
 	}
 	for _, r := range def.PitchRows {
 		d.PitchRows = append(d.PitchRows, CoilPitchRowData(r))
@@ -445,10 +446,12 @@ func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeom
 	if err != nil {
 		return nil, err
 	}
-	pitch, revs := d.Pitch, d.Revolutions
-	pf := NewCoilFeatures(fs).Add(skt, d.Profile, axis,
-		func() float64 { return pitch }, func() float64 { return revs }, d.Taper, op)
-	def := pf.feature.(*CoilFeature).def
+	def := &CoilDefinition{
+		Sketch: skt, ProfileIndex: d.Profile, Axis: axis,
+		Pitch: constFloat(d.Pitch), Revolutions: constFloat(d.Revolutions),
+		Height: constFloat(d.Height), Taper: d.Taper, Operation: op,
+	}
+	pf := NewCoilFeatures(fs).AddDefinition(def)
 	for _, r := range d.PitchRows {
 		def.PitchRows = append(def.PitchRows, CoilPitchRow(r))
 	}

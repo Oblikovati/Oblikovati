@@ -35,8 +35,8 @@ type CoilEndCondition struct {
 // coilStations compiles the definition's rail into kernel stations: the
 // constant pitch (or the row table), with flat ends appended as extra
 // stations. Radius is irrelevant for the rail's rise; it stays zero.
-func coilStations(def *CoilDefinition, revolutions float64) ([]geom.HelixStation, error) {
-	stations, err := coilShapeStations(def, revolutions)
+func coilStationsAt(def *CoilDefinition, pitch, revolutions float64) ([]geom.HelixStation, error) {
+	stations, err := coilShapeStations(def, pitch, revolutions)
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +46,8 @@ func coilStations(def *CoilDefinition, revolutions float64) ([]geom.HelixStation
 }
 
 // coilShapeStations is the rail before end treatment.
-func coilShapeStations(def *CoilDefinition, revolutions float64) ([]geom.HelixStation, error) {
+func coilShapeStations(def *CoilDefinition, pitch, revolutions float64) ([]geom.HelixStation, error) {
 	if len(def.PitchRows) == 0 {
-		pitch := callOrZero(def.Pitch)
 		return []geom.HelixStation{
 			{Turn: 0, Pitch: pitch},
 			{Turn: revolutions, Pitch: pitch},
@@ -107,15 +106,48 @@ func coilPrependFlat(stations []geom.HelixStation, c CoilEndCondition) []geom.He
 // coilRail validates the definition and compiles its rail: the
 // rise-per-angle closure plus the rail's total turn count.
 func coilRail(def *CoilDefinition) (func(angle float64) float64, float64, error) {
-	revs := callOrZero(def.Revolutions)
-	if revs <= 0 {
-		return nil, 0, fmt.Errorf("coil: revolutions must be > 0, got %g", revs)
+	pitch, revs, err := coilShapeSpec(def)
+	if err != nil {
+		return nil, 0, err
 	}
-	stations, err := coilStations(def, revs)
+	stations, err := coilStationsAt(def, pitch, revs)
 	if err != nil {
 		return nil, 0, err
 	}
 	return coilRise(stations)
+}
+
+// coilShapeSpec resolves the constant-shape coil from any TWO of
+// pitch/revolutions/height (the reference's three specification modes, #316).
+// A variable pitch table carries its own shape; height does not combine with it.
+func coilShapeSpec(def *CoilDefinition) (pitch, revs float64, err error) {
+	p, r, h := callOrZero(def.Pitch), callOrZero(def.Revolutions), callOrZero(def.Height)
+	if len(def.PitchRows) > 0 {
+		if h > 0 {
+			return 0, 0, fmt.Errorf("coil: height %g cannot combine with a variable pitch table", h)
+		}
+		rr, err := requirePositive(r, "revolutions")
+		return p, rr, err
+	}
+	switch {
+	case p > 0 && r > 0 && h > 0:
+		return 0, 0, fmt.Errorf("coil: give exactly two of pitch/revolutions/height (got %g/%g/%g)", p, r, h)
+	case p > 0 && r > 0:
+		return p, r, nil
+	case p > 0 && h > 0:
+		return p, h / p, nil
+	case r > 0 && h > 0:
+		return h / r, r, nil
+	default:
+		return 0, 0, fmt.Errorf("coil: give two of pitch/revolutions/height (got %g/%g/%g)", p, r, h)
+	}
+}
+
+func requirePositive(v float64, what string) (float64, error) {
+	if v <= 0 {
+		return 0, fmt.Errorf("coil: %s must be > 0, got %g", what, v)
+	}
+	return v, nil
 }
 
 // coilRise returns the rise-per-angle function over the compiled stations
