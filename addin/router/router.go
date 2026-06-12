@@ -78,6 +78,7 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodParametersGet] = getParameter
 	r.handlers[wire.MethodParametersAdd] = addParameter
 	r.handlers[wire.MethodParametersSet] = setParameter
+	r.registerParameterDetailHandlers()
 	r.handlers[wire.MethodModelTree] = modelTree
 	r.handlers[wire.MethodModelSelection] = modelSelection
 	r.handlers[wire.MethodModelReferenceKeys] = referenceKeys
@@ -117,6 +118,19 @@ func (r *Router) registerTransactionHandlers() {
 	r.handlers[wire.MethodTransactionState] = transactionState
 	r.handlers[wire.MethodTransactionBegin] = beginTransaction
 	r.handlers[wire.MethodTransactionEnd] = endTransaction
+}
+
+// registerParameterDetailHandlers wires the member-level parameter surface —
+// detail reads, presentation/tolerance/value-list mutations, dependency queries
+// and delete (M02-F08, Oblikovati#607).
+func (r *Router) registerParameterDetailHandlers() {
+	r.handlers[wire.MethodParametersGetDetail] = getParameterDetail
+	r.handlers[wire.MethodParametersUpdate] = updateParameter
+	r.handlers[wire.MethodParametersSetTolerance] = setParameterTolerance
+	r.handlers[wire.MethodParametersSetExpressionList] = setParameterExpressionList
+	r.handlers[wire.MethodParametersDelete] = deleteParameter
+	r.handlers[wire.MethodParametersDrivenBy] = parameterDrivenBy
+	r.handlers[wire.MethodParametersDependents] = parameterDependents
 }
 
 // registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and
@@ -295,41 +309,45 @@ func (r *Router) Handle(s *app.Session, method string, req []byte) (resp []byte,
 // allowlist: a method missing here simply is not broadcast (a known first-cut gap,
 // failing safe), whereas a read-only method must never appear (it would broadcast noise).
 var mutatingMethods = map[string]bool{
-	wire.MethodDocumentsCreate:         true,
-	wire.MethodDocumentsImport:         true,
-	wire.MethodParametersAdd:           true,
-	wire.MethodParametersSet:           true,
-	wire.MethodFeaturesAdd:             true,
-	wire.MethodFeaturesEdit:            true,
-	wire.MethodFeaturesDelete:          true,
-	wire.MethodFeaturesRename:          true,
-	wire.MethodFeaturesSetSuppressed:   true,
-	wire.MethodFeaturesReorder:         true,
-	wire.MethodWorkPlanesCreate:        true,
-	wire.MethodWorkPlanesRedefine:      true,
-	wire.MethodWorkPointsCreate:        true,
-	wire.MethodModelAssignMaterial:     true,
-	wire.MethodModelAssignAppearance:   true,
-	wire.MethodSketchCreate:            true,
-	wire.MethodSketchRectangle:         true,
-	wire.MethodSketchDelete:            true,
-	wire.MethodSketchEdit:              true,
-	wire.MethodSketchExitEdit:          true,
-	wire.MethodSketchSolve:             true,
-	wire.MethodSketchAddEntity:         true,
-	wire.MethodSketchAddConstraint:     true,
-	wire.MethodSketchDeleteConstraint:  true,
-	wire.MethodSketchAddDimension:      true,
-	wire.MethodSketchDriveDimension:    true,
-	wire.MethodSketchSetProperty:       true,
-	wire.MethodSketchSetCustomLineType: true,
-	wire.MethodSketchTransform:         true,
-	wire.MethodSketchAddPattern:        true,
-	wire.MethodSketchOffset:            true,
-	wire.MethodSketchProject:           true,
-	wire.MethodTransactionUndo:         true,
-	wire.MethodTransactionRedo:         true,
-	wire.MethodTransactionEnd:          true,
+	wire.MethodDocumentsCreate:             true,
+	wire.MethodDocumentsImport:             true,
+	wire.MethodParametersAdd:               true,
+	wire.MethodParametersSet:               true,
+	wire.MethodParametersUpdate:            true,
+	wire.MethodParametersSetTolerance:      true,
+	wire.MethodParametersSetExpressionList: true,
+	wire.MethodParametersDelete:            true,
+	wire.MethodFeaturesAdd:                 true,
+	wire.MethodFeaturesEdit:                true,
+	wire.MethodFeaturesDelete:              true,
+	wire.MethodFeaturesRename:              true,
+	wire.MethodFeaturesSetSuppressed:       true,
+	wire.MethodFeaturesReorder:             true,
+	wire.MethodWorkPlanesCreate:            true,
+	wire.MethodWorkPlanesRedefine:          true,
+	wire.MethodWorkPointsCreate:            true,
+	wire.MethodModelAssignMaterial:         true,
+	wire.MethodModelAssignAppearance:       true,
+	wire.MethodSketchCreate:                true,
+	wire.MethodSketchRectangle:             true,
+	wire.MethodSketchDelete:                true,
+	wire.MethodSketchEdit:                  true,
+	wire.MethodSketchExitEdit:              true,
+	wire.MethodSketchSolve:                 true,
+	wire.MethodSketchAddEntity:             true,
+	wire.MethodSketchAddConstraint:         true,
+	wire.MethodSketchDeleteConstraint:      true,
+	wire.MethodSketchAddDimension:          true,
+	wire.MethodSketchDriveDimension:        true,
+	wire.MethodSketchSetProperty:           true,
+	wire.MethodSketchSetCustomLineType:     true,
+	wire.MethodSketchTransform:             true,
+	wire.MethodSketchAddPattern:            true,
+	wire.MethodSketchOffset:                true,
+	wire.MethodSketchProject:               true,
+	wire.MethodTransactionUndo:             true,
+	wire.MethodTransactionRedo:             true,
+	wire.MethodTransactionEnd:              true,
 }
 
 // record appends an operation entry to the trace, except for logs.tail itself (so polling the
