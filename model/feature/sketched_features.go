@@ -287,15 +287,7 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 	if c.def.Axis == nil {
 		return Output{}, errors.New("coil: no axis")
 	}
-	revs := callOrZero(c.def.Revolutions)
-	if revs <= 0 {
-		return Output{}, fmt.Errorf("coil: revolutions must be > 0, got %g", revs)
-	}
-	stations, err := coilStations(c.def, revs)
-	if err != nil {
-		return Output{}, err
-	}
-	rise, totalTurns, err := coilRise(stations)
+	rise, totalTurns, err := coilRail(c.def)
 	if err != nil {
 		return Output{}, err
 	}

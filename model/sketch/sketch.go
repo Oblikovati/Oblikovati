@@ -295,14 +295,13 @@ func (s *Sketch) add(e Entity) { s.ents = append(s.ents, e) }
 
 // removeEntity drops an entity from the geometry list (used by delete/trim). It does not
 // touch constraints; callers handle those. Returns whether it was present.
-func (s *Sketch) removeEntity(e Entity) bool {
+func (s *Sketch) removeEntity(e Entity) {
 	for i, x := range s.ents {
 		if x == e {
 			s.ents = append(s.ents[:i], s.ents[i+1:]...)
-			return true
+			return
 		}
 	}
-	return false
 }
 
 // deleteEntity removes e from the entity list AND its typed collection, so an edit that
@@ -310,6 +309,12 @@ func (s *Sketch) removeEntity(e Entity) bool {
 // Count/Item/serialization would still report.
 func (s *Sketch) deleteEntity(e Entity) {
 	s.removeEntity(e)
+	s.dropFromCollection(e)
+}
+
+// dropFromCollection removes e from its typed collection (the deleteEntity
+// half that knows every entity family).
+func (s *Sketch) dropFromCollection(e Entity) {
 	switch t := e.(type) {
 	case *Line:
 		s.lines.remove(t)
@@ -341,16 +346,15 @@ func (s *Sketch) newPoint(pos math.Point2) *Point {
 	return p
 }
 
-// removePoint drops a solver point (a deactivated spline-handle end). Reports
-// whether it was present.
-func (s *Sketch) removePoint(p *Point) bool {
+// removePoint drops a solver point (a deactivated spline-handle end or a
+// point moved into a block definition).
+func (s *Sketch) removePoint(p *Point) {
 	for i, x := range s.pts {
 		if x == p {
 			s.pts = append(s.pts[:i], s.pts[i+1:]...)
-			return true
+			return
 		}
 	}
-	return false
 }
 
 // newRefPoint creates a fixed reference point (a projected anchor): a real Point other

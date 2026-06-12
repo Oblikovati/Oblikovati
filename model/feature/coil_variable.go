@@ -104,6 +104,20 @@ func coilPrependFlat(stations []geom.HelixStation, c CoilEndCondition) []geom.He
 	return out
 }
 
+// coilRail validates the definition and compiles its rail: the
+// rise-per-angle closure plus the rail's total turn count.
+func coilRail(def *CoilDefinition) (func(angle float64) float64, float64, error) {
+	revs := callOrZero(def.Revolutions)
+	if revs <= 0 {
+		return nil, 0, fmt.Errorf("coil: revolutions must be > 0, got %g", revs)
+	}
+	stations, err := coilStations(def, revs)
+	if err != nil {
+		return nil, 0, err
+	}
+	return coilRise(stations)
+}
+
 // coilRise returns the rise-per-angle function over the compiled stations
 // (the trapezoid pitch integral), plus the rail's total turns.
 func coilRise(stations []geom.HelixStation) (func(angle float64) float64, float64, error) {

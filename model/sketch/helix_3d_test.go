@@ -4,8 +4,9 @@ package sketch
 
 import (
 	"math"
-	"oblikovati.org/kernel/geom"
 	"testing"
+
+	"oblikovati.org/kernel/geom"
 
 	gmath "oblikovati.org/math"
 )

@@ -59,9 +59,12 @@ func sketchTabCommands() []*CommandDefinition {
 // captioned buttons; the rest stack as small labeled rows.
 type sketchToolEntry struct {
 	id, name, alias, tip string
-	start                func() Tool
-	variants             []sketchToolEntry
-	large                bool
+	// icon overrides the lowercased-name asset key for multi-word names
+	// (asset filenames are kebab-case).
+	icon     string
+	start    func() Tool
+	variants []sketchToolEntry
+	large    bool
 }
 
 // newToolCommand builds one tool-launching command (no alias/icon for variants, which only
@@ -83,8 +86,12 @@ func buildToolCommands(panel string, entries []sketchToolEntry) []*CommandDefini
 		if e.large {
 			style = LargeIconButton
 		}
+		key := e.icon
+		if key == "" {
+			key = strings.ToLower(e.name)
+		}
 		cmd := newToolCommand(panel, e).WithAlias(e.alias).
-			WithIcon(strings.ToLower(e.name)).WithButtonStyle(style)
+			WithIcon(key).WithButtonStyle(style)
 		if len(e.variants) > 0 {
 			variants := make([]*CommandDefinition, len(e.variants))
 			for j, v := range e.variants {
@@ -151,7 +158,7 @@ func createCommands() []*CommandDefinition {
 		{id: "Sketch.Chamfer", name: "Chamfer", tip: "Chamfer — pick two lines to bevel their corner.", start: func() Tool { return NewSketchChamferTool(0.5) }},
 		{id: "Sketch.Text", name: "Text", tip: "Text — click an anchor, then type the text.", start: func() Tool { return NewSketchTextTool() }},
 		{id: "Sketch.Point", name: "Point", alias: "PT", tip: "Point — place sketch points.", start: func() Tool { return NewPointTool() }},
-		{id: "Sketch.CreateBlock", name: "Create Block", tip: "Create Block — select geometry, then name the reusable block.", start: func() Tool { return NewSketchCreateBlockTool() }, variants: []sketchToolEntry{
+		{id: "Sketch.CreateBlock", name: "Create Block", icon: "create-block", tip: "Create Block — select geometry, then name the reusable block.", start: func() Tool { return NewSketchCreateBlockTool() }, variants: []sketchToolEntry{
 			{id: "Sketch.PlaceBlock", name: "Place Block", tip: "Place Block — choose a block, then click its insertion point.", start: func() Tool { return NewSketchPlaceBlockTool("") }},
 		}},
 	})

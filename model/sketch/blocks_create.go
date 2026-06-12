@@ -108,6 +108,14 @@ func replaceEntityPoint(e Entity, old, clone *Point) {
 		swap(&t.Center)
 		swap(&t.Start)
 		swap(&t.End)
+	default:
+		replaceCurvePoint(e, old, clone, swap)
+	}
+}
+
+// replaceCurvePoint is the conic/spline half of replaceEntityPoint.
+func replaceCurvePoint(e Entity, old, clone *Point, swap func(**Point)) {
+	switch t := e.(type) {
 	case *Ellipse:
 		swap(&t.Center)
 	case *EllipticalArc:
