@@ -81,15 +81,7 @@ func TessellateEdge(e *topo.Edge, q Quality) []math.Point3 {
 // cyl/cone faces touching a crack so a trimmed wall conforms to its planar neighbour; a watertight body
 // has no cracks and is untouched.
 func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
-	faces := b.Faces()
-	fm := make([]*Mesh, len(faces))
-	idx := make(map[*topo.Face]int, len(faces))
-	for i, f := range faces {
-		fm[i] = TessellateFace(f, q)
-		idx[f] = i
-	}
-	conformCylConeFaces(faces, idx, fm, q)
-	orientFacesOutward(fm) // re-orient imported faces whose B-rep sense came in inverted (Normal-Debug red)
+	_, fm := tessellateBodyFaces(b, q)
 	mesh := &Mesh{}
 	for _, m := range fm {
 		mergeMesh(mesh, m)
@@ -99,6 +91,22 @@ func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
 		edges = append(edges, TessellateEdge(e, q))
 	}
 	return mesh, edges
+}
+
+// tessellateBodyFaces runs the per-face meshing pipeline (facet, cross-face
+// conformance repair, outward orientation) and returns the faces with their
+// repaired meshes — shared by [TessellateBody] and [CalculateBodyFacets].
+func tessellateBodyFaces(b *topo.Body, q Quality) ([]*topo.Face, []*Mesh) {
+	faces := b.Faces()
+	fm := make([]*Mesh, len(faces))
+	idx := make(map[*topo.Face]int, len(faces))
+	for i, f := range faces {
+		fm[i] = TessellateFace(f, q)
+		idx[f] = i
+	}
+	conformCylConeFaces(faces, idx, fm, q)
+	orientFacesOutward(fm) // re-orient imported faces whose B-rep sense came in inverted (Normal-Debug red)
+	return faces, fm
 }
 
 // TessellateFace facets a face. Planar faces are triangulated exactly from their
