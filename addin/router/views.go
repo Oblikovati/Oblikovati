@@ -5,6 +5,7 @@ package router
 import (
 	"encoding/json"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/doc"
@@ -137,9 +138,9 @@ func viewInfo(i int, v *doc.View, active bool) wire.ViewInfo {
 		Name:   v.Name,
 		Active: active,
 		Camera: wire.CameraView{
-			Eye:    [3]float64{v.Eye.X, v.Eye.Y, v.Eye.Z},
-			Target: [3]float64{v.Target.X, v.Target.Y, v.Target.Z},
-			Up:     [3]float64{v.Up.X, v.Up.Y, v.Up.Z},
+			Eye:    types.Point{X: v.Eye.X, Y: v.Eye.Y, Z: v.Eye.Z},
+			Target: types.Point{X: v.Target.X, Y: v.Target.Y, Z: v.Target.Z},
+			Up:     types.Vector{X: v.Up.X, Y: v.Up.Y, Z: v.Up.Z},
 			FOV:    v.FOV,
 		},
 	}

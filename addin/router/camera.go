@@ -7,6 +7,7 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -43,9 +44,9 @@ func setCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	cam.Eye = math.P3(a.Eye[0], a.Eye[1], a.Eye[2])
-	cam.Target = math.P3(a.Target[0], a.Target[1], a.Target[2])
-	cam.Up = math.V3(a.Up[0], a.Up[1], a.Up[2])
+	cam.Eye = math.P3(a.Eye.X, a.Eye.Y, a.Eye.Z)
+	cam.Target = math.P3(a.Target.X, a.Target.Y, a.Target.Z)
+	cam.Up = math.V3(a.Up.X, a.Up.Y, a.Up.Z)
 	cam.FOV = a.FOV
 	if err := s.SetViewCamera(a.Document, cam); err != nil {
 		return nil, err
@@ -60,9 +61,9 @@ func setCamera(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 // cameraView projects a scene.Camera onto the wire look-at DTO.
 func cameraView(c scene.Camera) wire.CameraView {
 	return wire.CameraView{
-		Eye:    [3]float64{c.Eye.X, c.Eye.Y, c.Eye.Z},
-		Target: [3]float64{c.Target.X, c.Target.Y, c.Target.Z},
-		Up:     [3]float64{c.Up.X, c.Up.Y, c.Up.Z},
+		Eye:    types.Point{X: c.Eye.X, Y: c.Eye.Y, Z: c.Eye.Z},
+		Target: types.Point{X: c.Target.X, Y: c.Target.Y, Z: c.Target.Z},
+		Up:     types.Vector{X: c.Up.X, Y: c.Up.Y, Z: c.Up.Z},
 		FOV:    c.FOV,
 	}
 }
@@ -71,7 +72,7 @@ func cameraView(c scene.Camera) wire.CameraView {
 // non-finite component, a non-positive or ≥π field of view, a zero eye→target distance,
 // a zero-length up vector, or an up parallel to the view direction.
 func validateCameraArgs(a wire.SetCameraArgs) error {
-	for _, v := range []float64{a.Eye[0], a.Eye[1], a.Eye[2], a.Target[0], a.Target[1], a.Target[2], a.Up[0], a.Up[1], a.Up[2], a.FOV} {
+	for _, v := range []float64{a.Eye.X, a.Eye.Y, a.Eye.Z, a.Target.X, a.Target.Y, a.Target.Z, a.Up.X, a.Up.Y, a.Up.Z, a.FOV} {
 		if stdmath.IsNaN(v) || stdmath.IsInf(v, 0) {
 			return fmt.Errorf("view.setCamera: non-finite camera component in %+v", a)
 		}
@@ -79,9 +80,9 @@ func validateCameraArgs(a wire.SetCameraArgs) error {
 	if a.FOV <= 0 || a.FOV >= stdmath.Pi {
 		return fmt.Errorf("view.setCamera: fov %v out of range (expected 0 < fov < π)", a.FOV)
 	}
-	eye := math.P3(a.Eye[0], a.Eye[1], a.Eye[2])
-	target := math.P3(a.Target[0], a.Target[1], a.Target[2])
-	up := math.V3(a.Up[0], a.Up[1], a.Up[2])
+	eye := math.P3(a.Eye.X, a.Eye.Y, a.Eye.Z)
+	target := math.P3(a.Target.X, a.Target.Y, a.Target.Z)
+	up := math.V3(a.Up.X, a.Up.Y, a.Up.Z)
 	const eps = 1e-9
 	if eye.DistanceTo(target) < eps {
 		return fmt.Errorf("view.setCamera: eye and target coincide at %v", a.Eye)

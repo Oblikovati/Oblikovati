@@ -24,7 +24,7 @@ func triadEventLog(s *Session) *[]TriadDragged {
 
 func TestTriadAxisDragTranslatesAlongX(t *testing.T) {
 	s := NewSession()
-	if err := s.ShowTriad(wire.TriadSpec{Position: [3]float64{0, 0, 0}, Visible: true}); err != nil {
+	if err := s.ShowTriad(wire.TriadSpec{Position: types.NewPoint(0, 0, 0), Visible: true}); err != nil {
 		t.Fatalf("ShowTriad: %v", err)
 	}
 	got := triadEventLog(s)
@@ -54,14 +54,14 @@ func TestTriadAxisDragTranslatesAlongX(t *testing.T) {
 	if dy, dz := move.Delta[7], move.Delta[11]; dy != 0 || dz != 0 {
 		t.Errorf("off-axis translation (%v, %v), want the X constraint to hold", dy, dz)
 	}
-	if pos := s.TriadSpec().Position; stdmath.Abs(pos[0]-3) > 1e-6 {
-		t.Errorf("triad landed at x=%v, want 3 (the delta baked in)", pos[0])
+	if pos := s.TriadSpec().Position; stdmath.Abs(pos.X-3) > 1e-6 {
+		t.Errorf("triad landed at x=%v, want 3 (the delta baked in)", pos.X)
 	}
 }
 
 func TestTriadRingDragRotatesAboutZ(t *testing.T) {
 	s := NewSession()
-	if err := s.ShowTriad(wire.TriadSpec{Position: [3]float64{0, 0, 0}, Visible: true}); err != nil {
+	if err := s.ShowTriad(wire.TriadSpec{Position: types.NewPoint(0, 0, 0), Visible: true}); err != nil {
 		t.Fatalf("ShowTriad: %v", err)
 	}
 	got := triadEventLog(s)
@@ -87,7 +87,7 @@ func TestTriadRingDragRotatesAboutZ(t *testing.T) {
 
 func TestTriadPlanarDragStaysInPlane(t *testing.T) {
 	s := NewSession()
-	if err := s.ShowTriad(wire.TriadSpec{Position: [3]float64{0, 0, 0}, Visible: true}); err != nil {
+	if err := s.ShowTriad(wire.TriadSpec{Position: types.NewPoint(0, 0, 0), Visible: true}); err != nil {
 		t.Fatalf("ShowTriad: %v", err)
 	}
 	got := triadEventLog(s)
@@ -143,7 +143,7 @@ func TestTriadSegmentHoverEmitsOnTransition(t *testing.T) {
 func TestManipulatorDragSlidesInViewPlane(t *testing.T) {
 	s := NewSession()
 	if err := s.SetManipulators("sim", []wire.ManipulatorHandleSpec{
-		{ID: "tip", Position: [3]float64{1, 1, 0}},
+		{ID: "tip", Position: types.NewPoint(1, 1, 0)},
 	}, ""); err != nil {
 		t.Fatalf("SetManipulators: %v", err)
 	}
@@ -164,11 +164,11 @@ func TestManipulatorDragSlidesInViewPlane(t *testing.T) {
 	if err := s.EndManipulatorDrag(math.P3(4, 2, 10), down, false, false); err != nil {
 		t.Fatalf("End: %v", err)
 	}
-	if len(got) != 3 || got[1].Position != [3]float64{4, 2, 0} {
+	if len(got) != 3 || got[1].Position != types.NewPoint(4, 2, 0) {
 		t.Fatalf("events = %+v, want the handle at (4,2,0)", got)
 	}
 	// The final position bakes into the spec.
-	if h := s.Manipulators().Handles()["sim"][0]; h.Position != [3]float64{4, 2, 0} {
+	if h := s.Manipulators().Handles()["sim"][0]; h.Position != types.NewPoint(4, 2, 0) {
 		t.Errorf("baked position = %v, want (4,2,0)", h.Position)
 	}
 }

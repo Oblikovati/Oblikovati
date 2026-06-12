@@ -12,6 +12,7 @@ package events
 import (
 	"encoding/json"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/event"
@@ -139,7 +140,7 @@ func subscribeGizmos(bus *event.Bus, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.TriadDragged) event.Outcome {
 			return relayJSON(sink, wire.TriadDragEvent{
 				Type: wire.EventTriadDrag, Phase: e.Phase, Segment: e.Segment,
-				MoveType: e.MoveType, Delta: e.Delta, Context: e.Context,
+				MoveType: e.MoveType, Delta: types.Matrix{Cells: e.Delta}, Context: e.Context,
 			})
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.TriadSegmentChanged) event.Outcome {

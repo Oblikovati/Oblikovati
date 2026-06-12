@@ -177,8 +177,8 @@ func lightInfo(index int, l renderer.SceneLight) wire.LightInfo {
 		On:                  l.On,
 		Color:               types.Rgba{R: l.Color[0], G: l.Color[1], B: l.Color[2], A: 1},
 		Intensity:           float64(l.Intensity),
-		Direction:           vec64(l.Direction),
-		Position:            vec64(l.Position),
+		Direction:           pointVec(l.Direction),
+		Position:            pointPos(l.Position),
 		SpotInnerAngle:      float64(l.SpotInner),
 		SpotOuterAngle:      float64(l.SpotOuter),
 		Attenuation:         vec64(l.Attenuation),
@@ -189,8 +189,8 @@ func lightInfo(index int, l renderer.SceneLight) wire.LightInfo {
 func sceneLight(in wire.LightInfo) renderer.SceneLight {
 	return renderer.SceneLight{
 		Kind:        app.LightKindForDefinition(in.LightDefinitionType),
-		Direction:   vec32(in.Direction),
-		Position:    vec32(in.Position),
+		Direction:   [3]float32{float32(in.Direction.X), float32(in.Direction.Y), float32(in.Direction.Z)},
+		Position:    [3]float32{float32(in.Position.X), float32(in.Position.Y), float32(in.Position.Z)},
 		Color:       [3]float32{in.Color.R, in.Color.G, in.Color.B},
 		Intensity:   float32(in.Intensity),
 		On:          in.On,
@@ -240,5 +240,15 @@ func environmentView(e renderer.Environment) wire.EnvironmentView {
 }
 
 func vec64(v [3]float32) [3]float64 { return [3]float64{float64(v[0]), float64(v[1]), float64(v[2])} }
+
+// pointVec / pointPos lift the renderer's float32 triples into the typed wire
+// geometry (M01-F05).
+func pointVec(v [3]float32) types.Vector {
+	return types.Vector{X: float64(v[0]), Y: float64(v[1]), Z: float64(v[2])}
+}
+
+func pointPos(v [3]float32) types.Point {
+	return types.Point{X: float64(v[0]), Y: float64(v[1]), Z: float64(v[2])}
+}
 
 func vec32(v [3]float64) [3]float32 { return [3]float32{float32(v[0]), float32(v[1]), float32(v[2])} }

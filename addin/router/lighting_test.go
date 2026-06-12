@@ -69,10 +69,10 @@ func TestLightRoundTrips(t *testing.T) {
 
 	added.Intensity = 2.5
 	added.Color = types.Rgba{R: 0.2, G: 0.4, B: 0.8, A: 1}
-	added.Position = [3]float64{1, 2, 3}
+	added.Position = types.NewPoint(1, 2, 3)
 	var set wire.LightInfo
 	call(t, r, s, "lighting.setLight", argJSON(t, wire.SetLightArgs{Index: added.Index, Light: added}), &set)
-	if set.Intensity != 2.5 || set.Color.B != 0.8 || set.Position != [3]float64{1, 2, 3} {
+	if set.Intensity != 2.5 || set.Color.B != 0.8 || set.Position != types.NewPoint(1, 2, 3) {
 		t.Errorf("setLight did not round-trip: %+v", set)
 	}
 

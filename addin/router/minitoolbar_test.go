@@ -15,7 +15,7 @@ func TestMiniToolbarOverWire(t *testing.T) {
 
 	var lst wire.ListMiniToolbarsResult
 	call(t, r, s, "miniToolbar.list", "{}", &lst)
-	if len(lst.Toolbars) != 1 || lst.Toolbars[0].Anchor == nil || lst.Toolbars[0].Anchor[2] != 3 {
+	if len(lst.Toolbars) != 1 || lst.Toolbars[0].Anchor == nil || lst.Toolbars[0].Anchor.Z != 3 {
 		t.Fatalf("list = %+v, want the anchored toolbar", lst.Toolbars)
 	}
 
