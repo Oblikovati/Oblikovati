@@ -123,6 +123,23 @@ func buildHelix3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in
 	}
 	h := sk.AddHelix3D(origin, axis, radius, pitch, radial, turns, in.Clockwise)
 	h.SetConstruction(in.Construction)
+	// Variable rows and end conditions at creation (M06-F09, #624).
+	if kind, kerr := helixShapeKind(in.Mode); kerr == nil {
+		h.Definition().ShapeKind = kind
+	}
+	if len(in.Rows) > 0 {
+		rows, rerr := helixRowsFromWire(part, in.Rows)
+		if rerr != nil {
+			return nil, rerr
+		}
+		kind, _ := helixShapeKind(in.Mode)
+		if err := h.SetVariableShape(kind, rows); err != nil {
+			return nil, err
+		}
+	}
+	if err := applyHelixEndEdit(part, h, in.Start, in.End); err != nil {
+		return nil, err
+	}
 	return entityResult(uint64(h.EntityID()), in.Kind, h.Origin.EntityID())
 }
 

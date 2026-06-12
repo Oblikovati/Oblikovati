@@ -252,9 +252,9 @@ func (c *Blocks) Insert(def *BlockDefinition, t math.Matrix3) *BlockInstance {
 }
 
 // InstanceCount reports the sketch's placed instances; Item returns the i-th.
-func (c *Blocks) InstanceCount() int           { return len(c.instances) }
-func (c *Blocks) Item(i int) *BlockInstance    { return c.instances[i] }
-func (c *Blocks) Instances() []*BlockInstance  { return append([]*BlockInstance(nil), c.instances...) }
+func (c *Blocks) InstanceCount() int          { return len(c.instances) }
+func (c *Blocks) Item(i int) *BlockInstance   { return c.instances[i] }
+func (c *Blocks) Instances() []*BlockInstance { return append([]*BlockInstance(nil), c.instances...) }
 func (c *Blocks) remove(inst *BlockInstance) { // deleteEntity hook
 	inst.def.detach(inst)
 	c.instances = removeItem(c.instances, inst)

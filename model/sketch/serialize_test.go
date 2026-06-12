@@ -166,4 +166,3 @@ func TestPlaneSurvives(t *testing.T) {
 		t.Errorf("plane normal = %v, want %v", got.Normal(), want.Normal())
 	}
 }
-

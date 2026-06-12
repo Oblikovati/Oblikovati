@@ -257,6 +257,10 @@ type CoilDefinition struct {
 	Revolutions  func() float64
 	Taper        float64
 	Operation    ops.PartFeatureOperation
+	// Variable-pitch rail + end conditions (M06-F09, #624; coil_variable.go).
+	PitchRows []CoilPitchRow
+	StartEnd  CoilEndCondition
+	EndEnd    CoilEndCondition
 }
 
 // CoilFeature sweeps a profile along a helix.
@@ -287,7 +291,15 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 	if revs <= 0 {
 		return Output{}, fmt.Errorf("coil: revolutions must be > 0, got %g", revs)
 	}
-	sections := coilSections(prof, c.def.Sketch.Plane(), c.def.Axis, callOrZero(c.def.Pitch), revs)
+	stations, err := coilStations(c.def, revs)
+	if err != nil {
+		return Output{}, err
+	}
+	rise, totalTurns, err := coilRise(stations)
+	if err != nil {
+		return Output{}, err
+	}
+	sections := coilSections(prof, c.def.Sketch.Plane(), c.def.Axis, rise, totalTurns)
 	c.tool, err = sweptSolid(sections, false, featOr(c.featName, "coil"))
 	if err != nil {
 		return Output{}, err
@@ -299,9 +311,11 @@ func (c *CoilFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// coilSections places the profile along a helix: at each step it is rotated about the
-// axis by the running angle and translated along the axis by pitch·(angle/2π).
-func coilSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, pitch, revolutions float64) [][]math.Point3 {
+// coilSections places the profile along the helix rail: at each step it is
+// rotated about the axis by the running angle and translated along the axis
+// by the rail's rise at that angle (constant pitch or the M06-F09 pitch
+// table — the rise closure carries either).
+func coilSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, rise func(float64) float64, revolutions float64) [][]math.Point3 {
 	base := modelPolygon(prof, plane)
 	axisVec := axis.Direction().AsVector()
 	k := int(stdmath.Max(3, stdmath.Round(revolveSegments*revolutions)))
@@ -309,11 +323,10 @@ func coilSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, pitc
 	sections := make([][]math.Point3, k+1)
 	for s := 0; s <= k; s++ {
 		angle := total * float64(s) / float64(k)
-		rise := pitch * angle / (2 * stdmath.Pi)
 		rot := math.Rotation4(angle, axis.Direction(), axis.Origin())
 		sec := make([]math.Point3, len(base))
 		for i, p := range base {
-			sec[i] = rot.TransformPoint(p).TranslateBy(axisVec.Scale(rise))
+			sec[i] = rot.TransformPoint(p).TranslateBy(axisVec.Scale(math.Scalar(rise(angle))))
 		}
 		sections[s] = sec
 	}

@@ -11,8 +11,8 @@ import (
 // Helix3d is a 3D helical curve (the canonical sweep path for threads, springs and
 // coils). It winds about an axis through Origin in direction Axis, starting on the
 // in-plane ray RefDir at StartRadius, advancing AxialPerTurn along the axis and growing
-// RadialPerTurn outward per revolution, for Turns revolutions. This one shape covers
-// every Inventor coil mode: a cylindrical helix (RadialPerTurn = 0), a conical/tapered
+// RadialPerTurn outward per revolution, for Turns revolutions.
+// every reference coil mode: a cylindrical helix (RadialPerTurn = 0), a conical/tapered
 // helix (both nonzero), and a flat spiral (AxialPerTurn = 0). Clockwise flips the
 // handedness about Axis. Parameterized t ∈ [0, 1] over the whole curve.
 type Helix3d struct {

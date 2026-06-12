@@ -5,6 +5,7 @@ package sketch
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/seq"
 )
@@ -92,6 +93,28 @@ type Entity3DData struct {
 	T1     float64   `yaml:"t1,omitempty"`
 	// Spline only (M06-F11, #626): the active tangency handles.
 	Handles []SplineHandle3DData `yaml:"handles,omitempty"`
+	// Helical only (M06-F09, #624): the shape definition — kind spelling,
+	// variable rows and end conditions; absent reads as a constant
+	// pitch-and-revolution shape with natural ends.
+	HelixShapeKind string         `yaml:"helixShapeKind,omitempty"`
+	HelixRows      []HelixRowData `yaml:"helixRows,omitempty"`
+	HelixStart     *HelixEndData  `yaml:"helixStart,omitempty"`
+	HelixEnd       *HelixEndData  `yaml:"helixEnd,omitempty"`
+}
+
+// HelixRowData is one persisted variable-shape station (cm / turns).
+type HelixRowData struct {
+	Diameter   float64 `yaml:"diameter,omitempty"`
+	Pitch      float64 `yaml:"pitch,omitempty"`
+	Height     float64 `yaml:"height,omitempty"`
+	Revolution float64 `yaml:"revolution,omitempty"`
+}
+
+// HelixEndData is one persisted end condition (angles in radians).
+type HelixEndData struct {
+	Kind            string  `yaml:"kind"`
+	TransitionAngle float64 `yaml:"transitionAngle,omitempty"`
+	FlatAngle       float64 `yaml:"flatAngle,omitempty"`
 }
 
 // SplineHandle3DData is one active 3D spline tangency handle.
@@ -221,12 +244,14 @@ func serializeEntity3D(e Entity) (Entity3DData, error) {
 			CCW: v.CounterClockwise, Construction: v.construction,
 		}, nil
 	case *HelicalCurve3D:
-		return Entity3DData{
+		ed := Entity3DData{
 			ID: int(v.id), Kind: "helical", Points: []int{int(v.Origin.id)},
 			Radius: float64(v.StartRadius), Axis: axisTriple(v.Axis),
 			Pitch: v.AxialPerTurn, Turns: v.Turns, RadialPerTurn: v.RadialPerTurn,
 			Clockwise: v.Clockwise, Construction: v.construction,
-		}, nil
+		}
+		serializeHelixDefinition(&ed, v)
+		return ed, nil
 	case *Ellipse3D:
 		return Entity3DData{
 			ID: int(v.id), Kind: "ellipse", Points: []int{int(v.Center.id)},
@@ -524,6 +549,9 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Enti
 		}
 		h := s.addHelix3DPt(pts[0], axis, ed.Radius, ed.Pitch, ed.RadialPerTurn, ed.Turns, ed.Clockwise)
 		h.SetConstruction(ed.Construction)
+		if err := restoreHelixDefinition(h, ed); err != nil {
+			return nil, err
+		}
 		return h, nil
 	case "ellipse", "ellipticalArc":
 		return restoreConic3D(s, ed, pts[0])
@@ -796,4 +824,63 @@ func serializeSplineHandles3D(sp *Spline3D) []SplineHandle3DData {
 		out[i] = SplineHandle3DData{FitIndex: h.FitIndex, End: [3]float64{float64(p.X), float64(p.Y), float64(p.Z)}}
 	}
 	return out
+}
+
+// serializeHelixDefinition renders the M06-F09 shape definition onto the
+// helix's row; a default constant/natural definition stays absent.
+func serializeHelixDefinition(ed *Entity3DData, h *HelicalCurve3D) {
+	def := h.Definition()
+	if def.ShapeKind != types.HelixShapePitchRevolution || def.Variable() {
+		ed.HelixShapeKind = def.ShapeKind.String()
+	}
+	for _, r := range def.Rows {
+		ed.HelixRows = append(ed.HelixRows, HelixRowData(r))
+	}
+	ed.HelixStart = helixEndData(def.Start)
+	ed.HelixEnd = helixEndData(def.End)
+}
+
+// helixEndData persists a non-natural end condition (nil for natural).
+func helixEndData(c HelixEndCondition) *HelixEndData {
+	if !c.flat() {
+		return nil
+	}
+	return &HelixEndData{Kind: c.Kind.String(), TransitionAngle: c.TransitionAngle, FlatAngle: c.FlatAngle}
+}
+
+// restoreHelixDefinition rebuilds the persisted definition.
+func restoreHelixDefinition(h *HelicalCurve3D, ed Entity3DData) error {
+	def := h.Definition()
+	if ed.HelixShapeKind != "" {
+		kind, ok := types.ParseHelicalShapeDefinitionKind(ed.HelixShapeKind)
+		if !ok {
+			return fmt.Errorf("helical entity: unknown shape kind %q", ed.HelixShapeKind)
+		}
+		def.ShapeKind = kind
+	}
+	for _, r := range ed.HelixRows {
+		def.Rows = append(def.Rows, HelixRow(r))
+	}
+	start, err := helixEndFromData(ed.HelixStart)
+	if err != nil {
+		return err
+	}
+	end, err := helixEndFromData(ed.HelixEnd)
+	if err != nil {
+		return err
+	}
+	h.SetEndConditions(start, end)
+	return nil
+}
+
+// helixEndFromData parses a persisted end condition (nil stays natural).
+func helixEndFromData(d *HelixEndData) (*HelixEndCondition, error) {
+	if d == nil {
+		return nil, nil
+	}
+	kind, ok := types.ParseHelixEndKind(d.Kind)
+	if !ok {
+		return nil, fmt.Errorf("helical entity: unknown end kind %q", d.Kind)
+	}
+	return &HelixEndCondition{Kind: kind, TransitionAngle: d.TransitionAngle, FlatAngle: d.FlatAngle}, nil
 }

@@ -29,3 +29,7 @@ var (
 	_ contract.SketchBlockDefinition = (*BlockDefinition)(nil)
 	_ contract.SketchBlock           = (*BlockInstance)(nil)
 )
+
+// A helix definition view satisfies the public HelicalCurveDefinition
+// contract (M06-F09, #624).
+var _ contract.HelicalCurveDefinition = HelixDefinitionView{}

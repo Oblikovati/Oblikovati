@@ -4,6 +4,7 @@ package sketch
 
 import (
 	"math"
+	"oblikovati.org/kernel/geom"
 	"testing"
 
 	gmath "oblikovati.org/math"
@@ -27,7 +28,11 @@ func TestHelicalCurve3D(t *testing.T) {
 		t.Fatalf("Curve: %v", err)
 	}
 	want := math.Hypot(2*math.Pi*4, 10) * 3
-	if l := cu.Length(); math.Abs(l-want) > 1e-9 {
+	helix, isAnalytic := cu.(geom.Helix3d)
+	if !isAnalytic {
+		t.Fatalf("a natural constant helix must stay analytic, got %T", cu)
+	}
+	if l := helix.Length(); math.Abs(l-want) > 1e-9 {
 		t.Errorf("kernel helix length = %v, want %v", l, want)
 	}
 	// The start radius is a solver DOF the helix contributes.

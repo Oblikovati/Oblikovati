@@ -73,14 +73,14 @@ func (t *SketchPlaceBlockTool) Prompt(*Session) string {
 
 // SetDefinition / SetRotation / SetScale feed the placement parameters from
 // the dialog.
-func (t *SketchPlaceBlockTool) SetDefinition(name string)    { t.definition = name }
-func (t *SketchPlaceBlockTool) SetRotation(radians float64)  { t.rotation = radians }
-func (t *SketchPlaceBlockTool) SetScale(factor float64)      { t.scale = factor }
-func (t *SketchPlaceBlockTool) Start(*Session)               {}
-func (t *SketchPlaceBlockTool) Pick(*Session, Selectable)    {}
-func (t *SketchPlaceBlockTool) Cancel(*Session)              { t.at = nil }
-func (t *SketchPlaceBlockTool) CanCommit() bool              { return t.at != nil && t.definition != "" }
-func (t *SketchPlaceBlockTool) AutoCommits() bool            { return true }
+func (t *SketchPlaceBlockTool) SetDefinition(name string)   { t.definition = name }
+func (t *SketchPlaceBlockTool) SetRotation(radians float64) { t.rotation = radians }
+func (t *SketchPlaceBlockTool) SetScale(factor float64)     { t.scale = factor }
+func (t *SketchPlaceBlockTool) Start(*Session)              {}
+func (t *SketchPlaceBlockTool) Pick(*Session, Selectable)   {}
+func (t *SketchPlaceBlockTool) Cancel(*Session)             { t.at = nil }
+func (t *SketchPlaceBlockTool) CanCommit() bool             { return t.at != nil && t.definition != "" }
+func (t *SketchPlaceBlockTool) AutoCommits() bool           { return true }
 func (t *SketchPlaceBlockTool) ClickAt(_ *Session, px, py float64) {
 	p := math.P2(math.Scalar(px), math.Scalar(py))
 	t.at = &p

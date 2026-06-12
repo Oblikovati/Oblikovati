@@ -214,6 +214,7 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchListBlockInstances] = listBlockInstances
 	r.handlers[wire.MethodSketchSetSplineHandle] = setSplineHandle
 	r.handlers[wire.MethodSketch3DSetSplineHandle] = setSplineHandle3D
+	r.handlers[wire.MethodSketch3DEditHelix] = sketch3DEditHelix
 	r.registerSketchAuthoringHandlers()
 	r.registerSketch3DHandlers()
 }
@@ -419,6 +420,7 @@ var mutatingMethods = map[string]bool{
 	wire.MethodSketchBlockDefinitionDelete:      true,
 	wire.MethodSketchAddBlockInstance:           true,
 	wire.MethodSketch3DSetSplineHandle:          true,
+	wire.MethodSketch3DEditHelix:                true,
 	wire.MethodSketchAddConstraint:              true,
 	wire.MethodSketchDeleteConstraint:           true,
 	wire.MethodSketchAddDimension:               true,
