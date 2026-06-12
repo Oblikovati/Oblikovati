@@ -185,9 +185,15 @@ func TestBooleanNewBodyAndStrings(t *testing.T) {
 	}
 }
 
-func TestSewNotYetImplemented(t *testing.T) {
-	if _, err := Sew(tetra(1, math.V3(0, 0, 0)), 1e-6); err == nil {
-		t.Error("Sew should report NotYetImplemented in phase A")
+// Sew is implemented as of M07 PBI-084 (#300) — gap behavior is covered by
+// sew_test.go; an already-closed body simply promotes to a solid.
+func TestSewClosedTetraSucceeds(t *testing.T) {
+	solid, err := Sew(tetra(1, math.V3(0, 0, 0)), 1e-6)
+	if err != nil {
+		t.Fatalf("Sew on a closed body: %v", err)
+	}
+	if !solid.IsSolid() {
+		t.Error("sewing a closed tetra should yield a solid")
 	}
 }
 

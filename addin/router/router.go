@@ -303,6 +303,44 @@ func (r *Router) registerMaterialHandlers() {
 	r.handlers[wire.MethodModelAssignMaterial] = assignMaterial
 	r.handlers[wire.MethodModelAssignAppearance] = assignAppearance
 	r.handlers[wire.MethodModelPhysicalProperties] = physicalProperties
+
+	// Body topology, queries and facet sets (M07 #293/#629/#630).
+	r.handlers[wire.MethodBodyList] = bodyList
+	r.handlers[wire.MethodBodyShells] = bodyShells
+	r.handlers[wire.MethodBodyWires] = bodyWires
+	r.handlers[wire.MethodWireOffsetPlanar] = wireOffsetPlanar
+	r.handlers[wire.MethodBodyLocateUsingPoint] = bodyLocateUsingPoint
+	r.handlers[wire.MethodBodyFindUsingRay] = bodyFindUsingRay
+	r.handlers[wire.MethodBodyIsPointInside] = bodyIsPointInside
+	r.handlers[wire.MethodBodyConvexityEdges] = bodyConvexityEdges
+	r.handlers[wire.MethodBodyValidate] = bodyValidate
+	r.handlers[wire.MethodBodyRangeBox] = bodyRangeBox
+	r.handlers[wire.MethodBodyBindTransientKey] = bodyBindTransientKey
+	r.handlers[wire.MethodBodyCalculateFacets] = bodyCalculateFacets
+	r.handlers[wire.MethodBodyExistingFacets] = bodyExistingFacets
+	r.handlers[wire.MethodBodyFacetTolerances] = bodyFacetTolerances
+	r.handlers[wire.MethodBodyCalculateStrokes] = bodyCalculateStrokes
+	r.handlers[wire.MethodBodyExistingStrokes] = bodyExistingStrokes
+	r.handlers[wire.MethodBodyStrokeTolerances] = bodyStrokeTolerances
+	r.handlers[wire.MethodFaceCalculateFacets] = faceCalculateFacets
+	r.handlers[wire.MethodFaceCalculateStrokes] = faceCalculateStrokes
+
+	// The transient B-rep factory (M07 #628) — session-scoped, no document
+	// mutation, so none of these are mutating methods.
+	r.handlers[wire.MethodBrepCreatePrimitive] = brepCreatePrimitive
+	r.handlers[wire.MethodBrepBoolean] = brepBoolean
+	r.handlers[wire.MethodBrepTransform] = brepTransform
+	r.handlers[wire.MethodBrepCopy] = brepCopy
+	r.handlers[wire.MethodBrepSectionWithPlane] = brepSectionWithPlane
+	r.handlers[wire.MethodBrepDeleteFaces] = brepDeleteFaces
+	r.handlers[wire.MethodBrepSilhouette] = brepSilhouette
+	r.handlers[wire.MethodBrepRuledSurface] = brepRuledSurface
+	r.handlers[wire.MethodBrepImprint] = brepImprint
+	r.handlers[wire.MethodBrepIdenticalBodies] = brepIdenticalBodies
+	r.handlers[wire.MethodBrepCreateFromDefinition] = brepCreateFromDefinition
+	r.handlers[wire.MethodBrepDescribe] = brepDescribe
+	r.handlers[wire.MethodBrepList] = brepList
+	r.handlers[wire.MethodBrepDelete] = brepDelete
 }
 
 // registerLightingHandlers wires the lighting-style, light, environment, and shadow methods

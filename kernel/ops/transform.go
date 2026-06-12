@@ -28,9 +28,6 @@ import (
 //	    return prepend(topo.Tok("mirror", "copy", 0), l)
 //	})
 func TransformBody(b *topo.Body, m math.Matrix4, derive func(topo.Lineage) topo.Lineage) (*topo.Body, error) {
-	if n := len(b.Shells()); n != 1 {
-		return nil, fmt.Errorf("ops.TransformBody: %d shells; only single-shell bodies are supported", n)
-	}
 	reflected := m.Determinant() < 0
 	bld := topo.NewBuilder(b.IsSolid(), derive(b.Lineage()))
 
@@ -47,13 +44,73 @@ func TransformBody(b *topo.Body, m math.Matrix4, derive func(topo.Lineage) topo.
 		edges[e] = bld.AddEdge(curve, verts[e.StartVertex()], verts[e.EndVertex()], derive(e.Lineage()))
 	}
 	for _, f := range b.Faces() {
-		surface, err := geom.TransformSurface(f.Geometry(), m)
-		if err != nil {
-			return nil, fmt.Errorf("ops.TransformBody: face %d: %w", f.ID(), err)
+		if err := transformFaceInto(bld, f, m, edges, reflected, derive); err != nil {
+			return nil, err
 		}
-		bld.AddFace(surface, derive(f.Lineage()), loopSpecs(f, edges, reflected)...)
 	}
-	return bld.Build(), nil
+	out := bld.Build() // multi-shell sources regroup by connectivity here (#629)
+	transformWiresInto(out, b, m, edges, derive)
+	return out, nil
+}
+
+// transformFaceInto clones one face with its surface mapped, PRESERVING its
+// material sense — a reversed face (a cut/bore wall) must stay reversed or its
+// tessellation winds inward and the divergence-theorem volume flips on it.
+func transformFaceInto(bld *topo.Builder, f *topo.Face, m math.Matrix4, edges map[*topo.Edge]*topo.Edge, reflected bool, derive func(topo.Lineage) topo.Lineage) error {
+	surface, err := geom.TransformSurface(f.Geometry(), m)
+	if err != nil {
+		return fmt.Errorf("ops.TransformBody: face %d: %w", f.ID(), err)
+	}
+	if f.Reversed() {
+		bld.AddReversedFace(surface, derive(f.Lineage()), loopSpecs(f, edges, reflected)...)
+		return nil
+	}
+	bld.AddFace(surface, derive(f.Lineage()), loopSpecs(f, edges, reflected)...)
+	return nil
+}
+
+// transformWiresInto carries the source body's wires onto the transformed copy,
+// re-aiming each use at the cloned edges. Wire edges not shared with any face
+// are cloned here (they were absent from the face pass).
+func transformWiresInto(dst, src *topo.Body, m math.Matrix4, edges map[*topo.Edge]*topo.Edge, derive func(topo.Lineage) topo.Lineage) {
+	for _, w := range src.Wires() {
+		uses := make([]topo.Use, 0, len(w.Uses()))
+		for _, u := range w.Uses() {
+			clone, ok := edges[u.Edge]
+			if !ok {
+				clone = cloneWireEdge(u.Edge, m, derive)
+				edges[u.Edge] = clone
+			}
+			uses = append(uses, topo.Use{Edge: clone, Reversed: u.Reversed})
+		}
+		dst.AttachWire(derive(w.Lineage()), uses)
+	}
+}
+
+// cloneWireEdge maps a face-less wire edge (fresh vertices, transformed curve).
+// An untransformable curve keeps its polyline sampling — wires are sampled
+// consumers, so the seam stays faithful.
+func cloneWireEdge(e *topo.Edge, m math.Matrix4, derive func(topo.Lineage) topo.Lineage) *topo.Edge {
+	bld := topo.NewBuilder(false, derive(e.Lineage()))
+	curve, err := geom.TransformCurve(e.Geometry(), m)
+	if err != nil {
+		curve = transformSampledCurve(e.Geometry(), m)
+	}
+	s := bld.AddVertex(m.TransformPoint(e.StartVertex().Point()), derive(e.StartVertex().Lineage()))
+	t := bld.AddVertex(m.TransformPoint(e.EndVertex().Point()), derive(e.EndVertex().Lineage()))
+	return bld.AddEdge(curve, s, t, derive(e.Lineage()))
+}
+
+// transformSampledCurve maps a curve with no analytic transform as a polyline.
+func transformSampledCurve(c geom.Curve3, m math.Matrix4) geom.Curve3 {
+	const samples = 64
+	lo, hi := c.Domain()
+	pts := make([]math.Point3, samples+1)
+	for i := 0; i <= samples; i++ {
+		pts[i] = m.TransformPoint(c.PointAt(lo + (hi-lo)*float64(i)/samples))
+	}
+	poly, _ := geom.NewPolyline(pts)
+	return poly
 }
 
 // loopSpecs rebuilds a face's loop specs against the cloned edges, reversing the

@@ -5,7 +5,6 @@ package ops
 import (
 	"fmt"
 
-	"oblikovati.org/build"
 	"oblikovati.org/kernel/topo"
 )
 
@@ -56,13 +55,4 @@ func BoundaryEdges(b *topo.Body) []*topo.Edge {
 		}
 	}
 	return open
-}
-
-// Sew stitches an open shell's coincident boundary edges into a closed, manifold
-// body. Tolerant stitching (matching near-coincident edges and rewiring uses)
-// needs the tolerant-topology machinery of kernel phase D; until then Validate +
-// BoundaryEdges report the open edges precisely, which is the documented
-// "or reported precisely" path (PBI-084).
-func Sew(_ *topo.Body, _ float64) (*topo.Body, error) {
-	return nil, build.NotYetImplemented("PBI-084-sew")
 }

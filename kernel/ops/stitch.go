@@ -48,12 +48,18 @@ type (
 )
 
 // weld accumulates the coincidence-welded vertices, edges and faces to rebuild.
+// snap (identity for plain stitching) lets Sew pull near-coincident boundary
+// endpoints onto a shared position BEFORE quantization, so a real gap inside the
+// sew tolerance welds the way an exact coincidence does. built records the edges
+// the last build() created, so Sew can stamp gap residuals onto them.
 type weld struct {
 	tol    float64
+	snap   func(math.Point3) math.Point3
 	points map[vKey]math.Point3
 	curves map[eKey]geom.Curve3
 	uses   map[eKey]int
 	faces  []weldedFace
+	built  map[eKey]*topo.Edge
 }
 
 type weldedFace struct {
@@ -71,7 +77,10 @@ type weldedUse struct {
 }
 
 func newWeld(tol float64) *weld {
-	return &weld{tol: tol, points: map[vKey]math.Point3{}, curves: map[eKey]geom.Curve3{}, uses: map[eKey]int{}}
+	return &weld{
+		tol: tol, snap: func(p math.Point3) math.Point3 { return p },
+		points: map[vKey]math.Point3{}, curves: map[eKey]geom.Curve3{}, uses: map[eKey]int{},
+	}
 }
 
 // addFace captures a face (surface + lineage + welded loops) for rebuild.
@@ -105,12 +114,14 @@ func (w *weld) addUse(u *topo.EdgeUse) weldedUse {
 	return weldedUse{key: key, reversed: reversed}
 }
 
-// record welds an edge's endpoint positions and stores a representative curve.
+// record welds an edge's endpoint positions (after the snap hook) and stores a
+// representative curve.
 func (w *weld) record(e *topo.Edge) (vKey, vKey) {
-	sk := w.vkey(e.StartVertex().Point())
-	ek := w.vkey(e.EndVertex().Point())
-	w.points[sk] = e.StartVertex().Point()
-	w.points[ek] = e.EndVertex().Point()
+	s := w.snap(e.StartVertex().Point())
+	t := w.snap(e.EndVertex().Point())
+	sk, ek := w.vkey(s), w.vkey(t)
+	w.points[sk] = s
+	w.points[ek] = t
 	key, _ := canonical(sk, ek)
 	if _, ok := w.curves[key]; !ok {
 		w.curves[key] = e.Geometry()
@@ -173,6 +184,7 @@ func (w *weld) buildEdges(bld *topo.Builder, verts map[vKey]*topo.Vertex, feat s
 	for i, k := range keys {
 		out[k] = bld.AddEdge(w.curves[k], verts[k[0]], verts[k[1]], topo.NewLineage(topo.Tok(feat, "weld-edge", i)))
 	}
+	w.built = out
 	return out
 }
 

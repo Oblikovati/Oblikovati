@@ -10,9 +10,11 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app/options"
 	"oblikovati.org/event"
+	"oblikovati.org/model/bodyapi"
 	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/facetstore"
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence/dialogmemory"
@@ -32,6 +34,8 @@ type Session struct {
 	workspace            *doc.Workspace
 	store                doc.Store                // the workspace's persistence backend; nil for in-memory sessions
 	sketchInference      *sketch.InferenceOptions // session inference prefs (M06-F10; nil ⇒ defaults)
+	facetStore           *facetstore.FacetStore   // tolerance-keyed facet/stroke cache (M07 #293; lazy)
+	transientBodies      *bodyapi.TransientBRep   // transient B-rep registry (M07 #628; lazy)
 	commands             *CommandManager
 	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
