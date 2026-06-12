@@ -18,8 +18,9 @@ import (
 // planar slab via brep.CutCylindricalHole, a blind hole via brep.CutBlindCylindricalHole
 // (flat bottom, or a conical drill point when PointAngle is set). A counterbore adds a flat
 // recess + shoulder; a countersink a true cone recess (exact-only). Unsupported drilled/
-// counterbore shapes fall back to the faceted boolean. Boss geometry still defers (ErrDeferred →
-// Warning). A lost placement face → Sick. Point placement (vs. the face centroid) is a follow-up.
+// counterbore shapes fall back to the faceted boolean. A boss is the join-side mirror of the
+// drilled hole: the same tool cylinder grown OUT of the face and unioned (#327). A lost
+// placement face → Sick. Point placement (vs. the face centroid) is a follow-up.
 
 // HoleTapInfo carries thread data for a tapped hole, consumed by hole tables (M14).
 type HoleTapInfo struct {
@@ -224,19 +225,51 @@ type BossDefinition struct {
 }
 
 // BossFeature adds a cylindrical boss to the running solid.
-type BossFeature struct{ def *BossDefinition }
+type BossFeature struct {
+	def      *BossDefinition
+	featName string
+	tool     *topo.Body // the boss cylinder of the last recompute, for pattern replication
+}
 
 func (b *BossFeature) Definition() *BossDefinition { return b.def }
 func (b *BossFeature) Kind() string                { return "boss" }
+
+// Recompute resolves the placement face and raises the boss cylinder from its centroid along
+// the outward normal, joining it to the running body. The tool's small entry overhang sits
+// INSIDE the body (drillTool's near span), so the union always overlaps cleanly.
 func (b *BossFeature) Recompute(in Input) (Output, error) {
-	return resolveFacesThenDefer(in, [][]byte{b.def.PlacementFaceKey}, "boss")
+	body, err := runningBody(in)
+	if err != nil {
+		return Output{}, err
+	}
+	face, ok := body.FindFaceByKey(b.def.PlacementFaceKey)
+	if !ok {
+		return Output{}, fmt.Errorf("boss: placement face reference lost")
+	}
+	r, h := callOrZero(b.def.Diameter)/2, callOrZero(b.def.Height)
+	if r <= 0 || h <= 0 {
+		return Output{}, fmt.Errorf("boss: diameter %g and height %g must be > 0", 2*r, h)
+	}
+	out, err := math.UnitVector3FromVector(face.Geometry().NormalAt(0, 0))
+	if err != nil {
+		return Output{}, fmt.Errorf("boss: placement face has no normal")
+	}
+	b.tool = drillTool(centroidOf(faceVertexPoints(face)), out, r, h, featOr(b.featName, "boss"))
+	res, err := ops.Boolean(ops.Join, body, b.tool)
+	if err != nil {
+		return Output{}, fmt.Errorf("boss: %w", err)
+	}
+	return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
 }
 
-// Operation reports that a boss adds material, so once boss geometry lands a pattern of a boss
-// unions its raised cylinder at each occurrence. Until then its geometry defers (it builds no
-// body), so a pattern of a boss replicates nothing rather than copying the whole solid — the
-// empty-delta path in [sourceDelta]/[patternBase.replicate]. Implements [OperationalFeature].
+// Operation reports that a boss adds material, so a pattern of a boss unions its raised
+// cylinder at each occurrence (one body with N studs) instead of copying the whole solid.
+// Implements [OperationalFeature].
 func (b *BossFeature) Operation() ops.PartFeatureOperation { return ops.Join }
+
+// ToolBody returns the boss cylinder the last recompute joined, so a pattern replicates a
+// clean stud at each occurrence. Implements [ToolFeature].
+func (b *BossFeature) ToolBody() *topo.Body { return b.tool }
 
 // HoleFeatures and BossFeatures add hole/boss features into the engine.
 type (
@@ -293,7 +326,12 @@ func (c *HoleFeatures) addHole(def *HoleDefinition) *PartFeature {
 	return pf
 }
 
-// Add adds a cylindrical boss on the placement face.
+// Add adds a cylindrical boss on the placement face, naming it (Boss1, Boss2, …) so its
+// generated topology has a stable, distinct lineage.
 func (c *BossFeatures) Add(faceKey []byte, diameter, height func() float64) *PartFeature {
-	return c.engine.Add(&BossFeature{def: &BossDefinition{PlacementFaceKey: faceKey, Diameter: diameter, Height: height}})
+	bf := &BossFeature{def: &BossDefinition{PlacementFaceKey: faceKey, Diameter: diameter, Height: height}}
+	pf := c.engine.Add(bf)
+	pf.SetName(c.engine.UniqueName("Boss"))
+	bf.featName = pf.name
+	return pf
 }
