@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -215,5 +216,57 @@ func TestCombineDefinitionAccessible(t *testing.T) {
 	c := NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
 	if c.Definition().(*CombineFeature).Definition().Operation != ops.Cut {
 		t.Error("combine definition not accessible")
+	}
+}
+
+// The #331 face-edit extensions: move-face rotate mode and the approximation
+// request, both surviving the recipe codec.
+func TestMoveFaceRotateAndApproximationRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewModifyFeatures(fs).AddMoveFaceRotate([][]byte{[]byte("f1")},
+		math.P3(0, 0, 2), math.V3(0, 1, 0), constFloat(0.15))
+	NewModifyFeatures(fs).AddFaceOffsetApprox([][]byte{[]byte("f2")},
+		constFloat(0.3), types.NeverTooThinApproximation)
+
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if d := data[0].FaceEdit; len(d.AxisDir) != 3 || d.Angle != 0.15 || d.Translation != nil {
+		t.Fatalf("serialized rotate = %+v, want axis+angle and no translation", d)
+	}
+	if data[1].FaceEdit.Approximation != "neverTooThin" {
+		t.Fatalf("serialized approximation = %q", data[1].FaceEdit.Approximation)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if _, dir, angle, rotating := fresh.Item(0).Definition().(*MoveFaceFeature).Rotation(); !rotating || dir.Y != 1 || angle != 0.15 {
+		t.Errorf("restored rotate = dir %v angle %v rotating %v", dir, angle, rotating)
+	}
+	if got := fresh.Item(1).Definition().(*FaceOffsetFeature).Approximation(); got != types.NeverTooThinApproximation {
+		t.Errorf("restored approximation = %v, want neverTooThin", got)
+	}
+}
+
+// TestThickenApproximationRoundTrip: thicken carries its approximation too.
+func TestThickenApproximationRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	pf := NewModifyFeatures(fs).AddThicken(0.2)
+	pf.Definition().(*ThickenFeature).SetApproximation(types.MeanApproximation)
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if data[0].Thicken.Approximation != "mean" {
+		t.Fatalf("serialized thicken = %+v", data[0].Thicken)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if got := fresh.Item(0).Definition().(*ThickenFeature).Approximation(); got != types.MeanApproximation {
+		t.Errorf("restored thicken approximation = %v, want mean", got)
 	}
 }

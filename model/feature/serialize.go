@@ -234,14 +234,14 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 	case *ImportedBodyFeature:
 		fd.Import = serializeImportedBody(f)
 	case *MoveFaceFeature:
-		t := f.Translation()
-		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Translation: []float64{t.X, t.Y, t.Z}}
+		fd.FaceEdit = serializeMoveFace(f)
 	case *FaceOffsetFeature:
-		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Distance: f.Distance()}
+		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Distance: f.Distance(),
+			Approximation: approximationName(f.Approximation())}
 	case *ReplaceFaceFeature:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Target: encodeKey(f.TargetKey())}
 	case *ThickenFeature:
-		fd.Thicken = &ThickenData{Value: f.Thickness()}
+		fd.Thicken = &ThickenData{Value: f.Thickness(), Approximation: approximationName(f.Approximation())}
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	default:
@@ -345,7 +345,13 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if fd.Thicken == nil {
 			return nil, fmt.Errorf("thicken feature is missing its payload")
 		}
-		return NewModifyFeatures(fs).AddThicken(fd.Thicken.Value), nil
+		approx, err := approximationOf(fd.Thicken.Approximation)
+		if err != nil {
+			return nil, err
+		}
+		pf := NewModifyFeatures(fs).AddThicken(fd.Thicken.Value)
+		pf.Definition().(*ThickenFeature).SetApproximation(approx)
+		return pf, nil
 	case "revolve":
 		return restoreRevolve(fs, fd.Revolve, sk, work)
 	case "coil":

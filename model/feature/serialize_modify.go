@@ -2,26 +2,67 @@
 
 package feature
 
-import "fmt"
+import (
+	"fmt"
+
+	"oblikovati.org/api/types"
+)
 
 // This file holds the YAML codec for the direct face-edit features — split, move-face,
 // face-offset, delete-face, replace-face and thicken. They share one shape (a set of
 // picked faces by reference key) plus, for the geometric edits, a parameter: move-face
-// carries a translation vector, face-offset a distance. The keys re-bind to the
-// regenerated faces on recompute.
+// carries a translation vector or a rotation, face-offset a distance. The keys re-bind to
+// the regenerated faces on recompute.
 
 // FaceEditData is a direct face edit: the picked faces as reference keys, plus the optional
-// parameter of the geometric edits (move-face translation, face-offset distance).
+// parameter of the geometric edits (move-face translation or rotation, face-offset
+// distance + approximation).
 type FaceEditData struct {
-	Faces       []string  `yaml:"faces"`
-	Translation []float64 `yaml:"translation,omitempty"` // move-face: dx, dy, dz
-	Distance    float64   `yaml:"distance,omitempty"`    // face-offset
-	Target      string    `yaml:"target,omitempty"`      // replace-face: source face key
+	Faces         []string  `yaml:"faces"`
+	Translation   []float64 `yaml:"translation,omitempty"`   // move-face: dx, dy, dz
+	AxisPoint     []float64 `yaml:"axisPoint,omitempty"`     // move-face rotate (#331)
+	AxisDir       []float64 `yaml:"axisDir,omitempty"`       // move-face rotate
+	Angle         float64   `yaml:"angle,omitempty"`         // move-face rotate, radians
+	Distance      float64   `yaml:"distance,omitempty"`      // face-offset
+	Approximation string    `yaml:"approximation,omitempty"` // face-offset (#331), wire spelling
+	Target        string    `yaml:"target,omitempty"`        // replace-face: source face key
 }
 
-// ThickenData is a thicken feature: the wall thickness applied to the running surface body.
+// ThickenData is a thicken feature: the wall thickness applied to the running surface body,
+// plus the #331 approximation request (wire spelling; absent = none/exact).
 type ThickenData struct {
-	Value float64 `yaml:"value"`
+	Value         float64 `yaml:"value"`
+	Approximation string  `yaml:"approximation,omitempty"`
+}
+
+// approximationName / approximationOf map the enum to its wire spelling (empty for the zero
+// value so older recipes stay byte-identical).
+func approximationName(a types.FeatureApproximationType) string {
+	if a == 0 {
+		return ""
+	}
+	return a.String()
+}
+
+func approximationOf(s string) (types.FeatureApproximationType, error) {
+	if s == "" {
+		return 0, nil
+	}
+	a, ok := types.ParseFeatureApproximationType(s)
+	if !ok {
+		return 0, fmt.Errorf("unknown approximation %q (want none/mean/neverTooThick/neverTooThin)", s)
+	}
+	return a, nil
+}
+
+// serializeMoveFace encodes a move-face in whichever mode it carries.
+func serializeMoveFace(f *MoveFaceFeature) *FaceEditData {
+	if p, dir, angle, rotating := f.Rotation(); rotating {
+		return &FaceEditData{Faces: encodeKeys(f.FaceKeys()),
+			AxisPoint: []float64{p.X, p.Y, p.Z}, AxisDir: []float64{dir.X, dir.Y, dir.Z}, Angle: angle}
+	}
+	t := f.Translation()
+	return &FaceEditData{Faces: encodeKeys(f.FaceKeys()), Translation: []float64{t.X, t.Y, t.Z}}
 }
 
 // faceEditor is satisfied by every direct face-edit feature (they embed faceEditFeature),
@@ -45,9 +86,16 @@ func restoreFaceEdit(fs *PartFeatures, kind string, d *FaceEditData) (*PartFeatu
 	case "split":
 		return m.AddSplit(keys), nil
 	case "move-face":
+		if len(d.AxisDir) == 3 {
+			return m.AddMoveFaceRotate(keys, decodePoint3(d.AxisPoint), decodeVec3(d.AxisDir), constFloat(d.Angle)), nil
+		}
 		return m.AddMoveFace(keys, decodeVec3(d.Translation)), nil
 	case "face-offset":
-		return m.AddFaceOffset(keys, d.Distance), nil
+		approx, err := approximationOf(d.Approximation)
+		if err != nil {
+			return nil, err
+		}
+		return m.AddFaceOffsetApprox(keys, constFloat(d.Distance), approx), nil
 	case "delete-face":
 		return m.AddDeleteFace(keys), nil
 	case "replace-face":
