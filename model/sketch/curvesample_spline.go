@@ -26,14 +26,20 @@ const splineSamplesPerSpan = 8
 // endpoints included. Degenerate inputs (under 3 points, or a fit the solver
 // rejects) degrade to the defining polygon — strictly the pre-NURBS behavior.
 func sampleSplineEntity(sp *Spline) []math.Point2 {
+	return sampleSplineEntityN(sp, splineSamplesPerSpan)
+}
+
+// sampleSplineEntityN is sampleSplineEntity at caller-chosen per-span density
+// (region properties scale it with the requested accuracy — M06-F08, #623).
+func sampleSplineEntityN(sp *Spline, perSpan int) []math.Point2 {
 	pts := splinePositions(sp)
 	if len(pts) < 3 {
 		return pts
 	}
 	if sp.IsFitType() {
-		return sampleFitSpline(pts, sp.Closed, fitParameterization(sp.FitMethod))
+		return sampleFitSpline(pts, sp.Closed, fitParameterization(sp.FitMethod), perSpan)
 	}
-	return sampleControlSpline(pts, sp.Closed)
+	return sampleControlSpline(pts, sp.Closed, perSpan)
 }
 
 // fitParameterization maps the public fit method onto the kernel
@@ -52,16 +58,16 @@ func fitParameterization(m SplineFitMethod) geom.FitParameterization {
 // sampleFitSpline evaluates the interpolating B-spline span by span — the
 // defining points land exactly on the polyline (at their fit parameters), so
 // region detection sees them as vertices just as it always did.
-func sampleFitSpline(pts []math.Point2, closed bool, param geom.FitParameterization) []math.Point2 {
+func sampleFitSpline(pts []math.Point2, closed bool, param geom.FitParameterization, perSpan int) []math.Point2 {
 	curve, ubar, err := fitCurveFor(pts, closed, param)
 	if err != nil {
 		return pts
 	}
-	out := make([]math.Point2, 0, (len(ubar)-1)*splineSamplesPerSpan+1)
+	out := make([]math.Point2, 0, (len(ubar)-1)*perSpan+1)
 	for k := 0; k+1 < len(ubar); k++ {
 		out = append(out, pts[k%len(pts)])
-		for j := 1; j < splineSamplesPerSpan; j++ {
-			t := ubar[k] + (ubar[k+1]-ubar[k])*float64(j)/splineSamplesPerSpan
+		for j := 1; j < perSpan; j++ {
+			t := ubar[k] + (ubar[k+1]-ubar[k])*float64(j)/float64(perSpan)
 			out = append(out, curve.PointAt(t))
 		}
 	}
@@ -82,13 +88,13 @@ func fitCurveFor(pts []math.Point2, closed bool, param geom.FitParameterization)
 
 // sampleControlSpline evaluates the control-polygon B-spline (the points
 // shape, not pin, the curve) uniformly over its domain.
-func sampleControlSpline(pts []math.Point2, closed bool) []math.Point2 {
+func sampleControlSpline(pts []math.Point2, closed bool, perSpan int) []math.Point2 {
 	curve, err := controlCurveFor(pts, closed)
 	if err != nil {
 		return pts
 	}
 	lo, hi := curve.Domain()
-	segments := splineSamplesPerSpan * len(pts)
+	segments := perSpan * len(pts)
 	out := make([]math.Point2, 0, segments+1)
 	last := segments - 1 // closed: the loop wraps back to the first sample
 	if !closed {

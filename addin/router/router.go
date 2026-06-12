@@ -205,6 +205,8 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchDimensions] = enumerateDimensions
 	r.handlers[wire.MethodSketchConstraintStatus] = constraintStatus
 	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
+	r.handlers[wire.MethodSketchRegionProperties] = sketchRegionProperties
+	r.handlers[wire.MethodSketch3DRegionProperties] = sketch3DRegionProperties
 	r.registerSketchAuthoringHandlers()
 	r.registerSketch3DHandlers()
 }

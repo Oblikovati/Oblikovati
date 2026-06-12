@@ -65,13 +65,19 @@ func naturalPolyline(e Entity) []math.Point2 {
 // sampleEllipticalArcEntity samples an elliptical arc from StartAngle to EndAngle along
 // the ellipse (in the major/minor frame), endpoints inclusive.
 func sampleEllipticalArcEntity(e *EllipticalArc) []math.Point2 {
+	return sampleEllipticalArcEntityN(e, curveSamples)
+}
+
+// sampleEllipticalArcEntityN is sampleEllipticalArcEntity at caller-chosen density
+// (region properties scale it with the requested accuracy — M06-F08, #623).
+func sampleEllipticalArcEntityN(e *EllipticalArc, n int) []math.Point2 {
 	c := e.Center.Position()
 	ux, uy := unitAxis(e.MajorAxis)
 	start := float64(e.StartAngle)
 	sweep := float64(e.EndAngle) - start
-	pts := make([]math.Point2, curveSamples+1)
+	pts := make([]math.Point2, n+1)
 	for i := range pts {
-		a := start + sweep*float64(i)/float64(curveSamples)
+		a := start + sweep*float64(i)/float64(n)
 		mx, my := e.MajorRadius*stdmath.Cos(a), e.MinorRadius*stdmath.Sin(a)
 		pts[i] = math.P2(c.X+mx*ux-my*uy, c.Y+mx*uy+my*ux)
 	}
@@ -81,13 +87,18 @@ func sampleEllipticalArcEntity(e *EllipticalArc) []math.Point2 {
 // sampleArcEntity samples a circular arc from its Start to its End along the true
 // arc (respecting CounterClockwise), endpoints inclusive.
 func sampleArcEntity(a *Arc) []math.Point2 {
+	return sampleArcEntityN(a, curveSamples)
+}
+
+// sampleArcEntityN is sampleArcEntity at caller-chosen density.
+func sampleArcEntityN(a *Arc, n int) []math.Point2 {
 	c := a.Center.Position()
 	r := a.Radius()
 	start := angleOfPoint(c, a.Start.Position())
 	sweep := arcSweepSigned(a, c, start)
-	pts := make([]math.Point2, curveSamples+1)
+	pts := make([]math.Point2, n+1)
 	for i := range pts {
-		ang := start + sweep*float64(i)/float64(curveSamples)
+		ang := start + sweep*float64(i)/float64(n)
 		pts[i] = math.P2(c.X+r*stdmath.Cos(ang), c.Y+r*stdmath.Sin(ang))
 	}
 	return pts
@@ -114,11 +125,16 @@ func arcSweepSigned(a *Arc, center math.Point2, start float64) float64 {
 // sampleEllipseEntity samples a full ellipse's perimeter (counter-clockwise in its
 // major/minor frame) for a standalone closed loop.
 func sampleEllipseEntity(e *Ellipse) []math.Point2 {
+	return sampleEllipseEntityN(e, curveSamples)
+}
+
+// sampleEllipseEntityN is sampleEllipseEntity at caller-chosen density.
+func sampleEllipseEntityN(e *Ellipse, n int) []math.Point2 {
 	c := e.Center.Position()
 	ux, uy := unitAxis(e.MajorAxis)
-	pts := make([]math.Point2, curveSamples)
+	pts := make([]math.Point2, n)
 	for i := range pts {
-		a := 2 * stdmath.Pi * float64(i) / float64(curveSamples)
+		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		mx, my := e.MajorRadius*stdmath.Cos(a), e.MinorRadius*stdmath.Sin(a)
 		pts[i] = math.P2(c.X+mx*ux-my*uy, c.Y+mx*uy+my*ux)
 	}
