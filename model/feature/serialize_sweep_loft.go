@@ -194,7 +194,6 @@ func restoreSweepUnion(def *SweepDefinition, d *SweepData) error {
 	return nil
 }
 
-
 func serializeLoft(def *LoftDefinition, sk SketchIndexer) (*LoftData, error) {
 	sections := make([]LoftSectionData, len(def.Sections))
 	for i, s := range def.Sections {

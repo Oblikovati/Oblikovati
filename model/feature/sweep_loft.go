@@ -142,15 +142,6 @@ func (s *SweepFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// sweepSections places the profile (recentered onto each path point) rotated so its
-// normal follows the path tangent, with the total twist spread along the path —
-// the plain path sweep, a degenerate case of [sweepSectionsCfg].
-func sweepSections(prof *sketch.Profile, plane sketch.Plane, path []math.Point3, twist float64) [][]math.Point3 {
-	cfg := sweepConfig{twistAt: twistInterpolator(twist, nil)}
-	sections, _ := sweepSectionsCfg(prof, plane, path, cfg) // no rail/surface → cannot fail
-	return sections
-}
-
 // pathTangents returns a unit tangent at each path point: the forward segment at the
 // start, the backward segment at the end, and the average of the two interior segments.
 func pathTangents(path []math.Point3) []math.UnitVector3 {

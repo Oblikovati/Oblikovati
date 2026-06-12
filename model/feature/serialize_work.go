@@ -272,8 +272,8 @@ type RevolveData struct {
 	Axis       string  `yaml:"axis,omitempty"`       // a work-axis WorkRef; empty ⇒ centerline mode
 	AxisSketch int     `yaml:"axisSketch,omitempty"` // 1-based sketch index of a specific centerline (0 = none)
 	AxisLine   int     `yaml:"axisLine,omitempty"`   // that centerline's line index
-	Angle      float64 `yaml:"angle,omitempty"`  // 0 ⇒ full revolution
-	Angle2     float64 `yaml:"angle2,omitempty"` // second-direction sweep (#313)
+	Angle      float64 `yaml:"angle,omitempty"`      // 0 ⇒ full revolution
+	Angle2     float64 `yaml:"angle2,omitempty"`     // second-direction sweep (#313)
 	Operation  string  `yaml:"operation"`
 }
 

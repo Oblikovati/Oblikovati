@@ -253,4 +253,3 @@ func TestSolidSweepExtendsBox(t *testing.T) {
 		t.Errorf("definition type = %v, want solid", def.DefinitionType())
 	}
 }
-

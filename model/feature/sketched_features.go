@@ -177,12 +177,6 @@ func centerlineAxis(line *sketch.Line, sk *sketch.Sketch) (*WorkAxis, error) {
 	return &WorkAxis{origin: o, dir: dir}, nil
 }
 
-// revolveSections places the profile (in model space) at evenly-spaced angles about the
-// axis. A zero or ≥2π angle is a full revolution (a closed loop, no caps).
-func revolveSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle float64) ([][]math.Point3, bool) {
-	return revolveSectionsFrom(prof, plane, axis, angle, 0)
-}
-
 // revolveSectionsFrom is revolveSections starting at a signed angular offset —
 // the two-directional revolve sweeps [start, start+angle] (#313).
 func revolveSectionsFrom(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle, start float64) ([][]math.Point3, bool) {
