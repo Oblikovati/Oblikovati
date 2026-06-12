@@ -50,28 +50,28 @@ type Session struct {
 	hiddenBodyKeys       map[string]bool
 	graphics             *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins               *AddInManager
-	clientApps           *ClientApplicationRegistry    // external automation drivers (M05-F01)
-	browserPanes         *AddInBrowserPanes            // add-in browser panes (M05-F03)
-	dockableWindows      *AddInDockableWindows         // add-in dockable windows (M05-F03)
-	appOptions           options.All                   // typed per-user option groups (M05-F11)
-	optionsStore         options.Store                 // persists appOptions (nil ⇒ in-session only)
-	statusText           string                        // wire-set status-bar message (M05-F09)
-	messageCenter        *MessageCenter                // sectioned errors/warnings tree (M05-F09)
-	messageCenterOpen    bool                          // the Messages panel is open
-	progress             *ProgressLedger               // live progress bars (M05-F09)
-	balloonTips          *BalloonTipCenter             // notification balloons (M05-F09)
-	prompts              *PromptCenter                 // declarative prompts (M05-F09)
-	dialogMemoryStore    dialogmemory.Store            // persists suppressions + remembered answers
-	miniToolbars         *MiniToolbarRack              // in-canvas mini-toolbars (M05-F07)
-	fileDialogQueue      []FileDialogRequest           // pending add-in file-dialog asks (M05-F08)
-	webViews             map[string]wire.WebDialogSpec // presented web views (M05-F08)
-	webViewOrder         []string                      // web views in creation order
-	urlOpener            URLOpener                     // platform URL opener (head-injected)
-	windowFrame          WindowFrameStatus             // mirrored host-window state (M05-F10)
-	triad                TriadGizmo                    // the move/rotate triad (M05-F13)
-	manipulators         *ManipulatorBoard             // add-in drag handles (M05-F13)
-	helpSources          map[string]string             // add-in help bases by source (M05-F14)
-	helpInterceptor      HelpInterceptor               // before-help veto hook (M05-F14)
+	clientApps           *ClientApplicationRegistry        // external automation drivers (M05-F01)
+	browserPanes         *AddInBrowserPanes                // add-in browser panes (M05-F03)
+	dockableWindows      *AddInDockableWindows             // add-in dockable windows (M05-F03)
+	appOptions           options.All                       // typed per-user option groups (M05-F11)
+	optionsStore         options.Store                     // persists appOptions (nil ⇒ in-session only)
+	statusText           string                            // wire-set status-bar message (M05-F09)
+	messageCenter        *MessageCenter                    // sectioned errors/warnings tree (M05-F09)
+	messageCenterOpen    bool                              // the Messages panel is open
+	progress             *ProgressLedger                   // live progress bars (M05-F09)
+	balloonTips          *BalloonTipCenter                 // notification balloons (M05-F09)
+	prompts              *PromptCenter                     // declarative prompts (M05-F09)
+	dialogMemoryStore    dialogmemory.Store                // persists suppressions + remembered answers
+	miniToolbars         *MiniToolbarRack                  // in-canvas mini-toolbars (M05-F07)
+	fileDialogQueue      []FileDialogRequest               // pending add-in file-dialog asks (M05-F08)
+	webViews             map[string]wire.WebDialogSpec     // presented web views (M05-F08)
+	webViewOrder         []string                          // web views in creation order
+	urlOpener            URLOpener                         // platform URL opener (head-injected)
+	windowFrame          WindowFrameStatus                 // mirrored host-window state (M05-F10)
+	triad                TriadGizmo                        // the move/rotate triad (M05-F13)
+	manipulators         *ManipulatorBoard                 // add-in drag handles (M05-F13)
+	helpSources          map[string]string                 // add-in help bases by source (M05-F14)
+	helpInterceptor      HelpInterceptor                   // before-help veto hook (M05-F14)
 	documentSubTypes     map[doc.SubTypeID]DocumentSubType // registered flavors (M05-F15)
 	documentSubTypeOrder []doc.SubTypeID
 	addinEnvironments    map[Environment]string                           // registered add-in environments (M05-F16)

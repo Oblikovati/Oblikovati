@@ -139,7 +139,10 @@ func (ws *Workspace) openStub(fullDocumentName string) (*Document, error) {
 	return d, nil
 }
 
-// Save writes the document through the store and clears its dirty flag.
+// Save writes the document through the store and clears its dirty flag. The
+// save stamps the file identity (counter, revision GUIDs — M03-F07) and
+// snapshots the as-saved file reference records; a failed store write rolls
+// the identity back so it never drifts ahead of the bytes on disk.
 func (ws *Workspace) Save(d *Document) error {
 	if ws.store == nil {
 		return fmt.Errorf("doc: cannot save %q: no store configured", d.fullDocumentName)
@@ -147,7 +150,11 @@ func (ws *Workspace) Save(d *Document) error {
 	if err := vetoed(ws.bus, "save", DocumentSave{Document: d}); err != nil {
 		return err
 	}
+	d.snapshotFileReferences()
+	prior := d.identity
+	d.identity = prior.nextForSave(recipeDigest(d))
 	if err := ws.store.Save(d); err != nil {
+		d.identity = prior
 		return fmt.Errorf("doc: save %q: %w", d.fullDocumentName, err)
 	}
 	d.ClearDirty()

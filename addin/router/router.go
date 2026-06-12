@@ -74,6 +74,7 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodDocumentsCloseAll] = closeAllDocuments
 	r.handlers[wire.MethodDocumentsRegisterSubType] = registerDocumentSubType
 	r.handlers[wire.MethodDocumentsListSubTypes] = listDocumentSubTypes
+	r.registerFileHandlers()
 	r.handlers[wire.MethodParametersList] = listParameters
 	r.handlers[wire.MethodParametersGet] = getParameter
 	r.handlers[wire.MethodParametersAdd] = addParameter
@@ -107,6 +108,15 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodViewsRename] = renameView
 	r.handlers[wire.MethodViewsGetLayout] = getLayout
 	r.handlers[wire.MethodViewsSetLayout] = setLayout
+}
+
+// registerFileHandlers wires the file surface (M03-F07, #608): identity, the
+// persisted file-to-file reference records, and reference repair.
+func (r *Router) registerFileHandlers() {
+	r.handlers[wire.MethodFilesGet] = getFile
+	r.handlers[wire.MethodFilesListReferences] = listFileReferences
+	r.handlers[wire.MethodFilesReplaceReference] = replaceFileReference
+	r.handlers[wire.MethodDocumentsListFileReferences] = listDocumentFileReferences
 }
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query
@@ -397,6 +407,12 @@ var mutatingMethods = map[string]bool{
 	wire.MethodTransactionRedo:                  true,
 	wire.MethodTransactionEnd:                   true,
 	wire.MethodTransactionAbort:                 true,
+	wire.MethodFilesReplaceReference:            true,
+	wire.MethodDocumentsAddAttachment:           true,
+	wire.MethodDocumentsRemoveAttachment:        true,
+	wire.MethodDocumentsAddInterest:             true,
+	wire.MethodDocumentsRemoveInterest:          true,
+	wire.MethodDocumentsOpen:                    true,
 }
 
 // record appends an operation entry to the trace, except for logs.tail itself (so polling the

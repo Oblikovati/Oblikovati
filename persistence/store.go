@@ -38,6 +38,8 @@ func (s *PackageStore) Save(d *doc.Document) error {
 	if err := pkg.SetManifest(manifest); err != nil {
 		return err
 	}
+	pkg.SetIdentity(toCodecIdentity(d.FileIdentity()))
+	pkg.SetFileReferences(toCodecFileReferences(d.FileReferenceRecords()))
 	if rc, ok := d.Content().(doc.RecipeContent); ok {
 		model, err := rc.MarshalRecipe()
 		if err != nil {
@@ -67,6 +69,7 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 		return nil, err
 	}
 	d.SetSubType(doc.SubTypeID(manifest.SubType)) // restore the flavor (M05-F15)
+	restoreIdentity(d, pkg)
 	// Resources must be restored BEFORE the recipe is applied, so a feature that re-derives
 	// geometry from an embedded resource (e.g. an imported body) can read its bytes (ADR-0031).
 	if rb, ok := d.Content().(doc.ResourceBearer); ok {
@@ -82,6 +85,57 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 		}
 	}
 	return d, nil
+}
+
+// restoreIdentity puts the persisted identity block and reference records back
+// on the document (M03-F07). A pre-identity file keeps the freshly minted
+// identity, persisting it on its next save.
+func restoreIdentity(d *doc.Document, pkg *Package) {
+	if id := pkg.Identity(); id != nil {
+		d.SetFileIdentity(doc.FileIdentity{
+			InternalName: id.InternalName, RevisionID: id.RevisionID,
+			DatabaseRevisionID: id.DatabaseRevisionID, SaveCounter: id.SaveCounter,
+			VersionCreated: id.VersionCreated, VersionSaved: id.VersionSaved,
+			ModelDigest: id.ModelDigest,
+		})
+	}
+	d.SetFileReferenceRecords(fromCodecFileReferences(pkg.FileReferences()))
+}
+
+// toCodecIdentity renders the document identity for the on-disk shape.
+func toCodecIdentity(id doc.FileIdentity) *yamlcodec.FileIdentityRecord {
+	return &yamlcodec.FileIdentityRecord{
+		InternalName: id.InternalName, RevisionID: id.RevisionID,
+		DatabaseRevisionID: id.DatabaseRevisionID, SaveCounter: id.SaveCounter,
+		VersionCreated: id.VersionCreated, VersionSaved: id.VersionSaved,
+		ModelDigest: id.ModelDigest,
+	}
+}
+
+// toCodecFileReferences / fromCodecFileReferences bridge the reference records
+// across the doc/persistence seam (fields identical, layers decoupled).
+func toCodecFileReferences(in []doc.FileReferenceRecord) []yamlcodec.FileReferenceRecord {
+	out := make([]yamlcodec.FileReferenceRecord, len(in))
+	for i, r := range in {
+		out[i] = yamlcodec.FileReferenceRecord{
+			FullFileName: r.FullFileName, RelativeFileName: r.RelativeFileName,
+			LibraryName: r.LibraryName, LocationType: r.LocationType,
+			ReferencedInternalName: r.ReferencedInternalName, SaveCounter: r.SaveCounter,
+		}
+	}
+	return out
+}
+
+func fromCodecFileReferences(in []yamlcodec.FileReferenceRecord) []doc.FileReferenceRecord {
+	out := make([]doc.FileReferenceRecord, len(in))
+	for i, r := range in {
+		out[i] = doc.FileReferenceRecord{
+			FullFileName: r.FullFileName, RelativeFileName: r.RelativeFileName,
+			LibraryName: r.LibraryName, LocationType: r.LocationType,
+			ReferencedInternalName: r.ReferencedInternalName, SaveCounter: r.SaveCounter,
+		}
+	}
+	return out
 }
 
 // toCodecResources / fromCodecResources bridge the document-layer resource table (doc.Resource)

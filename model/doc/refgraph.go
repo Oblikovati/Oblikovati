@@ -149,6 +149,37 @@ func (g *RefGraph) removeReference(parent *Document, childName string) bool {
 	return false
 }
 
+// repointReference updates the edge parent→oldName to point at newName, fixing
+// the reverse index and reference counts — the ReplaceReference repair
+// (M03-F07, #608). A missing edge is a no-op: the persisted record is then the
+// only thing repaired, which is still correct for a reference whose graph edge
+// has not been rebuilt this session.
+func (g *RefGraph) repointReference(parent *Document, oldName, newName string) {
+	for _, desc := range g.forward[parent.fullDocumentName] {
+		if desc.fullDocumentName != oldName {
+			continue
+		}
+		desc.fullDocumentName, desc.resolved, desc.broken = newName, nil, false
+		delete(g.reverse[oldName], parent.fullDocumentName)
+		if g.reverse[newName] == nil {
+			g.reverse[newName] = map[string]bool{}
+		}
+		g.reverse[newName][parent.fullDocumentName] = true
+		g.shiftRefCount(oldName, newName)
+		return
+	}
+}
+
+// shiftRefCount moves one referenced-by count from the old target to the new.
+func (g *RefGraph) shiftRefCount(oldName, newName string) {
+	if child, ok := g.ws.byName[oldName]; ok && child.open {
+		child.releaseRef()
+	}
+	if child, ok := g.ws.byName[newName]; ok && child.open {
+		child.acquireRef()
+	}
+}
+
 // descriptors returns the reference descriptors of the named parent, in order.
 func (g *RefGraph) descriptors(parentName string) []*DocumentDescriptor {
 	src := g.forward[parentName]

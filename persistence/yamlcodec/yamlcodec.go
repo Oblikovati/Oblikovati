@@ -40,18 +40,48 @@ type Document struct {
 	// Resources is the root resource table (ADR-0031): imported files embedded in the
 	// document, keyed by a per-import UUID and referenced from the recipe by that key.
 	Resources map[string]Resource
+	// Identity is the file identity block (M03-F07, #159); nil for pre-identity files.
+	Identity *FileIdentityRecord
+	// References are the as-saved file-to-file reference records (M03-F07).
+	References []FileReferenceRecord
+}
+
+// FileIdentityRecord is the on-disk file identity block: the stable GUID plus
+// the revision stamps a referencing file compares against (M03-F07, #159).
+type FileIdentityRecord struct {
+	InternalName       string `yaml:"internalName,omitempty"`
+	RevisionID         string `yaml:"revisionId,omitempty"`
+	DatabaseRevisionID string `yaml:"databaseRevisionId,omitempty"`
+	SaveCounter        int    `yaml:"saveCounter,omitempty"`
+	VersionCreated     string `yaml:"versionCreated,omitempty"`
+	VersionSaved       string `yaml:"versionSaved,omitempty"`
+	ModelDigest        string `yaml:"modelDigest,omitempty"`
+}
+
+// FileReferenceRecord is one as-saved file-to-file reference: the logical
+// names, the location class (a wire spelling, readable in the file), and the
+// referenced file's identity at save time (M03-F07).
+type FileReferenceRecord struct {
+	FullFileName           string `yaml:"fullFileName"`
+	RelativeFileName       string `yaml:"relativeFileName,omitempty"`
+	LibraryName            string `yaml:"libraryName,omitempty"`
+	LocationType           string `yaml:"locationType,omitempty"`
+	ReferencedInternalName string `yaml:"referencedInternalName,omitempty"`
+	SaveCounter            int    `yaml:"saveCounter,omitempty"`
 }
 
 // onDisk is the YAML projection of a Document: manifest at top level, recipe as a
 // native node, data sections base64-encoded. omitempty keeps a minimal file readable.
 type onDisk struct {
-	SchemaVersion int               `yaml:"schemaVersion,omitempty"`
-	DocumentType  uint32            `yaml:"documentType,omitempty"`
-	SubType       string            `yaml:"subType,omitempty"`
-	DisplayName   string            `yaml:"displayName,omitempty"`
-	Resources     yaml.Node         `yaml:"resources,omitempty"`
-	Model         yaml.Node         `yaml:"model,omitempty"`
-	Data          map[string]string `yaml:"data,omitempty"`
+	SchemaVersion int                   `yaml:"schemaVersion,omitempty"`
+	DocumentType  uint32                `yaml:"documentType,omitempty"`
+	SubType       string                `yaml:"subType,omitempty"`
+	DisplayName   string                `yaml:"displayName,omitempty"`
+	Identity      *FileIdentityRecord   `yaml:"identity,omitempty"`
+	References    []FileReferenceRecord `yaml:"references,omitempty"`
+	Resources     yaml.Node             `yaml:"resources,omitempty"`
+	Model         yaml.Node             `yaml:"model,omitempty"`
+	Data          map[string]string     `yaml:"data,omitempty"`
 }
 
 // MarshalDocument renders d as the on-disk YAML file. The recipe bytes are parsed and
@@ -62,6 +92,8 @@ func MarshalDocument(d Document) ([]byte, error) {
 		DocumentType:  d.DocumentType,
 		SubType:       d.SubType,
 		DisplayName:   d.DisplayName,
+		Identity:      d.Identity,
+		References:    d.References,
 	}
 	if len(d.Resources) > 0 {
 		node, err := resourcesNode(d.Resources)
@@ -124,6 +156,8 @@ func documentHeader(od onDisk) Document {
 		DocumentType:  od.DocumentType,
 		SubType:       od.SubType,
 		DisplayName:   od.DisplayName,
+		Identity:      od.Identity,
+		References:    od.References,
 	}
 }
 

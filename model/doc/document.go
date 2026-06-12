@@ -44,6 +44,8 @@ type Document struct {
 	subType          SubTypeID      // flavored document subtype id, "" for plain (M05-F15, M03-F11)
 	referencedBy     int            // how many open documents reference this one (maintained by the graph, M03-F04)
 	views            *DocumentViews // per-document view collection (cameras); lazily seeded by Views()
+	identity         FileIdentity   // the file's persisted identity block (M03-F07, #159)
+	fileReferences   []*FileReference
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;
@@ -57,6 +59,7 @@ func newDocument(t DocumentType, fullDocumentName string, content Content, open 
 		content:          content,
 		open:             open,
 		visible:          open,
+		identity:         newFileIdentity(),
 	}
 }
 
