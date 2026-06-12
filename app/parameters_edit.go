@@ -144,6 +144,31 @@ func (s *Session) DeleteParameterGroup(name string) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.DeleteGroup(name, true) })
 }
 
+// ImportParameters applies a parameter-set XML document atomically: the part
+// snapshots first, and any invalid entry restores it so a half-applied import
+// never survives (M02-F07, Oblikovati#606). On success it lands as one undo step.
+func (s *Session) ImportParameters(xml string) (added, updated int, err error) {
+	part, err := activePart(s)
+	if err != nil {
+		return 0, 0, err
+	}
+	snapshot, err := part.MarshalRecipe()
+	if err != nil {
+		return 0, 0, fmt.Errorf("app: snapshot before parameter import: %w", err)
+	}
+	added, updated, err = part.Parameters().ImportXML(xml)
+	if err != nil {
+		if restoreErr := part.RestoreRecipe(snapshot); restoreErr != nil {
+			return 0, 0, fmt.Errorf("app: parameter import failed (%w) and the rollback failed too: %v", err, restoreErr)
+		}
+		return 0, 0, err
+	}
+	part.Features().MarkAllDirty()
+	part.Recompute()
+	s.recordEdit(part, "Import Parameters")
+	return added, updated, nil
+}
+
 // editParam resolves the parameter by id and applies edit, then recomputes.
 func (s *Session) editParam(id param.ID, edit func(*param.Parameter) error) error {
 	return s.editParameters(func(ps *param.Parameters) error {

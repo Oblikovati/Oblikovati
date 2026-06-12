@@ -189,6 +189,9 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 	_, _ = ps.AddGroup("com.example:frame", "Frame", "com.example")
 	_ = ps.AddToGroup(num.ID(), "com.example:frame")
 	_ = ps.AddToGroup(txt.ID(), "com.example:frame")
+	ps.Settings().LinearStandardTolerance = "0.1 mm"
+	ps.Settings().UseStandardTolerances = true
+	ps.Settings().DimensionDisplayType = types.DimensionDisplayExpression
 
 	r := reopenThroughStore(t, d).Parameters()
 
@@ -232,6 +235,10 @@ func TestParameterFieldsSurviveRoundTrip(t *testing.T) {
 	}
 	if got := r.GroupsOf(rt.ID()); len(got) != 1 || got[0] != "com.example:frame" {
 		t.Errorf("material groups = %v, want [com.example:frame]", got)
+	}
+	rs := r.Settings()
+	if rs.LinearStandardTolerance != "0.1 mm" || !rs.UseStandardTolerances || rs.DimensionDisplayType != types.DimensionDisplayExpression {
+		t.Errorf("parameter settings = %+v, want the saved standard tolerance/display restored", rs)
 	}
 	_ = flag
 }

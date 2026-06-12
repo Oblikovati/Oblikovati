@@ -131,12 +131,29 @@ func (r *Router) registerParameterDetailHandlers() {
 	r.handlers[wire.MethodParametersDelete] = deleteParameter
 	r.handlers[wire.MethodParametersDrivenBy] = parameterDrivenBy
 	r.handlers[wire.MethodParametersDependents] = parameterDependents
+	r.registerParameterGroupHandlers()
+	r.registerParameterSettingsHandlers()
+}
+
+// registerParameterGroupHandlers wires the custom parameter groups (M02-F05,
+// Oblikovati#604).
+func (r *Router) registerParameterGroupHandlers() {
 	r.handlers[wire.MethodParametersGroupsList] = listParameterGroups
 	r.handlers[wire.MethodParametersGroupsAdd] = addParameterGroup
 	r.handlers[wire.MethodParametersGroupsDelete] = deleteParameterGroup
 	r.handlers[wire.MethodParametersGroupsSetDisplayName] = setParameterGroupDisplayName
 	r.handlers[wire.MethodParametersGroupsAddMember] = addParameterGroupMember
 	r.handlers[wire.MethodParametersGroupsRemoveMember] = removeParameterGroupMember
+}
+
+// registerParameterSettingsHandlers wires the document-level parameter
+// settings, the tolerance sweep, and the XML exchange (M02-F07, Oblikovati#606).
+func (r *Router) registerParameterSettingsHandlers() {
+	r.handlers[wire.MethodParametersGetSettings] = getParameterSettings
+	r.handlers[wire.MethodParametersSetSettings] = setParameterSettings
+	r.handlers[wire.MethodParametersSetAllModelValueType] = sweepParameterModelValues
+	r.handlers[wire.MethodParametersExport] = exportParameters
+	r.handlers[wire.MethodParametersImport] = importParameters
 }
 
 // registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and
@@ -328,6 +345,9 @@ var mutatingMethods = map[string]bool{
 	wire.MethodParametersGroupsSetDisplayName: true,
 	wire.MethodParametersGroupsAddMember:      true,
 	wire.MethodParametersGroupsRemoveMember:   true,
+	wire.MethodParametersSetSettings:          true,
+	wire.MethodParametersSetAllModelValueType: true,
+	wire.MethodParametersImport:               true,
 	wire.MethodFeaturesAdd:                    true,
 	wire.MethodFeaturesEdit:                   true,
 	wire.MethodFeaturesDelete:                 true,

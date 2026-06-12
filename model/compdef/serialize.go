@@ -33,15 +33,16 @@ var _ doc.RecipeContent = (*PartComponentDefinition)(nil)
 // parameters. Sketches and features join it in later phases. The realized B-rep is
 // never stored — ApplyRecipe recomputes it.
 type partRecipe struct {
-	Units           map[string]string         `yaml:"units,omitempty"`
-	EndOfPart       *int                      `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
-	Parameters      []parameterRecipe         `yaml:"parameters,omitempty"`
-	ParameterGroups []parameterGroupRecipe    `yaml:"parameterGroups,omitempty"` // custom group records, in creation order
-	WorkFeatures    []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
-	Sketches        []sketch.SketchData       `yaml:"sketches,omitempty"`
-	Sketches3D      []sketch.SketchData3D     `yaml:"sketches3D,omitempty"`
-	Features        []feature.FeatureData     `yaml:"features,omitempty"`
-	Materials       *material.RecipeData      `yaml:"materials,omitempty"`
+	Units             map[string]string         `yaml:"units,omitempty"`
+	EndOfPart         *int                      `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
+	Parameters        []parameterRecipe         `yaml:"parameters,omitempty"`
+	ParameterGroups   []parameterGroupRecipe    `yaml:"parameterGroups,omitempty"` // custom group records, in creation order
+	ParameterSettings *parameterSettingsRecipe  `yaml:"parameterSettings,omitempty"`
+	WorkFeatures      []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
+	Sketches          []sketch.SketchData       `yaml:"sketches,omitempty"`
+	Sketches3D        []sketch.SketchData3D     `yaml:"sketches3D,omitempty"`
+	Features          []feature.FeatureData     `yaml:"features,omitempty"`
+	Materials         *material.RecipeData      `yaml:"materials,omitempty"`
 }
 
 // sketchIndex adapts a part's sketch collection to feature.SketchIndexer so features
@@ -108,6 +109,20 @@ type toleranceRecipe struct {
 	Lower float64 `yaml:"lower,omitempty"`
 }
 
+// parameterSettingsRecipe persists the document-level parameter settings when
+// they differ from the defaults (M02-F07, Oblikovati#606). DimensionDisplayType
+// carries the wire spelling.
+type parameterSettingsRecipe struct {
+	LinearStandardTolerance      string `yaml:"linearStandardTolerance,omitempty"`
+	AngularStandardTolerance     string `yaml:"angularStandardTolerance,omitempty"`
+	UseStandardTolerances        bool   `yaml:"useStandardTolerances,omitempty"`
+	ExportStandardTolerances     bool   `yaml:"exportStandardTolerances,omitempty"`
+	LinearDimensionPrecision     int    `yaml:"linearDimensionPrecision"`
+	AngularDimensionPrecision    int    `yaml:"angularDimensionPrecision"`
+	DimensionDisplayType         string `yaml:"dimensionDisplayType,omitempty"`
+	DisplayParameterAsExpression bool   `yaml:"displayParameterAsExpression,omitempty"`
+}
+
 // parameterGroupRecipe persists one custom parameter group: the immutable
 // internal name, the display name when it differs, the owning client id, and
 // the member parameter names (M02-F05, Oblikovati#604).
@@ -155,14 +170,15 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		return nil, fmt.Errorf("compdef: marshal work features: %w", err)
 	}
 	r := partRecipe{
-		Units:           d.unitsRecipe(),
-		Parameters:      d.parametersRecipe(),
-		ParameterGroups: d.parameterGroupsRecipe(),
-		WorkFeatures:    work,
-		Sketches:        sketches,
-		Sketches3D:      sketches3D,
-		Features:        features,
-		Materials:       d.materialsRecipe(),
+		Units:             d.unitsRecipe(),
+		Parameters:        d.parametersRecipe(),
+		ParameterGroups:   d.parameterGroupsRecipe(),
+		ParameterSettings: d.parameterSettingsRecipe(),
+		WorkFeatures:      work,
+		Sketches:          sketches,
+		Sketches3D:        sketches3D,
+		Features:          features,
+		Materials:         d.materialsRecipe(),
 	}
 	if d.eop != endOfPartAtEnd {
 		eop := d.eop
@@ -212,6 +228,9 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 		return err
 	}
 	if err := d.applyParameters(r.ParameterGroups, r.Parameters); err != nil {
+		return err
+	}
+	if err := d.applyParameterSettings(r.ParameterSettings); err != nil {
 		return err
 	}
 	if err := feature.ApplyWork(d.work, r.WorkFeatures); err != nil {
@@ -345,6 +364,48 @@ func (d *PartComponentDefinition) applyParameters(groups []parameterGroupRecipe,
 		if err := d.applyParameterGroup(gr); err != nil {
 			return fmt.Errorf("compdef: restore parameter group %q: %w", gr.InternalName, err)
 		}
+	}
+	return nil
+}
+
+// parameterSettingsRecipe persists the parameter settings, nil when they are
+// the new-document defaults (the recipe omits zero state).
+func (d *PartComponentDefinition) parameterSettingsRecipe() *parameterSettingsRecipe {
+	s := *d.params.Settings()
+	if s == param.DefaultCollectionSettings() {
+		return nil
+	}
+	return &parameterSettingsRecipe{
+		LinearStandardTolerance:      s.LinearStandardTolerance,
+		AngularStandardTolerance:     s.AngularStandardTolerance,
+		UseStandardTolerances:        s.UseStandardTolerances,
+		ExportStandardTolerances:     s.ExportStandardTolerances,
+		LinearDimensionPrecision:     s.LinearDimensionPrecision,
+		AngularDimensionPrecision:    s.AngularDimensionPrecision,
+		DimensionDisplayType:         s.DimensionDisplayType.String(),
+		DisplayParameterAsExpression: s.DisplayParameterAsExpression,
+	}
+}
+
+// applyParameterSettings restores the persisted parameter settings (nil keeps
+// the defaults).
+func (d *PartComponentDefinition) applyParameterSettings(sr *parameterSettingsRecipe) error {
+	if sr == nil {
+		return nil
+	}
+	display, ok := types.ParseDimensionDisplayType(sr.DimensionDisplayType)
+	if !ok {
+		return fmt.Errorf("compdef: unknown dimension display type %q (want value|name|expression|tolerance|preciseValue)", sr.DimensionDisplayType)
+	}
+	*d.params.Settings() = param.CollectionSettings{
+		LinearStandardTolerance:      sr.LinearStandardTolerance,
+		AngularStandardTolerance:     sr.AngularStandardTolerance,
+		UseStandardTolerances:        sr.UseStandardTolerances,
+		ExportStandardTolerances:     sr.ExportStandardTolerances,
+		LinearDimensionPrecision:     sr.LinearDimensionPrecision,
+		AngularDimensionPrecision:    sr.AngularDimensionPrecision,
+		DimensionDisplayType:         display,
+		DisplayParameterAsExpression: sr.DisplayParameterAsExpression,
 	}
 	return nil
 }
