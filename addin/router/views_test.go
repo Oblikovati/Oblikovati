@@ -71,7 +71,7 @@ func TestCameraReflectedInActiveViewListing(t *testing.T) {
 	var list wire.ListViewsResult
 	call(t, r, s, "views.list", "{}", &list)
 	got := list.Views[list.ActiveIndex].Camera
-	if got.Eye != [3]float64{9, 8, 7} || got.Target != [3]float64{1, 2, 3} {
+	if got.Eye != types.NewPoint(9, 8, 7) || got.Target != types.NewPoint(1, 2, 3) {
 		t.Fatalf("active view camera = %+v, want eye[9 8 7] target[1 2 3]", got)
 	}
 }

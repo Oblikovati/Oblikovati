@@ -111,9 +111,9 @@ func startVisualFeatureTool(s *app.Session, profile app.ProfileHandle) {
 		ext.Pick(s, profile)
 		ext.SetDistance(3)
 		_ = s.OK()
-		_ = s.ShowTriad(wire.TriadSpec{Position: [3]float64{2, 3, 1}, Visible: true})
+		_ = s.ShowTriad(wire.TriadSpec{Position: types.NewPoint(2, 3, 1), Visible: true})
 		_ = s.SetManipulators("demo", []wire.ManipulatorHandleSpec{
-			{ID: "tip", Position: [3]float64{0, 0, 2.5}, RadiusPx: 10},
+			{ID: "tip", Position: types.NewPoint(0, 0, 2.5), RadiusPx: 10},
 		}, "")
 	case "marking-menu": // M05-F12: the radial marking menu, opened as if right-clicked
 		ext := app.NewExtrudeTool()
@@ -198,7 +198,7 @@ func seedMessagingSurfaces(s *app.Session) {
 
 // seedMiniToolbar declares an anchored mini-toolbar the way a command would (M05-F07).
 func seedMiniToolbar(s *app.Session) {
-	anchor := [3]float64{2, 3, 2.5}
+	anchor := types.NewPoint(2, 3, 2.5)
 	_ = s.SetMiniToolbar(wire.MiniToolbarSpec{
 		ID: "demo.probe", Visible: true, HeadsUpText: "Probe depth", Anchor: &anchor,
 		ShowOK: true, ShowApply: true, ShowCancel: true,

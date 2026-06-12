@@ -89,3 +89,31 @@ api/  (Apache-2.0, oblikovati.org/api)
 source/  (GPL-2.0)  requires + implements api; serves api/wire via addin/router
 add-in/  (vendor-licensed)  imports only api/{types,wire,client}
 ```
+
+## Addendum (2026-06): transient geometry — in-process values, wire DTO encoding
+
+M01-F05 (#602) put the transient-geometry vocabulary on the public surface. These
+values are ownerless, immutable, and created in huge volume (every point of every
+stroke of every preview), so round-tripping construction and evaluation over the
+C ABI would be the wrong transport. The split:
+
+- **Value types live IN `api/types`, with their math** (`Point`/`Point2d`,
+  `Vector`/`Vector2d`, `UnitVector`/`UnitVector2d`, `Matrix`/`Matrix2d`, the
+  boxes, the B-spline definition recipes). They are pure data + pure functions —
+  Apache-2.0, no host state — so an add-in computes locally at zero wire cost.
+  This is the one place the contract module carries *implementation*, justified
+  exactly because the implementation is closed-form math with no host coupling.
+- **Wire encoding is the same types.** Their JSON form is fixed-length arrays
+  (`[x,y,z]`, 9/16 matrix cells), byte-compatible with the ad-hoc
+  `[3]float64`/`[16]float64` fields that predated them; payloads that carry
+  geometry use them directly (camera, lighting, gizmos, anchors).
+- **Curves/surfaces are contracts, not values.** Construction validates and
+  evaluation runs against the kernel, so `api/contract` defines the interfaces
+  (umbrella `Curve`/`Curve2d`/`Surface`, per-kind interfaces, the single
+  `TransientGeometry` factory) and `/source/kernel/geomapi` implements them as
+  thin adapters over `kernel/geom` — the kernel itself stays free of API
+  conversions. Kind discriminators are frozen to the reference enum values.
+- The kernel keeps its own `math` package (`Scalar`-based) as the private
+  computation vocabulary; `geomapi` converts at the boundary. Aliasing the two
+  was rejected: it would couple every kernel file to the contract module for no
+  behavioral gain.

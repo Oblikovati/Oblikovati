@@ -65,7 +65,7 @@ func miniToolbarScreenPos(cam scene.Camera, originX, originY float32, tb wire.Mi
 	if tb.Anchor == nil {
 		return originX + float32(tb.ScreenX), originY + float32(tb.ScreenY), true
 	}
-	p := gomath.P3(tb.Anchor[0], tb.Anchor[1], tb.Anchor[2])
+	p := gomath.P3(tb.Anchor.X, tb.Anchor.Y, tb.Anchor.Z)
 	sx, sy, ok := renderer.Project(cam, viewportNear, viewportFar, p)
 	if !ok {
 		return 0, 0, false

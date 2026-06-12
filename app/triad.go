@@ -112,13 +112,13 @@ func (s *Session) HoverTriadSegment(seg types.TriadSegment, hovered bool) {
 func (s *Session) triadAxes() (x, y, z math.Vector3) {
 	x, y, z = math.V3(1, 0, 0), math.V3(0, 1, 0), math.V3(0, 0, 1)
 	if a := s.triad.spec.AxisX; a != nil {
-		x = math.V3(a[0], a[1], a[2])
+		x = math.V3(a.X, a.Y, a.Z)
 	}
 	if a := s.triad.spec.AxisY; a != nil {
-		y = math.V3(a[0], a[1], a[2])
+		y = math.V3(a.X, a.Y, a.Z)
 	}
 	if a := s.triad.spec.AxisZ; a != nil {
-		z = math.V3(a[0], a[1], a[2])
+		z = math.V3(a.X, a.Y, a.Z)
 	}
 	return x, y, z
 }
@@ -126,7 +126,7 @@ func (s *Session) triadAxes() (x, y, z math.Vector3) {
 // TriadPosition returns the triad's position as a point.
 func (s *Session) TriadPosition() math.Point3 {
 	p := s.triad.spec.Position
-	return math.P3(p[0], p[1], p[2])
+	return math.P3(p.X, p.Y, p.Z)
 }
 
 // segmentConstraint resolves a segment to its motion constraint: the move type,
@@ -282,7 +282,7 @@ func (s *Session) EndTriadDrag(rayO math.Point3, rayD math.Vector3, shift, ctrl 
 	s.triad.drag = nil
 	if d.moveType != types.TriadRotate {
 		landed := d.origin.TranslateBy(math.V3(d.delta[3], d.delta[7], d.delta[11]))
-		s.triad.spec.Position = [3]float64{float64(landed.X), float64(landed.Y), float64(landed.Z)}
+		s.triad.spec.Position = types.Point{X: float64(landed.X), Y: float64(landed.Y), Z: float64(landed.Z)}
 	}
 	event.Emit(s.bus, event.After, TriadDragged{
 		Phase: DragEnd, Segment: d.segment, MoveType: d.moveType, Delta: d.delta,
@@ -298,9 +298,9 @@ func (s *Session) TriadDragging() bool { return s.triad.drag != nil }
 // dragContext assembles the wire context for an event.
 func dragContext(start math.Point3, rayO math.Point3, rayD math.Vector3, shift, ctrl bool, inf types.PointInferenceKind) wire.DragContext {
 	return wire.DragContext{
-		Start:     [3]float64{float64(start.X), float64(start.Y), float64(start.Z)},
-		RayOrigin: [3]float64{float64(rayO.X), float64(rayO.Y), float64(rayO.Z)},
-		RayDir:    [3]float64{float64(rayD.X), float64(rayD.Y), float64(rayD.Z)},
+		Start:     types.Point{X: float64(start.X), Y: float64(start.Y), Z: float64(start.Z)},
+		RayOrigin: types.Point{X: float64(rayO.X), Y: float64(rayO.Y), Z: float64(rayO.Z)},
+		RayDir:    types.Vector{X: float64(rayD.X), Y: float64(rayD.Y), Z: float64(rayD.Z)},
 		Shift:     shift, Ctrl: ctrl, Inference: inf,
 	}
 }

@@ -14,7 +14,7 @@ func TestTriadOverWire(t *testing.T) {
 	call(t, r, s, "triad.show", `{"triad":{"position":[1,2,3],"allowed":[1,9]}}`, nil)
 	var spec wire.TriadSpec
 	call(t, r, s, "triad.get", "{}", &spec)
-	if !spec.Visible || spec.Position[2] != 3 || len(spec.Allowed) != 2 {
+	if !spec.Visible || spec.Position.Z != 3 || len(spec.Allowed) != 2 {
 		t.Fatalf("triad = %+v, want visible at (1,2,3) with two allowed segments", spec)
 	}
 	if !s.TriadAllows(types.TriadXAxis) || s.TriadAllows(types.TriadYAxis) {

@@ -5,6 +5,7 @@ package router
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 )
 
@@ -16,7 +17,7 @@ func TestCameraRoundTrips(t *testing.T) {
 
 	var set wire.CameraView
 	call(t, r, s, "view.setCamera", args, &set)
-	if set.Eye != [3]float64{10, 20, 30} || set.Target != [3]float64{1, 2, 3} || set.FOV != 0.8 {
+	if set.Eye != types.NewPoint(10, 20, 30) || set.Target != types.NewPoint(1, 2, 3) || set.FOV != 0.8 {
 		t.Fatalf("setCamera = %+v, want eye=[10 20 30] target=[1 2 3] fov=0.8", set)
 	}
 

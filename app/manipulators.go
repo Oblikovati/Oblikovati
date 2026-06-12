@@ -21,7 +21,7 @@ type ManipulatorDragged struct {
 	Gizmo    string
 	Handle   string
 	Phase    string
-	Position [3]float64
+	Position types.Point
 	Context  wire.DragContext
 }
 
@@ -106,7 +106,7 @@ func (s *Session) BeginManipulatorDrag(gizmo, handle string, viewNormal math.Vec
 	if err != nil {
 		return err
 	}
-	start := math.P3(spec.Position[0], spec.Position[1], spec.Position[2])
+	start := math.P3(spec.Position.X, spec.Position.Y, spec.Position.Z)
 	s.manipulators.drag = &manipulatorDrag{
 		gizmo: gizmo, handle: handle, start: start,
 		normal: unitOrZero(viewNormal), snapTol: snapTol,
@@ -154,7 +154,7 @@ func (s *Session) EndManipulatorDrag(rayO math.Point3, rayD math.Vector3, shift,
 func (s *Session) ManipulatorDragging() bool { return s.manipulators.drag != nil }
 
 // manipulatorPosition resolves the dragged position with point inference.
-func (s *Session) manipulatorPosition(d *manipulatorDrag, rayO math.Point3, rayD math.Vector3) ([3]float64, types.PointInferenceKind) {
+func (s *Session) manipulatorPosition(d *manipulatorDrag, rayO math.Point3, rayD math.Vector3) (types.Point, types.PointInferenceKind) {
 	hit, ok := rayPlane(rayO, rayD, d.start, d.normal)
 	if !ok {
 		hit = d.start
@@ -165,7 +165,7 @@ func (s *Session) manipulatorPosition(d *manipulatorDrag, rayO math.Point3, rayD
 			hit, inference = snapped, types.InferencePoint
 		}
 	}
-	return [3]float64{float64(hit.X), float64(hit.Y), float64(hit.Z)}, inference
+	return types.Point{X: float64(hit.X), Y: float64(hit.Y), Z: float64(hit.Z)}, inference
 }
 
 // nearestWorkPoint finds a work point within tol of p.
@@ -199,7 +199,7 @@ func (s *Session) manipulatorHandle(gizmo, handle string) (wire.ManipulatorHandl
 }
 
 // bakeHandlePosition writes the dragged position back into the stored spec.
-func (s *Session) bakeHandlePosition(gizmo, handle string, pos [3]float64) {
+func (s *Session) bakeHandlePosition(gizmo, handle string, pos types.Point) {
 	g := s.manipulators.gizmos[gizmo]
 	for i := range g.handles {
 		if g.handles[i].ID == handle {

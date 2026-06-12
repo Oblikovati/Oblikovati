@@ -52,9 +52,9 @@ func triadOverlay(s *app.Session, cam scene.Camera, list renderer.DrawList) rend
 func triadWorldAxes(s *app.Session) [3]math.Vector3 {
 	spec := s.TriadSpec()
 	axes := [3]math.Vector3{math.V3(1, 0, 0), math.V3(0, 1, 0), math.V3(0, 0, 1)}
-	for i, a := range []*[3]float64{spec.AxisX, spec.AxisY, spec.AxisZ} {
+	for i, a := range []*types.UnitVector{spec.AxisX, spec.AxisY, spec.AxisZ} {
 		if a != nil {
-			axes[i] = math.V3(a[0], a[1], a[2])
+			axes[i] = math.V3(a.X, a.Y, a.Z)
 		}
 	}
 	return axes
@@ -99,7 +99,7 @@ func manipulatorOverlay(s *app.Session, cam scene.Camera, list renderer.DrawList
 	size := 5 * cam.WorldPerPixel()
 	for _, handles := range s.Manipulators().Handles() {
 		for _, h := range handles {
-			p := math.P3(h.Position[0], h.Position[1], h.Position[2])
+			p := math.P3(h.Position.X, h.Position.Y, h.Position.Z)
 			list.Items = append(list.Items, gizmoMarker(p, cam, size))
 		}
 	}
@@ -224,7 +224,7 @@ func manipulatorHitTest(s *app.Session, cam scene.Camera, mx, my float64) (strin
 			if radius <= 0 {
 				radius = gizmoHitPx
 			}
-			p := math.P3(h.Position[0], h.Position[1], h.Position[2])
+			p := math.P3(h.Position.X, h.Position.Y, h.Position.Z)
 			if d, ok := screenDistance(cam, p, mx, my); ok && d <= radius {
 				return gizmo, h.ID, true
 			}
