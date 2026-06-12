@@ -144,19 +144,25 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 		return edgeFillet{}, fmt.Errorf("fillet: edge is not convex (only convex edges are supported)")
 	}
 	in := cornerInputs{a: a, b: b, nA: nA, nB: nB, offDir: offDir, axis: axis.AsVector()}
+	return solvedEdgeFillet(e, p, in, blends)
+}
+
+// solvedEdgeFillet assembles the edgeFillet once the edge's frame is known: corners per end
+// radius, then either the chord-sampled varying blend or the constant cylinder.
+func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[uint64]*cornerBlend) (edgeFillet, error) {
 	c0, c1, err := edgeCorners(e, p, in, blends)
 	if err != nil {
 		return edgeFillet{}, err
 	}
 	if p.varying() {
 		sampleCornerChords(&c0, &c1, in)
-		return edgeFillet{a: a, b: b, c0: c0, c1: c1, edge: e, varying: true}, nil
+		return edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, edge: e, varying: true}, nil
 	}
-	cyl, err := geom.NewCylinder(c0.cen, axis.AsVector(), p.r0)
+	cyl, err := geom.NewCylinder(c0.cen, in.axis, p.r0)
 	if err != nil {
 		return edgeFillet{}, err
 	}
-	return edgeFillet{a: a, b: b, cyl: cyl, c0: c0, c1: c1, edge: e}, nil
+	return edgeFillet{a: in.a, b: in.b, cyl: cyl, c0: c0, c1: c1, edge: e}, nil
 }
 
 // edgeCorners solves the rounded corners at both endpoints of an edge (each blended when its
