@@ -272,7 +272,8 @@ type RevolveData struct {
 	Axis       string  `yaml:"axis,omitempty"`       // a work-axis WorkRef; empty ⇒ centerline mode
 	AxisSketch int     `yaml:"axisSketch,omitempty"` // 1-based sketch index of a specific centerline (0 = none)
 	AxisLine   int     `yaml:"axisLine,omitempty"`   // that centerline's line index
-	Angle      float64 `yaml:"angle,omitempty"`      // 0 ⇒ full revolution
+	Angle      float64 `yaml:"angle,omitempty"`  // 0 ⇒ full revolution
+	Angle2     float64 `yaml:"angle2,omitempty"` // second-direction sweep (#313)
 	Operation  string  `yaml:"operation"`
 }
 
@@ -285,7 +286,7 @@ func serializeRevolve(def *RevolveDefinition, sk SketchIndexer) (*RevolveData, e
 	if err != nil {
 		return nil, err
 	}
-	d := &RevolveData{Sketch: idx, Profile: def.ProfileIndex, Angle: evalFloat(def.Angle), Operation: op}
+	d := &RevolveData{Sketch: idx, Profile: def.ProfileIndex, Angle: evalFloat(def.Angle), Angle2: evalFloat(def.Angle2), Operation: op}
 	switch {
 	case def.Axis != nil:
 		d.Axis = string(def.Axis.Key())
@@ -330,10 +331,12 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 		if d.AxisLine < 0 || d.AxisLine >= axisSk.Lines().Count() {
 			return nil, fmt.Errorf("revolve axis centerline references line %d out of range", d.AxisLine)
 		}
-		return NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, d.Profile, axisSk, axisSk.Lines().Item(d.AxisLine), func() float64 { return angle }, op), nil
+		pf := NewRevolveFeatures(fs).AddAboutCenterlineLine(skt, d.Profile, axisSk, axisSk.Lines().Item(d.AxisLine), func() float64 { return angle }, op)
+		return restoreSecondAngle(pf, d.Angle2), nil
 	}
 	if d.Axis == "" { // revolve about the profile sketch's own (single) centerline
-		return NewRevolveFeatures(fs).AddAboutCenterline(skt, d.Profile, func() float64 { return angle }, op), nil
+		pf := NewRevolveFeatures(fs).AddAboutCenterline(skt, d.Profile, func() float64 { return angle }, op)
+		return restoreSecondAngle(pf, d.Angle2), nil
 	}
 	if work == nil {
 		return nil, fmt.Errorf("revolve needs the part's work geometry to resolve its axis")
@@ -342,7 +345,24 @@ func restoreRevolve(fs *PartFeatures, d *RevolveData, sk SketchIndexer, work *Wo
 	if err != nil {
 		return nil, fmt.Errorf("revolve axis: %w", err)
 	}
+	if d.Angle2 > 0 {
+		angle2 := d.Angle2
+		return NewRevolveFeatures(fs).AddTwoDirectional(skt, d.Profile, axis,
+			func() float64 { return angle }, func() float64 { return angle2 }, op), nil
+	}
 	return NewRevolveFeatures(fs).Add(skt, d.Profile, axis, func() float64 { return angle }, op), nil
+}
+
+// restoreSecondAngle re-applies a persisted second-direction sweep onto a
+// freshly restored revolve (the centerline Add paths take one angle).
+func restoreSecondAngle(pf *PartFeature, angle2 float64) *PartFeature {
+	if angle2 <= 0 {
+		return pf
+	}
+	if rf, ok := pf.feature.(*RevolveFeature); ok {
+		rf.def.Angle2 = func() float64 { return angle2 }
+	}
+	return pf
 }
 
 // CoilData is a coil's recipe: the sketch profile, the helix axis (a WorkRef), the

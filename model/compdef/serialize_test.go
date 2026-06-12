@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	stdmath "math"
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
+
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -541,4 +543,45 @@ func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
 	if got := reopened.Units().PreferredName(param.Length); got != "in" {
 		t.Errorf("length unit after reopen = %q, want in", got)
 	}
+}
+
+// TestRevolveTwoDirectionalSurvivesReopen: the second-direction sweep (#313)
+// persists and the restored revolve rebuilds the same straddling solid.
+func TestRevolveTwoDirectionalSurvivesReopen(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	offsetRect(sk, 2, 2)
+	yAxis := def.WorkAxes().Item(1) // the origin Y axis
+	feature.NewRevolveFeatures(def.Features()).AddTwoDirectional(sk, 0, yAxis,
+		func() float64 { return stdmath.Pi / 2 }, func() float64 { return stdmath.Pi / 2 }, ops.NewBody)
+	def.Recompute()
+
+	reopened := reopenThroughStore(t, d)
+	rev, ok := featureByKind(reopened.Features(), "revolve")
+	if !ok {
+		t.Fatal("revolve feature missing after reopen")
+	}
+	rdef := rev.Definition().(*feature.RevolveFeature).Definition()
+	if rdef.Angle2 == nil || stdmath.Abs(rdef.Angle2()-stdmath.Pi/2) > 1e-12 {
+		t.Fatal("Angle2 must survive the reopen")
+	}
+	reopened.Recompute()
+	want := stdmath.Pi * (4*4 - 2*2) * 2 / 2 // the 12π half washer
+	got := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	if stdmath.Abs(got-want)/want > 0.01 {
+		t.Errorf("reopened two-directional revolve volume = %g, want ≈%g", got, want)
+	}
+}
+
+// offsetRect draws a rectangle x∈[x0, x0+side], y∈[0, side] (a profile offset
+// from the revolve axis).
+func offsetRect(sk *sketch.Sketch, x0, side float64) {
+	p := func(x, y float64) *sketch.Point { return sk.Points().Add(math.P2(math.Scalar(x), math.Scalar(y))) }
+	c0, c1, c2, c3 := p(x0, 0), p(x0+side, 0), p(x0+side, side), p(x0, side)
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
 }

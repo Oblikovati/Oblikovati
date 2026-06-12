@@ -34,7 +34,10 @@ type RevolveDefinition struct {
 	AxisCenterline       *sketch.Line   // a specific centerline to revolve about
 	AxisCenterlineSketch *sketch.Sketch // the centerline's sketch (for its plane)
 	Angle                func() float64 // 0 ⇒ full revolution
-	Operation            ops.PartFeatureOperation
+	// Angle2 is the second-direction sweep (radians, opposite sense), the
+	// reference two-directional revolve (M08 PBI-093, #313). nil/0 ⇒ one-way.
+	Angle2    func() float64
+	Operation ops.PartFeatureOperation
 }
 
 // RevolveFeature spins a profile about an axis.
@@ -80,7 +83,7 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 // other case (partial angle, an oblique/curved profile edge, or the gate off) keeps the faceted
 // swept solid. Booleans re-facet an analytic revolve body on demand (combine → planarized).
 func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) (*topo.Body, error) {
-	angle := callOrZero(r.def.Angle)
+	angle, start := revolveSpan(r.def)
 	feat := featOr(r.featName, "revolve")
 	// Analytic only for a full revolve of a STRAIGHT-edged profile: those edges revolve to exact
 	// cylinder/cone/plane faces. A profile with an arc/spline (e.g. a sphere) would have its sampled
@@ -92,8 +95,26 @@ func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) 
 			return body, nil
 		}
 	}
-	sections, closed := revolveSections(prof, r.def.Sketch.Plane(), axis, angle)
+	sections, closed := revolveSectionsFrom(prof, r.def.Sketch.Plane(), axis, angle, start)
 	return sweptSolid(sections, closed, feat)
+}
+
+// revolveSpan resolves the total swept angle and its start offset: a
+// two-directional revolve spans [-angle2, +angle1]. A combined span reaching a
+// full turn collapses to the full revolution (start irrelevant — the solid is
+// rotationally complete).
+func revolveSpan(def *RevolveDefinition) (total, start float64) {
+	a1, a2 := callOrZero(def.Angle), callOrZero(def.Angle2)
+	if a2 <= 0 {
+		return a1, 0
+	}
+	if a1 <= 0 { // full + a second direction is still just full
+		return 0, 0
+	}
+	if a1+a2 >= 2*stdmath.Pi-1e-9 {
+		return 0, 0
+	}
+	return a1 + a2, -a2
 }
 
 // isStraightLoop reports whether every entity of a profile loop is a straight line segment (so its
@@ -159,16 +180,24 @@ func centerlineAxis(line *sketch.Line, sk *sketch.Sketch) (*WorkAxis, error) {
 // revolveSections places the profile (in model space) at evenly-spaced angles about the
 // axis. A zero or ≥2π angle is a full revolution (a closed loop, no caps).
 func revolveSections(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle float64) ([][]math.Point3, bool) {
+	return revolveSectionsFrom(prof, plane, axis, angle, 0)
+}
+
+// revolveSectionsFrom is revolveSections starting at a signed angular offset —
+// the two-directional revolve sweeps [start, start+angle] (#313).
+func revolveSectionsFrom(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle, start float64) ([][]math.Point3, bool) {
 	base := modelPolygon(prof, plane)
 	full := angle <= 0 || angle >= 2*stdmath.Pi-1e-9
 	k, step := revolveSegments, 2*stdmath.Pi/float64(revolveSegments)
-	if !full {
+	if full {
+		start = 0
+	} else {
 		segs := stdmath.Max(3, stdmath.Round(revolveSegments*angle/(2*stdmath.Pi)))
 		k, step = int(segs)+1, angle/segs
 	}
 	sections := make([][]math.Point3, k)
 	for s := 0; s < k; s++ {
-		m := math.Rotation4(step*float64(s), axis.Direction(), axis.Origin())
+		m := math.Rotation4(start+step*float64(s), axis.Direction(), axis.Origin())
 		sec := make([]math.Point3, len(base))
 		for i, p := range base {
 			sec[i] = m.TransformPoint(p)
@@ -220,6 +249,17 @@ func NewRevolveFeatures(engine *PartFeatures) *RevolveFeatures { return &Revolve
 // Add adds a revolve of the profile about axis through angle (nil ⇒ full).
 func (c *RevolveFeatures) Add(skt *sketch.Sketch, profileIndex int, axis *WorkAxis, angle func() float64, op ops.PartFeatureOperation) *PartFeature {
 	def := &RevolveDefinition{Sketch: skt, ProfileIndex: profileIndex, Axis: axis, Angle: angle, Operation: op}
+	rf := &RevolveFeature{def: def}
+	pf := c.engine.Add(rf)
+	pf.SetName(c.engine.UniqueName("Revolution"))
+	rf.featName = pf.name
+	return pf
+}
+
+// AddTwoDirectional adds a revolve sweeping angle forward and angle2 in the
+// opposite sense about axis — the reference two-directional revolve (#313).
+func (c *RevolveFeatures) AddTwoDirectional(skt *sketch.Sketch, profileIndex int, axis *WorkAxis, angle, angle2 func() float64, op ops.PartFeatureOperation) *PartFeature {
+	def := &RevolveDefinition{Sketch: skt, ProfileIndex: profileIndex, Axis: axis, Angle: angle, Angle2: angle2, Operation: op}
 	rf := &RevolveFeature{def: def}
 	pf := c.engine.Add(rf)
 	pf.SetName(c.engine.UniqueName("Revolution"))

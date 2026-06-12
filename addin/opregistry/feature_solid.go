@@ -26,6 +26,7 @@ type revolveArgs struct {
 	ProfileIndex int    `json:"profileIndex"`
 	AxisRef      string `json:"axisRef,omitempty"`
 	Angle        string `json:"angle"`
+	Angle2       string `json:"angle2,omitempty"` // second-direction sweep (#313)
 	Operation    string `json:"operation,omitempty"`
 }
 
@@ -36,6 +37,7 @@ const revolveSchema = `{
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
     "axisRef": {"type": "string", "description": "Work-axis reference to revolve about, e.g. \"origin/axis/y\" (default). See get_reference_keys / list_work_planes."},
     "angle": {"type": "string", "description": "Revolve angle with units, e.g. \"360 deg\"."},
+    "angle2": {"type": "string", "description": "Optional second-direction sweep (opposite sense), e.g. \"30 deg\" — the two-directional revolve."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new"}
   },
   "required": ["sketchIndex", "angle"]
@@ -69,6 +71,14 @@ func applyRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	op, err := parseOperation(in.Operation)
 	if err != nil {
 		return nil, err
+	}
+	if in.Angle2 != "" {
+		angle2, err := angleClosure(part, in.Angle2, "revolve: angle2")
+		if err != nil {
+			return nil, err
+		}
+		pf := feature.NewRevolveFeatures(part.Features()).AddTwoDirectional(sk, in.ProfileIndex, axis, angle, angle2, op)
+		return recomputeResult(part, pf)
 	}
 	pf := feature.NewRevolveFeatures(part.Features()).Add(sk, in.ProfileIndex, axis, angle, op)
 	return recomputeResult(part, pf)
