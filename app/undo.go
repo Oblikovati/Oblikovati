@@ -81,12 +81,20 @@ func (s *Session) recordEdit(part *compdef.PartComponentDefinition, label string
 		// undo step at EndTransaction. snapshot is intentionally left untouched.
 		return
 	}
+	s.commitRecipeDelta(d, dh, part, label)
+}
+
+// commitRecipeDelta records the part's recipe delta as one undo event and
+// pushes values other documents derive from through the reference graph
+// (M02-F06). A no-op delta (before == after) records nothing.
+func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, part *compdef.PartComponentDefinition, label string) {
 	after, err := part.MarshalRecipe()
 	if err != nil || bytes.Equal(after, dh.snapshot) {
 		return
 	}
 	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, part))
 	dh.snapshot = after
+	s.resyncDerivedTables(d, map[string]bool{})
 }
 
 // RecordAddInEdit finalizes a router-applied mutation as one undo step: the
@@ -139,12 +147,7 @@ func (s *Session) EndTransaction() error {
 	if !ok {
 		return nil
 	}
-	after, err := part.MarshalRecipe()
-	if err != nil || bytes.Equal(after, dh.snapshot) {
-		return nil
-	}
-	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, part))
-	dh.snapshot = after
+	s.commitRecipeDelta(d, dh, part, label)
 	return nil
 }
 

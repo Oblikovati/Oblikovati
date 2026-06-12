@@ -38,6 +38,7 @@ type partRecipe struct {
 	Parameters        []parameterRecipe         `yaml:"parameters,omitempty"`
 	ParameterGroups   []parameterGroupRecipe    `yaml:"parameterGroups,omitempty"` // custom group records, in creation order
 	ParameterSettings *parameterSettingsRecipe  `yaml:"parameterSettings,omitempty"`
+	DerivedTables     []derivedTableRecipe      `yaml:"derivedParameterTables,omitempty"`
 	WorkFeatures      []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
 	Sketches          []sketch.SketchData       `yaml:"sketches,omitempty"`
 	Sketches3D        []sketch.SketchData3D     `yaml:"sketches3D,omitempty"`
@@ -123,6 +124,17 @@ type parameterSettingsRecipe struct {
 	DisplayParameterAsExpression bool   `yaml:"displayParameterAsExpression,omitempty"`
 }
 
+// derivedTableRecipe persists one derived parameter table: its stable id (so
+// undo restores keep wire handles valid), the source document, and the linked
+// names. The produced derived parameters persist in the parameters list and
+// reconnect by name on restore (M02-F06, Oblikovati#605).
+type derivedTableRecipe struct {
+	ID             int      `yaml:"id"`
+	SourceDocument string   `yaml:"sourceDocument"`
+	Linked         []string `yaml:"linked,omitempty"`
+	OwnedByFeature bool     `yaml:"ownedByFeature,omitempty"`
+}
+
 // parameterGroupRecipe persists one custom parameter group: the immutable
 // internal name, the display name when it differs, the owning client id, and
 // the member parameter names (M02-F05, Oblikovati#604).
@@ -174,6 +186,7 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		Parameters:        d.parametersRecipe(),
 		ParameterGroups:   d.parameterGroupsRecipe(),
 		ParameterSettings: d.parameterSettingsRecipe(),
+		DerivedTables:     d.derivedTablesRecipe(),
 		WorkFeatures:      work,
 		Sketches:          sketches,
 		Sketches3D:        sketches3D,
@@ -231,6 +244,9 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 		return err
 	}
 	if err := d.applyParameterSettings(r.ParameterSettings); err != nil {
+		return err
+	}
+	if err := d.applyDerivedTables(r.DerivedTables); err != nil {
 		return err
 	}
 	if err := feature.ApplyWork(d.work, r.WorkFeatures); err != nil {
@@ -363,6 +379,29 @@ func (d *PartComponentDefinition) applyParameters(groups []parameterGroupRecipe,
 	for _, gr := range groups {
 		if err := d.applyParameterGroup(gr); err != nil {
 			return fmt.Errorf("compdef: restore parameter group %q: %w", gr.InternalName, err)
+		}
+	}
+	return nil
+}
+
+// derivedTablesRecipe renders the derived parameter tables in creation order.
+func (d *PartComponentDefinition) derivedTablesRecipe() []derivedTableRecipe {
+	var out []derivedTableRecipe
+	for _, t := range d.params.DerivedTables() {
+		out = append(out, derivedTableRecipe{
+			ID: t.ID(), SourceDocument: t.SourceDocument(),
+			Linked: t.Linked(), OwnedByFeature: t.OwnedByFeature(),
+		})
+	}
+	return out
+}
+
+// applyDerivedTables re-creates the persisted tables after the parameters
+// they reconnect to.
+func (d *PartComponentDefinition) applyDerivedTables(tables []derivedTableRecipe) error {
+	for _, tr := range tables {
+		if err := d.params.RestoreDerivedTable(tr.ID, tr.SourceDocument, tr.Linked, tr.OwnedByFeature); err != nil {
+			return fmt.Errorf("compdef: restore derived table %d: %w", tr.ID, err)
 		}
 	}
 	return nil

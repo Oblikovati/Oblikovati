@@ -26,6 +26,11 @@ type Parameters struct {
 
 	// settings are the document-level parameter settings (M02-F07); see settings.go.
 	settings CollectionSettings
+
+	// Derived parameter tables (M02-F06): cross-document links in creation
+	// order, with their persistent id counter. See derived_table.go.
+	derivedTables []*DerivedParameterTable
+	nextTableID   int
 }
 
 // idSet is a set of parameter ids.
@@ -38,6 +43,7 @@ func NewParameters() *Parameters {
 		drivenBy: map[ID]idSet{}, dependents: map[ID]idSet{},
 		memberships: map[ID]map[string]bool{},
 		settings:    DefaultCollectionSettings(),
+		nextTableID: 1,
 	}
 }
 
