@@ -18,27 +18,33 @@ import (
 // this is the seam that enforces identity and (later) the reference graph and
 // transactions (parametric-cad §13).
 type Workspace struct {
-	store   Store
-	ordered []*Document          // insertion order, for stable enumeration
-	byID    map[ID]*Document     // session-id lookup
-	byName  map[string]*Document // full-document-name lookup (ItemByName)
-	graph   *RefGraph            // shared document reference graph (M03-F04)
-	bus     *event.Bus           // application/document/modeling events (M04-F04)
-	active  *Document
+	store         Store
+	ordered       []*Document          // insertion order, for stable enumeration
+	byID          map[ID]*Document     // session-id lookup
+	byName        map[string]*Document // full-document-name lookup (ItemByName)
+	graph         *RefGraph            // shared document reference graph (M03-F04)
+	bus           *event.Bus           // application/document/modeling events (M04-F04)
+	externalFiles ExternalFileProbe    // foreign-file access for attachments (M03-F08)
+	active        *Document
 }
 
 // NewWorkspace creates an empty workspace backed by store. A nil store is allowed
 // for purely in-memory sessions; Save/Open then return an error.
 func NewWorkspace(store Store) *Workspace {
 	ws := &Workspace{
-		store:  store,
-		byID:   map[ID]*Document{},
-		byName: map[string]*Document{},
-		bus:    event.NewBus(),
+		store:         store,
+		byID:          map[ID]*Document{},
+		byName:        map[string]*Document{},
+		bus:           event.NewBus(),
+		externalFiles: osFileProbe{},
 	}
 	ws.graph = newRefGraph(ws)
 	return ws
 }
+
+// SetExternalFileProbe replaces the foreign-file access seam — tests inject a
+// named fake; the default probes the real filesystem.
+func (ws *Workspace) SetExternalFileProbe(p ExternalFileProbe) { ws.externalFiles = p }
 
 // References returns the workspace's document reference graph.
 func (ws *Workspace) References() *RefGraph { return ws.graph }
@@ -139,7 +145,10 @@ func (ws *Workspace) openStub(fullDocumentName string) (*Document, error) {
 	return d, nil
 }
 
-// Save writes the document through the store and clears its dirty flag.
+// Save writes the document through the store and clears its dirty flag. The
+// save stamps the file identity (counter, revision GUIDs — M03-F07) and
+// snapshots the as-saved file reference records; a failed store write rolls
+// the identity back so it never drifts ahead of the bytes on disk.
 func (ws *Workspace) Save(d *Document) error {
 	if ws.store == nil {
 		return fmt.Errorf("doc: cannot save %q: no store configured", d.fullDocumentName)
@@ -147,11 +156,36 @@ func (ws *Workspace) Save(d *Document) error {
 	if err := vetoed(ws.bus, "save", DocumentSave{Document: d}); err != nil {
 		return err
 	}
+	d.snapshotFileReferences()
+	prior := d.identity
+	d.identity = prior.nextForSave(recipeDigest(d))
 	if err := ws.store.Save(d); err != nil {
+		d.identity = prior
 		return fmt.Errorf("doc: save %q: %w", d.fullDocumentName, err)
 	}
 	d.ClearDirty()
 	event.Emit(ws.bus, event.After, DocumentSave{Document: d})
+	return nil
+}
+
+// SaveCopy writes a copy of the document to targetFullFileName without
+// retargeting the in-memory document (M03-F09, #610) — the export/archival
+// workhorse: the document keeps its binding, dirty state and identity; the
+// copy on disk gets a fresh one. The target must differ from the source and
+// must not be open in this workspace.
+func (ws *Workspace) SaveCopy(d *Document, targetFullFileName string, meta CopyMetadata) error {
+	if ws.store == nil {
+		return fmt.Errorf("doc: cannot save a copy of %q: no store configured", d.fullDocumentName)
+	}
+	if targetFullFileName == "" || targetFullFileName == d.fullDocumentName {
+		return fmt.Errorf("doc: copy target %q must name a different file", targetFullFileName)
+	}
+	if _, open := ws.byName[targetFullFileName]; open {
+		return fmt.Errorf("doc: cannot copy over %q: it is open in this workspace", targetFullFileName)
+	}
+	if err := ws.store.SaveCopy(d, targetFullFileName, meta); err != nil {
+		return fmt.Errorf("doc: save copy %q: %w", targetFullFileName, err)
+	}
 	return nil
 }
 

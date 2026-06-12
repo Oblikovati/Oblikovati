@@ -41,9 +41,13 @@ type Document struct {
 	open             bool
 	visible          bool
 	compacted        bool
-	subType          string         // add-in flavored document subtype id, "" for plain (M05-F15)
+	subType          SubTypeID      // flavored document subtype id, "" for plain (M05-F15, M03-F11)
 	referencedBy     int            // how many open documents reference this one (maintained by the graph, M03-F04)
 	views            *DocumentViews // per-document view collection (cameras); lazily seeded by Views()
+	identity         FileIdentity   // the file's persisted identity block (M03-F07, #159)
+	fileReferences   []*FileReference
+	attachments      *FileAttachments   // external-file attachment records (M03-F08); lazily seeded
+	interests        *DocumentInterests // add-in data registry (M03-F10); lazily seeded
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;
@@ -57,6 +61,7 @@ func newDocument(t DocumentType, fullDocumentName string, content Content, open 
 		content:          content,
 		open:             open,
 		visible:          open,
+		identity:         newFileIdentity(),
 	}
 }
 
@@ -73,12 +78,13 @@ func (d *Document) ID() ID { return d.id }
 // DocumentType returns the kind discriminator.
 func (d *Document) DocumentType() DocumentType { return d.docType }
 
-// SubType returns the add-in flavored subtype id ("" for a plain document) — the
-// DocumentSubType discriminator (M05-F15); persisted in the manifest.
-func (d *Document) SubType() string { return d.subType }
+// SubType returns the flavored subtype id ("" for a plain document) — the
+// DocumentSubType discriminator (M05-F15, typed in M03-F11); persisted in the
+// manifest.
+func (d *Document) SubType() SubTypeID { return d.subType }
 
 // SetSubType stamps the flavored subtype id.
-func (d *Document) SetSubType(id string) { d.subType = id }
+func (d *Document) SetSubType(id SubTypeID) { d.subType = id }
 
 // Content returns the modeling payload, or nil if this is an unopened reference
 // stub. Callers needing a typed view use the specialization accessors

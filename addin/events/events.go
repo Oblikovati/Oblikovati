@@ -185,7 +185,7 @@ func relayClientOperation(sink Sink, d *doc.Document, operation string) {
 	}
 	relayJSON(sink, wire.ClientOperationEvent{
 		Type: wire.EventClientOperation, Document: uint64(d.ID()),
-		SubType: d.SubType(), Operation: operation,
+		SubType: string(d.SubType()), Operation: operation,
 	})
 }
 

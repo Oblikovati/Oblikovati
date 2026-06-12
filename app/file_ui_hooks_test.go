@@ -21,6 +21,11 @@ func (f *fakeDocStore) Save(d *doc.Document) error {
 	return nil
 }
 
+func (f *fakeDocStore) SaveCopy(d *doc.Document, target string, _ doc.CopyMetadata) error {
+	f.saved[target] = d.DocumentType()
+	return nil
+}
+
 func (f *fakeDocStore) Load(name string) (*doc.Document, error) {
 	t, ok := f.saved[name]
 	if !ok {

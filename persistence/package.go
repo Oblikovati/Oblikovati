@@ -25,17 +25,45 @@ type StreamStat struct {
 // file (ADR-0020). Stream bytes are copied in and out so a Package never shares
 // backing arrays with its callers.
 type Package struct {
-	manifest  Manifest                      // identity; the zero value means "no manifest"
-	model     []byte                        // recipe YAML bytes; nil ⇒ no model
-	streams   map[string][]byte             // named binary data sections
-	order     []string                      // data-section insertion order, for stable enumeration
-	resources map[string]yamlcodec.Resource // embedded imported files, keyed by UUID (ADR-0031)
+	manifest    Manifest                      // identity; the zero value means "no manifest"
+	model       []byte                        // recipe YAML bytes; nil ⇒ no model
+	streams     map[string][]byte             // named binary data sections
+	order       []string                      // data-section insertion order, for stable enumeration
+	resources   map[string]yamlcodec.Resource // embedded imported files, keyed by UUID (ADR-0031)
+	identity    *yamlcodec.FileIdentityRecord // file identity block (M03-F07, #159); nil pre-identity
+	references  []yamlcodec.FileReferenceRecord
+	attachments []yamlcodec.AttachmentRecord // external-file attachments (M03-F08)
+	interests   []yamlcodec.InterestRecord   // add-in data registry (M03-F10)
 }
 
 // NewPackage returns an empty package.
 func NewPackage() *Package {
 	return &Package{streams: map[string][]byte{}}
 }
+
+// SetIdentity stores the file identity block (M03-F07, #159).
+func (p *Package) SetIdentity(id *yamlcodec.FileIdentityRecord) { p.identity = id }
+
+// Identity returns the file identity block, nil for a pre-identity file.
+func (p *Package) Identity() *yamlcodec.FileIdentityRecord { return p.identity }
+
+// SetFileReferences stores the as-saved file-to-file reference records (M03-F07).
+func (p *Package) SetFileReferences(refs []yamlcodec.FileReferenceRecord) { p.references = refs }
+
+// FileReferences returns the as-saved file-to-file reference records.
+func (p *Package) FileReferences() []yamlcodec.FileReferenceRecord { return p.references }
+
+// SetAttachments stores the external-file attachment records (M03-F08).
+func (p *Package) SetAttachments(a []yamlcodec.AttachmentRecord) { p.attachments = a }
+
+// Attachments returns the external-file attachment records.
+func (p *Package) Attachments() []yamlcodec.AttachmentRecord { return p.attachments }
+
+// SetInterests stores the add-in data-registry records (M03-F10).
+func (p *Package) SetInterests(i []yamlcodec.InterestRecord) { p.interests = i }
+
+// Interests returns the add-in data-registry records.
+func (p *Package) Interests() []yamlcodec.InterestRecord { return p.interests }
 
 // SetResources stores the document's embedded resource table (ADR-0031), keyed by UUID.
 func (p *Package) SetResources(r map[string]yamlcodec.Resource) { p.resources = r }

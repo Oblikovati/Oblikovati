@@ -37,9 +37,10 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		} else {
 			drawSingleViewport(win, s)
 		}
-		viewCubeContextMenu(s)    // the ViewCube right-click menu (opened from a tile/single path)
-		drawViewCubeOptions(s)    // the ViewCube Options window (toggled from that menu)
-		serviceScreenshot(win, s) // Tools ▸ Save Viewport PNG, after the viewport rendered
+		viewCubeContextMenu(s)       // the ViewCube right-click menu (opened from a tile/single path)
+		drawViewCubeOptions(s)       // the ViewCube Options window (toggled from that menu)
+		serviceScreenshot(win, s)    // Tools ▸ Save Viewport PNG, after the viewport rendered
+		serviceSaveThumbnail(win, s) // the save policy's sidecar capture (M03-F09)
 	}
 	native.End()
 }

@@ -25,6 +25,15 @@ func (s *fakeStore) Save(d *Document) error {
 	return nil
 }
 
+func (s *fakeStore) SaveCopy(d *Document, target string, meta CopyMetadata) error {
+	displayName := d.DisplayName()
+	if meta.DisplayName != "" {
+		displayName = meta.DisplayName
+	}
+	s.saved[target] = storedDoc{docType: d.DocumentType(), displayName: displayName}
+	return nil
+}
+
 func (s *fakeStore) Load(fullDocumentName string) (*Document, error) {
 	rec, ok := s.saved[fullDocumentName]
 	if !ok {

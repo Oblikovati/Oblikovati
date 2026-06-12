@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app/options"
@@ -31,6 +30,7 @@ import (
 // window involved, so "operating the UI" is fully unit-testable (ADR-0014/0004).
 type Session struct {
 	workspace            *doc.Workspace
+	store                doc.Store // the workspace's persistence backend; nil for in-memory sessions
 	commands             *CommandManager
 	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
@@ -50,30 +50,30 @@ type Session struct {
 	hiddenBodyKeys       map[string]bool
 	graphics             *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
 	addins               *AddInManager
-	clientApps           *ClientApplicationRegistry    // external automation drivers (M05-F01)
-	browserPanes         *AddInBrowserPanes            // add-in browser panes (M05-F03)
-	dockableWindows      *AddInDockableWindows         // add-in dockable windows (M05-F03)
-	appOptions           options.All                   // typed per-user option groups (M05-F11)
-	optionsStore         options.Store                 // persists appOptions (nil ⇒ in-session only)
-	statusText           string                        // wire-set status-bar message (M05-F09)
-	messageCenter        *MessageCenter                // sectioned errors/warnings tree (M05-F09)
-	messageCenterOpen    bool                          // the Messages panel is open
-	progress             *ProgressLedger               // live progress bars (M05-F09)
-	balloonTips          *BalloonTipCenter             // notification balloons (M05-F09)
-	prompts              *PromptCenter                 // declarative prompts (M05-F09)
-	dialogMemoryStore    dialogmemory.Store            // persists suppressions + remembered answers
-	miniToolbars         *MiniToolbarRack              // in-canvas mini-toolbars (M05-F07)
-	fileDialogQueue      []FileDialogRequest           // pending add-in file-dialog asks (M05-F08)
-	webViews             map[string]wire.WebDialogSpec // presented web views (M05-F08)
-	webViewOrder         []string                      // web views in creation order
-	urlOpener            URLOpener                     // platform URL opener (head-injected)
-	windowFrame          WindowFrameStatus             // mirrored host-window state (M05-F10)
-	triad                TriadGizmo                    // the move/rotate triad (M05-F13)
-	manipulators         *ManipulatorBoard             // add-in drag handles (M05-F13)
-	helpSources          map[string]string             // add-in help bases by source (M05-F14)
-	helpInterceptor      HelpInterceptor               // before-help veto hook (M05-F14)
-	documentSubTypes     map[string]DocumentSubType    // registered flavors (M05-F15)
-	documentSubTypeOrder []string
+	clientApps           *ClientApplicationRegistry        // external automation drivers (M05-F01)
+	browserPanes         *AddInBrowserPanes                // add-in browser panes (M05-F03)
+	dockableWindows      *AddInDockableWindows             // add-in dockable windows (M05-F03)
+	appOptions           options.All                       // typed per-user option groups (M05-F11)
+	optionsStore         options.Store                     // persists appOptions (nil ⇒ in-session only)
+	statusText           string                            // wire-set status-bar message (M05-F09)
+	messageCenter        *MessageCenter                    // sectioned errors/warnings tree (M05-F09)
+	messageCenterOpen    bool                              // the Messages panel is open
+	progress             *ProgressLedger                   // live progress bars (M05-F09)
+	balloonTips          *BalloonTipCenter                 // notification balloons (M05-F09)
+	prompts              *PromptCenter                     // declarative prompts (M05-F09)
+	dialogMemoryStore    dialogmemory.Store                // persists suppressions + remembered answers
+	miniToolbars         *MiniToolbarRack                  // in-canvas mini-toolbars (M05-F07)
+	fileDialogQueue      []FileDialogRequest               // pending add-in file-dialog asks (M05-F08)
+	webViews             map[string]wire.WebDialogSpec     // presented web views (M05-F08)
+	webViewOrder         []string                          // web views in creation order
+	urlOpener            URLOpener                         // platform URL opener (head-injected)
+	windowFrame          WindowFrameStatus                 // mirrored host-window state (M05-F10)
+	triad                TriadGizmo                        // the move/rotate triad (M05-F13)
+	manipulators         *ManipulatorBoard                 // add-in drag handles (M05-F13)
+	helpSources          map[string]string                 // add-in help bases by source (M05-F14)
+	helpInterceptor      HelpInterceptor                   // before-help veto hook (M05-F14)
+	documentSubTypes     map[doc.SubTypeID]DocumentSubType // registered flavors (M05-F15)
+	documentSubTypeOrder []doc.SubTypeID
 	addinEnvironments    map[Environment]string                           // registered add-in environments (M05-F16)
 	activeAddInEnv       Environment                                      // the entered add-in environment (base when none)
 	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
@@ -131,6 +131,7 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	s := &Session{
+		store:           store,
 		workspace:       doc.NewWorkspace(store),
 		commands:        NewCommandManager(),
 		histories:       map[doc.ID]*docHistory{},
@@ -163,6 +164,7 @@ func newSession(store doc.Store) *Session {
 	s.lighting.Environment = renderer.DefaultEnvironment()
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
+	s.watchDocumentInterests()
 	return s
 }
 
@@ -177,7 +179,8 @@ func (s *Session) initShellSurfaces() {
 		WorkPlanes: true, WorkAxes: true, WorkPoints: true, Sketches: true,
 	}
 	s.helpSources = map[string]string{}
-	s.documentSubTypes = map[string]DocumentSubType{}
+	s.documentSubTypes = map[doc.SubTypeID]DocumentSubType{}
+	s.registerBuiltInSubTypes()
 	s.addinEnvironments = map[Environment]string{}
 }
 
@@ -352,33 +355,11 @@ func (s *Session) uniquePartName() string {
 // the [doc.PackageExtension] suffix, since new documents are minted with bare names
 // like "Part1" — and return [ErrNeedsPath] so the UI can prompt via Save As.
 func (s *Session) SaveActiveDocument() error {
-	d := s.workspace.ActiveDocument()
-	if d == nil {
-		return ErrNoActiveDoc
-	}
-	if !strings.HasSuffix(d.FullFileName(), doc.PackageExtension) {
-		return ErrNeedsPath
-	}
-	s.collectFileMetadata(d) // the PopulateFileMetadata hook gathers file properties around the save
-	if err := s.workspace.Save(d); err != nil {
-		return err
-	}
-	s.saveViewState(d) // persist this user's camera/view layout alongside (not inside) the document
-	return nil
+	return s.SaveDocument(s.workspace.ActiveDocument())
 }
 
 // SaveActiveDocumentAs writes the active document to path, which becomes its new
 // identity. It is the core of File ▸ Save As and the CLI save-as command.
 func (s *Session) SaveActiveDocumentAs(path string) error {
-	d := s.workspace.ActiveDocument()
-	if d == nil {
-		return ErrNoActiveDoc
-	}
-	s.collectFileMetadata(d) // the PopulateFileMetadata hook gathers file properties around the save
-	if err := s.workspace.SaveAs(d, path); err != nil {
-		return err
-	}
-	s.saveViewState(d)             // persist under the new path (camera/view layout stays out of the .obk)
-	s.rememberRecentDocument(path) // a save-as destination is recent file activity
-	return nil
+	return s.SaveDocumentAs(s.workspace.ActiveDocument(), path)
 }

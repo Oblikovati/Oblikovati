@@ -40,18 +40,77 @@ type Document struct {
 	// Resources is the root resource table (ADR-0031): imported files embedded in the
 	// document, keyed by a per-import UUID and referenced from the recipe by that key.
 	Resources map[string]Resource
+	// Identity is the file identity block (M03-F07, #159); nil for pre-identity files.
+	Identity *FileIdentityRecord
+	// References are the as-saved file-to-file reference records (M03-F07).
+	References []FileReferenceRecord
+	// Attachments are the external-file attachment records (M03-F08).
+	Attachments []AttachmentRecord
+	// Interests are the add-in data registry records (M03-F10).
+	Interests []InterestRecord
+}
+
+// FileIdentityRecord is the on-disk file identity block: the stable GUID plus
+// the revision stamps a referencing file compares against (M03-F07, #159).
+type FileIdentityRecord struct {
+	InternalName       string `yaml:"internalName,omitempty"`
+	RevisionID         string `yaml:"revisionId,omitempty"`
+	DatabaseRevisionID string `yaml:"databaseRevisionId,omitempty"`
+	SaveCounter        int    `yaml:"saveCounter,omitempty"`
+	VersionCreated     string `yaml:"versionCreated,omitempty"`
+	VersionSaved       string `yaml:"versionSaved,omitempty"`
+	ModelDigest        string `yaml:"modelDigest,omitempty"`
+}
+
+// FileReferenceRecord is one as-saved file-to-file reference: the logical
+// names, the location class (a wire spelling, readable in the file), and the
+// referenced file's identity at save time (M03-F07).
+type FileReferenceRecord struct {
+	FullFileName           string `yaml:"fullFileName"`
+	RelativeFileName       string `yaml:"relativeFileName,omitempty"`
+	LibraryName            string `yaml:"libraryName,omitempty"`
+	LocationType           string `yaml:"locationType,omitempty"`
+	ReferencedInternalName string `yaml:"referencedInternalName,omitempty"`
+	SaveCounter            int    `yaml:"saveCounter,omitempty"`
+}
+
+// AttachmentRecord is one external-file attachment (M03-F08): a named link to
+// a foreign file, with an embedded payload carried base64 (the same concession
+// as data sections, ADR-0020).
+type AttachmentRecord struct {
+	Name              string `yaml:"name"`
+	Kind              string `yaml:"kind"`
+	FullFileName      string `yaml:"fullFileName,omitempty"`
+	ResourceID        string `yaml:"resourceId,omitempty"`
+	Payload           string `yaml:"payload,omitempty"` // base64
+	LastKnownFileTime string `yaml:"lastKnownFileTime,omitempty"`
+	BrowserVisible    bool   `yaml:"browserVisible,omitempty"`
+}
+
+// InterestRecord is one add-in data-registry entry (M03-F10): client X has
+// data in / depends on this document, readable without loading the add-in.
+type InterestRecord struct {
+	ClientID     string `yaml:"clientId"`
+	Name         string `yaml:"name"`
+	InterestType string `yaml:"interestType,omitempty"`
+	DataVersion  int    `yaml:"dataVersion,omitempty"`
+	ClientData   string `yaml:"clientData,omitempty"`
 }
 
 // onDisk is the YAML projection of a Document: manifest at top level, recipe as a
 // native node, data sections base64-encoded. omitempty keeps a minimal file readable.
 type onDisk struct {
-	SchemaVersion int               `yaml:"schemaVersion,omitempty"`
-	DocumentType  uint32            `yaml:"documentType,omitempty"`
-	SubType       string            `yaml:"subType,omitempty"`
-	DisplayName   string            `yaml:"displayName,omitempty"`
-	Resources     yaml.Node         `yaml:"resources,omitempty"`
-	Model         yaml.Node         `yaml:"model,omitempty"`
-	Data          map[string]string `yaml:"data,omitempty"`
+	SchemaVersion int                   `yaml:"schemaVersion,omitempty"`
+	DocumentType  uint32                `yaml:"documentType,omitempty"`
+	SubType       string                `yaml:"subType,omitempty"`
+	DisplayName   string                `yaml:"displayName,omitempty"`
+	Identity      *FileIdentityRecord   `yaml:"identity,omitempty"`
+	References    []FileReferenceRecord `yaml:"references,omitempty"`
+	Attachments   []AttachmentRecord    `yaml:"attachments,omitempty"`
+	Interests     []InterestRecord      `yaml:"interests,omitempty"`
+	Resources     yaml.Node             `yaml:"resources,omitempty"`
+	Model         yaml.Node             `yaml:"model,omitempty"`
+	Data          map[string]string     `yaml:"data,omitempty"`
 }
 
 // MarshalDocument renders d as the on-disk YAML file. The recipe bytes are parsed and
@@ -62,20 +121,13 @@ func MarshalDocument(d Document) ([]byte, error) {
 		DocumentType:  d.DocumentType,
 		SubType:       d.SubType,
 		DisplayName:   d.DisplayName,
+		Identity:      d.Identity,
+		References:    d.References,
+		Attachments:   d.Attachments,
+		Interests:     d.Interests,
 	}
-	if len(d.Resources) > 0 {
-		node, err := resourcesNode(d.Resources)
-		if err != nil {
-			return nil, err
-		}
-		od.Resources = *node
-	}
-	if len(d.Model) > 0 {
-		node, err := modelNode(d.Model)
-		if err != nil {
-			return nil, err
-		}
-		od.Model = *node
+	if err := embedNativeNodes(&od, d); err != nil {
+		return nil, err
 	}
 	if len(d.Data) > 0 {
 		od.Data = make(map[string]string, len(d.Data))
@@ -84,6 +136,26 @@ func MarshalDocument(d Document) ([]byte, error) {
 		}
 	}
 	return yaml.Marshal(od)
+}
+
+// embedNativeNodes parses the resource table and the recipe into native YAML
+// nodes so both read as real nested YAML on disk, not escaped strings.
+func embedNativeNodes(od *onDisk, d Document) error {
+	if len(d.Resources) > 0 {
+		node, err := resourcesNode(d.Resources)
+		if err != nil {
+			return err
+		}
+		od.Resources = *node
+	}
+	if len(d.Model) > 0 {
+		node, err := modelNode(d.Model)
+		if err != nil {
+			return err
+		}
+		od.Model = *node
+	}
+	return nil
 }
 
 // UnmarshalDocument decodes a .obk file's bytes. It rejects a legacy ZIP package with
@@ -124,6 +196,10 @@ func documentHeader(od onDisk) Document {
 		DocumentType:  od.DocumentType,
 		SubType:       od.SubType,
 		DisplayName:   od.DisplayName,
+		Identity:      od.Identity,
+		References:    od.References,
+		Attachments:   od.Attachments,
+		Interests:     od.Interests,
 	}
 }
 
