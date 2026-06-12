@@ -46,6 +46,7 @@ type Document struct {
 	views            *DocumentViews // per-document view collection (cameras); lazily seeded by Views()
 	identity         FileIdentity   // the file's persisted identity block (M03-F07, #159)
 	fileReferences   []*FileReference
+	attachments      *FileAttachments // external-file attachment records (M03-F08); lazily seeded
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;

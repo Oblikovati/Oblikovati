@@ -3,6 +3,7 @@
 package persistence
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -40,6 +41,7 @@ func (s *PackageStore) Save(d *doc.Document) error {
 	}
 	pkg.SetIdentity(toCodecIdentity(d.FileIdentity()))
 	pkg.SetFileReferences(toCodecFileReferences(d.FileReferenceRecords()))
+	pkg.SetAttachments(toCodecAttachments(d.AttachmentRecords()))
 	if rc, ok := d.Content().(doc.RecipeContent); ok {
 		model, err := rc.MarshalRecipe()
 		if err != nil {
@@ -69,7 +71,9 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 		return nil, err
 	}
 	d.SetSubType(doc.SubTypeID(manifest.SubType)) // restore the flavor (M05-F15)
-	restoreIdentity(d, pkg)
+	if err := restoreIdentity(d, pkg); err != nil {
+		return nil, fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
+	}
 	// Resources must be restored BEFORE the recipe is applied, so a feature that re-derives
 	// geometry from an embedded resource (e.g. an imported body) can read its bytes (ADR-0031).
 	if rb, ok := d.Content().(doc.ResourceBearer); ok {
@@ -87,10 +91,10 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	return d, nil
 }
 
-// restoreIdentity puts the persisted identity block and reference records back
-// on the document (M03-F07). A pre-identity file keeps the freshly minted
-// identity, persisting it on its next save.
-func restoreIdentity(d *doc.Document, pkg *Package) {
+// restoreIdentity puts the persisted identity block, reference records and
+// attachments back on the document (M03-F07/F08). A pre-identity file keeps
+// the freshly minted identity, persisting it on its next save.
+func restoreIdentity(d *doc.Document, pkg *Package) error {
 	if id := pkg.Identity(); id != nil {
 		d.SetFileIdentity(doc.FileIdentity{
 			InternalName: id.InternalName, RevisionID: id.RevisionID,
@@ -100,6 +104,43 @@ func restoreIdentity(d *doc.Document, pkg *Package) {
 		})
 	}
 	d.SetFileReferenceRecords(fromCodecFileReferences(pkg.FileReferences()))
+	recs, err := fromCodecAttachments(pkg.Attachments())
+	if err != nil {
+		return err
+	}
+	d.SetAttachmentRecords(recs)
+	return nil
+}
+
+// toCodecAttachments / fromCodecAttachments bridge attachment records across
+// the doc/persistence seam; the embedded payload travels base64 on disk (the
+// same concession as data sections, ADR-0020).
+func toCodecAttachments(in []doc.FileAttachmentRecord) []yamlcodec.AttachmentRecord {
+	out := make([]yamlcodec.AttachmentRecord, len(in))
+	for i, a := range in {
+		out[i] = yamlcodec.AttachmentRecord{
+			Name: a.Name, Kind: a.Kind, FullFileName: a.FullFileName,
+			ResourceID: a.ResourceID, Payload: base64.StdEncoding.EncodeToString(a.Payload),
+			LastKnownFileTime: a.LastKnownFileTime, BrowserVisible: a.BrowserVisible,
+		}
+	}
+	return out
+}
+
+func fromCodecAttachments(in []yamlcodec.AttachmentRecord) ([]doc.FileAttachmentRecord, error) {
+	out := make([]doc.FileAttachmentRecord, len(in))
+	for i, a := range in {
+		payload, err := base64.StdEncoding.DecodeString(a.Payload)
+		if err != nil {
+			return nil, fmt.Errorf("persistence: attachment %q payload is not valid base64: %w", a.Name, err)
+		}
+		out[i] = doc.FileAttachmentRecord{
+			Name: a.Name, Kind: a.Kind, FullFileName: a.FullFileName,
+			ResourceID: a.ResourceID, Payload: payload,
+			LastKnownFileTime: a.LastKnownFileTime, BrowserVisible: a.BrowserVisible,
+		}
+	}
+	return out, nil
 }
 
 // toCodecIdentity renders the document identity for the on-disk shape.

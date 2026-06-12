@@ -18,27 +18,33 @@ import (
 // this is the seam that enforces identity and (later) the reference graph and
 // transactions (parametric-cad §13).
 type Workspace struct {
-	store   Store
-	ordered []*Document          // insertion order, for stable enumeration
-	byID    map[ID]*Document     // session-id lookup
-	byName  map[string]*Document // full-document-name lookup (ItemByName)
-	graph   *RefGraph            // shared document reference graph (M03-F04)
-	bus     *event.Bus           // application/document/modeling events (M04-F04)
-	active  *Document
+	store         Store
+	ordered       []*Document          // insertion order, for stable enumeration
+	byID          map[ID]*Document     // session-id lookup
+	byName        map[string]*Document // full-document-name lookup (ItemByName)
+	graph         *RefGraph            // shared document reference graph (M03-F04)
+	bus           *event.Bus           // application/document/modeling events (M04-F04)
+	externalFiles ExternalFileProbe    // foreign-file access for attachments (M03-F08)
+	active        *Document
 }
 
 // NewWorkspace creates an empty workspace backed by store. A nil store is allowed
 // for purely in-memory sessions; Save/Open then return an error.
 func NewWorkspace(store Store) *Workspace {
 	ws := &Workspace{
-		store:  store,
-		byID:   map[ID]*Document{},
-		byName: map[string]*Document{},
-		bus:    event.NewBus(),
+		store:         store,
+		byID:          map[ID]*Document{},
+		byName:        map[string]*Document{},
+		bus:           event.NewBus(),
+		externalFiles: osFileProbe{},
 	}
 	ws.graph = newRefGraph(ws)
 	return ws
 }
+
+// SetExternalFileProbe replaces the foreign-file access seam — tests inject a
+// named fake; the default probes the real filesystem.
+func (ws *Workspace) SetExternalFileProbe(p ExternalFileProbe) { ws.externalFiles = p }
 
 // References returns the workspace's document reference graph.
 func (ws *Workspace) References() *RefGraph { return ws.graph }

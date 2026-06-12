@@ -44,6 +44,10 @@ type Document struct {
 	Identity *FileIdentityRecord
 	// References are the as-saved file-to-file reference records (M03-F07).
 	References []FileReferenceRecord
+	// Attachments are the external-file attachment records (M03-F08).
+	Attachments []AttachmentRecord
+	// Interests are the add-in data registry records (M03-F10).
+	Interests []InterestRecord
 }
 
 // FileIdentityRecord is the on-disk file identity block: the stable GUID plus
@@ -70,6 +74,29 @@ type FileReferenceRecord struct {
 	SaveCounter            int    `yaml:"saveCounter,omitempty"`
 }
 
+// AttachmentRecord is one external-file attachment (M03-F08): a named link to
+// a foreign file, with an embedded payload carried base64 (the same concession
+// as data sections, ADR-0020).
+type AttachmentRecord struct {
+	Name              string `yaml:"name"`
+	Kind              string `yaml:"kind"`
+	FullFileName      string `yaml:"fullFileName,omitempty"`
+	ResourceID        string `yaml:"resourceId,omitempty"`
+	Payload           string `yaml:"payload,omitempty"` // base64
+	LastKnownFileTime string `yaml:"lastKnownFileTime,omitempty"`
+	BrowserVisible    bool   `yaml:"browserVisible,omitempty"`
+}
+
+// InterestRecord is one add-in data-registry entry (M03-F10): client X has
+// data in / depends on this document, readable without loading the add-in.
+type InterestRecord struct {
+	ClientID     string `yaml:"clientId"`
+	Name         string `yaml:"name"`
+	InterestType string `yaml:"interestType,omitempty"`
+	DataVersion  int    `yaml:"dataVersion,omitempty"`
+	ClientData   string `yaml:"clientData,omitempty"`
+}
+
 // onDisk is the YAML projection of a Document: manifest at top level, recipe as a
 // native node, data sections base64-encoded. omitempty keeps a minimal file readable.
 type onDisk struct {
@@ -79,6 +106,8 @@ type onDisk struct {
 	DisplayName   string                `yaml:"displayName,omitempty"`
 	Identity      *FileIdentityRecord   `yaml:"identity,omitempty"`
 	References    []FileReferenceRecord `yaml:"references,omitempty"`
+	Attachments   []AttachmentRecord    `yaml:"attachments,omitempty"`
+	Interests     []InterestRecord      `yaml:"interests,omitempty"`
 	Resources     yaml.Node             `yaml:"resources,omitempty"`
 	Model         yaml.Node             `yaml:"model,omitempty"`
 	Data          map[string]string     `yaml:"data,omitempty"`
@@ -94,6 +123,8 @@ func MarshalDocument(d Document) ([]byte, error) {
 		DisplayName:   d.DisplayName,
 		Identity:      d.Identity,
 		References:    d.References,
+		Attachments:   d.Attachments,
+		Interests:     d.Interests,
 	}
 	if len(d.Resources) > 0 {
 		node, err := resourcesNode(d.Resources)
@@ -158,6 +189,8 @@ func documentHeader(od onDisk) Document {
 		DisplayName:   od.DisplayName,
 		Identity:      od.Identity,
 		References:    od.References,
+		Attachments:   od.Attachments,
+		Interests:     od.Interests,
 	}
 }
 

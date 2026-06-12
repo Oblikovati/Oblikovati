@@ -52,6 +52,8 @@ func (p *Package) marshal() ([]byte, error) {
 		DisplayName:   p.manifest.DisplayName,
 		Identity:      p.identity,
 		References:    p.references,
+		Attachments:   p.attachments,
+		Interests:     p.interests,
 		Model:         p.model,
 		Data:          p.streams,
 		Resources:     p.resources,
@@ -77,6 +79,8 @@ func decode(raw []byte) (*Package, error) {
 	p.resources = doc.Resources
 	p.identity = doc.Identity
 	p.references = doc.References
+	p.attachments = doc.Attachments
+	p.interests = doc.Interests
 	for name, data := range doc.Data {
 		p.WriteStream(name, data)
 	}

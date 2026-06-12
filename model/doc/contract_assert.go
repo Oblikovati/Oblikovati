@@ -18,3 +18,9 @@ var (
 	_ contract.FileDescriptor           = (*FileReference)(nil)
 	_ contract.ReferencedFileDescriptor = (*FileReference)(nil)
 )
+
+// External-file attachments (M03-F08, #609).
+var (
+	_ contract.FileAttachment  = (*FileAttachment)(nil)
+	_ contract.FileAttachments = (*FileAttachments)(nil)
+)
