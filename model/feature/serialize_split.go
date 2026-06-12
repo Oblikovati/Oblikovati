@@ -4,11 +4,12 @@ package feature
 
 import "fmt"
 
-// SplitSolidData is a solid split's recipe: the cutting work plane (by WorkRef) and which
-// side(s) to keep.
+// SplitSolidData is a solid split's recipe: the cutting work plane (by WorkRef), which
+// side(s) to keep, and the faces-only flag (the Split Faces mode, #330).
 type SplitSolidData struct {
-	Plane string `yaml:"plane"`
-	Keep  string `yaml:"keep,omitempty"`
+	Plane     string `yaml:"plane"`
+	Keep      string `yaml:"keep,omitempty"`
+	FacesOnly bool   `yaml:"facesOnly,omitempty"`
 }
 
 // splitSideNames map the kept-side enum to/from a stable name.
@@ -37,7 +38,7 @@ func serializeSplitSolid(def *SplitSolidDefinition) (*SplitSolidData, error) {
 	if def.Plane == nil {
 		return nil, fmt.Errorf("split references no cutting plane")
 	}
-	return &SplitSolidData{Plane: string(def.Plane.Key()), Keep: splitSideName(def.Keep)}, nil
+	return &SplitSolidData{Plane: string(def.Plane.Key()), Keep: splitSideName(def.Keep), FacesOnly: def.FacesOnly}, nil
 }
 
 func restoreSplitSolid(fs *PartFeatures, d *SplitSolidData, work *WorkGeometry) (*PartFeature, error) {
@@ -47,6 +48,9 @@ func restoreSplitSolid(fs *PartFeatures, d *SplitSolidData, work *WorkGeometry) 
 	wp, err := resolvePlaneRef(work, d.Plane)
 	if err != nil {
 		return nil, err
+	}
+	if d.FacesOnly {
+		return NewModifyFeatures(fs).AddSplitFaces(wp), nil
 	}
 	keep, err := parseSplitSide(d.Keep)
 	if err != nil {
