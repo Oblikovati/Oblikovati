@@ -24,3 +24,9 @@ var (
 	_ contract.FileAttachment  = (*FileAttachment)(nil)
 	_ contract.FileAttachments = (*FileAttachments)(nil)
 )
+
+// The add-in data registry (M03-F10, #611).
+var (
+	_ contract.DocumentInterest  = InterestRecordView{}
+	_ contract.DocumentInterests = (*DocumentInterests)(nil)
+)

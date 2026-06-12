@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/persistence/yamlcodec"
 )
@@ -42,6 +43,7 @@ func (s *PackageStore) Save(d *doc.Document) error {
 	pkg.SetIdentity(toCodecIdentity(d.FileIdentity()))
 	pkg.SetFileReferences(toCodecFileReferences(d.FileReferenceRecords()))
 	pkg.SetAttachments(toCodecAttachments(d.AttachmentRecords()))
+	pkg.SetInterests(toCodecInterests(d.InterestRecords()))
 	if rc, ok := d.Content().(doc.RecipeContent); ok {
 		model, err := rc.MarshalRecipe()
 		if err != nil {
@@ -109,7 +111,36 @@ func restoreIdentity(d *doc.Document, pkg *Package) error {
 		return err
 	}
 	d.SetAttachmentRecords(recs)
+	d.SetInterestRecords(fromCodecInterests(pkg.Interests()))
 	return nil
+}
+
+// toCodecInterests / fromCodecInterests bridge the interest registry across
+// the doc/persistence seam; the interest type persists as its wire spelling.
+func toCodecInterests(in []types.DocumentInterestRecord) []yamlcodec.InterestRecord {
+	out := make([]yamlcodec.InterestRecord, len(in))
+	for i, r := range in {
+		out[i] = yamlcodec.InterestRecord{
+			ClientID: r.ClientID, Name: r.Name, InterestType: r.InterestType.String(),
+			DataVersion: r.DataVersion, ClientData: r.ClientData,
+		}
+	}
+	return out
+}
+
+func fromCodecInterests(in []yamlcodec.InterestRecord) []types.DocumentInterestRecord {
+	out := make([]types.DocumentInterestRecord, len(in))
+	for i, r := range in {
+		t, ok := types.ParseDocumentInterestType(r.InterestType)
+		if !ok {
+			t = types.Interested
+		}
+		out[i] = types.DocumentInterestRecord{
+			ClientID: r.ClientID, Name: r.Name, InterestType: t,
+			DataVersion: r.DataVersion, ClientData: r.ClientData,
+		}
+	}
+	return out
 }
 
 // toCodecAttachments / fromCodecAttachments bridge attachment records across

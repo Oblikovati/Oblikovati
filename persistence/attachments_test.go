@@ -81,3 +81,36 @@ func TestAttachmentsRoundTripThroughPackage(t *testing.T) {
 			embedded.Payload(), embedded.ResourceID())
 	}
 }
+
+// TestInterestsRoundTripThroughPackage: the registry persists in a readable
+// 'interests' section and reloads with the document (M03-F10).
+func TestInterestsRoundTripThroughPackage(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bracket.obk")
+	store := NewPackageStore()
+	ws := doc.NewWorkspace(store)
+	d, err := ws.Add(doc.Part, path, true)
+	if err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := d.Interests().Add(types.DocumentInterestRecord{
+		ClientID: "com.x.toolpaths", Name: "toolpath-recipes", DataVersion: 3, ClientData: "k",
+	}); err != nil {
+		t.Fatalf("Add interest: %v", err)
+	}
+	if err := ws.Save(d); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	got := reopened.Interests().Records()
+	if len(got) != 1 || got[0].DataVersion != 3 || got[0].InterestType != types.Interested {
+		t.Fatalf("reloaded interests = %+v, want the persisted record", got)
+	}
+	if !reopened.Interests().HasInterest("com.x.toolpaths") {
+		t.Error("the reloaded registry must answer the discovery probe")
+	}
+}

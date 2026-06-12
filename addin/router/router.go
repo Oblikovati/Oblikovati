@@ -120,6 +120,10 @@ func (r *Router) registerFileHandlers() {
 	r.handlers[wire.MethodDocumentsListAttachments] = listAttachments
 	r.handlers[wire.MethodDocumentsAddAttachment] = addAttachment
 	r.handlers[wire.MethodDocumentsRemoveAttachment] = removeAttachment
+	r.handlers[wire.MethodDocumentsListInterests] = listDocumentInterests
+	r.handlers[wire.MethodDocumentsAddInterest] = addDocumentInterest
+	r.handlers[wire.MethodDocumentsRemoveInterest] = removeDocumentInterest
+	r.handlers[wire.MethodDocumentsHasInterest] = hasDocumentInterest
 }
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query

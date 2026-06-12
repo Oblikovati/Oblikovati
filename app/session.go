@@ -163,6 +163,7 @@ func newSession(store doc.Store) *Session {
 	s.lighting.Environment = renderer.DefaultEnvironment()
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
+	s.watchDocumentInterests()
 	return s
 }
 
