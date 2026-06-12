@@ -254,11 +254,13 @@ func (d *Document) snapshotOneReference(target string, prior []*FileReference) *
 // relateToOwner expresses target relative to the owner file's directory. A
 // sibling-tree target is an ownerDirectory reference (portable across moves of
 // the whole tree); anything else is recorded absolute with unknown location
-// until project search roots join resolution.
+// until project search roots join resolution. The relative spelling is
+// normalized to forward slashes — a .obk saved on one OS must resolve on
+// another (ADR-0020 portability).
 func relateToOwner(ownerName, target string) (string, types.FileLocationType) {
 	rel, err := filepath.Rel(filepath.Dir(ownerName), target)
 	if err != nil || strings.HasPrefix(rel, "..") {
 		return "", types.LocationUnknown
 	}
-	return rel, types.LocationOwnerDirectory
+	return filepath.ToSlash(rel), types.LocationOwnerDirectory
 }
