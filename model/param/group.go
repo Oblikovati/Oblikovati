@@ -7,102 +7,153 @@ import (
 	"strconv"
 )
 
-// Custom parameter groups (Inventor's CustomParameterGroups) let a user organize
-// parameters into named groups. Membership is a simple parameter→group-name map; group
-// names are kept in creation order for stable display. Deleting a group also deletes its
-// member parameters (per the journey: "rename or delete a group (and its parameters)").
+// Custom parameter groups (the reference API's CustomParameterGroups, M02-F05,
+// Oblikovati#604): named, add-in-attributable views over the parameter set. A
+// group is identified for its whole life by an immutable, locale-stable
+// internal name; the display name is editable. Membership never affects
+// parameter semantics — a parameter may belong to several groups, leaving one
+// touches nothing else, and deleting a parameter detaches it everywhere.
 
-// Groups returns the custom group names in creation order.
-func (ps *Parameters) Groups() []string {
-	return append([]string(nil), ps.groupOrder...)
+// ParameterGroup is one custom group record. The internal name is fixed at
+// creation; DisplayName and the membership live beside it. ClientID records
+// which add-in created the group (empty for user-created groups).
+type ParameterGroup struct {
+	internalName string
+	DisplayName  string
+	ClientID     string
 }
 
-// AddGroup creates a new, empty custom group. It rejects an empty or duplicate name.
-func (ps *Parameters) AddGroup(name string) error {
-	if name == "" {
-		return fmt.Errorf("param: group name must not be empty")
+// InternalName returns the immutable key the group is addressed by.
+func (g *ParameterGroup) InternalName() string { return g.internalName }
+
+// Groups returns the custom groups in creation order.
+func (ps *Parameters) Groups() []*ParameterGroup {
+	return append([]*ParameterGroup(nil), ps.groups...)
+}
+
+// GroupByKey returns the group with the given internal name.
+func (ps *Parameters) GroupByKey(key string) (*ParameterGroup, bool) {
+	for _, g := range ps.groups {
+		if g.internalName == key {
+			return g, true
+		}
 	}
-	if ps.hasGroup(name) {
-		return fmt.Errorf("param: a group named %q already exists", name)
+	return nil, false
+}
+
+// AddGroup creates a new, empty custom group. The internal name must be unique
+// and non-empty; an empty display name defaults to it.
+func (ps *Parameters) AddGroup(internalName, displayName, clientID string) (*ParameterGroup, error) {
+	if internalName == "" {
+		return nil, fmt.Errorf("param: group internal name must not be empty")
 	}
-	ps.groupOrder = append(ps.groupOrder, name)
+	if _, exists := ps.GroupByKey(internalName); exists {
+		return nil, fmt.Errorf("param: a group named %q already exists", internalName)
+	}
+	if displayName == "" {
+		displayName = internalName
+	}
+	g := &ParameterGroup{internalName: internalName, DisplayName: displayName, ClientID: clientID}
+	ps.groups = append(ps.groups, g)
+	return g, nil
+}
+
+// DeleteGroup removes a group. deleteParameters opts into the cascade that
+// also deletes the member parameters; without it the members stay, only the
+// group goes.
+func (ps *Parameters) DeleteGroup(key string, deleteParameters bool) error {
+	if _, ok := ps.GroupByKey(key); !ok {
+		return fmt.Errorf("param: no group named %q", key)
+	}
+	members := ps.GroupMembers(key)
+	for _, id := range members {
+		delete(ps.memberships[id], key)
+	}
+	if deleteParameters {
+		ps.deleteMembers(members)
+	}
+	ps.dropGroup(key)
 	return nil
 }
 
-// RenameGroup renames a group, retargeting its members. It rejects a clash with another
-// group and an unknown source name.
-func (ps *Parameters) RenameGroup(oldName, newName string) error {
-	if !ps.hasGroup(oldName) {
-		return fmt.Errorf("param: no group named %q", oldName)
-	}
-	if newName != oldName && ps.hasGroup(newName) {
-		return fmt.Errorf("param: a group named %q already exists", newName)
-	}
-	for i, g := range ps.groupOrder {
-		if g == oldName {
-			ps.groupOrder[i] = newName
-		}
-	}
-	for id, g := range ps.groupOf {
-		if g == oldName {
-			ps.groupOf[id] = newName
-		}
-	}
-	return nil
-}
-
-// DeleteGroup removes a group and deletes every parameter that belonged to it.
-func (ps *Parameters) DeleteGroup(name string) error {
-	if !ps.hasGroup(name) {
-		return fmt.Errorf("param: no group named %q", name)
-	}
-	for _, id := range ps.GroupMembers(name) {
+// deleteMembers removes the cascade-deleted member parameters (a member may
+// already be gone when an earlier removal cascaded — skip it).
+func (ps *Parameters) deleteMembers(members []ID) {
+	for _, id := range members {
 		if p, ok := ps.byID[id]; ok {
 			ps.remove(p)
 		}
 	}
-	ps.dropGroupName(name)
-	return nil
 }
 
-// AddToGroup assigns a parameter to a group, creating the group if it does not exist yet.
-func (ps *Parameters) AddToGroup(id ID, name string) error {
+// AddToGroup adds a parameter to an existing group. Membership in other groups
+// is untouched.
+func (ps *Parameters) AddToGroup(id ID, key string) error {
 	if _, ok := ps.byID[id]; !ok {
 		return fmt.Errorf("param: no parameter with id %d", id)
 	}
-	if !ps.hasGroup(name) {
-		if err := ps.AddGroup(name); err != nil {
-			return err
+	if _, ok := ps.GroupByKey(key); !ok {
+		return fmt.Errorf("param: no group named %q", key)
+	}
+	if ps.memberships[id] == nil {
+		ps.memberships[id] = map[string]bool{}
+	}
+	ps.memberships[id][key] = true
+	return nil
+}
+
+// RemoveFromGroup detaches a parameter from one group; the parameter itself
+// and its other memberships are kept.
+func (ps *Parameters) RemoveFromGroup(id ID, key string) error {
+	if _, ok := ps.byID[id]; !ok {
+		return fmt.Errorf("param: no parameter with id %d", id)
+	}
+	if _, ok := ps.GroupByKey(key); !ok {
+		return fmt.Errorf("param: no group named %q", key)
+	}
+	delete(ps.memberships[id], key)
+	return nil
+}
+
+// RemoveFromAllGroups detaches a parameter from every group it belongs to.
+func (ps *Parameters) RemoveFromAllGroups(id ID) error {
+	if _, ok := ps.byID[id]; !ok {
+		return fmt.Errorf("param: no parameter with id %d", id)
+	}
+	delete(ps.memberships, id)
+	return nil
+}
+
+// GroupsOf returns the internal names of the groups a parameter belongs to,
+// in group creation order (empty when ungrouped).
+func (ps *Parameters) GroupsOf(id ID) []string {
+	var out []string
+	for _, g := range ps.groups {
+		if ps.memberships[id][g.internalName] {
+			out = append(out, g.internalName)
 		}
 	}
-	ps.groupOf[id] = name
-	return nil
-}
-
-// RemoveFromGroup detaches a parameter from its group (the parameter itself is kept).
-func (ps *Parameters) RemoveFromGroup(id ID) error {
-	if _, ok := ps.byID[id]; !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
-	}
-	delete(ps.groupOf, id)
-	return nil
-}
-
-// GroupOf returns the group a parameter belongs to, or false when it is ungrouped.
-func (ps *Parameters) GroupOf(id ID) (string, bool) {
-	g, ok := ps.groupOf[id]
-	return g, ok
+	return out
 }
 
 // GroupMembers returns the ids of the parameters in a group, in collection order.
-func (ps *Parameters) GroupMembers(name string) []ID {
+func (ps *Parameters) GroupMembers(key string) []ID {
 	var out []ID
 	for _, id := range ps.order {
-		if ps.groupOf[id] == name {
+		if ps.memberships[id][key] {
 			out = append(out, id)
 		}
 	}
 	return out
+}
+
+func (ps *Parameters) dropGroup(key string) {
+	for i, g := range ps.groups {
+		if g.internalName == key {
+			ps.groups = append(ps.groups[:i], ps.groups[i+1:]...)
+			return
+		}
+	}
 }
 
 // CopyToUser duplicates a parameter as a new user parameter named "<name>_copy" (with a
@@ -147,23 +198,5 @@ func (ps *Parameters) uniqueCopyName(base string) string {
 			return name
 		}
 		name = base + "_copy" + strconv.Itoa(n)
-	}
-}
-
-func (ps *Parameters) hasGroup(name string) bool {
-	for _, g := range ps.groupOrder {
-		if g == name {
-			return true
-		}
-	}
-	return false
-}
-
-func (ps *Parameters) dropGroupName(name string) {
-	for i, g := range ps.groupOrder {
-		if g == name {
-			ps.groupOrder = append(ps.groupOrder[:i], ps.groupOrder[i+1:]...)
-			return
-		}
 	}
 }

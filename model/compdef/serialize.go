@@ -36,7 +36,7 @@ type partRecipe struct {
 	Units           map[string]string         `yaml:"units,omitempty"`
 	EndOfPart       *int                      `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
 	Parameters      []parameterRecipe         `yaml:"parameters,omitempty"`
-	ParameterGroups []string                  `yaml:"parameterGroups,omitempty"` // custom group names, in order
+	ParameterGroups []parameterGroupRecipe    `yaml:"parameterGroups,omitempty"` // custom group records, in creation order
 	WorkFeatures    []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
 	Sketches        []sketch.SketchData       `yaml:"sketches,omitempty"`
 	Sketches3D      []sketch.SketchData3D     `yaml:"sketches3D,omitempty"`
@@ -91,8 +91,7 @@ type parameterRecipe struct {
 	// SortedValueList is the inverse of the in-memory CustomOrder flag: a saved
 	// multi-value list is authored-order by default, so only auto-sorted lists
 	// persist a marker.
-	SortedValueList bool   `yaml:"sortedValueList,omitempty"`
-	Group           string `yaml:"group,omitempty"`
+	SortedValueList bool `yaml:"sortedValueList,omitempty"`
 	// Hidden is the inverse of Visible (parameters default to visible, and the
 	// recipe omits zero values).
 	Hidden bool `yaml:"hidden,omitempty"`
@@ -107,6 +106,16 @@ type toleranceRecipe struct {
 	Type  string  `yaml:"type,omitempty"`
 	Upper float64 `yaml:"upper,omitempty"`
 	Lower float64 `yaml:"lower,omitempty"`
+}
+
+// parameterGroupRecipe persists one custom parameter group: the immutable
+// internal name, the display name when it differs, the owning client id, and
+// the member parameter names (M02-F05, Oblikovati#604).
+type parameterGroupRecipe struct {
+	InternalName string   `yaml:"internalName"`
+	DisplayName  string   `yaml:"displayName,omitempty"`
+	ClientID     string   `yaml:"clientId,omitempty"`
+	Members      []string `yaml:"members,omitempty"`
 }
 
 // customPropertyRecipe persists a non-default custom-property format (the
@@ -148,7 +157,7 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 	r := partRecipe{
 		Units:           d.unitsRecipe(),
 		Parameters:      d.parametersRecipe(),
-		ParameterGroups: d.params.Groups(),
+		ParameterGroups: d.parameterGroupsRecipe(),
 		WorkFeatures:    work,
 		Sketches:        sketches,
 		Sketches3D:      sketches3D,
@@ -304,9 +313,6 @@ func (d *PartComponentDefinition) parameterRecipeOf(p *param.Parameter) paramete
 		pr.ExprList, pr.AllowCustom = p.ExpressionList(), p.AllowsCustomValue()
 		pr.SortedValueList = !p.CustomOrder()
 	}
-	if g, ok := d.params.GroupOf(p.ID()); ok {
-		pr.Group = g
-	}
 	pr.Hidden = !p.Visible
 	if p.DisplayFormat != param.DisplayFormatDecimal {
 		pr.DisplayFormat = p.DisplayFormat.String()
@@ -324,12 +330,7 @@ func (d *PartComponentDefinition) parameterRecipeOf(p *param.Parameter) paramete
 // applyParameters re-creates the custom groups (in their saved order) then re-adds each
 // parameter in recipe order. A parse error (bad expression, duplicate name, unknown
 // kind/unit) aborts the load rather than dropping the parameter silently.
-func (d *PartComponentDefinition) applyParameters(groups []string, params []parameterRecipe) error {
-	for _, g := range groups {
-		if err := d.params.AddGroup(g); err != nil {
-			return fmt.Errorf("compdef: restore parameter group %q: %w", g, err)
-		}
-	}
+func (d *PartComponentDefinition) applyParameters(groups []parameterGroupRecipe, params []parameterRecipe) error {
 	for _, pr := range params {
 		p, err := d.addParameter(pr)
 		if err != nil {
@@ -337,6 +338,50 @@ func (d *PartComponentDefinition) applyParameters(groups []string, params []para
 		}
 		if err := d.applyParameterState(p, pr); err != nil {
 			return fmt.Errorf("compdef: restore parameter %q: %w", pr.Name, err)
+		}
+	}
+	// Groups restore after the parameters their member lists name.
+	for _, gr := range groups {
+		if err := d.applyParameterGroup(gr); err != nil {
+			return fmt.Errorf("compdef: restore parameter group %q: %w", gr.InternalName, err)
+		}
+	}
+	return nil
+}
+
+// parameterGroupsRecipe renders the custom groups with their member names, in
+// creation order.
+func (d *PartComponentDefinition) parameterGroupsRecipe() []parameterGroupRecipe {
+	var out []parameterGroupRecipe
+	for _, g := range d.params.Groups() {
+		gr := parameterGroupRecipe{InternalName: g.InternalName(), ClientID: g.ClientID}
+		if g.DisplayName != g.InternalName() {
+			gr.DisplayName = g.DisplayName
+		}
+		for _, id := range d.params.GroupMembers(g.InternalName()) {
+			if p, ok := d.params.ByID(id); ok {
+				gr.Members = append(gr.Members, p.Name())
+			}
+		}
+		out = append(out, gr)
+	}
+	return out
+}
+
+// applyParameterGroup re-creates one custom group and re-attaches its members
+// by name.
+func (d *PartComponentDefinition) applyParameterGroup(gr parameterGroupRecipe) error {
+	g, err := d.params.AddGroup(gr.InternalName, gr.DisplayName, gr.ClientID)
+	if err != nil {
+		return err
+	}
+	for _, name := range gr.Members {
+		p, ok := d.params.ByName(name)
+		if !ok {
+			return fmt.Errorf("member %q is not a parameter", name)
+		}
+		if err := d.params.AddToGroup(p.ID(), g.InternalName()); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -379,13 +424,7 @@ func (d *PartComponentDefinition) applyParameterState(p *param.Parameter, pr par
 	if err := applyParameterTolerance(p, pr); err != nil {
 		return err
 	}
-	if err := applyParameterValueList(p, pr); err != nil {
-		return err
-	}
-	if pr.Group != "" {
-		return d.params.AddToGroup(p.ID(), pr.Group)
-	}
-	return nil
+	return applyParameterValueList(p, pr)
 }
 
 // applyParameterFormats restores the display format and custom-property format

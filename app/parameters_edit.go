@@ -107,23 +107,41 @@ func (s *Session) DeleteParameter(id param.ID) error {
 	return s.editParameters(func(ps *param.Parameters) error { return ps.Delete(id) })
 }
 
-// AddParameterToGroup / RemoveParameterFromGroup manage a parameter's group membership.
+// AddParameterToGroup / RemoveParameterFromGroup manage a parameter's group
+// membership for the head UI's single-name flow: adding creates the group on
+// first use (internal name = display name), removing detaches from every group.
 func (s *Session) AddParameterToGroup(id param.ID, group string) error {
-	return s.editParameters(func(ps *param.Parameters) error { return ps.AddToGroup(id, group) })
+	return s.editParameters(func(ps *param.Parameters) error {
+		if _, ok := ps.GroupByKey(group); !ok {
+			if _, err := ps.AddGroup(group, group, ""); err != nil {
+				return err
+			}
+		}
+		return ps.AddToGroup(id, group)
+	})
 }
 
 func (s *Session) RemoveParameterFromGroup(id param.ID) error {
-	return s.editParameters(func(ps *param.Parameters) error { return ps.RemoveFromGroup(id) })
+	return s.editParameters(func(ps *param.Parameters) error { return ps.RemoveFromAllGroups(id) })
 }
 
-// RenameParameterGroup / DeleteParameterGroup manage the custom groups themselves
-// (deleting a group also deletes its member parameters).
-func (s *Session) RenameParameterGroup(oldName, newName string) error {
-	return s.editParameters(func(ps *param.Parameters) error { return ps.RenameGroup(oldName, newName) })
+// RenameParameterGroup edits a group's display name; the internal name a group
+// is addressed by never changes (M02-F05).
+func (s *Session) RenameParameterGroup(key, displayName string) error {
+	return s.editParameters(func(ps *param.Parameters) error {
+		g, ok := ps.GroupByKey(key)
+		if !ok {
+			return fmt.Errorf("app: no parameter group named %q", key)
+		}
+		g.DisplayName = displayName
+		return nil
+	})
 }
 
+// DeleteParameterGroup removes a group and its member parameters (the head
+// UI's journey semantics; the wire surface exposes the opt-in cascade).
 func (s *Session) DeleteParameterGroup(name string) error {
-	return s.editParameters(func(ps *param.Parameters) error { return ps.DeleteGroup(name) })
+	return s.editParameters(func(ps *param.Parameters) error { return ps.DeleteGroup(name, true) })
 }
 
 // editParam resolves the parameter by id and applies edit, then recomputes.
