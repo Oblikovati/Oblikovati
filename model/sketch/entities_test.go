@@ -106,10 +106,15 @@ func TestEntityAccessorsAndItems(t *testing.T) {
 }
 
 func TestBlockDefinitionEntities(t *testing.T) {
-	s := NewSketches().Add(XYPlane())
-	def := s.Blocks().DefineBlock("b")
+	sc := NewSketches()
+	def, err := sc.BlockDefinitions().Define("b")
+	if err != nil {
+		t.Fatalf("Define: %v", err)
+	}
 	scratch := NewSketches().Add(XYPlane())
-	def.Add(scratch.Points().Add(math.P2(0, 0)))
+	if err := def.Add(scratch.Points().Add(math.P2(0, 0))); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
 	if len(def.Entities()) != 1 {
 		t.Errorf("definition Entities = %d, want 1", len(def.Entities()))
 	}

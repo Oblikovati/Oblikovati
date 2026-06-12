@@ -114,8 +114,13 @@ func (c *TextBoxes) AddStyled(anchor math.Point2, text string, height, rotation 
 	}
 	c.s.add(t)
 	c.items = append(c.items, t)
+	// Every text box is tied down by its non-deletable anchor record
+	// (M06-F11, #626) so constraint enumeration explains the anchoring.
+	c.s.anchorTextBox(t)
 	return t
 }
+
+func (c *TextBoxes) remove(t *TextBox) { c.items = removeItem(c.items, t) }
 
 // Count returns the number of text boxes; Item returns the i-th.
 func (c *TextBoxes) Count() int          { return len(c.items) }

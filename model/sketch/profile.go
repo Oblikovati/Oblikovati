@@ -241,9 +241,15 @@ const circleSamples = 24
 
 // sampleCircle returns a polygon approximating a circle.
 func sampleCircle(c *Circle) []math.Point2 {
-	pts := make([]math.Point2, circleSamples)
+	return sampleCircleN(c, circleSamples)
+}
+
+// sampleCircleN is sampleCircle at caller-chosen density (region properties
+// scale it with the requested accuracy — M06-F08, #623).
+func sampleCircleN(c *Circle, n int) []math.Point2 {
+	pts := make([]math.Point2, n)
 	for i := range pts {
-		a := 2 * stdmath.Pi * float64(i) / float64(circleSamples)
+		a := 2 * stdmath.Pi * float64(i) / float64(n)
 		pts[i] = math.P2(c.Center.X+c.Radius*stdmath.Cos(a), c.Center.Y+c.Radius*stdmath.Sin(a))
 	}
 	return pts

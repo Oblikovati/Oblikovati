@@ -72,6 +72,11 @@ func (t Matrix3) Cells() [9]Scalar {
 	return t.m
 }
 
+// Matrix3FromCells rebuilds a transform from its row-major cells (the
+// inverse of [Matrix3.Cells]) — the block-instance persistence path
+// (M06-F07, Oblikovati/Oblikovati#622).
+func Matrix3FromCells(cells [9]Scalar) Matrix3 { return Matrix3{m: cells} }
+
 // TransformPoint applies the full affine transform to p (translation included).
 func (t Matrix3) TransformPoint(p Point2) Point2 {
 	return Point2{

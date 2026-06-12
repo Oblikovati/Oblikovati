@@ -355,6 +355,22 @@ type CoilData struct {
 	Revolutions float64 `yaml:"revolutions"`
 	Taper       float64 `yaml:"taper,omitempty"`
 	Operation   string  `yaml:"operation"`
+	// Variable-pitch rail + end conditions (M06-F09, #624).
+	PitchRows []CoilPitchRowData `yaml:"pitchRows,omitempty"`
+	StartEnd  *CoilEndData       `yaml:"startEnd,omitempty"`
+	EndEnd    *CoilEndData       `yaml:"endEnd,omitempty"`
+}
+
+// CoilPitchRowData is one persisted pitch station.
+type CoilPitchRowData struct {
+	Pitch      float64 `yaml:"pitch"`
+	Revolution float64 `yaml:"revolution"`
+}
+
+// CoilEndData is one persisted flat-end condition (radians).
+type CoilEndData struct {
+	TransitionAngle float64 `yaml:"transitionAngle,omitempty"`
+	FlatAngle       float64 `yaml:"flatAngle,omitempty"`
 }
 
 func serializeCoil(def *CoilDefinition, sk SketchIndexer) (*CoilData, error) {
@@ -369,11 +385,25 @@ func serializeCoil(def *CoilDefinition, sk SketchIndexer) (*CoilData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &CoilData{
+	d := &CoilData{
 		Sketch: idx, Profile: def.ProfileIndex, Axis: string(def.Axis.Key()),
 		Pitch: evalFloat(def.Pitch), Revolutions: evalFloat(def.Revolutions),
 		Taper: def.Taper, Operation: op,
-	}, nil
+	}
+	for _, r := range def.PitchRows {
+		d.PitchRows = append(d.PitchRows, CoilPitchRowData(r))
+	}
+	d.StartEnd = coilEndData(def.StartEnd)
+	d.EndEnd = coilEndData(def.EndEnd)
+	return d, nil
+}
+
+// coilEndData persists a flat end (nil for natural).
+func coilEndData(c CoilEndCondition) *CoilEndData {
+	if !c.Flat {
+		return nil
+	}
+	return &CoilEndData{TransitionAngle: c.TransitionAngle, FlatAngle: c.FlatAngle}
 }
 
 func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeometry) (*PartFeature, error) {
@@ -396,8 +426,23 @@ func restoreCoil(fs *PartFeatures, d *CoilData, sk SketchIndexer, work *WorkGeom
 		return nil, err
 	}
 	pitch, revs := d.Pitch, d.Revolutions
-	return NewCoilFeatures(fs).Add(skt, d.Profile, axis,
-		func() float64 { return pitch }, func() float64 { return revs }, d.Taper, op), nil
+	pf := NewCoilFeatures(fs).Add(skt, d.Profile, axis,
+		func() float64 { return pitch }, func() float64 { return revs }, d.Taper, op)
+	def := pf.feature.(*CoilFeature).def
+	for _, r := range d.PitchRows {
+		def.PitchRows = append(def.PitchRows, CoilPitchRow(r))
+	}
+	def.StartEnd = coilEndFromData(d.StartEnd)
+	def.EndEnd = coilEndFromData(d.EndEnd)
+	return pf, nil
+}
+
+// coilEndFromData rebuilds a persisted flat end (nil stays natural).
+func coilEndFromData(d *CoilEndData) CoilEndCondition {
+	if d == nil {
+		return CoilEndCondition{}
+	}
+	return CoilEndCondition{Flat: true, TransitionAngle: d.TransitionAngle, FlatAngle: d.FlatAngle}
 }
 
 // refStrings renders work references as their string form for YAML.

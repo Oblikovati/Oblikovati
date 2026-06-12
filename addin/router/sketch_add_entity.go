@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -38,9 +39,12 @@ func addSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 		return nil, err
 	}
 	applyConstruction(ent, in.Construction)
-	return json.Marshal(wire.AddSketchEntityResult{
+	out := wire.AddSketchEntityResult{
 		EntityID: uint64(ent.EntityID()), Kind: in.Kind, PointIDs: pointIDs,
-	})
+	}
+	// Inference runs on commit and reports what it applied (M06-F10, #625).
+	applyEntityInference(s, sk, ent, &out)
+	return json.Marshal(out)
 }
 
 // isCompositeKind reports whether a kind builds several entities at once.
@@ -461,6 +465,13 @@ func buildSpline(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Poin
 		sp = sk.Splines().AddByControlPoints(pts, in.Closed)
 	} else {
 		sp = sk.Splines().AddByPoints(pts, in.Closed)
+	}
+	if in.FitMethod != "" {
+		m, ok := types.ParseSplineFitMethod(in.FitMethod)
+		if !ok {
+			return nil, nil, fmt.Errorf("sketch.addEntity: unknown fit method %q (want smooth|sweet|chord)", in.FitMethod)
+		}
+		sp.FitMethod = m
 	}
 	ids := make([]uint64, len(sp.Points))
 	for i, p := range sp.Points {

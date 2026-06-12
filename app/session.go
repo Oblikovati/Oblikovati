@@ -30,7 +30,8 @@ import (
 // window involved, so "operating the UI" is fully unit-testable (ADR-0014/0004).
 type Session struct {
 	workspace            *doc.Workspace
-	store                doc.Store // the workspace's persistence backend; nil for in-memory sessions
+	store                doc.Store                // the workspace's persistence backend; nil for in-memory sessions
+	sketchInference      *sketch.InferenceOptions // session inference prefs (M06-F10; nil ⇒ defaults)
 	commands             *CommandManager
 	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)

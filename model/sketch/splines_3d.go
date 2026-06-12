@@ -20,6 +20,9 @@ type Spline3D struct {
 	Points []*Point3D
 	Closed bool
 	fit    bool
+	// handles are the active tangency handles keyed by fit-point index
+	// (M06-F11; see spline_handles_3d.go).
+	handles map[int]*SplineHandle3D
 }
 
 // IsFitType reports whether the spline interpolates its points (fit) rather than
@@ -29,11 +32,14 @@ func (s *Spline3D) PointCount() int { return len(s.Points) }
 
 // Sample returns the spline's representative polyline in model space.
 func (s *Spline3D) Sample() []math.Point3 {
+	if len(s.handles) > 0 && s.fit {
+		return sampleHandledSpline3D(s, splineSamplesPerSpan)
+	}
 	pts := make([]math.Point3, len(s.Points))
 	for i, p := range s.Points {
 		pts[i] = p.Position()
 	}
-	return sampleChain3D(pts, s.Closed)
+	return sampleChain3D(pts, s.Closed, s.fit)
 }
 
 // FixedSpline3D is an immutable 3D spline through a stored coordinate list (a derived /
@@ -46,7 +52,7 @@ type FixedSpline3D struct {
 
 // Sample returns the fixed spline's representative polyline.
 func (s *FixedSpline3D) Sample() []math.Point3 {
-	return sampleChain3D(append([]math.Point3(nil), s.Pts...), s.Closed)
+	return sampleChain3D(append([]math.Point3(nil), s.Pts...), s.Closed, true)
 }
 
 // EquationCurve3D is a parametric 3D curve x(t)/y(t)/z(t) over t ∈ [T0, T1].

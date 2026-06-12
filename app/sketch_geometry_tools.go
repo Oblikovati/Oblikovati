@@ -143,7 +143,10 @@ func (t *PointTool) Prompt(*Session) string {
 }
 
 // SplineTool draws an interpolated spline through clicked points (OK finishes).
-type SplineTool struct{ collectClicks }
+type SplineTool struct {
+	collectClicks
+	withHandles bool
+}
 
 // NewSplineTool returns a fit-point spline tool.
 func NewSplineTool() *SplineTool { return &SplineTool{} }
@@ -154,12 +157,24 @@ func (t *SplineTool) Pick(*Session, Selectable) {}
 func (t *SplineTool) Cancel(*Session)           { t.reset() }
 func (t *SplineTool) CanCommit() bool           { return len(t.pts) >= 2 }
 
+// SetActivateHandles makes Commit also activate the tangency handle on every
+// placed fit point, ready for interactive shaping (M06-F11, #626).
+func (t *SplineTool) SetActivateHandles(on bool) { t.withHandles = on }
+
 // Commit fits an open spline through the placed points.
 func (t *SplineTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
 		return errNoSketch("spline")
 	}
-	s.activeSketch.Splines().AddByPoints(append([]math.Point2(nil), t.pts...), false)
+	sp := s.activeSketch.Splines().AddByPoints(append([]math.Point2(nil), t.pts...), false)
+	if !t.withHandles {
+		return nil
+	}
+	for i := range sp.Points {
+		if _, err := s.activeSketch.SplineHandles().Activate(sp, i); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

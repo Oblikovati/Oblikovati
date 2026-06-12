@@ -18,3 +18,18 @@ var _ contract.Profile = (*Profile)(nil)
 
 // A closed planar 3D-sketch loop satisfies the public Profile3D contract (M22-F09).
 var _ contract.Profile3D = (*Profile3D)(nil)
+
+// A computed region property set satisfies the public RegionProperties
+// contract (M06-F08, #623).
+var _ contract.RegionProperties = (*RegionProperties)(nil)
+
+// Block definitions and placed instances satisfy the public block contracts
+// (M06-F07, #622).
+var (
+	_ contract.SketchBlockDefinition = (*BlockDefinition)(nil)
+	_ contract.SketchBlock           = (*BlockInstance)(nil)
+)
+
+// A helix definition view satisfies the public HelicalCurveDefinition
+// contract (M06-F09, #624).
+var _ contract.HelicalCurveDefinition = HelixDefinitionView{}

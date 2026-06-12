@@ -2,70 +2,86 @@
 
 package sketch
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+)
 
-// 3D spline sampling mirrors the 2D approach (curvesample_spline.go): a spline stores only
-// its defining points, and a representative smooth polyline through them is produced with
-// a uniform Catmull–Rom (passes through the points, natural for closed loops). Exact
-// approximating NURBS fidelity is a kernel B-rep-curve concern, deferred; this polyline
-// only has to follow the curve closely enough for paths/region detection and faceting.
+// 3D spline sampling on the kernel's NURBS machinery — the 3D analogue of
+// curvesample_spline.go, replacing the Catmull–Rom approximation (M06-F12,
+// Oblikovati/Oblikovati#627).
 
-// catmullRom3DOpen samples an open 3D point chain, duplicating the endpoints as their own
-// phantom neighbours so the curve starts/ends exactly on the first/last point.
-func catmullRom3DOpen(pts []math.Point3) []math.Point3 {
-	n := len(pts)
-	out := []math.Point3{}
-	for i := 0; i < n-1; i++ {
-		out = append(out, spanSamples3D(pts[clampIndex(i-1, n-1)], pts[i], pts[i+1], pts[clampIndex(i+2, n-1)])...)
-	}
-	return append(out, pts[n-1])
-}
-
-// catmullRom3DClosed samples a closed 3D point chain, wrapping neighbours around the loop
-// (no duplicate closing vertex).
-func catmullRom3DClosed(pts []math.Point3) []math.Point3 {
-	n := len(pts)
-	out := []math.Point3{}
-	for i := 0; i < n; i++ {
-		out = append(out, spanSamples3D(pts[(i-1+n)%n], pts[i], pts[(i+1)%n], pts[(i+2)%n])...)
-	}
-	return out
-}
-
-// spanSamples3D returns the per-span sample points of the p1→p2 span (with neighbours
-// p0,p3), using the same resolution as the 2D sampler.
-func spanSamples3D(p0, p1, p2, p3 math.Point3) []math.Point3 {
-	out := make([]math.Point3, splineSamplesPerSpan)
-	for j := 0; j < splineSamplesPerSpan; j++ {
-		out[j] = catmullRom3DPoint(p0, p1, p2, p3, float64(j)/float64(splineSamplesPerSpan))
-	}
-	return out
-}
-
-// catmullRom3DPoint evaluates the uniform Catmull–Rom spline of the p1→p2 span at local
-// parameter t∈[0,1].
-func catmullRom3DPoint(p0, p1, p2, p3 math.Point3, t float64) math.Point3 {
-	t2, t3 := t*t, t*t*t
-	return math.P3(
-		catmullRom1D(p0.X, p1.X, p2.X, p3.X, math.Scalar(t), math.Scalar(t2), math.Scalar(t3)),
-		catmullRom1D(p0.Y, p1.Y, p2.Y, p3.Y, math.Scalar(t), math.Scalar(t2), math.Scalar(t3)),
-		catmullRom1D(p0.Z, p1.Z, p2.Z, p3.Z, math.Scalar(t), math.Scalar(t2), math.Scalar(t3)),
-	)
-}
-
-// catmullRom1D is the per-coordinate uniform Catmull–Rom basis blend.
-func catmullRom1D(a, b, c, d, t, t2, t3 math.Scalar) math.Scalar {
-	return 0.5 * (2*b + (-a+c)*t + (2*a-5*b+4*c-d)*t2 + (-a+3*b-3*c+d)*t3)
-}
-
-// sampleChain3D samples a 3D point chain as open or closed; a chain shorter than three
-// points is just its control polygon.
-func sampleChain3D(pts []math.Point3, closed bool) []math.Point3 {
+// sampleChain3D samples a 3D point chain as open or closed. fit selects
+// interpolation through the points (fit/fixed splines) versus the
+// control-polygon B-spline (control-point splines). Chains shorter than three
+// points, or fits the solver rejects, degrade to the defining polygon.
+func sampleChain3D(pts []math.Point3, closed, fit bool) []math.Point3 {
 	if len(pts) < 3 {
 		return pts
 	}
-	if closed {
-		return catmullRom3DClosed(pts)
+	if fit {
+		return sampleFitChain3D(pts, closed)
 	}
-	return catmullRom3DOpen(pts)
+	return sampleControlChain3D(pts, closed)
+}
+
+// sampleFitChain3D evaluates the interpolating B-spline span by span, with
+// the defining points landing exactly on the polyline.
+func sampleFitChain3D(pts []math.Point3, closed bool) []math.Point3 {
+	curve, ubar, err := fitCurve3DFor(pts, closed)
+	if err != nil {
+		return pts
+	}
+	out := make([]math.Point3, 0, (len(ubar)-1)*splineSamplesPerSpan+1)
+	for k := 0; k+1 < len(ubar); k++ {
+		out = append(out, pts[k%len(pts)])
+		for j := 1; j < splineSamplesPerSpan; j++ {
+			t := ubar[k] + (ubar[k+1]-ubar[k])*float64(j)/splineSamplesPerSpan
+			out = append(out, curve.PointAt(t))
+		}
+	}
+	if !closed {
+		out = append(out, pts[len(pts)-1])
+	}
+	return out
+}
+
+// fitCurve3DFor builds the open or periodic interpolating 3D curve. 3D
+// splines have no fit-method surface; they use the centripetal default.
+func fitCurve3DFor(pts []math.Point3, closed bool) (geom.BSplineCurve, []float64, error) {
+	if closed {
+		return geom.NewClosedFittedBSplineCurve(pts, geom.FitCentripetal)
+	}
+	return geom.NewFittedBSplineCurveParam(pts, geom.FitCentripetal)
+}
+
+// sampleControlChain3D evaluates the control-polygon B-spline uniformly.
+func sampleControlChain3D(pts []math.Point3, closed bool) []math.Point3 {
+	curve, err := controlCurve3DFor(pts, closed)
+	if err != nil {
+		return pts
+	}
+	lo, hi := curve.Domain()
+	segments := splineSamplesPerSpan * len(pts)
+	last := segments - 1 // closed: the loop wraps back to the first sample
+	if !closed {
+		last = segments
+	}
+	out := make([]math.Point3, 0, last+1)
+	for i := 0; i <= last; i++ {
+		out = append(out, curve.PointAt(lo+(hi-lo)*float64(i)/float64(segments)))
+	}
+	return out
+}
+
+// controlCurve3DFor builds the clamped or periodic control-polygon 3D curve.
+func controlCurve3DFor(pts []math.Point3, closed bool) (geom.BSplineCurve, error) {
+	if closed {
+		return geom.NewClosedControlBSplineCurve(pts)
+	}
+	degree := len(pts) - 1
+	if degree > 3 {
+		degree = 3
+	}
+	return geom.NewBSplineCurveUniformWeights(degree, pts, clampedUniformKnots(len(pts), degree))
 }

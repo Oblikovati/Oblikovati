@@ -166,15 +166,3 @@ func TestPlaneSurvives(t *testing.T) {
 		t.Errorf("plane normal = %v, want %v", got.Normal(), want.Normal())
 	}
 }
-
-// TestBlocksErrorRatherThanDropSilently guards the no-silent-loss rule for an as-yet
-// unsupported feature.
-func TestBlocksErrorRatherThanDropSilently(t *testing.T) {
-	sc := NewSketches()
-	s := sc.Add(XYPlane())
-	def := s.Blocks().DefineBlock("b")
-	s.Blocks().Insert(def, math.Identity3())
-	if _, err := sc.MarshalRecipe(); err == nil {
-		t.Error("MarshalRecipe silently accepted a sketch with blocks; it must error")
-	}
-}

@@ -123,7 +123,29 @@ func buildHelix3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, in
 	}
 	h := sk.AddHelix3D(origin, axis, radius, pitch, radial, turns, in.Clockwise)
 	h.SetConstruction(in.Construction)
+	if err := applyHelixCreateExtras(part, h, in); err != nil {
+		return nil, err
+	}
 	return entityResult(uint64(h.EntityID()), in.Kind, h.Origin.EntityID())
+}
+
+// applyHelixCreateExtras installs the M06-F09 definition extras carried by
+// the creation payload: shape kind, variable rows, end conditions (#624).
+func applyHelixCreateExtras(part *compdef.PartComponentDefinition, h *sketch.HelicalCurve3D, in wire.AddSketch3DEntityArgs) error {
+	kind, err := helixShapeKind(in.Mode)
+	if err == nil {
+		h.Definition().ShapeKind = kind
+	}
+	if len(in.Rows) > 0 {
+		rows, err := helixRowsFromWire(part, in.Rows)
+		if err != nil {
+			return err
+		}
+		if err := h.SetVariableShape(kind, rows); err != nil {
+			return err
+		}
+	}
+	return applyHelixEndEdit(part, h, in.Start, in.End)
 }
 
 // helixShape converts the request's mode + values into the canonical pitch (axial rise

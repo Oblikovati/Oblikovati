@@ -205,6 +205,18 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchDimensions] = enumerateDimensions
 	r.handlers[wire.MethodSketchConstraintStatus] = constraintStatus
 	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
+	r.handlers[wire.MethodSketchRegionProperties] = sketchRegionProperties
+	r.handlers[wire.MethodSketch3DRegionProperties] = sketch3DRegionProperties
+	r.handlers[wire.MethodSketchBlockDefinitionCreate] = createBlockDefinition
+	r.handlers[wire.MethodSketchBlockDefinitionList] = listBlockDefinitions
+	r.handlers[wire.MethodSketchBlockDefinitionDelete] = deleteBlockDefinition
+	r.handlers[wire.MethodSketchAddBlockInstance] = addBlockInstance
+	r.handlers[wire.MethodSketchListBlockInstances] = listBlockInstances
+	r.handlers[wire.MethodSketchSetSplineHandle] = setSplineHandle
+	r.handlers[wire.MethodSketch3DSetSplineHandle] = setSplineHandle3D
+	r.handlers[wire.MethodSketch3DEditHelix] = sketch3DEditHelix
+	r.handlers[wire.MethodSketchSetInferenceOptions] = setInferenceOptions
+	r.handlers[wire.MethodSketchGetInferenceOptions] = getInferenceOptions
 	r.registerSketchAuthoringHandlers()
 	r.registerSketch3DHandlers()
 }
@@ -405,6 +417,13 @@ var mutatingMethods = map[string]bool{
 	wire.MethodSketchExitEdit:                   true,
 	wire.MethodSketchSolve:                      true,
 	wire.MethodSketchAddEntity:                  true,
+	wire.MethodSketchSetSplineHandle:            true,
+	wire.MethodSketchBlockDefinitionCreate:      true,
+	wire.MethodSketchBlockDefinitionDelete:      true,
+	wire.MethodSketchAddBlockInstance:           true,
+	wire.MethodSketch3DSetSplineHandle:          true,
+	wire.MethodSketch3DEditHelix:                true,
+	wire.MethodSketchSetInferenceOptions:        true,
 	wire.MethodSketchAddConstraint:              true,
 	wire.MethodSketchDeleteConstraint:           true,
 	wire.MethodSketchAddDimension:               true,

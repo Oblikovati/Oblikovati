@@ -20,6 +20,9 @@ type CoilTool struct {
 	axis            feature.WorkRef
 	pitch           float64
 	revolutions     float64
+	pitchRows       []feature.CoilPitchRow
+	startEnd        feature.CoilEndCondition
+	endEnd          feature.CoilEndCondition
 	operation       ops.PartFeatureOperation
 	added           *feature.PartFeature
 }
@@ -65,6 +68,28 @@ func (t *CoilTool) PickedProfile() (ProfileHandle, bool) {
 // CanCommit reports whether a region is picked and the revolutions are positive.
 func (t *CoilTool) CanCommit() bool { return t.profile != nil && t.revolutions > 0 }
 
+// SetPitchRows installs the variable-pitch row table (nil restores the
+// constant pitch); PitchRows returns it (M06-F09, #624).
+func (t *CoilTool) SetPitchRows(rows []feature.CoilPitchRow) {
+	t.pitchRows = append([]feature.CoilPitchRow(nil), rows...)
+}
+func (t *CoilTool) PitchRows() []feature.CoilPitchRow {
+	return append([]feature.CoilPitchRow(nil), t.pitchRows...)
+}
+
+// SetEndConditions / StartEnd / EndEnd manage the flat-end treatments.
+func (t *CoilTool) SetEndConditions(start, end feature.CoilEndCondition) {
+	t.startEnd, t.endEnd = start, end
+}
+func (t *CoilTool) StartEnd() feature.CoilEndCondition { return t.startEnd }
+func (t *CoilTool) EndEnd() feature.CoilEndCondition   { return t.endEnd }
+
+// applyVariableRail copies the panel's rail extras into a definition.
+func (t *CoilTool) applyVariableRail(def *feature.CoilDefinition) {
+	def.PitchRows = append([]feature.CoilPitchRow(nil), t.pitchRows...)
+	def.StartEnd, def.EndEnd = t.startEnd, t.endEnd
+}
+
 // Commit adds the coil feature to the active part and recomputes; a sick feature keeps
 // the tool open by returning an error.
 func (t *CoilTool) Commit(s *Session) error {
@@ -82,6 +107,7 @@ func (t *CoilTool) Commit(s *Session) error {
 	pitch, revs := t.pitch, t.revolutions
 	t.added = feature.NewCoilFeatures(part.Features()).Add(t.profile.Sketch, t.profile.ProfileIndex, axis,
 		func() float64 { return pitch }, func() float64 { return revs }, 0, t.operation)
+	t.applyVariableRail(t.added.Definition().(*feature.CoilFeature).Definition())
 	part.Recompute()
 	s.recordEdit(part, "Coil")
 	if !t.added.Health().OK() {
@@ -106,6 +132,7 @@ func (t *CoilTool) commitEdit(s *Session) error {
 	def.Sketch, def.ProfileIndex, def.Axis = t.profile.Sketch, t.profile.ProfileIndex, axis
 	def.Pitch, def.Revolutions = konst(t.pitch), konst(t.revolutions)
 	def.Operation = t.operation
+	t.applyVariableRail(def)
 	return commitFeatureEdit(s, t.target)
 }
 

@@ -365,6 +365,9 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 	if item, ok := toolPreview(s); ok {
 		list.Items = append(list.Items, item)
 	}
+	if item, ok := inferenceGlyphs(s, plane, glyphPixels*cam.WorldPerPixel()); ok {
+		list.Items = append(list.Items, item)
+	}
 	if item, ok := snapMarker(s, plane, cam.WorldPerPixel()); ok {
 		list.Items = append(list.Items, item)
 	}

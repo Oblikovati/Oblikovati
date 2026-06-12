@@ -19,9 +19,12 @@ func enumerateEntities3D(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 		return nil, err
 	}
 	ents := sk.Entities()
+	moveable := sk.MoveableClassifier()
 	out := make([]wire.Sketch3DEntityInfo, 0, len(ents))
 	for i, e := range ents {
-		out = append(out, entity3DInfo(i, e))
+		info := entity3DInfo(i, e)
+		info.MoveableStatus = moveable.Of(e).String()
+		out = append(out, info)
 	}
 	return json.Marshal(wire.EnumerateEntities3DResult{Entities: out})
 }
@@ -69,6 +72,11 @@ func entity3DInfo(index int, e sketch.Entity) wire.Sketch3DEntityInfo {
 	if p, ok := e.(*sketch.Point3D); ok {
 		info.Kind = string(types.Sketch3DEntityPoint)
 		info.Points = [][]float64{p3coords(p.Position())}
+		return info
+	}
+	if h, ok := e.(*sketch.SplineHandle3D); ok {
+		info.Kind = string(types.Sketch3DEntitySplineHandle)
+		info.Points = [][]float64{p3coords(h.Anchor.Position()), p3coords(h.End.Position())}
 		return info
 	}
 	if fillSegmentCurve3DInfo(&info, e) {

@@ -33,15 +33,25 @@ func TestSplineEditsViaPoints(t *testing.T) {
 }
 
 func TestBlockInstancesAndUpdatesWithDefinition(t *testing.T) {
-	s := NewSketches().Add(XYPlane())
-	def := s.Blocks().DefineBlock("bolt")
+	sc := NewSketches()
+	s := sc.Add(XYPlane())
+	def, err := sc.BlockDefinitions().Define("bolt")
+	if err != nil {
+		t.Fatalf("Define: %v", err)
+	}
 	// A scratch sketch supplies entities to put in the definition.
 	scratch := NewSketches().Add(XYPlane())
-	def.Add(scratch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0)))
-	def.Add(scratch.Circles().AddByCenterRadius(math.P2(0, 0), 0.5))
+	mustAdd := func(e Entity) {
+		t.Helper()
+		if err := def.Add(e); err != nil {
+			t.Fatalf("Add: %v", err)
+		}
+	}
+	mustAdd(scratch.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0)))
+	mustAdd(scratch.Circles().AddByCenterRadius(math.P2(0, 0), 0.5))
 
 	inst := s.Blocks().Insert(def, math.Translation3(math.V2(10, 0)))
-	if s.Blocks().DefinitionCount() != 1 || s.Blocks().InstanceCount() != 1 {
+	if sc.BlockDefinitions().Count() != 1 || s.Blocks().InstanceCount() != 1 {
 		t.Fatal("block collection counts wrong")
 	}
 	if inst.Definition() != def || inst.EntityCount() != 2 {
@@ -52,7 +62,9 @@ func TestBlockInstancesAndUpdatesWithDefinition(t *testing.T) {
 	}
 
 	// Editing the definition is reflected live in the instance.
-	def.Add(scratch.Lines().AddByTwoPoints(math.P2(1, 0), math.P2(1, 1)))
+	if err := def.Add(scratch.Lines().AddByTwoPoints(math.P2(1, 0), math.P2(1, 1))); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
 	if inst.EntityCount() != 3 {
 		t.Errorf("instance entity count = %d after editing definition, want 3", inst.EntityCount())
 	}

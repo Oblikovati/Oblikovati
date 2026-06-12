@@ -144,23 +144,24 @@ type Sketch struct {
 	pts       []*Point // every constrainable point (endpoints, centers, standalone) — the solver's variables
 	refPts    []*Point // fixed reference points (projected anchors): constrainable but not solved
 
-	lines    *Lines
-	arcs     *Arcs
-	circles  *Circles
-	ellipses *Ellipses
-	ellArcs  *EllipticalArcs
-	splines  *Splines
-	points   *Points
-	images   *SketchImages
-	fills    *FillRegions
-	texts    *TextBoxes
-	eqCurves *EquationCurves
-	fixedSpl *FixedSplines
-	offSpl   *OffsetSplines
-	blocks   *Blocks
-	geomCons *GeometricConstraints
-	dimCons  *DimensionConstraints
-	params   *param.Parameters
+	lines         *Lines
+	arcs          *Arcs
+	circles       *Circles
+	ellipses      *Ellipses
+	ellArcs       *EllipticalArcs
+	splines       *Splines
+	points        *Points
+	images        *SketchImages
+	fills         *FillRegions
+	texts         *TextBoxes
+	eqCurves      *EquationCurves
+	fixedSpl      *FixedSplines
+	offSpl        *OffsetSplines
+	blocks        *Blocks
+	splineHandles *SplineHandles
+	geomCons      *GeometricConstraints
+	dimCons       *DimensionConstraints
+	params        *param.Parameters
 }
 
 // Plane returns the sketch's host plane.
@@ -255,6 +256,9 @@ func (s *Sketch) OffsetSplines() *OffsetSplines   { return s.offSpl }
 func (s *Sketch) Points() *Points                 { return s.points }
 func (s *Sketch) Blocks() *Blocks                 { return s.blocks }
 
+// SplineHandles returns the sketch's active spline tangency handles (M06-F11).
+func (s *Sketch) SplineHandles() *SplineHandles { return s.splineHandles }
+
 // GeometricConstraints returns the sketch's geometric-constraint collection.
 func (s *Sketch) GeometricConstraints() *GeometricConstraints { return s.geomCons }
 
@@ -291,14 +295,13 @@ func (s *Sketch) add(e Entity) { s.ents = append(s.ents, e) }
 
 // removeEntity drops an entity from the geometry list (used by delete/trim). It does not
 // touch constraints; callers handle those. Returns whether it was present.
-func (s *Sketch) removeEntity(e Entity) bool {
+func (s *Sketch) removeEntity(e Entity) {
 	for i, x := range s.ents {
 		if x == e {
 			s.ents = append(s.ents[:i], s.ents[i+1:]...)
-			return true
+			return
 		}
 	}
-	return false
 }
 
 // deleteEntity removes e from the entity list AND its typed collection, so an edit that
@@ -306,6 +309,12 @@ func (s *Sketch) removeEntity(e Entity) bool {
 // Count/Item/serialization would still report.
 func (s *Sketch) deleteEntity(e Entity) {
 	s.removeEntity(e)
+	s.dropFromCollection(e)
+}
+
+// dropFromCollection removes e from its typed collection (the deleteEntity
+// half that knows every entity family).
+func (s *Sketch) dropFromCollection(e Entity) {
 	switch t := e.(type) {
 	case *Line:
 		s.lines.remove(t)
@@ -313,6 +322,19 @@ func (s *Sketch) deleteEntity(e Entity) {
 		s.circles.remove(t)
 	case *Arc:
 		s.arcs.remove(t)
+	case *TextBox:
+		s.texts.remove(t)
+		s.deleteTextBoxAnchor(t) // the anchor record dies with its text (M06-F11)
+	case *Ellipse:
+		s.ellipses.remove(t)
+	case *EllipticalArc:
+		s.ellArcs.remove(t)
+	case *Spline:
+		s.splines.remove(t)
+	case *Point:
+		s.points.remove(t)
+	case *BlockInstance:
+		s.blocks.remove(t) // also detaches the definition back-reference (M06-F07)
 	}
 }
 
@@ -322,6 +344,17 @@ func (s *Sketch) newPoint(pos math.Point2) *Point {
 	p := &Point{id: nextID(), X: pos.X, Y: pos.Y}
 	s.pts = append(s.pts, p)
 	return p
+}
+
+// removePoint drops a solver point (a deactivated spline-handle end or a
+// point moved into a block definition).
+func (s *Sketch) removePoint(p *Point) {
+	for i, x := range s.pts {
+		if x == p {
+			s.pts = append(s.pts[:i], s.pts[i+1:]...)
+			return
+		}
+	}
 }
 
 // newRefPoint creates a fixed reference point (a projected anchor): a real Point other
@@ -349,6 +382,7 @@ func (s *Sketch) initCollections() {
 	s.fixedSpl = &FixedSplines{s: s}
 	s.offSpl = &OffsetSplines{s: s}
 	s.blocks = &Blocks{s: s}
+	s.splineHandles = &SplineHandles{s: s}
 	s.geomCons = &GeometricConstraints{}
 	s.params = param.NewParameters()
 	s.dimCons = &DimensionConstraints{params: s.params}
@@ -365,15 +399,21 @@ type Sketches struct {
 	items []*Sketch
 	byID  map[ID]*Sketch
 	seq   int // running counter behind the Sketch1, Sketch2, … auto-names
+	// blockDefs is the part-level block-definition registry every sketch of
+	// the part places instances from (M06-F07, #622).
+	blockDefs *BlockDefinitions
 }
 
 // NewSketches returns an empty collection.
 func NewSketches() *Sketches {
-	return &Sketches{byID: map[ID]*Sketch{}}
+	return &Sketches{byID: map[ID]*Sketch{}, blockDefs: &BlockDefinitions{}}
 }
 
+// BlockDefinitions returns the part-level block-definition registry.
+func (sc *Sketches) BlockDefinitions() *BlockDefinitions { return sc.blockDefs }
+
 // Add creates a planar sketch on plane and adds it to the collection, giving it the
-// next free auto-name (Sketch1, Sketch2, …) like Inventor.
+// next free auto-name (Sketch1, Sketch2, …) like the reference API.
 func (c *Sketches) Add(plane Plane) *Sketch {
 	return c.AddNamed(c.nextSketchName(), plane)
 }

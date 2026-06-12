@@ -56,20 +56,23 @@ func wrap2pi(d float64) float64 {
 	return d
 }
 
-// segmentEntityHits returns the points where segment seg crosses entity e (a line, circle
-// or arc); other entity kinds yield none.
+// segmentEntityHits returns the points where segment seg crosses entity e — a
+// line, circle or arc analytically; an ellipse, elliptical arc or spline via
+// the kernel's parametric intersector (edit_trim_freeform.go). Other entity
+// kinds yield none.
 func segmentEntityHits(seg geom.LineSegment2d, e Entity) []math.Point2 {
 	switch g := e.(type) {
 	case *Line:
 		if p, _, _, ok := geom.Segment2dIntersection(seg, entitySegment2d(g), 0); ok {
 			return []math.Point2{p}
 		}
+		return nil
 	case *Circle:
 		return geom.SegmentCircle2dIntersection(seg, entityCircle2d(g), 0)
 	case *Arc:
 		return arcFilter(entityArc2d(g), geom.SegmentCircle2dIntersection(seg, arcCircle(g), 0))
 	}
-	return nil
+	return segmentFreeformHits(seg, e)
 }
 
 // supportEntityHits returns the points where the infinite line crosses entity e — used by
@@ -82,12 +85,13 @@ func supportEntityHits(line geom.Line2d, e Entity) []math.Point2 {
 				return []math.Point2{p}
 			}
 		}
+		return nil
 	case *Circle:
 		return geom.LineCircle2dIntersection(line, entityCircle2d(g), 0)
 	case *Arc:
 		return arcFilter(entityArc2d(g), geom.LineCircle2dIntersection(line, arcCircle(g), 0))
 	}
-	return nil
+	return supportFreeformHits(line, e)
 }
 
 // arcCircle is the full circle underlying an arc.

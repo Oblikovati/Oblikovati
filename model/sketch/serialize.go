@@ -95,6 +95,22 @@ type EntityData struct {
 	Coords       []float64 `yaml:"coords,omitempty"`       // fixedSpline only: flattened [x,y,…]
 	ParentID     int       `yaml:"parentId,omitempty"`     // offsetSpline only
 	OffsetDist   float64   `yaml:"offsetDist,omitempty"`   // offsetSpline only
+	// Spline only (M06-F11, #626): the fit-method wire spelling (empty ⇒
+	// smooth) and the active tangency handles.
+	FitMethod string             `yaml:"fitMethod,omitempty"`
+	Handles   []SplineHandleData `yaml:"handles,omitempty"`
+	// Block instance only (M06-F07, #622): the placed definition's name and
+	// the row-major 3×3 placement transform.
+	Block     string    `yaml:"block,omitempty"`
+	Transform []float64 `yaml:"transform,omitempty,flow"`
+}
+
+// SplineHandleData is one active spline tangency handle: which fit point it
+// rides and where its draggable end sits.
+type SplineHandleData struct {
+	FitIndex int     `yaml:"fitIndex"`
+	EndX     float64 `yaml:"endX"`
+	EndY     float64 `yaml:"endY"`
 }
 
 // ConstraintData is one geometric constraint: its kind plus operand ids split into
@@ -105,6 +121,10 @@ type ConstraintData struct {
 	Points []int   `yaml:"points,omitempty"`
 	Curves []int   `yaml:"curves,omitempty"`
 	Value  float64 `yaml:"value,omitempty"` // offset constraint's signed distance
+	// Custom (add-in tag) constraints carry their owner and record name
+	// (M06-F11, #626).
+	ClientID string `yaml:"clientId,omitempty"`
+	Name     string `yaml:"name,omitempty"`
 }
 
 // DimensionData is one dimensional constraint: its kind, operand ids, the value
@@ -139,9 +159,6 @@ func (sc *Sketches) MarshalRecipe() ([]SketchData, error) {
 }
 
 func serializeSketch(s *Sketch) (SketchData, error) {
-	if len(s.blocks.defs) > 0 || len(s.blocks.instances) > 0 {
-		return SketchData{}, fmt.Errorf("block serialization is not yet supported (%d defs, %d instances)", len(s.blocks.defs), len(s.blocks.instances))
-	}
 	sd := SketchData{
 		Name:         s.name,
 		Hidden:       !s.visible,
@@ -157,12 +174,19 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 		sd.CustomLineName, sd.CustomLineFile, sd.CustomLinePattern = d.Name, file, d.Pattern
 	}
 	standalone := standalonePointIDs(s)
+	handleEnds := splineHandleEndIDs(s)
 	for _, p := range s.pts {
+		if handleEnds[p.id] {
+			continue // handle ends persist inside their spline's record and are re-minted on restore
+		}
 		sd.Points = append(sd.Points, PointData{ID: int(p.id), X: float64(p.X), Y: float64(p.Y), Standalone: standalone[p.id]})
 	}
 	for _, e := range s.ents {
 		if _, isPoint := e.(*Point); isPoint {
 			continue // standalone points are captured in Points, not Entities
+		}
+		if _, isHandle := e.(*SplineHandle); isHandle {
+			continue // handles persist inside their spline's record (M06-F11)
 		}
 		ed, err := serializeEntity(e)
 		if err != nil {
@@ -185,6 +209,17 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 		sd.Dimensions = append(sd.Dimensions, dd)
 	}
 	return sd, nil
+}
+
+// splineHandleEndIDs is the set of point ids owned by active spline handles.
+func splineHandleEndIDs(s *Sketch) map[ID]bool {
+	out := map[ID]bool{}
+	for _, sp := range s.splines.items {
+		for _, h := range sp.Handles() {
+			out[h.End.id] = true
+		}
+	}
+	return out
 }
 
 // standalonePointIDs is the set of point ids that are standalone SketchPoints.
@@ -218,7 +253,15 @@ func serializeEntity(e Entity) (EntityData, error) {
 	case *EllipticalArc:
 		return EntityData{ID: int(v.id), Kind: "ellipticalArc", Points: []int{int(v.Center.id)}, MajorAxis: []float64{float64(v.MajorAxis.X), float64(v.MajorAxis.Y)}, MajorRadius: float64(v.MajorRadius), MinorRadius: float64(v.MinorRadius), StartAngle: float64(v.StartAngle), EndAngle: float64(v.EndAngle), Construction: v.construction}, nil
 	case *Spline:
-		return EntityData{ID: int(v.id), Kind: "spline", Points: pointIDsOf(v.Points), Closed: v.Closed, Fit: v.fit, Construction: v.construction}, nil
+		return EntityData{
+			ID: int(v.id), Kind: "spline", Points: pointIDsOf(v.Points), Closed: v.Closed, Fit: v.fit,
+			FitMethod: fitMethodSpelling(v.FitMethod), Handles: serializeSplineHandles(v),
+			Construction: v.construction,
+		}, nil
+	case *BlockInstance:
+		return EntityData{
+			ID: int(v.id), Kind: "blockInstance", Block: v.def.name, Transform: matrixCells(v.transform),
+		}, nil
 	case *SketchImage:
 		return EntityData{
 			ID: int(v.id), Kind: "image", ImageRef: v.Ref,
@@ -307,9 +350,35 @@ func serializeConstraint(c Constraint) (ConstraintData, error) {
 		return ConstraintData{Kind: "offset", Curves: []int{int(v.L1.id), int(v.L2.id)}, Value: v.Dist}, nil
 	case *PatternConstraint:
 		return ConstraintData{Kind: "patternLink", Points: []int{int(v.Seed.id), int(v.Member.id)}}, nil
+	case *TextBoxAnchorConstraint:
+		return ConstraintData{Kind: "textBox", Curves: []int{int(v.Text.id)}}, nil
+	case *CustomConstraint:
+		return ConstraintData{Kind: "custom", ClientID: v.ClientID, Name: v.Name, Curves: entityIDsOf(v.Entities)}, nil
 	default:
 		return ConstraintData{}, fmt.Errorf("cannot serialize constraint of type %T (no codec)", c)
 	}
+}
+
+// fitMethodSpelling renders a spline fit method for persistence; the smooth
+// default stays empty so existing files do not churn.
+func fitMethodSpelling(m SplineFitMethod) string {
+	if m == 0 {
+		return ""
+	}
+	return m.String()
+}
+
+// serializeSplineHandles renders a spline's active handles in fit order.
+func serializeSplineHandles(sp *Spline) []SplineHandleData {
+	handles := sp.Handles()
+	if len(handles) == 0 {
+		return nil
+	}
+	out := make([]SplineHandleData, len(handles))
+	for i, h := range handles {
+		out[i] = SplineHandleData{FitIndex: h.FitIndex, EndX: float64(h.End.X), EndY: float64(h.End.Y)}
+	}
+	return out
 }
 
 func serializeDimension(d *DimensionConstraint) (DimensionData, error) {

@@ -5,6 +5,7 @@ package sketch
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/linetype"
 	"oblikovati.org/model/seq"
@@ -31,6 +32,7 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 	}
 	r := &sketchRestorer{
 		s:         sc.Add(plane),
+		blockDefs: sc.blockDefs,
 		pointMap:  make(map[int]*Point, len(sd.Points)),
 		entityMap: make(map[int]Entity, len(sd.Entities)),
 	}
@@ -52,6 +54,16 @@ func (r *sketchRestorer) restoreDerivedCurve(ed EntityData) (Entity, error) {
 	switch ed.Kind {
 	case "equationCurve":
 		return r.s.eqCurves.Add(ed.XExpr, ed.YExpr, ed.T0, ed.T1)
+	case "blockInstance":
+		def, ok := r.blockDefs.ByName(ed.Block)
+		if !ok {
+			return nil, fmt.Errorf("block instance references unknown definition %q", ed.Block)
+		}
+		t, err := matrixFromCells(ed.Transform)
+		if err != nil {
+			return nil, err
+		}
+		return r.s.Blocks().Insert(def, t), nil
 	case "fixedSpline":
 		return r.s.fixedSpl.Add(unflattenPoints(ed.Coords)), nil
 	case "offsetSpline":
@@ -103,6 +115,7 @@ func restoreSeq(s *Sketch, saved uint64) {
 // sketchRestorer carries the id→object maps while rebuilding one sketch.
 type sketchRestorer struct {
 	s         *Sketch
+	blockDefs *BlockDefinitions
 	pointMap  map[int]*Point
 	entityMap map[int]Entity
 }
@@ -180,7 +193,11 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 		if err != nil {
 			return nil, err
 		}
-		return r.s.splines.AddWithPoints(p, ed.Closed, ed.Fit), nil
+		sp := r.s.splines.AddWithPoints(p, ed.Closed, ed.Fit)
+		if err := restoreSplineExtras(r.s, sp, ed); err != nil {
+			return nil, err
+		}
+		return sp, nil
 	case "image":
 		if len(ed.Anchor) != 2 || len(ed.Size) != 2 {
 			return nil, fmt.Errorf("image needs a 2-component anchor and size")
@@ -326,9 +343,44 @@ func (r *sketchRestorer) restoreExtraConstraint(cd ConstraintData) error {
 		return r.twoLines(cd, func(a, b *Line) { g.AddOffset(a, b, cd.Value) })
 	case "patternLink":
 		return r.twoPoints(cd, func(a, b *Point) { g.AddPatternLink(a, b) })
+	case "textBox":
+		// The anchor record is auto-created with its text box; restoring it
+		// explicitly would duplicate it, so the persisted row is a no-op.
+		return nil
+	case "custom":
+		ents := make([]Entity, 0, len(cd.Curves))
+		for i := range cd.Curves {
+			e, err := r.entity(cd.Curves, i)
+			if err != nil {
+				return err
+			}
+			ents = append(ents, e)
+		}
+		_, err := g.AddCustom(cd.ClientID, cd.Name, ents)
+		return err
 	default:
 		return fmt.Errorf("unknown constraint kind %q", cd.Kind)
 	}
+}
+
+// restoreSplineExtras rebuilds a spline's fit method and active tangency
+// handles (M06-F11, #626).
+func restoreSplineExtras(s *Sketch, sp *Spline, ed EntityData) error {
+	if ed.FitMethod != "" {
+		m, ok := types.ParseSplineFitMethod(ed.FitMethod)
+		if !ok {
+			return fmt.Errorf("unknown spline fit method %q (want smooth|sweet|chord)", ed.FitMethod)
+		}
+		sp.FitMethod = m
+	}
+	for _, hd := range ed.Handles {
+		h, err := s.splineHandles.Activate(sp, hd.FitIndex)
+		if err != nil {
+			return err
+		}
+		h.End.SetPosition(math.P2(math.Scalar(hd.EndX), math.Scalar(hd.EndY)))
+	}
+	return nil
 }
 
 func (r *sketchRestorer) restoreDimensions(dims []DimensionData) error {

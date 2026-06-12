@@ -132,6 +132,18 @@ func (s *Sketch3D) newPoint3D(pos math.Point3) *Point3D {
 	return p
 }
 
+// removePoint3D drops a solver point (a deactivated spline-handle end).
+// Reports whether it was present.
+func (s *Sketch3D) removePoint3D(p *Point3D) bool {
+	for i, x := range s.pts {
+		if x == p {
+			s.pts = append(s.pts[:i], s.pts[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 // AddPoint3D adds a standalone 3D sketch point (both a solver variable and an entity).
 func (s *Sketch3D) AddPoint3D(pos math.Point3) *Point3D {
 	p := s.newPoint3D(pos)

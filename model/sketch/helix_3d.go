@@ -21,20 +21,33 @@ type HelicalCurve3D struct {
 	RadialPerTurn float64 // radial growth per revolution (0 ⇒ constant-radius helix)
 	Turns         float64 // number of revolutions (> 0)
 	Clockwise     bool
+	// definition is the M06-F09 shape definition (variable rows + end
+	// conditions); nil reads as a constant pitch-and-revolution shape.
+	definition *HelixDefinition
 }
 
 // scalarDOFs makes HelicalCurve3D a [scalar3DContributor]: its start radius is a free DOF
 // beyond the origin point's three.
 func (h *HelicalCurve3D) scalarDOFs() []*math.Scalar { return []*math.Scalar{&h.StartRadius} }
 
-// Curve builds the kernel helix for this entity (RefDir is an arbitrary in-plane axis
-// perpendicular to the helix axis), or an error if the axis/turns are degenerate.
-func (h *HelicalCurve3D) Curve() (geom.Helix3d, error) {
+// Curve builds the kernel curve for this entity (RefDir is an arbitrary in-plane axis
+// perpendicular to the helix axis), or an error if the axis/turns are degenerate. A
+// constant definition with natural ends yields the analytic [geom.Helix3d]; variable
+// rows or flat ends compile into a [geom.VariableHelix3d] station table (M06-F09).
+func (h *HelicalCurve3D) Curve() (geom.Curve3, error) {
 	refDir := perpendicularTo(h.Axis)
-	return geom.NewHelix3d(
-		h.Origin.Position(), h.Axis.AsVector(), refDir,
-		float64(h.StartRadius), h.AxialPerTurn, h.RadialPerTurn, h.Turns, h.Clockwise,
-	)
+	def := h.Definition()
+	if !def.Variable() && !def.Start.flat() && !def.End.flat() {
+		return geom.NewHelix3d(
+			h.Origin.Position(), h.Axis.AsVector(), refDir,
+			float64(h.StartRadius), h.AxialPerTurn, h.RadialPerTurn, h.Turns, h.Clockwise,
+		)
+	}
+	stations, err := h.definitionStations()
+	if err != nil {
+		return nil, err
+	}
+	return geom.NewVariableHelix3d(h.Origin.Position(), h.Axis.AsVector(), refDir, stations, h.Clockwise)
 }
 
 // Height returns the helix's total axial rise (pitch × turns).

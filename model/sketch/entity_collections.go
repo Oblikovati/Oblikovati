@@ -137,6 +137,8 @@ func (c *Ellipses) AddWithCenter(center *Point, majorAxis math.Vector2, majorR, 
 }
 
 // Count returns the number of ellipses; Item returns the i-th.
+func (c *Ellipses) remove(x *Ellipse) { c.items = removeItem(c.items, x) }
+
 func (c *Ellipses) Count() int          { return len(c.items) }
 func (c *Ellipses) Item(i int) *Ellipse { return c.items[i] }
 
@@ -169,6 +171,8 @@ func (c *EllipticalArcs) AddWithCenter(center *Point, majorAxis math.Vector2, ma
 }
 
 // Count returns the number of elliptical arcs; Item returns the i-th.
+func (c *EllipticalArcs) remove(x *EllipticalArc) { c.items = removeItem(c.items, x) }
+
 func (c *EllipticalArcs) Count() int                { return len(c.items) }
 func (c *EllipticalArcs) Item(i int) *EllipticalArc { return c.items[i] }
 
@@ -206,6 +210,8 @@ func (c *Splines) AddWithPoints(points []*Point, closed, fit bool) *Spline {
 }
 
 // Count returns the number of splines; Item returns the i-th.
+func (c *Splines) remove(x *Spline) { c.items = removeItem(c.items, x) }
+
 func (c *Splines) Count() int         { return len(c.items) }
 func (c *Splines) Item(i int) *Spline { return c.items[i] }
 
@@ -225,5 +231,7 @@ func (c *Points) Add(pos math.Point2) *Point {
 }
 
 // Count returns the number of standalone points; Item returns the i-th.
+func (c *Points) remove(x *Point) { c.items = removeItem(c.items, x) }
+
 func (c *Points) Count() int        { return len(c.items) }
 func (c *Points) Item(i int) *Point { return c.items[i] }

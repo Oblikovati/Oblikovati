@@ -23,7 +23,11 @@ func addConstraint(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := buildGeometricConstraint(sk, types.GeometricConstraintKind(in.Kind), in.Entities); err != nil {
+	if types.GeometricConstraintKind(in.Kind) == types.GeoConstraintCustom {
+		if err := addCustomConstraint(sk, in); err != nil {
+			return nil, err
+		}
+	} else if _, err := buildGeometricConstraint(sk, types.GeometricConstraintKind(in.Kind), in.Entities); err != nil {
 		return nil, err
 	}
 	g := sk.GeometricConstraints()
@@ -44,8 +48,26 @@ func deleteConstraint(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if in.ConstraintIndex < 0 || in.ConstraintIndex >= g.Count() {
 		return nil, fmt.Errorf("sketch.deleteConstraint: index %d out of range (%d constraints)", in.ConstraintIndex, g.Count())
 	}
-	g.Delete(g.Item(in.ConstraintIndex))
+	// System-owned records (the text-box anchor) refuse deletion (M06-F11).
+	if err := g.DeleteAllowed(g.Item(in.ConstraintIndex)); err != nil {
+		return nil, err
+	}
 	return json.Marshal(wire.OKResult{OK: true})
+}
+
+// addCustomConstraint applies the add-in tag constraint: arbitrary entity
+// operands, owned by ClientID (M06-F11, #626).
+func addCustomConstraint(sk *sketch.Sketch, in wire.AddConstraintArgs) error {
+	ents := make([]sketch.Entity, 0, len(in.Entities))
+	for _, id := range in.Entities {
+		e, ok := sk.EntityByID(sketch.ID(id))
+		if !ok {
+			return fmt.Errorf("sketch.addConstraint: entity %d not found", id)
+		}
+		ents = append(ents, e)
+	}
+	_, err := sk.GeometricConstraints().AddCustom(in.ClientID, in.Name, ents)
+	return err
 }
 
 // buildGeometricConstraint resolves the references and applies the matching model

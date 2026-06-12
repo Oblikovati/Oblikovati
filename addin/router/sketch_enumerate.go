@@ -19,16 +19,19 @@ func enumerateEntities(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 		return nil, err
 	}
 	ents := sk.Entities()
+	moveable := sk.MoveableClassifier()
 	out := make([]wire.SketchEntityInfo, len(ents))
 	for i, e := range ents {
 		kind, pts, radius := entityShape(e)
 		out[i] = wire.SketchEntityInfo{
-			Index:        i,
-			ID:           uint64(e.EntityID()),
-			Kind:         string(kind),
-			Construction: isConstruction(e),
-			Points:       pts,
-			Radius:       radius,
+			Index:          i,
+			ID:             uint64(e.EntityID()),
+			Kind:           string(kind),
+			Construction:   isConstruction(e),
+			Points:         pts,
+			Radius:         radius,
+			MoveableStatus: moveable.Of(e).String(),
+			FitMethod:      splineFitSpelling(e),
 		}
 	}
 	return json.Marshal(wire.EnumerateEntitiesResult{Entities: out})
@@ -43,8 +46,15 @@ func enumerateConstraints(s *app.Session, raw json.RawMessage) (json.RawMessage,
 	cons := sk.GeometricConstraints()
 	out := make([]wire.ConstraintInfo, cons.Count())
 	for i := 0; i < cons.Count(); i++ {
-		kind, refs := geometricShape(cons.Item(i))
-		out[i] = wire.ConstraintInfo{Index: i, Kind: string(kind), Entities: refs}
+		c := cons.Item(i)
+		kind, refs := geometricShape(c)
+		out[i] = wire.ConstraintInfo{
+			Index: i, Kind: string(kind), Entities: refs,
+			Deletable: constraintDeletable(c),
+		}
+		if custom, ok := c.(*sketch.CustomConstraint); ok {
+			out[i].ClientID, out[i].Name = custom.ClientID, custom.Name
+		}
 	}
 	return json.Marshal(wire.ListConstraintsResult{Constraints: out})
 }
@@ -96,9 +106,31 @@ func entityShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64)
 		return types.SketchEntityEllipticalArc, [][]float64{pt(v.Center)}, 0
 	case *sketch.Spline:
 		return types.SketchEntitySpline, splinePts(v), 0
+	case *sketch.SplineHandle:
+		return types.SketchEntitySplineHandle, [][]float64{pt(v.Anchor), pt(v.End)}, 0
 	default:
 		return annotationShape(e)
 	}
+}
+
+// splineFitSpelling reports a fit spline's fit-method wire spelling (the
+// zero value resolves to the smooth default); empty for everything else.
+func splineFitSpelling(e sketch.Entity) string {
+	sp, ok := e.(*sketch.Spline)
+	if !ok || !sp.IsFitType() {
+		return ""
+	}
+	if sp.FitMethod == 0 {
+		return types.SplineFitSmooth.String()
+	}
+	return sp.FitMethod.String()
+}
+
+// constraintDeletable reports whether explicit deletion is allowed (false for
+// system-owned records like the text-box anchor — M06-F11, #626).
+func constraintDeletable(c sketch.Constraint) bool {
+	nd, ok := c.(sketch.NonDeletable)
+	return !ok || nd.Deletable()
 }
 
 // annotationShape handles the non-curve (image/fill/text) entities.
@@ -153,7 +185,8 @@ func geometricShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint6
 	return types.GeoConstraintUnknown, nil
 }
 
-// extraConstraintShape handles the M21 constraints (ground/offset/pattern link).
+// extraConstraintShape handles the M21 constraints (ground/offset/pattern
+// link) and the M06-F11 tag constraints (text-box anchor, custom).
 func extraConstraintShape(c sketch.Constraint) (types.GeometricConstraintKind, []uint64, bool) {
 	switch v := c.(type) {
 	case *sketch.GroundConstraint:
@@ -162,6 +195,10 @@ func extraConstraintShape(c sketch.Constraint) (types.GeometricConstraintKind, [
 		return types.GeoConstraintOffset, ids(v.L1, v.L2), true
 	case *sketch.PatternConstraint:
 		return types.GeoConstraintPattern, ids(v.Seed, v.Member), true
+	case *sketch.TextBoxAnchorConstraint:
+		return types.GeoConstraintTextBox, ids(v.Text), true
+	case *sketch.CustomConstraint:
+		return types.GeoConstraintCustom, ids(v.Entities...), true
 	default:
 		return "", nil, false
 	}
