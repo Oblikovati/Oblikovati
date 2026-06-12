@@ -13,6 +13,7 @@ import (
 type Body struct {
 	id      uint64
 	shells  []*Shell
+	wires   []*Wire
 	solid   bool
 	lineage Lineage
 }

@@ -90,5 +90,11 @@ func (bld *Builder) buildLoop(f *Face, spec LoopSpec) *Loop {
 	return loop
 }
 
-// Build returns the assembled body.
-func (bld *Builder) Build() *Body { return bld.body }
+// Build returns the assembled body, with its shells regrouped to true face
+// connectivity (M07-F06, #629) — a builder receives faces in arbitrary order,
+// so the single working shell may actually hold several disjoint groups (a
+// stitched pair of quilts, a cavity cut's inner skin).
+func (bld *Builder) Build() *Body {
+	RegroupShells(bld.body)
+	return bld.body
+}
