@@ -2,7 +2,11 @@
 
 package sketch
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/api/types"
+
+	"oblikovati.org/math"
+)
 
 // Point is a constrainable sketch point and the solver's variable carrier: its X,Y
 // are the DOFs the solver reads and writes. Entities share points by pointer, so a
@@ -98,8 +102,8 @@ func (a *Arc) Radius() math.Scalar { return a.Center.Position().DistanceTo(a.Sta
 
 // CircularCurve is sketch geometry defined by a center and a radius — a Circle or an
 // Arc. The constraints that act on circular geometry (Concentric, Tangent, EqualRadius
-// and the point-on-curve coincidence) accept either, matching Inventor's polymorphic
-// constraints: an arc is a circle you can also constrain by its endpoints. The interface
+// and the point-on-curve coincidence) accept either, matching the reference API's
+// polymorphic constraints: an arc is a circle you can also constrain by its endpoints. The interface
 // is sealed (circularVars is unexported) so only Circle and Arc can satisfy it.
 type CircularCurve interface {
 	Entity
@@ -151,12 +155,19 @@ type EllipticalArc struct {
 	EndAngle    math.Scalar
 }
 
+// SplineFitMethod aliases the public fit-method enum (M06-F11,
+// Oblikovati/Oblikovati#626) so call sites stay on the sketch package.
+type SplineFitMethod = types.SplineFitMethod
+
 // Spline is a NURBS-style sketch spline through (fit) or near (control) its points.
+// FitMethod selects the interpolation parameterization of a fit spline; the zero
+// value behaves as the smooth (centripetal) default.
 type Spline struct {
 	entityBase
-	Points []*Point
-	Closed bool
-	fit    bool
+	Points    []*Point
+	Closed    bool
+	FitMethod SplineFitMethod
+	fit       bool
 }
 
 // IsFitType reports whether the spline interpolates its points (fit) rather than

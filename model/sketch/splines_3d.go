@@ -33,7 +33,7 @@ func (s *Spline3D) Sample() []math.Point3 {
 	for i, p := range s.Points {
 		pts[i] = p.Position()
 	}
-	return sampleChain3D(pts, s.Closed)
+	return sampleChain3D(pts, s.Closed, s.fit)
 }
 
 // FixedSpline3D is an immutable 3D spline through a stored coordinate list (a derived /
@@ -46,7 +46,7 @@ type FixedSpline3D struct {
 
 // Sample returns the fixed spline's representative polyline.
 func (s *FixedSpline3D) Sample() []math.Point3 {
-	return sampleChain3D(append([]math.Point3(nil), s.Pts...), s.Closed)
+	return sampleChain3D(append([]math.Point3(nil), s.Pts...), s.Closed, true)
 }
 
 // EquationCurve3D is a parametric 3D curve x(t)/y(t)/z(t) over t ∈ [T0, T1].

@@ -34,9 +34,10 @@ func (p *Path) IsClosed() bool { return p.closed }
 
 // Points returns the path's ordered vertices in sketch space, honoring each segment's
 // traversal direction. A sweep maps these through the path's sketch plane to a 3D rail.
-// A curved segment (arc) is sampled into a polyline (arcSampleStep) so a curved rail
-// follows the curve instead of collapsing to its chord; lines and splines contribute
-// their endpoints.
+// Every curved segment — arc (arcSampleStep), spline (true NURBS samples), elliptical
+// arc, equation curve — is sampled into a polyline so a curved rail follows the curve
+// instead of collapsing to its chord (M06-F12, Oblikovati/Oblikovati#627); lines
+// contribute their endpoints.
 func (p *Path) Points() []math.Point2 {
 	var pts []math.Point2
 	for i, pe := range p.entities {
@@ -54,15 +55,23 @@ func (p *Path) Points() []math.Point2 {
 }
 
 // segmentPolyline returns a path segment's points in traversal order (reversed flips it).
-// An arc is sampled into a polyline; other segments return their two endpoints.
+// Curved segments are sampled into polylines; straight (and unknown) segments return
+// their two endpoints.
 func segmentPolyline(e Entity, reversed bool) ([]math.Point2, bool) {
 	a, b, ok := segmentEnds(e)
 	if !ok {
 		return nil, false
 	}
 	pts := []math.Point2{a.Position(), b.Position()}
-	if arc, isArc := e.(*Arc); isArc {
-		pts = arcPolyline(arc)
+	switch t := e.(type) {
+	case *Arc:
+		pts = arcPolyline(t)
+	case *Spline:
+		pts = sampleSplineEntity(t)
+	case *EllipticalArc:
+		pts = sampleEllipticalArcEntity(t)
+	case *EquationCurve:
+		pts = t.Sample(curveSamples)
 	}
 	if reversed {
 		for l, r := 0, len(pts)-1; l < r; l, r = l+1, r-1 {

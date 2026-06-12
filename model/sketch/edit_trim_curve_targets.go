@@ -29,6 +29,8 @@ func (s *Sketch) circleEntityHits(cc geom.Circle2d, exclude Entity) []math.Point
 			out = append(out, geom.Circle2dCircle2dIntersection(cc, entityCircle2d(g), 0)...)
 		case *Arc:
 			out = append(out, arcFilter(entityArc2d(g), geom.Circle2dCircle2dIntersection(cc, arcCircle(g), 0))...)
+		default:
+			out = append(out, circleFreeformHits(cc, e)...)
 		}
 	}
 	return out
