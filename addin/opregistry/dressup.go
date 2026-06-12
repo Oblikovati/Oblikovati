@@ -5,9 +5,11 @@ package opregistry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
 
@@ -17,19 +19,36 @@ import (
 // recomputes. They are how an MCP driver exercises the subtractive kernel end to end.
 
 // edgeDressArgs is the shared shape of the edge-referencing operations (fillet, chamfer).
+// EdgeSets is fillet-only: the edge-set form (#323), taking precedence over the flat
+// edgeRefs+radius pair.
 type edgeDressArgs struct {
-	EdgeRefs []string `json:"edgeRefs"`
-	Radius   string   `json:"radius,omitempty"`   // fillet
-	Distance string   `json:"distance,omitempty"` // chamfer
+	EdgeRefs []string        `json:"edgeRefs"`
+	Radius   string          `json:"radius,omitempty"`   // fillet
+	Distance string          `json:"distance,omitempty"` // chamfer
+	EdgeSets []filletSetArgs `json:"edgeSets,omitempty"` // fillet
+}
+
+// filletSetArgs is one fillet edge set over the wire: constant (radius) or variable
+// (startRadius+endRadius over exactly one edge).
+type filletSetArgs struct {
+	EdgeRefs    []string `json:"edgeRefs"`
+	Radius      string   `json:"radius,omitempty"`
+	StartRadius string   `json:"startRadius,omitempty"`
+	EndRadius   string   `json:"endRadius,omitempty"`
 }
 
 const filletSchema = `{
   "type": "object",
   "properties": {
-    "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to round (from get_reference_keys)."},
-    "radius": {"type": "string", "description": "Fillet radius with units, e.g. \"3 mm\"."}
-  },
-  "required": ["edgeRefs", "radius"]
+    "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to round (from get_reference_keys). Flat form: one constant radius over these edges."},
+    "radius": {"type": "string", "description": "Fillet radius with units, e.g. \"3 mm\" (flat form)."},
+    "edgeSets": {"type": "array", "minItems": 1, "description": "Edge-set form (takes precedence over edgeRefs): any mix of constant and variable radius sets.", "items": {"type": "object", "properties": {
+      "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+      "radius": {"type": "string", "description": "Constant radius for this set, e.g. \"3 mm\"."},
+      "startRadius": {"type": "string", "description": "Variable set: radius at the edge's start vertex (the set holds exactly one edge)."},
+      "endRadius": {"type": "string", "description": "Variable set: radius at the edge's end vertex."}
+    }, "required": ["edgeRefs"]}}
+  }
 }`
 
 const chamferSchema = `{
@@ -58,8 +77,15 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
+	if len(in.EdgeSets) > 0 {
+		sets, err := filletSetsFromArgs(part, in.EdgeSets)
+		if err != nil {
+			return nil, err
+		}
+		return recomputeResult(part, feature.NewDressUpFeatures(part.Features()).AddFilletSets(sets))
+	}
 	if len(in.EdgeRefs) == 0 {
-		return nil, errors.New("fillet: edgeRefs is empty")
+		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius or edgeSets)")
 	}
 	r, err := lengthClosure(part, in.Radius, "fillet: radius")
 	if err != nil {
@@ -67,6 +93,42 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddFillet(refKeys(in.EdgeRefs), r)
 	return recomputeResult(part, pf)
+}
+
+// filletSetsFromArgs decodes the edge-set form: each set is constant (radius) or variable
+// (startRadius+endRadius); giving both or neither is a precise error.
+func filletSetsFromArgs(part *compdef.PartComponentDefinition, args []filletSetArgs) ([]feature.FilletEdgeSet, error) {
+	out := make([]feature.FilletEdgeSet, len(args))
+	for i, a := range args {
+		if len(a.EdgeRefs) == 0 {
+			return nil, fmt.Errorf("fillet: edgeSets[%d].edgeRefs is empty", i)
+		}
+		radii, err := filletSetRadii(part, a, i)
+		if err != nil {
+			return nil, err
+		}
+		radii.EdgeKeys = refKeys(a.EdgeRefs)
+		out[i] = radii
+	}
+	return out, nil
+}
+
+// filletSetRadii resolves one set's radius closures from its constant or variable spelling.
+func filletSetRadii(part *compdef.PartComponentDefinition, a filletSetArgs, i int) (feature.FilletEdgeSet, error) {
+	hasConst, hasVar := a.Radius != "", a.StartRadius != "" || a.EndRadius != ""
+	if hasConst == hasVar {
+		return feature.FilletEdgeSet{}, fmt.Errorf("fillet: edgeSets[%d] needs radius OR startRadius+endRadius (got radius=%q start=%q end=%q)", i, a.Radius, a.StartRadius, a.EndRadius)
+	}
+	if hasConst {
+		r, err := lengthClosure(part, a.Radius, "fillet: radius")
+		return feature.FilletEdgeSet{Radius: r}, err
+	}
+	r0, err := lengthClosure(part, a.StartRadius, "fillet: startRadius")
+	if err != nil {
+		return feature.FilletEdgeSet{}, err
+	}
+	r1, err := lengthClosure(part, a.EndRadius, "fillet: endRadius")
+	return feature.FilletEdgeSet{StartRadius: r0, EndRadius: r1}, err
 }
 
 func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -21,13 +22,34 @@ import (
 // (rolling-ball fillets), so once inputs resolve these features report
 // [ErrDeferred] (→ health.Warning) and pass the body through unchanged.
 
-// FilletDefinition rounds selected edges to a radius.
+// FilletEdgeSet is one edge set of a fillet definition (the reference's
+// FilletConstantRadiusEdgeSet / FilletVariableRadiusEdgeSet): a constant Radius over the
+// whole set, or — when Radius is nil — a variable StartRadius→EndRadius over a single edge
+// (radius runs linearly from the edge's start vertex to its end vertex).
+type FilletEdgeSet struct {
+	EdgeKeys    [][]byte
+	Radius      func() float64
+	StartRadius func() float64
+	EndRadius   func() float64
+}
+
+// variable reports whether the set carries a start→end radius instead of a constant one.
+func (s FilletEdgeSet) variable() bool { return s.Radius == nil }
+
+// FilletDefinition rounds selected edges. EdgeKeys+Radius is the original single
+// constant-radius form; EdgeSets (when non-empty) takes precedence and carries any mix of
+// constant and variable sets (#323).
 type FilletDefinition struct {
 	EdgeKeys [][]byte
 	Radius   func() float64
+	EdgeSets []FilletEdgeSet
 }
 
-// FilletFeature is a constant-radius edge fillet.
+// FilletType reports the definition's discriminator: always an edge fillet for now (the
+// reference's face and full-round fillets are follow-ups tracked on #323).
+func (d *FilletDefinition) FilletType() types.FilletType { return types.EdgeFillet }
+
+// FilletFeature is an edge fillet over one or more constant/variable radius edge sets.
 type FilletFeature struct{ def *FilletDefinition }
 
 // Definition returns the fillet recipe.
@@ -37,8 +59,11 @@ func (f *FilletFeature) Definition() *FilletDefinition { return f.def }
 func (f *FilletFeature) Kind() string { return "fillet" }
 
 // Recompute rounds the picked convex edges on the running body with a real rolling-ball
-// blend (cylinder faces). See fillet.go.
+// blend (cylinder faces; planar ruling strips for variable sets). See fillet.go.
 func (f *FilletFeature) Recompute(in Input) (Output, error) {
+	if len(f.def.EdgeSets) > 0 {
+		return filletBodySets(in, f.def.EdgeSets, "fillet")
+	}
 	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), "fillet")
 }
 
@@ -203,6 +228,12 @@ func NewDressUpFeatures(engine *PartFeatures) *DressUpFeatures { return &DressUp
 // AddFillet rounds the given edges (by reference key) to radius.
 func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *PartFeature {
 	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius}})
+}
+
+// AddFilletSets rounds any mix of constant and variable radius edge sets in one feature
+// (the reference's FilletDefinition edge-set model, #323).
+func (c *DressUpFeatures) AddFilletSets(sets []FilletEdgeSet) *PartFeature {
+	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeSets: sets}})
 }
 
 // AddChamfer bevels the given edges by distance, blending three-edge corners flat (the

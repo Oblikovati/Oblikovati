@@ -644,3 +644,52 @@ func centeredRect(sk *sketch.Sketch, half float64) {
 	sk.Lines().Add(c2, c3)
 	sk.Lines().Add(c3, c0)
 }
+
+// TestFilletEdgeSetsSurviveReopen: a mixed constant + variable edge-set fillet
+// (#323) reopens with its sets intact — same health, same volume.
+func TestFilletEdgeSetsSurviveReopen(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	rectangle(sk, 4, 3)
+	feature.NewExtrudeFeatures(def.Features()).
+		AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+	def.Recompute()
+
+	var vertical [][]byte
+	for _, e := range def.SurfaceBodies().All()[0].Edges() {
+		if a, b := e.StartVertex().Point(), e.EndVertex().Point(); a.X == b.X && a.Y == b.Y {
+			vertical = append(vertical, e.ReferenceKey())
+		}
+	}
+	if len(vertical) < 2 {
+		t.Fatalf("found %d vertical edges, want ≥2", len(vertical))
+	}
+	pf := feature.NewDressUpFeatures(def.Features()).AddFilletSets([]feature.FilletEdgeSet{
+		{EdgeKeys: [][]byte{vertical[0]}, Radius: func() float64 { return 0.4 }},
+		{EdgeKeys: [][]byte{vertical[1]}, StartRadius: func() float64 { return 0.2 }, EndRadius: func() float64 { return 0.7 }},
+	})
+	def.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("edge-set fillet before save = %v, want OK", pf.Health())
+	}
+	before := ops.BodyGeometryProperties(def.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+
+	reopened := reopenThroughStore(t, d)
+	got, ok := featureByKind(reopened.Features(), "fillet")
+	if !ok {
+		t.Fatal("fillet feature missing after reopen")
+	}
+	if !got.Health().OK() {
+		t.Fatalf("edge-set fillet after reopen = %v, want OK", got.Health())
+	}
+	rdef := got.Definition().(*feature.FilletFeature).Definition()
+	if len(rdef.EdgeSets) != 2 || rdef.EdgeSets[1].Radius != nil || rdef.EdgeSets[1].EndRadius() != 0.7 {
+		t.Errorf("restored edge sets = %d sets, want the constant+variable pair back", len(rdef.EdgeSets))
+	}
+	after := ops.BodyGeometryProperties(reopened.SurfaceBodies().All()[0], ops.DefaultQuality()).Volume
+	if stdmath.Abs(after-before) > 1e-9 {
+		t.Errorf("reopened fillet volume = %g, want %g", after, before)
+	}
+}

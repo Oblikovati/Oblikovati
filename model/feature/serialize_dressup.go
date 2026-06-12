@@ -27,10 +27,54 @@ func draftPull(p []float64) math.Vector3 {
 // picked edges as reference keys plus the scalar value. FlatCorners is chamfer-only and a
 // pointer so an absent value (older recipes, or a fillet) is distinguishable from an
 // explicit false; absent restores as the flat-corner default (see chamferFlatCornersOr).
+// Sets is fillet-only: the edge-set form (#323) — when present it carries the whole recipe
+// and Edges/Value stay empty.
 type EdgeDressData struct {
+	Edges       []string        `yaml:"edges,omitempty"`
+	Value       float64         `yaml:"value,omitempty"`
+	FlatCorners *bool           `yaml:"flatCorners,omitempty"`
+	Sets        []FilletSetData `yaml:"sets,omitempty"`
+}
+
+// FilletSetData is one serialized fillet edge set: constant (Radius) or variable
+// (StartRadius/EndRadius over one edge).
+type FilletSetData struct {
 	Edges       []string `yaml:"edges"`
-	Value       float64  `yaml:"value"`
-	FlatCorners *bool    `yaml:"flatCorners,omitempty"`
+	Radius      float64  `yaml:"radius,omitempty"`
+	StartRadius float64  `yaml:"startRadius,omitempty"`
+	EndRadius   float64  `yaml:"endRadius,omitempty"`
+}
+
+// serializeFilletSets encodes a fillet's edge sets (nil for the legacy single-set form).
+func serializeFilletSets(sets []FilletEdgeSet) []FilletSetData {
+	out := make([]FilletSetData, len(sets))
+	for i, s := range sets {
+		out[i] = FilletSetData{Edges: encodeKeys(s.EdgeKeys)}
+		if s.variable() {
+			out[i].StartRadius, out[i].EndRadius = evalFloat(s.StartRadius), evalFloat(s.EndRadius)
+			continue
+		}
+		out[i].Radius = evalFloat(s.Radius)
+	}
+	return out
+}
+
+// restoreFilletSets decodes the edge-set form back into definition sets.
+func restoreFilletSets(sets []FilletSetData) ([]FilletEdgeSet, error) {
+	out := make([]FilletEdgeSet, len(sets))
+	for i, s := range sets {
+		keys, err := decodeKeys(s.Edges)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = FilletEdgeSet{EdgeKeys: keys}
+		if s.Radius > 0 {
+			out[i].Radius = constFloat(s.Radius)
+			continue
+		}
+		out[i].StartRadius, out[i].EndRadius = constFloat(s.StartRadius), constFloat(s.EndRadius)
+	}
+	return out, nil
 }
 
 // FaceDressData is a face-based dress-up (shell thickness / draft angle): the picked

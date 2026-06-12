@@ -102,6 +102,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		}
 		fd.Extrude = ed
 	case *FilletFeature:
+		if len(f.def.EdgeSets) > 0 {
+			fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(f.def.EdgeSets)}
+			break
+		}
 		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius)}
 	case *ChamferFeature:
 		flat := f.def.FlatCorners
@@ -272,6 +276,13 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 	case "extrude":
 		return requireExtrude(fs, fd.Extrude, sk, work)
 	case "fillet":
+		if fd.Fillet != nil && len(fd.Fillet.Sets) > 0 {
+			sets, err := restoreFilletSets(fd.Fillet.Sets)
+			if err != nil {
+				return nil, err
+			}
+			return du.AddFilletSets(sets), nil
+		}
 		d, err := requireEdgeDress(fd.Fillet, "fillet")
 		if err != nil {
 			return nil, err

@@ -10,8 +10,8 @@ import (
 
 // filletResultFaces builds the faces of the filleted body: every original face transformed
 // for the fillets touching it (its A/B corners pulled back to the tangent points, its simple
-// end corners replaced by an arc), one cylinder face per filleted edge, and one sphere patch
-// per corner blend.
+// end corners replaced by an arc or chord fan), one cylinder face per constant filleted edge
+// (or a planar ruling strip per variable one), and one sphere patch per corner blend.
 func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) []filletFace {
 	abSubst, endCorner := filletMaps(fils)
 	var out []filletFace
@@ -19,12 +19,47 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 		out = append(out, transformFace(f, abSubst[f], endCorner[f]))
 	}
 	for _, ef := range fils {
+		if ef.varying {
+			out = append(out, rulingStripFaces(ef)...)
+			continue
+		}
 		out = append(out, cylinderFace(ef))
 	}
 	for _, cb := range blends {
 		out = append(out, spherePatchFace(cb))
 	}
 	return out
+}
+
+// rulingStripFaces builds a variable fillet's blend as planar trapezoids between successive
+// rulings: chord j of corner 0 pairs with chord j of corner 1 (the corners are sampled at the
+// same angular stations). Adjacent rulings of the blend meet at its cone apex on the edge
+// line, so each strip face is exactly planar; winding is fixed outward (away from the centre
+// line) per quad.
+func rulingStripFaces(ef edgeFillet) []filletFace {
+	cmid := ef.c0.cen.Midpoint(ef.c1.cen)
+	out := make([]filletFace, 0, len(ef.c0.chords)-1)
+	for j := 0; j+1 < len(ef.c0.chords); j++ {
+		quad := [4]math.Point3{ef.c0.chords[j], ef.c1.chords[j], ef.c1.chords[j+1], ef.c0.chords[j+1]}
+		out = append(out, planarQuadFace(quad, cmid))
+	}
+	return out
+}
+
+// planarQuadFace builds one planar face over the quad, wound so its normal points away from
+// the blend centre line (approximated by cmid — the wedge spans < π, so the sign is robust).
+func planarQuadFace(quad [4]math.Point3, cmid math.Point3) filletFace {
+	n := quad[0].VectorTo(quad[1]).Cross(quad[0].VectorTo(quad[3]))
+	qc := centroidPts(quad[:])
+	if n.Dot(cmid.VectorTo(qc)) < 0 {
+		quad = [4]math.Point3{quad[0], quad[3], quad[2], quad[1]}
+		n = n.Scale(-1)
+	}
+	pl, _ := geom.NewPlane(quad[0], n)
+	return filletFace{surface: pl, loops: []filletLoop{{
+		pts:    quad[:],
+		curves: make([]geom.Curve3, 4),
+	}}}
 }
 
 // filletMaps indexes, per face: the corner-vertex → tangent-point pullbacks (where the face
@@ -79,9 +114,7 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 			c := ends[v.ID()]
 			tIn := c.tOf(otherFace(uses[(i-1+n)%n].Edge(), f))
 			tOut := c.tOf(otherFace(u.Edge(), f))
-			arc, _ := geom.Arc3dByThreePoints(tIn, c.mid, tOut)
-			fl.add(tIn, arc)
-			fl.add(tOut, nil)
+			addCornerRound(&fl, c, tIn, tOut)
 		case subs != nil && hasSubst(subs, v):
 			fl.add(subs[v.ID()], nil)
 		default:
@@ -89,6 +122,33 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 		}
 	}
 	return fl
+}
+
+// addCornerRound expands a simple end corner into its rounded boundary: one true arc for a
+// constant fillet, or the chord fan (shared with the ruling strips) for a variable one.
+func addCornerRound(fl *filletLoop, c corner, tIn, tOut math.Point3) {
+	if len(c.chords) == 0 {
+		arc, _ := geom.Arc3dByThreePoints(tIn, c.mid, tOut)
+		fl.add(tIn, arc)
+		fl.add(tOut, nil)
+		return
+	}
+	for _, p := range orientedChords(c.chords, tIn) {
+		fl.add(p, nil)
+	}
+}
+
+// orientedChords returns the corner's chord samples starting from tIn (the chords run ta→tb;
+// a loop entering from the b side walks them reversed).
+func orientedChords(chords []math.Point3, tIn math.Point3) []math.Point3 {
+	if chords[0].DistanceTo(tIn) < 1e-9 {
+		return chords
+	}
+	out := make([]math.Point3, len(chords))
+	for i, p := range chords {
+		out[len(chords)-1-i] = p
+	}
+	return out
 }
 
 func hasCorner(ends map[uint64]corner, v *topo.Vertex) bool { _, ok := ends[v.ID()]; return ok }
