@@ -36,6 +36,7 @@ type FeatureData struct {
 	Emboss     *EmbossData     `yaml:"emboss,omitempty"`
 	Combine    *CombineData    `yaml:"combine,omitempty"`
 	SplitSolid *SplitSolidData `yaml:"splitSolid,omitempty"`
+	DirectEdit *DirectEditData `yaml:"directEdit,omitempty"`
 
 	RectPattern   *RectPatternData         `yaml:"rectangularPattern,omitempty"`
 	CircPattern   *CircPatternData         `yaml:"circularPattern,omitempty"`
@@ -233,6 +234,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Finish = &FinishData{Faces: encodeKeys(f.def.FaceKeys), Spec: f.def.Spec}
 	case *ImportedBodyFeature:
 		fd.Import = serializeImportedBody(f)
+	case *DirectEditFeature:
+		fd.DirectEdit = serializeDirectEdit(f.def)
 	case *MoveFaceFeature:
 		fd.FaceEdit = serializeMoveFace(f)
 	case *FaceOffsetFeature:
@@ -327,6 +330,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreBoss(fs, fd.Boss)
 	case "combine":
 		return restoreCombine(fs, fd.Combine)
+	case "directEdit":
+		return restoreDirectEdit(fs, fd.DirectEdit)
 	case "rectangular-pattern":
 		return restoreRectPattern(fs, fd.RectPattern, restored)
 	case "circular-pattern":

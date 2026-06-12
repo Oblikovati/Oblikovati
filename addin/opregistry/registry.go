@@ -117,6 +117,7 @@ func Default() *Registry {
 		combineDescriptor(),
 		thickenDescriptor(),
 		trimDescriptor(),
+		directEditDescriptor(),
 		moveFaceDescriptor(),
 		faceOffsetDescriptor(),
 		deleteFaceDescriptor(),
