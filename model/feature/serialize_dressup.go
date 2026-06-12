@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 )
 
@@ -85,11 +86,16 @@ type FaceDressData struct {
 	Pull  []float64 `yaml:"pull,omitempty"` // draft pull direction (dx,dy,dz); absent ⇒ +Z
 }
 
-// ThreadData tags a single cylindrical face (reference key) with a thread designation.
+// ThreadData tags a single cylindrical face (reference key) with a thread designation, plus
+// the #325 parity fields: the tolerance class, the tapered (pipe) flag, and which thread
+// diameter the modeled face represents (wire spelling; absent = major).
 type ThreadData struct {
-	Face        string `yaml:"face"`
-	Designation string `yaml:"designation"`
-	Cut         bool   `yaml:"cut,omitempty"`
+	Face          string `yaml:"face"`
+	Designation   string `yaml:"designation"`
+	Cut           bool   `yaml:"cut,omitempty"`
+	Class         string `yaml:"class,omitempty"`
+	Tapered       bool   `yaml:"tapered,omitempty"`
+	ModelDiameter string `yaml:"modelDiameter,omitempty"`
 }
 
 // dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups.
@@ -171,4 +177,25 @@ func chamferFlatCornersOr(p *bool) bool {
 		return true
 	}
 	return *p
+}
+
+// threadModelDiameterName encodes a thread's model-diameter choice as its wire spelling
+// (empty for the zero value, so older recipes stay byte-identical).
+func threadModelDiameterName(md types.ModelDiameterFromThread) string {
+	if md == 0 {
+		return ""
+	}
+	return md.String()
+}
+
+// threadModelDiameterOf decodes the wire spelling back (absent = zero value, meaning major).
+func threadModelDiameterOf(s string) (types.ModelDiameterFromThread, error) {
+	if s == "" {
+		return 0, nil
+	}
+	md, ok := types.ParseModelDiameterFromThread(s)
+	if !ok {
+		return 0, fmt.Errorf("thread: unknown modelDiameter %q (want major/minor/pitch/tapDrill)", s)
+	}
+	return md, nil
 }

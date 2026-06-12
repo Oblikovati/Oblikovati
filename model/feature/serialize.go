@@ -116,7 +116,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		p := f.def.PullDir
 		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle), Pull: []float64{p.X, p.Y, p.Z}}
 	case *ThreadFeature:
-		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut}
+		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut,
+			Class: f.def.Class, Tapered: f.def.Tapered, ModelDiameter: threadModelDiameterName(f.def.ModelDiameter)}
 	case *HoleFeature:
 		h, err := serializeHole(f.def)
 		if err != nil {
@@ -314,7 +315,12 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		return du.AddThread(key, fd.Thread.Designation, fd.Thread.Cut), nil
+		md, err := threadModelDiameterOf(fd.Thread.ModelDiameter)
+		if err != nil {
+			return nil, err
+		}
+		return du.AddThreadDef(&ThreadDefinition{FaceKey: key, Designation: fd.Thread.Designation,
+			Cut: fd.Thread.Cut, Class: fd.Thread.Class, Tapered: fd.Thread.Tapered, ModelDiameter: md}), nil
 	case "hole":
 		return restoreHole(fs, fd.Hole)
 	case "boss":

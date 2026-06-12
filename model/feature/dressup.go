@@ -132,10 +132,17 @@ func (d *FaceDraftFeature) Recompute(in Input) (Output, error) {
 
 // ThreadDefinition applies thread data to a cylindrical face. Cut=false is a cosmetic thread
 // (data + display, solid unchanged); Cut=true models a real thread (a helical groove cut).
+// Class, Tapered, and ModelDiameter are the #325 parity fields: the tolerance class recorded
+// on the spec, the pipe-thread flag (the reference's TaperedThreadInfo split — data-only, a
+// cut tapered thread needs a conical face and errors), and which thread diameter the modeled
+// cylindrical face represents (zero value = major, the common case).
 type ThreadDefinition struct {
-	FaceKey     []byte
-	Designation string
-	Cut         bool
+	FaceKey       []byte
+	Designation   string
+	Cut           bool
+	Class         string
+	Tapered       bool
+	ModelDiameter types.ModelDiameterFromThread
 }
 
 // ThreadFeature tags a cylindrical face with a cosmetic thread (Inventor's ThreadFeature): it
@@ -154,11 +161,20 @@ func (t *ThreadFeature) Spec() *ThreadSpec { return t.spec }
 
 // Recompute parses the designation, binds the cylindrical face, records the thread spec, and
 // passes the (unchanged) solid through. A bad designation, a lost face, or a non-cylindrical
-// face makes the feature Sick.
+// face makes the feature Sick — as does cutting a tapered (pipe) thread, which would need a
+// conical face the feature doesn't model yet.
 func (t *ThreadFeature) Recompute(in Input) (Output, error) {
 	spec, err := ParseThreadDesignation(t.def.Designation)
 	if err != nil {
 		return Output{}, err
+	}
+	spec.Class, spec.Tapered = t.def.Class, t.def.Tapered
+	spec.ModelDiameter = t.def.ModelDiameter
+	if spec.ModelDiameter == 0 {
+		spec.ModelDiameter = types.ThreadMajorDiameter
+	}
+	if t.def.Tapered && t.def.Cut {
+		return Output{}, fmt.Errorf("thread %q: a cut tapered (pipe) thread needs a conical face; model it cosmetic", t.def.Designation)
 	}
 	body, err := runningBody(in)
 	if err != nil {
@@ -274,5 +290,10 @@ func (c *DressUpFeatures) AddDraftPull(faceKeys [][]byte, pull math.Vector3, ang
 // AddThread tags a cylindrical face with thread data; cut=true models a real (cut) thread,
 // cut=false a cosmetic one.
 func (c *DressUpFeatures) AddThread(faceKey []byte, designation string, cut bool) *PartFeature {
-	return c.engine.Add(&ThreadFeature{def: &ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut}})
+	return c.AddThreadDef(&ThreadDefinition{FaceKey: faceKey, Designation: designation, Cut: cut})
+}
+
+// AddThreadDef adds a thread from a full definition (class / tapered / model diameter, #325).
+func (c *DressUpFeatures) AddThreadDef(def *ThreadDefinition) *PartFeature {
+	return c.engine.Add(&ThreadFeature{def: def})
 }

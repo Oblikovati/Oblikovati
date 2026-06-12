@@ -5,8 +5,10 @@ package opregistry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
 )
@@ -59,17 +61,23 @@ func applyBoss(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 }
 
 type threadArgs struct {
-	FaceRef     string `json:"faceRef"`
-	Designation string `json:"designation"`
-	Cut         bool   `json:"cut,omitempty"`
+	FaceRef       string `json:"faceRef"`
+	Designation   string `json:"designation"`
+	Cut           bool   `json:"cut,omitempty"`
+	Class         string `json:"class,omitempty"`
+	Tapered       bool   `json:"tapered,omitempty"`
+	ModelDiameter string `json:"modelDiameter,omitempty"`
 }
 
 const threadSchema = `{
   "type": "object",
   "properties": {
     "faceRef": {"type": "string", "description": "Reference key of the cylindrical face to thread (get_reference_keys)."},
-    "designation": {"type": "string", "description": "Thread designation, e.g. \"M8x1.25\"."},
-    "cut": {"type": "boolean", "default": false, "description": "false = cosmetic thread (display only); true = model a real cut thread (the face becomes a threaded surface)."}
+    "designation": {"type": "string", "description": "Thread designation, e.g. \"M8x1.25\" (enumerable via threads.tableQuery)."},
+    "cut": {"type": "boolean", "default": false, "description": "false = cosmetic thread (display only); true = model a real cut thread (the face becomes a threaded surface)."},
+    "class": {"type": "string", "description": "Tolerance class recorded on the spec, e.g. \"6H\" (enumerable via threads.tableQuery)."},
+    "tapered": {"type": "boolean", "default": false, "description": "Pipe-thread (tapered) data; a cut tapered thread is rejected — model it cosmetic."},
+    "modelDiameter": {"type": "string", "enum": ["major", "minor", "pitch", "tapDrill"], "description": "Which thread diameter the modeled face represents (default major)."}
   },
   "required": ["faceRef", "designation"]
 }`
@@ -90,6 +98,16 @@ func applyThread(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if in.FaceRef == "" || in.Designation == "" {
 		return nil, errors.New("thread: faceRef and designation are required")
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddThread([]byte(in.FaceRef), in.Designation, in.Cut)
+	md := types.ModelDiameterFromThread(0)
+	if in.ModelDiameter != "" {
+		var ok bool
+		if md, ok = types.ParseModelDiameterFromThread(in.ModelDiameter); !ok {
+			return nil, fmt.Errorf("thread: unknown modelDiameter %q (want major/minor/pitch/tapDrill)", in.ModelDiameter)
+		}
+	}
+	pf := feature.NewDressUpFeatures(part.Features()).AddThreadDef(&feature.ThreadDefinition{
+		FaceKey: []byte(in.FaceRef), Designation: in.Designation, Cut: in.Cut,
+		Class: in.Class, Tapered: in.Tapered, ModelDiameter: md,
+	})
 	return recomputeResult(part, pf)
 }
