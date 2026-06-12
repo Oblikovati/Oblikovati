@@ -58,3 +58,31 @@ func TestEndTransactionWithoutBeginErrors(t *testing.T) {
 		t.Fatal("expected an error ending with no open transaction")
 	}
 }
+
+// TestAbortTransactionDiscardsBatchOverWire: transaction.abort reverts the open
+// batch instead of committing it — the failed-batch escape hatch (M04-F05).
+func TestAbortTransactionDiscardsBatchOverWire(t *testing.T) {
+	r := New(opregistry.Default())
+	s := app.NewSession()
+	if _, err := s.NewPart(); err != nil {
+		t.Fatalf("NewPart: %v", err)
+	}
+
+	call(t, r, s, "transaction.begin", `{"label":"batch"}`, nil)
+	if err := s.AddNumericUserParameter("h", "3 cm"); err != nil {
+		t.Fatalf("add h: %v", err)
+	}
+
+	var st wire.UndoState
+	call(t, r, s, "transaction.abort", "{}", &st)
+	if st.CanUndo {
+		t.Fatalf("an aborted batch must record nothing, got %+v", st)
+	}
+	if err := s.AddNumericUserParameter("h", "5 cm"); err != nil {
+		t.Fatalf("re-adding h after abort must work (the batch was reverted): %v", err)
+	}
+
+	if _, err := r.Handle(s, "transaction.abort", nil); err == nil {
+		t.Fatal("expected an error aborting with no open transaction")
+	}
+}
