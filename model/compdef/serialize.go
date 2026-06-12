@@ -33,17 +33,18 @@ var _ doc.RecipeContent = (*PartComponentDefinition)(nil)
 // parameters. Sketches and features join it in later phases. The realized B-rep is
 // never stored — ApplyRecipe recomputes it.
 type partRecipe struct {
-	Units             map[string]string         `yaml:"units,omitempty"`
-	EndOfPart         *int                      `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
-	Parameters        []parameterRecipe         `yaml:"parameters,omitempty"`
-	ParameterGroups   []parameterGroupRecipe    `yaml:"parameterGroups,omitempty"` // custom group records, in creation order
-	ParameterSettings *parameterSettingsRecipe  `yaml:"parameterSettings,omitempty"`
-	DerivedTables     []derivedTableRecipe      `yaml:"derivedParameterTables,omitempty"`
-	WorkFeatures      []feature.WorkFeatureData `yaml:"workFeatures,omitempty"`
-	Sketches          []sketch.SketchData       `yaml:"sketches,omitempty"`
-	Sketches3D        []sketch.SketchData3D     `yaml:"sketches3D,omitempty"`
-	Features          []feature.FeatureData     `yaml:"features,omitempty"`
-	Materials         *material.RecipeData      `yaml:"materials,omitempty"`
+	Units             map[string]string            `yaml:"units,omitempty"`
+	EndOfPart         *int                         `yaml:"endOfPart,omitempty"` // nil ⇒ evaluate the whole program
+	Parameters        []parameterRecipe            `yaml:"parameters,omitempty"`
+	ParameterGroups   []parameterGroupRecipe       `yaml:"parameterGroups,omitempty"` // custom group records, in creation order
+	ParameterSettings *parameterSettingsRecipe     `yaml:"parameterSettings,omitempty"`
+	DerivedTables     []derivedTableRecipe         `yaml:"derivedParameterTables,omitempty"`
+	WorkFeatures      []feature.WorkFeatureData    `yaml:"workFeatures,omitempty"`
+	BlockDefinitions  []sketch.BlockDefinitionData `yaml:"blockDefinitions,omitempty"`
+	Sketches          []sketch.SketchData          `yaml:"sketches,omitempty"`
+	Sketches3D        []sketch.SketchData3D        `yaml:"sketches3D,omitempty"`
+	Features          []feature.FeatureData        `yaml:"features,omitempty"`
+	Materials         *material.RecipeData         `yaml:"materials,omitempty"`
 }
 
 // sketchIndex adapts a part's sketch collection to feature.SketchIndexer so features
@@ -169,6 +170,10 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compdef: marshal sketches: %w", err)
 	}
+	blocks, err := d.sketches.MarshalBlockDefinitions()
+	if err != nil {
+		return nil, fmt.Errorf("compdef: marshal block definitions: %w", err)
+	}
 	sketches3D, err := d.sketches3D.MarshalRecipe3D()
 	if err != nil {
 		return nil, fmt.Errorf("compdef: marshal 3D sketches: %w", err)
@@ -188,6 +193,7 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		ParameterSettings: d.parameterSettingsRecipe(),
 		DerivedTables:     d.derivedTablesRecipe(),
 		WorkFeatures:      work,
+		BlockDefinitions:  blocks,
 		Sketches:          sketches,
 		Sketches3D:        sketches3D,
 		Features:          features,
@@ -251,6 +257,10 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 	}
 	if err := feature.ApplyWork(d.work, r.WorkFeatures); err != nil {
 		return fmt.Errorf("compdef: restore work features: %w", err)
+	}
+	// Definitions restore before sketches: instances re-bind by name.
+	if err := d.sketches.ApplyBlockDefinitions(r.BlockDefinitions); err != nil {
+		return fmt.Errorf("compdef: restore block definitions: %w", err)
 	}
 	if err := d.sketches.ApplyRecipe(r.Sketches); err != nil {
 		return fmt.Errorf("compdef: restore sketches: %w", err)

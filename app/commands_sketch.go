@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// The contextual 2D Sketch tab, built from the command registry to mirror Inventor's
+// The contextual 2D Sketch tab, built from the command registry to mirror the reference UI's
 // ribbon (see architecture/mapping/inventor-ribbon-structure.md): panels Create, Modify,
 // Pattern, Constrain, Exit. Split out of commands_standard.go (which exceeded the file-size
 // limit) so the sketch ribbon lives in one place.
@@ -18,8 +18,8 @@ func sketchTabCommands() []*CommandDefinition {
 	cmds = append(cmds, sketchModifyCommands()...)
 	cmds = append(cmds, sketchPatternCommands()...)
 	cmds = append(cmds, sketchFormatCommands()...)
-	// Constrain panel (Inventor order): Dimension, Auto Dimension, then the constraint
-	// tools — there is no separate "Dimension" panel in the Inventor Sketch tab.
+	// Constrain panel (reference order): Dimension, Auto Dimension, then the constraint
+	// tools — there is no separate "Dimension" panel in the reference Sketch tab.
 	cmds = append(cmds, NewCommand("Sketch.Dimension", "Dimension", "Constrain", func(s *Session) error {
 		s.StartTool(newDimensionTool())
 		return nil
@@ -53,7 +53,7 @@ func sketchTabCommands() []*CommandDefinition {
 }
 
 // sketchToolEntry is one tool-launching command (id/label/alias/tooltip + factory).
-// variants, when present, become the entry's split-button dropdown (Inventor's variant
+// variants, when present, become the entry's split-button dropdown (the reference UI's variant
 // flyout): sibling tools reachable from the head's arrow, not their own panel buttons.
 // large marks the panel's headline tools (Line, Circle, …) that render as large
 // captioned buttons; the rest stack as small labeled rows.
@@ -97,7 +97,7 @@ func buildToolCommands(panel string, entries []sketchToolEntry) []*CommandDefini
 	return cmds
 }
 
-// sketchModifyCommands are the Sketch tab's Modify panel (Inventor order: Move, Copy,
+// sketchModifyCommands are the Sketch tab's Modify panel (reference order: Move, Copy,
 // Rotate, Scale, Trim, Extend, Split, Offset; Stretch is a follow-up). Each starts an
 // interactive tool the user feeds geometry.
 func sketchModifyCommands() []*CommandDefinition {
@@ -124,7 +124,7 @@ func sketchPatternCommands() []*CommandDefinition {
 }
 
 // createCommands are the Sketch tab's Create panel — the geometry tools (plus Fillet,
-// which Inventor places in Create, not Modify).
+// which the reference UI places in Create, not Modify).
 func createCommands() []*CommandDefinition {
 	return buildToolCommands("Create", []sketchToolEntry{
 		{id: "Sketch.Line", name: "Line", alias: "L", large: true, tip: "Line — draw a line between two points.", start: func() Tool { return NewLineTool() }},
@@ -151,11 +151,14 @@ func createCommands() []*CommandDefinition {
 		{id: "Sketch.Chamfer", name: "Chamfer", tip: "Chamfer — pick two lines to bevel their corner.", start: func() Tool { return NewSketchChamferTool(0.5) }},
 		{id: "Sketch.Text", name: "Text", tip: "Text — click an anchor, then type the text.", start: func() Tool { return NewSketchTextTool() }},
 		{id: "Sketch.Point", name: "Point", alias: "PT", tip: "Point — place sketch points.", start: func() Tool { return NewPointTool() }},
+		{id: "Sketch.CreateBlock", name: "Create Block", tip: "Create Block — select geometry, then name the reusable block.", start: func() Tool { return NewSketchCreateBlockTool() }, variants: []sketchToolEntry{
+			{id: "Sketch.PlaceBlock", name: "Place Block", tip: "Place Block — choose a block, then click its insertion point.", start: func() Tool { return NewSketchPlaceBlockTool("") }},
+		}},
 	})
 }
 
 // constrainCommands are the Sketch tab's Constrain panel — each starts an interactive
-// constraint tool the user then feeds geometry (Inventor's tool-first flow).
+// constraint tool the user then feeds geometry (the reference UI's tool-first flow).
 func constrainCommands() []*CommandDefinition {
 	cmds := make([]*CommandDefinition, len(constraintToolDefs))
 	for i, d := range constraintToolDefs {

@@ -320,6 +320,16 @@ func (s *Sketch) deleteEntity(e Entity) {
 	case *TextBox:
 		s.texts.remove(t)
 		s.deleteTextBoxAnchor(t) // the anchor record dies with its text (M06-F11)
+	case *Ellipse:
+		s.ellipses.remove(t)
+	case *EllipticalArc:
+		s.ellArcs.remove(t)
+	case *Spline:
+		s.splines.remove(t)
+	case *Point:
+		s.points.remove(t)
+	case *BlockInstance:
+		s.blocks.remove(t) // also detaches the definition back-reference (M06-F07)
 	}
 }
 
@@ -385,15 +395,21 @@ type Sketches struct {
 	items []*Sketch
 	byID  map[ID]*Sketch
 	seq   int // running counter behind the Sketch1, Sketch2, … auto-names
+	// blockDefs is the part-level block-definition registry every sketch of
+	// the part places instances from (M06-F07, #622).
+	blockDefs *BlockDefinitions
 }
 
 // NewSketches returns an empty collection.
 func NewSketches() *Sketches {
-	return &Sketches{byID: map[ID]*Sketch{}}
+	return &Sketches{byID: map[ID]*Sketch{}, blockDefs: &BlockDefinitions{}}
 }
 
+// BlockDefinitions returns the part-level block-definition registry.
+func (sc *Sketches) BlockDefinitions() *BlockDefinitions { return sc.blockDefs }
+
 // Add creates a planar sketch on plane and adds it to the collection, giving it the
-// next free auto-name (Sketch1, Sketch2, …) like Inventor.
+// next free auto-name (Sketch1, Sketch2, …) like the reference API.
 func (c *Sketches) Add(plane Plane) *Sketch {
 	return c.AddNamed(c.nextSketchName(), plane)
 }

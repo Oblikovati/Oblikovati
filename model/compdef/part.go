@@ -175,6 +175,12 @@ func (d *PartComponentDefinition) SetLengthUnit(name string) error {
 // Sketches returns the part's planar (2D) sketches.
 func (d *PartComponentDefinition) Sketches() *sketch.Sketches { return d.sketches }
 
+// SketchBlocks returns the part's block-definition registry — the reference
+// API's SketchBlocks on the component definition (M06-F07, #622).
+func (d *PartComponentDefinition) SketchBlocks() *sketch.BlockDefinitions {
+	return d.sketches.BlockDefinitions()
+}
+
 // Sketches3D returns the part's non-planar (3D) sketches.
 func (d *PartComponentDefinition) Sketches3D() *sketch.Sketches3D { return d.sketches3D }
 

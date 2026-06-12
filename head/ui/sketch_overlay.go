@@ -107,7 +107,22 @@ func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, can
 	addArcs(pick, plane, sk)
 	addEllipses(pick, plane, sk)
 	addSplines(pick, plane, sk)
+	addBlockInstances(pick, plane, sk)
 	return normal, sel, cand
+}
+
+// addBlockInstances draws every placed block instance's realized geometry —
+// the definition's curves under the placement transform, nesting included
+// (M06-F07, #622).
+func addBlockInstances(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
+	blocks := sk.Blocks()
+	for i := 0; i < blocks.InstanceCount(); i++ {
+		inst := blocks.Item(i)
+		acc, pat := pick(inst)
+		for _, poly := range inst.ExpandedPolylines() {
+			acc.patterned(plane, poly, false, pat)
+		}
+	}
 }
 
 func sketchItems(normal, sel, cand *segAccum) []renderer.DrawItem {

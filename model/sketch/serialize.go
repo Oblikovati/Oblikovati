@@ -99,6 +99,10 @@ type EntityData struct {
 	// smooth) and the active tangency handles.
 	FitMethod string             `yaml:"fitMethod,omitempty"`
 	Handles   []SplineHandleData `yaml:"handles,omitempty"`
+	// Block instance only (M06-F07, #622): the placed definition's name and
+	// the row-major 3×3 placement transform.
+	Block     string    `yaml:"block,omitempty"`
+	Transform []float64 `yaml:"transform,omitempty,flow"`
 }
 
 // SplineHandleData is one active spline tangency handle: which fit point it
@@ -155,9 +159,6 @@ func (sc *Sketches) MarshalRecipe() ([]SketchData, error) {
 }
 
 func serializeSketch(s *Sketch) (SketchData, error) {
-	if len(s.blocks.defs) > 0 || len(s.blocks.instances) > 0 {
-		return SketchData{}, fmt.Errorf("block serialization is not yet supported (%d defs, %d instances)", len(s.blocks.defs), len(s.blocks.instances))
-	}
 	sd := SketchData{
 		Name:         s.name,
 		Hidden:       !s.visible,
@@ -256,6 +257,10 @@ func serializeEntity(e Entity) (EntityData, error) {
 			ID: int(v.id), Kind: "spline", Points: pointIDsOf(v.Points), Closed: v.Closed, Fit: v.fit,
 			FitMethod: fitMethodSpelling(v.FitMethod), Handles: serializeSplineHandles(v),
 			Construction: v.construction,
+		}, nil
+	case *BlockInstance:
+		return EntityData{
+			ID: int(v.id), Kind: "blockInstance", Block: v.def.name, Transform: matrixCells(v.transform),
 		}, nil
 	case *SketchImage:
 		return EntityData{

@@ -22,3 +22,10 @@ var _ contract.Profile3D = (*Profile3D)(nil)
 // A computed region property set satisfies the public RegionProperties
 // contract (M06-F08, #623).
 var _ contract.RegionProperties = (*RegionProperties)(nil)
+
+// Block definitions and placed instances satisfy the public block contracts
+// (M06-F07, #622).
+var (
+	_ contract.SketchBlockDefinition = (*BlockDefinition)(nil)
+	_ contract.SketchBlock           = (*BlockInstance)(nil)
+)

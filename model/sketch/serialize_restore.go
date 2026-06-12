@@ -32,6 +32,7 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 	}
 	r := &sketchRestorer{
 		s:         sc.Add(plane),
+		blockDefs: sc.blockDefs,
 		pointMap:  make(map[int]*Point, len(sd.Points)),
 		entityMap: make(map[int]Entity, len(sd.Entities)),
 	}
@@ -53,6 +54,16 @@ func (r *sketchRestorer) restoreDerivedCurve(ed EntityData) (Entity, error) {
 	switch ed.Kind {
 	case "equationCurve":
 		return r.s.eqCurves.Add(ed.XExpr, ed.YExpr, ed.T0, ed.T1)
+	case "blockInstance":
+		def, ok := r.blockDefs.ByName(ed.Block)
+		if !ok {
+			return nil, fmt.Errorf("block instance references unknown definition %q", ed.Block)
+		}
+		t, err := matrixFromCells(ed.Transform)
+		if err != nil {
+			return nil, err
+		}
+		return r.s.Blocks().Insert(def, t), nil
 	case "fixedSpline":
 		return r.s.fixedSpl.Add(unflattenPoints(ed.Coords)), nil
 	case "offsetSpline":
@@ -104,6 +115,7 @@ func restoreSeq(s *Sketch, saved uint64) {
 // sketchRestorer carries the id→object maps while rebuilding one sketch.
 type sketchRestorer struct {
 	s         *Sketch
+	blockDefs *BlockDefinitions
 	pointMap  map[int]*Point
 	entityMap map[int]Entity
 }
