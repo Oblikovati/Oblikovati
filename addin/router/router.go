@@ -54,6 +54,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerUIShellHandlers()
 	r.registerTriadHandlers()
 	r.registerHelpHandlers()
+	r.registerAssemblyDeriveHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r
@@ -454,6 +455,9 @@ var mutatingMethods = map[string]bool{
 	wire.MethodWorkPlanesCreate:                 true,
 	wire.MethodWorkPlanesRedefine:               true,
 	wire.MethodWorkPointsCreate:                 true,
+	wire.MethodAssemblyDeriveCreate:             true,
+	wire.MethodAssemblyShrinkwrapCreate:         true,
+	wire.MethodAssemblyDeriveBreakLink:          true,
 	wire.MethodModelAssignMaterial:              true,
 	wire.MethodModelAssignAppearance:            true,
 	wire.MethodSketchCreate:                     true,
