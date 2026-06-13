@@ -11,3 +11,7 @@ var (
 	_ contract.AssemblyFeatures = (*AssemblyFeatures)(nil)
 	_ contract.EndOfFeatures    = (*AssemblyFeatures)(nil)
 )
+
+// The assembly definition satisfies the public contract's scalar assembly read surface
+// (#728); the occurrence tree and mutators travel over api/wire (assembly.*).
+var _ contract.AssemblyComponentDefinition = (*AssemblyComponentDefinition)(nil)
