@@ -5,8 +5,8 @@ package occurrence
 import "oblikovati.org/math"
 
 // Occurrences is the collection of component occurrences an assembly owns — the
-// reference API's ComponentOccurrences (M11-F01). It mints occurrence ids, tracks a
-// revision that advances on every structural or placement change (so the assembly's
+// reference API's ComponentOccurrences (M11-F01/F02). It mints occurrence ids, tracks
+// a revision that advances on every structural or placement change (so the assembly's
 // geometry version derives from it), and unions its members' boxes.
 type Occurrences struct {
 	items    []*Occurrence
@@ -20,16 +20,32 @@ func NewOccurrences() *Occurrences {
 	return &Occurrences{byID: map[uint64]*Occurrence{}}
 }
 
-// Add places source in the assembly under name with transform, returning the new
-// occurrence. The transform locates the component in the assembly's space; pass
-// [math.Identity4] to place it at the origin.
-func (c *Occurrences) Add(name string, source RangeBoxSource, transform math.Matrix4) *Occurrence {
+// AddByComponentDefinition places def in the assembly under name with transform,
+// returning the new occurrence. def is shared — placing the same definition twice
+// yields two occurrences that both track its edits (the flyweight). The transform
+// locates the component in the assembly's space; pass [math.Identity4] for the origin.
+func (c *Occurrences) AddByComponentDefinition(name string, def Definition, transform math.Matrix4) *Occurrence {
 	c.nextID++
-	o := &Occurrence{id: c.nextID, name: name, transform: transform, source: source, owner: c}
+	o := &Occurrence{id: c.nextID, name: name, transform: transform, definition: def, owner: c}
 	c.items = append(c.items, o)
 	c.byID[o.id] = o
 	c.bump()
 	return o
+}
+
+// Replace swaps an occurrence's definition in place — the "replace component"
+// operation: a different component at the same placement, keeping the occurrence's id,
+// name, transform, and state. Reports whether the occurrence belongs to this
+// collection.
+func (c *Occurrences) Replace(o *Occurrence, def Definition) bool {
+	// Verify identity, not just id presence: ids are per-collection, so a foreign
+	// occurrence can share an id with one of ours.
+	if c.byID[o.id] != o {
+		return false
+	}
+	o.definition = def
+	c.bump()
+	return true
 }
 
 // Count returns the number of occurrences; Item returns the i-th in placement order.
@@ -42,6 +58,18 @@ func (c *Occurrences) ByID(id uint64) (*Occurrence, bool) {
 	return o, ok
 }
 
+// byName returns the first occurrence with the given instance name, or nil. Instance
+// names are expected unique within a collection (the placement layer auto-numbers
+// them, e.g. "pin:1"/"pin:2"); path resolution relies on that.
+func (c *Occurrences) byName(name string) *Occurrence {
+	for _, o := range c.items {
+		if o.name == name {
+			return o
+		}
+	}
+	return nil
+}
+
 // All returns a snapshot of the occurrences in placement order.
 func (c *Occurrences) All() []*Occurrence {
 	out := make([]*Occurrence, len(c.items))
@@ -52,7 +80,9 @@ func (c *Occurrences) All() []*Occurrence {
 // Remove deletes an occurrence, reporting whether it was present and advancing the
 // revision when it was.
 func (c *Occurrences) Remove(o *Occurrence) bool {
-	if _, ok := c.byID[o.id]; !ok {
+	// Verify identity, not just id presence: a foreign occurrence may share an id
+	// with one of ours, and deleting on a bare id match would evict the real entry.
+	if c.byID[o.id] != o {
 		return false
 	}
 	delete(c.byID, o.id)
@@ -67,8 +97,8 @@ func (c *Occurrences) Remove(o *Occurrence) bool {
 }
 
 // RangeBox returns the axis-aligned box enclosing every unsuppressed occurrence,
-// empty when the assembly has none. Empty contributions (suppressed occurrences, or
-// a source with no geometry) are skipped — unioning the empty box would blow the
+// empty when the assembly has none. Empty contributions (suppressed occurrences, or a
+// definition with no geometry) are skipped — unioning the empty box would blow the
 // result out to infinite extents, since the empty box has ±inf corners.
 func (c *Occurrences) RangeBox() math.Box {
 	box := math.EmptyBox()
@@ -82,9 +112,9 @@ func (c *Occurrences) RangeBox() math.Box {
 	return box
 }
 
-// Revision returns a counter that advances on every structural change (add/remove)
-// and every placement/suppression change, so consumers can detect when the assembly
-// geometry changed (the basis for the assembly's ModelGeometryVersion).
+// Revision returns a counter that advances on every structural change (add/remove/
+// replace) and every placement/suppression change, so consumers can detect when the
+// assembly geometry changed (the basis for the assembly's ModelGeometryVersion).
 func (c *Occurrences) Revision() uint64 { return c.revision }
 
 // bump advances the revision after a mutation.
