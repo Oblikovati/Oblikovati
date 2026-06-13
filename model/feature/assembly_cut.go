@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package feature
+
+import (
+	"fmt"
+
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+)
+
+// AssemblyCutFeature is an assembly-machining feature: a tool body authored in the
+// assembly's space, booleaned against each running body it is applied to. It is the
+// V1 representative of the part feature triangle reused in assembly context (M11-F08,
+// #633) — like [CombineFeature] it is a thin wrapper over [ops.Boolean], but its tool
+// is fixed in assembly space rather than picked from the running bodies, because an
+// assembly feature cuts placed component geometry, not a single part's bodies.
+//
+// The assembly host applies it once per participating occurrence, threading that
+// occurrence's assembly-space bodies through Recompute, so the same tool machines
+// every participant in place without touching the shared part definitions.
+//
+// Example: a slot milled through every bracket in an assembly —
+//
+//	tool, _ := brep.SolidBlock(min, max, "asmCut")
+//	f := feature.NewAssemblyCutFeature(tool, ops.Cut)
+type AssemblyCutFeature struct {
+	tool *topo.Body
+	op   ops.PartFeatureOperation
+}
+
+// NewAssemblyCutFeature returns an assembly feature that applies op with tool. op is
+// typically [ops.Cut] (machining away material); [ops.Join] adds the tool as shared
+// stock and [ops.Intersect] keeps the common volume.
+func NewAssemblyCutFeature(tool *topo.Body, op ops.PartFeatureOperation) *AssemblyCutFeature {
+	return &AssemblyCutFeature{tool: tool, op: op}
+}
+
+// Kind implements [Feature].
+func (f *AssemblyCutFeature) Kind() string { return "assemblyCut" }
+
+// Operation reports the boolean the feature applies, satisfying [OperationalFeature].
+func (f *AssemblyCutFeature) Operation() ops.PartFeatureOperation { return f.op }
+
+// ToolBody returns the assembly-space tool, satisfying [ToolFeature].
+func (f *AssemblyCutFeature) ToolBody() *topo.Body { return f.tool }
+
+// Recompute booleans the tool against every running body, replacing each with its
+// result (an empty result — the tool consumed the whole body — drops it). A missing
+// tool is a lost-input failure the engine turns into feature health, not a panic.
+func (f *AssemblyCutFeature) Recompute(in Input) (Output, error) {
+	if f.tool == nil {
+		return Output{}, fmt.Errorf("assemblyCut: nil tool body")
+	}
+	out := make([]*topo.Body, 0, len(in.Bodies))
+	for i, target := range in.Bodies {
+		res, err := ops.Boolean(f.op, target, f.tool)
+		if err != nil {
+			return Output{}, fmt.Errorf("assemblyCut: boolean on body %d: %w", i, err)
+		}
+		if res != nil && len(res.Faces()) > 0 {
+			out = append(out, res)
+		}
+	}
+	return Output{Bodies: out}, nil
+}
