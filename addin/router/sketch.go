@@ -11,15 +11,40 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
-	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
-// createSketch adds a sketch on an origin plane of the active part and returns its
-// index (for sketch.rectangle / features.add).
+// activeSketchHost resolves the active document's content as a sketch host (a part or
+// an assembly), erroring if there is no active document or its content hosts no sketches.
+func activeSketchHost(s *app.Session) (sketchHost, error) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, modelaccess.ErrNoActiveDocument
+	}
+	host, ok := d.Content().(sketchHost)
+	if !ok {
+		return nil, fmt.Errorf("router: active document %q does not host sketches", d.DisplayName())
+	}
+	return host, nil
+}
+
+// sketchHost is the active-document content a sketch is authored on — a part or an
+// assembly. Both own a sketch collection, the parameter DAG dimensions share, display
+// units, and datum planes, so the sketch-authoring methods (create/rectangle) work
+// against either without knowing which (#739).
+type sketchHost interface {
+	Sketches() *sketch.Sketches
+	Parameters() *param.Parameters
+	Units() param.UnitsOfMeasure
+	WorkPlanes() *feature.WorkPlanes
+}
+
+// createSketch adds a sketch on an origin or work plane of the active sketch host (part
+// or assembly) and returns its index (for sketch.rectangle / features.add).
 func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	host, err := activeSketchHost(s)
 	if err != nil {
 		return nil, err
 	}
@@ -27,36 +52,36 @@ func createSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	plane, name, host, err := sketchCreatePlane(part, in)
+	plane, name, planeHost, err := sketchCreatePlane(host, in)
 	if err != nil {
 		return nil, err
 	}
-	sk := part.Sketches().Add(plane)
-	// Share the part's parameter DAG so dimension expressions can reference user
+	sk := host.Sketches().Add(plane)
+	// Share the host's parameter DAG so dimension expressions can reference user
 	// parameters (e.g. "od/2") and the dimension's own d0,d1… parameters live in
-	// the part's table — the way Inventor sketch dimensions work. Without this the
+	// the host's table — the way Inventor sketch dimensions work. Without this the
 	// sketch keeps an isolated param store and "od/2" resolves to 0, collapsing
 	// the geometry.
-	sk.SetParameters(part.Parameters())
+	sk.SetParameters(host.Parameters())
 	// On a work plane, track it so the sketch follows when the plane moves.
-	if host != nil {
-		sk.SetPlaneHost(host)
+	if planeHost != nil {
+		sk.SetPlaneHost(planeHost)
 	}
-	return json.Marshal(wire.CreateSketchResult{SketchIndex: part.Sketches().Count() - 1, Plane: name})
+	return json.Marshal(wire.CreateSketchResult{SketchIndex: host.Sketches().Count() - 1, Plane: name})
 }
 
 // sketchCreatePlane resolves the plane a new sketch starts on: a user work plane (when
 // WorkPlaneIndex is set — the way to sketch on a plane built on a feature-created face) or an
 // origin plane otherwise.
-func sketchCreatePlane(part *compdef.PartComponentDefinition, in wire.CreateSketchArgs) (sketch.Plane, string, func() sketch.Plane, error) {
+func sketchCreatePlane(host sketchHost, in wire.CreateSketchArgs) (sketch.Plane, string, func() sketch.Plane, error) {
 	if in.WorkPlaneIndex == nil {
 		plane, name, err := parsePlane(in.Plane)
 		return plane, name, nil, err // origin planes are fixed, no host to track
 	}
-	planes := part.WorkPlanes()
+	planes := host.WorkPlanes()
 	i := *in.WorkPlaneIndex
 	if i < 0 || i >= planes.Count() {
-		return sketch.Plane{}, "", nil, fmt.Errorf("sketch.create: work plane %d out of range (part has %d)", i, planes.Count())
+		return sketch.Plane{}, "", nil, fmt.Errorf("sketch.create: work plane %d out of range (have %d)", i, planes.Count())
 	}
 	wp := planes.Item(i)
 	// The host re-reads the work plane (recomputed in place) so the sketch tracks it.
@@ -65,7 +90,7 @@ func sketchCreatePlane(part *compdef.PartComponentDefinition, in wire.CreateSket
 
 // sketchRectangle adds a closed rectangle (one profile) to a sketch, ready to extrude.
 func sketchRectangle(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	host, err := activeSketchHost(s)
 	if err != nil {
 		return nil, err
 	}
@@ -73,15 +98,15 @@ func sketchRectangle(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	sk, err := sketchAtIndex(part, in.SketchIndex)
+	sk, err := sketchAtIndex(host, in.SketchIndex)
 	if err != nil {
 		return nil, err
 	}
-	w, err := part.Units().Parse(in.Width, param.Length)
+	w, err := host.Units().Parse(in.Width, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.rectangle: width %q: %w", in.Width, err)
 	}
-	h, err := part.Units().Parse(in.Height, param.Length)
+	h, err := host.Units().Parse(in.Height, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.rectangle: height %q: %w", in.Height, err)
 	}
@@ -115,10 +140,10 @@ func parsePlane(name string) (sketch.Plane, string, error) {
 	}
 }
 
-// sketchAtIndex returns the active part's sketch at i, bounds-checked.
-func sketchAtIndex(part *compdef.PartComponentDefinition, i int) (*sketch.Sketch, error) {
-	if i < 0 || i >= part.Sketches().Count() {
-		return nil, fmt.Errorf("sketch index %d out of range (part has %d sketches)", i, part.Sketches().Count())
+// sketchAtIndex returns the host's sketch at i, bounds-checked.
+func sketchAtIndex(host sketchHost, i int) (*sketch.Sketch, error) {
+	if i < 0 || i >= host.Sketches().Count() {
+		return nil, fmt.Errorf("sketch index %d out of range (have %d sketches)", i, host.Sketches().Count())
 	}
-	return part.Sketches().Item(i), nil
+	return host.Sketches().Item(i), nil
 }

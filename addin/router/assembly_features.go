@@ -31,6 +31,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesAdd] = assemblyFeaturesAdd
 	r.handlers[wire.MethodAssemblyFeaturesAddProxyCut] = assemblyFeaturesAddProxyCut
 	r.handlers[wire.MethodAssemblyFeaturesAddHole] = assemblyFeaturesAddHole
+	r.handlers[wire.MethodAssemblyFeaturesAddExtrude] = assemblyFeaturesAddExtrude
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
 	r.handlers[wire.MethodAssemblyFeaturesSetSuppressed] = assemblyFeaturesSetSuppressed
@@ -89,6 +90,35 @@ func assemblyFeaturesAddProxyCut(s *app.Session, raw json.RawMessage) (json.RawM
 	}
 	af := asm.AddFeature(feature.NewAssemblyProxyCutFeature(source, op))
 	af.RemoveParticipant(source)
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+}
+
+// assemblyFeaturesAddExtrude extrudes a closed sketch profile (authored on an assembly
+// work plane) into the participants — a profiled pocket or boss.
+func assemblyFeaturesAddExtrude(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAssemblyExtrudeArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	op, err := cutOperation(in.Operation)
+	if err != nil {
+		return nil, err
+	}
+	sk, err := sketchAtIndex(asm, in.SketchIndex)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddExtrude, err)
+	}
+	if in.Distance <= 0 {
+		return nil, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddExtrude, in.Distance)
+	}
+	distance := in.Distance
+	af := asm.AddFeature(feature.NewAssemblyExtrudeFeature(sk, in.ProfileIndex, op, func() float64 { return distance }))
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
 	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})

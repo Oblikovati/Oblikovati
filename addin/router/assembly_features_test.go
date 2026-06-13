@@ -74,6 +74,33 @@ func TestAssemblyFeaturesAddAndListOverWire(t *testing.T) {
 	}
 }
 
+// TestAssemblyExtrudeOverWire drives the assembly sketching subsystem over the wire:
+// create a sketch on the active assembly, rectangle a profile, and extrude-cut it into
+// the participant — gated against the analytic value (unit box minus a 0.5×1×0.6
+// pocket = 0.7; the database unit is the centimetre, so a 1 cm profile is 1 unit).
+func TestAssemblyExtrudeOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+
+	var sk wire.CreateSketchResult
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &sk)
+
+	var rect wire.SketchRectangleResult
+	call(t, r, s, "sketch.rectangle", fmt.Sprintf(`{"sketchIndex":%d,"width":"0.5 cm","height":"1 cm"}`, sk.SketchIndex), &rect)
+	if rect.Profiles != 1 {
+		t.Fatalf("rectangle profiles = %d, want 1", rect.Profiles)
+	}
+
+	var added wire.AssemblyFeatureResult
+	args := fmt.Sprintf(`{"sketchIndex":%d,"profileIndex":0,"distance":0.6,"operation":"difference"}`, sk.SketchIndex)
+	call(t, r, s, "assemblyFeatures.addExtrude", args, &added)
+	if added.Feature.Kind != "assemblyExtrude" {
+		t.Fatalf("feature kind = %q, want assemblyExtrude", added.Feature.Kind)
+	}
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.7) > 1e-6 {
+		t.Errorf("extrude-cut volume = %g, want 0.7 (unit box minus a 0.5×1×0.6 pocket)", got)
+	}
+}
+
 // TestAssemblyProxyCutOverWire adds a proxy-input cut whose tool is another
 // occurrence's geometry, gated against the analytic value and shown to be associative:
 // moving the source component re-resolves the cut on the next recompute.
