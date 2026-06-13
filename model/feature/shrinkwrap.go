@@ -47,6 +47,10 @@ type ShrinkwrapDefinition struct {
 	RemoveStyle   ShrinkwrapRemoveStyle
 	MinPartVolume float64 // threshold for RemoveSmallParts (units³)
 	EnvelopeStyle ShrinkwrapEnvelopeStyle
+	// PatchHoles fills each kept part's internal voids (cavities) so hollow parts
+	// become solid, before removal and enveloping. Through-holes open to the surface
+	// are unaffected (envelope replacement handles those).
+	PatchHoles bool
 }
 
 // BuildShrinkwrap flattens source's occurrence tree, drops parts per the removal
@@ -62,11 +66,25 @@ func BuildShrinkwrap(source AssemblyBodySource, def ShrinkwrapDefinition) ([]*to
 	if err != nil {
 		return nil, err
 	}
+	if def.PatchHoles {
+		world = patchHoles(world)
+	}
 	enveloped, err := applyEnvelope(keepAfterRemoval(world, def), def.EnvelopeStyle)
 	if err != nil {
 		return nil, err
 	}
 	return mergeIntoBase(enveloped), nil
+}
+
+// patchHoles fills each body's internal voids so hollow parts become solid before the
+// rest of the simplification runs.
+func patchHoles(world []*topo.Body) []*topo.Body {
+	q := ops.DefaultQuality()
+	out := make([]*topo.Body, 0, len(world))
+	for _, b := range world {
+		out = append(out, ops.FillInternalVoids(b, q))
+	}
+	return out
 }
 
 // worldBodies transforms each placed source body into assembly space, giving each a
