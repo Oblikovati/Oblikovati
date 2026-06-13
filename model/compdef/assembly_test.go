@@ -17,7 +17,7 @@ type fakeComponentSource struct{ box math.Box }
 
 func (f fakeComponentSource) RangeBox() math.Box { return f.box }
 
-var _ occurrence.RangeBoxSource = fakeComponentSource{}
+var _ occurrence.Definition = fakeComponentSource{}
 
 // unitSource is a 1×1×1 component at its own origin.
 func unitSource() fakeComponentSource {
@@ -38,8 +38,8 @@ func TestNewAssemblyIsEmptyAssemblyContent(t *testing.T) {
 func TestAssemblyRangeBoxUnionsOccurrencesAndVersionTracks(t *testing.T) {
 	a := NewAssemblyComponentDefinition()
 	v0 := a.ModelGeometryVersion()
-	a.Occurrences().Add("base", unitSource(), math.Identity4())
-	a.Occurrences().Add("offset", unitSource(), math.Translation4(math.V3(4, 0, 0)))
+	a.Place("base", unitSource(), math.Identity4())
+	a.Place("offset", unitSource(), math.Translation4(math.V3(4, 0, 0)))
 	// [0,1]³ ∪ [4,5]×[0,1]×[0,1] = [0,5]×[0,1]×[0,1].
 	box := a.RangeBox()
 	if box.Min != (math.P3(0, 0, 0)) || box.Max != (math.P3(5, 1, 1)) {
@@ -75,5 +75,63 @@ func TestAssemblyFactoryRegisteredForWorkspaceAdd(t *testing.T) {
 	}
 	if _, ok := d.Content().(*AssemblyComponentDefinition); !ok {
 		t.Errorf("factory content = %T, want *AssemblyComponentDefinition", d.Content())
+	}
+}
+
+// TestPlaceComponentSharesDefinitionAcrossPlacements is the PBI-118 acceptance at the
+// document level: two placements of one part document share its definition (the
+// flyweight), so editing the part would update both.
+func TestPlaceComponentSharesDefinitionAcrossPlacements(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	partDoc, err := AddPart(ws, "pin.opd", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	asm := NewAssemblyComponentDefinition()
+	o1, err := asm.PlaceComponent("pin:1", partDoc, math.Identity4())
+	if err != nil {
+		t.Fatalf("PlaceComponent pin:1: %v", err)
+	}
+	o2, err := asm.PlaceComponent("pin:2", partDoc, math.Translation4(math.V3(5, 0, 0)))
+	if err != nil {
+		t.Fatalf("PlaceComponent pin:2: %v", err)
+	}
+	if asm.Occurrences().Count() != 2 {
+		t.Fatalf("occurrence count = %d, want 2", asm.Occurrences().Count())
+	}
+	if o1.Definition() != o2.Definition() {
+		t.Error("two placements of one part document should share its definition (flyweight)")
+	}
+}
+
+func TestPlaceComponentRejectsNonComponentDocument(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	drawingDoc, err := ws.Add(doc.Drawing, "sheet.odd", true) // drawing content has no range box
+	if err != nil {
+		t.Fatalf("ws.Add(drawing): %v", err)
+	}
+	if _, err := NewAssemblyComponentDefinition().PlaceComponent("x", drawingDoc, math.Identity4()); err == nil {
+		t.Error("PlaceComponent of a drawing document should error (not a component definition)")
+	}
+}
+
+// TestNestedAssemblyResolvableByPath is the PBI-119 acceptance with real definitions:
+// a sub-assembly placed in a parent assembly has its nested part addressable by path.
+func TestNestedAssemblyResolvableByPath(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	pinDoc, err := AddPart(ws, "pin.opd", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	sub := NewAssemblyComponentDefinition()
+	if _, err := sub.PlaceComponent("pin:1", pinDoc, math.Identity4()); err != nil {
+		t.Fatalf("place pin in sub-assembly: %v", err)
+	}
+	top := NewAssemblyComponentDefinition()
+	top.Place("gearbox:1", sub, math.Identity4())
+
+	got, ok := top.Occurrences().Resolve(occurrence.OccurrencePath{"gearbox:1", "pin:1"})
+	if !ok || got.Name() != "pin:1" {
+		t.Errorf("Resolve([gearbox:1 pin:1]) ok=%v got=%v, want the nested pin:1", ok, got)
 	}
 }
