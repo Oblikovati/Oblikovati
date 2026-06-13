@@ -1,0 +1,161 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package router
+
+import (
+	"fmt"
+	stdmath "math"
+	"testing"
+
+	"oblikovati.org/addin/opregistry"
+	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/occurrence"
+)
+
+// assemblySessionWithBoxes makes an assembly the active document, places one unit-box
+// part per X translation, and returns the router, session, assembly, and occurrences.
+func assemblySessionWithBoxes(t *testing.T, xs ...float64) (*Router, *app.Session, *compdef.AssemblyComponentDefinition, []*occurrence.Occurrence) {
+	t.Helper()
+	s := app.NewSession()
+	d, err := compdef.AddAssembly(s.Workspace(), "asm.obk", true)
+	if err != nil {
+		t.Fatalf("AddAssembly: %v", err)
+	}
+	if err := s.Workspace().SetActiveDocument(d); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	asm := d.Content().(*compdef.AssemblyComponentDefinition)
+	occs := make([]*occurrence.Occurrence, len(xs))
+	for i, x := range xs {
+		occs[i] = asm.Place(fmt.Sprintf("box:%d", i+1), blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1)), math.Translation4(math.V3(x, 0, 0)))
+	}
+	return New(opregistry.Default()), s, asm, occs
+}
+
+// featureResultVolume sums an occurrence's machined assembly-feature result volume.
+func featureResultVolume(asm *compdef.AssemblyComponentDefinition, o *occurrence.Occurrence) float64 {
+	v := 0.0
+	for _, b := range asm.Features().Result(o) {
+		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	}
+	return v
+}
+
+// topHalfCut is the add request for a tool removing the top half (z>0.5) of unit boxes
+// across a wide X range.
+func topHalfCut() string {
+	return `{"toolMin":[-1,-1,0.5],"toolMax":[100,2,2],"operation":"difference"}`
+}
+
+// TestAssemblyFeaturesAddAndListOverWire adds a cut over the wire and checks it lists
+// with default participation, machining each participant to half volume.
+func TestAssemblyFeaturesAddAndListOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
+
+	var added wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &added)
+	if added.Feature.Kind != "assemblyCut" || len(added.Feature.Participants) != 2 {
+		t.Fatalf("added feature = %+v, want assemblyCut with 2 participants", added.Feature)
+	}
+
+	var list wire.AssemblyFeaturesResult
+	call(t, r, s, "assemblyFeatures.list", `{}`, &list)
+	if len(list.Features) != 1 || list.Features[0].ID != added.Feature.ID {
+		t.Fatalf("list = %+v, want the one added feature", list.Features)
+	}
+	for _, o := range occs {
+		if got := featureResultVolume(asm, o); stdmath.Abs(got-0.5) > 1e-6 {
+			t.Errorf("participant machined volume = %g, want 0.5", got)
+		}
+	}
+}
+
+// TestAssemblySetParticipantsOverWire narrows participation to one occurrence; the
+// dropped one is left whole.
+func TestAssemblySetParticipantsOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
+	var added wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &added)
+
+	args := fmt.Sprintf(`{"id":%d,"participants":[%d]}`, added.Feature.ID, occs[0].ID())
+	var setp wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.setParticipants", args, &setp)
+	if len(setp.Feature.Participants) != 1 || setp.Feature.Participants[0] != occs[0].ID() {
+		t.Fatalf("participants = %v, want just occurrence %d", setp.Feature.Participants, occs[0].ID())
+	}
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.5) > 1e-6 {
+		t.Errorf("kept participant volume = %g, want 0.5", got)
+	}
+	if got := featureResultVolume(asm, occs[1]); stdmath.Abs(got-1.0) > 1e-6 {
+		t.Errorf("dropped participant volume = %g, want 1.0 (untouched)", got)
+	}
+}
+
+// TestAssemblySetSuppressedOverWire suppresses then unsuppresses a feature in batch.
+func TestAssemblySetSuppressedOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+	var added wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &added)
+
+	var list wire.AssemblyFeaturesResult
+	call(t, r, s, "assemblyFeatures.setSuppressed", fmt.Sprintf(`{"ids":[%d],"suppressed":true}`, added.Feature.ID), &list)
+	if !list.Features[0].Suppressed {
+		t.Error("feature not reported suppressed")
+	}
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-1.0) > 1e-6 {
+		t.Errorf("suppressed-feature volume = %g, want 1.0 (passthrough)", got)
+	}
+
+	call(t, r, s, "assemblyFeatures.setSuppressed", fmt.Sprintf(`{"ids":[%d],"suppressed":false}`, added.Feature.ID), &list)
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.5) > 1e-6 {
+		t.Errorf("unsuppressed-feature volume = %g, want 0.5", got)
+	}
+}
+
+// TestAssemblyEndOfFeaturesOverWire rolls the program back and reads the marker.
+func TestAssemblyEndOfFeaturesOverWire(t *testing.T) {
+	r, s, _, _ := assemblySessionWithBoxes(t, 0)
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &wire.AssemblyFeatureResult{})
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &wire.AssemblyFeatureResult{})
+
+	var eof wire.EndOfFeaturesResult
+	call(t, r, s, "assembly.getEndOfFeatures", `{}`, &eof)
+	if eof.Position != -1 || eof.RolledBack {
+		t.Fatalf("initial marker = %+v, want position -1 not rolled back", eof)
+	}
+
+	var list wire.AssemblyFeaturesResult
+	call(t, r, s, "assembly.setEndOfFeatures", `{"position":1}`, &list)
+	if !list.RolledBack || list.EndOfFeatures != 1 {
+		t.Errorf("after rollback: result = %+v, want position 1 rolled back", list)
+	}
+	call(t, r, s, "assembly.getEndOfFeatures", `{}`, &eof)
+	if eof.Position != 1 || !eof.RolledBack {
+		t.Errorf("marker after rollback = %+v, want position 1 rolled back", eof)
+	}
+}
+
+// TestAssemblyFeaturesRejectsBadInput pins the error paths: a bad operation, an unknown
+// participant, and a non-assembly active document.
+func TestAssemblyFeaturesRejectsBadInput(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0)
+	if _, err := r.Handle(s, "assemblyFeatures.add", []byte(`{"toolMin":[0,0,0],"toolMax":[1,1,1],"operation":"bogus"}`)); err == nil {
+		t.Error("add with a bad operation should fail")
+	}
+	var added wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &added)
+	bad := fmt.Sprintf(`{"id":%d,"participants":[99999]}`, added.Feature.ID)
+	if _, err := r.Handle(s, "assemblyFeatures.setParticipants", []byte(bad)); err == nil {
+		t.Error("setParticipants with an unknown occurrence should fail")
+	}
+	_ = occs
+
+	rp, sp := emptyPartSession(t)
+	if _, err := rp.Handle(sp, "assemblyFeatures.list", []byte(`{}`)); err == nil {
+		t.Error("assemblyFeatures.list on a part document should fail")
+	}
+}

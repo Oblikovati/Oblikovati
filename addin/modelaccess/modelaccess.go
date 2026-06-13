@@ -30,3 +30,18 @@ func ActivePart(s *app.Session) (*compdef.PartComponentDefinition, error) {
 	}
 	return part, nil
 }
+
+// ActiveAssembly returns the active document's assembly component definition, or an
+// error if there is no active document or it is not an assembly. The assembly-feature
+// and occurrence surfaces resolve their target through this.
+func ActiveAssembly(s *app.Session) (*compdef.AssemblyComponentDefinition, error) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, ErrNoActiveDocument
+	}
+	asm, ok := d.Content().(*compdef.AssemblyComponentDefinition)
+	if !ok {
+		return nil, fmt.Errorf("modelaccess: active document %q is not an assembly", d.DisplayName())
+	}
+	return asm, nil
+}
