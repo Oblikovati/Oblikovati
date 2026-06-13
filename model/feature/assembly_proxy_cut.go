@@ -8,7 +8,6 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/occurrence"
-	"oblikovati.org/model/proxy"
 )
 
 // occurrenceBodies is a component definition that owns evaluated bodies — a part
@@ -22,9 +21,10 @@ type occurrenceBodies interface {
 // occurrence-context proxy of placed geometry, not as a definition-space native fixed
 // at construction (M11-F08 proxy inputs, #734). Its source is another occurrence in the
 // assembly; at every recompute it resolves that occurrence's current bodies into
-// assembly space through the proxy context ([proxy.NewContext]) and booleans them
-// against each participant body — so the cut is associative: move or edit the source
-// component and the machining follows.
+// assembly space through the occurrence context — its placement transform, the same
+// definition→assembly view [proxy.NewContext] exposes — and booleans them against each
+// participant body, so the cut is associative: move or edit the source component and the
+// machining follows.
 //
 // This realizes the issue's "proxy-to-profile resolution path": the input is the source
 // occurrence's geometry viewed through its assembly context, re-resolved each rebuild,
@@ -72,14 +72,15 @@ func (f *AssemblyProxyCutFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: out}, nil
 }
 
-// resolveTools views the source occurrence's bodies in assembly space through its proxy
-// context — the proxy-input resolution this feature exists to demonstrate.
+// resolveTools views the source occurrence's bodies in assembly space through its
+// occurrence context (its placement transform) — the proxy-input resolution this
+// feature exists to demonstrate, re-read each call so the tool tracks the source.
 func (f *AssemblyProxyCutFeature) resolveTools() ([]*topo.Body, error) {
 	def, ok := f.source.Definition().(occurrenceBodies)
 	if !ok {
 		return nil, fmt.Errorf("assemblyProxyCut: source occurrence %q has no bodies to proxy", f.source.Name())
 	}
-	world := proxy.NewContext(f.source).Transform()
+	world := f.source.Transform()
 	var tools []*topo.Body
 	for i, b := range def.SurfaceBodies().All() {
 		t, err := ops.TransformBody(b, world, proxyToolLineage(i))
