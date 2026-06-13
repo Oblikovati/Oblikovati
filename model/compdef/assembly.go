@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/param"
 )
@@ -31,6 +32,7 @@ type AssemblyComponentDefinition struct {
 	occurrences *occurrence.Occurrences
 	units       param.UnitsOfMeasure // document display units (length/angle/…)
 	events      *AssemblyEvents      // occurrence-lifecycle event source (M11-F07)
+	features    *AssemblyFeatures    // assembly-authored machining features (M11-F08)
 }
 
 // NewAssemblyComponentDefinition returns an empty assembly content object: no
@@ -42,6 +44,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 		occurrences: occ,
 		units:       param.DefaultUnitsOfMeasure(),
 		events:      newAssemblyEvents(),
+		features:    NewAssemblyFeatures(),
 	}
 	occ.SetListener(a.events)
 	return a
@@ -117,6 +120,28 @@ func (a *AssemblyComponentDefinition) PlaceComponent(name string, componentDoc *
 // changes raise typed events; delete and suppress are also vetoable in the Before
 // phase via [AssemblyComponentDefinition.DeleteOccurrence] and SetOccurrenceSuppressed.
 func (a *AssemblyComponentDefinition) Events() *AssemblyEvents { return a.events }
+
+// Features returns the assembly's machining-feature program — the features authored in
+// the assembly that cut/modify placed component geometry in place (M11-F08). Add a
+// feature with [AssemblyComponentDefinition.AddFeature] so it picks up default
+// participation; evaluate the program with [AssemblyComponentDefinition.RecomputeFeatures].
+func (a *AssemblyComponentDefinition) Features() *AssemblyFeatures { return a.features }
+
+// AddFeature appends an assembly machining feature wrapping f, defaulting its
+// participation to every component currently present (the reference API's behavior:
+// components added later do not participate unless added to the feature). It returns
+// the hosted feature so the caller can adjust participation or suppression.
+func (a *AssemblyComponentDefinition) AddFeature(f feature.Feature) *AssemblyFeature {
+	return a.features.Add(f, distinctSources(a.PlacedBodies()))
+}
+
+// RecomputeFeatures evaluates the assembly feature program against the current placed
+// geometry, machining each unsuppressed feature into its participants' assembly-space
+// bodies (not the shared part definitions) up to the end-of-features marker. Read the
+// per-occurrence results with [AssemblyFeatures.Result].
+func (a *AssemblyComponentDefinition) RecomputeFeatures() {
+	a.features.Recompute(a.PlacedBodies())
+}
 
 // DeleteOccurrence removes o from the assembly, first raising a vetoable OccurrenceDelete
 // in the Before phase; on commit the removal raises OccurrenceDelete After. It returns
