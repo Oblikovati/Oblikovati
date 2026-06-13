@@ -105,6 +105,27 @@ func TestAssemblyProxyCutOverWire(t *testing.T) {
 	}
 }
 
+// TestAssemblyAddHoleOverWire drills a parametric hole through the participant and
+// checks it removed material (a faceted bore) without consuming the whole body.
+func TestAssemblyAddHoleOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+
+	var added wire.AssemblyFeatureResult
+	args := `{"center":[0.5,0.5,0],"axis":[0,0,1],"diameter":0.5,"depth":1.5}`
+	call(t, r, s, "assemblyFeatures.addHole", args, &added)
+	if added.Feature.Kind != "assemblyHole" {
+		t.Fatalf("feature kind = %q, want assemblyHole", added.Feature.Kind)
+	}
+	got := featureResultVolume(asm, occs[0])
+	if got >= 1.0 || got < 0.7 {
+		t.Errorf("holed volume = %g, want a unit box minus a thin bore (≈0.8)", got)
+	}
+
+	if _, err := r.Handle(s, "assemblyFeatures.addHole", []byte(`{"center":[0,0,0],"axis":[0,0,0],"diameter":1,"depth":1}`)); err == nil {
+		t.Error("addHole with a zero axis should fail")
+	}
+}
+
 // TestAssemblySetParticipantsOverWire narrows participation to one occurrence; the
 // dropped one is left whole.
 func TestAssemblySetParticipantsOverWire(t *testing.T) {
