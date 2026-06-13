@@ -77,25 +77,32 @@ func (r *RevolveFeature) Recompute(in Input) (Output, error) {
 	return Output{Bodies: bodies}, nil
 }
 
-// buildRevolveTool spins the profile into the solid of revolution. Behind OBK_ANALYTIC_CURVES a
-// full 360° revolve of a rectilinear profile becomes a TRUE analytic solid (cylinder walls + disk/
-// annulus caps) so thread/chamfer/fillet attach to its revolved cylindrical faces (#129); every
-// other case (partial angle, an oblique/curved profile edge, or the gate off) keeps the faceted
-// swept solid. Booleans re-facet an analytic revolve body on demand (combine → planarized).
+// buildRevolveTool spins the profile into the solid of revolution, resolving the swept
+// span from the definition. The actual revolution is the shared [buildRevolveSolid] (the
+// assembly-context revolve, #735, reuses it on an assembly-space profile).
 func (r *RevolveFeature) buildRevolveTool(prof *sketch.Profile, axis *WorkAxis) (*topo.Body, error) {
 	angle, start := revolveSpan(r.def)
-	feat := featOr(r.featName, "revolve")
+	return buildRevolveSolid(prof, r.def.Sketch.Plane(), axis, angle, start, featOr(r.featName, "revolve"))
+}
+
+// buildRevolveSolid revolves a profile (already projected onto plane) about axis over the
+// swept angle starting at start. Behind OBK_ANALYTIC_CURVES a full 360° revolve of a
+// rectilinear profile becomes a TRUE analytic solid (cylinder walls + disk/annulus caps) so
+// thread/chamfer/fillet attach to its revolved cylindrical faces (#129); every other case
+// (partial angle, an oblique/curved profile edge, or the gate off) keeps the faceted swept
+// solid. Booleans re-facet an analytic revolve body on demand (combine → planarized).
+func buildRevolveSolid(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle, start float64, feat string) (*topo.Body, error) {
 	// Analytic only for a full revolve of a STRAIGHT-edged profile: those edges revolve to exact
 	// cylinder/cone/plane faces. A profile with an arc/spline (e.g. a sphere) would have its sampled
 	// chords turn into many tiny cone facets — worse than the faceted swept solid — so it stays
 	// faceted until curved meridian edges (torus, #129 follow-up) are supported.
 	if fullRevolution(angle) && isStraightLoop(prof.OuterLoop()) {
-		mer := meridianFromProfile(prof, r.def.Sketch.Plane(), axis)
+		mer := meridianFromProfile(prof, plane, axis)
 		if body, err := brep.SolidOfRevolution(axis.Origin(), axis.Direction().AsVector(), mer, feat); err == nil && body != nil {
 			return body, nil
 		}
 	}
-	sections, closed := revolveSectionsFrom(prof, r.def.Sketch.Plane(), axis, angle, start)
+	sections, closed := revolveSectionsFrom(prof, plane, axis, angle, start)
 	return sweptSolid(sections, closed, feat)
 }
 
@@ -157,14 +164,21 @@ func (r *RevolveFeature) revolveAxis() (*WorkAxis, error) {
 	if r.def.AxisCenterline != nil {
 		return centerlineAxis(r.def.AxisCenterline, r.def.AxisCenterlineSketch)
 	}
-	cls := r.def.Sketch.Centerlines()
+	return sketchCenterlineAxis(r.def.Sketch, "revolve")
+}
+
+// sketchCenterlineAxis resolves a sketch's single centerline into a revolve axis (Inventor's
+// "revolve about the sketch centerline"). No centerline, or more than one, is ambiguous and
+// reported as feature health — shared by the part and assembly-context revolves (#735).
+func sketchCenterlineAxis(sk *sketch.Sketch, feat string) (*WorkAxis, error) {
+	cls := sk.Centerlines()
 	if len(cls) == 0 {
-		return nil, errors.New("revolve: no axis of revolution (set an axis or add a sketch centerline)")
+		return nil, fmt.Errorf("%s: no axis of revolution (set an axis or add a sketch centerline)", feat)
 	}
 	if len(cls) > 1 {
-		return nil, errors.New("revolve: ambiguous axis — the sketch has multiple centerlines; pick one")
+		return nil, fmt.Errorf("%s: ambiguous axis — the sketch has multiple centerlines; pick one", feat)
 	}
-	return centerlineAxis(cls[0], r.def.Sketch)
+	return centerlineAxis(cls[0], sk)
 }
 
 // centerlineAxis turns a centerline line on its sketch into a transient axis of revolution.

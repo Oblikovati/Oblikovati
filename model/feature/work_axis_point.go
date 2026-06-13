@@ -114,6 +114,13 @@ type WorkAxes struct {
 	byKey map[WorkRef]*WorkAxis
 }
 
+// NewDatumAxis returns a transient datum axis (origin + unit direction) not tracked in any
+// WorkGeometry collection — for feature inputs resolved from caller coordinates, such as the
+// assembly-context revolve's axis supplied over the wire (#735).
+func NewDatumAxis(origin math.Point3, dir math.UnitVector3) *WorkAxis {
+	return &WorkAxis{origin: origin, dir: dir}
+}
+
 func newWorkAxes(g *WorkGeometry) *WorkAxes {
 	return &WorkAxes{g: g, byID: map[ID]*WorkAxis{}, byKey: map[WorkRef]*WorkAxis{}}
 }

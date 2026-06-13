@@ -5,6 +5,7 @@ package router
 import (
 	"encoding/json"
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
@@ -32,6 +33,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesAddProxyCut] = assemblyFeaturesAddProxyCut
 	r.handlers[wire.MethodAssemblyFeaturesAddHole] = assemblyFeaturesAddHole
 	r.handlers[wire.MethodAssemblyFeaturesAddExtrude] = assemblyFeaturesAddExtrude
+	r.handlers[wire.MethodAssemblyFeaturesAddRevolve] = assemblyFeaturesAddRevolve
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
 	r.handlers[wire.MethodAssemblyFeaturesSetSuppressed] = assemblyFeaturesSetSuppressed
@@ -122,6 +124,50 @@ func assemblyFeaturesAddExtrude(s *app.Session, raw json.RawMessage) (json.RawMe
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
 	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+}
+
+// assemblyFeaturesAddRevolve revolves a closed sketch profile (authored on an assembly
+// work plane) about the axis line (origin + direction in assembly space) into the
+// participants — a turned groove or boss.
+func assemblyFeaturesAddRevolve(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAssemblyRevolveArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	op, err := cutOperation(in.Operation)
+	if err != nil {
+		return nil, err
+	}
+	sk, err := sketchAtIndex(asm, in.SketchIndex)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddRevolve, err)
+	}
+	axis, err := revolveAxisFromArgs(in)
+	if err != nil {
+		return nil, err
+	}
+	angle := in.Angle
+	af := asm.AddFeature(feature.NewAssemblyRevolveFeature(sk, in.ProfileIndex, axis, op, func() float64 { return angle }))
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+}
+
+// revolveAxisFromArgs builds the assembly-space revolve axis from the request's origin and
+// direction, validating that the direction is non-zero and the angle is in (0,2π].
+func revolveAxisFromArgs(in wire.AddAssemblyRevolveArgs) (*feature.WorkAxis, error) {
+	dir, err := math.NewUnitVector3(in.Axis[0], in.Axis[1], in.Axis[2])
+	if err != nil {
+		return nil, fmt.Errorf("%s: axis %v is not a direction: %w", wire.MethodAssemblyFeaturesAddRevolve, in.Axis, err)
+	}
+	if in.Angle <= 0 || in.Angle > 2*stdmath.Pi+1e-9 {
+		return nil, fmt.Errorf("%s: angle %g must be in (0, 2π]", wire.MethodAssemblyFeaturesAddRevolve, in.Angle)
+	}
+	return feature.NewDatumAxis(math.P3(in.Origin[0], in.Origin[1], in.Origin[2]), dir), nil
 }
 
 // assemblyFeaturesAddHole drills a parametric hole through the participants.
