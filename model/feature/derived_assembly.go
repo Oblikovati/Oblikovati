@@ -104,15 +104,23 @@ func (d *DerivedAssemblyComponent) BreakLink() error {
 // Recompute appends the derived base body (or, after a broken link, the frozen bodies)
 // to the running state.
 func (d *DerivedAssemblyComponent) Recompute(in Input) (Output, error) {
+	return recomputeLinked(in, d.linked, d.frozen, d.derive)
+}
+
+// recomputeLinked is the shared associative-or-frozen recompute for the derive-family
+// features (derived-assembly, shrinkwrap): while linked it rebuilds from source via
+// build and appends the result; once the link is broken it appends the frozen bodies
+// captured at BreakLink instead. Keeps the two features' update semantics identical.
+func recomputeLinked(in Input, linked bool, frozen []*topo.Body, build func() ([]*topo.Body, error)) (Output, error) {
 	out := append([]*topo.Body(nil), in.Bodies...)
-	if !d.linked {
-		return Output{Bodies: append(out, d.frozen...)}, nil
+	if !linked {
+		return Output{Bodies: append(out, frozen...)}, nil
 	}
-	derived, err := d.derive()
+	built, err := build()
 	if err != nil {
 		return Output{}, err
 	}
-	return Output{Bodies: append(out, derived...)}, nil
+	return Output{Bodies: append(out, built...)}, nil
 }
 
 // derive flattens, transforms, and combines the source's placed bodies per style into
