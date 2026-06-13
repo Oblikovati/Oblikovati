@@ -6,8 +6,23 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
+
+// cavityBlock builds a 4³ block with a fully enclosed 2³ cavity (volume 56) by cutting
+// an inner block from a bigger one — a hollow part for the hole-patch gate.
+func cavityBlock(t *testing.T) *topo.Body {
+	t.Helper()
+	big := solidBlock(t, math.P3(0, 0, 0), math.P3(4, 4, 4))
+	small := solidBlock(t, math.P3(1, 1, 1), math.P3(3, 3, 3))
+	res, err := ops.Boolean(ops.Cut, big, small)
+	if err != nil {
+		t.Fatalf("cavity cut: %v", err)
+	}
+	return res
+}
 
 // rotZ45 is a 45° rotation about the Z axis through the origin — used to make a block's
 // world AABB strictly larger than the block, so an envelope volume is a meaningful gate.
@@ -106,6 +121,26 @@ func TestShrinkwrapWholeEnvelope(t *testing.T) {
 	}
 	if got := volumeOf(bodies[0]); !approx(got, 4) {
 		t.Errorf("whole envelope volume = %g, want 4 (4×1×1 bounding box)", got)
+	}
+}
+
+// TestShrinkwrapPatchHolesFillsCavity gates the hole-patch through the feature: a
+// hollow 56-volume part is solidified to its 64-volume outer block when PatchHoles is
+// set (the internal void is dropped before merge).
+func TestShrinkwrapPatchHolesFillsCavity(t *testing.T) {
+	cav := cavityBlock(t)
+	if v := volumeOf(cav); v < 55.9 || v > 56.1 {
+		t.Fatalf("cavity fixture volume = %g, want ~56", v)
+	}
+	src := &fakeAssemblySource{placed: []PlacedBody{
+		{Body: cav, Transform: math.Identity4(), Source: occFor("hollow:1")},
+	}}
+	bodies, err := BuildShrinkwrap(src, ShrinkwrapDefinition{PatchHoles: true})
+	if err != nil {
+		t.Fatalf("BuildShrinkwrap: %v", err)
+	}
+	if got := volumeOf(bodies[0]); got < 63.9 || got > 64.1 {
+		t.Errorf("patched volume = %g, want ~64 (cavity filled)", got)
 	}
 }
 

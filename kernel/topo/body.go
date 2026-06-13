@@ -113,6 +113,21 @@ func (b *Body) FindVertexByKey(key []byte) (*Vertex, bool) {
 	return nil, false
 }
 
+// BodyFromShells builds a body owning exactly the given shells, re-parenting each. It
+// rebuilds a body from a subset of another body's shells — e.g. dropping the inner
+// void shells to fill internal cavities (ops.FillInternalVoids, M11-F06 shrinkwrap).
+// The donor shells must not be reused afterward, as their owning body is rewritten.
+//
+// Example: solid := BodyFromShells(b.Lineage(), b.IsSolid(), outerShellsOf(b)...)
+func BodyFromShells(lineage Lineage, solid bool, shells ...*Shell) *Body {
+	body := &Body{id: nextID(), solid: solid, lineage: lineage}
+	for _, sh := range shells {
+		sh.body = body
+		body.shells = append(body.shells, sh)
+	}
+	return body
+}
+
 // MergeBodies combines the shells of several bodies into one (a multi-lump body),
 // re-parenting each shell. Used by a boolean Join of non-touching bodies
 // (kernel/ops). The input bodies should not be used afterward.
