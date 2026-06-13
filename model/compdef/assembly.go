@@ -153,6 +153,10 @@ func (a *AssemblyComponentDefinition) Parameters() *param.Parameters { return a.
 // planes/axes/points, expressed in assembly space — the planes a sketch is authored on.
 func (a *AssemblyComponentDefinition) WorkGeometry() *feature.WorkGeometry { return a.work }
 
+// WorkPlanes returns the assembly's datum planes (origin + user), so the shared sketch
+// surface can resolve "sketch on work plane N" the same way it does for a part.
+func (a *AssemblyComponentDefinition) WorkPlanes() *feature.WorkPlanes { return a.work.WorkPlanes() }
+
 // Sketches returns the assembly's planar sketches — the profile inputs an assembly
 // feature (e.g. an extrude) is authored from, sketched in assembly space.
 func (a *AssemblyComponentDefinition) Sketches() *sketch.Sketches { return a.sketches }
