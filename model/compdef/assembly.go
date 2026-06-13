@@ -3,12 +3,22 @@
 package compdef
 
 import (
+	"fmt"
 	"strconv"
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/param"
+)
+
+// An assembly definition is a composite component — a placeable definition that owns
+// its own occurrences — so it can nest inside a parent assembly; a part definition is
+// a plain (leaf) placeable definition. These assertions pin both, the flyweight
+// vocabulary the occurrence model places against (M11-F02).
+var (
+	_ occurrence.Composite  = (*AssemblyComponentDefinition)(nil)
+	_ occurrence.Definition = (*PartComponentDefinition)(nil)
 )
 
 // AssemblyComponentDefinition is an assembly's modeling content — the assembly
@@ -63,10 +73,37 @@ func AddAssembly(ws *doc.Workspace, fullDocumentName string, visible bool) (*doc
 func (a *AssemblyComponentDefinition) DocumentType() doc.DocumentType { return doc.Assembly }
 
 // Occurrences returns the assembly's component occurrences — the parts and
-// sub-assemblies placed in it. Placement and editing operations land in M11-F02; this
-// is the live collection the assembly's structure and range box read from.
+// sub-assemblies placed in it. This is the live collection the assembly's structure
+// and range box read from, and the one a parent assembly navigates into when this
+// assembly is itself placed (nesting). It also makes the definition a Composite.
 func (a *AssemblyComponentDefinition) Occurrences() *occurrence.Occurrences {
 	return a.occurrences
+}
+
+// Place adds an occurrence of def to the assembly under name at transform, returning
+// it — the assembly-level entry behind "place component". def is shared: place the
+// same definition twice and both occurrences track its edits (the flyweight). To
+// place an open document's component, use [PlaceComponent].
+func (a *AssemblyComponentDefinition) Place(name string, def occurrence.Definition, transform math.Matrix4) *occurrence.Occurrence {
+	return a.occurrences.AddByComponentDefinition(name, def, transform)
+}
+
+// PlaceComponent places the component held by componentDoc — an open part or assembly
+// document — into the assembly under name at transform. The document's content
+// definition is shared (the flyweight), so every placement tracks edits to that
+// component. It errors if the content is not a placeable component definition (e.g. a
+// reference stub or a drawing).
+//
+// NOTE: this links the in-memory definitions only. Recording the assembly→component
+// document reference (the reference graph) and persisting placements arrive in a
+// follow-up — see the assembly-persistence note on the package factory.
+func (a *AssemblyComponentDefinition) PlaceComponent(name string, componentDoc *doc.Document, transform math.Matrix4) (*occurrence.Occurrence, error) {
+	def, ok := componentDoc.Content().(occurrence.Definition)
+	if !ok {
+		return nil, fmt.Errorf("compdef: cannot place %q: its content %T is not a placeable component definition",
+			componentDoc.DisplayName(), componentDoc.Content())
+	}
+	return a.Place(name, def, transform), nil
 }
 
 // RangeBox returns the axis-aligned bounding box enclosing every unsuppressed
