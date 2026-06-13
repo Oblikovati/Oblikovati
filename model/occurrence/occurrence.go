@@ -45,6 +45,7 @@ type Occurrence struct {
 	suppressed bool
 	grounded   bool
 	adaptive   bool
+	substitute bool
 	definition Definition
 	owner      *Occurrences
 }
@@ -97,6 +98,12 @@ func (o *Occurrence) Adaptive() bool { return o.adaptive }
 
 // SetAdaptive marks the occurrence adaptive or rigid.
 func (o *Occurrence) SetAdaptive(adaptive bool) { o.adaptive = adaptive }
+
+// IsSubstitute reports whether this occurrence is a substitute — a simplified
+// representation that stands in for a set of detailed components (the reference API's
+// IsSubstituteOccurrence). Set by [Substitute]; the simplified geometry it references
+// is generated in M11-F06.
+func (o *Occurrence) IsSubstitute() bool { return o.substitute }
 
 // SubOccurrences returns the components nested inside this occurrence when it
 // instances an assembly (a [Composite] definition), or nil for a leaf part. They are
