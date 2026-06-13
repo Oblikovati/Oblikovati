@@ -43,6 +43,23 @@ func SubscribeAssembly(bus *event.Bus, document doc.ID, sink Sink) []event.Subsc
 			p.Suppressed = e.Suppressed
 			return relayJSON(sink, p)
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e compdef.AssemblyFeaturesRecomputed) event.Outcome {
+			return relayJSON(sink, assemblyFeaturesPayload(document, e))
+		}),
+	}
+}
+
+// assemblyFeaturesPayload renders a feature-program recompute as the wire change event,
+// mapping each feature's model health snapshot to its wire shape.
+func assemblyFeaturesPayload(document doc.ID, e compdef.AssemblyFeaturesRecomputed) wire.AssemblyFeaturesChangedEvent {
+	feats := make([]wire.AssemblyFeatureHealth, len(e.Features))
+	for i, f := range e.Features {
+		feats[i] = wire.AssemblyFeatureHealth{ID: f.ID, Suppressed: f.Suppressed, Health: f.Health}
+	}
+	return wire.AssemblyFeaturesChangedEvent{
+		Type:     wire.EventAssemblyFeaturesChanged,
+		Document: uint64(document),
+		Features: feats,
 	}
 }
 

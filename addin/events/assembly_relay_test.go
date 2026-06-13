@@ -9,16 +9,48 @@ import (
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
 )
 
 // occRecorder collects the occurrence push events the relay forwards (thread-safe;
 // occurrence events may fire from any goroutine).
 type occRecorder struct {
-	mu  sync.Mutex
-	got []wire.OccurrenceEventPayload
+	mu               sync.Mutex
+	got              []wire.OccurrenceEventPayload
+	rawFeatureEvents []wire.AssemblyFeaturesChangedEvent
+}
+
+// featureSink records only assemblyFeatures.changed pushes (the relay forwards both
+// occurrence and feature events to one sink, so it filters by type).
+func (r *occRecorder) featureSink(b []byte) {
+	var tag struct {
+		Type string `json:"type"`
+	}
+	if json.Unmarshal(b, &tag) != nil || tag.Type != wire.EventAssemblyFeaturesChanged {
+		return
+	}
+	var p wire.AssemblyFeaturesChangedEvent
+	if json.Unmarshal(b, &p) != nil {
+		return
+	}
+	r.mu.Lock()
+	r.rawFeatureEvents = append(r.rawFeatureEvents, p)
+	r.mu.Unlock()
+}
+
+// assemblyTool builds an assembly-space box-cut feature for the feature-program tests.
+func assemblyTool(t *testing.T) feature.Feature {
+	t.Helper()
+	tool, err := brep.SolidBlock(math.P3(-1, -1, 0.5), math.P3(2, 2, 2), "tool")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return feature.NewAssemblyCutFeature(tool, ops.Cut)
 }
 
 func (r *occRecorder) sink(b []byte) {
@@ -128,6 +160,35 @@ func TestSubscribeAssemblyCoalescesDrag(t *testing.T) {
 	}
 	if moved[0].Transform.Cells[3] != 50 || moved[0].Previous.Cells[3] != 0 {
 		t.Errorf("coalesced move new/prior X = %v/%v, want 50/0 (net move)", moved[0].Transform.Cells[3], moved[0].Previous.Cells[3])
+	}
+}
+
+// featuresChanged returns the recorded assemblyFeatures.changed payloads.
+func (r *occRecorder) featuresChanged() []wire.AssemblyFeaturesChangedEvent {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]wire.AssemblyFeaturesChangedEvent(nil), r.rawFeatureEvents...)
+}
+
+// TestSubscribeAssemblyRelaysFeatureProgram checks a feature-program recompute relays
+// one assemblyFeatures.changed push carrying each feature's health, tagged with the
+// document.
+func TestSubscribeAssemblyRelaysFeatureProgram(t *testing.T) {
+	asm := compdef.NewAssemblyComponentDefinition()
+	var rec occRecorder
+	subs := SubscribeAssembly(asm.Events().Bus(), doc.ID(9), rec.featureSink)
+	defer cancelAll(subs)
+
+	asm.Place("box:1", compdef.NewPartComponentDefinition(), math.Identity4())
+	af := asm.AddFeature(assemblyTool(t))
+	asm.RecomputeFeatures()
+
+	got := rec.featuresChanged()
+	if len(got) != 1 {
+		t.Fatalf("relayed %d feature-change pushes, want 1", len(got))
+	}
+	if got[0].Document != 9 || len(got[0].Features) != 1 || got[0].Features[0].ID != af.ID() {
+		t.Errorf("feature-change payload = %+v, want one feature %d on document 9", got[0], af.ID())
 	}
 }
 
