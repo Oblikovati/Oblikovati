@@ -47,6 +47,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 		features:    NewAssemblyFeatures(),
 	}
 	occ.SetListener(a.events)
+	a.features.SetBus(a.events.Bus()) // feature-program events ride the assembly's occurrence bus
 	return a
 }
 

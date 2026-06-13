@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 
+	"oblikovati.org/event"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -150,6 +151,27 @@ func TestEndOfFeaturesRollsBackTrailingFeatures(t *testing.T) {
 	asm.RecomputeFeatures()
 	if got := resultVolume(asm.Features(), occs[0]); stdmath.Abs(got-0.25) > 1e-6 {
 		t.Errorf("rolled-to-end volume = %g, want 0.25 (both cuts again)", got)
+	}
+}
+
+// TestRecomputeRaisesFeaturesEvent checks that recomputing the feature program raises
+// AssemblyFeaturesRecomputed on the assembly bus, carrying each feature's health.
+func TestRecomputeRaisesFeaturesEvent(t *testing.T) {
+	asm, _ := assemblyOfUnitBoxes(t, 0)
+	var got *AssemblyFeaturesRecomputed
+	event.Subscribe(asm.Events().Bus(), event.After, func(_ event.Context, e AssemblyFeaturesRecomputed) event.Outcome {
+		got = &e
+		return event.Continue()
+	})
+
+	af := asm.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
+	asm.RecomputeFeatures()
+
+	if got == nil || len(got.Features) != 1 || got.Features[0].ID != af.ID() {
+		t.Fatalf("recompute event = %+v, want one feature snapshot for %d", got, af.ID())
+	}
+	if got.Features[0].Suppressed || got.Features[0].Health != "" {
+		t.Errorf("feature snapshot = %+v, want unsuppressed + healthy", got.Features[0])
 	}
 }
 

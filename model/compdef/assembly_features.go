@@ -5,6 +5,7 @@ package compdef
 import (
 	"strconv"
 
+	"oblikovati.org/event"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/health"
@@ -114,6 +115,9 @@ type AssemblyFeatures struct {
 	// result holds each participant occurrence's machined assembly-space bodies after
 	// the last recompute; see assembly_features_recompute.go.
 	result map[*occurrence.Occurrence][]*topo.Body
+	// bus, when set by the assembly definition, is where the program raises
+	// AssemblyFeaturesRecomputed after each recompute (see assembly_features_events.go).
+	bus *event.Bus
 }
 
 // NewAssemblyFeatures returns an empty assembly feature program with the EOF marker at

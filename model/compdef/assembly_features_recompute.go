@@ -28,6 +28,7 @@ func (fs *AssemblyFeatures) Recompute(placed []feature.PlacedBody) {
 		fs.evaluate(fs.items[i], groups)
 	}
 	fs.result = groups
+	fs.raiseRecomputed()
 }
 
 // Result returns o's machined assembly-space bodies after the last recompute, or nil
