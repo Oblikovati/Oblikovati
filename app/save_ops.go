@@ -4,7 +4,6 @@ package app
 
 import (
 	"fmt"
-	"strings"
 
 	"oblikovati.org/model/doc"
 )
@@ -19,7 +18,7 @@ func (s *Session) SaveDocument(d *doc.Document) error {
 	if d == nil {
 		return ErrNoActiveDoc
 	}
-	if !strings.HasSuffix(d.FullFileName(), doc.PackageExtension) {
+	if !doc.HasDocumentExtension(d.FullFileName()) {
 		return ErrNeedsPath
 	}
 	if s.appOptions.Save.SaveDependents {
@@ -39,7 +38,7 @@ func (s *Session) SaveDocument(d *doc.Document) error {
 // one Save leaves the whole tree consistent (the SaveDependents policy).
 func (s *Session) saveDirtyDependents(d *doc.Document) error {
 	for _, dep := range d.AllReferencedDocuments() {
-		if !dep.Dirty() || !strings.HasSuffix(dep.FullFileName(), doc.PackageExtension) {
+		if !dep.Dirty() || !doc.HasDocumentExtension(dep.FullFileName()) {
 			continue
 		}
 		if err := s.workspace.Save(dep); err != nil {

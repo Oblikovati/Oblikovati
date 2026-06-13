@@ -13,7 +13,7 @@ import (
 // replacement for the COM design-data/template path registry — plain paths, no
 // Windows registry (architecture core/05).
 type FileLocations struct {
-	Templates  string // directory holding document templates, named "<type>.obk"
+	Templates  string // directory holding document templates, named "<type><ext>" (e.g. part.opd)
 	DesignData string // shared design data (materials, styles, …)
 }
 
@@ -121,13 +121,13 @@ func (fm *FileManager) Relativize(fullPath string) (string, bool) {
 }
 
 // TemplateFile returns the template package path for a document kind, or false if
-// no template exists for it. Templates are named "<type>.obk" in the project's
-// templates directory.
+// no template exists for it. Templates are named "<type><ext>" in the project's
+// templates directory — e.g. part.opd, assembly.oad (ADR-0034).
 func (fm *FileManager) TemplateFile(t DocumentType) (string, bool) {
 	if !t.IsValid() {
 		return "", false
 	}
-	path := filepath.Join(fm.project.Locations.Templates, t.String()+PackageExtension)
+	path := filepath.Join(fm.project.Locations.Templates, t.String()+t.Extension())
 	return path, fileExists(path)
 }
 

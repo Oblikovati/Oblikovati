@@ -296,7 +296,7 @@ func plural(n int, one, many string) string {
 func saveActive(s *app.Session) {
 	err := s.SaveActiveDocument()
 	if errors.Is(err, app.ErrNeedsPath) {
-		fileModal.openFor(dialogSaveAs)
+		armSaveAs(s)
 		return
 	}
 	if err != nil {

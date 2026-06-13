@@ -15,15 +15,15 @@ import (
 	"oblikovati.org/persistence"
 )
 
-// cmdExport opens an .obk part and writes its bodies to a mesh file (STL/OBJ/3MF) at the
+// cmdExport opens a part document and writes its bodies to a mesh file (STL/OBJ/3MF) at the
 // given resolution (low|medium|high; default medium):
 //
-//	oblikovati-cli export fixtures/bolt.obk bolt.stl high
+//	oblikovati-cli export fixtures/bolt.opd bolt.stl high
 //
 // The format is inferred from the destination extension.
 func cmdExport(args []string, out io.Writer) error {
 	if len(args) < 2 || len(args) > 3 {
-		return fmt.Errorf("export: expected <src.obk> <mesh-file> [low|medium|high], got %d arg(s)", len(args))
+		return fmt.Errorf("export: expected <src.opd> <mesh-file> [low|medium|high], got %d arg(s)", len(args))
 	}
 	src, dst := args[0], args[1]
 	format, err := formatFromExt(dst)

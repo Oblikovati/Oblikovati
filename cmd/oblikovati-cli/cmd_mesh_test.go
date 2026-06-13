@@ -45,7 +45,7 @@ func cliCubeSoup(s float64) meshio.RawMesh {
 func TestCLIImportThenExportRoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	stl := writeCLICubeSTL(t, dir, 4)
-	obk := filepath.Join(dir, "part.obk")
+	obk := filepath.Join(dir, "part.opd")
 
 	out, err := runCLI(t, "import", stl, obk)
 	if err != nil {
@@ -72,7 +72,7 @@ func TestCLIImportThenExportRoundTrip(t *testing.T) {
 }
 
 func TestCLIImportUnknownExtensionErrors(t *testing.T) {
-	_, err := runCLI(t, "import", "model.foo", filepath.Join(t.TempDir(), "p.obk"))
+	_, err := runCLI(t, "import", "model.foo", filepath.Join(t.TempDir(), "p.opd"))
 	if err == nil {
 		t.Fatalf("expected an unsupported-extension error")
 	}

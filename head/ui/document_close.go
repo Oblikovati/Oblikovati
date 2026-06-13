@@ -5,7 +5,6 @@ package ui
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"oblikovati.org/app"
 	"oblikovati.org/model/doc"
@@ -18,5 +17,5 @@ func closeDocumentNow(s *app.Session, d *doc.Document, skipSave bool) {
 }
 
 func documentNeedsSaveAs(d *doc.Document) bool {
-	return d != nil && !strings.HasSuffix(d.FullFileName(), doc.PackageExtension)
+	return d != nil && !doc.HasDocumentExtension(d.FullFileName())
 }

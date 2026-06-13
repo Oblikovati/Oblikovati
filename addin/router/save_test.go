@@ -16,13 +16,13 @@ import (
 	"oblikovati.org/persistence"
 )
 
-// storedSession is a router session whose workspace persists real .obk files
+// storedSession is a router session whose workspace persists real .opd files
 // under a temp dir — the open/save lifecycle needs a live store.
 func storedSession(t *testing.T) (*Router, *app.Session, string) {
 	t.Helper()
 	dir := t.TempDir()
 	s := app.NewSessionWithStore(persistence.NewPackageStore())
-	d, err := s.Workspace().Add(doc.Part, filepath.Join(dir, "bracket.obk"), true)
+	d, err := s.Workspace().Add(doc.Part, filepath.Join(dir, "bracket.opd"), true)
 	if err != nil {
 		t.Fatalf("add document: %v", err)
 	}
@@ -38,11 +38,11 @@ func TestSaveLifecycleOverWire(t *testing.T) {
 
 	var saved wire.SaveDocumentResult
 	call(t, r, s, "documents.save", fmt.Sprintf(`{"document":%d}`, id), &saved)
-	if saved.FullDocumentName != filepath.Join(dir, "bracket.obk") {
+	if saved.FullDocumentName != filepath.Join(dir, "bracket.opd") {
 		t.Fatalf("save = %+v, want the document's path", saved)
 	}
 
-	moved := filepath.Join(dir, "bracket-v2.obk")
+	moved := filepath.Join(dir, "bracket-v2.opd")
 	call(t, r, s, "documents.saveAs",
 		fmt.Sprintf(`{"document":%d,"newFullDocumentName":%q}`, id, moved), &saved)
 	if saved.FullDocumentName != moved || s.ActiveDocument().FullFileName() != moved {
@@ -66,13 +66,13 @@ func TestSaveCopyAsAndBatchOverWire(t *testing.T) {
 	id := uint64(s.ActiveDocument().ID())
 	source := s.ActiveDocument().FullFileName()
 
-	target := filepath.Join(dir, "export", "bracket-rev3.obk")
+	target := filepath.Join(dir, "export", "bracket-rev3.opd")
 	if _, err := r.Handle(s, "documents.saveCopyAs",
 		[]byte(fmt.Sprintf(`{"document":%d,"targetFileName":%q}`, id, target))); err == nil {
 		t.Fatal("copying into a nonexistent directory must surface the store error")
 	}
 
-	target = filepath.Join(dir, "bracket-rev3.obk")
+	target = filepath.Join(dir, "bracket-rev3.opd")
 	var saved wire.SaveDocumentResult
 	call(t, r, s, "documents.saveCopyAs",
 		fmt.Sprintf(`{"document":%d,"targetFileName":%q,"metadata":{"displayName":"Bracket rev3"}}`, id, target), &saved)
@@ -83,7 +83,7 @@ func TestSaveCopyAsAndBatchOverWire(t *testing.T) {
 	var batch wire.BatchSaveResult
 	call(t, r, s, "documents.batchSave", fmt.Sprintf(
 		`{"operation":"saveCopyAs","items":[{"document":%d,"targetFileName":%q},{"document":%d,"targetFileName":%q}]}`,
-		id, filepath.Join(dir, "a.obk"), id, source), &batch)
+		id, filepath.Join(dir, "a.opd"), id, source), &batch)
 	if batch.Saved != 1 || len(batch.Results) != 2 {
 		t.Fatalf("batch = %+v, want one success and one carried failure", batch)
 	}

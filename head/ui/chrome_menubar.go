@@ -65,7 +65,7 @@ func saveAsViaHookOrDialog(s *app.Session) {
 		applyFileAction(s, fileAction{Kind: dialogSaveAs, Path: path})
 		return
 	}
-	fileModal.openFor(dialogSaveAs)
+	armSaveAs(s)
 }
 
 // drawOpenRecentMenu lists the session's recent documents (File ▸ Open Recent);

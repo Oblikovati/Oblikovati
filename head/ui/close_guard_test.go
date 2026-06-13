@@ -13,11 +13,11 @@ import (
 // unsaved changes — the set the close prompt warns about.
 func TestDirtyDocuments(t *testing.T) {
 	s := app.NewSession()
-	a, err := compdef.AddPart(s.Workspace(), "a.obk", true)
+	a, err := compdef.AddPart(s.Workspace(), "a.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart a: %v", err)
 	}
-	b, err := compdef.AddPart(s.Workspace(), "b.obk", true)
+	b, err := compdef.AddPart(s.Workspace(), "b.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart b: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestDirtyDocuments(t *testing.T) {
 
 func TestDocumentCloseGuardRequestsPromptOnlyForDirtyDocument(t *testing.T) {
 	s := app.NewSession()
-	d, err := compdef.AddPart(s.Workspace(), "dirty.obk", true)
+	d, err := compdef.AddPart(s.Workspace(), "dirty.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart dirty: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestDocumentCloseGuardRequestsPromptOnlyForDirtyDocument(t *testing.T) {
 
 func TestDocumentCloseGuardDiscardClosesWithoutSaving(t *testing.T) {
 	s := app.NewSession()
-	d, err := compdef.AddPart(s.Workspace(), "dirty.obk", true)
+	d, err := compdef.AddPart(s.Workspace(), "dirty.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart dirty: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestDocumentCloseGuardDiscardClosesWithoutSaving(t *testing.T) {
 
 func TestDocumentCloseGuardCloseIfCleanWaitsUntilSaved(t *testing.T) {
 	s := app.NewSession()
-	d, err := compdef.AddPart(s.Workspace(), "dirty.obk", true)
+	d, err := compdef.AddPart(s.Workspace(), "dirty.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart dirty: %v", err)
 	}
@@ -97,11 +97,11 @@ func TestDocumentNeedsSaveAsForUnsavedPartName(t *testing.T) {
 	if !documentNeedsSaveAs(unsaved) {
 		t.Fatal("documentNeedsSaveAs(Part1) = false, want true")
 	}
-	savedName, err := compdef.AddPart(s.Workspace(), "saved.obk", true)
+	savedName, err := compdef.AddPart(s.Workspace(), "saved.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart saved-name: %v", err)
 	}
 	if documentNeedsSaveAs(savedName) {
-		t.Fatal("documentNeedsSaveAs(saved.obk) = true, want false")
+		t.Fatal("documentNeedsSaveAs(saved.opd) = true, want false")
 	}
 }

@@ -12,19 +12,19 @@ import (
 )
 
 // savedSession is a session over the in-memory fakeDocStore with one saved
-// part at parts/pin.obk referenced by an assembly at frame.obk.
+// part at parts/pin.opd referenced by an assembly at frame.oad.
 func savedSession(t *testing.T) (*Session, *fakeDocStore, *doc.Document, *doc.Document) {
 	t.Helper()
 	store := newFakeDocStore()
 	s := NewSessionWithStore(store)
-	part, err := s.Workspace().Add(doc.Part, "parts/pin.obk", true)
+	part, err := s.Workspace().Add(doc.Part, "parts/pin.opd", true)
 	if err != nil {
 		t.Fatalf("Add part: %v", err)
 	}
 	if err := s.Workspace().Save(part); err != nil {
 		t.Fatalf("Save part: %v", err)
 	}
-	owner, err := s.Workspace().Add(doc.Assembly, "frame.obk", true)
+	owner, err := s.Workspace().Add(doc.Assembly, "frame.oad", true)
 	if err != nil {
 		t.Fatalf("Add owner: %v", err)
 	}
@@ -101,13 +101,13 @@ func TestSavePolicyControlContract(t *testing.T) {
 func TestBatchSavePerFileOutcomes(t *testing.T) {
 	s, store, owner, part := savedSession(t)
 	q := s.NewBatchSave()
-	if err := q.AddFileToSave(part, "exports/pin-copy.obk"); err != nil {
+	if err := q.AddFileToSave(part, "exports/pin-copy.opd"); err != nil {
 		t.Fatalf("AddFileToSave: %v", err)
 	}
-	if err := q.AddFileToSave(owner, "exports/pin-copy.obk"); err == nil {
+	if err := q.AddFileToSave(owner, "exports/pin-copy.opd"); err == nil {
 		t.Fatal("a duplicate target must be rejected at queue time")
 	}
-	if err := q.AddFileToSave(owner, "parts/pin.obk"); err != nil {
+	if err := q.AddFileToSave(owner, "parts/pin.opd"); err != nil {
 		t.Fatalf("AddFileToSave owner: %v", err)
 	}
 	if q.Count() != 2 {
@@ -120,7 +120,7 @@ func TestBatchSavePerFileOutcomes(t *testing.T) {
 	if len(outcomes) != 2 || q.Count() != 0 {
 		t.Fatalf("outcomes = %d (queued %d), want 2 outcomes and a drained queue", len(outcomes), q.Count())
 	}
-	if outcomes[0].Err != nil || !store.Exists("exports/pin-copy.obk") {
+	if outcomes[0].Err != nil || !store.Exists("exports/pin-copy.opd") {
 		t.Errorf("outcome[0] = %+v, want the pin copied", outcomes[0])
 	}
 	if outcomes[1].Err == nil || !strings.Contains(outcomes[1].Err.Error(), "open in this workspace") {

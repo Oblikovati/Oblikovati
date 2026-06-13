@@ -46,7 +46,7 @@ func savePendingDocumentClose(s *app.Session) {
 		return
 	}
 	if documentNeedsSaveAs(d) {
-		fileModal.openFor(dialogSaveAs)
+		armSaveAs(s)
 		return
 	}
 	saveActive(s)

@@ -14,16 +14,16 @@ import (
 )
 
 // cmdImport creates a new part, imports a mesh file (STL/OBJ/3MF) into it as a solid (or
-// surface body when the mesh is open), and saves it as an .obk package:
+// surface body when the mesh is open), and saves it as a part package (.opd):
 //
-//	oblikovati-cli import bolt.stl fixtures/bolt.obk
+//	oblikovati-cli import bolt.stl fixtures/bolt.opd
 //
 // The format is inferred from the source extension.
 func cmdImport(args []string, out io.Writer) error {
 	if len(args) != 2 {
-		return fmt.Errorf("import: expected <mesh-file> <dst.obk>, got %d arg(s)", len(args))
+		return fmt.Errorf("import: expected <mesh-file> <dst.opd>, got %d arg(s)", len(args))
 	}
-	src, dst := args[0], withPackageExt(args[1])
+	src, dst := args[0], withDocExt(args[1], doc.Part)
 	format, err := formatFromExt(src)
 	if err != nil {
 		return fmt.Errorf("import: %w", err)

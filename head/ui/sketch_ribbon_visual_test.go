@@ -42,7 +42,7 @@ func TestInWindowSketchRibbonVisualHold(t *testing.T) {
 func sketchEnvSession(t *testing.T) *app.Session {
 	t.Helper()
 	s := app.NewSession()
-	if _, err := compdef.AddPart(s.Workspace(), "sketch-ribbon-visual.obk", true); err != nil {
+	if _, err := compdef.AddPart(s.Workspace(), "sketch-ribbon-visual.opd", true); err != nil {
 		t.Fatalf("AddPart: %v", err)
 	}
 	if err := app.RegisterStandardCommands(s); err != nil {

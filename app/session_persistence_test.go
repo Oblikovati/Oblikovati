@@ -13,7 +13,7 @@ import (
 	"oblikovati.org/persistence"
 )
 
-// storeBackedSession wires a real .obk PackageStore into a session rooted at dir, so
+// storeBackedSession wires a real .opd PackageStore into a session rooted at dir, so
 // these tests exercise the genuine save→reopen path (CONVENTIONS.md M03: persistence
 // PBIs assert a real round-trip, not a fake).
 func storeBackedSession() *app.Session {
@@ -22,7 +22,7 @@ func storeBackedSession() *app.Session {
 
 func TestSaveActiveDocumentAsThenReopen(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "bracket.obk")
+	path := filepath.Join(dir, "bracket.opd")
 
 	s := storeBackedSession()
 	if _, err := compdef.AddPart(s.Workspace(), "Part1", true); err != nil {
@@ -50,14 +50,14 @@ func TestSaveActiveDocumentNeedsPathBeforeFirstSaveAs(t *testing.T) {
 	if _, err := compdef.AddPart(s.Workspace(), "Part1", true); err != nil {
 		t.Fatalf("AddPart: %v", err)
 	}
-	// "Part1" has no .obk extension, so File ▸ Save must defer to Save As.
+	// "Part1" has no .opd extension, so File ▸ Save must defer to Save As.
 	if err := s.SaveActiveDocument(); !errors.Is(err, app.ErrNeedsPath) {
 		t.Fatalf("SaveActiveDocument() = %v, want ErrNeedsPath", err)
 	}
 }
 
 func TestSaveActiveDocumentSucceedsAfterSaveAs(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "plate.obk")
+	path := filepath.Join(t.TempDir(), "plate.opd")
 	s := storeBackedSession()
 	if _, err := compdef.AddPart(s.Workspace(), "Part1", true); err != nil {
 		t.Fatalf("AddPart: %v", err)
@@ -65,7 +65,7 @@ func TestSaveActiveDocumentSucceedsAfterSaveAs(t *testing.T) {
 	if err := s.SaveActiveDocumentAs(path); err != nil {
 		t.Fatalf("SaveActiveDocumentAs: %v", err)
 	}
-	// The document now carries a real .obk path, so a plain Save writes through.
+	// The document now carries a real .opd path, so a plain Save writes through.
 	if err := s.SaveActiveDocument(); err != nil {
 		t.Errorf("SaveActiveDocument() after Save As = %v, want nil", err)
 	}
