@@ -2,7 +2,10 @@
 
 **Status:** accepted (user decision, 2026-06-02) · **Amends:**
 [ADR-0006](ADR-0006-no-com-object-model.md) / core/05 (the on-disk format was
-specified as a ZIP package of binary streams; it is now one text file).
+specified as a ZIP package of binary streams; it is now one text file). ·
+**Amended by:** [ADR-0034](ADR-0034-per-document-type-file-extensions.md) (the
+single `.obk` extension is replaced by a per-kind extension; the YAML text-file
+format here is unchanged).
 
 ## Context
 
