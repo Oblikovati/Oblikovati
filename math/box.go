@@ -123,3 +123,19 @@ func (b Box) Corners() [8]Point3 {
 	}
 	return c
 }
+
+// Transform returns the axis-aligned box bounding this box's eight corners after the
+// affine transform m — the AABB of a placed (rotated/translated) component, used to
+// accumulate an assembly's range box from its occurrences. A rotation enlarges the
+// AABB, which is correct (the tight box of a rotated box is not axis-aligned). The
+// empty box is returned unchanged: it has no corners to place.
+func (b Box) Transform(m Matrix4) Box {
+	if b.IsEmpty() {
+		return b
+	}
+	out := EmptyBox()
+	for _, c := range b.Corners() {
+		out = out.ExtendPoint(m.TransformPoint(c))
+	}
+	return out
+}

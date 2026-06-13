@@ -69,6 +69,25 @@ func TestBoxUnionAndCorners(t *testing.T) {
 	}
 }
 
+func TestBoxTransform(t *testing.T) {
+	// Pure translation shifts both corners by the same vector.
+	moved := NewBox(P3(0, 0, 0), P3(1, 1, 1)).Transform(Translation4(V3(10, 20, 30)))
+	if moved.Min != (Point3{10, 20, 30}) || moved.Max != (Point3{11, 21, 31}) {
+		t.Errorf("translated = %v..%v, want {10 20 30}..{11 21 31}", moved.Min, moved.Max)
+	}
+	// A 90° rotation about Z maps (x,y)→(-y,x): the AABB of [0,2]×[0,1]×[0,1]
+	// grows to [-1,0]×[0,2]×[0,1] (a rotated box's tight AABB is larger).
+	rotZ := Matrix4FromCells([16]Scalar{0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1})
+	rotated := NewBox(P3(0, 0, 0), P3(2, 1, 1)).Transform(rotZ)
+	if rotated.Min != (Point3{-1, 0, 0}) || rotated.Max != (Point3{0, 2, 1}) {
+		t.Errorf("rotated = %v..%v, want {-1 0 0}..{0 2 1}", rotated.Min, rotated.Max)
+	}
+	// The empty box has no corners to place: it stays empty.
+	if got := EmptyBox().Transform(Translation4(V3(5, 5, 5))); !got.IsEmpty() {
+		t.Errorf("empty.Transform = %v..%v, want empty", got.Min, got.Max)
+	}
+}
+
 func TestBoxFarthestPoint(t *testing.T) {
 	b := NewBox(P3(-1, -2, -3), P3(4, 5, 6))
 	cases := []struct {
