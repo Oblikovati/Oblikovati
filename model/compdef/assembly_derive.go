@@ -21,25 +21,28 @@ var _ feature.AssemblyBodySource = (*AssemblyComponentDefinition)(nil)
 // what shrinkwrap will simplify (M11-F06).
 func (a *AssemblyComponentDefinition) PlacedBodies() []feature.PlacedBody {
 	var out []feature.PlacedBody
-	collectPlacedBodies(a.occurrences, math.Identity4(), &out)
+	collectPlacedBodies(a.occurrences, math.Identity4(), nil, &out)
 	return out
 }
 
 // collectPlacedBodies walks one occurrence level, composing each occurrence's transform
-// with its parent's, emitting a leaf part's bodies and recursing into sub-assemblies.
-func collectPlacedBodies(occs *occurrence.Occurrences, parent math.Matrix4, out *[]feature.PlacedBody) {
+// with its parent's and extending the instance-name path, emitting a leaf part's bodies
+// and recursing into sub-assemblies. The path disambiguates a shared flyweight reached
+// through several placements (M11-F08 nested participation).
+func collectPlacedBodies(occs *occurrence.Occurrences, parent math.Matrix4, path occurrence.OccurrencePath, out *[]feature.PlacedBody) {
 	for _, o := range occs.All() {
 		if o.Suppressed() {
 			continue
 		}
 		world := parent.Mul(o.Transform())
+		here := append(append(occurrence.OccurrencePath(nil), path...), o.Name())
 		switch def := o.Definition().(type) {
 		case bodyDefinition: // a leaf part: emit its bodies placed in the assembly
 			for _, b := range def.SurfaceBodies().All() {
-				*out = append(*out, feature.PlacedBody{Body: b, Transform: world, Source: o})
+				*out = append(*out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: here})
 			}
 		case occurrence.Composite: // a sub-assembly: recurse with the composed transform
-			collectPlacedBodies(def.Occurrences(), world, out)
+			collectPlacedBodies(def.Occurrences(), world, here, out)
 		}
 	}
 }

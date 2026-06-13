@@ -116,6 +116,54 @@ func TestAssemblySetSuppressedOverWire(t *testing.T) {
 	}
 }
 
+// pathResultVolume sums one placement's machined assembly-feature result volume.
+func pathResultVolume(asm *compdef.AssemblyComponentDefinition, path occurrence.OccurrencePath) float64 {
+	v := 0.0
+	for _, b := range asm.Features().ResultPath(path) {
+		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	}
+	return v
+}
+
+// TestAssemblySetParticipantPathsOverWire restricts a feature to one placement of a
+// sub-assembly placed twice; only that placement is machined.
+func TestAssemblySetParticipantPathsOverWire(t *testing.T) {
+	s := app.NewSession()
+	d, err := compdef.AddAssembly(s.Workspace(), "top.obk", true)
+	if err != nil {
+		t.Fatalf("AddAssembly: %v", err)
+	}
+	if err := s.Workspace().SetActiveDocument(d); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	top := d.Content().(*compdef.AssemblyComponentDefinition)
+	sub := compdef.NewAssemblyComponentDefinition()
+	sub.Place("part:1", blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1)), math.Identity4())
+	top.Place("subA:1", sub, math.Identity4())
+	top.Place("subB:1", sub, math.Translation4(math.V3(10, 0, 0)))
+	r := New(opregistry.Default())
+
+	var added wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &added)
+
+	args := fmt.Sprintf(`{"id":%d,"paths":[["subA:1","part:1"]]}`, added.Feature.ID)
+	var setp wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.setParticipantPaths", args, &setp)
+	if len(setp.Feature.ParticipantPaths) != 1 || setp.Feature.ParticipantPaths[0][0] != "subA:1" {
+		t.Fatalf("participant paths = %v, want one path through subA:1", setp.Feature.ParticipantPaths)
+	}
+	if got := pathResultVolume(top, occurrence.OccurrencePath{"subA:1", "part:1"}); stdmath.Abs(got-0.5) > 1e-6 {
+		t.Errorf("subA placement volume = %g, want 0.5 (machined)", got)
+	}
+	if got := pathResultVolume(top, occurrence.OccurrencePath{"subB:1", "part:1"}); stdmath.Abs(got-1.0) > 1e-6 {
+		t.Errorf("subB placement volume = %g, want 1.0 (excluded by path)", got)
+	}
+
+	if _, err := r.Handle(s, "assemblyFeatures.setParticipantPaths", []byte(fmt.Sprintf(`{"id":%d,"paths":[["nope:1"]]}`, added.Feature.ID))); err == nil {
+		t.Error("setParticipantPaths with an unresolvable path should fail")
+	}
+}
+
 // TestAssemblyEndOfFeaturesOverWire rolls the program back and reads the marker.
 func TestAssemblyEndOfFeaturesOverWire(t *testing.T) {
 	r, s, _, _ := assemblySessionWithBoxes(t, 0)

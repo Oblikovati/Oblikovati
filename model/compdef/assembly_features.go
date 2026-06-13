@@ -27,8 +27,12 @@ type AssemblyFeature struct {
 	feature      feature.Feature
 	participants map[*occurrence.Occurrence]bool
 	order        []*occurrence.Occurrence // first-added participant order, for determinism
-	suppress     bool
-	health       health.Health
+	// pathFilter, when non-empty, restricts machining to specific nested occurrence
+	// paths (keyed by pathKey) — disambiguating a sub-assembly placed more than once.
+	// Empty means "every path through a participating leaf occurrence" (the default).
+	pathFilter map[string]occurrence.OccurrencePath
+	suppress   bool
+	health     health.Health
 }
 
 // ID returns the feature's stable handle within its collection (unchanged by rename).
@@ -95,6 +99,49 @@ func (f *AssemblyFeature) SetParticipants(occs []*occurrence.Occurrence) {
 // Participates reports whether o is in this feature's participation set.
 func (f *AssemblyFeature) Participates(o *occurrence.Occurrence) bool { return f.participants[o] }
 
+// SetParticipantPaths restricts the feature to the given nested occurrence paths,
+// disambiguating a sub-assembly placed more than once (each placement is a distinct
+// path to the same shared leaf). Passing no paths clears the restriction, so the
+// feature again machines every path through a participating leaf occurrence (the
+// default). A path still only takes effect if its leaf occurrence is a participant.
+func (f *AssemblyFeature) SetParticipantPaths(paths []occurrence.OccurrencePath) {
+	if len(paths) == 0 {
+		f.pathFilter = nil
+		return
+	}
+	f.pathFilter = make(map[string]occurrence.OccurrencePath, len(paths))
+	for _, p := range paths {
+		f.pathFilter[pathKey(p)] = append(occurrence.OccurrencePath(nil), p...)
+	}
+}
+
+// ParticipantPaths returns the feature's path restriction, or nil when it is
+// unrestricted (machining every path through a participating leaf).
+func (f *AssemblyFeature) ParticipantPaths() []occurrence.OccurrencePath {
+	if len(f.pathFilter) == 0 {
+		return nil
+	}
+	out := make([]occurrence.OccurrencePath, 0, len(f.pathFilter))
+	for _, p := range f.pathFilter {
+		out = append(out, p)
+	}
+	return out
+}
+
+// participatesContribution reports whether the feature machines a placed contribution
+// reached through leaf at the given path key: its leaf must be a participant, and —
+// when a path restriction is set — its path must be listed.
+func (f *AssemblyFeature) participatesContribution(leaf *occurrence.Occurrence, key string) bool {
+	if !f.participants[leaf] {
+		return false
+	}
+	if len(f.pathFilter) == 0 {
+		return true
+	}
+	_, ok := f.pathFilter[key]
+	return ok
+}
+
 // Participants returns the participant occurrences in first-added order.
 func (f *AssemblyFeature) Participants() []*occurrence.Occurrence {
 	return append([]*occurrence.Occurrence(nil), f.order...)
@@ -112,9 +159,11 @@ type AssemblyFeatures struct {
 	byID   map[uint64]*AssemblyFeature
 	nextID uint64
 	eof    int // end-of-features feature index; endOfFeaturesAtEnd ⇒ full program
-	// result holds each participant occurrence's machined assembly-space bodies after
-	// the last recompute; see assembly_features_recompute.go.
-	result map[*occurrence.Occurrence][]*topo.Body
+	// result holds each placed contribution's machined assembly-space bodies after the
+	// last recompute, keyed by occurrence-path key; resultLeaf maps that key back to the
+	// leaf occurrence so Result aggregates per occurrence. See assembly_features_recompute.go.
+	result     map[string][]*topo.Body
+	resultLeaf map[string]*occurrence.Occurrence
 	// bus, when set by the assembly definition, is where the program raises
 	// AssemblyFeaturesRecomputed after each recompute (see assembly_features_events.go).
 	bus *event.Bus
