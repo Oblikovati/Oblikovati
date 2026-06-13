@@ -2,7 +2,11 @@
 
 package doc
 
-import "oblikovati.org/api/types"
+import (
+	"path/filepath"
+
+	"oblikovati.org/api/types"
+)
 
 // DocumentType discriminates the four document kinds plus an unknown sentinel. The
 // type and its stable values are defined once in the Apache-2.0 contract
@@ -32,8 +36,29 @@ const (
 	Presentation = types.DocumentPresentation
 )
 
-// PackageExtension is the on-disk file extension for every document kind. Unlike
-// COM's per-type extensions (.ipt/.iam/.idw/.ipn), the modern format is one
-// portable zip package whose manifest carries the root [DocumentType]
-// (architecture core/05).
-const PackageExtension = ".obk"
+// ProjectExtension is the on-disk extension for a design-project file (.opj). A
+// project is not a document (it has no [DocumentType]) — it is the portable
+// search-path config that resolves a document's referenced files. Defined once
+// in the contract ([types.ProjectFileExtension]); see project_file.go and
+// ADR-0034.
+const ProjectExtension = types.ProjectFileExtension
+
+// DocumentExtensions returns the four document extensions in kind order, for
+// file-dialog filters that browse documents (ADR-0034). The project extension is
+// intentionally excluded — a project is not a document.
+func DocumentExtensions() []string {
+	return []string{
+		Part.Extension(), Assembly.Extension(),
+		Drawing.Extension(), Presentation.Extension(),
+	}
+}
+
+// HasDocumentExtension reports whether name ends in one of the four document
+// extensions (.opd/.oad/.odd/.ord, any case). It is the "has this been saved to
+// a real document path yet?" gate used by the save flow — a freshly minted
+// document carries a bare display name with no extension, so it must be saved
+// via Save As before a plain Save can write it (ADR-0034). Each kind now carries
+// its own extension; the manifest's documentType stays the canonical identity.
+func HasDocumentExtension(name string) bool {
+	return types.DocumentTypeFromExtension(filepath.Ext(name)).IsValid()
+}

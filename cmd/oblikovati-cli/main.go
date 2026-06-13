@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 // Command oblikovati-cli is the headless entry point — it creates, inspects, and
-// re-saves .obk document packages without a window. It links no native code, so it
+// re-saves document packages without a window. It links no native code, so it
 // builds and runs with CGO_ENABLED=0 (architecture/ADR-0008). Its primary job today
-// is generating .obk test-case fixtures for end-to-end tests:
+// is generating document test-case fixtures for end-to-end tests, each stamped with
+// its per-kind extension (ADR-0034):
 //
-//	oblikovati-cli new part fixtures/bracket.obk
-//	oblikovati-cli info fixtures/bracket.obk
-//	oblikovati-cli save-as fixtures/bracket.obk fixtures/copy.obk
+//	oblikovati-cli new part fixtures/bracket.opd
+//	oblikovati-cli info fixtures/bracket.opd
+//	oblikovati-cli save-as fixtures/bracket.opd fixtures/copy.opd
 package main
 
 import (
@@ -57,14 +58,14 @@ func run(args []string, out io.Writer) error {
 }
 
 // usage is the one-screen command summary printed on `help` or a usage error.
-const usage = `oblikovati-cli — headless .obk document tool
+const usage = `oblikovati-cli — headless document tool
 
 usage:
   oblikovati-cli new <part|assembly|drawing|presentation> <path> [--seed]
   oblikovati-cli open <path>
   oblikovati-cli info <path> [--json]
   oblikovati-cli save-as <src> <dst>
-  oblikovati-cli import <mesh-file.stl|.obj|.3mf> <dst.obk>
-  oblikovati-cli export <src.obk> <mesh-file.stl|.obj|.3mf> [low|medium|high]
-  oblikovati-cli script run <file.lua> [--doc in.obk] [--save out.obk]
+  oblikovati-cli import <mesh-file.stl|.obj|.3mf> <dst.opd>
+  oblikovati-cli export <src.opd> <mesh-file.stl|.obj|.3mf> [low|medium|high]
+  oblikovati-cli script run <file.lua> [--doc in.opd] [--save out.opd]
   oblikovati-cli version`

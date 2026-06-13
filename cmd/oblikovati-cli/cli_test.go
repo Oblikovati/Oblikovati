@@ -21,7 +21,7 @@ func runCLI(t *testing.T, args ...string) (string, error) {
 }
 
 func TestNewWritesPackageThatInfoReports(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "bracket.obk")
+	path := filepath.Join(t.TempDir(), "bracket.opd")
 
 	out, err := runCLI(t, "new", "part", path)
 	if err != nil {
@@ -43,18 +43,44 @@ func TestNewWritesPackageThatInfoReports(t *testing.T) {
 	}
 }
 
+// TestNewCreatesEachKindWithItsExtension is the basic-file-handling guard for the
+// four document formats (ADR-0034, M11-F00): creating each kind stamps its own
+// extension and writes a package that `info` can read back as that kind.
+func TestNewCreatesEachKindWithItsExtension(t *testing.T) {
+	for _, c := range []struct{ kind, ext string }{
+		{"part", ".opd"}, {"assembly", ".oad"}, {"drawing", ".odd"}, {"presentation", ".ord"},
+	} {
+		t.Run(c.kind, func(t *testing.T) {
+			stem := filepath.Join(t.TempDir(), "doc")
+			if _, err := runCLI(t, "new", c.kind, stem); err != nil {
+				t.Fatalf("new %s: %v", c.kind, err)
+			}
+			if _, err := os.Stat(stem + c.ext); err != nil {
+				t.Fatalf("expected %s%s on disk: %v", stem, c.ext, err)
+			}
+			out, err := runCLI(t, "info", stem+c.ext)
+			if err != nil {
+				t.Fatalf("info %s: %v", c.kind, err)
+			}
+			if !strings.Contains(out, "type: "+c.kind) {
+				t.Errorf("info = %q, want it to report type: %s", out, c.kind)
+			}
+		})
+	}
+}
+
 func TestNewAppendsPackageExtension(t *testing.T) {
 	stem := filepath.Join(t.TempDir(), "noext")
 	if _, err := runCLI(t, "new", "assembly", stem); err != nil {
 		t.Fatalf("new: %v", err)
 	}
-	if _, err := os.Stat(stem + ".obk"); err != nil {
-		t.Fatalf("expected %s.obk on disk: %v", stem, err)
+	if _, err := os.Stat(stem + ".oad"); err != nil {
+		t.Fatalf("expected %s.oad on disk: %v", stem, err)
 	}
 }
 
 func TestInfoJSONIsParseable(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "plate.obk")
+	path := filepath.Join(t.TempDir(), "plate.opd")
 	if _, err := runCLI(t, "new", "part", path); err != nil {
 		t.Fatalf("new: %v", err)
 	}
@@ -74,8 +100,8 @@ func TestInfoJSONIsParseable(t *testing.T) {
 
 func TestSaveAsCopiesPackage(t *testing.T) {
 	dir := t.TempDir()
-	src := filepath.Join(dir, "src.obk")
-	dst := filepath.Join(dir, "dst.obk")
+	src := filepath.Join(dir, "src.odd")
+	dst := filepath.Join(dir, "dst.odd")
 	if _, err := runCLI(t, "new", "drawing", src); err != nil {
 		t.Fatalf("new: %v", err)
 	}
@@ -92,7 +118,7 @@ func TestSaveAsCopiesPackage(t *testing.T) {
 }
 
 func TestOpenReportsIdentity(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "p.obk")
+	path := filepath.Join(t.TempDir(), "p.opd")
 	if _, err := runCLI(t, "new", "part", path); err != nil {
 		t.Fatalf("new: %v", err)
 	}
@@ -112,10 +138,10 @@ func TestUsageErrors(t *testing.T) {
 	}{
 		{"no command", nil},
 		{"unknown command", []string{"frobnicate"}},
-		{"unknown type", []string{"new", "bogus", "/tmp/x.obk"}},
+		{"unknown type", []string{"new", "bogus", "/tmp/x.opd"}},
 		{"new missing path", []string{"new", "part"}},
 		{"info missing path", []string{"info"}},
-		{"save-as one arg", []string{"save-as", "/tmp/a.obk"}},
+		{"save-as one arg", []string{"save-as", "/tmp/a.opd"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

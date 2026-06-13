@@ -6,13 +6,15 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
-	"oblikovati.org/app"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
 	"time"
+
+	"oblikovati.org/app"
+	"oblikovati.org/model/doc"
 )
 
 // fileDialogMode is which file operation the path modal will perform on confirm. The
@@ -60,6 +62,7 @@ type fileDialog struct {
 	errorText  string
 	resolution int                   // export mesh resolution: 0 low, 1 medium, 2 high
 	request    app.FileDialogRequest // the add-in ask behind dialogAddIn mode
+	defaultExt string                // Save As: extension appended to a bare name, per the active document's kind (ADR-0034)
 }
 
 // fileAction is what a confirmed dialog asks the chrome to perform. Kind ==
@@ -80,8 +83,21 @@ func (d *fileDialog) openFor(mode fileDialogMode) {
 	d.path = [pathBufferLen]byte{}
 	d.search = [fileSearchBufferLen]byte{}
 	d.resolution = 1
+	d.defaultExt = doc.Part.Extension() // the common case; armSaveAs refines it to the active document's kind
 	d.roots = explorerRoots()
 	d.openDir(initialExplorerDir())
+}
+
+// armSaveAs opens the Save As modal with its appended extension defaulting to the
+// active document's kind (ADR-0034): a bare typed name becomes "<name>.opd" for a
+// part, "<name>.oad" for an assembly, and so on.
+func armSaveAs(s *app.Session) {
+	fileModal.openFor(dialogSaveAs)
+	if d := s.ActiveDocument(); d != nil {
+		if ext := d.DocumentType().Extension(); ext != "" {
+			fileModal.defaultExt = ext
+		}
+	}
 }
 
 // openForRequest arms the dialog for an add-in's ask (M05-F08): the request's
@@ -241,7 +257,7 @@ func (d *fileDialog) allowsFile(name string) bool {
 func (d *fileDialog) allowedExts() []string {
 	switch d.mode {
 	case dialogOpen, dialogSaveAs:
-		return []string{".obk"}
+		return doc.DocumentExtensions()
 	case dialogLoadHDR:
 		return []string{".hdr"}
 	case dialogMeshRef:
@@ -272,7 +288,7 @@ func filterExtensions(filter string) []string {
 
 func (d *fileDialog) withDefaultExt(path string) string {
 	if d.mode == dialogSaveAs && filepath.Ext(path) == "" {
-		return path + ".obk"
+		return path + d.defaultExt
 	}
 	return path
 }

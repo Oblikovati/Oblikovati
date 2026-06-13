@@ -107,7 +107,7 @@ func (d *Document) FullDocumentName() string { return d.fullDocumentName }
 func (d *Document) FullFileName() string { return d.fullDocumentName }
 
 // DisplayName returns the human-readable name: the explicit override if set,
-// otherwise the file name without its directory or [PackageExtension].
+// otherwise the file name without its directory or extension.
 func (d *Document) DisplayName() string {
 	if d.displayName != "" {
 		return d.displayName

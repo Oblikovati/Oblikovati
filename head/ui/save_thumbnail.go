@@ -12,8 +12,9 @@ import (
 
 // Save-time thumbnail capture (M03-F09, #610): with the save policy set to
 // activeWindowOnSave, a successful save arms a capture of the viewport into a
-// git-ignored sidecar image next to the document (<file>.obk.png — thumbnails
-// are never document content, ADR-0020). The capture is serviced AFTER the
+// git-ignored sidecar image next to the document (<document>.png, e.g.
+// bracket.opd.png — thumbnails are never document content, ADR-0020/ADR-0034).
+// The capture is serviced AFTER the
 // viewport has rendered the frame, like the screenshot service, so the image
 // reflects what is on screen.
 

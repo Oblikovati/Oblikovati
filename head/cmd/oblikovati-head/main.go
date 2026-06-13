@@ -171,7 +171,7 @@ func registerCommands(s *app.Session) {
 }
 
 func seedPart(s *app.Session) {
-	pd, err := compdef.AddPart(s.Workspace(), "demo.obk", true)
+	pd, err := compdef.AddPart(s.Workspace(), "demo.opd", true)
 	if err != nil {
 		panic(err)
 	}

@@ -14,7 +14,7 @@ func TestShouldDrawViewportOnlyWithDocuments(t *testing.T) {
 	if shouldDrawViewport(s) {
 		t.Fatal("shouldDrawViewport(empty session) = true, want false")
 	}
-	if _, err := compdef.AddPart(s.Workspace(), "p.obk", true); err != nil {
+	if _, err := compdef.AddPart(s.Workspace(), "p.opd", true); err != nil {
 		t.Fatalf("AddPart: %v", err)
 	}
 	if !shouldDrawViewport(s) {

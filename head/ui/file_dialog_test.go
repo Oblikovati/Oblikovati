@@ -27,7 +27,7 @@ func TestFileDialogConfirmReturnsActionForMode(t *testing.T) {
 	if !d.isOpen() || d.title() != "Save As" {
 		t.Fatalf("openFor(SaveAs): isOpen=%v title=%q", d.isOpen(), d.title())
 	}
-	path := filepath.Join(t.TempDir(), "part.obk")
+	path := filepath.Join(t.TempDir(), "part.opd")
 	d.typePath(path)
 	act := d.confirm()
 	if act.Kind != dialogSaveAs || act.Path != path {
@@ -41,7 +41,7 @@ func TestFileDialogConfirmReturnsActionForMode(t *testing.T) {
 func TestFileDialogCancelYieldsNoAction(t *testing.T) {
 	var d fileDialog
 	d.openFor(dialogOpen)
-	d.typePath("/x.obk")
+	d.typePath("/x.opd")
 	d.cancel()
 	if d.isOpen() {
 		t.Error("cancel should close the dialog")
@@ -103,15 +103,15 @@ func TestFileDialogImportExportModes(t *testing.T) {
 
 func TestFileDialogSearchFiltersAllowedFiles(t *testing.T) {
 	dir := t.TempDir()
-	writeDialogFile(t, filepath.Join(dir, "alpha.obk"))
+	writeDialogFile(t, filepath.Join(dir, "alpha.opd"))
 	writeDialogFile(t, filepath.Join(dir, "beta.stl"))
 	var d fileDialog
 	d.openFor(dialogOpen)
 	d.openDir(dir)
 	d.typeSearch("alpha")
 	got := d.visibleEntries()
-	if len(got) != 1 || got[0].Name != "alpha.obk" {
-		t.Fatalf("visibleEntries = %+v, want only alpha.obk", got)
+	if len(got) != 1 || got[0].Name != "alpha.opd" {
+		t.Fatalf("visibleEntries = %+v, want only alpha.opd", got)
 	}
 }
 
@@ -121,13 +121,13 @@ func TestFileDialogChooseDirectoryAndFile(t *testing.T) {
 	if err := os.Mkdir(nested, 0o755); err != nil {
 		t.Fatalf("mkdir nested: %v", err)
 	}
-	file := filepath.Join(nested, "part.obk")
+	file := filepath.Join(nested, "part.opd")
 	writeDialogFile(t, file)
 	var d fileDialog
 	d.openFor(dialogOpen)
 	d.openDir(dir)
 	d.chooseEntry(findDialogEntry(t, d.visibleEntries(), "nested"))
-	d.chooseEntry(findDialogEntry(t, d.visibleEntries(), "part.obk"))
+	d.chooseEntry(findDialogEntry(t, d.visibleEntries(), "part.opd"))
 	if act := d.confirm(); act.Path != file || act.Kind != dialogOpen {
 		t.Fatalf("confirm after choose = %+v, want open %q", act, file)
 	}
@@ -140,7 +140,7 @@ func TestFileDialogSaveJoinsDirectoryAndDefaultExt(t *testing.T) {
 	d.openDir(dir)
 	d.typePath("bracket")
 	act := d.confirm()
-	want := filepath.Join(dir, "bracket.obk")
+	want := filepath.Join(dir, "bracket.opd")
 	if act.Kind != dialogSaveAs || act.Path != want {
 		t.Fatalf("confirm save = %+v, want save %q", act, want)
 	}

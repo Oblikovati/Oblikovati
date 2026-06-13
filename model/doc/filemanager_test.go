@@ -18,49 +18,49 @@ func writeFile(t *testing.T, path string) {
 func TestResolveSearchesWorkspaceThenLibraries(t *testing.T) {
 	ws := t.TempDir()
 	lib := t.TempDir()
-	writeFile(t, filepath.Join(lib, "fastener.obk"))
+	writeFile(t, filepath.Join(lib, "fastener.opd"))
 	fm := NewFileManager(&DesignProject{WorkspacePath: ws, LibraryPaths: []string{lib}})
 
-	got, ok := fm.Resolve("fastener.obk")
-	if !ok || got != filepath.Join(lib, "fastener.obk") {
+	got, ok := fm.Resolve("fastener.opd")
+	if !ok || got != filepath.Join(lib, "fastener.opd") {
 		t.Fatalf("Resolve via library = %q ok=%v, want the library copy", got, ok)
 	}
 
 	// A copy in the workspace must win over the library copy.
-	writeFile(t, filepath.Join(ws, "fastener.obk"))
-	got, _ = fm.Resolve("fastener.obk")
-	if got != filepath.Join(ws, "fastener.obk") {
+	writeFile(t, filepath.Join(ws, "fastener.opd"))
+	got, _ = fm.Resolve("fastener.opd")
+	if got != filepath.Join(ws, "fastener.opd") {
 		t.Errorf("Resolve = %q, want the workspace copy to take priority", got)
 	}
 }
 
 func TestResolveMissingIsBrokenNotFatal(t *testing.T) {
 	fm := NewFileManager(&DesignProject{WorkspacePath: t.TempDir()})
-	if _, ok := fm.Resolve("nope.obk"); ok {
+	if _, ok := fm.Resolve("nope.opd"); ok {
 		t.Error("Resolve found a file that does not exist")
 	}
 }
 
 func TestResolveAbsolutePath(t *testing.T) {
 	dir := t.TempDir()
-	abs := filepath.Join(dir, "thing.obk")
+	abs := filepath.Join(dir, "thing.opd")
 	writeFile(t, abs)
 	fm := NewFileManager(&DesignProject{WorkspacePath: dir})
 	if got, ok := fm.Resolve(abs); !ok || got != abs {
 		t.Errorf("Resolve(abs) = %q ok=%v, want it returned as-is", got, ok)
 	}
-	if _, ok := fm.Resolve(filepath.Join(dir, "absent.obk")); ok {
+	if _, ok := fm.Resolve(filepath.Join(dir, "absent.opd")); ok {
 		t.Error("Resolve(abs) reported a missing absolute path as found")
 	}
 }
 
 func TestTemplateFileByType(t *testing.T) {
 	templates := t.TempDir()
-	writeFile(t, filepath.Join(templates, "part.obk"))
-	writeFile(t, filepath.Join(templates, "assembly.obk"))
+	writeFile(t, filepath.Join(templates, "part.opd"))
+	writeFile(t, filepath.Join(templates, "assembly.oad"))
 	fm := NewFileManager(&DesignProject{Locations: FileLocations{Templates: templates}})
 
-	if got, ok := fm.TemplateFile(Part); !ok || got != filepath.Join(templates, "part.obk") {
+	if got, ok := fm.TemplateFile(Part); !ok || got != filepath.Join(templates, "part.opd") {
 		t.Errorf("TemplateFile(Part) = %q ok=%v", got, ok)
 	}
 	if _, ok := fm.TemplateFile(Drawing); ok {
@@ -74,11 +74,11 @@ func TestTemplateFileByType(t *testing.T) {
 func TestRelativizeWithinWorkspace(t *testing.T) {
 	ws := t.TempDir()
 	fm := NewFileManager(&DesignProject{WorkspacePath: ws})
-	rel, ok := fm.Relativize(filepath.Join(ws, "sub", "part.obk"))
-	if !ok || rel != filepath.Join("sub", "part.obk") {
-		t.Errorf("Relativize = %q ok=%v, want sub/part.obk", rel, ok)
+	rel, ok := fm.Relativize(filepath.Join(ws, "sub", "part.opd"))
+	if !ok || rel != filepath.Join("sub", "part.opd") {
+		t.Errorf("Relativize = %q ok=%v, want sub/part.opd", rel, ok)
 	}
-	if _, ok := fm.Relativize(filepath.Join(t.TempDir(), "outside.obk")); ok {
+	if _, ok := fm.Relativize(filepath.Join(t.TempDir(), "outside.opd")); ok {
 		t.Error("Relativize accepted a path outside the workspace")
 	}
 }

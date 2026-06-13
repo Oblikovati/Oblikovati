@@ -18,10 +18,10 @@ import (
 	"oblikovati.org/persistence"
 )
 
-// cmdNew creates a document of the named kind and saves it as an .obk package at
-// path, the core fixture-generation command:
+// cmdNew creates a document of the named kind and saves it as a package at path,
+// stamping the kind's extension (ADR-0034), the core fixture-generation command:
 //
-//	oblikovati-cli new part fixtures/bracket.obk
+//	oblikovati-cli new part fixtures/bracket.opd
 func cmdNew(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("new", flag.ContinueOnError)
 	fs.SetOutput(out)
@@ -37,7 +37,7 @@ func cmdNew(args []string, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("new: %w", err)
 	}
-	path := withPackageExt(operands[1])
+	path := withDocExt(operands[1], t)
 	ws := doc.NewWorkspace(persistence.NewPackageStore())
 	d, err := createDocument(ws, t, path, *seed, out)
 	if err != nil {
@@ -104,12 +104,14 @@ func seedRectangle(sk *sketch.Sketch, w, h float64) {
 	sk.Lines().Add(c3, c0)
 }
 
-// withPackageExt returns path with the [doc.PackageExtension] suffix, appending it
-// when absent so generated fixtures share one predictable extension. A path that
-// already ends in .obk is returned unchanged.
-func withPackageExt(path string) string {
-	if strings.EqualFold(filepath.Ext(path), doc.PackageExtension) {
+// withDocExt returns path with the document kind's extension (ADR-0034),
+// appending it when absent so generated fixtures carry the right per-type
+// extension (e.g. part.opd, assembly.oad). A path that already ends in that
+// extension is returned unchanged.
+func withDocExt(path string, t doc.DocumentType) string {
+	ext := t.Extension()
+	if strings.EqualFold(filepath.Ext(path), ext) {
 		return path
 	}
-	return path + doc.PackageExtension
+	return path + ext
 }

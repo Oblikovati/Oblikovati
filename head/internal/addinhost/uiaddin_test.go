@@ -34,7 +34,7 @@ func TestAddInExtendsRibbonAndActsOnClick(t *testing.T) {
 	// BuildRibbon yields the Part ribbon — this mirrors how an add-in button is used in
 	// practice and the core router test's seededSession setup. Without it the session is
 	// on the ZeroDoc ribbon and the button is correctly excluded.
-	pd, err := s.Workspace().Add(doc.Part, "test.obk", true)
+	pd, err := s.Workspace().Add(doc.Part, "test.opd", true)
 	if err != nil {
 		t.Fatalf("add part document: %v", err)
 	}

@@ -239,7 +239,7 @@ func applyVisualOverrides(t *testing.T, s *app.Session) {
 func extrudeReadySession(t *testing.T) (*app.Session, app.ProfileHandle) {
 	t.Helper()
 	s := app.NewSession()
-	pd, err := compdef.AddPart(s.Workspace(), "extrude-panel-visual.obk", true)
+	pd, err := compdef.AddPart(s.Workspace(), "extrude-panel-visual.opd", true)
 	if err != nil {
 		t.Fatalf("AddPart: %v", err)
 	}

@@ -25,7 +25,7 @@ import (
 // surface add-ins and the MCP bridge use, sandboxed (ADR-0028):
 //
 //	oblikovati-cli script run build.lua
-//	oblikovati-cli script run build.lua --doc in.obk --save out.obk
+//	oblikovati-cli script run build.lua --doc in.opd --save out.opd
 func cmdScript(args []string, out io.Writer) error {
 	if len(args) == 0 || args[0] != "run" {
 		return fmt.Errorf("script: expected `run <file.lua>`, got %q", joinArgs(args))
@@ -39,7 +39,7 @@ func cmdScript(args []string, out io.Writer) error {
 func cmdScriptRun(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("script run", flag.ContinueOnError)
 	fs.SetOutput(out)
-	docPath := fs.String("doc", "", "open an existing .obk document before running")
+	docPath := fs.String("doc", "", "open an existing document before running")
 	savePath := fs.String("save", "", "save the active document to this path after a successful run")
 	// The file path is the sole positional and must come first; flags (which take
 	// values) follow it. flag.Parse stops at the first non-flag, so parse from arg[1:].
