@@ -66,8 +66,9 @@ func (o *Occurrence) Transform() math.Matrix4 { return o.transform }
 // It is the reference API's Transformation set / SetTransformWithoutConstraints:
 // constraint adjustment after a move is the solver's job (M12), not this call's.
 func (o *Occurrence) SetTransform(m math.Matrix4) {
+	previous := o.transform
 	o.transform = m
-	o.owner.bump()
+	o.owner.transformed(o, previous)
 }
 
 // Suppressed reports whether the occurrence is excluded from the model — it
@@ -82,7 +83,7 @@ func (o *Occurrence) SetSuppressed(suppressed bool) {
 		return
 	}
 	o.suppressed = suppressed
-	o.owner.bump()
+	o.owner.suppressed(o)
 }
 
 // Grounded reports whether the occurrence is fixed in space (the solver may not move

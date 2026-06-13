@@ -30,15 +30,21 @@ var (
 type AssemblyComponentDefinition struct {
 	occurrences *occurrence.Occurrences
 	units       param.UnitsOfMeasure // document display units (length/angle/…)
+	events      *AssemblyEvents      // occurrence-lifecycle event source (M11-F07)
 }
 
 // NewAssemblyComponentDefinition returns an empty assembly content object: no
-// occurrences and default (metric) display units.
+// occurrences, default (metric) display units, and a live event source wired to its
+// occurrence collection so placements/moves/suppression raise domain events (M11-F07).
 func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
-	return &AssemblyComponentDefinition{
-		occurrences: occurrence.NewOccurrences(),
+	occ := occurrence.NewOccurrences()
+	a := &AssemblyComponentDefinition{
+		occurrences: occ,
 		units:       param.DefaultUnitsOfMeasure(),
+		events:      newAssemblyEvents(),
 	}
+	occ.SetListener(a.events)
+	return a
 }
 
 // An assembly definition is plain document content, not recipe-bearing content: it
@@ -104,6 +110,42 @@ func (a *AssemblyComponentDefinition) PlaceComponent(name string, componentDoc *
 			componentDoc.DisplayName(), componentDoc.Content())
 	}
 	return a.Place(name, def, transform), nil
+}
+
+// Events returns the assembly's occurrence-lifecycle event source — subscribe add-ins
+// and observers to its bus (M11-F07). Placements, moves, replacements and suppression
+// changes raise typed events; delete and suppress are also vetoable in the Before
+// phase via [AssemblyComponentDefinition.DeleteOccurrence] and SetOccurrenceSuppressed.
+func (a *AssemblyComponentDefinition) Events() *AssemblyEvents { return a.events }
+
+// DeleteOccurrence removes o from the assembly, first raising a vetoable OccurrenceDelete
+// in the Before phase; on commit the removal raises OccurrenceDelete After. It returns
+// an [AssemblyVetoError] if a Before handler cancelled the delete, or nil otherwise
+// (removing an occurrence not in this assembly is a silent no-op, as for the reference
+// API). M11-F07.
+func (a *AssemblyComponentDefinition) DeleteOccurrence(o *occurrence.Occurrence) error {
+	if err := raiseBefore(a.events.bus, "delete occurrence", OccurrenceDelete{Occurrence: o}); err != nil {
+		return err
+	}
+	a.occurrences.Remove(o)
+	return nil
+}
+
+// SetOccurrenceSuppressed toggles o's suppression, first raising a vetoable
+// OccurrenceSuppress in the Before phase; on commit the change raises OccurrenceSuppress
+// After. A Before handler may veto (e.g. to keep a required component active), in which
+// case it returns an [AssemblyVetoError] and o is unchanged. A no-op toggle (already in
+// the requested state) raises no event and returns nil. M11-F07.
+func (a *AssemblyComponentDefinition) SetOccurrenceSuppressed(o *occurrence.Occurrence, suppressed bool) error {
+	if o.Suppressed() == suppressed {
+		return nil
+	}
+	ev := OccurrenceSuppress{Occurrence: o, Suppressed: suppressed}
+	if err := raiseBefore(a.events.bus, "suppress occurrence", ev); err != nil {
+		return err
+	}
+	o.SetSuppressed(suppressed)
+	return nil
 }
 
 // RangeBox returns the axis-aligned bounding box enclosing every unsuppressed

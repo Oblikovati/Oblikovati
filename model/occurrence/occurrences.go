@@ -7,17 +7,37 @@ import "oblikovati.org/math"
 // Occurrences is the collection of component occurrences an assembly owns — the
 // reference API's ComponentOccurrences (M11-F01/F02). It mints occurrence ids, tracks
 // a revision that advances on every structural or placement change (so the assembly's
-// geometry version derives from it), and unions its members' boxes.
+// geometry version derives from it), unions its members' boxes, and notifies a
+// [OccurrenceListener] of each mutation so the assembly raises domain events (M11-F07).
 type Occurrences struct {
 	items    []*Occurrence
 	byID     map[uint64]*Occurrence
 	nextID   uint64
 	revision uint64
+
+	listener OccurrenceListener
+	// Drag-batch state: while suspend > 0, per-occurrence transform notifications are
+	// withheld and coalesced. dragStart holds each moved occurrence's placement when the
+	// batch began; dragOrder preserves first-moved order so the resume flush is
+	// deterministic.
+	suspend   int
+	dragStart map[*Occurrence]math.Matrix4
+	dragOrder []*Occurrence
 }
 
-// NewOccurrences returns an empty occurrence collection.
+// NewOccurrences returns an empty occurrence collection with a silent (no-op) listener.
 func NewOccurrences() *Occurrences {
-	return &Occurrences{byID: map[uint64]*Occurrence{}}
+	return &Occurrences{byID: map[uint64]*Occurrence{}, listener: silentListener{}}
+}
+
+// SetListener installs the observer notified after each occurrence mutation, replacing
+// any previous one; pass nil to detach. The assembly definition installs its event
+// source here so occurrence changes raise domain events (M11-F07).
+func (c *Occurrences) SetListener(l OccurrenceListener) {
+	if l == nil {
+		l = silentListener{}
+	}
+	c.listener = l
 }
 
 // AddByComponentDefinition places def in the assembly under name with transform,
@@ -30,6 +50,7 @@ func (c *Occurrences) AddByComponentDefinition(name string, def Definition, tran
 	c.items = append(c.items, o)
 	c.byID[o.id] = o
 	c.bump()
+	c.listener.OccurrenceAdded(o)
 	return o
 }
 
@@ -43,8 +64,10 @@ func (c *Occurrences) Replace(o *Occurrence, def Definition) bool {
 	if c.byID[o.id] != o {
 		return false
 	}
+	previous := o.definition
 	o.definition = def
 	c.bump()
+	c.listener.OccurrenceReplaced(o, previous)
 	return true
 }
 
@@ -90,6 +113,7 @@ func (c *Occurrences) Remove(o *Occurrence) bool {
 		if existing == o {
 			c.items = append(c.items[:i], c.items[i+1:]...)
 			c.bump()
+			c.listener.OccurrenceRemoved(o)
 			return true
 		}
 	}
@@ -119,3 +143,60 @@ func (c *Occurrences) Revision() uint64 { return c.revision }
 
 // bump advances the revision after a mutation.
 func (c *Occurrences) bump() { c.revision++ }
+
+// transformed records a placement change for o (whose prior placement was previous):
+// it advances the revision and notifies the listener immediately, unless a drag batch
+// is active, in which case the notification is deferred and coalesced to a single call
+// at [Occurrences.ResumeNotifications]. Called by [Occurrence.SetTransform].
+func (c *Occurrences) transformed(o *Occurrence, previous math.Matrix4) {
+	c.bump()
+	if c.suspend == 0 {
+		c.listener.OccurrenceTransformed(o, previous)
+		return
+	}
+	if _, seen := c.dragStart[o]; !seen {
+		c.dragStart[o] = previous
+		c.dragOrder = append(c.dragOrder, o)
+	}
+}
+
+// suppressed records a suppression toggle for o and notifies the listener. Suppression
+// is a low-frequency, meaningful change, so it is never coalesced — it fires even
+// inside a drag batch. Called by [Occurrence.SetSuppressed].
+func (c *Occurrences) suppressed(o *Occurrence) {
+	c.bump()
+	c.listener.OccurrenceSuppressionChanged(o)
+}
+
+// SuspendNotifications begins a batch that coalesces per-occurrence transform
+// notifications until the matching [Occurrences.ResumeNotifications], so a solver drag
+// or drive animation raises one OccurrenceTransformed per moved occurrence instead of
+// one per step (M11-F07). Calls nest; the batch ends only when the outermost resumes.
+// The revision still advances per step — only the event stream is batched.
+func (c *Occurrences) SuspendNotifications() {
+	if c.suspend == 0 {
+		c.dragStart = map[*Occurrence]math.Matrix4{}
+		c.dragOrder = nil
+	}
+	c.suspend++
+}
+
+// ResumeNotifications ends a batch started by [Occurrences.SuspendNotifications],
+// flushing one OccurrenceTransformed per occurrence that ended the batch at a
+// different placement than it began (a net no-op move emits nothing), in first-moved
+// order. An unbalanced resume (no batch active) is ignored.
+func (c *Occurrences) ResumeNotifications() {
+	if c.suspend == 0 {
+		return
+	}
+	c.suspend--
+	if c.suspend > 0 {
+		return
+	}
+	for _, o := range c.dragOrder {
+		if start := c.dragStart[o]; o.transform != start {
+			c.listener.OccurrenceTransformed(o, start)
+		}
+	}
+	c.dragStart, c.dragOrder = nil, nil
+}
