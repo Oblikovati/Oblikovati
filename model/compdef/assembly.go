@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // An assembly definition is a composite component — a placeable definition that owns
@@ -30,14 +31,19 @@ var (
 // joints, and representations attach to it from M12.
 type AssemblyComponentDefinition struct {
 	occurrences *occurrence.Occurrences
-	units       param.UnitsOfMeasure // document display units (length/angle/…)
-	events      *AssemblyEvents      // occurrence-lifecycle event source (M11-F07)
-	features    *AssemblyFeatures    // assembly-authored machining features (M11-F08)
+	units       param.UnitsOfMeasure  // document display units (length/angle/…)
+	events      *AssemblyEvents       // occurrence-lifecycle event source (M11-F07)
+	features    *AssemblyFeatures     // assembly-authored machining features (M11-F08)
+	params      *param.Parameters     // parameter DAG for assembly sketch dimensions
+	work        *feature.WorkGeometry // origin frame + user work planes, in assembly space
+	sketches    *sketch.Sketches      // sketches authored in the assembly (profile inputs)
 }
 
 // NewAssemblyComponentDefinition returns an empty assembly content object: no
-// occurrences, default (metric) display units, and a live event source wired to its
-// occurrence collection so placements/moves/suppression raise domain events (M11-F07).
+// occurrences, default (metric) display units, a live event source wired to its
+// occurrence collection so placements/moves/suppression raise domain events (M11-F07),
+// and an empty sketch/work-geometry surface so assembly features can be authored from
+// profiles sketched in assembly space (the assembly sketching subsystem).
 func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	occ := occurrence.NewOccurrences()
 	a := &AssemblyComponentDefinition{
@@ -45,6 +51,9 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 		units:       param.DefaultUnitsOfMeasure(),
 		events:      newAssemblyEvents(),
 		features:    NewAssemblyFeatures(),
+		params:      param.NewParameters(),
+		work:        feature.NewWorkGeometry(),
+		sketches:    sketch.NewSketches(),
 	}
 	occ.SetListener(a.events)
 	a.features.SetBus(a.events.Bus()) // feature-program events ride the assembly's occurrence bus
@@ -136,12 +145,56 @@ func (a *AssemblyComponentDefinition) AddFeature(f feature.Feature) *AssemblyFea
 	return a.features.Add(f, distinctSources(a.PlacedBodies()))
 }
 
-// RecomputeFeatures evaluates the assembly feature program against the current placed
-// geometry, machining each unsuppressed feature into its participants' assembly-space
-// bodies (not the shared part definitions) up to the end-of-features marker. Read the
-// per-occurrence results with [AssemblyFeatures.Result].
+// Parameters returns the assembly's parameter DAG (shared with its sketches so
+// dimension expressions resolve against the same table).
+func (a *AssemblyComponentDefinition) Parameters() *param.Parameters { return a.params }
+
+// WorkGeometry returns the assembly's origin coordinate frame and user work
+// planes/axes/points, expressed in assembly space — the planes a sketch is authored on.
+func (a *AssemblyComponentDefinition) WorkGeometry() *feature.WorkGeometry { return a.work }
+
+// Sketches returns the assembly's planar sketches — the profile inputs an assembly
+// feature (e.g. an extrude) is authored from, sketched in assembly space.
+func (a *AssemblyComponentDefinition) Sketches() *sketch.Sketches { return a.sketches }
+
+// AddSketch creates a sketch on plane and shares the assembly's parameter DAG so its
+// dimensions resolve against the same table (mirroring the part). Pass a host closure
+// (non-nil) to track a moving work plane so the sketch follows it.
+func (a *AssemblyComponentDefinition) AddSketch(plane sketch.Plane, host func() sketch.Plane) *sketch.Sketch {
+	sk := a.sketches.Add(plane)
+	sk.SetParameters(a.params)
+	if host != nil {
+		sk.SetPlaneHost(host)
+	}
+	return sk
+}
+
+// RecomputeFeatures re-solves the assembly's sketches and work geometry, then evaluates
+// the feature program against the current placed geometry — machining each unsuppressed
+// feature into its participants' assembly-space bodies (not the shared part definitions)
+// up to the end-of-features marker. Solving first means a profile-based feature (an
+// extrude) reads an up-to-date profile. Read per-occurrence results with [AssemblyFeatures.Result].
 func (a *AssemblyComponentDefinition) RecomputeFeatures() {
+	a.solveSketches()
+	a.work.Recompute(nil) // origin + offset planes need no body; tangent-to-face planes are part-only
+	a.refreshSketchPlanes()
 	a.features.Recompute(a.PlacedBodies())
+}
+
+// solveSketches re-solves every assembly sketch so parameter-driven dimensions move the
+// geometry before a profile is read.
+func (a *AssemblyComponentDefinition) solveSketches() {
+	for i := 0; i < a.sketches.Count(); i++ {
+		a.sketches.Item(i).Solve()
+	}
+}
+
+// refreshSketchPlanes re-reads each sketch's host work plane so sketches on datum planes
+// follow them when they move.
+func (a *AssemblyComponentDefinition) refreshSketchPlanes() {
+	for i := 0; i < a.sketches.Count(); i++ {
+		a.sketches.Item(i).RefreshPlane()
+	}
 }
 
 // DeleteOccurrence removes o from the assembly, first raising a vetoable OccurrenceDelete
