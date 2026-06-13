@@ -30,6 +30,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesList] = assemblyFeaturesList
 	r.handlers[wire.MethodAssemblyFeaturesAdd] = assemblyFeaturesAdd
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
+	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
 	r.handlers[wire.MethodAssemblyFeaturesSetSuppressed] = assemblyFeaturesSetSuppressed
 	r.handlers[wire.MethodAssemblyGetEndOfFeatures] = assemblyGetEndOfFeatures
 	r.handlers[wire.MethodAssemblySetEndOfFeatures] = assemblySetEndOfFeatures
@@ -85,6 +86,48 @@ func assemblyFeaturesSetParticipants(s *app.Session, raw json.RawMessage) (json.
 	af.SetParticipants(occs)
 	asm.RecomputeFeatures()
 	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+}
+
+// assemblyFeaturesSetParticipantPaths restricts a feature to specific nested occurrence
+// paths (or clears the restriction when none are given).
+func assemblyFeaturesSetParticipantPaths(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.SetAssemblyParticipantPathsArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	af, err := assemblyFeatureByID(asm, in.ID, wire.MethodAssemblyFeaturesSetParticipantPaths)
+	if err != nil {
+		return nil, err
+	}
+	paths, err := resolveParticipantPaths(asm, in.Paths, wire.MethodAssemblyFeaturesSetParticipantPaths)
+	if err != nil {
+		return nil, err
+	}
+	af.SetParticipantPaths(paths)
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+}
+
+// resolveParticipantPaths validates each instance-name path resolves to an occurrence
+// in the assembly, rejecting an unresolvable path (and returning nil to clear when no
+// paths are given).
+func resolveParticipantPaths(asm *compdef.AssemblyComponentDefinition, paths [][]string, method string) ([]occurrence.OccurrencePath, error) {
+	if len(paths) == 0 {
+		return nil, nil
+	}
+	out := make([]occurrence.OccurrencePath, 0, len(paths))
+	for _, names := range paths {
+		path := occurrence.OccurrencePath(names)
+		if _, ok := asm.Occurrences().Resolve(path); !ok {
+			return nil, fmt.Errorf("%s: path %v resolves to no occurrence in the assembly", method, names)
+		}
+		out = append(out, path)
+	}
+	return out, nil
 }
 
 // assemblyFeaturesSetSuppressed suppresses or unsuppresses the named features in batch.
@@ -214,6 +257,9 @@ func assemblyFeatureInfo(af *compdef.AssemblyFeature) wire.AssemblyFeatureInfo {
 	info.Participants = make([]uint64, len(parts))
 	for i, o := range parts {
 		info.Participants[i] = o.ID()
+	}
+	for _, p := range af.ParticipantPaths() {
+		info.ParticipantPaths = append(info.ParticipantPaths, []string(p))
 	}
 	return info
 }

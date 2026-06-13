@@ -154,6 +154,49 @@ func TestEndOfFeaturesRollsBackTrailingFeatures(t *testing.T) {
 	}
 }
 
+// pathVolume sums one placement's machined assembly-feature result volume.
+func pathVolume(fs *AssemblyFeatures, path occurrence.OccurrencePath) float64 {
+	v := 0.0
+	for _, b := range fs.ResultPath(path) {
+		v += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
+	}
+	return v
+}
+
+// TestNestedParticipationPathRestriction: a sub-assembly placed twice shares one leaf
+// occurrence, so the two placements are distinguished only by path. By default a
+// feature machines both; restricting it to one path machines that placement alone.
+func TestNestedParticipationPathRestriction(t *testing.T) {
+	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
+	sub := NewAssemblyComponentDefinition()
+	leaf := sub.Place("part:1", part, math.Identity4())
+
+	top := NewAssemblyComponentDefinition()
+	top.Place("subA:1", sub, math.Identity4())
+	top.Place("subB:1", sub, math.Translation4(math.V3(10, 0, 0)))
+
+	af := top.AddFeature(feature.NewAssemblyCutFeature(topHalfCutter(t), ops.Cut))
+	top.RecomputeFeatures()
+
+	pathA := occurrence.OccurrencePath{"subA:1", "part:1"}
+	pathB := occurrence.OccurrencePath{"subB:1", "part:1"}
+	if got := resultVolume(top.Features(), leaf); stdmath.Abs(got-1.0) > 1e-6 {
+		t.Errorf("default leaf result = %g, want 1.0 (both placements machined to 0.5)", got)
+	}
+	if got := pathVolume(top.Features(), pathA); stdmath.Abs(got-0.5) > 1e-6 {
+		t.Errorf("default subA placement = %g, want 0.5", got)
+	}
+
+	af.SetParticipantPaths([]occurrence.OccurrencePath{pathA})
+	top.RecomputeFeatures()
+	if got := pathVolume(top.Features(), pathA); stdmath.Abs(got-0.5) > 1e-6 {
+		t.Errorf("restricted subA placement = %g, want 0.5 (still machined)", got)
+	}
+	if got := pathVolume(top.Features(), pathB); stdmath.Abs(got-1.0) > 1e-6 {
+		t.Errorf("restricted subB placement = %g, want 1.0 (excluded by path)", got)
+	}
+}
+
 // TestRecomputeRaisesFeaturesEvent checks that recomputing the feature program raises
 // AssemblyFeaturesRecomputed on the assembly bus, carrying each feature's health.
 func TestRecomputeRaisesFeaturesEvent(t *testing.T) {

@@ -43,10 +43,18 @@ func (s DeriveStyle) String() string {
 // places it (in the source assembly's space) and that occurrence, so a derived feature
 // can apply per-occurrence [DeriveStyle]. Flattening a source assembly's occurrence
 // tree yields these.
+//
+// Path is the instance-name path from the assembly root to the placing occurrence
+// (root first). Because nested sub-occurrences are shared flyweights, Source alone is
+// ambiguous when a sub-assembly is placed more than once — the same Source is reached
+// through several paths; Path disambiguates which placement this body belongs to (the
+// reference API's ComponentOccurrence.OccurrencePath). It is empty for a body placed by
+// a top-level occurrence in a non-nested flatten.
 type PlacedBody struct {
 	Body      *topo.Body
 	Transform math.Matrix4
 	Source    *occurrence.Occurrence
+	Path      occurrence.OccurrencePath
 }
 
 // AssemblyBodySource is the consumer-side view of a source assembly that a
