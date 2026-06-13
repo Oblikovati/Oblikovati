@@ -101,6 +101,38 @@ func TestAssemblyExtrudeOverWire(t *testing.T) {
 	}
 }
 
+// TestAssemblyRevolveOverWire drives the assembly revolve over the wire: a rectangle
+// profile authored on the assembly's XY sketch (x∈[0,0.5], y∈[0,1]) revolved a full turn
+// about the world Y axis is a cylinder (r=0.5) whose first quadrant cuts a quarter
+// cylinder (≈π/16) from the unit-box participant — so it removes material without
+// consuming the body. (The tight analytic gate is the model unit test; the boolean
+// re-facets the small-radius cylinder coarsely here.)
+func TestAssemblyRevolveOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+
+	var sk wire.CreateSketchResult
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &sk)
+	var rect wire.SketchRectangleResult
+	call(t, r, s, "sketch.rectangle", fmt.Sprintf(`{"sketchIndex":%d,"width":"0.5 cm","height":"1 cm"}`, sk.SketchIndex), &rect)
+
+	var added wire.AssemblyFeatureResult
+	args := fmt.Sprintf(`{"sketchIndex":%d,"profileIndex":0,"origin":[0,0,0],"axis":[0,1,0],"angle":%g,"operation":"difference"}`, sk.SketchIndex, 2*stdmath.Pi)
+	call(t, r, s, "assemblyFeatures.addRevolve", args, &added)
+	if added.Feature.Kind != "assemblyRevolve" {
+		t.Fatalf("feature kind = %q, want assemblyRevolve", added.Feature.Kind)
+	}
+	if got := featureResultVolume(asm, occs[0]); got >= 1.0 || got < 0.7 {
+		t.Errorf("revolve-cut volume = %g, want a unit box minus a quarter cylinder (≈0.8)", got)
+	}
+
+	if _, err := r.Handle(s, "assemblyFeatures.addRevolve", []byte(fmt.Sprintf(`{"sketchIndex":%d,"profileIndex":0,"origin":[0,0,0],"axis":[0,0,0],"angle":1,"operation":"difference"}`, sk.SketchIndex))); err == nil {
+		t.Error("addRevolve with a zero axis should fail")
+	}
+	if _, err := r.Handle(s, "assemblyFeatures.addRevolve", []byte(fmt.Sprintf(`{"sketchIndex":%d,"profileIndex":0,"origin":[0,0,0],"axis":[0,1,0],"angle":0,"operation":"difference"}`, sk.SketchIndex))); err == nil {
+		t.Error("addRevolve with a zero angle should fail")
+	}
+}
+
 // TestAssemblyProxyCutOverWire adds a proxy-input cut whose tool is another
 // occurrence's geometry, gated against the analytic value and shown to be associative:
 // moving the source component re-resolves the cut on the next recompute.

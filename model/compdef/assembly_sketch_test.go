@@ -87,6 +87,49 @@ func TestAssemblyExtrudeJoinsBoss(t *testing.T) {
 	}
 }
 
+// TestAssemblyRevolveBoresParticipant is the revolve subsystem end-to-end: a profile
+// sketched in assembly space (radius 0–0.25, height 0–1) is spun about its centerline into a
+// drilled cylinder and cut from a participant, gated against the analytic value — a unit box
+// minus a faceted r=0.25 through-bore ≈ 1 − π·0.25² (within facet tolerance).
+func TestAssemblyRevolveBoresParticipant(t *testing.T) {
+	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
+	asm := NewAssemblyComponentDefinition()
+	occ := asm.Place("box:1", part, math.Identity4())
+
+	// Plane below the box whose local +x is world +x and local +y is world +z, so the profile's
+	// local (x,y) maps to (radius from the vertical centreline, height up the box). The profile
+	// runs z∈[-0.5,1.5] so the bore overshoots both box faces — no coplanar end caps, which would
+	// be a coincident-face boolean hazard — leaving a clean through-hole over the box's z∈[0,1].
+	bore, _ := sketch.NewPlane(math.P3(0.5, 0.5, -0.5), unitX(t), worldZ(t))
+	sk := asm.AddSketch(bore, nil)
+	squareProfileSketch(sk, 0.25, 2) // radius 0–0.25, height 0–2 (overshoots the box)
+	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))
+	cl.SetCenterline(true) // the vertical bore axis
+
+	asm.AddFeature(feature.NewAssemblyRevolveFeature(sk, 0, nil, ops.Cut, func() float64 { return 2 * stdmath.Pi }))
+	asm.RecomputeFeatures()
+
+	// This asserts the assembly plumbing — sketch hosting, centreline axis, AddFeature,
+	// RecomputeFeatures, participant placement — drove a through-bore. The boolean re-facets
+	// the revolved cylinder coarsely at this radius (~an 8-gon), so it removes a bit less than
+	// the true circle; the tight analytic gate is the unit test TestAssemblyRevolveToolVolume.
+	removed := 1.0 - resultVolume(asm.Features(), occ)
+	trueBore := stdmath.Pi * 0.25 * 0.25 // π·r²·h, h=1
+	if removed < 0.85*trueBore || removed > 1.02*trueBore {
+		t.Errorf("revolve-bore removed = %g, want within [0.85,1.02]·%g of the analytic bore", removed, trueBore)
+	}
+}
+
+// worldZ returns the world Z unit vector for a sketch plane frame.
+func worldZ(t *testing.T) math.UnitVector3 {
+	t.Helper()
+	u, err := math.NewUnitVector3(0, 0, 1)
+	if err != nil {
+		t.Fatalf("worldZ: %v", err)
+	}
+	return u
+}
+
 // unitX / unitY return the world X / Y unit vectors for a sketch plane frame.
 func unitX(t *testing.T) math.UnitVector3 {
 	t.Helper()
