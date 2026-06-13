@@ -74,6 +74,37 @@ func TestAssemblyFeaturesAddAndListOverWire(t *testing.T) {
 	}
 }
 
+// TestAssemblyProxyCutOverWire adds a proxy-input cut whose tool is another
+// occurrence's geometry, gated against the analytic value and shown to be associative:
+// moving the source component re-resolves the cut on the next recompute.
+func TestAssemblyProxyCutOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+	// A tool occurrence: a unit box straddling the top half of the participant at occs[0].
+	tool := asm.Place("tool:1", blockPart(t, math.P3(0, 0, 0), math.P3(1, 1, 1)), math.Translation4(math.V3(0, 0, 0.5)))
+
+	var added wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.addProxyCut", fmt.Sprintf(`{"source":%d,"operation":"difference"}`, tool.ID()), &added)
+	if added.Feature.Kind != "assemblyProxyCut" {
+		t.Fatalf("feature kind = %q, want assemblyProxyCut", added.Feature.Kind)
+	}
+	// The source tool must not be a participant (a component does not machine itself).
+	for _, p := range added.Feature.Participants {
+		if p == tool.ID() {
+			t.Error("source occurrence should be excluded from participation")
+		}
+	}
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.5) > 1e-6 {
+		t.Errorf("proxy-cut participant volume = %g, want 0.5 (top half removed by the tool)", got)
+	}
+
+	// Associativity: move the tool clear and recompute — the cut follows.
+	tool.SetTransform(math.Translation4(math.V3(0, 0, 5)))
+	call(t, r, s, "assembly.setEndOfFeatures", `{"position":-1}`, &wire.AssemblyFeaturesResult{}) // any recompute
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-1.0) > 1e-6 {
+		t.Errorf("after moving the tool clear: volume = %g, want 1.0 (associative)", got)
+	}
+}
+
 // TestAssemblySetParticipantsOverWire narrows participation to one occurrence; the
 // dropped one is left whole.
 func TestAssemblySetParticipantsOverWire(t *testing.T) {

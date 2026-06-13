@@ -29,6 +29,7 @@ import (
 func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesList] = assemblyFeaturesList
 	r.handlers[wire.MethodAssemblyFeaturesAdd] = assemblyFeaturesAdd
+	r.handlers[wire.MethodAssemblyFeaturesAddProxyCut] = assemblyFeaturesAddProxyCut
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
 	r.handlers[wire.MethodAssemblyFeaturesSetSuppressed] = assemblyFeaturesSetSuppressed
@@ -60,6 +61,33 @@ func assemblyFeaturesAdd(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 		return nil, err
 	}
 	af := asm.AddFeature(cut)
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+}
+
+// assemblyFeaturesAddProxyCut adds a feature whose tool is the proxied geometry of the
+// source occurrence, re-resolved each rebuild. The source is excluded from the new
+// feature's default participation — a component does not machine itself.
+func assemblyFeaturesAddProxyCut(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddProxyCutFeatureArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	op, err := cutOperation(in.Operation)
+	if err != nil {
+		return nil, err
+	}
+	source, ok := asm.Occurrences().ByID(in.Source)
+	if !ok {
+		return nil, fmt.Errorf("%s: no occurrence with id %d in the assembly", wire.MethodAssemblyFeaturesAddProxyCut, in.Source)
+	}
+	af := asm.AddFeature(feature.NewAssemblyProxyCutFeature(source, op))
+	af.RemoveParticipant(source)
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
 	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
