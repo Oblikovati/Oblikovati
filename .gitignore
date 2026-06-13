@@ -428,9 +428,13 @@ go.work.sum
 
 experiments/
 
-# Generated document thumbnails (ADR-0020): a .obk is a committed YAML text file;
-# its thumbnail is regenerable cache written beside it on save and never committed.
-*.obk.thumb.*
+# Generated document thumbnails (ADR-0020): a document is a committed YAML text
+# file; its thumbnail is regenerable cache written beside it on save (<document>.png)
+# and never committed. One pattern per document extension (ADR-0034).
+*.opd.png
+*.oad.png
+*.odd.png
+*.ord.png
 
 # Add-in *sources* are tracked; only shared-library build outputs are ignored.
 # The host loads built libs from addins/ at runtime, and `go build -buildmode=
