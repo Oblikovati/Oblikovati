@@ -461,6 +461,7 @@ var mutatingMethods = map[string]bool{
 	wire.MethodAssemblyDeriveBreakLink:             true,
 	wire.MethodAssemblyFeaturesAdd:                 true,
 	wire.MethodAssemblyFeaturesAddProxyCut:         true,
+	wire.MethodAssemblyFeaturesAddHole:             true,
 	wire.MethodAssemblyFeaturesSetParticipants:     true,
 	wire.MethodAssemblyFeaturesSetParticipantPaths: true,
 	wire.MethodAssemblyFeaturesSetSuppressed:       true,

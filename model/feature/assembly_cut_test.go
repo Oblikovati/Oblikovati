@@ -79,6 +79,42 @@ func TestAssemblyCutDropsFullyConsumedBody(t *testing.T) {
 	}
 }
 
+// TestAssemblyHoleRemovesCylinder gates the parametric assembly hole against the
+// analytic value: a through-hole of radius 0.25 drilled along +z removes a faceted
+// cylinder (its 32-gon cross-section × the unit box's height) from the box.
+func TestAssemblyHoleRemovesCylinder(t *testing.T) {
+	axis, _ := gmath.NewUnitVector3(0, 0, 1)
+	f, err := NewAssemblyHoleFeature(gmath.P3(0.5, 0.5, 0), axis, 0.5, 1.5)
+	if err != nil {
+		t.Fatalf("NewAssemblyHoleFeature: %v", err)
+	}
+	if f.Kind() != "assemblyHole" {
+		t.Errorf("kind = %q, want assemblyHole", f.Kind())
+	}
+
+	out, err := f.Recompute(Input{Bodies: []*topo.Body{unitBlock(t)}})
+	if err != nil {
+		t.Fatalf("Recompute: %v", err)
+	}
+	if len(out.Bodies) != 1 {
+		t.Fatalf("result bodies = %d, want 1", len(out.Bodies))
+	}
+	// Expected: unit box minus the faceted bore (its 32-gon cross-section × box height 1).
+	boreArea := 0.5 * float64(holeFacets) * 0.25 * 0.25 * math.Sin(2*math.Pi/float64(holeFacets))
+	want := 1.0 - boreArea*1.0
+	if got := bodyVolume(out.Bodies[0]); math.Abs(got-want) > 1e-6 {
+		t.Errorf("holed volume = %g, want %g (box minus the faceted bore)", got, want)
+	}
+}
+
+// TestAssemblyHoleRejectsBadDimensions: non-positive diameter or depth is an error.
+func TestAssemblyHoleRejectsBadDimensions(t *testing.T) {
+	axis, _ := gmath.NewUnitVector3(0, 0, 1)
+	if _, err := NewAssemblyHoleFeature(gmath.P3(0, 0, 0), axis, 0, 1); err == nil {
+		t.Error("zero diameter should be rejected")
+	}
+}
+
 // TestAssemblyCutNilToolFails: a missing tool is a lost input the engine can turn into
 // feature health, reported as an error rather than a panic.
 func TestAssemblyCutNilToolFails(t *testing.T) {

@@ -30,6 +30,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesList] = assemblyFeaturesList
 	r.handlers[wire.MethodAssemblyFeaturesAdd] = assemblyFeaturesAdd
 	r.handlers[wire.MethodAssemblyFeaturesAddProxyCut] = assemblyFeaturesAddProxyCut
+	r.handlers[wire.MethodAssemblyFeaturesAddHole] = assemblyFeaturesAddHole
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
 	r.handlers[wire.MethodAssemblyFeaturesSetSuppressed] = assemblyFeaturesSetSuppressed
@@ -88,6 +89,30 @@ func assemblyFeaturesAddProxyCut(s *app.Session, raw json.RawMessage) (json.RawM
 	}
 	af := asm.AddFeature(feature.NewAssemblyProxyCutFeature(source, op))
 	af.RemoveParticipant(source)
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+}
+
+// assemblyFeaturesAddHole drills a parametric hole through the participants.
+func assemblyFeaturesAddHole(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAssemblyHoleArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	axis, err := math.NewUnitVector3(in.Axis[0], in.Axis[1], in.Axis[2])
+	if err != nil {
+		return nil, fmt.Errorf("%s: axis %v is not a direction: %w", wire.MethodAssemblyFeaturesAddHole, in.Axis, err)
+	}
+	hole, err := feature.NewAssemblyHoleFeature(math.P3(in.Center[0], in.Center[1], in.Center[2]), axis, in.Diameter, in.Depth)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddHole, err)
+	}
+	af := asm.AddFeature(hole)
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
 	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
