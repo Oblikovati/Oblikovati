@@ -79,6 +79,18 @@ func (f *AssemblyFeature) RemoveParticipant(o *occurrence.Occurrence) {
 	}
 }
 
+// SetParticipants replaces the feature's participation set with occs (in order),
+// dropping any current participant not in the new set. It is the "set participation"
+// edit the wire surface drives, distinct from incremental add/remove.
+func (f *AssemblyFeature) SetParticipants(occs []*occurrence.Occurrence) {
+	for _, o := range f.Participants() {
+		f.RemoveParticipant(o)
+	}
+	for _, o := range occs {
+		f.AddParticipant(o)
+	}
+}
+
 // Participates reports whether o is in this feature's participation set.
 func (f *AssemblyFeature) Participates(o *occurrence.Occurrence) bool { return f.participants[o] }
 
