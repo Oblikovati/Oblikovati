@@ -27,6 +27,7 @@ const (
 	dialogImport                 // File ▸ Import (STL/OBJ/3MF/STEP → imported body)
 	dialogExport                 // File ▸ Export (part bodies → STL/OBJ/3MF/STEP)
 	dialogAddIn                  // an add-in's dialogs.showFileDialog request (M05-F08)
+	dialogMeshRef                // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -103,6 +104,8 @@ func (d *fileDialog) title() string {
 		return "Save As"
 	case dialogLoadHDR:
 		return "Load HDR"
+	case dialogMeshRef:
+		return "Place Mesh (.stl)"
 	case dialogImport:
 		return "Import (.stl/.obj/.3mf/.step)"
 	case dialogExport:
@@ -241,6 +244,8 @@ func (d *fileDialog) allowedExts() []string {
 		return []string{".obk"}
 	case dialogLoadHDR:
 		return []string{".hdr"}
+	case dialogMeshRef:
+		return []string{".stl"}
 	case dialogImport, dialogExport:
 		return []string{".stl", ".obj", ".3mf", ".step", ".stp"}
 	case dialogAddIn:

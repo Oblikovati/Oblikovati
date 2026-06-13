@@ -12,9 +12,10 @@ import (
 // split the part into two bodies (the default) or trim away one side, then OK to divide the
 // active part. The cutting plane may be pre-selected in the browser/3D view before invoking.
 type SplitTool struct {
-	plane *feature.WorkPlane
-	keep  feature.SplitSide
-	added *feature.PartFeature
+	plane     *feature.WorkPlane
+	keep      feature.SplitSide
+	facesOnly bool // Split Faces: imprint the plane onto the faces, removing nothing (#330)
+	added     *feature.PartFeature
 }
 
 // NewSplitTool returns a split tool defaulting to a full split into two bodies.
@@ -39,19 +40,28 @@ func (t *SplitTool) Pick(_ *Session, sel Selectable) {
 }
 
 // SetKeep/Keep drive which side(s) the split keeps (both = split, one side = trim).
-func (t *SplitTool) SetKeep(k feature.SplitSide) { t.keep = k }
+// Choosing a keep side leaves faces-only mode.
+func (t *SplitTool) SetKeep(k feature.SplitSide) { t.keep, t.facesOnly = k, false }
 func (t *SplitTool) Keep() feature.SplitSide     { return t.keep }
 
 // Keep convenience setters + label, so the head can drive the choice without importing the
-// model's enum.
-func (t *SplitTool) SetKeepBoth()     { t.keep = feature.SplitBoth }
-func (t *SplitTool) SetKeepPositive() { t.keep = feature.SplitPositive }
-func (t *SplitTool) SetKeepNegative() { t.keep = feature.SplitNegative }
+// model's enum. Each keep mode clears faces-only (the modes are exclusive).
+func (t *SplitTool) SetKeepBoth()     { t.keep, t.facesOnly = feature.SplitBoth, false }
+func (t *SplitTool) SetKeepPositive() { t.keep, t.facesOnly = feature.SplitPositive, false }
+func (t *SplitTool) SetKeepNegative() { t.keep, t.facesOnly = feature.SplitNegative, false }
+
+// SetSplitFaces/FacesOnly drive the faces-only imprint mode: the plane splits the faces it
+// crosses but removes no material (#330).
+func (t *SplitTool) SetSplitFaces()  { t.facesOnly = true }
+func (t *SplitTool) FacesOnly() bool { return t.facesOnly }
+
 func (t *SplitTool) KeepLabel() string {
-	switch t.keep {
-	case feature.SplitPositive:
+	switch {
+	case t.facesOnly:
+		return "Split faces (imprint only)"
+	case t.keep == feature.SplitPositive:
 		return "Trim (keep front side)"
-	case feature.SplitNegative:
+	case t.keep == feature.SplitNegative:
 		return "Trim (keep back side)"
 	default:
 		return "Split into two bodies"
@@ -70,7 +80,12 @@ func (t *SplitTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddSplitSolid(t.plane, t.keep)
+	mods := feature.NewModifyFeatures(part.Features())
+	if t.facesOnly {
+		t.added = mods.AddSplitFaces(t.plane)
+	} else {
+		t.added = mods.AddSplitSolid(t.plane, t.keep)
+	}
 	part.Recompute()
 	s.recordEdit(part, "Split")
 	if !t.added.Health().OK() {

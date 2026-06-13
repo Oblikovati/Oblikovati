@@ -21,7 +21,7 @@ func TestDefaultDescriptors(t *testing.T) {
 		"replaceFace", "moveBody", "splitSolid", "coreCavity", "hull",
 		"sweep", "patternRectangular", "patternCircular", "mirror", "patternSketchDriven",
 		"boundaryPatch", "ruledSurface", "surfaceOffset", "extend", "midSurface", "stitch", "sculpt",
-		"freeformBox", "freeformPlane", "freeformQuadBall",
+		"freeformBox", "freeformPlane", "freeformQuadBall", "mesh",
 	}
 	if got := len(r.All()); got != len(all) {
 		t.Errorf("default registry has %d operations, want %d", got, len(all))

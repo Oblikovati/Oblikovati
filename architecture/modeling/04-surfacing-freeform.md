@@ -69,3 +69,36 @@ not architecture — which is exactly why ADR-0002's phasing matters: the surfac
 features and their UI exist now; their ops return `NotYetImplemented` health until
 the relevant kernel phase lands. Sub-D is the one genuinely new representation, and
 it is cleanly isolated in `kernel/subd` behind a `ToBRep` boundary.
+
+## As built (M10, 2026-06)
+
+What shipped, against the plan above (issues #333–#344; exposure pass #697–#705):
+
+- **Boundary patch**: a closed planar profile fills into a one-face trimmed surface
+  body; per-loop G0/G1/G2 conditions are carried (vacuously satisfied for an isolated
+  planar loop — curved blends are NURBS phase B).
+- **Ruled surface**: the normal mode builds a real planar-quad band; tangent /
+  perpendicular resolve inputs then defer (Warning).
+- **Stitch/Knit**: an exact-coincidence weld (tolerance-grid vertex merge); a closed
+  quilt becomes a solid. Tolerant near-gap `Sew` stays phase D. **Sculpt** fills an
+  enclosed volume.
+- **Trim**: Sutherland–Hodgman half-space clip of planar surfaces (single and
+  coplanar multi-face); curved trims stay phase B/C. **Extend** grows a planar
+  surface along a boundary edge. **Surface offset** translates planar patches;
+  **mid-surface** pairs antiparallel planar faces under a thickness threshold and
+  records per-pair thickness (for FEA, M18).
+- **Freeform**: `kernel/subd` is the sub-D kernel — control cage + per-edge creases,
+  Catmull–Clark `SubdivideN`, `ToBody` to a planar B-rep (closed cage → solid). The
+  conversion is per-level subdivision, not the `ToBRep` NURBS limit-surface fit the
+  plan sketched (that fit is the remaining phase-B step). Cage editing
+  (level/move/crease) is exposed over the wire as `freeform.*`; viewport direct
+  manipulation is follow-up UI work.
+- **Mesh**: an ASCII STL parses into welded reference geometry (`MeshFeature`) with
+  selectable facet topology, placeable from the ribbon and the `mesh` op — there is
+  no `topo.MeshBody`; the body-producing import path is the translator framework
+  (`ImportedBodyFeature`, M17). **Core/cavity** parts the tooling block by a planar
+  parting (axis + position + shrinkage); part-shaped pockets and silhouette parting
+  surfaces stay phase C (#653).
+
+Every feature above is reachable four ways: ribbon tool, `features.add` op schema,
+`features.get`/`features.edit` scalars, and the serialized `.obk` recipe.

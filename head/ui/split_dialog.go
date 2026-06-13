@@ -14,17 +14,20 @@ import (
 // (the reference panel schema) shows the cutting-plane chip and the keep-mode toggle
 // row (split into two / trim either side), then OK/Cancel.
 
-// splitModeToggles is the Behavior section's Mode row: which side(s) the split keeps.
+// splitModeToggles is the Behavior section's Mode row: which side(s) the split keeps,
+// plus the faces-only imprint mode (#330).
 var splitModeToggles = propertyToggleSet{
-	keys: []string{"split-keep-both", "split-keep-front", "split-keep-back"},
+	keys: []string{"split-keep-both", "split-keep-front", "split-keep-back", "split-faces"},
 	tips: []string{
 		"Split — keep both sides as separate bodies",
 		"Trim — keep the front side only",
 		"Trim — keep the back side only",
+		"Split Faces — imprint the plane onto the faces, removing nothing",
 	},
 }
 
-// splitModeSides lists the keep sides in the Mode toggle row's order.
+// splitModeSides lists the keep sides for the first three Mode toggles; the fourth
+// toggle is the faces-only mode.
 var splitModeSides = []feature.SplitSide{feature.SplitBoth, feature.SplitPositive, feature.SplitNegative}
 
 // drawSplitDialog shows the Split property panel while the Split tool is active.
@@ -50,16 +53,25 @@ func drawSplitDialog(s *app.Session) {
 	native.End()
 }
 
-// drawSplitModeRow renders the keep-mode toggles, mapped onto the tool's SplitSide.
+// drawSplitModeRow renders the keep-mode + faces-only toggles, mapped onto the tool.
 func drawSplitModeRow(t *app.SplitTool) {
 	propertyRow("Mode")
-	if i := propertyIconToggles("split-mode", splitModeToggles.keys, splitModeToggles.tips, splitModeIndex(t)); i >= 0 {
-		t.SetKeep(splitModeSides[i])
+	i := propertyIconToggles("split-mode", splitModeToggles.keys, splitModeToggles.tips, splitModeIndex(t))
+	if i < 0 {
+		return
 	}
+	if i == len(splitModeSides) {
+		t.SetSplitFaces()
+		return
+	}
+	t.SetKeep(splitModeSides[i])
 }
 
-// splitModeIndex maps the tool's keep side onto the Mode toggle row.
+// splitModeIndex maps the tool's mode onto the toggle row (faces-only is the last slot).
 func splitModeIndex(t *app.SplitTool) int {
+	if t.FacesOnly() {
+		return len(splitModeSides)
+	}
 	for i, side := range splitModeSides {
 		if side == t.Keep() {
 			return i

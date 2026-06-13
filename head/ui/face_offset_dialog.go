@@ -38,6 +38,9 @@ func drawFaceOffsetDialog(s *app.Session) {
 		if propertySection("Behavior") {
 			propertyFloatRow("Distance", "face-offset-distance", s.LengthUnitName()+" (+out / −in)", &faceOffsetUI.distance)
 			o.SetDistance(float64(faceOffsetUI.distance))
+			if i := propertyComboRow("Approximation", "face-offset-approx", app.ApproximationOptions(), o.ApproximationIndex()); i >= 0 {
+				o.SetApproximationIndex(i)
+			}
 		}
 		native.Separator()
 		drawCommitCancelButtons(s, o.CanCommit())

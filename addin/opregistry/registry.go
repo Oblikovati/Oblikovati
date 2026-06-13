@@ -145,6 +145,8 @@ func Default() *Registry {
 		freeformBoxDescriptor(),
 		freeformPlaneDescriptor(),
 		freeformQuadBallDescriptor(),
+		// Mesh reference geometry.
+		meshDescriptor(),
 	} {
 		if err := r.Register(d); err != nil {
 			panic(fmt.Sprintf("opregistry: seeding default registry: %v", err))

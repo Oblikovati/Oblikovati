@@ -107,7 +107,9 @@ func drawThreadPitch(t *app.ThreadTool, size feature.ThreadSize) {
 	}
 }
 
-// drawThreadBehavior is the Behavior section: the cosmetic-vs-modeled-cut toggle.
+// drawThreadBehavior is the Behavior section: the cosmetic-vs-modeled-cut toggle plus
+// the #325 parity options — tolerance class, tapered (pipe) flag, and which thread
+// diameter the modeled face represents.
 func drawThreadBehavior(t *app.ThreadTool) {
 	if !propertySection("Behavior") {
 		return
@@ -116,6 +118,17 @@ func drawThreadBehavior(t *app.ThreadTool) {
 	cut := t.Cut()
 	if native.Checkbox("Model real cut thread (else cosmetic)", &cut) {
 		t.SetCut(cut)
+	}
+	propertyRow("")
+	tapered := t.Tapered()
+	if native.Checkbox("Tapered (pipe) thread", &tapered) {
+		t.SetTapered(tapered)
+	}
+	if i := propertyComboRow("Class", "thread-class", t.ClassOptions(), t.ClassIndex()); i >= 0 {
+		t.SetClassIndex(i)
+	}
+	if i := propertyComboRow("Model diameter", "thread-model-dia", t.ModelDiameterOptions(), t.ModelDiameterIndex()); i >= 0 {
+		t.SetModelDiameterIndex(i)
 	}
 }
 

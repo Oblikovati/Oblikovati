@@ -13,9 +13,11 @@ import (
 // (the reference panel schema) shows the picked-edges chip and the blend radius, then
 // OK/Cancel.
 var filletUI = struct {
-	radius float32
-	seeded *app.FilletTool // the tool the fields were seeded from (nil = none)
-}{radius: 1}
+	radius      float32
+	startRadius float32
+	endRadius   float32
+	seeded      *app.FilletTool // the tool the fields were seeded from (nil = none)
+}{radius: 1, startRadius: 1, endRadius: 1}
 
 // drawFilletDialog shows the Fillet property panel while the Fillet tool is active —
 // creating a fillet or re-editing a committed one (the same panel serves both).
@@ -26,8 +28,7 @@ func drawFilletDialog(s *app.Session) {
 		return
 	}
 	if filletUI.seeded != f {
-		filletUI.radius = float32(f.Radius())
-		filletUI.seeded = f
+		seedFilletUI(f)
 	}
 	native.SetNextWindowSizeOnce(340, 230)
 	if native.Begin("Fillet") {
@@ -41,11 +42,38 @@ func drawFilletDialog(s *app.Session) {
 				f.EdgeCount() > 0, "Click convex edges in the viewport to round", f.ClearEdges)
 		}
 		if propertySection("Behavior") {
-			propertyFloatRow("Radius", "fillet-radius", s.LengthUnitName(), &filletUI.radius)
-			f.SetRadius(float64(filletUI.radius))
+			drawFilletRadiusRows(s, f)
 		}
 		native.Separator()
 		drawCommitCancelButtons(s, f.CanCommit())
 	}
 	native.End()
+}
+
+// seedFilletUI loads the panel buffers from the tool the first frame it appears
+// (creation defaults, or a committed fillet's values in edit mode).
+func seedFilletUI(f *app.FilletTool) {
+	filletUI.radius = float32(f.Radius())
+	filletUI.startRadius = float32(f.StartRadius())
+	filletUI.endRadius = float32(f.EndRadius())
+	filletUI.seeded = f
+}
+
+// drawFilletRadiusRows renders the constant-vs-variable mode (#323): a constant blend
+// takes one radius; variable blends each picked edge from a start to an end radius.
+func drawFilletRadiusRows(s *app.Session, f *app.FilletTool) {
+	propertyRow("")
+	variable := f.Variable()
+	if native.Checkbox("Variable radius (start → end per edge)", &variable) {
+		f.SetVariable(variable)
+	}
+	if !variable {
+		propertyFloatRow("Radius", "fillet-radius", s.LengthUnitName(), &filletUI.radius)
+		f.SetRadius(float64(filletUI.radius))
+		return
+	}
+	propertyFloatRow("Start radius", "fillet-start-radius", s.LengthUnitName(), &filletUI.startRadius)
+	f.SetStartRadius(float64(filletUI.startRadius))
+	propertyFloatRow("End radius", "fillet-end-radius", s.LengthUnitName(), &filletUI.endRadius)
+	f.SetEndRadius(float64(filletUI.endRadius))
 }

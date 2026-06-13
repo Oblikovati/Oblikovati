@@ -135,7 +135,60 @@ func modelTabCommands() []*CommandDefinition {
 	cmds = append(cmds, solidFeatureCommands()...)
 	cmds = append(cmds, modifyFeatureCommands()...)
 	cmds = append(cmds, patternFeatureCommands()...)
-	return append(cmds, surfaceFeatureCommands()...)
+	cmds = append(cmds, surfaceFeatureCommands()...)
+	cmds = append(cmds, freeformFeatureCommands()...)
+	cmds = append(cmds, moldFeatureCommands()...)
+	return append(cmds, meshFeatureCommands()...)
+}
+
+// meshFeatureCommands are the 3D Model tab's Mesh panel: place an STL as mesh reference
+// geometry (M10-F04, #700). The command arms the head's file dialog; the import itself is
+// Session.ImportMeshFile.
+func meshFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Mesh.Place", "Place Mesh", "Mesh", func(s *Session) error {
+			s.RequestImportMesh()
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("mesh-place").WithButtonStyle(LargeIconButton).
+			WithTooltip("Place Mesh — load an ASCII STL as selectable mesh reference geometry."),
+	}
+}
+
+// moldFeatureCommands are the 3D Model tab's Mold panel: the core/cavity tooling split
+// (M10-F04, #701).
+func moldFeatureCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("Mold.CoreCavity", "Core/Cavity", "Mold", func(s *Session) error {
+			s.StartTool(NewCoreCavityTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("core-cavity").WithButtonStyle(LargeIconButton).
+			WithTooltip("Core/Cavity — split the tooling block at a parting plane into core and cavity solids."),
+	}
+}
+
+// freeformFeatureCommands are the 3D Model tab's Freeform panel: the sub-D primitives
+// (M10-F03, #698). Cage editing on the placed feature is the freeform.* wire surface.
+func freeformFeatureCommands() []*CommandDefinition {
+	prims := []struct {
+		id, name, icon, tip string
+		start               func() Tool
+	}{
+		{"Freeform.Box", "Box", "freeform-box", "Freeform Box — place a sub-D box cage and smooth it by subdivision level.", func() Tool { return NewFreeformBoxTool() }},
+		{"Freeform.Plane", "Plane", "freeform-plane", "Freeform Plane — place an open sub-D plane cage (a surface body).", func() Tool { return NewFreeformPlaneTool() }},
+		{"Freeform.QuadBall", "Quad Ball", "freeform-quadball", "Freeform Quad Ball — place a closed sphere-like sub-D cage.", func() Tool { return NewFreeformQuadBallTool() }},
+	}
+	cmds := make([]*CommandDefinition, len(prims))
+	for i, d := range prims {
+		start := d.start
+		cmds[i] = NewCommand(d.id, d.name, "Freeform", func(s *Session) error {
+			s.StartTool(start())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).WithTooltip(d.tip).
+			WithIcon(d.icon).WithButtonStyle(SmallIconButton)
+	}
+	return cmds
 }
 
 // surfaceFeatureCommands are the 3D Model tab's Surface panel (canonical: Patch, Stitch, Sculpt,
@@ -172,12 +225,30 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("surface-extend").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extend — grow a surface outward along a boundary edge."),
+		NewCommand("Surface.Ruled", "Ruled Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewRuledSurfaceTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("ruled-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Ruled Surface — sweep a closed profile's edges by straight rulings into a band."),
+		NewCommand("Surface.Offset", "Offset Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewSurfaceOffsetTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("surface-offset").WithButtonStyle(LargeIconButton).
+			WithTooltip("Offset Surface — copy the running surface along its normal by a distance."),
+		NewCommand("Surface.MidSurface", "Mid-Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewMidSurfaceTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("mid-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Mid-Surface — extract mid-plane patches from the solid's thin walls (for FEA)."),
 	}
 }
 
 // patternFeatureCommands are the 3D Model tab's Pattern panel: replicate selected features
-// as real placed copies (canonical ribbon: Rectangular, Circular, Sketch Driven, Mirror;
-// Sketch Driven is a follow-up). Each starts an interactive tool fed the source features.
+// as real placed copies (canonical ribbon: Rectangular, Circular, Sketch Driven, Mirror).
+// Each starts an interactive tool fed the source features.
 func patternFeatureCommands() []*CommandDefinition {
 	pats := []struct {
 		id, name, icon, tip string
@@ -186,6 +257,7 @@ func patternFeatureCommands() []*CommandDefinition {
 		{"Modify.RectangularPattern", "Rectangular", "rectangular-pattern", "Rectangular Pattern — select features, set counts and spacing.", func() Tool { return NewFeatureRectPatternTool() }},
 		{"Modify.CircularPattern", "Circular", "circular-pattern", "Circular Pattern — select features, set count and angle.", func() Tool { return NewFeatureCircPatternTool() }},
 		{"Modify.Mirror", "Mirror", "mirror", "Mirror — select features, set the mirror-plane normal.", func() Tool { return NewFeatureMirrorTool() }},
+		{"Modify.SketchDrivenPattern", "Sketch Driven", "sketch-driven-pattern", "Sketch-Driven Pattern — select features, then the sketch whose points place the copies.", func() Tool { return NewFeatureSketchDrivenPatternTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(pats))
 	for i, p := range pats {
@@ -302,6 +374,8 @@ func directEditCommands() []*CommandDefinition {
 		{"Modify.Split", "Split", "split", "Split — divide the part by a work plane into two bodies, or trim one side away.", func() Tool { return NewSplitTool() }},
 		{"Modify.MoveFace", "Move Face", "move-face", "Move Face — translate picked faces, retopologizing the solid.", func() Tool { return NewMoveFaceTool() }},
 		{"Modify.MoveBodies", "Move Bodies", "move-bodies", "Move Bodies — relocate a body by a vector.", func() Tool { return NewMoveBodyTool() }},
+		{"Modify.DirectEdit", "Direct Edit", "direct-edit", "Direct Edit — move, push/pull, rotate, delete or scale picked geometry (#332).", func() Tool { return NewDirectEditTool() }},
+		{"Modify.Hull", "Hull", "hull", "Hull — wrap the part's solids into one convex solid.", func() Tool { return NewHullTool() }},
 	}
 	cmds := make([]*CommandDefinition, len(defs))
 	for i, d := range defs {
@@ -336,6 +410,12 @@ func cutFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithAlias("H").WithEnable(notInSketch).
 			WithIcon("hole").WithButtonStyle(LargeIconButton).
 			WithTooltip("Hole — drill a cylindrical hole into a planar face of the solid."),
+		NewCommand("Modify.Boss", "Boss", "Modify", func(s *Session) error {
+			s.StartTool(NewBossTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
+			WithIcon("boss").WithButtonStyle(LargeIconButton).
+			WithTooltip("Boss — raise a cylindrical stud on a planar face (the join-side mirror of Hole)."),
 		NewCommand("Modify.Chamfer", "Chamfer", "Modify", func(s *Session) error {
 			s.StartTool(NewChamferTool())
 			return nil

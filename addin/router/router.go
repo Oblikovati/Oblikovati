@@ -85,6 +85,9 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodModelReferenceKeys] = referenceKeys
 	r.handlers[wire.MethodThreadsTableQuery] = threadsTableQuery
 	r.handlers[wire.MethodThreadsResolve] = threadsResolve
+	r.handlers[wire.MethodFreeformSetLevel] = freeformSetLevel
+	r.handlers[wire.MethodFreeformMoveVertices] = freeformMoveVertices
+	r.handlers[wire.MethodFreeformCreaseEdges] = freeformCreaseEdges
 	r.registerSketchHandlers()
 	r.registerFeatureHandlers()
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
@@ -445,6 +448,9 @@ var mutatingMethods = map[string]bool{
 	wire.MethodFeaturesRename:                   true,
 	wire.MethodFeaturesSetSuppressed:            true,
 	wire.MethodFeaturesReorder:                  true,
+	wire.MethodFreeformSetLevel:                 true,
+	wire.MethodFreeformMoveVertices:             true,
+	wire.MethodFreeformCreaseEdges:              true,
 	wire.MethodWorkPlanesCreate:                 true,
 	wire.MethodWorkPlanesRedefine:               true,
 	wire.MethodWorkPointsCreate:                 true,

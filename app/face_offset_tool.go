@@ -12,9 +12,10 @@ import (
 // planar faces, set the offset distance (positive grows the solid along each face's
 // outward normal, negative shaves it), and OK to retopologize the active part.
 type FaceOffsetTool struct {
-	faces    []FaceHandle
-	distance float64
-	added    *feature.PartFeature
+	faces     []FaceHandle
+	distance  float64
+	approxIdx int // index into ApproximationOptions (#331; 0 = exact)
+	added     *feature.PartFeature
 }
 
 // NewFaceOffsetTool returns a face-offset tool with a default 1-unit offset.
@@ -48,6 +49,13 @@ func (t *FaceOffsetTool) hasFace(f FaceHandle) bool {
 func (t *FaceOffsetTool) SetDistance(d float64) { t.distance = d }
 func (t *FaceOffsetTool) Distance() float64     { return t.distance }
 
+// ApproximationIndex / SetApproximationIndex select the #331 approximation request
+// (index into ApproximationOptions).
+func (t *FaceOffsetTool) ApproximationIndex() int { return t.approxIdx }
+func (t *FaceOffsetTool) SetApproximationIndex(i int) {
+	t.approxIdx = clampRange(i, len(featureApproximations))
+}
+
 // Faces returns the picked faces (for the UI to list/highlight).
 func (t *FaceOffsetTool) Faces() []FaceHandle { return append([]FaceHandle(nil), t.faces...) }
 
@@ -65,7 +73,9 @@ func (t *FaceOffsetTool) Commit(s *Session) error {
 	for i, f := range t.faces {
 		keys[i] = f.Face.ReferenceKey()
 	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddFaceOffset(keys, t.distance)
+	d := t.distance
+	t.added = feature.NewModifyFeatures(part.Features()).
+		AddFaceOffsetApprox(keys, func() float64 { return d }, approximationAt(t.approxIdx))
 	part.Recompute()
 	s.recordEdit(part, "Offset Face")
 	if !t.added.Health().OK() {
