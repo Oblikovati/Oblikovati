@@ -128,10 +128,3 @@ func TestForwardsFileEvents(t *testing.T) {
 		t.Errorf("file.openDialog payload = %+v, want the supplied path", hook)
 	}
 }
-
-// cancelAll cancels every subscription (the shutdown path Subscribe documents).
-func cancelAll(subs []event.Subscription) {
-	for _, sub := range subs {
-		sub.Cancel()
-	}
-}
