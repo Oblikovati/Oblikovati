@@ -240,10 +240,12 @@ func mergeIntoBase(bodies []*topo.Body) []*topo.Body {
 // source, so a source edit re-simplifies; BreakLink freezes the current result. It is
 // the simplified-derive flavor of [DerivedAssemblyComponent].
 type ShrinkwrapComponent struct {
-	source AssemblyBodySource
-	def    ShrinkwrapDefinition
-	linked bool
-	frozen []*topo.Body
+	source    AssemblyBodySource // nil after restore until BindSource rebinds it
+	def       ShrinkwrapDefinition
+	linked    bool
+	frozen    []*topo.Body
+	link      DeriveSourceLink
+	outOfDate bool
 }
 
 // Definition returns the shrinkwrap recipe holder.
@@ -252,8 +254,28 @@ func (s *ShrinkwrapComponent) Definition() *ShrinkwrapComponent { return s }
 // Kind implements [Feature].
 func (s *ShrinkwrapComponent) Kind() string { return "shrinkwrap" }
 
-// SourceVersion returns the source assembly's geometry version (change tracking).
-func (s *ShrinkwrapComponent) SourceVersion() string { return s.source.ModelGeometryVersion() }
+// SourceVersion returns the source assembly's geometry version, or "" when the source is
+// not bound (after restore, before [BindSource]).
+func (s *ShrinkwrapComponent) SourceVersion() string {
+	if s.source == nil {
+		return ""
+	}
+	return s.source.ModelGeometryVersion()
+}
+
+// SourceLink returns the persisted identity of the shrinkwrap's source document (#715).
+func (s *ShrinkwrapComponent) SourceLink() DeriveSourceLink { return s.link }
+
+// OutOfDate reports whether the source assembly has been edited since this shrinkwrap was
+// saved — the source resolved on reopen carries a different recipe revision than captured.
+func (s *ShrinkwrapComponent) OutOfDate() bool { return s.outOfDate }
+
+// BindSource (re)binds the live source assembly after a restore and recomputes staleness:
+// out of date when currentDBRevID differs from the revision captured in the link (#715).
+func (s *ShrinkwrapComponent) BindSource(source AssemblyBodySource, currentDBRevID string) {
+	s.source = source
+	s.outOfDate = s.link.DatabaseRevisionID != "" && currentDBRevID != "" && currentDBRevID != s.link.DatabaseRevisionID
+}
 
 // Linked reports whether the shrinkwrap still pulls from its source.
 func (s *ShrinkwrapComponent) Linked() bool { return s.linked }
@@ -267,7 +289,7 @@ func (s *ShrinkwrapComponent) SetOptions(def ShrinkwrapDefinition) { s.def = def
 // BreakLink freezes the current shrinkwrap result and severs the source link, so the
 // part keeps the simplified geometry without further updates.
 func (s *ShrinkwrapComponent) BreakLink() error {
-	bodies, err := BuildShrinkwrap(s.source, s.def)
+	bodies, err := s.build()
 	if err != nil {
 		return err
 	}
@@ -276,12 +298,19 @@ func (s *ShrinkwrapComponent) BreakLink() error {
 	return nil
 }
 
+// build simplifies the bound source; an unbound source (a restored shrinkwrap not yet
+// resolved, or missing) yields no bodies, so a recompute before/without binding is safe.
+func (s *ShrinkwrapComponent) build() ([]*topo.Body, error) {
+	if s.source == nil {
+		return nil, nil
+	}
+	return BuildShrinkwrap(s.source, s.def)
+}
+
 // Recompute appends the shrinkwrap base body (or, after a broken link, the frozen
 // bodies) to the running state.
 func (s *ShrinkwrapComponent) Recompute(in Input) (Output, error) {
-	return recomputeLinked(in, s.linked, s.frozen, func() ([]*topo.Body, error) {
-		return BuildShrinkwrap(s.source, s.def)
-	})
+	return recomputeLinked(in, s.linked, s.frozen, s.build)
 }
 
 // ShrinkwrapComponents adds shrinkwrap features into the engine.
@@ -292,7 +321,17 @@ func NewShrinkwrapComponents(engine *PartFeatures) *ShrinkwrapComponents {
 	return &ShrinkwrapComponents{engine}
 }
 
-// AddShrinkwrap adds an associative shrinkwrap component simplifying source per def.
-func (c *ShrinkwrapComponents) AddShrinkwrap(source AssemblyBodySource, def ShrinkwrapDefinition) *PartFeature {
-	return c.engine.Add(&ShrinkwrapComponent{source: source, def: def, linked: true})
+// AddShrinkwrap adds an associative shrinkwrap component simplifying source per def,
+// recording link — the source assembly document's identity — so the shrinkwrap survives a
+// save and detects a stale source on reopen (#715).
+func (c *ShrinkwrapComponents) AddShrinkwrap(source AssemblyBodySource, def ShrinkwrapDefinition, link DeriveSourceLink) *PartFeature {
+	return c.engine.Add(&ShrinkwrapComponent{source: source, def: def, linked: true, link: link})
+}
+
+// RestoreShrinkwrap rebuilds a shrinkwrap component from its persisted recipe — the source
+// identity link, the simplification options, and the linked flag — all UNBOUND. The live
+// source is rebound later by [ShrinkwrapComponent.BindSource] once the part's reference
+// graph resolves the source document (#715); until then it contributes no geometry.
+func RestoreShrinkwrap(link DeriveSourceLink, def ShrinkwrapDefinition, linked bool) *ShrinkwrapComponent {
+	return &ShrinkwrapComponent{def: def, linked: linked, link: link}
 }

@@ -111,6 +111,57 @@ func restoreDerivedPart(fs *PartFeatures, data *DerivedPartData) (*PartFeature, 
 	return fs.Add(RestoreDerivedPart(link, transform, data.Linked)), nil
 }
 
+// ShrinkwrapData is the serialized form of a shrinkwrap feature (#715/#749): the source
+// assembly document's identity link, the linked flag, and the simplification options. The
+// simplified geometry is rebuilt from the resolved source on open, never embedded.
+type ShrinkwrapData struct {
+	SourceDocument           string  `yaml:"sourceDocument"`
+	SourceInternalName       string  `yaml:"sourceInternalName,omitempty"`
+	SourceDatabaseRevisionID string  `yaml:"sourceRevision,omitempty"`
+	Linked                   bool    `yaml:"linked"`
+	RemoveStyle              int     `yaml:"removeStyle,omitempty"`
+	MinPartVolume            float64 `yaml:"minPartVolume,omitempty"`
+	EnvelopeStyle            int     `yaml:"envelopeStyle,omitempty"`
+	PatchHoles               bool    `yaml:"patchHoles,omitempty"`
+}
+
+// serializeShrinkwrap projects a shrinkwrap feature to its persisted form.
+func serializeShrinkwrap(s *ShrinkwrapComponent) *ShrinkwrapData {
+	link := s.SourceLink()
+	opt := s.Options()
+	return &ShrinkwrapData{
+		SourceDocument:           link.Document,
+		SourceInternalName:       link.InternalName,
+		SourceDatabaseRevisionID: link.DatabaseRevisionID,
+		Linked:                   s.Linked(),
+		RemoveStyle:              int(opt.RemoveStyle),
+		MinPartVolume:            opt.MinPartVolume,
+		EnvelopeStyle:            int(opt.EnvelopeStyle),
+		PatchHoles:               opt.PatchHoles,
+	}
+}
+
+// restoreShrinkwrap rebuilds an UNBOUND shrinkwrap feature from its payload and adds it to
+// the engine. The source is rebound — and staleness computed — later, when the part's
+// reference graph resolves the source document.
+func restoreShrinkwrap(fs *PartFeatures, data *ShrinkwrapData) (*PartFeature, error) {
+	if data == nil {
+		return nil, fmt.Errorf("shrinkwrap feature is missing its payload")
+	}
+	link := DeriveSourceLink{
+		Document:           data.SourceDocument,
+		InternalName:       data.SourceInternalName,
+		DatabaseRevisionID: data.SourceDatabaseRevisionID,
+	}
+	def := ShrinkwrapDefinition{
+		RemoveStyle:   ShrinkwrapRemoveStyle(data.RemoveStyle),
+		MinPartVolume: data.MinPartVolume,
+		EnvelopeStyle: ShrinkwrapEnvelopeStyle(data.EnvelopeStyle),
+		PatchHoles:    data.PatchHoles,
+	}
+	return fs.Add(RestoreShrinkwrap(link, def, data.Linked)), nil
+}
+
 // matrixFromCells rebuilds a transform from its persisted 16 row-major cells; an empty
 // slice restores the identity (the pull-as-is derive).
 func matrixFromCells(cells []float64) (math.Matrix4, error) {

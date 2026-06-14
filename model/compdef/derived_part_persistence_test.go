@@ -23,14 +23,7 @@ func derivePartIntoPart(t *testing.T, ws *doc.Workspace, dir, name string, sourc
 	}
 	part := partDoc.Content().(*compdef.PartComponentDefinition)
 	source := sourceDoc.Content().(feature.BodySource)
-	id := sourceDoc.FileIdentity()
-	link := feature.DeriveSourceLink{
-		Document:           sourceDoc.FullDocumentName(),
-		InternalName:       id.InternalName,
-		DatabaseRevisionID: id.DatabaseRevisionID,
-	}
-	feature.NewDerivedComponents(part.Features()).AddDerived(source, transform, link)
-	partDoc.OpenReference(sourceDoc.FullDocumentName())
+	feature.NewDerivedComponents(part.Features()).AddDerived(source, transform, assemblySourceLink(partDoc, sourceDoc))
 	return partDoc
 }
 
