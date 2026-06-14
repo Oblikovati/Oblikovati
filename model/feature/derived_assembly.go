@@ -111,6 +111,26 @@ type AssemblyDeriveBinder interface {
 	BindSource(source AssemblyBodySource, currentDBRevID string)
 }
 
+// DeriveStatus is the drive-state surface common to every derive-family feature
+// (derived-assembly, derived-part, shrinkwrap): the persisted source link, whether the
+// source is out of date, whether the link is still live, and acknowledging the source to
+// re-sync. It is what the public deriveStatus/deriveUpdate surface drives (#751).
+type DeriveStatus interface {
+	SourceLink() DeriveSourceLink
+	OutOfDate() bool
+	Linked() bool
+	// AcknowledgeSource re-stamps the link's source revision to currentDBRevID and clears
+	// the out-of-date flag, recording the source's current state as the new baseline.
+	AcknowledgeSource(currentDBRevID string)
+}
+
+// Every derive-family feature reports and re-syncs its drive state.
+var (
+	_ DeriveStatus = (*DerivedAssemblyComponent)(nil)
+	_ DeriveStatus = (*DerivedPartComponent)(nil)
+	_ DeriveStatus = (*ShrinkwrapComponent)(nil)
+)
+
 // DerivedAssemblyComponent derives a source assembly into this part as a base body:
 // each recompute pulls the source's placed bodies, transforms each into the part, and
 // merges the included ones — cutting the subtracted, skipping the excluded — into one
@@ -155,6 +175,12 @@ func (d *DerivedAssemblyComponent) SourceLink() DeriveSourceLink { return d.link
 // source resolved on reopen carries a different recipe revision than [DeriveSourceLink]
 // captured. Always false for an in-session derive (the link matches the live source).
 func (d *DerivedAssemblyComponent) OutOfDate() bool { return d.outOfDate }
+
+// AcknowledgeSource re-stamps the link's source revision and clears out-of-date (#751).
+func (d *DerivedAssemblyComponent) AcknowledgeSource(currentDBRevID string) {
+	d.link.DatabaseRevisionID = currentDBRevID
+	d.outOfDate = false
+}
 
 // BindSource (re)binds the live source assembly after a restore and recomputes staleness:
 // the derive is out of date when currentDBRevID (the source's revision now) differs from

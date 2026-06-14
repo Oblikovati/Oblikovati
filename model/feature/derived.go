@@ -54,6 +54,12 @@ func (d *DerivedPartComponent) SourceLink() DeriveSourceLink { return d.link }
 // OutOfDate reports whether the source has been edited since this derive was saved.
 func (d *DerivedPartComponent) OutOfDate() bool { return d.outOfDate }
 
+// AcknowledgeSource re-stamps the link's source revision and clears out-of-date (#751).
+func (d *DerivedPartComponent) AcknowledgeSource(currentDBRevID string) {
+	d.link.DatabaseRevisionID = currentDBRevID
+	d.outOfDate = false
+}
+
 // Transform returns the geometry transform the derive applies to its source bodies.
 func (d *DerivedPartComponent) Transform() math.Matrix4 { return d.transform }
 

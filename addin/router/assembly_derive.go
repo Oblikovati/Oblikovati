@@ -26,6 +26,78 @@ func (r *Router) registerAssemblyDeriveHandlers() {
 	r.handlers[wire.MethodAssemblyDeriveCreate] = assemblyDeriveCreate
 	r.handlers[wire.MethodAssemblyShrinkwrapCreate] = assemblyShrinkwrapCreate
 	r.handlers[wire.MethodAssemblyDeriveBreakLink] = assemblyDeriveBreakLink
+	r.handlers[wire.MethodAssemblyDeriveStatus] = assemblyDeriveStatus
+	r.handlers[wire.MethodAssemblyDeriveUpdate] = assemblyDeriveUpdate
+}
+
+// assemblyDeriveStatus reports the drive state of a derive-family feature: whether it is
+// out of date relative to its source, and the source's saved vs current revision (#751).
+func assemblyDeriveStatus(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	_, derive, err := resolveDeriveStatusFeature(s, raw, wire.MethodAssemblyDeriveStatus)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(deriveStatusResult(s, derive))
+}
+
+// assemblyDeriveUpdate re-syncs a derive to its source's current revision, clearing its
+// out-of-date state, and recomputes the part (#751).
+func assemblyDeriveUpdate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, derive, err := resolveDeriveStatusFeature(s, raw, wire.MethodAssemblyDeriveUpdate)
+	if err != nil {
+		return nil, err
+	}
+	derive.AcknowledgeSource(currentSourceRevision(s, derive.SourceLink().Document))
+	part.Recompute()
+	return json.Marshal(deriveStatusResult(s, derive))
+}
+
+// resolveDeriveStatusFeature resolves the active part and the derive-family feature
+// addressed by the DeriveStatusArgs id, erroring when the feature is not a derive.
+func resolveDeriveStatusFeature(s *app.Session, raw json.RawMessage, method string) (*compdef.PartComponentDefinition, feature.DeriveStatus, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, nil, err
+	}
+	var in wire.DeriveStatusArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, nil, err
+	}
+	pf, _, err := partFeatureByID(part, in.ID, method)
+	if err != nil {
+		return nil, nil, err
+	}
+	derive, ok := pf.Definition().(feature.DeriveStatus)
+	if !ok {
+		return nil, nil, fmt.Errorf("%s: feature %d is a %s, not a derived/shrinkwrap component", method, in.ID, pf.Kind())
+	}
+	return part, derive, nil
+}
+
+// deriveStatusResult renders a derive's drive state, resolving the source's current
+// revision through the workspace (empty when the source is not open/resolvable).
+func deriveStatusResult(s *app.Session, derive feature.DeriveStatus) wire.DeriveStatusResult {
+	link := derive.SourceLink()
+	return wire.DeriveStatusResult{
+		OutOfDate:       derive.OutOfDate(),
+		Linked:          derive.Linked(),
+		SourceDocument:  link.Document,
+		SavedRevision:   link.DatabaseRevisionID,
+		CurrentRevision: currentSourceRevision(s, link.Document),
+	}
+}
+
+// currentSourceRevision returns the source document's current recipe revision, or "" when
+// the document is not open in the workspace (so the drive state cannot be compared).
+func currentSourceRevision(s *app.Session, sourceName string) string {
+	if sourceName == "" {
+		return ""
+	}
+	d, ok := s.Workspace().ByName(sourceName)
+	if !ok {
+		return ""
+	}
+	return d.FileIdentity().DatabaseRevisionID
 }
 
 // assemblyDeriveCreate derives the source assembly document into the active part as a

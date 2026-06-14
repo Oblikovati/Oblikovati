@@ -270,6 +270,12 @@ func (s *ShrinkwrapComponent) SourceLink() DeriveSourceLink { return s.link }
 // saved — the source resolved on reopen carries a different recipe revision than captured.
 func (s *ShrinkwrapComponent) OutOfDate() bool { return s.outOfDate }
 
+// AcknowledgeSource re-stamps the link's source revision and clears out-of-date (#751).
+func (s *ShrinkwrapComponent) AcknowledgeSource(currentDBRevID string) {
+	s.link.DatabaseRevisionID = currentDBRevID
+	s.outOfDate = false
+}
+
 // BindSource (re)binds the live source assembly after a restore and recomputes staleness:
 // out of date when currentDBRevID differs from the revision captured in the link (#715).
 func (s *ShrinkwrapComponent) BindSource(source AssemblyBodySource, currentDBRevID string) {
