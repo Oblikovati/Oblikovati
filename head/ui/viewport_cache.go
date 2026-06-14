@@ -49,15 +49,18 @@ func cachedBodyDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
 	return renderer.DrawList{Items: append([]renderer.DrawItem(nil), bodyGeometryCache.list.Items...)}
 }
 
-// bodyGeometryKey identifies the cached geometry: the part's geometry version (bumped on any
-// geometry/appearance edit and on recompute) + the visual style + the visible body ids.
+// bodyGeometryKey identifies the cached geometry: the active model's geometry version + the visual
+// style + the visible body ids. A part AND an assembly both report a geometry version (bumped on any
+// geometry/appearance edit, recompute, or — for an assembly — occurrence change), so the cache holds
+// for assemblies too; a part-only version here returned "" for an assembly, defeating the cache and
+// re-tessellating every placed body every frame (the unstable-viewport bug when a component is placed).
 func bodyGeometryKey(s *app.Session) string {
-	part := activePart(s)
-	if part == nil {
+	version, ok := activeModelGeometryVersion(s)
+	if !ok {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString(part.ModelGeometryVersion())
+	b.WriteString(version)
 	b.WriteByte('|')
 	b.WriteString(strconv.Itoa(int(s.VisualStyle())))
 	if on, perTri := s.MeshColors(); on { // mesh-debug-colors uses a different builder; key it apart
@@ -72,4 +75,23 @@ func bodyGeometryKey(s *app.Session) string {
 		b.WriteString(strconv.FormatUint(body.ID(), 10))
 	}
 	return b.String()
+}
+
+// modelGeometryVersioned is the active document content that reports a geometry version — a part or
+// an assembly (compdef.PartComponentDefinition / AssemblyComponentDefinition). Matched structurally
+// so the cache keys on either without importing or switching on the concrete type.
+type modelGeometryVersioned interface{ ModelGeometryVersion() string }
+
+// activeModelGeometryVersion returns the active document's geometry version, or false when no
+// renderable model (part or assembly) is active — in which case there is nothing to cache.
+func activeModelGeometryVersion(s *app.Session) (string, bool) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return "", false
+	}
+	m, ok := d.Content().(modelGeometryVersioned)
+	if !ok {
+		return "", false
+	}
+	return m.ModelGeometryVersion(), true
 }

@@ -191,12 +191,11 @@ func clampDim(v float32) int {
 	return int(v)
 }
 
-// activeBodies returns the surface bodies of the active part, or nil.
+// activeBodies returns the bodies the viewport draws for the active document — a part's own bodies
+// or an assembly's placed components (Session.VisibleBodies resolves both, #769). It is nil only
+// when no renderable document is active, so an assembly's components render and cache like a part's
+// (a part-only gate here left the assembly viewport blank).
 func activeBodies(s *app.Session) []*topo.Body {
-	part := activePart(s)
-	if part == nil {
-		return nil
-	}
 	return s.VisibleBodies()
 }
 
