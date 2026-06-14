@@ -86,6 +86,7 @@ type Session struct {
 	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
 	contextMenus         map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
 	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
+	cmdInput             commandInput                                     // command-alias input box state (M05-F17)
 	grid                 *GridSettings
 	themes               *theme.Library
 	themeStore           *theme.Store

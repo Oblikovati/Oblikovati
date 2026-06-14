@@ -200,12 +200,16 @@ func normalizeKey(key string) string {
 	return types.CanonicalKey(key)
 }
 
-// PressKey routes a key press through the binding engine (M05-F17, #831): the chord the
+// PressKey routes a key press through the binding engine (M05-F17, #831). While the
+// command-alias input box is open the keystroke edits its buffer; otherwise the chord the
 // event forms is resolved to an action — a registered command or a built-in (undo/redo/
 // cancel/commit/visibility) — and dispatched. With no matching binding it is a no-op. The
 // built-in guards (e.g. undo is suppressed mid-tool) live in the dispatch, so behavior
 // matches the formerly hardcoded shortcuts.
 func (s *Session) PressKey(e KeyEvent) error {
+	if s.CommandInputActive() {
+		return s.routeKeyToCommandInput(e)
+	}
 	b := s.Bindings()
 	if actionID, ok := b.ResolveChord(keyEventToChord(e)); ok {
 		return b.Dispatch(actionID, s)
