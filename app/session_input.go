@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/event"
 )
 
@@ -178,58 +179,36 @@ func (s *Session) Pointer(e PointerEvent) {
 	}
 }
 
-// undoRedoShortcut handles the Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z navigators over the active
-// document's transaction stream, returning handled=true when the keystroke was one of
-// them. It is a no-op while an interactive tool is mid-operation — Inventor forbids undo
-// while a transaction is in progress; the head additionally gates it on no text field
-// having keyboard focus.
-func (s *Session) undoRedoShortcut(e KeyEvent) (bool, error) {
-	if !e.Mods.Has(CtrlMod) || s.tool != nil {
-		return false, nil
+// keyEventToChord converts a device key event into a canonical [types.KeyChord],
+// normalizing key synonyms (Return → Enter) so a binding matches however the platform
+// spells the key.
+func keyEventToChord(e KeyEvent) types.KeyChord {
+	return types.KeyChord{
+		Key:   normalizeKey(e.Key),
+		Ctrl:  e.Mods.Has(CtrlMod),
+		Alt:   e.Mods.Has(AltMod),
+		Shift: e.Mods.Has(ShiftMod),
 	}
-	switch e.Key {
-	case "z", "Z":
-		if e.Mods.Has(ShiftMod) {
-			return true, s.Redo()
-		}
-		return true, s.Undo()
-	case "y", "Y":
-		return true, s.Redo()
-	}
-	return false, nil
 }
 
-// PressKey routes a key press: Escape cancels the active tool, Enter commits it, and
-// otherwise a registered command alias runs (Inventor command aliases).
+// normalizeKey maps platform key synonyms onto the canonical token the binding table
+// uses, then canonicalizes case so "z" and "Z" are one chord.
+func normalizeKey(key string) string {
+	if key == "Return" {
+		return "Enter"
+	}
+	return types.CanonicalKey(key)
+}
+
+// PressKey routes a key press through the binding engine (M05-F17, #831): the chord the
+// event forms is resolved to an action — a registered command or a built-in (undo/redo/
+// cancel/commit/visibility) — and dispatched. With no matching binding it is a no-op. The
+// built-in guards (e.g. undo is suppressed mid-tool) live in the dispatch, so behavior
+// matches the formerly hardcoded shortcuts.
 func (s *Session) PressKey(e KeyEvent) error {
-	if handled, err := s.undoRedoShortcut(e); handled {
-		return err
+	b := s.Bindings()
+	if actionID, ok := b.ResolveChord(keyEventToChord(e)); ok {
+		return b.Dispatch(actionID, s)
 	}
-	switch e.Key {
-	case "Escape":
-		// Esc cancels the active tool at any point in its operation; with no tool it
-		// clears the selection (Inventor's behavior).
-		if s.tool != nil {
-			s.CancelTool()
-		} else {
-			s.Select(nil)
-		}
-		return nil
-	case "Enter", "Return":
-		if s.tool != nil {
-			return s.OK()
-		}
-		return nil
-	case "v", "V":
-		// Toggle visibility of the selected work plane(s) (Autodesk Fusion's V binding;
-		// Inventor has no default visibility hotkey). No-op when nothing applicable is
-		// selected, so V stays free for other contexts.
-		s.ToggleSelectedWorkPlaneVisibility()
-		return nil
-	default:
-		if _, ok := s.commands.ByAlias(e.Key); ok {
-			return s.Invoke(e.Key)
-		}
-		return nil
-	}
+	return nil
 }

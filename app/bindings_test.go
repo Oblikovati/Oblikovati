@@ -242,6 +242,41 @@ func TestDispatchCancelClearsToolThenSelection(t *testing.T) {
 	}
 }
 
+func TestPressKeyRunsCommandViaDefaultChord(t *testing.T) {
+	s := NewSession()
+	ran := false
+	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithAlias("L")
+	if err := s.Commands().Add(cmd); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := s.PressKey(KeyEvent{Key: "l"}); err != nil { // lowercase canonicalizes to L
+		t.Fatalf("PressKey: %v", err)
+	}
+	if !ran {
+		t.Error("pressing a command's default chord should run it through the engine")
+	}
+}
+
+func TestPressKeyRebindTakesEffect(t *testing.T) {
+	s := NewSession()
+	ran := 0
+	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran++; return nil }).WithAlias("L")
+	if err := s.Commands().Add(cmd); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := s.Bindings().SetChord("Test.Line", types.KeyChord{Key: "K"}); err != nil {
+		t.Fatalf("SetChord: %v", err)
+	}
+	_ = s.PressKey(KeyEvent{Key: "L"}) // the old default chord is no longer bound
+	if ran != 0 {
+		t.Error("the old chord should not trigger the command after a rebind")
+	}
+	_ = s.PressKey(KeyEvent{Key: "K"}) // the new chord
+	if ran != 1 {
+		t.Errorf("the rebound chord should trigger the command, ran=%d", ran)
+	}
+}
+
 func TestDispatchUndoGuardedWhileToolActive(t *testing.T) {
 	s, profile := newPartWithSquare(t, 2)
 	trackFromHere(s)
