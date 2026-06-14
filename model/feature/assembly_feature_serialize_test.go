@@ -74,6 +74,26 @@ func TestAssemblyFeatureDataRoundTrip(t *testing.T) {
 	}
 }
 
+// TestAssemblyChamferRestoresFlatCorners pins #785: a flat-corner chamfer must restore flat. The
+// general round-trip test only exercises the default (mitred) corner, so it cannot catch the
+// restore dropping the flag — this one sets flatCorners=true explicitly.
+func TestAssemblyChamferRestoresFlatCorners(t *testing.T) {
+	ch := NewAssemblyChamferFeature([][]byte{[]byte("e0")}, func() float64 { return 0.2 })
+	ch.flatCorners = true
+
+	data := ch.MarshalAssembly(noSketchIndex)
+	if !data.FlatCorners {
+		t.Fatalf("marshal lost flatCorners: %+v", data)
+	}
+	restored, err := RestoreAssemblyFeature(data, nil, nil)
+	if err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	if got := restored.(*AssemblyChamferFeature).flatCorners; !got {
+		t.Errorf("restored chamfer flatCorners = %v, want true (the flag must survive save/undo)", got)
+	}
+}
+
 // TestRestoreAssemblyFeatureRejectsBadData: the corrupt-recipe guards.
 func TestRestoreAssemblyFeatureRejectsBadData(t *testing.T) {
 	if _, err := RestoreAssemblyFeature(AssemblyFeatureData{Kind: "nope"}, nil, nil); err == nil {

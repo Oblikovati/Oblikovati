@@ -84,7 +84,9 @@ func RestoreAssemblyFeature(d AssemblyFeatureData, sketches []*sketch.Sketch, oc
 		}
 		return NewAssemblyHoleFeature(math.P3(d.Center[0], d.Center[1], d.Center[2]), axis, d.Diameter, d.Depth)
 	case "assemblyChamfer":
-		return NewAssemblyChamferFeature(d.EdgeSuffixes, constScalar(d.Distance)), nil
+		ch := NewAssemblyChamferFeature(d.EdgeSuffixes, constScalar(d.Distance))
+		ch.flatCorners = d.FlatCorners // #785: a flat-corner chamfer must restore flat, not reset to mitred
+		return ch, nil
 	case "assemblyFillet":
 		return NewAssemblyFilletFeature(d.EdgeSuffixes, constScalar(d.Radius)), nil
 	case "assemblyMoveFace":
