@@ -5,6 +5,7 @@ package app
 import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/sketch"
 )
 
@@ -25,6 +26,7 @@ const (
 	SelectWorkPoint
 	SelectWorkAxis
 	SelectPath
+	SelectOccurrence
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -77,6 +79,13 @@ func (PathHandle) SelectionKind() SelectionKind { return SelectPath }
 type SketchEntityHandle struct{ Entity sketch.Entity }
 
 func (SketchEntityHandle) SelectionKind() SelectionKind { return SelectSketchEntity }
+
+// OccurrenceHandle wraps a placed component occurrence (selected in the assembly browser or, once
+// viewport occurrence picking lands in #769, by clicking its body). It is the input the assembly
+// occurrence operations (ground/suppress/delete, and the replication commands in #765) consume.
+type OccurrenceHandle struct{ Occurrence *occurrence.Occurrence }
+
+func (OccurrenceHandle) SelectionKind() SelectionKind { return SelectOccurrence }
 
 // SketchHandle wraps a whole sketch (selected in the browser), as opposed to one of its
 // entities — the input for Edit Sketch and for highlighting the sketch in the view.

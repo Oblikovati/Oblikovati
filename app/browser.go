@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/sketch"
 )
 
@@ -22,7 +23,7 @@ import (
 // clicking "XY Plane" selects the plane to sketch on).
 type BrowserNode struct {
 	Label    string
-	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "feature"
+	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "feature" | "occurrence"
 	Select   Selectable
 	Children []BrowserNode
 }
@@ -57,10 +58,53 @@ func BuildBrowser(s *Session) BrowserNode {
 		return BrowserNode{Label: "(no document)", Kind: "document"}
 	}
 	root := BrowserNode{Label: doc.DisplayName(), Kind: "document"}
-	if part, ok := doc.Content().(*compdef.PartComponentDefinition); ok {
-		addPartBranches(&root, part)
+	switch content := doc.Content().(type) {
+	case *compdef.PartComponentDefinition:
+		addPartBranches(&root, content)
+	case *compdef.AssemblyComponentDefinition:
+		addAssemblyBranches(&root, content)
 	}
 	return root
+}
+
+// addAssemblyBranches builds the assembly's browser tree: the Parameters folder, then the placed
+// component occurrences in placement order. Each occurrence node is selectable (its handle drives
+// ground/suppress/delete from the right-click menu and the replication commands), and a
+// sub-assembly occurrence nests its own occurrences so the structure is navigable (#764).
+func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefinition) {
+	params := root.child("Parameters", "parameters")
+	for _, p := range asm.Parameters().All() {
+		params.child(p.Name(), "parameter")
+	}
+	addOccurrenceNodes(root, asm.Occurrences())
+}
+
+// addOccurrenceNodes appends one selectable node per occurrence under parent, recursing into a
+// sub-assembly occurrence's own occurrences so nested structure is browsable. The node label
+// annotates the grounded / suppressed state (the head greys/badges later; the suffix keeps the
+// text tree self-describing).
+func addOccurrenceNodes(parent *BrowserNode, occs *occurrence.Occurrences) {
+	if occs == nil { // a leaf (part) occurrence has no sub-occurrence collection
+		return
+	}
+	for i := 0; i < occs.Count(); i++ {
+		o := occs.Item(i)
+		node := parent.selectableBranch(occurrenceLabel(o), "occurrence", OccurrenceHandle{Occurrence: o})
+		addOccurrenceNodes(node, o.SubOccurrences())
+	}
+}
+
+// occurrenceLabel is the occurrence's instance name with a state suffix when it is grounded or
+// suppressed, so the browser row reads its status without an icon.
+func occurrenceLabel(o *occurrence.Occurrence) string {
+	label := o.Name()
+	if o.Grounded() {
+		label += " (grounded)"
+	}
+	if o.Suppressed() {
+		label += " (suppressed)"
+	}
+	return label
 }
 
 // addPartBranches builds the part's browser tree: the static Origin and Parameters folders,
