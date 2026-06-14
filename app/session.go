@@ -24,6 +24,7 @@ import (
 	"oblikovati.org/renderer"
 	"oblikovati.org/scene"
 	"oblikovati.org/theme"
+	"oblikovati.org/update"
 )
 
 // Session is the running application state and the seam tests drive synthetically.
@@ -114,6 +115,8 @@ type Session struct {
 	asmBodies            assemblyBodyCache              // memoized world-space assembly bodies + their occurrences (#769)
 	bomPanelOpen         bool                           // the Assemble ▸ Bill of Materials panel is open (#768)
 	bomViewKind          bom.ViewKind                   // the BOM panel's selected view (structured / parts-only)
+	updateCheckRequested bool                           // Help ▸ Check for Updates was clicked; the head runs the (network) check
+	pendingUpdate        *update.Result                 // last update-check outcome to show in the update window; nil = closed
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
