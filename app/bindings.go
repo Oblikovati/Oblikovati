@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/app/cmdline"
 	"oblikovati.org/app/keymap"
 )
 
@@ -105,18 +106,23 @@ func mustChord(s string) types.KeyChord {
 	return c
 }
 
-// Bindings is the live resolver: the command registry, the built-in action table, and
-// the user's customization overlay, with the store to persist edits.
+// Bindings is the live resolver: the command registry, the built-in action table, the
+// built-in AutoCAD command vocabulary, and the user's customization overlay, with the
+// store to persist edits.
 type Bindings struct {
 	cmds     *CommandManager
 	builtins []builtinAction
+	vocab    *cmdline.Vocabulary // built-in AutoCAD name/alias → action id (M26)
 	custom   keymap.Customization
 	store    keymap.Store // nil ⇒ in-session only
 }
 
 // newBindings builds the engine over a command registry, with no customization yet.
 func newBindings(cmds *CommandManager) *Bindings {
-	return &Bindings{cmds: cmds, builtins: builtinActions(), custom: keymap.Defaults()}
+	return &Bindings{
+		cmds: cmds, builtins: builtinActions(),
+		vocab: cmdline.DefaultVocabulary(), custom: keymap.Defaults(),
+	}
 }
 
 // Bindings returns the session's binding engine, constructing it on first use over the
@@ -212,11 +218,29 @@ func (b *Bindings) ResolveChord(c types.KeyChord) (string, bool) {
 	return "", false
 }
 
-// ResolveAlias maps a typed alias (case-insensitive) to its action.
+// ResolveAlias maps a typed alias (case-insensitive) to its action. A user-defined alias
+// wins; failing that, the built-in AutoCAD vocabulary resolves the word — but only to an
+// action that actually exists in this session, so a stale table entry can never dispatch
+// to a missing command (M26).
 func (b *Bindings) ResolveAlias(alias string) (string, bool) {
 	if alias == "" {
 		return "", false
 	}
+	if id, ok := b.resolveUserAlias(alias); ok {
+		return id, true
+	}
+	if id, ok := b.vocab.Resolve(alias); ok {
+		if _, exists := b.findBindable(id); exists {
+			return id, true
+		}
+	}
+	return "", false
+}
+
+// resolveUserAlias maps a typed alias to its action using ONLY the user's overrides (not
+// the built-in vocabulary). The SetAlias conflict guard uses this so a user may freely
+// rebind a word the vocabulary already covers (their alias overrides the default).
+func (b *Bindings) resolveUserAlias(alias string) (string, bool) {
 	for id, a := range b.custom.Aliases {
 		if strings.EqualFold(a, alias) {
 			return id, true
@@ -261,7 +285,7 @@ func (b *Bindings) SetAlias(actionID, alias string) error {
 		return fmt.Errorf("app: unknown action %q for SetAlias; expected a command or built-in action id", actionID)
 	}
 	if alias != "" {
-		if owner, ok := b.ResolveAlias(alias); ok && owner != actionID {
+		if owner, ok := b.resolveUserAlias(alias); ok && owner != actionID {
 			return fmt.Errorf("app: alias %q already bound to %q (%s)", alias, owner, b.displayName(owner))
 		}
 	}
