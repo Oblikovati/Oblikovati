@@ -54,7 +54,7 @@ func assemblyPatternCreate(s *app.Session, raw json.RawMessage) (json.RawMessage
 		return nil, err
 	}
 	pat := occurrence.NewOccurrencePattern(seed.Definition(), seed.Transform(), arr)
-	return newOccurrencesReply(patternOccurrences(asm, seed, pat))
+	return newOccurrencesReply(occurrence.PatternComponents(asm.Occurrences(), seed, pat))
 }
 
 // assemblyMirror adds a mirror of each source occurrence across the plane (origin, normal).
@@ -221,17 +221,6 @@ func assemblySubstitute(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	}
 	sub := occurrence.Substitute(asm.Occurrences(), sources, in.Name, def, matrixFromWire(in.Transform))
 	return occurrenceReply(sub)
-}
-
-// patternOccurrences places a real occurrence for each pattern element beyond the seed
-// (element 0 is the seed, already placed), reusing the pattern's arrangement placements.
-func patternOccurrences(asm *compdef.AssemblyComponentDefinition, seed *occurrence.Occurrence, pat *occurrence.OccurrencePattern) []*occurrence.Occurrence {
-	created := make([]*occurrence.Occurrence, 0, pat.Count())
-	for i := 1; i < pat.Count(); i++ {
-		name := fmt.Sprintf("%s-p%d", seed.Name(), i+1)
-		created = append(created, asm.Place(name, seed.Definition(), pat.Element(i).Transform()))
-	}
-	return created
 }
 
 // arrangementFromArgs builds the pattern arrangement from the request's kind + parameters.

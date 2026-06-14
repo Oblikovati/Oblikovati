@@ -16,11 +16,35 @@ import "fmt"
 func assemblyTabCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		placeComponentCommand(),
-		assemblyStubCommand("Assembly.Pattern", "Pattern", "Pattern", 765),
-		assemblyStubCommand("Assembly.Mirror", "Mirror", "Pattern", 765),
-		assemblyStubCommand("Assembly.Copy", "Copy", "Pattern", 765),
+		assemblyToolCommand("Assembly.RectangularPattern", "Rectangular Pattern", "rectangular-pattern",
+			"Rectangular Pattern — replicate the selected component on a grid (counts and spacing).",
+			func() Tool { return NewAssemblyRectPatternTool() }),
+		assemblyToolCommand("Assembly.CircularPattern", "Circular Pattern", "circular-pattern",
+			"Circular Pattern — replicate the selected component around the Z axis (count and angle).",
+			func() Tool { return NewAssemblyCircPatternTool() }),
+		assemblyToolCommand("Assembly.Mirror", "Mirror", "mirror",
+			"Mirror — add a mirror of the selected components across a plane.",
+			func() Tool { return NewAssemblyMirrorTool() }),
+		NewCommand("Assembly.Copy", "Copy", "Pattern", func(s *Session) error { return s.CopyComponents() }).
+			WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
+			WithIcon("copy").WithButtonStyle(SmallIconButton).
+			WithTooltip("Copy — add an independent copy of each selected component."),
 		assemblyStubCommand("Assembly.BOM", "Bill of Materials", "BOM", 768),
 	}
+}
+
+// assemblyToolCommand builds an Assemble-tab command that starts a replication tool on the active
+// assembly. The tool seeds its sources from the current selection and reads the rest from the
+// generic tool-param dialog (#765).
+func assemblyToolCommand(id, name, icon, tooltip string, newTool func() Tool) *CommandDefinition {
+	return NewCommand(id, name, "Pattern", func(s *Session) error {
+		if _, err := activeAssembly(s); err != nil {
+			return err
+		}
+		s.StartTool(newTool())
+		return nil
+	}).WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
+		WithIcon(icon).WithButtonStyle(SmallIconButton).WithTooltip(tooltip)
 }
 
 // placeComponentCommand builds the Place command: it starts the modal Place Component tool on
