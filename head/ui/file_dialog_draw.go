@@ -239,39 +239,81 @@ func applyFileAction(s *app.Session, act fileAction) {
 	name := filepath.Base(act.Path)
 	switch act.Kind {
 	case dialogOpen:
-		if _, err := s.OpenDocument(act.Path); err != nil {
-			fileNotice(s, "Open failed: %v", err)
-		} else {
-			fileNotice(s, "Opened %s", name)
-		}
+		openDocumentFromFile(s, act.Path, name)
+	case dialogPlaceComponent:
+		placeComponentFromFile(s, act.Path, name)
 	case dialogSaveAs:
-		if err := s.SaveActiveDocumentAs(act.Path); err != nil {
-			fileNotice(s, "Save failed: %v", err)
-		} else {
-			fileNotice(s, "Saved %s", name)
-			queueSaveThumbnail(s, act.Path)
-		}
+		saveActiveDocumentAs(s, act.Path, name)
 	case dialogLoadHDR:
 		s.LoadEnvironmentFile(act.Path) // the decode happens lazily on the next viewport frame
 	case dialogMeshRef:
-		if _, err := s.ImportMeshFile(act.Path); err != nil {
-			fileNotice(s, "Place Mesh failed: %v", err)
-		} else {
-			fileNotice(s, "Placed mesh %s", name)
-		}
+		placeMeshFromFile(s, act.Path, name)
 	case dialogImport:
-		if res, err := s.ImportFile(act.Path); err != nil {
-			fileNotice(s, "Import failed: %v", err)
-		} else {
-			fileNotice(s, "Imported %s (%d %s)", name, res.BodyCount, plural(res.BodyCount, "body", "bodies"))
-		}
+		importBodyFromFile(s, act.Path, name)
 	case dialogExport:
-		if _, err := s.ExportFile(act.Path, types.MeshResolution(act.Resolution)); err != nil {
-			fileNotice(s, "Export failed: %v", err)
-		} else {
-			fileNotice(s, "Exported %s", name)
-		}
+		exportToFile(s, act, name)
 	}
+}
+
+// saveActiveDocumentAs writes the active document to path and, on success, queues its thumbnail
+// and remembers the path so a later File ▸ Save writes straight through (File ▸ Save As).
+func saveActiveDocumentAs(s *app.Session, path, name string) {
+	if err := s.SaveActiveDocumentAs(path); err != nil {
+		fileNotice(s, "Save failed: %v", err)
+		return
+	}
+	fileNotice(s, "Saved %s", name)
+	queueSaveThumbnail(s, path)
+}
+
+// placeMeshFromFile imports an ASCII STL as mesh reference geometry (Mesh ▸ Place Mesh).
+func placeMeshFromFile(s *app.Session, path, name string) {
+	if _, err := s.ImportMeshFile(path); err != nil {
+		fileNotice(s, "Place Mesh failed: %v", err)
+		return
+	}
+	fileNotice(s, "Placed mesh %s", name)
+}
+
+// importBodyFromFile imports a CAD file into the active part as an imported body (File ▸ Import).
+func importBodyFromFile(s *app.Session, path, name string) {
+	res, err := s.ImportFile(path)
+	if err != nil {
+		fileNotice(s, "Import failed: %v", err)
+		return
+	}
+	fileNotice(s, "Imported %s (%d %s)", name, res.BodyCount, plural(res.BodyCount, "body", "bodies"))
+}
+
+// exportToFile writes the active part's bodies to a mesh file at the chosen resolution (File ▸ Export).
+func exportToFile(s *app.Session, act fileAction, name string) {
+	if _, err := s.ExportFile(act.Path, types.MeshResolution(act.Resolution)); err != nil {
+		fileNotice(s, "Export failed: %v", err)
+		return
+	}
+	fileNotice(s, "Exported %s", name)
+}
+
+// openDocumentFromFile opens the chosen document and reports the outcome (File ▸ Open).
+func openDocumentFromFile(s *app.Session, path, name string) {
+	if _, err := s.OpenDocument(path); err != nil {
+		fileNotice(s, "Open failed: %v", err)
+		return
+	}
+	fileNotice(s, "Opened %s", name)
+}
+
+// placeComponentFromFile opens the chosen component and hands it to the running Place tool (#763);
+// the tool then drops instances on ground-plane clicks. Opening (not just naming) the document
+// shares the live content, so edits to the component propagate to every placement.
+func placeComponentFromFile(s *app.Session, path, name string) {
+	d, err := s.OpenDocument(path)
+	if err != nil {
+		fileNotice(s, "Place Component failed: %v", err)
+		return
+	}
+	s.SetPlaceComponentDocument(d)
+	fileNotice(s, "Placing %s — click to drop instances", name)
 }
 
 // fileNotice shows a file-operation outcome in the status bar (s.Notice) and mirrors it to
