@@ -63,11 +63,14 @@ func run(session *app.Session, maxFrames int) error {
 	defer addins.stop(session)
 	ui.SetScriptController(addins.script) // the Manage ▸ Script Console panel drives this runtime
 
+	updates := newUpdatePoller()
+	startupUpdateCheck(session, updates) // silent check on launch (honors the user's preference)
+
 	for frame := 0; ; frame++ {
 		if maxFrames > 0 && frame >= maxFrames {
 			break
 		}
-		if pumpFrame(win, session, addins) {
+		if pumpFrame(win, session, addins, updates) {
 			break
 		}
 	}
@@ -78,13 +81,14 @@ func run(session *app.Session, maxFrames int) error {
 // calls, and the close prompt. It returns true when the loop should exit — the user closed
 // the window, or a rebuilt add-in on disk needs the supervisor to relaunch (a Go c-shared
 // cannot be hot-swapped in-process).
-func pumpFrame(win *native.Window, session *app.Session, addins *addInHost) bool {
+func pumpFrame(win *native.Window, session *app.Session, addins *addInHost, updates *updatePoller) bool {
 	win.BeginFrame()
 	if id := ui.DrawChrome(win, session); id != "" {
 		if execErr := session.Execute(id); execErr != nil {
 			fmt.Fprintf(os.Stderr, "command %q: %v\n", id, execErr)
 		}
 	}
+	serviceUpdates(session, updates) // publish a finished update check; start a manual one
 	addins.drain()
 	exit := ui.HandleClose(win, session)
 	win.EndFrame(ui.WindowClearColor())   // themed swapchain background (ADR-0021)

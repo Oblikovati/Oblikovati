@@ -47,6 +47,13 @@ type Save struct {
 	OldVersionsToKeep int                       `yaml:"oldVersionsToKeep,omitempty"`
 }
 
+// Updates is the software-update behavior (read by the head's startup auto-check and
+// the CLI): whether to check GitHub for a newer release on launch. The user toggles it
+// from the update notification or Help ▸ Check for Updates; a manual check ignores it.
+type Updates struct {
+	CheckOnStartup bool `yaml:"checkOnStartup"`
+}
+
 // All is every persisted option group. The ViewCube/display preferences live in
 // their own store (persistence/userprefs) and the color scheme in the theme store —
 // the options surface proxies those rather than duplicating their persistence.
@@ -55,6 +62,7 @@ type All struct {
 	Sketch  Sketch  `yaml:"sketch"`
 	Part    Part    `yaml:"part"`
 	Save    Save    `yaml:"save"`
+	Updates Updates `yaml:"updates"`
 }
 
 // Defaults returns the out-of-the-box options, mirroring the session's historical
@@ -66,6 +74,7 @@ func Defaults() All {
 		Sketch:  Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true},
 		Part:    Part{ChamferFlatCorners: true},
 		Save:    Save{Thumbnail: types.ThumbnailNone},
+		Updates: Updates{CheckOnStartup: true},
 	}
 }
 
