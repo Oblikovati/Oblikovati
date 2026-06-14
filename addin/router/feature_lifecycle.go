@@ -11,7 +11,6 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/model/param"
 )
 
 // Handlers for the features.* lifecycle methods (issue #140): get, edit (scalar
@@ -49,22 +48,7 @@ func featureDetail(part *compdef.PartComponentDefinition, f *feature.PartFeature
 // featureScalars renders the feature's editable scalars with their value in the
 // document's preferred unit; nil when the definition exposes nothing editable.
 func featureScalars(part *compdef.PartComponentDefinition, f *feature.PartFeature) []wire.FeatureScalar {
-	ed, ok := f.Definition().(feature.Editable)
-	if !ok {
-		return nil
-	}
-	params := ed.EditableParams()
-	out := make([]wire.FeatureScalar, len(params))
-	for i, p := range params {
-		out[i] = wire.FeatureScalar{
-			Index:   i,
-			Label:   p.Label,
-			Unit:    part.Units().PreferredName(p.Unit),
-			Value:   part.Units().ToPreferred(param.Q(p.Get(), p.Unit)),
-			Integer: p.Integer,
-		}
-	}
-	return out
+	return editableScalars(part.Units(), f.Definition())
 }
 
 // featureDetailReply marshals the refreshed-feature response shared by the
@@ -131,32 +115,11 @@ func editFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 // index in range, each value parseable in the scalar's unit — and returns a single
 // closure that applies every Set (Set itself cannot fail).
 func parseScalarEdits(part *compdef.PartComponentDefinition, f *feature.PartFeature, edits []wire.ScalarEdit) (func(), error) {
-	if len(edits) == 0 {
-		return nil, fmt.Errorf("features.edit: scalars is empty; expected at least one {index,value} edit")
-	}
 	ed, ok := f.Definition().(feature.Editable)
 	if !ok {
 		return nil, fmt.Errorf("features.edit: feature %d (%s) has no editable scalars", uint64(f.ID()), f.Kind())
 	}
-	params := ed.EditableParams()
-	sets := make([]func(), len(edits))
-	for i, e := range edits {
-		if e.Index < 0 || e.Index >= len(params) {
-			return nil, fmt.Errorf("features.edit: scalar index %d out of range (%d scalars, see features.get)", e.Index, len(params))
-		}
-		p := params[e.Index]
-		q, err := part.Units().Parse(e.Value, p.Unit)
-		if err != nil {
-			return nil, fmt.Errorf("features.edit: scalar %d value %q: %w", e.Index, e.Value, err)
-		}
-		set, v := p.Set, q.Value
-		sets[i] = func() { set(v) }
-	}
-	return func() {
-		for _, set := range sets {
-			set()
-		}
-	}, nil
+	return planScalarEdits(part.Units(), ed, edits, wire.MethodFeaturesEdit)
 }
 
 // deleteFeature removes a feature from the history and recomputes.
