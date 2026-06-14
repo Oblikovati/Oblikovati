@@ -139,6 +139,9 @@ func drawToolsMenu(s *app.Session) {
 		if native.MenuItem("Command Input") { // M05-F17: type an alias to run a command
 			s.BeginCommandInput()
 		}
+		if native.MenuItem(checkLabel("Command Window", s.CommandWindowOpen())) { // M26 F04: docked REPL
+			s.ToggleCommandWindow()
+		}
 		native.Separator()
 		if native.MenuItem(checkLabel("Normal Debug (front green / back red)", normalDebugOn)) {
 			normalDebugOn = !normalDebugOn

@@ -53,6 +53,7 @@ int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
 int  obk_ig_input_text_submit(const char* label, char* buf, int buf_size);
+int  obk_ig_input_text_history(const char* label, char* buf, int buf_size, const char** items, int n, int* cursor);
 void obk_ig_set_keyboard_focus_here(void);
 int  obk_ig_input_text_multiline(const char* label, char* buf, int buf_size, float w, float h);
 int  obk_ig_begin_child(const char* id, float w, float h, int border);
@@ -279,6 +280,44 @@ func InputTextSubmit(label string, buf []byte) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_input_text_submit(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))) != 0
+}
+
+// InputTextHistory is InputTextSubmit with Up/Down command-history recall, driven by Dear
+// ImGui's CallbackHistory. history is the recall list (oldest first) and cursor is a
+// caller-owned index persisted across frames (len(history) ⇒ the empty current line), so
+// the recall position survives between calls. It returns true on the frame Enter is pressed.
+func InputTextHistory(label string, buf []byte, history []string, cursor *int32) bool {
+	if len(buf) == 0 {
+		return false
+	}
+	c, free := cstr(label)
+	defer free()
+	items, freeItems := cStringArray(history)
+	defer freeItems()
+	cur := C.int(*cursor)
+	r := C.obk_ig_input_text_history(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf)),
+		items, C.int(len(history)), &cur)
+	*cursor = int32(cur)
+	return r != 0
+}
+
+// cStringArray allocates a C array of C strings from ss and returns it with a free func
+// that releases every string and the array. Returns (nil, no-op) for an empty slice.
+func cStringArray(ss []string) (**C.char, func()) {
+	if len(ss) == 0 {
+		return nil, func() {}
+	}
+	arr := C.malloc(C.size_t(len(ss)) * C.size_t(unsafe.Sizeof(uintptr(0))))
+	slice := unsafe.Slice((**C.char)(arr), len(ss))
+	for i, s := range ss {
+		slice[i] = C.CString(s)
+	}
+	return (**C.char)(arr), func() {
+		for _, p := range slice {
+			C.free(unsafe.Pointer(p))
+		}
+		C.free(arr)
+	}
 }
 
 // SetKeyboardFocusHere focuses the next widget on the coming frame — used to put the caret

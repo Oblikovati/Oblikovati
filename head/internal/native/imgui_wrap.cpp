@@ -161,6 +161,40 @@ int  obk_ig_input_double(const char* label, double* v) { return ImGui::InputDoub
 int  obk_ig_input_int(const char* label, int* v)     { return ImGui::InputInt(label, v) ? 1 : 0; }
 int  obk_ig_input_text(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size) ? 1 : 0; }
 int  obk_ig_input_text_submit(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size, ImGuiInputTextFlags_EnterReturnsTrue) ? 1 : 0; }
+
+// ObkHistoryNav backs obk_ig_input_text_history: a command-recall history array plus a
+// caller-owned cursor (an index into items, where n means "the empty current line"). It is
+// stack-local per call; the InputText history callback navigates it on Up/Down (M26 F04).
+struct ObkHistoryNav { const char** items; int n; int* cursor; };
+
+// obk_ig_history_cb is the ImGuiInputTextFlags_CallbackHistory handler: Up/Down walk the
+// recall history and replace the edit buffer with the selected command (or clear it past
+// the newest), exactly like a shell's command history.
+static int obk_ig_history_cb(ImGuiInputTextCallbackData* data) {
+    if (data->EventFlag != ImGuiInputTextFlags_CallbackHistory) return 0;
+    ObkHistoryNav* h = (ObkHistoryNav*)data->UserData;
+    if (h->n <= 0) return 0;
+    int c = *h->cursor + (data->EventKey == ImGuiKey_UpArrow ? -1 : +1);
+    if (c < 0) c = 0;
+    if (c > h->n) c = h->n;
+    *h->cursor = c;
+    const char* repl = (c == h->n) ? "" : h->items[c];
+    data->DeleteChars(0, data->BufTextLen);
+    data->InsertChars(0, repl);
+    return 0;
+}
+
+// obk_ig_input_text_history is InputTextSubmit with Up/Down command-history recall. items/n
+// are the recall list, cursor a caller-owned index persisted across frames (so the position
+// survives between calls). Returns 1 on the frame Enter is pressed.
+int  obk_ig_input_text_history(const char* label, char* buf, int buf_size,
+                               const char** items, int n, int* cursor) {
+    ObkHistoryNav nav{items, n, cursor};
+    return ImGui::InputText(label, buf, (size_t)buf_size,
+        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
+        obk_ig_history_cb, &nav) ? 1 : 0;
+}
+
 void obk_ig_set_keyboard_focus_here(void) { ImGui::SetKeyboardFocusHere(); }
 int  obk_ig_input_text_multiline(const char* label, char* buf, int buf_size, float w, float h) {
     return ImGui::InputTextMultiline(label, buf, (size_t)buf_size, ImVec2(w, h)) ? 1 : 0;

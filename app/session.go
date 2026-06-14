@@ -89,6 +89,7 @@ type Session struct {
 	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
 	cmdInput             commandInput                                     // command-alias input box state (M05-F17)
 	cmdLine              *CommandLine                                     // Command Window REPL engine (M26)
+	commandWindowHidden  bool                                             // Command Window docked panel hidden? (M26; inverted so zero ⇒ visible)
 	grid                 *GridSettings
 	themes               *theme.Library
 	themeStore           *theme.Store
