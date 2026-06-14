@@ -43,28 +43,11 @@ func TestWorkPlanesListServesAssembly(t *testing.T) {
 }
 
 // TestWorkPlanesCreateOffsetInAssembly: an offset plane built on the assembly's origin XY plane is
-// created, healthy, and lands at the expected position — the same flow a part supports, now served
-// for an assembly (its offset plane needs no body).
+// created, healthy, and lands at the expected position — the same flow a part supports (its offset
+// plane needs no body), now served for an assembly. Shares the assertion with the part test.
 func TestWorkPlanesCreateOffsetInAssembly(t *testing.T) {
 	r, s := emptyAssemblySession(t)
-	var res wire.CreateWorkPlaneResult
-	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
-	if !res.Healthy {
-		t.Fatalf("offset plane not healthy: %+v", res)
-	}
-	if res.Index != 3 { // after the 3 origin planes
-		t.Errorf("new plane index = %d, want 3", res.Index)
-	}
-	var list wire.ListWorkPlanesResult
-	call(t, r, s, "workPlanes.list", "{}", &list)
-	if len(list.Planes) != 4 {
-		t.Fatalf("after create, %d planes, want 4", len(list.Planes))
-	}
-	created := list.Planes[3]
-	// "10 mm" is 1.0 cm in model units; the XY plane offset +Z lands at z=1.
-	if created.IsOrigin || len(created.Origin) != 3 || created.Origin[2] != 1 {
-		t.Errorf("created plane = %+v, want a user plane at z=1", created)
-	}
+	assertOffsetPlaneOnXY(t, r, s)
 }
 
 // TestWorkPlanesCreateThreePointsInAssembly: a three-point plane through the assembly's origin

@@ -27,14 +27,14 @@ func assemblyWithPlacedBox(t *testing.T) *app.Session {
 	}
 	def := partDoc.Content().(*compdef.PartComponentDefinition)
 	sk := def.Sketches().Add(sketch.XYPlane())
-	c0 := sk.Points().Add(math.P2(-2, -2))
-	c1 := sk.Points().Add(math.P2(2, -2))
-	c2 := sk.Points().Add(math.P2(2, 2))
-	c3 := sk.Points().Add(math.P2(-2, 2))
-	sk.Lines().Add(c0, c1)
-	sk.Lines().Add(c1, c2)
-	sk.Lines().Add(c2, c3)
-	sk.Lines().Add(c3, c0)
+	corners := []math.Point2{math.P2(-2, -2), math.P2(2, -2), math.P2(2, 2), math.P2(-2, 2)}
+	pts := make([]*sketch.Point, len(corners))
+	for i, c := range corners {
+		pts[i] = sk.Points().Add(c)
+	}
+	for i := range pts {
+		sk.Lines().Add(pts[i], pts[(i+1)%len(pts)]) // close the loop back to the first corner
+	}
 	feature.NewExtrudeFeatures(def.Features()).
 		AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
 	def.Recompute()
