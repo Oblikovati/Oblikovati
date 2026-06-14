@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/identity"
@@ -43,6 +44,9 @@ type PartComponentDefinition struct {
 	// per-import UUID that features cite, making the .obk self-contained (ADR-0031). Document-
 	// level input, NOT part of the recipe — it survives a recipe reset (undo/reopen).
 	resources map[string]doc.Resource
+	// props are the document's iProperties (metadata sets) — title/author/part number/custom,
+	// which feed BOMs and title blocks (#156).
+	props *attr.PropertySets
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
@@ -63,6 +67,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		assignments: material.NewAssignmentStore(),
 		assets:      material.NewAssetSet(),
 		resources:   map[string]doc.Resource{},
+		props:       attr.NewPropertySets(),
 	}
 	d.features.SetResourceStore(d) // re-derive imported bodies from the resource table on open
 	d.features.SetFontResolver(d)  // resolve text/emboss fonts from embedded/app-provided resources
@@ -76,6 +81,10 @@ func (d *PartComponentDefinition) Assignments() *material.AssignmentStore { retu
 // Assets returns the part's embedded appearance/material set (the document-owned copies of
 // the non-built-in assets it uses).
 func (d *PartComponentDefinition) Assets() *material.AssetSet { return d.assets }
+
+// Properties returns the part's iProperties (document metadata sets) — the standard Summary /
+// Document Summary / Design Tracking sets plus user-defined custom properties (#156).
+func (d *PartComponentDefinition) Properties() *attr.PropertySets { return d.props }
 
 // AddPart creates a new part document in ws with a realized part component
 // definition installed (not the bare doc-package placeholder), makes it active, and

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
@@ -41,6 +42,8 @@ type AssemblyComponentDefinition struct {
 	// component definitions — ApplyRecipe has no workspace, so binding waits for
 	// ResolveReferences once the document is registered (#715). Empty outside a reopen.
 	pending []occurrenceRecipe
+	// props are the assembly document's iProperties (metadata sets), like a part's (#156).
+	props *attr.PropertySets
 }
 
 // NewAssemblyComponentDefinition returns an empty assembly content object: no
@@ -58,6 +61,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 		params:      param.NewParameters(),
 		work:        feature.NewWorkGeometry(),
 		sketches:    sketch.NewSketches(),
+		props:       attr.NewPropertySets(),
 	}
 	occ.SetListener(a.events)
 	a.features.SetBus(a.events.Bus()) // feature-program events ride the assembly's occurrence bus
@@ -183,6 +187,9 @@ func (a *AssemblyComponentDefinition) AddFeature(f feature.Feature) *AssemblyFea
 // Parameters returns the assembly's parameter DAG (shared with its sketches so
 // dimension expressions resolve against the same table).
 func (a *AssemblyComponentDefinition) Parameters() *param.Parameters { return a.params }
+
+// Properties returns the assembly's iProperties (document metadata sets), like a part's (#156).
+func (a *AssemblyComponentDefinition) Properties() *attr.PropertySets { return a.props }
 
 // WorkGeometry returns the assembly's origin coordinate frame and user work
 // planes/axes/points, expressed in assembly space — the planes a sketch is authored on.
