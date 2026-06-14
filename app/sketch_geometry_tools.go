@@ -32,6 +32,18 @@ func (c *collectClicks) ClickAt(s *Session, px, py float64) {
 // Cancel discards the in-progress points.
 func (c *collectClicks) reset() { c.pts = nil }
 
+// SubmitToken records a typed point for the command line (M26), so every multi-point
+// geometry tool that embeds collectClicks (circle, arc, point, polygon) is command-driven
+// for free. The engine resolves relative/polar input to an absolute sketch coordinate
+// first; each tool's existing Prompt() supplies the step text.
+func (c *collectClicks) SubmitToken(_ *Session, tok CommandToken) error {
+	if tok.Kind != CoordToken {
+		return errors.New("sketch: expected a point coordinate")
+	}
+	c.pts = append(c.pts, math.P2(tok.Coord.X, tok.Coord.Y))
+	return nil
+}
+
 // CircleTool draws a circle from a clicked center and a radius point.
 type CircleTool struct{ collectClicks }
 

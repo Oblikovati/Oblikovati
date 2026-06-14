@@ -88,6 +88,7 @@ type Session struct {
 	contextMenus         map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
 	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
 	cmdInput             commandInput                                     // command-alias input box state (M05-F17)
+	cmdLine              *CommandLine                                     // Command Window REPL engine (M26)
 	grid                 *GridSettings
 	themes               *theme.Library
 	themeStore           *theme.Store

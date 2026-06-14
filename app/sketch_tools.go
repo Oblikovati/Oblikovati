@@ -149,6 +149,25 @@ func (t *LineTool) Prompt(*Session) string {
 	}
 }
 
+// SubmitToken adds a typed endpoint to the line (M26). The engine has already resolved any
+// relative/polar input to an absolute sketch-plane coordinate; the step prompt is Prompt().
+func (t *LineTool) SubmitToken(_ *Session, tok CommandToken) error {
+	if tok.Kind != CoordToken {
+		return errors.New("line: expected a point coordinate")
+	}
+	t.points = append(t.points, math.P2(tok.Coord.X, tok.Coord.Y))
+	return nil
+}
+
+// SubmitToken adds a typed corner to the rectangle (M26).
+func (t *RectangleTool) SubmitToken(_ *Session, tok CommandToken) error {
+	if tok.Kind != CoordToken {
+		return errors.New("rectangle: expected a corner coordinate")
+	}
+	t.corners = append(t.corners, math.P2(tok.Coord.X, tok.Coord.Y))
+	return nil
+}
+
 // PlaneClickTool is a sketch tool whose input is raw plane-point clicks (a pixel
 // mapped through the sketch plane), not entity picks — every geometry tool in the
 // sketch environment (line, rectangle, circle, arc, …) implements it.
