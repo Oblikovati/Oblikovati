@@ -159,6 +159,8 @@ int  obk_ig_input_float(const char* label, float* v) { return ImGui::InputFloat(
 int  obk_ig_input_double(const char* label, double* v) { return ImGui::InputDouble(label, v) ? 1 : 0; }
 int  obk_ig_input_int(const char* label, int* v)     { return ImGui::InputInt(label, v) ? 1 : 0; }
 int  obk_ig_input_text(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size) ? 1 : 0; }
+int  obk_ig_input_text_submit(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size, ImGuiInputTextFlags_EnterReturnsTrue) ? 1 : 0; }
+void obk_ig_set_keyboard_focus_here(void) { ImGui::SetKeyboardFocusHere(); }
 int  obk_ig_input_text_multiline(const char* label, char* buf, int buf_size, float w, float h) {
     return ImGui::InputTextMultiline(label, buf, (size_t)buf_size, ImVec2(w, h)) ? 1 : 0;
 }

@@ -38,6 +38,7 @@ type Session struct {
 	facetStore           *facetstore.FacetStore   // tolerance-keyed facet/stroke cache (M07 #293; lazy)
 	transientBodies      *bodyapi.TransientBRep   // transient B-rep registry (M07 #628; lazy)
 	commands             *CommandManager
+	bindings             *Bindings              // keyboard shortcut + alias resolver (M05-F17)
 	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
 	prefs                userprefs.Prefs        // global user preferences (ViewCube show/lock/compass/size/…)
@@ -85,6 +86,7 @@ type Session struct {
 	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
 	contextMenus         map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
 	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
+	cmdInput             commandInput                                     // command-alias input box state (M05-F17)
 	grid                 *GridSettings
 	themes               *theme.Library
 	themeStore           *theme.Store
@@ -98,6 +100,7 @@ type Session struct {
 	lighting             renderer.SceneLighting         // the live lighting rig (resolved from the style, then edited)
 	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
+	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
 	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
 	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
 	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)

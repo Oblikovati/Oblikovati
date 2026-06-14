@@ -16,6 +16,7 @@ import (
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
+	"oblikovati.org/app/keymap"
 	"oblikovati.org/app/options"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/internal/sysopen"
@@ -134,6 +135,7 @@ func newDemoSession() *app.Session {
 		s.SetUserPrefsStore(userprefs.NewFileStore(path))
 	}
 	registerCommands(s)
+	loadKeymap(s)                          // after registerCommands: CheckDefaults validates the registered shortcuts
 	s.SetURLOpener(sysopen.SystemOpener{}) // web-view fallback (M05-F08)
 	loadAppOptions(s)
 	// StartupAction (M05-F11): the historical default seeds a demo part; the user can
@@ -212,6 +214,23 @@ func installPicker(s *app.Session) {
 		}).
 		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }).
 		WithOccurrenceLookup(s.OccurrenceOfBody))
+}
+
+// loadKeymap wires the per-user keyboard-customization file (M05-F17) and verifies the
+// default bindings are self-consistent. A store failure costs only persistence (defaults
+// still apply); a CheckDefaults failure is a programming error in the command registry
+// (an alias colliding with a built-in shortcut) and is fatal.
+func loadKeymap(s *app.Session) {
+	if err := s.Bindings().CheckDefaults(); err != nil {
+		panic(err)
+	}
+	path, err := keymap.DefaultPath()
+	if err == nil {
+		err = s.UseKeymapStore(keymap.NewFileStore(path))
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "keymap: %v\n", err)
+	}
 }
 
 // loadAppOptions wires the per-user options file (M05-F11) and applies the stored
