@@ -4,10 +4,12 @@ package addinhost
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"oblikovati.org/api"
 	"oblikovati.org/app"
 )
 
@@ -16,6 +18,7 @@ import (
 type addInLib interface {
 	id() string
 	manifest() string
+	apiVersion() (major, minor int, present bool)
 	activate() error
 	deactivate() error
 	notify(b []byte) error
@@ -65,31 +68,91 @@ func (a *LoadedAddIn) CallAutomation(method string, args []byte) ([]byte, error)
 // Close unloads the shared library (dlclose/FreeLibrary).
 func (a *LoadedAddIn) Close() error { return a.lib.close() }
 
-// LoadDir opens every shared-library add-in in dir and returns wrappers ready to
-// register with session.AddIns(). A missing dir means "no add-ins installed" and
-// yields (nil, nil). On the first failed load it returns what loaded so far plus
-// the error, so the caller can decide whether a bad add-in is fatal.
-func LoadDir(dir string) ([]*LoadedAddIn, error) {
+// IncompatibleAddIn records an add-in [LoadDir] refused to load because its
+// compiled-against api version is incompatible with the host (a different major, or a
+// minor newer than the host's). The caller surfaces Reason to the user (status bar).
+type IncompatibleAddIn struct {
+	ID     string // the add-in's id (best effort; its ObkAddInId still resolves)
+	Path   string // the shared-library file
+	Reason string // why it was refused, naming both versions
+}
+
+// LoadDir opens every shared-library add-in in dir and returns the loadable ones
+// (ready to register with session.AddIns()) plus any it refused on version grounds.
+// A missing dir means "no add-ins installed" and yields (nil, nil, nil). On the first
+// hard load failure it returns what loaded so far plus the error, so the caller can
+// decide whether a bad add-in is fatal; a version-incompatible add-in is NOT a hard
+// failure — it is skipped, logged, and reported in the second return value.
+func LoadDir(dir string) ([]*LoadedAddIn, []IncompatibleAddIn, error) {
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {
-		return nil, nil
+		return nil, nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("addinhost: read add-in dir %q: %w", dir, err)
+		return nil, nil, fmt.Errorf("addinhost: read add-in dir %q: %w", dir, err)
 	}
 	var out []*LoadedAddIn
+	var skipped []IncompatibleAddIn
 	for _, e := range entries {
 		if e.IsDir() || !isSharedLib(e.Name()) {
 			continue
 		}
-		path := filepath.Join(dir, e.Name())
-		l, err := openLibrary(path)
-		if err != nil {
-			return out, err
+		loaded, skip, err := loadOne(filepath.Join(dir, e.Name()))
+		switch {
+		case err != nil:
+			return out, skipped, err
+		case skip != nil:
+			skipped = append(skipped, *skip)
+		default:
+			out = append(out, loaded)
 		}
-		out = append(out, &LoadedAddIn{lib: l, id: l.id(), path: path})
 	}
-	return out, nil
+	return out, skipped, nil
+}
+
+// loadOne opens one shared library and either returns a loadable add-in or, when its
+// api version is incompatible, a skip record naming why (the library is closed). A
+// hard open failure is returned as an error the caller may treat as fatal.
+func loadOne(path string) (*LoadedAddIn, *IncompatibleAddIn, error) {
+	l, err := openLibrary(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	if reason := compatibilityError(l); reason != nil {
+		// Read the id before close: dlclose unmaps the library, so calling any
+		// resolved export afterwards is use-after-unmap.
+		id := l.id()
+		slog.Warn("addinhost: not loading incompatible add-in", "id", id, "path", path, "reason", reason.Error())
+		_ = l.close()
+		return nil, &IncompatibleAddIn{ID: id, Path: path, Reason: reason.Error()}, nil
+	}
+	return &LoadedAddIn{lib: l, id: l.id(), path: path}, nil, nil
+}
+
+// compatibilityError refuses an add-in whose compiled-against api version is
+// incompatible with this host's (ObkAddInApiMajor/ObkAddInApiMinor, see
+// include/oblikovati_addin.h); nil means compatible.
+func compatibilityError(l addInLib) error {
+	major, minor, present := l.apiVersion()
+	return checkCompatibility(major, minor, present, api.Major(), api.Minor())
+}
+
+// checkCompatibility is the pure version comparison behind compatibilityError, split
+// out so it is unit testable without building a real c-shared add-in. The rule: a
+// missing version export cannot be verified (refused); a different major is breaking
+// (refused); a minor NEWER than the host needs API the host lacks (refused). An
+// older-or-equal minor is fine — minor bumps are additive/backward-compatible.
+func checkCompatibility(addinMajor, addinMinor int, present bool, hostMajor, hostMinor int) error {
+	if !present {
+		return fmt.Errorf("add-in does not report its API version (no ObkAddInApiMajor/Minor); cannot verify compatibility with host API %d.%d", hostMajor, hostMinor)
+	}
+	if addinMajor != hostMajor {
+		return fmt.Errorf("add-in built against API major %d, host is API major %d", addinMajor, hostMajor)
+	}
+	if addinMinor > hostMinor {
+		return fmt.Errorf("add-in built against API %d.%d, newer than host API %d.%d", addinMajor, addinMinor, hostMajor, hostMinor)
+	}
+	return nil
 }
 
 // Open loads a single shared-library add-in from path and wraps it for
@@ -99,6 +162,10 @@ func Open(path string) (*LoadedAddIn, error) {
 	l, err := openLibrary(path)
 	if err != nil {
 		return nil, err
+	}
+	if reason := compatibilityError(l); reason != nil {
+		_ = l.close()
+		return nil, fmt.Errorf("addinhost: %s: %w", path, reason)
 	}
 	return &LoadedAddIn{lib: l, id: l.id(), path: path}, nil
 }

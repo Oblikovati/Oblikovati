@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"oblikovati.org/addin/dispatch"
@@ -68,17 +69,7 @@ func startAddIns(session *app.Session) *addInHost {
 	h.script = newScriptController(rtr, session, d)
 	useBehaviorStore(session)
 	useDialogMemoryStore(session)
-	libs, err := addinhost.LoadDir(dir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
-	}
-	for _, lib := range libs {
-		if err := registerAndMaybeActivate(session, lib); err != nil {
-			fmt.Fprintf(os.Stderr, "add-in %q: %v\n", lib.ID(), err)
-			continue
-		}
-		h.loaded = append(h.loaded, lib)
-	}
+	h.loadAndRegister(session, dir)
 	h.subs = events.Subscribe(session, func(ev []byte) { h.notifyActive(session, ev) })
 	// Under a supervisor (make run-watch sets OBK_ADDIN_AUTORESTART=1), watch the
 	// add-ins dir so a rebuilt library makes the app exit-and-relaunch — the safe way
@@ -88,6 +79,42 @@ func startAddIns(session *app.Session) *addInHost {
 		go h.watchAddIns()
 	}
 	return h
+}
+
+// loadAndRegister loads every shared-library add-in from dir, surfaces any refused on
+// API-version grounds in the status bar, and registers (and per stored behavior,
+// activates) the loadable ones. A bad add-in is logged and skipped — never fatal.
+func (h *addInHost) loadAndRegister(session *app.Session, dir string) {
+	libs, skipped, err := addinhost.LoadDir(dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
+	}
+	if notice := incompatibleNotice(skipped); notice != "" {
+		session.SetNotice(notice)
+	}
+	for _, lib := range libs {
+		if err := registerAndMaybeActivate(session, lib); err != nil {
+			fmt.Fprintf(os.Stderr, "add-in %q: %v\n", lib.ID(), err)
+			continue
+		}
+		h.loaded = append(h.loaded, lib)
+	}
+}
+
+// incompatibleNotice is the status-bar message for add-ins LoadDir refused on version
+// grounds — so a skipped add-in is never silent. Empty when nothing was skipped.
+func incompatibleNotice(skipped []addinhost.IncompatibleAddIn) string {
+	if len(skipped) == 0 {
+		return ""
+	}
+	if len(skipped) == 1 {
+		return fmt.Sprintf("Add-in %q skipped: incompatible API version (%s)", skipped[0].ID, skipped[0].Reason)
+	}
+	ids := make([]string, len(skipped))
+	for i, s := range skipped {
+		ids[i] = s.ID
+	}
+	return fmt.Sprintf("%d add-ins skipped: incompatible API version (%s)", len(skipped), strings.Join(ids, ", "))
 }
 
 // newScriptController builds the Script Console runtime: a gopher-lua engine whose host

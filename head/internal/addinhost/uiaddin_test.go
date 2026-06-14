@@ -47,7 +47,7 @@ func TestAddInExtendsRibbonAndActsOnClick(t *testing.T) {
 		return rtr.Handle(s, method, req)
 	}, 2*time.Second)
 
-	libs, err := LoadDir(filepath.Dir(so))
+	libs, _, err := LoadDir(filepath.Dir(so))
 	if err != nil || len(libs) != 1 {
 		t.Fatalf("LoadDir: libs=%d err=%v", len(libs), err)
 	}

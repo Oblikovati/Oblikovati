@@ -51,6 +51,17 @@ func ObkAddInId() *C.char { return idStr }
 //export ObkAddInManifest
 func ObkAddInManifest() *C.char { return manStr }
 
+// ObkAddInApiMajor/ObkAddInApiMinor report the api version this fixture is "built
+// against" — hardcoded because testdata dirs are excluded from the module (cannot
+// import oblikovati.org/api). The major is pinned to api.Major() by
+// TestFixturesTrackAPIMajor; minor 0 stays <= any host minor.
+//
+//export ObkAddInApiMajor
+func ObkAddInApiMajor() C.int { return 0 }
+
+//export ObkAddInApiMinor
+func ObkAddInApiMinor() C.int { return 0 }
+
 //export ObkAddInActivate
 func ObkAddInActivate(call C.HostCall, free C.HostFree) C.int {
 	mu.Lock()
