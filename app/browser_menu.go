@@ -33,8 +33,29 @@ func BrowserMenu(n BrowserNode) []BrowserMenuItem {
 		return bodyMenu(n.Select)
 	case "occurrence":
 		return occurrenceMenu(n.Select)
+	case "assemblyFeature":
+		return assemblyFeatureNodeMenu(n.Select)
 	default:
 		return nil
+	}
+}
+
+// assemblyFeatureNodeMenu offers Edit (its scalar parameters), a Suppress/Unsuppress toggle, and
+// Delete for a committed assembly machining feature (#766). Edit is greyed for a feature with no
+// editable parameters.
+func assemblyFeatureNodeMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(AssemblyFeatureHandle)
+	if !ok {
+		return nil
+	}
+	suppressLabel := "Suppress"
+	if h.Feature.Suppressed() {
+		suppressLabel = "Unsuppress"
+	}
+	return []BrowserMenuItem{
+		{Label: "Edit", Enabled: assemblyFeatureEditable(h.Feature), Invoke: func(s *Session) error { s.BeginEditAssemblyFeature(h); return nil }},
+		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleAssemblyFeatureSuppressed(h.Feature) }},
+		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteAssemblyFeature(h.Feature) }},
 	}
 }
 

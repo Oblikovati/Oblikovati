@@ -23,7 +23,7 @@ import (
 // clicking "XY Plane" selects the plane to sketch on).
 type BrowserNode struct {
 	Label    string
-	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "feature" | "occurrence"
+	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "feature" | "occurrence" | "features" | "assemblyFeature"
 	Select   Selectable
 	Children []BrowserNode
 }
@@ -77,6 +77,29 @@ func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefini
 		params.child(p.Name(), "parameter")
 	}
 	addOccurrenceNodes(root, asm.Occurrences())
+	addAssemblyFeatureNodes(root, asm.Features())
+}
+
+// addAssemblyFeatureNodes appends a Features folder listing the assembly machining features in
+// program order, each a selectable row whose right-click menu edits / suppresses / deletes it
+// (#766). The folder is omitted when the assembly has no features yet.
+func addAssemblyFeatureNodes(root *BrowserNode, fs *compdef.AssemblyFeatures) {
+	if fs.Count() == 0 {
+		return
+	}
+	folder := root.child("Features", "features")
+	for i := 0; i < fs.Count(); i++ {
+		af := fs.Item(i)
+		folder.selectableChild(assemblyFeatureLabel(af), "assemblyFeature", AssemblyFeatureHandle{Feature: af})
+	}
+}
+
+// assemblyFeatureLabel is the feature row's label, suffixed when it is suppressed.
+func assemblyFeatureLabel(af *compdef.AssemblyFeature) string {
+	if af.Suppressed() {
+		return af.Name() + " (suppressed)"
+	}
+	return af.Name()
 }
 
 // addOccurrenceNodes appends one selectable node per occurrence under parent, recursing into a

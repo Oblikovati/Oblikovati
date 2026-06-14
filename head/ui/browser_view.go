@@ -193,6 +193,8 @@ func openEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
 	switch h := n.Select.(type) {
 	case app.FeatureHandle:
 		s.BeginEditFeature(h)
+	case app.AssemblyFeatureHandle:
+		s.BeginEditAssemblyFeature(h) // edit a committed assembly machining feature (#766)
 	case app.SketchHandle:
 		s.BeginEditSketch(h)
 	case app.WorkPlaneHandle:

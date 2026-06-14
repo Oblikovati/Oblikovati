@@ -4,6 +4,7 @@ package app
 
 import (
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/sketch"
@@ -86,6 +87,13 @@ func (SketchEntityHandle) SelectionKind() SelectionKind { return SelectSketchEnt
 type OccurrenceHandle struct{ Occurrence *occurrence.Occurrence }
 
 func (OccurrenceHandle) SelectionKind() SelectionKind { return SelectOccurrence }
+
+// AssemblyFeatureHandle wraps a committed assembly machining feature (selected in the assembly
+// browser), the input the edit/suppress/delete actions consume (#766). It wraps the program
+// wrapper, not the bare feature, so those actions reach the suppression/name/id state.
+type AssemblyFeatureHandle struct{ Feature *compdef.AssemblyFeature }
+
+func (AssemblyFeatureHandle) SelectionKind() SelectionKind { return SelectFeature }
 
 // SketchHandle wraps a whole sketch (selected in the browser), as opposed to one of its
 // entities — the input for Edit Sketch and for highlighting the sketch in the view.
