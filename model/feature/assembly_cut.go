@@ -7,7 +7,6 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/math"
 )
 
 // AssemblyCutFeature is an assembly-machining feature: a tool body authored in the
@@ -36,19 +35,6 @@ type AssemblyCutFeature struct {
 // stock and [ops.Intersect] keeps the common volume.
 func NewAssemblyCutFeature(tool *topo.Body, op ops.PartFeatureOperation) *AssemblyCutFeature {
 	return &AssemblyCutFeature{kind: "assemblyCut", tool: tool, op: op}
-}
-
-// NewAssemblyHoleFeature returns an assembly hole: a drilled cylinder of the given
-// diameter and depth from center along axisInto, cut from each participant — a
-// parametric assembly-context feature kind that needs no sketch (M11-F08 kind set,
-// #735). The tool is faceted (the exact analytic cylinder is a NURBS-phase refinement),
-// fixed in assembly space; it reuses the cut machinery and reports kind "assemblyHole".
-func NewAssemblyHoleFeature(center math.Point3, axisInto math.UnitVector3, diameter, depth float64) (*AssemblyCutFeature, error) {
-	if diameter <= 0 || depth <= 0 {
-		return nil, fmt.Errorf("assemblyHole: diameter %g and depth %g must be positive", diameter, depth)
-	}
-	cyl := drillTool(center, axisInto, diameter/2, depth, "asmHole")
-	return &AssemblyCutFeature{kind: "assemblyHole", tool: cyl, op: ops.Cut}, nil
 }
 
 // Kind implements [Feature].
