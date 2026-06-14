@@ -45,7 +45,7 @@ func NewAssemblyProxyCutFeature(source *occurrence.Occurrence, op ops.PartFeatur
 }
 
 // Kind implements [Feature].
-func (f *AssemblyProxyCutFeature) Kind() string { return "assemblyProxyCut" }
+func (f *AssemblyProxyCutFeature) Kind() string { return kindAssemblyProxyCut }
 
 // Operation reports the boolean the feature applies, satisfying [OperationalFeature].
 func (f *AssemblyProxyCutFeature) Operation() ops.PartFeatureOperation { return f.op }
@@ -110,7 +110,7 @@ func applyToolToAll(op ops.PartFeatureOperation, bodies []*topo.Body, tool *topo
 // proxyToolLineage gives each proxied tool body a distinct lineage prefix so repeated
 // resolutions keep independent reference keys.
 func proxyToolLineage(index int) func(topo.Lineage) topo.Lineage {
-	prefix := topo.Tok("assemblyProxyCut", "tool", index)
+	prefix := topo.Tok(kindAssemblyProxyCut, "tool", index)
 	return func(l topo.Lineage) topo.Lineage {
 		return topo.NewLineage(append([]topo.LineageToken{prefix}, l.Tokens()...)...)
 	}

@@ -107,6 +107,32 @@ func TestAssemblyFeatureEditIsUndoable(t *testing.T) {
 	}
 }
 
+// TestSuppressAssemblyFeatureToCurrentStateRecordsNothing: suppressing a feature to the state it is
+// already in is a no-op and pushes no undo step (#766).
+func TestSuppressAssemblyFeatureToCurrentStateRecordsNothing(t *testing.T) {
+	s, asm, _ := chamferedAssembly(t)
+	trackFromHere(s) // baseline: the feature is unsuppressed
+	if err := s.SuppressAssemblyFeature(asm.Features().Item(0), false); err != nil {
+		t.Fatalf("suppress to current state: %v", err)
+	}
+	if s.CanUndo() {
+		t.Error("suppressing to the current state should record no undo step")
+	}
+}
+
+// TestDeleteAssemblyFeatureRejectsUnknown: deleting a feature that is not in the assembly (here, a
+// second delete of an already-removed feature) errors and names the feature is not present.
+func TestDeleteAssemblyFeatureRejectsUnknown(t *testing.T) {
+	s, asm, _ := chamferedAssembly(t)
+	af := asm.Features().Item(0)
+	if err := s.DeleteAssemblyFeature(af); err != nil {
+		t.Fatalf("first delete: %v", err)
+	}
+	if err := s.DeleteAssemblyFeature(af); err == nil {
+		t.Error("deleting a feature not in the assembly should error")
+	}
+}
+
 // TestAssemblyFeatureMenuAndDelete: the feature menu offers Edit/Suppress/Delete, and Delete
 // removes the feature (undoably).
 func TestAssemblyFeatureMenuAndDelete(t *testing.T) {

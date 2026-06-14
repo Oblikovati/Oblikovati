@@ -153,3 +153,17 @@ func TestItemNumbersStableAndQuantityTracksSuppression(t *testing.T) {
 		t.Errorf("after suppressing B: %v, want A still item 1", rowNames(second.Rows))
 	}
 }
+
+// TestViewKindString pins the chooser labels and the unknown-value fallback, since the head's BOM
+// panel now derives its view names from String() rather than a parallel slice.
+func TestViewKindString(t *testing.T) {
+	cases := map[ViewKind]string{StructuredView: "Structured", PartsOnlyView: "Parts Only", ViewKind(7): "ViewKind(7)"}
+	for k, want := range cases {
+		if got := k.String(); got != want {
+			t.Errorf("ViewKind(%d).String() = %q, want %q", int(k), got, want)
+		}
+	}
+	if kinds := ViewKinds(); len(kinds) != 2 || kinds[0] != StructuredView || kinds[1] != PartsOnlyView {
+		t.Errorf("ViewKinds() = %v, want [Structured PartsOnly] in order", kinds)
+	}
+}

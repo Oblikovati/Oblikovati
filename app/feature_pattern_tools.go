@@ -113,7 +113,7 @@ type FeatureCircPatternTool struct {
 }
 
 func NewFeatureCircPatternTool() *FeatureCircPatternTool {
-	return &FeatureCircPatternTool{count: 4, totalAngle: 2 * 3.141592653589793}
+	return &FeatureCircPatternTool{count: 4, totalAngle: FullTurn}
 }
 func (t *FeatureCircPatternTool) Name() string { return "Circular Pattern" }
 func (t *FeatureCircPatternTool) Prompt(*Session) string {

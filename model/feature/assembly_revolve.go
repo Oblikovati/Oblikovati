@@ -38,7 +38,7 @@ func NewAssemblyRevolveFeature(skt *sketch.Sketch, profileIndex int, axis *WorkA
 }
 
 // Kind implements [Feature].
-func (f *AssemblyRevolveFeature) Kind() string { return "assemblyRevolve" }
+func (f *AssemblyRevolveFeature) Kind() string { return kindAssemblyRevolve }
 
 // Operation reports the boolean the feature applies, satisfying [OperationalFeature].
 func (f *AssemblyRevolveFeature) Operation() ops.PartFeatureOperation { return f.op }
@@ -61,7 +61,7 @@ func (f *AssemblyRevolveFeature) Recompute(in Input) (Output, error) {
 
 // buildTool spins the resolved profile about the resolved axis into the assembly-space tool.
 func (f *AssemblyRevolveFeature) buildTool() (*topo.Body, error) {
-	prof, err := resolveSingleProfile(f.sketch, f.profileIndex, "assemblyRevolve")
+	prof, err := resolveSingleProfile(f.sketch, f.profileIndex, kindAssemblyRevolve)
 	if err != nil {
 		return nil, err
 	}
@@ -81,5 +81,5 @@ func (f *AssemblyRevolveFeature) resolveAxis() (*WorkAxis, error) {
 	if f.axis != nil {
 		return f.axis, nil
 	}
-	return sketchCenterlineAxis(f.sketch, "assemblyRevolve")
+	return sketchCenterlineAxis(f.sketch, kindAssemblyRevolve)
 }

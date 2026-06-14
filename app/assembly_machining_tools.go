@@ -41,9 +41,6 @@ func signedAxisDir(i int) math.UnitVector3 {
 	return d
 }
 
-// fullTurn is 2π — the default revolve sweep (a full revolution).
-const fullTurn = 2 * 3.141592653589793
-
 // --- Revolve --------------------------------------------------------------
 
 // AssemblyRevolveTool spins a picked assembly-sketch profile about a coordinate axis through the
@@ -57,13 +54,13 @@ type AssemblyRevolveTool struct {
 
 // NewAssemblyRevolveTool returns a full-turn Cut about +Y by default.
 func NewAssemblyRevolveTool() *AssemblyRevolveTool {
-	return &AssemblyRevolveTool{angle: fullTurn, axisIndex: 2}
+	return &AssemblyRevolveTool{angle: FullTurn, axisIndex: 2}
 }
 func (t *AssemblyRevolveTool) Name() string { return "Revolve" }
 func (t *AssemblyRevolveTool) Prompt(*Session) string {
 	return "Pick a sketch profile, set the axis, angle and operation, then OK."
 }
-func (t *AssemblyRevolveTool) Start(*Session) {}
+func (t *AssemblyRevolveTool) Start(*Session) { /* no setup; the tool waits for a profile pick */ }
 func (t *AssemblyRevolveTool) Pick(_ *Session, sel Selectable) {
 	if h, ok := sel.(ProfileHandle); ok {
 		t.profile = &h
@@ -71,7 +68,7 @@ func (t *AssemblyRevolveTool) Pick(_ *Session, sel Selectable) {
 }
 func (t *AssemblyRevolveTool) Cancel(*Session) { t.profile = nil }
 func (t *AssemblyRevolveTool) CanCommit() bool {
-	return t.profile != nil && t.angle > 0 && t.angle <= fullTurn+1e-9
+	return t.profile != nil && t.angle > 0 && t.angle <= FullTurn+1e-9
 }
 
 func (t *AssemblyRevolveTool) Commit(s *Session) error {
@@ -98,7 +95,7 @@ func (t *AssemblyRevolveTool) Params() ToolParams {
 		},
 		Choices: []ChoiceParam{
 			{Label: "Axis", Options: signedAxisNames(), Get: func() int { return t.axisIndex }, Set: func(i int) { t.axisIndex = i }},
-			{Label: "Operation", Options: []string{"Cut", "Join", "Intersect", "New body"}, Get: func() int { return t.operation }, Set: func(i int) { t.operation = i }},
+			{Label: "Operation", Options: assemblyExtrudeOpNames, Get: func() int { return t.operation }, Set: func(i int) { t.operation = i }},
 		},
 	}
 }
@@ -122,6 +119,9 @@ func (t *AssemblyHoleTool) Name() string { return "Hole" }
 func (t *AssemblyHoleTool) Prompt(*Session) string {
 	return "Set the centre, axis, diameter and depth, then OK."
 }
+
+// The hole tool takes only numeric input (centre, axis, diameter, depth), so it has no
+// selection lifecycle: nothing to set up, pick, or undo on cancel.
 func (t *AssemblyHoleTool) Start(*Session)            {}
 func (t *AssemblyHoleTool) Pick(*Session, Selectable) {}
 func (t *AssemblyHoleTool) Cancel(*Session)           {}

@@ -39,7 +39,7 @@ func NewAssemblyHoleFeature(center math.Point3, axisInto math.UnitVector3, diame
 }
 
 // Kind implements [Feature].
-func (f *AssemblyHoleFeature) Kind() string { return "assemblyHole" }
+func (f *AssemblyHoleFeature) Kind() string { return kindAssemblyHole }
 
 // Operation reports the boolean the feature applies, satisfying [OperationalFeature].
 func (f *AssemblyHoleFeature) Operation() ops.PartFeatureOperation { return ops.Cut }

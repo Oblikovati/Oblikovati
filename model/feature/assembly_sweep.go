@@ -37,7 +37,7 @@ func NewAssemblySweepFeature(skt *sketch.Sketch, profileIndex int, op ops.PartFe
 }
 
 // Kind implements [Feature].
-func (f *AssemblySweepFeature) Kind() string { return "assemblySweep" }
+func (f *AssemblySweepFeature) Kind() string { return kindAssemblySweep }
 
 // Operation reports the boolean the feature applies, satisfying [OperationalFeature].
 func (f *AssemblySweepFeature) Operation() ops.PartFeatureOperation { return f.op }
@@ -63,7 +63,7 @@ func (f *AssemblySweepFeature) buildTool() (*topo.Body, error) {
 	if len(f.path) < 2 {
 		return nil, fmt.Errorf("assemblySweep: path needs at least two points, got %d", len(f.path))
 	}
-	prof, err := resolveSingleProfile(f.sketch, f.profileIndex, "assemblySweep")
+	prof, err := resolveSingleProfile(f.sketch, f.profileIndex, kindAssemblySweep)
 	if err != nil {
 		return nil, err
 	}

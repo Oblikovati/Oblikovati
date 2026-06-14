@@ -32,7 +32,7 @@ func NewAssemblyChamferFeature(edgeSuffixes [][]byte, distance func() float64) *
 }
 
 // Kind implements [Feature].
-func (f *AssemblyChamferFeature) Kind() string { return "assemblyChamfer" }
+func (f *AssemblyChamferFeature) Kind() string { return kindAssemblyChamfer }
 
 // Recompute chamfers the matched edges of every participant body.
 func (f *AssemblyChamferFeature) Recompute(in Input) (Output, error) {
@@ -42,7 +42,7 @@ func (f *AssemblyChamferFeature) Recompute(in Input) (Output, error) {
 		if err != nil {
 			return nil, err
 		}
-		return soleBody(out.Bodies, "assemblyChamfer")
+		return soleBody(out.Bodies, kindAssemblyChamfer)
 	})
 	if err != nil {
 		return Output{}, err
@@ -69,7 +69,7 @@ func NewAssemblyFilletFeature(edgeSuffixes [][]byte, radius func() float64) *Ass
 }
 
 // Kind implements [Feature].
-func (f *AssemblyFilletFeature) Kind() string { return "assemblyFillet" }
+func (f *AssemblyFilletFeature) Kind() string { return kindAssemblyFillet }
 
 // Recompute rounds the matched edges of every participant body.
 func (f *AssemblyFilletFeature) Recompute(in Input) (Output, error) {

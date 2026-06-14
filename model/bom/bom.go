@@ -2,7 +2,11 @@
 
 package bom
 
-import "oblikovati.org/model/occurrence"
+import (
+	"strconv"
+
+	"oblikovati.org/model/occurrence"
+)
 
 // BOM is the bill of materials derived from an assembly's occurrence structure. It is
 // a live view: each call to [BOM.Structured] or [BOM.PartsOnly] re-derives from the
@@ -26,6 +30,23 @@ const (
 	// quantity across the whole assembly.
 	PartsOnlyView
 )
+
+// ViewKinds returns the selectable view kinds in display order, so a UI chooser can enumerate
+// them without hardcoding the set (it reads each label from [ViewKind.String]).
+func ViewKinds() []ViewKind { return []ViewKind{StructuredView, PartsOnlyView} }
+
+// String returns the chooser label for a view kind. An unknown value reports itself so a missing
+// case is visible rather than silent.
+func (k ViewKind) String() string {
+	switch k {
+	case StructuredView:
+		return "Structured"
+	case PartsOnlyView:
+		return "Parts Only"
+	default:
+		return "ViewKind(" + strconv.Itoa(int(k)) + ")"
+	}
+}
 
 // Row is one line of a BOM view: its item number, the component's part metadata, its
 // BOM structure, the quantity at this level, and — in the structured view — its

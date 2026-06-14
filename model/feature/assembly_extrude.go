@@ -36,7 +36,7 @@ func NewAssemblyExtrudeFeature(skt *sketch.Sketch, profileIndex int, op ops.Part
 }
 
 // Kind implements [Feature].
-func (f *AssemblyExtrudeFeature) Kind() string { return "assemblyExtrude" }
+func (f *AssemblyExtrudeFeature) Kind() string { return kindAssemblyExtrude }
 
 // Operation reports the boolean the feature applies, satisfying [OperationalFeature].
 func (f *AssemblyExtrudeFeature) Operation() ops.PartFeatureOperation { return f.op }

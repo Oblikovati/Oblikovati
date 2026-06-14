@@ -16,8 +16,13 @@ import (
 // generic tool-param dialog. The geometry is model/feature's AssemblyExtrudeFeature.
 
 // assemblyExtrudeOps maps the tool's operation choice index to the kernel operation. Cut is first
-// because an assembly extrude is most often a pocket cut across components.
-var assemblyExtrudeOps = []ops.PartFeatureOperation{ops.Cut, ops.Join, ops.Intersect, ops.NewBody}
+// because an assembly extrude is most often a pocket cut across components. assemblyExtrudeOpNames
+// are the matching chooser labels — kept beside the ops so the two slices stay index-aligned;
+// shared by every sketch/profile machining tool (extrude, revolve).
+var (
+	assemblyExtrudeOps     = []ops.PartFeatureOperation{ops.Cut, ops.Join, ops.Intersect, ops.NewBody}
+	assemblyExtrudeOpNames = []string{"Cut", "Join", "Intersect", "New body"}
+)
 
 // AssemblyExtrudeTool extrudes a picked assembly-sketch profile into a machining feature applied to
 // every participant.
@@ -67,7 +72,7 @@ func (t *AssemblyExtrudeTool) Params() ToolParams {
 			{"Distance", func() float64 { return t.distance }, func(v float64) { t.distance = v }},
 		},
 		Choices: []ChoiceParam{
-			{Label: "Operation", Options: []string{"Cut", "Join", "Intersect", "New body"},
+			{Label: "Operation", Options: assemblyExtrudeOpNames,
 				Get: func() int { return t.operation }, Set: func(i int) { t.operation = i }},
 		},
 	}

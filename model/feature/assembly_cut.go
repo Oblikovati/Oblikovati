@@ -34,7 +34,7 @@ type AssemblyCutFeature struct {
 // typically [ops.Cut] (machining away material); [ops.Join] adds the tool as shared
 // stock and [ops.Intersect] keeps the common volume.
 func NewAssemblyCutFeature(tool *topo.Body, op ops.PartFeatureOperation) *AssemblyCutFeature {
-	return &AssemblyCutFeature{kind: "assemblyCut", tool: tool, op: op}
+	return &AssemblyCutFeature{kind: kindAssemblyCut, tool: tool, op: op}
 }
 
 // Kind implements [Feature].

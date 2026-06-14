@@ -35,7 +35,10 @@ func NewAssemblyFeatureEditTool(af *compdef.AssemblyFeature) *AssemblyFeatureEdi
 	return t
 }
 
-func (t *AssemblyFeatureEditTool) Name() string   { return "Edit " + t.feature.Name() }
+func (t *AssemblyFeatureEditTool) Name() string { return "Edit " + t.feature.Name() }
+
+// Start is a no-op: the editable parameters were snapshotted in the constructor, so the dialog
+// can open straight away.
 func (t *AssemblyFeatureEditTool) Start(*Session) {}
 
 // Pick is unused — an assembly feature edit changes scalar parameters, not geometric references
