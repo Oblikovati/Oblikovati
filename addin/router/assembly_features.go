@@ -38,6 +38,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesAddChamfer] = assemblyFeaturesAddChamfer
 	r.handlers[wire.MethodAssemblyFeaturesAddFillet] = assemblyFeaturesAddFillet
 	r.handlers[wire.MethodAssemblyFeaturesAddMoveFace] = assemblyFeaturesAddMoveFace
+	r.handlers[wire.MethodAssemblyFeaturesAddSweep] = assemblyFeaturesAddSweep
 	r.handlers[wire.MethodAssemblyFeaturesEdit] = assemblyFeaturesEdit
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
@@ -173,6 +174,48 @@ func revolveAxisFromArgs(in wire.AddAssemblyRevolveArgs) (*feature.WorkAxis, err
 		return nil, fmt.Errorf("%s: angle %g must be in (0, 2π]", wire.MethodAssemblyFeaturesAddRevolve, in.Angle)
 	}
 	return feature.NewDatumAxis(math.P3(in.Origin[0], in.Origin[1], in.Origin[2]), dir), nil
+}
+
+// assemblyFeaturesAddSweep sweeps an assembly sketch profile along an explicit polyline path
+// into the participants — a swept channel or rib.
+func assemblyFeaturesAddSweep(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAssemblySweepArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	op, err := cutOperation(in.Operation)
+	if err != nil {
+		return nil, err
+	}
+	sk, err := sketchAtIndex(asm, in.SketchIndex)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddSweep, err)
+	}
+	path, err := assemblySweepPath(in.Path, wire.MethodAssemblyFeaturesAddSweep)
+	if err != nil {
+		return nil, err
+	}
+	af := asm.AddFeature(feature.NewAssemblySweepFeature(sk, in.ProfileIndex, op, path))
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+}
+
+// assemblySweepPath converts a wire path polyline to assembly-space points, requiring at
+// least two.
+func assemblySweepPath(points [][3]float64, method string) ([]math.Point3, error) {
+	if len(points) < 2 {
+		return nil, fmt.Errorf("%s: path needs at least two points, got %d", method, len(points))
+	}
+	path := make([]math.Point3, len(points))
+	for i, p := range points {
+		path[i] = math.P3(p[0], p[1], p[2])
+	}
+	return path, nil
 }
 
 // assemblyFeaturesAddChamfer chamfers picked component edges on every participant.

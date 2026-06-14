@@ -491,3 +491,33 @@ func TestAssemblyMoveFaceOverWire(t *testing.T) {
 		t.Errorf("move-face scalars = %+v, want one editable Distance scalar", added.Feature.Scalars)
 	}
 }
+
+// TestAssemblySweepOverWire sweeps an assembly sketch profile along an explicit polyline
+// path into the participant (#735). A difference-sweep removes a channel (volume drops
+// below the box and stays a valid solid); the assembly-sketch profile + path wiring is what
+// this gates (the swept-solid geometry itself is covered by the part sweep tests).
+func TestAssemblySweepOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+
+	var sk wire.CreateSketchResult
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &sk)
+	var rect wire.SketchRectangleResult
+	call(t, r, s, "sketch.rectangle", fmt.Sprintf(`{"sketchIndex":%d,"width":"0.5 cm","height":"1 cm"}`, sk.SketchIndex), &rect)
+
+	var added wire.AssemblyFeatureResult
+	args := fmt.Sprintf(`{"sketchIndex":%d,"profileIndex":0,"path":[[0.25,0.5,0],[0.25,0.5,0.6]],"operation":"difference"}`, sk.SketchIndex)
+	call(t, r, s, "assemblyFeatures.addSweep", args, &added)
+	if added.Feature.Kind != "assemblySweep" {
+		t.Fatalf("feature kind = %q, want assemblySweep", added.Feature.Kind)
+	}
+	// The path starts at the profile centroid (0.25,0.5,0) and runs +0.6z, so the swept
+	// channel is the 0.5×1 profile dragged straight down — the same 0.3 cut an extrude makes.
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.7) > 1e-6 {
+		t.Errorf("swept-cut volume = %g, want 0.7 (unit box minus a 0.5×1×0.6 channel)", got)
+	}
+
+	// A single-point path is rejected.
+	if _, err := r.Handle(s, "assemblyFeatures.addSweep", []byte(fmt.Sprintf(`{"sketchIndex":%d,"profileIndex":0,"path":[[0,0,0]],"operation":"difference"}`, sk.SketchIndex))); err == nil {
+		t.Error("addSweep with a single-point path should fail")
+	}
+}
