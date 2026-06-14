@@ -2,6 +2,8 @@
 
 package occurrence
 
+import "strings"
+
 // OccurrencePath addresses a (possibly nested) occurrence from a root assembly: the
 // sequence of occurrence instance names from the top down, e.g.
 // ["gearbox:1", "shaft:2"]. Because sub-occurrences are shared flyweights, the same
@@ -9,6 +11,12 @@ package occurrence
 // path is what disambiguates the *context* it is reached through — the reference API's
 // ComponentOccurrence.OccurrencePath. The empty path resolves to nothing.
 type OccurrencePath []string
+
+// Key returns a stable string key for the path, for use as a map key when associating
+// data with a placement (e.g. per-occurrence derive styles, #715). It is an in-memory
+// key, not a persisted form — the NUL separator cannot occur in an instance name, so
+// distinct paths never collide.
+func (p OccurrencePath) Key() string { return strings.Join(p, "\x00") }
 
 // Resolve walks the path from this collection down through nested sub-assemblies,
 // returning the addressed occurrence. It fails (false) on an empty path, a segment

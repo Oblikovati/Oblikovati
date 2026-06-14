@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 )
 
@@ -28,14 +29,29 @@ func (r *Router) registerAssemblyDeriveHandlers() {
 }
 
 // assemblyDeriveCreate derives the source assembly document into the active part as a
-// base body (include-all) and returns the new feature's detail.
+// base body (include-all) and returns the new feature's detail. The source's identity is
+// captured on the derive and recorded as a reference of the active part, so the link
+// survives a save and a stale source is detected on reopen (#715).
 func assemblyDeriveCreate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, source, err := resolveDeriveSource(s, raw, wire.MethodAssemblyDeriveCreate)
+	part, source, sourceDoc, err := resolveDeriveSource(s, raw, wire.MethodAssemblyDeriveCreate)
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDerivedAssemblyComponents(part.Features()).AddDerived(source)
+	pf := feature.NewDerivedAssemblyComponents(part.Features()).AddDerived(source, deriveSourceLink(sourceDoc))
+	// Record the part→source edge now so the first save snapshots it (mirrors
+	// PlaceComponentFromFile); the source is already open, so this just resolves it.
+	s.ActiveDocument().OpenReference(sourceDoc.FullDocumentName())
 	return commitNewDerive(part, pf)
+}
+
+// deriveSourceLink captures the source assembly document's identity for a derive link.
+func deriveSourceLink(sourceDoc *doc.Document) feature.DeriveSourceLink {
+	id := sourceDoc.FileIdentity()
+	return feature.DeriveSourceLink{
+		Document:           sourceDoc.FullDocumentName(),
+		InternalName:       id.InternalName,
+		DatabaseRevisionID: id.DatabaseRevisionID,
+	}
 }
 
 // assemblyShrinkwrapCreate derives the source assembly into the active part as a
@@ -49,7 +65,7 @@ func assemblyShrinkwrapCreate(s *app.Session, raw json.RawMessage) (json.RawMess
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	source, err := assemblySource(s, in.Source, wire.MethodAssemblyShrinkwrapCreate)
+	source, _, err := assemblySource(s, in.Source, wire.MethodAssemblyShrinkwrapCreate)
 	if err != nil {
 		return nil, err
 	}
@@ -88,36 +104,37 @@ func assemblyDeriveBreakLink(s *app.Session, raw json.RawMessage) (json.RawMessa
 	return featureDetailReply(part, pf, idx)
 }
 
-// resolveDeriveSource resolves the active part and the DeriveCreateArgs source
-// assembly, shared by the derive create handler.
-func resolveDeriveSource(s *app.Session, raw json.RawMessage, method string) (*compdef.PartComponentDefinition, feature.AssemblyBodySource, error) {
+// resolveDeriveSource resolves the active part and the DeriveCreateArgs source assembly
+// document, shared by the derive create handler. The source document is returned so the
+// caller can capture its identity for the derive link (#715).
+func resolveDeriveSource(s *app.Session, raw json.RawMessage, method string) (*compdef.PartComponentDefinition, feature.AssemblyBodySource, *doc.Document, error) {
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	var in wire.DeriveCreateArgs
 	if err := decode(raw, &in); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	source, err := assemblySource(s, in.Source, method)
+	source, sourceDoc, err := assemblySource(s, in.Source, method)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return part, source, nil
+	return part, source, sourceDoc, nil
 }
 
-// assemblySource resolves an open document id to its assembly body source, rejecting a
-// non-assembly document (a part has no occurrence tree to derive).
-func assemblySource(s *app.Session, id uint64, method string) (feature.AssemblyBodySource, error) {
+// assemblySource resolves an open document id to its assembly body source and document,
+// rejecting a non-assembly document (a part has no occurrence tree to derive).
+func assemblySource(s *app.Session, id uint64, method string) (feature.AssemblyBodySource, *doc.Document, error) {
 	d, err := documentByID(s, id)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", method, err)
+		return nil, nil, fmt.Errorf("%s: %w", method, err)
 	}
 	source, ok := d.Content().(feature.AssemblyBodySource)
 	if !ok {
-		return nil, fmt.Errorf("%s: document %d (%s) is not an assembly", method, id, d.DisplayName())
+		return nil, nil, fmt.Errorf("%s: document %d (%s) is not an assembly", method, id, d.DisplayName())
 	}
-	return source, nil
+	return source, d, nil
 }
 
 // commitNewDerive gives the new derive/shrinkwrap feature a unique name, recomputes the

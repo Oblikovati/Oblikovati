@@ -39,6 +39,40 @@ func (s DeriveStyle) String() string {
 	}
 }
 
+// DeriveStyleFromName parses a derive style spelling (the inverse of [DeriveStyle.String]),
+// reporting whether it is a known style. Used to restore a persisted per-occurrence style.
+func DeriveStyleFromName(name string) (DeriveStyle, bool) {
+	switch name {
+	case "include":
+		return DeriveInclude, true
+	case "exclude":
+		return DeriveExclude, true
+	case "subtract":
+		return DeriveSubtract, true
+	default:
+		return DeriveInclude, false
+	}
+}
+
+// DeriveSourceLink identifies the source assembly document a derived component pulls from,
+// captured when the derive is created so the link survives a save (#715). Document is the
+// full document name to re-resolve on reopen; InternalName is the source's identity GUID;
+// DatabaseRevisionID is the source's recipe revision at derive time — a different revision
+// on reopen means the source changed since, i.e. the derive is out of date.
+type DeriveSourceLink struct {
+	Document           string
+	InternalName       string
+	DatabaseRevisionID string
+}
+
+// DeriveStyleAtPath pairs a non-default derive style with the occurrence path it applies
+// to — the persistable, pointer-free form of the per-occurrence styles map. Path is the
+// root-first instance-name path of the styled source placement ([PlacedBody.Path]).
+type DeriveStyleAtPath struct {
+	Path  occurrence.OccurrencePath
+	Style DeriveStyle
+}
+
 // PlacedBody is one source body paired with the world transform of the occurrence that
 // places it (in the source assembly's space) and that occurrence, so a derived feature
 // can apply per-occurrence [DeriveStyle]. Flattening a source assembly's occurrence
@@ -74,10 +108,19 @@ type AssemblyBodySource interface {
 // (M11-F06): a source edit bumps the source version so a re-derive flows it through,
 // and BreakLink freezes the current result and stops pulling.
 type DerivedAssemblyComponent struct {
-	source AssemblyBodySource
+	source AssemblyBodySource // nil after restore until BindSource rebinds it
 	styles map[*occurrence.Occurrence]DeriveStyle
 	linked bool
 	frozen []*topo.Body
+	// link is the persisted identity of the source document (#715); zero for a derive
+	// built without one (e.g. a pure in-memory test source).
+	link DeriveSourceLink
+	// pendingStyles holds path-keyed styles parsed from the recipe but not yet rebound to
+	// live occurrences — applied in BindSource once the source's PlacedBodies exist.
+	pendingStyles []DeriveStyleAtPath
+	// outOfDate records, after a rebind, that the source's current recipe revision differs
+	// from the one captured in link (the source was edited since this derive was saved).
+	outOfDate bool
 }
 
 // Definition returns the derived recipe.
@@ -86,12 +129,75 @@ func (d *DerivedAssemblyComponent) Definition() *DerivedAssemblyComponent { retu
 // Kind implements [Feature].
 func (d *DerivedAssemblyComponent) Kind() string { return "derivedAssembly" }
 
-// SourceVersion returns the source assembly's current geometry version (change tracking).
-func (d *DerivedAssemblyComponent) SourceVersion() string { return d.source.ModelGeometryVersion() }
+// SourceVersion returns the source assembly's current geometry version (change tracking),
+// or "" when the source is not bound (after restore, before [BindSource]).
+func (d *DerivedAssemblyComponent) SourceVersion() string {
+	if d.source == nil {
+		return ""
+	}
+	return d.source.ModelGeometryVersion()
+}
+
+// SourceLink returns the persisted identity of the derive's source document (#715).
+func (d *DerivedAssemblyComponent) SourceLink() DeriveSourceLink { return d.link }
+
+// OutOfDate reports whether the source has been edited since this derive was saved — the
+// source resolved on reopen carries a different recipe revision than [DeriveSourceLink]
+// captured. Always false for an in-session derive (the link matches the live source).
+func (d *DerivedAssemblyComponent) OutOfDate() bool { return d.outOfDate }
+
+// BindSource (re)binds the live source assembly after a restore and recomputes staleness:
+// the derive is out of date when currentDBRevID (the source's revision now) differs from
+// the revision captured in the link. It also rebinds the path-keyed pending styles to the
+// now-live occurrences. Both revisions must be non-empty for a meaningful comparison.
+func (d *DerivedAssemblyComponent) BindSource(source AssemblyBodySource, currentDBRevID string) {
+	d.source = source
+	d.outOfDate = d.link.DatabaseRevisionID != "" && currentDBRevID != "" && currentDBRevID != d.link.DatabaseRevisionID
+	d.rebindStyles()
+}
+
+// rebindStyles re-keys pendingStyles (path → style) onto the live source occurrences by
+// matching each placement's path, then clears them. A path no longer present in the source
+// is dropped (the placement was removed upstream).
+func (d *DerivedAssemblyComponent) rebindStyles() {
+	if len(d.pendingStyles) == 0 {
+		return
+	}
+	byPath := make(map[string]DeriveStyle, len(d.pendingStyles))
+	for _, e := range d.pendingStyles {
+		byPath[e.Path.Key()] = e.Style
+	}
+	for _, pb := range d.source.PlacedBodies() {
+		if style, ok := byPath[pb.Path.Key()]; ok {
+			d.styles[pb.Source] = style
+		}
+	}
+	d.pendingStyles = nil
+}
 
 // SetStyle sets the derive style for a source occurrence (default DeriveInclude).
 func (d *DerivedAssemblyComponent) SetStyle(o *occurrence.Occurrence, style DeriveStyle) {
 	d.styles[o] = style
+}
+
+// StylesByPath renders the non-default per-occurrence styles in their persistable,
+// pointer-free form, keyed by each styled placement's path. Returns nil when every
+// occurrence uses the default (include), keeping the recipe minimal.
+func (d *DerivedAssemblyComponent) StylesByPath() []DeriveStyleAtPath {
+	if d.source == nil || len(d.styles) == 0 {
+		return nil
+	}
+	var out []DeriveStyleAtPath
+	seen := map[string]bool{} // an occurrence with several bodies repeats its path; record once
+	for _, pb := range d.source.PlacedBodies() {
+		style, ok := d.styles[pb.Source]
+		if !ok || style == DeriveInclude || seen[pb.Path.Key()] {
+			continue
+		}
+		seen[pb.Path.Key()] = true
+		out = append(out, DeriveStyleAtPath{Path: pb.Path, Style: style})
+	}
+	return out
 }
 
 // Linked reports whether the derive still pulls from its source.
@@ -132,8 +238,13 @@ func recomputeLinked(in Input, linked bool, frozen []*topo.Body, build func() ([
 }
 
 // derive flattens, transforms, and combines the source's placed bodies per style into
-// the derived base bodies (zero bodies when nothing is included, otherwise one).
+// the derived base bodies (zero bodies when nothing is included, otherwise one). An
+// unbound source — a restored derive whose source has not been resolved yet (or is
+// missing) — yields no bodies, so a recompute before/without binding is safe.
 func (d *DerivedAssemblyComponent) derive() ([]*topo.Body, error) {
+	if d.source == nil {
+		return nil, nil
+	}
 	var joins, cuts []*topo.Body
 	for i, pb := range d.source.PlacedBodies() {
 		style := d.styles[pb.Source]
@@ -150,6 +261,12 @@ func (d *DerivedAssemblyComponent) derive() ([]*topo.Body, error) {
 			joins = append(joins, placed)
 		}
 	}
+	return combineDerived(joins, cuts)
+}
+
+// combineDerived merges the included bodies into one base and cuts the subtracted tools
+// from it, yielding zero bodies when nothing is included or the single merged base.
+func combineDerived(joins, cuts []*topo.Body) ([]*topo.Body, error) {
 	if len(joins) == 0 {
 		return nil, nil
 	}
@@ -181,12 +298,29 @@ func NewDerivedAssemblyComponents(engine *PartFeatures) *DerivedAssemblyComponen
 	return &DerivedAssemblyComponents{engine}
 }
 
-// AddDerived adds an associative derived-assembly component pulling from source.
-func (c *DerivedAssemblyComponents) AddDerived(source AssemblyBodySource) *PartFeature {
+// AddDerived adds an associative derived-assembly component pulling from source, recording
+// link — the source document's identity — so the derive survives a save and can detect a
+// stale source on reopen (#715).
+func (c *DerivedAssemblyComponents) AddDerived(source AssemblyBodySource, link DeriveSourceLink) *PartFeature {
 	d := &DerivedAssemblyComponent{
 		source: source,
 		styles: map[*occurrence.Occurrence]DeriveStyle{},
 		linked: true,
+		link:   link,
 	}
 	return c.engine.Add(d)
+}
+
+// RestoreDerivedAssembly rebuilds a derived-assembly component from its persisted recipe:
+// the source identity link, the linked flag, and the path-keyed styles — all UNBOUND. The
+// live source is rebound later by [DerivedAssemblyComponent.BindSource] once the part's
+// reference graph resolves the source document (#715), at which point styles re-key and
+// staleness is computed. Until then the derive contributes no geometry.
+func RestoreDerivedAssembly(link DeriveSourceLink, linked bool, styles []DeriveStyleAtPath) *DerivedAssemblyComponent {
+	return &DerivedAssemblyComponent{
+		styles:        map[*occurrence.Occurrence]DeriveStyle{},
+		linked:        linked,
+		link:          link,
+		pendingStyles: styles,
+	}
 }
