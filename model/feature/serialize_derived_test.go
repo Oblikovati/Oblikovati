@@ -77,6 +77,26 @@ func TestDerivedAssemblyStyleSurvivesRoundTrip(t *testing.T) {
 	}
 }
 
+// TestDeriveAcknowledgeSourceClearsOutOfDate checks AcknowledgeSource re-stamps the link's
+// source revision and clears the out-of-date flag — the model side of deriveUpdate (#751).
+func TestDeriveAcknowledgeSourceClearsOutOfDate(t *testing.T) {
+	src, _, _ := sourceWithTwoBlocks(t)
+	fs := NewPartFeatures(nil, nil)
+	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{DatabaseRevisionID: "rev-1"})
+	d := pf.Definition().(*DerivedAssemblyComponent)
+	d.BindSource(src, "rev-2")
+	if !d.OutOfDate() {
+		t.Fatal("binding a newer-revision source should flag out of date")
+	}
+	d.AcknowledgeSource("rev-2")
+	if d.OutOfDate() {
+		t.Error("AcknowledgeSource should clear out-of-date")
+	}
+	if got := d.SourceLink().DatabaseRevisionID; got != "rev-2" {
+		t.Errorf("acknowledged link revision = %q, want rev-2", got)
+	}
+}
+
 // TestDerivedAssemblyOutOfDateByRevision checks BindSource flags out-of-date exactly when
 // the source's current revision differs from the one captured in the link.
 func TestDerivedAssemblyOutOfDateByRevision(t *testing.T) {

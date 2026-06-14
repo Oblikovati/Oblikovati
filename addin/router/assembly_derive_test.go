@@ -141,3 +141,38 @@ func TestAssemblyBreakLinkRejectsUnknownFeature(t *testing.T) {
 		t.Fatal("deriveBreakLink on an unknown feature returned nil error, want a rejection")
 	}
 }
+
+// TestAssemblyDeriveStatusAndUpdateOverWire reads a fresh derive's drive state over the
+// wire (linked, not out of date, naming its source), exercises update (idempotent for a
+// current derive), and checks break-link flips the reported linked state (#751).
+func TestAssemblyDeriveStatusAndUpdateOverWire(t *testing.T) {
+	r, s := emptyPartSession(t)
+	src := addAssemblyDoc(t, s, "src.obk", 0)
+
+	var detail wire.FeatureDetailResult
+	call(t, r, s, "assembly.deriveCreate", fmt.Sprintf(`{"source":%d}`, src.ID()), &detail)
+	id := detail.Feature.ID
+
+	var status wire.DeriveStatusResult
+	call(t, r, s, "assembly.deriveStatus", fmt.Sprintf(`{"id":%d}`, id), &status)
+	if status.OutOfDate || !status.Linked || status.SourceDocument != "src.obk" {
+		t.Fatalf("status = %+v, want linked, current, source src.obk", status)
+	}
+
+	var updated wire.DeriveStatusResult
+	call(t, r, s, "assembly.deriveUpdate", fmt.Sprintf(`{"id":%d}`, id), &updated)
+	if updated.OutOfDate {
+		t.Error("updating a current derive should leave it not out of date")
+	}
+
+	var broken wire.FeatureDetailResult
+	call(t, r, s, "assembly.deriveBreakLink", fmt.Sprintf(`{"id":%d}`, id), &broken)
+	call(t, r, s, "assembly.deriveStatus", fmt.Sprintf(`{"id":%d}`, id), &status)
+	if status.Linked {
+		t.Error("after break-link, status should report Linked=false")
+	}
+
+	if _, err := r.Handle(s, "assembly.deriveStatus", []byte(`{"id":99999}`)); err == nil {
+		t.Error("deriveStatus of an unknown feature id should fail")
+	}
+}
