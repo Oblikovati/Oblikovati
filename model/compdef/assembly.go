@@ -208,6 +208,14 @@ func (a *AssemblyComponentDefinition) WorkGeometry() *feature.WorkGeometry { ret
 // surface can resolve "sketch on work plane N" the same way it does for a part.
 func (a *AssemblyComponentDefinition) WorkPlanes() *feature.WorkPlanes { return a.work.WorkPlanes() }
 
+// WorkAxes returns the assembly's datum axes (origin + user), mirroring the part so the work-
+// feature wire surface can author and list them against an assembly.
+func (a *AssemblyComponentDefinition) WorkAxes() *feature.WorkAxes { return a.work.WorkAxes() }
+
+// WorkPoints returns the assembly's datum points (origin + user), mirroring the part so the work-
+// feature wire surface (e.g. workPoints.create) can author them against an assembly.
+func (a *AssemblyComponentDefinition) WorkPoints() *feature.WorkPoints { return a.work.WorkPoints() }
+
 // Sketches returns the assembly's planar sketches — the profile inputs an assembly
 // feature (e.g. an extrude) is authored from, sketched in assembly space.
 func (a *AssemblyComponentDefinition) Sketches() *sketch.Sketches { return a.sketches }

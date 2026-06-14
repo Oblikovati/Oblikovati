@@ -17,17 +17,51 @@ import (
 	"oblikovati.org/model/param"
 )
 
-// listWorkPlanes enumerates the active part's datum planes (origin frame first, then
+// A part and an assembly both host work features over this wire surface.
+var (
+	_ workHost = (*compdef.PartComponentDefinition)(nil)
+	_ workHost = (*compdef.AssemblyComponentDefinition)(nil)
+)
+
+// workHost is the model surface the work-feature wire methods author against — a part OR an
+// assembly. Both own a work-geometry collection (origin frame + user datums), a parameter DAG,
+// document units, and a recompute, so workPlanes.* / workPoints.* serve an assembly exactly as a
+// part. (An assembly's offset / three-point / angle planes need no body; a tangent-to-face plane
+// needs a participant face and simply reports unhealthy on an assembly — it is not rejected here.)
+type workHost interface {
+	WorkPlanes() *feature.WorkPlanes
+	WorkPoints() *feature.WorkPoints
+	Units() param.UnitsOfMeasure
+	Parameters() *param.Parameters
+	Recompute()
+}
+
+// activeWorkHost resolves the active document's content to a work-feature host (part or assembly),
+// so the work-plane/point methods no longer reject an assembly. A document whose content is neither
+// (a drawing, a presentation, a reference stub) is an error.
+func activeWorkHost(s *app.Session) (workHost, error) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, modelaccess.ErrNoActiveDocument
+	}
+	host, ok := d.Content().(workHost)
+	if !ok {
+		return nil, fmt.Errorf("workPlanes: active document %q is not a part or assembly", d.DisplayName())
+	}
+	return host, nil
+}
+
+// listWorkPlanes enumerates the active model's datum planes (origin frame first, then
 // user planes) with their current geometry and health.
 func listWorkPlanes(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	host, err := activeWorkHost(s)
 	if err != nil {
 		return nil, err
 	}
-	planes := part.WorkPlanes()
+	planes := host.WorkPlanes()
 	out := make([]wire.WorkPlaneInfo, planes.Count())
 	for i := 0; i < planes.Count(); i++ {
-		out[i] = workPlaneInfo(part, planes.Item(i), i)
+		out[i] = workPlaneInfo(host, planes.Item(i), i)
 	}
 	return json.Marshal(wire.ListWorkPlanesResult{Planes: out})
 }
@@ -35,7 +69,7 @@ func listWorkPlanes(s *app.Session, _ json.RawMessage) (json.RawMessage, error) 
 // workPlaneInfo renders one plane as the wire DTO, including the editable inputs a redefine
 // accepts: its scalars (offset/angle, in the document's preferred unit) and its re-pickable
 // reference slots (each tagged plane|axis|point|face). Origin planes report neither.
-func workPlaneInfo(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, index int) wire.WorkPlaneInfo {
+func workPlaneInfo(host workHost, wp *feature.WorkPlane, index int) wire.WorkPlaneInfo {
 	return wire.WorkPlaneInfo{
 		Index:    index,
 		Name:     wp.Name(),
@@ -46,14 +80,14 @@ func workPlaneInfo(part *compdef.PartComponentDefinition, wp *feature.WorkPlane,
 		Healthy:  wp.Health().OK(),
 		Reason:   wp.Health().Reason, // empty when healthy
 		Kind:     wp.Kind(),
-		Scalars:  workPlaneScalars(part, wp),
+		Scalars:  workPlaneScalars(host, wp),
 		Slots:    workPlaneSlots(wp),
 	}
 }
 
 // workPlaneScalars renders the plane's editable scalars with their value in the document's
 // preferred unit (mm/deg), so a client reads the current value and can set a new one.
-func workPlaneScalars(part *compdef.PartComponentDefinition, wp *feature.WorkPlane) []wire.WorkPlaneScalar {
+func workPlaneScalars(host workHost, wp *feature.WorkPlane) []wire.WorkPlaneScalar {
 	scalars := wp.EditableScalars()
 	if len(scalars) == 0 {
 		return nil
@@ -63,8 +97,8 @@ func workPlaneScalars(part *compdef.PartComponentDefinition, wp *feature.WorkPla
 		out[i] = wire.WorkPlaneScalar{
 			Index: i,
 			Label: sc.Label,
-			Unit:  part.Units().PreferredName(sc.Unit),
-			Value: part.Units().ToPreferred(param.Q(sc.Get(), sc.Unit)),
+			Unit:  host.Units().PreferredName(sc.Unit),
+			Value: host.Units().ToPreferred(param.Q(sc.Get(), sc.Unit)),
 		}
 	}
 	return out
@@ -88,7 +122,7 @@ func workPlaneSlots(wp *feature.WorkPlane) []wire.WorkPlaneRefSlot {
 // and returns the plane's refreshed info. It fails on a bad index, an origin plane, or an
 // out-of-range scalar/slot; an unsatisfiable result is reported healthy=false, not an error.
 func redefineWorkPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	host, err := activeWorkHost(s)
 	if err != nil {
 		return nil, err
 	}
@@ -96,12 +130,12 @@ func redefineWorkPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	wp, err := userWorkPlane(part, in.Index)
+	wp, err := userWorkPlane(host, in.Index)
 	if err != nil {
 		return nil, err
 	}
 	restore := wp.SnapshotDefinition() // an error mid-batch must not leave earlier edits applied
-	if err := applyScalarEdits(part, wp, in.Scalars); err != nil {
+	if err := applyScalarEdits(host, wp, in.Scalars); err != nil {
 		restore()
 		return nil, err
 	}
@@ -109,13 +143,13 @@ func redefineWorkPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 		restore()
 		return nil, err
 	}
-	part.Recompute()
-	return json.Marshal(wire.RedefineWorkPlaneResult{Plane: workPlaneInfo(part, wp, in.Index)})
+	host.Recompute()
+	return json.Marshal(wire.RedefineWorkPlaneResult{Plane: workPlaneInfo(host, wp, in.Index)})
 }
 
 // userWorkPlane resolves a redefine index to a user (non-origin) work plane.
-func userWorkPlane(part *compdef.PartComponentDefinition, index int) (*feature.WorkPlane, error) {
-	planes := part.WorkPlanes()
+func userWorkPlane(host workHost, index int) (*feature.WorkPlane, error) {
+	planes := host.WorkPlanes()
 	if index < 0 || index >= planes.Count() {
 		return nil, fmt.Errorf("workPlanes.redefine: index %d out of range (%d planes)", index, planes.Count())
 	}
@@ -128,13 +162,13 @@ func userWorkPlane(part *compdef.PartComponentDefinition, index int) (*feature.W
 
 // applyScalarEdits sets the plane's scalars from unit-bearing strings, parsed by each scalar's
 // quantity kind (length or angle) into the database units its Set expects.
-func applyScalarEdits(part *compdef.PartComponentDefinition, wp *feature.WorkPlane, edits []wire.ScalarEdit) error {
+func applyScalarEdits(host workHost, wp *feature.WorkPlane, edits []wire.ScalarEdit) error {
 	scalars := wp.EditableScalars()
 	for _, e := range edits {
 		if e.Index < 0 || e.Index >= len(scalars) {
 			return fmt.Errorf("workPlanes.redefine: scalar index %d out of range (%d scalars)", e.Index, len(scalars))
 		}
-		q, err := part.Units().Parse(e.Value, scalars[e.Index].Unit)
+		q, err := host.Units().Parse(e.Value, scalars[e.Index].Unit)
 		if err != nil {
 			return fmt.Errorf("workPlanes.redefine: scalar %d value %q: %w", e.Index, e.Value, err)
 		}
@@ -159,11 +193,11 @@ func applyRepicks(wp *feature.WorkPlane, repicks []wire.SlotRepick) error {
 	return nil
 }
 
-// createWorkPlanes adds a datum plane of the requested kind to the active part and
+// createWorkPlanes adds a datum plane of the requested kind to the active model and
 // recomputes. An unsatisfiable definition still creates the plane (reported healthy=false)
 // — the call only fails on bad arguments (unknown kind, wrong reference count, …).
 func createWorkPlanes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	host, err := activeWorkHost(s)
 	if err != nil {
 		return nil, err
 	}
@@ -171,24 +205,24 @@ func createWorkPlanes(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	wp, err := buildWorkPlane(part, in)
+	wp, err := buildWorkPlane(host, in)
 	if err != nil {
 		return nil, err
 	}
-	part.Recompute()
+	host.Recompute()
 	return json.Marshal(wire.CreateWorkPlaneResult{
-		Index:   part.WorkPlanes().Count() - 1,
+		Index:   host.WorkPlanes().Count() - 1,
 		Ref:     string(wp.Key()),
 		Name:    wp.Name(),
 		Healthy: wp.Health().OK(),
 	})
 }
 
-// createWorkPoint adds a datum point fixed at the requested position to the active part and
+// createWorkPoint adds a datum point fixed at the requested position to the active model and
 // recomputes, returning its index and reference (usable as a point input to a work plane or a
 // redefine re-pick).
 func createWorkPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	host, err := activeWorkHost(s)
 	if err != nil {
 		return nil, err
 	}
@@ -201,10 +235,10 @@ func createWorkPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 		return nil, err
 	}
 	p := math.P3(at[0], at[1], at[2])
-	wp := part.WorkPoints().AddByPosition(func() math.Point3 { return p })
-	part.Recompute()
+	wp := host.WorkPoints().AddByPosition(func() math.Point3 { return p })
+	host.Recompute()
 	return json.Marshal(wire.CreateWorkPointResult{
-		Index: part.WorkPoints().Count() - 1,
+		Index: host.WorkPoints().Count() - 1,
 		Ref:   string(wp.Key()),
 		Name:  wp.Name(),
 	})
@@ -247,8 +281,8 @@ var refPlaneCtors = map[types.WorkPlaneKind]refPlaneCtor{
 }
 
 // buildWorkPlane dispatches a create request to the matching model constructor.
-func buildWorkPlane(part *compdef.PartComponentDefinition, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, error) {
-	planes := part.WorkPlanes()
+func buildWorkPlane(host workHost, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, error) {
+	planes := host.WorkPlanes()
 	refs := toWorkRefs(in.Refs)
 	kind := types.WorkPlaneKind(in.Kind)
 	if c, ok := refPlaneCtors[kind]; ok {
@@ -259,38 +293,38 @@ func buildWorkPlane(part *compdef.PartComponentDefinition, in wire.CreateWorkPla
 	}
 	switch kind {
 	case types.WorkPlaneOffset:
-		return addOffsetPlane(part, refs, in)
+		return addOffsetPlane(host, refs, in)
 	case types.WorkPlaneLinePlaneAngle:
-		return addAnglePlane(part, refs, in)
+		return addAnglePlane(host, refs, in)
 	case types.WorkPlaneFixed:
-		return addFixedWorkPlane(part.WorkPlanes(), in)
+		return addFixedWorkPlane(host.WorkPlanes(), in)
 	default:
 		return nil, fmt.Errorf("workPlanes.create: unknown kind %q (see api/types WorkPlane*)", in.Kind)
 	}
 }
 
 // addOffsetPlane builds the plane-offset kind: one base plane reference + a distance.
-func addOffsetPlane(part *compdef.PartComponentDefinition, refs []feature.WorkRef, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, error) {
+func addOffsetPlane(host workHost, refs []feature.WorkRef, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, error) {
 	if len(refs) != 1 {
 		return nil, fmt.Errorf("workPlanes.create: %s needs 1 reference, got %d", in.Kind, len(refs))
 	}
-	off, err := modelLengthClosure(part, in.Offset)
+	off, err := modelLengthClosure(host, in.Offset)
 	if err != nil {
 		return nil, err
 	}
-	return part.WorkPlanes().AddByPlaneAndOffset(refs[0], off), nil
+	return host.WorkPlanes().AddByPlaneAndOffset(refs[0], off), nil
 }
 
 // addAnglePlane builds the line-plane-angle kind: a line + a plane reference + an angle.
-func addAnglePlane(part *compdef.PartComponentDefinition, refs []feature.WorkRef, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, error) {
+func addAnglePlane(host workHost, refs []feature.WorkRef, in wire.CreateWorkPlaneArgs) (*feature.WorkPlane, error) {
 	if len(refs) != 2 {
 		return nil, fmt.Errorf("workPlanes.create: %s needs 2 references, got %d", in.Kind, len(refs))
 	}
-	a, err := modelAngle(part, in.Angle)
+	a, err := modelAngle(host, in.Angle)
 	if err != nil {
 		return nil, err
 	}
-	return part.WorkPlanes().AddByLinePlaneAndAngle(refs[0], refs[1], func() float64 { return a }), nil
+	return host.WorkPlanes().AddByLinePlaneAndAngle(refs[0], refs[1], func() float64 { return a }), nil
 }
 
 // addFixedWorkPlane builds an AddFixed plane from its origin point and two axis vectors.
@@ -353,14 +387,14 @@ func isWorkFeatureRef(r string) bool {
 // modelLengthClosure turns a distance argument into a live, parameter-aware value: a
 // plain literal is constant; an expression ("h", "h/2") is backed by an auto model
 // parameter, so editing the parameter and recomputing re-reads it (a work plane is
-// re-evaluated by part.Recompute). Mirrors opregistry's lengthClosure for the router
+// re-evaluated by the host's Recompute). Mirrors opregistry's lengthClosure for the router
 // args that feed func() float64 (work-plane offset).
-func modelLengthClosure(part *compdef.PartComponentDefinition, expr string) (func() float64, error) {
-	if q, err := part.Units().Parse(expr, param.Length); err == nil {
+func modelLengthClosure(host workHost, expr string) (func() float64, error) {
+	if q, err := host.Units().Parse(expr, param.Length); err == nil {
 		v := q.Value
 		return func() float64 { return v }, nil
 	}
-	p, err := part.Parameters().AddAutoModelParameter(expr)
+	p, err := host.Parameters().AddAutoModelParameter(expr)
 	if err != nil {
 		return nil, fmt.Errorf("workPlanes.create: offset %q: %w", expr, err)
 	}
@@ -371,8 +405,8 @@ func modelLengthClosure(part *compdef.PartComponentDefinition, expr string) (fun
 }
 
 // modelAngle parses a unit-bearing angle ("45 deg") into a model value (radians).
-func modelAngle(part *compdef.PartComponentDefinition, expr string) (float64, error) {
-	q, err := part.Units().Parse(expr, param.Angle)
+func modelAngle(host workHost, expr string) (float64, error) {
+	q, err := host.Units().Parse(expr, param.Angle)
 	if err != nil {
 		return 0, fmt.Errorf("workPlanes.create: angle %q: %w", expr, err)
 	}
