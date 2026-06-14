@@ -60,6 +60,9 @@ func (d *DerivedPartComponent) AcknowledgeSource(currentDBRevID string) {
 	d.outOfDate = false
 }
 
+// RelinkSource updates the link's source document name (#750).
+func (d *DerivedPartComponent) RelinkSource(document string) { d.link.Document = document }
+
 // Transform returns the geometry transform the derive applies to its source bodies.
 func (d *DerivedPartComponent) Transform() math.Matrix4 { return d.transform }
 

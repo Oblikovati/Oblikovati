@@ -100,8 +100,8 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		if err != nil {
 			return err
 		}
-		def := a.resolveComponent(owner, rec.Component)
-		occ := a.occurrences.AddByComponentName(rec.Name, def, rec.Component, transform)
+		def, component := a.resolveComponent(owner, rec.Component)
+		occ := a.occurrences.AddByComponentName(rec.Name, def, component, transform)
 		occ.SetSuppressed(rec.Suppressed)
 		occ.SetGrounded(rec.Grounded)
 		occ.SetAdaptive(rec.Adaptive)
@@ -111,20 +111,21 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 }
 
 // resolveComponent opens the component document named component as a reference of owner,
-// returning its placeable definition; a target that cannot be opened (missing/replaced
-// file) yields a [missingDefinition] placeholder so the occurrence still restores. The
-// owner.OpenReference call records and resolves the edge, so the broken reference is
-// surfaced through the document's reference status, not lost.
-func (a *AssemblyComponentDefinition) resolveComponent(owner *doc.Document, component string) occurrence.Definition {
+// returning its placeable definition and the name it actually resolved to — the current
+// location, which differs from component when the project tree moved (#750), so the
+// occurrence re-binds to the live name and a re-save records it. A target that cannot be
+// opened yields a [missingDefinition] placeholder under the original name so the occurrence
+// still restores; the broken reference is surfaced through the document's reference status.
+func (a *AssemblyComponentDefinition) resolveComponent(owner *doc.Document, component string) (occurrence.Definition, string) {
 	child, ok := owner.OpenReference(component)
 	if !ok {
-		return missingDefinition{}
+		return missingDefinition{}, component
 	}
 	def, ok := child.Content().(occurrence.Definition)
 	if !ok {
-		return missingDefinition{}
+		return missingDefinition{}, component
 	}
-	return def
+	return def, child.FullDocumentName()
 }
 
 // matrixFromRecipe rebuilds an occurrence transform from its persisted cells, erroring on
