@@ -5,6 +5,7 @@ package ui
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -35,6 +36,28 @@ func TestFileDialogConfirmReturnsActionForMode(t *testing.T) {
 	}
 	if d.isOpen() {
 		t.Error("dialog should be closed after confirm")
+	}
+}
+
+// TestFileDialogPlaceComponentMode checks the Place Component picker (#763): its title, that it
+// filters to the same .obk document family as Open (a component is a part or sub-assembly), and
+// that confirming yields a dialogPlaceComponent action — the one the chrome routes to
+// SetPlaceComponentDocument.
+func TestFileDialogPlaceComponentMode(t *testing.T) {
+	var d fileDialog
+	d.openFor(dialogPlaceComponent)
+	if !d.isOpen() || d.title() != "Place Component" {
+		t.Fatalf("openFor(PlaceComponent): isOpen=%v title=%q", d.isOpen(), d.title())
+	}
+	var open fileDialog
+	open.openFor(dialogOpen)
+	if !slices.Equal(d.allowedExts(), open.allowedExts()) {
+		t.Errorf("place-component exts = %v, want the document family %v", d.allowedExts(), open.allowedExts())
+	}
+	path := filepath.Join(t.TempDir(), "widget.obk")
+	d.typePath(path)
+	if act := d.confirm(); act.Kind != dialogPlaceComponent || act.Path != path {
+		t.Errorf("confirm() = %+v, want PlaceComponent %q", act, path)
 	}
 }
 

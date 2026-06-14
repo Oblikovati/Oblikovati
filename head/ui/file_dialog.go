@@ -22,14 +22,15 @@ import (
 type fileDialogMode int
 
 const (
-	dialogClosed  fileDialogMode = iota
-	dialogOpen                   // File ▸ Open
-	dialogSaveAs                 // File ▸ Save As
-	dialogLoadHDR                // View ▸ Load HDR (environment image)
-	dialogImport                 // File ▸ Import (STL/OBJ/3MF/STEP → imported body)
-	dialogExport                 // File ▸ Export (part bodies → STL/OBJ/3MF/STEP)
-	dialogAddIn                  // an add-in's dialogs.showFileDialog request (M05-F08)
-	dialogMeshRef                // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
+	dialogClosed         fileDialogMode = iota
+	dialogOpen                          // File ▸ Open
+	dialogSaveAs                        // File ▸ Save As
+	dialogLoadHDR                       // View ▸ Load HDR (environment image)
+	dialogImport                        // File ▸ Import (STL/OBJ/3MF/STEP → imported body)
+	dialogExport                        // File ▸ Export (part bodies → STL/OBJ/3MF/STEP)
+	dialogAddIn                         // an add-in's dialogs.showFileDialog request (M05-F08)
+	dialogMeshRef                       // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
+	dialogPlaceComponent                // Assemble ▸ Place: choose the component document to instance (#763)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -122,21 +123,29 @@ func (d *fileDialog) title() string {
 		return "Load HDR"
 	case dialogMeshRef:
 		return "Place Mesh (.stl)"
+	case dialogPlaceComponent:
+		return "Place Component"
 	case dialogImport:
 		return "Import (.stl/.obj/.3mf/.step)"
 	case dialogExport:
 		return "Export (.stl/.obj/.3mf/.step)"
 	case dialogAddIn:
-		if d.request.Title != "" {
-			return d.request.Title
-		}
-		if d.request.Save {
-			return "Save As"
-		}
-		return "Open"
+		return d.addInTitle()
 	default:
 		return "Open"
 	}
+}
+
+// addInTitle is the window heading for an add-in's file dialog request: its custom title when
+// set, otherwise Save As / Open by the request's direction.
+func (d *fileDialog) addInTitle() string {
+	if d.request.Title != "" {
+		return d.request.Title
+	}
+	if d.request.Save {
+		return "Save As"
+	}
+	return "Open"
 }
 
 // filterHint names the file family surfaced by the browser for this operation.
@@ -256,8 +265,8 @@ func (d *fileDialog) allowsFile(name string) bool {
 
 func (d *fileDialog) allowedExts() []string {
 	switch d.mode {
-	case dialogOpen, dialogSaveAs:
-		return doc.DocumentExtensions()
+	case dialogOpen, dialogSaveAs, dialogPlaceComponent:
+		return doc.DocumentExtensions() // a component is another .obk document (part or sub-assembly)
 	case dialogLoadHDR:
 		return []string{".hdr"}
 	case dialogMeshRef:

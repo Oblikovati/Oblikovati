@@ -108,6 +108,7 @@ func drawChromeDialogs(s *app.Session) {
 	drawOffsetPlaneDialog(s)
 	drawFeatureEditDialog(s)
 	drawWorkPlaneEditDialog(s)
+	drawPlaceComponentDialog(s) // Assemble ▸ Place: arms the component file picker (#763)
 }
 
 func drawSolidFeatureDialogs(s *app.Session) {
