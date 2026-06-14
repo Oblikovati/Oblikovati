@@ -26,9 +26,12 @@ func PrimitiveFromFace(f *topo.Face) (Primitive, error) {
 		if err != nil {
 			return Primitive{}, fmt.Errorf("assembly: planar face has a zero normal: %w", err)
 		}
-		return PlanePrimitive(surf.Origin, n), nil
+		// Carry the plane's U axis as the part-tied secondary so rigid/slider joint origins
+		// built from this face can lock the roll about the normal (M12-F02).
+		return PlanePrimitive(surf.Origin, n).withSecondary(surf.UAxis), nil
 	case geom.Cylinder:
-		return CylinderPrimitive(surf.Origin, surf.AxisDir, surf.Radius), nil
+		// The cylinder's reference axis is the part-tied secondary for joint roll locking.
+		return CylinderPrimitive(surf.Origin, surf.AxisDir, surf.Radius).withSecondary(surf.Ref), nil
 	default:
 		return Primitive{}, fmt.Errorf("assembly: unsupported face surface %T for a constraint input", surf)
 	}

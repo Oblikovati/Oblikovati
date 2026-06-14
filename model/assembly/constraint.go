@@ -75,38 +75,61 @@ type Constraint interface {
 	setLimits(lim *limits)
 }
 
-// constraintBase carries the identity, kind, anchors, health, suppression, and optional
-// limits shared by every constraint. Concrete kinds embed it by pointer.
-type constraintBase struct {
+// relationshipBase carries the identity, two geometry anchors, health, and suppression
+// shared by every assembly relationship — a constraint or a joint (M12-F02). Both
+// constraintBase and jointBase embed it; the solve treats both as a [relationship].
+type relationshipBase struct {
 	id         uint64
 	name       string
-	kind       types.AssemblyConstraintType
 	a, b       anchor
 	status     health.Status
 	suppressed bool
-	lim        *limits
 }
 
-// ID returns the constraint's session id.
-func (c *constraintBase) ID() uint64 { return c.id }
+// ID returns the relationship's session id.
+func (r *relationshipBase) ID() uint64 { return r.id }
 
-// Type returns the relationship kind.
+// Name returns the relationship's display name.
+func (r *relationshipBase) Name() string { return r.name }
+
+// Health reports the relationship's evaluated health.
+func (r *relationshipBase) Health() types.HealthStatus { return publicHealth(r.status) }
+
+// Suppressed reports whether the relationship is excluded from the solve.
+func (r *relationshipBase) Suppressed() bool { return r.suppressed }
+
+// SetSuppressed includes or excludes the relationship from the solve.
+func (r *relationshipBase) SetSuppressed(s bool) { r.suppressed = s }
+
+// anchors returns the two geometry inputs.
+func (r *relationshipBase) anchors() []anchor { return []anchor{r.a, r.b} }
+
+// AnchorRefs returns the two primary inputs' reportable identities.
+func (r *relationshipBase) AnchorRefs() (AnchorRef, AnchorRef) {
+	return AnchorRef{r.a.occ.ID(), r.a.entity}, AnchorRef{r.b.occ.ID(), r.b.entity}
+}
+
+// setHealth records the evaluated health.
+func (r *relationshipBase) setHealth(s health.Status) { r.status = s }
+
+// boundPlacements resolves both anchors' placements — the common preamble of every
+// relationship's residual closure.
+func (r *relationshipBase) boundPlacements(b binder) (*placement, *placement) {
+	return b(r.a.occ), b(r.b.occ)
+}
+
+// constraintBase adds the constraint kind and optional limits to the shared base.
+type constraintBase struct {
+	relationshipBase
+	kind types.AssemblyConstraintType
+	lim  *limits
+}
+
+// Type returns the constraint kind.
 func (c *constraintBase) Type() types.AssemblyConstraintType { return c.kind }
-
-// Name returns the constraint's display name.
-func (c *constraintBase) Name() string { return c.name }
 
 // Value returns the driven value; the base has none (overridden by kinds that do).
 func (c *constraintBase) Value() float64 { return 0 }
-
-// Health reports the constraint's evaluated health.
-func (c *constraintBase) Health() types.HealthStatus { return publicHealth(c.status) }
-
-// Suppressed reports whether the constraint is excluded from the solve.
-func (c *constraintBase) Suppressed() bool { return c.suppressed }
-
-// SetSuppressed includes or excludes the constraint from the solve.
-func (c *constraintBase) SetSuppressed(s bool) { c.suppressed = s }
 
 // Limits returns the driven-value bounds, or a nil interface when unbounded.
 func (c *constraintBase) Limits() contract.ConstraintLimits {
@@ -116,22 +139,5 @@ func (c *constraintBase) Limits() contract.ConstraintLimits {
 	return c.lim
 }
 
-// anchors returns the two geometry inputs.
-func (c *constraintBase) anchors() []anchor { return []anchor{c.a, c.b} }
-
-// AnchorRefs returns the two primary inputs' reportable identities.
-func (c *constraintBase) AnchorRefs() (AnchorRef, AnchorRef) {
-	return AnchorRef{c.a.occ.ID(), c.a.entity}, AnchorRef{c.b.occ.ID(), c.b.entity}
-}
-
-// setHealth records the evaluated health.
-func (c *constraintBase) setHealth(s health.Status) { c.status = s }
-
 // setLimits sets or clears the driven-value bounds.
 func (c *constraintBase) setLimits(lim *limits) { c.lim = lim }
-
-// boundMatrices resolves both anchors' placements and returns their live transforms — the
-// common preamble of every constraint's residual closure.
-func (c *constraintBase) boundPlacements(b binder) (*placement, *placement) {
-	return b(c.a.occ), b(c.b.occ)
-}
