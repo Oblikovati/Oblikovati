@@ -37,6 +37,7 @@ func standardCommands() []*CommandDefinition {
 	cmds = append(cmds, workFeatureCommands()...)
 	cmds = append(cmds, manageTabCommands()...)
 	cmds = append(cmds, sketchTabCommands()...)
+	cmds = append(cmds, assemblyTabCommands()...)
 	cmds = append(cmds, viewTabCommands()...)
 	return cmds
 }
