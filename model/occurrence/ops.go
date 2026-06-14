@@ -2,11 +2,20 @@
 
 package occurrence
 
-import "oblikovati.org/math"
+import (
+	"fmt"
 
-// Assembly-level replication ops (M11-F04, PBI-122): mirror, copy, and substitute
+	"oblikovati.org/math"
+)
+
+// Assembly-level replication ops (M11-F04, PBI-122): mirror, copy, pattern, and substitute
 // operate on an [Occurrences] collection, sharing the placed definitions (the
 // flyweight) and reusing the collection's id minting.
+//
+// The additive ops (mirror, copy, pattern) carry the source's componentName onto each new
+// occurrence: a replica references the SAME component document as its source, so it persists
+// and re-binds on reopen exactly like the source (and an undo records it). Without that name
+// the replica would be an in-memory-only placement the recipe drops (#765).
 
 // MirrorComponents adds a mirror of each source occurrence to dst, reflected across
 // the plane (origin, normal). Each mirror shares its source's definition but is placed
@@ -21,7 +30,7 @@ func MirrorComponents(dst *Occurrences, sources []*Occurrence, origin math.Point
 	out := make([]*Occurrence, 0, len(sources))
 	for _, s := range sources {
 		mirrored := reflect.Mul(s.Transform())
-		out = append(out, dst.AddByComponentDefinition(s.name+"-mirror", s.definition, mirrored))
+		out = append(out, dst.AddByComponentName(s.name+"-mirror", s.definition, s.componentName, mirrored))
 	}
 	return out
 }
@@ -32,7 +41,20 @@ func MirrorComponents(dst *Occurrences, sources []*Occurrence, origin math.Point
 func CopyComponents(dst *Occurrences, sources []*Occurrence) []*Occurrence {
 	out := make([]*Occurrence, 0, len(sources))
 	for _, s := range sources {
-		out = append(out, dst.AddByComponentDefinition(s.name+"-copy", s.definition, s.transform))
+		out = append(out, dst.AddByComponentName(s.name+"-copy", s.definition, s.componentName, s.transform))
+	}
+	return out
+}
+
+// PatternComponents places a real occurrence for each pattern element beyond the seed (element 0
+// is the seed, already in dst), naming them "<seed>-pN" and sharing the seed's component. Returns
+// the placed occurrences in element order. It is the shared placement step behind the assembly
+// pattern command and the wire pattern method, so both produce persistable occurrences.
+func PatternComponents(dst *Occurrences, seed *Occurrence, pat *OccurrencePattern) []*Occurrence {
+	out := make([]*Occurrence, 0, pat.Count())
+	for i := 1; i < pat.Count(); i++ {
+		name := fmt.Sprintf("%s-p%d", seed.name, i+1)
+		out = append(out, dst.AddByComponentName(name, seed.definition, seed.componentName, pat.Element(i).Transform()))
 	}
 	return out
 }

@@ -45,6 +45,34 @@ func TestCopyComponentsAreIndependentInstances(t *testing.T) {
 	}
 }
 
+// TestReplicasInheritComponentName is the #765 regression: a copy/mirror/pattern element must
+// carry the source's componentName, so it persists and re-binds on reopen exactly like the source
+// (the assembly recipe drops a nameless, in-memory-only placement, which also made replicas
+// un-undoable). Source placed with a component name; every replica must keep it.
+func TestReplicasInheritComponentName(t *testing.T) {
+	asm := NewOccurrences()
+	src := asm.AddByComponentName("widget:1", unitComponent(), "widget.obk", math.Identity4())
+
+	copies := CopyComponents(asm, []*Occurrence{src})
+	if got := copies[0].ComponentName(); got != "widget.obk" {
+		t.Errorf("copy componentName = %q, want widget.obk", got)
+	}
+	mirrors := MirrorComponents(asm, []*Occurrence{src}, math.P3(0, 0, 0), unitX(t))
+	if got := mirrors[0].ComponentName(); got != "widget.obk" {
+		t.Errorf("mirror componentName = %q, want widget.obk", got)
+	}
+	pat := NewOccurrencePattern(src.Definition(), src.Transform(), RectangularArrangement{
+		Dir1: unitX(t), Spacing1: 2, Count1: 2, Dir2: unitX(t), Spacing2: 0, Count2: 1,
+	})
+	elems := PatternComponents(asm, src, pat)
+	if len(elems) != 1 {
+		t.Fatalf("2×1 pattern placed %d occurrences beyond the seed, want 1", len(elems))
+	}
+	if got := elems[0].ComponentName(); got != "widget.obk" {
+		t.Errorf("pattern element componentName = %q, want widget.obk", got)
+	}
+}
+
 // TestSubstituteSwapsInSimplifiedRep is the PBI-122 substitution acceptance: the
 // detailed sources are suppressed and a simplified representation stands in for them.
 func TestSubstituteSwapsInSimplifiedRep(t *testing.T) {
