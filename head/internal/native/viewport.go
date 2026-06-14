@@ -27,6 +27,7 @@ void     obk_viewport_set_environment(void* h, const float* data, const int* dim
                                       float rotation, float intensity);
 uint64_t obk_viewport_texture(void* h, int slot);
 int      obk_viewport_readback(void* h, int slot, unsigned char* out, int cap, int* w, int* hh);
+int      obk_window_capture(void* h, unsigned char* out, int cap, int* w, int* hh);
 
 void obk_ig_image(unsigned long long tex, float w, float h);
 void obk_ig_content_region_avail(float* w, float* h);
@@ -100,6 +101,13 @@ func (w *Window) SaveViewportPNG(path string) error {
 	return saveViewportPNG(w, path)
 }
 
+// SaveWindowPNG reads back the current swapchain image and writes it as a PNG — a screenshot of the
+// WHOLE application window (chrome, open dialogs, and the composited viewport), for inspecting UI
+// state headlessly. Call after the frame has composited (EndFrame).
+func (w *Window) SaveWindowPNG(path string) error {
+	return saveWindowPNG(w, path)
+}
+
 // SetViewportNormalDebug toggles the normal-debug render: shaded triangles draw front-facing
 // green / back-facing red so inverted-winding / flipped-normal triangles stand out. Takes
 // effect on the next RenderViewport.
@@ -166,6 +174,23 @@ func (w *Window) ReadbackViewport(slot int) (pixels []byte, width, height int, o
 	buf := make([]byte, int(cw)*int(ch)*4)
 	n := C.obk_viewport_readback(w.handle, C.int(slot), (*C.uchar)(unsafe.Pointer(&buf[0])), C.int(len(buf)),
 		&cw, &ch)
+	if int(n) != len(buf) {
+		return nil, 0, 0, false
+	}
+	return buf, int(cw), int(ch), true
+}
+
+// ReadbackWindow copies the current swapchain image (the WHOLE window: chrome, dialogs, and the
+// composited viewport) to host memory, returning the raw 8-bit pixels (the surface's channel order,
+// typically BGRA), width and height, and ok=false if the swapchain is not ready. For headless
+// verification/screenshots; call after the frame has composited (EndFrame).
+func (w *Window) ReadbackWindow() (pixels []byte, width, height int, ok bool) {
+	var cw, ch C.int
+	if C.obk_window_capture(w.handle, nil, 0, &cw, &ch) != 0 || cw <= 0 || ch <= 0 {
+		return nil, 0, 0, false
+	}
+	buf := make([]byte, int(cw)*int(ch)*4)
+	n := C.obk_window_capture(w.handle, (*C.uchar)(unsafe.Pointer(&buf[0])), C.int(len(buf)), &cw, &ch)
 	if int(n) != len(buf) {
 		return nil, 0, 0, false
 	}
