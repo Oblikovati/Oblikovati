@@ -32,16 +32,13 @@ func drawStatusBar(s *app.Session) {
 		}
 		native.SameLine()
 		native.Text(selectionText(sb.SelectionCount))
-		if sb.Notice != "" {
-			native.SameLine()
-			native.Text("— " + sb.Notice)
-		}
 		if sb.StatusText != "" {
 			native.SameLine()
 			native.Text("· " + sb.StatusText)
 		}
 		drawStatusProgress(s, sb)
-		drawMessagesBadge(s, sb)
+		// M26 F03: the notice and the message-center badge are retired here — notices and
+		// messages now funnel into the docked Command Window.
 	}
 	native.End()
 }
@@ -64,18 +61,6 @@ func drawStatusProgress(s *app.Session, sb app.StatusBar) {
 		if native.Button("Cancel##progress") {
 			_ = s.CancelProgress(sb.Progress.ID)
 		}
-	}
-}
-
-// drawMessagesBadge renders the message-center indicator when it holds
-// errors/warnings; clicking opens the Messages panel.
-func drawMessagesBadge(s *app.Session, sb app.StatusBar) {
-	if !sb.MessageBadge {
-		return
-	}
-	native.SameLine()
-	if native.Button("Messages…") {
-		s.SetMessageCenterOpen(true)
 	}
 }
 

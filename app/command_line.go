@@ -35,9 +35,12 @@ func (s *Session) CommandLine() *CommandLine {
 // Scrollback exposes the rolling output for the head and the API to render.
 func (cl *CommandLine) Scrollback() *cmdline.Scrollback { return cl.sb }
 
-// Prompt returns the active tool's current step prompt (with bracketed options), or "" when
-// idle — the text the input line shows ahead of the caret.
+// Prompt returns the question or step the input line is waiting on: a pending command-line
+// question (M26 F03) first, then the active tool's current step prompt, else "".
 func (cl *CommandLine) Prompt(s *Session) string {
+	if spec, ok := s.Prompts().Pending(); ok {
+		return spec.Message + " [" + strings.Join(spec.Buttons, "/") + "]"
+	}
 	ti := s.ActiveTool()
 	if ti == nil {
 		return ""
@@ -45,18 +48,54 @@ func (cl *CommandLine) Prompt(s *Session) string {
 	return promptText(s, ti.Tool())
 }
 
-// Awaiting reports whether a command is mid-interaction (a tool is active), so a caller
-// knows more input is expected before the command completes.
-func (cl *CommandLine) Awaiting(s *Session) bool { return s.ActiveTool() != nil }
+// Awaiting reports whether the engine is waiting on input — a pending question or an active
+// tool mid-interaction — so a caller knows more input is expected before the command ends.
+func (cl *CommandLine) Awaiting(s *Session) bool {
+	if _, ok := s.Prompts().Pending(); ok {
+		return true
+	}
+	return s.ActiveTool() != nil
+}
 
-// Submit feeds one line to the engine: while a tool is active the line is a token for it,
-// otherwise it starts a command (an empty idle line repeats the last command).
+// Submit feeds one line to the engine. A pending command-line question is answered first
+// (M26 F03); otherwise, while a tool is active the line is a token for it, and when idle it
+// starts a command (an empty idle line repeats the last command).
 func (cl *CommandLine) Submit(s *Session, line string) error {
 	line = strings.TrimSpace(line)
+	if _, ok := s.Prompts().Pending(); ok {
+		return cl.answerPrompt(s, line)
+	}
 	if s.ActiveTool() != nil {
 		return cl.feedToken(s, line)
 	}
 	return cl.startCommand(s, line)
+}
+
+// answerPrompt resolves the pending prompt with the typed answer: an empty line accepts the
+// default button, otherwise the token is matched against the answer options (keyword/prefix).
+// An unrecognised answer re-asks rather than guessing (M26 F03).
+func (cl *CommandLine) answerPrompt(s *Session, line string) error {
+	spec, _ := s.Prompts().Pending()
+	answer, ok := cl.resolveAnswer(spec, line)
+	if !ok {
+		cl.appendf(cmdline.Warning, "Answer with one of [%s]", strings.Join(spec.Buttons, "/"))
+		return nil
+	}
+	cl.sb.Append(answer, cmdline.Echo)
+	if err := s.AnswerPrompt(spec.ID, answer, false); err != nil {
+		cl.appendf(cmdline.Error, "%v", err)
+		return err
+	}
+	return nil
+}
+
+// resolveAnswer maps a typed line to one of a prompt's buttons: "" accepts the default,
+// else a case-insensitive exact/prefix match.
+func (cl *CommandLine) resolveAnswer(spec PromptSpec, line string) (string, bool) {
+	if line == "" {
+		return spec.Buttons[spec.Default], true
+	}
+	return cmdline.MatchKeyword(line, spec.Buttons)
 }
 
 // startCommand resolves the first word to an action and dispatches it, then feeds any

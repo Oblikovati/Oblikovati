@@ -128,7 +128,10 @@ func (s *Session) Notice() string { return s.notice }
 // SetNotice puts a transient user-facing message in the status bar — used by an add-in to
 // surface state the user can't otherwise see (e.g. a collaboration add-in's connection
 // status). Cleared on the next user input, like any notice.
-func (s *Session) SetNotice(msg string) { s.notice = msg }
+func (s *Session) SetNotice(msg string) {
+	s.notice = msg
+	s.feedNotice(msg) // M26 F03: notices also appear in the Command Window
+}
 
 // VisualStyle returns the active scene visual style (default Shaded with Edges).
 func (s *Session) VisualStyle() renderer.VisualStyle { return s.visualStyle }
@@ -181,6 +184,7 @@ func newSession(store doc.Store) *Session {
 	// The embedded Sky map is the default environment for every visual style — IBL plus
 	// the sky as the viewport background (ADR-0026 §8).
 	s.lighting.Environment = renderer.DefaultEnvironment()
+	s.messageCenter.sink = s.routeMessage // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
 	s.watchDocumentInterests()

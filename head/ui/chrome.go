@@ -140,12 +140,13 @@ func drawChromeWindows(s *app.Session) {
 	drawMaterialsWindow(s)
 	drawLightingWindow(s)
 	drawScriptConsole(s)
-	drawKeymapEditor(s)                 // Tools ▸ Customize Keyboard (M05-F17)
-	drawCommandInput(s)                 // command-alias input box (M05-F17)
-	drawCommandWindow(s)                // docked Command Window REPL panel (M26 F04)
-	drawUpdateWindow(s)                 // Help ▸ Check for Updates notification
-	drawAddInPanels(s)                  // add-in dockable windows (M05-F03)
-	drawMessagingSurfaces(s)            // toasts, prompt modal, message center (M05-F09)
+	drawKeymapEditor(s)  // Tools ▸ Customize Keyboard (M05-F17)
+	drawCommandInput(s)  // command-alias input box (M05-F17)
+	drawCommandWindow(s) // docked Command Window REPL panel (M26 F04)
+	drawUpdateWindow(s)  // Help ▸ Check for Updates notification
+	drawAddInPanels(s)   // add-in dockable windows (M05-F03)
+	// M26 F03: toasts / prompt modal / message-center windows are retired — every message
+	// now funnels into the docked Command Window, and prompts are answered inline there.
 	drawWebViews(s)                     // web dialogs/views (M05-F08)
 	drawMarkingMenu(s)                  // radial marking menu popup (M05-F12)
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
