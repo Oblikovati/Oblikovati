@@ -107,6 +107,7 @@ type Session struct {
 	meshColors           bool                           // viewport mesh-debug-colors render (each face/triangle a distinct color)
 	meshColorsPerTri     bool                           // when meshColors: color per TRIANGLE (else per B-rep face)
 	editScope            editScope                      // while editing a node, hide everything created after it (issue #132)
+	asmBodies            assemblyBodyCache              // memoized world-space assembly bodies + their occurrences (#769)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in

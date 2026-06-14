@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/scene"
 )
@@ -19,13 +20,14 @@ import (
 // [Picker], so a test "clicks on" a modeled solid or a datum plane — screen coordinate
 // → ray → face/plane — with no GPU.
 type RayPicker struct {
-	camera     scene.Camera
-	bodies     func() []*topo.Body
-	planes     func() []*feature.WorkPlane
-	points     func() []*feature.WorkPoint
-	axes       func() []*feature.WorkAxis
-	sketches   func() []*sketch.Sketch
-	sketches3D func() []*sketch.Sketch3D
+	camera       scene.Camera
+	bodies       func() []*topo.Body
+	planes       func() []*feature.WorkPlane
+	points       func() []*feature.WorkPoint
+	axes         func() []*feature.WorkAxis
+	sketches     func() []*sketch.Sketch
+	sketches3D   func() []*sketch.Sketch3D
+	occurrenceOf func(*topo.Body) (*occurrence.Occurrence, bool) // maps an assembly body hit to its component (#769)
 }
 
 // pickPixelRadius is how close (in pixels) the cursor must be to a datum point or axis to
@@ -73,6 +75,14 @@ func (p *RayPicker) WithAxes(axes func() []*feature.WorkAxis) *RayPicker {
 	return p
 }
 
+// WithOccurrenceLookup adds a body→occurrence map so a click on an assembly component's body
+// resolves to that occurrence (component-level selection). Provided only for assemblies; without
+// it the picker behaves as the part-only hit-test (#769).
+func (p *RayPicker) WithOccurrenceLookup(lookup func(*topo.Body) (*occurrence.Occurrence, bool)) *RayPicker {
+	p.occurrenceOf = lookup
+	return p
+}
+
 // SetCamera updates the view used for picking.
 func (p *RayPicker) SetCamera(c scene.Camera) { p.camera = c }
 
@@ -88,6 +98,13 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 	}
 	var cands []pickCandidate
 	if face, body, t := p.nearestFace(origin, dir); face != nil {
+		// In an assembly a click selects the whole component by default, so the occurrence
+		// candidate is appended BEFORE the face — it wins the depth tie under an all-accepting
+		// filter. A machining tool that sets a face/edge filter excludes SelectOccurrence and so
+		// gets the face instead.
+		if occ, ok := p.occurrenceForBody(body, filter); ok {
+			cands = append(cands, pickCandidate{t, OccurrenceHandle{Occurrence: occ}})
+		}
 		if sel, ok := facePick(face, body, filter); ok {
 			cands = append(cands, pickCandidate{t, sel})
 		}
@@ -384,6 +401,15 @@ func (p *RayPicker) nearestPlane(origin math.Point3, dir math.Vector3) (*feature
 		}
 	}
 	return hit, best
+}
+
+// occurrenceForBody resolves a body hit to its component occurrence, when the picker has a
+// lookup (an assembly) and the filter accepts occurrence selection.
+func (p *RayPicker) occurrenceForBody(body *topo.Body, filter *SelectionFilter) (*occurrence.Occurrence, bool) {
+	if p.occurrenceOf == nil || !filter.Accepts(SelectOccurrence) {
+		return nil, false
+	}
+	return p.occurrenceOf(body)
 }
 
 // facePick wraps a face hit as the handle the filter wants (face or owning body),
