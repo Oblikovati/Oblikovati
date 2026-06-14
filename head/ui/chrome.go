@@ -184,6 +184,11 @@ func handleKeyboard(s *app.Session) {
 		return // modifier chords already handled above; don't double-dispatch them
 	}
 	// No text field is focused: plain shortcut keys dispatch directly (the legacy path).
+	// NOTE: we deliberately do NOT force-refocus the command line here to make it a sticky
+	// keyboard sink — calling SetKeyboardFocusHere while nothing is focused steals the active
+	// item and disables ImGui mouse hover, which breaks viewport drag-orbit (regression guard
+	// TestInWindowDockedViewportIsInteractive). True stickiness needs the viewport to decline
+	// keyboard focus on click instead; see ADR-0037's follow-ups.
 	dispatchPressedKeys(s, native.PressedKeys(), mods)
 }
 
