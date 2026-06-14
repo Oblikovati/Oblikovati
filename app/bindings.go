@@ -24,6 +24,7 @@ import (
 const (
 	ActionUndo             = "edit.undo"
 	ActionRedo             = "edit.redo"
+	ActionSave             = "file.save"
 	ActionCancel           = "tool.cancel"
 	ActionCommit           = "tool.commit"
 	ActionToggleVisibility = "workplane.toggleVisibility"
@@ -51,6 +52,7 @@ func builtinActions() []builtinAction {
 		{id: ActionUndo, displayName: "Undo", defaultChord: mustChord("Ctrl+Z"), dispatch: dispatchUndo},
 		{id: ActionRedo, displayName: "Redo", defaultChord: mustChord("Ctrl+Y"),
 			extraChords: []types.KeyChord{mustChord("Ctrl+Shift+Z")}, dispatch: dispatchRedo},
+		{id: ActionSave, displayName: "Save", defaultChord: mustChord("Ctrl+S"), dispatch: dispatchSave},
 		{id: ActionCancel, displayName: "Cancel / Deselect", defaultChord: mustChord("Escape"), dispatch: dispatchCancel},
 		{id: ActionCommit, displayName: "Finish Command", defaultChord: mustChord("Enter"), dispatch: dispatchCommit},
 		{id: ActionToggleVisibility, displayName: "Toggle Visibility", defaultChord: mustChord("V"), dispatch: dispatchToggleVisibility},
@@ -95,6 +97,9 @@ func dispatchToggleVisibility(s *Session) error {
 	s.ToggleSelectedWorkPlaneVisibility()
 	return nil
 }
+
+// dispatchSave saves the active document (Ctrl+S / the "SAVE" command word, M26 F05).
+func dispatchSave(s *Session) error { return s.SaveActiveDocument() }
 
 // mustChord parses a constant chord literal from the built-in table, panicking on a
 // malformed one (a programming error, never reachable with the valid literals above).
@@ -377,6 +382,17 @@ func (b *Bindings) CheckDefaults() error {
 		seen[key] = bd.id
 	}
 	return nil
+}
+
+// CanonicalWord returns the command word to echo when an action is triggered by a keyboard
+// chord (M26 F05): its AutoCAD vocabulary name ("SAVE", "UNDO", "EXTRUDE") when it has one,
+// else its display name upper-cased — so a chord reads on the command line like a typed
+// command.
+func (b *Bindings) CanonicalWord(actionID string) string {
+	if w, ok := b.vocab.CanonicalWord(actionID); ok {
+		return w
+	}
+	return strings.ToUpper(b.displayName(actionID))
 }
 
 // displayName resolves an action id to its label for error messages.

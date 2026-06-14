@@ -162,16 +162,28 @@ func drawChromeWindows(s *app.Session) {
 // keyboard, every non-modifier key pressed this frame is sent as a chord carrying the held
 // modifiers, so rebindable shortcuts (undo/redo, command shortcuts, …) resolve and fire.
 func handleKeyboard(s *app.Session) {
-	if native.EscapePressed() {
-		_ = s.PressKey(app.KeyEvent{Key: "Escape"})
-	}
 	if native.F1Pressed() {
 		_ = s.DisplayHelpTopic("", "")
 	}
-	if native.WantTextInput() { // a text widget owns the keyboard; stand down
-		return
+	mods := heldModifiers()
+	if native.EscapePressed() {
+		_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
 	}
-	dispatchPressedKeys(s, native.PressedKeys(), heldModifiers())
+	// M26 F05: modifier chords (Ctrl/Alt — e.g. Ctrl+S, Ctrl+Z) fire even while the
+	// command-window input is focused, so they work mid-typing; PressKey routes them through
+	// the command line, echoing the command word and running it (the "autofill + Enter" path).
+	ctrlOrAlt := mods.Has(app.CtrlMod) || mods.Has(app.AltMod)
+	if ctrlOrAlt {
+		dispatchPressedKeys(s, native.PressedKeys(), mods)
+	}
+	if native.WantTextInput() {
+		return // a text widget (the command line, by default) owns plain typing → fills it
+	}
+	if ctrlOrAlt {
+		return // modifier chords already handled above; don't double-dispatch them
+	}
+	// No text field is focused: plain shortcut keys dispatch directly (the legacy path).
+	dispatchPressedKeys(s, native.PressedKeys(), mods)
 }
 
 // dispatchPressedKeys sends each non-modifier key pressed this frame to the session as a

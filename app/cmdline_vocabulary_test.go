@@ -12,7 +12,7 @@ import (
 // besides registered commands.
 func builtinActionIDs() map[string]bool {
 	return map[string]bool{
-		ActionUndo: true, ActionRedo: true, ActionCancel: true,
+		ActionUndo: true, ActionRedo: true, ActionSave: true, ActionCancel: true,
 		ActionCommit: true, ActionToggleVisibility: true,
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/app/cmdline"
 )
 
@@ -68,13 +69,37 @@ func (cl *CommandLine) startCommand(s *Session, line string) error {
 	}
 	word := fields[0]
 	cl.sb.Append(word, cmdline.Echo)
-	actionID, ok := s.Bindings().ResolveAlias(word)
+	actionID, ok := cl.resolveWord(s, word)
 	if !ok {
 		cl.appendf(cmdline.Error, "Unknown command: %q", word)
 		return fmt.Errorf("cmdline: unknown command %q", word)
 	}
 	cl.sb.RecordCommand(word)
 	return cl.dispatch(s, actionID, fields[1:])
+}
+
+// resolveWord maps a typed command word to an action: a typed alias / AutoCAD vocabulary
+// word first, then — for a single character — that key's keyboard shortcut, so a one-letter
+// shortcut still runs when typed and committed with Enter (e.g. "V" → toggle visibility).
+func (cl *CommandLine) resolveWord(s *Session, word string) (string, bool) {
+	b := s.Bindings()
+	if actionID, ok := b.ResolveAlias(word); ok {
+		return actionID, true
+	}
+	if len([]rune(word)) == 1 {
+		return b.ResolveChord(types.KeyChord{Key: word})
+	}
+	return "", false
+}
+
+// RunChord runs an action triggered by a keyboard chord (Ctrl+S, Ctrl+Z, …) as if it were
+// typed: it echoes the action's canonical command word, then dispatches it — so a chord and
+// the equivalent typed command behave and read identically (M26 F05).
+func (cl *CommandLine) RunChord(s *Session, actionID string) error {
+	word := s.Bindings().CanonicalWord(actionID)
+	cl.sb.Append(word, cmdline.Echo)
+	cl.sb.RecordCommand(word)
+	return cl.dispatch(s, actionID, nil)
 }
 
 // dispatch runs the resolved action, shows the started tool's prompt, and feeds any inline
