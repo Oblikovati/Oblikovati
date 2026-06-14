@@ -44,10 +44,12 @@ func TestSubmitCommandLineDrawsLineOverWire(t *testing.T) {
 		t.Error("LINE produced no scrollback output")
 	}
 
+	// LINE is a continuous chain; an empty submit (Enter) ends it.
 	call(t, r, s, "commandLine.submit", `{"line":"0,0"}`, &res)
 	call(t, r, s, "commandLine.submit", `{"line":"10,0"}`, &res)
+	call(t, r, s, "commandLine.submit", `{"line":""}`, &res)
 	if res.Awaiting {
-		t.Error("line should have committed after the second point (not awaiting)")
+		t.Error("line should have committed after Enter (not awaiting)")
 	}
 	if sk.Lines().Count() != 1 {
 		t.Errorf("got %d lines over the wire, want 1", sk.Lines().Count())

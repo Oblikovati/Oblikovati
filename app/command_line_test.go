@@ -3,6 +3,7 @@
 package app
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/app/cmdline"
@@ -25,7 +26,8 @@ func sketchCommandSession(t *testing.T) (*Session, *sketch.Sketch, *CommandLine)
 
 func TestCommandLineDrawsLineFromText(t *testing.T) {
 	s, sk, cl := sketchCommandSession(t)
-	for _, in := range []string{"LINE", "0,0", "10,0"} {
+	// AutoCAD LINE is a continuous chain: an empty submit (Enter) ends it.
+	for _, in := range []string{"LINE", "0,0", "10,0", ""} {
 		if err := cl.Submit(s, in); err != nil {
 			t.Fatalf("Submit(%q): %v", in, err)
 		}
@@ -34,7 +36,7 @@ func TestCommandLineDrawsLineFromText(t *testing.T) {
 		t.Fatalf("got %d lines, want 1", sk.Lines().Count())
 	}
 	if s.ActiveTool() != nil {
-		t.Error("tool should have auto-committed and deactivated")
+		t.Error("tool should have committed and deactivated after Enter")
 	}
 	l := sk.Lines().Item(0)
 	if l.StartPoint().Position() != math.P2(0, 0) || l.EndPoint().Position() != math.P2(10, 0) {
@@ -47,6 +49,9 @@ func TestCommandLineInlineArguments(t *testing.T) {
 	if err := cl.Submit(s, "L 2,2 8,8"); err != nil {
 		t.Fatalf("Submit inline: %v", err)
 	}
+	if err := cl.Submit(s, ""); err != nil { // Enter ends the chain
+		t.Fatalf("Submit finish: %v", err)
+	}
 	if sk.Lines().Count() != 1 || s.ActiveTool() != nil {
 		t.Fatalf("inline line: lines=%d activeTool=%v", sk.Lines().Count(), s.ActiveTool() != nil)
 	}
@@ -54,7 +59,7 @@ func TestCommandLineInlineArguments(t *testing.T) {
 
 func TestCommandLineRelativeCoordinate(t *testing.T) {
 	s, sk, cl := sketchCommandSession(t)
-	for _, in := range []string{"LINE", "5,5", "@10,0"} {
+	for _, in := range []string{"LINE", "5,5", "@10,0", ""} {
 		if err := cl.Submit(s, in); err != nil {
 			t.Fatalf("Submit(%q): %v", in, err)
 		}
@@ -62,6 +67,41 @@ func TestCommandLineRelativeCoordinate(t *testing.T) {
 	l := sk.Lines().Item(0)
 	if l.EndPoint().Position() != math.P2(15, 5) {
 		t.Errorf("relative endpoint = %v, want (15,5)", l.EndPoint().Position())
+	}
+}
+
+func TestCommandLinePolylineClose(t *testing.T) {
+	s, sk, cl := sketchCommandSession(t)
+	// A triangle: three points, then Close connects the last back to the first and finishes.
+	for _, in := range []string{"LINE", "0,0", "10,0", "10,10", "Close"} {
+		if err := cl.Submit(s, in); err != nil {
+			t.Fatalf("Submit(%q): %v", in, err)
+		}
+	}
+	if s.ActiveTool() != nil {
+		t.Error("Close should finish the polyline")
+	}
+	if sk.Lines().Count() != 3 {
+		t.Fatalf("closed triangle: got %d lines, want 3", sk.Lines().Count())
+	}
+	if p := sk.Profiles(); p.Count() != 1 || !p.Item(0).IsClosed() {
+		t.Errorf("Close did not form one closed profile (count=%d)", sk.Profiles().Count())
+	}
+}
+
+func TestCommandLinePolylineUndo(t *testing.T) {
+	s, sk, cl := sketchCommandSession(t)
+	// Undo drops the stray third point before finishing, leaving a single segment.
+	for _, in := range []string{"LINE", "0,0", "10,0", "99,99", "U", ""} {
+		if err := cl.Submit(s, in); err != nil {
+			t.Fatalf("Submit(%q): %v", in, err)
+		}
+	}
+	if sk.Lines().Count() != 1 {
+		t.Fatalf("after Undo: got %d lines, want 1", sk.Lines().Count())
+	}
+	if sk.Lines().Item(0).EndPoint().Position() != math.P2(10, 0) {
+		t.Errorf("Undo left the wrong endpoint: %v", sk.Lines().Item(0).EndPoint().Position())
 	}
 }
 
@@ -117,6 +157,36 @@ func TestCommandLineDrawsRectangleFromText(t *testing.T) {
 	}
 	if sk.Lines().Count() != 4 || s.ActiveTool() != nil {
 		t.Fatalf("rectangle: lines=%d activeTool=%v", sk.Lines().Count(), s.ActiveTool() != nil)
+	}
+}
+
+func TestCommandLineRevolveFromAngle(t *testing.T) {
+	s, profile := newPartWithOffsetSquare(t, 2, 1)
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("RegisterStandardCommands: %v", err)
+	}
+	s.SetPicker(stubPicker{sel: profile})
+	cl := s.CommandLine()
+
+	if err := cl.Submit(s, "REVOLVE"); err != nil {
+		t.Fatalf("Submit REVOLVE: %v", err)
+	}
+	rev, ok := s.ActiveTool().Tool().(*RevolveTool)
+	if !ok {
+		t.Fatalf("active tool = %T, want *RevolveTool", s.ActiveTool().Tool())
+	}
+	s.Click(120, 90) // pick the region in the viewport
+	if err := cl.Submit(s, "90"); err != nil {
+		t.Fatalf("Submit angle: %v", err)
+	}
+	if s.ActiveTool() != nil {
+		t.Error("revolve should have committed after the angle value")
+	}
+	if rev.AddedFeature() == nil {
+		t.Fatal("no revolve feature was created")
+	}
+	if stdmath.Abs(rev.Angle()-stdmath.Pi/2) > 1e-9 {
+		t.Errorf("angle = %v rad, want π/2 (90°)", rev.Angle())
 	}
 }
 

@@ -126,10 +126,21 @@ func sketchOfLine(s *Session, line *sketch.Line) *sketch.Sketch {
 
 // The options the property window drives: the revolution axis, the swept angle, and the
 // boolean operation.
-func (t *RevolveTool) SetAxis(ref feature.WorkRef)              { t.axis = ref }
-func (t *RevolveTool) Axis() feature.WorkRef                    { return t.axis }
-func (t *RevolveTool) SetAngle(radians float64)                 { t.angle = radians }
-func (t *RevolveTool) Angle() float64                           { return t.angle }
+func (t *RevolveTool) SetAxis(ref feature.WorkRef) { t.axis = ref }
+func (t *RevolveTool) Axis() feature.WorkRef       { return t.axis }
+func (t *RevolveTool) SetAngle(radians float64)    { t.angle = radians }
+func (t *RevolveTool) Angle() float64              { return t.angle }
+
+// SubmitToken accepts a typed swept angle in DEGREES from the command line (M26 F02
+// follow-up); the region (and any non-default axis) are picked in the viewport. With no
+// angle typed the tool keeps its default full revolution.
+func (t *RevolveTool) SubmitToken(_ *Session, tok CommandToken) error {
+	if tok.Kind != ValueToken {
+		return errors.New("revolve: expected an angle in degrees (pick the region in the viewport)")
+	}
+	t.angle = tok.Value * stdmath.Pi / 180
+	return nil
+}
 func (t *RevolveTool) SetOperation(op ops.PartFeatureOperation) { t.operation = op }
 func (t *RevolveTool) Operation() ops.PartFeatureOperation      { return t.operation }
 

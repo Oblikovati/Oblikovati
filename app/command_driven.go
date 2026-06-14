@@ -48,3 +48,17 @@ type CommandDriven interface {
 type commandOptioned interface {
 	CommandOptions(s *Session) []string
 }
+
+// continuousCommandTool is an optional capability: a geometry tool that runs as a continuous
+// chain when started from the command line (AutoCAD's LINE). The engine enables it after
+// starting the command, so the viewport's single-shape behaviour is unaffected (M26).
+type continuousCommandTool interface {
+	EnableContinuous()
+}
+
+// tokenFinisher is an optional capability: a command-driven tool that, after a particular
+// token, is finished and should be committed immediately — e.g. LINE's Close option ends the
+// polyline. The engine checks it after each submitted token.
+type tokenFinisher interface {
+	FinishAfterToken() bool
+}

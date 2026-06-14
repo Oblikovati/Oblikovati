@@ -149,6 +149,11 @@ func (cl *CommandLine) dispatch(s *Session, actionID string, inline []string) er
 		cl.appendf(cmdline.Error, "%v", err)
 		return err
 	}
+	if ti := s.ActiveTool(); ti != nil {
+		if ct, ok := ti.Tool().(continuousCommandTool); ok {
+			ct.EnableContinuous() // command-line LINE chains, AutoCAD-style (viewport stays single-shape)
+		}
+	}
 	cl.showPrompt(s)
 	for _, tok := range inline {
 		if s.ActiveTool() == nil {
@@ -223,12 +228,17 @@ func (cl *CommandLine) apply(s *Session, driven CommandDriven, tok CommandToken)
 	return nil
 }
 
-// shouldFinish decides whether to commit after a token: a fixed-arity geometry tool that
-// has its clicks (AutoCommitTool), or a value-driven feature now ready to build.
+// shouldFinish decides whether to commit after a token: a tool that signals it is done
+// (tokenFinisher, e.g. LINE's Close), a fixed-arity geometry tool that has its clicks
+// (AutoCommitTool), or a value-driven feature now ready to build. A continuous chain reports
+// neither until Close, so it keeps collecting points until an explicit Enter (see finish).
 func (cl *CommandLine) shouldFinish(s *Session, tok CommandToken) bool {
 	ti := s.ActiveTool()
 	if ti == nil || !ti.Tool().CanCommit() {
 		return false
+	}
+	if tf, ok := ti.Tool().(tokenFinisher); ok {
+		return tf.FinishAfterToken()
 	}
 	if ac, ok := ti.Tool().(AutoCommitTool); ok && ac.AutoCommits() {
 		return true
