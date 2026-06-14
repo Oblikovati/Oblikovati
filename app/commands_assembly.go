@@ -13,6 +13,19 @@ package app
 func assemblyTabCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		placeComponentCommand(),
+		NewCommand("Assembly.CreateSketch", "Create 2D Sketch", "Sketch", func(s *Session) error {
+			if s.SelectedWorkPlane() != nil {
+				_, err := s.CreateSketchOnSelectedPlane()
+				return err
+			}
+			s.StartTool(NewCreateSketchTool())
+			return nil
+		}).WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(canCreateSketch).
+			WithIcon("create-sketch").WithButtonStyle(LargeIconButton).
+			WithTooltip("Create 2D Sketch — author a sketch in assembly space (extrude/revolve machine the components)."),
+		assemblyToolCommand("Assembly.Extrude", "Extrude", "Modify", "extrude",
+			"Extrude — run a sketch profile across the components to add or cut material.",
+			func() Tool { return NewAssemblyExtrudeTool() }),
 		assemblyToolCommand("Assembly.RectangularPattern", "Rectangular Pattern", "Pattern", "rectangular-pattern",
 			"Rectangular Pattern — replicate the selected component on a grid (counts and spacing).",
 			func() Tool { return NewAssemblyRectPatternTool() }),

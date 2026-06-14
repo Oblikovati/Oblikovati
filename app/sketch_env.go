@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
@@ -16,18 +17,44 @@ import (
 // the new/edited sketch. The geometry lives in model/sketch; the Session only tracks
 // which sketch is being edited (activeSketch).
 
-// CreateSketch adds a new sketch on the given plane to the active part and enters the
-// sketch environment to edit it. It errors when there is no active part or a sketch is
-// already being edited (Inventor forbids nesting sketch edits).
+// sketchHost is the active document's content a sketch is authored on — a part or an assembly.
+// Both own a sketch collection and the parameter DAG dimensions share, and both recompute, so the
+// sketch environment opens, finishes, and recomputes against either without knowing which (#766,
+// mirroring the content-agnostic router seam).
+type sketchHost interface {
+	Sketches() *sketch.Sketches
+	Parameters() *param.Parameters
+	Recompute()
+}
+
+// activeSketchHost resolves the active document's content as a sketch host, erroring when there is
+// no active document or its content hosts no sketches.
+func activeSketchHost(s *Session) (sketchHost, error) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, errors.New("app: no active document")
+	}
+	host, ok := d.Content().(sketchHost)
+	if !ok {
+		return nil, errors.New("app: the active document hosts no sketches")
+	}
+	return host, nil
+}
+
+// CreateSketch adds a new sketch on the given plane to the active document (part or assembly) and
+// enters the sketch environment to edit it. The sketch shares the host's parameter DAG so its
+// dimension expressions resolve against the host's parameters. It errors when there is no sketch
+// host active or a sketch is already being edited (Inventor forbids nesting sketch edits).
 func (s *Session) CreateSketch(plane sketch.Plane) (*sketch.Sketch, error) {
 	if s.activeSketch != nil {
 		return nil, errors.New("app: already editing a sketch (finish it first)")
 	}
-	part, err := activePart(s)
+	host, err := activeSketchHost(s)
 	if err != nil {
 		return nil, err
 	}
-	sk := part.Sketches().Add(plane)
+	sk := host.Sketches().Add(plane)
+	sk.SetParameters(host.Parameters()) // dimension expressions resolve in the host's table
 	s.EnterSketch(sk)
 	return sk, nil
 }
@@ -90,9 +117,11 @@ func (s *Session) FinishSketch() error {
 		s.CancelTool() // an in-progress geometry tool is abandoned on finish
 	}
 	s.ExitSketch()
-	if part, err := activePart(s); err == nil {
-		part.Recompute()
-		s.recordEdit(part, "Sketch")
+	if host, err := activeSketchHost(s); err == nil {
+		host.Recompute()
+		if rs, ok := host.(recipeStore); ok {
+			s.recordEdit(rs, "Sketch")
+		}
 	}
 	return nil
 }
@@ -107,6 +136,6 @@ func (s *Session) CanCreateSketch() bool {
 	if s.activeSketch != nil {
 		return false
 	}
-	_, err := activePart(s)
+	_, err := activeSketchHost(s)
 	return err == nil
 }

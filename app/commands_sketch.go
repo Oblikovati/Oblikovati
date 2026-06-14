@@ -45,11 +45,17 @@ func sketchTabCommands() []*CommandDefinition {
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
 		WithIcon("project-geometry").WithButtonStyle(LargeIconButton).
 		WithTooltip("Project Geometry — pick part edges/vertices to reference onto the sketch plane."))
-	return append(cmds, NewCommand("Sketch.Finish", "Finish Sketch", "Exit", func(s *Session) error {
+	cmds = append(cmds, NewCommand("Sketch.Finish", "Finish Sketch", "Exit", func(s *Session) error {
 		return s.FinishSketch()
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
 		WithIcon("finish-sketch").WithButtonStyle(LargeIconButton).
 		WithTooltip("Finish Sketch — leave the sketch environment and update the part."))
+	// The contextual Sketch tab serves a part AND an assembly sketch — the environment is now
+	// content-agnostic (#766) — so its tools appear on both ribbons.
+	for _, c := range cmds {
+		c.WithRibbons(PartRibbon, AssemblyRibbon)
+	}
+	return cmds
 }
 
 // sketchToolEntry is one tool-launching command (id/label/alias/tooltip + factory).
