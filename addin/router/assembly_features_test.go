@@ -366,3 +366,24 @@ func TestAssemblyFeaturesRejectsBadInput(t *testing.T) {
 		t.Error("assemblyFeatures.list on a part document should fail")
 	}
 }
+
+// TestAssemblyHoleEditOverWire checks a placed assembly hole advertises editable
+// Diameter/Depth scalars and that assemblyFeatures.edit re-dimensions it, re-drilling the
+// participant — a wider bore removes more material (#752).
+func TestAssemblyHoleEditOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+
+	var added wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.addHole", `{"center":[0.5,0.5,0],"axis":[0,0,1],"diameter":0.3,"depth":1.5}`, &added)
+	if len(added.Feature.Scalars) != 2 || added.Feature.Scalars[0].Label != "Diameter" || added.Feature.Scalars[1].Label != "Depth" {
+		t.Fatalf("hole scalars = %+v, want editable Diameter and Depth", added.Feature.Scalars)
+	}
+	narrow := featureResultVolume(asm, occs[0])
+
+	// Widen the bore (scalar 0 = Diameter) and confirm more material is removed.
+	var edited wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.edit", fmt.Sprintf(`{"id":%d,"scalars":[{"index":0,"value":"0.6 cm"}]}`, added.Feature.ID), &edited)
+	if wide := featureResultVolume(asm, occs[0]); wide >= narrow {
+		t.Errorf("widening the bore should remove more material: narrow=%g wide=%g", narrow, wide)
+	}
+}
