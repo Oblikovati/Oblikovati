@@ -165,7 +165,6 @@ func (cl *CommandLine) dispatch(s *Session, actionID string, inline []string) er
 			ct.EnableContinuous() // command-line LINE chains, AutoCAD-style (viewport stays single-shape)
 		}
 	}
-	cl.showPrompt(s)
 	for _, tok := range inline {
 		if s.ActiveTool() == nil {
 			break
@@ -235,7 +234,6 @@ func (cl *CommandLine) apply(s *Session, driven CommandDriven, tok CommandToken)
 	if cl.shouldFinish(s, tok) {
 		return cl.finish(s)
 	}
-	cl.showPrompt(s)
 	return nil
 }
 
@@ -289,15 +287,6 @@ func (cl *CommandLine) resolveRelative(c cmdline.Coord) cmdline.Coord {
 	abs.Relative = false
 	cl.lastPoint = &abs
 	return abs
-}
-
-// showPrompt appends the active tool's current step prompt to the scrollback.
-func (cl *CommandLine) showPrompt(s *Session) {
-	if ti := s.ActiveTool(); ti != nil {
-		if p := promptText(s, ti.Tool()); p != "" {
-			cl.sb.Append(p, cmdline.Prompt)
-		}
-	}
 }
 
 // reset clears the per-interaction relative-coordinate anchor.

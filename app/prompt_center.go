@@ -75,7 +75,6 @@ func (s *Session) ShowPrompt(spec PromptSpec) (resolved bool, answer string, err
 		}
 	}
 	s.prompts.pending = append(s.prompts.pending, spec)
-	s.feedPromptQuestion(spec) // M26 F03: ask it inline on the command line
 	return false, "", nil
 }
 

@@ -59,8 +59,8 @@ func TestPromptAskedAndAnsweredViaCommandLine(t *testing.T) {
 	if _, _, err := s.ShowPrompt(spec); err != nil {
 		t.Fatalf("ShowPrompt: %v", err)
 	}
-	if !scrollbackHas(s, "Overwrite the file? [Yes/No]", cmdline.Prompt) {
-		t.Error("prompt question was not asked on the command line")
+	if got := s.CommandLine().Prompt(s); got != "Overwrite the file? [Yes/No]" {
+		t.Errorf("command-line prompt = %q, want the question with its options", got)
 	}
 	if !s.CommandLine().Awaiting(s) {
 		t.Error("engine should be awaiting the prompt answer")

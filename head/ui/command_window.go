@@ -6,6 +6,7 @@ package ui
 
 import (
 	"oblikovati.org/app"
+	"oblikovati.org/app/cmdline"
 	"oblikovati.org/head/internal/native"
 )
 
@@ -31,6 +32,12 @@ var (
 	commandCompletions []string
 	commandCompSel     int32
 	commandCompForBuf  string
+
+	// Last mirrored prompt / status text, so each is appended to the scrollback only when it
+	// changes (the command window is the single feedback surface — these used to live in the
+	// status bar).
+	commandLastPrompt string
+	commandLastStatus string
 )
 
 const (
@@ -45,6 +52,7 @@ const (
 // drawCommandWindow renders the docked Command Window when it is open. It supersedes the
 // old notification surfaces as the single feedback + command-entry surface (M26).
 func drawCommandWindow(s *app.Session) {
+	mirrorCommandFeedback(s) // always mirror prompt/status text, even while collapsed/hidden
 	if !s.CommandWindowOpen() {
 		return
 	}
@@ -56,6 +64,26 @@ func drawCommandWindow(s *app.Session) {
 		drawCommandWindowBody(s)
 	}
 	native.End()
+}
+
+// mirrorCommandFeedback appends the active command's current step prompt and any add-in status
+// text to the scrollback when either changes (M26): the command window is the single feedback
+// surface, so what used to show in the status bar now lands here, for tools started from the
+// ribbon as well as from the command line. Change-detection avoids per-frame repeats.
+func mirrorCommandFeedback(s *app.Session) {
+	cl := s.CommandLine()
+	if p := cl.Prompt(s); p != commandLastPrompt {
+		commandLastPrompt = p
+		if p != "" {
+			cl.Scrollback().Append(p, cmdline.Prompt)
+		}
+	}
+	if st := s.StatusText(); st != commandLastStatus {
+		commandLastStatus = st
+		if st != "" {
+			cl.Scrollback().Append(st, cmdline.Info)
+		}
+	}
 }
 
 // drawCommandWindowBody draws the scrollback pane, the autocomplete hint list, and the input.

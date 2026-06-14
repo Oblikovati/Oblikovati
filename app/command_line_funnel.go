@@ -3,8 +3,6 @@
 package app
 
 import (
-	"strings"
-
 	"oblikovati.org/api/types"
 	"oblikovati.org/app/cmdline"
 )
@@ -41,13 +39,6 @@ func messageSeverity(sev types.MessageSeverity) cmdline.Severity {
 	default:
 		return cmdline.Info
 	}
-}
-
-// feedPromptQuestion shows a queued prompt as an inline command-line question: its message
-// plus the answer options in brackets. The next submitted line answers it (see
-// CommandLine.answerPrompt).
-func (s *Session) feedPromptQuestion(spec PromptSpec) {
-	s.feedScrollback(spec.Message+" ["+strings.Join(spec.Buttons, "/")+"]", cmdline.Prompt)
 }
 
 // balloonLine formats a balloon tip as one command-line line.

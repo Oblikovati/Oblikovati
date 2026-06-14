@@ -11,15 +11,14 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// drawStatusBar renders Inventor's status bar: the active command's step prompt and the
-// selection count, with OK/Cancel for the running tool. OK/Cancel act on the session
-// directly — a tool's lifecycle is a UI concern — mirroring the Edit-menu Cancel above.
+// drawStatusBar renders the status bar's interactive controls and live indicators: OK/Cancel
+// for the running tool, the selection count, and the progress bar. All TEXT MESSAGES — the
+// step prompt, add-in status text, and notices — are consolidated into the Command Window
+// (M26), so the status bar carries no message text, only state the user acts on or watches.
 func drawStatusBar(s *app.Session) {
 	if native.Begin("Status") {
 		sb := app.BuildStatus(s)
-		native.Text(sb.Prompt)
 		if sb.ToolActive {
-			native.SameLine()
 			native.BeginDisabled(!sb.CanCommit)
 			if native.Button("OK") {
 				_ = s.OK() // a failed commit keeps the tool open (Inventor behavior)
@@ -29,16 +28,10 @@ func drawStatusBar(s *app.Session) {
 			if native.Button("Cancel") {
 				s.CancelTool()
 			}
-		}
-		native.SameLine()
-		native.Text(selectionText(sb.SelectionCount))
-		if sb.StatusText != "" {
 			native.SameLine()
-			native.Text("· " + sb.StatusText)
 		}
+		native.Text(selectionText(sb.SelectionCount))
 		drawStatusProgress(s, sb)
-		// M26 F03: the notice and the message-center badge are retired here — notices and
-		// messages now funnel into the docked Command Window.
 	}
 	native.End()
 }
