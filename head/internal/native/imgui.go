@@ -71,10 +71,12 @@ void obk_ig_item_rect_min(float* x, float* y);
 void obk_ig_mouse_pos(float* x, float* y);
 int  obk_ig_key_shift(void);
 int  obk_ig_key_ctrl(void);
+int  obk_ig_key_alt(void);
 int  obk_ig_escape_pressed(void);
 int  obk_ig_f1_pressed(void);
 int  obk_ig_undo_pressed(void);
 int  obk_ig_redo_pressed(void);
+int  obk_ig_pressed_keys(char* buf, int buf_size);
 int  obk_ig_want_text_input(void);
 float obk_ig_mouse_wheel(void);
 float obk_ig_delta_time(void);
@@ -141,7 +143,10 @@ void obk_inject_key_shift(int down);
 */
 import "C"
 
-import "unsafe"
+import (
+	"strings"
+	"unsafe"
+)
 
 // ImGui-widget wrappers in idiomatic Go. These are the verbs the chrome (head/ui)
 // composes each frame; the LAYOUT logic stays in Go. cstr converts once per call —
@@ -677,6 +682,20 @@ func KeyShift() bool { return C.obk_ig_key_shift() != 0 }
 
 // KeyCtrl reports whether a Ctrl key is held (multi-select modifier).
 func KeyCtrl() bool { return C.obk_ig_key_ctrl() != 0 }
+
+// KeyAlt reports whether an Alt key is held (a shortcut-chord modifier).
+func KeyAlt() bool { return C.obk_ig_key_alt() != 0 }
+
+// PressedKeys returns the names of the named keys pressed this frame (no auto-repeat,
+// modifier keys excluded) — e.g. ["E"] or ["F1"]. The names match the canonical KeyChord
+// key tokens, so the head forwards each as a chord to the binding engine (M05-F17).
+func PressedKeys() []string {
+	var buf [256]byte
+	if C.obk_ig_pressed_keys((*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))) == 0 {
+		return nil
+	}
+	return strings.Split(C.GoString((*C.char)(unsafe.Pointer(&buf[0]))), "\n")
+}
 
 // EscapePressed reports whether Esc was pressed this frame (cancel the active tool).
 // F1Pressed fires once on the frame F1 is pressed — the host help shortcut (M05-F14).
