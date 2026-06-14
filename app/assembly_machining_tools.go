@@ -95,7 +95,7 @@ func (t *AssemblyRevolveTool) Params() ToolParams {
 		},
 		Choices: []ChoiceParam{
 			{Label: "Axis", Options: signedAxisNames(), Get: func() int { return t.axisIndex }, Set: func(i int) { t.axisIndex = i }},
-			{Label: "Operation", Options: []string{"Cut", "Join", "Intersect", "New body"}, Get: func() int { return t.operation }, Set: func(i int) { t.operation = i }},
+			{Label: "Operation", Options: assemblyExtrudeOpNames, Get: func() int { return t.operation }, Set: func(i int) { t.operation = i }},
 		},
 	}
 }
