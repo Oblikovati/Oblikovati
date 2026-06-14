@@ -57,6 +57,7 @@ func (t *AssemblyExtrudeTool) Commit(s *Session) error {
 	af := asm.AddFeature(feature.NewAssemblyExtrudeFeature(t.profile.Sketch, t.profile.ProfileIndex, op, func() float64 { return d }))
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
+	s.recordEdit(asm, "Extrude") // the feature program persists + undoes (#785)
 	return nil
 }
 

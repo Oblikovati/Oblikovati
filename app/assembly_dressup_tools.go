@@ -83,10 +83,11 @@ func (t *assemblyEdgeSelectTool) resolve(s *Session, op string) (*compdef.Assemb
 }
 
 // finish names the new dress-up feature, recomputes the assembly so the participants re-machine,
-// and clears the edge filter.
+// records the undo step (the feature program now persists, #785), and clears the edge filter.
 func (t *assemblyEdgeSelectTool) finish(s *Session, asm *compdef.AssemblyComponentDefinition, af *compdef.AssemblyFeature) {
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
+	s.recordEdit(asm, af.Kind())
 	s.Selection().SetFilter(NewSelectionFilter())
 }
 

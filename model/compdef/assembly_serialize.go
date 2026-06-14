@@ -8,7 +8,9 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
+	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence/yamlcodec"
 )
 
@@ -22,9 +24,20 @@ import (
 // assemblyRecipe is the persisted form of an AssemblyComponentDefinition: display units
 // plus the placed occurrences, in placement order.
 type assemblyRecipe struct {
-	Units       map[string]string  `yaml:"units,omitempty"`
-	Occurrences []occurrenceRecipe `yaml:"occurrences,omitempty"`
-	Properties  []propertyRecipe   `yaml:"properties,omitempty"` // document iProperties (#156)
+	Units         map[string]string              `yaml:"units,omitempty"`
+	Occurrences   []occurrenceRecipe             `yaml:"occurrences,omitempty"`
+	Properties    []propertyRecipe               `yaml:"properties,omitempty"` // document iProperties (#156)
+	Sketches      []sketch.SketchData            `yaml:"sketches,omitempty"`   // assembly-space sketches (#785)
+	Features      []assemblyFeatureProgramRecipe `yaml:"features,omitempty"`   // the machining program (#785)
+	EndOfFeatures *int                           `yaml:"endOfFeatures,omitempty"`
+}
+
+// assemblyFeatureProgramRecipe is the persisted form of one program entry: the feature's inputs
+// plus its name and suppression (the AssemblyFeature wrapper state).
+type assemblyFeatureProgramRecipe struct {
+	Name       string                      `yaml:"name,omitempty"`
+	Suppressed bool                        `yaml:"suppressed,omitempty"`
+	Feature    feature.AssemblyFeatureData `yaml:"feature"`
 }
 
 // occurrenceRecipe is the persisted form of one placement: the component document it
@@ -42,11 +55,60 @@ type occurrenceRecipe struct {
 
 // MarshalRecipe renders the assembly's recipe as YAML bytes (doc.RecipeContent).
 func (a *AssemblyComponentDefinition) MarshalRecipe() ([]byte, error) {
-	return yamlcodec.Marshal(assemblyRecipe{
+	sketches, err := a.sketches.MarshalRecipe()
+	if err != nil {
+		return nil, fmt.Errorf("compdef: marshal assembly sketches: %w", err)
+	}
+	r := assemblyRecipe{
 		Units:       unitsRecipeFor(a.units),
 		Occurrences: a.occurrencesRecipe(),
 		Properties:  propertiesRecipeOf(a.props),
-	})
+		Sketches:    sketches,
+		Features:    a.featuresRecipe(),
+	}
+	if eof := a.features.EndOfFeaturesPosition(); eof != endOfFeaturesAtEnd {
+		r.EndOfFeatures = &eof
+	}
+	return yamlcodec.Marshal(r)
+}
+
+// featuresRecipe captures the machining program in order — each feature whose state is
+// self-contained (a sketch-index/scalar/suffix feature). A kind not yet serializable (the box-cut's
+// transient tool body, the proxy-cut's occurrence reference) is skipped (#785).
+func (a *AssemblyComponentDefinition) featuresRecipe() []assemblyFeatureProgramRecipe {
+	sketchIndex := a.sketchIndexFunc()
+	var out []assemblyFeatureProgramRecipe
+	for i := 0; i < a.features.Count(); i++ {
+		af := a.features.Item(i)
+		m, ok := af.Definition().(feature.AssemblyFeatureMarshaler)
+		if !ok {
+			continue
+		}
+		out = append(out, assemblyFeatureProgramRecipe{
+			Name: af.Name(), Suppressed: af.Suppressed(), Feature: m.MarshalAssembly(sketchIndex),
+		})
+	}
+	return out
+}
+
+// sketchIndexFunc maps a sketch pointer to its index in the assembly's sketch collection, for a
+// feature to persist its sketch reference by index.
+func (a *AssemblyComponentDefinition) sketchIndexFunc() func(*sketch.Sketch) int {
+	idx := map[*sketch.Sketch]int{}
+	for i := 0; i < a.sketches.Count(); i++ {
+		idx[a.sketches.Item(i)] = i
+	}
+	return func(sk *sketch.Sketch) int { return idx[sk] }
+}
+
+// sketchSlice returns the assembly's sketches in order, for resolving feature sketch references on
+// restore.
+func (a *AssemblyComponentDefinition) sketchSlice() []*sketch.Sketch {
+	out := make([]*sketch.Sketch, a.sketches.Count())
+	for i := range out {
+		out[i] = a.sketches.Item(i)
+	}
+	return out
 }
 
 // occurrencesRecipe captures every restorable occurrence — those placed from a component
@@ -87,7 +149,17 @@ func (a *AssemblyComponentDefinition) ApplyRecipe(model []byte) error {
 		return err
 	}
 	applyPropertiesRecipe(a.props, r.Properties)
+	if err := a.sketches.ApplyRecipe(r.Sketches); err != nil {
+		return fmt.Errorf("compdef: restore assembly sketches: %w", err)
+	}
+	for i := 0; i < a.sketches.Count(); i++ {
+		a.sketches.Item(i).SetParameters(a.params) // share the param DAG so dimensions resolve
+	}
+	if r.EndOfFeatures != nil {
+		a.features.SetEndOfFeatures(*r.EndOfFeatures)
+	}
 	a.pending = r.Occurrences
+	a.pendingFeatures = r.Features // features bind after occurrences resolve (they snapshot participation)
 	return nil
 }
 
@@ -120,6 +192,10 @@ func (a *AssemblyComponentDefinition) resetOccurrences() {
 	a.occurrences = occurrence.NewOccurrences()
 	a.occurrences.SetListener(a.events)
 	a.props = attr.NewPropertySets() // a restore re-applies the snapshot's properties onto a clean set (#156)
+	a.sketches = sketch.NewSketches()
+	a.features = NewAssemblyFeatures() // the program rebuilds from the snapshot (#785)
+	a.features.SetBus(a.events.Bus())  // re-wire the recompute event bus the fresh program needs
+	a.pendingFeatures = nil
 	a.pending = nil
 }
 
@@ -143,6 +219,25 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		occ.SetAdaptive(rec.Adaptive)
 		occ.SetSubstitute(rec.Substitute)
 	}
+	return a.restoreFeatures()
+}
+
+// restoreFeatures reconstructs the machining program now that the occurrences are bound (each
+// feature snapshots the present occurrences as its participants via AddFeature) and recomputes.
+func (a *AssemblyComponentDefinition) restoreFeatures() error {
+	pending := a.pendingFeatures
+	a.pendingFeatures = nil
+	sketches := a.sketchSlice()
+	for _, fr := range pending {
+		f, err := feature.RestoreAssemblyFeature(fr.Feature, sketches)
+		if err != nil {
+			return fmt.Errorf("compdef: restore assembly feature: %w", err)
+		}
+		af := a.AddFeature(f)
+		af.SetName(fr.Name)
+		af.SetSuppressed(fr.Suppressed)
+	}
+	a.RecomputeFeatures()
 	return nil
 }
 

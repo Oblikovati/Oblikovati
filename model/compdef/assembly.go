@@ -42,6 +42,10 @@ type AssemblyComponentDefinition struct {
 	// component definitions — ApplyRecipe has no workspace, so binding waits for
 	// ResolveReferences once the document is registered (#715). Empty outside a reopen.
 	pending []occurrenceRecipe
+	// pendingFeatures holds the machining program parsed by ApplyRecipe but not yet rebuilt —
+	// features bind after the occurrences resolve (they snapshot participation), so they wait
+	// for ResolveReferences like the occurrences do (#785). Empty outside a reopen/restore.
+	pendingFeatures []assemblyFeatureProgramRecipe
 	// props are the assembly document's iProperties (metadata sets), like a part's (#156).
 	props *attr.PropertySets
 }
