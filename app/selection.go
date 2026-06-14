@@ -30,6 +30,7 @@ const (
 	SelectPath
 	SelectOccurrence
 	SelectConstraint
+	SelectJoint
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -103,6 +104,12 @@ func (AssemblyFeatureHandle) SelectionKind() SelectionKind { return SelectFeatur
 type AssemblyConstraintHandle struct{ Constraint assembly.Constraint }
 
 func (AssemblyConstraintHandle) SelectionKind() SelectionKind { return SelectConstraint }
+
+// AssemblyJointHandle wraps an assembly joint (rigid/rotational/…) selected in the assembly
+// browser's Joints folder, the input the suppress/delete/flip actions consume (M12-F02).
+type AssemblyJointHandle struct{ Joint assembly.Joint }
+
+func (AssemblyJointHandle) SelectionKind() SelectionKind { return SelectJoint }
 
 // SketchHandle wraps a whole sketch (selected in the browser), as opposed to one of its
 // entities — the input for Edit Sketch and for highlighting the sketch in the view.
