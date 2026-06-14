@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"oblikovati.org/api/wire"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 )
 
 // TestAssemblyPatternCircularOverWire replicates a seed component four-up around the Z
@@ -88,5 +91,49 @@ func TestAssemblySubstituteOverWire(t *testing.T) {
 
 	if _, err := r.Handle(s, "assembly.substitute", []byte(`{"sources":[99999],"document":1,"name":"x","transform":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}`)); err == nil {
 		t.Error("substitute of an unknown source id should fail")
+	}
+}
+
+// TestAssemblyMirrorIntoPartOverWire mirrors a file-backed component into a new opposite-
+// hand part document (#717): the created occurrence is placed by a proper (det>0)
+// transform — handedness lives in the part — and a new separately-openable "*-mirror.obk"
+// part holds the source geometry reflected across the local plane (volume preserved,
+// centroid crossed to -x).
+func TestAssemblyMirrorIntoPartOverWire(t *testing.T) {
+	r, s, _, _ := assemblySessionWithBoxes(t)
+	widget := partDocWithBox(t, s, "widget.obk") // a unit box [0,1]³ at the part origin
+
+	// Place the widget (file-backed, so the occurrence records a component document).
+	var placed wire.OccurrenceResult
+	call(t, r, s, "assembly.place", fmt.Sprintf(`{"document":%d,"name":"widget:1","transform":%s}`, uint64(widget.ID()), transformJSON(2, 0, 0)), &placed)
+
+	var mirrored wire.NewOccurrencesResult
+	call(t, r, s, "assembly.mirrorIntoPart", fmt.Sprintf(`{"sources":[%d],"origin":[0,0,0],"normal":[1,0,0]}`, placed.Occurrence.ID), &mirrored)
+	if len(mirrored.Created) != 1 {
+		t.Fatalf("mirror-into-part created %d occurrences, want 1", len(mirrored.Created))
+	}
+	if placement := math.Matrix4FromCells(mirrored.Created[0].Transform.Cells); placement.Determinant() <= 0 {
+		t.Errorf("placement determinant = %g, want > 0 (a real opposite-hand part, not a reflected instance)", placement.Determinant())
+	}
+
+	mirrorDoc, ok := s.Workspace().ByName("widget-mirror.obk")
+	if !ok {
+		t.Fatal("mirror-into-part should create a new widget-mirror.obk part document")
+	}
+	bodies := mirrorDoc.Content().(*compdef.PartComponentDefinition).SurfaceBodies().All()
+	if len(bodies) != 1 {
+		t.Fatalf("mirror part has %d bodies, want 1 (the reflected source)", len(bodies))
+	}
+	props := ops.BodyGeometryProperties(bodies[0], ops.DefaultQuality())
+	if stdmath.Abs(props.Volume-1) > 1e-6 {
+		t.Errorf("mirror part volume = %g, want 1 (reflection preserves the unit box)", props.Volume)
+	}
+	if props.Centroid.X > 0 {
+		t.Errorf("mirror part centroid x = %g, want < 0 (geometry reflected about the local YZ plane)", props.Centroid.X)
+	}
+
+	// The source occurrence remains; the assembly now has the original plus the mirror.
+	if _, err := r.Handle(s, "assembly.mirrorIntoPart", []byte(`{"sources":[999],"origin":[0,0,0],"normal":[1,0,0]}`)); err == nil {
+		t.Error("mirror-into-part of an unknown occurrence id should fail")
 	}
 }
