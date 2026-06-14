@@ -53,6 +53,7 @@ int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
 int  obk_ig_input_text_submit(const char* label, char* buf, int buf_size);
+int  obk_ig_input_text_command(const char* label, char* buf, int buf_size, const char** hist, int nHist, int* histCursor, const char** comps, int nComps, int* compSel);
 void obk_ig_set_keyboard_focus_here(void);
 int  obk_ig_input_text_multiline(const char* label, char* buf, int buf_size, float w, float h);
 int  obk_ig_begin_child(const char* id, float w, float h, int border);
@@ -279,6 +280,48 @@ func InputTextSubmit(label string, buf []byte) bool {
 	c, free := cstr(label)
 	defer free()
 	return C.obk_ig_input_text_submit(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))) != 0
+}
+
+// InputTextCommand is InputTextSubmit with Tab autocompletion and Up/Down navigation, driven
+// by Dear ImGui's CallbackCompletion + CallbackHistory. history is the recall list and comps
+// the live autocomplete candidates (oldest/first respectively); histCursor and compSel are
+// caller-owned indices persisted across frames. When comps is non-empty Up/Down move compSel
+// (the buffer is untouched) and Tab replaces the buffer with comps[compSel]; otherwise Up/Down
+// recall history (histCursor==len(history) ⇒ the empty line). Returns true on Enter.
+func InputTextCommand(label string, buf []byte, history []string, histCursor *int32, comps []string, compSel *int32) bool {
+	if len(buf) == 0 {
+		return false
+	}
+	c, free := cstr(label)
+	defer free()
+	hist, freeHist := cStringArray(history)
+	defer freeHist()
+	cmps, freeComps := cStringArray(comps)
+	defer freeComps()
+	hc, sc := C.int(*histCursor), C.int(*compSel)
+	r := C.obk_ig_input_text_command(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf)),
+		hist, C.int(len(history)), &hc, cmps, C.int(len(comps)), &sc)
+	*histCursor, *compSel = int32(hc), int32(sc)
+	return r != 0
+}
+
+// cStringArray allocates a C array of C strings from ss and returns it with a free func
+// that releases every string and the array. Returns (nil, no-op) for an empty slice.
+func cStringArray(ss []string) (**C.char, func()) {
+	if len(ss) == 0 {
+		return nil, func() {}
+	}
+	arr := C.malloc(C.size_t(len(ss)) * C.size_t(unsafe.Sizeof(uintptr(0))))
+	slice := unsafe.Slice((**C.char)(arr), len(ss))
+	for i, s := range ss {
+		slice[i] = C.CString(s)
+	}
+	return (**C.char)(arr), func() {
+		for _, p := range slice {
+			C.free(unsafe.Pointer(p))
+		}
+		C.free(arr)
+	}
 }
 
 // SetKeyboardFocusHere focuses the next widget on the coming frame — used to put the caret

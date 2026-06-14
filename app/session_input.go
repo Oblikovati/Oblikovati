@@ -200,19 +200,27 @@ func normalizeKey(key string) string {
 	return types.CanonicalKey(key)
 }
 
-// PressKey routes a key press through the binding engine (M05-F17, #831). While the
+// PressKey routes a key press through the binding engine (M05-F17, #831). While the legacy
 // command-alias input box is open the keystroke edits its buffer; otherwise the chord the
-// event forms is resolved to an action — a registered command or a built-in (undo/redo/
-// cancel/commit/visibility) — and dispatched. With no matching binding it is a no-op. The
-// built-in guards (e.g. undo is suppressed mid-tool) live in the dispatch, so behavior
-// matches the formerly hardcoded shortcuts.
+// event forms is resolved to an action and dispatched. With no matching binding it is a
+// no-op. The built-in guards (e.g. undo is suppressed mid-tool) live in the dispatch.
+//
+// M26 F05: a modifier chord (Ctrl/Alt, e.g. Ctrl+S, Ctrl+Z) runs through the Command Window
+// — its canonical word is echoed and then it dispatches — so a chord reads like a typed
+// command ("Ctrl+S" shows "SAVE" and saves). Plain keys still dispatch directly (this is the
+// no-text-field-focused path; in the running app a plain letter is typed into the focused
+// command line instead, filling it to await Enter).
 func (s *Session) PressKey(e KeyEvent) error {
 	if s.CommandInputActive() {
 		return s.routeKeyToCommandInput(e)
 	}
-	b := s.Bindings()
-	if actionID, ok := b.ResolveChord(keyEventToChord(e)); ok {
-		return b.Dispatch(actionID, s)
+	chord := keyEventToChord(e)
+	actionID, ok := s.Bindings().ResolveChord(chord)
+	if !ok {
+		return nil
 	}
-	return nil
+	if chord.Ctrl || chord.Alt {
+		return s.CommandLine().RunChord(s, actionID)
+	}
+	return s.Bindings().Dispatch(actionID, s)
 }

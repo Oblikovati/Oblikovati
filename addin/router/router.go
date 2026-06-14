@@ -302,6 +302,7 @@ func (r *Router) registerCommandHandlers() {
 	r.handlers[wire.MethodCommandsExecute] = executeCommand
 	r.handlers[wire.MethodCommandsCreate] = createCommand
 	r.handlers[wire.MethodCommandsSetState] = setCommandState
+	r.handlers[wire.MethodCommandLineSubmit] = submitCommandLine
 	r.handlers[wire.MethodRibbonList] = ribbonList
 }
 

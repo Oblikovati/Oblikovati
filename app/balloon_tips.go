@@ -5,6 +5,7 @@ package app
 import (
 	"fmt"
 
+	"oblikovati.org/app/cmdline"
 	"oblikovati.org/event"
 	"oblikovati.org/persistence/dialogmemory"
 )
@@ -75,6 +76,7 @@ func (s *Session) ShowBalloonTip(id string) (bool, error) {
 		}
 	}
 	b.active = append(b.active, id)
+	s.feedScrollback(balloonLine(b.specs[id]), cmdline.Info) // M26 F03: also show in the Command Window
 	return true, nil
 }
 

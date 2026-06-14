@@ -43,7 +43,6 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawBrowser(s)
 	drawViewportIfPresent(win, s)
 	drawChromeDialogs(s)
-	drawStatusBar(s)
 	drawChromeWindows(s)
 	drawDocumentClosePrompt(s)
 	drawFileDialog(s)
@@ -67,7 +66,7 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 func layoutDockedPanels() {
 	dockID := native.DockSpaceOverMain()
 	if !dockLaidOut {
-		dockSideNodes = native.DockDefaultLayout(dockID, "Model", "Viewport", "Status")
+		dockSideNodes = native.DockDefaultLayout(dockID, "Model", "Viewport", "Command")
 		addInDockRightNode = 0 // any lazily split right band died with the old layout
 		dockLaidOut = true
 	}
@@ -140,11 +139,13 @@ func drawChromeWindows(s *app.Session) {
 	drawMaterialsWindow(s)
 	drawLightingWindow(s)
 	drawScriptConsole(s)
-	drawKeymapEditor(s)                 // Tools ▸ Customize Keyboard (M05-F17)
-	drawCommandInput(s)                 // command-alias input box (M05-F17)
-	drawUpdateWindow(s)                 // Help ▸ Check for Updates notification
-	drawAddInPanels(s)                  // add-in dockable windows (M05-F03)
-	drawMessagingSurfaces(s)            // toasts, prompt modal, message center (M05-F09)
+	drawKeymapEditor(s)  // Tools ▸ Customize Keyboard (M05-F17)
+	drawCommandInput(s)  // command-alias input box (M05-F17)
+	drawCommandWindow(s) // docked Command Window REPL panel (M26 F04)
+	drawUpdateWindow(s)  // Help ▸ Check for Updates notification
+	drawAddInPanels(s)   // add-in dockable windows (M05-F03)
+	// M26 F03: toasts / prompt modal / message-center windows are retired — every message
+	// now funnels into the docked Command Window, and prompts are answered inline there.
 	drawWebViews(s)                     // web dialogs/views (M05-F08)
 	drawMarkingMenu(s)                  // radial marking menu popup (M05-F12)
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
@@ -161,16 +162,33 @@ func drawChromeWindows(s *app.Session) {
 // keyboard, every non-modifier key pressed this frame is sent as a chord carrying the held
 // modifiers, so rebindable shortcuts (undo/redo, command shortcuts, …) resolve and fire.
 func handleKeyboard(s *app.Session) {
-	if native.EscapePressed() {
-		_ = s.PressKey(app.KeyEvent{Key: "Escape"})
-	}
 	if native.F1Pressed() {
 		_ = s.DisplayHelpTopic("", "")
 	}
-	if native.WantTextInput() { // a text widget owns the keyboard; stand down
-		return
+	mods := heldModifiers()
+	if native.EscapePressed() {
+		_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
 	}
-	dispatchPressedKeys(s, native.PressedKeys(), heldModifiers())
+	// M26 F05: modifier chords (Ctrl/Alt — e.g. Ctrl+S, Ctrl+Z) fire even while the
+	// command-window input is focused, so they work mid-typing; PressKey routes them through
+	// the command line, echoing the command word and running it (the "autofill + Enter" path).
+	ctrlOrAlt := mods.Has(app.CtrlMod) || mods.Has(app.AltMod)
+	if ctrlOrAlt {
+		dispatchPressedKeys(s, native.PressedKeys(), mods)
+	}
+	if native.WantTextInput() {
+		return // a text widget (the command line, by default) owns plain typing → fills it
+	}
+	if ctrlOrAlt {
+		return // modifier chords already handled above; don't double-dispatch them
+	}
+	// No text field is focused: plain shortcut keys dispatch directly (the legacy path).
+	// NOTE: we deliberately do NOT force-refocus the command line here to make it a sticky
+	// keyboard sink — calling SetKeyboardFocusHere while nothing is focused steals the active
+	// item and disables ImGui mouse hover, which breaks viewport drag-orbit (regression guard
+	// TestInWindowDockedViewportIsInteractive). True stickiness needs the viewport to decline
+	// keyboard focus on click instead; see ADR-0037's follow-ups.
+	dispatchPressedKeys(s, native.PressedKeys(), mods)
 }
 
 // dispatchPressedKeys sends each non-modifier key pressed this frame to the session as a

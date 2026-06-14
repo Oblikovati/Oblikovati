@@ -220,6 +220,16 @@ func (t *ExtrudeTool) Prompt(*Session) string {
 	}
 }
 
+// SubmitToken accepts a typed height value from the command line (M26); the region itself
+// is picked in the viewport, and the step prompt is the tool's existing Prompt().
+func (t *ExtrudeTool) SubmitToken(_ *Session, tok CommandToken) error {
+	if tok.Kind != ValueToken {
+		return errors.New("extrude: expected a height value (pick the region in the viewport)")
+	}
+	t.distance = tok.Value
+	return nil
+}
+
 // Preview returns a transient wireframe of the prisms the tool will create — each
 // picked region's bottom and top loops plus vertical connectors — so the viewport
 // shows a live preview before OK (Inventor's in-canvas preview). Empty until a region

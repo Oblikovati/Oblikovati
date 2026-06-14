@@ -18,3 +18,13 @@ func clearBuf(b []byte) {
 		b[i] = 0
 	}
 }
+
+// setBuf replaces an InputText buffer's contents with s (NUL-terminated, truncated to fit) —
+// used to drop a clicked autocomplete suggestion into the command input.
+func setBuf(b []byte, s string) {
+	clearBuf(b)
+	n := copy(b, s)
+	if n < len(b) {
+		b[n] = 0
+	}
+}

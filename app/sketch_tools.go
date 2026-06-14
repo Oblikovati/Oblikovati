@@ -96,9 +96,14 @@ func (t *RectangleTool) Prompt(*Session) string {
 	}
 }
 
-// LineTool draws a single line between two clicked points.
+// LineTool draws lines between clicked points. By default (the viewport) it is a single
+// two-point line that auto-commits on the second click. Started from the command line it
+// runs continuous (EnableContinuous): point after point becomes a connected chain with
+// [Close/Undo] options, ended by Enter or Close — AutoCAD's LINE (M26 F02 follow-up).
 type LineTool struct {
-	points []math.Point2
+	points     []math.Point2
+	continuous bool // command-line polyline mode: chain segments until Enter/Close
+	closed     bool // a Close keyword was given: connect the last point back to the first
 }
 
 // NewLineTool returns a two-point line tool.
@@ -108,6 +113,10 @@ func (t *LineTool) Name() string              { return "Line" }
 func (t *LineTool) Start(*Session)            {}
 func (t *LineTool) Pick(*Session, Selectable) {}
 
+// EnableContinuous switches the tool to AutoCAD-style continuous-polyline mode (the command
+// line calls this when it starts a LINE). The viewport path leaves it off.
+func (t *LineTool) EnableContinuous() { t.continuous = true }
+
 // ClickAt records a line endpoint from a clicked pixel (snapped to points/grid).
 func (t *LineTool) ClickAt(s *Session, px, py float64) {
 	if p, ok := s.sketchClickPoint(px, py); ok {
@@ -115,30 +124,52 @@ func (t *LineTool) ClickAt(s *Session, px, py float64) {
 	}
 }
 
-// CanCommit is true once both endpoints are placed.
-func (t *LineTool) CanCommit() bool { return len(t.points) == 2 }
+// CanCommit is true once enough endpoints are placed: two for a single line, or at least two
+// for a continuous chain.
+func (t *LineTool) CanCommit() bool {
+	if t.continuous {
+		return len(t.points) >= 2
+	}
+	return len(t.points) == 2
+}
 
-// Commit adds the line to the active sketch and runs constraint inference on
-// it (M06-F10, #625): a near-axis line picks up its horizontal/vertical (or
-// parallel/perpendicular, per the session preference) automatically.
+// Commit adds the line(s) to the active sketch and runs constraint inference on each (M06-F10,
+// #625): a near-axis line picks up its horizontal/vertical (or parallel/perpendicular, per the
+// session preference) automatically. In continuous mode it connects every consecutive point
+// and, when Close was given, the last point back to the first.
 func (t *LineTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
-		return errors.New("line: no active sketch")
+		return errNoSketch("line")
 	}
 	sk := s.activeSketch
-	l := sk.Lines().Add(sk.Points().Add(t.points[0]), sk.Points().Add(t.points[1]))
-	sk.ApplyLineInference(l, s.SketchInferenceOptions())
+	prev := sk.Points().Add(t.points[0])
+	first := prev
+	for i := 1; i < len(t.points); i++ {
+		cur := sk.Points().Add(t.points[i])
+		sk.ApplyLineInference(sk.Lines().Add(prev, cur), s.SketchInferenceOptions())
+		prev = cur
+	}
+	if t.closed && len(t.points) >= 3 {
+		sk.ApplyLineInference(sk.Lines().Add(prev, first), s.SketchInferenceOptions())
+	}
 	return nil
 }
 
 // Cancel discards the in-progress line.
 func (t *LineTool) Cancel(*Session) { t.points = nil }
 
-// AutoCommits creates the line on the second click, then deactivates the tool.
-func (t *LineTool) AutoCommits() bool { return true }
+// AutoCommits creates the line on the second click in single-line mode; a continuous chain
+// finishes on Enter/Close instead, so it does not auto-commit.
+func (t *LineTool) AutoCommits() bool { return !t.continuous }
 
-// Prompt guides the user through placing the two endpoints (Inventor's status-bar prompts).
+// Prompt guides the user through placing the endpoints (Inventor's status-bar prompts).
 func (t *LineTool) Prompt(*Session) string {
+	if t.continuous {
+		if len(t.points) == 0 {
+			return "Specify first point"
+		}
+		return "Specify next point"
+	}
 	switch len(t.points) {
 	case 0:
 		return "Click the line start point"
@@ -147,6 +178,60 @@ func (t *LineTool) Prompt(*Session) string {
 	default:
 		return "Click OK to create the line"
 	}
+}
+
+// CommandOptions offers AutoCAD's chain options once a continuous line is under way: Undo
+// after the first point, Close once a closing segment is possible.
+func (t *LineTool) CommandOptions(*Session) []string {
+	if !t.continuous || len(t.points) == 0 {
+		return nil
+	}
+	if len(t.points) >= 2 {
+		return []string{"Close", "Undo"}
+	}
+	return []string{"Undo"}
+}
+
+// SubmitToken adds a typed endpoint, or applies a Close/Undo option in continuous mode. The
+// engine has already resolved any relative/polar input to an absolute sketch-plane coordinate.
+func (t *LineTool) SubmitToken(_ *Session, tok CommandToken) error {
+	switch tok.Kind {
+	case CoordToken:
+		t.points = append(t.points, math.P2(tok.Coord.X, tok.Coord.Y))
+		return nil
+	case KeywordToken:
+		return t.applyOption(tok.Keyword)
+	default:
+		return errors.New("line: expected a point coordinate")
+	}
+}
+
+// applyOption handles the Close/Undo chain options.
+func (t *LineTool) applyOption(keyword string) error {
+	switch keyword {
+	case "Close":
+		t.closed = true
+	case "Undo":
+		if len(t.points) > 0 {
+			t.points = t.points[:len(t.points)-1]
+		}
+	default:
+		return errors.New("line: unknown option " + keyword)
+	}
+	return nil
+}
+
+// FinishAfterToken tells the command-line engine to commit once a closing segment is set, so
+// typing Close ends the polyline (M26 F02 follow-up). Otherwise the chain continues until Enter.
+func (t *LineTool) FinishAfterToken() bool { return t.closed }
+
+// SubmitToken adds a typed corner to the rectangle (M26).
+func (t *RectangleTool) SubmitToken(_ *Session, tok CommandToken) error {
+	if tok.Kind != CoordToken {
+		return errors.New("rectangle: expected a corner coordinate")
+	}
+	t.corners = append(t.corners, math.P2(tok.Coord.X, tok.Coord.Y))
+	return nil
 }
 
 // PlaneClickTool is a sketch tool whose input is raw plane-point clicks (a pixel

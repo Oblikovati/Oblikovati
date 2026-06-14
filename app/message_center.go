@@ -23,6 +23,7 @@ type MessageCenter struct {
 	hasErrors   bool
 	hasWarnings bool
 	lastMessage string
+	sink        func(text string, severity types.MessageSeverity) // M26 F03: mirror to the command line
 }
 
 // NewMessageCenter returns an empty message center.
@@ -72,6 +73,9 @@ func (m *MessageCenter) AddMessage(text string, severity types.MessageSeverity) 
 		slog.Warn("message-center", "text", text)
 	default:
 		slog.Info("message-center", "text", text)
+	}
+	if m.sink != nil { // M26 F03: also surface it in the Command Window
+		m.sink(text, severity)
 	}
 }
 
