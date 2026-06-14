@@ -43,8 +43,8 @@ func standardCommands() []*CommandDefinition {
 }
 
 // getStartedCommands are the ZeroDoc ribbon's Get Started tab — shown when no document is
-// open. New Part is the primary action; it creates a part, which switches the active ribbon
-// to the Part ribbon (RibbonUI_Overview's per-document-type ribbons).
+// open. New Part / New Assembly are the launch actions; each creates a document, which switches
+// the active ribbon to that type's ribbon (RibbonUI_Overview's per-document-type ribbons).
 func getStartedCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("GetStarted.NewPart", "New Part", "Launch", func(s *Session) error {
@@ -53,6 +53,12 @@ func getStartedCommands() []*CommandDefinition {
 		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
 			WithIcon("new-part").WithButtonStyle(LargeIconButton).
 			WithTooltip("New Part — create a part document and open the part environment."),
+		NewCommand("GetStarted.NewAssembly", "New Assembly", "Launch", func(s *Session) error {
+			_, err := s.NewAssembly()
+			return err
+		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
+			WithIcon("new-assembly").WithButtonStyle(LargeIconButton).
+			WithTooltip("New Assembly — create an assembly document and open the assembly environment, where you place and constrain components."),
 	}
 }
 

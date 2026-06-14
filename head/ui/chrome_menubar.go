@@ -27,6 +27,9 @@ func drawFileMenu(s *app.Session) {
 		if native.MenuItem("New Part") {
 			_, _ = s.NewPart()
 		}
+		if native.MenuItem("New Assembly") { // #762 — start an assembly to place and constrain components
+			_, _ = s.NewAssembly()
+		}
 		if native.MenuItem("Open") {
 			openViaHookOrDialog(s)
 		}

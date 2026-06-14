@@ -335,7 +335,7 @@ func (s *Session) NewPart() (*doc.Document, error) {
 		s.notice = out.Reason
 		return nil, &doc.VetoError{Operation: "new part", Reason: out.Reason}
 	}
-	d, err := compdef.AddPart(s.workspace, s.uniquePartName(), true)
+	d, err := compdef.AddPart(s.workspace, s.uniqueDocumentName("Part"), true)
 	if err != nil {
 		return nil, err
 	}
@@ -344,14 +344,36 @@ func (s *Session) NewPart() (*doc.Document, error) {
 	return d, nil
 }
 
-// uniquePartName returns the first "PartN" name not currently open, so New Part never clashes.
-func (s *Session) uniquePartName() string {
+// NewAssembly creates a realized assembly document with a unique "AssemblyN" name and makes it
+// active (the workspace activates a newly added document), so the viewport and ribbon switch to
+// the assembly environment. It backs the New Assembly command on the ZeroDoc ribbon (#762) — the
+// counterpart of [Session.NewPart].
+//
+//	d, err := session.NewAssembly()
+func (s *Session) NewAssembly() (*doc.Document, error) {
+	ev := FileNew{DocumentType: doc.Assembly}
+	if out := event.Emit(s.bus, event.Before, ev); out.Vetoed() {
+		s.notice = out.Reason
+		return nil, &doc.VetoError{Operation: "new assembly", Reason: out.Reason}
+	}
+	d, err := compdef.AddAssembly(s.workspace, s.uniqueDocumentName("Assembly"), true)
+	if err != nil {
+		return nil, err
+	}
+	s.documentHistory(d) // open the event stream now so the first placement is undoable to the empty assembly
+	event.Emit(s.bus, event.After, ev)
+	return d, nil
+}
+
+// uniqueDocumentName returns the first "<prefix>N" name not currently open, so New Part / New
+// Assembly never clash with an open document.
+func (s *Session) uniqueDocumentName(prefix string) string {
 	taken := map[string]bool{}
 	for _, d := range s.workspace.Documents() {
 		taken[d.DisplayName()] = true
 	}
 	for n := 1; ; n++ {
-		if name := "Part" + strconv.Itoa(n); !taken[name] {
+		if name := prefix + strconv.Itoa(n); !taken[name] {
 			return name
 		}
 	}
