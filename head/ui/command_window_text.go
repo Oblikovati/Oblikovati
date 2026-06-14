@@ -2,7 +2,17 @@
 
 package ui
 
-import "oblikovati.org/app/cmdline"
+import (
+	"strconv"
+
+	"oblikovati.org/app/cmdline"
+)
+
+// selectionText renders the selection count as a short status (e.g. "1 selected") — shown in
+// the command window's control row (it moved here when the status bar was removed, M26).
+func selectionText(n int) string {
+	return strconv.Itoa(n) + " selected"
+}
 
 // Pure presentation helpers for the Command Window (M26 F04), split out with no cgo build
 // tag so they are unit-tested without the native layer (mirrors update_text.go).

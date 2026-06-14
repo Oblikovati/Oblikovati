@@ -22,7 +22,6 @@ var commandInputBuf = make([]byte, 1024)
 // for keyboard focus on the input next frame (on first show and after each submit);
 // commandLastLineCount tracks scrollback growth so auto-tail only fires on new output.
 var (
-	commandWindowDocked  bool
 	commandFocusNext     = true
 	commandLastLineCount int
 	commandHistoryCursor int32 // ↑/↓ recall position (len(history) ⇒ the empty line)
@@ -47,6 +46,8 @@ const (
 	commandCompLineHeight = 19
 	// commandCompMax caps how many autocomplete suggestions are shown at once.
 	commandCompMax = 8
+	// commandControlsRow is the height of the OK/Cancel/selection/progress row when shown.
+	commandControlsRow = 26
 )
 
 // drawCommandWindow renders the docked Command Window when it is open. It supersedes the
@@ -56,10 +57,8 @@ func drawCommandWindow(s *app.Session) {
 	if !s.CommandWindowOpen() {
 		return
 	}
-	if !commandWindowDocked {
-		native.SetNextWindowDock(dockSideNodes.Bottom)
-		commandWindowDocked = true
-	}
+	// The window docks into the bottom band via the default dock layout (DockDefaultLayout's
+	// "Command" slot), where the removed status bar used to sit.
 	if native.Begin("Command") {
 		drawCommandWindowBody(s)
 	}
@@ -86,14 +85,69 @@ func mirrorCommandFeedback(s *app.Session) {
 	}
 }
 
-// drawCommandWindowBody draws the scrollback pane, the autocomplete hint list, and the input.
+// drawCommandWindowBody draws the scrollback pane, the active-tool control row (OK/Cancel,
+// selection, progress — moved here when the status bar was removed), the autocomplete hint
+// list, and the input line.
 func drawCommandWindowBody(s *app.Session) {
 	cl := s.CommandLine()
+	sb := app.BuildStatus(s)
 	comps := refreshCompletions(s, cl)
-	reserve := float32(commandInputReserve) + float32(len(comps))*commandCompLineHeight
+	reserve := float32(commandInputReserve) + float32(len(comps))*commandCompLineHeight + controlsHeight(sb)
 	drawCommandScrollback(cl, reserve)
+	drawCommandControls(s, sb)
 	drawCommandCompletions(comps)
 	drawCommandInputLine(s, cl, comps)
+}
+
+// controlsHeight reserves a row for the tool controls when any is live (a running tool, a live
+// progress bar, or a non-empty selection), else nothing — so an idle command window is all
+// scrollback + input.
+func controlsHeight(sb app.StatusBar) float32 {
+	if sb.ToolActive || sb.HasProgress || sb.SelectionCount > 0 {
+		return commandControlsRow
+	}
+	return 0
+}
+
+// drawCommandControls renders the running tool's OK/Cancel, the selection count, and the
+// progress bar — the interactive state the removed status bar used to hold.
+func drawCommandControls(s *app.Session, sb app.StatusBar) {
+	if controlsHeight(sb) == 0 {
+		return
+	}
+	if sb.ToolActive {
+		native.BeginDisabled(!sb.CanCommit)
+		if native.Button("OK") {
+			_ = s.OK() // a failed commit keeps the tool open (Inventor behavior)
+		}
+		native.EndDisabled()
+		native.SameLine()
+		if native.Button("Cancel") {
+			s.CancelTool()
+		}
+		native.SameLine()
+	}
+	native.Text(selectionText(sb.SelectionCount))
+	if sb.HasProgress {
+		native.SameLine()
+		drawCommandProgress(s, sb)
+	}
+	native.Separator()
+}
+
+// drawCommandProgress renders the innermost live progress bar with its cancel control (M05-F09).
+func drawCommandProgress(s *app.Session, sb app.StatusBar) {
+	fraction := float32(0)
+	if sb.Progress.Steps > 0 {
+		fraction = float32(sb.Progress.Step) / float32(sb.Progress.Steps)
+	}
+	native.ProgressBar(fraction, 160, sb.Progress.Message)
+	if !sb.Progress.Cancelled {
+		native.SameLine()
+		if native.Button("Cancel##progress") {
+			_ = s.CancelProgress(sb.Progress.ID)
+		}
+	}
 }
 
 // refreshCompletions recomputes the autocomplete candidates when the input changes (resetting

@@ -43,7 +43,6 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 	drawBrowser(s)
 	drawViewportIfPresent(win, s)
 	drawChromeDialogs(s)
-	drawStatusBar(s)
 	drawChromeWindows(s)
 	drawDocumentClosePrompt(s)
 	drawFileDialog(s)
@@ -67,7 +66,7 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 func layoutDockedPanels() {
 	dockID := native.DockSpaceOverMain()
 	if !dockLaidOut {
-		dockSideNodes = native.DockDefaultLayout(dockID, "Model", "Viewport", "Status")
+		dockSideNodes = native.DockDefaultLayout(dockID, "Model", "Viewport", "Command")
 		addInDockRightNode = 0 // any lazily split right band died with the old layout
 		dockLaidOut = true
 	}
