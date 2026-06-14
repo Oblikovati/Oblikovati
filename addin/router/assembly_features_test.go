@@ -454,3 +454,40 @@ func TestAssemblyFilletOverWire(t *testing.T) {
 		t.Error("addChamfer with an unknown edge key should fail")
 	}
 }
+
+// topBoxFaceKey returns the reference key of the box component's top face (highest z),
+// whose +z normal makes a +z move-face grow the box.
+func topBoxFaceKey(t *testing.T, occ *occurrence.Occurrence) string {
+	t.Helper()
+	def := occ.Definition().(interface{ SurfaceBodies() *topo.SurfaceBodies })
+	var top *topo.Face
+	for _, f := range def.SurfaceBodies().All()[0].Faces() {
+		if top == nil || f.RangeBox().Center().Z > top.RangeBox().Center().Z {
+			top = f
+		}
+	}
+	return string(top.ReferenceKey())
+}
+
+// TestAssemblyMoveFaceOverWire translates a component's top face on every participant and
+// gates the grown volume (#735): pushing the unit box's top face +0.5z makes a 1.5 box, on
+// both placed instances from one feature.
+func TestAssemblyMoveFaceOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
+	face := topBoxFaceKey(t, occs[0])
+
+	var added wire.AssemblyFeatureResult
+	args := mustJSON(t, wire.AddAssemblyMoveFaceArgs{Faces: []wire.AssemblyFaceRef{{Occurrence: occs[0].ID(), Face: face}}, Translation: [3]float64{0, 0, 0.5}})
+	call(t, r, s, "assemblyFeatures.addMoveFace", args, &added)
+	if added.Feature.Kind != "assemblyMoveFace" {
+		t.Fatalf("feature kind = %q, want assemblyMoveFace", added.Feature.Kind)
+	}
+	for i, occ := range occs {
+		if got := featureResultVolume(asm, occ); stdmath.Abs(got-1.5) > 1e-6 {
+			t.Errorf("participant %d moved-face volume = %g, want 1.5 (top face pushed +0.5z)", i, got)
+		}
+	}
+	if len(added.Feature.Scalars) != 1 || added.Feature.Scalars[0].Label != "Distance" {
+		t.Errorf("move-face scalars = %+v, want one editable Distance scalar", added.Feature.Scalars)
+	}
+}
