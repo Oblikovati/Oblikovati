@@ -37,6 +37,10 @@ type AssemblyComponentDefinition struct {
 	params      *param.Parameters     // parameter DAG for assembly sketch dimensions
 	work        *feature.WorkGeometry // origin frame + user work planes, in assembly space
 	sketches    *sketch.Sketches      // sketches authored in the assembly (profile inputs)
+	// pending holds occurrence records parsed by ApplyRecipe but not yet bound to live
+	// component definitions — ApplyRecipe has no workspace, so binding waits for
+	// ResolveReferences once the document is registered (#715). Empty outside a reopen.
+	pending []occurrenceRecipe
 }
 
 // NewAssemblyComponentDefinition returns an empty assembly content object: no
@@ -60,17 +64,20 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	return a
 }
 
-// An assembly definition is plain document content, not recipe-bearing content: it
-// has no recipe to persist until its occurrences reference documents (M11-F02), so
-// it intentionally does NOT implement doc.RecipeContent (contrast PartComponentDefinition).
-var _ doc.Content = (*AssemblyComponentDefinition)(nil)
+// An assembly persists its occurrence structure as a recipe and rebinds each occurrence
+// to its component document through the reference graph on reopen (#715), so it is both
+// recipe-bearing content and a reference resolver (the marshal/apply live in
+// assembly_serialize.go).
+var (
+	_ doc.RecipeContent     = (*AssemblyComponentDefinition)(nil)
+	_ doc.ReferenceResolver = (*AssemblyComponentDefinition)(nil)
+)
 
 // init registers the real assembly content with the document layer so opening or
 // creating an assembly document yields a live AssemblyComponentDefinition, not the
-// identity-only stub (see doc.RegisterContentFactory). The assembly does not yet
-// implement doc.RecipeContent: its occurrences reference documents through the
-// reference graph that arrives in M11-F02, so there is nothing recipe-persistable
-// until then — today an assembly round-trips its identity (manifest) alone.
+// identity-only stub (see doc.RegisterContentFactory). Its recipe (assembly_serialize.go)
+// restores the occurrence structure; the component documents those occurrences instance
+// are resolved through the reference graph after the assembly is registered (#715).
 func init() {
 	doc.RegisterContentFactory(doc.Assembly, func() doc.Content { return NewAssemblyComponentDefinition() })
 }
@@ -113,9 +120,9 @@ func (a *AssemblyComponentDefinition) Place(name string, def occurrence.Definiti
 // component. It errors if the content is not a placeable component definition (e.g. a
 // reference stub or a drawing).
 //
-// NOTE: this links the in-memory definitions only. Recording the assembly→component
-// document reference (the reference graph) and persisting placements arrive in a
-// follow-up — see the assembly-persistence note on the package factory.
+// NOTE: this links the in-memory definitions only — the occurrence carries no persistent
+// component link. Use [PlaceComponentFromFile] to place an occurrence that survives a
+// save/reopen (it records the assembly→component reference and the document name).
 func (a *AssemblyComponentDefinition) PlaceComponent(name string, componentDoc *doc.Document, transform math.Matrix4) (*occurrence.Occurrence, error) {
 	def, ok := componentDoc.Content().(occurrence.Definition)
 	if !ok {
@@ -123,6 +130,24 @@ func (a *AssemblyComponentDefinition) PlaceComponent(name string, componentDoc *
 			componentDoc.DisplayName(), componentDoc.Content())
 	}
 	return a.Place(name, def, transform), nil
+}
+
+// PlaceComponentFromFile places componentDoc into owner's assembly under name at
+// transform AS A PERSISTENT placement: the occurrence records the component's document
+// name, and owner records the assembly→component reference (deduped) so the placement is
+// saved and restored across a reopen (#715). owner is the assembly's own document (the
+// one whose content is this definition); componentDoc is the component to instance.
+func (a *AssemblyComponentDefinition) PlaceComponentFromFile(owner, componentDoc *doc.Document, name string, transform math.Matrix4) (*occurrence.Occurrence, error) {
+	def, ok := componentDoc.Content().(occurrence.Definition)
+	if !ok {
+		return nil, fmt.Errorf("compdef: cannot place %q: its content %T is not a placeable component definition",
+			componentDoc.DisplayName(), componentDoc.Content())
+	}
+	componentName := componentDoc.FullDocumentName()
+	occ := a.occurrences.AddByComponentName(name, def, componentName, transform)
+	// Record (and resolve to the already-open) reference so save snapshots the edge.
+	owner.OpenReference(componentName)
+	return occ, nil
 }
 
 // Events returns the assembly's occurrence-lifecycle event source — subscribe add-ins
