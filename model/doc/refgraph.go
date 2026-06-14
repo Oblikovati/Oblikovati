@@ -131,6 +131,20 @@ func (g *RefGraph) addReference(parent *Document, childName string) *DocumentDes
 	return desc
 }
 
+// addReferenceUnique records parent→childName only when no such edge exists yet,
+// returning the existing or freshly created descriptor. It is the idempotent form used
+// when resolving restored references (#715): a component placed N times, or a reference
+// re-resolved across recomputes, must yield exactly one edge so the referenced-by count
+// is not inflated (addReference appends unconditionally, by contrast).
+func (g *RefGraph) addReferenceUnique(parent *Document, childName string) *DocumentDescriptor {
+	for _, desc := range g.forward[parent.fullDocumentName] {
+		if desc.fullDocumentName == childName {
+			return desc
+		}
+	}
+	return g.addReference(parent, childName)
+}
+
 // removeReference drops the edge from parent to childName, if present, and releases
 // the child's referenced count.
 func (g *RefGraph) removeReference(parent *Document, childName string) bool {

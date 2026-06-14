@@ -113,6 +113,14 @@ func (ws *Workspace) OpenWithOptions(fullDocumentName string, opts OpenOptions) 
 	}
 	d.visible = opts.Visible
 	ws.register(d)
+	// Resolve cross-document references after registration so a resolver that hidden-opens
+	// a sibling (an assembly binding its components, #715) finds this document already in
+	// byName — that short-circuit (above) is what terminates cyclic and diamond references.
+	if r, ok := d.content.(ReferenceResolver); ok {
+		if err := r.ResolveReferences(d); err != nil {
+			return nil, fmt.Errorf("doc: open %q: resolve references: %w", fullDocumentName, err)
+		}
+	}
 	event.Emit(ws.bus, event.After, DocumentOpened{FullDocumentName: fullDocumentName})
 	return d, nil
 }

@@ -44,9 +44,19 @@ func (c *Occurrences) SetListener(l OccurrenceListener) {
 // returning the new occurrence. def is shared — placing the same definition twice
 // yields two occurrences that both track its edits (the flyweight). The transform
 // locates the component in the assembly's space; pass [math.Identity4] for the origin.
+// The occurrence carries no persistent component link (its ComponentName is ""); use
+// [AddByComponentName] to place from a document so the placement can be saved (#715).
 func (c *Occurrences) AddByComponentDefinition(name string, def Definition, transform math.Matrix4) *Occurrence {
+	return c.AddByComponentName(name, def, "", transform)
+}
+
+// AddByComponentName places def under name with transform, recording componentName —
+// the full document name of the component def belongs to — so the placement can be
+// restored on reopen (#715). componentName "" is the in-memory-only placement (see
+// [AddByComponentDefinition]).
+func (c *Occurrences) AddByComponentName(name string, def Definition, componentName string, transform math.Matrix4) *Occurrence {
 	c.nextID++
-	o := &Occurrence{id: c.nextID, name: name, transform: transform, definition: def, owner: c}
+	o := &Occurrence{id: c.nextID, name: name, transform: transform, definition: def, componentName: componentName, owner: c}
 	c.items = append(c.items, o)
 	c.byID[o.id] = o
 	c.bump()

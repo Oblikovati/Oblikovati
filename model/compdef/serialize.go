@@ -295,22 +295,33 @@ func (d *PartComponentDefinition) materialsRecipe() *material.RecipeData {
 
 // unitsRecipe captures the preferred display-unit name for each category.
 func (d *PartComponentDefinition) unitsRecipe() map[string]string {
+	return unitsRecipeFor(d.units)
+}
+
+// applyUnits restores the preferred display unit for each named category.
+func (d *PartComponentDefinition) applyUnits(units map[string]string) error {
+	return applyUnitsTo(d.units, units)
+}
+
+// unitsRecipeFor captures the preferred display-unit name for each category — shared by
+// the part and assembly recipes, which persist units identically.
+func unitsRecipeFor(u param.UnitsOfMeasure) map[string]string {
 	out := make(map[string]string, len(unitCategories))
 	for _, cat := range unitCategories {
-		out[cat.String()] = d.units.PreferredName(cat)
+		out[cat.String()] = u.PreferredName(cat)
 	}
 	return out
 }
 
-// applyUnits restores the preferred display unit for each named category. An unknown
-// category name or an invalid unit is a corrupt-recipe error (no silent loss).
-func (d *PartComponentDefinition) applyUnits(units map[string]string) error {
+// applyUnitsTo restores the preferred display unit for each named category onto u. An
+// unknown category name or an invalid unit is a corrupt-recipe error (no silent loss).
+func applyUnitsTo(u param.UnitsOfMeasure, units map[string]string) error {
 	for name, unitName := range units {
 		cat, ok := unitCategoryByName(name)
 		if !ok {
 			return fmt.Errorf("compdef: unknown unit category %q in recipe", name)
 		}
-		if err := d.units.SetPreferred(cat, unitName); err != nil {
+		if err := u.SetPreferred(cat, unitName); err != nil {
 			return fmt.Errorf("compdef: restore units: %w", err)
 		}
 	}

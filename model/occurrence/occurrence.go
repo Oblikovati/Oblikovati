@@ -47,7 +47,12 @@ type Occurrence struct {
 	adaptive   bool
 	substitute bool
 	definition Definition
-	owner      *Occurrences
+	// componentName is the full document name of the component this occurrence instances,
+	// recorded when placed from a document so the placement can be restored on reopen
+	// (#715). Empty for an in-memory placement made from a bare definition (no file) and
+	// for replicated copies, which inherit the seed's definition rather than re-record it.
+	componentName string
+	owner         *Occurrences
 }
 
 // ID returns the occurrence's session id (unique within its owning collection).
@@ -58,6 +63,11 @@ func (o *Occurrence) Name() string { return o.name }
 
 // Definition returns the shared component definition this occurrence instances.
 func (o *Occurrence) Definition() Definition { return o.definition }
+
+// ComponentName returns the full document name of the component this occurrence
+// instances, or "" when it was placed from a bare in-memory definition. It is the
+// persistent link the assembly recipe records and resolves on reopen (#715).
+func (o *Occurrence) ComponentName() string { return o.componentName }
 
 // Transform returns the occurrence's placement in its assembly's space.
 func (o *Occurrence) Transform() math.Matrix4 { return o.transform }
@@ -105,6 +115,11 @@ func (o *Occurrence) SetAdaptive(adaptive bool) { o.adaptive = adaptive }
 // IsSubstituteOccurrence). Set by [Substitute]; the simplified geometry it references
 // is generated in M11-F06.
 func (o *Occurrence) IsSubstitute() bool { return o.substitute }
+
+// SetSubstitute marks the occurrence as a substitute (or not). It is the restore-time
+// setter for the persisted flag (#715); the interactive substitute path goes through
+// [Substitute], which also wires the simplified definition the flag stands for.
+func (o *Occurrence) SetSubstitute(substitute bool) { o.substitute = substitute }
 
 // SubOccurrences returns the components nested inside this occurrence when it
 // instances an assembly (a [Composite] definition), or nil for a leaf part. They are
