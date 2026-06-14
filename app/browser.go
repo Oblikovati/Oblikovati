@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 
+	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
@@ -79,7 +80,31 @@ func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefini
 		params.child(p.Name(), "parameter")
 	}
 	addOccurrenceNodes(root, asm.Occurrences())
+	addAssemblyConstraintNodes(root, asm.Constraints())
 	addAssemblyFeatureNodes(root, asm.Features())
+}
+
+// addAssemblyConstraintNodes appends a Constraints folder listing the assembly's
+// relationships (mate/flush/angle/insert/…) in creation order, each a selectable row whose
+// right-click menu suppresses / deletes it (M12-F01). The folder is omitted when the
+// assembly has no constraints yet, like the Features folder.
+func addAssemblyConstraintNodes(root *BrowserNode, set *assembly.ConstraintSet) {
+	if set.Count() == 0 {
+		return
+	}
+	folder := root.child("Constraints", "constraints")
+	for _, c := range set.All() {
+		folder.selectableChild(constraintBrowserLabel(c), "assemblyConstraint", AssemblyConstraintHandle{Constraint: c})
+	}
+}
+
+// constraintBrowserLabel is the constraint row's label (its name, e.g. "Mate:1"), suffixed
+// when it is suppressed.
+func constraintBrowserLabel(c assembly.Constraint) string {
+	if c.Suppressed() {
+		return c.Name() + " (suppressed)"
+	}
+	return c.Name()
 }
 
 // addAssemblyFeatureNodes appends a Features folder listing the assembly machining features in
