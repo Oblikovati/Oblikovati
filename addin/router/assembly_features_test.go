@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/occurrence"
@@ -385,5 +386,71 @@ func TestAssemblyHoleEditOverWire(t *testing.T) {
 	call(t, r, s, "assemblyFeatures.edit", fmt.Sprintf(`{"id":%d,"scalars":[{"index":0,"value":"0.6 cm"}]}`, added.Feature.ID), &edited)
 	if wide := featureResultVolume(asm, occs[0]); wide >= narrow {
 		t.Errorf("widening the bore should remove more material: narrow=%g wide=%g", narrow, wide)
+	}
+}
+
+// verticalBoxEdgeKey returns the reference key of a vertical edge (z-running) of the
+// occurrence's box component — a component-local key the assembly dress-up resolves per
+// placement.
+func verticalBoxEdgeKey(t *testing.T, occ *occurrence.Occurrence) string {
+	t.Helper()
+	def, ok := occ.Definition().(interface{ SurfaceBodies() *topo.SurfaceBodies })
+	if !ok || len(def.SurfaceBodies().All()) == 0 {
+		t.Fatal("occurrence component has no body")
+	}
+	for _, e := range def.SurfaceBodies().All()[0].Edges() {
+		if a, b := e.StartVertex().Point(), e.EndVertex().Point(); a.X == b.X && a.Y == b.Y {
+			return string(e.ReferenceKey())
+		}
+	}
+	t.Fatal("no vertical edge on the box component")
+	return ""
+}
+
+// TestAssemblyChamferOverWire chamfers a component edge and confirms EVERY placed instance
+// of that component is machined from the one feature — the occurrence-relative resolution
+// (#735). Two unit boxes share the component lineage, so both lose the chamfer wedge.
+func TestAssemblyChamferOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0, 5)
+	edge := verticalBoxEdgeKey(t, occs[0])
+
+	var added wire.AssemblyFeatureResult
+	args := mustJSON(t, wire.AddAssemblyChamferArgs{Edges: []wire.AssemblyEdgeRef{{Occurrence: occs[0].ID(), Edge: edge}}, Distance: 0.2})
+	call(t, r, s, "assemblyFeatures.addChamfer", args, &added)
+	if added.Feature.Kind != "assemblyChamfer" {
+		t.Fatalf("feature kind = %q, want assemblyChamfer", added.Feature.Kind)
+	}
+	// A 45° flat chamfer of setback 0.2 on a unit-length edge removes a 0.2²/2 prism ⇒ 0.98.
+	for i, occ := range occs {
+		if got := featureResultVolume(asm, occ); stdmath.Abs(got-0.98) > 1e-6 {
+			t.Errorf("participant %d chamfered volume = %g, want 0.98 (box minus a 0.2 chamfer wedge)", i, got)
+		}
+	}
+	// The chamfer advertises an editable Distance scalar.
+	if len(added.Feature.Scalars) != 1 || added.Feature.Scalars[0].Label != "Distance" {
+		t.Errorf("chamfer scalars = %+v, want one Distance scalar", added.Feature.Scalars)
+	}
+}
+
+// TestAssemblyFilletOverWire rounds a component edge on every participant, gated below the
+// box volume (a fillet removes the convex corner material).
+func TestAssemblyFilletOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+	edge := verticalBoxEdgeKey(t, occs[0])
+
+	var added wire.AssemblyFeatureResult
+	args := mustJSON(t, wire.AddAssemblyFilletArgs{Edges: []wire.AssemblyEdgeRef{{Occurrence: occs[0].ID(), Edge: edge}}, Radius: 0.2})
+	call(t, r, s, "assemblyFeatures.addFillet", args, &added)
+	if added.Feature.Kind != "assemblyFillet" {
+		t.Fatalf("feature kind = %q, want assemblyFillet", added.Feature.Kind)
+	}
+	got := featureResultVolume(asm, occs[0])
+	if got >= 1.0 || got < 0.9 {
+		t.Errorf("filleted volume = %g, want a unit box minus a small rounded corner (≈0.99)", got)
+	}
+
+	// An unknown edge key is rejected.
+	if _, err := r.Handle(s, "assemblyFeatures.addChamfer", []byte(fmt.Sprintf(`{"edges":[{"occurrence":%d,"edge":"bogus"}],"distance":0.1}`, occs[0].ID()))); err == nil {
+		t.Error("addChamfer with an unknown edge key should fail")
 	}
 }

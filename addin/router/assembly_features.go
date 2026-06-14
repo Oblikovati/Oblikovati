@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -34,6 +35,8 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesAddHole] = assemblyFeaturesAddHole
 	r.handlers[wire.MethodAssemblyFeaturesAddExtrude] = assemblyFeaturesAddExtrude
 	r.handlers[wire.MethodAssemblyFeaturesAddRevolve] = assemblyFeaturesAddRevolve
+	r.handlers[wire.MethodAssemblyFeaturesAddChamfer] = assemblyFeaturesAddChamfer
+	r.handlers[wire.MethodAssemblyFeaturesAddFillet] = assemblyFeaturesAddFillet
 	r.handlers[wire.MethodAssemblyFeaturesEdit] = assemblyFeaturesEdit
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
@@ -169,6 +172,98 @@ func revolveAxisFromArgs(in wire.AddAssemblyRevolveArgs) (*feature.WorkAxis, err
 		return nil, fmt.Errorf("%s: angle %g must be in (0, 2π]", wire.MethodAssemblyFeaturesAddRevolve, in.Angle)
 	}
 	return feature.NewDatumAxis(math.P3(in.Origin[0], in.Origin[1], in.Origin[2]), dir), nil
+}
+
+// assemblyFeaturesAddChamfer chamfers picked component edges on every participant.
+func assemblyFeaturesAddChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAssemblyChamferArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	if in.Distance <= 0 {
+		return nil, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddChamfer, in.Distance)
+	}
+	suffixes, err := assemblyEdgeSuffixes(asm, in.Edges, wire.MethodAssemblyFeaturesAddChamfer)
+	if err != nil {
+		return nil, err
+	}
+	dist := in.Distance
+	af := asm.AddFeature(feature.NewAssemblyChamferFeature(suffixes, func() float64 { return dist }))
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+}
+
+// assemblyFeaturesAddFillet rounds picked component edges on every participant.
+func assemblyFeaturesAddFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAssemblyFilletArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	if in.Radius <= 0 {
+		return nil, fmt.Errorf("%s: radius %g must be positive", wire.MethodAssemblyFeaturesAddFillet, in.Radius)
+	}
+	suffixes, err := assemblyEdgeSuffixes(asm, in.Edges, wire.MethodAssemblyFeaturesAddFillet)
+	if err != nil {
+		return nil, err
+	}
+	r := in.Radius
+	af := asm.AddFeature(feature.NewAssemblyFilletFeature(suffixes, func() float64 { return r }))
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+}
+
+// assemblyEdgeSuffixes resolves each edge ref to a component-local lineage suffix, after
+// validating the edge exists on its occurrence's component body. The suffix is what each
+// participant's placed body is matched against at recompute (#735).
+func assemblyEdgeSuffixes(asm *compdef.AssemblyComponentDefinition, refs []wire.AssemblyEdgeRef, method string) ([][]byte, error) {
+	if len(refs) == 0 {
+		return nil, fmt.Errorf("%s: no edges given", method)
+	}
+	out := make([][]byte, 0, len(refs))
+	for _, ref := range refs {
+		occ, err := occurrenceByID(asm, ref.Occurrence, method)
+		if err != nil {
+			return nil, err
+		}
+		key := []byte(ref.Edge)
+		if !edgeOnComponent(componentBodies(occ), key) {
+			return nil, fmt.Errorf("%s: edge key not found on occurrence %d's component", method, ref.Occurrence)
+		}
+		out = append(out, topo.LineageSuffixOf(key))
+	}
+	return out, nil
+}
+
+// componentBodies returns the evaluated surface bodies of an occurrence's component
+// definition, or nil when it is not a body-bearing part.
+func componentBodies(occ *occurrence.Occurrence) []*topo.Body {
+	def, ok := occ.Definition().(interface {
+		SurfaceBodies() *topo.SurfaceBodies
+	})
+	if !ok {
+		return nil
+	}
+	return def.SurfaceBodies().All()
+}
+
+// edgeOnComponent reports whether any of the component's bodies carries the edge key.
+func edgeOnComponent(bodies []*topo.Body, key []byte) bool {
+	for _, b := range bodies {
+		if _, ok := b.FindEdgeByKey(key); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // assemblyFeaturesAddHole drills a parametric hole through the participants.
