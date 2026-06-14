@@ -25,7 +25,7 @@ func NewAssemblyMoveFaceFeature(faceSuffixes [][]byte, delta math.Vector3) *Asse
 }
 
 // Kind implements [Feature].
-func (f *AssemblyMoveFaceFeature) Kind() string { return "assemblyMoveFace" }
+func (f *AssemblyMoveFaceFeature) Kind() string { return kindAssemblyMoveFace }
 
 // Recompute moves the matched faces of every participant body by the translation.
 func (f *AssemblyMoveFaceFeature) Recompute(in Input) (Output, error) {
