@@ -103,6 +103,25 @@ func TestSuppressOccurrenceIsUndoable(t *testing.T) {
 	}
 }
 
+// TestOccurrenceToggleToCurrentStateRecordsNothing: setting an occurrence to the state it is
+// already in is a no-op — it must not push an undo step (#764).
+func TestOccurrenceToggleToCurrentStateRecordsNothing(t *testing.T) {
+	s, asm := assemblyWithComponent(t)
+	placedWidget(t, s, asm, "widget:1")
+	o := asm.Occurrences().Item(0)
+	trackFromHere(s) // baseline: unsuppressed, not grounded
+
+	if err := s.SuppressOccurrence(o, false); err != nil {
+		t.Fatalf("suppress to current state: %v", err)
+	}
+	if err := s.GroundOccurrence(o, false); err != nil {
+		t.Fatalf("ground to current state: %v", err)
+	}
+	if s.CanUndo() {
+		t.Error("toggling to the current state should record no undo step")
+	}
+}
+
 // TestGroundOccurrenceIsUndoable: grounding a component is one undo step (the grounded flag
 // round-trips through the recipe).
 func TestGroundOccurrenceIsUndoable(t *testing.T) {
