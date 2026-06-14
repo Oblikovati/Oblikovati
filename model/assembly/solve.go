@@ -40,7 +40,31 @@ func (s *ConstraintSet) Solve() SolveReport {
 	if s.listener != nil {
 		s.listener.AssemblyResolved()
 	}
-	return s.report(result, residuals, order)
+	return s.reportFrom(result.DOFAnalysis, result.Converged, residuals, order)
+}
+
+// Health reports the assembly's current constraint health and DOF without moving any
+// occurrence — the analysis of the configuration as it stands (converged = the current
+// placements already satisfy the constraints).
+func (s *ConstraintSet) Health() SolveReport {
+	order, byOcc := s.placements()
+	residuals, freeVars := s.assemble(order, byOcc)
+	analysis := solve.AnalyzeDOF(residuals, freeVars)
+	return s.reportFrom(analysis, residualsSatisfied(residuals), residuals, order)
+}
+
+// residualsSatisfied reports whether every active residual is currently within tolerance —
+// i.e. the assembly already sits at a solution.
+func residualsSatisfied(residuals []solve.Residual) bool {
+	const tol = 1e-7
+	for _, r := range residuals {
+		for _, v := range r.Residuals() {
+			if v > tol || v < -tol {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // placements builds a placement for every non-suppressed occurrence, returned both in
@@ -103,15 +127,15 @@ func (s *ConstraintSet) commit(order []*placement) {
 	}
 }
 
-// report turns the solve outcome into the health/DOF report, including the per-occurrence
-// DOF (a grounded occurrence is fixed, hence 0).
-func (s *ConstraintSet) report(result solve.Result, residuals []solve.Residual, order []*placement) SolveReport {
+// reportFrom turns a DOF analysis into the health/DOF report, including the per-occurrence
+// DOF (a grounded occurrence is fixed, hence 0). Shared by Solve and Health.
+func (s *ConstraintSet) reportFrom(analysis solve.DOFAnalysis, converged bool, residuals []solve.Residual, order []*placement) SolveReport {
 	rep := SolveReport{
-		Status:           healthFromStatus(result.Status),
-		Converged:        result.Converged,
+		Status:           healthFromStatus(analysis.Status),
+		Converged:        converged,
 		Constraints:      s.activeCount(),
-		Redundant:        result.Redundant,
-		DegreesOfFreedom: result.DOF,
+		Redundant:        analysis.Redundant,
+		DegreesOfFreedom: analysis.DOF,
 	}
 	for _, p := range order {
 		rep.Occurrences = append(rep.Occurrences, OccurrenceDOF{

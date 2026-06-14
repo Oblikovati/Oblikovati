@@ -107,11 +107,11 @@ func (s *ConstraintSet) add(c Constraint) {
 }
 
 // newBase mints the shared identity/name for a constraint of the given kind over the two
-// anchors.
-func (s *ConstraintSet) newBase(kind types.AssemblyConstraintType, a, b anchor) *constraintBase {
+// geometry inputs.
+func (s *ConstraintSet) newBase(kind types.AssemblyConstraintType, a, b Ref) *constraintBase {
 	s.nextID++
 	s.counts[kind]++
-	return &constraintBase{id: s.nextID, kind: kind, name: constraintName(kind, s.counts[kind]), a: a, b: b}
+	return &constraintBase{id: s.nextID, kind: kind, name: constraintName(kind, s.counts[kind]), a: toAnchor(a), b: toAnchor(b)}
 }
 
 // constraintReferences reports whether c has an anchor on occurrence o.

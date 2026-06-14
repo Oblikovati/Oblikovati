@@ -42,6 +42,12 @@ func place(occs *occurrence.Occurrences, name string, m math.Matrix4) *occurrenc
 	return occs.AddByComponentDefinition(name, fakeComponent{}, m)
 }
 
+// ref bundles an occurrence and a primitive into a constraint geometry input (tests do not
+// exercise the reference-key round-trip, so Entity is left empty).
+func ref(o *occurrence.Occurrence, p Primitive) Ref {
+	return Ref{Occurrence: o, Primitive: p}
+}
+
 // TestMatePositionsComponent is the headline acceptance: mating two planar faces moves the
 // free component so the faces become coincident (PBI-125).
 func TestMatePositionsComponent(t *testing.T) {
@@ -53,7 +59,7 @@ func TestMatePositionsComponent(t *testing.T) {
 	set := NewConstraintSet(occs, nil)
 	topFace := PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))     // base's top face, +Z
 	bottomFace := PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1)) // moving's bottom face, -Z
-	set.AddMate(base, topFace, moving, bottomFace, 0, types.MateSolutionOpposed)
+	set.AddMate(ref(base, topFace), ref(moving, bottomFace), 0, types.MateSolutionOpposed)
 
 	rep := set.Solve()
 	if !rep.Converged {
@@ -73,8 +79,7 @@ func TestMateLeavesPlanarDOF(t *testing.T) {
 	moving := place(occs, "moving:1", math.Translation4(math.V3(0, 0, 4)))
 
 	set := NewConstraintSet(occs, nil)
-	set.AddMate(base, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)),
-		moving, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1)), 0, types.MateSolutionOpposed)
+	set.AddMate(ref(base, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), ref(moving, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1))), 0, types.MateSolutionOpposed)
 	rep := set.Solve()
 
 	if rep.DegreesOfFreedom != 3 {
@@ -98,8 +103,7 @@ func TestOverConstraintFlagged(t *testing.T) {
 
 	set := NewConstraintSet(occs, nil)
 	for i := 0; i < 2; i++ {
-		set.AddMate(base, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)),
-			moving, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1)), 0, types.MateSolutionOpposed)
+		set.AddMate(ref(base, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), ref(moving, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1))), 0, types.MateSolutionOpposed)
 	}
 	rep := set.Solve()
 
@@ -119,7 +123,7 @@ func TestPointMateCoincides(t *testing.T) {
 	moving := place(occs, "moving:1", math.Translation4(math.V3(7, -3, 9)))
 
 	set := NewConstraintSet(occs, nil)
-	set.AddMate(base, PointPrimitive(math.P3(1, 2, 3)), moving, PointPrimitive(math.P3(0, 0, 0)), 0, types.MateSolutionOpposed)
+	set.AddMate(ref(base, PointPrimitive(math.P3(1, 2, 3))), ref(moving, PointPrimitive(math.P3(0, 0, 0))), 0, types.MateSolutionOpposed)
 	set.Solve()
 
 	if got := moving.Transform().TransformPoint(math.P3(0, 0, 0)); !got.IsEqualTo(math.P3(1, 2, 3), 1e-6) {
@@ -136,8 +140,7 @@ func TestListenerNotified(t *testing.T) {
 
 	rec := &recordingListener{}
 	set := NewConstraintSet(occs, rec)
-	m := set.AddMate(a, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)),
-		b, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1)), 0, types.MateSolutionOpposed)
+	m := set.AddMate(ref(a, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), ref(b, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1))), 0, types.MateSolutionOpposed)
 	set.Solve()
 	if !set.Delete(m.ID()) {
 		t.Fatal("Delete returned false for a known constraint")
@@ -156,8 +159,7 @@ func TestSuppressedConstraintIgnored(t *testing.T) {
 	moving := place(occs, "moving:1", math.Translation4(math.V3(0, 0, 4)))
 
 	set := NewConstraintSet(occs, nil)
-	m := set.AddMate(base, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)),
-		moving, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1)), 0, types.MateSolutionOpposed)
+	m := set.AddMate(ref(base, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), ref(moving, PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, -1))), 0, types.MateSolutionOpposed)
 	m.SetSuppressed(true)
 	rep := set.Solve()
 
@@ -175,7 +177,7 @@ func TestLimitsRoundTrip(t *testing.T) {
 	a := place(occs, "a:1", math.Identity4())
 	b := place(occs, "b:1", math.Identity4())
 	set := NewConstraintSet(occs, nil)
-	m := set.AddMate(a, PointPrimitive(math.P3(0, 0, 0)), b, PointPrimitive(math.P3(0, 0, 0)), 0, types.MateSolutionOpposed)
+	m := set.AddMate(ref(a, PointPrimitive(math.P3(0, 0, 0))), ref(b, PointPrimitive(math.P3(0, 0, 0))), 0, types.MateSolutionOpposed)
 
 	lim := NewLimits(-1, true, 2, true, 0, false)
 	if err := set.SetLimits(m.ID(), lim); err != nil {
@@ -203,7 +205,7 @@ func TestForOccurrenceView(t *testing.T) {
 	b := place(occs, "b:1", math.Identity4())
 	c := place(occs, "c:1", math.Identity4())
 	set := NewConstraintSet(occs, nil)
-	set.AddMate(a, PointPrimitive(math.P3(0, 0, 0)), b, PointPrimitive(math.P3(0, 0, 0)), 0, types.MateSolutionOpposed)
+	set.AddMate(ref(a, PointPrimitive(math.P3(0, 0, 0))), ref(b, PointPrimitive(math.P3(0, 0, 0))), 0, types.MateSolutionOpposed)
 
 	if set.ForOccurrence(a).Count() != 1 {
 		t.Errorf("ForOccurrence(a).Count() = %d, want 1", set.ForOccurrence(a).Count())

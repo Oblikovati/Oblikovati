@@ -31,9 +31,9 @@ func TestMotionConstraintsHoldNoStaticDOF(t *testing.T) {
 	set := NewConstraintSet(occs, nil)
 
 	axis := LinePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))
-	rr := set.AddRotateRotate(a, axis, b, axis, 2.5)
-	rtc := set.AddRotateTranslate(a, axis, b, axis, 6.28)
-	tt := set.AddTranslateTranslate(a, axis, b, axis, 0.5)
+	rr := set.AddRotateRotate(ref(a, axis), ref(b, axis), 2.5)
+	rtc := set.AddRotateTranslate(ref(a, axis), ref(b, axis), 6.28)
+	tt := set.AddTranslateTranslate(ref(a, axis), ref(b, axis), 0.5)
 	rep := set.Solve()
 
 	if got := dofOf(rep, b.ID()); got != 6 {
@@ -55,7 +55,7 @@ func TestTransitionalKeepsContact(t *testing.T) {
 	set := NewConstraintSet(occs, nil)
 	plane := PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)) // z = 0 transition plane
 	rider := PointPrimitive(math.P3(0, 0, 0))
-	set.AddTransitional(moving, rider, base, plane)
+	set.AddTransitional(ref(moving, rider), ref(base, plane))
 	rep := set.Solve()
 
 	if z := moving.Transform().Translation().Z; z > 1e-6 || z < -1e-6 {
@@ -77,7 +77,7 @@ func TestCustomConstraintDispatches(t *testing.T) {
 	stub := &stubCustomSolver{}
 	set := NewConstraintSet(occs, nil)
 	set.UseCustomSolver(stub)
-	set.AddCustom(base, PointPrimitive(math.P3(1, 1, 1)), moving, PointPrimitive(math.P3(0, 0, 0)), "weld", []float64{1})
+	set.AddCustom(ref(base, PointPrimitive(math.P3(1, 1, 1))), ref(moving, PointPrimitive(math.P3(0, 0, 0))), "weld", []float64{1})
 	set.Solve()
 
 	if stub.calls == 0 {
@@ -97,7 +97,7 @@ func TestCustomConstraintInertWithoutSolver(t *testing.T) {
 	moving := place(occs, "moving:1", math.Identity4())
 
 	set := NewConstraintSet(occs, nil)
-	c := set.AddCustom(base, PointPrimitive(math.P3(0, 0, 0)), moving, PointPrimitive(math.P3(0, 0, 0)), "weld", nil)
+	c := set.AddCustom(ref(base, PointPrimitive(math.P3(0, 0, 0))), ref(moving, PointPrimitive(math.P3(0, 0, 0))), "weld", nil)
 	rep := set.Solve()
 
 	if got := dofOf(rep, moving.ID()); got != 6 {

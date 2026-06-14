@@ -38,8 +38,8 @@ func TestConstraintEventsAndSolve(t *testing.T) {
 	zUp, _ := math.NewUnitVector3(0, 0, 1)
 	zDown, _ := math.NewUnitVector3(0, 0, -1)
 	m := asm.Constraints().AddMate(
-		base, assembly.PlanePrimitive(math.P3(0, 0, 0), zUp),
-		moving, assembly.PlanePrimitive(math.P3(0, 0, 0), zDown),
+		assembly.Ref{Occurrence: base, Primitive: assembly.PlanePrimitive(math.P3(0, 0, 0), zUp)},
+		assembly.Ref{Occurrence: moving, Primitive: assembly.PlanePrimitive(math.P3(0, 0, 0), zDown)},
 		0, types.MateSolutionOpposed)
 
 	rep := asm.SolveConstraints()

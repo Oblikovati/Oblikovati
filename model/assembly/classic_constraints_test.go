@@ -22,8 +22,7 @@ func TestAngleRotatesToTarget(t *testing.T) {
 	// Start the moving direction perpendicular to the base (a non-singular start; an
 	// exactly-parallel start sits at the cosine's zero-gradient extremum) and drive to 45°.
 	set := NewConstraintSet(occs, nil)
-	set.AddAngle(base, LinePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)),
-		moving, LinePrimitive(math.P3(0, 0, 0), unit(t, 1, 0, 0)), stdmath.Pi/4, types.AngleSolutionUndirected)
+	set.AddAngle(ref(base, LinePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), ref(moving, LinePrimitive(math.P3(0, 0, 0), unit(t, 1, 0, 0))), stdmath.Pi/4, types.AngleSolutionUndirected)
 	if rep := set.Solve(); !rep.Converged {
 		t.Fatalf("solve did not converge: %+v", rep)
 	}
@@ -43,8 +42,7 @@ func TestInsertSeatsAxis(t *testing.T) {
 	moving := place(occs, "moving:1", math.Translation4(math.V3(3, 4, 10)))
 
 	set := NewConstraintSet(occs, nil)
-	set.AddInsert(base, LinePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)),
-		moving, LinePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1)), 0, false)
+	set.AddInsert(ref(base, LinePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), ref(moving, LinePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))), 0, false)
 	rep := set.Solve()
 
 	if p := moving.Transform().Translation(); !math.V3(p.X, p.Y, p.Z).IsEqualTo(math.V3(0, 0, 0), 1e-6) {
@@ -66,7 +64,7 @@ func TestTangentHoldsRadius(t *testing.T) {
 	set := NewConstraintSet(occs, nil)
 	plane := PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))     // z = 0 plane
 	cyl := CylinderPrimitive(math.P3(0, 0, 0), unit(t, 1, 0, 0), 2) // axis +X, radius 2
-	set.AddTangent(base, plane, moving, cyl, false)
+	set.AddTangent(ref(base, plane), ref(moving, cyl), false)
 	if rep := set.Solve(); !rep.Converged {
 		t.Fatalf("solve did not converge: %+v", rep)
 	}
@@ -87,7 +85,7 @@ func TestSymmetryMirrors(t *testing.T) {
 	pointA := PointPrimitive(math.P3(3, 1, 2))
 	pointB := PointPrimitive(math.P3(0, 0, 0))
 	plane := PlanePrimitive(math.P3(0, 0, 0), unit(t, 1, 0, 0)) // x = 0 mirror plane
-	set.AddSymmetry(base, pointA, moving, pointB, base, plane)
+	set.AddSymmetry(ref(base, pointA), ref(moving, pointB), ref(base, plane))
 	set.Solve()
 
 	if got := moving.Transform().TransformPoint(math.P3(0, 0, 0)); !got.IsEqualTo(math.P3(-3, 1, 2), 1e-6) {

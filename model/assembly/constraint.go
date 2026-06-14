@@ -10,14 +10,35 @@ import (
 	"oblikovati.org/solve"
 )
 
-// anchor pairs one of a constraint's two geometry inputs with the occurrence it belongs
-// to. The occurrence is resolved when the constraint is created; the [Primitive] is in
-// that component's definition space and is transformed by the occurrence's placement at
-// solve time.
-type anchor struct {
-	occ  *occurrence.Occurrence
-	prim Primitive
+// Ref is a constraint geometry input as the host supplies it: the occurrence the geometry
+// belongs to, the definition-space [Primitive] the solver consumes, and the opaque Entity
+// reference key the geometry was resolved from (carried for round-trip reporting and
+// future persistence — the engine never interprets it).
+type Ref struct {
+	Occurrence *occurrence.Occurrence
+	Primitive  Primitive
+	Entity     string
 }
+
+// AnchorRef is the reportable identity of one of a constraint's inputs: which occurrence,
+// and the reference key on it.
+type AnchorRef struct {
+	Occurrence uint64
+	Entity     string
+}
+
+// anchor pairs one of a constraint's geometry inputs with the occurrence it belongs to.
+// The occurrence is resolved when the constraint is created; the [Primitive] is in that
+// component's definition space and is transformed by the occurrence's placement at solve
+// time. entity is the opaque reference key, kept for reporting.
+type anchor struct {
+	occ    *occurrence.Occurrence
+	prim   Primitive
+	entity string
+}
+
+// toAnchor builds an internal anchor from a host-supplied [Ref].
+func toAnchor(r Ref) anchor { return anchor{occ: r.Occurrence, prim: r.Primitive, entity: r.Entity} }
 
 // binder resolves an occurrence to its live placement during a solve, so a constraint's
 // residual reads the same mutable variable block the solver is driving.
@@ -44,6 +65,8 @@ type Constraint interface {
 	SetSuppressed(bool)
 	// anchors returns the constraint's geometry inputs (for the per-occurrence view).
 	anchors() []anchor
+	// AnchorRefs returns the two primary inputs' reportable identities (A, B).
+	AnchorRefs() (AnchorRef, AnchorRef)
 	// bind returns the residual sources for this constraint over the bound placements.
 	bind(b binder) []solve.Residual
 	// setHealth records the constraint's evaluated health.
@@ -95,6 +118,11 @@ func (c *constraintBase) Limits() contract.ConstraintLimits {
 
 // anchors returns the two geometry inputs.
 func (c *constraintBase) anchors() []anchor { return []anchor{c.a, c.b} }
+
+// AnchorRefs returns the two primary inputs' reportable identities.
+func (c *constraintBase) AnchorRefs() (AnchorRef, AnchorRef) {
+	return AnchorRef{c.a.occ.ID(), c.a.entity}, AnchorRef{c.b.occ.ID(), c.b.entity}
+}
 
 // setHealth records the evaluated health.
 func (c *constraintBase) setHealth(s health.Status) { c.status = s }
