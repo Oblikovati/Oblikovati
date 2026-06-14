@@ -31,6 +31,7 @@ const (
 	dialogAddIn                         // an add-in's dialogs.showFileDialog request (M05-F08)
 	dialogMeshRef                       // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
 	dialogPlaceComponent                // Assemble ▸ Place: choose the component document to instance (#763)
+	dialogExportBOM                     // Assemble ▸ Bill of Materials ▸ Export CSV (#768)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -129,6 +130,8 @@ func (d *fileDialog) title() string {
 		return "Import (.stl/.obj/.3mf/.step)"
 	case dialogExport:
 		return "Export (.stl/.obj/.3mf/.step)"
+	case dialogExportBOM:
+		return "Export BOM (.csv)"
 	case dialogAddIn:
 		return d.addInTitle()
 	default:
@@ -273,6 +276,8 @@ func (d *fileDialog) allowedExts() []string {
 		return []string{".stl"}
 	case dialogImport, dialogExport:
 		return []string{".stl", ".obj", ".3mf", ".step", ".stp"}
+	case dialogExportBOM:
+		return []string{".csv"}
 	case dialogAddIn:
 		return filterExtensions(d.request.Filter)
 	default:

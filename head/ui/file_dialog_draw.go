@@ -212,7 +212,7 @@ func fileConfirmLabel() string {
 		return "Save"
 	case dialogImport:
 		return "Import"
-	case dialogExport:
+	case dialogExport, dialogExportBOM:
 		return "Export"
 	default:
 		return "Open"
@@ -252,6 +252,8 @@ func applyFileAction(s *app.Session, act fileAction) {
 		importBodyFromFile(s, act.Path, name)
 	case dialogExport:
 		exportToFile(s, act, name)
+	case dialogExportBOM:
+		exportBOMToFile(s, act.Path, name)
 	}
 }
 
@@ -292,6 +294,16 @@ func exportToFile(s *app.Session, act fileAction, name string) {
 		return
 	}
 	fileNotice(s, "Exported %s", name)
+}
+
+// exportBOMToFile writes the active assembly's current BOM view to a CSV file (Assemble ▸ Bill of
+// Materials ▸ Export CSV, #768).
+func exportBOMToFile(s *app.Session, path, name string) {
+	if err := s.ExportBOMCSV(path); err != nil {
+		fileNotice(s, "Export BOM failed: %v", err)
+		return
+	}
+	fileNotice(s, "Exported BOM %s", name)
 }
 
 // openDocumentFromFile opens the chosen document and reports the outcome (File ▸ Open).

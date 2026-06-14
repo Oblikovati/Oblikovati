@@ -134,6 +134,7 @@ func drawSurfaceFeatureDialogs(s *app.Session) {
 }
 
 func drawChromeWindows(s *app.Session) {
+	drawBOMWindow(s) // Assemble ▸ Bill of Materials (#768)
 	drawParametersWindow(s)
 	drawPreferencesWindow(s)
 	drawMaterialsWindow(s)
