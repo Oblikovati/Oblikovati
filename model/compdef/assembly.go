@@ -214,6 +214,14 @@ func (a *AssemblyComponentDefinition) AssemblyHealth() assembly.SolveReport {
 	return assembly.AssemblyHealth(a.constraints, a.joints)
 }
 
+// DriveJoint sweeps the joint with the given id through settings — re-solving the assembly at
+// each step with the driven variable pinned — and returns the resulting motion frames
+// (M12-F03, Oblikovati/Oblikovati#366). It is non-destructive: the assembly is left in its
+// pre-drive pose. Errors when the joint is unknown or its kind/variable is not drivable.
+func (a *AssemblyComponentDefinition) DriveJoint(jointID uint64, settings assembly.DriveSettings) (assembly.DriveResult, error) {
+	return assembly.DriveJoint(a.occurrences, a.constraints, a.joints, jointID, settings)
+}
+
 // AddFeature appends an assembly machining feature wrapping f, defaulting its
 // participation to every component currently present (the reference API's behavior:
 // components added later do not participate unless added to the feature). It returns
