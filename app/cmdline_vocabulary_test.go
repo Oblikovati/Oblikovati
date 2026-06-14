@@ -46,14 +46,34 @@ func TestVocabularyWordsResolveThroughBindings(t *testing.T) {
 	}
 	b := s.Bindings()
 	cases := map[string]string{
-		"LINE":    "Sketch.Line",
-		"E":       "Create.Extrude",
-		"EXTRUDE": "Create.Extrude",
-		"UNDO":    ActionUndo,
+		"LINE":       "Sketch.Line",
+		"E":          "Create.Extrude",
+		"EXTRUDE":    "Create.Extrude",
+		"FILLET":     "Sketch.Fillet", // 2D
+		"FILLETEDGE": "Modify.Fillet", // 3D — distinct word
+		"SURFPATCH":  "Surface.Patch",
+		"UNDO":       ActionUndo,
 	}
 	for word, want := range cases {
 		if got, ok := b.ResolveAlias(word); !ok || got != want {
 			t.Errorf("ResolveAlias(%q) = %q,%v, want %q", word, got, ok, want)
+		}
+	}
+}
+
+// TestEveryVocabularyWordResolves is the completeness guard: every word in the built-in
+// AutoCAD vocabulary must resolve through the binding engine to a real, registered action —
+// so no table entry points at a missing or misspelled command id (CLAUDE.md: never invent
+// ids; F07 expanded the table broadly).
+func TestEveryVocabularyWordResolves(t *testing.T) {
+	s := NewSession()
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("RegisterStandardCommands: %v", err)
+	}
+	b := s.Bindings()
+	for _, word := range cmdline.DefaultVocabulary().Words() {
+		if _, ok := b.ResolveAlias(word); !ok {
+			t.Errorf("vocabulary word %q does not resolve to a registered action", word)
 		}
 	}
 }
