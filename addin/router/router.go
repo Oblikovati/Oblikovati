@@ -58,6 +58,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerAssemblyFeatureHandlers()
 	r.registerAssemblyOccurrenceHandlers()
 	r.registerAssemblyReplicationHandlers()
+	r.registerAssemblyBOMHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r
