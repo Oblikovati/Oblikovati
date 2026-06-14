@@ -87,6 +87,37 @@ func (a *AssemblyComponentDefinition) ApplyRecipe(model []byte) error {
 	return nil
 }
 
+// RestoreRecipe replaces the assembly's entire occurrence structure with the snapshot — the
+// undo/redo restore path (command.RecipeStore, #763). Unlike a part's RestoreRecipe it cannot
+// finish in place: each occurrence must be re-bound to its component document, which needs the
+// workspace to open the component (the same reason ApplyRecipe defers binding). So it resets
+// the occurrences and re-stashes the snapshot as pending; the owner-aware caller pairs every
+// restore with [ResolveReferences] to re-bind (app/undo.go's rebindReferences does this for
+// every restore). Resetting in place preserves the definition pointer, so the document Content
+// and any held reference to the assembly stay valid, and applying a snapshot to an
+// already-populated assembly yields exactly that snapshot rather than a union.
+//
+// Example:
+//
+//	before, _ := asm.MarshalRecipe()
+//	asm.PlaceComponentFromFile(owner, widget, "widget:1", math.Identity4())
+//	asm.RestoreRecipe(before)            // occurrences back to pending
+//	asm.ResolveReferences(owner)         // re-bound: the placement is gone
+func (a *AssemblyComponentDefinition) RestoreRecipe(model []byte) error {
+	a.resetOccurrences()
+	return a.ApplyRecipe(model)
+}
+
+// resetOccurrences clears the occurrence structure in place, re-wiring the fresh collection to
+// the assembly's event source (the listener NewAssemblyComponentDefinition installs) so
+// placements after a restore keep raising occurrence-lifecycle events. The definition pointer
+// is preserved so external references to the assembly stay valid.
+func (a *AssemblyComponentDefinition) resetOccurrences() {
+	a.occurrences = occurrence.NewOccurrences()
+	a.occurrences.SetListener(a.events)
+	a.pending = nil
+}
+
 // ResolveReferences binds each pending occurrence to its component document, opening the
 // component through owner's reference graph (doc.ReferenceResolver). A component that
 // cannot be opened becomes a placeholder occurrence whose reference is flagged broken —

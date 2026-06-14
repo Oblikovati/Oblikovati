@@ -12,8 +12,20 @@ import (
 	"oblikovati.org/model/doc"
 )
 
-// The part definition is the concrete RecipeStore a snapshot event navigates.
-var _ command.RecipeStore = (*compdef.PartComponentDefinition)(nil)
+// recipeStore is the document content the app's undo stream records: content whose entire
+// recipe can be captured (MarshalRecipe) and restored (command.RecipeStore.RestoreRecipe). Part
+// and assembly definitions both satisfy it, so an assembly edit — placing a component (#763) —
+// is one undo step exactly like a part edit, recorded through the same chokepoint.
+type recipeStore interface {
+	command.RecipeStore
+	MarshalRecipe() ([]byte, error)
+}
+
+// Part and assembly definitions are the concrete recipe stores a snapshot event navigates.
+var (
+	_ recipeStore = (*compdef.PartComponentDefinition)(nil)
+	_ recipeStore = (*compdef.AssemblyComponentDefinition)(nil)
+)
 
 // docHistory is one document's transaction-event stream: the [command.History] (the
 // cursor over the events) plus snapshot — the recipe the model holds at the current
@@ -38,8 +50,8 @@ type docHistory struct {
 // resync sets snapshot to the recipe the document now holds — called after undo/redo
 // so the next new edit captures the correct before-snapshot for its event.
 func (dh *docHistory) resync(d *doc.Document) {
-	if part, ok := d.Content().(*compdef.PartComponentDefinition); ok {
-		dh.snapshot, _ = part.MarshalRecipe()
+	if c, ok := d.Content().(recipeStore); ok {
+		dh.snapshot, _ = c.MarshalRecipe()
 	}
 }
 
@@ -70,7 +82,7 @@ func (s *Session) documentHistory(d *doc.Document) *docHistory {
 // of the geometry recompute the caller already ran, so recordEdit does not recompute.
 // An edit that changed nothing (e.g. exiting a sketch untouched) leaves before==after
 // and records no event, so the stream holds only real changes.
-func (s *Session) recordEdit(part *compdef.PartComponentDefinition, label string) {
+func (s *Session) recordEdit(content recipeStore, label string) {
 	d := s.ActiveDocument()
 	if d == nil {
 		return
@@ -81,7 +93,7 @@ func (s *Session) recordEdit(part *compdef.PartComponentDefinition, label string
 		// undo step at EndTransaction. snapshot is intentionally left untouched.
 		return
 	}
-	s.commitRecipeDelta(d, dh, part, label)
+	s.commitRecipeDelta(d, dh, content, label)
 }
 
 // commitRecipeDelta records the part's recipe delta as one undo event and
@@ -89,16 +101,16 @@ func (s *Session) recordEdit(part *compdef.PartComponentDefinition, label string
 // (M02-F06). A no-op delta (before == after) records nothing. A Before
 // TransactionCommitted handler may veto, which reverts the part to the
 // pre-edit snapshot and reports the commit as an abort (M04-F05).
-func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, part *compdef.PartComponentDefinition, label string) {
-	after, err := part.MarshalRecipe()
+func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, content recipeStore, label string) {
+	after, err := content.MarshalRecipe()
 	if err != nil || bytes.Equal(after, dh.snapshot) {
 		return
 	}
 	if out := event.Emit(s.bus, event.Before, TransactionCommitted{Document: d.ID(), Label: label}); out.Vetoed() {
-		s.revertVetoedCommit(d, dh, part, label, out.Reason)
+		s.revertVetoedCommit(d, dh, content, label, out.Reason)
 		return
 	}
-	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, part))
+	dh.hist.Record(command.NewRecipeEvent(label, dh.snapshot, after, content))
 	dh.snapshot = after
 	s.resyncDerivedTables(d, map[string]bool{})
 	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: label})
@@ -106,14 +118,29 @@ func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, part *compd
 
 // revertVetoedCommit rolls the part back to the stream's snapshot after a Before
 // handler vetoed the commit, surfacing the veto reason in the status bar.
-func (s *Session) revertVetoedCommit(d *doc.Document, dh *docHistory, part *compdef.PartComponentDefinition, label, reason string) {
-	if err := part.RestoreRecipe(dh.snapshot); err != nil {
+func (s *Session) revertVetoedCommit(d *doc.Document, dh *docHistory, content recipeStore, label, reason string) {
+	if err := content.RestoreRecipe(dh.snapshot); err != nil {
 		s.notice = err.Error()
 		return
 	}
+	s.rebindReferences(d)
 	s.notice = reason
 	s.resyncDerivedTables(d, map[string]bool{})
 	event.Emit(s.bus, event.After, TransactionAborted{Document: d.ID(), Label: label})
+}
+
+// rebindReferences re-binds cross-document references after a recipe restore (#763). An
+// assembly's RestoreRecipe leaves its occurrences pending — binding each to its component
+// document needs the workspace to open the component, which only an owner-aware caller has — so
+// every app-layer restore (undo, redo, abort, veto-revert) pairs with this to re-bind. It also
+// re-binds a derived part's source after a part restore. Content that restores fully in place
+// implements no resolver and is a silent no-op.
+func (s *Session) rebindReferences(d *doc.Document) {
+	if r, ok := d.Content().(doc.ReferenceResolver); ok {
+		if err := r.ResolveReferences(d); err != nil {
+			s.notice = err.Error()
+		}
+	}
 }
 
 // RecordAddInEdit finalizes a router-applied mutation as one undo step: the
@@ -175,11 +202,11 @@ func (s *Session) EndTransaction() error {
 	}
 	label := dh.groupLabel
 	dh.groupLabel = ""
-	part, ok := d.Content().(*compdef.PartComponentDefinition)
+	content, ok := d.Content().(recipeStore)
 	if !ok {
 		return nil
 	}
-	s.commitRecipeDelta(d, dh, part, label)
+	s.commitRecipeDelta(d, dh, content, label)
 	return nil
 }
 
@@ -199,10 +226,11 @@ func (s *Session) AbortTransaction() error {
 	}
 	label := dh.groupLabel
 	dh.groupDepth, dh.groupLabel = 0, ""
-	if part, ok := d.Content().(*compdef.PartComponentDefinition); ok {
-		if err := part.RestoreRecipe(dh.snapshot); err != nil {
+	if content, ok := d.Content().(recipeStore); ok {
+		if err := content.RestoreRecipe(dh.snapshot); err != nil {
 			return err
 		}
+		s.rebindReferences(d)
 		s.resyncDerivedTables(d, map[string]bool{})
 	}
 	event.Emit(s.bus, event.After, TransactionAborted{Document: d.ID(), Label: label})
@@ -264,6 +292,7 @@ func cursorMove[E event.Event](s *Session, d *doc.Document, dh *docHistory, ev E
 		s.notice = err.Error()
 		return err
 	}
+	s.rebindReferences(d) // an assembly restore leaves occurrences pending; re-bind before resync (#763)
 	dh.resync(d)
 	s.notice = ""
 	return nil
