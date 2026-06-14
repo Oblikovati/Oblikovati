@@ -29,8 +29,32 @@ func BrowserMenu(n BrowserNode) []BrowserMenuItem {
 		return workAxisMenu(n.Select)
 	case "body":
 		return bodyMenu(n.Select)
+	case "occurrence":
+		return occurrenceMenu(n.Select)
 	default:
 		return nil
+	}
+}
+
+// occurrenceMenu offers a Ground/Unground toggle, a Suppress/Unsuppress toggle, and Delete for a
+// placed component occurrence (#764). Each label reflects the occurrence's current state.
+func occurrenceMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(OccurrenceHandle)
+	if !ok {
+		return nil
+	}
+	groundLabel := "Ground"
+	if h.Occurrence.Grounded() {
+		groundLabel = "Unground"
+	}
+	suppressLabel := "Suppress"
+	if h.Occurrence.Suppressed() {
+		suppressLabel = "Unsuppress"
+	}
+	return []BrowserMenuItem{
+		{Label: groundLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceGrounded(h.Occurrence) }},
+		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceSuppressed(h.Occurrence) }},
+		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteOccurrence(h.Occurrence) }},
 	}
 }
 
