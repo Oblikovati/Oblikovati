@@ -142,6 +142,7 @@ func drawChromeWindows(s *app.Session) {
 	drawScriptConsole(s)
 	drawKeymapEditor(s)                 // Tools ▸ Customize Keyboard (M05-F17)
 	drawCommandInput(s)                 // command-alias input box (M05-F17)
+	drawUpdateWindow(s)                 // Help ▸ Check for Updates notification
 	drawAddInPanels(s)                  // add-in dockable windows (M05-F03)
 	drawMessagingSurfaces(s)            // toasts, prompt modal, message center (M05-F09)
 	drawWebViews(s)                     // web dialogs/views (M05-F08)
