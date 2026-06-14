@@ -23,7 +23,40 @@ func assemblyTabCommands() []*CommandDefinition {
 		placeComponentCommand(),
 	}
 	cmds = append(cmds, relationshipCommands()...)
+	cmds = append(cmds, jointCommands()...)
 	return append(cmds, assemblyModelingCommands()...)
+}
+
+// jointCommands returns the Joints-panel commands — one per M12-F02 joint kind. Each starts
+// an [AssemblyJointTool] that picks the two joint-origin faces and creates the joint. Compact
+// icon buttons, like the Relationships panel.
+func jointCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		jointCommand("Assembly.JointRigid", "Rigid", "joint-rigid", "Rigid joint — fix two components together (0 DOF).",
+			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddRigid(r[0], r[1]) }),
+		jointCommand("Assembly.JointRotational", "Rotational", "joint-rotational", "Rotational joint — one rotation about the joint axis (a hinge).",
+			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddRotational(r[0], r[1]) }),
+		jointCommand("Assembly.JointSlider", "Slider", "joint-slider", "Slider joint — one translation along the joint axis.",
+			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddSlider(r[0], r[1]) }),
+		jointCommand("Assembly.JointCylindrical", "Cylindrical", "joint-cylindrical", "Cylindrical joint — translation along and rotation about the axis (2 DOF).",
+			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddCylindrical(r[0], r[1]) }),
+		jointCommand("Assembly.JointPlanar", "Planar", "joint-planar", "Planar joint — two in-plane translations and a rotation (3 DOF).",
+			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddPlanar(r[0], r[1]) }),
+		jointCommand("Assembly.JointBall", "Ball", "joint-ball", "Ball joint — three rotations about a common point (3 DOF).",
+			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddBall(r[0], r[1]) }),
+	}
+}
+
+// jointCommand builds a Joints-panel command that starts a joint tool of one kind.
+func jointCommand(id, name, icon, tooltip string, build jointBuild) *CommandDefinition {
+	return NewCommand(id, name, "Joints", func(s *Session) error {
+		if _, err := activeAssembly(s); err != nil {
+			return err
+		}
+		s.StartTool(NewAssemblyJointTool(name, build))
+		return nil
+	}).WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
+		WithIcon(icon).WithButtonStyle(CompactIconButton).WithTooltip(tooltip)
 }
 
 // assemblyModelingCommands returns the sketch/modify/pattern/BOM commands of the Assemble tab.

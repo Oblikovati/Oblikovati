@@ -31,6 +31,25 @@ type Primitive struct {
 	point  math.Point3      // a point on the entity (plane origin / axis point / vertex)
 	dir    math.UnitVector3 // plane normal or axis direction; ignored for a point
 	radius math.Scalar      // cylinder radius for tangent; 0 otherwise
+	// secondary is a part-tied in-frame reference axis (a planar face's U axis, a cylinder's
+	// reference) used by joints to LOCK ROLL (rigid/slider) — a roll lock needs an axis that
+	// rotates with the part, which the derived tangent frame does not provide. hasSecondary
+	// is false for inputs that carry no such axis (a bare edge / vertex).
+	secondary    math.UnitVector3
+	hasSecondary bool
+}
+
+// FramePrimitive builds a full joint-origin frame: a point, a primary axis, and a part-tied
+// secondary axis (so rigid/slider joints can lock the roll about the primary). It is the
+// joint analogue of PlanePrimitive/LinePrimitive, which carry only point + primary.
+func FramePrimitive(point math.Point3, primary, secondary math.UnitVector3) Primitive {
+	return Primitive{kind: planeKind, point: point, dir: primary, secondary: secondary, hasSecondary: true}
+}
+
+// withSecondary returns the primitive tagged with a part-tied secondary axis.
+func (p Primitive) withSecondary(s math.UnitVector3) Primitive {
+	p.secondary, p.hasSecondary = s, true
+	return p
 }
 
 // unitZ is the placeholder direction stored on a point primitive (its direction is never
@@ -71,7 +90,32 @@ func (p Primitive) TransformedBy(m math.Matrix4) Primitive {
 	if d, err := math.UnitVector3FromVector(m.TransformVector(p.dir.AsVector())); err == nil {
 		out.dir = d
 	}
+	if p.hasSecondary {
+		if s, err := math.UnitVector3FromVector(m.TransformVector(p.secondary.AsVector())); err == nil {
+			out.secondary = s
+		}
+	}
 	return out
+}
+
+// worldSecondary maps the primitive's part-tied secondary axis into assembly space (rotation
+// only). Callers gate on hasSecondary before using it.
+func worldSecondary(m math.Matrix4, prim Primitive) math.Vector3 {
+	return m.TransformVector(prim.secondary.AsVector())
+}
+
+// rollLockResidual locks the relative roll about the primary axis by aligning the two
+// part-tied secondary axes — the single residual that turns a cylindrical pairing (2 DOF)
+// into a slider (1 DOF) and is a rigid joint's last lock. It is the signed roll between the
+// secondaries (their cross product along the axis), zero when roll-aligned. Returns ok=false
+// when either input lacks a secondary axis (the roll is then left free, reported honestly in
+// the DOF).
+func rollLockResidual(a, b Primitive, ma, mb math.Matrix4) (float64, bool) {
+	if !a.hasSecondary || !b.hasSecondary {
+		return 0, false
+	}
+	axis := worldDir(mb, b)
+	return worldSecondary(ma, a).Cross(worldSecondary(mb, b)).Dot(axis), true
 }
 
 // worldPoint maps the primitive's reference point into assembly space through m.

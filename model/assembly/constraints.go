@@ -111,7 +111,10 @@ func (s *ConstraintSet) add(c Constraint) {
 func (s *ConstraintSet) newBase(kind types.AssemblyConstraintType, a, b Ref) *constraintBase {
 	s.nextID++
 	s.counts[kind]++
-	return &constraintBase{id: s.nextID, kind: kind, name: constraintName(kind, s.counts[kind]), a: toAnchor(a), b: toAnchor(b)}
+	return &constraintBase{
+		relationshipBase: relationshipBase{id: s.nextID, name: constraintName(kind, s.counts[kind]), a: toAnchor(a), b: toAnchor(b)},
+		kind:             kind,
+	}
 }
 
 // constraintReferences reports whether c has an anchor on occurrence o.

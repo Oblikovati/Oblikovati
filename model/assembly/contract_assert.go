@@ -21,4 +21,16 @@ var (
 	_ contract.TranslateTranslateConstraint  = (*TranslateTranslateConstraint)(nil)
 	_ contract.TransitionalConstraint        = (*TransitionalConstraint)(nil)
 	_ contract.CustomConstraint              = (*CustomConstraint)(nil)
+
+	// Joints (M12-F02).
+	_ contract.AssemblyJoint            = (*assemblyJoint)(nil)
+	_ contract.AssemblyJoints           = (*JointSet)(nil)
+	_ contract.AssemblyJointsEnumerator = (*OccurrenceJoints)(nil)
+	_ contract.JointLimits              = (*jointLimits)(nil)
+	_ contract.AssemblyJointProxy       = jointProxy{}
+	_ contract.AssemblyJointDefinition  = jointDefinition{}
+	_ contract.DSJoint                  = (*dsJoint)(nil)
+	_ contract.DSJoints                 = (*DSJointSet)(nil)
+	_ contract.DSJointDefinition        = dsJointDefinition{}
+	_ contract.DSDegreesOfFreedom       = (*dsDOF)(nil)
 )

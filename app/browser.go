@@ -81,7 +81,30 @@ func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefini
 	}
 	addOccurrenceNodes(root, asm.Occurrences())
 	addAssemblyConstraintNodes(root, asm.Constraints())
+	addAssemblyJointNodes(root, asm.Joints())
 	addAssemblyFeatureNodes(root, asm.Features())
+}
+
+// addAssemblyJointNodes appends a Joints folder listing the assembly's joints (rigid/
+// rotational/…) in creation order, each a selectable row carrying an AssemblyJointHandle
+// (M12-F02). The folder is omitted when the assembly has no joints yet.
+func addAssemblyJointNodes(root *BrowserNode, set *assembly.JointSet) {
+	if set.Count() == 0 {
+		return
+	}
+	folder := root.child("Joints", "joints")
+	for _, j := range set.All() {
+		folder.selectableChild(jointBrowserLabel(j), "assemblyJoint", AssemblyJointHandle{Joint: j})
+	}
+}
+
+// jointBrowserLabel is the joint row's label (its name, e.g. "Rotational:1"), suffixed when
+// it is suppressed.
+func jointBrowserLabel(j assembly.Joint) string {
+	if j.Suppressed() {
+		return j.Name() + " (suppressed)"
+	}
+	return j.Name()
 }
 
 // addAssemblyConstraintNodes appends a Constraints folder listing the assembly's

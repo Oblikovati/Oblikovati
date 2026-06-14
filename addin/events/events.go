@@ -172,7 +172,8 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.ClientOperationEvent | wire.TransactionEventPayload |
 	wire.FileResolutionEventPayload | wire.FileDirtyEventPayload |
 	wire.FileDialogHookPayload | wire.OccurrenceEventPayload |
-	wire.AssemblyFeaturesChangedEvent | wire.ConstraintEventPayload](sink Sink, ev E) event.Outcome {
+	wire.AssemblyFeaturesChangedEvent | wire.ConstraintEventPayload |
+	wire.JointEventPayload](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}
