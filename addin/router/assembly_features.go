@@ -34,6 +34,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesAddHole] = assemblyFeaturesAddHole
 	r.handlers[wire.MethodAssemblyFeaturesAddExtrude] = assemblyFeaturesAddExtrude
 	r.handlers[wire.MethodAssemblyFeaturesAddRevolve] = assemblyFeaturesAddRevolve
+	r.handlers[wire.MethodAssemblyFeaturesEdit] = assemblyFeaturesEdit
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
 	r.handlers[wire.MethodAssemblyFeaturesSetSuppressed] = assemblyFeaturesSetSuppressed
@@ -67,7 +68,7 @@ func assemblyFeaturesAdd(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	af := asm.AddFeature(cut)
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // assemblyFeaturesAddProxyCut adds a feature whose tool is the proxied geometry of the
@@ -94,7 +95,7 @@ func assemblyFeaturesAddProxyCut(s *app.Session, raw json.RawMessage) (json.RawM
 	af.RemoveParticipant(source)
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // assemblyFeaturesAddExtrude extrudes a closed sketch profile (authored on an assembly
@@ -123,7 +124,7 @@ func assemblyFeaturesAddExtrude(s *app.Session, raw json.RawMessage) (json.RawMe
 	af := asm.AddFeature(feature.NewAssemblyExtrudeFeature(sk, in.ProfileIndex, op, func() float64 { return distance }))
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // assemblyFeaturesAddRevolve revolves a closed sketch profile (authored on an assembly
@@ -154,7 +155,7 @@ func assemblyFeaturesAddRevolve(s *app.Session, raw json.RawMessage) (json.RawMe
 	af := asm.AddFeature(feature.NewAssemblyRevolveFeature(sk, in.ProfileIndex, axis, op, func() float64 { return angle }))
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // revolveAxisFromArgs builds the assembly-space revolve axis from the request's origin and
@@ -191,7 +192,7 @@ func assemblyFeaturesAddHole(s *app.Session, raw json.RawMessage) (json.RawMessa
 	af := asm.AddFeature(hole)
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // assemblyFeaturesSetParticipants replaces a feature's participation set.
@@ -214,7 +215,7 @@ func assemblyFeaturesSetParticipants(s *app.Session, raw json.RawMessage) (json.
 	}
 	af.SetParticipants(occs)
 	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // assemblyFeaturesSetParticipantPaths restricts a feature to specific nested occurrence
@@ -238,7 +239,7 @@ func assemblyFeaturesSetParticipantPaths(s *app.Session, raw json.RawMessage) (j
 	}
 	af.SetParticipantPaths(paths)
 	asm.RecomputeFeatures()
-	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(af)})
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // resolveParticipantPaths validates each instance-name path resolves to an occurrence
@@ -257,6 +258,35 @@ func resolveParticipantPaths(asm *compdef.AssemblyComponentDefinition, paths [][
 		out = append(out, path)
 	}
 	return out, nil
+}
+
+// assemblyFeaturesEdit sets editable scalars of an assembly feature in place — the
+// assembly-context Edit Feature (#725), mirroring the part features.edit. The batch is
+// validated before any value is applied, then the feature program recomputes once.
+func assemblyFeaturesEdit(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.EditAssemblyFeatureArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	af, err := assemblyFeatureByID(asm, in.ID, wire.MethodAssemblyFeaturesEdit)
+	if err != nil {
+		return nil, err
+	}
+	ed, ok := af.Definition().(feature.Editable)
+	if !ok {
+		return nil, fmt.Errorf("%s: feature %d (%s) has no editable scalars", wire.MethodAssemblyFeaturesEdit, af.ID(), af.Kind())
+	}
+	apply, err := planScalarEdits(asm.Units(), ed, in.Scalars, wire.MethodAssemblyFeaturesEdit)
+	if err != nil {
+		return nil, err
+	}
+	apply()
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
 // assemblyFeaturesSetSuppressed suppresses or unsuppresses the named features in batch.
@@ -362,7 +392,7 @@ func assemblyFeaturesResult(asm *compdef.AssemblyComponentDefinition) wire.Assem
 	feats := asm.Features()
 	out := make([]wire.AssemblyFeatureInfo, feats.Count())
 	for i := 0; i < feats.Count(); i++ {
-		out[i] = assemblyFeatureInfo(feats.Item(i))
+		out[i] = assemblyFeatureInfo(asm, feats.Item(i))
 	}
 	return wire.AssemblyFeaturesResult{
 		Features:      out,
@@ -372,12 +402,13 @@ func assemblyFeaturesResult(asm *compdef.AssemblyComponentDefinition) wire.Assem
 }
 
 // assemblyFeatureInfo renders one assembly feature as its wire DTO.
-func assemblyFeatureInfo(af *compdef.AssemblyFeature) wire.AssemblyFeatureInfo {
+func assemblyFeatureInfo(asm *compdef.AssemblyComponentDefinition, af *compdef.AssemblyFeature) wire.AssemblyFeatureInfo {
 	info := wire.AssemblyFeatureInfo{
 		ID:         af.ID(),
 		Kind:       af.Kind(),
 		Name:       af.Name(),
 		Suppressed: af.Suppressed(),
+		Scalars:    editableScalars(asm.Units(), af.Definition()),
 	}
 	if h := af.Health(); !h.OK() {
 		info.Health = h.Reason

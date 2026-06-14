@@ -5,6 +5,7 @@ package router
 import (
 	"fmt"
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/addin/opregistry"
@@ -98,6 +99,53 @@ func TestAssemblyExtrudeOverWire(t *testing.T) {
 	}
 	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.7) > 1e-6 {
 		t.Errorf("extrude-cut volume = %g, want 0.7 (unit box minus a 0.5×1×0.6 pocket)", got)
+	}
+}
+
+// TestAssemblyFeatureEditOverWire authors a profiled extrude-cut, then edits its depth in
+// place over the wire — the assembly-context Edit Feature (#725). The deeper pocket
+// removes more material (gated against the analytic value), while the box cut exposes no
+// editable scalars (its tool is fixed at construction) so editing it is rejected.
+func TestAssemblyFeatureEditOverWire(t *testing.T) {
+	r, s, asm, occs := assemblySessionWithBoxes(t, 0)
+
+	var sk wire.CreateSketchResult
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &sk)
+	var rect wire.SketchRectangleResult
+	call(t, r, s, "sketch.rectangle", fmt.Sprintf(`{"sketchIndex":%d,"width":"0.5 cm","height":"1 cm"}`, sk.SketchIndex), &rect)
+
+	var added wire.AssemblyFeatureResult
+	addArgs := fmt.Sprintf(`{"sketchIndex":%d,"profileIndex":0,"distance":0.6,"operation":"difference"}`, sk.SketchIndex)
+	call(t, r, s, "assemblyFeatures.addExtrude", addArgs, &added)
+	if len(added.Feature.Scalars) != 1 || added.Feature.Scalars[0].Label != "Distance" {
+		t.Fatalf("addExtrude scalars = %+v, want one editable Distance scalar", added.Feature.Scalars)
+	}
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.7) > 1e-6 {
+		t.Fatalf("pre-edit volume = %g, want 0.7 (0.5×1×0.6 pocket)", got)
+	}
+
+	// Deepen the pocket from 0.6 to 0.8: the participant loses more material.
+	var edited wire.AssemblyFeatureResult
+	editArgs := fmt.Sprintf(`{"id":%d,"scalars":[{"index":0,"value":"0.8 cm"}]}`, added.Feature.ID)
+	call(t, r, s, "assemblyFeatures.edit", editArgs, &edited)
+	if edited.Feature.ID != added.Feature.ID {
+		t.Fatalf("edit returned feature %d, want %d", edited.Feature.ID, added.Feature.ID)
+	}
+	if got := featureResultVolume(asm, occs[0]); stdmath.Abs(got-0.6) > 1e-6 {
+		t.Errorf("post-edit volume = %g, want 0.6 (deeper 0.5×1×0.8 pocket)", got)
+	}
+
+	// The box cut bakes its tool at construction, so it exposes nothing editable.
+	var cut wire.AssemblyFeatureResult
+	call(t, r, s, "assemblyFeatures.add", topHalfCut(), &cut)
+	if len(cut.Feature.Scalars) != 0 {
+		t.Errorf("box cut scalars = %+v, want none", cut.Feature.Scalars)
+	}
+	if _, err := r.Handle(s, "assemblyFeatures.edit", []byte(fmt.Sprintf(`{"id":%d,"scalars":[{"index":0,"value":"1 cm"}]}`, cut.Feature.ID))); err == nil {
+		t.Error("editing a box cut (no editable scalars) should fail")
+	}
+	if _, err := r.Handle(s, "assemblyFeatures.edit", []byte(fmt.Sprintf(`{"id":%d,"scalars":[{"index":5,"value":"1 cm"}]}`, added.Feature.ID))); err == nil || !strings.Contains(err.Error(), "out of range") {
+		t.Errorf("out-of-range scalar index err = %v, want 'out of range'", err)
 	}
 }
 
