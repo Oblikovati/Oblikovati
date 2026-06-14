@@ -102,6 +102,7 @@ type Session struct {
 	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
 	scriptConsoleOpen    bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
 	capturePath          string                         // a requested viewport PNG capture path; the head writes it after render
+	captureWindowPath    string                         // a requested whole-window PNG capture path; the head writes it after the frame composites
 	normalDebug          bool                           // viewport normal-debug render (front green / back red); head reads each frame
 	meshColors           bool                           // viewport mesh-debug-colors render (each face/triangle a distinct color)
 	meshColorsPerTri     bool                           // when meshColors: color per TRIANGLE (else per B-rep face)

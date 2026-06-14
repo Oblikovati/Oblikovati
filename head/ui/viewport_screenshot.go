@@ -41,3 +41,19 @@ func serviceScreenshot(win *native.Window, s *app.Session) {
 	}
 	fileNotice(s, "Saved viewport image to %s", screenshotPath)
 }
+
+// ServiceWindowCapture writes a pending whole-window capture (the viewport.captureWindow wire method
+// / MCP bridge) to its PNG. Unlike serviceScreenshot it must run AFTER EndFrame, when the swapchain
+// holds the fully composited frame (chrome + open dialogs + viewport), so the readback reflects the
+// whole window. Atomic temp+rename so a remote reader polling the path never sees a half-written file.
+func ServiceWindowCapture(win *native.Window, s *app.Session) {
+	path, ok := s.TakeWindowCapture()
+	if !ok {
+		return
+	}
+	if tmp := path + ".tmp"; win.SaveWindowPNG(tmp) != nil {
+		fileNotice(s, "viewport.captureWindow failed to render")
+	} else if err := os.Rename(tmp, path); err != nil {
+		fileNotice(s, "viewport.captureWindow failed: %v", err)
+	}
+}

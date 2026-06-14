@@ -19,6 +19,22 @@ func (s *Session) TakeViewportCapture() (path string, ok bool) {
 	return path, true
 }
 
+// RequestWindowCapture flags that the WHOLE application window (chrome + dialogs + viewport, the full
+// swapchain image) should be written to a PNG at path — the headless way to SEE the UI state, not
+// just the 3D render. Like [RequestViewportCapture] but the head reads back the swapchain after the
+// frame composites.
+func (s *Session) RequestWindowCapture(path string) { s.captureWindowPath = path }
+
+// TakeWindowCapture returns the pending whole-window capture path and clears it (ok=false when none
+// pending).
+func (s *Session) TakeWindowCapture() (path string, ok bool) {
+	if s.captureWindowPath == "" {
+		return "", false
+	}
+	path, s.captureWindowPath = s.captureWindowPath, ""
+	return path, true
+}
+
 // SetNormalDebug enables/disables the viewport's normal-debug render (front-facing GREEN, back-facing
 // RED) — the headless way to inspect winding/orientation. The head applies it on the next frame.
 func (s *Session) SetNormalDebug(on bool) { s.normalDebug = on }

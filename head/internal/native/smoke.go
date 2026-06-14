@@ -101,6 +101,22 @@ func saveViewportPNG(w *Window, path string) error {
 	if !ok {
 		return fmt.Errorf("readback unavailable")
 	}
+	return encodeBGRAPNG(px, width, height, path)
+}
+
+// saveWindowPNG reads the full window swapchain image back and writes it as a PNG, so the whole UI
+// (chrome + open dialogs + the composited viewport) can be inspected headlessly.
+func saveWindowPNG(w *Window, path string) error {
+	px, width, height, ok := w.ReadbackWindow()
+	if !ok {
+		return fmt.Errorf("window readback unavailable")
+	}
+	return encodeBGRAPNG(px, width, height, path)
+}
+
+// encodeBGRAPNG writes BGRA8 pixels (Vulkan's surface byte order) as an RGBA PNG at path, swapping
+// the byte order and forcing opaque alpha. Shared by the viewport and whole-window captures.
+func encodeBGRAPNG(px []byte, width, height int, path string) error {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	for i := 0; i+4 <= len(px); i += 4 {
 		img.Pix[i+0], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = px[i+2], px[i+1], px[i+0], 255

@@ -1303,6 +1303,90 @@ int obk_viewport_readback(void* h, int slot, unsigned char* out, int cap, int* w
     return need;
 }
 
+// obk_window_capture copies the swapchain image for the current frame — the WHOLE window: the ImGui
+// chrome, open dialogs, and the composited 3D viewport — into out as 8-bit BGRA (the surface order),
+// row-major top to bottom. It returns the byte count written (0 if not ready or out is too small) and
+// reports the window pixel size. A self-contained synchronous transfer like obk_viewport_readback, but
+// it reads the backbuffer (the full composite) rather than the offscreen viewport target: it waits on
+// the frame's render fence so the composite is complete, copies the backbuffer through a transient
+// command pool (independent of the lazy viewport target), and restores the PRESENT_SRC layout so the
+// presented image is untouched. Call after the frame has rendered (obk_head_end_frame).
+int obk_window_capture(void* h, unsigned char* out, int cap, int* w, int* hh) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c || c->device == VK_NULL_HANDLE) return 0;
+    ImGui_ImplVulkanH_Window* wd = &c->window_data;
+    if (wd->Width <= 0 || wd->Height <= 0 || (int)wd->FrameIndex >= wd->Frames.Size) return 0;
+    ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
+    if (fd->Backbuffer == VK_NULL_HANDLE) return 0;
+    int need = wd->Width * wd->Height * 4;
+    if (w) *w = wd->Width;
+    if (hh) *hh = wd->Height;
+    if (!out || cap < need) return 0;
+
+    // The ImGui render into this backbuffer must be complete before we read it.
+    vkWaitForFences(c->device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);
+
+    GpuBuffer staging{};
+    upload(c, &staging, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, (VkDeviceSize)need);
+
+    VkCommandPoolCreateInfo pci{};
+    pci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    pci.queueFamilyIndex = c->queueFamily;
+    VkCommandPool pool = VK_NULL_HANDLE;
+    vkCreateCommandPool(c->device, &pci, nullptr, &pool);
+    VkCommandBufferAllocateInfo cba{};
+    cba.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cba.commandPool = pool;
+    cba.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cba.commandBufferCount = 1;
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(c->device, &cba, &cmd);
+
+    VkCommandBufferBeginInfo bi{};
+    bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &bi);
+    // The backbuffer is in PRESENT_SRC after the ImGui render pass; flip it to TRANSFER_SRC to copy,
+    // then restore PRESENT_SRC.
+    img_barrier(cmd, fd->Backbuffer, 1, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_MEMORY_READ_BIT,
+                VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT);
+    VkBufferImageCopy cp{};
+    cp.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    cp.imageExtent = {(uint32_t)wd->Width, (uint32_t)wd->Height, 1};
+    vkCmdCopyImageToBuffer(cmd, fd->Backbuffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           staging.buffer, 1, &cp);
+    img_barrier(cmd, fd->Backbuffer, 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_TRANSFER_READ_BIT,
+                VK_ACCESS_MEMORY_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vkEndCommandBuffer(cmd);
+
+    VkFenceCreateInfo fci{};
+    fci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    VkFence fence = VK_NULL_HANDLE;
+    vkCreateFence(c->device, &fci, nullptr, &fence);
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkQueueSubmit(c->queue, 1, &submit, fence);
+    vkWaitForFences(c->device, 1, &fence, VK_TRUE, UINT64_MAX);
+
+    void* mapped = nullptr;
+    vkMapMemory(c->device, staging.memory, 0, need, 0, &mapped);
+    std::memcpy(out, mapped, need);
+    vkUnmapMemory(c->device, staging.memory);
+
+    vkDestroyFence(c->device, fence, nullptr);
+    vkDestroyCommandPool(c->device, pool, nullptr);
+    vkDestroyBuffer(c->device, staging.buffer, nullptr);
+    vkFreeMemory(c->device, staging.memory, nullptr);
+    return need;
+}
+
 // obk_viewport_texture returns the ImGui texture handle for the rendered color image
 // (0 before the first render), to be drawn with ImGui::Image.
 uint64_t obk_viewport_texture(void* h, int slot) {
