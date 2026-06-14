@@ -60,6 +60,7 @@ type FeatureData struct {
 	Import        *ImportData        `yaml:"import,omitempty"`
 
 	DerivedAssembly *DerivedAssemblyData `yaml:"derivedAssembly,omitempty"`
+	DerivedPart     *DerivedPartData     `yaml:"derivedPart,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -251,6 +252,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
 	case *DerivedAssemblyComponent:
 		fd.DerivedAssembly = serializeDerivedAssembly(f)
+	case *DerivedPartComponent:
+		fd.DerivedPart = serializeDerivedPart(f)
 	default:
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -383,6 +386,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreCosmetic(fs, fd)
 	case "derivedAssembly":
 		return restoreDerivedAssembly(fs, fd.DerivedAssembly)
+	case "derived":
+		return restoreDerivedPart(fs, fd.DerivedPart)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}
