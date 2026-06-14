@@ -58,6 +58,8 @@ type FeatureData struct {
 	Mark          *MarkData          `yaml:"mark,omitempty"`
 	Finish        *FinishData        `yaml:"finish,omitempty"`
 	Import        *ImportData        `yaml:"import,omitempty"`
+
+	DerivedAssembly *DerivedAssemblyData `yaml:"derivedAssembly,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -247,6 +249,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Thicken = &ThickenData{Value: f.Thickness(), Approximation: approximationName(f.Approximation())}
 	case faceEditor:
 		fd.FaceEdit = &FaceEditData{Faces: encodeKeys(f.FaceKeys())}
+	case *DerivedAssemblyComponent:
+		fd.DerivedAssembly = serializeDerivedAssembly(f)
 	default:
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -377,6 +381,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreImportedBody(fs, fd.Import)
 	case "decal", "reference", "client", "mark", "finish":
 		return restoreCosmetic(fs, fd)
+	case "derivedAssembly":
+		return restoreDerivedAssembly(fs, fd.DerivedAssembly)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}

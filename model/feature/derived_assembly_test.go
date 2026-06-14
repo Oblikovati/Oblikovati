@@ -57,7 +57,7 @@ func TestDerivedAssemblyMergesIncludedBodies(t *testing.T) {
 		{Body: block, Transform: math.Translation4(math.V3(10, 0, 0)), Source: occFor("a:2")},
 	}}
 	fs := NewPartFeatures(nil, nil)
-	pf := NewDerivedAssemblyComponents(fs).AddDerived(src)
+	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{})
 	fs.Recompute()
 	if !pf.Health().OK() || len(fs.Result()) != 1 {
 		t.Fatalf("derive: health=%+v bodies=%d, want ok and one base body", pf.Health(), len(fs.Result()))
@@ -78,7 +78,7 @@ func TestDerivedAssemblySubtractsStyledOccurrence(t *testing.T) {
 		{Body: small, Transform: math.Identity4(), Source: cut},
 	}}
 	fs := NewPartFeatures(nil, nil)
-	pf := NewDerivedAssemblyComponents(fs).AddDerived(src)
+	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{})
 	pf.Definition().(*DerivedAssemblyComponent).SetStyle(cut, DeriveSubtract)
 	fs.Recompute()
 	if !pf.Health().OK() {
@@ -98,7 +98,7 @@ func TestDerivedAssemblyExcludesStyledOccurrence(t *testing.T) {
 		{Body: dropped, Transform: math.Identity4(), Source: drop},
 	}}
 	fs := NewPartFeatures(nil, nil)
-	pf := NewDerivedAssemblyComponents(fs).AddDerived(src)
+	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{})
 	pf.Definition().(*DerivedAssemblyComponent).SetStyle(drop, DeriveExclude)
 	fs.Recompute()
 	if got := volumeOf(fs.Result()[0]); !approx(got, 8) {
@@ -114,7 +114,7 @@ func TestDerivedAssemblyBreakLinkFreezesAndVersionTracks(t *testing.T) {
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},
 	}}
 	fs := NewPartFeatures(nil, nil)
-	pf := NewDerivedAssemblyComponents(fs).AddDerived(src)
+	pf := NewDerivedAssemblyComponents(fs).AddDerived(src, DeriveSourceLink{})
 	fs.Recompute()
 	d := pf.Definition().(*DerivedAssemblyComponent)
 	v0 := d.SourceVersion()
