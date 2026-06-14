@@ -38,13 +38,13 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           repository: Oblikovati/Oblikovati.API
           ref: develop
           path: _api
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -62,7 +62,7 @@ jobs:
             CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "$LD" \
               -o "dist/oblikovati-cli-${VER}-${os}-${arch}${ext}" ./cmd/oblikovati-cli
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: cli
           path: dist/*
@@ -73,13 +73,13 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           repository: Oblikovati/Oblikovati.API
           ref: develop
           path: _api
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.24"
           cache: false
@@ -103,7 +103,7 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: "1" # GitHub runners have no FUSE
           VER: ${{ inputs.version }}
         run: scripts/package-linux.sh dist/oblikovati-head "$VER" dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: head-linux
           path: dist/*.AppImage
@@ -117,8 +117,8 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           repository: Oblikovati/Oblikovati.API
           ref: develop
@@ -155,7 +155,7 @@ jobs:
           for dll in $(ldd oblikovati-head.exe | grep -i mingw64 | awk '{print $3}'); do cp "$dll" .; done
           cp /mingw64/bin/glfw3.dll . 2>/dev/null || true
           zip -j "oblikovati-head-${VER}-windows-amd64.zip" oblikovati-head.exe ./*.dll
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: head-windows
           path: dist/*.zip
@@ -204,13 +204,13 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           repository: Oblikovati/Oblikovati.API
           ref: develop
           path: _api
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.24"
           cache: false
@@ -227,7 +227,7 @@ jobs:
           CGO_ENABLED=1 go build -ldflags "$LD" -o "$GITHUB_WORKSPACE/dist/oblikovati-head" ./cmd/oblikovati-head
       - name: Stage binary + dylibs
         run: scripts/macos-stage.sh dist/oblikovati-head "stage-${{ matrix.arch }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: head-macos-stage-${{ matrix.arch }}
           path: stage-${{ matrix.arch }}
@@ -242,8 +242,8 @@ jobs:
     if: needs.macos-preflight.outputs.enabled == 'true'
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
         with:
           pattern: head-macos-stage-*
           path: stage
@@ -289,7 +289,7 @@ jobs:
           AC_TEAM_ID: ${{ secrets.MACOS_AC_TEAM_ID }}
           VER: ${{ inputs.version }}
         run: scripts/macos-sign.sh dist/Oblikovati.app "$VER" dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: head-macos
           path: dist/*.zip
