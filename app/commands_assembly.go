@@ -44,6 +44,7 @@ func jointCommands() []*CommandDefinition {
 			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddPlanar(r[0], r[1]) }),
 		jointCommand("Assembly.JointBall", "Ball", "joint-ball", "Ball joint — three rotations about a common point (3 DOF).",
 			func(js *assembly.JointSet, r []assembly.Ref) assembly.Joint { return js.AddBall(r[0], r[1]) }),
+		driveCommand(),
 	}
 }
 

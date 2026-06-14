@@ -296,6 +296,9 @@ func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.P
 func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Camera, *feature.WorkPlane) {
 	cam := s.Camera()
 	cam.Width, cam.Height = pw, ph
+	if s.DriveAnimating() {
+		s.TickDriveAnimation(float64(native.DeltaTime())) // advance a running joint-drive playback (M12-F03)
+	}
 	if s.CameraAnimating() {
 		s.SetCamera(cam)
 		s.TickCameraAnimation(float64(native.DeltaTime()))
