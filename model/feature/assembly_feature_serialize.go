@@ -5,8 +5,10 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
+	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/sketch"
 )
 
@@ -15,9 +17,9 @@ import (
 // assembly's features round-trip through save/load and undo/redo. Sketch-bearing features
 // (extrude/revolve/sweep) reference the assembly's sketch by index; the closure-backed scalars
 // (distance/radius/angle) capture their current value and restore as a constant — editing a
-// restored feature is a separate concern. Features whose state is not self-contained (the box-cut's
-// transient tool body, the proxy-cut's source occurrence) do not implement the marshaler yet and
-// are skipped, to be added with their reference rebinding.
+// restored feature is a separate concern. The box-cut persists its tool's axis-aligned corners
+// (every tool is a brep.SolidBlock) and the proxy-cut persists its source occurrence by name,
+// rebound through occByName once the occurrences are bound.
 
 // AssemblyFeatureData is the serializable form of one assembly machining feature: its kind and the
 // superset of inputs the kinds use (each populates only its own).
@@ -40,6 +42,9 @@ type AssemblyFeatureData struct {
 	Diameter     float64      `yaml:"diameter,omitempty"`     // hole
 	Depth        float64      `yaml:"depth,omitempty"`        // hole
 	Path         [][3]float64 `yaml:"path,omitempty"`         // sweep
+	ToolMin      [3]float64   `yaml:"toolMin,omitempty"`      // box-cut tool corners
+	ToolMax      [3]float64   `yaml:"toolMax,omitempty"`      // box-cut tool corners
+	SourceName   string       `yaml:"sourceName,omitempty"`   // proxy-cut source occurrence name
 }
 
 // AssemblyFeatureMarshaler is implemented by the assembly features whose state is self-contained.
@@ -49,8 +54,10 @@ type AssemblyFeatureMarshaler interface {
 }
 
 // RestoreAssemblyFeature reconstructs a feature from its data, resolving sketch references against
-// sketches (by index). It errors on an unknown kind or an out-of-range sketch index.
-func RestoreAssemblyFeature(d AssemblyFeatureData, sketches []*sketch.Sketch) (Feature, error) {
+// sketches (by index) and a proxy-cut's source occurrence through occByName (nil for the kinds that
+// hold no occurrence reference). It errors on an unknown kind, an out-of-range sketch index, or an
+// unresolvable source.
+func RestoreAssemblyFeature(d AssemblyFeatureData, sketches []*sketch.Sketch, occByName func(string) (*occurrence.Occurrence, bool)) (Feature, error) {
 	switch d.Kind {
 	case "assemblyExtrude":
 		sk, err := sketchAt(sketches, d.SketchIndex, d.Kind)
@@ -82,6 +89,21 @@ func RestoreAssemblyFeature(d AssemblyFeatureData, sketches []*sketch.Sketch) (F
 		return NewAssemblyFilletFeature(d.EdgeSuffixes, constScalar(d.Radius)), nil
 	case "assemblyMoveFace":
 		return NewAssemblyMoveFaceFeature(d.FaceSuffixes, math.V3(math.Scalar(d.Translation[0]), math.Scalar(d.Translation[1]), math.Scalar(d.Translation[2]))), nil
+	case "assemblyCut":
+		tool, err := brep.SolidBlock(math.P3(d.ToolMin[0], d.ToolMin[1], d.ToolMin[2]), math.P3(d.ToolMax[0], d.ToolMax[1], d.ToolMax[2]), "asmCut")
+		if err != nil {
+			return nil, fmt.Errorf("feature: restore box cut: %w", err)
+		}
+		return NewAssemblyCutFeature(tool, ops.PartFeatureOperation(d.Operation)), nil
+	case "assemblyProxyCut":
+		if occByName == nil {
+			return nil, fmt.Errorf("feature: restore proxy cut %q needs an occurrence resolver", d.SourceName)
+		}
+		src, ok := occByName(d.SourceName)
+		if !ok {
+			return nil, fmt.Errorf("feature: restore proxy cut: source occurrence %q not found", d.SourceName)
+		}
+		return NewAssemblyProxyCutFeature(src, ops.PartFeatureOperation(d.Operation)), nil
 	default:
 		return nil, fmt.Errorf("feature: cannot restore assembly feature kind %q", d.Kind)
 	}
@@ -169,4 +191,19 @@ func (f *AssemblyFilletFeature) MarshalAssembly(func(*sketch.Sketch) int) Assemb
 func (f *AssemblyMoveFaceFeature) MarshalAssembly(func(*sketch.Sketch) int) AssemblyFeatureData {
 	return AssemblyFeatureData{Kind: "assemblyMoveFace", FaceSuffixes: f.faceSuffixes,
 		Translation: [3]float64{float64(f.translation.X), float64(f.translation.Y), float64(f.translation.Z)}}
+}
+
+// MarshalAssembly captures the box-cut's tool as its axis-aligned corners (every tool is a
+// brep.SolidBlock; its range box recovers the corners), rebuilt on restore.
+func (f *AssemblyCutFeature) MarshalAssembly(func(*sketch.Sketch) int) AssemblyFeatureData {
+	box := f.tool.RangeBox()
+	return AssemblyFeatureData{Kind: "assemblyCut", Operation: int(f.op),
+		ToolMin: [3]float64{float64(box.Min.X), float64(box.Min.Y), float64(box.Min.Z)},
+		ToolMax: [3]float64{float64(box.Max.X), float64(box.Max.Y), float64(box.Max.Z)}}
+}
+
+// MarshalAssembly captures the proxy-cut's source occurrence by name; restore rebinds it to the
+// live occurrence (the assembly resolves it after the occurrences are bound).
+func (f *AssemblyProxyCutFeature) MarshalAssembly(func(*sketch.Sketch) int) AssemblyFeatureData {
+	return AssemblyFeatureData{Kind: "assemblyProxyCut", Operation: int(f.op), SourceName: f.source.Name()}
 }

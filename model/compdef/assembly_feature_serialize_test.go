@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 )
@@ -48,5 +49,30 @@ func TestAssemblyFeatureProgramRoundTrips(t *testing.T) {
 		if !strings.Contains(recipe, want) {
 			t.Errorf("reopened recipe is missing %q:\n%s", want, recipe)
 		}
+	}
+}
+
+// TestAssemblyProxyCutRoundTrips: a proxy-cut's source occurrence reference rebinds on reopen — the
+// restored feature points at the live "tool:1" occurrence again, resolved by name after the
+// occurrences bind (the #785 follow-up for the reference-bearing kinds).
+func TestAssemblyProxyCutRoundTrips(t *testing.T) {
+	store, ws, asm, widget, asmDef := placedAssembly(t)
+	placeFromFile(t, asm, widget, asmDef, "target:1", math.Identity4())
+	src := placeFromFile(t, asm, widget, asmDef, "tool:1", math.Translation4(math.V3(0.5, 0, 0)))
+
+	af := asmDef.AddFeature(feature.NewAssemblyProxyCutFeature(src, ops.Cut))
+	af.RemoveParticipant(src) // a component never machines itself
+	af.SetName("proxy1")
+
+	def := reopenAssembly(t, store, ws, asm)
+	if def.Features().Count() != 1 {
+		t.Fatalf("reopened feature count = %d, want 1 (the proxy cut)", def.Features().Count())
+	}
+	pc, ok := def.Features().Item(0).Definition().(*feature.AssemblyProxyCutFeature)
+	if !ok {
+		t.Fatalf("restored feature is %T, want a proxy cut", def.Features().Item(0).Definition())
+	}
+	if pc.Source() == nil || pc.Source().Name() != "tool:1" {
+		t.Errorf("restored proxy-cut source = %v, want the rebound tool:1 occurrence", pc.Source())
 	}
 }
