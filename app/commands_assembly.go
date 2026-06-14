@@ -13,15 +13,21 @@ package app
 func assemblyTabCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		placeComponentCommand(),
-		assemblyToolCommand("Assembly.RectangularPattern", "Rectangular Pattern", "rectangular-pattern",
+		assemblyToolCommand("Assembly.RectangularPattern", "Rectangular Pattern", "Pattern", "rectangular-pattern",
 			"Rectangular Pattern — replicate the selected component on a grid (counts and spacing).",
 			func() Tool { return NewAssemblyRectPatternTool() }),
-		assemblyToolCommand("Assembly.CircularPattern", "Circular Pattern", "circular-pattern",
+		assemblyToolCommand("Assembly.CircularPattern", "Circular Pattern", "Pattern", "circular-pattern",
 			"Circular Pattern — replicate the selected component around the Z axis (count and angle).",
 			func() Tool { return NewAssemblyCircPatternTool() }),
-		assemblyToolCommand("Assembly.Mirror", "Mirror", "mirror",
+		assemblyToolCommand("Assembly.Mirror", "Mirror", "Pattern", "mirror",
 			"Mirror — add a mirror of the selected components across a plane.",
 			func() Tool { return NewAssemblyMirrorTool() }),
+		assemblyToolCommand("Assembly.Chamfer", "Chamfer", "Modify", "chamfer",
+			"Chamfer — bevel a picked component edge on every instance of that component.",
+			func() Tool { return NewAssemblyChamferTool() }),
+		assemblyToolCommand("Assembly.Fillet", "Fillet", "Modify", "fillet",
+			"Fillet — round a picked component edge on every instance of that component.",
+			func() Tool { return NewAssemblyFilletTool() }),
 		NewCommand("Assembly.Copy", "Copy", "Pattern", func(s *Session) error { return s.CopyComponents() }).
 			WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
 			WithIcon("copy").WithButtonStyle(SmallIconButton).
@@ -41,8 +47,8 @@ func assemblyTabCommands() []*CommandDefinition {
 // assemblyToolCommand builds an Assemble-tab command that starts a replication tool on the active
 // assembly. The tool seeds its sources from the current selection and reads the rest from the
 // generic tool-param dialog (#765).
-func assemblyToolCommand(id, name, icon, tooltip string, newTool func() Tool) *CommandDefinition {
-	return NewCommand(id, name, "Pattern", func(s *Session) error {
+func assemblyToolCommand(id, name, panel, icon, tooltip string, newTool func() Tool) *CommandDefinition {
+	return NewCommand(id, name, panel, func(s *Session) error {
 		if _, err := activeAssembly(s); err != nil {
 			return err
 		}
