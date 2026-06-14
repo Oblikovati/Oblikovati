@@ -202,8 +202,8 @@ func installPicker(s *app.Session) {
 	s.SetPicker(app.NewRayPicker(s.Camera(),
 		func() []*topo.Body { return activeBodies(s) }).
 		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }).
-		WithPoints(func() []*feature.WorkPoint { return activeWorkPoints(s) }).
-		WithAxes(func() []*feature.WorkAxis { return activeWorkAxes(s) }).
+		WithPoints(func() []*feature.WorkPoint { return s.PickableWorkPoints() }).
+		WithAxes(func() []*feature.WorkAxis { return s.PickableWorkAxes() }).
 		WithSketches(func() []*sketch.Sketch {
 			if !s.ObjectVisibility().Sketches {
 				return nil
@@ -230,46 +230,6 @@ func loadAppOptions(s *app.Session) {
 // the picker's hit-test so it follows the current document.
 func activeBodies(s *app.Session) []*topo.Body {
 	return s.VisibleBodies()
-}
-
-// activeWorkPoints / activeWorkAxes return the active part's datum points/axes (origin
-// and user), so the picker can snap a click to them as work-plane reference inputs. Nodes
-// hidden by the active edit scope are excluded, matching the overlays — geometry the
-// viewport does not draw must not be clickable.
-func activeWorkPoints(s *app.Session) []*feature.WorkPoint {
-	if !s.ObjectVisibility().WorkPoints { // hidden kinds are not pickable (M05-F12)
-		return nil
-	}
-	p, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil
-	}
-	points := p.WorkPoints()
-	out := make([]*feature.WorkPoint, 0, points.Count())
-	for i := 0; i < points.Count(); i++ {
-		if pt := points.Item(i); !s.EditScopeHides(pt.Seq()) {
-			out = append(out, pt)
-		}
-	}
-	return out
-}
-
-func activeWorkAxes(s *app.Session) []*feature.WorkAxis {
-	if !s.ObjectVisibility().WorkAxes { // hidden kinds are not pickable (M05-F12)
-		return nil
-	}
-	p, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil
-	}
-	axes := p.WorkAxes()
-	out := make([]*feature.WorkAxis, 0, axes.Count())
-	for i := 0; i < axes.Count(); i++ {
-		if ax := axes.Item(i); ax.Visible() && !s.EditScopeHides(ax.Seq()) {
-			out = append(out, ax)
-		}
-	}
-	return out
 }
 
 // activeSketches returns the active part's visible sketches (nil if none), so the picker

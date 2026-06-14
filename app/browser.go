@@ -67,11 +67,13 @@ func BuildBrowser(s *Session) BrowserNode {
 	return root
 }
 
-// addAssemblyBranches builds the assembly's browser tree: the Parameters folder, then the placed
-// component occurrences in placement order. Each occurrence node is selectable (its handle drives
-// ground/suppress/delete from the right-click menu and the replication commands), and a
-// sub-assembly occurrence nests its own occurrences so the structure is navigable (#764).
+// addAssemblyBranches builds the assembly's browser tree: the Origin folder (origin planes/axes/
+// point, like a part's), the Parameters folder, then the placed component occurrences in placement
+// order. Each occurrence node is selectable (its handle drives ground/suppress/delete from the
+// right-click menu and the replication commands), and a sub-assembly occurrence nests its own
+// occurrences so the structure is navigable (#764).
 func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefinition) {
+	addOriginBranch(root, asm.WorkGeometry()) // the Origin folder (planes/axes/point), like a part's
 	params := root.child("Parameters", "parameters")
 	for _, p := range asm.Parameters().All() {
 		params.child(p.Name(), "parameter")
@@ -137,7 +139,7 @@ func occurrenceLabel(o *occurrence.Occurrence) string {
 // Sketches branch, so a sketch's dependency on an earlier work plane/feature is visible
 // (issue #132). Sketch/feature/datum nodes are selectable so clicking one syncs the 3D view.
 func addPartBranches(root *BrowserNode, part *compdef.PartComponentDefinition) {
-	addOriginBranch(root, part)
+	addOriginBranch(root, part.WorkGeometry())
 	params := root.child("Parameters", "parameters")
 	for _, p := range part.Parameters().All() {
 		params.child(p.Name(), "parameter")
@@ -278,19 +280,20 @@ func featureLabel(f *feature.PartFeature) string {
 
 // addOriginBranch fills the Origin folder with the seven coordinate-system elements (three
 // planes, three axes, the center point), all selectable — the reference inputs for
-// axis/point-driven work planes (Inventor's Origin folder).
-func addOriginBranch(root *BrowserNode, part *compdef.PartComponentDefinition) {
+// axis/point-driven work planes (the Origin folder). It takes the work geometry (not a part) so a
+// part AND an assembly both get the folder — both seed the same origin frame.
+func addOriginBranch(root *BrowserNode, wg *feature.WorkGeometry) {
 	origin := root.child("Origin", "origin")
-	for _, wp := range part.OriginPlanes() {
+	for _, wp := range wg.OriginPlanes() {
 		origin.selectableChild(wp.Name(), "workplane", WorkPlaneHandle{Plane: wp})
 	}
-	axes := part.WorkAxes()
+	axes := wg.WorkAxes()
 	for i := 0; i < axes.Count(); i++ {
 		if a := axes.Item(i); a.IsCoordinateSystemElement() {
 			origin.selectableChild(a.Name(), "workaxis", WorkAxisHandle{Axis: a})
 		}
 	}
-	points := part.WorkPoints()
+	points := wg.WorkPoints()
 	for i := 0; i < points.Count(); i++ {
 		if p := points.Item(i); p.IsCoordinateSystemElement() {
 			origin.selectableChild(p.Name(), "workpoint", WorkPointHandle{Point: p})

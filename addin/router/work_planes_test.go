@@ -7,7 +7,32 @@ import (
 	"testing"
 
 	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
+
+// assertOffsetPlaneOnXY creates a +Z offset plane on the origin XY plane and asserts it is the
+// healthy 4th plane landing at z=1 (10 mm = 1 cm in model units). Shared by the part and the
+// assembly create tests so the same create+list+geometry check serves both document kinds.
+func assertOffsetPlaneOnXY(t *testing.T, r *Router, s *app.Session) {
+	t.Helper()
+	var res wire.CreateWorkPlaneResult
+	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
+	if !res.Healthy {
+		t.Fatalf("offset plane not healthy: %+v", res)
+	}
+	if res.Index != 3 { // after the 3 origin planes
+		t.Errorf("new plane index = %d, want 3", res.Index)
+	}
+	var list wire.ListWorkPlanesResult
+	call(t, r, s, "workPlanes.list", "{}", &list)
+	if len(list.Planes) != 4 {
+		t.Fatalf("after create, %d planes, want 4", len(list.Planes))
+	}
+	created := list.Planes[3]
+	if created.IsOrigin || len(created.Origin) != 3 || created.Origin[2] != 1 {
+		t.Errorf("created plane = %+v, want a user plane at z=1", created)
+	}
+}
 
 func TestWorkPlanesListIncludesOriginFrame(t *testing.T) {
 	r, s := emptyPartSession(t)
@@ -25,24 +50,7 @@ func TestWorkPlanesListIncludesOriginFrame(t *testing.T) {
 
 func TestWorkPlanesCreateOffsetThenList(t *testing.T) {
 	r, s := emptyPartSession(t)
-	var res wire.CreateWorkPlaneResult
-	call(t, r, s, "workPlanes.create", `{"kind":"plane-offset","refs":["origin/plane/xy"],"offset":"10 mm"}`, &res)
-	if !res.Healthy {
-		t.Fatalf("offset plane not healthy: %+v", res)
-	}
-	if res.Index != 3 { // after the 3 origin planes
-		t.Errorf("new plane index = %d, want 3", res.Index)
-	}
-	var list wire.ListWorkPlanesResult
-	call(t, r, s, "workPlanes.list", "{}", &list)
-	if len(list.Planes) != 4 {
-		t.Fatalf("after create, %d planes, want 4", len(list.Planes))
-	}
-	created := list.Planes[3]
-	// "10 mm" is 1.0 cm in model units; the XY plane offset +Z lands at z=1.
-	if created.IsOrigin || len(created.Origin) != 3 || created.Origin[2] != 1 {
-		t.Errorf("created plane = %+v, want a user plane at z=1", created)
-	}
+	assertOffsetPlaneOnXY(t, r, s)
 }
 
 func TestWorkPlanesCreateMidplane(t *testing.T) {
