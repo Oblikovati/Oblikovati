@@ -56,7 +56,10 @@ func assemblyPlace(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyPlace, err)
 	}
-	o, err := asm.PlaceComponent(in.Name, d, matrixFromWire(in.Transform))
+	// Place persistently: record the assembly→component reference and the occurrence's
+	// document name, so the placement survives a save/reopen (#715) and the occurrence is
+	// file-backed (e.g. for mirror-into-part, #717).
+	o, err := asm.PlaceComponentFromFile(s.ActiveDocument(), d, in.Name, matrixFromWire(in.Transform))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyPlace, err)
 	}
