@@ -125,7 +125,7 @@ type AssemblyCircPatternTool struct {
 
 // NewAssemblyCircPatternTool returns a 4-up full ring, ready to edit.
 func NewAssemblyCircPatternTool() *AssemblyCircPatternTool {
-	return &AssemblyCircPatternTool{count: 4, totalAngle: 2 * 3.141592653589793} // full ring (2π)
+	return &AssemblyCircPatternTool{count: 4, totalAngle: FullTurn} // full ring (2π)
 }
 func (t *AssemblyCircPatternTool) Name() string { return "Circular Pattern" }
 func (t *AssemblyCircPatternTool) Prompt(*Session) string {
