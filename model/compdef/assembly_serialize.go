@@ -229,16 +229,31 @@ func (a *AssemblyComponentDefinition) restoreFeatures() error {
 	a.pendingFeatures = nil
 	sketches := a.sketchSlice()
 	for _, fr := range pending {
-		f, err := feature.RestoreAssemblyFeature(fr.Feature, sketches)
+		f, err := feature.RestoreAssemblyFeature(fr.Feature, sketches, a.occurrenceByName)
 		if err != nil {
 			return fmt.Errorf("compdef: restore assembly feature: %w", err)
 		}
 		af := a.AddFeature(f)
 		af.SetName(fr.Name)
 		af.SetSuppressed(fr.Suppressed)
+		// A proxy-cut never machines its own source component (the router excludes it on add),
+		// so drop the source from the participants AddFeature snapshotted.
+		if pc, ok := f.(*feature.AssemblyProxyCutFeature); ok {
+			af.RemoveParticipant(pc.Source())
+		}
 	}
 	a.RecomputeFeatures()
 	return nil
+}
+
+// occurrenceByName resolves a leaf occurrence by its instance name (the proxy-cut source rebind).
+func (a *AssemblyComponentDefinition) occurrenceByName(name string) (*occurrence.Occurrence, bool) {
+	for _, o := range a.occurrences.All() {
+		if o.Name() == name {
+			return o, true
+		}
+	}
+	return nil, false
 }
 
 // resolveComponent opens the component document named component as a reference of owner,
