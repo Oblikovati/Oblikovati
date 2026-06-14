@@ -52,6 +52,8 @@ int  obk_ig_input_float(const char* label, float* v);
 int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
 int  obk_ig_input_text(const char* label, char* buf, int buf_size);
+int  obk_ig_input_text_submit(const char* label, char* buf, int buf_size);
+void obk_ig_set_keyboard_focus_here(void);
 int  obk_ig_input_text_multiline(const char* label, char* buf, int buf_size, float w, float h);
 int  obk_ig_begin_child(const char* id, float w, float h, int border);
 void obk_ig_end_child(void);
@@ -262,6 +264,21 @@ func InputText(label string, buf []byte) bool {
 	defer free()
 	return C.obk_ig_input_text(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))) != 0
 }
+
+// InputTextSubmit is InputText that returns true only on the frame the user presses Enter
+// (ImGuiInputTextFlags_EnterReturnsTrue) — the commit signal for the command-alias box.
+func InputTextSubmit(label string, buf []byte) bool {
+	if len(buf) == 0 {
+		return false
+	}
+	c, free := cstr(label)
+	defer free()
+	return C.obk_ig_input_text_submit(c, (*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))) != 0
+}
+
+// SetKeyboardFocusHere focuses the next widget on the coming frame — used to put the caret
+// in the command-alias box the moment it opens.
+func SetKeyboardFocusHere() { C.obk_ig_set_keyboard_focus_here() }
 
 // InputTextMultiline draws a multi-line text editor over buf (NUL-terminated, edited in
 // place up to len(buf)-1 bytes) sized w×h logical pixels (0 ⇒ fill the available content

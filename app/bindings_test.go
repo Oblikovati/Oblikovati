@@ -185,6 +185,19 @@ func TestCheckDefaultsDuplicateChord(t *testing.T) {
 	}
 }
 
+// TestStandardCommandsPassCheckDefaults guards the shipped registry: no standard command
+// alias may collide with a built-in shortcut or another command's default chord. This is
+// the same check the head runs at startup (loadKeymap), here gated headlessly.
+func TestStandardCommandsPassCheckDefaults(t *testing.T) {
+	s := NewSession()
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("RegisterStandardCommands: %v", err)
+	}
+	if err := s.Bindings().CheckDefaults(); err != nil {
+		t.Fatalf("the shipped command registry has a binding conflict: %v", err)
+	}
+}
+
 func TestCheckDefaultsCleanRegistry(t *testing.T) {
 	s := NewSession()
 	registerAlias(t, s, "Test.Extrude", "E")

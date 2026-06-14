@@ -17,7 +17,7 @@ func drawMenuBar(s *app.Session) {
 	}
 	drawFileMenu(s)
 	drawEditMenu(s)
-	drawToolsMenu()
+	drawToolsMenu(s)
 	drawCommandSearch(s) // the command search box (M05-F12)
 	native.EndMainMenuBar()
 }
@@ -107,13 +107,19 @@ func drawEditMenu(s *app.Session) {
 	}
 }
 
-func drawToolsMenu() {
+func drawToolsMenu(s *app.Session) {
 	if native.BeginMenu("Tools") {
 		if native.MenuItem("Materials") {
 			showMaterials = !showMaterials
 		}
 		if native.MenuItem("Preferences") {
 			showPreferences = !showPreferences
+		}
+		if native.MenuItem("Customize Keyboard") { // M05-F17: rebind shortcuts / aliases
+			s.OpenKeymapEditor()
+		}
+		if native.MenuItem("Command Input") { // M05-F17: type an alias to run a command
+			s.BeginCommandInput()
 		}
 		native.Separator()
 		if native.MenuItem(checkLabel("Normal Debug (front green / back red)", normalDebugOn)) {

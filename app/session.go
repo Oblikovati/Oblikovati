@@ -100,6 +100,7 @@ type Session struct {
 	lighting             renderer.SceneLighting         // the live lighting rig (resolved from the style, then edited)
 	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
+	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
 	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
 	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
 	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
