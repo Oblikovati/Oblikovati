@@ -26,9 +26,12 @@ type jointLimits struct {
 	angular *limits
 }
 
-// NewJointLimits builds joint limits from optional linear and angular ranges; it returns nil
-// when neither range is set (an unbounded joint carries no limits object).
-func NewJointLimits(linear, angular *limits) *jointLimits {
+// NewJointLimits builds joint limits from optional linear and angular bounds (each side
+// included only when its has flag is set); it returns nil when no bound is set (an unbounded
+// joint carries no limits object).
+func NewJointLimits(linMin float64, hasLinMin bool, linMax float64, hasLinMax bool, angMin float64, hasAngMin bool, angMax float64, hasAngMax bool) *jointLimits {
+	linear := NewLimits(linMin, hasLinMin, linMax, hasLinMax, 0, false)
+	angular := NewLimits(angMin, hasAngMin, angMax, hasAngMax, 0, false)
 	if linear == nil && angular == nil {
 		return nil
 	}

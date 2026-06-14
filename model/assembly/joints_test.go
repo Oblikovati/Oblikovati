@@ -91,7 +91,7 @@ func TestRotationalJointPositionsAndLimits(t *testing.T) {
 	if p := moving.Transform().Translation(); !math.V3(p.X, p.Y, p.Z).IsEqualTo(math.V3(0, 0, 0), 1e-6) {
 		t.Errorf("moving origin = %+v, want on the axis at the origin", p)
 	}
-	lim := NewJointLimits(nil, &limits{min: -1, max: 1, hasMin: true, hasMax: true})
+	lim := NewJointLimits(0, false, 0, false, -1, true, 1, true)
 	if err := js.SetLimits(j.ID(), lim); err != nil {
 		t.Fatalf("SetLimits: %v", err)
 	}
