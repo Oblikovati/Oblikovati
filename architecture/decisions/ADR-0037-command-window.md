@@ -47,7 +47,7 @@ backed by a command-line engine in the application layer.
    centers remain as the data sources behind the wire API; only their separate windows are gone.
 
 4. **The command line is on the public API** (`commandLine.submit`, contract-first per
-   [ADR-0018](ADR-0018-public-api-split.md)): submit a line, get back the produced output, the
+   [ADR-0018](ADR-0018-apache-api-contract-module.md)): submit a line, get back the produced output, the
    active command's next prompt, and whether more input is awaited — so an add-in or MCP tool runs
    the same REPL headlessly.
 
