@@ -24,3 +24,21 @@ func severityColor(sev cmdline.Severity) [4]float32 {
 		return [4]float32{0.82, 0.82, 0.82, 1}
 	}
 }
+
+// completionColor is the text colour for an autocomplete suggestion: the highlighted one reads
+// in the accent blue, the rest are dimmed.
+func completionColor(selected bool) [4]float32 {
+	if selected {
+		return [4]float32{0.55, 0.78, 1.0, 1}
+	}
+	return [4]float32{0.6, 0.6, 0.6, 1}
+}
+
+// completionLabel prefixes an autocomplete suggestion with a marker so the highlighted one
+// (Up/Down, Tab-completes) stands out even without colour.
+func completionLabel(word string, selected bool) string {
+	if selected {
+		return "▸ " + word
+	}
+	return "  " + word
+}

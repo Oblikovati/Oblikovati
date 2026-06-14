@@ -25,10 +25,22 @@ var (
 	commandFocusNext     = true
 	commandLastLineCount int
 	commandHistoryCursor int32 // ↑/↓ recall position (len(history) ⇒ the empty line)
+
+	// Autocomplete state: the candidate list for the current input, the highlighted index,
+	// and the buffer it was computed for (so it is recomputed only when the input changes).
+	commandCompletions []string
+	commandCompSel     int32
+	commandCompForBuf  string
 )
 
-// commandInputReserve is the height (logical px) kept below the scrollback for the input.
-const commandInputReserve = 30
+const (
+	// commandInputReserve is the height (logical px) kept below the scrollback for the input.
+	commandInputReserve = 30
+	// commandCompLineHeight is the per-row height of the autocomplete hint list.
+	commandCompLineHeight = 19
+	// commandCompMax caps how many autocomplete suggestions are shown at once.
+	commandCompMax = 8
+)
 
 // drawCommandWindow renders the docked Command Window when it is open. It supersedes the
 // old notification surfaces as the single feedback + command-entry surface (M26).
@@ -46,18 +58,41 @@ func drawCommandWindow(s *app.Session) {
 	native.End()
 }
 
-// drawCommandWindowBody draws the scrollback pane and the input line.
+// drawCommandWindowBody draws the scrollback pane, the autocomplete hint list, and the input.
 func drawCommandWindowBody(s *app.Session) {
 	cl := s.CommandLine()
-	drawCommandScrollback(cl)
-	drawCommandInputLine(s, cl)
+	comps := refreshCompletions(s, cl)
+	reserve := float32(commandInputReserve) + float32(len(comps))*commandCompLineHeight
+	drawCommandScrollback(cl, reserve)
+	drawCommandCompletions(comps)
+	drawCommandInputLine(s, cl, comps)
+}
+
+// refreshCompletions recomputes the autocomplete candidates when the input changes (resetting
+// the highlighted index), and keeps them stable while the user only navigates the list — so
+// Up/Down move the selection without the list shifting under them. Capped at commandCompMax.
+func refreshCompletions(s *app.Session, cl *app.CommandLine) []string {
+	buf := bufString(commandInputBuf)
+	if buf != commandCompForBuf {
+		commandCompForBuf = buf
+		commandCompletions = cl.Completions(s, buf)
+		if len(commandCompletions) > commandCompMax {
+			commandCompletions = commandCompletions[:commandCompMax]
+		}
+		commandCompSel = 0
+	}
+	if int(commandCompSel) >= len(commandCompletions) {
+		commandCompSel = 0
+	}
+	return commandCompletions
 }
 
 // drawCommandScrollback renders the rolling history in a scrollable pane that follows the
 // tail when new lines arrive, while still letting the user scroll up when nothing new is
-// appended (auto-tail fires only on growth, like a terminal).
-func drawCommandScrollback(cl *app.CommandLine) {
-	if !native.BeginChild("##cmd-scrollback", 0, -commandInputReserve, false) {
+// appended (auto-tail fires only on growth, like a terminal). reserve is the height kept
+// below it for the hint list + input.
+func drawCommandScrollback(cl *app.CommandLine, reserve float32) {
+	if !native.BeginChild("##cmd-scrollback", 0, -reserve, false) {
 		native.EndChild()
 		return
 	}
@@ -74,20 +109,38 @@ func drawCommandScrollback(cl *app.CommandLine) {
 	native.EndChild()
 }
 
-// drawCommandInputLine draws the full-width input with Up/Down history recall; Enter submits
-// the line to the engine, clears it, resets the recall cursor past the newest entry, and
-// refocuses for the next command (a persistent shell-style command line).
-func drawCommandInputLine(s *app.Session, cl *app.CommandLine) {
+// drawCommandCompletions renders the autocomplete hint list above the input, the highlighted
+// candidate (Up/Down) in the accent colour and the rest dimmed; Tab completes the highlight.
+// Clicking a row also completes it.
+func drawCommandCompletions(comps []string) {
+	for i, c := range comps {
+		selected := int32(i) == commandCompSel
+		native.PushStyleColor("Text", completionColor(selected))
+		native.Text(completionLabel(c, selected))
+		native.PopStyleColor(1)
+		if native.IsItemClicked(native.MouseLeft) {
+			setBuf(commandInputBuf, c)
+			commandCompForBuf = c
+			commandFocusNext = true
+		}
+	}
+}
+
+// drawCommandInputLine draws the full-width input with Tab autocompletion and Up/Down
+// navigation (the hint list when shown, else command history). Enter submits the typed line,
+// clears it, resets the cursors, and refocuses for the next command.
+func drawCommandInputLine(s *app.Session, cl *app.CommandLine, comps []string) {
 	if commandFocusNext {
 		native.SetKeyboardFocusHere()
 		commandFocusNext = false
 	}
 	history := cl.Scrollback().History()
 	native.SetNextItemWidth(-1)
-	if native.InputTextHistory("##cmd-input", commandInputBuf, history, &commandHistoryCursor) {
+	if native.InputTextCommand("##cmd-input", commandInputBuf, history, &commandHistoryCursor, comps, &commandCompSel) {
 		_ = cl.Submit(s, bufString(commandInputBuf))
 		clearBuf(commandInputBuf)
 		commandHistoryCursor = int32(len(cl.Scrollback().History())) // back to the empty line
+		commandCompletions, commandCompForBuf, commandCompSel = nil, "", 0
 		commandFocusNext = true
 	}
 }

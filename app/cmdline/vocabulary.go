@@ -2,7 +2,10 @@
 
 package cmdline
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // Vocabulary maps AutoCAD command words — the full name and its short aliases — to an
 // Oblikovati action id (a command id like "Sketch.Line", or a reserved built-in id like
@@ -184,6 +187,30 @@ func DefaultVocabulary() *Vocabulary {
 func (v *Vocabulary) CanonicalWord(action string) (string, bool) {
 	w, ok := v.canonical[action]
 	return w, ok
+}
+
+// Matches returns the autocomplete suggestions for a typed prefix: the canonical name of
+// every command any of whose words begins with the prefix (case-insensitive), de-duplicated
+// and sorted. So "L" → [LINE, LOFT] and "EX" → [EXTEND, EXTRUDE]. An empty prefix returns nil
+// (no hint until the user types).
+func (v *Vocabulary) Matches(prefix string) []string {
+	prefix = strings.ToUpper(strings.TrimSpace(prefix))
+	if prefix == "" {
+		return nil
+	}
+	seen := map[string]bool{}
+	var out []string
+	for word, action := range v.toAction {
+		if !strings.HasPrefix(word, prefix) {
+			continue
+		}
+		if canon := v.canonical[action]; !seen[canon] {
+			seen[canon] = true
+			out = append(out, canon)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Resolve maps a typed command word (case-insensitive) to its action id, returning false

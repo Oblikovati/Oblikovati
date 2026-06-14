@@ -162,37 +162,61 @@ int  obk_ig_input_int(const char* label, int* v)     { return ImGui::InputInt(la
 int  obk_ig_input_text(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size) ? 1 : 0; }
 int  obk_ig_input_text_submit(const char* label, char* buf, int buf_size) { return ImGui::InputText(label, buf, (size_t)buf_size, ImGuiInputTextFlags_EnterReturnsTrue) ? 1 : 0; }
 
-// ObkHistoryNav backs obk_ig_input_text_history: a command-recall history array plus a
-// caller-owned cursor (an index into items, where n means "the empty current line"). It is
-// stack-local per call; the InputText history callback navigates it on Up/Down (M26 F04).
-struct ObkHistoryNav { const char** items; int n; int* cursor; };
+// ObkCmdNav backs obk_ig_input_text_command: the command-recall history (with a caller-owned
+// cursor, n meaning "the empty current line") plus the live autocomplete candidates (with a
+// caller-owned selected index). It is stack-local per call. When candidates are present Up/Down
+// move the selection and Tab completes; with none, Up/Down do shell-style history recall (M26).
+struct ObkCmdNav {
+    const char** hist; int nHist; int* histCursor;
+    const char** comps; int nComps; int* compSel;
+};
 
-// obk_ig_history_cb is the ImGuiInputTextFlags_CallbackHistory handler: Up/Down walk the
-// recall history and replace the edit buffer with the selected command (or clear it past
-// the newest), exactly like a shell's command history.
-static int obk_ig_history_cb(ImGuiInputTextCallbackData* data) {
-    if (data->EventFlag != ImGuiInputTextFlags_CallbackHistory) return 0;
-    ObkHistoryNav* h = (ObkHistoryNav*)data->UserData;
-    if (h->n <= 0) return 0;
-    int c = *h->cursor + (data->EventKey == ImGuiKey_UpArrow ? -1 : +1);
-    if (c < 0) c = 0;
-    if (c > h->n) c = h->n;
-    *h->cursor = c;
-    const char* repl = (c == h->n) ? "" : h->items[c];
-    data->DeleteChars(0, data->BufTextLen);
-    data->InsertChars(0, repl);
+// obk_ig_cmd_cb handles both InputText callbacks: CallbackHistory (Up/Down) and
+// CallbackCompletion (Tab). With an active completion list, Up/Down move the highlighted
+// candidate (buffer untouched) and Tab replaces the buffer with it; otherwise Up/Down walk
+// the command history into the buffer.
+static int obk_ig_cmd_cb(ImGuiInputTextCallbackData* data) {
+    ObkCmdNav* n = (ObkCmdNav*)data->UserData;
+    if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
+        if (n->nComps > 0) { // move the completion selection only
+            int c = *n->compSel + (data->EventKey == ImGuiKey_UpArrow ? -1 : +1);
+            if (c < 0) c = 0;
+            if (c > n->nComps - 1) c = n->nComps - 1;
+            *n->compSel = c;
+            return 0;
+        }
+        if (n->nHist <= 0) return 0; // history recall into the buffer
+        int c = *n->histCursor + (data->EventKey == ImGuiKey_UpArrow ? -1 : +1);
+        if (c < 0) c = 0;
+        if (c > n->nHist) c = n->nHist;
+        *n->histCursor = c;
+        const char* repl = (c == n->nHist) ? "" : n->hist[c];
+        data->DeleteChars(0, data->BufTextLen);
+        data->InsertChars(0, repl);
+        return 0;
+    }
+    if (data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
+        if (n->nComps > 0 && *n->compSel >= 0 && *n->compSel < n->nComps) {
+            data->DeleteChars(0, data->BufTextLen);
+            data->InsertChars(0, n->comps[*n->compSel]);
+        }
+        return 0;
+    }
     return 0;
 }
 
-// obk_ig_input_text_history is InputTextSubmit with Up/Down command-history recall. items/n
-// are the recall list, cursor a caller-owned index persisted across frames (so the position
-// survives between calls). Returns 1 on the frame Enter is pressed.
-int  obk_ig_input_text_history(const char* label, char* buf, int buf_size,
-                               const char** items, int n, int* cursor) {
-    ObkHistoryNav nav{items, n, cursor};
+// obk_ig_input_text_command is InputTextSubmit with Tab autocompletion and Up/Down navigation
+// (the completion list when one is shown, else command history). hist/comps are the recall and
+// candidate lists; histCursor/compSel are caller-owned indices persisted across frames. Returns
+// 1 on the frame Enter is pressed.
+int  obk_ig_input_text_command(const char* label, char* buf, int buf_size,
+                               const char** hist, int nHist, int* histCursor,
+                               const char** comps, int nComps, int* compSel) {
+    ObkCmdNav nav{hist, nHist, histCursor, comps, nComps, compSel};
     return ImGui::InputText(label, buf, (size_t)buf_size,
-        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
-        obk_ig_history_cb, &nav) ? 1 : 0;
+        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory |
+            ImGuiInputTextFlags_CallbackCompletion,
+        obk_ig_cmd_cb, &nav) ? 1 : 0;
 }
 
 void obk_ig_set_keyboard_focus_here(void) { ImGui::SetKeyboardFocusHere(); }

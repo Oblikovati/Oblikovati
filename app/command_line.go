@@ -48,6 +48,17 @@ func (cl *CommandLine) Prompt(s *Session) string {
 	return promptText(s, ti.Tool())
 }
 
+// Completions returns autocomplete suggestions for the current input prefix — the command
+// names whose word matches (M26). It is empty while a command is mid-interaction (the input
+// is then a coordinate/value/answer, not a new command), so the hint list only shows when a
+// command word is being typed.
+func (cl *CommandLine) Completions(s *Session, prefix string) []string {
+	if cl.Awaiting(s) {
+		return nil
+	}
+	return s.Bindings().Completions(prefix)
+}
+
 // Awaiting reports whether the engine is waiting on input — a pending question or an active
 // tool mid-interaction — so a caller knows more input is expected before the command ends.
 func (cl *CommandLine) Awaiting(s *Session) bool {

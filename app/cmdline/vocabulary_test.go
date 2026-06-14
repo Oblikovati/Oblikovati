@@ -2,7 +2,10 @@
 
 package cmdline
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDefaultVocabularyResolves(t *testing.T) {
 	v := DefaultVocabulary()
@@ -36,6 +39,46 @@ func TestDefaultVocabularyNoDuplicateWords(t *testing.T) {
 		}
 	}()
 	_ = DefaultVocabulary()
+}
+
+func TestVocabularyMatches(t *testing.T) {
+	v := DefaultVocabulary()
+	// "L" matches the LINE and LOFT commands (via words L/LINE and LOFT), returned as their
+	// canonical names, de-duped and sorted.
+	got := v.Matches("l")
+	if len(got) < 2 || got[0] != "LINE" {
+		t.Fatalf("Matches(l) = %v, want it to start with LINE and include LOFT", got)
+	}
+	hasLoft := false
+	for _, m := range got {
+		if m == "LOFT" {
+			hasLoft = true
+		}
+		if m != strings.ToUpper(m) {
+			t.Errorf("match %q is not a canonical upper-case word", m)
+		}
+	}
+	if !hasLoft {
+		t.Errorf("Matches(l) = %v, want LOFT included", got)
+	}
+	if sorted := append([]string(nil), got...); !slicesSorted(sorted) {
+		t.Errorf("Matches not sorted: %v", got)
+	}
+	if v.Matches("") != nil {
+		t.Error("empty prefix should return no matches")
+	}
+	if v.Matches("zzz") != nil {
+		t.Error("a non-matching prefix should return no matches")
+	}
+}
+
+func slicesSorted(s []string) bool {
+	for i := 1; i < len(s); i++ {
+		if s[i-1] > s[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestVocabularyActionsDistinct(t *testing.T) {

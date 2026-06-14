@@ -384,6 +384,10 @@ func (b *Bindings) CheckDefaults() error {
 	return nil
 }
 
+// Completions returns the built-in AutoCAD vocabulary's autocomplete suggestions for a typed
+// command prefix (M26) — the canonical names of matching commands.
+func (b *Bindings) Completions(prefix string) []string { return b.vocab.Matches(prefix) }
+
 // CanonicalWord returns the command word to echo when an action is triggered by a keyboard
 // chord (M26 F05): its AutoCAD vocabulary name ("SAVE", "UNDO", "EXTRUDE") when it has one,
 // else its display name upper-cased — so a chord reads on the command line like a typed
