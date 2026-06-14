@@ -35,7 +35,9 @@ type AssemblyComponentDefinition struct {
 	occurrences *occurrence.Occurrences
 	units       param.UnitsOfMeasure    // document display units (length/angle/…)
 	events      *AssemblyEvents         // occurrence-lifecycle event source (M11-F07)
-	constraints *assembly.ConstraintSet // relationship set + positioning solver (M12-F01)
+	constraints *assembly.ConstraintSet // constraint relationships + positioning solver (M12-F01)
+	joints      *assembly.JointSet      // joint relationships (reduced-DOF, M12-F02)
+	dsJoints    *assembly.DSJointSet    // DS-joint (DOF/imposed-motion) view (M12-F02)
 	features    *AssemblyFeatures       // assembly-authored machining features (M11-F08)
 	params      *param.Parameters       // parameter DAG for assembly sketch dimensions
 	work        *feature.WorkGeometry   // origin frame + user work planes, in assembly space
@@ -72,6 +74,8 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	occ.SetListener(a.events)
 	a.features.SetBus(a.events.Bus()) // feature-program events ride the assembly's occurrence bus
 	a.constraints = assembly.NewConstraintSet(occ, a.events)
+	a.joints = assembly.NewJointSet(occ, a.events)
+	a.dsJoints = assembly.NewDSJointSet()
 	return a
 }
 
@@ -188,11 +192,26 @@ func (a *AssemblyComponentDefinition) Features() *AssemblyFeatures { return a.fe
 // then position the components with [AssemblyComponentDefinition.SolveConstraints].
 func (a *AssemblyComponentDefinition) Constraints() *assembly.ConstraintSet { return a.constraints }
 
-// SolveConstraints positions the assembly's occurrences to satisfy its constraint set and
-// returns the health/DOF report (M12-F01). It is the assembly analogue of recomputing a
-// part: a constraint edit or a component move calls it to re-resolve the positions.
+// Joints returns the assembly's joint set — the simplified joints (rigid/rotational/…) that
+// establish a degree-of-freedom set between occurrences (M12-F02). Author with its Add*
+// methods, then position with [AssemblyComponentDefinition.SolveConstraints].
+func (a *AssemblyComponentDefinition) Joints() *assembly.JointSet { return a.joints }
+
+// DSJoints returns the assembly's DS-joint (degrees-of-freedom / imposed-motion) set (M12-F02).
+func (a *AssemblyComponentDefinition) DSJoints() *assembly.DSJointSet { return a.dsJoints }
+
+// SolveConstraints positions the assembly's occurrences to satisfy BOTH its constraints and
+// its joints in one solve and returns the health/DOF report (M12-F01/F02 — joints are
+// reduced-DOF residual bundles on the same solver, ADR-0011). It is the assembly analogue of
+// recomputing a part: a relationship edit or a component move calls it to re-resolve.
 func (a *AssemblyComponentDefinition) SolveConstraints() assembly.SolveReport {
-	return a.constraints.Solve()
+	return assembly.SolveAssembly(a.constraints, a.joints)
+}
+
+// AssemblyHealth reports the assembly's combined constraint+joint health and DOF without
+// moving any occurrence.
+func (a *AssemblyComponentDefinition) AssemblyHealth() assembly.SolveReport {
+	return assembly.AssemblyHealth(a.constraints, a.joints)
 }
 
 // AddFeature appends an assembly machining feature wrapping f, defaulting its

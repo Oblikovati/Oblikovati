@@ -48,7 +48,30 @@ func SubscribeAssembly(bus *event.Bus, document doc.ID, sink Sink) []event.Subsc
 			return relayJSON(sink, assemblyFeaturesPayload(document, e))
 		}),
 	}
-	return append(subs, subscribeConstraints(bus, document, sink)...)
+	subs = append(subs, subscribeConstraints(bus, document, sink)...)
+	return append(subs, subscribeJoints(bus, document, sink)...)
+}
+
+// subscribeJoints wires the assembly's joint events (M12-F02): a joint added or deleted.
+func subscribeJoints(bus *event.Bus, document doc.ID, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e compdef.JointAdd) event.Outcome {
+			return relayJSON(sink, jointPayload(wire.EventAssemblyJointAdded, document, e.Joint))
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e compdef.JointDelete) event.Outcome {
+			return relayJSON(sink, jointPayload(wire.EventAssemblyJointDeleted, document, e.Joint))
+		}),
+	}
+}
+
+// jointPayload renders a joint's identity (document, session id, kind) into the wire payload.
+func jointPayload(eventType string, document doc.ID, j contract.AssemblyJoint) wire.JointEventPayload {
+	return wire.JointEventPayload{
+		Type:     eventType,
+		Document: uint64(document),
+		Joint:    j.ID(),
+		Kind:     j.Type().String(),
+	}
 }
 
 // subscribeConstraints wires the assembly's relationship events (M12-F01): a constraint
