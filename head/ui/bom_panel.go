@@ -19,9 +19,6 @@ import (
 // / ExportBOMCSV; this only renders it. Part numbers/descriptions are blank until a component's
 // iProperties feed the BOM (#718); the structure and quantities are correct regardless.
 
-// bomViewNames index by bom.ViewKind, for the view chooser.
-var bomViewNames = []string{"Structured", "Parts Only"}
-
 // drawBOMWindow renders the BOM panel when it is open. It rebuilds the view each frame from the
 // live assembly, so placing or deleting a component updates the list immediately.
 func drawBOMWindow(s *app.Session) {
@@ -48,12 +45,12 @@ func drawBOMWindow(s *app.Session) {
 // drawBOMControls renders the view chooser (Structured / Parts Only) and the Export CSV button,
 // which arms the file dialog to write the current view.
 func drawBOMControls(s *app.Session) {
-	cur := int(s.BOMViewKind())
+	cur := s.BOMViewKind()
 	native.SetNextItemWidth(160)
-	if native.BeginCombo("View##bom-view", bomViewNames[cur]) {
-		for i, name := range bomViewNames {
-			if native.Selectable(name, i == cur) {
-				s.SetBOMViewKind(bom.ViewKind(i))
+	if native.BeginCombo("View##bom-view", cur.String()) {
+		for _, k := range bom.ViewKinds() {
+			if native.Selectable(k.String(), k == cur) {
+				s.SetBOMViewKind(k)
 			}
 		}
 		native.EndCombo()
@@ -64,18 +61,21 @@ func drawBOMControls(s *app.Session) {
 	}
 }
 
-// drawBOMTable renders the rows as a five-column table (Item, Part Number, Description, QTY,
-// Structure). A structured view nests sub-assembly children, indented under their parent.
+// drawBOMTable renders the rows as a table whose headers mirror the CSV export's standard columns
+// (so the on-screen and exported BOM never disagree). A structured view nests sub-assembly
+// children, indented under their parent. The cells are drawn from the row fields directly rather
+// than through the columns' value funcs, because the panel adds tree indentation the CSV does not.
 func drawBOMTable(view *bom.View) {
 	if len(view.Rows) == 0 {
 		native.Text("  (no components)")
 		return
 	}
-	if !native.BeginTable("##bom-table", 5, 0, 0) {
+	columns := bom.StandardColumns()
+	if !native.BeginTable("##bom-table", len(columns), 0, 0) {
 		return
 	}
-	for _, c := range []string{"Item", "Part Number", "Description", "QTY", "Structure"} {
-		native.TableSetupColumn(c)
+	for _, c := range columns {
+		native.TableSetupColumn(c.Header)
 	}
 	native.TableSetupScrollFreeze(0, 1)
 	native.TableHeadersRow()
