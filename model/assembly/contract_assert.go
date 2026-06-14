@@ -33,4 +33,7 @@ var (
 	_ contract.DSJoints                 = (*DSJointSet)(nil)
 	_ contract.DSJointDefinition        = dsJointDefinition{}
 	_ contract.DSDegreesOfFreedom       = (*dsDOF)(nil)
+
+	// Drive (M12-F03).
+	_ contract.DriveSettings = DriveSettings{}
 )
