@@ -61,6 +61,46 @@ func (s *ConstraintSet) AddSymmetry(occA *occurrence.Occurrence, primA Primitive
 	return c
 }
 
+// AddRotateRotate adds a gear-ratio coupling between rotation A and rotation B.
+func (s *ConstraintSet) AddRotateRotate(occA *occurrence.Occurrence, primA Primitive, occB *occurrence.Occurrence, primB Primitive, ratio float64) *RotateRotateConstraint {
+	c := &RotateRotateConstraint{constraintBase: s.newBase(types.ConstraintRotateRotate, anchor{occA, primA}, anchor{occB, primB}), ratio: ratio}
+	s.add(c)
+	return c
+}
+
+// AddRotateTranslate adds a rack-and-pinion coupling between rotation A and translation B.
+func (s *ConstraintSet) AddRotateTranslate(occA *occurrence.Occurrence, primA Primitive, occB *occurrence.Occurrence, primB Primitive, distance float64) *RotateTranslateConstraint {
+	c := &RotateTranslateConstraint{constraintBase: s.newBase(types.ConstraintRotateTranslate, anchor{occA, primA}, anchor{occB, primB}), distance: distance}
+	s.add(c)
+	return c
+}
+
+// AddTranslateTranslate adds a ratio coupling between translation A and translation B.
+func (s *ConstraintSet) AddTranslateTranslate(occA *occurrence.Occurrence, primA Primitive, occB *occurrence.Occurrence, primB Primitive, ratio float64) *TranslateTranslateConstraint {
+	c := &TranslateTranslateConstraint{constraintBase: s.newBase(types.ConstraintTranslateTranslate, anchor{occA, primA}, anchor{occB, primB}), ratio: ratio}
+	s.add(c)
+	return c
+}
+
+// AddTransitional adds a sliding-contact constraint keeping geometry A on transition face B.
+func (s *ConstraintSet) AddTransitional(occA *occurrence.Occurrence, primA Primitive, occB *occurrence.Occurrence, primB Primitive) *TransitionalConstraint {
+	c := &TransitionalConstraint{constraintBase: s.newBase(types.ConstraintTransitional, anchor{occA, primA}, anchor{occB, primB})}
+	s.add(c)
+	return c
+}
+
+// AddCustom adds an add-in-solved relationship of the given kind, driven by params.
+func (s *ConstraintSet) AddCustom(occA *occurrence.Occurrence, primA Primitive, occB *occurrence.Occurrence, primB Primitive, kind string, params []float64) *CustomConstraint {
+	c := &CustomConstraint{
+		constraintBase: s.newBase(types.ConstraintCustom, anchor{occA, primA}, anchor{occB, primB}),
+		kind:           kind,
+		params:         append([]float64(nil), params...),
+		set:            s,
+	}
+	s.add(c)
+	return c
+}
+
 // constraintNames maps each kind to its display prefix (e.g. "Mate" → "Mate:1").
 var constraintNames = map[types.AssemblyConstraintType]string{
 	types.ConstraintMate:               "Mate",
