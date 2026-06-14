@@ -61,6 +61,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerAssemblyOccurrenceHandlers()
 	r.registerAssemblyConstraintHandlers()
 	r.registerAssemblyJointHandlers()
+	r.registerAssemblyDriveHandlers()
 	r.registerAssemblyReplicationHandlers()
 	r.registerAssemblyBOMHandlers()
 	r.registerDocumentPropertyHandlers()
