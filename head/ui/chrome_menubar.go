@@ -18,8 +18,26 @@ func drawMenuBar(s *app.Session) {
 	drawFileMenu(s)
 	drawEditMenu(s)
 	drawToolsMenu(s)
+	drawHelpMenu(s)
 	drawCommandSearch(s) // the command search box (M05-F12)
 	native.EndMainMenuBar()
+}
+
+// drawHelpMenu is the Help menu: product documentation (F1) and a manual update check.
+// "Check for Updates" requests the (network) check, which the head runs off-thread and
+// reports back through the Software Update window — so it works even while the
+// application is running, per the manual-check requirement.
+func drawHelpMenu(s *app.Session) {
+	if native.BeginMenu("Help") {
+		if native.MenuItem("Documentation") {
+			_ = s.DisplayHelpTopic("", "")
+		}
+		native.Separator()
+		if native.MenuItem("Check for Updates") {
+			s.RequestUpdateCheck()
+		}
+		native.EndMenu()
+	}
 }
 
 func drawFileMenu(s *app.Session) {
