@@ -233,7 +233,7 @@ func appendFeatureEntries(entries []timelineEntry, part *compdef.PartComponentDe
 	for i := 0; i < features.Count(); i++ {
 		f := features.Item(i)
 		entries = append(entries, timelineEntry{f.Seq(), func(root *BrowserNode) {
-			node := root.selectableBranch(f.Name(), "feature", FeatureHandle{Feature: f})
+			node := root.selectableBranch(featureLabel(f), "feature", FeatureHandle{Feature: f})
 			for _, sk := range f.ConsumedSketches() {
 				if absorber[sk] == f {
 					node.selectableChild(sk.Name(), "sketch", SketchHandle{Sketch: sk})
@@ -242,6 +242,15 @@ func appendFeatureEntries(entries []timelineEntry, part *compdef.PartComponentDe
 		}})
 	}
 	return entries
+}
+
+// featureLabel is a feature's browser label, with an "(out of date)" badge when it is a
+// derived/shrinkwrap feature whose source has changed since it was last synced (#767).
+func featureLabel(f *feature.PartFeature) string {
+	if ds, ok := f.Definition().(feature.DeriveStatus); ok && ds.OutOfDate() {
+		return f.Name() + " (out of date)"
+	}
+	return f.Name()
 }
 
 // addOriginBranch fills the Origin folder with the seven coordinate-system elements (three

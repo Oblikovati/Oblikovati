@@ -74,7 +74,36 @@ func manageTabCommands() []*CommandDefinition {
 			WithIcon("parameters").WithButtonStyle(LargeIconButton).
 			WithTooltip("Parameters — add, edit, and organize the model and user parameters that drive the part."),
 		scriptConsoleCommand(),
+		deriveAssemblyCommand(),
+		shrinkwrapCommand(),
 	}
+}
+
+// deriveAssemblyCommand / shrinkwrapCommand are the Manage tab's Simplify panel (#767): merge an
+// open assembly into the active part as a base body — full or simplified. Each is enabled only when
+// a part is active AND an assembly is open to derive (no source ⇒ nothing to do), and starts its
+// tool, which reads the source/options from the generic dialog.
+func deriveAssemblyCommand() *CommandDefinition {
+	return NewCommand("Manage.Derive", "Derive Assembly", "Simplify", func(s *Session) error {
+		s.StartTool(NewDeriveAssemblyTool())
+		return nil
+	}).WithTab("Manage").WithEnable(canDeriveAssembly).
+		WithIcon("derive").WithButtonStyle(LargeIconButton).
+		WithTooltip("Derive Assembly — merge an open assembly into this part as one base body, linked to the source.")
+}
+
+func shrinkwrapCommand() *CommandDefinition {
+	return NewCommand("Manage.Shrinkwrap", "Shrinkwrap", "Simplify", func(s *Session) error {
+		s.StartTool(NewShrinkwrapTool())
+		return nil
+	}).WithTab("Manage").WithEnable(canDeriveAssembly).
+		WithIcon("shrinkwrap").WithButtonStyle(LargeIconButton).
+		WithTooltip("Shrinkwrap — merge an open assembly into this part as a simplified, lightweight base body.")
+}
+
+// canDeriveAssembly reports whether a part is active and at least one assembly is open to derive.
+func canDeriveAssembly(s *Session) bool {
+	return hasActivePart(s) && len(s.OpenAssemblies()) > 0
 }
 
 // hasActivePart reports whether the active document is a part (the Parameters dialog

@@ -2,6 +2,8 @@
 
 package app
 
+import "oblikovati.org/model/feature"
+
 // The model browser's right-click menu. Inventor shows a different set of commands per
 // node type; BrowserMenu returns that set as plain data so the head (head/ui) renders it
 // without knowing the model — each item carries the closure that performs the action.
@@ -94,10 +96,25 @@ func featureMenu(sel Selectable) []BrowserMenuItem {
 	if h.Feature.Suppressed() {
 		suppressLabel = "Unsuppress"
 	}
-	return []BrowserMenuItem{
+	items := []BrowserMenuItem{
 		{Label: "Edit", Enabled: FeatureIsEditable(h.Feature), Invoke: func(s *Session) error { s.BeginEditFeature(h); return nil }},
 		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleFeatureSuppressed(h.Feature) }},
 		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteFeature(h.Feature) }},
+	}
+	return append(items, deriveMenuItems(h.Feature)...)
+}
+
+// deriveMenuItems adds the derive-family actions to a feature menu: Update (re-sync to the source,
+// enabled only when out of date) and Break Link (freeze, enabled while still linked). A non-derive
+// feature adds nothing (#767).
+func deriveMenuItems(f *feature.PartFeature) []BrowserMenuItem {
+	ds, ok := f.Definition().(feature.DeriveStatus)
+	if !ok {
+		return nil
+	}
+	return []BrowserMenuItem{
+		{Label: "Update", Enabled: ds.OutOfDate(), Invoke: func(s *Session) error { return s.UpdateDerivedFeature(f) }},
+		{Label: "Break Link", Enabled: ds.Linked(), Invoke: func(s *Session) error { return s.BreakDerivedLink(f) }},
 	}
 }
 
