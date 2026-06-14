@@ -37,7 +37,7 @@ func (f *AssemblyChamferFeature) Kind() string { return "assemblyChamfer" }
 // Recompute chamfers the matched edges of every participant body.
 func (f *AssemblyChamferFeature) Recompute(in Input) (Output, error) {
 	dist := f.distance()
-	bodies, err := dressParticipants(in.Bodies, f.edgeSuffixes, func(body *topo.Body, keys [][]byte) (*topo.Body, error) {
+	bodies, err := dressParticipants(in.Bodies, edgeSuffixKeys(f.edgeSuffixes), func(body *topo.Body, keys [][]byte) (*topo.Body, error) {
 		out, err := chamferEdges(Input{Bodies: []*topo.Body{body}}, keys, dist, "asmChamfer", f.flatCorners)
 		if err != nil {
 			return nil, err
@@ -74,7 +74,7 @@ func (f *AssemblyFilletFeature) Kind() string { return "assemblyFillet" }
 // Recompute rounds the matched edges of every participant body.
 func (f *AssemblyFilletFeature) Recompute(in Input) (Output, error) {
 	r := f.radius()
-	bodies, err := dressParticipants(in.Bodies, f.edgeSuffixes, func(body *topo.Body, keys [][]byte) (*topo.Body, error) {
+	bodies, err := dressParticipants(in.Bodies, edgeSuffixKeys(f.edgeSuffixes), func(body *topo.Body, keys [][]byte) (*topo.Body, error) {
 		return ops.FilletEdges(body, keys, r)
 	})
 	if err != nil {
@@ -88,13 +88,14 @@ func (f *AssemblyFilletFeature) EditableParams() []EditableParam {
 	return []EditableParam{scalarParam("Radius", param.Length, &f.radius)}
 }
 
-// dressParticipants applies an edge dress-up to every participant body, resolving the
-// component edge suffixes to that body's full edge keys first; a body with no matching edge
-// passes through unchanged. Shared by the assembly chamfer and fillet (#735).
-func dressParticipants(bodies []*topo.Body, suffixes [][]byte, dress func(body *topo.Body, keys [][]byte) (*topo.Body, error)) ([]*topo.Body, error) {
+// dressParticipants applies a face-edit/dress-up to every participant body, resolving the
+// component reference suffixes to that body's full keys via keysFor first; a body with no
+// matching entity passes through unchanged. Shared by the assembly chamfer, fillet, and
+// move-face (#735).
+func dressParticipants(bodies []*topo.Body, keysFor func(*topo.Body) [][]byte, dress func(body *topo.Body, keys [][]byte) (*topo.Body, error)) ([]*topo.Body, error) {
 	out := make([]*topo.Body, 0, len(bodies))
 	for _, body := range bodies {
-		keys := edgeKeysForSuffixes(body, suffixes)
+		keys := keysFor(body)
 		if len(keys) == 0 {
 			out = append(out, body)
 			continue
@@ -108,14 +109,27 @@ func dressParticipants(bodies []*topo.Body, suffixes [][]byte, dress func(body *
 	return out, nil
 }
 
-// edgeKeysForSuffixes resolves each component edge suffix to the participant body's full
-// reference keys (the occurrence-relative resolver from #735).
-func edgeKeysForSuffixes(body *topo.Body, suffixes [][]byte) [][]byte {
-	var keys [][]byte
-	for _, s := range suffixes {
-		keys = append(keys, body.EdgeReferenceKeysWithLineageSuffix(s)...)
+// edgeSuffixKeys / faceSuffixKeys return a resolver that maps each component suffix to a
+// participant body's full edge / face reference keys (the occurrence-relative resolver
+// from #735).
+func edgeSuffixKeys(suffixes [][]byte) func(*topo.Body) [][]byte {
+	return func(body *topo.Body) [][]byte {
+		var keys [][]byte
+		for _, s := range suffixes {
+			keys = append(keys, body.EdgeReferenceKeysWithLineageSuffix(s)...)
+		}
+		return keys
 	}
-	return keys
+}
+
+func faceSuffixKeys(suffixes [][]byte) func(*topo.Body) [][]byte {
+	return func(body *topo.Body) [][]byte {
+		var keys [][]byte
+		for _, s := range suffixes {
+			keys = append(keys, body.FaceReferenceKeysWithLineageSuffix(s)...)
+		}
+		return keys
+	}
 }
 
 // soleBody returns the single body of a dress-up result, erroring if the op did not yield

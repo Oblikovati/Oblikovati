@@ -37,6 +37,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.handlers[wire.MethodAssemblyFeaturesAddRevolve] = assemblyFeaturesAddRevolve
 	r.handlers[wire.MethodAssemblyFeaturesAddChamfer] = assemblyFeaturesAddChamfer
 	r.handlers[wire.MethodAssemblyFeaturesAddFillet] = assemblyFeaturesAddFillet
+	r.handlers[wire.MethodAssemblyFeaturesAddMoveFace] = assemblyFeaturesAddMoveFace
 	r.handlers[wire.MethodAssemblyFeaturesEdit] = assemblyFeaturesEdit
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
 	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
@@ -222,6 +223,27 @@ func assemblyFeaturesAddFillet(s *app.Session, raw json.RawMessage) (json.RawMes
 	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
 }
 
+// assemblyFeaturesAddMoveFace translates picked component faces on every participant.
+func assemblyFeaturesAddMoveFace(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAssemblyMoveFaceArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	suffixes, err := assemblyFaceSuffixes(asm, in.Faces, wire.MethodAssemblyFeaturesAddMoveFace)
+	if err != nil {
+		return nil, err
+	}
+	delta := math.V3(in.Translation[0], in.Translation[1], in.Translation[2])
+	af := asm.AddFeature(feature.NewAssemblyMoveFaceFeature(suffixes, delta))
+	af.SetName(asm.Features().UniqueName(af.Kind()))
+	asm.RecomputeFeatures()
+	return json.Marshal(wire.AssemblyFeatureResult{Feature: assemblyFeatureInfo(asm, af)})
+}
+
 // assemblyEdgeSuffixes resolves each edge ref to a component-local lineage suffix, after
 // validating the edge exists on its occurrence's component body. The suffix is what each
 // participant's placed body is matched against at recompute (#735).
@@ -231,17 +253,42 @@ func assemblyEdgeSuffixes(asm *compdef.AssemblyComponentDefinition, refs []wire.
 	}
 	out := make([][]byte, 0, len(refs))
 	for _, ref := range refs {
-		occ, err := occurrenceByID(asm, ref.Occurrence, method)
+		suffix, err := assemblyRefSuffix(asm, ref.Occurrence, []byte(ref.Edge), method, edgeOnComponent)
 		if err != nil {
 			return nil, err
 		}
-		key := []byte(ref.Edge)
-		if !edgeOnComponent(componentBodies(occ), key) {
-			return nil, fmt.Errorf("%s: edge key not found on occurrence %d's component", method, ref.Occurrence)
-		}
-		out = append(out, topo.LineageSuffixOf(key))
+		out = append(out, suffix)
 	}
 	return out, nil
+}
+
+// assemblyFaceSuffixes is the face twin of [assemblyEdgeSuffixes].
+func assemblyFaceSuffixes(asm *compdef.AssemblyComponentDefinition, refs []wire.AssemblyFaceRef, method string) ([][]byte, error) {
+	if len(refs) == 0 {
+		return nil, fmt.Errorf("%s: no faces given", method)
+	}
+	out := make([][]byte, 0, len(refs))
+	for _, ref := range refs {
+		suffix, err := assemblyRefSuffix(asm, ref.Occurrence, []byte(ref.Face), method, faceOnComponent)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, suffix)
+	}
+	return out, nil
+}
+
+// assemblyRefSuffix validates that key names an entity on the occurrence's component body
+// (via present) and returns its component-local lineage suffix.
+func assemblyRefSuffix(asm *compdef.AssemblyComponentDefinition, occID uint64, key []byte, method string, present func([]*topo.Body, []byte) bool) ([]byte, error) {
+	occ, err := occurrenceByID(asm, occID, method)
+	if err != nil {
+		return nil, err
+	}
+	if !present(componentBodies(occ), key) {
+		return nil, fmt.Errorf("%s: reference key not found on occurrence %d's component", method, occID)
+	}
+	return topo.LineageSuffixOf(key), nil
 }
 
 // componentBodies returns the evaluated surface bodies of an occurrence's component
@@ -256,10 +303,19 @@ func componentBodies(occ *occurrence.Occurrence) []*topo.Body {
 	return def.SurfaceBodies().All()
 }
 
-// edgeOnComponent reports whether any of the component's bodies carries the edge key.
+// edgeOnComponent / faceOnComponent report whether any component body carries the key.
 func edgeOnComponent(bodies []*topo.Body, key []byte) bool {
 	for _, b := range bodies {
 		if _, ok := b.FindEdgeByKey(key); ok {
+			return true
+		}
+	}
+	return false
+}
+
+func faceOnComponent(bodies []*topo.Body, key []byte) bool {
+	for _, b := range bodies {
+		if _, ok := b.FindFaceByKey(key); ok {
 			return true
 		}
 	}
