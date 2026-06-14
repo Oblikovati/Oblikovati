@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/persistence/yamlcodec"
@@ -23,6 +24,7 @@ import (
 type assemblyRecipe struct {
 	Units       map[string]string  `yaml:"units,omitempty"`
 	Occurrences []occurrenceRecipe `yaml:"occurrences,omitempty"`
+	Properties  []propertyRecipe   `yaml:"properties,omitempty"` // document iProperties (#156)
 }
 
 // occurrenceRecipe is the persisted form of one placement: the component document it
@@ -43,6 +45,7 @@ func (a *AssemblyComponentDefinition) MarshalRecipe() ([]byte, error) {
 	return yamlcodec.Marshal(assemblyRecipe{
 		Units:       unitsRecipeFor(a.units),
 		Occurrences: a.occurrencesRecipe(),
+		Properties:  propertiesRecipeOf(a.props),
 	})
 }
 
@@ -83,6 +86,7 @@ func (a *AssemblyComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := applyUnitsTo(a.units, r.Units); err != nil {
 		return err
 	}
+	applyPropertiesRecipe(a.props, r.Properties)
 	a.pending = r.Occurrences
 	return nil
 }
@@ -115,6 +119,7 @@ func (a *AssemblyComponentDefinition) RestoreRecipe(model []byte) error {
 func (a *AssemblyComponentDefinition) resetOccurrences() {
 	a.occurrences = occurrence.NewOccurrences()
 	a.occurrences.SetListener(a.events)
+	a.props = attr.NewPropertySets() // a restore re-applies the snapshot's properties onto a clean set (#156)
 	a.pending = nil
 }
 

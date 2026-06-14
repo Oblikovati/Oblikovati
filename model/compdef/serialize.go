@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/api/types"
 
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/identity"
@@ -45,6 +46,7 @@ type partRecipe struct {
 	Sketches3D        []sketch.SketchData3D        `yaml:"sketches3D,omitempty"`
 	Features          []feature.FeatureData        `yaml:"features,omitempty"`
 	Materials         *material.RecipeData         `yaml:"materials,omitempty"`
+	Properties        []propertyRecipe             `yaml:"properties,omitempty"` // document iProperties (#156)
 }
 
 // sketchIndex adapts a part's sketch collection to feature.SketchIndexer so features
@@ -198,6 +200,7 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		Sketches3D:        sketches3D,
 		Features:          features,
 		Materials:         d.materialsRecipe(),
+		Properties:        propertiesRecipeOf(d.props),
 	}
 	if d.eop != endOfPartAtEnd {
 		eop := d.eop
@@ -235,6 +238,7 @@ func (d *PartComponentDefinition) resetRecipe() {
 	d.assignments = material.NewAssignmentStore()
 	d.assets = material.NewAssetSet()
 	d.bodies = topo.NewSurfaceBodies()
+	d.props = attr.NewPropertySets()
 }
 
 // ApplyRecipe restores the part from recipe YAML and recomputes (doc.RecipeContent).
@@ -246,6 +250,7 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := d.applyUnits(r.Units); err != nil {
 		return err
 	}
+	applyPropertiesRecipe(d.props, r.Properties)
 	if err := d.applyParameters(r.ParameterGroups, r.Parameters); err != nil {
 		return err
 	}
