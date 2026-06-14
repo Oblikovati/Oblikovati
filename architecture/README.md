@@ -69,6 +69,13 @@ The three defining choices, plus the derived ones, are recorded as ADRs:
 | [0016](decisions/ADR-0016-shared-library-addins-mcp-bridge.md) | **In-process shared-library add-ins (C ABI) + MCP automation bridge** — amends 0003 |
 | [0017](decisions/ADR-0017-release-pipeline.md) | **Channel-based release pipeline** (nightly + stable; GUI head + CLI) — supersedes 0015's CD |
 | [0029](decisions/ADR-0029-user-config-location.md) | **Unified per-user config location** (`~/.oblikovati`; `%AppData%\oblikovati` on Windows) via `oblikovati.org/userconfig` |
+| [0030](decisions/ADR-0030-tolerant-nurbs-meshing.md) | Tolerant NURBS surface meshing (on-surface interior nodes + shared-edge stitching) |
+| [0031](decisions/ADR-0031-embedded-document-resources.md) | Imported files are embedded in the document as a root `resources` dictionary (UUID-keyed) |
+| [0032](decisions/ADR-0032-blender-theme-file-format.md) | Blender theme XML as the theme file format |
+| [0033](decisions/ADR-0033-icon-color-roles.md) | Icon color roles (primary / secondary / tertiary / background) |
+| [0034](decisions/ADR-0034-per-document-type-file-extensions.md) | Per-document-type file extensions, and a project file |
+| [0035](decisions/ADR-0035-assembly-machining-features.md) | **Assembly machining features**: occurrence-relative references + a serialized feature program |
+| [0036](decisions/ADR-0036-content-agnostic-sketch-host.md) | The sketch environment hosts on a content-agnostic `sketchHost` interface (part or assembly) |
 
 > Note: ADRs 0018–0028 exist under `decisions/` but predate the last index refresh; this
 > table is being backfilled separately.

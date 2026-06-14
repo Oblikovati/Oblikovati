@@ -95,8 +95,8 @@ modeled as the subassembly contributing its unsolved DOF to the parent's
   mirrored *definition*, a derived part — modeling/02; a symmetric part can reuse the
   definition with a mirror transform). The definition decides.
 - **Substitution** swaps an occurrence's `def` for a simplified representation
-  (shrinkwrap, iteration 4) — the occurrence keeps its path/transform, changes what
-  it points at.
+  (shrinkwrap — shipped as `compdef.shrinkwrap_lod`, M11-F06) — the occurrence keeps
+  its path/transform, changes what it points at.
 
 ## GPU instancing falls out (core/08, realtime-3d §3, §6)
 
