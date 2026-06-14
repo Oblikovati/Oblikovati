@@ -2,14 +2,11 @@
 
 package app
 
-import "fmt"
-
 // The Assemble ribbon tab (M11), shown for an assembly document (the AssemblyRibbon key,
-// switched in by ribbonKeyForDocument). This file establishes the tab's panel structure and
-// the active-assembly enable gate; each command's behavior lands in its own follow-up issue
-// (Pattern/Mirror/Copy #765, BOM #768), which replaces the stub run below with a real tool. The
-// assembly model + wire surface already exist — these are head/app wiring. Place (#763) is now
-// real: its command starts the Place Component tool.
+// switched in by ribbonKeyForDocument). It carries the Component panel (Place, #763), the Pattern
+// panel (Rectangular/Circular Pattern, Mirror, Copy, #765), and the BOM panel (Bill of Materials,
+// #768). The assembly model + wire surface already exist — these commands are the head/app wiring
+// that drives them.
 
 // assemblyTabCommands returns the Assemble tab commands in ribbon order, grouped into panels
 // by their category (Component / Pattern / BOM).
@@ -29,7 +26,15 @@ func assemblyTabCommands() []*CommandDefinition {
 			WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
 			WithIcon("copy").WithButtonStyle(SmallIconButton).
 			WithTooltip("Copy — add an independent copy of each selected component."),
-		assemblyStubCommand("Assembly.BOM", "Bill of Materials", "BOM", 768),
+		NewCommand("Assembly.BOM", "Bill of Materials", "BOM", func(s *Session) error {
+			if _, err := activeAssembly(s); err != nil {
+				return err
+			}
+			s.OpenBOM()
+			return nil
+		}).WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
+			WithIcon("bom").WithButtonStyle(LargeIconButton).
+			WithTooltip("Bill of Materials — list the assembly's components (structured or parts-only) and export to CSV."),
 	}
 }
 
@@ -67,22 +72,4 @@ func runPlaceComponent(s *Session) error {
 	}
 	s.StartTool(NewPlaceComponentTool())
 	return nil
-}
-
-// assemblyStubCommand builds one Assemble-tab command on the AssemblyRibbon, enabled when an
-// assembly is active. Its run is a placeholder until the named follow-up issue wires the
-// real tool — so the tab renders with the full panel structure now.
-func assemblyStubCommand(id, name, panel string, issue int) *CommandDefinition {
-	return NewCommand(id, name, panel, assemblyStubRun(name, issue)).
-		WithTab("Assemble").
-		WithRibbons(AssemblyRibbon).
-		WithEnable(hasActiveAssembly).
-		WithTooltip(fmt.Sprintf("%s — assembly command (implementation in #%d).", name, issue))
-}
-
-// assemblyStubRun reports that the command's behavior is not yet wired, naming its issue.
-func assemblyStubRun(name string, issue int) func(*Session) error {
-	return func(*Session) error {
-		return fmt.Errorf("%s is not yet implemented (#%d)", name, issue)
-	}
 }
