@@ -377,14 +377,14 @@ func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (r
 // modelOverlays appends the 3D-model overlays (work planes, part sketches, selected edges, and
 // the extrude / active-tool previews) to list.
 func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane, list renderer.DrawList) renderer.DrawList {
-	part := activePart(s)
-	hidden := s.EditScopeHides  // hide datums created after the node being edited (issue #132)
-	vis := s.ObjectVisibility() // View ▸ Object visibility (M05-F12): hidden kinds neither draw nor pick
-	if vis.WorkPlanes {
-		list.Items = append(list.Items, planesOverlay(part, s.SelectedWorkPlane(), hovered, hidden)...)
+	wg, hasWG := s.ActiveWorkGeometry() // a part OR an assembly's origin frame + datums (#769 parity)
+	hidden := s.EditScopeHides          // hide datums created after the node being edited (issue #132)
+	vis := s.ObjectVisibility()         // View ▸ Object visibility (M05-F12): hidden kinds neither draw nor pick
+	if hasWG && vis.WorkPlanes {
+		list.Items = append(list.Items, planesOverlay(wg.WorkPlanes(), s.SelectedWorkPlane(), hovered, hidden)...)
 	}
-	if vis.WorkAxes {
-		list.Items = append(list.Items, axesOverlay(part, selectedWorkAxis(s), hidden)...)
+	if hasWG && vis.WorkAxes {
+		list.Items = append(list.Items, axesOverlay(wg.WorkAxes(), selectedWorkAxis(s), hidden)...)
 	}
 	if vis.Sketches {
 		list.Items = append(list.Items, partSketchOverlays(s)...)

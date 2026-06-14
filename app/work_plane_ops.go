@@ -29,27 +29,89 @@ func (s *Session) SelectedWorkPlanes() []*feature.WorkPlane {
 	return planes
 }
 
+// ActiveWorkGeometry returns the active document's work geometry — its origin coordinate frame
+// (origin planes/axes/point) and user-created datums — whether the active document is a part or an
+// assembly, since both own a [feature.WorkGeometry]. The second result is false when no such
+// document is active. The viewport's datum rendering and picking source from this so an assembly's
+// origin axes and work planes are shown and clickable exactly like a part's.
+func (s *Session) ActiveWorkGeometry() (*feature.WorkGeometry, bool) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, false
+	}
+	provider, ok := d.Content().(interface {
+		WorkGeometry() *feature.WorkGeometry
+	})
+	if !ok {
+		return nil, false
+	}
+	return provider.WorkGeometry(), true
+}
+
 // PickableWorkPlanes returns the work planes the viewport hit-test should offer: every
-// origin plane (always pickable as a sketch host — Inventor's Origin folder — even though
+// origin plane (always pickable as a sketch host — the Origin folder — even though
 // origin planes default to hidden) plus every VISIBLE user-created datum not hidden by the
 // active edit scope (a plane the overlays don't draw must not be clickable either). User
 // planes were previously absent from the picker, so a ribbon-created plane could not be
 // clicked as a new sketch's reference in the 3D view (issue #132); the head feeds this to
-// the RayPicker.
+// the RayPicker. Works for an assembly too (its origin planes are sketch hosts as well).
 func (s *Session) PickableWorkPlanes() []*feature.WorkPlane {
 	if !s.objectVisibility.WorkPlanes { // hidden kinds are not pickable (M05-F12)
 		return nil
 	}
-	part, err := activePart(s)
-	if err != nil {
+	wg, ok := s.ActiveWorkGeometry()
+	if !ok {
 		return nil
 	}
-	planes := part.WorkPlanes()
+	planes := wg.WorkPlanes()
 	out := make([]*feature.WorkPlane, 0, planes.Count())
 	for i := 0; i < planes.Count(); i++ {
 		wp := planes.Item(i)
 		if wp.IsCoordinateSystemElement() || (wp.Visible() && !s.EditScopeHides(wp.Seq())) {
 			out = append(out, wp)
+		}
+	}
+	return out
+}
+
+// PickableWorkAxes returns the datum axes (origin X/Y/Z and user) the viewport hit-test should
+// offer — every visible axis not hidden by the active edit scope, for a part or an assembly. The
+// picker snaps a click to one as a work-plane / sketch reference; geometry the overlays do not draw
+// must not be clickable, so this mirrors the axesOverlay filter.
+func (s *Session) PickableWorkAxes() []*feature.WorkAxis {
+	if !s.objectVisibility.WorkAxes { // hidden kinds are not pickable (M05-F12)
+		return nil
+	}
+	wg, ok := s.ActiveWorkGeometry()
+	if !ok {
+		return nil
+	}
+	axes := wg.WorkAxes()
+	out := make([]*feature.WorkAxis, 0, axes.Count())
+	for i := 0; i < axes.Count(); i++ {
+		if ax := axes.Item(i); ax.Visible() && !s.EditScopeHides(ax.Seq()) {
+			out = append(out, ax)
+		}
+	}
+	return out
+}
+
+// PickableWorkPoints returns the datum points (origin center and user) the viewport hit-test should
+// snap to, for a part or an assembly. Points have no overlay symbol but are snap targets; scope-
+// hidden ones are excluded to match the other datums.
+func (s *Session) PickableWorkPoints() []*feature.WorkPoint {
+	if !s.objectVisibility.WorkPoints { // hidden kinds are not pickable (M05-F12)
+		return nil
+	}
+	wg, ok := s.ActiveWorkGeometry()
+	if !ok {
+		return nil
+	}
+	points := wg.WorkPoints()
+	out := make([]*feature.WorkPoint, 0, points.Count())
+	for i := 0; i < points.Count(); i++ {
+		if pt := points.Item(i); !s.EditScopeHides(pt.Seq()) {
+			out = append(out, pt)
 		}
 	}
 	return out

@@ -6,22 +6,21 @@ package ui
 
 import (
 	"oblikovati.org/math"
-	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/renderer"
 )
 
-// planesOverlay draws the part's work planes — the origin frame AND user-created datums —
-// each as a translucent filled square with a solid square border (Inventor's datum-plane
-// look), so a created work plane is visible and can be clicked. Hidden planes (Visibility
-// toggled off) are skipped. The selected plane's border is highlighted; the plane under
-// the cursor uses the hover color. Shown outside the sketch environment.
-func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *feature.WorkPlane, hidden scopeFilter) []renderer.DrawItem {
-	if part == nil {
+// planesOverlay draws a model's work planes — the origin frame AND user-created datums — each as a
+// translucent filled square with a solid square border (the datum-plane look), so a created work
+// plane is visible and can be clicked. Hidden planes (Visibility toggled off) are skipped. The
+// selected plane's border is highlighted; the plane under the cursor uses the hover color. Shown
+// outside the sketch environment. Takes the plane collection (not a part) so it serves a part or an
+// assembly — both expose WorkPlanes() through their work geometry.
+func planesOverlay(planes *feature.WorkPlanes, selected, hovered *feature.WorkPlane, hidden scopeFilter) []renderer.DrawItem {
+	if planes == nil {
 		return nil
 	}
 	var items []renderer.DrawItem
-	planes := part.WorkPlanes()
 	for i := 0; i < planes.Count(); i++ {
 		wp := planes.Item(i)
 		if !wp.Visible() || hidden(wp.Seq()) {
@@ -32,11 +31,10 @@ func planesOverlay(part *compdef.PartComponentDefinition, selected, hovered *fea
 	return items
 }
 
-func axesOverlay(part *compdef.PartComponentDefinition, selected *feature.WorkAxis, hidden scopeFilter) []renderer.DrawItem {
-	if part == nil {
+func axesOverlay(axes *feature.WorkAxes, selected *feature.WorkAxis, hidden scopeFilter) []renderer.DrawItem {
+	if axes == nil {
 		return nil
 	}
-	axes := part.WorkAxes()
 	items := make([]renderer.DrawItem, 0, axes.Count())
 	for i := 0; i < axes.Count(); i++ {
 		axis := axes.Item(i)
