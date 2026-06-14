@@ -54,6 +54,20 @@ typedef void (*ObkHostFree)(uint8_t *p);
  *
  *   ObkAddInId        stable add-in id (e.g. "com.oblikovati.mcp-bridge").
  *   ObkAddInManifest  JSON: {id, displayName, version, capabilities:[...]}.
+ *   ObkAddInApiMajor  the MAJOR version of the oblikovati.org/api contract the add-in
+ *                     was COMPILED against (== api.Major()). The host reads this right
+ *                     after loading the library and BEFORE activating it: if the value
+ *                     differs from the host's own API major, the add-in is incompatible
+ *                     (a major bump is the breaking-change boundary, semver §8) and is
+ *                     NOT loaded.
+ *   ObkAddInApiMinor  the MINOR version the add-in was COMPILED against (== api.Minor()).
+ *                     Within a matching major, the host loads an add-in built against the
+ *                     same or an OLDER minor (minor bumps are additive/backward-compatible,
+ *                     semver §7); an add-in built against a NEWER minor than the host needs
+ *                     API the host lacks and is NOT loaded. An add-in that omits either
+ *                     version export cannot prove compatibility and is likewise not loaded.
+ *                     The full host version is readable at runtime via the
+ *                     "application.apiVersion" host call.
  *   ObkAddInActivate  store the host callbacks and start the add-in (e.g. its MCP
  *                     server). Returns OBK_OK on success.
  *   ObkAddInDeactivate stop the add-in and join its goroutines. Returns OBK_OK.
@@ -70,6 +84,8 @@ typedef void (*ObkHostFree)(uint8_t *p);
 #ifndef OBK_BUILDING_ADDIN
 extern const char *ObkAddInId(void);
 extern const char *ObkAddInManifest(void);
+extern int ObkAddInApiMajor(void);
+extern int ObkAddInApiMinor(void);
 extern int ObkAddInActivate(ObkHostCall call, ObkHostFree freeFn);
 extern int ObkAddInDeactivate(void);
 extern int ObkAddInNotify(const uint8_t *ev, int len);

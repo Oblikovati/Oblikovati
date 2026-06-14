@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -56,7 +57,7 @@ func TestLoadDirRoundTripsHostCall(t *testing.T) {
 		return req, nil
 	}, 2*time.Second)
 
-	libs, err := LoadDir(dir)
+	libs, _, err := LoadDir(dir)
 	if err != nil {
 		t.Fatalf("LoadDir: %v", err)
 	}
@@ -92,13 +93,55 @@ func TestLoadDirRoundTripsHostCall(t *testing.T) {
 	}
 }
 
+// TestLoadDirSkipsIncompatibleAddIn proves the load-time gate end to end: a real
+// c-shared add-in reporting a mismatched ObkAddInApiMajor is left unloaded while a
+// compatible one in the same directory still loads.
+func TestLoadDirSkipsIncompatibleAddIn(t *testing.T) {
+	dir := t.TempDir()
+	placeFixture(t, "echoaddin", dir)
+	placeFixture(t, "incompataddin", dir)
+
+	libs, skipped, err := LoadDir(dir)
+	if err != nil {
+		t.Fatalf("LoadDir: %v", err)
+	}
+	if len(libs) != 1 {
+		t.Fatalf("loaded %d add-ins, want 1 (the incompatible one must be skipped)", len(libs))
+	}
+	if got := libs[0].ID(); got != "com.oblikovati.echo-fixture" {
+		t.Fatalf("loaded %q, want the compatible com.oblikovati.echo-fixture", got)
+	}
+	defer func() { _ = libs[0].Close() }()
+
+	if len(skipped) != 1 {
+		t.Fatalf("skipped %d add-ins, want 1 (reported for the status bar)", len(skipped))
+	}
+	if skipped[0].ID != "com.oblikovati.incompat-fixture" {
+		t.Errorf("skipped ID = %q, want com.oblikovati.incompat-fixture", skipped[0].ID)
+	}
+	if !strings.Contains(skipped[0].Reason, "API major") {
+		t.Errorf("skipped reason = %q, want it to name the API major mismatch", skipped[0].Reason)
+	}
+}
+
+// placeFixture builds a fixture and moves the library into dir, so several fixtures
+// can share one add-ins directory (buildFixture isolates each in its own temp dir).
+func placeFixture(t *testing.T, dirName, dir string) {
+	t.Helper()
+	so := buildFixture(t, dirName)
+	dst := filepath.Join(dir, filepath.Base(so))
+	if err := os.Rename(so, dst); err != nil {
+		t.Fatalf("place fixture %q: %v", dirName, err)
+	}
+}
+
 // TestLoadDirMissingDir treats an absent add-in folder as "none installed".
 func TestLoadDirMissingDir(t *testing.T) {
-	libs, err := LoadDir(filepath.Join(t.TempDir(), "does-not-exist"))
+	libs, skipped, err := LoadDir(filepath.Join(t.TempDir(), "does-not-exist"))
 	if err != nil {
 		t.Fatalf("LoadDir(missing) err = %v, want nil", err)
 	}
-	if libs != nil {
-		t.Fatalf("LoadDir(missing) = %v, want nil", libs)
+	if libs != nil || skipped != nil {
+		t.Fatalf("LoadDir(missing) = (%v, %v), want (nil, nil)", libs, skipped)
 	}
 }
