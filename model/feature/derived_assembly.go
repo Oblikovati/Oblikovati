@@ -101,6 +101,16 @@ type AssemblyBodySource interface {
 	ModelGeometryVersion() string
 }
 
+// AssemblyDeriveBinder is the derive-family feature that pulls from an assembly source —
+// the derived-assembly and the shrinkwrap. It exposes the persisted source link and
+// rebinds the live assembly source on reopen, so the part resolver can rebind both kinds
+// uniformly (#715). The derived-PART feature is NOT one of these — it binds a part
+// [BodySource], a different interface.
+type AssemblyDeriveBinder interface {
+	SourceLink() DeriveSourceLink
+	BindSource(source AssemblyBodySource, currentDBRevID string)
+}
+
 // DerivedAssemblyComponent derives a source assembly into this part as a base body:
 // each recompute pulls the source's placed bodies, transforms each into the part, and
 // merges the included ones — cutting the subtracted, skipping the excluded — into one

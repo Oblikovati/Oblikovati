@@ -152,7 +152,7 @@ func TestShrinkwrapBreakLinkFreezesAndVersionTracks(t *testing.T) {
 		{Body: block, Transform: math.Identity4(), Source: occFor("a:1")},
 	}}
 	fs := NewPartFeatures(nil, nil)
-	pf := NewShrinkwrapComponents(fs).AddShrinkwrap(src, ShrinkwrapDefinition{})
+	pf := NewShrinkwrapComponents(fs).AddShrinkwrap(src, ShrinkwrapDefinition{}, DeriveSourceLink{})
 	fs.Recompute()
 	s := pf.Definition().(*ShrinkwrapComponent)
 	v0 := s.SourceVersion()

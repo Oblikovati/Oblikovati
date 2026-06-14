@@ -65,7 +65,7 @@ func assemblyShrinkwrapCreate(s *app.Session, raw json.RawMessage) (json.RawMess
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	source, _, err := assemblySource(s, in.Source, wire.MethodAssemblyShrinkwrapCreate)
+	source, sourceDoc, err := assemblySource(s, in.Source, wire.MethodAssemblyShrinkwrapCreate)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,9 @@ func assemblyShrinkwrapCreate(s *app.Session, raw json.RawMessage) (json.RawMess
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewShrinkwrapComponents(part.Features()).AddShrinkwrap(source, def)
+	pf := feature.NewShrinkwrapComponents(part.Features()).AddShrinkwrap(source, def, deriveSourceLink(sourceDoc))
+	// Record the part→source edge so the first save snapshots the link (the source is open).
+	s.ActiveDocument().OpenReference(sourceDoc.FullDocumentName())
 	return commitNewDerive(part, pf)
 }
 

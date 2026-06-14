@@ -22,27 +22,38 @@ var _ doc.ReferenceResolver = (*PartComponentDefinition)(nil)
 func (d *PartComponentDefinition) ResolveReferences(owner *doc.Document) error {
 	rebound := false
 	for i := 0; i < d.features.Count(); i++ {
-		switch derive := d.features.Item(i).Definition().(type) {
-		case *feature.DerivedAssemblyComponent:
-			if child, rev, ok := openDeriveSource(owner, derive.SourceLink()); ok {
-				if source, ok := child.Content().(feature.AssemblyBodySource); ok {
-					derive.BindSource(source, rev)
-					rebound = true
-				}
-			}
-		case *feature.DerivedPartComponent:
-			if child, rev, ok := openDeriveSource(owner, derive.SourceLink()); ok {
-				if source, ok := child.Content().(feature.BodySource); ok {
-					derive.BindSource(source, rev)
-					rebound = true
-				}
-			}
+		if bindDeriveFeature(owner, d.features.Item(i).Definition()) {
+			rebound = true
 		}
 	}
 	if rebound {
 		d.Recompute()
 	}
 	return nil
+}
+
+// bindDeriveFeature rebinds one feature's derive source if it is a derive-family feature,
+// reporting whether a live source was bound. The assembly-sourced derives (derived-assembly
+// and shrinkwrap) share the AssemblyBodySource path; the derived-part binds a part
+// BodySource.
+func bindDeriveFeature(owner *doc.Document, def feature.Feature) bool {
+	switch derive := def.(type) {
+	case feature.AssemblyDeriveBinder:
+		if child, rev, ok := openDeriveSource(owner, derive.SourceLink()); ok {
+			if source, ok := child.Content().(feature.AssemblyBodySource); ok {
+				derive.BindSource(source, rev)
+				return true
+			}
+		}
+	case *feature.DerivedPartComponent:
+		if child, rev, ok := openDeriveSource(owner, derive.SourceLink()); ok {
+			if source, ok := child.Content().(feature.BodySource); ok {
+				derive.BindSource(source, rev)
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // openDeriveSource opens a derive's source document through owner's reference graph,

@@ -61,6 +61,7 @@ type FeatureData struct {
 
 	DerivedAssembly *DerivedAssemblyData `yaml:"derivedAssembly,omitempty"`
 	DerivedPart     *DerivedPartData     `yaml:"derivedPart,omitempty"`
+	Shrinkwrap      *ShrinkwrapData      `yaml:"shrinkwrap,omitempty"`
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -254,6 +255,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.DerivedAssembly = serializeDerivedAssembly(f)
 	case *DerivedPartComponent:
 		fd.DerivedPart = serializeDerivedPart(f)
+	case *ShrinkwrapComponent:
+		fd.Shrinkwrap = serializeShrinkwrap(f)
 	default:
 		return FeatureData{}, fmt.Errorf("no serialization codec for feature kind %q", pf.Kind())
 	}
@@ -388,6 +391,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreDerivedAssembly(fs, fd.DerivedAssembly)
 	case "derived":
 		return restoreDerivedPart(fs, fd.DerivedPart)
+	case "shrinkwrap":
+		return restoreShrinkwrap(fs, fd.Shrinkwrap)
 	default:
 		return nil, fmt.Errorf("no restore codec for feature kind %q", fd.Kind)
 	}
