@@ -61,6 +61,19 @@ func CylinderPrimitive(axisPoint math.Point3, axisDir math.UnitVector3, radius m
 	return Primitive{kind: lineKind, point: axisPoint, dir: axisDir, radius: radius}
 }
 
+// TransformedBy maps the primitive's reference point and direction through m, returning the
+// transformed primitive (radius unchanged). The head uses it with an occurrence's inverse
+// placement to convert a face picked in assembly space back into the component's definition
+// space, which is where a constraint input lives (the solver re-applies the placement).
+func (p Primitive) TransformedBy(m math.Matrix4) Primitive {
+	out := p
+	out.point = m.TransformPoint(p.point)
+	if d, err := math.UnitVector3FromVector(m.TransformVector(p.dir.AsVector())); err == nil {
+		out.dir = d
+	}
+	return out
+}
+
 // worldPoint maps the primitive's reference point into assembly space through m.
 func worldPoint(m math.Matrix4, prim Primitive) math.Point3 {
 	return m.TransformPoint(prim.point)
