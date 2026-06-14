@@ -38,6 +38,7 @@ type Session struct {
 	facetStore           *facetstore.FacetStore   // tolerance-keyed facet/stroke cache (M07 #293; lazy)
 	transientBodies      *bodyapi.TransientBRep   // transient B-rep registry (M07 #628; lazy)
 	commands             *CommandManager
+	bindings             *Bindings              // keyboard shortcut + alias resolver (M05-F17)
 	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
 	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
 	prefs                userprefs.Prefs        // global user preferences (ViewCube show/lock/compass/size/…)
