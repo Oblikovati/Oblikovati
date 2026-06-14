@@ -191,6 +191,11 @@ func (a *AssemblyComponentDefinition) Parameters() *param.Parameters { return a.
 // Properties returns the assembly's iProperties (document metadata sets), like a part's (#156).
 func (a *AssemblyComponentDefinition) Properties() *attr.PropertySets { return a.props }
 
+// Recompute re-solves the assembly (its sketches, work geometry, and feature program) — the
+// sketch-host-uniform name the sketch environment calls on Finish, aliasing RecomputeFeatures so
+// a part and an assembly present one recompute method (#766).
+func (a *AssemblyComponentDefinition) Recompute() { a.RecomputeFeatures() }
+
 // WorkGeometry returns the assembly's origin coordinate frame and user work
 // planes/axes/points, expressed in assembly space — the planes a sketch is authored on.
 func (a *AssemblyComponentDefinition) WorkGeometry() *feature.WorkGeometry { return a.work }
