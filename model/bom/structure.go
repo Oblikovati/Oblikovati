@@ -44,6 +44,17 @@ func (s Structure) String() string {
 	}
 }
 
+// ParseStructure resolves a structure's lowercase name back to its value, reporting false on an
+// unknown name (so a stored "BOM Structure" property maps to the enum; #718).
+func ParseStructure(s string) (Structure, bool) {
+	for _, v := range []Structure{Normal, Phantom, Reference, Purchased, Inseparable} {
+		if v.String() == s {
+			return v, true
+		}
+	}
+	return Normal, false
+}
+
 // expands reports whether a sub-assembly of this structure is traversed into its
 // children (Normal/Phantom) rather than counted as one opaque line
 // (Purchased/Inseparable). Reference is neither — it is dropped from counts entirely.
@@ -62,16 +73,16 @@ type Component interface {
 	Description() string
 	// BOMStructure is how the component participates in the BOM.
 	BOMStructure() Structure
-	// Properties are the component's custom properties (iProperties), keyed by name,
+	// CustomProperties are the component's properties (iProperties), keyed by name,
 	// available as export columns.
-	Properties() map[string]string
+	CustomProperties() map[string]string
 }
 
 // defaultComponent is the metadata used for a placed definition that does not
 // implement [Component]: a normal, unnamed line.
 type defaultComponent struct{}
 
-func (defaultComponent) PartNumber() string            { return "" }
-func (defaultComponent) Description() string           { return "" }
-func (defaultComponent) BOMStructure() Structure       { return Normal }
-func (defaultComponent) Properties() map[string]string { return nil }
+func (defaultComponent) PartNumber() string                  { return "" }
+func (defaultComponent) Description() string                 { return "" }
+func (defaultComponent) BOMStructure() Structure             { return Normal }
+func (defaultComponent) CustomProperties() map[string]string { return nil }

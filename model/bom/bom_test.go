@@ -18,11 +18,11 @@ type fakePart struct {
 	props     map[string]string
 }
 
-func (p *fakePart) RangeBox() math.Box            { return math.NewBox(math.P3(0, 0, 0), math.P3(1, 1, 1)) }
-func (p *fakePart) PartNumber() string            { return p.num }
-func (p *fakePart) Description() string           { return p.desc }
-func (p *fakePart) BOMStructure() Structure       { return p.structure }
-func (p *fakePart) Properties() map[string]string { return p.props }
+func (p *fakePart) RangeBox() math.Box                  { return math.NewBox(math.P3(0, 0, 0), math.P3(1, 1, 1)) }
+func (p *fakePart) PartNumber() string                  { return p.num }
+func (p *fakePart) Description() string                 { return p.desc }
+func (p *fakePart) BOMStructure() Structure             { return p.structure }
+func (p *fakePart) CustomProperties() map[string]string { return p.props }
 
 // fakeAssembly is a named sub-assembly component: a Composite (owns occurrences) that
 // is also a bom.Component.
