@@ -210,7 +210,8 @@ func installPicker(s *app.Session) {
 			}
 			return activeSketches(s)
 		}).
-		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }))
+		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }).
+		WithOccurrenceLookup(s.OccurrenceOfBody))
 }
 
 // loadAppOptions wires the per-user options file (M05-F11) and applies the stored

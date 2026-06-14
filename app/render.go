@@ -61,8 +61,15 @@ func (s *Session) RenderFrame(backend renderer.Backend) {
 // sceneBodies returns the bodies to draw — the active part's, if any.
 func (s *Session) sceneBodies() []*topo.Body { return s.VisibleBodies() }
 
-// VisibleBodies returns active-part bodies not hidden by browser visibility state.
+// VisibleBodies returns the bodies the viewport renders and the picker hit-tests for the active
+// document: a part's own bodies (minus those hidden by browser visibility state), or — for an
+// assembly — its placed components transformed into assembly space (#769). An assembly's
+// per-occurrence visibility is suppression, already applied when collecting placed bodies, so the
+// part hidden-body filter does not apply to it.
 func (s *Session) VisibleBodies() []*topo.Body {
+	if asm, err := activeAssembly(s); err == nil {
+		return s.worldAssemblyBodies(asm)
+	}
 	part, err := activePart(s)
 	if err != nil {
 		return nil
