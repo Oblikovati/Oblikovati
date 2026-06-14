@@ -141,7 +141,7 @@ func newRow(comp Component, def occurrence.Definition, quantity int) *Row {
 		Description: comp.Description(),
 		Structure:   comp.BOMStructure(),
 		Quantity:    quantity,
-		Properties:  comp.Properties(),
+		Properties:  comp.CustomProperties(),
 		Definition:  def,
 	}
 }
