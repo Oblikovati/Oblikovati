@@ -87,6 +87,7 @@ func (t *AssemblyRevolveTool) Commit(s *Session) error {
 	af := asm.AddFeature(feature.NewAssemblyRevolveFeature(t.profile.Sketch, t.profile.ProfileIndex, axis, assemblyExtrudeOps[t.operation], func() float64 { return a }))
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
+	s.recordEdit(asm, "Revolve") // the feature program persists + undoes (#785)
 	return nil
 }
 
@@ -138,6 +139,7 @@ func (t *AssemblyHoleTool) Commit(s *Session) error {
 	af := asm.AddFeature(hole)
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
+	s.recordEdit(asm, "Hole") // the feature program persists + undoes (#785)
 	return nil
 }
 
