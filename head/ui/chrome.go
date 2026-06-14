@@ -154,30 +154,49 @@ func drawChromeWindows(s *app.Session) {
 	}
 }
 
-// handleKeyboard routes global shortcuts to the session. Esc cancels the active tool at
-// any point (or clears the selection when idle) — Inventor's universal cancel. Ctrl+Z /
-// Ctrl+Y (Ctrl+Shift+Z) navigate the undo stream, but only when no text field has focus,
-// so a field's own editing keeps the keystroke.
+// handleKeyboard forwards keyboard input to the session's binding engine (M05-F17). Esc and
+// F1 are handled first so they work even from a focused field (Esc is the universal cancel;
+// F1 opens host help, not a bindable action). Otherwise, while no text widget owns the
+// keyboard, every non-modifier key pressed this frame is sent as a chord carrying the held
+// modifiers, so rebindable shortcuts (undo/redo, command shortcuts, …) resolve and fire.
 func handleKeyboard(s *app.Session) {
 	if native.EscapePressed() {
 		_ = s.PressKey(app.KeyEvent{Key: "Escape"})
 	}
-	if native.F1Pressed() { // F1 opens the host documentation (M05-F14)
+	if native.F1Pressed() {
 		_ = s.DisplayHelpTopic("", "")
 	}
-	if !native.KeyCtrl() || native.WantTextInput() {
+	if native.WantTextInput() { // a text widget owns the keyboard; stand down
 		return
 	}
-	mods := app.CtrlMod
+	dispatchPressedKeys(s, native.PressedKeys(), heldModifiers())
+}
+
+// dispatchPressedKeys sends each non-modifier key pressed this frame to the session as a
+// chord carrying the held modifiers. Escape is already handled in handleKeyboard, so it is
+// skipped here to avoid a double cancel. Kept pure (no native reads) so it is unit-testable.
+func dispatchPressedKeys(s *app.Session, keys []string, mods app.Modifier) {
+	for _, key := range keys {
+		if key == "Escape" {
+			continue
+		}
+		_ = s.PressKey(app.KeyEvent{Key: key, Mods: mods})
+	}
+}
+
+// heldModifiers reads the modifier keys currently down.
+func heldModifiers() app.Modifier {
+	var mods app.Modifier
+	if native.KeyCtrl() {
+		mods |= app.CtrlMod
+	}
 	if native.KeyShift() {
 		mods |= app.ShiftMod
 	}
-	switch {
-	case native.UndoPressed():
-		_ = s.PressKey(app.KeyEvent{Key: "z", Mods: mods})
-	case native.RedoPressed():
-		_ = s.PressKey(app.KeyEvent{Key: "y", Mods: mods})
+	if native.KeyAlt() {
+		mods |= app.AltMod
 	}
+	return mods
 }
 
 // dockLaidOut guards the one-time default panel arrangement (the dockspace persists

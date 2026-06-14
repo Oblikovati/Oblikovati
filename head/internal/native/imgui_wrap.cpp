@@ -4,6 +4,7 @@
 // Go-described tree in C++ — is what lets Go own the UI composition. Add wrappers as
 // the chrome grows; resist putting logic here.
 #include <cstring> // strcmp (theme color-name lookup)
+#include <cstdio>  // snprintf (bounds-safe key-name packing)
 #include "imgui.h"
 #include "imgui_internal.h" // SeparatorEx (vertical ribbon-panel divider)
 
@@ -322,6 +323,34 @@ int  obk_ig_f1_pressed(void)                 { return ImGui::IsKeyPressed(ImGuiK
 // Ctrl (and not WantTextInput) to form the global Ctrl+Z / Ctrl+Y shortcuts.
 int  obk_ig_undo_pressed(void)               { return ImGui::IsKeyPressed(ImGuiKey_Z) ? 1 : 0; }
 int  obk_ig_redo_pressed(void)               { return ImGui::IsKeyPressed(ImGuiKey_Y) ? 1 : 0; }
+int  obk_ig_key_alt(void)                    { return ImGui::GetIO().KeyAlt ? 1 : 0; }
+// pressed_keys writes the newline-separated names of every NAMED key pressed this frame (no
+// key repeat, modifier keys excluded) into buf, so the Go side can form a chord per key and
+// let the binding engine resolve rebindable shortcuts (M05-F17). Returns the count written.
+int  obk_ig_pressed_keys(char* buf, int buf_size) {
+    if (buf_size <= 0) return 0;
+    buf[0] = 0;
+    int count = 0, off = 0;
+    for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; key = (ImGuiKey)(key + 1)) {
+        if (!ImGui::IsKeyPressed(key, false)) continue; // false: ignore auto-repeat
+        switch (key) { // modifier keys travel as the chord's modifier flags, not as keys
+            case ImGuiKey_LeftCtrl:  case ImGuiKey_RightCtrl:
+            case ImGuiKey_LeftShift: case ImGuiKey_RightShift:
+            case ImGuiKey_LeftAlt:   case ImGuiKey_RightAlt:
+            case ImGuiKey_LeftSuper: case ImGuiKey_RightSuper: continue;
+            default: break;
+        }
+        const char* name = ImGui::GetKeyName(key);
+        if (name == NULL || name[0] == 0) continue;
+        const char* sep = (count > 0) ? "\n" : "";
+        // snprintf is bounds-safe: it never writes past buf_size and always NUL-terminates.
+        int n = snprintf(buf + off, (size_t)(buf_size - off), "%s%s", sep, name);
+        if (n < 0 || n >= buf_size - off) { buf[off] = 0; break; } // would truncate: keep complete entries
+        off += n;
+        count++;
+    }
+    return count;
+}
 // want_text_input is true while a text/number field is being edited, so global shortcuts
 // stand down and let the field keep the keystroke (incl. its own Ctrl+Z).
 int  obk_ig_want_text_input(void)            { return ImGui::GetIO().WantTextInput ? 1 : 0; }
