@@ -2,17 +2,33 @@
 
 package app
 
-// The Assemble ribbon tab (M11), shown for an assembly document (the AssemblyRibbon key,
-// switched in by ribbonKeyForDocument). It carries the Component panel (Place, #763), the Pattern
-// panel (Rectangular/Circular Pattern, Mirror, Copy, #765), and the BOM panel (Bill of Materials,
-// #768). The assembly model + wire surface already exist — these commands are the head/app wiring
-// that drives them.
+import (
+	"math"
+
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/assembly"
+)
+
+// The Assemble ribbon tab (M11/M12), shown for an assembly document (the AssemblyRibbon key,
+// switched in by ribbonKeyForDocument). It carries the Component panel (Place, #763), the
+// Relationships panel (the M12-F01 constraints — mate/flush/angle/…, #770), the Pattern panel
+// (Rectangular/Circular Pattern, Mirror, Copy, #765), and the BOM panel (Bill of Materials,
+// #768). The assembly model + wire surface already exist — these commands are the head/app
+// wiring that drives them.
 
 // assemblyTabCommands returns the Assemble tab commands in ribbon order, grouped into panels
-// by their category (Component / Pattern / BOM).
+// by their category (Component / Relationships / Modify / Pattern / BOM).
 func assemblyTabCommands() []*CommandDefinition {
-	return []*CommandDefinition{
+	cmds := []*CommandDefinition{
 		placeComponentCommand(),
+	}
+	cmds = append(cmds, relationshipCommands()...)
+	return append(cmds, assemblyModelingCommands()...)
+}
+
+// assemblyModelingCommands returns the sketch/modify/pattern/BOM commands of the Assemble tab.
+func assemblyModelingCommands() []*CommandDefinition {
+	return []*CommandDefinition{
 		NewCommand("Assembly.CreateSketch", "Create 2D Sketch", "Sketch", func(s *Session) error {
 			if s.SelectedWorkPlane() != nil {
 				_, err := s.CreateSketchOnSelectedPlane()
@@ -77,6 +93,72 @@ func assemblyToolCommand(id, name, panel, icon, tooltip string, newTool func() T
 		WithIcon(icon).WithButtonStyle(SmallIconButton).WithTooltip(tooltip)
 }
 
+// relationshipCommands returns the Relationships-panel commands — one per M12-F01 constraint
+// kind (#770). Each starts an [AssemblyConstraintTool] that picks the component faces the
+// relationship relates and creates it. They are compact icon buttons, like the sketch
+// Constrain panel.
+func relationshipCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		constraintCommand("Assembly.Mate", "Mate", "mate", "Mate — make two component faces coincident (opposed normals).", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddMate(r[0], r[1], 0, types.MateSolutionOpposed)
+			}),
+		constraintCommand("Assembly.Flush", "Flush", "flush", "Flush — make two component faces coplanar (aligned normals).", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddFlush(r[0], r[1], 0)
+			}),
+		constraintCommand("Assembly.Angle", "Angle", "angle", "Angle — hold an angle between two component faces.", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddAngle(r[0], r[1], math.Pi/2, types.AngleSolutionUndirected)
+			}),
+		constraintCommand("Assembly.Tangent", "Tangent", "tangent", "Tangent — keep a face tangent to a cylindrical face.", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddTangent(r[0], r[1], false)
+			}),
+		constraintCommand("Assembly.Insert", "Insert", "insert", "Insert — collinear axes plus a plane mate (a bolt into a hole).", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddInsert(r[0], r[1], 0, false)
+			}),
+		constraintCommand("Assembly.Symmetry", "Symmetry", "symmetry", "Symmetry — position two component faces symmetrically about a third.", 3,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddSymmetry(r[0], r[1], r[2])
+			}),
+		constraintCommand("Assembly.RotateRotate", "Rotate-Rotate", "rotate-rotate", "Rotate-Rotate — couple two rotations by a gear ratio.", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddRotateRotate(r[0], r[1], 1)
+			}),
+		constraintCommand("Assembly.RotateTranslate", "Rotate-Translate", "rotate-translate", "Rotate-Translate — rack and pinion.", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddRotateTranslate(r[0], r[1], 1)
+			}),
+		constraintCommand("Assembly.TranslateTranslate", "Translate-Translate", "translate-translate", "Translate-Translate — couple two translations by a ratio.", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddTranslateTranslate(r[0], r[1], 1)
+			}),
+		constraintCommand("Assembly.Transitional", "Transitional", "transitional", "Transitional — keep a face in sliding contact with a transition face.", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddTransitional(r[0], r[1])
+			}),
+		constraintCommand("Assembly.Custom", "Custom", "custom", "Custom — register an add-in-solved relationship.", 2,
+			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
+				return set.AddCustom(r[0], r[1], "custom", nil)
+			}),
+	}
+}
+
+// constraintCommand builds a Relationships-panel command that starts a constraint tool of one
+// kind on the active assembly.
+func constraintCommand(id, name, icon, tooltip string, need int, build constraintBuild) *CommandDefinition {
+	return NewCommand(id, name, "Relationships", func(s *Session) error {
+		if _, err := activeAssembly(s); err != nil {
+			return err
+		}
+		s.StartTool(NewAssemblyConstraintTool(name, need, build))
+		return nil
+	}).WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
+		WithIcon(icon).WithButtonStyle(CompactIconButton).WithTooltip(tooltip)
+}
+
 // placeComponentCommand builds the Place command: it starts the modal Place Component tool on
 // the active assembly. The component file is chosen by the head's file dialog, which feeds the
 // running tool through SetPlaceComponentDocument; each ground-plane click then drops an
@@ -86,6 +168,7 @@ func placeComponentCommand() *CommandDefinition {
 		WithTab("Assemble").
 		WithRibbons(AssemblyRibbon).
 		WithEnable(hasActiveAssembly).
+		WithIcon("place").WithButtonStyle(LargeIconButton).
 		WithTooltip("Place a component into the assembly.")
 }
 

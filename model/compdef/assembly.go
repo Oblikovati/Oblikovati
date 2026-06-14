@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
@@ -32,12 +33,13 @@ var (
 // joints, and representations attach to it from M12.
 type AssemblyComponentDefinition struct {
 	occurrences *occurrence.Occurrences
-	units       param.UnitsOfMeasure  // document display units (length/angle/…)
-	events      *AssemblyEvents       // occurrence-lifecycle event source (M11-F07)
-	features    *AssemblyFeatures     // assembly-authored machining features (M11-F08)
-	params      *param.Parameters     // parameter DAG for assembly sketch dimensions
-	work        *feature.WorkGeometry // origin frame + user work planes, in assembly space
-	sketches    *sketch.Sketches      // sketches authored in the assembly (profile inputs)
+	units       param.UnitsOfMeasure    // document display units (length/angle/…)
+	events      *AssemblyEvents         // occurrence-lifecycle event source (M11-F07)
+	constraints *assembly.ConstraintSet // relationship set + positioning solver (M12-F01)
+	features    *AssemblyFeatures       // assembly-authored machining features (M11-F08)
+	params      *param.Parameters       // parameter DAG for assembly sketch dimensions
+	work        *feature.WorkGeometry   // origin frame + user work planes, in assembly space
+	sketches    *sketch.Sketches        // sketches authored in the assembly (profile inputs)
 	// pending holds occurrence records parsed by ApplyRecipe but not yet bound to live
 	// component definitions — ApplyRecipe has no workspace, so binding waits for
 	// ResolveReferences once the document is registered (#715). Empty outside a reopen.
@@ -69,6 +71,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	}
 	occ.SetListener(a.events)
 	a.features.SetBus(a.events.Bus()) // feature-program events ride the assembly's occurrence bus
+	a.constraints = assembly.NewConstraintSet(occ, a.events)
 	return a
 }
 
@@ -179,6 +182,18 @@ func (a *AssemblyComponentDefinition) Events() *AssemblyEvents { return a.events
 // feature with [AssemblyComponentDefinition.AddFeature] so it picks up default
 // participation; evaluate the program with [AssemblyComponentDefinition.RecomputeFeatures].
 func (a *AssemblyComponentDefinition) Features() *AssemblyFeatures { return a.features }
+
+// Constraints returns the assembly's relationship set — the mate/flush/angle/... that
+// position occurrences relative to each other (M12-F01). Author with its Add* methods,
+// then position the components with [AssemblyComponentDefinition.SolveConstraints].
+func (a *AssemblyComponentDefinition) Constraints() *assembly.ConstraintSet { return a.constraints }
+
+// SolveConstraints positions the assembly's occurrences to satisfy its constraint set and
+// returns the health/DOF report (M12-F01). It is the assembly analogue of recomputing a
+// part: a constraint edit or a component move calls it to re-resolve the positions.
+func (a *AssemblyComponentDefinition) SolveConstraints() assembly.SolveReport {
+	return a.constraints.Solve()
+}
 
 // AddFeature appends an assembly machining feature wrapping f, defaulting its
 // participation to every component currently present (the reference API's behavior:

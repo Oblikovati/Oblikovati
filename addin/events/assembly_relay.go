@@ -5,6 +5,7 @@ package events
 import (
 	"sync"
 
+	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/event"
@@ -25,7 +26,7 @@ import (
 // five subscriptions (add/delete/replace/transform/suppress) so the caller can cancel
 // them. This is the pure relay — the host-facing wiring is [subscribeAssemblies].
 func SubscribeAssembly(bus *event.Bus, document doc.ID, sink Sink) []event.Subscription {
-	return []event.Subscription{
+	subs := []event.Subscription{
 		event.Subscribe(bus, event.After, func(_ event.Context, e compdef.OccurrenceAdd) event.Outcome {
 			return relayJSON(sink, occurrencePayload(wire.EventOccurrenceAdded, document, e.Occurrence))
 		}),
@@ -46,6 +47,34 @@ func SubscribeAssembly(bus *event.Bus, document doc.ID, sink Sink) []event.Subsc
 		event.Subscribe(bus, event.After, func(_ event.Context, e compdef.AssemblyFeaturesRecomputed) event.Outcome {
 			return relayJSON(sink, assemblyFeaturesPayload(document, e))
 		}),
+	}
+	return append(subs, subscribeConstraints(bus, document, sink)...)
+}
+
+// subscribeConstraints wires the assembly's relationship events (M12-F01): a constraint
+// added or deleted, and the assembly re-solved.
+func subscribeConstraints(bus *event.Bus, document doc.ID, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e compdef.ConstraintAdd) event.Outcome {
+			return relayJSON(sink, constraintPayload(wire.EventAssemblyConstraintAdded, document, e.Constraint))
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e compdef.ConstraintDelete) event.Outcome {
+			return relayJSON(sink, constraintPayload(wire.EventAssemblyConstraintDeleted, document, e.Constraint))
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, _ compdef.AssemblyResolved) event.Outcome {
+			return relayJSON(sink, wire.ConstraintEventPayload{Type: wire.EventAssemblyResolved, Document: uint64(document)})
+		}),
+	}
+}
+
+// constraintPayload renders a constraint's identity (document, session id, kind) into the
+// wire payload for the given relationship event type.
+func constraintPayload(eventType string, document doc.ID, c contract.AssemblyConstraint) wire.ConstraintEventPayload {
+	return wire.ConstraintEventPayload{
+		Type:       eventType,
+		Document:   uint64(document),
+		Constraint: c.ID(),
+		Kind:       c.Type().String(),
 	}
 }
 

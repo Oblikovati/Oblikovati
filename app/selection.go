@@ -4,6 +4,7 @@ package app
 
 import (
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
@@ -28,6 +29,7 @@ const (
 	SelectWorkAxis
 	SelectPath
 	SelectOccurrence
+	SelectConstraint
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -94,6 +96,13 @@ func (OccurrenceHandle) SelectionKind() SelectionKind { return SelectOccurrence 
 type AssemblyFeatureHandle struct{ Feature *compdef.AssemblyFeature }
 
 func (AssemblyFeatureHandle) SelectionKind() SelectionKind { return SelectFeature }
+
+// AssemblyConstraintHandle wraps an assembly relationship (mate/flush/insert/…) selected in
+// the assembly browser's Constraints folder, the input the suppress/delete actions consume
+// (M12-F01). It wraps the constraint interface so those actions reach its id/suppression.
+type AssemblyConstraintHandle struct{ Constraint assembly.Constraint }
+
+func (AssemblyConstraintHandle) SelectionKind() SelectionKind { return SelectConstraint }
 
 // SketchHandle wraps a whole sketch (selected in the browser), as opposed to one of its
 // entities — the input for Edit Sketch and for highlighting the sketch in the view.
