@@ -124,12 +124,23 @@ func (a *AssemblyComponentDefinition) Place(name string, def occurrence.Definiti
 // component link. Use [PlaceComponentFromFile] to place an occurrence that survives a
 // save/reopen (it records the assembly→component reference and the document name).
 func (a *AssemblyComponentDefinition) PlaceComponent(name string, componentDoc *doc.Document, transform math.Matrix4) (*occurrence.Occurrence, error) {
+	def, err := placeableDefinition(componentDoc)
+	if err != nil {
+		return nil, err
+	}
+	return a.Place(name, def, transform), nil
+}
+
+// placeableDefinition extracts the component definition a document holds, erroring when
+// its content is not placeable (a reference stub, a drawing). Shared by the in-memory and
+// file-backed place paths.
+func placeableDefinition(componentDoc *doc.Document) (occurrence.Definition, error) {
 	def, ok := componentDoc.Content().(occurrence.Definition)
 	if !ok {
 		return nil, fmt.Errorf("compdef: cannot place %q: its content %T is not a placeable component definition",
 			componentDoc.DisplayName(), componentDoc.Content())
 	}
-	return a.Place(name, def, transform), nil
+	return def, nil
 }
 
 // PlaceComponentFromFile places componentDoc into owner's assembly under name at
@@ -138,10 +149,9 @@ func (a *AssemblyComponentDefinition) PlaceComponent(name string, componentDoc *
 // saved and restored across a reopen (#715). owner is the assembly's own document (the
 // one whose content is this definition); componentDoc is the component to instance.
 func (a *AssemblyComponentDefinition) PlaceComponentFromFile(owner, componentDoc *doc.Document, name string, transform math.Matrix4) (*occurrence.Occurrence, error) {
-	def, ok := componentDoc.Content().(occurrence.Definition)
-	if !ok {
-		return nil, fmt.Errorf("compdef: cannot place %q: its content %T is not a placeable component definition",
-			componentDoc.DisplayName(), componentDoc.Content())
+	def, err := placeableDefinition(componentDoc)
+	if err != nil {
+		return nil, err
 	}
 	componentName := componentDoc.FullDocumentName()
 	occ := a.occurrences.AddByComponentName(name, def, componentName, transform)
