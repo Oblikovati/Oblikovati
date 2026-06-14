@@ -276,6 +276,9 @@ func (s *ShrinkwrapComponent) AcknowledgeSource(currentDBRevID string) {
 	s.outOfDate = false
 }
 
+// RelinkSource updates the link's source document name (#750).
+func (s *ShrinkwrapComponent) RelinkSource(document string) { s.link.Document = document }
+
 // BindSource (re)binds the live source assembly after a restore and recomputes staleness:
 // out of date when currentDBRevID differs from the revision captured in the link (#715).
 func (s *ShrinkwrapComponent) BindSource(source AssemblyBodySource, currentDBRevID string) {

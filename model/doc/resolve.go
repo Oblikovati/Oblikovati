@@ -2,6 +2,8 @@
 
 package doc
 
+import "path/filepath"
+
 // ReferenceResolver is the optional interface content implements when reopening it must
 // resolve references to other documents — an assembly binding its occurrences to the
 // component documents they instance (#715). The workspace calls ResolveReferences once,
@@ -29,5 +31,31 @@ func (d *Document) OpenReference(fullDocumentName string) (*Document, bool) {
 		return nil, false
 	}
 	desc := d.graph.addReferenceUnique(d, fullDocumentName)
+	if target, ok := d.graph.resolve(desc); ok {
+		return target, true
+	}
+	// The stored (absolute) name no longer resolves — the project tree may have moved.
+	// Re-anchor this reference's owner-relative spelling to the owner's CURRENT directory
+	// and retry, repointing the edge so a re-save records the new location (#750).
+	relocated, ok := d.relocatedReferenceTarget(fullDocumentName)
+	if !ok || relocated == fullDocumentName {
+		return nil, false
+	}
+	d.graph.repointReference(d, fullDocumentName, relocated)
 	return d.graph.resolve(desc)
+}
+
+// relocatedReferenceTarget re-anchors a moved reference: when the owner holds a persisted
+// file-reference record for name carrying an owner-directory-relative spelling, it re-joins
+// that spelling to the owner's CURRENT directory, so a project tree moved as a whole still
+// resolves on reopen (#750). It reports false when no relative record covers name (e.g. a
+// library or absolute reference), leaving absolute resolution as the last resort.
+func (d *Document) relocatedReferenceTarget(name string) (string, bool) {
+	for _, r := range d.fileReferences {
+		if r.fullFileName != name || r.relativeFileName == "" {
+			continue
+		}
+		return filepath.Join(filepath.Dir(d.fullDocumentName), filepath.FromSlash(r.relativeFileName)), true
+	}
+	return "", false
 }

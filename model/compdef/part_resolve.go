@@ -42,6 +42,7 @@ func bindDeriveFeature(owner *doc.Document, def feature.Feature) bool {
 		if child, rev, ok := openDeriveSource(owner, derive.SourceLink()); ok {
 			if source, ok := child.Content().(feature.AssemblyBodySource); ok {
 				derive.BindSource(source, rev)
+				derive.RelinkSource(child.FullDocumentName())
 				return true
 			}
 		}
@@ -49,6 +50,7 @@ func bindDeriveFeature(owner *doc.Document, def feature.Feature) bool {
 		if child, rev, ok := openDeriveSource(owner, derive.SourceLink()); ok {
 			if source, ok := child.Content().(feature.BodySource); ok {
 				derive.BindSource(source, rev)
+				derive.RelinkSource(child.FullDocumentName())
 				return true
 			}
 		}

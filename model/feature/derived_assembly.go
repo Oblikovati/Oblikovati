@@ -109,6 +109,9 @@ type AssemblyBodySource interface {
 type AssemblyDeriveBinder interface {
 	SourceLink() DeriveSourceLink
 	BindSource(source AssemblyBodySource, currentDBRevID string)
+	// RelinkSource updates the link's source document name to where it actually resolved,
+	// so a reference relocated with a moved project tree re-binds and re-saves clean (#750).
+	RelinkSource(document string)
 }
 
 // DeriveStatus is the drive-state surface common to every derive-family feature
@@ -181,6 +184,9 @@ func (d *DerivedAssemblyComponent) AcknowledgeSource(currentDBRevID string) {
 	d.link.DatabaseRevisionID = currentDBRevID
 	d.outOfDate = false
 }
+
+// RelinkSource updates the link's source document name (#750).
+func (d *DerivedAssemblyComponent) RelinkSource(document string) { d.link.Document = document }
 
 // BindSource (re)binds the live source assembly after a restore and recomputes staleness:
 // the derive is out of date when currentDBRevID (the source's revision now) differs from
