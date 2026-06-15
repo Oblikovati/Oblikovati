@@ -132,6 +132,9 @@ type edgeFillet struct {
 // sampled as chords (shared by the ruling strips and the end faces).
 func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter) (edgeFillet, error) {
 	e := p.edge
+	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
+		return edgeFillet{}, curvedFilletError(e, cyl, pl) // fillet of a fillet — Phase A: classify & report
+	}
 	a, b, nA, nB, err := edgePlanarFaces(e)
 	if err != nil {
 		return edgeFillet{}, err
