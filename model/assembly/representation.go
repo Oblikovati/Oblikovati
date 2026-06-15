@@ -3,9 +3,33 @@
 package assembly
 
 import (
+	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/occurrence"
+)
+
+// The exported read interfaces let the host (router/head) encode representations without naming
+// the unexported concrete types. Design-view adds the override counts and the captured camera
+// on top of its contract surface; the other families' contract surfaces already suffice.
+type (
+	// DesignViewRep is a design-view representation's host-read surface.
+	DesignViewRep interface {
+		contract.DesignViewRepresentation
+		Camera() *CapturedCamera
+		HiddenCount() int
+		AppearanceCount() int
+	}
+	// PositionalRep is a positional representation's host-read surface.
+	PositionalRep interface {
+		contract.PositionalRepresentation
+	}
+	// LODRep is a level-of-detail representation's host-read surface.
+	LODRep interface {
+		contract.LevelOfDetailRepresentation
+	}
+	// ModelStateRep is a model state's host-read surface.
+	ModelStateRep interface{ contract.ModelState }
 )
 
 // Representations (M12-F04, Oblikovati/Oblikovati#361/#367) are named override layers over an

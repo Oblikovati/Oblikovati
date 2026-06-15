@@ -31,7 +31,7 @@ func (m *modelState) PositionalName() string    { return m.positional }
 func (m *modelState) LevelOfDetailName() string { return m.lod }
 
 // CreateModelState adds a model state selecting one representation of each family by name.
-func (r *Representations) CreateModelState(name, design, positional, lod string) *modelState {
+func (r *Representations) CreateModelState(name, design, positional, lod string) ModelStateRep {
 	m := &modelState{id: r.id(), name: repName(name, "ModelState", len(r.models)+1), design: design, positional: positional, lod: lod}
 	r.models = append(r.models, m)
 	return m
@@ -39,8 +39,8 @@ func (r *Representations) CreateModelState(name, design, positional, lod string)
 
 // ActivateModelState activates the three representations the model state selects (skipping a
 // family whose name is empty or unresolved) and marks the model state active.
-func (r *Representations) ActivateModelState(id uint64) (*modelState, error) {
-	m := r.ModelStateByID(id)
+func (r *Representations) ActivateModelState(id uint64) (ModelStateRep, error) {
+	m := r.modelByID(id)
 	if m == nil {
 		return nil, fmt.Errorf("assembly: no model state with id %d", id)
 	}
@@ -66,10 +66,23 @@ func (r *Representations) ActivateModelState(id uint64) (*modelState, error) {
 }
 
 // AllModelStates returns the model states in creation order (the host reads these to build the
-// wire info rows); ModelStateByID looks one up.
-func (r *Representations) AllModelStates() []*modelState { return r.models }
+// wire info rows); ModelStateByID looks one up (or nil).
+func (r *Representations) AllModelStates() []ModelStateRep {
+	out := make([]ModelStateRep, len(r.models))
+	for i, m := range r.models {
+		out[i] = m
+	}
+	return out
+}
 
-func (r *Representations) ModelStateByID(id uint64) *modelState {
+func (r *Representations) ModelStateByID(id uint64) ModelStateRep {
+	if m := r.modelByID(id); m != nil {
+		return m
+	}
+	return nil
+}
+
+func (r *Representations) modelByID(id uint64) *modelState {
 	for _, m := range r.models {
 		if m.id == id {
 			return m
