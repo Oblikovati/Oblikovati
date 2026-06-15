@@ -1129,11 +1129,19 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                 vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
             }
         }
-        // 3) solid edges — depth-tested, so only the visible portions appear.
+        // 3) solid edges — depth-tested, so only the visible portions appear. A small negative
+        //    depth bias pulls the edge fragments slightly toward the camera so they win the
+        //    z-fight against the faces they lie on. Without it, an edge co-located with a face at
+        //    the same depth flickers in and out of the depth test and renders broken — worst
+        //    where two mated parts' coincident faces sit at the edge's exact depth. The bias is
+        //    small enough that edges genuinely behind solid geometry still fail the test (the
+        //    hidden-edge pass below handles those).
         if (lineIC > 0) {
             pushLit(0.0f);
+            vkCmdSetDepthBias(v->cmd, -1.0f, 0.0f, -1.0f);
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->linePipeline);
             vkCmdDrawIndexed(v->cmd, (uint32_t)lineIC, 1, (uint32_t)lineFirst, lineBase, 0);
+            vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
         }
         // 4) hidden edges — reversed depth test, drawn only where occluded (dashed geometry).
         if (hidIC > 0) {
