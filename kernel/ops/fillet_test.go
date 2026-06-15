@@ -5,6 +5,7 @@ package ops_test
 import (
 	stdmath "math"
 	"runtime"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -298,6 +299,48 @@ func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
 		if open := meshOpenEdges(m); open != 0 {
 			t.Errorf("two-edge miter mesh at tol %g has %d open edges, want watertight", tol, open)
 		}
+	}
+}
+
+// TestFilletCurvedAdjacentReported checks the "fillet of a fillet" inputs are classified and
+// reported precisely (instead of the old misleading "invalid solid" / "miter"): after rounding a
+// box's vertical edge, the resulting cylinder's TANGENT line into the side plane is G1-smooth (no
+// corner to round) and is rejected as smooth, while its sharp ARC cap edge is a real target
+// reported as not-yet-supported. Guards the curved-adjacent dispatch in computeEdgeFillet.
+func TestFilletCurvedAdjacentReported(t *testing.T) {
+	box := shellBox(4, 3, 2)
+	var vert []byte
+	for _, e := range box.Edges() {
+		a, c := e.StartVertex().Point(), e.EndVertex().Point()
+		if a.X == 4 && a.Y == 3 && c.X == 4 && c.Y == 3 {
+			vert = e.ReferenceKey()
+		}
+	}
+	f1, err := ops.FilletEdges(box, [][]byte{vert}, 0.3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	near := func(a, b float64) bool { return stdmath.Abs(a-b) < 1e-6 }
+	checked := 0
+	for _, e := range f1.Edges() {
+		m := e.RangeBox().Center()
+		switch {
+		case near(m.X, 4) && near(m.Y, 2.7): // tangent line: cylinder G1-smooth into the x=4 plane
+			_, err := ops.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
+			if err == nil || !strings.Contains(err.Error(), "smooth") {
+				t.Errorf("tangent line should be rejected as smooth, got: %v", err)
+			}
+			checked++
+		case near(m.X, 3.85) && near(m.Y, 2.85) && m.Z > 1.9: // sharp arc cap (cylinder ∩ top plane)
+			_, err := ops.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
+			if err == nil || !strings.Contains(err.Error(), "not yet supported") {
+				t.Errorf("arc cap should report not-yet-supported, got: %v", err)
+			}
+			checked++
+		}
+	}
+	if checked != 2 {
+		t.Fatalf("expected to check both the tangent line and the arc cap, checked %d", checked)
 	}
 }
 
