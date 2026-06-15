@@ -315,11 +315,13 @@ func openDocumentFromFile(s *app.Session, path, name string) {
 	fileNotice(s, "Opened %s", name)
 }
 
-// placeComponentFromFile opens the chosen component and hands it to the running Place tool (#763);
-// the tool then drops instances on ground-plane clicks. Opening (not just naming) the document
-// shares the live content, so edits to the component propagate to every placement.
+// placeComponentFromFile loads the chosen component in the background and hands it to the
+// running Place tool (#763); the tool then drops instances on ground-plane clicks. The
+// component is loaded (not just named) so the live content is shared and edits propagate to
+// every placement — but it is NOT made visible or active, so placing a part never switches the
+// tab away from the assembly. The user opens the part in a tab later via Edit on the occurrence.
 func placeComponentFromFile(s *app.Session, path, name string) {
-	d, err := s.OpenDocument(path)
+	d, err := s.OpenComponentForPlacement(path)
 	if err != nil {
 		fileNotice(s, "Place Component failed: %v", err)
 		return

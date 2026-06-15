@@ -61,6 +61,11 @@ type OpenOptions struct {
 	// DeferContent opens the document as a reference stub — identity registered,
 	// content not paged in — for callers that only need to record a dependency.
 	DeferContent bool
+	// Background loads the document without making it the active document (and without
+	// changing the current one) — the placement path, where instancing a component into the
+	// active assembly must reference its document in memory but never switch focus to it
+	// (Inventor's invisible Documents.Open). The user opens it in a tab later via Edit/Open.
+	Background bool
 }
 
 // Add creates a new document of kind t from the built-in template and registers
@@ -94,25 +99,44 @@ func (ws *Workspace) Open(fullDocumentName string, visible bool) (*Document, err
 // without touching the store.
 func (ws *Workspace) OpenWithOptions(fullDocumentName string, opts OpenOptions) (*Document, error) {
 	if existing, ok := ws.byName[fullDocumentName]; ok {
-		existing.SetVisible(opts.Visible)
-		ws.active = existing
-		return existing, nil
+		return ws.reopenExisting(existing, opts), nil
 	}
 	if opts.DeferContent {
 		return ws.openStub(fullDocumentName)
 	}
+	return ws.loadNew(fullDocumentName, opts)
+}
+
+// reopenExisting hands back an already-open document, applying the open's visibility and
+// making it active — UNLESS Background, which references it in place without changing its
+// visibility or stealing focus (re-placing a part the user has open must not hide it).
+func (ws *Workspace) reopenExisting(existing *Document, opts OpenOptions) *Document {
+	if !opts.Background {
+		existing.SetVisible(opts.Visible)
+		ws.active = existing
+	}
+	return existing
+}
+
+// loadNew loads, registers, and resolves a not-yet-open document. A Background load references
+// it in memory without switching the active document (the placement path).
+func (ws *Workspace) loadNew(fullDocumentName string, opts OpenOptions) (*Document, error) {
 	if ws.store == nil {
 		return nil, fmt.Errorf("doc: cannot open %q: no store configured", fullDocumentName)
 	}
 	if err := vetoed(ws.bus, "open", DocumentOpened{FullDocumentName: fullDocumentName}); err != nil {
 		return nil, err
 	}
+	prevActive := ws.active
 	d, err := ws.loadResolving(fullDocumentName)
 	if err != nil {
 		return nil, err
 	}
 	d.visible = opts.Visible
 	ws.register(d)
+	if opts.Background {
+		ws.active = prevActive // register() activated d; a background load must not switch focus
+	}
 	// Resolve cross-document references after registration so a resolver that hidden-opens
 	// a sibling (an assembly binding its components, #715) finds this document already in
 	// byName — that short-circuit (above) is what terminates cyclic and diamond references.

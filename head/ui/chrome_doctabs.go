@@ -62,7 +62,9 @@ var prevActiveDoc uint64
 // tab is selected so the strip follows. The tabs read the workspace each frame, so
 // opening/closing/activating documents is reflected automatically.
 func drawDocumentTabs(s *app.Session) {
-	docs := s.Workspace().Documents()
+	// Only visible documents get a tab: a component loaded in the background for placement is
+	// referenced in memory but shows no tab until the user opens it via Edit (#764).
+	docs := s.Workspace().VisibleDocuments()
 	if len(docs) == 0 {
 		return
 	}
