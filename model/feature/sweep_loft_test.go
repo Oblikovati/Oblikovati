@@ -196,6 +196,52 @@ func TestLoftMobiusStripDesign(t *testing.T) {
 	}
 }
 
+// mobiusSectionEllipseSketch is mobiusSectionSketch with an elliptical profile: an ellipse
+// centered on the plane (semi-axes width/2 along the width direction, thick/2 across) — the
+// rounded counterpart of the rectangular Möbius section.
+func mobiusSectionEllipseSketch(u, twist, radius, width, thick float64) *sketch.Sketch {
+	cu, su := stdmath.Cos(u), stdmath.Sin(u)
+	ca, sa := stdmath.Cos(twist), stdmath.Sin(twist)
+	wdir := math.V3(ca*cu, ca*su, sa).AsUnit()
+	tdir := math.V3(-sa*cu, -sa*su, ca).AsUnit()
+	center := math.P3(radius*cu, radius*su, 0)
+	plane, _ := sketch.NewPlane(center, wdir, tdir)
+	s := sketch.NewSketches().Add(plane)
+	s.Ellipses().Add(math.P2(0, 0), math.V2(1, 0), math.Scalar(width/2), math.Scalar(thick/2))
+	return s
+}
+
+// TestLoftMobiusStripEllipseDesign is the kernel unit test for the Möbius design with an ELLIPTICAL
+// cross-section (the rectangle replaced by a 16×2 mm ellipse). A loft over a curved profile feeds
+// the corner-preserving resample a finely-sampled loop and the closure the same 180° monodromy, so
+// the rounded band must also close seamlessly with the right mass. An elliptical band of semi-axes
+// a,b swept along the ring centroid has volume π·a·b·2πR.
+func TestLoftMobiusStripEllipseDesign(t *testing.T) {
+	const n = 36
+	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, ellipse 16×2 mm
+	fs := NewPartFeatures(nil, nil)
+	sections := make([]LoftSection, n)
+	for i := 0; i < n; i++ {
+		u := 2 * stdmath.Pi * float64(i) / float64(n)
+		sections[i] = LoftSection{Sketch: mobiusSectionEllipseSketch(u, u/2, R, W, T), ProfileIndex: 0}
+	}
+	pf := NewLoftFeatures(fs).Add(sections, true, ops.NewBody)
+	fs.Recompute()
+
+	if !pf.Health().OK() {
+		t.Fatalf("elliptical Möbius loft went sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("elliptical Möbius loft is not a valid solid: %+v", r)
+	}
+	a, b := W/2, T/2
+	if wantV := stdmath.Pi * a * b * 2 * stdmath.Pi * R; relErr(ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume, wantV) > 0.05 {
+		got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
+		t.Errorf("elliptical Möbius volume = %g cm³, want ≈%g (π·a·b·2πR)", got, wantV)
+	}
+}
+
 func TestLoftElongatedRectKeepsVolume(t *testing.T) {
 	// An 8×1 rectangle lofted straight from z=0 to z=5 is a prism: V = area·h = 8·5 = 40.
 	// The arc-length-resample bug skinned a 4.5-area quad → ~22.5; the corner-preserving
