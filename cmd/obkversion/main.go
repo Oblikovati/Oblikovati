@@ -31,7 +31,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "obkversion:", err)
 		os.Exit(1)
 	}
-	fmt.Println(v)
+	fmt.Fprintln(os.Stdout, v)
 }
 
 // gitRepo answers the two history questions the version needs. The seam keeps assemble
