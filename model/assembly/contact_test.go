@@ -31,6 +31,9 @@ func TestContactSolverMembership(t *testing.T) {
 	if s.Contacts(1, 3) {
 		t.Error("occurrence 3 is in no set — it should not contact")
 	}
+	if p := s.PartnersOf(1); len(p) != 1 || p[0] != 2 {
+		t.Errorf("PartnersOf(1) = %v, want [2]", p)
+	}
 
 	_ = s.RemoveMember(cs.ID(), 2)
 	if s.Contacts(1, 2) {

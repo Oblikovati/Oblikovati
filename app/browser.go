@@ -86,7 +86,20 @@ func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefini
 	addOccurrenceNodes(root, asm.Occurrences())
 	addAssemblyConstraintNodes(root, asm.Constraints())
 	addAssemblyJointNodes(root, asm.Joints())
+	addContactSetNodes(root, asm.ContactSolver())
 	addAssemblyFeatureNodes(root, asm.Features())
+}
+
+// addContactSetNodes appends a Contact Sets folder listing the assembly's contact sets (each
+// with its member count), omitted when there are none (M12-F05).
+func addContactSetNodes(root *BrowserNode, solver *assembly.ContactSolver) {
+	if solver.Count() == 0 {
+		return
+	}
+	folder := root.child("Contact Sets", "contactSets")
+	for _, cs := range solver.All() {
+		folder.child(fmt.Sprintf("%s (%d)", cs.Name(), cs.MemberCount()), "contactSet")
+	}
 }
 
 // addRepresentationNodes appends a Representations folder (View / Position / Level of Detail

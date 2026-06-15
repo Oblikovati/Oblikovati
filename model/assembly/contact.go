@@ -151,6 +151,25 @@ func (s *ContactSolver) Item(i int) contract.ContactSet {
 	return s.sets[i]
 }
 
+// PartnersOf returns the occurrences that share a contact set with occID — the components its
+// motion must not interpenetrate.
+func (s *ContactSolver) PartnersOf(occID uint64) []uint64 {
+	seen := map[uint64]bool{}
+	var out []uint64
+	for _, cs := range s.sets {
+		if !contains(cs.members, occID) {
+			continue
+		}
+		for _, m := range cs.members {
+			if m != occID && !seen[m] {
+				seen[m] = true
+				out = append(out, m)
+			}
+		}
+	}
+	return out
+}
+
 // Contacts reports whether the two occurrences share a contact set — the pairs the contact
 // solver keeps from interpenetrating.
 func (s *ContactSolver) Contacts(a, b uint64) bool {

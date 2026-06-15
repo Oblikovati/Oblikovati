@@ -45,6 +45,36 @@ func (a *AssemblyComponentDefinition) AnalyzeInterference(subset []uint64) assem
 	return out
 }
 
+// WouldContactBlock reports whether moving the occurrence with occID to newTransform would make
+// it interpenetrate one of its contact-set partners (M12-F05) — the contact solver's
+// stop-at-contact test for a candidate move. It is false (no block) when the solver is
+// disabled or the occurrence shares no contact set. The probe is non-destructive: the
+// occurrence's transform is restored before returning.
+func (a *AssemblyComponentDefinition) WouldContactBlock(occID uint64, newTransform math.Matrix4) bool {
+	if !a.contacts.Enabled() {
+		return false
+	}
+	partners := a.contacts.PartnersOf(occID)
+	o, ok := a.occurrences.ByID(occID)
+	if len(partners) == 0 || !ok {
+		return false
+	}
+	saved := o.Transform()
+	o.SetTransform(newTransform)
+	defer o.SetTransform(saved)
+	moved := occurrenceWorldBodies(o)
+	for _, pid := range partners {
+		p, ok := a.occurrences.ByID(pid)
+		if !ok {
+			continue
+		}
+		if vol, _, found := bodiesOverlapVolume(moved, occurrenceWorldBodies(p)); found && vol > interferenceVolumeEps {
+			return true
+		}
+	}
+	return false
+}
+
 // placedLeafOccurrences returns the non-suppressed occurrences that instance a part with
 // bodies (sub-assembly interference is a later refinement).
 func placedLeafOccurrences(occs *occurrence.Occurrences) []*occurrence.Occurrence {

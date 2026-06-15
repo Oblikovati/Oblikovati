@@ -6,7 +6,9 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
+	math4 "oblikovati.org/math"
 )
 
 // TestInterferenceAnalysisOverWire checks the M12-F05 interference analysis: two unit boxes
@@ -63,5 +65,32 @@ func TestContactSetsOverWire(t *testing.T) {
 	call(t, r, s, "contactSets.delete", mustJSON(t, wire.ContactSetRef{ID: cs.ContactSet.ID}), &afterDel)
 	if len(afterDel.ContactSets) != 0 {
 		t.Errorf("after delete = %+v, want empty", afterDel.ContactSets)
+	}
+}
+
+// TestContactStopBlocksInterpenetratingMove checks the M12-F05 contact-stop: with the contact
+// solver on, moving a contact-set member into a partner is rejected (the part stops at
+// contact); with it off, the move applies.
+func TestContactStopBlocksInterpenetratingMove(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0, 1) // adjacent unit boxes, touching at x=1
+
+	var cs wire.ContactSetResult
+	call(t, r, s, "contactSets.create", mustJSON(t, wire.CreateContactSetArgs{Name: "g"}), &cs)
+	call(t, r, s, "contactSets.addMember", mustJSON(t, wire.ContactMemberArgs{Set: cs.ContactSet.ID, Occurrence: occs[0].ID()}), &wire.ContactSetResult{})
+	call(t, r, s, "contactSets.addMember", mustJSON(t, wire.ContactMemberArgs{Set: cs.ContactSet.ID, Occurrence: occs[1].ID()}), &wire.ContactSetResult{})
+	call(t, r, s, "contactSolver.setEnabled", mustJSON(t, wire.ContactSolverEnableArgs{Enabled: true}), &wire.ContactSolverResult{})
+
+	before := occs[1].Transform()
+	intoPartner := types.Matrix{Cells: math4.Translation4(math4.V3(0.5, 0, 0)).Cells()} // overlaps box:1 [0,1]
+	var res wire.OccurrenceResult
+	call(t, r, s, "assembly.transform", mustJSON(t, wire.TransformOccurrenceArgs{ID: occs[1].ID(), Transform: intoPartner}), &res)
+	if !occs[1].Transform().IsEqualTo(before, 1e-9) {
+		t.Error("contact on: an interpenetrating move should be blocked (occurrence keeps its place)")
+	}
+
+	call(t, r, s, "contactSolver.setEnabled", mustJSON(t, wire.ContactSolverEnableArgs{Enabled: false}), &wire.ContactSolverResult{})
+	call(t, r, s, "assembly.transform", mustJSON(t, wire.TransformOccurrenceArgs{ID: occs[1].ID(), Transform: intoPartner}), &res)
+	if occs[1].Transform().IsEqualTo(before, 1e-9) {
+		t.Error("contact off: the move should apply")
 	}
 }
