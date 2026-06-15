@@ -25,6 +25,7 @@ func assemblyTabCommands() []*CommandDefinition {
 	cmds = append(cmds, relationshipCommands()...)
 	cmds = append(cmds, jointCommands()...)
 	cmds = append(cmds, representationCommands()...)
+	cmds = append(cmds, contactCommands()...)
 	return append(cmds, assemblyModelingCommands()...)
 }
 

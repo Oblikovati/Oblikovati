@@ -84,14 +84,20 @@ func assemblyPlaceByDefinition(s *app.Session, raw json.RawMessage) (json.RawMes
 	return occurrenceReply(o)
 }
 
-// assemblyTransform repositions an occurrence.
+// assemblyTransform repositions an occurrence. When the contact solver is on, a move that would
+// drive a contact-set member into one of its partners is rejected — the part stops at contact
+// (M12-F05); the occurrence keeps its current placement.
 func assemblyTransform(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	var in wire.TransformOccurrenceArgs
 	o, err := occurrenceFromArgs(s, raw, &in, &in.ID, wire.MethodAssemblyTransform)
 	if err != nil {
 		return nil, err
 	}
-	o.SetTransform(matrixFromWire(in.Transform))
+	target := matrixFromWire(in.Transform)
+	if asm, err := modelaccess.ActiveAssembly(s); err == nil && asm.WouldContactBlock(o.ID(), target) {
+		return occurrenceReply(o)
+	}
+	o.SetTransform(target)
 	return occurrenceReply(o)
 }
 
