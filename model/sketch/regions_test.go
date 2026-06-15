@@ -85,6 +85,32 @@ func TestOverlappingCirclesYieldThreeRegions(t *testing.T) {
 	}
 }
 
+// TestCrossingBarsInsideBoundaryMergeToOneHole: a boundary with a grid of crossing bars (a
+// disconnected island whose interior is subdivided into many abutting cells) yields one profile
+// whose island is a single merged hole — not a tiling of overlapping cell-loops (#863).
+func TestCrossingBarsInsideBoundaryMergeToOneHole(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	addRectangle(s, 1.5, 1.5, 8.5, 8.5) // boundary
+	for _, x := range []float64{3, 5, 7} {
+		addRectangle(s, x-0.2, 1.8, x+0.2, 8.2) // crossing vertical bars
+	}
+	for _, y := range []float64{3, 5, 7} {
+		addRectangle(s, 1.8, y-0.2, 8.2, y+0.2) // crossing horizontal bars
+	}
+	ps := s.Profiles()
+	if ps.Count() != 1 {
+		t.Fatalf("crossing-bar boundary profiles = %d, want 1", ps.Count())
+	}
+	p := ps.Item(0)
+	if len(p.InnerLoops()) != 1 {
+		t.Fatalf("inner loops = %d, want 1 (the island merged to one outline)", len(p.InnerLoops()))
+	}
+	// Area-consistent: the boundary (49) minus the island's footprint, with no double-counting.
+	if got := p.Area(); !math.IsNearZero(got-24.84, 1e-6) {
+		t.Errorf("frame area = %v, want 24.84 (49 − island footprint 24.16)", got)
+	}
+}
+
 func TestPlainRectangleStillOneRegion(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	addRectangle(s, 0, 0, 4, 3)
