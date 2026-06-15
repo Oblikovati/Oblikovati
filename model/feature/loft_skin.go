@@ -71,6 +71,16 @@ func alignSections(sections [][]math.Point3) [][]math.Point3 {
 
 // rotateToBestOffset returns cur cyclically shifted to the offset minimizing Σ|ref[k]−cur[k]|².
 func rotateToBestOffset(ref, cur []math.Point3) []math.Point3 {
+	return rotateLoop(cur, bestLoopOffset(ref, cur))
+}
+
+// bestLoopOffset is the cyclic shift of cur that minimizes Σ|ref[k]−cur[(k+off)]|² — the start
+// offset that best lines cur up with ref. For a CLOSED loft it is also the loop's correspondence
+// monodromy: going once around a twisted closed loft, index k returns shifted by this offset (e.g.
+// half the points for a 180°-twisted Möbius band, whose rectangular section maps onto itself under
+// that shift). The closure (blend + mesh wrap) must apply it, or the wrap crams the whole twist
+// into one segment — the seam notch.
+func bestLoopOffset(ref, cur []math.Point3) int {
 	n := len(cur)
 	best, bestCost := 0, stdmath.Inf(1)
 	for off := 0; off < n; off++ {
@@ -83,14 +93,32 @@ func rotateToBestOffset(ref, cur []math.Point3) []math.Point3 {
 			bestCost, best = cost, off
 		}
 	}
-	if best == 0 {
-		return cur
+	return best
+}
+
+// closureShift is the wrap correspondence offset of a closed section sequence: 0 for an open or
+// trivially-closing loft, else the best alignment of the last section back onto the first. It is
+// the monodromy the blend and the mesh wrap must apply so a twisted closed loft (a Möbius band)
+// closes seamlessly instead of pinching at the seam. A non-twisted closed loft (a full revolve,
+// an untwisted ring) returns 0, so existing closed sweeps are unaffected.
+func closureShift(sections [][]math.Point3, closed bool) int {
+	if !closed || len(sections) < 3 {
+		return 0
 	}
-	res := make([]math.Point3, n)
+	return bestLoopOffset(sections[len(sections)-1], sections[0])
+}
+
+// rotateVecLoop is rotateLoop for a tangent array (cyclically shifts so index off becomes 0).
+func rotateVecLoop(vecs []math.Vector3, off int) []math.Vector3 {
+	if off == 0 {
+		return vecs
+	}
+	n := len(vecs)
+	out := make([]math.Vector3, n)
 	for k := 0; k < n; k++ {
-		res[k] = cur[(k+best)%n]
+		out[k] = vecs[(k+off)%n]
 	}
-	return res
+	return out
 }
 
 // splineSections inserts loftSegmentSamples interpolated sub-sections between each consecutive
@@ -99,12 +127,12 @@ func rotateToBestOffset(ref, cur []math.Point3) []math.Point3 {
 // dictated by their end condition (Free keeps the natural Catmull-Rom tangent, so an all-Free
 // loft is the same ruled/curved blend as before — see loftEnds). Corresponding points must
 // already be aligned.
-func splineSections(sections [][]math.Point3, closed bool, ends loftEnds) [][]math.Point3 {
+func splineSections(sections [][]math.Point3, closed bool, ends loftEnds, wrapShift int) [][]math.Point3 {
 	m := len(sections)
 	if m < 2 || loftSegmentSamples < 2 {
 		return sections
 	}
-	return hermiteBlend(sections, sectionTangents(sections, closed, ends), closed)
+	return hermiteBlend(sections, sectionTangents(sections, closed, ends, wrapShift), closed, wrapShift)
 }
 
 // railGuide deforms the densified sections so the loft follows guide rails (the kLoftWithRails
@@ -335,7 +363,7 @@ func resamplePath(poly []math.Point3, count int) []math.Point3 {
 // (half the chord from the previous to the next section) at interior sections, overridden at
 // the first/last section by an angled end condition. Feeding these to a Hermite blend with the
 // Catmull-Rom tangents reproduces the Catmull-Rom curve exactly, so Free ends are unchanged.
-func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds) [][]math.Vector3 {
+func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds, wrapShift int) [][]math.Vector3 {
 	m, n := len(sections), len(sections[0])
 	idx := func(i int) int {
 		if closed {
@@ -343,11 +371,25 @@ func sectionTangents(sections [][]math.Point3, closed bool, ends loftEnds) [][]m
 		}
 		return clampInt(i, 0, m-1)
 	}
+	// Across the closed seam (between section m-1 and 0) the correspondence is offset by the
+	// monodromy wrapShift, so a periodic neighbour's matching point is reindexed by it. Without this
+	// the Catmull-Rom tangent at the seam sections points across the cross-section (a kink/crease at
+	// the seam) instead of along the loop.
+	corr := func(j, shift int) int { return ((j+shift)%n + n) % n }
 	tan := make([][]math.Vector3, m)
 	for i := 0; i < m; i++ {
 		tan[i] = make([]math.Vector3, n)
+		predShift, succShift := 0, 0
+		if closed && i == 0 {
+			predShift = -wrapShift // stepping back to section m-1 crosses the seam
+		}
+		if closed && i == m-1 {
+			succShift = wrapShift // stepping forward to section 0 crosses the seam
+		}
 		for j := 0; j < n; j++ {
-			tan[i][j] = sections[idx(i-1)][j].VectorTo(sections[idx(i+1)][j]).Scale(0.5)
+			p := sections[idx(i-1)][corr(j, predShift)]
+			q := sections[idx(i+1)][corr(j, succShift)]
+			tan[i][j] = p.VectorTo(q).Scale(0.5)
 		}
 	}
 	if !closed {
@@ -512,7 +554,11 @@ func unitOrFallback(v, fallback math.Vector3) math.Vector3 {
 
 // hermiteBlend samples a cubic Hermite spline through each corresponding-point track, using the
 // per-section tangents, into loftSegmentSamples sub-sections per segment (periodic when closed).
-func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool) [][]math.Point3 {
+// For a closed loft with a correspondence monodromy (wrapShift != 0 — a twisted band such as a
+// Möbius), the closing segment blends toward the start section REINDEXED by wrapShift, so the wrap
+// is a small twist (one step) instead of cramming the whole accumulated twist into one segment.
+// sweptSolid's mesh wrap applies the same shift, so the two stay consistent.
+func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool, wrapShift int) [][]math.Point3 {
 	m := len(sections)
 	segs := m - 1
 	if closed {
@@ -521,14 +567,17 @@ func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool) [
 	out := make([][]math.Point3, 0, 1+segs*loftSegmentSamples)
 	out = append(out, sections[0])
 	for i := 0; i < segs; i++ {
-		i1 := (i + 1) % m
-		n := segmentSamples(sections[i], sections[i1], tan[i], tan[i1])
+		p1, t1 := sections[(i+1)%m], tan[(i+1)%m]
+		if closed && i == segs-1 && wrapShift != 0 { // the wrap: aim at the start reindexed by the monodromy
+			p1, t1 = rotateLoop(sections[0], wrapShift), rotateVecLoop(tan[0], wrapShift)
+		}
+		n := segmentSamples(sections[i], p1, tan[i], t1)
 		for s := 1; s <= n; s++ {
-			out = append(out, hermiteSection(sections[i], sections[i1], tan[i], tan[i1], float64(s)/float64(n)))
+			out = append(out, hermiteSection(sections[i], p1, tan[i], t1, float64(s)/float64(n)))
 		}
 	}
 	if closed {
-		out = out[:len(out)-1] // the final sample equals sections[0]; drop it (sweptSolid closes the loop)
+		out = out[:len(out)-1] // the final sample equals the (reindexed) start; drop it (sweptSolid closes the loop)
 	}
 	return out
 }

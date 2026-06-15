@@ -26,7 +26,7 @@ func sweptSolid(sections [][]math.Point3, closedLoop bool, feat string) (*topo.B
 	if err := validateSections(sections, closedLoop); err != nil {
 		return nil, err
 	}
-	mesh := sectionMesh(sections, closedLoop)
+	mesh := sectionMesh(sections, closedLoop, closureShift(sections, closedLoop))
 	body := subd.ToBody(mesh, feat)
 	// A consistently-wound cage is either all-outward or all-inward; if the signed
 	// volume came out negative the cage is inside-out, so rebuild it face-reversed.
@@ -59,8 +59,10 @@ func validateSections(sections [][]math.Point3, closedLoop bool) error {
 }
 
 // sectionMesh assembles the cage: vertex (s,i) at index s*n+i, a quad per (segment,
-// cross-section edge), and start/end caps unless the sweep is a closed loop.
-func sectionMesh(sections [][]math.Point3, closedLoop bool) subd.Mesh {
+// cross-section edge), and start/end caps unless the sweep is a closed loop. wrapShift offsets
+// the cross-section index across the CLOSING segment only, so a twisted closed loft (a Möbius
+// band) joins corresponding points across the seam instead of pairing them off by the monodromy.
+func sectionMesh(sections [][]math.Point3, closedLoop bool, wrapShift int) subd.Mesh {
 	k, n := len(sections), len(sections[0])
 	verts := make([]math.Point3, 0, k*n)
 	for _, s := range sections {
@@ -73,9 +75,14 @@ func sectionMesh(sections [][]math.Point3, closedLoop bool) subd.Mesh {
 	var faces [][]int
 	for s := 0; s < segs; s++ {
 		ns := (s + 1) % k
+		shift := 0
+		if closedLoop && ns == 0 { // the wrap segment carries the loop's correspondence offset
+			shift = wrapShift
+		}
 		for i := 0; i < n; i++ {
 			j := (i + 1) % n
-			a, b, c, d := s*n+i, s*n+j, ns*n+j, ns*n+i
+			a, b := s*n+i, s*n+j
+			c, d := ns*n+(j+shift)%n, ns*n+(i+shift)%n
 			faces = append(faces, sideQuad(verts, a, b, c, d)...)
 		}
 	}

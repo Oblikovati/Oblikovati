@@ -3,6 +3,7 @@
 package feature
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -29,6 +30,192 @@ func centeredSquareOn(plane sketch.Plane, half float64) *sketch.Sketch {
 func planeAtZ(z float64) sketch.Plane {
 	p, _ := sketch.NewPlane(math.P3(0, 0, z), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
 	return p
+}
+
+// centeredRectOn returns a sketch on plane with a centered halfW×halfH rectangle (corners
+// ±halfW, ±halfH), wound counter-clockwise — an elongated section when halfW≠halfH.
+func centeredRectOn(plane sketch.Plane, halfW, halfH float64) *sketch.Sketch {
+	s := sketch.NewSketches().Add(plane)
+	c0 := s.Points().Add(math.P2(-halfW, -halfH))
+	c1 := s.Points().Add(math.P2(halfW, -halfH))
+	c2 := s.Points().Add(math.P2(halfW, halfH))
+	c3 := s.Points().Add(math.P2(-halfW, halfH))
+	s.Lines().Add(c0, c1)
+	s.Lines().Add(c1, c2)
+	s.Lines().Add(c2, c3)
+	s.Lines().Add(c3, c0)
+	return s
+}
+
+// polygonAreaXY is the shoelace area of a loop projected to the XY plane.
+func polygonAreaXY(loop []math.Point3) float64 {
+	var sum float64
+	n := len(loop)
+	for i := 0; i < n; i++ {
+		a, b := loop[i], loop[(i+1)%n]
+		sum += float64(a.X*b.Y - b.X*a.Y)
+	}
+	if sum < 0 {
+		sum = -sum
+	}
+	return sum / 2
+}
+
+// TestResampleLoopPreservesArea pins the loft volume-deficit fix (2026-06-15): resampling an
+// elongated rectangle to a common point count must NOT cut its corners. A plain arc-length
+// resample turned an 8×1 rectangle (area 8) into a 4.5-area quad (0.5625×); resampleLoop now
+// preserves the corners, so the area is unchanged whether n equals or exceeds the vertex count.
+func TestResampleLoopPreservesArea(t *testing.T) {
+	rect := []math.Point3{
+		math.P3(-4, -0.5, 0), math.P3(4, -0.5, 0), math.P3(4, 0.5, 0), math.P3(-4, 0.5, 0),
+	}
+	const want = 8.0 // 8 wide × 1 tall
+	for _, n := range []int{4, 8, 13, 32} {
+		got := polygonAreaXY(resampleLoop(rect, n))
+		if relErr(got, want) > 1e-9 {
+			t.Errorf("resampleLoop(8×1 rect, n=%d) area = %g, want %g (corners must be preserved)", n, got, want)
+		}
+		if len(resampleLoop(rect, n)) != n {
+			t.Errorf("resampleLoop(rect, n=%d) returned %d points, want %d", n, len(resampleLoop(rect, n)), n)
+		}
+	}
+}
+
+// mobiusSectionLoops builds n elongated-rectangle cross-sections around a ring of radius R, each
+// twisted by `turns`·azimuth (turns=0.5 → a 0→180° half-twist = a Möbius band; turns=0 → a flat
+// untwisted ring). W is the band width, T its thickness. CCW in the width/thickness frame.
+func mobiusSectionLoops(n int, radius, width, thick, turns float64) [][]math.Point3 {
+	loops := make([][]math.Point3, n)
+	for i := 0; i < n; i++ {
+		u := 2 * stdmath.Pi * float64(i) / float64(n)
+		a := u * turns
+		cu, su := stdmath.Cos(u), stdmath.Sin(u)
+		ca, sa := stdmath.Cos(a), stdmath.Sin(a)
+		w := math.V3(ca*cu, ca*su, sa)        // width direction
+		td := math.V3(-sa*cu, -sa*su, ca)     // thickness direction
+		c := math.P3(radius*cu, radius*su, 0) // section centre on the ring
+		hw, ht := width/2, thick/2
+		loops[i] = []math.Point3{
+			c.TranslateBy(w.Scale(-hw)).TranslateBy(td.Scale(-ht)),
+			c.TranslateBy(w.Scale(hw)).TranslateBy(td.Scale(-ht)),
+			c.TranslateBy(w.Scale(hw)).TranslateBy(td.Scale(ht)),
+			c.TranslateBy(w.Scale(-hw)).TranslateBy(td.Scale(ht)),
+		}
+	}
+	return loops
+}
+
+// TestClosureShiftDetectsMonodromy pins the seam fix's core: a closed loft that twists 180° over a
+// 180°-symmetric (rectangular) section comes back shifted by half its points; an untwisted ring
+// does not. The closure (blend + mesh wrap) applies this offset so the seam doesn't pinch.
+func TestClosureShiftDetectsMonodromy(t *testing.T) {
+	if got := closureShift(mobiusSectionLoops(12, 30, 16, 2, 0.5), true); got != 2 {
+		t.Errorf("closureShift(Möbius rects) = %d, want 2 (rectangle 180° monodromy)", got)
+	}
+	if got := closureShift(mobiusSectionLoops(12, 30, 16, 2, 0), true); got != 0 {
+		t.Errorf("closureShift(untwisted ring) = %d, want 0", got)
+	}
+	if got := closureShift(mobiusSectionLoops(12, 30, 16, 2, 0.5), false); got != 0 {
+		t.Errorf("closureShift(open loft) = %d, want 0 (no wrap)", got)
+	}
+}
+
+// TestClosedMobiusLoftClosesWithoutCram is the seam-notch regression: a closed loft twisting 180°
+// around a ring must close as a clean watertight solid (volume ≈ W·T·2πR) AND must NOT cram the
+// whole twist into the wrap segment — the old behaviour blew the wrap up to loftMaxSegmentSamples
+// (a pinched notch); the monodromy-aware closure keeps every segment at the floor.
+func TestClosedMobiusLoftClosesWithoutCram(t *testing.T) {
+	const n, R, W, T = 36, 30.0, 16.0, 2.0
+	loops := mobiusSectionLoops(n, R, W, T, 0.5)
+
+	secs := skinnedSections(loops, maxLoopCount(loops), true, loftEnds{}, loftGuides{})
+	if len(secs) > n*(loftSegmentSamples+2) { // ~n·floor with the fix; a crammed wrap balloons this
+		t.Errorf("closed twisted loft densified to %d sections — the seam is cramming (want ≈%d)", len(secs), n*loftSegmentSamples)
+	}
+
+	body, err := skinLoops(loops, true, "mobius", loftEnds{}, loftGuides{})
+	if err != nil {
+		t.Fatalf("skinLoops: %v", err)
+	}
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("Möbius loft is not a valid solid: %+v", r)
+	}
+	wantV := W * T * 2 * stdmath.Pi * R // cross-section · centroid path length
+	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, wantV) > 0.03 {
+		t.Errorf("Möbius volume = %g, want ≈%g (W·T·2πR)", v, wantV)
+	}
+}
+
+// mobiusSectionSketch builds one Möbius cross-section as a sketch: a centered width×thick rectangle
+// on a plane at azimuth u around a ring of radius `radius`, with its in-plane axes twisted by
+// `twist` (width along cosθ·r̂+sinθ·ẑ, thickness perpendicular in the radial/axial plane) — the
+// design's fixed-frame section. The plane's xAxis is the width direction, yAxis the thickness.
+func mobiusSectionSketch(u, twist, radius, width, thick float64) *sketch.Sketch {
+	cu, su := stdmath.Cos(u), stdmath.Sin(u)
+	ca, sa := stdmath.Cos(twist), stdmath.Sin(twist)
+	wdir := math.V3(ca*cu, ca*su, sa).AsUnit()   // width direction (plane xAxis)
+	tdir := math.V3(-sa*cu, -sa*su, ca).AsUnit() // thickness direction (plane yAxis)
+	center := math.P3(radius*cu, radius*su, 0)
+	plane, _ := sketch.NewPlane(center, wdir, tdir)
+	return centeredRectOn(plane, width/2, thick/2)
+}
+
+// TestLoftMobiusStripDesign is the kernel unit test for the loft built with this project's Möbius
+// strip design parameters: 36 rectangular cross-sections (16×2 mm) on planes around a ring (R=30
+// mm), each twisted by half the azimuth (a 180° half-twist over the loop), joined by a CLOSED loft.
+// It drives the whole loft feature (profile → skin → solid) and pins the two 2026-06-15 fixes: the
+// corner-preserving resample (full cross-section → right volume) and the monodromy-aware closure
+// (seamless seam). A thin band of section w×t swept along the ring centroid (length 2πR) has
+// volume w·t·2πR and one-sided surface area ≈ 2(w+t)·2πR, independent of the twist.
+func TestLoftMobiusStripDesign(t *testing.T) {
+	const n = 36
+	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, band 16×2 mm (model units = cm)
+	fs := NewPartFeatures(nil, nil)
+	sections := make([]LoftSection, n)
+	for i := 0; i < n; i++ {
+		u := 2 * stdmath.Pi * float64(i) / float64(n)
+		sections[i] = LoftSection{Sketch: mobiusSectionSketch(u, u/2, R, W, T), ProfileIndex: 0}
+	}
+	pf := NewLoftFeatures(fs).Add(sections, true, ops.NewBody)
+	fs.Recompute()
+
+	if !pf.Health().OK() {
+		t.Fatalf("Möbius loft went sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("Möbius loft is not a valid solid: %+v", r)
+	}
+	props := ops.BodyGeometryProperties(body, ops.DefaultQuality())
+	if wantV := W * T * 2 * stdmath.Pi * R; relErr(props.Volume, wantV) > 0.03 { // 6.032 cm³
+		t.Errorf("Möbius volume = %g cm³, want ≈%g (w·t·2πR); ~%g would mean corners are being cut",
+			props.Volume, wantV, 0.5625*wantV)
+	}
+	if wantA := 2 * (W + T) * 2 * stdmath.Pi * R; relErr(props.Area, wantA) > 0.05 { // ≈67.86 cm²
+		t.Errorf("Möbius area = %g cm², want ≈%g (2(w+t)·2πR)", props.Area, wantA)
+	}
+}
+
+func TestLoftElongatedRectKeepsVolume(t *testing.T) {
+	// An 8×1 rectangle lofted straight from z=0 to z=5 is a prism: V = area·h = 8·5 = 40.
+	// The arc-length-resample bug skinned a 4.5-area quad → ~22.5; the corner-preserving
+	// resample restores the full cross-section.
+	fs := NewPartFeatures(nil, nil)
+	bottom := centeredRectOn(sketch.XYPlane(), 4, 0.5)
+	top := centeredRectOn(planeAtZ(5), 4, 0.5)
+	pf := NewLoftFeatures(fs).Add([]LoftSection{{Sketch: bottom, ProfileIndex: 0}, {Sketch: top, ProfileIndex: 0}}, false, ops.NewBody)
+	fs.Recompute()
+
+	if !pf.Health().OK() {
+		t.Fatalf("loft went sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("lofted body is not a valid solid: %+v", r)
+	}
+	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(v, 40) > 0.02 {
+		t.Errorf("elongated-rect prism volume = %g, want ≈40 (area 8 × height 5)", v)
+	}
 }
 
 // sketchList is a SketchIndexer over an ordered set of sketches (loft uses several).
