@@ -36,4 +36,11 @@ var (
 
 	// Drive (M12-F03).
 	_ contract.DriveSettings = DriveSettings{}
+
+	// Representations (M12-F04).
+	_ contract.DesignViewRepresentation    = (*designViewRep)(nil)
+	_ contract.PositionalRepresentation    = (*positionalRep)(nil)
+	_ contract.LevelOfDetailRepresentation = (*lodRep)(nil)
+	_ contract.ModelState                  = (*modelState)(nil)
+	_ contract.RepresentationsManager      = (*Representations)(nil)
 )

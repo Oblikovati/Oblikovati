@@ -21,6 +21,9 @@ type AngleConstraint struct {
 // Value returns the target angle (radians).
 func (c *AngleConstraint) Value() float64 { return c.angle }
 
+// SetValue overrides the constrained angle (a positional representation, M12-F04).
+func (c *AngleConstraint) SetValue(v float64) { c.angle = v }
+
 // SolutionType returns how the angle is measured (undirected/directed/reference-vector).
 func (c *AngleConstraint) SolutionType() types.AngleConstraintSolutionType { return c.solution }
 

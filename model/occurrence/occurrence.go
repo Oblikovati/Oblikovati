@@ -43,6 +43,7 @@ type Occurrence struct {
 	name       string
 	transform  math.Matrix4
 	suppressed bool
+	hidden     bool // inverse of visibility (M12-F04 design-view reps); zero ⇒ visible
 	grounded   bool
 	adaptive   bool
 	substitute bool
@@ -102,6 +103,15 @@ func (o *Occurrence) Grounded() bool { return o.grounded }
 
 // SetGrounded fixes or releases the occurrence in space.
 func (o *Occurrence) SetGrounded(grounded bool) { o.grounded = grounded }
+
+// Visible reports whether the occurrence is drawn. Visibility is a display concern (a
+// design-view representation override, M12-F04) — not geometry — so it does not bump the
+// version or affect solving. The field is stored inverted (hidden) so the zero-value
+// occurrence is visible.
+func (o *Occurrence) Visible() bool { return !o.hidden }
+
+// SetVisible shows or hides the occurrence in the render queue.
+func (o *Occurrence) SetVisible(visible bool) { o.hidden = !visible }
 
 // Adaptive reports whether the occurrence's underdimensioned geometry may flex to
 // satisfy assembly constraints (resolved by the solver from M12).

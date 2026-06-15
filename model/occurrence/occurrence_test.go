@@ -214,3 +214,21 @@ func TestResolveRejectsBadPaths(t *testing.T) {
 		}
 	}
 }
+
+// TestVisibilityFlagDefaultsVisible checks the M12-F04 display-visibility flag: a new
+// occurrence is visible, and hiding/showing round-trips without touching suppression.
+func TestVisibilityFlagDefaultsVisible(t *testing.T) {
+	occs := NewOccurrences()
+	o := occs.AddByComponentDefinition("widget:1", unitComponent(), math.Identity4())
+	if !o.Visible() {
+		t.Error("a new occurrence should be visible by default")
+	}
+	o.SetVisible(false)
+	if o.Visible() || o.Suppressed() {
+		t.Errorf("after SetVisible(false): Visible=%v Suppressed=%v, want false/false", o.Visible(), o.Suppressed())
+	}
+	o.SetVisible(true)
+	if !o.Visible() {
+		t.Error("after SetVisible(true) the occurrence should be visible again")
+	}
+}
