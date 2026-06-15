@@ -43,4 +43,11 @@ var (
 	_ contract.LevelOfDetailRepresentation = (*lodRep)(nil)
 	_ contract.ModelState                  = (*modelState)(nil)
 	_ contract.RepresentationsManager      = (*Representations)(nil)
+
+	// Contact & interference (M12-F05).
+	_ contract.ContactSet          = (*contactSet)(nil)
+	_ contract.ContactSets         = (*ContactSolver)(nil)
+	_ contract.ContactSolver       = (*ContactSolver)(nil)
+	_ contract.InterferenceResult  = InterferenceResult{}
+	_ contract.InterferenceResults = InterferenceResults{}
 )

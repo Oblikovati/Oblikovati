@@ -40,6 +40,7 @@ type AssemblyComponentDefinition struct {
 	dsJoints    *assembly.DSJointSet    // DS-joint (DOF/imposed-motion) view (M12-F02)
 
 	representations *assembly.Representations // design-view/positional/LOD override layers + model states (M12-F04)
+	contacts        *assembly.ContactSolver   // contact sets + interpenetration toggle (M12-F05)
 	features        *AssemblyFeatures         // assembly-authored machining features (M11-F08)
 	params          *param.Parameters         // parameter DAG for assembly sketch dimensions
 	work            *feature.WorkGeometry     // origin frame + user work planes, in assembly space
@@ -79,6 +80,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	a.joints = assembly.NewJointSet(occ, a.events)
 	a.dsJoints = assembly.NewDSJointSet()
 	a.representations = assembly.NewRepresentations(occ, a.constraints, a.joints)
+	a.contacts = assembly.NewContactSolver()
 	return a
 }
 
@@ -207,6 +209,12 @@ func (a *AssemblyComponentDefinition) DSJoints() *assembly.DSJointSet { return a
 // level-of-detail override layers plus model states (M12-F04).
 func (a *AssemblyComponentDefinition) Representations() *assembly.Representations {
 	return a.representations
+}
+
+// ContactSolver returns the assembly's contact solver — the contact sets and the
+// interpenetration-on-drag toggle (M12-F05).
+func (a *AssemblyComponentDefinition) ContactSolver() *assembly.ContactSolver {
+	return a.contacts
 }
 
 // SolveConstraints positions the assembly's occurrences to satisfy BOTH its constraints and
