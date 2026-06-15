@@ -113,6 +113,7 @@ func Default() *Registry {
 		lipDescriptor(),
 		holeDescriptor(),
 		bossDescriptor(),
+		grillDescriptor(),
 		threadDescriptor(),
 		// Direct edits and booleans.
 		combineDescriptor(),
