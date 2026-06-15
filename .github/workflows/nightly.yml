@@ -22,10 +22,16 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      # Pin to the latest api release so API_VERSION matches what the build links.
+      - uses: ./.github/actions/api-contract
       - id: check
         run: |
           set -euo pipefail
-          echo "version=$(scripts/version.sh nightly)" >> "$GITHUB_OUTPUT"
+          echo "version=$(go run ./cmd/obkversion nightly)" >> "$GITHUB_OUTPUT"
           if git rev-parse -q --verify refs/tags/nightly >/dev/null; then
             n="$(git rev-list --count nightly..HEAD)"
           else

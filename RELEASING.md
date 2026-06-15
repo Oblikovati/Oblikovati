@@ -5,42 +5,50 @@ Two channels, both automated by GitHub Actions:
 | Channel | Trigger | Workflow | Result |
 |---------|---------|----------|--------|
 | **Nightly** | daily cron + manual `workflow_dispatch`, on `develop` | `.github/workflows/nightly.yml` | rolling `nightly` **prerelease** (skipped if no new commits) |
-| **Stable** | push to `release` (merge a PR `develop` → `release`) | `.github/workflows/release.yml` | GitHub release tagged `vMAJOR.MINOR.<timestamp>` |
+| **Stable** | push to `release` (merge a PR `develop` → `release`) | `.github/workflows/release.yml` | GitHub release tagged `v{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}` |
 
 Both build the **GUI head + CLI** for Windows, Linux (AppImage), and macOS (one
 **universal `.app`**, codesigned + notarized — see [macOS signing](#macos-signing--notarization)).
 Add-ins are **not** shipped; they are maintained by external vendors.
 
-## Versioning — `MAJOR.MINOR.PATCH`
+## Versioning — `{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}`
 
-- **MAJOR** — a **breaking change to the public API** (starts at `0`).
-- **MINOR** — a **non-breaking API extension _or_ a bug fix**.
-- **PATCH** — the **build number**: a UTC timestamp (`YYYYmmddHHMMSS`), set
-  automatically. Nightlies add a `-nightly` suffix (a semver prerelease).
+- **MANUAL_MAJOR** — a deliberate generational bump, hand-set in the repo-root
+  [`version.yaml`](version.yaml) (`major:`); starts at `0`.
+- **API_VERSION** — the referenced `oblikovati.org/api` release (the `require` in
+  `go.mod`, kept current automatically), each semver component zero-padded to two
+  digits and concatenated: `v0.2.0` → `000200`.
+- **MINOR** / **PATCH** — auto-numbered from the **conventional-commit scope** since the
+  last stable release, per SemVer: a `feat` (or a breaking change) bumps **MINOR** and
+  resets PATCH; a `fix` bumps **PATCH**. They **reset to `0.0`** whenever MANUAL_MAJOR or
+  API_VERSION changes (a new line gets its own sequence). Nightlies append
+  `-nightly.<timestamp>` (a semver prerelease).
 
-`MAJOR.MINOR` lives in the repo-root [`VERSION`](VERSION) file. `scripts/version.sh`
-appends the timestamp:
+[`cmd/obkversion`](cmd/obkversion) computes the whole string; its logic lives in the
+tested [`release`](release) package. It reads `version.yaml`, the api pin, and git
+tags + commit history — so it needs a full checkout (`fetch-depth: 0`):
 
 ```sh
-scripts/version.sh stable   # -> 0.0.20260602T120000   (e.g.)
-scripts/version.sh nightly  # -> 0.0.20260602T120000-nightly
+go run ./cmd/obkversion stable    # -> 0.000200.1.0          (e.g.)
+go run ./cmd/obkversion nightly   # -> 0.000200.1.0-nightly.20260602T120000
 ```
 
-### Bumping `MAJOR.MINOR`
+### Bumping the version
 
-Edit `VERSION` **in the PR that introduces the change**, per the rules above:
-
-- breaking API change → bump MAJOR (e.g. `0.7` → `1.0`), reset MINOR to `0`;
-- API extension or bug fix → bump MINOR (e.g. `0.7` → `0.8`).
-
-PATCH is never edited by hand — it is the build timestamp.
+- **MINOR / PATCH** are never edited by hand — use [Conventional
+  Commits](https://www.conventionalcommits.org) (`feat:` / `fix:` / `feat!:`) and the
+  pipeline derives the bump.
+- **API_VERSION** changes on its own when the `oblikovati.org/api` pin is bumped (CI
+  tracks the latest contract release).
+- **MANUAL_MAJOR** — edit `version.yaml` only for a deliberate generational release.
 
 ## Cutting a stable release
 
-1. Land your changes on `develop` (with the `VERSION` bump if warranted).
+1. Land your changes on `develop` (conventional-commit messages drive the bump).
 2. Open and merge a PR **`develop` → `release`**.
-3. The `release` workflow builds all platforms and publishes
-   `vMAJOR.MINOR.<timestamp>` with the binaries + `checksums.txt` + generated notes.
+3. The `release` workflow computes the version, builds all platforms, and publishes
+   `v{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}` with the binaries + `checksums.txt`
+   + generated notes. That tag becomes the base for the next release's MINOR.PATCH.
 
 The `release` branch is the stable channel (one-time setup: `git branch release &&
 git push -u origin release`).
@@ -73,9 +81,9 @@ scan); `notarytool --wait` blocks the job on the verdict.
 
 ## Local builds
 
-`make build` / `make build-all` (in `source/`) stamp `build.Version` from `VERSION`
-+ a timestamp, matching the release scheme. CI overrides it with the exact release
-version via `VERSION=… make build`.
+`make build` / `make build-all` stamp `build.Version` via `go run ./cmd/obkversion
+stable`, matching the release scheme. CI overrides it with the exact release version
+via `VERSION=… make build`.
 
 ## Notes / known follow-ups
 

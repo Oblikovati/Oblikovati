@@ -2,8 +2,8 @@ name: release
 
 # Stable release: cut when a PR is merged into `release` (develop → release). Builds
 # the GUI head + CLI for all platforms and publishes a GitHub release tagged
-# vMAJOR.MINOR.<timestamp> (the version comes from the VERSION file + a timestamp;
-# see RELEASING.md). Replaces the old `v*`-tag goreleaser flow.
+# v{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH} (computed by cmd/obkversion from
+# version.yaml, the api pin, and git tags + commit scope; see RELEASING.md).
 on:
   push:
     branches: [release]
@@ -18,8 +18,16 @@ jobs:
       version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # cmd/obkversion reads git tags + commit history for MINOR.PATCH
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      # Pin to the latest api release so API_VERSION matches what the build links.
+      - uses: ./.github/actions/api-contract
       - id: v
-        run: echo "version=$(scripts/version.sh stable)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(go run ./cmd/obkversion stable)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: version

@@ -18,13 +18,17 @@ channels driven by the branch model rather than hand-cut tags.
      cron + manual dispatch; skipped when there are no new commits since the last
      nightly).
    - **Stable** — cut when a PR is merged **`develop` → `release`** (push to
-     `release`); tagged `vMAJOR.MINOR.<timestamp>`.
+     `release`); tagged `v{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}`.
 
-2. **Versioning `MAJOR.MINOR.PATCH`.** MAJOR = breaking API change (from 0); MINOR =
-   non-breaking API extension or bug fix; PATCH = a UTC-timestamp build number.
-   `MAJOR.MINOR` lives in the repo-root `VERSION` file; `scripts/version.sh` appends
-   the timestamp (nightlies add a `-nightly` prerelease identifier). The human only
-   ever edits `MAJOR.MINOR`.
+2. **Versioning `{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}`** (revised 2026-06;
+   superseded the earlier `MAJOR.MINOR.<timestamp>`). MANUAL_MAJOR is hand-set in the
+   repo-root `version.yaml` (a deliberate generational bump, from 0); API_VERSION is the
+   referenced `oblikovati.org/api` release, each component zero-padded to two digits and
+   concatenated (`v0.2.0` → `000200`); MINOR/PATCH auto-number from conventional-commit
+   scope (feat/breaking → minor, fix → patch) and reset to `0.0` when MANUAL_MAJOR or
+   API_VERSION change. `cmd/obkversion` (tested `release` package) computes it from
+   git tags + history; nightlies append `-nightly.<timestamp>`. The human only ever
+   edits `version.yaml`.
 
 3. **Artifacts.** The **GUI head + CLI** for **Windows**, **Linux (AppImage)**, and
    **macOS (Intel + Apple Silicon, unsigned** — no Apple cert yet). **Add-ins are
