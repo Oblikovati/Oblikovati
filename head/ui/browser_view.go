@@ -201,6 +201,10 @@ func openEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
 		s.BeginEditWorkPlane(h)
 	case app.OccurrenceHandle:
 		_ = s.OpenOccurrenceDocument(h.Occurrence) // open the placed component in a tab (#764)
+	case app.RepresentationHandle:
+		_ = s.ActivateRepresentation(h) // double-click activates a representation (M12-F04)
+	case app.ModelStateHandle:
+		_ = s.ActivateModelState(h) // double-click switches the model state (M12-F04)
 	}
 }
 

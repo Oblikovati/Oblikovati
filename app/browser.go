@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -82,7 +83,45 @@ func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefini
 	addOccurrenceNodes(root, asm.Occurrences())
 	addAssemblyConstraintNodes(root, asm.Constraints())
 	addAssemblyJointNodes(root, asm.Joints())
+	addRepresentationNodes(root, asm.Representations())
 	addAssemblyFeatureNodes(root, asm.Features())
+}
+
+// addRepresentationNodes appends a Representations folder (View / Position / Level of Detail
+// sub-folders) and a Model States folder, each row selectable and double-click-activatable
+// (M12-F04). Empty families are omitted. The active representation/model state is marked.
+func addRepresentationNodes(root *BrowserNode, reps *assembly.Representations) {
+	dv, pos, lod := reps.AllDesignViews(), reps.AllPositionals(), reps.AllLODs()
+	if len(dv) > 0 || len(pos) > 0 || len(lod) > 0 {
+		folder := root.child("Representations", "representations")
+		for _, d := range dv {
+			folder.selectableChild(repBrowserLabel(d.Name(), d.Active()), "representation",
+				RepresentationHandle{Family: types.RepresentationDesignView, ID: d.ID(), Name: d.Name()})
+		}
+		for _, p := range pos {
+			folder.selectableChild(repBrowserLabel(p.Name(), p.Active()), "representation",
+				RepresentationHandle{Family: types.RepresentationPositional, ID: p.ID(), Name: p.Name()})
+		}
+		for _, l := range lod {
+			folder.selectableChild(repBrowserLabel(l.Name(), l.Active()), "representation",
+				RepresentationHandle{Family: types.RepresentationLevelOfDetail, ID: l.ID(), Name: l.Name()})
+		}
+	}
+	if states := reps.AllModelStates(); len(states) > 0 {
+		folder := root.child("Model States", "modelStates")
+		for _, m := range states {
+			folder.selectableChild(repBrowserLabel(m.Name(), m.Active()), "modelState",
+				ModelStateHandle{ID: m.ID(), Name: m.Name()})
+		}
+	}
+}
+
+// repBrowserLabel marks the active representation/model state row.
+func repBrowserLabel(name string, active bool) string {
+	if active {
+		return name + " (active)"
+	}
+	return name
 }
 
 // addAssemblyJointNodes appends a Joints folder listing the assembly's joints (rigid/

@@ -300,6 +300,27 @@ func (r *Representations) lodByIDInternal(id uint64) *lodRep {
 	return nil
 }
 
+// ActiveSelection returns the names of the currently-active representation in each family
+// (empty when a family has no active one) — what a new model state captures.
+func (r *Representations) ActiveSelection() (designView, positional, levelOfDetail string) {
+	for _, d := range r.design {
+		if d.active {
+			designView = d.name
+		}
+	}
+	for _, p := range r.pos {
+		if p.active {
+			positional = p.name
+		}
+	}
+	for _, l := range r.lod {
+		if l.active {
+			levelOfDetail = l.name
+		}
+	}
+	return
+}
+
 // repName returns the given name, or a default "Prefix:N" when name is empty.
 func repName(name, prefix string, n int) string {
 	if name != "" {

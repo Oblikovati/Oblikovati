@@ -3,6 +3,7 @@
 package app
 
 import (
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
@@ -31,6 +32,8 @@ const (
 	SelectOccurrence
 	SelectConstraint
 	SelectJoint
+	SelectRepresentation
+	SelectModelState
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the
@@ -110,6 +113,26 @@ func (AssemblyConstraintHandle) SelectionKind() SelectionKind { return SelectCon
 type AssemblyJointHandle struct{ Joint assembly.Joint }
 
 func (AssemblyJointHandle) SelectionKind() SelectionKind { return SelectJoint }
+
+// RepresentationHandle wraps a representation selected in the assembly browser's
+// Representations folders (M12-F04): its family and id, so Activate/Delete dispatch to the
+// right collection.
+type RepresentationHandle struct {
+	Family types.RepresentationKind
+	ID     uint64
+	Name   string
+}
+
+func (RepresentationHandle) SelectionKind() SelectionKind { return SelectRepresentation }
+
+// ModelStateHandle wraps a model state selected in the assembly browser's Model States folder
+// (M12-F04) — the input the Activate/Delete actions consume.
+type ModelStateHandle struct {
+	ID   uint64
+	Name string
+}
+
+func (ModelStateHandle) SelectionKind() SelectionKind { return SelectModelState }
 
 // SketchHandle wraps a whole sketch (selected in the browser), as opposed to one of its
 // entities — the input for Edit Sketch and for highlighting the sketch in the view.
