@@ -87,7 +87,11 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	// modest operand size: triangle CSG on a large body is expensive and rarely recovers it,
 	// so above the limit we keep the (fast) planar result rather than pay a big CSG attempt.
 	if shouldFallbackBoolean(op, target, tool, body) && len(target.Faces())+len(tool.Faces()) <= csgFallbackFaceLimit {
-		if csg, cerr := booleanCSG(op, target, tool, lin); cerr == nil && csg != nil && Validate(csg).Valid {
+		// Adopt the CSG fallback only when it is a genuine closed manifold solid — NOT merely
+		// Validate().Valid, which does not require Closed: a high-facet mesh whose T-junction
+		// removal bailed (tjunctionFaceBudget) comes back non-watertight, and adopting that
+		// would replace a sound planar result with open garbage.
+		if csg, cerr := booleanCSG(op, target, tool, lin); cerr == nil && csg != nil && validBooleanSolid(csg) {
 			return csg, nil
 		}
 	}
