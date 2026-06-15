@@ -30,3 +30,15 @@ func TestVersionMetadataHasDefaults(t *testing.T) {
 func TestModeFlagsAreCompileTimeConstants(_ *testing.T) {
 	const _ = Debug && Profile && Editor
 }
+
+// TestTitleIsProductPlusVersion pins the window-title format ("Oblikovati <version>"),
+// the string the GLFW window title and the host-reported caption both use.
+func TestTitleIsProductPlusVersion(t *testing.T) {
+	want := AppName + " " + Version
+	if got := Title(); got != want {
+		t.Fatalf("Title() = %q, want %q", got, want)
+	}
+	if !strings.HasPrefix(Title(), "Oblikovati ") {
+		t.Errorf("Title() = %q, want it to start with %q", Title(), "Oblikovati ")
+	}
+}

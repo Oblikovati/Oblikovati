@@ -11,10 +11,10 @@ func TestDetectChannel(t *testing.T) {
 	}{
 		{"", Dev},
 		{"dev", Dev},
-		{"0.0.20260614120000", Stable},
-		{"v0.0.20260614120000", Stable}, // a leading v is still a stable release
-		{"0.0.20260614120000-nightly", Nightly},
-		{"1.4.20260614120000-nightly", Nightly},
+		{"0.000200.1.0", Stable},
+		{"v0.000200.1.0", Stable}, // a leading v is still a stable release
+		{"0.000200.1.0-nightly.20260614T120000", Nightly},
+		{"1.000200.4.2-nightly.20260614T120000", Nightly},
 	}
 	for _, c := range cases {
 		if got := DetectChannel(c.version); got != c.want {

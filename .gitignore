@@ -21,6 +21,9 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+# ...but release/ at the repo root is our Go source package (version tooling), not a
+# build-output dir, so keep it tracked.
+!/release/
 x64/
 x86/
 [Ww][Ii][Nn]32/

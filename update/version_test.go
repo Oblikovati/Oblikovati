@@ -9,14 +9,18 @@ func TestIsNewer(t *testing.T) {
 		latest, current string
 		want            bool
 	}{
-		{"0.0.20260615030000", "0.0.20260614120000", true},                 // later nightly timestamp
-		{"0.0.20260614120000", "0.0.20260615030000", false},                // older
-		{"0.0.20260614120000", "0.0.20260614120000", false},                // equal
-		{"0.1.20260101000000", "0.0.20260615030000", true},                 // minor bump beats a newer timestamp
-		{"1.0.20260101000000", "0.9.20260615030000", true},                 // major bump
-		{"v0.0.20260615030000", "0.0.20260614120000", true},                // leading v on latest
-		{"0.0.20260615030000-nightly", "0.0.20260614120000-nightly", true}, // prerelease ignored
-		{"0.0.20260615030000-nightly", "0.0.20260615030000-nightly", false},
+		{"0.000200.1.1", "0.000200.1.0", true},                                                  // patch bump
+		{"0.000200.2.0", "0.000200.1.9", true},                                                  // minor beats a higher patch
+		{"0.000200.1.0", "0.000200.2.0", false},                                                 // older minor
+		{"0.000200.1.0", "0.000200.1.0", false},                                                 // equal
+		{"0.000300.0.1", "0.000200.9.9", true},                                                  // newer API_VERSION wins
+		{"0.000200.1.0", "0.000300.0.0", false},                                                 // older API_VERSION
+		{"1.000200.0.0", "0.000900.9.9", true},                                                  // MANUAL_MAJOR bump
+		{"v0.000200.1.1", "0.000200.1.0", true},                                                 // leading v on latest
+		{"0.000200.1.0-nightly.20260615T030000", "0.000200.1.0-nightly.20260614T030000", true},  // later nightly stamp
+		{"0.000200.1.0-nightly.20260614T030000", "0.000200.1.0-nightly.20260615T030000", false}, // older stamp
+		{"0.000200.1.0-nightly.20260615T030000", "0.000200.1.0-nightly.20260615T030000", false}, // equal nightly
+		{"0.000200.2.0-nightly.20260101T000000", "0.000200.1.0-nightly.20260615T030000", true},  // minor beats a newer stamp
 	}
 	for _, c := range cases {
 		if got := IsNewer(c.latest, c.current); got != c.want {
@@ -25,10 +29,10 @@ func TestIsNewer(t *testing.T) {
 	}
 }
 
-// TestPatchTimestampExceedsInt32 guards the int64 parse: a 14-digit timestamp PATCH
-// overflows a 32-bit int, which would corrupt the comparison on a 32-bit build.
-func TestPatchTimestampExceedsInt32(t *testing.T) {
-	if !IsNewer("0.0.20260101000001", "0.0.20260101000000") {
-		t.Fatal("timestamp PATCH must compare as int64, not overflow")
+// TestAPIFieldExceedsInt32 guards the int64 parse: a wide zero-padded API_VERSION
+// must compare as int64, not overflow a 32-bit int.
+func TestAPIFieldExceedsInt32(t *testing.T) {
+	if !IsNewer("0.999999.0.1", "0.999999.0.0") {
+		t.Fatal("API_VERSION field must compare as int64, not overflow")
 	}
 }

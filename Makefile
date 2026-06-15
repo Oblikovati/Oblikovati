@@ -8,11 +8,11 @@ MODULE      := oblikovati
 PKG         := ./...
 DIST        := dist
 
-# VERSION is MAJOR.MINOR (VERSION file at the repo root) + a timestamp patch via
-# scripts/version.sh, so local builds match the release scheme. CI overrides it with
-# the exact release version (VERSION=X.Y.<ts> make build). Falls back to git
-# describe, then "dev".
-VERSION     ?= $(shell scripts/version.sh stable 2>/dev/null || git describe --tags --always --dirty 2>/dev/null || echo dev)
+# VERSION is {MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}, computed by cmd/obkversion
+# from version.yaml + the api pin + git tags/commit scope, so local builds match the
+# release scheme. CI overrides it with the exact release version. Falls back to git
+# describe, then "dev" (e.g. on a shallow checkout without tags).
+VERSION     ?= $(shell go run ./cmd/obkversion stable 2>/dev/null || git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT      := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 DATE        := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS     := -s -w \

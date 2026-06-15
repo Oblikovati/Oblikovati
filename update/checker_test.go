@@ -37,7 +37,7 @@ func TestCheckDevBuildNeverQueries(t *testing.T) {
 
 func TestCheckOfflineIsGracefulSkip(t *testing.T) {
 	src := &fakeSource{err: ErrOffline}
-	res, err := NewChecker(src).Check(context.Background(), "0.0.20260614120000")
+	res, err := NewChecker(src).Check(context.Background(), "0.000200.1.0")
 	if err != nil {
 		t.Fatalf("offline must not be an error, got %v", err)
 	}
@@ -48,7 +48,7 @@ func TestCheckOfflineIsGracefulSkip(t *testing.T) {
 
 func TestCheckNoReleaseIsGracefulSkip(t *testing.T) {
 	src := &fakeSource{err: ErrNoRelease}
-	res, _ := NewChecker(src).Check(context.Background(), "0.0.20260614120000")
+	res, _ := NewChecker(src).Check(context.Background(), "0.000200.1.0")
 	if !res.Skipped || res.SkipReason != "no published release" {
 		t.Errorf("got %+v, want skipped no published release", res)
 	}
@@ -57,14 +57,14 @@ func TestCheckNoReleaseIsGracefulSkip(t *testing.T) {
 func TestCheckUnexpectedErrorPropagates(t *testing.T) {
 	boom := errors.New("github 503")
 	src := &fakeSource{err: boom}
-	if _, err := NewChecker(src).Check(context.Background(), "0.0.20260614120000"); !errors.Is(err, boom) {
+	if _, err := NewChecker(src).Check(context.Background(), "0.000200.1.0"); !errors.Is(err, boom) {
 		t.Fatalf("want the underlying error, got %v", err)
 	}
 }
 
 func TestCheckUpdateAvailableUsesChannel(t *testing.T) {
-	src := &fakeSource{rel: Release{Version: "0.0.20260615030000-nightly", HTMLURL: "https://x/r"}}
-	res, err := NewChecker(src).Check(context.Background(), "0.0.20260614120000-nightly")
+	src := &fakeSource{rel: Release{Version: "0.000200.1.0-nightly.20260615T030000", HTMLURL: "https://x/r"}}
+	res, err := NewChecker(src).Check(context.Background(), "0.000200.1.0-nightly.20260614T120000")
 	if err != nil {
 		t.Fatalf("Check: %v", err)
 	}
@@ -77,8 +77,8 @@ func TestCheckUpdateAvailableUsesChannel(t *testing.T) {
 }
 
 func TestCheckUpToDate(t *testing.T) {
-	src := &fakeSource{rel: Release{Version: "0.0.20260614120000"}}
-	res, _ := NewChecker(src).Check(context.Background(), "0.0.20260614120000")
+	src := &fakeSource{rel: Release{Version: "0.000200.1.0"}}
+	res, _ := NewChecker(src).Check(context.Background(), "0.000200.1.0")
 	if res.UpdateAvailable || res.Skipped {
 		t.Errorf("got %+v, want no update and not skipped", res)
 	}

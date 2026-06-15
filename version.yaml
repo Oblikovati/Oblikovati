@@ -1,0 +1,6 @@
+# The application's MANUAL major version — the first field of the build version
+#   {MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}
+# Bump this by hand only for a deliberate generational release. The other fields are
+# automatic: API_VERSION is the referenced oblikovati.org/api release (padded, dotless),
+# and MINOR/PATCH auto-number from conventional-commit scope. See RELEASING.md.
+major: 0

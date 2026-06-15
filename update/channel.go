@@ -8,8 +8,9 @@
 //
 // A build's channel is derived from its linker-stamped version
 // ([oblikovati.org/build.Version]): a "-nightly" prerelease comes from the rolling
-// nightly prerelease, a plain MAJOR.MINOR.PATCH from a stable release, and "dev"
-// (a local build) from no channel at all — so a developer's build never nags.
+// nightly prerelease, a plain {MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH} from a stable
+// release, and "dev" (a local build) from no channel at all — so a developer's build
+// never nags.
 package update
 
 import "strings"
@@ -30,8 +31,8 @@ const (
 	Nightly
 )
 
-// nightlySuffix is the semver prerelease tag scripts/version.sh appends to a nightly
-// build's version (e.g. "0.0.20260614120000-nightly").
+// nightlySuffix is the semver prerelease identifier cmd/obkversion gives a nightly
+// build, followed by ".<timestamp>" (e.g. "0.000200.1.0-nightly.20260614T120000").
 const nightlySuffix = "-nightly"
 
 // String renders the channel for user-facing text and logs.
@@ -47,13 +48,13 @@ func (c Channel) String() string {
 }
 
 // DetectChannel classifies a linker-stamped build version into its release channel.
-// An empty or "dev" version is a local build (Dev); a "-nightly" prerelease suffix is
-// Nightly; anything else is a Stable release.
+// An empty or "dev" version is a local build (Dev); a "-nightly" prerelease identifier
+// (which a timestamp follows) is Nightly; anything else is a Stable release.
 func DetectChannel(version string) Channel {
 	switch {
 	case version == "" || version == "dev":
 		return Dev
-	case strings.HasSuffix(version, nightlySuffix):
+	case strings.Contains(version, nightlySuffix):
 		return Nightly
 	default:
 		return Stable

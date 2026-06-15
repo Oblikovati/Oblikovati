@@ -82,9 +82,10 @@ go build -tags debug,profile,editor ./cmd/oblikovati
 ```
 
 `build.Debug`, `build.Profile`, `build.Editor`. Version metadata
-(`build.Version/Commit/Date`) is injected via `-ldflags` by the Makefile, which
-derives the version from the repo-root `VERSION` file (`MAJOR.MINOR`) plus a
-timestamp via `scripts/version.sh`; the release workflows pass the exact version.
+(`build.Version/Commit/Date`) is injected via `-ldflags` by the Makefile, which derives
+the version `{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}` via `cmd/obkversion` (from
+`version.yaml`, the api pin, and git tags + commit scope — see RELEASING.md); the
+release workflows pass the exact version.
 
 ## Conventions
 

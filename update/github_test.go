@@ -40,12 +40,12 @@ func newSource(d *fakeDoer) *GitHubSource {
 }
 
 func TestLatestStableParsesTag(t *testing.T) {
-	d := &fakeDoer{status: 200, body: `{"tag_name":"v0.0.20260614120000","html_url":"https://gh/r1"}`}
+	d := &fakeDoer{status: 200, body: `{"tag_name":"v0.000200.1.0","html_url":"https://gh/r1"}`}
 	rel, err := newSource(d).Latest(context.Background(), Stable)
 	if err != nil {
 		t.Fatalf("Latest: %v", err)
 	}
-	if rel.Version != "0.0.20260614120000" || rel.HTMLURL != "https://gh/r1" || rel.Channel != Stable {
+	if rel.Version != "0.000200.1.0" || rel.HTMLURL != "https://gh/r1" || rel.Channel != Stable {
 		t.Errorf("got %+v", rel)
 	}
 	if !strings.HasSuffix(d.gotURL, "/releases/latest") {
@@ -57,12 +57,12 @@ func TestLatestStableParsesTag(t *testing.T) {
 }
 
 func TestLatestNightlyParsesTitle(t *testing.T) {
-	d := &fakeDoer{status: 200, body: `{"tag_name":"nightly","name":"Nightly 0.0.20260615030000-nightly","html_url":"https://gh/n"}`}
+	d := &fakeDoer{status: 200, body: `{"tag_name":"nightly","name":"Nightly 0.000200.1.0-nightly.20260615T030000","html_url":"https://gh/n"}`}
 	rel, err := newSource(d).Latest(context.Background(), Nightly)
 	if err != nil {
 		t.Fatalf("Latest: %v", err)
 	}
-	if rel.Version != "0.0.20260615030000-nightly" {
+	if rel.Version != "0.000200.1.0-nightly.20260615T030000" {
 		t.Errorf("nightly version = %q", rel.Version)
 	}
 	if !strings.HasSuffix(d.gotURL, "/releases/tags/nightly") {

@@ -18,6 +18,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/app/keymap"
 	"oblikovati.org/app/options"
+	"oblikovati.org/build"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/internal/sysopen"
 	"oblikovati.org/head/internal/windowstate"
@@ -104,7 +105,7 @@ func openMainWindow() (*native.Window, error) {
 	if hasSaved {
 		width, height = saved.Width, saved.Height
 	}
-	win, err := native.CreateWindow(width, height, "Oblikovati")
+	win, err := native.CreateWindow(width, height, build.Title())
 	if err != nil {
 		return nil, err
 	}
