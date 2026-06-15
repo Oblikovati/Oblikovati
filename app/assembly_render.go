@@ -5,9 +5,59 @@ package app
 import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/occurrence"
 )
+
+// InstanceGroup is one unique component mesh and the world transforms it is drawn at — the
+// render-side instancing unit (ADR-0038). A part placed K times in an assembly is ONE group with K
+// transforms: the renderer tessellates/uploads Source once and draws it K times with a per-instance
+// model matrix, instead of K independent transformed copies. Source is component-LOCAL geometry.
+type InstanceGroup struct {
+	Source     *topo.Body
+	Transforms []math.Matrix4
+}
+
+// VisibleInstances returns the render scene as instance groups: a part is its visible bodies, each a
+// single identity-transform group; an assembly's placements are grouped by their shared source body,
+// so repeated components collapse to one mesh + many transforms. This is a render-only view —
+// picking, selection and mass properties still use the world-space VisibleBodies (ADR-0038).
+func (s *Session) VisibleInstances() []InstanceGroup {
+	if asm, err := activeAssembly(s); err == nil {
+		return s.assemblyInstances(asm)
+	}
+	part, err := activePart(s)
+	if err != nil {
+		return nil
+	}
+	var out []InstanceGroup
+	for _, body := range part.SurfaceBodies().All() {
+		if s.BodyVisible(body) {
+			out = append(out, InstanceGroup{Source: body, Transforms: []math.Matrix4{math.Identity4()}})
+		}
+	}
+	return out
+}
+
+// assemblyInstances groups the assembly's placed bodies by their shared source body pointer (copies
+// of one component reference the same definition's bodies), preserving first-seen order so the scene
+// is deterministic. Suppression/visibility are already applied by PlacedBodies.
+func (s *Session) assemblyInstances(asm *compdef.AssemblyComponentDefinition) []InstanceGroup {
+	placed := asm.PlacedBodies()
+	index := make(map[*topo.Body]int, len(placed))
+	out := make([]InstanceGroup, 0, len(placed))
+	for _, pb := range placed {
+		i, ok := index[pb.Body]
+		if !ok {
+			i = len(out)
+			index[pb.Body] = i
+			out = append(out, InstanceGroup{Source: pb.Body})
+		}
+		out[i].Transforms = append(out[i].Transforms, pb.Transform)
+	}
+	return out
+}
 
 // Assembly viewport geometry (#769): an assembly renders its placed components by transforming
 // each occurrence's component body into assembly space. The same world-space bodies feed the

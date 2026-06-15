@@ -15,6 +15,14 @@ namespace {
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 // vec3 pos + vec3 normal + vec4 color + metallic + roughness + vec3 emissive + mode.
 constexpr uint32_t kVertexFloats = 16;
+
+// Instanced draw records (ADR-0038). Each record is kDrawRecInts int32s describing one
+// (source-mesh stream × instance set) draw: {stream, firstIndex, indexCount, vertexOffset,
+// firstInstance, instanceCount, biased}. stream selects the pipeline; biased marks a depth-pushed
+// overlay fill. Records are ordered by stream so the pipeline binds change minimally.
+constexpr int kDrawRecInts = 7;
+constexpr int32_t kStreamOcc = 0, kStreamTri = 1, kStreamLine = 2, kStreamHid = 3,
+                  kStreamTopTri = 4, kStreamTopLine = 5;
 constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 
 // Scene UBO layout in floats (std140), matching the Scene block in mesh.frag:
@@ -124,6 +132,7 @@ struct Viewport {
     Target          targets[kMaxTiles];
 
     GpuBuffer       vbuf, ibuf;
+    GpuBuffer       instbuf; // per-instance model matrices (binding 1, ADR-0038)
 
     // Background the 3D pass clears to (themed; ADR-0021). Defaults reproduce the
     // pre-theming look so an un-themed build is unchanged.
@@ -216,6 +225,37 @@ void create_render_pass(HeadContext* c, Viewport* v) {
     vkCreateRenderPass(c->device, &rp, nullptr, &v->renderPass);
 }
 
+// fill_instanced_vertex_input describes the vertex input shared by every geometry + shadow pipeline:
+// binding 0 is the per-vertex 16-float interleave (pos, normal, color, metallic, roughness, emissive,
+// mode — matching mesh.vert and viewport.Flatten); binding 1 is the per-INSTANCE 4×4 model matrix
+// (locations 7..10), so one local mesh draws at many transforms (ADR-0038). binds/attrs are
+// caller-owned storage kept alive until pipeline creation.
+void fill_instanced_vertex_input(VkVertexInputBindingDescription binds[2],
+                                 VkVertexInputAttributeDescription attrs[11],
+                                 VkPipelineVertexInputStateCreateInfo& vi) {
+    binds[0] = {0, kVertexFloats * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    binds[1] = {1, 16 * sizeof(float), VK_VERTEX_INPUT_RATE_INSTANCE};
+    const VkVertexInputAttributeDescription base[7] = {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
+        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
+        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
+        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
+        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
+        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
+    };
+    for (int i = 0; i < 7; i++) attrs[i] = base[i];
+    for (uint32_t i = 0; i < 4; i++) { // mat4 model = 4 vec4 rows, binding 1
+        attrs[7 + i] = {7 + i, 1, VK_FORMAT_R32G32B32A32_SFLOAT, (uint32_t)(i * 4 * sizeof(float))};
+    }
+    vi = {};
+    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vi.vertexBindingDescriptionCount = 2;
+    vi.pVertexBindingDescriptions = binds;
+    vi.vertexAttributeDescriptionCount = 11;
+    vi.pVertexAttributeDescriptions = attrs;
+}
+
 VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo,
                            VkPolygonMode poly, VkBool32 colorWrite, VkCompareOp depthOp,
                            VkBool32 depthWrite) {
@@ -229,25 +269,10 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
     stages[1].module = v->fragModule;
     stages[1].pName = "main";
 
-    VkVertexInputBindingDescription bind{0, kVertexFloats * sizeof(float),
-                                         VK_VERTEX_INPUT_RATE_VERTEX};
-    // pos, normal, color, metallic, roughness, emissive, mode — matching mesh.vert and the
-    // 16-float interleave in viewport.Flatten.
-    VkVertexInputAttributeDescription attrs[7] = {
-        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
-        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
-        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
-        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
-        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
-        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
-    };
+    VkVertexInputBindingDescription binds[2];
+    VkVertexInputAttributeDescription attrs[11];
     VkPipelineVertexInputStateCreateInfo vi{};
-    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vi.vertexBindingDescriptionCount = 1;
-    vi.pVertexBindingDescriptions = &bind;
-    vi.vertexAttributeDescriptionCount = 7;
-    vi.pVertexAttributeDescriptions = attrs;
+    fill_instanced_vertex_input(binds, attrs, vi);
 
     VkPipelineInputAssemblyStateCreateInfo ia{};
     ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -806,23 +831,10 @@ void create_shadow_pipeline(HeadContext* c, Viewport* v) {
     stage.module = v->vertModule;
     stage.pName = "main";
 
-    VkVertexInputBindingDescription bind{0, kVertexFloats * sizeof(float),
-                                         VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription attrs[7] = {
-        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
-        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
-        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
-        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
-        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
-        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
-    };
+    VkVertexInputBindingDescription binds[2];
+    VkVertexInputAttributeDescription attrs[11];
     VkPipelineVertexInputStateCreateInfo vi{};
-    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vi.vertexBindingDescriptionCount = 1;
-    vi.pVertexBindingDescriptions = &bind;
-    vi.vertexAttributeDescriptionCount = 7;
-    vi.pVertexAttributeDescriptions = attrs;
+    fill_instanced_vertex_input(binds, attrs, vi);
     VkPipelineInputAssemblyStateCreateInfo ia{};
     ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -975,7 +987,8 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                          const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
-                         int triBiasFirst, const float* clip) {
+                         int triBiasFirst, const float* clip,
+                         const float* mats, int matCount, const int32_t* recs, int recCount) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
@@ -1010,6 +1023,15 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
            verts.size() * sizeof(float));
     upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(),
            idx.size() * sizeof(uint32_t));
+    // Per-instance model matrices (binding 1, ADR-0038). With matrices supplied, recs drive
+    // instanced per-(source,stream) draws; otherwise every stream draws as one identity instance
+    // (geometry in its own world space — unchanged output).
+    static const float kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    if (matCount > 0 && mats) {
+        upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mats, (size_t)matCount * 16 * sizeof(float));
+    } else {
+        upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
+    }
 
     // Refresh the scene-lighting UBO from the CPU copy (coherent mapped memory, so the copy is
     // visible to the GPU without an explicit flush).
@@ -1039,15 +1061,26 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         vkCmdSetViewport(v->cmd, 0, 1, &sv);
         vkCmdSetScissor(v->cmd, 0, 1, &ss);
         VkDeviceSize zero = 0;
-        vkCmdBindVertexBuffers(v->cmd, 0, 1, &v->vbuf.buffer, &zero);
+        VkBuffer vbufs[2] = {v->vbuf.buffer, v->instbuf.buffer};
+        VkDeviceSize voffs[2] = {0, 0};
+        vkCmdBindVertexBuffers(v->cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
         vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
         PushConstants sp{};
         std::memcpy(sp.mvp, &v->sceneData[kShadowVP], sizeof(sp.mvp));
         vkCmdPushConstants(v->cmd, v->layout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(sp), &sp);
         vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->shadowPipeline);
-        if (occIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
-        if (triIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+        if (recCount > 0 && recs) { // instanced: each face-stream record casts at its instances
+            for (int r = 0; r < recCount; r++) {
+                const int32_t* rec = recs + (size_t)r * kDrawRecInts;
+                if ((rec[0] == kStreamOcc || rec[0] == kStreamTri) && rec[2] > 0 && rec[5] > 0) {
+                    vkCmdDrawIndexed(v->cmd, (uint32_t)rec[2], (uint32_t)rec[5], (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
+                }
+            }
+        } else {
+            if (occIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
+            if (triIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+        }
         vkCmdEndRenderPass(v->cmd);
     }
 
@@ -1091,7 +1124,9 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
 
     if (!verts.empty()) {
         VkDeviceSize zero = 0;
-        vkCmdBindVertexBuffers(v->cmd, 0, 1, &v->vbuf.buffer, &zero);
+        VkBuffer vbufs[2] = {v->vbuf.buffer, v->instbuf.buffer};
+        VkDeviceSize voffs[2] = {0, 0};
+        vkCmdBindVertexBuffers(v->cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
         vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
         PushConstants push{};
         std::memcpy(push.mvp, mvp, sizeof(push.mvp));
@@ -1104,6 +1139,32 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             vkCmdPushConstants(v->cmd, v->layout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(push), &push);
         };
+        if (recCount > 0 && recs) {
+            // Instanced (ADR-0038): one draw per (source stream × its instances), records ordered
+            // by stream so the pipeline + lit flag change once per stream. Stream picks the same
+            // pipeline/lit/bias the legacy per-stream path below uses.
+            VkPipeline pipes[6] = {v->occluderPipeline, v->triPipeline, v->linePipeline,
+                                   v->hiddenPipeline, v->topTriPipeline, v->topLinePipeline};
+            int curStream = -1;
+            for (int r = 0; r < recCount; r++) {
+                const int32_t* rec = recs + (size_t)r * kDrawRecInts;
+                int stream = rec[0];
+                if (stream < 0 || stream > 5 || rec[2] <= 0 || rec[5] <= 0) continue;
+                if (stream != curStream) {
+                    vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipes[stream]);
+                    pushLit(stream == kStreamTri ? (v->normalDebug ? 2.0f : 1.0f)
+                                                 : (stream == kStreamOcc ? 1.0f : 0.0f));
+                    curStream = stream;
+                }
+                float bias = 0.0f;
+                if (stream == kStreamLine) bias = -1.0f;              // edges win the z-fight vs faces
+                else if (stream == kStreamTri && rec[6]) bias = 2.0f; // overlay fill pushed back
+                vkCmdSetDepthBias(v->cmd, bias, 0.0f, bias);
+                vkCmdDrawIndexed(v->cmd, (uint32_t)rec[2], (uint32_t)rec[5],
+                                 (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
+            }
+            vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
+        } else {
         // 1) occluder faces — depth only, hide edges behind unseen geometry.
         if (occIC > 0) {
             pushLit(1.0f);
@@ -1162,6 +1223,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topLinePipeline);
             vkCmdDrawIndexed(v->cmd, (uint32_t)topLineIC, 1, (uint32_t)topLineFirst, topLineBase, 0);
         }
+        } // end legacy (non-instanced) draws
     }
 
     vkCmdEndRenderPass(v->cmd);
@@ -1413,6 +1475,8 @@ void obk_viewport_destroy(HeadContext* c) {
     if (v->vbuf.memory) vkFreeMemory(c->device, v->vbuf.memory, nullptr);
     if (v->ibuf.buffer) vkDestroyBuffer(c->device, v->ibuf.buffer, nullptr);
     if (v->ibuf.memory) vkFreeMemory(c->device, v->ibuf.memory, nullptr);
+    if (v->instbuf.buffer) vkDestroyBuffer(c->device, v->instbuf.buffer, nullptr);
+    if (v->instbuf.memory) vkFreeMemory(c->device, v->instbuf.memory, nullptr);
     destroy_env_image(c, v);
     if (v->envSampler) vkDestroySampler(c->device, v->envSampler, nullptr);
     if (v->shadowFB) vkDestroyFramebuffer(c->device, v->shadowFB, nullptr);

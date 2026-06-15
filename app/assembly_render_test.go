@@ -3,6 +3,7 @@
 package app
 
 import (
+	"fmt"
 	"testing"
 
 	"oblikovati.org/kernel/topo"
@@ -131,4 +132,50 @@ func TestViewportClickSelectsOccurrence(t *testing.T) {
 	if _, ok := faceSel.(FaceHandle); !ok {
 		t.Errorf("face-filtered click selected %T, want FaceHandle", faceSel)
 	}
+}
+
+// TestVisibleInstancesGroupsRepeatedComponents pins ADR-0038's dedup: the same component placed
+// several times collapses to ONE instance group (one source mesh) with one transform per placement,
+// instead of N independent world bodies — so the renderer tessellates/uploads it once.
+func TestVisibleInstancesGroupsRepeatedComponents(t *testing.T) {
+	s, asm, _ := assemblyWithBoxComponent(t, 10)
+	boxDoc := s.Workspace().Documents()[0]
+	for i := 2; i <= 5; i++ { // four more copies of the SAME box part
+		if _, err := asm.PlaceComponentFromFile(s.ActiveDocument(), boxDoc,
+			fmt.Sprintf("box:%d", i), math.Translation4(math.V3(math.Scalar(10*i), 0, 0))); err != nil {
+			t.Fatalf("place copy %d: %v", i, err)
+		}
+	}
+	if got := len(s.VisibleBodies()); got != 5 {
+		t.Fatalf("VisibleBodies = %d, want 5 (one world body per placement)", got)
+	}
+	groups := s.VisibleInstances()
+	if len(groups) != 1 {
+		t.Fatalf("VisibleInstances = %d groups, want 1 (all five copies share one source mesh)", len(groups))
+	}
+	if got := len(groups[0].Transforms); got != 5 {
+		t.Errorf("group has %d transforms, want 5 (one per placement)", got)
+	}
+}
+
+// TestVisibleInstancesPartIsIdentity: a plain part yields one identity-transform group per body, so
+// the part path and the assembly path share one instanced renderer (the K=1 case).
+func TestVisibleInstancesPartIsIdentity(t *testing.T) {
+	s := extrudedBox(t, 2, 4)
+	groups := s.VisibleInstances()
+	if len(groups) != 1 || len(groups[0].Transforms) != 1 {
+		t.Fatalf("part VisibleInstances = %d groups (transforms %v), want 1 group with 1 identity transform",
+			len(groups), groupTransformCounts(groups))
+	}
+	if !groups[0].Transforms[0].IsEqualTo(math.Identity4(), 1e-9) {
+		t.Errorf("part instance transform = %v, want identity", groups[0].Transforms[0])
+	}
+}
+
+func groupTransformCounts(groups []InstanceGroup) []int {
+	out := make([]int, len(groups))
+	for i, g := range groups {
+		out[i] = len(g.Transforms)
+	}
+	return out
 }

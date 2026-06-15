@@ -6,11 +6,13 @@ package ui
 
 import (
 	"strconv"
+	"time"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/viewport"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -67,15 +69,29 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	hit := viewCubeHover(s, p, cam)
 	viewCubeClick(s, hit, pw, ph, nil)
 
+	t0 := frameClock()
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
-	list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
-	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
-	list = gizmoOverlays(s, cam, list)
-	renderViewportImage(win, s, 0, cam, list, pw, ph, cx, cy)
+	sketchPlane, dims, gfxLabels := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
 	}
+}
+
+// buildAndRenderScene assembles the single view's draw list (body instances + overlays), renders it,
+// and records the per-phase frame timing (t0 brackets the preceding pick). It returns the sketch
+// plane, dimensions and client-graphics labels the caller draws as 2D overlays on top.
+func buildAndRenderScene(win *native.Window, s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
+	pw, ph int, cx, cy float32, t0 time.Time,
+) (sketch.Plane, []app.DimensionView, []clientgraphics.Label) {
+	t1 := frameClock()
+	list, bodyCount, sketchPlane, dims := viewportDrawList(s, cam, hovered)
+	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
+	list = gizmoOverlays(s, cam, list)
+	t2 := frameClock()
+	renderViewportImage(win, s, 0, cam, list, bodyCount, pw, ph, cx, cy)
+	frameTiming(t0, t1, t2, frameClock())
+	return sketchPlane, dims, gfxLabels
 }
 
 // planTiles returns the tile rectangles for the active document's view layout and the
@@ -189,7 +205,8 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		}
 		renderActiveTile(win, s, i, cam, pw, ph, tx, ty, bx, by)
 	} else {
-		renderViewportImage(win, s, i, cam, baseDrawList(s, cam), pw, ph, tx, ty)
+		bl := baseDrawList(s, cam)
+		renderViewportImage(win, s, i, cam, bl, len(bl.Items), pw, ph, tx, ty)
 	}
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
@@ -238,9 +255,9 @@ func tileNavigate(s *app.Session, i int, cam *scene.Camera, isActive bool) bool 
 // renderActiveTile renders the focused tile's scene with overlays and the active-tile border.
 func renderActiveTile(win *native.Window, s *app.Session, i int, cam scene.Camera, pw, ph int, tx, ty, bx, by float32) {
 	hovered := hoveredPlane(s)
-	list, sketchPlane, dims := viewportDrawList(s, cam, hovered)
+	list, bodyCount, sketchPlane, dims := viewportDrawList(s, cam, hovered)
 	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
-	renderViewportImage(win, s, i, cam, list, pw, ph, tx, ty)
+	renderViewportImage(win, s, i, cam, list, bodyCount, pw, ph, tx, ty)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, tx, ty, ph)
 	drawActiveTileBorder(bx, by, float32(pw), float32(ph))
 }
@@ -261,13 +278,24 @@ func drawActiveTileBorder(x, y, w, h float32) {
 // wheel), as opposed to mere hovering — the signal to claim a tile as the active view.
 func navInteracted(n NavInput) bool { return n.Active || n.Wheel != 0 }
 
-func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane) (renderer.DrawList, sketch.Plane, []app.DimensionView) {
-	list := baseDrawList(s, cam)
+// viewportDrawList builds the frame's draw list and returns it with bodyCount — the number of
+// leading body items (everything after is overlays), so the instanced path can rebuild the bodies
+// from local per-component meshes and treat the overlay tail as a single identity instance.
+func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane) (renderer.DrawList, int, sketch.Plane, []app.DimensionView) {
+	var list renderer.DrawList
+	// The instanced path (ADR-0038) rebuilds the bodies from per-component local meshes, so the
+	// world-body draw list is built ONLY for the mesh-color debug mode (its own builder + legacy
+	// flatten) — otherwise a 10k-copy assembly would tessellate 10k world bodies here just to throw
+	// them away. bodyCount stays 0 in the instanced case (everything appended is an overlay).
+	if on, _ := s.MeshColors(); on {
+		list = baseDrawList(s, cam)
+	}
+	bodyCount := len(list.Items)
 	if s.InSketch() {
 		list, sketchPlane, dims := sketchOverlays(s, cam, list)
-		return list, sketchPlane, dims
+		return list, bodyCount, sketchPlane, dims
 	}
-	return modelOverlays(s, cam, hovered, list), sketch.Plane{}, nil
+	return modelOverlays(s, cam, hovered, list), bodyCount, sketch.Plane{}, nil
 }
 
 // baseDrawList is the model geometry (styled) with the current selection highlighted, with
@@ -320,23 +348,93 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 	return cam, hoveredPlane(s)
 }
 
+// frameMeshAndInstances builds the geometry the viewport draws: the instanced path (ADR-0038)
+// rebuilds the bodies from per-component LOCAL meshes (deduped, one per unique component) plus the
+// overlay/ground tail as one identity instance, returning the merged mesh + per-instance matrices +
+// draw records. It falls back to a single legacy flatten of the whole list (nil mats/recs) when
+// instancing does not apply — mesh-color debug mode (its own builder) or no keyable geometry.
+func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups []app.InstanceGroup) (viewport.Mesh, []float32, []int32) {
+	if bodyCount < 0 || bodyCount > len(list.Items) {
+		bodyCount = len(list.Items)
+	}
+	if on, _ := s.MeshColors(); !on {
+		overlay := renderer.DrawList{Items: append(append([]renderer.DrawItem(nil), list.Items[bodyCount:]...), ground...)}
+		// Highlight against the group SOURCE bodies (already in hand), NOT activeBodies(s) — the
+		// latter is VisibleBodies → worldAssemblyBodies, which re-derives (TransformBody) every
+		// occurrence each frame, an O(occurrences) cost that defeats instancing on a big assembly.
+		sources := make([]*topo.Body, len(groups))
+		for i, g := range groups {
+			sources[i] = g.Source
+		}
+		decorate := func(l renderer.DrawList) renderer.DrawList {
+			return highlightSelection(l, s.Selection().First(), sources)
+		}
+		if m, mats, recs, ok := buildInstancedFrame(groups, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
+			return m, mats, recs
+		}
+	}
+	list.Items = append(list.Items, ground...) // legacy: one flatten of the whole (world-space) list
+	return viewport.Flatten(list), nil, nil
+}
+
+// frameBounds is the model bounds for shadow + ground framing: the instance groups' transformed
+// range boxes (no tessellation), unioned with the overlay tail's extent. In mesh-color mode the
+// bodies are in the world-space list, so it scans that instead.
+func frameBounds(s *app.Session, list renderer.DrawList, groups []app.InstanceGroup) (mn, mx [3]float32, ok bool) {
+	if on, _ := s.MeshColors(); on {
+		return viewport.DrawListBounds(list)
+	}
+	mn, mx, ok = instancedBounds(groups)
+	if omn, omx, ook := viewport.DrawListBounds(list); ook { // include overlay (work-plane/sketch) extent
+		if !ok {
+			return omn, omx, true
+		}
+		for i := 0; i < 3; i++ {
+			mn[i] = minF32(mn[i], omn[i])
+			mx[i] = maxF32(mx[i], omx[i])
+		}
+	}
+	return mn, mx, ok
+}
+
+func minF32(a, b float32) float32 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxF32(a, b float32) float32 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 // renderViewportImage flattens the draw list, renders it into the window's offscreen target
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
-func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, pw, ph int, cx, cy float32) {
+func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, bodyCount, pw, ph int, cx, cy float32) {
 	// Fit the shadow frustum to the model (before adding the ground), then drop in the ground
-	// plane so object shadows have a surface to land on.
-	min, max, hasGeom := viewport.DrawListBounds(list) // bounds without a throwaway Flatten
+	// plane so object shadows have a surface to land on. With instancing, the bounds come from the
+	// instance groups' transformed range boxes (no tessellation) rather than scanning a world-body
+	// mesh, so framing a 10k-copy assembly is O(instances).
+	groups := s.VisibleInstances()
+	mn, mx, hasGeom := frameBounds(s, list, groups)
+	var ground []renderer.DrawItem
 	if hasGeom && wantGround(s) {
-		list.Items = append(list.Items, groundPlaneItem(min, max, renderer.PassSetFor(s.VisualStyle()).Faces))
+		ground = []renderer.DrawItem{groundPlaneItem(mn, mx, renderer.PassSetFor(s.VisualStyle()).Faces)}
 	}
-	m := viewport.Flatten(list) // the single Flatten, now with the ground plane included
+	tb := frameClock()
+	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups)
+	frameStats.buildNs = time.Since(tb).Nanoseconds()
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	applyEnvironment(win, s.Environment())
 	applySkybox(win, s.Environment(), mvp)
-	applyShadow(win, s, min, max, hasGeom)
+	applyShadow(win, s, mn, mx, hasGeom)
+	tg := frameClock()
 	win.RenderViewport(slot, pw, ph, mvp[:], eye,
 		m.TriVerts, m.TriVCount, m.TriIndices,
 		m.OccVerts, m.OccVCount, m.OccIndices,
@@ -344,7 +442,9 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 		m.HidVerts, m.HidVCount, m.HidIndices,
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices,
-		m.TriBiasFirst, s.ActiveSectionClip()) // section-plane clip (M12-F04)
+		m.TriBiasFirst, s.ActiveSectionClip(), // section-plane clip (M12-F04)
+		mats, recs) // instanced draw (ADR-0038); nil mats/recs ⇒ legacy one-identity-instance path
+	frameStats.gpuNs = time.Since(tg).Nanoseconds()
 	if tex := win.ViewportTexture(slot); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
 		native.Image(tex, float32(pw), float32(ph))
