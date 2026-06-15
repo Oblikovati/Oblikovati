@@ -155,6 +155,16 @@ func quantize(v float64) int64 { return int64(stdmath.Round(v / weldGrid)) }
 // every undirected edge ends up shared by exactly two triangles (the prerequisite for a
 // closed solid). Capped to avoid pathological loops.
 func removeTJunctions(verts []math.Point3, faces [][3]int) [][3]int {
+	// The CSG fallback only matters for small degenerate cases (it is adopted only when its
+	// result validates). On a large tessellated mesh — a faceted curved wall the loft-blade
+	// boolean tessellates into thousands of triangles — the per-edge vertex scan below is
+	// O(faces·verts) per pass AND cascade-splitting grows faces each pass, so leaving it
+	// unbounded hangs the whole boolean (it never returns). Bail once the mesh exceeds the
+	// budget: the partly-split cage won't be watertight, so booleanGeneral discards this
+	// fallback and keeps the planar result — which is what such large cases get anyway.
+	if len(faces) > tjunctionFaceBudget {
+		return faces
+	}
 	for pass := 0; pass < 64; pass++ {
 		split := false
 		var next [][3]int
@@ -167,12 +177,18 @@ func removeTJunctions(verts []math.Point3, faces [][3]int) [][3]int {
 			}
 		}
 		faces = next
-		if !split {
+		if !split || len(faces) > tjunctionFaceBudget {
 			break
 		}
 	}
 	return faces
 }
+
+// tjunctionFaceBudget caps the triangle count the O(faces·verts) T-junction pass will chew
+// through, so the CSG fallback can never hang the boolean on a high-facet mesh. Small
+// degenerate cases (the V2 flush-bottom oblique penetration) are a few dozen triangles, far
+// under it; a tessellated faceted-wall boolean is thousands and bails immediately.
+const tjunctionFaceBudget = 4000
 
 // splitFaceAtTJunction finds a vertex lying on one of the triangle's edges and splits
 // the triangle across it into two triangles, reporting whether a split happened.
