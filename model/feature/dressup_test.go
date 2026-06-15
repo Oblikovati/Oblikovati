@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -141,6 +142,69 @@ func TestChamferFlatCornerBlendsThreeEdges(t *testing.T) {
 	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
 	if volFlat >= volPointy {
 		t.Errorf("flat corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
+	}
+}
+
+// chamferedCornerAsym chamfers the three edges at the box's (0,0,0) corner with an asymmetric
+// two-distance setback (d1≠d2), flat or pointy, and returns the resulting solid. It builds the
+// definition directly because the public asymmetric builder always blends flat.
+func chamferedCornerAsym(t *testing.T, d1, d2 float64, flat bool) *topo.Body {
+	t.Helper()
+	box := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 2, Y: 0}, {X: 2, Y: 2}, {X: 0, Y: 2}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "box")
+	keys := edgesAtCorner(box, math.P3(0, 0, 0))
+	if len(keys) != 3 {
+		t.Fatalf("found %d edges at the corner, want 3", len(keys))
+	}
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(box)
+	ch := NewDressUpFeatures(fs).addChamfer(&ChamferDefinition{
+		EdgeKeys: keys, Distance: func() float64 { return d1 }, Distance2: func() float64 { return d2 },
+		Type: types.ChamferTwoDistances, FlatCorners: flat,
+	})
+	fs.Recompute()
+	if !ch.Health().OK() {
+		t.Fatalf("asymmetric corner chamfer (flat=%v) sick: %+v", flat, ch.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("asymmetric corner chamfer (flat=%v) not a valid solid: %+v", flat, r)
+	}
+	return res
+}
+
+// cornerBlendFaces counts triangular faces whose outward normal points into the (−,−,−)
+// octant — the flat-corner blend at the (0,0,0) corner. For an asymmetric chamfer the normal
+// tilts off the symmetric (−1,−1,−1)/√3 axis, but every component stays negative.
+func cornerBlendFaces(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		nrm := f.Geometry().NormalAt(0, 0)
+		if len(f.Edges()) == 3 && nrm.X < 0 && nrm.Y < 0 && nrm.Z < 0 {
+			n++
+		}
+	}
+	return n
+}
+
+// TestChamferFlatCornerBlendsAsymmetric pins the asymmetric-corner fix: a two-distance chamfer
+// of the three edges at a box corner must blend the corner flat (one triangular face), exactly
+// like the equal-distance mode. Before the fix the asymmetric corner was left pointy — the
+// blend was gated to symmetric setbacks (dressup.go) and reconstructed from a single distance
+// (chamfer.go). The flat blend trims the pointy tip, so it removes material vs. the pointy one.
+func TestChamferFlatCornerBlendsAsymmetric(t *testing.T) {
+	flat := chamferedCornerAsym(t, 0.5, 0.8, true)
+	pointy := chamferedCornerAsym(t, 0.5, 0.8, false)
+
+	if got := cornerBlendFaces(flat); got != 1 {
+		t.Errorf("asymmetric flat corner produced %d triangular blend faces, want 1", got)
+	}
+	if got := cornerBlendFaces(pointy); got != 0 {
+		t.Errorf("asymmetric pointy corner produced %d triangular blend faces, want 0", got)
+	}
+	volFlat := ops.BodyGeometryProperties(flat, ops.DefaultQuality()).Volume
+	volPointy := ops.BodyGeometryProperties(pointy, ops.DefaultQuality()).Volume
+	if volFlat >= volPointy {
+		t.Errorf("flat asymmetric corner volume %g should be less than pointy %g (it trims the tip)", volFlat, volPointy)
 	}
 }
 
