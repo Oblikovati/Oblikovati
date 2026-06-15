@@ -50,6 +50,7 @@ type Session struct {
 	picker               Picker
 	camera               scene.Camera
 	camTween             cameraTween
+	driveAnim            driveAnimation
 	sketchReturnCam      scene.Camera
 	activeSketch         *sketch.Sketch
 	activeSketch3D       *sketch.Sketch3D
