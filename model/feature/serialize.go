@@ -21,27 +21,28 @@ import (
 // FeatureData is the serializable form of one history feature. Exactly one payload
 // pointer is set, matching Kind.
 type FeatureData struct {
-	Kind       string          `yaml:"kind"`
-	Name       string          `yaml:"name,omitempty"`
-	Suppressed bool            `yaml:"suppressed,omitempty"`
-	Seq        uint64          `yaml:"seq,omitempty"` // global creation stamp; see model/seq
-	Extrude    *ExtrudeData    `yaml:"extrude,omitempty"`
-	Fillet     *EdgeDressData  `yaml:"fillet,omitempty"`
-	Chamfer    *EdgeDressData  `yaml:"chamfer,omitempty"`
-	Shell      *FaceDressData  `yaml:"shell,omitempty"`
-	Draft      *FaceDressData  `yaml:"draft,omitempty"`
-	Lip        *LipData        `yaml:"lip,omitempty"`
-	Simplify   *SimplifyData   `yaml:"simplify,omitempty"`
-	Unwrap     *UnwrapData     `yaml:"unwrap,omitempty"`
-	MeshSolid  *MeshSolidData  `yaml:"meshSolid,omitempty"`
-	Thread     *ThreadData     `yaml:"thread,omitempty"`
-	Hole       *HoleData       `yaml:"hole,omitempty"`
-	Boss       *BossData       `yaml:"boss,omitempty"`
-	Rib        *RibData        `yaml:"rib,omitempty"`
-	Emboss     *EmbossData     `yaml:"emboss,omitempty"`
-	Combine    *CombineData    `yaml:"combine,omitempty"`
-	SplitSolid *SplitSolidData `yaml:"splitSolid,omitempty"`
-	DirectEdit *DirectEditData `yaml:"directEdit,omitempty"`
+	Kind           string              `yaml:"kind"`
+	Name           string              `yaml:"name,omitempty"`
+	Suppressed     bool                `yaml:"suppressed,omitempty"`
+	Seq            uint64              `yaml:"seq,omitempty"` // global creation stamp; see model/seq
+	Extrude        *ExtrudeData        `yaml:"extrude,omitempty"`
+	Fillet         *EdgeDressData      `yaml:"fillet,omitempty"`
+	Chamfer        *EdgeDressData      `yaml:"chamfer,omitempty"`
+	Shell          *FaceDressData      `yaml:"shell,omitempty"`
+	Draft          *FaceDressData      `yaml:"draft,omitempty"`
+	Lip            *LipData            `yaml:"lip,omitempty"`
+	Simplify       *SimplifyData       `yaml:"simplify,omitempty"`
+	Unwrap         *UnwrapData         `yaml:"unwrap,omitempty"`
+	MeshSolid      *MeshSolidData      `yaml:"meshSolid,omitempty"`
+	ModelTolerance *ModelToleranceData `yaml:"modelTolerance,omitempty"`
+	Thread         *ThreadData         `yaml:"thread,omitempty"`
+	Hole           *HoleData           `yaml:"hole,omitempty"`
+	Boss           *BossData           `yaml:"boss,omitempty"`
+	Rib            *RibData            `yaml:"rib,omitempty"`
+	Emboss         *EmbossData         `yaml:"emboss,omitempty"`
+	Combine        *CombineData        `yaml:"combine,omitempty"`
+	SplitSolid     *SplitSolidData     `yaml:"splitSolid,omitempty"`
+	DirectEdit     *DirectEditData     `yaml:"directEdit,omitempty"`
 
 	RectPattern   *RectPatternData         `yaml:"rectangularPattern,omitempty"`
 	CircPattern   *CircPatternData         `yaml:"circularPattern,omitempty"`
@@ -137,6 +138,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Unwrap = &UnwrapData{Face: encodeKey(f.def.FaceKey)}
 	case *MeshSolidFeature:
 		fd.MeshSolid = serializeMeshSolid(f.geom)
+	case *ModelToleranceFeature:
+		fd.ModelTolerance = serializeModelTolerance(f.def)
 	case *ThreadFeature:
 		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut,
 			Class: f.def.Class, Tapered: f.def.Tapered, ModelDiameter: threadModelDiameterName(f.def.ModelDiameter)}
@@ -348,6 +351,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreUnwrap(fs, fd.Unwrap)
 	case "mesh-solid":
 		return restoreMeshSolid(fs, fd.MeshSolid)
+	case "modelTolerance":
+		return restoreModelTolerance(fs, fd.ModelTolerance)
 	case "shell":
 		d, err := requireFaceDress(fd.Shell, "shell")
 		if err != nil {
