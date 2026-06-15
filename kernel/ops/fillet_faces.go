@@ -79,8 +79,8 @@ func filletMaps(fils []edgeFillet) (map[*topo.Face]map[uint64]math.Point3, map[*
 		for _, c := range []corner{ef.c0, ef.c1} {
 			put(ab, c.a, c.vertex.ID(), c.ta)
 			put(ab, c.b, c.vertex.ID(), c.tb)
-			if c.blend {
-				continue // the rounded corner is the sphere patch, not an end-face arc
+			if c.blend || c.miter {
+				continue // the rounded corner is the sphere patch or the miter seam, not an end-face arc
 			}
 			if ends[c.endFace] == nil {
 				ends[c.endFace] = map[uint64]corner{}
@@ -181,40 +181,78 @@ func otherFace(e *topo.Edge, f *topo.Face) *topo.Face {
 	return nil
 }
 
-// cylinderFace builds the rolling-ball cylinder face: tangent line on A, end arc, tangent
-// line on B, end arc — wound so its geometric normal matches the cylinder's outward radial.
+// cylinderFace builds the rolling-ball cylinder face: tangent line on A, the rounded end at
+// corner 1, tangent line on B, the rounded end at corner 0. Each end is a single arc for a
+// simple/blend corner, or the seam chords for a miter corner. The loop is wound so its normal
+// matches the cylinder's outward radial.
 func cylinderFace(ef edgeFillet) filletFace {
-	c0, c1 := ef.c0, ef.c1
-	arc1, _ := geom.Arc3dByThreePoints(c1.ta, c1.mid, c1.tb) // TA1 → TB1 at end 1
-	arc0, _ := geom.Arc3dByThreePoints(c0.tb, c0.mid, c0.ta) // TB0 → TA0 at end 0
-	loop := filletLoop{
-		pts:    []math.Point3{c0.ta, c1.ta, c1.tb, c0.tb},
-		curves: []geom.Curve3{nil, arc1, nil, arc0},
+	segs := []endSeg{{from: ef.c0.ta, to: ef.c1.ta}}             // A-tangent line c0.ta → c1.ta
+	segs = append(segs, cornerEndSegs(ef.c1)...)                 // rounded end 1: c1.ta → c1.tb
+	segs = append(segs, endSeg{from: ef.c1.tb, to: ef.c0.tb})    // B-tangent line c1.tb → c0.tb
+	segs = append(segs, reverseEndSegs(cornerEndSegs(ef.c0))...) // rounded end 0: c0.tb → c0.ta
+	if cylinderSegsFlipped(ef, segs) {
+		segs = reverseEndSegs(segs)
 	}
-	if cylinderLoopFlipped(ef.cyl, loop) {
-		loop = reverseFilletLoop(loop, ef)
-	}
-	return filletFace{surface: ef.cyl, loops: []filletLoop{loop}}
+	return filletFace{surface: ef.cyl, loops: []filletLoop{loopFromSegs(segs)}}
 }
 
-// cylinderLoopFlipped reports whether the loop winds against the cylinder's outward normal at
-// the first end arc's midpoint (so it should be reversed for a consistent, outward face).
-func cylinderLoopFlipped(cyl geom.Cylinder, loop filletLoop) bool {
-	a, b, c := loop.pts[0], loop.pts[1], loop.pts[2]
+// endSeg is one boundary segment from→to of a cylinder loop, with the arc curve (and its
+// midpoint, for re-deriving the arc when the loop is reversed) when the end is rounded by an
+// arc; a miter seam's chords are straight (curve nil, arc false).
+type endSeg struct {
+	from, to math.Point3
+	curve    geom.Curve3
+	mid      math.Point3
+	arc      bool
+}
+
+// cornerEndSegs returns the segments rounding corner c from its ta to its tb: the seam chords
+// for a miter corner, otherwise a single arc through the corner's mid.
+func cornerEndSegs(c corner) []endSeg {
+	if c.miter {
+		segs := make([]endSeg, 0, len(c.seam)-1)
+		for i := 0; i+1 < len(c.seam); i++ {
+			segs = append(segs, endSeg{from: c.seam[i], to: c.seam[i+1]})
+		}
+		return segs
+	}
+	arc, _ := geom.Arc3dByThreePoints(c.ta, c.mid, c.tb)
+	return []endSeg{{from: c.ta, to: c.tb, curve: arc, mid: c.mid, arc: true}}
+}
+
+// reverseEndSegs reverses a chain of segments (swapping each from/to and re-deriving any arc in
+// the new direction), so a forward end-rounding ta→tb can run tb→ta.
+func reverseEndSegs(segs []endSeg) []endSeg {
+	out := make([]endSeg, len(segs))
+	for i, s := range segs {
+		r := endSeg{from: s.to, to: s.from, mid: s.mid, arc: s.arc}
+		if s.arc {
+			r.curve, _ = geom.Arc3dByThreePoints(s.to, s.mid, s.from)
+		}
+		out[len(segs)-1-i] = r
+	}
+	return out
+}
+
+// loopFromSegs flattens a closed chain of segments (each seg's to is the next seg's from) into a
+// filletLoop: each point with the curve of the segment leaving it.
+func loopFromSegs(segs []endSeg) filletLoop {
+	var fl filletLoop
+	for _, s := range segs {
+		fl.pts = append(fl.pts, s.from)
+		fl.curves = append(fl.curves, s.curve)
+	}
+	return fl
+}
+
+// cylinderSegsFlipped reports whether the loop winds against the cylinder's outward normal. It
+// builds the test triangle from the four tangent corners (always well separated, unlike a
+// miter seam's near-collinear chords), so the sign is robust for both arc and seam ends.
+func cylinderSegsFlipped(ef edgeFillet, segs []endSeg) bool {
+	a, b, c := ef.c0.ta, ef.c1.ta, ef.c1.tb
 	n := a.VectorTo(b).Cross(a.VectorTo(c))
-	u, v := cyl.ParamAt(centroidPts(loop.pts))
-	return n.Dot(cyl.NormalAt(u, v)) < 0
-}
-
-// reverseFilletLoop reverses the cylinder loop (and rebuilds its arcs in the new direction).
-func reverseFilletLoop(_ filletLoop, ef edgeFillet) filletLoop {
-	c0, c1 := ef.c0, ef.c1
-	arc0, _ := geom.Arc3dByThreePoints(c0.ta, c0.mid, c0.tb) // TA0 → TB0
-	arc1, _ := geom.Arc3dByThreePoints(c1.tb, c1.mid, c1.ta) // TB1 → TA1
-	return filletLoop{
-		pts:    []math.Point3{c0.ta, c0.tb, c1.tb, c1.ta},
-		curves: []geom.Curve3{arc0, nil, arc1, nil},
-	}
+	u, v := ef.cyl.ParamAt(centroidPts(loopFromSegs(segs).pts))
+	return n.Dot(ef.cyl.NormalAt(u, v)) < 0
 }
 
 // spherePatchFace builds the corner sphere patch: a spherical triangle bounded by the blend's

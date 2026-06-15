@@ -8,7 +8,6 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/kernel/topo"
 )
 
 // TestFilletToolEndToEnd drives the Fillet UI: start the tool, click a vertical edge of a
@@ -74,18 +73,18 @@ func TestFilletViaRibbonCommand(t *testing.T) {
 	}
 }
 
-// TestFilletUnsupportedCornerSurfacesNotice checks that committing a fillet over an
-// unsupported corner config (two of the three edges at a vertex) fails loudly: the tool stays
-// open and the session carries a notice the status bar shows — not a silent "nothing happened".
-func TestFilletUnsupportedCornerSurfacesNotice(t *testing.T) {
+// TestFilletUnbuildableSurfacesNotice checks that committing a fillet the kernel cannot build
+// (here, a rolling-ball radius far larger than the 2×2×2 block admits — the ball centre falls
+// outside the solid) fails loudly: the tool stays open and the session carries a notice the
+// status bar shows — not a silent "nothing happened".
+func TestFilletUnbuildableSurfacesNotice(t *testing.T) {
 	s, block := newPartWithBlock(t, 2)
 	f := NewFilletTool()
 	s.StartTool(f)
-	for _, e := range cornerEdges(block)[:2] { // two of the three edges at one corner (unsupported)
-		f.Pick(s, EdgeHandle{Edge: e})
-	}
+	f.Pick(s, verticalEdgeOf(t, block))
+	f.SetRadius(10) // a 10-unit rolling ball cannot round a 2×2×2 block's edge
 	if err := s.OK(); err == nil {
-		t.Fatal("filleting an unsupported corner config should fail")
+		t.Fatal("filleting with an impossible radius should fail")
 	}
 	if s.ActiveTool() == nil {
 		t.Error("a failed commit should keep the fillet tool open")
@@ -96,18 +95,6 @@ func TestFilletUnsupportedCornerSurfacesNotice(t *testing.T) {
 	if v := ops.BodyGeometryProperties(activePartDef(t, s).SurfaceBodies().Item(0), ops.DefaultQuality()).Volume; relErrApp(v, 8) > 1e-6 {
 		t.Errorf("body should be unchanged (vol 8) after a failed fillet, got %g", v)
 	}
-}
-
-// cornerEdges returns the three edges meeting at the (0,0,0) corner of a box.
-func cornerEdges(b *topo.Body) []*topo.Edge {
-	var out []*topo.Edge
-	for _, e := range b.Edges() {
-		a, c := e.StartVertex().Point(), e.EndVertex().Point()
-		if (a.X == 0 && a.Y == 0 && a.Z == 0) || (c.X == 0 && c.Y == 0 && c.Z == 0) {
-			out = append(out, e)
-		}
-	}
-	return out
 }
 
 // TestFilletToolNeedsEdge checks the tool is not committable until an edge is picked.
