@@ -122,6 +122,8 @@ func Default() *Registry {
 		moveFaceDescriptor(),
 		faceOffsetDescriptor(),
 		deleteFaceDescriptor(),
+		simplifyDescriptor(),
+		unwrapDescriptor(),
 		splitFaceDescriptor(),
 		replaceFaceDescriptor(),
 		moveBodyDescriptor(),

@@ -301,3 +301,70 @@ func decodeFaceEdit(s *app.Session, raw json.RawMessage, op string) (*compdef.Pa
 	}
 	return part, in, nil
 }
+
+// --- simplify & unwrap (M20-F13) -------------------------------------------
+
+type simplifyArgs struct {
+	FaceRefs  []string `json:"faceRefs,omitempty"`
+	FillVoids bool     `json:"fillVoids,omitempty"`
+}
+
+const simplifySchema = `{
+  "type": "object",
+  "properties": {
+    "faceRefs": {"type": "array", "items": {"type": "string"}, "description": "Reference keys of faces to remove and heal (from get_reference_keys)."},
+    "fillVoids": {"type": "boolean", "default": false, "description": "Also fill internal voids (cavities)."}
+  }
+}`
+
+func simplifyDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "simplify", Summary: "Reduce a model: remove and heal selected faces and/or fill internal voids.", Schema: json.RawMessage(simplifySchema), Apply: applySimplify}
+}
+
+func applySimplify(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in simplifyArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	if len(in.FaceRefs) == 0 && !in.FillVoids {
+		return nil, errors.New("simplify: nothing to do (faceRefs empty and fillVoids off)")
+	}
+	pf := feature.NewModifyFeatures(part.Features()).AddSimplify(refKeys(in.FaceRefs), in.FillVoids)
+	return recomputeResult(part, pf)
+}
+
+type unwrapArgs struct {
+	FaceRef string `json:"faceRef"`
+}
+
+const unwrapSchema = `{
+  "type": "object",
+  "properties": {
+    "faceRef": {"type": "string", "description": "Reference key of the cylindrical face to flatten (from get_reference_keys)."}
+  },
+  "required": ["faceRef"]
+}`
+
+func unwrapDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "unwrap", Summary: "Flatten a cylindrical face into a flat sheet patch (circumference × height).", Schema: json.RawMessage(unwrapSchema), Apply: applyUnwrap}
+}
+
+func applyUnwrap(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in unwrapArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	if in.FaceRef == "" {
+		return nil, errors.New("unwrap: faceRef is required")
+	}
+	pf := feature.NewModifyFeatures(part.Features()).AddUnwrap([]byte(in.FaceRef))
+	return recomputeResult(part, pf)
+}

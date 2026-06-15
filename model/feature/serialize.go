@@ -31,6 +31,8 @@ type FeatureData struct {
 	Shell      *FaceDressData  `yaml:"shell,omitempty"`
 	Draft      *FaceDressData  `yaml:"draft,omitempty"`
 	Lip        *LipData        `yaml:"lip,omitempty"`
+	Simplify   *SimplifyData   `yaml:"simplify,omitempty"`
+	Unwrap     *UnwrapData     `yaml:"unwrap,omitempty"`
 	Thread     *ThreadData     `yaml:"thread,omitempty"`
 	Hole       *HoleData       `yaml:"hole,omitempty"`
 	Boss       *BossData       `yaml:"boss,omitempty"`
@@ -128,6 +130,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle), Pull: []float64{p.X, p.Y, p.Z}}
 	case *LipFeature:
 		fd.Lip = &LipData{Edges: encodeKeys(f.def.EdgeKeys), Width: evalFloat(f.def.Width), Height: evalFloat(f.def.Height), Groove: f.def.Groove}
+	case *SimplifyFeature:
+		fd.Simplify = &SimplifyData{RemoveFaces: encodeKeys(f.def.RemoveFaceKeys), FillVoids: f.def.FillVoids}
+	case *UnwrapFeature:
+		fd.Unwrap = &UnwrapData{Face: encodeKey(f.def.FaceKey)}
 	case *ThreadFeature:
 		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut,
 			Class: f.def.Class, Tapered: f.def.Tapered, ModelDiameter: threadModelDiameterName(f.def.ModelDiameter)}
@@ -333,6 +339,10 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		}
 	case "lip":
 		return restoreLip(fs, fd.Lip)
+	case "simplify":
+		return restoreSimplify(fs, fd.Simplify)
+	case "unwrap":
+		return restoreUnwrap(fs, fd.Unwrap)
 	case "shell":
 		d, err := requireFaceDress(fd.Shell, "shell")
 		if err != nil {
