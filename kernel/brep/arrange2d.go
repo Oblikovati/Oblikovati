@@ -57,6 +57,7 @@ func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
 			}
 		}
 	}
+	splitTJunctions(weld.points, edges)
 	out := make([][2]int, 0, len(edges))
 	for e := range edges {
 		out = append(out, e)
@@ -70,6 +71,63 @@ func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
 		return out[i][1] < out[j][1]
 	})
 	return weld.points, out
+}
+
+// tjTol bounds the perpendicular distance at which a welded vertex counts as lying ON an
+// edge — a T-junction. It matches the welder's coincidence grid (1e-7): any point that would
+// weld onto the line is at most that far off it, while genuine features sit orders of
+// magnitude further (≥1e-2), so this never splits a near-miss.
+const tjTol = 1e-7
+
+// splitTJunctions subdivides every edge at any welded vertex lying strictly on its interior,
+// repeating until stable. splitOne only cuts at proper interior crossings of two segments;
+// when one segment merely ENDS on another's interior (a T-junction — e.g. a coplanar imprint
+// chain clipped to land exactly on a hole-loop edge, #860), the touch point welds as a vertex
+// but the host edge is left whole, so the chain dangles and the face never partitions. This
+// pass welds such chains shut, the crux of robust planar arrangement under faceted-curve cuts.
+func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
+	for changed := true; changed; {
+		changed = false
+		for e := range edges {
+			c := vertexOnEdgeInterior(pts, e[0], e[1])
+			if c < 0 {
+				continue
+			}
+			delete(edges, e)
+			edges[canonEdge(e[0], c)] = true
+			edges[canonEdge(c, e[1])] = true
+			changed = true
+		}
+	}
+}
+
+// vertexOnEdgeInterior returns a vertex index lying strictly inside segment a→b (within
+// [tjTol] of it, parameter away from both ends), or −1 if none. The lowest such index is
+// returned for determinism.
+func vertexOnEdgeInterior(pts []math.Point2, a, b int) int {
+	pa, pb := pts[a], pts[b]
+	ab := pa.VectorTo(pb)
+	lenSq := ab.LengthSquared()
+	if lenSq < tjTol*tjTol {
+		return -1
+	}
+	best := -1
+	for c := range pts {
+		if c == a || c == b {
+			continue
+		}
+		t := pa.VectorTo(pts[c]).Dot(ab) / lenSq
+		if t <= tjTol || t >= 1-tjTol {
+			continue
+		}
+		if pa.TranslateBy(ab.Scale(t)).DistanceTo(pts[c]) > tjTol {
+			continue
+		}
+		if best < 0 || c < best {
+			best = c
+		}
+	}
+	return best
 }
 
 // splitOne returns segment i's elementary edges: the chain of welded vertex indices along

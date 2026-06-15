@@ -65,8 +65,8 @@ func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
 	for i := range fa {
 		for j := range fb {
 			if coplanar(fa[i], fb[j]) {
-				impA[i] = append(impA[i], interiorSegments(fa[i], faceEdges3D(fb[j]))...)
-				impB[j] = append(impB[j], interiorSegments(fb[j], faceEdges3D(fa[i]))...)
+				impA[i] = append(impA[i], coplanarOverlapSegments(fa[i], faceEdges3D(fb[j]))...)
+				impB[j] = append(impB[j], coplanarOverlapSegments(fb[j], faceEdges3D(fa[i]))...)
 				continue
 			}
 			segs := imprint(fa[i], fb[j])
@@ -134,6 +134,7 @@ func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Bo
 				fromFace = append(fromFace, out)
 			}
 		}
+		fromFace = mergeFilledHoles(fromFace)
 		// A face that survives as a single piece carries its source lineage unchanged, so
 		// its reference key is identical after the boolean (K1a). A face split into several
 		// kept pieces gives each a distinct child lineage (parent + split#k).
