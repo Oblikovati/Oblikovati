@@ -42,7 +42,7 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	}
 	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
-		return meshSeamCrossingFace(s, outer3D, holes3D, q) // a loop wrapping the seam: band/cap fallbacks
+		return meshSeamCrossingFace(f, s, outer3D, holes3D, q) // a loop wrapping the seam: band/cap fallbacks
 	}
 	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
@@ -54,12 +54,15 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // can't unwrap it): a full cylinder/cone side or a torus rim-fillet band closes the seam watertight via
 // closedDomainMesh; a singly-periodic sphere cap straddling the pole goes through the best-fit-plane CDT
 // (the full-domain grid tears there); a doubly-periodic torus we can't reduce keeps the full-domain grid.
-func meshSeamCrossingFace(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
+func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
 		return closedDomainMesh(s, us, vs) // full cylinder/cone side: wraps the seam watertight
 	}
-	if us, vs, isBand := doublyPeriodicBandGrid(s, outer3D, holes3D); isBand {
-		return closedDomainMesh(s, us, vs) // torus rim-fillet band: wraps the axis, bounded in the tube
+	if _, _, isBand := doublyPeriodicBandGrid(s, outer3D, holes3D); isBand {
+		if m, ok := closedBandLoftMesh(f, s, q); ok {
+			return m // torus rim-fillet band: loft so each edge ring keeps its own (differing) tessellation
+		}
+		return fullDomainGridMesh(s, q) // shouldn't reach: a doubly-periodic band that isn't two circles + a seam
 	}
 	if isPeriodic(s.UDomain()) != isPeriodic(s.VDomain()) {
 		return trimmedPatchMesh(s, outer3D, holes3D) // sphere cap on the pole: CDT in the best-fit plane
