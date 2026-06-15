@@ -116,7 +116,42 @@ func faceLineIntervals(f planarFace, p0 math.Point3, dir math.Vector3) [][2]floa
 			out = append(out, [2]float64{ts[i], ts[i+1]})
 		}
 	}
+	// A line that runs exactly ALONG a boundary edge grazes the face: the even–odd midpoint
+	// test above lands on the boundary and rejects it non-deterministically (a float tie-break
+	// that drops one wall of a boundary-straddle cut, #860). Add the span of every collinear
+	// boundary edge explicitly so such an imprint is captured on whichever face owns the edge
+	// — for that face interiorSegments later drops it as on-boundary; for the other face (where
+	// the same line is interior) the overlap keeps it.
+	return append(out, collinearEdgeSpans(o2, d2, f)...)
+}
+
+// collinearEdgeSpans returns the line parameters spanned by each boundary edge of f that lies
+// along the line (o2 + t·d2) — both endpoints within [arrTol] of the line. The span is the
+// edge endpoints projected onto the line; an edge meeting the line at a single point is not
+// collinear and is excluded.
+func collinearEdgeSpans(o2 math.Point2, d2 math.Vector2, f planarFace) [][2]float64 {
+	lenSq := d2.LengthSquared()
+	var out [][2]float64
+	for _, ring := range f.loops {
+		n := len(ring)
+		for i := 0; i < n; i++ {
+			a, b := to2D(f.plane, ring[i]), to2D(f.plane, ring[(i+1)%n])
+			if distPointLine2D(a, o2, d2) > arrTol || distPointLine2D(b, o2, d2) > arrTol {
+				continue
+			}
+			ta := o2.VectorTo(a).Dot(d2) / lenSq
+			tb := o2.VectorTo(b).Dot(d2) / lenSq
+			out = append(out, [2]float64{minf(ta, tb), maxf(ta, tb)})
+		}
+	}
 	return out
+}
+
+// distPointLine2D is the perpendicular distance from p to the line through o with direction d.
+func distPointLine2D(p, o math.Point2, d math.Vector2) float64 {
+	op := o.VectorTo(p)
+	cross := op.Cross(d)
+	return stdmath.Abs(cross) / stdmath.Sqrt(d.LengthSquared())
 }
 
 func to2Dvec(pl geom.Plane, v math.Vector3) math.Vector2 {

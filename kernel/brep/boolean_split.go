@@ -3,6 +3,11 @@
 package brep
 
 import (
+	stdmath "math"
+	"sort"
+	"strconv"
+	"strings"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -28,6 +33,68 @@ func splitFace(f planarFace, imprints [][2]math.Point3) []subFace {
 		out = append(out, sf)
 	}
 	return out
+}
+
+// mergeFilledHoles dissolves the artificial split where one kept sub-face exactly FILLS a hole
+// of another kept sub-face of the same source face. Both are coincident, same-normal fragments
+// of one planar surface, so the hole boundary between them is not a real edge — leaving it in
+// makes the shared loop a third user of edges that also bound the neighbour solid's face,
+// producing a non-manifold seam at a partial penetration (#860, the blade footprint over a
+// bored wall). Removing the filled hole and dropping the filler merges them into the single
+// face the surface should be.
+func mergeFilledHoles(faces []subFace) []subFace {
+	drop := make([]bool, len(faces))
+	for i := range faces {
+		for h := 0; h < len(faces[i].holes); {
+			if j := fillerOf(faces, faces[i].holes[h], drop, i); j >= 0 {
+				drop[j] = true
+				faces[i].holes = append(faces[i].holes[:h], faces[i].holes[h+1:]...)
+				continue
+			}
+			h++
+		}
+	}
+	out := faces[:0]
+	for i := range faces {
+		if !drop[i] {
+			out = append(out, faces[i])
+		}
+	}
+	return out
+}
+
+// fillerOf returns the index of a not-yet-dropped face (other than self) whose outer loop is
+// the same ring as hole, or −1. A face filling a hole is identified by loop coincidence.
+func fillerOf(faces []subFace, hole []math.Point3, drop []bool, self int) int {
+	want := ringSignature(hole)
+	for j := range faces {
+		if j == self || drop[j] || len(faces[j].holes) > 0 {
+			continue
+		}
+		if ringSignature(faces[j].outer) == want {
+			return j
+		}
+	}
+	return -1
+}
+
+// ringSignature is an order/winding-independent key for a 3D loop: its vertices rounded to the
+// stitch weld grid and concatenated in sorted order, so the same ring compares equal however
+// it is traversed.
+func ringSignature(ring []math.Point3) string {
+	keys := make([]string, len(ring))
+	for i, p := range ring {
+		keys[i] = roundKey(p)
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, "|")
+}
+
+func roundKey(p math.Point3) string {
+	const grid = 1e-6
+	return strconv.FormatInt(int64(stdmath.Round(p.X/grid)), 36) + "," +
+		strconv.FormatInt(int64(stdmath.Round(p.Y/grid)), 36) + "," +
+		strconv.FormatInt(int64(stdmath.Round(p.Z/grid)), 36)
 }
 
 // faceBoundarySegments returns a face's loop edges as 2D segments in its plane.
