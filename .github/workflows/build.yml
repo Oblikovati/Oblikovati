@@ -4,10 +4,11 @@ name: build
 # packages the cgo/Vulkan GUI head per OS, uploading everything as run artifacts.
 # Called by nightly.yml and release.yml.
 #
-# The Apache-2.0 API contract is a sibling repo (Oblikovati/Oblikovati.API). Each
-# Go job checks it out into ./_api and points the `api` require at it via
-# `go mod edit -replace` on the job's MAIN module (root for the CLI, head for the
-# GUI) — the committed go.mod has no replace (local dev uses go.work).
+# The Apache-2.0 API contract is a sibling repo (Oblikovati/Oblikovati.API). Each Go
+# job wires the build against the LATEST published api RELEASE via the local
+# .github/actions/api-contract composite (checks the release tag out into ./_api and
+# pins + replaces the job's MAIN module — root for the CLI, head for the GUI). So a
+# shipped build always links a real released contract, never an unreleased develop.
 on:
   workflow_call:
     inputs:
@@ -39,16 +40,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - uses: ./.github/actions/api-contract
       - name: Cross-build CLI
         env:
           VER: ${{ inputs.version }} # via env, never interpolated into the script (script injection)
@@ -74,16 +70,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
       - uses: actions/setup-go@v6
         with:
           go-version: "1.24"
           cache: false
-      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - uses: ./.github/actions/api-contract
+        with:
+          modules: head
       - name: Install build + packaging deps
         run: |
           sudo apt-get update
@@ -118,10 +111,16 @@ jobs:
         shell: msys2 {0}
     steps:
       - uses: actions/checkout@v5
+      # Resolve + check out the latest api release. The api-contract composite runs its
+      # `go mod edit` under bash, but this job's Go lives in the msys2 environment, so we
+      # do the resolve/checkout here and the mod edit in the msys2 shell below.
+      - id: api
+        shell: bash
+        run: echo "version=$(scripts/latest-api-version.sh)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
         with:
           repository: Oblikovati/Oblikovati.API
-          ref: develop
+          ref: ${{ steps.api.outputs.version }}
           path: _api
       - uses: msys2/setup-msys2@e9898307ac31d1a803454791be09ab9973336e1c # v2
         with:
@@ -135,7 +134,12 @@ jobs:
             mingw-w64-x86_64-vulkan-loader
             mingw-w64-x86_64-vulkan-headers
             zip
-      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - name: Pin + replace api to the release
+        env:
+          VERSION: ${{ steps.api.outputs.version }}
+        run: |
+          go -C head mod edit -require="oblikovati.org/api@$VERSION"
+          go -C head mod edit -replace "oblikovati.org/api=$GITHUB_WORKSPACE/_api"
       - name: Build head
         working-directory: head
         env:
@@ -205,16 +209,13 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
       - uses: actions/setup-go@v6
         with:
           go-version: "1.24"
           cache: false
-      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - uses: ./.github/actions/api-contract
+        with:
+          modules: head
       - name: Install deps
         run: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config
       - name: Build head

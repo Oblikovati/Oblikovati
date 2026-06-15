@@ -1,0 +1,54 @@
+# Resolve the latest oblikovati.org/api RELEASE, check it out, and wire the build
+# against it. Replaces the per-job "checkout api@develop + go mod edit -replace"
+# boilerplate (ADR-0018: the contract is a sibling repo, no replace is committed).
+#
+# It does two things so the build matches what ships:
+#   1. pins each module's `require oblikovati.org/api` to the resolved release tag
+#      (keeps the committed pin honest with what we built against), and
+#   2. adds a `replace` to the checked-out tag so the build resolves the contract
+#      from disk without needing the oblikovati.org vanity host or a go.sum entry.
+#
+# Requires Go to be set up already (it runs `go mod edit`). Run it after setup-go.
+name: API contract
+description: Check out the latest oblikovati.org/api release and pin/replace the given module(s) to it.
+
+inputs:
+  modules:
+    description: Space-separated module dirs to wire (e.g. "." for the root, "head" for the GUI).
+    required: false
+    default: "."
+  path:
+    description: Directory to check the contract out into.
+    required: false
+    default: _api
+
+outputs:
+  version:
+    description: The resolved oblikovati.org/api release tag (vX.Y.Z).
+    value: ${{ steps.resolve.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      run: echo "version=$(scripts/latest-api-version.sh)" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/checkout@v5
+      with:
+        repository: Oblikovati/Oblikovati.API
+        ref: ${{ steps.resolve.outputs.version }}
+        path: ${{ inputs.path }}
+
+    - shell: bash
+      env:
+        VERSION: ${{ steps.resolve.outputs.version }}
+        MODULES: ${{ inputs.modules }}
+      run: |
+        set -euo pipefail
+        api="$GITHUB_WORKSPACE/${{ inputs.path }}"
+        for m in $MODULES; do
+          echo "→ $m: require + replace oblikovati.org/api@$VERSION (-> $api)"
+          go -C "$m" mod edit -require="oblikovati.org/api@$VERSION"
+          go -C "$m" mod edit -replace "oblikovati.org/api=$api"
+        done
