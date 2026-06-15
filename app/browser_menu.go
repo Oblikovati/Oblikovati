@@ -75,6 +75,7 @@ func occurrenceMenu(sel Selectable) []BrowserMenuItem {
 		suppressLabel = "Unsuppress"
 	}
 	return []BrowserMenuItem{
+		{Label: "Edit", Enabled: h.Occurrence.ComponentName() != "", Invoke: func(s *Session) error { return s.OpenOccurrenceDocument(h.Occurrence) }},
 		{Label: groundLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceGrounded(h.Occurrence) }},
 		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceSuppressed(h.Occurrence) }},
 		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteOccurrence(h.Occurrence) }},

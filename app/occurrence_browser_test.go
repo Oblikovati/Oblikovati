@@ -66,13 +66,13 @@ func TestOccurrenceMenuTogglesLabels(t *testing.T) {
 	o := asm.Occurrences().Item(0)
 	node := findBrowserNode(BuildBrowser(s), "occurrence", "widget:1")
 
-	if labels := strings.Join(menuLabels(BrowserMenu(*node)), "|"); labels != "Ground|Suppress|Delete" {
-		t.Errorf("fresh occurrence menu = %q, want Ground|Suppress|Delete", labels)
+	if labels := strings.Join(menuLabels(BrowserMenu(*node)), "|"); labels != "Edit|Ground|Suppress|Delete" {
+		t.Errorf("fresh occurrence menu = %q, want Edit|Ground|Suppress|Delete", labels)
 	}
 	o.SetGrounded(true)
 	o.SetSuppressed(true)
-	if labels := strings.Join(menuLabels(BrowserMenu(*node)), "|"); labels != "Unground|Unsuppress|Delete" {
-		t.Errorf("grounded+suppressed menu = %q, want Unground|Unsuppress|Delete", labels)
+	if labels := strings.Join(menuLabels(BrowserMenu(*node)), "|"); labels != "Edit|Unground|Unsuppress|Delete" {
+		t.Errorf("grounded+suppressed menu = %q, want Edit|Unground|Unsuppress|Delete", labels)
 	}
 }
 

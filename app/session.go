@@ -341,6 +341,20 @@ func (s *Session) OpenDocument(path string) (*doc.Document, error) {
 	return d, nil
 }
 
+// OpenComponentForPlacement loads a component document into memory so the active assembly can
+// instance it, WITHOUT making it visible or active — placing a part must never switch the tab
+// away from the assembly (Inventor's invisible Documents.Open). The document is reachable but
+// shows no tab; the user opens it in a tab later via Edit/Open on the occurrence
+// ([OpenOccurrenceDocument]).
+func (s *Session) OpenComponentForPlacement(path string) (*doc.Document, error) {
+	d, err := s.workspace.OpenWithOptions(path, doc.OpenOptions{Visible: false, Background: true})
+	if err != nil {
+		return nil, err
+	}
+	s.documentHistory(d) // track its edit stream so an Edit-in-tab later has a clean before-state
+	return d, nil
+}
+
 // NewPart creates a realized part document with a unique "PartN" name and makes it active
 // (the workspace activates a newly added document), so the viewport and ribbon switch to the
 // part environment. It backs the New Part command on the ZeroDoc ribbon and the File menu.

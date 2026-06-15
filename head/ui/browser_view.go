@@ -199,6 +199,8 @@ func openEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
 		s.BeginEditSketch(h)
 	case app.WorkPlaneHandle:
 		s.BeginEditWorkPlane(h)
+	case app.OccurrenceHandle:
+		_ = s.OpenOccurrenceDocument(h.Occurrence) // open the placed component in a tab (#764)
 	}
 }
 

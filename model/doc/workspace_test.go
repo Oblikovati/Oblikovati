@@ -265,3 +265,54 @@ func TestAddRejectsDuplicateNameAndBadType(t *testing.T) {
 		t.Error("Add accepted an invalid document type")
 	}
 }
+
+// TestBackgroundOpenKeepsActiveAndHidden pins the place-component fix (#764): loading a
+// component in the background must reference it in memory without making it visible or
+// stealing the active document, so placing a part never switches the tab away from the
+// assembly.
+func TestBackgroundOpenKeepsActiveAndHidden(t *testing.T) {
+	ws := NewWorkspace(newFakeStore())
+	asm, _ := ws.Add(Assembly, "asm.obk", true)
+	part, _ := ws.Add(Part, "part.obk", true) // stage in the store
+	if err := ws.Save(part); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	if err := ws.Close(part, false); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	if err := ws.SetActiveDocument(asm); err != nil {
+		t.Fatalf("SetActiveDocument: %v", err)
+	}
+
+	got, err := ws.OpenWithOptions("part.obk", OpenOptions{Visible: false, Background: true})
+	if err != nil {
+		t.Fatalf("background open: %v", err)
+	}
+	if ws.ActiveDocument() != asm {
+		t.Error("background open stole the active document; the assembly must stay active")
+	}
+	if got.Visible() {
+		t.Error("background-opened component reports Visible() = true")
+	}
+	if vis := ws.VisibleDocuments(); len(vis) != 1 || vis[0] != asm {
+		t.Errorf("visible documents = %d (want only the assembly); a background component must show no tab", len(vis))
+	}
+}
+
+// TestBackgroundOpenOfOpenDocPreservesIt checks that re-placing a part the user already has
+// open in a tab does not hide it or steal focus.
+func TestBackgroundOpenOfOpenDocPreservesIt(t *testing.T) {
+	ws := NewWorkspace(newFakeStore())
+	asm, _ := ws.Add(Assembly, "asm.obk", true)
+	part, _ := ws.Add(Part, "part.obk", true) // user has it open, visible, active
+	if _, err := ws.OpenWithOptions("part.obk", OpenOptions{Visible: false, Background: true}); err != nil {
+		t.Fatalf("background re-open: %v", err)
+	}
+	if !part.Visible() {
+		t.Error("re-placing a part the user has open in a tab hid it")
+	}
+	if ws.ActiveDocument() != part {
+		t.Error("background re-open changed the active document")
+	}
+	_ = asm
+}
