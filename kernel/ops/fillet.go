@@ -41,6 +41,9 @@ func FilletEdges(body *topo.Body, edgeKeys [][]byte, r float64) (*topo.Body, err
 // the edge line, so each strip face is EXACTLY planar — the only approximation is the end
 // arcs as chords, the same density convention as a hole's faceted cylinder.
 func FilletEdgesVarying(body *topo.Body, picks []EdgeFilletRadii) (*topo.Body, error) {
+	if rim := loneRimPick(body, picks); rim != nil {
+		return FilletCylinderRim(body, rim.Key, rim.R0) // a circular cylinder/cap rim → toroidal band
+	}
 	edges, err := resolveFilletPicks(body, picks)
 	if err != nil {
 		return nil, err
