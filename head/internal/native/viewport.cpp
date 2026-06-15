@@ -124,6 +124,7 @@ struct Viewport {
     Target          targets[kMaxTiles];
 
     GpuBuffer       vbuf, ibuf;
+    GpuBuffer       instbuf; // per-instance model matrices (binding 1, ADR-0038)
 
     // Background the 3D pass clears to (themed; ADR-0021). Defaults reproduce the
     // pre-theming look so an un-themed build is unchanged.
@@ -216,6 +217,37 @@ void create_render_pass(HeadContext* c, Viewport* v) {
     vkCreateRenderPass(c->device, &rp, nullptr, &v->renderPass);
 }
 
+// fill_instanced_vertex_input describes the vertex input shared by every geometry + shadow pipeline:
+// binding 0 is the per-vertex 16-float interleave (pos, normal, color, metallic, roughness, emissive,
+// mode — matching mesh.vert and viewport.Flatten); binding 1 is the per-INSTANCE 4×4 model matrix
+// (locations 7..10), so one local mesh draws at many transforms (ADR-0038). binds/attrs are
+// caller-owned storage kept alive until pipeline creation.
+void fill_instanced_vertex_input(VkVertexInputBindingDescription binds[2],
+                                 VkVertexInputAttributeDescription attrs[11],
+                                 VkPipelineVertexInputStateCreateInfo& vi) {
+    binds[0] = {0, kVertexFloats * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    binds[1] = {1, 16 * sizeof(float), VK_VERTEX_INPUT_RATE_INSTANCE};
+    const VkVertexInputAttributeDescription base[7] = {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
+        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
+        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
+        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
+        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
+        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
+    };
+    for (int i = 0; i < 7; i++) attrs[i] = base[i];
+    for (uint32_t i = 0; i < 4; i++) { // mat4 model = 4 vec4 rows, binding 1
+        attrs[7 + i] = {7 + i, 1, VK_FORMAT_R32G32B32A32_SFLOAT, (uint32_t)(i * 4 * sizeof(float))};
+    }
+    vi = {};
+    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vi.vertexBindingDescriptionCount = 2;
+    vi.pVertexBindingDescriptions = binds;
+    vi.vertexAttributeDescriptionCount = 11;
+    vi.pVertexAttributeDescriptions = attrs;
+}
+
 VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo,
                            VkPolygonMode poly, VkBool32 colorWrite, VkCompareOp depthOp,
                            VkBool32 depthWrite) {
@@ -229,25 +261,10 @@ VkPipeline create_pipeline(HeadContext* c, Viewport* v, VkPrimitiveTopology topo
     stages[1].module = v->fragModule;
     stages[1].pName = "main";
 
-    VkVertexInputBindingDescription bind{0, kVertexFloats * sizeof(float),
-                                         VK_VERTEX_INPUT_RATE_VERTEX};
-    // pos, normal, color, metallic, roughness, emissive, mode — matching mesh.vert and the
-    // 16-float interleave in viewport.Flatten.
-    VkVertexInputAttributeDescription attrs[7] = {
-        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
-        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
-        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
-        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
-        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
-        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
-    };
+    VkVertexInputBindingDescription binds[2];
+    VkVertexInputAttributeDescription attrs[11];
     VkPipelineVertexInputStateCreateInfo vi{};
-    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vi.vertexBindingDescriptionCount = 1;
-    vi.pVertexBindingDescriptions = &bind;
-    vi.vertexAttributeDescriptionCount = 7;
-    vi.pVertexAttributeDescriptions = attrs;
+    fill_instanced_vertex_input(binds, attrs, vi);
 
     VkPipelineInputAssemblyStateCreateInfo ia{};
     ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -806,23 +823,10 @@ void create_shadow_pipeline(HeadContext* c, Viewport* v) {
     stage.module = v->vertModule;
     stage.pName = "main";
 
-    VkVertexInputBindingDescription bind{0, kVertexFloats * sizeof(float),
-                                         VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription attrs[7] = {
-        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
-        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 6 * sizeof(float)},
-        {3, 0, VK_FORMAT_R32_SFLOAT, 10 * sizeof(float)},
-        {4, 0, VK_FORMAT_R32_SFLOAT, 11 * sizeof(float)},
-        {5, 0, VK_FORMAT_R32G32B32_SFLOAT, 12 * sizeof(float)},
-        {6, 0, VK_FORMAT_R32_SFLOAT, 15 * sizeof(float)},
-    };
+    VkVertexInputBindingDescription binds[2];
+    VkVertexInputAttributeDescription attrs[11];
     VkPipelineVertexInputStateCreateInfo vi{};
-    vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vi.vertexBindingDescriptionCount = 1;
-    vi.pVertexBindingDescriptions = &bind;
-    vi.vertexAttributeDescriptionCount = 7;
-    vi.pVertexAttributeDescriptions = attrs;
+    fill_instanced_vertex_input(binds, attrs, vi);
     VkPipelineInputAssemblyStateCreateInfo ia{};
     ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -1010,6 +1014,11 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
            verts.size() * sizeof(float));
     upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(),
            idx.size() * sizeof(uint32_t));
+    // Per-instance model matrices (binding 1). This non-instanced path draws every stream as one
+    // identity instance, so the geometry is its own world space (unchanged output); the instanced
+    // entry point (ADR-0038) replaces this with the occurrence transforms.
+    static const float kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
 
     // Refresh the scene-lighting UBO from the CPU copy (coherent mapped memory, so the copy is
     // visible to the GPU without an explicit flush).
@@ -1039,7 +1048,9 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         vkCmdSetViewport(v->cmd, 0, 1, &sv);
         vkCmdSetScissor(v->cmd, 0, 1, &ss);
         VkDeviceSize zero = 0;
-        vkCmdBindVertexBuffers(v->cmd, 0, 1, &v->vbuf.buffer, &zero);
+        VkBuffer vbufs[2] = {v->vbuf.buffer, v->instbuf.buffer};
+        VkDeviceSize voffs[2] = {0, 0};
+        vkCmdBindVertexBuffers(v->cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
         vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
         PushConstants sp{};
         std::memcpy(sp.mvp, &v->sceneData[kShadowVP], sizeof(sp.mvp));
@@ -1091,7 +1102,9 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
 
     if (!verts.empty()) {
         VkDeviceSize zero = 0;
-        vkCmdBindVertexBuffers(v->cmd, 0, 1, &v->vbuf.buffer, &zero);
+        VkBuffer vbufs[2] = {v->vbuf.buffer, v->instbuf.buffer};
+        VkDeviceSize voffs[2] = {0, 0};
+        vkCmdBindVertexBuffers(v->cmd, 0, 2, vbufs, voffs); // binding 0 = verts, 1 = instance matrices
         vkCmdBindIndexBuffer(v->cmd, v->ibuf.buffer, 0, VK_INDEX_TYPE_UINT32);
         PushConstants push{};
         std::memcpy(push.mvp, mvp, sizeof(push.mvp));
@@ -1413,6 +1426,8 @@ void obk_viewport_destroy(HeadContext* c) {
     if (v->vbuf.memory) vkFreeMemory(c->device, v->vbuf.memory, nullptr);
     if (v->ibuf.buffer) vkDestroyBuffer(c->device, v->ibuf.buffer, nullptr);
     if (v->ibuf.memory) vkFreeMemory(c->device, v->ibuf.memory, nullptr);
+    if (v->instbuf.buffer) vkDestroyBuffer(c->device, v->instbuf.buffer, nullptr);
+    if (v->instbuf.memory) vkFreeMemory(c->device, v->instbuf.memory, nullptr);
     destroy_env_image(c, v);
     if (v->envSampler) vkDestroySampler(c->device, v->envSampler, nullptr);
     if (v->shadowFB) vkDestroyFramebuffer(c->device, v->shadowFB, nullptr);
