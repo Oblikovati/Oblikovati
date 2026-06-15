@@ -140,6 +140,17 @@ func (s *Sketch) Profiles() *Profiles {
 	return ps
 }
 
+// ClosedLoops returns the sketch's standalone closed loops detected by endpoint chaining
+// (detectLoops), independent of the planar-arrangement region finder. Because each loop is a
+// connected chain, crossing loops (e.g. a grid of bars whose rectangles intersect mid-edge but
+// share no endpoints) are returned individually and intact — unlike Profiles, whose even–odd
+// region nesting cannot represent overlapping interior loops. Callers that need a boolean of
+// loops (grill: boundary − union(bars), #863) use this instead of profile inner loops.
+func (s *Sketch) ClosedLoops() []Loop {
+	closed, _ := detectLoops(s.normalGeometry())
+	return closed
+}
+
 // openChainsOutside returns the open chains formed by entities that bound no detected
 // region — the geometry an extrude rightly rejects but a surface may consume. Entities
 // already used by a region are excluded so a dividing curve is not also reported open.

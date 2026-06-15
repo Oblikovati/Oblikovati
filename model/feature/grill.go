@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
 
@@ -40,8 +41,12 @@ func (g *GrillFeature) Definition() *GrillDefinition { return g.def }
 // Kind implements [Feature].
 func (g *GrillFeature) Kind() string { return "grill" }
 
-// Recompute cuts the boundary profiles (honoring their structure holes) through the running
-// wall, leaving the ribs/spars/islands bridging the vent.
+// Recompute cuts each boundary's vent through the running wall, leaving the rib/spar/island
+// structure bridging it. The vent of a boundary is boundary − union(bars), where the bars are
+// the sketch's closed loops lying inside that boundary; computing it as a boundary solid drilled
+// by each bar (a sequence of booleans = union subtraction) is robust even when the bars cross —
+// unlike the boundary profile's inner loops, which the even–odd region finder mis-forms for
+// overlapping structure (#863).
 func (g *GrillFeature) Recompute(in Input) (Output, error) {
 	if _, err := lastBody(in, "grill"); err != nil {
 		return Output{}, err
@@ -55,12 +60,75 @@ func (g *GrillFeature) Recompute(in Input) (Output, error) {
 	}
 	plane := g.def.Sketch.Plane()
 	sp := throughSpan(in.Bodies, plane)
-	cutTool := buildProfilePrisms(boundaries, plane, sp, g.def.Draft, featOr(g.featName, "grill"))
+	loops := g.def.Sketch.ClosedLoops()
+	cutTool := ventTool(boundaries, loops, plane, sp, g.def.Draft, featOr(g.featName, "grill"))
 	bodies, err := combine(in.Bodies, cutTool, ops.Cut)
 	if err != nil {
 		return Output{}, fmt.Errorf("grill: %w", err)
 	}
 	return Output{Bodies: bodies}, nil
+}
+
+// ventTool builds the merged cut tool: for each boundary, a solid prism of its outer loop drilled
+// by every closed loop (bar) lying inside it, giving boundary − union(bars).
+func ventTool(boundaries []*sketch.Profile, loops []sketch.Loop, plane sketch.Plane, sp span, draft float64, feat string) *topo.Body {
+	tools := make([]*topo.Body, 0, len(boundaries))
+	for i, b := range boundaries {
+		name := feat
+		if len(boundaries) > 1 {
+			name = fmt.Sprintf("%s/b%d", feat, i)
+		}
+		outer := b.OuterLoop().Polygon()
+		solid := buildPrism(outer, plane, sp, draft, name)
+		if bars := loopsInside(loops, outer); len(bars) > 0 {
+			solid = drillProfileHoles(solid, bars, plane, sp, draft, name)
+		}
+		tools = append(tools, solid)
+	}
+	if len(tools) == 1 {
+		return tools[0]
+	}
+	return topo.MergeBodies(topo.NewLineage(topo.Tok(feat, "merged", 0)), true, tools...)
+}
+
+// loopsInside returns the loops lying strictly inside the boundary polygon (the bars) — excluding
+// the boundary loop itself and anything outside it.
+func loopsInside(loops []sketch.Loop, boundary []math.Point2) []sketch.Loop {
+	var inside []sketch.Loop
+	for _, l := range loops {
+		if loopStrictlyInside(l.Polygon(), boundary) {
+			inside = append(inside, l)
+		}
+	}
+	return inside
+}
+
+// loopStrictlyInside reports whether every vertex of poly lies inside boundary (so the boundary
+// loop, whose vertices lie on its own edge, is excluded).
+func loopStrictlyInside(poly, boundary []math.Point2) bool {
+	if len(poly) == 0 {
+		return false
+	}
+	for _, v := range poly {
+		if !pointInPolygon2D(v, boundary) {
+			return false
+		}
+	}
+	return true
+}
+
+// pointInPolygon2D is the even–odd ray-cast test.
+func pointInPolygon2D(p math.Point2, poly []math.Point2) bool {
+	in := false
+	for i, j := 0, len(poly)-1; i < len(poly); j, i = i, i+1 {
+		yi, yj := poly[i].Y, poly[j].Y
+		if (yi > p.Y) != (yj > p.Y) {
+			if p.X < poly[i].X+(p.Y-yi)/(yj-yi)*(poly[j].X-poly[i].X) {
+				in = !in
+			}
+		}
+	}
+	return in
 }
 
 // throughSpan spans the whole running material along the sketch-plane normal (plus a margin on

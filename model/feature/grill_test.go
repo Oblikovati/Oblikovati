@@ -45,6 +45,38 @@ func TestGrillCutsVentLeavingRibs(t *testing.T) {
 	}
 }
 
+// TestGrillCrossingBarsVolume: a grid of crossing ribs and spars (overlapping rectangles) cuts
+// the correct vent — boundary 49 minus the bars' union 13.92 = 35.08 removed from a 100 wall,
+// leaving 64.92. Built as boundary − union(bars), robust to the crossings (#863).
+func TestGrillCrossingBarsVolume(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	wall := sketch.NewSketches().Add(sketch.XYPlane())
+	addRect(wall, 0, 0, 10, 10)
+	NewExtrudeFeatures(fs).AddByDistanceExtent(wall, 0, ops.NewBody, func() float64 { return 1 })
+
+	g := sketch.NewSketches().Add(sketch.XYPlane())
+	addRect(g, 1.5, 1.5, 8.5, 8.5) // boundary 7×7 = 49
+	for _, x := range []float64{3, 5, 7} {
+		addRect(g, x-0.2, 1.8, x+0.2, 8.2) // vertical ribs
+	}
+	for _, y := range []float64{3, 5, 7} {
+		addRect(g, 1.8, y-0.2, 8.2, y+0.2) // horizontal spars (cross the ribs)
+	}
+	grill := NewGrillFeatures(fs).Add(&GrillDefinition{Sketch: g, Boundaries: []int{0}})
+	fs.Recompute()
+
+	if !grill.Health().OK() {
+		t.Fatalf("crossing-bar grill sick: %+v", grill.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("crossing-bar grill body not a valid solid: %+v", r.Issues)
+	}
+	if v := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; stdmath.Abs(v-64.92) > 1e-3 {
+		t.Errorf("crossing-bar grill volume = %g, want 64.92 (100 − vent 35.08)", v)
+	}
+}
+
 // TestGrillBoundaryOnlyIsAWindow: a boundary with no inner structure cuts a plain window
 // (vol 100 − 36 = 64).
 func TestGrillBoundaryOnlyIsAWindow(t *testing.T) {
