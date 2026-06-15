@@ -153,6 +153,7 @@ int  obk_ig_begin_popup(const char* id)      { return ImGui::BeginPopup(id) ? 1 
 void obk_ig_close_current_popup(void)               { ImGui::CloseCurrentPopup(); }
 void obk_ig_end_popup(void)                  { ImGui::EndPopup(); }
 void obk_ig_set_scroll_here_y(void)          { ImGui::SetScrollHereY(0.5f); }
+void obk_ig_scroll_to_bottom(void)           { ImGui::SetScrollHereY(1.0f); }
 
 // Preference widgets: a float/int field and a checkbox. Each returns 1 when the value
 // changed this frame and writes the new value back through the pointer.

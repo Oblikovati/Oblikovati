@@ -185,7 +185,7 @@ func drawCommandScrollback(cl *app.CommandLine, reserve float32) {
 		native.PopStyleColor(1)
 	}
 	if len(lines) > commandLastLineCount {
-		native.SetScrollHereY()
+		native.ScrollToBottom() // new lines pin to the bottom and roll older text up (shell-style)
 	}
 	commandLastLineCount = len(lines)
 	native.EndChild()
