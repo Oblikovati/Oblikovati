@@ -41,12 +41,16 @@ runs:
         path: ${{ inputs.path }}
 
     - shell: bash
+      # Route every action input through env, never interpolated into the script body:
+      # inputs are caller-controlled, so a `${{ inputs.x }}` in a run block is a script
+      # -injection vector (githubactions:S7630).
       env:
         VERSION: ${{ steps.resolve.outputs.version }}
         MODULES: ${{ inputs.modules }}
+        API_PATH: ${{ inputs.path }}
       run: |
         set -euo pipefail
-        api="$GITHUB_WORKSPACE/${{ inputs.path }}"
+        api="$GITHUB_WORKSPACE/$API_PATH"
         for m in $MODULES; do
           echo "→ $m: require + replace oblikovati.org/api@$VERSION (-> $api)"
           go -C "$m" mod edit -require="oblikovati.org/api@$VERSION"
