@@ -5,7 +5,9 @@
 package ui
 
 import (
+	"fmt"
 	stdmath "math"
+	"strconv"
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/viewport"
@@ -151,24 +153,67 @@ func sortRecsByStream(recs [][7]int32) [][7]int32 {
 // falls back to the legacy single-mesh path.
 func buildInstancedFrame(groups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
 	lookup renderer.SurfaceLookup, style renderer.VisualStyle,
-	decorate func(renderer.DrawList) renderer.DrawList,
+	decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
 ) (viewport.Mesh, []float32, []int32, bool) {
 	if len(groups) == 0 && len(overlay.Items) == 0 {
 		return viewport.Mesh{}, nil, nil, false
 	}
 	var b instanceBuilder
 	for _, g := range groups {
-		local := renderer.BuildDrawListStyled([]*topo.Body{g.Source}, cam, ops.DefaultQuality(), lookup, style)
-		if decorate != nil { // e.g. selection highlight, recolouring the source's items in place
-			local = decorate(local)
-		}
-		b.addGroup(viewport.Flatten(local), g.Transforms)
+		// The expensive part — tessellate the source + extract edges + flatten — is cached per
+		// source body, so orbiting a 1024-copy assembly reuses the mesh instead of re-tessellating a
+		// ~14k-face Möbius every frame (the orbit-perf bug: ~60ms/frame). Only the cheap per-frame
+		// matrices/records (below) adapt to camera/transform changes.
+		b.addGroup(cachedSourceMesh(g.Source, cam, lookup, style, decorate, sourceKey), g.Transforms)
 	}
 	if len(overlay.Items) > 0 {
 		b.addGroup(viewport.Flatten(overlay), []math.Matrix4{math.Identity4()})
 	}
 	m, mats, recs := b.finish()
 	return m, mats, recs, len(recs) > 0
+}
+
+// sourceMeshCache memoises the flattened, styled mesh of each unique component body, keyed on the
+// geometry/style/selection signature (sourceKey). Flattening a source tessellates it, extracts its
+// edges and packs the vertex streams — tens of ms for a dense part — and is camera-independent, so
+// without this an assembly re-did it for the one shared mesh every frame. Cleared lazily: an entry
+// whose key no longer matches is rebuilt (a geometry edit, placement, style or selection change
+// bumps the key). The render loop is single-threaded, so a package map is safe (like bodyGeometryCache).
+var sourceMeshCache = map[*topo.Body]struct {
+	key  string
+	mesh viewport.Mesh
+}{}
+
+// instancedSourceKey signs everything that changes a cached source mesh: the active model's
+// geometry version (bumped on any edit/recompute/placement), the visual style, and the selection
+// (the highlight recolours a source's items). It is camera-independent, so it is stable while
+// orbiting — the cache then holds and the dense source is not re-tessellated. Empty (no keyable
+// model) disables the source cache for that frame.
+func instancedSourceKey(s *app.Session) string {
+	ver, ok := activeModelGeometryVersion(s)
+	if !ok {
+		return ""
+	}
+	return ver + "|" + strconv.Itoa(int(s.VisualStyle())) + "|" + fmt.Sprintf("%v", s.Selection().First())
+}
+
+// cachedSourceMesh returns g's flattened source mesh, rebuilding only when sourceKey changed.
+func cachedSourceMesh(src *topo.Body, cam scene.Camera, lookup renderer.SurfaceLookup,
+	style renderer.VisualStyle, decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
+) viewport.Mesh {
+	if c, ok := sourceMeshCache[src]; ok && c.key == sourceKey {
+		return c.mesh
+	}
+	local := renderer.BuildDrawListStyled([]*topo.Body{src}, cam, ops.DefaultQuality(), lookup, style)
+	if decorate != nil { // selection highlight recolours the source's items (in the key)
+		local = decorate(local)
+	}
+	m := viewport.Flatten(local)
+	sourceMeshCache[src] = struct {
+		key  string
+		mesh viewport.Mesh
+	}{sourceKey, m}
+	return m
 }
 
 // instancedBounds is the world-space bounding box of every instance, computed from each source's
