@@ -26,6 +26,7 @@ func (r *Router) registerAssemblyOccurrenceHandlers() {
 	r.handlers[wire.MethodAssemblyOccurrences] = assemblyOccurrences
 	r.handlers[wire.MethodAssemblyPlace] = assemblyPlace
 	r.handlers[wire.MethodAssemblyPlaceByDefinition] = assemblyPlaceByDefinition
+	r.handlers[wire.MethodAssemblyPlaceByDefinitionBatch] = assemblyPlaceByDefinitionBatch
 	r.handlers[wire.MethodAssemblyTransform] = assemblyTransform
 	r.handlers[wire.MethodAssemblyGround] = assemblyGround
 	r.handlers[wire.MethodAssemblySetFlexible] = assemblySetFlexible
@@ -84,6 +85,31 @@ func assemblyPlaceByDefinition(s *app.Session, raw json.RawMessage) (json.RawMes
 	}
 	o := asm.Place(in.Name, src.Definition(), matrixFromWire(in.Transform))
 	return occurrenceReply(o)
+}
+
+// assemblyPlaceByDefinitionBatch places many instances of an existing occurrence's component in one
+// call. Each Place is a cheap occurrence append; doing them in a single handler means the assembly's
+// geometry version bumps once for the whole batch, so the live host recomputes/re-tessellates once
+// instead of per placement — the difference between minutes and seconds for a large assembly.
+func assemblyPlaceByDefinitionBatch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, err := modelaccess.ActiveAssembly(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.PlaceByDefinitionBatchArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	src, err := occurrenceByID(asm, in.Source, wire.MethodAssemblyPlaceByDefinitionBatch)
+	if err != nil {
+		return nil, err
+	}
+	def := src.Definition()
+	out := make([]wire.OccurrenceInfo, 0, len(in.Placements))
+	for _, p := range in.Placements {
+		out = append(out, occurrenceInfo(asm.Place(p.Name, def, matrixFromWire(p.Transform))))
+	}
+	return json.Marshal(wire.PlaceByDefinitionBatchResult{Occurrences: out})
 }
 
 // assemblyTransform repositions an occurrence. When the contact solver is on, a move that would
