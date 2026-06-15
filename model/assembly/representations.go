@@ -300,6 +300,17 @@ func (r *Representations) lodByIDInternal(id uint64) *lodRep {
 	return nil
 }
 
+// ActiveSection returns the first section plane of the active design-view representation, if
+// any — what the head's viewport clips against (M12-F04).
+func (r *Representations) ActiveSection() (types.SectionPlane, bool) {
+	for _, d := range r.design {
+		if d.active && len(d.sections) > 0 {
+			return d.sections[0], true
+		}
+	}
+	return types.SectionPlane{}, false
+}
+
 // ActiveSelection returns the names of the currently-active representation in each family
 // (empty when a family has no active one) — what a new model state captures.
 func (r *Representations) ActiveSelection() (designView, positional, levelOfDetail string) {

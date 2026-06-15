@@ -36,6 +36,7 @@ constexpr uint32_t kShadowDim = 2048; // sun shadow map resolution
 struct PushConstants {
     float mvp[16];
     float camPosLit[4];
+    float clip[4]; // section plane (M12-F04): xyz = world normal (0 ⇒ none), w = offset d
 };
 
 struct GpuBuffer {
@@ -974,7 +975,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                          const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
-                         int triBiasFirst) {
+                         int triBiasFirst, const float* clip) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
@@ -1097,6 +1098,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         push.camPosLit[0] = camPos ? camPos[0] : 0.0f;
         push.camPosLit[1] = camPos ? camPos[1] : 0.0f;
         push.camPosLit[2] = camPos ? camPos[2] : 0.0f;
+        for (int i = 0; i < 4; i++) push.clip[i] = clip ? clip[i] : 0.0f; // section plane (M12-F04)
         auto pushLit = [&](float lit) {
             push.camPosLit[3] = lit;
             vkCmdPushConstants(v->cmd, v->layout,

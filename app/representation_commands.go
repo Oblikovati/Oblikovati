@@ -3,6 +3,8 @@
 package app
 
 import (
+	"math"
+
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/assembly"
 )
@@ -146,6 +148,32 @@ func (s *Session) DeleteModelState(h ModelStateHandle) error {
 	asm.Representations().DeleteModelState(h.ID)
 	s.recordEdit(asm, "Delete Model State")
 	return nil
+}
+
+// ActiveSectionClip returns the active design-view representation's section plane as a clip
+// vector [nx, ny, nz, d] for the viewport shader (M12-F04): fragments where dot(n, worldPos) - d
+// is positive are clipped, revealing the interior. Returns nil when no assembly / design-view /
+// section is active, so the viewport renders unclipped.
+func (s *Session) ActiveSectionClip() []float32 {
+	asm, err := activeAssembly(s)
+	if err != nil {
+		return nil
+	}
+	plane, ok := asm.Representations().ActiveSection()
+	if !ok {
+		return nil
+	}
+	nx, ny, nz := plane.Normal.X, plane.Normal.Y, plane.Normal.Z
+	if plane.Flipped {
+		nx, ny, nz = -nx, -ny, -nz
+	}
+	length := math.Sqrt(nx*nx + ny*ny + nz*nz)
+	if length < 1e-9 {
+		return nil
+	}
+	nx, ny, nz = nx/length, ny/length, nz/length
+	d := nx*plane.Origin.X + ny*plane.Origin.Y + nz*plane.Origin.Z
+	return []float32{float32(nx), float32(ny), float32(nz), float32(d)}
 }
 
 // capturedCamera snapshots the session's current camera for a design-view capture.

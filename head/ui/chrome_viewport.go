@@ -344,7 +344,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 		m.HidVerts, m.HidVCount, m.HidIndices,
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices,
-		m.TriBiasFirst)
+		m.TriBiasFirst, s.ActiveSectionClip()) // section-plane clip (M12-F04)
 	if tex := win.ViewportTexture(slot); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button
 		native.Image(tex, float32(pw), float32(ph))

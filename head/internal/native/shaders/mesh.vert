@@ -6,6 +6,7 @@
 layout(push_constant) uniform PushConstants {
     mat4 mvp;
     vec4 camPosLit; // xyz = camera eye in world space, w = lit flag (0 = line/flat, 1 = surface)
+    vec4 clip;      // section plane: xyz = world normal (0 ⇒ no section), w = plane offset d (M12-F04)
 } pc;
 layout(location = 0) in vec3  inPos;
 layout(location = 1) in vec3  inNormal;
