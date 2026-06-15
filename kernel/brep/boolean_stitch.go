@@ -226,6 +226,10 @@ func buildEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, edgeU
 	return edges
 }
 
+// weldGrid is the coincidence tolerance for merging stitched vertices (cm). Points within it
+// are the same vertex.
+const weldGrid = 1e-6
+
 // welder3 merges coincident 3D points onto a shared index list.
 type welder3 struct {
 	index  map[[3]int64]int
@@ -234,13 +238,25 @@ type welder3 struct {
 
 func newWelder3() *welder3 { return &welder3{index: map[[3]int64]int{}} }
 
+// add returns the index of the welded vertex for p, merging it with any existing vertex within
+// weldGrid. The point is hashed to a grid cell, but the 26 neighbouring cells are also searched:
+// two coincident points either side of a cell boundary hash to different cells, so a cell-exact
+// lookup would leave them unmerged — the failure that shredded dense self-proximate geometry
+// (a fine-pitch coil-join) into unpaired, coincident open edges (#879).
 func (w *welder3) add(p math.Point3) int {
-	const grid = 1e-6
-	k := [3]int64{int64(stdmath.Round(p.X / grid)), int64(stdmath.Round(p.Y / grid)), int64(stdmath.Round(p.Z / grid))}
-	if i, ok := w.index[k]; ok {
-		return i
+	cx := int64(stdmath.Round(p.X / weldGrid))
+	cy := int64(stdmath.Round(p.Y / weldGrid))
+	cz := int64(stdmath.Round(p.Z / weldGrid))
+	for dx := int64(-1); dx <= 1; dx++ {
+		for dy := int64(-1); dy <= 1; dy++ {
+			for dz := int64(-1); dz <= 1; dz++ {
+				if i, ok := w.index[[3]int64{cx + dx, cy + dy, cz + dz}]; ok && w.points[i].DistanceTo(p) <= weldGrid {
+					return i
+				}
+			}
+		}
 	}
-	w.index[k] = len(w.points)
+	w.index[[3]int64{cx, cy, cz}] = len(w.points)
 	w.points = append(w.points, p)
 	return len(w.points) - 1
 }
