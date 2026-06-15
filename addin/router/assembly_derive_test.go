@@ -99,6 +99,25 @@ func TestAssemblyShrinkwrapCreateOverWire(t *testing.T) {
 	}
 }
 
+// TestAssemblyShrinkwrapMaxHoleDiameterOverWire confirms the maxHoleDiameter option is accepted
+// and mapped over the wire (#721): solid boxes have no surface holes, so capping is a no-op and
+// the whole-envelope result is unchanged — the wire field flows through without error.
+func TestAssemblyShrinkwrapMaxHoleDiameterOverWire(t *testing.T) {
+	r, s := emptyPartSession(t)
+	src := addAssemblyDoc(t, s, "src.obk", 0, 10)
+
+	var detail wire.FeatureDetailResult
+	args := fmt.Sprintf(`{"source":%d,"envelopeStyle":%d,"maxHoleDiameter":5}`, src.ID(), int32(2))
+	call(t, r, s, "assembly.shrinkwrapCreate", args, &detail)
+
+	if detail.Feature.Kind != "shrinkwrap" {
+		t.Errorf("shrinkwrap feature kind = %q, want shrinkwrap", detail.Feature.Kind)
+	}
+	if got := activePartVolume(t, s); stdmath.Abs(got-11.0) > 1e-6 {
+		t.Errorf("shrinkwrap volume = %g, want 11.0 (capping is a no-op on solid boxes)", got)
+	}
+}
+
 // TestAssemblyDeriveBreakLinkOverWire creates a derive, then breaks its link and checks
 // the feature is no longer linked.
 func TestAssemblyDeriveBreakLinkOverWire(t *testing.T) {
