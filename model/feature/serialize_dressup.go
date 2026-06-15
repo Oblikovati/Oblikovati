@@ -35,6 +35,12 @@ type EdgeDressData struct {
 	Value       float64         `yaml:"value,omitempty"`
 	FlatCorners *bool           `yaml:"flatCorners,omitempty"`
 	Sets        []FilletSetData `yaml:"sets,omitempty"`
+	// Chamfer-only mode (M20-F03): the setback mode and its second input. ChamferType 0 (or
+	// absent, in older recipes) ⇒ the equal-distance default; Value2 is the second distance
+	// (twoDistances); Angle is the chamfer-face angle in radians (distanceAndAngle).
+	ChamferType int32   `yaml:"chamferType,omitempty"`
+	Value2      float64 `yaml:"value2,omitempty"`
+	Angle       float64 `yaml:"angle,omitempty"`
 }
 
 // FilletSetData is one serialized fillet edge set: constant (Radius) or variable

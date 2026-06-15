@@ -67,16 +67,24 @@ func (f *FilletFeature) Recompute(in Input) (Output, error) {
 	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), "fillet")
 }
 
-// ChamferDefinition bevels selected edges by a distance. FlatCorners blends a vertex
-// where three selected edges meet into a flat triangular face (the Inventor default);
-// when false the three chamfer planes are left to meet at a point.
+// ChamferType aliases the public chamfer-mode discriminator (ADR-0018).
+type ChamferType = types.ChamferType
+
+// ChamferDefinition bevels selected edges. Type (M20-F03) selects the setback mode: equal
+// Distance on both faces (the default / zero value), two independent distances (Distance +
+// Distance2, asymmetric), or a Distance plus the chamfer-face Angle. FlatCorners blends a
+// vertex where three selected edges meet into a flat triangular face — only for the
+// equal-distance mode; an asymmetric chamfer leaves the corner planes to meet at a point.
 type ChamferDefinition struct {
 	EdgeKeys    [][]byte
 	Distance    func() float64
+	Distance2   func() float64 // twoDistances: setback on the second face
+	Angle       func() float64 // distanceAndAngle: chamfer-face angle (radians)
+	Type        ChamferType    // zero value ⇒ equal-distance
 	FlatCorners bool
 }
 
-// ChamferFeature is an equal-distance edge chamfer.
+// ChamferFeature bevels selected edges (equal-distance, two-distance, or distance-and-angle).
 type ChamferFeature struct {
 	def      *ChamferDefinition
 	featName string
@@ -86,9 +94,14 @@ func (c *ChamferFeature) Definition() *ChamferDefinition { return c.def }
 func (c *ChamferFeature) Kind() string                   { return "chamfer" }
 
 // Recompute bevels each selected (convex) edge by cutting a wedge tool along it via the
-// boolean. See chamfer.go.
+// boolean; the two setbacks come from the mode (see chamferSetbacks). Flat-corner blending
+// applies only to the symmetric equal-distance case. See chamfer.go.
 func (c *ChamferFeature) Recompute(in Input) (Output, error) {
-	return chamferEdges(in, c.def.EdgeKeys, callOrZero(c.def.Distance), featOr(c.featName, "chamfer"), c.def.FlatCorners)
+	d1, d2, err := chamferSetbacks(c.def)
+	if err != nil {
+		return Output{}, err
+	}
+	return chamferEdges(in, c.def.EdgeKeys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners && d1 == d2)
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.
@@ -261,7 +274,24 @@ func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64)
 // AddChamferCorners bevels the given edges by distance; flatCorners selects whether a
 // three-edge corner is blended into a flat triangular face (true) or left pointy (false).
 func (c *DressUpFeatures) AddChamferCorners(edgeKeys [][]byte, distance func() float64, flatCorners bool) *PartFeature {
-	cf := &ChamferFeature{def: &ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, FlatCorners: flatCorners}}
+	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners})
+}
+
+// AddChamferTwoDistances bevels the given edges with independent setbacks on the two adjacent
+// faces (an asymmetric chamfer, M20-F03).
+func (c *DressUpFeatures) AddChamferTwoDistances(edgeKeys [][]byte, distance, distance2 func() float64) *PartFeature {
+	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Distance2: distance2, Type: types.ChamferTwoDistances})
+}
+
+// AddChamferDistanceAngle bevels the given edges by a setback on the first face and the
+// chamfer-face angle (radians), M20-F03.
+func (c *DressUpFeatures) AddChamferDistanceAngle(edgeKeys [][]byte, distance, angle func() float64) *PartFeature {
+	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Angle: angle, Type: types.ChamferDistanceAndAngle})
+}
+
+// addChamfer registers a chamfer feature with the given definition.
+func (c *DressUpFeatures) addChamfer(def *ChamferDefinition) *PartFeature {
+	cf := &ChamferFeature{def: def}
 	pf := c.engine.Add(cf)
 	pf.SetName(c.engine.UniqueName("Chamfer"))
 	cf.featName = pf.name

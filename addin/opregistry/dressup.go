@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -22,10 +23,13 @@ import (
 // EdgeSets is fillet-only: the edge-set form (#323), taking precedence over the flat
 // edgeRefs+radius pair.
 type edgeDressArgs struct {
-	EdgeRefs []string        `json:"edgeRefs"`
-	Radius   string          `json:"radius,omitempty"`   // fillet
-	Distance string          `json:"distance,omitempty"` // chamfer
-	EdgeSets []filletSetArgs `json:"edgeSets,omitempty"` // fillet
+	EdgeRefs    []string        `json:"edgeRefs"`
+	Radius      string          `json:"radius,omitempty"`      // fillet
+	Distance    string          `json:"distance,omitempty"`    // chamfer
+	EdgeSets    []filletSetArgs `json:"edgeSets,omitempty"`    // fillet
+	ChamferType string          `json:"chamferType,omitempty"` // chamfer mode (default distance)
+	Distance2   string          `json:"distance2,omitempty"`   // chamfer twoDistances
+	Angle       string          `json:"angle,omitempty"`       // chamfer distanceAndAngle
 }
 
 // filletSetArgs is one fillet edge set over the wire: constant (radius) or variable
@@ -55,7 +59,10 @@ const chamferSchema = `{
   "type": "object",
   "properties": {
     "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to bevel (from get_reference_keys)."},
-    "distance": {"type": "string", "description": "Chamfer setback with units, e.g. \"2 mm\"."}
+    "distance": {"type": "string", "description": "Chamfer setback with units, e.g. \"2 mm\" (the first face for the asymmetric modes)."},
+    "chamferType": {"type": "string", "enum": ["distance", "distanceAndAngle", "twoDistances"], "default": "distance", "description": "Setback mode."},
+    "distance2": {"type": "string", "description": "twoDistances: setback on the second face, e.g. \"4 mm\"."},
+    "angle": {"type": "string", "description": "distanceAndAngle: chamfer-face angle, e.g. \"30 deg\"."}
   },
   "required": ["edgeRefs", "distance"]
 }`
@@ -147,8 +154,49 @@ func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddChamfer(refKeys(in.EdgeRefs), d)
+	ct, err := chamferTypeOf(in.ChamferType)
+	if err != nil {
+		return nil, err
+	}
+	pf, err := applyChamferMode(part, refKeys(in.EdgeRefs), d, ct, in)
+	if err != nil {
+		return nil, err
+	}
 	return recomputeResult(part, pf)
+}
+
+// chamferTypeOf resolves the chamfer mode spelling, defaulting to equal-distance.
+func chamferTypeOf(spelling string) (types.ChamferType, error) {
+	if spelling == "" {
+		return types.ChamferDistance, nil
+	}
+	v, ok := types.ParseChamferType(spelling)
+	if !ok {
+		return 0, fmt.Errorf("chamfer: unknown chamferType %q", spelling)
+	}
+	return v, nil
+}
+
+// applyChamferMode places the chamfer feature for the resolved mode, resolving the second
+// input (distance2 or angle) for the asymmetric modes.
+func applyChamferMode(part *compdef.PartComponentDefinition, keys [][]byte, d func() float64, ct types.ChamferType, in edgeDressArgs) (*feature.PartFeature, error) {
+	du := feature.NewDressUpFeatures(part.Features())
+	switch ct {
+	case types.ChamferTwoDistances:
+		d2, err := lengthClosure(part, in.Distance2, "chamfer: distance2")
+		if err != nil {
+			return nil, err
+		}
+		return du.AddChamferTwoDistances(keys, d, d2), nil
+	case types.ChamferDistanceAndAngle:
+		a, err := angleClosure(part, in.Angle, "chamfer: angle")
+		if err != nil {
+			return nil, err
+		}
+		return du.AddChamferDistanceAngle(keys, d, a), nil
+	default:
+		return du.AddChamfer(keys, d), nil
+	}
 }
 
 // faceDressArgs is the shared shape of the face-referencing operations (shell, draft).

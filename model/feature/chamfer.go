@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 	"sort"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -30,32 +31,42 @@ const singularDetTol = 1e-12
 // a tetrahedron cut that trims the pointy three-plane intersection into one flat
 // triangular face — the way Inventor blends such a corner by default. With it clear the
 // three chamfer planes are left to meet at a point.
-func chamferEdges(in Input, keys [][]byte, dist float64, feat string, flatCorners bool) (Output, error) {
+func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorners bool) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
 	}
-	if dist <= 0 {
-		return Output{}, fmt.Errorf("chamfer: distance %g must be > 0", dist)
+	if d1 <= 0 || d2 <= 0 {
+		return Output{}, fmt.Errorf("chamfer: setbacks (%g, %g) must both be > 0", d1, d2)
 	}
 	edges, err := resolveEdges(body, keys)
 	if err != nil {
 		return Output{}, err
 	}
-	// A rim of a simple analytic cylinder gets a TRUE conical chamfer (one geom.Cone face) by
-	// rebuilding the body as a surface of revolution (#127). Anything else falls through.
-	if res, ok := analyticCylinderChamfer(body, edges, dist, feat); ok {
-		return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+	// The analytic conical chamfer (#127) and the flat-corner blend assume a SYMMETRIC setback;
+	// an asymmetric (two-distance / distance-angle) chamfer takes the plain faceted-wedge path.
+	if d1 == d2 {
+		// A rim of a simple analytic cylinder gets a TRUE conical chamfer (one geom.Cone face) by
+		// rebuilding the body as a surface of revolution (#127). Anything else falls through.
+		if res, ok := analyticCylinderChamfer(body, edges, d1, feat); ok {
+			return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+		}
 	}
+	return chamferByWedges(in, body, edges, d1, d2, feat, flatCorners)
+}
+
+// chamferByWedges bevels the edges by cutting a wedge tool per edge (plus the flat-corner
+// blend cuts when requested) — the general faceted path used for every non-analytic chamfer.
+func chamferByWedges(in Input, body *topo.Body, edges []*topo.Edge, d1, d2 float64, feat string, flatCorners bool) (Output, error) {
 	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
 	// segments, so the wedge cut works instead of hitting a degenerate closed edge (#129/#127).
 	work, edges := planarizeForEdges(body, edges, feat)
-	tools, err := chamferWedges(edges, dist, feat)
+	tools, err := chamferWedges(edges, d1, d2, feat)
 	if err != nil {
 		return Output{}, err
 	}
 	if flatCorners {
-		tools = append(tools, cornerCutTools(edges, dist, feat)...)
+		tools = append(tools, cornerCutTools(edges, d1, feat)...)
 	}
 	result, err := cutAll(work, tools)
 	if err != nil {
@@ -91,11 +102,31 @@ func resolveEdges(body *topo.Body, keys [][]byte) ([]*topo.Edge, error) {
 	return edges, nil
 }
 
-// chamferWedges builds the bevel wedge for each resolved edge.
-func chamferWedges(edges []*topo.Edge, dist float64, feat string) ([]*topo.Body, error) {
+// chamferSetbacks resolves a chamfer definition's mode into the two face setbacks (d1 along
+// the first adjacent face, d2 along the second): equal distance, two distances, or a distance
+// plus the chamfer-face angle (d2 = d1·tan θ, exact for perpendicular faces, the box case).
+func chamferSetbacks(def *ChamferDefinition) (d1, d2 float64, err error) {
+	d1 = callOrZero(def.Distance)
+	switch def.Type {
+	case types.ChamferTwoDistances:
+		d2 = callOrZero(def.Distance2)
+	case types.ChamferDistanceAndAngle:
+		a := callOrZero(def.Angle)
+		if a <= 0 || a >= stdmath.Pi/2 {
+			return 0, 0, fmt.Errorf("chamfer: angle %g rad must be in (0, π/2)", a)
+		}
+		d2 = d1 * stdmath.Tan(a)
+	default: // ChamferDistance (and the zero value): symmetric
+		d2 = d1
+	}
+	return d1, d2, nil
+}
+
+// chamferWedges builds the bevel wedge for each resolved edge (setbacks d1, d2).
+func chamferWedges(edges []*topo.Edge, d1, d2 float64, feat string) ([]*topo.Body, error) {
 	tools := make([]*topo.Body, 0, len(edges))
 	for i, edge := range edges {
-		tool, err := chamferWedge(edge, dist, fmt.Sprintf("%s/w%d", feat, i))
+		tool, err := chamferWedge(edge, d1, d2, fmt.Sprintf("%s/w%d", feat, i))
 		if err != nil {
 			return nil, err
 		}
@@ -104,10 +135,11 @@ func chamferWedges(edges []*topo.Edge, dist float64, feat string) ([]*topo.Body,
 	return tools, nil
 }
 
-// chamferWedge builds the triangular prism removed to bevel an edge: a right-triangle
-// cross-section with legs `dist` along each adjacent face's interior, swept along the
-// edge (with a small overhang past each end so the boolean is clean).
-func chamferWedge(edge *topo.Edge, dist float64, feat string) (*topo.Body, error) {
+// chamferWedge builds the triangular prism removed to bevel an edge: a triangle cross-section
+// with leg d1 along the first adjacent face's interior and d2 along the second's, swept along
+// the edge (with a small overhang past each end so the boolean is clean). Equal d1==d2 is the
+// symmetric chamfer; d1≠d2 is the asymmetric two-distance / distance-angle chamfer.
+func chamferWedge(edge *topo.Edge, d1, d2 float64, feat string) (*topo.Body, error) {
 	faces := edge.Faces()
 	if len(faces) != 2 {
 		return nil, fmt.Errorf("chamfer: edge bounds %d faces, need 2", len(faces))
@@ -126,7 +158,7 @@ func chamferWedge(edge *topo.Edge, dist float64, feat string) (*topo.Body, error
 	plane := planePerp(v0, e)
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
-	poly := []math.Point2{{X: 0, Y: 0}, proj(t1.Scale(dist)), proj(t2.Scale(dist))}
+	poly := []math.Point2{{X: 0, Y: 0}, proj(t1.Scale(d1)), proj(t2.Scale(d2))}
 	return buildPrism(poly, plane, span{near: -cutterOverhang, far: v0.DistanceTo(v1) + cutterOverhang}, 0, feat), nil
 }
 
