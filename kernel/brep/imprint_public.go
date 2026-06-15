@@ -64,7 +64,7 @@ func rebuildImprinted(faces []planarFace, imprints [][][2]math.Point3) (ImprintR
 		}
 		kept = append(kept, pieces...)
 	}
-	body, err := stitch(kept)
+	body, _, err := stitch(kept)
 	if err != nil || body == nil {
 		return ImprintResult{}, err
 	}

@@ -5,6 +5,7 @@ package brep
 import (
 	"errors"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -31,6 +32,7 @@ type subFace struct {
 	normal  math.Vector3
 	point   math.Point3
 	lineage topo.Lineage
+	fromB   bool // which operand this came from (false=A, true=B); fuses tangent contacts
 }
 
 // Boolean computes A op B as a clean planar B-rep: it imprints the face–face intersection
@@ -45,11 +47,79 @@ func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 	if !oka || !okb {
 		return nil, ErrNonPlanar
 	}
+	res, away, err := booleanOnce(op, fa, fb, a, b)
+	if err != nil || away.LengthSquared() == 0 {
+		return res, err
+	}
+	return retryNudged(op, fa, fb, a, res, away)
+}
+
+// booleanOnce runs one pass: imprint, split, classify, keep, stitch. The vector is a non-zero
+// "away" direction when the pass hit a tangent/grazing contact (operand B nudged along it
+// opens a clean clearance), else the zero vector.
+func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.Vector3, error) {
 	impA, impB := imprintAll(fa, fb)
 	var kept []subFace
 	kept = append(kept, selectFaces(fa, impA, b, fb, op, false)...)
 	kept = append(kept, selectFaces(fb, impB, a, fa, op, true)...)
 	return stitch(kept)
+}
+
+// nudgeEps is the magnitude (cm) of the clearance opened at a tangent contact: above the weld
+// grid (1e-6) so it survives, far below any modelled feature so it is geometrically
+// irrelevant. A line tangency carries no material, so replacing it with a ~0.1 µm gap loses
+// nothing and — unlike the exact tangent — leaves no coincident edge for a re-weld to collapse.
+const nudgeEps = 1e-5
+
+// retryNudged re-runs the boolean with operand B nudged a hair along `away` (out of the
+// tangent contact) so the degenerate touch becomes a clean clearance. It keeps the nudged
+// result only when it is a proper solid, so a nudge that would disconnect the part falls back
+// to the original (topologically resolved) result.
+func retryNudged(op Op, fa, fb []planarFace, a, original *topo.Body, away math.Vector3) (*topo.Body, error) {
+	fbp := translateFaces(fb, away.Scale(nudgeEps))
+	bp, _, err := stitch(planarToSubFaces(fbp))
+	if err != nil || bp == nil {
+		return original, nil
+	}
+	res, _, err := booleanOnce(op, fa, fbp, a, bp)
+	if err != nil || res == nil || !res.IsSolid() {
+		return original, nil
+	}
+	return res, nil
+}
+
+// translateFaces returns a copy of the planar faces rigidly displaced by d (a rigid move keeps
+// every face planar, so the result is still a valid planar-faceted operand).
+func translateFaces(faces []planarFace, d math.Vector3) []planarFace {
+	out := make([]planarFace, len(faces))
+	for i, f := range faces {
+		loops := make([][]math.Point3, len(f.loops))
+		for li, ring := range f.loops {
+			moved := make([]math.Point3, len(ring))
+			for vi, p := range ring {
+				moved[vi] = p.TranslateBy(d)
+			}
+			loops[li] = moved
+		}
+		pl, _ := geom.NewPlane(centroid3(loops[0]), f.normal)
+		out[i] = planarFace{plane: pl, normal: f.normal, loops: loops, lineage: f.lineage}
+	}
+	return out
+}
+
+// planarToSubFaces adapts whole planar faces to sub-faces (outer ring first, the rest holes)
+// so stitch can rebuild a body from them — used to materialise the nudged operand B.
+func planarToSubFaces(faces []planarFace) []subFace {
+	out := make([]subFace, 0, len(faces))
+	for _, f := range faces {
+		if len(f.loops) == 0 {
+			continue
+		}
+		sf := subFace{outer: f.loops[0], normal: f.normal, point: centroid3(f.loops[0]), lineage: f.lineage, fromB: true}
+		sf.holes = append(sf.holes, f.loops[1:]...)
+		out = append(out, sf)
+	}
+	return out
 }
 
 // imprintAll computes, for every crossing face pair, the shared intersection segment and
@@ -139,6 +209,7 @@ func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Bo
 		// its reference key is identical after the boolean (K1a). A face split into several
 		// kept pieces gives each a distinct child lineage (parent + split#k).
 		for k := range fromFace {
+			fromFace[k].fromB = isB // operand tag, so the stitch can fuse tangent contacts
 			if len(fromFace) == 1 {
 				fromFace[k].lineage = f.lineage
 			} else {

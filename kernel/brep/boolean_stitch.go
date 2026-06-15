@@ -17,9 +17,13 @@ import (
 // Result faces carry their source face's lineage (K1a), so a face surviving the boolean
 // keeps its reference key; edges/vertices still get fresh lineage (edge-key survival is a
 // follow-up, as edges are routinely split by the operation).
-func stitch(faces []subFace) (*topo.Body, error) {
+// The second result is a non-zero "away" direction when a tangent/grazing contact was
+// resolved (an edge used by more than two faces): operand B nudged along it separates from the
+// contact, so a re-run yields a non-degenerate, re-weld-safe result. It is the zero vector when
+// the result is already clean.
+func stitch(faces []subFace) (*topo.Body, math.Vector3, error) {
 	if len(faces) == 0 {
-		return nil, nil
+		return nil, math.Vector3{}, nil
 	}
 	w := newWelder3()
 	// Pass 1: weld every face's loops to vertex indices (collect the full vertex set).
@@ -30,23 +34,39 @@ func stitch(faces []subFace) (*topo.Body, error) {
 			rings = append(rings, w.ring(orientRing(h, sf.normal, false)))
 		}
 		surf, _ := geom.NewPlane(centroid3(sf.outer), sf.normal)
-		out[i] = builtFace{rings: rings, surf: surf, lineage: sf.lineage}
+		out[i] = builtFace{rings: rings, surf: surf, normal: sf.normal, fromB: sf.fromB, lineage: sf.lineage}
 	}
 	// Pass 2: with all vertices known, split every loop edge at any welded vertex lying on
 	// it — propagating each imprint split-point to the neighbour face sharing that edge, so
 	// shared edges subdivide identically (eliminates cross-face T-junctions).
-	edgeUse := map[[2]int]int{}
 	for fi := range out {
 		for ri := range out[fi].rings {
 			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w.points)
 		}
-		for _, r := range out[fi].rings {
-			for i := 0; i < len(r); i++ {
-				edgeUse[canonEdge(r[i], r[(i+1)%len(r)])]++
+	}
+	body, away := assemble(w.points, out)
+	return body, away, nil
+}
+
+// awayFromContacts sums the unit normals of operand-B faces at each over-used (tangent) edge —
+// each points from B into A at the contact — so its negation is the direction to nudge B to
+// open a clean clearance. The zero vector means no tangent contact was found.
+func awayFromContacts(uses map[[2]int][]loopEdgeUse, faces []builtFace) math.Vector3 {
+	var into math.Vector3
+	for _, u := range uses {
+		if len(u) <= 2 {
+			continue
+		}
+		for _, h := range u {
+			if h.fromB {
+				into = into.Add(faces[h.face].normal)
 			}
 		}
 	}
-	return assemble(w.points, out, edgeUse), nil
+	if into.LengthSquared() < 1e-18 {
+		return math.Vector3{}
+	}
+	return into.AsUnit().AsVector().Scale(-1)
 }
 
 // splitRingTJunctions inserts, into each edge of the ring, any other vertex that lies in
@@ -120,26 +140,34 @@ func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[i
 type builtFace struct {
 	rings   [][]int
 	surf    geom.Plane
+	normal  math.Vector3
+	fromB   bool
 	lineage topo.Lineage
 }
 
-// assemble builds the topo body from welded vertices, per-face loop rings, and the edge
-// use counts (to decide solid vs. surface).
-func assemble(verts []math.Point3, faces []builtFace, edgeUse map[[2]int]int) *topo.Body {
-	bld := topo.NewBuilder(allEdgesPaired(edgeUse), topo.NewLineage(topo.Tok("brep", "body", 0)))
+// assemble builds the topo body from welded vertices and per-face loop rings. Each directed
+// loop edge (a "use") is resolved to a shared topo edge: the common case is two uses per
+// undirected vertex pair (one shared edge). Where coincident geometry leaves a pair used by
+// MORE than twice — a tangent/grazing contact between the two operands, which would be a
+// non-manifold edge if collapsed onto one edge — the uses are split into manifold pairs by
+// radial order around the edge (resolveEdgeUses), so each resulting edge is used exactly
+// twice. This keeps a tangent union a valid manifold solid (M20-F01).
+func assemble(verts []math.Point3, faces []builtFace) (*topo.Body, math.Vector3) {
+	uses := collectEdgeUses(faces)
+	bld := topo.NewBuilder(allUsesPaired(uses), topo.NewLineage(topo.Tok("brep", "body", 0)))
 	tv := make([]*topo.Vertex, len(verts))
 	for i, p := range verts {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok("brep", "vertex", i)))
 	}
-	edges := buildEdges(bld, verts, tv, edgeUse)
+	useEdge := buildResolvedEdges(bld, verts, tv, uses, faces)
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.rings))
 		for ri, r := range f.rings {
-			specs[ri] = loopSpec(ri == 0, r, edges)
+			specs[ri] = loopSpecResolved(ri == 0, r, fi, ri, useEdge)
 		}
 		bld.AddFace(f.surf, faceLineage(f, fi), specs...)
 	}
-	return bld.Build()
+	return bld.Build(), awayFromContacts(uses, faces)
 }
 
 // faceLineage uses the source face's carried lineage when present (K1a reference-key
@@ -152,7 +180,8 @@ func faceLineage(f builtFace, fi int) topo.Lineage {
 }
 
 // allEdgesPaired reports whether every undirected edge is used exactly twice — the
-// combinatorial test for a closed (solid) shell.
+// combinatorial test for a closed (solid) shell. Used by the drill paths, which key edges by
+// vertex pair directly (no tangent-contact resolution needed for a single drilled hole).
 func allEdgesPaired(edgeUse map[[2]int]int) bool {
 	for _, c := range edgeUse {
 		if c != 2 {
