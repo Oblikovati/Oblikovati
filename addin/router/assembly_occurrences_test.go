@@ -93,6 +93,36 @@ func TestAssemblyPlaceByDefinitionOverWire(t *testing.T) {
 	}
 }
 
+// TestAssemblyPlaceByDefinitionBatchOverWire places several copies of a component in ONE call (the
+// large-assembly fast path) and gets all the new occurrences back, each distinct from the source.
+func TestAssemblyPlaceByDefinitionBatchOverWire(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0)
+
+	args := fmt.Sprintf(`{"source":%d,"placements":[{"name":"box:2","transform":%s},{"name":"box:3","transform":%s},{"name":"box:4","transform":%s}]}`,
+		occs[0].ID(), transformJSON(3, 0, 0), transformJSON(6, 0, 0), transformJSON(9, 0, 0))
+	var res wire.PlaceByDefinitionBatchResult
+	call(t, r, s, "assembly.placeByDefinitionBatch", args, &res)
+
+	if len(res.Occurrences) != 3 {
+		t.Fatalf("batch placed %d occurrences, want 3", len(res.Occurrences))
+	}
+	seen := map[uint64]bool{occs[0].ID(): true}
+	for i, o := range res.Occurrences {
+		if want := fmt.Sprintf("box:%d", i+2); o.Name != want {
+			t.Errorf("occurrence %d name = %q, want %q", i, o.Name, want)
+		}
+		if seen[o.ID] {
+			t.Errorf("occurrence %d reused id %d (not a distinct new placement)", i, o.ID)
+		}
+		seen[o.ID] = true
+	}
+
+	if _, err := r.Handle(s, "assembly.placeByDefinitionBatch",
+		[]byte(`{"source":99999,"placements":[{"name":"x","transform":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}]}`)); err == nil {
+		t.Error("batch placeByDefinition with an unknown source id should fail")
+	}
+}
+
 // TestAssemblyTransformGroundSuppressOverWire drives the per-occurrence state mutators and
 // checks each is reflected on the occurrence.
 func TestAssemblyTransformGroundSuppressOverWire(t *testing.T) {
