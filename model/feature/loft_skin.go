@@ -607,7 +607,7 @@ func segmentSamples(p0, p1 []math.Point3, m0, m1 []math.Vector3) int {
 // (no extra) for an untwisted loft, more as the loft twists, so the skin's warped quads stay
 // narrow enough to read smooth (a wide quad on a twisting surface folds steeply when split into
 // triangles, regardless of longitudinal density). Proportional to the max inter-section twist.
-func aroundSubdivisions(sections [][]math.Point3, closed bool) int {
+func aroundSubdivisions(sections [][]math.Point3, closed bool, wrapShift int) int {
 	if len(sections) < 2 {
 		return 1
 	}
@@ -618,7 +618,11 @@ func aroundSubdivisions(sections [][]math.Point3, closed bool) int {
 		}
 	}
 	if closed {
-		if a := segmentTwist(sections[len(sections)-1], sections[0]); a > maxTwist {
+		// Measure the wrap twist against the start REINDEXED by the monodromy (wrapShift); otherwise
+		// a twisted/non-orientable closure (a Möbius band) reads its seam as the full accumulated
+		// twist (~180°) and over-subdivides EVERY cross-section to "smooth" a twist that does not
+		// happen between adjacent sections — a 12× mesh blow-up on the ellipse Möbius.
+		if a := segmentTwist(sections[len(sections)-1], rotateLoop(sections[0], wrapShift)); a > maxTwist {
 			maxTwist = a
 		}
 	}
