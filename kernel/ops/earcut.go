@@ -175,6 +175,9 @@ func (tc *triContext) isEar(ear *triNode) bool {
 // cureLocalIntersections removes self-intersections by clipping any diagonal whose endpoints'
 // neighbors form a valid triangle, emitting that triangle.
 func (tc *triContext) cureLocalIntersections(start *triNode, tris *[][3]int) *triNode {
+	if start == nil {
+		return nil // filterPoints collapsed the ring (e.g. degenerate/overlapping holes) — #873
+	}
 	p := start
 	for {
 		a, b := p.prev, p.next.next
@@ -197,6 +200,9 @@ func (tc *triContext) cureLocalIntersections(start *triNode, tris *[][3]int) *tr
 // splitEarcut is the last-resort fallback: find a valid diagonal that splits the polygon in
 // two and triangulate each half independently.
 func (tc *triContext) splitEarcut(start *triNode, tris *[][3]int) {
+	if start == nil {
+		return // a collapsed ring has nothing left to split (#873)
+	}
 	a := start
 	for {
 		b := a.next.next
@@ -227,6 +233,9 @@ func (tc *triContext) eliminateHoles(holeIdx []int, end int, outerNode *triNode)
 			stop = holeIdx[k+1]
 		}
 		list := tc.linkedList(start, stop, false)
+		if list == nil {
+			continue // a degenerate (empty/collinear) hole range contributes no ring (#873)
+		}
 		if list == list.next {
 			list.steiner = true
 		}
