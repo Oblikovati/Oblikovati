@@ -50,19 +50,21 @@ func DriveJoint(occs *occurrence.Occurrences, cs *ConstraintSet, js *JointSet, j
 	if !ok {
 		return DriveResult{}, fmt.Errorf("assembly: joint %d (%s) is not drivable for variable %s", jointID, joint.kind, s.variable)
 	}
-	return sweep(occs, combinedRelationships(cs, js), joint, resolved, s), nil
+	return sweep(occs, cs, js, joint, resolved, s), nil
 }
 
-// sweep runs the value sequence, restoring the assembly afterwards. base is the assembly's
-// constraints+joints; each step appends a fresh pin so base is never mutated.
-func sweep(occs *occurrence.Occurrences, base []relationship, joint *assemblyJoint, resolved types.DriveVariable, s DriveSettings) DriveResult {
+// sweep runs the value sequence, restoring the assembly afterwards. Each step pins the driven
+// joint — and any gears it is geared to (couplingPins, #883) — onto a fresh copy of the
+// assembly's constraints+joints, so the base set is never mutated.
+func sweep(occs *occurrence.Occurrences, cs *ConstraintSet, js *JointSet, joint *assemblyJoint, resolved types.DriveVariable, s DriveSettings) DriveResult {
+	base := combinedRelationships(cs, js)
 	saved := snapshotPlacements(occs)
 	defer restorePlacements(occs, saved)
 
 	var res DriveResult
 	for i, v := range driveValues(s) {
-		pin := &drivenPin{joint: joint, resolved: resolved, value: v}
-		solveOver(occs, append(append([]relationship{}, base...), pin), true)
+		pins := couplingPins(joint, resolved, v, cs, js)
+		solveOver(occs, append(append([]relationship{}, base...), pins...), true)
 		frame := DriveFrame{Value: v, Placements: capturePlacements(occs)}
 		if s.collision && occurrencesInterfere(occs) {
 			frame.Collided = true
