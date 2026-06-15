@@ -31,6 +31,7 @@ type PartComponentDefinition struct {
 	features   *feature.PartFeatures
 	keys       *identity.KeyManager
 	work       *feature.WorkGeometry // origin coordinate frame + user work planes/axes/points
+	surfaces   *feature.WorkSurfaces // construction surfaces wrapping the result's sheet bodies (M20-F16)
 	units      param.UnitsOfMeasure  // document display units (length/angle/…)
 	version    uint64
 	eop        int // end-of-part feature index; endOfPartAtEnd ⇒ full program
@@ -62,6 +63,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		features:    feature.NewPartFeatures(params, keys),
 		keys:        keys,
 		work:        feature.NewWorkGeometry(),
+		surfaces:    feature.NewWorkSurfaces(),
 		units:       param.DefaultUnitsOfMeasure(),
 		eop:         endOfPartAtEnd,
 		assignments: material.NewAssignmentStore(),
@@ -128,6 +130,7 @@ func (d *PartComponentDefinition) Recompute() {
 	for _, b := range d.features.Result() {
 		d.bodies.Add(b)
 	}
+	d.surfaces.Sync(d.features.Result()) // gather the result's sheet bodies as work surfaces (M20-F16)
 	d.refreshSketchReferences()
 	d.MarkChanged()
 }
