@@ -163,6 +163,7 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.RectPattern = &RectPatternData{
 			Source: src, CountX: evalInt(f.def.CountX), CountY: evalInt(f.def.CountY),
 			StepX: encodeVec3(f.def.StepX), StepY: encodeVec3(f.def.StepY),
+			Options: encodePatternOptions(f.def.Options),
 		}
 	case *CircularPatternFeature:
 		src, err := sourceIndices(f.def.SourceFeatures, idx)
@@ -172,6 +173,7 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.CircPattern = &CircPatternData{
 			Source: src, Count: evalInt(f.def.Count), Angle: evalFloat(f.def.Angle),
 			AxisPoint: encodePoint3(f.def.AxisPoint), AxisDir: encodeVec3(f.def.AxisDir),
+			Options: encodePatternOptions(f.def.Options),
 		}
 	case *SketchDrivenPatternFeature:
 		src, err := sourceIndices(f.def.SourceFeatures, idx)

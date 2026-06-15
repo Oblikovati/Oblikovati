@@ -28,11 +28,17 @@ type PatternElement struct {
 }
 
 // patternBase holds the element list and the persistent per-index suppression set
-// shared by every pattern kind.
+// shared by every pattern kind. clipped is the transient set of occurrences a boundary
+// excludes this recompute (computed, not user-set; see [PatternOptions]).
 type patternBase struct {
 	suppressed map[int]bool
+	clipped    map[int]bool
 	elements   []PatternElement
 }
+
+// skip reports whether occurrence k is left out of the result — either suppressed by the
+// user or clipped by a pattern boundary.
+func (p *patternBase) skip(k int) bool { return p.suppressed[k] || p.clipped[k] }
 
 // rebuild regenerates the element list for count occurrences, preserving any
 // per-element suppression by index.
@@ -83,7 +89,7 @@ func (p *patternBase) SetElementSuppressed(i int, s bool) {
 func (p *patternBase) placeCopies(bodies []*topo.Body, transforms []math.Matrix4, feat string) ([]*topo.Body, error) {
 	var copies []*topo.Body
 	for k := 1; k < len(transforms); k++ {
-		if p.suppressed[k] {
+		if p.skip(k) {
 			continue
 		}
 		for bi, b := range bodies {
@@ -149,7 +155,7 @@ func (p *patternBase) replicateTool(bodies []*topo.Body, tool *topo.Body, op ops
 	last := len(running) - 1
 	running[last] = planarized(running[last], feat) // ditto for a curved running target
 	for k := 1; k < len(transforms); k++ {
-		if p.suppressed[k] {
+		if p.skip(k) {
 			continue
 		}
 		tk, err := ops.TransformBody(tool, transforms[k], copyLineage(feat, k, 0))
@@ -191,6 +197,7 @@ type RectangularPatternDefinition struct {
 	CountY         func() int
 	StepX          math.Vector3
 	StepY          math.Vector3
+	Options        PatternOptions // spacing/compute/orientation/positioning + boundary (M20-F18)
 }
 
 // RectangularPatternFeature is a 2D grid pattern.
@@ -205,7 +212,11 @@ func (r *RectangularPatternFeature) Kind() string                              {
 func (r *RectangularPatternFeature) Recompute(in Input) (Output, error) {
 	nx, ny := callOr1(r.def.CountX), callOr1(r.def.CountY)
 	r.rebuild(nx * ny)
-	transforms := rectTransforms(nx, ny, r.def.StepX, r.def.StepY)
+	stepX := r.def.Options.rectStep(r.def.StepX, nx)
+	stepY := r.def.Options.rectStep(r.def.StepY, ny)
+	transforms := rectTransforms(nx, ny, stepX, stepY)
+	seed, ok := seedCentre(in.Bodies)
+	r.clipped = r.def.Options.clippedOccurrences(transforms, seed, ok)
 	return r.replicate(in, r.def.SourceFeatures, transforms, "rect-pattern")
 }
 
@@ -230,6 +241,7 @@ type CircularPatternDefinition struct {
 	Angle          func() float64
 	AxisPoint      math.Point3
 	AxisDir        math.Vector3
+	Options        PatternOptions // spacing/compute/orientation/positioning + boundary (M20-F18)
 }
 
 // CircularPatternFeature is a circular pattern.
@@ -244,21 +256,24 @@ func (c *CircularPatternFeature) Kind() string                           { retur
 func (c *CircularPatternFeature) Recompute(in Input) (Output, error) {
 	count := callOr1(c.def.Count)
 	c.rebuild(count)
-	transforms, err := circTransforms(count, callOrZero(c.def.Angle), c.def.AxisPoint, c.def.AxisDir)
+	inc := c.def.Options.circIncrement(callOrZero(c.def.Angle), count)
+	transforms, err := circTransforms(count, inc, c.def.AxisPoint, c.def.AxisDir)
 	if err != nil {
 		return Output{}, err
 	}
+	seed, ok := seedCentre(in.Bodies)
+	c.clipped = c.def.Options.clippedOccurrences(transforms, seed, ok)
 	return c.replicate(in, c.def.SourceFeatures, transforms, "circ-pattern")
 }
 
-// circTransforms returns count occurrence rotations about the axis at angle/count
-// increments; element 0 is the identity.
-func circTransforms(count int, angle float64, axisPoint math.Point3, axisDir math.Vector3) ([]math.Matrix4, error) {
+// circTransforms returns count occurrence rotations about the axis stepping by inc radians
+// per occurrence; element 0 is the identity. The increment is chosen by the spacing type
+// ([PatternOptions.circIncrement]).
+func circTransforms(count int, inc float64, axisPoint math.Point3, axisDir math.Vector3) ([]math.Matrix4, error) {
 	dir, err := math.UnitVector3FromVector(axisDir)
 	if err != nil {
 		return nil, err
 	}
-	inc := angle / float64(count)
 	out := make([]math.Matrix4, count)
 	for k := 0; k < count; k++ {
 		out[k] = math.Rotation4(inc*float64(k), dir, axisPoint)
