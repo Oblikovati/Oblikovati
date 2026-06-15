@@ -15,6 +15,14 @@ namespace {
 bool ok(VkResult r) { return r == VK_SUCCESS; }
 // vec3 pos + vec3 normal + vec4 color + metallic + roughness + vec3 emissive + mode.
 constexpr uint32_t kVertexFloats = 16;
+
+// Instanced draw records (ADR-0038). Each record is kDrawRecInts int32s describing one
+// (source-mesh stream × instance set) draw: {stream, firstIndex, indexCount, vertexOffset,
+// firstInstance, instanceCount, biased}. stream selects the pipeline; biased marks a depth-pushed
+// overlay fill. Records are ordered by stream so the pipeline binds change minimally.
+constexpr int kDrawRecInts = 7;
+constexpr int32_t kStreamOcc = 0, kStreamTri = 1, kStreamLine = 2, kStreamHid = 3,
+                  kStreamTopTri = 4, kStreamTopLine = 5;
 constexpr VkFormat kDepthFormat = VK_FORMAT_D32_SFLOAT;
 
 // Scene UBO layout in floats (std140), matching the Scene block in mesh.frag:
@@ -979,7 +987,8 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* hidV, int hidVC, const uint32_t* hidIdx, int hidIC,
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                          const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
-                         int triBiasFirst, const float* clip) {
+                         int triBiasFirst, const float* clip,
+                         const float* mats, int matCount, const int32_t* recs, int recCount) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
@@ -1014,11 +1023,15 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
            verts.size() * sizeof(float));
     upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(),
            idx.size() * sizeof(uint32_t));
-    // Per-instance model matrices (binding 1). This non-instanced path draws every stream as one
-    // identity instance, so the geometry is its own world space (unchanged output); the instanced
-    // entry point (ADR-0038) replaces this with the occurrence transforms.
+    // Per-instance model matrices (binding 1, ADR-0038). With matrices supplied, recs drive
+    // instanced per-(source,stream) draws; otherwise every stream draws as one identity instance
+    // (geometry in its own world space — unchanged output).
     static const float kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
-    upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
+    if (matCount > 0 && mats) {
+        upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mats, (size_t)matCount * 16 * sizeof(float));
+    } else {
+        upload(c, &v->instbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, kIdentity, sizeof(kIdentity));
+    }
 
     // Refresh the scene-lighting UBO from the CPU copy (coherent mapped memory, so the copy is
     // visible to the GPU without an explicit flush).
@@ -1057,8 +1070,17 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
         vkCmdPushConstants(v->cmd, v->layout,
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(sp), &sp);
         vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->shadowPipeline);
-        if (occIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
-        if (triIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+        if (recCount > 0 && recs) { // instanced: each face-stream record casts at its instances
+            for (int r = 0; r < recCount; r++) {
+                const int32_t* rec = recs + (size_t)r * kDrawRecInts;
+                if ((rec[0] == kStreamOcc || rec[0] == kStreamTri) && rec[2] > 0 && rec[5] > 0) {
+                    vkCmdDrawIndexed(v->cmd, (uint32_t)rec[2], (uint32_t)rec[5], (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
+                }
+            }
+        } else {
+            if (occIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)occIC, 1, (uint32_t)occFirst, occBase, 0);
+            if (triIC > 0) vkCmdDrawIndexed(v->cmd, (uint32_t)triIC, 1, (uint32_t)triFirst, triBase, 0);
+        }
         vkCmdEndRenderPass(v->cmd);
     }
 
@@ -1117,6 +1139,32 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             vkCmdPushConstants(v->cmd, v->layout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(push), &push);
         };
+        if (recCount > 0 && recs) {
+            // Instanced (ADR-0038): one draw per (source stream × its instances), records ordered
+            // by stream so the pipeline + lit flag change once per stream. Stream picks the same
+            // pipeline/lit/bias the legacy per-stream path below uses.
+            VkPipeline pipes[6] = {v->occluderPipeline, v->triPipeline, v->linePipeline,
+                                   v->hiddenPipeline, v->topTriPipeline, v->topLinePipeline};
+            int curStream = -1;
+            for (int r = 0; r < recCount; r++) {
+                const int32_t* rec = recs + (size_t)r * kDrawRecInts;
+                int stream = rec[0];
+                if (stream < 0 || stream > 5 || rec[2] <= 0 || rec[5] <= 0) continue;
+                if (stream != curStream) {
+                    vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipes[stream]);
+                    pushLit(stream == kStreamTri ? (v->normalDebug ? 2.0f : 1.0f)
+                                                 : (stream == kStreamOcc ? 1.0f : 0.0f));
+                    curStream = stream;
+                }
+                float bias = 0.0f;
+                if (stream == kStreamLine) bias = -1.0f;              // edges win the z-fight vs faces
+                else if (stream == kStreamTri && rec[6]) bias = 2.0f; // overlay fill pushed back
+                vkCmdSetDepthBias(v->cmd, bias, 0.0f, bias);
+                vkCmdDrawIndexed(v->cmd, (uint32_t)rec[2], (uint32_t)rec[5],
+                                 (uint32_t)rec[1], rec[3], (uint32_t)rec[4]);
+            }
+            vkCmdSetDepthBias(v->cmd, 0.0f, 0.0f, 0.0f);
+        } else {
         // 1) occluder faces — depth only, hide edges behind unseen geometry.
         if (occIC > 0) {
             pushLit(1.0f);
@@ -1175,6 +1223,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
             vkCmdBindPipeline(v->cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, v->topLinePipeline);
             vkCmdDrawIndexed(v->cmd, (uint32_t)topLineIC, 1, (uint32_t)topLineFirst, topLineBase, 0);
         }
+        } // end legacy (non-instanced) draws
     }
 
     vkCmdEndRenderPass(v->cmd);
