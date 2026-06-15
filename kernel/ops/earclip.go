@@ -41,6 +41,11 @@ func holedPlanarMesh(outer2D []math.Point2, outer3D []math.Point3, holes3D [][]m
 	for i, h := range holes3D {
 		holes2D[i] = project2D(h, flat)
 	}
+	if holesOverlap(holes2D) {
+		// Overlapping inner loops are degenerate for direct earcut; union them via the planar
+		// arrangement so the mesh covers exactly outer − union(holes) (#873).
+		return unionHoledMesh(outer3D, holes3D, normal)
+	}
 	m := &Mesh{}
 	for _, p := range outer3D {
 		m.addVertex(p, normal)
