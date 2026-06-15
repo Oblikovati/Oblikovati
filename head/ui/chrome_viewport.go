@@ -266,7 +266,14 @@ func navInteracted(n NavInput) bool { return n.Active || n.Wheel != 0 }
 // leading body items (everything after is overlays), so the instanced path can rebuild the bodies
 // from local per-component meshes and treat the overlay tail as a single identity instance.
 func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane) (renderer.DrawList, int, sketch.Plane, []app.DimensionView) {
-	list := baseDrawList(s, cam)
+	var list renderer.DrawList
+	// The instanced path (ADR-0038) rebuilds the bodies from per-component local meshes, so the
+	// world-body draw list is built ONLY for the mesh-color debug mode (its own builder + legacy
+	// flatten) — otherwise a 10k-copy assembly would tessellate 10k world bodies here just to throw
+	// them away. bodyCount stays 0 in the instanced case (everything appended is an overlay).
+	if on, _ := s.MeshColors(); on {
+		list = baseDrawList(s, cam)
+	}
 	bodyCount := len(list.Items)
 	if s.InSketch() {
 		list, sketchPlane, dims := sketchOverlays(s, cam, list)
@@ -330,7 +337,7 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 // overlay/ground tail as one identity instance, returning the merged mesh + per-instance matrices +
 // draw records. It falls back to a single legacy flatten of the whole list (nil mats/recs) when
 // instancing does not apply — mesh-color debug mode (its own builder) or no keyable geometry.
-func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem) (viewport.Mesh, []float32, []int32) {
+func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups []app.InstanceGroup) (viewport.Mesh, []float32, []int32) {
 	if bodyCount < 0 || bodyCount > len(list.Items) {
 		bodyCount = len(list.Items)
 	}
@@ -339,7 +346,7 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 		decorate := func(l renderer.DrawList) renderer.DrawList {
 			return highlightSelection(l, s.Selection().First(), activeBodies(s))
 		}
-		if m, mats, recs, ok := buildInstancedFrame(s.VisibleInstances(), overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate); ok {
+		if m, mats, recs, ok := buildInstancedFrame(groups, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate); ok {
 			return m, mats, recs
 		}
 	}
@@ -347,20 +354,55 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 	return viewport.Flatten(list), nil, nil
 }
 
+// frameBounds is the model bounds for shadow + ground framing: the instance groups' transformed
+// range boxes (no tessellation), unioned with the overlay tail's extent. In mesh-color mode the
+// bodies are in the world-space list, so it scans that instead.
+func frameBounds(s *app.Session, list renderer.DrawList, groups []app.InstanceGroup) (mn, mx [3]float32, ok bool) {
+	if on, _ := s.MeshColors(); on {
+		return viewport.DrawListBounds(list)
+	}
+	mn, mx, ok = instancedBounds(groups)
+	if omn, omx, ook := viewport.DrawListBounds(list); ook { // include overlay (work-plane/sketch) extent
+		if !ok {
+			return omn, omx, true
+		}
+		for i := 0; i < 3; i++ {
+			mn[i] = minF32(mn[i], omn[i])
+			mx[i] = maxF32(mx[i], omx[i])
+		}
+	}
+	return mn, mx, ok
+}
+
+func minF32(a, b float32) float32 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxF32(a, b float32) float32 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 // renderViewportImage flattens the draw list, renders it into the window's offscreen target
 // with the camera's view-projection, and blits the resulting texture back over the
 // input-capturing button at (cx,cy) so the panel shows the rendered scene.
 func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene.Camera, list renderer.DrawList, bodyCount, pw, ph int, cx, cy float32) {
 	// Fit the shadow frustum to the model (before adding the ground), then drop in the ground
-	// plane so object shadows have a surface to land on. Bounds come from the world-space list
-	// (its body items are correct for shadow framing even though the instanced path redraws the
-	// bodies from local meshes).
-	mn, mx, hasGeom := viewport.DrawListBounds(list)
+	// plane so object shadows have a surface to land on. With instancing, the bounds come from the
+	// instance groups' transformed range boxes (no tessellation) rather than scanning a world-body
+	// mesh, so framing a 10k-copy assembly is O(instances).
+	groups := s.VisibleInstances()
+	mn, mx, hasGeom := frameBounds(s, list, groups)
 	var ground []renderer.DrawItem
 	if hasGeom && wantGround(s) {
 		ground = []renderer.DrawItem{groundPlaneItem(mn, mx, renderer.PassSetFor(s.VisualStyle()).Faces)}
 	}
-	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground)
+	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups)
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))

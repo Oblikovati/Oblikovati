@@ -5,6 +5,8 @@
 package ui
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/app"
 	"oblikovati.org/head/viewport"
 	"oblikovati.org/kernel/ops"
@@ -167,6 +169,43 @@ func buildInstancedFrame(groups []app.InstanceGroup, overlay renderer.DrawList, 
 	}
 	m, mats, recs := b.finish()
 	return m, mats, recs, len(recs) > 0
+}
+
+// instancedBounds is the world-space bounding box of every instance, computed from each source's
+// range box transformed by its occurrence matrices — O(instances) and NO tessellation, so a 10k-copy
+// assembly frames its shadow/ground without building a world-body mesh. ok is false when empty.
+func instancedBounds(groups []app.InstanceGroup) (min, max [3]float32, ok bool) {
+	min = [3]float32{stdmath.MaxFloat32, stdmath.MaxFloat32, stdmath.MaxFloat32}
+	max = [3]float32{-stdmath.MaxFloat32, -stdmath.MaxFloat32, -stdmath.MaxFloat32}
+	for _, g := range groups {
+		bx := g.Source.RangeBox()
+		corners := [8]math.Point3{
+			math.P3(bx.Min.X, bx.Min.Y, bx.Min.Z), math.P3(bx.Max.X, bx.Min.Y, bx.Min.Z),
+			math.P3(bx.Min.X, bx.Max.Y, bx.Min.Z), math.P3(bx.Max.X, bx.Max.Y, bx.Min.Z),
+			math.P3(bx.Min.X, bx.Min.Y, bx.Max.Z), math.P3(bx.Max.X, bx.Min.Y, bx.Max.Z),
+			math.P3(bx.Min.X, bx.Max.Y, bx.Max.Z), math.P3(bx.Max.X, bx.Max.Y, bx.Max.Z),
+		}
+		for _, t := range g.Transforms {
+			for _, c := range corners {
+				p := t.TransformPoint(c)
+				widenBounds(&min, &max, float32(p.X), float32(p.Y), float32(p.Z))
+				ok = true
+			}
+		}
+	}
+	return min, max, ok
+}
+
+// widenBounds expands the running min/max to include (x,y,z).
+func widenBounds(min, max *[3]float32, x, y, z float32) {
+	for i, c := range [3]float32{x, y, z} {
+		if c < min[i] {
+			min[i] = c
+		}
+		if c > max[i] {
+			max[i] = c
+		}
+	}
 }
 
 // matrixFloats returns t as 16 column-major float32 — the per-instance model matrix layout the
