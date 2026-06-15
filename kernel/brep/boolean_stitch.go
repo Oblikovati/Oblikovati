@@ -44,6 +44,7 @@ func stitch(faces []subFace) (*topo.Body, math.Vector3, error) {
 			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w.points)
 		}
 	}
+	reorientFaces(out, w.points)
 	body, away := assemble(w.points, out)
 	return body, away, nil
 }
