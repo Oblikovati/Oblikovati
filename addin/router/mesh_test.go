@@ -60,6 +60,30 @@ func TestMeshFeatureOverWire(t *testing.T) {
 	}
 }
 
+// TestMeshSolidOverWire imports the same STL with solid:true and confirms the mesh is
+// converted to a validated solid body (M20-F15 #492).
+func TestMeshSolidOverWire(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := filepath.Join(t.TempDir(), "tetra.stl")
+	if err := os.WriteFile(path, []byte(routerTetraSTL), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var res struct {
+		Bodies int `json:"bodies"`
+	}
+	call(t, r, s, "features.add", fmt.Sprintf(`{"kind":"mesh","args":{"path":%q,"solid":true}}`, path), &res)
+	if res.Bodies != 1 {
+		t.Fatalf("mesh-solid body count = %d, want 1 (converted solid)", res.Bodies)
+	}
+	var v struct {
+		Valid bool `json:"valid"`
+	}
+	call(t, r, s, "body.validate", `{"bodyIndex":0}`, &v)
+	if !v.Valid {
+		t.Fatal("converted mesh-solid body is not valid")
+	}
+}
+
 func TestMeshFeatureOverWireRejectsMissingFile(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "features.add", []byte(`{"kind":"mesh","args":{"path":"/nonexistent/x.stl"}}`)); err == nil {
