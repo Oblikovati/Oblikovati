@@ -72,6 +72,22 @@ func (s *Session) ToggleOccurrenceGrounded(o *occurrence.Occurrence) error {
 	return s.GroundOccurrence(o, !o.Grounded())
 }
 
+// ToggleOccurrenceFlexible flips a sub-assembly occurrence's flexible flag (the browser's
+// Flexible entry, M12-F06) — when flexible, the sub-assembly solves its components independently
+// per placement. Mutually exclusive with adaptive (the setter clears it).
+func (s *Session) ToggleOccurrenceFlexible(o *occurrence.Occurrence) error {
+	asm, err := activeAssembly(s)
+	if err != nil {
+		return err
+	}
+	if o == nil {
+		return errors.New("app: ToggleOccurrenceFlexible with nil occurrence")
+	}
+	o.SetFlexible(!o.Flexible())
+	s.recordEdit(asm, "Flexible Component")
+	return nil
+}
+
 // DeleteOccurrence removes o from the active assembly, clears the selection (the deleted node no
 // longer exists at its old identity), recomputes, and records an undo step. Undo restores the
 // occurrence through the assembly recipe and rebinds its component reference.

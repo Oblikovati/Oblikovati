@@ -232,3 +232,33 @@ func TestVisibilityFlagDefaultsVisible(t *testing.T) {
 		t.Error("after SetVisible(true) the occurrence should be visible again")
 	}
 }
+
+// TestFlexibleFlag checks the M12-F06 flexible flag: only a sub-assembly occurrence can be
+// flexible, and flexible is mutually exclusive with adaptive.
+func TestFlexibleFlag(t *testing.T) {
+	occs := NewOccurrences()
+
+	// A leaf part cannot be flexible.
+	leaf := occs.AddByComponentDefinition("part:1", unitComponent(), math.Identity4())
+	leaf.SetFlexible(true)
+	if leaf.Flexible() {
+		t.Error("a leaf part occurrence should not become flexible")
+	}
+
+	// A sub-assembly occurrence can.
+	sub := occs.AddByComponentDefinition("sub:1", &fakeAssembly{children: NewOccurrences()}, math.Identity4())
+	sub.SetFlexible(true)
+	if !sub.Flexible() {
+		t.Error("a sub-assembly occurrence should become flexible")
+	}
+
+	// Flexible and adaptive are mutually exclusive.
+	sub.SetAdaptive(true)
+	if sub.Flexible() || !sub.Adaptive() {
+		t.Errorf("after SetAdaptive: flexible=%v adaptive=%v, want false/true", sub.Flexible(), sub.Adaptive())
+	}
+	sub.SetFlexible(true)
+	if !sub.Flexible() || sub.Adaptive() {
+		t.Errorf("after SetFlexible: flexible=%v adaptive=%v, want true/false", sub.Flexible(), sub.Adaptive())
+	}
+}
