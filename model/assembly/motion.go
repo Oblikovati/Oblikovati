@@ -20,6 +20,9 @@ type RotateRotateConstraint struct {
 // Value returns the gear ratio.
 func (c *RotateRotateConstraint) Value() float64 { return c.ratio }
 
+// SetValue overrides the rotate-rotate ratio (a positional representation, M12-F04).
+func (c *RotateRotateConstraint) SetValue(v float64) { c.ratio = v }
+
 // Ratio returns the gear ratio (revolutions of B per revolution of A).
 func (c *RotateRotateConstraint) Ratio() float64 { return c.ratio }
 
@@ -36,6 +39,9 @@ type RotateTranslateConstraint struct {
 // Value returns the distance moved per revolution.
 func (c *RotateTranslateConstraint) Value() float64 { return c.distance }
 
+// SetValue overrides the rotate-translate distance (a positional representation, M12-F04).
+func (c *RotateTranslateConstraint) SetValue(v float64) { c.distance = v }
+
 // Distance returns the translation moved per revolution (cm).
 func (c *RotateTranslateConstraint) Distance() float64 { return c.distance }
 
@@ -50,6 +56,9 @@ type TranslateTranslateConstraint struct {
 
 // Value returns the translation ratio.
 func (c *TranslateTranslateConstraint) Value() float64 { return c.ratio }
+
+// SetValue overrides the translate-translate ratio (a positional representation, M12-F04).
+func (c *TranslateTranslateConstraint) SetValue(v float64) { c.ratio = v }
 
 // Ratio returns the translation ratio (distance of B per unit distance of A).
 func (c *TranslateTranslateConstraint) Ratio() float64 { return c.ratio }

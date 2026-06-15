@@ -20,6 +20,9 @@ type MateConstraint struct {
 // Value returns the mate offset.
 func (m *MateConstraint) Value() float64 { return m.offset }
 
+// SetValue overrides the mate offset (a positional representation, M12-F04).
+func (m *MateConstraint) SetValue(v float64) { m.offset = v }
+
 // SolutionType returns the directed sense (opposed/aligned) the solver enforces.
 func (m *MateConstraint) SolutionType() types.MateConstraintSolutionType { return m.solution }
 
@@ -40,6 +43,9 @@ type FlushConstraint struct {
 
 // Value returns the flush offset.
 func (f *FlushConstraint) Value() float64 { return f.offset }
+
+// SetValue overrides the flush offset (a positional representation, M12-F04).
+func (f *FlushConstraint) SetValue(v float64) { f.offset = v }
 
 // bind returns the flush's residual source (a plane mate with aligned normals).
 func (f *FlushConstraint) bind(b binder) []solve.Residual {

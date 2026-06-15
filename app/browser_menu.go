@@ -20,6 +20,14 @@ type BrowserMenuItem struct {
 // other non-actionable nodes return nil (no menu). The entries close over the node's
 // concrete handle, so a wrong handle/kind pairing safely yields no menu.
 func BrowserMenu(n BrowserNode) []BrowserMenuItem {
+	if items := partNodeMenu(n); items != nil {
+		return items
+	}
+	return assemblyNodeMenu(n)
+}
+
+// partNodeMenu returns the menu for a part-document node kind, or nil.
+func partNodeMenu(n BrowserNode) []BrowserMenuItem {
 	switch n.Kind {
 	case "sketch":
 		return sketchMenu(n.Select)
@@ -31,8 +39,21 @@ func BrowserMenu(n BrowserNode) []BrowserMenuItem {
 		return workAxisMenu(n.Select)
 	case "body":
 		return bodyMenu(n.Select)
+	default:
+		return nil
+	}
+}
+
+// assemblyNodeMenu returns the menu for an assembly node kind (occurrence/representation/
+// model state/assembly feature), or nil.
+func assemblyNodeMenu(n BrowserNode) []BrowserMenuItem {
+	switch n.Kind {
 	case "occurrence":
 		return occurrenceMenu(n.Select)
+	case "representation":
+		return representationMenu(n.Select)
+	case "modelState":
+		return modelStateMenu(n.Select)
 	case "assemblyFeature":
 		return assemblyFeatureNodeMenu(n.Select)
 	default:
@@ -79,6 +100,31 @@ func occurrenceMenu(sel Selectable) []BrowserMenuItem {
 		{Label: groundLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceGrounded(h.Occurrence) }},
 		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceSuppressed(h.Occurrence) }},
 		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteOccurrence(h.Occurrence) }},
+	}
+}
+
+// representationMenu offers Activate and Delete for a representation selected in the
+// Representations folders (M12-F04).
+func representationMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(RepresentationHandle)
+	if !ok {
+		return nil
+	}
+	return []BrowserMenuItem{
+		{Label: "Activate", Enabled: true, Invoke: func(s *Session) error { return s.ActivateRepresentation(h) }},
+		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteRepresentation(h) }},
+	}
+}
+
+// modelStateMenu offers Activate and Delete for a model state (M12-F04).
+func modelStateMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(ModelStateHandle)
+	if !ok {
+		return nil
+	}
+	return []BrowserMenuItem{
+		{Label: "Activate", Enabled: true, Invoke: func(s *Session) error { return s.ActivateModelState(h) }},
+		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteModelState(h) }},
 	}
 }
 

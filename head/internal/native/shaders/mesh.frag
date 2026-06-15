@@ -13,6 +13,7 @@
 layout(push_constant) uniform PushConstants {
     mat4 mvp;
     vec4 camPosLit;
+    vec4 clip; // section plane: xyz = world normal (0 ⇒ no section), w = plane offset d (M12-F04)
 } pc;
 
 // GpuLight: dir.xyz = unit vector toward the light, dir.w = kind (0 directional, 1 point,
@@ -236,6 +237,13 @@ float sceneLambert(vec3 N, vec3 V) {
 }
 
 void main() {
+    // Section plane (M12-F04): discard fragments on the normal side of the active design-view
+    // representation's clipping plane, revealing the model's interior. pc.clip.xyz == 0 means no
+    // section. Applied to every mode (surfaces, lines, overlays) so the cut is consistent.
+    if (dot(pc.clip.xyz, pc.clip.xyz) > 0.0 && dot(vWorldPos, pc.clip.xyz) - pc.clip.w > 0.0) {
+        discard;
+    }
+
     // Lines / flat overlays: emit the unlit color.
     if (pc.camPosLit.w < 0.5) { outColor = vColor; return; }
 

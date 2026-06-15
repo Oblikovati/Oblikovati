@@ -19,6 +19,9 @@ type InsertConstraint struct {
 // Value returns the axial offset (seating depth).
 func (c *InsertConstraint) Value() float64 { return c.offset }
 
+// SetValue overrides the insert offset (a positional representation, M12-F04).
+func (c *InsertConstraint) SetValue(v float64) { c.offset = v }
+
 // Aligned reports the aligned plane sense; false is the default opposed sense.
 func (c *InsertConstraint) Aligned() bool { return c.aligned }
 

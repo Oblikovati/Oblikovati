@@ -73,6 +73,9 @@ type Constraint interface {
 	setHealth(health.Status)
 	// setLimits sets (lim non-nil) or clears (lim nil) the driven-value bounds.
 	setLimits(lim *limits)
+	// SetValue overrides the constraint's driven value (offset/angle/ratio) — the seam a
+	// positional representation uses (M12-F04). A constraint with no value ignores it.
+	SetValue(v float64)
 }
 
 // relationshipBase carries the identity, two geometry anchors, health, and suppression
@@ -130,6 +133,10 @@ func (c *constraintBase) Type() types.AssemblyConstraintType { return c.kind }
 
 // Value returns the driven value; the base has none (overridden by kinds that do).
 func (c *constraintBase) Value() float64 { return 0 }
+
+// SetValue is a no-op by default — a constraint with no driven value (e.g. a custom
+// residual) ignores a positional override. Value-bearing kinds override it.
+func (c *constraintBase) SetValue(float64) {}
 
 // Limits returns the driven-value bounds, or a nil interface when unbounded.
 func (c *constraintBase) Limits() contract.ConstraintLimits {
