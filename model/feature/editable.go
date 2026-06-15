@@ -416,7 +416,14 @@ func (f *FilletFeature) EditableParams() []EditableParam {
 
 // EditableParams exposes the chamfer distance.
 func (c *ChamferFeature) EditableParams() []EditableParam {
-	return []EditableParam{scalarParam("Distance", param.Length, &c.def.Distance)}
+	ps := []EditableParam{scalarParam("Distance", param.Length, &c.def.Distance)}
+	switch c.def.Type {
+	case types.ChamferTwoDistances:
+		ps = append(ps, scalarParam("Distance 2", param.Length, &c.def.Distance2))
+	case types.ChamferDistanceAndAngle:
+		ps = append(ps, scalarParam("Angle", param.Angle, &c.def.Angle))
+	}
+	return ps
 }
 
 // EditableParams exposes the shell wall thickness.

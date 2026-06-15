@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/seq"
 	"oblikovati.org/model/sketch"
@@ -115,7 +116,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius)}
 	case *ChamferFeature:
 		flat := f.def.FlatCorners
-		fd.Chamfer = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Distance), FlatCorners: &flat}
+		fd.Chamfer = &EdgeDressData{
+			Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Distance), FlatCorners: &flat,
+			ChamferType: int32(f.def.Type), Value2: evalFloat(f.def.Distance2), Angle: evalFloat(f.def.Angle),
+		}
 	case *ShellFeature:
 		fd.Shell = &FaceDressData{Faces: encodeKeys(f.def.RemovedFaceKeys), Value: evalFloat(f.def.Thickness)}
 	case *FaceDraftFeature:
@@ -316,7 +320,14 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		return du.AddChamferCorners(d.keys, constFloat(d.value), chamferFlatCornersOr(fd.Chamfer.FlatCorners)), nil
+		switch types.ChamferType(fd.Chamfer.ChamferType) {
+		case types.ChamferTwoDistances:
+			return du.AddChamferTwoDistances(d.keys, constFloat(d.value), constFloat(fd.Chamfer.Value2)), nil
+		case types.ChamferDistanceAndAngle:
+			return du.AddChamferDistanceAngle(d.keys, constFloat(d.value), constFloat(fd.Chamfer.Angle)), nil
+		default:
+			return du.AddChamferCorners(d.keys, constFloat(d.value), chamferFlatCornersOr(fd.Chamfer.FlatCorners)), nil
+		}
 	case "shell":
 		d, err := requireFaceDress(fd.Shell, "shell")
 		if err != nil {

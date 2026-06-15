@@ -38,7 +38,7 @@ func (f *AssemblyChamferFeature) Kind() string { return kindAssemblyChamfer }
 func (f *AssemblyChamferFeature) Recompute(in Input) (Output, error) {
 	dist := f.distance()
 	bodies, err := dressParticipants(in.Bodies, edgeSuffixKeys(f.edgeSuffixes), func(body *topo.Body, keys [][]byte) (*topo.Body, error) {
-		out, err := chamferEdges(Input{Bodies: []*topo.Body{body}}, keys, dist, "asmChamfer", f.flatCorners)
+		out, err := chamferEdges(Input{Bodies: []*topo.Body{body}}, keys, dist, dist, "asmChamfer", f.flatCorners)
 		if err != nil {
 			return nil, err
 		}
