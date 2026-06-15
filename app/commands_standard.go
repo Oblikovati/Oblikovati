@@ -579,6 +579,12 @@ func sweptSolidCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("emboss").WithButtonStyle(LargeIconButton).
 			WithTooltip("Emboss — raise or engrave a closed sketch profile on the part."),
+		NewCommand("Create.Grill", "Grill", "Create", func(s *Session) error {
+			s.StartTool(NewGrillTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
+			WithIcon("grill").WithButtonStyle(LargeIconButton).
+			WithTooltip("Grill — cut a ventilation grill: a vent bridged by the boundary profile's rib/spar/island structure."),
 		NewCommand("Create.Decal", "Decal", "Create", func(s *Session) error {
 			s.StartTool(NewDecalTool())
 			return nil

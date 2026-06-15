@@ -35,6 +35,7 @@ type FeatureData struct {
 	Unwrap         *UnwrapData         `yaml:"unwrap,omitempty"`
 	MeshSolid      *MeshSolidData      `yaml:"meshSolid,omitempty"`
 	ModelTolerance *ModelToleranceData `yaml:"modelTolerance,omitempty"`
+	Grill          *GrillData          `yaml:"grill,omitempty"`
 	Thread         *ThreadData         `yaml:"thread,omitempty"`
 	Hole           *HoleData           `yaml:"hole,omitempty"`
 	Boss           *BossData           `yaml:"boss,omitempty"`
@@ -140,6 +141,12 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.MeshSolid = serializeMeshSolid(f.geom)
 	case *ModelToleranceFeature:
 		fd.ModelTolerance = serializeModelTolerance(f.def)
+	case *GrillFeature:
+		gd, err := serializeGrill(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Grill = gd
 	case *ThreadFeature:
 		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut,
 			Class: f.def.Class, Tapered: f.def.Tapered, ModelDiameter: threadModelDiameterName(f.def.ModelDiameter)}
@@ -353,6 +360,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreMeshSolid(fs, fd.MeshSolid)
 	case "modelTolerance":
 		return restoreModelTolerance(fs, fd.ModelTolerance)
+	case "grill":
+		return restoreGrill(fs, fd.Grill, sk)
 	case "shell":
 		d, err := requireFaceDress(fd.Shell, "shell")
 		if err != nil {
