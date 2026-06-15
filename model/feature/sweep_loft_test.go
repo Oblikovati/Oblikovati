@@ -7,9 +7,34 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
+
+// closedMobiusLoftBody builds a closed Möbius loft of n cross-sections (each twisted by half its
+// azimuth) from the given section-sketch builder, asserts it is a valid solid, and returns the body
+// — the shared spine of the Möbius design tests, so they don't each repeat the section/loft loop.
+func closedMobiusLoftBody(t *testing.T, n int, radius, width, thick float64,
+	section func(u, twist, radius, width, thick float64) *sketch.Sketch) *topo.Body {
+	t.Helper()
+	fs := NewPartFeatures(nil, nil)
+	sections := make([]LoftSection, n)
+	for i := 0; i < n; i++ {
+		u := 2 * stdmath.Pi * float64(i) / float64(n)
+		sections[i] = LoftSection{Sketch: section(u, u/2, radius, width, thick), ProfileIndex: 0}
+	}
+	pf := NewLoftFeatures(fs).Add(sections, true, ops.NewBody)
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("Möbius loft went sick: %+v", pf.Health())
+	}
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("Möbius loft is not a valid solid: %+v", r)
+	}
+	return body
+}
 
 // centeredSquareOn returns a sketch on plane with a centered square of the given half
 // width (corners ±half), wound counter-clockwise.
@@ -168,24 +193,8 @@ func mobiusSectionSketch(u, twist, radius, width, thick float64) *sketch.Sketch 
 // (seamless seam). A thin band of section w×t swept along the ring centroid (length 2πR) has
 // volume w·t·2πR and one-sided surface area ≈ 2(w+t)·2πR, independent of the twist.
 func TestLoftMobiusStripDesign(t *testing.T) {
-	const n = 36
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, band 16×2 mm (model units = cm)
-	fs := NewPartFeatures(nil, nil)
-	sections := make([]LoftSection, n)
-	for i := 0; i < n; i++ {
-		u := 2 * stdmath.Pi * float64(i) / float64(n)
-		sections[i] = LoftSection{Sketch: mobiusSectionSketch(u, u/2, R, W, T), ProfileIndex: 0}
-	}
-	pf := NewLoftFeatures(fs).Add(sections, true, ops.NewBody)
-	fs.Recompute()
-
-	if !pf.Health().OK() {
-		t.Fatalf("Möbius loft went sick: %+v", pf.Health())
-	}
-	body := fs.Result()[0]
-	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
-		t.Fatalf("Möbius loft is not a valid solid: %+v", r)
-	}
+	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionSketch)
 	props := ops.BodyGeometryProperties(body, ops.DefaultQuality())
 	if wantV := W * T * 2 * stdmath.Pi * R; relErr(props.Volume, wantV) > 0.03 { // 6.032 cm³
 		t.Errorf("Möbius volume = %g cm³, want ≈%g (w·t·2πR); ~%g would mean corners are being cut",
@@ -217,24 +226,8 @@ func mobiusSectionEllipseSketch(u, twist, radius, width, thick float64) *sketch.
 // the rounded band must also close seamlessly with the right mass. An elliptical band of semi-axes
 // a,b swept along the ring centroid has volume π·a·b·2πR.
 func TestLoftMobiusStripEllipseDesign(t *testing.T) {
-	const n = 36
 	const R, W, T = 3.0, 1.6, 0.2 // cm: ring 30 mm, ellipse 16×2 mm
-	fs := NewPartFeatures(nil, nil)
-	sections := make([]LoftSection, n)
-	for i := 0; i < n; i++ {
-		u := 2 * stdmath.Pi * float64(i) / float64(n)
-		sections[i] = LoftSection{Sketch: mobiusSectionEllipseSketch(u, u/2, R, W, T), ProfileIndex: 0}
-	}
-	pf := NewLoftFeatures(fs).Add(sections, true, ops.NewBody)
-	fs.Recompute()
-
-	if !pf.Health().OK() {
-		t.Fatalf("elliptical Möbius loft went sick: %+v", pf.Health())
-	}
-	body := fs.Result()[0]
-	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
-		t.Fatalf("elliptical Möbius loft is not a valid solid: %+v", r)
-	}
+	body := closedMobiusLoftBody(t, 36, R, W, T, mobiusSectionEllipseSketch)
 	a, b := W/2, T/2
 	if wantV := stdmath.Pi * a * b * 2 * stdmath.Pi * R; relErr(ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume, wantV) > 0.05 {
 		got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume
@@ -248,20 +241,8 @@ func TestLoftMobiusStripEllipseDesign(t *testing.T) {
 // ~166k triangles and stalling the viewport (14 ms/frame just to flatten). The correct mesh tracks
 // the loop density (≈ longitudinal sections × ellipse points); this pins it well under the blow-up.
 func TestLoftClosedTwistMeshStaysBounded(t *testing.T) {
-	const n = 36
-	const R, W, T = 3.0, 1.6, 0.2
-	fs := NewPartFeatures(nil, nil)
-	sections := make([]LoftSection, n)
-	for i := 0; i < n; i++ {
-		u := 2 * stdmath.Pi * float64(i) / float64(n)
-		sections[i] = LoftSection{Sketch: mobiusSectionEllipseSketch(u, u/2, R, W, T), ProfileIndex: 0}
-	}
-	pf := NewLoftFeatures(fs).Add(sections, true, ops.NewBody)
-	fs.Recompute()
-	if !pf.Health().OK() {
-		t.Fatalf("elliptical Möbius loft went sick: %+v", pf.Health())
-	}
-	mesh, _ := ops.TessellateBody(fs.Result()[0], ops.DefaultQuality())
+	body := closedMobiusLoftBody(t, 36, 3.0, 1.6, 0.2, mobiusSectionEllipseSketch)
+	mesh, _ := ops.TessellateBody(body, ops.DefaultQuality())
 	if got := mesh.TriangleCount(); got > 30000 { // correct ≈14k; the monodromy bug produced ~166k
 		t.Errorf("elliptical Möbius tessellated to %d triangles — the closed-twist seam is over-subdividing every section", got)
 	}
