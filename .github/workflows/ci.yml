@@ -14,23 +14,54 @@ defaults:
     shell: bash
 
 jobs:
-  lint:
+  # Keep the committed `oblikovati.org/api` pin tracking the latest published release.
+  # The contract auto-releases a vX.Y.Z tag on every merge (Oblikovati.API), so a source
+  # PR's pin drifts behind on its own; this bumps both modules to the newest release and
+  # commits the result back onto the PR branch. The build/test jobs below build against
+  # that same release regardless (via the api-contract action), so this only persists the
+  # pin — it never gates the PR. Skipped for forks (no write access to the head branch).
+  api-version:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
-      # The Apache-2.0 contract is a sibling repo now; check it out and point the
-      # `api` require at it (the committed go.mod has no replace — local dev uses
-      # go.work, CI injects an equivalent replace).
-      - uses: actions/checkout@v5
         with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - id: pin
+        run: echo "version=$(scripts/sync-api-version.sh)" >> "$GITHUB_OUTPUT"
+      - name: Commit the pin if it changed
+        env:
+          VERSION: ${{ steps.pin.outputs.version }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- go.mod head/go.mod; then
+            echo "oblikovati.org/api already pinned to $VERSION"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add go.mod head/go.mod
+          git commit -m "build: pin oblikovati.org/api $VERSION"
+          git push origin "HEAD:$BRANCH"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      # Check out the latest api release and wire the build against it (ADR-0018).
+      - uses: ./.github/actions/api-contract
       - uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7
         with:
           version: v2.1.0
@@ -73,16 +104,11 @@ jobs:
       CGO_ENABLED: "0"
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - uses: ./.github/actions/api-contract
       - run: go install gotest.tools/gotestsum@v1.12.0
       - name: Test
         run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count ./...
@@ -97,16 +123,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - uses: ./.github/actions/api-contract
       - run: go test -race -skip 'TestNop.*CSG' ./...
 
   # cgo GUI head (Vulkan + Dear ImGui). The PR test/race/build jobs above run `./...`
@@ -123,17 +144,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
       - uses: actions/setup-go@v6
         with:
           # Match build.yml's head-linux toolchain.
           go-version: "1.24"
           cache: false
-      - run: go -C head mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - uses: ./.github/actions/api-contract
+        with:
+          modules: head
       - name: Install cgo + headless-Vulkan deps
         run: |
           sudo apt-get update
@@ -159,16 +177,11 @@ jobs:
         target: [linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with:
-          repository: Oblikovati/Oblikovati.API
-          ref: develop
-          path: _api
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
-      - run: go mod edit -replace oblikovati.org/api="$GITHUB_WORKSPACE/_api"
+      - uses: ./.github/actions/api-contract
       - name: Cross-compile
         run: |
           GOOS=$(echo "${{ matrix.target }}" | cut -d/ -f1)
