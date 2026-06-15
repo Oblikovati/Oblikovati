@@ -234,10 +234,11 @@ func shrinkwrapDefinition(in wire.ShrinkwrapCreateArgs) (feature.ShrinkwrapDefin
 		return feature.ShrinkwrapDefinition{}, err
 	}
 	return feature.ShrinkwrapDefinition{
-		RemoveStyle:   remove,
-		MinPartVolume: in.MinPartVolume,
-		EnvelopeStyle: envelope,
-		PatchHoles:    in.PatchHoles,
+		RemoveStyle:     remove,
+		MinPartVolume:   in.MinPartVolume,
+		EnvelopeStyle:   envelope,
+		PatchHoles:      in.PatchHoles,
+		MaxHoleDiameter: in.MaxHoleDiameter,
 	}, nil
 }
 

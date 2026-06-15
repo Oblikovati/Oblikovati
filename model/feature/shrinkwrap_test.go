@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // cavityBlock builds a 4³ block with a fully enclosed 2³ cavity (volume 56) by cutting
@@ -141,6 +142,49 @@ func TestShrinkwrapPatchHolesFillsCavity(t *testing.T) {
 	}
 	if got := volumeOf(bodies[0]); got < 63.9 || got > 64.1 {
 		t.Errorf("patched volume = %g, want ~64 (cavity filled)", got)
+	}
+}
+
+// holedPlate returns a 4×4×2 plate with a 2×2 through-hole (vol 24), built by extruding a
+// rectangle-with-rectangular-hole profile.
+func holedPlate(t *testing.T) *topo.Body {
+	t.Helper()
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	addRect(sk, 0, 0, 4, 4)
+	addRect(sk, 1, 1, 3, 3)
+	fs := NewPartFeatures(nil, nil)
+	NewExtrudeFeatures(fs).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 2 })
+	fs.Recompute()
+	return fs.Result()[0]
+}
+
+// TestShrinkwrapCapsThroughHole gates the through-hole patch (#721) through the feature: a
+// holed plate (vol 24) closes to its 32-volume solid block when MaxHoleDiameter covers the
+// opening, and is left intact when it does not.
+func TestShrinkwrapCapsThroughHole(t *testing.T) {
+	plate := holedPlate(t)
+	if v := volumeOf(plate); v < 23.9 || v > 24.1 {
+		t.Fatalf("holed-plate fixture volume = %g, want ~24", v)
+	}
+	src := &fakeAssemblySource{placed: []PlacedBody{
+		{Body: plate, Transform: math.Identity4(), Source: occFor("plate:1")},
+	}}
+
+	capped, err := BuildShrinkwrap(src, ShrinkwrapDefinition{MaxHoleDiameter: 3})
+	if err != nil {
+		t.Fatalf("BuildShrinkwrap: %v", err)
+	}
+	if got := volumeOf(capped[0]); got < 31.9 || got > 32.1 {
+		t.Errorf("capped volume = %g, want ~32 (hole closed flush)", got)
+	}
+
+	// PatchHoles alone must NOT fill a through-hole (it is not a disconnected internal void).
+	intact, err := BuildShrinkwrap(src, ShrinkwrapDefinition{PatchHoles: true})
+	if err != nil {
+		t.Fatalf("BuildShrinkwrap: %v", err)
+	}
+	if got := volumeOf(intact[0]); got < 23.9 || got > 24.1 {
+		t.Errorf("PatchHoles volume = %g, want ~24 (through-hole left intact)", got)
 	}
 }
 

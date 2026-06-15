@@ -48,9 +48,13 @@ type ShrinkwrapDefinition struct {
 	MinPartVolume float64 // threshold for RemoveSmallParts (units³)
 	EnvelopeStyle ShrinkwrapEnvelopeStyle
 	// PatchHoles fills each kept part's internal voids (cavities) so hollow parts
-	// become solid, before removal and enveloping. Through-holes open to the surface
-	// are unaffected (envelope replacement handles those).
+	// become solid, before removal and enveloping.
 	PatchHoles bool
+	// MaxHoleDiameter, when > 0, caps through-holes / pockets that open to the surface
+	// whose opening spans at most this width — closing them flush while keeping the real
+	// outer geometry (#721). Larger holes are left intact. Complements PatchHoles, which
+	// only fills disconnected internal voids.
+	MaxHoleDiameter float64
 }
 
 // BuildShrinkwrap flattens source's occurrence tree, drops parts per the removal
@@ -69,6 +73,9 @@ func BuildShrinkwrap(source AssemblyBodySource, def ShrinkwrapDefinition) ([]*to
 	if def.PatchHoles {
 		world = patchHoles(world)
 	}
+	if def.MaxHoleDiameter > 0 {
+		world = capThroughHoles(world, def.MaxHoleDiameter)
+	}
 	enveloped, err := applyEnvelope(keepAfterRemoval(world, def), def.EnvelopeStyle)
 	if err != nil {
 		return nil, err
@@ -83,6 +90,20 @@ func patchHoles(world []*topo.Body) []*topo.Body {
 	out := make([]*topo.Body, 0, len(world))
 	for _, b := range world {
 		out = append(out, ops.FillInternalVoids(b, q))
+	}
+	return out
+}
+
+// capThroughHoles caps each body's surface-opening holes no wider than maxDiameter, keeping the
+// holed body whenever the cap cannot close it (so a tricky part never fails the whole build).
+func capThroughHoles(world []*topo.Body, maxDiameter float64) []*topo.Body {
+	out := make([]*topo.Body, 0, len(world))
+	for _, b := range world {
+		if capped, err := ops.CapHolesByDiameter(b, maxDiameter); err == nil {
+			out = append(out, capped)
+			continue
+		}
+		out = append(out, b)
 	}
 	return out
 }
