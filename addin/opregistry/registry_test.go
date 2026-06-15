@@ -18,7 +18,7 @@ func TestDefaultDescriptors(t *testing.T) {
 		"extrude", "revolve", "rib", "emboss", "coil", "loft",
 		"fillet", "chamfer", "shell", "draft", "lip", "hole", "boss", "thread",
 		"combine", "thicken", "trim", "directEdit", "moveFace", "faceOffset", "deleteFace", "split",
-		"replaceFace", "moveBody", "bendPart", "splitSolid", "coreCavity", "hull",
+		"replaceFace", "simplify", "unwrap", "moveBody", "bendPart", "splitSolid", "coreCavity", "hull",
 		"sweep", "patternRectangular", "patternCircular", "mirror", "patternSketchDriven",
 		"boundaryPatch", "ruledSurface", "surfaceOffset", "extend", "midSurface", "stitch", "sculpt",
 		"freeformBox", "freeformPlane", "freeformQuadBall", "mesh",
