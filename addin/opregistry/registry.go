@@ -124,6 +124,7 @@ func Default() *Registry {
 		splitFaceDescriptor(),
 		replaceFaceDescriptor(),
 		moveBodyDescriptor(),
+		bendPartDescriptor(),
 		splitSolidDescriptor(),
 		coreCavityDescriptor(),
 		hullDescriptor(),

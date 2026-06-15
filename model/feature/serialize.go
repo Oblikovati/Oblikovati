@@ -52,6 +52,7 @@ type FeatureData struct {
 	Sweep         *SweepData         `yaml:"sweep,omitempty"`
 	Loft          *LoftData          `yaml:"loft,omitempty"`
 	Move          *MoveData          `yaml:"move,omitempty"`
+	Bend          *BendData          `yaml:"bend,omitempty"`
 	Decal         *DecalData         `yaml:"decal,omitempty"`
 	Reference     *ReferenceData     `yaml:"reference,omitempty"`
 	Client        *ClientData        `yaml:"client,omitempty"`
@@ -228,6 +229,12 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Loft = lo
 	case *MoveFeature:
 		fd.Move = serializeMove(f.def)
+	case *BendPartFeature:
+		bd, err := serializeBend(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Bend = bd
 	case *DecalFeature:
 		fd.Decal = &DecalData{Face: encodeKey(f.def.FaceKey), Image: f.def.Image}
 	case *ReferenceFeature:
@@ -385,6 +392,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSplitSolid(fs, fd.SplitSolid, work)
 	case "move":
 		return restoreMove(fs, fd.Move)
+	case "bend-part":
+		return restoreBend(fs, fd.Bend, sk)
 	case "importedBody":
 		return restoreImportedBody(fs, fd.Import)
 	case "decal", "reference", "client", "mark", "finish":
