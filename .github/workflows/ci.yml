@@ -117,6 +117,12 @@ jobs:
         with:
           name: test-results-${{ matrix.os }}
           path: test-results-${{ matrix.os }}.xml
+      # One Go coverage profile (Linux) feeds the SonarCloud `sonar` job.
+      - uses: actions/upload-artifact@v6
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: coverage-root
+          path: coverage.out
 
   # Race detector needs cgo; Linux only.
   race:
@@ -165,7 +171,12 @@ jobs:
         run: CGO_ENABLED=1 go build ./...
       - name: Test head (xvfb + lavapipe)
         working-directory: head
-        run: xvfb-run -a go test ./...
+        run: xvfb-run -a go test -coverprofile=coverage.out -covermode=count ./...
+      # The cgo head module's coverage profile for the SonarCloud `sonar` job.
+      - uses: actions/upload-artifact@v6
+        with:
+          name: coverage-head
+          path: head/coverage.out
 
   # Confirm the cgo-free core cross-compiles for every shipping target.
   build:
@@ -188,3 +199,34 @@ jobs:
           GOARCH=$(echo "${{ matrix.target }}" | cut -d/ -f2)
           echo "building $GOOS/$GOARCH"
           GOOS=$GOOS GOARCH=$GOARCH go build ./...
+
+  # Upload Go coverage to SonarCloud so it can measure coverage on new code (Automatic
+  # Analysis cannot import Go coverage — sonar-project.properties has the one-time
+  # setup). Reuses the coverage profiles produced by the `test` (root) and `head` jobs,
+  # so it adds no extra test runs. The scan is SKIPPED until SONAR_TOKEN is set, so the
+  # job is green meanwhile.
+  sonar:
+    needs: [test, head]
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # SonarCloud needs full history for new-code detection / blame
+      - uses: actions/download-artifact@v7
+        with:
+          name: coverage-root
+          path: .
+      - uses: actions/download-artifact@v7
+        with:
+          name: coverage-head
+          path: head
+      - name: SonarCloud scan (coverage upload)
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
+        env:
+          SONAR_HOST_URL: https://sonarcloud.io
+      - name: Sonar not configured yet
+        if: env.SONAR_TOKEN == ''
+        run: echo "::notice::SONAR_TOKEN not set — coverage profiles were generated but not uploaded. Add the SONAR_TOKEN secret and turn off Automatic Analysis in SonarCloud to enable CI coverage (see sonar-project.properties)."
