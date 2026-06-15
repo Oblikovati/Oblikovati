@@ -71,3 +71,40 @@ func TestAssemblyPlacedBodiesSkipsSuppressed(t *testing.T) {
 		t.Errorf("placed bodies = %d, want 1 (suppressed occurrence skipped)", got)
 	}
 }
+
+// TestFlexibleIndependentChildPositions checks the M12-F06 independent solve: a flexible
+// sub-assembly occurrence positions its child independently of another placement of the same
+// (shared) sub-assembly definition.
+func TestFlexibleIndependentChildPositions(t *testing.T) {
+	part := partWithBlock(t, math.P3(0, 0, 0), math.P3(1, 1, 1))
+	sub := NewAssemblyComponentDefinition()
+	sub.Place("p:1", part, math.Identity4()) // shared default: child at the origin
+
+	top := NewAssemblyComponentDefinition()
+	flex := top.Place("sub:1", sub, math.Identity4())             // placement 1, at x=0
+	top.Place("sub:2", sub, math.Translation4(math.V3(10, 0, 0))) // placement 2, at x=10
+
+	// Make placement 1 flexible and lift its child by +20 in Z — only this placement changes.
+	flex.SetFlexible(true)
+	flex.SetChildTransform("p:1", math.Translation4(math.V3(0, 0, 20)))
+
+	placed := top.PlacedBodies()
+	if len(placed) != 2 {
+		t.Fatalf("placed bodies = %d, want 2", len(placed))
+	}
+	var flexZ, rigidZ float64 = -1, -1
+	for _, pb := range placed {
+		p0 := pb.Transform.TransformPoint(math.P3(0, 0, 0))
+		if float64(p0.X) > 5 {
+			rigidZ = float64(p0.Z) // placement 2 (x=10) — the shared default
+		} else {
+			flexZ = float64(p0.Z) // placement 1 (x=0) — the flexible override
+		}
+	}
+	if flexZ != 20 {
+		t.Errorf("flexible placement child Z = %g, want 20 (independent override)", flexZ)
+	}
+	if rigidZ != 0 {
+		t.Errorf("other placement child Z = %g, want 0 (shared default, unaffected)", rigidZ)
+	}
+}

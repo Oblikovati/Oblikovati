@@ -21,28 +21,41 @@ var _ feature.AssemblyBodySource = (*AssemblyComponentDefinition)(nil)
 // what shrinkwrap will simplify (M11-F06).
 func (a *AssemblyComponentDefinition) PlacedBodies() []feature.PlacedBody {
 	var out []feature.PlacedBody
-	collectPlacedBodies(a.occurrences, math.Identity4(), nil, &out)
+	collectPlacedBodies(a.occurrences, math.Identity4(), nil, &out, nil)
 	return out
 }
 
 // collectPlacedBodies walks one occurrence level, composing each occurrence's transform
 // with its parent's and extending the instance-name path, emitting a leaf part's bodies
 // and recursing into sub-assemblies. The path disambiguates a shared flyweight reached
-// through several placements (M11-F08 nested participation).
-func collectPlacedBodies(occs *occurrence.Occurrences, parent math.Matrix4, path occurrence.OccurrencePath, out *[]feature.PlacedBody) {
+// through several placements (M11-F08 nested participation). flexParent, when non-nil, is the
+// flexible sub-assembly occurrence whose children we are walking: each child uses that
+// placement's independent override transform when one is set, so two placements of one flexible
+// sub-assembly show their components in different positions (M12-F06).
+func collectPlacedBodies(occs *occurrence.Occurrences, parent math.Matrix4, path occurrence.OccurrencePath, out *[]feature.PlacedBody, flexParent *occurrence.Occurrence) {
 	for _, o := range occs.All() {
 		if o.Suppressed() {
 			continue
 		}
-		world := parent.Mul(o.Transform())
+		local := o.Transform()
+		if flexParent != nil {
+			if override, ok := flexParent.ChildTransform(o.Name()); ok {
+				local = override
+			}
+		}
+		world := parent.Mul(local)
 		here := append(append(occurrence.OccurrencePath(nil), path...), o.Name())
 		switch def := o.Definition().(type) {
 		case bodyDefinition: // a leaf part: emit its bodies placed in the assembly
 			for _, b := range def.SurfaceBodies().All() {
 				*out = append(*out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: here})
 			}
-		case occurrence.Composite: // a sub-assembly: recurse with the composed transform
-			collectPlacedBodies(def.Occurrences(), world, here, out)
+		case occurrence.Composite: // a sub-assembly: recurse, carrying flexible-child overrides
+			var nextFlex *occurrence.Occurrence
+			if o.Flexible() {
+				nextFlex = o
+			}
+			collectPlacedBodies(def.Occurrences(), world, here, out, nextFlex)
 		}
 	}
 }

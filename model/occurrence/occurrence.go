@@ -49,6 +49,10 @@ type Occurrence struct {
 	flexible   bool // sub-assembly solves independently per placement (M12-F06); excl. adaptive
 	substitute bool
 	definition Definition
+	// childOverrides is a flexible occurrence's independent child placement: keyed by child
+	// instance name, it overrides the shared sub-assembly definition's default transform so THIS
+	// placement positions its components independently (M12-F06). Nil for a rigid occurrence.
+	childOverrides map[string]math.Matrix4
 	// componentName is the full document name of the component this occurrence instances,
 	// recorded when placed from a document so the placement can be restored on reopen
 	// (#715). Empty for an in-memory placement made from a bare definition (no file) and
@@ -143,6 +147,50 @@ func (o *Occurrence) SetFlexible(flexible bool) {
 		o.adaptive = false
 	}
 	o.flexible = flexible
+}
+
+// ChildTransform returns the independent transform this flexible occurrence assigns to the
+// named child of its sub-assembly definition, and whether one is set (M12-F06). A caller falls
+// back to the child's shared default transform when ok is false.
+func (o *Occurrence) ChildTransform(childName string) (math.Matrix4, bool) {
+	m, ok := o.childOverrides[childName]
+	return m, ok
+}
+
+// SetChildTransform positions the named child of this flexible occurrence's sub-assembly
+// independently of the other placements, bumping the owning assembly's version so the render
+// refreshes. It is the per-placement degree of freedom that makes a sub-assembly flexible.
+func (o *Occurrence) SetChildTransform(childName string, m math.Matrix4) {
+	if o.childOverrides == nil {
+		o.childOverrides = map[string]math.Matrix4{}
+	}
+	o.childOverrides[childName] = m
+	o.owner.transformed(o, o.transform) // bump the version (the placement moved a child)
+}
+
+// ChildOverrides returns a copy of this occurrence's per-child transform overrides — what the
+// recipe persists for a flexible placement (M12-F06).
+func (o *Occurrence) ChildOverrides() map[string]math.Matrix4 {
+	if len(o.childOverrides) == 0 {
+		return nil
+	}
+	out := make(map[string]math.Matrix4, len(o.childOverrides))
+	for k, v := range o.childOverrides {
+		out[k] = v
+	}
+	return out
+}
+
+// SetChildOverrides restores the per-child overrides (the recipe-apply path on reopen).
+func (o *Occurrence) SetChildOverrides(overrides map[string]math.Matrix4) {
+	if len(overrides) == 0 {
+		o.childOverrides = nil
+		return
+	}
+	o.childOverrides = make(map[string]math.Matrix4, len(overrides))
+	for k, v := range overrides {
+		o.childOverrides[k] = v
+	}
 }
 
 // IsSubstitute reports whether this occurrence is a substitute — a simplified
