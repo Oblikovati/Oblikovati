@@ -48,7 +48,7 @@ func compute(channel, root string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return assemble(channel, major, apiField, realGit{}, time.Now())
+	return assemble(channel, major, apiField, realGit{dir: root}, time.Now())
 }
 
 // assemble builds the version string from the two fixed fields plus the tag-derived,
@@ -109,11 +109,11 @@ func tagBase(repo gitRepo, prefix string) (minor, patch int, sinceRef string) {
 	return 0, 0, repo.newestTag("v*.*.*.*") // a different line — reset, measure since the last release
 }
 
-// realGit answers the queries by shelling out to git in the working directory.
-type realGit struct{}
+// realGit answers the queries by shelling out to git in dir (the module root).
+type realGit struct{ dir string }
 
-func (realGit) newestTag(pattern string) string {
-	out, err := runGit("tag", "--list", pattern, "--sort=-v:refname")
+func (g realGit) newestTag(pattern string) string {
+	out, err := g.run("tag", "--list", pattern, "--sort=-v:refname")
 	if err != nil {
 		return ""
 	}
@@ -127,12 +127,12 @@ func (realGit) newestTag(pattern string) string {
 
 // commitsSince returns the non-merge commit messages reachable from HEAD after ref
 // (whole history when ref is empty), NUL-separated as `git log --format=%B%x00` emits.
-func (realGit) commitsSince(ref string) []string {
+func (g realGit) commitsSince(ref string) []string {
 	args := []string{"log", "--no-merges", "--format=%B%x00"}
 	if ref != "" {
 		args = append(args, ref+"..HEAD")
 	}
-	out, err := runGit(args...)
+	out, err := g.run(args...)
 	if err != nil {
 		return nil
 	}
@@ -145,7 +145,9 @@ func (realGit) commitsSince(ref string) []string {
 	return msgs
 }
 
-func runGit(args ...string) (string, error) {
-	out, err := exec.Command("git", args...).Output()
+func (g realGit) run(args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = g.dir
+	out, err := cmd.Output()
 	return string(out), err
 }
