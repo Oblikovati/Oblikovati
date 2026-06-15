@@ -5,6 +5,8 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -16,20 +18,108 @@ import (
 
 // RectPatternData replicates source features in a 2D grid stepping by StepX/StepY.
 type RectPatternData struct {
-	Source []int     `yaml:"source"`
-	CountX int       `yaml:"countX"`
-	CountY int       `yaml:"countY"`
-	StepX  []float64 `yaml:"stepX"`
-	StepY  []float64 `yaml:"stepY"`
+	Source  []int               `yaml:"source"`
+	CountX  int                 `yaml:"countX"`
+	CountY  int                 `yaml:"countY"`
+	StepX   []float64           `yaml:"stepX"`
+	StepY   []float64           `yaml:"stepY"`
+	Options *PatternOptionsData `yaml:"options,omitempty"`
 }
 
 // CircPatternData replicates source features around an axis.
 type CircPatternData struct {
-	Source    []int     `yaml:"source"`
-	Count     int       `yaml:"count"`
-	Angle     float64   `yaml:"angle"`
-	AxisPoint []float64 `yaml:"axisPoint"`
-	AxisDir   []float64 `yaml:"axisDir"`
+	Source    []int               `yaml:"source"`
+	Count     int                 `yaml:"count"`
+	Angle     float64             `yaml:"angle"`
+	AxisPoint []float64           `yaml:"axisPoint"`
+	AxisDir   []float64           `yaml:"axisDir"`
+	Options   *PatternOptionsData `yaml:"options,omitempty"`
+}
+
+// PatternOptionsData is the serialized M20-F18 option block (omitted entirely when the
+// pattern uses only legacy defaults, so existing files round-trip unchanged).
+type PatternOptionsData struct {
+	Spacing     int32                `yaml:"spacing,omitempty"`
+	Compute     int32                `yaml:"compute,omitempty"`
+	Orientation int32                `yaml:"orientation,omitempty"`
+	Positioning int32                `yaml:"positioning,omitempty"`
+	Boundary    *PatternBoundaryData `yaml:"boundary,omitempty"`
+}
+
+// PatternBoundaryData is the serialized clipping boundary: the plane (origin + normal)
+// and the closed loop in the plane's (u,v) coordinates, plus the inclusion rule.
+type PatternBoundaryData struct {
+	PlaneOrigin []float64   `yaml:"planeOrigin"`
+	PlaneNormal []float64   `yaml:"planeNormal"`
+	Polygon     [][]float64 `yaml:"polygon"`
+	Inclusion   int32       `yaml:"inclusion,omitempty"`
+}
+
+// encodePatternOptions serializes the option block, returning nil when every field is the
+// legacy default so a plain pattern emits no options key.
+func encodePatternOptions(o PatternOptions) *PatternOptionsData {
+	if o.Spacing == 0 && o.Compute == 0 && o.Orientation == 0 && o.Positioning == 0 && o.Boundary == nil {
+		return nil
+	}
+	return &PatternOptionsData{
+		Spacing:     int32(o.Spacing),
+		Compute:     int32(o.Compute),
+		Orientation: int32(o.Orientation),
+		Positioning: int32(o.Positioning),
+		Boundary:    encodePatternBoundary(o.Boundary),
+	}
+}
+
+// decodePatternOptions rebuilds the option block (nil ⇒ the legacy default zero value).
+func decodePatternOptions(d *PatternOptionsData) (PatternOptions, error) {
+	if d == nil {
+		return PatternOptions{}, nil
+	}
+	boundary, err := decodePatternBoundary(d.Boundary)
+	if err != nil {
+		return PatternOptions{}, err
+	}
+	return PatternOptions{
+		Spacing:     types.PatternSpacingType(d.Spacing),
+		Compute:     types.PatternComputeType(d.Compute),
+		Orientation: types.PatternOrientation(d.Orientation),
+		Positioning: types.PatternPositioningMethod(d.Positioning),
+		Boundary:    boundary,
+	}, nil
+}
+
+func encodePatternBoundary(b *PatternBoundary) *PatternBoundaryData {
+	if b == nil {
+		return nil
+	}
+	poly := make([][]float64, len(b.Polygon))
+	for i, q := range b.Polygon {
+		poly[i] = []float64{q.X, q.Y}
+	}
+	return &PatternBoundaryData{
+		PlaneOrigin: encodePoint3(b.Plane.Origin),
+		PlaneNormal: encodeVec3(b.Plane.Normal()),
+		Polygon:     poly,
+		Inclusion:   int32(b.Inclusion),
+	}
+}
+
+func decodePatternBoundary(d *PatternBoundaryData) (*PatternBoundary, error) {
+	if d == nil {
+		return nil, nil
+	}
+	plane, err := geom.NewPlane(decodePoint3(d.PlaneOrigin), decodeVec3(d.PlaneNormal))
+	if err != nil {
+		return nil, fmt.Errorf("pattern boundary plane: %w", err)
+	}
+	poly := make([]math.Point2, len(d.Polygon))
+	for i, q := range d.Polygon {
+		if len(q) < 2 {
+			return nil, fmt.Errorf("pattern boundary polygon vertex %d has %d coords, want 2", i, len(q))
+		}
+		poly[i] = math.P2(q[0], q[1])
+	}
+	return &PatternBoundary{Plane: plane, Polygon: poly, Inclusion: types.PatternBoundaryInclusion(d.Inclusion)}, nil
 }
 
 // SketchDrivenPatternData places one occurrence of the source per sketch point.
@@ -89,7 +179,12 @@ func restoreRectPattern(fs *PartFeatures, d *RectPatternData, restored []*PartFe
 	if err != nil {
 		return nil, err
 	}
-	NewPatternFeatures(fs).AddRectangular(src, constInt(d.CountX), constInt(d.CountY), decodeVec3(d.StepX), decodeVec3(d.StepY))
+	f := NewPatternFeatures(fs).AddRectangular(src, constInt(d.CountX), constInt(d.CountY), decodeVec3(d.StepX), decodeVec3(d.StepY))
+	opts, err := decodePatternOptions(d.Options)
+	if err != nil {
+		return nil, err
+	}
+	f.Definition().Options = opts
 	return lastFeature(fs), nil
 }
 
@@ -101,7 +196,12 @@ func restoreCircPattern(fs *PartFeatures, d *CircPatternData, restored []*PartFe
 	if err != nil {
 		return nil, err
 	}
-	NewPatternFeatures(fs).AddCircular(src, constInt(d.Count), constFloat(d.Angle), decodePoint3(d.AxisPoint), decodeVec3(d.AxisDir))
+	f := NewPatternFeatures(fs).AddCircular(src, constInt(d.Count), constFloat(d.Angle), decodePoint3(d.AxisPoint), decodeVec3(d.AxisDir))
+	opts, err := decodePatternOptions(d.Options)
+	if err != nil {
+		return nil, err
+	}
+	f.Definition().Options = opts
 	return lastFeature(fs), nil
 }
 

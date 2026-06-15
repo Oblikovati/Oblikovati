@@ -5,8 +5,10 @@ package opregistry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -18,17 +20,32 @@ import (
 // resolved to their ids; the layout is given numerically (counts, steps, axis, plane normal).
 
 type patternArgs struct {
-	SourceFeatures []string  `json:"sourceFeatures"`
-	CountX         int       `json:"countX,omitempty"`
-	CountY         int       `json:"countY,omitempty"`
-	StepX          []float64 `json:"stepX,omitempty"`
-	StepY          []float64 `json:"stepY,omitempty"`
-	Count          int       `json:"count,omitempty"`
-	Angle          string    `json:"angle,omitempty"`
-	AxisPoint      []float64 `json:"axisPoint,omitempty"`
-	AxisDir        []float64 `json:"axisDir,omitempty"`
-	Normal         []float64 `json:"normal,omitempty"`
-	Origin         []float64 `json:"origin,omitempty"`
+	SourceFeatures    []string     `json:"sourceFeatures"`
+	CountX            int          `json:"countX,omitempty"`
+	CountY            int          `json:"countY,omitempty"`
+	StepX             []float64    `json:"stepX,omitempty"`
+	StepY             []float64    `json:"stepY,omitempty"`
+	Count             int          `json:"count,omitempty"`
+	Angle             string       `json:"angle,omitempty"`
+	AxisPoint         []float64    `json:"axisPoint,omitempty"`
+	AxisDir           []float64    `json:"axisDir,omitempty"`
+	Normal            []float64    `json:"normal,omitempty"`
+	Origin            []float64    `json:"origin,omitempty"`
+	SpacingType       string       `json:"spacingType,omitempty"`
+	ComputeType       string       `json:"computeType,omitempty"`
+	Orientation       string       `json:"orientation,omitempty"`
+	PositioningMethod string       `json:"positioningMethod,omitempty"`
+	Boundary          *boundaryArg `json:"boundary,omitempty"`
+}
+
+// boundaryArg is the optional pattern-clipping boundary (M20-F18): a closed loop of 3D
+// points (cm) projected into the plane through planeOrigin with planeNormal; an occurrence
+// is dropped when its centre falls outside the loop.
+type boundaryArg struct {
+	PlaneOrigin []float64   `json:"planeOrigin,omitempty"`
+	PlaneNormal []float64   `json:"planeNormal"`
+	Polygon     [][]float64 `json:"polygon"`
+	Inclusion   string      `json:"inclusion,omitempty"`
 }
 
 const rectPatternSchema = `{
@@ -38,7 +55,17 @@ const rectPatternSchema = `{
     "countX": {"type": "integer", "minimum": 1, "default": 2},
     "countY": {"type": "integer", "minimum": 1, "default": 1},
     "stepX": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the first direction [x,y,z] in cm."},
-    "stepY": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the second direction [x,y,z] in cm."}
+    "stepY": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the second direction [x,y,z] in cm."},
+    "spacingType": {"type": "string", "enum": ["spacing", "fitted", "fitToPathLength"], "description": "How a step is read: 'spacing' = gap between occurrences (default); 'fitted' = total span divided across the count."},
+    "computeType": {"type": "string", "enum": ["identical", "adjustToModel", "optimized"], "description": "How each occurrence is computed."},
+    "orientation": {"type": "string", "enum": ["identical", "direction1", "direction2"], "description": "How each occurrence is oriented."},
+    "positioningMethod": {"type": "string", "enum": ["fitted", "incremental"], "description": "How occurrences are positioned along a direction."},
+    "boundary": {"type": "object", "description": "Clip the pattern: drop occurrences whose centre falls outside this loop.", "properties": {
+      "planeOrigin": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Boundary plane origin [x,y,z] (default origin)."},
+      "planeNormal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Boundary plane normal [x,y,z]."},
+      "polygon": {"type": "array", "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "description": "Closed loop of 3D points (cm) projected into the plane."},
+      "inclusion": {"type": "string", "enum": ["enclosed", "centroid", "basePoint"], "description": "Which occurrence point the boundary tests (default centroid)."}
+    }, "required": ["planeNormal", "polygon"]}
   },
   "required": ["sourceFeatures", "stepX"]
 }`
@@ -50,7 +77,17 @@ const circPatternSchema = `{
     "count": {"type": "integer", "minimum": 1, "default": 4},
     "angle": {"type": "string", "description": "Total sweep angle, e.g. \"360 deg\"."},
     "axisPoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on the rotation axis [x,y,z] (default origin)."},
-    "axisDir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Rotation axis direction [x,y,z] (default +Z)."}
+    "axisDir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Rotation axis direction [x,y,z] (default +Z)."},
+    "spacingType": {"type": "string", "enum": ["spacing", "fitted", "fitToPathLength"], "description": "How 'angle' is read: 'spacing' = per-occurrence increment; 'fitted' = spread count across the angle inclusive; default = angle divided by count (full sweep)."},
+    "computeType": {"type": "string", "enum": ["identical", "adjustToModel", "optimized"], "description": "How each occurrence is computed."},
+    "orientation": {"type": "string", "enum": ["identical", "direction1", "direction2"], "description": "How each occurrence is oriented."},
+    "positioningMethod": {"type": "string", "enum": ["fitted", "incremental"], "description": "How occurrences are positioned."},
+    "boundary": {"type": "object", "description": "Clip the pattern: drop occurrences whose centre falls outside this loop.", "properties": {
+      "planeOrigin": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+      "planeNormal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+      "polygon": {"type": "array", "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}},
+      "inclusion": {"type": "string", "enum": ["enclosed", "centroid", "basePoint"]}
+    }, "required": ["planeNormal", "polygon"]}
   },
   "required": ["sourceFeatures", "count", "angle"]
 }`
@@ -111,7 +148,12 @@ func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 		}
 	}
 	cx, cy := defaultInt(in.CountX, 2), defaultInt(in.CountY, 1)
-	feature.NewPatternFeatures(part.Features()).AddRectangular(ids, constIntFn(cx), constIntFn(cy), stepX, stepY)
+	opts, err := patternOptions(in)
+	if err != nil {
+		return nil, err
+	}
+	f := feature.NewPatternFeatures(part.Features()).AddRectangular(ids, constIntFn(cx), constIntFn(cy), stepX, stepY)
+	f.Definition().Options = opts
 	return lastFeatureResult(part)
 }
 
@@ -124,8 +166,78 @@ func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err != nil {
 		return nil, err
 	}
-	feature.NewPatternFeatures(part.Features()).AddCircular(ids, constIntFn(defaultInt(in.Count, 4)), angle, originOr(in.AxisPoint), zAxisOr(in.AxisDir))
+	opts, err := patternOptions(in)
+	if err != nil {
+		return nil, err
+	}
+	f := feature.NewPatternFeatures(part.Features()).AddCircular(ids, constIntFn(defaultInt(in.Count, 4)), angle, originOr(in.AxisPoint), zAxisOr(in.AxisDir))
+	f.Definition().Options = opts
 	return lastFeatureResult(part)
+}
+
+// patternOptions resolves the M20-F18 option fields (spacing/compute/orientation/
+// positioning + boundary) from the request, defaulting to the legacy zero value.
+func patternOptions(in patternArgs) (feature.PatternOptions, error) {
+	o, err := patternEnumOptions(in)
+	if err != nil {
+		return o, err
+	}
+	if in.Boundary != nil {
+		o.Boundary, err = buildPatternBoundary(in.Boundary)
+	}
+	return o, err
+}
+
+// patternEnumOptions parses the four enum option fields, rejecting a non-empty unknown.
+func patternEnumOptions(in patternArgs) (feature.PatternOptions, error) {
+	var o feature.PatternOptions
+	var ok bool
+	if in.SpacingType != "" {
+		if o.Spacing, ok = types.ParsePatternSpacingType(in.SpacingType); !ok {
+			return o, fmt.Errorf("pattern: unknown spacingType %q", in.SpacingType)
+		}
+	}
+	if in.ComputeType != "" {
+		if o.Compute, ok = types.ParsePatternComputeType(in.ComputeType); !ok {
+			return o, fmt.Errorf("pattern: unknown computeType %q", in.ComputeType)
+		}
+	}
+	if in.Orientation != "" {
+		if o.Orientation, ok = types.ParsePatternOrientation(in.Orientation); !ok {
+			return o, fmt.Errorf("pattern: unknown orientation %q", in.Orientation)
+		}
+	}
+	if in.PositioningMethod != "" {
+		if o.Positioning, ok = types.ParsePatternPositioningMethod(in.PositioningMethod); !ok {
+			return o, fmt.Errorf("pattern: unknown positioningMethod %q", in.PositioningMethod)
+		}
+	}
+	return o, nil
+}
+
+// buildPatternBoundary turns the boundary request into a model clipping boundary.
+func buildPatternBoundary(b *boundaryArg) (*feature.PatternBoundary, error) {
+	if len(b.PlaneNormal) != 3 {
+		return nil, errors.New("pattern boundary: planeNormal needs 3 components [x,y,z]")
+	}
+	normal, _ := vec3(b.PlaneNormal, "pattern boundary normal")
+	poly := make([]math.Point3, len(b.Polygon))
+	for i, p := range b.Polygon {
+		q, err := point3(p, "pattern boundary polygon vertex")
+		if err != nil {
+			return nil, err
+		}
+		poly[i] = q
+	}
+	incl := types.IncludeByCentroid
+	if b.Inclusion != "" {
+		v, ok := types.ParsePatternBoundaryInclusion(b.Inclusion)
+		if !ok {
+			return nil, fmt.Errorf("pattern boundary: unknown inclusion %q", b.Inclusion)
+		}
+		incl = v
+	}
+	return feature.NewPatternBoundary(originOr(b.PlaneOrigin), normal, poly, incl)
 }
 
 func applyMirror(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
