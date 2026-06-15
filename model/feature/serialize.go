@@ -342,14 +342,19 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		switch types.ChamferType(fd.Chamfer.ChamferType) {
-		case types.ChamferTwoDistances:
-			return du.AddChamferTwoDistances(d.keys, constFloat(d.value), constFloat(fd.Chamfer.Value2)), nil
-		case types.ChamferDistanceAndAngle:
-			return du.AddChamferDistanceAngle(d.keys, constFloat(d.value), constFloat(fd.Chamfer.Angle)), nil
-		default:
-			return du.AddChamferCorners(d.keys, constFloat(d.value), chamferFlatCornersOr(fd.Chamfer.FlatCorners)), nil
+		// Build the def directly so the stored flat-corner flag round-trips for EVERY mode
+		// (the asymmetric builders default it to true, but a recipe carries the saved value).
+		def := &ChamferDefinition{
+			EdgeKeys: d.keys, Distance: constFloat(d.value),
+			Type: types.ChamferType(fd.Chamfer.ChamferType), FlatCorners: chamferFlatCornersOr(fd.Chamfer.FlatCorners),
 		}
+		switch def.Type {
+		case types.ChamferTwoDistances:
+			def.Distance2 = constFloat(fd.Chamfer.Value2)
+		case types.ChamferDistanceAndAngle:
+			def.Angle = constFloat(fd.Chamfer.Angle)
+		}
+		return du.addChamfer(def), nil
 	case "lip":
 		return restoreLip(fs, fd.Lip)
 	case "simplify":

@@ -29,8 +29,9 @@ const singularDetTol = 1e-12
 //
 // When flatCorners is set, every vertex where exactly three selected edges meet also gets
 // a tetrahedron cut that trims the pointy three-plane intersection into one flat
-// triangular face — the way Inventor blends such a corner by default. With it clear the
-// three chamfer planes are left to meet at a point.
+// triangular face — the default corner blend. With it clear the three chamfer planes are
+// left to meet at a point. The blend honours per-face setbacks (d1, d2), so it is correct
+// for asymmetric chamfers too, not only the symmetric equal-distance case.
 func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorners bool) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
@@ -43,8 +44,9 @@ func chamferEdges(in Input, keys [][]byte, d1, d2 float64, feat string, flatCorn
 	if err != nil {
 		return Output{}, err
 	}
-	// The analytic conical chamfer (#127) and the flat-corner blend assume a SYMMETRIC setback;
-	// an asymmetric (two-distance / distance-angle) chamfer takes the plain faceted-wedge path.
+	// The analytic conical chamfer (#127) assumes a SYMMETRIC setback; an asymmetric
+	// (two-distance / distance-angle) chamfer takes the faceted-wedge path. The flat-corner
+	// blend, by contrast, now handles both (chamferByWedges builds it from per-face setbacks).
 	if d1 == d2 {
 		// A rim of a simple analytic cylinder gets a TRUE conical chamfer (one geom.Cone face) by
 		// rebuilding the body as a surface of revolution (#127). Anything else falls through.
@@ -66,7 +68,7 @@ func chamferByWedges(in Input, body *topo.Body, edges []*topo.Edge, d1, d2 float
 		return Output{}, err
 	}
 	if flatCorners {
-		tools = append(tools, cornerCutTools(edges, d1, feat)...)
+		tools = append(tools, cornerCutTools(edges, d1, d2, feat)...)
 	}
 	result, err := cutAll(work, tools)
 	if err != nil {
@@ -135,6 +137,15 @@ func chamferWedges(edges []*topo.Edge, d1, d2 float64, feat string) ([]*topo.Bod
 	return tools, nil
 }
 
+// chamferOverhang extends the wedge past each end of the edge. The overhang must reach past the
+// lip remnant that the per-edge bevel otherwise leaves where the edge runs into an adjacent face
+// (so the boolean consumes it and the bevel meets that face FLUSH); the lip sits at most about
+// one setback past the end, so the overhang is scaled to the larger setback. The excess past the
+// body boundary is trimmed by the boolean, so a generous value is safe at a convex end.
+func chamferOverhang(d1, d2 float64) float64 {
+	return 2 * stdmath.Max(d1, d2)
+}
+
 // chamferWedge builds the triangular prism removed to bevel an edge: a triangle cross-section
 // with leg d1 along the first adjacent face's interior and d2 along the second's, swept along
 // the edge (with a small overhang past each end so the boolean is clean). Equal d1==d2 is the
@@ -159,7 +170,8 @@ func chamferWedge(edge *topo.Edge, d1, d2 float64, feat string) (*topo.Body, err
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
 	poly := []math.Point2{{X: 0, Y: 0}, proj(t1.Scale(d1)), proj(t2.Scale(d2))}
-	return buildPrism(poly, plane, span{near: -cutterOverhang, far: v0.DistanceTo(v1) + cutterOverhang}, 0, feat), nil
+	oh := chamferOverhang(d1, d2)
+	return buildPrism(poly, plane, span{near: -oh, far: v0.DistanceTo(v1) + oh}, 0, feat), nil
 }
 
 // interiorDir returns the unit direction, perpendicular to the edge, pointing from the
@@ -182,11 +194,13 @@ type threeEdgeCorner struct {
 }
 
 // cornerCutTools builds the flat-corner blend cut for every three-edge corner among the
-// selected edges. A degenerate corner (collinear edges, zero-volume tetra) is skipped.
-func cornerCutTools(edges []*topo.Edge, dist float64, feat string) []*topo.Body {
+// selected edges, using the per-face setbacks (d1, d2) so the blend is correct for both
+// symmetric and asymmetric chamfers. A degenerate corner (collinear edges, zero-volume
+// tetra) is skipped.
+func cornerCutTools(edges []*topo.Edge, d1, d2 float64, feat string) []*topo.Body {
 	tools := make([]*topo.Body, 0)
 	for i, c := range threeEdgeCorners(edges) {
-		if tool, ok := cornerTetra(c, dist, fmt.Sprintf("%s/c%d", feat, i)); ok {
+		if tool, ok := cornerTetra(c, d1, d2, fmt.Sprintf("%s/c%d", feat, i)); ok {
 			tools = append(tools, tool)
 		}
 	}
@@ -221,8 +235,8 @@ func threeEdgeCorners(edges []*topo.Edge) []threeEdgeCorner {
 // vertices are the outer ends of the chamfer-pair edges (see cornerBasePoints) trims the
 // protruding tip and exposes one flat triangular face. ok is false when any of the defining
 // planes are parallel/degenerate.
-func cornerTetra(c threeEdgeCorner, dist float64, feat string) (*topo.Body, bool) {
-	planes, ok := cornerChamferPlanes(c, dist)
+func cornerTetra(c threeEdgeCorner, d1, d2 float64, feat string) (*topo.Body, bool) {
+	planes, ok := cornerChamferPlanes(c, d1, d2)
 	if !ok {
 		return nil, false
 	}
@@ -284,11 +298,12 @@ func sharedFace(a, b *topo.Edge) *topo.Face {
 	return nil
 }
 
-// cornerChamferPlanes builds the chamfer-face plane of each of the corner's three edges.
-func cornerChamferPlanes(c threeEdgeCorner, dist float64) ([3]geom.Plane, bool) {
+// cornerChamferPlanes builds the chamfer-face plane of each of the corner's three edges from
+// the per-face setbacks (d1, d2).
+func cornerChamferPlanes(c threeEdgeCorner, d1, d2 float64) ([3]geom.Plane, bool) {
 	var planes [3]geom.Plane
 	for i, e := range c.edges {
-		pl, ok := chamferPlane(e, c.vertex, dist)
+		pl, ok := chamferPlane(e, c.vertex, d1, d2)
 		if !ok {
 			return planes, false
 		}
@@ -297,10 +312,12 @@ func cornerChamferPlanes(c threeEdgeCorner, dist float64) ([3]geom.Plane, bool) 
 	return planes, true
 }
 
-// chamferPlane reconstructs the plane of an edge's chamfer face at this corner: through the
-// face's two setback offsets (dist along each adjacent face interior) and parallel to the
-// edge — the same hypotenuse plane chamferWedge cuts with.
-func chamferPlane(e *topo.Edge, corner *topo.Vertex, dist float64) (geom.Plane, bool) {
+// chamferPlane reconstructs the plane of an edge's chamfer face at this corner: it offsets the
+// edge's first adjacent face by d1 and its second by d2 — the SAME per-face setbacks (and the
+// same edge.Faces() ordering) chamferWedge cuts with — and runs parallel to the edge. So the
+// reconstructed plane is the wedge's hypotenuse for asymmetric chamfers (d1≠d2) as well as the
+// symmetric case (d1==d2), which makes the flat-corner blend land on the real chamfer faces.
+func chamferPlane(e *topo.Edge, corner *topo.Vertex, d1, d2 float64) (geom.Plane, bool) {
 	faces := e.Faces()
 	if len(faces) != 2 {
 		return geom.Plane{}, false
@@ -314,7 +331,9 @@ func chamferPlane(e *topo.Edge, corner *topo.Vertex, dist float64) (geom.Plane, 
 	if t1.LengthSquared() == 0 || t2.LengthSquared() == 0 {
 		return geom.Plane{}, false
 	}
-	pl, err := geom.NewPlaneFromAxes(p.TranslateBy(t1.Scale(dist)), dir.AsVector(), t2.Sub(t1))
+	a := p.TranslateBy(t1.Scale(d1)) // setback point on the first adjacent face
+	b := p.TranslateBy(t2.Scale(d2)) // setback point on the second adjacent face
+	pl, err := geom.NewPlaneFromAxes(a, dir.AsVector(), a.VectorTo(b))
 	if err != nil {
 		return geom.Plane{}, false
 	}

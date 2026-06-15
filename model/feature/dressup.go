@@ -95,13 +95,14 @@ func (c *ChamferFeature) Kind() string                   { return "chamfer" }
 
 // Recompute bevels each selected (convex) edge by cutting a wedge tool along it via the
 // boolean; the two setbacks come from the mode (see chamferSetbacks). Flat-corner blending
-// applies only to the symmetric equal-distance case. See chamfer.go.
+// applies to every mode — the blend is built from the per-face setbacks, so an asymmetric
+// (two-distance / distance-angle) corner blends just like a symmetric one. See chamfer.go.
 func (c *ChamferFeature) Recompute(in Input) (Output, error) {
 	d1, d2, err := chamferSetbacks(c.def)
 	if err != nil {
 		return Output{}, err
 	}
-	return chamferEdges(in, c.def.EdgeKeys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners && d1 == d2)
+	return chamferEdges(in, c.def.EdgeKeys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners)
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.
@@ -278,15 +279,17 @@ func (c *DressUpFeatures) AddChamferCorners(edgeKeys [][]byte, distance func() f
 }
 
 // AddChamferTwoDistances bevels the given edges with independent setbacks on the two adjacent
-// faces (an asymmetric chamfer, M20-F03).
+// faces (an asymmetric chamfer, M20-F03). Three-edge corners blend flat by default, like the
+// equal-distance mode.
 func (c *DressUpFeatures) AddChamferTwoDistances(edgeKeys [][]byte, distance, distance2 func() float64) *PartFeature {
-	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Distance2: distance2, Type: types.ChamferTwoDistances})
+	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Distance2: distance2, Type: types.ChamferTwoDistances, FlatCorners: true})
 }
 
 // AddChamferDistanceAngle bevels the given edges by a setback on the first face and the
-// chamfer-face angle (radians), M20-F03.
+// chamfer-face angle (radians), M20-F03. Three-edge corners blend flat by default, like the
+// equal-distance mode.
 func (c *DressUpFeatures) AddChamferDistanceAngle(edgeKeys [][]byte, distance, angle func() float64) *PartFeature {
-	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Angle: angle, Type: types.ChamferDistanceAndAngle})
+	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Angle: angle, Type: types.ChamferDistanceAndAngle, FlatCorners: true})
 }
 
 // addChamfer registers a chamfer feature with the given definition.
