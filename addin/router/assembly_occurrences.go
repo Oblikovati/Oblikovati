@@ -29,6 +29,7 @@ func (r *Router) registerAssemblyOccurrenceHandlers() {
 	r.handlers[wire.MethodAssemblyTransform] = assemblyTransform
 	r.handlers[wire.MethodAssemblyGround] = assemblyGround
 	r.handlers[wire.MethodAssemblySetFlexible] = assemblySetFlexible
+	r.handlers[wire.MethodAssemblySetFlexibleChild] = assemblySetFlexibleChild
 	r.handlers[wire.MethodAssemblySuppress] = assemblySuppress
 	r.handlers[wire.MethodAssemblyReplace] = assemblyReplace
 	r.handlers[wire.MethodAssemblyRemove] = assemblyRemove
@@ -123,6 +124,39 @@ func assemblySetFlexible(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	}
 	o.SetFlexible(in.Flexible)
 	return occurrenceReply(o)
+}
+
+// assemblySetFlexibleChild positions a child component within a flexible sub-assembly
+// occurrence independently of the sub-assembly's other placements (M12-F06 independent solve).
+func assemblySetFlexibleChild(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.SetFlexibleChildArgs
+	o, err := occurrenceFromArgs(s, raw, &in, &in.Occurrence, wire.MethodAssemblySetFlexibleChild)
+	if err != nil {
+		return nil, err
+	}
+	if !o.Flexible() {
+		return nil, fmt.Errorf("%s: occurrence %d is not flexible", wire.MethodAssemblySetFlexibleChild, in.Occurrence)
+	}
+	if !subAssemblyHasChild(o, in.Child) {
+		return nil, fmt.Errorf("%s: flexible occurrence %d has no child named %q", wire.MethodAssemblySetFlexibleChild, in.Occurrence, in.Child)
+	}
+	o.SetChildTransform(in.Child, matrixFromWire(in.Transform))
+	return occurrenceReply(o)
+}
+
+// subAssemblyHasChild reports whether o's sub-assembly definition has a child instance named
+// childName.
+func subAssemblyHasChild(o *occurrence.Occurrence, childName string) bool {
+	sub, ok := o.Definition().(occurrence.Composite)
+	if !ok {
+		return false
+	}
+	for _, c := range sub.Occurrences().All() {
+		if c.Name() == childName {
+			return true
+		}
+	}
+	return false
 }
 
 // assemblySuppress excludes or restores an occurrence from the model (vetoable).

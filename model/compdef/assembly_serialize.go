@@ -51,7 +51,10 @@ type occurrenceRecipe struct {
 	Grounded   bool      `yaml:"grounded,omitempty"`
 	Adaptive   bool      `yaml:"adaptive,omitempty"`
 	Flexible   bool      `yaml:"flexible,omitempty"` // M12-F06
-	Substitute bool      `yaml:"substitute,omitempty"`
+	// ChildTransforms is a flexible occurrence's per-child independent placement (child name →
+	// 16-cell row-major transform), persisting the M12-F06 independent solution per placement.
+	ChildTransforms map[string][]float64 `yaml:"childTransforms,omitempty"`
+	Substitute      bool                 `yaml:"substitute,omitempty"`
 }
 
 // MarshalRecipe renders the assembly's recipe as YAML bytes (doc.RecipeContent).
@@ -124,14 +127,15 @@ func (a *AssemblyComponentDefinition) occurrencesRecipe() []occurrenceRecipe {
 		}
 		cells := o.Transform().Cells()
 		out = append(out, occurrenceRecipe{
-			Name:       o.Name(),
-			Component:  o.ComponentName(),
-			Transform:  cells[:],
-			Suppressed: o.Suppressed(),
-			Grounded:   o.Grounded(),
-			Adaptive:   o.Adaptive(),
-			Flexible:   o.Flexible(),
-			Substitute: o.IsSubstitute(),
+			Name:            o.Name(),
+			Component:       o.ComponentName(),
+			Transform:       cells[:],
+			Suppressed:      o.Suppressed(),
+			Grounded:        o.Grounded(),
+			Adaptive:        o.Adaptive(),
+			Flexible:        o.Flexible(),
+			ChildTransforms: marshalChildOverrides(o.ChildOverrides()),
+			Substitute:      o.IsSubstitute(),
 		})
 	}
 	return out
@@ -220,6 +224,7 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		occ.SetGrounded(rec.Grounded)
 		occ.SetAdaptive(rec.Adaptive)
 		occ.SetFlexible(rec.Flexible)
+		occ.SetChildOverrides(parseChildOverrides(rec.ChildTransforms))
 		occ.SetSubstitute(rec.Substitute)
 	}
 	return a.restoreFeatures()
@@ -300,3 +305,34 @@ type missingDefinition struct{}
 
 // RangeBox returns the empty box, satisfying occurrence.Definition.
 func (missingDefinition) RangeBox() math.Box { return math.EmptyBox() }
+
+// marshalChildOverrides flattens a flexible occurrence's per-child transforms (M12-F06) to the
+// recipe form (child instance name → 16-cell row-major transform).
+func marshalChildOverrides(overrides map[string]math.Matrix4) map[string][]float64 {
+	if len(overrides) == 0 {
+		return nil
+	}
+	out := make(map[string][]float64, len(overrides))
+	for name, m := range overrides {
+		cells := m.Cells()
+		out[name] = cells[:]
+	}
+	return out
+}
+
+// parseChildOverrides reverses marshalChildOverrides on reopen, skipping malformed entries.
+func parseChildOverrides(recorded map[string][]float64) map[string]math.Matrix4 {
+	if len(recorded) == 0 {
+		return nil
+	}
+	out := make(map[string]math.Matrix4, len(recorded))
+	for name, c := range recorded {
+		if len(c) != 16 {
+			continue
+		}
+		var cells [16]float64
+		copy(cells[:], c)
+		out[name] = math.Matrix4FromCells(cells)
+	}
+	return out
+}
