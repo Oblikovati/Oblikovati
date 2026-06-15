@@ -17,13 +17,15 @@ import (
 // documents.import, which converts a mesh file into B-rep bodies.
 
 type meshArgs struct {
-	Path string `json:"path"`
+	Path  string `json:"path"`
+	Solid bool   `json:"solid"`
 }
 
 const meshSchema = `{
   "type": "object",
   "properties": {
-    "path": {"type": "string", "description": "Host-local path of an ASCII STL file to place as mesh reference geometry."}
+    "path": {"type": "string", "description": "Host-local path of an ASCII STL file to place as mesh reference geometry."},
+    "solid": {"type": "boolean", "description": "When true, convert the mesh to a faceted B-rep solid body (one planar face per facet) instead of placing it as reference geometry."}
   },
   "required": ["path"]
 }`
@@ -50,6 +52,16 @@ func applyMesh(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("mesh: parse %q: %w", in.Path, err)
 	}
-	pf := feature.NewMeshFeatures(part.Features()).Add(g)
-	return recomputeResult(part, pf)
+	return recomputeResult(part, addMeshFeature(part.Features(), g, in.Solid))
+}
+
+// addMeshFeature places the mesh as a single feature: a faceted B-rep solid when solid is set
+// (#492), otherwise a presentation mesh (reference geometry that passes the running solid
+// through). The two modes are mutually exclusive.
+func addMeshFeature(fs *feature.PartFeatures, g *feature.MeshGeometry, solid bool) *feature.PartFeature {
+	meshes := feature.NewMeshFeatures(fs)
+	if solid {
+		return meshes.AddSolid(g)
+	}
+	return meshes.Add(g)
 }

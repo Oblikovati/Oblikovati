@@ -33,6 +33,7 @@ type FeatureData struct {
 	Lip        *LipData        `yaml:"lip,omitempty"`
 	Simplify   *SimplifyData   `yaml:"simplify,omitempty"`
 	Unwrap     *UnwrapData     `yaml:"unwrap,omitempty"`
+	MeshSolid  *MeshSolidData  `yaml:"meshSolid,omitempty"`
 	Thread     *ThreadData     `yaml:"thread,omitempty"`
 	Hole       *HoleData       `yaml:"hole,omitempty"`
 	Boss       *BossData       `yaml:"boss,omitempty"`
@@ -134,6 +135,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Simplify = &SimplifyData{RemoveFaces: encodeKeys(f.def.RemoveFaceKeys), FillVoids: f.def.FillVoids}
 	case *UnwrapFeature:
 		fd.Unwrap = &UnwrapData{Face: encodeKey(f.def.FaceKey)}
+	case *MeshSolidFeature:
+		fd.MeshSolid = serializeMeshSolid(f.geom)
 	case *ThreadFeature:
 		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut,
 			Class: f.def.Class, Tapered: f.def.Tapered, ModelDiameter: threadModelDiameterName(f.def.ModelDiameter)}
@@ -343,6 +346,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSimplify(fs, fd.Simplify)
 	case "unwrap":
 		return restoreUnwrap(fs, fd.Unwrap)
+	case "mesh-solid":
+		return restoreMeshSolid(fs, fd.MeshSolid)
 	case "shell":
 		d, err := requireFaceDress(fd.Shell, "shell")
 		if err != nil {
