@@ -80,10 +80,12 @@ func addAssemblyBranches(root *BrowserNode, asm *compdef.AssemblyComponentDefini
 	for _, p := range asm.Parameters().All() {
 		params.child(p.Name(), "parameter")
 	}
+	// Representations/Model States sit with Origin and Parameters at the top of the tree (they
+	// are assembly-wide states, not components), not down with the constraints/joints/features.
+	addRepresentationNodes(root, asm.Representations())
 	addOccurrenceNodes(root, asm.Occurrences())
 	addAssemblyConstraintNodes(root, asm.Constraints())
 	addAssemblyJointNodes(root, asm.Joints())
-	addRepresentationNodes(root, asm.Representations())
 	addAssemblyFeatureNodes(root, asm.Features())
 }
 
