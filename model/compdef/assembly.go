@@ -38,10 +38,12 @@ type AssemblyComponentDefinition struct {
 	constraints *assembly.ConstraintSet // constraint relationships + positioning solver (M12-F01)
 	joints      *assembly.JointSet      // joint relationships (reduced-DOF, M12-F02)
 	dsJoints    *assembly.DSJointSet    // DS-joint (DOF/imposed-motion) view (M12-F02)
-	features    *AssemblyFeatures       // assembly-authored machining features (M11-F08)
-	params      *param.Parameters       // parameter DAG for assembly sketch dimensions
-	work        *feature.WorkGeometry   // origin frame + user work planes, in assembly space
-	sketches    *sketch.Sketches        // sketches authored in the assembly (profile inputs)
+
+	representations *assembly.Representations // design-view/positional/LOD override layers + model states (M12-F04)
+	features        *AssemblyFeatures         // assembly-authored machining features (M11-F08)
+	params          *param.Parameters         // parameter DAG for assembly sketch dimensions
+	work            *feature.WorkGeometry     // origin frame + user work planes, in assembly space
+	sketches        *sketch.Sketches          // sketches authored in the assembly (profile inputs)
 	// pending holds occurrence records parsed by ApplyRecipe but not yet bound to live
 	// component definitions — ApplyRecipe has no workspace, so binding waits for
 	// ResolveReferences once the document is registered (#715). Empty outside a reopen.
@@ -76,6 +78,7 @@ func NewAssemblyComponentDefinition() *AssemblyComponentDefinition {
 	a.constraints = assembly.NewConstraintSet(occ, a.events)
 	a.joints = assembly.NewJointSet(occ, a.events)
 	a.dsJoints = assembly.NewDSJointSet()
+	a.representations = assembly.NewRepresentations(occ, a.constraints, a.joints)
 	return a
 }
 
@@ -199,6 +202,12 @@ func (a *AssemblyComponentDefinition) Joints() *assembly.JointSet { return a.joi
 
 // DSJoints returns the assembly's DS-joint (degrees-of-freedom / imposed-motion) set (M12-F02).
 func (a *AssemblyComponentDefinition) DSJoints() *assembly.DSJointSet { return a.dsJoints }
+
+// Representations returns the assembly's representation hub — the design-view, positional, and
+// level-of-detail override layers plus model states (M12-F04).
+func (a *AssemblyComponentDefinition) Representations() *assembly.Representations {
+	return a.representations
+}
 
 // SolveConstraints positions the assembly's occurrences to satisfy BOTH its constraints and
 // its joints in one solve and returns the health/DOF report (M12-F01/F02 — joints are
