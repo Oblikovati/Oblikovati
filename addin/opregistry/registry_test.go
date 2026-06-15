@@ -16,7 +16,7 @@ func TestDefaultDescriptors(t *testing.T) {
 	r := Default()
 	all := []string{
 		"extrude", "revolve", "rib", "emboss", "coil", "loft",
-		"fillet", "chamfer", "shell", "draft", "hole", "boss", "thread",
+		"fillet", "chamfer", "shell", "draft", "lip", "hole", "boss", "thread",
 		"combine", "thicken", "trim", "directEdit", "moveFace", "faceOffset", "deleteFace", "split",
 		"replaceFace", "moveBody", "bendPart", "splitSolid", "coreCavity", "hull",
 		"sweep", "patternRectangular", "patternCircular", "mirror", "patternSketchDriven",

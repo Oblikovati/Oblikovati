@@ -436,6 +436,14 @@ func (d *FaceDraftFeature) EditableParams() []EditableParam {
 	return []EditableParam{scalarParam("Angle", param.Angle, &d.def.Angle)}
 }
 
+// EditableParams exposes the lip bead's width and height.
+func (l *LipFeature) EditableParams() []EditableParam {
+	return []EditableParam{
+		scalarParam("Width", param.Length, &l.def.Width),
+		scalarParam("Height", param.Length, &l.def.Height),
+	}
+}
+
 // EditableParams exposes a hole's diameter, depth (blind only), and recess inputs by type.
 func (h *HoleFeature) EditableParams() []EditableParam {
 	ps := []EditableParam{scalarParam("Diameter", param.Length, &h.def.Diameter)}
