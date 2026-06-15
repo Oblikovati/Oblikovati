@@ -50,6 +50,7 @@ type occurrenceRecipe struct {
 	Suppressed bool      `yaml:"suppressed,omitempty"`
 	Grounded   bool      `yaml:"grounded,omitempty"`
 	Adaptive   bool      `yaml:"adaptive,omitempty"`
+	Flexible   bool      `yaml:"flexible,omitempty"` // M12-F06
 	Substitute bool      `yaml:"substitute,omitempty"`
 }
 
@@ -129,6 +130,7 @@ func (a *AssemblyComponentDefinition) occurrencesRecipe() []occurrenceRecipe {
 			Suppressed: o.Suppressed(),
 			Grounded:   o.Grounded(),
 			Adaptive:   o.Adaptive(),
+			Flexible:   o.Flexible(),
 			Substitute: o.IsSubstitute(),
 		})
 	}
@@ -217,6 +219,7 @@ func (a *AssemblyComponentDefinition) ResolveReferences(owner *doc.Document) err
 		occ.SetSuppressed(rec.Suppressed)
 		occ.SetGrounded(rec.Grounded)
 		occ.SetAdaptive(rec.Adaptive)
+		occ.SetFlexible(rec.Flexible)
 		occ.SetSubstitute(rec.Substitute)
 	}
 	return a.restoreFeatures()

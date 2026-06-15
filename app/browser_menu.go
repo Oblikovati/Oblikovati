@@ -95,12 +95,21 @@ func occurrenceMenu(sel Selectable) []BrowserMenuItem {
 	if h.Occurrence.Suppressed() {
 		suppressLabel = "Unsuppress"
 	}
-	return []BrowserMenuItem{
+	items := []BrowserMenuItem{
 		{Label: "Edit", Enabled: h.Occurrence.ComponentName() != "", Invoke: func(s *Session) error { return s.OpenOccurrenceDocument(h.Occurrence) }},
 		{Label: groundLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceGrounded(h.Occurrence) }},
 		{Label: suppressLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceSuppressed(h.Occurrence) }},
-		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteOccurrence(h.Occurrence) }},
 	}
+	// Only a sub-assembly occurrence can be flexible (solve its components independently per
+	// placement, M12-F06); the label reflects the current state.
+	if h.Occurrence.SubOccurrences() != nil {
+		flexLabel := "Flexible"
+		if h.Occurrence.Flexible() {
+			flexLabel = "Rigid"
+		}
+		items = append(items, BrowserMenuItem{Label: flexLabel, Enabled: true, Invoke: func(s *Session) error { return s.ToggleOccurrenceFlexible(h.Occurrence) }})
+	}
+	return append(items, BrowserMenuItem{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteOccurrence(h.Occurrence) }})
 }
 
 // representationMenu offers Activate and Delete for a representation selected in the

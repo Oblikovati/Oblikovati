@@ -28,6 +28,7 @@ func (r *Router) registerAssemblyOccurrenceHandlers() {
 	r.handlers[wire.MethodAssemblyPlaceByDefinition] = assemblyPlaceByDefinition
 	r.handlers[wire.MethodAssemblyTransform] = assemblyTransform
 	r.handlers[wire.MethodAssemblyGround] = assemblyGround
+	r.handlers[wire.MethodAssemblySetFlexible] = assemblySetFlexible
 	r.handlers[wire.MethodAssemblySuppress] = assemblySuppress
 	r.handlers[wire.MethodAssemblyReplace] = assemblyReplace
 	r.handlers[wire.MethodAssemblyRemove] = assemblyRemove
@@ -109,6 +110,18 @@ func assemblyGround(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 		return nil, err
 	}
 	o.SetGrounded(in.Grounded)
+	return occurrenceReply(o)
+}
+
+// assemblySetFlexible marks a sub-assembly occurrence flexible (independent per-placement solve)
+// or rigid — mutually exclusive with adaptive (M12-F06).
+func assemblySetFlexible(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.SetFlexibleOccurrenceArgs
+	o, err := occurrenceFromArgs(s, raw, &in, &in.ID, wire.MethodAssemblySetFlexible)
+	if err != nil {
+		return nil, err
+	}
+	o.SetFlexible(in.Flexible)
 	return occurrenceReply(o)
 }
 
@@ -240,6 +253,7 @@ func occurrenceInfo(o *occurrence.Occurrence) wire.OccurrenceInfo {
 		Suppressed: o.Suppressed(),
 		Grounded:   o.Grounded(),
 		Adaptive:   o.Adaptive(),
+		Flexible:   o.Flexible(),
 		Substitute: o.IsSubstitute(),
 	}
 	if subs := o.SubOccurrences(); subs != nil {

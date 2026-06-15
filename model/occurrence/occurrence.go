@@ -46,6 +46,7 @@ type Occurrence struct {
 	hidden     bool // inverse of visibility (M12-F04 design-view reps); zero ⇒ visible
 	grounded   bool
 	adaptive   bool
+	flexible   bool // sub-assembly solves independently per placement (M12-F06); excl. adaptive
 	substitute bool
 	definition Definition
 	// componentName is the full document name of the component this occurrence instances,
@@ -117,8 +118,32 @@ func (o *Occurrence) SetVisible(visible bool) { o.hidden = !visible }
 // satisfy assembly constraints (resolved by the solver from M12).
 func (o *Occurrence) Adaptive() bool { return o.adaptive }
 
-// SetAdaptive marks the occurrence adaptive or rigid.
-func (o *Occurrence) SetAdaptive(adaptive bool) { o.adaptive = adaptive }
+// SetAdaptive marks the occurrence adaptive or rigid. Adaptive and flexible are mutually
+// exclusive (M12-F06), so enabling adaptive clears flexible.
+func (o *Occurrence) SetAdaptive(adaptive bool) {
+	if adaptive {
+		o.flexible = false
+	}
+	o.adaptive = adaptive
+}
+
+// Flexible reports whether this sub-assembly occurrence solves its components independently per
+// placement — so two placements of the same sub-assembly can show their components in different
+// positions (M12-F06, the reference API's flexible component). Mutually exclusive with adaptive.
+func (o *Occurrence) Flexible() bool { return o.flexible }
+
+// SetFlexible marks a sub-assembly occurrence flexible (or rigid). Only an occurrence that
+// instances a sub-assembly (a [Composite] definition) can be flexible — for a leaf part it is a
+// no-op. Enabling flexible clears adaptive (the two states are mutually exclusive).
+func (o *Occurrence) SetFlexible(flexible bool) {
+	if flexible {
+		if _, ok := o.definition.(Composite); !ok {
+			return
+		}
+		o.adaptive = false
+	}
+	o.flexible = flexible
+}
 
 // IsSubstitute reports whether this occurrence is a substitute — a simplified
 // representation that stands in for a set of detailed components (the reference API's
