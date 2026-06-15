@@ -35,16 +35,14 @@ func profiledPart(t *testing.T) *app.Session {
 	return s
 }
 
-// addRect draws a closed w×h rectangle at the sketch origin (one profile).
+// addRect draws a closed w×h rectangle at the sketch origin (one profile), chaining the
+// four corners into a loop.
 func addRect(sk *sketch.Sketch, w, h float64) {
-	c0 := sk.Points().Add(math.P2(0, 0))
-	c1 := sk.Points().Add(math.P2(w, 0))
-	c2 := sk.Points().Add(math.P2(w, h))
-	c3 := sk.Points().Add(math.P2(0, h))
-	sk.Lines().Add(c0, c1)
-	sk.Lines().Add(c1, c2)
-	sk.Lines().Add(c2, c3)
-	sk.Lines().Add(c3, c0)
+	at := func(x, y float64) *sketch.Point { return sk.Points().Add(math.P2(x, y)) }
+	corners := []*sketch.Point{at(0, 0), at(w, 0), at(w, h), at(0, h)}
+	for i, c := range corners {
+		sk.Lines().Add(c, corners[(i+1)%len(corners)])
+	}
 }
 
 // apply runs the named default-registry operation with JSON args.
