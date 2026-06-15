@@ -5,7 +5,6 @@ package ops_test
 import (
 	stdmath "math"
 	"runtime"
-	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -201,6 +200,33 @@ func TestFilletCornerBlendMeshWatertight(t *testing.T) {
 	}
 }
 
+// TestFilletCornerBlendPatchOnSphere checks the 3-edge corner blend's spherical patch is built on
+// the analytic rolling-ball sphere: every tessellated vertex of the sphere face lies at radius r
+// from the sphere centre. This guards the corner-arc midpoints (a wrong mid leaves a watertight but
+// dented/bulged patch — invisible to the volume and open-edge checks, only to the eye).
+func TestFilletCornerBlendPatchOnSphere(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	res, err := ops.FilletEdges(box, cornerEdgeKeys(t, box), 0.3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sphere *geom.Sphere
+	for _, f := range res.Faces() {
+		if s, ok := f.Geometry().(geom.Sphere); ok {
+			sphere = &s
+			m := ops.TessellateFace(f, ops.Quality{ChordTolerance: 1e-3})
+			for _, p := range m.Positions {
+				if d := sphere.Center.DistanceTo(p); stdmath.Abs(float64(d)-sphere.Radius) > 1e-3 {
+					t.Fatalf("sphere-patch vertex %v is %g from centre, want radius %g", p, d, sphere.Radius)
+				}
+			}
+		}
+	}
+	if sphere == nil {
+		t.Fatal("corner blend produced no sphere face")
+	}
+}
+
 // TestFilletAllBoxEdges rounds every edge of a 2×2×2 box: 12 cylinder fillets joined by 8
 // spherical corner patches into a valid solid (a fully-rounded box), with material removed.
 func TestFilletAllBoxEdges(t *testing.T) {
@@ -235,17 +261,43 @@ func TestFilletAllBoxEdges(t *testing.T) {
 	}
 }
 
-// TestFilletTwoEdgeCornerErrors checks an unsupported corner config (two of the three edges
-// at a vertex) errors clearly rather than producing a broken solid.
-func TestFilletTwoEdgeCornerErrors(t *testing.T) {
+// TestFilletTwoEdgeCornerMiters checks the two-edge corner config (two of the three edges at a
+// vertex, the third staying sharp): the two cylinder fillets mutually trim along a miter seam
+// into a valid solid (2 cylinders, no sphere), with material removed. The third edge of the
+// corner is sharp, so no sphere patch is built.
+func TestFilletTwoEdgeCornerMiters(t *testing.T) {
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
-	_, err := ops.FilletEdges(box, keys, 0.3)
-	if err == nil {
-		t.Fatal("filleting only two of the three edges at a corner should error")
+	res, err := ops.FilletEdges(box, keys, 0.3)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(err.Error(), "corner") {
-		t.Errorf("error %q should mention the corner limitation", err)
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("two-edge mitered box not a valid solid: %+v", r)
+	}
+	if c, s := hasCylinderFaces(res), hasSphereFaces(res); c != 2 || s != 0 {
+		t.Errorf("got %d cylinder + %d sphere faces, want 2 + 0 (a miter, not a sphere blend)", c, s)
+	}
+	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v <= 7.5 || v >= 8 {
+		t.Errorf("two-edge miter volume = %g, want material removed (7.5 < v < 8)", v)
+	}
+}
+
+// TestFilletTwoEdgeCornerMiterMeshWatertight checks the miter seam's TESSELLATION is watertight
+// across qualities — the two cylinders share the seam chord polyline exactly, so the welded mesh
+// must have no cracks where they meet.
+func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
+	box := shellBox(4, 3, 5)
+	keys := cornerEdgeKeys(t, box)[:2]
+	res, err := ops.FilletEdges(box, keys, 0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
+		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		if open := meshOpenEdges(m); open != 0 {
+			t.Errorf("two-edge miter mesh at tol %g has %d open edges, want watertight", tol, open)
+		}
 	}
 }
 
