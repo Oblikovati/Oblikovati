@@ -48,6 +48,7 @@ int  obk_ig_begin_popup(const char* id);
 void obk_ig_close_current_popup(void);
 void obk_ig_end_popup(void);
 void obk_ig_set_scroll_here_y(void);
+void obk_ig_scroll_to_bottom(void);
 int  obk_ig_input_float(const char* label, float* v);
 int  obk_ig_input_double(const char* label, double* v);
 int  obk_ig_input_int(const char* label, int* v);
@@ -658,6 +659,11 @@ func CloseCurrentPopup() { C.obk_ig_close_current_popup() }
 // SetScrollHereY scrolls the current window to center the most recently drawn item — used
 // to reveal the browser node that just synced to the active selection.
 func SetScrollHereY() { C.obk_ig_set_scroll_here_y() }
+
+// ScrollToBottom scrolls the current window so the most recently drawn item sits at the
+// bottom edge — the shell behaviour where new lines appear at the bottom and roll older
+// text up (the Command Window's scrollback).
+func ScrollToBottom() { C.obk_ig_scroll_to_bottom() }
 
 // BeginDisabled / EndDisabled gray out and disable the widgets between them.
 func BeginDisabled(disabled bool) {
