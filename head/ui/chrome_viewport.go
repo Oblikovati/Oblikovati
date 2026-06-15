@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/viewport"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -343,8 +344,15 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 	}
 	if on, _ := s.MeshColors(); !on {
 		overlay := renderer.DrawList{Items: append(append([]renderer.DrawItem(nil), list.Items[bodyCount:]...), ground...)}
+		// Highlight against the group SOURCE bodies (already in hand), NOT activeBodies(s) — the
+		// latter is VisibleBodies → worldAssemblyBodies, which re-derives (TransformBody) every
+		// occurrence each frame, an O(occurrences) cost that defeats instancing on a big assembly.
+		sources := make([]*topo.Body, len(groups))
+		for i, g := range groups {
+			sources[i] = g.Source
+		}
 		decorate := func(l renderer.DrawList) renderer.DrawList {
-			return highlightSelection(l, s.Selection().First(), activeBodies(s))
+			return highlightSelection(l, s.Selection().First(), sources)
 		}
 		if m, mats, recs, ok := buildInstancedFrame(groups, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate); ok {
 			return m, mats, recs
