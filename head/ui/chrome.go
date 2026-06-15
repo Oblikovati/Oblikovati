@@ -20,6 +20,7 @@ package ui
 import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
+	"oblikovati.org/build"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
@@ -85,9 +86,9 @@ func reportWindowFrame(win *native.Window, s *app.Session) {
 	if maximized {
 		state = types.WindowMaximized
 	}
-	caption := "Oblikovati"
+	caption := build.Title()
 	if d := s.ActiveDocument(); d != nil {
-		caption = d.DisplayName() + " — Oblikovati"
+		caption = d.DisplayName() + " — " + build.Title()
 	}
 	s.SetWindowFrameStatus(app.WindowFrameStatus{Caption: caption, State: state, Width: w, Height: h})
 }
