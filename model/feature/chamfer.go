@@ -137,6 +137,15 @@ func chamferWedges(edges []*topo.Edge, d1, d2 float64, feat string) ([]*topo.Bod
 	return tools, nil
 }
 
+// chamferOverhang extends the wedge past each end of the edge. The overhang must reach past the
+// lip remnant that the per-edge bevel otherwise leaves where the edge runs into an adjacent face
+// (so the boolean consumes it and the bevel meets that face FLUSH); the lip sits at most about
+// one setback past the end, so the overhang is scaled to the larger setback. The excess past the
+// body boundary is trimmed by the boolean, so a generous value is safe at a convex end.
+func chamferOverhang(d1, d2 float64) float64 {
+	return 2 * stdmath.Max(d1, d2)
+}
+
 // chamferWedge builds the triangular prism removed to bevel an edge: a triangle cross-section
 // with leg d1 along the first adjacent face's interior and d2 along the second's, swept along
 // the edge (with a small overhang past each end so the boolean is clean). Equal d1==d2 is the
@@ -161,7 +170,8 @@ func chamferWedge(edge *topo.Edge, d1, d2 float64, feat string) (*topo.Body, err
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
 	poly := []math.Point2{{X: 0, Y: 0}, proj(t1.Scale(d1)), proj(t2.Scale(d2))}
-	return buildPrism(poly, plane, span{near: -cutterOverhang, far: v0.DistanceTo(v1) + cutterOverhang}, 0, feat), nil
+	oh := chamferOverhang(d1, d2)
+	return buildPrism(poly, plane, span{near: -oh, far: v0.DistanceTo(v1) + oh}, 0, feat), nil
 }
 
 // interiorDir returns the unit direction, perpendicular to the edge, pointing from the
