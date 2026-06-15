@@ -21,6 +21,10 @@ func (d *PartComponentDefinition) UserCoordinateSystems() *feature.UserCoordinat
 	return d.work.UserCoordinateSystems()
 }
 
+// WorkSurfaces exposes the part's construction surfaces (the result's sheet bodies wrapped
+// as named, visibility-controlled objects), kept in sync by Recompute (M20-F16).
+func (d *PartComponentDefinition) WorkSurfaces() *feature.WorkSurfaces { return d.surfaces }
+
 // OriginPlanes returns the part's origin datum planes (XY/XZ/YZ), the Origin folder's
 // contents in the browser and the default sketch hosts.
 func (d *PartComponentDefinition) OriginPlanes() []*feature.WorkPlane {
