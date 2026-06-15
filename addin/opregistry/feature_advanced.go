@@ -385,6 +385,85 @@ func buildRotateAboutLineOp(part *compdef.PartComponentDefinition, a moveOpArg) 
 	return feature.RotateAboutLineOp(point, dir, angle), nil
 }
 
+// --- bend part -------------------------------------------------------------
+
+type bendPartArgs struct {
+	SketchIndex int    `json:"sketchIndex"`
+	LineIndex   int    `json:"lineIndex,omitempty"`
+	BendType    string `json:"bendType,omitempty"`
+	Radius      string `json:"radius,omitempty"`
+	Angle       string `json:"angle,omitempty"`
+	ArcLength   string `json:"arcLength,omitempty"`
+	Flip        bool   `json:"flip,omitempty"`
+}
+
+const bendPartSchema = `{
+  "type": "object",
+  "properties": {
+    "sketchIndex": {"type": "integer", "minimum": 0, "description": "Sketch holding the bend line."},
+    "lineIndex": {"type": "integer", "minimum": 0, "default": 0, "description": "Index of the bend line within the sketch's lines."},
+    "bendType": {"type": "string", "enum": ["radiusAndAngle", "radiusAndArcLength", "arcLengthAndAngle"], "default": "radiusAndAngle", "description": "Which two inputs drive the bend (the third is derived)."},
+    "radius": {"type": "string", "description": "Bend radius, e.g. \"5 mm\" (radiusAndAngle / radiusAndArcLength)."},
+    "angle": {"type": "string", "description": "Bend angle, e.g. \"90 deg\" (radiusAndAngle / arcLengthAndAngle)."},
+    "arcLength": {"type": "string", "description": "Bend arc length (radiusAndArcLength / arcLengthAndAngle)."},
+    "flip": {"type": "boolean", "default": false, "description": "Fold toward the opposite side of the sketch plane."}
+  },
+  "required": ["sketchIndex"]
+}`
+
+func bendPartDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "bendPart", Summary: "Bend a solid body around a sketch bend line (radius/angle/arc-length controlled).", Schema: json.RawMessage(bendPartSchema), Apply: applyBendPart}
+}
+
+func applyBendPart(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in bendPartArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	def, err := bendDefinition(part, in)
+	if err != nil {
+		return nil, err
+	}
+	return recomputeResult(part, feature.NewBendPartFeatures(part.Features()).Add(def))
+}
+
+// bendDefinition resolves the bend args (sketch, bend type, parametric scalars) into a model
+// bend definition.
+func bendDefinition(part *compdef.PartComponentDefinition, in bendPartArgs) (*feature.BendPartDefinition, error) {
+	sk, err := sketchAt(part, in.SketchIndex)
+	if err != nil {
+		return nil, err
+	}
+	bendType := types.RadiusAndAngleBend
+	if in.BendType != "" {
+		v, ok := types.ParseBendPartType(in.BendType)
+		if !ok {
+			return nil, fmt.Errorf("bendPart: unknown bendType %q", in.BendType)
+		}
+		bendType = v
+	}
+	radius, err := optionalLengthClosure(part, in.Radius, "bendPart: radius")
+	if err != nil {
+		return nil, err
+	}
+	angle, err := optionalAngleClosure(part, in.Angle, "bendPart: angle")
+	if err != nil {
+		return nil, err
+	}
+	arc, err := optionalLengthClosure(part, in.ArcLength, "bendPart: arcLength")
+	if err != nil {
+		return nil, err
+	}
+	return &feature.BendPartDefinition{
+		Sketch: sk, LineIndex: in.LineIndex, BendType: bendType,
+		Radius: radius, Angle: angle, ArcLength: arc, Flip: in.Flip,
+	}, nil
+}
+
 // --- replace face ----------------------------------------------------------
 
 type replaceFaceArgs struct {
