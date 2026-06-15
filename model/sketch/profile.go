@@ -205,7 +205,11 @@ func groupRegions(loops []Loop) []*Profile {
 	return profiles
 }
 
-// holesOf returns the loops one nesting level inside outer (index oi) — its holes.
+// holesOf returns the holes of outer (index oi): the loops one nesting level inside it. A
+// disconnected island whose interior is itself subdivided (e.g. a grid of crossing bars inside
+// the boundary) arrives as many abutting minimal cells at that level; they are merged into the
+// island's outline loop(s) so the profile carries clean, non-abutting holes rather than a tiling
+// of overlapping cells (#863 — abutting hole loops are degenerate downstream).
 func holesOf(oi int, loops []Loop, depth []int) []Loop {
 	var holes []Loop
 	for j, l := range loops {
@@ -213,7 +217,108 @@ func holesOf(oi int, loops []Loop, depth []int) []Loop {
 			holes = append(holes, l)
 		}
 	}
-	return holes
+	return mergeAbuttingLoops(holes)
+}
+
+// mergeAbuttingLoops fuses loops that share edges (the minimal cells of one connected island)
+// into their boundary outline: a directed edge traversed by two abutting cells appears in both
+// directions and cancels; the surviving edges chain into the outline. Disjoint loops (separate
+// islands) share no edges and pass through unchanged.
+func mergeAbuttingLoops(loops []Loop) []Loop {
+	if len(loops) <= 1 {
+		return loops
+	}
+	w := newLoopWelder()
+	dir := map[[2]int]int{}
+	for _, l := range loops {
+		idx := make([]int, len(l.polygon))
+		for i, p := range l.polygon {
+			idx[i] = w.add(p)
+		}
+		for i := range idx {
+			if a, b := idx[i], idx[(i+1)%len(idx)]; a != b {
+				dir[[2]int{a, b}]++
+			}
+		}
+	}
+	rings := chainLoopBoundary(boundaryDirEdges(dir), w.points)
+	if len(rings) == 0 {
+		return loops // chaining failed (unexpected); keep the originals rather than drop holes
+	}
+	out := make([]Loop, len(rings))
+	for i, r := range rings {
+		out[i] = Loop{polygon: r, closed: true}
+	}
+	return out
+}
+
+// boundaryDirEdges keeps the directed edges whose reverse is absent — the outline of the union
+// (an edge shared by two abutting cells appears in both directions and is dropped).
+func boundaryDirEdges(dir map[[2]int]int) [][2]int {
+	var keep [][2]int
+	for e, c := range dir {
+		if dir[[2]int{e[1], e[0]}] == 0 {
+			for k := 0; k < c; k++ {
+				keep = append(keep, e)
+			}
+		}
+	}
+	return keep
+}
+
+// chainLoopBoundary links directed edges head-to-tail into closed rings.
+func chainLoopBoundary(edges [][2]int, pts []math.Point2) [][]math.Point2 {
+	next := make(map[int][]int, len(edges))
+	for _, e := range edges {
+		next[e[0]] = append(next[e[0]], e[1])
+	}
+	var rings [][]math.Point2
+	for start := range next {
+		for len(next[start]) > 0 {
+			if ring := traceRing(start, next, pts); len(ring) >= 3 {
+				rings = append(rings, ring)
+			}
+		}
+	}
+	return rings
+}
+
+// traceRing walks next-edges from start until it returns, consuming each edge once.
+func traceRing(start int, next map[int][]int, pts []math.Point2) []math.Point2 {
+	ring := []math.Point2{pts[start]}
+	for cur := start; ; {
+		outs := next[cur]
+		if len(outs) == 0 {
+			return nil // open chain (degenerate)
+		}
+		nxt := outs[0]
+		next[cur] = outs[1:]
+		if nxt == start {
+			return ring
+		}
+		ring = append(ring, pts[nxt])
+		cur = nxt
+	}
+}
+
+// loopWelder merges coincident loop vertices onto a shared index list (a tolerance grid coarser
+// than the arrangement weld so computed cell corners coincide).
+type loopWelder struct {
+	index  map[[2]int64]int
+	points []math.Point2
+}
+
+func newLoopWelder() *loopWelder { return &loopWelder{index: map[[2]int64]int{}} }
+
+func (w *loopWelder) add(p math.Point2) int {
+	const grid = 1e-7
+	k := [2]int64{int64(stdmath.Round(p.X / grid)), int64(stdmath.Round(p.Y / grid))}
+	if i, ok := w.index[k]; ok {
+		return i
+	}
+	w.index[k] = len(w.points)
+	w.points = append(w.points, p)
+	return len(w.points) - 1
 }
 
 // containsLoop reports whether outer contains inner: every vertex of inner lies
