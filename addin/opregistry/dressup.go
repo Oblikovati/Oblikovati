@@ -271,3 +271,51 @@ func applyDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	pf := feature.NewDressUpFeatures(part.Features()).AddDraft(refKeys(in.FaceRefs), a)
 	return recomputeResult(part, pf)
 }
+
+// --- lip / groove (M20-F10) ------------------------------------------------
+
+type lipArgs struct {
+	EdgeRefs []string `json:"edgeRefs"`
+	Width    string   `json:"width"`
+	Height   string   `json:"height"`
+	Groove   bool     `json:"groove,omitempty"`
+}
+
+const lipSchema = `{
+  "type": "object",
+  "properties": {
+    "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to run the bead along (from get_reference_keys)."},
+    "width": {"type": "string", "description": "Bead width along the first adjacent face, e.g. \"2 mm\"."},
+    "height": {"type": "string", "description": "Bead height along the second adjacent face, e.g. \"2 mm\"."},
+    "groove": {"type": "boolean", "default": false, "description": "Cut a recessed groove instead of raising a lip."}
+  },
+  "required": ["edgeRefs", "width", "height"]
+}`
+
+func lipDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "lip", Summary: "Run a raised lip (or recessed groove) bead along picked edges.", Schema: json.RawMessage(lipSchema), Apply: applyLip}
+}
+
+func applyLip(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in lipArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	if len(in.EdgeRefs) == 0 {
+		return nil, errors.New("lip: edgeRefs is empty")
+	}
+	w, err := lengthClosure(part, in.Width, "lip: width")
+	if err != nil {
+		return nil, err
+	}
+	h, err := lengthClosure(part, in.Height, "lip: height")
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewDressUpFeatures(part.Features()).AddLip(refKeys(in.EdgeRefs), w, h, in.Groove)
+	return recomputeResult(part, pf)
+}

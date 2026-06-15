@@ -30,6 +30,7 @@ type FeatureData struct {
 	Chamfer    *EdgeDressData  `yaml:"chamfer,omitempty"`
 	Shell      *FaceDressData  `yaml:"shell,omitempty"`
 	Draft      *FaceDressData  `yaml:"draft,omitempty"`
+	Lip        *LipData        `yaml:"lip,omitempty"`
 	Thread     *ThreadData     `yaml:"thread,omitempty"`
 	Hole       *HoleData       `yaml:"hole,omitempty"`
 	Boss       *BossData       `yaml:"boss,omitempty"`
@@ -125,6 +126,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 	case *FaceDraftFeature:
 		p := f.def.PullDir
 		fd.Draft = &FaceDressData{Faces: encodeKeys(f.def.FaceKeys), Value: evalFloat(f.def.Angle), Pull: []float64{p.X, p.Y, p.Z}}
+	case *LipFeature:
+		fd.Lip = &LipData{Edges: encodeKeys(f.def.EdgeKeys), Width: evalFloat(f.def.Width), Height: evalFloat(f.def.Height), Groove: f.def.Groove}
 	case *ThreadFeature:
 		fd.Thread = &ThreadData{Face: encodeKey(f.def.FaceKey), Designation: f.def.Designation, Cut: f.def.Cut,
 			Class: f.def.Class, Tapered: f.def.Tapered, ModelDiameter: threadModelDiameterName(f.def.ModelDiameter)}
@@ -328,6 +331,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		default:
 			return du.AddChamferCorners(d.keys, constFloat(d.value), chamferFlatCornersOr(fd.Chamfer.FlatCorners)), nil
 		}
+	case "lip":
+		return restoreLip(fs, fd.Lip)
 	case "shell":
 		d, err := requireFaceDress(fd.Shell, "shell")
 		if err != nil {

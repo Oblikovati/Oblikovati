@@ -110,6 +110,7 @@ func Default() *Registry {
 		chamferDescriptor(),
 		shellDescriptor(),
 		draftDescriptor(),
+		lipDescriptor(),
 		holeDescriptor(),
 		bossDescriptor(),
 		threadDescriptor(),
