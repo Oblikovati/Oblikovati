@@ -242,6 +242,31 @@ func TestLoftMobiusStripEllipseDesign(t *testing.T) {
 	}
 }
 
+// TestLoftClosedTwistMeshStaysBounded guards the closed-twist over-tessellation fix: the seam
+// monodromy must NOT be read as a per-segment twist. When it was, aroundSubdivisions saw the
+// wrap as a ~180° twist and subdivided every cross-section ~12×, ballooning the ellipse Möbius to
+// ~166k triangles and stalling the viewport (14 ms/frame just to flatten). The correct mesh tracks
+// the loop density (≈ longitudinal sections × ellipse points); this pins it well under the blow-up.
+func TestLoftClosedTwistMeshStaysBounded(t *testing.T) {
+	const n = 36
+	const R, W, T = 3.0, 1.6, 0.2
+	fs := NewPartFeatures(nil, nil)
+	sections := make([]LoftSection, n)
+	for i := 0; i < n; i++ {
+		u := 2 * stdmath.Pi * float64(i) / float64(n)
+		sections[i] = LoftSection{Sketch: mobiusSectionEllipseSketch(u, u/2, R, W, T), ProfileIndex: 0}
+	}
+	pf := NewLoftFeatures(fs).Add(sections, true, ops.NewBody)
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("elliptical Möbius loft went sick: %+v", pf.Health())
+	}
+	mesh, _ := ops.TessellateBody(fs.Result()[0], ops.DefaultQuality())
+	if got := mesh.TriangleCount(); got > 30000 { // correct ≈14k; the monodromy bug produced ~166k
+		t.Errorf("elliptical Möbius tessellated to %d triangles — the closed-twist seam is over-subdividing every section", got)
+	}
+}
+
 func TestLoftElongatedRectKeepsVolume(t *testing.T) {
 	// An 8×1 rectangle lofted straight from z=0 to z=5 is a prism: V = area·h = 8·5 = 40.
 	// The arc-length-resample bug skinned a 4.5-area quad → ~22.5; the corner-preserving

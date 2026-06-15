@@ -599,10 +599,12 @@ func skinnedSections(loops [][]math.Point3, n int, closed bool, ends loftEnds, g
 	// A twisting loft's skin quads are a full section-edge wide, so they warp steeply and facet
 	// even when finely sampled along the length. Subdivide each section edge (corner-preserving)
 	// proportional to the twist, so the skin is narrow enough across its width to read smooth.
-	aligned = densifyAround(aligned, aroundSubdivisions(aligned, closed))
-	// A closed loft that twists comes back with a correspondence shift (the monodromy): the closing
-	// segment blends toward the start REINDEXED by it, so the wrap is one small twist, not a crammed
-	// 180° pinch (the Möbius seam notch). sweptSolid applies the same shift to the mesh wrap.
+	// The wrap's correspondence is offset by the monodromy (a 180° half-twist returns shifted by
+	// half the points); the around-subdivision and the spline blend both measure the wrap twist
+	// against the start REINDEXED by that shift, else a Möbius/twisted closure reads its seam as a
+	// ~180° twist and over-subdivides every section (the seam notch's cousin — a 12× mesh blow-up).
+	shift := closureShift(aligned, closed)
+	aligned = densifyAround(aligned, aroundSubdivisions(aligned, closed, shift))
 	secs := splineSections(aligned, closed, ends, closureShift(aligned, closed))
 	secs = areaGraphScale(secs, guides.areaGraph)
 	secs = centerlineGuide(secs, guides.centerline)
