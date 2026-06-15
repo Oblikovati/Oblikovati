@@ -247,21 +247,47 @@ func pathFromSketch(part *compdef.PartComponentDefinition, sketchIndex, pathInde
 // --- move body -------------------------------------------------------------
 
 type moveBodyArgs struct {
-	BodyIndex   int       `json:"bodyIndex"`
-	Translation []float64 `json:"translation"`
+	BodyIndex   int         `json:"bodyIndex"`
+	Translation []float64   `json:"translation,omitempty"`
+	Operations  []moveOpArg `json:"operations,omitempty"`
+}
+
+// moveOpArg is one entry of an ordered move operation list (M20-F20). Each is a typed,
+// independently parametric step (free-drag / along-ray / rotate-about-line); the fields a
+// given type reads are noted in the schema. The scalars are unit-bearing expressions so
+// they join the parameter graph.
+type moveOpArg struct {
+	Type  string    `json:"type"`
+	X     string    `json:"x,omitempty"`
+	Y     string    `json:"y,omitempty"`
+	Z     string    `json:"z,omitempty"`
+	Dir   []float64 `json:"dir,omitempty"`
+	Dist  string    `json:"dist,omitempty"`
+	Point []float64 `json:"point,omitempty"`
+	Angle string    `json:"angle,omitempty"`
 }
 
 const moveBodySchema = `{
   "type": "object",
   "properties": {
     "bodyIndex": {"type": "integer", "minimum": 0, "description": "Body to move (model.tree body order)."},
-    "translation": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Move vector [x,y,z] in cm."}
+    "translation": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Simple form: move vector [x,y,z] in cm. Ignored when operations is given."},
+    "operations": {"type": "array", "description": "Ordered move operations composed in list order (e.g. rotate then slide). Each is a separately parametric step.", "items": {"type": "object", "properties": {
+      "type": {"type": "string", "enum": ["freeDrag", "alongRay", "rotateAboutLine"], "description": "freeDrag: x/y/z offsets. alongRay: dir + dist. rotateAboutLine: point + dir + angle."},
+      "x": {"type": "string", "description": "freeDrag X offset, e.g. \"5 mm\"."},
+      "y": {"type": "string", "description": "freeDrag Y offset."},
+      "z": {"type": "string", "description": "freeDrag Z offset."},
+      "dir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Direction [x,y,z]: the ray for alongRay, the axis for rotateAboutLine."},
+      "dist": {"type": "string", "description": "alongRay distance, e.g. \"5 mm\"."},
+      "point": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "rotateAboutLine axis point [x,y,z] in cm."},
+      "angle": {"type": "string", "description": "rotateAboutLine angle, e.g. \"30 deg\"."}
+    }, "required": ["type"]}}
   },
-  "required": ["bodyIndex", "translation"]
+  "required": ["bodyIndex"]
 }`
 
 func moveBodyDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "moveBody", Summary: "Move a solid body by a translation.", Schema: json.RawMessage(moveBodySchema), Apply: applyMoveBody}
+	return &OperationDescriptor{Name: "moveBody", Summary: "Move a solid body by a translation or an ordered list of parametric operations (free-drag / along-ray / rotate-about-line).", Schema: json.RawMessage(moveBodySchema), Apply: applyMoveBody}
 }
 
 func applyMoveBody(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -273,12 +299,90 @@ func applyMoveBody(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
+	mods := feature.NewModifyFeatures(part.Features())
+	if len(in.Operations) > 0 {
+		ops, err := buildMoveOps(part, in.Operations)
+		if err != nil {
+			return nil, err
+		}
+		return recomputeResult(part, mods.AddMoveOps(in.BodyIndex, ops))
+	}
 	t, err := vec3(in.Translation, "moveBody: translation")
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewModifyFeatures(part.Features()).AddMove(in.BodyIndex, math.Translation4(t))
-	return recomputeResult(part, pf)
+	return recomputeResult(part, mods.AddMove(in.BodyIndex, math.Translation4(t)))
+}
+
+// buildMoveOps resolves each operation arg into a parametric model move operation.
+func buildMoveOps(part *compdef.PartComponentDefinition, args []moveOpArg) ([]feature.MoveOperation, error) {
+	ops := make([]feature.MoveOperation, len(args))
+	for i, a := range args {
+		op, err := buildMoveOp(part, a)
+		if err != nil {
+			return nil, fmt.Errorf("moveBody operation %d: %w", i, err)
+		}
+		ops[i] = op
+	}
+	return ops, nil
+}
+
+// buildMoveOp dispatches on the operation type.
+func buildMoveOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+	switch types.MoveOperationType(a.Type) {
+	case types.MoveFreeDrag:
+		return buildFreeDragOp(part, a)
+	case types.MoveAlongRay:
+		return buildAlongRayOp(part, a)
+	case types.MoveRotateAboutLine:
+		return buildRotateAboutLineOp(part, a)
+	default:
+		return feature.MoveOperation{}, fmt.Errorf("unknown type %q (want freeDrag/alongRay/rotateAboutLine)", a.Type)
+	}
+}
+
+func buildFreeDragOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+	x, err := optionalLengthClosure(part, a.X, "moveBody freeDrag x")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	y, err := optionalLengthClosure(part, a.Y, "moveBody freeDrag y")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	z, err := optionalLengthClosure(part, a.Z, "moveBody freeDrag z")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	return feature.FreeDragOp(x, y, z), nil
+}
+
+func buildAlongRayOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+	dir, err := vec3(a.Dir, "moveBody alongRay dir")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	dist, err := lengthClosure(part, a.Dist, "moveBody alongRay dist")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	return feature.AlongRayOp(dir, dist), nil
+}
+
+func buildRotateAboutLineOp(part *compdef.PartComponentDefinition, a moveOpArg) (feature.MoveOperation, error) {
+	dir, err := vec3(a.Dir, "moveBody rotateAboutLine dir")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	point, err := point3(a.Point, "moveBody rotateAboutLine point")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	angle, err := angleClosure(part, a.Angle, "moveBody rotateAboutLine angle")
+	if err != nil {
+		return feature.MoveOperation{}, err
+	}
+	return feature.RotateAboutLineOp(point, dir, angle), nil
 }
 
 // --- replace face ----------------------------------------------------------

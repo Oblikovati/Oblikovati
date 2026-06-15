@@ -4,7 +4,9 @@ package feature
 
 import (
 	"bytes"
+	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -355,6 +357,35 @@ func (e *ExtrudeFeature) EditableParams() []EditableParam {
 // EditableParams exposes the revolve angle (0 ⇒ a full revolution).
 func (r *RevolveFeature) EditableParams() []EditableParam {
 	return []EditableParam{scalarParam("Angle", param.Angle, &r.def.Angle)}
+}
+
+// EditableParams exposes each move operation's own scalars in list order, so a composed
+// move ("rotate then slide") is edited per operation (M20-F20). A baked single-transform
+// move (no operation list) exposes nothing — its matrix is not a scalar surface.
+func (m *MoveFeature) EditableParams() []EditableParam {
+	var ps []EditableParam
+	for i := range m.def.Ops {
+		ps = append(ps, moveOpParams(i+1, &m.def.Ops[i])...)
+	}
+	return ps
+}
+
+// moveOpParams returns the editable scalars of the n-th move operation (1-based label).
+func moveOpParams(n int, op *MoveOperation) []EditableParam {
+	switch op.Kind {
+	case types.MoveFreeDrag:
+		return []EditableParam{
+			scalarParam(fmt.Sprintf("Move %d X", n), param.Length, &op.X),
+			scalarParam(fmt.Sprintf("Move %d Y", n), param.Length, &op.Y),
+			scalarParam(fmt.Sprintf("Move %d Z", n), param.Length, &op.Z),
+		}
+	case types.MoveAlongRay:
+		return []EditableParam{scalarParam(fmt.Sprintf("Move %d Distance", n), param.Length, &op.Dist)}
+	case types.MoveRotateAboutLine:
+		return []EditableParam{scalarParam(fmt.Sprintf("Move %d Angle", n), param.Angle, &op.Angle)}
+	default:
+		return nil
+	}
 }
 
 // EditableParams exposes the coil's pitch and revolution count.

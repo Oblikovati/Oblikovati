@@ -67,6 +67,15 @@ func optionalAngleClosure(part *compdef.PartComponentDefinition, expr, field str
 	return angleClosure(part, expr, field)
 }
 
+// optionalLengthClosure is lengthClosure that yields a constant 0 for a blank argument
+// (an omitted offset/distance is a no-op move component).
+func optionalLengthClosure(part *compdef.PartComponentDefinition, expr, field string) (func() float64, error) {
+	if strings.TrimSpace(expr) == "" {
+		return func() float64 { return 0 }, nil
+	}
+	return lengthClosure(part, expr, field)
+}
+
 // valueClosure is the shared core of the *Closure helpers: a plain unit literal
 // ("10 mm") becomes a constant closure; any expression (a parameter reference like
 // "h", or "h+2 mm") is backed by an auto-named model parameter so the argument joins
