@@ -42,23 +42,29 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	}
 	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
-		if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
-			return closedDomainMesh(s, us, vs) // full cylinder/cone side: wraps the seam watertight
-		}
-		// A SINGLY-periodic surface (a sphere: periodic longitude, bounded latitude) whose (u,v)
-		// degenerates here is a cap straddling the pole — mesh its real boundary trim via the CDT in
-		// the best-fit plane, not the whole sphere (fullDomainGridMesh gave the torn radiating fan).
-		// A doubly-periodic surface (a torus) keeps the full-domain grid: its seam boundary bounds no
-		// planar trim, so the CDT would be meaningless.
-		if isPeriodic(s.UDomain()) != isPeriodic(s.VDomain()) {
-			return trimmedPatchMesh(s, outer3D, holes3D)
-		}
-		return fullDomainGridMesh(s, q) // doubly-periodic / aperiodic seam face we can't reduce
+		return meshSeamCrossingFace(s, outer3D, holes3D, q) // a loop wrapping the seam: band/cap fallbacks
 	}
 	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 	}
 	return nonRectangularMesh(f, s, outer3D, holes3D, outerUV, holesUV)
+}
+
+// meshSeamCrossingFace meshes a curved face whose boundary loop wraps the periodic seam (so toUVLoops
+// can't unwrap it): a full cylinder/cone side or a torus rim-fillet band closes the seam watertight via
+// closedDomainMesh; a singly-periodic sphere cap straddling the pole goes through the best-fit-plane CDT
+// (the full-domain grid tears there); a doubly-periodic torus we can't reduce keeps the full-domain grid.
+func meshSeamCrossingFace(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
+	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
+		return closedDomainMesh(s, us, vs) // full cylinder/cone side: wraps the seam watertight
+	}
+	if us, vs, isBand := doublyPeriodicBandGrid(s, outer3D, holes3D); isBand {
+		return closedDomainMesh(s, us, vs) // torus rim-fillet band: wraps the axis, bounded in the tube
+	}
+	if isPeriodic(s.UDomain()) != isPeriodic(s.VDomain()) {
+		return trimmedPatchMesh(s, outer3D, holes3D) // sphere cap on the pole: CDT in the best-fit plane
+	}
+	return fullDomainGridMesh(s, q) // doubly-periodic / aperiodic seam face we can't reduce
 }
 
 // nonRectangularMesh meshes a non-iso-rectangular curved trim. A sphere cap is meshed over its own
@@ -340,6 +346,42 @@ func periodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Po
 		return nil, nil, false
 	}
 	return us, vs, true
+}
+
+// doublyPeriodicBandGrid meshes a band on a DOUBLY-periodic surface (a torus) whose boundary wraps
+// exactly ONE parameter direction around its full period — two edge circles joined by a seam — and is
+// bounded in the other. The torus rim fillet is such a band: it wraps the axis (u over [0,2π]) and
+// spans only a quarter of the tube (v). periodicBandGrid rejects it (a torus is periodic in BOTH
+// directions), so the wrap direction is read from the boundary's own parameter span here instead.
+func doublyPeriodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (us, vs []float64, ok bool) {
+	if !isPeriodic(s.UDomain()) || !isPeriodic(s.VDomain()) || len(holes3D) != 0 {
+		return nil, nil, false // need a doubly-periodic surface and no holes
+	}
+	uu := make([]float64, len(outer3D))
+	vv := make([]float64, len(outer3D))
+	for i, p := range outer3D {
+		uu[i], vv[i] = s.ParamAt(p)
+	}
+	uWrap, vWrap := spansFullPeriod(uu), spansFullPeriod(vv)
+	if uWrap == vWrap {
+		return nil, nil, false // need exactly one direction wrapping the full period
+	}
+	if uWrap {
+		us, vs = bracketPeriod(uu), sortUnique(vv)
+	} else {
+		us, vs = sortUnique(uu), bracketPeriod(vv)
+	}
+	if len(us) < 2 || len(vs) < 2 {
+		return nil, nil, false
+	}
+	return us, vs, true
+}
+
+// spansFullPeriod reports whether a periodic parameter's samples cover essentially its whole [0,2π]
+// period (a band that wraps the seam), versus a bounded sub-range (the tube of a rim-fillet torus).
+func spansFullPeriod(g []float64) bool {
+	u := sortUnique(g)
+	return len(u) > 1 && u[len(u)-1]-u[0] > 2*stdmath.Pi-0.5
 }
 
 // coneApexFan tessellates a cone face that closes to its apex (a drill point): its single rim
