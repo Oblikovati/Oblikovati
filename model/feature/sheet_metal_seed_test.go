@@ -26,3 +26,9 @@ func seedSheetMetalSheet(t *testing.T, side float64, extraParams map[string]stri
 	fs.Recompute()
 	return fs, topEdgeAlongX(t, fs.Result()[0])
 }
+
+// smSolidVolume is a sheet-metal body's volume at a fine chord tolerance — the measure the
+// roll/loft geometry tests compare against an analytic value.
+func smSolidVolume(body *topo.Body) float64 {
+	return ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume
+}
