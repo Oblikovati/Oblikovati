@@ -65,19 +65,25 @@ func (b *BendPartFeature) Recompute(in Input) (Output, error) {
 // bendLine resolves the bend line's model-space point, direction, and the up-normal (the
 // sketch plane normal, flipped when Flip is set) the moving flange folds toward.
 func (b *BendPartFeature) bendLine() (point math.Point3, dir, up math.Vector3, err error) {
-	sk := b.def.Sketch
+	return sketchBendLine(b.def.Sketch, b.def.LineIndex, b.def.Flip, "bend-part")
+}
+
+// sketchBendLine resolves a sketch line into the model-space bend axis: a point on it, its
+// direction, and the fold-toward normal (the sketch plane normal, flipped when flip is set).
+// Shared by the part bend and the sheet-metal bend.
+func sketchBendLine(sk *sketch.Sketch, lineIndex int, flip bool, what string) (point math.Point3, dir, up math.Vector3, err error) {
 	if sk == nil {
-		return point, dir, up, fmt.Errorf("bend-part: no sketch set")
+		return point, dir, up, fmt.Errorf("%s: no sketch set", what)
 	}
 	lines := sk.Lines()
-	if b.def.LineIndex < 0 || b.def.LineIndex >= lines.Count() {
-		return point, dir, up, fmt.Errorf("bend-part: line index %d out of range (%d lines)", b.def.LineIndex, lines.Count())
+	if lineIndex < 0 || lineIndex >= lines.Count() {
+		return point, dir, up, fmt.Errorf("%s: line index %d out of range (%d lines)", what, lineIndex, lines.Count())
 	}
-	l := lines.Item(b.def.LineIndex)
+	l := lines.Item(lineIndex)
 	pl := sk.Plane()
 	p0, p1 := pl.ToModel(l.StartPoint().Position()), pl.ToModel(l.EndPoint().Position())
 	up = pl.Normal().AsVector()
-	if b.def.Flip {
+	if flip {
 		up = up.Scale(-1)
 	}
 	return p0, p0.VectorTo(p1), up, nil
