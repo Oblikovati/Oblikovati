@@ -4,11 +4,17 @@ package dwg
 
 import "fmt"
 
-// decompressR2004 expands one R2004+ compressed region into exactly decompSize
+// decompressR2004 expands one R2004+ compressed region, producing up to maxOut
 // bytes. The format is the ODA LZ77 variant (Open Design Specification §4.7): a
 // leading literal run, then opcodes that each copy a back-reference from the
-// already-produced output followed by some literal bytes, bounded by decompSize
-// (or an explicit 0x11 terminator).
+// already-produced output followed by some literal bytes, until the input is
+// exhausted, the output reaches maxOut, or a 0x11 terminator is seen.
+//
+// maxOut is a ceiling, not an exact target. A data page's compressed stream is
+// padded and its window is the section's max page size (0x7400), so the decoder
+// legitimately runs past the page's logical bytes into discardable tail data; the
+// caller keeps only the section's declared size (see assembleSection). System
+// pages, by contrast, fill maxOut exactly — readSystemSection checks that.
 //
 // The opcode operand encoding has three families — the high opcodes 0x40-0xFF (and
 // the unused-but-tolerated <0x10), the 0x10-0x1F group, and the 0x20-0x3F group —
@@ -17,18 +23,18 @@ import "fmt"
 //
 // Example:
 //
-//	page, err := decompressR2004(comp, hdr.decompSize)
-func decompressR2004(src []byte, decompSize int) ([]byte, error) {
-	if decompSize < 0 {
-		return nil, fmt.Errorf("dwg lz77: negative decompressed size %d", decompSize)
+//	page, err := decompressR2004(comp, 0x7400)
+func decompressR2004(src []byte, maxOut int) ([]byte, error) {
+	if maxOut < 0 {
+		return nil, fmt.Errorf("dwg lz77: negative output ceiling %d", maxOut)
 	}
-	d := &lz77{src: src, dst: make([]byte, decompSize)}
+	d := &lz77{src: src, dst: make([]byte, maxOut)}
 	opcode := d.next()
 	if opcode&0xF0 == 0 { // leading literal run
 		d.appendLiterals(d.literalLength(opcode))
 		opcode = d.next()
 	}
-	for d.err == nil && d.out < decompSize && opcode != 0x11 {
+	for d.err == nil && !d.eof && d.out < maxOut && opcode != 0x11 {
 		compBytes, compOffset, post := d.decodeOpcode(opcode)
 		d.copyBackref(compBytes, compOffset)
 		opcode = d.trailingLiterals(post)
@@ -36,20 +42,18 @@ func decompressR2004(src []byte, decompSize int) ([]byte, error) {
 	if d.err != nil {
 		return nil, d.err
 	}
-	if d.out != decompSize {
-		return nil, fmt.Errorf("dwg lz77: produced %d bytes, expected %d", d.out, decompSize)
-	}
-	return d.dst, nil
+	return d.dst[:d.out], nil
 }
 
-// lz77 holds the decompression cursors: the input (src/pos) and the fixed-size
-// output buffer (dst/out). The output is pre-sized to the declared decompressed
-// length so back-references and the tolerated exact-fill final copy stay in bounds.
+// lz77 holds the decompression cursors: the input (src/pos) and the output buffer
+// (dst/out) sized to the maxOut ceiling. eof marks that the input ran out, which
+// for a padded data page is a normal stop rather than an error.
 type lz77 struct {
 	src []byte
 	pos int
 	dst []byte
 	out int
+	eof bool
 	err error
 }
 
@@ -59,12 +63,14 @@ func (d *lz77) fail(format string, args ...any) {
 	}
 }
 
+// next reads one input byte, setting eof (a graceful stop, not an error) when the
+// input is spent.
 func (d *lz77) next() byte {
-	if d.err != nil {
+	if d.err != nil || d.eof {
 		return 0
 	}
 	if d.pos >= len(d.src) {
-		d.fail("read past end of %d compressed bytes", len(d.src))
+		d.eof = true
 		return 0
 	}
 	b := d.src[d.pos]
@@ -72,18 +78,18 @@ func (d *lz77) next() byte {
 	return b
 }
 
-// appendLiterals copies n bytes verbatim from input to output.
+// appendLiterals copies up to n bytes verbatim from input to output, stopping at
+// the maxOut ceiling or input end (both normal stops for a padded data page).
 func (d *lz77) appendLiterals(n int) {
 	if d.err != nil {
 		return
 	}
 	if d.out+n > len(d.dst) {
-		d.fail("literal run of %d overflows output", n)
-		return
+		n = len(d.dst) - d.out // clamp: tail past the page's logical data
 	}
 	if d.pos+n > len(d.src) {
-		d.fail("literal run of %d overruns input", n)
-		return
+		n = len(d.src) - d.pos
+		d.eof = true
 	}
 	copy(d.dst[d.out:], d.src[d.pos:d.pos+n])
 	d.out += n
@@ -93,9 +99,10 @@ func (d *lz77) appendLiterals(n int) {
 // copyBackref copies compBytes from compOffset bytes behind the write head. The
 // offset is one-based (offset 1 = the immediately preceding byte) because each
 // opcode family folds its +1/+plus bias into compOffset; copying one byte at a
-// time supports the length>offset run-length case.
+// time supports the length>offset run-length case. The count is clamped at the
+// maxOut ceiling — a data page's window deliberately exceeds its logical size.
 func (d *lz77) copyBackref(compBytes, compOffset int) {
-	if d.err != nil {
+	if d.err != nil || d.eof {
 		return
 	}
 	start := d.out - compOffset
@@ -104,8 +111,7 @@ func (d *lz77) copyBackref(compBytes, compOffset int) {
 		return
 	}
 	if d.out+compBytes > len(d.dst) {
-		d.fail("back-reference of %d overflows output", compBytes)
-		return
+		compBytes = len(d.dst) - d.out // clamp at the page window ceiling
 	}
 	for i := 0; i < compBytes; i++ {
 		d.dst[d.out] = d.dst[start+i]

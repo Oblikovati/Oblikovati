@@ -93,10 +93,11 @@ func TestParseR2000HeaderRealFile(t *testing.T) {
 	}
 }
 
-func TestParseR2004HeaderUnsupportedForNow(t *testing.T) {
-	// Until the paged container lands, an AC1032 file must fail loudly, not silently.
+func TestParseR2004MalformedFailsLoudly(t *testing.T) {
+	// A truncated/garbage AC1032 file must fail at header decryption (no marker),
+	// not parse into nonsense.
 	hdr := append([]byte("AC1032"), make([]byte, 200)...)
 	if _, err := ParseFileHeader(hdr); err == nil {
-		t.Fatal("expected explicit unsupported error for paged container")
+		t.Fatal("expected decryption-marker error for malformed paged container")
 	}
 }

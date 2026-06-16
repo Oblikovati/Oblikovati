@@ -46,7 +46,40 @@ type FileHeader struct {
 	MaintenanceVersion byte
 	PreviewAddress     int64
 	Codepage           int
-	Sections           []SectionLocator
+	Sections           []SectionLocator // R2000 flat locator table
+	r2004              *r2004Container  // R2004+ paging layer (nil for R2000)
+}
+
+// LogicalSection returns the assembled, decompressed bytes of a named logical
+// section (R2004+ only), e.g. "AcDb:Handles", "AcDb:Classes", "AcDb:AcDbObjects".
+// The bytes are reconstructed on demand from the section's data pages.
+//
+// Example:
+//
+//	handles, err := h.LogicalSection(data, "AcDb:Handles")
+func (h *FileHeader) LogicalSection(data []byte, name string) ([]byte, error) {
+	if h.r2004 == nil {
+		return nil, fmt.Errorf("dwg: LogicalSection %q requested on a non-paged (R2000) file", name)
+	}
+	for _, d := range h.r2004.sections {
+		if d.name == name {
+			return assembleSection(data, h.r2004.pages, d)
+		}
+	}
+	return nil, fmt.Errorf("dwg: logical section %q not found", name)
+}
+
+// SectionNames lists the logical section names present in a paged file, for
+// diagnostics and tests.
+func (h *FileHeader) SectionNames() []string {
+	if h.r2004 == nil {
+		return nil
+	}
+	names := make([]string, len(h.r2004.sections))
+	for i, d := range h.r2004.sections {
+		names[i] = d.name
+	}
+	return names
 }
 
 // Locator returns the locator record with the given id, or false if the file does

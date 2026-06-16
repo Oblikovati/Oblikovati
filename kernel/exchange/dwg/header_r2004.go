@@ -24,6 +24,15 @@ const (
 	dataPageMagic   = 0x4163043b
 )
 
+// r2004Container is the parsed R2004+ paging layer carried on a [FileHeader]: the
+// physical page map and the logical section descriptors. Logical section bytes are
+// assembled on demand (some, like AcDb:AcDbObjects, are tens of MB) rather than
+// eagerly, so this holds the maps, not the data.
+type r2004Container struct {
+	pages    map[int32]pageEntry
+	sections []sectionDescriptor
+}
+
 // r2004Header is the decrypted top-of-file header for the paged container. It
 // locates the two system maps (page map and section map) that, between them, say
 // where every logical section's data lives.
@@ -109,13 +118,18 @@ func parsePageMap(data []byte, h *r2004Header) (map[int32]pageEntry, error) {
 	}
 	pages := make(map[int32]pageEntry)
 	offset := int64(r2004BaseOffset)
-	for i := 0; i+8 <= len(raw); i += 8 {
+	for i := 0; i+8 <= len(raw); {
 		num := int32(binary.LittleEndian.Uint32(raw[i:]))
 		size := int64(binary.LittleEndian.Uint32(raw[i+4:]))
+		i += 8
 		if num > 0 {
 			pages[num] = pageEntry{number: num, size: size, offset: offset}
+		} else {
+			// Negative (gap) entries carry 16 extra bytes (parent/left/right/0)
+			// after the size that are tree metadata, not file data (ODA §4.4).
+			i += 16
 		}
-		offset += size
+		offset += size // gaps still occupy file space, so the offset advances
 	}
 	if len(pages) == 0 {
 		return nil, fmt.Errorf("dwg: page map yielded no positive pages from %d bytes", len(raw))
@@ -139,23 +153,49 @@ func readSystemSection(data []byte, off int64, wantType uint32) ([]byte, error) 
 		return nil, fmt.Errorf("dwg: page body at %#x size %d overruns file (len %d)", bodyStart, hdr.compSize, len(data))
 	}
 	body := data[bodyStart : bodyStart+int64(hdr.compSize)]
-	if hdr.compType == 2 {
-		return decompressR2004(body, hdr.decompSize)
+	if hdr.compType != 2 {
+		return body, nil
 	}
-	return body, nil
+	out, err := decompressR2004(body, hdr.decompSize)
+	if err != nil {
+		return nil, err
+	}
+	// System pages (page/section map) decompress to their declared size exactly; a
+	// short result means a mis-parsed page rather than tolerable data-page padding.
+	if len(out) != hdr.decompSize {
+		return nil, fmt.Errorf("dwg: system page decompressed to %d bytes, declared %d", len(out), hdr.decompSize)
+	}
+	return out, nil
 }
 
-// parseHeaderR2004 decodes the R2004+ paged container. Implemented incrementally;
-// the encrypted header, page map and section map are landing in M1, after which
-// this returns a fully-populated FileHeader.
+// parseHeaderR2004 decodes the R2004+ paged container end to end: the encrypted
+// file header, the page map (physical page → file offset), and the section map
+// (logical section → ordered data pages). The resulting [FileHeader] carries the
+// parsed container so logical sections can be assembled on demand.
 func parseHeaderR2004(data []byte, version Version) (*FileHeader, error) {
 	dec, err := decryptR2004Header(data)
 	if err != nil {
 		return nil, err
 	}
-	h := parseR2004HeaderFields(dec)
-	if _, err := parsePageMap(data, h); err != nil {
+	hdr := parseR2004HeaderFields(dec)
+	pages, err := parsePageMap(data, hdr)
+	if err != nil {
 		return nil, err
 	}
-	return nil, fmt.Errorf("dwg: %s section-map decode not yet implemented (page map OK)", version)
+	smPage, ok := pages[int32(hdr.sectionMapID)]
+	if !ok {
+		return nil, fmt.Errorf("dwg: section map id %d absent from page map", hdr.sectionMapID)
+	}
+	raw, err := readSystemSection(data, smPage.offset, sectionMapMagic)
+	if err != nil {
+		return nil, fmt.Errorf("dwg: section map: %w", err)
+	}
+	descs, err := parseSectionMap(raw)
+	if err != nil {
+		return nil, err
+	}
+	return &FileHeader{
+		Version: version,
+		r2004:   &r2004Container{pages: pages, sections: descs},
+	}, nil
 }
