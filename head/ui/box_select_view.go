@@ -25,21 +25,52 @@ var (
 	boxCrossBorder  = [4]float32{0.45, 0.90, 0.50, 0.90}
 )
 
-// handleViewportSelection routes a left press/drag over the viewport: a drag begun on empty
-// space runs box-select; anything else (a press on geometry, or no left input) falls through
-// to the single-pick click handler. Replaces the bare handleViewportClick call so the two
-// never both fire on the same press.
+// handleViewportSelection routes a left press/drag over the viewport: in the sketch editor a
+// press on an unconstrained entity drags it; otherwise a drag begun on empty space runs
+// box-select; anything else (a press on geometry, or no left input) falls through to the
+// single-pick click handler. Replaces the bare handleViewportClick call so they never both
+// fire on the same press.
 func handleViewportSelection(s *app.Session) {
+	if updateSketchDrag(s) {
+		return
+	}
 	if updateBoxSelect(s) {
 		return
 	}
 	handleViewportClick(s)
 }
 
+// updateSketchDrag advances direct drag-to-move of sketch entities and reports whether it
+// consumed this frame's left input. A press on an unconstrained entity (no modifier, no active
+// tool) begins the drag; the cursor moves it; release commits. A Shift/Ctrl press is a
+// selection-extend, not a drag, so it falls through.
+func updateSketchDrag(s *app.Session) bool {
+	if !s.InSketch() {
+		return false
+	}
+	if s.EntityDragActive() {
+		lx, ly := viewportCursor()
+		if native.MouseDown(native.MouseLeft) {
+			s.UpdateEntityDrag(lx, ly)
+		} else {
+			s.CommitEntityDrag()
+		}
+		return true
+	}
+	if !native.IsItemClicked(native.MouseLeft) || native.KeyShift() || native.KeyCtrl() {
+		return false
+	}
+	lx, ly := viewportCursor()
+	return s.BeginEntityDrag(lx, ly)
+}
+
 // updateBoxSelect advances the box-select state machine and reports whether it consumed this
 // frame's left input. It begins a box only on a fresh left press over empty space, tracks the
 // cursor while the button is held, and commits on release.
 func updateBoxSelect(s *app.Session) bool {
+	if s.InSketch() && !s.BoxSelectActive() {
+		return false // sketch-entity box-select is a follow-up (#909); the sketch env drags/click-selects
+	}
 	if s.BoxSelectActive() {
 		lx, ly := viewportCursor()
 		if native.MouseDown(native.MouseLeft) {
