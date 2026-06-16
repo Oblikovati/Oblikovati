@@ -5,7 +5,6 @@ package compdef
 import (
 	"fmt"
 
-	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
@@ -77,13 +76,10 @@ func (d *PartComponentDefinition) developTab(pf *feature.PartFeature, plane sket
 	if !ok {
 		return feature.FlatTab{}, false
 	}
-	out := p.Outward.AsVector()
-	x, y := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	return feature.FlatTab{
-		A:       plane.ToSketch(p.AxisStart),
-		B:       plane.ToSketch(p.AxisEnd),
-		Outward: math.V2(out.Dot(x), out.Dot(y)),
-		Length:  d.sheetMetal.Unfold().BendAllowance(p.Angle, p.Radius, p.Thickness) + p.Length,
-		Angle:   p.Angle,
+		A:      plane.ToSketch(p.AxisStart),
+		B:      plane.ToSketch(p.AxisEnd),
+		Length: d.sheetMetal.Unfold().BendAllowance(p.Angle, p.Radius, p.Thickness) + p.Length,
+		Angle:  p.Angle,
 	}, true
 }

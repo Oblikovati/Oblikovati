@@ -13,9 +13,9 @@ import (
 // watertight flat solid whose footprint is the square plus the tab, with one fold line.
 func TestBuildFlatPatternWatertightWithTab(t *testing.T) {
 	const side, thickness, tab = 4.0, 0.2, 1.5
-	// Tab on the y=0 edge extending outward (-Y) by the developed length.
+	// Tab on the y=0 edge; BuildFlatPattern orients it outward (−Y, away from the base).
 	tabs := []FlatTab{{
-		A: math.P2(0, 0), B: math.P2(side, 0), Outward: math.V2(0, -1), Length: tab, Angle: stdmath.Pi / 2,
+		A: math.P2(0, 0), B: math.P2(side, 0), Length: tab, Angle: stdmath.Pi / 2,
 	}}
 
 	fp, err := BuildFlatPattern(squareSketch(side), 0, thickness, tabs)
