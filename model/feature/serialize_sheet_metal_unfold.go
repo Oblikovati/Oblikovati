@@ -15,10 +15,14 @@ import (
 
 // bendTransformData is one persisted bend transform.
 type bendTransformData struct {
-	LinePoint  []float64 `yaml:"linePoint"`
-	LineDir    []float64 `yaml:"lineDir"`
-	BaseNormal []float64 `yaml:"baseNormal"`
-	Angle      float64   `yaml:"angle"`
+	LinePoint []float64 `yaml:"linePoint"`
+	LineDir   []float64 `yaml:"lineDir"`
+	Up        []float64 `yaml:"up"`
+	Out       []float64 `yaml:"out"`
+	Angle     float64   `yaml:"angle"`
+	Radius    float64   `yaml:"radius"`
+	Thickness float64   `yaml:"thickness"`
+	Neutral   float64   `yaml:"neutral"`
 }
 
 // SheetMetalUnfoldData / SheetMetalRefoldData persist the bend list of an unfold / refold.
@@ -34,10 +38,14 @@ func serializeBendTransforms(bends []BendTransform) []bendTransformData {
 	out := make([]bendTransformData, len(bends))
 	for i, b := range bends {
 		out[i] = bendTransformData{
-			LinePoint:  []float64{b.LinePoint.X, b.LinePoint.Y, b.LinePoint.Z},
-			LineDir:    []float64{b.LineDir.X, b.LineDir.Y, b.LineDir.Z},
-			BaseNormal: []float64{b.BaseNormal.X, b.BaseNormal.Y, b.BaseNormal.Z},
-			Angle:      b.Angle,
+			LinePoint: []float64{b.LinePoint.X, b.LinePoint.Y, b.LinePoint.Z},
+			LineDir:   []float64{b.LineDir.X, b.LineDir.Y, b.LineDir.Z},
+			Up:        []float64{b.Up.X, b.Up.Y, b.Up.Z},
+			Out:       []float64{b.Out.X, b.Out.Y, b.Out.Z},
+			Angle:     b.Angle,
+			Radius:    b.Radius,
+			Thickness: b.Thickness,
+			Neutral:   b.Neutral,
 		}
 	}
 	return out
@@ -47,14 +55,18 @@ func serializeBendTransforms(bends []BendTransform) []bendTransformData {
 func restoreBendTransforms(data []bendTransformData) ([]BendTransform, error) {
 	out := make([]BendTransform, len(data))
 	for i, d := range data {
-		if len(d.LinePoint) != 3 || len(d.LineDir) != 3 || len(d.BaseNormal) != 3 {
+		if len(d.LinePoint) != 3 || len(d.LineDir) != 3 || len(d.Up) != 3 || len(d.Out) != 3 {
 			return nil, fmt.Errorf("sheet-metal unfold: bend %d has a malformed [x,y,z] triple", i)
 		}
 		out[i] = BendTransform{
-			LinePoint:  math.P3(d.LinePoint[0], d.LinePoint[1], d.LinePoint[2]),
-			LineDir:    math.V3(d.LineDir[0], d.LineDir[1], d.LineDir[2]),
-			BaseNormal: math.V3(d.BaseNormal[0], d.BaseNormal[1], d.BaseNormal[2]),
-			Angle:      d.Angle,
+			LinePoint: math.P3(d.LinePoint[0], d.LinePoint[1], d.LinePoint[2]),
+			LineDir:   math.V3(d.LineDir[0], d.LineDir[1], d.LineDir[2]),
+			Up:        math.V3(d.Up[0], d.Up[1], d.Up[2]),
+			Out:       math.V3(d.Out[0], d.Out[1], d.Out[2]),
+			Angle:     d.Angle,
+			Radius:    d.Radius,
+			Thickness: d.Thickness,
+			Neutral:   d.Neutral,
 		}
 	}
 	return out, nil

@@ -25,7 +25,8 @@ func flangedSheetForUnfold(t *testing.T) (*PartFeatures, BendTransform) {
 	p, _ := pf.Definition().(*SheetMetalFlangeFeature).Placement()
 	return fs, BendTransform{
 		LinePoint: p.AxisStart, LineDir: p.AxisStart.VectorTo(p.AxisEnd),
-		BaseNormal: math.V3(0, 0, 1), Angle: p.Angle,
+		Up: p.Up.AsVector(), Out: p.Outward.AsVector(), Angle: p.Angle,
+		Radius: p.Radius, Thickness: p.Thickness, Neutral: p.Radius + 0.44*p.Thickness,
 	}
 }
 
@@ -76,7 +77,7 @@ func TestRefoldFeatureRestores(t *testing.T) {
 // restore (they reference no sketch, so the recipe is self-contained).
 func TestUnfoldRefoldRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
-	bend := BendTransform{LinePoint: math.P3(0, 0, 0.2), LineDir: math.V3(4, 0, 0), BaseNormal: math.V3(0, 0, 1), Angle: stdmath.Pi / 2}
+	bend := BendTransform{LinePoint: math.P3(0, 0, 0.2), LineDir: math.V3(4, 0, 0), Up: math.V3(0, 0, 1), Out: math.V3(0, 1, 0), Angle: stdmath.Pi / 2, Radius: 0.2, Thickness: 0.1, Neutral: 0.244}
 	NewSheetMetalUnfoldFeatures(fs).Add(&SheetMetalUnfoldDefinition{Bends: []BendTransform{bend}})
 	NewSheetMetalRefoldFeatures(fs).Add(&SheetMetalRefoldDefinition{Bends: []BendTransform{bend}})
 
@@ -114,12 +115,18 @@ func TestUnfoldRefoldMissingPayload(t *testing.T) {
 	}
 }
 
-// TestUnfoldBendRejectsParallelNormal a bend line parallel to the base normal can't define a
-// split plane and errors with the offending input.
-func TestUnfoldBendRejectsParallelNormal(t *testing.T) {
+// TestUnfoldBendRejectsDegenerateFrame a bend transform with a degenerate fold normal or a
+// non-positive developed length cannot define a development and errors with the offending input.
+func TestUnfoldBendRejectsDegenerateFrame(t *testing.T) {
 	fs, bt := flangedSheetForUnfold(t)
-	bt.BaseNormal = bt.LineDir // parallel ⇒ degenerate across
-	if _, err := unfoldBend(fs.Result()[0], bt, bt.Angle); err == nil {
-		t.Error("unfoldBend with a normal parallel to the bend line must error")
+	zeroUp := bt
+	zeroUp.Up = math.V3(0, 0, 0)
+	if _, err := unfoldBend(fs.Result()[0], zeroUp, +1, "unfold"); err == nil {
+		t.Error("unfoldBend with a degenerate fold normal must error")
+	}
+	badNeutral := bt
+	badNeutral.Neutral = 0
+	if _, err := unfoldBend(fs.Result()[0], badNeutral, +1, "unfold"); err == nil {
+		t.Error("unfoldBend with a non-positive neutral radius must error")
 	}
 }

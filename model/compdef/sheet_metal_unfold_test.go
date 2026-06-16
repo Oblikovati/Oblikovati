@@ -13,6 +13,52 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
+// TestCutCrossingBendSurvivesRefold a slot cut while flat that STRADDLES the bend line is
+// carried fully through the bend on refold — reaching the base, the bend region, and the
+// flange. The regression for the rigid-rotation defect, where the bend stayed curved so a
+// crossing cut reached only one face: the refolded volume must match the flat-cut volume (if
+// the bend region kept its material, the refolded volume would be higher).
+func TestCutCrossingBendSurvivesRefold(t *testing.T) {
+	d, _ := sheetWithFlange(t) // base y∈[0,4]; flange on the y=0 edge, develops into −Y
+	foldedVol := flatVolume(d.Features().Result()[0])
+
+	if _, err := d.AddUnfold(); err != nil {
+		t.Fatalf("AddUnfold: %v", err)
+	}
+	d.Recompute()
+	assertFlatSolid(t, d.Features().Result()[0]) // the bend developed to a proper flat strip
+
+	// A slot crossing y=0: from the base (y>0) through the bend region into the flange (y<0).
+	sk := d.Sketches().Add(sketch.XYPlane())
+	a := sk.Points().Add(gmath.P2(1.6, -0.6))
+	b := sk.Points().Add(gmath.P2(2.4, -0.6))
+	c := sk.Points().Add(gmath.P2(2.4, 0.6))
+	e := sk.Points().Add(gmath.P2(1.6, 0.6))
+	sk.Lines().Add(a, b)
+	sk.Lines().Add(b, c)
+	sk.Lines().Add(c, e)
+	sk.Lines().Add(e, a)
+	cut := feature.NewSheetMetalCutFeatures(d.features).Add(&feature.SheetMetalCutDefinition{Sketch: sk, ProfileIndex: 0})
+	d.Recompute()
+	if !cut.Health().OK() {
+		t.Fatalf("slot crossing the bend (flat) unhealthy: %s", cut.Health().Reason)
+	}
+	flatCutVol := flatVolume(d.Features().Result()[0])
+	if !(flatCutVol < foldedVol) {
+		t.Fatalf("slot removed no material: %.4f vs %.4f", flatCutVol, foldedVol)
+	}
+
+	if _, err := d.AddRefold(); err != nil {
+		t.Fatalf("AddRefold: %v", err)
+	}
+	d.Recompute()
+	refolded := d.Features().Result()[0]
+	assertFlatSolid(t, refolded)
+	if v := flatVolume(refolded); math.Abs(v-flatCutVol)/flatCutVol > 0.02 {
+		t.Errorf("refolded volume %.4f != flat-cut %.4f: the slot was not carried through the bend (one face kept its material)", v, flatCutVol)
+	}
+}
+
 // maxZ returns the body's highest vertex Z — the out-of-plane extent that drops to ~the gauge
 // when the part is flat and rises again when refolded.
 func maxZ(b *topo.Body) float64 {
