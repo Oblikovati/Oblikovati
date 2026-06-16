@@ -195,7 +195,10 @@ Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in 
 | S3 | ✅ | `applyPickToSelection`; Shift/Ctrl adds a new object via `Selection.Toggle`. |
 | S4 | ✅ **FIXED** | Shift/Ctrl+click on a selected object now removes just it (`Selection.Toggle`/`Remove`). Was a blind `append` that never removed **and duplicated** the entry (contradicting the SelectSet "de-duplicated" docstring). |
 | S5 | ✅ **FIXED** | Click on empty space now clears (`clearSelectionOnEmptyClick`). The pick-miss path previously `return`ed without clearing. |
-| S6–S9 | ❌ | No rubber-band window/crossing box-select. Tracked. |
+| S6 | ✅ **DONE** | Window select (drag L→R, fully-enclosed) — `Session.BeginBoxSelect`/`CommitBoxSelect` + `RayPicker.PickRegion` + `head/ui/box_select_view.go` rubber-band. Whole-body granularity (per-face/edge + sketch-entity box are #909 follow-ups). |
+| S7 | ✅ **DONE** | Crossing select (drag R→L, enclosed-or-intersected) — same path, direction sets the mode. |
+| S8 | ✅ **DONE** | Shift+box adds (`applyRegionToSelection`). |
+| S9 | ✅ **DONE** | Ctrl+box inverts (`applyRegionToSelection`). |
 | S10 | ❌ | No Select Other occluded-geometry cycling. Tracked. |
 | S11 | 🟡 | `SelectionFilter` restricts *kinds* but there is no Edge/Feature/Part **priority** cycling or QAT dropdown. Tracked. |
 | S12 | 🟡 | Browser double-click (`browser_view.go`) and dimension double-click (`chrome_viewport.go:316`) edit; viewport double-click-to-edit-feature is not wired. |
@@ -246,21 +249,25 @@ Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in 
 | D5 | ➖ | Grips/nudge — AutoCAD. |
 | D6 | 🟡 | Drag-to-constrain snap — verify. |
 
-### Intentional divergence (flagged)
-- **Plain left-drag orbits** for discoverability (`navigate.go` `ApplyNavigation`, `in.Left`). Inventor
-  reserves left-drag for window/crossing box-select. Acceptable **only until** box-select (S6/S7) lands;
-  at that point left-drag must switch to box-select and orbit stays on Shift+middle. Captured in the
-  box-select follow-up issue.
+### Resolved divergence (was flagged)
+- **Left-drag orbit retired.** Left-drag previously orbited the camera "for discoverability", which
+  collided with the sketch editor's left-click select/drag. `ApplyNavigation` no longer reads the left
+  button — orbit is Shift+middle, pan is middle, and left-drag is selection (box-select on empty space).
+  This is the Inventor-accurate model and unblocked box-select (S6–S9).
 
-### Fixed in the audit commit
+### Fixed/landed in the audit work (#916)
 - **S4** Shift/Ctrl+click toggles per-object (and the SelectSet is now genuinely de-duplicated).
 - **S5** Click on empty space clears the selection.
-  Both covered by unit tests in `app/interaction_test.go`
-  (`TestPlainClickReplacesShiftClickTogglesPerObject`, `TestEmptyClickClearsSelection`,
-  `TestSelectionAddDedupesAndToggle`).
+- **Left-drag-orbit retired** (`navigate.go`), unblocking left-drag selection.
+- **S6–S9** Window/crossing box-select with Shift-add / Ctrl-invert — app state machine
+  (`app/box_select.go`), body region pick (`app/region_pick.go`), head rubber-band + drag
+  (`head/ui/box_select_view.go`); live-verified via Vulkan capture.
+  Covered by `app/interaction_test.go`, `app/box_select_test.go`, `app/region_pick_test.go`,
+  and the in-window `TestInWindowBoxSelectDragSelects`.
 
 ### Tracked follow-up issues (substantial unbuilt features)
-- **#909** — Window & crossing box-select (S6–S9) + retire left-drag-orbit divergence.
+- **#909** — Box-select **core landed** in #916 (window/crossing, Shift/Ctrl, left-drag-orbit retired).
+  Remaining in #909: per-face/edge granularity + **sketch-entity** box-select + drag-to-move-on-entity.
 - **#910** — Select Other: cycle occluded geometry (S10).
 - **#911** — Function-key navigation F2–F6 + Previous View history (N11–N15).
 - **#912** — Selection priority: Edge / Feature / Part (S11).
