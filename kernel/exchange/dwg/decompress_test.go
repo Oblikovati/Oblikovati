@@ -66,3 +66,57 @@ func TestDecompressR2004PageMap(t *testing.T) {
 		}
 	}
 }
+
+// TestDecompressR2004SectionMap is the strong regression for the opcode families
+// (0x10-0x3F long forms) that the page map never exercises: the section map must
+// decompress to EXACTLY its declared size and yield well-formed descriptors with
+// readable AcDb: names. An off-by-one in any length/offset formula corrupts the
+// descriptor strides or names long before the size check, so this pins the whole
+// decoder against real R2018 data.
+func TestDecompressR2004SectionMap(t *testing.T) {
+	data := loadTestFile(t, "testfile-1.dwg")
+	dec, err := decryptR2004Header(data)
+	if err != nil {
+		t.Fatalf("decrypt header: %v", err)
+	}
+	h := parseR2004HeaderFields(dec)
+	pages, err := parsePageMap(data, h)
+	if err != nil {
+		t.Fatalf("page map: %v", err)
+	}
+	page := pages[int32(h.sectionMapID)]
+	hdr, _ := readSystemPageHeader(data, page.offset)
+	raw, err := readSystemSection(data, page.offset, sectionMapMagic)
+	if err != nil {
+		t.Fatalf("decompress section map: %v", err)
+	}
+	if len(raw) != hdr.decompSize {
+		t.Fatalf("section map decompressed to %d bytes, declared %d", len(raw), hdr.decompSize)
+	}
+	// Walk the descriptors and require the essential sections to appear with the
+	// exact 96+16*pageCount stride (a mis-decode desyncs this immediately).
+	num := int(binary.LittleEndian.Uint32(raw))
+	names := map[string]bool{}
+	off := 20
+	for i := 0; i < num && off+96 <= len(raw); i++ {
+		pageCount := int(binary.LittleEndian.Uint32(raw[off+8:]))
+		name := cString(raw[off+0x20 : off+0x20+64])
+		names[name] = true
+		off += 96 + 16*pageCount
+	}
+	for _, must := range []string{"AcDb:Header", "AcDb:Classes", "AcDb:Handles", "AcDb:AcDbObjects"} {
+		if !names[must] {
+			t.Errorf("section map missing essential descriptor %q (got %v)", must, names)
+		}
+	}
+}
+
+// cString trims a fixed-width field at its first NUL.
+func cString(b []byte) string {
+	for i, c := range b {
+		if c == 0 {
+			return string(b[:i])
+		}
+	}
+	return string(b)
+}

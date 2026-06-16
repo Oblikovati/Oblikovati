@@ -6,56 +6,56 @@ import "fmt"
 
 // decompressR2004 expands one R2004+ compressed region into exactly decompSize
 // bytes. The format is the ODA LZ77 variant (Open Design Specification §4.7): a
-// leading literal run, then a sequence of opcodes that each copy a back-reference
-// from the already-decompressed output and then some literal bytes, until the
-// 0x11 terminator.
+// leading literal run, then opcodes that each copy a back-reference from the
+// already-produced output followed by some literal bytes, bounded by decompSize
+// (or an explicit 0x11 terminator).
 //
-// A notable property of this LZ77: the copy length may exceed the back-offset, so
-// a back-reference can read bytes it is itself producing (run-length style); the
-// byte-at-a-time copy below is therefore required, not a single memmove.
+// The opcode operand encoding has three families — the high opcodes 0x40-0xFF (and
+// the unused-but-tolerated <0x10), the 0x10-0x1F group, and the 0x20-0x3F group —
+// each with its own length mask and offset bias. A copy length may exceed its
+// back-offset (run-length extension), so copies proceed one byte at a time.
 //
 // Example:
 //
-//	page, err := decompressR2004(comp, 0x67e0) // page-map page
+//	page, err := decompressR2004(comp, hdr.decompSize)
 func decompressR2004(src []byte, decompSize int) ([]byte, error) {
-	d := &lz77{src: src, dst: make([]byte, 0, decompSize)}
-	opcode, isOp := d.leadingLiterals()
-	if !isOp {
+	if decompSize < 0 {
+		return nil, fmt.Errorf("dwg lz77: negative decompressed size %d", decompSize)
+	}
+	d := &lz77{src: src, dst: make([]byte, decompSize)}
+	opcode := d.next()
+	if opcode&0xF0 == 0 { // leading literal run
+		d.appendLiterals(d.literalLength(opcode))
 		opcode = d.next()
 	}
-	for d.err == nil {
-		if opcode == 0x11 { // terminator
-			break
-		}
-		compBytes, compOffset, litCount := d.decodeOpcode(opcode)
+	for d.err == nil && d.out < decompSize && opcode != 0x11 {
+		compBytes, compOffset, post := d.decodeOpcode(opcode)
 		d.copyBackref(compBytes, compOffset)
-		next, more := d.copyTrailingLiterals(litCount)
-		if more { // a literal-length byte with a set high nibble IS the next opcode
-			opcode = next
-		} else {
-			opcode = d.next()
-		}
+		opcode = d.trailingLiterals(post)
 	}
 	if d.err != nil {
 		return nil, d.err
 	}
-	if len(d.dst) != decompSize {
-		return nil, fmt.Errorf("dwg lz77: produced %d bytes, expected %d", len(d.dst), decompSize)
+	if d.out != decompSize {
+		return nil, fmt.Errorf("dwg lz77: produced %d bytes, expected %d", d.out, decompSize)
 	}
 	return d.dst, nil
 }
 
-// lz77 holds the decompression cursor: input src/pos and the growing output dst.
+// lz77 holds the decompression cursors: the input (src/pos) and the fixed-size
+// output buffer (dst/out). The output is pre-sized to the declared decompressed
+// length so back-references and the tolerated exact-fill final copy stay in bounds.
 type lz77 struct {
 	src []byte
 	pos int
 	dst []byte
+	out int
 	err error
 }
 
 func (d *lz77) fail(format string, args ...any) {
 	if d.err == nil {
-		d.err = fmt.Errorf("dwg lz77 at in=%d out=%d: %s", d.pos, len(d.dst), fmt.Sprintf(format, args...))
+		d.err = fmt.Errorf("dwg lz77 at in=%d out=%d: %s", d.pos, d.out, fmt.Sprintf(format, args...))
 	}
 }
 
@@ -72,137 +72,133 @@ func (d *lz77) next() byte {
 	return b
 }
 
-// leadingLiterals copies the section's opening literal run. It returns (opcode,
-// true) when the literal length encoded a set high nibble — meaning zero leading
-// literals and that byte is actually the first opcode.
-func (d *lz77) leadingLiterals() (byte, bool) {
-	n, opcode, isOp := d.literalLength()
-	if isOp {
-		return opcode, true
-	}
-	d.appendLiterals(n)
-	return 0, false
-}
-
-// copyTrailingLiterals copies litCount literal bytes after a back-reference. When
-// litCount is 0 the count is re-read as a Literal Length, which may instead signal
-// the next opcode (returned as (opcode, true)).
-func (d *lz77) copyTrailingLiterals(litCount int) (byte, bool) {
-	if litCount == 0 {
-		n, opcode, isOp := d.literalLength()
-		if isOp {
-			return opcode, true
-		}
-		litCount = n
-	}
-	d.appendLiterals(litCount)
-	return 0, false
-}
-
-// appendLiterals copies n bytes verbatim from the input to the output.
+// appendLiterals copies n bytes verbatim from input to output.
 func (d *lz77) appendLiterals(n int) {
 	if d.err != nil {
+		return
+	}
+	if d.out+n > len(d.dst) {
+		d.fail("literal run of %d overflows output", n)
 		return
 	}
 	if d.pos+n > len(d.src) {
 		d.fail("literal run of %d overruns input", n)
 		return
 	}
-	d.dst = append(d.dst, d.src[d.pos:d.pos+n]...)
+	copy(d.dst[d.out:], d.src[d.pos:d.pos+n])
+	d.out += n
 	d.pos += n
 }
 
-// copyBackref copies compBytes from compOffset bytes behind the write head. Offset
-// is zero-based distance-minus-one (offset 0 = the immediately preceding byte), so
-// the source index is len-compOffset-1; copying one byte at a time supports the
-// length>offset run-length case.
+// copyBackref copies compBytes from compOffset bytes behind the write head. The
+// offset is one-based (offset 1 = the immediately preceding byte) because each
+// opcode family folds its +1/+plus bias into compOffset; copying one byte at a
+// time supports the length>offset run-length case.
 func (d *lz77) copyBackref(compBytes, compOffset int) {
 	if d.err != nil {
 		return
 	}
-	start := len(d.dst) - compOffset - 1
+	start := d.out - compOffset
 	if start < 0 {
 		d.fail("back-reference offset %d before start of output", compOffset)
 		return
 	}
+	if d.out+compBytes > len(d.dst) {
+		d.fail("back-reference of %d overflows output", compBytes)
+		return
+	}
 	for i := 0; i < compBytes; i++ {
-		d.dst = append(d.dst, d.dst[start+i])
+		d.dst[d.out] = d.dst[start+i]
+		d.out++
 	}
 }
 
-// decodeOpcode reads the operands for opcode1, returning the back-reference length
-// and offset and the trailing literal count (0 meaning "read a Literal Length").
-// Ranges and constants are from ODA §4.7.
-func (d *lz77) decodeOpcode(opcode1 byte) (compBytes, compOffset, litCount int) {
-	switch {
-	case opcode1 == 0x10:
-		compBytes = d.longLength() + 9
-		compOffset, litCount = d.twoByteOffset()
-		compOffset += 0x3FFF
-	case opcode1 >= 0x12 && opcode1 <= 0x1F:
-		compBytes = int(opcode1&0x0F) + 2
-		compOffset, litCount = d.twoByteOffset()
-		compOffset += 0x3FFF
-	case opcode1 == 0x20:
-		compBytes = d.longLength() + 0x21
-		compOffset, litCount = d.twoByteOffset()
-	case opcode1 >= 0x21 && opcode1 <= 0x3F:
-		compBytes = int(opcode1) - 0x1E
-		compOffset, litCount = d.twoByteOffset()
-	case opcode1 >= 0x40:
-		compBytes = int(opcode1&0xF0)>>4 - 1
-		opcode2 := int(d.next())
-		compOffset = opcode2<<2 | int(opcode1&0x0C)>>2
-		litCount = int(opcode1 & 0x03)
-	default: // 0x00–0x0F never appear as an opcode; 0x11 handled by the caller
-		d.fail("invalid opcode %#02x", opcode1)
-	}
-	return compBytes, compOffset, litCount
-}
-
-// twoByteOffset decodes the two-byte (offset, litCount) operand (ODA §4.7).
-func (d *lz77) twoByteOffset() (offset, litCount int) {
-	first := d.next()
-	offset = int(first>>2) | int(d.next())<<6
-	litCount = int(first & 0x03)
-	return offset, litCount
-}
-
-// literalLength decodes a Literal Length (ODA §4.7). A byte with any high-nibble
-// bit set means length 0 and that the byte is the next opcode (returned via the
-// third result); a 0x00 byte starts a 0xFF-accumulating run; 0x01..0x0F map to
-// value+3.
-func (d *lz77) literalLength() (length int, opcode byte, isOpcode bool) {
-	b := d.next()
-	if b&0xF0 != 0 {
-		return 0, b, true
-	}
-	if b == 0x00 {
-		return d.accumulate(0x0F) + 3, 0, false
-	}
-	return int(b) + 3, 0, false
-}
-
-// longLength decodes a Long Compression Offset (ODA §4.7): a non-zero byte is the
-// value; a 0x00 byte starts a 0xFF-accumulating run seeded at 0xFF.
-func (d *lz77) longLength() int {
-	b := d.next()
-	if b != 0x00 {
-		return int(b)
-	}
-	return d.accumulate(0xFF)
-}
-
-// accumulate implements the shared "0x00 adds 0xFF, non-zero adds and stops"
-// run used by both length encodings, starting from the given running total.
-func (d *lz77) accumulate(total int) int {
-	for d.err == nil {
-		n := d.next()
-		if n == 0x00 {
-			total += 0xFF
-			continue
+// trailingLiterals copies the literal bytes that follow a back-reference and
+// returns the next opcode. The count comes from the low two bits of post (the
+// opcode left after operand decoding); when those are 0 the next byte is read and,
+// if its high nibble is clear, decoded as a Literal Length — otherwise that byte
+// is itself the next opcode (no literals).
+func (d *lz77) trailingLiterals(post byte) byte {
+	litCount := int(post & 3)
+	if litCount == 0 {
+		opcode := d.next()
+		if opcode&0xF0 != 0 {
+			return opcode // high nibble set: zero literals, this is the next opcode
 		}
-		return total + int(n)
+		d.appendLiterals(d.literalLength(opcode))
+		return d.next()
 	}
-	return total
+	d.appendLiterals(litCount)
+	return d.next()
+}
+
+// decodeOpcode reads the back-reference operands for opcode and returns the copy
+// length, the (one-based) copy offset, and the opcode value that carries the
+// trailing literal count in its low two bits. Masks and biases per ODA §4.7 as
+// realised in the reference decoder.
+func (d *lz77) decodeOpcode(opcode byte) (compBytes, compOffset int, post byte) {
+	switch {
+	case opcode < 0x10 || opcode >= 0x40:
+		compBytes = int(opcode>>4) - 1
+		op2 := int(d.next())
+		compOffset = (int(opcode>>2)&3 | op2<<2) + 1
+		post = opcode // literal count from the original opcode
+	case opcode < 0x20: // 0x10-0x1F
+		compBytes = d.compressedBytes(opcode, 7)
+		compOffset = int(opcode&8) << 11
+		post = d.twoByteOffset(0x4000, &compOffset)
+	default: // 0x20-0x3F
+		compBytes = d.compressedBytes(opcode, 0x1F)
+		post = d.twoByteOffset(1, &compOffset)
+	}
+	return compBytes, compOffset, post
+}
+
+// twoByteOffset folds the next two bytes into offset (OR-ing the existing partial
+// value) and adds the family bias plus; it returns the first byte, whose low two
+// bits give the trailing literal count and which becomes the next opcode.
+func (d *lz77) twoByteOffset(plus int, offset *int) byte {
+	first := d.next()
+	*offset |= int(first >> 2)
+	*offset |= int(d.next()) << 6
+	*offset += plus
+	return first
+}
+
+// compressedBytes decodes a copy length: the low (opcode&mask) bits, or — when
+// those are zero — a run where each 0x00 byte adds 0xFF and the first non-zero
+// byte adds itself plus mask. Always +2 (the minimum copy is 2 bytes).
+func (d *lz77) compressedBytes(opcode, mask byte) int {
+	n := int(opcode & mask)
+	if n != 0 {
+		return n + 2
+	}
+	var last byte
+	for {
+		last = d.next()
+		if last != 0 || d.err != nil {
+			break
+		}
+		n += 0xFF
+	}
+	return n + int(last) + int(mask) + 2
+}
+
+// literalLength decodes a Literal Length whose low nibble is opcode&0x0F, or —
+// when that nibble is zero — a 0x00-run (each 0x00 adds 0xFF, first non-zero adds
+// itself plus 0x0F). Always +3.
+func (d *lz77) literalLength(opcode byte) int {
+	n := int(opcode & 0x0F)
+	if n != 0 {
+		return n + 3
+	}
+	var last byte
+	for {
+		last = d.next()
+		if last != 0 || d.err != nil {
+			break
+		}
+		n += 0xFF
+	}
+	return n + 0x0F + int(last) + 3
 }
