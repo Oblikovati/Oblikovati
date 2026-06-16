@@ -139,6 +139,7 @@ func Default() *Registry {
 		sheetMetalContourFlangeDescriptor(),
 		sheetMetalLoftedFlangeDescriptor(),
 		sheetMetalContourRollDescriptor(),
+		sheetMetalCornerSeamDescriptor(),
 		splitSolidDescriptor(),
 		coreCavityDescriptor(),
 		hullDescriptor(),
