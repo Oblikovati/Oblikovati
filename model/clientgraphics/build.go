@@ -77,9 +77,24 @@ func buildPrimitive(p Primitive, lane Lane, bb billboard, wpp float64) (renderer
 		return triangleItem(p, p.Indices, onTop)
 	case types.GraphicsTriangleStrip:
 		return triangleItem(p, stripTriangleIndices(len(p.Coords)), onTop)
+	case types.GraphicsTriangleFan:
+		return triangleItem(p, fanTriangleIndices(len(p.Coords)), onTop)
 	default:
 		return renderer.DrawItem{}, false
 	}
+}
+
+// fanTriangleIndices expands an n-vertex triangle fan into 0-based triangle corner indices:
+// each triangle joins the first vertex with two consecutive others (v0, vi, vi+1).
+func fanTriangleIndices(n int) []int {
+	if n < 3 {
+		return nil
+	}
+	out := make([]int, 0, (n-2)*3)
+	for i := 1; i+1 < n; i++ {
+		out = append(out, 0, i, i+1)
+	}
+	return out
 }
 
 // triangleItem builds a shaded triangle draw item, resolving per-vertex colors from the
