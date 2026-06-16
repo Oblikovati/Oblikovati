@@ -79,18 +79,18 @@ func TestApplySetup(t *testing.T) {
 	}
 }
 
-// TestRunBoxSelectCaptures runs the full box-select capture (opens the real window, installs
-// the picker, injects a drag, saves the window mid-drag) end to end, so run + captureBoxSelect
-// are exercised. The m16shot binary supports only ONE real window per test process (a second
-// native.CreateWindow crashes on GLFW/Vulkan teardown), so this is the single window test and
-// it covers the box-select path added in #916.
-func TestRunBoxSelectCaptures(t *testing.T) {
-	out := filepath.Join(t.TempDir(), "box.png")
-	if err := run(opts{box: true, boxselect: true, frames: 2, out: out}); err != nil {
-		t.Fatalf("run boxselect: %v", err)
+// TestRunSketchCaptures runs the full sketch capture (opens the real window, enters a dimensioned
+// sketch, renders frames, saves the window) end to end, so run + captureSketch are exercised. The
+// m16shot binary supports only ONE real window per test process (a second native.CreateWindow
+// crashes on GLFW/Vulkan teardown), so this is the single window test and it covers the newest
+// capture path (#909); the box-select capture is exercised manually.
+func TestRunSketchCaptures(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "sketch.png")
+	if err := run(opts{sketch: true, frames: 2, out: out}); err != nil {
+		t.Fatalf("run sketch: %v", err)
 	}
 	if fi, err := os.Stat(out); err != nil || fi.Size() == 0 {
-		t.Errorf("box-select capture PNG not written: %v", err)
+		t.Errorf("sketch capture PNG not written: %v", err)
 	}
 }
 
