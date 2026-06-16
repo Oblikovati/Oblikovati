@@ -11,6 +11,17 @@ import (
 	"oblikovati.org/model/occurrence"
 )
 
+// snapPair sets up a grounded base + a free moving occurrence and a constraint set over them — the
+// fixture the grip-snap tests build their two refs on.
+func snapPair(t *testing.T, movingAt math.Matrix4) (*ConstraintSet, *occurrence.Occurrence, *occurrence.Occurrence) {
+	t.Helper()
+	occs := occurrence.NewOccurrences()
+	base := place(occs, "base:1", math.Identity4())
+	base.SetGrounded(true)
+	moving := place(occs, "moving:1", movingAt)
+	return NewConstraintSet(occs, nil), base, moving
+}
+
 // TestGripSnapInfers checks the grip-snap inference picks the right constraint from the two inputs'
 // primitive kinds (and, for two planes, their current world orientation).
 func TestGripSnapInfers(t *testing.T) {
@@ -29,11 +40,7 @@ func TestGripSnapInfers(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			occs := occurrence.NewOccurrences()
-			base := place(occs, "base:1", math.Identity4())
-			base.SetGrounded(true)
-			moving := place(occs, "moving:1", math.Identity4())
-			set := NewConstraintSet(occs, nil)
+			set, base, moving := snapPair(t, math.Identity4())
 			cst, kind, err := set.InferGripConstraint(ref(base, c.a), ref(moving, c.b), 0)
 			if err != nil {
 				t.Fatalf("InferGripConstraint: %v", err)
@@ -48,11 +55,7 @@ func TestGripSnapInfers(t *testing.T) {
 // TestGripSnapPreferOverrides checks an explicit prefer overrides the inference: two opposed planes
 // (which would auto-infer a mate) snap as a flush when flush is preferred.
 func TestGripSnapPreferOverrides(t *testing.T) {
-	occs := occurrence.NewOccurrences()
-	base := place(occs, "base:1", math.Identity4())
-	base.SetGrounded(true)
-	moving := place(occs, "moving:1", math.Identity4())
-	set := NewConstraintSet(occs, nil)
+	set, base, moving := snapPair(t, math.Identity4())
 	a := PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))
 	b := PlanePrimitive(math.P3(0, 0, 5), unit(t, 0, 0, -1))
 	_, kind, err := set.InferGripConstraint(ref(base, a), ref(moving, b), types.ConstraintFlush)
@@ -67,11 +70,7 @@ func TestGripSnapPreferOverrides(t *testing.T) {
 // TestGripSnapSnapsIntoPlace checks the grip snap repositions the moving component: snapping its hole
 // axis (offset in space) onto the base's axis inserts it so the axes are collinear at the origin.
 func TestGripSnapSnapsIntoPlace(t *testing.T) {
-	occs := occurrence.NewOccurrences()
-	base := place(occs, "base:1", math.Identity4())
-	base.SetGrounded(true)
-	moving := place(occs, "moving:1", math.Translation4(math.V3(3, 4, 10)))
-	set := NewConstraintSet(occs, nil)
+	set, base, moving := snapPair(t, math.Translation4(math.V3(3, 4, 10)))
 	_, kind, err := set.InferGripConstraint(
 		ref(base, CylinderPrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1), 2)),
 		ref(moving, CylinderPrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1), 2)), 0)

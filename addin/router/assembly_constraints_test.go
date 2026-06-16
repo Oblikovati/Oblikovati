@@ -89,19 +89,8 @@ func TestAssemblySnapConstrainOverWire(t *testing.T) {
 	if z := occs[1].Transform().Translation().Z; stdmath.Abs(z-1) > 1e-6 {
 		t.Errorf("snapped box z = %v, want 1 (bottom face on the grounded top face)", z)
 	}
-
-	// A prefer override forces the kind: snapping the same faces as a flush creates a flush instead.
-	r2, s2, _, occs2 := assemblySessionWithBoxes(t, 0, 5)
-	occs2[0].SetGrounded(true)
-	var flush wire.ConstraintResult
-	call(t, r2, s2, "assemblyConstraints.snap", mustJSON(t, wire.SnapConstraintArgs{
-		A:      wire.ConstraintGeomRef{Occurrence: occs2[0].ID(), Entity: topBoxFaceKey(t, occs2[0])},
-		B:      wire.ConstraintGeomRef{Occurrence: occs2[1].ID(), Entity: bottomBoxFaceKey(t, occs2[1])},
-		Prefer: "flush",
-	}), &flush)
-	if flush.Constraint.Type != "flush" {
-		t.Errorf("prefer=flush inferred %q, want flush", flush.Constraint.Type)
-	}
+	// The prefer override (snapping the same faces as a flush) is covered by the model
+	// TestGripSnapPreferOverrides and the bridge grip-snap e2e.
 }
 
 // TestAssemblySolveReportsFreeDOF checks the solve endpoint reports per-occurrence DOF for
