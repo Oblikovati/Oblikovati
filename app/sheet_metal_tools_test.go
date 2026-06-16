@@ -72,17 +72,28 @@ func TestSheetMetalCommandsEnable(t *testing.T) {
 		t.Error("hasActiveSheetMetalPart should be false with an ordinary part active")
 	}
 	cmds := sheetMetalTabCommands()
-	if len(cmds) != 14 {
-		t.Errorf("Sheet Metal tab has %d commands, want 14", len(cmds))
+	if len(cmds) != 15 {
+		t.Errorf("Sheet Metal tab has %d commands, want 15", len(cmds))
 	}
 	for _, c := range cmds {
 		if c.tab != "Sheet Metal" {
 			t.Errorf("command %q is on tab %q, want Sheet Metal", c.displayName, c.tab)
 		}
+		// Convert is the entry point: enabled on an ORDINARY part, off once converted. Every
+		// other command is the inverse — enabled only inside the environment.
+		if c.id == "SheetMetal.Convert" {
+			if c.IsEnabled(s) {
+				t.Error("Convert should be disabled on an already sheet-metal part")
+			}
+			if !c.IsEnabled(newSessionWithPart(t)) {
+				t.Error("Convert should be enabled on an ordinary part (the way in)")
+			}
+			continue
+		}
 		if !c.IsEnabled(s) {
 			t.Errorf("command %q should be enabled on a sheet-metal part", c.displayName)
 		}
-		if hasActiveSheetMetalPart(newSessionWithPart(t)) || c.IsEnabled(newSessionWithPart(t)) {
+		if c.IsEnabled(newSessionWithPart(t)) {
 			t.Errorf("command %q should be disabled on an ordinary part", c.displayName)
 		}
 	}
