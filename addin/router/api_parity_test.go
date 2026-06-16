@@ -44,7 +44,7 @@ func TestEveryWireMethodHasAHandler(t *testing.T) {
 // emit them (the representations / model-state surface has no app-level event yet). They
 // are tracked debt: when that feature fires an app event, relay it in addin/events and
 // DELETE it from this list. Any OTHER unrelayed event fails the test below — so this list
-// may only shrink.
+// may only shrink. See https://github.com/Oblikovati/Oblikovati/issues/901.
 var notYetRelayed = map[string]bool{
 	"EventModelStateActivated":     true,
 	"EventRepresentationActivated": true,
