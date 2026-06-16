@@ -309,6 +309,21 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 	}
 }
 
+// TestFilletRunOutToZero checks a lone variable fillet that tapers to radius 0 at one end: the blend
+// cone closes to a single apex on the edge (a run-out / "fade out"), producing a watertight solid
+// rather than the degenerate non-manifold fan the unguarded collapse would leave.
+func TestFilletRunOutToZero(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("run-out fillet not a valid solid: %+v", r)
+	}
+	assertWatertight(t, res, "run-out fillet")
+}
+
 // TestFilletTwoEdgeCornerMiterMeshWatertight checks the miter seam's TESSELLATION is watertight
 // across qualities — the two cylinders share the seam chord polyline exactly, so the welded mesh
 // must have no cracks where they meet.

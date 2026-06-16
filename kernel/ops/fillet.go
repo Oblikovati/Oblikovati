@@ -45,16 +45,17 @@ func FilletEdgesVarying(body *topo.Body, picks []EdgeFilletRadii) (*topo.Body, e
 }
 
 // CornerStrategy selects how a corner where two filleted edges meet a vertex whose third edge stays
-// sharp is treated (mirrors api types.FilletCornerType's miter/setback; the "round" form is realised
-// by the feature adding the third edge, which makes the corner a 3-edge sphere blend automatically).
+// sharp is treated (mirrors api types.FilletCornerType). Round and setback both augment the selection
+// with the sharp third edge — round at constant radius, setback as a taper that runs out to 0 — so
+// the corner resolves as a 3-edge sphere blend; miter keeps the two edges' cylinders meeting at a seam.
 type CornerStrategy int
 
 const (
 	// CornerMiter mutually trims the two cylinders along their intersection seam (a crease).
 	CornerMiter CornerStrategy = iota
-	// CornerSetback scoops the corner with a sphere patch set back from the sharp edge.
+	// CornerSetback rounds the corner into a sphere and tapers the third edge to a run-out (set-back).
 	CornerSetback
-	// CornerRound rounds the corner fully by also filleting the third edge — a true 3-edge sphere.
+	// CornerRound rounds the corner fully by also filleting the third edge at constant radius (sphere).
 	CornerRound
 )
 
@@ -72,17 +73,20 @@ func FilletEdgesCorner(body *topo.Body, picks []EdgeFilletRadii, corner CornerSt
 	if err != nil {
 		return nil, err
 	}
-	if corner == CornerRound {
-		edges = roundThirdEdges(edges) // round the corners fully → 3-edge blends
-		corner = CornerMiter           // the augmented corners are now 3-edge (sphere); none stay 2-edge
+	switch corner {
+	case CornerRound:
+		edges = roundThirdEdges(edges) // fillet the third edge at constant radius → 3-edge sphere
+	case CornerSetback:
+		edges = setbackThirdEdges(edges) // taper the third edge (r→0 run-out) → smooth set-back sphere
 	}
-	return filletResolvedEdges(body, edges, corner)
+	return filletResolvedEdges(body, edges)
 }
 
 // filletResolvedEdges solves the corners and edge fillets of an already-resolved pick list and
-// assembles the validated result body.
-func filletResolvedEdges(body *topo.Body, edges []filletPick, corner CornerStrategy) (*topo.Body, error) {
-	blends, miters, err := computeCorners(edges, corner)
+// assembles the validated result body. Round/setback corners have already been reduced to 3-edge
+// sphere blends by augmenting the third edge, so the corner solver only ever sees miters and blends.
+func filletResolvedEdges(body *topo.Body, edges []filletPick) (*topo.Body, error) {
+	blends, miters, err := computeCorners(edges)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +119,8 @@ func (p filletPick) varying() bool { return p.r0 != p.r1 }
 func resolveFilletPicks(body *topo.Body, picks []EdgeFilletRadii) ([]filletPick, error) {
 	out := make([]filletPick, 0, len(picks))
 	for _, p := range picks {
-		if p.R0 <= 0 || p.R1 <= 0 {
-			return nil, fmt.Errorf("fillet: radii %g/%g must be > 0", p.R0, p.R1)
+		if p.R0 < 0 || p.R1 < 0 || p.R0+p.R1 <= 0 {
+			return nil, fmt.Errorf("fillet: radii %g/%g must be >= 0 with at least one > 0 (a run-out tapers to 0 at one end)", p.R0, p.R1)
 		}
 		e, ok := body.FindEdgeByKey(p.Key)
 		if !ok {
@@ -144,6 +148,7 @@ type corner struct {
 	blend   bool
 	miter   bool          // two-fillet corner: the end is bounded by seam (no end face, no sphere)
 	seam    []math.Point3 // miter only: the seam chords from ta to tb, shared with the other cylinder
+	runout  bool          // variable fillet only: r=0 here, the blend collapses to an apex on the edge
 }
 
 // tOf returns the tangent point on face f (a or b).
@@ -210,10 +215,10 @@ func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[ui
 // edgeCorners solves the rounded corners at both endpoints of an edge (each blended when its
 // vertex is a shared corner), with the pick's per-end radius.
 func edgeCorners(e *topo.Edge, p filletPick, in cornerInputs, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter) (c0, c1 corner, err error) {
-	if c0, err = cornerAt(e.StartVertex(), in, p.r0, blends[e.StartVertex().ID()], miters[e.StartVertex().ID()]); err != nil {
+	if c0, err = cornerAt(e.StartVertex(), in, p.r0, blends[e.StartVertex().ID()], miters[e.StartVertex().ID()], p.varying()); err != nil {
 		return corner{}, corner{}, err
 	}
-	c1, err = cornerAt(e.EndVertex(), in, p.r1, blends[e.EndVertex().ID()], miters[e.EndVertex().ID()])
+	c1, err = cornerAt(e.EndVertex(), in, p.r1, blends[e.EndVertex().ID()], miters[e.EndVertex().ID()], p.varying())
 	return c0, c1, err
 }
 
@@ -221,14 +226,25 @@ func edgeCorners(e *topo.Edge, p filletPick, in cornerInputs, blends map[uint64]
 // had this many sides, so a 90° wedge gets 8.
 const filletChordsPerTurn = 32
 
-// sampleCornerChords samples both corners' arcs at the same angular stations, so chord j of
-// one corner pairs with chord j of the other as a straight ruling of the blend cone.
-func sampleCornerChords(c0, c1 *corner, in cornerInputs) {
+// runoutTol is the radius at or below which a variable fillet is treated as a run-out: the blend
+// collapses to a single apex on the edge (no end face), so the fillet fades smoothly into the corner.
+const runoutTol = 1e-9
+
+// cornerChordCount is the number of chord segments spanning the corner's rolling-ball wedge — sized
+// as if the full circle had filletChordsPerTurn sides (a 90° wedge gets 8), with a floor of 4.
+func cornerChordCount(in cornerInputs) int {
 	wedge := stdmath.Acos(float64(in.nA.Dot(in.nB)))
 	k := int(stdmath.Ceil(wedge / (2 * stdmath.Pi / filletChordsPerTurn)))
 	if k < 4 {
 		k = 4
 	}
+	return k
+}
+
+// sampleCornerChords samples both corners' arcs at the same angular stations, so chord j of
+// one corner pairs with chord j of the other as a straight ruling of the blend cone.
+func sampleCornerChords(c0, c1 *corner, in cornerInputs) {
+	k := cornerChordCount(in)
 	c0.chords = arcChords(*c0, in, k)
 	c1.chords = arcChords(*c1, in, k)
 }
@@ -275,7 +291,11 @@ type cornerInputs struct {
 // face. With a blend (v is a shared corner) the centre is the blend sphere's centre and the
 // tangent points are the sphere's tangents on the two faces; the corner-end arc joins the
 // sphere patch (no end face), and the arc is registered on the blend.
-func cornerAt(v *topo.Vertex, in cornerInputs, r float64, blend *cornerBlend, miter *cornerMiter) (corner, error) {
+func cornerAt(v *topo.Vertex, in cornerInputs, r float64, blend *cornerBlend, miter *cornerMiter, variable bool) (corner, error) {
+	if r <= runoutTol { // a variable fillet tapered to 0: the blend collapses to an apex on the edge here
+		p := v.Point()
+		return corner{a: in.a, b: in.b, vertex: v, cen: p, ta: p, tb: p, mid: p, runout: true}, nil
+	}
 	cen := v.Point().TranslateBy(in.offDir.Scale(r)) // the rolling-ball centre, on the cylinder axis
 	ta := cen.TranslateBy(in.nA.Scale(r))
 	tb := cen.TranslateBy(in.nB.Scale(r))
@@ -294,10 +314,21 @@ func cornerAt(v *topo.Vertex, in cornerInputs, r float64, blend *cornerBlend, mi
 	// mid is computed AFTER the switch so a blend corner's arc midpoint uses the sphere centre.
 	mid := cen.TranslateBy(perpToward(cen, v.Point(), in.axis).Scale(r))
 	c := corner{a: in.a, b: in.b, endFace: end, vertex: v, cen: cen, ta: ta, tb: tb, mid: mid, blend: blend != nil, miter: miter != nil, seam: seam}
-	if blend != nil {
-		blend.arcs = append(blend.arcs, blendArc{ta: ta, tb: tb, mid: mid})
-	}
+	registerBlendArc(blend, c, in, variable)
 	return c, nil
+}
+
+// registerBlendArc records the corner's boundary arc on the sphere patch when v is a blend corner. A
+// variable edge stores the arc as the cone's chord polyline so the patch and cone meet edge-for-edge.
+func registerBlendArc(blend *cornerBlend, c corner, in cornerInputs, variable bool) {
+	if blend == nil {
+		return
+	}
+	arc := blendArc{ta: c.ta, tb: c.tb, mid: c.mid}
+	if variable {
+		arc.chords = arcChords(c, in, cornerChordCount(in))
+	}
+	blend.arcs = append(blend.arcs, arc)
 }
 
 // miterTangents returns this edge's corner tangents and the seam oriented ta→tb: the shared
@@ -346,9 +377,13 @@ func endFaceAt(v *topo.Vertex, a, b *topo.Face) *topo.Face {
 	return nil
 }
 
-// blendArc is one boundary arc of a corner sphere patch (shared with a cylinder fillet):
-// from ta to tb through mid, all on the sphere.
-type blendArc struct{ ta, tb, mid math.Point3 }
+// blendArc is one boundary arc of a corner sphere patch (shared with a cylinder fillet). chords is
+// nil for an analytic single arc (a constant cylinder), or the chord polyline ta…tb when the arc is
+// shared with a VARIABLE cone, whose faceted end must match the patch edge-for-edge to stay watertight.
+type blendArc struct {
+	ta, tb, mid math.Point3
+	chords      []math.Point3
+}
 
 // cornerBlend is a spherical corner patch where several filleted edges meet at one vertex:
 // the rolling-ball sphere tangent to the corner's faces, its tangent point on each face
@@ -371,7 +406,7 @@ type cornerBlend struct {
 // All edges meeting at a corner must use ONE constant radius — a variable edge's faceted end
 // chords cannot meet a corner watertight, and a blend/seam has a single radius — so those and
 // any other configuration error clearly.
-func computeCorners(picks []filletPick, strategy CornerStrategy) (map[uint64]*cornerBlend, map[uint64]*cornerMiter, error) {
+func computeCorners(picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*cornerMiter, error) {
 	groups := map[uint64][]filletPick{}
 	for _, p := range picks {
 		groups[p.edge.StartVertex().ID()] = append(groups[p.edge.StartVertex().ID()], p)
@@ -383,7 +418,7 @@ func computeCorners(picks []filletPick, strategy CornerStrategy) (map[uint64]*co
 		if len(ps) < 2 {
 			continue
 		}
-		cb, cm, err := solveCorner(vid, ps, strategy)
+		cb, cm, err := solveCorner(vid, ps)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -400,8 +435,8 @@ func computeCorners(picks []filletPick, strategy CornerStrategy) (map[uint64]*co
 // solveCorner solves the corner treatment at vertex vid where the picks ps meet: a sphere blend
 // (3 edges, trihedral vertex) or a miter seam (2 edges sharing a face), at the corner's one shared
 // radius. Exactly one of (blend, miter) is returned; any other configuration errors.
-func solveCorner(vid uint64, ps []filletPick, strategy CornerStrategy) (*cornerBlend, *cornerMiter, error) {
-	r, err := blendRadius(ps)
+func solveCorner(vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error) {
+	r, err := cornerRadius(vid, ps)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -411,12 +446,10 @@ func solveCorner(vid uint64, ps []filletPick, strategy CornerStrategy) (*cornerB
 	case len(ps) == 3 && len(faces) == 3:
 		cb, err := solveBlend(v, faces, r)
 		return cb, nil, err
-	case len(ps) == 2 && strategy == CornerSetback:
-		// A pure sphere tangent to the three corner planes pinches to points at the two side-plane
-		// tangents, so a distinct watertight set-back patch is still being built; the miter is the
-		// exact alternative and the round the smooth one.
-		return nil, nil, fmt.Errorf("fillet: the setback corner at %v is not yet available — use the miter (exact crease) or round (smooth sphere) corner strategy", v.Point())
 	case len(ps) == 2:
+		if p := varyingPick(ps); p != nil {
+			return nil, nil, fmt.Errorf("fillet: a variable-radius edge (radii %g→%g) cannot share a 2-edge miter corner (its cone has no seam with a cylinder); round the third edge for a setback instead", p.r0, p.r1)
+		}
 		cm, err := solveMiter(v, ps, r)
 		return nil, cm, err
 	default:
@@ -424,19 +457,35 @@ func solveCorner(vid uint64, ps []filletPick, strategy CornerStrategy) (*cornerB
 	}
 }
 
-// blendRadius returns the single constant radius shared by every pick meeting at the corner,
-// erroring on a variable pick or on differing radii (with the offending values).
-func blendRadius(ps []filletPick) (float64, error) {
-	r := ps[0].r0
+// cornerRadius returns the radius every pick carries AT the shared corner vertex vid — the radius of
+// the corner sphere. A variable edge is allowed (e.g. a setback's tapered third edge) as long as its
+// radius at this corner matches the others; only the far ends may differ.
+func cornerRadius(vid uint64, ps []filletPick) (float64, error) {
+	r := radiusAtVertex(ps[0], vid)
 	for _, p := range ps {
-		if p.varying() {
-			return 0, fmt.Errorf("fillet: a variable-radius edge (radii %g→%g) cannot share a filleted corner with another filleted edge", p.r0, p.r1)
-		}
-		if p.r0 != r {
-			return 0, fmt.Errorf("fillet: edges meeting at a shared corner must use one radius (got %g and %g)", r, p.r0)
+		if rv := radiusAtVertex(p, vid); rv != r {
+			return 0, fmt.Errorf("fillet: edges meeting at a shared corner must use one radius there (got %g and %g)", r, rv)
 		}
 	}
 	return r, nil
+}
+
+// varyingPick returns the first pick whose radius varies along the edge, or nil if all are constant.
+func varyingPick(ps []filletPick) *filletPick {
+	for i := range ps {
+		if ps[i].varying() {
+			return &ps[i]
+		}
+	}
+	return nil
+}
+
+// radiusAtVertex returns the pick's radius at the endpoint vid (r0 at the start vertex, else r1).
+func radiusAtVertex(p filletPick, vid uint64) float64 {
+	if p.edge.StartVertex().ID() == vid {
+		return p.r0
+	}
+	return p.r1
 }
 
 // edgesOf projects the picks' edges.
