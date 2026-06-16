@@ -180,7 +180,7 @@ const (
 	viewCubeSnapSecs = 0.35
 	// Placement geometry as ratios of the (runtime) cube radius, so changing the size
 	// scales the margins, the rotational reach, and the home button together.
-	viewCubeMarginRatio  = 2.4 // cube-center inset from the corner — fits the compass ring + cardinals
+	viewCubeMarginRatio  = 2.4  // cube-center inset from the corner — fits the compass ring + cardinals
 	viewCubeReachRatio   = 1.74 // max projected half-extent of the rotating cube (≈√3)
 	viewCubeHomeGapRatio = 0.22 // clear margin between the cube's reach and the home button
 	viewCubeHomeRRatio   = 0.36 // home-button half-size
