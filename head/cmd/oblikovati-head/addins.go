@@ -89,6 +89,11 @@ func (h *addInHost) loadAndRegister(session *app.Session, dir string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
 	}
+	// A version-skipped add-in is the usual cause of "the bridge port never opened": surface each one
+	// on stderr (not only the UI status bar) so it is catchable in the process log / headless runs.
+	for _, sk := range skipped {
+		fmt.Fprintf(os.Stderr, "add-in %q skipped (incompatible): %s\n", sk.ID, sk.Reason)
+	}
 	if notice := incompatibleNotice(skipped); notice != "" {
 		session.SetNotice(notice)
 	}
