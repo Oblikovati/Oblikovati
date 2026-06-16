@@ -26,8 +26,8 @@ var (
 // precedence) so they never collide with a face/edge/corner pick.
 
 const (
-	viewCubeAdjOff  = 1.7  // adjacent-arrow distance from the cube centre, in radii
-	viewCubeRollOff = 1.2  // roll-arrow distance from the cube centre, in radii
+	viewCubeAdjOff  = 1.5  // adjacent-arrow distance from the cube centre — in the cube↔ring gap
+	viewCubeRollOff = 1.5  // roll-arrow distance from the cube centre (top-right, outside the face)
 	viewCubeArrowR  = 0.30 // arrow hit half-size, in radii
 )
 

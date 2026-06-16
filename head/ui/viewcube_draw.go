@@ -124,7 +124,7 @@ func drawCornerCombo(s *app.Session) {
 // heading as the view orbits.
 func drawCompass(cam scene.Camera, o doc.CubeOrient, cx, cy, r float32) {
 	right, up, fwd := cubeBasis(cam, o)
-	const rc, segs = 1.32, 48 // ring radius in cube units, hugging the base like the reference
+	const rc, segs = 1.95, 48 // ring radius (cube units) — clears the cube's iso reach (≈1.74) with a gap
 	var px, py float32
 	for i := 0; i <= segs; i++ {
 		t := float64(i) / segs * 2 * stdmath.Pi
@@ -137,7 +137,7 @@ func drawCompass(cam scene.Camera, o doc.CubeOrient, cx, cy, r float32) {
 	}
 	// The four cardinals, just outside the ring (N=+Y/BACK, E=+X, S=−Y/FRONT, W=−X), matching the
 	// reference's bold N/E/S/W rose.
-	const lr = rc * 1.22
+	const lr = rc * 1.13 // cardinals just outside the ring
 	for _, card := range []struct {
 		v math.Vector3
 		s string
@@ -180,7 +180,7 @@ const (
 	viewCubeSnapSecs = 0.35
 	// Placement geometry as ratios of the (runtime) cube radius, so changing the size
 	// scales the margins, the rotational reach, and the home button together.
-	viewCubeMarginRatio  = 1.78 // cube-center inset from the chosen corner
+	viewCubeMarginRatio  = 2.4 // cube-center inset from the corner — fits the compass ring + cardinals
 	viewCubeReachRatio   = 1.74 // max projected half-extent of the rotating cube (≈√3)
 	viewCubeHomeGapRatio = 0.22 // clear margin between the cube's reach and the home button
 	viewCubeHomeRRatio   = 0.36 // home-button half-size
