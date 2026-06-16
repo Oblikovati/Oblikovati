@@ -37,6 +37,15 @@ func (s *Session) SetDisplaySettings(id doc.ID, set display.Settings) {
 	}
 }
 
+// OpenDisplaySettings opens the Display Settings dialog (M16-F07 #643).
+func (s *Session) OpenDisplaySettings() { s.displaySettingsOpen = true }
+
+// CloseDisplaySettings closes the Display Settings dialog.
+func (s *Session) CloseDisplaySettings() { s.displaySettingsOpen = false }
+
+// DisplaySettingsOpen reports whether the Display Settings dialog is open.
+func (s *Session) DisplaySettingsOpen() bool { return s.displaySettingsOpen }
+
 // GroundPlaneVisible reports whether the active document's display settings keep the ground
 // plane visible (M16-F07 #643).
 func (s *Session) GroundPlaneVisible() bool { return s.DisplaySettings(0).GroundPlane.Visible }

@@ -50,9 +50,10 @@ func main() {
 	named := flag.Bool("named", false, "save a couple named views and open the Named Views panel (M16-F03)")
 	stylesPanel := flag.Bool("styles", false, "select the demo box and open the Color Styles panel (M16-F02)")
 	window := flag.Bool("window", false, "capture the WHOLE window (chrome + panels), not just the 3D viewport")
+	dialog := flag.Bool("dialog", false, "open the Display Settings dialog (M16-F07)")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *stylesPanel, *window}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *stylesPanel, *window, *dialog}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -70,6 +71,7 @@ type opts struct {
 	overlay               bool
 	style                 string
 	named, styles, window bool
+	dialog                bool
 }
 
 func run(o opts) error {
@@ -124,6 +126,9 @@ func applyDisplaySetup(s *app.Session, o opts) {
 	}
 	if o.styles {
 		applyStylesPanel(s)
+	}
+	if o.dialog {
+		s.OpenDisplaySettings()
 	}
 	if o.noEnv {
 		e := s.Environment()

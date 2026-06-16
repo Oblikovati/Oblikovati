@@ -14,5 +14,11 @@ func displayViewCommands() []*CommandDefinition {
 		}).WithTab("View").WithEnable(hasActivePart).WithIcon("home").WithButtonStyle(SmallIconButton).
 			WithActive(func(s *Session) bool { return s.GroundPlaneVisible() }).
 			WithTooltip("Ground Plane — show or hide the shadow-catching ground (View ▸ display settings)."),
+		NewCommand("View.DisplaySettings", "Display Settings…", "Appearance", func(s *Session) error {
+			s.OpenDisplaySettings()
+			return nil
+		}).WithTab("View").WithEnable(hasActivePart).WithIcon("decal").WithButtonStyle(SmallIconButton).
+			WithActive(func(s *Session) bool { return s.DisplaySettingsOpen() }).
+			WithTooltip("Display Settings — the document's background, edge color, ground plane and shadows."),
 	}
 }

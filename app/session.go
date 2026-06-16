@@ -116,6 +116,7 @@ type Session struct {
 	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
 	namedViewsPanelOpen  bool                           // the View ▸ Named Views panel is open (M16-F03 #404)
 	colorStylesPanelOpen bool                           // the Color Styles panel is open (M16-F02 #403/#408)
+	displaySettingsOpen  bool                           // the Display Settings dialog is open (M16-F07 #643)
 	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
 	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
 	scriptConsoleOpen    bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
