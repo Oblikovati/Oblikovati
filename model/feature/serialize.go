@@ -81,6 +81,7 @@ type FeatureData struct {
 	SheetMetalLoftedFlange  *SheetMetalLoftedFlangeData  `yaml:"sheetMetalLoftedFlange,omitempty"`  // M13-F02
 	SheetMetalContourRoll   *SheetMetalContourRollData   `yaml:"sheetMetalContourRoll,omitempty"`   // M13-F02
 	SheetMetalCornerSeam    *SheetMetalCornerSeamData    `yaml:"sheetMetalCornerSeam,omitempty"`    // M13-F02
+	SheetMetalCut           *SheetMetalCutData           `yaml:"sheetMetalCut,omitempty"`           // M13-F03
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -316,6 +317,12 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.SheetMetalContourRoll = smcr
 	case *SheetMetalCornerSeamFeature:
 		fd.SheetMetalCornerSeam = serializeSheetMetalCornerSeam(f.def)
+	case *SheetMetalCutFeature:
+		smc, err := serializeSheetMetalCut(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.SheetMetalCut = smc
 	case *DecalFeature:
 		fd.Decal = &DecalData{Face: encodeKey(f.def.FaceKey), Image: f.def.Image}
 	case *ReferenceFeature:
@@ -523,6 +530,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSheetMetalContourRoll(fs, fd.SheetMetalContourRoll, sk)
 	case "sheet-metal-corner-seam":
 		return restoreSheetMetalCornerSeam(fs, fd.SheetMetalCornerSeam)
+	case "sheet-metal-cut":
+		return restoreSheetMetalCut(fs, fd.SheetMetalCut, sk)
 	case "importedBody":
 		return restoreImportedBody(fs, fd.Import)
 	case "decal", "reference", "client", "mark", "finish":
