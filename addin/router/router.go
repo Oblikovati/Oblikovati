@@ -108,6 +108,7 @@ func (r *Router) registerStandardHandlers() {
 	r.registerSketchHandlers()
 	r.registerFeatureHandlers()
 	r.registerSheetMetalHandlers()
+	r.registerFlatPatternHandlers()
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
 	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodWorkPlanesRedefine] = redefineWorkPlane

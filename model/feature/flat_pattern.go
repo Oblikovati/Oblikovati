@@ -42,13 +42,15 @@ type FlatBendLine struct {
 	Angle float64
 }
 
-// FlatPattern is the developed flat: the flat solid, its fold lines, the 2D extents, and the
-// gauge. Body is one watertight solid (the base plate unioned with every tab).
+// FlatPattern is the developed flat: the flat solid, its fold lines, the 2D extents, the
+// gauge, and the base plane the flat lies in (so callers can project the body to 2D). Body is
+// one watertight solid (the base plate unioned with every tab).
 type FlatPattern struct {
 	Body      *topo.Body
 	Bends     []FlatBendLine
 	Extents   math.Box2d
 	Thickness float64
+	Plane     sketch.Plane
 }
 
 // BuildFlatPattern thickens the base profile in its plane, unions each tab on as a coplanar
@@ -79,6 +81,7 @@ func BuildFlatPattern(baseSketch *sketch.Sketch, baseProfile int, thickness floa
 	}
 	fp.Body = body
 	fp.Extents = flatExtents(body, plane)
+	fp.Plane = plane
 	return fp, nil
 }
 
