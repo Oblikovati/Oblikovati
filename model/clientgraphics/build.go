@@ -24,7 +24,7 @@ func (s *Store) Build(cam scene.Camera) ([]renderer.DrawItem, []Label) {
 			continue
 		}
 		for i := range g.nodes {
-			items, labels = buildNode(items, labels, &g.nodes[i], g.lane, bb, wpp)
+			items, labels = buildNode(items, labels, &g.nodes[i], g.lane, bb, wpp, s.resolver)
 		}
 	}
 	return items, labels
@@ -32,7 +32,7 @@ func (s *Store) Build(cam scene.Camera) ([]renderer.DrawItem, []Label) {
 
 // buildNode appends one node's primitives (placed by its transform, gated by its
 // visibility) to the running geometry and labels.
-func buildNode(items []renderer.DrawItem, labels []Label, n *Node, lane Lane, bb billboard, wpp float64) ([]renderer.DrawItem, []Label) {
+func buildNode(items []renderer.DrawItem, labels []Label, n *Node, lane Lane, bb billboard, wpp float64, resolver BodyMeshResolver) ([]renderer.DrawItem, []Label) {
 	if n.Visible != nil && !*n.Visible {
 		return items, labels
 	}
@@ -42,7 +42,7 @@ func buildNode(items []renderer.DrawItem, labels []Label, n *Node, lane Lane, bb
 			labels = append(labels, Label{Anchor: p.Anchor, Text: p.Text, Color: p.Color, FontSize: p.FontSize})
 			continue
 		}
-		if item, ok := buildPrimitive(p, lane, bb, wpp); ok {
+		if item, ok := buildPrimitive(p, lane, bb, wpp, resolver); ok {
 			items = append(items, item)
 		}
 	}
@@ -64,7 +64,7 @@ func placedPrimitive(p *Primitive, n *Node) Primitive {
 
 // buildPrimitive converts one non-text primitive into a draw item; ok is false for a kind
 // that produces no geometry (e.g. an empty primitive).
-func buildPrimitive(p Primitive, lane Lane, bb billboard, wpp float64) (renderer.DrawItem, bool) {
+func buildPrimitive(p Primitive, lane Lane, bb billboard, wpp float64, resolver BodyMeshResolver) (renderer.DrawItem, bool) {
 	onTop := p.OnTop || lane == LaneOverlay
 	switch p.Kind {
 	case types.GraphicsPoints:
@@ -79,9 +79,34 @@ func buildPrimitive(p Primitive, lane Lane, bb billboard, wpp float64) (renderer
 		return triangleItem(p, stripTriangleIndices(len(p.Coords)), onTop)
 	case types.GraphicsTriangleFan:
 		return triangleItem(p, fanTriangleIndices(len(p.Coords)), onTop)
+	case types.GraphicsSurface:
+		return surfaceItem(p, onTop, resolver)
 	default:
 		return renderer.DrawItem{}, false
 	}
+}
+
+// surfaceItem renders a body-derived overlay (GraphicsSurface, M16-F05 #641): it resolves the
+// referenced body/face to a tessellated mesh through the injected resolver and draws it in the
+// primitive's override color, on top of the model. ok is false when there is no resolver or the
+// body cannot be resolved.
+func surfaceItem(p Primitive, onTop bool, resolver BodyMeshResolver) (renderer.DrawItem, bool) {
+	if resolver == nil {
+		return renderer.DrawItem{}, false
+	}
+	pos, norm, idx, ok := resolver(p.BodyKey, p.TransientKey)
+	if !ok || len(pos) == 0 || len(idx) == 0 {
+		return renderer.DrawItem{}, false
+	}
+	return renderer.DrawItem{
+		Primitive: renderer.Triangles,
+		Positions: pos,
+		Normals:   norm,
+		Indices:   idx,
+		Color:     applyOpacity(p.Color, p.Opacity),
+		Opacity:   opacityOf(p.Color, p.Opacity),
+		OnTop:     onTop,
+	}, true
 }
 
 // fanTriangleIndices expands an n-vertex triangle fan into 0-based triangle corner indices:

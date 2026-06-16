@@ -191,7 +191,8 @@ func newSession(store doc.Store) *Session {
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
 	s.seedVisualState()
-	s.messageCenter.sink = s.routeMessage // M26 F03: mirror message-center entries to the command line
+	s.graphics.SetBodyResolver(s.resolveOverlayMesh) // M16-F05: surface-overlay body tessellation
+	s.messageCenter.sink = s.routeMessage            // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
 	s.watchDocumentInterests()

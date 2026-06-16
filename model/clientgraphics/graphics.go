@@ -57,6 +57,12 @@ type Primitive struct {
 	FontSize      float64
 	Opacity       float32
 	OnTop         bool
+
+	// Body-derived primitives (GraphicsSurface, M16-F05 #641): the persistent reference key
+	// (BodyKey) or transient handle (TransientKey) of the body/face to render in the override
+	// Color — the host tessellates it at Build via the injected body resolver (no mesh shipped).
+	BodyKey      string
+	TransientKey uint64
 }
 
 // Node groups primitives under one optional transform and visibility/opacity. Id names the

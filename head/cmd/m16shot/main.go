@@ -16,11 +16,13 @@ import (
 	"os"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/ui"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
+	"oblikovati.org/model/clientgraphics"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -43,9 +45,10 @@ func main() {
 	orient := flag.String("orient", "", "jump to a standard orientation (front/top/iso…)")
 	edge := flag.String("edge", "", "override the display-settings edge color as R,G,B (0-255)")
 	ground := flag.String("ground", "", "set the display-settings ground color as R,G,B and enable ground shadows")
+	overlay := flag.Bool("overlay", false, "add a red surface overlay highlighting the demo box (M16-F05)")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -60,6 +63,7 @@ type opts struct {
 	orient      string
 	edge        string
 	ground      string
+	overlay     bool
 }
 
 func run(o opts) error {
@@ -72,6 +76,15 @@ func run(o opts) error {
 	} else if _, err := s.NewPart(); err != nil {
 		return err
 	}
+	if err := applySetup(s, o); err != nil {
+		return err
+	}
+	return renderAndCapture(s, o.frames, o.out)
+}
+
+// applySetup applies the requested scene mutations (scheme / orientation / edge / ground /
+// overlay / environment) to the session before capture.
+func applySetup(s *app.Session, o opts) error {
 	if o.scheme != "" {
 		if err := s.SetColorScheme(o.scheme); err != nil {
 			return err
@@ -88,12 +101,15 @@ func run(o opts) error {
 	if o.ground != "" {
 		applyGround(s, o.ground)
 	}
+	if o.overlay {
+		applyOverlay(s)
+	}
 	if o.noEnv {
 		e := s.Environment()
 		e.ShowImage = false
 		s.SetEnvironment(e)
 	}
-	return renderAndCapture(s, o.frames, o.out)
+	return nil
 }
 
 // renderAndCapture opens the window, runs the real DrawChrome loop for n frames so the
@@ -135,6 +151,27 @@ func applyGround(s *app.Session, rgb string) {
 	sh := s.ShadowSettings()
 	sh.GroundShadows = true
 	s.SetShadowSettings(sh)
+}
+
+// applyOverlay adds a red surface-overlay client-graphics group that highlights the first
+// visible body by its reference key — the host tessellates it via the injected resolver
+// (M16-F05 #641).
+func applyOverlay(s *app.Session) {
+	bodies := s.VisibleBodies()
+	if len(bodies) == 0 {
+		return
+	}
+	key := string(bodies[0].ReferenceKey())
+	g, err := clientgraphics.DecodeGroup(wire.SetClientGraphicsArgs{
+		ClientId: "highlight",
+		Nodes: []wire.GraphicsNode{{Primitives: []wire.GraphicsPrimitive{{
+			Kind: string(types.GraphicsSurface), BodyKey: key, Color: []float32{1, 0.15, 0.15, 1}, OnTop: true,
+		}}}},
+	})
+	if err != nil {
+		panic(err)
+	}
+	s.Graphics().Set(g)
 }
 
 // buildBox seeds the active part with a 4x3x5 extruded box and frames it, so the captured
