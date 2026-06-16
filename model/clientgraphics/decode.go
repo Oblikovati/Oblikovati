@@ -67,8 +67,19 @@ func decodeNode(n wire.GraphicsNode) (Node, error) {
 		}
 		prims[i] = prim
 	}
-	return Node{Transform: xf, HasTransform: has, Visible: n.Visible, Opacity: n.Opacity, Primitives: prims}, nil
+	return Node{
+		Id: n.Id, Transform: xf, HasTransform: has, Visible: n.Visible, Opacity: n.Opacity,
+		Selectable: n.Selectable, ComponentKey: n.ComponentKey, Primitives: prims,
+	}, nil
 }
+
+// MapperFromWire validates and converts a wire color mapper to the model type — the named
+// color-mapper registry path (M16-F05 #641).
+func MapperFromWire(m wire.GraphicsColorMapper) (*ColorMapper, error) { return decodeMapper(&m) }
+
+// TransformFromWire builds a Matrix4 from a 16-element row-major slice (empty ⇒ identity / no
+// transform) — the retained-mode node-move path (M16-F05 #641).
+func TransformFromWire(t []float64) (math.Matrix4, bool, error) { return decodeTransform(t) }
 
 // decodeTransform builds a Matrix4 from a 16-element row-major slice; an empty slice
 // means "no transform" (identity), any other length is an error.

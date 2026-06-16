@@ -11,11 +11,14 @@ import (
 // single owner of add-in-submitted graphics for a session; Build reads it each frame.
 // Not safe for concurrent use — it is mutated and read on the session goroutine.
 type Store struct {
-	groups map[string]*Group
+	groups  map[string]*Group
+	mappers map[string]*ColorMapper // named, reusable color mappers (M16-F05 #641)
 }
 
 // NewStore returns an empty store.
-func NewStore() *Store { return &Store{groups: map[string]*Group{}} }
+func NewStore() *Store {
+	return &Store{groups: map[string]*Group{}, mappers: map[string]*ColorMapper{}}
+}
 
 // Set inserts or replaces a group (idempotent by client id) — the submit path.
 func (s *Store) Set(g Group) {

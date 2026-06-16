@@ -59,12 +59,18 @@ type Primitive struct {
 	OnTop         bool
 }
 
-// Node groups primitives under one optional transform and visibility/opacity.
+// Node groups primitives under one optional transform and visibility/opacity. Id names the
+// node within its group so targeted retained-mode mutations (set transform/visible/selectable)
+// can address it without resubmitting geometry; Selectable lets its primitives participate in
+// picking; ComponentKey anchors it to a component/feature (M16-F05 #641).
 type Node struct {
+	Id           string
 	Transform    math.Matrix4
 	HasTransform bool
 	Visible      *bool
 	Opacity      float32
+	Selectable   bool
+	ComponentKey string
 	Primitives   []Primitive
 }
 

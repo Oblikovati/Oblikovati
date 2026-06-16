@@ -398,6 +398,7 @@ func (r *Router) registerGraphicsHandlers() {
 	r.handlers[wire.MethodClientGraphicsSetVisible] = setClientGraphicsVisible
 	r.handlers[wire.MethodInteractionGraphicsUpdate] = updateInteractionGraphics
 	r.handlers[wire.MethodInteractionGraphicsClear] = clearInteractionGraphics
+	r.registerGraphicsObjectModelHandlers()
 }
 
 // Handle dispatches method with its JSON args (empty args become {}), returning the
