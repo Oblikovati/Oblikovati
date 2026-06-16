@@ -117,7 +117,7 @@ func renderAndCapture(s *app.Session, frames int, out string) error {
 // color, so the rebuilt draw list draws the model edges in that color.
 func applyEdgeColor(s *app.Session, rgb string) {
 	var r, g, b uint8
-	fmt.Sscanf(rgb, "%d,%d,%d", &r, &g, &b)
+	_, _ = fmt.Sscanf(rgb, "%d,%d,%d", &r, &g, &b)
 	set := s.DisplaySettings(0)
 	set.EdgeColor = types.NewColor(r, g, b)
 	s.SetDisplaySettings(0, set)
@@ -127,7 +127,7 @@ func applyEdgeColor(s *app.Session, rgb string) {
 // shadows so the colored ground plane is drawn under the model.
 func applyGround(s *app.Session, rgb string) {
 	var r, g, b uint8
-	fmt.Sscanf(rgb, "%d,%d,%d", &r, &g, &b)
+	_, _ = fmt.Sscanf(rgb, "%d,%d,%d", &r, &g, &b)
 	set := s.DisplaySettings(0)
 	set.GroundPlane.Color = types.NewColor(r, g, b)
 	set.GroundPlane.Visible = true
