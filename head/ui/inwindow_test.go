@@ -235,3 +235,37 @@ func TestInWindowBoxSelectDragSelects(t *testing.T) {
 		t.Errorf("box-select release should select the region hit: count=%d, want 1", s.Selection().Count())
 	}
 }
+
+// TestInWindowBoxSelectCrossingShift drives a right→left (crossing) Shift+drag, exercising the
+// crossing-mode rubber-band colour and the Shift-add modifier path of the head box-select
+// handler (#916).
+func TestInWindowBoxSelectCrossingShift(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	s := framedSession()
+	s.SetPicker(fakeEmptyPicker{})
+	s.SetRegionPicker(fakeRegionHit{sel: app.BodyHandle{}})
+	cx, cy := float32(inWinW/2), float32(inWinH/2)
+
+	native.InjectMousePos(cx+150, cy+100) // start lower-right
+	viewportFrame(win, s)
+	native.InjectMousePos(cx+150, cy+100)
+	viewportFrame(win, s)
+
+	native.InjectKeyShift(true)
+	native.InjectMouseButton(native.MouseLeft, true)
+	viewportFrame(win, s)
+	for i := 1; i <= 3; i++ { // drag up-left → crossing select
+		native.InjectMousePos(cx+150-float32(60*i), cy+100-float32(40*i))
+		viewportFrame(win, s)
+	}
+	if _, _, _, _, crossing := s.BoxSelectRect(); !crossing {
+		t.Error("a right→left drag should be a crossing select (drives the green rubber-band)")
+	}
+	native.InjectMouseButton(native.MouseLeft, false) // release with Shift STILL held...
+	viewportFrame(win, s)                             // ...so the commit reads ShiftMod (add)
+	native.InjectKeyShift(false)
+	if s.Selection().Count() != 1 {
+		t.Errorf("shift+crossing box-select should add the region hit: count=%d, want 1", s.Selection().Count())
+	}
+}

@@ -60,6 +60,25 @@ func TestPickRegionCrossingTouchesBody(t *testing.T) {
 	}
 }
 
+func TestPickRegionNilBodiesAndBehindCamera(t *testing.T) {
+	// No bodies provider → no region hits (the head installs one, but guard the nil case).
+	pNil := NewRayPicker(scene.NewCamera(400, 400), nil)
+	if got := pNil.PickRegion(0, 0, 100, 100, false, NewSelectionFilter()); got != nil {
+		t.Errorf("PickRegion with no bodies provider should return nil, got %d", len(got))
+	}
+
+	// A body entirely behind the camera fails to project and is skipped (no hits), even for a
+	// huge crossing rectangle.
+	s := extrudedBox(t, 2, 4)
+	cam := scene.NewCamera(400, 400)
+	cam.Eye = math.P3(0, 0, -20)
+	cam.Target = math.P3(0, 0, -40) // look away from the box (which sits at z∈[0,4])
+	p := NewRayPicker(cam, partBodies(s))
+	if got := p.PickRegion(-1e6, -1e6, 1e6, 1e6, true, NewSelectionFilter()); len(got) != 0 {
+		t.Errorf("a body behind the camera should not be region-selected, got %d", len(got))
+	}
+}
+
 func TestPickRegionHonorsBodyFilter(t *testing.T) {
 	p, box := regionPickerForBox(t)
 	// A filter that excludes bodies (edges only) yields no whole-body region hits.

@@ -98,6 +98,28 @@ func TestBoxSelectModifiers(t *testing.T) {
 	}
 }
 
+func TestBoxSelectGuardsWhenInactive(t *testing.T) {
+	rp := &fakeRegionPicker{windowHits: []Selectable{FaceHandle{Face: aFace()}}}
+	s := NewSession()
+	s.SetRegionPicker(rp)
+
+	// Update/Commit are no-ops when no drag is in progress.
+	s.UpdateBoxSelect(5, 5) // must not panic or activate
+	if s.BoxSelectActive() {
+		t.Error("UpdateBoxSelect with no active drag must not activate one")
+	}
+	if n := s.CommitBoxSelect(0); n != 0 || rp.calls != 0 {
+		t.Errorf("CommitBoxSelect with no active drag should be a no-op: n=%d calls=%d", n, rp.calls)
+	}
+
+	// Commit with an active box but no RegionPicker installed clears the box and selects nothing.
+	s2 := NewSession()
+	s2.boxSelect = BoxSelection{X0: 0, Y0: 0, X1: 9, Y1: 9, Active: true}
+	if n := s2.CommitBoxSelect(0); n != 0 || s2.BoxSelectActive() {
+		t.Errorf("commit without a RegionPicker should drop the box: n=%d active=%v", n, s2.BoxSelectActive())
+	}
+}
+
 func TestCancelBoxSelectLeavesSelectionUntouched(t *testing.T) {
 	a := FaceHandle{Face: aFace()}
 	rp := &fakeRegionPicker{windowHits: []Selectable{a}}
