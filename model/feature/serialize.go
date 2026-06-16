@@ -82,6 +82,8 @@ type FeatureData struct {
 	SheetMetalContourRoll   *SheetMetalContourRollData   `yaml:"sheetMetalContourRoll,omitempty"`   // M13-F02
 	SheetMetalCornerSeam    *SheetMetalCornerSeamData    `yaml:"sheetMetalCornerSeam,omitempty"`    // M13-F02
 	SheetMetalCut           *SheetMetalCutData           `yaml:"sheetMetalCut,omitempty"`           // M13-F03
+	SheetMetalUnfold        *SheetMetalUnfoldData        `yaml:"sheetMetalUnfold,omitempty"`        // M13-F04
+	SheetMetalRefold        *SheetMetalRefoldData        `yaml:"sheetMetalRefold,omitempty"`        // M13-F04
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -323,6 +325,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.SheetMetalCut = smc
+	case *SheetMetalUnfoldFeature:
+		fd.SheetMetalUnfold = &SheetMetalUnfoldData{Bends: serializeBendTransforms(f.def.Bends)}
+	case *SheetMetalRefoldFeature:
+		fd.SheetMetalRefold = &SheetMetalRefoldData{Bends: serializeBendTransforms(f.def.Bends)}
 	case *DecalFeature:
 		fd.Decal = &DecalData{Face: encodeKey(f.def.FaceKey), Image: f.def.Image}
 	case *ReferenceFeature:
@@ -532,6 +538,10 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSheetMetalCornerSeam(fs, fd.SheetMetalCornerSeam)
 	case "sheet-metal-cut":
 		return restoreSheetMetalCut(fs, fd.SheetMetalCut, sk)
+	case "sheet-metal-unfold":
+		return restoreSheetMetalUnfold(fs, fd.SheetMetalUnfold)
+	case "sheet-metal-refold":
+		return restoreSheetMetalRefold(fs, fd.SheetMetalRefold)
 	case "importedBody":
 		return restoreImportedBody(fs, fd.Import)
 	case "decal", "reference", "client", "mark", "finish":
