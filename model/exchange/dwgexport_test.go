@@ -114,7 +114,8 @@ func wantEndpoints(t *testing.T, what string, got, want *sketch.Arc) {
 	gs, ge := got.Start.Position(), got.End.Position()
 	ws, we := want.Start.Position(), want.End.Position()
 	same := func(a, b gmath.Point2) bool { return math.Abs(a.X-b.X) < 1e-7 && math.Abs(a.Y-b.Y) < 1e-7 }
-	if !(same(gs, ws) && same(ge, we)) && !(same(gs, we) && same(ge, ws)) {
+	matched := (same(gs, ws) && same(ge, we)) || (same(gs, we) && same(ge, ws))
+	if !matched {
 		t.Errorf("%s endpoints = (%v,%v), want the pair (%v,%v)", what, gs, ge, ws, we)
 	}
 }

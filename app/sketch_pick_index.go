@@ -55,6 +55,8 @@ func pickIndexFor(sk *sketch.Sketch) *sketchPickIndex {
 
 // buildPickIndex facets every entity into model-space segments and bins them into a
 // roughly sqrt(N) × sqrt(N) grid over the sketch's 2D extent (N = segment count).
+//
+//nolint:funlen,gocyclo // spatial-grid construction; length/branches are the binning, not logic.
 func buildPickIndex(sk *sketch.Sketch, count int) *sketchPickIndex {
 	plane := sk.Plane()
 	idx := &sketchPickIndex{count: count, plane: plane, segs: make([]sketchSeg, 0, count)}

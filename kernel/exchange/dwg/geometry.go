@@ -125,11 +125,13 @@ func (e *Insert) EntityType() ObjectType { return TypeInsert }
 // decodeEntity decodes one geometry entity's coordinates from a reader positioned
 // at its type-specific data (see seekEntityGeometry). It returns (nil, nil) for a
 // type whose geometry decoder is not yet implemented, so callers can skip it.
+//
+//nolint:funlen // one-case-per-type geometry-decode dispatch.
 func decodeEntity(r *BitReader, header ObjectHeader, version Version) (Entity, error) {
 	var e Entity
 	switch header.Type {
 	case TypeLine:
-		e = decodeLine(r, header.Handle, version)
+		e = decodeLine(r, header.Handle)
 	case TypeCircle:
 		e = decodeCircle(r, header.Handle)
 	case TypeArc:
@@ -154,7 +156,7 @@ func decodeEntity(r *BitReader, header ObjectHeader, version Version) (Entity, e
 // decodeLine reads LINE geometry (ODA): a z-is-zero flag, then start.x/start.y as
 // raw doubles with end.x/end.y as deltas from them, optional z, then thickness and
 // extrusion (consumed but unused here).
-func decodeLine(r *BitReader, handle uint64, version Version) *Line {
+func decodeLine(r *BitReader, handle uint64) *Line {
 	zZero := r.ReadBit() == 1
 	sx := r.ReadRD()
 	ex := r.ReadDD(sx)
@@ -229,6 +231,8 @@ const (
 // decodeLwPolyline reads LWPOLYLINE geometry. After the flag-gated header fields,
 // the vertices are a 2DD vector (first point full, the rest deltas from the
 // previous), then a bulge vector, vertex-id vector (R2010+) and width pairs.
+//
+//nolint:funlen // sequential flag-gated LWPOLYLINE field reads; length is the format.
 func decodeLwPolyline(r *BitReader, handle uint64, version Version, objSize int) *LwPolyline {
 	flag := r.ReadBS()
 	p := &LwPolyline{Handle: handle, Closed: flag&lwClosed != 0, Normal: [3]float64{0, 0, 1}}
@@ -276,6 +280,8 @@ func decodeLwPolyline(r *BitReader, handle uint64, version Version, objSize int)
 // weighted). Scenario 2 (fit points): tolerance, begin/end tangents, then a fit
 // point vector. On R2013+ a splineflags/knotparam pair precedes the data and can
 // override the scenario.
+//
+//nolint:funlen // sequential SPLINE field reads across both scenarios; length is the format.
 func decodeSpline(r *BitReader, handle uint64, version Version, objSize int) *Spline {
 	scenario := r.ReadBL()
 	if version >= R2013 {

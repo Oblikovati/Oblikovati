@@ -222,6 +222,8 @@ func (d *Drawing) Planar(tol float64) (elevation float64, planar bool) {
 }
 
 // entityZ returns the Z coordinates an entity contributes to the planarity test.
+//
+//nolint:funlen // one-case-per-entity-type dispatch returning each type's Z coordinates.
 func entityZ(e Entity) []float64 {
 	switch g := e.(type) {
 	case *Line:

@@ -155,6 +155,8 @@ func readUnitsAndCounts(r *BitReader, hv *HeaderVars, version Version) {
 
 // readSizesAndTimes consumes the real-valued size defaults (LTSCALE..CELTSCALE), the
 // creation/update/usage timers, and CECOLOR, capturing the import-relevant scales.
+//
+//nolint:funlen // sequential header-variable reads in spec order; length is the field layout.
 func readSizesAndTimes(r *BitReader, hv *HeaderVars, version Version) {
 	hv.LTScale = r.ReadBD()
 	hv.TextSize = r.ReadBD()
@@ -192,6 +194,8 @@ func readSizesAndTimes(r *BitReader, hv *HeaderVars, version Version) {
 // readUcsDimAndInsunits consumes the paper/model UCS and extents, the dimension-variable
 // block, and finally FLAGS, returning the INSUNITS value that immediately follows. The
 // model-space extents/limits are captured along the way.
+//
+//nolint:funlen // sequential header-variable reads in spec order; length is the field layout.
 func readUcsDimAndInsunits(r *BitReader, hv *HeaderVars, version Version) int {
 	if version >= R2000 {
 		r.ReadBD() // PSVPSCALE
@@ -232,6 +236,8 @@ func readUcsDimAndInsunits(r *BitReader, hv *HeaderVars, version Version) int {
 // readDimVars consumes the dimension-style variable block (DIMSCALE onward) up to FLAGS,
 // capturing DIMSCALE. The pre-R2000 layout (a different bool/BS ordering) is gated out
 // here because the supported generations are R2000+.
+//
+//nolint:funlen,gocyclo // sequential version-gated dimension-variable reads; length/branches are the format.
 func readDimVars(r *BitReader, hv *HeaderVars, version Version) {
 	hv.DimScale = r.ReadBD()
 	for i := 0; i < 8; i++ { // DIMASZ, DIMEXO, DIMDLI, DIMEXE, DIMRND, DIMDLE, DIMTP, DIMTM
@@ -307,6 +313,8 @@ func readDimVars(r *BitReader, hv *HeaderVars, version Version) {
 // strings share one stream (so TV strings and handle references must be consumed inline
 // to stay in sync). Implemented separately from the R2007+ path because of that
 // interleaving.
+//
+//nolint:funlen // the R2000 header is one long inline field sequence; length is the format, not logic.
 func readHeaderVarsR2000(r *BitReader, hv *HeaderVars, version Version) {
 	hv.Unit1Ratio, hv.Unit2Ratio = r.ReadBD(), r.ReadBD()
 	hv.Unit3Ratio, hv.Unit4Ratio = r.ReadBD(), r.ReadBD()

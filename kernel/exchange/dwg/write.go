@@ -50,6 +50,8 @@ func objectTypeBS(e Entity) (int, bool) {
 // MS size to the handle stream — is computed from the pre-encoded body so it can be
 // written before the body. Validated against LibreDWG's dwgread, which reads the resulting
 // entities with no CRC mismatch.
+//
+//nolint:funlen // sequential object framing: size, type, bitsize, body, handle stream, CRC.
 func encodeEntityObject(handle uint64, e Entity) ([]byte, error) {
 	typ, ok := objectTypeBS(e)
 	if !ok {
@@ -116,6 +118,8 @@ func writeCommonEntityData(w *BitWriter) {
 }
 
 // writeGeometry dispatches to the per-type geometry encoder (exact inverse of decodeEntity).
+//
+//nolint:funlen // one-case-per-type geometry-encode dispatch (inverse of decodeEntity).
 func writeGeometry(w *BitWriter, e Entity) {
 	switch g := e.(type) {
 	case *Line:
@@ -184,6 +188,8 @@ func writeLineGeom(w *BitWriter, l *Line) {
 
 // writeLwPolylineGeom encodes LWPOLYLINE: a flag word gating the optional fields, the
 // counts, the vertices (first full, rest DD deltas), then bulges.
+//
+//nolint:funlen // sequential flag-gated LWPOLYLINE field writes; length is the format.
 func writeLwPolylineGeom(w *BitWriter, p *LwPolyline) {
 	flag := 0
 	if p.Closed {
@@ -227,6 +233,8 @@ func writeLwPolylineGeom(w *BitWriter, p *LwPolyline) {
 // writeSplineGeom encodes SPLINE in control-point form. The knot vector is omitted
 // (count 0): the importer rebuilds the curve from the control points, so the round trip
 // preserves them without carrying knots.
+//
+//nolint:funlen // sequential SPLINE field writes; length is the format.
 func writeSplineGeom(w *BitWriter, s *Spline) {
 	if len(s.ControlPoints) >= 2 {
 		w.WriteBL(1) // scenario: control points
@@ -320,6 +328,8 @@ func (b *r2000Builder) build(entities []Entity) ([]byte, error) {
 
 // encodeObjectMap writes the handle→offset directory: one section of (handle delta,
 // location delta) pairs followed by the terminating size-2 section.
+//
+//nolint:funlen // builds the object-map section and its CRC byte-by-byte; length is the format.
 func (b *r2000Builder) encodeObjectMap() []byte {
 	pairs := NewBitWriter()
 	var lastHandle uint64

@@ -38,6 +38,8 @@ func readResolvedHandle(r *BitReader, own uint64) uint64 {
 // returns the owner handle (the owning block for entmode 0; 0 otherwise) plus a reader
 // positioned right after them, so an entity-specific handle (e.g. INSERT.block_header)
 // can be read next. The reader is independent of the geometry/data-stream cursor.
+//
+//nolint:funlen,gocyclo // sequential flag-gated handle reads in spec order; length/branches are the format.
 func commonEntityHandles(data []byte, cur *entityCursor, version Version) (owner uint64, r *BitReader) {
 	r = NewBitReaderAt(data, cur.handleStart)
 	ce := cur.common

@@ -26,6 +26,8 @@ const objectMapMaxSection = 2040
 // Example:
 //
 //	refs, err := parseObjectMap(handlesSection) // refs[i].Offset into AcDbObjects
+//
+//nolint:funlen // section + (handle,location) delta-decode loop; length is the wire format.
 func parseObjectMap(data []byte) ([]ObjectRef, error) {
 	r := NewBitReader(data)
 	var refs []ObjectRef

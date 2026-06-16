@@ -94,6 +94,8 @@ func add2DEntities(sk *sketch.Sketch, entities []dwg.Entity) (int, []string) {
 
 // add2DEntity places one entity on a 2D sketch using its X/Y coordinates; it
 // returns false for a type with no 2D mapping.
+//
+//nolint:funlen // one-case-per-entity-type conversion dispatch.
 func add2DEntity(sk *sketch.Sketch, e dwg.Entity) bool {
 	switch g := e.(type) {
 	case *dwg.Line:

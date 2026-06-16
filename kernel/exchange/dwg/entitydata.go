@@ -88,6 +88,8 @@ func skipEED(r *BitReader) {
 // cursor lands on the entity geometry, capturing the flags that drive handle-stream
 // parsing. Field order and version gating follow common_entity_data.spec; handle and
 // string-stream fields are absent here (they do not advance the data stream).
+//
+//nolint:funlen // sequential common-entity-data field reads; length is the field layout, not logic.
 func readCommonEntityData(r *BitReader, version Version) commonEntity {
 	var ce commonEntity
 	if r.ReadBit() == 1 { // preview_exists

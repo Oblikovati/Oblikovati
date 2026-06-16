@@ -88,3 +88,28 @@ func TestMetersPerUnit(t *testing.T) {
 		}
 	}
 }
+
+// TestParseHeaderVarsSequence exercises the full header-variable read sequence for both
+// generations (R2018 three-stream path and R2000 inline path) on a well-framed buffer of
+// zero bytes: every field decodes to its zero/default value and the cursor must reach
+// INSUNITS without error. This covers the long field-by-field parsers in CI, where the
+// real .dwg corpus is absent.
+func TestParseHeaderVarsSequence(t *testing.T) {
+	for _, v := range []Version{R2018, R2000} {
+		buf := append(append([]byte{}, vbeginSentinel...), make([]byte, 8192)...)
+		hv, err := ParseHeaderVars(buf, v)
+		if err != nil {
+			t.Fatalf("version %d: ParseHeaderVars on zero buffer: %v", v, err)
+		}
+		if hv.INSUNITS != 0 {
+			t.Errorf("version %d: zero-buffer INSUNITS = %d, want 0", v, hv.INSUNITS)
+		}
+	}
+}
+
+// TestParseHeaderVarsNoSentinel checks the missing-sentinel error path.
+func TestParseHeaderVarsNoSentinel(t *testing.T) {
+	if _, err := ParseHeaderVars(make([]byte, 64), R2018); err == nil {
+		t.Error("expected an error when the variable-begin sentinel is absent")
+	}
+}

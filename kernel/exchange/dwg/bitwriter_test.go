@@ -84,3 +84,34 @@ func TestBitWriterRoundTrip(t *testing.T) {
 		t.Fatalf("reader error after round-trip: %v", err)
 	}
 }
+
+// TestBitReaderMiscReaders covers the position helpers and R2010 readers (BOT/BLL/2BD)
+// that the round-trip path does not otherwise exercise.
+func TestBitReaderMiscReaders(t *testing.T) {
+	w := NewBitWriter()
+	w.WriteBits(0, 2)
+	w.WriteRC(0x05) // BOT selector 00 + RC => 5
+	w.WriteBits(3, 3)
+	w.WriteRC(1)
+	w.WriteRC(2)
+	w.WriteRC(3) // BLL: 3 bytes little-endian => 0x030201
+	w.WriteBD(1.5)
+	w.WriteBD(2.5) // 2BD
+	r := NewBitReader(w.Bytes())
+	if got := r.ReadBOT(); got != 5 {
+		t.Errorf("ReadBOT = %d, want 5", got)
+	}
+	if got := r.ReadBLL(); got != 0x030201 {
+		t.Errorf("ReadBLL = %#x, want 0x030201", got)
+	}
+	if got := r.Read2BD(); got != [2]float64{1.5, 2.5} {
+		t.Errorf("Read2BD = %v", got)
+	}
+	if r.BitLen() != len(w.Bytes())*8 {
+		t.Errorf("BitLen = %d", r.BitLen())
+	}
+	r.SetPosition(0)
+	if r.Position() != 0 || r.Remaining() != r.BitLen() {
+		t.Errorf("SetPosition/Remaining mismatch: pos=%d rem=%d", r.Position(), r.Remaining())
+	}
+}
