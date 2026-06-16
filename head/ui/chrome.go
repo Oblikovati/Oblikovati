@@ -152,8 +152,14 @@ func drawChromeWindows(s *app.Session) {
 	drawAddInPanels(s)   // add-in dockable windows (M05-F03)
 	// M26 F03: toasts / prompt modal / message-center windows are retired — every message
 	// now funnels into the docked Command Window, and prompts are answered inline there.
-	drawWebViews(s)                     // web dialogs/views (M05-F08)
-	drawMarkingMenu(s)                  // radial marking menu popup (M05-F12)
+	drawWebViews(s)          // web dialogs/views (M05-F08)
+	drawMarkingMenu(s)       // radial marking menu popup (M05-F12)
+	drawSelectOtherWidget(s) // Select Other cycle control over stacked geometry (#910)
+	serviceFileModalRequests(s)
+}
+
+// serviceFileModalRequests arms the file modal for ribbon buttons that request a file picker.
+func serviceFileModalRequests(s *app.Session) {
 	if s.TakeLoadEnvironmentRequest() { // the View ▸ Load HDR ribbon button arms the file modal
 		fileModal.openFor(dialogLoadHDR)
 	}
@@ -173,7 +179,11 @@ func handleKeyboard(s *app.Session) {
 	}
 	mods := heldModifiers()
 	if native.EscapePressed() {
-		_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
+		if s.SelectOtherActive() {
+			s.CancelSelectOther() // Esc ends the cycle, keeping the highlighted candidate (#910)
+		} else {
+			_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
+		}
 	}
 	// M26 F05: modifier chords (Ctrl/Alt — e.g. Ctrl+S, Ctrl+Z) fire even while the
 	// command-window input is focused, so they work mid-typing; PressKey routes them through

@@ -56,9 +56,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	// Reserve the region with an input-capturing button, then read navigation from it.
 	cx, cy := native.GetCursorPos()
 	native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
-	if native.IsItemClicked(native.MouseRight) {
-		openMarkingMenu() // the radial marking menu (M05-F12)
-	}
+	handleViewportRightClick(s)
 	bx, by := native.ItemRectMin()
 
 	cam := s.Camera()

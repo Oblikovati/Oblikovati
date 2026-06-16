@@ -31,6 +31,12 @@ var (
 // single-pick click handler. Replaces the bare handleViewportClick call so they never both
 // fire on the same press.
 func handleViewportSelection(s *app.Session) {
+	if s.SelectOtherActive() {
+		if native.IsItemClicked(native.MouseLeft) {
+			s.CommitSelectOther() // a click in the viewport accepts the highlighted candidate (#910)
+		}
+		return // the Select Other cycle owns viewport picking until it ends
+	}
 	if updateSketchDrag(s) {
 		return
 	}
