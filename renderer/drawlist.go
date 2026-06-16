@@ -120,8 +120,22 @@ func (l DrawList) Lines() int {
 // defaultSurfaceColor is the neutral material used until materials land.
 var defaultSurfaceColor = [4]float32{0.7, 0.72, 0.75, 1}
 
-// edgeColor is the wireframe color.
+// edgeColor is the wireframe color. The document's display settings can override it
+// (M16-F07 #643) via [SetEdgeColor]; the head applies the active document's EdgeColor each
+// time it (re)builds the styled draw list.
 var edgeColor = [4]float32{0.1, 0.1, 0.12, 1}
+
+// defaultEdgeColor is the built-in edge color, restored when a document carries no override.
+var defaultEdgeColor = [4]float32{0.1, 0.1, 0.12, 1}
+
+// SetEdgeColor overrides the wireframe/edge color used by subsequently-built draw lists.
+func SetEdgeColor(c [4]float32) { edgeColor = c }
+
+// EdgeColor returns the current wireframe/edge color.
+func EdgeColor() [4]float32 { return edgeColor }
+
+// DefaultEdgeColor returns the built-in edge color (the head's reset value).
+func DefaultEdgeColor() [4]float32 { return defaultEdgeColor }
 
 // outlineColor is the near-black "ink" used for NPR illustration outlines.
 var outlineColor = [4]float32{0.04, 0.04, 0.06, 1}

@@ -41,9 +41,10 @@ func main() {
 	noEnv := flag.Bool("no-env", false, "turn off the environment skybox so the scheme background shows")
 	box := flag.Bool("box", false, "build a demo box so geometry is visible")
 	orient := flag.String("orient", "", "jump to a standard orientation (front/top/iso…)")
+	edge := flag.String("edge", "", "override the display-settings edge color as R,G,B (0-255)")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -56,6 +57,7 @@ type opts struct {
 	frames      int
 	noEnv, box  bool
 	orient      string
+	edge        string
 }
 
 func run(o opts) error {
@@ -63,11 +65,10 @@ func run(o opts) error {
 	if err := app.RegisterStandardCommands(s); err != nil {
 		return err
 	}
-	if _, err := s.NewPart(); err != nil {
-		return err
-	}
 	if o.box {
-		buildBox(s)
+		buildBox(s) // AddPart makes the box the active document
+	} else if _, err := s.NewPart(); err != nil {
+		return err
 	}
 	if o.scheme != "" {
 		if err := s.SetColorScheme(o.scheme); err != nil {
@@ -78,6 +79,9 @@ func run(o opts) error {
 		if err := s.SetViewOrientation(orientByName[o.orient], true); err != nil {
 			return err
 		}
+	}
+	if o.edge != "" {
+		applyEdgeColor(s, o.edge)
 	}
 	if o.noEnv {
 		e := s.Environment()
@@ -104,11 +108,24 @@ func renderAndCapture(s *app.Session, frames int, out string) error {
 	return win.SaveViewportPNG(out)
 }
 
+// applyEdgeColor parses "R,G,B" and stores it as the active document's display-settings edge
+// color, so the rebuilt draw list draws the model edges in that color.
+func applyEdgeColor(s *app.Session, rgb string) {
+	var r, g, b uint8
+	fmt.Sscanf(rgb, "%d,%d,%d", &r, &g, &b)
+	set := s.DisplaySettings(0)
+	set.EdgeColor = types.NewColor(r, g, b)
+	s.SetDisplaySettings(0, set)
+}
+
 // buildBox seeds the active part with a 4x3x5 extruded box and frames it, so the captured
 // viewport shows real geometry (for confirming orientation/overlay features).
 func buildBox(s *app.Session) {
 	pd, err := compdef.AddPart(s.Workspace(), "m16box.opd", true)
 	if err != nil {
+		panic(err)
+	}
+	if err := s.Workspace().SetActiveDocument(pd); err != nil {
 		panic(err)
 	}
 	def := pd.Content().(*compdef.PartComponentDefinition)

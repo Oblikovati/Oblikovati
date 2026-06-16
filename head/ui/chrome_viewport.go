@@ -357,6 +357,10 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 	if bodyCount < 0 || bodyCount > len(list.Items) {
 		bodyCount = len(list.Items)
 	}
+	// M16-F07: apply the active document's display-settings edge color before the (instanced or
+	// world) body meshes are built; it is baked into the edge line items, so it also keys the
+	// source-mesh cache (instancedSourceKey) and the body cache (bodyGeometryKey).
+	renderer.SetEdgeColor(displayEdgeColor(s))
 	if on, _ := s.MeshColors(); !on {
 		overlay := renderer.DrawList{Items: append(append([]renderer.DrawItem(nil), list.Items[bodyCount:]...), ground...)}
 		// Highlight against the group SOURCE bodies (already in hand), NOT activeBodies(s) — the
