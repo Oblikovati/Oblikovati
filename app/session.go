@@ -188,20 +188,26 @@ func newSession(store doc.Store) *Session {
 		// that the whole rig lights every shaded mode (ADR-0026 §8).
 		lightingStyle:      renderer.LightingThreePoint,
 		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
-		colorSchemes:       colorscheme.NewRegistry(),
-		styles:             style.NewManager(),
-		displayOptions:     display.DefaultOptions(),
-		docDisplay:         map[doc.ID]display.Settings{},
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
-	// The embedded Sky map is the default environment for every visual style — IBL plus
-	// the sky as the viewport background (ADR-0026 §8).
-	s.lighting.Environment = renderer.DefaultEnvironment()
+	s.seedVisualState()
 	s.messageCenter.sink = s.routeMessage // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
 	s.watchDocumentInterests()
 	return s
+}
+
+// seedVisualState seeds the M16 visualization registries (color schemes, color styles, display
+// options/settings) and the default IBL environment. Split out of newSession to keep it short
+// (one place for the visual defaults). The embedded Sky map is the default environment for
+// every visual style — IBL plus the sky as the viewport background (ADR-0026 §8).
+func (s *Session) seedVisualState() {
+	s.lighting.Environment = renderer.DefaultEnvironment()
+	s.colorSchemes = colorscheme.NewRegistry()
+	s.styles = style.NewManager()
+	s.displayOptions = display.DefaultOptions()
+	s.docDisplay = map[doc.ID]display.Settings{}
 }
 
 // initShellSurfaces seeds the M05 add-in UI-shell state: web views, the default

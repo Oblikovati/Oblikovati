@@ -61,7 +61,7 @@ type styleManagerView struct{ s *Session }
 
 var _ contract.StyleManager = styleManagerView{}
 
-func (v styleManagerView) ColorStyles() contract.ColorStyles { return colorStylesView{v.s} }
+func (v styleManagerView) ColorStyles() contract.ColorStyles { return colorStylesView(v) }
 
 func (v styleManagerView) LightingStyles() []contract.LightingStyle {
 	gallery := renderer.LightingStyleGallery()

@@ -112,32 +112,29 @@ func (s *Session) fireCameraChanged(d *doc.Document) {
 	event.Emit(s.bus, event.After, CameraChanged{Document: d.ID()})
 }
 
-// orientationFrame maps a standard orientation to its (eye-direction, up) unit vectors in the
-// Y-up world (eye = target + dir·distance). It returns ok=false for orientations with no fixed
-// direction (current/arbitrary/saved/flat variants), which the caller treats as a no-op.
+// orientationVector pairs a standard orientation's eye-direction with its up vector (Y-up
+// world; eye = target + dir·distance).
+type orientationVector struct{ dir, up math.Vector3 }
+
+// orientationFrames is the table of standard orientations that have a fixed camera direction.
+// Orientations absent from it (current/arbitrary/saved/flat variants) keep the current camera.
+var orientationFrames = map[types.ViewOrientationTypeEnum]orientationVector{
+	types.FrontViewOrientation:          {math.V3(0, 0, 1), math.V3(0, 1, 0)},
+	types.BackViewOrientation:           {math.V3(0, 0, -1), math.V3(0, 1, 0)},
+	types.RightViewOrientation:          {math.V3(1, 0, 0), math.V3(0, 1, 0)},
+	types.LeftViewOrientation:           {math.V3(-1, 0, 0), math.V3(0, 1, 0)},
+	types.TopViewOrientation:            {math.V3(0, 1, 0), math.V3(0, 0, -1)},
+	types.BottomViewOrientation:         {math.V3(0, -1, 0), math.V3(0, 0, 1)},
+	types.IsoTopRightViewOrientation:    {math.V3(1, 1, 1), math.V3(0, 1, 0)},
+	types.DefaultViewOrientation:        {math.V3(1, 1, 1), math.V3(0, 1, 0)},
+	types.IsoTopLeftViewOrientation:     {math.V3(-1, 1, 1), math.V3(0, 1, 0)},
+	types.IsoBottomRightViewOrientation: {math.V3(1, -1, 1), math.V3(0, 1, 0)},
+	types.IsoBottomLeftViewOrientation:  {math.V3(-1, -1, 1), math.V3(0, 1, 0)},
+}
+
+// orientationFrame returns the (eye-direction, up) for a standard orientation, with ok=false
+// for orientations with no fixed direction (the caller treats those as a no-op).
 func orientationFrame(o types.ViewOrientationTypeEnum) (dir, up math.Vector3, ok bool) {
-	yUp, zUp := math.V3(0, 1, 0), math.V3(0, 0, 1)
-	switch o {
-	case types.FrontViewOrientation:
-		return math.V3(0, 0, 1), yUp, true
-	case types.BackViewOrientation:
-		return math.V3(0, 0, -1), yUp, true
-	case types.RightViewOrientation:
-		return math.V3(1, 0, 0), yUp, true
-	case types.LeftViewOrientation:
-		return math.V3(-1, 0, 0), yUp, true
-	case types.TopViewOrientation:
-		return math.V3(0, 1, 0), zUp.Negate(), true
-	case types.BottomViewOrientation:
-		return math.V3(0, -1, 0), zUp, true
-	case types.IsoTopRightViewOrientation, types.DefaultViewOrientation:
-		return math.V3(1, 1, 1), yUp, true
-	case types.IsoTopLeftViewOrientation:
-		return math.V3(-1, 1, 1), yUp, true
-	case types.IsoBottomRightViewOrientation:
-		return math.V3(1, -1, 1), yUp, true
-	case types.IsoBottomLeftViewOrientation:
-		return math.V3(-1, -1, 1), yUp, true
-	}
-	return math.Vector3{}, math.Vector3{}, false
+	f, ok := orientationFrames[o]
+	return f.dir, f.up, ok
 }
