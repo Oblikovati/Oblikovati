@@ -162,6 +162,13 @@ type Sketch struct {
 	geomCons      *GeometricConstraints
 	dimCons       *DimensionConstraints
 	params        *param.Parameters
+
+	// profilesCache memoises Profiles() — region detection is O(n log n) over the
+	// geometry and was rerun on every call (the hover picker calls it each frame),
+	// freezing on a dense imported sketch. profilesSig is the geometry signature it
+	// was built for (counts + point coordinates), so any edit invalidates it.
+	profilesCache *Profiles
+	profilesSig   uint64
 }
 
 // Plane returns the sketch's host plane.

@@ -130,6 +130,10 @@ func (ps *Profiles) All() []*Profile {
 // Cells are classified into outer boundaries and holes by even–odd nesting; geometry
 // that bounds no cell (a connected but unclosed chain) becomes an open profile.
 func (s *Sketch) Profiles() *Profiles {
+	sig := s.geomSignature()
+	if s.profilesCache != nil && s.profilesSig == sig {
+		return s.profilesCache
+	}
 	ents := s.normalGeometry()
 	loops := detectRegions(ents)
 	ps := &Profiles{}
@@ -137,7 +141,25 @@ func (s *Sketch) Profiles() *Profiles {
 	for _, chain := range openChainsOutside(ents, loops) {
 		ps.items = append(ps.items, &Profile{outer: chain})
 	}
+	s.profilesCache, s.profilesSig = ps, sig
 	return ps
+}
+
+// geomSignature is a cheap fingerprint of the sketch geometry — entity/point counts
+// folded with every point coordinate (FNV-1a) — so Profiles() rebuilds after any
+// add, remove or move but reuses its cache when nothing changed. It is O(points),
+// far below the region detection it guards.
+func (s *Sketch) geomSignature() uint64 {
+	const prime = 1099511628211
+	h := uint64(14695981039346656037)
+	mix := func(v uint64) { h = (h ^ v) * prime }
+	mix(uint64(len(s.ents)))
+	mix(uint64(len(s.pts)))
+	for _, p := range s.pts {
+		mix(stdmath.Float64bits(p.X))
+		mix(stdmath.Float64bits(p.Y))
+	}
+	return h
 }
 
 // ClosedLoops returns the sketch's standalone closed loops detected by endpoint chaining
