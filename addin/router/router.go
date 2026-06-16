@@ -51,6 +51,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerColorSchemeHandlers()
 	r.registerNamedViewHandlers()
 	r.registerStyleHandlers()
+	r.registerDisplayHandlers()
 	r.registerKeymapHandlers()
 	r.registerMessagingHandlers()
 	r.registerMiniToolbarHandlers()
