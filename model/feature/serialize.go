@@ -116,10 +116,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Extrude = ed
 	case *FilletFeature:
 		if len(f.def.EdgeSets) > 0 {
-			fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(f.def.EdgeSets)}
+			fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(f.def.EdgeSets), CornerType: int32(f.def.CornerType)}
 			break
 		}
-		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius)}
+		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType)}
 	case *ChamferFeature:
 		flat := f.def.FlatCorners
 		fd.Chamfer = &EdgeDressData{
@@ -325,18 +325,22 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 	case "extrude":
 		return requireExtrude(fs, fd.Extrude, sk, work)
 	case "fillet":
+		corner := types.FilletCornerType(fd.Fillet.cornerTypeOrZero())
+		if corner == 0 {
+			corner = types.FilletCornerMiter // absent / older recipe ⇒ the miter default
+		}
 		if fd.Fillet != nil && len(fd.Fillet.Sets) > 0 {
 			sets, err := restoreFilletSets(fd.Fillet.Sets)
 			if err != nil {
 				return nil, err
 			}
-			return du.AddFilletSets(sets), nil
+			return du.AddFilletSetsCorner(sets, corner), nil
 		}
 		d, err := requireEdgeDress(fd.Fillet, "fillet")
 		if err != nil {
 			return nil, err
 		}
-		return du.AddFillet(d.keys, constFloat(d.value)), nil
+		return du.AddFilletCorner(d.keys, constFloat(d.value), corner), nil
 	case "chamfer":
 		d, err := requireEdgeDress(fd.Chamfer, "chamfer")
 		if err != nil {

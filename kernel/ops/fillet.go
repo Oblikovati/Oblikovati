@@ -41,6 +41,27 @@ func FilletEdges(body *topo.Body, edgeKeys [][]byte, r float64) (*topo.Body, err
 // the edge line, so each strip face is EXACTLY planar — the only approximation is the end
 // arcs as chords, the same density convention as a hole's faceted cylinder.
 func FilletEdgesVarying(body *topo.Body, picks []EdgeFilletRadii) (*topo.Body, error) {
+	return FilletEdgesCorner(body, picks, CornerMiter)
+}
+
+// CornerStrategy selects how a corner where two filleted edges meet a vertex whose third edge stays
+// sharp is treated (mirrors api types.FilletCornerType's miter/setback; the "round" form is realised
+// by the feature adding the third edge, which makes the corner a 3-edge sphere blend automatically).
+type CornerStrategy int
+
+const (
+	// CornerMiter mutually trims the two cylinders along their intersection seam (a crease).
+	CornerMiter CornerStrategy = iota
+	// CornerSetback scoops the corner with a sphere patch set back from the sharp edge.
+	CornerSetback
+	// CornerRound rounds the corner fully by also filleting the third edge — a true 3-edge sphere.
+	CornerRound
+)
+
+// FilletEdgesCorner is FilletEdgesVarying with an explicit 2-edge corner strategy. Lone curved
+// (rim/arc) picks ignore it (they have no shared corner). CornerRound augments the selection with the
+// sharp third edge of each 2-edge corner so the corner resolves as a watertight 3-edge sphere blend.
+func FilletEdgesCorner(body *topo.Body, picks []EdgeFilletRadii, corner CornerStrategy) (*topo.Body, error) {
 	if rim := loneRimPick(body, picks); rim != nil {
 		return FilletCylinderRim(body, rim.Key, rim.R0) // a circular cylinder/cap rim → toroidal band
 	}
@@ -51,7 +72,17 @@ func FilletEdgesVarying(body *topo.Body, picks []EdgeFilletRadii) (*topo.Body, e
 	if err != nil {
 		return nil, err
 	}
-	blends, miters, err := computeCorners(edges)
+	if corner == CornerRound {
+		edges = roundThirdEdges(edges) // round the corners fully → 3-edge blends
+		corner = CornerMiter           // the augmented corners are now 3-edge (sphere); none stay 2-edge
+	}
+	return filletResolvedEdges(body, edges, corner)
+}
+
+// filletResolvedEdges solves the corners and edge fillets of an already-resolved pick list and
+// assembles the validated result body.
+func filletResolvedEdges(body *topo.Body, edges []filletPick, corner CornerStrategy) (*topo.Body, error) {
+	blends, miters, err := computeCorners(edges, corner)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +371,7 @@ type cornerBlend struct {
 // All edges meeting at a corner must use ONE constant radius — a variable edge's faceted end
 // chords cannot meet a corner watertight, and a blend/seam has a single radius — so those and
 // any other configuration error clearly.
-func computeCorners(picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*cornerMiter, error) {
+func computeCorners(picks []filletPick, strategy CornerStrategy) (map[uint64]*cornerBlend, map[uint64]*cornerMiter, error) {
 	groups := map[uint64][]filletPick{}
 	for _, p := range picks {
 		groups[p.edge.StartVertex().ID()] = append(groups[p.edge.StartVertex().ID()], p)
@@ -352,7 +383,7 @@ func computeCorners(picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*co
 		if len(ps) < 2 {
 			continue
 		}
-		cb, cm, err := solveCorner(vid, ps)
+		cb, cm, err := solveCorner(vid, ps, strategy)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -369,7 +400,7 @@ func computeCorners(picks []filletPick) (map[uint64]*cornerBlend, map[uint64]*co
 // solveCorner solves the corner treatment at vertex vid where the picks ps meet: a sphere blend
 // (3 edges, trihedral vertex) or a miter seam (2 edges sharing a face), at the corner's one shared
 // radius. Exactly one of (blend, miter) is returned; any other configuration errors.
-func solveCorner(vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error) {
+func solveCorner(vid uint64, ps []filletPick, strategy CornerStrategy) (*cornerBlend, *cornerMiter, error) {
 	r, err := blendRadius(ps)
 	if err != nil {
 		return nil, nil, err
@@ -380,6 +411,11 @@ func solveCorner(vid uint64, ps []filletPick) (*cornerBlend, *cornerMiter, error
 	case len(ps) == 3 && len(faces) == 3:
 		cb, err := solveBlend(v, faces, r)
 		return cb, nil, err
+	case len(ps) == 2 && strategy == CornerSetback:
+		// A pure sphere tangent to the three corner planes pinches to points at the two side-plane
+		// tangents, so a distinct watertight set-back patch is still being built; the miter is the
+		// exact alternative and the round the smooth one.
+		return nil, nil, fmt.Errorf("fillet: the setback corner at %v is not yet available — use the miter (exact crease) or round (smooth sphere) corner strategy", v.Point())
 	case len(ps) == 2:
 		cm, err := solveMiter(v, ps, r)
 		return nil, cm, err

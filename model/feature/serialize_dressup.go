@@ -41,6 +41,8 @@ type EdgeDressData struct {
 	ChamferType int32   `yaml:"chamferType,omitempty"`
 	Value2      float64 `yaml:"value2,omitempty"`
 	Angle       float64 `yaml:"angle,omitempty"`
+	// Fillet-only: the shared-corner treatment. FilletCornerType 0 (or absent) ⇒ the miter default.
+	CornerType int32 `yaml:"cornerType,omitempty"`
 }
 
 // FilletSetData is one serialized fillet edge set: constant (Radius) or variable
@@ -50,6 +52,15 @@ type FilletSetData struct {
 	Radius      float64  `yaml:"radius,omitempty"`
 	StartRadius float64  `yaml:"startRadius,omitempty"`
 	EndRadius   float64  `yaml:"endRadius,omitempty"`
+}
+
+// cornerTypeOrZero returns the fillet corner-treatment id, defaulting to 0 (miter) for an absent
+// payload or an older recipe.
+func (d *EdgeDressData) cornerTypeOrZero() int32 {
+	if d == nil {
+		return 0
+	}
+	return d.CornerType
 }
 
 // serializeFilletSets encodes a fillet's edge sets (nil for the legacy single-set form).

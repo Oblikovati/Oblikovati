@@ -27,6 +27,7 @@ type edgeDressArgs struct {
 	Radius      string          `json:"radius,omitempty"`      // fillet
 	Distance    string          `json:"distance,omitempty"`    // chamfer
 	EdgeSets    []filletSetArgs `json:"edgeSets,omitempty"`    // fillet
+	CornerType  string          `json:"cornerType,omitempty"`  // fillet shared-corner treatment (default miter)
 	ChamferType string          `json:"chamferType,omitempty"` // chamfer mode (default distance)
 	Distance2   string          `json:"distance2,omitempty"`   // chamfer twoDistances
 	Angle       string          `json:"angle,omitempty"`       // chamfer distanceAndAngle
@@ -51,7 +52,8 @@ const filletSchema = `{
       "radius": {"type": "string", "description": "Constant radius for this set, e.g. \"3 mm\"."},
       "startRadius": {"type": "string", "description": "Variable set: radius at the edge's start vertex (the set holds exactly one edge)."},
       "endRadius": {"type": "string", "description": "Variable set: radius at the edge's end vertex."}
-    }, "required": ["edgeRefs"]}}
+    }, "required": ["edgeRefs"]}},
+    "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."}
   }
 }`
 
@@ -84,12 +86,12 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
+	corner, err := filletCornerOf(in.CornerType)
+	if err != nil {
+		return nil, err
+	}
 	if len(in.EdgeSets) > 0 {
-		sets, err := filletSetsFromArgs(part, in.EdgeSets)
-		if err != nil {
-			return nil, err
-		}
-		return recomputeResult(part, feature.NewDressUpFeatures(part.Features()).AddFilletSets(sets))
+		return applyFilletSets(part, in.EdgeSets, corner)
 	}
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius or edgeSets)")
@@ -98,8 +100,30 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pf := feature.NewDressUpFeatures(part.Features()).AddFillet(refKeys(in.EdgeRefs), r)
+	pf := feature.NewDressUpFeatures(part.Features()).AddFilletCorner(refKeys(in.EdgeRefs), r, corner)
 	return recomputeResult(part, pf)
+}
+
+// applyFilletSets decodes the edge-set form and adds the fillet with the chosen corner treatment.
+func applyFilletSets(part *compdef.PartComponentDefinition, args []filletSetArgs, corner types.FilletCornerType) (json.RawMessage, error) {
+	sets, err := filletSetsFromArgs(part, args)
+	if err != nil {
+		return nil, err
+	}
+	return recomputeResult(part, feature.NewDressUpFeatures(part.Features()).AddFilletSetsCorner(sets, corner))
+}
+
+// filletCornerOf resolves the optional cornerType wire spelling (empty ⇒ miter), erroring on an
+// unknown value with the accepted set.
+func filletCornerOf(spelling string) (types.FilletCornerType, error) {
+	if spelling == "" {
+		return types.FilletCornerMiter, nil
+	}
+	c, ok := types.ParseFilletCornerType(spelling)
+	if !ok {
+		return 0, fmt.Errorf("fillet: unknown cornerType %q (want miter, setback, or round)", spelling)
+	}
+	return c, nil
 }
 
 // filletSetsFromArgs decodes the edge-set form: each set is constant (radius) or variable

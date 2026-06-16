@@ -284,6 +284,31 @@ func TestFilletTwoEdgeCornerMiters(t *testing.T) {
 	}
 }
 
+// TestFilletCornerRoundAddsThirdEdge checks the CornerRound strategy: selecting two of the three
+// edges at a corner rounds the corner FULLY by auto-filleting the sharp third edge, so the corner
+// becomes a watertight 3-edge sphere blend (3 cylinders + 1 sphere), not a 2-cylinder miter crease.
+func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
+	picks := []ops.EdgeFilletRadii{{Key: keys[0], R0: 0.3, R1: 0.3}, {Key: keys[1], R0: 0.3, R1: 0.3}}
+	res, err := ops.FilletEdgesCorner(box, picks, ops.CornerRound)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("rounded-corner box not a valid solid: %+v", r)
+	}
+	if c, s := hasCylinderFaces(res), hasSphereFaces(res); c != 3 || s != 1 {
+		t.Errorf("got %d cylinder + %d sphere faces, want 3 + 1 (the third edge auto-rounded into a sphere)", c, s)
+	}
+	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
+		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		if open := meshOpenEdges(m); open != 0 {
+			t.Errorf("rounded corner at tol %g: %d open edges", tol, open)
+		}
+	}
+}
+
 // TestFilletTwoEdgeCornerMiterMeshWatertight checks the miter seam's TESSELLATION is watertight
 // across qualities — the two cylinders share the seam chord polyline exactly, so the welded mesh
 // must have no cracks where they meet.
