@@ -79,11 +79,50 @@ func TestPickRegionNilBodiesAndBehindCamera(t *testing.T) {
 	}
 }
 
-func TestPickRegionHonorsBodyFilter(t *testing.T) {
+// TestPickRegionGranularityByFilter checks the box-select granularity follows the selection
+// filter: a body-permissive filter selects the whole body, a face-only filter selects its faces,
+// an edge-only filter selects its edges (#909). The box [0,2]×[0,2]×[0,4] has 6 faces and 12 edges.
+func TestPickRegionGranularityByFilter(t *testing.T) {
 	p, box := regionPickerForBox(t)
-	// A filter that excludes bodies (edges only) yields no whole-body region hits.
-	edgeOnly := NewSelectionFilter(SelectEdge)
-	if got := p.PickRegion(box.minX-5, box.minY-5, box.maxX+5, box.maxY+5, false, edgeOnly); got != nil {
-		t.Errorf("body-excluding filter should yield no body region hits, got %d", len(got))
+	pad := 5.0
+	enclose := func(f *SelectionFilter) []Selectable {
+		return p.PickRegion(box.minX-pad, box.minY-pad, box.maxX+pad, box.maxY+pad, false, f)
+	}
+
+	bodies := enclose(NewSelectionFilter()) // permissive (accepts all) → whole body
+	if len(bodies) != 1 {
+		t.Fatalf("permissive filter should select the whole body, got %d", len(bodies))
+	}
+	if _, ok := bodies[0].(BodyHandle); !ok {
+		t.Errorf("permissive region hit = %T, want BodyHandle", bodies[0])
+	}
+
+	faces := enclose(NewSelectionFilter(SelectFace))
+	if len(faces) != 6 {
+		t.Errorf("face-only filter over the box = %d hits, want its 6 faces", len(faces))
+	} else if _, ok := faces[0].(FaceHandle); !ok {
+		t.Errorf("face region hit = %T, want FaceHandle", faces[0])
+	}
+
+	edges := enclose(NewSelectionFilter(SelectEdge))
+	if len(edges) != 12 {
+		t.Errorf("edge-only filter over the box = %d hits, want its 12 edges", len(edges))
+	} else if _, ok := edges[0].(EdgeHandle); !ok {
+		t.Errorf("edge region hit = %T, want EdgeHandle", edges[0])
+	}
+}
+
+// TestPickRegionGranularityCrossing checks the crossing mode for faces and edges: a rectangle
+// over part of the box still catches the faces/edges it overlaps (which a window would miss).
+func TestPickRegionGranularityCrossing(t *testing.T) {
+	p, box := regionPickerForBox(t)
+	midX := (box.minX + box.maxX) / 2
+	x0, y0, x1, y1 := box.minX-5, box.minY-5, midX, box.maxY+5
+
+	if faces := p.PickRegion(x0, y0, x1, y1, true, NewSelectionFilter(SelectFace)); len(faces) == 0 {
+		t.Error("crossing over part of the box should catch some faces")
+	}
+	if edges := p.PickRegion(x0, y0, x1, y1, true, NewSelectionFilter(SelectEdge)); len(edges) == 0 {
+		t.Error("crossing over part of the box should catch some edges")
 	}
 }

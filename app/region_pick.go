@@ -4,6 +4,7 @@ package app
 
 import (
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 	"oblikovati.org/renderer"
 )
 
@@ -25,23 +26,72 @@ const (
 // box-select are tracked follow-ups (#909).
 //
 // RayPicker satisfies both Picker (point pick) and RegionPicker (this), so the head installs
-// the one object for both.
+// the one object for both. The granularity follows the active selection filter, like Inventor's
+// selection priority: a body-permissive filter (the default) selects whole bodies, a face-only
+// filter selects faces, an edge-only filter selects edges.
 func (p *RayPicker) PickRegion(x0, y0, x1, y1 float64, crossing bool, filter *SelectionFilter) []Selectable {
-	if !filter.Accepts(SelectBody) || p.bodies == nil {
+	if p.bodies == nil {
 		return nil
 	}
 	sel := orderedRect(x0, y0, x1, y1)
+	switch {
+	case filter.Accepts(SelectBody):
+		return p.regionBodies(sel, crossing)
+	case filter.Accepts(SelectFace):
+		return p.regionFaces(sel, crossing)
+	case filter.Accepts(SelectEdge):
+		return p.regionEdges(sel, crossing)
+	default:
+		return nil
+	}
+}
+
+// regionBodies selects whole bodies whose projected range box satisfies the rectangle.
+func (p *RayPicker) regionBodies(sel screenRect, crossing bool) []Selectable {
 	var hits []Selectable
 	for _, b := range p.bodies() {
-		box, ok := p.projectBodyRect(b)
-		if !ok {
-			continue
-		}
-		if (crossing && box.overlaps(sel)) || (!crossing && sel.contains(box)) {
+		if box, ok := p.projectBodyRect(b); ok && rectCovers(sel, box, crossing) {
 			hits = append(hits, BodyHandle{Body: b})
 		}
 	}
 	return hits
+}
+
+// regionFaces selects faces whose projected vertex bounds satisfy the rectangle.
+func (p *RayPicker) regionFaces(sel screenRect, crossing bool) []Selectable {
+	var hits []Selectable
+	for _, b := range p.bodies() {
+		for _, f := range b.Faces() {
+			if box, ok := p.projectVertexRect(f.Vertices()); ok && rectCovers(sel, box, crossing) {
+				hits = append(hits, FaceHandle{Face: f, Body: b})
+			}
+		}
+	}
+	return hits
+}
+
+// regionEdges selects edges whose projected endpoints satisfy the rectangle (window: both
+// inside; crossing: an endpoint inside or the segment crosses an edge of the box).
+func (p *RayPicker) regionEdges(sel screenRect, crossing bool) []Selectable {
+	var hits []Selectable
+	for _, b := range p.bodies() {
+		for _, e := range b.Edges() {
+			pts := p.projectVertices(e.Vertices())
+			if len(pts) == len(e.Vertices()) && regionCoversOutline(pts, sel, crossing) {
+				hits = append(hits, EdgeHandle{Edge: e})
+			}
+		}
+	}
+	return hits
+}
+
+// rectCovers reports whether sel covers box per the select mode: crossing = overlap, window =
+// full enclosure.
+func rectCovers(sel, box screenRect, crossing bool) bool {
+	if crossing {
+		return sel.overlaps(box)
+	}
+	return sel.contains(box)
 }
 
 // screenRect is a viewport-pixel axis-aligned rectangle (minX≤maxX, minY≤maxY).
@@ -69,14 +119,39 @@ func (r screenRect) containsPoint(x, y float64) bool {
 	return x >= r.minX && x <= r.maxX && y >= r.minY && y <= r.maxY
 }
 
-// projectBodyRect projects the eight corners of a body's range box to screen and returns
-// their bounding rectangle. ok is false when any corner is at/behind the camera (the body
-// is partly off-screen), in which case the caller skips it.
+// projectBodyRect projects the eight corners of a body's range box to a screen rectangle.
 func (p *RayPicker) projectBodyRect(b *topo.Body) (screenRect, bool) {
 	corners := b.RangeBox().Corners()
+	return p.projectPointsRect(corners[:])
+}
+
+// projectVertexRect projects topology vertices to their screen bounding rectangle.
+func (p *RayPicker) projectVertexRect(vs []*topo.Vertex) (screenRect, bool) {
+	pts := make([]math.Point3, len(vs))
+	for i, v := range vs {
+		pts[i] = v.Point()
+	}
+	return p.projectPointsRect(pts)
+}
+
+// projectVertices projects topology vertices to viewport pixels, dropping any at/behind the
+// camera — the outline a region edge test consumes.
+func (p *RayPicker) projectVertices(vs []*topo.Vertex) []screenPt {
+	out := make([]screenPt, 0, len(vs))
+	for _, v := range vs {
+		if sx, sy, ok := renderer.Project(p.camera, regionNear, regionFar, v.Point()); ok {
+			out = append(out, screenPt{sx, sy})
+		}
+	}
+	return out
+}
+
+// projectPointsRect projects world points to their screen bounding rectangle. ok is false when
+// any point is at/behind the camera (partly off-screen), in which case the caller skips it.
+func (p *RayPicker) projectPointsRect(pts []math.Point3) (screenRect, bool) {
 	first := true
 	var r screenRect
-	for _, c := range corners {
+	for _, c := range pts {
 		sx, sy, ok := renderer.Project(p.camera, regionNear, regionFar, c)
 		if !ok {
 			return screenRect{}, false
