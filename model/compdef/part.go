@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/model/identity"
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/sheetmetal"
 	"oblikovati.org/model/sketch"
 )
 
@@ -48,6 +49,12 @@ type PartComponentDefinition struct {
 	// props are the document's iProperties (metadata sets) — title/author/part number/custom,
 	// which feed BOMs and title blocks (#156).
 	props *attr.PropertySets
+	// sheetMetal is the active sheet-metal rule when this part is in the sheet-metal
+	// environment (M13-F01), else nil. A sheet-metal part is still a PartComponentDefinition
+	// (so every part feature works on it); the rule adds the constant-thickness invariant and
+	// the unfold method that bend/flat-pattern features consult. It is parameter-backed — its
+	// thickness/bend-radius read the part's Thickness/BendRadius parameters.
+	sheetMetal *sheetmetal.Rule
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature

@@ -107,6 +107,7 @@ func (r *Router) registerStandardHandlers() {
 	r.handlers[wire.MethodFreeformCreaseEdges] = freeformCreaseEdges
 	r.registerSketchHandlers()
 	r.registerFeatureHandlers()
+	r.registerSheetMetalHandlers()
 	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
 	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
 	r.handlers[wire.MethodWorkPlanesRedefine] = redefineWorkPlane
