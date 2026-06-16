@@ -309,6 +309,53 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 	}
 }
 
+// TestFilletCornerSetbackTapersThirdEdge checks the CornerSetback strategy: selecting two of the
+// three edges at a corner rounds the corner into a sphere and tapers the sharp third edge from the
+// corner radius to a run-out (radius 0) at its far end — a watertight set-back (3 cylinders/cones + 1
+// sphere), distinct from the constant round. The taper makes it a variable (cone) blend, so the body
+// is watertight at every tolerance with no degenerate run-out apex.
+func TestFilletCornerSetbackTapersThirdEdge(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	keys := cornerEdgeKeys(t, box)[:2]
+	picks := []ops.EdgeFilletRadii{{Key: keys[0], R0: 0.3, R1: 0.3}, {Key: keys[1], R0: 0.3, R1: 0.3}}
+	res, err := ops.FilletEdgesCorner(box, picks, ops.CornerSetback)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("set-back corner box not a valid solid: %+v", r)
+	}
+	if s := hasSphereFaces(res); s != 1 {
+		t.Errorf("got %d sphere faces, want 1 (the corner is rounded)", s)
+	}
+	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
+		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		if open := meshOpenEdges(m); open != 0 {
+			t.Errorf("set-back corner at tol %g: %d open edges", tol, open)
+		}
+	}
+}
+
+// TestFilletRunOutToZero checks a lone variable fillet that tapers to radius 0 at one end: the blend
+// cone closes to a single apex on the edge (a run-out / "fade out"), producing a watertight solid
+// rather than the degenerate non-manifold fan the unguarded collapse would leave.
+func TestFilletRunOutToZero(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("run-out fillet not a valid solid: %+v", r)
+	}
+	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
+		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		if open := meshOpenEdges(m); open != 0 {
+			t.Errorf("run-out fillet at tol %g: %d open edges", tol, open)
+		}
+	}
+}
+
 // TestFilletTwoEdgeCornerMiterMeshWatertight checks the miter seam's TESSELLATION is watertight
 // across qualities — the two cylinders share the seam chord polyline exactly, so the welded mesh
 // must have no cracks where they meet.

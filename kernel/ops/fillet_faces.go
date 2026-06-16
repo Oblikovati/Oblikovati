@@ -35,15 +35,34 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 // rulings: chord j of corner 0 pairs with chord j of corner 1 (the corners are sampled at the
 // same angular stations). Adjacent rulings of the blend meet at its cone apex on the edge
 // line, so each strip face is exactly planar; winding is fixed outward (away from the centre
-// line) per quad.
+// line) per quad. When one end is a RUN-OUT (radius 0, all its chords are the apex vertex), the
+// strips collapse to a triangle fan to that apex so the cone closes manifold (not degenerate quads).
 func rulingStripFaces(ef edgeFillet) []filletFace {
 	cmid := ef.c0.cen.Midpoint(ef.c1.cen)
 	out := make([]filletFace, 0, len(ef.c0.chords)-1)
 	for j := 0; j+1 < len(ef.c0.chords); j++ {
-		quad := [4]math.Point3{ef.c0.chords[j], ef.c1.chords[j], ef.c1.chords[j+1], ef.c0.chords[j+1]}
-		out = append(out, planarQuadFace(quad, cmid))
+		switch {
+		case ef.c1.runout: // fan from corner-0's arc to corner-1's apex
+			out = append(out, planarTriangleFace(ef.c0.chords[j], ef.c1.cen, ef.c0.chords[j+1], cmid))
+		case ef.c0.runout: // fan from corner-1's arc to corner-0's apex
+			out = append(out, planarTriangleFace(ef.c1.chords[j], ef.c0.cen, ef.c1.chords[j+1], cmid))
+		default:
+			quad := [4]math.Point3{ef.c0.chords[j], ef.c1.chords[j], ef.c1.chords[j+1], ef.c0.chords[j+1]}
+			out = append(out, planarQuadFace(quad, cmid))
+		}
 	}
 	return out
+}
+
+// planarTriangleFace builds one planar triangle, wound so its normal points away from cmid.
+func planarTriangleFace(p0, p1, p2, cmid math.Point3) filletFace {
+	n := p0.VectorTo(p1).Cross(p0.VectorTo(p2))
+	tri := [3]math.Point3{p0, p1, p2}
+	if n.Dot(cmid.VectorTo(centroidPts(tri[:]))) < 0 {
+		tri = [3]math.Point3{p0, p2, p1}
+	}
+	pl, _ := geom.NewPlane(tri[0], p0.VectorTo(tri[1]).Cross(p0.VectorTo(tri[2])))
+	return filletFace{surface: pl, loops: []filletLoop{{pts: tri[:], curves: make([]geom.Curve3, 3)}}}
 }
 
 // planarQuadFace builds one planar face over the quad, wound so its normal points away from
@@ -79,8 +98,8 @@ func filletMaps(fils []edgeFillet) (map[*topo.Face]map[uint64]math.Point3, map[*
 		for _, c := range []corner{ef.c0, ef.c1} {
 			put(ab, c.a, c.vertex.ID(), c.ta)
 			put(ab, c.b, c.vertex.ID(), c.tb)
-			if c.blend || c.miter {
-				continue // the rounded corner is the sphere patch or the miter seam, not an end-face arc
+			if c.blend || c.miter || c.runout {
+				continue // the rounded corner is a sphere patch / miter seam / run-out apex, not an end-face arc
 			}
 			if ends[c.endFace] == nil {
 				ends[c.endFace] = map[uint64]corner{}
@@ -282,14 +301,29 @@ func chainArcs(arcs []blendArc) filletLoop {
 				continue
 			}
 			used[j] = true
-			arc, _ := geom.Arc3dByThreePoints(from, a.mid, to)
-			fl.pts = append(fl.pts, from)
-			fl.curves = append(fl.curves, arc)
+			appendBlendArc(&fl, a, from, to)
 			cur = to
 			break
 		}
 	}
 	return fl
+}
+
+// appendBlendArc appends one blend arc oriented from→to: a faceted chord polyline (straight segments)
+// when the arc is shared with a variable cone, otherwise a single Arc3d through its midpoint. Only the
+// segment's start points are added (its end is the next arc's start), so the loop stays closed.
+func appendBlendArc(fl *filletLoop, a blendArc, from, to math.Point3) {
+	if a.chords == nil {
+		arc, _ := geom.Arc3dByThreePoints(from, a.mid, to)
+		fl.pts = append(fl.pts, from)
+		fl.curves = append(fl.curves, arc)
+		return
+	}
+	pts := orientedChords(a.chords, from) // ta…tb, reversed when entering from tb
+	for i := 0; i+1 < len(pts); i++ {
+		fl.pts = append(fl.pts, pts[i])
+		fl.curves = append(fl.curves, nil) // straight chord matching the cone's ruling end
+	}
 }
 
 // arcEndpoints orients an arc so it starts at cur (returning from=cur, to=other), or ok=false
@@ -312,8 +346,9 @@ func spherePatchFlipped(cb *cornerBlend, loop filletLoop) bool {
 	return n.Dot(cb.center.VectorTo(c)) < 0
 }
 
-// reverseArcLoop reverses a closed arc loop, re-deriving each segment's arc in the new
-// direction (the arc midpoints are recovered from the original arcs).
+// reverseArcLoop reverses a closed arc loop, re-deriving each segment's arc in the new direction
+// (the arc midpoints are recovered from the original arcs). Straight chord segments (nil curve, from a
+// faceted variable-cone arc) stay straight rather than being mis-fitted to an arc through the origin.
 func reverseArcLoop(loop filletLoop) filletLoop {
 	n := len(loop.pts)
 	mids := arcMidpoints(loop)
@@ -321,9 +356,13 @@ func reverseArcLoop(loop filletLoop) filletLoop {
 	for i := 0; i < n; i++ {
 		from := loop.pts[(n-i)%n]
 		to := loop.pts[(n-i-1+n)%n]
-		arc, _ := geom.Arc3dByThreePoints(from, mids[(n-i-1+n)%n], to)
+		src := (n - i - 1 + n) % n
+		var curve geom.Curve3
+		if loop.curves[src] != nil {
+			curve, _ = geom.Arc3dByThreePoints(from, mids[src], to)
+		}
 		out.pts = append(out.pts, from)
-		out.curves = append(out.curves, arc)
+		out.curves = append(out.curves, curve)
 	}
 	return out
 }
