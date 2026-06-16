@@ -599,6 +599,7 @@ func sweptSolidCommands() []*CommandDefinition {
 func viewTabCommands() []*CommandDefinition {
 	cmds := append(viewNavigateCommands(), orientViewCommands()...)
 	cmds = append(cmds, displayViewCommands()...)
+	cmds = append(cmds, colorStylesCommand())
 	cmds = append(cmds, visualStyleCommands()...)
 	cmds = append(cmds, colorSchemeCommands()...)
 	cmds = append(cmds, lightingViewCommands()...)

@@ -28,6 +28,24 @@ func (s *Session) BodyColorStyle(bodyKey string) (string, bool) {
 	return name, ok
 }
 
+// SelectedBodyKey returns the reference key of the currently selected body, and whether a body
+// is selected — the target the Color Styles panel applies a style to.
+func (s *Session) SelectedBodyKey() (string, bool) {
+	if h, ok := s.Selection().First().(BodyHandle); ok && h.Body != nil {
+		return string(h.Body.ReferenceKey()), true
+	}
+	return "", false
+}
+
+// OpenColorStylesPanel opens the Color Styles panel (M16-F02 #403/#408).
+func (s *Session) OpenColorStylesPanel() { s.colorStylesPanelOpen = true }
+
+// CloseColorStylesPanel closes the Color Styles panel.
+func (s *Session) CloseColorStylesPanel() { s.colorStylesPanelOpen = false }
+
+// ColorStylesPanelOpen reports whether the Color Styles panel is open.
+func (s *Session) ColorStylesPanelOpen() bool { return s.colorStylesPanelOpen }
+
 // styleSurface converts a color style into the renderer's PBR surface: the diffuse drives the
 // albedo, shininess maps to (1-roughness), and the specular's brightness hints the metalness.
 func styleSurface(cs style.ColorStyle) renderer.Surface {

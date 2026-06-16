@@ -48,10 +48,11 @@ func main() {
 	overlay := flag.Bool("overlay", false, "add a red surface overlay highlighting the demo box (M16-F05)")
 	styleName := flag.String("style", "", "assign a color style (e.g. Brass) to the demo box (M16-F02)")
 	named := flag.Bool("named", false, "save a couple named views and open the Named Views panel (M16-F03)")
+	stylesPanel := flag.Bool("styles", false, "select the demo box and open the Color Styles panel (M16-F02)")
 	window := flag.Bool("window", false, "capture the WHOLE window (chrome + panels), not just the 3D viewport")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *window}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *stylesPanel, *window}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -60,15 +61,15 @@ func main() {
 
 // opts is the capture configuration parsed from the command line.
 type opts struct {
-	scheme, out   string
-	frames        int
-	noEnv, box    bool
-	orient        string
-	edge          string
-	ground        string
-	overlay       bool
-	style         string
-	named, window bool
+	scheme, out           string
+	frames                int
+	noEnv, box            bool
+	orient                string
+	edge                  string
+	ground                string
+	overlay               bool
+	style                 string
+	named, styles, window bool
 }
 
 func run(o opts) error {
@@ -121,6 +122,9 @@ func applyDisplaySetup(s *app.Session, o opts) {
 	if o.named {
 		applyNamedViews(s)
 	}
+	if o.styles {
+		applyStylesPanel(s)
+	}
 	if o.noEnv {
 		e := s.Environment()
 		e.ShowImage = false
@@ -156,6 +160,15 @@ func applyNamedViews(s *app.Session) {
 	_ = s.SetViewOrientation(orientByName["top"], true)
 	_, _ = s.CaptureNamedView("Top")
 	s.OpenNamedViewsPanel()
+}
+
+// applyStylesPanel selects the first visible body and opens the Color Styles panel, so a
+// whole-window capture shows the panel with the style list and the selected-body label.
+func applyStylesPanel(s *app.Session) {
+	if bodies := s.VisibleBodies(); len(bodies) > 0 {
+		s.Selection().Add(app.BodyHandle{Body: bodies[0]})
+	}
+	s.OpenColorStylesPanel()
 }
 
 // applyEdgeColor parses "R,G,B" and stores it as the active document's display-settings edge
