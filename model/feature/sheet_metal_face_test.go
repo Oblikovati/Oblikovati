@@ -82,6 +82,41 @@ func TestSheetMetalFaceNeedsThickness(t *testing.T) {
 	}
 }
 
+// TestSheetMetalFaceDirections each material side (positive/negative/symmetric) thickens the
+// profile into a valid single solid of the same volume, on the chosen side of the plane.
+func TestSheetMetalFaceDirections(t *testing.T) {
+	want := 4.0 * 4.0 * 0.2 // side²·thickness
+	for _, dir := range []ExtentDirection{PositiveDir, NegativeDir, SymmetricDir} {
+		ps := sheetMetalParams(t, "2 mm")
+		fs := NewPartFeatures(ps, nil)
+		def := &SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Direction: dir, Operation: ops.NewBody}
+		pf := NewSheetMetalFaceFeatures(fs).Add(def)
+		if pf.Definition() == nil {
+			t.Fatal("Definition() returned nil")
+		}
+		fs.Recompute()
+		if !pf.Health().OK() {
+			t.Fatalf("direction %d: face sick %+v", dir, pf.Health())
+		}
+		bodies := fs.Result()
+		if len(bodies) != 1 || !bodies[0].IsSolid() {
+			t.Fatalf("direction %d: not a single solid", dir)
+		}
+		if got := ops.BodyGeometryProperties(bodies[0], ops.Quality{ChordTolerance: 1e-4}).Volume; math.Abs(got-want) > 1e-6 {
+			t.Errorf("direction %d: volume = %.6f, want %.6f", dir, got, want)
+		}
+	}
+}
+
+// TestSheetMetalFaceDefinitionAccessor Definition returns the stored recipe.
+func TestSheetMetalFaceDefinitionAccessor(t *testing.T) {
+	def := &SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody}
+	f := &SheetMetalFaceFeature{def: def}
+	if f.Definition() != def || f.Kind() != "sheet-metal-face" {
+		t.Error("Definition/Kind mismatch")
+	}
+}
+
 // TestSheetMetalFaceSecondaryJoins a second Face with Join merges into the running sheet
 // rather than starting a new body.
 func TestSheetMetalFaceSecondaryJoins(t *testing.T) {

@@ -45,3 +45,17 @@ func TestSheetMetalFaceRejectsPlainPart(t *testing.T) {
 		t.Fatal("sheetMetalFace on a plain part must error")
 	}
 }
+
+// TestSheetMetalFaceRejectsBadArgs sheetMetalFace reports a clear error for an out-of-range
+// sketch index and a malformed args payload.
+func TestSheetMetalFaceRejectsBadArgs(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	for _, bad := range []string{
+		`{"kind":"sheetMetalFace","args":{"sketchIndex":99}}`, // no such sketch
+		`{"kind":"sheetMetalFace","args":{"sketchIndex":"x"}}`, // not an integer
+	} {
+		if _, err := r.Handle(s, "features.add", []byte(bad)); err == nil {
+			t.Errorf("sheetMetalFace(%s) should error", bad)
+		}
+	}
+}
