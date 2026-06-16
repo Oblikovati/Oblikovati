@@ -30,6 +30,33 @@ func (r *Router) registerFlatPatternHandlers() {
 	r.handlers[wire.MethodFlatPatternDeleteOrientation] = flatPatternDeleteOrientation
 	r.handlers[wire.MethodFlatPatternEdgesOfType] = flatPatternEdgesOfType
 	r.handlers[wire.MethodFlatPatternFaces] = flatPatternFaces
+	r.handlers[wire.MethodFlatPatternMapEntity] = flatPatternMapEntity
+}
+
+func flatPatternMapEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.MapEntityArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	mapper := part.MapFlatToFolded
+	if in.ToFlat {
+		mapper = part.MapFoldedToFlat
+	}
+	// Keys are the raw topology reference keys model.referenceKeys reports, so a caller can
+	// feed one straight back in.
+	mapped, found, err := mapper([]byte(in.Key))
+	if err != nil {
+		return nil, err
+	}
+	out := wire.MapEntityResult{Found: found}
+	if found {
+		out.Key, out.Kind = string(mapped), "face"
+	}
+	return json.Marshal(out)
 }
 
 func flatPatternEdgesOfType(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

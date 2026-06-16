@@ -3,10 +3,46 @@
 package router
 
 import (
+	"encoding/json"
 	"testing"
 
 	"oblikovati.org/api/wire"
 )
+
+// TestFlatPatternMapEntityOverWire a folded face maps to a flat face (and back) by reference
+// key over the wire — the correspondence a flat drawing dimension survives recompute by.
+func TestFlatPatternMapEntityOverWire(t *testing.T) {
+	r, s := flangedSheet(t)
+
+	var keys wire.ReferenceKeysResult
+	call(t, r, s, wire.MethodModelReferenceKeys, "{}", &keys)
+	if len(keys.Bodies) == 0 || len(keys.Bodies[0].Faces) == 0 {
+		t.Fatal("no face reference keys")
+	}
+	faceKey := keys.Bodies[0].Faces[0].Key
+
+	toFlat, _ := json.Marshal(map[string]any{"key": faceKey, "toFlat": true})
+	var flat wire.MapEntityResult
+	call(t, r, s, wire.MethodFlatPatternMapEntity, string(toFlat), &flat)
+	if !flat.Found || flat.Kind != "face" || flat.Key == "" {
+		t.Fatalf("folded→flat map = %+v, want a found face", flat)
+	}
+
+	toFolded, _ := json.Marshal(map[string]any{"key": flat.Key})
+	var folded wire.MapEntityResult
+	call(t, r, s, wire.MethodFlatPatternMapEntity, string(toFolded), &folded)
+	if !folded.Found {
+		t.Errorf("flat→folded map = %+v, want a found face", folded)
+	}
+
+	// An unknown key reports not-found (not an error).
+	unknown, _ := json.Marshal(map[string]any{"key": "bogus", "toFlat": true})
+	var miss wire.MapEntityResult
+	call(t, r, s, wire.MethodFlatPatternMapEntity, string(unknown), &miss)
+	if miss.Found {
+		t.Error("an unknown key should report not-found")
+	}
+}
 
 // TestFlatPatternOrientationsOverWire drives the M13-F05 orientation surface: a flanged sheet
 // reports the default orientation with a positive length/width; adding a vertical orientation
