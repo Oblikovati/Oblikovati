@@ -148,6 +148,8 @@ func cutPair(segs []taggedSeg, i, j int, cuts [][]cut) {
 // only pairs that share a cell — each pair once (deduped, since a long segment spans
 // several cells). Exact: AABB-overlapping (hence possibly-intersecting) segments
 // always co-occupy a cell.
+//
+//nolint:funlen // spatial-grid binning of segment AABBs; length is the binning, not logic.
 func gridCuts(segs []taggedSeg, cuts [][]cut) {
 	minX, minY := stdmath.Inf(1), stdmath.Inf(1)
 	maxX, maxY := stdmath.Inf(-1), stdmath.Inf(-1)

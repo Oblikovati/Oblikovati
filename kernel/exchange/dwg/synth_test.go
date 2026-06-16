@@ -167,3 +167,77 @@ func TestReadCommonEntityDataModernVersions(t *testing.T) {
 		}
 	}
 }
+
+// buildLineObject hand-encodes an R2000 LINE object with a chosen entmode. For a
+// block-owned entity (entmode 0) the owner (block) handle leads the handle stream.
+func buildLineObject(handle, owner uint64, entmode int, start, end [3]float64) []byte {
+	body := NewBitWriter()
+	body.WriteHandle(0, handle)
+	body.WriteBS(0) // EED
+	// common entity data with the given entmode (cf. writeCommonEntityData, R2000).
+	body.WriteBit(0)
+	body.WriteBits(uint64(entmode), 2)
+	body.WriteBL(0)  // num_reactors
+	body.WriteBit(1) // nolinks
+	body.WriteBS(0)  // colour
+	body.WriteBD(1.0)
+	body.WriteBits(0, 2) // ltype_flags
+	body.WriteBits(0, 2) // plotstyle_flags
+	body.WriteBS(0)      // invisible
+	body.WriteRC(0)      // linewt
+	writeGeometry(body, &Line{Start: start, End: end})
+
+	w := NewBitWriter()
+	w.WriteBS(int(TypeLine))
+	w.WriteRL(uint32(bsBits(int(TypeLine)) + 32 + body.Position()))
+	w.Append(body)
+	if entmode == 0 {
+		w.WriteHandle(4, owner) // owner block (entmode 0 only)
+	}
+	w.WriteHandle(3, 0) // xdicobjhandle
+	w.WriteHandle(5, 0) // layer
+	w.AlignToByte()
+	payload := w.Bytes()
+
+	out := NewBitWriter()
+	out.WriteMS(len(payload))
+	for _, b := range payload {
+		out.WriteRC(b)
+	}
+	out.WriteRS(crc16(0xC0C1, out.Bytes()))
+	return out.Bytes()
+}
+
+// TestDecodeBlockInsertFile assembles a full R2000 file with a block-owned LINE and a
+// model-space INSERT that places that block, then decodes it — covering the collector's
+// block-definition vs model-space classification, the owner handle resolution, and the
+// INSERT expansion, all without the .dwg corpus.
+func TestDecodeBlockInsertFile(t *testing.T) {
+	const block = uint64(0x42)
+	objs := [][]byte{
+		buildLineObject(0x10, block, entmodeBlock, [3]float64{0, 0, 0}, [3]float64{1, 0, 0}),
+		buildInsertObject(0x11, block, [3]float64{10, 5, 0}, 0),
+	}
+	b := &r2000Builder{}
+	out := make([]byte, 0x100)
+	for i, o := range objs {
+		b.refs = append(b.refs, ObjectRef{Handle: uint64(0x10 + i), Offset: int64(len(out))})
+		out = append(out, o...)
+	}
+	mapOff := len(out)
+	out = append(out, b.encodeObjectMap()...)
+	copy(out, b.encodeHeader(int64(mapOff), int64(len(out)-mapOff)))
+
+	dr, _, err := Decode(out)
+	if err != nil {
+		t.Fatalf("Decode: %v", err)
+	}
+	// The block's line appears once, placed by the model insert: (0,0)+insertion=(10,5).
+	if len(dr.Entities) != 1 {
+		t.Fatalf("decoded %d entities, want 1 (the inserted block line)", len(dr.Entities))
+	}
+	l, ok := dr.Entities[0].(*Line)
+	if !ok || math.Abs(l.Start[0]-10) > 1e-6 || math.Abs(l.Start[1]-5) > 1e-6 {
+		t.Errorf("inserted line start = %v, want ~(10,5,0)", dr.Entities[0])
+	}
+}

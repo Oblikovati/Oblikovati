@@ -20,6 +20,7 @@ func TestWriteDecodeRoundTrip(t *testing.T) {
 		&LwPolyline{Closed: true, Points: [][2]float64{{0, 0}, {2, 0}, {2, 2}}, Bulges: []float64{0, 0.5, 0}},
 		&Point{Position: [3]float64{7, 8, 0}},
 		&Ellipse{Center: [3]float64{1, 1, 0}, MajorAxis: [3]float64{2, 0, 0}, AxisRatio: 0.5, StartAngle: 0, EndAngle: 1.2, Normal: [3]float64{0, 0, 1}},
+		&Spline{Degree: 3, FitPoints: [][3]float64{{0, 0, 0}, {1, 1, 0}, {2, 0, 0}}}, // fit-point form (scenario 2)
 	}
 	data, err := Write(&Drawing{Entities: in, Units: 5})
 	if err != nil {
@@ -68,5 +69,9 @@ func TestWriteDecodeRoundTrip(t *testing.T) {
 	el := dr.Entities[6].(*Ellipse)
 	if !closeP(el.Center, [3]float64{1, 1, 0}) || math.Abs(el.AxisRatio-0.5) > 1e-9 || math.Abs(el.EndAngle-1.2) > 1e-9 {
 		t.Errorf("ellipse round-trip: c=%v ratio=%g end=%g", el.Center, el.AxisRatio, el.EndAngle)
+	}
+	fs := dr.Entities[7].(*Spline)
+	if len(fs.FitPoints) != 3 || !closeP(fs.FitPoints[1], [3]float64{1, 1, 0}) {
+		t.Errorf("fit spline round-trip: fit=%v", fs.FitPoints)
 	}
 }
