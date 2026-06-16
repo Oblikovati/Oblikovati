@@ -44,6 +44,9 @@ func FilletEdgesVarying(body *topo.Body, picks []EdgeFilletRadii) (*topo.Body, e
 	if rim := loneRimPick(body, picks); rim != nil {
 		return FilletCylinderRim(body, rim.Key, rim.R0) // a circular cylinder/cap rim → toroidal band
 	}
+	if arc := loneArcPick(body, picks); arc != nil {
+		return FilletCylinderArc(body, arc.Key, arc.R0) // a cylinder/cap arc → torus + setback end-caps
+	}
 	edges, err := resolveFilletPicks(body, picks)
 	if err != nil {
 		return nil, err
