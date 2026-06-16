@@ -51,7 +51,7 @@ func TestSheetMetalFaceRejectsPlainPart(t *testing.T) {
 func TestSheetMetalFaceRejectsBadArgs(t *testing.T) {
 	r, s := newSheetMetalPart(t)
 	for _, bad := range []string{
-		`{"kind":"sheetMetalFace","args":{"sketchIndex":99}}`, // no such sketch
+		`{"kind":"sheetMetalFace","args":{"sketchIndex":99}}`,  // no such sketch
 		`{"kind":"sheetMetalFace","args":{"sketchIndex":"x"}}`, // not an integer
 	} {
 		if _, err := r.Handle(s, "features.add", []byte(bad)); err == nil {

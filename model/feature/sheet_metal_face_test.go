@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
 
 // sheetMetalParams returns a parameter set carrying a Thickness parameter at the given
@@ -79,6 +80,65 @@ func TestSheetMetalFaceNeedsThickness(t *testing.T) {
 	fs.Recompute()
 	if pf.Health().OK() {
 		t.Fatal("face without a Thickness parameter should be sick")
+	}
+}
+
+// TestSheetMetalFaceRoundTrip the Face recipe (profile + direction + operation) marshals and
+// restores in-package, preserving the kind and payload.
+func TestSheetMetalFaceRoundTrip(t *testing.T) {
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	fs := NewPartFeatures(nil, nil)
+	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Direction: NegativeDir, Operation: ops.Join})
+
+	data, err := fs.MarshalRecipe(oneSketch{sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	if len(data) != 1 || data[0].Kind != "sheet-metal-face" || data[0].SheetMetalFace == nil {
+		t.Fatalf("marshaled = %+v, want one sheet-metal-face with payload", data)
+	}
+	if data[0].SheetMetalFace.Direction != int32(NegativeDir) || data[0].SheetMetalFace.Operation != int32(ops.Join) {
+		t.Errorf("payload = %+v, want negative/join", data[0].SheetMetalFace)
+	}
+
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{sk}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	if fresh.Count() != 1 || fresh.Item(0).Kind() != "sheet-metal-face" {
+		t.Errorf("restored program = %d features, want one sheet-metal-face", fresh.Count())
+	}
+}
+
+// TestSheetMetalFaceMissingPayload restoring a sheet-metal-face record with no payload errors.
+func TestSheetMetalFaceMissingPayload(t *testing.T) {
+	if _, err := restoreSheetMetalFace(NewPartFeatures(nil, nil), nil, oneSketch{}); err == nil {
+		t.Error("restoreSheetMetalFace(nil) must error")
+	}
+}
+
+// TestSheetMetalFaceSerializeUnknownSketch serializing a Face whose sketch is not in the part
+// errors rather than silently dropping the profile reference.
+func TestSheetMetalFaceSerializeUnknownSketch(t *testing.T) {
+	def := &SheetMetalFaceDefinition{Sketch: sketch.NewSketches().Add(sketch.XYPlane()), ProfileIndex: 0}
+	// oneSketch over a *different* sketch ⇒ IndexOf returns false.
+	if _, err := serializeSheetMetalFace(def, oneSketch{s: sketch.NewSketches().Add(sketch.XYPlane())}); err == nil {
+		t.Error("serializeSheetMetalFace with an unknown sketch must error")
+	}
+}
+
+// TestSheetThicknessEdgeCases the thickness reader rejects nil parameters and a non-positive
+// gauge.
+func TestSheetThicknessEdgeCases(t *testing.T) {
+	if _, err := sheetThickness(nil); err == nil {
+		t.Error("sheetThickness(nil) must error")
+	}
+	ps := param.NewParameters()
+	if _, err := ps.AddUserParameter("Thickness", "0 mm"); err != nil {
+		t.Fatalf("add Thickness: %v", err)
+	}
+	if _, err := sheetThickness(ps); err == nil {
+		t.Error("sheetThickness with zero gauge must error")
 	}
 }
 
