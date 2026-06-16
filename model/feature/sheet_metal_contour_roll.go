@@ -7,7 +7,6 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
 
@@ -17,9 +16,6 @@ import (
 // its plane into a band; the band revolves about the axis through the sweep angle (default a
 // full 360°). Thickness is read live from the rule. The result is a new body or joined to the
 // running part.
-
-// rollSegments caps the facet count of a full revolution (matching the part revolve's).
-const rollSegments = 48
 
 // SheetMetalContourRollDefinition is the contour-roll recipe: the open profile sketch, the
 // index of the axis line in that sketch (a centerline), the sweep angle (parameter-backed;
@@ -63,7 +59,7 @@ func (f *SheetMetalContourRollFeature) Recompute(in Input) (Output, error) {
 	if angle <= 0 {
 		return Output{}, fmt.Errorf("sheet-metal contour roll: angle must be positive, got %g", angle)
 	}
-	sections, full := rollSections(band, axis, angle)
+	sections, full := revolvePointsAbout(band, axis, angle, 0)
 	rolled, err := sweptSolid(sections, full, featOr(f.featName, "contourRoll"))
 	if err != nil {
 		return Output{}, fmt.Errorf("sheet-metal contour roll: %w", err)
@@ -94,27 +90,6 @@ func (f *SheetMetalContourRollFeature) resolveAngle() float64 {
 		return 2 * stdmath.Pi
 	}
 	return f.def.Angle()
-}
-
-// rollSections revolves the band base about the axis through angle, returning the rotated
-// cross-sections and whether the revolution is full (a closed loft).
-func rollSections(base []math.Point3, axis *WorkAxis, angle float64) ([][]math.Point3, bool) {
-	full := angle >= 2*stdmath.Pi-1e-9
-	k, step := rollSegments, 2*stdmath.Pi/float64(rollSegments)
-	if !full {
-		segs := stdmath.Max(3, stdmath.Round(rollSegments*angle/(2*stdmath.Pi)))
-		k, step = int(segs)+1, angle/segs
-	}
-	sections := make([][]math.Point3, k)
-	for s := 0; s < k; s++ {
-		m := math.Rotation4(step*float64(s), axis.Direction(), axis.Origin())
-		sec := make([]math.Point3, len(base))
-		for i, p := range base {
-			sec[i] = m.TransformPoint(p)
-		}
-		sections[s] = sec
-	}
-	return sections, full
 }
 
 // SheetMetalContourRollFeatures adds contour-roll features into the engine.

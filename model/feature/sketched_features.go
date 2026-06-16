@@ -194,7 +194,13 @@ func centerlineAxis(line *sketch.Line, sk *sketch.Sketch) (*WorkAxis, error) {
 // revolveSectionsFrom is revolveSections starting at a signed angular offset —
 // the two-directional revolve sweeps [start, start+angle] (#313).
 func revolveSectionsFrom(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, angle, start float64) ([][]math.Point3, bool) {
-	base := modelPolygon(prof, plane)
+	return revolvePointsAbout(modelPolygon(prof, plane), axis, angle, start)
+}
+
+// revolvePointsAbout sweeps a base section's points about the axis from start through angle,
+// returning the rotated cross-sections (revolveSegments facets per full turn) and whether the
+// revolution is full. Shared by the part revolve and the sheet-metal contour roll.
+func revolvePointsAbout(base []math.Point3, axis *WorkAxis, angle, start float64) ([][]math.Point3, bool) {
 	full := angle <= 0 || angle >= 2*stdmath.Pi-1e-9
 	k, step := revolveSegments, 2*stdmath.Pi/float64(revolveSegments)
 	if full {
