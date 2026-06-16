@@ -36,7 +36,7 @@ func decodeGeometry(t *testing.T, name string) (map[uint64]Entity, map[string]in
 			continue
 		}
 		switch hdr.Type {
-		case TypeLine, TypeCircle, TypeArc, TypePoint:
+		case TypeLine, TypeCircle, TypeArc, TypePoint, TypeEllipse, TypeLwpolyline:
 		default:
 			continue
 		}
@@ -63,7 +63,10 @@ func TestDecodeGeometryCorpus(t *testing.T) {
 		file string
 		want map[string]int
 	}{
-		{"testfile-1.dwg", map[string]int{"LINE": 58062, "ARC": 1670, "CIRCLE": 959, "POINT": 739}},
+		{"testfile-1.dwg", map[string]int{
+			"LINE": 58062, "ARC": 1670, "CIRCLE": 959, "POINT": 739,
+			"ELLIPSE": 1271, "LWPOLYLINE": 15525,
+		}},
 		{"testfile-2.dwg", map[string]int{"LINE": 134240, "ARC": 41950, "POINT": 34264}},
 	}
 	for _, c := range cases {
@@ -116,6 +119,25 @@ func TestDecodeGeometryCoordsMatchOracle(t *testing.T) {
 		t.Fatal("handle 1026420 not a Point")
 	}
 	wantClose(t, "point", point.Position, [3]float64{539962606.9976188, 178228176.57959518, 0})
+
+	ellipse, ok := ents[1035518].(*Ellipse)
+	if !ok {
+		t.Fatal("handle 1035518 not an Ellipse")
+	}
+	wantClose(t, "ellipse.center", ellipse.Center, [3]float64{540022641.2854427, 178190920.62832335, 0})
+	wantClose(t, "ellipse.major", ellipse.MajorAxis, [3]float64{-2.2e-13, 14.99999999999998, 0})
+	if math.Abs(ellipse.AxisRatio-0.17364817766693) > 1e-9 {
+		t.Errorf("ellipse.axisRatio = %v, want 0.17364817766693", ellipse.AxisRatio)
+	}
+
+	lwp, ok := ents[993637].(*LwPolyline)
+	if !ok {
+		t.Fatal("handle 993637 not an LwPolyline")
+	}
+	if len(lwp.Points) != 2 ||
+		math.Abs(lwp.Points[0][0]-(-0.5)) > 1e-9 || math.Abs(lwp.Points[1][1]-0.5) > 1e-9 {
+		t.Errorf("lwpolyline points = %v, want [[-0.5 -0.5] [0.5 0.5]]", lwp.Points)
+	}
 }
 
 func wantClose(t *testing.T, what string, got, want [3]float64) {
