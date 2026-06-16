@@ -13,6 +13,50 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
+// cutRectangle adds a closed rectangle (two opposite corners) on the XY plane and returns the
+// sketch — the cut profile the unfold/refold round-trip tests develop.
+func cutRectangle(d *PartComponentDefinition, x1, y1, x2, y2 float64) *sketch.Sketch {
+	sk := d.Sketches().Add(sketch.XYPlane())
+	a := sk.Points().Add(gmath.P2(x1, y1))
+	b := sk.Points().Add(gmath.P2(x2, y1))
+	c := sk.Points().Add(gmath.P2(x2, y2))
+	e := sk.Points().Add(gmath.P2(x1, y2))
+	sk.Lines().Add(a, b)
+	sk.Lines().Add(b, c)
+	sk.Lines().Add(c, e)
+	sk.Lines().Add(e, a)
+	return sk
+}
+
+// unfoldCutRefold runs the cut-while-flat round trip on d: unfold flat, cut the rectangle
+// through the developed part, then refold. It fails the test if any step is unhealthy or the
+// cut removes no material, and returns the folded, flat-cut, and refolded volumes — so each
+// caller asserts the carry-back (refolded ≈ flat-cut) for its own cut placement.
+func unfoldCutRefold(t *testing.T, d *PartComponentDefinition, x1, y1, x2, y2 float64) (folded, flatCut, refolded float64) {
+	t.Helper()
+	folded = flatVolume(d.Features().Result()[0])
+	if _, err := d.AddUnfold(); err != nil {
+		t.Fatalf("AddUnfold: %v", err)
+	}
+	d.Recompute()
+	assertFlatSolid(t, d.Features().Result()[0]) // the bend developed to a proper flat strip
+	cut := feature.NewSheetMetalCutFeatures(d.features).Add(&feature.SheetMetalCutDefinition{Sketch: cutRectangle(d, x1, y1, x2, y2), ProfileIndex: 0})
+	d.Recompute()
+	if !cut.Health().OK() {
+		t.Fatalf("cut on the flat unhealthy: %s", cut.Health().Reason)
+	}
+	flatCut = flatVolume(d.Features().Result()[0])
+	if !(flatCut < folded) {
+		t.Fatalf("cut removed no material: %.4f vs %.4f", flatCut, folded)
+	}
+	if _, err := d.AddRefold(); err != nil {
+		t.Fatalf("AddRefold: %v", err)
+	}
+	d.Recompute()
+	assertFlatSolid(t, d.Features().Result()[0])
+	return folded, flatCut, flatVolume(d.Features().Result()[0])
+}
+
 // TestCutCrossingBendSurvivesRefold a slot cut while flat that STRADDLES the bend line is
 // carried fully through the bend on refold — reaching the base, the bend region, and the
 // flange. The regression for the rigid-rotation defect, where the bend stayed curved so a
@@ -20,42 +64,10 @@ import (
 // the bend region kept its material, the refolded volume would be higher).
 func TestCutCrossingBendSurvivesRefold(t *testing.T) {
 	d, _ := sheetWithFlange(t) // base y∈[0,4]; flange on the y=0 edge, develops into −Y
-	foldedVol := flatVolume(d.Features().Result()[0])
-
-	if _, err := d.AddUnfold(); err != nil {
-		t.Fatalf("AddUnfold: %v", err)
-	}
-	d.Recompute()
-	assertFlatSolid(t, d.Features().Result()[0]) // the bend developed to a proper flat strip
-
 	// A slot crossing y=0: from the base (y>0) through the bend region into the flange (y<0).
-	sk := d.Sketches().Add(sketch.XYPlane())
-	a := sk.Points().Add(gmath.P2(1.6, -0.6))
-	b := sk.Points().Add(gmath.P2(2.4, -0.6))
-	c := sk.Points().Add(gmath.P2(2.4, 0.6))
-	e := sk.Points().Add(gmath.P2(1.6, 0.6))
-	sk.Lines().Add(a, b)
-	sk.Lines().Add(b, c)
-	sk.Lines().Add(c, e)
-	sk.Lines().Add(e, a)
-	cut := feature.NewSheetMetalCutFeatures(d.features).Add(&feature.SheetMetalCutDefinition{Sketch: sk, ProfileIndex: 0})
-	d.Recompute()
-	if !cut.Health().OK() {
-		t.Fatalf("slot crossing the bend (flat) unhealthy: %s", cut.Health().Reason)
-	}
-	flatCutVol := flatVolume(d.Features().Result()[0])
-	if !(flatCutVol < foldedVol) {
-		t.Fatalf("slot removed no material: %.4f vs %.4f", flatCutVol, foldedVol)
-	}
-
-	if _, err := d.AddRefold(); err != nil {
-		t.Fatalf("AddRefold: %v", err)
-	}
-	d.Recompute()
-	refolded := d.Features().Result()[0]
-	assertFlatSolid(t, refolded)
-	if v := flatVolume(refolded); math.Abs(v-flatCutVol)/flatCutVol > 0.02 {
-		t.Errorf("refolded volume %.4f != flat-cut %.4f: the slot was not carried through the bend (one face kept its material)", v, flatCutVol)
+	_, flatCut, refolded := unfoldCutRefold(t, d, 1.6, -0.6, 2.4, 0.6)
+	if math.Abs(refolded-flatCut)/flatCut > 0.02 {
+		t.Errorf("refolded volume %.4f != flat-cut %.4f: the slot was not carried through the bend (one face kept its material)", refolded, flatCut)
 	}
 }
 
@@ -125,46 +137,13 @@ func TestUnfoldRefoldRoundTrip(t *testing.T) {
 // unfold/refold are body transforms, the cut is part of the topology, not lost.
 func TestCutWhileFlatSurvivesRefold(t *testing.T) {
 	d, _ := sheetWithFlange(t) // flange on the y=0 top edge; unfolded it extends into −Y
-	foldedVol := flatVolume(d.Features().Result()[0])
-
-	if _, err := d.AddUnfold(); err != nil {
-		t.Fatalf("AddUnfold: %v", err)
+	// A 0.4×0.4 hole wholly on the developed flange (y in [−0.8,−0.4]) — away from the bend.
+	folded, flatCut, refolded := unfoldCutRefold(t, d, 1.8, -0.8, 2.2, -0.4)
+	if math.Abs(refolded-flatCut)/flatCut > 0.02 {
+		t.Errorf("refold volume %.4f != flat-cut volume %.4f (the cut was not carried back)", refolded, flatCut)
 	}
-	d.Recompute()
-
-	// Cut a 0.4×0.4 square hole through the developed flange (y in [−0.8,−0.4] lies on it).
-	sk := d.Sketches().Add(sketch.XYPlane())
-	a := sk.Points().Add(gmath.P2(1.8, -0.8))
-	b := sk.Points().Add(gmath.P2(2.2, -0.8))
-	c := sk.Points().Add(gmath.P2(2.2, -0.4))
-	e := sk.Points().Add(gmath.P2(1.8, -0.4))
-	sk.Lines().Add(a, b)
-	sk.Lines().Add(b, c)
-	sk.Lines().Add(c, e)
-	sk.Lines().Add(e, a)
-	cut := feature.NewSheetMetalCutFeatures(d.features).Add(&feature.SheetMetalCutDefinition{Sketch: sk, ProfileIndex: 0})
-	d.Recompute()
-	if !cut.Health().OK() {
-		t.Fatalf("cut on the flat flange unhealthy: %s", cut.Health().Reason)
-	}
-	flatCutVol := flatVolume(d.Features().Result()[0])
-	if !(flatCutVol < foldedVol) {
-		t.Fatalf("cut did not remove material: %.4f vs %.4f", flatCutVol, foldedVol)
-	}
-
-	if _, err := d.AddRefold(); err != nil {
-		t.Fatalf("AddRefold: %v", err)
-	}
-	d.Recompute()
-	refolded := d.Features().Result()[0]
-	assertFlatSolid(t, refolded)
-	// The hole survives refold: volume stays reduced (matches the flat-cut volume) and the
-	// flange is folded up again.
-	if v := flatVolume(refolded); math.Abs(v-flatCutVol)/flatCutVol > 0.02 {
-		t.Errorf("refold volume %.4f != flat-cut volume %.4f (the cut was not carried back)", v, flatCutVol)
-	}
-	if v := flatVolume(refolded); !(v < foldedVol) {
-		t.Errorf("refolded part volume %.4f should stay below the uncut folded %.4f", v, foldedVol)
+	if !(refolded < folded) {
+		t.Errorf("refolded part volume %.4f should stay below the uncut folded %.4f", refolded, folded)
 	}
 }
 
