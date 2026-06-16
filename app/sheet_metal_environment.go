@@ -25,17 +25,11 @@ func (s *Session) ConvertActiveToSheetMetal() error {
 	if d == nil {
 		return errors.New("convert to sheet metal: no active document")
 	}
-	part, ok := d.Content().(*compdef.PartComponentDefinition)
-	if !ok {
-		return errors.New("convert to sheet metal: the active document is not a part")
+	if part, ok := d.Content().(*compdef.PartComponentDefinition); ok && part.IsSheetMetal() {
+		return nil // already in the environment
 	}
-	if part.IsSheetMetal() {
-		return nil
-	}
-	if err := s.StampDocumentSubType(d, types.SubTypeSheetMetalPart); err != nil {
-		return err
-	}
-	if _, err := part.EnableSheetMetal(); err != nil {
+	part, err := s.enterSheetMetalEnvironment(d)
+	if err != nil {
 		return err
 	}
 	s.recordEdit(part, "Convert to Sheet Metal")
@@ -49,17 +43,26 @@ func (s *Session) NewSheetMetalPart() (*doc.Document, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := s.StampDocumentSubType(d, types.SubTypeSheetMetalPart); err != nil {
+	if _, err := s.enterSheetMetalEnvironment(d); err != nil {
 		return nil, err
 	}
+	return d, nil
+}
+
+// enterSheetMetalEnvironment stamps the sheet-metal flavor on d's part and seeds its rule — the
+// shared body of Convert and New Sheet Metal Part. It errors when d is not a part.
+func (s *Session) enterSheetMetalEnvironment(d *doc.Document) (*compdef.PartComponentDefinition, error) {
 	part, ok := d.Content().(*compdef.PartComponentDefinition)
 	if !ok {
-		return nil, errors.New("new sheet metal part: content is not a part")
+		return nil, errors.New("sheet metal: the active document is not a part")
+	}
+	if err := s.StampDocumentSubType(d, types.SubTypeSheetMetalPart); err != nil {
+		return nil, err
 	}
 	if _, err := part.EnableSheetMetal(); err != nil {
 		return nil, err
 	}
-	return d, nil
+	return part, nil
 }
 
 // canConvertToSheetMetal enables the Convert command: an active part that is not already sheet
