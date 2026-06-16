@@ -255,6 +255,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"modelTolerance":      `{"linear":"0.01 mm"}`,
 		"moveBody":            `{"body":0,"type":"freeDrag","x":"1 mm"}`,
 		"bendPart":            `{}`,
+		"sheetMetalFace":      `{"sketchIndex":0}`,
 		"splitSolid":          `{"toolSketch":0}`,
 		"coreCavity":          `{}`,
 		"hull":                `{}`,

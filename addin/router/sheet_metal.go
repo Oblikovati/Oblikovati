@@ -61,6 +61,10 @@ func sheetMetalSetStyle(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err := applyStyleEdits(part, rule, in); err != nil {
 		return nil, err
 	}
+	// A rule edit (e.g. thickness) changes the inputs every wall/bend reads live, but those
+	// reads are not tracked feature dependencies — invalidate the whole program so the sheet
+	// rebuilds at the new gauge (the same full-rebuild a parameter edit triggers).
+	part.Features().MarkAllDirty()
 	part.Recompute()
 	return json.Marshal(wire.SheetMetalStyleResult{Style: styleInfo(part, rule)})
 }

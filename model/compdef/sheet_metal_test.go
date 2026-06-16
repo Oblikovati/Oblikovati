@@ -7,8 +7,28 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
+	gmath "oblikovati.org/math"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sheetmetal"
+	"oblikovati.org/model/sketch"
 )
+
+// addSquareFace adds a closed square-profile sketch and a base sheet-metal Face over it to
+// the part, then recomputes — the minimal sheet-metal body for persistence tests.
+func addSquareFace(d *PartComponentDefinition, side float64) {
+	sk := d.Sketches().Add(sketch.XYPlane())
+	c0 := sk.Points().Add(gmath.P2(0, 0))
+	c1 := sk.Points().Add(gmath.P2(side, 0))
+	c2 := sk.Points().Add(gmath.P2(side, side))
+	c3 := sk.Points().Add(gmath.P2(0, side))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+	feature.NewSheetMetalFaceFeatures(d.Features()).Add(&feature.SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Operation: ops.NewBody})
+	d.Recompute()
+}
 
 // TestEnableSheetMetalSeedsRule a fresh part enters the environment with a default rule and
 // the backing Thickness/BendRadius parameters.
@@ -102,6 +122,35 @@ func TestSheetMetalRecipeRoundTrips(t *testing.T) {
 	want := rule.BendAllowance(math.Pi/2, 0.2)
 	if g := got.BendAllowance(math.Pi/2, 0.2); math.Abs(g-want) > 1e-9 {
 		t.Errorf("restored bend allowance = %v, want %v", g, want)
+	}
+}
+
+// TestSheetMetalFaceSurvivesRoundTrip a sheet-metal part with a base Face wall round-trips
+// through the recipe: the restored part is still sheet metal and rebuilds the same single
+// solid wall (the Face reads the restored Thickness parameter live).
+func TestSheetMetalFaceSurvivesRoundTrip(t *testing.T) {
+	src := NewPartComponentDefinition()
+	if _, err := src.EnableSheetMetal(); err != nil {
+		t.Fatalf("enable: %v", err)
+	}
+	addSquareFace(src, 4)
+	if got := src.bodies.Count(); got != 1 {
+		t.Fatalf("source has %d bodies, want 1 wall", got)
+	}
+
+	blob, err := src.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	dst := NewPartComponentDefinition()
+	if err := dst.ApplyRecipe(blob); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if !dst.IsSheetMetal() {
+		t.Fatal("restored part lost its sheet-metal environment")
+	}
+	if got := dst.bodies.Count(); got != 1 {
+		t.Errorf("restored part rebuilt %d bodies, want 1 wall", got)
 	}
 }
 
