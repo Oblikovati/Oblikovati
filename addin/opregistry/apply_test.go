@@ -260,6 +260,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"sheetMetalHem":       `{"edge":"x","length":"6 mm"}`,
 		"sheetMetalBend":      `{"sketchIndex":0}`,
 		"sheetMetalFold":      `{"sketchIndex":0}`,
+		"sheetMetalCorner":    `{"edges":["x"],"treatment":"round","size":"3 mm"}`,
 		"splitSolid":          `{"toolSketch":0}`,
 		"coreCavity":          `{}`,
 		"hull":                `{}`,
