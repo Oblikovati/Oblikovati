@@ -33,7 +33,8 @@ var bodyGeometryCache struct {
 // place) and the overlays (which append) never corrupt the cached list.
 func cachedBodyDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
 	build := func() renderer.DrawList {
-		if on, perTri := s.MeshColors(); on { // each face/triangle a distinct color (viewport.setMeshColors)
+		renderer.SetEdgeColor(displayEdgeColor(s)) // M16-F07: the document's display-settings edge color
+		if on, perTri := s.MeshColors(); on {      // each face/triangle a distinct color (viewport.setMeshColors)
 			return renderer.BuildDrawListMeshColors(activeBodies(s), cam, ops.DefaultQuality(), perTri)
 		}
 		return renderer.BuildDrawListStyled(activeBodies(s), cam, ops.DefaultQuality(), s.SurfaceLookup(), s.VisualStyle())
@@ -63,6 +64,9 @@ func bodyGeometryKey(s *app.Session) string {
 	b.WriteString(version)
 	b.WriteByte('|')
 	b.WriteString(strconv.Itoa(int(s.VisualStyle())))
+	ec := displayEdgeColor(s) // M16-F07: edge-color override is baked into the list, so it keys the cache
+	b.WriteByte('|')
+	b.WriteString(strconv.FormatFloat(float64(ec[0]+ec[1]*2+ec[2]*3), 'f', 3, 64))
 	if on, perTri := s.MeshColors(); on { // mesh-debug-colors uses a different builder; key it apart
 		if perTri {
 			b.WriteString("|tricolors")
@@ -75,6 +79,15 @@ func bodyGeometryKey(s *app.Session) string {
 		b.WriteString(strconv.FormatUint(body.ID(), 10))
 	}
 	return b.String()
+}
+
+// displayEdgeColor is the active document's display-settings edge color as an rgba float array,
+// falling back to the renderer's default when there is no active document (M16-F07 #643).
+func displayEdgeColor(s *app.Session) [4]float32 {
+	if s.ActiveDocument() == nil {
+		return renderer.DefaultEdgeColor()
+	}
+	return s.DocumentDisplaySettings(0).EdgeColor().Rgba().Array()
 }
 
 // modelGeometryVersioned is the active document content that reports a geometry version — a part or

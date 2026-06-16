@@ -108,12 +108,15 @@ type Session struct {
 	colorSchemes         *colorscheme.Registry          // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
 	colorSchemeRev       uint64                         // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
 	styles               *style.Manager                 // document color styles + style-library cascade (M16-F02 #403/#408)
+	bodyColorStyles      map[string]string              // body reference key → assigned color-style name (M16-F02 #403/#408)
 	displayOptions       display.Options                // app-level display options that parameterize the display modes (M16-F07 #643)
-	docDisplay           map[doc.ID]display.Settings    // per-document display settings (background, edges, ground, shadows) (M16-F07 #643)
 	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
 	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
 	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
+	namedViewsPanelOpen  bool                           // the View ▸ Named Views panel is open (M16-F03 #404)
+	colorStylesPanelOpen bool                           // the Color Styles panel is open (M16-F02 #403/#408)
+	displaySettingsOpen  bool                           // the Display Settings dialog is open (M16-F07 #643)
 	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
 	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
 	scriptConsoleOpen    bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
@@ -191,7 +194,8 @@ func newSession(store doc.Store) *Session {
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
 	s.seedVisualState()
-	s.messageCenter.sink = s.routeMessage // M26 F03: mirror message-center entries to the command line
+	s.graphics.SetBodyResolver(s.resolveOverlayMesh) // M16-F05: surface-overlay body tessellation
+	s.messageCenter.sink = s.routeMessage            // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
 	s.watchDocumentInterests()
@@ -206,8 +210,8 @@ func (s *Session) seedVisualState() {
 	s.lighting.Environment = renderer.DefaultEnvironment()
 	s.colorSchemes = colorscheme.NewRegistry()
 	s.styles = style.NewManager()
+	s.bodyColorStyles = map[string]string{}
 	s.displayOptions = display.DefaultOptions()
-	s.docDisplay = map[doc.ID]display.Settings{}
 }
 
 // initShellSurfaces seeds the M05 add-in UI-shell state: web views, the default

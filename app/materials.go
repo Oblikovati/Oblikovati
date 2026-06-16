@@ -80,6 +80,13 @@ func (s *Session) SurfaceLookup() renderer.SurfaceLookup {
 	look := material.MergedLookup{Embedded: part.Assets(), Catalog: s.Materials()}
 	assign := part.Assignments()
 	return func(b *topo.Body) renderer.Surface {
+		// A color-style assignment (M16-F02 #403/#408) wins over the appearance: the body
+		// renders in the style's color.
+		if name, ok := s.bodyColorStyles[string(b.ReferenceKey())]; ok {
+			if cs, found := s.styles.ByName(name); found {
+				return styleSurface(cs)
+			}
+		}
 		appr := assign.EffectiveAppearance(look, material.RefKey(b.ReferenceKey()), "")
 		return appearanceSurface(appr)
 	}

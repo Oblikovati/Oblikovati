@@ -32,8 +32,9 @@ type Package struct {
 	resources   map[string]yamlcodec.Resource // embedded imported files, keyed by UUID (ADR-0031)
 	identity    *yamlcodec.FileIdentityRecord // file identity block (M03-F07, #159); nil pre-identity
 	references  []yamlcodec.FileReferenceRecord
-	attachments []yamlcodec.AttachmentRecord // external-file attachments (M03-F08)
-	interests   []yamlcodec.InterestRecord   // add-in data registry (M03-F10)
+	attachments []yamlcodec.AttachmentRecord     // external-file attachments (M03-F08)
+	interests   []yamlcodec.InterestRecord       // add-in data registry (M03-F10)
+	display     *yamlcodec.DisplaySettingsRecord // per-document display settings (M16-F07 #643)
 }
 
 // NewPackage returns an empty package.
@@ -58,6 +59,12 @@ func (p *Package) SetAttachments(a []yamlcodec.AttachmentRecord) { p.attachments
 
 // Attachments returns the external-file attachment records.
 func (p *Package) Attachments() []yamlcodec.AttachmentRecord { return p.attachments }
+
+// SetDisplaySettings stores the per-document display settings record (M16-F07 #643).
+func (p *Package) SetDisplaySettings(d *yamlcodec.DisplaySettingsRecord) { p.display = d }
+
+// DisplaySettings returns the per-document display settings record (nil when unset).
+func (p *Package) DisplaySettings() *yamlcodec.DisplaySettingsRecord { return p.display }
 
 // SetInterests stores the add-in data-registry records (M03-F10).
 func (p *Package) SetInterests(i []yamlcodec.InterestRecord) { p.interests = i }

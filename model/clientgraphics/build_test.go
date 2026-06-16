@@ -17,7 +17,8 @@ func buildOne(t *testing.T, args wire.SetClientGraphicsArgs) ([]renderer.DrawIte
 	t.Helper()
 	s := NewStore()
 	s.Set(mustDecode(t, args))
-	return s.Build(testCamera())
+	items, labels, _ := s.Build(testCamera())
+	return items, labels
 }
 
 // TestBuildHeatmapResolvesPerVertexColors is the headline case: scalars through a mapper
@@ -122,7 +123,7 @@ func TestBuildInvisibleGroupProducesNothing(t *testing.T) {
 	if err := s.SetVisible("h", false); err != nil {
 		t.Fatalf("SetVisible: %v", err)
 	}
-	items, _ := s.Build(testCamera())
+	items, _, _ := s.Build(testCamera())
 	if len(items) != 0 {
 		t.Errorf("hidden group should produce no items, got %d", len(items))
 	}

@@ -194,7 +194,9 @@ func instancedSourceKey(s *app.Session) string {
 	if !ok {
 		return ""
 	}
-	return ver + "|" + strconv.Itoa(int(s.VisualStyle())) + "|" + fmt.Sprintf("%v", s.Selection().First())
+	ec := displayEdgeColor(s) // M16-F07: edge-color override is baked into the source mesh
+	return ver + "|" + strconv.Itoa(int(s.VisualStyle())) + "|" + fmt.Sprintf("%v", s.Selection().First()) +
+		"|" + fmt.Sprintf("%.3f", ec[0]+ec[1]*2+ec[2]*3)
 }
 
 // cachedSourceMesh returns g's flattened source mesh, rebuilding only when sourceKey changed.

@@ -112,6 +112,15 @@ func (s *Session) fireCameraChanged(d *doc.Document) {
 	event.Emit(s.bus, event.After, CameraChanged{Document: d.ID()})
 }
 
+// OpenNamedViewsPanel opens the Named Views panel (M16-F03 #404).
+func (s *Session) OpenNamedViewsPanel() { s.namedViewsPanelOpen = true }
+
+// CloseNamedViewsPanel closes the Named Views panel.
+func (s *Session) CloseNamedViewsPanel() { s.namedViewsPanelOpen = false }
+
+// NamedViewsPanelOpen reports whether the Named Views panel is open.
+func (s *Session) NamedViewsPanelOpen() bool { return s.namedViewsPanelOpen }
+
 // orientationVector pairs a standard orientation's eye-direction with its up vector (Y-up
 // world; eye = target + dir·distance).
 type orientationVector struct{ dir, up math.Vector3 }

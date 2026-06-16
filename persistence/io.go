@@ -46,17 +46,18 @@ func (p *Package) Save(path string) error {
 // stable for clean git diffs.
 func (p *Package) marshal() ([]byte, error) {
 	return yamlcodec.MarshalDocument(yamlcodec.Document{
-		SchemaVersion: p.manifest.SchemaVersion,
-		DocumentType:  p.manifest.DocumentType,
-		SubType:       p.manifest.SubType,
-		DisplayName:   p.manifest.DisplayName,
-		Identity:      p.identity,
-		References:    p.references,
-		Attachments:   p.attachments,
-		Interests:     p.interests,
-		Model:         p.model,
-		Data:          p.streams,
-		Resources:     p.resources,
+		SchemaVersion:   p.manifest.SchemaVersion,
+		DocumentType:    p.manifest.DocumentType,
+		SubType:         p.manifest.SubType,
+		DisplayName:     p.manifest.DisplayName,
+		Identity:        p.identity,
+		References:      p.references,
+		Attachments:     p.attachments,
+		Interests:       p.interests,
+		DisplaySettings: p.display,
+		Model:           p.model,
+		Data:            p.streams,
+		Resources:       p.resources,
 	})
 }
 
@@ -81,6 +82,7 @@ func decode(raw []byte) (*Package, error) {
 	p.references = doc.References
 	p.attachments = doc.Attachments
 	p.interests = doc.Interests
+	p.display = doc.DisplaySettings
 	for name, data := range doc.Data {
 		p.WriteStream(name, data)
 	}

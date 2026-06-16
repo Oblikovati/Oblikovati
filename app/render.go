@@ -38,7 +38,7 @@ func (s *Session) Graphics() *clientgraphics.Store { return s.graphics }
 // GraphicsLabels returns the world-anchored text labels of the live client graphics, for
 // the UI head to draw via its projected-ImGui label path (text is not draw-list geometry).
 func (s *Session) GraphicsLabels() []clientgraphics.Label {
-	_, labels := s.graphics.Build(s.camera)
+	_, labels, _ := s.graphics.Build(s.camera)
 	return labels
 }
 
@@ -53,7 +53,7 @@ func (s *Session) RenderFrame(backend renderer.Backend) {
 			list.Items = append(list.Items, p.Preview(s)...)
 		}
 	}
-	graphics, _ := s.graphics.Build(s.camera)
+	graphics, _, _ := s.graphics.Build(s.camera)
 	list.Items = append(list.Items, graphics...)
 	backend.Render(list)
 }

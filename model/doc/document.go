@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"oblikovati.org/event"
+	"oblikovati.org/model/display"
 )
 
 // ID is a document's session-stable handle. Like entity ids (core/02), it is a
@@ -41,10 +42,11 @@ type Document struct {
 	open             bool
 	visible          bool
 	compacted        bool
-	subType          SubTypeID      // flavored document subtype id, "" for plain (M05-F15, M03-F11)
-	referencedBy     int            // how many open documents reference this one (maintained by the graph, M03-F04)
-	views            *DocumentViews // per-document view collection (cameras); lazily seeded by Views()
-	identity         FileIdentity   // the file's persisted identity block (M03-F07, #159)
+	subType          SubTypeID         // flavored document subtype id, "" for plain (M05-F15, M03-F11)
+	referencedBy     int               // how many open documents reference this one (maintained by the graph, M03-F04)
+	views            *DocumentViews    // per-document view collection (cameras); lazily seeded by Views()
+	displaySettings  *display.Settings // per-document display settings (background/edges/ground/shadows), nil ⇒ defaults (M16-F07 #643)
+	identity         FileIdentity      // the file's persisted identity block (M03-F07, #159)
 	fileReferences   []*FileReference
 	attachments      *FileAttachments   // external-file attachment records (M03-F08); lazily seeded
 	interests        *DocumentInterests // add-in data registry (M03-F10); lazily seeded
@@ -161,6 +163,30 @@ func (d *Document) Visible() bool { return d.visible }
 
 // SetVisible shows or hides the document. Hiding does not unload it.
 func (d *Document) SetVisible(visible bool) { d.visible = visible }
+
+// DisplaySettings returns the document's per-document display settings and whether they have
+// been set (nil ⇒ the caller should use defaults). M16-F07 (#643).
+func (d *Document) DisplaySettings() (display.Settings, bool) {
+	if d.displaySettings == nil {
+		return display.Settings{}, false
+	}
+	return *d.displaySettings, true
+}
+
+// SetDisplaySettings stores the document's per-document display settings (and marks it dirty,
+// since they round-trip in the .obk).
+func (d *Document) SetDisplaySettings(set display.Settings) {
+	cp := set
+	d.displaySettings = &cp
+	d.MarkDirty()
+}
+
+// RestoreDisplaySettings stores the display settings WITHOUT marking the document dirty — the
+// load path, where the in-memory state already matches disk (like [Document.RestoreViews]).
+func (d *Document) RestoreDisplaySettings(set display.Settings) {
+	cp := set
+	d.displaySettings = &cp
+}
 
 // Referenced reports whether any open document references this one. An
 // unreferenced close (see Workspace.CloseAll) leaves referenced documents open.

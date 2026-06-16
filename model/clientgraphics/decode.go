@@ -105,6 +105,8 @@ func decodePrimitive(p wire.GraphicsPrimitive) (Primitive, error) {
 		LineType:      types.GraphicsLineType(p.LineType), LineWeight: p.LineWeight,
 		PointStyle: types.GraphicsPointStyle(p.PointStyle), PointSize: p.PointSize,
 		Text: p.Text, FontSize: p.FontSize, Opacity: p.Opacity, OnTop: p.OnTop,
+		BodyKey: p.BodyKey, TransientKey: p.TransientKey,
+		ImagePath: p.ImagePath, ImageWidth: p.ImageWidth, ImageHeight: p.ImageHeight,
 	}
 	var err error
 	if out.Coords, err = decodePoints("coordinates", p.Coordinates); err != nil {

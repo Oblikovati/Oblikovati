@@ -18,11 +18,11 @@ import (
 // projected pixel — the same split the dimension overlay uses.
 
 // clientGraphicsOverlay appends the live client/interaction graphics geometry to list and
-// returns the labels to draw after the image is blitted.
-func clientGraphicsOverlay(s *app.Session, cam scene.Camera, list renderer.DrawList) (renderer.DrawList, []clientgraphics.Label) {
-	items, labels := s.Graphics().Build(cam)
+// returns the text labels and image billboards to draw after the image is blitted.
+func clientGraphicsOverlay(s *app.Session, cam scene.Camera, list renderer.DrawList) (renderer.DrawList, []clientgraphics.Label, []clientgraphics.ImageBillboard) {
+	items, labels, images := s.Graphics().Build(cam)
 	list.Items = append(list.Items, items...)
-	return list, labels
+	return list, labels, images
 }
 
 // drawClientGraphicsLabels overlays each client-graphics label's text at its projected

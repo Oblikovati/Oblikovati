@@ -597,7 +597,11 @@ func sweptSolidCommands() []*CommandDefinition {
 // viewTabCommands are the View tab commands: navigation, the Visual Style presets, and the
 // lighting/environment/shadow controls (M16/F03).
 func viewTabCommands() []*CommandDefinition {
-	cmds := append(viewNavigateCommands(), visualStyleCommands()...)
+	cmds := append(viewNavigateCommands(), orientViewCommands()...)
+	cmds = append(cmds, displayViewCommands()...)
+	cmds = append(cmds, colorStylesCommand())
+	cmds = append(cmds, visualStyleCommands()...)
+	cmds = append(cmds, colorSchemeCommands()...)
 	cmds = append(cmds, lightingViewCommands()...)
 	return append(cmds, windowsViewCommands()...)
 }

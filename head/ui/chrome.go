@@ -54,6 +54,7 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 	if icons == nil {
 		icons = newIconCache(win) // lazily bind the icon cache to this window
 	}
+	bindGraphicsImages(win) // client-graphics image billboards create textures on this window (M16-F05)
 	reportWindowFrame(win, s)
 	icons.beginFrame(s.ThemeRevision()) // free retired textures; flush composes on theme change
 	applyThemeIfChanged(win, s)         // restyle ImGui + overlays when the theme changed (live preview)
@@ -140,6 +141,9 @@ func drawChromeWindows(s *app.Session) {
 	drawPreferencesWindow(s)
 	drawMaterialsWindow(s)
 	drawLightingWindow(s)
+	drawNamedViewsWindow(s)      // View ▸ Named Views (M16-F03 #404)
+	drawColorStylesWindow(s)     // View ▸ Color Styles (M16-F02 #403/#408)
+	drawDisplaySettingsWindow(s) // View ▸ Display Settings (M16-F07 #643)
 	drawScriptConsole(s)
 	drawKeymapEditor(s)  // Tools ▸ Customize Keyboard (M05-F17)
 	drawCommandInput(s)  // command-alias input box (M05-F17)

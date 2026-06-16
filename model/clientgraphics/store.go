@@ -5,20 +5,32 @@ package clientgraphics
 import (
 	"fmt"
 	"sort"
+
+	"oblikovati.org/math"
 )
 
 // Store holds the live graphics groups keyed by client id, across all lanes. It is the
 // single owner of add-in-submitted graphics for a session; Build reads it each frame.
 // Not safe for concurrent use — it is mutated and read on the session goroutine.
 type Store struct {
-	groups  map[string]*Group
-	mappers map[string]*ColorMapper // named, reusable color mappers (M16-F05 #641)
+	groups   map[string]*Group
+	mappers  map[string]*ColorMapper // named, reusable color mappers (M16-F05 #641)
+	resolver BodyMeshResolver        // host-side body/face tessellation for surface overlays (M16-F05 #641)
 }
 
 // NewStore returns an empty store.
 func NewStore() *Store {
 	return &Store{groups: map[string]*Group{}, mappers: map[string]*ColorMapper{}}
 }
+
+// BodyMeshResolver tessellates the body/face a client-graphics surface primitive references
+// (by persistent reference key or transient handle), returning its world-space triangle mesh
+// (positions, vertex normals, 0-based corner indices) or ok=false when it cannot be resolved.
+// The host injects it so the pure store/build stays free of the model + kernel.
+type BodyMeshResolver func(bodyKey string, transientKey uint64) (pos []math.Point3, norm []math.Vector3, idx []int, ok bool)
+
+// SetBodyResolver injects the host's body/face tessellation used to render surface overlays.
+func (s *Store) SetBodyResolver(r BodyMeshResolver) { s.resolver = r }
 
 // Set inserts or replaces a group (idempotent by client id) — the submit path.
 func (s *Store) Set(g Group) {
