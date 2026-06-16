@@ -98,7 +98,7 @@ func (s *Session) regionHits(b BoxSelection) []Selectable {
 	if s.regionPicker == nil {
 		return nil
 	}
-	return s.regionPicker.PickRegion(b.X0, b.Y0, b.X1, b.Y1, b.Crossing(), s.selection.Filter())
+	return s.regionPicker.PickRegion(b.X0, b.Y0, b.X1, b.Y1, b.Crossing(), s.pickFilter())
 }
 
 // applyRegionToSelection folds box-select hits into the selection set: a plain box replaces

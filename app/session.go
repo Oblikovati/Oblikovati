@@ -51,11 +51,12 @@ type Session struct {
 	selection            *Selection
 	tool                 *ToolInstance
 	picker               Picker
-	regionPicker         RegionPicker // resolves a box-select rectangle (nil ⇒ box-select disabled)
-	boxSelect            BoxSelection // the in-progress rubber-band rectangle, if any
-	entityDrag           sketchDrag   // the in-progress direct drag of sketch entities, if any
-	selectOther          selectOther  // the in-progress Select Other cycle, if any
-	viewHistory          viewHistory  // recorded views for Previous View (F5)
+	regionPicker         RegionPicker      // resolves a box-select rectangle (nil ⇒ box-select disabled)
+	boxSelect            BoxSelection      // the in-progress rubber-band rectangle, if any
+	entityDrag           sketchDrag        // the in-progress direct drag of sketch entities, if any
+	selectOther          selectOther       // the in-progress Select Other cycle, if any
+	viewHistory          viewHistory       // recorded views for Previous View (F5)
+	selectionPriority    SelectionPriority // biases no-tool picking (Edge/Face/Part) (#912)
 	camera               scene.Camera
 	camTween             cameraTween
 	driveAnim            driveAnimation

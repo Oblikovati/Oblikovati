@@ -163,7 +163,7 @@ func (s *Session) Pointer(e PointerEvent) {
 	if s.picker == nil {
 		return
 	}
-	sel, ok := s.picker.Pick(e.X, e.Y, s.selection.Filter())
+	sel, ok := s.picker.Pick(e.X, e.Y, s.pickFilter())
 	if !ok {
 		s.clearSelectionOnEmptyClick(e.Mods)
 		return
