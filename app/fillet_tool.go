@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/model/feature"
 )
 
@@ -19,11 +20,37 @@ type FilletTool struct {
 	variable        bool // variable mode: each edge blends startRadius → endRadius (#323)
 	startRadius     float64
 	endRadius       float64
+	cornerType      feature.FilletCornerType // shared-corner treatment (miter default)
 	added           *feature.PartFeature
 }
 
-// NewFilletTool returns a fillet tool with a default 1-unit radius.
+// NewFilletTool returns a fillet tool with a default 1-unit radius and mitered corners.
 func NewFilletTool() *FilletTool { return &FilletTool{radius: 1, startRadius: 1, endRadius: 1} }
+
+// filletCornerOrder maps the UI option index to the corner-type enum.
+var filletCornerOrder = []feature.FilletCornerType{
+	types.FilletCornerMiter, types.FilletCornerSetback, types.FilletCornerRound,
+}
+
+// FilletCornerOptions are the corner-treatment labels for the property panel, in index order.
+func FilletCornerOptions() []string { return []string{"Miter (crease)", "Setback", "Round (sphere)"} }
+
+// CornerTypeIndex returns the selected corner treatment as a [FilletCornerOptions] index.
+func (t *FilletTool) CornerTypeIndex() int {
+	for i, c := range filletCornerOrder {
+		if c == t.cornerType {
+			return i
+		}
+	}
+	return 0
+}
+
+// SetCornerTypeIndex selects the corner treatment from a [FilletCornerOptions] index.
+func (t *FilletTool) SetCornerTypeIndex(i int) {
+	if i >= 0 && i < len(filletCornerOrder) {
+		t.cornerType = filletCornerOrder[i]
+	}
+}
 
 // Name implements [Tool].
 func (t *FilletTool) Name() string { return "Fillet" }
@@ -149,10 +176,10 @@ func (t *FilletTool) Cancel(s *Session) {
 // form, or one variable set per edge.
 func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeature {
 	if t.variable {
-		return dress.AddFilletSets(t.variableSets(t.selectedEdgeKeys()))
+		return dress.AddFilletSetsCorner(t.variableSets(t.selectedEdgeKeys()), t.cornerType)
 	}
 	r := t.radius
-	return dress.AddFillet(t.selectedEdgeKeys(), func() float64 { return r })
+	return dress.AddFilletCorner(t.selectedEdgeKeys(), func() float64 { return r }, t.cornerType)
 }
 
 // commitEdit writes the panel state back into the committed fillet's definition: the
@@ -160,6 +187,7 @@ func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeat
 // rewrites the sets.
 func (t *FilletTool) commitEdit(s *Session) error {
 	def := t.target.Definition().(*feature.FilletFeature).Definition()
+	def.CornerType = t.cornerType
 	if t.variable {
 		def.EdgeKeys, def.Radius, def.EdgeSets = nil, nil, t.variableSets(t.selectedEdgeKeys())
 		return commitFeatureEdit(s, t.target)

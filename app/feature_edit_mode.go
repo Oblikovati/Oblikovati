@@ -256,6 +256,7 @@ func editFilletTool(f *feature.PartFeature, fl *feature.FilletFeature) *FilletTo
 		return nil // a multi-set fillet doesn't fit the single-radius panel
 	}
 	t := NewFilletTool()
+	t.cornerType = def.CornerType
 	if len(def.EdgeSets) == 1 {
 		seedFilletSet(t, def.EdgeSets[0])
 	} else {

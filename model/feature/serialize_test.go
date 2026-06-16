@@ -124,6 +124,38 @@ func TestChamferFlatCornersRoundTrip(t *testing.T) {
 	}
 }
 
+// TestFilletCornerTypeRoundTrip checks the fillet corner treatment survives a recipe round trip,
+// and that an older recipe with no field restores as miter (the zero-value default).
+func TestFilletCornerTypeRoundTrip(t *testing.T) {
+	for _, corner := range []types.FilletCornerType{types.FilletCornerMiter, types.FilletCornerSetback, types.FilletCornerRound} {
+		fs := NewPartFeatures(nil, nil)
+		NewDressUpFeatures(fs).AddFilletCorner([][]byte{[]byte("edge")}, func() float64 { return 0.3 }, corner)
+		data, err := fs.MarshalRecipe(oneSketch{})
+		if err != nil {
+			t.Fatalf("MarshalRecipe(%v): %v", corner, err)
+		}
+		if got := types.FilletCornerType(data[0].Fillet.CornerType); got != corner {
+			t.Fatalf("serialized CornerType = %v, want %v", got, corner)
+		}
+		fresh := NewPartFeatures(nil, nil)
+		if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+			t.Fatalf("ApplyRecipe(%v): %v", corner, err)
+		}
+		if got := fresh.Item(0).Definition().(*FilletFeature).Definition().CornerType; got != corner {
+			t.Errorf("restored CornerType = %v, want %v", got, corner)
+		}
+	}
+	// An older recipe without the field restores as miter (the zero default).
+	fresh := NewPartFeatures(nil, nil)
+	legacy := []FeatureData{{Kind: "fillet", Fillet: &EdgeDressData{Edges: []string{}, Value: 0.3}}}
+	if err := fresh.ApplyRecipe(legacy, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe(legacy): %v", err)
+	}
+	if got := fresh.Item(0).Definition().(*FilletFeature).Definition().CornerType; got != types.FilletCornerMiter {
+		t.Errorf("legacy fillet without cornerType should restore as miter, got %v", got)
+	}
+}
+
 func TestSolidFeaturesRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewHoleFeatures(fs).AddTapped([]byte("face-1"), func() float64 { return 6 }, func() float64 { return 10 }, "M6x1")
