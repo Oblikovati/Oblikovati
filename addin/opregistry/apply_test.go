@@ -256,6 +256,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"moveBody":            `{"body":0,"type":"freeDrag","x":"1 mm"}`,
 		"bendPart":            `{}`,
 		"sheetMetalFace":      `{"sketchIndex":0}`,
+		"sheetMetalFlange":    `{"edge":"x","height":"10 mm"}`,
 		"splitSolid":          `{"toolSketch":0}`,
 		"coreCavity":          `{}`,
 		"hull":                `{}`,
