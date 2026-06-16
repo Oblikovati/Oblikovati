@@ -20,35 +20,56 @@ const degPerRad = 57.29577951308232
 var smUI struct {
 	seeded                                 any
 	height, angle, length, size, gap, roll float32
+	// Style editor (rule) buffers.
+	thickness, bendRadius, kFactor    float32
+	reliefWidth, reliefDepth, ruleGap float32
+	reliefShape                       int
 }
 
-// drawSheetMetalDialogs shows the property panel for whichever Sheet Metal tool is active.
+// reliefShapeNames labels the relief-shape combo in types.ReliefShape order (round, square, tear).
+var reliefShapeNames = []string{"Round", "Square", "Tear"}
+
+// drawSheetMetalDialogs shows the property panel for whichever Sheet Metal tool is active. The
+// dispatch is split across the Setup (Style), Create (wall), and Modify panels' tools so each
+// router stays within the statement budget.
 func drawSheetMetalDialogs(s *app.Session) {
-	if t := s.ActiveSheetMetalFace(); t != nil {
-		sheetMetalPanel(s, "Face", "Profile", "sm-face", "Click a closed sketch profile", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
+	if t := s.ActiveSheetMetalStyle(); t != nil {
+		drawSheetMetalStyle(s, t)
 		return
 	}
-	if t := s.ActiveSheetMetalFlange(); t != nil {
-		drawSheetMetalFlange(s, t)
-		return
-	}
-	if t := s.ActiveSheetMetalHem(); t != nil {
-		drawSheetMetalHem(s, t)
-		return
-	}
-	if t := s.ActiveSheetMetalContourFlange(); t != nil {
-		sheetMetalPanel(s, "Contour Flange", "Edge + Profile", "sm-contour", "Click a sheet edge and an open profile", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
-		return
-	}
-	if t := s.ActiveSheetMetalLoftedFlange(); t != nil {
-		sheetMetalPanel(s, "Lofted Flange", "Profiles", "sm-lofted", "Click two sketch profiles", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
-		return
-	}
-	if t := s.ActiveSheetMetalContourRoll(); t != nil {
-		drawSheetMetalContourRoll(s, t)
+	if drawSheetMetalWallDialogs(s) {
 		return
 	}
 	drawSheetMetalModifyDialogs(s)
+}
+
+// drawSheetMetalWallDialogs routes the Create-panel wall tools, returning true when it drew one.
+func drawSheetMetalWallDialogs(s *app.Session) bool {
+	if t := s.ActiveSheetMetalFace(); t != nil {
+		sheetMetalPanel(s, "Face", "Profile", "sm-face", "Click a closed sketch profile", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
+		return true
+	}
+	if t := s.ActiveSheetMetalFlange(); t != nil {
+		drawSheetMetalFlange(s, t)
+		return true
+	}
+	if t := s.ActiveSheetMetalHem(); t != nil {
+		drawSheetMetalHem(s, t)
+		return true
+	}
+	if t := s.ActiveSheetMetalContourFlange(); t != nil {
+		sheetMetalPanel(s, "Contour Flange", "Edge + Profile", "sm-contour", "Click a sheet edge and an open profile", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
+		return true
+	}
+	if t := s.ActiveSheetMetalLoftedFlange(); t != nil {
+		sheetMetalPanel(s, "Lofted Flange", "Profiles", "sm-lofted", "Click two sketch profiles", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
+		return true
+	}
+	if t := s.ActiveSheetMetalContourRoll(); t != nil {
+		drawSheetMetalContourRoll(s, t)
+		return true
+	}
+	return false
 }
 
 // drawSheetMetalModifyDialogs routes the Modify- and Flat-Pattern-panel tools.
@@ -125,6 +146,48 @@ func drawSheetMetalCornerSeam(s *app.Session, t *app.SheetMetalCornerSeamTool) {
 		propertyFloatRow("Gap", "sm-seam-gap", s.LengthUnitName(), &smUI.gap)
 		t.SetGap(float64(smUI.gap))
 	})
+}
+
+// drawSheetMetalStyle edits the active part's rule (no geometry pick — a settings panel). It
+// seeds the rule's gauge/radius/K-factor/relief into the buffers once, then writes every edited
+// row back to the tool each frame; Commit re-authors the rule and recomputes the part.
+func drawSheetMetalStyle(s *app.Session, t *app.SheetMetalStyleTool) {
+	seedSheetMetal(t, func() { seedStyleBuffers(t) })
+	sheetMetalPanel(s, "Sheet Metal Style", "", "", "", 0, nil, t.CanCommit(), func() {
+		drawStyleRows(s, t)
+	})
+}
+
+// seedStyleBuffers copies the tool's rule values into the panel buffers (first frame only).
+func seedStyleBuffers(t *app.SheetMetalStyleTool) {
+	smUI.thickness = float32(t.Thickness())
+	smUI.bendRadius = float32(t.BendRadius())
+	smUI.kFactor = float32(t.KFactor())
+	smUI.reliefWidth = float32(t.ReliefWidth())
+	smUI.reliefDepth = float32(t.ReliefDepth())
+	smUI.ruleGap = float32(t.Gap())
+	smUI.reliefShape = t.ReliefShapeIndex()
+}
+
+// drawStyleRows draws the rule's editable rows and writes each back to the tool every frame.
+func drawStyleRows(s *app.Session, t *app.SheetMetalStyleTool) {
+	unit := s.LengthUnitName()
+	propertyFloatRow("Thickness", "sm-style-thickness", unit, &smUI.thickness)
+	t.SetThickness(float64(smUI.thickness))
+	propertyFloatRow("Bend Radius", "sm-style-radius", unit, &smUI.bendRadius)
+	t.SetBendRadius(float64(smUI.bendRadius))
+	propertyFloatRow("K-Factor", "sm-style-kfactor", "", &smUI.kFactor)
+	t.SetKFactor(float64(smUI.kFactor))
+	if i := propertyComboRow("Relief Shape", "sm-style-relief", reliefShapeNames, smUI.reliefShape); i >= 0 {
+		smUI.reliefShape = i
+	}
+	t.SetReliefShapeIndex(smUI.reliefShape)
+	propertyFloatRow("Relief Width", "sm-style-relief-w", unit, &smUI.reliefWidth)
+	t.SetReliefWidth(float64(smUI.reliefWidth))
+	propertyFloatRow("Relief Depth", "sm-style-relief-d", unit, &smUI.reliefDepth)
+	t.SetReliefDepth(float64(smUI.reliefDepth))
+	propertyFloatRow("Min Gap", "sm-style-gap", unit, &smUI.ruleGap)
+	t.SetGap(float64(smUI.ruleGap))
 }
 
 // seedSheetMetal loads the panel buffers from a tool the first frame it appears.

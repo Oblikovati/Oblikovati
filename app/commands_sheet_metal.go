@@ -11,6 +11,10 @@ package app
 // sheetMetalTabCommands returns the Sheet Metal tab commands in ribbon order.
 func sheetMetalTabCommands() []*CommandDefinition {
 	return []*CommandDefinition{
+		// Setup panel — the active rule (gauge, bend radius, K-factor, relief).
+		sheetMetalToolCommand("Style", "Setup", "sheet-metal-style",
+			"Edit the active sheet-metal rule: gauge thickness, bend radius, K-factor and corner relief.",
+			func() Tool { return NewSheetMetalStyleTool() }),
 		// Create panel — the walls.
 		sheetMetalToolCommand("Face", "Create", "sheet-metal-face",
 			"Thicken a closed sketch profile into a sheet-metal wall at the active gauge.",
