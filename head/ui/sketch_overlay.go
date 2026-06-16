@@ -5,7 +5,9 @@
 package ui
 
 import (
+	"fmt"
 	stdmath "math"
+	"strings"
 
 	"oblikovati.org/app"
 	"oblikovati.org/math"
@@ -13,6 +15,65 @@ import (
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
 )
+
+// sketchOverlayCache memoises the finished-sketch wireframe. Sampling every curve
+// of every finished sketch into line segments each frame makes a dense sketch — a
+// DWG import can be hundreds of thousands of segments — redraw at a crawl. The
+// overlay geometry is camera-independent (it is mapped through the sketch plane
+// into model space), so it holds across camera moves and rebuilds only when the
+// key changes. The render loop is single-threaded, so a package-level cache is safe.
+var sketchOverlayCache struct {
+	key   string
+	items []renderer.DrawItem
+}
+
+// cachedPartSketchOverlays returns the finished-sketch overlay, rebuilding it only
+// when the sketch state changes (see sketchOverlayKey). The returned slice is a
+// shallow copy so the caller's appends never mutate the cached list. When there is
+// no part to key on it falls back to an uncached build.
+func cachedPartSketchOverlays(s *app.Session) []renderer.DrawItem {
+	key, ok := sketchOverlayKey(s)
+	if !ok {
+		return partSketchOverlays(s)
+	}
+	if key != sketchOverlayCache.key {
+		sketchOverlayCache.key = key
+		sketchOverlayCache.items = partSketchOverlays(s)
+	}
+	return append([]renderer.DrawItem(nil), sketchOverlayCache.items...)
+}
+
+// sketchOverlayKey identifies the finished-sketch overlay geometry. Sketch edits do
+// not bump the model geometry version, so the key also folds in the selected sketch
+// (it recolours) and each sketch's seq, visibility, edit state, edit-scope hiding
+// and entity count — which together change on import (new sketch, new count), the
+// edit cycle (IsEditing flips on Finish), and add/remove.
+func sketchOverlayKey(s *app.Session) (string, bool) {
+	version, ok := activeModelGeometryVersion(s)
+	if !ok {
+		return "", false
+	}
+	part := activePart(s)
+	if part == nil {
+		return "", false
+	}
+	var b strings.Builder
+	b.WriteString(version)
+	fmt.Fprintf(&b, "|sel=%p", selectedSketch(s))
+	for i := 0; i < part.Sketches().Count(); i++ {
+		sk := part.Sketches().Item(i)
+		fmt.Fprintf(&b, "|%d:%t%t%t:%d", sk.Seq(), sk.Visible(), sk.IsEditing(),
+			s.EditScopeHides(sk.Seq()), sketchEntityCount(sk))
+	}
+	return b.String(), true
+}
+
+// sketchEntityCount sums a sketch's drawable geometry collections (each Count is
+// O(1)) for the overlay cache key.
+func sketchEntityCount(sk *sketch.Sketch) int {
+	return sk.Lines().Count() + sk.Arcs().Count() + sk.Circles().Count() +
+		sk.Ellipses().Count() + sk.Splines().Count() + sk.Points().Count()
+}
 
 // partSketchOverlays renders the active part's finished, visible sketches in the 3D
 // view (the one being edited is drawn by the in-sketch overlay instead), so a sketch
