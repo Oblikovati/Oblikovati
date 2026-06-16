@@ -1,0 +1,246 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package feature
+
+import (
+	"fmt"
+	stdmath "math"
+
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
+)
+
+// Sheet-metal Contour Flange feature (M13-F02). A contour flange sweeps a user-drawn OPEN
+// profile (the wall's cross-section — any chain of straight segments) along a sheet edge,
+// instead of the straight-wall-plus-arc the plain Flange computes. The profile is the inner
+// (top-face-side) contour; thickening it by the rule's material thickness and extruding the
+// resulting band along the edge gives the flange, unioned onto the sheet. The profile's first
+// point sits at the edge, so the band's start segment is the sheet's edge cross-section and
+// the union is watertight. Thickness is read live from the rule, like every other wall.
+
+// SheetMetalContourFlangeDefinition is the contour-flange recipe: the edge to sweep along, the
+// open profile sketch (the cross-section), and a flip that folds to the opposite side.
+type SheetMetalContourFlangeDefinition struct {
+	EdgeKey []byte
+	Profile *sketch.Sketch
+	Flip    bool
+}
+
+// SheetMetalContourFlangeFeature sweeps the profile onto the sheet each recompute.
+type SheetMetalContourFlangeFeature struct {
+	def      *SheetMetalContourFlangeDefinition
+	featName string
+}
+
+// Definition returns the contour-flange recipe.
+func (f *SheetMetalContourFlangeFeature) Definition() *SheetMetalContourFlangeDefinition {
+	return f.def
+}
+
+// Kind identifies the feature for serialization and the model tree.
+func (f *SheetMetalContourFlangeFeature) Kind() string { return "sheet-metal-contour-flange" }
+
+// Recompute resolves the edge and profile, builds the thickened band, and unions it on.
+func (f *SheetMetalContourFlangeFeature) Recompute(in Input) (Output, error) {
+	body, err := lastBody(in, "sheet-metal contour flange")
+	if err != nil {
+		return Output{}, err
+	}
+	t, err := sheetThickness(in.Params)
+	if err != nil {
+		return Output{}, err
+	}
+	profile, err := openProfilePoints(f.def.Profile)
+	if err != nil {
+		return Output{}, err
+	}
+	edges, err := resolveEdges(body, [][]byte{f.def.EdgeKey})
+	if err != nil {
+		return Output{}, err
+	}
+	wall, err := buildContourFlangeSolid(edges[0], profile, t, f.def.Flip, f.featName)
+	if err != nil {
+		return Output{}, err
+	}
+	bodies, err := combine(in.Bodies, wall, ops.Join)
+	if err != nil {
+		return Output{}, err
+	}
+	return Output{Bodies: bodies}, nil
+}
+
+// buildContourFlangeSolid builds the contour-flange solid: the profile band mapped onto the
+// edge's section frame and extruded along the edge.
+func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness float64, flip bool, feat string) (*topo.Body, error) {
+	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
+	e, err := math.UnitVector3FromVector(v0.VectorTo(v1))
+	if err != nil {
+		return nil, fmt.Errorf("sheet-metal contour flange: degenerate edge")
+	}
+	up, out, err := flangeFrame(edge, v0.Midpoint(v1), e, flip)
+	if err != nil {
+		return nil, err
+	}
+	plane := planePerp(v0, e)
+	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
+	// Map a profile point (px along out, py along up) into the section plane's 2D frame.
+	at := func(p math.Point2) math.Point2 {
+		w := out.AsVector().Scale(float64(p.X)).Add(up.AsVector().Scale(float64(p.Y)))
+		return math.P2(math.Scalar(w.Dot(u)), math.Scalar(w.Dot(v)))
+	}
+	band := contourBand(profile, thickness, at)
+	return buildPrism(band, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), nil
+}
+
+// contourBand returns the closed cross-section band for the profile: the inner contour, then
+// the outer contour (the inner offset toward the material by the thickness) reversed, each
+// mapped into the section plane via at.
+func contourBand(profile []math.Point2, thickness float64, at func(math.Point2) math.Point2) []math.Point2 {
+	outer := offsetProfile(profile, -thickness) // offset toward −up (the sheet's material side)
+	band := make([]math.Point2, 0, len(profile)+len(outer))
+	for _, p := range profile {
+		band = append(band, at(p))
+	}
+	for i := len(outer) - 1; i >= 0; i-- {
+		band = append(band, at(outer[i]))
+	}
+	return band
+}
+
+// offsetProfile offsets an open polyline by d along each segment's left normal, mitring at
+// interior vertices (a first-order join — good for the straight contours this feature takes).
+func offsetProfile(pts []math.Point2, d float64) []math.Point2 {
+	if len(pts) < 2 {
+		return pts
+	}
+	out := make([]math.Point2, len(pts))
+	for i := range pts {
+		out[i] = pts[i].TranslateBy(vertexNormal(pts, i).Scale(math.Scalar(d)))
+	}
+	return out
+}
+
+// vertexNormal returns the unit left-normal at vertex i: the segment normal at an endpoint,
+// the averaged adjacent normals at an interior vertex.
+func vertexNormal(pts []math.Point2, i int) math.Vector2 {
+	left := func(a, b math.Point2) math.Vector2 {
+		dx, dy := float64(b.X-a.X), float64(b.Y-a.Y)
+		l := stdmath.Hypot(dx, dy)
+		if l == 0 {
+			return math.V2(0, 0)
+		}
+		return math.V2(math.Scalar(-dy/l), math.Scalar(dx/l))
+	}
+	switch {
+	case i == 0:
+		return left(pts[0], pts[1])
+	case i == len(pts)-1:
+		return left(pts[i-1], pts[i])
+	default:
+		n := left(pts[i-1], pts[i]).Add(left(pts[i], pts[i+1]))
+		if u, err := math.UnitVector2FromVector(n); err == nil {
+			return u.AsVector()
+		}
+		return left(pts[i], pts[i+1])
+	}
+}
+
+// openProfilePoints walks a sketch's line entities into a single ordered open polyline,
+// erroring when the sketch is empty or not one open chain.
+func openProfilePoints(sk *sketch.Sketch) ([]math.Point2, error) {
+	if sk == nil {
+		return nil, fmt.Errorf("sheet-metal contour flange: no profile sketch")
+	}
+	lines := sk.Lines()
+	n := lines.Count()
+	if n == 0 {
+		return nil, fmt.Errorf("sheet-metal contour flange: profile sketch has no lines")
+	}
+	deg := map[*sketch.Point]int{}
+	for i := 0; i < n; i++ {
+		l := lines.Item(i)
+		deg[l.StartPoint()]++
+		deg[l.EndPoint()]++
+	}
+	start := chainStart(deg)
+	if start == nil {
+		return nil, fmt.Errorf("sheet-metal contour flange: profile must be one open chain")
+	}
+	return walkOpenChain(lines, n, start)
+}
+
+// chainStart returns the open-chain end (degree-1 vertex) nearest the sketch origin — the
+// profile's edge-attachment point by convention — or nil when no open end exists (a closed
+// loop or a branching set). Choosing the nearest-origin end makes the walk deterministic
+// regardless of map iteration order.
+func chainStart(deg map[*sketch.Point]int) *sketch.Point {
+	var best *sketch.Point
+	bestD2 := stdmath.Inf(1)
+	for p, d := range deg {
+		if d != 1 {
+			continue
+		}
+		pos := p.Position()
+		d2 := float64(pos.X)*float64(pos.X) + float64(pos.Y)*float64(pos.Y)
+		if d2 < bestD2 {
+			best, bestD2 = p, d2
+		}
+	}
+	return best
+}
+
+// walkOpenChain follows the connected line segments from start to the far end, collecting the
+// ordered vertex positions, erroring if the lines do not form one simple chain of all n lines.
+func walkOpenChain(lines *sketch.Lines, n int, start *sketch.Point) ([]math.Point2, error) {
+	used := make([]bool, n)
+	pts := []math.Point2{start.Position()}
+	cur := start
+	for step := 0; step < n; step++ {
+		next, idx := nextSegment(lines, n, used, cur)
+		if next == nil {
+			return nil, fmt.Errorf("sheet-metal contour flange: profile is not a single connected chain")
+		}
+		used[idx] = true
+		pts = append(pts, next.Position())
+		cur = next
+	}
+	return pts, nil
+}
+
+// nextSegment finds an unused line touching cur and returns its other endpoint and index.
+func nextSegment(lines *sketch.Lines, n int, used []bool, cur *sketch.Point) (*sketch.Point, int) {
+	for i := 0; i < n; i++ {
+		if used[i] {
+			continue
+		}
+		l := lines.Item(i)
+		switch cur {
+		case l.StartPoint():
+			return l.EndPoint(), i
+		case l.EndPoint():
+			return l.StartPoint(), i
+		}
+	}
+	return nil, -1
+}
+
+// SheetMetalContourFlangeFeatures adds contour-flange features into the engine.
+type SheetMetalContourFlangeFeatures struct{ engine *PartFeatures }
+
+// NewSheetMetalContourFlangeFeatures binds the collection to a feature engine.
+func NewSheetMetalContourFlangeFeatures(engine *PartFeatures) *SheetMetalContourFlangeFeatures {
+	return &SheetMetalContourFlangeFeatures{engine}
+}
+
+// Add appends a contour-flange feature, naming it ContourFlange1, … .
+func (c *SheetMetalContourFlangeFeatures) Add(def *SheetMetalContourFlangeDefinition) *PartFeature {
+	f := &SheetMetalContourFlangeFeature{def: def}
+	pf := c.engine.Add(f)
+	pf.SetName(c.engine.UniqueName("ContourFlange"))
+	f.featName = pf.Name()
+	return pf
+}
+
+var _ Feature = (*SheetMetalContourFlangeFeature)(nil)
