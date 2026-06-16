@@ -427,7 +427,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	mn, mx, hasGeom := frameBounds(s, list, groups)
 	var ground []renderer.DrawItem
 	if hasGeom && wantGround(s) {
-		ground = []renderer.DrawItem{groundPlaneItem(mn, mx, renderer.PassSetFor(s.VisualStyle()).Faces)}
+		ground = []renderer.DrawItem{groundPlaneItem(mn, mx, renderer.PassSetFor(s.VisualStyle()).Faces, displayGroundColor(s))}
 	}
 	tb := frameClock()
 	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups)

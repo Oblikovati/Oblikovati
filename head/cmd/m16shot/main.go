@@ -42,9 +42,10 @@ func main() {
 	box := flag.Bool("box", false, "build a demo box so geometry is visible")
 	orient := flag.String("orient", "", "jump to a standard orientation (front/top/iso…)")
 	edge := flag.String("edge", "", "override the display-settings edge color as R,G,B (0-255)")
+	ground := flag.String("ground", "", "set the display-settings ground color as R,G,B and enable ground shadows")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -58,6 +59,7 @@ type opts struct {
 	noEnv, box  bool
 	orient      string
 	edge        string
+	ground      string
 }
 
 func run(o opts) error {
@@ -82,6 +84,9 @@ func run(o opts) error {
 	}
 	if o.edge != "" {
 		applyEdgeColor(s, o.edge)
+	}
+	if o.ground != "" {
+		applyGround(s, o.ground)
 	}
 	if o.noEnv {
 		e := s.Environment()
@@ -116,6 +121,20 @@ func applyEdgeColor(s *app.Session, rgb string) {
 	set := s.DisplaySettings(0)
 	set.EdgeColor = types.NewColor(r, g, b)
 	s.SetDisplaySettings(0, set)
+}
+
+// applyGround parses "R,G,B" as the active document's ground-plane color and enables ground
+// shadows so the colored ground plane is drawn under the model.
+func applyGround(s *app.Session, rgb string) {
+	var r, g, b uint8
+	fmt.Sscanf(rgb, "%d,%d,%d", &r, &g, &b)
+	set := s.DisplaySettings(0)
+	set.GroundPlane.Color = types.NewColor(r, g, b)
+	set.GroundPlane.Visible = true
+	s.SetDisplaySettings(0, set)
+	sh := s.ShadowSettings()
+	sh.GroundShadows = true
+	s.SetShadowSettings(sh)
 }
 
 // buildBox seeds the active part with a 4x3x5 extruded box and frames it, so the captured
