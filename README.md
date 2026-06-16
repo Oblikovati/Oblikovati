@@ -8,6 +8,8 @@
 [![App License](https://img.shields.io/badge/app-GPL_2.0-blue.svg)](LICENSE)
 [![API License](https://img.shields.io/badge/api-Apache_2.0-blue.svg)](https://github.com/Oblikovati/Oblikovati.API)
 
+![The Oblikovati GUI — ribbon, model browser, Vulkan viewport and ViewCube — showing an elliptical Möbius strip rendered with per-triangle mesh-debug colors](architecture/images/oblikovati-app.png)
+
 **Oblikovati is a parametric, feature-based, history-driven mechanical-CAD (MCAD)
 application** — an Inventor-class 3D solid modeler — rebuilt from the ground up in
 **Go** with a **Vulkan 1.3** renderer, for **Linux, macOS, and Windows**.
