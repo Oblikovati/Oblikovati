@@ -31,6 +31,46 @@ func (r *Router) registerFlatPatternHandlers() {
 	r.handlers[wire.MethodFlatPatternEdgesOfType] = flatPatternEdgesOfType
 	r.handlers[wire.MethodFlatPatternFaces] = flatPatternFaces
 	r.handlers[wire.MethodFlatPatternMapEntity] = flatPatternMapEntity
+	r.handlers[wire.MethodFlatPatternListPlates] = flatPatternListPlates
+	r.handlers[wire.MethodFlatPatternGetSettings] = flatPatternGetSettings
+	r.handlers[wire.MethodFlatPatternSetSettings] = flatPatternSetSettings
+}
+
+func flatPatternListPlates(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	plates, err := part.FlatPlates()
+	if err != nil {
+		return nil, err
+	}
+	out := wire.PlatesResult{Plates: make([]wire.PlateInfo, len(plates))}
+	for i, p := range plates {
+		out.Plates[i] = wire.PlateInfo{Index: i, Length: p.Length, Width: p.Width, Area: p.Area}
+	}
+	return json.Marshal(out)
+}
+
+func flatPatternGetSettings(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(wire.SettingsResult{Settings: wire.FlatPatternSettings{DeferUpdate: part.FlatSettings().DeferUpdate}})
+}
+
+func flatPatternSetSettings(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.SetSettingsArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	part.SetFlatDeferUpdate(in.DeferUpdate)
+	return json.Marshal(wire.SettingsResult{Settings: wire.FlatPatternSettings{DeferUpdate: part.FlatSettings().DeferUpdate}})
 }
 
 func flatPatternMapEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

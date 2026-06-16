@@ -109,6 +109,7 @@ type sheetMetalRecipe struct {
 	BendTable    []bendTableRowRecipe `yaml:"bendTable,omitempty"`
 	Orientations []orientationRecipe  `yaml:"orientations,omitempty"` // M13-F05
 	ActiveOrient string               `yaml:"activeOrientation,omitempty"`
+	DeferUpdate  bool                 `yaml:"deferFlatUpdate,omitempty"` // M13-F05
 }
 
 // bendTableRowRecipe is one persisted bend-table sample (database units, cm; angle radians).
@@ -167,6 +168,7 @@ func (d *PartComponentDefinition) captureOrientations(rec *sheetMetalRecipe) {
 		})
 	}
 	rec.ActiveOrient = d.flatOrientations.Active().Name
+	rec.DeferUpdate = d.flatSettings.DeferUpdate
 }
 
 // applySheetMetalRecipe rebuilds the rule from rec, binding its thickness/bend-radius to the
@@ -217,6 +219,7 @@ func (d *PartComponentDefinition) restoreOrientations(rec *sheetMetalRecipe) err
 			return err
 		}
 	}
+	d.flatSettings.DeferUpdate = rec.DeferUpdate
 	return nil
 }
 
