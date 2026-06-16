@@ -52,6 +52,19 @@ func TestGripSnapInfers(t *testing.T) {
 	}
 }
 
+// TestGripSnapInferenceErrors checks the inference rejects a pair it cannot snap (a plane + a bare
+// axis with no radius) and a prefer that is not a snap constraint (an angle).
+func TestGripSnapInferenceErrors(t *testing.T) {
+	set, base, moving := snapPair(t, math.Identity4())
+	plane := PlanePrimitive(math.P3(0, 0, 0), unit(t, 0, 0, 1))
+	if _, _, err := set.InferGripConstraint(ref(base, plane), ref(moving, LinePrimitive(math.P3(0, 0, 0), unit(t, 1, 0, 0))), 0); err == nil {
+		t.Error("plane + bare axis (no radius) should not infer a snap constraint")
+	}
+	if _, _, err := set.InferGripConstraint(ref(base, plane), ref(moving, plane), types.ConstraintAngle); err == nil {
+		t.Error("prefer=angle is not a snap constraint and should error")
+	}
+}
+
 // TestGripSnapPreferOverrides checks an explicit prefer overrides the inference: two opposed planes
 // (which would auto-infer a mate) snap as a flush when flush is preferred.
 func TestGripSnapPreferOverrides(t *testing.T) {

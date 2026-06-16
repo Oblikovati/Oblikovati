@@ -100,6 +100,18 @@ func TestGripSnapToolCommitInfersAndSnaps(t *testing.T) {
 	}
 }
 
+// TestGripSnapToolCommitRejectsBadSecondFace: a valid first pick but an unresolved second face is a
+// clean error, leaving the tool open.
+func TestGripSnapToolCommitRejectsBadSecondFace(t *testing.T) {
+	s, _, grounded, _ := twoBoxAssembly(t)
+	tool := NewGripSnapTool()
+	tool.Pick(s, FaceHandle{Face: topFaceOf(t, grounded), Body: grounded})
+	tool.Pick(s, FaceHandle{}) // unresolved
+	if err := tool.Commit(s); err == nil {
+		t.Error("commit with an unresolved second face should return an error")
+	}
+}
+
 // TestGripSnapToolCancelClears: cancelling drops the picks and the tool stays usable.
 func TestGripSnapToolCancelClears(t *testing.T) {
 	s := assemblySession(t)
