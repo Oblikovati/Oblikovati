@@ -36,7 +36,7 @@ func decodeGeometry(t *testing.T, name string) (map[uint64]Entity, map[string]in
 			continue
 		}
 		switch hdr.Type {
-		case TypeLine, TypeCircle, TypeArc, TypePoint, TypeEllipse, TypeLwpolyline:
+		case TypeLine, TypeCircle, TypeArc, TypePoint, TypeEllipse, TypeLwpolyline, TypeSpline:
 		default:
 			continue
 		}
@@ -65,7 +65,7 @@ func TestDecodeGeometryCorpus(t *testing.T) {
 	}{
 		{"testfile-1.dwg", map[string]int{
 			"LINE": 58062, "ARC": 1670, "CIRCLE": 959, "POINT": 739,
-			"ELLIPSE": 1271, "LWPOLYLINE": 15525,
+			"ELLIPSE": 1271, "LWPOLYLINE": 15525, "SPLINE": 2898,
 		}},
 		{"testfile-2.dwg", map[string]int{"LINE": 134240, "ARC": 41950, "POINT": 34264}},
 	}
@@ -138,6 +138,16 @@ func TestDecodeGeometryCoordsMatchOracle(t *testing.T) {
 		math.Abs(lwp.Points[0][0]-(-0.5)) > 1e-9 || math.Abs(lwp.Points[1][1]-0.5) > 1e-9 {
 		t.Errorf("lwpolyline points = %v, want [[-0.5 -0.5] [0.5 0.5]]", lwp.Points)
 	}
+
+	spline, ok := ents[1019296].(*Spline)
+	if !ok {
+		t.Fatal("handle 1019296 not a Spline")
+	}
+	if spline.Degree != 3 || len(spline.ControlPoints) != 4 || len(spline.Knots) != 8 {
+		t.Errorf("spline = degree %d, %d ctrl, %d knots; want degree 3, 4 ctrl, 8 knots",
+			spline.Degree, len(spline.ControlPoints), len(spline.Knots))
+	}
+	wantClose(t, "spline.ctrl0", spline.ControlPoints[0], [3]float64{748.9970525371714, 126.32570743854146, 0})
 }
 
 func wantClose(t *testing.T, what string, got, want [3]float64) {

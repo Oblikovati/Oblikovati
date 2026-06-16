@@ -89,6 +89,23 @@ type LwPolyline struct {
 func (e *LwPolyline) EntityHandle() uint64   { return e.Handle }
 func (e *LwPolyline) EntityType() ObjectType { return TypeLwpolyline }
 
+// Spline is a NURBS curve. Scenario 1 stores control points (with optional
+// weights) and a knot vector; scenario 2 stores fit points (the converter rebuilds
+// the curve from whichever is present).
+type Spline struct {
+	Handle        uint64
+	Degree        int
+	Closed        bool
+	Rational      bool
+	Knots         []float64
+	ControlPoints [][3]float64
+	Weights       []float64 // empty when not rational/weighted
+	FitPoints     [][3]float64
+}
+
+func (e *Spline) EntityHandle() uint64   { return e.Handle }
+func (e *Spline) EntityType() ObjectType { return TypeSpline }
+
 // decodeEntity decodes one geometry entity's coordinates from a reader positioned
 // at its type-specific data (see seekEntityGeometry). It returns (nil, nil) for a
 // type whose geometry decoder is not yet implemented, so callers can skip it.
@@ -107,6 +124,8 @@ func decodeEntity(r *BitReader, header ObjectHeader, version Version) (Entity, e
 		e = decodeEllipse(r, header.Handle)
 	case TypeLwpolyline:
 		e = decodeLwPolyline(r, header.Handle, version)
+	case TypeSpline:
+		e = decodeSpline(r, header.Handle, version)
 	default:
 		return nil, nil
 	}
@@ -233,6 +252,62 @@ func decodeLwPolyline(r *BitReader, handle uint64, version Version) *LwPolyline 
 		r.ReadBD() // end width
 	}
 	return p
+}
+
+// decodeSpline reads SPLINE geometry. Scenario 1 (control points): rational/
+// closed/periodic flags, tolerances, knot and control-point counts, a weighted
+// flag, then the knot vector and control points (each a 3BD, plus a weight when
+// weighted). Scenario 2 (fit points): tolerance, begin/end tangents, then a fit
+// point vector. On R2013+ a splineflags/knotparam pair precedes the data and can
+// override the scenario.
+func decodeSpline(r *BitReader, handle uint64, version Version) *Spline {
+	scenario := r.ReadBL()
+	if version >= R2013 {
+		splineflags := r.ReadBL()
+		knotparam := r.ReadBL()
+		if splineflags&1 != 0 {
+			scenario = 2
+		}
+		if knotparam == 15 {
+			scenario = 1
+		}
+	}
+	s := &Spline{Handle: handle, Degree: r.ReadBL()}
+	if scenario&1 != 0 { // control-point form
+		s.Rational = r.ReadBit() == 1
+		s.Closed = r.ReadBit() == 1
+		r.ReadBit() // periodic
+		r.ReadBD()  // knot tolerance
+		r.ReadBD()  // control tolerance
+		numKnots := r.ReadBL()
+		numCtrl := r.ReadBL()
+		weighted := r.ReadBit() == 1
+		s.Knots = make([]float64, numKnots)
+		for i := range s.Knots {
+			s.Knots[i] = r.ReadBD()
+		}
+		s.ControlPoints = make([][3]float64, numCtrl)
+		if weighted {
+			s.Weights = make([]float64, numCtrl)
+		}
+		for i := 0; i < numCtrl; i++ {
+			s.ControlPoints[i] = r.Read3BD()
+			if weighted {
+				s.Weights[i] = r.ReadBD()
+			}
+		}
+		return s
+	}
+	// fit-point form
+	r.ReadBD()  // fit tolerance
+	r.Read3BD() // begin tangent
+	r.Read3BD() // end tangent
+	numFit := r.ReadBL()
+	s.FitPoints = make([][3]float64, numFit)
+	for i := range s.FitPoints {
+		s.FitPoints[i] = r.Read3BD()
+	}
+	return s
 }
 
 // readLwVertices reads the LWPOLYLINE 2DD point vector: the first vertex is a full
