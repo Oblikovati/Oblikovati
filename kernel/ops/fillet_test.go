@@ -328,12 +328,7 @@ func TestFilletCornerSetbackTapersThirdEdge(t *testing.T) {
 	if s := hasSphereFaces(res); s != 1 {
 		t.Errorf("got %d sphere faces, want 1 (the corner is rounded)", s)
 	}
-	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
-		if open := meshOpenEdges(m); open != 0 {
-			t.Errorf("set-back corner at tol %g: %d open edges", tol, open)
-		}
-	}
+	assertWatertight(t, res, "set-back corner")
 }
 
 // TestFilletRunOutToZero checks a lone variable fillet that tapers to radius 0 at one end: the blend
@@ -348,12 +343,7 @@ func TestFilletRunOutToZero(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("run-out fillet not a valid solid: %+v", r)
 	}
-	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
-		if open := meshOpenEdges(m); open != 0 {
-			t.Errorf("run-out fillet at tol %g: %d open edges", tol, open)
-		}
-	}
+	assertWatertight(t, res, "run-out fillet")
 }
 
 // TestFilletTwoEdgeCornerMiterMeshWatertight checks the miter seam's TESSELLATION is watertight

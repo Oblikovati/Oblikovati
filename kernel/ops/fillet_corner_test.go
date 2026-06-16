@@ -36,6 +36,28 @@ func topLoopKeys(t *testing.T, b *topo.Body, top float64) [][]byte {
 	return keys
 }
 
+// assertWatertight fails t if res has any open mesh edges across coarse-to-fine tolerances.
+func assertWatertight(t *testing.T, res *topo.Body, label string) {
+	t.Helper()
+	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
+		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		if open := meshOpenEdges(m); open != 0 {
+			t.Errorf("%s at tol %g: %d open edges", label, tol, open)
+		}
+	}
+}
+
+// countTorusFaces counts the body's analytic torus faces.
+func countTorusFaces(res *topo.Body) int {
+	n := 0
+	for _, f := range res.Faces() {
+		if _, ok := f.Geometry().(geom.Torus); ok {
+			n++
+		}
+	}
+	return n
+}
+
 // cornerStrategyOf maps a wire-style spelling to the kernel strategy (the test's own small table).
 func cornerStrategyOf(name string) ops.CornerStrategy {
 	switch name {
@@ -83,12 +105,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 			if s := hasSphereFaces(res); s != c.wantSphere {
 				t.Errorf("%s/%s: %d sphere faces, want %d", c.strategy, c.scenario, s, c.wantSphere)
 			}
-			for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-				m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
-				if open := meshOpenEdges(m); open != 0 {
-					t.Errorf("%s/%s at tol %g: %d open edges", c.strategy, c.scenario, tol, open)
-				}
-			}
+			assertWatertight(t, res, c.strategy+"/"+c.scenario)
 			if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= 8 {
 				t.Errorf("%s/%s volume = %g, want < 8 (material removed)", c.strategy, c.scenario, v)
 			}
@@ -166,21 +183,10 @@ func TestFilletOfAFilletArcCap(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("arc-cap refillet not a valid solid: %+v", r)
 	}
-	tor := 0
-	for _, f := range res.Faces() {
-		if _, ok := f.Geometry().(geom.Torus); ok {
-			tor++
-		}
-	}
-	if tor != 1 {
+	if tor := countTorusFaces(res); tor != 1 {
 		t.Errorf("torus faces = %d, want 1", tor)
 	}
-	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
-		if open := meshOpenEdges(m); open != 0 {
-			t.Errorf("arc-cap refillet at tol %g: %d open edges", tol, open)
-		}
-	}
+	assertWatertight(t, res, "arc-cap refillet")
 }
 
 // TestFilletOfAFilletSmoothLineRejected: the cylinder a vertical-edge fillet leaves runs G1-smooth
@@ -217,13 +223,7 @@ func TestFilletOfAFilletRim(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
 		t.Fatalf("rim refillet not a valid solid: %+v", r)
 	}
-	tor := 0
-	for _, f := range res.Faces() {
-		if _, ok := f.Geometry().(geom.Torus); ok {
-			tor++
-		}
-	}
-	if tor != 1 {
+	if tor := countTorusFaces(res); tor != 1 {
 		t.Errorf("rim torus faces = %d, want 1", tor)
 	}
 }
