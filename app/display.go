@@ -22,18 +22,19 @@ func (s *Session) SetDisplayOptions(o display.Options) { s.displayOptions = o }
 // DisplaySettings returns a document's per-document display settings, seeding the defaults the
 // first time a document is asked for. Document 0 selects the active document.
 func (s *Session) DisplaySettings(id doc.ID) display.Settings {
-	id = s.resolveDocID(id)
-	if set, ok := s.docDisplay[id]; ok {
-		return set
+	if d := s.documentForDisplay(id); d != nil {
+		if set, ok := d.DisplaySettings(); ok {
+			return set
+		}
 	}
-	def := display.DefaultSettings()
-	s.docDisplay[id] = def
-	return def
+	return display.DefaultSettings()
 }
 
 // SetDisplaySettings stores a document's per-document display settings (Document 0 ⇒ active).
 func (s *Session) SetDisplaySettings(id doc.ID, set display.Settings) {
-	s.docDisplay[s.resolveDocID(id)] = set
+	if d := s.documentForDisplay(id); d != nil {
+		d.SetDisplaySettings(set)
+	}
 }
 
 // GroundPlaneVisible reports whether the active document's display settings keep the ground
@@ -47,14 +48,15 @@ func (s *Session) SetGroundPlaneVisible(v bool) {
 	s.SetDisplaySettings(0, set)
 }
 
-// resolveDocID maps a 0 document id to the active document's id (or leaves it unchanged).
-func (s *Session) resolveDocID(id doc.ID) doc.ID {
+// documentForDisplay resolves a document id (0 = active) to its document, or nil.
+func (s *Session) documentForDisplay(id doc.ID) *doc.Document {
 	if id == 0 {
-		if d := s.ActiveDocument(); d != nil {
-			return d.ID()
-		}
+		return s.ActiveDocument()
 	}
-	return id
+	if d, ok := s.Workspace().ByID(id); ok {
+		return d
+	}
+	return nil
 }
 
 // displayOptionsView adapts the session's app display options to contract.DisplayOptions.

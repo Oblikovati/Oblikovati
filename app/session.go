@@ -110,7 +110,6 @@ type Session struct {
 	styles               *style.Manager                 // document color styles + style-library cascade (M16-F02 #403/#408)
 	bodyColorStyles      map[string]string              // body reference key → assigned color-style name (M16-F02 #403/#408)
 	displayOptions       display.Options                // app-level display options that parameterize the display modes (M16-F07 #643)
-	docDisplay           map[doc.ID]display.Settings    // per-document display settings (background, edges, ground, shadows) (M16-F07 #643)
 	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
 	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
@@ -212,7 +211,6 @@ func (s *Session) seedVisualState() {
 	s.styles = style.NewManager()
 	s.bodyColorStyles = map[string]string{}
 	s.displayOptions = display.DefaultOptions()
-	s.docDisplay = map[doc.ID]display.Settings{}
 }
 
 // initShellSurfaces seeds the M05 add-in UI-shell state: web views, the default

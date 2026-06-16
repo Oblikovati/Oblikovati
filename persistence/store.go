@@ -84,6 +84,9 @@ func (s *PackageStore) buildPackage(d *doc.Document, displayName, subType string
 	pkg.SetFileReferences(toCodecFileReferences(d.FileReferenceRecords()))
 	pkg.SetAttachments(toCodecAttachments(d.AttachmentRecords()))
 	pkg.SetInterests(toCodecInterests(d.InterestRecords()))
+	if set, ok := d.DisplaySettings(); ok { // M16-F07 #643: per-document display settings
+		pkg.SetDisplaySettings(toCodecDisplaySettings(set))
+	}
 	if rc, ok := d.Content().(doc.RecipeContent); ok {
 		model, err := rc.MarshalRecipe()
 		if err != nil {
@@ -123,6 +126,9 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	}
 	if err := applyModelRecipe(d, pkg, fullDocumentName); err != nil {
 		return nil, err
+	}
+	if rec := pkg.DisplaySettings(); rec != nil { // M16-F07 #643: per-document display settings
+		d.RestoreDisplaySettings(fromCodecDisplaySettings(rec))
 	}
 	return d, nil
 }

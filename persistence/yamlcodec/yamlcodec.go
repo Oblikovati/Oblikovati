@@ -48,6 +48,51 @@ type Document struct {
 	Attachments []AttachmentRecord
 	// Interests are the add-in data registry records (M03-F10).
 	Interests []InterestRecord
+	// DisplaySettings are the per-document display settings (background/edges/ground/shadows),
+	// nil for a document that never customized them (M16-F07 #643).
+	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
+}
+
+// ColorRecord is a color value object on disk: 8-bit rgb, opacity, and the color-source enum.
+type ColorRecord struct {
+	R       uint8   `yaml:"r,omitempty"`
+	G       uint8   `yaml:"g,omitempty"`
+	B       uint8   `yaml:"b,omitempty"`
+	Opacity float64 `yaml:"opacity,omitempty"`
+	Source  int32   `yaml:"source,omitempty"`
+}
+
+// GroundPlaneRecord is the on-disk ground-plane block of the display settings.
+type GroundPlaneRecord struct {
+	Visible                    bool        `yaml:"visible"`
+	Color                      ColorRecord `yaml:"color,omitempty"`
+	HeightOffset               float64     `yaml:"heightOffset,omitempty"`
+	DisplayGridLines           bool        `yaml:"displayGridLines,omitempty"`
+	MinorGridLineSpacing       float64     `yaml:"minorGridLineSpacing,omitempty"`
+	MinorLinesPerMajorGridLine int         `yaml:"minorLinesPerMajorGridLine,omitempty"`
+	Opacity                    float64     `yaml:"opacity,omitempty"`
+	Reflectivity               float64     `yaml:"reflectivity,omitempty"`
+}
+
+// DisplaySettingsRecord is the on-disk per-document display settings (M16-F07 #643). Enums are
+// stored as their frozen integer ids; colors as [ColorRecord]. The application converts to/from
+// its model display settings.
+type DisplaySettingsRecord struct {
+	BackgroundType           int32             `yaml:"backgroundType,omitempty"`
+	EdgeColor                ColorRecord       `yaml:"edgeColor,omitempty"`
+	DepthDimming             bool              `yaml:"depthDimming,omitempty"`
+	DisplaySilhouettes       bool              `yaml:"displaySilhouettes,omitempty"`
+	HiddenLineDimmingPercent int               `yaml:"hiddenLineDimmingPercent,omitempty"`
+	NewWindowDisplayMode     int32             `yaml:"newWindowDisplayMode,omitempty"`
+	DisplayModeSource        int32             `yaml:"displayModeSource,omitempty"`
+	NewWindowProjection      int32             `yaml:"newWindowProjection,omitempty"`
+	GroundPlane              GroundPlaneRecord `yaml:"groundPlane,omitempty"`
+	GroundShadow             int32             `yaml:"groundShadow,omitempty"`
+	ShadowDirection          int32             `yaml:"shadowDirection,omitempty"`
+	ShowGroundReflections    bool              `yaml:"showGroundReflections,omitempty"`
+	ShowObjectShadows        bool              `yaml:"showObjectShadows,omitempty"`
+	ShowAmbientShadows       bool              `yaml:"showAmbientShadows,omitempty"`
+	TexturesOn               bool              `yaml:"texturesOn,omitempty"`
 }
 
 // FileIdentityRecord is the on-disk file identity block: the stable GUID plus
@@ -100,31 +145,33 @@ type InterestRecord struct {
 // onDisk is the YAML projection of a Document: manifest at top level, recipe as a
 // native node, data sections base64-encoded. omitempty keeps a minimal file readable.
 type onDisk struct {
-	SchemaVersion int                   `yaml:"schemaVersion,omitempty"`
-	DocumentType  uint32                `yaml:"documentType,omitempty"`
-	SubType       string                `yaml:"subType,omitempty"`
-	DisplayName   string                `yaml:"displayName,omitempty"`
-	Identity      *FileIdentityRecord   `yaml:"identity,omitempty"`
-	References    []FileReferenceRecord `yaml:"references,omitempty"`
-	Attachments   []AttachmentRecord    `yaml:"attachments,omitempty"`
-	Interests     []InterestRecord      `yaml:"interests,omitempty"`
-	Resources     yaml.Node             `yaml:"resources,omitempty"`
-	Model         yaml.Node             `yaml:"model,omitempty"`
-	Data          map[string]string     `yaml:"data,omitempty"`
+	SchemaVersion   int                    `yaml:"schemaVersion,omitempty"`
+	DocumentType    uint32                 `yaml:"documentType,omitempty"`
+	SubType         string                 `yaml:"subType,omitempty"`
+	DisplayName     string                 `yaml:"displayName,omitempty"`
+	Identity        *FileIdentityRecord    `yaml:"identity,omitempty"`
+	References      []FileReferenceRecord  `yaml:"references,omitempty"`
+	Attachments     []AttachmentRecord     `yaml:"attachments,omitempty"`
+	Interests       []InterestRecord       `yaml:"interests,omitempty"`
+	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
+	Resources       yaml.Node              `yaml:"resources,omitempty"`
+	Model           yaml.Node              `yaml:"model,omitempty"`
+	Data            map[string]string      `yaml:"data,omitempty"`
 }
 
 // MarshalDocument renders d as the on-disk YAML file. The recipe bytes are parsed and
 // embedded as a native node so the model is real nested YAML, not an escaped string.
 func MarshalDocument(d Document) ([]byte, error) {
 	od := onDisk{
-		SchemaVersion: d.SchemaVersion,
-		DocumentType:  d.DocumentType,
-		SubType:       d.SubType,
-		DisplayName:   d.DisplayName,
-		Identity:      d.Identity,
-		References:    d.References,
-		Attachments:   d.Attachments,
-		Interests:     d.Interests,
+		SchemaVersion:   d.SchemaVersion,
+		DocumentType:    d.DocumentType,
+		SubType:         d.SubType,
+		DisplayName:     d.DisplayName,
+		Identity:        d.Identity,
+		References:      d.References,
+		Attachments:     d.Attachments,
+		Interests:       d.Interests,
+		DisplaySettings: d.DisplaySettings,
 	}
 	if err := embedNativeNodes(&od, d); err != nil {
 		return nil, err
@@ -192,14 +239,15 @@ func UnmarshalDocument(raw []byte) (Document, error) {
 // documentHeader copies the manifest fields off the on-disk projection.
 func documentHeader(od onDisk) Document {
 	return Document{
-		SchemaVersion: od.SchemaVersion,
-		DocumentType:  od.DocumentType,
-		SubType:       od.SubType,
-		DisplayName:   od.DisplayName,
-		Identity:      od.Identity,
-		References:    od.References,
-		Attachments:   od.Attachments,
-		Interests:     od.Interests,
+		SchemaVersion:   od.SchemaVersion,
+		DocumentType:    od.DocumentType,
+		SubType:         od.SubType,
+		DisplayName:     od.DisplayName,
+		Identity:        od.Identity,
+		References:      od.References,
+		Attachments:     od.Attachments,
+		Interests:       od.Interests,
+		DisplaySettings: od.DisplaySettings,
 	}
 }
 
