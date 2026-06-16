@@ -389,3 +389,47 @@ func TestInWindowSketchBoxSelect(t *testing.T) {
 		t.Errorf("the box should select the enclosed line: count=%d", s.Selection().Count())
 	}
 }
+
+// fakeStackPicker reports two stacked candidates under any pixel — the input Select Other cycles
+// through (implements app.Picker + app.MultiPicker).
+type fakeStackPicker struct{ all []app.Selectable }
+
+func (f fakeStackPicker) Pick(_, _ float64, _ *app.SelectionFilter) (app.Selectable, bool) {
+	if len(f.all) == 0 {
+		return nil, false
+	}
+	return f.all[0], true
+}
+func (f fakeStackPicker) PickAll(_, _ float64, _ *app.SelectionFilter) []app.Selectable { return f.all }
+
+// TestInWindowRightClickBeginsSelectOther drives a real right-click over stacked geometry and
+// asserts the head began the Select Other cycle (instead of the marking menu) and renders its
+// widget (#910).
+func TestInWindowRightClickBeginsSelectOther(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+	s := framedSession()
+	s.SetPicker(fakeStackPicker{all: []app.Selectable{app.BodyHandle{}, app.EdgeHandle{}}})
+	frame := func() {
+		win.BeginFrame()
+		DrawChrome(win, s)
+		win.EndFrame(0.1, 0.1, 0.1)
+	}
+	cx, cy := float32(inWinW/2), float32(inWinH/2) // the docked viewport node
+
+	native.InjectMousePos(cx, cy)
+	frame()
+	frame()
+	native.InjectMouseButton(native.MouseRight, true) // right-click over the stack
+	frame()
+	if !s.SelectOtherActive() {
+		t.Fatal("right-click on stacked geometry did not begin Select Other")
+	}
+	if _, count := s.SelectOtherStatus(); count != 2 {
+		t.Errorf("Select Other count = %d, want 2", count)
+	}
+	native.InjectMouseButton(native.MouseRight, false)
+	frame() // the widget renders (drawSelectOtherWidget) without crashing
+}
