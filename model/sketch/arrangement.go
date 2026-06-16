@@ -104,28 +104,104 @@ type cut struct {
 	pt    math.Point2
 }
 
+// arrBruteMax is the segment count below which intersectionCuts compares every pair
+// directly; above it a grid broad-phase is used, since all-pairs is O(n²) and a dense
+// imported drawing has hundreds of thousands of segments.
+const arrBruteMax = 1024
+
 // intersectionCuts finds, for every segment, the points where other entities' segments
 // cross it. Facets of the same entity are skipped (they only share endpoints, they do
-// not cross), which also avoids O(n²) self-pairs within one curve.
+// not cross). A grid broad-phase keeps it tractable on large sketches: two segments
+// can only intersect if their bounding boxes overlap, and overlapping boxes always
+// share a grid cell, so testing only same-cell pairs is exact (no crossing is missed).
 func intersectionCuts(segs []taggedSeg) [][]cut {
 	cuts := make([][]cut, len(segs))
-	for i := 0; i < len(segs); i++ {
-		for j := i + 1; j < len(segs); j++ {
-			if segs[i].entity == segs[j].entity {
-				continue
+	if len(segs) <= arrBruteMax {
+		for i := 0; i < len(segs); i++ {
+			for j := i + 1; j < len(segs); j++ {
+				cutPair(segs, i, j, cuts)
 			}
-			pt, s, t, ok := geom.Segment2dIntersection(
-				geom.NewLineSegment2d(segs[i].a, segs[i].b),
-				geom.NewLineSegment2d(segs[j].a, segs[j].b), arrMergeTol,
-			)
-			if !ok {
-				continue
+		}
+		return cuts
+	}
+	gridCuts(segs, cuts)
+	return cuts
+}
+
+// cutPair tests one segment pair and records the crossing (if any) on both.
+func cutPair(segs []taggedSeg, i, j int, cuts [][]cut) {
+	if segs[i].entity == segs[j].entity {
+		return
+	}
+	pt, s, t, ok := geom.Segment2dIntersection(
+		geom.NewLineSegment2d(segs[i].a, segs[i].b),
+		geom.NewLineSegment2d(segs[j].a, segs[j].b), arrMergeTol,
+	)
+	if !ok {
+		return
+	}
+	cuts[i] = append(cuts[i], cut{s, pt})
+	cuts[j] = append(cuts[j], cut{t, pt})
+}
+
+// gridCuts bins segments into a ~sqrt(n)×sqrt(n) grid by their bounding box and tests
+// only pairs that share a cell — each pair once (deduped, since a long segment spans
+// several cells). Exact: AABB-overlapping (hence possibly-intersecting) segments
+// always co-occupy a cell.
+//
+//nolint:funlen // spatial-grid binning of segment AABBs; length is the binning, not logic.
+func gridCuts(segs []taggedSeg, cuts [][]cut) {
+	minX, minY := stdmath.Inf(1), stdmath.Inf(1)
+	maxX, maxY := stdmath.Inf(-1), stdmath.Inf(-1)
+	for _, s := range segs {
+		minX, minY = stdmath.Min(minX, stdmath.Min(s.a.X, s.b.X)), stdmath.Min(minY, stdmath.Min(s.a.Y, s.b.Y))
+		maxX, maxY = stdmath.Max(maxX, stdmath.Max(s.a.X, s.b.X)), stdmath.Max(maxY, stdmath.Max(s.a.Y, s.b.Y))
+	}
+	dim := int(stdmath.Sqrt(float64(len(segs))))
+	if dim < 1 {
+		dim = 1
+	} else if dim > 2048 {
+		dim = 2048
+	}
+	cell := stdmath.Max(stdmath.Max(maxX-minX, maxY-minY)/float64(dim), 1e-9)
+	cols := int((maxX-minX)/cell) + 1
+	rows := int((maxY-minY)/cell) + 1
+	col := func(x float64) int { return clampInt(int((x-minX)/cell), cols) }
+	row := func(y float64) int { return clampInt(int((y-minY)/cell), rows) }
+	bins := make([][]int32, cols*rows)
+	for i, s := range segs {
+		for cj := row(stdmath.Min(s.a.Y, s.b.Y)); cj <= row(stdmath.Max(s.a.Y, s.b.Y)); cj++ {
+			for ci := col(stdmath.Min(s.a.X, s.b.X)); ci <= col(stdmath.Max(s.a.X, s.b.X)); ci++ {
+				bins[cj*cols+ci] = append(bins[cj*cols+ci], int32(i))
 			}
-			cuts[i] = append(cuts[i], cut{s, pt})
-			cuts[j] = append(cuts[j], cut{t, pt})
 		}
 	}
-	return cuts
+	tested := map[[2]int32]struct{}{}
+	for _, bin := range bins {
+		for x := 0; x < len(bin); x++ {
+			for y := x + 1; y < len(bin); y++ {
+				i, j := bin[x], bin[y]
+				if i > j {
+					i, j = j, i
+				}
+				if _, seen := tested[[2]int32{i, j}]; seen {
+					continue
+				}
+				tested[[2]int32{i, j}] = struct{}{}
+				cutPair(segs, int(i), int(j), cuts)
+			}
+		}
+	}
+}
+
+func clampInt(c, n int) int {
+	if c < 0 {
+		return 0
+	}
+	if c >= n {
+		return n - 1
+	}
+	return c
 }
 
 // splitPoints returns a segment's points in order: its start, the interior crossing

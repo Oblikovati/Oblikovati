@@ -178,9 +178,10 @@ func rayPointDistance(origin math.Point3, dir math.Vector3, pt math.Point3) (dis
 // the overlay's draw sampling so what you see is what you pick.
 const pick3DCurveSegments = 48
 
-// nearestSketchCurve returns the sketch line the ray passes nearest (within the pick radius, in
-// any visible sketch), when the filter accepts sketch entities — so a sketch line/centerline can
-// be picked in the part view (e.g. a revolve axis). Lines only today (the kind used as an axis).
+// nearestSketchCurve returns the sketch entity the ray passes nearest (within the pick radius, in
+// any visible sketch), when the filter accepts sketch entities — so any imported curve (line,
+// arc, circle, ellipse, elliptical arc, spline) can be picked in the part view, e.g. a line as a
+// revolve axis. The spatial index facets every entity, so curves are hit along their true sweep.
 func (p *RayPicker) nearestSketchCurve(origin math.Point3, dir math.Vector3, filter *SelectionFilter) (Selectable, float64, bool) {
 	if p.sketches == nil || !filter.Accepts(SelectSketchEntity) {
 		return nil, stdmath.Inf(1), false
@@ -189,15 +190,13 @@ func (p *RayPicker) nearestSketchCurve(origin math.Point3, dir math.Vector3, fil
 	var hit Selectable
 	best := stdmath.Inf(1)
 	for _, sk := range p.sketches() {
-		plane := sk.Plane()
-		for i := 0; i < sk.Lines().Count(); i++ {
-			l := sk.Lines().Item(i)
-			a := plane.ToModel(l.StartPoint().Position())
-			b := plane.ToModel(l.EndPoint().Position())
-			if d, t, ok := raySegmentDistance(origin, dir, a, b); ok && d <= tol && t < best {
-				best, hit = t, SketchEntityHandle{Entity: l}
+		// Test only the segments near the ray (cached spatial index), not every
+		// line — a dense imported sketch has hundreds of thousands.
+		pickIndexFor(sk).forCandidates(origin, dir, tol, func(seg sketchSeg) {
+			if d, t, ok := raySegmentDistance(origin, dir, seg.a, seg.b); ok && d <= tol && t < best {
+				best, hit = t, SketchEntityHandle{Entity: seg.entity}
 			}
-		}
+		})
 	}
 	return hit, best, hit != nil
 }

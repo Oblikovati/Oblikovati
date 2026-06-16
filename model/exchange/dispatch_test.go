@@ -64,14 +64,14 @@ func TestStepRoundTripThroughDispatch(t *testing.T) {
 func TestFormatFromPath(t *testing.T) {
 	cases := map[string]types.ExchangeFormat{
 		"a.stl": types.FormatSTL, "b.OBJ": types.FormatOBJ, "c.3mf": types.Format3MF,
-		"d.step": types.FormatSTEP, "e.STP": types.FormatSTEP,
+		"d.step": types.FormatSTEP, "e.STP": types.FormatSTEP, "f.DWG": types.FormatDWG,
 	}
 	for path, want := range cases {
 		if got, ok := exchange.FormatFromPath(path); !ok || got != want {
 			t.Errorf("FormatFromPath(%q) = %q,%v; want %q", path, got, ok, want)
 		}
 	}
-	if _, ok := exchange.FormatFromPath("x.dwg"); ok {
+	if _, ok := exchange.FormatFromPath("x.iges"); ok {
 		t.Error("FormatFromPath accepted an unknown extension")
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
@@ -36,7 +37,7 @@ func drawFileDialog(s *app.Session) {
 	if native.Begin(fileModal.title()) {
 		drawExplorerHeader()
 		act = drawExplorerTable()
-		drawExplorerTarget()
+		drawExplorerTarget(s)
 		act = drawExplorerActions(act)
 	}
 	native.End()
@@ -177,7 +178,7 @@ func entryModified(entry fileEntry) string {
 }
 
 // drawExplorerTarget renders the final path field and mode-specific controls.
-func drawExplorerTarget() {
+func drawExplorerTarget(s *app.Session) {
 	if hint := fileModal.filterHint(); hint != "" {
 		native.Text("Files: " + hint)
 	}
@@ -185,6 +186,36 @@ func drawExplorerTarget() {
 	native.InputText("File name or path##file-path", fileModal.path[:])
 	if fileModal.mode == dialogExport {
 		drawExportResolution()
+	}
+	if fileModal.mode == dialogImport && isDWGTarget() {
+		drawImportPlane(s)
+	}
+}
+
+// isDWGTarget reports whether the import target is a .dwg file (so the plane picker
+// shows only for DWG, which imports into a sketch on a chosen plane).
+func isDWGTarget() bool {
+	return strings.EqualFold(filepath.Ext(fileModal.targetPath()), ".dwg")
+}
+
+// drawImportPlane renders the work-plane picker for a DWG import: a 2D drawing lands
+// on the chosen plane (its origin at the plane origin); a 3D drawing ignores it.
+func drawImportPlane(s *app.Session) {
+	choices, err := s.DWGPlaneChoices()
+	if err != nil || len(choices) == 0 {
+		native.Text("Open a part to import a DWG into.")
+		return
+	}
+	if fileModal.planeIndex >= len(choices) {
+		fileModal.planeIndex = 0
+	}
+	if native.BeginCombo("Sketch plane", choices[fileModal.planeIndex].Name) {
+		for i, c := range choices {
+			if native.Selectable(c.Name, i == fileModal.planeIndex) {
+				fileModal.planeIndex = i
+			}
+		}
+		native.EndCombo()
 	}
 }
 
@@ -249,7 +280,11 @@ func applyFileAction(s *app.Session, act fileAction) {
 	case dialogMeshRef:
 		placeMeshFromFile(s, act.Path, name)
 	case dialogImport:
-		importBodyFromFile(s, act.Path, name)
+		if isDWGPath(act.Path) {
+			importDWGFromFile(s, act, name)
+		} else {
+			importBodyFromFile(s, act.Path, name)
+		}
 	case dialogExport:
 		exportToFile(s, act, name)
 	case dialogExportBOM:
@@ -285,6 +320,34 @@ func importBodyFromFile(s *app.Session, path, name string) {
 		return
 	}
 	fileNotice(s, "Imported %s (%d %s)", name, res.BodyCount, plural(res.BodyCount, "body", "bodies"))
+}
+
+// isDWGPath reports whether path is a .dwg file (the sketch-importing branch of File ▸ Import).
+func isDWGPath(path string) bool { return strings.EqualFold(filepath.Ext(path), ".dwg") }
+
+// importDWGFromFile imports a .dwg into the active part on the chosen work plane
+// (2D drawing → a sketch on that plane; 3D drawing → a Sketch3D), reporting the
+// outcome (File ▸ Import of a .dwg).
+func importDWGFromFile(s *app.Session, act fileAction, name string) {
+	choices, err := s.DWGPlaneChoices()
+	if err != nil {
+		fileNotice(s, "Import failed: %v", err)
+		return
+	}
+	plane := choices[0].Plane
+	if act.PlaneIndex >= 0 && act.PlaneIndex < len(choices) {
+		plane = choices[act.PlaneIndex].Plane
+	}
+	res, err := s.ImportDWGFile(act.Path, plane)
+	if err != nil {
+		fileNotice(s, "Import failed: %v", err)
+		return
+	}
+	kind := "2D sketch"
+	if res.Is3D {
+		kind = "3D sketch"
+	}
+	fileNotice(s, "Imported %s into a %s (%d entities)", name, kind, res.EntityCount)
 }
 
 // exportToFile writes the active part's bodies to a mesh file at the chosen resolution (File ▸ Export).

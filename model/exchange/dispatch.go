@@ -26,6 +26,9 @@ import (
 //
 //	res, err := exchange.Import(part, "bracket.step", types.FormatSTEP)
 func Import(part *compdef.PartComponentDefinition, path string, format types.ExchangeFormat) (ImportResult, error) {
+	if format.IsSketch() {
+		return ImportResult{}, fmt.Errorf("import %q: %s is a sketch format and imports into a sketch on a chosen work plane; use ImportDWGFile", path, format)
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import: read %q: %w", path, err)
@@ -96,6 +99,8 @@ func FormatFromPath(path string) (types.ExchangeFormat, bool) {
 		return types.Format3MF, true
 	case ".step", ".stp":
 		return types.FormatSTEP, true
+	case ".dwg":
+		return types.FormatDWG, true
 	default:
 		return "", false
 	}

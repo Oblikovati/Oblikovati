@@ -162,6 +162,13 @@ type Sketch struct {
 	geomCons      *GeometricConstraints
 	dimCons       *DimensionConstraints
 	params        *param.Parameters
+
+	// profilesCache memoises Profiles() — region detection is O(n log n) over the
+	// geometry and was rerun on every call (the hover picker calls it each frame),
+	// freezing on a dense imported sketch. profilesSig is the geometry signature it
+	// was built for (counts + point coordinates), so any edit invalidates it.
+	profilesCache *Profiles
+	profilesSig   uint64
 }
 
 // Plane returns the sketch's host plane.
@@ -345,6 +352,12 @@ func (s *Sketch) newPoint(pos math.Point2) *Point {
 	s.pts = append(s.pts, p)
 	return p
 }
+
+// NewPoint creates a sketch vertex point for use as a shared endpoint of lines or
+// arcs (it is not a standalone point marker). It lets a bulk authoring caller — the
+// DWG importer — connect a polyline's segments through shared vertices instead of
+// duplicating endpoints, roughly a third less geometry on dense drawings.
+func (s *Sketch) NewPoint(pos math.Point2) *Point { return s.newPoint(pos) }
 
 // removePoint drops a solver point (a deactivated spline-handle end or a
 // point moved into a block definition).

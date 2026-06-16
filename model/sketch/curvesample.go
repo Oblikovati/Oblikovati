@@ -35,6 +35,17 @@ func traversalPolyline(e Entity, reversed bool) []math.Point2 {
 	return pts[:len(pts)-1]
 }
 
+// EntityPolyline returns entity e faceted into sketch-space (2D) points and whether it
+// is inherently closed (the caller wraps the last point back to the first). It is the
+// single faceting entry point shared by region detection and picking, so every consumer
+// discretizes a curve the same way — e.g. an imported elliptical arc is hit-tested along
+// its true sweep, not its chord. Returns fewer than two points for a bare point entity.
+//
+//	pts, closed := sketch.EntityPolyline(arc) // pts follows the arc; closed == false
+func EntityPolyline(e Entity) (pts []math.Point2, closed bool) {
+	return entityPolyline(e)
+}
+
 // naturalPolyline samples entity e from its natural start to its natural end,
 // endpoints inclusive. Unknown entities degrade to their endpoint chord.
 func naturalPolyline(e Entity) []math.Point2 {

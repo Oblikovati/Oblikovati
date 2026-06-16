@@ -63,6 +63,7 @@ type fileDialog struct {
 	roots      []string
 	errorText  string
 	resolution int                   // export mesh resolution: 0 low, 1 medium, 2 high
+	planeIndex int                   // DWG import: index into the active part's work-plane choices
 	request    app.FileDialogRequest // the add-in ask behind dialogAddIn mode
 	defaultExt string                // Save As: extension appended to a bare name, per the active document's kind (ADR-0034)
 }
@@ -73,6 +74,7 @@ type fileAction struct {
 	Kind       fileDialogMode
 	Path       string
 	Resolution string // export mesh resolution ("low"|"medium"|"high")
+	PlaneIndex int    // DWG import: chosen work-plane index (see DWGPlaneChoices)
 }
 
 // exportResolutionNames maps the resolution index to its api/types.MeshResolution string.
@@ -127,7 +129,7 @@ func (d *fileDialog) title() string {
 	case dialogPlaceComponent:
 		return "Place Component"
 	case dialogImport:
-		return "Import (.stl/.obj/.3mf/.step)"
+		return "Import (.stl/.obj/.3mf/.step/.dwg)"
 	case dialogExport:
 		return "Export (.stl/.obj/.3mf/.step)"
 	case dialogExportBOM:
@@ -186,7 +188,7 @@ func (d *fileDialog) confirm() fileAction {
 	if path == "" {
 		return fileAction{Kind: dialogClosed}
 	}
-	return fileAction{Kind: mode, Path: path, Resolution: res}
+	return fileAction{Kind: mode, Path: path, Resolution: res, PlaneIndex: d.planeIndex}
 }
 
 // cancel dismisses the dialog without an action and clears the typed path.
@@ -274,7 +276,10 @@ func (d *fileDialog) allowedExts() []string {
 		return []string{".hdr"}
 	case dialogMeshRef:
 		return []string{".stl"}
-	case dialogImport, dialogExport:
+	case dialogImport:
+		// DWG imports into a sketch (curve geometry), the others into bodies.
+		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg"}
+	case dialogExport:
 		return []string{".stl", ".obj", ".3mf", ".step", ".stp"}
 	case dialogExportBOM:
 		return []string{".csv"}
