@@ -69,6 +69,25 @@ func (h *FileHeader) LogicalSection(data []byte, name string) ([]byte, error) {
 	return nil, fmt.Errorf("dwg: logical section %q not found", name)
 }
 
+// ObjectMapBytes returns the raw object-map (handle directory) bytes, abstracting
+// the version: the AcDb:Handles logical section for R2004+, or the flat object-map
+// section for R2000.
+func (h *FileHeader) ObjectMapBytes(data []byte) ([]byte, error) {
+	if h.Version.Paged() {
+		return h.LogicalSection(data, "AcDb:Handles")
+	}
+	return h.SectionBytes(data, secObjectMap)
+}
+
+// ObjectData returns the stream that object-map offsets index into: the assembled
+// AcDb:AcDbObjects section for R2004+, or the whole file for R2000.
+func (h *FileHeader) ObjectData(data []byte) ([]byte, error) {
+	if h.Version.Paged() {
+		return h.LogicalSection(data, "AcDb:AcDbObjects")
+	}
+	return data, nil
+}
+
 // SectionNames lists the logical section names present in a paged file, for
 // diagnostics and tests.
 func (h *FileHeader) SectionNames() []string {

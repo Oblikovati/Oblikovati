@@ -270,6 +270,24 @@ func (r *BitReader) ReadMS() int {
 	return 0
 }
 
+// ReadBOT reads a Bit Object Type (R2010+): a 2-bit selector then the type.
+//
+//	00 → one byte (RC)             01 → one byte + 0x1F0
+//	10/11 → a 16-bit short (RS)
+//
+// Earlier versions store the object type as a plain BitShort; see the version
+// branch in the object decoder.
+func (r *BitReader) ReadBOT() int {
+	switch r.ReadBits(2) {
+	case 0:
+		return int(r.ReadRC())
+	case 1:
+		return int(r.ReadRC()) + 0x1F0
+	default:
+		return int(r.ReadRS())
+	}
+}
+
 // ReadHandle reads an object handle reference (H): a code nibble, a size nibble,
 // then Size big-endian value bytes.
 func (r *BitReader) ReadHandle() Handle {
