@@ -35,24 +35,25 @@ func (s *Sketch) DragSolve(pins []PinTarget) SolveResult {
 	return Solve(cons, s.variables(), Options{})
 }
 
+// pointDefined is an entity that can name its constrainable points (each entity declares its own
+// so DefiningPoints needs no type switch — which would duplicate entityFreedomVars in
+// moveable_status.go). The method is unexported, sealing the set to this package's entities.
+type pointDefined interface{ definingPoints() []*Point }
+
+func (p *Point) definingPoints() []*Point         { return []*Point{p} }
+func (l *Line) definingPoints() []*Point          { return []*Point{l.A, l.B} }
+func (c *Circle) definingPoints() []*Point        { return []*Point{c.Center} }
+func (a *Arc) definingPoints() []*Point           { return []*Point{a.Center, a.Start, a.End} }
+func (e *Ellipse) definingPoints() []*Point       { return []*Point{e.Center} }
+func (e *EllipticalArc) definingPoints() []*Point { return []*Point{e.Center} }
+
 // DefiningPoints returns the entity's constrainable points — the handles a drag pins. Dragging a
 // single point pins just it; dragging a whole curve pins all its points so it translates rigidly
-// (the solver then re-satisfies the constraints touching them).
+// (the solver then re-satisfies the constraints touching them). Entities without points (text,
+// images) and nil return none.
 func DefiningPoints(e Entity) []*Point {
-	switch t := e.(type) {
-	case *Point:
-		return []*Point{t}
-	case *Line:
-		return []*Point{t.A, t.B}
-	case *Circle:
-		return []*Point{t.Center}
-	case *Arc:
-		return []*Point{t.Center, t.Start, t.End}
-	case *Ellipse:
-		return []*Point{t.Center}
-	case *EllipticalArc:
-		return []*Point{t.Center}
-	default:
-		return nil
+	if d, ok := e.(pointDefined); ok {
+		return d.definingPoints()
 	}
+	return nil
 }
