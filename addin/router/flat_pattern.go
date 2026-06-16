@@ -34,6 +34,43 @@ func (r *Router) registerFlatPatternHandlers() {
 	r.handlers[wire.MethodFlatPatternListPlates] = flatPatternListPlates
 	r.handlers[wire.MethodFlatPatternGetSettings] = flatPatternGetSettings
 	r.handlers[wire.MethodFlatPatternSetSettings] = flatPatternSetSettings
+	r.handlers[wire.MethodFlatPatternListBendOrder] = flatPatternListBendOrder
+	r.handlers[wire.MethodFlatPatternSetBendOrder] = flatPatternSetBendOrder
+}
+
+func flatPatternListBendOrder(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(bendOrderResult(part))
+}
+
+func flatPatternSetBendOrder(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.SetBendOrderArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	if err := part.SetBendOrder(in.Order); err != nil {
+		return nil, err
+	}
+	return json.Marshal(bendOrderResult(part))
+}
+
+// bendOrderResult renders the part's bends in their press-brake sequence (1-based order).
+func bendOrderResult(part *compdef.PartComponentDefinition) wire.BendOrderResult {
+	bends := part.OrderedBends()
+	out := wire.BendOrderResult{Bends: make([]wire.BendOrderInfo, len(bends))}
+	for i, b := range bends {
+		out.Bends[i] = wire.BendOrderInfo{
+			Feature: b.Feature, Order: i + 1, Angle: b.Angle * degPerRad, Radius: b.Radius,
+		}
+	}
+	return out
 }
 
 func flatPatternListPlates(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {

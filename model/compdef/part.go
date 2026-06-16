@@ -62,6 +62,9 @@ type PartComponentDefinition struct {
 	// flatSettings is the per-part flat-pattern settings (M13-F05): currently the deferred-update
 	// flag so a heavy flat only develops on demand.
 	flatSettings sheetmetal.FlatPatternSettings
+	// bendOrder is the press-brake bend sequence (M13-F06) as an overlay of bend feature names;
+	// empty means the natural (creation) order. Bends not listed follow the listed ones.
+	bendOrder []string
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature

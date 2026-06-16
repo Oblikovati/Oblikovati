@@ -151,6 +151,31 @@ func TestFlatPatternPlatesAndSettings(t *testing.T) {
 	}
 }
 
+// TestFlatPatternBendOrderOverWire a flanged sheet lists its bend order; setting the order by
+// feature name round-trips; an unknown name errors.
+func TestFlatPatternBendOrderOverWire(t *testing.T) {
+	r, s := flangedSheet(t)
+
+	var list wire.BendOrderResult
+	call(t, r, s, wire.MethodFlatPatternListBendOrder, "{}", &list)
+	if len(list.Bends) != 1 || list.Bends[0].Order != 1 || list.Bends[0].Feature == "" {
+		t.Fatalf("bend order = %+v, want one bend at order 1", list.Bends)
+	}
+	feature := list.Bends[0].Feature
+
+	var set wire.BendOrderResult
+	toFlat, _ := json.Marshal(map[string]any{"order": []string{feature}})
+	call(t, r, s, wire.MethodFlatPatternSetBendOrder, string(toFlat), &set)
+	if len(set.Bends) != 1 || set.Bends[0].Feature != feature {
+		t.Errorf("set bend order = %+v, want %s", set.Bends, feature)
+	}
+
+	bad, _ := json.Marshal(map[string]any{"order": []string{"NoSuchBend"}})
+	if _, err := r.Handle(s, wire.MethodFlatPatternSetBendOrder, bad); err == nil {
+		t.Error("setBendOrder with an unknown bend must error")
+	}
+}
+
 // TestFlatPatternRejectsPlainPart every flat-pattern method errors on an ordinary part.
 func TestFlatPatternRejectsPlainPart(t *testing.T) {
 	r, s := seededSession(t)
@@ -162,6 +187,8 @@ func TestFlatPatternRejectsPlainPart(t *testing.T) {
 		wire.MethodFlatPatternListPlates,
 		wire.MethodFlatPatternGetSettings,
 		wire.MethodFlatPatternSetSettings,
+		wire.MethodFlatPatternListBendOrder,
+		wire.MethodFlatPatternSetBendOrder,
 	} {
 		if _, err := r.Handle(s, m, []byte("{}")); err == nil {
 			t.Errorf("%s on a plain part must error", m)
