@@ -77,9 +77,10 @@ func (d *PartComponentDefinition) developTab(pf *feature.PartFeature, plane sket
 		return feature.FlatTab{}, false
 	}
 	return feature.FlatTab{
-		A:      plane.ToSketch(p.AxisStart),
-		B:      plane.ToSketch(p.AxisEnd),
-		Length: d.sheetMetal.Unfold().BendAllowance(p.Angle, p.Radius, p.Thickness) + p.Length,
-		Angle:  p.Angle,
+		A:        plane.ToSketch(p.AxisStart),
+		B:        plane.ToSketch(p.AxisEnd),
+		Length:   d.sheetMetal.Unfold().BendAllowance(p.Angle, p.Radius, p.Thickness) + p.Length,
+		Angle:    p.Angle,
+		FoldDown: p.FoldDown,
 	}, true
 }

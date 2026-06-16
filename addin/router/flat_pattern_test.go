@@ -54,6 +54,41 @@ func TestFlatPatternOrientationsOverWire(t *testing.T) {
 	}
 }
 
+// TestFlatPatternEdgesAndFaces a flanged sheet reports its fold line as a bend-up edge (a
+// plain flange folds up), filterable by type, and its front/back faces with equal areas.
+func TestFlatPatternEdgesAndFaces(t *testing.T) {
+	r, s := flangedSheet(t)
+
+	var all wire.EdgesResult
+	call(t, r, s, wire.MethodFlatPatternEdgesOfType, "{}", &all)
+	if len(all.Edges) != 1 || all.Edges[0].Type != "bendUp" {
+		t.Fatalf("edges = %+v, want one bendUp fold line", all.Edges)
+	}
+	if all.Edges[0].Angle <= 0 {
+		t.Errorf("fold line angle = %v, want positive", all.Edges[0].Angle)
+	}
+
+	var up, down wire.EdgesResult
+	call(t, r, s, wire.MethodFlatPatternEdgesOfType, `{"type":"bendUp"}`, &up)
+	call(t, r, s, wire.MethodFlatPatternEdgesOfType, `{"type":"bendDown"}`, &down)
+	if len(up.Edges) != 1 || len(down.Edges) != 0 {
+		t.Errorf("filtered up=%d down=%d, want 1 and 0", len(up.Edges), len(down.Edges))
+	}
+
+	var faces wire.FacesResult
+	call(t, r, s, wire.MethodFlatPatternFaces, "{}", &faces)
+	if len(faces.Faces) != 2 || faces.Faces[0].Type != "front" || faces.Faces[1].Type != "back" {
+		t.Fatalf("faces = %+v, want front+back", faces.Faces)
+	}
+	if faces.Faces[0].Area <= 0 || faces.Faces[0].Area != faces.Faces[1].Area {
+		t.Errorf("front/back areas = %v/%v, want equal positive", faces.Faces[0].Area, faces.Faces[1].Area)
+	}
+
+	if _, err := r.Handle(s, wire.MethodFlatPatternEdgesOfType, []byte(`{"type":"nope"}`)); err == nil {
+		t.Error("a bad edge type must error")
+	}
+}
+
 // TestFlatPatternRejectsPlainPart the flat-pattern surface errors on an ordinary part.
 func TestFlatPatternRejectsPlainPart(t *testing.T) {
 	r, s := seededSession(t)

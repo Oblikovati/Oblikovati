@@ -10,7 +10,9 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sheetmetal"
 )
@@ -26,6 +28,80 @@ func (r *Router) registerFlatPatternHandlers() {
 	r.handlers[wire.MethodFlatPatternAddOrientation] = flatPatternAddOrientation
 	r.handlers[wire.MethodFlatPatternActivateOrientation] = flatPatternActivateOrientation
 	r.handlers[wire.MethodFlatPatternDeleteOrientation] = flatPatternDeleteOrientation
+	r.handlers[wire.MethodFlatPatternEdgesOfType] = flatPatternEdgesOfType
+	r.handlers[wire.MethodFlatPatternFaces] = flatPatternFaces
+}
+
+func flatPatternEdgesOfType(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.EdgesOfTypeArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	filter, err := edgeTypeFilter(in.Type)
+	if err != nil {
+		return nil, err
+	}
+	flat, err := part.Unfold()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(wire.EdgesResult{Edges: classifiedEdges(flat.Bends, filter)})
+}
+
+// classifiedEdges turns the flat's fold lines into classified wire edges (bend-up unless the
+// bend folds toward the back), keeping only those matching filter (nil ⇒ all).
+func classifiedEdges(bends []feature.FlatBendLine, filter *types.FlatPatternEdgeType) []wire.FlatEdgeInfo {
+	out := make([]wire.FlatEdgeInfo, 0, len(bends))
+	for _, b := range bends {
+		et := types.BendUpFlatPatternEdge
+		if b.FoldDown {
+			et = types.BendDownFlatPatternEdge
+		}
+		if filter != nil && *filter != et {
+			continue
+		}
+		out = append(out, wire.FlatEdgeInfo{
+			Start: point2d(b.A), End: point2d(b.B), Type: et.String(), Angle: b.Angle * degPerRad,
+		})
+	}
+	return out
+}
+
+// edgeTypeFilter parses an optional edge-type filter; an empty string means "all types".
+func edgeTypeFilter(s string) (*types.FlatPatternEdgeType, error) {
+	if s == "" {
+		return nil, nil
+	}
+	et, ok := types.ParseFlatPatternEdgeType(s)
+	if !ok {
+		return nil, fmt.Errorf("flatPattern: edge type %q: want bendUp|bendDown|tangent", s)
+	}
+	return &et, nil
+}
+
+func flatPatternFaces(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	flat, err := part.Unfold()
+	if err != nil {
+		return nil, err
+	}
+	// The flat is a constant-thickness plate: its front (top) and back (bottom) faces share
+	// the developed footprint area (the body volume over the gauge).
+	area := 0.0
+	if flat.Thickness > 0 {
+		area = ops.BodyGeometryProperties(flat.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / flat.Thickness
+	}
+	return json.Marshal(wire.FacesResult{Faces: []wire.FlatFaceInfo{
+		{Type: types.FrontFlatPatternFace.String(), Area: area},
+		{Type: types.BackFlatPatternFace.String(), Area: area},
+	}})
 }
 
 func flatPatternListOrientations(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
