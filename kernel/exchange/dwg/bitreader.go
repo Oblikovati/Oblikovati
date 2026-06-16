@@ -233,6 +233,25 @@ func (r *BitReader) ReadMC() int {
 	return 0
 }
 
+// ReadUMC reads an unsigned Modular Char: little-endian 7-bit groups, high bit =
+// continue, with no sign bit. The object map stores handle offsets this way —
+// they are always positive (the 0x40 bit of the final byte is a value bit, not a
+// sign, unlike [BitReader.ReadMC]).
+func (r *BitReader) ReadUMC() uint64 {
+	var result uint64
+	var shift uint
+	for i := 0; i < 9; i++ {
+		b := uint64(r.ReadRC())
+		result |= (b & 0x7f) << shift
+		if b&0x80 == 0 {
+			return result
+		}
+		shift += 7
+	}
+	r.fail("ReadUMC exceeded 9 bytes")
+	return 0
+}
+
 // ReadMS reads a Modular Short: little-endian 15-bit groups (one RS each), high
 // bit = continue. Spans at most 2 words.
 func (r *BitReader) ReadMS() int {
