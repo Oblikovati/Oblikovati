@@ -163,20 +163,25 @@ func openProfilePoints(sk *sketch.Sketch) ([]math.Point2, error) {
 	}
 	lines := sk.Lines()
 	n := lines.Count()
-	if n == 0 {
-		return nil, fmt.Errorf("sheet-metal contour flange: profile sketch has no lines")
-	}
 	deg := map[*sketch.Point]int{}
+	profileLines := 0
 	for i := 0; i < n; i++ {
 		l := lines.Item(i)
+		if l.IsCenterline() { // an axis/centerline (e.g. a contour-roll axis) is not part of the profile
+			continue
+		}
+		profileLines++
 		deg[l.StartPoint()]++
 		deg[l.EndPoint()]++
+	}
+	if profileLines == 0 {
+		return nil, fmt.Errorf("sheet-metal contour flange: profile sketch has no profile lines")
 	}
 	start := chainStart(deg)
 	if start == nil {
 		return nil, fmt.Errorf("sheet-metal contour flange: profile must be one open chain")
 	}
-	return walkOpenChain(lines, n, start)
+	return walkOpenChain(lines, n, profileLines, start)
 }
 
 // chainStart returns the open-chain end (degree-1 vertex) nearest the sketch origin — the
@@ -199,13 +204,14 @@ func chainStart(deg map[*sketch.Point]int) *sketch.Point {
 	return best
 }
 
-// walkOpenChain follows the connected line segments from start to the far end, collecting the
-// ordered vertex positions, erroring if the lines do not form one simple chain of all n lines.
-func walkOpenChain(lines *sketch.Lines, n int, start *sketch.Point) ([]math.Point2, error) {
+// walkOpenChain follows the connected profile segments from start to the far end, collecting
+// the ordered vertex positions, erroring unless they form one simple chain of all the
+// profileLines (centerlines are skipped).
+func walkOpenChain(lines *sketch.Lines, n, profileLines int, start *sketch.Point) ([]math.Point2, error) {
 	used := make([]bool, n)
 	pts := []math.Point2{start.Position()}
 	cur := start
-	for step := 0; step < n; step++ {
+	for step := 0; step < profileLines; step++ {
 		next, idx := nextSegment(lines, n, used, cur)
 		if next == nil {
 			return nil, fmt.Errorf("sheet-metal contour flange: profile is not a single connected chain")
@@ -217,13 +223,17 @@ func walkOpenChain(lines *sketch.Lines, n int, start *sketch.Point) ([]math.Poin
 	return pts, nil
 }
 
-// nextSegment finds an unused line touching cur and returns its other endpoint and index.
+// nextSegment finds an unused, non-centerline line touching cur and returns its other endpoint
+// and index.
 func nextSegment(lines *sketch.Lines, n int, used []bool, cur *sketch.Point) (*sketch.Point, int) {
 	for i := 0; i < n; i++ {
 		if used[i] {
 			continue
 		}
 		l := lines.Item(i)
+		if l.IsCenterline() {
+			continue
+		}
 		switch cur {
 		case l.StartPoint():
 			return l.EndPoint(), i
