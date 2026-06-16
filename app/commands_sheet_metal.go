@@ -11,7 +11,14 @@ package app
 // sheetMetalTabCommands returns the Sheet Metal tab commands in ribbon order.
 func sheetMetalTabCommands() []*CommandDefinition {
 	return []*CommandDefinition{
-		// Setup panel — the active rule (gauge, bend radius, K-factor, relief).
+		// Setup panel — enter the environment, then edit the active rule.
+		// Convert is the one command lit before conversion: it turns an ordinary part into a
+		// sheet-metal part so the rest of the tab enables.
+		NewCommand("SheetMetal.Convert", "Convert to Sheet Metal", "Setup", func(s *Session) error {
+			return s.ConvertActiveToSheetMetal()
+		}).WithTab("Sheet Metal").WithRibbons(PartRibbon).WithEnable(canConvertToSheetMetal).
+			WithIcon("sheet-metal-convert").WithButtonStyle(LargeIconButton).
+			WithTooltip("Convert the active part into a sheet-metal part, entering the sheet-metal environment."),
 		sheetMetalToolCommand("Style", "Setup", "sheet-metal-style",
 			"Edit the active sheet-metal rule: gauge thickness, bend radius, K-factor and corner relief.",
 			func() Tool { return NewSheetMetalStyleTool() }),

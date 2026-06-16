@@ -54,6 +54,12 @@ func getStartedCommands() []*CommandDefinition {
 		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
 			WithIcon("new-part").WithButtonStyle(LargeIconButton).
 			WithTooltip("New Part — create a part document and open the part environment."),
+		NewCommand("GetStarted.NewSheetMetalPart", "New Sheet Metal Part", "Launch", func(s *Session) error {
+			_, err := s.NewSheetMetalPart()
+			return err
+		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
+			WithIcon("sheet-metal-new").WithButtonStyle(LargeIconButton).
+			WithTooltip("New Sheet Metal Part — create a part already in the sheet-metal environment."),
 		NewCommand("GetStarted.NewAssembly", "New Assembly", "Launch", func(s *Session) error {
 			_, err := s.NewAssembly()
 			return err
