@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -26,52 +27,47 @@ func rollProfile(radius, height float64) *sketch.Sketch {
 	return s
 }
 
-// TestContourRollRollsTube a contour roll revolves the profile a full turn into a cylindrical
-// tube — one valid watertight solid whose volume is the annular shell π((R+t)²−R²)·H.
-func TestContourRollRollsTube(t *testing.T) {
-	const r, th, h = 2.0, 0.2, 3.0
+// rolledBody builds a contour roll of radius r / height h through angle (0 ⇒ full turn) and
+// returns the resulting body, failing if the feature goes sick.
+func rolledBody(t *testing.T, r, h, angle float64) *topo.Body {
+	t.Helper()
+	def := &SheetMetalContourRollDefinition{Profile: rollProfile(r, h), AxisLine: 0, Operation: ops.NewBody}
+	if angle > 0 {
+		def.Angle = func() float64 { return angle }
+	}
 	fs := NewPartFeatures(thicknessParams(t), nil)
-	pf := NewSheetMetalContourRollFeatures(fs).Add(&SheetMetalContourRollDefinition{
-		Profile: rollProfile(r, h), AxisLine: 0, Operation: ops.NewBody, // full 360° default
-	})
+	pf := NewSheetMetalContourRollFeatures(fs).Add(def)
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("contour roll sick: %+v", pf.Health())
 	}
-	body := fs.Result()[0]
-	if !body.IsSolid() {
-		t.Fatal("contour roll is not a solid")
-	}
-	if r := ops.Validate(body); !r.Valid {
-		t.Fatalf("contour roll invalid: %v", r.Issues)
-	}
-	if open := ops.BoundaryEdges(body); len(open) != 0 {
-		t.Errorf("contour roll not watertight: %d boundary edges", len(open))
-	}
-	want := stdmath.Pi * ((r+th)*(r+th) - r*r) * h
-	if got := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; stdmath.Abs(got-want)/want > 0.02 {
+	return fs.Result()[0]
+}
+
+// fullTubeVolume is the annular-shell volume of a full revolution.
+func fullTubeVolume(r, th, h float64) float64 { return stdmath.Pi * ((r+th)*(r+th) - r*r) * h }
+
+// TestContourRollRollsTube a full revolution rolls the profile into a watertight tube whose
+// volume is the annular shell π((R+t)²−R²)·H.
+func TestContourRollRollsTube(t *testing.T) {
+	const r, th, h = 2.0, 0.2, 3.0
+	body := rolledBody(t, r, h, 0)
+	assertWatertightSolid(t, body)
+	want := fullTubeVolume(r, th, h)
+	if got := smSolidVolume(body); stdmath.Abs(got-want)/want > 0.02 {
 		t.Errorf("tube volume = %.4f, want ~%.4f (±2%%)", got, want)
 	}
 }
 
-// TestContourRollPartialAngle a partial roll (90°) makes a valid open shell with less volume
-// than a full tube.
+// TestContourRollPartialAngle a partial roll (90°) makes a valid shell with less volume than
+// the full tube.
 func TestContourRollPartialAngle(t *testing.T) {
-	fs := NewPartFeatures(thicknessParams(t), nil)
-	pf := NewSheetMetalContourRollFeatures(fs).Add(&SheetMetalContourRollDefinition{
-		Profile: rollProfile(2, 3), AxisLine: 0, Angle: func() float64 { return stdmath.Pi / 2 }, Operation: ops.NewBody,
-	})
-	fs.Recompute()
-	if !pf.Health().OK() {
-		t.Fatalf("partial roll sick: %+v", pf.Health())
-	}
-	body := fs.Result()[0]
+	body := rolledBody(t, 2, 3, stdmath.Pi/2)
 	if r := ops.Validate(body); !r.Valid {
 		t.Fatalf("partial roll invalid: %v", r.Issues)
 	}
-	full := stdmath.Pi * ((2.2)*(2.2) - 4) * 3
-	if v := ops.BodyGeometryProperties(body, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= full {
-		t.Errorf("partial-roll volume %.4f should be less than the full tube %.4f", v, full)
+	if v := smSolidVolume(body); v >= fullTubeVolume(2, 0.2, 3) {
+		t.Errorf("partial-roll volume %.4f should be less than the full tube", v)
 	}
 }
 
