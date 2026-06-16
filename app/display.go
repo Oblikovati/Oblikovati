@@ -36,6 +36,17 @@ func (s *Session) SetDisplaySettings(id doc.ID, set display.Settings) {
 	s.docDisplay[s.resolveDocID(id)] = set
 }
 
+// GroundPlaneVisible reports whether the active document's display settings keep the ground
+// plane visible (M16-F07 #643).
+func (s *Session) GroundPlaneVisible() bool { return s.DisplaySettings(0).GroundPlane.Visible }
+
+// SetGroundPlaneVisible toggles the active document's ground-plane visibility.
+func (s *Session) SetGroundPlaneVisible(v bool) {
+	set := s.DisplaySettings(0)
+	set.GroundPlane.Visible = v
+	s.SetDisplaySettings(0, set)
+}
+
 // resolveDocID maps a 0 document id to the active document's id (or leaves it unchanged).
 func (s *Session) resolveDocID(id doc.ID) doc.ID {
 	if id == 0 {

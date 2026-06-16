@@ -598,6 +598,7 @@ func sweptSolidCommands() []*CommandDefinition {
 // lighting/environment/shadow controls (M16/F03).
 func viewTabCommands() []*CommandDefinition {
 	cmds := append(viewNavigateCommands(), orientViewCommands()...)
+	cmds = append(cmds, displayViewCommands()...)
 	cmds = append(cmds, visualStyleCommands()...)
 	cmds = append(cmds, colorSchemeCommands()...)
 	cmds = append(cmds, lightingViewCommands()...)
