@@ -8,19 +8,12 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/model/param"
 )
 
 // sheetWithHem builds a square sheet then hems its highest +X top edge with the given type.
 func sheetWithHem(t *testing.T, hemType HemType, lengthCm, gapCm float64) *topo.Body {
 	t.Helper()
-	ps := param.NewParameters()
-	mustParam(t, ps, "Thickness", "2 mm")
-	fs := NewPartFeatures(ps, nil)
-	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
-	fs.Recompute()
-
-	edge := topEdgeAlongX(t, fs.Result()[0])
+	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	def := &SheetMetalHemDefinition{EdgeKey: edge.ReferenceKey(), Length: func() float64 { return lengthCm }, Type: hemType}
 	if gapCm > 0 {
 		def.Gap = func() float64 { return gapCm }
@@ -138,12 +131,7 @@ func TestHemMissingPayload(t *testing.T) {
 
 // TestHemRejectsBadDims a zero-length hem goes sick.
 func TestHemRejectsBadDims(t *testing.T) {
-	ps := param.NewParameters()
-	mustParam(t, ps, "Thickness", "2 mm")
-	fs := NewPartFeatures(ps, nil)
-	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
-	fs.Recompute()
-	edge := topEdgeAlongX(t, fs.Result()[0])
+	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalHemFeatures(fs).Add(&SheetMetalHemDefinition{EdgeKey: edge.ReferenceKey(), Length: func() float64 { return 0 }})
 	fs.Recompute()
 	if pf.Health().OK() {

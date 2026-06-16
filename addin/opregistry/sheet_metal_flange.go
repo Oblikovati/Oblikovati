@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -47,12 +46,9 @@ func sheetMetalFlangeDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalFlange(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, err := activeSheetMetalPart(s, "sheetMetalFlange")
 	if err != nil {
 		return nil, err
-	}
-	if !part.IsSheetMetal() {
-		return nil, fmt.Errorf("sheetMetalFlange: the active part is not a sheet-metal part")
 	}
 	var in sheetMetalFlangeArgs
 	if err := json.Unmarshal(raw, &in); err != nil {

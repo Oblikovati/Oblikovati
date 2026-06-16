@@ -2,37 +2,17 @@
 
 package opregistry
 
-import (
-	"encoding/json"
-	"testing"
-
-	"oblikovati.org/model/compdef"
-)
+import "testing"
 
 // TestSheetMetalHemApply seeds a sheet-metal wall, hems a top edge, and confirms one merged
 // solid results; then checks the error paths.
 func TestSheetMetalHemApply(t *testing.T) {
-	s := sheetMetalProfiledPart(t)
-	if _, err := apply(t, s, "sheetMetalFace", `{"sketchIndex":0}`); err != nil {
-		t.Fatalf("seed face: %v", err)
-	}
-	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)
-	edge := topEdgeKey(t, def)
-
+	s, edge := seedSheetMetalSheet(t)
 	out, err := applyMap(t, s, "sheetMetalHem", map[string]any{"edge": edge, "length": "6 mm", "type": "open", "gap": "4 mm"})
 	if err != nil {
 		t.Fatalf("hem apply: %v", err)
 	}
-	var res struct {
-		Bodies  int  `json:"bodies"`
-		Healthy bool `json:"healthy"`
-	}
-	if err := json.Unmarshal(out, &res); err != nil {
-		t.Fatalf("decode: %v", err)
-	}
-	if res.Bodies != 1 || !res.Healthy {
-		t.Errorf("hem: bodies=%d healthy=%v, want 1 healthy", res.Bodies, res.Healthy)
-	}
+	expectMergedSolid(t, out, "hem")
 
 	// Error paths.
 	if _, err := apply(t, sheetMetalProfiledPart(t), "sheetMetalHem", `{"length":"5 mm"}`); err == nil {

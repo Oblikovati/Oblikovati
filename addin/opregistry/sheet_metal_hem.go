@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -46,12 +45,9 @@ func sheetMetalHemDescriptor() *OperationDescriptor {
 }
 
 func applySheetMetalHem(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
-	part, err := modelaccess.ActivePart(s)
+	part, err := activeSheetMetalPart(s, "sheetMetalHem")
 	if err != nil {
 		return nil, err
-	}
-	if !part.IsSheetMetal() {
-		return nil, fmt.Errorf("sheetMetalHem: the active part is not a sheet-metal part")
 	}
 	var in sheetMetalHemArgs
 	if err := json.Unmarshal(raw, &in); err != nil {
