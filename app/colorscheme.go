@@ -17,11 +17,16 @@ func (s *Session) ColorSchemes() contract.ColorSchemes { return colorSchemesAdap
 func (s *Session) ActiveColorScheme() colorscheme.Scheme { return s.colorSchemes.Active() }
 
 // SetColorScheme activates the named scheme and bumps the color-scheme revision so the head
-// re-applies the viewport colors next frame. It surfaces the registry's "no such scheme" error.
+// re-applies the viewport colors next frame. Activating a scheme is an explicit choice of
+// viewport background, so it turns off the environment-image (sky) background that would
+// otherwise paint over the scheme's screen color — the IBL still lights the model, and the
+// sky can be turned back on via the View ▸ Environment controls. It surfaces the registry's
+// "no such scheme" error.
 func (s *Session) SetColorScheme(name string) error {
 	if err := s.colorSchemes.SetActive(name); err != nil {
 		return err
 	}
+	s.lighting.Environment.ShowImage = false
 	s.colorSchemeRev++
 	return nil
 }
