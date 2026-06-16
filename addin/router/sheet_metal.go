@@ -25,6 +25,7 @@ func (r *Router) registerSheetMetalHandlers() {
 	r.handlers[wire.MethodSheetMetalGetStyle] = sheetMetalGetStyle
 	r.handlers[wire.MethodSheetMetalSetStyle] = sheetMetalSetStyle
 	r.handlers[wire.MethodSheetMetalBendAllowance] = sheetMetalBendAllowance
+	r.handlers[wire.MethodSheetMetalBends] = sheetMetalBends
 }
 
 // activeSheetMetal returns the active part and its rule, or an error if the active document
@@ -168,6 +169,30 @@ func sheetMetalBendAllowance(s *app.Session, raw json.RawMessage) (json.RawMessa
 		BendDeduction: rule.BendDeduction(angle.Value, radius),
 	})
 }
+
+func sheetMetalBends(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	bends := part.Bends()
+	out := wire.BendsResult{Bends: make([]wire.BendInfo, 0, len(bends))}
+	for _, b := range bends {
+		out.Bends = append(out.Bends, wire.BendInfo{
+			Feature:   b.Feature,
+			Angle:     b.Angle * degPerRad,
+			Radius:    b.Radius,
+			Thickness: b.Thickness,
+			Allowance: b.Allowance,
+			Deduction: b.Deduction,
+		})
+		out.TotalAllowance += b.Allowance
+	}
+	return json.Marshal(out)
+}
+
+// degPerRad converts a bend's stored angle (radians) to the degrees the wire reports.
+const degPerRad = 180.0 / 3.141592653589793
 
 // styleInfo renders the active rule as wire, formatting lengths in the document's units and
 // including the bend allowance of a 90° bend as a convenience preview. The two
