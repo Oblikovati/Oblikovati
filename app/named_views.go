@@ -47,6 +47,7 @@ func (s *Session) RestoreNamedView(name string) error {
 	}
 	// Apply directly (not animated) so the logical camera is correct the instant the call
 	// returns — an add-in reading get_camera right after must see the restored frame.
+	s.PushViewHistory() // record the view Previous View (F5) returns to
 	s.SetCamera(s.homeCamera(&h))
 	s.fireCameraChanged(d)
 	return nil
@@ -76,6 +77,7 @@ func (s *Session) SetViewOrientation(o types.ViewOrientationTypeEnum, fit bool) 
 	if !ok {
 		return nil // no-op for orientations without a fixed direction
 	}
+	s.PushViewHistory() // record the view Previous View (F5) returns to
 	s.SetCamera(s.orientedCamera(dir, up, fit))
 	s.fireCameraChanged(d)
 	return nil

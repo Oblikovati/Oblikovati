@@ -28,6 +28,8 @@ const (
 	ActionCancel           = "tool.cancel"
 	ActionCommit           = "tool.commit"
 	ActionToggleVisibility = "workplane.toggleVisibility"
+	ActionPreviousView     = "view.previous"
+	ActionHomeView         = "view.home"
 )
 
 const (
@@ -56,7 +58,21 @@ func builtinActions() []builtinAction {
 		{id: ActionCancel, displayName: "Cancel / Deselect", defaultChord: mustChord("Escape"), dispatch: dispatchCancel},
 		{id: ActionCommit, displayName: "Finish Command", defaultChord: mustChord("Enter"), dispatch: dispatchCommit},
 		{id: ActionToggleVisibility, displayName: "Toggle Visibility", defaultChord: mustChord("V"), dispatch: dispatchToggleVisibility},
+		{id: ActionPreviousView, displayName: "Previous View", defaultChord: mustChord("F5"), dispatch: dispatchPreviousView},
+		{id: ActionHomeView, displayName: "Home View", defaultChord: mustChord("F6"), dispatch: dispatchHomeView},
 	}
+}
+
+// dispatchPreviousView restores the last recorded view (F5 — Inventor's Previous View).
+func dispatchPreviousView(s *Session) error {
+	s.PreviousView()
+	return nil
+}
+
+// dispatchHomeView swings to the model's Home / isometric view (F6).
+func dispatchHomeView(s *Session) error {
+	s.GoHome()
+	return nil
 }
 
 // dispatchUndo runs undo only when no interactive tool is mid-operation — undo is

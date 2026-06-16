@@ -55,6 +55,7 @@ type Session struct {
 	boxSelect            BoxSelection // the in-progress rubber-band rectangle, if any
 	entityDrag           sketchDrag   // the in-progress direct drag of sketch entities, if any
 	selectOther          selectOther  // the in-progress Select Other cycle, if any
+	viewHistory          viewHistory  // recorded views for Previous View (F5)
 	camera               scene.Camera
 	camTween             cameraTween
 	driveAnim            driveAnimation
