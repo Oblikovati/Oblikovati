@@ -35,6 +35,7 @@ type BendSpec struct {
 type BendPlacement struct {
 	AxisStart, AxisEnd math.Point3      // the bend line — the picked edge's endpoints
 	Outward            math.UnitVector3 // in-plane direction the flat tab extends (away from the sheet)
+	Up                 math.UnitVector3 // fold normal: the bend-axis centre is the bend line + Up·Radius (M13-F04 develop)
 	Angle, Radius      float64          // swept bend angle (radians) and inside radius (cm)
 	Thickness, Length  float64          // material thickness and the flange's straight-run length (cm)
 	FoldDown           bool             // the bend folds the material toward the back (a flipped flange) ⇒ a bend-down fold line

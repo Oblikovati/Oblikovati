@@ -5,7 +5,6 @@ package feature
 import (
 	"fmt"
 
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -19,76 +18,48 @@ import (
 // without a separate folded↔flat entity map (the bend arc flattens approximately: cuts away
 // from the bend are exact).
 
-// BendTransform is one bend an unfold/refold acts on: the bend line (a point + direction) and
-// the swept fold angle. The flange feature folds the moving side by −angle about the line, so
-// unfold rotates it by +angle and refold by −angle. Baked into the feature at creation from
-// the recorded [BendPlacement] so Recompute stays self-contained (it never reaches back into
-// the part's other features).
+// BendTransform is one bend an unfold/refold acts on: the bend line, its fold frame, and the
+// developed dimensions. Unfold develops the bend region flat (unrolls it about the neutral
+// fibre); refold rolls it back. Baked into the feature at creation from the recorded
+// [BendPlacement] + the rule's developed length, so Recompute stays self-contained (it never
+// reaches back into the part's other features).
 type BendTransform struct {
-	LinePoint  math.Point3  // a point on the bend line
-	LineDir    math.Vector3 // the bend line direction (the picked edge)
-	BaseNormal math.Vector3 // the base sheet's outward normal (defines the split plane)
-	Angle      float64      // swept fold angle (radians)
+	LinePoint math.Point3  // a point on the inner-edge bend line
+	LineDir   math.Vector3 // the bend line direction (the picked edge)
+	Up        math.Vector3 // fold normal — the bend-axis centre is the bend line + Up·Radius
+	Out       math.Vector3 // in-plane direction toward the flange
+	Angle     float64      // swept fold angle (radians)
+	Radius    float64      // inside bend radius (cm)
+	Thickness float64      // material gauge (cm)
+	Neutral   float64      // neutral-fibre radius (cm) — the developed length per radian of bend
 }
 
-// unfoldBend flattens one bend: split at the bend-line plane, rotate the moving side by the
-// signed angle about the bend line, union back. A positive angle unfolds a +angle-folded
-// flange; refold passes the negated angle. Returns one watertight solid, erroring when the
-// bend line does not divide the body in two.
-func unfoldBend(body *topo.Body, bt BendTransform, signedAngle float64) (*topo.Body, error) {
-	dir, err := math.UnitVector3FromVector(bt.LineDir)
-	if err != nil {
-		return nil, fmt.Errorf("sheet-metal unfold: bend line direction is degenerate: %v", bt.LineDir)
-	}
-	across, err := math.UnitVector3FromVector(bt.LineDir.Cross(bt.BaseNormal))
-	if err != nil {
-		return nil, fmt.Errorf("sheet-metal unfold: bend line is parallel to the base normal")
-	}
-	fixed, moving, err := splitAtBendLine(body, bt.LinePoint, across)
+// unfoldBend develops one bend: it applies the development point map to the whole body via
+// [ops.DeformBody], so any cut placed while flat moves with its vertices through the bend. sign
+// > 0 unrolls the bend flat (unfold); sign < 0 rolls it back (refold). Returns one watertight
+// solid.
+func unfoldBend(body *topo.Body, bt BendTransform, sign float64, what string) (*topo.Body, error) {
+	dev, err := newBendDevelop(bt)
 	if err != nil {
 		return nil, err
 	}
-	rotated, err := ops.TransformBody(moving, math.Rotation4(signedAngle, dir, bt.LinePoint), identityLineage)
+	fn := dev.foldedToFlat
+	if sign < 0 {
+		fn = dev.flatToFolded
+	}
+	out, err := ops.DeformBody(body, fn, identityLineage)
 	if err != nil {
-		return nil, fmt.Errorf("sheet-metal unfold: rotating the flange: %w", err)
+		return nil, fmt.Errorf("%s: %w", what, err)
 	}
-	merged, err := combine([]*topo.Body{fixed}, rotated, ops.Join)
-	if err != nil {
-		return nil, fmt.Errorf("sheet-metal unfold: rejoining the flange: %w", err)
-	}
-	if len(merged) != 1 {
-		return nil, fmt.Errorf("sheet-metal unfold: flange rejoin produced %d bodies, want 1", len(merged))
-	}
-	return merged[0], nil
+	return out, nil
 }
 
-// splitAtBendLine cuts the body with the plane through the bend line whose normal is across
-// (perpendicular to the line, in the base plane), returning the fixed side (base) and the
-// moving side (the flange, on the +across side). It errors unless the plane divides the body.
-func splitAtBendLine(body *topo.Body, linePoint math.Point3, across math.UnitVector3) (fixed, moving *topo.Body, err error) {
-	plane, err := geom.NewPlane(linePoint, across.AsVector())
-	if err != nil {
-		return nil, nil, err
-	}
-	pieces, err := ops.SplitSolidByPlane(body, plane)
-	if err != nil {
-		return nil, nil, fmt.Errorf("sheet-metal unfold: splitting at the bend line: %w", err)
-	}
-	if len(pieces) != 2 {
-		return nil, nil, fmt.Errorf("sheet-metal unfold: bend line does not divide the body (got %d pieces)", len(pieces))
-	}
-	at := across.AsVector().Dot(linePoint.AsVector())
-	if across.AsVector().Dot(pieces[0].RangeBox().Center().AsVector()) > at {
-		return pieces[1], pieces[0], nil
-	}
-	return pieces[0], pieces[1], nil
-}
-
-// identityLineage keeps lineage unchanged under a body transform (the flange's faces keep
-// their reference keys, so a cut on the flat flange survives the refold transform).
+// identityLineage keeps lineage unchanged under a body transform (every face keeps its
+// reference key, so a cut on the flat flange survives the develop/refold map).
 func identityLineage(l topo.Lineage) topo.Lineage { return l }
 
-// applyBends flattens (sign +1) or refolds (sign −1) every bend on the running body, in order.
+// applyBends develops (sign +1, unfold) or refolds (sign −1) every bend on the running body, in
+// order.
 func applyBends(in Input, bends []BendTransform, sign float64, what string) (Output, error) {
 	body, err := lastBody(in, what)
 	if err != nil {
@@ -96,7 +67,7 @@ func applyBends(in Input, bends []BendTransform, sign float64, what string) (Out
 	}
 	result := body
 	for _, bt := range bends {
-		result, err = unfoldBend(result, bt, sign*bt.Angle)
+		result, err = unfoldBend(result, bt, sign, what)
 		if err != nil {
 			return Output{}, err
 		}
