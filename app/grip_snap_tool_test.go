@@ -4,6 +4,22 @@ package app
 
 import "testing"
 
+// TestActiveGripSnapNil: ActiveGripSnap is nil with no tool and with a different tool running.
+func TestActiveGripSnapNil(t *testing.T) {
+	s := assemblySession(t)
+	if s.ActiveGripSnap() != nil {
+		t.Error("ActiveGripSnap should be nil when no tool is running")
+	}
+	s.StartTool(NewAssemblyConstraintTool("Mate", 2, nil))
+	if s.ActiveGripSnap() != nil {
+		t.Error("ActiveGripSnap should be nil when a different tool is running")
+	}
+	s.StartTool(NewGripSnapTool())
+	if s.ActiveGripSnap() == nil {
+		t.Error("ActiveGripSnap should return the running grip-snap tool")
+	}
+}
+
 // TestGripSnapToolPickProgression: the tool takes exactly two face picks (move + target) and only
 // then enables commit; extra picks are ignored.
 func TestGripSnapToolPickProgression(t *testing.T) {
