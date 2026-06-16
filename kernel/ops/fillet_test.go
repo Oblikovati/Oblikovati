@@ -302,24 +302,31 @@ func TestFilletTwoEdgeCornerMiterMeshWatertight(t *testing.T) {
 	}
 }
 
-// TestFilletCurvedAdjacentReported checks the "fillet of a fillet" inputs are classified and
-// reported precisely (instead of the old misleading "invalid solid" / "miter"): after rounding a
-// box's vertical edge, the resulting cylinder's TANGENT line into the side plane is G1-smooth (no
-// corner to round) and is rejected as smooth, while its sharp ARC cap edge is a real target
-// reported as not-yet-supported. Guards the curved-adjacent dispatch in computeEdgeFillet.
-func TestFilletCurvedAdjacentReported(t *testing.T) {
-	box := shellBox(4, 3, 2)
+// filletBoxVertical rounds a box's (X=hx, Y=hy) vertical edge by r, leaving a quarter-cylinder with
+// two sharp arc cap edges — the input for the curved-adjacent (fillet-of-fillet) tests.
+func filletBoxVertical(t *testing.T, hx, hy, r float64) *topo.Body {
+	t.Helper()
+	box := shellBox(hx, hy, 2)
 	var vert []byte
 	for _, e := range box.Edges() {
 		a, c := e.StartVertex().Point(), e.EndVertex().Point()
-		if a.X == 4 && a.Y == 3 && c.X == 4 && c.Y == 3 {
+		if a.X == hx && a.Y == hy && c.X == hx && c.Y == hy {
 			vert = e.ReferenceKey()
 		}
 	}
-	f1, err := ops.FilletEdges(box, [][]byte{vert}, 0.3)
+	f1, err := ops.FilletEdges(box, [][]byte{vert}, r)
 	if err != nil {
 		t.Fatal(err)
 	}
+	return f1
+}
+
+// TestFilletCurvedAdjacentReported checks the "fillet of a fillet" inputs are classified precisely:
+// after rounding a box's vertical edge, the resulting cylinder's TANGENT line into the side plane is
+// G1-smooth (no corner to round) and is rejected as smooth, while its sharp ARC cap edge is a real
+// target that now rounds into a torus + setback end-caps. Guards the curved-adjacent dispatch.
+func TestFilletCurvedAdjacentReported(t *testing.T) {
+	f1 := filletBoxVertical(t, 4, 3, 0.3)
 	near := func(a, b float64) bool { return stdmath.Abs(a-b) < 1e-6 }
 	checked := 0
 	for _, e := range f1.Edges() {
@@ -332,15 +339,64 @@ func TestFilletCurvedAdjacentReported(t *testing.T) {
 			}
 			checked++
 		case near(m.X, 3.85) && near(m.Y, 2.85) && m.Z > 1.9: // sharp arc cap (cylinder ∩ top plane)
-			_, err := ops.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
-			if err == nil || !strings.Contains(err.Error(), "not yet supported") {
-				t.Errorf("arc cap should report not-yet-supported, got: %v", err)
+			res, err := ops.FilletEdges(f1, [][]byte{e.ReferenceKey()}, 0.1)
+			if err != nil {
+				t.Errorf("arc cap should round, got: %v", err)
+			} else if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+				t.Errorf("arc-cap fillet not a valid solid: %+v", r)
 			}
 			checked++
 		}
 	}
 	if checked != 2 {
 		t.Fatalf("expected to check both the tangent line and the arc cap, checked %d", checked)
+	}
+}
+
+// TestFilletEdgesRoutesArc drives the public FilletEdges with the sharp ARC cap a prior vertical-edge
+// fillet leaves: it routes to the torus + setback end-cap arc fillet, producing a valid watertight
+// solid with one torus face and two planar setback end-caps, with the arc material removed.
+func TestFilletEdgesRoutesArc(t *testing.T) {
+	f1 := filletBoxVertical(t, 4, 3, 0.3)
+	near := func(a, b float64) bool { return stdmath.Abs(a-b) < 1e-6 }
+	var arc []byte
+	for _, e := range f1.Edges() {
+		m := e.RangeBox().Center()
+		if near(m.X, 3.85) && near(m.Y, 2.85) && m.Z > 1.9 {
+			arc = e.ReferenceKey()
+		}
+	}
+	if arc == nil {
+		t.Fatal("no sharp arc cap edge on the filleted box")
+	}
+	beforeV := ops.BodyGeometryProperties(f1, ops.Quality{ChordTolerance: 1e-3}).Volume
+	res, err := ops.FilletEdges(f1, [][]byte{arc}, 0.1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("arc-filleted box not a valid solid: %+v", r)
+	}
+	tor, planes := 0, 0
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Torus:
+			tor++
+		case geom.Plane:
+			planes++
+		}
+	}
+	if tor != 1 {
+		t.Errorf("torus faces = %d, want 1", tor)
+	}
+	for _, tol := range []float64{0.05, 1e-2, 1e-3, 1e-4} {
+		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
+		if open := meshOpenEdges(m); open != 0 {
+			t.Errorf("arc fillet at tol %g: %d open edges", tol, open)
+		}
+	}
+	if v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume; v >= beforeV || v < beforeV-0.05 {
+		t.Errorf("arc-fillet volume = %g, want just under %g (arc notch removed)", v, beforeV)
 	}
 }
 
