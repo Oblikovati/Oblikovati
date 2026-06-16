@@ -21,32 +21,54 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, feat string) (Outpu
 	if radius <= 0 {
 		return Output{}, fmt.Errorf("%s: radius %g must be > 0", feat, radius)
 	}
-	// A rim of a simple analytic cylinder gets a TRUE toroidal fillet (one geom.Torus face) by
-	// rebuilding the body as a surface of revolution (#127). Anything else falls through.
-	if origEdges, e := resolveEdges(body, edgeKeys); e == nil {
-		if res, ok := analyticCylinderFillet(body, origEdges, radius, feat); ok {
-			return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
-		}
+	if out, ok, err := analyticFilletFastPath(in, body, edgeKeys, radius, feat); ok || err != nil {
+		return out, err
 	}
-	// A curved body (analytic cylinder) is re-faceted and the selected edges remapped to its faceted
-	// segments, so the rolling-ball blend works instead of failing on a degenerate closed edge
-	// (#129/#127). A planar body is unchanged (work==body, same keys).
-	work, keys := body, edgeKeys
-	if origEdges, e := resolveEdges(body, edgeKeys); e == nil {
-		pb, mapped := planarizeForEdges(body, origEdges, feat)
-		if pb != body {
-			work = pb
-			keys = make([][]byte, len(mapped))
-			for i, me := range mapped {
-				keys[i] = me.ReferenceKey()
-			}
-		}
-	}
+	work, keys := planarizedFillet(body, edgeKeys, feat)
 	result, err := ops.FilletEdges(work, keys, radius)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
+}
+
+// analyticFilletFastPath rounds a curved fillet target directly on the ANALYTIC body, before the
+// planarize step that would re-facet the cylinder and destroy the circle/arc it needs: a SIMPLE
+// cylinder rim becomes a surface of revolution (#127); the cylinder/cap RIM or ARC a prior fillet
+// leaves becomes a toroidal band / torus + setback caps. ok=false means no analytic case applied.
+func analyticFilletFastPath(in Input, body *topo.Body, edgeKeys [][]byte, radius float64, feat string) (Output, bool, error) {
+	if origEdges, e := resolveEdges(body, edgeKeys); e == nil {
+		if res, ok := analyticCylinderFillet(body, origEdges, radius, feat); ok {
+			return Output{Bodies: replaceBody(in.Bodies, body, res)}, true, nil
+		}
+	}
+	if !ops.IsLoneCurvedAdjacentEdge(body, edgeKeys) {
+		return Output{}, false, nil
+	}
+	res, err := ops.FilletEdges(body, edgeKeys, radius)
+	if err != nil {
+		return Output{}, true, err
+	}
+	return Output{Bodies: replaceBody(in.Bodies, body, res)}, true, nil
+}
+
+// planarizedFillet re-facets a curved body for the selected edges, remapping each key to its faceted
+// segment so the rolling-ball blend works instead of failing on a degenerate closed edge (#129/#127).
+// A planar body — or an unresolvable key, surfaced later by the kernel — passes through unchanged.
+func planarizedFillet(body *topo.Body, edgeKeys [][]byte, feat string) (*topo.Body, [][]byte) {
+	origEdges, err := resolveEdges(body, edgeKeys)
+	if err != nil {
+		return body, edgeKeys
+	}
+	pb, mapped := planarizeForEdges(body, origEdges, feat)
+	if pb == body {
+		return body, edgeKeys
+	}
+	keys := make([][]byte, len(mapped))
+	for i, me := range mapped {
+		keys[i] = me.ReferenceKey()
+	}
+	return pb, keys
 }
 
 // filletBodySets rounds the definition's edge sets in one kernel pass: each constant set

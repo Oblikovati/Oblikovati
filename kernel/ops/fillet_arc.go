@@ -58,6 +58,24 @@ func loneArcPick(body *topo.Body, picks []EdgeFilletRadii) *EdgeFilletRadii {
 	return &picks[0]
 }
 
+// IsLoneCurvedAdjacentEdge reports whether the keys are a single edge that borders a CYLINDER and a
+// plane — the curved edge a prior fillet leaves (a rim circle, an arc cap, a smooth tangent line, or
+// an axial cut). The feature must let the kernel round these on the ANALYTIC body: re-faceting the
+// cylinder first destroys the circle/arc the toroidal-band / torus + setback-cap path needs AND the
+// G1 classification, so a smooth edge would planarize into the misleading "invalid solid" instead of
+// being rejected cleanly. FilletEdges then routes it (rim→band, arc→torus+caps, smooth→reject).
+func IsLoneCurvedAdjacentEdge(body *topo.Body, keys [][]byte) bool {
+	if len(keys) != 1 {
+		return false
+	}
+	e, ok := body.FindEdgeByKey(keys[0])
+	if !ok {
+		return false
+	}
+	_, _, isCylPlane := cylinderPlaneEdge(e)
+	return isCylPlane
+}
+
 // arcFillet is the solved geometry + the topology an arc fillet replaces and inserts.
 type arcFillet struct {
 	arcEdge     *topo.Edge
