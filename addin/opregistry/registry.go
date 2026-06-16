@@ -142,6 +142,7 @@ func Default() *Registry {
 		sheetMetalCornerSeamDescriptor(),
 		sheetMetalCutDescriptor(),
 		sheetMetalRipDescriptor(),
+		sheetMetalPunchDescriptor(),
 		sheetMetalCosmeticBendDescriptor(),
 		sheetMetalUnfoldDescriptor(),
 		sheetMetalRefoldDescriptor(),

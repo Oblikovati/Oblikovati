@@ -83,6 +83,7 @@ type FeatureData struct {
 	SheetMetalCornerSeam    *SheetMetalCornerSeamData    `yaml:"sheetMetalCornerSeam,omitempty"`    // M13-F02
 	SheetMetalCut           *SheetMetalCutData           `yaml:"sheetMetalCut,omitempty"`           // M13-F03
 	SheetMetalRip           *SheetMetalRipData           `yaml:"sheetMetalRip,omitempty"`           // M13-F03
+	SheetMetalPunch         *SheetMetalPunchData         `yaml:"sheetMetalPunch,omitempty"`         // M13-F03
 	SheetMetalCosmeticBend  *SheetMetalCosmeticBendData  `yaml:"sheetMetalCosmeticBend,omitempty"`  // M13-F03
 	SheetMetalUnfold        *SheetMetalUnfoldData        `yaml:"sheetMetalUnfold,omitempty"`        // M13-F04
 	SheetMetalRefold        *SheetMetalRefoldData        `yaml:"sheetMetalRefold,omitempty"`        // M13-F04
@@ -305,6 +306,12 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.SheetMetalRip = smr
+	case *SheetMetalPunchFeature:
+		smp, err := serializeSheetMetalPunch(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.SheetMetalPunch = smp
 	case *SheetMetalFoldFeature:
 		smf, err := serializeSheetMetalFold(f.def, sk)
 		if err != nil {
@@ -542,6 +549,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSheetMetalCosmeticBend(fs, fd.SheetMetalCosmeticBend, sk)
 	case "sheet-metal-rip":
 		return restoreSheetMetalRip(fs, fd.SheetMetalRip, sk)
+	case "sheet-metal-punch":
+		return restoreSheetMetalPunch(fs, fd.SheetMetalPunch, sk)
 	case "sheet-metal-fold":
 		return restoreSheetMetalFold(fs, fd.SheetMetalFold, sk)
 	case "sheet-metal-corner":
