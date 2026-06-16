@@ -59,6 +59,9 @@ type PartComponentDefinition struct {
 	// states that frame the developed flat. Seeded with the default orientation when the part
 	// enters the sheet-metal environment; nil for ordinary parts.
 	flatOrientations *sheetmetal.Orientations
+	// flatSettings is the per-part flat-pattern settings (M13-F05): currently the deferred-update
+	// flag so a heavy flat only develops on demand.
+	flatSettings sheetmetal.FlatPatternSettings
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature

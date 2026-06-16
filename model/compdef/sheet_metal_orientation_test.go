@@ -46,6 +46,46 @@ func TestFlatOrientationsRoundTrip(t *testing.T) {
 	}
 }
 
+// TestFlatSettingsRoundTrip the deferred-update flag persists through the recipe.
+func TestFlatSettingsRoundTrip(t *testing.T) {
+	src := NewPartComponentDefinition()
+	if _, err := src.EnableSheetMetal(); err != nil {
+		t.Fatalf("EnableSheetMetal: %v", err)
+	}
+	if src.FlatSettings().DeferUpdate {
+		t.Error("a fresh part should not defer the flat update")
+	}
+	src.SetFlatDeferUpdate(true)
+
+	blob, err := src.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	dst := NewPartComponentDefinition()
+	if err := dst.ApplyRecipe(blob); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if !dst.FlatSettings().DeferUpdate {
+		t.Error("restored part should defer the flat update")
+	}
+}
+
+// TestFlatPlates a single-base sheet-metal part develops one plate with positive extents/area.
+func TestFlatPlates(t *testing.T) {
+	d, _ := sheetWithFlange(t)
+	plates, err := d.FlatPlates()
+	if err != nil {
+		t.Fatalf("FlatPlates: %v", err)
+	}
+	if len(plates) != 1 {
+		t.Fatalf("plates = %d, want 1", len(plates))
+	}
+	p := plates[0]
+	if p.Length <= 0 || p.Width <= 0 || p.Area <= 0 {
+		t.Errorf("plate = %+v, want positive extents/area", p)
+	}
+}
+
 // TestFlatLengthWidthSwapsWithAlignment a vertical orientation swaps the flat's length and
 // width relative to the horizontal default.
 func TestFlatLengthWidthSwapsWithAlignment(t *testing.T) {

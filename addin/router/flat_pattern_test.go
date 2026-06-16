@@ -125,6 +125,32 @@ func TestFlatPatternEdgesAndFaces(t *testing.T) {
 	}
 }
 
+// TestFlatPatternPlatesAndSettings a flanged sheet reports one plate and round-trips the
+// deferred-update setting over the wire.
+func TestFlatPatternPlatesAndSettings(t *testing.T) {
+	r, s := flangedSheet(t)
+
+	var plates wire.PlatesResult
+	call(t, r, s, wire.MethodFlatPatternListPlates, "{}", &plates)
+	if len(plates.Plates) != 1 || plates.Plates[0].Length <= 0 || plates.Plates[0].Area <= 0 {
+		t.Fatalf("plates = %+v, want one plate with positive extents/area", plates.Plates)
+	}
+
+	var got wire.SettingsResult
+	call(t, r, s, wire.MethodFlatPatternGetSettings, "{}", &got)
+	if got.Settings.DeferUpdate {
+		t.Error("default deferUpdate should be false")
+	}
+	call(t, r, s, wire.MethodFlatPatternSetSettings, `{"deferUpdate":true}`, &got)
+	if !got.Settings.DeferUpdate {
+		t.Error("setSettings did not enable deferUpdate")
+	}
+	call(t, r, s, wire.MethodFlatPatternGetSettings, "{}", &got)
+	if !got.Settings.DeferUpdate {
+		t.Error("deferUpdate did not persist on the part")
+	}
+}
+
 // TestFlatPatternRejectsPlainPart every flat-pattern method errors on an ordinary part.
 func TestFlatPatternRejectsPlainPart(t *testing.T) {
 	r, s := seededSession(t)
@@ -133,6 +159,9 @@ func TestFlatPatternRejectsPlainPart(t *testing.T) {
 		wire.MethodFlatPatternEdgesOfType,
 		wire.MethodFlatPatternFaces,
 		wire.MethodFlatPatternMapEntity,
+		wire.MethodFlatPatternListPlates,
+		wire.MethodFlatPatternGetSettings,
+		wire.MethodFlatPatternSetSettings,
 	} {
 		if _, err := r.Handle(s, m, []byte("{}")); err == nil {
 			t.Errorf("%s on a plain part must error", m)

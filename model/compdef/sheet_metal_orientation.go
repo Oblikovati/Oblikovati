@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/sheetmetal"
 )
@@ -36,4 +37,39 @@ func (d *PartComponentDefinition) FlatLengthWidth(or *sheetmetal.FlatPatternOrie
 		length, width = width, length
 	}
 	return length, width, nil
+}
+
+// FlatSettings returns the part's flat-pattern settings.
+func (d *PartComponentDefinition) FlatSettings() sheetmetal.FlatPatternSettings {
+	return d.flatSettings
+}
+
+// SetFlatDeferUpdate sets the deferred-flat-pattern-update flag.
+func (d *PartComponentDefinition) SetFlatDeferUpdate(deferred bool) {
+	d.flatSettings.DeferUpdate = deferred
+}
+
+// FlatPlate is one developed flat plate (a connected flat region) with its extents and area
+// under the active orientation.
+type FlatPlate struct {
+	Length, Width, Area float64
+}
+
+// FlatPlates returns the developed flat's plates under the active orientation. A single-base
+// sheet-metal part develops one connected plate; multi-body parts (each base its own region)
+// are a follow-up, so this reports the one plate the model authors.
+func (d *PartComponentDefinition) FlatPlates() ([]FlatPlate, error) {
+	fp, err := d.Unfold()
+	if err != nil {
+		return nil, err
+	}
+	length, width, err := d.FlatLengthWidth(d.flatOrientations.Active())
+	if err != nil {
+		return nil, err
+	}
+	area := 0.0
+	if fp.Thickness > 0 {
+		area = ops.BodyGeometryProperties(fp.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / fp.Thickness
+	}
+	return []FlatPlate{{Length: length, Width: width, Area: area}}, nil
 }
