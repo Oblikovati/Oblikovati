@@ -3,6 +3,7 @@
 package compdef
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -63,7 +64,14 @@ func (d *PartComponentDefinition) EnableSheetMetal() (*sheetmetal.Rule, error) {
 		relief,
 		sheetmetal.KFactorMethod(0.44),
 	)
+	d.flatOrientations = sheetmetal.NewOrientations()
 	return d.sheetMetal, nil
+}
+
+// FlatOrientations returns the part's flat-pattern orientations (M13-F05), or nil when the
+// part is not in the sheet-metal environment.
+func (d *PartComponentDefinition) FlatOrientations() *sheetmetal.Orientations {
+	return d.flatOrientations
 }
 
 // SetSheetMetalLengthParam re-authors one of the rule's backing length parameters
@@ -99,6 +107,8 @@ type sheetMetalRecipe struct {
 	KFactor      float64              `yaml:"kFactor,omitempty"`
 	Equation     string               `yaml:"equation,omitempty"`
 	BendTable    []bendTableRowRecipe `yaml:"bendTable,omitempty"`
+	Orientations []orientationRecipe  `yaml:"orientations,omitempty"` // M13-F05
+	ActiveOrient string               `yaml:"activeOrientation,omitempty"`
 }
 
 // bendTableRowRecipe is one persisted bend-table sample (database units, cm; angle radians).
@@ -107,6 +117,17 @@ type bendTableRowRecipe struct {
 	Radius    float64 `yaml:"radius"`
 	Thickness float64 `yaml:"thickness"`
 	Allowance float64 `yaml:"allowance"`
+}
+
+// orientationRecipe is one persisted flat-pattern orientation (M13-F05; rotation in radians,
+// alignment axis as a hex reference key).
+type orientationRecipe struct {
+	Name              string  `yaml:"name"`
+	AlignmentType     string  `yaml:"alignmentType,omitempty"`
+	AlignmentRotation float64 `yaml:"alignmentRotation,omitempty"`
+	AlignmentAxis     string  `yaml:"alignmentAxis,omitempty"`
+	FlipAlignmentAxis bool    `yaml:"flipAlignmentAxis,omitempty"`
+	FlipBaseFace      bool    `yaml:"flipBaseFace,omitempty"`
 }
 
 // sheetMetalRecipeOf captures the active rule, or nil when the part is not sheet metal.
@@ -130,7 +151,22 @@ func (d *PartComponentDefinition) sheetMetalRecipeOf() *sheetMetalRecipe {
 			rec.BendTable = append(rec.BendTable, bendTableRowRecipe{row.Angle, row.Radius, row.Thickness, row.Allowance})
 		}
 	}
+	d.captureOrientations(rec)
 	return rec
+}
+
+// captureOrientations records the flat-pattern orientations (and which is active) into rec.
+func (d *PartComponentDefinition) captureOrientations(rec *sheetMetalRecipe) {
+	if d.flatOrientations == nil {
+		return
+	}
+	for _, o := range d.flatOrientations.List() {
+		rec.Orientations = append(rec.Orientations, orientationRecipe{
+			Name: o.Name, AlignmentType: o.AlignmentType.String(), AlignmentRotation: o.AlignmentRotation,
+			AlignmentAxis: hex.EncodeToString(o.AlignmentAxisKey), FlipAlignmentAxis: o.FlipAlignmentAxis, FlipBaseFace: o.FlipBaseFace,
+		})
+	}
+	rec.ActiveOrient = d.flatOrientations.Active().Name
 }
 
 // applySheetMetalRecipe rebuilds the rule from rec, binding its thickness/bend-radius to the
@@ -152,6 +188,35 @@ func (d *PartComponentDefinition) applySheetMetalRecipe(rec *sheetMetalRecipe) e
 		return err
 	}
 	rule.SetUnfold(unfold)
+	return d.restoreOrientations(rec)
+}
+
+// restoreOrientations rebuilds the flat-pattern orientations from rec onto the seeded set
+// (the default orientation already exists), then re-activates the persisted active one.
+func (d *PartComponentDefinition) restoreOrientations(rec *sheetMetalRecipe) error {
+	for _, o := range rec.Orientations {
+		at, _ := types.ParseAlignmentType(o.AlignmentType)
+		key, err := hex.DecodeString(o.AlignmentAxis)
+		if err != nil {
+			return fmt.Errorf("sheet-metal recipe: bad alignment axis key %q: %w", o.AlignmentAxis, err)
+		}
+		restored := &sheetmetal.FlatPatternOrientation{
+			Name: o.Name, AlignmentType: at, AlignmentRotation: o.AlignmentRotation,
+			AlignmentAxisKey: key, FlipAlignmentAxis: o.FlipAlignmentAxis, FlipBaseFace: o.FlipBaseFace,
+		}
+		if existing, _, ok := d.flatOrientations.ByName(o.Name); ok {
+			*existing = *restored // the seeded default already exists — restore its edited fields
+			continue
+		}
+		if err := d.flatOrientations.Add(restored); err != nil {
+			return err
+		}
+	}
+	if rec.ActiveOrient != "" {
+		if err := d.flatOrientations.Activate(rec.ActiveOrient); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

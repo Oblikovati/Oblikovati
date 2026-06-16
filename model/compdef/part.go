@@ -55,6 +55,10 @@ type PartComponentDefinition struct {
 	// the unfold method that bend/flat-pattern features consult. It is parameter-backed — its
 	// thickness/bend-radius read the part's Thickness/BendRadius parameters.
 	sheetMetal *sheetmetal.Rule
+	// flatOrientations holds the part's flat-pattern orientations (M13-F05) — named alignment
+	// states that frame the developed flat. Seeded with the default orientation when the part
+	// enters the sheet-metal environment; nil for ordinary parts.
+	flatOrientations *sheetmetal.Orientations
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
