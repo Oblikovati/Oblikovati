@@ -23,3 +23,13 @@ func activeSheetMetalPart(s *app.Session, op string) (*compdef.PartComponentDefi
 	}
 	return part, nil
 }
+
+// angleOverride returns the bend angle closure for a non-empty expression, else nil so the
+// feature applies its own default (90°/360°). Distinct from optionalAngleClosure, which yields
+// a constant 0 — a sheet-metal override must be nil to fall through to the rule default.
+func angleOverride(part *compdef.PartComponentDefinition, expr, field string) (func() float64, error) {
+	if expr == "" {
+		return nil, nil
+	}
+	return angleClosure(part, expr, field)
+}

@@ -59,13 +59,10 @@ func applySheetMetalContourRoll(s *app.Session, raw json.RawMessage) (json.RawMe
 	if err != nil {
 		return nil, err
 	}
-	def := &feature.SheetMetalContourRollDefinition{Profile: profile, AxisLine: in.AxisLine, Operation: op}
-	if in.Angle != "" {
-		angle, err := angleClosure(part, in.Angle, "sheetMetalContourRoll: angle")
-		if err != nil {
-			return nil, err
-		}
-		def.Angle = angle
+	angle, err := angleOverride(part, in.Angle, "sheetMetalContourRoll: angle")
+	if err != nil {
+		return nil, err
 	}
+	def := &feature.SheetMetalContourRollDefinition{Profile: profile, AxisLine: in.AxisLine, Angle: angle, Operation: op}
 	return recomputeResult(part, feature.NewSheetMetalContourRollFeatures(part.Features()).Add(def))
 }
