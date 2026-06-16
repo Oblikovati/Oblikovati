@@ -266,6 +266,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"sheetMetalContourRoll":   `{"profileSketch":0,"axisLine":0}`,
 		"sheetMetalCornerSeam":    `{"edges":["x"],"gap":"0.2 mm"}`,
 		"sheetMetalCut":           `{"sketchIndex":0}`,
+		"sheetMetalRip":           `{"sketchIndex":0,"gap":"0.1 mm"}`,
 		"sheetMetalCosmeticBend":  `{"sketchIndex":0}`,
 		"sheetMetalUnfold":        `{}`,
 		"sheetMetalRefold":        `{}`,
