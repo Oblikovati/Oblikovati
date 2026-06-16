@@ -257,6 +257,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"bendPart":            `{}`,
 		"sheetMetalFace":      `{"sketchIndex":0}`,
 		"sheetMetalFlange":    `{"edge":"x","height":"10 mm"}`,
+		"sheetMetalHem":       `{"edge":"x","length":"6 mm"}`,
 		"splitSolid":          `{"toolSketch":0}`,
 		"coreCavity":          `{}`,
 		"hull":                `{}`,
