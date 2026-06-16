@@ -14,39 +14,48 @@ import (
 // and expanded point glyphs) plus the world-anchored text labels the UI head draws.
 // Overlay-lane primitives are marked OnTop (drawn over the model). The camera supplies the
 // billboard basis and pixel scale for screen-constant point glyphs.
-func (s *Store) Build(cam scene.Camera) ([]renderer.DrawItem, []Label) {
+func (s *Store) Build(cam scene.Camera) ([]renderer.DrawItem, []Label, []ImageBillboard) {
 	bb := newBillboard(cam)
 	wpp := cam.WorldPerPixel()
-	var items []renderer.DrawItem
-	var labels []Label
+	out := buildAccum{}
 	for _, g := range s.Groups() {
 		if !g.visible {
 			continue
 		}
 		for i := range g.nodes {
-			items, labels = buildNode(items, labels, &g.nodes[i], g.lane, bb, wpp, s.resolver)
+			buildNode(&out, &g.nodes[i], g.lane, bb, wpp, s.resolver)
 		}
 	}
-	return items, labels
+	return out.items, out.labels, out.images
+}
+
+// buildAccum collects the three drawable outputs of a Build: draw-list geometry, text labels,
+// and image billboards (the latter two are projected/blitted by the head, not draw-list items).
+type buildAccum struct {
+	items  []renderer.DrawItem
+	labels []Label
+	images []ImageBillboard
 }
 
 // buildNode appends one node's primitives (placed by its transform, gated by its
-// visibility) to the running geometry and labels.
-func buildNode(items []renderer.DrawItem, labels []Label, n *Node, lane Lane, bb billboard, wpp float64, resolver BodyMeshResolver) ([]renderer.DrawItem, []Label) {
+// visibility) to the accumulator.
+func buildNode(out *buildAccum, n *Node, lane Lane, bb billboard, wpp float64, resolver BodyMeshResolver) {
 	if n.Visible != nil && !*n.Visible {
-		return items, labels
+		return
 	}
 	for i := range n.Primitives {
 		p := placedPrimitive(&n.Primitives[i], n)
-		if p.Kind == types.GraphicsText {
-			labels = append(labels, Label{Anchor: p.Anchor, Text: p.Text, Color: p.Color, FontSize: p.FontSize})
-			continue
-		}
-		if item, ok := buildPrimitive(p, lane, bb, wpp, resolver); ok {
-			items = append(items, item)
+		switch p.Kind {
+		case types.GraphicsText:
+			out.labels = append(out.labels, Label{Anchor: p.Anchor, Text: p.Text, Color: p.Color, FontSize: p.FontSize})
+		case types.GraphicsImage:
+			out.images = append(out.images, ImageBillboard{Anchor: p.Anchor, Path: p.ImagePath, Width: p.ImageWidth, Height: p.ImageHeight})
+		default:
+			if item, ok := buildPrimitive(p, lane, bb, wpp, resolver); ok {
+				out.items = append(out.items, item)
+			}
 		}
 	}
-	return items, labels
 }
 
 // placedPrimitive returns a copy of the primitive with the node transform applied to its

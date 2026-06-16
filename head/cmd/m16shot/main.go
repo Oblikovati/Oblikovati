@@ -13,6 +13,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"os"
 
 	"oblikovati.org/api/types"
@@ -51,9 +54,10 @@ func main() {
 	stylesPanel := flag.Bool("styles", false, "select the demo box and open the Color Styles panel (M16-F02)")
 	window := flag.Bool("window", false, "capture the WHOLE window (chrome + panels), not just the 3D viewport")
 	dialog := flag.Bool("dialog", false, "open the Display Settings dialog (M16-F07)")
+	imageOverlay := flag.Bool("image", false, "add an image billboard overlay at the origin (M16-F05)")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *stylesPanel, *window, *dialog}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *stylesPanel, *window, *dialog, *imageOverlay}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -71,7 +75,7 @@ type opts struct {
 	overlay               bool
 	style                 string
 	named, styles, window bool
-	dialog                bool
+	dialog, image         bool
 }
 
 func run(o opts) error {
@@ -129,6 +133,9 @@ func applyDisplaySetup(s *app.Session, o opts) {
 	}
 	if o.dialog {
 		s.OpenDisplaySettings()
+	}
+	if o.image {
+		applyImageOverlay(s)
 	}
 	if o.noEnv {
 		e := s.Environment()
@@ -210,6 +217,45 @@ func applyStyle(s *app.Session, styleName string) {
 	if err := s.AssignColorStyleToBody(string(bodies[0].ReferenceKey()), styleName); err != nil {
 		panic(err)
 	}
+}
+
+// applyImageOverlay writes a small checker PNG and adds an image-billboard overlay anchored at
+// the model top, so a capture shows the host-loaded image floating over the box (M16-F05 #641).
+func applyImageOverlay(s *app.Session) {
+	path := "/tmp/m16-overlay.png"
+	if err := writeCheckerPNG(path, 64); err != nil {
+		panic(err)
+	}
+	g, err := clientgraphics.DecodeGroup(wire.SetClientGraphicsArgs{
+		ClientId: "logo",
+		Nodes: []wire.GraphicsNode{{Primitives: []wire.GraphicsPrimitive{{
+			Kind: string(types.GraphicsImage), ImagePath: path, Anchor: []float64{2, 5, 2.5}, ImageWidth: 4, ImageHeight: 4,
+		}}}},
+	})
+	if err != nil {
+		panic(err)
+	}
+	s.Graphics().Set(g)
+}
+
+// writeCheckerPNG writes an n×n magenta/cyan checker so the overlay is unmistakable in a capture.
+func writeCheckerPNG(path string, n int) error {
+	img := image.NewRGBA(image.Rect(0, 0, n, n))
+	for y := 0; y < n; y++ {
+		for x := 0; x < n; x++ {
+			c := color.RGBA{R: 255, B: 255, A: 255} // magenta
+			if (x/8+y/8)%2 == 0 {
+				c = color.RGBA{G: 220, B: 255, A: 255} // cyan
+			}
+			img.Set(x, y, c)
+		}
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return png.Encode(f, img)
 }
 
 // applyOverlay adds a red surface-overlay client-graphics group that highlights the first

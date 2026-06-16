@@ -54,6 +54,7 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 	if icons == nil {
 		icons = newIconCache(win) // lazily bind the icon cache to this window
 	}
+	bindGraphicsImages(win) // client-graphics image billboards create textures on this window (M16-F05)
 	reportWindowFrame(win, s)
 	icons.beginFrame(s.ThemeRevision()) // free retired textures; flush composes on theme change
 	applyThemeIfChanged(win, s)         // restyle ImGui + overlays when the theme changed (live preview)

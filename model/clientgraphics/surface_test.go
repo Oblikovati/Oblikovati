@@ -29,7 +29,7 @@ func TestSurfaceOverlayResolvesBodyMesh(t *testing.T) {
 	s.Set(mustDecode(t, wire.SetClientGraphicsArgs{ClientId: "hl", Nodes: []wire.GraphicsNode{{Primitives: []wire.GraphicsPrimitive{{
 		Kind: string(types.GraphicsSurface), BodyKey: "box", Color: []float32{1, 0, 0, 1},
 	}}}}}))
-	items, _ := s.Build(testCamera())
+	items, _, _ := s.Build(testCamera())
 	if len(items) != 1 || len(items[0].Indices) != 3 {
 		t.Fatalf("want one 3-index triangle item, got %+v", items)
 	}
@@ -45,7 +45,7 @@ func TestSurfaceOverlayWithoutResolverDrawsNothing(t *testing.T) {
 	s.Set(mustDecode(t, wire.SetClientGraphicsArgs{ClientId: "hl", Nodes: []wire.GraphicsNode{{Primitives: []wire.GraphicsPrimitive{{
 		Kind: string(types.GraphicsSurface), BodyKey: "box", Color: []float32{1, 0, 0, 1},
 	}}}}}))
-	if items, _ := s.Build(testCamera()); len(items) != 0 {
+	if items, _, _ := s.Build(testCamera()); len(items) != 0 {
 		t.Errorf("want nothing without a resolver, got %+v", items)
 	}
 }

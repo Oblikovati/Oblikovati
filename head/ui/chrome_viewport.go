@@ -71,8 +71,8 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 
 	t0 := frameClock()
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
-	sketchPlane, dims, gfxLabels := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
-	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, cx, cy, ph)
+	sketchPlane, dims, gfxLabels, gfxImages := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
+	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
 	}
@@ -83,15 +83,15 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 // plane, dimensions and client-graphics labels the caller draws as 2D overlays on top.
 func buildAndRenderScene(win *native.Window, s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	pw, ph int, cx, cy float32, t0 time.Time,
-) (sketch.Plane, []app.DimensionView, []clientgraphics.Label) {
+) (sketch.Plane, []app.DimensionView, []clientgraphics.Label, []clientgraphics.ImageBillboard) {
 	t1 := frameClock()
 	list, bodyCount, sketchPlane, dims := viewportDrawList(s, cam, hovered)
-	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
+	list, gfxLabels, gfxImages := clientGraphicsOverlay(s, cam, list)
 	list = gizmoOverlays(s, cam, list)
 	t2 := frameClock()
 	renderViewportImage(win, s, 0, cam, list, bodyCount, pw, ph, cx, cy)
 	frameTiming(t0, t1, t2, frameClock())
-	return sketchPlane, dims, gfxLabels
+	return sketchPlane, dims, gfxLabels, gfxImages
 }
 
 // planTiles returns the tile rectangles for the active document's view layout and the
@@ -256,9 +256,9 @@ func tileNavigate(s *app.Session, i int, cam *scene.Camera, isActive bool) bool 
 func renderActiveTile(win *native.Window, s *app.Session, i int, cam scene.Camera, pw, ph int, tx, ty, bx, by float32) {
 	hovered := hoveredPlane(s)
 	list, bodyCount, sketchPlane, dims := viewportDrawList(s, cam, hovered)
-	list, gfxLabels := clientGraphicsOverlay(s, cam, list)
+	list, gfxLabels, gfxImages := clientGraphicsOverlay(s, cam, list)
 	renderViewportImage(win, s, i, cam, list, bodyCount, pw, ph, tx, ty)
-	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, tx, ty, ph)
+	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, tx, ty, ph)
 	drawActiveTileBorder(bx, by, float32(pw), float32(ph))
 }
 
@@ -305,10 +305,11 @@ func baseDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
 	return highlightSelection(list, s.Selection().First(), activeBodies(s))
 }
 
-func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.Plane, dims []app.DimensionView, labels []clientgraphics.Label, cx, cy float32, ph int) {
+func drawViewportOverlays(s *app.Session, cam scene.Camera, sketchPlane sketch.Plane, dims []app.DimensionView, labels []clientgraphics.Label, images []clientgraphics.ImageBillboard, cx, cy float32, ph int) {
 	ox, oy := native.ItemRectMin()
 	drawAxisGizmo(cam, ox, oy, ph)
 	drawClientGraphicsLabels(cx, cy, cam, labels)
+	drawClientGraphicsImages(cx, cy, cam, images)
 	drawMiniToolbars(s, cam, ox, oy) // in-canvas mini-toolbars (M05-F07)
 	if s.InSketch() && len(dims) > 0 {
 		if d := drawDimensionLabels(cx, cy, cam, sketchPlane, dims); d != nil {

@@ -63,6 +63,12 @@ type Primitive struct {
 	// Color — the host tessellates it at Build via the injected body resolver (no mesh shipped).
 	BodyKey      string
 	TransientKey uint64
+
+	// Image billboards (GraphicsImage, M16-F05 #641): the source image file and the quad size
+	// (model units); Anchor is the world point it draws at.
+	ImagePath   string
+	ImageWidth  float64
+	ImageHeight float64
 }
 
 // Node groups primitives under one optional transform and visibility/opacity. Id names the
@@ -118,4 +124,14 @@ type Label struct {
 	Text     string
 	Color    [4]float32
 	FontSize float64
+}
+
+// ImageBillboard is a world-anchored image extracted from an "image" primitive at Build
+// (M16-F05 #641) — drawn by the head's projected-ImGui path as a textured quad (the host loads
+// the image file), not as draw-list geometry.
+type ImageBillboard struct {
+	Anchor math.Point3
+	Path   string
+	Width  float64
+	Height float64
 }
