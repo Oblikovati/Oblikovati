@@ -179,6 +179,10 @@ func (f *SelectionFilter) Accepts(k SelectionKind) bool {
 	return f.kinds[k]
 }
 
+// IsRestricted reports whether the filter limits the accepted kinds (i.e. it is not the
+// accept-everything default) — so a caller can tell an explicitly-set filter from the default.
+func (f *SelectionFilter) IsRestricted() bool { return f != nil && len(f.kinds) > 0 }
+
 // Selection is the current selection set — Inventor's SelectSet. It is an ordered,
 // de-duplicated list of selectables with an active filter.
 type Selection struct {
