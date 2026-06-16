@@ -346,3 +346,46 @@ func pressFindsSketchPoint(win *native.Window, s *app.Session) (float32, float32
 	}
 	return x, float32(inWinH / 2), false
 }
+
+// TestInWindowSketchBoxSelect drives a real left-drag box across a line in the sketch editor and
+// asserts the head selected the enclosed entity (sketch-entity box-select, #909).
+func TestInWindowSketchBoxSelect(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	s := app.NewSession()
+	docu, _ := compdef.AddPart(s.Workspace(), "boxsel.opd", true)
+	part := docu.Content().(*compdef.PartComponentDefinition)
+	sk := part.Sketches().Add(sketch.XYPlane())
+	s.EnterSketch(sk)
+	s.Grid().SnapToGrid = false
+	s.SetPicker(fakeEmptyPicker{}) // a corner press is "empty" → box-select arms
+	ln := sk.Lines().AddByTwoPoints(math.P2(-1, 0), math.P2(1, 0))
+
+	s.TickCameraAnimation(100) // finish the enter-sketch swing (test dt≈0)
+	cam := scene.NewCamera(inWinW, inWinH)
+	cam.Eye, cam.Target, cam.Up = math.P3(0, 0, 10), math.P3(0, 0, 0), math.V3(0, 1, 0)
+	s.SetCamera(cam)
+
+	// Press at an empty corner, drag a window to the opposite corner enclosing the centred line.
+	native.InjectMousePos(60, 70)
+	viewportFrame(win, s)
+	viewportFrame(win, s)
+	native.InjectMouseButton(native.MouseLeft, true)
+	viewportFrame(win, s)
+	if !s.BoxSelectActive() {
+		t.Fatal("a corner press in the sketch did not begin a box-select")
+	}
+	for i := 1; i <= 4; i++ {
+		native.InjectMousePos(60+float32(170*i), 70+float32(120*i))
+		viewportFrame(win, s)
+	}
+	native.InjectMouseButton(native.MouseLeft, false)
+	viewportFrame(win, s)
+
+	if s.BoxSelectActive() {
+		t.Error("releasing should end the box-select")
+	}
+	if s.Selection().Count() != 1 || !s.Selection().Contains(app.SketchEntityHandle{Entity: ln}) {
+		t.Errorf("the box should select the enclosed line: count=%d", s.Selection().Count())
+	}
+}

@@ -66,11 +66,10 @@ func updateSketchDrag(s *app.Session) bool {
 
 // updateBoxSelect advances the box-select state machine and reports whether it consumed this
 // frame's left input. It begins a box only on a fresh left press over empty space, tracks the
-// cursor while the button is held, and commits on release.
+// cursor while the button is held, and commits on release. In the sketch editor it selects 2D
+// entities; in the model env it selects bodies (#909). updateSketchDrag runs first, so a press on
+// a draggable sketch entity moves it rather than starting a box.
 func updateBoxSelect(s *app.Session) bool {
-	if s.InSketch() && !s.BoxSelectActive() {
-		return false // sketch-entity box-select is a follow-up (#909); the sketch env drags/click-selects
-	}
 	if s.BoxSelectActive() {
 		lx, ly := viewportCursor()
 		if native.MouseDown(native.MouseLeft) {
