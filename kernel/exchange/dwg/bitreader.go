@@ -288,6 +288,58 @@ func (r *BitReader) ReadBOT() int {
 	}
 }
 
+// ReadDD reads a BitDouble-with-default (DD): a 2-bit selector that either keeps
+// the default, patches some of its little-endian bytes, or replaces it wholesale.
+//
+//	00 → default unchanged          01 → low 4 bytes replaced
+//	10 → bytes 4,5 then 0..3        11 → full 64-bit RD
+func (r *BitReader) ReadDD(def float64) float64 {
+	switch r.ReadBits(2) {
+	case 0:
+		return def
+	case 1:
+		bits := math.Float64bits(def)&^uint64(0xFFFFFFFF) | uint64(r.ReadRL())
+		return math.Float64frombits(bits)
+	case 2:
+		b4, b5 := uint64(r.ReadRC()), uint64(r.ReadRC())
+		b0, b1 := uint64(r.ReadRC()), uint64(r.ReadRC())
+		b2, b3 := uint64(r.ReadRC()), uint64(r.ReadRC())
+		keep := math.Float64bits(def) & 0xFFFF000000000000 // bytes 6,7
+		return math.Float64frombits(keep | b5<<40 | b4<<32 | b3<<24 | b2<<16 | b1<<8 | b0)
+	default:
+		return r.ReadRD()
+	}
+}
+
+// ReadBT reads a Bit Thickness (R2000+): a flag bit, then 0.0 if set or a BD if
+// clear. (Pre-R2000 thickness is always a BD; this package targets R2000+.)
+func (r *BitReader) ReadBT() float64 {
+	if r.ReadBit() == 1 {
+		return 0
+	}
+	return r.ReadBD()
+}
+
+// ReadBE reads a Bit Extrusion (R2000+): a flag bit selecting the default Z axis
+// (0,0,1), or three BDs otherwise.
+func (r *BitReader) ReadBE() [3]float64 {
+	if r.ReadBit() == 1 {
+		return [3]float64{0, 0, 1}
+	}
+	return r.Read3BD()
+}
+
+// ReadBLL reads a Bit Long Long: a 3-bit byte count then that many little-endian
+// bytes. Used for R2010+ sizes such as the preview length.
+func (r *BitReader) ReadBLL() uint64 {
+	n := int(r.ReadBits(3))
+	var v uint64
+	for i := 0; i < n; i++ {
+		v |= uint64(r.ReadRC()) << (8 * uint(i))
+	}
+	return v
+}
+
 // ReadHandle reads an object handle reference (H): a code nibble, a size nibble,
 // then Size big-endian value bytes.
 func (r *BitReader) ReadHandle() Handle {
