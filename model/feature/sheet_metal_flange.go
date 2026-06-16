@@ -159,8 +159,8 @@ func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64,
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
 	poly := flangeBandPolygon(out.AsVector(), up.AsVector(), thickness, radius, height, angle, proj)
 	placement := BendPlacement{
-		AxisStart: v0, AxisEnd: v1, Outward: out,
-		Angle: angle, Radius: radius, Thickness: thickness, Length: height,
+		AxisStart: v0, AxisEnd: v1, Outward: out, Up: up,
+		Angle: angle, Radius: radius, Thickness: thickness, Length: height, FoldDown: flip,
 	}
 	return buildPrism(poly, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), placement, nil
 }

@@ -30,25 +30,29 @@ import (
 // plane (a flange folded off a bottom edge folds in −Z) and so cannot be projected into it.
 // Angle is carried through for the fold-line annotation.
 type FlatTab struct {
-	A, B   math.Point2
-	Length float64
-	Angle  float64
+	A, B     math.Point2
+	Length   float64
+	Angle    float64
+	FoldDown bool // the bend folds toward the back ⇒ a bend-down fold line
 }
 
-// FlatBendLine is one fold line in the flat pattern: the segment (base-plane 2D) and the
-// bend angle — what a DXF export draws on the bend layer.
+// FlatBendLine is one fold line in the flat pattern: the segment (base-plane 2D), the bend
+// angle, and the fold direction — what a DXF export draws on the bend-up/bend-down layers.
 type FlatBendLine struct {
-	A, B  math.Point2
-	Angle float64
+	A, B     math.Point2
+	Angle    float64
+	FoldDown bool
 }
 
-// FlatPattern is the developed flat: the flat solid, its fold lines, the 2D extents, and the
-// gauge. Body is one watertight solid (the base plate unioned with every tab).
+// FlatPattern is the developed flat: the flat solid, its fold lines, the 2D extents, the
+// gauge, and the base plane the flat lies in (so callers can project the body to 2D). Body is
+// one watertight solid (the base plate unioned with every tab).
 type FlatPattern struct {
 	Body      *topo.Body
 	Bends     []FlatBendLine
 	Extents   math.Box2d
 	Thickness float64
+	Plane     sketch.Plane
 }
 
 // BuildFlatPattern thickens the base profile in its plane, unions each tab on as a coplanar
@@ -75,10 +79,11 @@ func BuildFlatPattern(baseSketch *sketch.Sketch, baseProfile int, thickness floa
 		if body, err = appendTab(body, plane, sp, tab, centroid); err != nil {
 			return nil, err
 		}
-		fp.Bends = append(fp.Bends, FlatBendLine{A: tab.A, B: tab.B, Angle: tab.Angle})
+		fp.Bends = append(fp.Bends, FlatBendLine{A: tab.A, B: tab.B, Angle: tab.Angle, FoldDown: tab.FoldDown})
 	}
 	fp.Body = body
 	fp.Extents = flatExtents(body, plane)
+	fp.Plane = plane
 	return fp, nil
 }
 
