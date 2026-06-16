@@ -47,9 +47,11 @@ func main() {
 	ground := flag.String("ground", "", "set the display-settings ground color as R,G,B and enable ground shadows")
 	overlay := flag.Bool("overlay", false, "add a red surface overlay highlighting the demo box (M16-F05)")
 	styleName := flag.String("style", "", "assign a color style (e.g. Brass) to the demo box (M16-F02)")
+	named := flag.Bool("named", false, "save a couple named views and open the Named Views panel (M16-F03)")
+	window := flag.Bool("window", false, "capture the WHOLE window (chrome + panels), not just the 3D viewport")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *window}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -58,14 +60,15 @@ func main() {
 
 // opts is the capture configuration parsed from the command line.
 type opts struct {
-	scheme, out string
-	frames      int
-	noEnv, box  bool
-	orient      string
-	edge        string
-	ground      string
-	overlay     bool
-	style       string
+	scheme, out   string
+	frames        int
+	noEnv, box    bool
+	orient        string
+	edge          string
+	ground        string
+	overlay       bool
+	style         string
+	named, window bool
 }
 
 func run(o opts) error {
@@ -81,7 +84,7 @@ func run(o opts) error {
 	if err := applySetup(s, o); err != nil {
 		return err
 	}
-	return renderAndCapture(s, o.frames, o.out)
+	return renderAndCapture(s, o)
 }
 
 // applySetup applies the requested scene mutations (scheme / orientation / edge / ground /
@@ -97,6 +100,12 @@ func applySetup(s *app.Session, o opts) error {
 			return err
 		}
 	}
+	applyDisplaySetup(s, o)
+	return nil
+}
+
+// applyDisplaySetup applies the display / overlay / style / named-view / environment mutations.
+func applyDisplaySetup(s *app.Session, o opts) {
 	if o.edge != "" {
 		applyEdgeColor(s, o.edge)
 	}
@@ -109,29 +118,44 @@ func applySetup(s *app.Session, o opts) error {
 	if o.style != "" {
 		applyStyle(s, o.style)
 	}
+	if o.named {
+		applyNamedViews(s)
+	}
 	if o.noEnv {
 		e := s.Environment()
 		e.ShowImage = false
 		s.SetEnvironment(e)
 	}
-	return nil
 }
 
 // renderAndCapture opens the window, runs the real DrawChrome loop for n frames so the
-// renderer settles, then saves the 3D viewport to out.
-func renderAndCapture(s *app.Session, frames int, out string) error {
+// renderer settles, then saves the 3D viewport (or the whole window when wantWindow) to out.
+func renderAndCapture(s *app.Session, o opts) error {
 	win, err := native.CreateWindow(1280, 800, "m16shot")
 	if err != nil {
 		return err
 	}
 	defer win.Destroy()
 	win.InitViewport()
-	for i := 0; i < frames; i++ {
+	for i := 0; i < o.frames; i++ {
 		win.BeginFrame()
 		ui.DrawChrome(win, s)
 		win.EndFrame(ui.WindowClearColor())
 	}
-	return win.SaveViewportPNG(out)
+	if o.window {
+		return win.SaveWindowPNG(o.out)
+	}
+	return win.SaveViewportPNG(o.out)
+}
+
+// applyNamedViews saves a couple of named views (from two orientations) and opens the Named
+// Views panel, so a whole-window capture shows the populated browser (M16-F03 #404).
+func applyNamedViews(s *app.Session) {
+	_ = s.SetViewOrientation(orientByName["iso"], true)
+	_, _ = s.CaptureNamedView("Iso Home")
+	_ = s.SetViewOrientation(orientByName["top"], true)
+	_, _ = s.CaptureNamedView("Top")
+	s.OpenNamedViewsPanel()
 }
 
 // applyEdgeColor parses "R,G,B" and stores it as the active document's display-settings edge

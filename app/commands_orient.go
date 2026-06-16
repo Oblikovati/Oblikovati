@@ -45,5 +45,16 @@ func orientViewCommands() []*CommandDefinition {
 		WithVariants(variants...)
 	// Only the primary is returned; RegisterStandardCommands registers the variants for id
 	// dispatch by walking primary.Variants() (returning them here would double-register).
-	return []*CommandDefinition{primary}
+	return []*CommandDefinition{primary, namedViewsCommand()}
+}
+
+// namedViewsCommand opens the Named Views panel — save the current camera under a name and
+// restore saved views (M16-F03 #404).
+func namedViewsCommand() *CommandDefinition {
+	return NewCommand("View.NamedViews", "Named Views…", "Navigate", func(s *Session) error {
+		s.OpenNamedViewsPanel()
+		return nil
+	}).WithTab("View").WithEnable(hasActivePart).WithIcon("home").WithButtonStyle(SmallIconButton).
+		WithActive(func(s *Session) bool { return s.NamedViewsPanelOpen() }).
+		WithTooltip("Named Views — save the current view under a name and restore it later.")
 }

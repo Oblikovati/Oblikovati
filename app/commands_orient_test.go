@@ -45,6 +45,29 @@ func TestOrientCommandsMoveCamera(t *testing.T) {
 	}
 }
 
+// TestNamedViewsCommandOpensPanel checks the View-tab Named Views button is present and its
+// command opens the panel.
+func TestNamedViewsCommandOpensPanel(t *testing.T) {
+	s := registeredSession(t)
+	tab, _ := BuildRibbon(s).Tab("View")
+	nav, ok := tab.Panel("Navigate")
+	if !ok {
+		t.Fatal("View tab has no Navigate panel")
+	}
+	if _, ok := buttonNamed(nav, "Named Views…"); !ok {
+		t.Error("Navigate panel has no Named Views button")
+	}
+	if s.NamedViewsPanelOpen() {
+		t.Fatal("panel should start closed")
+	}
+	if err := s.Execute("View.NamedViews"); err != nil {
+		t.Fatalf("View.NamedViews: %v", err)
+	}
+	if !s.NamedViewsPanelOpen() {
+		t.Error("Named Views command should open the panel")
+	}
+}
+
 // buttonNamed returns the named button of a panel.
 func buttonNamed(p RibbonPanel, name string) (RibbonButton, bool) {
 	for _, b := range p.Buttons {

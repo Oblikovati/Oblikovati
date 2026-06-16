@@ -140,6 +140,7 @@ func drawChromeWindows(s *app.Session) {
 	drawPreferencesWindow(s)
 	drawMaterialsWindow(s)
 	drawLightingWindow(s)
+	drawNamedViewsWindow(s) // View ▸ Named Views (M16-F03 #404)
 	drawScriptConsole(s)
 	drawKeymapEditor(s)  // Tools ▸ Customize Keyboard (M05-F17)
 	drawCommandInput(s)  // command-alias input box (M05-F17)
