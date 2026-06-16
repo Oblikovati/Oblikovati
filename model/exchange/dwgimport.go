@@ -114,24 +114,29 @@ func add2DSpline(sk *sketch.Sketch, g *dwg.Spline) {
 
 // add2DPolyline adds each polyline segment as a line, or an arc when the vertex
 // carries a non-zero bulge. Closed polylines also join the last vertex to the
-// first.
+// first. Consecutive segments share their vertex points (a polyline is a connected
+// chain) — both more faithful and roughly a third less data than independent
+// segments, which matters for the undo snapshot and renderer on dense drawings.
 func add2DPolyline(sk *sketch.Sketch, g *dwg.LwPolyline) {
 	n := len(g.Points)
 	if n < 2 {
 		return
+	}
+	verts := make([]*sketch.Point, n)
+	for i, p := range g.Points {
+		verts[i] = sk.NewPoint(gmath.P2(p[0], p[1]))
 	}
 	last := n - 1
 	if g.Closed {
 		last = n
 	}
 	for i := 0; i < last; i++ {
-		a := g.Points[i]
-		b := g.Points[(i+1)%n]
+		a, b := verts[i], verts[(i+1)%n]
 		if bulge := bulgeAt(g.Bulges, i); bulge != 0 {
-			center, ccw := bulgeArc(a, b, bulge)
-			sk.Arcs().AddByCenterStartEnd(gmath.P2(center[0], center[1]), gmath.P2(a[0], a[1]), gmath.P2(b[0], b[1]), ccw)
+			center, ccw := bulgeArc(g.Points[i], g.Points[(i+1)%n], bulge)
+			sk.Arcs().Add(sk.NewPoint(gmath.P2(center[0], center[1])), a, b, ccw)
 		} else {
-			sk.Lines().AddByTwoPoints(gmath.P2(a[0], a[1]), gmath.P2(b[0], b[1]))
+			sk.Lines().Add(a, b)
 		}
 	}
 }

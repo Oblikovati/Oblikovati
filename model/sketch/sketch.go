@@ -346,6 +346,12 @@ func (s *Sketch) newPoint(pos math.Point2) *Point {
 	return p
 }
 
+// NewPoint creates a sketch vertex point for use as a shared endpoint of lines or
+// arcs (it is not a standalone point marker). It lets a bulk authoring caller — the
+// DWG importer — connect a polyline's segments through shared vertices instead of
+// duplicating endpoints, roughly a third less geometry on dense drawings.
+func (s *Sketch) NewPoint(pos math.Point2) *Point { return s.newPoint(pos) }
+
 // removePoint drops a solver point (a deactivated spline-handle end or a
 // point moved into a block definition).
 func (s *Sketch) removePoint(p *Point) {
