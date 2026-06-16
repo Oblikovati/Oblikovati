@@ -117,6 +117,16 @@ func (f *SheetMetalFlangeFeature) resolveAngle() float64 {
 	return f.def.Angle()
 }
 
+// BendSpecs reports the single bend a flange introduces (its fold), for the flat pattern.
+// A nil radius override defers to the rule's default (signalled by a non-positive radius).
+func (f *SheetMetalFlangeFeature) BendSpecs(_ float64) []BendSpec {
+	radius := 0.0
+	if f.def.Radius != nil {
+		radius = f.def.Radius()
+	}
+	return []BendSpec{{Angle: f.resolveAngle(), Radius: radius}}
+}
+
 // buildFlangeSolid constructs the bend+wall solid on edge: the cross-section band extruded
 // along the edge. up is the parent face's outward normal (the fold-toward side); out is the
 // in-plane direction away from the sheet. flip folds toward the opposite face.

@@ -93,6 +93,13 @@ func (f *SheetMetalHemFeature) hemRadius(thickness float64) float64 {
 	return thickness / 2
 }
 
+// BendSpecs reports the single 180° fold a hem introduces, for the flat pattern. The hem
+// radius is gauge-derived (a closed hem folds at half the thickness), so it is always
+// resolved here from the passed thickness rather than deferred to the rule's default.
+func (f *SheetMetalHemFeature) BendSpecs(thickness float64) []BendSpec {
+	return []BendSpec{{Angle: hemFoldAngle, Radius: f.hemRadius(thickness)}}
+}
+
 // SheetMetalHemFeatures adds hem features into the engine.
 type SheetMetalHemFeatures struct{ engine *PartFeatures }
 
