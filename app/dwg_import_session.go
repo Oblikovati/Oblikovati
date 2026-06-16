@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 
 	"oblikovati.org/model/exchange"
 	"oblikovati.org/model/sketch"
@@ -56,4 +57,46 @@ func (s *Session) ImportDWGFile(path string, plane sketch.Plane) (exchange.DWGIm
 	}
 	s.recordEdit(part, fmt.Sprintf("Import DWG (%d entities)", res.EntityCount))
 	return res, nil
+}
+
+// ImportDWGOnPlane imports a .dwg onto the named work plane (case-insensitive; e.g.
+// "XY Plane"), defaulting to the first origin plane when planeName is empty or
+// unknown. It is the name-keyed entry the RPC/CLI layer calls; the GUI uses
+// ImportDWGFile with a plane chosen from DWGPlaneChoices.
+func (s *Session) ImportDWGOnPlane(path, planeName string) (exchange.DWGImportResult, error) {
+	choices, err := s.DWGPlaneChoices()
+	if err != nil {
+		return exchange.DWGImportResult{}, err
+	}
+	if len(choices) == 0 {
+		return exchange.DWGImportResult{}, fmt.Errorf("import dwg: active part has no work planes")
+	}
+	plane := choices[0].Plane
+	if planeName != "" {
+		match, ok := planeByName(choices, planeName)
+		if !ok {
+			return exchange.DWGImportResult{}, fmt.Errorf("import dwg: no work plane named %q (have %s)", planeName, planeNames(choices))
+		}
+		plane = match
+	}
+	return s.ImportDWGFile(path, plane)
+}
+
+// planeByName finds a plane choice by case-insensitive name.
+func planeByName(choices []WorkPlaneChoice, name string) (sketch.Plane, bool) {
+	for _, c := range choices {
+		if strings.EqualFold(c.Name, name) {
+			return c.Plane, true
+		}
+	}
+	return sketch.Plane{}, false
+}
+
+// planeNames lists the choice names for an error message.
+func planeNames(choices []WorkPlaneChoice) string {
+	names := make([]string, len(choices))
+	for i, c := range choices {
+		names[i] = c.Name
+	}
+	return strings.Join(names, ", ")
 }

@@ -18,6 +18,21 @@ import (
 func (r *Router) registerExchangeHandlers() {
 	r.handlers[wire.MethodDocumentsImport] = importDocument
 	r.handlers[wire.MethodDocumentsExport] = exportDocument
+	r.handlers[wire.MethodImportDWG] = importDWG
+}
+
+// importDWG imports a .dwg into the active part: a planar drawing onto the named
+// work plane (default: first origin plane), a non-planar one into a 3D sketch.
+func importDWG(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.ImportDWGArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	res, err := s.ImportDWGOnPlane(in.Path, in.Plane)
+	if err != nil {
+		return nil, fmt.Errorf("import.dwg: %w", err)
+	}
+	return json.Marshal(wire.ImportDWGResult{Is3D: res.Is3D, EntityCount: res.EntityCount, Warnings: res.Warnings})
 }
 
 // importDocument reads a foreign file (STL/OBJ/3MF mesh, or STEP B-rep) into the active part as
