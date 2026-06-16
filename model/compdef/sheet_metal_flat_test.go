@@ -8,7 +8,10 @@ import (
 
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
+	gmath "oblikovati.org/math"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sheetmetal"
+	"oblikovati.org/model/sketch"
 )
 
 // flatVolume is the developed flat body's mesh volume at a fine chord tolerance.
@@ -63,6 +66,53 @@ func TestUnfoldDevelopsWatertightFlat(t *testing.T) {
 	if len(fp.Bends) != 1 || math.Abs(fp.Bends[0].Angle-math.Pi/2) > 1e-12 {
 		t.Errorf("flat bends = %+v, want one 90° fold line", fp.Bends)
 	}
+}
+
+// TestUnfoldDevelopsTabForOutOfPlaneFold a flange whose 3D fold direction leaves the base
+// plane (a flange folded off a bottom edge folds in −Z) must still develop a tab in the base
+// plane: the tab outward is derived from the base geometry, not the 3D fold vector. Regression
+// for the bridge-found bug where such a tab collapsed (projected −Z → zero) and the flat was
+// just the base.
+func TestUnfoldDevelopsTabForOutOfPlaneFold(t *testing.T) {
+	d := NewPartComponentDefinition()
+	if _, err := d.EnableSheetMetal(); err != nil {
+		t.Fatalf("EnableSheetMetal: %v", err)
+	}
+	addRectFace(t, d, 4, 3)
+	body := d.Features().Result()[0]
+	edge := body.Edges()[0] // a bottom edge: its flange folds out of the base plane (−Z)
+	pf := feature.NewSheetMetalFlangeFeatures(d.Features()).Add(&feature.SheetMetalFlangeDefinition{
+		EdgeKey: edge.ReferenceKey(), Height: func() float64 { return 1 },
+	})
+	d.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("flange unhealthy: %s", pf.Health().Reason)
+	}
+
+	fp, err := d.Unfold()
+	if err != nil {
+		t.Fatalf("Unfold: %v", err)
+	}
+	baseVol := 4 * 3 * d.SheetMetal().Thickness()
+	if got := flatVolume(fp.Body); got <= baseVol*1.05 {
+		t.Errorf("flat volume = %.4f, want clearly above the base %.4f (the tab must develop)", got, baseVol)
+	}
+}
+
+// addRectFace adds a w×h rectangle base Face on XY and recomputes.
+func addRectFace(t *testing.T, d *PartComponentDefinition, w, h float64) {
+	t.Helper()
+	sk := d.Sketches().Add(sketch.XYPlane())
+	c0 := sk.Points().Add(gmath.P2(0, 0))
+	c1 := sk.Points().Add(gmath.P2(w, 0))
+	c2 := sk.Points().Add(gmath.P2(w, h))
+	c3 := sk.Points().Add(gmath.P2(0, h))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+	feature.NewSheetMetalFaceFeatures(d.Features()).Add(&feature.SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Operation: ops.NewBody})
+	d.Recompute()
 }
 
 // TestUnfoldTracksKFactor the flat is associative on the rule: raising the K-factor lengthens
