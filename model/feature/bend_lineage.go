@@ -2,6 +2,8 @@
 
 package feature
 
+import "oblikovati.org/math"
+
 // BendLineage is implemented by sheet-metal features that introduce one or more bends. The
 // flat pattern (M13-F04, #377) reads it to develop each bend: the architecture requires
 // every bend to record its unfold parameters (angle + radius) so the flat develops at the
@@ -22,4 +24,25 @@ type BendLineage interface {
 type BendSpec struct {
 	Angle  float64 // swept bend angle (radians)
 	Radius float64 // inside bend radius (cm); <= 0 ⇒ use the rule's default
+}
+
+// BendPlacement is the resolved geometry of one edge bend, captured during the feature's
+// recompute (when its edge and frame are in hand). The flat pattern lays the bend's flange
+// out as a tab in the base plane, extending from the bend line (AxisStart→AxisEnd) along
+// Outward by the developed length (the rule's bend allowance + Length). The allowance is
+// filled in by the rule at unfold time, so the placement itself stays free of the unfold
+// method — the same separation BendSpec keeps.
+type BendPlacement struct {
+	AxisStart, AxisEnd math.Point3      // the bend line — the picked edge's endpoints
+	Outward            math.UnitVector3 // in-plane direction the flat tab extends (away from the sheet)
+	Angle, Radius      float64          // swept bend angle (radians) and inside radius (cm)
+	Thickness, Length  float64          // material thickness and the flange's straight-run length (cm)
+}
+
+// PlacedBend is implemented by the edge-bend walls (flange, hem) that develop into a flat
+// tab. Placement reports the resolved bend geometry from the last successful recompute; ok
+// is false before the first recompute or after the feature went sick. The flat pattern reads
+// it to lay each flange out in the base plane.
+type PlacedBend interface {
+	Placement() (BendPlacement, bool)
 }
