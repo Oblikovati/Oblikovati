@@ -127,9 +127,25 @@ func (ps *Profiles) All() []*Profile {
 // Profiles detects regions in the sketch from its non-construction geometry: it builds
 // a planar arrangement of the (faceted) curves and extracts the minimal closed cells —
 // so a dividing curve splits a shape into several regions (arrangement.go / regions.go).
+// maxProfileEntities caps profile/region detection. Above it the sketch is treated
+// as reference geometry (no profiles): an imported drawing has no single extrudable
+// region, and arranging that many segments every hover frame would freeze the UI.
+const maxProfileEntities = 20000
+
 // Cells are classified into outer boundaries and holes by even–odd nesting; geometry
 // that bounds no cell (a connected but unclosed chain) becomes an open profile.
 func (s *Sketch) Profiles() *Profiles {
+	// A very dense sketch — an imported drawing can be hundreds of thousands of
+	// segments — has no practical extrudable profile, and arranging that many
+	// segments would stall the frame (the hover picker calls this). Skip detection
+	// above the cap so picking/hover stay instant; reference geometry offers no
+	// profiles. This is O(1) (len(ents)), checked before the geometry signature.
+	if len(s.ents) > maxProfileEntities {
+		if s.profilesCache == nil {
+			s.profilesCache = &Profiles{}
+		}
+		return s.profilesCache
+	}
 	sig := s.geomSignature()
 	if s.profilesCache != nil && s.profilesSig == sig {
 		return s.profilesCache

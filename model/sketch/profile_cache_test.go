@@ -55,3 +55,17 @@ func TestProfilesCacheInvalidatesOnConstructionToggle(t *testing.T) {
 		t.Fatal("Profiles() cache not invalidated after a construction toggle")
 	}
 }
+
+// TestProfilesCappedForHugeSketch checks that a sketch past the entity cap (an
+// imported drawing) offers no profiles and returns immediately, so the hover
+// picker never arranges hundreds of thousands of segments.
+func TestProfilesCappedForHugeSketch(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	for i := 0; i < maxProfileEntities+10; i++ {
+		x := float64(i)
+		s.Lines().AddByTwoPoints(math.P2(x, 0), math.P2(x+0.5, 1))
+	}
+	if n := s.Profiles().Count(); n != 0 {
+		t.Fatalf("huge sketch offered %d profiles, want 0 (capped)", n)
+	}
+}
