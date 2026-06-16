@@ -5,12 +5,24 @@ package exchange
 import (
 	"fmt"
 	"math"
+	"os"
 
 	"oblikovati.org/kernel/exchange/dwg"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
+
+// ImportDWGFile reads a .dwg file and imports it into part on the chosen plane (2D)
+// or as a Sketch3D, the path-based companion to ImportDWG. The caller resolves the
+// plane from the work plane the user picked.
+func ImportDWGFile(part *compdef.PartComponentDefinition, path string, plane sketch.Plane) (DWGImportResult, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return DWGImportResult{}, fmt.Errorf("import dwg: read %q: %w", path, err)
+	}
+	return ImportDWG(part, data, plane)
+}
 
 // dwgPlanarTolerance is the Z spread under which a decoded drawing is treated as
 // 2D and imported onto a single plane.

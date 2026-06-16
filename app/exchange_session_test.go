@@ -54,7 +54,7 @@ func TestSessionImportExportFile(t *testing.T) {
 
 // TestSessionImportUnknownExtension reports a clear error for an unrecognized file type.
 func TestSessionImportUnknownExtension(t *testing.T) {
-	if _, err := sessionWithPart(t).ImportFile("model.dwg"); err == nil {
+	if _, err := sessionWithPart(t).ImportFile("model.iges"); err == nil {
 		t.Error("ImportFile accepted an unknown extension")
 	}
 }
