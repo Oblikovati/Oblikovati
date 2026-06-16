@@ -159,6 +159,16 @@ func (s *Sketch) geomSignature() uint64 {
 		mix(stdmath.Float64bits(p.X))
 		mix(stdmath.Float64bits(p.Y))
 	}
+	// Construction/centerline entities are excluded from profiles (normalGeometry),
+	// so toggling that flag changes the regions without changing any coordinate —
+	// fold it in so the cache invalidates on a construction toggle.
+	for _, e := range s.ents {
+		if cg, ok := e.(interface{ IsConstruction() bool }); ok && cg.IsConstruction() {
+			mix(1)
+		} else {
+			mix(2)
+		}
+	}
 	return h
 }
 

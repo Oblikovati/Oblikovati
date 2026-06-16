@@ -35,3 +35,23 @@ func TestProfilesCacheReuseAndInvalidate(t *testing.T) {
 		t.Fatal("Profiles() not rebuilt after moving a point")
 	}
 }
+
+// TestProfilesCacheInvalidatesOnConstructionToggle guards the regression where
+// toggling an entity's construction flag (which removes it from the profile
+// geometry) left no coordinate changed, so the cached profiles went stale.
+func TestProfilesCacheInvalidatesOnConstructionToggle(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	pts := make([]*Point, 4)
+	for i, c := range []math.Point2{{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 1, Y: 1}, {X: 0, Y: 1}} {
+		pts[i] = s.NewPoint(c)
+	}
+	var sides []*Line
+	for i := range pts {
+		sides = append(sides, s.Lines().Add(pts[i], pts[(i+1)%4]))
+	}
+	before := s.Profiles()
+	sides[0].SetConstruction(true) // changes the profile geometry without moving any point
+	if s.Profiles() == before {
+		t.Fatal("Profiles() cache not invalidated after a construction toggle")
+	}
+}
