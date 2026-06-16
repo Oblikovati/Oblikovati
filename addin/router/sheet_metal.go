@@ -10,7 +10,10 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
+	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sheetmetal"
 )
@@ -25,6 +28,8 @@ func (r *Router) registerSheetMetalHandlers() {
 	r.handlers[wire.MethodSheetMetalGetStyle] = sheetMetalGetStyle
 	r.handlers[wire.MethodSheetMetalSetStyle] = sheetMetalSetStyle
 	r.handlers[wire.MethodSheetMetalBendAllowance] = sheetMetalBendAllowance
+	r.handlers[wire.MethodSheetMetalBends] = sheetMetalBends
+	r.handlers[wire.MethodSheetMetalUnfold] = sheetMetalUnfold
 }
 
 // activeSheetMetal returns the active part and its rule, or an error if the active document
@@ -167,6 +172,68 @@ func sheetMetalBendAllowance(s *app.Session, raw json.RawMessage) (json.RawMessa
 		BendAllowance: rule.BendAllowance(angle.Value, radius),
 		BendDeduction: rule.BendDeduction(angle.Value, radius),
 	})
+}
+
+func sheetMetalBends(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	bends := part.Bends()
+	out := wire.BendsResult{Bends: make([]wire.BendInfo, 0, len(bends))}
+	for _, b := range bends {
+		out.Bends = append(out.Bends, wire.BendInfo{
+			Feature:   b.Feature,
+			Angle:     b.Angle * degPerRad,
+			Radius:    b.Radius,
+			Thickness: b.Thickness,
+			Allowance: b.Allowance,
+			Deduction: b.Deduction,
+		})
+		out.TotalAllowance += b.Allowance
+	}
+	return json.Marshal(out)
+}
+
+// degPerRad converts a bend's stored angle (radians) to the degrees the wire reports.
+const degPerRad = 180.0 / 3.141592653589793
+
+func sheetMetalUnfold(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	flat, err := part.Unfold()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(wire.UnfoldResult{Flat: flatInfo(flat)})
+}
+
+// flatInfo renders a developed flat pattern as wire: its extents, gauge, developed footprint
+// area (the constant-thickness plate's volume divided by the gauge), and the fold lines.
+func flatInfo(flat *feature.FlatPattern) wire.FlatPatternInfo {
+	area := 0.0
+	if flat.Thickness > 0 {
+		area = ops.BodyGeometryProperties(flat.Body, ops.Quality{ChordTolerance: 1e-3}).Volume / flat.Thickness
+	}
+	info := wire.FlatPatternInfo{
+		Extents:   types.Box2d{Min: point2d(flat.Extents.Min), Max: point2d(flat.Extents.Max)},
+		Thickness: flat.Thickness,
+		Area:      area,
+		Bends:     make([]wire.FlatBendLineInfo, 0, len(flat.Bends)),
+	}
+	for _, b := range flat.Bends {
+		info.Bends = append(info.Bends, wire.FlatBendLineInfo{
+			Start: point2d(b.A), End: point2d(b.B), Angle: b.Angle * degPerRad,
+		})
+	}
+	return info
+}
+
+// point2d converts a model 2D point to the wire value type.
+func point2d(p gmath.Point2) types.Point2d {
+	return types.Point2d{X: float64(p.X), Y: float64(p.Y)}
 }
 
 // styleInfo renders the active rule as wire, formatting lengths in the document's units and

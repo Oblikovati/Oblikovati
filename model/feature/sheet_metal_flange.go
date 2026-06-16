@@ -41,8 +41,9 @@ type SheetMetalFlangeDefinition struct {
 
 // SheetMetalFlangeFeature folds a wall onto the sheet each recompute.
 type SheetMetalFlangeFeature struct {
-	def      *SheetMetalFlangeDefinition
-	featName string
+	def       *SheetMetalFlangeDefinition
+	featName  string
+	placement *BendPlacement // resolved bend geometry from the last recompute (for the flat pattern)
 }
 
 // Definition returns the flange recipe.
@@ -66,7 +67,7 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	wall, err := buildFlangeSolid(edges[0], dims.thickness, dims.radius, dims.height, dims.angle, f.def.Flip, f.featName)
+	wall, placement, err := buildFlangeSolid(edges[0], dims.thickness, dims.radius, dims.height, dims.angle, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -75,7 +76,18 @@ func (f *SheetMetalFlangeFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
+	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
 	return Output{Bodies: bodies}, nil
+}
+
+// Placement returns the resolved bend geometry captured by the last successful recompute,
+// for the flat pattern to lay this flange out as a tab. ok is false before the first
+// recompute.
+func (f *SheetMetalFlangeFeature) Placement() (BendPlacement, bool) {
+	if f.placement == nil {
+		return BendPlacement{}, false
+	}
+	return *f.placement, true
 }
 
 // flangeDims is the resolved, validated set of flange dimensions for one recompute.
@@ -117,24 +129,40 @@ func (f *SheetMetalFlangeFeature) resolveAngle() float64 {
 	return f.def.Angle()
 }
 
+// BendSpecs reports the single bend a flange introduces (its fold), for the flat pattern.
+// A nil radius override defers to the rule's default (signalled by a non-positive radius).
+func (f *SheetMetalFlangeFeature) BendSpecs(_ float64) []BendSpec {
+	radius := 0.0
+	if f.def.Radius != nil {
+		radius = f.def.Radius()
+	}
+	return []BendSpec{{Angle: f.resolveAngle(), Radius: radius}}
+}
+
 // buildFlangeSolid constructs the bend+wall solid on edge: the cross-section band extruded
 // along the edge. up is the parent face's outward normal (the fold-toward side); out is the
-// in-plane direction away from the sheet. flip folds toward the opposite face.
-func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64, flip bool, feat string) (*topo.Body, error) {
+// in-plane direction away from the sheet. flip folds toward the opposite face. It also
+// returns the resolved [BendPlacement] (the bend line + outward direction + dims) so the
+// flat pattern can lay this flange out as a tab without re-resolving the edge.
+func buildFlangeSolid(edge *topo.Edge, thickness, radius, height, angle float64, flip bool, feat string) (*topo.Body, BendPlacement, error) {
 	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
 	e, err := math.UnitVector3FromVector(v0.VectorTo(v1))
 	if err != nil {
-		return nil, fmt.Errorf("sheet-metal flange: degenerate edge")
+		return nil, BendPlacement{}, fmt.Errorf("sheet-metal flange: degenerate edge")
 	}
 	up, out, err := flangeFrame(edge, v0.Midpoint(v1), e, flip)
 	if err != nil {
-		return nil, err
+		return nil, BendPlacement{}, err
 	}
 	plane := planePerp(v0, e)
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
 	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
 	poly := flangeBandPolygon(out.AsVector(), up.AsVector(), thickness, radius, height, angle, proj)
-	return buildPrism(poly, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), nil
+	placement := BendPlacement{
+		AxisStart: v0, AxisEnd: v1, Outward: out,
+		Angle: angle, Radius: radius, Thickness: thickness, Length: height,
+	}
+	return buildPrism(poly, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), placement, nil
 }
 
 // flangeFrame returns the parent face's outward normal (up) and the in-plane outward

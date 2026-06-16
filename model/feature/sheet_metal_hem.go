@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/param"
 )
 
 // Sheet-metal Hem feature (M13-F02). A hem folds the material at an edge back on itself —
@@ -41,8 +42,9 @@ type SheetMetalHemDefinition struct {
 
 // SheetMetalHemFeature folds a hem onto the sheet each recompute.
 type SheetMetalHemFeature struct {
-	def      *SheetMetalHemDefinition
-	featName string
+	def       *SheetMetalHemDefinition
+	featName  string
+	placement *BendPlacement // resolved bend geometry from the last recompute (for the flat pattern)
 }
 
 // Definition returns the hem recipe.
@@ -57,20 +59,15 @@ func (f *SheetMetalHemFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	t, err := sheetThickness(in.Params)
+	t, radius, length, err := f.hemDims(in.Params)
 	if err != nil {
 		return Output{}, err
-	}
-	radius := f.hemRadius(t)
-	length := evalFloat(f.def.Length)
-	if radius <= 0 || length <= 0 {
-		return Output{}, fmt.Errorf("sheet-metal hem: radius/length must be positive (r=%g l=%g)", radius, length)
 	}
 	edges, err := resolveEdges(body, [][]byte{f.def.EdgeKey})
 	if err != nil {
 		return Output{}, err
 	}
-	wall, err := buildFlangeSolid(edges[0], t, radius, length, hemFoldAngle, f.def.Flip, f.featName)
+	wall, placement, err := buildFlangeSolid(edges[0], t, radius, length, hemFoldAngle, f.def.Flip, f.featName)
 	if err != nil {
 		return Output{}, err
 	}
@@ -78,7 +75,32 @@ func (f *SheetMetalHemFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
+	f.placement = &placement // record the resolved bend for the flat pattern (M13-F04)
 	return Output{Bodies: bodies}, nil
+}
+
+// Placement returns the resolved bend geometry captured by the last successful recompute,
+// for the flat pattern to lay this hem out as a tab. ok is false before the first recompute.
+func (f *SheetMetalHemFeature) Placement() (BendPlacement, bool) {
+	if f.placement == nil {
+		return BendPlacement{}, false
+	}
+	return *f.placement, true
+}
+
+// hemDims reads the live thickness and resolves the hem's bend radius and fold-back length,
+// erroring if either is non-positive.
+func (f *SheetMetalHemFeature) hemDims(ps *param.Parameters) (thickness, radius, length float64, err error) {
+	thickness, err = sheetThickness(ps)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	radius = f.hemRadius(thickness)
+	length = evalFloat(f.def.Length)
+	if radius <= 0 || length <= 0 {
+		return 0, 0, 0, fmt.Errorf("sheet-metal hem: radius/length must be positive (r=%g l=%g)", radius, length)
+	}
+	return thickness, radius, length, nil
 }
 
 // hemRadius returns the inside bend radius for the hem type: a closed hem folds at half the
@@ -91,6 +113,13 @@ func (f *SheetMetalHemFeature) hemRadius(thickness float64) float64 {
 		return thickness
 	}
 	return thickness / 2
+}
+
+// BendSpecs reports the single 180° fold a hem introduces, for the flat pattern. The hem
+// radius is gauge-derived (a closed hem folds at half the thickness), so it is always
+// resolved here from the passed thickness rather than deferred to the rule's default.
+func (f *SheetMetalHemFeature) BendSpecs(thickness float64) []BendSpec {
+	return []BendSpec{{Angle: hemFoldAngle, Radius: f.hemRadius(thickness)}}
 }
 
 // SheetMetalHemFeatures adds hem features into the engine.

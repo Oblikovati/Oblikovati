@@ -136,6 +136,16 @@ func (f *SheetMetalFoldFeature) resolveAngle() float64 {
 	return f.def.Angle()
 }
 
+// BendSpecs reports the single bend this fold introduces, for the flat pattern. A nil
+// radius override defers to the rule's default (signalled by a non-positive radius).
+func (f *SheetMetalFoldFeature) BendSpecs(_ float64) []BendSpec {
+	radius := 0.0
+	if f.def.Radius != nil {
+		radius = f.def.Radius()
+	}
+	return []BendSpec{{Angle: f.resolveAngle(), Radius: radius}}
+}
+
 // SheetMetalFoldFeatures adds fold features into the engine.
 type SheetMetalFoldFeatures struct{ engine *PartFeatures }
 
