@@ -36,13 +36,18 @@ type FilletEdgeSet struct {
 // variable reports whether the set carries a start→end radius instead of a constant one.
 func (s FilletEdgeSet) variable() bool { return s.Radius == nil }
 
+// FilletCornerType aliases the public corner-treatment discriminator (ADR-0018).
+type FilletCornerType = types.FilletCornerType
+
 // FilletDefinition rounds selected edges. EdgeKeys+Radius is the original single
 // constant-radius form; EdgeSets (when non-empty) takes precedence and carries any mix of
-// constant and variable sets (#323).
+// constant and variable sets (#323). CornerType selects how a vertex where two filleted edges
+// meet (third edge sharp) is treated — miter crease (default/zero), or a full round.
 type FilletDefinition struct {
-	EdgeKeys [][]byte
-	Radius   func() float64
-	EdgeSets []FilletEdgeSet
+	EdgeKeys   [][]byte
+	Radius     func() float64
+	EdgeSets   []FilletEdgeSet
+	CornerType FilletCornerType
 }
 
 // FilletType reports the definition's discriminator: always an edge fillet for now (the
@@ -62,9 +67,9 @@ func (f *FilletFeature) Kind() string { return "fillet" }
 // blend (cylinder faces; planar ruling strips for variable sets). See fillet.go.
 func (f *FilletFeature) Recompute(in Input) (Output, error) {
 	if len(f.def.EdgeSets) > 0 {
-		return filletBodySets(in, f.def.EdgeSets, "fillet")
+		return filletBodySets(in, f.def.EdgeSets, f.def.CornerType, "fillet")
 	}
-	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), "fillet")
+	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), f.def.CornerType, "fillet")
 }
 
 // ChamferType aliases the public chamfer-mode discriminator (ADR-0018).
@@ -255,15 +260,25 @@ type DressUpFeatures struct{ engine *PartFeatures }
 // NewDressUpFeatures binds the collection to an engine.
 func NewDressUpFeatures(engine *PartFeatures) *DressUpFeatures { return &DressUpFeatures{engine} }
 
-// AddFillet rounds the given edges (by reference key) to radius.
+// AddFillet rounds the given edges (by reference key) to radius, mitering shared corners.
 func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *PartFeature {
-	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius}})
+	return c.AddFilletCorner(edgeKeys, radius, types.FilletCornerMiter)
+}
+
+// AddFilletCorner rounds the given edges to radius with an explicit shared-corner treatment.
+func (c *DressUpFeatures) AddFilletCorner(edgeKeys [][]byte, radius func() float64, corner FilletCornerType) *PartFeature {
+	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: corner}})
 }
 
 // AddFilletSets rounds any mix of constant and variable radius edge sets in one feature
-// (the reference's FilletDefinition edge-set model, #323).
+// (the reference's FilletDefinition edge-set model, #323), mitering shared corners.
 func (c *DressUpFeatures) AddFilletSets(sets []FilletEdgeSet) *PartFeature {
-	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeSets: sets}})
+	return c.AddFilletSetsCorner(sets, types.FilletCornerMiter)
+}
+
+// AddFilletSetsCorner rounds the edge sets with an explicit shared-corner treatment.
+func (c *DressUpFeatures) AddFilletSetsCorner(sets []FilletEdgeSet, corner FilletCornerType) *PartFeature {
+	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeSets: sets, CornerType: corner}})
 }
 
 // AddChamfer bevels the given edges by distance, blending three-edge corners flat (the
