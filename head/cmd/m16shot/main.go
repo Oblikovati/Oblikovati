@@ -46,9 +46,10 @@ func main() {
 	edge := flag.String("edge", "", "override the display-settings edge color as R,G,B (0-255)")
 	ground := flag.String("ground", "", "set the display-settings ground color as R,G,B and enable ground shadows")
 	overlay := flag.Bool("overlay", false, "add a red surface overlay highlighting the demo box (M16-F05)")
+	styleName := flag.String("style", "", "assign a color style (e.g. Brass) to the demo box (M16-F02)")
 	flag.Parse()
 
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay}); err != nil {
+	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName}); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
@@ -64,6 +65,7 @@ type opts struct {
 	edge        string
 	ground      string
 	overlay     bool
+	style       string
 }
 
 func run(o opts) error {
@@ -103,6 +105,9 @@ func applySetup(s *app.Session, o opts) error {
 	}
 	if o.overlay {
 		applyOverlay(s)
+	}
+	if o.style != "" {
+		applyStyle(s, o.style)
 	}
 	if o.noEnv {
 		e := s.Environment()
@@ -151,6 +156,18 @@ func applyGround(s *app.Session, rgb string) {
 	sh := s.ShadowSettings()
 	sh.GroundShadows = true
 	s.SetShadowSettings(sh)
+}
+
+// applyStyle assigns a named color style to the first visible body, so it renders in the
+// style's color (M16-F02 #403/#408).
+func applyStyle(s *app.Session, styleName string) {
+	bodies := s.VisibleBodies()
+	if len(bodies) == 0 {
+		return
+	}
+	if err := s.AssignColorStyleToBody(string(bodies[0].ReferenceKey()), styleName); err != nil {
+		panic(err)
+	}
 }
 
 // applyOverlay adds a red surface-overlay client-graphics group that highlights the first
