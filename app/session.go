@@ -51,6 +51,8 @@ type Session struct {
 	selection            *Selection
 	tool                 *ToolInstance
 	picker               Picker
+	regionPicker         RegionPicker // resolves a box-select rectangle (nil ⇒ box-select disabled)
+	boxSelect            BoxSelection // the in-progress rubber-band rectangle, if any
 	camera               scene.Camera
 	camTween             cameraTween
 	driveAnim            driveAnimation
