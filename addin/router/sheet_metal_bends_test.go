@@ -109,3 +109,30 @@ func TestSheetMetalBendsRejectsPlainPart(t *testing.T) {
 		t.Fatal("bends on a plain part must error")
 	}
 }
+
+// TestSheetMetalUnfoldOverWire a flanged sheet unfolds over the wire to a flat with a positive
+// gauge/area, extents that exceed the folded footprint (the developed tab), and one fold line.
+func TestSheetMetalUnfoldOverWire(t *testing.T) {
+	r, s := flangedSheet(t) // 40×30 mm base, 10 mm flange
+	var res wire.UnfoldResult
+	call(t, r, s, wire.MethodSheetMetalUnfold, "{}", &res)
+	flat := res.Flat
+	if flat.Thickness <= 0 || flat.Area <= 0 {
+		t.Errorf("flat gauge/area must be positive: %+v", flat)
+	}
+	// Base is 4×3 cm; the flange develops a tab beyond it, so one extent exceeds 4 cm.
+	if w, h := flat.Extents.Max.X-flat.Extents.Min.X, flat.Extents.Max.Y-flat.Extents.Min.Y; w < 3.9 || h < 3.9 || math.Max(w, h) < 4.1 {
+		t.Errorf("flat extents = %.3f × %.3f cm, want base 4×3 plus a developed tab", w, h)
+	}
+	if len(flat.Bends) != 1 || math.Abs(flat.Bends[0].Angle-90) > 1e-6 {
+		t.Errorf("flat fold lines = %+v, want one 90° bend", flat.Bends)
+	}
+}
+
+// TestSheetMetalUnfoldRejectsPlainPart unfold on an ordinary part errors (no sheet-metal rule).
+func TestSheetMetalUnfoldRejectsPlainPart(t *testing.T) {
+	r, s := seededSession(t)
+	if _, err := r.Handle(s, wire.MethodSheetMetalUnfold, []byte("{}")); err == nil {
+		t.Fatal("unfold on a plain part must error")
+	}
+}
