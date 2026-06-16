@@ -66,10 +66,30 @@ func TestDefiningPointsByEntity(t *testing.T) {
 	s := NewSketches().Add(XYPlane())
 	pt := s.Points().Add(math.P2(0, 0))
 	ln := s.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(1, 0))
-	if got := DefiningPoints(pt); len(got) != 1 || got[0] != pt {
-		t.Errorf("DefiningPoints(point) = %v, want the point itself", got)
+	ci := s.Circles().AddByCenterRadius(math.P2(0, 0), 1)
+	ar := s.Arcs().AddByCenterStartEnd(math.P2(0, 0), math.P2(1, 0), math.P2(0, 1), true)
+	el := s.Ellipses().Add(math.P2(0, 0), math.V2(1, 0), 2, 1)
+	ea := s.EllipticalArcs().Add(math.P2(0, 0), math.V2(1, 0), 2, 1, 0, 1)
+
+	cases := []struct {
+		name string
+		ent  Entity
+		want int
+	}{
+		{"point", pt, 1},
+		{"line", ln, 2},
+		{"circle", ci, 1},
+		{"arc", ar, 3},
+		{"ellipse", el, 1},
+		{"ellipticalArc", ea, 1},
+		{"unknown", nil, 0},
 	}
-	if got := DefiningPoints(ln); len(got) != 2 {
-		t.Errorf("DefiningPoints(line) = %d points, want 2 (both endpoints)", len(got))
+	for _, c := range cases {
+		if got := DefiningPoints(c.ent); len(got) != c.want {
+			t.Errorf("DefiningPoints(%s) = %d points, want %d", c.name, len(got), c.want)
+		}
+	}
+	if got := DefiningPoints(pt); got[0] != pt {
+		t.Error("DefiningPoints(point) should return the point itself")
 	}
 }

@@ -68,6 +68,50 @@ func TestEntityDragResolvesConstraint(t *testing.T) {
 	}
 }
 
+func TestEntityDragGuardsAndCancel(t *testing.T) {
+	s, sk := sketchSession(t)
+	s.Grid().SnapToGrid = false
+
+	// A fixed (grounded) point is not MoveableFree → BeginEntityDrag declines it.
+	fixed := sk.Points().Add(math.P2(1, 0))
+	sk.GeometricConstraints().AddFix(fixed)
+	centerOnSketchPoint(s, 1)
+	if s.BeginEntityDrag(100, 100) {
+		t.Error("a fixed point must not begin a drag")
+	}
+
+	// UpdateEntityDrag with no active drag is a no-op (must not panic).
+	s.UpdateEntityDrag(120, 100)
+
+	// Begin on a free point, then cancel → the drag is dropped.
+	sk.Points().Add(math.P2(5, 0))
+	centerOnSketchPoint(s, 5)
+	if !s.BeginEntityDrag(100, 100) {
+		t.Fatal("should begin a drag on the free point")
+	}
+	s.CancelEntityDrag()
+	if s.EntityDragActive() {
+		t.Error("CancelEntityDrag should clear the drag")
+	}
+}
+
+// TestDragAnchorsDedupesSharedPoints checks that dragging a selection of two lines that share an
+// endpoint pins that shared point once (the de-dup branch of dragAnchors).
+func TestDragAnchorsDedupesSharedPoints(t *testing.T) {
+	s, sk := sketchSession(t)
+	shared := sk.Points().Add(math.P2(0, 0))
+	l1 := sk.Lines().Add(shared, sk.Points().Add(math.P2(2, 0)))
+	l2 := sk.Lines().Add(shared, sk.Points().Add(math.P2(0, 2)))
+	s.Selection().Add(SketchEntityHandle{Entity: l1})
+	s.Selection().Add(SketchEntityHandle{Entity: l2})
+
+	anchors := s.dragAnchors(l1) // l1 is selected → drag the whole selection
+	// l1 (shared, p2) + l2 (shared, p3) → shared counted once → 3 distinct points.
+	if len(anchors) != 3 {
+		t.Errorf("dragAnchors over two lines sharing a point = %d anchors, want 3 (de-duplicated)", len(anchors))
+	}
+}
+
 func TestBeginEntityDragRejectsWhenNotDraggable(t *testing.T) {
 	// No active sketch → no drag.
 	plain := NewSession()

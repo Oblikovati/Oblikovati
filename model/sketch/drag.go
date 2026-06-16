@@ -16,16 +16,12 @@ type PinTarget struct {
 	Target math.Point2
 }
 
-// dragPin is a temporary constraint that pulls point P toward (tx,ty). It is appended to the
-// constraint set only for the duration of one DragSolve and is never persisted on the sketch.
-type dragPin struct {
-	constraintBase
-	P      *Point
-	tx, ty math.Scalar
+// dragFix is a temporary pin pulling point p toward target. It reuses FixConstraint (a fix to a
+// position) rather than re-declaring its residual/variable math; it is appended only for the
+// duration of one DragSolve and is never added to the sketch's persisted constraints.
+func dragFix(p *Point, target math.Point2) *FixConstraint {
+	return &FixConstraint{constraintBase: newConstraint(), P: p, x0: target.X, y0: target.Y}
 }
-
-func (c *dragPin) Residuals() []float64      { return []float64{c.P.X - c.tx, c.P.Y - c.ty} }
-func (c *dragPin) Variables() []*math.Scalar { return []*math.Scalar{&c.P.X, &c.P.Y} }
 
 // DragSolve re-solves the sketch with the given points temporarily pinned to their drag targets.
 // The dragged points follow the cursor while the existing constraints pull the dependent geometry
@@ -34,7 +30,7 @@ func (c *dragPin) Variables() []*math.Scalar { return []*math.Scalar{&c.P.X, &c.
 func (s *Sketch) DragSolve(pins []PinTarget) SolveResult {
 	cons := append([]Constraint(nil), s.Constraints()...)
 	for _, pt := range pins {
-		cons = append(cons, &dragPin{constraintBase: newConstraint(), P: pt.P, tx: pt.Target.X, ty: pt.Target.Y})
+		cons = append(cons, dragFix(pt.P, pt.Target))
 	}
 	return Solve(cons, s.variables(), Options{})
 }
