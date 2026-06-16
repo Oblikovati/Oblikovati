@@ -64,3 +64,18 @@ func TestEntityMapUnknownKey(t *testing.T) {
 		t.Errorf("unknown key: found=%v err=%v, want found=false err=nil", found, err)
 	}
 }
+
+// TestEntityMapNoFlat mapping on a sheet-metal part with no developable flat errors (there is
+// no base Face to develop).
+func TestEntityMapNoFlat(t *testing.T) {
+	d := NewPartComponentDefinition()
+	if _, err := d.EnableSheetMetal(); err != nil {
+		t.Fatalf("EnableSheetMetal: %v", err)
+	}
+	if _, _, err := d.MapFoldedToFlat([]byte("k")); err == nil {
+		t.Error("MapFoldedToFlat with no flat must error")
+	}
+	if _, _, err := d.MapFlatToFolded([]byte("k")); err == nil {
+		t.Error("MapFlatToFolded with no flat must error")
+	}
+}

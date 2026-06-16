@@ -125,10 +125,17 @@ func TestFlatPatternEdgesAndFaces(t *testing.T) {
 	}
 }
 
-// TestFlatPatternRejectsPlainPart the flat-pattern surface errors on an ordinary part.
+// TestFlatPatternRejectsPlainPart every flat-pattern method errors on an ordinary part.
 func TestFlatPatternRejectsPlainPart(t *testing.T) {
 	r, s := seededSession(t)
-	if _, err := r.Handle(s, wire.MethodFlatPatternListOrientations, []byte("{}")); err == nil {
-		t.Fatal("flatPattern on a plain part must error")
+	for _, m := range []string{
+		wire.MethodFlatPatternListOrientations,
+		wire.MethodFlatPatternEdgesOfType,
+		wire.MethodFlatPatternFaces,
+		wire.MethodFlatPatternMapEntity,
+	} {
+		if _, err := r.Handle(s, m, []byte("{}")); err == nil {
+			t.Errorf("%s on a plain part must error", m)
+		}
 	}
 }
