@@ -37,19 +37,24 @@ func TestApplyNavigationPansWithMiddleDrag(t *testing.T) {
 	}
 }
 
-func TestApplyNavigationOrbitsWithShiftMiddleAndLeftDrag(t *testing.T) {
+func TestApplyNavigationOrbitsWithShiftMiddle(t *testing.T) {
 	cam := scene.NewCamera(800, 600)
-	for name, in := range map[string]NavInput{
-		"shift+middle": {Active: true, Middle: true, Shift: true, DX: 30},
-		"left":         {Active: true, Left: true, DX: 30},
-	} {
-		o := ApplyNavigation(cam, in)
-		if o.Eye.IsEqualTo(cam.Eye, 1e-9) {
-			t.Errorf("%s drag should orbit (move the eye)", name)
-		}
-		if stdmath.Abs(dist(o)-dist(cam)) > 1e-9 {
-			t.Errorf("%s orbit must preserve distance: %v want %v", name, dist(o), dist(cam))
-		}
+	o := ApplyNavigation(cam, NavInput{Active: true, Middle: true, Shift: true, DX: 30})
+	if o.Eye.IsEqualTo(cam.Eye, 1e-9) {
+		t.Error("shift+middle drag should orbit (move the eye)")
+	}
+	if stdmath.Abs(dist(o)-dist(cam)) > 1e-9 {
+		t.Errorf("orbit must preserve distance: %v want %v", dist(o), dist(cam))
+	}
+}
+
+// Left-drag must NOT navigate — Inventor reserves it for selection / box-select, and
+// orbiting on left-drag collided with the sketch editor's left-click select/drag (#916).
+func TestApplyNavigationLeftDragDoesNotMoveCamera(t *testing.T) {
+	cam := scene.NewCamera(800, 600)
+	// A left-drag is signalled only by Active (no Middle); the camera must be untouched.
+	if out := ApplyNavigation(cam, NavInput{Active: true, DX: 40, DY: 25}); out != cam {
+		t.Error("a plain left-drag (Active, no middle button) must not move the camera")
 	}
 }
 

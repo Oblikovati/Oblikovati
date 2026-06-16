@@ -27,13 +27,14 @@ type NavInput struct {
 	Wheel   float32
 	DX, DY  float32
 	Middle  bool
-	Left    bool
 	Shift   bool
 }
 
 // ApplyNavigation maps one frame of pointer input to a camera move, mirroring Inventor:
-// wheel zooms (when hovered), middle-drag pans, Shift+middle-drag orbits; a plain
-// left-drag also orbits for discoverability. The camera math lives in scene.
+// wheel zooms (when hovered), middle-drag pans, Shift+middle-drag orbits. Left-drag is
+// deliberately NOT a navigation gesture — Inventor reserves it for selection (box-select
+// on empty space, drag-to-move on an entity), and orbiting on left-drag collided with the
+// sketch editor's left-click select/drag (#916). The camera math lives in scene.
 func ApplyNavigation(cam scene.Camera, in NavInput) scene.Camera {
 	if in.Hovered && in.Wheel != 0 {
 		cam = cam.Dolly(stdmath.Pow(zoomPerNotch, float64(in.Wheel)))
@@ -44,7 +45,7 @@ func ApplyNavigation(cam scene.Camera, in NavInput) scene.Camera {
 	switch {
 	case in.Middle && !in.Shift: // Inventor: pan with the middle button
 		cam = cam.Pan(float64(in.DX), float64(in.DY))
-	case (in.Middle && in.Shift) || in.Left: // Shift+middle orbits; left-drag orbits too
+	case in.Middle && in.Shift: // Shift+middle orbits
 		cam = cam.Orbit(float64(-in.DX)*orbitRadPerPixel, float64(-in.DY)*orbitRadPerPixel)
 	}
 	return cam

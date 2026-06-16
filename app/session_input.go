@@ -165,16 +165,40 @@ func (s *Session) Pointer(e PointerEvent) {
 	}
 	sel, ok := s.picker.Pick(e.X, e.Y, s.selection.Filter())
 	if !ok {
+		s.clearSelectionOnEmptyClick(e.Mods)
 		return
 	}
 	if s.tool != nil {
 		s.feedPickMods(sel, e.Mods)
 		return
 	}
-	if !e.Mods.Has(ShiftMod) && !e.Mods.Has(CtrlMod) {
-		s.selection.Clear() // a plain click replaces the selection
+	s.applyPickToSelection(sel, e.Mods)
+}
+
+// clearSelectionOnEmptyClick clears the selection when the user clicks empty space with
+// no active tool — Inventor (GUID-B8F6E805): "click in an empty area to deselect". A
+// modifier-held empty click is a no-op (it neither clears nor extends), and an active tool
+// owns its own miss handling, so both are left untouched.
+func (s *Session) clearSelectionOnEmptyClick(mods Modifier) {
+	if s.tool != nil || mods.Has(ShiftMod) || mods.Has(CtrlMod) || s.selection.Count() == 0 {
+		return
 	}
-	if s.selection.Add(sel) {
+	s.selection.Clear()
+	event.Emit(s.bus, event.After, SelectionChanged{Count: 0})
+}
+
+// applyPickToSelection updates the selection set for a viewport pick with no active tool,
+// mirroring Inventor (GUID-B8F6E805): a plain click replaces the selection; Shift/Ctrl+click
+// toggles the clicked object's membership (add if new, remove if already selected).
+func (s *Session) applyPickToSelection(sel Selectable, mods Modifier) {
+	var changed bool
+	if mods.Has(ShiftMod) || mods.Has(CtrlMod) {
+		changed = s.selection.Toggle(sel)
+	} else {
+		s.selection.Clear()
+		changed = s.selection.Add(sel)
+	}
+	if changed {
 		event.Emit(s.bus, event.After, SelectionChanged{Count: s.selection.Count()})
 	}
 }

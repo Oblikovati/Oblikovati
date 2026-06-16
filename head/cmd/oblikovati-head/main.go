@@ -206,7 +206,7 @@ func seedPart(s *app.Session) {
 // document is current (New Part, a tab, an add-in's activate_document) — and works
 // even when startup opened an empty workspace (StartupEmptyWorkspace, M05-F11).
 func installPicker(s *app.Session) {
-	s.SetPicker(app.NewRayPicker(s.Camera(),
+	picker := app.NewRayPicker(s.Camera(),
 		func() []*topo.Body { return activeBodies(s) }).
 		WithPlanes(func() []*feature.WorkPlane { return s.PickableWorkPlanes() }).
 		WithPoints(func() []*feature.WorkPoint { return s.PickableWorkPoints() }).
@@ -218,7 +218,9 @@ func installPicker(s *app.Session) {
 			return activeSketches(s)
 		}).
 		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }).
-		WithOccurrenceLookup(s.OccurrenceOfBody))
+		WithOccurrenceLookup(s.OccurrenceOfBody)
+	s.SetPicker(picker)
+	s.SetRegionPicker(picker) // the same picker answers box-select (window/crossing)
 }
 
 // loadKeymap wires the per-user keyboard-customization file (M05-F17) and verifies the

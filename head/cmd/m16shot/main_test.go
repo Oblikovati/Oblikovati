@@ -5,6 +5,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 	"testing"
@@ -78,15 +79,43 @@ func TestApplySetup(t *testing.T) {
 	}
 }
 
-// TestRunCaptures runs the full capture (opens the real window, renders a couple frames, saves
-// the viewport) end to end, so run + renderAndCapture are exercised.
-func TestRunCaptures(t *testing.T) {
-	out := filepath.Join(t.TempDir(), "out.png")
-	if err := run(opts{box: true, frames: 2, out: out}); err != nil {
-		t.Fatalf("run: %v", err)
+// TestRunBoxSelectCaptures runs the full box-select capture (opens the real window, installs
+// the picker, injects a drag, saves the window mid-drag) end to end, so run + captureBoxSelect
+// are exercised. The m16shot binary supports only ONE real window per test process (a second
+// native.CreateWindow crashes on GLFW/Vulkan teardown), so this is the single window test and
+// it covers the box-select path added in #916.
+func TestRunBoxSelectCaptures(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "box.png")
+	if err := run(opts{box: true, boxselect: true, frames: 2, out: out}); err != nil {
+		t.Fatalf("run boxselect: %v", err)
 	}
 	if fi, err := os.Stat(out); err != nil || fi.Size() == 0 {
-		t.Errorf("capture PNG not written: %v", err)
+		t.Errorf("box-select capture PNG not written: %v", err)
+	}
+}
+
+// TestParseOpts checks the flag parser maps command-line args onto the capture config.
+func TestParseOpts(t *testing.T) {
+	oldArgs, oldFlags := os.Args, flag.CommandLine
+	defer func() { os.Args, flag.CommandLine = oldArgs, oldFlags }()
+	flag.CommandLine = flag.NewFlagSet("m16shot", flag.ContinueOnError)
+	os.Args = []string{"m16shot", "-box", "-boxselect", "-frames", "3", "-out", "/tmp/parseopts.png"}
+
+	o := parseOpts()
+	if !o.box || !o.boxselect || o.frames != 3 || o.out != "/tmp/parseopts.png" {
+		t.Errorf("parseOpts = %+v, want box+boxselect, frames 3, the given out path", o)
+	}
+}
+
+// TestInjectBoxDrag exercises the box-select drag-injection sequence with a counting frame
+// callback (no window): it must press, drag through several positions, and render a frame at
+// each step. captureBoxSelect's window orchestration is verified manually (the live PNG) —
+// the m16shot binary supports only one real window per test process.
+func TestInjectBoxDrag(t *testing.T) {
+	frames := 0
+	injectBoxDrag(func() { frames++ })
+	if frames < 6 {
+		t.Errorf("injectBoxDrag rendered %d frames, want at least 6 (press + drag steps)", frames)
 	}
 }
 
