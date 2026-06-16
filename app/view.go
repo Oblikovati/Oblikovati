@@ -11,7 +11,10 @@ import "oblikovati.org/math"
 
 // FitView reframes the camera so the whole active part fits the viewport. It writes
 // through the active view (SetCamera) so the framing is remembered per view.
-func (s *Session) FitView() { s.SetCamera(s.Camera().Fit(s.modelBounds())) }
+func (s *Session) FitView() {
+	s.PushViewHistory() // record the view Previous View (F5) returns to
+	s.SetCamera(s.Camera().Fit(s.modelBounds()))
+}
 
 // HomeView switches to the default isometric view, framed to fit the active part, writing
 // through the active view so the framing is remembered.

@@ -433,3 +433,70 @@ func TestInWindowRightClickBeginsSelectOther(t *testing.T) {
 	native.InjectMouseButton(native.MouseRight, false)
 	frame() // the widget renders (drawSelectOtherWidget) without crashing
 }
+
+// TestInWindowF2HoldPansWithLeftDrag holds F2 and left-drags through the live window, asserting
+// the head turned the drag into a pan — the hold-to-navigate path (#911).
+func TestInWindowF2HoldPansWithLeftDrag(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	s := framedSession()
+	cx, cy := float32(inWinW/2), float32(inWinH/2)
+
+	native.InjectMousePos(cx, cy)
+	viewportFrame(win, s)
+	viewportFrame(win, s)
+	native.InjectFKey(2, true) // hold F2 (pan)
+	native.InjectMouseButton(native.MouseLeft, true)
+	viewportFrame(win, s)
+	before := s.Camera()
+	for i := 1; i <= 3; i++ {
+		native.InjectMousePos(cx+float32(20*i), cy)
+		viewportFrame(win, s)
+	}
+	got := s.Camera()
+	native.InjectMouseButton(native.MouseLeft, false)
+	native.InjectFKey(2, false)
+	viewportFrame(win, s)
+	if got.Target.IsEqualTo(before.Target, 1e-6) {
+		t.Fatalf("F2-hold + left-drag should pan: target stayed %v", got.Target)
+	}
+
+	// F4-hold + left-drag orbits (moves the eye). Reset the cursor to centre first so the drag
+	// deltas are monotonic (not cancelled by the previous gesture's end position).
+	native.InjectMousePos(cx, cy)
+	viewportFrame(win, s)
+	native.InjectFKey(4, true)
+	native.InjectMouseButton(native.MouseLeft, true)
+	viewportFrame(win, s)
+	eyeBefore := s.Camera()
+	for i := 1; i <= 3; i++ {
+		native.InjectMousePos(cx+float32(20*i), cy)
+		viewportFrame(win, s)
+	}
+	orbited := s.Camera()
+	native.InjectMouseButton(native.MouseLeft, false)
+	native.InjectFKey(4, false)
+	viewportFrame(win, s)
+	if orbited.Eye.IsEqualTo(eyeBefore.Eye, 1e-6) {
+		t.Error("F4-hold + left-drag should orbit (move the eye)")
+	}
+
+	// F3-hold + vertical left-drag zooms (changes the eye–target distance).
+	native.InjectMousePos(cx, cy)
+	viewportFrame(win, s)
+	native.InjectFKey(3, true)
+	native.InjectMouseButton(native.MouseLeft, true)
+	viewportFrame(win, s)
+	distBefore := dist(s.Camera())
+	for i := 1; i <= 3; i++ {
+		native.InjectMousePos(cx, cy+float32(20*i))
+		viewportFrame(win, s)
+	}
+	zoomed := dist(s.Camera())
+	native.InjectMouseButton(native.MouseLeft, false)
+	native.InjectFKey(3, false)
+	viewportFrame(win, s)
+	if stdmath.Abs(zoomed-distBefore) < 1e-6 {
+		t.Error("F3-hold + vertical left-drag should zoom (change the distance)")
+	}
+}

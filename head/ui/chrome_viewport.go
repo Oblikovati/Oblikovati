@@ -636,6 +636,7 @@ const (
 // box-select, handled separately, so it is not read here.
 func readNavInput() NavInput {
 	dx, dy := native.MouseDelta()
+	modal := heldNavMode()
 	return NavInput{
 		Hovered: native.IsItemHovered(),
 		Active:  native.IsItemActive(),
@@ -644,5 +645,22 @@ func readNavInput() NavInput {
 		DY:      dy,
 		Middle:  native.MouseDown(native.MouseMiddle),
 		Shift:   native.KeyShift(),
+		Modal:   modal,
+		Left:    modal != NavNone && native.MouseDown(native.MouseLeft),
+	}
+}
+
+// heldNavMode reports which hold-to-navigate function key is down — F2 pan, F3 zoom, F4 orbit
+// (#911) — so a left-drag drives that gesture. F4 wins if several are held.
+func heldNavMode() NavMode {
+	switch {
+	case native.FKeyDown(4):
+		return NavOrbit
+	case native.FKeyDown(3):
+		return NavZoom
+	case native.FKeyDown(2):
+		return NavPan
+	default:
+		return NavNone
 	}
 }

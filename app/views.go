@@ -67,6 +67,7 @@ func (s *Session) SetActiveViewHome(fitToView bool) {
 // Current View as Home"), else the default iso Home (model framed from (1,1,1)). It backs
 // the ViewCube Home button.
 func (s *Session) GoHome() {
+	s.PushViewHistory() // record the view Previous View (F5) returns to
 	v := s.ActiveView()
 	if v == nil || v.Home == nil {
 		s.animateCameraTo(s.Camera().Home(s.modelBounds()), sketchViewTweenSeconds)
