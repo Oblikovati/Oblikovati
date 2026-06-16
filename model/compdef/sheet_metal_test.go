@@ -104,3 +104,30 @@ func TestSheetMetalRecipeRoundTrips(t *testing.T) {
 		t.Errorf("restored bend allowance = %v, want %v", g, want)
 	}
 }
+
+// TestSheetMetalBendTableRecipeRoundTrips a bend-table unfold method (its measured rows)
+// survives marshal/restore and develops the same length.
+func TestSheetMetalBendTableRecipeRoundTrips(t *testing.T) {
+	src := NewPartComponentDefinition()
+	rule, _ := src.EnableSheetMetal()
+	table := sheetmetal.NewBendTable([]sheetmetal.BendTableRow{
+		{Angle: math.Pi / 2, Radius: 0.1, Thickness: 0.1, Allowance: 0.31},
+	})
+	rule.SetUnfold(sheetmetal.BendTableMethod(table))
+
+	blob, err := src.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	dst := NewPartComponentDefinition()
+	if err := dst.ApplyRecipe(blob); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	got := dst.SheetMetal()
+	if got == nil || got.Unfold().Type != types.BendTableUnfold {
+		t.Fatalf("restored unfold = %v, want bendTable", got)
+	}
+	if ba := got.BendAllowance(math.Pi/2, 0.1); math.Abs(ba-0.31) > 1e-9 {
+		t.Errorf("restored table allowance = %v, want 0.31", ba)
+	}
+}

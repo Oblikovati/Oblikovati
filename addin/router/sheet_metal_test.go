@@ -92,3 +92,54 @@ func TestSheetMetalSetStyleRejectsUnsupportedUnfold(t *testing.T) {
 		t.Fatal("setStyle must reject bendTable (no table payload in the style DTO)")
 	}
 }
+
+// TestSheetMetalSetStyleAllProperties setStyle edits every simple property in one call:
+// bend radius, relief width/depth, minimum gap, and the named K-factor method.
+func TestSheetMetalSetStyleAllProperties(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	var res wire.SheetMetalStyleResult
+	call(t, r, s, wire.MethodSheetMetalSetStyle,
+		`{"bendRadius":"3 mm","reliefShape":"square","reliefWidth":"0.5 mm","reliefDepth":"0.5 mm","minimumGap":"1 mm","unfoldMethod":"kFactor"}`, &res)
+	if res.Style.BendRadius != "3 mm" {
+		t.Errorf("bend radius = %q, want 3 mm", res.Style.BendRadius)
+	}
+	if res.Style.ReliefWidth != "0.5 mm" || res.Style.ReliefDepth != "0.5 mm" {
+		t.Errorf("relief size = %q/%q, want 0.5 mm/0.5 mm", res.Style.ReliefWidth, res.Style.ReliefDepth)
+	}
+	if res.Style.MindGap != "1 mm" {
+		t.Errorf("minimum gap = %q, want 1 mm", res.Style.MindGap)
+	}
+	if res.Style.UnfoldMethod != types.KFactorUnfold.String() {
+		t.Errorf("unfold = %q, want kFactor", res.Style.UnfoldMethod)
+	}
+}
+
+// TestSheetMetalSetStyleRejectsBadExpressions setStyle reports a clear error for an
+// unparseable length and a bad relief shape.
+func TestSheetMetalSetStyleRejectsBadExpressions(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	// reliefShape/minimumGap/reliefWidth go through a hard unit parse, so a bad value errors.
+	// (thickness/bendRadius re-author a parameter, where an unparseable token becomes a sick
+	// parameter rather than a setStyle error — that path is the parameter engine's contract.)
+	for _, bad := range []string{
+		`{"reliefShape":"hexagon"}`,
+		`{"minimumGap":"zzz"}`,
+		`{"reliefWidth":"zzz"}`,
+		`{"reliefDepth":"zzz"}`,
+	} {
+		if _, err := r.Handle(s, wire.MethodSheetMetalSetStyle, []byte(bad)); err == nil {
+			t.Errorf("setStyle(%s) should error", bad)
+		}
+	}
+}
+
+// TestSheetMetalBendAllowanceRejectsBadInput bendAllowance reports a clear error for a bad
+// angle or radius expression.
+func TestSheetMetalBendAllowanceRejectsBadInput(t *testing.T) {
+	r, s := newSheetMetalPart(t)
+	for _, bad := range []string{`{"angle":"oops"}`, `{"angle":"90 deg","radius":"oops"}`} {
+		if _, err := r.Handle(s, wire.MethodSheetMetalBendAllowance, []byte(bad)); err == nil {
+			t.Errorf("bendAllowance(%s) should error", bad)
+		}
+	}
+}

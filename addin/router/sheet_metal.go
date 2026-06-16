@@ -166,14 +166,22 @@ func sheetMetalBendAllowance(s *app.Session, raw json.RawMessage) (json.RawMessa
 }
 
 // styleInfo renders the active rule as wire, formatting lengths in the document's units and
-// including the bend allowance of a 90° bend as a convenience preview.
+// including the bend allowance of a 90° bend as a convenience preview. The two
+// parameter-backed lengths report their authored expression (e.g. "3 mm" or "t*2"), which
+// is both more faithful and free of the floating-point noise a unit reconversion introduces.
 func styleInfo(part *compdef.PartComponentDefinition, rule *sheetmetal.Rule) wire.SheetMetalStyleInfo {
 	fmtLen := func(v float64) string { return part.Units().Format(param.Q(v, param.Length)) }
+	paramExpr := func(name string, value float64) string {
+		if p, ok := part.Parameters().ByName(name); ok {
+			return p.Expression()
+		}
+		return fmtLen(value)
+	}
 	unfold := rule.Unfold()
 	return wire.SheetMetalStyleInfo{
 		Name:          rule.Name(),
-		Thickness:     fmtLen(rule.Thickness()),
-		BendRadius:    fmtLen(rule.BendRadius()),
+		Thickness:     paramExpr(compdef.ThicknessParamName(), rule.Thickness()),
+		BendRadius:    paramExpr(compdef.BendRadiusParamName(), rule.BendRadius()),
 		ReliefShape:   rule.Relief().Shape.String(),
 		ReliefWidth:   fmtLen(rule.ReliefWidth()),
 		ReliefDepth:   fmtLen(rule.ReliefDepth()),
