@@ -11,6 +11,7 @@ package events
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
@@ -31,6 +32,20 @@ type wireEvent struct {
 	ID       uint64 `json:"id,omitempty"`
 	Command  string `json:"command,omitempty"`
 	Failed   bool   `json:"failed,omitempty"`
+	Name     string `json:"name,omitempty"` // style name (M16-F02 style events)
+}
+
+// styleEventType maps a style-change kind to its wire event constant (references all three so
+// the API↔router parity guard sees each one relayed).
+func styleEventType(k app.StyleChangeKind) string {
+	switch k {
+	case app.StyleAdded:
+		return wire.EventStyleAdded
+	case app.StyleDeleted:
+		return wire.EventStyleDeleted
+	default:
+		return wire.EventStyleChanged
+	}
 }
 
 // Subscribe wires the session's document, command, and UI-surface events to sink
@@ -53,6 +68,16 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
 			return relayEdit(sink, e)
+		}),
+		// M16-F03 (#404): the active view's camera moved (named-view restore / orientation
+		// jump). The add-in reads the new frame via get_camera; wire.CameraChangedEvent is the
+		// richer DTO for an out-of-band transport.
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.CameraChanged) event.Outcome {
+			return relay(sink, wireEvent{Type: wire.EventCameraChanged, Document: strconv.FormatUint(uint64(e.Document), 10)})
+		}),
+		// M16-F02 (#403/#408): a color/lighting style was added, edited, or deleted.
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.StyleChanged) event.Outcome {
+			return relay(sink, wireEvent{Type: styleEventType(e.Kind), Name: e.Name})
 		}),
 	)
 	subs = append(subs, subscribeTransactions(bus, sink)...)

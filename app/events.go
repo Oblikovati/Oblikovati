@@ -27,7 +27,39 @@ const (
 	tidTriadSegment         event.TypeID = 0x0510 // app/triad.go (M05-F13)
 	tidTriadDrag            event.TypeID = 0x0511 // app/triad.go (M05-F13)
 	tidManipulatorDrag      event.TypeID = 0x0512 // app/manipulators.go (M05-F13)
+	tidCameraChanged        event.TypeID = 0x1601 // app/named_views.go (M16-F03 #404)
+	tidStyleChanged         event.TypeID = 0x1602 // app/style.go (M16-F02 #403/#408)
 )
+
+// CameraChanged fires (After) when the active view's camera moves — a named-view restore or a
+// standard-orientation jump (Inventor's CameraEvents). Document is the affected document's ID;
+// collaboration and overlay add-ins re-sync to the new frame.
+type CameraChanged struct{ Document doc.ID }
+
+// EventID implements event.Event.
+func (CameraChanged) EventID() event.TypeID { return tidCameraChanged }
+
+// StyleChangeKind is which style mutation a [StyleChanged] reports.
+type StyleChangeKind uint8
+
+const (
+	// StyleAdded is a newly created style.
+	StyleAdded StyleChangeKind = iota
+	// StyleEdited is an updated style — consumers re-resolve their styling.
+	StyleEdited
+	// StyleDeleted is a removed style.
+	StyleDeleted
+)
+
+// StyleChanged fires (After) when a color or lighting style is added, edited, or deleted —
+// Inventor's StyleEvents. Name is the affected style; Kind discriminates the change.
+type StyleChanged struct {
+	Name string
+	Kind StyleChangeKind
+}
+
+// EventID implements event.Event.
+func (StyleChanged) EventID() event.TypeID { return tidStyleChanged }
 
 // CommandStarted fires (Before) when a command begins — Inventor's
 // OnExecute(Before). A handler could veto, though most observe.

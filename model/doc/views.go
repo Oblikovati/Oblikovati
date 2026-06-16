@@ -102,7 +102,8 @@ type DocumentViews struct {
 	// "use the default 0.5" so a freshly-seeded collection needs no initialization.
 	splitX float32
 	splitY float32
-	front  CubeOrient // ViewCube orientation (Set/Reset Front); zero value ⇒ identity
+	front  CubeOrient          // ViewCube orientation (Set/Reset Front); zero value ⇒ identity
+	named  map[string]ViewHome // saved named views (M16-F03 #404): name → exact camera frame
 }
 
 // Front returns the document's ViewCube orientation, defaulting to the identity (the

@@ -13,11 +13,14 @@ import (
 	"oblikovati.org/model/bodyapi"
 	"oblikovati.org/model/bom"
 	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/model/colorscheme"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/display"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/facetstore"
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/sketch"
+	"oblikovati.org/model/style"
 	"oblikovati.org/persistence/dialogmemory"
 	"oblikovati.org/persistence/userprefs"
 	"oblikovati.org/persistence/viewstate"
@@ -102,6 +105,11 @@ type Session struct {
 	visualStyle          renderer.VisualStyle           // how the scene is drawn (View tab's Visual Style)
 	lightingStyle        renderer.LightingStyleID       // active lighting preset (View tab's Lighting Style)
 	lighting             renderer.SceneLighting         // the live lighting rig (resolved from the style, then edited)
+	colorSchemes         *colorscheme.Registry          // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
+	colorSchemeRev       uint64                         // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
+	styles               *style.Manager                 // document color styles + style-library cascade (M16-F02 #403/#408)
+	displayOptions       display.Options                // app-level display options that parameterize the display modes (M16-F07 #643)
+	docDisplay           map[doc.ID]display.Settings    // per-document display settings (background, edges, ground, shadows) (M16-F07 #643)
 	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
 	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
@@ -182,14 +190,24 @@ func newSession(store doc.Store) *Session {
 		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
-	// The embedded Sky map is the default environment for every visual style — IBL plus
-	// the sky as the viewport background (ADR-0026 §8).
-	s.lighting.Environment = renderer.DefaultEnvironment()
+	s.seedVisualState()
 	s.messageCenter.sink = s.routeMessage // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
 	s.watchDocumentInterests()
 	return s
+}
+
+// seedVisualState seeds the M16 visualization registries (color schemes, color styles, display
+// options/settings) and the default IBL environment. Split out of newSession to keep it short
+// (one place for the visual defaults). The embedded Sky map is the default environment for
+// every visual style — IBL plus the sky as the viewport background (ADR-0026 §8).
+func (s *Session) seedVisualState() {
+	s.lighting.Environment = renderer.DefaultEnvironment()
+	s.colorSchemes = colorscheme.NewRegistry()
+	s.styles = style.NewManager()
+	s.displayOptions = display.DefaultOptions()
+	s.docDisplay = map[doc.ID]display.Settings{}
 }
 
 // initShellSurfaces seeds the M05 add-in UI-shell state: web views, the default
