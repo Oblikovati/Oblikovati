@@ -94,17 +94,25 @@ func buildContourFlangeSolid(edge *topo.Edge, profile []math.Point2, thickness f
 	return buildPrism(band, plane, span{near: 0, far: v0.DistanceTo(v1)}, 0, feat), nil
 }
 
-// contourBand returns the closed cross-section band for the profile: the inner contour, then
-// the outer contour (the inner offset toward the material by the thickness) reversed, each
-// mapped into the section plane via at.
+// contourBand returns the closed cross-section band for the profile mapped into the section
+// plane via at.
 func contourBand(profile []math.Point2, thickness float64, at func(math.Point2) math.Point2) []math.Point2 {
-	outer := offsetProfile(profile, -thickness) // offset toward −up (the sheet's material side)
-	band := make([]math.Point2, 0, len(profile)+len(outer))
-	for _, p := range profile {
-		band = append(band, at(p))
+	band := profileBand2D(profile, thickness)
+	for i, p := range band {
+		band[i] = at(p)
 	}
+	return band
+}
+
+// profileBand2D returns the closed constant-thickness band of an open profile: the inner
+// contour, then its outer offset (toward the material side) reversed. Shared by the contour
+// flange and the lofted flange.
+func profileBand2D(profile []math.Point2, thickness float64) []math.Point2 {
+	outer := offsetProfile(profile, -thickness)
+	band := make([]math.Point2, 0, len(profile)+len(outer))
+	band = append(band, profile...)
 	for i := len(outer) - 1; i >= 0; i-- {
-		band = append(band, at(outer[i]))
+		band = append(band, outer[i])
 	}
 	return band
 }
