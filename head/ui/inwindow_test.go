@@ -180,3 +180,58 @@ func TestInWindowWheelZoomsCamera(t *testing.T) {
 		t.Errorf("scroll-up over the live viewport should zoom in: %v → %v", before, after)
 	}
 }
+
+// fakeEmptyPicker reports a miss for every point pick — so a viewport press lands on empty
+// space and arms box-select (the head's begin condition).
+type fakeEmptyPicker struct{}
+
+func (fakeEmptyPicker) Pick(_, _ float64, _ *app.SelectionFilter) (app.Selectable, bool) {
+	return nil, false
+}
+
+// fakeRegionHit returns one canned selectable for any box, so the test asserts the head
+// drove Begin→Update→Commit without needing real projected geometry.
+type fakeRegionHit struct{ sel app.Selectable }
+
+func (f fakeRegionHit) PickRegion(_, _, _, _ float64, _ bool, _ *app.SelectionFilter) []app.Selectable {
+	return []app.Selectable{f.sel}
+}
+
+// TestInWindowBoxSelectDragSelects drives a real left-drag from empty space across the live
+// viewport and asserts the head ran the box-select state machine to completion: nothing is
+// selected mid-drag, and on release the region hit joins the selection (#916).
+func TestInWindowBoxSelectDragSelects(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	s := framedSession()
+	s.SetPicker(fakeEmptyPicker{}) // every press is on empty space → box-select arms
+	s.SetRegionPicker(fakeRegionHit{sel: app.BodyHandle{}})
+	cx, cy := float32(inWinW/2), float32(inWinH/2)
+
+	native.InjectMousePos(cx, cy)
+	viewportFrame(win, s)
+	native.InjectMousePos(cx, cy)
+	viewportFrame(win, s)
+
+	native.InjectMouseButton(native.MouseLeft, true) // press on empty → begin box
+	viewportFrame(win, s)
+	if !s.BoxSelectActive() {
+		t.Fatal("a left press on empty space did not begin box-select")
+	}
+	for i := 1; i <= 3; i++ { // drag out the rectangle
+		native.InjectMousePos(cx+float32(40*i), cy+float32(25*i))
+		viewportFrame(win, s)
+	}
+	if s.Selection().Count() != 0 {
+		t.Fatalf("box-select must not commit mid-drag: count=%d", s.Selection().Count())
+	}
+
+	native.InjectMouseButton(native.MouseLeft, false) // release → commit
+	viewportFrame(win, s)
+	if s.BoxSelectActive() {
+		t.Error("releasing the button must end the box-select drag")
+	}
+	if s.Selection().Count() != 1 {
+		t.Errorf("box-select release should select the region hit: count=%d, want 1", s.Selection().Count())
+	}
+}

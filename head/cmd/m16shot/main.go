@@ -40,28 +40,35 @@ var orientByName = map[string]types.ViewOrientationTypeEnum{
 }
 
 func main() {
-	scheme := flag.String("scheme", "", "color scheme to activate before capture")
-	out := flag.String("out", "/tmp/m16shot.png", "viewport PNG output path")
-	frames := flag.Int("frames", 8, "frames to render before capture")
-	noEnv := flag.Bool("no-env", false, "turn off the environment skybox so the scheme background shows")
-	box := flag.Bool("box", false, "build a demo box so geometry is visible")
-	orient := flag.String("orient", "", "jump to a standard orientation (front/top/iso…)")
-	edge := flag.String("edge", "", "override the display-settings edge color as R,G,B (0-255)")
-	ground := flag.String("ground", "", "set the display-settings ground color as R,G,B and enable ground shadows")
-	overlay := flag.Bool("overlay", false, "add a red surface overlay highlighting the demo box (M16-F05)")
-	styleName := flag.String("style", "", "assign a color style (e.g. Brass) to the demo box (M16-F02)")
-	named := flag.Bool("named", false, "save a couple named views and open the Named Views panel (M16-F03)")
-	stylesPanel := flag.Bool("styles", false, "select the demo box and open the Color Styles panel (M16-F02)")
-	window := flag.Bool("window", false, "capture the WHOLE window (chrome + panels), not just the 3D viewport")
-	dialog := flag.Bool("dialog", false, "open the Display Settings dialog (M16-F07)")
-	imageOverlay := flag.Bool("image", false, "add an image billboard overlay at the origin (M16-F05)")
-	flag.Parse()
-
-	if err := run(opts{*scheme, *out, *frames, *noEnv, *box, *orient, *edge, *ground, *overlay, *styleName, *named, *stylesPanel, *window, *dialog, *imageOverlay}); err != nil {
+	o := parseOpts()
+	if err := run(o); err != nil {
 		fmt.Fprintln(os.Stderr, "m16shot:", err)
 		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stdout, "wrote", *out)
+	fmt.Fprintln(os.Stdout, "wrote", o.out)
+}
+
+// parseOpts defines and parses the command-line flags into the capture configuration.
+func parseOpts() opts {
+	var o opts
+	flag.StringVar(&o.scheme, "scheme", "", "color scheme to activate before capture")
+	flag.StringVar(&o.out, "out", "/tmp/m16shot.png", "viewport PNG output path")
+	flag.IntVar(&o.frames, "frames", 8, "frames to render before capture")
+	flag.BoolVar(&o.noEnv, "no-env", false, "turn off the environment skybox so the scheme background shows")
+	flag.BoolVar(&o.box, "box", false, "build a demo box so geometry is visible")
+	flag.StringVar(&o.orient, "orient", "", "jump to a standard orientation (front/top/iso…)")
+	flag.StringVar(&o.edge, "edge", "", "override the display-settings edge color as R,G,B (0-255)")
+	flag.StringVar(&o.ground, "ground", "", "set the display-settings ground color as R,G,B and enable ground shadows")
+	flag.BoolVar(&o.overlay, "overlay", false, "add a red surface overlay highlighting the demo box (M16-F05)")
+	flag.StringVar(&o.style, "style", "", "assign a color style (e.g. Brass) to the demo box (M16-F02)")
+	flag.BoolVar(&o.named, "named", false, "save a couple named views and open the Named Views panel (M16-F03)")
+	flag.BoolVar(&o.styles, "styles", false, "select the demo box and open the Color Styles panel (M16-F02)")
+	flag.BoolVar(&o.window, "window", false, "capture the WHOLE window (chrome + panels), not just the 3D viewport")
+	flag.BoolVar(&o.dialog, "dialog", false, "open the Display Settings dialog (M16-F07)")
+	flag.BoolVar(&o.image, "image", false, "add an image billboard overlay at the origin (M16-F05)")
+	flag.BoolVar(&o.boxselect, "boxselect", false, "drag a window box-select across the demo box and capture the rubber-band (#916)")
+	flag.Parse()
+	return o
 }
 
 // opts is the capture configuration parsed from the command line.
@@ -76,6 +83,7 @@ type opts struct {
 	style                 string
 	named, styles, window bool
 	dialog, image         bool
+	boxselect             bool
 }
 
 func run(o opts) error {
@@ -91,7 +99,54 @@ func run(o opts) error {
 	if err := applySetup(s, o); err != nil {
 		return err
 	}
+	if o.boxselect {
+		return captureBoxSelect(s, o)
+	}
 	return renderAndCapture(s, o)
+}
+
+// captureBoxSelect installs the real ray/region picker over the scene, then injects a left
+// drag from an empty corner of the viewport across the demo box and captures the whole
+// window mid-drag — so the saved PNG shows the window-select rubber-band over the geometry
+// (#916). Coordinates target the central viewport dock node of the default layout.
+func captureBoxSelect(s *app.Session, o opts) error {
+	picker := app.NewRayPicker(s.Camera(), s.VisibleBodies)
+	s.SetPicker(picker)
+	s.SetRegionPicker(picker)
+	win, err := native.CreateWindow(1280, 800, "m16shot")
+	if err != nil {
+		return err
+	}
+	defer win.Destroy()
+	win.InitViewport()
+	frame := func() {
+		win.BeginFrame()
+		ui.DrawChrome(win, s)
+		win.EndFrame(ui.WindowClearColor())
+	}
+	for i := 0; i < o.frames; i++ {
+		frame()
+	}
+	injectBoxDrag(frame)
+	err = win.SaveWindowPNG(o.out) // capture mid-drag: the rubber-band is on screen
+	native.InjectMouseButton(native.MouseLeft, false)
+	frame()
+	return err
+}
+
+// injectBoxDrag presses on an empty spot inside the viewport content (left of the box,
+// below the tab strip) and drags a window down-right across the box, rendering each frame so
+// the rubber-band is on screen when the caller captures. It leaves the button held.
+func injectBoxDrag(frame func()) {
+	native.InjectMousePos(400, 300)
+	frame()
+	frame()
+	native.InjectMouseButton(native.MouseLeft, true)
+	frame()
+	for i := 1; i <= 6; i++ {
+		native.InjectMousePos(400+float32(125*i), 300+float32(63*i))
+		frame()
+	}
 }
 
 // applySetup applies the requested scene mutations (scheme / orientation / edge / ground /

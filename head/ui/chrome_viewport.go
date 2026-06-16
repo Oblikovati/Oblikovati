@@ -73,6 +73,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
 	sketchPlane, dims, gfxLabels, gfxImages := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
+	drawBoxSelectRect(s, bx, by) // the rubber-band selection rectangle, on top of the image
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
 	}
@@ -343,7 +344,7 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 	// The triad/manipulators own the pointer when hovered or mid-drag (M05-F13);
 	// picking and tool clicks stand down for the frame.
 	if !routeGizmoInput(s, cam) {
-		handleViewportClick(s)
+		handleViewportSelection(s) // box-select on an empty-space drag, else single-pick click
 	}
 	return cam, hoveredPlane(s)
 }

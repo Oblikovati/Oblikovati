@@ -90,6 +90,18 @@ func TestRunCaptures(t *testing.T) {
 	}
 }
 
+// TestInjectBoxDrag exercises the box-select drag-injection sequence with a counting frame
+// callback (no window): it must press, drag through several positions, and render a frame at
+// each step. captureBoxSelect's window orchestration is verified manually (the live PNG) —
+// the m16shot binary supports only one real window per test process.
+func TestInjectBoxDrag(t *testing.T) {
+	frames := 0
+	injectBoxDrag(func() { frames++ })
+	if frames < 6 {
+		t.Errorf("injectBoxDrag rendered %d frames, want at least 6 (press + drag steps)", frames)
+	}
+}
+
 // TestWriteCheckerPNG writes a checker PNG and checks it lands on disk.
 func TestWriteCheckerPNG(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "checker.png")
