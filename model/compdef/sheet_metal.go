@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	gmath "oblikovati.org/math"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sheetmetal"
 )
@@ -111,6 +112,15 @@ type sheetMetalRecipe struct {
 	ActiveOrient string               `yaml:"activeOrientation,omitempty"`
 	DeferUpdate  bool                 `yaml:"deferFlatUpdate,omitempty"` // M13-F05
 	BendOrder    []string             `yaml:"bendOrder,omitempty"`       // M13-F06
+	Centerlines  []centerlineRecipe   `yaml:"centerlines,omitempty"`     // M13-F06
+}
+
+// centerlineRecipe is one persisted cosmetic centerline (flat 2D coordinates, cm).
+type centerlineRecipe struct {
+	X1 float64 `yaml:"x1"`
+	Y1 float64 `yaml:"y1"`
+	X2 float64 `yaml:"x2"`
+	Y2 float64 `yaml:"y2"`
 }
 
 // bendTableRowRecipe is one persisted bend-table sample (database units, cm; angle radians).
@@ -171,6 +181,9 @@ func (d *PartComponentDefinition) captureOrientations(rec *sheetMetalRecipe) {
 	rec.ActiveOrient = d.flatOrientations.Active().Name
 	rec.DeferUpdate = d.flatSettings.DeferUpdate
 	rec.BendOrder = d.bendOrder
+	for _, c := range d.centerlines {
+		rec.Centerlines = append(rec.Centerlines, centerlineRecipe{c.Start.X, c.Start.Y, c.End.X, c.End.Y})
+	}
 }
 
 // applySheetMetalRecipe rebuilds the rule from rec, binding its thickness/bend-radius to the
@@ -223,6 +236,10 @@ func (d *PartComponentDefinition) restoreOrientations(rec *sheetMetalRecipe) err
 	}
 	d.flatSettings.DeferUpdate = rec.DeferUpdate
 	d.bendOrder = rec.BendOrder
+	d.centerlines = nil
+	for _, c := range rec.Centerlines {
+		d.centerlines = append(d.centerlines, sheetmetal.CosmeticCenterline{Start: gmath.P2(c.X1, c.Y1), End: gmath.P2(c.X2, c.Y2)})
+	}
 	return nil
 }
 

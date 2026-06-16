@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/kernel/ops"
+	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
@@ -36,6 +37,55 @@ func (r *Router) registerFlatPatternHandlers() {
 	r.handlers[wire.MethodFlatPatternSetSettings] = flatPatternSetSettings
 	r.handlers[wire.MethodFlatPatternListBendOrder] = flatPatternListBendOrder
 	r.handlers[wire.MethodFlatPatternSetBendOrder] = flatPatternSetBendOrder
+	r.handlers[wire.MethodFlatPatternAddCenterline] = flatPatternAddCenterline
+	r.handlers[wire.MethodFlatPatternListCenterlines] = flatPatternListCenterlines
+	r.handlers[wire.MethodFlatPatternDeleteCenterline] = flatPatternDeleteCenterline
+}
+
+func flatPatternAddCenterline(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddCenterlineArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	part.AddCosmeticCenterline(gmath.P2(in.Start.X, in.Start.Y), gmath.P2(in.End.X, in.End.Y))
+	return json.Marshal(centerlinesResult(part))
+}
+
+func flatPatternListCenterlines(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(centerlinesResult(part))
+}
+
+func flatPatternDeleteCenterline(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, _, err := activeSheetMetal(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.DeleteCenterlineArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	if err := part.DeleteCosmeticCenterline(in.Index); err != nil {
+		return nil, err
+	}
+	return json.Marshal(centerlinesResult(part))
+}
+
+// centerlinesResult renders the part's cosmetic centerlines as wire.
+func centerlinesResult(part *compdef.PartComponentDefinition) wire.CenterlinesResult {
+	lines := part.CosmeticCenterlines()
+	out := wire.CenterlinesResult{Centerlines: make([]wire.CenterlineInfo, len(lines))}
+	for i, c := range lines {
+		out.Centerlines[i] = wire.CenterlineInfo{Index: i, Start: point2d(c.Start), End: point2d(c.End)}
+	}
+	return out
 }
 
 func flatPatternListBendOrder(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {

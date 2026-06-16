@@ -65,6 +65,9 @@ type PartComponentDefinition struct {
 	// bendOrder is the press-brake bend sequence (M13-F06) as an overlay of bend feature names;
 	// empty means the natural (creation) order. Bends not listed follow the listed ones.
 	bendOrder []string
+	// centerlines are the flat pattern's cosmetic centerlines (M13-F06) — annotation lines that
+	// persist with the part.
+	centerlines []sheetmetal.CosmeticCenterline
 }
 
 // NewPartComponentDefinition returns an empty part content object with its feature
