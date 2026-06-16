@@ -188,6 +188,24 @@ func mateSolution(s string) types.MateConstraintSolutionType {
 	return types.MateSolutionOpposed
 }
 
+// snapPrefer maps the optional grip-snap prefer spelling to a constraint type (empty ⇒ 0, auto-infer).
+func snapPrefer(spelling string) (types.AssemblyConstraintType, error) {
+	switch spelling {
+	case "":
+		return 0, nil
+	case "mate":
+		return types.ConstraintMate, nil
+	case "flush":
+		return types.ConstraintFlush, nil
+	case "insert":
+		return types.ConstraintInsert, nil
+	case "tangent":
+		return types.ConstraintTangent, nil
+	default:
+		return 0, fmt.Errorf("assembly snap: unknown prefer %q (want mate, flush, insert, or tangent)", spelling)
+	}
+}
+
 // angleSolution maps the wire solution string to the angle solution enum ("" ⇒ undirected).
 func angleSolution(s string) types.AngleConstraintSolutionType {
 	switch s {

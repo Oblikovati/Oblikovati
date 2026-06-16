@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/scene"
 )
@@ -18,7 +19,20 @@ import (
 // placed occurrence — the fixture for the viewport rendering + picking tests (#769).
 func assemblyWithBoxComponent(t *testing.T, tx float64) (*Session, *compdef.AssemblyComponentDefinition, *occurrence.Occurrence) {
 	t.Helper()
-	s := extrudedBox(t, 2, 4) // active part = box [0,2]×[0,2]×[0,4]
+	s, asm, boxDoc, asmDoc := emptyBoxAssembly(t)
+	occ, err := asm.PlaceComponentFromFile(asmDoc, boxDoc, "box:1", math.Translation4(math.V3(math.Scalar(tx), 0, 0)))
+	if err != nil {
+		t.Fatalf("place box: %v", err)
+	}
+	return s, asm, occ
+}
+
+// emptyBoxAssembly builds a box part [0,2]×[0,2]×[0,4] and a fresh active assembly that can host
+// instances of it, returning the session, the assembly definition, the box part document, and the
+// assembly document — the shared fixture for the one- and two-instance assembly tests.
+func emptyBoxAssembly(t *testing.T) (*Session, *compdef.AssemblyComponentDefinition, *doc.Document, *doc.Document) {
+	t.Helper()
+	s := extrudedBox(t, 2, 4)
 	boxDoc := s.ActiveDocument()
 	asmDoc, err := compdef.AddAssembly(s.Workspace(), "asm.obk", true)
 	if err != nil {
@@ -27,12 +41,7 @@ func assemblyWithBoxComponent(t *testing.T, tx float64) (*Session, *compdef.Asse
 	if err := s.Workspace().SetActiveDocument(asmDoc); err != nil {
 		t.Fatalf("activate assembly: %v", err)
 	}
-	asm := asmDoc.Content().(*compdef.AssemblyComponentDefinition)
-	occ, err := asm.PlaceComponentFromFile(asmDoc, boxDoc, "box:1", math.Translation4(math.V3(math.Scalar(tx), 0, 0)))
-	if err != nil {
-		t.Fatalf("place box: %v", err)
-	}
-	return s, asm, occ
+	return s, asmDoc.Content().(*compdef.AssemblyComponentDefinition), boxDoc, asmDoc
 }
 
 // TestVisibleBodiesTransformsPlacedComponents: an assembly's VisibleBodies are its components

@@ -26,6 +26,7 @@ func (r *Router) registerAssemblyConstraintHandlers() {
 	r.handlers[wire.MethodAssemblyConstraintsAddAngle] = assemblyAddAngle
 	r.handlers[wire.MethodAssemblyConstraintsAddTangent] = assemblyAddTangent
 	r.handlers[wire.MethodAssemblyConstraintsAddInsert] = assemblyAddInsert
+	r.handlers[wire.MethodAssemblyConstraintsSnap] = assemblySnapConstrain
 	r.handlers[wire.MethodAssemblyConstraintsAddSymmetry] = assemblyAddSymmetry
 	r.handlers[wire.MethodAssemblyConstraintsAddRotateRotate] = assemblyAddRotateRotate
 	r.handlers[wire.MethodAssemblyConstraintsAddRotateTranslate] = assemblyAddRotateTranslate
@@ -90,6 +91,26 @@ func assemblyAddInsert(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 		return nil, err
 	}
 	return solvedConstraint(asm, asm.Constraints().AddInsert(a, b, in.Offset, in.Aligned))
+}
+
+// assemblySnapConstrain infers the grip-snap constraint between the two geometry inputs (or honours
+// the prefer override), creates it, and re-solves so the part jumps into place.
+func assemblySnapConstrain(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	asm, in, a, b, err := twoRefArgs[wire.SnapConstraintArgs](s, raw, wire.MethodAssemblyConstraintsSnap, func(v wire.SnapConstraintArgs) (wire.ConstraintGeomRef, wire.ConstraintGeomRef) {
+		return v.A, v.B
+	})
+	if err != nil {
+		return nil, err
+	}
+	prefer, err := snapPrefer(in.Prefer)
+	if err != nil {
+		return nil, err
+	}
+	c, _, err := asm.Constraints().InferGripConstraint(a, b, prefer)
+	if err != nil {
+		return nil, err
+	}
+	return solvedConstraint(asm, c)
 }
 
 func assemblyAddSymmetry(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

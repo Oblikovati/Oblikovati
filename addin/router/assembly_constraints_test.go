@@ -68,6 +68,31 @@ func TestAssemblyMateOverWire(t *testing.T) {
 	}
 }
 
+// TestAssemblySnapConstrainOverWire grip-snaps a free box's bottom face onto a grounded box's top
+// face over the wire WITHOUT naming the constraint: the host infers a mate (two opposed planar faces)
+// and repositions the component, exactly as the explicit mate does (#794).
+func TestAssemblySnapConstrainOverWire(t *testing.T) {
+	r, s, _, occs := assemblySessionWithBoxes(t, 0, 5)
+	occs[0].SetGrounded(true)
+	topKey := topBoxFaceKey(t, occs[0])
+	botKey := bottomBoxFaceKey(t, occs[1])
+
+	var added wire.ConstraintResult
+	args := mustJSON(t, wire.SnapConstraintArgs{
+		A: wire.ConstraintGeomRef{Occurrence: occs[0].ID(), Entity: topKey},
+		B: wire.ConstraintGeomRef{Occurrence: occs[1].ID(), Entity: botKey},
+	})
+	call(t, r, s, "assemblyConstraints.snap", args, &added)
+	if added.Constraint.Type != "mate" {
+		t.Fatalf("snap inferred %q, want mate (two opposed planar faces)", added.Constraint.Type)
+	}
+	if z := occs[1].Transform().Translation().Z; stdmath.Abs(z-1) > 1e-6 {
+		t.Errorf("snapped box z = %v, want 1 (bottom face on the grounded top face)", z)
+	}
+	// The prefer override (snapping the same faces as a flush) is covered by the model
+	// TestGripSnapPreferOverrides and the bridge grip-snap e2e.
+}
+
 // TestAssemblySolveReportsFreeDOF checks the solve endpoint reports per-occurrence DOF for
 // a grounded + free pair with no constraints: the free box keeps six DOF, the grounded box
 // none.
