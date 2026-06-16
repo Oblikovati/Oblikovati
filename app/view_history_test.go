@@ -37,6 +37,23 @@ func TestPreviousViewRestoresRecordedCamera(t *testing.T) {
 	}
 }
 
+func TestViewHistoryCapsAtMax(t *testing.T) {
+	s := NewSession()
+	for i := 0; i < maxViewHistory+10; i++ {
+		s.SetCamera(camAt(float64(i)))
+		s.PushViewHistory()
+	}
+	if s.ViewHistoryDepth() != maxViewHistory {
+		t.Errorf("history depth = %d, want it capped at %d", s.ViewHistoryDepth(), maxViewHistory)
+	}
+	// The most recent push survives the trim: Previous View returns the last camera recorded.
+	s.SetCamera(camAt(999))
+	s.PreviousView()
+	if s.Camera().Eye != camAt(float64(maxViewHistory+9)).Eye {
+		t.Errorf("after the cap, PreviousView eye = %v, want the most recent recorded", s.Camera().Eye)
+	}
+}
+
 func TestFitViewRecordsHistory(t *testing.T) {
 	s := extrudedBox(t, 2, 4)
 	start := s.Camera()

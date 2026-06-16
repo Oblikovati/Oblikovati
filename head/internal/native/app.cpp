@@ -312,6 +312,7 @@ struct ObkInject {
     bool down[5];
     float wheel;
     bool shift;
+    int fkey; // a held hold-to-navigate function key (0 none, else 2/3/4) (#911)
 };
 static ObkInject g_inject = {};
 
@@ -320,6 +321,7 @@ void obk_inject_mouse_pos(float x, float y)  { g_inject.active = true; g_inject.
 void obk_inject_mouse_button(int b, int down) { if (b >= 0 && b < 5) { g_inject.active = true; g_inject.down[b] = down != 0; } }
 void obk_inject_mouse_wheel(float w)         { g_inject.active = true; g_inject.wheel = w; }
 void obk_inject_key_shift(int down)          { g_inject.active = true; g_inject.shift = down != 0; }
+void obk_inject_fkey(int n, int down)        { g_inject.active = true; g_inject.fkey = down ? n : 0; }
 }
 
 static void obk_apply_inject() {
@@ -332,6 +334,9 @@ static void obk_apply_inject() {
     for (int b = 0; b < 5; b++) io.AddMouseButtonEvent(b, g_inject.down[b]);
     if (g_inject.wheel != 0.0f) { io.AddMouseWheelEvent(0.0f, g_inject.wheel); g_inject.wheel = 0.0f; }
     io.AddKeyEvent(ImGuiMod_Shift, g_inject.shift);
+    io.AddKeyEvent(ImGuiKey_F2, g_inject.fkey == 2);
+    io.AddKeyEvent(ImGuiKey_F3, g_inject.fkey == 3);
+    io.AddKeyEvent(ImGuiKey_F4, g_inject.fkey == 4);
 }
 
 // obk_ig_dockspace_over_main hosts a full-window dockspace (called every frame, after

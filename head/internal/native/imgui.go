@@ -143,6 +143,7 @@ void obk_inject_mouse_pos(float x, float y);
 void obk_inject_mouse_button(int b, int down);
 void obk_inject_mouse_wheel(float w);
 void obk_inject_key_shift(int down);
+void obk_inject_fkey(int n, int down);
 */
 import "C"
 
@@ -911,6 +912,9 @@ func InjectMousePos(x, y float32) { C.obk_inject_mouse_pos(C.float(x), C.float(y
 func InjectMouseButton(button int, down bool) { C.obk_inject_mouse_button(C.int(button), cBool(down)) }
 func InjectMouseWheel(w float32)              { C.obk_inject_mouse_wheel(C.float(w)) }
 func InjectKeyShift(down bool)                { C.obk_inject_key_shift(cBool(down)) }
+
+// InjectFKey holds (down) or releases the hold-to-navigate function key F(n), n in 2..4 (#911).
+func InjectFKey(n int, down bool) { C.obk_inject_fkey(C.int(n), cBool(down)) }
 
 // cBool converts a Go bool to the 0/1 C.int the wrappers expect.
 func cBool(b bool) C.int {
