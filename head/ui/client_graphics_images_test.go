@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
 	"oblikovati.org/model/clientgraphics"
 )
 
@@ -38,6 +40,42 @@ func TestDecodeImageRGBA(t *testing.T) {
 	}
 	if _, _, _, err := decodeImageRGBA(filepath.Join(t.TempDir(), "missing.png")); err == nil {
 		t.Error("decoding a missing file should error")
+	}
+}
+
+// TestInWindowImageOverlayLoadsTexture opens the real window with an image-billboard overlay
+// and runs frames, so the projected blit path (gfxTexture → CreateTexture → native.Image) runs
+// against a real window and texture (M16-F05 #641).
+func TestInWindowImageOverlayLoadsTexture(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "overlay.png")
+	img := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	img.Set(0, 0, color.RGBA{R: 255, A: 255})
+	f, _ := os.Create(path)
+	_ = png.Encode(f, img)
+	f.Close()
+
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+	delete(gfxImageTex, path) // start cold so this frame creates the texture
+	s := framedSession()
+
+	g, err := clientgraphics.DecodeGroup(wire.SetClientGraphicsArgs{ClientId: "img", Nodes: []wire.GraphicsNode{{Primitives: []wire.GraphicsPrimitive{{
+		Kind: string(types.GraphicsImage), ImagePath: path, Anchor: []float64{0, 0, 0}, ImageWidth: 2, ImageHeight: 2,
+	}}}}})
+	if err != nil {
+		t.Fatalf("DecodeGroup: %v", err)
+	}
+	s.Graphics().Set(g)
+
+	for i := 0; i < 3; i++ {
+		win.BeginFrame()
+		DrawChrome(win, s)
+		win.EndFrame(0.1, 0.1, 0.1)
+	}
+	if tex, ok := gfxImageTex[path]; !ok || tex == 0 {
+		t.Errorf("image overlay texture not created/cached for %q (tex=%d ok=%v)", path, tex, ok)
 	}
 }
 
