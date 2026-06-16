@@ -73,7 +73,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
 	drawBoxSelectRect(s, bx, by) // the rubber-band selection rectangle, on top of the image
 	if s.ShowViewCube() {
-		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
+		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity(), hit.arrow)
 	}
 }
 
@@ -208,7 +208,7 @@ func drawViewTile(win *native.Window, s *app.Session, i int, r TileRect, ox, oy 
 		renderViewportImage(win, s, i, cam, bl, len(bl.Items), pw, ph, tx, ty)
 	}
 	if s.ShowViewCube() {
-		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity())
+		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity(), hit.arrow)
 	}
 }
 

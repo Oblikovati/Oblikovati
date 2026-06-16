@@ -52,6 +52,14 @@ func main() {
 // parseOpts defines and parses the command-line flags into the capture configuration.
 func parseOpts() opts {
 	var o opts
+	defineSceneFlags(&o)
+	defineCaptureFlags(&o)
+	flag.Parse()
+	return o
+}
+
+// defineSceneFlags registers the flags that build/dress the scene before capture.
+func defineSceneFlags(o *opts) {
 	flag.StringVar(&o.scheme, "scheme", "", "color scheme to activate before capture")
 	flag.StringVar(&o.out, "out", "/tmp/m16shot.png", "viewport PNG output path")
 	flag.IntVar(&o.frames, "frames", 8, "frames to render before capture")
@@ -62,6 +70,10 @@ func parseOpts() opts {
 	flag.StringVar(&o.ground, "ground", "", "set the display-settings ground color as R,G,B and enable ground shadows")
 	flag.BoolVar(&o.overlay, "overlay", false, "add a red surface overlay highlighting the demo box (M16-F05)")
 	flag.StringVar(&o.style, "style", "", "assign a color style (e.g. Brass) to the demo box (M16-F02)")
+}
+
+// defineCaptureFlags registers the flags that pick a capture mode / panel / widget.
+func defineCaptureFlags(o *opts) {
 	flag.BoolVar(&o.named, "named", false, "save a couple named views and open the Named Views panel (M16-F03)")
 	flag.BoolVar(&o.styles, "styles", false, "select the demo box and open the Color Styles panel (M16-F02)")
 	flag.BoolVar(&o.window, "window", false, "capture the WHOLE window (chrome + panels), not just the 3D viewport")
@@ -69,8 +81,7 @@ func parseOpts() opts {
 	flag.BoolVar(&o.image, "image", false, "add an image billboard overlay at the origin (M16-F05)")
 	flag.BoolVar(&o.boxselect, "boxselect", false, "drag a window box-select across the demo box and capture the rubber-band (#916)")
 	flag.BoolVar(&o.sketch, "sketch", false, "enter a sketch with a dimensioned rectangle over the grid and capture (depth layering, #909)")
-	flag.Parse()
-	return o
+	flag.BoolVar(&o.compass, "compass", false, "show the ViewCube compass ring (N/E/S/W) in the capture (#914)")
 }
 
 // opts is the capture configuration parsed from the command line.
@@ -86,6 +97,7 @@ type opts struct {
 	named, styles, window bool
 	dialog, image         bool
 	boxselect, sketch     bool
+	compass               bool
 }
 
 func run(o opts) error {
@@ -101,6 +113,7 @@ func run(o opts) error {
 	if err := applySetup(s, o); err != nil {
 		return err
 	}
+	s.SetShowCompass(o.compass)
 	if o.boxselect {
 		return captureBoxSelect(s, o)
 	}
