@@ -12,17 +12,24 @@ import (
 // Direct manipulation of sketch geometry: in the sketch editor a left-drag that starts on an
 // unconstrained entity moves it (and any entities sharing its points) live, following the
 // cursor — Inventor's drag-to-move. Only MoveableFree geometry drags; fixed / fully-dimensioned
-// entities fall through to click-select. Constrained re-solving during the drag is a follow-up
-// (#909); v1 translates the picked free geometry directly, which is the unconstrained case the
-// user works in.
+// entities fall through to click-select. Each frame the dragged entities' points are pinned to
+// their start position plus the cursor delta and the sketch is re-solved (sketch.DragSolve), so
+// the geometry follows the cursor *within its constraints* (#909): a coincident neighbour tracks
+// along, a horizontal line stays horizontal, and a free point lands exactly on the cursor.
 
-// sketchDrag is an in-progress direct drag of one or more sketch entities. lastPt is the cursor
-// position (in sketch coordinates) at the previous frame, so each update applies the incremental
-// delta.
+// dragAnchor is one point being dragged, remembered with its position at the drag's start so the
+// solve can pin it to start+delta absolutely (no per-frame drift).
+type dragAnchor struct {
+	p     *sketch.Point
+	start math.Point2
+}
+
+// sketchDrag is an in-progress direct drag of one or more sketch entities. grabPt is the cursor
+// position (sketch coordinates) where the drag began, so the per-frame delta is absolute.
 type sketchDrag struct {
-	ents   []sketch.Entity
-	lastPt math.Point2
-	active bool
+	anchors []dragAnchor
+	grabPt  math.Point2
+	active  bool
 }
 
 // EntityDragActive reports whether a sketch entity is currently being dragged.
@@ -41,12 +48,29 @@ func (s *Session) BeginEntityDrag(px, py float64) bool {
 	if !ok || s.activeSketch.MoveableClassifier().Of(ent) != types.MoveableFree {
 		return false
 	}
-	start, ok := screenToSketch(s, px, py)
+	grab, ok := screenToSketch(s, px, py)
 	if !ok {
 		return false
 	}
-	s.entityDrag = sketchDrag{ents: s.dragSet(ent), lastPt: start, active: true}
+	s.entityDrag = sketchDrag{anchors: s.dragAnchors(ent), grabPt: grab, active: true}
 	return true
+}
+
+// dragAnchors collects the distinct points to pin while dragging — the defining points of every
+// entity in the drag set (selection or the clicked entity), each captured at its start position.
+func (s *Session) dragAnchors(ent sketch.Entity) []dragAnchor {
+	seen := map[*sketch.Point]bool{}
+	var anchors []dragAnchor
+	for _, e := range s.dragSet(ent) {
+		for _, p := range sketch.DefiningPoints(e) {
+			if seen[p] {
+				continue
+			}
+			seen[p] = true
+			anchors = append(anchors, dragAnchor{p: p, start: p.Position()})
+		}
+	}
+	return anchors
 }
 
 // dragSet returns the entities a drag of ent should move: the selected sketch entities when ent
@@ -77,9 +101,9 @@ func (s *Session) selectedSketchEntities() []sketch.Entity {
 	return out
 }
 
-// UpdateEntityDrag translates the dragged entities by the cursor delta since the last frame, so
-// the geometry follows the pointer. The sketch overlay rebuilds from the live sketch each frame,
-// so the move is visible immediately.
+// UpdateEntityDrag pins each dragged point to its start position plus the cursor delta and
+// re-solves the sketch, so the geometry follows the pointer while honouring its constraints. The
+// sketch overlay rebuilds from the live sketch each frame, so the move is visible immediately.
 func (s *Session) UpdateEntityDrag(px, py float64) {
 	if !s.entityDrag.active {
 		return
@@ -88,9 +112,12 @@ func (s *Session) UpdateEntityDrag(px, py float64) {
 	if !ok {
 		return
 	}
-	delta := s.entityDrag.lastPt.VectorTo(cur)
-	s.activeSketch.MoveEntities(s.entityDrag.ents, delta)
-	s.entityDrag.lastPt = cur
+	delta := s.entityDrag.grabPt.VectorTo(cur)
+	pins := make([]sketch.PinTarget, len(s.entityDrag.anchors))
+	for i, a := range s.entityDrag.anchors {
+		pins[i] = sketch.PinTarget{P: a.p, Target: a.start.TranslateBy(delta)}
+	}
+	s.activeSketch.DragSolve(pins)
 }
 
 // CommitEntityDrag ends the drag. The geometry was moved live during the drag, so this only

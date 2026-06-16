@@ -46,6 +46,28 @@ func TestEntityDragMovesFreePoint(t *testing.T) {
 	}
 }
 
+func TestEntityDragResolvesConstraint(t *testing.T) {
+	s, sk := sketchSession(t)
+	s.Grid().SnapToGrid = false
+	a := sk.Points().Add(math.P2(1, 0))
+	b := sk.Points().Add(math.P2(1, 0)) // coincident with a
+	sk.GeometricConstraints().AddCoincident(a, b)
+	centerOnSketchPoint(s, 1) // (1,0) is at screen centre
+
+	if !s.BeginEntityDrag(100, 100) {
+		t.Fatal("did not begin a drag on the constrained point")
+	}
+	s.UpdateEntityDrag(150, 100) // drag right
+	s.CommitEntityDrag()
+
+	if a.Position().X <= 1.0 {
+		t.Errorf("dragged point did not move in +x: %v", a.Position())
+	}
+	if !b.Position().IsEqualTo(a.Position(), 1e-6) {
+		t.Errorf("the coincident point did not follow the drag: a=%v b=%v", a.Position(), b.Position())
+	}
+}
+
 func TestBeginEntityDragRejectsWhenNotDraggable(t *testing.T) {
 	// No active sketch → no drag.
 	plain := NewSession()
