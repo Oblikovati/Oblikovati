@@ -16,15 +16,7 @@ import (
 // boundary edge up 90° over the given radius/height. It returns the engine's result bodies.
 func sheetWithFlange(t *testing.T, side, radiusCm, heightCm float64) []*topo.Body {
 	t.Helper()
-	ps := param.NewParameters()
-	if _, err := ps.AddUserParameter("Thickness", "2 mm"); err != nil {
-		t.Fatalf("Thickness: %v", err)
-	}
-	fs := NewPartFeatures(ps, nil)
-	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(side), ProfileIndex: 0, Operation: ops.NewBody})
-	fs.Recompute()
-
-	edge := topEdgeAlongX(t, fs.Result()[0])
+	fs, edge := seedSheetMetalSheet(t, side, nil)
 	NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(),
 		Height:  func() float64 { return heightCm },
@@ -108,14 +100,7 @@ func TestFlangeRisesAboveSheet(t *testing.T) {
 // parameter, the default 90° angle applies, and flip folds the wall to the opposite (−Z)
 // side. Also exercises the Definition accessor.
 func TestFlangeDefaultsAndFlip(t *testing.T) {
-	ps := param.NewParameters()
-	mustParam(t, ps, "Thickness", "2 mm")
-	mustParam(t, ps, "BendRadius", "2 mm") // the rule's default radius the flange should read
-	fs := NewPartFeatures(ps, nil)
-	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(4), ProfileIndex: 0, Operation: ops.NewBody})
-	fs.Recompute()
-
-	edge := topEdgeAlongX(t, fs.Result()[0])
+	fs, edge := seedSheetMetalSheet(t, 4, map[string]string{"BendRadius": "2 mm"}) // rule radius the flange reads
 	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(),
 		Height:  func() float64 { return 1.0 },
@@ -154,17 +139,11 @@ func mustParam(t *testing.T, ps *param.Parameters, name, expr string) {
 // TestFlangeRejectsBadDims a flange with a non-positive height (and no Thickness parameter)
 // goes sick rather than building degenerate geometry.
 func TestFlangeRejectsBadDims(t *testing.T) {
-	const side, r = 4.0, 0.2
-	ps := param.NewParameters()
-	mustParam(t, ps, "Thickness", "2 mm")
-	fs := NewPartFeatures(ps, nil)
-	NewSheetMetalFaceFeatures(fs).Add(&SheetMetalFaceDefinition{Sketch: squareSketch(side), ProfileIndex: 0, Operation: ops.NewBody})
-	fs.Recompute()
-	edge := topEdgeAlongX(t, fs.Result()[0])
+	fs, edge := seedSheetMetalSheet(t, 4, nil)
 	pf := NewSheetMetalFlangeFeatures(fs).Add(&SheetMetalFlangeDefinition{
 		EdgeKey: edge.ReferenceKey(),
 		Height:  func() float64 { return 0 }, // zero height
-		Radius:  func() float64 { return r },
+		Radius:  func() float64 { return 0.2 },
 	})
 	fs.Recompute()
 	if pf.Health().OK() {
