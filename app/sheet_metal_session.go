@@ -81,3 +81,8 @@ func (s *Session) ActiveSheetMetalUnfold() *SheetMetalUnfoldTool {
 func (s *Session) ActiveSheetMetalRefold() *SheetMetalRefoldTool {
 	return activeSheetMetalTool[*SheetMetalRefoldTool](s)
 }
+
+// ActiveSheetMetalStyle returns the running Sheet Metal Style editor tool, or nil.
+func (s *Session) ActiveSheetMetalStyle() *SheetMetalStyleTool {
+	return activeSheetMetalTool[*SheetMetalStyleTool](s)
+}

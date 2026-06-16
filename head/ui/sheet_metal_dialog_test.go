@@ -25,6 +25,7 @@ func TestSheetMetalDialogsRender(t *testing.T) {
 
 	// Each tool active → its property panel renders.
 	starts := []func(*app.Session){
+		func(s *app.Session) { s.StartTool(app.NewSheetMetalStyleTool()) },
 		func(s *app.Session) { s.StartTool(app.NewSheetMetalFaceTool()) },
 		func(s *app.Session) { s.StartTool(app.NewSheetMetalFlangeTool()) },
 		func(s *app.Session) { s.StartTool(app.NewSheetMetalHemTool()) },

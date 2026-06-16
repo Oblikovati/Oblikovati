@@ -37,6 +37,7 @@ func TestSheetMetalSessionAccessors(t *testing.T) {
 		{"cut", func() { s.StartTool(NewSheetMetalCutTool()) }, func() bool { return s.ActiveSheetMetalCut() != nil }},
 		{"unfold", func() { s.StartTool(NewSheetMetalUnfoldTool()) }, func() bool { return s.ActiveSheetMetalUnfold() != nil }},
 		{"refold", func() { s.StartTool(NewSheetMetalRefoldTool()) }, func() bool { return s.ActiveSheetMetalRefold() != nil }},
+		{"style", func() { s.StartTool(NewSheetMetalStyleTool()) }, func() bool { return s.ActiveSheetMetalStyle() != nil }},
 	} {
 		c.start()
 		if !c.live() {
