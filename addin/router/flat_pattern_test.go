@@ -176,6 +176,30 @@ func TestFlatPatternBendOrderOverWire(t *testing.T) {
 	}
 }
 
+// TestFlatPatternCenterlinesOverWire add/list/delete cosmetic centerlines over the wire.
+func TestFlatPatternCenterlinesOverWire(t *testing.T) {
+	r, s := flangedSheet(t)
+
+	var res wire.CenterlinesResult
+	call(t, r, s, wire.MethodFlatPatternListCenterlines, "{}", &res)
+	if len(res.Centerlines) != 0 {
+		t.Fatalf("fresh centerlines = %d, want 0", len(res.Centerlines))
+	}
+	call(t, r, s, wire.MethodFlatPatternAddCenterline, `{"start":[0,0],"end":[4,0]}`, &res)
+	call(t, r, s, wire.MethodFlatPatternAddCenterline, `{"start":[2,-1],"end":[2,1]}`, &res)
+	if len(res.Centerlines) != 2 || res.Centerlines[1].Index != 1 {
+		t.Fatalf("after adds = %+v, want 2 centerlines", res.Centerlines)
+	}
+
+	call(t, r, s, wire.MethodFlatPatternDeleteCenterline, `{"index":0}`, &res)
+	if len(res.Centerlines) != 1 || res.Centerlines[0].Start.X != 2 {
+		t.Errorf("after delete = %+v, want the vertical centerline", res.Centerlines)
+	}
+	if _, err := r.Handle(s, wire.MethodFlatPatternDeleteCenterline, []byte(`{"index":9}`)); err == nil {
+		t.Error("deleting an out-of-range centerline must error")
+	}
+}
+
 // TestFlatPatternRejectsPlainPart every flat-pattern method errors on an ordinary part.
 func TestFlatPatternRejectsPlainPart(t *testing.T) {
 	r, s := seededSession(t)
@@ -189,6 +213,9 @@ func TestFlatPatternRejectsPlainPart(t *testing.T) {
 		wire.MethodFlatPatternSetSettings,
 		wire.MethodFlatPatternListBendOrder,
 		wire.MethodFlatPatternSetBendOrder,
+		wire.MethodFlatPatternAddCenterline,
+		wire.MethodFlatPatternListCenterlines,
+		wire.MethodFlatPatternDeleteCenterline,
 	} {
 		if _, err := r.Handle(s, m, []byte("{}")); err == nil {
 			t.Errorf("%s on a plain part must error", m)
