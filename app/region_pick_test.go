@@ -112,6 +112,16 @@ func TestPickRegionGranularityByFilter(t *testing.T) {
 	}
 }
 
+// TestPickRegionFilterAcceptsNothingRelevant checks a filter that admits none of body/face/edge
+// (e.g. vertices only) yields no region hits.
+func TestPickRegionFilterAcceptsNothingRelevant(t *testing.T) {
+	p, box := regionPickerForBox(t)
+	vtx := NewSelectionFilter(SelectVertex)
+	if got := p.PickRegion(box.minX-5, box.minY-5, box.maxX+5, box.maxY+5, false, vtx); got != nil {
+		t.Errorf("a vertex-only filter should yield no region hits, got %d", len(got))
+	}
+}
+
 // TestPickRegionGranularityCrossing checks the crossing mode for faces and edges: a rectangle
 // over part of the box still catches the faces/edges it overlaps (which a window would miss).
 func TestPickRegionGranularityCrossing(t *testing.T) {

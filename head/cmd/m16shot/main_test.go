@@ -107,6 +107,22 @@ func TestParseOpts(t *testing.T) {
 	}
 }
 
+// TestEnterDimensionedRectangle exercises the sketch-capture scene setup (no window): it must
+// create a sketch with the four rectangle edges, add a dimension, and enter the sketch env.
+func TestEnterDimensionedRectangle(t *testing.T) {
+	s := app.NewSession()
+	if err := enterDimensionedRectangle(s); err != nil {
+		t.Fatalf("enterDimensionedRectangle: %v", err)
+	}
+	sk := s.ActiveSketch()
+	if sk == nil || !s.InSketch() {
+		t.Fatal("should be editing the new sketch")
+	}
+	if sk.Lines().Count() != 4 {
+		t.Errorf("rectangle should have 4 lines, got %d", sk.Lines().Count())
+	}
+}
+
 // TestInjectBoxDrag exercises the box-select drag-injection sequence with a counting frame
 // callback (no window): it must press, drag through several positions, and render a frame at
 // each step. captureBoxSelect's window orchestration is verified manually (the live PNG) —
