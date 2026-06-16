@@ -246,7 +246,7 @@ Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in 
 
 | # | Status | Evidence / note |
 |---|---|---|
-| D1 | 🟡 | Sketch entity drag — verify against sketch solver. |
+| D1 | ✅ **DONE** | Left-drag on an unconstrained (MoveableFree) sketch entity moves it live (`app/sketch_drag.go` Begin/Update/CommitEntityDrag → `sketch.MoveEntities`; head `updateSketchDrag`). Constrained re-solve during drag is a #909 follow-up. |
 | D2 | 🟡 | Assembly grip/snap shipped (feat/assembly-grip-snap). |
 | D3 | ✅ | `TriadDragging`/`ManipulatorDragging` direct-edit handles. |
 | D4 | ✅ | `tool_highlight.go` hover + pick highlight. |
