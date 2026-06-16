@@ -115,6 +115,39 @@ func addRectFace(t *testing.T, d *PartComponentDefinition, w, h float64) {
 	d.Recompute()
 }
 
+// TestFlatBendDownForFlippedFlange a flipped flange (folds toward the back) marks its fold
+// line bend-down in the flat; a plain flange marks it bend-up.
+func TestFlatBendDownForFlippedFlange(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		flip     bool
+		wantDown bool
+	}{{"plain", false, false}, {"flipped", true, true}} {
+		t.Run(tc.name, func(t *testing.T) {
+			d := NewPartComponentDefinition()
+			if _, err := d.EnableSheetMetal(); err != nil {
+				t.Fatalf("EnableSheetMetal: %v", err)
+			}
+			addSquareFace(d, 4)
+			edge := topXEdge(t, d.Features().Result()[0])
+			pf := feature.NewSheetMetalFlangeFeatures(d.Features()).Add(&feature.SheetMetalFlangeDefinition{
+				EdgeKey: edge.ReferenceKey(), Height: func() float64 { return 1 }, Flip: tc.flip,
+			})
+			d.Recompute()
+			if !pf.Health().OK() {
+				t.Fatalf("flange unhealthy: %s", pf.Health().Reason)
+			}
+			fp, err := d.Unfold()
+			if err != nil {
+				t.Fatalf("Unfold: %v", err)
+			}
+			if len(fp.Bends) != 1 || fp.Bends[0].FoldDown != tc.wantDown {
+				t.Errorf("bends = %+v, want one with FoldDown=%v", fp.Bends, tc.wantDown)
+			}
+		})
+	}
+}
+
 // TestUnfoldTracksKFactor the flat is associative on the rule: raising the K-factor lengthens
 // the bend allowance and so the developed extent, without recomputing the folded model.
 func TestUnfoldTracksKFactor(t *testing.T) {

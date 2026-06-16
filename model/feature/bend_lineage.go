@@ -37,6 +37,7 @@ type BendPlacement struct {
 	Outward            math.UnitVector3 // in-plane direction the flat tab extends (away from the sheet)
 	Angle, Radius      float64          // swept bend angle (radians) and inside radius (cm)
 	Thickness, Length  float64          // material thickness and the flange's straight-run length (cm)
+	FoldDown           bool             // the bend folds the material toward the back (a flipped flange) ⇒ a bend-down fold line
 }
 
 // PlacedBend is implemented by the edge-bend walls (flange, hem) that develop into a flat
