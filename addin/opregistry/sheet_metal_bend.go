@@ -69,20 +69,9 @@ func applySheetMetalBend(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 // bendDef resolves the bend args into a definition: the sketch + line, and the optional
 // angle/radius closures (omitted ⇒ nil, so the feature uses its defaults).
 func bendDef(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in sheetMetalBendArgs) (*feature.SheetMetalBendDefinition, error) {
-	def := &feature.SheetMetalBendDefinition{Sketch: sk, LineIndex: in.LineIndex, Flip: in.Flip}
-	if in.Angle != "" {
-		angle, err := angleClosure(part, in.Angle, "sheetMetalBend: angle")
-		if err != nil {
-			return nil, err
-		}
-		def.Angle = angle
+	angle, radius, err := optionalBendDims(part, in.Angle, in.Radius, "sheetMetalBend")
+	if err != nil {
+		return nil, err
 	}
-	if in.Radius != "" {
-		radius, err := lengthClosure(part, in.Radius, "sheetMetalBend: radius")
-		if err != nil {
-			return nil, err
-		}
-		def.Radius = radius
-	}
-	return def, nil
+	return &feature.SheetMetalBendDefinition{Sketch: sk, LineIndex: in.LineIndex, Flip: in.Flip, Angle: angle, Radius: radius}, nil
 }
