@@ -29,6 +29,7 @@ import (
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
+	"oblikovati.org/scene"
 )
 
 // orientByName maps a CLI orientation name to a standard view orientation.
@@ -67,6 +68,7 @@ func parseOpts() opts {
 	flag.BoolVar(&o.dialog, "dialog", false, "open the Display Settings dialog (M16-F07)")
 	flag.BoolVar(&o.image, "image", false, "add an image billboard overlay at the origin (M16-F05)")
 	flag.BoolVar(&o.boxselect, "boxselect", false, "drag a window box-select across the demo box and capture the rubber-band (#916)")
+	flag.BoolVar(&o.sketch, "sketch", false, "enter a sketch with a dimensioned rectangle over the grid and capture (depth layering, #909)")
 	flag.Parse()
 	return o
 }
@@ -83,7 +85,7 @@ type opts struct {
 	style                 string
 	named, styles, window bool
 	dialog, image         bool
-	boxselect             bool
+	boxselect, sketch     bool
 }
 
 func run(o opts) error {
@@ -102,7 +104,57 @@ func run(o opts) error {
 	if o.boxselect {
 		return captureBoxSelect(s, o)
 	}
+	if o.sketch {
+		return captureSketch(s, o)
+	}
 	return renderAndCapture(s, o)
+}
+
+// captureSketch enters a sketch holding a dimensioned rectangle over the grid and captures the
+// window, so the PNG shows the depth layering: grid behind, entities above it, the dimension above
+// the entities (#909).
+func captureSketch(s *app.Session, o opts) error {
+	if err := enterDimensionedRectangle(s); err != nil {
+		return err
+	}
+	win, err := native.CreateWindow(1280, 800, "m16shot")
+	if err != nil {
+		return err
+	}
+	defer win.Destroy()
+	win.InitViewport()
+	for i := 0; i < o.frames; i++ {
+		win.BeginFrame()
+		ui.DrawChrome(win, s)
+		win.EndFrame(ui.WindowClearColor())
+	}
+	return win.SaveWindowPNG(o.out)
+}
+
+// enterDimensionedRectangle builds a part with a sketch holding a dimensioned rectangle, enters
+// the sketch with the grid visible, and aims the camera straight at the plane.
+func enterDimensionedRectangle(s *app.Session) error {
+	pd, err := compdef.AddPart(s.Workspace(), "m16sketch.opd", true)
+	if err != nil {
+		return err
+	}
+	_ = s.Workspace().SetActiveDocument(pd)
+	def := pd.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	c0, c1 := sk.Points().Add(math.P2(0, 0)), sk.Points().Add(math.P2(4, 0))
+	c2, c3 := sk.Points().Add(math.P2(4, 3)), sk.Points().Add(math.P2(0, 3))
+	bottom := sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+	_, _ = sk.DimensionConstraints().AddDistance(bottom.A, bottom.B, "4 mm")
+	s.EnterSketch(sk)
+	s.Grid().Visible = true
+	s.TickCameraAnimation(100) // finish the enter-sketch swing
+	cam := scene.NewCamera(1280, 800)
+	cam.Eye, cam.Target, cam.Up = math.P3(2, 1.5, 6), math.P3(2, 1.5, 0), math.V3(0, 1, 0)
+	s.SetCamera(cam)
+	return nil
 }
 
 // captureBoxSelect installs the real ray/region picker over the scene, then injects a left

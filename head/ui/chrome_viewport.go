@@ -461,25 +461,44 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 // views the caller needs for the on-screen dimension labels.
 func sketchOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) (renderer.DrawList, sketch.Plane, []app.DimensionView) {
 	plane := s.ActiveSketch().Plane()
+	// Depth layering (the sketch entities are coplanar with the grid, so depth-testing them
+	// z-fights): the grid stays depth-tested at the bottom; every sketch overlay is marked OnTop
+	// so it draws in the depth-disabled lane in submission order — entities first, then dimensions,
+	// then interaction feedback. So grid < entities < dimensions, as intended (#909).
 	if g := s.Grid(); g.Visible {
 		list.Items = append(gridOverlay(plane, g.SpacingModel(), g.MajorEvery), list.Items...)
 	}
-	list.Items = append(list.Items, sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s))...)
+	list.Items = append(list.Items, onTop(sketchOverlay(s.ActiveSketch(), s.IsSelectedEntity, hoverCandidate(s)))...)
 	dims := s.SketchDimensions()
-	list.Items = append(list.Items, dimensionLines(plane, dims)...)
+	list.Items = append(list.Items, onTop(dimensionLines(plane, dims))...)
 	if item, ok := pointsOverlay(plane, s.ActiveSketch(), pointMarkerPixels*cam.WorldPerPixel()); ok {
-		list.Items = append(list.Items, item)
+		list.Items = append(list.Items, onTopItem(item))
 	}
 	if item, ok := toolPreview(s); ok {
-		list.Items = append(list.Items, item)
+		list.Items = append(list.Items, onTopItem(item))
 	}
 	if item, ok := inferenceGlyphs(s, plane, glyphPixels*cam.WorldPerPixel()); ok {
-		list.Items = append(list.Items, item)
+		list.Items = append(list.Items, onTopItem(item))
 	}
 	if item, ok := snapMarker(s, plane, cam.WorldPerPixel()); ok {
-		list.Items = append(list.Items, item)
+		list.Items = append(list.Items, onTopItem(item))
 	}
 	return list, plane, dims
+}
+
+// onTop marks every item to draw in the depth-disabled lane (over the grid), preserving the
+// caller's submission order so later groups layer above earlier ones.
+func onTop(items []renderer.DrawItem) []renderer.DrawItem {
+	for i := range items {
+		items[i].OnTop = true
+	}
+	return items
+}
+
+// onTopItem is onTop for a single item.
+func onTopItem(item renderer.DrawItem) renderer.DrawItem {
+	item.OnTop = true
+	return item
 }
 
 // modelOverlays appends the 3D-model overlays (work planes, part sketches, selected edges, and
