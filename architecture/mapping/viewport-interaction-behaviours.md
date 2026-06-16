@@ -64,7 +64,7 @@ flag in review whether Oblikovati follows the Inventor or the AutoCAD convention
 | C2 | Right-press, drag toward an item, quick-release (a **mark/gesture**) | Selects that radial item by gesture without showing the full menu (muscle-memory mode). | Marking menu mode. | `WEB:GUID-4B081B74` |
 | C3 | Right-click; read the shortened context list above/below the wheel | An **overflow menu** (shortened classic context menu) appears above or below the marking menu depending on cursor position. | Marking menu mode. | `WEB:GUID-4B081B74` |
 | C4 | Marking-menu contents vary by environment | Part env exposes Hole/Extrude/Fillet/Work Plane; Sketch env exposes Line/Circle/Rectangle/Finish Sketch; Assembly env exposes Constrain/Place/Move/Rotate Component. | Active environment. | `WEB:GUID-4B081B74` |
-| C5 | Right-click with no command active | Context offers **Repeat <last command>** to re-invoke the previous command. | Idle (no active command). | `WEB:https://help.autodesk.com/view/INVNTOR/2022/ENU/?guid=GUID-3E3537A9-565E-4F2E-B69D-069EDCDF1AE1` (Select context); convention — verify exact label |
+| C5 | Right-click with no command active | Context offers **Repeat “last command”** to re-invoke the previous command. | Idle (no active command). | `WEB:https://help.autodesk.com/view/INVNTOR/2022/ENU/?guid=GUID-3E3537A9-565E-4F2E-B69D-069EDCDF1AE1` (Select context); convention — verify exact label |
 | C6 | Right-click during an active command | Context offers in-command actions plus **OK / Done / Cancel** (Apply / Finish where relevant). | A command is in progress. | Convention (Inventor in-command marking menu); verify against `marking_menu_view.go` |
 | C7 | Press **Esc** | Aborts / cancels the operation in progress. Some operations are not instantly interruptible; a message displays when cancellation completes. | A command/operation is running. | `CORPUS:inv:inventor-basics.md` L154–155, L183–184 |
 | C8 | Toggle marking-menu vs classic context menu | The right-click menu style is a setting (marking menu vs. classic). Audit which Oblikovati ships and whether it is switchable. | Tools > Customize. | `WEB:GUID-4B081B74` (Open question — exact toggle path; see §6) |
@@ -188,6 +188,7 @@ Legend: ✅ matches · 🟡 partial / divergent · ❌ not implemented · ➖ Au
 Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in the audit commit.
 
 ### Selection
+
 | # | Status | Evidence / note |
 |---|---|---|
 | S1 | 🟡 | Rollover prehighlight exists for sketch entities & active-tool candidates (`tool_highlight.go`, `hoverCandidate`) and origin work planes (`hoveredPlane`); general model-env face/edge/body rollover not confirmed. |
@@ -206,18 +207,20 @@ Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in 
 | S15 | ✅ | Environment gating via `viewport_environment.go` + filter kinds. |
 
 ### Context (right-click)
+
 | # | Status | Evidence / note |
 |---|---|---|
 | C1 | ✅ | `openMarkingMenu` + `marking_menu_view.go` (radial ring). |
 | C2 | 🟡 | Ring renders; quick-flick gesture-select (no menu shown) not confirmed. |
 | C3 | ✅ | `drawMarkingOverflow` (linear overflow rows). |
 | C4 | ✅ | Quadrants are per-environment `wire.MarkingMenuItem`s. |
-| C5 | ❌ | No "Repeat <last command>". Tracked. |
+| C5 | ❌ | No “Repeat last command”. Tracked. |
 | C6 | 🟡 | In-command OK/Done/Cancel marking content — verify per tool. |
 | C7 | ✅ | `handleKeyboard` → `EscapePressed` → `PressKey{Escape}`. |
 | C8 | ❌ | Marking menu only; no classic-context-menu toggle. Tracked. |
 
 ### Navigation
+
 | # | Status | Evidence / note |
 |---|---|---|
 | N1 | ✅ | `ApplyNavigation` middle-drag → `cam.Pan`. |
@@ -240,6 +243,7 @@ Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in 
 | N28 | ✅ | `camera_anim.go` smooths transitions; configurable time — verify. |
 
 ### Direct manipulation / drag
+
 | # | Status | Evidence / note |
 |---|---|---|
 | D1 | 🟡 | Sketch entity drag — verify against sketch solver. |
@@ -250,12 +254,14 @@ Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in 
 | D6 | 🟡 | Drag-to-constrain snap — verify. |
 
 ### Resolved divergence (was flagged)
+
 - **Left-drag orbit retired.** Left-drag previously orbited the camera "for discoverability", which
   collided with the sketch editor's left-click select/drag. `ApplyNavigation` no longer reads the left
   button — orbit is Shift+middle, pan is middle, and left-drag is selection (box-select on empty space).
   This is the Inventor-accurate model and unblocked box-select (S6–S9).
 
 ### Fixed/landed in the audit work (#916)
+
 - **S4** Shift/Ctrl+click toggles per-object (and the SelectSet is now genuinely de-duplicated).
 - **S5** Click on empty space clears the selection.
 - **Left-drag-orbit retired** (`navigate.go`), unblocking left-drag selection.
@@ -266,6 +272,7 @@ Evidence cites the implementing symbol. Rows marked **FIXED** were addressed in 
   and the in-window `TestInWindowBoxSelectDragSelects`.
 
 ### Tracked follow-up issues (substantial unbuilt features)
+
 - **#909** — Box-select **core landed** in #916 (window/crossing, Shift/Ctrl, left-drag-orbit retired).
   Remaining in #909: per-face/edge granularity + **sketch-entity** box-select + drag-to-move-on-entity.
 - **#910** — Select Other: cycle occluded geometry (S10).
