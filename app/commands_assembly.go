@@ -135,6 +135,7 @@ func assemblyToolCommand(id, name, panel, icon, tooltip string, newTool func() T
 // Constrain panel.
 func relationshipCommands() []*CommandDefinition {
 	return []*CommandDefinition{
+		gripSnapCommand(),
 		constraintCommand("Assembly.Mate", "Mate", "mate", "Mate — make two component faces coincident (opposed normals).", 2,
 			func(set *assembly.ConstraintSet, r []assembly.Ref) assembly.Constraint {
 				return set.AddMate(r[0], r[1], 0, types.MateSolutionOpposed)
@@ -180,6 +181,20 @@ func relationshipCommands() []*CommandDefinition {
 				return set.AddCustom(r[0], r[1], "custom", nil)
 			}),
 	}
+}
+
+// gripSnapCommand builds the Grip Snap command: pick a face on the component to move + a target face,
+// and the constraint is inferred (or chosen) and the part snaps into place (#794).
+func gripSnapCommand() *CommandDefinition {
+	return NewCommand("Assembly.GripSnap", "Grip Snap", "Relationships", func(s *Session) error {
+		if _, err := activeAssembly(s); err != nil {
+			return err
+		}
+		s.StartTool(NewGripSnapTool())
+		return nil
+	}).WithTab("Assemble").WithRibbons(AssemblyRibbon).WithEnable(hasActiveAssembly).
+		WithIcon("grip-snap").WithButtonStyle(CompactIconButton).
+		WithTooltip("Grip Snap — pick a face to move and a target face; the snap constraint is inferred and the part snaps into place.")
 }
 
 // constraintCommand builds a Relationships-panel command that starts a constraint tool of one
