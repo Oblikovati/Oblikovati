@@ -72,7 +72,7 @@ func sketchOverlayKey(s *app.Session) (string, bool) {
 // O(1)) for the overlay cache key.
 func sketchEntityCount(sk *sketch.Sketch) int {
 	return sk.Lines().Count() + sk.Arcs().Count() + sk.Circles().Count() +
-		sk.Ellipses().Count() + sk.Splines().Count() + sk.Points().Count()
+		sk.Ellipses().Count() + sk.EllipticalArcs().Count() + sk.Splines().Count() + sk.Points().Count()
 }
 
 // partSketchOverlays renders the active part's finished, visible sketches in the 3D
@@ -167,6 +167,7 @@ func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, can
 	addCircles(pick, plane, sk)
 	addArcs(pick, plane, sk)
 	addEllipses(pick, plane, sk)
+	addEllipticalArcs(pick, plane, sk)
 	addSplines(pick, plane, sk)
 	addBlockInstances(pick, plane, sk)
 	return normal, sel, cand
@@ -242,6 +243,14 @@ func addEllipses(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	}
 }
 
+func addEllipticalArcs(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
+	for i := 0; i < sk.EllipticalArcs().Count(); i++ {
+		e := sk.EllipticalArcs().Item(i)
+		acc, pat := pick(e)
+		acc.patterned(plane, sampleEllipticalArc(e), false, pat)
+	}
+}
+
 func addSplines(pick accumFor, plane sketch.Plane, sk *sketch.Sketch) {
 	for i := 0; i < sk.Splines().Count(); i++ {
 		sp := sk.Splines().Item(i)
@@ -271,6 +280,22 @@ func sampleEllipse(e *sketch.Ellipse) []math.Point2 {
 	pts := make([]math.Point2, sketchSegments)
 	for i := range pts {
 		a := 2 * stdmath.Pi * float64(i) / float64(sketchSegments)
+		mx, my := e.MajorRadius*stdmath.Cos(a), e.MinorRadius*stdmath.Sin(a)
+		pts[i] = math.P2(c.X+mx*ux-my*uy, c.Y+mx*uy+my*ux)
+	}
+	return pts
+}
+
+// sampleEllipticalArc samples an elliptical arc from StartAngle to EndAngle in its
+// major/minor frame (an open polyline — endpoints inclusive, not wrapped closed).
+func sampleEllipticalArc(e *sketch.EllipticalArc) []math.Point2 {
+	c := e.Center.Position()
+	ux, uy := unit(e.MajorAxis)
+	start := float64(e.StartAngle)
+	sweep := float64(e.EndAngle) - start
+	pts := make([]math.Point2, sketchSegments+1)
+	for i := range pts {
+		a := start + sweep*float64(i)/float64(sketchSegments)
 		mx, my := e.MajorRadius*stdmath.Cos(a), e.MinorRadius*stdmath.Sin(a)
 		pts[i] = math.P2(c.X+mx*ux-my*uy, c.Y+mx*uy+my*ux)
 	}

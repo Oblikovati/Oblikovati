@@ -9,19 +9,22 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// sketchSeg is one sketch line precomputed for picking: its model-space endpoints
-// (so a pick needs no per-entity plane transform) and the line it selects.
+// sketchSeg is one faceted sub-segment of a sketch entity, precomputed for picking:
+// its model-space endpoints (so a pick needs no per-entity plane transform) and the
+// entity it selects. A curved entity (arc/circle/ellipse/elliptical arc/spline)
+// contributes several segments that all point back to the same entity, so the whole
+// curve is pickable along its true sweep, not just its chord.
 type sketchSeg struct {
-	a, b math.Point3
-	line *sketch.Line
+	a, b   math.Point3
+	entity sketch.Entity
 }
 
-// sketchPickIndex is a uniform 2D grid (in sketch space) over a sketch's line
-// segments so hover/ray picking tests only the handful near the cursor instead of
-// all of them — the difference between sluggish and instant on a dense imported
+// sketchPickIndex is a uniform 2D grid (in sketch space) over a sketch's faceted
+// entity segments so hover/ray picking tests only the handful near the cursor instead
+// of all of them — the difference between sluggish and instant on a dense imported
 // drawing (hundreds of thousands of segments). It is camera-independent
 // (model-space endpoints + sketch-space bins), so it is cached per sketch and
-// rebuilt only when the line count or the sketch plane changes.
+// rebuilt only when the entity count or the sketch plane changes.
 type sketchPickIndex struct {
 	count int
 	plane sketch.Plane
@@ -39,9 +42,9 @@ type sketchPickIndex struct {
 var sketchPickIndexes = map[*sketch.Sketch]*sketchPickIndex{}
 
 // pickIndexFor returns the cached pick index for sk, building it when absent or
-// stale (line count or plane changed).
+// stale (entity count or plane changed).
 func pickIndexFor(sk *sketch.Sketch) *sketchPickIndex {
-	n := sk.Lines().Count()
+	n := sk.EntityCount()
 	if idx := sketchPickIndexes[sk]; idx != nil && idx.count == n && idx.plane == sk.Plane() {
 		return idx
 	}
@@ -50,25 +53,33 @@ func pickIndexFor(sk *sketch.Sketch) *sketchPickIndex {
 	return idx
 }
 
-// buildPickIndex precomputes the model-space segments and bins them into a roughly
-// sqrt(n) × sqrt(n) grid over the sketch's 2D extent.
-func buildPickIndex(sk *sketch.Sketch, n int) *sketchPickIndex {
+// buildPickIndex facets every entity into model-space segments and bins them into a
+// roughly sqrt(N) × sqrt(N) grid over the sketch's 2D extent (N = segment count).
+func buildPickIndex(sk *sketch.Sketch, count int) *sketchPickIndex {
 	plane := sk.Plane()
-	idx := &sketchPickIndex{count: n, plane: plane, segs: make([]sketchSeg, 0, n)}
+	idx := &sketchPickIndex{count: count, plane: plane, segs: make([]sketchSeg, 0, count)}
 	minX, minY := stdmath.Inf(1), stdmath.Inf(1)
 	maxX, maxY := stdmath.Inf(-1), stdmath.Inf(-1)
 	type box struct{ aX, aY, bX, bY float64 }
-	boxes := make([]box, 0, n)
-	for i := 0; i < n; i++ {
-		l := sk.Lines().Item(i)
-		a2, b2 := l.StartPoint().Position(), l.EndPoint().Position()
-		idx.segs = append(idx.segs, sketchSeg{a: plane.ToModel(a2), b: plane.ToModel(b2), line: l})
+	var boxes []box
+	addSeg := func(a2, b2 math.Point2, e sketch.Entity) {
+		idx.segs = append(idx.segs, sketchSeg{a: plane.ToModel(a2), b: plane.ToModel(b2), entity: e})
 		boxes = append(boxes, box{a2.X, a2.Y, b2.X, b2.Y})
 		minX, minY = stdmath.Min(minX, stdmath.Min(a2.X, b2.X)), stdmath.Min(minY, stdmath.Min(a2.Y, b2.Y))
 		maxX, maxY = stdmath.Max(maxX, stdmath.Max(a2.X, b2.X)), stdmath.Max(maxY, stdmath.Max(a2.Y, b2.Y))
 	}
+	for _, e := range sk.Entities() {
+		pts, closed := sketch.EntityPolyline(e)
+		for k := 0; k+1 < len(pts); k++ {
+			addSeg(pts[k], pts[k+1], e)
+		}
+		if closed && len(pts) >= 2 {
+			addSeg(pts[len(pts)-1], pts[0], e)
+		}
+	}
+	n := len(idx.segs)
 	if n == 0 || maxX <= minX && maxY <= minY {
-		return idx // degenerate: queries fall back to a full scan of segs
+		return idx // degenerate (no segments, or all coincident): queries full-scan segs
 	}
 	dim := int(stdmath.Sqrt(float64(n)))
 	if dim < 1 {
