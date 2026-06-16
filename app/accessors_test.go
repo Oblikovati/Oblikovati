@@ -53,6 +53,7 @@ func TestEventIDsStable(t *testing.T) {
 		CommandStarted{}:   0x0501,
 		CommandEnded{}:     0x0502,
 		SelectionChanged{}: 0x0503,
+		CameraChanged{}:    0x1601,
 	}
 	for e, want := range ids {
 		if e.EventID() != want {

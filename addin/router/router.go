@@ -49,6 +49,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerUISurfaceHandlers()
 	r.registerOptionHandlers()
 	r.registerColorSchemeHandlers()
+	r.registerNamedViewHandlers()
 	r.registerKeymapHandlers()
 	r.registerMessagingHandlers()
 	r.registerMiniToolbarHandlers()

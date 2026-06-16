@@ -22,7 +22,7 @@ func listViews(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(listViewsResult(d))
+	return json.Marshal(listViewsResult(d, s.DisplayMode()))
 }
 
 // addView creates a new view of a document and makes it active, returning it
@@ -40,7 +40,7 @@ func addView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(viewInfo(i, d.Views().All()[i], i == d.Views().ActiveIndex()))
+	return json.Marshal(viewInfo(i, d.Views().All()[i], i == d.Views().ActiveIndex(), s.DisplayMode()))
 }
 
 // activateView makes the indexed view active, returning the updated collection
@@ -57,7 +57,7 @@ func activateView(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 	if err := d.Views().Activate(a.Index); err != nil {
 		return nil, err
 	}
-	return json.Marshal(listViewsResult(d))
+	return json.Marshal(listViewsResult(d, s.DisplayMode()))
 }
 
 // closeView removes the indexed view (refused for the last view), returning the updated
@@ -74,7 +74,7 @@ func closeView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err := d.Views().Close(a.Index); err != nil {
 		return nil, err
 	}
-	return json.Marshal(listViewsResult(d))
+	return json.Marshal(listViewsResult(d, s.DisplayMode()))
 }
 
 // renameView sets the indexed view's name, returning it (wire.MethodViewsRename).
@@ -90,7 +90,7 @@ func renameView(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	if err := d.Views().Rename(a.Index, a.Name); err != nil {
 		return nil, err
 	}
-	return json.Marshal(viewInfo(a.Index, d.Views().All()[a.Index], a.Index == d.Views().ActiveIndex()))
+	return json.Marshal(viewInfo(a.Index, d.Views().All()[a.Index], a.Index == d.Views().ActiveIndex(), s.DisplayMode()))
 }
 
 // getLayout returns a document's tiling layout (wire.MethodViewsGetLayout).
@@ -120,28 +120,32 @@ func setLayout(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(wire.LayoutResult{Document: a.Document, Layout: d.Views().Layout()})
 }
 
-// listViewsResult renders a document's whole view collection into the wire DTO.
-func listViewsResult(d *doc.Document) wire.ListViewsResult {
+// listViewsResult renders a document's whole view collection into the wire DTO. The display
+// mode is the session-wide current mode (views share one renderer today).
+func listViewsResult(d *doc.Document, mode types.DisplayModeEnum) wire.ListViewsResult {
 	vs := d.Views()
 	all := vs.All()
 	out := make([]wire.ViewInfo, len(all))
 	for i, v := range all {
-		out[i] = viewInfo(i, v, i == vs.ActiveIndex())
+		out[i] = viewInfo(i, v, i == vs.ActiveIndex(), mode)
 	}
 	return wire.ListViewsResult{Views: out, ActiveIndex: vs.ActiveIndex(), Layout: vs.Layout()}
 }
 
-// viewInfo renders one view (index, name, active flag, camera) into the wire DTO.
-func viewInfo(i int, v *doc.View, active bool) wire.ViewInfo {
+// viewInfo renders one view (index, name, active flag, type, camera, display mode) into the
+// wire DTO — the camera + display-mode pair a client view carries (#409).
+func viewInfo(i int, v *doc.View, active bool, mode types.DisplayModeEnum) wire.ViewInfo {
 	return wire.ViewInfo{
-		Index:  i,
-		Name:   v.Name,
-		Active: active,
+		Index:    i,
+		Name:     v.Name,
+		Active:   active,
+		ViewType: types.GraphicsViewType,
 		Camera: wire.CameraView{
 			Eye:    types.Point{X: v.Eye.X, Y: v.Eye.Y, Z: v.Eye.Z},
 			Target: types.Point{X: v.Target.X, Y: v.Target.Y, Z: v.Target.Z},
 			Up:     types.Vector{X: v.Up.X, Y: v.Up.Y, Z: v.Up.Z},
 			FOV:    v.FOV,
 		},
+		DisplayMode: mode,
 	}
 }

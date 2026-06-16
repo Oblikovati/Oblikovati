@@ -11,6 +11,7 @@ package events
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
@@ -53,6 +54,12 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
 			return relayEdit(sink, e)
+		}),
+		// M16-F03 (#404): the active view's camera moved (named-view restore / orientation
+		// jump). The add-in reads the new frame via get_camera; wire.CameraChangedEvent is the
+		// richer DTO for an out-of-band transport.
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.CameraChanged) event.Outcome {
+			return relay(sink, wireEvent{Type: wire.EventCameraChanged, Document: strconv.FormatUint(uint64(e.Document), 10)})
 		}),
 	)
 	subs = append(subs, subscribeTransactions(bus, sink)...)
