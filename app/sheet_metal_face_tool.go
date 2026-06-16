@@ -56,13 +56,7 @@ func (t *SheetMetalFaceTool) Commit(s *Session) error {
 	t.added = feature.NewSheetMetalFaceFeatures(part.Features()).Add(&feature.SheetMetalFaceDefinition{
 		Sketch: p.Sketch, ProfileIndex: p.ProfileIndex, Operation: op,
 	})
-	part.Recompute()
-	s.recordEdit(part, "Sheet Metal Face")
-	if !t.added.Health().OK() {
-		return errors.New("sheet-metal face: " + t.added.Health().Reason)
-	}
-	s.Selection().SetFilter(NewSelectionFilter())
-	return nil
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Face")
 }
 
 // Cancel abandons the tool.

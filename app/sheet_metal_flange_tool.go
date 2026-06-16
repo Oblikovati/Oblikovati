@@ -70,13 +70,7 @@ func (t *SheetMetalFlangeTool) Commit(s *Session) error {
 		Height:  func() float64 { return height },
 		Angle:   func() float64 { return angle },
 	})
-	part.Recompute()
-	s.recordEdit(part, "Sheet Metal Flange")
-	if !t.added.Health().OK() {
-		return errors.New("sheet-metal flange: " + t.added.Health().Reason)
-	}
-	s.Selection().SetFilter(NewSelectionFilter())
-	return nil
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Flange")
 }
 
 // Cancel abandons the tool.

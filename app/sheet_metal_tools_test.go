@@ -61,7 +61,8 @@ func topXEdge(t *testing.T, body *topo.Body) *topo.Edge {
 	return best
 }
 
-// TestSheetMetalCommandsEnable the Sheet Metal commands enable only on a sheet-metal part.
+// TestSheetMetalCommandsEnable the Sheet Metal commands all sit on the Sheet Metal tab and
+// enable only on a sheet-metal part.
 func TestSheetMetalCommandsEnable(t *testing.T) {
 	s, _ := sheetMetalSession(t)
 	if !hasActiveSheetMetalPart(s) {
@@ -70,10 +71,110 @@ func TestSheetMetalCommandsEnable(t *testing.T) {
 	if hasActiveSheetMetalPart(newSessionWithPart(t)) {
 		t.Error("hasActiveSheetMetalPart should be false with an ordinary part active")
 	}
-	for _, c := range sheetMetalTabCommands() {
+	cmds := sheetMetalTabCommands()
+	if len(cmds) != 13 {
+		t.Errorf("Sheet Metal tab has %d commands, want 13", len(cmds))
+	}
+	for _, c := range cmds {
+		if c.tab != "Sheet Metal" {
+			t.Errorf("command %q is on tab %q, want Sheet Metal", c.displayName, c.tab)
+		}
 		if !c.IsEnabled(s) {
 			t.Errorf("command %q should be enabled on a sheet-metal part", c.displayName)
 		}
+		if hasActiveSheetMetalPart(newSessionWithPart(t)) || c.IsEnabled(newSessionWithPart(t)) {
+			t.Errorf("command %q should be disabled on an ordinary part", c.displayName)
+		}
+	}
+}
+
+// TestSheetMetalToolFlow a Face → Flange → Unfold → Refold flow through the tools yields a
+// healthy part at each step — the core authoring path the ribbon drives.
+func TestSheetMetalToolFlow(t *testing.T) {
+	s, part := sheetMetalSession(t)
+
+	face := NewSheetMetalFaceTool()
+	face.Start(s)
+	face.Pick(s, squareProfile(part, 4))
+	if err := face.Commit(s); err != nil {
+		t.Fatalf("Face: %v", err)
+	}
+
+	flange := NewSheetMetalFlangeTool()
+	flange.Start(s)
+	flange.Pick(s, EdgeHandle{Edge: topXEdge(t, part.Features().Result()[0])})
+	flange.SetHeight(1)
+	if err := flange.Commit(s); err != nil {
+		t.Fatalf("Flange: %v", err)
+	}
+
+	unfold := NewSheetMetalUnfoldTool()
+	if !unfold.CanCommit() {
+		t.Fatal("Unfold should be ready to commit")
+	}
+	if err := unfold.Commit(s); err != nil {
+		t.Fatalf("Unfold: %v", err)
+	}
+	if !unfold.AddedFeature().Health().OK() {
+		t.Errorf("unfold unhealthy: %s", unfold.AddedFeature().Health().Reason)
+	}
+
+	refold := NewSheetMetalRefoldTool()
+	if err := refold.Commit(s); err != nil {
+		t.Fatalf("Refold: %v", err)
+	}
+	if !refold.AddedFeature().Health().OK() {
+		t.Errorf("refold unhealthy: %s", refold.AddedFeature().Health().Reason)
+	}
+}
+
+// TestSheetMetalHemTool the Hem tool folds a healthy hem on a base sheet edge.
+func TestSheetMetalHemTool(t *testing.T) {
+	s, part := sheetMetalSession(t)
+	face := NewSheetMetalFaceTool()
+	face.Start(s)
+	face.Pick(s, squareProfile(part, 4))
+	if err := face.Commit(s); err != nil {
+		t.Fatalf("Face: %v", err)
+	}
+	hem := NewSheetMetalHemTool()
+	hem.Start(s)
+	hem.Pick(s, EdgeHandle{Edge: topXEdge(t, part.Features().Result()[0])})
+	hem.SetLength(0.5)
+	if err := hem.Commit(s); err != nil {
+		t.Fatalf("Hem: %v", err)
+	}
+	if !hem.AddedFeature().Health().OK() {
+		t.Errorf("hem unhealthy: %s", hem.AddedFeature().Health().Reason)
+	}
+}
+
+// TestSheetMetalToolsRequireInput every tool's Commit errors before its input is gathered (no
+// pick, or no developable flat) — so a half-finished tool never silently commits nothing.
+func TestSheetMetalToolsRequireInput(t *testing.T) {
+	makers := []func() Tool{
+		func() Tool { return NewSheetMetalFaceTool() },
+		func() Tool { return NewSheetMetalFlangeTool() },
+		func() Tool { return NewSheetMetalHemTool() },
+		func() Tool { return NewSheetMetalContourFlangeTool() },
+		func() Tool { return NewSheetMetalLoftedFlangeTool() },
+		func() Tool { return NewSheetMetalContourRollTool() },
+		func() Tool { return NewSheetMetalBendTool() },
+		func() Tool { return NewSheetMetalFoldTool() },
+		func() Tool { return NewSheetMetalCornerTool() },
+		func() Tool { return NewSheetMetalCornerSeamTool() },
+		func() Tool { return NewSheetMetalCutTool() },
+		func() Tool { return NewSheetMetalUnfoldTool() },
+		func() Tool { return NewSheetMetalRefoldTool() },
+	}
+	for _, mk := range makers {
+		s, _ := sheetMetalSession(t)
+		tool := mk()
+		tool.Start(s)
+		if err := tool.Commit(s); err == nil {
+			t.Errorf("%s should error before its input is gathered", tool.Name())
+		}
+		tool.Cancel(s)
 	}
 }
 
