@@ -102,3 +102,35 @@ func TestVisibleFacesFromTopShowsTop(t *testing.T) {
 		t.Error("TOP face should be visible from a top-down view")
 	}
 }
+
+// TestFaceCellsRubikGrid checks each cube face subdivides into a 3×3 grid whose cells are the
+// face's nine selectable zones: one centre face, four edges, four corners — all on that face (#914).
+func TestFaceCellsRubikGrid(t *testing.T) {
+	var top faceDef
+	for _, d := range cubeFaceDefs {
+		if d.axis == 2 && d.sign == 1 { // the +Z (TOP) face
+			top = d
+		}
+	}
+	cells := faceCells(top)
+	if len(cells) != 9 {
+		t.Fatalf("a face should subdivide into 9 cells, got %d", len(cells))
+	}
+	var faces, edges, corners int
+	for _, c := range cells {
+		if c.region.Z != 1 {
+			t.Errorf("cell %+v is not on the +Z face", c.region)
+		}
+		switch c.region.Kind {
+		case RegionFace:
+			faces++
+		case RegionEdge:
+			edges++
+		case RegionCorner:
+			corners++
+		}
+	}
+	if faces != 1 || edges != 4 || corners != 4 {
+		t.Errorf("3×3 grid = %d face / %d edge / %d corner cells, want 1 / 4 / 4", faces, edges, corners)
+	}
+}

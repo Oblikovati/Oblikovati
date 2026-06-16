@@ -15,8 +15,8 @@ import (
 
 // viewCubeArrowColor / viewCubeArrowHotColor are the arrow widgets' idle and hovered tints.
 var (
-	viewCubeArrowColor    = [4]float32{0.55, 0.60, 0.70, 0.85}
-	viewCubeArrowHotColor = [4]float32{0.40, 0.70, 1.00, 1.0}
+	viewCubeArrowColor    = [4]float32{0.64, 0.68, 0.74, 0.9} // light gray, like the reference arrows
+	viewCubeArrowHotColor = [4]float32{0.42, 0.50, 0.64, 1.0} // muted slate blue (matches the cube hover)
 )
 
 // ViewCube arrow widgets (#914 / N20–N21): the four adjacent-face triangles around the cube (step

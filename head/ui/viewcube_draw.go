@@ -124,19 +124,30 @@ func drawCornerCombo(s *app.Session) {
 // heading as the view orbits.
 func drawCompass(cam scene.Camera, o doc.CubeOrient, cx, cy, r float32) {
 	right, up, fwd := cubeBasis(cam, o)
-	const rc, segs = 1.5, 48 // ring radius in cube units, just outside the base
+	const rc, segs = 1.32, 48 // ring radius in cube units, hugging the base like the reference
 	var px, py float32
 	for i := 0; i <= segs; i++ {
 		t := float64(i) / segs * 2 * stdmath.Pi
 		c := project(math.V3(rc*stdmath.Cos(t), rc*stdmath.Sin(t), -1), right, up, fwd, r)
 		x, y := cx+c.sx, cy+c.sy
 		if i > 0 {
-			native.DrawLine(px, py, x, y, viewCubeCompassColor, 1.4)
+			native.DrawLine(px, py, x, y, viewCubeCompassColor, 1.6)
 		}
 		px, py = x, y
 	}
-	n := project(math.V3(0, rc, -1), right, up, fwd, r) // +Y = North
-	native.DrawText(cx+n.sx-3, cy+n.sy-7, "N", viewCubeCompassColor)
+	// The four cardinals, just outside the ring (N=+Y/BACK, E=+X, S=−Y/FRONT, W=−X), matching the
+	// reference's bold N/E/S/W rose.
+	const lr = rc * 1.22
+	for _, card := range []struct {
+		v math.Vector3
+		s string
+	}{
+		{math.V3(0, lr, -1), "N"}, {math.V3(lr, 0, -1), "E"},
+		{math.V3(0, -lr, -1), "S"}, {math.V3(-lr, 0, -1), "W"},
+	} {
+		c := project(card.v, right, up, fwd, r)
+		native.DrawText(cx+c.sx-3.5, cy+c.sy-7, card.s, viewCubeCompassColor)
+	}
 }
 
 // projectionMenuItems renders the three projection-mode rows (radio-marked) for the active
@@ -283,14 +294,29 @@ func snapToCubeRegion(s *app.Session, region *Region, pw, ph int) {
 
 // ViewCube colors. Faces are a light translucent panel; the hovered region's faces tint to
 // the accent. (Theming via tokens is a Phase-C follow-up.)
+// ViewCube palette, sampled from the reference: light blue-gray faces, a muted slate-blue hover,
+// subtle gray grid lines, medium-gray labels (not black), and blue-gray compass cardinals.
 var (
-	viewCubeFaceColor    = [4]float32{0.85, 0.86, 0.88, 1.0}  // opaque light gray
-	viewCubeHoverColor   = [4]float32{0.36, 0.66, 0.96, 0.95} // accent on hover
-	viewCubeEdgeColor    = [4]float32{0.50, 0.52, 0.56, 1.0}  // medium gray, not black
-	viewCubeTextColor    = [4]float32{0.20, 0.22, 0.26, 1}
+	viewCubeFaceColor    = [4]float32{0.85, 0.87, 0.91, 1.0} // light blue-gray face (≈217,222,232)
+	viewCubeHoverColor   = [4]float32{0.42, 0.50, 0.64, 1.0} // muted slate blue (≈102,120,153)
+	viewCubeEdgeColor    = [4]float32{0.64, 0.67, 0.71, 1.0} // subtle grid line
+	viewCubeTextColor    = [4]float32{0.40, 0.43, 0.47, 1.0} // medium gray label (≈103,109,117)
 	viewCubeHomeColor    = [4]float32{0.62, 0.66, 0.72, 0.95}
-	viewCubeCompassColor = [4]float32{0.46, 0.52, 0.60, 0.95}
+	viewCubeCompassColor = [4]float32{0.44, 0.48, 0.54, 0.95} // blue-gray cardinals
 )
+
+// faceShade brightens the top face and dims the bottom, like the reference's lit cube, for the 3D
+// look (the cube's local +Z is TOP). Applied to the base face color, not the hover highlight.
+func faceShade(r Region) float32 {
+	switch r.Z {
+	case 1: // TOP
+		return 1.0
+	case -1: // BOTTOM
+		return 0.82
+	default: // sides
+		return 0.91
+	}
+}
 
 // drawViewCube paints the navigation cube centered at screen (cx,cy) for the camera, with
 // the hovered region (if any) tinted and the home button highlighted when homeHovered.
@@ -300,22 +326,9 @@ func drawViewCube(cam scene.Camera, o doc.CubeOrient, p cubePlacement, hovered *
 		drawCompass(cam, o, p.cx, p.cy, p.r) // under the cube faces
 	}
 	drawViewCubeArrows(p, arrow) // adjacent-face + roll arrows around the cube (#914)
+	right, up, fwd := cubeBasis(cam, o)
 	for _, f := range visibleFaces(cam, o, p.r) {
-		col := viewCubeFaceColor
-		if hovered != nil && faceInRegion(f.region, hovered) {
-			col = viewCubeHoverColor
-		} else {
-			col[3] = opacity // inactive faces honor the user's opacity preference
-		}
-		x0, y0 := p.cx+f.corner[0].sx, p.cy+f.corner[0].sy
-		x1, y1 := p.cx+f.corner[1].sx, p.cy+f.corner[1].sy
-		x2, y2 := p.cx+f.corner[2].sx, p.cy+f.corner[2].sy
-		x3, y3 := p.cx+f.corner[3].sx, p.cy+f.corner[3].sy
-		native.DrawQuadFilled(x0, y0, x1, y1, x2, y2, x3, y3, col) // single convex fill (no diagonal seam)
-		native.DrawLine(x0, y0, x1, y1, viewCubeEdgeColor, viewCubeEdgeW)
-		native.DrawLine(x1, y1, x2, y2, viewCubeEdgeColor, viewCubeEdgeW)
-		native.DrawLine(x2, y2, x3, y3, viewCubeEdgeColor, viewCubeEdgeW)
-		native.DrawLine(x3, y3, x0, y0, viewCubeEdgeColor, viewCubeEdgeW)
+		drawFaceCells(f, right, up, fwd, p, hovered, opacity)
 		// Label painted IN the face plane (projected with the cube), not screen-aligned.
 		for _, s := range faceLabelSegments(f, cam, o, p.r) {
 			native.DrawLine(p.cx+s[0], p.cy+s[1], p.cx+s[2], p.cy+s[3], viewCubeTextColor, viewCubeLabelW)
@@ -324,17 +337,44 @@ func drawViewCube(cam scene.Camera, o doc.CubeOrient, p cubePlacement, hovered *
 	drawHomeButton(p.homeX, p.homeY, p.homeR, homeHovered)
 }
 
-// faceInRegion reports whether face f is part of the hovered region (its axis sign matches),
-// so a corner hover tints its three faces, an edge two, a face one.
-func faceInRegion(f Region, h *Region) bool {
-	switch {
-	case f.X != 0:
-		return h.X == f.X
-	case f.Y != 0:
-		return h.Y == f.Y
-	default:
-		return h.Z == f.Z
+// drawFaceCells paints a face's 3×3 Rubik grid: each cell is a filled quad with a grid border,
+// and only the cell matching the hovered region is highlighted (so a face hover lights the centre
+// cell, an edge hover one edge cell, a corner hover one corner cell).
+func drawFaceCells(f cubeFace, right, up, fwd math.Vector3, p cubePlacement, hovered *Region, opacity float32) {
+	shade := faceShade(f.region)
+	for _, cell := range faceCells(faceDefFor(f.region)) {
+		col := viewCubeFaceColor
+		if hovered != nil && sameRegion(cell.region, *hovered) {
+			col = viewCubeHoverColor
+		} else {
+			col[0], col[1], col[2] = col[0]*shade, col[1]*shade, col[2]*shade // lit cube look
+			col[3] = opacity                                                  // inactive cells honor the user's opacity preference
+		}
+		var c [4]cubeCorner
+		for k := range cell.quad {
+			c[k] = project(cell.quad[k], right, up, fwd, p.r)
+		}
+		x0, y0 := p.cx+c[0].sx, p.cy+c[0].sy
+		x1, y1 := p.cx+c[1].sx, p.cy+c[1].sy
+		x2, y2 := p.cx+c[2].sx, p.cy+c[2].sy
+		x3, y3 := p.cx+c[3].sx, p.cy+c[3].sy
+		native.DrawQuadFilled(x0, y0, x1, y1, x2, y2, x3, y3, col)
+		native.DrawLine(x0, y0, x1, y1, viewCubeEdgeColor, viewCubeEdgeW)
+		native.DrawLine(x1, y1, x2, y2, viewCubeEdgeColor, viewCubeEdgeW)
+		native.DrawLine(x2, y2, x3, y3, viewCubeEdgeColor, viewCubeEdgeW)
+		native.DrawLine(x3, y3, x0, y0, viewCubeEdgeColor, viewCubeEdgeW)
 	}
+}
+
+// faceDefFor returns the cube-face definition for a face region (its 3×3 grid is generated from it).
+func faceDefFor(r Region) faceDef {
+	for _, d := range cubeFaceDefs {
+		n := d.normal()
+		if int(n.X) == r.X && int(n.Y) == r.Y && int(n.Z) == r.Z {
+			return d
+		}
+	}
+	return cubeFaceDefs[0]
 }
 
 // drawHomeButton paints a small house glyph (roof triangle + body) at (hx,hy), sized by r.

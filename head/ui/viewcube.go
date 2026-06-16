@@ -28,10 +28,15 @@ func cubeBasis(cam scene.Camera, o doc.CubeOrient) (right, up, fwd math.Vector3)
 	return o.ToLocal(r), o.ToLocal(u), o.ToLocal(f)
 }
 
-// edgeZone is the fraction of a face (from its edge inward) that counts as an edge/corner
-// region rather than the face center, when classifying a hit. 0.5 splits each axis into
-// outer-third-ish edge bands vs the central face.
-const edgeZone = 0.5
+// viewCubeEdgeBand is each edge strip's fraction of a face in the Rubik-style 3×3 grid; the centre
+// (face) cell takes the rest. 0.2 matches the reference — a large centre with thin edge/corner
+// bands — rather than equal thirds.
+const viewCubeEdgeBand = 0.2
+
+// edgeZone is the coordinate past which an axis counts as an edge/corner rather than the face
+// centre, when classifying a hit. Derived from the edge band so the hit zones line up exactly with
+// the drawn cells: the centre cell spans the middle 1−2·band of each axis.
+const edgeZone = 1 - 2*viewCubeEdgeBand
 
 // RegionKind is whether a ViewCube region is a face, an edge, or a corner.
 type RegionKind int
@@ -225,6 +230,51 @@ func zoneSigns(c [3]float64, face int) [3]int {
 	}
 	return s
 }
+
+// faceCell is one of a cube face's 3×3 selectable cells (Rubik-style): its four local-space
+// corners (inheriting the face's winding) and the region it selects — the centre cell is the face,
+// the four edge cells its edges, the four corner cells its corners.
+type faceCell struct {
+	quad   [4]math.Vector3
+	region Region
+}
+
+// faceCells subdivides a cube face into its 3×3 grid. Each cell's corners are a bilinear sample of
+// the face quad (so the winding matches), and its region comes from classifying the cell centre.
+func faceCells(d faceDef) []faceCell {
+	cuts := [4]float64{0, viewCubeEdgeBand, 1 - viewCubeEdgeBand, 1} // thin edge strips, big centre
+	cells := make([]faceCell, 0, 9)
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			sa, sb := cuts[i], cuts[i+1]
+			ta, tb := cuts[j], cuts[j+1]
+			cell := faceCell{quad: [4]math.Vector3{
+				cellCorner(d.quad, sa, ta), cellCorner(d.quad, sb, ta),
+				cellCorner(d.quad, sb, tb), cellCorner(d.quad, sa, tb),
+			}}
+			if reg := classify(cellCorner(d.quad, (sa+sb)/2, (ta+tb)/2)); reg != nil {
+				cell.region = *reg
+				cells = append(cells, cell)
+			}
+		}
+	}
+	return cells
+}
+
+// cellCorner bilinearly samples a face quad (CCW Q0..Q3; s runs Q0→Q1, t runs Q0→Q3).
+func cellCorner(q [4][3]float64, s, t float64) math.Vector3 {
+	a := lerp3(q[0], q[1], s)
+	b := lerp3(q[3], q[2], s)
+	p := lerp3(a, b, t)
+	return math.V3(p[0], p[1], p[2])
+}
+
+func lerp3(a, b [3]float64, t float64) [3]float64 {
+	return [3]float64{a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t, a[2] + (b[2]-a[2])*t}
+}
+
+// sameRegion reports whether two regions are the same zone (identical axis signs).
+func sameRegion(a, b Region) bool { return a.X == b.X && a.Y == b.Y && a.Z == b.Z }
 
 // cubeFace is a projected, visible cube face for painting: its four screen-corner offsets
 // (in draw order) and depth (face-center forward component) for back-to-front sorting.
