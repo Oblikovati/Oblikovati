@@ -7,13 +7,9 @@ import (
 	"testing"
 )
 
-// headerBeginSentinel opens the AcDb:Header section in every DWG generation;
-// finding it at the front of the assembled section proves the whole paged pipeline
-// (decrypt → page map → section map → data-page decompress → assemble) is correct.
-var headerBeginSentinel = []byte{
-	0xCF, 0x7B, 0x1F, 0x23, 0xFD, 0xDE, 0x38, 0xA9,
-	0x5F, 0x7C, 0x68, 0xB8, 0x4E, 0x6D, 0x33, 0x5F,
-}
+// The AcDb:Header section opens with vbeginSentinel (defined in headervars.go) in every
+// DWG generation; finding it at the front of the assembled section proves the whole paged
+// pipeline (decrypt → page map → section map → data-page decompress → assemble) is correct.
 
 // r2018Corpus is every AC1032 file in the test corpus; the AC1015 file is covered
 // by the R2000 tests.
@@ -68,7 +64,7 @@ func TestParseR2004ContainerCorpus(t *testing.T) {
 			if err != nil {
 				t.Fatalf("assemble AcDb:Header: %v", err)
 			}
-			if !bytes.HasPrefix(hdr, headerBeginSentinel) {
+			if !bytes.HasPrefix(hdr, vbeginSentinel) {
 				t.Errorf("AcDb:Header does not start with begin sentinel; got % X", hdr[:min(16, len(hdr))])
 			}
 		})

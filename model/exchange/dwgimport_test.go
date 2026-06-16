@@ -3,6 +3,7 @@
 package exchange
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"oblikovati.org/kernel/exchange/dwg"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
@@ -35,7 +37,9 @@ func TestAdd2DEntitiesMapsEachType(t *testing.T) {
 		&dwg.Circle{Center: [3]float64{0, 0, 0}, Radius: 2},
 		&dwg.Arc{Center: [3]float64{0, 0, 0}, Radius: 1, StartAngle: 0, EndAngle: 1.5},
 		&dwg.Point{Position: [3]float64{3, 3, 0}},
-		&dwg.Ellipse{Center: [3]float64{0, 0, 0}, MajorAxis: [3]float64{4, 0, 0}, AxisRatio: 0.5},
+		&dwg.Ellipse{Center: [3]float64{0, 0, 0}, MajorAxis: [3]float64{4, 0, 0}, AxisRatio: 0.5, StartAngle: 0, EndAngle: 2 * math.Pi},
+		// partial ellipse (start/end != full perimeter) -> elliptical arc, not a closed ellipse
+		&dwg.Ellipse{Center: [3]float64{5, 0, 0}, MajorAxis: [3]float64{4, 0, 0}, AxisRatio: 0.5, StartAngle: 1, EndAngle: 2.5},
 		&dwg.Spline{ControlPoints: [][3]float64{{0, 0, 0}, {1, 1, 0}, {2, 0, 0}}, Degree: 2},
 		// open polyline: (0,0)->(1,0) straight, (1,0)->(1,1) bulged -> one line + one arc
 		&dwg.LwPolyline{Points: [][2]float64{{0, 0}, {1, 0}, {1, 1}}, Bulges: []float64{0, 0.5, 0}},
@@ -52,7 +56,38 @@ func TestAdd2DEntitiesMapsEachType(t *testing.T) {
 	checkCount(t, "arcs", sk.Arcs().Count(), 2) // arc entity + polyline bulge segment
 	checkCount(t, "points", sk.Points().Count(), 1)
 	checkCount(t, "ellipses", sk.Ellipses().Count(), 1)
+	checkCount(t, "elliptical arcs", sk.EllipticalArcs().Count(), 1)
 	checkCount(t, "splines", sk.Splines().Count(), 1)
+}
+
+// TestDWGToDocumentScale covers unit conversion into the model's cm database unit: a
+// known DWG unit converts by physical size (independent of the document's display unit),
+// while a unitless drawing is taken to be in the document's preferred unit.
+func TestDWGToDocumentScale(t *testing.T) {
+	mm := param.DefaultUnitsOfMeasure() // preferred length = mm
+	meters := param.DefaultUnitsOfMeasure()
+	if err := meters.SetPreferred(param.Length, "m"); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name     string
+		insunits int
+		units    param.UnitsOfMeasure
+		want     float64
+	}{
+		{"mm drawing", 4, mm, 0.1},          // 1 mm = 0.1 cm
+		{"m drawing", 6, mm, 100},           // 1 m = 100 cm (document unit irrelevant)
+		{"inch drawing", 1, mm, 2.54},       // 1 in = 2.54 cm
+		{"unitless, doc mm", 0, mm, 0.1},    // treated as mm → 0.1 cm
+		{"unitless, doc m", 0, meters, 100}, // treated as m → 100 cm
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := dwgToDocumentScale(tc.insunits, tc.units); got != tc.want {
+				t.Errorf("dwgToDocumentScale(%d) = %g, want %g", tc.insunits, got, tc.want)
+			}
+		})
+	}
 }
 
 func checkCount(t *testing.T, what string, got, want int) {
@@ -91,6 +126,18 @@ func TestImportDWGPlanarRealFile(t *testing.T) {
 	}
 	if part.Sketches().Count() != 1 || part.Sketches3D().Count() != 0 {
 		t.Errorf("expected one 2D sketch and no 3D sketch, got %d/%d", part.Sketches().Count(), part.Sketches3D().Count())
+	}
+
+	// Regression: testfile-7's 175 ELLIPSE entities are all but one (the model-space
+	// full ellipse) block-definition geometry in blocks no model-space INSERT places.
+	// The old importer drew every block-definition entity at its definition coordinates,
+	// stacking those ellipses into the radiating "mess"; model-space filtering now keeps
+	// only the one real model-space ellipse, and block geometry appears solely through
+	// the INSERTs that reference it. (The partial-ELLIPSE → EllipticalArc mapping itself
+	// is pinned by TestAdd2DEntitiesMapsEachType.)
+	sk := part.Sketches().Item(0)
+	if got := sk.Ellipses().Count(); got != 1 {
+		t.Errorf("model-space full ellipses = %d, want 1", got)
 	}
 }
 

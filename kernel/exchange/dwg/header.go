@@ -88,6 +88,16 @@ func (h *FileHeader) ObjectData(data []byte) ([]byte, error) {
 	return data, nil
 }
 
+// HeaderSection returns the raw bytes of the drawing-header-variables section
+// ("AcDb:Header" for paged files, the secHeaderVars locator for R2000), the input to
+// ParseHeaderVars.
+func (h *FileHeader) HeaderSection(data []byte) ([]byte, error) {
+	if h.Version.Paged() {
+		return h.LogicalSection(data, "AcDb:Header")
+	}
+	return h.SectionBytes(data, byte(secHeaderVars))
+}
+
 // SectionNames lists the logical section names present in a paged file, for
 // diagnostics and tests.
 func (h *FileHeader) SectionNames() []string {

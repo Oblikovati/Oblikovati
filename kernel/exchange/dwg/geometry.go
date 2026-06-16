@@ -106,6 +106,22 @@ type Spline struct {
 func (e *Spline) EntityHandle() uint64   { return e.Handle }
 func (e *Spline) EntityType() ObjectType { return TypeSpline }
 
+// Insert is a block reference: it places the entities of the block identified by
+// BlockHeader at Insertion, after applying Scale and a Rotation (radians, about the
+// extrusion/Z axis). It is an intermediate — the decoder expands it into transformed
+// copies of the block's geometry (see expand in decode.go), so an Insert never reaches
+// the sketch converter.
+type Insert struct {
+	Handle      uint64
+	BlockHeader uint64 // handle of the referenced block's BLOCK_HEADER
+	Insertion   [3]float64
+	Scale       [3]float64
+	Rotation    float64
+}
+
+func (e *Insert) EntityHandle() uint64   { return e.Handle }
+func (e *Insert) EntityType() ObjectType { return TypeInsert }
+
 // decodeEntity decodes one geometry entity's coordinates from a reader positioned
 // at its type-specific data (see seekEntityGeometry). It returns (nil, nil) for a
 // type whose geometry decoder is not yet implemented, so callers can skip it.

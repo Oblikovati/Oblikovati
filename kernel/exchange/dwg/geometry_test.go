@@ -40,11 +40,11 @@ func decodeGeometry(t *testing.T, name string) (map[uint64]Entity, map[string]in
 		default:
 			continue
 		}
-		r, err := seekEntityGeometry(od, ref, h.Version)
+		cur, err := seekEntity(od, ref, h.Version)
 		if err != nil {
 			t.Fatalf("%s: seek handle %d (%s): %v", name, ref.Handle, hdr.Type.Name(), err)
 		}
-		e, err := decodeEntity(r, hdr, h.Version)
+		e, err := decodeEntity(cur.geom, hdr, h.Version)
 		if err != nil || e == nil {
 			t.Fatalf("%s: decode handle %d (%s): %v", name, ref.Handle, hdr.Type.Name(), err)
 		}

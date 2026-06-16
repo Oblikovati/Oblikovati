@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/exchange/dwg"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
@@ -51,12 +52,29 @@ func ImportDWG(part *compdef.PartComponentDefinition, data []byte, plane sketch.
 	if err != nil {
 		return DWGImportResult{}, fmt.Errorf("import dwg: %w", err)
 	}
+	drawing.Entities = dwg.ScaleEntities(drawing.Entities, dwgToDocumentScale(drawing.Units, part.Units()))
 	if _, planar := drawing.Planar(dwgPlanarTolerance); planar {
 		n, w := add2DEntities(part.Sketches().Add(plane), drawing.Entities)
 		return DWGImportResult{EntityCount: n, Warnings: append(warns, w...)}, nil
 	}
 	n, w := add3DEntities(part.Sketches3D().Add(), drawing.Entities)
 	return DWGImportResult{Is3D: true, EntityCount: n, Warnings: append(warns, w...)}, nil
+}
+
+// dbUnitMetres is the model's database length unit in metres (centimetres; see
+// param.Length). DWG coordinates are scaled into it on import.
+const dbUnitMetres = 0.01
+
+// dwgToDocumentScale returns the factor that converts a DWG coordinate (in the drawing's
+// $INSUNITS unit) to the model's database unit (cm). A drawing with a known unit converts
+// by physical size, independent of the document's display preference; a unitless drawing
+// (INSUNITS 0) is taken to already be in the document's preferred length unit, so it scales
+// by that unit's database factor.
+func dwgToDocumentScale(insunits int, units param.UnitsOfMeasure) float64 {
+	if m, ok := dwg.MetersPerUnit(insunits); ok {
+		return m / dbUnitMetres
+	}
+	return units.FromPreferred(1, param.Length).Value // cm per the document's preferred unit
 }
 
 // add2DEntities maps each decoded entity onto a 2D sketch, returning the count
@@ -89,7 +107,15 @@ func add2DEntity(sk *sketch.Sketch, e dwg.Entity) bool {
 		sk.Points().Add(p2(g.Position))
 	case *dwg.Ellipse:
 		majorR := math.Hypot(g.MajorAxis[0], g.MajorAxis[1])
-		sk.Ellipses().Add(p2(g.Center), gmath.V2(g.MajorAxis[0], g.MajorAxis[1]), majorR, majorR*g.AxisRatio)
+		axis := gmath.V2(g.MajorAxis[0], g.MajorAxis[1])
+		// AutoCAD stores most arcs/elliptical arcs as a partial ELLIPSE entity
+		// (start/end parametric angles). Importing those as a full ellipse drew giant
+		// closed ovals over the drawing — emit a bounded EllipticalArc when partial.
+		if isFullEllipse(g.StartAngle, g.EndAngle) {
+			sk.Ellipses().Add(p2(g.Center), axis, majorR, majorR*g.AxisRatio)
+		} else {
+			sk.EllipticalArcs().Add(p2(g.Center), axis, majorR, majorR*g.AxisRatio, g.StartAngle, g.EndAngle)
+		}
 	case *dwg.Spline:
 		add2DSpline(sk, g)
 	case *dwg.LwPolyline:
@@ -164,6 +190,13 @@ func arcEndpoints(center [3]float64, radius, start, end float64) (gmath.Point2, 
 	s := gmath.P2(center[0]+radius*math.Cos(start), center[1]+radius*math.Sin(start))
 	e := gmath.P2(center[0]+radius*math.Cos(end), center[1]+radius*math.Sin(end))
 	return s, e
+}
+
+// isFullEllipse reports whether a DWG ellipse's parametric angle span covers the whole
+// perimeter (start≈0, end≈2π) — the only case that maps to a closed sketch Ellipse; any
+// shorter span is an elliptical arc.
+func isFullEllipse(start, end float64) bool {
+	return math.Abs(start) < 1e-6 && math.Abs(end-2*math.Pi) < 1e-6
 }
 
 // p2 projects a 3D coordinate onto the sketch plane's X/Y.
