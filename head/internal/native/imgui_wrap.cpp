@@ -378,6 +378,18 @@ int  obk_ig_key_ctrl(void)                   { return ImGui::GetIO().KeyCtrl ? 1
 // escape_pressed fires once on the frame Esc is pressed (cancel the active tool).
 int  obk_ig_escape_pressed(void)             { return ImGui::IsKeyPressed(ImGuiKey_Escape) ? 1 : 0; }
 int  obk_ig_f1_pressed(void)                 { return ImGui::IsKeyPressed(ImGuiKey_F1) ? 1 : 0; }
+// obk_ig_fkey_down reports whether F(n) is held (n in 2..4) — the hold-to-navigate keys
+// F2 pan / F3 zoom / F4 orbit (#911).
+int  obk_ig_fkey_down(int n) {
+    ImGuiKey key;
+    switch (n) {
+        case 2: key = ImGuiKey_F2; break;
+        case 3: key = ImGuiKey_F3; break;
+        case 4: key = ImGuiKey_F4; break;
+        default: return 0;
+    }
+    return ImGui::IsKeyDown(key) ? 1 : 0;
+}
 // undo/redo_pressed fire once on the frame Z / Y is pressed; the Go side gates them on
 // Ctrl (and not WantTextInput) to form the global Ctrl+Z / Ctrl+Y shortcuts.
 int  obk_ig_undo_pressed(void)               { return ImGui::IsKeyPressed(ImGuiKey_Z) ? 1 : 0; }

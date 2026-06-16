@@ -58,6 +58,29 @@ func TestApplyNavigationLeftDragDoesNotMoveCamera(t *testing.T) {
 	}
 }
 
+// TestApplyNavigationModalFKeys checks the hold-to-navigate keys drive a left-drag: F2 pans, F4
+// orbits (distance preserved), F3 zooms; a modal mode without the left button does nothing (#911).
+func TestApplyNavigationModalFKeys(t *testing.T) {
+	cam := scene.NewCamera(800, 600)
+
+	if pan := ApplyNavigation(cam, NavInput{Active: true, Modal: NavPan, Left: true, DX: 30}); pan.Target.IsEqualTo(cam.Target, 1e-9) {
+		t.Error("F2-hold + left-drag should pan (move the target)")
+	}
+	orbit := ApplyNavigation(cam, NavInput{Active: true, Modal: NavOrbit, Left: true, DX: 30})
+	if orbit.Eye.IsEqualTo(cam.Eye, 1e-9) {
+		t.Error("F4-hold + left-drag should orbit (move the eye)")
+	}
+	if stdmath.Abs(dist(orbit)-dist(cam)) > 1e-9 {
+		t.Error("F4 orbit must preserve the eye–target distance")
+	}
+	if zoom := ApplyNavigation(cam, NavInput{Active: true, Modal: NavZoom, Left: true, DY: 20}); stdmath.Abs(dist(zoom)-dist(cam)) < 1e-9 {
+		t.Error("F3-hold + left-drag should zoom (change the distance)")
+	}
+	if out := ApplyNavigation(cam, NavInput{Active: true, Modal: NavPan, DX: 30}); out != cam {
+		t.Error("a modal nav mode without the left button held must not move the camera")
+	}
+}
+
 func TestApplyNavigationIdleLeavesCameraUnchanged(t *testing.T) {
 	cam := scene.NewCamera(800, 600)
 	if ApplyNavigation(cam, NavInput{}) != cam {

@@ -31,6 +31,9 @@ var (
 // single-pick click handler. Replaces the bare handleViewportClick call so they never both
 // fire on the same press.
 func handleViewportSelection(s *app.Session) {
+	if heldNavMode() != NavNone {
+		return // a held F2/F3/F4 turns a left-drag into navigation, not selection (#911)
+	}
 	if s.SelectOtherActive() {
 		if native.IsItemClicked(native.MouseLeft) {
 			s.CommitSelectOther() // a click in the viewport accepts the highlighted candidate (#910)

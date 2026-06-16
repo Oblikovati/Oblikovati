@@ -76,6 +76,7 @@ int  obk_ig_key_ctrl(void);
 int  obk_ig_key_alt(void);
 int  obk_ig_escape_pressed(void);
 int  obk_ig_f1_pressed(void);
+int  obk_ig_fkey_down(int n);
 int  obk_ig_undo_pressed(void);
 int  obk_ig_redo_pressed(void);
 int  obk_ig_pressed_keys(char* buf, int buf_size);
@@ -749,6 +750,10 @@ func PressedKeys() []string {
 // EscapePressed reports whether Esc was pressed this frame (cancel the active tool).
 // F1Pressed fires once on the frame F1 is pressed — the host help shortcut (M05-F14).
 func F1Pressed() bool { return C.obk_ig_f1_pressed() != 0 }
+
+// FKeyDown reports whether F(n) is currently held (n in 2..4) — the hold-to-navigate keys
+// F2 pan / F3 zoom / F4 orbit (#911).
+func FKeyDown(n int) bool { return C.obk_ig_fkey_down(C.int(n)) != 0 }
 
 func EscapePressed() bool { return C.obk_ig_escape_pressed() != 0 }
 
