@@ -43,42 +43,38 @@ func rulingStripFaces(ef edgeFillet) []filletFace {
 	for j := 0; j+1 < len(ef.c0.chords); j++ {
 		switch {
 		case ef.c1.runout: // fan from corner-0's arc to corner-1's apex
-			out = append(out, planarTriangleFace(ef.c0.chords[j], ef.c1.cen, ef.c0.chords[j+1], cmid))
+			out = append(out, planarFaceFromRing([]math.Point3{ef.c0.chords[j], ef.c1.cen, ef.c0.chords[j+1]}, cmid))
 		case ef.c0.runout: // fan from corner-1's arc to corner-0's apex
-			out = append(out, planarTriangleFace(ef.c1.chords[j], ef.c0.cen, ef.c1.chords[j+1], cmid))
+			out = append(out, planarFaceFromRing([]math.Point3{ef.c1.chords[j], ef.c0.cen, ef.c1.chords[j+1]}, cmid))
 		default:
-			quad := [4]math.Point3{ef.c0.chords[j], ef.c1.chords[j], ef.c1.chords[j+1], ef.c0.chords[j+1]}
-			out = append(out, planarQuadFace(quad, cmid))
+			out = append(out, planarFaceFromRing([]math.Point3{ef.c0.chords[j], ef.c1.chords[j], ef.c1.chords[j+1], ef.c0.chords[j+1]}, cmid))
 		}
 	}
 	return out
 }
 
-// planarTriangleFace builds one planar triangle, wound so its normal points away from cmid.
-func planarTriangleFace(p0, p1, p2, cmid math.Point3) filletFace {
-	n := p0.VectorTo(p1).Cross(p0.VectorTo(p2))
-	tri := [3]math.Point3{p0, p1, p2}
-	if n.Dot(cmid.VectorTo(centroidPts(tri[:]))) < 0 {
-		tri = [3]math.Point3{p0, p2, p1}
-	}
-	pl, _ := geom.NewPlane(tri[0], p0.VectorTo(tri[1]).Cross(p0.VectorTo(tri[2])))
-	return filletFace{surface: pl, loops: []filletLoop{{pts: tri[:], curves: make([]geom.Curve3, 3)}}}
-}
-
-// planarQuadFace builds one planar face over the quad, wound so its normal points away from
-// the blend centre line (approximated by cmid — the wedge spans < π, so the sign is robust).
-func planarQuadFace(quad [4]math.Point3, cmid math.Point3) filletFace {
-	n := quad[0].VectorTo(quad[1]).Cross(quad[0].VectorTo(quad[3]))
-	qc := centroidPts(quad[:])
-	if n.Dot(cmid.VectorTo(qc)) < 0 {
-		quad = [4]math.Point3{quad[0], quad[3], quad[2], quad[1]}
+// planarFaceFromRing builds one planar face over a closed point ring (a quad strip or a triangle fan
+// of the cone), wound so its normal points away from the blend centre line (cmid; the wedge spans < π,
+// so the sign is robust).
+func planarFaceFromRing(ring []math.Point3, cmid math.Point3) filletFace {
+	n := ring[0].VectorTo(ring[1]).Cross(ring[0].VectorTo(ring[len(ring)-1]))
+	if n.Dot(cmid.VectorTo(centroidPts(ring))) < 0 {
+		ring = reversedRing(ring)
 		n = n.Scale(-1)
 	}
-	pl, _ := geom.NewPlane(quad[0], n)
-	return filletFace{surface: pl, loops: []filletLoop{{
-		pts:    quad[:],
-		curves: make([]geom.Curve3, 4),
-	}}}
+	pl, _ := geom.NewPlane(ring[0], n)
+	return filletFace{surface: pl, loops: []filletLoop{{pts: ring, curves: make([]geom.Curve3, len(ring))}}}
+}
+
+// reversedRing reverses a closed point ring while keeping its first point first (so the winding flips
+// but the loop still starts at ring[0]): [p0,p1,…,pn] → [p0,pn,…,p1].
+func reversedRing(ring []math.Point3) []math.Point3 {
+	out := make([]math.Point3, len(ring))
+	out[0] = ring[0]
+	for i := 1; i < len(ring); i++ {
+		out[i] = ring[len(ring)-i]
+	}
+	return out
 }
 
 // filletMaps indexes, per face: the corner-vertex → tangent-point pullbacks (where the face

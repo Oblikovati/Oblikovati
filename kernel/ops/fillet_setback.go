@@ -4,12 +4,28 @@ package ops
 
 import "oblikovati.org/kernel/topo"
 
-// roundThirdEdges augments the pick list so every 2-edge corner becomes a full 3-edge sphere blend:
-// at each vertex where exactly two picked edges meet and a single sharp edge remains, that third edge
-// is added at the corner's radius. This realises the CornerRound strategy by reusing the watertight
-// 3-edge blend (solveBlend) instead of a degenerate 2-edge sphere. Added edges are de-duplicated (an
-// edge may be the third edge of corners at both its ends).
+// roundThirdEdges augments the pick list so every 2-edge corner becomes a full 3-edge sphere blend by
+// adding the sharp third edge at the corner's CONSTANT radius (CornerRound) — reusing the watertight
+// 3-edge blend instead of a degenerate 2-edge sphere.
 func roundThirdEdges(picks []filletPick) []filletPick {
+	return augmentThirdEdges(picks, func(e *topo.Edge, _ uint64, r float64) filletPick {
+		return filletPick{edge: e, r0: r, r1: r}
+	})
+}
+
+// setbackThirdEdges augments the pick list so each 2-edge corner becomes a smooth sphere whose sharp
+// third edge is filleted with a VARIABLE taper — the corner radius at the vertex, running out to 0 at
+// the edge's far end (CornerSetback) — a smooth corner that fades back to the sharp edge. The run-out
+// apex at each far end is handled by the variable-fillet path.
+func setbackThirdEdges(picks []filletPick) []filletPick {
+	return augmentThirdEdges(picks, taperFromCorner)
+}
+
+// augmentThirdEdges adds, for each 2-edge corner (a vertex where exactly two picked edges meet leaving
+// one sharp edge), that sharp third edge to the selection — its pick built by mk from the corner
+// vertex and the corner radius. Added edges are de-duplicated (an edge may be the third edge of
+// corners at both its ends).
+func augmentThirdEdges(picks []filletPick, mk func(third *topo.Edge, vid uint64, r float64) filletPick) []filletPick {
 	already := map[*topo.Edge]bool{}
 	byVertex := map[uint64][]filletPick{}
 	for _, p := range picks {
@@ -23,43 +39,12 @@ func roundThirdEdges(picks []filletPick) []filletPick {
 		if len(ps) != 2 {
 			continue // only a 2-edge corner has a single sharp edge to round
 		}
-		v := vertexByID(edgesOf(ps), vid)
-		third := thirdSharpEdge(v, ps)
+		third := thirdSharpEdge(vertexByID(edgesOf(ps), vid), ps)
 		if third == nil || already[third] || added[third] {
 			continue
 		}
 		added[third] = true
-		out = append(out, filletPick{edge: third, r0: ps[0].r0, r1: ps[0].r0})
-	}
-	return out
-}
-
-// setbackThirdEdges augments the pick list so each 2-edge corner becomes a smooth sphere whose sharp
-// third edge is filleted with a VARIABLE taper — the corner radius at the vertex, running out to 0 at
-// the edge's far end. This realises CornerSetback: a smooth corner that fades back to the sharp edge
-// (distinct from CornerRound, which fillets the third edge at constant radius full-length). Added
-// edges are de-duplicated; the run-out apex at each far end is handled by the variable-fillet path.
-func setbackThirdEdges(picks []filletPick) []filletPick {
-	already := map[*topo.Edge]bool{}
-	byVertex := map[uint64][]filletPick{}
-	for _, p := range picks {
-		already[p.edge] = true
-		byVertex[p.edge.StartVertex().ID()] = append(byVertex[p.edge.StartVertex().ID()], p)
-		byVertex[p.edge.EndVertex().ID()] = append(byVertex[p.edge.EndVertex().ID()], p)
-	}
-	out := picks
-	added := map[*topo.Edge]bool{}
-	for vid, ps := range byVertex {
-		if len(ps) != 2 {
-			continue
-		}
-		v := vertexByID(edgesOf(ps), vid)
-		third := thirdSharpEdge(v, ps)
-		if third == nil || already[third] || added[third] {
-			continue
-		}
-		added[third] = true
-		out = append(out, taperFromCorner(third, vid, radiusAtVertex(ps[0], vid)))
+		out = append(out, mk(third, vid, radiusAtVertex(ps[0], vid)))
 	}
 	return out
 }
