@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // singularDetTol is the magnitude below which a normal determinant (three planes' triple
@@ -151,27 +152,49 @@ func chamferOverhang(d1, d2 float64) float64 {
 // the edge (with a small overhang past each end so the boolean is clean). Equal d1==d2 is the
 // symmetric chamfer; d1≠d2 is the asymmetric two-distance / distance-angle chamfer.
 func chamferWedge(edge *topo.Edge, d1, d2 float64, feat string) (*topo.Body, error) {
+	fr, err := edgeCornerFrame(edge, "chamfer")
+	if err != nil {
+		return nil, err
+	}
+	poly := []math.Point2{{X: 0, Y: 0}, fr.proj(fr.t1.Scale(d1)), fr.proj(fr.t2.Scale(d2))}
+	oh := chamferOverhang(d1, d2)
+	return buildPrism(poly, fr.plane, span{near: -oh, far: fr.length + oh}, 0, feat), nil
+}
+
+// edgeFrame is the resolved corner-cut frame at an edge (see edgeCornerFrame).
+type edgeFrame struct {
+	t1, t2 math.Vector3
+	plane  sketch.Plane
+	proj   func(math.Vector3) math.Point2
+	length float64
+}
+
+// edgeCornerFrame resolves the section frame at an edge for a corner cut: the two adjacent
+// faces' interior directions (t1/t2), the plane perpendicular to the edge, a projector into
+// that plane's 2D coords, and the edge length. Shared by the chamfer wedge and the
+// sheet-metal corner-seam relief, which differ only in the 2D notch polygon they build.
+func edgeCornerFrame(edge *topo.Edge, what string) (edgeFrame, error) {
 	faces := edge.Faces()
 	if len(faces) != 2 {
-		return nil, fmt.Errorf("chamfer: edge bounds %d faces, need 2", len(faces))
+		return edgeFrame{}, fmt.Errorf("%s: edge bounds %d faces, need 2", what, len(faces))
 	}
 	v0, v1 := edge.StartVertex().Point(), edge.EndVertex().Point()
 	e, err := math.UnitVector3FromVector(v0.VectorTo(v1))
 	if err != nil {
-		return nil, fmt.Errorf("chamfer: degenerate edge")
+		return edgeFrame{}, fmt.Errorf("%s: degenerate edge", what)
 	}
 	mid := v0.Midpoint(v1)
 	t1 := interiorDir(faces[0], mid, e)
 	t2 := interiorDir(faces[1], mid, e)
 	if t1.LengthSquared() == 0 || t2.LengthSquared() == 0 {
-		return nil, fmt.Errorf("chamfer: cannot orient the wedge against the edge faces")
+		return edgeFrame{}, fmt.Errorf("%s: cannot orient the cut against the edge faces", what)
 	}
 	plane := planePerp(v0, e)
 	u, v := plane.XAxis().AsVector(), plane.YAxis().AsVector()
-	proj := func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) }
-	poly := []math.Point2{{X: 0, Y: 0}, proj(t1.Scale(d1)), proj(t2.Scale(d2))}
-	oh := chamferOverhang(d1, d2)
-	return buildPrism(poly, plane, span{near: -oh, far: v0.DistanceTo(v1) + oh}, 0, feat), nil
+	return edgeFrame{
+		t1: t1, t2: t2, plane: plane, length: v0.DistanceTo(v1),
+		proj: func(w math.Vector3) math.Point2 { return math.P2(w.Dot(u), w.Dot(v)) },
+	}, nil
 }
 
 // interiorDir returns the unit direction, perpendicular to the edge, pointing from the

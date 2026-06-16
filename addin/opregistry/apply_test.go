@@ -264,6 +264,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"sheetMetalContourFlange": `{"edge":"x","profileSketch":0}`,
 		"sheetMetalLoftedFlange":  `{"profileA":0,"profileB":0}`,
 		"sheetMetalContourRoll":   `{"profileSketch":0,"axisLine":0}`,
+		"sheetMetalCornerSeam":    `{"edges":["x"],"gap":"0.2 mm"}`,
 		"splitSolid":              `{"toolSketch":0}`,
 		"coreCavity":              `{}`,
 		"hull":                    `{}`,
