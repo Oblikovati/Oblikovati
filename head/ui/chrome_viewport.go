@@ -240,7 +240,7 @@ func tileInput(s *app.Session, i int, hit viewCubeHit, cam *scene.Camera, pw, ph
 // tileNavigate applies hover/drag/wheel to tile i's camera; on a non-active tile a real
 // manipulation (drag/wheel) makes it the active view. Returns the (possibly updated) active.
 func tileNavigate(s *app.Session, i int, cam *scene.Camera, isActive bool) bool {
-	nav := readNavInput(isPlacingTool(s) && isActive)
+	nav := readNavInput()
 	if nav.Hovered && navInteracted(nav) && !isActive {
 		_ = s.ActivateView(i)
 		isActive = true
@@ -338,8 +338,7 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 	if overCube {
 		return cam, nil // the ViewCube owns the cursor this frame: no orbit, no pick
 	}
-	gizmoActive := s.TriadDragging() || s.ManipulatorDragging()
-	cam = ApplyNavigation(cam, readNavInput(isPlacingTool(s) || gizmoActive))
+	cam = ApplyNavigation(cam, readNavInput())
 	s.SetCamera(cam)
 	// The triad/manipulators own the pointer when hovered or mid-drag (M05-F13);
 	// picking and tool clicks stand down for the frame.
@@ -514,17 +513,6 @@ func gizmoOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) ren
 	return manipulatorOverlay(s, cam, list)
 }
 
-// isPlacingTool reports whether the active tool consumes plane-point clicks (a sketch
-// geometry tool), so the viewport should route left-clicks to it instead of orbiting.
-func isPlacingTool(s *app.Session) bool {
-	ti := s.ActiveTool()
-	if ti == nil {
-		return false
-	}
-	_, ok := ti.Tool().(app.PlaneClickTool)
-	return ok
-}
-
 // handleViewportClick feeds a left-click on the viewport image to the session in
 // viewport-local pixels (the camera was sized to the panel) — placing sketch geometry,
 // selecting a sketch entity, or picking a face/plane. Shift extends the selection.
@@ -625,9 +613,10 @@ const (
 
 // readNavInput snapshots this frame's viewport pointer state from the native layer for
 // the pure ApplyNavigation mapping (see navigate.go). It must be called right after the
-// viewport's InvisibleButton, so IsItemActive/Hovered refer to it. While a sketch tool
-// is placing geometry, the left button is withheld so a click does not also orbit.
-func readNavInput(placing bool) NavInput {
+// viewport's InvisibleButton, so IsItemActive/Hovered refer to it. Navigation is driven by
+// the middle button only (pan / Shift+orbit); the left button belongs to selection and
+// box-select, handled separately, so it is not read here.
+func readNavInput() NavInput {
 	dx, dy := native.MouseDelta()
 	return NavInput{
 		Hovered: native.IsItemHovered(),
@@ -636,7 +625,6 @@ func readNavInput(placing bool) NavInput {
 		DX:      dx,
 		DY:      dy,
 		Middle:  native.MouseDown(native.MouseMiddle),
-		Left:    !placing && native.MouseDown(native.MouseLeft),
 		Shift:   native.KeyShift(),
 	}
 }

@@ -72,11 +72,12 @@ func TestInWindowDockedViewportIsInteractive(t *testing.T) {
 	}
 	cx, cy := float32(inWinW/2), float32(inWinH/2) // center → the docked viewport's node
 
-	// Settle the dock layout + establish hover, then press and drag.
+	// Settle the dock layout + establish hover, then Shift+middle-drag to orbit.
 	native.InjectMousePos(cx, cy)
 	frame()
 	frame()
-	native.InjectMouseButton(native.MouseLeft, true)
+	native.InjectKeyShift(true)
+	native.InjectMouseButton(native.MouseMiddle, true)
 	frame()
 	before := s.Camera()
 	for i := 1; i <= 3; i++ {
@@ -84,21 +85,23 @@ func TestInWindowDockedViewportIsInteractive(t *testing.T) {
 		frame()
 	}
 	got := s.Camera()
-	native.InjectMouseButton(native.MouseLeft, false)
+	native.InjectMouseButton(native.MouseMiddle, false)
+	native.InjectKeyShift(false)
 	frame()
 
 	if got.Eye.IsEqualTo(before.Eye, 1e-6) {
-		t.Fatal("dragging over the docked viewport did not orbit — the 3D viewport is not present/sized")
+		t.Fatal("Shift+middle-drag over the docked viewport did not orbit — the 3D viewport is not present/sized")
 	}
 }
 
-func TestInWindowLeftDragOrbitsCamera(t *testing.T) {
+// Left-drag must NOT orbit the camera — Inventor reserves it for selection / box-select,
+// and the old left-drag-orbit collided with the sketch editor's left-click select/drag (#916).
+func TestInWindowLeftDragDoesNotOrbit(t *testing.T) {
 	win := newViewportWindow(t)
 	defer win.Destroy()
 	s := framedSession()
 	cx, cy := float32(inWinW/2), float32(inWinH/2)
 
-	// Hover the nav surface (pointer over it, button up), then press left → it activates.
 	native.InjectMousePos(cx, cy)
 	native.InjectMouseButton(native.MouseLeft, false)
 	viewportFrame(win, s)
@@ -106,21 +109,16 @@ func TestInWindowLeftDragOrbitsCamera(t *testing.T) {
 	viewportFrame(win, s)
 
 	before := s.Camera()
-
-	// Drag right with the button held → orbit (button state persists across frames).
 	for i := 1; i <= 3; i++ {
 		native.InjectMousePos(cx+float32(20*i), cy)
 		viewportFrame(win, s)
 	}
 	got := s.Camera()
-	native.InjectMouseButton(native.MouseLeft, false) // release
+	native.InjectMouseButton(native.MouseLeft, false)
 	viewportFrame(win, s)
 
-	if got.Eye.IsEqualTo(before.Eye, 1e-6) {
-		t.Fatalf("left-drag through the live window did not orbit: eye stayed %v", got.Eye)
-	}
-	if d := stdmath.Abs(dist(got) - dist(before)); d > 1e-6 {
-		t.Errorf("orbit changed the eye–target distance by %v, want it preserved", d)
+	if !got.Eye.IsEqualTo(before.Eye, 1e-6) {
+		t.Fatalf("left-drag must not orbit: eye moved from %v to %v", before.Eye, got.Eye)
 	}
 }
 

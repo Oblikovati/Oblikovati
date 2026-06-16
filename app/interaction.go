@@ -4,8 +4,9 @@ package app
 
 // Interaction input — the device events the viewport feeds the session, modeled as
 // plain data so tests inject them directly (the "auto-click" harness). Mouse/key
-// behavior follows Autodesk Inventor: LMB selects, RMB opens the marking menu, MMB
-// drag orbits (Shift+MMB pans), the wheel zooms.
+// behavior follows Autodesk Inventor: LMB selects (drag = box-select on empty space,
+// move on an entity), RMB opens the marking menu, MMB-drag pans, Shift+MMB-drag orbits,
+// the wheel zooms. LMB is never a navigation gesture (#916).
 
 // PointerButton identifies a mouse button.
 type PointerButton uint8
