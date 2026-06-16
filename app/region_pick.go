@@ -64,6 +64,11 @@ func (r screenRect) overlaps(other screenRect) bool {
 		r.minY <= other.maxY && r.maxY >= other.minY
 }
 
+// containsPoint reports whether (x,y) lies inside r (inclusive).
+func (r screenRect) containsPoint(x, y float64) bool {
+	return x >= r.minX && x <= r.maxX && y >= r.minY && y <= r.maxY
+}
+
 // projectBodyRect projects the eight corners of a body's range box to screen and returns
 // their bounding rectangle. ok is false when any corner is at/behind the camera (the body
 // is partly off-screen), in which case the caller skips it.

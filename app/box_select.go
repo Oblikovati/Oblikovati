@@ -39,10 +39,11 @@ type BoxSelection struct {
 // crossing select; left→right is a window select.
 func (b BoxSelection) Crossing() bool { return b.X1 < b.X0 }
 
-// BeginBoxSelect starts a rubber-band rectangle anchored at the press point. It is a no-op
-// when no RegionPicker is installed, so callers can begin unconditionally.
+// BeginBoxSelect starts a rubber-band rectangle anchored at the press point. It is a no-op when
+// box-select cannot resolve hits — no RegionPicker installed and not editing a sketch — so callers
+// can begin unconditionally.
 func (s *Session) BeginBoxSelect(x, y float64) {
-	if s.regionPicker == nil {
+	if s.regionPicker == nil && s.activeSketch == nil {
 		return
 	}
 	s.boxSelect = BoxSelection{X0: x, Y0: y, X1: x, Y1: y, Active: true}
@@ -75,17 +76,29 @@ func (s *Session) CancelBoxSelect() { s.boxSelect = BoxSelection{} }
 // then ends the drag. It emits SelectionChanged when the set changed. Returns the number of
 // objects the rectangle covered.
 func (s *Session) CommitBoxSelect(mods Modifier) int {
-	if !s.boxSelect.Active || s.regionPicker == nil {
+	if !s.boxSelect.Active {
 		s.boxSelect = BoxSelection{}
 		return 0
 	}
 	b := s.boxSelect
-	hits := s.regionPicker.PickRegion(b.X0, b.Y0, b.X1, b.Y1, b.Crossing(), s.selection.Filter())
+	hits := s.regionHits(b)
 	s.boxSelect = BoxSelection{}
 	if s.applyRegionToSelection(hits, mods) {
 		event.Emit(s.bus, event.After, SelectionChanged{Count: s.selection.Count()})
 	}
 	return len(hits)
+}
+
+// regionHits resolves the box rectangle to selectables: the active sketch's entities while
+// editing a sketch (2D), otherwise the model bodies via the installed RegionPicker (3D).
+func (s *Session) regionHits(b BoxSelection) []Selectable {
+	if s.activeSketch != nil {
+		return s.pickSketchRegion(b.X0, b.Y0, b.X1, b.Y1, b.Crossing())
+	}
+	if s.regionPicker == nil {
+		return nil
+	}
+	return s.regionPicker.PickRegion(b.X0, b.Y0, b.X1, b.Y1, b.Crossing(), s.selection.Filter())
 }
 
 // applyRegionToSelection folds box-select hits into the selection set: a plain box replaces
