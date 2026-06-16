@@ -123,9 +123,9 @@ func decodeEntity(r *BitReader, header ObjectHeader, version Version) (Entity, e
 	case TypeEllipse:
 		e = decodeEllipse(r, header.Handle)
 	case TypeLwpolyline:
-		e = decodeLwPolyline(r, header.Handle, version)
+		e = decodeLwPolyline(r, header.Handle, version, header.Size)
 	case TypeSpline:
-		e = decodeSpline(r, header.Handle, version)
+		e = decodeSpline(r, header.Handle, version, header.Size)
 	default:
 		return nil, nil
 	}
@@ -213,7 +213,7 @@ const (
 // decodeLwPolyline reads LWPOLYLINE geometry. After the flag-gated header fields,
 // the vertices are a 2DD vector (first point full, the rest deltas from the
 // previous), then a bulge vector, vertex-id vector (R2010+) and width pairs.
-func decodeLwPolyline(r *BitReader, handle uint64, version Version) *LwPolyline {
+func decodeLwPolyline(r *BitReader, handle uint64, version Version, objSize int) *LwPolyline {
 	flag := r.ReadBS()
 	p := &LwPolyline{Handle: handle, Closed: flag&lwClosed != 0, Normal: [3]float64{0, 0, 1}}
 	if flag&lwConstWidth != 0 {
@@ -228,16 +228,16 @@ func decodeLwPolyline(r *BitReader, handle uint64, version Version) *LwPolyline 
 	if flag&lwExtrusion != 0 {
 		p.Normal = r.Read3BD()
 	}
-	numPoints := r.ReadBL()
+	numPoints := r.CheckCount(r.ReadBL(), objSize)
 	var numBulges, numVertexIDs, numWidths int
 	if flag&lwHasBulges != 0 {
-		numBulges = r.ReadBL()
+		numBulges = r.CheckCount(r.ReadBL(), objSize)
 	}
 	if version >= R2010 && flag&lwHasVertexID != 0 {
-		numVertexIDs = r.ReadBL()
+		numVertexIDs = r.CheckCount(r.ReadBL(), objSize)
 	}
 	if flag&lwHasWidths != 0 {
-		numWidths = r.ReadBL()
+		numWidths = r.CheckCount(r.ReadBL(), objSize)
 	}
 	p.Points = readLwVertices(r, numPoints)
 	p.Bulges = make([]float64, numBulges)
@@ -260,7 +260,7 @@ func decodeLwPolyline(r *BitReader, handle uint64, version Version) *LwPolyline 
 // weighted). Scenario 2 (fit points): tolerance, begin/end tangents, then a fit
 // point vector. On R2013+ a splineflags/knotparam pair precedes the data and can
 // override the scenario.
-func decodeSpline(r *BitReader, handle uint64, version Version) *Spline {
+func decodeSpline(r *BitReader, handle uint64, version Version, objSize int) *Spline {
 	scenario := r.ReadBL()
 	if version >= R2013 {
 		splineflags := r.ReadBL()
@@ -279,8 +279,8 @@ func decodeSpline(r *BitReader, handle uint64, version Version) *Spline {
 		r.ReadBit() // periodic
 		r.ReadBD()  // knot tolerance
 		r.ReadBD()  // control tolerance
-		numKnots := r.ReadBL()
-		numCtrl := r.ReadBL()
+		numKnots := r.CheckCount(r.ReadBL(), objSize)
+		numCtrl := r.CheckCount(r.ReadBL(), objSize)
 		weighted := r.ReadBit() == 1
 		s.Knots = make([]float64, numKnots)
 		for i := range s.Knots {
@@ -302,7 +302,7 @@ func decodeSpline(r *BitReader, handle uint64, version Version) *Spline {
 	r.ReadBD()  // fit tolerance
 	r.Read3BD() // begin tangent
 	r.Read3BD() // end tangent
-	numFit := r.ReadBL()
+	numFit := r.CheckCount(r.ReadBL(), objSize)
 	s.FitPoints = make([][3]float64, numFit)
 	for i := range s.FitPoints {
 		s.FitPoints[i] = r.Read3BD()

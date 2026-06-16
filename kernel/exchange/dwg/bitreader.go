@@ -270,6 +270,22 @@ func (r *BitReader) ReadMS() int {
 	return 0
 }
 
+// CheckCount validates a decoded element count, failing the reader (sticky) when
+// it is negative or exceeds limit. Callers pass the object's byte size as limit:
+// every element occupies at least one bit, so a count above the byte size is a
+// desync, and guarding before allocating/looping prevents a giant alloc or hang.
+// Returns the count when valid, 0 when it fails.
+func (r *BitReader) CheckCount(n, limit int) int {
+	if r.err != nil {
+		return 0
+	}
+	if n < 0 || n > limit {
+		r.fail("element count %d out of range [0,%d] (desync)", n, limit)
+		return 0
+	}
+	return n
+}
+
 // ReadBOT reads a Bit Object Type (R2010+): a 2-bit selector then the type.
 //
 //	00 → one byte (RC)             01 → one byte + 0x1F0

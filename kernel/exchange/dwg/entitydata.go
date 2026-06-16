@@ -110,7 +110,14 @@ func skipEntityColor(r *BitReader, version Version) {
 	if flags&0x20 != 0 {
 		r.ReadBL() // alpha
 	}
-	if flags&0x80 != 0 { // RGB present (mutually exclusive with the 0x40 handle case)
-		r.ReadBL()
+	// 0x40 (colour by handle) and 0x80 (explicit RGB) are mutually exclusive, and
+	// 0x40 takes precedence: when set, the colour is a handle in the handle stream
+	// and NO RGB long is read from the data stream. Reading it unconditionally on
+	// 0x80 (flag 0xC0 = both) desynced these entities.
+	if flags&0x40 != 0 {
+		return // colour handle lives in the handle stream
+	}
+	if flags&0x80 != 0 {
+		r.ReadBL() // explicit RGB
 	}
 }
