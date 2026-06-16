@@ -197,13 +197,48 @@ func (s *Selection) SetFilter(f *SelectionFilter) { s.filter = f }
 // Filter returns the active selection filter.
 func (s *Selection) Filter() *SelectionFilter { return s.filter }
 
-// Add appends a selectable if the filter accepts its kind, reporting success.
+// Add appends a selectable if the filter accepts its kind and it is not already in the
+// set, reporting whether the set changed. De-duplication honours the SelectSet contract
+// (the docstring above) — re-picking the same entity must not create a duplicate.
 func (s *Selection) Add(sel Selectable) bool {
-	if !s.filter.Accepts(sel.SelectionKind()) {
+	if !s.filter.Accepts(sel.SelectionKind()) || s.Contains(sel) {
 		return false
 	}
 	s.items = append(s.items, sel)
 	return true
+}
+
+// Contains reports whether sel is already in the set. Selectable handles are comparable
+// value structs wrapping the underlying entity pointer/id, so identity is plain equality.
+func (s *Selection) Contains(sel Selectable) bool {
+	for _, it := range s.items {
+		if it == sel {
+			return true
+		}
+	}
+	return false
+}
+
+// Remove drops sel from the set, reporting whether it was present.
+func (s *Selection) Remove(sel Selectable) bool {
+	for i, it := range s.items {
+		if it == sel {
+			s.items = append(s.items[:i], s.items[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// Toggle flips sel's membership — removing it when already selected, otherwise adding it
+// (subject to the filter). This is Inventor's Shift/Ctrl+click behaviour (GUID-B8F6E805):
+// clicking an already-selected object removes just that object, leaving the rest. Returns
+// whether the set changed.
+func (s *Selection) Toggle(sel Selectable) bool {
+	if s.Remove(sel) {
+		return true
+	}
+	return s.Add(sel)
 }
 
 // Clear empties the selection.

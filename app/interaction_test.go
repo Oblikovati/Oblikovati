@@ -55,17 +55,82 @@ func TestClickSelectsHonoringFilterAndFiresEvent(t *testing.T) {
 	}
 }
 
-func TestPlainClickReplacesSelectionShiftAdds(t *testing.T) {
+func TestPlainClickReplacesShiftClickTogglesPerObject(t *testing.T) {
+	s := NewSession()
+	faceA := FaceHandle{Face: aFace()}
+	faceB := FaceHandle{Face: aFace()}
+
+	s.SetPicker(stubPicker{sel: faceA})
+	s.Click(10, 10)
+	s.Click(20, 20) // plain click replaces → still 1 (and no duplicate)
+	if s.Selection().Count() != 1 {
+		t.Fatalf("plain re-click count = %d, want 1 (replace, de-duplicated)", s.Selection().Count())
+	}
+
+	// Shift+click a different object adds it (GUID-B8F6E805).
+	s.SetPicker(stubPicker{sel: faceB})
+	s.Pointer(PointerEvent{X: 30, Y: 30, Button: LeftButton, Mods: ShiftMod})
+	if s.Selection().Count() != 2 {
+		t.Fatalf("shift-click new object count = %d, want 2 (add)", s.Selection().Count())
+	}
+
+	// Ctrl+click an already-selected object removes just that object, leaving the rest.
+	s.Pointer(PointerEvent{X: 31, Y: 31, Button: LeftButton, Mods: CtrlMod})
+	if s.Selection().Count() != 1 || s.Selection().Contains(faceB) {
+		t.Fatalf("ctrl-click selected object should toggle it off: count=%d containsB=%v",
+			s.Selection().Count(), s.Selection().Contains(faceB))
+	}
+	if !s.Selection().Contains(faceA) {
+		t.Error("toggling faceB off must leave faceA selected")
+	}
+}
+
+func TestEmptyClickClearsSelection(t *testing.T) {
 	s := NewSession()
 	s.SetPicker(stubPicker{sel: FaceHandle{Face: aFace()}})
 	s.Click(10, 10)
-	s.Click(20, 20) // plain click replaces → still 1
 	if s.Selection().Count() != 1 {
-		t.Errorf("plain re-click count = %d, want 1 (replace)", s.Selection().Count())
+		t.Fatalf("setup: expected 1 selected, got %d", s.Selection().Count())
 	}
-	s.Pointer(PointerEvent{X: 30, Y: 30, Button: LeftButton, Mods: ShiftMod}) // shift adds
-	if s.Selection().Count() != 2 {
-		t.Errorf("shift-click count = %d, want 2 (add)", s.Selection().Count())
+
+	// A plain click on empty space (picker miss) deselects.
+	cleared := 0
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, _ SelectionChanged) event.Outcome { cleared++; return event.Continue() })
+	s.SetPicker(stubPicker{sel: nil}) // miss everywhere
+	s.Click(99, 99)
+	if s.Selection().Count() != 0 || cleared != 1 {
+		t.Fatalf("empty click should clear + fire once: count=%d events=%d", s.Selection().Count(), cleared)
+	}
+
+	// A modifier-held empty click is a no-op (does not clear an existing selection).
+	s.SetPicker(stubPicker{sel: FaceHandle{Face: aFace()}})
+	s.Click(10, 10)
+	s.SetPicker(stubPicker{sel: nil})
+	s.Pointer(PointerEvent{X: 99, Y: 99, Button: LeftButton, Mods: ShiftMod})
+	if s.Selection().Count() != 1 {
+		t.Errorf("shift+empty-click must not clear: count=%d", s.Selection().Count())
+	}
+}
+
+func TestSelectionAddDedupesAndToggle(t *testing.T) {
+	sel := NewSelection()
+	a := FaceHandle{Face: aFace()}
+	b := EdgeHandle{Edge: nil}
+
+	if !sel.Add(a) || sel.Add(a) { // second Add is a no-op (de-dup)
+		t.Fatalf("Add must add once then de-dup: count=%d", sel.Count())
+	}
+	if sel.Count() != 1 || !sel.Contains(a) {
+		t.Fatalf("after Add(a): count=%d contains=%v", sel.Count(), sel.Contains(a))
+	}
+	if !sel.Toggle(b) || sel.Count() != 2 { // toggle a new item adds it
+		t.Fatalf("Toggle(new) should add: count=%d", sel.Count())
+	}
+	if !sel.Toggle(a) || sel.Count() != 1 || sel.Contains(a) { // toggle present removes it
+		t.Fatalf("Toggle(present) should remove a: count=%d containsA=%v", sel.Count(), sel.Contains(a))
+	}
+	if !sel.Remove(b) || sel.Remove(b) { // Remove reports presence; second is a no-op
+		t.Fatalf("Remove must remove once then report absent: count=%d", sel.Count())
 	}
 }
 
