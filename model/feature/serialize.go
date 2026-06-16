@@ -70,6 +70,8 @@ type FeatureData struct {
 	DerivedAssembly *DerivedAssemblyData `yaml:"derivedAssembly,omitempty"`
 	DerivedPart     *DerivedPartData     `yaml:"derivedPart,omitempty"`
 	Shrinkwrap      *ShrinkwrapData      `yaml:"shrinkwrap,omitempty"`
+
+	SheetMetalFace *SheetMetalFaceData `yaml:"sheetMetalFace,omitempty"` // M13-F02
 }
 
 // SketchIndexer maps between a sketch pointer and its index in the part, so a feature
@@ -261,6 +263,12 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.Bend = bd
+	case *SheetMetalFaceFeature:
+		sm, err := serializeSheetMetalFace(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.SheetMetalFace = sm
 	case *DecalFeature:
 		fd.Decal = &DecalData{Face: encodeKey(f.def.FaceKey), Image: f.def.Image}
 	case *ReferenceFeature:
@@ -448,6 +456,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreMove(fs, fd.Move)
 	case "bend-part":
 		return restoreBend(fs, fd.Bend, sk)
+	case "sheet-metal-face":
+		return restoreSheetMetalFace(fs, fd.SheetMetalFace, sk)
 	case "importedBody":
 		return restoreImportedBody(fs, fd.Import)
 	case "decal", "reference", "client", "mark", "finish":
