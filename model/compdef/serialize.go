@@ -47,6 +47,7 @@ type partRecipe struct {
 	Features          []feature.FeatureData        `yaml:"features,omitempty"`
 	Materials         *material.RecipeData         `yaml:"materials,omitempty"`
 	Properties        []propertyRecipe             `yaml:"properties,omitempty"` // document iProperties (#156)
+	SheetMetal        *sheetMetalRecipe            `yaml:"sheetMetal,omitempty"` // sheet-metal rule (M13-F01); nil for ordinary parts
 }
 
 // sketchIndex adapts a part's sketch collection to feature.SketchIndexer so features
@@ -201,6 +202,7 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 		Features:          features,
 		Materials:         d.materialsRecipe(),
 		Properties:        propertiesRecipeOf(d.props),
+		SheetMetal:        d.sheetMetalRecipeOf(),
 	}
 	if d.eop != endOfPartAtEnd {
 		eop := d.eop
@@ -239,6 +241,7 @@ func (d *PartComponentDefinition) resetRecipe() {
 	d.assets = material.NewAssetSet()
 	d.bodies = topo.NewSurfaceBodies()
 	d.props = attr.NewPropertySets()
+	d.sheetMetal = nil // re-derived from the recipe's sheetMetal section on restore
 }
 
 // ApplyRecipe restores the part from recipe YAML and recomputes (doc.RecipeContent).
@@ -280,6 +283,9 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 		if err := material.ApplyRecipe(*r.Materials, d.assets, d.assignments); err != nil {
 			return fmt.Errorf("compdef: restore materials: %w", err)
 		}
+	}
+	if err := d.applySheetMetalRecipe(r.SheetMetal); err != nil {
+		return fmt.Errorf("compdef: restore sheet-metal rule: %w", err)
 	}
 	if r.EndOfPart != nil {
 		d.SetEndOfPart(*r.EndOfPart)

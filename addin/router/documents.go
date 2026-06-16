@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
@@ -58,8 +59,28 @@ func createDocument(s *app.Session, args json.RawMessage) (json.RawMessage, erro
 		if err := s.StampDocumentSubType(d, doc.SubTypeID(in.SubType)); err != nil {
 			return nil, err
 		}
+		if err := enableSheetMetalIfFlavored(d, doc.SubTypeID(in.SubType)); err != nil {
+			return nil, err
+		}
 	}
 	return json.Marshal(docInfo(d, d))
+}
+
+// enableSheetMetalIfFlavored seeds the sheet-metal rule on a part stamped with the
+// sheet-metal subtype, so a part created as sheet metal enters the environment ready to
+// take wall/bend features (M13-F01). Other flavors are left untouched.
+func enableSheetMetalIfFlavored(d *doc.Document, sub doc.SubTypeID) error {
+	if sub != types.SubTypeSheetMetalPart {
+		return nil
+	}
+	part, ok := d.Content().(*compdef.PartComponentDefinition)
+	if !ok {
+		return fmt.Errorf("documents.create: sheet-metal subtype on a non-part document %q", d.DisplayName())
+	}
+	if _, err := part.EnableSheetMetal(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // registerDocumentSubType declares an add-in flavor (wire documents.registerSubType).
