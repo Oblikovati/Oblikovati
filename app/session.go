@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/model/bodyapi"
 	"oblikovati.org/model/bom"
 	"oblikovati.org/model/clientgraphics"
+	"oblikovati.org/model/colorscheme"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/facetstore"
@@ -102,6 +103,8 @@ type Session struct {
 	visualStyle          renderer.VisualStyle           // how the scene is drawn (View tab's Visual Style)
 	lightingStyle        renderer.LightingStyleID       // active lighting preset (View tab's Lighting Style)
 	lighting             renderer.SceneLighting         // the live lighting rig (resolved from the style, then edited)
+	colorSchemes         *colorscheme.Registry          // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
+	colorSchemeRev       uint64                         // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
 	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
 	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
@@ -180,6 +183,7 @@ func newSession(store doc.Store) *Session {
 		// that the whole rig lights every shaded mode (ADR-0026 §8).
 		lightingStyle:      renderer.LightingThreePoint,
 		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
+		colorSchemes:       colorscheme.NewRegistry(),
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
 	}
 	// The embedded Sky map is the default environment for every visual style — IBL plus

@@ -37,26 +37,40 @@ var (
 
 func init() { refreshThemeColors(theme.DefaultDark()) }
 
-// appliedThemeRevision is the library revision last pushed into Dear ImGui and the color
-// vars, so applyThemeIfChanged is a cheap no-op on the frames the theme has not changed.
+// appliedThemeRevision / appliedColorSchemeRevision are the library + color-scheme revisions
+// last pushed into Dear ImGui and the color vars, so applyThemeIfChanged is a cheap no-op on
+// frames neither has changed.
 var appliedThemeRevision uint64
+var appliedColorSchemeRevision uint64
 
-// applyThemeIfChanged re-styles the UI from the active theme when it has changed since
-// the last frame — pushing the chrome colors into Dear ImGui's persistent style (set
-// once per change, not per widget), refreshing the overlay/icon color vars, and updating
-// the 3D viewport's clear color. Called at the top of DrawChrome; this is the live-preview
-// hook (a theme switch or a color edit bumps the library revision).
+// applyThemeIfChanged re-styles the UI from the active theme when it (or the active color
+// scheme) has changed since the last frame — pushing the chrome colors into Dear ImGui's
+// persistent style (set once per change, not per widget), refreshing the overlay/icon color
+// vars, and updating the 3D viewport's clear color. Called at the top of DrawChrome; this is
+// the live-preview hook (a theme switch, a color edit, or a color-scheme switch bumps a revision).
 func applyThemeIfChanged(win *native.Window, s *app.Session) {
-	rev := s.ThemeRevision()
-	if rev == appliedThemeRevision {
+	rev, schemeRev := s.ThemeRevision(), s.ColorSchemeRevision()
+	if rev == appliedThemeRevision && schemeRev == appliedColorSchemeRevision {
 		return
 	}
-	appliedThemeRevision = rev
+	appliedThemeRevision, appliedColorSchemeRevision = rev, schemeRev
 	active := s.Theme()
 	applyChromeStyle(active)
 	refreshThemeColors(active)
-	vp := active.Color(types.TokenViewportBg)
+	applyColorSchemeColors(s)
+	vp := viewportClear(s)
 	win.SetViewportClear(vp.R, vp.G, vp.B)
+}
+
+// viewportClear is the 3D background color: the active color scheme owns the viewport
+// background (M16-F06 #642), so its screen color overrides the theme's viewport-bg token.
+func viewportClear(s *app.Session) theme.Rgba { return s.ActiveColorScheme().Screen.Rgba() }
+
+// applyColorSchemeColors pushes the active scheme's highlight color into the selection-overlay
+// var so a scheme switch repaints selection highlighting along with the background.
+func applyColorSchemeColors(s *app.Session) {
+	h := s.ActiveColorScheme().Highlight.Rgba()
+	selectionHighlight = [4]float32{h.R, h.G, h.B, 1}
 }
 
 // refreshThemeColors copies the active theme's overlay/icon colors into the package vars
