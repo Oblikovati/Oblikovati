@@ -224,18 +224,23 @@ func placeViewCube(bx, by float32, pw, ph int, r float32, corner int) cubePlacem
 type viewCubeHit struct {
 	region   *Region
 	homeHit  bool
-	overCube bool // cursor is over the cube/home — caller suppresses orbit/pick
+	arrow    cubeArrowHit // a roll / adjacent-face arrow under the cursor (#914)
+	overCube bool         // cursor is over the cube/home/arrows — caller suppresses orbit/pick
 }
 
-// viewCubeHover hit-tests the ViewCube at placement p for camera cam (read-only).
+// viewCubeHover hit-tests the ViewCube at placement p for camera cam (read-only). The arrow
+// widgets are tested first: a cursor on an arrow is an arrow hit, not a cube face/edge/corner.
 func viewCubeHover(s *app.Session, p cubePlacement, cam scene.Camera) viewCubeHit {
 	var h viewCubeHit
 	if s.ShowViewCube() && native.IsItemHovered() {
 		mx, my := native.MousePos()
-		h.region = HitTest(mx-p.cx, my-p.cy, p.r, cam, s.CubeOrientation())
+		h.arrow = hitViewCubeArrow(mx, my, p)
+		if h.arrow.kind == arrowNone {
+			h.region = HitTest(mx-p.cx, my-p.cy, p.r, cam, s.CubeOrientation())
+		}
 		h.homeHit = overHomeButton(mx, my, p)
 	}
-	h.overCube = h.region != nil || h.homeHit
+	h.overCube = h.region != nil || h.homeHit || h.arrow.kind != arrowNone
 	return h
 }
 
@@ -251,17 +256,29 @@ func viewCubeClick(s *app.Session, h viewCubeHit, pw, ph int, onActivate func())
 	if (left || right) && onActivate != nil {
 		onActivate()
 	}
-	switch {
-	case left && h.homeHit:
-		s.GoHome()
-	case left:
-		start := s.Camera()
-		start.Width, start.Height = pw, ph
-		s.SetCamera(start) // sync the tween's start to this view
-		s.AnimateCameraTo(h.region.SnapCamera(start, s.ViewCubePivot(), s.CubeOrientation()), viewCubeSnapSecs)
-	case right:
+	if right {
 		native.OpenPopup(viewCubeMenuID)
+		return
 	}
+	if !left {
+		return
+	}
+	switch {
+	case h.arrow.kind != arrowNone:
+		applyViewCubeArrow(s, h.arrow, pw, ph) // roll / step to the adjacent face (#914)
+	case h.homeHit:
+		s.GoHome()
+	case h.region != nil:
+		snapToCubeRegion(s, h.region, pw, ph)
+	}
+}
+
+// snapToCubeRegion animates the view to look at the pivot from a clicked face/edge/corner region.
+func snapToCubeRegion(s *app.Session, region *Region, pw, ph int) {
+	start := s.Camera()
+	start.Width, start.Height = pw, ph
+	s.SetCamera(start) // sync the tween's start to this view
+	s.AnimateCameraTo(region.SnapCamera(start, s.ViewCubePivot(), s.CubeOrientation()), viewCubeSnapSecs)
 }
 
 // ViewCube colors. Faces are a light translucent panel; the hovered region's faces tint to
@@ -278,10 +295,11 @@ var (
 // drawViewCube paints the navigation cube centered at screen (cx,cy) for the camera, with
 // the hovered region (if any) tinted and the home button highlighted when homeHovered.
 // Drawn after the tile image so it sits on top; uses screen coordinates (ImGui draw list).
-func drawViewCube(cam scene.Camera, o doc.CubeOrient, p cubePlacement, hovered *Region, homeHovered, compass bool, opacity float32) {
+func drawViewCube(cam scene.Camera, o doc.CubeOrient, p cubePlacement, hovered *Region, homeHovered, compass bool, opacity float32, arrow cubeArrowHit) {
 	if compass {
 		drawCompass(cam, o, p.cx, p.cy, p.r) // under the cube faces
 	}
+	drawViewCubeArrows(p, arrow) // adjacent-face + roll arrows around the cube (#914)
 	for _, f := range visibleFaces(cam, o, p.r) {
 		col := viewCubeFaceColor
 		if hovered != nil && faceInRegion(f.region, hovered) {

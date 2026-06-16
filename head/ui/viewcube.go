@@ -294,6 +294,67 @@ func visibleFaces(cam scene.Camera, o doc.CubeOrient, radius float32) []cubeFace
 	return faces
 }
 
+// rolledView rolls the camera a quarter-turn about its view axis — the ViewCube's upper-right
+// roll arrows (N21). The up vector rotates 90° while eye/target (and so the framing) stay put;
+// ccw rolls the scene counter-clockwise on screen.
+func rolledView(cam scene.Camera, ccw bool) scene.Camera {
+	right, _, _ := camBasis(cam)
+	if ccw {
+		cam.Up = right
+	} else {
+		cam.Up = right.Scale(-1)
+	}
+	return cam
+}
+
+// AdjacentDir is one of the four ViewCube adjacent-face arrows (N20): up/down rotate over the
+// top/bottom edge, left/right around the vertical.
+type AdjacentDir int
+
+const (
+	AdjacentUp AdjacentDir = iota
+	AdjacentDown
+	AdjacentLeft
+	AdjacentRight
+)
+
+// adjacentView snaps the camera to the neighbouring face in the arrow's screen direction (N20):
+// the face whose outward normal points along the current screen up/down/left/right. It snaps
+// (rather than free-orbiting, which clamps at the poles) so the result lands exactly on a face.
+func adjacentView(cam scene.Camera, dir AdjacentDir, o doc.CubeOrient, center math.Point3) scene.Camera {
+	right, up, _ := camBasis(cam)
+	var want math.Vector3 // world direction the new view should look FROM
+	switch dir {
+	case AdjacentUp:
+		want = up
+	case AdjacentDown:
+		want = up.Scale(-1)
+	case AdjacentLeft:
+		want = right.Scale(-1)
+	default: // AdjacentRight
+		want = right
+	}
+	return nearestFaceRegion(o.ToLocal(normVec(want))).SnapCamera(cam, center, o)
+}
+
+// nearestFaceRegion returns the cube face whose outward normal is closest to the (cube-local)
+// direction d — the face an adjacent-arrow step lands on.
+func nearestFaceRegion(d math.Vector3) Region {
+	c := [3]float64{d.X, d.Y, d.Z}
+	ax := faceAxis(c)
+	r := Region{Kind: RegionFace}
+	switch ax {
+	case 0:
+		r.X = sign(c[0])
+	case 1:
+		r.Y = sign(c[1])
+	default:
+		r.Z = sign(c[2])
+	}
+	r.Label = faceLabels[[3]int{r.X, r.Y, r.Z}]
+	return r
+}
+
 func abs(i int) int {
 	if i < 0 {
 		return -i
