@@ -22,6 +22,7 @@ type Workspace struct {
 	ordered       []*Document          // insertion order, for stable enumeration
 	byID          map[ID]*Document     // session-id lookup
 	byName        map[string]*Document // full-document-name lookup (ItemByName)
+	byGUID        map[string]*Document // identity-GUID lookup, enforces one open doc per identity
 	graph         *RefGraph            // shared document reference graph (M03-F04)
 	bus           *event.Bus           // application/document/modeling events (M04-F04)
 	externalFiles ExternalFileProbe    // foreign-file access for attachments (M03-F08)
@@ -35,6 +36,7 @@ func NewWorkspace(store Store) *Workspace {
 		store:         store,
 		byID:          map[ID]*Document{},
 		byName:        map[string]*Document{},
+		byGUID:        map[string]*Document{},
 		bus:           event.NewBus(),
 		externalFiles: osFileProbe{},
 	}
@@ -133,6 +135,7 @@ func (ws *Workspace) loadNew(fullDocumentName string, opts OpenOptions) (*Docume
 		return nil, err
 	}
 	d.visible = opts.Visible
+	ws.reassignCollidingIdentity(d)
 	ws.register(d)
 	if opts.Background {
 		ws.active = prevActive // register() activated d; a background load must not switch focus
@@ -233,6 +236,29 @@ func (ws *Workspace) SaveAs(d *Document, newFullDocumentName string) error {
 	return ws.Save(d)
 }
 
+// reassignCollidingIdentity mints d a fresh identity GUID when an already-open document
+// carries the same one. Two open files must never share an identity (references key on it,
+// and the UI tabs it by it), but a file copied outside the application keeps the source's
+// GUID, so a collision is detected on open and resolved here. The new GUID lives in memory
+// until d's next save persists it; d is marked dirty so the save happens, and the host is
+// told via [DocumentIdentityReassigned] so it can notify the user.
+func (ws *Workspace) reassignCollidingIdentity(d *Document) {
+	guid := d.identity.InternalName
+	if guid == "" {
+		return
+	}
+	existing, clash := ws.byGUID[guid]
+	if !clash || existing == d {
+		return
+	}
+	fresh := mintFileGUID()
+	d.identity.InternalName = fresh
+	d.dirty = true
+	event.Emit(ws.bus, event.After, DocumentIdentityReassigned{
+		Document: d, PreviousInternalName: guid, NewInternalName: fresh,
+	})
+}
+
 // register inserts d into all indexes, links it to the reference graph, and makes
 // it the active document.
 func (ws *Workspace) register(d *Document) {
@@ -240,5 +266,8 @@ func (ws *Workspace) register(d *Document) {
 	ws.ordered = append(ws.ordered, d)
 	ws.byID[d.id] = d
 	ws.byName[d.fullDocumentName] = d
+	if guid := d.identity.InternalName; guid != "" {
+		ws.byGUID[guid] = d
+	}
 	ws.active = d
 }
