@@ -5,6 +5,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/math"
@@ -89,7 +91,7 @@ func drawDocumentTabs(s *app.Session) {
 
 func drawDocumentTab(s *app.Session, d *doc.Document, active *doc.Document, force bool) {
 	selected := force && active != nil && d.ID() == active.ID()
-	open, keep := native.BeginTabItemClosable(d.DisplayName(), selected)
+	open, keep := native.BeginTabItemClosable(documentTabLabel(d), selected)
 	if open && keep && !force && (active == nil || d.ID() != active.ID()) {
 		_ = s.Workspace().SetActiveDocument(d)
 	}
@@ -99,4 +101,19 @@ func drawDocumentTab(s *app.Session, d *doc.Document, active *doc.Document, forc
 	if !keep && closeDocumentModal.request(d) {
 		closeDocumentNow(s, d, false)
 	}
+}
+
+// documentTabLabel is the ImGui label for a document's tab. ImGui identifies a tab by its
+// label string, so two documents whose display names collide (e.g. a part "box.opd" and a
+// drawing "box.odd" both show "box") would hash to the SAME tab id — making ImGui report both
+// as selected and the active document ping-pong between them every frame. The "###<uuid>"
+// suffix gives each tab a stable, unique id from the document's persisted identity GUID (not
+// the visible text, so a rename keeps the tab's identity) while ImGui still displays only the
+// name before "###". A reference stub minted without a GUID falls back to the in-memory id.
+func documentTabLabel(d *doc.Document) string {
+	id := d.File().InternalName()
+	if id == "" {
+		id = fmt.Sprintf("%d", d.ID())
+	}
+	return fmt.Sprintf("%s###%s", d.DisplayName(), id)
 }
