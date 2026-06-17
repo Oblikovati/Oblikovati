@@ -70,6 +70,34 @@ func TestProfilesCacheInvalidatesOnRadiusChange(t *testing.T) {
 	}
 }
 
+// TestProfilesCacheInvalidatesOnEllipseChange the same stored-scalar guard for ellipses and
+// elliptical arcs (major/minor radii, axis, and arc angles are not points either).
+func TestProfilesCacheInvalidatesOnEllipseChange(t *testing.T) {
+	for _, c := range []struct {
+		name  string
+		build func(*Sketch) func()
+	}{
+		{"ellipse major radius", func(s *Sketch) func() {
+			e := s.Ellipses().Add(math.P2(0, 0), math.V2(1, 0), 0.4, 0.2)
+			return func() { e.MajorRadius = 0.6 }
+		}},
+		{"elliptical-arc end angle", func(s *Sketch) func() {
+			e := s.EllipticalArcs().Add(math.P2(0, 0), math.V2(1, 0), 0.4, 0.2, 0, 3.0)
+			return func() { e.EndAngle = 2.0 }
+		}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			s := NewSketches().Add(XYPlane())
+			resize := c.build(s)
+			before := s.Profiles()
+			resize() // change a stored scalar in place — no point moves
+			if s.Profiles() == before {
+				t.Fatalf("Profiles() cache not invalidated after a %s change", c.name)
+			}
+		})
+	}
+}
+
 // TestProfilesCappedForHugeSketch checks that a sketch past the entity cap (an
 // imported drawing) offers no profiles and returns immediately, so the hover
 // picker never arranges hundreds of thousands of segments.
