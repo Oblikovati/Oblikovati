@@ -8,22 +8,24 @@ import (
 
 	"oblikovati.org/kernel/exchange/drawing"
 	"oblikovati.org/kernel/exchange/dwg"
+	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
 )
 
 // ExportDWG encodes a 2D sketch's geometry as an R2000 DWG file: the inverse of ImportDWG.
 // The sketch→drawing conversion is shared with every drawing format (see
-// sketch_to_drawing.go); only the dwg.Write call is DWG-specific. Coordinates are written
-// in database units (cm).
+// sketch_to_drawing.go); only the dwg.Write call is DWG-specific. Coordinates are written —
+// and $INSUNITS declared — in the document's preferred length unit (scaled from cm).
 //
-//	data, err := exchange.ExportDWG(sk)
-func ExportDWG(sk *sketch.Sketch) ([]byte, error) {
-	return dwg.Write(&drawing.Drawing{Entities: sketchToDrawing(sk), Units: drawing.INSCentimetres})
+//	data, err := exchange.ExportDWG(sk, part.Units())
+func ExportDWG(sk *sketch.Sketch, units param.UnitsOfMeasure) ([]byte, error) {
+	ins, scale := documentDrawingUnit(units)
+	return dwg.Write(&drawing.Drawing{Entities: drawing.ScaleEntities(sketchToDrawing(sk), scale), Units: ins})
 }
 
 // ExportDWGFile writes ExportDWG's output to path.
-func ExportDWGFile(sk *sketch.Sketch, path string) error {
-	data, err := ExportDWG(sk)
+func ExportDWGFile(sk *sketch.Sketch, path string, units param.UnitsOfMeasure) error {
+	data, err := ExportDWG(sk, units)
 	if err != nil {
 		return err
 	}

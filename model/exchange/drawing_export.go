@@ -60,12 +60,12 @@ func SheetToDrawing(sheet *dmodel.Sheet, layers DrawingExportLayers) []drawing.E
 //
 //	data, n, err := exchange.ExportDrawingDXF(sheet, exchange.DefaultDrawingExportLayers(), types.DXFR2018)
 func ExportDrawingDXF(sheet *dmodel.Sheet, layers DrawingExportLayers, version types.DXFVersion) ([]byte, int, error) {
-	return encodeDXF(SheetToDrawing(sheet, layers), version)
+	return encodeDXF(SheetToDrawing(sheet, layers), version, drawing.INSCentimetres)
 }
 
 // ExportDrawingDXFFile writes ExportDrawingDXF's output to path.
 func ExportDrawingDXFFile(sheet *dmodel.Sheet, path string, layers DrawingExportLayers, version types.DXFVersion) (int, error) {
-	return writeDXFFile(SheetToDrawing(sheet, layers), path, version)
+	return writeDXFFile(SheetToDrawing(sheet, layers), path, version, drawing.INSCentimetres)
 }
 
 // viewEntities emits every view's drawing curves as line segments on the visible or hidden
