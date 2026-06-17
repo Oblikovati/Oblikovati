@@ -3,13 +3,10 @@
 package exchange
 
 import (
-	"fmt"
 	stdmath "math"
-	"os"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/exchange/drawing"
-	"oblikovati.org/kernel/exchange/dxf"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -172,19 +169,10 @@ const (
 //
 //	data, n, err := exchange.ExportFlatPatternDXF(flat, exchange.FlatExportLayers{}, types.DXFR2018)
 func ExportFlatPatternDXF(flat *feature.FlatPattern, layers FlatExportLayers, version types.DXFVersion) ([]byte, int, error) {
-	dr := &drawing.Drawing{Entities: FlatPatternToDrawing(flat, layers), Units: drawing.INSCentimetres}
-	data, err := dxf.Encode(dr, dxfVersion(version))
-	return data, len(dr.Entities), err
+	return encodeDXF(FlatPatternToDrawing(flat, layers), version)
 }
 
 // ExportFlatPatternDXFFile writes ExportFlatPatternDXF's output to path, returning the entity count.
 func ExportFlatPatternDXFFile(flat *feature.FlatPattern, path string, layers FlatExportLayers, version types.DXFVersion) (int, error) {
-	data, n, err := ExportFlatPatternDXF(flat, layers, version)
-	if err != nil {
-		return 0, err
-	}
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return 0, fmt.Errorf("export flat pattern dxf: write %q: %w", path, err)
-	}
-	return n, nil
+	return writeDXFFile(FlatPatternToDrawing(flat, layers), path, version)
 }
