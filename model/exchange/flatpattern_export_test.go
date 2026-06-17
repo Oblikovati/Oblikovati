@@ -19,14 +19,7 @@ import (
 func flatWithTab(t *testing.T, side, thickness, tab float64) *feature.FlatPattern {
 	t.Helper()
 	s := sketch.NewSketches().Add(sketch.XYPlane())
-	c0 := s.Points().Add(math.P2(0, 0))
-	c1 := s.Points().Add(math.P2(side, 0))
-	c2 := s.Points().Add(math.P2(side, side))
-	c3 := s.Points().Add(math.P2(0, side))
-	s.Lines().Add(c0, c1)
-	s.Lines().Add(c1, c2)
-	s.Lines().Add(c2, c3)
-	s.Lines().Add(c3, c0)
+	s.AddRectangleByCorners(math.P2(0, 0), math.P2(side, side))
 	tabs := []feature.FlatTab{{A: math.P2(0, 0), B: math.P2(side, 0), Length: tab, Angle: stdmath.Pi / 2}}
 	fp, err := feature.BuildFlatPattern(s, 0, thickness, tabs)
 	if err != nil {

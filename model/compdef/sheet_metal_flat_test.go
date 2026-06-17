@@ -73,14 +73,7 @@ func TestUnfoldDevelopsWatertightFlat(t *testing.T) {
 func TestUnfoldDevelopsPunchRepresentation(t *testing.T) {
 	d, _ := sheetWithFlange(t)
 	sk := d.Sketches().Add(sketch.XYPlane())
-	p0 := sk.Points().Add(gmath.P2(1, 1))
-	p1 := sk.Points().Add(gmath.P2(2, 1))
-	p2 := sk.Points().Add(gmath.P2(2, 2))
-	p3 := sk.Points().Add(gmath.P2(1, 2))
-	sk.Lines().Add(p0, p1)
-	sk.Lines().Add(p1, p2)
-	sk.Lines().Add(p2, p3)
-	sk.Lines().Add(p3, p0)
+	sk.AddRectangleByCorners(gmath.P2(1, 1), gmath.P2(2, 2))
 	punch := feature.NewSheetMetalPunchFeatures(d.Features()).Add(&feature.SheetMetalPunchDefinition{Sketch: sk})
 	d.Recompute()
 

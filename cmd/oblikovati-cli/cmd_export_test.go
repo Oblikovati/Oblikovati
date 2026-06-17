@@ -51,14 +51,7 @@ func writeCLISheetMetalPart(t *testing.T, dir string) string {
 		t.Fatalf("EnableSheetMetal: %v", err)
 	}
 	sk := part.Sketches().Add(sketch.XYPlane())
-	c0 := sk.Points().Add(gmath.P2(0, 0))
-	c1 := sk.Points().Add(gmath.P2(4, 0))
-	c2 := sk.Points().Add(gmath.P2(4, 4))
-	c3 := sk.Points().Add(gmath.P2(0, 4))
-	sk.Lines().Add(c0, c1)
-	sk.Lines().Add(c1, c2)
-	sk.Lines().Add(c2, c3)
-	sk.Lines().Add(c3, c0)
+	sk.AddRectangleByCorners(gmath.P2(0, 0), gmath.P2(4, 4))
 	feature.NewSheetMetalFaceFeatures(part.Features()).Add(&feature.SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Operation: ops.NewBody})
 	part.Recompute()
 	if err := ws.Save(d); err != nil {
