@@ -1,0 +1,55 @@
+name: Wiki
+
+# Republish the Oblikovati user wiki whenever a pull request merges to develop (a merge is a
+# push to develop). The wiki's source of truth is docs/wiki/*.md plus the generated Command
+# Manual page (rendered from the built-in command vocabulary in app/cmdline).
+#
+# Prerequisite: the repository's Wiki feature must be enabled (Settings → Features → Wikis)
+# and initialized with at least one page so the <repo>.wiki.git remote exists; after that this
+# workflow keeps it in sync automatically.
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'docs/wiki/**'
+      - 'app/cmdline/**'
+      - 'cmd/command-manual/**'
+      - 'scripts/publish-wiki.sh'
+      - '.github/workflows/wiki.yml'
+  workflow_dispatch: {}
+
+# Pushing to the wiki repo uses the job's GITHUB_TOKEN.
+permissions:
+  contents: write
+
+# Never run two publishes at once (they push to the same wiki).
+concurrency:
+  group: wiki-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # Resolve + wire the oblikovati.org/api release so `go run ./cmd/command-manual` builds.
+      - uses: ./.github/actions/api-contract
+
+      - name: Build and publish the wiki
+        env:
+          # Authenticated remote for this repo's wiki (GITHUB_TOKEN can write it).
+          WIKI_REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GITHUB_SHA: ${{ github.sha }}
+        run: scripts/publish-wiki.sh

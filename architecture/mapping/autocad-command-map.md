@@ -141,6 +141,40 @@ Every multi-letter command word the Command Window (M26) accepts, grouped by are
 | `TANPLANE` | — | Create a work plane tangent to a face. | `TANPLANE (face) (plane)` |
 | `WORKPLANE` | `PLANE` | Create a work plane offset from a face/plane. | `WORKPLANE (face) 10` |
 
+## Mold, freeform & mesh
+
+| Command | Aliases | Description | Example |
+| --- | --- | --- | --- |
+| `CORECAVITY` | — | Generate core and cavity from a part. | `CORECAVITY (part)` |
+| `FREEFORMBOX` | — | Create a freeform (T-spline) box. | `FREEFORMBOX 0,0,0 10,10,10` |
+| `FREEFORMPLANE` | — | Create a freeform (T-spline) plane. | `FREEFORMPLANE (plane) 10 10` |
+| `MESHPLACE` | `IMPORTMESH` | Import or place a mesh body. | `MESHPLACE (file)` |
+| `QUADBALL` | — | Create a freeform (T-spline) quadball. | `QUADBALL 0,0,0 5` |
+
+## Sheet metal
+
+| Command | Aliases | Description | Example |
+| --- | --- | --- | --- |
+| `CONTOURFLANGE` | — | Create a contour flange from an open profile. | `CONTOURFLANGE (profile) (edge)` |
+| `CONTOURROLL` | — | Roll a contour into a sheet-metal part. | `CONTOURROLL (profile) (axis)` |
+| `CORNER` | — | Apply a corner round or chamfer. | `CORNER (corner) 2` |
+| `CORNERSEAM` | — | Create a corner seam between two flanges. | `CORNERSEAM (edge1) (edge2)` |
+| `COSMETICBEND` | — | Add a cosmetic bend line. | `COSMETICBEND (line)` |
+| `FLANGE` | — | Add a flange to an edge. | `FLANGE (edge) 20` |
+| `FLATPATTERN` | — | Create the flat pattern. | `FLATPATTERN` |
+| `FOLD` | — | Fold a face along a sketched line. | `FOLD (line)` |
+| `HEM` | — | Add a hem to an edge. | `HEM (edge)` |
+| `LIP` | — | Add a lip to an edge. | `LIP (edge)` |
+| `LOFTEDFLANGE` | — | Create a lofted flange between two profiles. | `LOFTEDFLANGE (profile1) (profile2)` |
+| `PUNCH` | — | Apply a punch tool (iFeature). | `PUNCH (point)` |
+| `REFOLD` | — | Refold a flattened model. | `REFOLD` |
+| `RIP` | — | Rip an edge to open a corner. | `RIP (edge)` |
+| `SMBEND` | — | Add a bend between two faces. | `SMBEND (edge)` |
+| `SMCONVERT` | — | Convert a solid to sheet metal. | `SMCONVERT (face) 1` |
+| `SMCUT` | — | Cut through sheet-metal faces. | `SMCUT (profile)` |
+| `SMFACE` | — | Create the base face of a sheet-metal part. | `SMFACE (profile)` |
+| `SMSTYLE` | — | Edit sheet-metal styles and rules. | `SMSTYLE` |
+
 ## Assembly
 
 | Command | Aliases | Description | Example |
@@ -183,30 +217,6 @@ Every multi-letter command word the Command Window (M26) accepts, grouped by are
 | `MATE` | — | Apply a mate constraint between two components. | `MATE (face1) (face2)` |
 | `MODELSTATE` | — | Create a new model state. | `MODELSTATE` |
 | `PLACE` | — | Place an existing component into the assembly. | `PLACE (file) 0,0,0` |
-
-## Sheet metal
-
-| Command | Aliases | Description | Example |
-| --- | --- | --- | --- |
-| `CONTOURFLANGE` | — | Create a contour flange from an open profile. | `CONTOURFLANGE (profile) (edge)` |
-| `CONTOURROLL` | — | Roll a contour into a sheet-metal part. | `CONTOURROLL (profile) (axis)` |
-| `CORNER` | — | Apply a corner round or chamfer. | `CORNER (corner) 2` |
-| `CORNERSEAM` | — | Create a corner seam between two flanges. | `CORNERSEAM (edge1) (edge2)` |
-| `COSMETICBEND` | — | Add a cosmetic bend line. | `COSMETICBEND (line)` |
-| `FLANGE` | — | Add a flange to an edge. | `FLANGE (edge) 20` |
-| `FLATPATTERN` | — | Create the flat pattern. | `FLATPATTERN` |
-| `FOLD` | — | Fold a face along a sketched line. | `FOLD (line)` |
-| `HEM` | — | Add a hem to an edge. | `HEM (edge)` |
-| `LIP` | — | Add a lip to an edge. | `LIP (edge)` |
-| `LOFTEDFLANGE` | — | Create a lofted flange between two profiles. | `LOFTEDFLANGE (profile1) (profile2)` |
-| `PUNCH` | — | Apply a punch tool (iFeature). | `PUNCH (point)` |
-| `REFOLD` | — | Refold a flattened model. | `REFOLD` |
-| `RIP` | — | Rip an edge to open a corner. | `RIP (edge)` |
-| `SMBEND` | — | Add a bend between two faces. | `SMBEND (edge)` |
-| `SMCONVERT` | — | Convert a solid to sheet metal. | `SMCONVERT (face) 1` |
-| `SMCUT` | — | Cut through sheet-metal faces. | `SMCUT (profile)` |
-| `SMFACE` | — | Create the base face of a sheet-metal part. | `SMFACE (profile)` |
-| `SMSTYLE` | — | Edit sheet-metal styles and rules. | `SMSTYLE` |
 
 ## Drawing
 
@@ -258,20 +268,15 @@ Every multi-letter command word the Command Window (M26) accepts, grouped by are
 | `WIREFRAME` | — | Set the wireframe visual style. | `WIREFRAME` |
 | `ZOOM` | `ZOOMALL`, `ZE` | Zoom to fit all geometry. | `ZOOM` |
 
-## Mold / freeform / mesh
+## Application & files
 
 | Command | Aliases | Description | Example |
 | --- | --- | --- | --- |
 | `CANCEL` | — | Cancel the active command. | `CANCEL` |
-| `CORECAVITY` | — | Generate core and cavity from a part. | `CORECAVITY (part)` |
-| `FREEFORMBOX` | — | Create a freeform (T-spline) box. | `FREEFORMBOX 0,0,0 10,10,10` |
-| `FREEFORMPLANE` | — | Create a freeform (T-spline) plane. | `FREEFORMPLANE (plane) 10 10` |
-| `MESHPLACE` | `IMPORTMESH` | Import or place a mesh body. | `MESHPLACE (file)` |
 | `NEW` | `NEWPART` | Create a new part document. | `NEW` |
 | `NEWASSEMBLY` | — | Create a new assembly document. | `NEWASSEMBLY` |
 | `NEWDRAWING` | — | Create a new drawing document. | `NEWDRAWING` |
 | `NEWSHEETMETAL` | — | Create a new sheet-metal part document. | `NEWSHEETMETAL` |
-| `QUADBALL` | — | Create a freeform (T-spline) quadball. | `QUADBALL 0,0,0 5` |
 | `REDO` | `MREDO` | Redo the last undone operation. | `REDO` |
 | `SAVE` | `QSAVE` | Save the active document. | `SAVE` |
 | `UNDO` | — | Undo the last operation. | `UNDO` |
