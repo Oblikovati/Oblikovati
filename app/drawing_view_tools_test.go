@@ -78,12 +78,21 @@ func TestBaseViewToolPlacesViaCursor(t *testing.T) {
 	}
 }
 
-func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
+// drawingWithFrontBase returns a session whose active drawing already has a FRONT base view —
+// the parent the derived-view tools (projected/auxiliary/section) build on.
+func drawingWithFrontBase(t *testing.T) *Session {
+	t.Helper()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
-	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1}); err != nil {
+	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100}); err != nil {
 		t.Fatalf("AddBase: %v", err)
 	}
+	return s
+}
+
+func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
+	s := drawingWithFrontBase(t)
+	c, _ := ActiveDrawing(s)
 	tool := NewAuxiliaryViewTool()
 	tool.Start(s)
 	if !tool.CanCommit() {
@@ -131,11 +140,8 @@ func TestAuxiliaryViewToolWithoutBaseView(t *testing.T) {
 }
 
 func TestSectionViewToolCutsThroughBase(t *testing.T) {
-	s := drawingWithModelSession(t)
+	s := drawingWithFrontBase(t)
 	c, _ := ActiveDrawing(s)
-	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100}); err != nil {
-		t.Fatalf("AddBase: %v", err)
-	}
 	tool := NewSectionViewTool()
 	tool.Start(s)
 	if !tool.CanCommit() {

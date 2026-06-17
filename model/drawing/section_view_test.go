@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/subd"
 )
 
 // curveKinds tallies a view's curves by kind.
@@ -30,10 +29,8 @@ func curveKinds(v *DrawingView) (edge, section, hatch int) {
 func TestAddSectionViewCutsAndHatches(t *testing.T) {
 	c := drawingWithBox(t)
 	views := c.Sheets().Active().Views()
-	front, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100})
-	if err != nil {
-		t.Fatalf("AddBase: %v", err)
-	}
+	frontBase(t, views)
+	front, _ := views.ByName("FRONT")
 	// A horizontal cut line across the front view at its centre (sheet mm).
 	minX, _, maxX, _, _ := front.BoundsMM()
 	sec, err := views.AddSection(SectionViewSpec{
@@ -71,23 +68,11 @@ func TestSectionRejectsNonBaseParent(t *testing.T) {
 func TestSectionRecipeRoundTrip(t *testing.T) {
 	c := drawingWithBox(t)
 	views := c.Sheets().Active().Views()
-	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100}); err != nil {
-		t.Fatalf("AddBase: %v", err)
-	}
+	frontBase(t, views)
 	if _, err := views.AddSection(SectionViewSpec{Name: "A-A", ParentView: "FRONT", X1: 80, Y1: 100, X2: 120, Y2: 100, CenterX: 100, CenterY: 220}); err != nil {
 		t.Fatalf("AddSection: %v", err)
 	}
-	data, err := c.MarshalRecipe()
-	if err != nil {
-		t.Fatalf("MarshalRecipe: %v", err)
-	}
-	restored := NewContent()
-	restored.SetBodyResolver(fakeBodyResolver{body: subd.ToBody(subd.Box(2, 3, 4), "box")})
-	if err := restored.ApplyRecipe(data); err != nil {
-		t.Fatalf("ApplyRecipe: %v", err)
-	}
-	restored.RecomputeViews()
-	v, ok := restored.Sheets().Active().Views().ByName("A-A")
+	v, ok := reopen(t, c).Sheets().Active().Views().ByName("A-A")
 	if !ok || v.Type() != types.DrawingViewSection {
 		t.Fatalf("restored section view missing/mistyped: ok=%v", ok)
 	}

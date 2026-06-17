@@ -27,6 +27,32 @@ func drawingWithBox(t *testing.T) *Content {
 	return c
 }
 
+// frontBase adds a standard FRONT base view named "FRONT" — the parent the derived-view tests
+// build on.
+func frontBase(t *testing.T, views *DrawingViews) {
+	t.Helper()
+	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100}); err != nil {
+		t.Fatalf("AddBase FRONT: %v", err)
+	}
+}
+
+// reopen marshals a drawing and restores it into a fresh box-backed content, re-projecting its
+// views — the persistence round-trip the view tests share.
+func reopen(t *testing.T, c *Content) *Content {
+	t.Helper()
+	data, err := c.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	restored := NewContent()
+	restored.SetBodyResolver(fakeBodyResolver{body: subd.ToBody(subd.Box(2, 3, 4), "box")})
+	if err := restored.ApplyRecipe(data); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	restored.RecomputeViews()
+	return restored
+}
+
 // TestAddBaseViewIsoProjectsCube checks a base iso view of a cube produces the textbook 9
 // visible / 3 hidden edges, placed on the sheet and keyed for associativity.
 func TestAddBaseViewIsoProjectsCube(t *testing.T) {
