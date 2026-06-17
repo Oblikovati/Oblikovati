@@ -44,9 +44,10 @@ type DrawingView struct {
 	name        string
 	viewType    types.DrawingViewType
 	projected   bool
-	baseView    string      // the parent view a projected/auxiliary/section view derives from
-	foldAngle   float64     // auxiliary fold-line angle on the parent, radians
-	section     sectionLine // section-view cut line on the parent (sheet mm)
+	baseView    string         // the parent view a projected/auxiliary/section view derives from
+	foldAngle   float64        // auxiliary fold-line angle on the parent, radians
+	section     sectionLine    // section-view cut line on the parent (sheet mm)
+	detail      detailBoundary // detail-view circular boundary (parent model-2D)
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
@@ -59,6 +60,7 @@ type DrawingView struct {
 var (
 	_ contract.DrawingView        = (*DrawingView)(nil)
 	_ contract.SectionDrawingView = (*DrawingView)(nil)
+	_ contract.DetailDrawingView  = (*DrawingView)(nil)
 )
 
 // Name, Type, ParentView, IsProjected, Orientation, Scale, Style, CenterMM and CurveCount
@@ -85,6 +87,12 @@ func (v *DrawingView) FoldAngle() float64 { return v.foldAngle }
 // SectionLineMM returns the section view's cut line on its parent (sheet millimetres).
 func (v *DrawingView) SectionLineMM() (x1, y1, x2, y2 float64) {
 	return v.section.x1, v.section.y1, v.section.x2, v.section.y2
+}
+
+// DetailBoundaryMM returns the detail view's circular boundary on its parent (sheet millimetres):
+// centre and radius, converted back from the parent's projection space.
+func (v *DrawingView) DetailBoundaryMM() (cx, cy, r float64) {
+	return v.detail.sheetCX, v.detail.sheetCY, v.detail.sheetR
 }
 
 // Curves returns the view's computed drawing curves.
@@ -139,18 +147,37 @@ func (v *DrawingView) VisibleHidden() (visible, hidden int) {
 // clipped cut-away projection (cut outline + hatch); other views run plain HLR. In wireframe
 // style every edge is drawn visible (no hidden-line removal).
 func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
-	segs := hlr.Project(body, basis, ops.DefaultQuality())
-	if v.viewType == types.DrawingViewSection {
-		segs = hlr.ProjectSection(body, basis, ops.DefaultQuality())
-	}
+	segs := v.project(body, basis)
 	v.curves = make([]DrawingCurve, 0, len(segs))
 	wireframe := v.style == types.WireframeViewStyle
 	for _, s := range segs {
+		a, b, ok := v.clip(s.A, s.B)
+		if !ok {
+			continue
+		}
 		v.curves = append(v.curves, DrawingCurve{
-			A: v.place(s.A), B: v.place(s.B), Visible: wireframe || s.Visible,
+			A: v.place(a), B: v.place(b), Visible: wireframe || s.Visible,
 			kind: curveKind(s.Kind), edgeKey: s.EdgeKey,
 		})
 	}
+}
+
+// project runs the projection a view's type calls for: a section view's clipped cut-away, or
+// plain hidden-line projection for every other kind.
+func (v *DrawingView) project(body *topo.Body, basis hlr.View) []hlr.Segment {
+	if v.viewType == types.DrawingViewSection {
+		return hlr.ProjectSection(body, basis, ops.DefaultQuality())
+	}
+	return hlr.Project(body, basis, ops.DefaultQuality())
+}
+
+// clip restricts a projected segment (in the parent's model-2D) to a detail view's circular
+// boundary; every other view kind passes the segment through unchanged.
+func (v *DrawingView) clip(a, b math.Point2) (math.Point2, math.Point2, bool) {
+	if v.viewType != types.DrawingViewDetail {
+		return a, b, true
+	}
+	return clipToCircle(a, b, v.detail.cx, v.detail.cy, v.detail.r)
 }
 
 // curveKind maps a projected segment's kind to its drawing-curve classification.

@@ -181,6 +181,44 @@ func TestSectionViewToolWithoutBaseView(t *testing.T) {
 	}
 }
 
+func TestDetailViewToolMagnifiesBase(t *testing.T) {
+	s := drawingWithFrontBase(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewDetailViewTool()
+	tool.Start(s)
+	if tool.Name() != "Detail View" || !tool.CanCommit() {
+		t.Fatalf("detail tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	tool.Params().Floats[0].Set(3) // 3× magnification
+	tool.PreviewCurves(s)          // exercise the preview path (may be empty for a hollow box centre)
+	tool.SetPlacement(260, 220)
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	v, ok := c.Sheets().Active().Views().ByName("VIEW:2")
+	if !ok {
+		t.Fatal("detail view not added")
+	}
+	if v.Type() != types.DrawingViewDetail || v.Scale() != 3 {
+		t.Fatalf("added view = type %v scale %g, want detail at 3×", v.Type(), v.Scale())
+	}
+}
+
+func TestDetailViewToolWithoutBaseView(t *testing.T) {
+	s := drawingWithModelSession(t)
+	tool := NewDetailViewTool()
+	tool.Start(s)
+	if tool.CanCommit() {
+		t.Error("detail tool can commit with no base view, want it disabled")
+	}
+	if got := tool.PreviewCurves(s); got != nil {
+		t.Errorf("preview with no base view = %d curves, want none", len(got))
+	}
+	if err := tool.Commit(s); err == nil {
+		t.Error("Commit with no base view = ok, want error")
+	}
+}
+
 func TestPickSelectEditDeleteDrawingView(t *testing.T) {
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)

@@ -371,6 +371,95 @@ func (t *SectionViewTool) Params() ToolParams {
 	}}
 }
 
+// DetailViewTool magnifies a circular region (centred on the parent view, radius a fraction of
+// its size) at a chosen scale; the preview follows the cursor and a click drops the detail view.
+// (A free-placed boundary is a follow-up; a centred region is the common case.)
+type DetailViewTool struct {
+	derivedViewTool
+	scale float64
+}
+
+// NewDetailViewTool starts at 2× magnification.
+func NewDetailViewTool() *DetailViewTool {
+	return &DetailViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}, scale: 2}
+}
+
+func (t *DetailViewTool) Name() string { return "Detail View" }
+
+// boundaryOn returns the detail circle (sheet mm) centred on the named parent view, with a
+// radius covering ~40% of its larger dimension; ok is false when the view has no geometry yet.
+func (t *DetailViewTool) boundaryOn(s *Session, parent string) (cx, cy, r float64, ok bool) {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return 0, 0, 0, false
+	}
+	v, found := c.Sheets().Active().Views().ByName(parent)
+	if !found {
+		return 0, 0, 0, false
+	}
+	minX, minY, maxX, maxY, has := v.BoundsMM()
+	if !has {
+		return 0, 0, 0, false
+	}
+	return (minX + maxX) / 2, (minY + maxY) / 2, 0.4 * maxf64(maxX-minX, maxY-minY), true
+}
+
+// PreviewCurves magnifies the chosen parent region at the origin, cached until parent/scale change.
+func (t *DetailViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	parent := t.parent()
+	if parent == "" {
+		return nil
+	}
+	key := fmt.Sprintf("%s/%g", parent, t.scale)
+	if key != t.previewKey {
+		t.preview = nil
+		if cx, cy, r, ok := t.boundaryOn(s, parent); ok {
+			c, _ := ActiveDrawing(s)
+			t.preview, _ = c.Sheets().Active().Views().PreviewDetail(parent, cx, cy, r, t.scale)
+		}
+		t.previewKey = key
+	}
+	return t.preview
+}
+
+// Commit magnifies the selected parent's centred region at the chosen scale.
+func (t *DetailViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	if parent == "" {
+		return fmt.Errorf("drawing: no base view to detail — add a base view first")
+	}
+	cx, cy, r, ok := t.boundaryOn(s, parent)
+	if !ok {
+		return fmt.Errorf("drawing: base view %q has no geometry to detail", parent)
+	}
+	if _, err := c.Sheets().Active().Views().AddDetail(drawing.DetailViewSpec{
+		ParentView: parent, BoundaryX: cx, BoundaryY: cy, RadiusMM: r, Scale: t.scale, CenterX: t.centerX, CenterY: t.centerY,
+	}); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view choice and detail scale for the property dialog.
+func (t *DetailViewTool) Params() ToolParams {
+	return ToolParams{
+		Choices: []ChoiceParam{t.baseChoice("Base View")},
+		Floats:  []FloatParam{{"Scale", func() float64 { return t.scale }, func(v float64) { t.scale = v }}},
+	}
+}
+
+func maxf64(a, b float64) float64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 // baseViewNames lists the active sheet's base views (the candidates a projected view derives
 // from); empty when no drawing is active.
 func baseViewNames(s *Session) []string {

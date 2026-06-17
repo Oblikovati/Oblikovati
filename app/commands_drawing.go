@@ -46,6 +46,9 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Section View", "Views", "drawing-section-view",
 			"Cut a section view through a base view (horizontal or vertical centreline): the near half is removed and the exposed faces are hatched.",
 			func() Tool { return NewSectionViewTool() }),
+		drawingToolCommand("Detail View", "Views", "drawing-detail-view",
+			"Magnify a circular region of a base view at a larger scale.",
+			func() Tool { return NewDetailViewTool() }),
 		NewCommand("Drawing.ExportDXF", "Export DXF", "Output", requestDrawingDXFExport).
 			WithTab("Drawing").WithRibbons(DrawingRibbon).WithEnable(hasActiveDrawing).
 			WithIcon("drawing-export-dxf").WithButtonStyle(LargeIconButton).
