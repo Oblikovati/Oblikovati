@@ -56,6 +56,20 @@ func TestProfilesCacheInvalidatesOnConstructionToggle(t *testing.T) {
 	}
 }
 
+// TestProfilesCacheInvalidatesOnRadiusChange guards the regression where resizing a circle via
+// its radius (a stored DOF, not a point) — e.g. a "radius = od/2" dimension driven by a
+// parameter — left every point unmoved, so the cached profiles went stale and a parametric
+// resize produced the OLD geometry (the spacer/flange resize failures).
+func TestProfilesCacheInvalidatesOnRadiusChange(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	s.Circles().AddByCenterRadius(math.P2(0, 0), 0.3)
+	before := s.Profiles()
+	s.circles.items[0].Radius = 0.4 // resize in place — the centre point does not move
+	if s.Profiles() == before {
+		t.Fatal("Profiles() cache not invalidated after a circle radius change")
+	}
+}
+
 // TestProfilesCappedForHugeSketch checks that a sketch past the entity cap (an
 // imported drawing) offers no profiles and returns immediately, so the hover
 // picker never arranges hundreds of thousands of segments.
