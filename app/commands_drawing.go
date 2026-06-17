@@ -43,6 +43,9 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Auxiliary View", "Views", "drawing-auxiliary-view",
 			"Fold an auxiliary view off a base view about a line at a chosen angle, to show an inclined face true-size.",
 			func() Tool { return NewAuxiliaryViewTool() }),
+		drawingToolCommand("Section View", "Views", "drawing-section-view",
+			"Cut a section view through a base view (horizontal or vertical centreline): the near half is removed and the exposed faces are hatched.",
+			func() Tool { return NewSectionViewTool() }),
 		NewCommand("Drawing.ExportDXF", "Export DXF", "Output", requestDrawingDXFExport).
 			WithTab("Drawing").WithRibbons(DrawingRibbon).WithEnable(hasActiveDrawing).
 			WithIcon("drawing-export-dxf").WithButtonStyle(LargeIconButton).

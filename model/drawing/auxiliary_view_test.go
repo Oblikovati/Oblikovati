@@ -161,23 +161,11 @@ func TestAuxiliaryCascadesOnParentDelete(t *testing.T) {
 func TestAuxiliaryRecipeRoundTrip(t *testing.T) {
 	c := drawingWithBox(t)
 	views := c.Sheets().Active().Views()
-	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1}); err != nil {
-		t.Fatalf("AddBase: %v", err)
-	}
+	frontBase(t, views)
 	if _, err := views.AddAuxiliary(AuxiliaryViewSpec{Name: "AUX", ParentView: "FRONT", FoldAngleRad: deg90, CenterX: 200, CenterY: 150}); err != nil {
 		t.Fatalf("AddAuxiliary: %v", err)
 	}
-	data, err := c.MarshalRecipe()
-	if err != nil {
-		t.Fatalf("MarshalRecipe: %v", err)
-	}
-	restored := NewContent()
-	restored.SetBodyResolver(fakeBodyResolver{body: subd.ToBody(subd.Box(2, 3, 4), "box")})
-	if err := restored.ApplyRecipe(data); err != nil {
-		t.Fatalf("ApplyRecipe: %v", err)
-	}
-	restored.RecomputeViews()
-	v, ok := restored.Sheets().Active().Views().ByName("AUX")
+	v, ok := reopen(t, c).Sheets().Active().Views().ByName("AUX")
 	if !ok {
 		t.Fatal("restored drawing has no AUX view")
 	}

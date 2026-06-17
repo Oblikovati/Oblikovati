@@ -124,6 +124,53 @@ func (vs *DrawingViews) AddAuxiliary(spec AuxiliaryViewSpec) (*DrawingView, erro
 	return v, nil
 }
 
+// SectionViewSpec describes a section view cut from a parent view by a section line. The line
+// endpoints are in sheet millimetres, drawn on the parent view.
+type SectionViewSpec struct {
+	Name             string
+	ParentView       string
+	X1, Y1, X2, Y2   float64 // section line on the parent (sheet mm)
+	CenterX, CenterY float64 // where the section view sits on the sheet
+}
+
+// AddSection adds a section view: the parent's referenced model cut by the plane through the
+// section line (perpendicular to the parent), with the near half removed, the cut outline drawn
+// bold and the exposed faces hatched. The parent must be a base view.
+func (vs *DrawingViews) AddSection(spec SectionViewSpec) (*DrawingView, error) {
+	parent, body, err := vs.parentBaseFor(spec.ParentView)
+	if err != nil {
+		return nil, err
+	}
+	name, err := vs.uniqueName(spec.Name)
+	if err != nil {
+		return nil, err
+	}
+	line := sectionLine{spec.X1, spec.Y1, spec.X2, spec.Y2}
+	v := &DrawingView{
+		name: name, viewType: types.DrawingViewSection, baseView: spec.ParentView, section: line,
+		orientation: parent.orientation, style: parent.style, scale: parent.scale,
+		centerX: spec.CenterX, centerY: spec.CenterY,
+	}
+	origin := bodyCenter(body)
+	v.recompute(body, sectionBasis(baseBasis(parent.orientation, origin), line, parent.scale, parent.centerX, parent.centerY, origin))
+	vs.items = append(vs.items, v)
+	return v, nil
+}
+
+// PreviewSection returns the origin-placed curves a section view through the given line on
+// parentView would produce, without adding it. ok is false when the parent or model is missing.
+func (vs *DrawingViews) PreviewSection(parentView string, x1, y1, x2, y2 float64) ([]DrawingCurve, bool) {
+	parent, body, err := vs.parentBaseFor(parentView)
+	if err != nil {
+		return nil, false
+	}
+	line := sectionLine{x1, y1, x2, y2}
+	v := &DrawingView{viewType: types.DrawingViewSection, style: parent.style, scale: parent.scale}
+	origin := bodyCenter(body)
+	v.recompute(body, sectionBasis(baseBasis(parent.orientation, origin), line, parent.scale, parent.centerX, parent.centerY, origin))
+	return v.curves, true
+}
+
 // PreviewAuxiliary returns the origin-centred curves an auxiliary view folded off parentView at
 // foldAngleRad would produce, without adding it. ok is false when the parent or model is missing.
 func (vs *DrawingViews) PreviewAuxiliary(parentView string, foldAngleRad float64) ([]DrawingCurve, bool) {
@@ -237,6 +284,12 @@ func (vs *DrawingViews) basisFor(v *DrawingView, origin math.Point3) (hlr.View, 
 			return hlr.View{}, false
 		}
 		return auxiliaryBasis(baseBasis(base.orientation, origin), v.foldAngle, origin), true
+	case types.DrawingViewSection:
+		base, ok := vs.ByName(v.baseView)
+		if !ok {
+			return hlr.View{}, false
+		}
+		return sectionBasis(baseBasis(base.orientation, origin), v.section, base.scale, base.centerX, base.centerY, origin), true
 	default: // base view
 		return baseBasis(v.orientation, origin), true
 	}

@@ -78,12 +78,21 @@ func TestBaseViewToolPlacesViaCursor(t *testing.T) {
 	}
 }
 
-func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
+// drawingWithFrontBase returns a session whose active drawing already has a FRONT base view —
+// the parent the derived-view tools (projected/auxiliary/section) build on.
+func drawingWithFrontBase(t *testing.T) *Session {
+	t.Helper()
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)
-	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1}); err != nil {
+	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100}); err != nil {
 		t.Fatalf("AddBase: %v", err)
 	}
+	return s
+}
+
+func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
+	s := drawingWithFrontBase(t)
+	c, _ := ActiveDrawing(s)
 	tool := NewAuxiliaryViewTool()
 	tool.Start(s)
 	if !tool.CanCommit() {
@@ -119,6 +128,48 @@ func TestAuxiliaryViewToolWithoutBaseView(t *testing.T) {
 	tool.Start(s) // no base view present
 	if tool.CanCommit() {
 		t.Error("auxiliary tool can commit with no base view, want it disabled")
+	}
+	if got := tool.PreviewCurves(s); got != nil {
+		t.Errorf("preview with no base view = %d curves, want none", len(got))
+	}
+	tool.Pick(s, nil)
+	tool.Cancel(s)
+	if err := tool.Commit(s); err == nil {
+		t.Error("Commit with no base view = ok, want error")
+	}
+}
+
+func TestSectionViewToolCutsThroughBase(t *testing.T) {
+	s := drawingWithFrontBase(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewSectionViewTool()
+	tool.Start(s)
+	if !tool.CanCommit() {
+		t.Fatal("section tool cannot commit with a base view present")
+	}
+	tool.Params().Choices[1].Set(1) // vertical cut
+	if got := tool.PreviewCurves(s); len(got) == 0 {
+		t.Fatal("section tool produced no preview curves")
+	}
+	tool.SetPlacement(100, 250)
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	v, ok := c.Sheets().Active().Views().ByName("VIEW:2")
+	if !ok || v.Type() != types.DrawingViewSection {
+		t.Fatalf("section view not added as a section (have %d views)", c.Sheets().Active().Views().Count())
+	}
+}
+
+func TestSectionViewToolWithoutBaseView(t *testing.T) {
+	s := drawingWithModelSession(t)
+	tool := NewSectionViewTool()
+	if tool.Name() != "Section View" {
+		t.Errorf("Name() = %q, want Section View", tool.Name())
+	}
+	tool.Start(s) // no base view
+	if tool.CanCommit() {
+		t.Error("section tool can commit with no base view, want it disabled")
 	}
 	if got := tool.PreviewCurves(s); got != nil {
 		t.Errorf("preview with no base view = %d curves, want none", len(got))
