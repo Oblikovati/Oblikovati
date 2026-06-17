@@ -44,7 +44,7 @@ func writeEntityCommon(b *objectBody, prev, next, layer uint64) {
 func encodeModelEntity(handle uint64, e Entity, prev, next, layer uint64) ([]byte, error) {
 	typ, ok := objectTypeBS(e)
 	if !ok {
-		return nil, fmt.Errorf("dwg: cannot write entity type %s", e.EntityType().Name())
+		return nil, fmt.Errorf("dwg: cannot write entity type %s", e.Kind().String())
 	}
 	b := newObjectBody(handle, typ)
 	writeEntityCommon(b, prev, next, layer)

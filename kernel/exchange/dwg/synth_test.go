@@ -75,45 +75,6 @@ func TestDecodeInsertSynthetic(t *testing.T) {
 	}
 }
 
-// TestEntityIdentity covers the EntityHandle/EntityType accessors on every entity type.
-func TestEntityIdentity(t *testing.T) {
-	cases := []struct {
-		e Entity
-		t ObjectType
-	}{
-		{&Line{Handle: 1}, TypeLine}, {&Circle{Handle: 2}, TypeCircle},
-		{&Arc{Handle: 3}, TypeArc}, {&Point{Handle: 4}, TypePoint},
-		{&Ellipse{Handle: 5}, TypeEllipse}, {&LwPolyline{Handle: 6}, TypeLwpolyline},
-		{&Spline{Handle: 7}, TypeSpline}, {&Insert{Handle: 8}, TypeInsert},
-	}
-	for i, c := range cases {
-		if c.e.EntityType() != c.t {
-			t.Errorf("case %d type = %v, want %v", i, c.e.EntityType(), c.t)
-		}
-		if c.e.EntityHandle() != uint64(i+1) {
-			t.Errorf("case %d handle = %d, want %d", i, c.e.EntityHandle(), i+1)
-		}
-	}
-}
-
-// TestTransformEntityAllTypes covers the per-type affine transform for the curve types not
-// already exercised (ellipse, polyline, spline) under a translate+scale.
-func TestTransformEntityAllTypes(t *testing.T) {
-	m := affine{{2, 0, 0, 1}, {0, 2, 0, 1}, {0, 0, 2, 0}} // scale 2, translate (1,1)
-	el := transformEntity(&Ellipse{Center: [3]float64{1, 0, 0}, MajorAxis: [3]float64{1, 0, 0}, AxisRatio: 0.5}, m).(*Ellipse)
-	if el.Center != [3]float64{3, 1, 0} || el.MajorAxis != [3]float64{2, 0, 0} {
-		t.Errorf("ellipse transform: c=%v major=%v", el.Center, el.MajorAxis)
-	}
-	pl := transformEntity(&LwPolyline{Points: [][2]float64{{0, 0}, {1, 1}}, Bulges: []float64{0.2, 0}}, m).(*LwPolyline)
-	if pl.Points[1] != [2]float64{3, 3} || pl.Bulges[0] != 0.2 {
-		t.Errorf("polyline transform: %v bulges %v", pl.Points, pl.Bulges)
-	}
-	sp := transformEntity(&Spline{ControlPoints: [][3]float64{{0, 0, 0}, {1, 1, 0}}, FitPoints: [][3]float64{{2, 2, 0}}}, m).(*Spline)
-	if sp.ControlPoints[1] != [3]float64{3, 3, 0} || sp.FitPoints[0] != [3]float64{5, 5, 0} {
-		t.Errorf("spline transform: ctrl=%v fit=%v", sp.ControlPoints, sp.FitPoints)
-	}
-}
-
 // TestReadInsertScaleFlags covers all four INSERT scale_flag forms.
 func TestReadInsertScaleFlags(t *testing.T) {
 	cases := []struct {

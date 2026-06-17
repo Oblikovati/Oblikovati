@@ -19,7 +19,7 @@ import (
 //	data, err := exchange.ExportDWG(sk)
 func ExportDWG(sk *sketch.Sketch) ([]byte, error) {
 	entities := sketchToDWG(sk)
-	return dwg.Write(&dwg.Drawing{Version: dwg.R2000, Entities: entities, Units: insunitsCentimetre})
+	return dwg.Write(&dwg.Drawing{Entities: entities, Units: insunitsCentimetre})
 }
 
 // ExportDWGFile writes ExportDWG's output to path.

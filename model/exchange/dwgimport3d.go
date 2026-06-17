@@ -21,7 +21,7 @@ func add3DEntities(sk *sketch.Sketch3D, entities []dwg.Entity) (int, []string) {
 		if add3DEntity(sk, e) {
 			added++
 		} else {
-			warns = append(warns, fmt.Sprintf("dwg: skipped %s handle %d (no 3D mapping)", e.EntityType().Name(), e.EntityHandle()))
+			warns = append(warns, fmt.Sprintf("dwg: skipped %s handle %d (no 3D mapping)", e.Kind().String(), e.EntityHandle()))
 		}
 	}
 	return added, warns

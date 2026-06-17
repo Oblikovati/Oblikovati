@@ -86,7 +86,7 @@ func add2DEntities(sk *sketch.Sketch, entities []dwg.Entity) (int, []string) {
 		if add2DEntity(sk, e) {
 			added++
 		} else {
-			warns = append(warns, fmt.Sprintf("dwg: skipped %s handle %d (no 2D mapping)", e.EntityType().Name(), e.EntityHandle()))
+			warns = append(warns, fmt.Sprintf("dwg: skipped %s handle %d (no 2D mapping)", e.Kind().String(), e.EntityHandle()))
 		}
 	}
 	return added, warns
