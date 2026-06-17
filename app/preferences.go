@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/model/param"
 )
 
@@ -77,6 +78,20 @@ func (s *Session) ChamferFlatCorners() bool { return s.chamferFlatCorners }
 
 // SetChamferFlatCorners sets the default corner treatment for new chamfers.
 func (s *Session) SetChamferFlatCorners(flat bool) { s.chamferFlatCorners = flat }
+
+// ChamferConcaveStrategy reports the default concave-edge strategy new Chamfer tools start with:
+// outward fills the inside corner with material (the default), inward cuts a recessed relief.
+func (s *Session) ChamferConcaveStrategy() types.ChamferConcaveStrategy {
+	if !s.chamferConcaveOut {
+		return types.ChamferConcaveInward
+	}
+	return types.ChamferConcaveOutward
+}
+
+// SetChamferConcaveStrategy sets the default concave-edge strategy for new chamfers.
+func (s *Session) SetChamferConcaveStrategy(strategy types.ChamferConcaveStrategy) {
+	s.chamferConcaveOut = strategy != types.ChamferConcaveInward
+}
 
 // Grid returns the session's sketch-grid settings (created on first use).
 func (s *Session) Grid() *GridSettings {

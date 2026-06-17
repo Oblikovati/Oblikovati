@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/model/feature"
 )
 
@@ -17,20 +18,24 @@ type ChamferTool struct {
 	seededEdgeKeys  [][]byte // edit mode: the feature's existing edge keys (their edges are consumed, so no live handles exist)
 	distance        float64
 	flatCorners     bool
+	concaveStrategy types.ChamferConcaveStrategy // concave edges: outward fill (default) or inward relief
 	added           *feature.PartFeature
 }
 
-// NewChamferTool returns a chamfer tool with a default 1-unit setback and flat three-edge
-// corners (overridden from the session preference in Start).
-func NewChamferTool() *ChamferTool { return &ChamferTool{distance: 1, flatCorners: true} }
+// NewChamferTool returns a chamfer tool with a default 1-unit setback, flat three-edge corners,
+// and outward concave fill (all overridden from the session preferences in Start).
+func NewChamferTool() *ChamferTool {
+	return &ChamferTool{distance: 1, flatCorners: true, concaveStrategy: types.ChamferConcaveOutward}
+}
 
 // Name implements [Tool].
 func (t *ChamferTool) Name() string { return "Chamfer" }
 
-// Start sets the selection filter to edges and seeds the corner treatment from the
-// session's chamfer preference.
+// Start sets the selection filter to edges and seeds the corner treatment and concave-edge
+// strategy from the session's chamfer preferences.
 func (t *ChamferTool) Start(s *Session) {
 	t.flatCorners = s.ChamferFlatCorners()
+	t.concaveStrategy = s.ChamferConcaveStrategy()
 	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
 }
 
@@ -38,6 +43,29 @@ func (t *ChamferTool) Start(s *Session) {
 // blended into a flat triangular face (true) or left pointy (false).
 func (t *ChamferTool) SetFlatCorners(flat bool) { t.flatCorners = flat }
 func (t *ChamferTool) FlatCorners() bool        { return t.flatCorners }
+
+// concaveStrategyNames orders the concave-strategy combo: index 0 outward, 1 inward.
+var concaveStrategyNames = []types.ChamferConcaveStrategy{types.ChamferConcaveOutward, types.ChamferConcaveInward}
+
+// ConcaveStrategyNames labels the concave-edge combo (the UI renders these in index order).
+func ConcaveStrategyNames() []string { return []string{"Outward (fill)", "Inward (relief)"} }
+
+// ConcaveStrategyIndex / SetConcaveStrategyIndex expose the concave-edge strategy as a combo
+// index (0 outward, 1 inward) for the property panel, mirroring the relief-shape combos.
+func (t *ChamferTool) ConcaveStrategyIndex() int {
+	if t.concaveStrategy == types.ChamferConcaveInward {
+		return 1
+	}
+	return 0
+}
+
+// SetConcaveStrategyIndex selects the concave-edge strategy from the combo index (out of range
+// is ignored, keeping the current strategy).
+func (t *ChamferTool) SetConcaveStrategyIndex(i int) {
+	if i >= 0 && i < len(concaveStrategyNames) {
+		t.concaveStrategy = concaveStrategyNames[i]
+	}
+}
 
 // Pick appends the clicked edge (ignoring one already chosen, so a double-click does not
 // duplicate it).
@@ -93,7 +121,7 @@ func (t *ChamferTool) Commit(s *Session) error {
 		return err
 	}
 	d := t.distance
-	t.added = feature.NewDressUpFeatures(part.Features()).AddChamferCorners(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners)
+	t.added = feature.NewDressUpFeatures(part.Features()).AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
 	part.Recompute()
 	s.recordEdit(part, "Chamfer")
 	if !t.added.Health().OK() {
@@ -129,6 +157,7 @@ func (t *ChamferTool) commitEdit(s *Session) error {
 	def.EdgeKeys = t.selectedEdgeKeys()
 	def.Distance = konst(t.distance)
 	def.FlatCorners = t.flatCorners
+	def.ConcaveStrategy = t.concaveStrategy
 	return commitFeatureEdit(s, t.target)
 }
 
