@@ -51,6 +51,9 @@ func drawFileMenu(s *app.Session) {
 		if native.MenuItem("New Assembly") { // #762 — start an assembly to place and constrain components
 			_, _ = s.NewAssembly()
 		}
+		if native.MenuItem("New Drawing") { // M14-F01 — start a drawing of a model's views
+			_, _ = s.NewDrawing()
+		}
 		if native.MenuItem("Open") {
 			openViaHookOrDialog(s)
 		}

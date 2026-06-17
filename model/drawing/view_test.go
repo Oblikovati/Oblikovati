@@ -1,0 +1,150 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package drawing
+
+import (
+	"testing"
+
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/subd"
+	"oblikovati.org/kernel/topo"
+)
+
+// fakeBodyResolver is a named fake (CLAUDE.md: no inline stubs) returning one body for any
+// reference — the referenced model in drawing-view tests.
+type fakeBodyResolver struct{ body *topo.Body }
+
+func (f fakeBodyResolver) Body(string) (*topo.Body, bool) { return f.body, f.body != nil }
+
+func drawingWithBox(t *testing.T) *Content {
+	t.Helper()
+	c := NewContent()
+	// Distinct dimensions (2×3×4) so the isometric projection is in general position — no two
+	// corners project coincident, keeping the visible/hidden counts platform-stable (a perfect
+	// cube under iso is FP-degenerate).
+	c.SetBodyResolver(fakeBodyResolver{body: subd.ToBody(subd.Box(2, 3, 4), "box")})
+	c.SetModelReference("box.opd")
+	return c
+}
+
+// TestAddBaseViewIsoProjectsCube checks a base iso view of a cube produces the textbook 9
+// visible / 3 hidden edges, placed on the sheet and keyed for associativity.
+func TestAddBaseViewIsoProjectsCube(t *testing.T) {
+	c := drawingWithBox(t)
+	v, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{Orientation: types.BaseViewIso, Scale: 1, CenterX: 150, CenterY: 100})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	visible, hidden := v.VisibleHidden()
+	if visible != 9 || hidden != 3 {
+		t.Fatalf("iso cube view = %d visible / %d hidden, want 9/3", visible, hidden)
+	}
+	for _, curve := range v.Curves() {
+		if len(curve.EdgeKey()) == 0 {
+			t.Error("drawing curve has no source edge key (not associative)")
+		}
+	}
+}
+
+func TestAddBaseViewRequiresModel(t *testing.T) {
+	c := NewContent() // no body resolver / reference
+	if _, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{Orientation: types.BaseViewFront}); err == nil {
+		t.Error("AddBase without a referenced model should error")
+	}
+}
+
+func TestAddProjectedViewFromBase(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	base, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	proj, err := views.AddProjected(ProjectedViewSpec{Name: "RIGHT", BaseView: "FRONT", Direction: types.ProjectRight, CenterX: 200})
+	if err != nil {
+		t.Fatalf("AddProjected: %v", err)
+	}
+	if !proj.IsProjected() || proj.BaseViewName() != "FRONT" {
+		t.Errorf("projected view = %+v, want projected off FRONT", proj)
+	}
+	if proj.CurveCount() == 0 {
+		t.Error("projected view produced no curves")
+	}
+	// Removing the base view also removes the view projected from it.
+	if err := views.Remove("FRONT"); err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+	if views.Count() != 0 {
+		t.Errorf("after removing base, %d views remain, want 0 (projected cascades)", views.Count())
+	}
+	_ = base
+}
+
+func TestPreviewAndEditViews(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+
+	// Preview (origin-centred, not added) for a base view.
+	if prev, ok := views.PreviewBase(types.BaseViewFront, types.HiddenLineViewStyle, 1); !ok || len(prev) == 0 {
+		t.Fatalf("PreviewBase = (%d curves, %v), want curves", len(prev), ok)
+	}
+	base, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	if prev, ok := views.PreviewProjected("FRONT", types.ProjectRight); !ok || len(prev) == 0 {
+		t.Fatalf("PreviewProjected = (%d curves, %v), want curves", len(prev), ok)
+	}
+
+	// EditBase changes orientation + scale and re-projects in place.
+	if err := views.EditBase("FRONT", types.BaseViewTop, types.WireframeViewStyle, 0.5, 120, 80); err != nil {
+		t.Fatalf("EditBase: %v", err)
+	}
+	if base.Orientation() != types.BaseViewTop || base.Scale() != 0.5 {
+		t.Errorf("edited base = %v/%g, want top/0.5", base.Orientation(), base.Scale())
+	}
+
+	// EditProjected on a projected view changes its direction.
+	proj, err := views.AddProjected(ProjectedViewSpec{Name: "SIDE", BaseView: "FRONT", Direction: types.ProjectRight})
+	if err != nil {
+		t.Fatalf("AddProjected: %v", err)
+	}
+	if err := views.EditProjected("SIDE", types.ProjectUp, 200, 150); err != nil {
+		t.Fatalf("EditProjected: %v", err)
+	}
+	if proj.Direction() != types.ProjectUp {
+		t.Errorf("edited projected direction = %v, want up", proj.Direction())
+	}
+	// Editing a missing view errors.
+	if err := views.EditBase("ghost", types.BaseViewFront, types.HiddenLineViewStyle, 1, 0, 0); err == nil {
+		t.Error("EditBase on a missing view should error")
+	}
+}
+
+func TestViewsSurviveRecipeRoundTrip(t *testing.T) {
+	c := drawingWithBox(t)
+	if _, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{Name: "TOP", Orientation: types.BaseViewTop, Scale: 0.5, CenterX: 120, CenterY: 90}); err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	blob, err := c.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	restored := NewContent()
+	restored.SetBodyResolver(fakeBodyResolver{body: subd.ToBody(subd.Box(2, 2, 2), "box")})
+	if err := restored.ApplyRecipe(blob); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	v, ok := restored.Sheets().Active().Views().ByName("TOP")
+	if !ok || v.Orientation() != types.BaseViewTop || v.Scale() != 0.5 {
+		t.Fatalf("restored view = %+v, want TOP scale 0.5", v)
+	}
+	// Curves are re-projected, not stored: empty until recompute, then populated.
+	if v.CurveCount() != 0 {
+		t.Errorf("restored view should have no curves before recompute, got %d", v.CurveCount())
+	}
+	restored.RecomputeViews()
+	if v.CurveCount() == 0 {
+		t.Error("RecomputeViews should re-project the restored view's curves")
+	}
+}

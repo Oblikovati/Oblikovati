@@ -4,7 +4,11 @@
 
 package ui
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/math"
+)
 
 // TestFitSheetCentersAndScales checks the sheet fits inside the panel with padding,
 // preserves aspect (uniform scale), and is centered.
@@ -47,4 +51,25 @@ func abs32(v float32) float32 {
 		return -v
 	}
 	return v
+}
+
+// TestScreenSheetRoundTrip checks the sheet↔screen mapping inverts: a sheet point mapped to
+// the screen and back lands where it started (the basis for cursor placement and hit-testing).
+func TestScreenSheetRoundTrip(t *testing.T) {
+	face := rect{x: 100, y: 50, w: 600, h: 400, scale: 2}
+	for _, p := range []math.Point2{math.P2(0, 0), math.P2(120, 90), math.P2(300, 200)} {
+		sx, sy := curveToScreen(face, p)
+		cx, cy := screenToSheet(face, sx, sy)
+		if abs32(float32(cx)-float32(p.X)) > 1e-2 || abs32(float32(cy)-float32(p.Y)) > 1e-2 {
+			t.Errorf("round-trip %v → screen(%g,%g) → sheet(%g,%g)", p, sx, sy, cx, cy)
+		}
+	}
+}
+
+// TestOffset2 checks the placement offset shifts a curve point by the cursor position.
+func TestOffset2(t *testing.T) {
+	got := offset2(math.P2(10, 20), 5, -3)
+	if got.X != 15 || got.Y != 17 {
+		t.Errorf("offset2 = %v, want (15,17)", got)
+	}
 }

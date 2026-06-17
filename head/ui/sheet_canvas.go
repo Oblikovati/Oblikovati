@@ -6,8 +6,11 @@ package ui
 
 import (
 	"fmt"
+	stdmath "math"
 
+	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/math"
 	"oblikovati.org/model/drawing"
 )
 
@@ -34,14 +37,17 @@ type rect struct {
 	scale      float32
 }
 
-// drawSheetCanvas renders the active drawing's active sheet across the viewport panel.
-// It reads the resolved content directly (display-only in F01; canvas interaction arrives
-// with drawing views in F02).
-func drawSheetCanvas(c *drawing.Content) {
+// drawSheetCanvas renders the active drawing's active sheet across the viewport panel and
+// handles canvas interaction (view placement, selection, right-click) — the drawing
+// counterpart of the 3D viewport.
+func drawSheetCanvas(s *app.Session, c *drawing.Content) {
+	c.SyncViews() // re-project if the referenced model was recomputed (live associativity)
 	sheet := c.Sheets().Active()
 	ox, oy := native.GetCursorScreenPos()
 	availW, availH := native.ContentRegionAvail()
 	native.InvisibleButton("##sheet-canvas", availW, availH) // reserve the region
+	hovered := native.IsItemHovered()
+	mx, my := native.MousePos()
 	native.DrawQuadFilled(ox, oy, ox+availW, oy, ox+availW, oy+availH, ox, oy+availH, canvasMat)
 	if sheet == nil {
 		native.DrawText(ox+12, oy+12, "Drawing has no sheet", captionInk)
@@ -51,8 +57,89 @@ func drawSheetCanvas(c *drawing.Content) {
 	drawSheetFace(face)
 	inner := drawSheetBorder(face, sheet)
 	drawTitleBlock(inner, sheet)
+	drawSheetViews(s, face, sheet)
 	drawSheetCaption(ox, oy, sheet, c.ModelReference(), c.Styles().ActiveStandard().String())
+	handleSheetCanvasInput(s, face, hovered, mx, my)
 }
+
+// View-curve colors: visible edges solid dark ink, hidden edges dashed in a lighter grey.
+var (
+	viewVisibleInk = [4]float32{0.10, 0.10, 0.12, 1}
+	viewHiddenInk  = [4]float32{0.45, 0.46, 0.50, 1}
+	viewSelectInk  = [4]float32{0.20, 0.55, 0.95, 1} // selected-view highlight box
+)
+
+// drawSheetViews draws every view's hidden-line curves onto the sheet: visible edges solid,
+// hidden edges dashed. Curve coordinates are sheet millimetres (y up from the sheet bottom),
+// mapped to the screen through the sheet's fit rectangle. The selected view gets a highlight
+// box so canvas selection is visible.
+func drawSheetViews(s *app.Session, face rect, sheet *drawing.Sheet) {
+	selected := selectedDrawingView(s)
+	views := sheet.Views()
+	for i := 0; i < views.Count(); i++ {
+		v := views.Item(i)
+		for _, c := range v.Curves() {
+			ax, ay := curveToScreen(face, c.Start())
+			bx, by := curveToScreen(face, c.End())
+			if c.IsVisible() {
+				native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.4)
+			} else {
+				drawDashed(ax, ay, bx, by, viewHiddenInk)
+			}
+		}
+		if v == selected {
+			drawViewHighlight(face, v)
+		}
+	}
+}
+
+// selectedDrawingView returns the currently selected view (canvas/browser), or nil.
+func selectedDrawingView(s *app.Session) *drawing.DrawingView {
+	if h, ok := s.Selection().First().(app.DrawingViewHandle); ok {
+		return h.View
+	}
+	return nil
+}
+
+// drawViewHighlight outlines the selected view's bounds in the highlight color.
+func drawViewHighlight(face rect, v *drawing.DrawingView) {
+	minX, minY, maxX, maxY, ok := v.BoundsMM()
+	if !ok {
+		return
+	}
+	const pad = 3 // mm breathing room around the geometry
+	x0, y0 := curveToScreen(face, math.P2(math.Scalar(minX-pad), math.Scalar(maxY+pad)))
+	x1, y1 := curveToScreen(face, math.P2(math.Scalar(maxX+pad), math.Scalar(minY-pad)))
+	native.DrawLine(x0, y0, x1, y0, viewSelectInk, 1)
+	native.DrawLine(x1, y0, x1, y1, viewSelectInk, 1)
+	native.DrawLine(x1, y1, x0, y1, viewSelectInk, 1)
+	native.DrawLine(x0, y1, x0, y0, viewSelectInk, 1)
+}
+
+// curveToScreen maps a sheet-millimetre point (y up) to screen pixels within the sheet face.
+func curveToScreen(face rect, p math.Point2) (float32, float32) {
+	return face.x + float32(p.X)*face.scale, face.y + face.h - float32(p.Y)*face.scale
+}
+
+// drawDashed strokes a dashed line (a hidden edge) as a run of short on/off segments.
+func drawDashed(ax, ay, bx, by float32, c [4]float32) {
+	const dash = 4 // pixels on, then off
+	dx, dy := bx-ax, by-ay
+	length := float32(stdSqrt(float64(dx*dx + dy*dy)))
+	if length < 1e-3 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	for t := float32(0); t < length; t += 2 * dash {
+		s1 := t + dash
+		if s1 > length {
+			s1 = length
+		}
+		native.DrawLine(ax+ux*t, ay+uy*t, ax+ux*s1, ay+uy*s1, c, 1.2)
+	}
+}
+
+func stdSqrt(v float64) float64 { return stdmath.Sqrt(v) }
 
 // fitSheet centers the sheet (given in mm) inside the panel with padding and returns its
 // screen rectangle and the mm→pixel scale.
