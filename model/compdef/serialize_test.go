@@ -546,6 +546,36 @@ func TestLengthUnitSurvivesRoundTrip(t *testing.T) {
 	}
 }
 
+// TestUnitsPrecisionAndFormatSurviveRoundTrip persists the display precision and
+// the length/angle formats (the #146 additions) and restores them.
+func TestUnitsPrecisionAndFormatSurviveRoundTrip(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+
+	u := def.Units().Clone()
+	if err := u.SetPreferred(param.Length, "in"); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.SetLengthPrecision(5); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.SetAnglePrecision(4); err != nil {
+		t.Fatal(err)
+	}
+	u.SetLengthFormat(types.DisplayFormatFractional)
+	u.SetAngleFormat(param.AngleDMS)
+	def.SetUnits(u)
+
+	got := reopenThroughStore(t, d).Units()
+	if got.LengthPrecision() != 5 || got.AnglePrecision() != 4 {
+		t.Errorf("precision after reopen = %d/%d, want 5/4", got.LengthPrecision(), got.AnglePrecision())
+	}
+	if got.LengthFormat() != types.DisplayFormatFractional || got.AngleFormat() != param.AngleDMS {
+		t.Errorf("formats after reopen = %v/%v, want fractional/DMS", got.LengthFormat(), got.AngleFormat())
+	}
+}
+
 // TestRevolveTwoDirectionalSurvivesReopen: the second-direction sweep (#313)
 // persists and the restored revolve rebuilds the same straddling solid.
 func TestRevolveTwoDirectionalSurvivesReopen(t *testing.T) {

@@ -151,7 +151,7 @@ func (a *AssemblyComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := yamlcodec.Unmarshal(model, &r); err != nil {
 		return fmt.Errorf("compdef: parse assembly recipe: %w", err)
 	}
-	if err := applyUnitsTo(a.units, r.Units); err != nil {
+	if err := applyUnitsTo(&a.units, r.Units); err != nil {
 		return err
 	}
 	applyPropertiesRecipe(a.props, r.Properties)

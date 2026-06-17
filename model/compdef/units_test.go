@@ -57,3 +57,24 @@ func TestAssemblySetUnits(t *testing.T) {
 		t.Errorf("assembly length unit after SetUnits = %q, want ft", name)
 	}
 }
+
+func TestApplyUnitsToReservedKeys(t *testing.T) {
+	u := param.DefaultUnitsOfMeasure().Clone()
+	if err := applyUnitsTo(&u, map[string]string{
+		"lengthPrecision": "4", "anglePrecision": "1",
+		"lengthFormat": "fractional", "angleFormat": "dms",
+	}); err != nil {
+		t.Fatalf("apply reserved keys: %v", err)
+	}
+	if u.LengthPrecision() != 4 || u.AnglePrecision() != 1 || u.AngleFormat() != param.AngleDMS {
+		t.Errorf("reserved keys not applied: %+v", u)
+	}
+	for _, bad := range []map[string]string{
+		{"lengthPrecision": "x"}, {"lengthFormat": "bogus"},
+		{"angleFormat": "bogus"}, {"nonsense": "mm"},
+	} {
+		if err := applyUnitsTo(&u, bad); err == nil {
+			t.Errorf("applyUnitsTo(%v) should error", bad)
+		}
+	}
+}
