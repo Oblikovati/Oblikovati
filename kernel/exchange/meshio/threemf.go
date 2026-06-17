@@ -22,6 +22,7 @@ const modelPartPath = "3D/3dmodel.model"
 // for the first cut (a single faceted object covers import→solid and export round-trip).
 type threeMFModel struct {
 	XMLName   xml.Name        `xml:"model"`
+	Unit      string          `xml:"unit,attr"`
 	Resources threeMFResource `xml:"resources"`
 }
 
@@ -67,6 +68,21 @@ func Decode3MF(data []byte) (RawMesh, error) {
 		return RawMesh{}, &decodeError{format: "3MF", what: "malformed model XML", value: err.Error()}
 	}
 	return soupFromModel(model)
+}
+
+// read3MFUnit returns the <model unit="…"> spelling, or "" when it cannot be read
+// (the caller then falls back to millimetres). Used to scale a 3MF import into the
+// database unit.
+func read3MFUnit(data []byte) string {
+	xmlBytes, err := readModelPart(data)
+	if err != nil {
+		return ""
+	}
+	var model threeMFModel
+	if xml.Unmarshal(xmlBytes, &model) != nil {
+		return ""
+	}
+	return model.Unit
 }
 
 // readModelPart opens the ZIP and returns the bytes of the 3D/3dmodel.model part.
@@ -129,17 +145,18 @@ func addTriangleByIndex(m *RawMesh, verts []math.Point3, t threeMFTriangle, obj 
 //	data, err := meshio.Encode3MF(body, meshio.QualityFor(types.ResolutionHigh))
 func Encode3MF(body *topo.Body, q ops.Quality) ([]byte, error) {
 	mesh, _ := ops.TessellateBody(body, q)
-	return encode3MFMesh(mesh)
+	return encode3MFMesh(mesh, "millimeter")
 }
 
-// encode3MFMesh writes an already-tessellated mesh as a 3MF ZIP container.
-func encode3MFMesh(mesh *ops.Mesh) ([]byte, error) {
+// encode3MFMesh writes an already-tessellated mesh as a 3MF ZIP container declaring
+// the given 3MF unit spelling (e.g. "millimeter", "inch").
+func encode3MFMesh(mesh *ops.Mesh, unit string) ([]byte, error) {
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	parts := map[string][]byte{
 		"[Content_Types].xml": []byte(contentTypesXML),
 		"_rels/.rels":         []byte(relsXML),
-		modelPartPath:         modelXML(mesh),
+		modelPartPath:         modelXML(mesh, unit),
 	}
 	for name, content := range parts {
 		if err := writeZipPart(zw, name, content); err != nil {

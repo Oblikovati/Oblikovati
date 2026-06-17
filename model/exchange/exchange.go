@@ -14,6 +14,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -61,7 +62,7 @@ func (MeshExchange) ImportInto(part *compdef.PartComponentDefinition, path strin
 		return ImportResult{}, fmt.Errorf("import: read %q: %w", path, err)
 	}
 	feat := fmt.Sprintf("import:%s#0", format)
-	body, warns, err := meshio.ImportBody(format, data, feat, 0)
+	body, warns, err := meshio.ImportBody(format, data, feat, 0, exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import %q: %w", path, err)
 	}
@@ -93,7 +94,7 @@ func (MeshExchange) ExportFrom(part *compdef.PartComponentDefinition, path strin
 	if len(bodies) == 0 {
 		return ExportResult{}, fmt.Errorf("export %q: part has no bodies", path)
 	}
-	data, tris, err := meshio.ExportBodies(format, bodies, res)
+	data, tris, err := meshio.ExportBodies(format, bodies, res, exportUnits(part))
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("export %q: %w", path, err)
 	}

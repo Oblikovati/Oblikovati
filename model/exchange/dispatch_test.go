@@ -118,3 +118,25 @@ func TestStepExportDeclaresDocumentUnit(t *testing.T) {
 		}
 	}
 }
+
+// TestMeshExportImportThroughDispatch exercises the unified Import/Export for a mesh
+// format (the dispatch's mesh branch) and confirms the size round-trips in centimetres.
+func TestMeshExportImportThroughDispatch(t *testing.T) {
+	src := compdef.NewPartComponentDefinition()
+	if _, err := exchange.Import(src, stepFixture("cube.step"), types.FormatSTEP); err != nil {
+		t.Fatalf("seed import: %v", err)
+	}
+	v0 := ops.BodyGeometryProperties(src.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	out := filepath.Join(t.TempDir(), "m.stl")
+	if _, err := exchange.Export(src, out, types.FormatSTL, types.ResolutionHigh); err != nil {
+		t.Fatalf("export stl: %v", err)
+	}
+	back := compdef.NewPartComponentDefinition()
+	if _, err := exchange.Import(back, out, types.FormatSTL); err != nil {
+		t.Fatalf("re-import stl: %v", err)
+	}
+	v1 := ops.BodyGeometryProperties(back.SurfaceBodies().Item(0), ops.DefaultQuality()).Volume
+	if relErr(v0, v1) > 0.05 {
+		t.Errorf("mesh dispatch round-trip volume %.4f → %.4f", v0, v1)
+	}
+}

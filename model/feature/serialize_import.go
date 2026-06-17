@@ -33,7 +33,8 @@ func ImportBodiesFromData(format types.ExchangeFormat, data []byte) ([]*topo.Bod
 		// The kernel works in centimetres; the reader scales the file's declared unit into it.
 		return step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
 	case format.IsMesh():
-		body, warns, err := meshio.ImportBody(format, data, fmt.Sprintf("import:%s#0", format), 0)
+		body, warns, err := meshio.ImportBody(format, data, fmt.Sprintf("import:%s#0", format), 0,
+			exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
 		if err != nil {
 			return nil, nil, err
 		}

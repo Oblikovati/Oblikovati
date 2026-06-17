@@ -148,7 +148,9 @@ func TestExportThenImportRoundTripsACylinderVolume(t *testing.T) {
 		t.Fatalf("re-import: %v", err)
 	}
 	got := totalVolume(reimport)
-	if want := 125.0; got < want-1e-3 || got > want+1e-3 {
-		t.Errorf("round-trip volume = %v, want %v", got, want)
+	// The fixture is a 5-unit cube; mesh files are read as millimetres, so it imports
+	// as a 0.5 cm cube (0.125 cm³) and the OBJ round-trip preserves that.
+	if want := 0.125; got < want-1e-4 || got > want+1e-4 {
+		t.Errorf("round-trip volume = %v, want %v cm³", got, want)
 	}
 }
