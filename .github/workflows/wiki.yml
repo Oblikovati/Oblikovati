@@ -14,6 +14,10 @@ on:
       - 'docs/wiki/**'
       - 'app/cmdline/**'
       - 'cmd/command-manual/**'
+      - 'cmd/lua-manual/**'
+      - 'script/luadoc/**'
+      - 'script/examples/**'
+      - 'go.mod'
       - 'scripts/publish-wiki.sh'
       - '.github/workflows/wiki.yml'
   workflow_dispatch: {}
