@@ -1,0 +1,131 @@
+schemaVersion: 2
+documentType: 1
+displayName: internal-fillet
+identity:
+    internalName: 1294770b-490b-4986-9d23-2115ab88d16e
+    revisionId: 9fb6fac4-9285-4c40-9d2e-90c926ceecce
+    databaseRevisionId: e3bb7310-9639-4227-be32-c86a1701bab6
+    saveCounter: 5
+    versionCreated: dev
+    versionSaved: dev
+    modelDigest: 23ba1e01d841b906d8120817fb0a60d1efdeb31f3af9f37fe9fe5b857fb896bc
+model:
+    units:
+        angle: deg
+        area: mm^2
+        length: mm
+        mass: kg
+        time: s
+        volume: mm^3
+    sketches:
+        - name: Sketch1
+          hidden: true
+          seq: 18
+          plane:
+            origin:
+                - 0
+                - 0
+                - 0
+            xAxis:
+                - 0
+                - 1
+                - 0
+            yAxis:
+                - 0
+                - 0
+                - 1
+          points:
+            - id: 82
+              x: 0
+              "y": 0
+          entities:
+            - id: 83
+              kind: circle
+              points:
+                - 82
+              radius: 3.9136705118148165
+        - name: Sketch2
+          seq: 20
+          plane:
+            origin:
+                - 0
+                - 0
+                - 0
+            xAxis:
+                - 0
+                - 1
+                - 0
+            yAxis:
+                - 0
+                - 0
+                - 1
+          points:
+            - id: 85
+              x: 2
+              "y": 2
+              standalone: true
+            - id: 86
+              x: -2.2772288999872448
+              "y": 2
+              standalone: true
+            - id: 87
+              x: -2.2772288999872448
+              "y": -1.267228706803533
+              standalone: true
+            - id: 88
+              x: 2
+              "y": -1.267228706803533
+              standalone: true
+          entities:
+            - id: 89
+              kind: line
+              points:
+                - 85
+                - 86
+            - id: 90
+              kind: line
+              points:
+                - 86
+                - 87
+            - id: 91
+              kind: line
+              points:
+                - 87
+                - 88
+            - id: 92
+              kind: line
+              points:
+                - 88
+                - 85
+    features:
+        - kind: extrude
+          name: Extrusion1
+          seq: 19
+          extrude:
+            sketch: 0
+            profiles:
+                - 0
+            operation: newBody
+            extent: distance
+            direction: positive
+            distance: 1
+        - kind: extrude
+          name: Extrusion2
+          seq: 21
+          extrude:
+            sketch: 1
+            profiles:
+                - 0
+            operation: newBody
+            extent: distance
+            direction: negative
+            distance: 1
+        - kind: fillet
+          name: fillet
+          seq: 23
+          fillet:
+            edges:
+                - AkV4dHJ1c2lvbjI6dG9wLWVkZ2UjMA==
+                - AkV4dHJ1c2lvbjI6dG9wLWVkZ2UjMw==
+            value: 0.5
+            cornerType: 200003

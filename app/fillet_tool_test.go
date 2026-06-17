@@ -6,9 +6,31 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/feature"
 )
+
+// TestFilletToolConcaveStrategy checks the tool defaults to outward fill and carries the chosen
+// concave strategy (via the combo index) into the committed fillet's definition.
+func TestFilletToolConcaveStrategy(t *testing.T) {
+	s, block := newPartWithBlock(t, 2)
+	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
+	f := NewFilletTool()
+	s.StartTool(f)
+	if f.ConcaveStrategyIndex() != 0 {
+		t.Errorf("new fillet tool concave index = %d, want 0 (outward fill default)", f.ConcaveStrategyIndex())
+	}
+	s.Click(1, 1)
+	f.SetRadius(0.3)
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	if def := f.AddedFeature().Definition().(*feature.FilletFeature).Definition(); def.ConcaveStrategy != types.FilletConcaveOutward {
+		t.Errorf("committed fillet concave strategy = %v, want outward (the default)", def.ConcaveStrategy)
+	}
+}
 
 // TestFilletToolEndToEnd drives the Fillet UI: start the tool, click a vertical edge of a
 // 2×2×2 block, set the radius, OK — and asserts a valid solid with a cylinder face and the

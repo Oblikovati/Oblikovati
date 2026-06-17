@@ -41,7 +41,7 @@ func FilletEdges(body *topo.Body, edgeKeys [][]byte, r float64) (*topo.Body, err
 // the edge line, so each strip face is EXACTLY planar — the only approximation is the end
 // arcs as chords, the same density convention as a hole's faceted cylinder.
 func FilletEdgesVarying(body *topo.Body, picks []EdgeFilletRadii) (*topo.Body, error) {
-	return FilletEdgesCorner(body, picks, CornerMiter)
+	return FilletEdgesCorner(body, picks, CornerMiter, FillConcaveOutward)
 }
 
 // CornerStrategy selects how a corner where two filleted edges meet a vertex whose third edge stays
@@ -59,10 +59,23 @@ const (
 	CornerRound
 )
 
+// ConcaveFill selects how a fillet treats a CONCAVE (internal) edge — one whose faces fold over the
+// material (dihedral > π). A convex edge always rounds its corner away (material removed) and ignores
+// this. Mirrors api types.FilletConcaveStrategy.
+type ConcaveFill int
+
+const (
+	// FillConcaveOutward fills the inside corner with material: the rolling ball sits in the void and
+	// the cylinder face bridges the two faces (the default — also the zero value).
+	FillConcaveOutward ConcaveFill = iota
+	// FillConcaveInward rounds a recess into the corner instead (the ball sits in the material).
+	FillConcaveInward
+)
+
 // FilletEdgesCorner is FilletEdgesVarying with an explicit 2-edge corner strategy. Lone curved
 // (rim/arc) picks ignore it (they have no shared corner). CornerRound augments the selection with the
 // sharp third edge of each 2-edge corner so the corner resolves as a watertight 3-edge sphere blend.
-func FilletEdgesCorner(body *topo.Body, picks []EdgeFilletRadii, corner CornerStrategy) (*topo.Body, error) {
+func FilletEdgesCorner(body *topo.Body, picks []EdgeFilletRadii, corner CornerStrategy, concave ConcaveFill) (*topo.Body, error) {
 	if rim := loneRimPick(body, picks); rim != nil {
 		return FilletCylinderRim(body, rim.Key, rim.R0) // a circular cylinder/cap rim → toroidal band
 	}
@@ -79,20 +92,20 @@ func FilletEdgesCorner(body *topo.Body, picks []EdgeFilletRadii, corner CornerSt
 	case CornerSetback:
 		edges = setbackThirdEdges(edges) // taper the third edge (r→0 run-out) → smooth set-back sphere
 	}
-	return filletResolvedEdges(body, edges)
+	return filletResolvedEdges(body, edges, concave)
 }
 
 // filletResolvedEdges solves the corners and edge fillets of an already-resolved pick list and
 // assembles the validated result body. Round/setback corners have already been reduced to 3-edge
 // sphere blends by augmenting the third edge, so the corner solver only ever sees miters and blends.
-func filletResolvedEdges(body *topo.Body, edges []filletPick) (*topo.Body, error) {
+func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFill) (*topo.Body, error) {
 	blends, miters, err := computeCorners(edges)
 	if err != nil {
 		return nil, err
 	}
 	fils := make([]edgeFillet, 0, len(edges))
 	for _, p := range edges {
-		ef, err := computeEdgeFillet(body, p, blends, miters)
+		ef, err := computeEdgeFillet(body, p, blends, miters, concave)
 		if err != nil {
 			return nil, err
 		}
@@ -167,12 +180,13 @@ type edgeFillet struct {
 	c0, c1  corner
 	edge    *topo.Edge
 	varying bool
+	flip    bool // concave fillet: the cylinder face's outward sense is inverted (surface faces the centre)
 }
 
 // computeEdgeFillet solves the rolling-ball geometry for one convex straight edge, using a
 // corner blend at either endpoint that is a shared corner. A varying pick gets its end arcs
 // sampled as chords (shared by the ruling strips and the end faces).
-func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter) (edgeFillet, error) {
+func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter, concave ConcaveFill) (edgeFillet, error) {
 	e := p.edge
 	if cyl, pl, ok := cylinderPlaneEdge(e); ok {
 		return edgeFillet{}, curvedFilletError(e, cyl, pl) // fillet of a fillet — Phase A: classify & report
@@ -185,13 +199,39 @@ func computeEdgeFillet(body *topo.Body, p filletPick, blends map[uint64]*cornerB
 	if err != nil {
 		return edgeFillet{}, fmt.Errorf("fillet: degenerate edge")
 	}
-	offDir := nA.Add(nB).Scale(-1 / (1 + nA.Dot(nB))) // per-unit-radius centre offset into the solid
-	rMid := (p.r0 + p.r1) / 2
-	if mid := e.StartVertex().Point().Midpoint(e.EndVertex().Point()); !PointInsideBody(body, mid.TranslateBy(offDir.Scale(rMid))) {
-		return edgeFillet{}, fmt.Errorf("fillet: edge is not convex (only convex edges are supported)")
+	in, err := filletFrame(body, e, nA, nB, (p.r0+p.r1)/2, concave)
+	if err != nil {
+		return edgeFillet{}, err
 	}
-	in := cornerInputs{a: a, b: b, nA: nA, nB: nB, offDir: offDir, axis: axis.AsVector()}
+	in.a, in.b, in.axis = a, b, axis.AsVector()
 	return solvedEdgeFillet(e, p, in, blends, miters)
+}
+
+// filletFrame resolves the rolling-ball centre offset and the tangent-point normals for an edge,
+// choosing the side from the edge's convexity and (for concave edges) the fill strategy:
+//   - convex: the ball centre sits INSIDE the solid (offDir = −(nA+nB)/(1+nA·nB)); the corner is
+//     rounded away. A centre that is not inside means the edge is not actually convex.
+//   - concave + outward (default): the ball sits in the VOID so the cylinder bridges the faces and
+//     FILLS the inside corner — the same offDir/normals negated to put the centre on the void side.
+//   - concave + inward: the ball sits in the MATERIAL (the convex formula's side), rounding a recess
+//     into the corner.
+func filletFrame(body *topo.Body, e *topo.Edge, nA, nB math.Vector3, rMid float64, concave ConcaveFill) (cornerInputs, error) {
+	offDir := nA.Add(nB).Scale(-1 / (1 + nA.Dot(nB))) // per-unit-radius centre offset into the solid
+	mid := e.StartVertex().Point().Midpoint(e.EndVertex().Point())
+	if ClassifyEdgeConvexity(e) == EdgeConcave {
+		if concave == FillConcaveOutward {
+			return cornerInputs{nA: nA.Scale(-1), nB: nB.Scale(-1), offDir: offDir.Scale(-1), flip: true}, nil
+		}
+		// Inward recess: the ball rolls in the MATERIAL (the convex-formula side). Its tangent points
+		// land off the bounded faces unless they extend that way, so it is only valid on geometry that
+		// permits it (e.g. a pocket); elsewhere the assembled body fails validation and the feature
+		// goes sick honestly. A concave edge's natural fillet is the outward fill above.
+		return cornerInputs{nA: nA, nB: nB, offDir: offDir}, nil
+	}
+	if !PointInsideBody(body, mid.TranslateBy(offDir.Scale(rMid))) {
+		return cornerInputs{}, fmt.Errorf("fillet: edge is not convex (only convex edges are supported)")
+	}
+	return cornerInputs{nA: nA, nB: nB, offDir: offDir}, nil
 }
 
 // solvedEdgeFillet assembles the edgeFillet once the edge's frame is known: corners per end
@@ -203,13 +243,13 @@ func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[ui
 	}
 	if p.varying() {
 		sampleCornerChords(&c0, &c1, in)
-		return edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, edge: e, varying: true}, nil
+		return edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, edge: e, varying: true, flip: in.flip}, nil
 	}
 	cyl, err := geom.NewCylinder(c0.cen, in.axis, p.r0)
 	if err != nil {
 		return edgeFillet{}, err
 	}
-	return edgeFillet{a: in.a, b: in.b, cyl: cyl, c0: c0, c1: c1, edge: e}, nil
+	return edgeFillet{a: in.a, b: in.b, cyl: cyl, c0: c0, c1: c1, edge: e, flip: in.flip}, nil
 }
 
 // edgeCorners solves the rounded corners at both endpoints of an edge (each blended when its
@@ -284,6 +324,7 @@ type cornerInputs struct {
 	nA, nB math.Vector3
 	offDir math.Vector3
 	axis   math.Vector3
+	flip   bool // invert the cylinder face's outward sense (a concave fillet's surface faces the centre)
 }
 
 // cornerAt solves a fillet corner at vertex v with the local radius r. Without a blend it is

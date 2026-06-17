@@ -54,7 +54,8 @@ const filletSchema = `{
       "startRadius": {"type": "string", "description": "Variable set: radius at the edge's start vertex (the set holds exactly one edge)."},
       "endRadius": {"type": "string", "description": "Variable set: radius at the edge's end vertex."}
     }, "required": ["edgeRefs"]}},
-    "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."}
+    "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."},
+    "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with an exact rolling-ball cylinder (default). inward rounds a recess into the corner and is only valid where the faces extend into the material (e.g. a pocket). Convex edges ignore this."}
   }
 }`
 
@@ -92,9 +93,19 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(in.EdgeSets) > 0 {
-		return applyFilletSets(part, in.EdgeSets, corner)
+	cs, err := filletConcaveStrategyOf(in.ConcaveStrategy)
+	if err != nil {
+		return nil, err
 	}
+	if len(in.EdgeSets) > 0 {
+		return applyFilletSets(part, in.EdgeSets, corner, cs)
+	}
+	return applyFilletFlat(part, in, corner, cs)
+}
+
+// applyFilletFlat builds the flat (edgeRefs + single radius) fillet with the chosen corner
+// treatment and concave-edge strategy.
+func applyFilletFlat(part *compdef.PartComponentDefinition, in edgeDressArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy) (json.RawMessage, error) {
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius or edgeSets)")
 	}
@@ -103,16 +114,32 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return nil, err
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddFilletCorner(refKeys(in.EdgeRefs), r, corner)
+	pf.Definition().(*feature.FilletFeature).Definition().ConcaveStrategy = cs
 	return recomputeResult(part, pf)
 }
 
-// applyFilletSets decodes the edge-set form and adds the fillet with the chosen corner treatment.
-func applyFilletSets(part *compdef.PartComponentDefinition, args []filletSetArgs, corner types.FilletCornerType) (json.RawMessage, error) {
+// applyFilletSets decodes the edge-set form and adds the fillet with the chosen corner treatment
+// and concave-edge strategy.
+func applyFilletSets(part *compdef.PartComponentDefinition, args []filletSetArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy) (json.RawMessage, error) {
 	sets, err := filletSetsFromArgs(part, args)
 	if err != nil {
 		return nil, err
 	}
-	return recomputeResult(part, feature.NewDressUpFeatures(part.Features()).AddFilletSetsCorner(sets, corner))
+	pf := feature.NewDressUpFeatures(part.Features()).AddFilletSetsCorner(sets, corner)
+	pf.Definition().(*feature.FilletFeature).Definition().ConcaveStrategy = cs
+	return recomputeResult(part, pf)
+}
+
+// filletConcaveStrategyOf resolves the optional concaveStrategy wire spelling (empty ⇒ outward).
+func filletConcaveStrategyOf(spelling string) (types.FilletConcaveStrategy, error) {
+	if spelling == "" {
+		return types.FilletConcaveOutward, nil
+	}
+	v, ok := types.ParseFilletConcaveStrategy(spelling)
+	if !ok {
+		return 0, fmt.Errorf("fillet: unknown concaveStrategy %q (want outward or inward)", spelling)
+	}
+	return v, nil
 }
 
 // filletCornerOf resolves the optional cornerType wire spelling (empty ⇒ miter), erroring on an

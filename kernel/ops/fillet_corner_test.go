@@ -89,7 +89,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.strategy+"-"+c.scenario, func(t *testing.T) {
 			box := shellBox(2, 2, 2)
-			res, err := ops.FilletEdgesCorner(box, cornerStrategyPicks(t, box, c.scenario), cornerStrategyOf(c.strategy))
+			res, err := ops.FilletEdgesCorner(box, cornerStrategyPicks(t, box, c.scenario), cornerStrategyOf(c.strategy), ops.FillConcaveOutward)
 			if err != nil {
 				t.Fatalf("%s/%s: %v", c.strategy, c.scenario, err)
 			}
@@ -114,7 +114,7 @@ func TestFilletCornerStrategiesValidWatertight(t *testing.T) {
 func TestFilletCornerVolumeOrdering(t *testing.T) {
 	vol := func(strategy string) float64 {
 		box := shellBox(2, 2, 2)
-		res, err := ops.FilletEdgesCorner(box, cornerStrategyPicks(t, box, "oneCorner"), cornerStrategyOf(strategy))
+		res, err := ops.FilletEdgesCorner(box, cornerStrategyPicks(t, box, "oneCorner"), cornerStrategyOf(strategy), ops.FillConcaveOutward)
 		if err != nil {
 			t.Fatalf("%s: %v", strategy, err)
 		}
@@ -145,7 +145,7 @@ func TestFilletCornerRadiusMismatchRejected(t *testing.T) {
 		{Key: keys[0], R0: 0.3, R1: 0.3},
 		{Key: keys[1], R0: 0.3, R1: 0.3},
 		{Key: keys[2], R0: 0.5, R1: 0.5},
-	}, ops.CornerMiter)
+	}, ops.CornerMiter, ops.FillConcaveOutward)
 	if err == nil || !strings.Contains(err.Error(), "one radius") {
 		t.Fatalf("radius-mismatch err = %v, want the one-radius-at-corner rejection", err)
 	}

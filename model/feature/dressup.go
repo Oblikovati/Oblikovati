@@ -44,10 +44,11 @@ type FilletCornerType = types.FilletCornerType
 // constant and variable sets (#323). CornerType selects how a vertex where two filleted edges
 // meet (third edge sharp) is treated — miter crease (default/zero), or a full round.
 type FilletDefinition struct {
-	EdgeKeys   [][]byte
-	Radius     func() float64
-	EdgeSets   []FilletEdgeSet
-	CornerType FilletCornerType
+	EdgeKeys        [][]byte
+	Radius          func() float64
+	EdgeSets        []FilletEdgeSet
+	CornerType      FilletCornerType
+	ConcaveStrategy types.FilletConcaveStrategy // concave edges: outward fill (zero/default) or inward recess
 }
 
 // FilletType reports the definition's discriminator: always an edge fillet for now (the
@@ -67,9 +68,9 @@ func (f *FilletFeature) Kind() string { return "fillet" }
 // blend (cylinder faces; planar ruling strips for variable sets). See fillet.go.
 func (f *FilletFeature) Recompute(in Input) (Output, error) {
 	if len(f.def.EdgeSets) > 0 {
-		return filletBodySets(in, f.def.EdgeSets, f.def.CornerType, "fillet")
+		return filletBodySets(in, f.def.EdgeSets, f.def.CornerType, f.def.ConcaveStrategy, "fillet")
 	}
-	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), f.def.CornerType, "fillet")
+	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), f.def.CornerType, f.def.ConcaveStrategy, "fillet")
 }
 
 // ChamferType aliases the public chamfer-mode discriminator (ADR-0018).
@@ -272,8 +273,16 @@ func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *P
 }
 
 // AddFilletCorner rounds the given edges to radius with an explicit shared-corner treatment.
+// Concave edges fill outward (the default); use [AddFilletConcave] to round a recess inward.
 func (c *DressUpFeatures) AddFilletCorner(edgeKeys [][]byte, radius func() float64, corner FilletCornerType) *PartFeature {
 	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: corner}})
+}
+
+// AddFilletConcave rounds the given edges to radius with an explicit concave-edge strategy: outward
+// fills the inside corner with material (the default), inward rounds a recess into it. Convex edges
+// are unaffected by the strategy. Shared corners miter.
+func (c *DressUpFeatures) AddFilletConcave(edgeKeys [][]byte, radius func() float64, concave types.FilletConcaveStrategy) *PartFeature {
+	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, ConcaveStrategy: concave}})
 }
 
 // AddFilletSets rounds any mix of constant and variable radius edge sets in one feature

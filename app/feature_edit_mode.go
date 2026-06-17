@@ -257,6 +257,7 @@ func editFilletTool(f *feature.PartFeature, fl *feature.FilletFeature) *FilletTo
 	}
 	t := NewFilletTool()
 	t.cornerType = def.CornerType
+	t.concaveStrategy = def.ConcaveStrategy
 	if len(def.EdgeSets) == 1 {
 		seedFilletSet(t, def.EdgeSets[0])
 	} else {

@@ -46,6 +46,9 @@ func drawFilletDialog(s *app.Session) {
 			if i := propertyComboRow("Corner", "fillet-corner", app.FilletCornerOptions(), f.CornerTypeIndex()); i >= 0 {
 				f.SetCornerTypeIndex(i)
 			}
+			if i := propertyComboRow("Concave edge", "fillet-concave", app.FilletConcaveOptions(), f.ConcaveStrategyIndex()); i >= 0 {
+				f.SetConcaveStrategyIndex(i)
+			}
 		}
 		native.Separator()
 		drawCommitCancelButtons(s, f.CanCommit())

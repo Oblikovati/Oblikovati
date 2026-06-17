@@ -205,7 +205,9 @@ func cylinderFace(ef edgeFillet) filletFace {
 	segs = append(segs, cornerEndSegs(ef.c1)...)                 // rounded end 1: c1.ta → c1.tb
 	segs = append(segs, endSeg{from: ef.c1.tb, to: ef.c0.tb})    // B-tangent line c1.tb → c0.tb
 	segs = append(segs, reverseEndSegs(cornerEndSegs(ef.c0))...) // rounded end 0: c0.tb → c0.ta
-	if cylinderSegsFlipped(ef, segs) {
+	// A concave fillet's surface faces the cylinder CENTRE (material is on the far side), so its loop
+	// must wind against the cylinder's outward radial — invert the convex sense.
+	if cylinderSegsFlipped(ef, segs) != ef.flip {
 		segs = reverseEndSegs(segs)
 	}
 	return filletFace{surface: ef.cyl, loops: []filletLoop{loopFromSegs(segs)}}

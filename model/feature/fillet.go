@@ -22,11 +22,19 @@ func cornerStrategy(t types.FilletCornerType) ops.CornerStrategy {
 	}
 }
 
+// concaveFill maps the public concave-edge strategy to the kernel's fill direction (zero ⇒ outward).
+func concaveFill(t types.FilletConcaveStrategy) ops.ConcaveFill {
+	if t == types.FilletConcaveInward {
+		return ops.FillConcaveInward
+	}
+	return ops.FillConcaveOutward
+}
+
 // filletBody rounds the selected convex edges of the running body to the given radius via
 // ops.FilletEdgesCorner (a real rolling-ball blend with cylinder faces), replacing it in the body
 // list. corner selects how a 2-edge corner is treated. A lost edge, a non-convex edge, or a
 // non-positive radius is an error so the feature goes Sick. See kernel/ops/fillet.go for the geometry.
-func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCornerType, feat string) (Output, error) {
+func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCornerType, concave types.FilletConcaveStrategy, feat string) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
@@ -42,7 +50,7 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 	for i, k := range keys {
 		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius}
 	}
-	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner))
+	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner), concaveFill(concave))
 	if err != nil {
 		return Output{}, err
 	}
@@ -91,9 +99,9 @@ func planarizedFillet(body *topo.Body, edgeKeys [][]byte, feat string) (*topo.Bo
 // filletBodySets rounds the definition's edge sets in one kernel pass: each constant set
 // contributes its edges at one radius, each variable set one edge with a start→end radius.
 // A single constant set routes through filletBody to keep the analytic cylinder-rim path.
-func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, feat string) (Output, error) {
+func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, concave types.FilletConcaveStrategy, feat string) (Output, error) {
 	if len(sets) == 1 && !sets[0].variable() {
-		return filletBody(in, sets[0].EdgeKeys, callOrZero(sets[0].Radius), corner, feat)
+		return filletBody(in, sets[0].EdgeKeys, callOrZero(sets[0].Radius), corner, concave, feat)
 	}
 	body, err := runningBody(in)
 	if err != nil {
@@ -104,7 +112,7 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, fea
 		return Output{}, err
 	}
 	work := planarizeFilletPicks(body, picks, feat)
-	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner))
+	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner), concaveFill(concave))
 	if err != nil {
 		return Output{}, err
 	}
