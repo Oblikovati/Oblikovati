@@ -86,6 +86,20 @@ func drawSheetViews(s *app.Session, face rect, sheet *drawing.Sheet) {
 			drawViewHighlight(face, v)
 		}
 	}
+	drawSheetAnnotations(face, sheet)
+}
+
+// drawSheetAnnotations strokes the sheet's annotation curves (CoG markers, revision clouds) in
+// the accent ink, over the views.
+func drawSheetAnnotations(face rect, sheet *drawing.Sheet) {
+	an := sheet.Annotations()
+	for i := 0; i < an.Count(); i++ {
+		for _, c := range an.Item(i).Curves() {
+			ax, ay := curveToScreen(face, c.Start())
+			bx, by := curveToScreen(face, c.End())
+			native.DrawLine(ax, ay, bx, by, viewSelectInk, 1.4)
+		}
+	}
 }
 
 // selectedDrawingView returns the currently selected view (canvas/browser), or nil.

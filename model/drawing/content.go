@@ -96,7 +96,11 @@ func (c *Content) resolveBody() (*topo.Body, bool) {
 // associativity path the host runs after the model changes.
 func (c *Content) RecomputeViews() {
 	for i := 0; i < c.sheets.Count(); i++ {
-		c.sheets.Item(i).views.Recompute()
+		sh := c.sheets.Item(i)
+		sh.views.Recompute()
+		if sh.annotations != nil {
+			sh.annotations.Recompute() // CoG markers track the model centroid
+		}
 	}
 }
 

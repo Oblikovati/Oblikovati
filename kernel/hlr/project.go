@@ -97,6 +97,10 @@ func classifySegment(mesh *ops.Mesh, view View, a, b math.Point3, key []byte, bi
 	return Segment{A: a2, B: b2, Visible: !occluded(mesh, view, midpoint(a, b), bias), EdgeKey: key}, true
 }
 
+// ProjectPoint orthographically projects a single 3D point onto the view plane — used to place
+// annotations (e.g. a centre-of-gravity marker) at a model point's view position.
+func ProjectPoint(view View, p math.Point3) math.Point2 { return project2D(view, p) }
+
 // project2D drops a 3D point onto the view plane: (u, v) = ((p-origin)·xAxis, (p-origin)·yAxis).
 func project2D(view View, p math.Point3) math.Point2 {
 	d := view.Origin.VectorTo(p)

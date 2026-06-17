@@ -25,10 +25,19 @@ type Sheet struct {
 	border      *Border
 	titleBlock  *TitleBlock
 	views       *DrawingViews
+	annotations *DrawingAnnotations
 }
 
 // Views returns the sheet's drawing views (projections of the referenced model).
 func (s *Sheet) Views() *DrawingViews { return s.views }
+
+// Annotations returns the sheet's annotations (CoG markers, revision clouds).
+func (s *Sheet) Annotations() *DrawingAnnotations {
+	if s.annotations == nil {
+		s.annotations = newDrawingAnnotations(s.views, s.views.body)
+	}
+	return s.annotations
+}
 
 // compile-time: a sheet and its sub-objects satisfy the api/contract surface (ADR-0018).
 var (

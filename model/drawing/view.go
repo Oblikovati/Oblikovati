@@ -232,6 +232,13 @@ func curveKind(k hlr.SegmentKind) types.DrawingCurveKind {
 	}
 }
 
+// SheetPointOfModelMM projects a 3D model point through the view's base orientation and places
+// it on the sheet (millimetres) — used to position annotations (e.g. a centre-of-gravity marker)
+// on the view. origin is the model's projection centre (its bounding-box centre).
+func (v *DrawingView) SheetPointOfModelMM(p, origin math.Point3) math.Point2 {
+	return v.place(hlr.ProjectPoint(baseBasis(v.orientation, origin), p))
+}
+
 // place maps a projected 2D point (model centimetres) to the sheet (millimetres) at the view's
 // scale and centre.
 func (v *DrawingView) place(p math.Point2) math.Point2 {
