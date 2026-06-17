@@ -291,7 +291,7 @@ func TestFilletCornerRoundAddsThirdEdge(t *testing.T) {
 	box := shellBox(2, 2, 2)
 	keys := cornerEdgeKeys(t, box)[:2] // two of the three edges meeting at the corner
 	picks := []ops.EdgeFilletRadii{{Key: keys[0], R0: 0.3, R1: 0.3}, {Key: keys[1], R0: 0.3, R1: 0.3}}
-	res, err := ops.FilletEdgesCorner(box, picks, ops.CornerRound)
+	res, err := ops.FilletEdgesCorner(box, picks, ops.CornerRound, ops.FillConcaveOutward)
 	if err != nil {
 		t.Fatal(err)
 	}

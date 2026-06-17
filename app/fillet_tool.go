@@ -20,12 +20,37 @@ type FilletTool struct {
 	variable        bool // variable mode: each edge blends startRadius → endRadius (#323)
 	startRadius     float64
 	endRadius       float64
-	cornerType      feature.FilletCornerType // shared-corner treatment (miter default)
+	cornerType      feature.FilletCornerType    // shared-corner treatment (miter default)
+	concaveStrategy types.FilletConcaveStrategy // concave edges: outward fill (default) or inward recess
 	added           *feature.PartFeature
 }
 
-// NewFilletTool returns a fillet tool with a default 1-unit radius and mitered corners.
-func NewFilletTool() *FilletTool { return &FilletTool{radius: 1, startRadius: 1, endRadius: 1} }
+// NewFilletTool returns a fillet tool with a default 1-unit radius, mitered corners, and outward
+// concave fill.
+func NewFilletTool() *FilletTool {
+	return &FilletTool{radius: 1, startRadius: 1, endRadius: 1, concaveStrategy: types.FilletConcaveOutward}
+}
+
+// filletConcaveOrder maps the UI option index to the concave-strategy enum (0 outward, 1 inward).
+var filletConcaveOrder = []types.FilletConcaveStrategy{types.FilletConcaveOutward, types.FilletConcaveInward}
+
+// FilletConcaveOptions are the concave-edge strategy labels for the property panel, in index order.
+func FilletConcaveOptions() []string { return []string{"Outward (fill)", "Inward (recess)"} }
+
+// ConcaveStrategyIndex returns the selected concave strategy as a [FilletConcaveOptions] index.
+func (t *FilletTool) ConcaveStrategyIndex() int {
+	if t.concaveStrategy == types.FilletConcaveInward {
+		return 1
+	}
+	return 0
+}
+
+// SetConcaveStrategyIndex selects the concave strategy from a [FilletConcaveOptions] index.
+func (t *FilletTool) SetConcaveStrategyIndex(i int) {
+	if i >= 0 && i < len(filletConcaveOrder) {
+		t.concaveStrategy = filletConcaveOrder[i]
+	}
+}
 
 // filletCornerOrder maps the UI option index to the corner-type enum.
 var filletCornerOrder = []feature.FilletCornerType{
@@ -175,11 +200,15 @@ func (t *FilletTool) Cancel(s *Session) {
 // addFillet appends the picked edges in the active mode: the legacy constant-radius
 // form, or one variable set per edge.
 func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeature {
+	var pf *feature.PartFeature
 	if t.variable {
-		return dress.AddFilletSetsCorner(t.variableSets(t.selectedEdgeKeys()), t.cornerType)
+		pf = dress.AddFilletSetsCorner(t.variableSets(t.selectedEdgeKeys()), t.cornerType)
+	} else {
+		r := t.radius
+		pf = dress.AddFilletCorner(t.selectedEdgeKeys(), func() float64 { return r }, t.cornerType)
 	}
-	r := t.radius
-	return dress.AddFilletCorner(t.selectedEdgeKeys(), func() float64 { return r }, t.cornerType)
+	pf.Definition().(*feature.FilletFeature).Definition().ConcaveStrategy = t.concaveStrategy
+	return pf
 }
 
 // commitEdit writes the panel state back into the committed fillet's definition: the
@@ -188,6 +217,7 @@ func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeat
 func (t *FilletTool) commitEdit(s *Session) error {
 	def := t.target.Definition().(*feature.FilletFeature).Definition()
 	def.CornerType = t.cornerType
+	def.ConcaveStrategy = t.concaveStrategy
 	if t.variable {
 		def.EdgeKeys, def.Radius, def.EdgeSets = nil, nil, t.variableSets(t.selectedEdgeKeys())
 		return commitFeatureEdit(s, t.target)
