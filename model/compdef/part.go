@@ -204,6 +204,11 @@ func (d *PartComponentDefinition) SetLengthUnit(name string) error {
 	return d.units.SetPreferred(param.Length, name)
 }
 
+// SetUnits replaces the document's display units wholesale — the way the units
+// API and the Units settings dialog apply an edited preferences object (build
+// it from Units().Clone()).
+func (d *PartComponentDefinition) SetUnits(u param.UnitsOfMeasure) { d.units = u }
+
 // Sketches returns the part's planar (2D) sketches.
 func (d *PartComponentDefinition) Sketches() *sketch.Sketches { return d.sketches }
 

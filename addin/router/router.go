@@ -157,6 +157,22 @@ func (r *Router) registerFileHandlers() {
 	r.handlers[wire.MethodDocumentsAddInterest] = addDocumentInterest
 	r.handlers[wire.MethodDocumentsRemoveInterest] = removeDocumentInterest
 	r.handlers[wire.MethodDocumentsHasInterest] = hasDocumentInterest
+
+	// Document units of measure + unit/expression service (#146).
+	r.handlers[wire.MethodDocumentsGetUnits] = getDocumentUnits
+	r.handlers[wire.MethodDocumentsSetUnits] = setDocumentUnits
+	r.handlers[wire.MethodUnitsConvert] = unitsConvert
+	r.handlers[wire.MethodUnitsGetStringFromValue] = unitsGetStringFromValue
+	r.handlers[wire.MethodUnitsGetPreciseStringFromValue] = unitsGetPreciseStringFromValue
+	r.handlers[wire.MethodUnitsGetValueFromExpression] = unitsGetValueFromExpression
+	r.handlers[wire.MethodUnitsGetDatabaseUnitsFromExpression] = unitsGetDatabaseUnitsFromExpression
+	r.handlers[wire.MethodUnitsIsExpressionValid] = unitsIsExpressionValid
+	r.handlers[wire.MethodUnitsCompatibleUnits] = unitsCompatibleUnits
+	r.handlers[wire.MethodUnitsGetTypeFromString] = unitsGetTypeFromString
+	r.handlers[wire.MethodUnitsGetStringFromType] = unitsGetStringFromType
+	r.handlers[wire.MethodUnitsGetLocaleCorrectedExpression] = unitsGetLocaleCorrectedExpression
+	r.handlers[wire.MethodUnitsGetDrivingParameters] = unitsGetDrivingParameters
+
 	r.handlers[wire.MethodDocumentsOpen] = openDocument
 	r.handlers[wire.MethodDocumentsSave] = saveDocument
 	r.handlers[wire.MethodDocumentsSaveAs] = saveDocumentAs
