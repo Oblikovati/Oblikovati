@@ -13,9 +13,19 @@ import (
 // stream be exercised without the real .dwg corpus.
 func buildInsertObject(ownHandle, blockHandle uint64, ins [3]float64, rot float64) []byte {
 	body := NewBitWriter()
-	body.WriteHandle(0, ownHandle)     // own handle
-	body.WriteBS(0)                    // EED size 0
-	writeCommonEntityData(body)        // model-space entity (entmode 2), nolinks
+	body.WriteHandle(0, ownHandle) // own handle
+	body.WriteBS(0)                // EED size 0
+	// common entity data: model-space entity (entmode 2), nolinks (no prev/next handles).
+	body.WriteBit(0)
+	body.WriteBits(2, 2)
+	body.WriteBL(0)
+	body.WriteBit(1)
+	body.WriteBS(0)
+	body.WriteBD(1.0)
+	body.WriteBits(0, 2)
+	body.WriteBits(0, 2)
+	body.WriteBS(0)
+	body.WriteRC(0)
 	body.Write3BD(ins)                 // ins_pt
 	body.WriteBits(3, 2)               // scale_flag 3 -> (1,1,1)
 	body.WriteBD(rot)                  // rotation
@@ -218,15 +228,19 @@ func TestDecodeBlockInsertFile(t *testing.T) {
 		buildLineObject(0x10, block, entmodeBlock, [3]float64{0, 0, 0}, [3]float64{1, 0, 0}),
 		buildInsertObject(0x11, block, [3]float64{10, 5, 0}, 0),
 	}
-	b := &r2000Builder{}
+	var refs []ObjectRef
 	out := make([]byte, 0x100)
 	for i, o := range objs {
-		b.refs = append(b.refs, ObjectRef{Handle: uint64(0x10 + i), Offset: int64(len(out))})
+		refs = append(refs, ObjectRef{Handle: uint64(0x10 + i), Offset: int64(len(out))})
 		out = append(out, o...)
 	}
 	mapOff := len(out)
-	out = append(out, b.encodeObjectMap()...)
-	copy(out, b.encodeHeader(int64(mapOff), int64(len(out)-mapOff)))
+	out = append(out, encodeObjectMap(refs)...)
+	copy(out, encodeFileHeader([]SectionLocator{
+		{ID: secHeaderVars, Address: 0, Size: 0},
+		{ID: secClasses, Address: 0, Size: 0},
+		{ID: secObjectMap, Address: int64(mapOff), Size: int64(len(out) - mapOff)},
+	}))
 
 	dr, _, err := Decode(out)
 	if err != nil {

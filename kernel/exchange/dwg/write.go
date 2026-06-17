@@ -18,8 +18,7 @@ func Write(d *Drawing) ([]byte, error) {
 	if d == nil {
 		return nil, fmt.Errorf("dwg: Write nil drawing")
 	}
-	b := newR2000Builder()
-	return b.build(d.Entities)
+	return buildR2000(d.Entities, d.Units)
 }
 
 // objectTypeBS is the BitShort type code each writable entity encodes with.
@@ -44,51 +43,6 @@ func objectTypeBS(e Entity) (int, bool) {
 	}
 }
 
-// encodeEntityObject lays out one R2000 object: the MS byte size, then the data stream
-// (BS type, RL bitsize, the object's own handle, empty EED, common entity data, geometry),
-// then the handle stream and the object CRC. bitsize — the bit offset from just after the
-// MS size to the handle stream — is computed from the pre-encoded body so it can be
-// written before the body. Validated against LibreDWG's dwgread, which reads the resulting
-// entities with no CRC mismatch.
-//
-//nolint:funlen // sequential object framing: size, type, bitsize, body, handle stream, CRC.
-func encodeEntityObject(handle uint64, e Entity) ([]byte, error) {
-	typ, ok := objectTypeBS(e)
-	if !ok {
-		return nil, fmt.Errorf("dwg: cannot write entity type %s", e.EntityType().Name())
-	}
-	body := NewBitWriter()
-	body.WriteHandle(0, handle) // the object's own handle
-	body.WriteBS(0)             // EED size 0 (none)
-	writeCommonEntityData(body)
-	writeGeometry(body, e)
-
-	bitsize := bsBits(typ) + 32 + body.Position() // type + the RL itself + body
-
-	w := NewBitWriter()
-	w.WriteBS(typ)
-	w.WriteRL(uint32(bitsize))
-	w.Append(body)
-	// Handle stream (starts exactly at bitsize, bit-packed): the common-entity handles a
-	// reader expects for a model-space entity with nolinks set — a null xdic and a null
-	// layer reference. Without these a conforming reader runs past the object decoding the
-	// handles. They are null (code 5, value 0) until a layer table is emitted.
-	w.WriteHandle(5, 0) // xdicobjhandle (null)
-	w.WriteHandle(5, 0) // layer (null)
-	w.AlignToByte()
-	payload := w.Bytes()
-
-	out := NewBitWriter()
-	out.WriteMS(len(payload)) // object size: the data bytes only (size field and CRC excluded)
-	for _, by := range payload {
-		out.WriteRC(by)
-	}
-	// Object CRC: over the object so far — the MS size field plus the payload — seeded
-	// 0xC0C1 and stored little-endian, matching what conforming readers verify (ODA).
-	out.WriteRS(crc16(0xC0C1, out.Bytes()))
-	return out.Bytes(), nil
-}
-
 // bsBits returns the encoded bit length of a BitShort type code, matching WriteBS.
 func bsBits(v int) int {
 	switch {
@@ -99,22 +53,6 @@ func bsBits(v int) int {
 	default:
 		return 2 + 16
 	}
-}
-
-// writeCommonEntityData emits the R2000 common-entity-data data-stream fields for a
-// model-space entity with no reactors, links, or special colour — the inverse of
-// readCommonEntityData on the R2000 path.
-func writeCommonEntityData(w *BitWriter) {
-	w.WriteBit(0)     // preview_exists = no
-	w.WriteBits(2, 2) // entmode = 2 (model space)
-	w.WriteBL(0)      // num_reactors
-	w.WriteBit(1)     // nolinks = 1 (no prev/next entity handles)
-	w.WriteBS(0)      // colour (CMC index, pre-R2004)
-	w.WriteBD(1.0)    // ltype_scale
-	w.WriteBits(0, 2) // ltype_flags = ByLayer
-	w.WriteBits(0, 2) // plotstyle_flags = ByLayer
-	w.WriteBS(0)      // invisible
-	w.WriteRC(0)      // linewt
 }
 
 // writeGeometry dispatches to the per-type geometry encoder (exact inverse of decodeEntity).
@@ -279,62 +217,80 @@ func boolBit(b bool) uint {
 	return 0
 }
 
-// r2000Builder assembles the flat R2000 file: a header + section locator, then the object
-// records, then the handle→offset object map, with the locator pointing at the map.
-type r2000Builder struct {
-	refs []ObjectRef
-}
-
-func newR2000Builder() *r2000Builder { return &r2000Builder{} }
-
-// sentinelHeaderEnd is the 16-byte sentinel that closes the R2000 header section (the
-// reader checks the first sentinelSignatureLen bytes).
+// sentinelHeaderEnd is the 16-byte sentinel that closes the R2000 file header (the reader
+// checks the first sentinelSignatureLen bytes).
 var sentinelHeaderEnd = [16]byte{
 	0x95, 0xA0, 0x4E, 0x28, 0x99, 0x82, 0x1A, 0xE5,
 	0x5E, 0x41, 0xE0, 0x5F, 0x9D, 0x3A, 0x4D, 0x00,
 }
 
-// build lays out the whole file: a fixed header area is reserved, objects are written
-// after it (recording each handle→offset), then the object map, and finally the header +
-// locator are filled in pointing at the map.
-func (b *r2000Builder) build(entities []Entity) ([]byte, error) {
-	const headerReserve = 0x100 // header + locator table fit comfortably in 256 bytes
-	out := make([]byte, headerReserve)
+// fileHeaderReserve is the bytes set aside at the start of the file for the version string,
+// section-locator table, CRC and sentinel (the three records fit in well under this).
+const fileHeaderReserve = 0x80
 
-	for i, e := range entities {
-		if _, ok := objectTypeBS(e); !ok {
-			continue
-		}
-		handle := uint64(i + 1)
-		obj, err := encodeEntityObject(handle, e)
-		if err != nil {
-			return nil, err
-		}
-		b.refs = append(b.refs, ObjectRef{Handle: handle, Offset: int64(len(out))})
-		out = append(out, obj...)
+// buildR2000 lays out a complete R2000 file: the file header, the header-variables section,
+// the classes section, every system object plus the model-space entities, and the object
+// map. Section addresses are absolute, so the file header is filled in last once every
+// section's size is known. The synthesised object graph (writegraph.go and friends) gives the
+// drawing the symbol tables, block records and dictionaries AutoCAD requires.
+//
+//nolint:funlen // sequential file assembly: handles, sections, objects, map, locator table.
+func buildR2000(entities []Entity, units int) ([]byte, error) {
+	var h graphHandles
+	h.allocate()
+	clearDictionaryChain(&h) // not yet emitted; header/layer/blocks reference them as null
+
+	objs, refs, err := encodeGraph(&h, entities)
+	if err != nil {
+		return nil, err
 	}
+	handseed := refs[len(refs)-1].Handle + 1
 
-	mapOffset := len(out)
-	out = append(out, b.encodeObjectMap()...)
-	mapSize := len(out) - mapOffset
+	out := make([]byte, fileHeaderReserve)
+	hdrAddr := len(out)
+	out = append(out, encodeHeaderVars(&h, units, handseed)...)
+	classAddr := len(out)
+	out = append(out, encodeClasses(nil)...)
 
-	header := b.encodeHeader(int64(mapOffset), int64(mapSize))
-	if len(header) > headerReserve {
-		return nil, fmt.Errorf("dwg: R2000 header %d bytes exceeds reserve %d", len(header), headerReserve)
+	objBase := int64(len(out))
+	for i := range refs {
+		refs[i].Offset += objBase // offsets were relative to the object block start
+	}
+	out = append(out, objs...)
+
+	mapAddr := len(out)
+	out = append(out, encodeObjectMap(refs)...)
+
+	sections := []SectionLocator{
+		{ID: secHeaderVars, Address: int64(hdrAddr), Size: int64(classAddr - hdrAddr)},
+		{ID: secClasses, Address: int64(classAddr), Size: objBase - int64(classAddr)},
+		{ID: secObjectMap, Address: int64(mapAddr), Size: int64(len(out) - mapAddr)},
+	}
+	header := encodeFileHeader(sections)
+	if len(header) > fileHeaderReserve {
+		return nil, fmt.Errorf("dwg: R2000 file header %d bytes exceeds reserve %d", len(header), fileHeaderReserve)
 	}
 	copy(out, header)
 	return out, nil
+}
+
+// clearDictionaryChain zeroes the named-object-dictionary-chain handles so the header,
+// layer and block records reference them as null pointers until the chain is emitted.
+func clearDictionaryChain(h *graphHandles) {
+	h.groupDict, h.mlineDict, h.mlineStandard = 0, 0, 0
+	h.plotStyleDict, h.placeholder = 0, 0
+	h.layoutDict, h.layoutModel, h.layoutPaper, h.plotSettingsDict = 0, 0, 0, 0
 }
 
 // encodeObjectMap writes the handle→offset directory: one section of (handle delta,
 // location delta) pairs followed by the terminating size-2 section.
 //
 //nolint:funlen // builds the object-map section and its CRC byte-by-byte; length is the format.
-func (b *r2000Builder) encodeObjectMap() []byte {
+func encodeObjectMap(refs []ObjectRef) []byte {
 	pairs := NewBitWriter()
 	var lastHandle uint64
 	var lastLoc int64
-	for _, ref := range b.refs {
+	for _, ref := range refs {
 		pairs.WriteUMC(ref.Handle - lastHandle)
 		pairs.WriteMC(int(ref.Offset - lastLoc))
 		lastHandle, lastLoc = ref.Handle, ref.Offset
@@ -369,21 +325,16 @@ func (b *r2000Builder) encodeObjectMap() []byte {
 	return out.Bytes()
 }
 
-// encodeHeader writes the fixed R2000 file header and the section locator table, pointing
-// section id secObjectMap at the object map. The header-variables and classes sections are
-// declared empty (address/size 0); Decode treats an absent header as unitless.
-func (b *r2000Builder) encodeHeader(mapOffset, mapSize int64) []byte {
+// encodeFileHeader writes the fixed R2000 file header and the section-locator table for the
+// given sections (header variables, classes, object map). The CRC is seeded 0xC0C1 over the
+// header up to the CRC — the same value Decode and dwgread verify for a three-record table.
+func encodeFileHeader(sections []SectionLocator) []byte {
 	buf := make([]byte, 0x19)
 	copy(buf, "AC1015")
 	buf[0x0C] = 0x00
 	binary.LittleEndian.PutUint16(buf[0x13:], 30) // codepage ANSI_1252
-	records := []SectionLocator{
-		{ID: secHeaderVars, Address: 0, Size: 0},
-		{ID: secClasses, Address: 0, Size: 0},
-		{ID: secObjectMap, Address: mapOffset, Size: mapSize},
-	}
-	binary.LittleEndian.PutUint32(buf[0x15:], uint32(len(records)))
-	for _, r := range records {
+	binary.LittleEndian.PutUint32(buf[0x15:], uint32(len(sections)))
+	for _, r := range sections {
 		rec := make([]byte, 9)
 		rec[0] = r.ID
 		binary.LittleEndian.PutUint32(rec[1:], uint32(r.Address))
