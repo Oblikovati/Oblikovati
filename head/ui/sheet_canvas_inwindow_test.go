@@ -95,3 +95,30 @@ func TestInWindowDrawingCanvasRenders(t *testing.T) {
 		t.Error("rendered base view lost its curves")
 	}
 }
+
+// TestInWindowDrawingSheetTabsRender renders a drawing with two sheets so the sheet-tab strip
+// (drawSheetTabs) actually executes — the affordance for switching the active sheet, which only
+// appears when a drawing has more than one sheet. Skips when no display/Vulkan is available.
+func TestInWindowDrawingSheetTabsRender(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+
+	s := drawingWithViewsSession(t)
+	c, _ := app.ActiveDrawing(s)
+	if _, err := c.Sheets().Add(drawing.SheetSpec{Size: types.SheetSizeA3, Orientation: types.SheetLandscape}); err != nil {
+		t.Fatalf("add second sheet: %v", err)
+	}
+	if c.Sheets().Count() != 2 {
+		t.Fatalf("want 2 sheets for a tab strip, got %d", c.Sheets().Count())
+	}
+
+	// Several frames: the first force-selects the active tab; later frames let ImGui drive —
+	// exercising the whole sheet-tab strip (force and steady-state paths).
+	for i := 0; i < 4; i++ {
+		win.BeginFrame()
+		DrawChrome(win, s)
+		win.EndFrame(0.1, 0.1, 0.1)
+	}
+}

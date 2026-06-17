@@ -42,7 +42,8 @@ type rect struct {
 // handles canvas interaction (view placement, selection, right-click) — the drawing
 // counterpart of the 3D viewport.
 func drawSheetCanvas(s *app.Session, c *drawing.Content) {
-	c.SyncViews() // re-project if the referenced model was recomputed (live associativity)
+	c.SyncViews()    // re-project if the referenced model was recomputed (live associativity)
+	drawSheetTabs(c) // a tab per sheet so the user can switch which sheet the canvas shows
 	sheet := c.Sheets().Active()
 	ox, oy := native.GetCursorScreenPos()
 	availW, availH := native.ContentRegionAvail()
@@ -61,6 +62,56 @@ func drawSheetCanvas(s *app.Session, c *drawing.Content) {
 	drawSheetViews(s, face, sheet)
 	drawSheetCaption(ox, oy, sheet, c.ModelReference(), c.Styles().ActiveStandard().String())
 	handleSheetCanvasInput(s, face, hovered, mx, my)
+}
+
+// prevActiveSheetName tracks the active sheet across frames so a programmatic switch (New Sheet
+// on the ribbon, an add-in) force-selects its tab once without fighting the user's tab clicks —
+// the same one-frame-force pattern the document tabs use.
+var prevActiveSheetName string
+
+// drawSheetTabs renders a tab per sheet at the top of the drawing canvas so the user can switch
+// the active sheet (the canvas only shows the active sheet). Clicking a tab activates that sheet;
+// New Sheet / Delete Sheet stay on the ribbon. With a single sheet there is nothing to switch, so
+// no strip is drawn.
+func drawSheetTabs(c *drawing.Content) {
+	sheets := c.Sheets()
+	if sheets.Count() <= 1 {
+		prevActiveSheetName = ""
+		return
+	}
+	active := sheets.Active()
+	var cur string
+	if active != nil {
+		cur = active.Name()
+	}
+	force := cur != prevActiveSheetName
+	prevActiveSheetName = cur
+	if native.BeginTabBar("##sheet-tabs") {
+		for i := 0; i < sheets.Count(); i++ {
+			drawSheetTab(sheets, sheets.Item(i), active, force)
+		}
+		native.EndTabBar()
+	}
+}
+
+// drawSheetTab renders one sheet's tab and activates it when the user selects it (but not on the
+// force frame, which only mirrors an external switch into ImGui's selection).
+func drawSheetTab(sheets *drawing.Sheets, sh, active *drawing.Sheet, force bool) {
+	selected := force && active != nil && sh.Name() == active.Name()
+	if !native.BeginTabItemSelected(sheetTabLabel(sh), selected) {
+		return
+	}
+	if !force && (active == nil || sh.Name() != active.Name()) {
+		_ = sheets.SetActive(sh.Name())
+	}
+	native.EndTabItem()
+}
+
+// sheetTabLabel is the ImGui label for a sheet's tab: the sheet name, with a stable "###id" suffix
+// (sheet names are unique within a drawing) so the visible text is just the name. See the document
+// tabs for why ImGui tab ids must not collide.
+func sheetTabLabel(sh *drawing.Sheet) string {
+	return sh.Name() + "###sheet-" + sh.Name()
 }
 
 // View-curve colors: visible edges solid dark ink, hidden edges dashed in a lighter grey.
