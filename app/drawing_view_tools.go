@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"oblikovati.org/api/types"
+	gmath "oblikovati.org/math"
 	"oblikovati.org/model/drawing"
 )
 
@@ -300,26 +301,10 @@ func NewSectionViewTool() *SectionViewTool {
 
 func (t *SectionViewTool) Name() string { return "Section View" }
 
-// sectionLineOn returns the cut line (sheet mm) through the named base view's centre, spanning
-// its bounds along the chosen orientation; ok is false when the view has no geometry yet.
+// sectionLineOn returns the cut line (sheet mm) through the named base view's centre along the
+// chosen orientation; ok is false when the view has no geometry yet.
 func (t *SectionViewTool) sectionLineOn(s *Session, parent string) (x1, y1, x2, y2 float64, ok bool) {
-	c, err := ActiveDrawing(s)
-	if err != nil {
-		return 0, 0, 0, 0, false
-	}
-	v, found := c.Sheets().Active().Views().ByName(parent)
-	if !found {
-		return 0, 0, 0, 0, false
-	}
-	minX, minY, maxX, maxY, has := v.BoundsMM()
-	if !has {
-		return 0, 0, 0, 0, false
-	}
-	cx, cy := (minX+maxX)/2, (minY+maxY)/2
-	if t.orient == 1 { // vertical
-		return cx, minY - 5, cx, maxY + 5, true
-	}
-	return minX - 5, cy, maxX + 5, cy, true // horizontal
+	return viewCentrelineMM(s, parent, t.orient == 1)
 }
 
 // PreviewCurves projects the section through the chosen base+orientation, cached until they change.
@@ -386,22 +371,10 @@ func NewDetailViewTool() *DetailViewTool {
 
 func (t *DetailViewTool) Name() string { return "Detail View" }
 
-// boundaryOn returns the detail circle (sheet mm) centred on the named parent view, with a
-// radius covering ~40% of its larger dimension; ok is false when the view has no geometry yet.
+// boundaryOn returns the detail circle (sheet mm) centred on the named parent view; ok is false
+// when the view has no geometry yet.
 func (t *DetailViewTool) boundaryOn(s *Session, parent string) (cx, cy, r float64, ok bool) {
-	c, err := ActiveDrawing(s)
-	if err != nil {
-		return 0, 0, 0, false
-	}
-	v, found := c.Sheets().Active().Views().ByName(parent)
-	if !found {
-		return 0, 0, 0, false
-	}
-	minX, minY, maxX, maxY, has := v.BoundsMM()
-	if !has {
-		return 0, 0, 0, false
-	}
-	return (minX + maxX) / 2, (minY + maxY) / 2, 0.4 * maxf64(maxX-minX, maxY-minY), true
+	return viewCentreRegionMM(s, parent)
 }
 
 // PreviewCurves magnifies the chosen parent region at the origin, cached until parent/scale change.
@@ -486,15 +459,7 @@ func (t *BreakViewTool) Name() string { return "Break View" }
 // gapOn returns the removed band (sheet mm) — the middle third of the named base view along the
 // chosen axis; ok is false when the view has no geometry yet.
 func (t *BreakViewTool) gapOn(s *Session, parent string) (orient types.BreakOrientation, start, end float64, ok bool) {
-	c, err := ActiveDrawing(s)
-	if err != nil {
-		return 0, 0, 0, false
-	}
-	v, found := c.Sheets().Active().Views().ByName(parent)
-	if !found {
-		return 0, 0, 0, false
-	}
-	minX, minY, maxX, maxY, has := v.BoundsMM()
+	minX, minY, maxX, maxY, has := viewBoundsMM(s, parent)
 	if !has {
 		return 0, 0, 0, false
 	}
@@ -553,6 +518,208 @@ func (t *BreakViewTool) Params() ToolParams {
 		t.baseChoice("Base View"),
 		{Label: "Break", Options: labelsOf(len(breakOrientations), func(i int) string { return breakOrientations[i].label }),
 			Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
+	}}
+}
+
+// viewBoundsMM returns the named view's sheet-mm bounds; ok is false when it has no geometry yet.
+func viewBoundsMM(s *Session, name string) (minX, minY, maxX, maxY float64, ok bool) {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return 0, 0, 0, 0, false
+	}
+	v, found := c.Sheets().Active().Views().ByName(name)
+	if !found {
+		return 0, 0, 0, 0, false
+	}
+	return v.BoundsMM()
+}
+
+// viewCentrelineMM returns a horizontal or vertical centreline (sheet mm) across the named view —
+// shared by the Section and Slice tools.
+func viewCentrelineMM(s *Session, parent string, vertical bool) (x1, y1, x2, y2 float64, ok bool) {
+	minX, minY, maxX, maxY, has := viewBoundsMM(s, parent)
+	if !has {
+		return 0, 0, 0, 0, false
+	}
+	cx, cy := (minX+maxX)/2, (minY+maxY)/2
+	if vertical {
+		return cx, minY - 5, cx, maxY + 5, true
+	}
+	return minX - 5, cy, maxX + 5, cy, true
+}
+
+// viewCentreRegionMM returns a circle (sheet mm) centred on the named view covering ~40% of its
+// larger dimension — shared by the Detail and Breakout tools.
+func viewCentreRegionMM(s *Session, parent string) (cx, cy, r float64, ok bool) {
+	minX, minY, maxX, maxY, has := viewBoundsMM(s, parent)
+	if !has {
+		return 0, 0, 0, false
+	}
+	return (minX + maxX) / 2, (minY + maxY) / 2, 0.4 * maxf64(maxX-minX, maxY-minY), true
+}
+
+// SliceViewTool cuts a zero-thickness slice through a base view's horizontal/vertical centreline.
+type SliceViewTool struct {
+	derivedViewTool
+	orient int
+}
+
+// NewSliceViewTool creates the tool; its base-view list is captured on Start.
+func NewSliceViewTool() *SliceViewTool {
+	return &SliceViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+}
+
+func (t *SliceViewTool) Name() string { return "Slice View" }
+
+// PreviewCurves slices the chosen parent at the origin, cached until parent/orientation change.
+func (t *SliceViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	parent := t.parent()
+	if parent == "" {
+		return nil
+	}
+	key := fmt.Sprintf("%s/%d", parent, t.orient)
+	if key != t.previewKey {
+		t.preview = nil
+		if x1, y1, x2, y2, ok := viewCentrelineMM(s, parent, t.orient == 1); ok {
+			c, _ := ActiveDrawing(s)
+			t.preview, _ = c.Sheets().Active().Views().PreviewSlice(parent, x1, y1, x2, y2)
+		}
+		t.previewKey = key
+	}
+	return t.preview
+}
+
+// Commit cuts the slice through the selected base view.
+func (t *SliceViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	x1, y1, x2, y2, ok := viewCentrelineMM(s, parent, t.orient == 1)
+	if !ok {
+		return fmt.Errorf("drawing: no base view with geometry to slice — add a base view first")
+	}
+	if _, err := c.Sheets().Active().Views().AddSlice(drawing.SliceViewSpec{
+		ParentView: parent, X1: x1, Y1: y1, X2: x2, Y2: y2, CenterX: t.centerX, CenterY: t.centerY,
+	}); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view and cut-orientation choices.
+func (t *SliceViewTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		t.baseChoice("Base View"),
+		{Label: "Cut", Options: sectionOrientations, Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
+	}}
+}
+
+// BreakoutViewTool reveals the interior in a centred region of a base view (a local cut-away).
+type BreakoutViewTool struct{ derivedViewTool }
+
+// NewBreakoutViewTool creates the tool; its base-view list is captured on Start.
+func NewBreakoutViewTool() *BreakoutViewTool {
+	return &BreakoutViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+}
+
+func (t *BreakoutViewTool) Name() string { return "Breakout View" }
+
+// PreviewCurves builds the breakout of the chosen parent at the origin, cached until it changes.
+func (t *BreakoutViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	parent := t.parent()
+	if parent == "" {
+		return nil
+	}
+	if parent != t.previewKey {
+		t.preview = nil
+		if cx, cy, r, ok := viewCentreRegionMM(s, parent); ok {
+			c, _ := ActiveDrawing(s)
+			t.preview, _ = c.Sheets().Active().Views().PreviewBreakout(parent, cx, cy, r)
+		}
+		t.previewKey = parent
+	}
+	return t.preview
+}
+
+// Commit reveals the interior in the centred region of the selected base view.
+func (t *BreakoutViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	cx, cy, r, ok := viewCentreRegionMM(s, parent)
+	if !ok {
+		return fmt.Errorf("drawing: no base view with geometry for a breakout — add a base view first")
+	}
+	if _, err := c.Sheets().Active().Views().AddBreakout(drawing.BreakoutViewSpec{
+		ParentView: parent, BoundaryX: cx, BoundaryY: cy, RadiusMM: r, CenterX: t.centerX, CenterY: t.centerY,
+	}); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view choice.
+func (t *BreakoutViewTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{t.baseChoice("Base View")}}
+}
+
+// DraftViewTool drops a model-less framed draft view (a container for manual 2D geometry); the
+// frame follows the cursor and a click drops it.
+type DraftViewTool struct {
+	width, height    float64
+	centerX, centerY float64
+	preview          []drawing.DrawingCurve
+}
+
+// NewDraftViewTool starts on an 80×50 mm frame.
+func NewDraftViewTool() *DraftViewTool {
+	return &DraftViewTool{width: 80, height: 50, centerX: 150, centerY: 150}
+}
+
+func (t *DraftViewTool) Name() string              { return "Draft View" }
+func (t *DraftViewTool) Start(*Session)            {}
+func (t *DraftViewTool) Pick(*Session, Selectable) {}
+func (t *DraftViewTool) CanCommit() bool           { return true }
+func (t *DraftViewTool) Cancel(*Session)           {}
+func (t *DraftViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// PreviewCurves builds the origin-centred frame rectangle to follow the cursor.
+func (t *DraftViewTool) PreviewCurves(*Session) []drawing.DrawingCurve {
+	w, h := gmath.Scalar(t.width/2), gmath.Scalar(t.height/2)
+	corners := [4]gmath.Point2{gmath.P2(-w, -h), gmath.P2(w, -h), gmath.P2(w, h), gmath.P2(-w, h)}
+	t.preview = t.preview[:0]
+	for i := 0; i < 4; i++ {
+		t.preview = append(t.preview, drawing.DrawingCurve{A: corners[i], B: corners[(i+1)%4], Visible: true})
+	}
+	return t.preview
+}
+
+// Commit drops the draft frame at the placement.
+func (t *DraftViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Sheets().Active().Views().AddDraft(drawing.DraftViewSpec{
+		WidthMM: t.width, HeightMM: t.height, CenterX: t.centerX, CenterY: t.centerY,
+	}); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the draft frame width/height.
+func (t *DraftViewTool) Params() ToolParams {
+	return ToolParams{Floats: []FloatParam{
+		{"Width (mm)", func() float64 { return t.width }, func(v float64) { t.width = v }},
+		{"Height (mm)", func() float64 { return t.height }, func(v float64) { t.height = v }},
 	}}
 }
 
