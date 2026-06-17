@@ -116,6 +116,22 @@ func setupOp(s *app.Session, op string) error {
 		startPendingRib(s)
 	case "thicken":
 		startPendingThicken(s)
+	case "emboss":
+		startPendingEmboss(s, mustBlock(s))
+	case "grill":
+		startPendingGrill(s, mustBlock(s))
+	case "replaceface":
+		startPendingReplaceFace(s, mustBlock(s))
+	case "patch":
+		startPendingPatch(s)
+	case "stitch":
+		startPendingStitch(s)
+	case "surfacetrim":
+		startPendingSurfaceTrim(s)
+	case "sculpt":
+		startPendingSculpt(s)
+	case "extend":
+		startPendingExtend(s)
 	default:
 		return fmt.Errorf("unknown -op %q", op)
 	}
@@ -399,6 +415,156 @@ func startPendingThicken(s *app.Session) {
 	t := app.NewThickenTool()
 	s.StartTool(t)
 	t.SetThickness(1)
+}
+
+// startPendingEmboss raises a region sketched on the block's top face (adds material → green).
+func startPendingEmboss(s *app.Session, def *compdef.PartComponentDefinition) {
+	es := def.Sketches().Add(topPlaneZ(3))
+	rectOn(es, 2, 2, 4, 4)
+	def.Recompute()
+	t := app.NewEmbossTool()
+	s.StartTool(t)
+	t.Pick(s, app.ProfileHandle{Sketch: es, ProfileIndex: 0})
+	t.SetDepth(1)
+}
+
+// startPendingGrill cuts a grill (vents + ribs) on the block's top face (removes material → red).
+func startPendingGrill(s *app.Session, def *compdef.PartComponentDefinition) {
+	es := def.Sketches().Add(topPlaneZ(3))
+	rectOn(es, 1, 1, 5, 5)
+	rectOn(es, 2.25, 1.5, 2.75, 4.5)
+	rectOn(es, 3.25, 1.5, 3.75, 4.5)
+	def.Recompute()
+	t := app.NewGrillTool()
+	s.StartTool(t)
+	t.Pick(s, app.ProfileHandle{Sketch: es, ProfileIndex: 0})
+}
+
+// startPendingReplaceFace replaces the block's chamfered face with a flat side plane (the
+// retrimmed solid result is shown). A chamfer first gives a non-axis face to replace onto a
+// neighbouring plane, producing a visible change.
+func startPendingReplaceFace(s *app.Session, def *compdef.PartComponentDefinition) {
+	body := def.SurfaceBodies().Item(0)
+	feature.NewDressUpFeatures(def.Features()).AddChamfer([][]byte{verticalEdge(body.Edges()).ReferenceKey()}, func() float64 { return 1.2 })
+	def.Recompute()
+	body = def.SurfaceBodies().Item(0)
+	t := app.NewReplaceFaceTool()
+	s.StartTool(t)
+	t.Pick(s, app.FaceHandle{Face: nonAxisAlignedFace(body), Body: body}) // the chamfer face
+	t.SetPickingTarget(true)
+	t.Pick(s, app.FaceHandle{Face: faceByNormalX(body, 1), Body: body}) // onto the +X side plane
+}
+
+// startPendingPatch fills a sketched region with a surface patch (creates surface → green).
+func startPendingPatch(s *app.Session) {
+	def := newPart(s, "previewshot.opd")
+	sk := addSquare(def, 0, 0, 4)
+	def.Recompute()
+	t := app.NewPatchTool()
+	s.StartTool(t)
+	t.Pick(s, app.ProfileHandle{Sketch: sk, ProfileIndex: 0})
+}
+
+// startPendingStitch welds two adjacent surface patches (result surface → green).
+func startPendingStitch(s *app.Session) {
+	def := newPart(s, "previewshot.opd")
+	addPatchFeature(def, 0, 0, 2, 3)
+	addPatchFeature(def, 2, 0, 4, 3)
+	def.Recompute()
+	s.StartTool(app.NewStitchTool())
+}
+
+// startPendingSurfaceTrim trims a surface patch by a work plane (removes area → red).
+func startPendingSurfaceTrim(s *app.Session) {
+	def := newPart(s, "previewshot.opd")
+	addPatchFeature(def, 0, 0, 4, 4)
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginYZPlane, func() float64 { return 2 })
+	def.Recompute()
+	t := app.NewSurfaceTrimTool()
+	s.StartTool(t)
+	t.Pick(s, app.WorkPlaneHandle{Plane: wp})
+}
+
+// startPendingSculpt closes a 6-face surface shell into a solid (creates volume → green).
+func startPendingSculpt(s *app.Session) {
+	def := newPart(s, "previewshot.opd")
+	feature.NewBaseFeatures(def.Features()).AddBase(unitCubeShell()...)
+	def.Recompute()
+	s.StartTool(app.NewSculptTool())
+}
+
+// startPendingExtend grows a surface patch beyond its bottom edge (adds area → green).
+func startPendingExtend(s *app.Session) {
+	def := newPart(s, "previewshot.opd")
+	addPatchFeature(def, 0, 0, 4, 4)
+	def.Recompute()
+	body := def.SurfaceBodies().Item(0)
+	var bottom *topo.Edge
+	for _, e := range body.Edges() {
+		if e.StartVertex().Point().Y == 0 && e.EndVertex().Point().Y == 0 {
+			bottom = e
+		}
+	}
+	t := app.NewExtendTool()
+	s.StartTool(t)
+	t.Pick(s, app.EdgeHandle{Edge: bottom})
+	t.SetDistance(2)
+}
+
+// topPlaneZ is a sketch plane parallel to XY at height z.
+func topPlaneZ(z float64) sketch.Plane {
+	p, _ := sketch.NewPlane(math.P3(0, 0, z), math.V3(1, 0, 0).AsUnit(), math.V3(0, 1, 0).AsUnit())
+	return p
+}
+
+// rectOn adds a rectangle [x0,y0]-[x1,y1] to sketch sk.
+func rectOn(sk *sketch.Sketch, x0, y0, x1, y1 float64) {
+	c0 := sk.Points().Add(math.P2(x0, y0))
+	c1 := sk.Points().Add(math.P2(x1, y0))
+	c2 := sk.Points().Add(math.P2(x1, y1))
+	c3 := sk.Points().Add(math.P2(x0, y1))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+}
+
+// addPatchFeature adds a rectangular boundary-patch surface to the part.
+func addPatchFeature(def *compdef.PartComponentDefinition, x0, y0, x1, y1 float64) {
+	sk := def.Sketches().Add(sketch.XYPlane())
+	rectOn(sk, x0, y0, x1, y1)
+	feature.NewBoundaryPatchFeatures(def.Features()).Add(sk, 0, feature.PatchFree)
+}
+
+// unitCubeShell builds the six surface faces of a unit cube (an open shell sculpt closes).
+func unitCubeShell() []*topo.Body {
+	p := math.P3
+	return []*topo.Body{
+		cubeFace(p(0, 0, 0), p(0, 1, 0), p(1, 1, 0), p(1, 0, 0)),
+		cubeFace(p(0, 0, 1), p(1, 0, 1), p(1, 1, 1), p(0, 1, 1)),
+		cubeFace(p(0, 0, 0), p(1, 0, 0), p(1, 0, 1), p(0, 0, 1)),
+		cubeFace(p(0, 1, 0), p(0, 1, 1), p(1, 1, 1), p(1, 1, 0)),
+		cubeFace(p(0, 0, 0), p(0, 0, 1), p(0, 1, 1), p(0, 1, 0)),
+		cubeFace(p(1, 0, 0), p(1, 1, 0), p(1, 1, 1), p(1, 0, 1)),
+	}
+}
+
+// cubeFace builds one quad surface face from four corners.
+func cubeFace(p0, p1, p2, p3 math.Point3) *topo.Body {
+	lin := topo.NewLineage(topo.Tok("previewshot", "cubeface", 0))
+	bld := topo.NewBuilder(false, lin)
+	surf, _ := geom.NewPlane(p0, p0.VectorTo(p1).Cross(p1.VectorTo(p2)))
+	pts := []math.Point3{p0, p1, p2, p3}
+	v := make([]*topo.Vertex, 4)
+	for i, q := range pts {
+		v[i] = bld.AddVertex(q, lin)
+	}
+	uses := make([]topo.Use, 4)
+	for i := 0; i < 4; i++ {
+		uses[i] = topo.Fwd(bld.AddEdge(geom.NewLineSegment(pts[i], pts[(i+1)%4]), v[i], v[(i+1)%4], lin))
+	}
+	bld.AddFace(surf, lin, topo.OuterLoop(uses...))
+	return bld.Build()
 }
 
 // patchSurface builds a w×h planar (open) surface body on the XY plane.
