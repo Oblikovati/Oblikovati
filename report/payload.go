@@ -21,14 +21,15 @@ type Payload struct {
 	ViewportPNG    []byte         `json:"viewportPng,omitempty"`
 }
 
-// DocumentInfo summarises one open document for the report: its file path, display name,
-// kind, dirty flag, and a human-readable dump of its display settings (empty when the
-// document uses defaults). It deliberately carries no model geometry — just the context a
-// triager needs to reproduce.
+// DocumentInfo is one open document in the report: its file path, display name, kind, dirty
+// flag, whether it is the active document, and Content — the document's full .obk YAML (the
+// file as it would be saved), which is what a triager needs to reproduce. The active
+// document is emitted first.
 type DocumentInfo struct {
-	Path            string `json:"path"`
-	Name            string `json:"name"`
-	Type            string `json:"type"`
-	Dirty           bool   `json:"dirty"`
-	DisplaySettings string `json:"displaySettings,omitempty"`
+	Path    string `json:"path"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Dirty   bool   `json:"dirty"`
+	Active  bool   `json:"active"`
+	Content string `json:"content,omitempty"`
 }

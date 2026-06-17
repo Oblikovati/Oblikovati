@@ -46,32 +46,61 @@ func (s *Session) TransactionLog() []string {
 	return dh.hist.Labels()
 }
 
-// openDocumentInfos summarises every open document for the report.
+// documentMarshaler is the optional capability of the session's store that renders a
+// document to its .obk YAML in memory (persistence.PackageStore implements it). Declared
+// here so the app stays decoupled from the persistence package (the DI rule); an in-memory
+// session whose store lacks it simply ships documents without their YAML content.
+type documentMarshaler interface {
+	MarshalDocument(d *doc.Document) ([]byte, error)
+}
+
+// openDocumentInfos summarises every open document for the report, the ACTIVE document
+// first, each carrying its full .obk YAML in Content when the store can render it.
 func (s *Session) openDocumentInfos() []report.DocumentInfo {
-	docs := s.workspace.Documents()
+	marshaler, _ := s.store.(documentMarshaler) // nil for stores that cannot serialize (e.g. in-memory)
+	active := s.ActiveDocument()
+	docs := s.openDocumentsActiveFirst(active)
 	out := make([]report.DocumentInfo, 0, len(docs))
 	for _, d := range docs {
 		out = append(out, report.DocumentInfo{
-			Path:            d.FullDocumentName(),
-			Name:            d.DisplayName(),
-			Type:            d.DocumentType().String(),
-			Dirty:           d.Dirty(),
-			DisplaySettings: displaySettingsText(d),
+			Path:    d.FullDocumentName(),
+			Name:    d.DisplayName(),
+			Type:    d.DocumentType().String(),
+			Dirty:   d.Dirty(),
+			Active:  active != nil && d.ID() == active.ID(),
+			Content: documentYAML(marshaler, d),
 		})
 	}
 	return out
 }
 
-// displaySettingsText renders a document's per-document display settings as YAML, or ""
-// when the document uses the application defaults (the common case).
-func displaySettingsText(d *doc.Document) string {
-	set, ok := d.DisplaySettings()
-	if !ok {
+// openDocumentsActiveFirst returns the open documents with active first (the order the
+// report renders them), or workspace order when there is no active document.
+func (s *Session) openDocumentsActiveFirst(active *doc.Document) []*doc.Document {
+	docs := s.workspace.Documents()
+	if active == nil {
+		return docs
+	}
+	ordered := make([]*doc.Document, 0, len(docs))
+	ordered = append(ordered, active)
+	for _, d := range docs {
+		if d.ID() != active.ID() {
+			ordered = append(ordered, d)
+		}
+	}
+	return ordered
+}
+
+// documentYAML renders one document's .obk content via the store, or "" when no marshaler
+// is available (an in-memory session). A marshal error is surfaced inline so the report
+// still carries the rest of the document set.
+func documentYAML(m documentMarshaler, d *doc.Document) string {
+	if m == nil {
 		return ""
 	}
-	b, err := yaml.Marshal(set)
+	b, err := m.MarshalDocument(d)
 	if err != nil {
-		return fmt.Sprintf("(failed to render display settings: %v)", err)
+		return fmt.Sprintf("(failed to serialize document: %v)", err)
 	}
 	return string(b)
 }
