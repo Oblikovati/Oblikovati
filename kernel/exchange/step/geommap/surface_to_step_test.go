@@ -63,12 +63,12 @@ func TestCylinderRadiusRoundTrips(t *testing.T) {
 
 func TestEmitterWriterScalingAndSharing(t *testing.T) {
 	w := part21.NewWriter()
-	e := NewEmitter(w, 2.0)
+	e := NewEmitter(w, 0.5) // dbToFile = 0.5 (e.g. exporting cm geometry to a 2 cm-per-unit file)
 	if e.Writer() != w {
 		t.Fatal("Writer did not expose the backing writer")
 	}
 	if got := e.LengthValue(6); got != "3." {
-		t.Fatalf("LengthValue with 2mm units = %q, want 3.", got)
+		t.Fatalf("LengthValue with dbToFile 0.5 = %q, want 3.", got)
 	}
 	p1 := e.Point(math.P3(2, 4, 6))
 	p2 := e.Point(math.P3(2, 4, 6))

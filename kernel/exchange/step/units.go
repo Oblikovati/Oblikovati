@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 // Package step is the AP203/214/242 reader/writer facade over the part21, schema,
-// geommap and topomap layers. units.go resolves a file's length unit into the
-// scale factor that converts file lengths into the kernel's database unit (mm).
+// geommap and topomap layers. units.go resolves a file's declared length unit into
+// millimetres per file unit; the reader then divides by the database-unit size
+// (exchange.TranslationOptions.TargetUnitMM — 10 mm, since the kernel works in
+// centimetres) to scale file lengths into database units.
 package step
 
 import (

@@ -3,6 +3,8 @@
 package step
 
 import (
+	"fmt"
+
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step/geommap"
 	"oblikovati.org/kernel/exchange/step/part21"
@@ -23,14 +25,18 @@ type Writer struct{}
 // compile-time assertion that Writer is a BodyExporter.
 var _ exchange.BodyExporter = Writer{}
 
-// ExportSolids writes the bodies as one AP203 file. Lengths are emitted in mm (the
-// kernel's database unit) so the file declares a millimeter unit. A body with a
-// surface type that cannot be exported yields an error (tessellated fallback is
-// PBI-E); the geometry that does export is byte-stable for a given body.
+// ExportSolids writes the bodies as one AP203 file in opts.FileUnit (millimetres
+// when unset), scaling the kernel's centimetre geometry into that unit and
+// declaring it so the lengths are unambiguous on re-import. A body with a surface
+// type that cannot be exported yields an error (tessellated fallback is PBI-E);
+// the geometry that does export is byte-stable for a given body and unit.
 func (Writer) ExportSolids(bodies []*topo.Body, opts exchange.TranslationOptions) ([]byte, []string, error) {
+	if _, ok := opts.FileUnitMM(); !ok {
+		return nil, nil, fmt.Errorf("step export: unknown file unit %q", opts.FileUnit)
+	}
 	w := part21.NewWriter()
-	emit := geommap.NewEmitter(w, 1.0) // 1 file unit = 1 mm
-	emitUnitContext(w)
+	emit := geommap.NewEmitter(w, opts.ExportScale()) // database-unit (cm) → file unit
+	emitUnitContext(w, opts.FileUnit)
 	for _, body := range bodies {
 		if _, err := topomap.BodyToStep(emit, body); err != nil {
 			return nil, nil, err
@@ -39,11 +45,38 @@ func (Writer) ExportSolids(bodies []*topo.Body, opts exchange.TranslationOptions
 	return w.Emit(ap203Header()), nil, nil
 }
 
-// emitUnitContext emits the millimeter SI length unit + a unit-assigned context, so
-// the file's lengths are unambiguous on re-import.
-func emitUnitContext(w *part21.Writer) int {
-	mm := w.AddRaw("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))")
-	return w.Add("GLOBAL_UNIT_ASSIGNED_CONTEXT", part21.FormatList(part21.Ref(mm)))
+// emitUnitContext emits the file's SI (mm/cm/m) or conversion-based (in/ft) length
+// unit plus a unit-assigned context, so the file's lengths are unambiguous on
+// re-import. An empty unit defaults to millimetres.
+func emitUnitContext(w *part21.Writer, fileUnit string) int {
+	return w.Add("GLOBAL_UNIT_ASSIGNED_CONTEXT", part21.FormatList(part21.Ref(lengthUnitRef(w, fileUnit))))
+}
+
+// lengthUnitRef emits the LENGTH_UNIT entity for fileUnit and returns its id.
+func lengthUnitRef(w *part21.Writer, fileUnit string) int {
+	switch fileUnit {
+	case "cm":
+		return w.AddRaw("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.CENTI.,.METRE.))")
+	case "m":
+		return w.AddRaw("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT($,.METRE.))")
+	case "in":
+		return conversionLengthUnit(w, "INCH", 0.0254)
+	case "ft":
+		return conversionLengthUnit(w, "FOOT", 0.3048)
+	default: // "" or "mm"
+		return w.AddRaw("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))")
+	}
+}
+
+// conversionLengthUnit emits a CONVERSION_BASED_UNIT of metresPerUnit metres (an
+// imperial length), returning its id. The reader's units_conversion.go parses it.
+func conversionLengthUnit(w *part21.Writer, name string, metresPerUnit float64) int {
+	dim := w.AddRaw("DIMENSIONAL_EXPONENTS(1.,0.,0.,0.,0.,0.,0.)")
+	metre := w.AddRaw("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT($,.METRE.))")
+	measure := w.AddRaw("LENGTH_MEASURE_WITH_UNIT(LENGTH_MEASURE(" +
+		part21.FormatReal(metresPerUnit) + ")," + part21.Ref(metre) + ")")
+	return w.AddRaw("(CONVERSION_BASED_UNIT(" + part21.QuoteString(name) + "," +
+		part21.Ref(measure) + ")LENGTH_UNIT()NAMED_UNIT(" + part21.Ref(dim) + "))")
 }
 
 // ap203Header builds the HEADER for an exported AP203 file.

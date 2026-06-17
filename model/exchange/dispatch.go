@@ -14,6 +14,7 @@ import (
 	"oblikovati.org/kernel/exchange/step"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/param"
 )
 
 // Import reads path as format into the part as imported-body features — routing mesh formats
@@ -73,7 +74,7 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 	case format.IsMesh():
 		data, tris, err = meshio.ExportBodies(format, bodies, res)
 	case format == types.FormatSTEP:
-		data, warns, err = step.Writer{}.ExportSolids(bodies, exchange.TranslationOptions{TargetUnitMM: 1})
+		data, warns, err = step.Writer{}.ExportSolids(bodies, exportUnits(part))
 	default:
 		return ExportResult{}, fmt.Errorf("export: unsupported format %q (want stl|obj|3mf|step)", format)
 	}
@@ -84,6 +85,17 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 		return ExportResult{}, fmt.Errorf("export: write %q: %w", path, err)
 	}
 	return ExportResult{TriangleCount: tris, Warnings: warns}, nil
+}
+
+// exportUnits builds the translation options for an export: the kernel works in
+// centimetres (TargetUnitMM = exchange.DBUnitMM), and the file is written in the
+// document's preferred length unit so the exported numbers match what the user
+// sees (Oblikovati/Oblikovati#146).
+func exportUnits(part *compdef.PartComponentDefinition) exchange.TranslationOptions {
+	return exchange.TranslationOptions{
+		TargetUnitMM: exchange.DBUnitMM,
+		FileUnit:     part.Units().PreferredName(param.Length),
+	}
 }
 
 // FormatFromPath infers the exchange format from a file's extension (case-insensitive), so the
