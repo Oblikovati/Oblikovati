@@ -62,7 +62,7 @@ func (v *Vocabulary) RenderManual() string {
 		}
 		writeManualTable(&b, "## "+cat.title, rows)
 	}
-	return b.String()
+	return strings.TrimRight(b.String(), "\n") + "\n" // exactly one trailing newline (markdownlint MD012/MD047)
 }
 
 // groupByCategory buckets every manual row under its area category, each bucket sorted by

@@ -47,7 +47,7 @@ func (v *Vocabulary) RenderWikiManual() string {
 			writeManualTable(&b, "### "+cat, rows)
 		}
 	}
-	return b.String()
+	return strings.TrimRight(b.String(), "\n") + "\n" // exactly one trailing newline (markdownlint MD012/MD047)
 }
 
 // documentHasRows reports whether any of a document group's categories has commands, so an

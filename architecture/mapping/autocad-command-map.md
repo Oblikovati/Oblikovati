@@ -280,4 +280,3 @@ Every multi-letter command word the Command Window (M26) accepts, grouped by are
 | `REDO` | `MREDO` | Redo the last undone operation. | `REDO` |
 | `SAVE` | `QSAVE` | Save the active document. | `SAVE` |
 | `UNDO` | — | Undo the last operation. | `UNDO` |
-
