@@ -17,90 +17,74 @@ import (
 	"oblikovati.org/persistence"
 )
 
-// writeCLIPartWithSketch saves a part document carrying one sketch with a single line, for
-// the DXF-export CLI test.
-func writeCLIPartWithSketch(t *testing.T, dir string) string {
+// saveCLIPart builds a part with build and saves it to dir/<name>, returning the path — the
+// shared fixture for the DXF-export CLI tests.
+func saveCLIPart(t *testing.T, dir, name string, build func(*compdef.PartComponentDefinition)) string {
 	t.Helper()
-	opd := filepath.Join(dir, "plate.opd")
+	opd := filepath.Join(dir, name)
 	ws := doc.NewWorkspace(persistence.NewPackageStore())
 	d, err := compdef.AddPart(ws, opd, true)
 	if err != nil {
 		t.Fatalf("AddPart: %v", err)
 	}
-	part := d.Content().(*compdef.PartComponentDefinition)
-	sk := part.Sketches().Add(sketch.XYPlane())
-	sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(5, 5))
+	build(d.Content().(*compdef.PartComponentDefinition))
 	if err := ws.Save(d); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 	return opd
 }
 
-// writeCLISheetMetalPart saves a sheet-metal part with a square base face, for the
-// flat-pattern DXF export CLI test.
-func writeCLISheetMetalPart(t *testing.T, dir string) string {
+// runCLIExport runs an export subcommand and returns its stdout plus the written DXF's contents.
+func runCLIExport(t *testing.T, dxfPath string, args ...string) (stdout, dxf string) {
 	t.Helper()
-	opd := filepath.Join(dir, "tray.opd")
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
-	d, err := compdef.AddPart(ws, opd, true)
+	out, err := runCLI(t, args...)
 	if err != nil {
-		t.Fatalf("AddPart: %v", err)
+		t.Fatalf("%v: %v", args, err)
 	}
-	part := d.Content().(*compdef.PartComponentDefinition)
-	if _, err := part.EnableSheetMetal(); err != nil {
-		t.Fatalf("EnableSheetMetal: %v", err)
+	data, err := os.ReadFile(dxfPath)
+	if err != nil {
+		t.Fatalf("expected %s on disk: %v", dxfPath, err)
 	}
-	sk := part.Sketches().Add(sketch.XYPlane())
-	sk.AddRectangleByCorners(gmath.P2(0, 0), gmath.P2(4, 4))
-	feature.NewSheetMetalFaceFeatures(part.Features()).Add(&feature.SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Operation: ops.NewBody})
-	part.Recompute()
-	if err := ws.Save(d); err != nil {
-		t.Fatalf("save: %v", err)
+	return out, string(data)
+}
+
+// TestCLIExportSketchDXF exports a part's sketch to a .dxf at a chosen version via the CLI.
+func TestCLIExportSketchDXF(t *testing.T) {
+	dir := t.TempDir()
+	opd := saveCLIPart(t, dir, "plate.opd", func(p *compdef.PartComponentDefinition) {
+		p.Sketches().Add(sketch.XYPlane()).Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(5, 5))
+	})
+	dxfPath := filepath.Join(dir, "plate.dxf")
+
+	out, data := runCLIExport(t, dxfPath, "export", opd, dxfPath, "r2018")
+	if !strings.Contains(out, "curves") || !strings.Contains(out, "r2018") {
+		t.Errorf("export output = %q, want curve count + r2018", out)
 	}
-	return opd
+	if !strings.Contains(data, "AC1032") || !strings.Contains(data, "\nLINE\n") {
+		t.Errorf("exported DXF missing AC1032 header or LINE entity")
+	}
 }
 
 // TestCLIExportFlat develops a sheet-metal part's flat pattern to DXF via the CLI, asserting the
 // outline lands on the Outline layer.
 func TestCLIExportFlat(t *testing.T) {
 	dir := t.TempDir()
-	opd := writeCLISheetMetalPart(t, dir)
+	opd := saveCLIPart(t, dir, "tray.opd", func(p *compdef.PartComponentDefinition) {
+		if _, err := p.EnableSheetMetal(); err != nil {
+			t.Fatalf("EnableSheetMetal: %v", err)
+		}
+		sk := p.Sketches().Add(sketch.XYPlane())
+		sk.AddRectangleByCorners(gmath.P2(0, 0), gmath.P2(4, 4))
+		feature.NewSheetMetalFaceFeatures(p.Features()).Add(&feature.SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Operation: ops.NewBody})
+		p.Recompute()
+	})
 	dxfPath := filepath.Join(dir, "tray-flat.dxf")
 
-	out, err := runCLI(t, "export-flat", opd, dxfPath, "r2018")
-	if err != nil {
-		t.Fatalf("export-flat: %v", err)
-	}
+	out, data := runCLIExport(t, dxfPath, "export-flat", opd, dxfPath, "r2018")
 	if !strings.Contains(out, "flat pattern") || !strings.Contains(out, "r2018") {
 		t.Errorf("export-flat output = %q, want flat-pattern entity count + r2018", out)
 	}
-	data, err := os.ReadFile(dxfPath)
-	if err != nil {
-		t.Fatalf("expected %s on disk: %v", dxfPath, err)
-	}
-	if !strings.Contains(string(data), "\n2\nOutline\n") || !strings.Contains(string(data), "\nLINE\n") {
+	if !strings.Contains(data, "\n2\nOutline\n") || !strings.Contains(data, "\nLINE\n") {
 		t.Errorf("exported flat DXF missing the Outline layer or outline geometry")
-	}
-}
-
-// TestCLIExportSketchDXF exports a part's sketch to a .dxf at a chosen version via the CLI.
-func TestCLIExportSketchDXF(t *testing.T) {
-	dir := t.TempDir()
-	opd := writeCLIPartWithSketch(t, dir)
-	dxfPath := filepath.Join(dir, "plate.dxf")
-
-	out, err := runCLI(t, "export", opd, dxfPath, "r2018")
-	if err != nil {
-		t.Fatalf("export dxf: %v", err)
-	}
-	if !strings.Contains(out, "curves") || !strings.Contains(out, "r2018") {
-		t.Errorf("export output = %q, want curve count + r2018", out)
-	}
-	data, err := os.ReadFile(dxfPath)
-	if err != nil {
-		t.Fatalf("expected %s on disk: %v", dxfPath, err)
-	}
-	if !strings.Contains(string(data), "AC1032") || !strings.Contains(string(data), "\nLINE\n") {
-		t.Errorf("exported DXF missing AC1032 header or LINE entity")
 	}
 }
