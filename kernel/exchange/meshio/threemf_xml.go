@@ -23,8 +23,9 @@ const (
 <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
 </Relationships>`
 
-	modelOpen = `<?xml version="1.0" encoding="UTF-8"?>
-<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+	// modelOpenFmt takes the unit spelling (e.g. "millimeter", "inch").
+	modelOpenFmt = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="%s" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
 <resources><object id="1" type="model"><mesh>`
 
 	modelClose = `</mesh></object></resources>
@@ -32,10 +33,11 @@ const (
 </model>`
 )
 
-// modelXML serializes a tessellated mesh into the 3MF <model> XML (one object).
-func modelXML(mesh *ops.Mesh) []byte {
+// modelXML serializes a tessellated mesh into the 3MF <model> XML (one object),
+// declaring the given unit.
+func modelXML(mesh *ops.Mesh, unit string) []byte {
 	var buf bytes.Buffer
-	buf.WriteString(modelOpen)
+	fmt.Fprintf(&buf, modelOpenFmt, unit)
 	buf.WriteString("<vertices>")
 	for _, p := range mesh.Positions {
 		fmt.Fprintf(&buf, `<vertex x="%g" y="%g" z="%g"/>`, p.X, p.Y, p.Z)

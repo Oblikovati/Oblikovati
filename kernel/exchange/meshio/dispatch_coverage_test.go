@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
@@ -19,7 +20,7 @@ func TestDispatchDecodeImportAndExportErrors(t *testing.T) {
 	if _, err := Decode(types.ExchangeFormat("ply"), nil); err == nil {
 		t.Fatal("Decode accepted unsupported format")
 	}
-	if _, _, err := ImportBody(types.ExchangeFormat("ply"), nil, "import:bad", DefaultWeldTolerance); err == nil {
+	if _, _, err := ImportBody(types.ExchangeFormat("ply"), nil, "import:bad", DefaultWeldTolerance, exchange.TranslationOptions{}); err == nil {
 		t.Fatal("ImportBody accepted unsupported format")
 	}
 	body, _, err := SolidOrSurface(cubeSoup(1), "cube", DefaultWeldTolerance)
@@ -29,14 +30,14 @@ func TestDispatchDecodeImportAndExportErrors(t *testing.T) {
 	if _, _, err := ExportBody(types.ExchangeFormat("ply"), body, types.ResolutionLow); err == nil {
 		t.Fatal("ExportBody accepted unsupported format")
 	}
-	if _, _, err := ExportBodies(types.ExchangeFormat("ply"), []*topo.Body{body}, types.ResolutionLow); err == nil {
+	if _, _, err := ExportBodies(types.ExchangeFormat("ply"), []*topo.Body{body}, types.ResolutionLow, exchange.TranslationOptions{}); err == nil {
 		t.Fatal("ExportBodies accepted unsupported format")
 	}
 	if raw, err := Decode(types.FormatOBJ, []byte("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")); err != nil || raw.TriangleCount() != 1 {
 		t.Fatalf("Decode OBJ triangles = %d, %v", raw.TriangleCount(), err)
 	}
 	data := EncodeBinarySTL(body, ops.DefaultQuality())
-	imported, warns, err := ImportBody(types.FormatSTL, data, "import:stl", DefaultWeldTolerance)
+	imported, warns, err := ImportBody(types.FormatSTL, data, "import:stl", DefaultWeldTolerance, exchange.TranslationOptions{})
 	if err != nil {
 		t.Fatalf("ImportBody STL: %v", err)
 	}
@@ -61,7 +62,7 @@ func TestExportBodiesMergesMeshes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidOrSurface B: %v", err)
 	}
-	data, tris, err := ExportBodies(types.FormatOBJ, []*topo.Body{bodyA, bodyB}, types.ResolutionLow)
+	data, tris, err := ExportBodies(types.FormatOBJ, []*topo.Body{bodyA, bodyB}, types.ResolutionLow, exchange.TranslationOptions{})
 	if err != nil {
 		t.Fatalf("ExportBodies OBJ: %v", err)
 	}
@@ -71,10 +72,10 @@ func TestExportBodiesMergesMeshes(t *testing.T) {
 	if len(data) == 0 {
 		t.Fatal("ExportBodies OBJ returned empty data")
 	}
-	if data, tris, err := ExportBodies(types.FormatSTL, []*topo.Body{bodyA}, types.ResolutionLow); err != nil || tris != 12 || len(data) == 0 {
+	if data, tris, err := ExportBodies(types.FormatSTL, []*topo.Body{bodyA}, types.ResolutionLow, exchange.TranslationOptions{}); err != nil || tris != 12 || len(data) == 0 {
 		t.Fatalf("ExportBodies STL len=%d tris=%d err=%v", len(data), tris, err)
 	}
-	if data, tris, err := ExportBodies(types.Format3MF, []*topo.Body{bodyA}, types.ResolutionLow); err != nil || tris != 12 || len(data) == 0 {
+	if data, tris, err := ExportBodies(types.Format3MF, []*topo.Body{bodyA}, types.ResolutionLow, exchange.TranslationOptions{}); err != nil || tris != 12 || len(data) == 0 {
 		t.Fatalf("ExportBodies 3MF len=%d tris=%d err=%v", len(data), tris, err)
 	}
 }

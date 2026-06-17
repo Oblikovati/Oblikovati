@@ -72,7 +72,7 @@ func Export(part *compdef.PartComponentDefinition, path string, format types.Exc
 	)
 	switch {
 	case format.IsMesh():
-		data, tris, err = meshio.ExportBodies(format, bodies, res)
+		data, tris, err = meshio.ExportBodies(format, bodies, res, exportUnits(part))
 	case format == types.FormatSTEP:
 		data, warns, err = step.Writer{}.ExportSolids(bodies, exportUnits(part))
 	default:

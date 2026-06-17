@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/meshio"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
@@ -61,7 +62,8 @@ func TestImportedBodyFeatureRoundTripsViaReImport(t *testing.T) {
 	dir := t.TempDir()
 	path := writeCubeSTL(t, dir)
 	raw := mustRead(t, path)
-	body, _, err := meshio.ImportBody(types.FormatSTL, raw, "import:stl#0", 0)
+	body, _, err := meshio.ImportBody(types.FormatSTL, raw, "import:stl#0", 0,
+		exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
 	if err != nil {
 		t.Fatalf("ImportBody: %v", err)
 	}

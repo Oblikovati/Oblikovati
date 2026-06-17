@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
@@ -36,12 +37,24 @@ func Decode(format types.ExchangeFormat, data []byte) (RawMesh, error) {
 // Example:
 //
 //	body, warns, err := meshio.ImportBody(types.FormatSTL, data, "import:stl#0", 0)
-func ImportBody(format types.ExchangeFormat, data []byte, feat string, weldTol float64) (*topo.Body, []string, error) {
+func ImportBody(format types.ExchangeFormat, data []byte, feat string, weldTol float64, opts exchange.TranslationOptions) (*topo.Body, []string, error) {
 	raw, err := Decode(format, data)
 	if err != nil {
 		return nil, nil, err
 	}
+	scaleRaw(&raw, opts.ImportScale(importFileUnitMM(format, data)))
 	return SolidOrSurface(raw, feat, weldTol)
+}
+
+// importFileUnitMM is the millimetre size of the file's length unit on import:
+// STL/OBJ are unitless (millimetre convention); 3MF declares its unit, read here.
+func importFileUnitMM(format types.ExchangeFormat, data []byte) float64 {
+	if format == types.Format3MF {
+		if mm, ok := mmPer3MFUnit[read3MFUnit(data)]; ok {
+			return mm
+		}
+	}
+	return 1 // mm
 }
 
 // ExportBody tessellates a body at the given resolution and encodes it in the given
@@ -82,22 +95,29 @@ func triangleCount(body *topo.Body, q ops.Quality) int {
 // Example:
 //
 //	data, tris, err := meshio.ExportBodies(types.FormatSTL, part.SurfaceBodies().All(), types.ResolutionMedium)
-func ExportBodies(format types.ExchangeFormat, bodies []*topo.Body, res types.MeshResolution) ([]byte, int, error) {
+func ExportBodies(format types.ExchangeFormat, bodies []*topo.Body, res types.MeshResolution, opts exchange.TranslationOptions) ([]byte, int, error) {
+	// STL and OBJ carry no unit, so they always use the millimetre convention (the
+	// universal mesh interchange unit) regardless of the document unit; only 3MF
+	// records — and thus honors — the document's unit.
+	if format != types.Format3MF {
+		opts.FileUnit = "mm"
+	}
 	q := QualityFor(res)
 	merged := mergeTessellations(bodies, q)
-	return encodeMesh(format, merged)
+	scaleMesh(merged, opts.ExportScale()) // database centimetres → the file unit
+	return encodeMesh(format, merged, opts.FileUnit)
 }
 
 // encodeMesh encodes an already-tessellated mesh in the given format, returning the bytes
-// and triangle count.
-func encodeMesh(format types.ExchangeFormat, mesh *ops.Mesh) ([]byte, int, error) {
+// and triangle count. fileUnit names the 3MF unit attribute (STL/OBJ are unitless).
+func encodeMesh(format types.ExchangeFormat, mesh *ops.Mesh, fileUnit string) ([]byte, int, error) {
 	switch format {
 	case types.FormatSTL:
 		return encodeBinarySTLMesh(mesh), mesh.TriangleCount(), nil
 	case types.FormatOBJ:
 		return encodeOBJMesh(mesh), mesh.TriangleCount(), nil
 	case types.Format3MF:
-		data, err := encode3MFMesh(mesh)
+		data, err := encode3MFMesh(mesh, threeMFUnitName(fileUnit))
 		return data, mesh.TriangleCount(), err
 	default:
 		return nil, 0, fmt.Errorf("meshio: unsupported export format %q (want stl|obj|3mf)", format)
