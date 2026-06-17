@@ -37,11 +37,26 @@ func NewView(origin math.Point3, viewDir, upHint math.Vector3) View {
 	return View{Origin: origin, XAxis: x, YAxis: y, ViewDir: f}
 }
 
+// SegmentKind classifies a projected segment so a drawing view can style it. The zero value is
+// KindEdge, so ordinary HLR edge segments keep their meaning.
+type SegmentKind int
+
+const (
+	// KindEdge is a projected model edge (visible solid / hidden dashed).
+	KindEdge SegmentKind = iota
+	// KindCut is a section-cut outline segment (the body's intersection with the cut plane).
+	KindCut
+	// KindHatch is one hatch line filling a section cut face.
+	KindHatch
+)
+
 // Segment is one projected edge segment classified visible/hidden, carrying the source edge's
-// reference key for view↔model associativity.
+// reference key for view↔model associativity. Kind distinguishes ordinary edges from section
+// cut outlines and hatch lines (KindEdge for plain projection).
 type Segment struct {
 	A, B    math.Point2
 	Visible bool
+	Kind    SegmentKind
 	EdgeKey []byte
 }
 

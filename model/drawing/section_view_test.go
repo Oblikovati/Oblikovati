@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package drawing
+
+import (
+	"testing"
+
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/subd"
+)
+
+// curveKinds tallies a view's curves by kind.
+func curveKinds(v *DrawingView) (edge, section, hatch int) {
+	for _, c := range v.Curves() {
+		switch c.Kind() {
+		case types.DrawingSectionCurve:
+			section++
+		case types.DrawingHatchCurve:
+			hatch++
+		default:
+			edge++
+		}
+	}
+	return
+}
+
+// TestAddSectionViewCutsAndHatches sections a 2×3×4 box through a horizontal line across the
+// middle of a FRONT view, and checks the result carries a bold cut outline and hatch fill (the
+// exposed cross-section) plus retained-half edges.
+func TestAddSectionViewCutsAndHatches(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	front, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	// A horizontal cut line across the front view at its centre (sheet mm).
+	minX, _, maxX, _, _ := front.BoundsMM()
+	sec, err := views.AddSection(SectionViewSpec{
+		Name: "A-A", ParentView: "FRONT", X1: minX - 5, Y1: 100, X2: maxX + 5, Y2: 100, CenterX: 100, CenterY: 220,
+	})
+	if err != nil {
+		t.Fatalf("AddSection: %v", err)
+	}
+	if sec.Type() != types.DrawingViewSection || sec.BaseViewName() != "FRONT" {
+		t.Fatalf("section view = type %v parent %q, want section off FRONT", sec.Type(), sec.BaseViewName())
+	}
+	edge, section, hatch := curveKinds(sec)
+	if section == 0 {
+		t.Error("section view has no cut-outline curves")
+	}
+	if hatch == 0 {
+		t.Error("section view has no hatch fill")
+	}
+	if edge == 0 {
+		t.Error("section view has no retained-half edges")
+	}
+}
+
+// TestSectionRejectsNonBaseParent checks a section can only cut a base view.
+func TestSectionRejectsNonBaseParent(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	if _, err := views.AddSection(SectionViewSpec{ParentView: "NOPE", X1: 0, Y1: 0, X2: 10, Y2: 0}); err == nil {
+		t.Error("section off a missing parent = ok, want error")
+	}
+}
+
+// TestSectionRecipeRoundTrip checks a section view's type, parent and cut line survive
+// persistence (its curves re-project on open).
+func TestSectionRecipeRoundTrip(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1, CenterX: 100, CenterY: 100}); err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	if _, err := views.AddSection(SectionViewSpec{Name: "A-A", ParentView: "FRONT", X1: 80, Y1: 100, X2: 120, Y2: 100, CenterX: 100, CenterY: 220}); err != nil {
+		t.Fatalf("AddSection: %v", err)
+	}
+	data, err := c.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	restored := NewContent()
+	restored.SetBodyResolver(fakeBodyResolver{body: subd.ToBody(subd.Box(2, 3, 4), "box")})
+	if err := restored.ApplyRecipe(data); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	restored.RecomputeViews()
+	v, ok := restored.Sheets().Active().Views().ByName("A-A")
+	if !ok || v.Type() != types.DrawingViewSection {
+		t.Fatalf("restored section view missing/mistyped: ok=%v", ok)
+	}
+	x1, _, _, _ := v.SectionLineMM()
+	if x1 != 80 {
+		t.Errorf("restored section line x1 = %g, want 80", x1)
+	}
+	if _, section, _ := curveKinds(v); section == 0 {
+		t.Error("restored section view re-projected no cut outline")
+	}
+}

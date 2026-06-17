@@ -44,8 +44,9 @@ type DrawingView struct {
 	name        string
 	viewType    types.DrawingViewType
 	projected   bool
-	baseView    string  // the parent view a projected/auxiliary view derives from
-	foldAngle   float64 // auxiliary fold-line angle on the parent, radians
+	baseView    string      // the parent view a projected/auxiliary/section view derives from
+	foldAngle   float64     // auxiliary fold-line angle on the parent, radians
+	section     sectionLine // section-view cut line on the parent (sheet mm)
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
@@ -55,7 +56,10 @@ type DrawingView struct {
 	curves      []DrawingCurve
 }
 
-var _ contract.DrawingView = (*DrawingView)(nil)
+var (
+	_ contract.DrawingView        = (*DrawingView)(nil)
+	_ contract.SectionDrawingView = (*DrawingView)(nil)
+)
 
 // Name, Type, ParentView, IsProjected, Orientation, Scale, Style, CenterMM and CurveCount
 // satisfy contract.DrawingView.
@@ -77,6 +81,11 @@ func (v *DrawingView) BaseViewName() string { return v.baseView }
 
 // FoldAngle is the auxiliary view's fold-line angle on its parent, in radians.
 func (v *DrawingView) FoldAngle() float64 { return v.foldAngle }
+
+// SectionLineMM returns the section view's cut line on its parent (sheet millimetres).
+func (v *DrawingView) SectionLineMM() (x1, y1, x2, y2 float64) {
+	return v.section.x1, v.section.y1, v.section.x2, v.section.y2
+}
 
 // Curves returns the view's computed drawing curves.
 func (v *DrawingView) Curves() []DrawingCurve { return v.curves }
@@ -126,16 +135,33 @@ func (v *DrawingView) VisibleHidden() (visible, hidden int) {
 }
 
 // recompute runs hidden-line projection of body through basis and rebuilds the view's curves,
-// placing each segment on the sheet at the view's scale and centre. In wireframe style every
-// edge is drawn visible (no hidden-line removal).
+// placing each segment on the sheet at the view's scale and centre. A section view runs the
+// clipped cut-away projection (cut outline + hatch); other views run plain HLR. In wireframe
+// style every edge is drawn visible (no hidden-line removal).
 func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
 	segs := hlr.Project(body, basis, ops.DefaultQuality())
+	if v.viewType == types.DrawingViewSection {
+		segs = hlr.ProjectSection(body, basis, ops.DefaultQuality())
+	}
 	v.curves = make([]DrawingCurve, 0, len(segs))
 	wireframe := v.style == types.WireframeViewStyle
 	for _, s := range segs {
 		v.curves = append(v.curves, DrawingCurve{
-			A: v.place(s.A), B: v.place(s.B), Visible: wireframe || s.Visible, edgeKey: s.EdgeKey,
+			A: v.place(s.A), B: v.place(s.B), Visible: wireframe || s.Visible,
+			kind: curveKind(s.Kind), edgeKey: s.EdgeKey,
 		})
+	}
+}
+
+// curveKind maps a projected segment's kind to its drawing-curve classification.
+func curveKind(k hlr.SegmentKind) types.DrawingCurveKind {
+	switch k {
+	case hlr.KindCut:
+		return types.DrawingSectionCurve
+	case hlr.KindHatch:
+		return types.DrawingHatchCurve
+	default:
+		return types.DrawingEdgeCurve
 	}
 }
 

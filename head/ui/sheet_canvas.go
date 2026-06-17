@@ -8,6 +8,7 @@ import (
 	"fmt"
 	stdmath "math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/math"
@@ -79,13 +80,7 @@ func drawSheetViews(s *app.Session, face rect, sheet *drawing.Sheet) {
 	for i := 0; i < views.Count(); i++ {
 		v := views.Item(i)
 		for _, c := range v.Curves() {
-			ax, ay := curveToScreen(face, c.Start())
-			bx, by := curveToScreen(face, c.End())
-			if c.IsVisible() {
-				native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.4)
-			} else {
-				drawDashed(ax, ay, bx, by, viewHiddenInk)
-			}
+			drawViewCurve(face, c)
 		}
 		if v == selected {
 			drawViewHighlight(face, v)
@@ -114,6 +109,25 @@ func drawViewHighlight(face rect, v *drawing.DrawingView) {
 	native.DrawLine(x1, y0, x1, y1, viewSelectInk, 1)
 	native.DrawLine(x1, y1, x0, y1, viewSelectInk, 1)
 	native.DrawLine(x0, y1, x0, y0, viewSelectInk, 1)
+}
+
+// drawViewCurve strokes one drawing curve in the style of its kind: a section cut outline bold,
+// hatch lines thin and faint, and model edges solid (visible) or dashed (hidden).
+func drawViewCurve(face rect, c drawing.DrawingCurve) {
+	ax, ay := curveToScreen(face, c.Start())
+	bx, by := curveToScreen(face, c.End())
+	switch c.Kind() {
+	case types.DrawingSectionCurve:
+		native.DrawLine(ax, ay, bx, by, viewVisibleInk, 2.2)
+	case types.DrawingHatchCurve:
+		native.DrawLine(ax, ay, bx, by, sheetFaint, 1)
+	default:
+		if c.IsVisible() {
+			native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.4)
+		} else {
+			drawDashed(ax, ay, bx, by, viewHiddenInk)
+		}
+	}
 }
 
 // curveToScreen maps a sheet-millimetre point (y up) to screen pixels within the sheet face.

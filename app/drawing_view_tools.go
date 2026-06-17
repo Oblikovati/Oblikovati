@@ -292,6 +292,105 @@ func (t *AuxiliaryViewTool) Params() ToolParams {
 	}
 }
 
+// sectionOrientations is the cut-line orientation choice for the Section View tool.
+var sectionOrientations = []string{"Horizontal", "Vertical"}
+
+// SectionViewTool cuts a section view through a base view's centre, along a horizontal or
+// vertical section line; the preview follows the cursor and a click drops the section view.
+// (Free-hand section lines are a follow-up; a centreline cut is the common case.)
+type SectionViewTool struct {
+	bases      []string
+	baseIndex  int
+	orient     int
+	centerX    float64
+	centerY    float64
+	preview    []drawing.DrawingCurve
+	previewKey string
+}
+
+// NewSectionViewTool creates the tool; its base-view list is captured on Start.
+func NewSectionViewTool() *SectionViewTool { return &SectionViewTool{centerX: 150, centerY: 250} }
+
+func (t *SectionViewTool) Name() string              { return "Section View" }
+func (t *SectionViewTool) Start(s *Session)          { t.bases = baseViewNames(s) }
+func (t *SectionViewTool) Pick(*Session, Selectable) {}
+func (t *SectionViewTool) CanCommit() bool           { return len(t.bases) > 0 }
+func (t *SectionViewTool) Cancel(*Session)           {}
+func (t *SectionViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// sectionLineOn returns the cut line (sheet mm) through the named base view's centre, spanning
+// its bounds along the chosen orientation; ok is false when the view has no geometry yet.
+func (t *SectionViewTool) sectionLineOn(s *Session, parent string) (x1, y1, x2, y2 float64, ok bool) {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return 0, 0, 0, 0, false
+	}
+	v, found := c.Sheets().Active().Views().ByName(parent)
+	if !found {
+		return 0, 0, 0, 0, false
+	}
+	minX, minY, maxX, maxY, has := v.BoundsMM()
+	if !has {
+		return 0, 0, 0, 0, false
+	}
+	cx, cy := (minX+maxX)/2, (minY+maxY)/2
+	if t.orient == 1 { // vertical
+		return cx, minY - 5, cx, maxY + 5, true
+	}
+	return minX - 5, cy, maxX + 5, cy, true // horizontal
+}
+
+// PreviewCurves projects the section through the chosen base+orientation, cached until they change.
+func (t *SectionViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	if len(t.bases) == 0 {
+		return nil
+	}
+	parent := t.bases[clampIndex(t.baseIndex, len(t.bases))]
+	key := fmt.Sprintf("%s/%d", parent, t.orient)
+	if key != t.previewKey {
+		t.preview = nil
+		if x1, y1, x2, y2, ok := t.sectionLineOn(s, parent); ok {
+			c, _ := ActiveDrawing(s)
+			t.preview, _ = c.Sheets().Active().Views().PreviewSection(parent, x1, y1, x2, y2)
+		}
+		t.previewKey = key
+	}
+	return t.preview
+}
+
+// Commit cuts the section view through the selected base view.
+func (t *SectionViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if len(t.bases) == 0 {
+		return fmt.Errorf("drawing: no base view to section — add a base view first")
+	}
+	parent := t.bases[clampIndex(t.baseIndex, len(t.bases))]
+	x1, y1, x2, y2, ok := t.sectionLineOn(s, parent)
+	if !ok {
+		return fmt.Errorf("drawing: base view %q has no geometry to section", parent)
+	}
+	if _, err := c.Sheets().Active().Views().AddSection(drawing.SectionViewSpec{
+		ParentView: parent, X1: x1, Y1: y1, X2: x2, Y2: y2, CenterX: t.centerX, CenterY: t.centerY,
+	}); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view and cut-orientation choices for the property dialog.
+func (t *SectionViewTool) Params() ToolParams {
+	return ToolParams{
+		Choices: []ChoiceParam{
+			{Label: "Base View", Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }},
+			{Label: "Cut", Options: sectionOrientations, Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
+		},
+	}
+}
+
 // baseViewNames lists the active sheet's base views (the candidates a projected view derives
 // from); empty when no drawing is active.
 func baseViewNames(s *Session) []string {
