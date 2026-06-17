@@ -75,3 +75,22 @@ func (s *failingStore) Load(name string) (*Document, error) {
 	return nil, errNotStored{name}
 }
 func (s *failingStore) Exists(string) bool { return false }
+
+// TestCopyIdentityMintsFreshNameKeepsModelStamp: a copy is a NEW file — its internal name must
+// differ from the source's — but it documents the source's model, so the database revision and
+// digest carry over (a derived part keyed on them still matches). (M03-F09)
+func TestCopyIdentityMintsFreshNameKeepsModelStamp(t *testing.T) {
+	src := newFileIdentity()
+	src.DatabaseRevisionID = "db-rev-123"
+	src.ModelDigest = "digest-abc"
+
+	cp := CopyIdentity(src)
+
+	if cp.InternalName == src.InternalName || cp.InternalName == "" {
+		t.Errorf("copy internal name = %q, want a fresh GUID distinct from source %q", cp.InternalName, src.InternalName)
+	}
+	if cp.DatabaseRevisionID != src.DatabaseRevisionID || cp.ModelDigest != src.ModelDigest {
+		t.Errorf("copy model stamp = (%q, %q), want the source's (%q, %q)",
+			cp.DatabaseRevisionID, cp.ModelDigest, src.DatabaseRevisionID, src.ModelDigest)
+	}
+}

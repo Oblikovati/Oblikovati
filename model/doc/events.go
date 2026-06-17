@@ -16,13 +16,14 @@ import (
 //
 // TypeIDs are stable across versions (they cross the gRPC seam); never renumber.
 const (
-	tidDocumentCreated  event.TypeID = 0x0401
-	tidDocumentOpened   event.TypeID = 0x0402
-	tidDocumentSave     event.TypeID = 0x0403
-	tidDocumentClose    event.TypeID = 0x0404
-	tidDocumentActivate event.TypeID = 0x0405
-	tidApplicationQuit  event.TypeID = 0x0410
-	tidModelChanged     event.TypeID = 0x0420
+	tidDocumentCreated            event.TypeID = 0x0401
+	tidDocumentOpened             event.TypeID = 0x0402
+	tidDocumentSave               event.TypeID = 0x0403
+	tidDocumentClose              event.TypeID = 0x0404
+	tidDocumentActivate           event.TypeID = 0x0405
+	tidDocumentIdentityReassigned event.TypeID = 0x0406
+	tidApplicationQuit            event.TypeID = 0x0410
+	tidModelChanged               event.TypeID = 0x0420
 )
 
 // DocumentCreated is fired (After only) when a new document is created from a
@@ -57,6 +58,19 @@ type DocumentActivate struct{ Document *Document }
 
 // EventID implements event.Event.
 func (DocumentActivate) EventID() event.TypeID { return tidDocumentActivate }
+
+// DocumentIdentityReassigned is fired (After) when a document is opened whose persisted
+// identity GUID collides with an already-open document, so the workspace minted it a fresh
+// identity to keep identities unique within the session. The new GUID is in memory only until
+// the document's next save persists it. The host surfaces this to the user as a notice.
+type DocumentIdentityReassigned struct {
+	Document             *Document
+	PreviousInternalName string
+	NewInternalName      string
+}
+
+// EventID implements event.Event.
+func (DocumentIdentityReassigned) EventID() event.TypeID { return tidDocumentIdentityReassigned }
 
 // ApplicationQuit is fired around shutting down the session; a Before handler may
 // veto it. ApplicationEvents.OnQuit.

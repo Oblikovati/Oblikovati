@@ -14,8 +14,9 @@ type fakeStore struct {
 }
 
 type storedDoc struct {
-	docType     DocumentType
-	displayName string
+	docType      DocumentType
+	displayName  string
+	internalName string // persisted identity GUID; "" keeps the freshly minted one
 }
 
 func newFakeStore() *fakeStore { return &fakeStore{saved: map[string]storedDoc{}} }
@@ -40,7 +41,11 @@ func (s *fakeStore) Load(fullDocumentName string) (*Document, error) {
 		return nil, errNotStored{fullDocumentName}
 	}
 	s.loads++
-	return Restore(rec.docType, fullDocumentName, rec.displayName)
+	d, err := Restore(rec.docType, fullDocumentName, rec.displayName)
+	if err == nil && rec.internalName != "" {
+		d.SetFileIdentity(FileIdentity{InternalName: rec.internalName})
+	}
+	return d, err
 }
 
 func (s *fakeStore) Exists(fullDocumentName string) bool {

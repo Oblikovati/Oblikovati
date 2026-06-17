@@ -133,6 +133,9 @@ func (ws *Workspace) CloseAll(unreferencedOnly, skipSave bool) error {
 func (ws *Workspace) remove(d *Document) {
 	delete(ws.byID, d.id)
 	delete(ws.byName, d.fullDocumentName)
+	if guid := d.identity.InternalName; guid != "" && ws.byGUID[guid] == d {
+		delete(ws.byGUID, guid)
+	}
 	for i, other := range ws.ordered {
 		if other == d {
 			ws.ordered = append(ws.ordered[:i], ws.ordered[i+1:]...)
