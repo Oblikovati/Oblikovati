@@ -199,13 +199,12 @@ func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 		Name: v.Name(), Type: v.Type().String(), Projected: v.IsProjected(),
 		Orientation: v.Orientation().String(), Scale: v.Scale(), Style: v.Style().String(),
 		CenterXMM: x, CenterYMM: y, VisibleCount: visible, HiddenCount: hidden,
+		BaseView: v.BaseViewName(), // the parent of any derived view (projected/auxiliary/section)
 	}
 	switch v.Type() {
 	case types.DrawingViewProjected:
-		info.BaseView = v.BaseViewName()
 		info.Direction = v.Direction().String()
 	case types.DrawingViewAuxiliary:
-		info.BaseView = v.BaseViewName()
 		info.FoldAngleDeg = v.FoldAngle() * 180 / math.Pi
 	}
 	return info
