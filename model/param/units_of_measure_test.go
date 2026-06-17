@@ -87,6 +87,29 @@ func TestSetPreferredRejectsWrongCategory(t *testing.T) {
 	}
 }
 
+// TestToFromPreferredRoundTrip pins the database↔preferred-unit conversion pair
+// the UI fields cross every frame: ToPreferred expresses a stored cm value in the
+// preferred unit, and FromPreferred is its exact inverse.
+func TestToFromPreferredRoundTrip(t *testing.T) {
+	m := DefaultUnitsOfMeasure().Clone()
+	if err := m.SetPreferred(Length, "in"); err != nil {
+		t.Fatalf("SetPreferred: %v", err)
+	}
+	// 2.54 cm == 1 in in the preferred unit.
+	if got := m.ToPreferred(Q(2.54, Length)); !approxScalar(got, 1) {
+		t.Errorf("ToPreferred(2.54 cm) = %g in, want 1", got)
+	}
+	// FromPreferred(1 in) rebuilds the 2.54 cm database quantity.
+	q := m.FromPreferred(1, Length)
+	if q.Unit != Length || !approxScalar(q.Value, 2.54) {
+		t.Errorf("FromPreferred(1 in) = %+v, want {2.54 Length}", q)
+	}
+	// Round-trip through both is identity.
+	if back := m.ToPreferred(m.FromPreferred(3.7, Length)); !approxScalar(back, 3.7) {
+		t.Errorf("round-trip = %g, want 3.7", back)
+	}
+}
+
 func TestParseErrors(t *testing.T) {
 	m := DefaultUnitsOfMeasure()
 	if _, err := m.Parse("12 furlongs", Length); err == nil {

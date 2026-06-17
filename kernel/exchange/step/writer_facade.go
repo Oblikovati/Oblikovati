@@ -47,9 +47,11 @@ func (Writer) ExportSolids(bodies []*topo.Body, opts exchange.TranslationOptions
 
 // emitUnitContext emits the file's SI (mm/cm/m) or conversion-based (in/ft) length
 // unit plus a unit-assigned context, so the file's lengths are unambiguous on
-// re-import. An empty unit defaults to millimetres.
-func emitUnitContext(w *part21.Writer, fileUnit string) int {
-	return w.Add("GLOBAL_UNIT_ASSIGNED_CONTEXT", part21.FormatList(part21.Ref(lengthUnitRef(w, fileUnit))))
+// re-import. An empty unit defaults to millimetres. The reader locates the unit by
+// scanning for GLOBAL_UNIT_ASSIGNED_CONTEXT (units.go), so the context id needs no
+// further reference here.
+func emitUnitContext(w *part21.Writer, fileUnit string) {
+	w.Add("GLOBAL_UNIT_ASSIGNED_CONTEXT", part21.FormatList(part21.Ref(lengthUnitRef(w, fileUnit))))
 }
 
 // lengthUnitRef emits the LENGTH_UNIT entity for fileUnit and returns its id.
