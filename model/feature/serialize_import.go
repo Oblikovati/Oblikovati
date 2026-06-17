@@ -30,7 +30,8 @@ func ImportBodies(format types.ExchangeFormat, path string) ([]*topo.Body, []str
 func ImportBodiesFromData(format types.ExchangeFormat, data []byte) ([]*topo.Body, []string, error) {
 	switch {
 	case format == types.FormatSTEP:
-		return step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: 1})
+		// The kernel works in centimetres; the reader scales the file's declared unit into it.
+		return step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
 	case format.IsMesh():
 		body, warns, err := meshio.ImportBody(format, data, fmt.Sprintf("import:%s#0", format), 0)
 		if err != nil {

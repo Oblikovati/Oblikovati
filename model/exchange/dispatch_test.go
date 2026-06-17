@@ -3,7 +3,9 @@
 package exchange_test
 
 import (
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
@@ -85,4 +87,34 @@ func relErr(a, b float64) float64 {
 		return -d
 	}
 	return d
+}
+
+// TestStepExportDeclaresDocumentUnit checks the dispatch threads the document's
+// preferred length unit into the STEP export's declared unit (#146): the same
+// part exports as inch or centimetre depending on its units.
+func TestStepExportDeclaresDocumentUnit(t *testing.T) {
+	part := compdef.NewPartComponentDefinition()
+	if _, err := exchange.Import(part, stepFixture("cube.step"), types.FormatSTEP); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	for unit, marker := range map[string]string{
+		"in": "CONVERSION_BASED_UNIT",
+		"cm": "SI_UNIT(.CENTI.,.METRE.)",
+		"mm": "SI_UNIT(.MILLI.,.METRE.)",
+	} {
+		if err := part.SetLengthUnit(unit); err != nil {
+			t.Fatalf("SetLengthUnit(%q): %v", unit, err)
+		}
+		out := filepath.Join(t.TempDir(), "u.step")
+		if _, err := exchange.Export(part, out, types.FormatSTEP, ""); err != nil {
+			t.Fatalf("export %s: %v", unit, err)
+		}
+		data, err := os.ReadFile(out)
+		if err != nil {
+			t.Fatalf("read %s: %v", unit, err)
+		}
+		if !strings.Contains(string(data), marker) {
+			t.Errorf("a %q document's STEP must declare %q", unit, marker)
+		}
+	}
 }

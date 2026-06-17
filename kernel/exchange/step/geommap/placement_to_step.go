@@ -10,27 +10,29 @@ import (
 // Emitter writes kernel geometry into a part21.Writer, sharing identical leaf
 // entities (points, directions). It is the export counterpart of the from_step
 // mappers and the only place /source emits STEP geometry, keeping the encoding in
-// one module. divScale converts database mm back into the file's length unit.
+// one module. dbToFile scales each database-unit (centimetre) length into the
+// file's declared length unit.
 type Emitter struct {
 	w        *part21.Writer
-	mmToUnit float64 // multiply a mm length by this to get the file unit
+	dbToFile float64 // multiply a database-unit length by this to get the file-unit value
 }
 
-// NewEmitter builds an emitter writing into w, expressing lengths in file units
-// where one file unit is unitMM millimeters (so mm→unit is 1/unitMM).
-func NewEmitter(w *part21.Writer, unitMM float64) *Emitter {
-	if unitMM == 0 {
-		unitMM = 1
+// NewEmitter builds an emitter writing into w, scaling each database-unit length
+// by dbToFile to express it in the file's declared length unit (the
+// exchange.TranslationOptions.ExportScale). A zero scale is treated as 1.
+func NewEmitter(w *part21.Writer, dbToFile float64) *Emitter {
+	if dbToFile == 0 {
+		dbToFile = 1
 	}
-	return &Emitter{w: w, mmToUnit: 1 / unitMM}
+	return &Emitter{w: w, dbToFile: dbToFile}
 }
 
-// Point emits a CARTESIAN_POINT (shared) for p, scaled mm→file-unit, returning its id.
+// Point emits a CARTESIAN_POINT (shared) for p, scaled database-unit→file-unit, returning its id.
 func (e *Emitter) Point(p math.Point3) int {
 	coords := part21.FormatList(
-		part21.FormatReal(float64(p.X)*e.mmToUnit),
-		part21.FormatReal(float64(p.Y)*e.mmToUnit),
-		part21.FormatReal(float64(p.Z)*e.mmToUnit),
+		part21.FormatReal(float64(p.X)*e.dbToFile),
+		part21.FormatReal(float64(p.Y)*e.dbToFile),
+		part21.FormatReal(float64(p.Z)*e.dbToFile),
 	)
 	return e.w.AddShared("CARTESIAN_POINT", part21.QuoteString(""), coords)
 }
@@ -57,7 +59,7 @@ func (e *Emitter) Placement(origin math.Point3, axisZ, axisX math.Vector3) int {
 // Writer exposes the underlying part21 writer for the topology emitter.
 func (e *Emitter) Writer() *part21.Writer { return e.w }
 
-// LengthValue formats a mm length in file units as a Part 21 real.
-func (e *Emitter) LengthValue(mm float64) string {
-	return part21.FormatReal(mm * e.mmToUnit)
+// LengthValue formats a database-unit length in file units as a Part 21 real.
+func (e *Emitter) LengthValue(dbLen float64) string {
+	return part21.FormatReal(dbLen * e.dbToFile)
 }

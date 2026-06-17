@@ -31,8 +31,8 @@ func (Reader) ImportSolids(data []byte, opts exchange.TranslationOptions) ([]*to
 	if err != nil {
 		return nil, nil, err
 	}
-	scale, warns := unitScale(f.Graph)
-	bodies, bw, err := importAllBreps(f.Graph, scale)
+	mmPerUnit, warns := unitScale(f.Graph)
+	bodies, bw, err := importAllBreps(f.Graph, opts.ImportScale(mmPerUnit))
 	if err != nil {
 		return nil, nil, err
 	}
