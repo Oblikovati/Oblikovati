@@ -252,17 +252,10 @@ func profileOutline(ph app.ProfileHandle, color [4]float32) []renderer.DrawItem 
 	return appendGrid(nil, acc, color)
 }
 
-// activeToolPreviewItems returns the active tool's transient preview (the Extrude prism
-// wireframe), drawn in the 3D view outside the sketch environment. Nil when the tool has
-// no preview or nothing to show yet.
+// activeToolPreviewItems returns the active tool's transient preview, drawn in the 3D view
+// outside the sketch environment — the translucent solid result preview when the tool can
+// draft its feature, else the legacy wireframe. The session resolves which (see
+// Session.ToolPreview); nil when nothing is shown yet.
 func activeToolPreviewItems(s *app.Session) []renderer.DrawItem {
-	ti := s.ActiveTool()
-	if ti == nil {
-		return nil
-	}
-	pv, ok := ti.Tool().(app.Previewable)
-	if !ok {
-		return nil
-	}
-	return pv.Preview(s)
+	return s.ToolPreview()
 }

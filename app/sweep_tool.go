@@ -7,10 +7,8 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
-	"oblikovati.org/renderer"
 )
 
 // SweepTool is the interactive Sweep command: activate it, click a sketch region (the
@@ -94,13 +92,9 @@ func (t *SweepTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	path3d, err := resolveSweepPath(t.path)
-	if err != nil {
+	if t.added, err = t.addSweep(part.Features()); err != nil {
 		return err
 	}
-	twist := t.twist
-	t.added = feature.NewSweepFeatures(part.Features()).
-		Add(t.profile.Sketch, t.profile.ProfileIndex, path3d, func() float64 { return twist }, t.operation)
 	part.Recompute()
 	s.recordEdit(part, "Sweep")
 	if !t.added.Health().OK() {
@@ -143,19 +137,27 @@ func (t *SweepTool) Prompt(*Session) string {
 }
 
 // Preview outlines the picked profile region until the sweep is committed.
-func (t *SweepTool) Preview(*Session) []renderer.DrawItem {
-	if t.profile == nil || t.profile.ProfileIndex >= t.profile.Sketch.Profiles().Count() {
-		return nil
+// addSweep resolves the path to a 3D rail and builds the sweep feature into engine fs — the
+// shared constructor used by both Commit (the part's engine) and DraftFeature (a scratch
+// engine), so the preview matches the committed result.
+func (t *SweepTool) addSweep(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+	path3d, err := resolveSweepPath(t.path)
+	if err != nil {
+		return nil, err
 	}
-	poly := t.profile.Sketch.Profiles().Item(t.profile.ProfileIndex).OuterLoop().Polygon()
-	plane := t.profile.Sketch.Plane()
-	pts := make([]math.Point3, len(poly))
-	idx := make([]int, 0, 2*len(poly))
-	for i, p := range poly {
-		pts[i] = plane.ToModel(p)
-		idx = append(idx, i, (i+1)%len(poly))
+	twist := t.twist
+	return feature.NewSweepFeatures(fs).
+		Add(t.profile.Sketch, t.profile.ProfileIndex, path3d, func() float64 { return twist }, t.operation), nil
+}
+
+// DraftFeature returns the unattached sweep feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addSweep the commit uses. Empty until both
+// a profile and a path are picked.
+func (t *SweepTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
 	}
-	return []renderer.DrawItem{{Primitive: renderer.Lines, Positions: pts, Indices: idx, Color: [4]float32{1, 0.6, 0, 1}}}
+	return draftFromScratch(t.addSweep)
 }
 
 // Cancel restores the default selection filter.

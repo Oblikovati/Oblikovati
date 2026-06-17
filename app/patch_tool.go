@@ -53,8 +53,7 @@ func (t *PatchTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewBoundaryPatchFeatures(part.Features()).
-		Add(t.profile.Sketch, t.profile.ProfileIndex, feature.PatchFree)
+	t.added = t.addPatch(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Patch")
 	if !t.added.Health().OK() {
@@ -62,6 +61,21 @@ func (t *PatchTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// addPatch builds the boundary-patch feature into engine fs — shared by Commit and the preview.
+func (t *PatchTool) addPatch(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewBoundaryPatchFeatures(fs).Add(t.profile.Sketch, t.profile.ProfileIndex, feature.PatchFree)
+}
+
+// DraftFeature returns the unattached patch feature the viewport previews before commit.
+func (t *PatchTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addPatch(fs), nil
+	})
 }
 
 // Cancel restores the default selection filter.

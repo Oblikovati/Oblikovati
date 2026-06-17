@@ -56,11 +56,7 @@ func (t *DeleteFaceTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	keys := make([][]byte, len(t.faces))
-	for i, f := range t.faces {
-		keys[i] = f.Face.ReferenceKey()
-	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddDeleteFace(keys)
+	t.added = t.addDeleteFace(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Delete Face")
 	if !t.added.Health().OK() {
@@ -70,8 +66,23 @@ func (t *DeleteFaceTool) Commit(s *Session) error {
 	return nil
 }
 
+// addDeleteFace builds the delete-face feature into engine fs — shared by Commit and preview.
+func (t *DeleteFaceTool) addDeleteFace(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewModifyFeatures(fs).AddDeleteFace(faceKeys(t.faces))
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *DeleteFaceTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached delete-face feature the viewport previews before commit.
+func (t *DeleteFaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addDeleteFace(fs), nil
+	})
+}
 
 // Prompt guides the user through the delete-face steps.
 func (t *DeleteFaceTool) Prompt(*Session) string {

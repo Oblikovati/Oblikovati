@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
 
@@ -60,14 +61,28 @@ func (t *SheetMetalLipTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal lip: pick an edge and set a positive height/return/angle")
 	}
+	t.added = t.addLip(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Lip")
+}
+
+func (t *SheetMetalLipTool) addLip(fs *feature.PartFeatures) *feature.PartFeature {
 	height, returnLen, angle := t.height, t.returnLen, t.angle
-	t.added = feature.NewSheetMetalLipFeatures(part.Features()).Add(&feature.SheetMetalLipDefinition{
+	return feature.NewSheetMetalLipFeatures(fs).Add(&feature.SheetMetalLipDefinition{
 		EdgeKey:      t.edge.Edge.ReferenceKey(),
 		Height:       func() float64 { return height },
 		ReturnLength: func() float64 { return returnLen },
 		Angle:        func() float64 { return angle },
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Lip")
+}
+
+// DraftFeature returns the unattached sheet-metal lip feature the viewport previews.
+func (t *SheetMetalLipTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addLip(fs), nil
+	})
 }
 
 // SheetMetalRipTool slits the sheet along a picked sketch line, opening a seam of the gap width.
@@ -103,15 +118,37 @@ func (t *SheetMetalRipTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal rip: pick a sketch line and set a positive gap")
 	}
+	added, err := t.addRip(part, part.Features())
+	if err != nil {
+		return err
+	}
+	t.added = added
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Rip")
+}
+
+func (t *SheetMetalRipTool) addRip(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	sk, idx, ok := lineHandleInPart(part, t.line.Entity)
 	if !ok {
-		return errors.New("sheet-metal rip: the pick is not a sketch line")
+		return nil, errors.New("sheet-metal rip: the pick is not a sketch line")
 	}
 	gap := t.gap
-	t.added = feature.NewSheetMetalRipFeatures(part.Features()).Add(&feature.SheetMetalRipDefinition{
+	return feature.NewSheetMetalRipFeatures(fs).Add(&feature.SheetMetalRipDefinition{
 		Sketch: sk, LineIndex: idx, Gap: func() float64 { return gap },
+	}), nil
+}
+
+// DraftFeature returns the unattached sheet-metal rip feature the viewport previews.
+func (t *SheetMetalRipTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	part, err := activeSheetMetalPart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addRip(part, fs)
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Rip")
 }
 
 // SheetMetalPunchTool stamps every closed profile of the picked profile's sketch through the
@@ -145,10 +182,24 @@ func (t *SheetMetalPunchTool) Commit(s *Session) error {
 	if t.profile == nil {
 		return errors.New("sheet-metal punch: pick a closed sketch profile (all profiles of its sketch are punched)")
 	}
-	t.added = feature.NewSheetMetalPunchFeatures(part.Features()).Add(&feature.SheetMetalPunchDefinition{
+	t.added = t.addPunch(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Punch")
+}
+
+func (t *SheetMetalPunchTool) addPunch(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewSheetMetalPunchFeatures(fs).Add(&feature.SheetMetalPunchDefinition{
 		Sketch: t.profile.Sketch,
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Punch")
+}
+
+// DraftFeature returns the unattached sheet-metal punch feature the viewport previews.
+func (t *SheetMetalPunchTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addPunch(fs), nil
+	})
 }
 
 // SheetMetalCosmeticBendTool marks a cosmetic bend line (no fold) on a picked sketch line.

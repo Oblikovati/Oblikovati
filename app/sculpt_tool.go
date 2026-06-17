@@ -49,7 +49,7 @@ func (t *SculptTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewSculptFeatures(part.Features()).Add(ops.NewBody, t.tolerance)
+	t.added = t.addSculpt(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Sculpt")
 	if !t.added.Health().OK() {
@@ -58,8 +58,23 @@ func (t *SculptTool) Commit(s *Session) error {
 	return nil
 }
 
+// addSculpt builds the sculpt feature into engine fs — shared by Commit and the preview.
+func (t *SculptTool) addSculpt(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewSculptFeatures(fs).Add(ops.NewBody, t.tolerance)
+}
+
 // Cancel abandons the tool with no change.
 func (t *SculptTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SculptTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached sculpt feature the viewport previews before commit.
+func (t *SculptTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addSculpt(fs), nil
+	})
+}

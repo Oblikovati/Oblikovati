@@ -170,17 +170,9 @@ func (t *ThreadTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	if t.face == nil {
-		return errors.New("thread: click a cylindrical face first")
-	}
-	designation, err := t.Designation()
-	if err != nil {
+	if t.added, err = t.addThread(feature.NewDressUpFeatures(part.Features())); err != nil {
 		return err
 	}
-	t.added = feature.NewDressUpFeatures(part.Features()).AddThreadDef(&feature.ThreadDefinition{
-		FaceKey: t.face.Face.ReferenceKey(), Designation: designation, Cut: t.cut,
-		Class: t.class(), Tapered: t.tapered, ModelDiameter: threadModelDiameters[clampRange(t.modelDiaIdx, len(threadModelDiameters))],
-	})
 	part.Recompute()
 	s.recordEdit(part, "Thread")
 	if !t.added.Health().OK() {
@@ -190,11 +182,40 @@ func (t *ThreadTool) Commit(s *Session) error {
 	return nil
 }
 
+// addThread builds the thread feature into collection dress — the shared constructor used by
+// both Commit (the part's engine) and DraftFeature (a scratch engine).
+func (t *ThreadTool) addThread(dress *feature.DressUpFeatures) (*feature.PartFeature, error) {
+	if t.face == nil {
+		return nil, errors.New("thread: click a cylindrical face first")
+	}
+	designation, err := t.Designation()
+	if err != nil {
+		return nil, err
+	}
+	return dress.AddThreadDef(&feature.ThreadDefinition{
+		FaceKey: t.face.Face.ReferenceKey(), Designation: designation, Cut: t.cut,
+		Class: t.class(), Tapered: t.tapered, ModelDiameter: threadModelDiameters[clampRange(t.modelDiaIdx, len(threadModelDiameters))],
+	}), nil
+}
+
 // Cancel abandons the tool.
 func (t *ThreadTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ThreadTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached thread feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addThread the commit uses. A cut thread
+// previews red; an applied (cosmetic/raised) thread changes little volume. Empty until a
+// cylindrical face is picked.
+func (t *ThreadTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addThread(feature.NewDressUpFeatures(fs))
+	})
+}
 
 // clampRange keeps an index within [0, n).
 func clampRange(i, n int) int {

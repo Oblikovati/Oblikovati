@@ -74,10 +74,7 @@ func (t *GrillTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	skt := t.profiles[0].Sketch
-	t.added = feature.NewGrillFeatures(part.Features()).Add(&feature.GrillDefinition{
-		Sketch: skt, Boundaries: profileIndicesOn(t.profiles, skt), Draft: t.draft,
-	})
+	t.added = t.addGrill(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Grill")
 	if !t.added.Health().OK() {
@@ -85,6 +82,24 @@ func (t *GrillTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// addGrill builds the grill feature into engine fs — shared by Commit and the preview.
+func (t *GrillTool) addGrill(fs *feature.PartFeatures) *feature.PartFeature {
+	skt := t.profiles[0].Sketch
+	return feature.NewGrillFeatures(fs).Add(&feature.GrillDefinition{
+		Sketch: skt, Boundaries: profileIndicesOn(t.profiles, skt), Draft: t.draft,
+	})
+}
+
+// DraftFeature returns the unattached grill feature the viewport previews before commit.
+func (t *GrillTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addGrill(fs), nil
+	})
 }
 
 // Cancel restores the default selection filter.

@@ -171,10 +171,8 @@ func (t *ExtrudeTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	skt := t.profiles[0].Sketch
-	indices := profileIndicesOn(t.profiles, skt)
-	t.added = feature.NewExtrudeFeatures(part.Features()).
-		AddExtrude(skt, indices, t.operation, t.buildExtent(), t.taper)
+	def, _ := t.draftDefinition() // CanCommit (checked by the dialog) guarantees ok
+	t.added = feature.NewExtrudeFeatures(part.Features()).AddExtrudeFeature(def)
 	part.Recompute()
 	s.recordEdit(part, "Extrude")
 	if !t.added.Health().OK() {
@@ -207,6 +205,31 @@ func profileIndicesOn(handles []ProfileHandle, skt *sketch.Sketch) []int {
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ExtrudeTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// draftDefinition builds the ExtrudeDefinition from the tool's current state — the single
+// source of truth shared by Commit and the live preview, so the previewed solid is exactly
+// the geometry OK will create. ok is false until at least one region is picked.
+func (t *ExtrudeTool) draftDefinition() (*feature.ExtrudeDefinition, bool) {
+	if len(t.profiles) == 0 {
+		return nil, false
+	}
+	skt := t.profiles[0].Sketch
+	return &feature.ExtrudeDefinition{
+		Sketch: skt, ProfileIndices: profileIndicesOn(t.profiles, skt),
+		Operation: t.operation, Extent: t.buildExtent(), Taper: t.taper,
+	}, true
+}
+
+// DraftFeature returns the unattached extrude feature the viewport previews before commit
+// (satisfying DraftPreviewable), and whether enough input is gathered to show it — the same
+// gate as CanCommit, so the translucent preview appears exactly when OK becomes available.
+func (t *ExtrudeTool) DraftFeature(*Session) (feature.Feature, bool) {
+	def, ok := t.draftDefinition()
+	if !ok || !t.CanCommit() {
+		return nil, false
+	}
+	return feature.NewExtrudeFeature(def), true
+}
 
 // Prompt guides the user through the extrude steps (Inventor's status-bar prompts).
 func (t *ExtrudeTool) Prompt(*Session) string {

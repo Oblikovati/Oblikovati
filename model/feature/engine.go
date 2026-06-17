@@ -168,6 +168,26 @@ func (fs *PartFeatures) Recompute() {
 	fs.result = bodies
 }
 
+// PreviewResult evaluates a candidate feature as if it were appended at the end-of-part
+// marker, against the cached prefix bodies, and returns the resulting body state — WITHOUT
+// mutating the program (no Add, no dirty flags, no fs.result change, no events). It is the
+// non-destructive seam behind the live in-canvas feature preview: a tool builds its draft
+// feature and asks "what would the model look like?" once per change, reusing the clean
+// prefix the engine already cached, so a preview costs ~one feature recompute.
+//
+// Example: ext := buildExtrudeFeature(def); bodies, err := part.Features().PreviewResult(ext).
+func (fs *PartFeatures) PreviewResult(candidate Feature) ([]*topo.Body, error) {
+	if candidate == nil {
+		return nil, errors.New("feature: PreviewResult got a nil candidate")
+	}
+	bodies := fs.prefixBodies(fs.effectiveEnd())
+	out, err := candidate.Recompute(Input{Bodies: bodies, Params: fs.params, Keys: fs.keys, SourceTool: fs.sourceTool})
+	if err != nil {
+		return nil, err
+	}
+	return out.Bodies, nil
+}
+
 // evaluate runs one feature, updating its health/cache and returning the running
 // body state after it.
 func (fs *PartFeatures) evaluate(pf *PartFeature, bodies []*topo.Body, sick map[ID]bool) []*topo.Body {

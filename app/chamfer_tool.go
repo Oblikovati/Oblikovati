@@ -120,8 +120,7 @@ func (t *ChamferTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	d := t.distance
-	t.added = feature.NewDressUpFeatures(part.Features()).AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
+	t.added = t.addChamfer(feature.NewDressUpFeatures(part.Features()))
 	part.Recompute()
 	s.recordEdit(part, "Chamfer")
 	if !t.added.Health().OK() {
@@ -131,8 +130,27 @@ func (t *ChamferTool) Commit(s *Session) error {
 	return nil
 }
 
+// addChamfer builds the chamfer feature into collection dress — the shared constructor used by
+// both Commit (the part's engine) and DraftFeature (a scratch engine).
+func (t *ChamferTool) addChamfer(dress *feature.DressUpFeatures) *feature.PartFeature {
+	d := t.distance
+	return dress.AddChamferConcave(t.selectedEdgeKeys(), func() float64 { return d }, t.flatCorners, t.concaveStrategy)
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ChamferTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached chamfer feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addChamfer the commit uses. Empty until an
+// edge is selected.
+func (t *ChamferTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addChamfer(feature.NewDressUpFeatures(fs)), nil
+	})
+}
 
 // Prompt guides the user through the chamfer steps.
 func (t *ChamferTool) Prompt(*Session) string {

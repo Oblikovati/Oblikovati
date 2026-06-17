@@ -74,6 +74,46 @@ func TestUniqueNameNumbersFromOneAndSkipsTaken(t *testing.T) {
 	}
 }
 
+func TestPreviewResultIsNonDestructive(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	fs.Add(body())
+	fs.Add(body())
+	fs.Recompute()
+	before := fs.Result()
+	beforeCounts := []int{fs.Item(0).RecomputeCount(), fs.Item(1).RecomputeCount()}
+
+	// Previewing a candidate appended at end-of-part sees the 2 committed bodies and
+	// returns 3, without touching the program.
+	got, err := fs.PreviewResult(body())
+	if err != nil {
+		t.Fatalf("PreviewResult: %v", err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("preview result has %d bodies, want 3 (2 committed + 1 candidate)", len(got))
+	}
+	if len(fs.Result()) != 2 || &fs.Result()[0] != &before[0] {
+		t.Errorf("PreviewResult mutated fs.Result(): now %d bodies", len(fs.Result()))
+	}
+	if fs.Count() != 2 {
+		t.Errorf("PreviewResult changed the program length to %d, want 2", fs.Count())
+	}
+	if c0, c1 := fs.Item(0).RecomputeCount(), fs.Item(1).RecomputeCount(); c0 != beforeCounts[0] || c1 != beforeCounts[1] {
+		t.Errorf("PreviewResult re-evaluated committed features: counts %d,%d → %d,%d", beforeCounts[0], beforeCounts[1], c0, c1)
+	}
+}
+
+func TestPreviewResultPropagatesCandidateError(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	fs.Add(body())
+	fs.Recompute()
+	if _, err := fs.PreviewResult(failer{}); err == nil {
+		t.Fatal("PreviewResult should surface a sick candidate's error, got nil")
+	}
+	if _, err := fs.PreviewResult(nil); err == nil {
+		t.Fatal("PreviewResult(nil) should error")
+	}
+}
+
 func TestEditingEarlyFeatureReusesCleanPrefix(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	a := fs.Add(body())

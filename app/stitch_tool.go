@@ -52,7 +52,7 @@ func (t *StitchTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewStitchFeatures(part.Features()).Add(t.tolerance, t.keepSurface)
+	t.added = t.addStitch(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Stitch")
 	if !t.added.Health().OK() {
@@ -61,8 +61,23 @@ func (t *StitchTool) Commit(s *Session) error {
 	return nil
 }
 
+// addStitch builds the stitch feature into engine fs — shared by Commit and the preview.
+func (t *StitchTool) addStitch(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewStitchFeatures(fs).Add(t.tolerance, t.keepSurface)
+}
+
 // Cancel abandons the tool with no change.
 func (t *StitchTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *StitchTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached stitch feature the viewport previews before commit.
+func (t *StitchTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addStitch(fs), nil
+	})
+}

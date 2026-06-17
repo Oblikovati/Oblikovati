@@ -59,8 +59,7 @@ func (t *SurfaceTrimTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	sp := t.plane.Plane()
-	t.added = feature.NewTrimFeatures(part.Features()).AddByPlane(sp.Origin(), sp.Normal().AsVector(), t.keepPositive)
+	t.added = t.addTrim(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Trim")
 	if !t.added.Health().OK() {
@@ -68,6 +67,22 @@ func (t *SurfaceTrimTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// addTrim builds the surface-trim feature into engine fs — shared by Commit and the preview.
+func (t *SurfaceTrimTool) addTrim(fs *feature.PartFeatures) *feature.PartFeature {
+	sp := t.plane.Plane()
+	return feature.NewTrimFeatures(fs).AddByPlane(sp.Origin(), sp.Normal().AsVector(), t.keepPositive)
+}
+
+// DraftFeature returns the unattached trim feature the viewport previews before commit.
+func (t *SurfaceTrimTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addTrim(fs), nil
+	})
 }
 
 // Cancel restores the default selection filter.

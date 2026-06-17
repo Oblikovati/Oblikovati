@@ -8,7 +8,6 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/renderer"
 )
 
 // LoftTool is the interactive Loft command: activate it, click two or more cross-sections in
@@ -163,26 +162,7 @@ func (t *LoftTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	sections := make([]feature.LoftSection, len(t.sections))
-	for i, h := range t.sections {
-		switch {
-		case h.isPoint():
-			sections[i] = feature.LoftSection{Point: h.apex}
-		case h.isFace():
-			sections[i] = feature.LoftSection{FaceKey: h.faceKey}
-		default:
-			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
-		}
-	}
-	guides := feature.LoftGuideSet{
-		Rails:     t.railProviders(),
-		MapCurves: t.mapCurveProviders(),
-		AreaGraph: t.areaStops(),
-	}
-	if t.centerline != nil { // a centerline (spine) is exclusive with rails
-		guides.Rails, guides.Centerline = nil, t.centerlineProvider()
-	}
-	t.added = feature.NewLoftFeatures(part.Features()).AddGuided(sections, t.closed, t.operation, t.first, t.last, guides)
+	t.added = t.addLoft(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Loft")
 	if !t.added.Health().OK() {
@@ -258,27 +238,42 @@ func (t *LoftTool) Prompt(*Session) string {
 
 // Preview outlines each picked profile cross-section so the user sees what will be blended (a
 // point section is a single vertex, already drawn by the selection highlight).
-func (t *LoftTool) Preview(*Session) []renderer.DrawItem {
-	var items []renderer.DrawItem
-	for _, s := range t.sections {
-		if s.isPoint() || s.isFace() {
-			continue // a point/face section has no profile polygon to outline
+// addLoft assembles the cross-sections and guide set and builds the loft feature into engine
+// fs — the shared constructor used by both Commit (the part's engine) and DraftFeature (a
+// scratch engine), so the preview matches the committed result.
+func (t *LoftTool) addLoft(fs *feature.PartFeatures) *feature.PartFeature {
+	sections := make([]feature.LoftSection, len(t.sections))
+	for i, h := range t.sections {
+		switch {
+		case h.isPoint():
+			sections[i] = feature.LoftSection{Point: h.apex}
+		case h.isFace():
+			sections[i] = feature.LoftSection{FaceKey: h.faceKey}
+		default:
+			sections[i] = feature.LoftSection{Sketch: h.profile.Sketch, ProfileIndex: h.profile.ProfileIndex}
 		}
-		h := s.profile
-		if h.ProfileIndex >= h.Sketch.Profiles().Count() {
-			continue
-		}
-		poly := h.Sketch.Profiles().Item(h.ProfileIndex).OuterLoop().Polygon()
-		plane := h.Sketch.Plane()
-		pts := make([]math.Point3, len(poly))
-		idx := make([]int, 0, 2*len(poly))
-		for i, p := range poly {
-			pts[i] = plane.ToModel(p)
-			idx = append(idx, i, (i+1)%len(poly))
-		}
-		items = append(items, renderer.DrawItem{Primitive: renderer.Lines, Positions: pts, Indices: idx, Color: [4]float32{1, 0.6, 0, 1}})
 	}
-	return items
+	guides := feature.LoftGuideSet{
+		Rails:     t.railProviders(),
+		MapCurves: t.mapCurveProviders(),
+		AreaGraph: t.areaStops(),
+	}
+	if t.centerline != nil { // a centerline (spine) is exclusive with rails
+		guides.Rails, guides.Centerline = nil, t.centerlineProvider()
+	}
+	return feature.NewLoftFeatures(fs).AddGuided(sections, t.closed, t.operation, t.first, t.last, guides)
+}
+
+// DraftFeature returns the unattached loft feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addLoft the commit uses. Empty until at
+// least two cross-sections are picked.
+func (t *LoftTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addLoft(fs), nil
+	})
 }
 
 // Cancel restores the default selection filter.

@@ -21,6 +21,28 @@ type Previewable interface {
 	Preview(s *Session) []renderer.DrawItem
 }
 
+// ToolPreview returns the active tool's transient preview draw items for the UI head, which
+// assembles its own frame draw list (the headless RenderFrame path uses the same source).
+func (s *Session) ToolPreview() []renderer.DrawItem { return s.toolPreviewItems() }
+
+// toolPreviewItems returns the active tool's transient preview: the translucent solid
+// result preview when the tool can draft its feature (DraftPreviewable), otherwise the
+// legacy wireframe (Previewable). Nil when no tool is active or it offers no preview.
+func (s *Session) toolPreviewItems() []renderer.DrawItem {
+	if s.tool == nil {
+		return nil
+	}
+	if dp, ok := s.tool.tool.(DraftPreviewable); ok {
+		if items := s.featurePreviewItems(dp); items != nil {
+			return items
+		}
+	}
+	if p, ok := s.tool.tool.(Previewable); ok {
+		return p.Preview(s)
+	}
+	return nil
+}
+
 // AddOverlay adds a persistent client-graphics primitive (overlay line/points drawn
 // over the model). ClearOverlays removes them; Overlays returns a snapshot.
 func (s *Session) AddOverlay(item renderer.DrawItem) { s.overlays = append(s.overlays, item) }
@@ -48,11 +70,7 @@ func (s *Session) GraphicsLabels() []clientgraphics.Label {
 func (s *Session) RenderFrame(backend renderer.Backend) {
 	list := renderer.BuildDrawListStyled(s.VisibleBodies(), s.camera, ops.DefaultQuality(), s.SurfaceLookup(), s.visualStyle)
 	list.Items = append(list.Items, s.overlays...)
-	if s.tool != nil {
-		if p, ok := s.tool.tool.(Previewable); ok {
-			list.Items = append(list.Items, p.Preview(s)...)
-		}
-	}
+	list.Items = append(list.Items, s.toolPreviewItems()...)
 	graphics, _, _ := s.graphics.Build(s.camera)
 	list.Items = append(list.Items, graphics...)
 	backend.Render(list)
