@@ -72,28 +72,45 @@ func drawSheetMetalWallDialogs(s *app.Session) bool {
 	return false
 }
 
-// drawSheetMetalModifyDialogs routes the Modify- and Flat-Pattern-panel tools.
+// drawSheetMetalModifyDialogs routes the Modify- and Flat-Pattern-panel tools across the F02,
+// F03, and flat-pattern sub-routers (split so each stays within the statement budget).
 func drawSheetMetalModifyDialogs(s *app.Session) {
+	if drawSheetMetalF03Dialogs(s) {
+		return
+	}
+	if drawSheetMetalBendCutDialogs(s) {
+		return
+	}
+	drawSheetMetalFlatDialogs(s)
+}
+
+// drawSheetMetalBendCutDialogs routes the F02 Modify-panel tools (bend/fold/corner/seam/cut).
+func drawSheetMetalBendCutDialogs(s *app.Session) bool {
 	if t := s.ActiveSheetMetalBend(); t != nil {
 		sheetMetalPanel(s, "Bend", "Bend Line", "sm-bend", "Click a sketch line crossing the sheet", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
-		return
+		return true
 	}
 	if t := s.ActiveSheetMetalFold(); t != nil {
 		sheetMetalPanel(s, "Fold", "Fold Line", "sm-fold", "Click a sketch line crossing the sheet", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
-		return
+		return true
 	}
 	if t := s.ActiveSheetMetalCorner(); t != nil {
 		drawSheetMetalCorner(s, t)
-		return
+		return true
 	}
 	if t := s.ActiveSheetMetalCornerSeam(); t != nil {
 		drawSheetMetalCornerSeam(s, t)
-		return
+		return true
 	}
 	if t := s.ActiveSheetMetalCut(); t != nil {
 		sheetMetalPanel(s, "Cut", "Profile", "sm-cut", "Click a closed sketch profile to cut", t.PickCount(), t.ClearPicks, t.CanCommit(), nil)
-		return
+		return true
 	}
+	return false
+}
+
+// drawSheetMetalFlatDialogs routes the Flat-Pattern-panel tools (create flat pattern / refold).
+func drawSheetMetalFlatDialogs(s *app.Session) {
 	if t := s.ActiveSheetMetalUnfold(); t != nil {
 		sheetMetalPanel(s, "Create Flat Pattern", "", "", "", 0, nil, t.CanCommit(), nil)
 		return

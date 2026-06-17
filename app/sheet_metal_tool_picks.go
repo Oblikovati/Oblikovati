@@ -59,3 +59,19 @@ func (t *SheetMetalCornerSeamTool) ClearPicks()    { t.edges = nil }
 // Cut
 func (t *SheetMetalCutTool) PickCount() int { return boolCount(t.profile != nil) }
 func (t *SheetMetalCutTool) ClearPicks()    { t.profile = nil }
+
+// Lip (edge)
+func (t *SheetMetalLipTool) PickCount() int { return boolCount(t.edge != nil) }
+func (t *SheetMetalLipTool) ClearPicks()    { t.edge = nil }
+
+// Rip (sketch line)
+func (t *SheetMetalRipTool) PickCount() int { return boolCount(t.line != nil) }
+func (t *SheetMetalRipTool) ClearPicks()    { t.line = nil }
+
+// Punch (profile)
+func (t *SheetMetalPunchTool) PickCount() int { return boolCount(t.profile != nil) }
+func (t *SheetMetalPunchTool) ClearPicks()    { t.profile = nil }
+
+// Cosmetic Bend (sketch line)
+func (t *SheetMetalCosmeticBendTool) PickCount() int { return boolCount(t.line != nil) }
+func (t *SheetMetalCosmeticBendTool) ClearPicks()    { t.line = nil }
