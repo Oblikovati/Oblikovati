@@ -132,9 +132,12 @@ func (s *Session) serviceBugSubmit() {
 
 // submitter returns the injected reporting submitter, lazily creating the real HTTP one so
 // headless/test sessions that never file a report pay nothing and can inject a fake first.
+// OBLIKOVATI_REPORTING_ENDPOINT overrides the target so a dev/staging build can point at a
+// local reporting service (empty ⇒ report.DefaultEndpoint).
 func (s *Session) submitter() bugSubmitter {
 	if s.bugSubmitter == nil {
-		s.bugSubmitter = report.NewSubmitter("", &http.Client{Timeout: bugSubmitTimeout})
+		endpoint := os.Getenv("OBLIKOVATI_REPORTING_ENDPOINT")
+		s.bugSubmitter = report.NewSubmitter(endpoint, &http.Client{Timeout: bugSubmitTimeout})
 	}
 	return s.bugSubmitter
 }
