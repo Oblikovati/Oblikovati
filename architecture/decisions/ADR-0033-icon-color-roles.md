@@ -25,6 +25,7 @@ palette we had no way to use.
    alpha, which needs no dedicated token.
 2. **Roles are authored with sentinel paints** in the SVG sources — placeholders the
    theme replaces, never shown on screen:
+
    | Role | Sentinel |
    | --- | --- |
    | primary | `#000000` (the pre-existing monochrome art reads as primary unedited) |
@@ -48,6 +49,7 @@ palette we had no way to use.
    before `DestroyTexture` (swapchain frames in flight).
 5. **Colors map from the Blender theme files** (extending the ADR-0032 table) using
    Blender's own icon palette:
+
    | Token | Blender source |
    | --- | --- |
    | icon.primary | `ui@icon_collection` (the neutral icon gray) |

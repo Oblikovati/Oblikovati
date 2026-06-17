@@ -31,6 +31,37 @@ func TestManualComplete(t *testing.T) {
 	}
 }
 
+// TestEveryCommandHasACategory guards that every command lands in a real manual area (not the
+// "Other" fallback) and in a document group — so the generated wiki manual has no orphans.
+func TestEveryCommandHasACategory(t *testing.T) {
+	inGroup := map[string]bool{}
+	for _, dg := range documentGroups() {
+		for _, cat := range dg.categories {
+			inGroup[cat] = true
+		}
+	}
+	for _, c := range DefaultVocabulary().Manual() {
+		cat := categoryOf(c.Action)
+		if cat == "Other" {
+			t.Errorf("%s has no manual category (add its prefix to manualCategories)", c.Action)
+		}
+		if !inGroup[cat] {
+			t.Errorf("%s category %q is in no document group (add it to documentGroups)", c.Action, cat)
+		}
+	}
+}
+
+// TestWikiManualGroupsByDocumentType checks the wiki manual leads with the document-type
+// headings and nests the area subgroups under them.
+func TestWikiManualGroupsByDocumentType(t *testing.T) {
+	md := DefaultVocabulary().RenderWikiManual()
+	for _, want := range []string{"## Part", "### Sketch — draw & modify", "## Assembly", "## Drawing", "## Sheet Metal Part"} {
+		if !strings.Contains(md, want) {
+			t.Errorf("wiki manual missing heading %q", want)
+		}
+	}
+}
+
 // TestCommandManualInSync keeps the committed Markdown manual byte-identical to RenderManual,
 // so the doc can never drift from the vocabulary. Regenerate with:
 //
@@ -47,7 +78,9 @@ func TestCommandManualInSync(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read manual %s: %v (regenerate with UPDATE_MANUAL=1)", manualDocPath, err)
 	}
-	if string(want) != got {
+	// Normalize CRLF → LF so a Windows checkout (git autocrlf) compares equal to the
+	// LF-only RenderManual output; .gitattributes also pins the file to LF.
+	if strings.ReplaceAll(string(want), "\r\n", "\n") != got {
 		t.Errorf("command manual %s is out of date; regenerate with UPDATE_MANUAL=1 go test ./app/cmdline -run TestCommandManualInSync", manualDocPath)
 	}
 }

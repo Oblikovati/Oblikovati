@@ -7,55 +7,70 @@ import (
 	"strings"
 )
 
-// manualSection groups manual rows under a heading. The order of sections below is the
-// reading order of the rendered manual; commands within a section are sorted by name.
-type manualSection struct {
-	title  string
-	prefix string // action-id prefix that routes a command into this section
+// manualCategory is one area grouping in the manual: a heading and the action-id prefixes
+// whose commands fall under it. The slice order is reading order; the longest matching prefix
+// wins (so "Sketch3D." beats "Sketch.").
+type manualCategory struct {
+	title    string
+	prefixes []string
 }
 
-// manualSections is the manual's table of contents, in reading order. The longest matching
-// prefix wins (so "Sketch3D." beats "Sketch."), which sectionOf relies on.
-func manualSections() []manualSection {
-	return []manualSection{
-		{"Sketch — draw & modify", "Sketch."},
-		{"Sketch — 3D", "Sketch3D."},
-		{"Part — create", "Create."},
-		{"Part — modify", "Modify."},
-		{"Surfaces", "Surface."},
-		{"Work planes", "WorkPlane."},
-		{"Assembly", "Assembly."},
-		{"Sheet metal", "SheetMetal."},
-		{"Drawing", "Drawing."},
-		{"Manage", "Manage."},
-		{"View & visual styles", "View."},
-		{"Mold / freeform / mesh", ""}, // Mold./Freeform./Mesh. fall here via the catch-all
+// manualCategories is the area table of contents shared by every manual rendering.
+func manualCategories() []manualCategory {
+	return []manualCategory{
+		{"Sketch — draw & modify", []string{"Sketch."}},
+		{"Sketch — 3D", []string{"Sketch3D."}},
+		{"Part — create", []string{"Create."}},
+		{"Part — modify", []string{"Modify."}},
+		{"Surfaces", []string{"Surface."}},
+		{"Work planes", []string{"WorkPlane."}},
+		{"Mold, freeform & mesh", []string{"Mold.", "Freeform.", "Mesh."}},
+		{"Sheet metal", []string{"SheetMetal."}},
+		{"Assembly", []string{"Assembly."}},
+		{"Drawing", []string{"Drawing."}},
+		{"Manage", []string{"Manage."}},
+		{"View & visual styles", []string{"View."}},
+		{"Application & files", []string{"file.", "edit.", "tool.", "GetStarted."}},
 	}
 }
 
-// RenderManual renders the whole vocabulary as a Markdown command manual: one table per
-// section, columns Command | Aliases | Description | Example. It is deterministic (sorted),
-// so a drift-guard test can compare it byte-for-byte against the committed doc.
+// categoryOf returns the area-category title for an action id by longest-prefix match across
+// every category's prefixes, falling back to "Other" (a developer-error signal a test guards).
+func categoryOf(action string) string {
+	best, bestLen := "Other", -1
+	for _, cat := range manualCategories() {
+		for _, p := range cat.prefixes {
+			if strings.HasPrefix(action, p) && len(p) > bestLen {
+				best, bestLen = cat.title, len(p)
+			}
+		}
+	}
+	return best
+}
+
+// RenderManual renders the whole vocabulary as a flat, area-grouped Markdown reference: one
+// table per category, columns Command | Aliases | Description | Example. Deterministic
+// (sorted), so a drift-guard test compares it byte-for-byte against the committed doc.
 func (v *Vocabulary) RenderManual() string {
 	var b strings.Builder
-	b.WriteString(manualHeader())
-	bySection := v.groupBySection()
-	for _, sec := range manualSections() {
-		rows := bySection[sec.title]
+	b.WriteString(flatManualHeader())
+	byCat := v.groupByCategory()
+	for _, cat := range manualCategories() {
+		rows := byCat[cat.title]
 		if len(rows) == 0 {
 			continue
 		}
-		writeManualSection(&b, sec.title, rows)
+		writeManualTable(&b, "## "+cat.title, rows)
 	}
-	return b.String()
+	return strings.TrimRight(b.String(), "\n") + "\n" // exactly one trailing newline (markdownlint MD012/MD047)
 }
 
-// groupBySection buckets every manual row under its section title (longest-prefix match,
-// catch-all last), each bucket sorted by canonical name.
-func (v *Vocabulary) groupBySection() map[string][]Command {
+// groupByCategory buckets every manual row under its area category, each bucket sorted by
+// canonical name.
+func (v *Vocabulary) groupByCategory() map[string][]Command {
 	out := map[string][]Command{}
 	for _, c := range v.Manual() {
-		out[sectionOf(c.Action)] = append(out[sectionOf(c.Action)], c)
+		out[categoryOf(c.Action)] = append(out[categoryOf(c.Action)], c)
 	}
 	for _, rows := range out {
 		sort.Slice(rows, func(i, j int) bool { return rows[i].Canonical < rows[j].Canonical })
@@ -63,27 +78,9 @@ func (v *Vocabulary) groupBySection() map[string][]Command {
 	return out
 }
 
-// sectionOf returns the manual section title for an action id by longest-prefix match,
-// falling back to the catch-all (mold/freeform/mesh) section.
-func sectionOf(action string) string {
-	best, bestLen := "", -1
-	for _, sec := range manualSections() {
-		if sec.prefix == "" {
-			continue
-		}
-		if strings.HasPrefix(action, sec.prefix) && len(sec.prefix) > bestLen {
-			best, bestLen = sec.title, len(sec.prefix)
-		}
-	}
-	if best == "" {
-		return "Mold / freeform / mesh"
-	}
-	return best
-}
-
-// writeManualSection writes one Markdown table for a section.
-func writeManualSection(b *strings.Builder, title string, rows []Command) {
-	b.WriteString("## " + title + "\n\n")
+// writeManualTable writes one Markdown table under the given heading.
+func writeManualTable(b *strings.Builder, heading string, rows []Command) {
+	b.WriteString(heading + "\n\n")
 	b.WriteString("| Command | Aliases | Description | Example |\n")
 	b.WriteString("| --- | --- | --- | --- |\n")
 	for _, c := range rows {
@@ -105,8 +102,8 @@ func aliasCell(c Command) string {
 	return strings.Join(quoted, ", ")
 }
 
-// manualHeader is the generated doc's preamble (it warns the file is generated).
-func manualHeader() string {
+// flatManualHeader is the in-repo reference doc's preamble (it warns the file is generated).
+func flatManualHeader() string {
 	return "<!-- GENERATED by cmdline.Vocabulary.RenderManual — do not edit by hand. -->\n" +
 		"<!-- Regenerate: UPDATE_MANUAL=1 go test ./app/cmdline -run TestCommandManualInSync -->\n\n" +
 		"# Command manual\n\n" +

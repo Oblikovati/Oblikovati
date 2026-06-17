@@ -1,0 +1,4 @@
+# Generated docs are LF-only so the drift-guard test compares equal on every platform
+# (a Windows checkout must not rewrite them to CRLF). See app/cmdline TestCommandManualInSync.
+architecture/mapping/autocad-command-map.md text eol=lf
+docs/wiki/*.md text eol=lf
