@@ -135,13 +135,14 @@ func unitsConvert(_ *app.Session, args json.RawMessage) (json.RawMessage, error)
 }
 
 // unitsGetStringFromValue formats a database-unit value in the document's
-// display unit (honoring display precision, once #146's formatter lands).
+// display unit, honoring the display precision and format (decimal / fractional
+// / architectural lengths, decimal-degree / DMS angles).
 func unitsGetStringFromValue(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
 	doc, cat, value, err := stringFromValueInputs(s, args)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(wire.StringResult{Value: doc.Units().Format(param.Q(value, cat))})
+	return json.Marshal(wire.StringResult{Value: doc.Units().FormatDisplay(param.Q(value, cat))})
 }
 
 // unitsGetPreciseStringFromValue formats a database-unit value at full

@@ -59,8 +59,8 @@ func TestUnitsServiceOverWire(t *testing.T) {
 
 	var str wire.StringResult
 	call(t, r, s, "units.getStringFromValue", `{"value":4,"unitsType":"length"}`, &str)
-	if str.Value != "40 mm" {
-		t.Errorf("getStringFromValue(4 cm) = %q, want \"40 mm\"", str.Value)
+	if str.Value != "40.000 mm" { // display precision = 3 decimals
+		t.Errorf("getStringFromValue(4 cm) = %q, want \"40.000 mm\"", str.Value)
 	}
 
 	var val wire.ValueResult

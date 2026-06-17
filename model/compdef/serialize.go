@@ -4,6 +4,7 @@ package compdef
 
 import (
 	"fmt"
+	"strconv"
 
 	"oblikovati.org/api/types"
 
@@ -311,32 +312,105 @@ func (d *PartComponentDefinition) unitsRecipe() map[string]string {
 
 // applyUnits restores the preferred display unit for each named category.
 func (d *PartComponentDefinition) applyUnits(units map[string]string) error {
-	return applyUnitsTo(d.units, units)
+	return applyUnitsTo(&d.units, units)
 }
 
-// unitsRecipeFor captures the preferred display-unit name for each category — shared by
-// the part and assembly recipes, which persist units identically.
+// Reserved units-recipe keys carry the display precision/format alongside the
+// per-category unit names in the same map. They are NOT category names, so old
+// recipes that lack them simply restore the defaults.
+const (
+	keyLengthPrecision = "lengthPrecision"
+	keyAnglePrecision  = "anglePrecision"
+	keyLengthFormat    = "lengthFormat"
+	keyAngleFormat     = "angleFormat"
+)
+
+// unitsRecipeFor captures the preferred display-unit name for each category plus
+// the display precision/format — shared by the part and assembly recipes, which
+// persist units identically.
 func unitsRecipeFor(u param.UnitsOfMeasure) map[string]string {
-	out := make(map[string]string, len(unitCategories))
+	out := make(map[string]string, len(unitCategories)+4)
 	for _, cat := range unitCategories {
 		out[cat.String()] = u.PreferredName(cat)
 	}
+	out[keyLengthPrecision] = strconv.Itoa(u.LengthPrecision())
+	out[keyAnglePrecision] = strconv.Itoa(u.AnglePrecision())
+	out[keyLengthFormat] = u.LengthFormat().String()
+	out[keyAngleFormat] = angleFormatName(u.AngleFormat())
 	return out
 }
 
-// applyUnitsTo restores the preferred display unit for each named category onto u. An
-// unknown category name or an invalid unit is a corrupt-recipe error (no silent loss).
-func applyUnitsTo(u param.UnitsOfMeasure, units map[string]string) error {
-	for name, unitName := range units {
+// applyUnitsTo restores the preferred display unit for each named category plus
+// the precision/format reserved keys onto u. An unknown category name or an
+// invalid value is a corrupt-recipe error (no silent loss).
+func applyUnitsTo(u *param.UnitsOfMeasure, units map[string]string) error {
+	for name, val := range units {
+		handled, err := applyReservedUnitKey(u, name, val)
+		if err != nil {
+			return err
+		}
+		if handled {
+			continue
+		}
 		cat, ok := unitCategoryByName(name)
 		if !ok {
 			return fmt.Errorf("compdef: unknown unit category %q in recipe", name)
 		}
-		if err := u.SetPreferred(cat, unitName); err != nil {
+		if err := u.SetPreferred(cat, val); err != nil {
 			return fmt.Errorf("compdef: restore units: %w", err)
 		}
 	}
 	return nil
+}
+
+// applyReservedUnitKey applies a precision/format reserved key, reporting whether
+// the key was one (so the category path is skipped) and any parse/validation error.
+func applyReservedUnitKey(u *param.UnitsOfMeasure, name, val string) (bool, error) {
+	switch name {
+	case keyLengthPrecision, keyAnglePrecision:
+		n, err := strconv.Atoi(val)
+		if err != nil {
+			return true, fmt.Errorf("compdef: %s %q is not an integer: %w", name, val, err)
+		}
+		set := u.SetLengthPrecision
+		if name == keyAnglePrecision {
+			set = u.SetAnglePrecision
+		}
+		return true, set(n)
+	case keyLengthFormat:
+		f, ok := types.ParseParameterDisplayFormat(val)
+		if !ok {
+			return true, fmt.Errorf("compdef: unknown length display format %q in recipe", val)
+		}
+		u.SetLengthFormat(f)
+		return true, nil
+	case keyAngleFormat:
+		f, ok := parseAngleFormat(val)
+		if !ok {
+			return true, fmt.Errorf("compdef: unknown angle display format %q in recipe", val)
+		}
+		u.SetAngleFormat(f)
+		return true, nil
+	}
+	return false, nil
+}
+
+// angleFormatName / parseAngleFormat are the recipe spellings of param.AngleFormat.
+func angleFormatName(f param.AngleFormat) string {
+	if f == param.AngleDMS {
+		return "dms"
+	}
+	return "decimal"
+}
+
+func parseAngleFormat(s string) (param.AngleFormat, bool) {
+	switch s {
+	case "decimal":
+		return param.AngleDecimal, true
+	case "dms":
+		return param.AngleDMS, true
+	}
+	return param.AngleDecimal, false
 }
 
 // parametersRecipe captures every parameter in creation order (a valid order to

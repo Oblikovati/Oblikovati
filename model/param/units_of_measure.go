@@ -51,10 +51,23 @@ func lookupUnit(name string) (unitDef, bool) {
 // rendering for fractional/architectural/DMS is built on top of these in #146.
 type UnitsOfMeasure struct {
 	prefs           map[Unit]string // category → preferred user-unit name
-	lengthPrecision int             // length display precision (decimal places)
+	lengthPrecision int             // length display precision (decimal places / fraction subdivision exponent)
 	anglePrecision  int             // angle display precision (decimal places)
 	lengthFormat    types.ParameterDisplayFormat
+	angleFormat     AngleFormat
 }
+
+// AngleFormat is how an angle is rendered for display: as decimal degrees or as
+// degrees-minutes-seconds (DMS). Length has the richer
+// [types.ParameterDisplayFormat]; angle needs only this binary choice.
+type AngleFormat uint8
+
+const (
+	// AngleDecimal renders an angle as decimal degrees (e.g. "30.5 deg").
+	AngleDecimal AngleFormat = iota
+	// AngleDMS renders an angle in degrees-minutes-seconds (e.g. "30° 30' 0\"").
+	AngleDMS
+)
 
 // DefaultUnitsOfMeasure returns metric defaults (mm, degrees, kg, seconds) with
 // three length / two angle display decimals and decimal length formatting.
@@ -66,6 +79,7 @@ func DefaultUnitsOfMeasure() UnitsOfMeasure {
 		lengthPrecision: 3,
 		anglePrecision:  2,
 		lengthFormat:    types.DisplayFormatDecimal,
+		angleFormat:     AngleDecimal,
 	}
 }
 
@@ -88,6 +102,12 @@ func (m UnitsOfMeasure) AnglePrecision() int  { return m.anglePrecision }
 
 // LengthFormat is how lengths are rendered (decimal / fractional / architectural).
 func (m UnitsOfMeasure) LengthFormat() types.ParameterDisplayFormat { return m.lengthFormat }
+
+// AngleFormat is how angles are rendered (decimal degrees / DMS).
+func (m UnitsOfMeasure) AngleFormat() AngleFormat { return m.angleFormat }
+
+// SetAngleFormat sets the angle display format (decimal degrees / DMS).
+func (m *UnitsOfMeasure) SetAngleFormat(f AngleFormat) { m.angleFormat = f }
 
 // SetLengthPrecision / SetAnglePrecision set the display decimal places; a
 // negative count is rejected naming the offending value.
