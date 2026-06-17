@@ -76,5 +76,39 @@ func exportSketchDXF(part *compdef.PartComponentDefinition, src, dst string, arg
 	return nil
 }
 
+// cmdExportFlat develops a sheet-metal part's flat pattern and writes it to a .dxf with the
+// outline, bend lines and punch tokens on named layers, at a version (r2000|r2018; default r2000):
+//
+//	oblikovati-cli export-flat fixtures/bracket.opd bracket-flat.dxf r2018
+func cmdExportFlat(args []string, out io.Writer) error {
+	if len(args) < 2 || len(args) > 3 {
+		return fmt.Errorf("export-flat: expected <src.opd> <out.dxf> [r2000|r2018], got %d arg(s)", len(args))
+	}
+	src, dst := args[0], args[1]
+	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	d, err := ws.Open(src, true)
+	if err != nil {
+		return fmt.Errorf("export-flat: open %q: %w", src, err)
+	}
+	part, ok := d.Content().(*compdef.PartComponentDefinition)
+	if !ok {
+		return fmt.Errorf("export-flat: %q is not a part document", src)
+	}
+	flat, err := part.Unfold()
+	if err != nil {
+		return fmt.Errorf("export-flat: %w", err)
+	}
+	version := types.DXFR2000
+	if len(args) == 3 {
+		version = types.DXFVersion(args[2])
+	}
+	n, err := exchange.ExportFlatPatternDXFFile(flat, dst, exchange.FlatExportLayers{}, version)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "exported %s flat pattern to %s (%d entities, %s)\n", src, dst, n, version.Normalized())
+	return nil
+}
+
 // lowerExt returns path's lower-cased extension (including the dot).
 func lowerExt(path string) string { return strings.ToLower(filepath.Ext(path)) }

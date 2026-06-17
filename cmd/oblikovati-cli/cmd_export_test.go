@@ -8,9 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/ops"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence"
 )
@@ -32,6 +34,60 @@ func writeCLIPartWithSketch(t *testing.T, dir string) string {
 		t.Fatalf("save: %v", err)
 	}
 	return opd
+}
+
+// writeCLISheetMetalPart saves a sheet-metal part with a square base face, for the
+// flat-pattern DXF export CLI test.
+func writeCLISheetMetalPart(t *testing.T, dir string) string {
+	t.Helper()
+	opd := filepath.Join(dir, "tray.opd")
+	ws := doc.NewWorkspace(persistence.NewPackageStore())
+	d, err := compdef.AddPart(ws, opd, true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	part := d.Content().(*compdef.PartComponentDefinition)
+	if _, err := part.EnableSheetMetal(); err != nil {
+		t.Fatalf("EnableSheetMetal: %v", err)
+	}
+	sk := part.Sketches().Add(sketch.XYPlane())
+	c0 := sk.Points().Add(gmath.P2(0, 0))
+	c1 := sk.Points().Add(gmath.P2(4, 0))
+	c2 := sk.Points().Add(gmath.P2(4, 4))
+	c3 := sk.Points().Add(gmath.P2(0, 4))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+	feature.NewSheetMetalFaceFeatures(part.Features()).Add(&feature.SheetMetalFaceDefinition{Sketch: sk, ProfileIndex: 0, Operation: ops.NewBody})
+	part.Recompute()
+	if err := ws.Save(d); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	return opd
+}
+
+// TestCLIExportFlat develops a sheet-metal part's flat pattern to DXF via the CLI, asserting the
+// outline lands on the Outline layer.
+func TestCLIExportFlat(t *testing.T) {
+	dir := t.TempDir()
+	opd := writeCLISheetMetalPart(t, dir)
+	dxfPath := filepath.Join(dir, "tray-flat.dxf")
+
+	out, err := runCLI(t, "export-flat", opd, dxfPath, "r2018")
+	if err != nil {
+		t.Fatalf("export-flat: %v", err)
+	}
+	if !strings.Contains(out, "flat pattern") || !strings.Contains(out, "r2018") {
+		t.Errorf("export-flat output = %q, want flat-pattern entity count + r2018", out)
+	}
+	data, err := os.ReadFile(dxfPath)
+	if err != nil {
+		t.Fatalf("expected %s on disk: %v", dxfPath, err)
+	}
+	if !strings.Contains(string(data), "\n2\nOutline\n") || !strings.Contains(string(data), "\nLINE\n") {
+		t.Errorf("exported flat DXF missing the Outline layer or outline geometry")
+	}
 }
 
 // TestCLIExportSketchDXF exports a part's sketch to a .dxf at a chosen version via the CLI.

@@ -45,6 +45,8 @@ func run(args []string, out io.Writer) error {
 		return cmdImport(args[1:], out)
 	case "export":
 		return cmdExport(args[1:], out)
+	case "export-flat":
+		return cmdExportFlat(args[1:], out)
 	case "script":
 		return cmdScript(args[1:], out)
 	case "version":
@@ -55,7 +57,7 @@ func run(args []string, out io.Writer) error {
 		fmt.Fprintln(out, usage)
 		return nil
 	default:
-		return fmt.Errorf("oblikovati-cli: unknown command %q (want new|open|info|save-as|import|export|script|version|check-updates)", args[0])
+		return fmt.Errorf("oblikovati-cli: unknown command %q (want new|open|info|save-as|import|export|export-flat|script|version|check-updates)", args[0])
 	}
 }
 
@@ -69,6 +71,7 @@ usage:
   oblikovati-cli save-as <src> <dst>
   oblikovati-cli import <mesh-file.stl|.obj|.3mf> <dst.opd>
   oblikovati-cli export <src.opd> <mesh-file.stl|.obj|.3mf> [low|medium|high]
+  oblikovati-cli export-flat <src.opd> <out.dxf> [r2000|r2018]
   oblikovati-cli script run <file.lua> [--doc in.opd] [--save out.opd]
   oblikovati-cli version
   oblikovati-cli check-updates`
