@@ -75,3 +75,75 @@ func TestWriteDecodeRoundTrip(t *testing.T) {
 		t.Errorf("fit spline round-trip: fit=%v", fs.FitPoints)
 	}
 }
+
+// TestWriteFullGraphStructure checks that a written R2000 file carries the complete system
+// object graph AutoCAD requires — the nine symbol-table control objects, the standard
+// records, the block records and the named-object dictionary — alongside the model-space
+// entities, and that the $INSUNITS code round-trips through the header. The whole graph
+// decoding without warning is the in-CI proxy for the dwgread "SUCCESS" validation.
+func TestWriteFullGraphStructure(t *testing.T) {
+	in := []Entity{
+		&Line{Start: [3]float64{0, 0, 0}, End: [3]float64{10, 5, 0}},
+		&Circle{Center: [3]float64{3, 4, 0}, Radius: 2.5, Normal: [3]float64{0, 0, 1}},
+	}
+	data, err := Write(&Drawing{Entities: in, Units: 4}) // 4 = millimetres
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	dr, warns, err := Decode(data)
+	if err != nil {
+		t.Fatalf("Decode: %v", err)
+	}
+	if len(warns) != 0 {
+		t.Errorf("unexpected decode warnings: %v", warns)
+	}
+	if dr.Units != 4 {
+		t.Errorf("units round-trip = %d, want 4", dr.Units)
+	}
+	if len(dr.Entities) != len(in) {
+		t.Fatalf("entities round-trip = %d, want %d", len(dr.Entities), len(in))
+	}
+
+	counts := tallyObjectTypes(t, data)
+	for _, w := range []struct {
+		typ  ObjectType
+		want int
+	}{
+		{typeBlockControl, 1}, {typeLayerControl, 1}, {typeStyleControl, 1}, {typeLtypeControl, 1},
+		{typeViewControl, 1}, {typeUcsControl, 1}, {typeVportControl, 1}, {typeAppidControl, 1},
+		{typeDimstyleControl, 1}, {TypeLayer, 1}, {TypeStyle, 1}, {TypeLtype, 3}, {TypeAppid, 1},
+		{TypeVport, 1}, {TypeDimstyle, 1}, {TypeBlockHeader, 2}, {TypeBlock, 2}, {TypeEndblk, 2},
+		// NOD + ACAD_GROUP/MLINESTYLE/PLOTSETTINGS/LAYOUT sub-dictionaries.
+		{TypeDictionary, 5},
+		// Named-object-dictionary chain objects (MLINESTYLE is fixed 0x49; the rest are
+		// class-resolved at 500/501/502 in the writer's class order).
+		{0x49, 1}, {classDictWDflt, 1}, {classPlaceholder, 1}, {classLayout, 2},
+	} {
+		if counts[w.typ] != w.want {
+			t.Errorf("object type %#x count = %d, want %d", int(w.typ), counts[w.typ], w.want)
+		}
+	}
+}
+
+// tallyObjectTypes walks the written file's object map and counts each object by type.
+func tallyObjectTypes(t *testing.T, data []byte) map[ObjectType]int {
+	t.Helper()
+	h, err := ParseFileHeader(data)
+	if err != nil {
+		t.Fatalf("ParseFileHeader: %v", err)
+	}
+	omb, _ := h.ObjectMapBytes(data)
+	refs, err := parseObjectMap(omb)
+	if err != nil {
+		t.Fatalf("parseObjectMap: %v", err)
+	}
+	counts := map[ObjectType]int{}
+	for _, ref := range refs {
+		hdr, err := decodeObjectHeader(data, ref, h.Version)
+		if err != nil {
+			t.Fatalf("object %d header: %v", ref.Handle, err)
+		}
+		counts[hdr.Type]++
+	}
+	return counts
+}
