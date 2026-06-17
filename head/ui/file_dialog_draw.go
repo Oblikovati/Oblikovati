@@ -185,25 +185,34 @@ func drawExplorerTarget(s *app.Session) {
 	native.SetNextItemWidth(-1)
 	native.InputText("File name or path##file-path", fileModal.path[:])
 	if fileModal.mode == dialogExport {
-		drawExportResolution()
+		if isDXFTarget() {
+			drawExportDXFVersion()
+		} else {
+			drawExportResolution()
+		}
 	}
-	if fileModal.mode == dialogImport && isDWGTarget() {
+	if fileModal.mode == dialogImport && isSketchImportTarget() {
 		drawImportPlane(s)
 	}
 }
 
-// isDWGTarget reports whether the import target is a .dwg file (so the plane picker
-// shows only for DWG, which imports into a sketch on a chosen plane).
-func isDWGTarget() bool {
-	return strings.EqualFold(filepath.Ext(fileModal.targetPath()), ".dwg")
+// isSketchImportTarget reports whether the import target is a drawing file (.dwg/.dxf) — the
+// sketch-importing formats, for which the plane picker is shown.
+func isSketchImportTarget() bool {
+	return isSketchPath(fileModal.targetPath())
 }
 
-// drawImportPlane renders the work-plane picker for a DWG import: a 2D drawing lands
+// isDXFTarget reports whether the current target path is a .dxf file.
+func isDXFTarget() bool {
+	return strings.EqualFold(filepath.Ext(fileModal.targetPath()), ".dxf")
+}
+
+// drawImportPlane renders the work-plane picker for a drawing import: a 2D drawing lands
 // on the chosen plane (its origin at the plane origin); a 3D drawing ignores it.
 func drawImportPlane(s *app.Session) {
 	choices, err := s.DWGPlaneChoices()
 	if err != nil || len(choices) == 0 {
-		native.Text("Open a part to import a DWG into.")
+		native.Text("Open a part to import a drawing into.")
 		return
 	}
 	if fileModal.planeIndex >= len(choices) {
@@ -262,6 +271,19 @@ func drawExportResolution() {
 	}
 }
 
+// drawExportDXFVersion renders the DXF-export version selector (r2000/r2018), shown when the
+// export target is a .dxf file.
+func drawExportDXFVersion() {
+	if native.BeginCombo("DXF version", dxfVersionNames[fileModal.dxfVersion]) {
+		for i, name := range dxfVersionNames {
+			if native.Selectable(name, i == fileModal.dxfVersion) {
+				fileModal.dxfVersion = i
+			}
+		}
+		native.EndCombo()
+	}
+}
+
 // applyFileAction performs the confirmed file operation and reports the outcome — success
 // or the underlying (kernel) error — in the status bar so the user always knows what
 // happened, instead of an import/export silently doing nothing. A successful Save As
@@ -280,11 +302,7 @@ func applyFileAction(s *app.Session, act fileAction) {
 	case dialogMeshRef:
 		placeMeshFromFile(s, act.Path, name)
 	case dialogImport:
-		if isDWGPath(act.Path) {
-			importDWGFromFile(s, act, name)
-		} else {
-			importBodyFromFile(s, act.Path, name)
-		}
+		importFromFile(s, act, name)
 	case dialogExport:
 		exportToFile(s, act, name)
 	case dialogExportBOM:
@@ -325,6 +343,12 @@ func importBodyFromFile(s *app.Session, path, name string) {
 // isDWGPath reports whether path is a .dwg file (the sketch-importing branch of File ▸ Import).
 func isDWGPath(path string) bool { return strings.EqualFold(filepath.Ext(path), ".dwg") }
 
+// isDXFPath reports whether path is a .dxf file (the other sketch-importing branch).
+func isDXFPath(path string) bool { return strings.EqualFold(filepath.Ext(path), ".dxf") }
+
+// isSketchPath reports whether path is a drawing file (.dwg/.dxf) that imports into a sketch.
+func isSketchPath(path string) bool { return isDWGPath(path) || isDXFPath(path) }
+
 // importDWGFromFile imports a .dwg into the active part on the chosen work plane
 // (2D drawing → a sketch on that plane; 3D drawing → a Sketch3D), reporting the
 // outcome (File ▸ Import of a .dwg).
@@ -350,8 +374,55 @@ func importDWGFromFile(s *app.Session, act fileAction, name string) {
 	fileNotice(s, "Imported %s into a %s (%d entities)", name, kind, res.EntityCount)
 }
 
-// exportToFile writes the active part's bodies to a mesh file at the chosen resolution (File ▸ Export).
+// importFromFile routes a File ▸ Import to the right reader by extension: .dwg/.dxf import
+// into a sketch (on the chosen work plane), the mesh/B-rep formats into bodies.
+func importFromFile(s *app.Session, act fileAction, name string) {
+	switch {
+	case isDWGPath(act.Path):
+		importDWGFromFile(s, act, name)
+	case isDXFPath(act.Path):
+		importDXFFromFile(s, act, name)
+	default:
+		importBodyFromFile(s, act.Path, name)
+	}
+}
+
+// importDXFFromFile imports a .dxf into the active part on the chosen work plane (2D drawing
+// → a sketch on that plane; 3D drawing → a Sketch3D), reporting the outcome.
+func importDXFFromFile(s *app.Session, act fileAction, name string) {
+	choices, err := s.DWGPlaneChoices()
+	if err != nil {
+		fileNotice(s, "Import failed: %v", err)
+		return
+	}
+	plane := choices[0].Plane
+	if act.PlaneIndex >= 0 && act.PlaneIndex < len(choices) {
+		plane = choices[act.PlaneIndex].Plane
+	}
+	res, err := s.ImportDXFFile(act.Path, plane)
+	if err != nil {
+		fileNotice(s, "Import failed: %v", err)
+		return
+	}
+	kind := "2D sketch"
+	if res.Is3D {
+		kind = "3D sketch"
+	}
+	fileNotice(s, "Imported %s into a %s (%d entities)", name, kind, res.EntityCount)
+}
+
+// exportToFile writes the active part to the chosen file: a .dxf exports the active sketch's
+// curves at the chosen version; the mesh/B-rep formats export the part's bodies.
 func exportToFile(s *app.Session, act fileAction, name string) {
+	if isDXFPath(act.Path) {
+		n, err := s.ExportActiveSketchDXF(act.Path, types.DXFVersion(act.DXFVersion))
+		if err != nil {
+			fileNotice(s, "Export failed: %v", err)
+			return
+		}
+		fileNotice(s, "Exported %s (%d curves)", name, n)
+		return
+	}
 	if _, err := s.ExportFile(act.Path, types.MeshResolution(act.Resolution)); err != nil {
 		fileNotice(s, "Export failed: %v", err)
 		return
