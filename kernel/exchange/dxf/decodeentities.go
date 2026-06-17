@@ -62,6 +62,10 @@ func decodeEntity(name string, body []pair) (drawing.Entity, error) {
 		return decodeArc(indexByCode(body))
 	case "ELLIPSE":
 		return decodeEllipse(indexByCode(body))
+	case "LWPOLYLINE":
+		return decodeLwPolyline(body)
+	case "SPLINE":
+		return decodeSpline(body)
 	default:
 		return nil, nil
 	}
@@ -155,6 +159,110 @@ func decodeEllipse(m map[int]pair) (drawing.Entity, error) {
 		Handle: handleOf(m), Center: center, MajorAxis: major, AxisRatio: ratio,
 		StartAngle: start, EndAngle: end, Normal: normalOf(m),
 	}, nil
+}
+
+// decodeLwPolyline reads LWPOLYLINE, whose codes repeat per vertex, so it walks the ordered
+// body. Each vertex is a 10/20 pair; a 42 that follows a vertex is that vertex's bulge (the
+// Bulges slice stays parallel to Points, default 0). 70 bit 1 is closed; 38 is elevation;
+// 210/220/230 the extrusion normal.
+//
+//nolint:funlen,gocyclo // sequential ordered-pair walk; the field handling is the format.
+func decodeLwPolyline(b []pair) (drawing.Entity, error) {
+	p := &drawing.LwPolyline{Normal: [3]float64{0, 0, 1}}
+	var ferr error
+	f := readFloat(&ferr)
+	var nx, ny, x float64
+	for _, pr := range b {
+		switch pr.code {
+		case 5:
+			p.Handle = pr.handle()
+		case 70:
+			fl, _ := pr.integer()
+			p.Closed = fl&1 != 0
+		case 38:
+			p.Elevation = f(pr)
+		case 210:
+			nx = f(pr)
+		case 220:
+			ny = f(pr)
+		case 230:
+			p.Normal = [3]float64{nx, ny, f(pr)}
+		case 10:
+			x = f(pr)
+		case 20:
+			p.Points = append(p.Points, [2]float64{x, f(pr)})
+			p.Bulges = append(p.Bulges, 0)
+		case 42:
+			if n := len(p.Bulges); n > 0 {
+				p.Bulges[n-1] = f(pr)
+			}
+		}
+	}
+	if ferr != nil {
+		return nil, ferr
+	}
+	return p, nil
+}
+
+// decodeSpline reads SPLINE, whose codes repeat, so it walks the ordered body: 40 are the
+// knots, 41 the (optional, interleaved) control-point weights, 10/20/30 the control points,
+// 11/21/31 the fit points. 70 bit 1 = closed, bit 4 = rational; 71 is the degree. The
+// tolerance codes 42/43/44 are ignored (defaults rebuild the curve).
+//
+//nolint:funlen,gocyclo // sequential ordered-pair walk across both spline scenarios.
+func decodeSpline(b []pair) (drawing.Entity, error) {
+	s := &drawing.Spline{}
+	var ferr error
+	f := readFloat(&ferr)
+	var cp, fp [3]float64
+	for _, pr := range b {
+		switch pr.code {
+		case 5:
+			s.Handle = pr.handle()
+		case 70:
+			fl, _ := pr.integer()
+			s.Closed = fl&1 != 0
+			s.Rational = fl&4 != 0
+		case 71:
+			s.Degree, _ = pr.integer()
+		case 40:
+			s.Knots = append(s.Knots, f(pr))
+		case 41:
+			s.Weights = append(s.Weights, f(pr))
+		case 10:
+			cp[0] = f(pr)
+		case 20:
+			cp[1] = f(pr)
+		case 30:
+			cp[2] = f(pr)
+			s.ControlPoints = append(s.ControlPoints, cp)
+			cp = [3]float64{}
+		case 11:
+			fp[0] = f(pr)
+		case 21:
+			fp[1] = f(pr)
+		case 31:
+			fp[2] = f(pr)
+			s.FitPoints = append(s.FitPoints, fp)
+			fp = [3]float64{}
+		}
+	}
+	if ferr != nil {
+		return nil, ferr
+	}
+	return s, nil
+}
+
+// readFloat returns a parse helper that records the first error into *ferr, so an
+// ordered-pair walk can read many reals concisely and report a malformed one once.
+func readFloat(ferr *error) func(pair) float64 {
+	return func(p pair) float64 {
+		v, err := p.float()
+		if err != nil && *ferr == nil {
+			*ferr = err
+		}
+		return v
+	}
 }
 
 // indexByCode maps an entity's group pairs by code (first occurrence wins). Suitable for

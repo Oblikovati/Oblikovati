@@ -39,7 +39,103 @@ func encodeEntity(w *tagWriter, e drawing.Entity, handle, owner uint64) {
 		w.real(40, g.AxisRatio)
 		w.real(41, g.StartAngle)
 		w.real(42, g.EndAngle)
+	case *drawing.LwPolyline:
+		entityHead(w, "LWPOLYLINE", handle, owner, "AcDbPolyline")
+		w.integer(90, len(g.Points))
+		w.integer(70, closedFlag(g.Closed))
+		if g.Elevation != 0 {
+			w.real(38, g.Elevation)
+		}
+		for i, pt := range g.Points {
+			w.real(10, pt[0])
+			w.real(20, pt[1])
+			if i < len(g.Bulges) && g.Bulges[i] != 0 {
+				w.real(42, g.Bulges[i]) // bulge attaches to the vertex it follows
+			}
+		}
+	case *drawing.Spline:
+		encodeSpline(w, g, handle, owner)
 	}
+}
+
+// closedFlag is the LWPOLYLINE 70 flag value for an open/closed polyline.
+func closedFlag(closed bool) int {
+	if closed {
+		return 1
+	}
+	return 0
+}
+
+// encodeSpline writes a SPLINE. Knots and weights interleave with the control points per the
+// DXF layout. When the model carries control points but no knot vector (the common case from
+// a sketch export), a clamped uniform knot vector is generated so the curve is a valid NURBS
+// AutoCAD accepts rather than a knot-less spline.
+//
+//nolint:funlen // sequential SPLINE field writes across header, knots, control and fit points.
+func encodeSpline(w *tagWriter, s *drawing.Spline, handle, owner uint64) {
+	entityHead(w, "SPLINE", handle, owner, "AcDbSpline")
+	degree := splineDegree(s)
+	knots := s.Knots
+	if len(knots) == 0 && len(s.ControlPoints) >= 2 {
+		knots = clampedKnots(len(s.ControlPoints), degree)
+	}
+	flag := 8 // planar
+	if s.Closed {
+		flag |= 1
+	}
+	if s.Rational {
+		flag |= 4
+	}
+	w.integer(70, flag)
+	w.integer(71, degree)
+	w.integer(72, len(knots))
+	w.integer(73, len(s.ControlPoints))
+	w.integer(74, len(s.FitPoints))
+	for _, k := range knots {
+		w.real(40, k)
+	}
+	for i, cp := range s.ControlPoints {
+		w.coord(10, cp)
+		if i < len(s.Weights) {
+			w.real(41, s.Weights[i])
+		}
+	}
+	for _, fp := range s.FitPoints {
+		w.coord(11, fp)
+	}
+}
+
+// splineDegree returns the spline's degree, defaulting to 3 and clamping to one less than
+// the control-point count (a degree cannot exceed that for a valid B-spline).
+func splineDegree(s *drawing.Spline) int {
+	d := s.Degree
+	if d < 1 {
+		d = 3
+	}
+	if n := len(s.ControlPoints); n >= 2 && d > n-1 {
+		d = n - 1
+	}
+	return d
+}
+
+// clampedKnots builds a clamped uniform knot vector for n control points of the given
+// degree: the first and last (degree+1) knots are repeated (0 and 1), the interior knots
+// evenly spaced — the standard vector for a curve that passes through its end control points.
+func clampedKnots(n, degree int) []float64 {
+	total := n + degree + 1
+	interior := n - degree - 1
+	knots := make([]float64, total)
+	for i := range knots {
+		switch {
+		case i <= degree:
+			knots[i] = 0
+		case i >= total-degree-1:
+			knots[i] = 1
+		default:
+			knots[i] = float64(i-degree) / float64(interior+1)
+		}
+	}
+	return knots
 }
 
 // normalOrZ defaults a zero extrusion vector to +Z (a 2D entity), so a model entity that
