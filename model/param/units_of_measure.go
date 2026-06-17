@@ -7,6 +7,8 @@ import (
 	stdmath "math"
 	"strconv"
 	"strings"
+
+	"oblikovati.org/api/types"
 )
 
 // unitDef defines a named user unit: its dimension category and the factor that
@@ -42,15 +44,74 @@ func lookupUnit(name string) (unitDef, bool) {
 // UnitsOfMeasure holds a document's display-unit preferences and performs the
 // conversion/formatting at the boundary (contract: UnitsOfMeasure). Stored
 // values never change when preferences do — only their presentation.
+//
+// Beyond the per-category preferred unit, it carries the length/angle display
+// precision (decimal places) and the length display format (decimal /
+// fractional / architectural). These drive presentation only; the rich
+// rendering for fractional/architectural/DMS is built on top of these in #146.
 type UnitsOfMeasure struct {
-	prefs map[Unit]string // category → preferred user-unit name
+	prefs           map[Unit]string // category → preferred user-unit name
+	lengthPrecision int             // length display precision (decimal places)
+	anglePrecision  int             // angle display precision (decimal places)
+	lengthFormat    types.ParameterDisplayFormat
 }
 
-// DefaultUnitsOfMeasure returns metric defaults (mm, degrees, kg, seconds).
+// DefaultUnitsOfMeasure returns metric defaults (mm, degrees, kg, seconds) with
+// three length / two angle display decimals and decimal length formatting.
 func DefaultUnitsOfMeasure() UnitsOfMeasure {
-	return UnitsOfMeasure{prefs: map[Unit]string{
-		Length: "mm", Angle: "deg", Area: "mm^2", Volume: "mm^3", Mass: "kg", Time: "s",
-	}}
+	return UnitsOfMeasure{
+		prefs: map[Unit]string{
+			Length: "mm", Angle: "deg", Area: "mm^2", Volume: "mm^3", Mass: "kg", Time: "s",
+		},
+		lengthPrecision: 3,
+		anglePrecision:  2,
+		lengthFormat:    types.DisplayFormatDecimal,
+	}
+}
+
+// Clone returns an independent copy whose preference edits do not touch the
+// receiver's shared map — the safe basis for building an updated units object
+// before storing it back on a document.
+func (m UnitsOfMeasure) Clone() UnitsOfMeasure {
+	prefs := make(map[Unit]string, len(m.prefs))
+	for k, v := range m.prefs {
+		prefs[k] = v
+	}
+	m.prefs = prefs
+	return m
+}
+
+// LengthPrecision / AnglePrecision are the display decimal places for lengths
+// and angles.
+func (m UnitsOfMeasure) LengthPrecision() int { return m.lengthPrecision }
+func (m UnitsOfMeasure) AnglePrecision() int  { return m.anglePrecision }
+
+// LengthFormat is how lengths are rendered (decimal / fractional / architectural).
+func (m UnitsOfMeasure) LengthFormat() types.ParameterDisplayFormat { return m.lengthFormat }
+
+// SetLengthPrecision / SetAnglePrecision set the display decimal places; a
+// negative count is rejected naming the offending value.
+func (m *UnitsOfMeasure) SetLengthPrecision(places int) error {
+	return setPrecision(&m.lengthPrecision, places)
+}
+
+func (m *UnitsOfMeasure) SetAnglePrecision(places int) error {
+	return setPrecision(&m.anglePrecision, places)
+}
+
+// setPrecision validates and assigns a display-precision decimal-place count.
+func setPrecision(dst *int, places int) error {
+	if places < 0 {
+		return fmt.Errorf("param: display precision %d is negative; want ≥ 0", places)
+	}
+	*dst = places
+	return nil
+}
+
+// SetLengthFormat sets the length display format (decimal / fractional /
+// architectural).
+func (m *UnitsOfMeasure) SetLengthFormat(f types.ParameterDisplayFormat) {
+	m.lengthFormat = f
 }
 
 // SetPreferred sets the display unit for a category; the name must be registered

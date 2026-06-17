@@ -378,6 +378,10 @@ func (a *AssemblyComponentDefinition) SetLengthUnit(name string) error {
 	return a.units.SetPreferred(param.Length, name)
 }
 
+// SetUnits replaces the document's display units wholesale (build from
+// Units().Clone()).
+func (a *AssemblyComponentDefinition) SetUnits(u param.UnitsOfMeasure) { a.units = u }
+
 // ModelGeometryVersion is a string that changes whenever the assembly's occurrences
 // change (add/remove/move/suppress), so consumers (drawings, parent assemblies) can
 // detect when they must update. It is derived from the occurrence collection's
