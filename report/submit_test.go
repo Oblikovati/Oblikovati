@@ -46,7 +46,7 @@ func samplePayload() Payload {
 		Arch:           "amd64",
 		AppVersion:     "0.16.0",
 		OpenDocuments:  []DocumentInfo{{Path: "/tmp/p.obk", Name: "p", Type: "Part"}},
-		TransactionLog: []string{"Sketch", "Extrude"},
+		TransactionLog: []TransactionEvent{{Time: "09:00:01", Document: "p", Label: "Extrude", Recipe: "features: []\n"}},
 		WindowPNG:      []byte{0x89, 0x50, 0x4e, 0x47},
 		ViewportPNG:    []byte{0x89, 0x50, 0x4e, 0x47, 0x0d},
 	}

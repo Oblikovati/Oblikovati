@@ -32,14 +32,19 @@ func (s *Session) CollectDiagnostics() report.Payload {
 }
 
 // TransactionLog returns the transaction-manager events recorded since the application
-// opened — every committed edit across all documents, oldest first — as
-// "<time>  <document>: <label>" lines. It is an append-only audit (see watchTransactions),
-// not a document's current undo stack: undo does not erase entries here, so the report shows
-// the full sequence of what the user did.
-func (s *Session) TransactionLog() []string {
-	out := make([]string, 0, len(s.txEvents))
+// opened — every committed edit across all documents, oldest first — each carrying the
+// document's full recipe (the complete, replayable command payload). It is an append-only
+// audit (see watchTransactions), not a document's current undo stack: undo does not erase
+// entries here, so the report shows the full sequence of what the user did.
+func (s *Session) TransactionLog() []report.TransactionEvent {
+	out := make([]report.TransactionEvent, 0, len(s.txEvents))
 	for _, e := range s.txEvents {
-		out = append(out, fmt.Sprintf("%s  %s: %s", e.when.Format("15:04:05"), e.doc, e.label))
+		out = append(out, report.TransactionEvent{
+			Time:     e.when.Format("15:04:05"),
+			Document: e.doc,
+			Label:    e.label,
+			Recipe:   string(e.recipe),
+		})
 	}
 	return out
 }
