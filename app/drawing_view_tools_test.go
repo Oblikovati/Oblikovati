@@ -78,6 +78,38 @@ func TestBaseViewToolPlacesViaCursor(t *testing.T) {
 	}
 }
 
+func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	if _, err := c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1}); err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	tool := NewAuxiliaryViewTool()
+	tool.Start(s)
+	if !tool.CanCommit() {
+		t.Fatal("auxiliary tool cannot commit with a base view present")
+	}
+	tool.Params().Floats[0].Set(30) // fold 30°
+	if got := tool.PreviewCurves(s); len(got) == 0 {
+		t.Fatal("auxiliary tool produced no preview curves")
+	}
+	tool.SetPlacement(260, 200)
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	views := c.Sheets().Active().Views()
+	v, ok := views.ByName("VIEW:2")
+	if !ok {
+		t.Fatalf("auxiliary view not added (have %d views)", views.Count())
+	}
+	if v.Type() != types.DrawingViewAuxiliary || v.BaseViewName() != "FRONT" {
+		t.Errorf("placed view = type %v parent %q, want auxiliary off FRONT", v.Type(), v.BaseViewName())
+	}
+	if x, y := v.CenterMM(); x != 260 || y != 200 {
+		t.Errorf("placed at (%g,%g), want the cursor (260,200)", x, y)
+	}
+}
+
 func TestPickSelectEditDeleteDrawingView(t *testing.T) {
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)

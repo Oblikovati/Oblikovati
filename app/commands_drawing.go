@@ -40,6 +40,9 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Projected View", "Views", "drawing-projected-view",
 			"Project an orthographic view off an existing base view (right/left/up/down).",
 			func() Tool { return NewProjectedViewTool() }),
+		drawingToolCommand("Auxiliary View", "Views", "drawing-auxiliary-view",
+			"Fold an auxiliary view off a base view about a line at a chosen angle, to show an inclined face true-size.",
+			func() Tool { return NewAuxiliaryViewTool() }),
 		NewCommand("Drawing.ExportDXF", "Export DXF", "Output", requestDrawingDXFExport).
 			WithTab("Drawing").WithRibbons(DrawingRibbon).WithEnable(hasActiveDrawing).
 			WithIcon("drawing-export-dxf").WithButtonStyle(LargeIconButton).

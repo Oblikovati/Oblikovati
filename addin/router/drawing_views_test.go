@@ -67,10 +67,19 @@ func TestDrawingViewsLifecycleOverWire(t *testing.T) {
 		t.Fatalf("projected view = %+v, want projected off FRONT", proj.View)
 	}
 
+	var aux wire.ViewResult
+	call(t, r, s, "drawingViews.addAuxiliary", `{"name":"AUX","parentView":"FRONT","foldAngleDeg":0,"centerXmm":120,"centerYmm":240}`, &aux)
+	if aux.View.Type != "auxiliary" || aux.View.BaseView != "FRONT" || aux.View.Projected {
+		t.Fatalf("auxiliary view = %+v, want an auxiliary off FRONT", aux.View)
+	}
+	if aux.View.VisibleCount == 0 {
+		t.Error("auxiliary view has no visible curves")
+	}
+
 	var list wire.ListDrawingViewsResult
 	call(t, r, s, "drawingViews.list", "{}", &list)
-	if len(list.Views) != 2 {
-		t.Fatalf("views = %d, want 2", len(list.Views))
+	if len(list.Views) != 3 {
+		t.Fatalf("views = %d, want 3 (base + projected + auxiliary)", len(list.Views))
 	}
 
 	var curves wire.ViewCurvesResult

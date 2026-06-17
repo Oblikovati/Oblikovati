@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // bodyLookup resolves the drawing's referenced model to its B-rep body for projection. It is
@@ -81,14 +83,75 @@ func (vs *DrawingViews) AddProjected(spec ProjectedViewSpec) (*DrawingView, erro
 		return nil, err
 	}
 	v := &DrawingView{
-		name: name, projected: true, baseView: spec.BaseView, orientation: base.orientation,
-		direction: spec.Direction, style: base.style, scale: base.scale,
+		name: name, viewType: types.DrawingViewProjected, projected: true, baseView: spec.BaseView,
+		orientation: base.orientation, direction: spec.Direction, style: base.style, scale: base.scale,
 		centerX: spec.CenterX, centerY: spec.CenterY,
 	}
 	origin := bodyCenter(body)
 	v.recompute(body, projectedBasis(baseBasis(base.orientation, origin), spec.Direction, origin))
 	vs.items = append(vs.items, v)
 	return v, nil
+}
+
+// AuxiliaryViewSpec describes an auxiliary view folded off a parent view.
+type AuxiliaryViewSpec struct {
+	Name             string
+	ParentView       string
+	FoldAngleRad     float64
+	CenterX, CenterY float64
+}
+
+// AddAuxiliary adds a view projected perpendicular to a fold line on parentView, inheriting the
+// parent's scale and style. The parent must be a base view (auxiliaries fold off an orthographic
+// base, like projected views).
+func (vs *DrawingViews) AddAuxiliary(spec AuxiliaryViewSpec) (*DrawingView, error) {
+	parent, body, err := vs.parentBaseFor(spec.ParentView)
+	if err != nil {
+		return nil, err
+	}
+	name, err := vs.uniqueName(spec.Name)
+	if err != nil {
+		return nil, err
+	}
+	v := &DrawingView{
+		name: name, viewType: types.DrawingViewAuxiliary, baseView: spec.ParentView,
+		foldAngle: spec.FoldAngleRad, orientation: parent.orientation, style: parent.style,
+		scale: parent.scale, centerX: spec.CenterX, centerY: spec.CenterY,
+	}
+	origin := bodyCenter(body)
+	v.recompute(body, auxiliaryBasis(baseBasis(parent.orientation, origin), spec.FoldAngleRad, origin))
+	vs.items = append(vs.items, v)
+	return v, nil
+}
+
+// PreviewAuxiliary returns the origin-centred curves an auxiliary view folded off parentView at
+// foldAngleRad would produce, without adding it. ok is false when the parent or model is missing.
+func (vs *DrawingViews) PreviewAuxiliary(parentView string, foldAngleRad float64) ([]DrawingCurve, bool) {
+	parent, body, err := vs.parentBaseFor(parentView)
+	if err != nil {
+		return nil, false
+	}
+	origin := bodyCenter(body)
+	v := &DrawingView{viewType: types.DrawingViewAuxiliary, style: parent.style, scale: parent.scale}
+	v.recompute(body, auxiliaryBasis(baseBasis(parent.orientation, origin), foldAngleRad, origin))
+	return v.curves, true
+}
+
+// parentBaseFor resolves a derived view's parent (which must be a base view) and the referenced
+// model body — the common precondition for auxiliary/section/detail views.
+func (vs *DrawingViews) parentBaseFor(parentView string) (*DrawingView, *topo.Body, error) {
+	parent, ok := vs.ByName(parentView)
+	if !ok {
+		return nil, nil, fmt.Errorf("drawing: no parent view %q to derive from", parentView)
+	}
+	if parent.viewType != types.DrawingViewBase {
+		return nil, nil, fmt.Errorf("drawing: %q is not a base view; derive from a base view", parentView)
+	}
+	body, ok := vs.resolveBody()
+	if !ok {
+		return nil, nil, fmt.Errorf("drawing: no referenced model to project")
+	}
+	return parent, body, nil
 }
 
 // PreviewBase returns the drawing curves a base view of the given orientation/style/scale
@@ -152,13 +215,30 @@ func (vs *DrawingViews) Recompute() {
 	}
 	origin := bodyCenter(body)
 	for _, v := range vs.items {
-		if !v.projected {
-			v.recompute(body, baseBasis(v.orientation, origin))
-			continue
+		if basis, ok := vs.basisFor(v, origin); ok {
+			v.recompute(body, basis)
 		}
-		if base, ok := vs.ByName(v.baseView); ok {
-			v.recompute(body, projectedBasis(baseBasis(base.orientation, origin), v.direction, origin))
+	}
+}
+
+// basisFor returns the projection frame a view uses, dispatching on its type. A derived view
+// whose parent is missing yields ok=false (it is left as-is rather than mis-projected).
+func (vs *DrawingViews) basisFor(v *DrawingView, origin math.Point3) (hlr.View, bool) {
+	switch v.viewType {
+	case types.DrawingViewProjected:
+		base, ok := vs.ByName(v.baseView)
+		if !ok {
+			return hlr.View{}, false
 		}
+		return projectedBasis(baseBasis(base.orientation, origin), v.direction, origin), true
+	case types.DrawingViewAuxiliary:
+		base, ok := vs.ByName(v.baseView)
+		if !ok {
+			return hlr.View{}, false
+		}
+		return auxiliaryBasis(baseBasis(base.orientation, origin), v.foldAngle, origin), true
+	default: // base view
+		return baseBasis(v.orientation, origin), true
 	}
 }
 
@@ -181,15 +261,15 @@ func (vs *DrawingViews) ByName(name string) (*DrawingView, bool) {
 	return nil, false
 }
 
-// Remove deletes the named view; removing a base view also removes the views projected from
-// it (they have no base to derive from).
+// Remove deletes the named view; removing a base view also removes the views derived from it
+// (projected/auxiliary/…), which have no parent left to derive from.
 func (vs *DrawingViews) Remove(name string) error {
 	if _, ok := vs.ByName(name); !ok {
 		return fmt.Errorf("drawing: no view named %q", name)
 	}
 	kept := vs.items[:0]
 	for _, v := range vs.items {
-		if v.name == name || (v.projected && v.baseView == name) {
+		if v.name == name || v.baseView == name {
 			continue
 		}
 		kept = append(kept, v)

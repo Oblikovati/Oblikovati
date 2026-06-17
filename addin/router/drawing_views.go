@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
@@ -22,6 +23,7 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.handlers[wire.MethodDrawingViewsList] = drawingViewsList
 	r.handlers[wire.MethodDrawingViewsAddBase] = drawingViewsAddBase
 	r.handlers[wire.MethodDrawingViewsAddProjected] = drawingViewsAddProjected
+	r.handlers[wire.MethodDrawingViewsAddAuxiliary] = drawingViewsAddAuxiliary
 	r.handlers[wire.MethodDrawingViewsDelete] = drawingViewsDelete
 	r.handlers[wire.MethodDrawingViewsCurves] = drawingViewsCurves
 }
@@ -103,6 +105,26 @@ func drawingViewsAddProjected(s *app.Session, raw json.RawMessage) (json.RawMess
 	return json.Marshal(wire.ViewResult{View: drawingViewInfo(v)})
 }
 
+func drawingViewsAddAuxiliary(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	views, err := activeSheetViews(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAuxiliaryViewArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	v, err := views.AddAuxiliary(drawing.AuxiliaryViewSpec{
+		Name: in.Name, ParentView: in.ParentView, FoldAngleRad: in.FoldAngleDeg * math.Pi / 180,
+		CenterX: in.CenterXMM, CenterY: in.CenterYMM,
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.ViewResult{View: drawingViewInfo(v)})
+}
+
 func drawingViewsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	views, err := activeSheetViews(s)
 	if err != nil {
@@ -142,7 +164,7 @@ func drawingViewsCurves(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 		out.Segments = append(out.Segments, wire.DrawingCurveSegment{
 			AX: float64(c.Start().X), AY: float64(c.Start().Y),
 			BX: float64(c.End().X), BY: float64(c.End().Y),
-			Visible: c.IsVisible(), EdgeKey: hex.EncodeToString(c.EdgeKey()),
+			Visible: c.IsVisible(), Kind: c.Kind().String(), EdgeKey: hex.EncodeToString(c.EdgeKey()),
 		})
 	}
 	return json.Marshal(out)
@@ -153,13 +175,17 @@ func drawingViewInfo(v *drawing.DrawingView) wire.DrawingViewInfo {
 	visible, hidden := v.VisibleHidden()
 	x, y := v.CenterMM()
 	info := wire.DrawingViewInfo{
-		Name: v.Name(), Projected: v.IsProjected(), Orientation: v.Orientation().String(),
-		Scale: v.Scale(), Style: v.Style().String(), CenterXMM: x, CenterYMM: y,
-		VisibleCount: visible, HiddenCount: hidden,
+		Name: v.Name(), Type: v.Type().String(), Projected: v.IsProjected(),
+		Orientation: v.Orientation().String(), Scale: v.Scale(), Style: v.Style().String(),
+		CenterXMM: x, CenterYMM: y, VisibleCount: visible, HiddenCount: hidden,
 	}
-	if v.IsProjected() {
+	switch v.Type() {
+	case types.DrawingViewProjected:
 		info.BaseView = v.BaseViewName()
 		info.Direction = v.Direction().String()
+	case types.DrawingViewAuxiliary:
+		info.BaseView = v.BaseViewName()
+		info.FoldAngleDeg = v.FoldAngle() * 180 / math.Pi
 	}
 	return info
 }

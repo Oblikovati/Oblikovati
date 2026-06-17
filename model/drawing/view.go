@@ -25,22 +25,27 @@ const cmToMM = 10.0
 type DrawingCurve struct {
 	A, B    math.Point2
 	Visible bool
+	kind    types.DrawingCurveKind
 	edgeKey []byte
 }
 
-// Start, End and IsVisible expose the curve geometry; EdgeKey is the source model edge key.
-func (c DrawingCurve) Start() math.Point2 { return c.A }
-func (c DrawingCurve) End() math.Point2   { return c.B }
-func (c DrawingCurve) IsVisible() bool    { return c.Visible }
-func (c DrawingCurve) EdgeKey() []byte    { return c.edgeKey }
+// Start, End and IsVisible expose the curve geometry; EdgeKey is the source model edge key;
+// Kind classifies the curve (edge/section/hatch/break) so the head can style it.
+func (c DrawingCurve) Start() math.Point2           { return c.A }
+func (c DrawingCurve) End() math.Point2             { return c.B }
+func (c DrawingCurve) IsVisible() bool              { return c.Visible }
+func (c DrawingCurve) Kind() types.DrawingCurveKind { return c.kind }
+func (c DrawingCurve) EdgeKey() []byte              { return c.edgeKey }
 
 // DrawingView is one view on a sheet: a base view (standard orientation) or a projected view
 // (derived from a base view by a direction), at a scale/style/centre, holding the drawing
 // curves the hidden-line engine produced for the referenced model.
 type DrawingView struct {
 	name        string
+	viewType    types.DrawingViewType
 	projected   bool
-	baseView    string // the base view a projected view derives from
+	baseView    string  // the parent view a projected/auxiliary view derives from
+	foldAngle   float64 // auxiliary fold-line angle on the parent, radians
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
@@ -52,9 +57,11 @@ type DrawingView struct {
 
 var _ contract.DrawingView = (*DrawingView)(nil)
 
-// Name, IsProjected, Orientation, Scale, Style, CenterMM and CurveCount satisfy
-// contract.DrawingView.
+// Name, Type, ParentView, IsProjected, Orientation, Scale, Style, CenterMM and CurveCount
+// satisfy contract.DrawingView.
 func (v *DrawingView) Name() string                           { return v.name }
+func (v *DrawingView) Type() types.DrawingViewType            { return v.viewType }
+func (v *DrawingView) ParentView() string                     { return v.baseView }
 func (v *DrawingView) IsProjected() bool                      { return v.projected }
 func (v *DrawingView) Orientation() types.BaseViewOrientation { return v.orientation }
 func (v *DrawingView) Scale() float64                         { return v.scale }
@@ -65,8 +72,11 @@ func (v *DrawingView) CurveCount() int                        { return len(v.cur
 // Direction is the projection direction (for a projected view).
 func (v *DrawingView) Direction() types.ProjectionDirection { return v.direction }
 
-// BaseViewName is the base view a projected view derives from ("" for a base view).
+// BaseViewName is the parent view a projected/auxiliary view derives from ("" for a base view).
 func (v *DrawingView) BaseViewName() string { return v.baseView }
+
+// FoldAngle is the auxiliary view's fold-line angle on its parent, in radians.
+func (v *DrawingView) FoldAngle() float64 { return v.foldAngle }
 
 // Curves returns the view's computed drawing curves.
 func (v *DrawingView) Curves() []DrawingCurve { return v.curves }
