@@ -4,23 +4,43 @@ package dxf
 
 import "oblikovati.org/kernel/exchange/drawing"
 
-// decodeEntities walks an ENTITIES section's pairs, splitting them into per-entity groups
-// (each starts at a code-0 type marker) and decoding each. A type with no decoder is
-// skipped; a decode error is collected as a warning so the rest of the drawing survives.
-func decodeEntities(pairs []pair) ([]drawing.Entity, []string) {
-	var out []drawing.Entity
+// decodeModelEntities walks an ENTITIES section, returning the directly-drawn model-space
+// geometry and the model-space INSERTs separately (the caller expands the INSERTs against the
+// block set). Paper-space entities (code 67 = 1) are skipped, matching the DWG importer which
+// brings in model space only. A type with no decoder is skipped; a decode error is collected
+// as a warning so the rest of the drawing survives.
+func decodeModelEntities(pairs []pair, bs *blockSet) ([]drawing.Entity, []*drawing.Insert, []string) {
+	var geometry []drawing.Entity
+	var inserts []*drawing.Insert
 	var warns []string
 	for _, g := range splitEntities(pairs) {
+		m := indexByCode(g.body)
+		if isPaperSpace(m) {
+			continue
+		}
+		if g.name == "INSERT" {
+			inserts = append(inserts, decodeInsert(m, bs))
+			continue
+		}
 		e, err := decodeEntity(g.name, g.body)
 		if err != nil {
 			warns = append(warns, err.Error())
 			continue
 		}
 		if e != nil {
-			out = append(out, e)
+			geometry = append(geometry, e)
 		}
 	}
-	return out, warns
+	return geometry, inserts, warns
+}
+
+// isPaperSpace reports whether an entity is in paper space (code 67 = 1).
+func isPaperSpace(m map[int]pair) bool {
+	if p, ok := m[67]; ok {
+		v, _ := p.integer()
+		return v == 1
+	}
+	return false
 }
 
 // entityGroup is one entity's name (the code-0 value) and the group pairs that follow it.
@@ -301,6 +321,15 @@ func optFloat(m map[int]pair, code int) (float64, error) {
 		return p.float()
 	}
 	return 0, nil
+}
+
+// optFloatDefault reads a real for code, or the given default when the code is absent (used
+// for INSERT scale factors, which default to 1).
+func optFloatDefault(m map[int]pair, code int, def float64) (float64, error) {
+	if p, ok := m[code]; ok {
+		return p.float()
+	}
+	return def, nil
 }
 
 // handleOf returns the entity's hex handle (code 5), or 0 when absent.

@@ -26,8 +26,14 @@ func Decode(data []byte) (*drawing.Drawing, []string, error) {
 	if hdr, ok := sections["HEADER"]; ok {
 		dr.Units = headerInsunits(hdr)
 	}
+	bs := newBlockSet()
+	if blk, ok := sections["BLOCKS"]; ok {
+		bs = decodeBlocks(blk)
+	}
 	if ents, ok := sections["ENTITIES"]; ok {
-		dr.Entities, warns = decodeEntities(ents)
+		geometry, inserts, w := decodeModelEntities(ents, bs)
+		warns = w
+		dr.Entities = expandModel(geometry, inserts, bs)
 	}
 	return dr, warns, nil
 }
