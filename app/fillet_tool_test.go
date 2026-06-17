@@ -22,6 +22,14 @@ func TestFilletToolConcaveStrategy(t *testing.T) {
 	if f.ConcaveStrategyIndex() != 0 {
 		t.Errorf("new fillet tool concave index = %d, want 0 (outward fill default)", f.ConcaveStrategyIndex())
 	}
+	if len(FilletConcaveOptions()) != 2 {
+		t.Errorf("FilletConcaveOptions = %v, want 2 labels", FilletConcaveOptions())
+	}
+	f.SetConcaveStrategyIndex(1) // inward
+	if f.ConcaveStrategyIndex() != 1 {
+		t.Errorf("after SetConcaveStrategyIndex(1), index = %d, want 1 (inward)", f.ConcaveStrategyIndex())
+	}
+	f.SetConcaveStrategyIndex(0) // back to the outward default for the commit below
 	s.Click(1, 1)
 	f.SetRadius(0.3)
 	if err := s.OK(); err != nil {

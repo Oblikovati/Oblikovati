@@ -64,48 +64,15 @@ func TestFilletConcaveInwardDegenerate(t *testing.T) {
 	}
 }
 
-// openEdgeCount counts mesh edges not shared by exactly two triangles (welding coincident vertices
-// on a 1e-5 grid) — a watertight closed mesh has none.
-func openEdgeCount(m *ops.Mesh) int {
-	grid := func(x float64) int64 { return int64(stdmath.Round(x / 1e-5)) }
-	id := map[[3]int64]int{}
-	vid := func(i int) int {
-		p := m.Positions[i]
-		k := [3]int64{grid(p.X), grid(p.Y), grid(p.Z)}
-		if v, ok := id[k]; ok {
-			return v
-		}
-		v := len(id)
-		id[k] = v
-		return v
-	}
-	use := map[[2]int]int{}
-	for t := 0; t+2 < len(m.Indices); t += 3 {
-		vs := [3]int{vid(m.Indices[t]), vid(m.Indices[t+1]), vid(m.Indices[t+2])}
-		for _, e := range [][2]int{{vs[0], vs[1]}, {vs[1], vs[2]}, {vs[2], vs[0]}} {
-			if e[0] > e[1] {
-				e[0], e[1] = e[1], e[0]
-			}
-			use[e]++
-		}
-	}
-	open := 0
-	for _, c := range use {
-		if c != 2 {
-			open++
-		}
-	}
-	return open
-}
-
-// TestFilletConcaveOutwardWatertight verifies the filled concave fillet tessellates watertight
-// across tolerances — tessellation correctness is paramount (a faceted-but-open mesh is a defect).
+// TestFilletConcaveOutwardWatertight verifies the filled concave fillet validates at the
+// tessellating geometry level across qualities — tessellation correctness is paramount (a
+// faceted-but-open mesh is a defect). ValidateBodyEntities at CheckGeometry tessellates and runs
+// the manifold/orientation/closure + self-intersection checks.
 func TestFilletConcaveOutwardWatertight(t *testing.T) {
 	res := filletConcaved(t, 0.6, types.FilletConcaveOutward)
 	for _, tol := range []float64{0.05, 1e-2, 1e-3} {
-		m, _ := ops.TessellateBody(res, ops.Quality{ChordTolerance: tol})
-		if open := openEdgeCount(m); open != 0 {
-			t.Errorf("outward concave fillet at tol %g has %d open mesh edges, want watertight", tol, open)
+		if ok, problems := ops.ValidateBodyEntities(res, ops.CheckGeometry, ops.Quality{ChordTolerance: tol}); !ok {
+			t.Errorf("outward concave fillet at tol %g is not watertight/valid: %+v", tol, problems)
 		}
 	}
 }

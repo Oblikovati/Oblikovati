@@ -131,7 +131,10 @@ func TestDressUpOnSolid(t *testing.T) {
 		args     map[string]any
 	}{
 		{"fillet flat", "fillet", map[string]any{"radius": "1 mm"}},
+		{"fillet outward", "fillet", map[string]any{"radius": "1 mm", "concaveStrategy": "outward"}},
+		{"fillet inward", "fillet", map[string]any{"radius": "1 mm", "concaveStrategy": "inward"}},
 		{"fillet set const", "fillet", map[string]any{"_set": "radius"}},
+		{"fillet set concave", "fillet", map[string]any{"_set": "radius", "concaveStrategy": "outward"}},
 		{"fillet set variable", "fillet", map[string]any{"_set": "var"}},
 		{"chamfer distance", "chamfer", map[string]any{"distance": "1 mm"}},
 		{"chamfer two distances", "chamfer", map[string]any{"distance": "1 mm", "distance2": "2 mm", "chamferType": "twoDistances"}},
@@ -144,7 +147,7 @@ func TestDressUpOnSolid(t *testing.T) {
 			args := c.args
 			switch args["_set"] {
 			case "radius":
-				args = map[string]any{"edgeSets": []map[string]any{{"edgeRefs": []string{edge}, "radius": "1 mm"}}}
+				args = map[string]any{"edgeSets": []map[string]any{{"edgeRefs": []string{edge}, "radius": "1 mm"}}, "concaveStrategy": c.args["concaveStrategy"]}
 			case "var":
 				args = map[string]any{"edgeSets": []map[string]any{{"edgeRefs": []string{edge}, "startRadius": "1 mm", "endRadius": "2 mm"}}}
 			default:
@@ -179,6 +182,19 @@ func TestDressUpRejectsEmptyRefs(t *testing.T) {
 		s, _, _ := extrudedSolid(t)
 		if _, err := apply(t, s, op, `{"radius":"1 mm","distance":"1 mm","thickness":"1 mm","angle":"3 deg","width":"1 mm","height":"1 mm"}`); err == nil {
 			t.Errorf("%s with no refs should error", op)
+		}
+	}
+}
+
+// TestDressUpRejectsBadConcaveStrategy: fillet and chamfer reject an unknown concaveStrategy.
+func TestDressUpRejectsBadConcaveStrategy(t *testing.T) {
+	for _, c := range []struct{ op, args string }{
+		{"fillet", `{"edgeRefs":["x"],"radius":"1 mm","concaveStrategy":"sideways"}`},
+		{"chamfer", `{"edgeRefs":["x"],"distance":"1 mm","concaveStrategy":"sideways"}`},
+	} {
+		s, _, _ := extrudedSolid(t)
+		if _, err := apply(t, s, c.op, c.args); err == nil {
+			t.Errorf("%s with an unknown concaveStrategy should error", c.op)
 		}
 	}
 }
