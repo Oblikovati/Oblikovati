@@ -26,6 +26,7 @@ type Sheet struct {
 	titleBlock  *TitleBlock
 	views       *DrawingViews
 	annotations *DrawingAnnotations
+	dimensions  *DrawingDimensions
 }
 
 // Views returns the sheet's drawing views (projections of the referenced model).
@@ -37,6 +38,14 @@ func (s *Sheet) Annotations() *DrawingAnnotations {
 		s.annotations = newDrawingAnnotations(s.views, s.views.body)
 	}
 	return s.annotations
+}
+
+// Dimensions returns the sheet's drawing dimensions (associative linear measurements on views).
+func (s *Sheet) Dimensions() *DrawingDimensions {
+	if s.dimensions == nil {
+		s.dimensions = newDrawingDimensions(s.views, s.views.body)
+	}
+	return s.dimensions
 }
 
 // compile-time: a sheet and its sub-objects satisfy the api/contract surface (ADR-0018).

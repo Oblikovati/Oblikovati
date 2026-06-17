@@ -6,7 +6,7 @@ require (
 	github.com/yuin/gopher-lua v1.1.1
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
 	gopkg.in/yaml.v3 v3.0.1
-	oblikovati.org/api v0.27.0
+	oblikovati.org/api v0.28.0
 )
 
 require golang.org/x/text v0.22.0 // indirect

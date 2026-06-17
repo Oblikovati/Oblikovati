@@ -57,6 +57,10 @@ func drawingWithViewsSession(t *testing.T) *app.Session {
 	if _, err := views.AddProjected(drawing.ProjectedViewSpec{Name: "RIGHT", BaseView: "FRONT", Direction: types.ProjectRight, CenterX: 240, CenterY: 100}); err != nil {
 		t.Fatalf("AddProjected: %v", err)
 	}
+	// A linear dimension across FRONT so the canvas renders the dimension glyph + value text.
+	if _, err := c.Sheets().Active().Dimensions().AddLinear("D1", "FRONT", types.HorizontalDimension, 100, 100, 140, 100, -14); err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
 	return s
 }
 

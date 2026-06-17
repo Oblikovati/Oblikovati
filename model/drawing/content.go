@@ -101,6 +101,9 @@ func (c *Content) RecomputeViews() {
 		if sh.annotations != nil {
 			sh.annotations.Recompute() // CoG markers track the model centroid
 		}
+		if sh.dimensions != nil {
+			sh.dimensions.Recompute() // dimensions re-measure against the recomputed model
+		}
 	}
 }
 
