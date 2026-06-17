@@ -86,3 +86,23 @@ func (s *Session) ActiveSheetMetalRefold() *SheetMetalRefoldTool {
 func (s *Session) ActiveSheetMetalStyle() *SheetMetalStyleTool {
 	return activeSheetMetalTool[*SheetMetalStyleTool](s)
 }
+
+// ActiveSheetMetalLip returns the running Sheet Metal Lip tool, or nil.
+func (s *Session) ActiveSheetMetalLip() *SheetMetalLipTool {
+	return activeSheetMetalTool[*SheetMetalLipTool](s)
+}
+
+// ActiveSheetMetalRip returns the running Sheet Metal Rip tool, or nil.
+func (s *Session) ActiveSheetMetalRip() *SheetMetalRipTool {
+	return activeSheetMetalTool[*SheetMetalRipTool](s)
+}
+
+// ActiveSheetMetalPunch returns the running Sheet Metal Punch tool, or nil.
+func (s *Session) ActiveSheetMetalPunch() *SheetMetalPunchTool {
+	return activeSheetMetalTool[*SheetMetalPunchTool](s)
+}
+
+// ActiveSheetMetalCosmeticBend returns the running Sheet Metal Cosmetic Bend tool, or nil.
+func (s *Session) ActiveSheetMetalCosmeticBend() *SheetMetalCosmeticBendTool {
+	return activeSheetMetalTool[*SheetMetalCosmeticBendTool](s)
+}

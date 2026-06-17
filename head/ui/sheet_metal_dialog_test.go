@@ -39,6 +39,10 @@ func TestSheetMetalDialogsRender(t *testing.T) {
 		func(s *app.Session) { s.StartTool(app.NewSheetMetalCutTool()) },
 		func(s *app.Session) { s.StartTool(app.NewSheetMetalUnfoldTool()) },
 		func(s *app.Session) { s.StartTool(app.NewSheetMetalRefoldTool()) },
+		func(s *app.Session) { s.StartTool(app.NewSheetMetalLipTool()) },
+		func(s *app.Session) { s.StartTool(app.NewSheetMetalRipTool()) },
+		func(s *app.Session) { s.StartTool(app.NewSheetMetalPunchTool()) },
+		func(s *app.Session) { s.StartTool(app.NewSheetMetalCosmeticBendTool()) },
 	}
 	for _, start := range starts {
 		s := app.NewSession()
