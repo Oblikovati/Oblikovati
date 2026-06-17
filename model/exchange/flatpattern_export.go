@@ -169,10 +169,10 @@ const (
 //
 //	data, n, err := exchange.ExportFlatPatternDXF(flat, exchange.FlatExportLayers{}, types.DXFR2018)
 func ExportFlatPatternDXF(flat *feature.FlatPattern, layers FlatExportLayers, version types.DXFVersion) ([]byte, int, error) {
-	return encodeDXF(FlatPatternToDrawing(flat, layers), version)
+	return encodeDXF(FlatPatternToDrawing(flat, layers), version, drawing.INSCentimetres)
 }
 
 // ExportFlatPatternDXFFile writes ExportFlatPatternDXF's output to path, returning the entity count.
 func ExportFlatPatternDXFFile(flat *feature.FlatPattern, path string, layers FlatExportLayers, version types.DXFVersion) (int, error) {
-	return writeDXFFile(FlatPatternToDrawing(flat, layers), path, version)
+	return writeDXFFile(FlatPatternToDrawing(flat, layers), path, version, drawing.INSCentimetres)
 }

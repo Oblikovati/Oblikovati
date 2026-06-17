@@ -82,7 +82,7 @@ func exportSketchDXF(part *compdef.PartComponentDefinition, src, dst string, arg
 		return fmt.Errorf("export: %q has no sketch to export to DXF", src)
 	}
 	version := dxfVersionArg(args)
-	n, err := exchange.ExportDXFFile(part.Sketches().Item(0), dst, version)
+	n, err := exchange.ExportDXFFile(part.Sketches().Item(0), dst, version, part.Units())
 	if err != nil {
 		return err
 	}

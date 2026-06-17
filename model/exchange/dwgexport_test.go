@@ -21,7 +21,7 @@ import (
 // part whose preferred length unit is the database unit (cm); the unit scale is then 1 and
 // coordinates compare directly.
 func TestExportImportRoundTrip(t *testing.T) {
-	src := compdef.NewPartComponentDefinition()
+	src := newCentimetrePart(t)
 	sk := src.Sketches().Add(xyPlane(t))
 	line := sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(10, 5))
 	circle := sk.Circles().AddByCenterRadius(gmath.P2(3, 4), 2.5)
@@ -29,7 +29,7 @@ func TestExportImportRoundTrip(t *testing.T) {
 	arc := sk.Arcs().AddByCenterStartEnd(gmath.P2(1, 1), gmath.P2(4, 1), gmath.P2(1, 4), true)
 	spline := sk.Splines().AddByControlPoints([]gmath.Point2{{X: 0, Y: 0}, {X: 1, Y: 2}, {X: 3, Y: 2}, {X: 4, Y: 0}}, false)
 
-	data, err := ExportDWG(sk)
+	data, err := ExportDWG(sk, src.Units())
 	if err != nil {
 		t.Fatalf("ExportDWG: %v", err)
 	}
@@ -117,5 +117,28 @@ func wantEndpoints(t *testing.T, what string, got, want *sketch.Arc) {
 	matched := (same(gs, ws) && same(ge, we)) || (same(gs, we) && same(ge, ws))
 	if !matched {
 		t.Errorf("%s endpoints = (%v,%v), want the pair (%v,%v)", what, gs, ge, ws, we)
+	}
+}
+
+// TestExportDWGHonorsDocumentUnit checks a DWG exported from an inch document
+// re-imports at the same physical size (1 inch ↔ 2.54 cm).
+func TestExportDWGHonorsDocumentUnit(t *testing.T) {
+	src := newCentimetrePart(t)
+	if err := src.SetLengthUnit("in"); err != nil {
+		t.Fatalf("SetLengthUnit in: %v", err)
+	}
+	sk := src.Sketches().Add(xyPlane(t))
+	sk.Lines().AddByTwoPoints(gmath.P2(0, 0), gmath.P2(2.54, 0))
+	data, err := ExportDWG(sk, src.Units())
+	if err != nil {
+		t.Fatalf("ExportDWG: %v", err)
+	}
+	dst := newCentimetrePart(t)
+	if _, err := ImportDWG(dst, data, xyPlane(t)); err != nil {
+		t.Fatalf("ImportDWG: %v", err)
+	}
+	end := dst.Sketches().Item(0).Lines().Item(0).EndPoint().Position()
+	if math.Abs(end.X-2.54) > 1e-6 {
+		t.Errorf("DWG round-trip line end X = %g cm, want 2.54", end.X)
 	}
 }

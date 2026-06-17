@@ -62,5 +62,5 @@ func (s *Session) ExportActiveSketchDXF(path string, version types.DXFVersion) (
 	if sk == nil {
 		return 0, fmt.Errorf("export dxf: no active 2D sketch to export")
 	}
-	return exchange.ExportDXFFile(sk, path, version)
+	return exchange.ExportDXFFile(sk, path, version, s.DocumentUnits())
 }
