@@ -29,6 +29,12 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 	win.SetViewportNormalDebug(normalDebugOn || s.NormalDebug()) // Tools ▸ Normal Debug, or viewport.setNormalDebug
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
+		// A drawing document shows a 2D sheet canvas, not the 3D viewport (M14-F01).
+		if dc, err := app.ActiveDrawing(s); err == nil {
+			drawSheetCanvas(dc)
+			native.End()
+			return
+		}
 		// View configuration (layout, new/close view) lives on the View ribbon tab's
 		// Windows panel — see app.windowsViewCommands.
 		// Per-document views can tile (split layouts); a single view takes the classic
