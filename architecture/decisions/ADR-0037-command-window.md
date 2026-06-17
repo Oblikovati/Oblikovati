@@ -51,13 +51,37 @@ backed by a command-line engine in the application layer.
    active command's next prompt, and whether more input is awaited — so an add-in or MCP tool runs
    the same REPL headlessly.
 
+5. **The static vocabulary is multi-letter only; single letters belong to the keybinding
+   editor** (amended 2026-06-17). Every word in the built-in vocabulary (`app/cmdline`) is a
+   multi-letter AutoCAD command name or alias — there are no single-letter words. A bare single
+   letter typed at the command line does not resolve to a command; single-letter activation is a
+   personalised Shift/Control chord configured in the keybinding editor. The vocabulary doubles as
+   the source of a generated command manual: each entry carries a one-line summary and a usage
+   example, rendered to [`architecture/mapping/autocad-command-map.md`](../mapping/autocad-command-map.md)
+   by `Vocabulary.RenderManual` and held in sync by `TestCommandManualInSync`.
+
+   On the **keyboard** the same rule holds: a bare single letter is never a default and never
+   dispatches a command. `bindables` drops bare single-letter alias chords, and `Bindings.SetChord`/
+   `SetAlias` reject a bare single letter — the user binds single-letter shortcuts as Shift/Control
+   chords. Commands ship sensible **predefined** shortcuts via `Command.WithDefaultChord` (a full
+   chord like `Ctrl+N`): the common set is Save `Ctrl+S`, New `Ctrl+N`, Close `Ctrl+W`, Undo
+   `Ctrl+Z`, Redo `Ctrl+Y`/`Ctrl+Shift+Z`, plus the F-keys (Help `F1`, Previous View `F5`, Home
+   `F6`). The platform "command" modifier maps cross-platform: `Ctrl` on Windows/Linux and `Cmd`
+   (Super) on macOS (`obk_ig_key_ctrl` ORs in `KeySuper` under `ConfigMacOSXBehaviors`).
+
+6. **ESC is the universal cancel** (amended 2026-06-17): it drops any pending command-line
+   question, closes the active feature/tool creation or editing window, clears the selection when
+   nothing is in progress, and always returns keyboard focus to the command-window input
+   (`Session.RequestCommandInputFocus` → the head's `TakeCommandInputFocus`).
+
 ## Consequences
 
 - One surface to learn, one feedback log, and one command path shared by the UI and the API.
 - The vocabulary is many→one and flat, so a word resolves to a single action; context is enforced
-  by each command's own enable rule (e.g. 2D `FILLET` vs 3D `FILLETEDGE`). The map is documented
-  in [`architecture/mapping/autocad-command-map.md`](../mapping/autocad-command-map.md) and pinned
-  by a test that every word resolves to a real action.
+  by each command's own enable rule (e.g. 2D `FILLET` vs 3D `FILLETEDGE`). The generated manual at
+  [`architecture/mapping/autocad-command-map.md`](../mapping/autocad-command-map.md) lists every
+  command with its aliases, description and example; `TestEveryVocabularyWordResolves` pins that
+  every word resolves to a real action and `TestCommandManualInSync` keeps the manual current.
 - "Full REPL" is honest about scope: coordinate/value steps are fully typed; pick-dependent steps
   (selecting an existing edge to fillet) are still picked in the viewport, co-driven with the line.
 - Retiring the modal/toast surfaces means a blocking yes/no is now an inline question; code that

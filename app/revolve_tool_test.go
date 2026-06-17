@@ -196,12 +196,12 @@ func TestRevolveViaCommandAlias(t *testing.T) {
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
 	}
-	if err := s.PressKey(KeyEvent{Key: "R"}); err != nil { // type the "R" alias
-		t.Fatalf("alias: %v", err)
+	if err := s.Execute("Create.Revolve"); err != nil { // run the Revolve command
+		t.Fatalf("execute: %v", err)
 	}
 	rv, ok := s.ActiveTool().Tool().(*RevolveTool)
 	if !ok {
-		t.Fatal("Revolve alias did not start the revolve tool")
+		t.Fatal("Revolve command did not start the revolve tool")
 	}
 	s.Click(1, 1)                   // pick the profile
 	rv.SetAxis(feature.OriginYAxis) // property window: axis = Y

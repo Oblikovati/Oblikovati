@@ -47,17 +47,27 @@ func TestVocabularyWordsResolveThroughBindings(t *testing.T) {
 	b := s.Bindings()
 	cases := map[string]string{
 		"LINE":       "Sketch.Line",
-		"E":          "Create.Extrude",
+		"EXT":        "Create.Extrude",
 		"EXTRUDE":    "Create.Extrude",
 		"FILLET":     "Sketch.Fillet", // 2D
 		"FILLETEDGE": "Modify.Fillet", // 3D — distinct word
 		"SURFPATCH":  "Surface.Patch",
+		"UNION":      "Modify.Combine",  // §2 boolean
+		"GCPARALLEL": "Sketch.Parallel", // §2 constraint
+		"VIEWBASE":   "Drawing.BaseView",
+		"PLACE":      "Assembly.Place",
+		"FLANGE":     "SheetMetal.Flange",
 		"UNDO":       ActionUndo,
 	}
 	for word, want := range cases {
 		if got, ok := b.ResolveAlias(word); !ok || got != want {
 			t.Errorf("ResolveAlias(%q) = %q,%v, want %q", word, got, ok, want)
 		}
+	}
+	// A bare single letter is NOT a static vocabulary word — single letters belong to the
+	// keybinding editor (personalised Shift/Control chords), not the command-window list.
+	if got, ok := b.ResolveAlias("E"); ok {
+		t.Errorf("ResolveAlias(\"E\") = %q,%v, want no resolution (single letters are editor-only)", got, ok)
 	}
 }
 
@@ -86,10 +96,12 @@ func TestUserAliasOverridesVocabulary(t *testing.T) {
 		t.Fatalf("RegisterStandardCommands: %v", err)
 	}
 	b := s.Bindings()
-	if err := b.SetAlias("Create.Revolve", "E"); err != nil {
+	// EXTRUDE is a built-in vocabulary word for Create.Extrude; a user alias for the same word
+	// must win. (Single-letter aliases are rejected, so the override is a multi-letter word.)
+	if err := b.SetAlias("Create.Revolve", "EXTRUDE"); err != nil {
 		t.Fatalf("SetAlias: %v", err)
 	}
-	if got, ok := b.ResolveAlias("E"); !ok || got != "Create.Revolve" {
-		t.Errorf("ResolveAlias(E) = %q,%v, want Create.Revolve (user override wins)", got, ok)
+	if got, ok := b.ResolveAlias("EXTRUDE"); !ok || got != "Create.Revolve" {
+		t.Errorf("ResolveAlias(EXTRUDE) = %q,%v, want Create.Revolve (user override wins)", got, ok)
 	}
 }

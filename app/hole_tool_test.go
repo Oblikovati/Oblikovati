@@ -250,11 +250,11 @@ func TestHoleViaRibbonCommand(t *testing.T) {
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("register commands: %v", err)
 	}
-	if err := s.PressKey(KeyEvent{Key: "H"}); err != nil { // "H" alias
-		t.Fatalf("alias: %v", err)
+	if err := s.Execute("Modify.Hole"); err != nil { // run the Hole command
+		t.Fatalf("execute: %v", err)
 	}
 	if _, ok := s.ActiveTool().Tool().(*HoleTool); !ok {
-		t.Fatal("Hole alias did not start the hole tool")
+		t.Fatal("Hole command did not start the hole tool")
 	}
 	s.Click(1, 1)
 	if err := s.OK(); err != nil { // default Ø1 × 2 blind hole

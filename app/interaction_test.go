@@ -134,12 +134,12 @@ func TestSelectionAddDedupesAndToggle(t *testing.T) {
 	}
 }
 
-func TestKeyAliasInvokesCommand(t *testing.T) {
+func TestKeyChordInvokesCommand(t *testing.T) {
 	s := NewSession()
 	ran := false
-	_ = s.Commands().Add(NewCommand("line", "Line", "Sketch", func(*Session) error { ran = true; return nil }).WithAlias("L"))
-	if err := s.PressKey(KeyEvent{Key: "L"}); err != nil || !ran {
-		t.Errorf("alias key did not run command: err=%v ran=%v", err, ran)
+	_ = s.Commands().Add(NewCommand("line", "Line", "Sketch", func(*Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+L"))
+	if err := s.PressKey(KeyEvent{Key: "L", Mods: CtrlMod}); err != nil || !ran {
+		t.Errorf("chord key did not run command: err=%v ran=%v", err, ran)
 	}
 }
 

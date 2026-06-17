@@ -374,7 +374,14 @@ void obk_ig_mouse_pos(float* x, float* y) {
     *y = p.y;
 }
 int  obk_ig_key_shift(void)                  { return ImGui::GetIO().KeyShift ? 1 : 0; }
-int  obk_ig_key_ctrl(void)                   { return ImGui::GetIO().KeyCtrl ? 1 : 0; }
+// obk_ig_key_ctrl reports the platform "command" modifier: Control on Windows/Linux, and
+// Command (Super) on macOS — so a shortcut bound to Ctrl+S fires on Cmd+S on a Mac. The Windows
+// key is NOT treated as Control (the Super→Ctrl mapping is gated on macOS behaviours).
+int  obk_ig_key_ctrl(void) {
+    ImGuiIO& io = ImGui::GetIO();
+    bool cmdAsCtrl = io.ConfigMacOSXBehaviors && io.KeySuper;
+    return (io.KeyCtrl || cmdAsCtrl) ? 1 : 0;
+}
 // escape_pressed fires once on the frame Esc is pressed (cancel the active tool).
 int  obk_ig_escape_pressed(void)             { return ImGui::IsKeyPressed(ImGuiKey_Escape) ? 1 : 0; }
 int  obk_ig_f1_pressed(void)                 { return ImGui::IsKeyPressed(ImGuiKey_F1) ? 1 : 0; }

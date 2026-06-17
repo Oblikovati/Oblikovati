@@ -88,8 +88,8 @@ func TestExtrudeToolNeedsProfileAndDistance(t *testing.T) {
 	}
 }
 
-// TestExtrudeViaCommandThenTool shows the ribbon command launching the tool.
-func TestExtrudeViaCommandAlias(t *testing.T) {
+// TestExtrudeViaCommand shows the ribbon command launching the tool.
+func TestExtrudeViaCommand(t *testing.T) {
 	s, profile := newPartWithSquare(t, 4)
 	s.SetPicker(stubPicker{sel: profile})
 	var started *ExtrudeTool
@@ -97,13 +97,13 @@ func TestExtrudeViaCommandAlias(t *testing.T) {
 		started = NewExtrudeTool()
 		sess.StartTool(started)
 		return nil
-	}).WithAlias("E"))
+	}))
 
-	if err := s.PressKey(KeyEvent{Key: "E"}); err != nil { // type the "E" alias
-		t.Fatalf("alias: %v", err)
+	if err := s.Execute("Part.Extrude"); err != nil { // run the Extrude command
+		t.Fatalf("execute: %v", err)
 	}
 	if s.ActiveTool() == nil || s.ActiveTool().Tool() != started {
-		t.Fatal("Extrude alias did not start the tool")
+		t.Fatal("Extrude command did not start the tool")
 	}
 	s.Click(1, 1)
 	started.SetDistance(2)

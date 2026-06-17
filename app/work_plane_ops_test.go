@@ -5,6 +5,7 @@ package app
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -311,12 +312,16 @@ func TestToggleWorkPlaneVisibilitySessionAndKeyboard(t *testing.T) {
 	if !xy.Visible() {
 		t.Error("ToggleSelectedWorkPlaneVisibility should show the selected plane")
 	}
-	// The V keyboard shortcut toggles it back.
-	if err := s.PressKey(KeyEvent{Key: "V"}); err != nil {
-		t.Fatalf("PressKey V: %v", err)
+	// A personalised Shift/Control chord toggles it back (single-letter shortcuts are no longer
+	// plain keys — the user binds them in the keybinding editor, M26).
+	if err := s.Bindings().SetChord(ActionToggleVisibility, types.KeyChord{Key: "V", Ctrl: true}); err != nil {
+		t.Fatalf("SetChord Ctrl+V: %v", err)
+	}
+	if err := s.PressKey(KeyEvent{Key: "V", Mods: CtrlMod}); err != nil {
+		t.Fatalf("PressKey Ctrl+V: %v", err)
 	}
 	if xy.Visible() {
-		t.Error("V should toggle the selected plane's visibility back off")
+		t.Error("Ctrl+V should toggle the selected plane's visibility back off")
 	}
 }
 

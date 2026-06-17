@@ -12,17 +12,18 @@ import (
 )
 
 // TestDispatchPressedKeysRunsShortcut proves the head's key-forwarding (M05-F17) drives the
-// binding engine: a forwarded letter resolves to its shortcut command and runs.
+// binding engine: a forwarded Shift/Control chord resolves to its shortcut command and runs.
+// (A bare single letter is reserved for the keybinding editor, M26, so the shortcut is Ctrl+L.)
 func TestDispatchPressedKeysRunsShortcut(t *testing.T) {
 	s := app.NewSession()
 	ran := false
-	cmd := app.NewCommand("Test.Line", "Line", "Test", func(*app.Session) error { ran = true; return nil }).WithAlias("L")
+	cmd := app.NewCommand("Test.Line", "Line", "Test", func(*app.Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+L")
 	if err := s.Commands().Add(cmd); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
-	dispatchPressedKeys(s, []string{"L"}, 0)
+	dispatchPressedKeys(s, []string{"L"}, app.CtrlMod)
 	if !ran {
-		t.Error("forwarding the L key should run the L-shortcut command")
+		t.Error("forwarding Ctrl+L should run the shortcut command")
 	}
 }
 

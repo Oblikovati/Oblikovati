@@ -46,7 +46,7 @@ func TestCommandLineDrawsLineFromText(t *testing.T) {
 
 func TestCommandLineInlineArguments(t *testing.T) {
 	s, sk, cl := sketchCommandSession(t)
-	if err := cl.Submit(s, "L 2,2 8,8"); err != nil {
+	if err := cl.Submit(s, "LINE 2,2 8,8"); err != nil {
 		t.Fatalf("Submit inline: %v", err)
 	}
 	if err := cl.Submit(s, ""); err != nil { // Enter ends the chain

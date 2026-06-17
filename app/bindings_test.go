@@ -21,29 +21,47 @@ func (bindingStubTool) CanCommit() bool           { return false }
 func (bindingStubTool) Commit(*Session) error     { return nil }
 func (bindingStubTool) Cancel(*Session)           {}
 
-// registerAlias adds a command with the given id/alias for binding tests.
-func registerAlias(t *testing.T, s *Session, id, alias string) {
+// registerAlias adds a command for binding tests with an optional predefined default chord
+// (a full chord like "Ctrl+E"; "" ⇒ no default). Single-letter shortcuts are no longer
+// auto-derived from an alias (M26), so chord tests pin a real Shift/Control default here.
+func registerAlias(t *testing.T, s *Session, id, chord string) {
 	t.Helper()
 	cmd := NewCommand(id, id, "Test", func(*Session) error { return nil })
-	if alias != "" {
-		cmd = cmd.WithAlias(alias)
+	if chord != "" {
+		cmd = cmd.WithDefaultChord(chord)
 	}
 	if err := s.Commands().Add(cmd); err != nil {
 		t.Fatalf("register %q: %v", id, err)
 	}
 }
 
-func TestDefaultChordDerivesFromAlias(t *testing.T) {
+func TestDefaultChordFromPredefinedChord(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
+	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	b := s.Bindings()
 
 	c, ok := b.EffectiveChord("Test.Extrude")
-	if !ok || c.String() != "E" {
-		t.Fatalf("EffectiveChord = (%q, %v), want E", c.String(), ok)
+	if !ok || c.String() != "Ctrl+E" {
+		t.Fatalf("EffectiveChord = (%q, %v), want Ctrl+E", c.String(), ok)
 	}
-	if id, ok := b.ResolveChord(types.KeyChord{Key: "E"}); !ok || id != "Test.Extrude" {
-		t.Errorf("ResolveChord(E) = (%q, %v), want Test.Extrude", id, ok)
+	if id, ok := b.ResolveChord(types.KeyChord{Key: "E", Ctrl: true}); !ok || id != "Test.Extrude" {
+		t.Errorf("ResolveChord(Ctrl+E) = (%q, %v), want Test.Extrude", id, ok)
+	}
+}
+
+// TestSingleLetterAliasHasNoDefaultChord pins the M26 rule: a bare single-letter alias does
+// NOT become a default keyboard chord — single letters are personalised in the keybinding
+// editor as Shift/Control chords.
+func TestSingleLetterAliasHasNoDefaultChord(t *testing.T) {
+	s := NewSession()
+	if err := s.Commands().Add(NewCommand("Test.Q", "Q", "Test", func(*Session) error { return nil }).WithAlias("Q")); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if c, ok := s.Bindings().EffectiveChord("Test.Q"); ok {
+		t.Errorf("single-letter alias should yield no default chord, got %q", c.String())
+	}
+	if _, ok := s.Bindings().ResolveChord(types.KeyChord{Key: "Q"}); ok {
+		t.Error("a bare single letter must not resolve to a command")
 	}
 }
 
@@ -55,7 +73,7 @@ func TestResolveChordBuiltinDefaults(t *testing.T) {
 		"Ctrl+Shift+Z": ActionRedo, // extra default chord still resolves
 		"Escape":       ActionCancel,
 		"Enter":        ActionCommit,
-		"V":            ActionToggleVisibility,
+		// Toggle Visibility ships unbound (single-letter shortcuts are editor-personalised, M26).
 	}
 	for chordStr, want := range cases {
 		c, _ := types.ParseChord(chordStr)
@@ -67,7 +85,7 @@ func TestResolveChordBuiltinDefaults(t *testing.T) {
 
 func TestSetChordOverrideRebinds(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
+	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	b := s.Bindings()
 
 	if err := b.SetChord("Test.Extrude", types.KeyChord{Key: "E", Ctrl: true, Shift: true}); err != nil {
@@ -86,7 +104,7 @@ func TestSetChordOverrideRebinds(t *testing.T) {
 
 func TestSetChordConflictIsRejected(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
+	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	err := s.Bindings().SetChord("Test.Extrude", types.KeyChord{Key: "Z", Ctrl: true})
 	if err == nil {
 		t.Fatal("rebinding to Ctrl+Z (undo) should conflict")
@@ -98,7 +116,7 @@ func TestSetChordConflictIsRejected(t *testing.T) {
 
 func TestSetChordClearThenReset(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
+	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	b := s.Bindings()
 
 	if err := b.SetChord("Test.Extrude", types.KeyChord{}); err != nil {
@@ -110,15 +128,15 @@ func TestSetChordClearThenReset(t *testing.T) {
 	if err := b.Reset("Test.Extrude"); err != nil {
 		t.Fatalf("Reset: %v", err)
 	}
-	if c, ok := b.EffectiveChord("Test.Extrude"); !ok || c.String() != "E" {
-		t.Errorf("after reset, chord = (%q, %v), want default E", c.String(), ok)
+	if c, ok := b.EffectiveChord("Test.Extrude"); !ok || c.String() != "Ctrl+E" {
+		t.Errorf("after reset, chord = (%q, %v), want default Ctrl+E", c.String(), ok)
 	}
 }
 
 func TestAliasSetResolveConflictCaseInsensitive(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
-	registerAlias(t, s, "Test.Hole", "H")
+	registerAlias(t, s, "Test.Extrude", "")
+	registerAlias(t, s, "Test.Hole", "")
 	b := s.Bindings()
 
 	if err := b.SetAlias("Test.Extrude", "EXT"); err != nil {
@@ -134,14 +152,14 @@ func TestAliasSetResolveConflictCaseInsensitive(t *testing.T) {
 
 func TestAliasWithoutDefaultResetRemovesIt(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
+	registerAlias(t, s, "Test.Extrude", "")
 	b := s.Bindings()
 
-	if err := b.SetAlias("Test.Extrude", "X"); err != nil {
+	if err := b.SetAlias("Test.Extrude", "XYZ"); err != nil {
 		t.Fatalf("SetAlias: %v", err)
 	}
-	if b.EffectiveAlias("Test.Extrude") != "X" {
-		t.Errorf("alias = %q, want X", b.EffectiveAlias("Test.Extrude"))
+	if b.EffectiveAlias("Test.Extrude") != "XYZ" {
+		t.Errorf("alias = %q, want XYZ", b.EffectiveAlias("Test.Extrude"))
 	}
 	if err := b.Reset("Test.Extrude"); err != nil {
 		t.Fatalf("Reset: %v", err)
@@ -153,7 +171,7 @@ func TestAliasWithoutDefaultResetRemovesIt(t *testing.T) {
 
 func TestResetAllClearsEveryCustomization(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
+	registerAlias(t, s, "Test.Extrude", "")
 	b := s.Bindings()
 	_ = b.SetChord("Test.Extrude", types.KeyChord{Key: "E", Ctrl: true})
 	_ = b.SetAlias("Test.Extrude", "EXT")
@@ -178,10 +196,11 @@ func TestCheckDefaultsReservedIDCollision(t *testing.T) {
 
 func TestCheckDefaultsDuplicateChord(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Visibility", "V") // collides with built-in V (toggleVisibility)
+	registerAlias(t, s, "Test.One", "Ctrl+J")
+	registerAlias(t, s, "Test.Two", "Ctrl+J") // two commands claim the same default chord
 	err := s.Bindings().CheckDefaults()
-	if err == nil || !strings.Contains(err.Error(), "V") {
-		t.Fatalf("duplicate default chord V should fail CheckDefaults, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "Ctrl+J") {
+		t.Fatalf("duplicate default chord Ctrl+J should fail CheckDefaults, got %v", err)
 	}
 }
 
@@ -200,7 +219,7 @@ func TestStandardCommandsPassCheckDefaults(t *testing.T) {
 
 func TestCheckDefaultsCleanRegistry(t *testing.T) {
 	s := NewSession()
-	registerAlias(t, s, "Test.Extrude", "E")
+	registerAlias(t, s, "Test.Extrude", "Ctrl+E")
 	if err := s.Bindings().CheckDefaults(); err != nil {
 		t.Errorf("a clean registry should pass CheckDefaults, got %v", err)
 	}
@@ -209,7 +228,7 @@ func TestCheckDefaultsCleanRegistry(t *testing.T) {
 func TestKeymapStorePersistsAndReloads(t *testing.T) {
 	store := keymap.NewMemStore()
 	s1 := NewSession()
-	registerAlias(t, s1, "Test.Extrude", "E")
+	registerAlias(t, s1, "Test.Extrude", "")
 	if err := s1.UseKeymapStore(store); err != nil {
 		t.Fatalf("UseKeymapStore: %v", err)
 	}
@@ -258,11 +277,11 @@ func TestDispatchCancelClearsToolThenSelection(t *testing.T) {
 func TestPressKeyRunsCommandViaDefaultChord(t *testing.T) {
 	s := NewSession()
 	ran := false
-	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithAlias("L")
+	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+L")
 	if err := s.Commands().Add(cmd); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
-	if err := s.PressKey(KeyEvent{Key: "l"}); err != nil { // lowercase canonicalizes to L
+	if err := s.PressKey(KeyEvent{Key: "l", Mods: CtrlMod}); err != nil { // lowercase canonicalizes to L
 		t.Fatalf("PressKey: %v", err)
 	}
 	if !ran {
@@ -273,18 +292,18 @@ func TestPressKeyRunsCommandViaDefaultChord(t *testing.T) {
 func TestPressKeyRebindTakesEffect(t *testing.T) {
 	s := NewSession()
 	ran := 0
-	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran++; return nil }).WithAlias("L")
+	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran++; return nil }).WithDefaultChord("Ctrl+L")
 	if err := s.Commands().Add(cmd); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
-	if err := s.Bindings().SetChord("Test.Line", types.KeyChord{Key: "K"}); err != nil {
+	if err := s.Bindings().SetChord("Test.Line", types.KeyChord{Key: "K", Ctrl: true}); err != nil {
 		t.Fatalf("SetChord: %v", err)
 	}
-	_ = s.PressKey(KeyEvent{Key: "L"}) // the old default chord is no longer bound
+	_ = s.PressKey(KeyEvent{Key: "L", Mods: CtrlMod}) // the old default chord is no longer bound
 	if ran != 0 {
 		t.Error("the old chord should not trigger the command after a rebind")
 	}
-	_ = s.PressKey(KeyEvent{Key: "K"}) // the new chord
+	_ = s.PressKey(KeyEvent{Key: "K", Mods: CtrlMod}) // the new chord
 	if ran != 1 {
 		t.Errorf("the rebound chord should trigger the command, ran=%d", ran)
 	}

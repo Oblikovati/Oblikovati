@@ -50,40 +50,49 @@ func TestCtrlSSavesAndEchoes(t *testing.T) {
 	}
 }
 
-// TestPlainKeyChordStillDispatches confirms the no-text-field path is unchanged: a plain
-// shortcut key dispatched via PressKey still runs its command directly (the head keeps the
-// command line focused so, live, a plain letter fills it instead — but PressKey itself, the
-// fallback path, must keep working for existing shortcuts).
-func TestPlainKeyChordStillDispatches(t *testing.T) {
+// TestSingleLetterChordNeedsModifier confirms the M26 rule on the keyboard path: a bare
+// single letter does NOT dispatch a command (no plain default exists), while the same letter
+// chorded with Control does. Single-letter shortcuts are personalised as Shift/Control chords.
+func TestSingleLetterChordNeedsModifier(t *testing.T) {
 	s := NewSession()
 	ran := false
 	if err := s.Commands().Add(NewCommand("Test.Greet", "Greet", "Test",
-		func(*Session) error { ran = true; return nil }).WithAlias("G")); err != nil {
+		func(*Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+G")); err != nil {
 		t.Fatalf("add command: %v", err)
 	}
-	if err := s.PressKey(KeyEvent{Key: "G"}); err != nil {
+	if err := s.PressKey(KeyEvent{Key: "G"}); err != nil { // plain G: no command
 		t.Fatalf("PressKey(G): %v", err)
 	}
+	if ran {
+		t.Error("a bare single letter must not dispatch a command")
+	}
+	if err := s.PressKey(KeyEvent{Key: "G", Mods: CtrlMod}); err != nil {
+		t.Fatalf("PressKey(Ctrl+G): %v", err)
+	}
 	if !ran {
-		t.Error("plain shortcut key should still dispatch its command directly")
+		t.Error("Ctrl+G should dispatch the command")
 	}
 }
 
-// TestTypedSingleLetterResolvesOnEnter verifies the command line resolves a single-letter
-// shortcut typed and committed with Enter (the "fill, await Enter" path): "V" → toggle
-// visibility, which is a built-in shortcut not present in the AutoCAD vocabulary.
-func TestTypedSingleLetterResolvesOnEnter(t *testing.T) {
+// TestTypedSingleLetterDoesNotResolve pins the M26 rule that single-letter commands are NOT
+// part of the static command-window vocabulary: they belong to the keybinding editor, where
+// the user personalises them as Shift/Control chords. So a bare "V" typed and Entered is an
+// unknown command, not a shortcut — the user presses their configured chord instead.
+func TestTypedSingleLetterDoesNotResolve(t *testing.T) {
 	s := NewSession()
 	if err := RegisterStandardCommands(s); err != nil {
 		t.Fatalf("RegisterStandardCommands: %v", err)
 	}
-	if err := s.CommandLine().Submit(s, "V"); err != nil {
-		t.Fatalf("Submit(V): %v", err)
+	if err := s.CommandLine().Submit(s, "V"); err == nil {
+		t.Fatal("Submit(V) should report an unknown command (single letters are editor-only)")
 	}
-	// It resolved (no "Unknown command" error line).
+	found := false
 	for _, l := range s.CommandLine().Scrollback().Lines() {
 		if l.Severity == cmdline.Error && strings.Contains(l.Text, "Unknown") {
-			t.Errorf("typed 'V' was not resolved: %q", l.Text)
+			found = true
 		}
+	}
+	if !found {
+		t.Error("expected an 'Unknown command' line for a typed single letter")
 	}
 }
