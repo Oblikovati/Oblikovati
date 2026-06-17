@@ -68,6 +68,37 @@ func TestUnfoldDevelopsWatertightFlat(t *testing.T) {
 	}
 }
 
+// TestUnfoldDevelopsPunchRepresentation a coplanar (base-plane) punch develops into a flat punch
+// representation: its outline projected into the base plane, tagged with the feature name (#378).
+func TestUnfoldDevelopsPunchRepresentation(t *testing.T) {
+	d, _ := sheetWithFlange(t)
+	sk := d.Sketches().Add(sketch.XYPlane())
+	p0 := sk.Points().Add(gmath.P2(1, 1))
+	p1 := sk.Points().Add(gmath.P2(2, 1))
+	p2 := sk.Points().Add(gmath.P2(2, 2))
+	p3 := sk.Points().Add(gmath.P2(1, 2))
+	sk.Lines().Add(p0, p1)
+	sk.Lines().Add(p1, p2)
+	sk.Lines().Add(p2, p3)
+	sk.Lines().Add(p3, p0)
+	punch := feature.NewSheetMetalPunchFeatures(d.Features()).Add(&feature.SheetMetalPunchDefinition{Sketch: sk})
+	d.Recompute()
+
+	fp, err := d.Unfold()
+	if err != nil {
+		t.Fatalf("Unfold: %v", err)
+	}
+	if len(fp.Punches) != 1 {
+		t.Fatalf("flat punches = %d, want 1 (the base-plane punch)", len(fp.Punches))
+	}
+	if fp.Punches[0].Token != punch.Name() {
+		t.Errorf("punch token = %q, want the feature name %q", fp.Punches[0].Token, punch.Name())
+	}
+	if len(fp.Punches[0].Outline) < 4 {
+		t.Errorf("punch outline = %d points, want >= 4 (the square profile)", len(fp.Punches[0].Outline))
+	}
+}
+
 // TestUnfoldDevelopsTabForOutOfPlaneFold a flange whose 3D fold direction leaves the base
 // plane (a flange folded off a bottom edge folds in −Z) must still develop a tab in the base
 // plane: the tab outward is derived from the base geometry, not the 3D fold vector. Regression

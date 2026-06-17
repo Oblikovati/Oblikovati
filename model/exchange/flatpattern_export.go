@@ -94,14 +94,42 @@ func flatOutlineEntities(flat *feature.FlatPattern, layer string) []drawing.Enti
 	return out
 }
 
-// flatPunchEntities emits each punch representation as its outline plus a TEXT token at the
-// centroid, both on the punch layer. The flat pattern carries no punch development yet (only
-// base + edge flanges are unfolded), so this is currently empty; it is the seam the punch
-// representation populates.
+// flatPunchEntities emits each punch representation as its closed outline plus a TEXT token at
+// the centroid, both on the punch layer — the manufacturing tag a CAM programmer reads.
 func flatPunchEntities(flat *feature.FlatPattern, layer string) []drawing.Entity {
-	_ = flat
-	_ = layer
-	return nil
+	var out []drawing.Entity
+	for _, p := range flat.Punches {
+		if len(p.Outline) < 2 {
+			continue
+		}
+		pts := make([][2]float64, len(p.Outline))
+		for i, q := range p.Outline {
+			pts[i] = [2]float64{float64(q.X), float64(q.Y)}
+		}
+		out = append(out, &drawing.LwPolyline{Layer: layer, Closed: true, Points: pts})
+		if p.Token != "" {
+			c, h := punchLabel(p.Outline)
+			out = append(out, &drawing.Text{Layer: layer, Position: [3]float64{c[0], c[1], 0}, Height: h, Value: p.Token})
+		}
+	}
+	return out
+}
+
+// punchLabel returns where to place a punch's token (the outline centroid) and a legible text
+// height (a fraction of the smaller bounding-box dimension, with a small floor).
+func punchLabel(outline []math.Point2) (centroid [2]float64, height float64) {
+	minX, minY := stdmath.Inf(1), stdmath.Inf(1)
+	maxX, maxY := stdmath.Inf(-1), stdmath.Inf(-1)
+	var sx, sy float64
+	for _, p := range outline {
+		x, y := float64(p.X), float64(p.Y)
+		sx, sy = sx+x, sy+y
+		minX, minY = stdmath.Min(minX, x), stdmath.Min(minY, y)
+		maxX, maxY = stdmath.Max(maxX, x), stdmath.Max(maxY, y)
+	}
+	n := float64(len(outline))
+	span := stdmath.Min(maxX-minX, maxY-minY)
+	return [2]float64{sx / n, sy / n}, stdmath.Max(0.3*span, flatTokenMinHeight)
 }
 
 // onPlaneAt reports whether p sits on the plane offset height h along normal n from origin
@@ -135,6 +163,8 @@ const (
 	flatPlaneTol = 1e-6
 	// flatParallelTol is the |normal·planeNormal| above which a face counts as in-plane (flat).
 	flatParallelTol = 0.999
+	// flatTokenMinHeight floors a punch token's text height (database units, cm).
+	flatTokenMinHeight = 0.1
 )
 
 // ExportFlatPatternDXF encodes a developed flat pattern as an ASCII DXF of the given version,

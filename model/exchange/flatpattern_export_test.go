@@ -75,6 +75,30 @@ func TestExportFlatPatternDXF(t *testing.T) {
 	}
 }
 
+// TestExportFlatPatternPunches a punch representation exports as a closed outline plus its token
+// (a TEXT entity) on the Punches layer — the manufacturing tag from #378's acceptance.
+func TestExportFlatPatternPunches(t *testing.T) {
+	fp := flatWithTab(t, 4, 0.2, 1.5)
+	fp.Punches = []feature.FlatPunch{{
+		Outline: []math.Point2{math.P2(1, 1), math.P2(2, 1), math.P2(2, 2), math.P2(1, 2)},
+		Token:   "Punch1",
+	}}
+	data, _, err := ExportFlatPatternDXF(fp, FlatExportLayers{}, types.DXFR2018)
+	if err != nil {
+		t.Fatalf("ExportFlatPatternDXF: %v", err)
+	}
+	out := string(data)
+	if !strings.Contains(out, "\n2\nPunches\n") {
+		t.Error("LAYER table missing the Punches layer")
+	}
+	if !strings.Contains(out, "\n8\nPunches\n") {
+		t.Error("no punch geometry on the Punches layer")
+	}
+	if !strings.Contains(out, "\n0\nTEXT\n") || !strings.Contains(out, "\n1\nPunch1\n") {
+		t.Error("punch token TEXT not emitted")
+	}
+}
+
 // TestFlatExportLayersDefaults the zero layer value resolves to the default scheme.
 func TestFlatExportLayersDefaults(t *testing.T) {
 	got := FlatExportLayers{}.withDefaults()
