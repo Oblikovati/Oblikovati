@@ -205,3 +205,46 @@ func edgeLines(frame renderer.DrawList) int {
 	}
 	return n
 }
+
+// TestFaceSigHelpers pins the surface-signature comparison helpers used by changedFacePreview
+// to tell a feature's NEW faces from the base body's faces. A surface and its reverse share a
+// signature (signNorm), the freeform branch compares area+centroid (exercising maxVal), and a
+// different kind/anchor/radius never matches.
+func TestFaceSigHelpers(t *testing.T) {
+	// signNorm flips a vector so its dominant component is positive, so opposite normals match.
+	up, down := math.V3(0, 0, 1), math.V3(0, 0, -1)
+	if !signNorm(up).IsEqualTo(signNorm(down), 1e-9) {
+		t.Errorf("signNorm(%v) != signNorm(%v)", up, down)
+	}
+	// A cylinder axis foot is invariant to where along the axis the origin sits.
+	a := axisFoot(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	b := axisFoot(math.P3(0, 0, 7), math.V3(0, 0, 1))
+	if !a.IsEqualTo(b, 1e-9) {
+		t.Errorf("axisFoot not invariant along axis: %v vs %v", a, b)
+	}
+	if got := maxVal(2, 5); got != 5 {
+		t.Errorf("maxVal(2,5) = %g, want 5", got)
+	}
+	if got := absVal(-3); got != 3 {
+		t.Errorf("absVal(-3) = %g, want 3", got)
+	}
+
+	// Two freeform sigs (kind 0) with equal area+centroid match; differing area does not.
+	c := math.P3(1, 2, 3)
+	free := faceSig{kind: 0, centroid: c, area: 10}
+	if !sigEqual(free, faceSig{kind: 0, centroid: c, area: 10}) {
+		t.Error("identical freeform sigs should match")
+	}
+	if sigEqual(free, faceSig{kind: 0, centroid: c, area: 12}) {
+		t.Error("freeform sigs with different area should not match")
+	}
+	// A plane and a cylinder (different kind) never match.
+	if sigEqual(faceSig{kind: 1}, faceSig{kind: 2}) {
+		t.Error("different surface kinds should not match")
+	}
+	// Same-kind cylinders with different radii do not match.
+	cyl := faceSig{kind: 2, dir: math.V3(0, 0, 1), anchor: c, r1: 1}
+	if sigEqual(cyl, faceSig{kind: 2, dir: math.V3(0, 0, 1), anchor: c, r1: 2}) {
+		t.Error("cylinders with different radii should not match")
+	}
+}

@@ -35,6 +35,46 @@ func translucentTriangles(items []renderer.DrawItem) []renderer.DrawItem {
 	return out
 }
 
+// TestSetupOpPreviewsEveryFeature drives the driver's headless setup for every -op value and
+// asserts each leaves the session with a non-empty preview ghost. This exercises every
+// startPendingX builder + the base-solid/face/edge helpers without opening a native window
+// (run() does that and is exercised manually), so the demo driver can't silently rot when a
+// tool's preview wiring changes. Mirrors m16shot's setup-coverage test.
+func TestSetupOpPreviewsEveryFeature(t *testing.T) {
+	ops := []string{
+		"join", "cut", "revolve", "sweep", "loft", "coil", "hole",
+		"fillet", "chamfer", "shell", "draft", "thread",
+		"faceoffset", "deleteface", "split", "corecavity", "rib", "thicken",
+		"emboss", "grill", "replaceface", "patch", "stitch", "surfacetrim",
+		"sculpt", "extend",
+	}
+	for _, op := range ops {
+		t.Run(op, func(t *testing.T) {
+			s := app.NewSession()
+			if err := app.RegisterStandardCommands(s); err != nil {
+				t.Fatalf("RegisterStandardCommands: %v", err)
+			}
+			if err := setupOp(s, op); err != nil {
+				t.Fatalf("setupOp(%q): %v", op, err)
+			}
+			if len(s.ToolPreview()) == 0 {
+				t.Errorf("setupOp(%q): no preview ghost", op)
+			}
+		})
+	}
+}
+
+// TestSetupOpUnknown rejects an unknown op so the CLI fails loudly instead of drawing nothing.
+func TestSetupOpUnknown(t *testing.T) {
+	s := app.NewSession()
+	if err := app.RegisterStandardCommands(s); err != nil {
+		t.Fatalf("RegisterStandardCommands: %v", err)
+	}
+	if err := setupOp(s, "bogus"); err == nil {
+		t.Fatal("setupOp(\"bogus\") = nil error, want failure")
+	}
+}
+
 // TestPendingExtrudePreviewColors checks the driver's pending extrude shows a translucent
 // ghost that is green-dominant for a material-adding join and red-dominant for a cut — the
 // behaviour the live PNGs capture (run() opens a real window and is exercised manually).
