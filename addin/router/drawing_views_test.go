@@ -3,6 +3,9 @@
 package router
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"oblikovati.org/addin/opregistry"
@@ -93,6 +96,25 @@ func TestDrawingViewsLifecycleOverWire(t *testing.T) {
 	call(t, r, s, "drawingViews.delete", `{"name":"FRONT"}`, &after)
 	if len(after.Views) != 0 {
 		t.Errorf("views after deleting the base = %d, want 0 (projected cascades)", len(after.Views))
+	}
+}
+
+// TestDrawingExportDXFOverWire checks the active sheet (with a view) exports to a DXF file.
+func TestDrawingExportDXFOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
+
+	// Forward-slash the temp path so it is a valid JSON string on Windows (backslashes are
+	// JSON escapes); Go's file ops accept forward slashes on every OS.
+	path := filepath.ToSlash(t.TempDir()) + "/sheet.dxf"
+	var res wire.ExportDrawingDXFResult
+	call(t, r, s, "drawing.exportDXF", `{"path":"`+path+`","version":"r2018"}`, &res)
+	if res.Entities == 0 || res.Path != path {
+		t.Fatalf("export result = %+v, want entities written to %q", res, path)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil || !strings.Contains(string(data), "LINE") {
+		t.Fatalf("exported DXF unreadable or empty: err=%v", err)
 	}
 }
 
