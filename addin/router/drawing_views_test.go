@@ -139,6 +139,26 @@ func TestDrawingExportDXFOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingExtraViewsOverWire drives slice, breakout and draft over the wire.
+func TestDrawingExtraViewsOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
+
+	var slice, breakout, draft wire.ViewResult
+	call(t, r, s, "drawingViews.addSlice", `{"name":"SL","parentView":"FRONT","x1":80,"y1":100,"x2":160,"y2":100,"centerXmm":120,"centerYmm":240}`, &slice)
+	if slice.View.Type != "slice" {
+		t.Errorf("slice view type = %q, want slice", slice.View.Type)
+	}
+	call(t, r, s, "drawingViews.addBreakout", `{"name":"BO","parentView":"FRONT","boundaryXmm":120,"boundaryYmm":100,"radiusMm":60,"centerXmm":300,"centerYmm":100}`, &breakout)
+	if breakout.View.Type != "breakout" || breakout.View.BaseView != "FRONT" {
+		t.Errorf("breakout view = %+v, want breakout off FRONT", breakout.View)
+	}
+	call(t, r, s, "drawingViews.addDraft", `{"name":"DR","widthMm":80,"heightMm":50,"centerXmm":120,"centerYmm":340}`, &draft)
+	if draft.View.Type != "draft" {
+		t.Errorf("draft view type = %q, want draft", draft.View.Type)
+	}
+}
+
 func TestDrawingViewsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

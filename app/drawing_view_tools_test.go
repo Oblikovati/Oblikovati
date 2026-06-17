@@ -254,6 +254,82 @@ func TestBreakViewToolWithoutBaseView(t *testing.T) {
 	}
 }
 
+func TestSliceAndBreakoutViewTools(t *testing.T) {
+	s := drawingWithFrontBase(t)
+	c, _ := ActiveDrawing(s)
+	slice := NewSliceViewTool()
+	slice.Start(s)
+	if slice.Name() != "Slice View" || !slice.CanCommit() {
+		t.Fatalf("slice tool name/commit wrong: %q / %v", slice.Name(), slice.CanCommit())
+	}
+	slice.PreviewCurves(s)
+	slice.SetPlacement(260, 220)
+	if err := slice.Commit(s); err != nil {
+		t.Fatalf("slice Commit: %v", err)
+	}
+	bo := NewBreakoutViewTool()
+	bo.Start(s)
+	if bo.Name() != "Breakout View" || !bo.CanCommit() {
+		t.Fatalf("breakout tool name/commit wrong: %q / %v", bo.Name(), bo.CanCommit())
+	}
+	bo.PreviewCurves(s)
+	bo.SetPlacement(260, 320)
+	if err := bo.Commit(s); err != nil {
+		t.Fatalf("breakout Commit: %v", err)
+	}
+	views := c.Sheets().Active().Views()
+	if v, ok := views.ByName("VIEW:2"); !ok || v.Type() != types.DrawingViewSlice {
+		t.Errorf("VIEW:2 not a slice view (ok=%v)", ok)
+	}
+	if v, ok := views.ByName("VIEW:3"); !ok || v.Type() != types.DrawingViewBreakout {
+		t.Errorf("VIEW:3 not a breakout view (ok=%v)", ok)
+	}
+}
+
+func TestDraftViewToolNeedsNoModel(t *testing.T) {
+	s := drawingWithModelSession(t) // a drawing; draft ignores the model
+	c, _ := ActiveDrawing(s)
+	tool := NewDraftViewTool()
+	tool.Start(s)
+	if tool.Name() != "Draft View" || !tool.CanCommit() {
+		t.Fatalf("draft tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	tool.Params().Floats[0].Set(120)
+	if got := tool.PreviewCurves(s); len(got) != 4 {
+		t.Errorf("draft preview = %d curves, want a 4-edge frame", len(got))
+	}
+	tool.Pick(s, nil)
+	tool.Cancel(s)
+	tool.SetPlacement(200, 200)
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	if v, ok := c.Sheets().Active().Views().ByName("VIEW:1"); !ok || v.Type() != types.DrawingViewDraft {
+		t.Errorf("draft view not added (ok=%v)", ok)
+	}
+}
+
+func TestSliceBreakoutToolsWithoutBase(t *testing.T) {
+	s := drawingWithModelSession(t)
+	for _, tool := range []interface {
+		Start(*Session)
+		CanCommit() bool
+		Commit(*Session) error
+		PreviewCurves(*Session) []drawing.DrawingCurve
+	}{NewSliceViewTool(), NewBreakoutViewTool()} {
+		tool.Start(s)
+		if tool.CanCommit() {
+			t.Error("derived view tool can commit with no base view")
+		}
+		if got := tool.PreviewCurves(s); got != nil {
+			t.Errorf("preview with no base = %d curves, want none", len(got))
+		}
+		if err := tool.Commit(s); err == nil {
+			t.Error("Commit with no base = ok, want error")
+		}
+	}
+}
+
 func TestPickSelectEditDeleteDrawingView(t *testing.T) {
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)

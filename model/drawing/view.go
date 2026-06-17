@@ -49,6 +49,8 @@ type DrawingView struct {
 	section     sectionLine    // section-view cut line on the parent (sheet mm)
 	detail      detailBoundary // detail-view circular boundary (parent model-2D)
 	brk         breakBand      // break-view removed band (parent model-2D, along the break axis)
+	draftW      float64        // draft-view frame width (sheet mm)
+	draftH      float64        // draft-view frame height (sheet mm)
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
@@ -156,8 +158,15 @@ func (v *DrawingView) VisibleHidden() (visible, hidden int) {
 func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
 	segs := v.project(body, basis)
 	v.curves = make([]DrawingCurve, 0, len(segs))
-	if v.viewType == types.DrawingViewBreak {
+	switch v.viewType {
+	case types.DrawingViewBreak:
 		v.recomputeBreak(segs)
+		return
+	case types.DrawingViewSlice:
+		v.recomputeSlice(segs)
+		return
+	case types.DrawingViewBreakout:
+		v.recomputeBreakout(segs)
 		return
 	}
 	wireframe := v.style == types.WireframeViewStyle
@@ -170,6 +179,24 @@ func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
 	}
 }
 
+// DraftSizeMM returns a draft view's frame size (sheet millimetres).
+func (v *DrawingView) DraftSizeMM() (w, h float64) { return v.draftW, v.draftH }
+
+// recomputeDraftFrame rebuilds a model-less draft view's rectangular frame directly in sheet
+// millimetres (no projection); a placement preview/selection then has bounds to work with.
+func (v *DrawingView) recomputeDraftFrame() {
+	w, h := v.draftW/2, v.draftH/2
+	x0, y0, x1, y1 := v.centerX-w, v.centerY-h, v.centerX+w, v.centerY+h
+	corners := [4]math.Point2{
+		math.P2(math.Scalar(x0), math.Scalar(y0)), math.P2(math.Scalar(x1), math.Scalar(y0)),
+		math.P2(math.Scalar(x1), math.Scalar(y1)), math.P2(math.Scalar(x0), math.Scalar(y1)),
+	}
+	v.curves = v.curves[:0]
+	for i := 0; i < 4; i++ {
+		v.curves = append(v.curves, DrawingCurve{A: corners[i], B: corners[(i+1)%4], Visible: true, kind: types.DrawingEdgeCurve})
+	}
+}
+
 // appendCurve places a model-2D segment on the sheet and adds it to the view's curves.
 func (v *DrawingView) appendCurve(a, b math.Point2, visible bool, kind types.DrawingCurveKind, edgeKey []byte) {
 	v.curves = append(v.curves, DrawingCurve{A: v.place(a), B: v.place(b), Visible: visible, kind: kind, edgeKey: edgeKey})
@@ -178,7 +205,7 @@ func (v *DrawingView) appendCurve(a, b math.Point2, visible bool, kind types.Dra
 // project runs the projection a view's type calls for: a section view's clipped cut-away, or
 // plain hidden-line projection for every other kind.
 func (v *DrawingView) project(body *topo.Body, basis hlr.View) []hlr.Segment {
-	if v.viewType == types.DrawingViewSection {
+	if v.viewType == types.DrawingViewSection || v.viewType == types.DrawingViewSlice {
 		return hlr.ProjectSection(body, basis, ops.DefaultQuality())
 	}
 	return hlr.Project(body, basis, ops.DefaultQuality())

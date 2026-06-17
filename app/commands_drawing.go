@@ -52,6 +52,15 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Break View", "Views", "drawing-break-view",
 			"Compress a base view by removing a band (horizontal or vertical) with break lines at the join.",
 			func() Tool { return NewBreakViewTool() }),
+		drawingToolCommand("Slice View", "Views", "drawing-slice-view",
+			"Show only the zero-thickness slice outline at a section line through a base view.",
+			func() Tool { return NewSliceViewTool() }),
+		drawingToolCommand("Breakout View", "Views", "drawing-breakout-view",
+			"Reveal the interior within a region of a base view (a local cut-away).",
+			func() Tool { return NewBreakoutViewTool() }),
+		drawingToolCommand("Draft View", "Views", "drawing-draft-view",
+			"Place a model-less framed view for manually-drawn 2D geometry.",
+			func() Tool { return NewDraftViewTool() }),
 		NewCommand("Drawing.ExportDXF", "Export DXF", "Output", requestDrawingDXFExport).
 			WithTab("Drawing").WithRibbons(DrawingRibbon).WithEnable(hasActiveDrawing).
 			WithIcon("drawing-export-dxf").WithButtonStyle(LargeIconButton).

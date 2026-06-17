@@ -231,6 +231,119 @@ type BreakViewSpec struct {
 	CenterX, CenterY float64
 }
 
+// SliceViewSpec describes a slice view: the zero-thickness cut at a section line on the parent.
+type SliceViewSpec struct {
+	Name             string
+	ParentView       string
+	X1, Y1, X2, Y2   float64 // section line on the parent (sheet mm)
+	CenterX, CenterY float64
+}
+
+// BreakoutViewSpec describes a breakout view: a parent copy with the interior revealed inside a
+// circular region (sheet mm) on the parent.
+type BreakoutViewSpec struct {
+	Name             string
+	ParentView       string
+	BoundaryX        float64
+	BoundaryY        float64
+	RadiusMM         float64
+	CenterX, CenterY float64
+}
+
+// DraftViewSpec describes a model-less framed draft view (sheet mm).
+type DraftViewSpec struct {
+	Name              string
+	WidthMM, HeightMM float64
+	CenterX, CenterY  float64
+}
+
+// addDerived builds a parent-derived view: it resolves the parent base view + model, assigns a
+// unique name, configures the view via setup (which sets the type and its payload), projects it
+// and adds it. Shared by the slice/breakout adders (mirroring section/detail/auxiliary).
+func (vs *DrawingViews) addDerived(parentView, name string, setup func(parent *DrawingView) *DrawingView) (*DrawingView, error) {
+	parent, body, err := vs.parentBaseFor(parentView)
+	if err != nil {
+		return nil, err
+	}
+	n, err := vs.uniqueName(name)
+	if err != nil {
+		return nil, err
+	}
+	v := setup(parent)
+	v.name, v.baseView = n, parentView
+	if basis, ok := vs.basisFor(v, bodyCenter(body)); ok {
+		v.recompute(body, basis)
+	}
+	vs.items = append(vs.items, v)
+	return v, nil
+}
+
+// AddSlice adds a slice view: the zero-thickness cut outline at a section line on the parent.
+func (vs *DrawingViews) AddSlice(spec SliceViewSpec) (*DrawingView, error) {
+	return vs.addDerived(spec.ParentView, spec.Name, func(parent *DrawingView) *DrawingView {
+		return &DrawingView{
+			viewType: types.DrawingViewSlice, section: sectionLine{spec.X1, spec.Y1, spec.X2, spec.Y2},
+			orientation: parent.orientation, style: parent.style, scale: parent.scale,
+			centerX: spec.CenterX, centerY: spec.CenterY,
+		}
+	})
+}
+
+// AddBreakout adds a breakout view: the parent projection with the interior revealed inside the
+// circular region.
+func (vs *DrawingViews) AddBreakout(spec BreakoutViewSpec) (*DrawingView, error) {
+	return vs.addDerived(spec.ParentView, spec.Name, func(parent *DrawingView) *DrawingView {
+		return &DrawingView{
+			viewType: types.DrawingViewBreakout, detail: detailBoundaryOf(parent, spec.BoundaryX, spec.BoundaryY, spec.RadiusMM),
+			orientation: parent.orientation, style: parent.style, scale: parent.scale,
+			centerX: spec.CenterX, centerY: spec.CenterY,
+		}
+	})
+}
+
+// AddDraft adds a model-less framed draft view (a container for manual 2D geometry).
+func (vs *DrawingViews) AddDraft(spec DraftViewSpec) (*DrawingView, error) {
+	name, err := vs.uniqueName(spec.Name)
+	if err != nil {
+		return nil, err
+	}
+	v := &DrawingView{
+		name: name, viewType: types.DrawingViewDraft, scale: 1, centerX: spec.CenterX, centerY: spec.CenterY,
+		draftW: positiveScale(spec.WidthMM), draftH: positiveScale(spec.HeightMM),
+	}
+	v.recomputeDraftFrame()
+	vs.items = append(vs.items, v)
+	return v, nil
+}
+
+// PreviewSlice returns the origin-placed curves a slice view at the given line on parentView
+// would produce, without adding it.
+func (vs *DrawingViews) PreviewSlice(parentView string, x1, y1, x2, y2 float64) ([]DrawingCurve, bool) {
+	parent, body, err := vs.parentBaseFor(parentView)
+	if err != nil {
+		return nil, false
+	}
+	v := &DrawingView{viewType: types.DrawingViewSlice, section: sectionLine{x1, y1, x2, y2}, style: parent.style, scale: parent.scale}
+	origin := bodyCenter(body)
+	v.recompute(body, sectionBasis(baseBasis(parent.orientation, origin), v.section, parent.scale, parent.centerX, parent.centerY, origin))
+	return v.curves, true
+}
+
+// PreviewBreakout returns the origin-placed curves a breakout view of the given region on
+// parentView would produce, without adding it.
+func (vs *DrawingViews) PreviewBreakout(parentView string, boundaryX, boundaryY, radiusMM float64) ([]DrawingCurve, bool) {
+	parent, body, err := vs.parentBaseFor(parentView)
+	if err != nil {
+		return nil, false
+	}
+	v := &DrawingView{
+		viewType: types.DrawingViewBreakout, detail: detailBoundaryOf(parent, boundaryX, boundaryY, radiusMM),
+		style: parent.style, scale: parent.scale,
+	}
+	v.recompute(body, baseBasis(parent.orientation, bodyCenter(body)))
+	return v.curves, true
+}
+
 // AddBreak adds a break view: the parent's projection with the band removed and the two sides
 // butted together (a zigzag break line at the join). The parent must be a base view.
 func (vs *DrawingViews) AddBreak(spec BreakViewSpec) (*DrawingView, error) {
@@ -351,15 +464,19 @@ func (vs *DrawingViews) EditProjected(name string, dir types.ProjectionDirection
 }
 
 // Recompute re-projects every view against the current referenced model — the associativity
-// path after a model edit. With no resolvable model it leaves the views untouched.
+// path after a model edit. Draft views (no model) refresh their frame regardless; the
+// model-backed views are left untouched when no model resolves.
 func (vs *DrawingViews) Recompute() {
 	body, ok := vs.resolveBody()
-	if !ok {
-		return
-	}
-	origin := bodyCenter(body)
 	for _, v := range vs.items {
-		if basis, ok := vs.basisFor(v, origin); ok {
+		if v.viewType == types.DrawingViewDraft {
+			v.recomputeDraftFrame()
+			continue
+		}
+		if !ok {
+			continue
+		}
+		if basis, ok := vs.basisFor(v, bodyCenter(body)); ok {
 			v.recompute(body, basis)
 		}
 	}
@@ -382,10 +499,10 @@ func (vs *DrawingViews) basisFor(v *DrawingView, origin math.Point3) (hlr.View, 
 		return projectedBasis(parent, v.direction, origin), true
 	case types.DrawingViewAuxiliary:
 		return auxiliaryBasis(parent, v.foldAngle, origin), true
-	case types.DrawingViewSection:
+	case types.DrawingViewSection, types.DrawingViewSlice:
 		return sectionBasis(parent, v.section, base.scale, base.centerX, base.centerY, origin), true
-	default: // detail & break reuse the parent projection (recompute clips/breaks); re-map their
-		// sheet-mm region against the parent's current placement so they track a rescale/move.
+	default: // detail/breakout/break reuse the parent projection (recompute clips/breaks); re-map
+		// their sheet-mm region against the parent's current placement so they track a rescale/move.
 		v.refreshParentRegion(base)
 		return parent, true
 	}
@@ -396,7 +513,7 @@ func (vs *DrawingViews) basisFor(v *DrawingView, origin math.Point3) (hlr.View, 
 // path when the parent is rescaled or moved.
 func (v *DrawingView) refreshParentRegion(parent *DrawingView) {
 	switch v.viewType {
-	case types.DrawingViewDetail:
+	case types.DrawingViewDetail, types.DrawingViewBreakout:
 		v.detail = detailBoundaryOf(parent, v.detail.sheetCX, v.detail.sheetCY, v.detail.sheetR)
 	case types.DrawingViewBreak:
 		v.brk = breakBandOf(parent, v.brk.orientation, v.brk.sheetG0, v.brk.sheetG1)

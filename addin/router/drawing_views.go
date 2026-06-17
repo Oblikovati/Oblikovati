@@ -27,6 +27,9 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.handlers[wire.MethodDrawingViewsAddSection] = drawingViewsAddSection
 	r.handlers[wire.MethodDrawingViewsAddDetail] = drawingViewsAddDetail
 	r.handlers[wire.MethodDrawingViewsAddBreak] = drawingViewsAddBreak
+	r.handlers[wire.MethodDrawingViewsAddSlice] = drawingViewsAddSlice
+	r.handlers[wire.MethodDrawingViewsAddBreakout] = drawingViewsAddBreakout
+	r.handlers[wire.MethodDrawingViewsAddDraft] = drawingViewsAddDraft
 	r.handlers[wire.MethodDrawingViewsDelete] = drawingViewsDelete
 	r.handlers[wire.MethodDrawingViewsCurves] = drawingViewsCurves
 }
@@ -188,6 +191,65 @@ func drawingViewsAddBreak(s *app.Session, raw json.RawMessage) (json.RawMessage,
 	v, err := views.AddBreak(drawing.BreakViewSpec{
 		Name: in.Name, ParentView: in.ParentView, Orientation: orient,
 		GapStart: in.GapStartMM, GapEnd: in.GapEndMM, CenterX: in.CenterXMM, CenterY: in.CenterYMM,
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.ViewResult{View: drawingViewInfo(v)})
+}
+
+func drawingViewsAddSlice(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	views, err := activeSheetViews(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddSliceViewArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	v, err := views.AddSlice(drawing.SliceViewSpec{
+		Name: in.Name, ParentView: in.ParentView, X1: in.X1, Y1: in.Y1, X2: in.X2, Y2: in.Y2,
+		CenterX: in.CenterXMM, CenterY: in.CenterYMM,
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.ViewResult{View: drawingViewInfo(v)})
+}
+
+func drawingViewsAddBreakout(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	views, err := activeSheetViews(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddBreakoutViewArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	v, err := views.AddBreakout(drawing.BreakoutViewSpec{
+		Name: in.Name, ParentView: in.ParentView, BoundaryX: in.BoundaryXMM, BoundaryY: in.BoundaryYMM,
+		RadiusMM: in.RadiusMM, CenterX: in.CenterXMM, CenterY: in.CenterYMM,
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.ViewResult{View: drawingViewInfo(v)})
+}
+
+func drawingViewsAddDraft(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	views, err := activeSheetViews(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddDraftViewArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	v, err := views.AddDraft(drawing.DraftViewSpec{
+		Name: in.Name, WidthMM: in.WidthMM, HeightMM: in.HeightMM, CenterX: in.CenterXMM, CenterY: in.CenterYMM,
 	})
 	if err != nil {
 		return nil, err

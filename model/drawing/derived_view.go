@@ -225,6 +225,53 @@ func axisPoint(axisX bool, axis, perp float64) gmath.Point2 {
 	return gmath.P2(gmath.Scalar(perp), gmath.Scalar(axis))
 }
 
+// recomputeSlice keeps only the zero-thickness cut outline of a section projection (the body∩
+// plane curves) — a slice view shows the cut and nothing projected behind it.
+func (v *DrawingView) recomputeSlice(segs []hlr.Segment) {
+	for _, s := range segs {
+		if s.Kind == hlr.KindCut {
+			v.appendCurve(s.A, s.B, true, types.DrawingSectionCurve, nil)
+		}
+	}
+}
+
+// recomputeBreakout copies the parent projection but reveals the interior inside the breakout
+// region: hidden edges whose midpoint falls in the region are drawn solid (as if the near
+// material were removed there). The region boundary circle is drawn so the cut-away reads.
+func (v *DrawingView) recomputeBreakout(segs []hlr.Segment) {
+	wireframe := v.style == types.WireframeViewStyle
+	cx, cy, r := v.detail.cx, v.detail.cy, v.detail.r
+	for _, s := range segs {
+		visible := wireframe || s.Visible || (!s.Visible && segmentMidInDisk(s.A, s.B, cx, cy, r))
+		v.appendCurve(s.A, s.B, visible, types.DrawingEdgeCurve, s.EdgeKey)
+	}
+	for _, seg := range circleOutline(cx, cy, r) {
+		v.appendCurve(seg[0], seg[1], true, types.DrawingSectionCurve, nil)
+	}
+}
+
+// segmentMidInDisk reports whether the segment's midpoint lies within the disk (cx, cy, r).
+func segmentMidInDisk(a, b gmath.Point2, cx, cy, r float64) bool {
+	mx, my := (float64(a.X)+float64(b.X))/2-cx, (float64(a.Y)+float64(b.Y))/2-cy
+	return mx*mx+my*my <= r*r
+}
+
+// circleOutline tessellates a circle (cx, cy, r) into a closed polyline of segments — the
+// breakout region boundary.
+func circleOutline(cx, cy, r float64) [][2]gmath.Point2 {
+	const n = 32
+	pts := make([]gmath.Point2, n+1)
+	for i := 0; i <= n; i++ {
+		a := 2 * math.Pi * float64(i) / float64(n)
+		pts[i] = gmath.P2(gmath.Scalar(cx+r*math.Cos(a)), gmath.Scalar(cy+r*math.Sin(a)))
+	}
+	out := make([][2]gmath.Point2, 0, n)
+	for i := 0; i+1 < len(pts); i++ {
+		out = append(out, [2]gmath.Point2{pts[i], pts[i+1]})
+	}
+	return out
+}
+
 // sectionBasis derives a section view's cut-plane frame from its parent frame and the cut line
 // drawn on the parent. The line (sheet mm) is mapped back through the parent's placement into the
 // parent's model plane; the cut plane contains that line and is parallel to the parent's view
