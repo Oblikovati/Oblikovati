@@ -26,19 +26,36 @@ func cmdExport(args []string, out io.Writer) error {
 		return fmt.Errorf("export: expected <src.opd> <out-file> [low|medium|high | r2000|r2018], got %d arg(s)", len(args))
 	}
 	src, dst := args[0], args[1]
-	ws := doc.NewWorkspace(persistence.NewPackageStore())
-	d, err := ws.Open(src, true)
+	part, err := openCLIPart(src)
 	if err != nil {
-		return fmt.Errorf("export: open %q: %w", src, err)
-	}
-	part, ok := d.Content().(*compdef.PartComponentDefinition)
-	if !ok {
-		return fmt.Errorf("export: %q is not a part document", src)
+		return fmt.Errorf("export: %w", err)
 	}
 	if lowerExt(dst) == ".dxf" {
 		return exportSketchDXF(part, src, dst, args, out)
 	}
 	return exportBodies(part, src, dst, args, out)
+}
+
+// openCLIPart opens an .opd and returns its part component definition, erroring if the document
+// is missing or is not a part.
+func openCLIPart(src string) (*compdef.PartComponentDefinition, error) {
+	d, err := doc.NewWorkspace(persistence.NewPackageStore()).Open(src, true)
+	if err != nil {
+		return nil, fmt.Errorf("open %q: %w", src, err)
+	}
+	part, ok := d.Content().(*compdef.PartComponentDefinition)
+	if !ok {
+		return nil, fmt.Errorf("%q is not a part document", src)
+	}
+	return part, nil
+}
+
+// dxfVersionArg resolves an optional trailing version arg (r2000|r2018), defaulting to R2000.
+func dxfVersionArg(args []string) types.DXFVersion {
+	if len(args) == 3 {
+		return types.DXFVersion(args[2])
+	}
+	return types.DXFR2000
 }
 
 // exportBodies writes the part's bodies to a mesh/B-rep file at the chosen resolution.
@@ -64,15 +81,38 @@ func exportSketchDXF(part *compdef.PartComponentDefinition, src, dst string, arg
 	if part.Sketches().Count() == 0 {
 		return fmt.Errorf("export: %q has no sketch to export to DXF", src)
 	}
-	version := types.DXFR2000
-	if len(args) == 3 {
-		version = types.DXFVersion(args[2])
-	}
+	version := dxfVersionArg(args)
 	n, err := exchange.ExportDXFFile(part.Sketches().Item(0), dst, version)
 	if err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "exported %s sketch to %s (%d curves, %s)\n", src, dst, n, version.Normalized())
+	return nil
+}
+
+// cmdExportFlat develops a sheet-metal part's flat pattern and writes it to a .dxf with the
+// outline, bend lines and punch tokens on named layers, at a version (r2000|r2018; default r2000):
+//
+//	oblikovati-cli export-flat fixtures/bracket.opd bracket-flat.dxf r2018
+func cmdExportFlat(args []string, out io.Writer) error {
+	if len(args) < 2 || len(args) > 3 {
+		return fmt.Errorf("export-flat: expected <src.opd> <out.dxf> [r2000|r2018], got %d arg(s)", len(args))
+	}
+	src, dst := args[0], args[1]
+	part, err := openCLIPart(src)
+	if err != nil {
+		return fmt.Errorf("export-flat: %w", err)
+	}
+	flat, err := part.Unfold()
+	if err != nil {
+		return fmt.Errorf("export-flat: %w", err)
+	}
+	version := dxfVersionArg(args)
+	n, err := exchange.ExportFlatPatternDXFFile(flat, dst, exchange.FlatExportLayers{}, version)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "exported %s flat pattern to %s (%d entities, %s)\n", src, dst, n, version.Normalized())
 	return nil
 }
 

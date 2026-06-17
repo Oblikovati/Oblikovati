@@ -4,7 +4,9 @@ package compdef
 
 import (
 	"fmt"
+	stdmath "math"
 
+	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
 )
@@ -27,7 +29,57 @@ func (d *PartComponentDefinition) Unfold() (*feature.FlatPattern, error) {
 		return nil, fmt.Errorf("unfold: the part has no base Face to develop")
 	}
 	def := base.Definition()
-	return feature.BuildFlatPattern(def.Sketch, def.ProfileIndex, d.sheetMetal.Thickness(), d.flatTabs())
+	fp, err := feature.BuildFlatPattern(def.Sketch, def.ProfileIndex, d.sheetMetal.Thickness(), d.flatTabs())
+	if err != nil {
+		return nil, err
+	}
+	fp.Punches = d.flatPunches(def.Sketch.Plane())
+	return fp, nil
+}
+
+// flatPunches develops every healthy punch feature whose sketch is coplanar with the base into a
+// flat punch representation (its outline + the feature name as the token). A punch on a flange
+// develops through the fold and is a follow-up, so it is skipped here.
+func (d *PartComponentDefinition) flatPunches(basePlane sketch.Plane) []feature.FlatPunch {
+	fs := d.features
+	var out []feature.FlatPunch
+	for i := 0; i < fs.Count(); i++ {
+		pf := fs.Item(i)
+		punch, ok := pf.Definition().(*feature.SheetMetalPunchFeature)
+		if !ok || pf.Suppressed() || !pf.Health().OK() {
+			continue
+		}
+		out = append(out, developPunch(pf, punch, basePlane)...)
+	}
+	return out
+}
+
+// developPunch projects each closed profile of a coplanar punch into the base plane as a flat
+// punch outline tagged with the feature name.
+func developPunch(pf *feature.PartFeature, punch *feature.SheetMetalPunchFeature, basePlane sketch.Plane) []feature.FlatPunch {
+	sk := punch.Definition().Sketch
+	if stdmath.Abs(sk.Plane().Normal().AsVector().Dot(basePlane.Normal().AsVector())) < 0.999 {
+		return nil // not coplanar: a flange punch, developed through the fold — a follow-up
+	}
+	profs := sk.Profiles()
+	out := make([]feature.FlatPunch, 0, profs.Count())
+	for j := 0; j < profs.Count(); j++ {
+		out = append(out, feature.FlatPunch{
+			Outline: projectToPlane(profs.Item(j).OuterLoop().Polygon(), sk.Plane(), basePlane),
+			Token:   pf.Name(),
+		})
+	}
+	return out
+}
+
+// projectToPlane maps a loop's 2D points from one plane's frame into another's (lift to model
+// space, drop back into the target plane) — for a coplanar punch this is its outline in base 2D.
+func projectToPlane(poly []math.Point2, from, to sketch.Plane) []math.Point2 {
+	out := make([]math.Point2, len(poly))
+	for i, p := range poly {
+		out[i] = to.ToSketch(from.ToModel(p))
+	}
+	return out
 }
 
 // baseFace returns the first sheet-metal base Face feature — the flat region the development

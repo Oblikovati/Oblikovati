@@ -21,6 +21,10 @@ type encHandles struct {
 	layer0, styleStandard, appidACAD, dimstyleStd uint64
 	modelSpaceBR, paperSpaceBR                    uint64
 
+	// extraLayers holds one handle per custom (non-"0") layer record, in the order their
+	// names are written; allocated before entityBase so entity handles stay sequential.
+	extraLayers []uint64
+
 	// Block definitions (BLOCK/ENDBLK markers).
 	modelBlock, modelEndblk, paperBlock, paperEndblk uint64
 
@@ -41,7 +45,7 @@ func (h *encHandles) alloc() uint64 {
 // output is stable) and sets entityBase to the first handle the entities will use.
 //
 //nolint:funlen // one allocation per fixed object; the list is the object graph.
-func newEncHandles() *encHandles {
+func newEncHandles(extraLayers int) *encHandles {
 	h := &encHandles{}
 	h.blockRecordTable = h.alloc()
 	h.vportTable = h.alloc()
@@ -70,6 +74,13 @@ func newEncHandles() *encHandles {
 	h.paperEndblk = h.alloc()
 
 	h.rootDict = h.alloc()
+
+	// Custom layer records take handles before the entities so entity handles stay a
+	// contiguous run from entityBase (the decoder and $HANDSEED rely on the ordering).
+	h.extraLayers = make([]uint64, extraLayers)
+	for i := range h.extraLayers {
+		h.extraLayers[i] = h.alloc()
+	}
 
 	h.entityBase = h.next + 1
 	return h

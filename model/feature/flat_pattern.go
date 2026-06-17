@@ -44,12 +44,22 @@ type FlatBendLine struct {
 	FoldDown bool
 }
 
-// FlatPattern is the developed flat: the flat solid, its fold lines, the 2D extents, the
-// gauge, and the base plane the flat lies in (so callers can project the body to 2D). Body is
-// one watertight solid (the base plate unioned with every tab).
+// FlatPunch is one punch's representation in the flat pattern: its closed outline (base-plane
+// 2D) and a token naming the punch/tool, drawn on the punch layer for the CAM programmer. It is
+// an annotation — a marker, not a body hole — so it represents a punch even where the flat solid
+// does not yet carry the cut.
+type FlatPunch struct {
+	Outline []math.Point2
+	Token   string
+}
+
+// FlatPattern is the developed flat: the flat solid, its fold lines, punch representations, the
+// 2D extents, the gauge, and the base plane the flat lies in (so callers can project the body to
+// 2D). Body is one watertight solid (the base plate unioned with every tab).
 type FlatPattern struct {
 	Body      *topo.Body
 	Bends     []FlatBendLine
+	Punches   []FlatPunch
 	Extents   math.Box2d
 	Thickness float64
 	Plane     sketch.Plane
