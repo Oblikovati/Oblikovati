@@ -116,38 +116,41 @@ func (t *BaseViewTool) Params() ToolParams {
 	}
 }
 
-// ProjectedViewTool places a view projected from a base view in a chosen direction; the
-// preview follows the cursor and a click drops it.
-type ProjectedViewTool struct {
+// derivedViewTool is the shared state of the tools that place a view derived from a base view
+// (projected/auxiliary/section): the candidate base views, the chosen one, the cursor placement
+// and the cached cursor-follow preview. The concrete tools embed it and add their own option
+// (direction / fold angle / cut orientation) plus PreviewCurves/Commit/Params.
+type derivedViewTool struct {
 	bases      []string
 	baseIndex  int
-	direction  int
 	centerX    float64
 	centerY    float64
 	preview    []drawing.DrawingCurve
 	previewKey string
 }
 
-// SetPlacement records the cursor sheet position the projected view will be centred on.
-func (t *ProjectedViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+// Start captures the base views the derived view can be built from.
+func (t *derivedViewTool) Start(s *Session)          { t.bases = baseViewNames(s) }
+func (t *derivedViewTool) Pick(*Session, Selectable) {}
+func (t *derivedViewTool) Cancel(*Session)           {}
 
-// PreviewCurves projects the chosen base+direction at the origin, cached until they change.
-func (t *ProjectedViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+// CanCommit requires at least one base view to derive from.
+func (t *derivedViewTool) CanCommit() bool { return len(t.bases) > 0 }
+
+// SetPlacement records the cursor sheet position the derived view will be centred on.
+func (t *derivedViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// parent returns the selected base view's name ("" when none are available).
+func (t *derivedViewTool) parent() string {
 	if len(t.bases) == 0 {
-		return nil
+		return ""
 	}
-	c, err := ActiveDrawing(s)
-	if err != nil {
-		return nil
-	}
-	base := t.bases[clampIndex(t.baseIndex, len(t.bases))]
-	key := fmt.Sprintf("%s/%d", base, t.direction)
-	if key != t.previewKey {
-		t.preview, _ = c.Sheets().Active().Views().PreviewProjected(base,
-			projectionDirections[clampIndex(t.direction, len(projectionDirections))].dir)
-		t.previewKey = key
-	}
-	return t.preview
+	return t.bases[clampIndex(t.baseIndex, len(t.bases))]
+}
+
+// baseChoice is the base-view dropdown the derived-view tools share in Params.
+func (t *derivedViewTool) baseChoice(label string) ChoiceParam {
+	return ChoiceParam{Label: label, Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }}
 }
 
 var projectionDirections = []struct {
@@ -157,24 +160,40 @@ var projectionDirections = []struct {
 	{"Right", types.ProjectRight}, {"Left", types.ProjectLeft}, {"Up", types.ProjectUp}, {"Down", types.ProjectDown},
 }
 
+// ProjectedViewTool places a view projected from a base view in a chosen direction.
+type ProjectedViewTool struct {
+	derivedViewTool
+	direction int
+}
+
 // NewProjectedViewTool creates the tool; its base-view list is captured on Start.
 func NewProjectedViewTool() *ProjectedViewTool {
-	return &ProjectedViewTool{centerX: 250, centerY: 150}
+	return &ProjectedViewTool{derivedViewTool: derivedViewTool{centerX: 250, centerY: 150}}
 }
 
 func (t *ProjectedViewTool) Name() string { return "Projected View" }
 
-// Start captures the base views the projection can derive from.
-func (t *ProjectedViewTool) Start(s *Session) {
-	t.bases = baseViewNames(s)
+func (t *ProjectedViewTool) dir() types.ProjectionDirection {
+	return projectionDirections[clampIndex(t.direction, len(projectionDirections))].dir
 }
 
-func (t *ProjectedViewTool) Pick(*Session, Selectable) {}
-
-// CanCommit requires at least one base view to project from.
-func (t *ProjectedViewTool) CanCommit() bool { return len(t.bases) > 0 }
-
-func (t *ProjectedViewTool) Cancel(*Session) {}
+// PreviewCurves projects the chosen base+direction at the origin, cached until they change.
+func (t *ProjectedViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	parent := t.parent()
+	if parent == "" {
+		return nil
+	}
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return nil
+	}
+	key := fmt.Sprintf("%s/%d", parent, t.direction)
+	if key != t.previewKey {
+		t.preview, _ = c.Sheets().Active().Views().PreviewProjected(parent, t.dir())
+		t.previewKey = key
+	}
+	return t.preview
+}
 
 // Commit projects from the selected base view in the chosen direction.
 func (t *ProjectedViewTool) Commit(s *Session) error {
@@ -182,13 +201,11 @@ func (t *ProjectedViewTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	if len(t.bases) == 0 {
+	if t.parent() == "" {
 		return fmt.Errorf("drawing: no base view to project from — add a base view first")
 	}
 	_, err = c.Sheets().Active().Views().AddProjected(drawing.ProjectedViewSpec{
-		BaseView:  t.bases[clampIndex(t.baseIndex, len(t.bases))],
-		Direction: projectionDirections[clampIndex(t.direction, len(projectionDirections))].dir,
-		CenterX:   t.centerX, CenterY: t.centerY,
+		BaseView: t.parent(), Direction: t.dir(), CenterX: t.centerX, CenterY: t.centerY,
 	})
 	if err != nil {
 		return err
@@ -197,61 +214,39 @@ func (t *ProjectedViewTool) Commit(s *Session) error {
 	return nil
 }
 
-// Params exposes the base-view and direction choices for the property dialog (the sheet
-// position comes from the placement click).
+// Params exposes the base-view and direction choices for the property dialog.
 func (t *ProjectedViewTool) Params() ToolParams {
-	return ToolParams{
-		Choices: []ChoiceParam{
-			{Label: "Base View", Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }},
-			{Label: "Direction", Options: labelsOf(len(projectionDirections), func(i int) string { return projectionDirections[i].label }),
-				Get: func() int { return t.direction }, Set: func(i int) { t.direction = i }},
-		},
-	}
+	return ToolParams{Choices: []ChoiceParam{
+		t.baseChoice("Base View"),
+		{Label: "Direction", Options: labelsOf(len(projectionDirections), func(i int) string { return projectionDirections[i].label }),
+			Get: func() int { return t.direction }, Set: func(i int) { t.direction = i }},
+	}}
 }
 
-// AuxiliaryViewTool places a view folded off a base view about a fold line at a chosen angle;
-// the preview follows the cursor and a click drops it. It mirrors ProjectedViewTool but takes a
-// fold angle (degrees) instead of a discrete direction.
+// AuxiliaryViewTool places a view folded off a base view about a fold line at a chosen angle —
+// it mirrors ProjectedViewTool but takes a fold angle (degrees) instead of a discrete direction.
 type AuxiliaryViewTool struct {
-	bases      []string
-	baseIndex  int
-	foldDeg    float64
-	centerX    float64
-	centerY    float64
-	preview    []drawing.DrawingCurve
-	previewKey string
+	derivedViewTool
+	foldDeg float64
 }
 
 // NewAuxiliaryViewTool creates the tool; its parent-view list is captured on Start.
 func NewAuxiliaryViewTool() *AuxiliaryViewTool {
-	return &AuxiliaryViewTool{centerX: 250, centerY: 250}
+	return &AuxiliaryViewTool{derivedViewTool: derivedViewTool{centerX: 250, centerY: 250}}
 }
 
 func (t *AuxiliaryViewTool) Name() string { return "Auxiliary View" }
 
-// Start captures the base views the auxiliary can fold off.
-func (t *AuxiliaryViewTool) Start(s *Session) { t.bases = baseViewNames(s) }
-
-func (t *AuxiliaryViewTool) Pick(*Session, Selectable) {}
-
-// CanCommit requires at least one base view to fold from.
-func (t *AuxiliaryViewTool) CanCommit() bool { return len(t.bases) > 0 }
-
-func (t *AuxiliaryViewTool) Cancel(*Session) {}
-
-// SetPlacement records the cursor sheet position the auxiliary view will be centred on.
-func (t *AuxiliaryViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
-
 // PreviewCurves folds the chosen parent at the chosen angle at the origin, cached until they change.
 func (t *AuxiliaryViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
-	if len(t.bases) == 0 {
+	parent := t.parent()
+	if parent == "" {
 		return nil
 	}
 	c, err := ActiveDrawing(s)
 	if err != nil {
 		return nil
 	}
-	parent := t.bases[clampIndex(t.baseIndex, len(t.bases))]
 	key := fmt.Sprintf("%s/%g", parent, t.foldDeg)
 	if key != t.previewKey {
 		t.preview, _ = c.Sheets().Active().Views().PreviewAuxiliary(parent, t.foldDeg*math.Pi/180)
@@ -266,12 +261,11 @@ func (t *AuxiliaryViewTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	if len(t.bases) == 0 {
+	if t.parent() == "" {
 		return fmt.Errorf("drawing: no base view to fold from — add a base view first")
 	}
 	_, err = c.Sheets().Active().Views().AddAuxiliary(drawing.AuxiliaryViewSpec{
-		ParentView:   t.bases[clampIndex(t.baseIndex, len(t.bases))],
-		FoldAngleRad: t.foldDeg * math.Pi / 180, CenterX: t.centerX, CenterY: t.centerY,
+		ParentView: t.parent(), FoldAngleRad: t.foldDeg * math.Pi / 180, CenterX: t.centerX, CenterY: t.centerY,
 	})
 	if err != nil {
 		return err
@@ -283,12 +277,8 @@ func (t *AuxiliaryViewTool) Commit(s *Session) error {
 // Params exposes the parent-view choice and fold angle for the property dialog.
 func (t *AuxiliaryViewTool) Params() ToolParams {
 	return ToolParams{
-		Choices: []ChoiceParam{
-			{Label: "Parent View", Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }},
-		},
-		Floats: []FloatParam{
-			{"Fold Angle (deg)", func() float64 { return t.foldDeg }, func(v float64) { t.foldDeg = v }},
-		},
+		Choices: []ChoiceParam{t.baseChoice("Parent View")},
+		Floats:  []FloatParam{{"Fold Angle (deg)", func() float64 { return t.foldDeg }, func(v float64) { t.foldDeg = v }}},
 	}
 }
 
@@ -299,24 +289,16 @@ var sectionOrientations = []string{"Horizontal", "Vertical"}
 // vertical section line; the preview follows the cursor and a click drops the section view.
 // (Free-hand section lines are a follow-up; a centreline cut is the common case.)
 type SectionViewTool struct {
-	bases      []string
-	baseIndex  int
-	orient     int
-	centerX    float64
-	centerY    float64
-	preview    []drawing.DrawingCurve
-	previewKey string
+	derivedViewTool
+	orient int
 }
 
 // NewSectionViewTool creates the tool; its base-view list is captured on Start.
-func NewSectionViewTool() *SectionViewTool { return &SectionViewTool{centerX: 150, centerY: 250} }
+func NewSectionViewTool() *SectionViewTool {
+	return &SectionViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+}
 
-func (t *SectionViewTool) Name() string              { return "Section View" }
-func (t *SectionViewTool) Start(s *Session)          { t.bases = baseViewNames(s) }
-func (t *SectionViewTool) Pick(*Session, Selectable) {}
-func (t *SectionViewTool) CanCommit() bool           { return len(t.bases) > 0 }
-func (t *SectionViewTool) Cancel(*Session)           {}
-func (t *SectionViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+func (t *SectionViewTool) Name() string { return "Section View" }
 
 // sectionLineOn returns the cut line (sheet mm) through the named base view's centre, spanning
 // its bounds along the chosen orientation; ok is false when the view has no geometry yet.
@@ -342,10 +324,10 @@ func (t *SectionViewTool) sectionLineOn(s *Session, parent string) (x1, y1, x2, 
 
 // PreviewCurves projects the section through the chosen base+orientation, cached until they change.
 func (t *SectionViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
-	if len(t.bases) == 0 {
+	parent := t.parent()
+	if parent == "" {
 		return nil
 	}
-	parent := t.bases[clampIndex(t.baseIndex, len(t.bases))]
 	key := fmt.Sprintf("%s/%d", parent, t.orient)
 	if key != t.previewKey {
 		t.preview = nil
@@ -364,10 +346,10 @@ func (t *SectionViewTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	if len(t.bases) == 0 {
+	parent := t.parent()
+	if parent == "" {
 		return fmt.Errorf("drawing: no base view to section — add a base view first")
 	}
-	parent := t.bases[clampIndex(t.baseIndex, len(t.bases))]
 	x1, y1, x2, y2, ok := t.sectionLineOn(s, parent)
 	if !ok {
 		return fmt.Errorf("drawing: base view %q has no geometry to section", parent)
@@ -383,12 +365,10 @@ func (t *SectionViewTool) Commit(s *Session) error {
 
 // Params exposes the base-view and cut-orientation choices for the property dialog.
 func (t *SectionViewTool) Params() ToolParams {
-	return ToolParams{
-		Choices: []ChoiceParam{
-			{Label: "Base View", Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }},
-			{Label: "Cut", Options: sectionOrientations, Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
-		},
-	}
+	return ToolParams{Choices: []ChoiceParam{
+		t.baseChoice("Base View"),
+		{Label: "Cut", Options: sectionOrientations, Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
+	}}
 }
 
 // baseViewNames lists the active sheet's base views (the candidates a projected view derives
