@@ -73,4 +73,14 @@ func TestUnitsOfMeasurePrecisionFields(t *testing.T) {
 	if err := c.SetLengthPrecision(-1); err == nil {
 		t.Error("a negative precision must error")
 	}
+	if err := c.SetAnglePrecision(1); err != nil || c.AnglePrecision() != 1 {
+		t.Errorf("SetAnglePrecision = (%v); angle precision %d, want 1", err, c.AnglePrecision())
+	}
+	if err := c.SetAnglePrecision(-2); err == nil {
+		t.Error("a negative angle precision must error")
+	}
+	c.SetLengthFormat(types.DisplayFormatFractional)
+	if c.LengthFormat() != types.DisplayFormatFractional {
+		t.Errorf("length format = %v, want fractional", c.LengthFormat())
+	}
 }

@@ -6,7 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // Document units of measure + unit/expression service over the wire (#146).
@@ -104,5 +106,97 @@ func TestUnitsServiceOverWire(t *testing.T) {
 	call(t, r, s, "units.getDrivingParameters", `{"expression":"width + height"}`, &dp)
 	if len(dp.Names) != 2 || dp.Names[0] != "width" || dp.Names[1] != "height" {
 		t.Errorf("drivingParameters = %v, want [width height]", dp.Names)
+	}
+}
+
+// TestUnitsExtraMethodsOverWire covers the methods not exercised above: the
+// precise string formatter, compatibility check, and the locale-corrected
+// expression passthrough.
+func TestUnitsExtraMethodsOverWire(t *testing.T) {
+	r, s := seededSession(t)
+
+	var str wire.StringResult
+	call(t, r, s, "units.getPreciseStringFromValue", `{"value":4,"unitsType":"length"}`, &str)
+	if str.Value != "40 mm" {
+		t.Errorf("precise(4 cm) = %q, want \"40 mm\"", str.Value)
+	}
+
+	var comp wire.CompatibleUnitsResult
+	call(t, r, s, "units.compatibleUnits", `{"expression":"5 mm","unitsType":"length"}`, &comp)
+	if !comp.Compatible {
+		t.Error("5 mm should be compatible with length")
+	}
+	call(t, r, s, "units.compatibleUnits", `{"expression":"5 deg","unitsType":"length"}`, &comp)
+	if comp.Compatible {
+		t.Error("5 deg should not be compatible with length")
+	}
+
+	var lc wire.StringResult
+	call(t, r, s, "units.getLocaleCorrectedExpression", `{"expression":"3 mm + 1 cm"}`, &lc)
+	if lc.Value != "3 mm + 1 cm" {
+		t.Errorf("locale-corrected = %q, want the canonical passthrough", lc.Value)
+	}
+}
+
+// TestUnitsHandlersNeedActiveDocument covers the no-active-document early-return
+// branch of every document-scoped units handler.
+func TestUnitsHandlersNeedActiveDocument(t *testing.T) {
+	r := New(opregistry.Default())
+	s := app.NewSession() // no document added
+	args := `{"unitsType":"length","expression":"1","value":1}`
+	for _, m := range []string{
+		"documents.getUnits", "documents.setUnits",
+		"units.getStringFromValue", "units.getPreciseStringFromValue",
+		"units.getValueFromExpression", "units.getDatabaseUnitsFromExpression",
+		"units.isExpressionValid", "units.compatibleUnits", "units.getStringFromType",
+	} {
+		if _, err := r.Handle(s, m, []byte(args)); err == nil {
+			t.Errorf("%s with no active document should error", m)
+		}
+	}
+}
+
+// TestUnitsHandlerErrors covers the decode / bad-category / bad-expression error
+// branches across the units handlers.
+func TestUnitsHandlerErrors(t *testing.T) {
+	r, s := seededSession(t)
+
+	// Malformed JSON → decode error.
+	for _, m := range []string{
+		"units.convert", "units.getStringFromValue", "units.getTypeFromString",
+		"units.getDrivingParameters", "units.getLocaleCorrectedExpression",
+		"documents.setUnits", "units.getValueFromExpression",
+	} {
+		if _, err := r.Handle(s, m, []byte(`{`)); err == nil {
+			t.Errorf("%s with malformed JSON should error", m)
+		}
+	}
+
+	// Unknown category spelling → categoryOf error.
+	for _, m := range []string{
+		"units.getStringFromValue", "units.getStringFromType",
+		"units.getValueFromExpression", "units.isExpressionValid", "units.compatibleUnits",
+	} {
+		if _, err := r.Handle(s, m, []byte(`{"unitsType":"bogus","expression":"1","value":1}`)); err == nil {
+			t.Errorf("%s with unknown category should error", m)
+		}
+	}
+
+	// Unknown unit name → getTypeFromString error.
+	if _, err := r.Handle(s, "units.getTypeFromString", []byte(`{"unitString":"furlong"}`)); err == nil {
+		t.Error("getTypeFromString of an unknown unit should error")
+	}
+	// Malformed / undefined-reference expression → eval and parse errors.
+	if _, err := r.Handle(s, "units.getValueFromExpression", []byte(`{"expression":"missing + 1","unitsType":"length"}`)); err == nil {
+		t.Error("an undefined reference should error")
+	}
+	if _, err := r.Handle(s, "units.getLocaleCorrectedExpression", []byte(`{"expression":"3 +"}`)); err == nil {
+		t.Error("a malformed expression should error")
+	}
+	if _, err := r.Handle(s, "units.getDrivingParameters", []byte(`{"expression":"3 +"}`)); err == nil {
+		t.Error("getDrivingParameters of a malformed expression should error")
+	}
+	if _, err := r.Handle(s, "units.convert", []byte(`{"value":1,"from":"furlong","to":"cm"}`)); err == nil {
+		t.Error("convert from an unknown unit should error")
 	}
 }
