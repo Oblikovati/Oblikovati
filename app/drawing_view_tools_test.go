@@ -110,6 +110,26 @@ func TestAuxiliaryViewToolFoldsOffBase(t *testing.T) {
 	}
 }
 
+func TestAuxiliaryViewToolWithoutBaseView(t *testing.T) {
+	s := drawingWithModelSession(t)
+	tool := NewAuxiliaryViewTool()
+	if tool.Name() != "Auxiliary View" {
+		t.Errorf("Name() = %q, want Auxiliary View", tool.Name())
+	}
+	tool.Start(s) // no base view present
+	if tool.CanCommit() {
+		t.Error("auxiliary tool can commit with no base view, want it disabled")
+	}
+	if got := tool.PreviewCurves(s); got != nil {
+		t.Errorf("preview with no base view = %d curves, want none", len(got))
+	}
+	tool.Pick(s, nil)
+	tool.Cancel(s)
+	if err := tool.Commit(s); err == nil {
+		t.Error("Commit with no base view = ok, want error")
+	}
+}
+
 func TestPickSelectEditDeleteDrawingView(t *testing.T) {
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)

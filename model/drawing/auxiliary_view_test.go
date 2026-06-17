@@ -61,6 +61,64 @@ func TestAuxiliaryFoldNinetyEqualsRightView(t *testing.T) {
 
 const deg90 = 1.5707963267948966 // π/2
 
+// TestPreviewAuxiliary checks the origin-centred preview an auxiliary placement follows, and
+// that it reports not-ok for a missing parent.
+func TestPreviewAuxiliary(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1}); err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	curves, ok := views.PreviewAuxiliary("FRONT", deg90)
+	if !ok || len(curves) == 0 {
+		t.Fatalf("PreviewAuxiliary = (%d curves, ok=%v), want curves", len(curves), ok)
+	}
+	if _, ok := views.PreviewAuxiliary("NOPE", 0); ok {
+		t.Error("PreviewAuxiliary off a missing parent = ok, want not-ok")
+	}
+}
+
+// TestAuxiliaryAccessors checks the view/curve accessors the wire layer reads.
+func TestAuxiliaryAccessors(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	if _, err := views.AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 1}); err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	aux, err := views.AddAuxiliary(AuxiliaryViewSpec{ParentView: "FRONT", FoldAngleRad: deg90})
+	if err != nil {
+		t.Fatalf("AddAuxiliary: %v", err)
+	}
+	if aux.ParentView() != "FRONT" || aux.FoldAngle() != deg90 {
+		t.Errorf("accessors = parent %q fold %g, want FRONT / %g", aux.ParentView(), aux.FoldAngle(), deg90)
+	}
+	if len(aux.Curves()) == 0 || aux.Curves()[0].Kind() != types.DrawingEdgeCurve {
+		t.Error("auxiliary edge curves should be DrawingEdgeCurve")
+	}
+}
+
+// TestRestoreLegacyViewRecipe checks a recipe without the type discriminator falls back to the
+// Projected flag (so older drawings still restore projected views).
+func TestRestoreLegacyViewRecipe(t *testing.T) {
+	yaml := "modelReference: box.opd\n" +
+		"sheets:\n" +
+		"  - name: Sheet:1\n" +
+		"    size: a3\n" +
+		"    border: true\n" +
+		"    views:\n" +
+		"      - name: FRONT\n        orientation: front\n        scale: 1\n" +
+		"      - name: RIGHT\n        projected: true\n        baseView: FRONT\n        direction: right\n        scale: 1\n"
+	c := NewContent()
+	c.SetBodyResolver(fakeBodyResolver{body: subd.ToBody(subd.Box(2, 3, 4), "box")})
+	if err := c.ApplyRecipe([]byte(yaml)); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	v, ok := c.Sheets().Active().Views().ByName("RIGHT")
+	if !ok || !v.IsProjected() || v.Type() != types.DrawingViewProjected {
+		t.Errorf("legacy projected view restored as %v (projected=%v), want projected", v.Type(), v != nil && v.IsProjected())
+	}
+}
+
 // TestAuxiliaryRejectsNonBaseParent checks an auxiliary can only fold off a base view.
 func TestAuxiliaryRejectsNonBaseParent(t *testing.T) {
 	c := drawingWithBox(t)
