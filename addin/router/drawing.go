@@ -5,13 +5,10 @@ package router
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
-	"oblikovati.org/model/attr"
-	"oblikovati.org/model/doc"
 	"oblikovati.org/model/drawing"
 )
 
@@ -29,20 +26,11 @@ func (r *Router) registerDrawingHandlers() {
 	r.handlers[wire.MethodDrawingTitleBlockFields] = drawingTitleBlockFields
 }
 
-// activeDrawing returns the active document's drawing content, erroring if no drawing is
-// active. It (re)wires the title-block resolver to the workspace so fields resolve
-// against the current referenced model.
+// activeDrawing returns the active document's drawing content with its title-block
+// resolver wired to the workspace (app.ActiveDrawing is shared with the Drawing-tab tools
+// and the head sheet canvas, so resolution behaves identically on every path).
 func activeDrawing(s *app.Session) (*drawing.Content, error) {
-	d := s.ActiveDocument()
-	if d == nil {
-		return nil, fmt.Errorf("drawing: no active document")
-	}
-	c, ok := d.Content().(*drawing.Content)
-	if !ok {
-		return nil, fmt.Errorf("drawing: active document %q is not a drawing", d.FullDocumentName())
-	}
-	c.SetModelProperties(referencedModelProperties{ws: s.Workspace(), ref: c.ModelReference})
-	return c, nil
+	return app.ActiveDrawing(s)
 }
 
 func drawingListSheets(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
@@ -204,50 +192,4 @@ func titleBlockFieldsResult(sh *drawing.Sheet) wire.TitleBlockFieldsResult {
 		out.Fields = append(out.Fields, wire.TitleBlockField{Name: f.Name, Value: f.Value, Source: f.Source})
 	}
 	return out
-}
-
-// referencedModelProperties resolves a drawing's referenced model iProperties by looking
-// the document up by name in the workspace on each read (so it tracks the model being
-// opened or edited after the drawing references it). ref re-reads the drawing's current
-// reference so a later setModelReference is honoured.
-type referencedModelProperties struct {
-	ws  *doc.Workspace
-	ref func() string
-}
-
-func (p referencedModelProperties) Property(set, name string) (string, bool) {
-	d, ok := p.ws.ByName(p.ref())
-	if !ok || d.Content() == nil {
-		return "", false
-	}
-	props, ok := d.Content().(interface{ Properties() *attr.PropertySets })
-	if !ok {
-		return "", false
-	}
-	ps, ok := props.Properties().Lookup(set)
-	if !ok {
-		return "", false
-	}
-	prop, ok := ps.Property(name)
-	if !ok {
-		return "", false
-	}
-	return propertyText(prop.Value()), true
-}
-
-// propertyText renders an iProperty value as the plain text a title block shows.
-func propertyText(v attr.Value) string {
-	if s, ok := v.Str(); ok {
-		return s
-	}
-	if i, ok := v.Int(); ok {
-		return strconv.FormatInt(i, 10)
-	}
-	if f, ok := v.Float(); ok {
-		return strconv.FormatFloat(f, 'g', -1, 64)
-	}
-	if b, ok := v.Bool(); ok {
-		return strconv.FormatBool(b)
-	}
-	return ""
 }

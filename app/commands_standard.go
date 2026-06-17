@@ -39,6 +39,8 @@ func standardCommands() []*CommandDefinition {
 	cmds = append(cmds, sketchTabCommands()...)
 	cmds = append(cmds, assemblyTabCommands()...)
 	cmds = append(cmds, sheetMetalTabCommands()...)
+	cmds = append(cmds, newDrawingCommand())
+	cmds = append(cmds, drawingTabCommands()...)
 	cmds = append(cmds, viewTabCommands()...)
 	return cmds
 }
