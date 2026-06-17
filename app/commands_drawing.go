@@ -40,6 +40,10 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Projected View", "Views", "drawing-projected-view",
 			"Project an orthographic view off an existing base view (right/left/up/down).",
 			func() Tool { return NewProjectedViewTool() }),
+		NewCommand("Drawing.ExportDXF", "Export DXF", "Output", requestDrawingDXFExport).
+			WithTab("Drawing").WithRibbons(DrawingRibbon).WithEnable(hasActiveDrawing).
+			WithIcon("drawing-export-dxf").WithButtonStyle(LargeIconButton).
+			WithTooltip("Export the active sheet to a DXF file — view edges on Visible/Hidden layers, plus the border and title block."),
 	}
 }
 

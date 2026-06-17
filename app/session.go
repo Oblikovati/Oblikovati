@@ -212,7 +212,8 @@ func newSession(store doc.Store) *Session {
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
 	s.watchDocumentInterests()
-	s.watchTransactions() // append-only transaction log for bug reports
+	s.watchTransactions()  // append-only transaction log for bug reports
+	s.watchDrawingExport() // Drawing tab Export DXF: write the sheet when its file dialog is answered
 	return s
 }
 
