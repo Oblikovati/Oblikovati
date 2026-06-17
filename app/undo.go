@@ -20,24 +20,30 @@ const maxSessionTxEvents = 2000
 
 // sessionTxEvent is one committed transaction recorded for the life of the session — an
 // append-only audit of what the user did since the app opened, independent of the
-// per-document undo stacks (which shrink on undo). It feeds the bug report's transaction log.
+// per-document undo stacks (which shrink on undo). recipe is the document's full parametric
+// recipe after the step (the complete command payload), so the sequence replays precisely.
 type sessionTxEvent struct {
-	when  time.Time
-	doc   string
-	label string
+	when   time.Time
+	doc    string
+	label  string
+	recipe []byte
 }
 
 // watchTransactions appends every committed transaction (on any document) to the session's
-// append-only event log, so a bug report can show everything the user did since launch.
-// Undo/redo do not emit TransactionCommitted, so the log is a forward audit that survives
-// undo — unlike a document's undo stack.
+// append-only event log, capturing the document's resulting recipe as the replayable
+// command payload. Undo/redo do not emit TransactionCommitted, so the log is a forward
+// audit that survives undo — unlike a document's undo stack. The event fires right after
+// commitRecipeDelta advances the snapshot, so the content's recipe is the after-state.
 func (s *Session) watchTransactions() {
 	event.Subscribe(s.bus, event.After, func(_ event.Context, e TransactionCommitted) event.Outcome {
-		name := "untitled"
+		name, recipe := "untitled", []byte(nil)
 		if d, ok := s.workspace.ByID(e.Document); ok {
 			name = d.DisplayName()
+			if rc, ok := d.Content().(recipeStore); ok {
+				recipe, _ = rc.MarshalRecipe()
+			}
 		}
-		s.txEvents = append(s.txEvents, sessionTxEvent{when: time.Now().UTC(), doc: name, label: e.Label})
+		s.txEvents = append(s.txEvents, sessionTxEvent{when: time.Now().UTC(), doc: name, label: e.Label, recipe: recipe})
 		if len(s.txEvents) > maxSessionTxEvents {
 			s.txEvents = s.txEvents[len(s.txEvents)-maxSessionTxEvents:]
 		}

@@ -8,17 +8,27 @@ package report
 // round-trip test on each side guards against drift). The two PNGs are encoded as base64
 // by encoding/json automatically because they are []byte.
 type Payload struct {
-	Comment        string         `json:"comment"`
-	OS             string         `json:"os"`
-	Arch           string         `json:"arch"`
-	AppVersion     string         `json:"appVersion"`
-	AppCommit      string         `json:"appCommit"`
-	AppBuildDate   string         `json:"appBuildDate"`
-	UserSettings   string         `json:"userSettings"`
-	OpenDocuments  []DocumentInfo `json:"openDocuments"`
-	TransactionLog []string       `json:"transactionLog"`
-	WindowPNG      []byte         `json:"windowPng,omitempty"`
-	ViewportPNG    []byte         `json:"viewportPng,omitempty"`
+	Comment        string             `json:"comment"`
+	OS             string             `json:"os"`
+	Arch           string             `json:"arch"`
+	AppVersion     string             `json:"appVersion"`
+	AppCommit      string             `json:"appCommit"`
+	AppBuildDate   string             `json:"appBuildDate"`
+	UserSettings   string             `json:"userSettings"`
+	OpenDocuments  []DocumentInfo     `json:"openDocuments"`
+	TransactionLog []TransactionEvent `json:"transactionLog"`
+	WindowPNG      []byte             `json:"windowPng,omitempty"`
+	ViewportPNG    []byte             `json:"viewportPng,omitempty"`
+}
+
+// TransactionEvent is one committed transaction-manager event since the application opened.
+// Recipe is the document's full parametric recipe (the complete command payload) at that
+// step, so the sequence can be replayed to reproduce the user's interactions precisely.
+type TransactionEvent struct {
+	Time     string `json:"time"`
+	Document string `json:"document"`
+	Label    string `json:"label"`
+	Recipe   string `json:"recipe,omitempty"`
 }
 
 // DocumentInfo is one open document in the report: its file path, display name, kind, dirty

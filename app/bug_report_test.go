@@ -7,7 +7,6 @@ import (
 	"errors"
 	"os"
 	"runtime"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -210,11 +209,18 @@ func TestTransactionLogIsAppendOnlySinceOpen(t *testing.T) {
 	if len(log) != before+2 {
 		t.Fatalf("want %d events, got %d: %v", before+2, len(log), log)
 	}
-	if !strings.Contains(log[before], "Sketch") || !strings.Contains(log[before+1], "Extrude") {
-		t.Errorf("events out of order or missing labels: %v", log[before:])
+	if log[before].Label != "Sketch" || log[before+1].Label != "Extrude" {
+		t.Errorf("events out of order or missing labels: %+v", log[before:])
 	}
-	if !strings.Contains(log[before], d.DisplayName()) {
-		t.Errorf("event missing document name %q: %q", d.DisplayName(), log[before])
+	if log[before].Document != d.DisplayName() {
+		t.Errorf("event document = %q, want %q", log[before].Document, d.DisplayName())
+	}
+	// The replayable recipe payload is captured from the document's content.
+	if rc, ok := d.Content().(recipeStore); ok {
+		want, _ := rc.MarshalRecipe()
+		if log[before].Recipe != string(want) {
+			t.Errorf("recipe payload not captured:\n got %q\nwant %q", log[before].Recipe, want)
+		}
 	}
 }
 
