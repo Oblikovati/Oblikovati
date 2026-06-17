@@ -23,6 +23,7 @@ func Encode(dr *drawing.Drawing, version Version) ([]byte, error) {
 	}
 	w := &tagWriter{}
 	writeHeader(w, version, dr.Units, h.next+1)
+	writeClasses(w, version)
 	writeTables(w, h)
 	writeBlocks(w, h)
 	writeEntitiesSection(w, dr.Entities, h)

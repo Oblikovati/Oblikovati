@@ -50,6 +50,44 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 	}
 }
 
+// TestRoundTripBothVersions checks the geometry and unit code survive Encode→Decode for
+// both export versions (the entity group codes are version-independent).
+func TestRoundTripBothVersions(t *testing.T) {
+	in := &drawing.Drawing{Units: drawing.INSMillimetres, Entities: []drawing.Entity{
+		&drawing.Line{End: [3]float64{4, 2, 0}},
+		&drawing.Arc{Center: [3]float64{1, 1, 0}, Radius: 2, StartAngle: 0.3, EndAngle: 1.1},
+		&drawing.Spline{Degree: 3, ControlPoints: [][3]float64{{0, 0, 0}, {1, 1, 0}, {2, 0, 0}, {3, 1, 0}}},
+	}}
+	for _, v := range []Version{R2000, R2018} {
+		data, err := Encode(in, v)
+		if err != nil {
+			t.Fatalf("Encode(%v): %v", v, err)
+		}
+		dr, warns, err := Decode(data)
+		if err != nil {
+			t.Fatalf("Decode(%v): %v", v, err)
+		}
+		if len(warns) != 0 {
+			t.Errorf("version %v warnings: %v", v, warns)
+		}
+		if dr.Units != drawing.INSMillimetres || len(dr.Entities) != 3 {
+			t.Errorf("version %v: units=%d entities=%d", v, dr.Units, len(dr.Entities))
+		}
+	}
+}
+
+// TestR2018EmitsClasses checks R2018 carries a CLASSES section (R2000 omits it).
+func TestR2018EmitsClasses(t *testing.T) {
+	r18, _ := Encode(&drawing.Drawing{}, R2018)
+	if !strings.Contains(string(r18), "\nCLASSES\n") {
+		t.Error("R2018 output missing CLASSES section")
+	}
+	r15, _ := Encode(&drawing.Drawing{}, R2000)
+	if strings.Contains(string(r15), "\nCLASSES\n") {
+		t.Error("R2000 output should not carry a CLASSES section")
+	}
+}
+
 // TestEncodeEmitsStandardSections checks the encoder writes the full standard section set,
 // not just the bare ENTITIES, so the file opens in AutoCAD without repair.
 func TestEncodeEmitsStandardSections(t *testing.T) {
