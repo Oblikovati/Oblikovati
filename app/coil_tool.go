@@ -6,9 +6,8 @@ import (
 	"errors"
 
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
-	"oblikovati.org/renderer"
 )
 
 // CoilTool is the interactive Coil command: activate it, click a sketch region, choose
@@ -100,14 +99,9 @@ func (t *CoilTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	axis, ok := part.WorkGeometry().AxisByRef(t.axis)
-	if !ok {
-		return errors.New("coil: axis " + string(t.axis) + " not found")
+	if t.added, err = t.addCoil(part, part.Features()); err != nil {
+		return err
 	}
-	pitch, revs := t.pitch, t.revolutions
-	t.added = feature.NewCoilFeatures(part.Features()).Add(t.profile.Sketch, t.profile.ProfileIndex, axis,
-		func() float64 { return pitch }, func() float64 { return revs }, 0, t.operation)
-	t.applyVariableRail(t.added.Definition().(*feature.CoilFeature).Definition())
 	part.Recompute()
 	s.recordEdit(part, "Coil")
 	if !t.added.Health().OK() {
@@ -147,20 +141,35 @@ func (t *CoilTool) Prompt(*Session) string {
 	return "Set the axis, pitch and revolutions, then click OK"
 }
 
-// Preview returns a transient outline of the region to coil, until a region is picked.
-func (t *CoilTool) Preview(*Session) []renderer.DrawItem {
-	if t.profile == nil || t.profile.ProfileIndex >= t.profile.Sketch.Profiles().Count() {
-		return nil
+// addCoil resolves the helix axis and builds the coil feature (including the variable-rail
+// extras) into engine fs — the shared constructor used by both Commit (the part's engine) and
+// DraftFeature (a scratch engine), so the preview matches the committed result.
+func (t *CoilTool) addCoil(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) (*feature.PartFeature, error) {
+	axis, ok := part.WorkGeometry().AxisByRef(t.axis)
+	if !ok {
+		return nil, errors.New("coil: axis " + string(t.axis) + " not found")
 	}
-	poly := t.profile.Sketch.Profiles().Item(t.profile.ProfileIndex).OuterLoop().Polygon()
-	plane := t.profile.Sketch.Plane()
-	pts := make([]math.Point3, len(poly))
-	idx := make([]int, 0, 2*len(poly))
-	for i, p := range poly {
-		pts[i] = plane.ToModel(p)
-		idx = append(idx, i, (i+1)%len(poly))
+	pitch, revs := t.pitch, t.revolutions
+	pf := feature.NewCoilFeatures(fs).Add(t.profile.Sketch, t.profile.ProfileIndex, axis,
+		func() float64 { return pitch }, func() float64 { return revs }, 0, t.operation)
+	t.applyVariableRail(pf.Definition().(*feature.CoilFeature).Definition())
+	return pf, nil
+}
+
+// DraftFeature returns the unattached coil feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addCoil the commit uses. Empty until a
+// region is picked and revolutions are set.
+func (t *CoilTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
 	}
-	return []renderer.DrawItem{{Primitive: renderer.Lines, Positions: pts, Indices: idx, Color: [4]float32{1, 0.6, 0, 1}}}
+	part, err := activePart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addCoil(part, fs)
+	})
 }
 
 // Cancel restores the default selection filter.

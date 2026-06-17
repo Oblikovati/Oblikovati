@@ -180,6 +180,18 @@ func (t *FilletTool) Commit(s *Session) error {
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *FilletTool) AddedFeature() *feature.PartFeature { return t.added }
 
+// DraftFeature returns the unattached fillet feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addFillet the commit uses — so the
+// translucent preview is exactly what OK creates. Empty until an edge is selected.
+func (t *FilletTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFillet(feature.NewDressUpFeatures(fs)), nil
+	})
+}
+
 // Prompt guides the user through the fillet steps.
 func (t *FilletTool) Prompt(*Session) string {
 	if len(t.edges) == 0 {

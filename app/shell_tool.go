@@ -83,8 +83,7 @@ func (t *ShellTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	th := t.thickness
-	t.added = feature.NewDressUpFeatures(part.Features()).AddShell(t.selectedFaceKeys(), func() float64 { return th })
+	t.added = t.addShell(feature.NewDressUpFeatures(part.Features()))
 	part.Recompute()
 	s.recordEdit(part, "Shell")
 	if !t.added.Health().OK() {
@@ -94,8 +93,27 @@ func (t *ShellTool) Commit(s *Session) error {
 	return nil
 }
 
+// addShell builds the shell feature into collection dress — the shared constructor used by
+// both Commit (the part's engine) and DraftFeature (a scratch engine).
+func (t *ShellTool) addShell(dress *feature.DressUpFeatures) *feature.PartFeature {
+	th := t.thickness
+	return dress.AddShell(t.selectedFaceKeys(), func() float64 { return th })
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ShellTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached shell feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addShell the commit uses. Empty until a
+// face is selected.
+func (t *ShellTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addShell(feature.NewDressUpFeatures(fs)), nil
+	})
+}
 
 // Prompt guides the user through the shell steps.
 func (t *ShellTool) Prompt(*Session) string {

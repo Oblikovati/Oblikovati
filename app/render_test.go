@@ -53,22 +53,27 @@ func TestExtrudeToolLivePreview(t *testing.T) {
 
 	s.Click(0, 0)
 	ext.SetDistance(5)
-	// Now the tool contributes a transient wireframe preview to the frame.
+	// Now the tool contributes a translucent solid result preview to the frame.
 	null.Reset()
 	s.RenderFrame(null)
 	if len(null.LastFrame().Items) <= preCount {
 		t.Fatal("no preview item added once the extrude is ready")
 	}
-	// The preview is a line item with the expected vertex count (2n ring points).
-	var preview *renderer.DrawItem
-	for i := range null.LastFrame().Items {
-		if null.LastFrame().Items[i].Primitive == renderer.Lines {
-			preview = &null.LastFrame().Items[i]
-		}
+	prev := previewItems(null.LastFrame())
+	if len(prev) == 0 {
+		t.Fatal("expected translucent triangle preview items once the extrude is ready")
 	}
-	if preview == nil || len(preview.Positions) != 8 { // square → 4 bottom + 4 top
-		t.Errorf("extrude preview wireframe wrong: %+v", preview)
+	// Building a new body on an empty part adds volume → the preview is GREEN.
+	if !sameHue(prev[0].Color, previewAddColor) {
+		t.Errorf("additive extrude preview color = %v, want green %v", prev[0].Color, previewAddColor)
 	}
+	if previewTriangles(prev) == 0 {
+		t.Error("preview has no triangles")
+	}
+
+	// A Cut of the same region previews RED (it would remove material from the new body).
+	// (Here there is no base material yet, so this only exercises the color path on commit
+	// order; the cut/remove color is covered directly in TestFeaturePreviewCutIsRed.)
 
 	// After OK the preview is gone and the real solid is rendered.
 	if err := s.OK(); err != nil {
@@ -79,6 +84,29 @@ func TestExtrudeToolLivePreview(t *testing.T) {
 	if null.LastFrame().Triangles() != 12 {
 		t.Errorf("post-commit frame triangles = %d, want 12", null.LastFrame().Triangles())
 	}
+	if len(previewItems(null.LastFrame())) != 0 {
+		t.Error("preview items should be gone after commit")
+	}
+}
+
+// previewItems returns the translucent (Opacity<1) triangle items in a frame — the live
+// feature preview, distinct from the opaque modeled solid.
+func previewItems(frame renderer.DrawList) []renderer.DrawItem {
+	var out []renderer.DrawItem
+	for _, it := range frame.Items {
+		if it.Primitive == renderer.Triangles && it.Opacity > 0 && it.Opacity < 1 {
+			out = append(out, it)
+		}
+	}
+	return out
+}
+
+func previewTriangles(items []renderer.DrawItem) int {
+	n := 0
+	for _, it := range items {
+		n += len(it.Indices) / 3
+	}
+	return n
 }
 
 func TestRenderFrameNoActivePart(t *testing.T) {

@@ -221,6 +221,18 @@ func konst(v float64) func() float64 { return func() float64 { return v } }
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *HoleTool) AddedFeature() *feature.PartFeature { return t.added }
 
+// DraftFeature returns the unattached hole feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addFeature the commit uses. The hole's
+// drill tool body previews red (a cut). Empty until placement is valid.
+func (t *HoleTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFeature(feature.NewHoleFeatures(fs)), nil
+	})
+}
+
 // Prompt guides the user through the hole steps.
 func (t *HoleTool) Prompt(*Session) string {
 	if t.face == nil {

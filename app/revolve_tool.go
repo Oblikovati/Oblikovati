@@ -11,7 +11,6 @@ import (
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
-	"oblikovati.org/renderer"
 )
 
 // preselectCenterline chooses the centerline a revolve should auto-select once a profile is
@@ -242,7 +241,7 @@ func (t *RevolveTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	if t.added, err = t.addRevolve(part); err != nil {
+	if t.added, err = t.addRevolve(part, part.Features()); err != nil {
 		return err
 	}
 	part.Recompute()
@@ -292,9 +291,9 @@ func (t *RevolveTool) writeEditAxis(s *Session, def *feature.RevolveDefinition) 
 
 // addRevolve adds the revolve feature about the tool's chosen axis: a specific picked centerline,
 // the sketch's own centerline, or a named work axis.
-func (t *RevolveTool) addRevolve(part *compdef.PartComponentDefinition) (*feature.PartFeature, error) {
+func (t *RevolveTool) addRevolve(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) (*feature.PartFeature, error) {
 	angle := func() float64 { return t.angle }
-	revolves := feature.NewRevolveFeatures(part.Features())
+	revolves := feature.NewRevolveFeatures(fs)
 	switch {
 	case t.centerline != nil: // a specific picked/pre-selected centerline
 		return revolves.AddAboutCenterlineLine(t.profile.Sketch, t.profile.ProfileIndex, t.centerlineSk, t.centerline, angle, t.operation), nil
@@ -320,21 +319,20 @@ func (t *RevolveTool) Prompt(*Session) string {
 	return "Set the axis and angle, then click OK"
 }
 
-// Preview returns a transient outline of the region to revolve, so the viewport shows
-// what will be swept before OK. Empty until a region is picked.
-func (t *RevolveTool) Preview(*Session) []renderer.DrawItem {
-	if t.profile == nil || t.profile.ProfileIndex >= t.profile.Sketch.Profiles().Count() {
-		return nil
+// DraftFeature returns the unattached revolve feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addRevolve the commit uses — so the
+// translucent solid preview is exactly what OK creates. Empty until a region is picked.
+func (t *RevolveTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
 	}
-	poly := t.profile.Sketch.Profiles().Item(t.profile.ProfileIndex).OuterLoop().Polygon()
-	plane := t.profile.Sketch.Plane()
-	pts := make([]math.Point3, len(poly))
-	idx := make([]int, 0, 2*len(poly))
-	for i, p := range poly {
-		pts[i] = plane.ToModel(p)
-		idx = append(idx, i, (i+1)%len(poly))
+	part, err := activePart(s)
+	if err != nil {
+		return nil, false
 	}
-	return []renderer.DrawItem{{Primitive: renderer.Lines, Positions: pts, Indices: idx, Color: [4]float32{1, 0.6, 0, 1}}}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addRevolve(part, fs)
+	})
 }
 
 // Cancel restores the default selection filter.

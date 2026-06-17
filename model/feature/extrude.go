@@ -142,16 +142,28 @@ func (c *ExtrudeFeatures) AddByDistanceExtentProfiles(skt *sketch.Sketch, profil
 // operation, and taper (draft) angle — the general constructor the Extrude tool and the
 // automation API drive. The distance constructors above delegate here.
 func (c *ExtrudeFeatures) AddExtrude(skt *sketch.Sketch, profileIndices []int, op ops.PartFeatureOperation, extent Extent, taper float64) *PartFeature {
-	def := &ExtrudeDefinition{
+	return c.AddExtrudeFeature(&ExtrudeDefinition{
 		Sketch: skt, ProfileIndices: append([]int(nil), profileIndices...),
 		Operation: op, Extent: extent, Taper: taper,
-	}
-	ef := &ExtrudeFeature{def: def}
+	})
+}
+
+// AddExtrudeFeature registers and names an extrude built from def — the seam shared by the
+// arg-based AddExtrude above and the Extrude tool, which builds the same def for both the
+// live preview ([NewExtrudeFeature]) and commit so the previewed geometry is exactly what
+// OK creates.
+func (c *ExtrudeFeatures) AddExtrudeFeature(def *ExtrudeDefinition) *PartFeature {
+	ef := NewExtrudeFeature(def)
 	pf := c.engine.Add(ef)
 	pf.SetName(c.engine.UniqueName("Extrusion")) // Extrusion1, Extrusion2, … (Inventor's naming)
 	ef.featName = pf.name
 	return pf
 }
+
+// NewExtrudeFeature builds an extrude feature value from a definition WITHOUT adding it to
+// any engine — the unattached, unnamed [Feature] the live preview evaluates speculatively
+// (see [PartFeatures.PreviewResult]). AddExtrudeFeature wraps this, then registers and names it.
+func NewExtrudeFeature(def *ExtrudeDefinition) *ExtrudeFeature { return &ExtrudeFeature{def: def} }
 
 // combine applies an operation between the running bodies and a new body. Phase A
 // handles the first body / new-body and the non-overlapping boolean cases.

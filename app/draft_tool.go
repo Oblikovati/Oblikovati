@@ -84,8 +84,7 @@ func (t *DraftTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	rad := t.angleDeg * degToRad
-	t.added = feature.NewDressUpFeatures(part.Features()).AddDraft(t.selectedFaceKeys(), func() float64 { return rad })
+	t.added = t.addDraft(feature.NewDressUpFeatures(part.Features()))
 	part.Recompute()
 	s.recordEdit(part, "Draft")
 	if !t.added.Health().OK() {
@@ -95,8 +94,27 @@ func (t *DraftTool) Commit(s *Session) error {
 	return nil
 }
 
+// addDraft builds the draft feature into collection dress — the shared constructor used by
+// both Commit (the part's engine) and DraftFeature (a scratch engine).
+func (t *DraftTool) addDraft(dress *feature.DressUpFeatures) *feature.PartFeature {
+	rad := t.angleDeg * degToRad
+	return dress.AddDraft(t.selectedFaceKeys(), func() float64 { return rad })
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *DraftTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached draft feature the viewport previews before commit
+// (satisfying DraftPreviewable), built by the same addDraft the commit uses. Empty until a
+// face is selected.
+func (t *DraftTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addDraft(feature.NewDressUpFeatures(fs)), nil
+	})
+}
 
 // Prompt guides the user through the draft steps.
 func (t *DraftTool) Prompt(*Session) string {
