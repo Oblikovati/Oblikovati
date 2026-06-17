@@ -36,14 +36,28 @@ type drawingRecipe struct {
 // sheetRecipe is the YAML shape of one sheet. WidthMM/HeightMM are written only for a
 // custom size (a standard size's dimensions come from the size+orientation on open).
 type sheetRecipe struct {
-	Name        string       `yaml:"name"`
-	Size        string       `yaml:"size"`
-	Orientation string       `yaml:"orientation,omitempty"`
-	WidthMM     float64      `yaml:"widthMm,omitempty"`
-	HeightMM    float64      `yaml:"heightMm,omitempty"`
-	Border      bool         `yaml:"border"`
-	TitleBlock  string       `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
-	Views       []viewRecipe `yaml:"views,omitempty"`
+	Name        string             `yaml:"name"`
+	Size        string             `yaml:"size"`
+	Orientation string             `yaml:"orientation,omitempty"`
+	WidthMM     float64            `yaml:"widthMm,omitempty"`
+	HeightMM    float64            `yaml:"heightMm,omitempty"`
+	Border      bool               `yaml:"border"`
+	TitleBlock  string             `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
+	Views       []viewRecipe       `yaml:"views,omitempty"`
+	Annotations []annotationRecipe `yaml:"annotations,omitempty"`
+}
+
+// annotationRecipe is the YAML shape of one drawing annotation. A CoG marker's glyph re-derives
+// from its view's centroid on open; a revision cloud's scallops re-derive from its rectangle.
+type annotationRecipe struct {
+	Name     string  `yaml:"name"`
+	Kind     string  `yaml:"kind"`
+	ViewName string  `yaml:"viewName,omitempty"`
+	X        float64 `yaml:"xmm,omitempty"`
+	Y        float64 `yaml:"ymm,omitempty"`
+	W        float64 `yaml:"widthMm,omitempty"`
+	H        float64 `yaml:"heightMm,omitempty"`
+	Tag      string  `yaml:"tag,omitempty"`
 }
 
 // viewRecipe is the YAML shape of one drawing view. The drawing curves are not stored — they
@@ -120,6 +134,14 @@ func sheetRecipeOf(sh *Sheet) sheetRecipe {
 	for _, v := range sh.views.items {
 		rec.Views = append(rec.Views, viewRecipeOf(v))
 	}
+	if sh.annotations != nil {
+		for _, a := range sh.annotations.items {
+			rec.Annotations = append(rec.Annotations, annotationRecipe{
+				Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
+				X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag,
+			})
+		}
+	}
 	return rec
 }
 
@@ -164,8 +186,26 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	for _, vr := range rec.Views {
 		sh.views.items = append(sh.views.items, restoreView(vr))
 	}
+	restoreAnnotations(sh, rec.Annotations)
 	s.items = append(s.items, sh)
 	return nil
+}
+
+// restoreAnnotations rebuilds a sheet's annotations from its recipe; CoG glyphs re-derive on the
+// next RecomputeViews, revision-cloud scallops re-derive now from the rectangle.
+func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
+	if len(recs) == 0 {
+		return
+	}
+	as := sh.Annotations()
+	for _, ar := range recs {
+		kind, _ := types.ParseDrawingAnnotationKind(ar.Kind)
+		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag}
+		if kind == types.RevisionCloudAnnotation {
+			a.curves = revisionCloudCurves(ar.X, ar.Y, ar.W, ar.H)
+		}
+		as.items = append(as.items, a)
+	}
 }
 
 // restoreView rebuilds a view's definition from its recipe; its curves are re-projected by

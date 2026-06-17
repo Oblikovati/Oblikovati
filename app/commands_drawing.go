@@ -61,6 +61,12 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Draft View", "Views", "drawing-draft-view",
 			"Place a model-less framed view for manually-drawn 2D geometry.",
 			func() Tool { return NewDraftViewTool() }),
+		drawingToolCommand("Center of Gravity", "Annotate", "drawing-cog-marker",
+			"Mark a view's centre of gravity, positioned at the referenced model's centre of mass.",
+			func() Tool { return NewCoGMarkerTool() }),
+		drawingToolCommand("Revision Cloud", "Annotate", "drawing-revision-cloud",
+			"Draw a scalloped revision cloud over a region of the sheet to highlight a change.",
+			func() Tool { return NewRevisionCloudTool() }),
 		NewCommand("Drawing.ExportDXF", "Export DXF", "Output", requestDrawingDXFExport).
 			WithTab("Drawing").WithRibbons(DrawingRibbon).WithEnable(hasActiveDrawing).
 			WithIcon("drawing-export-dxf").WithButtonStyle(LargeIconButton).
