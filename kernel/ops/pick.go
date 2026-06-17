@@ -26,6 +26,14 @@ func RayCastFaces(b *topo.Body, origin math.Point3, dir math.Vector3, q Quality)
 
 // rayCastMesh returns the nearest positive hit distance of a ray against a mesh's
 // triangles.
+// RayCastMesh returns the nearest forward hit distance of the ray (origin, dir) against the
+// mesh's triangles, and whether any was hit. It lets callers ray-test against a mesh they
+// already hold (e.g. the hidden-line engine occlusion-tests projected edge points against a
+// once-tessellated body) without re-tessellating per ray.
+func RayCastMesh(m *Mesh, origin math.Point3, dir math.Vector3) (float64, bool) {
+	return rayCastMesh(m, origin, dir)
+}
+
 func rayCastMesh(m *Mesh, origin math.Point3, dir math.Vector3) (float64, bool) {
 	best := stdmath.Inf(1)
 	hit := false

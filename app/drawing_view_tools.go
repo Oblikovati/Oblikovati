@@ -1,0 +1,241 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package app
+
+import (
+	"fmt"
+
+	"oblikovati.org/api/types"
+	"oblikovati.org/model/drawing"
+)
+
+// baseViewOrientations is the orientation dropdown for the Base View tool (index → orientation).
+var baseViewOrientations = []struct {
+	label       string
+	orientation types.BaseViewOrientation
+}{
+	{"Front", types.BaseViewFront}, {"Top", types.BaseViewTop}, {"Right", types.BaseViewRight},
+	{"Back", types.BaseViewBack}, {"Left", types.BaseViewLeft}, {"Bottom", types.BaseViewBottom},
+	{"Isometric", types.BaseViewIso},
+}
+
+var viewStyleChoices = []struct {
+	label string
+	style types.DrawingViewStyle
+}{
+	{"Hidden Line", types.HiddenLineViewStyle}, {"Wireframe", types.WireframeViewStyle},
+}
+
+// DrawingPlacementTool is a tool that drops a drawing view where the user clicks on the sheet,
+// with a cursor-follow preview. The head canvas, each frame, sets the placement to the cursor
+// and draws PreviewCurves there; a left-click commits the tool (s.OK) at that position.
+type DrawingPlacementTool interface {
+	Tool
+	// PreviewCurves returns the view's curves centred at the origin (to be drawn at the cursor).
+	PreviewCurves(s *Session) []drawing.DrawingCurve
+	// SetPlacement records the sheet position (millimetres) the view will be centred on.
+	SetPlacement(xMM, yMM float64)
+}
+
+// BaseViewTool places a base view of the drawing's referenced model. The user picks
+// orientation/style/scale in the dialog and clicks the sheet to drop the view; the preview
+// follows the cursor.
+type BaseViewTool struct {
+	orientation int
+	style       int
+	scale       float64
+	centerX     float64
+	centerY     float64
+	preview     []drawing.DrawingCurve
+	previewKey  string // orientation/style/scale the cached preview was built for
+}
+
+// NewBaseViewTool starts on a front, hidden-line, 1:1 view.
+func NewBaseViewTool() *BaseViewTool {
+	return &BaseViewTool{scale: 1, centerX: 150, centerY: 150}
+}
+
+func (t *BaseViewTool) Name() string              { return "Base View" }
+func (t *BaseViewTool) Start(*Session)            {}
+func (t *BaseViewTool) Pick(*Session, Selectable) {}
+func (t *BaseViewTool) CanCommit() bool           { return true }
+func (t *BaseViewTool) Cancel(*Session)           {}
+
+// SetPlacement records the cursor sheet position the view will be centred on.
+func (t *BaseViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// PreviewCurves projects the chosen orientation/style/scale at the origin, caching until those
+// options change, so the head can draw a cursor-follow preview without re-projecting per frame.
+func (t *BaseViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return nil
+	}
+	key := fmt.Sprintf("%d/%d/%g", t.orientation, t.style, t.scale)
+	if key != t.previewKey {
+		t.preview, _ = c.Sheets().Active().Views().PreviewBase(
+			baseViewOrientations[clampIndex(t.orientation, len(baseViewOrientations))].orientation,
+			viewStyleChoices[clampIndex(t.style, len(viewStyleChoices))].style, t.scale)
+		t.previewKey = key
+	}
+	return t.preview
+}
+
+// Commit projects the configured base view onto the active sheet.
+func (t *BaseViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	_, err = c.Sheets().Active().Views().AddBase(drawing.BaseViewSpec{
+		Orientation: baseViewOrientations[clampIndex(t.orientation, len(baseViewOrientations))].orientation,
+		Style:       viewStyleChoices[clampIndex(t.style, len(viewStyleChoices))].style,
+		Scale:       t.scale, CenterX: t.centerX, CenterY: t.centerY,
+	})
+	if err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the orientation/style/scale fields for the property dialog (the sheet
+// position comes from the placement click, not a field).
+func (t *BaseViewTool) Params() ToolParams {
+	return ToolParams{
+		Choices: []ChoiceParam{
+			{Label: "Orientation", Options: labelsOf(len(baseViewOrientations), func(i int) string { return baseViewOrientations[i].label }),
+				Get: func() int { return t.orientation }, Set: func(i int) { t.orientation = i }},
+			{Label: "Style", Options: labelsOf(len(viewStyleChoices), func(i int) string { return viewStyleChoices[i].label }),
+				Get: func() int { return t.style }, Set: func(i int) { t.style = i }},
+		},
+		Floats: []FloatParam{
+			{"Scale", func() float64 { return t.scale }, func(v float64) { t.scale = v }},
+		},
+	}
+}
+
+// ProjectedViewTool places a view projected from a base view in a chosen direction; the
+// preview follows the cursor and a click drops it.
+type ProjectedViewTool struct {
+	bases      []string
+	baseIndex  int
+	direction  int
+	centerX    float64
+	centerY    float64
+	preview    []drawing.DrawingCurve
+	previewKey string
+}
+
+// SetPlacement records the cursor sheet position the projected view will be centred on.
+func (t *ProjectedViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// PreviewCurves projects the chosen base+direction at the origin, cached until they change.
+func (t *ProjectedViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	if len(t.bases) == 0 {
+		return nil
+	}
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return nil
+	}
+	base := t.bases[clampIndex(t.baseIndex, len(t.bases))]
+	key := fmt.Sprintf("%s/%d", base, t.direction)
+	if key != t.previewKey {
+		t.preview, _ = c.Sheets().Active().Views().PreviewProjected(base,
+			projectionDirections[clampIndex(t.direction, len(projectionDirections))].dir)
+		t.previewKey = key
+	}
+	return t.preview
+}
+
+var projectionDirections = []struct {
+	label string
+	dir   types.ProjectionDirection
+}{
+	{"Right", types.ProjectRight}, {"Left", types.ProjectLeft}, {"Up", types.ProjectUp}, {"Down", types.ProjectDown},
+}
+
+// NewProjectedViewTool creates the tool; its base-view list is captured on Start.
+func NewProjectedViewTool() *ProjectedViewTool {
+	return &ProjectedViewTool{centerX: 250, centerY: 150}
+}
+
+func (t *ProjectedViewTool) Name() string { return "Projected View" }
+
+// Start captures the base views the projection can derive from.
+func (t *ProjectedViewTool) Start(s *Session) {
+	t.bases = baseViewNames(s)
+}
+
+func (t *ProjectedViewTool) Pick(*Session, Selectable) {}
+
+// CanCommit requires at least one base view to project from.
+func (t *ProjectedViewTool) CanCommit() bool { return len(t.bases) > 0 }
+
+func (t *ProjectedViewTool) Cancel(*Session) {}
+
+// Commit projects from the selected base view in the chosen direction.
+func (t *ProjectedViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if len(t.bases) == 0 {
+		return fmt.Errorf("drawing: no base view to project from — add a base view first")
+	}
+	_, err = c.Sheets().Active().Views().AddProjected(drawing.ProjectedViewSpec{
+		BaseView:  t.bases[clampIndex(t.baseIndex, len(t.bases))],
+		Direction: projectionDirections[clampIndex(t.direction, len(projectionDirections))].dir,
+		CenterX:   t.centerX, CenterY: t.centerY,
+	})
+	if err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view and direction choices for the property dialog (the sheet
+// position comes from the placement click).
+func (t *ProjectedViewTool) Params() ToolParams {
+	return ToolParams{
+		Choices: []ChoiceParam{
+			{Label: "Base View", Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }},
+			{Label: "Direction", Options: labelsOf(len(projectionDirections), func(i int) string { return projectionDirections[i].label }),
+				Get: func() int { return t.direction }, Set: func(i int) { t.direction = i }},
+		},
+	}
+}
+
+// baseViewNames lists the active sheet's base views (the candidates a projected view derives
+// from); empty when no drawing is active.
+func baseViewNames(s *Session) []string {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return nil
+	}
+	views := c.Sheets().Active().Views()
+	var names []string
+	for i := 0; i < views.Count(); i++ {
+		if v := views.Item(i); !v.IsProjected() {
+			names = append(names, v.Name())
+		}
+	}
+	return names
+}
+
+func labelsOf(n int, at func(int) string) []string {
+	out := make([]string, n)
+	for i := range out {
+		out[i] = at(i)
+	}
+	return out
+}
+
+func clampIndex(i, n int) int {
+	if i < 0 || i >= n {
+		return 0
+	}
+	return i
+}

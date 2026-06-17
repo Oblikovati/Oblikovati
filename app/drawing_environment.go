@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"oblikovati.org/event"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/attr"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/drawing"
@@ -52,6 +53,7 @@ func ActiveDrawing(s *Session) (*drawing.Content, error) {
 		return nil, fmt.Errorf("drawing: active document %q is not a drawing", d.FullDocumentName())
 	}
 	c.SetModelProperties(referencedModelProperties{ws: s.workspace, ref: c.ModelReference})
+	c.SetBodyResolver(referencedModelBodies{ws: s.workspace})
 	return c, nil
 }
 
@@ -68,7 +70,32 @@ func hasActiveDrawing(s *Session) bool {
 func wireDrawingResolver(s *Session, d *doc.Document) {
 	if c, ok := d.Content().(*drawing.Content); ok {
 		c.SetModelProperties(referencedModelProperties{ws: s.workspace, ref: c.ModelReference})
+		c.SetBodyResolver(referencedModelBodies{ws: s.workspace})
 	}
+}
+
+// referencedModelBodies resolves a drawing's referenced model document to its body for view
+// projection, looking it up by name in the workspace on each call (so it tracks the model
+// being opened or edited). It returns the model's first surface body; multi-body parts are a
+// follow-up.
+type referencedModelBodies struct {
+	ws *doc.Workspace
+}
+
+func (r referencedModelBodies) Body(fullDocumentName string) (*topo.Body, bool) {
+	d, ok := r.ws.ByName(fullDocumentName)
+	if !ok || d.Content() == nil {
+		return nil, false
+	}
+	src, ok := d.Content().(interface{ SurfaceBodies() *topo.SurfaceBodies })
+	if !ok {
+		return nil, false
+	}
+	bodies := src.SurfaceBodies().All()
+	if len(bodies) == 0 {
+		return nil, false
+	}
+	return bodies[0], true
 }
 
 // referencedModelProperties resolves a drawing's referenced model iProperties by looking

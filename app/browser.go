@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/drawing"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/model/sketch"
@@ -65,8 +66,30 @@ func BuildBrowser(s *Session) BrowserNode {
 		addPartBranches(&root, content)
 	case *compdef.AssemblyComponentDefinition:
 		addAssemblyBranches(&root, content)
+	case *drawing.Content:
+		addDrawingBranches(&root, content)
 	}
 	return root
+}
+
+// addDrawingBranches builds a drawing's browser tree: one node per sheet, each listing its
+// views (base and projected) as selectable nodes — so a view can be selected, edited and
+// deleted from the tree like a part's features.
+func addDrawingBranches(root *BrowserNode, content *drawing.Content) {
+	sheets := content.Sheets()
+	for i := 0; i < sheets.Count(); i++ {
+		sh := sheets.Item(i)
+		sheetNode := root.child(sh.Name(), "sheet")
+		views := sh.Views()
+		for j := 0; j < views.Count(); j++ {
+			v := views.Item(j)
+			label := v.Name()
+			if v.IsProjected() {
+				label += "  (projected)"
+			}
+			sheetNode.selectableChild(label, "drawingView", DrawingViewHandle{Views: views, View: v})
+		}
+	}
 }
 
 // addAssemblyBranches builds the assembly's browser tree: the Origin folder (origin planes/axes/

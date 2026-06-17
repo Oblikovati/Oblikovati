@@ -31,7 +31,7 @@ func drawViewportPanel(win *native.Window, s *app.Session) {
 		drawDocumentTabs(s)
 		// A drawing document shows a 2D sheet canvas, not the 3D viewport (M14-F01).
 		if dc, err := app.ActiveDrawing(s); err == nil {
-			drawSheetCanvas(dc)
+			drawSheetCanvas(s, dc)
 			native.End()
 			return
 		}

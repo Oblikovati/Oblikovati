@@ -35,13 +35,29 @@ type drawingRecipe struct {
 // sheetRecipe is the YAML shape of one sheet. WidthMM/HeightMM are written only for a
 // custom size (a standard size's dimensions come from the size+orientation on open).
 type sheetRecipe struct {
+	Name        string       `yaml:"name"`
+	Size        string       `yaml:"size"`
+	Orientation string       `yaml:"orientation,omitempty"`
+	WidthMM     float64      `yaml:"widthMm,omitempty"`
+	HeightMM    float64      `yaml:"heightMm,omitempty"`
+	Border      bool         `yaml:"border"`
+	TitleBlock  string       `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
+	Views       []viewRecipe `yaml:"views,omitempty"`
+}
+
+// viewRecipe is the YAML shape of one drawing view. The drawing curves are not stored — they
+// are re-projected from the referenced model on open, so a view always reflects the current
+// model.
+type viewRecipe struct {
 	Name        string  `yaml:"name"`
-	Size        string  `yaml:"size"`
+	Projected   bool    `yaml:"projected,omitempty"`
+	BaseView    string  `yaml:"baseView,omitempty"`
 	Orientation string  `yaml:"orientation,omitempty"`
-	WidthMM     float64 `yaml:"widthMm,omitempty"`
-	HeightMM    float64 `yaml:"heightMm,omitempty"`
-	Border      bool    `yaml:"border"`
-	TitleBlock  string  `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
+	Direction   string  `yaml:"direction,omitempty"`
+	Scale       float64 `yaml:"scale,omitempty"`
+	Style       string  `yaml:"style,omitempty"`
+	CenterX     float64 `yaml:"centerXmm,omitempty"`
+	CenterY     float64 `yaml:"centerYmm,omitempty"`
 }
 
 // MarshalRecipe renders the drawing's sheets and referenced model as YAML
@@ -68,6 +84,7 @@ func (c *Content) ApplyRecipe(model []byte) error {
 	}
 	c.sheets = newSheets()
 	c.sheets.lookup = c.resolveProperty
+	c.sheets.bodyResolve = c.resolveBody
 	for _, sr := range r.Sheets {
 		if err := c.sheets.restore(sr); err != nil {
 			return err
@@ -92,7 +109,19 @@ func sheetRecipeOf(sh *Sheet) sheetRecipe {
 	if sh.titleBlock != nil {
 		rec.TitleBlock = sh.titleBlock.def.name
 	}
+	for _, v := range sh.views.items {
+		rec.Views = append(rec.Views, viewRecipeOf(v))
+	}
 	return rec
+}
+
+// viewRecipeOf snapshots one view's definition (its curves are re-projected on open).
+func viewRecipeOf(v *DrawingView) viewRecipe {
+	return viewRecipe{
+		Name: v.name, Projected: v.projected, BaseView: v.baseView,
+		Orientation: v.orientation.String(), Direction: v.direction.String(),
+		Scale: v.scale, Style: v.style.String(), CenterX: v.centerX, CenterY: v.centerY,
+	}
 }
 
 // restore rebuilds one sheet from its recipe and appends it. A standard size derives
@@ -111,15 +140,30 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	if err != nil {
 		return err
 	}
-	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h}
+	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve)}
 	if rec.Border {
 		sh.border = newBorder(DefaultBorderDefinition())
 	}
 	if rec.TitleBlock != "" {
 		sh.titleBlock = newTitleBlock(DefaultTitleBlockDefinition(), s.lookup)
 	}
+	for _, vr := range rec.Views {
+		sh.views.items = append(sh.views.items, restoreView(vr))
+	}
 	s.items = append(s.items, sh)
 	return nil
+}
+
+// restoreView rebuilds a view's definition from its recipe; its curves are re-projected by
+// the next RecomputeViews (once the referenced model resolves).
+func restoreView(vr viewRecipe) *DrawingView {
+	orient, _ := types.ParseBaseViewOrientation(vr.Orientation)
+	dir, _ := types.ParseProjectionDirection(vr.Direction)
+	style, _ := types.ParseDrawingViewStyle(vr.Style)
+	return &DrawingView{
+		name: vr.Name, projected: vr.Projected, baseView: vr.BaseView, orientation: orient,
+		direction: dir, scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
+	}
 }
 
 // restoreDims resolves a restored sheet's dimensions: the table value for a standard

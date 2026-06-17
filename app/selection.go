@@ -34,6 +34,7 @@ const (
 	SelectJoint
 	SelectRepresentation
 	SelectModelState
+	SelectDrawingView
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the

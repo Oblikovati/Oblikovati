@@ -23,7 +23,30 @@ func BrowserMenu(n BrowserNode) []BrowserMenuItem {
 	if items := partNodeMenu(n); items != nil {
 		return items
 	}
-	return assemblyNodeMenu(n)
+	if items := assemblyNodeMenu(n); items != nil {
+		return items
+	}
+	return drawingNodeMenu(n)
+}
+
+// drawingNodeMenu returns the menu for a drawing-document node kind (a view), or nil.
+func drawingNodeMenu(n BrowserNode) []BrowserMenuItem {
+	if n.Kind == "drawingView" {
+		return drawingViewMenu(n.Select)
+	}
+	return nil
+}
+
+// drawingViewMenu is the Edit/Delete menu for a drawing view (browser or canvas right-click).
+func drawingViewMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(DrawingViewHandle)
+	if !ok {
+		return nil
+	}
+	return []BrowserMenuItem{
+		{Label: "Edit", Enabled: true, Invoke: func(s *Session) error { s.BeginEditDrawingView(h); return nil }},
+		{Label: "Delete", Enabled: true, Invoke: func(s *Session) error { return s.DeleteDrawingView(h) }},
+	}
 }
 
 // partNodeMenu returns the menu for a part-document node kind, or nil.

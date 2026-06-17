@@ -24,7 +24,11 @@ type Sheet struct {
 	height      float64
 	border      *Border
 	titleBlock  *TitleBlock
+	views       *DrawingViews
 }
+
+// Views returns the sheet's drawing views (projections of the referenced model).
+func (s *Sheet) Views() *DrawingViews { return s.views }
 
 // compile-time: a sheet and its sub-objects satisfy the api/contract surface (ADR-0018).
 var (
@@ -66,9 +70,10 @@ func (s *Sheet) TitleBlock() contract.DrawingTitleBlock {
 
 // Sheets is a drawing's ordered, named sheet collection, tracking which sheet is active.
 type Sheets struct {
-	items  []*Sheet
-	active int
-	lookup propertyLookup // handed to each new title block; set by the owning Content
+	items       []*Sheet
+	active      int
+	lookup      propertyLookup // handed to each new title block; set by the owning Content
+	bodyResolve bodyLookup     // handed to each sheet's views; set by the owning Content
 }
 
 func newSheets() *Sheets { return &Sheets{} }
@@ -98,6 +103,7 @@ func (s *Sheets) Add(spec SheetSpec) (*Sheet, error) {
 		name: name, size: spec.Size, orientation: spec.Orientation, width: w, height: h,
 		border:     newBorder(DefaultBorderDefinition()),
 		titleBlock: newTitleBlock(DefaultTitleBlockDefinition(), s.lookup),
+		views:      newDrawingViews(s.bodyResolve),
 	}
 	s.items = append(s.items, sh)
 	s.active = len(s.items) - 1

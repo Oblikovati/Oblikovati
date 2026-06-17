@@ -34,6 +34,12 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Drafting Standard", "Setup", "drawing-standard",
 			"Set the drawing's drafting standard (ISO or ANSI); it governs dimension, text and line appearance.",
 			func() Tool { return NewDraftingStandardTool() }),
+		drawingToolCommand("Base View", "Views", "drawing-base-view",
+			"Project a base view of the referenced model onto the sheet (orientation, scale, hidden-line style).",
+			func() Tool { return NewBaseViewTool() }),
+		drawingToolCommand("Projected View", "Views", "drawing-projected-view",
+			"Project an orthographic view off an existing base view (right/left/up/down).",
+			func() Tool { return NewProjectedViewTool() }),
 	}
 }
 

@@ -205,6 +205,8 @@ func openEditOnDoubleClick(s *app.Session, n app.BrowserNode) {
 		_ = s.ActivateRepresentation(h) // double-click activates a representation (M12-F04)
 	case app.ModelStateHandle:
 		_ = s.ActivateModelState(h) // double-click switches the model state (M12-F04)
+	case app.DrawingViewHandle:
+		s.BeginEditDrawingView(h) // double-click a drawing view edits its settings (M14-F02)
 	}
 }
 
