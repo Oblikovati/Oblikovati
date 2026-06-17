@@ -78,7 +78,9 @@ func TestCommandManualInSync(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read manual %s: %v (regenerate with UPDATE_MANUAL=1)", manualDocPath, err)
 	}
-	if string(want) != got {
+	// Normalize CRLF → LF so a Windows checkout (git autocrlf) compares equal to the
+	// LF-only RenderManual output; .gitattributes also pins the file to LF.
+	if strings.ReplaceAll(string(want), "\r\n", "\n") != got {
 		t.Errorf("command manual %s is out of date; regenerate with UPDATE_MANUAL=1 go test ./app/cmdline -run TestCommandManualInSync", manualDocPath)
 	}
 }
