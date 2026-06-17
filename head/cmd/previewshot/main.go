@@ -108,6 +108,14 @@ func setupOp(s *app.Session, op string) error {
 		startPendingFaceOffset(s, mustBlock(s))
 	case "deleteface":
 		startPendingDeleteFace(s, mustBlock(s))
+	case "split":
+		startPendingSplit(s, mustBlock(s))
+	case "corecavity":
+		startPendingCoreCavity(s, mustBlock(s))
+	case "rib":
+		startPendingRib(s)
+	case "thicken":
+		startPendingThicken(s)
 	default:
 		return fmt.Errorf("unknown -op %q", op)
 	}
@@ -328,12 +336,88 @@ func startPendingFaceOffset(s *app.Session, def *compdef.PartComponentDefinition
 	t.SetDistance(2)
 }
 
-// startPendingDeleteFace deletes (and heals) the block's top face (removes material → red delta).
+// startPendingDeleteFace chamfers a vertical edge, then deletes (and heals) that chamfer face —
+// restoring the sharp corner, so material is added back (green). Deleting an outer box face
+// instead cannot heal closed (a no-op preview), hence the chamfer setup.
 func startPendingDeleteFace(s *app.Session, def *compdef.PartComponentDefinition) {
 	body := def.SurfaceBodies().Item(0)
+	feature.NewDressUpFeatures(def.Features()).AddChamfer([][]byte{verticalEdge(body.Edges()).ReferenceKey()}, func() float64 { return 1.2 })
+	def.Recompute()
+	body = def.SurfaceBodies().Item(0)
 	t := app.NewDeleteFaceTool()
 	s.StartTool(t)
-	t.Pick(s, app.FaceHandle{Face: faceByNormalZ(body, 1), Body: body})
+	t.Pick(s, app.FaceHandle{Face: nonAxisAlignedFace(body), Body: body})
+}
+
+// nonAxisAlignedFace returns the body's first face whose normal is not along ±X/±Y/±Z (the
+// chamfer bevel), or the first face as a fallback.
+func nonAxisAlignedFace(b *topo.Body) *topo.Face {
+	for _, f := range b.Faces() {
+		n := f.Geometry().NormalAt(0, 0)
+		if abs(float64(n.X)) < 0.9 && abs(float64(n.Y)) < 0.9 && abs(float64(n.Z)) < 0.9 {
+			return f
+		}
+	}
+	return b.Faces()[0]
+}
+
+// startPendingSplit cuts the block with a mid work plane (multi-body delta → highlighted).
+func startPendingSplit(s *app.Session, def *compdef.PartComponentDefinition) {
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 1.5 })
+	def.Recompute()
+	t := app.NewSplitTool()
+	s.StartTool(t)
+	t.Pick(s, app.WorkPlaneHandle{Plane: wp})
+}
+
+// startPendingCoreCavity splits the tooling block at the parting plane (its default).
+func startPendingCoreCavity(s *app.Session, def *compdef.PartComponentDefinition) {
+	t := app.NewCoreCavityTool()
+	s.StartTool(t)
+	_ = def
+}
+
+// startPendingRib thickens an open profile into a rib joined to a base block (tool body → green).
+func startPendingRib(s *app.Session) {
+	def := newPart(s, "previewshot.opd")
+	sk := addSquare(def, 0, 0, 6)
+	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 2 })
+	rs := def.Sketches().Add(sketch.XYPlane())
+	rs.Lines().AddByTwoPoints(math.P2(1, 3), math.P2(5, 3)) // open path across the block
+	def.Recompute()
+	t := app.NewRibTool()
+	s.StartTool(t)
+	t.SetThickness(1)
+	t.SetDepth(3)
+}
+
+// startPendingThicken thickens a planar surface patch into a solid (surface→solid → green).
+func startPendingThicken(s *app.Session) {
+	def := newPart(s, "previewshot.opd")
+	feature.NewBaseFeatures(def.Features()).AddBase(patchSurface(4, 4))
+	def.Recompute()
+	t := app.NewThickenTool()
+	s.StartTool(t)
+	t.SetThickness(1)
+}
+
+// patchSurface builds a w×h planar (open) surface body on the XY plane.
+func patchSurface(w, h float64) *topo.Body {
+	lin := topo.NewLineage(topo.Tok("previewshot", "patch", 0))
+	bld := topo.NewBuilder(false, lin)
+	p := []math.Point3{{X: 0, Y: 0}, {X: w, Y: 0}, {X: w, Y: h}, {X: 0, Y: h}}
+	v := make([]*topo.Vertex, 4)
+	for i, q := range p {
+		v[i] = bld.AddVertex(q, lin)
+	}
+	uses := make([]topo.Use, 4)
+	for i := range p {
+		e := bld.AddEdge(geom.NewLineSegment(p[i], p[(i+1)%4]), v[i], v[(i+1)%4], lin)
+		uses[i] = topo.Use{Edge: e}
+	}
+	plane, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	bld.AddFace(plane, lin, topo.OuterLoop(uses...))
+	return bld.Build()
 }
 
 // --- geometry helpers ------------------------------------------------------------------
