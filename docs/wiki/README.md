@@ -17,7 +17,7 @@ To preview locally:
 
 ```sh
 go run ./cmd/command-manual /tmp/Command-Manual.md
-go run ./cmd/lua-manual /tmp/Lua-Scripting.md
+go run ./cmd/lua-manual "$(go list -m -f '{{.Dir}}' oblikovati.org/api)" /tmp/Lua-Scripting.md
 ```
 
 This `README.md` is repo-only and is never published to the wiki.

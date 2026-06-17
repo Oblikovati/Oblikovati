@@ -2,6 +2,7 @@
 
 package luadoc
 
+// embed is imported for its //go:embed directive on guideText below (blank import).
 import _ "embed"
 
 // guideText is the hand-written introduction that precedes the generated reference (what

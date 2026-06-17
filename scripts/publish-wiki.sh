@@ -37,7 +37,9 @@ shopt -u nullglob
 go run ./cmd/command-manual "$BUILD/Command-Manual.md"
 
 # Generated Lua Scripting page (rendered from the wire API + its mcp:summary annotations).
-go run ./cmd/lua-manual "$BUILD/Lua-Scripting.md"
+# Resolve the api module dir here so the generator launches no subprocess of its own.
+API_DIR="$(go list -m -f '{{.Dir}}' oblikovati.org/api)"
+go run ./cmd/lua-manual "$API_DIR" "$BUILD/Lua-Scripting.md"
 
 # --- 2. Sync into the wiki repo (preserve history; init if it's brand new) -----------
 WORK="$(mktemp -d)"

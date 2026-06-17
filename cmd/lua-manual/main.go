@@ -3,16 +3,20 @@
 // Command lua-manual renders the Lua Scripting wiki page from the public API: the method
 // reference comes from api/wire + the api/client mcp:summary annotations (the same source the
 // MCP bridge uses), and the worked examples from the bundled script/examples library. The
-// wiki publish workflow runs it on every merge so the manual never drifts:
+// wiki publish workflow runs it on every merge so the manual never drifts.
 //
-//	go run ./cmd/lua-manual > Lua-Scripting.md      # write to stdout
-//	go run ./cmd/lua-manual path/to/Lua-Scripting.md   # write to a file
+// The api module directory is passed in (the caller resolves it with
+// `go list -m -f {{.Dir}} oblikovati.org/api`), so this tool launches no subprocess:
+//
+//	APIDIR=$(go list -m -f '{{.Dir}}' oblikovati.org/api)
+//	go run ./cmd/lua-manual "$APIDIR"                       # write to stdout
+//	go run ./cmd/lua-manual "$APIDIR" path/to/Lua-Scripting.md   # write to a file
 package main
 
 import (
 	"fmt"
+	"io"
 	"os"
-	"os/exec"
 	"strings"
 
 	"oblikovati.org/script/examples"
@@ -20,41 +24,32 @@ import (
 )
 
 func main() {
-	dir, err := apiDir()
-	if err != nil {
-		fail(err)
-	}
-	exs, err := loadExamples()
-	if err != nil {
-		fail(err)
-	}
-	md, err := luadoc.Generate(dir, exs)
-	if err != nil {
-		fail(err)
-	}
-	if len(os.Args) > 1 {
-		if err := os.WriteFile(os.Args[1], []byte(md), 0o644); err != nil {
-			fail(err)
-		}
-		return
-	}
-	if _, err := os.Stdout.WriteString(md); err != nil {
-		fail(err)
+	if err := run(os.Args[1:], os.Stdout); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
 
-// apiDir resolves the on-disk oblikovati.org/api module root (honoring go.work / the CI
-// replace), so the generator parses the same contract the build links against.
-func apiDir() (string, error) {
-	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", "oblikovati.org/api").Output()
+// run renders the manual from the api dir given as the first argument and writes it to the
+// second argument (a file) or to stdout when no file is given. Kept separate from main so it
+// is testable without a subprocess or os.Exit.
+func run(args []string, stdout io.Writer) error {
+	if len(args) < 1 || args[0] == "" {
+		return fmt.Errorf("lua-manual: usage: lua-manual <apiDir> [outPath]")
+	}
+	exs, err := loadExamples()
 	if err != nil {
-		return "", fmt.Errorf("lua-manual: resolve api dir: %w", err)
+		return err
 	}
-	dir := strings.TrimSpace(string(out))
-	if dir == "" {
-		return "", fmt.Errorf("lua-manual: empty api dir from go list")
+	md, err := luadoc.Generate(args[0], exs)
+	if err != nil {
+		return err
 	}
-	return dir, nil
+	if len(args) >= 2 && args[1] != "" {
+		return os.WriteFile(args[1], []byte(md), 0o644)
+	}
+	_, err = io.WriteString(stdout, md)
+	return err
 }
 
 // loadExamples turns the bundled example programs into manual entries, using each program's
@@ -88,9 +83,4 @@ func leadingComment(src string) string {
 		parts = append(parts, strings.TrimSpace(rest))
 	}
 	return strings.TrimSpace(strings.Join(parts, " "))
-}
-
-func fail(err error) {
-	fmt.Fprintln(os.Stderr, err)
-	os.Exit(1)
 }
