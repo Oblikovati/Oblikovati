@@ -108,10 +108,13 @@ func TestFileDialogTitleDefaultsToOpen(t *testing.T) {
 func TestFileDialogImportExportModes(t *testing.T) {
 	var d fileDialog
 	d.openFor(dialogImport)
-	if d.title() != "Import (.stl/.obj/.3mf/.step/.dwg)" {
+	if d.title() != "Import (.stl/.obj/.3mf/.step/.dwg/.dxf)" {
 		t.Errorf("import title = %q", d.title())
 	}
 	d.openFor(dialogExport)
+	if d.title() != "Export (.stl/.obj/.3mf/.step/.dxf)" {
+		t.Errorf("export title = %q", d.title())
+	}
 	if d.resolution != 1 { // defaults to medium
 		t.Errorf("export default resolution = %d, want 1 (medium)", d.resolution)
 	}
@@ -121,6 +124,18 @@ func TestFileDialogImportExportModes(t *testing.T) {
 	want := filepath.Join(initialExplorerDir(), "out.stl")
 	if act.Kind != dialogExport || act.Path != want || act.Resolution != "high" {
 		t.Errorf("export confirm = %+v, want {dialogExport, %q, high}", act, want)
+	}
+}
+
+// TestFileDialogExportDXFVersion covers a confirmed Export carrying the selected DXF version.
+func TestFileDialogExportDXFVersion(t *testing.T) {
+	var d fileDialog
+	d.openFor(dialogExport)
+	d.dxfVersion = 1 // r2018
+	copy(d.path[:], "out.dxf")
+	act := d.confirm()
+	if act.DXFVersion != "r2018" {
+		t.Errorf("export confirm DXFVersion = %q, want r2018", act.DXFVersion)
 	}
 }
 
