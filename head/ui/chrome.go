@@ -145,6 +145,7 @@ func drawChromeWindows(s *app.Session) {
 	drawNamedViewsWindow(s)      // View ▸ Named Views (M16-F03 #404)
 	drawColorStylesWindow(s)     // View ▸ Color Styles (M16-F02 #403/#408)
 	drawDisplaySettingsWindow(s) // View ▸ Display Settings (M16-F07 #643)
+	drawUnitsSettingsWindow(s)   // Tools ▸ Document Settings — Units (#146)
 	drawScriptConsole(s)
 	drawKeymapEditor(s)    // Tools ▸ Customize Keyboard (M05-F17)
 	drawCommandInput(s)    // command-alias input box (M05-F17)

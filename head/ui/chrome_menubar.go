@@ -139,6 +139,9 @@ func drawToolsMenu(s *app.Session) {
 		if native.MenuItem("Preferences") {
 			showPreferences = !showPreferences
 		}
+		if native.MenuItem("Document Settings — Units") { // #146: per-document units & precision
+			s.OpenUnitsSettings()
+		}
 		if native.MenuItem("Customize Keyboard") { // M05-F17: rebind shortcuts / aliases
 			s.OpenKeymapEditor()
 		}
