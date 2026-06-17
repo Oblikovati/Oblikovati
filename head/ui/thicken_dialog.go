@@ -32,7 +32,7 @@ func drawThickenDialog(s *app.Session) {
 	if native.Begin("Thicken") {
 		drawFeatureBreadcrumb("Thicken", "")
 		if propertySection("Behavior") {
-			propertyFloatRow("Thickness", "thicken-thickness", s.LengthUnitName(), &thickenUI.thickness)
+			lengthCmRow(s, "Thickness", "thicken-thickness", &thickenUI.thickness)
 			th.SetThickness(float64(thickenUI.thickness))
 			if i := propertyComboRow("Approximation", "thicken-approx", app.ApproximationOptions(), th.ApproximationIndex()); i >= 0 {
 				th.SetApproximationIndex(i)

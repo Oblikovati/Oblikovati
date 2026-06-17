@@ -41,7 +41,7 @@ func drawShellDialog(s *app.Session) {
 				sh.FaceCount() > 0, "Click the faces to open (they are removed; the rest walls in)", sh.ClearFaces)
 		}
 		if propertySection("Behavior") {
-			propertyFloatRow("Thickness", "shell-thickness", s.LengthUnitName(), &shellUI.thickness)
+			lengthCmRow(s, "Thickness", "shell-thickness", &shellUI.thickness)
 			sh.SetThickness(float64(shellUI.thickness))
 		}
 		native.Separator()

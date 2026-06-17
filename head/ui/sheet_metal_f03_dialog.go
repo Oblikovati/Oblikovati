@@ -35,7 +35,7 @@ func drawSheetMetalF03Dialogs(s *app.Session) bool {
 func drawSheetMetalRip(s *app.Session, t *app.SheetMetalRipTool) {
 	seedSheetMetal(t, func() { smUI.gap = float32(t.Gap()) })
 	sheetMetalPanel(s, "Rip", "Rip Line", "sm-rip", "Click a sketch line to rip along", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		propertyFloatRow("Gap", "sm-rip-gap", s.LengthUnitName(), &smUI.gap)
+		lengthCmRow(s, "Gap", "sm-rip-gap", &smUI.gap)
 		t.SetGap(float64(smUI.gap))
 	})
 }
@@ -47,12 +47,11 @@ func drawSheetMetalLip(s *app.Session, t *app.SheetMetalLipTool) {
 		smUI.angle = float32(t.Angle() * degPerRad)
 	})
 	sheetMetalPanel(s, "Lip", "Edge", "sm-lip", "Click a straight sheet edge", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		unit := s.LengthUnitName()
-		propertyFloatRow("Height", "sm-lip-height", unit, &smUI.height)
+		lengthCmRow(s, "Height", "sm-lip-height", &smUI.height)
 		t.SetHeight(float64(smUI.height))
-		propertyFloatRow("Return", "sm-lip-return", unit, &smUI.length)
+		lengthCmRow(s, "Return", "sm-lip-return", &smUI.length)
 		t.SetReturnLength(float64(smUI.length))
-		propertyFloatRow("Angle", "sm-lip-angle", "deg", &smUI.angle)
+		angleDegRow(s, "Angle", "sm-lip-angle", &smUI.angle)
 		t.SetAngle(float64(smUI.angle) / degPerRad)
 	})
 }
@@ -60,7 +59,7 @@ func drawSheetMetalLip(s *app.Session, t *app.SheetMetalLipTool) {
 func drawSheetMetalCosmeticBend(s *app.Session, t *app.SheetMetalCosmeticBendTool) {
 	seedSheetMetal(t, func() { smUI.angle = float32(t.Angle() * degPerRad) })
 	sheetMetalPanel(s, "Cosmetic Bend", "Bend Line", "sm-cosbend", "Click a sketch line to mark", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		propertyFloatRow("Angle", "sm-cosbend-angle", "deg", &smUI.angle)
+		angleDegRow(s, "Angle", "sm-cosbend-angle", &smUI.angle)
 		t.SetAngle(float64(smUI.angle) / degPerRad)
 	})
 }

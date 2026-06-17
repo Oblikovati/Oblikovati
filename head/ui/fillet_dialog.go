@@ -74,12 +74,12 @@ func drawFilletRadiusRows(s *app.Session, f *app.FilletTool) {
 		f.SetVariable(variable)
 	}
 	if !variable {
-		propertyFloatRow("Radius", "fillet-radius", s.LengthUnitName(), &filletUI.radius)
+		lengthCmRow(s, "Radius", "fillet-radius", &filletUI.radius)
 		f.SetRadius(float64(filletUI.radius))
 		return
 	}
-	propertyFloatRow("Start radius", "fillet-start-radius", s.LengthUnitName(), &filletUI.startRadius)
+	lengthCmRow(s, "Start radius", "fillet-start-radius", &filletUI.startRadius)
 	f.SetStartRadius(float64(filletUI.startRadius))
-	propertyFloatRow("End radius", "fillet-end-radius", s.LengthUnitName(), &filletUI.endRadius)
+	lengthCmRow(s, "End radius", "fillet-end-radius", &filletUI.endRadius)
 	f.SetEndRadius(float64(filletUI.endRadius))
 }

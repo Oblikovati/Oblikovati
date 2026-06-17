@@ -36,7 +36,7 @@ func drawFaceOffsetDialog(s *app.Session) {
 				len(o.Faces()) > 0, "Click faces in the viewport to offset", o.ClearFaces)
 		}
 		if propertySection("Behavior") {
-			propertyFloatRow("Distance", "face-offset-distance", s.LengthUnitName()+" (+out / −in)", &faceOffsetUI.distance)
+			lengthCmRowHint(s, "Distance", "face-offset-distance", " (+out / −in)", &faceOffsetUI.distance)
 			o.SetDistance(float64(faceOffsetUI.distance))
 			if i := propertyComboRow("Approximation", "face-offset-approx", app.ApproximationOptions(), o.ApproximationIndex()); i >= 0 {
 				o.SetApproximationIndex(i)

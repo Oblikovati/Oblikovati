@@ -36,7 +36,7 @@ func drawSweepDialog(s *app.Session) {
 	if native.Begin("Sweep") {
 		drawFeatureBreadcrumb("Sweep", sw.SourceSketchName())
 		drawSweepInputGeometry(sw)
-		drawSweepBehavior(sw)
+		drawSweepBehavior(s, sw)
 		drawSweepOutput(sw)
 		native.Separator()
 		drawCommitCancelButtons(s, sw.CanCommit())
@@ -65,11 +65,11 @@ func drawSweepInputGeometry(sw *app.SweepTool) {
 }
 
 // drawSweepBehavior is the Behavior section: the twist spread along the path.
-func drawSweepBehavior(sw *app.SweepTool) {
+func drawSweepBehavior(s *app.Session, sw *app.SweepTool) {
 	if !propertySection("Behavior") {
 		return
 	}
-	propertyFloatRow("Twist", "sweep-twist", "deg", &sweepUI.twistDeg)
+	angleDegRow(s, "Twist", "sweep-twist", &sweepUI.twistDeg)
 	sw.SetTwist(float64(sweepUI.twistDeg) * stdmath.Pi / 180)
 }
 

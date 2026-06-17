@@ -41,7 +41,7 @@ func drawDraftDialog(s *app.Session) {
 				d.FaceCount() > 0, "Click faces in the viewport to draft", d.ClearFaces)
 		}
 		if propertySection("Behavior") {
-			propertyFloatRow("Angle", "draft-angle", "deg (+out / −in)", &draftUI.angle)
+			angleDegRowHint(s, "Angle", "draft-angle", " (+out / −in)", &draftUI.angle)
 			d.SetAngleDegrees(float64(draftUI.angle))
 		}
 		native.Separator()
