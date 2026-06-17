@@ -124,12 +124,12 @@ func drawCoilBehavior(s *app.Session, c *app.CoilTool) {
 	if !propertySection("Behavior") {
 		return
 	}
-	propertyFloatRow("Pitch", "coil-pitch", s.LengthUnitName(), &coilUI.pitch)
+	lengthCmRow(s, "Pitch", "coil-pitch", &coilUI.pitch)
 	c.SetPitch(float64(coilUI.pitch))
 	propertyFloatRow("Revolutions", "coil-revolutions", "", &coilUI.revolutions)
 	c.SetRevolutions(float64(coilUI.revolutions))
 	drawCoilPitchRows(s, c)
-	drawCoilEnds(c)
+	drawCoilEnds(s, c)
 }
 
 // drawCoilPitchRows is the variable-pitch rows grid: toggle, per-row pitch +
@@ -147,7 +147,7 @@ func drawCoilPitchRows(s *app.Session, c *app.CoilTool) {
 	}
 	for i := range coilUI.rows {
 		id := fmt.Sprintf("coil-row-%d", i)
-		propertyFloatRow(fmt.Sprintf("Row %d Pitch", i+1), id+"-pitch", s.LengthUnitName(), &coilUI.rows[i].pitch)
+		lengthCmRow(s, fmt.Sprintf("Row %d Pitch", i+1), id+"-pitch", &coilUI.rows[i].pitch)
 		propertyFloatRow(fmt.Sprintf("Row %d Rev", i+1), id+"-rev", "", &coilUI.rows[i].revolution)
 	}
 	if native.Button("Add Row") {
@@ -166,16 +166,16 @@ func drawCoilPitchRows(s *app.Session, c *app.CoilTool) {
 }
 
 // drawCoilEnds is the flat start/end condition controls (angles in degrees).
-func drawCoilEnds(c *app.CoilTool) {
+func drawCoilEnds(s *app.Session, c *app.CoilTool) {
 	native.Checkbox("Flat start", &coilUI.startFlat)
 	if coilUI.startFlat {
-		propertyFloatRow("Start Transition", "coil-start-trans", "deg", &coilUI.startTransition)
-		propertyFloatRow("Start Flat", "coil-start-flat", "deg", &coilUI.startFlatAngle)
+		angleDegRow(s, "Start Transition", "coil-start-trans", &coilUI.startTransition)
+		angleDegRow(s, "Start Flat", "coil-start-flat", &coilUI.startFlatAngle)
 	}
 	native.Checkbox("Flat end", &coilUI.endFlat)
 	if coilUI.endFlat {
-		propertyFloatRow("End Transition", "coil-end-trans", "deg", &coilUI.endTransition)
-		propertyFloatRow("End Flat", "coil-end-flat", "deg", &coilUI.endFlatAngle)
+		angleDegRow(s, "End Transition", "coil-end-trans", &coilUI.endTransition)
+		angleDegRow(s, "End Flat", "coil-end-flat", &coilUI.endFlatAngle)
 	}
 	c.SetEndConditions(coilEnd(coilUI.startFlat, coilUI.startTransition, coilUI.startFlatAngle),
 		coilEnd(coilUI.endFlat, coilUI.endTransition, coilUI.endFlatAngle))

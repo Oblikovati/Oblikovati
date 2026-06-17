@@ -126,9 +126,9 @@ func drawSheetMetalFlange(s *app.Session, t *app.SheetMetalFlangeTool) {
 		smUI.angle = float32(t.Angle() * degPerRad)
 	})
 	sheetMetalPanel(s, "Flange", "Edge", "sm-flange", "Click a straight sheet edge", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		propertyFloatRow("Height", "sm-flange-height", s.LengthUnitName(), &smUI.height)
+		lengthCmRow(s, "Height", "sm-flange-height", &smUI.height)
 		t.SetHeight(float64(smUI.height))
-		propertyFloatRow("Angle", "sm-flange-angle", "deg", &smUI.angle)
+		angleDegRow(s, "Angle", "sm-flange-angle", &smUI.angle)
 		t.SetAngle(float64(smUI.angle) / degPerRad)
 	})
 }
@@ -136,7 +136,7 @@ func drawSheetMetalFlange(s *app.Session, t *app.SheetMetalFlangeTool) {
 func drawSheetMetalHem(s *app.Session, t *app.SheetMetalHemTool) {
 	seedSheetMetal(t, func() { smUI.length = float32(t.Length()) })
 	sheetMetalPanel(s, "Hem", "Edge", "sm-hem", "Click a straight sheet edge", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		propertyFloatRow("Length", "sm-hem-length", s.LengthUnitName(), &smUI.length)
+		lengthCmRow(s, "Length", "sm-hem-length", &smUI.length)
 		t.SetLength(float64(smUI.length))
 	})
 }
@@ -144,7 +144,7 @@ func drawSheetMetalHem(s *app.Session, t *app.SheetMetalHemTool) {
 func drawSheetMetalContourRoll(s *app.Session, t *app.SheetMetalContourRollTool) {
 	seedSheetMetal(t, func() { smUI.roll = float32(t.Angle() * degPerRad) })
 	sheetMetalPanel(s, "Contour Roll", "Profile + Axis", "sm-roll", "Click an open profile and its axis line", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		propertyFloatRow("Angle", "sm-roll-angle", "deg", &smUI.roll)
+		angleDegRow(s, "Angle", "sm-roll-angle", &smUI.roll)
 		t.SetAngle(float64(smUI.roll) / degPerRad)
 	})
 }
@@ -152,7 +152,7 @@ func drawSheetMetalContourRoll(s *app.Session, t *app.SheetMetalContourRollTool)
 func drawSheetMetalCorner(s *app.Session, t *app.SheetMetalCornerTool) {
 	seedSheetMetal(t, func() { smUI.size = float32(t.Size()) })
 	sheetMetalPanel(s, "Corner", "Corner Edges", "sm-corner", "Click corner edges to chamfer", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		propertyFloatRow("Size", "sm-corner-size", s.LengthUnitName(), &smUI.size)
+		lengthCmRow(s, "Size", "sm-corner-size", &smUI.size)
 		t.SetSize(float64(smUI.size))
 	})
 }
@@ -160,7 +160,7 @@ func drawSheetMetalCorner(s *app.Session, t *app.SheetMetalCornerTool) {
 func drawSheetMetalCornerSeam(s *app.Session, t *app.SheetMetalCornerSeamTool) {
 	seedSheetMetal(t, func() { smUI.gap = float32(t.Gap()) })
 	sheetMetalPanel(s, "Corner Seam", "Seam Edges", "sm-seam", "Click the seam edges", t.PickCount(), t.ClearPicks, t.CanCommit(), func() {
-		propertyFloatRow("Gap", "sm-seam-gap", s.LengthUnitName(), &smUI.gap)
+		lengthCmRow(s, "Gap", "sm-seam-gap", &smUI.gap)
 		t.SetGap(float64(smUI.gap))
 	})
 }

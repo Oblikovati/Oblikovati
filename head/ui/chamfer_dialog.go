@@ -56,7 +56,7 @@ func drawChamferDialog(s *app.Session) {
 // drawChamferBehaviorRows renders the setback distance, the concave-edge strategy combo, and the
 // flat-corner toggle.
 func drawChamferBehaviorRows(s *app.Session, c *app.ChamferTool) {
-	propertyFloatRow("Distance", "chamfer-distance", s.LengthUnitName(), &chamferUI.distance)
+	lengthCmRow(s, "Distance", "chamfer-distance", &chamferUI.distance)
 	c.SetDistance(float64(chamferUI.distance))
 	if i := propertyComboRow("Concave edge", "chamfer-concave", app.ConcaveStrategyNames(), chamferUI.concaveIndex); i >= 0 {
 		chamferUI.concaveIndex = i

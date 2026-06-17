@@ -128,14 +128,14 @@ func applyHoleSeat(h *app.HoleTool, index int) {
 // Ø + depth, or a countersink's sink Ø + included angle.
 func drawHoleSeatParams(s *app.Session, h *app.HoleTool) {
 	if h.Counterbore() {
-		propertyFloatRow("Seat Ø", "hole-cdia", s.LengthUnitName(), &holeUI.cDiameter)
-		propertyFloatRow("Seat Depth", "hole-cdepth", s.LengthUnitName(), &holeUI.cDepth)
+		lengthCmRow(s, "Seat Ø", "hole-cdia", &holeUI.cDiameter)
+		lengthCmRow(s, "Seat Depth", "hole-cdepth", &holeUI.cDepth)
 		h.SetCounterDiameter(float64(holeUI.cDiameter))
 		h.SetCounterDepth(float64(holeUI.cDepth))
 	}
 	if h.Countersink() {
-		propertyFloatRow("Seat Ø", "hole-sdia", s.LengthUnitName(), &holeUI.cDiameter)
-		propertyFloatRow("Seat Angle", "hole-sang", "deg", &holeUI.sinkAngleDeg)
+		lengthCmRow(s, "Seat Ø", "hole-sdia", &holeUI.cDiameter)
+		angleDegRow(s, "Seat Angle", "hole-sang", &holeUI.sinkAngleDeg)
 		h.SetCounterDiameter(float64(holeUI.cDiameter))
 		h.SetSinkAngle(float64(holeUI.sinkAngleDeg) * stdmath.Pi / 180)
 	}
@@ -164,10 +164,10 @@ func drawHoleBehavior(s *app.Session, h *app.HoleTool) {
 		return
 	}
 	drawHoleTerminationRow(h)
-	propertyFloatRow("Diameter", "hole-diameter", s.LengthUnitName(), &holeUI.diameter)
+	lengthCmRow(s, "Diameter", "hole-diameter", &holeUI.diameter)
 	h.SetDiameter(float64(holeUI.diameter))
 	drawHoleDepthRow(s, h)
-	drawHoleDrillPointRow(h)
+	drawHoleDrillPointRow(s, h)
 }
 
 // drawHoleTerminationRow renders the Termination toggles (distance / through-all).
@@ -187,7 +187,7 @@ func drawHoleTerminationRow(h *app.HoleTool) {
 // drawHoleDepthRow renders the Depth field, greyed while drilling through everything.
 func drawHoleDepthRow(s *app.Session, h *app.HoleTool) {
 	native.BeginDisabled(holeUI.through)
-	propertyFloatRow("Depth", "hole-depth", s.LengthUnitName(), &holeUI.depth)
+	lengthCmRow(s, "Depth", "hole-depth", &holeUI.depth)
 	native.EndDisabled()
 	h.SetDepth(float64(holeUI.depth))
 }
@@ -195,7 +195,7 @@ func drawHoleDepthRow(s *app.Session, h *app.HoleTool) {
 // drawHoleDrillPointRow renders the Drill Point toggles with the included-angle field
 // beside them in angle mode. The row greys out when the bottom shape is moot: a
 // through hole has no bottom, and a seated hole's recess owns the profile.
-func drawHoleDrillPointRow(h *app.HoleTool) {
+func drawHoleDrillPointRow(s *app.Session, h *app.HoleTool) {
 	native.BeginDisabled(holeUI.through || holeUI.counterbore || holeUI.countersink)
 	propertyRow("Drill Point")
 	active := 0
@@ -206,21 +206,24 @@ func drawHoleDrillPointRow(h *app.HoleTool) {
 	if i := propertyIconToggles("hole-drill", dt.keys, dt.tips, active); i >= 0 {
 		applyHoleDrillPoint(h, i)
 	}
-	drawHolePointAngleField(h)
+	drawHolePointAngleField(s, h)
 	native.EndDisabled()
 }
 
 // drawHolePointAngleField is the included-angle input shown beside the toggles while a
 // conical drill point is selected.
-func drawHolePointAngleField(h *app.HoleTool) {
+func drawHolePointAngleField(s *app.Session, h *app.HoleTool) {
 	if h.PointAngle() <= 0 {
 		return
 	}
 	native.SameLine()
 	native.SetNextItemWidth(60)
-	native.InputFloat("##hole-pang", &holeUI.pointAngleDeg)
+	disp := float32(s.AngleDegToDisplay(float64(holeUI.pointAngleDeg)))
+	if native.InputFloat("##hole-pang", &disp) {
+		holeUI.pointAngleDeg = float32(s.AngleDisplayToDeg(float64(disp)))
+	}
 	native.SameLine()
-	native.Text("deg")
+	native.Text(s.AngleUnitName())
 	h.SetPointAngle(float64(holeUI.pointAngleDeg) * stdmath.Pi / 180)
 }
 

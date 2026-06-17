@@ -50,7 +50,7 @@ func drawLoftDialog(s *app.Session) {
 	if native.Begin("Loft") {
 		drawFeatureBreadcrumb("Loft", "")
 		drawLoftInputGeometry(l)
-		drawLoftBehavior(l)
+		drawLoftBehavior(s, l)
 		drawLoftOutput(l)
 		native.Separator()
 		drawCommitCancelButtons(s, l.CanCommit())
@@ -123,7 +123,7 @@ func drawLoftGuideKindCombo(l *app.LoftTool) {
 
 // drawLoftBehavior is the Behavior section: the closed-loop toggle, the area-graph mid
 // scale, and — for an open loft — the start/end section conditions.
-func drawLoftBehavior(l *app.LoftTool) {
+func drawLoftBehavior(s *app.Session, l *app.LoftTool) {
 	if !propertySection("Behavior") {
 		return
 	}
@@ -134,22 +134,22 @@ func drawLoftBehavior(l *app.LoftTool) {
 	}
 	propertyFloatRow("Area Mid", "loft-area-mid", "× (1 = off)", &loftUI.areaMid)
 	l.SetAreaMidScale(float64(loftUI.areaMid))
-	drawOpenLoftConditions(l, closed)
+	drawOpenLoftConditions(s, l, closed)
 }
 
-func drawOpenLoftConditions(l *app.LoftTool, closed bool) {
+func drawOpenLoftConditions(s *app.Session, l *app.LoftTool, closed bool) {
 	if closed {
 		return
 	}
-	drawLoftEndConditionRows("Start", "loft-start", &loftUI.first)
-	drawLoftEndConditionRows("End", "loft-end", &loftUI.last)
+	drawLoftEndConditionRows(s, "Start", "loft-start", &loftUI.first)
+	drawLoftEndConditionRows(s, "End", "loft-end", &loftUI.last)
 	l.SetFirstCondition(loftUI.first.toEnd())
 	l.SetLastCondition(loftUI.last.toEnd())
 }
 
 // drawLoftEndConditionRows renders one end's condition combo plus, for an angle/
 // direction takeoff, its angle (degrees), impact (takeoff weight) and reversed flag.
-func drawLoftEndConditionRows(title, id string, u *loftEndUI) {
+func drawLoftEndConditionRows(s *app.Session, title, id string, u *loftEndUI) {
 	propertyRow(title)
 	native.SetNextItemWidth(propertyComboWidth)
 	if native.BeginCombo("##"+id+"-cond", loftCondLabels[u.cond]) {
@@ -160,18 +160,18 @@ func drawLoftEndConditionRows(title, id string, u *loftEndUI) {
 		}
 		native.EndCombo()
 	}
-	drawLoftEndConditionParams(id, u)
+	drawLoftEndConditionParams(s, id, u)
 }
 
 // drawLoftEndConditionParams renders the condition's dependent fields: nothing for
 // Free/Sharp, a takeoff angle for Angle/Direction, and the impact weight + reversed
 // flag for every shaped condition.
-func drawLoftEndConditionParams(id string, u *loftEndUI) {
+func drawLoftEndConditionParams(s *app.Session, id string, u *loftEndUI) {
 	if u.cond == 0 || u.cond == 3 { // Free / Sharp: no further controls (sharp = a straight apex)
 		return
 	}
 	if u.cond == 1 || u.cond == 2 { // Angle / Direction: takeoff angle on a profile section
-		propertyFloatRow("  Angle", id+"-angle", "deg", &u.angleDeg)
+		angleDegRow(s, "  Angle", id+"-angle", &u.angleDeg)
 	}
 	propertyFloatRow("  Impact", id+"-impact", "", &u.impact)
 	propertyRow("")
