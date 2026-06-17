@@ -5,6 +5,7 @@ package feature
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/param"
@@ -38,7 +39,7 @@ func (f *AssemblyChamferFeature) Kind() string { return kindAssemblyChamfer }
 func (f *AssemblyChamferFeature) Recompute(in Input) (Output, error) {
 	dist := f.distance()
 	bodies, err := dressParticipants(in.Bodies, edgeSuffixKeys(f.edgeSuffixes), func(body *topo.Body, keys [][]byte) (*topo.Body, error) {
-		out, err := chamferEdges(Input{Bodies: []*topo.Body{body}}, keys, dist, dist, "asmChamfer", f.flatCorners)
+		out, err := chamferEdges(Input{Bodies: []*topo.Body{body}}, keys, dist, dist, "asmChamfer", f.flatCorners, types.ChamferConcaveOutward)
 		if err != nil {
 			return nil, err
 		}

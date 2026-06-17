@@ -23,14 +23,15 @@ import (
 // EdgeSets is fillet-only: the edge-set form (#323), taking precedence over the flat
 // edgeRefs+radius pair.
 type edgeDressArgs struct {
-	EdgeRefs    []string        `json:"edgeRefs"`
-	Radius      string          `json:"radius,omitempty"`      // fillet
-	Distance    string          `json:"distance,omitempty"`    // chamfer
-	EdgeSets    []filletSetArgs `json:"edgeSets,omitempty"`    // fillet
-	CornerType  string          `json:"cornerType,omitempty"`  // fillet shared-corner treatment (default miter)
-	ChamferType string          `json:"chamferType,omitempty"` // chamfer mode (default distance)
-	Distance2   string          `json:"distance2,omitempty"`   // chamfer twoDistances
-	Angle       string          `json:"angle,omitempty"`       // chamfer distanceAndAngle
+	EdgeRefs        []string        `json:"edgeRefs"`
+	Radius          string          `json:"radius,omitempty"`          // fillet
+	Distance        string          `json:"distance,omitempty"`        // chamfer
+	EdgeSets        []filletSetArgs `json:"edgeSets,omitempty"`        // fillet
+	CornerType      string          `json:"cornerType,omitempty"`      // fillet shared-corner treatment (default miter)
+	ChamferType     string          `json:"chamferType,omitempty"`     // chamfer mode (default distance)
+	Distance2       string          `json:"distance2,omitempty"`       // chamfer twoDistances
+	Angle           string          `json:"angle,omitempty"`           // chamfer distanceAndAngle
+	ConcaveStrategy string          `json:"concaveStrategy,omitempty"` // chamfer concave-edge handling (default outward)
 }
 
 // filletSetArgs is one fillet edge set over the wire: constant (radius) or variable
@@ -64,7 +65,8 @@ const chamferSchema = `{
     "distance": {"type": "string", "description": "Chamfer setback with units, e.g. \"2 mm\" (the first face for the asymmetric modes)."},
     "chamferType": {"type": "string", "enum": ["distance", "distanceAndAngle", "twoDistances"], "default": "distance", "description": "Setback mode."},
     "distance2": {"type": "string", "description": "twoDistances: setback on the second face, e.g. \"4 mm\"."},
-    "angle": {"type": "string", "description": "distanceAndAngle: chamfer-face angle, e.g. \"30 deg\"."}
+    "angle": {"type": "string", "description": "distanceAndAngle: chamfer-face angle, e.g. \"30 deg\"."},
+    "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with material (default), inward cuts a recessed relief groove. Convex edges ignore this."}
   },
   "required": ["edgeRefs", "distance"]
 }`
@@ -174,6 +176,16 @@ func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("chamfer: edgeRefs is empty")
 	}
+	pf, err := buildChamfer(part, in)
+	if err != nil {
+		return nil, err
+	}
+	return recomputeResult(part, pf)
+}
+
+// buildChamfer resolves the chamfer mode, setbacks, and concave-edge strategy from the args and
+// adds the feature (not yet recomputed).
+func buildChamfer(part *compdef.PartComponentDefinition, in edgeDressArgs) (*feature.PartFeature, error) {
 	d, err := lengthClosure(part, in.Distance, "chamfer: distance")
 	if err != nil {
 		return nil, err
@@ -182,11 +194,16 @@ func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
+	cs, err := chamferConcaveStrategyOf(in.ConcaveStrategy)
+	if err != nil {
+		return nil, err
+	}
 	pf, err := applyChamferMode(part, refKeys(in.EdgeRefs), d, ct, in)
 	if err != nil {
 		return nil, err
 	}
-	return recomputeResult(part, pf)
+	pf.Definition().(*feature.ChamferFeature).Definition().ConcaveStrategy = cs
+	return pf, nil
 }
 
 // chamferTypeOf resolves the chamfer mode spelling, defaulting to equal-distance.
@@ -197,6 +214,18 @@ func chamferTypeOf(spelling string) (types.ChamferType, error) {
 	v, ok := types.ParseChamferType(spelling)
 	if !ok {
 		return 0, fmt.Errorf("chamfer: unknown chamferType %q", spelling)
+	}
+	return v, nil
+}
+
+// chamferConcaveStrategyOf resolves the concave-edge strategy spelling, defaulting to outward.
+func chamferConcaveStrategyOf(spelling string) (types.ChamferConcaveStrategy, error) {
+	if spelling == "" {
+		return types.ChamferConcaveOutward, nil
+	}
+	v, ok := types.ParseChamferConcaveStrategy(spelling)
+	if !ok {
+		return 0, fmt.Errorf("chamfer: unknown concaveStrategy %q (want outward or inward)", spelling)
 	}
 	return v, nil
 }

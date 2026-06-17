@@ -162,6 +162,84 @@ func TestSheetMetalSketchTools(t *testing.T) {
 	})
 }
 
+// TestSheetMetalF03Tools the F03 modify tools (Lip, Rip, Punch, Cosmetic Bend) pick their input
+// and commit on a base sheet.
+func TestSheetMetalF03Tools(t *testing.T) {
+	t.Run("lip", func(t *testing.T) {
+		s, part := faceSheet(t, 4)
+		lip := NewSheetMetalLipTool()
+		lip.Start(s)
+		lip.Pick(s, EdgeHandle{Edge: topXEdge(t, part.Features().Result()[0])})
+		lip.SetHeight(1.0)
+		lip.SetReturnLength(0.4)
+		lip.SetAngle(halfPiAngle)
+		_, _, _ = lip.Height(), lip.ReturnLength(), lip.Angle()
+		if !lip.CanCommit() || lip.Name() == "" {
+			t.Fatal("lip not ready")
+		}
+		if err := lip.Commit(s); err != nil {
+			t.Fatalf("lip: %v", err)
+		}
+		if lip.AddedFeature() == nil {
+			t.Error("lip added no feature")
+		}
+	})
+	t.Run("rip", func(t *testing.T) {
+		s, part := faceSheet(t, 4)
+		rip := NewSheetMetalRipTool()
+		rip.Start(s)
+		rip.Pick(s, lineSketch(part, gmath.P2(1, 1.5), gmath.P2(3, 1.5))) // partial line
+		rip.SetGap(0.05)
+		_ = rip.Gap()
+		if !rip.CanCommit() || rip.Name() == "" {
+			t.Fatal("rip not ready")
+		}
+		if err := rip.Commit(s); err != nil {
+			t.Fatalf("rip: %v", err)
+		}
+		_ = rip.AddedFeature()
+	})
+	t.Run("punch", func(t *testing.T) {
+		s, part := faceSheet(t, 4)
+		holes := part.Sketches().Add(sketch.XYPlane())
+		for _, c := range []gmath.Point2{gmath.P2(1, 1), gmath.P2(3, 3)} {
+			q := []gmath.Point2{gmath.P2(c.X-0.3, c.Y-0.3), gmath.P2(c.X+0.3, c.Y-0.3), gmath.P2(c.X+0.3, c.Y+0.3), gmath.P2(c.X-0.3, c.Y+0.3)}
+			var pts []*sketch.Point
+			for _, p := range q {
+				pts = append(pts, holes.Points().Add(p))
+			}
+			for i := range pts {
+				holes.Lines().Add(pts[i], pts[(i+1)%len(pts)])
+			}
+		}
+		punch := NewSheetMetalPunchTool()
+		punch.Start(s)
+		punch.Pick(s, ProfileHandle{Sketch: holes, ProfileIndex: 0})
+		if !punch.CanCommit() || punch.Name() == "" {
+			t.Fatal("punch not ready")
+		}
+		if err := punch.Commit(s); err != nil {
+			t.Fatalf("punch: %v", err)
+		}
+		_ = punch.AddedFeature()
+	})
+	t.Run("cosmetic-bend", func(t *testing.T) {
+		s, part := faceSheet(t, 4)
+		cb := NewSheetMetalCosmeticBendTool()
+		cb.Start(s)
+		cb.Pick(s, lineSketch(part, gmath.P2(2, 0), gmath.P2(2, 4)))
+		cb.SetAngle(halfPiAngle)
+		_ = cb.Angle()
+		if !cb.CanCommit() || cb.Name() == "" {
+			t.Fatal("cosmetic bend not ready")
+		}
+		if err := cb.Commit(s); err != nil {
+			t.Fatalf("cosmetic bend: %v", err)
+		}
+		_ = cb.AddedFeature()
+	})
+}
+
 // TestSheetMetalProfileFlangeTools the profile/axis-driven walls (Contour Flange, Lofted
 // Flange, Contour Roll) gather their picks and exercise the commit path; their developed
 // geometry is deep-tested in the source model suites.

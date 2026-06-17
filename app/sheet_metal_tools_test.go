@@ -72,8 +72,8 @@ func TestSheetMetalCommandsEnable(t *testing.T) {
 		t.Error("hasActiveSheetMetalPart should be false with an ordinary part active")
 	}
 	cmds := sheetMetalTabCommands()
-	if len(cmds) != 15 {
-		t.Errorf("Sheet Metal tab has %d commands, want 15", len(cmds))
+	if len(cmds) != 19 {
+		t.Errorf("Sheet Metal tab has %d commands, want 19", len(cmds))
 	}
 	for _, c := range cmds {
 		if c.tab != "Sheet Metal" {
