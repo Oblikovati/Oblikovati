@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/drawing"
+	"oblikovati.org/model/exchange"
 )
 
 // The drawing-document sheet surface (M14-F01, #384): list/add/remove sheets, pick the
@@ -24,6 +25,33 @@ func (r *Router) registerDrawingHandlers() {
 	r.handlers[wire.MethodDrawingSetActiveSheet] = drawingSetActiveSheet
 	r.handlers[wire.MethodDrawingSetModelReference] = drawingSetModelReference
 	r.handlers[wire.MethodDrawingTitleBlockFields] = drawingTitleBlockFields
+	r.handlers[wire.MethodDrawingExportDXF] = drawingExportDXF
+}
+
+// drawingExportDXF writes the active sheet (its views' visible/hidden edges, border and title
+// block) to a DXF file. Views are re-projected first so the export reflects the current model.
+func drawingExportDXF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	c, err := activeDrawing(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.ExportDrawingDXFArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	if in.Path == "" {
+		return nil, fmt.Errorf("drawing: export path is required")
+	}
+	c.RecomputeViews()
+	sheet := c.Sheets().Active()
+	if sheet == nil {
+		return nil, fmt.Errorf("drawing: no active sheet to export")
+	}
+	n, err := exchange.ExportDrawingDXFFile(sheet, in.Path, exchange.DefaultDrawingExportLayers(), types.DXFVersion(in.Version).Normalized())
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(wire.ExportDrawingDXFResult{Path: in.Path, Entities: n})
 }
 
 // activeDrawing returns the active document's drawing content with its title-block
