@@ -175,17 +175,41 @@ func (s *Sketch) geomSignature() uint64 {
 		mix(stdmath.Float64bits(p.X))
 		mix(stdmath.Float64bits(p.Y))
 	}
-	// Construction/centerline entities are excluded from profiles (normalGeometry),
-	// so toggling that flag changes the regions without changing any coordinate —
-	// fold it in so the cache invalidates on a construction toggle.
 	for _, e := range s.ents {
+		// Construction/centerline entities are excluded from profiles (normalGeometry), so
+		// toggling that flag changes the regions without changing any coordinate — fold it in.
 		if cg, ok := e.(interface{ IsConstruction() bool }); ok && cg.IsConstruction() {
 			mix(1)
 		} else {
 			mix(2)
 		}
+		mixEntityScalars(mix, e)
 	}
 	return h
+}
+
+// mixEntityScalars folds an entity's intrinsic scalars that are NOT stored as points — a
+// circle's radius, an ellipse's axes/angles. A dimension resizing one (e.g. radius = od/2)
+// leaves the centre point, and so the point-coordinate signature, unchanged; without this the
+// cache would return a stale profile and break parametric resize (the spacer/flange regressions).
+func mixEntityScalars(mix func(uint64), e Entity) {
+	bits := func(v math.Scalar) { mix(stdmath.Float64bits(float64(v))) }
+	switch c := e.(type) {
+	case *Circle:
+		bits(c.Radius)
+	case *Ellipse:
+		bits(c.MajorRadius)
+		bits(c.MinorRadius)
+		bits(c.MajorAxis.X)
+		bits(c.MajorAxis.Y)
+	case *EllipticalArc:
+		bits(c.MajorRadius)
+		bits(c.MinorRadius)
+		bits(c.MajorAxis.X)
+		bits(c.MajorAxis.Y)
+		bits(c.StartAngle)
+		bits(c.EndAngle)
+	}
 }
 
 // ClosedLoops returns the sketch's standalone closed loops detected by endpoint chaining
