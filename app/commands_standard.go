@@ -53,7 +53,7 @@ func getStartedCommands() []*CommandDefinition {
 		NewCommand("GetStarted.NewPart", "New Part", "Launch", func(s *Session) error {
 			_, err := s.NewPart()
 			return err
-		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
+		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).WithDefaultChord("Ctrl+N").
 			WithIcon("new-part").WithButtonStyle(LargeIconButton).
 			WithTooltip("New Part — create a part document and open the part environment."),
 		NewCommand("GetStarted.NewSheetMetalPart", "New Sheet Metal Part", "Launch", func(s *Session) error {
@@ -634,7 +634,7 @@ func windowsViewCommands() []*CommandDefinition {
 			WithTooltip("New View — add another view of this document, with its own camera."),
 		NewCommand("View.Close", "Close View", "Windows", func(s *Session) error {
 			return s.CloseActiveView()
-		}).WithTab("View").WithEnable(hasActivePart).WithIcon("view-close").WithButtonStyle(SmallIconButton).
+		}).WithTab("View").WithEnable(hasActivePart).WithDefaultChord("Ctrl+W").WithIcon("view-close").WithButtonStyle(SmallIconButton).
 			WithTooltip("Close View — remove the active view (a document keeps at least one)."),
 		NewCommand("View.ViewCube", "ViewCube", "Windows", func(s *Session) error {
 			s.SetShowViewCube(!s.ShowViewCube())

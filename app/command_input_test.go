@@ -41,20 +41,21 @@ func TestCommandInputCommitsCustomAlias(t *testing.T) {
 	}
 }
 
-func TestCommandInputSingleLetterFallback(t *testing.T) {
+func TestCommandInputRejectsSingleLetter(t *testing.T) {
 	s := NewSession()
 	ran := false
-	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithAlias("L")
+	cmd := NewCommand("Test.Line", "Line", "Test", func(*Session) error { ran = true; return nil }).WithDefaultChord("Ctrl+L")
 	if err := s.Commands().Add(cmd); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 	s.BeginCommandInput()
 	s.SetCommandInputText("L")
-	if err := s.CommitCommandInput(); err != nil {
-		t.Fatalf("commit: %v", err)
+	// A bare single letter is not a command word (M26) — it does not resolve, and nothing runs.
+	if err := s.CommitCommandInput(); err == nil {
+		t.Error("a single letter should not resolve to a command")
 	}
-	if !ran {
-		t.Error("a single letter should fall back to that shortcut's command")
+	if ran {
+		t.Error("a single letter must not run a command")
 	}
 }
 

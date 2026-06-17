@@ -57,7 +57,9 @@ func builtinActions() []builtinAction {
 		{id: ActionSave, displayName: "Save", defaultChord: mustChord("Ctrl+S"), dispatch: dispatchSave},
 		{id: ActionCancel, displayName: "Cancel / Deselect", defaultChord: mustChord("Escape"), dispatch: dispatchCancel},
 		{id: ActionCommit, displayName: "Finish Command", defaultChord: mustChord("Enter"), dispatch: dispatchCommit},
-		{id: ActionToggleVisibility, displayName: "Toggle Visibility", defaultChord: mustChord("V"), dispatch: dispatchToggleVisibility},
+		// Toggle Visibility ships unbound: it is a single-letter shortcut, so the user binds it
+		// as a Shift/Control chord in the keybinding editor (M26), like any single-letter command.
+		{id: ActionToggleVisibility, displayName: "Toggle Visibility", dispatch: dispatchToggleVisibility},
 		{id: ActionPreviousView, displayName: "Previous View", defaultChord: mustChord("F5"), dispatch: dispatchPreviousView},
 		{id: ActionHomeView, displayName: "Home View", defaultChord: mustChord("F6"), dispatch: dispatchHomeView},
 	}
@@ -91,13 +93,24 @@ func dispatchRedo(s *Session) error {
 	return s.Redo()
 }
 
-// dispatchCancel cancels the active tool, or with no tool clears the selection.
+// dispatchCancel is ESC, the universal cancel (M26): it stops any pending command-line
+// question, closes any feature/tool creation or editing window (the active tool), and with
+// nothing in progress clears the selection. It always asks the head to return keyboard focus
+// to the command-window input so the next command can be typed immediately.
 func dispatchCancel(s *Session) error {
-	if s.tool != nil {
-		s.CancelTool()
-		return nil
+	s.RequestCommandInputFocus()
+	cancelled := false
+	if _, ok := s.Prompts().Pending(); ok {
+		s.Prompts().CancelPending()
+		cancelled = true
 	}
-	s.Select(nil)
+	if s.tool != nil {
+		s.CancelTool() // closes the active feature/tool creation or editing window
+		cancelled = true
+	}
+	if !cancelled {
+		s.Select(nil)
+	}
 	return nil
 }
 
@@ -116,6 +129,14 @@ func dispatchToggleVisibility(s *Session) error {
 
 // dispatchSave saves the active document (Ctrl+S / the "SAVE" command word, M26 F05).
 func dispatchSave(s *Session) error { return s.SaveActiveDocument() }
+
+// isBareLetterChord reports whether c is a single printable character with no modifier. Such
+// chords are reserved (M26): single-letter shortcuts must carry Shift or Control, so they are
+// never a default and the keybinding editor rejects them. Multi-character keys (Escape, F5)
+// and modified chords (Ctrl+S) are unaffected.
+func isBareLetterChord(c types.KeyChord) bool {
+	return !c.IsZero() && len([]rune(c.Key)) == 1 && !c.Ctrl && !c.Alt && !c.Shift
+}
 
 // mustChord parses a constant chord literal from the built-in table, panicking on a
 // malformed one (a programming error, never reachable with the valid literals above).
@@ -170,8 +191,7 @@ type bindable struct {
 func (b *Bindings) bindables() []bindable {
 	out := make([]bindable, 0, len(b.cmds.defs)+len(b.builtins))
 	for _, c := range b.cmds.All() {
-		dc, _ := types.ParseChord(c.Alias()) // single-letter alias; empty ⇒ unbound zero chord
-		out = append(out, bindable{id: c.ID(), displayName: c.DisplayName(), kind: bindingKindCommand, defaultChord: dc})
+		out = append(out, bindable{id: c.ID(), displayName: c.DisplayName(), kind: bindingKindCommand, defaultChord: commandDefaultChord(c)})
 	}
 	for _, ba := range b.builtins {
 		out = append(out, bindable{
@@ -180,6 +200,21 @@ func (b *Bindings) bindables() []bindable {
 		})
 	}
 	return out
+}
+
+// commandDefaultChord derives a command's default shortcut: its predefined WithDefaultChord if
+// set, else its single-letter alias — but a bare single letter is dropped, since single-letter
+// shortcuts are personalised as Shift/Control chords in the keybinding editor (M26).
+func commandDefaultChord(c *CommandDefinition) types.KeyChord {
+	if c.DefaultChord() != "" {
+		dc, _ := types.ParseChord(c.DefaultChord())
+		return dc
+	}
+	dc, _ := types.ParseChord(c.Alias())
+	if isBareLetterChord(dc) {
+		return types.KeyChord{}
+	}
+	return dc
 }
 
 // findBindable locates one action by id.
@@ -287,6 +322,9 @@ func (b *Bindings) SetChord(actionID string, c types.KeyChord) error {
 	if _, ok := b.findBindable(actionID); !ok {
 		return fmt.Errorf("app: unknown action %q for SetChord; expected a command or built-in action id", actionID)
 	}
+	if isBareLetterChord(c) {
+		return fmt.Errorf("app: single-letter shortcut %q must use Shift or Control (M26)", c.String())
+	}
 	if !c.IsZero() {
 		if owner, ok := b.ResolveChord(c); ok && owner != actionID {
 			return fmt.Errorf("app: chord %q already bound to %q (%s)", c.String(), owner, b.displayName(owner))
@@ -304,6 +342,9 @@ func (b *Bindings) SetChord(actionID string, c types.KeyChord) error {
 func (b *Bindings) SetAlias(actionID, alias string) error {
 	if _, ok := b.findBindable(actionID); !ok {
 		return fmt.Errorf("app: unknown action %q for SetAlias; expected a command or built-in action id", actionID)
+	}
+	if len([]rune(alias)) == 1 {
+		return fmt.Errorf("app: single-letter alias %q is not allowed — bind it as a Shift/Control chord instead (M26)", alias)
 	}
 	if alias != "" {
 		if owner, ok := b.resolveUserAlias(alias); ok && owner != actionID {

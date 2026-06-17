@@ -89,6 +89,9 @@ func mirrorCommandFeedback(s *app.Session) {
 // selection, progress — moved here when the status bar was removed), the autocomplete hint
 // list, and the input line.
 func drawCommandWindowBody(s *app.Session) {
+	if s.TakeCommandInputFocus() {
+		commandFocusNext = true // ESC/cancel asked to return focus to the input (M26)
+	}
 	cl := s.CommandLine()
 	sb := app.BuildStatus(s)
 	comps := refreshCompletions(s, cl)

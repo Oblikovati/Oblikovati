@@ -55,6 +55,10 @@ func (p *PromptCenter) Pending() (PromptSpec, bool) {
 // Prompts returns the session's prompt center.
 func (s *Session) Prompts() *PromptCenter { return s.prompts }
 
+// CancelPending discards every queued prompt without answering it — ESC cancels the whole
+// operation that asked the question (M26), so its pending prompts are dropped, not defaulted.
+func (p *PromptCenter) CancelPending() { p.pending = nil }
+
 // ShowPrompt queues a prompt. A remembered answer resolves instantly (resolved true
 // + the answer); otherwise the head shows the modal and the answer arrives through
 // [Session.AnswerPrompt] as a [PromptAnswered] event.

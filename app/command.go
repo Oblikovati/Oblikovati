@@ -45,6 +45,7 @@ type CommandDefinition struct {
 	category         string // ribbon panel within the tab (e.g. "Create")
 	kind             ControlKind
 	alias            string // typed command alias (e.g. "E" → Extrude), Inventor-style
+	defaultChord     string // predefined keyboard chord (e.g. "Ctrl+N"); single-letter chords are not allowed (M26)
 	tooltip          string
 	tooltipTitle     string      // progressive tooltip title (M05-F09)
 	tooltipExpanded  string      // progressive tooltip long text, shown after a longer hover
@@ -77,6 +78,18 @@ func (c *CommandDefinition) WithTab(tab string) *CommandDefinition { c.tab = tab
 
 // WithAlias sets the typed command alias.
 func (c *CommandDefinition) WithAlias(alias string) *CommandDefinition { c.alias = alias; return c }
+
+// WithDefaultChord predefines the command's default keyboard shortcut as a full chord
+// ("Ctrl+N", "Ctrl+Shift+S", "F7"). Use this — not WithAlias — for shipped shortcuts: a bare
+// single-letter is reserved for the keybinding editor (M26), so the default must carry Shift or
+// Control (or be a non-letter key). The user can still rebind it.
+func (c *CommandDefinition) WithDefaultChord(chord string) *CommandDefinition {
+	c.defaultChord = chord
+	return c
+}
+
+// DefaultChord returns the command's predefined chord string ("" if none).
+func (c *CommandDefinition) DefaultChord() string { return c.defaultChord }
 
 // WithKind sets the control kind.
 func (c *CommandDefinition) WithKind(k ControlKind) *CommandDefinition { c.kind = k; return c }

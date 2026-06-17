@@ -11,8 +11,8 @@ func TestDefaultVocabularyResolves(t *testing.T) {
 	v := DefaultVocabulary()
 	cases := map[string]string{
 		"LINE":    "Sketch.Line",
-		"l":       "Sketch.Line", // case-insensitive
-		"E":       "Create.Extrude",
+		"line":    "Sketch.Line", // case-insensitive
+		"EXT":     "Create.Extrude",
 		"EXTRUDE": "Create.Extrude",
 		"rec":     "Sketch.Rectangle",
 		"UNDO":    "edit.undo",
@@ -43,23 +43,23 @@ func TestDefaultVocabularyNoDuplicateWords(t *testing.T) {
 
 func TestVocabularyMatches(t *testing.T) {
 	v := DefaultVocabulary()
-	// "L" matches the LINE and LOFT commands (via words L/LINE and LOFT), returned as their
-	// canonical names, de-duped and sorted.
-	got := v.Matches("l")
-	if len(got) < 2 || got[0] != "LINE" {
-		t.Fatalf("Matches(l) = %v, want it to start with LINE and include LOFT", got)
+	// "LO" matches the LOFT and LOFTEDFLANGE commands, returned as their canonical names,
+	// de-duped and sorted.
+	got := v.Matches("lo")
+	if len(got) < 2 || got[0] != "LOFT" {
+		t.Fatalf("Matches(lo) = %v, want it to start with LOFT", got)
 	}
-	hasLoft := false
+	hasLoftedFlange := false
 	for _, m := range got {
-		if m == "LOFT" {
-			hasLoft = true
+		if m == "LOFTEDFLANGE" {
+			hasLoftedFlange = true
 		}
 		if m != strings.ToUpper(m) {
 			t.Errorf("match %q is not a canonical upper-case word", m)
 		}
 	}
-	if !hasLoft {
-		t.Errorf("Matches(l) = %v, want LOFT included", got)
+	if !hasLoftedFlange {
+		t.Errorf("Matches(lo) = %v, want LOFTEDFLANGE included", got)
 	}
 	if sorted := append([]string(nil), got...); !slicesSorted(sorted) {
 		t.Errorf("Matches not sorted: %v", got)

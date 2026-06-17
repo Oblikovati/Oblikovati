@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"oblikovati.org/api/types"
 	"oblikovati.org/app/cmdline"
 )
 
@@ -34,6 +33,18 @@ func (s *Session) CommandLine() *CommandLine {
 
 // Scrollback exposes the rolling output for the head and the API to render.
 func (cl *CommandLine) Scrollback() *cmdline.Scrollback { return cl.sb }
+
+// RequestCommandInputFocus asks the head to move keyboard focus to the command-window input
+// on the next frame (set by ESC/cancel, M26). It is a one-shot the head reads and clears.
+func (s *Session) RequestCommandInputFocus() { s.commandFocusWanted = true }
+
+// TakeCommandInputFocus reports whether a focus request is pending and clears it, so the head
+// honours it exactly once.
+func (s *Session) TakeCommandInputFocus() bool {
+	want := s.commandFocusWanted
+	s.commandFocusWanted = false
+	return want
+}
 
 // Prompt returns the question or step the input line is waiting on: a pending command-line
 // question (M26 F03) first, then the active tool's current step prompt, else "".
@@ -128,18 +139,13 @@ func (cl *CommandLine) startCommand(s *Session, line string) error {
 	return cl.dispatch(s, actionID, fields[1:])
 }
 
-// resolveWord maps a typed command word to an action: a typed alias / AutoCAD vocabulary
-// word first, then — for a single character — that key's keyboard shortcut, so a one-letter
-// shortcut still runs when typed and committed with Enter (e.g. "V" → toggle visibility).
+// resolveWord maps a typed command word to an action through the binding engine: a user
+// alias first, then the built-in multi-letter AutoCAD vocabulary. A bare single letter does
+// NOT resolve here — single-letter commands are reserved for the keybinding editor, where the
+// user personalises them as Shift/Control chords (M26). So "L" typed and Entered is not LINE;
+// the user types LINE, or presses their configured Ctrl/Shift+L chord.
 func (cl *CommandLine) resolveWord(s *Session, word string) (string, bool) {
-	b := s.Bindings()
-	if actionID, ok := b.ResolveAlias(word); ok {
-		return actionID, true
-	}
-	if len([]rune(word)) == 1 {
-		return b.ResolveChord(types.KeyChord{Key: word})
-	}
-	return "", false
+	return s.Bindings().ResolveAlias(word)
 }
 
 // RunChord runs an action triggered by a keyboard chord (Ctrl+S, Ctrl+Z, …) as if it were
