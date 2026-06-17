@@ -51,7 +51,7 @@ func drawSheetCanvas(c *drawing.Content) {
 	drawSheetFace(face)
 	inner := drawSheetBorder(face, sheet)
 	drawTitleBlock(inner, sheet)
-	drawSheetCaption(ox, oy, sheet, c.ModelReference())
+	drawSheetCaption(ox, oy, sheet, c.ModelReference(), c.Styles().ActiveStandard().String())
 }
 
 // fitSheet centers the sheet (given in mm) inside the panel with padding and returns its
@@ -127,8 +127,9 @@ func titleBlockRect(inner rect, rows int) rect {
 	return rect{x: inner.x + inner.w - w, y: inner.y + inner.h - h, w: w, h: h, scale: inner.scale}
 }
 
-// drawSheetCaption labels the canvas (top-left) with the sheet and the referenced model.
-func drawSheetCaption(ox, oy float32, sheet *drawing.Sheet, modelRef string) {
+// drawSheetCaption labels the canvas (top-left) with the sheet, the referenced model, and
+// the active drafting standard.
+func drawSheetCaption(ox, oy float32, sheet *drawing.Sheet, modelRef, standard string) {
 	caption := fmt.Sprintf("%s — %s %s (%.0f×%.0f mm)",
 		sheet.Name(), sheet.Size(), sheet.Orientation(), sheet.WidthMM(), sheet.HeightMM())
 	native.DrawText(ox+12, oy+10, caption, captionInk)
@@ -136,7 +137,7 @@ func drawSheetCaption(ox, oy float32, sheet *drawing.Sheet, modelRef string) {
 	if model == "" {
 		model = "(no model referenced)"
 	}
-	native.DrawText(ox+12, oy+28, "Model: "+model, captionInk)
+	native.DrawText(ox+12, oy+28, "Model: "+model+"    Standard: "+standard, captionInk)
 }
 
 // rectOutline strokes a rectangle's four edges.

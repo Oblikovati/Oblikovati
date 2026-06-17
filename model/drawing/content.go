@@ -28,14 +28,16 @@ type ModelProperties interface {
 // any other content kind.
 type Content struct {
 	sheets   *Sheets
+	styles   *StylesManager
 	modelRef string          // full document name of the primary referenced model
 	props    ModelProperties // resolves modelRef's iProperties; nil ⇒ unresolved
 }
 
 // NewContent creates a drawing with one default A3 landscape sheet (bordered, with the
-// standard title block) — the state a freshly created drawing document opens in.
+// standard title block) and the ISO style manager — the state a freshly created drawing
+// document opens in.
 func NewContent() *Content {
-	c := &Content{sheets: newSheets()}
+	c := &Content{sheets: newSheets(), styles: newStylesManager()}
 	c.sheets.lookup = c.resolveProperty
 	c.sheets.addDefault()
 	return c
@@ -46,6 +48,9 @@ func (c *Content) DocumentType() doc.DocumentType { return doc.Drawing }
 
 // Sheets returns the drawing's sheets.
 func (c *Content) Sheets() *Sheets { return c.sheets }
+
+// Styles returns the drawing's style system (active drafting standard + presets).
+func (c *Content) Styles() *StylesManager { return c.styles }
 
 // ModelReference returns the full document name of the primary referenced model, or ""
 // if none is set.
