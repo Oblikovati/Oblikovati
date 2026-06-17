@@ -3,6 +3,7 @@
 package dxf
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
@@ -17,19 +18,36 @@ import (
 //
 //	data, err := dxf.Encode(dr, dxf.R2000)
 func Encode(dr *drawing.Drawing, version Version) ([]byte, error) {
-	h := newEncHandles()
+	layers := extraLayerNames(dr.Entities)
+	h := newEncHandles(len(layers))
 	for range dr.Entities {
 		h.alloc() // reserve an entity handle per entity (assigned in order on write)
 	}
 	w := &tagWriter{}
 	writeHeader(w, version, dr.Units, h.next+1)
 	writeClasses(w, version)
-	writeTables(w, h)
+	writeTables(w, h, layers)
 	writeBlocks(w, h)
 	writeEntitiesSection(w, dr.Entities, h)
 	writeObjects(w, h)
 	w.tag(0, "EOF")
 	return []byte(w.string()), nil
+}
+
+// extraLayerNames returns the distinct non-default layer names the entities reference, sorted
+// for a stable output. The "0" layer is always present and written separately, so it is
+// excluded here.
+func extraLayerNames(entities []drawing.Entity) []string {
+	seen := map[string]bool{}
+	var names []string
+	for _, e := range entities {
+		if l := layerOf(e); l != "" && l != "0" && !seen[l] {
+			seen[l] = true
+			names = append(names, l)
+		}
+	}
+	sort.Strings(names)
+	return names
 }
 
 // writeHeader emits the HEADER section with the variables a reader needs: the version, the

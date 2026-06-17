@@ -34,13 +34,14 @@ const (
 	KindLwPolyline
 	KindSpline
 	KindInsert
+	KindText
 )
 
 // kindNames maps each Kind to its canonical (DXF) entity name.
 var kindNames = map[Kind]string{
 	KindUnknown: "UNKNOWN", KindLine: "LINE", KindCircle: "CIRCLE", KindArc: "ARC",
 	KindPoint: "POINT", KindEllipse: "ELLIPSE", KindLwPolyline: "LWPOLYLINE",
-	KindSpline: "SPLINE", KindInsert: "INSERT",
+	KindSpline: "SPLINE", KindInsert: "INSERT", KindText: "TEXT",
 }
 
 // String returns the canonical entity name, or "UNKNOWN" for an unrecognised kind.
@@ -63,6 +64,7 @@ type Drawing struct {
 // Line is a straight segment between two 3D points.
 type Line struct {
 	Handle uint64
+	Layer  string // target layer name ("" ⇒ the default "0" layer)
 	Start  [3]float64
 	End    [3]float64
 }
@@ -73,6 +75,7 @@ func (e *Line) Kind() Kind           { return KindLine }
 // Circle is a full circle: a centre, radius and normal (extrusion) direction.
 type Circle struct {
 	Handle uint64
+	Layer  string
 	Center [3]float64
 	Radius float64
 	Normal [3]float64
@@ -84,6 +87,7 @@ func (e *Circle) Kind() Kind           { return KindCircle }
 // Arc is a circular arc, angles in radians measured in the plane of Normal.
 type Arc struct {
 	Handle     uint64
+	Layer      string
 	Center     [3]float64
 	Radius     float64
 	StartAngle float64
@@ -97,6 +101,7 @@ func (e *Arc) Kind() Kind           { return KindArc }
 // Point is a single model-space point.
 type Point struct {
 	Handle   uint64
+	Layer    string
 	Position [3]float64
 }
 
@@ -107,6 +112,7 @@ func (e *Point) Kind() Kind           { return KindPoint }
 // relative to Center; AxisRatio is minor/major; angles are parametric, in radians.
 type Ellipse struct {
 	Handle     uint64
+	Layer      string
 	Center     [3]float64
 	MajorAxis  [3]float64
 	AxisRatio  float64
@@ -123,6 +129,7 @@ func (e *Ellipse) Kind() Kind           { return KindEllipse }
 // planar at Elevation, oriented by Normal. Closed joins the last vertex back to the first.
 type LwPolyline struct {
 	Handle    uint64
+	Layer     string
 	Closed    bool
 	Elevation float64
 	Points    [][2]float64
@@ -138,6 +145,7 @@ func (e *LwPolyline) Kind() Kind           { return KindLwPolyline }
 // whichever is present).
 type Spline struct {
 	Handle        uint64
+	Layer         string
 	Degree        int
 	Closed        bool
 	Rational      bool
@@ -166,3 +174,19 @@ type Insert struct {
 
 func (e *Insert) EntityHandle() uint64 { return e.Handle }
 func (e *Insert) Kind() Kind           { return KindInsert }
+
+// Text is a single-line annotation string placed at Position, of the given Height (drawing
+// units) and Rotation (radians, about Z). It carries no geometry of its own — exporters use
+// it to tag drawings (e.g. a flat pattern's punch tokens). Importers that only rebuild curve
+// geometry skip it.
+type Text struct {
+	Handle   uint64
+	Layer    string
+	Position [3]float64
+	Height   float64
+	Value    string
+	Rotation float64
+}
+
+func (e *Text) EntityHandle() uint64 { return e.Handle }
+func (e *Text) Kind() Kind           { return KindText }

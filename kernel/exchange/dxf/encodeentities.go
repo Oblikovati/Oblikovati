@@ -10,21 +10,22 @@ import "oblikovati.org/kernel/exchange/drawing"
 //
 //nolint:funlen // one-case-per-entity-type encode dispatch (inverse of decodeEntity).
 func encodeEntity(w *tagWriter, e drawing.Entity, handle, owner uint64) {
+	layer := layerOf(e)
 	switch g := e.(type) {
 	case *drawing.Line:
-		entityHead(w, "LINE", handle, owner, "AcDbLine")
+		entityHead(w, "LINE", handle, owner, "AcDbLine", layer)
 		w.coord(10, g.Start)
 		w.coord(11, g.End)
 	case *drawing.Circle:
-		entityHead(w, "CIRCLE", handle, owner, "AcDbCircle")
+		entityHead(w, "CIRCLE", handle, owner, "AcDbCircle", layer)
 		w.coord(10, g.Center)
 		w.real(40, g.Radius)
 	case *drawing.Point:
-		entityHead(w, "POINT", handle, owner, "AcDbPoint")
+		entityHead(w, "POINT", handle, owner, "AcDbPoint", layer)
 		w.coord(10, g.Position)
 	case *drawing.Arc:
 		// ARC carries two subclass markers (AcDbCircle then AcDbArc); angles are DEGREES.
-		entityHead(w, "ARC", handle, owner, "AcDbCircle")
+		entityHead(w, "ARC", handle, owner, "AcDbCircle", layer)
 		w.coord(10, g.Center)
 		w.real(40, g.Radius)
 		w.tag(100, "AcDbArc")
@@ -32,7 +33,7 @@ func encodeEntity(w *tagWriter, e drawing.Entity, handle, owner uint64) {
 		w.real(51, radToDeg(g.EndAngle))
 	case *drawing.Ellipse:
 		// ELLIPSE start/end parameters are RADIANS — written unconverted, unlike ARC.
-		entityHead(w, "ELLIPSE", handle, owner, "AcDbEllipse")
+		entityHead(w, "ELLIPSE", handle, owner, "AcDbEllipse", layer)
 		w.coord(10, g.Center)
 		w.coord(11, g.MajorAxis)
 		w.coord(210, normalOrZ(g.Normal))
@@ -40,22 +41,68 @@ func encodeEntity(w *tagWriter, e drawing.Entity, handle, owner uint64) {
 		w.real(41, g.StartAngle)
 		w.real(42, g.EndAngle)
 	case *drawing.LwPolyline:
-		entityHead(w, "LWPOLYLINE", handle, owner, "AcDbPolyline")
-		w.integer(90, len(g.Points))
-		w.integer(70, closedFlag(g.Closed))
-		if g.Elevation != 0 {
-			w.real(38, g.Elevation)
-		}
-		for i, pt := range g.Points {
-			w.real(10, pt[0])
-			w.real(20, pt[1])
-			if i < len(g.Bulges) && g.Bulges[i] != 0 {
-				w.real(42, g.Bulges[i]) // bulge attaches to the vertex it follows
-			}
-		}
+		encodeLwPolyline(w, g, handle, owner, layer)
 	case *drawing.Spline:
-		encodeSpline(w, g, handle, owner)
+		encodeSpline(w, g, handle, owner, layer)
+	case *drawing.Text:
+		encodeText(w, g, handle, owner, layer)
 	}
+}
+
+// encodeLwPolyline writes an LWPOLYLINE: vertex count, closed flag, optional elevation, then
+// each vertex with its trailing bulge (0 = straight to the next).
+func encodeLwPolyline(w *tagWriter, g *drawing.LwPolyline, handle, owner uint64, layer string) {
+	entityHead(w, "LWPOLYLINE", handle, owner, "AcDbPolyline", layer)
+	w.integer(90, len(g.Points))
+	w.integer(70, closedFlag(g.Closed))
+	if g.Elevation != 0 {
+		w.real(38, g.Elevation)
+	}
+	for i, pt := range g.Points {
+		w.real(10, pt[0])
+		w.real(20, pt[1])
+		if i < len(g.Bulges) && g.Bulges[i] != 0 {
+			w.real(42, g.Bulges[i]) // bulge attaches to the vertex it follows
+		}
+	}
+}
+
+// encodeText writes a single-line TEXT label. It repeats the AcDbText subclass after the
+// geometry (the second marker is the alignment block); a minimal label needs only the
+// insertion point, height and string.
+func encodeText(w *tagWriter, g *drawing.Text, handle, owner uint64, layer string) {
+	entityHead(w, "TEXT", handle, owner, "AcDbText", layer)
+	w.coord(10, g.Position)
+	w.real(40, g.Height)
+	w.tag(1, g.Value)
+	if g.Rotation != 0 {
+		w.real(50, radToDeg(g.Rotation))
+	}
+	w.tag(100, "AcDbText")
+}
+
+// layerOf returns an entity's target layer name (empty for a geometry that carries none),
+// which entityHead maps to the default "0" layer.
+func layerOf(e drawing.Entity) string {
+	switch g := e.(type) {
+	case *drawing.Line:
+		return g.Layer
+	case *drawing.Circle:
+		return g.Layer
+	case *drawing.Arc:
+		return g.Layer
+	case *drawing.Point:
+		return g.Layer
+	case *drawing.Ellipse:
+		return g.Layer
+	case *drawing.LwPolyline:
+		return g.Layer
+	case *drawing.Spline:
+		return g.Layer
+	case *drawing.Text:
+		return g.Layer
+	}
+	return ""
 }
 
 // closedFlag is the LWPOLYLINE 70 flag value for an open/closed polyline.
@@ -72,8 +119,8 @@ func closedFlag(closed bool) int {
 // AutoCAD accepts rather than a knot-less spline.
 //
 //nolint:funlen // sequential SPLINE field writes across header, knots, control and fit points.
-func encodeSpline(w *tagWriter, s *drawing.Spline, handle, owner uint64) {
-	entityHead(w, "SPLINE", handle, owner, "AcDbSpline")
+func encodeSpline(w *tagWriter, s *drawing.Spline, handle, owner uint64, layer string) {
+	entityHead(w, "SPLINE", handle, owner, "AcDbSpline", layer)
 	degree := splineDegree(s)
 	knots := s.Knots
 	if len(knots) == 0 && len(s.ControlPoints) >= 2 {
@@ -149,12 +196,20 @@ func normalOrZ(n [3]float64) [3]float64 {
 
 // entityHead writes the common ENTITIES preamble shared by every entity: the type marker,
 // the handle, the owner (the *Model_Space block record), the AcDbEntity subclass, the layer
-// (always "0" — the geometry carries no layer), and the type-specific subclass marker.
-func entityHead(w *tagWriter, typ string, handle, owner uint64, subclass string) {
+// (the entity's named layer, or "0" when it carries none), and the type-specific subclass.
+func entityHead(w *tagWriter, typ string, handle, owner uint64, subclass, layer string) {
 	w.tag(0, typ)
 	w.handle(5, handle)
 	w.handle(330, owner)
 	w.tag(100, "AcDbEntity")
-	w.tag(8, "0")
+	w.tag(8, layerOr0(layer))
 	w.tag(100, subclass)
+}
+
+// layerOr0 returns the layer name, or the default "0" layer when empty.
+func layerOr0(layer string) string {
+	if layer == "" {
+		return "0"
+	}
+	return layer
 }

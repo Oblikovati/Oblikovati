@@ -10,12 +10,12 @@ package dxf
 // dxf2dwg → dwgread oracle.
 
 // writeTables emits the TABLES section with the nine standard symbol tables.
-func writeTables(w *tagWriter, h *encHandles) {
+func writeTables(w *tagWriter, h *encHandles, layers []string) {
 	w.tag(0, "SECTION")
 	w.tag(2, "TABLES")
 	writeVportTable(w, h)
 	writeLtypeTable(w, h)
-	writeLayerTable(w, h)
+	writeLayerTable(w, h, layers)
 	writeStyleTable(w, h)
 	writeEmptyTable(w, "VIEW", h.viewTable)
 	writeEmptyTable(w, "UCS", h.ucsTable)
@@ -112,16 +112,25 @@ func writeLtype(w *tagWriter, handle, owner uint64, name, desc string) {
 	w.real(40, 0)     // pattern length
 }
 
-// writeLayerTable writes the LAYER table with the default "0" layer.
-func writeLayerTable(w *tagWriter, h *encHandles) {
-	tableHead(w, "LAYER", h.layerTable, 1)
-	recordHead(w, "LAYER", h.layer0, h.layerTable, "AcDbLayerTableRecord")
-	w.tag(2, "0")
+// writeLayerTable writes the LAYER table: the default "0" layer plus one record per custom
+// layer the entities reference (handles from h.extraLayers, names in the same order).
+func writeLayerTable(w *tagWriter, h *encHandles, layers []string) {
+	tableHead(w, "LAYER", h.layerTable, 1+len(layers))
+	writeLayerRecord(w, h.layer0, h.layerTable, "0")
+	for i, name := range layers {
+		writeLayerRecord(w, h.extraLayers[i], h.layerTable, name)
+	}
+	w.tag(0, "ENDTAB")
+}
+
+// writeLayerRecord writes one LAYER record (white, continuous, default lineweight).
+func writeLayerRecord(w *tagWriter, handle, owner uint64, name string) {
+	recordHead(w, "LAYER", handle, owner, "AcDbLayerTableRecord")
+	w.tag(2, name)
 	w.integer(70, 0)
 	w.integer(62, 7) // colour white
 	w.tag(6, "Continuous")
 	w.integer(370, -3) // lineweight by default
-	w.tag(0, "ENDTAB")
 }
 
 // writeStyleTable writes the STYLE table with the "Standard" text style.
