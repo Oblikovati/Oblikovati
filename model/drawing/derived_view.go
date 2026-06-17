@@ -5,6 +5,7 @@ package drawing
 import (
 	"math"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/hlr"
 	gmath "oblikovati.org/math"
 )
@@ -91,6 +92,137 @@ func minf2(a, b float64) float64 {
 		return a
 	}
 	return b
+}
+
+// breakBand is a break view's removed band. g0/g1 bound it (g0<g1) along the break axis in the
+// parent's projection space; sheetG0/G1 keep the parent-sheet-mm band the user gave.
+type breakBand struct {
+	orientation      types.BreakOrientation
+	g0, g1           float64 // parent model-2D, along the break axis
+	sheetG0, sheetG1 float64 // parent sheet mm
+}
+
+// axisX reports whether the break compresses along the X axis (a horizontal break removes a
+// vertical band, so it clips/shifts on X).
+func (b breakBand) axisX() bool { return b.orientation == types.BreakHorizontal }
+
+// breakBandOf maps a removed band given on the parent (sheet mm, along the break axis) into the
+// parent's projection space, inverting the parent's placement.
+func breakBandOf(parent *DrawingView, orientation types.BreakOrientation, gapStart, gapEnd float64) breakBand {
+	s := cmToMM * parent.scale
+	centre := parent.centerX
+	if orientation == types.BreakVertical {
+		centre = parent.centerY
+	}
+	g0, g1 := (gapStart-centre)/s, (gapEnd-centre)/s
+	if g0 > g1 {
+		g0, g1 = g1, g0
+	}
+	return breakBand{orientation: orientation, g0: g0, g1: g1, sheetG0: gapStart, sheetG1: gapEnd}
+}
+
+// recomputeBreak compresses the projected segments by removing the band and butting the two
+// sides together, then draws a zigzag break line at the join. The far side is shifted toward
+// the near side by the band width; segments inside the band are dropped.
+func (v *DrawingView) recomputeBreak(segs []hlr.Segment) {
+	wireframe := v.style == types.WireframeViewStyle
+	axisX, g0, g1 := v.brk.axisX(), v.brk.g0, v.brk.g1
+	w := g1 - g0
+	pmin, pmax := perpBounds(segs, axisX)
+	for _, s := range segs {
+		vis := wireframe || s.Visible
+		if a, b, ok := clipHalfAxis(s.A, s.B, axisX, g0, true); ok {
+			v.appendCurve(a, b, vis, types.DrawingEdgeCurve, s.EdgeKey)
+		}
+		if a, b, ok := clipHalfAxis(s.A, s.B, axisX, g1, false); ok {
+			v.appendCurve(shiftAxis(a, axisX, -w), shiftAxis(b, axisX, -w), vis, types.DrawingEdgeCurve, s.EdgeKey)
+		}
+	}
+	for _, g := range breakGlyph(axisX, g0, pmin, pmax) {
+		v.appendCurve(g[0], g[1], true, types.DrawingBreakCurve, nil)
+	}
+}
+
+// clipHalfAxis keeps the part of a→b on one side of an axis-aligned line. With keepLE it keeps
+// the portion whose axis coordinate is ≤ limit; otherwise ≥ limit. axisX selects which
+// coordinate is the axis. ok is false when nothing is kept.
+func clipHalfAxis(a, b gmath.Point2, axisX bool, limit float64, keepLE bool) (gmath.Point2, gmath.Point2, bool) {
+	sa, sb := axisCoord(a, axisX), axisCoord(b, axisX)
+	in := func(s float64) bool {
+		if keepLE {
+			return s <= limit
+		}
+		return s >= limit
+	}
+	ina, inb := in(sa), in(sb)
+	if ina && inb {
+		return a, b, true
+	}
+	if !ina && !inb {
+		return a, b, false
+	}
+	t := (limit - sa) / (sb - sa)
+	cross := lerp2(a, float64(b.X-a.X), float64(b.Y-a.Y), t)
+	if ina {
+		return a, cross, true
+	}
+	return cross, b, true
+}
+
+func axisCoord(p gmath.Point2, axisX bool) float64 {
+	if axisX {
+		return float64(p.X)
+	}
+	return float64(p.Y)
+}
+
+func shiftAxis(p gmath.Point2, axisX bool, delta float64) gmath.Point2 {
+	if axisX {
+		return gmath.P2(p.X+gmath.Scalar(delta), p.Y)
+	}
+	return gmath.P2(p.X, p.Y+gmath.Scalar(delta))
+}
+
+// perpBounds returns the min/max of the coordinate perpendicular to the break axis, over all
+// segment endpoints — the extent the break-line glyph spans.
+func perpBounds(segs []hlr.Segment, axisX bool) (lo, hi float64) {
+	lo, hi = math.Inf(1), math.Inf(-1)
+	for _, s := range segs {
+		for _, p := range [2]gmath.Point2{s.A, s.B} {
+			c := axisCoord(p, !axisX)
+			lo, hi = minf2(lo, c), maxf2(hi, c)
+		}
+	}
+	return lo, hi
+}
+
+// breakGlyph builds the zigzag break line at the join (axis coordinate g0), spanning the
+// perpendicular extent [pmin, pmax].
+func breakGlyph(axisX bool, g0, pmin, pmax float64) [][2]gmath.Point2 {
+	const segments = 6
+	amp := 0.06 * (pmax - pmin)
+	pts := make([]gmath.Point2, segments+1)
+	for i := 0; i <= segments; i++ {
+		perp := pmin + (pmax-pmin)*float64(i)/float64(segments)
+		axis := g0
+		if i%2 == 1 {
+			axis = g0 + amp
+		}
+		pts[i] = axisPoint(axisX, axis, perp)
+	}
+	out := make([][2]gmath.Point2, 0, segments)
+	for i := 0; i+1 < len(pts); i++ {
+		out = append(out, [2]gmath.Point2{pts[i], pts[i+1]})
+	}
+	return out
+}
+
+// axisPoint builds a point from an axis coordinate and a perpendicular coordinate.
+func axisPoint(axisX bool, axis, perp float64) gmath.Point2 {
+	if axisX {
+		return gmath.P2(gmath.Scalar(axis), gmath.Scalar(perp))
+	}
+	return gmath.P2(gmath.Scalar(perp), gmath.Scalar(axis))
 }
 
 // sectionBasis derives a section view's cut-plane frame from its parent frame and the cut line

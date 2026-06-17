@@ -48,6 +48,7 @@ type DrawingView struct {
 	foldAngle   float64        // auxiliary fold-line angle on the parent, radians
 	section     sectionLine    // section-view cut line on the parent (sheet mm)
 	detail      detailBoundary // detail-view circular boundary (parent model-2D)
+	brk         breakBand      // break-view removed band (parent model-2D, along the break axis)
 	orientation types.BaseViewOrientation
 	direction   types.ProjectionDirection
 	scale       float64
@@ -94,6 +95,12 @@ func (v *DrawingView) SectionLineMM() (x1, y1, x2, y2 float64) {
 func (v *DrawingView) DetailBoundaryMM() (cx, cy, r float64) {
 	return v.detail.sheetCX, v.detail.sheetCY, v.detail.sheetR
 }
+
+// BreakOrientation returns the axis a break view compresses along.
+func (v *DrawingView) BreakOrientation() types.BreakOrientation { return v.brk.orientation }
+
+// BreakGapMM returns the removed band's start/end on the parent (sheet millimetres).
+func (v *DrawingView) BreakGapMM() (start, end float64) { return v.brk.sheetG0, v.brk.sheetG1 }
 
 // Curves returns the view's computed drawing curves.
 func (v *DrawingView) Curves() []DrawingCurve { return v.curves }
@@ -149,17 +156,23 @@ func (v *DrawingView) VisibleHidden() (visible, hidden int) {
 func (v *DrawingView) recompute(body *topo.Body, basis hlr.View) {
 	segs := v.project(body, basis)
 	v.curves = make([]DrawingCurve, 0, len(segs))
+	if v.viewType == types.DrawingViewBreak {
+		v.recomputeBreak(segs)
+		return
+	}
 	wireframe := v.style == types.WireframeViewStyle
 	for _, s := range segs {
 		a, b, ok := v.clip(s.A, s.B)
 		if !ok {
 			continue
 		}
-		v.curves = append(v.curves, DrawingCurve{
-			A: v.place(a), B: v.place(b), Visible: wireframe || s.Visible,
-			kind: curveKind(s.Kind), edgeKey: s.EdgeKey,
-		})
+		v.appendCurve(a, b, wireframe || s.Visible, curveKind(s.Kind), s.EdgeKey)
 	}
+}
+
+// appendCurve places a model-2D segment on the sheet and adds it to the view's curves.
+func (v *DrawingView) appendCurve(a, b math.Point2, visible bool, kind types.DrawingCurveKind, edgeKey []byte) {
+	v.curves = append(v.curves, DrawingCurve{A: v.place(a), B: v.place(b), Visible: visible, kind: kind, edgeKey: edgeKey})
 }
 
 // project runs the projection a view's type calls for: a section view's clipped cut-away, or

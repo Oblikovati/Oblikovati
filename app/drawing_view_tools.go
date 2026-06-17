@@ -460,6 +460,102 @@ func maxf64(a, b float64) float64 {
 	return b
 }
 
+// breakOrientations is the orientation choice for the Break View tool (index → orientation).
+var breakOrientations = []struct {
+	label  string
+	orient types.BreakOrientation
+}{
+	{"Horizontal", types.BreakHorizontal}, {"Vertical", types.BreakVertical},
+}
+
+// BreakViewTool compresses a base view by removing its middle third along a horizontal or
+// vertical axis; the preview follows the cursor and a click drops the break view. (A
+// user-dragged gap is a follow-up; the middle third is the common case.)
+type BreakViewTool struct {
+	derivedViewTool
+	orient int
+}
+
+// NewBreakViewTool creates the tool; its base-view list is captured on Start.
+func NewBreakViewTool() *BreakViewTool {
+	return &BreakViewTool{derivedViewTool: derivedViewTool{centerX: 150, centerY: 250}}
+}
+
+func (t *BreakViewTool) Name() string { return "Break View" }
+
+// gapOn returns the removed band (sheet mm) — the middle third of the named base view along the
+// chosen axis; ok is false when the view has no geometry yet.
+func (t *BreakViewTool) gapOn(s *Session, parent string) (orient types.BreakOrientation, start, end float64, ok bool) {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return 0, 0, 0, false
+	}
+	v, found := c.Sheets().Active().Views().ByName(parent)
+	if !found {
+		return 0, 0, 0, false
+	}
+	minX, minY, maxX, maxY, has := v.BoundsMM()
+	if !has {
+		return 0, 0, 0, false
+	}
+	o := breakOrientations[clampIndex(t.orient, len(breakOrientations))].orient
+	lo, hi := minX, maxX
+	if o == types.BreakVertical {
+		lo, hi = minY, maxY
+	}
+	return o, lo + (hi-lo)/3, lo + 2*(hi-lo)/3, true
+}
+
+// PreviewCurves compresses the chosen parent at the origin, cached until parent/orientation change.
+func (t *BreakViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	parent := t.parent()
+	if parent == "" {
+		return nil
+	}
+	key := fmt.Sprintf("%s/%d", parent, t.orient)
+	if key != t.previewKey {
+		t.preview = nil
+		if o, start, end, ok := t.gapOn(s, parent); ok {
+			c, _ := ActiveDrawing(s)
+			t.preview, _ = c.Sheets().Active().Views().PreviewBreak(parent, o, start, end)
+		}
+		t.previewKey = key
+	}
+	return t.preview
+}
+
+// Commit compresses the selected base view by removing its middle third.
+func (t *BreakViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	if parent == "" {
+		return fmt.Errorf("drawing: no base view to break — add a base view first")
+	}
+	o, start, end, ok := t.gapOn(s, parent)
+	if !ok {
+		return fmt.Errorf("drawing: base view %q has no geometry to break", parent)
+	}
+	if _, err := c.Sheets().Active().Views().AddBreak(drawing.BreakViewSpec{
+		ParentView: parent, Orientation: o, GapStart: start, GapEnd: end, CenterX: t.centerX, CenterY: t.centerY,
+	}); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view and break-orientation choices for the property dialog.
+func (t *BreakViewTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		t.baseChoice("Base View"),
+		{Label: "Break", Options: labelsOf(len(breakOrientations), func(i int) string { return breakOrientations[i].label }),
+			Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
+	}}
+}
+
 // baseViewNames lists the active sheet's base views (the candidates a projected view derives
 // from); empty when no drawing is active.
 func baseViewNames(s *Session) []string {

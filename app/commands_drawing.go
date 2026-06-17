@@ -49,6 +49,9 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Detail View", "Views", "drawing-detail-view",
 			"Magnify a circular region of a base view at a larger scale.",
 			func() Tool { return NewDetailViewTool() }),
+		drawingToolCommand("Break View", "Views", "drawing-break-view",
+			"Compress a base view by removing a band (horizontal or vertical) with break lines at the join.",
+			func() Tool { return NewBreakViewTool() }),
 		NewCommand("Drawing.ExportDXF", "Export DXF", "Output", requestDrawingDXFExport).
 			WithTab("Drawing").WithRibbons(DrawingRibbon).WithEnable(hasActiveDrawing).
 			WithIcon("drawing-export-dxf").WithButtonStyle(LargeIconButton).

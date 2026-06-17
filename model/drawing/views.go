@@ -221,6 +221,53 @@ func (vs *DrawingViews) PreviewDetail(parentView string, boundaryX, boundaryY, r
 	return v.curves, true
 }
 
+// BreakViewSpec describes a break view: the parent compressed by removing a band along an axis.
+// GapStart/GapEnd bound the removed band on the parent (sheet mm) along the break axis.
+type BreakViewSpec struct {
+	Name             string
+	ParentView       string
+	Orientation      types.BreakOrientation
+	GapStart, GapEnd float64 // on the parent (sheet mm)
+	CenterX, CenterY float64
+}
+
+// AddBreak adds a break view: the parent's projection with the band removed and the two sides
+// butted together (a zigzag break line at the join). The parent must be a base view.
+func (vs *DrawingViews) AddBreak(spec BreakViewSpec) (*DrawingView, error) {
+	parent, body, err := vs.parentBaseFor(spec.ParentView)
+	if err != nil {
+		return nil, err
+	}
+	name, err := vs.uniqueName(spec.Name)
+	if err != nil {
+		return nil, err
+	}
+	v := &DrawingView{
+		name: name, viewType: types.DrawingViewBreak, baseView: spec.ParentView,
+		brk:         breakBandOf(parent, spec.Orientation, spec.GapStart, spec.GapEnd),
+		orientation: parent.orientation, style: parent.style, scale: parent.scale,
+		centerX: spec.CenterX, centerY: spec.CenterY,
+	}
+	v.recompute(body, baseBasis(parent.orientation, bodyCenter(body)))
+	vs.items = append(vs.items, v)
+	return v, nil
+}
+
+// PreviewBreak returns the origin-placed curves a break view of parentView (band removed) would
+// produce, without adding it.
+func (vs *DrawingViews) PreviewBreak(parentView string, orientation types.BreakOrientation, gapStart, gapEnd float64) ([]DrawingCurve, bool) {
+	parent, body, err := vs.parentBaseFor(parentView)
+	if err != nil {
+		return nil, false
+	}
+	v := &DrawingView{
+		viewType: types.DrawingViewBreak, style: parent.style, scale: parent.scale,
+		brk: breakBandOf(parent, orientation, gapStart, gapEnd),
+	}
+	v.recompute(body, baseBasis(parent.orientation, bodyCenter(body)))
+	return v.curves, true
+}
+
 // PreviewAuxiliary returns the origin-centred curves an auxiliary view folded off parentView at
 // foldAngleRad would produce, without adding it. ok is false when the parent or model is missing.
 func (vs *DrawingViews) PreviewAuxiliary(parentView string, foldAngleRad float64) ([]DrawingCurve, bool) {
@@ -337,10 +384,22 @@ func (vs *DrawingViews) basisFor(v *DrawingView, origin math.Point3) (hlr.View, 
 		return auxiliaryBasis(parent, v.foldAngle, origin), true
 	case types.DrawingViewSection:
 		return sectionBasis(parent, v.section, base.scale, base.centerX, base.centerY, origin), true
-	default: // detail: reuse the parent projection (recompute clips). Re-derive the clip circle
-		// from the persisted sheet-mm boundary so it tracks a parent rescale/move (associativity).
-		v.detail = detailBoundaryOf(base, v.detail.sheetCX, v.detail.sheetCY, v.detail.sheetR)
+	default: // detail & break reuse the parent projection (recompute clips/breaks); re-map their
+		// sheet-mm region against the parent's current placement so they track a rescale/move.
+		v.refreshParentRegion(base)
 		return parent, true
+	}
+}
+
+// refreshParentRegion re-derives a detail/break view's region (clip circle or break band) from
+// its persisted sheet-mm definition against the parent's current placement — the associativity
+// path when the parent is rescaled or moved.
+func (v *DrawingView) refreshParentRegion(parent *DrawingView) {
+	switch v.viewType {
+	case types.DrawingViewDetail:
+		v.detail = detailBoundaryOf(parent, v.detail.sheetCX, v.detail.sheetCY, v.detail.sheetR)
+	case types.DrawingViewBreak:
+		v.brk = breakBandOf(parent, v.brk.orientation, v.brk.sheetG0, v.brk.sheetG1)
 	}
 }
 
