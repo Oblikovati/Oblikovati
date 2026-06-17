@@ -238,7 +238,6 @@ const fileHeaderReserve = 0x80
 func buildR2000(entities []Entity, units int) ([]byte, error) {
 	var h graphHandles
 	h.allocate()
-	clearDictionaryChain(&h) // not yet emitted; header/layer/blocks reference them as null
 
 	objs, refs, err := encodeGraph(&h, entities)
 	if err != nil {
@@ -250,7 +249,7 @@ func buildR2000(entities []Entity, units int) ([]byte, error) {
 	hdrAddr := len(out)
 	out = append(out, encodeHeaderVars(&h, units, handseed)...)
 	classAddr := len(out)
-	out = append(out, encodeClasses(nil)...)
+	out = append(out, encodeClasses(chainClasses())...)
 
 	objBase := int64(len(out))
 	for i := range refs {
@@ -272,14 +271,6 @@ func buildR2000(entities []Entity, units int) ([]byte, error) {
 	}
 	copy(out, header)
 	return out, nil
-}
-
-// clearDictionaryChain zeroes the named-object-dictionary-chain handles so the header,
-// layer and block records reference them as null pointers until the chain is emitted.
-func clearDictionaryChain(h *graphHandles) {
-	h.groupDict, h.mlineDict, h.mlineStandard = 0, 0, 0
-	h.plotStyleDict, h.placeholder = 0, 0
-	h.layoutDict, h.layoutModel, h.layoutPaper, h.plotSettingsDict = 0, 0, 0, 0
 }
 
 // encodeObjectMap writes the handle→offset directory: one section of (handle delta,

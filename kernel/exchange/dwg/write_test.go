@@ -113,7 +113,11 @@ func TestWriteFullGraphStructure(t *testing.T) {
 		{typeViewControl, 1}, {typeUcsControl, 1}, {typeVportControl, 1}, {typeAppidControl, 1},
 		{typeDimstyleControl, 1}, {TypeLayer, 1}, {TypeStyle, 1}, {TypeLtype, 3}, {TypeAppid, 1},
 		{TypeVport, 1}, {TypeDimstyle, 1}, {TypeBlockHeader, 2}, {TypeBlock, 2}, {TypeEndblk, 2},
-		{TypeDictionary, 1},
+		// NOD + ACAD_GROUP/MLINESTYLE/PLOTSETTINGS/LAYOUT sub-dictionaries.
+		{TypeDictionary, 5},
+		// Named-object-dictionary chain objects (MLINESTYLE is fixed 0x49; the rest are
+		// class-resolved at 500/501/502 in the writer's class order).
+		{0x49, 1}, {classDictWDflt, 1}, {classPlaceholder, 1}, {classLayout, 2},
 	} {
 		if counts[w.typ] != w.want {
 			t.Errorf("object type %#x count = %d, want %d", int(w.typ), counts[w.typ], w.want)

@@ -115,7 +115,11 @@ func encodeGraph(h *graphHandles, entities []Entity) ([]byte, []ObjectRef, error
 	add(h.vportControl, writeControlObject(h.vportControl, typeVportControl, []uint64{h.vportActive}))
 	add(h.appidControl, writeControlObject(h.appidControl, typeAppidControl, []uint64{h.appidAcad}))
 	add(h.dimstyleControl, writeDimstyleControl(h))
-	add(h.nod, writeDictionary(h.nod, 0, nil))
+	add(h.nod, writeDictionary(h.nod, 0, []dictEntry{
+		{"ACAD_GROUP", h.groupDict}, {"ACAD_LAYOUT", h.layoutDict},
+		{"ACAD_MLINESTYLE", h.mlineDict}, {"ACAD_PLOTSETTINGS", h.plotSettingsDict},
+		{"ACAD_PLOTSTYLENAME", h.plotStyleDict},
+	}))
 	add(h.layer0, writeLayer(h))
 	add(h.styleStandard, writeStyle(h))
 	add(h.ltypeByBlock, writeLinetype(h.ltypeByBlock, h.ltypeControl, "ByBlock"))
@@ -137,6 +141,19 @@ func encodeGraph(h *graphHandles, entities []Entity) ([]byte, []ObjectRef, error
 	add(h.modelEndblk, writeEndblk(h.modelEndblk, h.layer0))
 	add(h.paperBlock, writeBlock(h.paperBlock, h.layer0, "*Paper_Space"))
 	add(h.paperEndblk, writeEndblk(h.paperEndblk, h.layer0))
+
+	// Named-object-dictionary chain (emitted in ascending handle order; see allocate()).
+	add(h.groupDict, writeSubDictionary(h.groupDict, h.nod, nil))
+	add(h.mlineDict, writeSubDictionary(h.mlineDict, h.nod, []dictEntry{{"Standard", h.mlineStandard}}))
+	add(h.mlineStandard, writeMlinestyle(h.mlineStandard, h.mlineDict))
+	add(h.plotStyleDict, writeDictionaryWDflt(h.plotStyleDict, h.nod, []dictEntry{{"Normal", h.placeholder}}, h.placeholder))
+	add(h.placeholder, writePlaceholder(h.placeholder, h.plotStyleDict))
+	add(h.layoutDict, writeSubDictionary(h.layoutDict, h.nod, []dictEntry{
+		{"Model", h.layoutModel}, {"Layout1", h.layoutPaper},
+	}))
+	add(h.layoutModel, writeLayout(h.layoutModel, layoutRefs{owner: h.layoutDict, blockHeader: h.modelHdr, name: "Model", tabOrder: 0, flags: 1}))
+	add(h.layoutPaper, writeLayout(h.layoutPaper, layoutRefs{owner: h.layoutDict, blockHeader: h.paperHdr, name: "Layout1", tabOrder: 1, flags: 0}))
+	add(h.plotSettingsDict, writeSubDictionary(h.plotSettingsDict, h.nod, nil))
 
 	for i, e := range ents {
 		handle := h.entityBase + uint64(i)
