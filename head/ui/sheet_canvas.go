@@ -121,6 +121,8 @@ func drawViewCurve(face rect, c drawing.DrawingCurve) {
 		native.DrawLine(ax, ay, bx, by, viewVisibleInk, 2.2)
 	case types.DrawingHatchCurve:
 		native.DrawLine(ax, ay, bx, by, sheetFaint, 1)
+	case types.DrawingBreakCurve:
+		native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1)
 	default:
 		if c.IsVisible() {
 			native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.4)

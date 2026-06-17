@@ -219,6 +219,41 @@ func TestDetailViewToolWithoutBaseView(t *testing.T) {
 	}
 }
 
+func TestBreakViewToolCompressesBase(t *testing.T) {
+	s := drawingWithFrontBase(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewBreakViewTool()
+	tool.Start(s)
+	if tool.Name() != "Break View" || !tool.CanCommit() {
+		t.Fatalf("break tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	tool.Params().Choices[1].Set(1) // vertical break
+	tool.PreviewCurves(s)
+	tool.SetPlacement(260, 220)
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	v, ok := c.Sheets().Active().Views().ByName("VIEW:2")
+	if !ok || v.Type() != types.DrawingViewBreak {
+		t.Fatalf("break view not added correctly (ok=%v)", ok)
+	}
+}
+
+func TestBreakViewToolWithoutBaseView(t *testing.T) {
+	s := drawingWithModelSession(t)
+	tool := NewBreakViewTool()
+	tool.Start(s)
+	if tool.CanCommit() {
+		t.Error("break tool can commit with no base view, want it disabled")
+	}
+	if got := tool.PreviewCurves(s); got != nil {
+		t.Errorf("preview with no base view = %d curves, want none", len(got))
+	}
+	if err := tool.Commit(s); err == nil {
+		t.Error("Commit with no base view = ok, want error")
+	}
+}
+
 func TestPickSelectEditDeleteDrawingView(t *testing.T) {
 	s := drawingWithModelSession(t)
 	c, _ := ActiveDrawing(s)

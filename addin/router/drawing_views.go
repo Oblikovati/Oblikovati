@@ -26,6 +26,7 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.handlers[wire.MethodDrawingViewsAddAuxiliary] = drawingViewsAddAuxiliary
 	r.handlers[wire.MethodDrawingViewsAddSection] = drawingViewsAddSection
 	r.handlers[wire.MethodDrawingViewsAddDetail] = drawingViewsAddDetail
+	r.handlers[wire.MethodDrawingViewsAddBreak] = drawingViewsAddBreak
 	r.handlers[wire.MethodDrawingViewsDelete] = drawingViewsDelete
 	r.handlers[wire.MethodDrawingViewsCurves] = drawingViewsCurves
 }
@@ -159,6 +160,34 @@ func drawingViewsAddDetail(s *app.Session, raw json.RawMessage) (json.RawMessage
 	v, err := views.AddDetail(drawing.DetailViewSpec{
 		Name: in.Name, ParentView: in.ParentView, BoundaryX: in.BoundaryXMM, BoundaryY: in.BoundaryYMM,
 		RadiusMM: in.RadiusMM, Scale: in.Scale, CenterX: in.CenterXMM, CenterY: in.CenterYMM,
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.ViewResult{View: drawingViewInfo(v)})
+}
+
+func drawingViewsAddBreak(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	views, err := activeSheetViews(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddBreakViewArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	orient := types.BreakHorizontal
+	if in.Orientation != "" {
+		o, ok := types.ParseBreakOrientation(in.Orientation)
+		if !ok {
+			return nil, fmt.Errorf("drawing: unknown break orientation %q", in.Orientation)
+		}
+		orient = o
+	}
+	v, err := views.AddBreak(drawing.BreakViewSpec{
+		Name: in.Name, ParentView: in.ParentView, Orientation: orient,
+		GapStart: in.GapStartMM, GapEnd: in.GapEndMM, CenterX: in.CenterXMM, CenterY: in.CenterYMM,
 	})
 	if err != nil {
 		return nil, err

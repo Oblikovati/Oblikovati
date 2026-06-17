@@ -59,6 +59,8 @@ type viewRecipe struct {
 	FoldAngleDeg float64    `yaml:"foldAngleDeg,omitempty"` // auxiliary fold-line angle on the parent
 	SectionLine  [4]float64 `yaml:"sectionLine,omitempty"`  // section cut line on the parent (sheet mm)
 	Detail       [3]float64 `yaml:"detail,omitempty"`       // detail boundary on the parent: centreX, centreY, radius (sheet mm)
+	BreakOrient  string     `yaml:"breakOrient,omitempty"`  // break orientation (horizontal/vertical)
+	BreakGap     [2]float64 `yaml:"breakGap,omitempty"`     // break band on the parent: start, end (sheet mm)
 	Scale        float64    `yaml:"scale,omitempty"`
 	Style        string     `yaml:"style,omitempty"`
 	CenterX      float64    `yaml:"centerXmm,omitempty"`
@@ -128,6 +130,8 @@ func viewRecipeOf(v *DrawingView) viewRecipe {
 		FoldAngleDeg: v.foldAngle * 180 / math.Pi,
 		SectionLine:  [4]float64{v.section.x1, v.section.y1, v.section.x2, v.section.y2},
 		Detail:       [3]float64{v.detail.sheetCX, v.detail.sheetCY, v.detail.sheetR},
+		BreakOrient:  v.brk.orientation.String(),
+		BreakGap:     [2]float64{v.brk.sheetG0, v.brk.sheetG1},
 		Scale:        v.scale, Style: v.style.String(), CenterX: v.centerX, CenterY: v.centerY,
 	}
 }
@@ -169,11 +173,13 @@ func restoreView(vr viewRecipe) *DrawingView {
 	dir, _ := types.ParseProjectionDirection(vr.Direction)
 	style, _ := types.ParseDrawingViewStyle(vr.Style)
 	vt := restoredViewType(vr)
-	sl, dt := vr.SectionLine, vr.Detail
+	sl, dt, bg := vr.SectionLine, vr.Detail, vr.BreakGap
+	brkOrient, _ := types.ParseBreakOrientation(vr.BreakOrient)
 	return &DrawingView{
 		name: vr.Name, viewType: vt, projected: vt == types.DrawingViewProjected, baseView: vr.BaseView,
 		foldAngle: vr.FoldAngleDeg * math.Pi / 180, section: sectionLine{sl[0], sl[1], sl[2], sl[3]},
 		detail:      detailBoundary{sheetCX: dt[0], sheetCY: dt[1], sheetR: dt[2]},
+		brk:         breakBand{orientation: brkOrient, sheetG0: bg[0], sheetG1: bg[1]},
 		orientation: orient, direction: dir,
 		scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
 	}

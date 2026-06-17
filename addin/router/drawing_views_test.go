@@ -82,10 +82,16 @@ func TestDrawingViewsLifecycleOverWire(t *testing.T) {
 		t.Fatalf("detail view = %+v, want a detail off FRONT", det.View)
 	}
 
+	var brk wire.ViewResult
+	call(t, r, s, "drawingViews.addBreak", `{"name":"BRK","parentView":"FRONT","orientation":"horizontal","gapStartMm":110,"gapEndMm":130,"centerXmm":120,"centerYmm":320}`, &brk)
+	if brk.View.Type != "break" || brk.View.BaseView != "FRONT" {
+		t.Fatalf("break view = %+v, want a break off FRONT", brk.View)
+	}
+
 	var list wire.ListDrawingViewsResult
 	call(t, r, s, "drawingViews.list", "{}", &list)
-	if len(list.Views) != 4 {
-		t.Fatalf("views = %d, want 4 (base + projected + auxiliary + detail)", len(list.Views))
+	if len(list.Views) != 5 {
+		t.Fatalf("views = %d, want 5 (base + projected + auxiliary + detail + break)", len(list.Views))
 	}
 
 	var curves wire.ViewCurvesResult
