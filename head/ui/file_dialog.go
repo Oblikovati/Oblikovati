@@ -63,7 +63,8 @@ type fileDialog struct {
 	roots      []string
 	errorText  string
 	resolution int                   // export mesh resolution: 0 low, 1 medium, 2 high
-	planeIndex int                   // DWG import: index into the active part's work-plane choices
+	planeIndex int                   // DWG/DXF import: index into the active part's work-plane choices
+	dxfVersion int                   // DXF export: 0 r2000, 1 r2018
 	request    app.FileDialogRequest // the add-in ask behind dialogAddIn mode
 	defaultExt string                // Save As: extension appended to a bare name, per the active document's kind (ADR-0034)
 }
@@ -74,11 +75,15 @@ type fileAction struct {
 	Kind       fileDialogMode
 	Path       string
 	Resolution string // export mesh resolution ("low"|"medium"|"high")
-	PlaneIndex int    // DWG import: chosen work-plane index (see DWGPlaneChoices)
+	PlaneIndex int    // DWG/DXF import: chosen work-plane index (see DWGPlaneChoices)
+	DXFVersion string // DXF export: target version ("r2000"|"r2018")
 }
 
 // exportResolutionNames maps the resolution index to its api/types.MeshResolution string.
 var exportResolutionNames = []string{"low", "medium", "high"}
+
+// dxfVersionNames maps the DXF-export version index to its api/types.DXFVersion string.
+var dxfVersionNames = []string{"r2000", "r2018"}
 
 // openFor arms the dialog for mode with an empty path (export defaults to medium resolution).
 // Calling it again re-arms the dialog (e.g. switching from Open to Save As) and clears prior text.
@@ -129,9 +134,9 @@ func (d *fileDialog) title() string {
 	case dialogPlaceComponent:
 		return "Place Component"
 	case dialogImport:
-		return "Import (.stl/.obj/.3mf/.step/.dwg)"
+		return "Import (.stl/.obj/.3mf/.step/.dwg/.dxf)"
 	case dialogExport:
-		return "Export (.stl/.obj/.3mf/.step)"
+		return "Export (.stl/.obj/.3mf/.step/.dxf)"
 	case dialogExportBOM:
 		return "Export BOM (.csv)"
 	case dialogAddIn:
@@ -188,7 +193,7 @@ func (d *fileDialog) confirm() fileAction {
 	if path == "" {
 		return fileAction{Kind: dialogClosed}
 	}
-	return fileAction{Kind: mode, Path: path, Resolution: res, PlaneIndex: d.planeIndex}
+	return fileAction{Kind: mode, Path: path, Resolution: res, PlaneIndex: d.planeIndex, DXFVersion: dxfVersionNames[d.dxfVersion]}
 }
 
 // cancel dismisses the dialog without an action and clears the typed path.
@@ -277,10 +282,11 @@ func (d *fileDialog) allowedExts() []string {
 	case dialogMeshRef:
 		return []string{".stl"}
 	case dialogImport:
-		// DWG imports into a sketch (curve geometry), the others into bodies.
-		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg"}
+		// DWG/DXF import into a sketch (curve geometry), the others into bodies.
+		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg", ".dxf"}
 	case dialogExport:
-		return []string{".stl", ".obj", ".3mf", ".step", ".stp"}
+		// DXF exports the active sketch; the others export the part's bodies.
+		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dxf"}
 	case dialogExportBOM:
 		return []string{".csv"}
 	case dialogAddIn:

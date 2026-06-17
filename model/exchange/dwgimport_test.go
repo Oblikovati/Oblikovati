@@ -83,8 +83,8 @@ func TestDWGToDocumentScale(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := dwgToDocumentScale(tc.insunits, tc.units); got != tc.want {
-				t.Errorf("dwgToDocumentScale(%d) = %g, want %g", tc.insunits, got, tc.want)
+			if got := drawingToDocumentScale(tc.insunits, tc.units); got != tc.want {
+				t.Errorf("drawingToDocumentScale(%d) = %g, want %g", tc.insunits, got, tc.want)
 			}
 		})
 	}

@@ -4,18 +4,9 @@ package dwg
 
 import (
 	"fmt"
-	"math"
-)
 
-// Drawing is the decoded, sketch-relevant content of a DWG file: its format
-// generation and the model-space curve entities. It is the hand-off to the
-// Sketch/Sketch3D converter.
-type Drawing struct {
-	Version  Version
-	Entities []Entity
-	// Units is the $INSUNITS code (0 = unitless); use MetersPerUnit to convert.
-	Units int
-}
+	"oblikovati.org/kernel/exchange/drawing"
+)
 
 // Decode parses a DWG file end to end and returns its model-space geometry: the curve
 // entities (LINE/CIRCLE/ARC/POINT/ELLIPSE/LWPOLYLINE/SPLINE) drawn directly in model
@@ -49,7 +40,7 @@ func Decode(data []byte) (*Drawing, []string, error) {
 	}
 	c := &collector{data: od, version: h.Version, blockEntities: map[uint64][]Entity{}, blockInserts: map[uint64][]*Insert{}}
 	warns := c.collect(refs)
-	dr := &Drawing{Version: h.Version, Entities: c.resolve()}
+	dr := &Drawing{Entities: c.resolve()}
 	// The unit code drives the unit conversion at import; a header that fails to parse is
 	// non-fatal (the drawing is left unitless and the importer falls back to document units).
 	if sec, herr := h.HeaderSection(data); herr == nil {
@@ -60,21 +51,6 @@ func Decode(data []byte) (*Drawing, []string, error) {
 		}
 	}
 	return dr, warns, nil
-}
-
-// ScaleEntities returns the entities uniformly scaled about the origin by factor — used by
-// the importer to convert drawing units to the document's units (see MetersPerUnit). The
-// per-entity transform keeps radii and axes consistent with the scaled positions.
-func ScaleEntities(entities []Entity, factor float64) []Entity {
-	if factor == 1 {
-		return entities
-	}
-	m := affine{{factor, 0, 0, 0}, {0, factor, 0, 0}, {0, 0, factor, 0}}
-	out := make([]Entity, len(entities))
-	for i, e := range entities {
-		out[i] = transformEntity(e, m)
-	}
-	return out
 }
 
 // collector accumulates a drawing's geometry during the object pass, classifying each
@@ -173,7 +149,7 @@ const maxBlockDepth = 32
 func (c *collector) resolve() []Entity {
 	out := c.modelEntities
 	for _, in := range c.modelInserts {
-		out = c.expand(in, identityAffine(), out, map[uint64]bool{}, 0)
+		out = c.expand(in, drawing.IdentityAffine(), out, map[uint64]bool{}, 0)
 	}
 	return out
 }
@@ -181,73 +157,18 @@ func (c *collector) resolve() []Entity {
 // expand appends a block reference's geometry to out, transformed by parent∘insert, and
 // recurses into the block's own inserts. The visiting set breaks reference cycles and
 // depth bounds runaway nesting.
-func (c *collector) expand(in *Insert, parent affine, out []Entity, visiting map[uint64]bool, depth int) []Entity {
+func (c *collector) expand(in *Insert, parent drawing.Affine, out []Entity, visiting map[uint64]bool, depth int) []Entity {
 	if depth >= maxBlockDepth || visiting[in.BlockHeader] || len(out) >= maxExpandedEntities {
 		return out
 	}
-	m := parent.mul(insertAffine(in))
+	m := parent.Mul(drawing.InsertAffine(in))
 	visiting[in.BlockHeader] = true
 	for _, e := range c.blockEntities[in.BlockHeader] {
-		out = append(out, transformEntity(e, m))
+		out = append(out, drawing.TransformEntity(e, m))
 	}
 	for _, ni := range c.blockInserts[in.BlockHeader] {
 		out = c.expand(ni, m, out, visiting, depth+1)
 	}
 	delete(visiting, in.BlockHeader)
 	return out
-}
-
-// Planar reports whether every entity lies in one Z=constant plane (within tol)
-// and returns that elevation. It routes an import to a 2D Sketch (with the
-// returned elevation as the plane offset) versus a Sketch3D. An empty drawing is
-// treated as planar at z=0.
-func (d *Drawing) Planar(tol float64) (elevation float64, planar bool) {
-	first := true
-	var z float64
-	check := func(v float64) bool {
-		if first {
-			z, first = v, false
-			return true
-		}
-		return math.Abs(v-z) <= tol
-	}
-	for _, e := range d.Entities {
-		for _, v := range entityZ(e) {
-			if !check(v) {
-				return 0, false
-			}
-		}
-	}
-	return z, true
-}
-
-// entityZ returns the Z coordinates an entity contributes to the planarity test.
-//
-//nolint:funlen // one-case-per-entity-type dispatch returning each type's Z coordinates.
-func entityZ(e Entity) []float64 {
-	switch g := e.(type) {
-	case *Line:
-		return []float64{g.Start[2], g.End[2]}
-	case *Circle:
-		return []float64{g.Center[2]}
-	case *Arc:
-		return []float64{g.Center[2]}
-	case *Point:
-		return []float64{g.Position[2]}
-	case *Ellipse:
-		return []float64{g.Center[2]}
-	case *LwPolyline:
-		return []float64{g.Elevation}
-	case *Spline:
-		zs := make([]float64, 0, len(g.ControlPoints)+len(g.FitPoints))
-		for _, c := range g.ControlPoints {
-			zs = append(zs, c[2])
-		}
-		for _, f := range g.FitPoints {
-			zs = append(zs, f[2])
-		}
-		return zs
-	default:
-		return nil
-	}
 }

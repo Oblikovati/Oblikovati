@@ -19,6 +19,8 @@ func (r *Router) registerExchangeHandlers() {
 	r.handlers[wire.MethodDocumentsImport] = importDocument
 	r.handlers[wire.MethodDocumentsExport] = exportDocument
 	r.handlers[wire.MethodImportDWG] = importDWG
+	r.handlers[wire.MethodImportDXF] = importDXF
+	r.handlers[wire.MethodExportDXF] = exportDXF
 }
 
 // importDWG imports a .dwg into the active part: a planar drawing onto the named
@@ -33,6 +35,33 @@ func importDWG(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return nil, fmt.Errorf("import.dwg: %w", err)
 	}
 	return json.Marshal(wire.ImportDWGResult{Is3D: res.Is3D, EntityCount: res.EntityCount, Warnings: res.Warnings})
+}
+
+// importDXF imports a .dxf into the active part: a planar drawing onto the named work plane
+// (default: first origin plane), a non-planar one into a 3D sketch.
+func importDXF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.ImportDXFArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	res, err := s.ImportDXFOnPlane(in.Path, in.Plane)
+	if err != nil {
+		return nil, fmt.Errorf("import.dxf: %w", err)
+	}
+	return json.Marshal(wire.ImportDXFResult{Is3D: res.Is3D, EntityCount: res.EntityCount, Warnings: res.Warnings})
+}
+
+// exportDXF writes the active 2D sketch to a .dxf file at the requested version.
+func exportDXF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.ExportDXFArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	n, err := s.ExportActiveSketchDXF(in.Path, types.DXFVersion(in.Version))
+	if err != nil {
+		return nil, fmt.Errorf("export.dxf: %w", err)
+	}
+	return json.Marshal(wire.ExportDXFResult{EntityCount: n})
 }
 
 // importDocument reads a foreign file (STL/OBJ/3MF mesh, or STEP B-rep) into the active part as
