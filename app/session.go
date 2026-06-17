@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync/atomic"
 
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app/options"
@@ -138,6 +139,9 @@ type Session struct {
 	bomViewKind          bom.ViewKind                   // the BOM panel's selected view (structured / parts-only)
 	updateCheckRequested bool                           // Help ▸ Check for Updates was clicked; the head runs the (network) check
 	pendingUpdate        *update.Result                 // last update-check outcome to show in the update window; nil = closed
+	bugReport            bugReportState                 // in-progress Help ▸ Report Bug capture+submit, if any
+	bugOutcome           atomic.Pointer[bugResult]      // submit goroutine → frame loop handoff (session never touched off-thread)
+	bugSubmitter         bugSubmitter                   // injectable reporting endpoint (DI; lazily defaults to real HTTP)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in

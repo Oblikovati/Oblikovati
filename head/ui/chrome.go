@@ -146,11 +146,12 @@ func drawChromeWindows(s *app.Session) {
 	drawColorStylesWindow(s)     // View ▸ Color Styles (M16-F02 #403/#408)
 	drawDisplaySettingsWindow(s) // View ▸ Display Settings (M16-F07 #643)
 	drawScriptConsole(s)
-	drawKeymapEditor(s)  // Tools ▸ Customize Keyboard (M05-F17)
-	drawCommandInput(s)  // command-alias input box (M05-F17)
-	drawCommandWindow(s) // docked Command Window REPL panel (M26 F04)
-	drawUpdateWindow(s)  // Help ▸ Check for Updates notification
-	drawAddInPanels(s)   // add-in dockable windows (M05-F03)
+	drawKeymapEditor(s)    // Tools ▸ Customize Keyboard (M05-F17)
+	drawCommandInput(s)    // command-alias input box (M05-F17)
+	drawCommandWindow(s)   // docked Command Window REPL panel (M26 F04)
+	drawUpdateWindow(s)    // Help ▸ Check for Updates notification
+	drawReportBugDialog(s) // Help ▸ Report Bug
+	drawAddInPanels(s)     // add-in dockable windows (M05-F03)
 	// M26 F03: toasts / prompt modal / message-center windows are retired — every message
 	// now funnels into the docked Command Window, and prompts are answered inline there.
 	drawWebViews(s)          // web dialogs/views (M05-F08)

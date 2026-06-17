@@ -36,6 +36,9 @@ func drawHelpMenu(s *app.Session) {
 		if native.MenuItem("Check for Updates") {
 			s.RequestUpdateCheck()
 		}
+		if native.MenuItem("Report Bug") { // opens the report window; submit happens off-thread
+			reportBugUI.open = true
+		}
 		native.EndMenu()
 	}
 }

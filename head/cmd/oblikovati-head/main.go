@@ -94,6 +94,7 @@ func pumpFrame(win *native.Window, session *app.Session, addins *addInHost, upda
 	exit := ui.HandleClose(win, session)
 	win.EndFrame(ui.WindowClearColor())   // themed swapchain background (ADR-0021)
 	ui.ServiceWindowCapture(win, session) // whole-window PNG: AFTER the swapchain composited this frame
+	session.ServiceBugReport()            // Help ▸ Report Bug: both captures are now on disk; submit off-thread
 	return exit || addins.addInChanged()
 }
 
