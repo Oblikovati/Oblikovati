@@ -31,19 +31,17 @@ func (s *Session) CollectDiagnostics() report.Payload {
 	}
 }
 
-// TransactionLog returns the active document's undo/redo step labels, oldest first — the
-// "what the user did" trail. Empty when no document is active. This is the public accessor
-// over the per-document command.History the session keeps in docHistory.
+// TransactionLog returns the transaction-manager events recorded since the application
+// opened — every committed edit across all documents, oldest first — as
+// "<time>  <document>: <label>" lines. It is an append-only audit (see watchTransactions),
+// not a document's current undo stack: undo does not erase entries here, so the report shows
+// the full sequence of what the user did.
 func (s *Session) TransactionLog() []string {
-	d := s.ActiveDocument()
-	if d == nil {
-		return nil
+	out := make([]string, 0, len(s.txEvents))
+	for _, e := range s.txEvents {
+		out = append(out, fmt.Sprintf("%s  %s: %s", e.when.Format("15:04:05"), e.doc, e.label))
 	}
-	dh := s.documentHistory(d)
-	if dh == nil || dh.hist == nil {
-		return nil
-	}
-	return dh.hist.Labels()
+	return out
 }
 
 // documentMarshaler is the optional capability of the session's store that renders a

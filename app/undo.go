@@ -5,12 +5,45 @@ package app
 import (
 	"bytes"
 	"errors"
+	"time"
 
 	"oblikovati.org/command"
 	"oblikovati.org/event"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
 )
+
+// maxSessionTxEvents bounds the append-only transaction log so a very long session cannot
+// grow it without limit; once full the oldest events are dropped (the report shows the most
+// recent activity, which is what matters for a repro).
+const maxSessionTxEvents = 2000
+
+// sessionTxEvent is one committed transaction recorded for the life of the session — an
+// append-only audit of what the user did since the app opened, independent of the
+// per-document undo stacks (which shrink on undo). It feeds the bug report's transaction log.
+type sessionTxEvent struct {
+	when  time.Time
+	doc   string
+	label string
+}
+
+// watchTransactions appends every committed transaction (on any document) to the session's
+// append-only event log, so a bug report can show everything the user did since launch.
+// Undo/redo do not emit TransactionCommitted, so the log is a forward audit that survives
+// undo — unlike a document's undo stack.
+func (s *Session) watchTransactions() {
+	event.Subscribe(s.bus, event.After, func(_ event.Context, e TransactionCommitted) event.Outcome {
+		name := "untitled"
+		if d, ok := s.workspace.ByID(e.Document); ok {
+			name = d.DisplayName()
+		}
+		s.txEvents = append(s.txEvents, sessionTxEvent{when: time.Now().UTC(), doc: name, label: e.Label})
+		if len(s.txEvents) > maxSessionTxEvents {
+			s.txEvents = s.txEvents[len(s.txEvents)-maxSessionTxEvents:]
+		}
+		return event.Continue()
+	})
+}
 
 // recipeStore is the document content the app's undo stream records: content whose entire
 // recipe can be captured (MarshalRecipe) and restored (command.RecipeStore.RestoreRecipe). Part

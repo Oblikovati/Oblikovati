@@ -7,11 +7,13 @@ import (
 	"errors"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"oblikovati.org/build"
+	"oblikovati.org/event"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/report"
 )
@@ -190,6 +192,30 @@ func TestDiagnosticsIncludesOpenDocumentYAML(t *testing.T) {
 	}
 	// Exercises the per-document transaction-history accessor (the active-document path).
 	_ = s.TransactionLog()
+}
+
+func TestTransactionLogIsAppendOnlySinceOpen(t *testing.T) {
+	s := NewSession()
+	d, err := s.NewPart()
+	if err != nil {
+		t.Fatalf("NewPart: %v", err)
+	}
+	before := len(s.TransactionLog())
+	// Committed transactions are recorded via the TransactionCommitted event (the same
+	// signal commitRecipeDelta emits), across the whole session.
+	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: "Sketch"})
+	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: "Extrude"})
+
+	log := s.TransactionLog()
+	if len(log) != before+2 {
+		t.Fatalf("want %d events, got %d: %v", before+2, len(log), log)
+	}
+	if !strings.Contains(log[before], "Sketch") || !strings.Contains(log[before+1], "Extrude") {
+		t.Errorf("events out of order or missing labels: %v", log[before:])
+	}
+	if !strings.Contains(log[before], d.DisplayName()) {
+		t.Errorf("event missing document name %q: %q", d.DisplayName(), log[before])
+	}
 }
 
 func mustWrite(t *testing.T, path, content string) {
