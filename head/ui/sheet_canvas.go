@@ -138,7 +138,28 @@ func drawSheetViews(s *app.Session, face rect, sheet *drawing.Sheet) {
 		}
 	}
 	drawSheetAnnotations(face, sheet)
+	drawSheetDimensions(face, sheet)
 }
+
+// drawSheetDimensions strokes each dimension's glyph (extension/dimension lines, arrowheads) in
+// the ink colour and draws its measured value at the dimension-line midpoint.
+func drawSheetDimensions(face rect, sheet *drawing.Sheet) {
+	ds := sheet.Dimensions()
+	for i := 0; i < ds.Count(); i++ {
+		d := ds.Item(i)
+		for _, c := range d.Curves() {
+			ax, ay := curveToScreen(face, c.Start())
+			bx, by := curveToScreen(face, c.End())
+			native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.2)
+		}
+		tx, ty := curveToScreen(face, math.P2(math.Scalar(dimAnchorX(d)), math.Scalar(dimAnchorY(d))))
+		native.DrawText(tx+2, ty-14, d.Text(), sheetInk)
+	}
+}
+
+// dimAnchorX / dimAnchorY split the dimension's text-anchor for the mm→screen mapping.
+func dimAnchorX(d *drawing.DrawingDimension) float64 { x, _ := d.TextAnchorMM(); return x }
+func dimAnchorY(d *drawing.DrawingDimension) float64 { _, y := d.TextAnchorMM(); return y }
 
 // drawSheetAnnotations strokes the sheet's annotation curves (CoG markers, revision clouds) in
 // the accent ink, over the views.

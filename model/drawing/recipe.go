@@ -3,6 +3,7 @@
 package drawing
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math"
 
@@ -45,6 +46,19 @@ type sheetRecipe struct {
 	TitleBlock  string             `yaml:"titleBlock,omitempty"` // definition name; "" ⇒ no title block
 	Views       []viewRecipe       `yaml:"views,omitempty"`
 	Annotations []annotationRecipe `yaml:"annotations,omitempty"`
+	Dimensions  []dimensionRecipe  `yaml:"dimensions,omitempty"`
+}
+
+// dimensionRecipe is the YAML shape of one drawing dimension. The glyph and measured value are
+// not stored — they re-derive on open from the attached vertices (KeyA/KeyB, hex of each vertex's
+// reference key), which re-bind to the current model, so a dimension always reflects it.
+type dimensionRecipe struct {
+	Name     string  `yaml:"name"`
+	Type     string  `yaml:"type,omitempty"`
+	ViewName string  `yaml:"viewName"`
+	KeyA     string  `yaml:"keyA"`
+	KeyB     string  `yaml:"keyB"`
+	Offset   float64 `yaml:"offsetMm,omitempty"`
 }
 
 // annotationRecipe is the YAML shape of one drawing annotation. A CoG marker's glyph re-derives
@@ -134,15 +148,40 @@ func sheetRecipeOf(sh *Sheet) sheetRecipe {
 	for _, v := range sh.views.items {
 		rec.Views = append(rec.Views, viewRecipeOf(v))
 	}
-	if sh.annotations != nil {
-		for _, a := range sh.annotations.items {
-			rec.Annotations = append(rec.Annotations, annotationRecipe{
-				Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
-				X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag,
-			})
-		}
-	}
+	rec.Annotations = annotationRecipesOf(sh)
+	rec.Dimensions = dimensionRecipesOf(sh)
 	return rec
+}
+
+// annotationRecipesOf snapshots a sheet's annotations for persistence.
+func annotationRecipesOf(sh *Sheet) []annotationRecipe {
+	if sh.annotations == nil {
+		return nil
+	}
+	out := make([]annotationRecipe, 0, len(sh.annotations.items))
+	for _, a := range sh.annotations.items {
+		out = append(out, annotationRecipe{
+			Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
+			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag,
+		})
+	}
+	return out
+}
+
+// dimensionRecipesOf snapshots a sheet's dimensions for persistence (the attached vertex keys as
+// hex; the glyph and value re-derive on open).
+func dimensionRecipesOf(sh *Sheet) []dimensionRecipe {
+	if sh.dimensions == nil {
+		return nil
+	}
+	out := make([]dimensionRecipe, 0, len(sh.dimensions.items))
+	for _, d := range sh.dimensions.items {
+		out = append(out, dimensionRecipe{
+			Name: d.name, Type: d.dimType.String(), ViewName: d.viewName,
+			KeyA: hex.EncodeToString(d.keyA), KeyB: hex.EncodeToString(d.keyB), Offset: d.offset,
+		})
+	}
+	return out
 }
 
 // viewRecipeOf snapshots one view's definition (its curves are re-projected on open).
@@ -187,8 +226,26 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 		sh.views.items = append(sh.views.items, restoreView(vr))
 	}
 	restoreAnnotations(sh, rec.Annotations)
+	restoreDimensions(sh, rec.Dimensions)
 	s.items = append(s.items, sh)
 	return nil
+}
+
+// restoreDimensions rebuilds a sheet's dimensions from its recipe; each re-binds its attached
+// vertices and re-measures on the next RecomputeViews (once the referenced model resolves).
+func restoreDimensions(sh *Sheet, recs []dimensionRecipe) {
+	if len(recs) == 0 {
+		return
+	}
+	ds := sh.Dimensions()
+	for _, dr := range recs {
+		dimType, _ := types.ParseDrawingDimensionType(dr.Type)
+		keyA, _ := hex.DecodeString(dr.KeyA)
+		keyB, _ := hex.DecodeString(dr.KeyB)
+		d := &DrawingDimension{name: dr.Name, dimType: dimType, viewName: dr.ViewName, keyA: keyA, keyB: keyB, offset: dr.Offset}
+		ds.recompute(d)
+		ds.items = append(ds.items, d)
+	}
 }
 
 // restoreAnnotations rebuilds a sheet's annotations from its recipe; CoG glyphs re-derive on the
