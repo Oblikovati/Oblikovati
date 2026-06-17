@@ -84,8 +84,8 @@ func addDrawingBranches(root *BrowserNode, content *drawing.Content) {
 		for j := 0; j < views.Count(); j++ {
 			v := views.Item(j)
 			label := v.Name()
-			if v.IsProjected() {
-				label += "  (projected)"
+			if v.Type() != types.DrawingViewBase {
+				label += "  (" + v.Type().String() + ")"
 			}
 			sheetNode.selectableChild(label, "drawingView", DrawingViewHandle{Views: views, View: v})
 		}

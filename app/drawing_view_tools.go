@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"math"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/drawing"
@@ -204,6 +205,89 @@ func (t *ProjectedViewTool) Params() ToolParams {
 			{Label: "Base View", Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }},
 			{Label: "Direction", Options: labelsOf(len(projectionDirections), func(i int) string { return projectionDirections[i].label }),
 				Get: func() int { return t.direction }, Set: func(i int) { t.direction = i }},
+		},
+	}
+}
+
+// AuxiliaryViewTool places a view folded off a base view about a fold line at a chosen angle;
+// the preview follows the cursor and a click drops it. It mirrors ProjectedViewTool but takes a
+// fold angle (degrees) instead of a discrete direction.
+type AuxiliaryViewTool struct {
+	bases      []string
+	baseIndex  int
+	foldDeg    float64
+	centerX    float64
+	centerY    float64
+	preview    []drawing.DrawingCurve
+	previewKey string
+}
+
+// NewAuxiliaryViewTool creates the tool; its parent-view list is captured on Start.
+func NewAuxiliaryViewTool() *AuxiliaryViewTool {
+	return &AuxiliaryViewTool{centerX: 250, centerY: 250}
+}
+
+func (t *AuxiliaryViewTool) Name() string { return "Auxiliary View" }
+
+// Start captures the base views the auxiliary can fold off.
+func (t *AuxiliaryViewTool) Start(s *Session) { t.bases = baseViewNames(s) }
+
+func (t *AuxiliaryViewTool) Pick(*Session, Selectable) {}
+
+// CanCommit requires at least one base view to fold from.
+func (t *AuxiliaryViewTool) CanCommit() bool { return len(t.bases) > 0 }
+
+func (t *AuxiliaryViewTool) Cancel(*Session) {}
+
+// SetPlacement records the cursor sheet position the auxiliary view will be centred on.
+func (t *AuxiliaryViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// PreviewCurves folds the chosen parent at the chosen angle at the origin, cached until they change.
+func (t *AuxiliaryViewTool) PreviewCurves(s *Session) []drawing.DrawingCurve {
+	if len(t.bases) == 0 {
+		return nil
+	}
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return nil
+	}
+	parent := t.bases[clampIndex(t.baseIndex, len(t.bases))]
+	key := fmt.Sprintf("%s/%g", parent, t.foldDeg)
+	if key != t.previewKey {
+		t.preview, _ = c.Sheets().Active().Views().PreviewAuxiliary(parent, t.foldDeg*math.Pi/180)
+		t.previewKey = key
+	}
+	return t.preview
+}
+
+// Commit folds an auxiliary view off the selected parent at the chosen angle.
+func (t *AuxiliaryViewTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if len(t.bases) == 0 {
+		return fmt.Errorf("drawing: no base view to fold from — add a base view first")
+	}
+	_, err = c.Sheets().Active().Views().AddAuxiliary(drawing.AuxiliaryViewSpec{
+		ParentView:   t.bases[clampIndex(t.baseIndex, len(t.bases))],
+		FoldAngleRad: t.foldDeg * math.Pi / 180, CenterX: t.centerX, CenterY: t.centerY,
+	})
+	if err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the parent-view choice and fold angle for the property dialog.
+func (t *AuxiliaryViewTool) Params() ToolParams {
+	return ToolParams{
+		Choices: []ChoiceParam{
+			{Label: "Parent View", Options: t.bases, Get: func() int { return t.baseIndex }, Set: func(i int) { t.baseIndex = i }},
+		},
+		Floats: []FloatParam{
+			{"Fold Angle (deg)", func() float64 { return t.foldDeg }, func(v float64) { t.foldDeg = v }},
 		},
 	}
 }

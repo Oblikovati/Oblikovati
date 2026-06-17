@@ -4,6 +4,7 @@ package drawing
 
 import (
 	"fmt"
+	"math"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/doc"
@@ -49,15 +50,17 @@ type sheetRecipe struct {
 // are re-projected from the referenced model on open, so a view always reflects the current
 // model.
 type viewRecipe struct {
-	Name        string  `yaml:"name"`
-	Projected   bool    `yaml:"projected,omitempty"`
-	BaseView    string  `yaml:"baseView,omitempty"`
-	Orientation string  `yaml:"orientation,omitempty"`
-	Direction   string  `yaml:"direction,omitempty"`
-	Scale       float64 `yaml:"scale,omitempty"`
-	Style       string  `yaml:"style,omitempty"`
-	CenterX     float64 `yaml:"centerXmm,omitempty"`
-	CenterY     float64 `yaml:"centerYmm,omitempty"`
+	Name         string  `yaml:"name"`
+	Type         string  `yaml:"type,omitempty"` // DrawingViewType ("" ⇒ base, or projected via Projected)
+	Projected    bool    `yaml:"projected,omitempty"`
+	BaseView     string  `yaml:"baseView,omitempty"`
+	Orientation  string  `yaml:"orientation,omitempty"`
+	Direction    string  `yaml:"direction,omitempty"`
+	FoldAngleDeg float64 `yaml:"foldAngleDeg,omitempty"` // auxiliary fold-line angle on the parent
+	Scale        float64 `yaml:"scale,omitempty"`
+	Style        string  `yaml:"style,omitempty"`
+	CenterX      float64 `yaml:"centerXmm,omitempty"`
+	CenterY      float64 `yaml:"centerYmm,omitempty"`
 }
 
 // MarshalRecipe renders the drawing's sheets and referenced model as YAML
@@ -118,9 +121,10 @@ func sheetRecipeOf(sh *Sheet) sheetRecipe {
 // viewRecipeOf snapshots one view's definition (its curves are re-projected on open).
 func viewRecipeOf(v *DrawingView) viewRecipe {
 	return viewRecipe{
-		Name: v.name, Projected: v.projected, BaseView: v.baseView,
+		Name: v.name, Type: v.viewType.String(), Projected: v.projected, BaseView: v.baseView,
 		Orientation: v.orientation.String(), Direction: v.direction.String(),
-		Scale: v.scale, Style: v.style.String(), CenterX: v.centerX, CenterY: v.centerY,
+		FoldAngleDeg: v.foldAngle * 180 / math.Pi,
+		Scale:        v.scale, Style: v.style.String(), CenterX: v.centerX, CenterY: v.centerY,
 	}
 }
 
@@ -160,10 +164,24 @@ func restoreView(vr viewRecipe) *DrawingView {
 	orient, _ := types.ParseBaseViewOrientation(vr.Orientation)
 	dir, _ := types.ParseProjectionDirection(vr.Direction)
 	style, _ := types.ParseDrawingViewStyle(vr.Style)
+	vt := restoredViewType(vr)
 	return &DrawingView{
-		name: vr.Name, projected: vr.Projected, baseView: vr.BaseView, orientation: orient,
-		direction: dir, scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
+		name: vr.Name, viewType: vt, projected: vt == types.DrawingViewProjected, baseView: vr.BaseView,
+		foldAngle: vr.FoldAngleDeg * math.Pi / 180, orientation: orient, direction: dir,
+		scale: positiveScale(vr.Scale), style: style, centerX: vr.CenterX, centerY: vr.CenterY,
 	}
+}
+
+// restoredViewType resolves a recipe's view type, falling back to the Projected flag for
+// recipes written before the type discriminator existed.
+func restoredViewType(vr viewRecipe) types.DrawingViewType {
+	if vt, ok := types.ParseDrawingViewType(vr.Type); ok {
+		return vt
+	}
+	if vr.Projected {
+		return types.DrawingViewProjected
+	}
+	return types.DrawingViewBase
 }
 
 // restoreDims resolves a restored sheet's dimensions: the table value for a standard
