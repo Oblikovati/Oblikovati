@@ -46,13 +46,25 @@ func drawReportBugActions(s *app.Session) {
 		return
 	}
 	if native.Button("Send Report") {
-		s.BeginBugReport(bufString(reportBugUI.buf[:]))
-		clearBuf(reportBugUI.buf[:])
-		reportBugUI.open = false
+		sendReportFromDialog(s)
 	}
 	native.SameLine()
 	if native.Button("Cancel") {
-		clearBuf(reportBugUI.buf[:])
-		reportBugUI.open = false
+		cancelReportDialog()
 	}
+}
+
+// sendReportFromDialog hands the typed comment to the session (which captures + submits)
+// then empties and closes the dialog. Split from the draw so it is unit-testable without a
+// click: the window must close so the captures grab the app without it covering the view.
+func sendReportFromDialog(s *app.Session) {
+	s.BeginBugReport(bufString(reportBugUI.buf[:]))
+	clearBuf(reportBugUI.buf[:])
+	reportBugUI.open = false
+}
+
+// cancelReportDialog discards the draft and closes the dialog.
+func cancelReportDialog() {
+	clearBuf(reportBugUI.buf[:])
+	reportBugUI.open = false
 }

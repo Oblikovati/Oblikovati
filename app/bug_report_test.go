@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"os"
 	"runtime"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"oblikovati.org/build"
+	"oblikovati.org/model/display"
 	"oblikovati.org/report"
 )
 
@@ -112,6 +114,70 @@ func TestBeginBugReportIgnoredWhileInProgress(t *testing.T) {
 	if s.bugReport.winPath != first || s.bugReport.payload.Comment != "first" {
 		t.Error("second Begin should be ignored while one is in flight")
 	}
+}
+
+func TestBugReportReturnsToIdleOnError(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		err  error
+	}{
+		{"offline", report.ErrOffline},
+		{"generic", errors.New("server exploded")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := NewSession()
+			s.SetBugSubmitter(&fakeBugSubmitter{err: tc.err})
+			s.BeginBugReport("note")
+			mustWrite(t, s.bugReport.winPath, "W")
+			mustWrite(t, s.bugReport.viewPath, "V")
+			s.ServiceBugReport() // launch submit
+			waitUntil(t, func() bool { return s.bugOutcome.Load() != nil })
+			s.ServiceBugReport() // drain
+			if s.BugReportInProgress() {
+				t.Error("report should return to idle even after a failed submit")
+			}
+		})
+	}
+}
+
+func TestSubmitterLazilyDefaults(t *testing.T) {
+	s := NewSession() // no SetBugSubmitter: the real HTTP submitter is created on demand
+	if s.submitter() == nil {
+		t.Fatal("submitter() returned nil")
+	}
+}
+
+func TestDiagnosticsIncludesOpenDocuments(t *testing.T) {
+	s := NewSession()
+	if _, err := s.NewPart(); err != nil {
+		t.Fatalf("NewPart: %v", err)
+	}
+	// Before display settings are set, the document uses defaults (no per-doc dump).
+	if before := s.CollectDiagnostics(); len(before.OpenDocuments) == 0 {
+		t.Fatal("expected the new part among open documents")
+	} else if before.OpenDocuments[0].DisplaySettings != "" {
+		t.Error("a defaults document should carry no display-settings dump")
+	}
+
+	d := s.ActiveDocument()
+	if d == nil {
+		t.Fatal("no active document after NewPart")
+	}
+	d.SetDisplaySettings(display.DefaultSettings())
+
+	diag := s.CollectDiagnostics()
+	if len(diag.OpenDocuments) == 0 {
+		t.Fatal("expected open documents")
+	}
+	doc0 := diag.OpenDocuments[0]
+	if doc0.Type == "" || doc0.Name == "" {
+		t.Errorf("document info incomplete: %+v", doc0)
+	}
+	if doc0.DisplaySettings == "" {
+		t.Error("expected a display-settings dump once set")
+	}
+	// Exercises the per-document transaction-history accessor (the active-document path).
+	_ = s.TransactionLog()
 }
 
 func mustWrite(t *testing.T, path, content string) {

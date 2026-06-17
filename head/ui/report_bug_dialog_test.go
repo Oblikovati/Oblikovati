@@ -54,3 +54,30 @@ func TestInWindowReportBugDialogRenders(t *testing.T) {
 	frame()
 	frame()
 }
+
+// TestReportBugDialogSendAndCancel exercises the Send and Cancel actions directly (no click
+// simulation): Send starts a report and closes the window; Cancel just discards and closes.
+func TestReportBugDialogSendAndCancel(t *testing.T) {
+	s := framedSession()
+	s.SetBugSubmitter(stubBugSubmitter{})
+
+	reportBugUI.open = true
+	setBuf(reportBugUI.buf[:], "something broke")
+	sendReportFromDialog(s)
+	if reportBugUI.open {
+		t.Error("Send should close the dialog so the capture excludes it")
+	}
+	if !s.BugReportInProgress() {
+		t.Error("Send should start the report")
+	}
+	if bufString(reportBugUI.buf[:]) != "" {
+		t.Error("Send should clear the draft")
+	}
+
+	reportBugUI.open = true
+	setBuf(reportBugUI.buf[:], "never mind")
+	cancelReportDialog()
+	if reportBugUI.open || bufString(reportBugUI.buf[:]) != "" {
+		t.Error("Cancel should clear the draft and close the dialog")
+	}
+}
