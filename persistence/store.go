@@ -49,6 +49,17 @@ func (s *PackageStore) Save(d *doc.Document) error {
 	return pkg.Save(d.FullFileName())
 }
 
+// MarshalDocument renders the document to the YAML bytes it would be saved as (the .obk
+// file content) without writing anything — used to attach open documents to a bug report.
+// It mirrors Save's package build, but returns the bytes instead of writing a file.
+func (s *PackageStore) MarshalDocument(d *doc.Document) ([]byte, error) {
+	pkg, err := s.buildPackage(d, d.DisplayName(), string(d.SubType()), d.FileIdentity())
+	if err != nil {
+		return nil, err
+	}
+	return pkg.marshal()
+}
+
 // SaveCopy writes a copy of the document at targetFullFileName: same content,
 // fresh file identity (two files must never share an internal name), with
 // optional display-name/subtype overrides (M03-F09).

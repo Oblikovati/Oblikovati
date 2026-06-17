@@ -7,14 +7,26 @@ import (
 	"errors"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"oblikovati.org/build"
-	"oblikovati.org/model/display"
+	"oblikovati.org/event"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/report"
 )
+
+// fakeMarshalStore is a doc.Store that can also render a document to YAML, so the
+// diagnostics collector's Content path can be tested without the persistence package.
+type fakeMarshalStore struct{ yaml string }
+
+func (fakeMarshalStore) Save(*doc.Document) error                               { return nil }
+func (fakeMarshalStore) SaveCopy(*doc.Document, string, doc.CopyMetadata) error { return nil }
+func (fakeMarshalStore) Load(string) (*doc.Document, error)                     { return nil, errors.New("no store") }
+func (fakeMarshalStore) Exists(string) bool                                     { return false }
+func (f fakeMarshalStore) MarshalDocument(*doc.Document) ([]byte, error)        { return []byte(f.yaml), nil }
 
 // fakeBugSubmitter records the payload it is handed instead of POSTing it, so the
 // capture→submit flow can be driven without a network.
@@ -147,37 +159,63 @@ func TestSubmitterLazilyDefaults(t *testing.T) {
 	}
 }
 
-func TestDiagnosticsIncludesOpenDocuments(t *testing.T) {
-	s := NewSession()
+func TestDiagnosticsIncludesOpenDocumentYAML(t *testing.T) {
+	s := NewSessionWithStore(fakeMarshalStore{yaml: "schemaVersion: 2\ndocumentType: 1\n"})
 	if _, err := s.NewPart(); err != nil {
 		t.Fatalf("NewPart: %v", err)
 	}
-	// Before display settings are set, the document uses defaults (no per-doc dump).
-	if before := s.CollectDiagnostics(); len(before.OpenDocuments) == 0 {
-		t.Fatal("expected the new part among open documents")
-	} else if before.OpenDocuments[0].DisplaySettings != "" {
-		t.Error("a defaults document should carry no display-settings dump")
+	if _, err := s.NewPart(); err != nil { // a second open document
+		t.Fatalf("NewPart: %v", err)
 	}
-
-	d := s.ActiveDocument()
-	if d == nil {
-		t.Fatal("no active document after NewPart")
-	}
-	d.SetDisplaySettings(display.DefaultSettings())
 
 	diag := s.CollectDiagnostics()
-	if len(diag.OpenDocuments) == 0 {
-		t.Fatal("expected open documents")
+	if len(diag.OpenDocuments) < 2 {
+		t.Fatalf("want >= 2 open documents, got %d", len(diag.OpenDocuments))
 	}
-	doc0 := diag.OpenDocuments[0]
-	if doc0.Type == "" || doc0.Name == "" {
-		t.Errorf("document info incomplete: %+v", doc0)
+	if !diag.OpenDocuments[0].Active {
+		t.Error("the active document must be emitted first")
 	}
-	if doc0.DisplaySettings == "" {
-		t.Error("expected a display-settings dump once set")
+	active := 0
+	for i, d := range diag.OpenDocuments {
+		if d.Content == "" {
+			t.Errorf("document %d (%s) is missing its YAML content", i, d.Name)
+		}
+		if d.Type == "" {
+			t.Errorf("document %d missing type", i)
+		}
+		if d.Active {
+			active++
+		}
+	}
+	if active != 1 {
+		t.Errorf("active documents = %d, want exactly 1", active)
 	}
 	// Exercises the per-document transaction-history accessor (the active-document path).
 	_ = s.TransactionLog()
+}
+
+func TestTransactionLogIsAppendOnlySinceOpen(t *testing.T) {
+	s := NewSession()
+	d, err := s.NewPart()
+	if err != nil {
+		t.Fatalf("NewPart: %v", err)
+	}
+	before := len(s.TransactionLog())
+	// Committed transactions are recorded via the TransactionCommitted event (the same
+	// signal commitRecipeDelta emits), across the whole session.
+	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: "Sketch"})
+	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: "Extrude"})
+
+	log := s.TransactionLog()
+	if len(log) != before+2 {
+		t.Fatalf("want %d events, got %d: %v", before+2, len(log), log)
+	}
+	if !strings.Contains(log[before], "Sketch") || !strings.Contains(log[before+1], "Extrude") {
+		t.Errorf("events out of order or missing labels: %v", log[before:])
+	}
+	if !strings.Contains(log[before], d.DisplayName()) {
+		t.Errorf("event missing document name %q: %q", d.DisplayName(), log[before])
+	}
 }
 
 func mustWrite(t *testing.T, path, content string) {
