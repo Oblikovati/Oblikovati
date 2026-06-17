@@ -25,6 +25,7 @@ func (r *Router) registerDrawingViewHandlers() {
 	r.handlers[wire.MethodDrawingViewsAddProjected] = drawingViewsAddProjected
 	r.handlers[wire.MethodDrawingViewsAddAuxiliary] = drawingViewsAddAuxiliary
 	r.handlers[wire.MethodDrawingViewsAddSection] = drawingViewsAddSection
+	r.handlers[wire.MethodDrawingViewsAddDetail] = drawingViewsAddDetail
 	r.handlers[wire.MethodDrawingViewsDelete] = drawingViewsDelete
 	r.handlers[wire.MethodDrawingViewsCurves] = drawingViewsCurves
 }
@@ -138,6 +139,26 @@ func drawingViewsAddSection(s *app.Session, raw json.RawMessage) (json.RawMessag
 	v, err := views.AddSection(drawing.SectionViewSpec{
 		Name: in.Name, ParentView: in.ParentView, X1: in.X1, Y1: in.Y1, X2: in.X2, Y2: in.Y2,
 		CenterX: in.CenterXMM, CenterY: in.CenterYMM,
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.ViewResult{View: drawingViewInfo(v)})
+}
+
+func drawingViewsAddDetail(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	views, err := activeSheetViews(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddDetailViewArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	v, err := views.AddDetail(drawing.DetailViewSpec{
+		Name: in.Name, ParentView: in.ParentView, BoundaryX: in.BoundaryXMM, BoundaryY: in.BoundaryYMM,
+		RadiusMM: in.RadiusMM, Scale: in.Scale, CenterX: in.CenterXMM, CenterY: in.CenterYMM,
 	})
 	if err != nil {
 		return nil, err

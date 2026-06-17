@@ -76,10 +76,16 @@ func TestDrawingViewsLifecycleOverWire(t *testing.T) {
 		t.Error("auxiliary view has no visible curves")
 	}
 
+	var det wire.ViewResult
+	call(t, r, s, "drawingViews.addDetail", `{"name":"DET","parentView":"FRONT","boundaryXmm":120,"boundaryYmm":100,"radiusMm":40,"scale":4,"centerXmm":360,"centerYmm":100}`, &det)
+	if det.View.Type != "detail" || det.View.BaseView != "FRONT" {
+		t.Fatalf("detail view = %+v, want a detail off FRONT", det.View)
+	}
+
 	var list wire.ListDrawingViewsResult
 	call(t, r, s, "drawingViews.list", "{}", &list)
-	if len(list.Views) != 3 {
-		t.Fatalf("views = %d, want 3 (base + projected + auxiliary)", len(list.Views))
+	if len(list.Views) != 4 {
+		t.Fatalf("views = %d, want 4 (base + projected + auxiliary + detail)", len(list.Views))
 	}
 
 	var curves wire.ViewCurvesResult

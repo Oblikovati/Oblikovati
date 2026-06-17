@@ -171,6 +171,56 @@ func (vs *DrawingViews) PreviewSection(parentView string, x1, y1, x2, y2 float64
 	return v.curves, true
 }
 
+// DetailViewSpec describes a detail view: a magnified circular region of a parent view. The
+// boundary centre/radius are in sheet millimetres on the parent; Scale is the (larger) detail
+// scale.
+type DetailViewSpec struct {
+	Name             string
+	ParentView       string
+	BoundaryX        float64 // circle centre on the parent (sheet mm)
+	BoundaryY        float64
+	RadiusMM         float64 // circle radius on the parent (sheet mm)
+	Scale            float64
+	CenterX, CenterY float64 // where the detail view sits on the sheet
+}
+
+// AddDetail adds a detail view: the parent's projection clipped to a circular boundary and
+// re-placed at a larger scale. The parent must be a base view.
+func (vs *DrawingViews) AddDetail(spec DetailViewSpec) (*DrawingView, error) {
+	parent, body, err := vs.parentBaseFor(spec.ParentView)
+	if err != nil {
+		return nil, err
+	}
+	name, err := vs.uniqueName(spec.Name)
+	if err != nil {
+		return nil, err
+	}
+	v := &DrawingView{
+		name: name, viewType: types.DrawingViewDetail, baseView: spec.ParentView,
+		detail:      detailBoundaryOf(parent, spec.BoundaryX, spec.BoundaryY, spec.RadiusMM),
+		orientation: parent.orientation, style: parent.style, scale: positiveScale(spec.Scale),
+		centerX: spec.CenterX, centerY: spec.CenterY,
+	}
+	v.recompute(body, baseBasis(parent.orientation, bodyCenter(body)))
+	vs.items = append(vs.items, v)
+	return v, nil
+}
+
+// PreviewDetail returns the origin-placed curves a detail view of the given region on parentView
+// at the given scale would produce, without adding it.
+func (vs *DrawingViews) PreviewDetail(parentView string, boundaryX, boundaryY, radiusMM, scale float64) ([]DrawingCurve, bool) {
+	parent, body, err := vs.parentBaseFor(parentView)
+	if err != nil {
+		return nil, false
+	}
+	v := &DrawingView{
+		viewType: types.DrawingViewDetail, style: parent.style, scale: positiveScale(scale),
+		detail: detailBoundaryOf(parent, boundaryX, boundaryY, radiusMM),
+	}
+	v.recompute(body, baseBasis(parent.orientation, bodyCenter(body)))
+	return v.curves, true
+}
+
 // PreviewAuxiliary returns the origin-centred curves an auxiliary view folded off parentView at
 // foldAngleRad would produce, without adding it. ok is false when the parent or model is missing.
 func (vs *DrawingViews) PreviewAuxiliary(parentView string, foldAngleRad float64) ([]DrawingCurve, bool) {
@@ -268,30 +318,29 @@ func (vs *DrawingViews) Recompute() {
 	}
 }
 
-// basisFor returns the projection frame a view uses, dispatching on its type. A derived view
-// whose parent is missing yields ok=false (it is left as-is rather than mis-projected).
+// basisFor returns the projection frame a view uses, dispatching on its type. A base view
+// projects its standard orientation; a derived view derives from its parent's frame (and yields
+// ok=false if that parent is missing, so it is left as-is rather than mis-projected).
 func (vs *DrawingViews) basisFor(v *DrawingView, origin math.Point3) (hlr.View, bool) {
+	if v.viewType == types.DrawingViewBase {
+		return baseBasis(v.orientation, origin), true
+	}
+	base, ok := vs.ByName(v.baseView)
+	if !ok {
+		return hlr.View{}, false
+	}
+	parent := baseBasis(base.orientation, origin)
 	switch v.viewType {
 	case types.DrawingViewProjected:
-		base, ok := vs.ByName(v.baseView)
-		if !ok {
-			return hlr.View{}, false
-		}
-		return projectedBasis(baseBasis(base.orientation, origin), v.direction, origin), true
+		return projectedBasis(parent, v.direction, origin), true
 	case types.DrawingViewAuxiliary:
-		base, ok := vs.ByName(v.baseView)
-		if !ok {
-			return hlr.View{}, false
-		}
-		return auxiliaryBasis(baseBasis(base.orientation, origin), v.foldAngle, origin), true
+		return auxiliaryBasis(parent, v.foldAngle, origin), true
 	case types.DrawingViewSection:
-		base, ok := vs.ByName(v.baseView)
-		if !ok {
-			return hlr.View{}, false
-		}
-		return sectionBasis(baseBasis(base.orientation, origin), v.section, base.scale, base.centerX, base.centerY, origin), true
-	default: // base view
-		return baseBasis(v.orientation, origin), true
+		return sectionBasis(parent, v.section, base.scale, base.centerX, base.centerY, origin), true
+	default: // detail: reuse the parent projection (recompute clips). Re-derive the clip circle
+		// from the persisted sheet-mm boundary so it tracks a parent rescale/move (associativity).
+		v.detail = detailBoundaryOf(base, v.detail.sheetCX, v.detail.sheetCY, v.detail.sheetR)
+		return parent, true
 	}
 }
 
