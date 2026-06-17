@@ -22,14 +22,18 @@ func ImportDWGFile(part *compdef.PartComponentDefinition, path string, plane ske
 	return ImportDWG(part, data, plane)
 }
 
-// DWGImportResult summarises a DWG import: whether it landed in a 3D sketch (vs a 2D sketch
-// on the chosen plane), how many entities were added, and any per-entity decode/convert
-// warnings.
-type DWGImportResult struct {
+// SketchImportResult summarises a drawing import (DWG/DXF): whether it landed in a 3D sketch
+// (vs a 2D sketch on the chosen plane), how many entities were added, and any per-entity
+// decode/convert warnings.
+type SketchImportResult struct {
 	Is3D        bool
 	EntityCount int
 	Warnings    []string
 }
+
+// DWGImportResult is the original name of SketchImportResult, kept so existing callers (the
+// session, the router) compile unchanged.
+type DWGImportResult = SketchImportResult
 
 // ImportDWG decodes DWG bytes and adds their geometry to part. A planar drawing becomes a
 // 2D Sketch on plane (the world origin mapping to the plane origin, per the caller's chosen
