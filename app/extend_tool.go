@@ -60,8 +60,7 @@ func (t *ExtendTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	d := t.distance
-	t.added = feature.NewExtendFeatures(part.Features()).Add(t.edge.Edge.ReferenceKey(), func() float64 { return d })
+	t.added = t.addExtend(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Extend")
 	if !t.added.Health().OK() {
@@ -69,6 +68,22 @@ func (t *ExtendTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// addExtend builds the extend feature into engine fs — shared by Commit and the preview.
+func (t *ExtendTool) addExtend(fs *feature.PartFeatures) *feature.PartFeature {
+	d := t.distance
+	return feature.NewExtendFeatures(fs).Add(t.edge.Edge.ReferenceKey(), func() float64 { return d })
+}
+
+// DraftFeature returns the unattached extend feature the viewport previews before commit.
+func (t *ExtendTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addExtend(fs), nil
+	})
 }
 
 // Cancel restores the default selection filter.

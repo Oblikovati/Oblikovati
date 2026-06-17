@@ -69,13 +69,7 @@ func (t *FaceOffsetTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	keys := make([][]byte, len(t.faces))
-	for i, f := range t.faces {
-		keys[i] = f.Face.ReferenceKey()
-	}
-	d := t.distance
-	t.added = feature.NewModifyFeatures(part.Features()).
-		AddFaceOffsetApprox(keys, func() float64 { return d }, approximationAt(t.approxIdx))
+	t.added = t.addFaceOffset(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Offset Face")
 	if !t.added.Health().OK() {
@@ -85,8 +79,25 @@ func (t *FaceOffsetTool) Commit(s *Session) error {
 	return nil
 }
 
+// addFaceOffset builds the offset-face feature into engine fs — shared by Commit and preview.
+func (t *FaceOffsetTool) addFaceOffset(fs *feature.PartFeatures) *feature.PartFeature {
+	d := t.distance
+	return feature.NewModifyFeatures(fs).
+		AddFaceOffsetApprox(faceKeys(t.faces), func() float64 { return d }, approximationAt(t.approxIdx))
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *FaceOffsetTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached offset-face feature the viewport previews before commit.
+func (t *FaceOffsetTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFaceOffset(fs), nil
+	})
+}
 
 // Prompt guides the user through the offset steps.
 func (t *FaceOffsetTool) Prompt(*Session) string {

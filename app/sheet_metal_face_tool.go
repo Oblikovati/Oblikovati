@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
 
@@ -48,15 +49,22 @@ func (t *SheetMetalFaceTool) Commit(s *Session) error {
 	if len(t.profiles) == 0 {
 		return errors.New("sheet-metal face: pick a closed sketch profile")
 	}
+	t.added = t.addFace(part, part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Face")
+}
+
+// addFace builds the sheet-metal face feature into engine fs — shared by Commit and the
+// preview. The operation (new body vs join the running sheet) is decided from the PART's
+// current result, not fs, so the preview matches whether a sheet already exists.
+func (t *SheetMetalFaceTool) addFace(part *compdef.PartComponentDefinition, fs *feature.PartFeatures) *feature.PartFeature {
 	op := ops.NewBody
 	if len(part.Features().Result()) > 0 {
 		op = ops.Join
 	}
 	p := t.profiles[0]
-	t.added = feature.NewSheetMetalFaceFeatures(part.Features()).Add(&feature.SheetMetalFaceDefinition{
+	return feature.NewSheetMetalFaceFeatures(fs).Add(&feature.SheetMetalFaceDefinition{
 		Sketch: p.Sketch, ProfileIndex: p.ProfileIndex, Operation: op,
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Face")
 }
 
 // Cancel abandons the tool.
@@ -64,3 +72,17 @@ func (t *SheetMetalFaceTool) Cancel(s *Session) { s.Selection().SetFilter(NewSel
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SheetMetalFaceTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached sheet-metal face feature the viewport previews.
+func (t *SheetMetalFaceTool) DraftFeature(s *Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	part, err := activeSheetMetalPart(s)
+	if err != nil {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFace(part, fs), nil
+	})
+}

@@ -79,11 +79,7 @@ func (t *ReplaceFaceTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	keys := make([][]byte, len(t.faces))
-	for i, f := range t.faces {
-		keys[i] = f.Face.ReferenceKey()
-	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddReplaceFace(keys, t.target.Face.ReferenceKey())
+	t.added = t.addReplaceFace(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Replace Face")
 	if !t.added.Health().OK() {
@@ -93,8 +89,23 @@ func (t *ReplaceFaceTool) Commit(s *Session) error {
 	return nil
 }
 
+// addReplaceFace builds the replace-face feature into engine fs — shared by Commit and preview.
+func (t *ReplaceFaceTool) addReplaceFace(fs *feature.PartFeatures) *feature.PartFeature {
+	return feature.NewModifyFeatures(fs).AddReplaceFace(faceKeys(t.faces), t.target.Face.ReferenceKey())
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ReplaceFaceTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached replace-face feature the viewport previews before commit.
+func (t *ReplaceFaceTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addReplaceFace(fs), nil
+	})
+}
 
 // Prompt guides the user through the replace-face steps.
 func (t *ReplaceFaceTool) Prompt(*Session) string {

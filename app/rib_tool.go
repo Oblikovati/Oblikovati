@@ -59,8 +59,7 @@ func (t *RibTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	th, d := t.thickness, t.depth
-	t.added = feature.NewRibFeatures(part.Features()).Add(t.profile, t.pathIndex, konst(th), konst(d), ops.Join)
+	t.added = t.addRib(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Rib")
 	if !t.added.Health().OK() {
@@ -69,11 +68,27 @@ func (t *RibTool) Commit(s *Session) error {
 	return nil
 }
 
+// addRib builds the rib feature into engine fs — shared by Commit and the preview.
+func (t *RibTool) addRib(fs *feature.PartFeatures) *feature.PartFeature {
+	th, d := t.thickness, t.depth
+	return feature.NewRibFeatures(fs).Add(t.profile, t.pathIndex, konst(th), konst(d), ops.Join)
+}
+
 // Cancel abandons the tool with no change.
 func (t *RibTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *RibTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached rib feature the viewport previews before commit.
+func (t *RibTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addRib(fs), nil
+	})
+}
 
 // ribProfile picks the sketch + open-path index the rib operates on: the active sketch if it
 // has an open path, else the part's most recent sketch that does. Returns nil when none.

@@ -79,9 +79,7 @@ func (t *EmbossTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	skt := t.profiles[0].Sketch
-	d, eng := t.depth, t.engrave
-	t.added = feature.NewEmbossFeatures(part.Features()).Add(skt, profileIndicesOn(t.profiles, skt), func() float64 { return d }, eng, 0)
+	t.added = t.addEmboss(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Emboss")
 	if !t.added.Health().OK() {
@@ -89,6 +87,23 @@ func (t *EmbossTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// addEmboss builds the emboss feature into engine fs — shared by Commit and the preview.
+func (t *EmbossTool) addEmboss(fs *feature.PartFeatures) *feature.PartFeature {
+	skt := t.profiles[0].Sketch
+	d, eng := t.depth, t.engrave
+	return feature.NewEmbossFeatures(fs).Add(skt, profileIndicesOn(t.profiles, skt), func() float64 { return d }, eng, 0)
+}
+
+// DraftFeature returns the unattached emboss feature the viewport previews before commit.
+func (t *EmbossTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addEmboss(fs), nil
+	})
 }
 
 // Cancel restores the default selection filter.

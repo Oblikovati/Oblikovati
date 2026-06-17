@@ -80,12 +80,7 @@ func (t *SplitTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	mods := feature.NewModifyFeatures(part.Features())
-	if t.facesOnly {
-		t.added = mods.AddSplitFaces(t.plane)
-	} else {
-		t.added = mods.AddSplitSolid(t.plane, t.keep)
-	}
+	t.added = t.addSplit(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Split")
 	if !t.added.Health().OK() {
@@ -93,6 +88,25 @@ func (t *SplitTool) Commit(s *Session) error {
 	}
 	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
+}
+
+// addSplit builds the split feature into engine fs — shared by Commit and the preview.
+func (t *SplitTool) addSplit(fs *feature.PartFeatures) *feature.PartFeature {
+	mods := feature.NewModifyFeatures(fs)
+	if t.facesOnly {
+		return mods.AddSplitFaces(t.plane)
+	}
+	return mods.AddSplitSolid(t.plane, t.keep)
+}
+
+// DraftFeature returns the unattached split feature the viewport previews before commit.
+func (t *SplitTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addSplit(fs), nil
+	})
 }
 
 // Cancel restores the default selection filter.

@@ -50,8 +50,7 @@ func (t *ThickenTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	t.added = feature.NewModifyFeatures(part.Features()).AddThicken(t.thickness)
-	t.added.Definition().(*feature.ThickenFeature).SetApproximation(approximationAt(t.approxIdx))
+	t.added = t.addThicken(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Thicken")
 	if !t.added.Health().OK() {
@@ -60,8 +59,25 @@ func (t *ThickenTool) Commit(s *Session) error {
 	return nil
 }
 
+// addThicken builds the thicken feature into engine fs — shared by Commit and the preview.
+func (t *ThickenTool) addThicken(fs *feature.PartFeatures) *feature.PartFeature {
+	pf := feature.NewModifyFeatures(fs).AddThicken(t.thickness)
+	pf.Definition().(*feature.ThickenFeature).SetApproximation(approximationAt(t.approxIdx))
+	return pf
+}
+
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ThickenTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached thicken feature the viewport previews before commit.
+func (t *ThickenTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addThicken(fs), nil
+	})
+}
 
 // Prompt guides the user.
 func (t *ThickenTool) Prompt(*Session) string { return "Set the thickness, then click OK" }

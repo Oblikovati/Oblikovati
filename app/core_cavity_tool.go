@@ -66,15 +66,29 @@ func (t *CoreCavityTool) Commit(s *Session) error {
 	if err != nil {
 		return err
 	}
-	pos := t.position
-	t.added = feature.NewCoreCavityFeatures(part.Features()).
-		AddByPartingPlaneFn(t.axis, func() float64 { return pos }, t.shrinkage)
+	t.added = t.addCoreCavity(part.Features())
 	part.Recompute()
 	s.recordEdit(part, "Core/Cavity")
 	if !t.added.Health().OK() {
 		return errors.New("core/cavity: " + t.added.Health().Reason)
 	}
 	return nil
+}
+
+// addCoreCavity builds the core/cavity feature into engine fs — shared by Commit and preview.
+func (t *CoreCavityTool) addCoreCavity(fs *feature.PartFeatures) *feature.PartFeature {
+	pos := t.position
+	return feature.NewCoreCavityFeatures(fs).AddByPartingPlaneFn(t.axis, func() float64 { return pos }, t.shrinkage)
+}
+
+// DraftFeature returns the unattached core/cavity feature the viewport previews before commit.
+func (t *CoreCavityTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addCoreCavity(fs), nil
+	})
 }
 
 // Cancel implements [Tool] (nothing to restore).

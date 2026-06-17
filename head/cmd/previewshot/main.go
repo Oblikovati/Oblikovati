@@ -104,6 +104,10 @@ func setupOp(s *app.Session, op string) error {
 		startPendingCoil(s)
 	case "thread":
 		return startPendingThread(s)
+	case "faceoffset":
+		startPendingFaceOffset(s, mustBlock(s))
+	case "deleteface":
+		startPendingDeleteFace(s, mustBlock(s))
 	default:
 		return fmt.Errorf("unknown -op %q", op)
 	}
@@ -313,6 +317,23 @@ func startPendingThread(s *app.Session) error {
 	tool.SetPitchIndex(0)
 	tool.SetCut(true) // cut thread → removes material → red
 	return nil
+}
+
+// startPendingFaceOffset offsets the block's top face outward (adds material → green delta).
+func startPendingFaceOffset(s *app.Session, def *compdef.PartComponentDefinition) {
+	body := def.SurfaceBodies().Item(0)
+	t := app.NewFaceOffsetTool()
+	s.StartTool(t)
+	t.Pick(s, app.FaceHandle{Face: faceByNormalZ(body, 1), Body: body})
+	t.SetDistance(2)
+}
+
+// startPendingDeleteFace deletes (and heals) the block's top face (removes material → red delta).
+func startPendingDeleteFace(s *app.Session, def *compdef.PartComponentDefinition) {
+	body := def.SurfaceBodies().Item(0)
+	t := app.NewDeleteFaceTool()
+	s.StartTool(t)
+	t.Pick(s, app.FaceHandle{Face: faceByNormalZ(body, 1), Body: body})
 }
 
 // --- geometry helpers ------------------------------------------------------------------

@@ -64,13 +64,18 @@ func (t *SheetMetalFlangeTool) Commit(s *Session) error {
 	if !t.CanCommit() {
 		return errors.New("sheet-metal flange: pick an edge and set a positive height/angle")
 	}
+	t.added = t.addFlange(part.Features())
+	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Flange")
+}
+
+// addFlange builds the sheet-metal flange feature into engine fs — shared by Commit and preview.
+func (t *SheetMetalFlangeTool) addFlange(fs *feature.PartFeatures) *feature.PartFeature {
 	height, angle := t.height, t.angle
-	t.added = feature.NewSheetMetalFlangeFeatures(part.Features()).Add(&feature.SheetMetalFlangeDefinition{
+	return feature.NewSheetMetalFlangeFeatures(fs).Add(&feature.SheetMetalFlangeDefinition{
 		EdgeKey: t.edge.Edge.ReferenceKey(),
 		Height:  func() float64 { return height },
 		Angle:   func() float64 { return angle },
 	})
-	return commitSheetMetalFeature(s, part, t.added, "Sheet Metal Flange")
 }
 
 // Cancel abandons the tool.
@@ -78,3 +83,13 @@ func (t *SheetMetalFlangeTool) Cancel(s *Session) { s.Selection().SetFilter(NewS
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SheetMetalFlangeTool) AddedFeature() *feature.PartFeature { return t.added }
+
+// DraftFeature returns the unattached sheet-metal flange feature the viewport previews.
+func (t *SheetMetalFlangeTool) DraftFeature(*Session) (feature.Feature, bool) {
+	if !t.CanCommit() {
+		return nil, false
+	}
+	return draftFromScratch(func(fs *feature.PartFeatures) (*feature.PartFeature, error) {
+		return t.addFlange(fs), nil
+	})
+}

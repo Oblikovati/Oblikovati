@@ -38,6 +38,25 @@ var (
 	_ DraftPreviewable = (*ShellTool)(nil)
 	_ DraftPreviewable = (*DraftTool)(nil)
 	_ DraftPreviewable = (*ThreadTool)(nil)
+	_ DraftPreviewable = (*RibTool)(nil)
+	_ DraftPreviewable = (*EmbossTool)(nil)
+	_ DraftPreviewable = (*ThickenTool)(nil)
+	_ DraftPreviewable = (*SplitTool)(nil)
+	_ DraftPreviewable = (*GrillTool)(nil)
+	_ DraftPreviewable = (*CoreCavityTool)(nil)
+	_ DraftPreviewable = (*FaceOffsetTool)(nil)
+	_ DraftPreviewable = (*ReplaceFaceTool)(nil)
+	_ DraftPreviewable = (*DeleteFaceTool)(nil)
+	_ DraftPreviewable = (*PatchTool)(nil)
+	_ DraftPreviewable = (*StitchTool)(nil)
+	_ DraftPreviewable = (*SurfaceTrimTool)(nil)
+	_ DraftPreviewable = (*SculptTool)(nil)
+	_ DraftPreviewable = (*ExtendTool)(nil)
+	_ DraftPreviewable = (*SheetMetalFaceTool)(nil)
+	_ DraftPreviewable = (*SheetMetalFlangeTool)(nil)
+	_ DraftPreviewable = (*SheetMetalLipTool)(nil)
+	_ DraftPreviewable = (*SheetMetalRipTool)(nil)
+	_ DraftPreviewable = (*SheetMetalPunchTool)(nil)
 )
 
 // previewAddColor / previewRemoveColor are the operation-coded preview tints: a feature that
@@ -82,6 +101,16 @@ func (s *Session) featurePreviewItems(t DraftPreviewable) []renderer.DrawItem {
 		return nil
 	}
 	return deltaPreviewItems(base, result)
+}
+
+// faceKeys returns the reference keys of picked faces — the input the modify features
+// (delete/replace/offset face) consume, shared by their tools' commit and preview builders.
+func faceKeys(faces []FaceHandle) [][]byte {
+	keys := make([][]byte, len(faces))
+	for i, f := range faces {
+		keys[i] = f.Face.ReferenceKey()
+	}
+	return keys
 }
 
 // draftFromScratch builds a tool's feature into a throwaway engine — so the part's real
