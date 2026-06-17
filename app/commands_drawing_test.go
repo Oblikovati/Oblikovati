@@ -113,6 +113,34 @@ func TestModelReferenceToolDrivesTitleBlock(t *testing.T) {
 	}
 }
 
+func TestDraftingStandardToolSwitchesStandard(t *testing.T) {
+	s := drawingSession(t)
+	c, _ := ActiveDrawing(s)
+	if c.Styles().ActiveStandard() != types.DraftingISO {
+		t.Fatalf("default standard = %v, want ISO", c.Styles().ActiveStandard())
+	}
+	tool := NewDraftingStandardTool()
+	if tool.Name() == "" || !tool.CanCommit() {
+		t.Fatal("DraftingStandardTool should be named and committable")
+	}
+	tool.Start(s)
+	tool.Pick(s, nil) // no-op for a dialog-only tool
+	tool.Params().Choices[0].Set(draftingStandardIndexOf(types.DraftingANSI))
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	if c.Styles().ActiveStandard() != types.DraftingANSI {
+		t.Errorf("after tool = %v, want ANSI", c.Styles().ActiveStandard())
+	}
+	if c.Styles().ActiveStyle().DimensionStyle().Unit() != types.DimensionInch {
+		t.Error("ANSI dimension style should report inches")
+	}
+	NewDraftingStandardTool().Cancel(s) // abandoning leaves the standard unchanged
+	if c.Styles().ActiveStandard() != types.DraftingANSI {
+		t.Error("Cancel must not change the active standard")
+	}
+}
+
 func TestDeleteSheetKeepsAtLeastOne(t *testing.T) {
 	s := drawingSession(t)
 	if canDeleteSheet(s) {

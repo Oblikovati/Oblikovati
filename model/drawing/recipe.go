@@ -27,6 +27,7 @@ var _ doc.RecipeContent = (*Content)(nil)
 // on open, so the title block always reflects the current iProperties.
 type drawingRecipe struct {
 	ModelReference string        `yaml:"modelReference,omitempty"`
+	Standard       string        `yaml:"standard,omitempty"` // active drafting standard ("" ⇒ ISO)
 	ActiveSheet    int           `yaml:"activeSheet,omitempty"`
 	Sheets         []sheetRecipe `yaml:"sheets,omitempty"`
 }
@@ -46,7 +47,7 @@ type sheetRecipe struct {
 // MarshalRecipe renders the drawing's sheets and referenced model as YAML
 // (doc.RecipeContent).
 func (c *Content) MarshalRecipe() ([]byte, error) {
-	r := drawingRecipe{ModelReference: c.modelRef, ActiveSheet: c.sheets.active}
+	r := drawingRecipe{ModelReference: c.modelRef, Standard: c.styles.active.String(), ActiveSheet: c.sheets.active}
 	for _, sh := range c.sheets.items {
 		r.Sheets = append(r.Sheets, sheetRecipeOf(sh))
 	}
@@ -62,6 +63,9 @@ func (c *Content) ApplyRecipe(model []byte) error {
 		return fmt.Errorf("drawing: parse recipe: %w", err)
 	}
 	c.modelRef = r.ModelReference
+	if std, ok := types.ParseDraftingStandard(r.Standard); ok {
+		c.styles.SetActiveStandard(std)
+	}
 	c.sheets = newSheets()
 	c.sheets.lookup = c.resolveProperty
 	for _, sr := range r.Sheets {

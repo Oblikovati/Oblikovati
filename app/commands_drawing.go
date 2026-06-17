@@ -31,6 +31,9 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Model Reference", "Setup", "drawing-model",
 			"Choose the model this drawing documents; its iProperties fill the title-block fields.",
 			func() Tool { return NewModelReferenceTool() }),
+		drawingToolCommand("Drafting Standard", "Setup", "drawing-standard",
+			"Set the drawing's drafting standard (ISO or ANSI); it governs dimension, text and line appearance.",
+			func() Tool { return NewDraftingStandardTool() }),
 	}
 }
 
