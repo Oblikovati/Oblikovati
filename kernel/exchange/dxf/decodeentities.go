@@ -58,6 +58,10 @@ func decodeEntity(name string, body []pair) (drawing.Entity, error) {
 		return decodeCircle(indexByCode(body))
 	case "POINT":
 		return decodePoint(indexByCode(body))
+	case "ARC":
+		return decodeArc(indexByCode(body))
+	case "ELLIPSE":
+		return decodeEllipse(indexByCode(body))
 	default:
 		return nil, nil
 	}
@@ -96,6 +100,61 @@ func decodePoint(m map[int]pair) (drawing.Entity, error) {
 		return nil, err
 	}
 	return &drawing.Point{Handle: handleOf(m), Position: pos}, nil
+}
+
+// decodeArc reads ARC: centre (10/20/30), radius (40), start/end angles (50/51, in DEGREES
+// — converted to the model's radians), extrusion normal (210/220/230).
+func decodeArc(m map[int]pair) (drawing.Entity, error) {
+	center, err := coord(m, 10, 20, 30)
+	if err != nil {
+		return nil, err
+	}
+	radius, err := optFloat(m, 40)
+	if err != nil {
+		return nil, err
+	}
+	start, err := optFloat(m, 50)
+	if err != nil {
+		return nil, err
+	}
+	end, err := optFloat(m, 51)
+	if err != nil {
+		return nil, err
+	}
+	return &drawing.Arc{
+		Handle: handleOf(m), Center: center, Radius: radius,
+		StartAngle: degToRad(start), EndAngle: degToRad(end), Normal: normalOf(m),
+	}, nil
+}
+
+// decodeEllipse reads ELLIPSE: centre (10/20/30), major-axis endpoint relative to centre
+// (11/21/31), axis ratio (40), start/end parametric angles (41/42, already in RADIANS —
+// unlike ARC, no conversion), extrusion normal (210/220/230).
+func decodeEllipse(m map[int]pair) (drawing.Entity, error) {
+	center, err := coord(m, 10, 20, 30)
+	if err != nil {
+		return nil, err
+	}
+	major, err := coord(m, 11, 21, 31)
+	if err != nil {
+		return nil, err
+	}
+	ratio, err := optFloat(m, 40)
+	if err != nil {
+		return nil, err
+	}
+	start, err := optFloat(m, 41)
+	if err != nil {
+		return nil, err
+	}
+	end, err := optFloat(m, 42)
+	if err != nil {
+		return nil, err
+	}
+	return &drawing.Ellipse{
+		Handle: handleOf(m), Center: center, MajorAxis: major, AxisRatio: ratio,
+		StartAngle: start, EndAngle: end, Normal: normalOf(m),
+	}, nil
 }
 
 // indexByCode maps an entity's group pairs by code (first occurrence wins). Suitable for
