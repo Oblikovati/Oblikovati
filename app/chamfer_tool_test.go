@@ -5,6 +5,7 @@ package app
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/compdef"
@@ -102,6 +103,28 @@ func TestChamferToolSeedsCornerPreference(t *testing.T) {
 	}
 	if def := ch.AddedFeature().Definition().(*feature.ChamferFeature).Definition(); def.FlatCorners {
 		t.Error("committed chamfer should carry the pointy preference")
+	}
+}
+
+// TestChamferToolSeedsConcaveStrategy checks the tool adopts the session's default concave-edge
+// strategy on Start and carries it (via the combo index) to the committed feature's definition.
+func TestChamferToolSeedsConcaveStrategy(t *testing.T) {
+	s, block := newPartWithBlock(t, 2)
+	s.SetPicker(stubPicker{sel: verticalEdgeOf(t, block)})
+	s.SetChamferConcaveStrategy(types.ChamferConcaveInward)
+
+	ch := NewChamferTool()
+	s.StartTool(ch)
+	if ch.ConcaveStrategyIndex() != 1 {
+		t.Errorf("tool concave index = %d, want 1 (inward) from the session preference", ch.ConcaveStrategyIndex())
+	}
+	ch.SetConcaveStrategyIndex(0) // user switches back to outward in the panel
+	s.Click(1, 1)
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	if def := ch.AddedFeature().Definition().(*feature.ChamferFeature).Definition(); def.ConcaveStrategy != types.ChamferConcaveOutward {
+		t.Errorf("committed chamfer concave strategy = %v, want outward (the panel choice)", def.ConcaveStrategy)
 	}
 }
 

@@ -292,6 +292,7 @@ func editChamferTool(f *feature.PartFeature, c *feature.ChamferFeature) *Chamfer
 	t.seededEdgeKeys = cloneKeys(def.EdgeKeys)
 	t.distance = callOrZeroFn(def.Distance)
 	t.flatCorners = def.FlatCorners
+	t.concaveStrategy = def.ConcaveStrategy
 	t.bindEdit(f, snapshotChamferDef(def))
 	return t
 }

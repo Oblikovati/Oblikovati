@@ -117,6 +117,7 @@ type Session struct {
 	bodyColorStyles      map[string]string              // body reference key → assigned color-style name (M16-F02 #403/#408)
 	displayOptions       display.Options                // app-level display options that parameterize the display modes (M16-F07 #643)
 	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
+	chamferConcaveOut    bool                           // default concave-edge strategy for new chamfers (true ⇒ outward fill)
 	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
 	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
 	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
@@ -198,6 +199,7 @@ func newSession(store doc.Store) *Session {
 		lightingStyle:      renderer.LightingThreePoint,
 		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
+		chamferConcaveOut:  true, // concave edges fill the inside corner by default (outward)
 	}
 	s.seedVisualState()
 	s.graphics.SetBodyResolver(s.resolveOverlayMesh) // M16-F05: surface-overlay body tessellation

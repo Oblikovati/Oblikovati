@@ -75,18 +75,24 @@ func (f *FilletFeature) Recompute(in Input) (Output, error) {
 // ChamferType aliases the public chamfer-mode discriminator (ADR-0018).
 type ChamferType = types.ChamferType
 
+// ChamferConcaveStrategy aliases the public concave-edge strategy discriminator (ADR-0018).
+type ChamferConcaveStrategy = types.ChamferConcaveStrategy
+
 // ChamferDefinition bevels selected edges. Type (M20-F03) selects the setback mode: equal
 // Distance on both faces (the default / zero value), two independent distances (Distance +
 // Distance2, asymmetric), or a Distance plus the chamfer-face Angle. FlatCorners blends a
 // vertex where three selected edges meet into a flat triangular face — only for the
 // equal-distance mode; an asymmetric chamfer leaves the corner planes to meet at a point.
+// ConcaveStrategy applies only to CONCAVE (internal) edges: fill the inside corner with material
+// (outward, the zero-value default) or cut a recessed relief groove (inward).
 type ChamferDefinition struct {
-	EdgeKeys    [][]byte
-	Distance    func() float64
-	Distance2   func() float64 // twoDistances: setback on the second face
-	Angle       func() float64 // distanceAndAngle: chamfer-face angle (radians)
-	Type        ChamferType    // zero value ⇒ equal-distance
-	FlatCorners bool
+	EdgeKeys        [][]byte
+	Distance        func() float64
+	Distance2       func() float64 // twoDistances: setback on the second face
+	Angle           func() float64 // distanceAndAngle: chamfer-face angle (radians)
+	Type            ChamferType    // zero value ⇒ equal-distance
+	FlatCorners     bool
+	ConcaveStrategy ChamferConcaveStrategy // zero value ⇒ outward (fill the inside corner)
 }
 
 // ChamferFeature bevels selected edges (equal-distance, two-distance, or distance-and-angle).
@@ -107,7 +113,7 @@ func (c *ChamferFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return chamferEdges(in, c.def.EdgeKeys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners)
+	return chamferEdges(in, c.def.EdgeKeys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners, c.def.ConcaveStrategy)
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.
@@ -289,8 +295,16 @@ func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64)
 
 // AddChamferCorners bevels the given edges by distance; flatCorners selects whether a
 // three-edge corner is blended into a flat triangular face (true) or left pointy (false).
+// Concave edges fill outward (the default); use [AddChamferConcave] to relieve them inward.
 func (c *DressUpFeatures) AddChamferCorners(edgeKeys [][]byte, distance func() float64, flatCorners bool) *PartFeature {
 	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners})
+}
+
+// AddChamferConcave bevels the given edges by distance with an explicit concave-edge strategy:
+// outward fills the inside corner with material (the default), inward cuts a recessed relief
+// groove. Convex edges are unaffected by the strategy. Three-edge corners blend flat.
+func (c *DressUpFeatures) AddChamferConcave(edgeKeys [][]byte, distance func() float64, flatCorners bool, strategy ChamferConcaveStrategy) *PartFeature {
+	return c.addChamfer(&ChamferDefinition{EdgeKeys: edgeKeys, Distance: distance, Type: types.ChamferDistance, FlatCorners: flatCorners, ConcaveStrategy: strategy})
 }
 
 // AddChamferTwoDistances bevels the given edges with independent setbacks on the two adjacent
