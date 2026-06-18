@@ -77,9 +77,10 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
 	sketchPlane, dims, gfxLabels, gfxImages := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
-	drawBoxSelectRect(s, bx, by)  // the rubber-band selection rectangle, on top of the image
-	drawZoomWindowRect(s, bx, by) // the Zoom Window rubber band (#913 N16), if armed
-	drawOrbitRing(bx, by, pw, ph) // the Free-Orbit ring while F4 is held (#913 N5–N8)
+	drawBoxSelectRect(s, bx, by)         // the rubber-band selection rectangle, on top of the image
+	drawZoomWindowRect(s, bx, by)        // the Zoom Window rubber band (#913 N16), if armed
+	drawOrbitRing(bx, by, pw, ph)        // the Free-Orbit ring while F4 is held (#913 N5–N8)
+	drawNavigationBar(s, cx, cy, pw, ph) // the floating nav-tool strip at the right edge (#913 N25)
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity(), hit.arrow)
 	}

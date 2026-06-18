@@ -40,6 +40,24 @@ func TestShowCompassNoStoreIsInSession(t *testing.T) {
 	}
 }
 
+// TestNavBarTogglePersists confirms the Navigation Bar show/hide toggle is a global preference
+// that survives across sessions (#913 N25).
+func TestNavBarTogglePersists(t *testing.T) {
+	store := userprefs.NewMemStore()
+	s1 := NewSession()
+	s1.SetUserPrefsStore(store)
+	if !s1.ShowNavBar() {
+		t.Fatal("the Navigation Bar should be shown by default")
+	}
+	s1.SetShowNavBar(false)
+
+	s2 := NewSession()
+	s2.SetUserPrefsStore(store)
+	if s2.ShowNavBar() {
+		t.Error("the Navigation Bar hidden state did not persist")
+	}
+}
+
 // TestViewCubeTogglesPersist confirms the ViewCube show/hide and Lock-to-Selection toggles
 // are now global preferences that survive across sessions.
 func TestViewCubeTogglesPersist(t *testing.T) {

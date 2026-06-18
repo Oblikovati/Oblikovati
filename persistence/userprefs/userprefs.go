@@ -31,6 +31,8 @@ type Prefs struct {
 	CubeHidden bool `yaml:"cubeHidden,omitempty"`
 	// LockToSelection makes the ViewCube orbit around the current selection when true.
 	LockToSelection bool `yaml:"lockToSelection,omitempty"`
+	// NavBarHidden hides the floating Navigation Bar when true (the View-tab toggle; default shown).
+	NavBarHidden bool `yaml:"navBarHidden,omitempty"`
 }
 
 // Store loads and saves the global preferences.

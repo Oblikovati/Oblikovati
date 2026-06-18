@@ -57,6 +57,15 @@ func (s *Session) CanLookAt() bool {
 	return planar
 }
 
+// ShowNavBar reports whether the floating Navigation Bar is shown in viewports (default true).
+func (s *Session) ShowNavBar() bool { return !s.prefs.NavBarHidden }
+
+// SetShowNavBar shows or hides the Navigation Bar (View-tab toggle), persisted as a global pref.
+func (s *Session) SetShowNavBar(show bool) {
+	s.prefs.NavBarHidden = !show
+	s.savePrefs()
+}
+
 // ToggleConstrainedOrbit turns the Constrained Orbit tool (#913 N10) on or off — a turntable locked
 // to the model vertical, entered from the View tab / Navigation Bar. While on, a viewport left-drag
 // orbits about the vertical axis (horizontal = turn, vertical = tilt) instead of selecting.
