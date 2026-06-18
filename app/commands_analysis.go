@@ -5,6 +5,7 @@ package app
 import (
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/model/analysis"
 )
 
@@ -27,8 +28,13 @@ func physicalProperties(s *Session) error {
 	if err != nil {
 		return err
 	}
-	mp := analysis.MassPropertiesOf(part.SurfaceBodies().All(), 0)
-	s.SetNotice(fmt.Sprintf("Physical Properties — volume %.2f mm³, area %.2f mm², mass %.2f g, CoM (%.2f, %.2f, %.2f) mm",
-		mp.VolumeMm3, mp.SurfaceAreaMm2, mp.MassG, mp.CentroidXMm, mp.CentroidYMm, mp.CentroidZMm))
+	density := 0.0 // default to the assigned material density
+	if props, ok := s.PhysicalProperties(); ok && props.Density > 0 {
+		density = props.Density
+	}
+	mp := analysis.MassPropertiesOf(part.SurfaceBodies().All(), density, types.MassPropertiesMedium)
+	s.SetNotice(fmt.Sprintf("Physical Properties — volume %.2f mm³, area %.2f mm², mass %.2f g, CoM (%.2f, %.2f, %.2f) mm, principal I (%.1f, %.1f, %.1f) g·mm²",
+		mp.VolumeMm3, mp.SurfaceAreaMm2, mp.MassG, mp.CentroidXMm, mp.CentroidYMm, mp.CentroidZMm,
+		mp.PrincipalMomentsGmm2[0], mp.PrincipalMomentsGmm2[1], mp.PrincipalMomentsGmm2[2]))
 	return nil
 }
