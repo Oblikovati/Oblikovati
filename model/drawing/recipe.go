@@ -90,6 +90,8 @@ type annotationRecipe struct {
 	// custom table: the column headers and data rows.
 	Headers []string   `yaml:"headers,omitempty"`
 	Rows    [][]string `yaml:"rows,omitempty"`
+	// hole notes: the quantity-grouping mode ("" ⇒ perHole).
+	HoleQuantity string `yaml:"holeQuantity,omitempty"`
 }
 
 // revisionRowRecipe is the YAML shape of one revision-table row.
@@ -190,10 +192,19 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
 			Characteristic: a.characteristic.String(), Tolerance: a.tolerance, Datums: a.datums,
 			MaterialRemoval: a.materialRemoval.String(), Revisions: revisionRowRecipesOf(a.revisions),
-			Headers: a.headers, Rows: a.tableRows,
+			Headers: a.headers, Rows: a.tableRows, HoleQuantity: holeQuantityString(a),
 		})
 	}
 	return out
+}
+
+// holeQuantityString persists a hole note's grouping mode, and only that — "" for every other
+// annotation and for the per-hole default, so recipes stay clean.
+func holeQuantityString(a *DrawingAnnotation) string {
+	if a.kind != types.HoleNoteAnnotation || a.holeQuantity == types.HoleNotePerHole {
+		return ""
+	}
+	return a.holeQuantity.String()
 }
 
 // revisionRowRecipesOf snapshots a revision table's rows for persistence.
@@ -319,9 +330,10 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 		kind, _ := types.ParseDrawingAnnotationKind(ar.Kind)
 		edgeKey, _ := hex.DecodeString(ar.EdgeKey)
 		characteristic, _ := types.ParseGeometricCharacteristic(ar.Characteristic)
+		holeQuantity, _ := types.ParseHoleNoteQuantity(ar.HoleQuantity)
 		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey,
 			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums, revisions: revisionRowsOf(ar.Revisions),
-			headers: ar.Headers, tableRows: ar.Rows}
+			headers: ar.Headers, tableRows: ar.Rows, holeQuantity: holeQuantity}
 		restoreAnnotationGeometry(a, ar)
 		as.items = append(as.items, a)
 	}
