@@ -41,21 +41,27 @@ func activeDocumentGUID(s *app.Session) (string, error) {
 	return guid, nil
 }
 
-// sketchReferenceKey returns the persistent reference key of the addressed sketch.
+// keyedSketch is the shared shape of a 2D or 3D sketch the reference-key methods need: its
+// own id and its entities. Both *sketch.Sketch and *sketch.Sketch3D satisfy it, so the
+// derive/resolve logic is written once for both dimensions.
+type keyedSketch interface {
+	ID() sketch.ID
+	Entities() []sketch.Entity
+}
+
+// sketchCollection is a 2D or 3D sketch collection (both expose Count/Item over a keyedSketch).
+type sketchCollection[T keyedSketch] interface {
+	Count() int
+	Item(int) T
+}
+
+// sketchReferenceKey returns the persistent reference key of the addressed 2D sketch.
 func sketchReferenceKey(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	sk, _, err := resolveSketch(s, raw)
 	if err != nil {
 		return nil, err
 	}
-	guid, err := activeDocumentGUID(s)
-	if err != nil {
-		return nil, err
-	}
-	key, err := identity.SketchKey(guid, uint64(sk.ID()))
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(wire.SketchReferenceKeyResult{ReferenceKey: key})
+	return sketchKeyResult(s, sk)
 }
 
 // sketch3DReferenceKey returns the persistent reference key of the addressed 3D sketch.
@@ -64,6 +70,12 @@ func sketch3DReferenceKey(s *app.Session, raw json.RawMessage) (json.RawMessage,
 	if err != nil {
 		return nil, err
 	}
+	return sketchKeyResult(s, sk)
+}
+
+// sketchKeyResult derives a sketch's own reference key (against the active document's GUID)
+// and marshals it — shared by the 2D and 3D referenceKey handlers.
+func sketchKeyResult(s *app.Session, sk keyedSketch) (json.RawMessage, error) {
 	guid, err := activeDocumentGUID(s)
 	if err != nil {
 		return nil, err
@@ -91,55 +103,31 @@ func sketchResolveReference(s *app.Session, raw json.RawMessage) (json.RawMessag
 	if err != nil {
 		return nil, err
 	}
-	res := matchReference(part.Sketches(), guid, in.ReferenceKey)
+	res := matchReference(part.Sketches(), guid, in.ReferenceKey, "sketch", "sketchEntity")
 	if !res.Found {
-		res = matchReference3D(part.Sketches3D(), guid, in.ReferenceKey)
+		res = matchReference(part.Sketches3D(), guid, in.ReferenceKey, "sketch3d", "sketch3dEntity")
 	}
 	return json.Marshal(res)
 }
 
-// matchReference scans every sketch and entity for the one whose derived key equals want,
-// returning the first match (sketch keys before entity keys). A miss is found=false.
-func matchReference(sketches *sketch.Sketches, guid, want string) wire.ResolveSketchReferenceResult {
-	for i := 0; i < sketches.Count(); i++ {
-		sk := sketches.Item(i)
+// matchReference scans a 2D or 3D sketch collection for the sketch or entity whose derived
+// key equals want, tagging a match with the given kind labels (sketch keys before entity
+// keys). A miss is found=false. The same logic serves both dimensions via [keyedSketch].
+func matchReference[T keyedSketch](c sketchCollection[T], guid, want, sketchKind, entityKind string) wire.ResolveSketchReferenceResult {
+	for i := 0; i < c.Count(); i++ {
+		sk := c.Item(i)
 		if k, err := identity.SketchKey(guid, uint64(sk.ID())); err == nil && k == want {
-			return wire.ResolveSketchReferenceResult{Found: true, Kind: "sketch", SketchIndex: i}
+			return wire.ResolveSketchReferenceResult{Found: true, Kind: sketchKind, SketchIndex: i}
 		}
-		if id, ok := matchEntity(sk, guid, want); ok {
-			return wire.ResolveSketchReferenceResult{Found: true, Kind: "sketchEntity", SketchIndex: i, EntityID: id}
+		if id, ok := matchSketchEntity(sk, guid, want); ok {
+			return wire.ResolveSketchReferenceResult{Found: true, Kind: entityKind, SketchIndex: i, EntityID: id}
 		}
 	}
 	return wire.ResolveSketchReferenceResult{Found: false}
 }
 
-// matchEntity returns the session id of the sketch entity whose derived key equals want.
-func matchEntity(sk *sketch.Sketch, guid, want string) (uint64, bool) {
-	for _, e := range sk.Entities() {
-		if k, err := identity.SketchEntityKey(guid, uint64(e.EntityID())); err == nil && k == want {
-			return uint64(e.EntityID()), true
-		}
-	}
-	return 0, false
-}
-
-// matchReference3D scans every 3D sketch and entity for the one whose derived key equals
-// want, returning the first match with the 3D-flavoured Kind. A miss is found=false.
-func matchReference3D(sketches *sketch.Sketches3D, guid, want string) wire.ResolveSketchReferenceResult {
-	for i := 0; i < sketches.Count(); i++ {
-		sk := sketches.Item(i)
-		if k, err := identity.SketchKey(guid, uint64(sk.ID())); err == nil && k == want {
-			return wire.ResolveSketchReferenceResult{Found: true, Kind: "sketch3d", SketchIndex: i}
-		}
-		if id, ok := matchEntity3D(sk, guid, want); ok {
-			return wire.ResolveSketchReferenceResult{Found: true, Kind: "sketch3dEntity", SketchIndex: i, EntityID: id}
-		}
-	}
-	return wire.ResolveSketchReferenceResult{Found: false}
-}
-
-// matchEntity3D returns the session id of the 3D sketch entity whose derived key equals want.
-func matchEntity3D(sk *sketch.Sketch3D, guid, want string) (uint64, bool) {
+// matchSketchEntity returns the session id of the sketch entity whose derived key equals want.
+func matchSketchEntity(sk keyedSketch, guid, want string) (uint64, bool) {
 	for _, e := range sk.Entities() {
 		if k, err := identity.SketchEntityKey(guid, uint64(e.EntityID())); err == nil && k == want {
 			return uint64(e.EntityID()), true
