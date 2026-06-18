@@ -51,11 +51,22 @@ type sheetRecipe struct {
 	Sketches    []sketchRecipeItem `yaml:"sketches,omitempty"`
 }
 
-// sketchRecipeItem is the YAML shape of one drawing sketch: its name and entities (the curves
-// re-derive from the entities on open).
+// sketchRecipeItem is the YAML shape of one drawing sketch: its name, entities and hatch regions
+// (the curves re-derive from them on open).
 type sketchRecipeItem struct {
 	Name     string               `yaml:"name"`
 	Entities []sketchEntityRecipe `yaml:"entities,omitempty"`
+	Hatches  []hatchRecipe        `yaml:"hatches,omitempty"`
+}
+
+// hatchRecipe is the YAML shape of one hatch region.
+type hatchRecipe struct {
+	X       float64 `yaml:"xmm"`
+	Y       float64 `yaml:"ymm"`
+	W       float64 `yaml:"widthMm"`
+	H       float64 `yaml:"heightMm"`
+	Pattern string  `yaml:"pattern,omitempty"`
+	Spacing float64 `yaml:"spacingMm,omitempty"`
 }
 
 // sketchEntityRecipe is the YAML shape of one drawing-sketch entity.
@@ -208,6 +219,9 @@ func sketchRecipesOf(sh *Sheet) []sketchRecipeItem {
 		for _, e := range s.entities {
 			rec.Entities = append(rec.Entities, sketchEntityRecipe{Kind: e.kind.String(), Points: e.points, Radius: e.radius})
 		}
+		for _, h := range s.hatches {
+			rec.Hatches = append(rec.Hatches, hatchRecipe{X: h.x, Y: h.y, W: h.w, H: h.h, Pattern: h.pattern.String(), Spacing: h.spacing})
+		}
 		out = append(out, rec)
 	}
 	return out
@@ -347,6 +361,10 @@ func restoreSketches(sh *Sheet, recs []sketchRecipeItem) {
 		for _, er := range sr.Entities {
 			kind, _ := types.ParseDrawingSketchEntityKind(er.Kind)
 			s.entities = append(s.entities, DrawingSketchEntity{kind: kind, points: er.Points, radius: er.Radius})
+		}
+		for _, hr := range sr.Hatches {
+			pattern, _ := types.ParseHatchPattern(hr.Pattern)
+			s.hatches = append(s.hatches, hatchRegion{x: hr.X, y: hr.Y, w: hr.W, h: hr.H, pattern: pattern, spacing: hr.Spacing})
 		}
 		s.rebuild()
 	}

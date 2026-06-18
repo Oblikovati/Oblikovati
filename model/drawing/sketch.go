@@ -25,6 +25,7 @@ type DrawingSketchEntity struct {
 type DrawingSketch struct {
 	name     string
 	entities []DrawingSketchEntity
+	hatches  []hatchRegion
 	curves   []DrawingCurve
 }
 
@@ -110,11 +111,14 @@ func validateSketchEntity(kind types.DrawingSketchEntityKind, points [][2]float6
 	return nil
 }
 
-// rebuild regenerates the sketch's drawing curves from its entities.
+// rebuild regenerates the sketch's drawing curves from its entities and hatch regions.
 func (s *DrawingSketch) rebuild() {
 	s.curves = nil
 	for _, e := range s.entities {
 		s.curves = append(s.curves, sketchEntityCurves(e)...)
+	}
+	for _, h := range s.hatches {
+		s.curves = append(s.curves, hatchRegionCurves(h)...)
 	}
 }
 

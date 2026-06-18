@@ -47,3 +47,23 @@ func TestSketchCircleToolDropsCircle(t *testing.T) {
 		t.Fatalf("circle sketch not added (sketches=%d)", ss.Count())
 	}
 }
+
+// TestHatchRegionToolFillsRegion: the hatch tool drops a sketch whose curves are the fill lines.
+func TestHatchRegionToolFillsRegion(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewHatchRegionTool()
+	tool.Start(s)
+	tool.SetPlacement(150, 150)
+	tool.Params().Choices[0].Set(1) // Pattern = Cross
+	if tool.Name() != "Hatch Region" || !tool.CanCommit() {
+		t.Fatalf("hatch tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	ss := c.Sheets().Active().Sketches()
+	if ss.Count() != 1 || ss.Item(0).CurveCount() == 0 {
+		t.Fatalf("hatch sketch not added (sketches=%d)", ss.Count())
+	}
+}

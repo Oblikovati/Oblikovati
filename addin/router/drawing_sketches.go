@@ -20,6 +20,7 @@ func (r *Router) registerDrawingSketchHandlers() {
 	r.handlers[wire.MethodDrawingSketchesList] = drawingSketchesList
 	r.handlers[wire.MethodDrawingSketchesAdd] = drawingSketchesAdd
 	r.handlers[wire.MethodDrawingSketchesAddEntity] = drawingSketchesAddEntity
+	r.handlers[wire.MethodDrawingSketchesAddHatch] = drawingSketchesAddHatch
 }
 
 // activeSheetSketches returns the active drawing's active-sheet sketch collection.
@@ -75,6 +76,31 @@ func drawingSketchesAddEntity(s *app.Session, raw json.RawMessage) (json.RawMess
 		return nil, fmt.Errorf("drawing: unknown sketch entity kind %q (want line|circle|rectangle)", in.Kind)
 	}
 	sk, err := ss.AddEntity(in.SketchName, kind, in.Points, in.Radius)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.DrawingSketchResult{Sketch: drawingSketchInfo(sk)})
+}
+
+func drawingSketchesAddHatch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	ss, err := activeSheetSketches(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddHatchRegionArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	pattern := types.HatchGeneral
+	if in.Pattern != "" {
+		p, ok := types.ParseHatchPattern(in.Pattern)
+		if !ok {
+			return nil, fmt.Errorf("drawing: unknown hatch pattern %q (want general|cross|ansi31)", in.Pattern)
+		}
+		pattern = p
+	}
+	sk, err := ss.AddHatchRegion(in.SketchName, in.XMM, in.YMM, in.WidthMM, in.HeightMM, pattern, in.ScaleMM)
 	if err != nil {
 		return nil, err
 	}

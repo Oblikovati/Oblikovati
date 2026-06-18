@@ -48,6 +48,47 @@ func (t *SketchRectangleTool) Commit(s *Session) error {
 	return nil
 }
 
+// hatchPatterns indexes the hatch-region Pattern dropdown.
+var hatchPatterns = []types.HatchPattern{types.HatchGeneral, types.HatchCross, types.HatchANSI31}
+
+// HatchRegionTool fills a default-sized rectangular region with a hatch pattern at the cursor.
+type HatchRegionTool struct {
+	patternIndex     int
+	centerX, centerY float64
+}
+
+// NewHatchRegionTool creates the tool.
+func NewHatchRegionTool() *HatchRegionTool { return &HatchRegionTool{centerX: 150, centerY: 150} }
+
+func (t *HatchRegionTool) Name() string              { return "Hatch Region" }
+func (t *HatchRegionTool) Start(*Session)            {}
+func (t *HatchRegionTool) Pick(*Session, Selectable) {}
+func (t *HatchRegionTool) CanCommit() bool           { return true }
+func (t *HatchRegionTool) Cancel(*Session)           {}
+func (t *HatchRegionTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops a hatch-filled rectangle centred on the placed point.
+func (t *HatchRegionTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	pattern := hatchPatterns[clampIndex(t.patternIndex, len(hatchPatterns))]
+	w, h := sketchRectWidthMM/2, sketchRectHeightMM/2
+	if _, err := c.Sheets().Active().Sketches().AddHatchRegion("", t.centerX-w, t.centerY-h, sketchRectWidthMM, sketchRectHeightMM, pattern, 0); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the hatch-pattern choice.
+func (t *HatchRegionTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		{Label: "Pattern", Options: []string{"General", "Cross", "ANSI31"}, Get: func() int { return t.patternIndex }, Set: func(i int) { t.patternIndex = i }},
+	}}
+}
+
 // SketchCircleTool drops a new sketch containing a default-sized circle at the cursor.
 type SketchCircleTool struct{ centerX, centerY float64 }
 
