@@ -6,6 +6,9 @@
 package analysis
 
 import (
+	stdmath "math"
+
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
@@ -14,7 +17,7 @@ import (
 // surface reports in. See [[database-unit-is-cm]].
 const cmToMM = 10.0
 
-// MassProperties is a part's combined geometry properties and mass, in user units.
+// MassProperties is a part's combined geometry properties, mass and inertia, in user units.
 type MassProperties struct {
 	VolumeMm3      float64
 	SurfaceAreaMm2 float64
@@ -23,19 +26,42 @@ type MassProperties struct {
 	CentroidXMm    float64
 	CentroidYMm    float64
 	CentroidZMm    float64
+	// Mass moment of inertia about the centroid (g·mm²); Ixy/Iyz/Izx are products of inertia.
+	InertiaXxGmm2 float64
+	InertiaYyGmm2 float64
+	InertiaZzGmm2 float64
+	InertiaXyGmm2 float64
+	InertiaYzGmm2 float64
+	InertiaZxGmm2 float64
+	// Principal moments of inertia (g·mm²) and their unit axes (rows aligned to the moments).
+	PrincipalMomentsGmm2 [3]float64
+	PrincipalAxes        [3][3]float64
+}
+
+// qualityFor maps an accuracy level to a tessellation quality (planar bodies are exact regardless).
+func qualityFor(accuracy types.MassPropertiesAccuracy) ops.Quality {
+	switch accuracy {
+	case types.MassPropertiesLow:
+		return ops.Quality{ChordTolerance: 0.2, AngleTolerance: 20 * stdmath.Pi / 180}
+	case types.MassPropertiesHigh:
+		return ops.Quality{ChordTolerance: 0.01, AngleTolerance: 5 * stdmath.Pi / 180}
+	default:
+		return ops.DefaultQuality()
+	}
 }
 
 // MassPropertiesOf returns the combined mass properties of the given solid bodies for a material
-// density (g/cm³; ≤0 ⇒ 1.0, so the mass equals the volume in cm³). Volume, area and centroid come
-// from each body's tessellated geometry (divergence theorem); the centroid is volume-weighted
-// across the bodies.
-func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64) MassProperties {
+// density (g/cm³; ≤0 ⇒ 1.0) at the given accuracy. Volume/area/centroid come from each body's
+// tessellated geometry; the centroid is volume-weighted, and the inertia tensor is each body's
+// inertia (about its own centroid) shifted to the combined centroid by the parallel-axis theorem.
+func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64, accuracy types.MassPropertiesAccuracy) MassProperties {
 	if densityGCm3 <= 0 {
 		densityGCm3 = 1
 	}
+	q := qualityFor(accuracy)
 	var volCm3, areaCm2, cx, cy, cz float64
 	for _, b := range bodies {
-		p := ops.BodyGeometryProperties(b, ops.DefaultQuality())
+		p := ops.BodyGeometryProperties(b, q)
 		volCm3 += p.Volume
 		areaCm2 += p.Area
 		cx += float64(p.Centroid.X) * p.Volume
@@ -45,7 +71,7 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64) MassProperties {
 	if volCm3 > 0 {
 		cx, cy, cz = cx/volCm3, cy/volCm3, cz/volCm3
 	}
-	return MassProperties{
+	mp := MassProperties{
 		VolumeMm3:      volCm3 * cmToMM * cmToMM * cmToMM,
 		SurfaceAreaMm2: areaCm2 * cmToMM * cmToMM,
 		MassG:          densityGCm3 * volCm3,
@@ -54,4 +80,6 @@ func MassPropertiesOf(bodies []*topo.Body, densityGCm3 float64) MassProperties {
 		CentroidYMm:    cy * cmToMM,
 		CentroidZMm:    cz * cmToMM,
 	}
+	applyInertia(&mp, bodies, q, densityGCm3, [3]float64{cx, cy, cz})
+	return mp
 }

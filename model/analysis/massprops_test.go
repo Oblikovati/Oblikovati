@@ -6,6 +6,7 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
@@ -24,7 +25,7 @@ func block53x2(t *testing.T) *topo.Body {
 // TestMassPropertiesOfBox checks volume, surface area, centroid and mass against the analytic
 // values for the 5×3×2 cm block, including the default-density path.
 func TestMassPropertiesOfBox(t *testing.T) {
-	mp := MassPropertiesOf([]*topo.Body{block53x2(t)}, 2.0) // density 2 g/cm³
+	mp := MassPropertiesOf([]*topo.Body{block53x2(t)}, 2.0, types.MassPropertiesMedium) // density 2 g/cm³
 
 	// 50×30×20 mm: volume 30000 mm³, area 2(50·30+50·20+30·20)=6200 mm², centroid (25,15,10) mm.
 	approx(t, "volume", mp.VolumeMm3, 30000)
@@ -34,7 +35,19 @@ func TestMassPropertiesOfBox(t *testing.T) {
 	approx(t, "centroidZ", mp.CentroidZMm, 10)
 	approx(t, "mass", mp.MassG, 60) // 2 g/cm³ × 30 cm³
 
-	def := MassPropertiesOf([]*topo.Body{block53x2(t)}, 0) // zero density ⇒ 1 g/cm³
+	// Inertia (g·mm²) about the centroid: mass m = 60 g, full dims (50,30,20) mm →
+	// Ixx = m(30²+20²)/12 = 60·1300/12 = 6500; Iyy = m(50²+20²)/12 = 60·2900/12 = 14500;
+	// Izz = m(50²+30²)/12 = 60·3400/12 = 17000. Products zero (axis-aligned about centroid).
+	approx(t, "Ixx", mp.InertiaXxGmm2, 6500)
+	approx(t, "Iyy", mp.InertiaYyGmm2, 14500)
+	approx(t, "Izz", mp.InertiaZzGmm2, 17000)
+	approx(t, "Ixy", mp.InertiaXyGmm2, 0)
+	// Principal moments equal the (sorted-ascending) diagonal for an axis-aligned box.
+	approx(t, "principal0", mp.PrincipalMomentsGmm2[0], 6500)
+	approx(t, "principal1", mp.PrincipalMomentsGmm2[1], 14500)
+	approx(t, "principal2", mp.PrincipalMomentsGmm2[2], 17000)
+
+	def := MassPropertiesOf([]*topo.Body{block53x2(t)}, 0, types.MassPropertiesMedium) // zero density ⇒ 1 g/cm³
 	if def.DensityGCm3 != 1 {
 		t.Errorf("default density = %g, want 1", def.DensityGCm3)
 	}
@@ -43,7 +56,7 @@ func TestMassPropertiesOfBox(t *testing.T) {
 
 // TestMassPropertiesEmpty: no bodies yields zero properties (and no divide-by-zero centroid).
 func TestMassPropertiesEmpty(t *testing.T) {
-	mp := MassPropertiesOf(nil, 5)
+	mp := MassPropertiesOf(nil, 5, types.MassPropertiesMedium)
 	if mp.VolumeMm3 != 0 || mp.MassG != 0 || mp.CentroidXMm != 0 {
 		t.Fatalf("empty mass properties = %+v, want all zero", mp)
 	}

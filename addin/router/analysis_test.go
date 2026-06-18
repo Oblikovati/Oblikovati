@@ -29,8 +29,15 @@ func TestAnalysisMassPropertiesOverWire(t *testing.T) {
 	if math.Abs(mp.MassG-120) > 1e-3 {
 		t.Errorf("mass = %g g, want 120", mp.MassG)
 	}
+	// Inertia is populated; principal moments positive and sorted ascending.
+	if mp.InertiaXxGmm2 <= 0 || mp.PrincipalMomentsGmm2[0] <= 0 || mp.PrincipalMomentsGmm2[0] > mp.PrincipalMomentsGmm2[2] {
+		t.Errorf("inertia = %+v, want positive Ixx + ascending principal moments", mp)
+	}
 
-	// With no active part, the method errors.
+	// A bad accuracy errors; with no active part, the method errors.
+	if _, err := r.Handle(s, "analysis.massProperties", []byte(`{"accuracy":"bogus"}`)); err == nil {
+		t.Error("massProperties with a bad accuracy = ok, want error")
+	}
 	br, bs := New(opregistry.Default()), app.NewSession()
 	if _, err := br.Handle(bs, "analysis.massProperties", []byte(`{}`)); err == nil {
 		t.Error("massProperties with no active part = ok, want error")
