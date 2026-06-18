@@ -152,6 +152,38 @@ func measureArgs(t *testing.T, measureType, keyA, keyB string) string {
 	return string(b)
 }
 
+// TestAnalysisModelHealthOverWire drives the model-health aggregation: a clean box reports ok with
+// nothing to repair, and a suppressed feature is enumerated as suppressed.
+func TestAnalysisModelHealthOverWire(t *testing.T) {
+	r, s := boxPartSession(t)
+
+	var clean wire.ModelHealthResult
+	call(t, r, s, "analysis.modelHealth", `{}`, &clean)
+	if clean.Overall != "ok" || clean.SickCount != 0 || len(clean.Unhealthy) != 0 {
+		t.Errorf("clean box health = %+v, want ok with nothing unhealthy", clean)
+	}
+
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatalf("ActivePart: %v", err)
+	}
+	part.Features().Item(0).SetSuppressed(true)
+
+	var suppressed wire.ModelHealthResult
+	call(t, r, s, "analysis.modelHealth", `{}`, &suppressed)
+	if len(suppressed.Unhealthy) != 1 || suppressed.Unhealthy[0].Status != "suppressed" {
+		t.Errorf("after suppress = %+v, want one suppressed feature", suppressed)
+	}
+	if suppressed.Overall != "ok" {
+		t.Errorf("overall after suppress = %q, want ok (suppression is neutral)", suppressed.Overall)
+	}
+
+	br, bs := New(opregistry.Default()), app.NewSession()
+	if _, err := br.Handle(bs, "analysis.modelHealth", []byte(`{}`)); err == nil {
+		t.Error("modelHealth with no active part = ok, want error")
+	}
+}
+
 // nearAny reports whether v is within 0.01 of any of the candidate values.
 func nearAny(v float64, candidates ...float64) bool {
 	for _, c := range candidates {

@@ -21,6 +21,26 @@ import (
 func (r *Router) registerAnalysisHandlers() {
 	r.handlers[wire.MethodAnalysisMassProperties] = analysisMassProperties
 	r.handlers[wire.MethodAnalysisMeasure] = analysisMeasure
+	r.handlers[wire.MethodAnalysisModelHealth] = analysisModelHealth
+}
+
+func analysisModelHealth(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	mh := analysis.ModelHealthOf(part.Features())
+	return json.Marshal(modelHealthResult(mh))
+}
+
+// modelHealthResult flattens the aggregated health into the wire DTO, carrying each status as its
+// stable lowercase name.
+func modelHealthResult(mh analysis.ModelHealth) wire.ModelHealthResult {
+	out := wire.ModelHealthResult{Overall: mh.Overall.String(), SickCount: mh.SickCount}
+	for _, f := range mh.Unhealthy {
+		out.Unhealthy = append(out.Unhealthy, wire.FeatureHealth{Name: f.Name, Status: f.Status.String(), Reason: f.Reason})
+	}
+	return out
 }
 
 func analysisMeasure(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
