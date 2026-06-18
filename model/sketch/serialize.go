@@ -20,6 +20,10 @@ import (
 // common visible=true case omits the field (M21-F01 PBI-201 persists name/display props,
 // closing the previous name-not-persisted gap).
 type SketchData struct {
+	// ID is the sketch's document-local id, persisted (#153) so it survives the round trip
+	// and the sketch's document-derived reference key stays stable. Zero in legacy recipes
+	// that predate it; restore then keeps the freshly-minted id.
+	ID           uint64  `yaml:"id,omitempty"`
 	Name         string  `yaml:"name,omitempty"`
 	Hidden       bool    `yaml:"hidden,omitempty"`
 	Shared       bool    `yaml:"shared,omitempty"` // shared sketch stays at top level (issue #132)
@@ -160,6 +164,7 @@ func (sc *Sketches) MarshalRecipe() ([]SketchData, error) {
 
 func serializeSketch(s *Sketch) (SketchData, error) {
 	sd := SketchData{
+		ID:           uint64(s.id),
 		Name:         s.name,
 		Hidden:       !s.visible,
 		Shared:       s.shared,

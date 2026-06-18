@@ -23,6 +23,21 @@ var idSeq atomic.Uint64
 
 func nextID() ID { return ID(idSeq.Add(1)) }
 
+// raiseIDSeq lifts the entity id clock to at least n. Restoring a document pins its
+// entity/sketch ids to their persisted (verbatim) values; raising the clock past the
+// largest restored id ensures ids minted afterwards never collide with them (#153).
+func raiseIDSeq(n uint64) {
+	for {
+		cur := idSeq.Load()
+		if cur >= n {
+			return
+		}
+		if idSeq.CompareAndSwap(cur, n) {
+			return
+		}
+	}
+}
+
 // Entity is a piece of sketch geometry (line, arc, circle, point, …). The full
 // interface — constrainable points, curve evaluation — is filled in by the entity
 // types (M06-F02); here it is the minimum the container needs.
@@ -460,6 +475,20 @@ func (c *Sketches) AddNamed(name string, plane Plane) *Sketch {
 	c.items = append(c.items, s)
 	c.byID[s.id] = s
 	return s
+}
+
+// restoreSketchID pins a freshly-added sketch's local id to its persisted value so the
+// sketch's document-derived persistent reference key (#153) is stable across load, re-keying
+// the byID index and raising the id clock past it. A zero saved id (a legacy recipe with no
+// persisted sketch id) keeps the minted one.
+func (c *Sketches) restoreSketchID(s *Sketch, saved uint64) {
+	if saved == 0 {
+		return
+	}
+	delete(c.byID, s.id)
+	s.id = ID(saved)
+	c.byID[s.id] = s
+	raiseIDSeq(saved)
 }
 
 // Count returns the number of sketches.
