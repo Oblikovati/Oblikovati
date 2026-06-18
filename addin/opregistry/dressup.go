@@ -154,6 +154,49 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	return applyFilletFlat(part, in, corner, cs)
 }
 
+const fullRoundSchema = `{
+  "type": "object",
+  "properties": {
+    "side1Ref": {"type": "string", "description": "First side face (reference key)."},
+    "centerRef": {"type": "string", "description": "Center face to replace with the round."},
+    "side2Ref": {"type": "string", "description": "Second side face, parallel to the first."}
+  },
+  "required": ["side1Ref", "centerRef", "side2Ref"]
+}`
+
+func fullRoundDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{
+		Name:    "fullRoundFillet",
+		Summary: "Replace a center face with a full round (half-cylinder) tangent to two parallel side faces.",
+		Schema:  json.RawMessage(fullRoundSchema),
+		Apply:   applyFullRound,
+	}
+}
+
+// fullRoundArgs is the full-round op's wire shape: the two side faces and the center face to round.
+type fullRoundArgs struct {
+	Side1Ref  string `json:"side1Ref"`
+	CenterRef string `json:"centerRef"`
+	Side2Ref  string `json:"side2Ref"`
+}
+
+func applyFullRound(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in fullRoundArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	if in.Side1Ref == "" || in.CenterRef == "" || in.Side2Ref == "" {
+		return nil, errors.New("full round: side1Ref, centerRef and side2Ref are all required")
+	}
+	pf := feature.NewDressUpFeatures(part.Features()).AddFullRoundFillet(
+		refKeys([]string{in.Side1Ref}), refKeys([]string{in.CenterRef}), refKeys([]string{in.Side2Ref}))
+	return recomputeResult(part, pf)
+}
+
 // applyFaceFillet rounds the edges shared between two face sets (#694, adjacent-faces case): both
 // faceRefsA and faceRefsB plus a radius are required.
 func applyFaceFillet(part *compdef.PartComponentDefinition, in edgeDressArgs) (json.RawMessage, error) {

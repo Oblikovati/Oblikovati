@@ -116,6 +116,26 @@ func TestFaceFilletRoundTrip(t *testing.T) {
 	}
 }
 
+// TestFullRoundRoundTrip checks the full-round fillet's three face sets survive a recipe round trip (#694).
+func TestFullRoundRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewDressUpFeatures(fs).AddFullRoundFillet(
+		[][]byte{[]byte("side-1")}, [][]byte{[]byte("center")}, [][]byte{[]byte("side-2")})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*FullRoundFilletFeature).Definition()
+	if string(d.Side1Keys[0]) != "side-1" || string(d.CenterKeys[0]) != "center" || string(d.Side2Keys[0]) != "side-2" {
+		t.Errorf("restored full round = %s/%s/%s, want side-1/center/side-2",
+			d.Side1Keys[0], d.CenterKeys[0], d.Side2Keys[0])
+	}
+}
+
 // TestRuleFilletRoundTrip checks the rule fillet's rule + radius survive a recipe round trip (#486).
 func TestRuleFilletRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
