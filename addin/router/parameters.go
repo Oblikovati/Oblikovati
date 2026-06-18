@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/event"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/param"
 )
@@ -92,7 +93,21 @@ func setParameter(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 	// full parametric rebuild.
 	part.Features().MarkAllDirty()
 	part.Recompute()
-	return json.Marshal(paramInfo(part, p))
+	info := paramInfo(part, p)
+	emitParameterChanged(s, info) // #148 granular parameter-change notification
+	return json.Marshal(info)
+}
+
+// emitParameterChanged publishes the granular parameter-change event on the session bus (#148),
+// carrying the parameter's new state for relay to subscribing add-ins.
+func emitParameterChanged(s *app.Session, info wire.ParameterInfo) {
+	event.Emit(s.Events(), event.After, app.ParameterChanged{
+		Document:   s.ActiveDocument().ID(),
+		Name:       info.Name,
+		Kind:       info.Kind,
+		Expression: info.Expression,
+		Value:      info.Value,
+	})
 }
 
 // partAndSetArgs decodes name+expression and resolves the active part, validating

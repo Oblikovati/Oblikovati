@@ -55,6 +55,7 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 	subs := subscribeDocuments(s.Workspace().Events(), sink)
 	subs = append(subs, subscribeSessionUI(bus, sink)...)
 	subs = append(subs, subscribeRepresentations(bus, sink)...)
+	subs = append(subs, subscribeParameters(bus, sink)...)
 	subs = append(subs, subscribeTransactions(bus, sink)...)
 	subs = append(subs, subscribeFileAccess(s.Workspace().Events(), sink)...)
 	subs = append(subs, subscribeAssemblies(s.Workspace().Events(), sink)...)
@@ -88,6 +89,22 @@ func subscribeSessionUI(bus *event.Bus, sink Sink) []event.Subscription {
 		// M16-F02 (#403/#408): a color/lighting style was added, edited, or deleted.
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.StyleChanged) event.Outcome {
 			return relay(sink, wireEvent{Type: styleEventType(e.Kind), Name: e.Name})
+		}),
+	}
+}
+
+// subscribeParameters relays the granular parameter-change notification (#148) — the parameter's
+// new state, beyond the generic edit.committed — to the add-in sink.
+func subscribeParameters(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.ParameterChanged) event.Outcome {
+			return relayJSON(sink, wire.ParameterChangedEvent{
+				Type:     wire.EventParameterChanged,
+				Document: uint64(e.Document),
+				Parameter: wire.ParameterInfo{
+					Name: e.Name, Kind: e.Kind, Expression: e.Expression, Value: e.Value,
+				},
+			})
 		}),
 	}
 }
@@ -220,7 +237,7 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.FileResolutionEventPayload | wire.FileDirtyEventPayload |
 	wire.FileDialogHookPayload | wire.OccurrenceEventPayload |
 	wire.AssemblyFeaturesChangedEvent | wire.ConstraintEventPayload |
-	wire.JointEventPayload](sink Sink, ev E) event.Outcome {
+	wire.JointEventPayload | wire.ParameterChangedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}
