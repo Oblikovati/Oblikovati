@@ -53,6 +53,22 @@ func TestDrawingRadialDimensionsOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingAngularDimensionOverWire drives the angular-dimension surface: the angle between two
+// perpendicular box edges re-derives 90° through the live stack, reported in valueDeg.
+func TestDrawingAngularDimensionOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
+
+	var dim wire.DimensionResult
+	call(t, r, s, "drawingDimensions.addAngular", `{"name":"A1","viewName":"FRONT","x1":100,"y1":80,"x2":120,"y2":100}`, &dim)
+	if dim.Dimension.Type != "angular" || math.Abs(dim.Dimension.ValueDeg-90) > 1e-6 {
+		t.Fatalf("angular dimension = %+v, want a 90° angle", dim.Dimension)
+	}
+	if dim.Dimension.CurveCount == 0 || dim.Dimension.Text == "" {
+		t.Errorf("angular dimension = %+v, want arc glyph + text", dim.Dimension)
+	}
+}
+
 // TestDrawingDimensionsOverWire drives the linear-dimension surface: add a horizontal dimension
 // across a base view, list it, and delete it — through the live router→model→kernel stack.
 func TestDrawingDimensionsOverWire(t *testing.T) {

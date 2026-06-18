@@ -68,6 +68,32 @@ func TestRadialDimensionToolDimensionsHoles(t *testing.T) {
 	}
 }
 
+// TestAngularDimensionToolDimensionsCorner: the angular tool dimensions a base view's corner angle
+// (a box's perpendicular edges → 90°).
+func TestAngularDimensionToolDimensionsCorner(t *testing.T) {
+	s := drawingWithModelSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+
+	tool := NewAngularDimensionTool()
+	tool.Start(s)
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("angular Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	dims := c.Sheets().Active().Dimensions()
+	if dims.Count() != 1 {
+		t.Fatalf("dimension count = %d, want 1", dims.Count())
+	}
+	if d := dims.Item(0); d.Type() != types.AngularDimension || math.Abs(d.ValueDeg()-90) > 1e-6 {
+		t.Errorf("dimension = (%v, %v°), want an angular 90°", d.Type(), d.ValueDeg())
+	}
+}
+
 // TestLinearDimensionToolPlacesOverallDimension: the tool dimensions a base view's overall size in
 // the chosen direction, producing an associative dimension with a positive measured value.
 func TestLinearDimensionToolPlacesOverallDimension(t *testing.T) {
