@@ -103,6 +103,13 @@ type FaceDressData struct {
 	Pull  []float64 `yaml:"pull,omitempty"` // draft pull direction (dx,dy,dz); absent ⇒ +Z
 }
 
+// FaceFilletData persists a face fillet (#694): the two face-set reference keys and the radius.
+type FaceFilletData struct {
+	FacesA []string `yaml:"facesA"`
+	FacesB []string `yaml:"facesB"`
+	Value  float64  `yaml:"value"`
+}
+
 // ThreadData tags a single cylindrical face (reference key) with a thread designation, plus
 // the #325 parity fields: the tolerance class, the tapered (pipe) flag, and which thread
 // diameter the modeled face represents (wire spelling; absent = major).

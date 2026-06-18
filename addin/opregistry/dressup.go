@@ -27,6 +27,8 @@ type edgeDressArgs struct {
 	Radius          string          `json:"radius,omitempty"`          // fillet
 	Distance        string          `json:"distance,omitempty"`        // chamfer
 	EdgeSets        []filletSetArgs `json:"edgeSets,omitempty"`        // fillet
+	FaceRefsA       []string        `json:"faceRefsA,omitempty"`       // fillet face-fillet: first face set (#694)
+	FaceRefsB       []string        `json:"faceRefsB,omitempty"`       // fillet face-fillet: second face set
 	CornerType      string          `json:"cornerType,omitempty"`      // fillet shared-corner treatment (default miter)
 	ChamferType     string          `json:"chamferType,omitempty"`     // chamfer mode (default distance)
 	Distance2       string          `json:"distance2,omitempty"`       // chamfer twoDistances
@@ -47,7 +49,9 @@ const filletSchema = `{
   "type": "object",
   "properties": {
     "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Reference keys of the edges to round (from get_reference_keys). Flat form: one constant radius over these edges."},
-    "radius": {"type": "string", "description": "Fillet radius with units, e.g. \"3 mm\" (flat form)."},
+    "radius": {"type": "string", "description": "Fillet radius with units, e.g. \"3 mm\" (flat and face-fillet forms)."},
+    "faceRefsA": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form (#694): first face set (reference keys). With faceRefsB + radius, rounds the edges the two sets share — pick by face instead of by edge. Adjacent faces only for now."},
+    "faceRefsB": {"type": "array", "items": {"type": "string"}, "description": "Face-fillet form: second face set."},
     "edgeSets": {"type": "array", "minItems": 1, "description": "Edge-set form (takes precedence over edgeRefs): any mix of constant and variable radius sets.", "items": {"type": "object", "properties": {
       "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1},
       "radius": {"type": "string", "description": "Constant radius for this set, e.g. \"3 mm\"."},
@@ -97,10 +101,27 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(in.FaceRefsA) > 0 || len(in.FaceRefsB) > 0 {
+		return applyFaceFillet(part, in)
+	}
 	if len(in.EdgeSets) > 0 {
 		return applyFilletSets(part, in.EdgeSets, corner, cs)
 	}
 	return applyFilletFlat(part, in, corner, cs)
+}
+
+// applyFaceFillet rounds the edges shared between two face sets (#694, adjacent-faces case): both
+// faceRefsA and faceRefsB plus a radius are required.
+func applyFaceFillet(part *compdef.PartComponentDefinition, in edgeDressArgs) (json.RawMessage, error) {
+	if len(in.FaceRefsA) == 0 || len(in.FaceRefsB) == 0 {
+		return nil, errors.New("face fillet: both faceRefsA and faceRefsB are required")
+	}
+	r, err := lengthClosure(part, in.Radius, "fillet: radius")
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewDressUpFeatures(part.Features()).AddFaceFillet(refKeys(in.FaceRefsA), refKeys(in.FaceRefsB), r)
+	return recomputeResult(part, pf)
 }
 
 // applyFilletFlat builds the flat (edgeRefs + single radius) fillet with the chosen corner

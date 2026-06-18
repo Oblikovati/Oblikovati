@@ -296,6 +296,12 @@ func (c *DressUpFeatures) AddFilletSetsCorner(sets []FilletEdgeSet, corner Fille
 	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeSets: sets, CornerType: corner}})
 }
 
+// AddFaceFillet rounds the edges shared between two face sets with a constant-radius rolling-ball
+// blend (#694, the adjacent-faces case of FilletConstantRadiusFaceSet).
+func (c *DressUpFeatures) AddFaceFillet(faceKeysA, faceKeysB [][]byte, radius func() float64) *PartFeature {
+	return c.engine.Add(&FaceFilletFeature{def: &FaceFilletDefinition{FaceKeysA: faceKeysA, FaceKeysB: faceKeysB, Radius: radius}})
+}
+
 // AddChamfer bevels the given edges by distance, blending three-edge corners flat (the
 // default treatment). Use [AddChamferCorners] to choose the pointy corner instead.
 func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64) *PartFeature {
