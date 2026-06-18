@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/analysis"
@@ -23,7 +24,36 @@ func analysisCommands() []*CommandDefinition {
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("physical-properties").WithButtonStyle(LargeIconButton).
 			WithTooltip("Compute the part's volume, surface area, centre of mass and mass, and show them in the status bar."),
+		NewCommand("Inspect.ModelHealth", "Model Health", "Validate", modelHealth).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("model-health").WithButtonStyle(LargeIconButton).
+			WithTooltip("Report the part's overall health and list every feature that is sick, warning or suppressed for repair."),
 	}
+}
+
+// modelHealth aggregates the active part's feature health and reports it as a notice.
+func modelHealth(s *Session) error {
+	part, err := activePart(s)
+	if err != nil {
+		return err
+	}
+	mh := analysis.ModelHealthOf(part.Features())
+	if len(mh.Unhealthy) == 0 {
+		s.SetNotice("Model Health — all features OK")
+		return nil
+	}
+	s.SetNotice(fmt.Sprintf("Model Health — overall %s, %d sick: %s",
+		mh.Overall, mh.SickCount, unhealthySummary(mh.Unhealthy)))
+	return nil
+}
+
+// unhealthySummary lists each unhealthy feature as "Name (status)".
+func unhealthySummary(items []analysis.FeatureHealthItem) string {
+	parts := make([]string, len(items))
+	for i, it := range items {
+		parts[i] = fmt.Sprintf("%s (%s)", it.Name, it.Status)
+	}
+	return strings.Join(parts, ", ")
 }
 
 // startMeasure activates the interactive Measure tool on the active part.
