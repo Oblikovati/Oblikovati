@@ -22,6 +22,10 @@ type Point struct {
 // EntityID implements [Entity].
 func (p *Point) EntityID() ID { return p.id }
 
+// setID pins the point's local id to a persisted value (restore path only); see
+// [entityBase.setID].
+func (p *Point) setID(id ID) { p.id = id }
+
 // Position returns the point as a [math.Point2].
 func (p *Point) Position() math.Point2 { return math.P2(p.X, p.Y) }
 
@@ -39,6 +43,11 @@ func newEntity() entityBase { return entityBase{id: nextID()} }
 
 // EntityID implements [Entity].
 func (e *entityBase) EntityID() ID { return e.id }
+
+// setID overrides the minted local id with a persisted one (restore path only). A sketch
+// entity's local id must survive the .obk round trip so its document-derived persistent
+// reference key (#153) is stable across save/load; see model/identity.SketchEntityKey.
+func (e *entityBase) setID(id ID) { e.id = id }
 
 // IsConstruction reports whether the entity is construction (reference) geometry — it shapes
 // constraints but is not part of a profile. A centerline is always construction (an axis never

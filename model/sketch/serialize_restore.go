@@ -36,11 +36,13 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 		pointMap:  make(map[int]*Point, len(sd.Points)),
 		entityMap: make(map[int]Entity, len(sd.Entities)),
 	}
+	sc.restoreSketchID(r.s, sd.ID)
 	restoreSketchProps(r.s, sd)
 	r.restorePoints(sd.Points)
 	if err := r.restoreEntities(sd.Entities); err != nil {
 		return err
 	}
+	raiseIDSeq(r.maxID) // ids minted after load must not collide with the restored ones
 	if err := r.restoreConstraints(sd.Constraints); err != nil {
 		return err
 	}
@@ -112,23 +114,51 @@ func restoreSeq(s *Sketch, saved uint64) {
 	seq.Restore(&s.seq, saved)
 }
 
-// sketchRestorer carries the id→object maps while rebuilding one sketch.
+// sketchRestorer carries the id→object maps while rebuilding one sketch. maxID tracks the
+// largest persisted local id pinned onto a point/entity, so the id clock can be raised
+// past it once the sketch is rebuilt (#153).
 type sketchRestorer struct {
 	s         *Sketch
 	blockDefs *BlockDefinitions
 	pointMap  map[int]*Point
 	entityMap map[int]Entity
+	maxID     uint64
+}
+
+// idCarrier is the restore-only seam for pinning a sketch object's local id to its
+// persisted value. Every entity satisfies it (curves/annotations via entityBase, points
+// directly), so the same restore code path keeps all ids stable across save/load (#153).
+type idCarrier interface{ setID(ID) }
+
+// pin overrides obj's minted id with its persisted value and tracks the maximum seen.
+func (r *sketchRestorer) pin(obj idCarrier, saved int) {
+	obj.setID(ID(saved))
+	if uint64(saved) > r.maxID {
+		r.maxID = uint64(saved)
+	}
 }
 
 func (r *sketchRestorer) restorePoints(points []PointData) {
 	for _, pd := range points {
-		pos := math.P2(pd.X, pd.Y)
-		if pd.Standalone {
-			r.pointMap[pd.ID] = r.s.points.Add(pos)
-			continue
-		}
-		r.pointMap[pd.ID] = r.s.newPoint(pos)
+		r.pointMap[pd.ID] = r.restorePoint(pd)
 	}
+}
+
+// restorePoint recreates one point (standalone SketchPoint or a curve-owned point) and
+// pins its persisted local id.
+func (r *sketchRestorer) restorePoint(pd PointData) *Point {
+	pos := math.P2(pd.X, pd.Y)
+	p := r.newPointFor(pd.Standalone, pos)
+	r.pin(p, pd.ID)
+	return p
+}
+
+// newPointFor creates a standalone SketchPoint or a curve-owned solver point, exactly one.
+func (r *sketchRestorer) newPointFor(standalone bool, pos math.Point2) *Point {
+	if standalone {
+		return r.s.points.Add(pos)
+	}
+	return r.s.newPoint(pos)
 }
 
 func (r *sketchRestorer) restoreEntities(entities []EntityData) error {
@@ -143,6 +173,7 @@ func (r *sketchRestorer) restoreEntities(entities []EntityData) error {
 				cl.SetCenterline(true)
 			}
 		}
+		r.pin(e.(idCarrier), ed.ID)
 		r.entityMap[ed.ID] = e
 	}
 	return nil
