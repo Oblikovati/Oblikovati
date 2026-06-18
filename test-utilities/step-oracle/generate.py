@@ -22,6 +22,25 @@ import gmsh
 OUT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "kernel", "exchange", "step", "testdata", "occ"))
 
 
+def freeform_trimmed(o):
+    """A mild B-spline barrel loft (radii 9,10,9 over z=0,8,16) with an axial Ø6 through-bore.
+
+    Genuinely freeform: addThruSections(makeRuled=False) emits B_SPLINE_SURFACE side faces and the
+    closed cross-sections are B_SPLINE_CURVEs, so it exercises the trimmed-NURBS mesher (the bore
+    trims the caps and adds an inner face). The mild convex curvature imports faithfully (our volume
+    converges to OCC getMass), so it gates fold + over-enclosure for #584 without masking a bug.
+    """
+    import math
+
+    def ring(z, r, n=28):
+        pts = [o.addPoint(r * math.cos(2 * math.pi * i / n), r * math.sin(2 * math.pi * i / n), z) for i in range(n)]
+        pts.append(pts[0])
+        return o.addWire([o.addBSpline(pts)])
+
+    solid = o.addThruSections([ring(0, 9), ring(8, 10), ring(16, 9)], makeSolid=True, makeRuled=False)[0][1]
+    o.cut([(3, solid)], [(3, o.addCylinder(0, 0, -2, 0, 0, 20, 3))])
+
+
 def main():
     gmsh.initialize()
     gmsh.option.setNumber("General.Terminal", 0)
@@ -55,6 +74,7 @@ def main():
     o.addCylinder(0, 0, 0, 0, 0, 10, 5, angle=1.5); emit("partial_cylinder")
     o.addTorus(0, 0, 0, 10, 3, angle=3.14159); emit("partial_torus")
     o.addSphere(0, 0, 0, 8, angle3=1.0); emit("partial_sphere")
+    freeform_trimmed(o); emit("freeform_trimmed")
 
     json.dump(oracle, open(f"{OUT}/oracle.json", "w"), indent=1, sort_keys=True)
     gmsh.finalize()

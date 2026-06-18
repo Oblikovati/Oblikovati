@@ -31,6 +31,10 @@
   "solids": 1,
   "volume": 7572.6194
  },
+ "freeform_trimmed": {
+  "solids": 1,
+  "volume": 4170.7877
+ },
  "fused_boxes": {
   "solids": 1,
   "volume": 1875.0
