@@ -29,6 +29,7 @@ type FeatureData struct {
 	Fillet         *EdgeDressData      `yaml:"fillet,omitempty"`
 	FaceFillet     *FaceFilletData     `yaml:"faceFillet,omitempty"`
 	RuleFillet     *RuleFilletData     `yaml:"ruleFillet,omitempty"`
+	SnapFit        *SnapFitData        `yaml:"snapFit,omitempty"`
 	Chamfer        *EdgeDressData      `yaml:"chamfer,omitempty"`
 	Shell          *FaceDressData      `yaml:"shell,omitempty"`
 	Draft          *FaceDressData      `yaml:"draft,omitempty"`
@@ -144,6 +145,11 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(f.def.FaceKeysA), FacesB: encodeKeys(f.def.FaceKeysB), Value: evalFloat(f.def.Radius)}
 	case *RuleFilletFeature:
 		fd.RuleFillet = &RuleFilletData{Rule: f.def.Rule.String(), Value: evalFloat(f.def.Radius)}
+	case *SnapFitFeature:
+		fd.SnapFit = &SnapFitData{
+			Length: evalFloat(f.def.Length), Width: evalFloat(f.def.Width), Thickness: evalFloat(f.def.Thickness),
+			CatchLength: evalFloat(f.def.CatchLength), CatchHeight: evalFloat(f.def.CatchHeight),
+		}
 	case *ChamferFeature:
 		flat := f.def.FlatCorners
 		fd.Chamfer = &EdgeDressData{
@@ -461,6 +467,14 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 			return nil, fmt.Errorf("rule-fillet: unknown rule %q", fd.RuleFillet.Rule)
 		}
 		return du.AddRuleFillet(rule, constFloat(fd.RuleFillet.Value)), nil
+	case "snap-fit":
+		if fd.SnapFit == nil {
+			return nil, fmt.Errorf("snap-fit feature is missing its payload")
+		}
+		d := fd.SnapFit
+		return NewPlasticFeatures(fs).AddCantileverSnapFit(
+			constFloat(d.Length), constFloat(d.Width), constFloat(d.Thickness),
+			constFloat(d.CatchLength), constFloat(d.CatchHeight)), nil
 	case "chamfer":
 		d, err := requireEdgeDress(fd.Chamfer, "chamfer")
 		if err != nil {

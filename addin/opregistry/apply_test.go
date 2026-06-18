@@ -299,6 +299,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"sweep":                   `{"sketchIndex":0,"path":{"sketchIndex":1}}`,
 		"fillet":                  `{"edges":["e1"],"radius":"1 mm"}`,
 		"ruleFillet":              `{"rule":"allRounds","radius":"1 mm"}`,
+		"snapFit":                 `{"length":"10 mm","width":"4 mm","thickness":"2 mm","catchLength":"2 mm","catchHeight":"1 mm"}`,
 		"chamfer":                 `{"edges":["e1"],"distance":"1 mm"}`,
 		"shell":                   `{"faces":["f1"],"thickness":"1 mm"}`,
 		"draft":                   `{"faces":["f1"],"angle":"3 deg","neutralFace":"f2"}`,

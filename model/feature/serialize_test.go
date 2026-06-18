@@ -137,6 +137,25 @@ func TestRuleFilletRoundTrip(t *testing.T) {
 	}
 }
 
+// TestSnapFitRoundTrip checks the cantilever snap-fit's dimensions survive a recipe round trip (#486).
+func TestSnapFitRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewPlasticFeatures(fs).AddCantileverSnapFit(cf(20), cf(6), cf(2), cf(3), cf(1.5))
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*SnapFitFeature).Definition()
+	if d.Length() != 20 || d.Width() != 6 || d.Thickness() != 2 || d.CatchLength() != 3 || d.CatchHeight() != 1.5 {
+		t.Errorf("snap-fit dims = %g/%g/%g/%g/%g, want 20/6/2/3/1.5",
+			d.Length(), d.Width(), d.Thickness(), d.CatchLength(), d.CatchHeight())
+	}
+}
+
 // TestChamferFlatCornersRoundTrip checks the chamfer corner treatment survives a recipe
 // round trip in both states, and that an older recipe with no flag restores as flat (the
 // default, matching a freshly created chamfer).
