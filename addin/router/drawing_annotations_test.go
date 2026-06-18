@@ -209,6 +209,35 @@ func TestDrawingRevisionTagOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingNoteOverWire drives the note surface: a leader note produces a text annotation with a
+// leader through the live stack.
+func TestDrawingNoteOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var n wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addNote", `{"name":"N","xmm":100,"ymm":100,"text":"DEBURR","leaderXmm":140,"leaderYmm":130}`, &n)
+	if n.Annotation.Kind != "drawingNote" || n.Annotation.CurveCount == 0 || n.Annotation.Tag != "DEBURR" {
+		t.Fatalf("note = %+v, want a drawingNote (text+leader) tagged DEBURR", n.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addNote", []byte(`{"xmm":0,"ymm":0,"text":""}`)); err == nil {
+		t.Error("addNote with empty text = ok, want error")
+	}
+}
+
+// TestDrawingCustomTableOverWire drives the custom-table surface: a table with headers + rows
+// produces a grid annotation reporting the row count through the live stack.
+func TestDrawingCustomTableOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var ct wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addCustomTable",
+		`{"name":"CT","xmm":250,"ymm":60,"headers":["PARAM","VALUE"],"rows":[["width","60 mm"],["height","40 mm"]]}`, &ct)
+	if ct.Annotation.Kind != "customTable" || ct.Annotation.CurveCount == 0 || ct.Annotation.RowCount != 2 {
+		t.Fatalf("custom table = %+v, want a customTable with 2 rows + grid geometry", ct.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addCustomTable", []byte(`{"xmm":0,"ymm":0}`)); err == nil {
+		t.Error("addCustomTable with no headers = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

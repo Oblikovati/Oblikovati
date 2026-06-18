@@ -294,6 +294,49 @@ func TestRevisionTagToolDropsTag(t *testing.T) {
 	}
 }
 
+// TestNoteToolDropsNote: the note tool drops a text note with an optional leader.
+func TestNoteToolDropsNote(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewNoteTool()
+	tool.Start(s)
+	tool.SetPlacement(100, 100)
+	tool.Params().Texts[0].Set("DEBURR ALL EDGES")
+	tool.Params().Floats[0].Set(140) // Leader X
+	tool.Params().Floats[1].Set(130) // Leader Y
+	if tool.Name() != "Note" || !tool.CanCommit() {
+		t.Fatalf("note tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.DrawingNoteAnnotation || an.Item(0).Tag() != "DEBURR ALL EDGES" {
+		t.Fatalf("note not added (count=%d)", an.Count())
+	}
+}
+
+// TestCustomTableToolDropsTable: the custom-table tool drops a seeded two-column table.
+func TestCustomTableToolDropsTable(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewCustomTableTool()
+	tool.Start(s)
+	tool.SetPlacement(250, 60)
+	tool.Params().Texts[0].Set("PARAM")
+	tool.Params().Texts[1].Set("VALUE")
+	if tool.Name() != "Custom Table" || !tool.CanCommit() {
+		t.Fatalf("custom-table tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.CustomTableAnnotation {
+		t.Fatalf("custom table not added (count=%d)", an.Count())
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()

@@ -87,6 +87,9 @@ type annotationRecipe struct {
 	MaterialRemoval string `yaml:"materialRemoval,omitempty"`
 	// revision table: the user-supplied change-history rows.
 	Revisions []revisionRowRecipe `yaml:"revisions,omitempty"`
+	// custom table: the column headers and data rows.
+	Headers []string   `yaml:"headers,omitempty"`
+	Rows    [][]string `yaml:"rows,omitempty"`
 }
 
 // revisionRowRecipe is the YAML shape of one revision-table row.
@@ -187,6 +190,7 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
 			Characteristic: a.characteristic.String(), Tolerance: a.tolerance, Datums: a.datums,
 			MaterialRemoval: a.materialRemoval.String(), Revisions: revisionRowRecipesOf(a.revisions),
+			Headers: a.headers, Rows: a.tableRows,
 		})
 	}
 	return out
@@ -316,7 +320,8 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 		edgeKey, _ := hex.DecodeString(ar.EdgeKey)
 		characteristic, _ := types.ParseGeometricCharacteristic(ar.Characteristic)
 		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey,
-			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums, revisions: revisionRowsOf(ar.Revisions)}
+			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums, revisions: revisionRowsOf(ar.Revisions),
+			headers: ar.Headers, tableRows: ar.Rows}
 		restoreAnnotationGeometry(a, ar)
 		as.items = append(as.items, a)
 	}
@@ -340,11 +345,25 @@ func restoreAnnotationGeometry(a *DrawingAnnotation, ar annotationRecipe) {
 	case types.BalloonAnnotation:
 		item, _ := strconv.Atoi(ar.Tag)
 		a.curves, a.labels = balloonGeometry(ar.X, ar.Y, item, ar.W, ar.H)
+	case types.RevisionTagAnnotation:
+		a.curves, a.labels = revisionTagGeometry(ar.X, ar.Y, ar.Tag)
+	case types.DrawingNoteAnnotation:
+		a.curves, a.labels = noteGeometry(ar.X, ar.Y, ar.Tag, ar.W, ar.H)
+	default:
+		restoreAnnotationTableGeometry(a, ar)
+	}
+}
+
+// restoreAnnotationTableGeometry rebuilds the user-supplied table annotations (revision and custom)
+// from their persisted rows — split out of restoreAnnotationGeometry to keep each focused.
+func restoreAnnotationTableGeometry(a *DrawingAnnotation, ar annotationRecipe) {
+	switch a.kind {
 	case types.RevisionTableAnnotation:
 		a.rowCount = len(a.revisions)
 		a.curves, a.labels = revisionTableGeometry(ar.X, ar.Y, a.revisions)
-	case types.RevisionTagAnnotation:
-		a.curves, a.labels = revisionTagGeometry(ar.X, ar.Y, ar.Tag)
+	case types.CustomTableAnnotation:
+		a.rowCount = len(a.tableRows)
+		a.curves, a.labels = customTableGeometry(ar.X, ar.Y, a.headers, a.tableRows)
 	}
 }
 

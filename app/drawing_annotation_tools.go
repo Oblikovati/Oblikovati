@@ -289,6 +289,89 @@ func (t *RevisionTagTool) Params() ToolParams {
 	}}
 }
 
+// NoteTool drops a free text note at the cursor, with an optional leader to a point.
+type NoteTool struct {
+	text             string
+	leaderX, leaderY float64
+	centerX, centerY float64
+}
+
+// NewNoteTool starts with placeholder note text.
+func NewNoteTool() *NoteTool { return &NoteTool{text: "NOTE", centerX: 150, centerY: 150} }
+
+func (t *NoteTool) Name() string              { return "Note" }
+func (t *NoteTool) Start(*Session)            {}
+func (t *NoteTool) Pick(*Session, Selectable) {}
+func (t *NoteTool) CanCommit() bool           { return t.text != "" }
+func (t *NoteTool) Cancel(*Session)           {}
+func (t *NoteTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the note (with its optional leader) at the placed point.
+func (t *NoteTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Sheets().Active().Annotations().AddNote("", t.centerX, t.centerY, t.text, t.leaderX, t.leaderY); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the note text and optional leader target.
+func (t *NoteTool) Params() ToolParams {
+	return ToolParams{
+		Texts: []TextParam{{Label: "Text", Get: func() string { return t.text }, Set: func(v string) { t.text = v }}},
+		Floats: []FloatParam{
+			{Label: "Leader X", Get: func() float64 { return t.leaderX }, Set: func(v float64) { t.leaderX = v }},
+			{Label: "Leader Y", Get: func() float64 { return t.leaderY }, Set: func(v float64) { t.leaderY = v }},
+		},
+	}
+}
+
+// CustomTableTool drops a general-purpose table seeded with two columns and one empty row at the
+// cursor; the API/bridge place tables with arbitrary headers and rows.
+type CustomTableTool struct {
+	col1, col2       string
+	centerX, centerY float64
+}
+
+// NewCustomTableTool seeds two placeholder column headers.
+func NewCustomTableTool() *CustomTableTool {
+	return &CustomTableTool{col1: "ITEM", col2: "VALUE", centerX: 250, centerY: 60}
+}
+
+func (t *CustomTableTool) Name() string              { return "Custom Table" }
+func (t *CustomTableTool) Start(*Session)            {}
+func (t *CustomTableTool) Pick(*Session, Selectable) {}
+func (t *CustomTableTool) CanCommit() bool           { return t.col1 != "" }
+func (t *CustomTableTool) Cancel(*Session)           {}
+func (t *CustomTableTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the seeded two-column table at the placed point.
+func (t *CustomTableTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	headers := []string{t.col1, t.col2}
+	rows := [][]string{{"", ""}}
+	if _, err := c.Sheets().Active().Annotations().AddCustomTable("", t.centerX, t.centerY, headers, rows); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the two seeded column headers.
+func (t *CustomTableTool) Params() ToolParams {
+	return ToolParams{Texts: []TextParam{
+		{Label: "Column 1", Get: func() string { return t.col1 }, Set: func(v string) { t.col1 = v }},
+		{Label: "Column 2", Get: func() string { return t.col2 }, Set: func(v string) { t.col2 = v }},
+	}}
+}
+
 // DatumFeatureTool drops a GD&T datum feature symbol (a lettered box + datum triangle) at the
 // cursor.
 type DatumFeatureTool struct {

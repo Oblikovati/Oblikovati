@@ -30,6 +30,8 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddHoleTable] = drawingAnnotationsAddHoleTable
 	r.handlers[wire.MethodDrawingAnnotationsAddRevTable] = drawingAnnotationsAddRevisionTable
 	r.handlers[wire.MethodDrawingAnnotationsAddRevTag] = drawingAnnotationsAddRevisionTag
+	r.handlers[wire.MethodDrawingAnnotationsAddNote] = drawingAnnotationsAddNote
+	r.handlers[wire.MethodDrawingAnnotationsAddCustomTable] = drawingAnnotationsAddCustomTable
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -275,6 +277,40 @@ func drawingAnnotationsAddRevisionTag(s *app.Session, raw json.RawMessage) (json
 		return nil, err
 	}
 	a, err := an.AddRevisionTag(in.Name, in.XMM, in.YMM, in.Revision)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddNote(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddDrawingNoteArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddNote(in.Name, in.XMM, in.YMM, in.Text, in.LeaderXMM, in.LeaderYMM)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddCustomTable(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddCustomTableArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddCustomTable(in.Name, in.XMM, in.YMM, in.Headers, in.Rows)
 	if err != nil {
 		return nil, err
 	}
