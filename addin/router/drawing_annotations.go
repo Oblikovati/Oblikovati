@@ -23,6 +23,7 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddCenterMarks] = drawingAnnotationsAddCenterMarks
 	r.handlers[wire.MethodDrawingAnnotationsAddCenterlines] = drawingAnnotationsAddCenterlines
 	r.handlers[wire.MethodDrawingAnnotationsAddFCF] = drawingAnnotationsAddFCF
+	r.handlers[wire.MethodDrawingAnnotationsAddDatum] = drawingAnnotationsAddDatum
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -137,6 +138,23 @@ func drawingAnnotationsAddFCF(s *app.Session, raw json.RawMessage) (json.RawMess
 		return nil, fmt.Errorf("drawing: unknown geometric characteristic %q", in.Characteristic)
 	}
 	a, err := an.AddFeatureControlFrame(in.Name, in.XMM, in.YMM, characteristic, in.Tolerance, in.Datums)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddDatum(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddDatumFeatureArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddDatumFeature(in.Name, in.XMM, in.YMM, in.Letter)
 	if err != nil {
 		return nil, err
 	}
