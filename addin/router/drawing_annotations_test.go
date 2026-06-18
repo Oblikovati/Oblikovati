@@ -105,6 +105,21 @@ func TestDrawingDatumFeatureOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingSurfaceTextureOverWire drives the surface-texture surface: a machined surface texture
+// symbol with a roughness value produces a checkmark annotation through the live stack.
+func TestDrawingSurfaceTextureOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var st wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addSurfaceTexture",
+		`{"name":"ST","xmm":80,"ymm":80,"roughness":"1.6","materialRemoval":"required"}`, &st)
+	if st.Annotation.Kind != "surfaceTexture" || st.Annotation.CurveCount < 3 {
+		t.Fatalf("surface texture = %+v, want a surfaceTexture with checkmark geometry", st.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addSurfaceTexture", []byte(`{"xmm":0,"ymm":0,"materialRemoval":"bogus"}`)); err == nil {
+		t.Error("addSurfaceTexture with a bad variant = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

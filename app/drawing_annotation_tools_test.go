@@ -117,6 +117,31 @@ func TestDatumFeatureToolDropsSymbol(t *testing.T) {
 	}
 }
 
+// TestSurfaceTextureToolDropsSymbol: the surface-texture tool drops a checkmark symbol at the
+// placed point with the chosen roughness and variant.
+func TestSurfaceTextureToolDropsSymbol(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewSurfaceTextureTool()
+	tool.Start(s)
+	tool.SetPlacement(85, 85)
+	tool.Params().Texts[0].Set("3.2") // Roughness
+	tool.Params().Choices[0].Set(2)   // Material removal = Prohibited
+	if tool.Name() != "Surface Texture" || !tool.CanCommit() {
+		t.Fatalf("surface tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.SurfaceTextureAnnotation {
+		t.Fatalf("surface texture not added (count=%d)", an.Count())
+	}
+	if got := an.Item(0).Labels(); len(got) != 1 || got[0].Text != "3.2" {
+		t.Errorf("surface texture labels = %v, want roughness 3.2", got)
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()

@@ -82,6 +82,8 @@ type annotationRecipe struct {
 	Characteristic string   `yaml:"characteristic,omitempty"`
 	Tolerance      string   `yaml:"tolerance,omitempty"`
 	Datums         []string `yaml:"datums,omitempty"`
+	// surface texture: the material-removal variant (the roughness value reuses Tag).
+	MaterialRemoval string `yaml:"materialRemoval,omitempty"`
 }
 
 // viewRecipe is the YAML shape of one drawing view. The drawing curves are not stored — they
@@ -174,6 +176,7 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 			Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
 			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
 			Characteristic: a.characteristic.String(), Tolerance: a.tolerance, Datums: a.datums,
+			MaterialRemoval: a.materialRemoval.String(),
 		})
 	}
 	return out
@@ -287,6 +290,10 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 			a.curves, a.labels = featureControlFrameGeometry(ar.X, ar.Y, characteristic, ar.Tolerance, ar.Datums)
 		case types.DatumFeatureAnnotation:
 			a.curves, a.labels = datumFeatureGeometry(ar.X, ar.Y, ar.Tag)
+		case types.SurfaceTextureAnnotation:
+			variant, _ := types.ParseMaterialRemoval(ar.MaterialRemoval)
+			a.materialRemoval = variant
+			a.curves, a.labels = surfaceTextureGeometry(ar.X, ar.Y, ar.Tag, variant)
 		}
 		as.items = append(as.items, a)
 	}
