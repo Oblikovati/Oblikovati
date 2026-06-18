@@ -42,6 +42,7 @@ func standardCommands() []*CommandDefinition {
 	cmds = append(cmds, newDrawingCommand())
 	cmds = append(cmds, drawingTabCommands()...)
 	cmds = append(cmds, viewTabCommands()...)
+	cmds = append(cmds, analysisCommands()...)
 	return cmds
 }
 
