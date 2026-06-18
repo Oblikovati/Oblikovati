@@ -373,6 +373,41 @@ func TestAddHoleTable(t *testing.T) {
 	}
 }
 
+// TestHoleTableFromDrilledHole checks a hole table finds a hole drilled into a slab (a composite
+// body, not a primitive cylinder), reporting its diameter. It complements the projection-fit unit
+// test (TestFitCircleRecoversFacetedCircle), which guards the live-verify finding (#391) that a
+// sketch extrude-cut facets the rim away from an analytic geom.Circle edge.
+func TestHoleTableFromDrilledHole(t *testing.T) {
+	slab, err := brep.SolidBlock(gmath.P3(0, 0, 0), gmath.P3(6, 4, 1), "slab")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	slab, err = brep.CutCylindricalHole(slab, gmath.P3(3, 2, 0), gmath.V3(0, 0, 1), 0.4)
+	if err != nil {
+		t.Fatalf("CutCylindricalHole: %v", err)
+	}
+
+	c := NewContent()
+	c.SetBodyResolver(fakeBodyResolver{body: slab})
+	c.SetModelReference("slab.opd")
+	topBase(t, c.Sheets().Active().Views())
+
+	ht, err := c.Sheets().Active().Annotations().AddHoleTable("HT", "TOP", 40, 260)
+	if err != nil {
+		t.Fatalf("AddHoleTable on a drilled slab: %v", err)
+	}
+	if ht.RowCount() != 1 {
+		t.Fatalf("drilled-slab hole table = %d rows, want 1 (the cut hole)", ht.RowCount())
+	}
+	texts := map[string]bool{}
+	for _, l := range ht.Labels() {
+		texts[l.Text] = true
+	}
+	if !texts["Ø8.00"] { // 0.4 cm radius → 8 mm diameter
+		t.Errorf("drilled-hole diameter label missing Ø8.00: %v", ht.Labels())
+	}
+}
+
 // TestHoleTableNeedsCircularEdge: a box has no circular edges, so a hole table errors.
 func TestHoleTableNeedsCircularEdge(t *testing.T) {
 	c := drawingWithBox(t)
