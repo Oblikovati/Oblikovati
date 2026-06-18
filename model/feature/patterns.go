@@ -118,20 +118,28 @@ func appendCopies(bodies, copies []*topo.Body) []*topo.Body {
 	return append(out, copies...)
 }
 
-// replicate produces the patterned body state. When the single source feature added or
-// removed material (a cut/join/intersect), it re-applies that source's tool at each active
-// occurrence with the same boolean — so patterning a hole cuts N holes in one body, and
-// patterning a boss unions N bosses into one body. A boolean source whose tool cannot be
-// recovered (a deferred feature that built no geometry, or a degenerate delta) replicates
-// nothing — copying the whole running body would wrongly multiply it. Only a new-body/base
-// source falls back to placing whole-body copies as independent solids.
+// groupTool pairs a resolved source-feature tool body with its boolean operation, so a pattern
+// can re-apply a whole GROUP of material features (e.g. a join boss + a hole) at each occurrence.
+type groupTool struct {
+	body *topo.Body
+	op   ops.PartFeatureOperation
+}
+
+// replicate produces the patterned body state. When every source feature added or removed
+// material (a cut/join/intersect), it re-applies those sources' tools — in feature order — at
+// each active occurrence with their own booleans, so patterning a hole cuts N holes in one body,
+// patterning a boss unions N bosses into one body, and patterning a join+hole GROUP places N
+// connected bosses each holed (Oblikovati/Oblikovati#128) rather than scattering whole-body
+// copies. A boolean source whose tool cannot be recovered (a deferred feature that built no
+// geometry, or a degenerate delta) replicates nothing — copying the whole running body would
+// wrongly multiply it. Only a new-body/base source falls back to placing whole-body copies.
 func (p *patternBase) replicate(in Input, sources []ID, transforms []math.Matrix4, feat string) (Output, error) {
-	tool, op, ok := singleSourceTool(in, sources)
-	if booleanReplicable(op) {
-		if !ok {
+	tools, boolean := resolveGroup(in, sources)
+	if boolean {
+		if len(tools) == 0 {
 			return Output{Bodies: in.Bodies}, nil
 		}
-		return p.replicateTool(in.Bodies, tool, op, transforms, feat)
+		return p.replicateTools(in.Bodies, tools, transforms, feat)
 	}
 	copies, err := p.placeCopies(in.Bodies, transforms, feat)
 	if err != nil {
@@ -140,17 +148,20 @@ func (p *patternBase) replicate(in Input, sources []ID, transforms []math.Matrix
 	return Output{Bodies: appendCopies(in.Bodies, copies)}, nil
 }
 
-// replicateTool re-applies the source tool, transformed by each active occurrence, against
-// the running result with the source operation (the original sits at occurrence 0 already).
-func (p *patternBase) replicateTool(bodies []*topo.Body, tool *topo.Body, op ops.PartFeatureOperation, transforms []math.Matrix4, feat string) (Output, error) {
+// replicateTools re-applies a group of source tools, transformed by each active occurrence,
+// against the running result (the original sits at occurrence 0 already). Applying the tools in
+// source order at every grid cell keeps a multi-feature group connected (#128).
+func (p *patternBase) replicateTools(bodies []*topo.Body, tools []groupTool, transforms []math.Matrix4, feat string) (Output, error) {
 	if len(bodies) == 0 {
 		return Output{Bodies: bodies}, nil
 	}
 	// Re-facet a curved tool (an extruded-circle ANALYTIC cylinder, #129) into a planar B-rep
 	// before the boolean — exactly as combine() does. The planar B-rep boolean hangs/explodes on
 	// a full periodic cylinder face, so a circular pattern of a Ø-hole cut used to blow up into
-	// tens of thousands of edges (Oblikovati/Oblikovati#129). A faceted tool is left unchanged.
-	tool = planarized(tool, feat)
+	// tens of thousands of edges (#129). A faceted tool is left unchanged.
+	for i := range tools {
+		tools[i].body = planarized(tools[i].body, feat)
+	}
 	running := append([]*topo.Body(nil), bodies...)
 	last := len(running) - 1
 	running[last] = planarized(running[last], feat) // ditto for a curved running target
@@ -158,28 +169,55 @@ func (p *patternBase) replicateTool(bodies []*topo.Body, tool *topo.Body, op ops
 		if p.skip(k) {
 			continue
 		}
-		tk, err := ops.TransformBody(tool, transforms[k], copyLineage(feat, k, 0))
+		next, err := applyGroupAt(running[last], tools, transforms[k], feat, k)
 		if err != nil {
 			return Output{}, err
 		}
-		res, err := ops.Boolean(op, running[last], tk)
-		if err != nil {
-			return Output{}, err
-		}
-		if res != nil && len(res.Faces()) > 0 {
-			running[last] = res
-		}
+		running[last] = next
 	}
 	return Output{Bodies: running}, nil
 }
 
-// singleSourceTool returns the tool + operation of a lone source feature (the common case);
-// it declines multi-source patterns and missing resolvers, leaving them to the copy path.
-func singleSourceTool(in Input, sources []ID) (*topo.Body, ops.PartFeatureOperation, bool) {
-	if in.SourceTool == nil || len(sources) != 1 {
-		return nil, ops.NewBody, false
+// applyGroupAt booleans every tool of the group at occurrence k against the running body, in
+// source order, transformed into place with a per-tool lineage so reference keys stay distinct.
+func applyGroupAt(running *topo.Body, tools []groupTool, xf math.Matrix4, feat string, k int) (*topo.Body, error) {
+	for bi, t := range tools {
+		tk, err := ops.TransformBody(t.body, xf, copyLineage(feat, k, bi))
+		if err != nil {
+			return nil, err
+		}
+		res, err := ops.Boolean(t.op, running, tk)
+		if err != nil {
+			return nil, err
+		}
+		if res != nil && len(res.Faces()) > 0 {
+			running = res
+		}
 	}
-	return in.SourceTool(sources[0])
+	return running, nil
+}
+
+// resolveGroup classifies the pattern's source features. boolean is true when every source
+// applies a boolean op (cut/join/intersect) — a material group the pattern re-applies at each
+// occurrence; it is false when any source is a new-body placement, so the caller copies whole
+// bodies. When a boolean source's tool cannot be resolved, tools is empty but boolean stays true,
+// so the caller no-ops the pattern rather than multiplying whole bodies.
+func resolveGroup(in Input, sources []ID) (tools []groupTool, boolean bool) {
+	if in.SourceTool == nil || len(sources) == 0 {
+		return nil, false
+	}
+	tools = make([]groupTool, 0, len(sources))
+	for _, id := range sources {
+		tool, op, ok := in.SourceTool(id)
+		if !booleanReplicable(op) {
+			return nil, false
+		}
+		if !ok {
+			return nil, true
+		}
+		tools = append(tools, groupTool{body: tool, op: op})
+	}
+	return tools, true
 }
 
 // booleanReplicable reports whether an operation is one the pattern re-applies as a boolean
