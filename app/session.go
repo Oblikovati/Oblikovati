@@ -56,6 +56,7 @@ type Session struct {
 	boxSelect            BoxSelection      // the in-progress rubber-band rectangle, if any
 	zoomWindow           BoxSelection      // the in-progress Zoom Window rubber-band, if any (#913 N16)
 	zoomWindowArmed      bool              // the Zoom Window tool is armed: the next left-drag zooms
+	constrainedOrbit     bool              // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
 	entityDrag           sketchDrag        // the in-progress direct drag of sketch entities, if any
 	dimDrag              dimDragState      // the in-progress drag of a drawing dimension's text/line
 	selectOther          selectOther       // the in-progress Select Other cycle, if any

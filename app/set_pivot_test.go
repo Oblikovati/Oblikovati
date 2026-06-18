@@ -4,6 +4,27 @@ package app
 
 import "testing"
 
+// TestToggleConstrainedOrbit covers the Constrained Orbit tool's on/off/disarm state (#913 N10).
+func TestToggleConstrainedOrbit(t *testing.T) {
+	s := NewSession()
+	if s.ConstrainedOrbitActive() {
+		t.Fatal("Constrained Orbit should be off by default")
+	}
+	s.ToggleConstrainedOrbit()
+	if !s.ConstrainedOrbitActive() {
+		t.Fatal("toggle should turn it on")
+	}
+	s.ToggleConstrainedOrbit()
+	if s.ConstrainedOrbitActive() {
+		t.Fatal("toggle should turn it off")
+	}
+	s.ToggleConstrainedOrbit()
+	s.DisarmConstrainedOrbit()
+	if s.ConstrainedOrbitActive() {
+		t.Fatal("disarm should turn it off")
+	}
+}
+
 // TestSetOrbitPivotRecenters: clicking off-centre to set the Free-Orbit pivot moves the orbit centre
 // (the camera target) to the clicked point while keeping the view direction (#913 N9).
 func TestSetOrbitPivotRecenters(t *testing.T) {

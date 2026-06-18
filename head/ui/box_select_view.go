@@ -36,6 +36,9 @@ func handleViewportSelection(s *app.Session) {
 	if updateOrbitPivot(s) {
 		return // Free Orbit: a no-drag click set the orbit pivot (#913 N9)
 	}
+	if s.ConstrainedOrbitActive() {
+		return // Constrained Orbit owns the left-drag, which turntables (#913 N10)
+	}
 	if heldNavMode() != NavNone {
 		return // a held F2/F3/F4 turns a left-drag into navigation, not selection (#911)
 	}

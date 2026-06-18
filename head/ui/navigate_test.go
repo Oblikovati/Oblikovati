@@ -85,6 +85,19 @@ func TestApplyOrbitZones(t *testing.T) {
 	}
 }
 
+// TestApplyNavigationConstrainedOrbit: a Constrained-Orbit drag turntables about the model vertical
+// and re-levels the view (removes roll), regardless of the drag's start zone (#913 N10).
+func TestApplyNavigationConstrainedOrbit(t *testing.T) {
+	cam := scene.NewCamera(800, 600).Roll(0.5) // a rolled view
+	out := ApplyNavigation(cam, NavInput{Active: true, Constrained: true, DX: 30})
+	if out.Eye.IsEqualTo(cam.Eye, 1e-9) {
+		t.Error("constrained-orbit drag should move the eye")
+	}
+	if !out.Up.IsEqualTo(modelUp, 1e-9) {
+		t.Errorf("constrained orbit up = %v, want the model vertical %v (re-levelled)", out.Up, modelUp)
+	}
+}
+
 func TestApplyNavigationPansWithMiddleDrag(t *testing.T) {
 	cam := scene.NewCamera(800, 600)
 	out := ApplyNavigation(cam, NavInput{Active: true, Middle: true, DX: 50})

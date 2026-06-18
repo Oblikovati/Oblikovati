@@ -300,6 +300,28 @@ func (c Camera) Roll(angle float64) Camera {
 	return c
 }
 
+// OrbitConstrained is a turntable orbit locked to a world vertical axis — Inventor's Constrained
+// Orbit (N10): yaw rotates the eye about worldUp (the model vertical), pitch tilts about the
+// horizontal screen axis, and the view is re-levelled so worldUp stays vertical on screen (no roll).
+// Unlike Orbit, which yaws about the camera's own (possibly rolled) up, this keeps vertical lines
+// vertical regardless of any prior roll. The eye–target distance is preserved; a pitch that would
+// flip over the pole is skipped. A degenerate worldUp falls back to Orbit.
+func (c Camera) OrbitConstrained(yaw, pitch float64, worldUp math.Vector3) Camera {
+	up := unit(worldUp)
+	if up == (math.Vector3{}) {
+		return c.Orbit(yaw, pitch)
+	}
+	offset := rotateAboutAxis(c.Target.VectorTo(c.Eye), up, yaw)
+	forward := unit(offset.Scale(-1)) // eye → target after the yaw
+	right := unit(forward.Cross(up))
+	if pitched := rotateAboutAxis(offset, right, pitch); absDot(unit(pitched), up) < poleCos {
+		offset = pitched
+	}
+	c.Eye = c.Target.TranslateBy(offset)
+	c.Up = up // re-level: the world vertical stays up, removing any roll
+	return c
+}
+
 // Pan slides the eye and target together in the view plane so the point under the
 // cursor tracks the drag (Inventor's Pan). dxPixels/dyPixels are screen-space deltas
 // (y down); the world step per pixel is derived from the target distance and FOV.
