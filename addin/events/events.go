@@ -53,7 +53,19 @@ func styleEventType(k app.StyleChangeKind) string {
 func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 	bus := s.Events()
 	subs := subscribeDocuments(s.Workspace().Events(), sink)
-	subs = append(subs,
+	subs = append(subs, subscribeSessionUI(bus, sink)...)
+	subs = append(subs, subscribeRepresentations(bus, sink)...)
+	subs = append(subs, subscribeTransactions(bus, sink)...)
+	subs = append(subs, subscribeFileAccess(s.Workspace().Events(), sink)...)
+	subs = append(subs, subscribeAssemblies(s.Workspace().Events(), sink)...)
+	subs = append(subs, subscribeFileUIHooks(bus, sink)...)
+	return append(subs, subscribeUISurfaces(bus, sink)...)
+}
+
+// subscribeSessionUI relays the session bus's command, selection, environment, edit, camera and
+// style change events (M05/M16) to the add-in sink.
+func subscribeSessionUI(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
 		event.Subscribe(bus, event.Before, func(_ event.Context, e app.CommandStarted) event.Outcome {
 			return relay(sink, wireEvent{Type: wire.EventCommandStarted, Command: e.ID})
 		}),
@@ -69,9 +81,7 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.EditCommitted) event.Outcome {
 			return relayEdit(sink, e)
 		}),
-		// M16-F03 (#404): the active view's camera moved (named-view restore / orientation
-		// jump). The add-in reads the new frame via get_camera; wire.CameraChangedEvent is the
-		// richer DTO for an out-of-band transport.
+		// M16-F03 (#404): the active view's camera moved (named-view restore / orientation jump).
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.CameraChanged) event.Outcome {
 			return relay(sink, wireEvent{Type: wire.EventCameraChanged, Document: strconv.FormatUint(uint64(e.Document), 10)})
 		}),
@@ -79,12 +89,24 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.StyleChanged) event.Outcome {
 			return relay(sink, wireEvent{Type: styleEventType(e.Kind), Name: e.Name})
 		}),
-	)
-	subs = append(subs, subscribeTransactions(bus, sink)...)
-	subs = append(subs, subscribeFileAccess(s.Workspace().Events(), sink)...)
-	subs = append(subs, subscribeAssemblies(s.Workspace().Events(), sink)...)
-	subs = append(subs, subscribeFileUIHooks(bus, sink)...)
-	return append(subs, subscribeUISurfaces(bus, sink)...)
+	}
+}
+
+// subscribeRepresentations relays the representation / model-state change notifications (#901): the
+// request/response methods are handled in addin/router; these forward the matching app events so a
+// subscriber learns of an activation/capture (Name carries the representation / model-state name).
+func subscribeRepresentations(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.RepresentationActivated) event.Outcome {
+			return relay(sink, wireEvent{Type: wire.EventRepresentationActivated, Name: e.Name})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.RepresentationCaptured) event.Outcome {
+			return relay(sink, wireEvent{Type: wire.EventRepresentationCaptured, Name: e.Name})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.ModelStateActivated) event.Outcome {
+			return relay(sink, wireEvent{Type: wire.EventModelStateActivated, Name: e.Name})
+		}),
+	}
 }
 
 // subscribeDocuments wires the workspace document events; a flavored document's

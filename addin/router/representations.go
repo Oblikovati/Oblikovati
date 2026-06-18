@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/event"
 	"oblikovati.org/model/assembly"
 	"oblikovati.org/model/compdef"
 )
@@ -69,6 +70,7 @@ func designRepsCapture(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 		return nil, err
 	}
 	d := asm.Representations().CaptureDesignView(in.Name, capturedCamera(s))
+	event.Emit(s.Events(), event.After, app.RepresentationCaptured{Kind: "design", Name: d.Name()})
 	return json.Marshal(wire.DesignViewResult{Representation: designViewInfo(d)})
 }
 
@@ -81,6 +83,7 @@ func designRepsActivate(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
+	event.Emit(s.Events(), event.After, app.RepresentationActivated{Kind: "design", Name: d.Name()})
 	return json.Marshal(wire.DesignViewResult{Representation: designViewInfo(d)})
 }
 
@@ -166,6 +169,7 @@ func positionalRepsCapture(s *app.Session, raw json.RawMessage) (json.RawMessage
 		return nil, err
 	}
 	p := asm.Representations().CapturePositional(in.Name)
+	event.Emit(s.Events(), event.After, app.RepresentationCaptured{Kind: "positional", Name: p.Name()})
 	return json.Marshal(wire.PositionalResult{Representation: positionalInfo(p)})
 }
 
@@ -178,6 +182,7 @@ func positionalRepsActivate(s *app.Session, raw json.RawMessage) (json.RawMessag
 	if err != nil {
 		return nil, err
 	}
+	event.Emit(s.Events(), event.After, app.RepresentationActivated{Kind: "positional", Name: p.Name()})
 	return json.Marshal(wire.PositionalResult{Representation: positionalInfo(p)})
 }
 
@@ -244,6 +249,7 @@ func lodRepsCapture(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 		return nil, err
 	}
 	l := asm.Representations().CaptureLOD(in.Name)
+	event.Emit(s.Events(), event.After, app.RepresentationCaptured{Kind: "lod", Name: l.Name()})
 	return json.Marshal(wire.LODResult{Representation: lodInfo(l)})
 }
 
@@ -256,6 +262,7 @@ func lodRepsActivate(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
+	event.Emit(s.Events(), event.After, app.RepresentationActivated{Kind: "lod", Name: l.Name()})
 	return json.Marshal(wire.LODResult{Representation: lodInfo(l)})
 }
 
@@ -323,6 +330,7 @@ func modelStatesActivate(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	if err != nil {
 		return nil, err
 	}
+	event.Emit(s.Events(), event.After, app.ModelStateActivated{Name: m.Name()})
 	return json.Marshal(wire.ModelStateResult{ModelState: modelStateInfo(m)})
 }
 

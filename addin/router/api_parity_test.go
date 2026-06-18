@@ -65,11 +65,7 @@ var notYetHandled = map[string]bool{}
 // are tracked debt: when that feature fires an app event, relay it in addin/events and
 // DELETE it from this list. Any OTHER unrelayed event fails the test below — so this list
 // may only shrink. See https://github.com/Oblikovati/Oblikovati/issues/901.
-var notYetRelayed = map[string]bool{
-	"EventModelStateActivated":     true,
-	"EventRepresentationActivated": true,
-	"EventRepresentationCaptured":  true,
-}
+var notYetRelayed = map[string]bool{}
 
 // TestEveryWireEventIsRelayed guards the other direction: every wire.Event* constant
 // must be referenced by the add-in's event relay (addin/events) or the router, so a
