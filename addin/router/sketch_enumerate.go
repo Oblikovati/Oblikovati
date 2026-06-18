@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/math"
+	"oblikovati.org/model/identity"
 	"oblikovati.org/model/sketch"
 )
 
@@ -20,6 +21,7 @@ func enumerateEntities(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	}
 	ents := sk.Entities()
 	moveable := sk.MoveableClassifier()
+	guid, _ := activeDocumentGUID(s) // empty ⇒ omit keys; never fails for a real document
 	out := make([]wire.SketchEntityInfo, len(ents))
 	for i, e := range ents {
 		kind, pts, radius := entityShape(e)
@@ -30,11 +32,25 @@ func enumerateEntities(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 			Construction:   isConstruction(e),
 			Points:         pts,
 			Radius:         radius,
+			ReferenceKey:   entityReferenceKey(guid, e),
 			MoveableStatus: moveable.Of(e).String(),
 			FitMethod:      splineFitSpelling(e),
 		}
 	}
 	return json.Marshal(wire.EnumerateEntitiesResult{Entities: out})
+}
+
+// entityReferenceKey derives an entity's persistent reference key (#153); empty when the
+// document guid is unavailable, so the field is simply omitted.
+func entityReferenceKey(guid string, e sketch.Entity) string {
+	if guid == "" {
+		return ""
+	}
+	k, err := identity.SketchEntityKey(guid, uint64(e.EntityID()))
+	if err != nil {
+		return ""
+	}
+	return k
 }
 
 // enumerateConstraints lists a sketch's geometric constraints (kind + related entity ids).

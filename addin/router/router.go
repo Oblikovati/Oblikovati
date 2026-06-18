@@ -73,6 +73,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerDocumentPropertyHandlers()
 	r.registerAttributeHandlers()
 	r.registerSelectionMutationHandlers()
+	r.registerSketchReferenceKeyHandlers()
 	r.registerDrawingHandlers()
 	r.registerDrawingStyleHandlers()
 	r.registerDrawingViewHandlers()
