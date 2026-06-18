@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
+	"oblikovati.org/head/internal/native"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
@@ -80,31 +81,19 @@ func TestInWindowDrawingCanvasRenders(t *testing.T) {
 
 	// Frame 1–2: a base-view placement tool is active → the preview branch renders.
 	s.StartTool(app.NewBaseViewTool())
-	for i := 0; i < 2; i++ {
-		win.BeginFrame()
-		DrawChrome(win, s)
-		win.EndFrame(0.1, 0.1, 0.1)
-	}
+	renderChromeFrames(win, s, 2)
 	s.CancelTool()
 
 	// Frame 3–4: a view is selected → the highlight + selection branch render.
 	s.Select(app.DrawingViewHandle{Views: views, View: views.Item(0)})
-	for i := 0; i < 2; i++ {
-		win.BeginFrame()
-		DrawChrome(win, s)
-		win.EndFrame(0.1, 0.1, 0.1)
-	}
+	renderChromeFrames(win, s, 2)
 
 	// Frame 5–6: a dimension's text is being dragged → its highlight branch renders.
 	dc, _ := app.ActiveDrawing(s)
 	if d := dc.Sheets().Active().Dimensions().Item(0); d != nil {
 		tx, ty := d.TextAnchorMM()
 		s.DragDimension(true, true, tx, ty, 0, 0)
-		for i := 0; i < 2; i++ {
-			win.BeginFrame()
-			DrawChrome(win, s)
-			win.EndFrame(0.1, 0.1, 0.1)
-		}
+		renderChromeFrames(win, s, 2)
 	}
 
 	if views.Item(0).CurveCount() == 0 {
@@ -132,7 +121,12 @@ func TestInWindowDrawingSheetTabsRender(t *testing.T) {
 
 	// Several frames: the first force-selects the active tab; later frames let ImGui drive —
 	// exercising the whole sheet-tab strip (force and steady-state paths).
-	for i := 0; i < 4; i++ {
+	renderChromeFrames(win, s, 4)
+}
+
+// renderChromeFrames draws n full chrome frames — the in-window tests' shared render loop.
+func renderChromeFrames(win *native.Window, s *app.Session, n int) {
+	for i := 0; i < n; i++ {
 		win.BeginFrame()
 		DrawChrome(win, s)
 		win.EndFrame(0.1, 0.1, 0.1)

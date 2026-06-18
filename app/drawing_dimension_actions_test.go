@@ -2,11 +2,16 @@
 
 package app
 
-import "testing"
+import (
+	"testing"
 
-// TestPickAndMoveDrawingDimension: a dimension's text and line can be picked on the canvas and
-// moved, so overlapping dimensions are separated.
-func TestPickAndMoveDrawingDimension(t *testing.T) {
+	"oblikovati.org/model/drawing"
+)
+
+// dimensionedDrawingSession builds a boxed-part drawing with one placed base view + linear
+// dimension — the shared fixture for the dimension-canvas-interaction tests.
+func dimensionedDrawingSession(t *testing.T) (*Session, *drawing.DrawingDimension) {
+	t.Helper()
 	s := drawingWithModelSession(t)
 	base := NewBaseViewTool()
 	base.Start(s)
@@ -20,7 +25,13 @@ func TestPickAndMoveDrawingDimension(t *testing.T) {
 		t.Fatalf("place dimension: %v", err)
 	}
 	c, _ := ActiveDrawing(s)
-	d := c.Sheets().Active().Dimensions().Item(0)
+	return s, c.Sheets().Active().Dimensions().Item(0)
+}
+
+// TestPickAndMoveDrawingDimension: a dimension's text and line can be picked on the canvas and
+// moved, so overlapping dimensions are separated.
+func TestPickAndMoveDrawingDimension(t *testing.T) {
+	s, d := dimensionedDrawingSession(t)
 
 	// Picking at the text anchor grabs the text.
 	tx, ty := d.TextAnchorMM()
@@ -46,20 +57,7 @@ func TestPickAndMoveDrawingDimension(t *testing.T) {
 // TestDragDimensionStateMachine: a press over the text starts a drag, subsequent active frames
 // move the text, and releasing ends it.
 func TestDragDimensionStateMachine(t *testing.T) {
-	s := drawingWithModelSession(t)
-	base := NewBaseViewTool()
-	base.Start(s)
-	base.SetPlacement(120, 100)
-	if err := base.Commit(s); err != nil {
-		t.Fatalf("place base view: %v", err)
-	}
-	lin := NewLinearDimensionTool()
-	lin.Start(s)
-	if err := lin.Commit(s); err != nil {
-		t.Fatalf("place dimension: %v", err)
-	}
-	c, _ := ActiveDrawing(s)
-	d := c.Sheets().Active().Dimensions().Item(0)
+	s, d := dimensionedDrawingSession(t)
 	tx, ty := d.TextAnchorMM()
 
 	// Press on the text (itemClicked) starts the drag and consumes the input.
