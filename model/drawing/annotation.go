@@ -177,6 +177,8 @@ func (as *DrawingAnnotations) Recompute() {
 			as.recomputePartsList(a)
 		case types.HoleTableAnnotation:
 			as.recomputeHoleTable(a)
+		case types.HoleNoteAnnotation:
+			as.recomputeHoleNotes(a)
 		}
 	}
 }
