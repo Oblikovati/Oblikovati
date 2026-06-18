@@ -191,6 +191,28 @@ func TestPartsListToolDropsTable(t *testing.T) {
 	}
 }
 
+// TestBalloonToolDropsBalloon: the balloon tool drops a circled item number with a leader.
+func TestBalloonToolDropsBalloon(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewBalloonTool()
+	tool.Start(s)
+	tool.SetPlacement(100, 200)
+	tool.Params().Ints[0].Set(5)     // Item
+	tool.Params().Floats[0].Set(130) // Leader X
+	tool.Params().Floats[1].Set(180) // Leader Y
+	if tool.Name() != "Balloon" || !tool.CanCommit() {
+		t.Fatalf("balloon tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.BalloonAnnotation || an.Item(0).Tag() != "5" {
+		t.Fatalf("balloon not added (count=%d)", an.Count())
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()

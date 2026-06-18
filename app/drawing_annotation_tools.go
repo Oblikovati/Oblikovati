@@ -333,6 +333,48 @@ func (t *PartsListTool) Commit(s *Session) error {
 	return nil
 }
 
+// BalloonTool drops a balloon (a circled parts-list item number) at the cursor, with an optional
+// leader to a previously-picked point.
+type BalloonTool struct {
+	item             int
+	centerX, centerY float64
+	leaderX, leaderY float64
+}
+
+// NewBalloonTool starts on item 1, no leader.
+func NewBalloonTool() *BalloonTool { return &BalloonTool{item: 1, centerX: 150, centerY: 150} }
+
+func (t *BalloonTool) Name() string              { return "Balloon" }
+func (t *BalloonTool) Start(*Session)            {}
+func (t *BalloonTool) Pick(*Session, Selectable) {}
+func (t *BalloonTool) CanCommit() bool           { return t.item > 0 }
+func (t *BalloonTool) Cancel(*Session)           {}
+func (t *BalloonTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the balloon at the placed point.
+func (t *BalloonTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Sheets().Active().Annotations().AddBalloon("", t.centerX, t.centerY, t.item, t.leaderX, t.leaderY); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the item number and leader-target inputs.
+func (t *BalloonTool) Params() ToolParams {
+	return ToolParams{
+		Ints: []IntParam{{Label: "Item", Get: func() int { return t.item }, Set: func(v int) { t.item = v }}},
+		Floats: []FloatParam{
+			{"Leader X (mm)", func() float64 { return t.leaderX }, func(v float64) { t.leaderX = v }},
+			{"Leader Y (mm)", func() float64 { return t.leaderY }, func(v float64) { t.leaderY = v }},
+		},
+	}
+}
+
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
 	width, height    float64

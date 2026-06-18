@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"strconv"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/model/doc"
@@ -283,19 +284,29 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 		characteristic, _ := types.ParseGeometricCharacteristic(ar.Characteristic)
 		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey,
 			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums}
-		switch kind {
-		case types.RevisionCloudAnnotation:
-			a.curves = revisionCloudCurves(ar.X, ar.Y, ar.W, ar.H)
-		case types.FeatureControlFrameAnnotation:
-			a.curves, a.labels = featureControlFrameGeometry(ar.X, ar.Y, characteristic, ar.Tolerance, ar.Datums)
-		case types.DatumFeatureAnnotation:
-			a.curves, a.labels = datumFeatureGeometry(ar.X, ar.Y, ar.Tag)
-		case types.SurfaceTextureAnnotation:
-			variant, _ := types.ParseMaterialRemoval(ar.MaterialRemoval)
-			a.materialRemoval = variant
-			a.curves, a.labels = surfaceTextureGeometry(ar.X, ar.Y, ar.Tag, variant)
-		}
+		restoreAnnotationGeometry(a, ar)
 		as.items = append(as.items, a)
+	}
+}
+
+// restoreAnnotationGeometry rebuilds a restored annotation's curves and labels from its recipe (the
+// kinds whose glyph is a pure function of persisted fields; the model-associative ones re-derive on
+// the next RecomputeViews instead).
+func restoreAnnotationGeometry(a *DrawingAnnotation, ar annotationRecipe) {
+	switch a.kind {
+	case types.RevisionCloudAnnotation:
+		a.curves = revisionCloudCurves(ar.X, ar.Y, ar.W, ar.H)
+	case types.FeatureControlFrameAnnotation:
+		a.curves, a.labels = featureControlFrameGeometry(ar.X, ar.Y, a.characteristic, ar.Tolerance, ar.Datums)
+	case types.DatumFeatureAnnotation:
+		a.curves, a.labels = datumFeatureGeometry(ar.X, ar.Y, ar.Tag)
+	case types.SurfaceTextureAnnotation:
+		variant, _ := types.ParseMaterialRemoval(ar.MaterialRemoval)
+		a.materialRemoval = variant
+		a.curves, a.labels = surfaceTextureGeometry(ar.X, ar.Y, ar.Tag, variant)
+	case types.BalloonAnnotation:
+		item, _ := strconv.Atoi(ar.Tag)
+		a.curves, a.labels = balloonGeometry(ar.X, ar.Y, item, ar.W, ar.H)
 	}
 }
 
