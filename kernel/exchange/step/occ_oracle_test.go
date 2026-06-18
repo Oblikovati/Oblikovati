@@ -57,6 +57,13 @@ var knownGaps = map[string]string{
 	"partial_torus":  "trimmed doubly-periodic surface tessellation (kernel/ops) not yet implemented",
 }
 
+// knownFolds are fixtures whose tessellation still has fold edges (a watertight self-crease). The
+// fold gate in checkOracle skips them; the list may only shrink (delete an entry when its folds are
+// fixed). filleted_box: 2 residual folds on the spherical corner-fillet caps — tracked in #1011.
+var knownFolds = map[string]bool{
+	"filleted_box": true,
+}
+
 func checkOracle(t *testing.T, dir, name string, want oracleEntry) {
 	if reason, gap := knownGaps[name]; gap {
 		t.Skip(reason)
@@ -73,9 +80,18 @@ func checkOracle(t *testing.T, dir, name string, want oracleEntry) {
 		t.Errorf("%s: imported %d solids, want %d (warnings: %v)", name, len(bodies), want.Solids, warns)
 	}
 	var got float64
-	for _, b := range bodies {
+	for i, b := range bodies {
 		if r := ops.Validate(b); !r.Valid || !b.IsSolid() {
 			t.Errorf("%s: a body is not a valid solid (valid=%v solid=%v)", name, r.Valid, b.IsSolid())
+		}
+		// A folded tessellation can be watertight yet over-enclose (wrong mass). Guard 0 folds so
+		// the volume match below reflects faithful geometry, not luck-of-cancellation (#584).
+		mesh, _ := ops.TessellateBody(b, ops.DefaultQuality())
+		switch folds := ops.FoldEdgeCount(mesh); {
+		case folds != 0 && !knownFolds[name]:
+			t.Errorf("%s: body %d tessellated with %d fold edges; want 0 (over-enclosure)", name, i, folds)
+		case folds == 0 && knownFolds[name]:
+			t.Errorf("%s: body %d is now fold-free — delete it from knownFolds (#1011)", name, i)
 		}
 		got += ops.BodyGeometryProperties(b, ops.DefaultQuality()).Volume
 	}
@@ -98,6 +114,8 @@ func oracleTolerance(name string) float64 {
 		return 0.001 // planar
 	case "sphere", "partial_sphere", "torus", "partial_torus", "filleted_box":
 		return 0.08 // doubly curved / many small blends
+	case "freeform_trimmed":
+		return 0.03 // B-spline barrel loft + bore: chord error on convex freeform faces
 	default:
 		return 0.05 // singly curved (cylinder, cone, drilled, boss, chamfer)
 	}
