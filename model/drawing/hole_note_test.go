@@ -15,7 +15,7 @@ import (
 func TestAddHoleNotes(t *testing.T) {
 	c := drawingWithCylinder(t, 2) // 2 cm radius → Ø40
 	topBase(t, c.Sheets().Active().Views())
-	hn, err := c.Sheets().Active().Annotations().AddHoleNotes("HN", "TOP")
+	hn, err := c.Sheets().Active().Annotations().AddHoleNotes("HN", "TOP", types.HoleNotePerHole)
 	if err != nil {
 		t.Fatalf("AddHoleNotes: %v", err)
 	}
@@ -41,7 +41,25 @@ func TestAddHoleNotes(t *testing.T) {
 func TestHoleNotesNeedHoles(t *testing.T) {
 	c := drawingWithBox(t)
 	frontBase(t, c.Sheets().Active().Views())
-	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("HN", "FRONT"); err == nil {
+	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("HN", "FRONT", types.HoleNotePerHole); err == nil {
 		t.Error("AddHoleNotes on a box (no holes) = ok, want error")
+	}
+}
+
+// TestRenderCombinedHoleNotes: combined grouping collapses equal-diameter holes into one
+// "<n>x Ø<d>" callout per size, in encounter order, leaving distinct sizes as their own callouts.
+func TestRenderCombinedHoleNotes(t *testing.T) {
+	holes := []projectedHoleNote{
+		{sx: 10, sy: 10, radiusMM: 4}, // Ø8.00
+		{sx: 40, sy: 10, radiusMM: 6}, // Ø12.00
+		{sx: 70, sy: 10, radiusMM: 4}, // Ø8.00 (groups with the first)
+	}
+	a := &DrawingAnnotation{kind: types.HoleNoteAnnotation, holeQuantity: types.HoleNoteCombined}
+	renderCombinedHoleNotes(a, holes)
+	if a.rowCount != 2 || len(a.labels) != 2 {
+		t.Fatalf("combined notes = %d callouts, want 2 (Ø8 group + Ø12)", a.rowCount)
+	}
+	if a.labels[0].Text != "2x Ø8.00" || a.labels[1].Text != "Ø12.00" {
+		t.Errorf("combined labels = [%q, %q], want [2x Ø8.00, Ø12.00]", a.labels[0].Text, a.labels[1].Text)
 	}
 }

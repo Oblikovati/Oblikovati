@@ -245,12 +245,15 @@ func TestDrawingHoleNotesOverWire(t *testing.T) {
 	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
 
 	var hn wire.AnnotationResult
-	call(t, r, s, "drawingAnnotations.addHoleNotes", `{"name":"HN","viewName":"TOP"}`, &hn)
+	call(t, r, s, "drawingAnnotations.addHoleNotes", `{"name":"HN","viewName":"TOP","quantity":"combined"}`, &hn)
 	if hn.Annotation.Kind != "holeNote" || hn.Annotation.CurveCount == 0 || hn.Annotation.RowCount != 1 {
 		t.Fatalf("hole notes = %+v, want a holeNote with 1 callout (dedup rims)", hn.Annotation)
 	}
 	if _, err := r.Handle(s, "drawingAnnotations.addHoleNotes", []byte(`{"viewName":"NOPE"}`)); err == nil {
 		t.Error("addHoleNotes on a missing view = ok, want error")
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addHoleNotes", []byte(`{"viewName":"TOP","quantity":"bogus"}`)); err == nil {
+		t.Error("addHoleNotes with a bad quantity = ok, want error")
 	}
 }
 

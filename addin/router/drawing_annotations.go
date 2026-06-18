@@ -328,7 +328,15 @@ func drawingAnnotationsAddHoleNotes(s *app.Session, raw json.RawMessage) (json.R
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	a, err := an.AddHoleNotes(in.Name, in.ViewName)
+	quantity := types.HoleNotePerHole
+	if in.Quantity != "" {
+		q, ok := types.ParseHoleNoteQuantity(in.Quantity)
+		if !ok {
+			return nil, fmt.Errorf("drawing: unknown hole-note quantity %q (want perHole|combined)", in.Quantity)
+		}
+		quantity = q
+	}
+	a, err := an.AddHoleNotes(in.Name, in.ViewName, quantity)
 	if err != nil {
 		return nil, err
 	}

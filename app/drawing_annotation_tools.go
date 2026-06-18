@@ -289,11 +289,15 @@ func (t *RevisionTagTool) Params() ToolParams {
 	}}
 }
 
+// holeNoteQuantities indexes the hole-notes Quantity dropdown.
+var holeNoteQuantities = []types.HoleNoteQuantity{types.HoleNotePerHole, types.HoleNoteCombined}
+
 // HoleNotesTool annotates every hole in a chosen base view with a leadered diameter callout that
-// re-resolves with the model.
+// re-resolves with the model; the Quantity option groups same-diameter holes into one callout.
 type HoleNotesTool struct {
-	views     []string
-	viewIndex int
+	views         []string
+	viewIndex     int
+	quantityIndex int
 }
 
 // NewHoleNotesTool creates the tool; its base-view list is captured on Start.
@@ -314,17 +318,19 @@ func (t *HoleNotesTool) Commit(s *Session) error {
 	if len(t.views) == 0 {
 		return fmt.Errorf("drawing: no base view for hole notes — add a base view first")
 	}
-	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("", t.views[clampIndex(t.viewIndex, len(t.views))]); err != nil {
+	quantity := holeNoteQuantities[clampIndex(t.quantityIndex, len(holeNoteQuantities))]
+	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("", t.views[clampIndex(t.viewIndex, len(t.views))], quantity); err != nil {
 		return err
 	}
 	s.ActiveDocument().MarkDirty()
 	return nil
 }
 
-// Params exposes the base-view choice for the property dialog.
+// Params exposes the base-view and quantity-mode choices for the property dialog.
 func (t *HoleNotesTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
 		{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
+		{Label: "Quantity", Options: []string{"Per hole", "Combined"}, Get: func() int { return t.quantityIndex }, Set: func(i int) { t.quantityIndex = i }},
 	}}
 }
 

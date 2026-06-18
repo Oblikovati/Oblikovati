@@ -35,10 +35,11 @@ type DrawingAnnotation struct {
 	datums         []string
 	// surface texture: the material-removal variant (the roughness value reuses tag).
 	materialRemoval types.MaterialRemoval
-	rowCount        int           // parts list / hole table / custom table: the number of data rows
-	revisions       []RevisionRow // revision table: the user-supplied change-history rows
-	headers         []string      // custom table: the column headers
-	tableRows       [][]string    // custom table: the data rows (cells aligned to headers)
+	rowCount        int                    // parts list / hole table / custom table: the number of data rows
+	revisions       []RevisionRow          // revision table: the user-supplied change-history rows
+	headers         []string               // custom table: the column headers
+	tableRows       [][]string             // custom table: the data rows (cells aligned to headers)
+	holeQuantity    types.HoleNoteQuantity // hole notes: per-hole vs combined-by-diameter callouts
 	labels          []AnnotationLabel
 	curves          []DrawingCurve
 }

@@ -350,6 +350,7 @@ func TestHoleNotesToolAnnotatesHoles(t *testing.T) {
 	}
 	tool := NewHoleNotesTool()
 	tool.Start(s)
+	tool.Params().Choices[1].Set(1) // Quantity = Combined
 	if tool.Name() != "Hole Notes" || !tool.CanCommit() {
 		t.Fatalf("hole-notes tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
 	}
