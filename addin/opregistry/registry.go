@@ -109,6 +109,7 @@ func Default() *Registry {
 		filletDescriptor(),
 		ruleFilletDescriptor(),
 		snapFitDescriptor(),
+		restDescriptor(),
 		chamferDescriptor(),
 		shellDescriptor(),
 		draftDescriptor(),
