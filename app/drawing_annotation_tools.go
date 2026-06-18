@@ -293,11 +293,13 @@ func (t *RevisionTagTool) Params() ToolParams {
 var holeNoteQuantities = []types.HoleNoteQuantity{types.HoleNotePerHole, types.HoleNoteCombined}
 
 // HoleNotesTool annotates every hole in a chosen base view with a leadered diameter callout that
-// re-resolves with the model; the Quantity option groups same-diameter holes into one callout.
+// re-resolves with the model; the Quantity option groups same-diameter holes into one callout, and
+// the Format option overrides the callout text ({d} = diameter, {n} = count).
 type HoleNotesTool struct {
 	views         []string
 	viewIndex     int
 	quantityIndex int
+	format        string
 }
 
 // NewHoleNotesTool creates the tool; its base-view list is captured on Start.
@@ -319,19 +321,24 @@ func (t *HoleNotesTool) Commit(s *Session) error {
 		return fmt.Errorf("drawing: no base view for hole notes — add a base view first")
 	}
 	quantity := holeNoteQuantities[clampIndex(t.quantityIndex, len(holeNoteQuantities))]
-	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("", t.views[clampIndex(t.viewIndex, len(t.views))], quantity); err != nil {
+	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("", t.views[clampIndex(t.viewIndex, len(t.views))], quantity, t.format); err != nil {
 		return err
 	}
 	s.ActiveDocument().MarkDirty()
 	return nil
 }
 
-// Params exposes the base-view and quantity-mode choices for the property dialog.
+// Params exposes the base-view, quantity-mode and format-template inputs for the property dialog.
 func (t *HoleNotesTool) Params() ToolParams {
-	return ToolParams{Choices: []ChoiceParam{
-		{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
-		{Label: "Quantity", Options: []string{"Per hole", "Combined"}, Get: func() int { return t.quantityIndex }, Set: func(i int) { t.quantityIndex = i }},
-	}}
+	return ToolParams{
+		Choices: []ChoiceParam{
+			{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
+			{Label: "Quantity", Options: []string{"Per hole", "Combined"}, Get: func() int { return t.quantityIndex }, Set: func(i int) { t.quantityIndex = i }},
+		},
+		Texts: []TextParam{
+			{Label: "Format ({d},{n})", Get: func() string { return t.format }, Set: func(v string) { t.format = v }},
+		},
+	}
 }
 
 // NoteTool drops a free text note at the cursor, with an optional leader to a point.

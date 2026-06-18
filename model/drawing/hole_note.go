@@ -5,6 +5,7 @@ package drawing
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/hlr"
@@ -24,19 +25,35 @@ const (
 )
 
 // AddHoleNotes adds the hole-note annotation for the named base view: a leadered diameter callout
-// per hole (or per distinct diameter, when quantity is combined). It errors when no holes resolve
-// (no model, a non-base view, or no circular edges).
-func (as *DrawingAnnotations) AddHoleNotes(name, viewName string, quantity types.HoleNoteQuantity) (*DrawingAnnotation, error) {
+// per hole (or per distinct diameter, when quantity is combined). An optional format template with
+// {d} (diameter) and {n} (count) placeholders overrides the callout text; empty uses the default.
+// It errors when no holes resolve (no model, a non-base view, or no circular edges).
+func (as *DrawingAnnotations) AddHoleNotes(name, viewName string, quantity types.HoleNoteQuantity, format string) (*DrawingAnnotation, error) {
 	if _, _, _, err := as.annotationBasis(viewName); err != nil {
 		return nil, err
 	}
-	a := &DrawingAnnotation{name: as.uniqueName(name), kind: types.HoleNoteAnnotation, viewName: viewName, holeQuantity: quantity}
+	a := &DrawingAnnotation{name: as.uniqueName(name), kind: types.HoleNoteAnnotation, viewName: viewName, holeQuantity: quantity, tag: format}
 	as.recomputeHoleNotes(a)
 	if a.rowCount == 0 {
 		return nil, fmt.Errorf("drawing: view %q has no holes for hole notes", viewName)
 	}
 	as.items = append(as.items, a)
 	return a, nil
+}
+
+// formatHoleNote renders a hole callout: the format template with {d} (diameter, 2 decimals) and
+// {n} (count) substituted, or the built-in default when the template is empty ("Ø<d>", or
+// "<n>x Ø<d>" when count > 1).
+func formatHoleNote(format string, diameterMM float64, count int) string {
+	d := holeCoord(diameterMM)
+	if format == "" {
+		if count > 1 {
+			return strconv.Itoa(count) + "x Ø" + d
+		}
+		return "Ø" + d
+	}
+	out := strings.ReplaceAll(format, "{d}", d)
+	return strings.ReplaceAll(out, "{n}", strconv.Itoa(count))
 }
 
 // projectedHoleNote is one hole's callout anchor: its centre on the sheet (mm) and radius (mm).
@@ -55,11 +72,11 @@ func (as *DrawingAnnotations) recomputeHoleNotes(a *DrawingAnnotation) {
 	}
 	holes := dedupedHoleNotes(view, body, basis)
 	if a.holeQuantity == types.HoleNoteCombined {
-		renderCombinedHoleNotes(a, holes)
+		renderCombinedHoleNotes(a, holes, a.tag)
 		return
 	}
 	for _, h := range holes {
-		appendHoleNote(a, h, "Ø"+holeCoord(h.radiusMM*2))
+		appendHoleNote(a, h, formatHoleNote(a.tag, h.radiusMM*2, 1))
 	}
 }
 
@@ -80,9 +97,9 @@ func dedupedHoleNotes(view *DrawingView, body *topo.Body, basis hlr.View) []proj
 	return out
 }
 
-// renderCombinedHoleNotes groups holes by diameter and emits one "<n>x Ø<d>" callout per size,
-// anchored at the first hole of each group (in encounter order).
-func renderCombinedHoleNotes(a *DrawingAnnotation, holes []projectedHoleNote) {
+// renderCombinedHoleNotes groups holes by diameter and emits one "<n>x Ø<d>" callout per size
+// (or the format template), anchored at the first hole of each group (in encounter order).
+func renderCombinedHoleNotes(a *DrawingAnnotation, holes []projectedHoleNote, format string) {
 	type group struct {
 		first projectedHoleNote
 		count int
@@ -101,11 +118,7 @@ func renderCombinedHoleNotes(a *DrawingAnnotation, holes []projectedHoleNote) {
 	}
 	for _, key := range order {
 		g := groups[key]
-		text := "Ø" + key
-		if g.count > 1 {
-			text = strconv.Itoa(g.count) + "x Ø" + key
-		}
-		appendHoleNote(a, g.first, text)
+		appendHoleNote(a, g.first, formatHoleNote(format, g.first.radiusMM*2, g.count))
 	}
 }
 

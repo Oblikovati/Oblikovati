@@ -336,7 +336,7 @@ func drawingAnnotationsAddHoleNotes(s *app.Session, raw json.RawMessage) (json.R
 		}
 		quantity = q
 	}
-	a, err := an.AddHoleNotes(in.Name, in.ViewName, quantity)
+	a, err := an.AddHoleNotes(in.Name, in.ViewName, quantity, in.Format)
 	if err != nil {
 		return nil, err
 	}

@@ -255,6 +255,11 @@ func TestDrawingHoleNotesOverWire(t *testing.T) {
 	if _, err := r.Handle(s, "drawingAnnotations.addHoleNotes", []byte(`{"viewName":"TOP","quantity":"bogus"}`)); err == nil {
 		t.Error("addHoleNotes with a bad quantity = ok, want error")
 	}
+	var fmt1 wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addHoleNotes", `{"name":"HNF","viewName":"TOP","format":"Ø{d} THRU"}`, &fmt1)
+	if fmt1.Annotation.Kind != "holeNote" || fmt1.Annotation.CurveCount == 0 {
+		t.Fatalf("formatted hole notes = %+v, want a holeNote callout", fmt1.Annotation)
+	}
 }
 
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
