@@ -226,6 +226,23 @@ func (ds *DrawingDimensions) AddRadial(name, viewName string, dimType types.Draw
 	return d, nil
 }
 
+// AddArcLength adds an arc-length dimension on the circular/arc model edge nearest the pick point
+// (sheet mm) projected on the named base view; the value re-measures when the model changes.
+func (ds *DrawingDimensions) AddArcLength(name, viewName string, pickX, pickY float64) (*DrawingDimension, error) {
+	view, body, basis, err := ds.dimensionBasis(viewName)
+	if err != nil {
+		return nil, err
+	}
+	key, ok := nearestArcEdgeKey(body, view, basis, pickX, pickY)
+	if !ok {
+		return nil, fmt.Errorf("drawing: view %q has no circular or arc edge to dimension", viewName)
+	}
+	d := &DrawingDimension{name: ds.uniqueName(name), dimType: types.ArcLengthDimension, viewName: viewName, edgeKey: key}
+	ds.recompute(d)
+	ds.items = append(ds.items, d)
+	return d, nil
+}
+
 // AddRadialForEachCircle adds a radius or diameter dimension for every distinct circular edge in
 // the named base view — auto hole callouts. Coincident projections (a through-hole's two rims) are
 // dimensioned once. Returns how many it added.
@@ -365,6 +382,10 @@ func (ds *DrawingDimensions) recompute(d *DrawingDimension) {
 		ds.recomputeOrdinate(d, view, body, basis)
 		return
 	}
+	if d.dimType == types.ArcLengthDimension {
+		ds.recomputeArcLength(d, view, body, basis)
+		return
+	}
 	ds.recomputeLinear(d, view, body, basis)
 }
 
@@ -466,6 +487,91 @@ func (ds *DrawingDimensions) recomputeRadial(d *DrawingDimension, view *DrawingV
 	curves, mx, my, nx, ny := radialDimensionCurves(center, arc, opp, d.dimType == types.DiameterDimension)
 	d.curves = curves
 	d.setTextAnchor(mx, my, nx, ny, 1)
+}
+
+// arcEdgeOf classifies an edge's geometry as a circular/arc curve and exposes what an arc-length
+// dimension needs: the centre, the swept length (cm), whether it is a full circle, and a sampler
+// that walks the curve as t runs 0→1. It reports ok=false for any non-circular edge.
+func arcEdgeOf(curve geom.Curve3) (center gmath.Point3, lengthCM float64, full bool, sample func(float64) gmath.Point3, ok bool) {
+	switch c := curve.(type) {
+	case geom.Circle:
+		return c.Center, c.Circumference(), true, c.PointAt, true
+	case geom.Arc3d:
+		return c.Center, c.Length(), false, c.PointAt, true
+	default:
+		return gmath.Point3{}, 0, false, nil, false
+	}
+}
+
+// recomputeArcLength re-binds the circular/arc edge, re-measures its swept length (the true model
+// size) and rebuilds the glyph — a dimension line following the projected arc.
+func (ds *DrawingDimensions) recomputeArcLength(d *DrawingDimension, view *DrawingView, body *topo.Body, basis hlr.View) {
+	edge, ok := body.FindEdgeByKey(d.edgeKey)
+	if !ok {
+		return
+	}
+	center3, lengthCM, full, sample, ok := arcEdgeOf(edge.Geometry())
+	if !ok {
+		return
+	}
+	d.valueMM = lengthCM * cmToMM
+	d.text = strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+	const samples = 32
+	pts := make([]gmath.Point2, 0, samples+1)
+	for i := 0; i <= samples; i++ {
+		pts = append(pts, view.place(hlr.ProjectPoint(basis, sample(float64(i)/samples))))
+	}
+	centerS := view.place(hlr.ProjectPoint(basis, center3))
+	curves, mx, my, nx, ny := arcLengthDimensionCurves(centerS, pts, full)
+	d.curves = curves
+	d.setTextAnchor(mx, my, nx, ny, 1)
+}
+
+// arcLengthDimensionCurves builds an arc-length dimension's glyph (sheet mm): the projected arc
+// offset radially outward from the centre into a dimension line that follows it, with an arrowhead
+// at each end (a full circle has none). It returns the text anchor at the arc's middle, lifted
+// radially outward.
+func arcLengthDimensionCurves(center gmath.Point2, pts []gmath.Point2, full bool) (curves []DrawingCurve, anchorX, anchorY, nx, ny float64) {
+	const gap = 6.0
+	cx, cy := float64(center.X), float64(center.Y)
+	off := make([][2]float64, len(pts))
+	for i, p := range pts {
+		px, py := float64(p.X), float64(p.Y)
+		dx, dy := px-cx, py-cy
+		if l := math.Hypot(dx, dy); l > 1e-9 {
+			off[i] = [2]float64{px + dx/l*gap, py + dy/l*gap}
+		} else {
+			off[i] = [2]float64{px, py}
+		}
+	}
+	for i := 1; i < len(off); i++ {
+		curves = append(curves, dimSegment(off[i-1][0], off[i-1][1], off[i][0], off[i][1]))
+	}
+	if n := len(off); !full && n >= 2 {
+		curves = append(curves, arrowheadCurves(off[0][0], off[0][1], off[1][0], off[1][1])...)
+		curves = append(curves, arrowheadCurves(off[n-1][0], off[n-1][1], off[n-2][0], off[n-2][1])...)
+	}
+	mid := off[len(off)/2]
+	return curves, mid[0], mid[1], mid[0] - cx, mid[1] - cy
+}
+
+// nearestArcEdgeKey returns the reference key of the circular/arc model edge whose centre projects
+// nearest the pick (sheet mm), and false when the body has no such edges.
+func nearestArcEdgeKey(body *topo.Body, v *DrawingView, basis hlr.View, x, y float64) ([]byte, bool) {
+	var bestKey []byte
+	bestD := -1.0
+	for _, e := range body.Edges() {
+		center, _, _, _, ok := arcEdgeOf(e.Geometry())
+		if !ok {
+			continue
+		}
+		s := v.place(hlr.ProjectPoint(basis, center))
+		dx, dy := float64(s.X)-x, float64(s.Y)-y
+		if d := dx*dx + dy*dy; bestD < 0 || d < bestD {
+			bestD, bestKey = d, e.ReferenceKey()
+		}
+	}
+	return bestKey, bestD >= 0
 }
 
 // nearestCircularEdgeKey returns the reference key of the circular model edge whose centre projects

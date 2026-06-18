@@ -59,6 +59,47 @@ func TestRadialDimensionMeasuresCircle(t *testing.T) {
 	}
 }
 
+// TestArcLengthDimensionMeasuresCircumference: an arc-length dimension on a 2 cm cylinder's rim
+// reports its circumference (2π·20 ≈ 125.66 mm) with a glyph that follows the arc, and re-measures
+// when the model changes.
+func TestArcLengthDimensionMeasuresCircumference(t *testing.T) {
+	c := drawingWithCylinder(t, 2)
+	views := c.Sheets().Active().Views()
+	topBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+
+	ad, err := dims.AddArcLength("L1", "TOP", 100, 100)
+	if err != nil {
+		t.Fatalf("AddArcLength: %v", err)
+	}
+	want := 2 * math.Pi * 20 // circumference of a 20 mm-radius rim
+	if d := ad.Type(); d != types.ArcLengthDimension {
+		t.Errorf("type = %v, want ArcLengthDimension", d)
+	}
+	if math.Abs(ad.ValueMM()-want) > 1e-3 || ad.CurveCount() == 0 {
+		t.Errorf("arc-length = (%v mm, %d curves), want %v with a glyph", ad.ValueMM(), ad.CurveCount(), want)
+	}
+
+	wider, err := brep.SolidCylinder(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), 3, 5)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	c.SetBodyResolver(fakeBodyResolver{body: wider})
+	c.RecomputeViews()
+	if want := 2 * math.Pi * 30; math.Abs(ad.ValueMM()-want) > 1e-3 {
+		t.Errorf("after the cylinder widened, arc-length = %v mm, want %v", ad.ValueMM(), want)
+	}
+}
+
+// TestArcLengthNeedsCircularEdge: a box has no circular edge, so an arc-length dimension errors.
+func TestArcLengthNeedsCircularEdge(t *testing.T) {
+	c := drawingWithBox(t)
+	frontBase(t, c.Sheets().Active().Views())
+	if _, err := c.Sheets().Active().Dimensions().AddArcLength("L1", "FRONT", 100, 100); err == nil {
+		t.Error("AddArcLength on a box (no circular edges) = ok, want error")
+	}
+}
+
 // TestRadialDimensionIsAssociative: a radius dimension follows the model — widening the cylinder
 // 2→3 cm re-measures 20→30 mm.
 func TestRadialDimensionIsAssociative(t *testing.T) {
