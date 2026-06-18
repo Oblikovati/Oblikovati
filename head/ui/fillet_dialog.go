@@ -34,28 +34,39 @@ func drawFilletDialog(s *app.Session) {
 	}
 	native.SetNextWindowSizeOnce(340, 300)
 	if native.Begin("Fillet") {
-		title := "Fillet"
-		if name := f.EditingName(); name != "" {
-			title = name // re-editing a committed fillet: the breadcrumb names it
-		}
-		drawFeatureBreadcrumb(title, "")
-		if propertySection("Input Geometry") {
-			drawPickChipRow("Edges", "fillet-edges", countChipText(f.EdgeCount(), "Edge", "Select Edges"),
-				f.EdgeCount() > 0, "Click convex edges in the viewport to round", f.ClearEdges)
-		}
-		if propertySection("Behavior") {
-			drawFilletRadiusRows(s, f)
-			if i := propertyComboRow("Corner", "fillet-corner", app.FilletCornerOptions(), f.CornerTypeIndex()); i >= 0 {
-				f.SetCornerTypeIndex(i)
-			}
-			if i := propertyComboRow("Concave edge", "fillet-concave", app.FilletConcaveOptions(), f.ConcaveStrategyIndex()); i >= 0 {
-				f.SetConcaveStrategyIndex(i)
-			}
-		}
-		native.Separator()
-		drawCommitCancelButtons(s, f.CanCommit())
+		drawFilletPanelBody(s, f)
 	}
 	native.End()
+}
+
+// drawFilletPanelBody draws the Fillet panel's sections (the Begin/End wrapper stays in
+// drawFilletDialog): the breadcrumb, the edge picker, and the radius/corner behavior rows.
+func drawFilletPanelBody(s *app.Session, f *app.FilletTool) {
+	title := "Fillet"
+	if name := f.EditingName(); name != "" {
+		title = name // re-editing a committed fillet: the breadcrumb names it
+	}
+	drawFeatureBreadcrumb(title, "")
+	if propertySection("Input Geometry") {
+		drawPickChipRow("Edges", "fillet-edges", countChipText(f.EdgeCount(), "Edge", "Select Edges"),
+			f.EdgeCount() > 0, "Click convex edges in the viewport to round", f.ClearEdges)
+	}
+	if propertySection("Behavior") {
+		drawFilletRadiusRows(s, f)
+		drawFilletCornerRows(f)
+	}
+	native.Separator()
+	drawCommitCancelButtons(s, f.CanCommit())
+}
+
+// drawFilletCornerRows draws the shared-corner treatment and concave-edge strategy dropdowns.
+func drawFilletCornerRows(f *app.FilletTool) {
+	if i := propertyComboRow("Corner", "fillet-corner", app.FilletCornerOptions(), f.CornerTypeIndex()); i >= 0 {
+		f.SetCornerTypeIndex(i)
+	}
+	if i := propertyComboRow("Concave edge", "fillet-concave", app.FilletConcaveOptions(), f.ConcaveStrategyIndex()); i >= 0 {
+		f.SetConcaveStrategyIndex(i)
+	}
 }
 
 // seedFilletUI loads the panel buffers from the tool the first frame it appears

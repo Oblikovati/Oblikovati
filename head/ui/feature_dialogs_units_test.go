@@ -70,7 +70,10 @@ func TestFeatureDialogsRenderUnitFields(t *testing.T) {
 			frame(func() { draw(s) })
 			if name == "fillet" {
 				filletUI.seeded = nil
-				s.ActiveFillet().SetVariable(true) // start/end radius rows
+				f := s.ActiveFillet()
+				f.SetVariable(true) // start/end radius rows
+				frame(func() { drawFilletDialog(s) })
+				f.AddMidPoint() // #695: render a Position/Radius intermediate-point row
 				frame(func() { drawFilletDialog(s) })
 			}
 		})

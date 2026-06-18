@@ -21,9 +21,6 @@ type FilletMidPoint struct {
 	Radius float64
 }
 
-// MidPointCount reports how many intermediate radius stops are set (meaningful in variable mode).
-func (t *FilletTool) MidPointCount() int { return len(t.midPoints) }
-
 // MidPoints returns a copy of the intermediate radius stops for the panel to render.
 func (t *FilletTool) MidPoints() []FilletMidPoint {
 	return append([]FilletMidPoint(nil), t.midPoints...)
