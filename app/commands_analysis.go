@@ -15,11 +15,24 @@ import (
 // analysisCommands are the Inspect tab's Measure panel.
 func analysisCommands() []*CommandDefinition {
 	return []*CommandDefinition{
+		NewCommand("Inspect.Measure", "Measure", "Measure", startMeasure).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("measure").WithButtonStyle(LargeIconButton).
+			WithTooltip("Pick faces, edges and vertices to measure length, area, perimeter, distance and angle."),
 		NewCommand("Inspect.PhysicalProperties", "Physical Properties", "Measure", physicalProperties).
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("physical-properties").WithButtonStyle(LargeIconButton).
 			WithTooltip("Compute the part's volume, surface area, centre of mass and mass, and show them in the status bar."),
 	}
+}
+
+// startMeasure activates the interactive Measure tool on the active part.
+func startMeasure(s *Session) error {
+	if _, err := activePart(s); err != nil {
+		return err
+	}
+	s.StartTool(NewMeasureTool())
+	return nil
 }
 
 // physicalProperties computes the active part's mass properties and reports them as a notice.
