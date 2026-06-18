@@ -52,26 +52,65 @@ func measureEntity(body *topo.Body, mt types.MeasureType, keyA, keyB string) (fl
 	q := ops.DefaultQuality()
 	switch mt {
 	case types.MeasureLength:
-		e, ok := body.FindEdgeByKey(decodeKey(keyA))
-		if !ok {
-			return 0, "", fmt.Errorf("analysis.measure: no edge for key %q", keyA)
-		}
-		return analysis.EdgeLengthMm(e, q), "mm", nil
+		return measureEdgeLength(body, keyA, q)
 	case types.MeasureArea:
-		f, ok := body.FindFaceByKey(decodeKey(keyA))
-		if !ok {
-			return 0, "", fmt.Errorf("analysis.measure: no face for key %q", keyA)
-		}
-		return analysis.FaceAreaMm2(f, q), "mm²", nil
+		return measureFaceArea(body, keyA, q)
 	case types.MeasureDistance:
-		a, okA := body.FindVertexByKey(decodeKey(keyA))
-		b, okB := body.FindVertexByKey(decodeKey(keyB))
-		if !okA || !okB {
-			return 0, "", fmt.Errorf("analysis.measure: distance needs two vertex keys (keyA=%q, keyB=%q)", keyA, keyB)
-		}
-		return analysis.VertexDistanceMm(a, b), "mm", nil
+		return measureVertexDistance(body, keyA, keyB)
+	case types.MeasureMinDistance:
+		return measureMinDistance(body, keyA, keyB, q)
 	}
 	return 0, "", fmt.Errorf("analysis.measure: unsupported measure type %v", mt)
+}
+
+func measureEdgeLength(body *topo.Body, keyA string, q ops.Quality) (float64, string, error) {
+	e, ok := body.FindEdgeByKey(decodeKey(keyA))
+	if !ok {
+		return 0, "", fmt.Errorf("analysis.measure: no edge for key %q", keyA)
+	}
+	return analysis.EdgeLengthMm(e, q), "mm", nil
+}
+
+func measureFaceArea(body *topo.Body, keyA string, q ops.Quality) (float64, string, error) {
+	f, ok := body.FindFaceByKey(decodeKey(keyA))
+	if !ok {
+		return 0, "", fmt.Errorf("analysis.measure: no face for key %q", keyA)
+	}
+	return analysis.FaceAreaMm2(f, q), "mm²", nil
+}
+
+func measureVertexDistance(body *topo.Body, keyA, keyB string) (float64, string, error) {
+	a, okA := body.FindVertexByKey(decodeKey(keyA))
+	b, okB := body.FindVertexByKey(decodeKey(keyB))
+	if !okA || !okB {
+		return 0, "", fmt.Errorf("analysis.measure: distance needs two vertex keys (keyA=%q, keyB=%q)", keyA, keyB)
+	}
+	return analysis.VertexDistanceMm(a, b), "mm", nil
+}
+
+func measureMinDistance(body *topo.Body, keyA, keyB string, q ops.Quality) (float64, string, error) {
+	a, errA := resolveMeasureEntity(body, keyA)
+	b, errB := resolveMeasureEntity(body, keyB)
+	if errA != nil || errB != nil {
+		return 0, "", fmt.Errorf("analysis.measure: minDistance needs two entity keys (keyA=%q, keyB=%q)", keyA, keyB)
+	}
+	return analysis.MinDistanceMm(a, b, q), "mm", nil
+}
+
+// resolveMeasureEntity resolves a reference key to a vertex, edge or face of the body (whichever it
+// names), for entity-to-entity measurement.
+func resolveMeasureEntity(body *topo.Body, key string) (analysis.MeasureEntity, error) {
+	k := decodeKey(key)
+	if f, ok := body.FindFaceByKey(k); ok {
+		return analysis.MeasureEntity{Face: f}, nil
+	}
+	if e, ok := body.FindEdgeByKey(k); ok {
+		return analysis.MeasureEntity{Edge: e}, nil
+	}
+	if v, ok := body.FindVertexByKey(k); ok {
+		return analysis.MeasureEntity{Vertex: v}, nil
+	}
+	return analysis.MeasureEntity{}, fmt.Errorf("analysis.measure: no entity for key %q", key)
 }
 
 // decodeKey carries a reference key as raw bytes — matching get_reference_keys and every other

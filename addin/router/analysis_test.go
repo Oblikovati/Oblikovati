@@ -78,6 +78,20 @@ func TestAnalysisMeasureOverWire(t *testing.T) {
 	if _, err := r.Handle(s, "analysis.measure", []byte(measureArgs(t, "distance", vA, ""))); err == nil {
 		t.Error("distance with one vertex key = ok, want error")
 	}
+
+	// minDistance between two faces of the box equals one of its dimensions (opposite) or 0 (adjacent).
+	allFaces := body.Faces()
+	fA := string(allFaces[0].ReferenceKey())
+	for i := 1; i < len(allFaces); i++ {
+		fB := string(allFaces[i].ReferenceKey())
+		call(t, r, s, "analysis.measure", measureArgs(t, "minDistance", fA, fB), &m)
+		if m.Unit != "mm" || !nearAny(m.Value, 0, 30, 40, 50) {
+			t.Errorf("minDistance(face0,face%d) = %+v, want one of 0/30/40/50 mm", i, m)
+		}
+	}
+	if _, err := r.Handle(s, "analysis.measure", []byte(measureArgs(t, "minDistance", fA, "nope"))); err == nil {
+		t.Error("minDistance with an unknown entity key = ok, want error")
+	}
 	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"bogus","keyA":"00"}`)); err == nil {
 		t.Error("measure with a bad type = ok, want error")
 	}
