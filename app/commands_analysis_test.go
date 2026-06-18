@@ -38,3 +38,11 @@ func TestPhysicalPropertiesNotice(t *testing.T) {
 		t.Fatalf("notice = %q, want a Physical Properties summary", notice)
 	}
 }
+
+// TestPhysicalPropertiesWithoutPart: the command errors when no part is active.
+func TestPhysicalPropertiesWithoutPart(t *testing.T) {
+	s := NewSession()
+	if err := physicalProperties(s); err == nil {
+		t.Error("physicalProperties with no active part = ok, want error")
+	}
+}

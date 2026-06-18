@@ -6,7 +6,9 @@ import (
 	"math"
 	"testing"
 
+	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // TestAnalysisMassPropertiesOverWire drives the mass-properties surface: the box-part fixture
@@ -26,5 +28,11 @@ func TestAnalysisMassPropertiesOverWire(t *testing.T) {
 	}
 	if math.Abs(mp.MassG-120) > 1e-3 {
 		t.Errorf("mass = %g g, want 120", mp.MassG)
+	}
+
+	// With no active part, the method errors.
+	br, bs := New(opregistry.Default()), app.NewSession()
+	if _, err := br.Handle(bs, "analysis.massProperties", []byte(`{}`)); err == nil {
+		t.Error("massProperties with no active part = ok, want error")
 	}
 }

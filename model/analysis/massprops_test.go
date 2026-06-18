@@ -43,6 +43,14 @@ func TestMassPropertiesDefaultDensity(t *testing.T) {
 	approx(t, "mass", mp.MassG, 30) // 30 cm³ × 1 g/cm³
 }
 
+// TestMassPropertiesEmpty: no bodies yields zero properties (and no divide-by-zero centroid).
+func TestMassPropertiesEmpty(t *testing.T) {
+	mp := MassPropertiesOf(nil, 5)
+	if mp.VolumeMm3 != 0 || mp.MassG != 0 || mp.CentroidXMm != 0 {
+		t.Fatalf("empty mass properties = %+v, want all zero", mp)
+	}
+}
+
 func approx(t *testing.T, name string, got, want float64) {
 	t.Helper()
 	if math.Abs(got-want) > 1e-6*math.Max(1, math.Abs(want)) {
