@@ -107,6 +107,7 @@ func Default() *Registry {
 		loftDescriptor(),
 		// Subtractive / dress-up (edge & face reference keys).
 		filletDescriptor(),
+		ruleFilletDescriptor(),
 		chamferDescriptor(),
 		shellDescriptor(),
 		draftDescriptor(),

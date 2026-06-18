@@ -28,6 +28,7 @@ type FeatureData struct {
 	Extrude        *ExtrudeData        `yaml:"extrude,omitempty"`
 	Fillet         *EdgeDressData      `yaml:"fillet,omitempty"`
 	FaceFillet     *FaceFilletData     `yaml:"faceFillet,omitempty"`
+	RuleFillet     *RuleFilletData     `yaml:"ruleFillet,omitempty"`
 	Chamfer        *EdgeDressData      `yaml:"chamfer,omitempty"`
 	Shell          *FaceDressData      `yaml:"shell,omitempty"`
 	Draft          *FaceDressData      `yaml:"draft,omitempty"`
@@ -141,6 +142,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType)}
 	case *FaceFilletFeature:
 		fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(f.def.FaceKeysA), FacesB: encodeKeys(f.def.FaceKeysB), Value: evalFloat(f.def.Radius)}
+	case *RuleFilletFeature:
+		fd.RuleFillet = &RuleFilletData{Rule: f.def.Rule.String(), Value: evalFloat(f.def.Radius)}
 	case *ChamferFeature:
 		flat := f.def.FlatCorners
 		fd.Chamfer = &EdgeDressData{
@@ -449,6 +452,15 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 			return nil, err
 		}
 		return du.AddFaceFillet(a, b, constFloat(fd.FaceFillet.Value)), nil
+	case "rule-fillet":
+		if fd.RuleFillet == nil {
+			return nil, fmt.Errorf("rule-fillet feature is missing its payload")
+		}
+		rule, ok := ParseRuleFilletRule(fd.RuleFillet.Rule)
+		if !ok {
+			return nil, fmt.Errorf("rule-fillet: unknown rule %q", fd.RuleFillet.Rule)
+		}
+		return du.AddRuleFillet(rule, constFloat(fd.RuleFillet.Value)), nil
 	case "chamfer":
 		d, err := requireEdgeDress(fd.Chamfer, "chamfer")
 		if err != nil {

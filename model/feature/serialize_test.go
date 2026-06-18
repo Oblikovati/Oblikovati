@@ -116,6 +116,27 @@ func TestFaceFilletRoundTrip(t *testing.T) {
 	}
 }
 
+// TestRuleFilletRoundTrip checks the rule fillet's rule + radius survive a recipe round trip (#486).
+func TestRuleFilletRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewDressUpFeatures(fs).AddRuleFillet(RuleFilletAllFillets, func() float64 { return 1.5 })
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*RuleFilletFeature).Definition()
+	if d.Rule != RuleFilletAllFillets {
+		t.Errorf("rule = %v, want %v", d.Rule, RuleFilletAllFillets)
+	}
+	if d.Radius() != 1.5 {
+		t.Errorf("radius = %v, want 1.5", d.Radius())
+	}
+}
+
 // TestChamferFlatCornersRoundTrip checks the chamfer corner treatment survives a recipe
 // round trip in both states, and that an older recipe with no flag restores as flat (the
 // default, matching a freshly created chamfer).

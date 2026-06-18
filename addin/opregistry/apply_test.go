@@ -200,6 +200,23 @@ func TestFaceFilletThroughRegistry(t *testing.T) {
 	}
 }
 
+// TestRuleFilletThroughRegistry rounds every convex edge of an extruded solid in one feature via the
+// ruleFillet op (#486) — the end-to-end registry/MCP path.
+func TestRuleFilletThroughRegistry(t *testing.T) {
+	s, _, _ := extrudedSolid(t)
+	if _, err := applyMap(t, s, "ruleFillet", map[string]any{"rule": "allRounds", "radius": "0.5 mm"}); err != nil {
+		t.Fatalf("rule fillet through registry: %v", err)
+	}
+}
+
+// TestRuleFilletRejectsBadRule: an unknown rule is a clean error.
+func TestRuleFilletRejectsBadRule(t *testing.T) {
+	s, _, _ := extrudedSolid(t)
+	if _, err := applyMap(t, s, "ruleFillet", map[string]any{"rule": "everything", "radius": "0.5 mm"}); err == nil {
+		t.Error("ruleFillet with an unknown rule should error")
+	}
+}
+
 // TestFaceFilletRequiresBothSets: the face-fillet form rejects only one face set given.
 func TestFaceFilletRequiresBothSets(t *testing.T) {
 	s, _, face := extrudedSolid(t)
@@ -281,6 +298,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"loft":                    `{"sections":[{"sketchIndex":0,"profileIndex":0},{"sketchIndex":1,"profileIndex":0}]}`,
 		"sweep":                   `{"sketchIndex":0,"path":{"sketchIndex":1}}`,
 		"fillet":                  `{"edges":["e1"],"radius":"1 mm"}`,
+		"ruleFillet":              `{"rule":"allRounds","radius":"1 mm"}`,
 		"chamfer":                 `{"edges":["e1"],"distance":"1 mm"}`,
 		"shell":                   `{"faces":["f1"],"thickness":"1 mm"}`,
 		"draft":                   `{"faces":["f1"],"angle":"3 deg","neutralFace":"f2"}`,
