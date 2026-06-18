@@ -46,12 +46,19 @@ type EdgeDressData struct {
 }
 
 // FilletSetData is one serialized fillet edge set: constant (Radius) or variable
-// (StartRadius/EndRadius over one edge).
+// (StartRadius/EndRadius over one edge, plus optional intermediate RadiusPoints, #695).
 type FilletSetData struct {
-	Edges       []string `yaml:"edges"`
-	Radius      float64  `yaml:"radius,omitempty"`
-	StartRadius float64  `yaml:"startRadius,omitempty"`
-	EndRadius   float64  `yaml:"endRadius,omitempty"`
+	Edges        []string                `yaml:"edges"`
+	Radius       float64                 `yaml:"radius,omitempty"`
+	StartRadius  float64                 `yaml:"startRadius,omitempty"`
+	EndRadius    float64                 `yaml:"endRadius,omitempty"`
+	RadiusPoints []FilletRadiusPointData `yaml:"radiusPoints,omitempty"`
+}
+
+// FilletRadiusPointData is one serialized intermediate radius stop on a variable fillet edge (#695).
+type FilletRadiusPointData struct {
+	T      float64 `yaml:"t"`
+	Radius float64 `yaml:"radius"`
 }
 
 // cornerTypeOrZero returns the fillet corner-treatment id, defaulting to 0 (miter) for an absent
@@ -70,6 +77,7 @@ func serializeFilletSets(sets []FilletEdgeSet) []FilletSetData {
 		out[i] = FilletSetData{Edges: encodeKeys(s.EdgeKeys)}
 		if s.variable() {
 			out[i].StartRadius, out[i].EndRadius = evalFloat(s.StartRadius), evalFloat(s.EndRadius)
+			out[i].RadiusPoints = serializeRadiusPoints(s.RadiusPoints)
 			continue
 		}
 		out[i].Radius = evalFloat(s.Radius)
@@ -91,8 +99,33 @@ func restoreFilletSets(sets []FilletSetData) ([]FilletEdgeSet, error) {
 			continue
 		}
 		out[i].StartRadius, out[i].EndRadius = constFloat(s.StartRadius), constFloat(s.EndRadius)
+		out[i].RadiusPoints = restoreRadiusPoints(s.RadiusPoints)
 	}
 	return out, nil
+}
+
+// serializeRadiusPoints / restoreRadiusPoints round-trip a variable fillet's intermediate
+// radius stops (#695).
+func serializeRadiusPoints(pts []FilletRadiusPoint) []FilletRadiusPointData {
+	if len(pts) == 0 {
+		return nil
+	}
+	out := make([]FilletRadiusPointData, len(pts))
+	for i, p := range pts {
+		out[i] = FilletRadiusPointData{T: p.T, Radius: evalFloat(p.Radius)}
+	}
+	return out
+}
+
+func restoreRadiusPoints(pts []FilletRadiusPointData) []FilletRadiusPoint {
+	if len(pts) == 0 {
+		return nil
+	}
+	out := make([]FilletRadiusPoint, len(pts))
+	for i, p := range pts {
+		out[i] = FilletRadiusPoint{T: p.T, Radius: constFloat(p.Radius)}
+	}
+	return out
 }
 
 // FaceDressData is a face-based dress-up (shell thickness / draft angle): the picked

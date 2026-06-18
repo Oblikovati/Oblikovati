@@ -47,6 +47,52 @@ func TestFilletVaryingRadiusVolume(t *testing.T) {
 	}
 }
 
+// TestFilletIntermediateRadiiVolume rounds one vertical edge of a 2×2×2 box with a
+// piecewise-linear radius profile: 0.3 at the start, 0.7 at the mid (T=0.5), 0.4 at
+// the end (#695). The removed volume is the per-segment chord integral summed — every
+// ruling strip is still planar, so the tessellation adds no error.
+func TestFilletIntermediateRadiiVolume(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	pick := ops.EdgeFilletRadii{
+		Key: verticalEdgeKey(t, box), R0: 0.3, R1: 0.4,
+		Mids: []ops.FilletRadiusPoint{{T: 0.5, R: 0.7}},
+	}
+	res, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{pick})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("intermediate-radii box not a valid solid: %+v", r)
+	}
+	if n := hasCylinderFaces(res); n != 0 {
+		t.Errorf("intermediate-radii fillet produced %d cylinder faces, want 0 (planar strips)", n)
+	}
+	const k = 8 // ceil((π/2) / (2π/32)) chords across the 90° wedge
+	seg := func(ra, rb, length float64) float64 { return length * (ra*ra + ra*rb + rb*rb) / 3 }
+	removed := varyingNotchFactor(k) * (seg(0.3, 0.7, 1.0) + seg(0.7, 0.4, 1.0))
+	want := 8 - removed
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
+		t.Errorf("intermediate-radii fillet volume = %g, want %g (exact chord geometry)", got, want)
+	}
+}
+
+// TestFilletIntermediateRadiiValidation rejects out-of-range and non-increasing points (#695).
+func TestFilletIntermediateRadiiValidation(t *testing.T) {
+	box := shellBox(2, 2, 2)
+	key := verticalEdgeKey(t, box)
+	cases := map[string][]ops.FilletRadiusPoint{
+		"must be strictly between 0 and 1": {{T: 0, R: 0.5}},
+		"radius":                           {{T: 0.5, R: 0}},
+		"strictly increasing in T":         {{T: 0.6, R: 0.4}, {T: 0.6, R: 0.5}},
+	}
+	for want, mids := range cases {
+		_, err := ops.FilletEdgesVarying(box, []ops.EdgeFilletRadii{{Key: key, R0: 0.3, R1: 0.4, Mids: mids}})
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("mids %+v: err = %v, want %q", mids, err, want)
+		}
+	}
+}
+
 // TestFilletVaryingCollapsesToConstant: equal end radii through the varying API
 // must reproduce the constant cylinder fillet exactly.
 func TestFilletVaryingCollapsesToConstant(t *testing.T) {

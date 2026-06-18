@@ -136,6 +136,7 @@ func TestDressUpOnSolid(t *testing.T) {
 		{"fillet set const", "fillet", map[string]any{"_set": "radius"}},
 		{"fillet set concave", "fillet", map[string]any{"_set": "radius", "concaveStrategy": "outward"}},
 		{"fillet set variable", "fillet", map[string]any{"_set": "var"}},
+		{"fillet set radius points", "fillet", map[string]any{"_set": "points"}},
 		{"chamfer distance", "chamfer", map[string]any{"distance": "1 mm"}},
 		{"chamfer two distances", "chamfer", map[string]any{"distance": "1 mm", "distance2": "2 mm", "chamferType": "twoDistances"}},
 		{"chamfer distance angle", "chamfer", map[string]any{"distance": "1 mm", "angle": "30 deg", "chamferType": "distanceAndAngle"}},
@@ -150,6 +151,9 @@ func TestDressUpOnSolid(t *testing.T) {
 				args = map[string]any{"edgeSets": []map[string]any{{"edgeRefs": []string{edge}, "radius": "1 mm"}}, "concaveStrategy": c.args["concaveStrategy"]}
 			case "var":
 				args = map[string]any{"edgeSets": []map[string]any{{"edgeRefs": []string{edge}, "startRadius": "1 mm", "endRadius": "2 mm"}}}
+			case "points":
+				args = map[string]any{"edgeSets": []map[string]any{{"edgeRefs": []string{edge}, "startRadius": "1 mm", "endRadius": "2 mm",
+					"radiusPoints": []map[string]any{{"t": 0.5, "radius": "3 mm"}}}}}
 			default:
 				args["edgeRefs"] = []string{edge}
 			}

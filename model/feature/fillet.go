@@ -135,9 +135,24 @@ func filletPicksOf(sets []FilletEdgeSet, feat string) ([]ops.EdgeFilletRadii, er
 		if len(s.EdgeKeys) != 1 {
 			return nil, fmt.Errorf("%s: a variable-radius set must hold exactly 1 edge, got %d (tangent chains are a follow-up)", feat, len(s.EdgeKeys))
 		}
-		out = append(out, ops.EdgeFilletRadii{Key: s.EdgeKeys[0], R0: callOrZero(s.StartRadius), R1: callOrZero(s.EndRadius)})
+		out = append(out, ops.EdgeFilletRadii{
+			Key: s.EdgeKeys[0], R0: callOrZero(s.StartRadius), R1: callOrZero(s.EndRadius),
+			Mids: midRadiiOf(s.RadiusPoints),
+		})
 	}
 	return out, nil
+}
+
+// midRadiiOf evaluates the feature-layer radius-point closures into kernel FilletRadiusPoints (#695).
+func midRadiiOf(pts []FilletRadiusPoint) []ops.FilletRadiusPoint {
+	if len(pts) == 0 {
+		return nil
+	}
+	out := make([]ops.FilletRadiusPoint, len(pts))
+	for i, p := range pts {
+		out[i] = ops.FilletRadiusPoint{T: p.T, R: callOrZero(p.Radius)}
+	}
+	return out
 }
 
 // planarizeFilletPicks re-facets a curved body for the picks' edges (remapping each pick's

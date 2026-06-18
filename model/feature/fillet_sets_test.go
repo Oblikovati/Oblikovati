@@ -80,6 +80,34 @@ func TestFilletVariableSetThroughEngine(t *testing.T) {
 	}
 }
 
+// TestFilletRadiusPointsThroughEngine rounds one vertical edge with an intermediate
+// radius stop (0.3 → 0.7 at T=0.5 → 0.4) through the feature engine — the per-segment
+// chord-geometry volume (#695).
+func TestFilletRadiusPointsThroughEngine(t *testing.T) {
+	fs, keys := boxAndVerticalEdges(t)
+	pf := NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{{
+		EdgeKeys:     [][]byte{keys[0]},
+		StartRadius:  angleConst(0.3),
+		EndRadius:    angleConst(0.4),
+		RadiusPoints: []FilletRadiusPoint{{T: 0.5, Radius: angleConst(0.7)}},
+	}})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("radius-points fillet sick: %+v", pf.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("radius-points fillet not a valid solid: %+v", r)
+	}
+	const k = 8 // chords across the 90° wedge at the holeFacets density
+	c := 1 - float64(k)/2*stdmath.Sin(stdmath.Pi/2/float64(k))
+	seg := func(ra, rb float64) float64 { return 1.0 * (ra*ra + ra*rb + rb*rb) / 3 }
+	want := 8 - c*(seg(0.3, 0.7)+seg(0.7, 0.4))
+	if got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume; stdmath.Abs(got-want) > 1e-9 {
+		t.Errorf("radius-points fillet volume = %g, want %g", got, want)
+	}
+}
+
 // TestFilletVariableSetNeedsOneEdge: a variable set over two edges is a
 // precise Sick, not a broken body.
 func TestFilletVariableSetNeedsOneEdge(t *testing.T) {

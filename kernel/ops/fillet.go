@@ -11,12 +11,21 @@ import (
 	"oblikovati.org/math"
 )
 
+// FilletRadiusPoint is an intermediate radius along a variable fillet edge: R at parameter T in
+// (0,1) measured from the start vertex (#695). Points let the radius follow a piecewise profile —
+// e.g. a bulge in the middle — instead of only the linear R0→R1 taper.
+type FilletRadiusPoint struct {
+	T, R float64
+}
+
 // EdgeFilletRadii is one picked edge with its blend radius at each end: R0 at the edge's
 // start vertex, R1 at its end vertex. Equal radii give a constant fillet; differing radii a
-// variable fillet whose radius runs linearly along the edge (#323).
+// variable fillet whose radius runs linearly along the edge (#323). Mids adds intermediate radius
+// points the blend interpolates through (#695), sorted by T; empty = the plain R0→R1 taper.
 type EdgeFilletRadii struct {
 	Key    []byte
 	R0, R1 float64
+	Mids   []FilletRadiusPoint
 }
 
 // FilletEdges rounds the selected convex straight edges of a planar solid with a constant-
@@ -122,10 +131,12 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 type filletPick struct {
 	edge   *topo.Edge
 	r0, r1 float64
+	mids   []FilletRadiusPoint
 }
 
-// varying reports whether the pick's radius changes along the edge.
-func (p filletPick) varying() bool { return p.r0 != p.r1 }
+// varying reports whether the pick's radius changes along the edge (differing ends, or any
+// intermediate radius point that bulges/pinches the profile).
+func (p filletPick) varying() bool { return p.r0 != p.r1 || len(p.mids) > 0 }
 
 // resolveFilletPicks resolves the edge reference keys against the body, erroring on a lost
 // key or a non-positive radius.
@@ -135,11 +146,14 @@ func resolveFilletPicks(body *topo.Body, picks []EdgeFilletRadii) ([]filletPick,
 		if p.R0 < 0 || p.R1 < 0 || p.R0+p.R1 <= 0 {
 			return nil, fmt.Errorf("fillet: radii %g/%g must be >= 0 with at least one > 0 (a run-out tapers to 0 at one end)", p.R0, p.R1)
 		}
+		if err := validateRadiusPoints(p.Mids); err != nil {
+			return nil, err
+		}
 		e, ok := body.FindEdgeByKey(p.Key)
 		if !ok {
 			return nil, fmt.Errorf("fillet: edge reference lost: %x", p.Key)
 		}
-		out = append(out, filletPick{edge: e, r0: p.R0, r1: p.R1})
+		out = append(out, filletPick{edge: e, r0: p.R0, r1: p.R1, mids: p.Mids})
 	}
 	return out, nil
 }
@@ -178,6 +192,7 @@ type edgeFillet struct {
 	a, b    *topo.Face
 	cyl     geom.Cylinder
 	c0, c1  corner
+	mids    []corner // variable fillet only: intermediate profiles ruled between c0 and c1 (#695)
 	edge    *topo.Edge
 	varying bool
 	flip    bool // concave fillet: the cylinder face's outward sense is inverted (surface faces the centre)
@@ -243,7 +258,8 @@ func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[ui
 	}
 	if p.varying() {
 		sampleCornerChords(&c0, &c1, in)
-		return edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, edge: e, varying: true, flip: in.flip}, nil
+		mids := midProfiles(e, in, p.mids, cornerChordCount(in))
+		return edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, mids: mids, edge: e, varying: true, flip: in.flip}, nil
 	}
 	cyl, err := geom.NewCylinder(c0.cen, in.axis, p.r0)
 	if err != nil {
@@ -279,6 +295,45 @@ func cornerChordCount(in cornerInputs) int {
 		k = 4
 	}
 	return k
+}
+
+// validateRadiusPoints checks intermediate fillet radius points are strictly inside the edge
+// (0 < T < 1), positive, and strictly increasing in T (so the ruled profiles stay in order).
+func validateRadiusPoints(mids []FilletRadiusPoint) error {
+	prev := 0.0
+	for _, m := range mids {
+		if m.T <= 0 || m.T >= 1 {
+			return fmt.Errorf("fillet: intermediate radius point T=%g must be strictly between 0 and 1", m.T)
+		}
+		if m.R <= 0 {
+			return fmt.Errorf("fillet: intermediate radius %g must be > 0", m.R)
+		}
+		if m.T <= prev {
+			return fmt.Errorf("fillet: intermediate radius points must be strictly increasing in T (got %g after %g)", m.T, prev)
+		}
+		prev = m.T
+	}
+	return nil
+}
+
+// midProfiles builds one corner cross-section per intermediate radius point: the rolling-ball circle
+// at the interpolated edge point and radius, sampled as chords with the same frame as the end corners
+// (#695). They have no end face/blend — they are pure ruling profiles between c0 and c1.
+func midProfiles(e *topo.Edge, in cornerInputs, mids []FilletRadiusPoint, k int) []corner {
+	if len(mids) == 0 {
+		return nil
+	}
+	p0, p1 := e.StartVertex().Point(), e.EndVertex().Point()
+	span := p0.VectorTo(p1)
+	out := make([]corner, 0, len(mids))
+	for _, m := range mids {
+		p := p0.TranslateBy(span.Scale(m.T))
+		cen := p.TranslateBy(in.offDir.Scale(m.R))
+		c := corner{a: in.a, b: in.b, cen: cen, ta: cen.TranslateBy(in.nA.Scale(m.R)), tb: cen.TranslateBy(in.nB.Scale(m.R))}
+		c.chords = arcChords(c, in, k)
+		out = append(out, c)
+	}
+	return out
 }
 
 // sampleCornerChords samples both corners' arcs at the same angular stations, so chord j of
