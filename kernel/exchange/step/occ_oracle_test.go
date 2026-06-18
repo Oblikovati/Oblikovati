@@ -59,10 +59,9 @@ var knownGaps = map[string]string{
 
 // knownFolds are fixtures whose tessellation still has fold edges (a watertight self-crease). The
 // fold gate in checkOracle skips them; the list may only shrink (delete an entry when its folds are
-// fixed). filleted_box: 2 residual folds on the spherical corner-fillet caps — tracked in #1011.
-var knownFolds = map[string]bool{
-	"filleted_box": true,
-}
+// fixed). Currently empty — the metric-scaled analytic-patch mesher (#585) made every oracle fixture,
+// including filleted_box's spherical corner caps (formerly #1011), fold-free.
+var knownFolds = map[string]bool{}
 
 func checkOracle(t *testing.T, dir, name string, want oracleEntry) {
 	if reason, gap := knownGaps[name]; gap {

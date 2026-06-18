@@ -3,6 +3,7 @@
 package ops
 
 import (
+	stdmath "math"
 	"os"
 	"testing"
 
@@ -99,5 +100,42 @@ func TestImportedNurbsDuctWatertight(t *testing.T) {
 	}
 	if total != 0 {
 		t.Errorf("imported model total free edges = %d; want 0 (watertightness regression)", total)
+	}
+}
+
+// edfOCCVolume is OCC getMass for the EDF model (mm³); edfFoldCeiling is the current residual fold
+// count (sphere pole + B-spline pcurve self-proximity), which may only shrink. See edfVolumeTol.
+const (
+	edfOCCVolume   = 207002.0
+	edfVolumeTol   = 0.01 // 1% — the trim-local metric mesher lands EDF at ≈ -0.4% (was +35.6%)
+	edfFoldCeiling = 38
+)
+
+// TestImportedNurbsDuctVolumeAndFolds guards the #585 fix: EDF's tessellation is not merely watertight
+// (TestImportedNurbsDuctWatertight) but VOLUME-CORRECT and (almost) fold-free. A watertight mesh can
+// still fold over itself and over-enclose — the EDF duct used to be +35.6% over OCC's getMass because
+// its trimmed analytic faces (torus/cylinder/sphere/cone) folded. Routing them through metricPatchMesh
+// (a TRIM-LOCAL metric-scaled (u,v) CDT) collapses the over-enclosure to ≈ -0.4% and the fold count
+// from 139 to the residual ceiling (the remaining folds are the B-spline pcurve path + a few sphere
+// pole facets, tracked separately). Env-gated like the watertightness guard.
+func TestImportedNurbsDuctVolumeAndFolds(t *testing.T) {
+	path := os.Getenv("OBK_PERF_STEP")
+	if path == "" {
+		t.Skip("set OBK_PERF_STEP=/path/EDF.STEP to run the imported-NURBS volume/fold guard")
+	}
+	var volume float64
+	folds := 0
+	for _, body := range stepBodies(t, path) {
+		mesh, _ := TessellateBody(body, DefaultQuality())
+		folds += FoldEdgeCount(mesh)
+		volume += BodyGeometryProperties(body, DefaultQuality()).Volume
+	}
+	if rel := stdmath.Abs(volume-edfOCCVolume) / edfOCCVolume; rel > edfVolumeTol {
+		t.Errorf("EDF total volume %.0f vs OCC %.0f (rel %.4f > %.4f) — an over-enclosure regression",
+			volume, edfOCCVolume, rel, edfVolumeTol)
+	}
+	if folds > edfFoldCeiling {
+		t.Errorf("EDF total fold edges = %d, want <= %d (the ceiling may only shrink as the residual "+
+			"B-spline/sphere folds are fixed)", folds, edfFoldCeiling)
 	}
 }

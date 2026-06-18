@@ -168,6 +168,70 @@ func pointInUVPoly(poly []math.Point2, p [2]float64) bool {
 	return in
 }
 
+// metricPatchMesh meshes an analytic curved trim (torus/sphere/cone/cylinder) over its OWN (u,v) with
+// a METRIC-SCALED constrained-Delaunay triangulation — the same anti-fold approach nurbsPcurveMesh
+// uses for B-splines. gridPatchMesh's plain (u,v) CDT folds where the surface metric is anisotropic
+// (a torus's tube vs ring, a sphere near its poles): u and v have very different 3D scales, so an
+// isotropic Delaunay twists in 3D. Scaling each axis by its mean 3D length (√E, √G via metricScale)
+// makes the parameter space ≈ isometric to 3D, so the triangulation is well-shaped and fold-free.
+// Boundary loops keep their exact 3D edge points (watertight); interior nodes are deflection-adaptive;
+// residual folds are swept by repairFolds. Falls back to the best-fit-plane boundary triangulation if
+// the CDT degenerates or tears (a pole/seam-distorted cap).
+func metricPatchMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+	su, sv := trimMetricScale(s, outerUV)
+	b := newPatchBuilder(s, su, sv)
+	loops := [][]int{b.addLoop(outer3D, outerUV)}
+	for i := range holes3D {
+		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
+	}
+	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q) {
+		b.addInterior(g)
+	}
+	tris := constrainedDelaunay(b.scaled, loops)
+	if len(tris) == 0 {
+		return boundaryPatchMesh(s, outer3D, holes3D)
+	}
+	m := patchMeshFrom(b.pos, b.nrm, tris)
+	repairFolds(m, 8)
+	if !patchIsManifold(m, loops) {
+		return boundaryPatchMesh(s, outer3D, holes3D)
+	}
+	return m
+}
+
+// trimMetricScale returns the per-axis (u,v) metric (mean 3D length of a unit u/v step) sampled over
+// the TRIM region's (u,v) bounding box, not the surface's whole domain. This matters where a surface's
+// metric varies across the domain: a cone's u-step length (the circumference) shrinks to zero toward
+// the apex, so the whole-domain mean (metricScale) is dominated by the degenerate apex and the scaled
+// CDT folds — but a cone-frustum trim sits away from the apex, where the local metric is well behaved.
+// Falls back to the whole-domain metricScale when the trim bbox is empty/degenerate.
+func trimMetricScale(s geom.Surface, outerUV []math.Point2) (su, sv float64) {
+	if len(outerUV) == 0 {
+		return metricScale(s)
+	}
+	umin, umax, vmin, vmax := uvBBox(outerUV)
+	if umax <= umin || vmax <= vmin {
+		return metricScale(s)
+	}
+	var sumU, sumV float64
+	const n = 4
+	for i := 0; i <= n; i++ {
+		for j := 0; j <= n; j++ {
+			du, dv := s.DerivativesAt(umin+(umax-umin)*float64(i)/n, vmin+(vmax-vmin)*float64(j)/n)
+			sumU += du.Length()
+			sumV += dv.Length()
+		}
+	}
+	su, sv = sumU/float64((n+1)*(n+1)), sumV/float64((n+1)*(n+1))
+	if su <= 0 {
+		su = 1
+	}
+	if sv <= 0 {
+		sv = 1
+	}
+	return su, sv
+}
+
 // trimmedPatchMesh meshes a non-rectangular curved patch via a constrained Delaunay triangulation
 // of its boundary loops. The 2D embedding to triangulate in is chosen by patchProjection: the
 // surface's own (u,v) for a B-spline (where the trim loops are a simple polygon), or the boundary's
