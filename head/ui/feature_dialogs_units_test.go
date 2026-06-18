@@ -59,6 +59,7 @@ func TestFeatureDialogsRenderUnitFields(t *testing.T) {
 		"sweep":      drawSweepDialog,
 		"fillet":     drawFilletDialog,
 		"faceFillet": drawFaceFilletDialog,
+		"fullRound":  drawFullRoundFilletDialog,
 		"chamfer":    drawChamferDialog,
 		"shell":      drawShellDialog,
 		"draft":      drawDraftDialog,
@@ -82,6 +83,10 @@ func TestFeatureDialogsRenderUnitFields(t *testing.T) {
 				s.ActiveFaceFillet().ArmSetB() // re-render with set 2 as the armed (accent) selector
 				frame(func() { drawFaceFilletDialog(s) })
 			}
+			if name == "fullRound" {
+				s.ActiveFullRoundFillet().ArmCenter() // re-render with the center selector armed
+				frame(func() { drawFullRoundFilletDialog(s) })
+			}
 		})
 	}
 }
@@ -95,6 +100,8 @@ func toolFor(name string) app.Tool {
 		return app.NewFilletTool()
 	case "faceFillet":
 		return app.NewFaceFilletTool()
+	case "fullRound":
+		return app.NewFullRoundFilletTool()
 	case "chamfer":
 		return app.NewChamferTool()
 	case "shell":
