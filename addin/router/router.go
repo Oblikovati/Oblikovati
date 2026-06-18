@@ -254,6 +254,7 @@ func (r *Router) registerSketchHandlers() {
 	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
 	r.handlers[wire.MethodSketchList] = listSketches
 	r.handlers[wire.MethodSketchGet] = getSketch
+	r.handlers[wire.MethodSketchDependents] = sketchDependents
 	r.handlers[wire.MethodSketchEdit] = editSketch
 	r.handlers[wire.MethodSketchExitEdit] = exitEditSketch
 	r.handlers[wire.MethodSketchSolve] = solveSketch

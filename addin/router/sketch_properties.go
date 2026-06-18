@@ -33,7 +33,7 @@ func setSketchProperty(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	if err := applySketchProperty(part, sk, in.Property, in.Value); err != nil {
 		return nil, err
 	}
-	return json.Marshal(sketchInfo(in.SketchIndex, sk))
+	return json.Marshal(sketchInfo(part, in.SketchIndex, sk))
 }
 
 // applySketchProperty applies one property=value to the sketch, parsing typed values.

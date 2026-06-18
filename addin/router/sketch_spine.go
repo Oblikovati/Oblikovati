@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/sketch"
 )
 
@@ -22,7 +23,7 @@ func listSketches(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	sketches := part.Sketches()
 	out := make([]wire.SketchInfo, sketches.Count())
 	for i := 0; i < sketches.Count(); i++ {
-		out[i] = sketchInfo(i, sketches.Item(i))
+		out[i] = sketchInfo(part, i, sketches.Item(i))
 	}
 	return json.Marshal(wire.ListSketchesResult{Sketches: out})
 }
@@ -33,7 +34,11 @@ func getSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(sketchInfo(idx, sk))
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(sketchInfo(part, idx, sk))
 }
 
 // editSketch enters edit mode; exitEditSketch leaves it.
@@ -113,15 +118,19 @@ func deleteSketch(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
+	if err := rejectIfConsumed(part, sk); err != nil {
+		return nil, err
+	}
 	if !part.Sketches().Remove(sk.ID()) {
 		return nil, fmt.Errorf("sketch.delete: sketch %d could not be removed", sk.ID())
 	}
 	return json.Marshal(wire.OKResult{OK: true})
 }
 
-// sketchInfo renders a sketch as its wire summary (DOF computed without moving geometry).
-func sketchInfo(index int, sk *sketch.Sketch) wire.SketchInfo {
-	return wire.SketchInfo{
+// sketchInfo renders a sketch as its wire summary (DOF computed without moving geometry),
+// including its consumed/owned-by/shared state derived from the part's features (#154).
+func sketchInfo(part *compdef.PartComponentDefinition, index int, sk *sketch.Sketch) wire.SketchInfo {
+	info := wire.SketchInfo{
 		Index:        index,
 		Name:         sk.Name(),
 		Plane:        planeLabel(sk.Plane()),
@@ -130,11 +139,16 @@ func sketchInfo(index int, sk *sketch.Sketch) wire.SketchInfo {
 		DOF:          sk.DegreesOfFreedom(),
 		Editing:      sk.IsEditing(),
 		Healthy:      sk.Health().OK(),
+		Shared:       sk.Shared(),
 		Color:        sk.Color(),
 		LineType:     sk.LineType(),
 		LineWeight:   sk.LineWeight(),
 		DeferUpdates: sk.DeferUpdates(),
 	}
+	if cons := sketchConsumers(part, sk); len(cons) > 0 {
+		info.Consumed, info.OwnedBy = true, cons[0].Name()
+	}
+	return info
 }
 
 // activeSketchAt returns the active part's sketch at the given index.

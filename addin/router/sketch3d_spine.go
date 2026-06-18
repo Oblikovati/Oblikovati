@@ -197,6 +197,7 @@ func sketch3DInfo(index int, sk *sketch.Sketch3D) wire.Sketch3DInfo {
 		DOF:               sk.DegreesOfFreedom(),
 		Editing:           sk.IsEditing(),
 		Healthy:           sk.Health().OK(),
+		Shared:            sk.Shared(),
 		Color:             sk.Color(),
 		DeferUpdates:      sk.DeferUpdates(),
 	}
