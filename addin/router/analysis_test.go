@@ -98,6 +98,34 @@ func TestAnalysisMeasureOverWire(t *testing.T) {
 	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"length","keyA":"dead"}`)); err == nil {
 		t.Error("measure with an unknown edge key = ok, want error")
 	}
+
+	// angle between two faces of the box is 90° (adjacent) or 180° (opposite).
+	for i := 1; i < len(allFaces); i++ {
+		call(t, r, s, "analysis.measure", measureArgs(t, "angle", fA, string(allFaces[i].ReferenceKey())), &m)
+		if m.Unit != "deg" || (!nearAny(m.Value, 90) && !nearAny(m.Value, 180)) {
+			t.Errorf("angle(face0,face%d) = %+v, want 90 or 180 deg", i, m)
+		}
+	}
+	// angle on two vertices (no direction) errors.
+	if _, err := r.Handle(s, "analysis.measure", []byte(measureArgs(t, "angle", vA, vB))); err == nil {
+		t.Error("angle on two vertices = ok, want error")
+	}
+	// three-vertex angle is reported as a degree in [0,180].
+	vC := string(body.Vertices()[2].ReferenceKey())
+	call(t, r, s, "analysis.measure", threeKeyArgs(t, "angle", vA, vB, vC), &m)
+	if m.Unit != "deg" || m.Value < 0 || m.Value > 180 {
+		t.Errorf("three-point angle = %+v, want a degree in [0,180]", m)
+	}
+}
+
+// threeKeyArgs JSON-encodes analysis.measure arguments with all three keys (raw-byte safe).
+func threeKeyArgs(t *testing.T, measureType, keyA, keyB, keyC string) string {
+	t.Helper()
+	b, err := json.Marshal(map[string]any{"type": measureType, "keyA": keyA, "keyB": keyB, "keyC": keyC})
+	if err != nil {
+		t.Fatalf("marshal measure args: %v", err)
+	}
+	return string(b)
 }
 
 // measureArgs JSON-encodes analysis.measure arguments through a map, so raw reference-key bytes are

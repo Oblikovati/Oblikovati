@@ -34,13 +34,13 @@ func analysisMeasure(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	}
 	mt, ok := types.ParseMeasureType(in.Type)
 	if !ok {
-		return nil, fmt.Errorf("analysis.measure: unknown measure type %q (want length|area|distance)", in.Type)
+		return nil, fmt.Errorf("analysis.measure: unknown measure type %q (want length|area|distance|minDistance|angle)", in.Type)
 	}
 	bodies := part.SurfaceBodies().All()
 	if in.BodyIndex < 0 || in.BodyIndex >= len(bodies) {
 		return nil, fmt.Errorf("analysis.measure: body index %d out of range [0,%d)", in.BodyIndex, len(bodies))
 	}
-	value, unit, err := measureEntity(bodies[in.BodyIndex], mt, in.KeyA, in.KeyB)
+	value, unit, err := measureEntity(bodies[in.BodyIndex], mt, in.KeyA, in.KeyB, in.KeyC)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func analysisMeasure(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 }
 
 // measureEntity resolves the entity (or pair) by reference key and computes the requested quantity.
-func measureEntity(body *topo.Body, mt types.MeasureType, keyA, keyB string) (float64, string, error) {
+func measureEntity(body *topo.Body, mt types.MeasureType, keyA, keyB, keyC string) (float64, string, error) {
 	q := ops.DefaultQuality()
 	switch mt {
 	case types.MeasureLength:
@@ -59,6 +59,8 @@ func measureEntity(body *topo.Body, mt types.MeasureType, keyA, keyB string) (fl
 		return measureVertexDistance(body, keyA, keyB)
 	case types.MeasureMinDistance:
 		return measureMinDistance(body, keyA, keyB, q)
+	case types.MeasureAngle:
+		return measureAngle(body, keyA, keyB, keyC, q)
 	}
 	return 0, "", fmt.Errorf("analysis.measure: unsupported measure type %v", mt)
 }
@@ -95,6 +97,34 @@ func measureMinDistance(body *topo.Body, keyA, keyB string, q ops.Quality) (floa
 		return 0, "", fmt.Errorf("analysis.measure: minDistance needs two entity keys (keyA=%q, keyB=%q)", keyA, keyB)
 	}
 	return analysis.MinDistanceMm(a, b, q), "mm", nil
+}
+
+// measureAngle returns a two-entity angle (edge/face), or a three-vertex angle when keyC is given.
+func measureAngle(body *topo.Body, keyA, keyB, keyC string, q ops.Quality) (float64, string, error) {
+	if keyC != "" {
+		return threePointAngle(body, keyA, keyB, keyC)
+	}
+	a, errA := resolveMeasureEntity(body, keyA)
+	b, errB := resolveMeasureEntity(body, keyB)
+	if errA != nil || errB != nil {
+		return 0, "", fmt.Errorf("analysis.measure: angle needs two entity keys (keyA=%q, keyB=%q)", keyA, keyB)
+	}
+	deg, err := analysis.AngleDegrees(a, b, q)
+	if err != nil {
+		return 0, "", err
+	}
+	return deg, "deg", nil
+}
+
+// threePointAngle returns the angle at apex vertex keyB between vertices keyA and keyC.
+func threePointAngle(body *topo.Body, keyA, keyB, keyC string) (float64, string, error) {
+	a, okA := body.FindVertexByKey(decodeKey(keyA))
+	apex, okB := body.FindVertexByKey(decodeKey(keyB))
+	c, okC := body.FindVertexByKey(decodeKey(keyC))
+	if !okA || !okB || !okC {
+		return 0, "", fmt.Errorf("analysis.measure: angle needs three vertex keys (keyA=%q, keyB=%q, keyC=%q)", keyA, keyB, keyC)
+	}
+	return analysis.ThreePointAngleDegrees(a, apex, c), "deg", nil
 }
 
 // resolveMeasureEntity resolves a reference key to a vertex, edge or face of the body (whichever it
