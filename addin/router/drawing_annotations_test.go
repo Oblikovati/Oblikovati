@@ -76,6 +76,21 @@ func TestDrawingCenterlinesOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingFeatureControlFrameOverWire drives the GD&T surface: a position FCF with two datums
+// produces a frame annotation (with frame + symbol curves) through the live stack.
+func TestDrawingFeatureControlFrameOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var fcf wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addFeatureControlFrame",
+		`{"name":"FCF","xmm":60,"ymm":60,"characteristic":"position","tolerance":"0.5","datums":["A","B"]}`, &fcf)
+	if fcf.Annotation.Kind != "featureControlFrame" || fcf.Annotation.CurveCount == 0 {
+		t.Fatalf("FCF = %+v, want a featureControlFrame with frame geometry", fcf.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addFeatureControlFrame", []byte(`{"xmm":0,"ymm":0,"characteristic":"bogus","tolerance":"1"}`)); err == nil {
+		t.Error("addFeatureControlFrame with a bad characteristic = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

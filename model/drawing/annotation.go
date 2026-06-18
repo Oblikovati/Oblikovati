@@ -29,16 +29,29 @@ type DrawingAnnotation struct {
 	w, h     float64 // revision cloud: size (sheet mm)
 	tag      string  // revision cloud: revision label
 	edgeKey  []byte  // centre mark: the circular edge it marks (associativity anchor)
-	curves   []DrawingCurve
+	// feature control frame (GD&T): the geometric tolerance it states.
+	characteristic types.GeometricCharacteristic
+	tolerance      string
+	datums         []string
+	labels         []AnnotationLabel
+	curves         []DrawingCurve
 }
 
-// Name, Kind, ViewName, Tag and Curves expose the annotation.
+// AnnotationLabel is one piece of text an annotation renders (sheet millimetres) — e.g. a feature
+// control frame's tolerance value or datum letter, centred in its compartment.
+type AnnotationLabel struct {
+	Text string
+	X, Y float64
+}
+
+// Name, Kind, ViewName, Tag, Curves and Labels expose the annotation.
 func (a *DrawingAnnotation) Name() string                      { return a.name }
 func (a *DrawingAnnotation) Kind() types.DrawingAnnotationKind { return a.kind }
 func (a *DrawingAnnotation) ViewName() string                  { return a.viewName }
 func (a *DrawingAnnotation) Tag() string                       { return a.tag }
 func (a *DrawingAnnotation) Curves() []DrawingCurve            { return a.curves }
 func (a *DrawingAnnotation) CurveCount() int                   { return len(a.curves) }
+func (a *DrawingAnnotation) Labels() []AnnotationLabel         { return a.labels }
 
 // DrawingAnnotations is a sheet's annotation collection. It holds the body-resolution hook and
 // the sheet's views so a CoG marker can find its view and the model's centre of mass.

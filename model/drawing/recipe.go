@@ -78,6 +78,10 @@ type annotationRecipe struct {
 	H        float64 `yaml:"heightMm,omitempty"`
 	Tag      string  `yaml:"tag,omitempty"`
 	EdgeKey  string  `yaml:"edgeKey,omitempty"` // centre mark: the circular edge it marks
+	// feature control frame (GD&T):
+	Characteristic string   `yaml:"characteristic,omitempty"`
+	Tolerance      string   `yaml:"tolerance,omitempty"`
+	Datums         []string `yaml:"datums,omitempty"`
 }
 
 // viewRecipe is the YAML shape of one drawing view. The drawing curves are not stored — they
@@ -169,6 +173,7 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 		out = append(out, annotationRecipe{
 			Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
 			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
+			Characteristic: a.characteristic.String(), Tolerance: a.tolerance, Datums: a.datums,
 		})
 	}
 	return out
@@ -272,9 +277,14 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 	for _, ar := range recs {
 		kind, _ := types.ParseDrawingAnnotationKind(ar.Kind)
 		edgeKey, _ := hex.DecodeString(ar.EdgeKey)
-		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey}
-		if kind == types.RevisionCloudAnnotation {
+		characteristic, _ := types.ParseGeometricCharacteristic(ar.Characteristic)
+		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey,
+			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums}
+		switch kind {
+		case types.RevisionCloudAnnotation:
 			a.curves = revisionCloudCurves(ar.X, ar.Y, ar.W, ar.H)
+		case types.FeatureControlFrameAnnotation:
+			a.curves, a.labels = featureControlFrameGeometry(ar.X, ar.Y, characteristic, ar.Tolerance, ar.Datums)
 		}
 		as.items = append(as.items, a)
 	}

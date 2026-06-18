@@ -186,10 +186,15 @@ func dimAnchorY(d *drawing.DrawingDimension) float64 { _, y := d.TextAnchorMM();
 func drawSheetAnnotations(face rect, sheet *drawing.Sheet) {
 	an := sheet.Annotations()
 	for i := 0; i < an.Count(); i++ {
-		for _, c := range an.Item(i).Curves() {
+		a := an.Item(i)
+		for _, c := range a.Curves() {
 			ax, ay := curveToScreen(face, c.Start())
 			bx, by := curveToScreen(face, c.End())
 			native.DrawLine(ax, ay, bx, by, viewSelectInk, 1.4)
+		}
+		for _, l := range a.Labels() { // FCF tolerance / datum text, centred on its anchor
+			tx, ty := curveToScreen(face, math.P2(math.Scalar(l.X), math.Scalar(l.Y)))
+			native.DrawText(tx-float32(utf8.RuneCountInString(l.Text))*3.2, ty-7, l.Text, sheetInk)
 		}
 	}
 }

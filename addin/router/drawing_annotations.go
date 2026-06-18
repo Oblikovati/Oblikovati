@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/drawing"
@@ -21,6 +22,7 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddRevisionCloud] = drawingAnnotationsAddRevisionCloud
 	r.handlers[wire.MethodDrawingAnnotationsAddCenterMarks] = drawingAnnotationsAddCenterMarks
 	r.handlers[wire.MethodDrawingAnnotationsAddCenterlines] = drawingAnnotationsAddCenterlines
+	r.handlers[wire.MethodDrawingAnnotationsAddFCF] = drawingAnnotationsAddFCF
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -114,6 +116,27 @@ func drawingAnnotationsAddCenterlines(s *app.Session, raw json.RawMessage) (json
 		return nil, err
 	}
 	a, err := an.AddCenterlines(in.Name, in.ViewName)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddFCF(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddFeatureControlFrameArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	characteristic, ok := types.ParseGeometricCharacteristic(in.Characteristic)
+	if !ok {
+		return nil, fmt.Errorf("drawing: unknown geometric characteristic %q", in.Characteristic)
+	}
+	a, err := an.AddFeatureControlFrame(in.Name, in.XMM, in.YMM, characteristic, in.Tolerance, in.Datums)
 	if err != nil {
 		return nil, err
 	}

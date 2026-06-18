@@ -71,6 +71,32 @@ func TestCenterlineToolAddsCenterlines(t *testing.T) {
 	}
 }
 
+// TestFeatureControlFrameToolDropsFrame: the FCF tool drops a frame at the placed point with the
+// chosen characteristic, tolerance and datums.
+func TestFeatureControlFrameToolDropsFrame(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewFeatureControlFrameTool()
+	tool.Start(s)
+	tool.SetPlacement(80, 80)
+	tool.Params().Texts[0].Set("0.2")  // Tolerance
+	tool.Params().Texts[1].Set("A, B") // Datums
+	tool.Params().Choices[0].Set(1)    // Characteristic = Flatness
+	if !tool.CanCommit() {
+		t.Fatal("FCF tool cannot commit with a tolerance set")
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.FeatureControlFrameAnnotation {
+		t.Fatalf("FCF not added (count=%d)", an.Count())
+	}
+	if n := len(an.Item(0).Labels()); n != 3 { // tolerance + 2 datums (flatness symbol is drawn)
+		t.Errorf("FCF labels = %d, want 3", n)
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()
