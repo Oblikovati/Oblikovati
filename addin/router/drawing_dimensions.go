@@ -23,6 +23,7 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.handlers[wire.MethodDrawingDimensionsAddAngular] = drawingDimensionsAddAngular
 	r.handlers[wire.MethodDrawingDimensionsAddBaseline] = drawingDimensionsAddBaseline
 	r.handlers[wire.MethodDrawingDimensionsAddChain] = drawingDimensionsAddChain
+	r.handlers[wire.MethodDrawingDimensionsAddOrdinate] = drawingDimensionsAddOrdinate
 	r.handlers[wire.MethodDrawingDimensionsDelete] = drawingDimensionsDelete
 }
 
@@ -149,6 +150,50 @@ func drawingDimensionSet(s *app.Session, raw json.RawMessage,
 		out.Dimensions = append(out.Dimensions, drawingDimensionInfo(d))
 	}
 	return json.Marshal(out)
+}
+
+func drawingDimensionsAddOrdinate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	ds, err := activeSheetDimensions(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddOrdinateDimensionsArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	datum, pts, err := parseOrdinateArgs(in)
+	if err != nil {
+		return nil, err
+	}
+	dims, err := ds.AddOrdinateSet(in.ViewName, in.Axis != "vertical", datum, pts)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	out := wire.DimensionSetResult{}
+	for _, d := range dims {
+		out.Dimensions = append(out.Dimensions, drawingDimensionInfo(d))
+	}
+	return json.Marshal(out)
+}
+
+// parseOrdinateArgs resolves an ordinate request's datum and measured points (each [x,y] sheet mm).
+func parseOrdinateArgs(in wire.AddOrdinateDimensionsArgs) (datum [2]float64, pts [][2]float64, err error) {
+	if in.Axis != "" && in.Axis != "horizontal" && in.Axis != "vertical" {
+		return datum, nil, fmt.Errorf("drawing: ordinate axis %q must be horizontal|vertical", in.Axis)
+	}
+	if len(in.Datum) != 2 {
+		return datum, nil, fmt.Errorf("drawing: datum must be [x,y], got %v", in.Datum)
+	}
+	datum = [2]float64{in.Datum[0], in.Datum[1]}
+	pts = make([][2]float64, len(in.Points))
+	for i, p := range in.Points {
+		if len(p) != 2 {
+			return datum, nil, fmt.Errorf("drawing: point %d must be [x,y], got %v", i, p)
+		}
+		pts[i] = [2]float64{p[0], p[1]}
+	}
+	return datum, pts, nil
 }
 
 // parseDimensionSetArgs resolves a set request's measurement type and pick points.

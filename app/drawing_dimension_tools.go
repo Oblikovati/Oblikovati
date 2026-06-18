@@ -183,6 +183,53 @@ func (t *DimensionSetTool) Params() ToolParams {
 	}}
 }
 
+// ordinateAxisLabels indexes the ordinate Axis dropdown.
+var ordinateAxisLabels = []string{"Horizontal", "Vertical"}
+
+// OrdinateDimensionTool dimensions a base view's corners as an ordinate set: each corner's view-X
+// (or view-Y) offset from the bottom-left datum corner, as a leader to its value (a full multi-pick
+// set is a follow-up).
+type OrdinateDimensionTool struct {
+	derivedViewTool
+	axis int
+}
+
+// NewOrdinateDimensionTool creates the tool; its base-view list is captured on Start.
+func NewOrdinateDimensionTool() *OrdinateDimensionTool { return &OrdinateDimensionTool{} }
+
+func (t *OrdinateDimensionTool) Name() string { return "Ordinate Dimension" }
+
+// Commit dimensions the selected base view's corners from its bottom-left datum along the axis.
+func (t *OrdinateDimensionTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	if parent == "" {
+		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+	}
+	minX, minY, maxX, maxY, ok := viewBoundsMM(s, parent)
+	if !ok {
+		return fmt.Errorf("drawing: base view %q has no geometry to dimension", parent)
+	}
+	datum := [2]float64{minX, minY}
+	corners := [][2]float64{{minX, minY}, {maxX, minY}, {maxX, maxY}, {minX, maxY}}
+	if _, err := c.Sheets().Active().Dimensions().AddOrdinateSet(parent, t.axis == 0, datum, corners); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view and axis choices for the property dialog.
+func (t *OrdinateDimensionTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		t.baseChoice("Base View"),
+		{Label: "Axis", Options: ordinateAxisLabels, Get: func() int { return t.axis }, Set: func(i int) { t.axis = i }},
+	}}
+}
+
 // dimensionTypeForIndex maps the Type dropdown index to the dimension type (shared with the linear
 // tool's labels: Horizontal, Vertical, Aligned).
 func dimensionTypeForIndex(idx int) types.DrawingDimensionType {

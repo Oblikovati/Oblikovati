@@ -90,6 +90,32 @@ func TestDimensionSetToolDimensionsCorners(t *testing.T) {
 	}
 }
 
+// TestOrdinateDimensionToolDimensionsCorners: the ordinate tool places a leaderless ordinate per
+// corner of a base view, measured from the bottom-left datum.
+func TestOrdinateDimensionToolDimensionsCorners(t *testing.T) {
+	s := drawingWithModelSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+	tool := NewOrdinateDimensionTool()
+	tool.Start(s)
+	tool.Params().Choices[1].Set(1) // Axis = Vertical
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("ordinate Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	dims := c.Sheets().Active().Dimensions()
+	if dims.Count() != 4 {
+		t.Fatalf("ordinate set placed %d dimensions, want 4 (one per corner)", dims.Count())
+	}
+	if dims.Item(0).Type() != types.OrdinateDimension {
+		t.Errorf("dimension type = %v, want OrdinateDimension", dims.Item(0).Type())
+	}
+}
+
 // TestAngularDimensionToolDimensionsCorner: the angular tool dimensions a base view's corner angle
 // (a box's perpendicular edges → 90°).
 func TestAngularDimensionToolDimensionsCorner(t *testing.T) {
