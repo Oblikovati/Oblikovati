@@ -78,6 +78,35 @@ func TestDrawingDimensionSetsOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingOrdinateDimensionsOverWire drives the ordinate surface: a horizontal ordinate set from
+// a datum corner measures each corner's view-X offset through the live stack.
+func TestDrawingOrdinateDimensionsOverWire(t *testing.T) {
+	r, s := drawingViewSession(t) // box 4×6×5 cm; FRONT corners x∈{80,120}, y∈{75,125}
+	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
+
+	var set struct {
+		Dimensions []struct {
+			Type    string  `json:"type"`
+			ValueMM float64 `json:"valueMm"`
+		} `json:"dimensions"`
+	}
+	call(t, r, s, "drawingDimensions.addOrdinate",
+		`{"viewName":"FRONT","axis":"horizontal","datum":[80,75],"points":[[80,75],[120,75]]}`, &set)
+	if len(set.Dimensions) != 2 {
+		t.Fatalf("ordinate set = %d dimensions, want 2", len(set.Dimensions))
+	}
+	if set.Dimensions[0].Type != "ordinate" {
+		t.Errorf("ordinate[0].Type = %q, want ordinate", set.Dimensions[0].Type)
+	}
+	// datum→itself = 0, datum→bottom-right = 4 cm width.
+	if math.Abs(set.Dimensions[0].ValueMM-0) > 1e-6 || math.Abs(set.Dimensions[1].ValueMM-40) > 1e-6 {
+		t.Errorf("ordinate values = %v / %v mm, want 0 / 40", set.Dimensions[0].ValueMM, set.Dimensions[1].ValueMM)
+	}
+	if _, err := r.Handle(s, "drawingDimensions.addOrdinate", []byte(`{"viewName":"FRONT","axis":"sideways","datum":[80,75],"points":[[120,75]]}`)); err == nil {
+		t.Error("addOrdinate with a bad axis = ok, want error")
+	}
+}
+
 // TestDrawingAngularDimensionOverWire drives the angular-dimension surface: the angle between two
 // perpendicular box edges re-derives 90° through the live stack, reported in valueDeg.
 func TestDrawingAngularDimensionOverWire(t *testing.T) {

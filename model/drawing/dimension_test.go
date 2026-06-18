@@ -134,6 +134,59 @@ func TestBaselineAndChainSets(t *testing.T) {
 	}
 }
 
+// TestOrdinateSetMeasuresOffsetsFromDatum: an ordinate set measures each point's view-X (or
+// view-Y) offset from the datum corner, draws a leaderless witness line, and survives reopen with
+// its axis. Box 2×3×4 cm; FRONT corners x∈{90,110} (20 mm wide), y∈{80,120} (40 mm tall).
+func TestOrdinateSetMeasuresOffsetsFromDatum(t *testing.T) {
+	c := drawingWithBox(t)
+	frontBase(t, c.Sheets().Active().Views())
+	dims := c.Sheets().Active().Dimensions()
+	datum := [2]float64{90, 80} // bottom-left corner
+	pts := [][2]float64{{90, 80}, {110, 80}, {110, 120}}
+
+	horiz, err := dims.AddOrdinateSet("FRONT", true, datum, pts)
+	if err != nil {
+		t.Fatalf("AddOrdinateSet horizontal: %v", err)
+	}
+	if len(horiz) != 3 {
+		t.Fatalf("ordinate set = %d dims, want 3 (one per point)", len(horiz))
+	}
+	// X-offsets from the datum: the datum itself = 0, the bottom-right = 20 mm wide.
+	if math.Abs(horiz[0].ValueMM()-0) > 1e-6 || math.Abs(horiz[1].ValueMM()-20) > 1e-6 {
+		t.Errorf("horizontal ordinate values = %v / %v mm, want 0 / 20", horiz[0].ValueMM(), horiz[1].ValueMM())
+	}
+	if horiz[1].Type() != types.OrdinateDimension || horiz[1].CurveCount() == 0 {
+		t.Errorf("ordinate = (%v, %d curves), want OrdinateDimension with a witness line", horiz[1].Type(), horiz[1].CurveCount())
+	}
+
+	vert, err := dims.AddOrdinateSet("FRONT", false, datum, [][2]float64{{90, 120}})
+	if err != nil {
+		t.Fatalf("AddOrdinateSet vertical: %v", err)
+	}
+	if math.Abs(vert[0].ValueMM()-40) > 1e-6 { // Y-offset datum→top-left = 4 cm tall
+		t.Errorf("vertical ordinate value = %v mm, want 40", vert[0].ValueMM())
+	}
+
+	restored := reopen(t, c)
+	rd := restored.Sheets().Active().Dimensions()
+	if rd.Count() != 4 {
+		t.Fatalf("reopened ordinate count = %d, want 4", rd.Count())
+	}
+	// The vertical ordinate's axis must round-trip: its value stays the view-Y offset (40 mm).
+	if got := rd.Item(3).ValueMM(); math.Abs(got-40) > 1e-6 {
+		t.Errorf("reopened vertical ordinate = %v mm, want 40 (axis persisted)", got)
+	}
+}
+
+// TestOrdinateSetNeedsAPoint: an ordinate set with no points errors.
+func TestOrdinateSetNeedsAPoint(t *testing.T) {
+	c := drawingWithBox(t)
+	frontBase(t, c.Sheets().Active().Views())
+	if _, err := c.Sheets().Active().Dimensions().AddOrdinateSet("FRONT", true, [2]float64{90, 80}, nil); err == nil {
+		t.Error("AddOrdinateSet with no points should error")
+	}
+}
+
 // TestDimensionSetNeedsTwoPoints: a set with fewer than two points errors.
 func TestDimensionSetNeedsTwoPoints(t *testing.T) {
 	c := drawingWithBox(t)

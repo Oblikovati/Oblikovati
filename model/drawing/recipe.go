@@ -63,6 +63,7 @@ type dimensionRecipe struct {
 	Offset   float64 `yaml:"offsetMm,omitempty"`
 	TextDX   float64 `yaml:"textDxMm,omitempty"` // user text nudge (drag-the-text)
 	TextDY   float64 `yaml:"textDyMm,omitempty"`
+	AxisHorz bool    `yaml:"axisHorizontal,omitempty"` // ordinate: measure the view-X offset, else view-Y
 }
 
 // annotationRecipe is the YAML shape of one drawing annotation. A CoG marker's glyph re-derives
@@ -184,7 +185,7 @@ func dimensionRecipesOf(sh *Sheet) []dimensionRecipe {
 			Name: d.name, Type: d.dimType.String(), ViewName: d.viewName,
 			KeyA: hex.EncodeToString(d.keyA), KeyB: hex.EncodeToString(d.keyB),
 			EdgeKey: hex.EncodeToString(d.edgeKey), EdgeKeyB: hex.EncodeToString(d.edgeKeyB),
-			Offset: d.offset, TextDX: d.textDX, TextDY: d.textDY,
+			Offset: d.offset, TextDX: d.textDX, TextDY: d.textDY, AxisHorz: d.axisHorizontal,
 		})
 	}
 	return out
@@ -253,7 +254,7 @@ func restoreDimensions(sh *Sheet, recs []dimensionRecipe) {
 		d := &DrawingDimension{
 			name: dr.Name, dimType: dimType, viewName: dr.ViewName,
 			keyA: keyA, keyB: keyB, edgeKey: edgeKey, edgeKeyB: edgeKeyB,
-			offset: dr.Offset, textDX: dr.TextDX, textDY: dr.TextDY,
+			offset: dr.Offset, textDX: dr.TextDX, textDY: dr.TextDY, axisHorizontal: dr.AxisHorz,
 		}
 		ds.recompute(d)
 		ds.items = append(ds.items, d)

@@ -32,16 +32,18 @@ type DrawingDimension struct {
 	edgeKey  []byte  // radial: the attached circular edge; angular: the first straight edge
 	edgeKeyB []byte  // angular: the second straight edge
 	offset   float64 // dimension-line standoff from the measured points (signed, sheet mm)
-	valueMM  float64 // measured model distance (mm), scale-independent (0 for angular)
-	valueDeg float64 // measured angle (degrees) for an angular dimension
-	text     string  // displayed text (the formatted value)
-	anchorX  float64 // text anchor (sheet mm), lifted off the dimension line by textGapMM
-	anchorY  float64
-	textDX   float64 // user text nudge from the anchor (sheet mm) — drag the text to set it
-	textDY   float64
-	nx       float64 // unit perpendicular of the dimension line — text-lift + line-drag direction
-	ny       float64
-	curves   []DrawingCurve
+	// ordinate: measure the view-X offset from the datum (keyA) when true, else the view-Y offset.
+	axisHorizontal bool
+	valueMM        float64 // measured model distance (mm), scale-independent (0 for angular)
+	valueDeg       float64 // measured angle (degrees) for an angular dimension
+	text           string  // displayed text (the formatted value)
+	anchorX        float64 // text anchor (sheet mm), lifted off the dimension line by textGapMM
+	anchorY        float64
+	textDX         float64 // user text nudge from the anchor (sheet mm) — drag the text to set it
+	textDY         float64
+	nx             float64 // unit perpendicular of the dimension line — text-lift + line-drag direction
+	ny             float64
+	curves         []DrawingCurve
 }
 
 // textGapMM lifts the value text off the dimension line so it stays readable by default.
@@ -172,6 +174,41 @@ func (ds *DrawingDimensions) snapPoints(viewName string, points [][2]float64) ([
 	return keys, nil
 }
 
+// AddOrdinateSet adds one ordinate dimension per point, each measuring the point's offset from the
+// shared datum along one axis (axisHorizontal = view-X, else view-Y), drawn as a leader to its
+// value with no dimension line. The datum and every point snap to the nearest projected model
+// vertex, so every ordinate stays associative.
+func (ds *DrawingDimensions) AddOrdinateSet(viewName string, axisHorizontal bool, datum [2]float64, points [][2]float64) ([]*DrawingDimension, error) {
+	if len(points) == 0 {
+		return nil, fmt.Errorf("drawing: an ordinate set needs at least one point, got 0")
+	}
+	view, body, basis, err := ds.dimensionBasis(viewName)
+	if err != nil {
+		return nil, err
+	}
+	datumKey, ok := nearestVertexKey(body, view, basis, datum[0], datum[1])
+	if !ok {
+		return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
+	}
+	out := make([]*DrawingDimension, 0, len(points))
+	for _, p := range points {
+		key, ok := nearestVertexKey(body, view, basis, p[0], p[1])
+		if !ok {
+			return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
+		}
+		out = append(out, ds.addOrdinateFromKeys(viewName, axisHorizontal, datumKey, key))
+	}
+	return out, nil
+}
+
+// addOrdinateFromKeys creates one ordinate dimension between an already-resolved datum and point.
+func (ds *DrawingDimensions) addOrdinateFromKeys(viewName string, axisHorizontal bool, datumKey, pointKey []byte) *DrawingDimension {
+	d := &DrawingDimension{name: ds.uniqueName(""), dimType: types.OrdinateDimension, viewName: viewName, keyA: datumKey, keyB: pointKey, axisHorizontal: axisHorizontal}
+	ds.recompute(d)
+	ds.items = append(ds.items, d)
+	return d
+}
+
 // AddRadial adds a radius or diameter dimension on the circular model edge nearest the pick point
 // (sheet mm) projected on the named base view; the value re-measures when the model changes.
 func (ds *DrawingDimensions) AddRadial(name, viewName string, dimType types.DrawingDimensionType, pickX, pickY float64) (*DrawingDimension, error) {
@@ -294,7 +331,7 @@ func (ds *DrawingDimensions) MoveText(name string, dx, dy float64) {
 // this increment (radial/angular line position is fixed; nudge their text instead).
 func (ds *DrawingDimensions) MoveLine(name string, dx, dy float64) {
 	d, ok := ds.ByName(name)
-	if !ok || isRadial(d.dimType) || d.dimType == types.AngularDimension {
+	if !ok || isRadial(d.dimType) || d.dimType == types.AngularDimension || d.dimType == types.OrdinateDimension {
 		return
 	}
 	d.offset += dx*d.nx + dy*d.ny
@@ -324,7 +361,32 @@ func (ds *DrawingDimensions) recompute(d *DrawingDimension) {
 		ds.recomputeAngular(d, view, body, basis)
 		return
 	}
+	if d.dimType == types.OrdinateDimension {
+		ds.recomputeOrdinate(d, view, body, basis)
+		return
+	}
 	ds.recomputeLinear(d, view, body, basis)
+}
+
+// recomputeOrdinate re-binds the datum (keyA) and measured point (keyB), measures the point's
+// view-X or view-Y offset from the datum (the running coordinate), then builds the leader glyph.
+func (ds *DrawingDimensions) recomputeOrdinate(d *DrawingDimension, view *DrawingView, body *topo.Body, basis hlr.View) {
+	datum, okA := body.FindVertexByKey(d.keyA)
+	point, okB := body.FindVertexByKey(d.keyB)
+	if !okA || !okB {
+		return
+	}
+	pd := hlr.ProjectPoint(basis, datum.Point())
+	pp := hlr.ProjectPoint(basis, point.Point())
+	if d.axisHorizontal {
+		d.valueMM = math.Abs(float64(pp.X-pd.X)) * cmToMM
+	} else {
+		d.valueMM = math.Abs(float64(pp.Y-pd.Y)) * cmToMM
+	}
+	d.text = strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+	curves, mx, my, nx, ny := ordinateDimensionCurves(view, view.place(pp), d.axisHorizontal)
+	d.curves = curves
+	d.setTextAnchor(mx, my, nx, ny, 1)
 }
 
 // recomputeAngular re-binds the two straight edges, projects them and measures the angle between
@@ -708,6 +770,25 @@ func linearDimensionCurves(s1, s2 gmath.Point2, ax, ay, offset float64) (curves 
 	out = append(out, arrowheadCurves(e1x, e1y, e2x, e2y)...)
 	out = append(out, arrowheadCurves(e2x, e2y, e1x, e1y)...)
 	return out, (e1x + e2x) / 2, (e1y + e2y) / 2
+}
+
+// ordinateDimensionCurves builds an ordinate leader (sheet mm): a witness line from the measured
+// point out to a common spine — below the view for a horizontal (view-X) ordinate, to its right
+// for a vertical (view-Y) ordinate — so every ordinate text in a set lines up. It returns the text
+// anchor at the spine end and the outward lift direction. There is no dimension line or arrowhead.
+func ordinateDimensionCurves(view *DrawingView, point gmath.Point2, axisHorizontal bool) (curves []DrawingCurve, anchorX, anchorY, nx, ny float64) {
+	px, py := float64(point.X), float64(point.Y)
+	const spineGap = 14.0
+	_, minY, maxX, _, ok := view.BoundsMM()
+	if !ok {
+		minY, maxX = py, px
+	}
+	if axisHorizontal {
+		spineY := minY - spineGap
+		return []DrawingCurve{dimSegment(px, py, px, spineY)}, px, spineY, 0, -1
+	}
+	spineX := maxX + spineGap
+	return []DrawingCurve{dimSegment(px, py, spineX, py)}, spineX, py, 1, 0
 }
 
 // arrowheadCurves builds the two short barbs of an arrowhead whose tip is at (tipX, tipY) and
