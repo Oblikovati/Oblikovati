@@ -82,3 +82,25 @@ func TestSetAttributeRequiresSetAndName(t *testing.T) {
 		t.Error("set with a blank set name should fail")
 	}
 }
+
+// TestAttributeHandlersRejectBadInput: every attribute handler rejects malformed JSON and (for the
+// document-targeted methods) an unknown document id, rather than panicking or silently succeeding.
+func TestAttributeHandlersRejectBadInput(t *testing.T) {
+	r, s := emptyPartSession(t)
+	docMethods := []string{"attributes.set", "attributes.get", "attributes.list", "attributes.listSets", "attributes.delete"}
+	for _, m := range append([]string{"attributes.find"}, docMethods...) {
+		if _, err := r.Handle(s, m, []byte(`{ not json`)); err == nil {
+			t.Errorf("%s accepted malformed JSON", m)
+		}
+	}
+	for _, m := range docMethods {
+		args := []byte(`{"document":999999,"set":"s","name":"n"}`) // no such open document
+		if _, err := r.Handle(s, m, args); err == nil {
+			t.Errorf("%s accepted an unknown document id", m)
+		}
+	}
+	// find with a blank set is a rejection.
+	if _, err := r.Handle(s, "attributes.find", []byte(`{"set":""}`)); err == nil {
+		t.Error("find with a blank set should fail")
+	}
+}
