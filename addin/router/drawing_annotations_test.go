@@ -120,6 +120,33 @@ func TestDrawingSurfaceTextureOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingPartsListOverWire drives the parts-list surface: a drawing referencing an assembly of
+// two distinct parts gets a parts list whose row count reflects the parts-only BOM, through the
+// live stack.
+func TestDrawingPartsListOverWire(t *testing.T) {
+	r, s, _, _ := assemblySessionWithBoxes(t, 0, 2) // assembly "asm.obk" with two distinct parts
+	call(t, r, s, "documents.create", `{"type":"drawing","name":"asm.odd"}`, nil)
+	call(t, r, s, "drawing.setModelReference", `{"fullDocumentName":"asm.obk"}`, nil)
+
+	var pl wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addPartsList", `{"name":"PL","xmm":40,"ymm":260}`, &pl)
+	if pl.Annotation.Kind != "partsList" || pl.Annotation.CurveCount == 0 {
+		t.Fatalf("parts list = %+v, want a partsList with grid geometry", pl.Annotation)
+	}
+	if pl.Annotation.RowCount != 2 {
+		t.Errorf("parts list rowCount = %d, want 2 (two distinct parts)", pl.Annotation.RowCount)
+	}
+}
+
+// TestDrawingPartsListNeedsAssembly: a parts list on a drawing referencing a part (not an assembly)
+// errors.
+func TestDrawingPartsListNeedsAssembly(t *testing.T) {
+	r, s := drawingViewSession(t) // references a box PART, not an assembly
+	if _, err := r.Handle(s, "drawingAnnotations.addPartsList", []byte(`{"xmm":40,"ymm":260}`)); err == nil {
+		t.Error("addPartsList on a part-referencing drawing = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

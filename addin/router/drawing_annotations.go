@@ -25,6 +25,7 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddFCF] = drawingAnnotationsAddFCF
 	r.handlers[wire.MethodDrawingAnnotationsAddDatum] = drawingAnnotationsAddDatum
 	r.handlers[wire.MethodDrawingAnnotationsAddSurfaceText] = drawingAnnotationsAddSurfaceText
+	r.handlers[wire.MethodDrawingAnnotationsAddPartsList] = drawingAnnotationsAddPartsList
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -188,6 +189,23 @@ func drawingAnnotationsAddSurfaceText(s *app.Session, raw json.RawMessage) (json
 	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
 }
 
+func drawingAnnotationsAddPartsList(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddPartsListArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddPartsList(in.Name, in.XMM, in.YMM)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
 func drawingAnnotationsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	an, err := activeSheetAnnotations(s)
 	if err != nil {
@@ -211,6 +229,7 @@ func drawingAnnotationsDelete(s *app.Session, raw json.RawMessage) (json.RawMess
 // drawingAnnotationInfo flattens an annotation into its wire DTO.
 func drawingAnnotationInfo(a *drawing.DrawingAnnotation) wire.DrawingAnnotationInfo {
 	return wire.DrawingAnnotationInfo{
-		Name: a.Name(), Kind: a.Kind().String(), ViewName: a.ViewName(), Tag: a.Tag(), CurveCount: a.CurveCount(),
+		Name: a.Name(), Kind: a.Kind().String(), ViewName: a.ViewName(), Tag: a.Tag(),
+		CurveCount: a.CurveCount(), RowCount: a.RowCount(),
 	}
 }

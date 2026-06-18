@@ -34,6 +34,14 @@ type BodyResolver interface {
 	Body(fullDocumentName string) (*topo.Body, bool)
 }
 
+// BOMResolver resolves a referenced assembly document to its parts-only BOM rows for a parts list.
+// Like [BodyResolver] it is the host's seam (router/app over the workspace); a nil resolver, an
+// unresolved reference, or a non-assembly model means a parts list has no rows.
+type BOMResolver interface {
+	// BOMRows returns the named document's parts-only BOM rows, and whether it resolved.
+	BOMRows(fullDocumentName string) ([]PartsListRow, bool)
+}
+
 // Content is a drawing document's modeling content. It implements doc.Content (and
 // doc.RecipeContent, in recipe.go) so the document/persistence layers treat it like
 // any other content kind.
@@ -43,6 +51,7 @@ type Content struct {
 	modelRef     string          // full document name of the primary referenced model
 	props        ModelProperties // resolves modelRef's iProperties; nil ⇒ unresolved
 	bodies       BodyResolver    // resolves modelRef's body for view projection; nil ⇒ unresolved
+	bom          BOMResolver     // resolves modelRef's BOM for parts lists; nil ⇒ unresolved
 	lastViewBody *topo.Body      // body the views were last projected against (staleness check)
 }
 
@@ -53,6 +62,7 @@ func NewContent() *Content {
 	c := &Content{sheets: newSheets(), styles: newStylesManager()}
 	c.sheets.lookup = c.resolveProperty
 	c.sheets.bodyResolve = c.resolveBody
+	c.sheets.bomResolve = c.resolveBOM
 	c.sheets.addDefault()
 	return c
 }
@@ -82,6 +92,22 @@ func (c *Content) SetModelProperties(props ModelProperties) { c.props = props }
 // SetBodyResolver injects the resolver for the referenced model's body. The host calls it
 // after wiring the drawing to its workspace; until then, views cannot be projected.
 func (c *Content) SetBodyResolver(bodies BodyResolver) { c.bodies = bodies }
+
+// SetBOMResolver injects the resolver for the referenced assembly's BOM. The host calls it after
+// wiring the drawing to its workspace; until then, parts lists have no rows.
+func (c *Content) SetBOMResolver(bom BOMResolver) {
+	c.bom = bom
+	c.sheets.bomResolve = c.resolveBOM
+}
+
+// resolveBOM is the parts-list hook handed to the sheets: it resolves the referenced model's
+// parts-only BOM rows through the injected resolver, or returns (nil, false) when none is wired.
+func (c *Content) resolveBOM() ([]PartsListRow, bool) {
+	if c.bom == nil || c.modelRef == "" {
+		return nil, false
+	}
+	return c.bom.BOMRows(c.modelRef)
+}
 
 // resolveBody is the view-projection hook handed to the sheets: it resolves the referenced
 // model's body through the injected resolver, or returns (nil, false) when none is wired.

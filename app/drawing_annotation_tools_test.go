@@ -3,9 +3,12 @@
 package app
 
 import (
+	"fmt"
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
 )
 
 func TestCoGMarkerToolMarksView(t *testing.T) {
@@ -139,6 +142,52 @@ func TestSurfaceTextureToolDropsSymbol(t *testing.T) {
 	}
 	if got := an.Item(0).Labels(); len(got) != 1 || got[0].Text != "3.2" {
 		t.Errorf("surface texture labels = %v, want roughness 3.2", got)
+	}
+}
+
+// TestPartsListToolDropsTable: the parts-list tool drops a table on a drawing referencing an
+// assembly, with one row per parts-only BOM item.
+func TestPartsListToolDropsTable(t *testing.T) {
+	s := NewSession()
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("commands: %v", err)
+	}
+	asmDoc, err := compdef.AddAssembly(s.Workspace(), "asm.obk", true)
+	if err != nil {
+		t.Fatalf("AddAssembly: %v", err)
+	}
+	asm := asmDoc.Content().(*compdef.AssemblyComponentDefinition)
+	for i, name := range []string{"p1.opd", "p2.opd"} { // two distinct parts → two BOM rows
+		p, err := compdef.AddPart(s.Workspace(), name, true)
+		if err != nil {
+			t.Fatalf("AddPart: %v", err)
+		}
+		asm.Place(fmt.Sprintf("c:%d", i+1), p.Content().(*compdef.PartComponentDefinition), math.Identity4())
+	}
+	if err := s.Workspace().SetActiveDocument(asmDoc); err != nil {
+		t.Fatalf("activate assembly: %v", err)
+	}
+	if _, err := s.NewDrawing(); err != nil {
+		t.Fatalf("NewDrawing: %v", err)
+	}
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		t.Fatalf("ActiveDrawing: %v", err)
+	}
+	c.SetModelReference("asm.obk")
+
+	tool := NewPartsListTool()
+	tool.Start(s)
+	tool.SetPlacement(40, 260)
+	if tool.Name() != "Parts List" || !tool.CanCommit() {
+		t.Fatalf("parts-list tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.PartsListAnnotation || an.Item(0).RowCount() != 2 {
+		t.Fatalf("parts list not added with 2 rows (count=%d)", an.Count())
 	}
 }
 

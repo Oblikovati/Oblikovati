@@ -27,15 +27,16 @@ type Sheet struct {
 	views       *DrawingViews
 	annotations *DrawingAnnotations
 	dimensions  *DrawingDimensions
+	bomResolve  bomLookup // parts-list BOM source, captured from the owning Sheets
 }
 
 // Views returns the sheet's drawing views (projections of the referenced model).
 func (s *Sheet) Views() *DrawingViews { return s.views }
 
-// Annotations returns the sheet's annotations (CoG markers, revision clouds).
+// Annotations returns the sheet's annotations (CoG markers, revision clouds, parts lists, …).
 func (s *Sheet) Annotations() *DrawingAnnotations {
 	if s.annotations == nil {
-		s.annotations = newDrawingAnnotations(s.views, s.views.body)
+		s.annotations = newDrawingAnnotations(s.views, s.views.body, s.bomResolve)
 	}
 	return s.annotations
 }
@@ -92,6 +93,7 @@ type Sheets struct {
 	active      int
 	lookup      propertyLookup // handed to each new title block; set by the owning Content
 	bodyResolve bodyLookup     // handed to each sheet's views; set by the owning Content
+	bomResolve  bomLookup      // handed to each sheet's annotations (parts lists); set by Content
 }
 
 func newSheets() *Sheets { return &Sheets{} }
@@ -122,6 +124,7 @@ func (s *Sheets) Add(spec SheetSpec) (*Sheet, error) {
 		border:     newBorder(DefaultBorderDefinition()),
 		titleBlock: newTitleBlock(DefaultTitleBlockDefinition(), s.lookup),
 		views:      newDrawingViews(s.bodyResolve),
+		bomResolve: s.bomResolve,
 	}
 	s.items = append(s.items, sh)
 	s.active = len(s.items) - 1

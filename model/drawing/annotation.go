@@ -35,6 +35,7 @@ type DrawingAnnotation struct {
 	datums         []string
 	// surface texture: the material-removal variant (the roughness value reuses tag).
 	materialRemoval types.MaterialRemoval
+	rowCount        int // parts list: the number of BOM data rows
 	labels          []AnnotationLabel
 	curves          []DrawingCurve
 }
@@ -54,6 +55,7 @@ func (a *DrawingAnnotation) Tag() string                       { return a.tag }
 func (a *DrawingAnnotation) Curves() []DrawingCurve            { return a.curves }
 func (a *DrawingAnnotation) CurveCount() int                   { return len(a.curves) }
 func (a *DrawingAnnotation) Labels() []AnnotationLabel         { return a.labels }
+func (a *DrawingAnnotation) RowCount() int                     { return a.rowCount }
 
 // DrawingAnnotations is a sheet's annotation collection. It holds the body-resolution hook and
 // the sheet's views so a CoG marker can find its view and the model's centre of mass.
@@ -61,10 +63,11 @@ type DrawingAnnotations struct {
 	items []*DrawingAnnotation
 	views *DrawingViews
 	body  bodyLookup
+	bom   bomLookup // parts-list BOM source
 }
 
-func newDrawingAnnotations(views *DrawingViews, body bodyLookup) *DrawingAnnotations {
-	return &DrawingAnnotations{views: views, body: body}
+func newDrawingAnnotations(views *DrawingViews, body bodyLookup, bom bomLookup) *DrawingAnnotations {
+	return &DrawingAnnotations{views: views, body: body, bom: bom}
 }
 
 // AddCoGMarker adds a centre-of-gravity marker on the named view, positioned at the referenced
@@ -159,6 +162,8 @@ func (as *DrawingAnnotations) Recompute() {
 			as.recomputeCenterMark(a)
 		case types.CenterlineAnnotation:
 			as.recomputeCenterline(a)
+		case types.PartsListAnnotation:
+			as.recomputePartsList(a)
 		}
 	}
 }
