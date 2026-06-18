@@ -668,6 +668,12 @@ func viewNavigateCommands() []*CommandDefinition {
 			return nil
 		}).WithTab("View").WithIcon("look-at").WithButtonStyle(LargeIconButton).WithEnable(canLookAt).
 			WithTooltip("Look At — reorient the view normal to the selected planar face or work plane."),
+		NewCommand("View.ZoomWindow", "Zoom Window", "Navigate", func(s *Session) error {
+			s.ArmZoomWindow()
+			return nil
+		}).WithTab("View").WithIcon("zoom-window").WithButtonStyle(LargeIconButton).WithEnable(hasActivePart).
+			WithActive(func(s *Session) bool { return s.ZoomWindowArmed() }).
+			WithTooltip("Zoom Window — drag a rectangle in the viewport; the view zooms to fit it."),
 	}
 }
 

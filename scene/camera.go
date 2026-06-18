@@ -202,6 +202,36 @@ func (c Camera) DollyToCursor(factor, px, py float64) Camera {
 	return c
 }
 
+// zoomRectMinPixels is the smallest drag (in viewport pixels) ZoomToRect acts on; a smaller box
+// (a click or a twitch) is treated as no rectangle and ignored.
+const zoomRectMinPixels = 3
+
+// ZoomToRect reframes the view to the screen rectangle (x0,y0)-(x1,y1) in viewport pixels — Inventor's
+// Zoom Window / Zoom Area (N16). The rectangle's centre becomes the new view centre and the box
+// expands to fill the viewport: its larger relative dimension fits exactly, so the whole box stays
+// visible. The view direction and up are unchanged. A degenerate (near-zero) rectangle, or a centre
+// ray parallel to the target plane, is a no-op.
+//
+// Example: cam = cam.ZoomToRect(x0, y0, x1, y1) // fit the dragged window
+func (c Camera) ZoomToRect(x0, y0, x1, y1 float64) Camera {
+	if c.Width <= 0 || c.Height <= 0 {
+		return c
+	}
+	w, h := stdmath.Abs(x1-x0), stdmath.Abs(y1-y0)
+	if w < zoomRectMinPixels || h < zoomRectMinPixels {
+		return c
+	}
+	pivot, ok := c.cursorPlanePoint((x0+x1)/2, (y0+y1)/2)
+	if !ok {
+		return c
+	}
+	fwd := c.Forward()
+	dist := float64(c.Eye.DistanceTo(c.Target))
+	c.Target = pivot
+	c.Eye = pivot.TranslateBy(fwd.Scale(-dist))
+	return c.Dolly(stdmath.Max(w/float64(c.Width), h/float64(c.Height)))
+}
+
 // cursorPlanePoint returns the world point where the ray through pixel (px, py) meets the plane
 // through the target perpendicular to the view direction — the focal-depth point under the cursor.
 // ok is false when the ray is parallel to that plane or points away from it.

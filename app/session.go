@@ -54,6 +54,8 @@ type Session struct {
 	picker               Picker
 	regionPicker         RegionPicker      // resolves a box-select rectangle (nil ⇒ box-select disabled)
 	boxSelect            BoxSelection      // the in-progress rubber-band rectangle, if any
+	zoomWindow           BoxSelection      // the in-progress Zoom Window rubber-band, if any (#913 N16)
+	zoomWindowArmed      bool              // the Zoom Window tool is armed: the next left-drag zooms
 	entityDrag           sketchDrag        // the in-progress direct drag of sketch entities, if any
 	dimDrag              dimDragState      // the in-progress drag of a drawing dimension's text/line
 	selectOther          selectOther       // the in-progress Select Other cycle, if any

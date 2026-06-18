@@ -183,9 +183,12 @@ func handleKeyboard(s *app.Session) {
 	}
 	mods := heldModifiers()
 	if native.EscapePressed() {
-		if s.SelectOtherActive() {
+		switch {
+		case s.SelectOtherActive():
 			s.CancelSelectOther() // Esc ends the cycle, keeping the highlighted candidate (#910)
-		} else {
+		case s.ZoomWindowArmed():
+			s.DisarmZoomWindow() // Esc cancels an armed Zoom Window before/while dragging (#913 N16)
+		default:
 			_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
 		}
 	}
