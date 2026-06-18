@@ -3,9 +3,11 @@
 package router
 
 import (
+	"encoding/hex"
 	"math"
 	"testing"
 
+	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
@@ -42,4 +44,43 @@ func TestAnalysisMassPropertiesOverWire(t *testing.T) {
 	if _, err := br.Handle(bs, "analysis.massProperties", []byte(`{}`)); err == nil {
 		t.Error("massProperties with no active part = ok, want error")
 	}
+}
+
+// TestAnalysisMeasureOverWire drives the measurement surface: an edge of the box-part fixture
+// reports a length in {40, 30, 50} mm, and a face an area in {1200, 1500, 2000} mm².
+func TestAnalysisMeasureOverWire(t *testing.T) {
+	r, s := boxPartSession(t)
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatalf("ActivePart: %v", err)
+	}
+	body := part.SurfaceBodies().Item(0)
+	edgeKey := hex.EncodeToString(body.Edges()[0].ReferenceKey())
+	faceKey := hex.EncodeToString(body.Faces()[0].ReferenceKey())
+
+	var m wire.MeasureResult
+	call(t, r, s, "analysis.measure", `{"type":"length","keyA":"`+edgeKey+`"}`, &m)
+	if m.Unit != "mm" || !nearAny(m.Value, 40, 30, 50) {
+		t.Errorf("edge length = %+v, want one of 40/30/50 mm", m)
+	}
+	call(t, r, s, "analysis.measure", `{"type":"area","keyA":"`+faceKey+`"}`, &m)
+	if m.Unit != "mm²" || !nearAny(m.Value, 1200, 1500, 2000) {
+		t.Errorf("face area = %+v, want one of 1200/1500/2000 mm²", m)
+	}
+	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"bogus","keyA":"00"}`)); err == nil {
+		t.Error("measure with a bad type = ok, want error")
+	}
+	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"length","keyA":"dead"}`)); err == nil {
+		t.Error("measure with an unknown edge key = ok, want error")
+	}
+}
+
+// nearAny reports whether v is within 0.01 of any of the candidate values.
+func nearAny(v float64, candidates ...float64) bool {
+	for _, c := range candidates {
+		if math.Abs(v-c) < 0.01 {
+			return true
+		}
+	}
+	return false
 }
