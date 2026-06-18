@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"oblikovati.org/api/types"
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/topo"
 )
@@ -59,25 +58,21 @@ func (as *DrawingAnnotations) recomputeHoleTable(a *DrawingAnnotation) {
 	a.curves, a.labels = holeTableGeometry(a.x, a.y, holes)
 }
 
-// projectedHoles collects each distinct circular edge's centre (projected onto the view plane, cm)
-// and diameter (mm); coincident projections (a through-hole's two rims) are listed once — keyed on
-// the sheet position like the centre-mark dedup.
+// projectedHoles collects each distinct hole's centre (on the view plane, cm) and diameter (mm),
+// recovered by circle-fitting the view's projected edge loops (so it sees cut holes, not just
+// primitive cylinders). Coincident projections (a through-hole's two rims) are listed once — keyed
+// on the sheet position like the centre-mark dedup.
 func projectedHoles(view *DrawingView, body *topo.Body, basis hlr.View) []holeRow {
 	seen := map[string]bool{}
 	var out []holeRow
-	for _, e := range body.Edges() {
-		circle, ok := e.Geometry().(geom.Circle)
-		if !ok {
-			continue
-		}
-		p := hlr.ProjectPoint(basis, circle.Center)
-		s := view.place(p)
+	for _, c := range circlesFromProjection(body, basis) {
+		s := view.place(c.center)
 		key := fmt.Sprintf("%.1f/%.1f", float64(s.X), float64(s.Y))
 		if seen[key] {
 			continue
 		}
 		seen[key] = true
-		out = append(out, holeRow{cx: float64(p.X), cy: float64(p.Y), diameter: circle.Radius * 2 * cmToMM})
+		out = append(out, holeRow{cx: float64(c.center.X), cy: float64(c.center.Y), diameter: c.radius * 2 * cmToMM})
 	}
 	return out
 }
