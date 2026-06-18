@@ -156,6 +156,12 @@ func (g *WorkGeometry) plane(ref WorkRef) (sketch.Plane, error) {
 	return w.Plane(), nil
 }
 
+// ResolvePlaneRef resolves any plane reference — a planar B-rep face key, a user work plane
+// ("plane/N"), or an origin plane ("origin/plane/xy") — to its plane (origin + normal). It is
+// the public entry the feature-edit re-pick (#163) uses to turn a wire plane ref into a
+// mirror's plane; errors when the ref names no resolvable plane.
+func (g *WorkGeometry) ResolvePlaneRef(ref WorkRef) (sketch.Plane, error) { return g.plane(ref) }
+
 // WorkPlaneByRef resolves a WorkRef to its *WorkPlane (origin or user) — for features
 // that reference a datum plane, e.g. an extrude's to-face / from-to target.
 func (g *WorkGeometry) WorkPlaneByRef(ref WorkRef) (*WorkPlane, error) {

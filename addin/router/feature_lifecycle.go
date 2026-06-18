@@ -42,7 +42,10 @@ func partFeatureByID(part *compdef.PartComponentDefinition, id uint64, method st
 // featureDetail renders one feature with its history index and the editable scalars
 // features.edit accepts, mirroring workPlaneInfo for datum planes.
 func featureDetail(part *compdef.PartComponentDefinition, f *feature.PartFeature, index int) wire.FeatureDetail {
-	return wire.FeatureDetail{FeatureInfo: featureInfo(f), Index: index, Scalars: featureScalars(part, f)}
+	return wire.FeatureDetail{
+		FeatureInfo: featureInfo(f), Index: index,
+		Scalars: featureScalars(part, f), Slots: featureSlots(f),
+	}
 }
 
 // featureScalars renders the feature's editable scalars with their value in the
@@ -100,15 +103,38 @@ func editFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	apply, err := parseScalarEdits(part, f, in.Scalars)
-	if err != nil {
+	if err := planAndApplyFeatureEdits(part, f, in); err != nil {
 		return nil, err
 	}
-	apply()
 	if err := s.CommitFeatureEdit(f); err != nil {
 		return nil, err
 	}
 	return featureDetailReply(part, f, idx)
+}
+
+// planAndApplyFeatureEdits validates the WHOLE batch — scalars and reference re-picks — before
+// applying any, so a failure (bad value, missing profile, wrong slot kind) leaves the definition
+// untouched (#163). Scalars are parsed only when present, so a repick-only edit works on a feature
+// that exposes references but no editable scalars (e.g. a mirror's plane). The caller recomputes.
+func planAndApplyFeatureEdits(part *compdef.PartComponentDefinition, f *feature.PartFeature, in wire.EditFeatureArgs) error {
+	if len(in.Scalars) == 0 && len(in.Repick) == 0 {
+		return fmt.Errorf("features.edit: feature %d has no scalar or repick edits to apply", in.ID)
+	}
+	applyScalars := func() {}
+	if len(in.Scalars) > 0 {
+		apply, err := parseScalarEdits(part, f, in.Scalars)
+		if err != nil {
+			return err
+		}
+		applyScalars = apply
+	}
+	applyRepicks, err := planFeatureRepicks(part, f, in.Repick)
+	if err != nil {
+		return err
+	}
+	applyScalars()
+	applyRepicks()
+	return nil
 }
 
 // parseScalarEdits validates the whole batch — the feature must be editable, each
