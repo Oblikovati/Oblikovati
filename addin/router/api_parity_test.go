@@ -57,8 +57,11 @@ func TestEveryWireMethodHasAHandler(t *testing.T) {
 // notYetHandled are wire methods the API declares ahead of the router handler that will serve
 // them. Tracked debt: add an entry only when the contract genuinely lands before its handler, and
 // DELETE it the moment the handler lands (the guard above fails on a stale entry, so this list may
-// only shrink). It is currently empty — every declared wire method has a handler.
-var notYetHandled = map[string]bool{}
+// only shrink). drawingAnnotations.addBalloon shipped in API v0.40.0 ahead of its handler (the M14
+// balloon-annotation adoption PR adds it and removes this entry). See #1024.
+var notYetHandled = map[string]bool{
+	"MethodDrawingAnnotationsAddBalloon": true,
+}
 
 // notYetRelayed are wire events the API declares ahead of the host behavior that would
 // emit them (the representations / model-state surface has no app-level event yet). They

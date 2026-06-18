@@ -43,6 +43,56 @@ func TestOffCenterRaysSpread(t *testing.T) {
 
 func dirIsUnit(v math.Vector3) bool { return stdmath.Abs(v.Length()-1) < 1e-9 }
 
+// pointRayDistance is the perpendicular distance from p to the line (origin, unit dir).
+func pointRayDistance(p, origin math.Point3, dir math.Vector3) float64 {
+	v := origin.VectorTo(p)
+	along := v.Dot(dir)
+	closest := origin.TranslateBy(dir.Scale(float64(along)))
+	return float64(closest.DistanceTo(p))
+}
+
+// TestDollyToCursorKeepsPivotUnderCursor: zooming toward an off-centre pixel keeps the world point
+// under it on that pixel's ray (zoom-to-cursor, N2) and scales the eye–target distance like Dolly.
+func TestDollyToCursorKeepsPivotUnderCursor(t *testing.T) {
+	c := NewCamera(800, 600)
+	px, py := 650.0, 180.0 // off-centre
+	pivot, ok := c.cursorPlanePoint(px, py)
+	if !ok {
+		t.Fatal("cursorPlanePoint failed for an on-screen pixel")
+	}
+	z := c.DollyToCursor(0.5, px, py)
+	if d := float64(z.Eye.DistanceTo(z.Target)); stdmath.Abs(d-5) > 1e-9 {
+		t.Errorf("zoom-to-cursor distance = %v, want 5 (factor 0.5 of 10)", d)
+	}
+	if !z.Forward().IsEqualTo(c.Forward(), 1e-9) {
+		t.Error("zoom-to-cursor must keep the view direction fixed")
+	}
+	o, dir := z.RayThrough(px, py)
+	if dd := pointRayDistance(pivot, o, dir); dd > 1e-6 {
+		t.Errorf("pivot is %g off the cursor ray after zoom (should stay under the cursor)", dd)
+	}
+}
+
+// TestDollyToCursorCenterEqualsDolly: at the centre pixel the pivot is the target, so zoom-to-cursor
+// reduces exactly to the view-centred Dolly.
+func TestDollyToCursorCenterEqualsDolly(t *testing.T) {
+	c := NewCamera(800, 600)
+	z := c.DollyToCursor(0.5, 400, 300)
+	d := c.Dolly(0.5)
+	if !z.Eye.IsEqualTo(d.Eye, 1e-9) || !z.Target.IsEqualTo(d.Target, 1e-9) {
+		t.Errorf("centre zoom-to-cursor = (eye %v, target %v), want Dolly (eye %v, target %v)", z.Eye, z.Target, d.Eye, d.Target)
+	}
+}
+
+// TestDollyToCursorClampsMinDistance: a hard zoom-in clamps to minDistance like Dolly.
+func TestDollyToCursorClampsMinDistance(t *testing.T) {
+	c := NewCamera(800, 600)
+	z := c.DollyToCursor(1e-12, 650, 180)
+	if d := float64(z.Eye.DistanceTo(z.Target)); stdmath.Abs(d-minDistance) > 1e-9 {
+		t.Errorf("clamped zoom-to-cursor distance = %v, want %v", d, minDistance)
+	}
+}
+
 func TestDollyScalesDistanceKeepingDirection(t *testing.T) {
 	c := NewCamera(800, 600) // eye (0,0,10), target origin
 	in := c.Dolly(0.5)

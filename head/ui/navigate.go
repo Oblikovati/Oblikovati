@@ -35,14 +35,15 @@ const (
 // surface (Active stays true through a drag even if the cursor leaves it); the rest are
 // the raw wheel/delta/button/modifier state. Modal+Left carry the hold-F-key navigation.
 type NavInput struct {
-	Hovered bool
-	Active  bool
-	Wheel   float32
-	DX, DY  float32
-	Middle  bool
-	Shift   bool
-	Modal   NavMode // a held F2/F3/F4 navigation mode (drives a left-drag)
-	Left    bool    // left button down — only consulted in a Modal mode
+	Hovered          bool
+	Active           bool
+	Wheel            float32
+	DX, DY           float32
+	CursorX, CursorY float32 // viewport-local cursor pixels (for zoom-to-cursor, N2)
+	Middle           bool
+	Shift            bool
+	Modal            NavMode // a held F2/F3/F4 navigation mode (drives a left-drag)
+	Left             bool    // left button down — only consulted in a Modal mode
 }
 
 // ApplyNavigation maps one frame of pointer input to a camera move, mirroring Inventor:
@@ -52,7 +53,7 @@ type NavInput struct {
 // sketch editor's left-click select/drag (#916). The camera math lives in scene.
 func ApplyNavigation(cam scene.Camera, in NavInput) scene.Camera {
 	if in.Hovered && in.Wheel != 0 {
-		cam = cam.Dolly(stdmath.Pow(zoomPerNotch, float64(in.Wheel)))
+		cam = cam.DollyToCursor(stdmath.Pow(zoomPerNotch, float64(in.Wheel)), float64(in.CursorX), float64(in.CursorY))
 	}
 	if !in.Active || (in.DX == 0 && in.DY == 0) {
 		return cam

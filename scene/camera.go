@@ -177,6 +177,48 @@ func (c Camera) Dolly(factor float64) Camera {
 	return c
 }
 
+// DollyToCursor zooms by factor toward the point under screen pixel (px, py), keeping that point
+// fixed on screen — Inventor's default zoom-to-cursor (N2), as opposed to Dolly's view-centred zoom.
+// The pivot is where the cursor ray meets the target plane; Eye and Target are scaled about it, so
+// the view direction and up are unchanged and the eye–target distance scales by factor exactly as
+// Dolly, while whatever is under the cursor stays put. A cursor ray parallel to the plane (or factor
+// ≤ 0) falls back to Dolly. The minDistance floor is honoured by clamping factor, so the pivot stays
+// fixed right up to the closest zoom.
+//
+// Example: cam = cam.DollyToCursor(0.9, mouseX, mouseY) // one wheel notch in toward the cursor
+func (c Camera) DollyToCursor(factor, px, py float64) Camera {
+	if factor <= 0 || c.Height <= 0 {
+		return c
+	}
+	pivot, ok := c.cursorPlanePoint(px, py)
+	if !ok {
+		return c.Dolly(factor)
+	}
+	if dist := float64(c.Eye.DistanceTo(c.Target)); dist > 0 && dist*factor < minDistance {
+		factor = minDistance / dist
+	}
+	c.Eye = pivot.TranslateBy(pivot.VectorTo(c.Eye).Scale(factor))
+	c.Target = pivot.TranslateBy(pivot.VectorTo(c.Target).Scale(factor))
+	return c
+}
+
+// cursorPlanePoint returns the world point where the ray through pixel (px, py) meets the plane
+// through the target perpendicular to the view direction — the focal-depth point under the cursor.
+// ok is false when the ray is parallel to that plane or points away from it.
+func (c Camera) cursorPlanePoint(px, py float64) (math.Point3, bool) {
+	origin, dir := c.RayThrough(px, py)
+	forward := c.Forward()
+	denom := float64(dir.Dot(forward))
+	if stdmath.Abs(denom) < 1e-9 {
+		return math.Point3{}, false
+	}
+	t := float64(origin.VectorTo(c.Target).Dot(forward)) / denom
+	if t <= 0 {
+		return math.Point3{}, false
+	}
+	return origin.TranslateBy(dir.Scale(t)), true
+}
+
 // Orbit rotates the eye around the fixed target — a turntable: yaw about the up axis,
 // then pitch about the current right axis (Inventor's Rotate). The eye–target distance
 // is preserved; a pitch that would flip over the up pole is skipped.

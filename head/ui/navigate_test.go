@@ -26,6 +26,20 @@ func TestApplyNavigationZoomsOnWheelWhenHovered(t *testing.T) {
 	}
 }
 
+// TestApplyNavigationWheelZoomsTowardCursor: the wheel zooms toward the cursor (N2) — at the centre
+// it is a pure dolly (target fixed); off-centre it pans the target toward the cursor.
+func TestApplyNavigationWheelZoomsTowardCursor(t *testing.T) {
+	cam := scene.NewCamera(800, 600)
+	center := ApplyNavigation(cam, NavInput{Hovered: true, Wheel: 1, CursorX: 400, CursorY: 300})
+	if !center.Target.IsEqualTo(cam.Target, 1e-9) {
+		t.Errorf("wheel zoom at the centre should keep the target fixed, got %v", center.Target)
+	}
+	off := ApplyNavigation(cam, NavInput{Hovered: true, Wheel: 1, CursorX: 700, CursorY: 150})
+	if off.Target.IsEqualTo(cam.Target, 1e-9) {
+		t.Error("wheel zoom off-centre should move the target toward the cursor (zoom-to-cursor)")
+	}
+}
+
 func TestApplyNavigationPansWithMiddleDrag(t *testing.T) {
 	cam := scene.NewCamera(800, 600)
 	out := ApplyNavigation(cam, NavInput{Active: true, Middle: true, DX: 50})
