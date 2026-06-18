@@ -28,6 +28,8 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddPartsList] = drawingAnnotationsAddPartsList
 	r.handlers[wire.MethodDrawingAnnotationsAddBalloon] = drawingAnnotationsAddBalloon
 	r.handlers[wire.MethodDrawingAnnotationsAddHoleTable] = drawingAnnotationsAddHoleTable
+	r.handlers[wire.MethodDrawingAnnotationsAddRevTable] = drawingAnnotationsAddRevisionTable
+	r.handlers[wire.MethodDrawingAnnotationsAddRevTag] = drawingAnnotationsAddRevisionTag
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -235,6 +237,44 @@ func drawingAnnotationsAddHoleTable(s *app.Session, raw json.RawMessage) (json.R
 		return nil, err
 	}
 	a, err := an.AddHoleTable(in.Name, in.ViewName, in.XMM, in.YMM)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddRevisionTable(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddRevisionTableArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	rows := make([]drawing.RevisionRow, len(in.Rows))
+	for i, r := range in.Rows {
+		rows[i] = drawing.RevisionRow{Revision: r.Revision, Date: r.Date, Description: r.Description}
+	}
+	a, err := an.AddRevisionTable(in.Name, in.XMM, in.YMM, rows)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddRevisionTag(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddRevisionTagArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddRevisionTag(in.Name, in.XMM, in.YMM, in.Revision)
 	if err != nil {
 		return nil, err
 	}

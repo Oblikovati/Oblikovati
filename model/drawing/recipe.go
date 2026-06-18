@@ -85,6 +85,15 @@ type annotationRecipe struct {
 	Datums         []string `yaml:"datums,omitempty"`
 	// surface texture: the material-removal variant (the roughness value reuses Tag).
 	MaterialRemoval string `yaml:"materialRemoval,omitempty"`
+	// revision table: the user-supplied change-history rows.
+	Revisions []revisionRowRecipe `yaml:"revisions,omitempty"`
+}
+
+// revisionRowRecipe is the YAML shape of one revision-table row.
+type revisionRowRecipe struct {
+	Revision    string `yaml:"revision"`
+	Date        string `yaml:"date,omitempty"`
+	Description string `yaml:"description,omitempty"`
 }
 
 // viewRecipe is the YAML shape of one drawing view. The drawing curves are not stored — they
@@ -177,8 +186,32 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 			Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
 			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
 			Characteristic: a.characteristic.String(), Tolerance: a.tolerance, Datums: a.datums,
-			MaterialRemoval: a.materialRemoval.String(),
+			MaterialRemoval: a.materialRemoval.String(), Revisions: revisionRowRecipesOf(a.revisions),
 		})
+	}
+	return out
+}
+
+// revisionRowRecipesOf snapshots a revision table's rows for persistence.
+func revisionRowRecipesOf(rows []RevisionRow) []revisionRowRecipe {
+	if len(rows) == 0 {
+		return nil
+	}
+	out := make([]revisionRowRecipe, len(rows))
+	for i, r := range rows {
+		out[i] = revisionRowRecipe(r)
+	}
+	return out
+}
+
+// revisionRowsOf rebuilds a revision table's rows from its recipe.
+func revisionRowsOf(recs []revisionRowRecipe) []RevisionRow {
+	if len(recs) == 0 {
+		return nil
+	}
+	out := make([]RevisionRow, len(recs))
+	for i, r := range recs {
+		out[i] = RevisionRow(r)
 	}
 	return out
 }
@@ -283,7 +316,7 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 		edgeKey, _ := hex.DecodeString(ar.EdgeKey)
 		characteristic, _ := types.ParseGeometricCharacteristic(ar.Characteristic)
 		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey,
-			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums}
+			characteristic: characteristic, tolerance: ar.Tolerance, datums: ar.Datums, revisions: revisionRowsOf(ar.Revisions)}
 		restoreAnnotationGeometry(a, ar)
 		as.items = append(as.items, a)
 	}
@@ -307,6 +340,11 @@ func restoreAnnotationGeometry(a *DrawingAnnotation, ar annotationRecipe) {
 	case types.BalloonAnnotation:
 		item, _ := strconv.Atoi(ar.Tag)
 		a.curves, a.labels = balloonGeometry(ar.X, ar.Y, item, ar.W, ar.H)
+	case types.RevisionTableAnnotation:
+		a.rowCount = len(a.revisions)
+		a.curves, a.labels = revisionTableGeometry(ar.X, ar.Y, a.revisions)
+	case types.RevisionTagAnnotation:
+		a.curves, a.labels = revisionTagGeometry(ar.X, ar.Y, ar.Tag)
 	}
 }
 

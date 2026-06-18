@@ -252,6 +252,48 @@ func TestHoleTableToolWithoutView(t *testing.T) {
 	}
 }
 
+// TestRevisionTableToolDropsTable: the revision-table tool drops a one-row table seeded with its
+// revision fields.
+func TestRevisionTableToolDropsTable(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewRevisionTableTool()
+	tool.Start(s)
+	tool.SetPlacement(250, 60)
+	tool.Params().Texts[0].Set("C")             // Revision
+	tool.Params().Texts[2].Set("Tightened fit") // Description
+	if tool.Name() != "Revision Table" || !tool.CanCommit() {
+		t.Fatalf("revision-table tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.RevisionTableAnnotation || an.Item(0).RowCount() != 1 {
+		t.Fatalf("revision table not added (count=%d)", an.Count())
+	}
+}
+
+// TestRevisionTagToolDropsTag: the revision-tag tool drops a triangle holding the revision letter.
+func TestRevisionTagToolDropsTag(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewRevisionTagTool()
+	tool.Start(s)
+	tool.SetPlacement(120, 90)
+	tool.Params().Texts[0].Set("C")
+	if tool.Name() != "Revision Tag" || !tool.CanCommit() {
+		t.Fatalf("revision-tag tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.RevisionTagAnnotation || an.Item(0).Tag() != "C" {
+		t.Fatalf("revision tag not added (count=%d)", an.Count())
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()
