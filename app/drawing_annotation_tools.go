@@ -248,6 +248,62 @@ func (t *DatumFeatureTool) Params() ToolParams {
 	}}
 }
 
+// surfaceVariants indexes the surface-texture Material removal dropdown.
+var surfaceVariants = []struct {
+	label string
+	value types.MaterialRemoval
+}{
+	{"Any", types.MaterialRemovalAny},
+	{"Required (machined)", types.MaterialRemovalRequired},
+	{"Prohibited (as-cast)", types.MaterialRemovalProhibited},
+}
+
+// SurfaceTextureTool drops an ISO 1302 surface texture symbol at the cursor with a roughness value
+// and material-removal variant.
+type SurfaceTextureTool struct {
+	roughness        string
+	variantIndex     int
+	centerX, centerY float64
+}
+
+// NewSurfaceTextureTool starts on a 1.6 roughness, any material removal.
+func NewSurfaceTextureTool() *SurfaceTextureTool {
+	return &SurfaceTextureTool{roughness: "1.6", centerX: 150, centerY: 150}
+}
+
+func (t *SurfaceTextureTool) Name() string              { return "Surface Texture" }
+func (t *SurfaceTextureTool) Start(*Session)            {}
+func (t *SurfaceTextureTool) Pick(*Session, Selectable) {}
+func (t *SurfaceTextureTool) CanCommit() bool           { return true }
+func (t *SurfaceTextureTool) Cancel(*Session)           {}
+func (t *SurfaceTextureTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the surface texture symbol at the placed point.
+func (t *SurfaceTextureTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	variant := surfaceVariants[clampIndex(t.variantIndex, len(surfaceVariants))].value
+	if _, err := c.Sheets().Active().Annotations().AddSurfaceTexture("", t.centerX, t.centerY, t.roughness, variant); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the roughness value and material-removal variant.
+func (t *SurfaceTextureTool) Params() ToolParams {
+	labels := make([]string, len(surfaceVariants))
+	for i, v := range surfaceVariants {
+		labels[i] = v.label
+	}
+	return ToolParams{
+		Texts:   []TextParam{{Label: "Roughness", Get: func() string { return t.roughness }, Set: func(v string) { t.roughness = v }}},
+		Choices: []ChoiceParam{{Label: "Material removal", Options: labels, Get: func() int { return t.variantIndex }, Set: func(i int) { t.variantIndex = i }}},
+	}
+}
+
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
 	width, height    float64

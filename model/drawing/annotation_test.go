@@ -208,6 +208,47 @@ func TestDatumFeatureNeedsLetter(t *testing.T) {
 	}
 }
 
+// TestAddSurfaceTexture: a surface texture symbol draws the checkmark (plus the variant bar/circle)
+// and the roughness label, for every material-removal variant, and survives reopen.
+func TestAddSurfaceTexture(t *testing.T) {
+	for _, variant := range []types.MaterialRemoval{types.MaterialRemovalAny, types.MaterialRemovalRequired, types.MaterialRemovalProhibited} {
+		c := drawingWithBox(t)
+		st, err := c.Sheets().Active().Annotations().AddSurfaceTexture("ST", 80, 80, "1.6", variant)
+		if err != nil {
+			t.Fatalf("AddSurfaceTexture(%v): %v", variant, err)
+		}
+		if st.Kind() != types.SurfaceTextureAnnotation || st.CurveCount() < 3 {
+			t.Fatalf("variant %v = (%v, %d curves), want a checkmark glyph", variant, st.Kind(), st.CurveCount())
+		}
+		if got := st.Labels(); len(got) != 1 || got[0].Text != "1.6" {
+			t.Fatalf("variant %v labels = %v, want the roughness 1.6", variant, got)
+		}
+		// The 'required' bar and 'prohibited' circle add curves beyond the basic three-stroke check.
+		if variant != types.MaterialRemovalAny && st.CurveCount() <= 3 {
+			t.Errorf("variant %v = %d curves, want extra variant geometry", variant, st.CurveCount())
+		}
+
+		rann := reopen(t, c).Sheets().Active().Annotations()
+		rst, ok := rann.ByName("ST")
+		if !ok || rst.Kind() != types.SurfaceTextureAnnotation || rst.CurveCount() < 3 || len(rst.Labels()) != 1 {
+			t.Errorf("reopened surface texture (%v) wrong: ok=%v curves=%d labels=%d", variant, ok, rst.CurveCount(), len(rst.Labels()))
+		}
+	}
+}
+
+// TestSurfaceTextureNoRoughness: a surface texture symbol with no roughness still draws (an
+// unspecified-finish callout) but has no value label.
+func TestSurfaceTextureNoRoughness(t *testing.T) {
+	c := drawingWithBox(t)
+	st, err := c.Sheets().Active().Annotations().AddSurfaceTexture("ST", 80, 80, "", types.MaterialRemovalAny)
+	if err != nil {
+		t.Fatalf("AddSurfaceTexture: %v", err)
+	}
+	if st.CurveCount() < 3 || len(st.Labels()) != 0 {
+		t.Errorf("blank surface texture = (%d curves, %d labels), want the checkmark and no label", st.CurveCount(), len(st.Labels()))
+	}
+}
+
 // TestFeatureControlFrameNeedsTolerance: an FCF with no tolerance value errors.
 func TestFeatureControlFrameNeedsTolerance(t *testing.T) {
 	c := drawingWithBox(t)

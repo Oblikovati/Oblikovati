@@ -33,8 +33,10 @@ type DrawingAnnotation struct {
 	characteristic types.GeometricCharacteristic
 	tolerance      string
 	datums         []string
-	labels         []AnnotationLabel
-	curves         []DrawingCurve
+	// surface texture: the material-removal variant (the roughness value reuses tag).
+	materialRemoval types.MaterialRemoval
+	labels          []AnnotationLabel
+	curves          []DrawingCurve
 }
 
 // AnnotationLabel is one piece of text an annotation renders (sheet millimetres) — e.g. a feature
