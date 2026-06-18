@@ -36,6 +36,30 @@ func TestDrawingAnnotationsOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingCenterMarksOverWire drives the centre-mark surface: auto-marking a cylinder's TOP view
+// places one crosshair (its two coincident rims dedup) through the live stack.
+func TestDrawingCenterMarksOverWire(t *testing.T) {
+	r, s := drawingCylinderSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
+
+	var marks struct {
+		Annotations []struct {
+			Kind       string `json:"kind"`
+			CurveCount int    `json:"curveCount"`
+		} `json:"annotations"`
+	}
+	call(t, r, s, "drawingAnnotations.addCenterMarks", `{"viewName":"TOP"}`, &marks)
+	if len(marks.Annotations) != 1 {
+		t.Fatalf("centre marks = %d, want 1 (dedup coincident rims)", len(marks.Annotations))
+	}
+	if marks.Annotations[0].Kind != "centerMark" || marks.Annotations[0].CurveCount == 0 {
+		t.Errorf("centre mark = %+v, want a centerMark with a crosshair glyph", marks.Annotations[0])
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addCenterMarks", []byte(`{"viewName":"NOPE"}`)); err == nil {
+		t.Error("addCenterMarks on a missing view = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

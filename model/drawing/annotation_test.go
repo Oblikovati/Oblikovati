@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/brep"
+	gmath "oblikovati.org/math"
 )
 
 // TestAddCoGMarkerOnView checks a centre-of-gravity marker is placed on a view (with glyph
@@ -35,6 +37,55 @@ func TestAddCoGMarkerOnView(t *testing.T) {
 		if sx < minX-5 || sx > maxX+5 || sy < minY-5 || sy > maxY+5 {
 			t.Errorf("CoG glyph point (%g,%g) outside the view bounds", sx, sy)
 		}
+	}
+}
+
+// TestAddCenterMarksOnCircularEdges: centre-marking a cylinder's TOP view places one crosshair at
+// the rim's centre (the two coincident rims dedup), survives reopen, and re-projects on recompute.
+func TestAddCenterMarksOnCircularEdges(t *testing.T) {
+	c := drawingWithCylinder(t, 2)
+	topBase(t, c.Sheets().Active().Views())
+	marks, err := c.Sheets().Active().Annotations().AddCenterMarks("TOP")
+	if err != nil {
+		t.Fatalf("AddCenterMarks: %v", err)
+	}
+	if len(marks) != 1 {
+		t.Fatalf("centre marks = %d, want 1 (the two coincident rims dedup)", len(marks))
+	}
+	if marks[0].Kind() != types.CenterMarkAnnotation || marks[0].CurveCount() == 0 {
+		t.Errorf("mark = (%v, %d curves), want a centre mark with a crosshair glyph", marks[0].Kind(), marks[0].CurveCount())
+	}
+
+	// Reopen against the same cylinder so the persisted edge key re-binds and the glyph re-derives.
+	data, err := c.MarshalRecipe()
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	cyl, err := brep.SolidCylinder(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), 2, 5)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	restored := NewContent()
+	restored.SetBodyResolver(fakeBodyResolver{body: cyl})
+	if err := restored.ApplyRecipe(data); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	restored.RecomputeViews()
+	ra := restored.Sheets().Active().Annotations()
+	if ra.Count() != 1 || ra.Item(0).Kind() != types.CenterMarkAnnotation {
+		t.Fatalf("reopened annotations = %d, want 1 centre mark", ra.Count())
+	}
+	if ra.Item(0).CurveCount() == 0 {
+		t.Error("reopened centre mark did not re-derive its glyph (edge key not persisted?)")
+	}
+}
+
+// TestCenterMarksNeedCircularEdge: a box has no circular edges, so centre-marking errors.
+func TestCenterMarksNeedCircularEdge(t *testing.T) {
+	c := drawingWithBox(t)
+	frontBase(t, c.Sheets().Active().Views())
+	if _, err := c.Sheets().Active().Annotations().AddCenterMarks("FRONT"); err == nil {
+		t.Error("AddCenterMarks on a box (no circular edges) = ok, want error")
 	}
 }
 

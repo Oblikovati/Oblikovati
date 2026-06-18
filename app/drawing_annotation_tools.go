@@ -52,6 +52,45 @@ func (t *CoGMarkerTool) Params() ToolParams {
 	}}
 }
 
+// CenterMarkTool places a centre mark (crosshair) at every circular edge's centre in a chosen base
+// view — the auto centre-mark-all-holes action.
+type CenterMarkTool struct {
+	views     []string
+	viewIndex int
+}
+
+// NewCenterMarkTool creates the tool; its view list is captured on Start.
+func NewCenterMarkTool() *CenterMarkTool { return &CenterMarkTool{} }
+
+func (t *CenterMarkTool) Name() string              { return "Center Mark" }
+func (t *CenterMarkTool) Start(s *Session)          { t.views = baseViewNames(s) }
+func (t *CenterMarkTool) Pick(*Session, Selectable) {}
+func (t *CenterMarkTool) CanCommit() bool           { return len(t.views) > 0 }
+func (t *CenterMarkTool) Cancel(*Session)           {}
+
+// Commit centre-marks every circular edge in the selected view.
+func (t *CenterMarkTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if len(t.views) == 0 {
+		return fmt.Errorf("drawing: no view for centre marks — add a base view first")
+	}
+	if _, err := c.Sheets().Active().Annotations().AddCenterMarks(t.views[clampIndex(t.viewIndex, len(t.views))]); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the view choice for the property dialog.
+func (t *CenterMarkTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
+	}}
+}
+
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
 	width, height    float64

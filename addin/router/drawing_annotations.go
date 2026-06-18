@@ -19,6 +19,7 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsList] = drawingAnnotationsList
 	r.handlers[wire.MethodDrawingAnnotationsAddCoG] = drawingAnnotationsAddCoG
 	r.handlers[wire.MethodDrawingAnnotationsAddRevisionCloud] = drawingAnnotationsAddRevisionCloud
+	r.handlers[wire.MethodDrawingAnnotationsAddCenterMarks] = drawingAnnotationsAddCenterMarks
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -79,6 +80,27 @@ func drawingAnnotationsAddRevisionCloud(s *app.Session, raw json.RawMessage) (js
 	}
 	s.ActiveDocument().MarkDirty()
 	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddCenterMarks(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddCenterMarksArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	marks, err := an.AddCenterMarks(in.ViewName)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	out := wire.CenterMarksResult{}
+	for _, m := range marks {
+		out.Annotations = append(out.Annotations, drawingAnnotationInfo(m))
+	}
+	return json.Marshal(out)
 }
 
 func drawingAnnotationsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

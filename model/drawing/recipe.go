@@ -77,6 +77,7 @@ type annotationRecipe struct {
 	W        float64 `yaml:"widthMm,omitempty"`
 	H        float64 `yaml:"heightMm,omitempty"`
 	Tag      string  `yaml:"tag,omitempty"`
+	EdgeKey  string  `yaml:"edgeKey,omitempty"` // centre mark: the circular edge it marks
 }
 
 // viewRecipe is the YAML shape of one drawing view. The drawing curves are not stored — they
@@ -167,7 +168,7 @@ func annotationRecipesOf(sh *Sheet) []annotationRecipe {
 	for _, a := range sh.annotations.items {
 		out = append(out, annotationRecipe{
 			Name: a.name, Kind: a.kind.String(), ViewName: a.viewName,
-			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag,
+			X: a.x, Y: a.y, W: a.w, H: a.h, Tag: a.tag, EdgeKey: hex.EncodeToString(a.edgeKey),
 		})
 	}
 	return out
@@ -270,7 +271,8 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 	as := sh.Annotations()
 	for _, ar := range recs {
 		kind, _ := types.ParseDrawingAnnotationKind(ar.Kind)
-		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag}
+		edgeKey, _ := hex.DecodeString(ar.EdgeKey)
+		a := &DrawingAnnotation{name: ar.Name, kind: kind, viewName: ar.ViewName, x: ar.X, y: ar.Y, w: ar.W, h: ar.H, tag: ar.Tag, edgeKey: edgeKey}
 		if kind == types.RevisionCloudAnnotation {
 			a.curves = revisionCloudCurves(ar.X, ar.Y, ar.W, ar.H)
 		}

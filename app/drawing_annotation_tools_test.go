@@ -27,6 +27,32 @@ func TestCoGMarkerToolMarksView(t *testing.T) {
 	}
 }
 
+// TestCenterMarkToolMarksHoles: the centre-mark tool places a crosshair at a base view's circular
+// edge (a cylinder rim → one mark after rim dedup).
+func TestCenterMarkToolMarksHoles(t *testing.T) {
+	s := drawingWithCylinderSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.Params().Choices[0].Set(1) // Top, so the cylinder's rim projects as a circle
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+	tool := NewCenterMarkTool()
+	tool.Start(s)
+	if tool.Name() != "Center Mark" || !tool.CanCommit() {
+		t.Fatalf("centre-mark tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.CenterMarkAnnotation {
+		t.Fatalf("centre mark not added (count=%d)", an.Count())
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()
