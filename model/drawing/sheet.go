@@ -27,6 +27,7 @@ type Sheet struct {
 	views       *DrawingViews
 	annotations *DrawingAnnotations
 	dimensions  *DrawingDimensions
+	sketches    *DrawingSketches
 	bomResolve  bomLookup // parts-list BOM source, captured from the owning Sheets
 }
 
@@ -39,6 +40,14 @@ func (s *Sheet) Annotations() *DrawingAnnotations {
 		s.annotations = newDrawingAnnotations(s.views, s.views.body, s.bomResolve)
 	}
 	return s.annotations
+}
+
+// Sketches returns the sheet's drawing sketches (2D geometry drawn directly in sheet space).
+func (s *Sheet) Sketches() *DrawingSketches {
+	if s.sketches == nil {
+		s.sketches = &DrawingSketches{}
+	}
+	return s.sketches
 }
 
 // Dimensions returns the sheet's drawing dimensions (associative linear measurements on views).

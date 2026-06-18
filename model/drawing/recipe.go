@@ -48,6 +48,21 @@ type sheetRecipe struct {
 	Views       []viewRecipe       `yaml:"views,omitempty"`
 	Annotations []annotationRecipe `yaml:"annotations,omitempty"`
 	Dimensions  []dimensionRecipe  `yaml:"dimensions,omitempty"`
+	Sketches    []sketchRecipeItem `yaml:"sketches,omitempty"`
+}
+
+// sketchRecipeItem is the YAML shape of one drawing sketch: its name and entities (the curves
+// re-derive from the entities on open).
+type sketchRecipeItem struct {
+	Name     string               `yaml:"name"`
+	Entities []sketchEntityRecipe `yaml:"entities,omitempty"`
+}
+
+// sketchEntityRecipe is the YAML shape of one drawing-sketch entity.
+type sketchEntityRecipe struct {
+	Kind   string       `yaml:"kind"`
+	Points [][2]float64 `yaml:"points,omitempty"`
+	Radius float64      `yaml:"radiusMm,omitempty"`
 }
 
 // dimensionRecipe is the YAML shape of one drawing dimension. The glyph and measured value are
@@ -177,7 +192,25 @@ func sheetRecipeOf(sh *Sheet) sheetRecipe {
 	}
 	rec.Annotations = annotationRecipesOf(sh)
 	rec.Dimensions = dimensionRecipesOf(sh)
+	rec.Sketches = sketchRecipesOf(sh)
 	return rec
+}
+
+// sketchRecipesOf snapshots a sheet's drawing sketches for persistence (their curves re-derive from
+// the entities on open).
+func sketchRecipesOf(sh *Sheet) []sketchRecipeItem {
+	if sh.sketches == nil {
+		return nil
+	}
+	out := make([]sketchRecipeItem, 0, len(sh.sketches.items))
+	for _, s := range sh.sketches.items {
+		rec := sketchRecipeItem{Name: s.name}
+		for _, e := range s.entities {
+			rec.Entities = append(rec.Entities, sketchEntityRecipe{Kind: e.kind.String(), Points: e.points, Radius: e.radius})
+		}
+		out = append(out, rec)
+	}
+	return out
 }
 
 // annotationRecipesOf snapshots a sheet's annotations for persistence.
@@ -287,13 +320,36 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	if rec.TitleBlock != "" {
 		sh.titleBlock = newTitleBlock(DefaultTitleBlockDefinition(), s.lookup)
 	}
+	restoreSheetContents(sh, rec)
+	s.items = append(s.items, sh)
+	return nil
+}
+
+// restoreSheetContents rebuilds a restored sheet's views, annotations, dimensions and sketches.
+func restoreSheetContents(sh *Sheet, rec sheetRecipe) {
 	for _, vr := range rec.Views {
 		sh.views.items = append(sh.views.items, restoreView(vr))
 	}
 	restoreAnnotations(sh, rec.Annotations)
 	restoreDimensions(sh, rec.Dimensions)
-	s.items = append(s.items, sh)
-	return nil
+	restoreSketches(sh, rec.Sketches)
+}
+
+// restoreSketches rebuilds a sheet's drawing sketches from their recipe; each sketch's curves
+// re-derive from its entities.
+func restoreSketches(sh *Sheet, recs []sketchRecipeItem) {
+	if len(recs) == 0 {
+		return
+	}
+	ss := sh.Sketches()
+	for _, sr := range recs {
+		s := ss.Add(sr.Name)
+		for _, er := range sr.Entities {
+			kind, _ := types.ParseDrawingSketchEntityKind(er.Kind)
+			s.entities = append(s.entities, DrawingSketchEntity{kind: kind, points: er.Points, radius: er.Radius})
+		}
+		s.rebuild()
+	}
 }
 
 // restoreDimensions rebuilds a sheet's dimensions from its recipe; each re-binds its attached

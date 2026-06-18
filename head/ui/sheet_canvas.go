@@ -138,8 +138,22 @@ func drawSheetViews(s *app.Session, face rect, sheet *drawing.Sheet) {
 			drawViewHighlight(face, v)
 		}
 	}
+	drawSheetSketches(face, sheet)
 	drawSheetAnnotations(face, sheet)
 	drawSheetDimensions(s, face, sheet)
+}
+
+// drawSheetSketches strokes the sheet's drawing-sketch curves (2D geometry the user drew in sheet
+// space) in the visible-edge ink, under the annotations.
+func drawSheetSketches(face rect, sheet *drawing.Sheet) {
+	ss := sheet.Sketches()
+	for i := 0; i < ss.Count(); i++ {
+		for _, c := range ss.Item(i).Curves() {
+			ax, ay := curveToScreen(face, c.Start())
+			bx, by := curveToScreen(face, c.End())
+			native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.2)
+		}
+	}
 }
 
 // drawSheetDimensions strokes each dimension's glyph (extension/dimension lines, arrowheads) and
