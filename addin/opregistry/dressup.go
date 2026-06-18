@@ -84,6 +84,50 @@ func chamferDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{Name: "chamfer", Summary: "Bevel picked edges of a body by a setback distance.", Schema: json.RawMessage(chamferSchema), Apply: applyChamfer}
 }
 
+const ruleFilletSchema = `{
+  "type": "object",
+  "properties": {
+    "rule": {"type": "string", "enum": ["allRounds", "allFillets", "allEdges"], "default": "allRounds", "description": "Which edges to round, by dihedral class: allRounds = every convex (outside) edge, allFillets = every concave (inside) edge, allEdges = both."},
+    "radius": {"type": "string", "description": "Fillet radius with units, e.g. \"1 mm\"."}
+  },
+  "required": ["radius"]
+}`
+
+func ruleFilletDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "ruleFillet", Summary: "Round a whole class of a body's edges (all rounds / all fillets) in one feature.", Schema: json.RawMessage(ruleFilletSchema), Apply: applyRuleFillet}
+}
+
+// ruleFilletArgs is the rule-fillet op's wire shape: a dihedral rule + a radius.
+type ruleFilletArgs struct {
+	Rule   string `json:"rule"`
+	Radius string `json:"radius"`
+}
+
+func applyRuleFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in ruleFilletArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	rule := feature.RuleFilletAllRounds
+	if in.Rule != "" {
+		r, ok := feature.ParseRuleFilletRule(in.Rule)
+		if !ok {
+			return nil, fmt.Errorf("ruleFillet: unknown rule %q (want allRounds, allFillets, or allEdges)", in.Rule)
+		}
+		rule = r
+	}
+	radius, err := lengthClosure(part, in.Radius, "ruleFillet: radius")
+	if err != nil {
+		return nil, err
+	}
+	pf := feature.NewDressUpFeatures(part.Features()).AddRuleFillet(rule, radius)
+	return recomputeResult(part, pf)
+}
+
 func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {

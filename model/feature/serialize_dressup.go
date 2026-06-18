@@ -110,6 +110,12 @@ type FaceFilletData struct {
 	Value  float64  `yaml:"value"`
 }
 
+// RuleFilletData persists a rule fillet (#486): the dihedral rule (wire spelling) and the radius.
+type RuleFilletData struct {
+	Rule  string  `yaml:"rule"`
+	Value float64 `yaml:"value"`
+}
+
 // ThreadData tags a single cylindrical face (reference key) with a thread designation, plus
 // the #325 parity fields: the tolerance class, the tapered (pipe) flag, and which thread
 // diameter the modeled face represents (wire spelling; absent = major).

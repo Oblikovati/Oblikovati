@@ -302,6 +302,12 @@ func (c *DressUpFeatures) AddFaceFillet(faceKeysA, faceKeysB [][]byte, radius fu
 	return c.engine.Add(&FaceFilletFeature{def: &FaceFilletDefinition{FaceKeysA: faceKeysA, FaceKeysB: faceKeysB, Radius: radius}})
 }
 
+// AddRuleFillet rounds the running body's edges that match a dihedral rule, all at one radius
+// (#486, the plastic-part rule fillet).
+func (c *DressUpFeatures) AddRuleFillet(rule RuleFilletRule, radius func() float64) *PartFeature {
+	return c.engine.Add(&RuleFilletFeature{def: &RuleFilletDefinition{Rule: rule, Radius: radius}})
+}
+
 // AddChamfer bevels the given edges by distance, blending three-edge corners flat (the
 // default treatment). Use [AddChamferCorners] to choose the pointy corner instead.
 func (c *DressUpFeatures) AddChamfer(edgeKeys [][]byte, distance func() float64) *PartFeature {
