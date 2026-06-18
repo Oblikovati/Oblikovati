@@ -24,6 +24,7 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.handlers[wire.MethodDrawingDimensionsAddBaseline] = drawingDimensionsAddBaseline
 	r.handlers[wire.MethodDrawingDimensionsAddChain] = drawingDimensionsAddChain
 	r.handlers[wire.MethodDrawingDimensionsAddOrdinate] = drawingDimensionsAddOrdinate
+	r.handlers[wire.MethodDrawingDimensionsAddArcLength] = drawingDimensionsAddArcLength
 	r.handlers[wire.MethodDrawingDimensionsDelete] = drawingDimensionsDelete
 }
 
@@ -150,6 +151,23 @@ func drawingDimensionSet(s *app.Session, raw json.RawMessage,
 		out.Dimensions = append(out.Dimensions, drawingDimensionInfo(d))
 	}
 	return json.Marshal(out)
+}
+
+func drawingDimensionsAddArcLength(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	ds, err := activeSheetDimensions(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddArcLengthDimensionArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	d, err := ds.AddArcLength(in.Name, in.ViewName, in.PickXMM, in.PickYMM)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
 }
 
 func drawingDimensionsAddOrdinate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

@@ -78,6 +78,25 @@ func TestDrawingDimensionSetsOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingArcLengthDimensionOverWire drives the arc-length surface: an arc-length dimension on a
+// 2 cm cylinder's rim re-measures the true circumference (2π·20 ≈ 125.66 mm) through the live stack.
+func TestDrawingArcLengthDimensionOverWire(t *testing.T) {
+	r, s := drawingCylinderSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
+
+	var dim wire.DimensionResult
+	call(t, r, s, "drawingDimensions.addArcLength", `{"name":"L1","viewName":"TOP","pickXmm":100,"pickYmm":100}`, &dim)
+	if dim.Dimension.Type != "arcLength" || math.Abs(dim.Dimension.ValueMM-2*math.Pi*20) > 1e-3 {
+		t.Fatalf("arc-length dimension = %+v, want circumference 2π·20 ≈ 125.66 mm", dim.Dimension)
+	}
+	if dim.Dimension.CurveCount == 0 || dim.Dimension.Text == "" {
+		t.Errorf("arc-length dimension = %+v, want arc glyph + text", dim.Dimension)
+	}
+	if _, err := r.Handle(s, "drawingDimensions.addArcLength", []byte(`{"viewName":"NOPE","pickXmm":0,"pickYmm":0}`)); err == nil {
+		t.Error("addArcLength on a missing view = ok, want error")
+	}
+}
+
 // TestDrawingOrdinateDimensionsOverWire drives the ordinate surface: a horizontal ordinate set from
 // a datum corner measures each corner's view-X offset through the live stack.
 func TestDrawingOrdinateDimensionsOverWire(t *testing.T) {

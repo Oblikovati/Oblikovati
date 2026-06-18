@@ -68,6 +68,32 @@ func TestRadialDimensionToolDimensionsHoles(t *testing.T) {
 	}
 }
 
+// TestArcLengthDimensionToolDimensionsRim: the arc-length tool dimensions a base view's circular
+// edge with its circumference (2 cm cylinder rim → 2π·20 ≈ 125.66 mm).
+func TestArcLengthDimensionToolDimensionsRim(t *testing.T) {
+	s := drawingWithCylinderSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.Params().Choices[0].Set(1) // Top, so the cylinder's rim projects as a circle
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+	tool := NewArcLengthDimensionTool()
+	tool.Start(s)
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("arc-length Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	dims := c.Sheets().Active().Dimensions()
+	if dims.Count() != 1 {
+		t.Fatalf("dimension count = %d, want 1", dims.Count())
+	}
+	if d := dims.Item(0); d.Type() != types.ArcLengthDimension || math.Abs(d.ValueMM()-2*math.Pi*20) > 1e-3 {
+		t.Errorf("dimension = (%v, %v mm), want arc-length ≈ 125.66", d.Type(), d.ValueMM())
+	}
+}
+
 // TestDimensionSetToolDimensionsCorners: the set tool places a baseline set of three linear
 // dimensions on a base view's corners.
 func TestDimensionSetToolDimensionsCorners(t *testing.T) {

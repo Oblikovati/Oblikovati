@@ -183,6 +183,44 @@ func (t *DimensionSetTool) Params() ToolParams {
 	}}
 }
 
+// ArcLengthDimensionTool dimensions the swept length of the first circular/arc edge in a chosen
+// base view (e.g. a hole's circumference or a fillet's arc).
+type ArcLengthDimensionTool struct {
+	derivedViewTool
+}
+
+// NewArcLengthDimensionTool creates the tool; its base-view list is captured on Start.
+func NewArcLengthDimensionTool() *ArcLengthDimensionTool { return &ArcLengthDimensionTool{} }
+
+func (t *ArcLengthDimensionTool) Name() string { return "Arc Length Dimension" }
+
+// Commit dimensions the swept length of the selected base view's first circular/arc edge. The pick
+// point is the view centre, which snaps to the nearest such edge.
+func (t *ArcLengthDimensionTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	if parent == "" {
+		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+	}
+	minX, minY, maxX, maxY, ok := viewBoundsMM(s, parent)
+	if !ok {
+		return fmt.Errorf("drawing: base view %q has no geometry to dimension", parent)
+	}
+	if _, err := c.Sheets().Active().Dimensions().AddArcLength("", parent, (minX+maxX)/2, (minY+maxY)/2); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view choice for the property dialog.
+func (t *ArcLengthDimensionTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{t.baseChoice("Base View")}}
+}
+
 // ordinateAxisLabels indexes the ordinate Axis dropdown.
 var ordinateAxisLabels = []string{"Horizontal", "Vertical"}
 
