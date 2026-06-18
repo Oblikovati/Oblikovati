@@ -264,6 +264,28 @@ func (c Camera) Orbit(yaw, pitch float64) Camera {
 	return c
 }
 
+// SetPivotUnderCursor recenters the orbit on the world point under screen pixel (px,py) — at the
+// current focal depth (the cursor ray ∩ target plane) — keeping the view direction and eye–target
+// distance. That point becomes the orbit centre (the target) and is brought to the view centre;
+// nothing rotates or scales, so subsequent orbits pivot about it. This is Inventor's "set a new
+// pivot" in Free Orbit (N9). A degenerate cursor ray is a no-op.
+//
+// Example: cam = cam.SetPivotUnderCursor(mouseX, mouseY) // click to re-centre the orbit
+func (c Camera) SetPivotUnderCursor(px, py float64) Camera {
+	p, ok := c.cursorPlanePoint(px, py)
+	if !ok {
+		return c
+	}
+	dist := float64(c.Eye.DistanceTo(c.Target))
+	if dist < minDistance {
+		dist = 1
+	}
+	fwd := c.Forward()
+	c.Target = p
+	c.Eye = p.TranslateBy(fwd.Scale(-dist))
+	return c
+}
+
 // Roll twists the view about the forward (eye→target) axis — the spin a Free-Orbit ring perimeter
 // drag produces (#913 N8). Eye and Target are unchanged; only Up rotates, so the model appears to
 // turn in-plane about the view centre. A degenerate view direction is a no-op.
