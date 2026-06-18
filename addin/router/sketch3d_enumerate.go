@@ -20,9 +20,11 @@ func enumerateEntities3D(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	}
 	ents := sk.Entities()
 	moveable := sk.MoveableClassifier()
+	guid, _ := activeDocumentGUID(s) // empty ⇒ omit keys; never fails for a real document
 	out := make([]wire.Sketch3DEntityInfo, 0, len(ents))
 	for i, e := range ents {
 		info := entity3DInfo(i, e)
+		info.ReferenceKey = entityReferenceKey(guid, e)
 		info.MoveableStatus = moveable.Of(e).String()
 		out = append(out, info)
 	}
