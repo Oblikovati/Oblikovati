@@ -26,6 +26,13 @@ import (
 // the scene — rebuilt from the model each frame (renderer.BuildDrawList) and projected
 // with the navigated camera — always reflects current model and view state (ADR-0004).
 func drawViewportPanel(win *native.Window, s *app.Session) {
+	// The viewport draws icon textures (the Navigation Bar, #913 N25), so the icon cache must be bound
+	// to THIS window. DrawChrome binds it lazily, but the in-window viewportFrame test path calls us
+	// directly — without that, a stale cache from a destroyed window would feed ImageButton invalid
+	// textures and crash Vulkan at EndFrame. Rebind when absent or bound to a different window.
+	if icons == nil || icons.win != win {
+		icons = newIconCache(win)
+	}
 	win.SetViewportNormalDebug(normalDebugOn || s.NormalDebug()) // Tools ▸ Normal Debug, or viewport.setNormalDebug
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
@@ -77,9 +84,10 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
 	sketchPlane, dims, gfxLabels, gfxImages := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
-	drawBoxSelectRect(s, bx, by)  // the rubber-band selection rectangle, on top of the image
-	drawZoomWindowRect(s, bx, by) // the Zoom Window rubber band (#913 N16), if armed
-	drawOrbitRing(bx, by, pw, ph) // the Free-Orbit ring while F4 is held (#913 N5–N8)
+	drawBoxSelectRect(s, bx, by)         // the rubber-band selection rectangle, on top of the image
+	drawZoomWindowRect(s, bx, by)        // the Zoom Window rubber band (#913 N16), if armed
+	drawOrbitRing(bx, by, pw, ph)        // the Free-Orbit ring while F4 is held (#913 N5–N8)
+	drawNavigationBar(s, cx, cy, pw, ph) // the floating nav-tool strip at the right edge (#913 N25)
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity(), hit.arrow)
 	}
