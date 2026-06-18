@@ -39,14 +39,5 @@ func modelTree(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 // modelSelection returns the current selection summary (read-only). Mutating the
 // selection by reference key is a fast-follow.
 func modelSelection(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
-	items := s.Selection().Items()
-	kinds := make([]int, len(items))
-	for i, it := range items {
-		kinds[i] = int(it.SelectionKind())
-	}
-	return json.Marshal(wire.SelectionResult{
-		Count: len(items),
-		Kinds: kinds,
-		Refs:  s.Selection().References(),
-	})
+	return json.Marshal(currentSelection(s))
 }

@@ -101,6 +101,26 @@ func (g *WorkGeometry) surface(ref WorkRef) (geom.Surface, error) {
 	return nil, fmt.Errorf("work geometry: face reference %q is lost", ref)
 }
 
+// FaceRefKey decodes a face WorkRef back to its reference key, reporting ok=false for a ref that is
+// not a face reference (#157 selection mutation resolves picked-by-reference faces this way).
+func FaceRefKey(ref WorkRef) ([]byte, bool) { return decodeRefKey(string(ref), faceRefPrefix) }
+
+// VertexRefKey decodes a vertex WorkRef back to its reference key, reporting ok=false otherwise.
+func VertexRefKey(ref WorkRef) ([]byte, bool) { return decodeRefKey(string(ref), vertexRefPrefix) }
+
+// decodeRefKey strips prefix and base64-decodes the key, reporting ok=false on a prefix mismatch
+// or a malformed payload.
+func decodeRefKey(s, prefix string) ([]byte, bool) {
+	if !strings.HasPrefix(s, prefix) {
+		return nil, false
+	}
+	key, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(s, prefix))
+	if err != nil {
+		return nil, false
+	}
+	return key, true
+}
+
 const vertexRefPrefix = "vertex/"
 
 // VertexRef encodes a B-rep vertex's reference key as a point WorkRef, so a picked solid
