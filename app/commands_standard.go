@@ -663,8 +663,16 @@ func viewNavigateCommands() []*CommandDefinition {
 			return nil
 		}).WithTab("View").WithIcon("home").WithButtonStyle(LargeIconButton).
 			WithTooltip("Home View — the default isometric view, framed to fit."),
+		NewCommand("View.LookAt", "Look At", "Navigate", func(s *Session) error {
+			s.LookAtSelection()
+			return nil
+		}).WithTab("View").WithIcon("look-at").WithButtonStyle(LargeIconButton).WithEnable(canLookAt).
+			WithTooltip("Look At — reorient the view normal to the selected planar face or work plane."),
 	}
 }
+
+// canLookAt enables Look At only when a planar face or work plane is selected.
+func canLookAt(s *Session) bool { return s.CanLookAt() }
 
 // visualStyleSpec maps a renderer VisualStyle to its View-tab command id and tooltip. The ids
 // are stable (tests + aliases depend on "View.Shaded" etc.); the styles and labels come from
