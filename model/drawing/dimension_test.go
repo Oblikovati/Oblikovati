@@ -99,6 +99,49 @@ func TestRadialForEachCircleDedupsRims(t *testing.T) {
 	}
 }
 
+// TestDimensionTextLiftedAndDraggable: the value text sits off the dimension line by default
+// (readable), and dragging the text nudges its anchor.
+func TestDimensionTextLiftedAndDraggable(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	// The text anchor is lifted off the dimension line (curve[2] is the horizontal dimension line).
+	line := d.Curves()[2]
+	tx, ty := d.TextAnchorMM()
+	if math.Abs(ty-float64(line.Start().Y)) < 1e-6 {
+		t.Errorf("text anchor y %v sits on the dimension line y %v — should be lifted off", ty, float64(line.Start().Y))
+	}
+
+	dims.MoveText("D1", 7, 4)
+	mx, my := d.TextAnchorMM()
+	if math.Abs(mx-tx-7) > 1e-9 || math.Abs(my-ty-4) > 1e-9 {
+		t.Errorf("after MoveText the anchor moved by (%v,%v), want (7,4)", mx-tx, my-ty)
+	}
+}
+
+// TestMoveLineShiftsDimensionLine: dragging the dimension line moves it perpendicular to itself.
+func TestMoveLineShiftsDimensionLine(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	before := float64(d.Curves()[2].Start().Y)
+	dims.MoveLine("D1", 0, -6) // drag the horizontal dimension line down 6 mm
+	after := float64(d.Curves()[2].Start().Y)
+	if math.Abs(after-before+6) > 1e-6 {
+		t.Errorf("dimension line moved by %v mm, want -6", after-before)
+	}
+}
+
 // TestAngularDimensionMeasuresCorner: an angular dimension between a horizontal and a vertical box
 // edge reports 90°, with ValueMM 0 (the value is in degrees) and an arc glyph.
 func TestAngularDimensionMeasuresCorner(t *testing.T) {

@@ -35,10 +35,17 @@ type DrawingDimension struct {
 	valueMM  float64 // measured model distance (mm), scale-independent (0 for angular)
 	valueDeg float64 // measured angle (degrees) for an angular dimension
 	text     string  // displayed text (the formatted value)
-	anchorX  float64 // dimension-line midpoint (sheet mm) — where the head draws the text
+	anchorX  float64 // text anchor (sheet mm), lifted off the dimension line by textGapMM
 	anchorY  float64
+	textDX   float64 // user text nudge from the anchor (sheet mm) — drag the text to set it
+	textDY   float64
+	nx       float64 // unit perpendicular of the dimension line — text-lift + line-drag direction
+	ny       float64
 	curves   []DrawingCurve
 }
+
+// textGapMM lifts the value text off the dimension line so it stays readable by default.
+const textGapMM = 5.0
 
 var _ contract.DrawingDimension = (*DrawingDimension)(nil)
 
@@ -53,7 +60,9 @@ func (d *DrawingDimension) CurveCount() int                  { return len(d.curv
 func (d *DrawingDimension) Curves() []DrawingCurve           { return d.curves }
 
 // TextAnchorMM is the dimension line's midpoint (sheet mm) — where the value text is centred.
-func (d *DrawingDimension) TextAnchorMM() (x, y float64) { return d.anchorX, d.anchorY }
+func (d *DrawingDimension) TextAnchorMM() (x, y float64) {
+	return d.anchorX + d.textDX, d.anchorY + d.textDY
+}
 
 // DrawingDimensions is a sheet's dimension collection. It holds the view collection (to resolve a
 // dimension's view and project through it) and the body-resolution hook (to re-bind the attached
@@ -195,6 +204,27 @@ func (ds *DrawingDimensions) addAngularEdges(viewName string, keyA, keyB []byte)
 	return d
 }
 
+// MoveText nudges the named dimension's value text by (dx, dy) sheet millimetres — the drag-the-
+// text gesture, so overlapping dimensions can be separated for readability.
+func (ds *DrawingDimensions) MoveText(name string, dx, dy float64) {
+	if d, ok := ds.ByName(name); ok {
+		d.textDX += dx
+		d.textDY += dy
+	}
+}
+
+// MoveLine shifts the named dimension's dimension line perpendicular to itself by the drag
+// (dx, dy) sheet millimetres and re-derives the glyph — the drag-the-line gesture. Linear only in
+// this increment (radial/angular line position is fixed; nudge their text instead).
+func (ds *DrawingDimensions) MoveLine(name string, dx, dy float64) {
+	d, ok := ds.ByName(name)
+	if !ok || isRadial(d.dimType) || d.dimType == types.AngularDimension {
+		return
+	}
+	d.offset += dx*d.nx + dy*d.ny
+	ds.recompute(d)
+}
+
 // Recompute re-measures every dimension against the current model — the associativity path.
 func (ds *DrawingDimensions) Recompute() {
 	for _, d := range ds.items {
@@ -231,7 +261,9 @@ func (ds *DrawingDimensions) recomputeAngular(d *DrawingDimension, view *Drawing
 	}
 	d.valueDeg = angleBetweenDeg(a.dir, b.dir)
 	d.text = strconv.FormatFloat(d.valueDeg, 'g', 4, 64) + "°"
-	d.curves, d.anchorX, d.anchorY = angularDimensionCurves(a, b)
+	curves, mx, my, nx, ny := angularDimensionCurves(a, b)
+	d.curves = curves
+	d.setTextAnchor(mx, my, nx, ny, 1)
 }
 
 // recomputeLinear re-binds the two vertices, re-projects them and rebuilds the linear glyph.
@@ -247,7 +279,21 @@ func (ds *DrawingDimensions) recomputeLinear(d *DrawingDimension, view *DrawingV
 	d.text = strconv.FormatFloat(d.valueMM, 'g', 4, 64)
 	s1, s2 := view.place(p1), view.place(p2)
 	ax, ay := dimensionAxis(d.dimType, s1, s2)
-	d.curves, d.anchorX, d.anchorY = linearDimensionCurves(s1, s2, ax, ay, d.offset)
+	var mx, my float64
+	d.curves, mx, my = linearDimensionCurves(s1, s2, ax, ay, d.offset)
+	// Lift the text off the dimension line, on the side away from the measured geometry.
+	d.setTextAnchor(mx, my, -ay, ax, sign(d.offset))
+}
+
+// setTextAnchor records the dimension-line midpoint (mx, my) and the dimension line's unit
+// perpendicular nx,ny (the offset axis — line-drag follows it). It lifts the default text anchor
+// textGapMM off the line along liftSign*perpendicular (away from the measured geometry).
+func (d *DrawingDimension) setTextAnchor(mx, my, nx, ny, liftSign float64) {
+	if l := math.Hypot(nx, ny); l > 1e-9 {
+		nx, ny = nx/l, ny/l
+	}
+	d.nx, d.ny = nx, ny
+	d.anchorX, d.anchorY = mx+nx*liftSign*textGapMM, my+ny*liftSign*textGapMM
 }
 
 // isRadial reports whether a dimension type measures a circular edge (radius or diameter).
@@ -279,7 +325,9 @@ func (ds *DrawingDimensions) recomputeRadial(d *DrawingDimension, view *DrawingV
 	center := view.place(hlr.ProjectPoint(basis, circle.Center))
 	arc := view.place(hlr.ProjectPoint(basis, circle.PointAt(0)))
 	opp := view.place(hlr.ProjectPoint(basis, circle.PointAt(0.5)))
-	d.curves, d.anchorX, d.anchorY = radialDimensionCurves(center, arc, opp, d.dimType == types.DiameterDimension)
+	curves, mx, my, nx, ny := radialDimensionCurves(center, arc, opp, d.dimType == types.DiameterDimension)
+	d.curves = curves
+	d.setTextAnchor(mx, my, nx, ny, 1)
 }
 
 // nearestCircularEdgeKey returns the reference key of the circular model edge whose centre projects
@@ -304,19 +352,21 @@ func nearestCircularEdgeKey(body *topo.Body, v *DrawingView, basis hlr.View, x, 
 // radialDimensionCurves builds a radial dimension's glyph (sheet mm): a radius leader from the
 // centre to the arc with an arrowhead, or a diameter line across the circle with arrowheads at
 // both ends. It returns the text anchor (the midpoint of the leader / the centre).
-func radialDimensionCurves(center, arc, opp gmath.Point2, diameter bool) (curves []DrawingCurve, anchorX, anchorY float64) {
+func radialDimensionCurves(center, arc, opp gmath.Point2, diameter bool) (curves []DrawingCurve, anchorX, anchorY, nx, ny float64) {
 	cx, cy := float64(center.X), float64(center.Y)
 	ax, ay := float64(arc.X), float64(arc.Y)
+	// Lift the text perpendicular to the leader/diameter line so it clears it.
+	pnx, pny := -(ay - cy), ax-cx
 	if diameter {
 		ox, oy := float64(opp.X), float64(opp.Y)
 		out := []DrawingCurve{dimSegment(ax, ay, ox, oy)}
 		out = append(out, arrowheadCurves(ax, ay, cx, cy)...)
 		out = append(out, arrowheadCurves(ox, oy, cx, cy)...)
-		return out, cx, cy
+		return out, cx, cy, pnx, pny
 	}
 	out := []DrawingCurve{dimSegment(cx, cy, ax, ay)}
 	out = append(out, arrowheadCurves(ax, ay, cx, cy)...)
-	return out, (cx + ax) / 2, (cy + ay) / 2
+	return out, (cx + ax) / 2, (cy + ay) / 2, pnx, pny
 }
 
 // sheetSegment is a straight model edge projected onto the sheet: its endpoints, midpoint and unit
@@ -377,7 +427,7 @@ func angleBetweenDeg(d1, d2 [2]float64) float64 {
 // angularDimensionCurves builds an angular dimension's arc glyph (sheet mm) spanning between the
 // two edges, centred on their intersection, with arrowheads at the arc ends. It returns the text
 // anchor on the arc's bisector.
-func angularDimensionCurves(a, b sheetSegment) (curves []DrawingCurve, anchorX, anchorY float64) {
+func angularDimensionCurves(a, b sheetSegment) (curves []DrawingCurve, anchorX, anchorY, nx, ny float64) {
 	cx, cy, ok := lineIntersection(a, b)
 	if !ok {
 		cx, cy = (a.mx+b.mx)/2, (a.my+b.my)/2
@@ -388,7 +438,8 @@ func angularDimensionCurves(a, b sheetSegment) (curves []DrawingCurve, anchorX, 
 	out := arcPolyline(cx, cy, radius, a0, a0+sweep)
 	out = append(out, arcArrowheads(cx, cy, radius, a0, a0+sweep)...)
 	mid := a0 + sweep/2
-	return out, cx + radius*math.Cos(mid), cy + radius*math.Sin(mid)
+	// The text sits on the bisector, lifted radially outward (away from the corner).
+	return out, cx + radius*math.Cos(mid), cy + radius*math.Sin(mid), math.Cos(mid), math.Sin(mid)
 }
 
 // lineIntersection returns the intersection of the two segments' infinite lines, ok=false when

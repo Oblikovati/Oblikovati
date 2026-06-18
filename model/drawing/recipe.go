@@ -61,6 +61,8 @@ type dimensionRecipe struct {
 	EdgeKey  string  `yaml:"edgeKey,omitempty"`  // radial: circular edge; angular: first straight edge
 	EdgeKeyB string  `yaml:"edgeKeyB,omitempty"` // angular: second straight edge
 	Offset   float64 `yaml:"offsetMm,omitempty"`
+	TextDX   float64 `yaml:"textDxMm,omitempty"` // user text nudge (drag-the-text)
+	TextDY   float64 `yaml:"textDyMm,omitempty"`
 }
 
 // annotationRecipe is the YAML shape of one drawing annotation. A CoG marker's glyph re-derives
@@ -181,7 +183,8 @@ func dimensionRecipesOf(sh *Sheet) []dimensionRecipe {
 		out = append(out, dimensionRecipe{
 			Name: d.name, Type: d.dimType.String(), ViewName: d.viewName,
 			KeyA: hex.EncodeToString(d.keyA), KeyB: hex.EncodeToString(d.keyB),
-			EdgeKey: hex.EncodeToString(d.edgeKey), EdgeKeyB: hex.EncodeToString(d.edgeKeyB), Offset: d.offset,
+			EdgeKey: hex.EncodeToString(d.edgeKey), EdgeKeyB: hex.EncodeToString(d.edgeKeyB),
+			Offset: d.offset, TextDX: d.textDX, TextDY: d.textDY,
 		})
 	}
 	return out
@@ -247,7 +250,11 @@ func restoreDimensions(sh *Sheet, recs []dimensionRecipe) {
 		keyB, _ := hex.DecodeString(dr.KeyB)
 		edgeKey, _ := hex.DecodeString(dr.EdgeKey)
 		edgeKeyB, _ := hex.DecodeString(dr.EdgeKeyB)
-		d := &DrawingDimension{name: dr.Name, dimType: dimType, viewName: dr.ViewName, keyA: keyA, keyB: keyB, edgeKey: edgeKey, edgeKeyB: edgeKeyB, offset: dr.Offset}
+		d := &DrawingDimension{
+			name: dr.Name, dimType: dimType, viewName: dr.ViewName,
+			keyA: keyA, keyB: keyB, edgeKey: edgeKey, edgeKeyB: edgeKeyB,
+			offset: dr.Offset, textDX: dr.TextDX, textDY: dr.TextDY,
+		}
 		ds.recompute(d)
 		ds.items = append(ds.items, d)
 	}
