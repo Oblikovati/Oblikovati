@@ -76,6 +76,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerDrawingViewHandlers()
 	r.registerDrawingAnnotationHandlers()
 	r.registerDrawingDimensionHandlers()
+	r.registerDrawingSketchHandlers()
 	r.handlers[wire.MethodLogsTail] = r.logsTail
 	r.handlers[wire.MethodScriptRun] = r.scriptsRun
 	return r
