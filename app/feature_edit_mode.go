@@ -279,6 +279,7 @@ func seedFilletSet(t *FilletTool, set feature.FilletEdgeSet) {
 	t.variable = true
 	t.startRadius = callOrZeroFn(set.StartRadius)
 	t.endRadius = callOrZeroFn(set.EndRadius)
+	t.midPoints = midPointsFromSet(set.RadiusPoints) // #695
 }
 
 func snapshotFilletDef(def *feature.FilletDefinition) func() {
