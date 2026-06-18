@@ -176,6 +176,38 @@ func TestDressUpOnSolid(t *testing.T) {
 	}
 }
 
+// TestFaceFilletThroughRegistry rounds the edge two adjacent faces share, selected by face over the
+// fillet op's face-fillet form (#694) — the end-to-end registry path an MCP driver uses.
+func TestFaceFilletThroughRegistry(t *testing.T) {
+	s := profiledPart(t)
+	if _, err := apply(t, s, "extrude", `{"sketchIndex":0,"distance":"10 mm"}`); err != nil {
+		t.Fatalf("seed extrude: %v", err)
+	}
+	b := s.ActiveDocument().Content().(*compdef.PartComponentDefinition).SurfaceBodies().Item(0)
+	var fa, fb string
+	for _, e := range b.Edges() {
+		if fs := e.Faces(); len(fs) == 2 {
+			fa, fb = string(fs[0].ReferenceKey()), string(fs[1].ReferenceKey())
+			break
+		}
+	}
+	if fa == "" {
+		t.Fatal("no edge with two adjacent faces")
+	}
+	args := map[string]any{"faceRefsA": []string{fa}, "faceRefsB": []string{fb}, "radius": "1 mm"}
+	if _, err := applyMap(t, s, "fillet", args); err != nil {
+		t.Fatalf("face fillet through registry: %v", err)
+	}
+}
+
+// TestFaceFilletRequiresBothSets: the face-fillet form rejects only one face set given.
+func TestFaceFilletRequiresBothSets(t *testing.T) {
+	s, _, face := extrudedSolid(t)
+	if _, err := applyMap(t, s, "fillet", map[string]any{"faceRefsA": []string{face}, "radius": "1 mm"}); err == nil {
+		t.Error("face fillet with only faceRefsA should error")
+	}
+}
+
 // TestDressUpRejectsEmptyRefs: each dress-up op rejects a missing reference list.
 func TestDressUpRejectsEmptyRefs(t *testing.T) {
 	for _, op := range []string{"fillet", "chamfer", "shell", "draft", "lip"} {

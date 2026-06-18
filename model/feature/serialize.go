@@ -27,6 +27,7 @@ type FeatureData struct {
 	Seq            uint64              `yaml:"seq,omitempty"` // global creation stamp; see model/seq
 	Extrude        *ExtrudeData        `yaml:"extrude,omitempty"`
 	Fillet         *EdgeDressData      `yaml:"fillet,omitempty"`
+	FaceFillet     *FaceFilletData     `yaml:"faceFillet,omitempty"`
 	Chamfer        *EdgeDressData      `yaml:"chamfer,omitempty"`
 	Shell          *FaceDressData      `yaml:"shell,omitempty"`
 	Draft          *FaceDressData      `yaml:"draft,omitempty"`
@@ -138,6 +139,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			break
 		}
 		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType)}
+	case *FaceFilletFeature:
+		fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(f.def.FaceKeysA), FacesB: encodeKeys(f.def.FaceKeysB), Value: evalFloat(f.def.Radius)}
 	case *ChamferFeature:
 		flat := f.def.FlatCorners
 		fd.Chamfer = &EdgeDressData{
@@ -433,6 +436,19 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 			return nil, err
 		}
 		return du.AddFilletCorner(d.keys, constFloat(d.value), corner), nil
+	case "face-fillet":
+		if fd.FaceFillet == nil {
+			return nil, fmt.Errorf("face-fillet feature is missing its payload")
+		}
+		a, err := decodeKeys(fd.FaceFillet.FacesA)
+		if err != nil {
+			return nil, err
+		}
+		b, err := decodeKeys(fd.FaceFillet.FacesB)
+		if err != nil {
+			return nil, err
+		}
+		return du.AddFaceFillet(a, b, constFloat(fd.FaceFillet.Value)), nil
 	case "chamfer":
 		d, err := requireEdgeDress(fd.Chamfer, "chamfer")
 		if err != nil {

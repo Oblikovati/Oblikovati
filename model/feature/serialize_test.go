@@ -90,6 +90,32 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+// TestFaceFilletRoundTrip checks the face-fillet feature's two face sets + radius survive a recipe
+// round trip (#694).
+func TestFaceFilletRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewDressUpFeatures(fs).AddFaceFillet(
+		[][]byte{[]byte("face-a"), []byte("face-b")}, [][]byte{[]byte("face-c")}, func() float64 { return 0.7 })
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*FaceFilletFeature).Definition()
+	if len(d.FaceKeysA) != 2 || string(d.FaceKeysA[0]) != "face-a" || string(d.FaceKeysA[1]) != "face-b" {
+		t.Errorf("faceA keys = %v, want [face-a face-b]", d.FaceKeysA)
+	}
+	if len(d.FaceKeysB) != 1 || string(d.FaceKeysB[0]) != "face-c" {
+		t.Errorf("faceB keys = %v, want [face-c]", d.FaceKeysB)
+	}
+	if d.Radius() != 0.7 {
+		t.Errorf("radius = %v, want 0.7", d.Radius())
+	}
+}
+
 // TestChamferFlatCornersRoundTrip checks the chamfer corner treatment survives a recipe
 // round trip in both states, and that an older recipe with no flag restores as flat (the
 // default, matching a freshly created chamfer).
