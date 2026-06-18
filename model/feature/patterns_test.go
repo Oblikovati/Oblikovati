@@ -181,6 +181,34 @@ func TestPatternOfJoinMergesIntoOneBody(t *testing.T) {
 	}
 }
 
+// TestPatternOfFeatureGroupStaysConnected pins Oblikovati/Oblikovati#128: patterning a GROUP of
+// features (a join boss + a hole cut into it) must replicate the group as connected material at
+// each occurrence — one body with N bosses, each holed — not fall back to copying the whole part
+// and scattering disconnected solids.
+func TestPatternOfFeatureGroupStaysConnected(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	// A 10x10x5 base box.
+	NewExtrudeFeatures(fs).AddExtrude(squareSketch(10), []int{0}, ops.NewBody,
+		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 5 }}, 0)
+	// A 3x3 boss joined on top near a corner, then a 1x1 hole cut through that boss.
+	boss := NewExtrudeFeatures(fs).AddExtrude(squareSketchAt(3, 1), []int{0}, ops.Join,
+		Extent{Type: DistanceExtent, Direction: PositiveDir, Distance: func() float64 { return 8 }}, 0)
+	hole := NewExtrudeFeatures(fs).AddExtrude(squareSketchAt(1, 2), []int{0}, ops.Cut,
+		Extent{Type: ThroughAllExtent, Direction: SymmetricDir, Distance: func() float64 { return 20 }}, 0)
+	// Pattern the boss+hole GROUP twice along X.
+	NewPatternFeatures(fs).AddRectangular([]ID{boss.ID(), hole.ID()},
+		func() int { return 2 }, func() int { return 1 }, math.V3(4, 0, 0), noStep)
+	fs.Recompute()
+
+	res := fs.Result()
+	if len(res) != 1 {
+		t.Fatalf("pattern of a join+hole group → %d bodies, want 1 connected body (the copies scattered)", len(res))
+	}
+	if !ops.Validate(res[0]).Valid {
+		t.Errorf("patterned-group body is invalid: %v", ops.Validate(res[0]).Issues)
+	}
+}
+
 // patIDOf returns the engine id of a pattern feature (it is the last one added of
 // its source set — found by identity).
 func patIDOf(fs *PartFeatures, f Feature) ID {
