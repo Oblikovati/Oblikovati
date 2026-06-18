@@ -7,7 +7,10 @@ import (
 	"math"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
 )
 
@@ -21,10 +24,11 @@ import (
 type DrawingAnnotation struct {
 	name     string
 	kind     types.DrawingAnnotationKind
-	viewName string  // CoG: the view it marks
+	viewName string  // CoG / centre mark: the view it marks
 	x, y     float64 // revision cloud: lower-left corner (sheet mm)
 	w, h     float64 // revision cloud: size (sheet mm)
 	tag      string  // revision cloud: revision label
+	edgeKey  []byte  // centre mark: the circular edge it marks (associativity anchor)
 	curves   []DrawingCurve
 }
 
@@ -74,13 +78,97 @@ func (as *DrawingAnnotations) AddRevisionCloud(name string, x, y, w, h float64, 
 	return a, nil
 }
 
-// Recompute re-derives the associative annotations (the CoG markers) against the current model.
+// AddCenterMarks adds a centre mark (crosshair) at the centre of every distinct circular model
+// edge in the named base view — the auto centre-mark-all-holes action. Coincident projections (a
+// through-hole's two rims) are marked once. Each mark attaches to its edge, so it re-projects when
+// the model changes.
+func (as *DrawingAnnotations) AddCenterMarks(viewName string) ([]*DrawingAnnotation, error) {
+	view, body, basis, err := as.annotationBasis(viewName)
+	if err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	var out []*DrawingAnnotation
+	for _, e := range body.Edges() {
+		circle, ok := e.Geometry().(geom.Circle)
+		if !ok {
+			continue
+		}
+		c := view.place(hlr.ProjectPoint(basis, circle.Center))
+		key := fmt.Sprintf("%.1f/%.1f", float64(c.X), float64(c.Y))
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, as.addCenterMarkForEdge(viewName, e.ReferenceKey()))
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("drawing: view %q has no circular edges to centre-mark", viewName)
+	}
+	return out, nil
+}
+
+// addCenterMarkForEdge appends a centre mark on a specific circular edge (already resolved).
+func (as *DrawingAnnotations) addCenterMarkForEdge(viewName string, edgeKey []byte) *DrawingAnnotation {
+	a := &DrawingAnnotation{name: as.uniqueName(""), kind: types.CenterMarkAnnotation, viewName: viewName, edgeKey: edgeKey}
+	as.recomputeCenterMark(a)
+	as.items = append(as.items, a)
+	return a
+}
+
+// Recompute re-derives the associative annotations (CoG markers and centre marks) against the
+// current model.
 func (as *DrawingAnnotations) Recompute() {
 	for _, a := range as.items {
-		if a.kind == types.CoGMarkerAnnotation {
+		switch a.kind {
+		case types.CoGMarkerAnnotation:
 			as.recomputeCoG(a)
+		case types.CenterMarkAnnotation:
+			as.recomputeCenterMark(a)
 		}
 	}
+}
+
+// annotationBasis resolves a base view, the referenced model body and the view's projection frame
+// — the inputs a centre mark needs to project a model edge onto the sheet.
+func (as *DrawingAnnotations) annotationBasis(viewName string) (*DrawingView, *topo.Body, hlr.View, error) {
+	view, ok := as.views.ByName(viewName)
+	if !ok {
+		return nil, nil, hlr.View{}, fmt.Errorf("drawing: no view %q to annotate", viewName)
+	}
+	if view.viewType != types.DrawingViewBase {
+		return nil, nil, hlr.View{}, fmt.Errorf("drawing: %q is not a base view; centre-mark a base view", viewName)
+	}
+	if as.body == nil {
+		return nil, nil, hlr.View{}, fmt.Errorf("drawing: no referenced model to annotate")
+	}
+	body, ok := as.body()
+	if !ok {
+		return nil, nil, hlr.View{}, fmt.Errorf("drawing: no referenced model to annotate")
+	}
+	return view, body, baseBasis(view.orientation, bodyCenter(body)), nil
+}
+
+// recomputeCenterMark re-binds the circular edge, projects its centre into the view and rebuilds the
+// crosshair glyph (sized to the projected radius); with no resolvable edge it clears the mark.
+func (as *DrawingAnnotations) recomputeCenterMark(a *DrawingAnnotation) {
+	a.curves = nil
+	view, body, basis, err := as.annotationBasis(a.viewName)
+	if err != nil {
+		return
+	}
+	edge, ok := body.FindEdgeByKey(a.edgeKey)
+	if !ok {
+		return
+	}
+	circle, ok := edge.Geometry().(geom.Circle)
+	if !ok {
+		return
+	}
+	c := view.place(hlr.ProjectPoint(basis, circle.Center))
+	rim := view.place(hlr.ProjectPoint(basis, circle.PointAt(0)))
+	r := math.Hypot(float64(rim.X-c.X), float64(rim.Y-c.Y))
+	a.curves = centerMarkCurves(float64(c.X), float64(c.Y), r)
 }
 
 // recomputeCoG positions a marker at the referenced model's centre of mass projected into its
@@ -152,6 +240,22 @@ func cogMarkerCurves(cx, cy float64) []DrawingCurve {
 		DrawingCurve{A: gmath.P2(gmath.Scalar(cx), gmath.Scalar(cy-r)), B: gmath.P2(gmath.Scalar(cx), gmath.Scalar(cy+r)), Visible: true},
 	)
 	return out
+}
+
+// centerMarkCurves builds a centre-mark crosshair at (cx, cy) sized to the projected hole radius r
+// (sheet mm): a small solid cross through the centre plus four extension arms that reach just past
+// the rim, with the conventional gap between the central cross and the arms.
+func centerMarkCurves(cx, cy, r float64) []DrawingCurve {
+	const overshoot, gap = 2.0, 1.5
+	ext := r + overshoot
+	seg := func(ax, ay, bx, by float64) DrawingCurve {
+		return DrawingCurve{A: gmath.P2(gmath.Scalar(ax), gmath.Scalar(ay)), B: gmath.P2(gmath.Scalar(bx), gmath.Scalar(by)), Visible: true}
+	}
+	return []DrawingCurve{
+		seg(cx-gap, cy, cx+gap, cy), seg(cx, cy-gap, cx, cy+gap), // central solid cross
+		seg(cx-ext, cy, cx-gap, cy), seg(cx+gap, cy, cx+ext, cy), // horizontal extension arms
+		seg(cx, cy-ext, cx, cy-gap), seg(cx, cy+gap, cx, cy+ext), // vertical extension arms
+	}
 }
 
 // circlePolyline tessellates a circle (cx, cy, r) into visible drawing curves.
