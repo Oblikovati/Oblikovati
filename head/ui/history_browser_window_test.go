@@ -45,6 +45,24 @@ func TestInWindowHistoryBrowserDraws(t *testing.T) {
 	}
 }
 
+// TestInWindowHistoryBrowserEmptyDraws opens the browser with no open documents and runs frames,
+// covering the empty-state path without tripping ImGui assertions.
+func TestInWindowHistoryBrowserEmptyDraws(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+	s := app.NewSession()
+	s.OpenHistoryBrowser()
+	defer s.CloseHistoryBrowser()
+
+	for i := 0; i < 2; i++ {
+		win.BeginFrame()
+		DrawChrome(win, s)
+		win.EndFrame(0.1, 0.1, 0.1)
+	}
+}
+
 // TestHistoryRowLabelMarksSavedAndUniqueID: a save checkpoint shows "*", and repeated step
 // names get distinct widget ids (the "##pos" suffix) so the selectables do not collide.
 func TestHistoryRowLabelMarksSavedAndUniqueID(t *testing.T) {

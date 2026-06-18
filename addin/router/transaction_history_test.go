@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"testing"
 
+	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
 )
 
 // TestTransactionHistoryAndJumpOverTheAPI drives the history-browser surface: a feature
@@ -46,5 +48,18 @@ func TestTransactionJumpToRejectsOutOfRange(t *testing.T) {
 	r, s := seededSession(t)
 	if _, err := r.Handle(s, "transaction.jumpTo", []byte(`{"position":99}`)); err == nil {
 		t.Fatal("jumpTo past the end should error")
+	}
+}
+
+// TestTransactionHistoryNoActiveDocument: history/jumpTo with no active document (and no explicit
+// id) error cleanly rather than panicking — the historyTargetDoc guard.
+func TestTransactionHistoryNoActiveDocument(t *testing.T) {
+	r := New(opregistry.Default())
+	s := app.NewSession()
+	if _, err := r.Handle(s, "transaction.history", []byte(`{}`)); err == nil {
+		t.Error("transaction.history with no active document should error")
+	}
+	if _, err := r.Handle(s, "transaction.jumpTo", []byte(`{"position":0}`)); err == nil {
+		t.Error("transaction.jumpTo with no active document should error")
 	}
 }
