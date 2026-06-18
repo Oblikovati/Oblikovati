@@ -108,6 +108,7 @@ func Default() *Registry {
 		// Subtractive / dress-up (edge & face reference keys).
 		filletDescriptor(),
 		ruleFilletDescriptor(),
+		snapFitDescriptor(),
 		chamferDescriptor(),
 		shellDescriptor(),
 		draftDescriptor(),

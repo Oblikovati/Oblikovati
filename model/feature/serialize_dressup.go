@@ -116,6 +116,15 @@ type RuleFilletData struct {
 	Value float64 `yaml:"value"`
 }
 
+// SnapFitData persists a cantilever snap-fit (#486): the beam and catch dimensions.
+type SnapFitData struct {
+	Length      float64 `yaml:"length"`
+	Width       float64 `yaml:"width"`
+	Thickness   float64 `yaml:"thickness"`
+	CatchLength float64 `yaml:"catchLength"`
+	CatchHeight float64 `yaml:"catchHeight"`
+}
+
 // ThreadData tags a single cylindrical face (reference key) with a thread designation, plus
 // the #325 parity fields: the tolerance class, the tapered (pipe) flag, and which thread
 // diameter the modeled face represents (wire spelling; absent = major).
