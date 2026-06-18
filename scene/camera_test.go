@@ -128,6 +128,22 @@ func TestZoomToRectIgnoresDegenerate(t *testing.T) {
 	}
 }
 
+// TestRollRotatesUpAboutView: roll spins the up vector about the forward axis without moving the
+// eye or target; a quarter turn takes +Y up to ±X (in the screen plane).
+func TestRollRotatesUpAboutView(t *testing.T) {
+	c := NewCamera(800, 600) // eye (0,0,10) → target origin, forward −Z, up +Y
+	r := c.Roll(stdmath.Pi / 2)
+	if !r.Eye.IsEqualTo(c.Eye, 1e-9) || !r.Target.IsEqualTo(c.Target, 1e-9) {
+		t.Error("roll must not move the eye or target")
+	}
+	if stdmath.Abs(float64(r.Up.Y)) > 1e-9 || stdmath.Abs(stdmath.Abs(float64(r.Up.X))-1) > 1e-9 {
+		t.Errorf("rolled up = %v, want ±X (a quarter turn of +Y about −Z)", r.Up)
+	}
+	if !r.Up.IsEqualTo(unit(r.Up), 1e-9) {
+		t.Error("rolled up should stay unit length")
+	}
+}
+
 func TestDollyScalesDistanceKeepingDirection(t *testing.T) {
 	c := NewCamera(800, 600) // eye (0,0,10), target origin
 	in := c.Dolly(0.5)

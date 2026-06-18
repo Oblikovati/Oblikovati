@@ -40,6 +40,51 @@ func TestApplyNavigationWheelZoomsTowardCursor(t *testing.T) {
 	}
 }
 
+// TestClassifyOrbitZone covers the Free-Orbit ring zones (#913 N5–N8): inner disc → free, rim
+// left/right → yaw, rim top/bottom → pitch, outside → roll, and a degenerate ring → free.
+func TestClassifyOrbitZone(t *testing.T) {
+	const cx, cy, radius = 400, 300, 200
+	cases := []struct {
+		name   string
+		px, py float64
+		want   OrbitZone
+	}{
+		{"centre", cx, cy, OrbitFree},
+		{"left rim", cx - 190, cy, OrbitYaw},
+		{"right rim", cx + 190, cy, OrbitYaw},
+		{"top rim", cx, cy - 190, OrbitPitch},
+		{"bottom rim", cx, cy + 190, OrbitPitch},
+		{"outside", cx + 260, cy, OrbitRoll},
+	}
+	for _, c := range cases {
+		if got := classifyOrbitZone(c.px, c.py, cx, cy, radius); got != c.want {
+			t.Errorf("%s: zone = %d, want %d", c.name, got, c.want)
+		}
+	}
+	if got := classifyOrbitZone(cx, cy, cx, cy, 0); got != OrbitFree {
+		t.Errorf("degenerate ring zone = %d, want OrbitFree", got)
+	}
+}
+
+// TestApplyOrbitZones: the latched zone selects the rotation — yaw-only keeps the eye in the
+// up-plane (Y=0), pitch-only keeps it in the yaw-plane (X=0), roll spins up without moving the eye.
+func TestApplyOrbitZones(t *testing.T) {
+	base := scene.NewCamera(800, 600) // eye (0,0,10), up +Y, centre (400,300)
+
+	yaw := ApplyNavigation(base, NavInput{Active: true, Modal: NavOrbit, Left: true, DX: 20, DY: 20, OrbitZone: OrbitYaw})
+	if stdmath.Abs(float64(yaw.Eye.Y)) > 1e-9 || yaw.Eye.IsEqualTo(base.Eye, 1e-9) {
+		t.Errorf("yaw-only orbit eye = %v, want moved with Y=0", yaw.Eye)
+	}
+	pitch := ApplyNavigation(base, NavInput{Active: true, Modal: NavOrbit, Left: true, DX: 20, DY: 20, OrbitZone: OrbitPitch})
+	if stdmath.Abs(float64(pitch.Eye.X)) > 1e-9 || pitch.Eye.IsEqualTo(base.Eye, 1e-9) {
+		t.Errorf("pitch-only orbit eye = %v, want moved with X=0", pitch.Eye)
+	}
+	roll := ApplyNavigation(base, NavInput{Active: true, Modal: NavOrbit, Left: true, DX: 20, CursorX: 400, CursorY: 200, OrbitZone: OrbitRoll})
+	if !roll.Eye.IsEqualTo(base.Eye, 1e-9) || roll.Up.IsEqualTo(base.Up, 1e-9) {
+		t.Errorf("roll should spin up (got %v) without moving the eye (got %v)", roll.Up, roll.Eye)
+	}
+}
+
 func TestApplyNavigationPansWithMiddleDrag(t *testing.T) {
 	cam := scene.NewCamera(800, 600)
 	out := ApplyNavigation(cam, NavInput{Active: true, Middle: true, DX: 50})
