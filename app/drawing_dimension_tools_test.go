@@ -68,6 +68,28 @@ func TestRadialDimensionToolDimensionsHoles(t *testing.T) {
 	}
 }
 
+// TestDimensionSetToolDimensionsCorners: the set tool places a baseline set of three linear
+// dimensions on a base view's corners.
+func TestDimensionSetToolDimensionsCorners(t *testing.T) {
+	s := drawingWithModelSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+	tool := NewDimensionSetTool()
+	tool.Start(s)
+	tool.Params().Choices[2].Set(2) // Type = Aligned
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("set Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	if n := c.Sheets().Active().Dimensions().Count(); n != 3 {
+		t.Errorf("dimension set placed %d dimensions, want 3", n)
+	}
+}
+
 // TestAngularDimensionToolDimensionsCorner: the angular tool dimensions a base view's corner angle
 // (a box's perpendicular edges → 90°).
 func TestAngularDimensionToolDimensionsCorner(t *testing.T) {

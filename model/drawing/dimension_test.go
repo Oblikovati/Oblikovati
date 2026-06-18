@@ -99,6 +99,65 @@ func TestRadialForEachCircleDedupsRims(t *testing.T) {
 	}
 }
 
+// TestBaselineAndChainSets: a baseline set measures from one corner to each of the others
+// (stacked), a chain set measures between consecutive corners, and both are associative linear
+// dimensions.
+func TestBaselineAndChainSets(t *testing.T) {
+	c := drawingWithBox(t) // box 2×3×4 cm; FRONT corners at x∈{90,110}, y∈{80,120}
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	corners := [][2]float64{{90, 80}, {110, 80}, {110, 120}, {90, 120}}
+
+	base, err := c.Sheets().Active().Dimensions().AddBaselineSet("FRONT", types.AlignedDimension, corners)
+	if err != nil {
+		t.Fatalf("AddBaselineSet: %v", err)
+	}
+	if len(base) != 3 {
+		t.Fatalf("baseline set = %d dims, want 3 (one per non-datum corner)", len(base))
+	}
+	if math.Abs(base[0].ValueMM()-20) > 1e-6 { // datum→bottom-right = 2 cm width
+		t.Errorf("baseline[0] = %v mm, want 20", base[0].ValueMM())
+	}
+	if base[0].CurveCount() == 0 {
+		t.Error("baseline dimension has no glyph")
+	}
+
+	chain, err := c.Sheets().Active().Dimensions().AddChainSet("FRONT", types.AlignedDimension, corners)
+	if err != nil {
+		t.Fatalf("AddChainSet: %v", err)
+	}
+	if len(chain) != 3 {
+		t.Fatalf("chain set = %d dims, want 3 (between consecutive corners)", len(chain))
+	}
+	if math.Abs(chain[0].ValueMM()-20) > 1e-6 { // bottom edge = 2 cm
+		t.Errorf("chain[0] = %v mm, want 20", chain[0].ValueMM())
+	}
+}
+
+// TestDimensionSetNeedsTwoPoints: a set with fewer than two points errors.
+func TestDimensionSetNeedsTwoPoints(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	if _, err := c.Sheets().Active().Dimensions().AddBaselineSet("FRONT", types.AlignedDimension, [][2]float64{{90, 80}}); err == nil {
+		t.Error("a one-point baseline set should error")
+	}
+}
+
+// TestSetForViewCornersBaseline: the single-action corner set dimensions a view's four corners.
+func TestSetForViewCornersBaseline(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	dims, err := c.Sheets().Active().Dimensions().AddSetForViewCorners("FRONT", types.AlignedDimension, true)
+	if err != nil {
+		t.Fatalf("AddSetForViewCorners: %v", err)
+	}
+	if len(dims) != 3 {
+		t.Errorf("corner baseline set = %d dims, want 3", len(dims))
+	}
+}
+
 // TestDimensionTextLiftedAndDraggable: the value text sits off the dimension line by default
 // (readable), and dragging the text nudges its anchor.
 func TestDimensionTextLiftedAndDraggable(t *testing.T) {

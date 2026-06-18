@@ -21,6 +21,8 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.handlers[wire.MethodDrawingDimensionsAddLinear] = drawingDimensionsAddLinear
 	r.handlers[wire.MethodDrawingDimensionsAddRadial] = drawingDimensionsAddRadial
 	r.handlers[wire.MethodDrawingDimensionsAddAngular] = drawingDimensionsAddAngular
+	r.handlers[wire.MethodDrawingDimensionsAddBaseline] = drawingDimensionsAddBaseline
+	r.handlers[wire.MethodDrawingDimensionsAddChain] = drawingDimensionsAddChain
 	r.handlers[wire.MethodDrawingDimensionsDelete] = drawingDimensionsDelete
 }
 
@@ -110,6 +112,63 @@ func drawingDimensionsAddAngular(s *app.Session, raw json.RawMessage) (json.RawM
 	}
 	s.ActiveDocument().MarkDirty()
 	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
+}
+
+func drawingDimensionsAddBaseline(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	return drawingDimensionSet(s, raw, (*drawing.DrawingDimensions).AddBaselineSet)
+}
+
+func drawingDimensionsAddChain(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	return drawingDimensionSet(s, raw, (*drawing.DrawingDimensions).AddChainSet)
+}
+
+// drawingDimensionSet decodes an AddDimensionSetArgs and runs add (AddBaselineSet/AddChainSet),
+// returning the created dimensions.
+func drawingDimensionSet(s *app.Session, raw json.RawMessage,
+	add func(*drawing.DrawingDimensions, string, types.DrawingDimensionType, [][2]float64) ([]*drawing.DrawingDimension, error),
+) (json.RawMessage, error) {
+	ds, err := activeSheetDimensions(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddDimensionSetArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	dimType, pts, err := parseDimensionSetArgs(in)
+	if err != nil {
+		return nil, err
+	}
+	dims, err := add(ds, in.ViewName, dimType, pts)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	out := wire.DimensionSetResult{}
+	for _, d := range dims {
+		out.Dimensions = append(out.Dimensions, drawingDimensionInfo(d))
+	}
+	return json.Marshal(out)
+}
+
+// parseDimensionSetArgs resolves a set request's measurement type and pick points.
+func parseDimensionSetArgs(in wire.AddDimensionSetArgs) (types.DrawingDimensionType, [][2]float64, error) {
+	dimType := types.AlignedDimension
+	if in.Type != "" {
+		t, ok := types.ParseDrawingDimensionType(in.Type)
+		if !ok {
+			return 0, nil, fmt.Errorf("drawing: unknown dimension type %q", in.Type)
+		}
+		dimType = t
+	}
+	pts := make([][2]float64, len(in.Points))
+	for i, p := range in.Points {
+		if len(p) != 2 {
+			return 0, nil, fmt.Errorf("drawing: point %d must be [x,y], got %v", i, p)
+		}
+		pts[i] = [2]float64{p[0], p[1]}
+	}
+	return dimType, pts, nil
 }
 
 func drawingDimensionsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

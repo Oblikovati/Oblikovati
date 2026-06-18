@@ -90,10 +90,86 @@ func (ds *DrawingDimensions) AddLinear(name, viewName string, dimType types.Draw
 	if !okA || !okB {
 		return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
 	}
+	return ds.addLinearFromKeys(name, viewName, dimType, keyA, keyB, offset), nil
+}
+
+// addLinearFromKeys creates a linear dimension between two already-resolved vertex keys.
+func (ds *DrawingDimensions) addLinearFromKeys(name, viewName string, dimType types.DrawingDimensionType, keyA, keyB []byte, offset float64) *DrawingDimension {
 	d := &DrawingDimension{name: ds.uniqueName(name), dimType: dimType, viewName: viewName, keyA: keyA, keyB: keyB, offset: offset}
 	ds.recompute(d)
 	ds.items = append(ds.items, d)
-	return d, nil
+	return d
+}
+
+// AddBaselineSet adds a baseline set: a linear dimension from the first pick point to each of the
+// others, stacked at increasing offsets (the datum-referenced common case). Each point is snapped
+// to the nearest projected model vertex, so every dimension stays associative.
+func (ds *DrawingDimensions) AddBaselineSet(viewName string, dimType types.DrawingDimensionType, points [][2]float64) ([]*DrawingDimension, error) {
+	keys, err := ds.snapPoints(viewName, points)
+	if err != nil {
+		return nil, err
+	}
+	const baseGap = 14.0
+	out := make([]*DrawingDimension, 0, len(keys)-1)
+	for i := 1; i < len(keys); i++ {
+		out = append(out, ds.addLinearFromKeys("", viewName, dimType, keys[0], keys[i], -baseGap*float64(i)))
+	}
+	return out, nil
+}
+
+// AddChainSet adds a chain set: a linear dimension between each consecutive pair of pick points,
+// all on one line (running dimensions). Each point is snapped to the nearest model vertex.
+func (ds *DrawingDimensions) AddChainSet(viewName string, dimType types.DrawingDimensionType, points [][2]float64) ([]*DrawingDimension, error) {
+	keys, err := ds.snapPoints(viewName, points)
+	if err != nil {
+		return nil, err
+	}
+	const chainOffset = -14.0
+	out := make([]*DrawingDimension, 0, len(keys)-1)
+	for i := 0; i+1 < len(keys); i++ {
+		out = append(out, ds.addLinearFromKeys("", viewName, dimType, keys[i], keys[i+1], chainOffset))
+	}
+	return out, nil
+}
+
+// AddSetForViewCorners dimensions a base view's bounding-box corners as a baseline or chain set —
+// the single-action dimension set (a full multi-pick set is a follow-up). Aligned measurement
+// gives non-degenerate values (width / diagonal / height).
+func (ds *DrawingDimensions) AddSetForViewCorners(viewName string, dimType types.DrawingDimensionType, baseline bool) ([]*DrawingDimension, error) {
+	view, ok := ds.views.ByName(viewName)
+	if !ok {
+		return nil, fmt.Errorf("drawing: no view %q to dimension", viewName)
+	}
+	minX, minY, maxX, maxY, ok := view.BoundsMM()
+	if !ok {
+		return nil, fmt.Errorf("drawing: view %q has no geometry to dimension", viewName)
+	}
+	pts := [][2]float64{{minX, minY}, {maxX, minY}, {maxX, maxY}, {minX, maxY}}
+	if baseline {
+		return ds.AddBaselineSet(viewName, dimType, pts)
+	}
+	return ds.AddChainSet(viewName, dimType, pts)
+}
+
+// snapPoints resolves each pick point to a model-vertex key on the view; it needs at least two
+// points and a resolvable model.
+func (ds *DrawingDimensions) snapPoints(viewName string, points [][2]float64) ([][]byte, error) {
+	if len(points) < 2 {
+		return nil, fmt.Errorf("drawing: a dimension set needs at least two points, got %d", len(points))
+	}
+	view, body, basis, err := ds.dimensionBasis(viewName)
+	if err != nil {
+		return nil, err
+	}
+	keys := make([][]byte, len(points))
+	for i, p := range points {
+		k, ok := nearestVertexKey(body, view, basis, p[0], p[1])
+		if !ok {
+			return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
+		}
+		keys[i] = k
+	}
+	return keys, nil
 }
 
 // AddRadial adds a radius or diameter dimension on the circular model edge nearest the pick point

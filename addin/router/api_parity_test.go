@@ -55,15 +55,10 @@ func TestEveryWireMethodHasAHandler(t *testing.T) {
 }
 
 // notYetHandled are wire methods the API declares ahead of the router handler that will serve
-// them. The drawing dimension-set methods (API v0.32.0, #148) released at the same time as this
-// branch's transaction.history contract, so two API versions landed together and develop does
-// not yet carry their handlers — they come in the dimension-sets adoption PR. Tracked debt:
-// DELETE each entry when its handler lands (the guard above fails once a listed method is handled
-// or undeclared, so this list may only shrink). See #148.
-var notYetHandled = map[string]bool{
-	"MethodDrawingDimensionsAddBaseline": true,
-	"MethodDrawingDimensionsAddChain":    true,
-}
+// them. Tracked debt: add an entry only when the contract genuinely lands before its handler, and
+// DELETE it the moment the handler lands (the guard above fails on a stale entry, so this list may
+// only shrink). It is currently empty — every declared wire method has a handler.
+var notYetHandled = map[string]bool{}
 
 // notYetRelayed are wire events the API declares ahead of the host behavior that would
 // emit them (the representations / model-state surface has no app-level event yet). They
