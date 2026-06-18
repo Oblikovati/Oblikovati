@@ -57,6 +57,17 @@ func (s *Session) CanLookAt() bool {
 	return planar
 }
 
+// ToggleConstrainedOrbit turns the Constrained Orbit tool (#913 N10) on or off — a turntable locked
+// to the model vertical, entered from the View tab / Navigation Bar. While on, a viewport left-drag
+// orbits about the vertical axis (horizontal = turn, vertical = tilt) instead of selecting.
+func (s *Session) ToggleConstrainedOrbit() { s.constrainedOrbit = !s.constrainedOrbit }
+
+// ConstrainedOrbitActive reports whether the Constrained Orbit tool is on.
+func (s *Session) ConstrainedOrbitActive() bool { return s.constrainedOrbit }
+
+// DisarmConstrainedOrbit turns the Constrained Orbit tool off (e.g. Esc).
+func (s *Session) DisarmConstrainedOrbit() { s.constrainedOrbit = false }
+
 // SetOrbitPivot recenters the orbit on the world point under viewport pixel (x,y) — Free Orbit's
 // click-to-set-pivot (#913 N9). The clicked point becomes the orbit centre and is brought to the
 // view centre, keeping the view direction and distance.

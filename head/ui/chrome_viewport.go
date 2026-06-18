@@ -247,7 +247,7 @@ func tileInput(s *app.Session, i int, hit viewCubeHit, cam *scene.Camera, pw, ph
 // tileNavigate applies hover/drag/wheel to tile i's camera; on a non-active tile a real
 // manipulation (drag/wheel) makes it the active view. Returns the (possibly updated) active.
 func tileNavigate(s *app.Session, i int, cam *scene.Camera, isActive bool) bool {
-	nav := readNavInput()
+	nav := readNavInput(s)
 	if nav.Hovered && navInteracted(nav) && !isActive {
 		_ = s.ActivateView(i)
 		isActive = true
@@ -345,7 +345,7 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 	if overCube {
 		return cam, nil // the ViewCube owns the cursor this frame: no orbit, no pick
 	}
-	cam = ApplyNavigation(cam, readNavInput())
+	cam = ApplyNavigation(cam, readNavInput(s))
 	s.SetCamera(cam)
 	// The triad/manipulators own the pointer when hovered or mid-drag (M05-F13);
 	// picking and tool clicks stand down for the frame.
@@ -642,7 +642,7 @@ const (
 // viewport's InvisibleButton, so IsItemActive/Hovered refer to it. Navigation is driven by
 // the middle button only (pan / Shift+orbit); the left button belongs to selection and
 // box-select, handled separately, so it is not read here.
-func readNavInput() NavInput {
+func readNavInput(s *app.Session) NavInput {
 	dx, dy := native.MouseDelta()
 	modal := heldNavMode()
 	cx, cy := viewportCursor()
@@ -660,6 +660,7 @@ func readNavInput() NavInput {
 		Left:    modal != NavNone && native.MouseDown(native.MouseLeft),
 	}
 	in.OrbitZone = latchOrbitZone(in, cx, cy)
+	in.Constrained = s.ConstrainedOrbitActive() && native.MouseDown(native.MouseLeft)
 	return in
 }
 

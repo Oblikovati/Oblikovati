@@ -8,8 +8,13 @@ package ui
 import (
 	stdmath "math"
 
+	"oblikovati.org/math"
 	"oblikovati.org/scene"
 )
+
+// modelUp is the world vertical axis Constrained Orbit (#913 N10) locks to — the app's up convention
+// (Home/sketch views use +Y).
+var modelUp = math.V3(0, 1, 0)
 
 const (
 	// orbitRadPerPixel turns a drag pixel into an orbit angle; zoomPerNotch is the dolly
@@ -85,6 +90,7 @@ type NavInput struct {
 	Modal            NavMode   // a held F2/F3/F4 navigation mode (drives a left-drag)
 	Left             bool      // left button down — only consulted in a Modal mode
 	OrbitZone        OrbitZone // the Free-Orbit ring zone latched at drag start (#913 N5–N8)
+	Constrained      bool      // Constrained Orbit tool active: a left-drag turntables about modelUp (#913 N10)
 }
 
 // ApplyNavigation maps one frame of pointer input to a camera move, mirroring Inventor:
@@ -98,6 +104,9 @@ func ApplyNavigation(cam scene.Camera, in NavInput) scene.Camera {
 	}
 	if !in.Active || (in.DX == 0 && in.DY == 0) {
 		return cam
+	}
+	if in.Constrained {
+		return cam.OrbitConstrained(float64(-in.DX)*orbitRadPerPixel, float64(-in.DY)*orbitRadPerPixel, modelUp)
 	}
 	switch navGesture(in) {
 	case NavPan:

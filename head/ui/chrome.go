@@ -188,6 +188,8 @@ func handleKeyboard(s *app.Session) {
 			s.CancelSelectOther() // Esc ends the cycle, keeping the highlighted candidate (#910)
 		case s.ZoomWindowArmed():
 			s.DisarmZoomWindow() // Esc cancels an armed Zoom Window before/while dragging (#913 N16)
+		case s.ConstrainedOrbitActive():
+			s.DisarmConstrainedOrbit() // Esc exits the Constrained Orbit tool (#913 N10)
 		default:
 			_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
 		}

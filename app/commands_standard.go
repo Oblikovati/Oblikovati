@@ -674,6 +674,12 @@ func viewNavigateCommands() []*CommandDefinition {
 		}).WithTab("View").WithIcon("zoom-window").WithButtonStyle(LargeIconButton).WithEnable(hasActivePart).
 			WithActive(func(s *Session) bool { return s.ZoomWindowArmed() }).
 			WithTooltip("Zoom Window — drag a rectangle in the viewport; the view zooms to fit it."),
+		NewCommand("View.ConstrainedOrbit", "Constrained Orbit", "Navigate", func(s *Session) error {
+			s.ToggleConstrainedOrbit()
+			return nil
+		}).WithTab("View").WithIcon("orbit-constrained").WithButtonStyle(LargeIconButton).WithEnable(hasActivePart).
+			WithActive(func(s *Session) bool { return s.ConstrainedOrbitActive() }).
+			WithTooltip("Constrained Orbit — left-drag turntables about the vertical axis (horizontal = turn, vertical = tilt)."),
 	}
 }
 

@@ -207,6 +207,31 @@ func TestOrbitPreservesDistanceAndYawsAroundUp(t *testing.T) {
 	}
 }
 
+// TestOrbitConstrainedYawsAboutWorldUpAndLevels: constrained orbit yaws about the world vertical and
+// re-levels the view (removing roll), unlike Orbit which yaws about the camera's own up.
+func TestOrbitConstrainedYawsAboutWorldUpAndLevels(t *testing.T) {
+	c := NewCamera(800, 600).Roll(0.6) // a rolled view: camera up is no longer world +Y
+	worldUp := math.V3(0, 1, 0)
+
+	q := c.OrbitConstrained(stdmath.Pi/2, 0, worldUp) // quarter turn about world +Y: (0,0,10)→(10,0,0)
+	if !q.Eye.IsEqualTo(math.P3(10, 0, 0), 1e-9) {
+		t.Errorf("eye after constrained 90° yaw = %v, want (10,0,0)", q.Eye)
+	}
+	if !q.Up.IsEqualTo(worldUp, 1e-9) {
+		t.Errorf("constrained orbit up = %v, want world +Y (re-levelled, no roll)", q.Up)
+	}
+	if d := float64(q.Eye.DistanceTo(q.Target)); stdmath.Abs(d-10) > 1e-9 {
+		t.Errorf("constrained orbit changed distance: %v, want 10", d)
+	}
+	// A near-pole pitch is skipped; a degenerate worldUp falls back to Orbit.
+	if !c.OrbitConstrained(0, stdmath.Pi/2, worldUp).Eye.IsEqualTo(c.Eye, 1e-9) {
+		t.Error("near-pole constrained pitch should be clamped")
+	}
+	if c.OrbitConstrained(0.3, 0, math.V3(0, 0, 0)) != c.Orbit(0.3, 0) {
+		t.Error("degenerate worldUp should fall back to Orbit")
+	}
+}
+
 func TestFitFramesBoxKeepingDirection(t *testing.T) {
 	c := NewCamera(800, 600) // looks −Z
 	box := math.NewBox(math.P3(2, 2, 2), math.P3(6, 4, 8))
