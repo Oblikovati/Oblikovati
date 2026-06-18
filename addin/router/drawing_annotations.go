@@ -26,6 +26,7 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddDatum] = drawingAnnotationsAddDatum
 	r.handlers[wire.MethodDrawingAnnotationsAddSurfaceText] = drawingAnnotationsAddSurfaceText
 	r.handlers[wire.MethodDrawingAnnotationsAddPartsList] = drawingAnnotationsAddPartsList
+	r.handlers[wire.MethodDrawingAnnotationsAddBalloon] = drawingAnnotationsAddBalloon
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -199,6 +200,23 @@ func drawingAnnotationsAddPartsList(s *app.Session, raw json.RawMessage) (json.R
 		return nil, err
 	}
 	a, err := an.AddPartsList(in.Name, in.XMM, in.YMM)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddBalloon(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddBalloonArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddBalloon(in.Name, in.XMM, in.YMM, in.Item, in.LeaderXMM, in.LeaderYMM)
 	if err != nil {
 		return nil, err
 	}

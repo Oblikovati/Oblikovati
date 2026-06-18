@@ -147,6 +147,20 @@ func TestDrawingPartsListNeedsAssembly(t *testing.T) {
 	}
 }
 
+// TestDrawingBalloonOverWire drives the balloon surface: a balloon with a leader produces a circle
+// + leader annotation carrying its item number through the live stack.
+func TestDrawingBalloonOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var b wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addBalloon", `{"name":"B","xmm":100,"ymm":200,"item":3,"leaderXmm":120,"leaderYmm":180}`, &b)
+	if b.Annotation.Kind != "balloon" || b.Annotation.CurveCount == 0 || b.Annotation.Tag != "3" {
+		t.Fatalf("balloon = %+v, want a balloon (circle+leader) tagged item 3", b.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addBalloon", []byte(`{"xmm":0,"ymm":0,"item":0}`)); err == nil {
+		t.Error("addBalloon with item 0 = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

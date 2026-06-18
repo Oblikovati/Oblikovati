@@ -302,6 +302,42 @@ func TestPartsListNeedsBOM(t *testing.T) {
 	}
 }
 
+// TestAddBalloon: a balloon draws a circle + leader (curves) and the item-number label, and
+// survives reopen with its geometry re-derived.
+func TestAddBalloon(t *testing.T) {
+	c := drawingWithBox(t)
+	b, err := c.Sheets().Active().Annotations().AddBalloon("B", 100, 200, 3, 120, 180)
+	if err != nil {
+		t.Fatalf("AddBalloon: %v", err)
+	}
+	if b.Kind() != types.BalloonAnnotation || b.CurveCount() == 0 {
+		t.Fatalf("balloon = (%v, %d curves), want a balloon circle + leader", b.Kind(), b.CurveCount())
+	}
+	if got := b.Labels(); len(got) != 1 || got[0].Text != "3" {
+		t.Fatalf("balloon labels = %v, want the item number 3", got)
+	}
+
+	// A leaderless balloon (0,0) draws just the circle (fewer curves than one with a leader).
+	noLeader, _ := c.Sheets().Active().Annotations().AddBalloon("B2", 60, 200, 1, 0, 0)
+	if noLeader.CurveCount() >= b.CurveCount() {
+		t.Errorf("leaderless balloon = %d curves, want fewer than the leadered one (%d)", noLeader.CurveCount(), b.CurveCount())
+	}
+
+	rann := reopen(t, c).Sheets().Active().Annotations()
+	rb, ok := rann.ByName("B")
+	if !ok || rb.Kind() != types.BalloonAnnotation || rb.CurveCount() == 0 || len(rb.Labels()) != 1 {
+		t.Errorf("reopened balloon wrong: ok=%v curves=%d labels=%d", ok, rb.CurveCount(), len(rb.Labels()))
+	}
+}
+
+// TestBalloonNeedsItem: a balloon with no positive item number errors.
+func TestBalloonNeedsItem(t *testing.T) {
+	c := drawingWithBox(t)
+	if _, err := c.Sheets().Active().Annotations().AddBalloon("B", 10, 10, 0, 0, 0); err == nil {
+		t.Error("AddBalloon with item 0 = ok, want error")
+	}
+}
+
 // TestFeatureControlFrameNeedsTolerance: an FCF with no tolerance value errors.
 func TestFeatureControlFrameNeedsTolerance(t *testing.T) {
 	c := drawingWithBox(t)
