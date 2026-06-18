@@ -33,6 +33,14 @@ func TestMeasureBox(t *testing.T) {
 	}
 	approx(t, "total face area", totalArea, 9400)
 
+	// Each box face's perimeter is 2(w+h) for its two in-plane dimensions; the six faces' perimeters
+	// are 2·{2(40+30), 2(40+50), 2(30+50)} = {140,180,160} mm twice over, summing to 960 mm.
+	var totalPerimeter float64
+	for _, f := range block.Faces() {
+		totalPerimeter += FaceLoopLengthMm(f, q)
+	}
+	approx(t, "summed face perimeter", totalPerimeter, 2*(140+180+160))
+
 	verts := block.Vertices()
 	var maxDist float64
 	for i := range verts {

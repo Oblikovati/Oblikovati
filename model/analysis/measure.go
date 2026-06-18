@@ -40,6 +40,30 @@ func VertexDistanceMm(a, b *topo.Vertex) float64 {
 	return distanceMm(a.Point(), b.Point())
 }
 
+// FaceLoopLengthMm returns the length of a face's outer boundary loop — its perimeter — in
+// millimetres, summing the loop's edge lengths.
+func FaceLoopLengthMm(f *topo.Face, q ops.Quality) float64 {
+	loop := outerLoop(f)
+	if loop == nil {
+		return 0
+	}
+	var total float64
+	for _, u := range loop.EdgeUses() {
+		total += EdgeLengthMm(u.Edge(), q)
+	}
+	return total
+}
+
+// outerLoop returns a face's outer boundary loop, or nil when the face has no loops. Face.Loops()
+// is outer-first by construction, so the first loop is the outer boundary.
+func outerLoop(f *topo.Face) *topo.Loop {
+	loops := f.Loops()
+	if len(loops) == 0 {
+		return nil
+	}
+	return loops[0]
+}
+
 // distanceMm is the millimetre distance between two database-unit points.
 func distanceMm(a, b math.Point3) float64 {
 	return float64(a.VectorTo(b).Length()) * cmToMM

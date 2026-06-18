@@ -116,6 +116,15 @@ func TestAnalysisMeasureOverWire(t *testing.T) {
 	if m.Unit != "deg" || m.Value < 0 || m.Value > 180 {
 		t.Errorf("three-point angle = %+v, want a degree in [0,180]", m)
 	}
+
+	// loopLength of a box face is one of the rectangular perimeters 2(w+h) ∈ {140,160,180} mm.
+	call(t, r, s, "analysis.measure", measureArgs(t, "loopLength", fA, ""), &m)
+	if m.Unit != "mm" || !nearAny(m.Value, 140, 160, 180) {
+		t.Errorf("loopLength(face0) = %+v, want one of 140/160/180 mm", m)
+	}
+	if _, err := r.Handle(s, "analysis.measure", []byte(measureArgs(t, "loopLength", vA, ""))); err == nil {
+		t.Error("loopLength on a vertex key = ok, want error")
+	}
 }
 
 // threeKeyArgs JSON-encodes analysis.measure arguments with all three keys (raw-byte safe).
