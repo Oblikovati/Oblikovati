@@ -20,6 +20,7 @@ type FilletTool struct {
 	variable        bool // variable mode: each edge blends startRadius → endRadius (#323)
 	startRadius     float64
 	endRadius       float64
+	midPoints       []FilletMidPoint            // optional intermediate radius stops along each edge (#695)
 	cornerType      feature.FilletCornerType    // shared-corner treatment (miter default)
 	concaveStrategy types.FilletConcaveStrategy // concave edges: outward fill (default) or inward recess
 	added           *feature.PartFeature
@@ -137,21 +138,24 @@ func (t *FilletTool) selectedEdgeKeys() [][]byte {
 // are positive.
 func (t *FilletTool) CanCommit() bool {
 	if t.variable {
-		return t.EdgeCount() > 0 && t.startRadius > 0 && t.endRadius > 0
+		return t.EdgeCount() > 0 && t.startRadius > 0 && t.endRadius > 0 && t.midPointsValid()
 	}
 	return t.EdgeCount() > 0 && t.radius > 0
 }
 
-// variableSets builds one variable edge set per key, each blending start → end (#323 —
-// a variable set carries exactly one edge, so corners stay constant-radius blends).
+// variableSets builds one variable edge set per key, each blending start → end through any
+// intermediate radius stops (#323, #695 — a variable set carries exactly one edge, so corners
+// stay constant-radius blends). Every set shares the same stops (read-only closures).
 func (t *FilletTool) variableSets(keys [][]byte) []feature.FilletEdgeSet {
 	r0, r1 := t.startRadius, t.endRadius
+	mids := t.radiusPoints()
 	sets := make([]feature.FilletEdgeSet, len(keys))
 	for i, k := range keys {
 		sets[i] = feature.FilletEdgeSet{
-			EdgeKeys:    [][]byte{k},
-			StartRadius: func() float64 { return r0 },
-			EndRadius:   func() float64 { return r1 },
+			EdgeKeys:     [][]byte{k},
+			StartRadius:  func() float64 { return r0 },
+			EndRadius:    func() float64 { return r1 },
+			RadiusPoints: mids,
 		}
 	}
 	return sets

@@ -5,6 +5,8 @@
 package ui
 
 import (
+	"strconv"
+
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
@@ -30,7 +32,7 @@ func drawFilletDialog(s *app.Session) {
 	if filletUI.seeded != f {
 		seedFilletUI(f)
 	}
-	native.SetNextWindowSizeOnce(340, 230)
+	native.SetNextWindowSizeOnce(340, 300)
 	if native.Begin("Fillet") {
 		title := "Fillet"
 		if name := f.EditingName(); name != "" {
@@ -82,4 +84,44 @@ func drawFilletRadiusRows(s *app.Session, f *app.FilletTool) {
 	f.SetStartRadius(float64(filletUI.startRadius))
 	lengthCmRow(s, "End radius", "fillet-end-radius", &filletUI.endRadius)
 	f.SetEndRadius(float64(filletUI.endRadius))
+	drawFilletMidPointRows(s, f)
+}
+
+// drawFilletMidPointRows renders the intermediate radius stops of a variable fillet (#695): one
+// editable Position/Radius pair per stop with a remove (×), plus an Add button. Position is a
+// 0–1 fraction along the edge; the radius follows the document length unit. The tool owns the
+// stops, so each row reads/writes through it — no panel-side buffer to keep in sync.
+func drawFilletMidPointRows(s *app.Session, f *app.FilletTool) {
+	for i, p := range f.MidPoints() {
+		if drawFilletMidPointRow(s, f, i, p) {
+			break // the slice shifted under us when a stop was removed; redraw next frame
+		}
+	}
+	if native.Button("+ Add intermediate point") {
+		f.AddMidPoint()
+	}
+	native.SetItemTooltip("Add a radius stop between the start and end radius of each edge")
+}
+
+// drawFilletMidPointRow draws one stop. It returns true when the stop was removed this frame so
+// the caller stops iterating the now-stale slice.
+func drawFilletMidPointRow(s *app.Session, f *app.FilletTool, i int, p app.FilletMidPoint) bool {
+	tBuf := float32(p.T)
+	if propertyFloatRow("Position", filletMidID("t", i), "(0–1)", &tBuf) {
+		f.SetMidPointT(i, float64(tBuf))
+	}
+	native.SameLine()
+	if native.Button("×##" + filletMidID("rm", i)) {
+		f.RemoveMidPoint(i)
+		return true
+	}
+	rBuf := float32(p.Radius)
+	lengthCmRow(s, "Radius", filletMidID("r", i), &rBuf)
+	f.SetMidPointR(i, float64(rBuf))
+	return false
+}
+
+// filletMidID gives a stop's widget a stable, per-index ImGui id.
+func filletMidID(field string, i int) string {
+	return "fillet-mid-" + field + "-" + strconv.Itoa(i)
 }
