@@ -90,6 +90,34 @@ func TestDressUpFeaturesRoundTrip(t *testing.T) {
 	}
 }
 
+// TestFilletRadiusPointsRoundTrip checks a variable fillet's intermediate radius stops survive a
+// recipe round trip (#695).
+func TestFilletRadiusPointsRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewDressUpFeatures(fs).AddFilletSets([]FilletEdgeSet{{
+		EdgeKeys:     [][]byte{[]byte("edge-v")},
+		StartRadius:  func() float64 { return 0.3 },
+		EndRadius:    func() float64 { return 0.4 },
+		RadiusPoints: []FilletRadiusPoint{{T: 0.5, Radius: func() float64 { return 0.7 }}},
+	}})
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*FilletFeature).Definition()
+	if len(d.EdgeSets) != 1 {
+		t.Fatalf("edge sets after round trip = %d, want 1", len(d.EdgeSets))
+	}
+	pts := d.EdgeSets[0].RadiusPoints
+	if len(pts) != 1 || pts[0].T != 0.5 || pts[0].Radius() != 0.7 {
+		t.Errorf("radius points = %+v, want [{T:0.5 R:0.7}]", pts)
+	}
+}
+
 // TestFaceFilletRoundTrip checks the face-fillet feature's two face sets + radius survive a recipe
 // round trip (#694).
 func TestFaceFilletRoundTrip(t *testing.T) {

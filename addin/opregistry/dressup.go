@@ -37,12 +37,19 @@ type edgeDressArgs struct {
 }
 
 // filletSetArgs is one fillet edge set over the wire: constant (radius) or variable
-// (startRadius+endRadius over exactly one edge).
+// (startRadius+endRadius over exactly one edge, plus optional intermediate radiusPoints, #695).
 type filletSetArgs struct {
-	EdgeRefs    []string `json:"edgeRefs"`
-	Radius      string   `json:"radius,omitempty"`
-	StartRadius string   `json:"startRadius,omitempty"`
-	EndRadius   string   `json:"endRadius,omitempty"`
+	EdgeRefs     []string             `json:"edgeRefs"`
+	Radius       string               `json:"radius,omitempty"`
+	StartRadius  string               `json:"startRadius,omitempty"`
+	EndRadius    string               `json:"endRadius,omitempty"`
+	RadiusPoints []filletRadiusPtArgs `json:"radiusPoints,omitempty"`
+}
+
+// filletRadiusPtArgs is one intermediate radius stop on a variable fillet edge over the wire (#695).
+type filletRadiusPtArgs struct {
+	T      float64 `json:"t"`
+	Radius string  `json:"radius"`
 }
 
 const filletSchema = `{
@@ -56,7 +63,11 @@ const filletSchema = `{
       "edgeRefs": {"type": "array", "items": {"type": "string"}, "minItems": 1},
       "radius": {"type": "string", "description": "Constant radius for this set, e.g. \"3 mm\"."},
       "startRadius": {"type": "string", "description": "Variable set: radius at the edge's start vertex (the set holds exactly one edge)."},
-      "endRadius": {"type": "string", "description": "Variable set: radius at the edge's end vertex."}
+      "endRadius": {"type": "string", "description": "Variable set: radius at the edge's end vertex."},
+      "radiusPoints": {"type": "array", "description": "Variable set: optional intermediate radius stops along the edge (#695), each strictly between the ends and strictly increasing in t.", "items": {"type": "object", "properties": {
+        "t": {"type": "number", "description": "Fraction along the edge from start vertex (0) to end vertex (1); 0<t<1."},
+        "radius": {"type": "string", "description": "Radius at this stop, e.g. \"4 mm\"."}
+      }, "required": ["t", "radius"]}}
     }, "required": ["edgeRefs"]}},
     "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."},
     "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with an exact rolling-ball cylinder (default). inward rounds a recess into the corner and is only valid where the faces extend into the material (e.g. a pocket). Convex edges ignore this."}
@@ -296,7 +307,27 @@ func filletSetRadii(part *compdef.PartComponentDefinition, a filletSetArgs, i in
 		return feature.FilletEdgeSet{}, err
 	}
 	r1, err := lengthClosure(part, a.EndRadius, "fillet: endRadius")
-	return feature.FilletEdgeSet{StartRadius: r0, EndRadius: r1}, err
+	if err != nil {
+		return feature.FilletEdgeSet{}, err
+	}
+	pts, err := filletRadiusPoints(part, a.RadiusPoints)
+	return feature.FilletEdgeSet{StartRadius: r0, EndRadius: r1, RadiusPoints: pts}, err
+}
+
+// filletRadiusPoints resolves a variable set's intermediate radius stops' closures (#695).
+func filletRadiusPoints(part *compdef.PartComponentDefinition, pts []filletRadiusPtArgs) ([]feature.FilletRadiusPoint, error) {
+	if len(pts) == 0 {
+		return nil, nil
+	}
+	out := make([]feature.FilletRadiusPoint, len(pts))
+	for i, p := range pts {
+		r, err := lengthClosure(part, p.Radius, "fillet: radiusPoints radius")
+		if err != nil {
+			return nil, err
+		}
+		out[i] = feature.FilletRadiusPoint{T: p.T, Radius: r}
+	}
+	return out, nil
 }
 
 func applyChamfer(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

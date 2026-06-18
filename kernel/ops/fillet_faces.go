@@ -13,10 +13,10 @@ import (
 // end corners replaced by an arc or chord fan), one cylinder face per constant filleted edge
 // (or a planar ruling strip per variable one), and one sphere patch per corner blend.
 func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*cornerBlend) []filletFace {
-	abSubst, endCorner := filletMaps(fils)
+	abSubst, endCorner, edgeInserts := filletMaps(fils)
 	var out []filletFace
 	for _, f := range body.Faces() {
-		out = append(out, transformFace(f, abSubst[f], endCorner[f]))
+		out = append(out, transformFace(f, abSubst[f], endCorner[f], edgeInserts[f]))
 	}
 	for _, ef := range fils {
 		if ef.varying {
@@ -39,15 +39,27 @@ func filletResultFaces(body *topo.Body, fils []edgeFillet, blends map[uint64]*co
 // strips collapse to a triangle fan to that apex so the cone closes manifold (not degenerate quads).
 func rulingStripFaces(ef edgeFillet) []filletFace {
 	cmid := ef.c0.cen.Midpoint(ef.c1.cen)
-	out := make([]filletFace, 0, len(ef.c0.chords)-1)
-	for j := 0; j+1 < len(ef.c0.chords); j++ {
+	profiles := append([]corner{ef.c0}, ef.mids...) // c0, intermediate profiles (#695), c1
+	profiles = append(profiles, ef.c1)
+	var out []filletFace
+	for i := 0; i+1 < len(profiles); i++ {
+		out = append(out, ruleStripBetween(profiles[i], profiles[i+1], cmid)...)
+	}
+	return out
+}
+
+// ruleStripBetween rules one strip of planar faces between two corner profiles' chord arrays. Only an
+// end corner can be a run-out (collapse to an apex); intermediate profiles are always full arcs.
+func ruleStripBetween(a, b corner, cmid math.Point3) []filletFace {
+	out := make([]filletFace, 0, len(a.chords))
+	for j := 0; j+1 < len(a.chords) && j+1 < len(b.chords); j++ {
 		switch {
-		case ef.c1.runout: // fan from corner-0's arc to corner-1's apex
-			out = append(out, planarFaceFromRing([]math.Point3{ef.c0.chords[j], ef.c1.cen, ef.c0.chords[j+1]}, cmid))
-		case ef.c0.runout: // fan from corner-1's arc to corner-0's apex
-			out = append(out, planarFaceFromRing([]math.Point3{ef.c1.chords[j], ef.c0.cen, ef.c1.chords[j+1]}, cmid))
+		case b.runout: // fan from a's arc to b's apex
+			out = append(out, planarFaceFromRing([]math.Point3{a.chords[j], b.cen, a.chords[j+1]}, cmid))
+		case a.runout: // fan from b's arc to a's apex
+			out = append(out, planarFaceFromRing([]math.Point3{b.chords[j], a.cen, b.chords[j+1]}, cmid))
 		default:
-			out = append(out, planarFaceFromRing([]math.Point3{ef.c0.chords[j], ef.c1.chords[j], ef.c1.chords[j+1], ef.c0.chords[j+1]}, cmid))
+			out = append(out, planarFaceFromRing([]math.Point3{a.chords[j], b.chords[j], b.chords[j+1], a.chords[j+1]}, cmid))
 		}
 	}
 	return out
@@ -81,9 +93,10 @@ func reversedRing(ring []math.Point3) []math.Point3 {
 // is a fillet's A or B face — every corner, simple or blended), and the corner-vertex →
 // corner arc (only for SIMPLE end corners; a blend corner's arc lives on the sphere patch,
 // and all its faces just pull back to the sphere tangent points).
-func filletMaps(fils []edgeFillet) (map[*topo.Face]map[uint64]math.Point3, map[*topo.Face]map[uint64]corner) {
+func filletMaps(fils []edgeFillet) (map[*topo.Face]map[uint64]math.Point3, map[*topo.Face]map[uint64]corner, map[*topo.Face]map[uint64][]math.Point3) {
 	ab := map[*topo.Face]map[uint64]math.Point3{}
 	ends := map[*topo.Face]map[uint64]corner{}
+	inserts := map[*topo.Face]map[uint64][]math.Point3{}
 	put := func(m map[*topo.Face]map[uint64]math.Point3, f *topo.Face, id uint64, p math.Point3) {
 		if m[f] == nil {
 			m[f] = map[uint64]math.Point3{}
@@ -102,23 +115,46 @@ func filletMaps(fils []edgeFillet) (map[*topo.Face]map[uint64]math.Point3, map[*
 			}
 			ends[c.endFace][c.vertex.ID()] = c
 		}
+		putEdgeInserts(inserts, ef) // variable fillets split the A/B tangent lines at each mid station (#695)
 	}
-	return ab, ends
+	return ab, ends, inserts
+}
+
+// putEdgeInserts records, for a variable fillet, the intermediate tangent points that must be inserted
+// into the two adjacent faces' filleted-edge boundary so they weld to the subdivided ruling strips: the
+// A face gets each mid profile's ta, the B face each mid's tb, ordered from the edge's start vertex (#695).
+func putEdgeInserts(inserts map[*topo.Face]map[uint64][]math.Point3, ef edgeFillet) {
+	if len(ef.mids) == 0 {
+		return
+	}
+	eid := ef.edge.ID()
+	ta := make([]math.Point3, len(ef.mids))
+	tb := make([]math.Point3, len(ef.mids))
+	for i, m := range ef.mids {
+		ta[i], tb[i] = m.ta, m.tb
+	}
+	for f, pts := range map[*topo.Face][]math.Point3{ef.a: ta, ef.b: tb} {
+		if inserts[f] == nil {
+			inserts[f] = map[uint64][]math.Point3{}
+		}
+		inserts[f][eid] = pts
+	}
 }
 
 // transformFace rebuilds a face's loops, pulling A/B corners to their tangent points and
 // expanding each end corner into a tangent-point-to-tangent-point arc. A face untouched by
 // any fillet is copied unchanged.
-func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner) filletFace {
+func transformFace(f *topo.Face, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3) filletFace {
 	ff := filletFace{surface: f.Geometry()}
 	for _, l := range f.Loops() {
-		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends))
+		ff.loops = append(ff.loops, transformLoop(f, l, subs, ends, inserts))
 	}
 	return ff
 }
 
-// transformLoop walks a loop's edge uses and applies the per-vertex fillet substitutions.
-func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner) filletLoop {
+// transformLoop walks a loop's edge uses and applies the per-vertex fillet substitutions, then
+// subdivides the filleted edge at any intermediate tangent points (variable fillets, #695).
+func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends map[uint64]corner, inserts map[uint64][]math.Point3) filletLoop {
 	uses := l.EdgeUses()
 	n := len(uses)
 	var fl filletLoop
@@ -135,8 +171,37 @@ func transformLoop(f *topo.Face, l *topo.Loop, subs map[uint64]math.Point3, ends
 		default:
 			fl.add(v.Point(), nil)
 		}
+		addEdgeInserts(&fl, inserts, u)
 	}
 	return fl
+}
+
+// addEdgeInserts appends the mid tangent points along edge use u (oriented to the traversal direction),
+// subdividing a variable fillet's tangent line so the adjacent face welds to the ruling strips (#695).
+func addEdgeInserts(fl *filletLoop, inserts map[uint64][]math.Point3, u *topo.EdgeUse) {
+	if inserts == nil {
+		return
+	}
+	pts, ok := inserts[u.Edge().ID()]
+	if !ok {
+		return
+	}
+	for _, p := range orientedInserts(pts, u.Reversed()) {
+		fl.add(p, nil)
+	}
+}
+
+// orientedInserts returns the start→end-ordered insert points, reversed when the edge is traversed
+// from its end vertex.
+func orientedInserts(pts []math.Point3, reversed bool) []math.Point3 {
+	if !reversed {
+		return pts
+	}
+	out := make([]math.Point3, len(pts))
+	for i, p := range pts {
+		out[len(pts)-1-i] = p
+	}
+	return out
 }
 
 // addCornerRound expands a simple end corner into its rounded boundary: one true arc for a

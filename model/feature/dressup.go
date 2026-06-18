@@ -25,12 +25,22 @@ import (
 // FilletEdgeSet is one edge set of a fillet definition (the reference's
 // FilletConstantRadiusEdgeSet / FilletVariableRadiusEdgeSet): a constant Radius over the
 // whole set, or — when Radius is nil — a variable StartRadius→EndRadius over a single edge
-// (radius runs linearly from the edge's start vertex to its end vertex).
+// (radius runs linearly from the edge's start vertex to its end vertex). RadiusPoints are
+// optional intermediate (position, radius) stops along that variable edge (#695), each at a
+// fraction 0<T<1 of the edge, strictly increasing in T — the reference's FilletRadius set points.
 type FilletEdgeSet struct {
-	EdgeKeys    [][]byte
-	Radius      func() float64
-	StartRadius func() float64
-	EndRadius   func() float64
+	EdgeKeys     [][]byte
+	Radius       func() float64
+	StartRadius  func() float64
+	EndRadius    func() float64
+	RadiusPoints []FilletRadiusPoint
+}
+
+// FilletRadiusPoint is one intermediate radius stop on a variable fillet edge: T is the fraction
+// along the edge (start vertex = 0, end vertex = 1), Radius the rolling-ball radius there.
+type FilletRadiusPoint struct {
+	T      float64
+	Radius func() float64
 }
 
 // variable reports whether the set carries a start→end radius instead of a constant one.
