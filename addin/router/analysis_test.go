@@ -67,6 +67,15 @@ func TestAnalysisMeasureOverWire(t *testing.T) {
 	if m.Unit != "mm²" || !nearAny(m.Value, 1200, 1500, 2000) {
 		t.Errorf("face area = %+v, want one of 1200/1500/2000 mm²", m)
 	}
+	vA := hex.EncodeToString(body.Vertices()[0].ReferenceKey())
+	vB := hex.EncodeToString(body.Vertices()[1].ReferenceKey())
+	call(t, r, s, "analysis.measure", `{"type":"distance","keyA":"`+vA+`","keyB":"`+vB+`"}`, &m)
+	if m.Unit != "mm" || m.Value <= 0 {
+		t.Errorf("vertex distance = %+v, want a positive mm distance", m)
+	}
+	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"distance","keyA":"`+vA+`"}`)); err == nil {
+		t.Error("distance with one vertex key = ok, want error")
+	}
 	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"bogus","keyA":"00"}`)); err == nil {
 		t.Error("measure with a bad type = ok, want error")
 	}
