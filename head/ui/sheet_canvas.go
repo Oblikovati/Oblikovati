@@ -139,25 +139,42 @@ func drawSheetViews(s *app.Session, face rect, sheet *drawing.Sheet) {
 		}
 	}
 	drawSheetAnnotations(face, sheet)
-	drawSheetDimensions(face, sheet)
+	drawSheetDimensions(s, face, sheet)
 }
 
-// drawSheetDimensions strokes each dimension's glyph (extension/dimension lines, arrowheads) in
-// the ink colour and draws its measured value at the dimension-line midpoint.
-func drawSheetDimensions(face rect, sheet *drawing.Sheet) {
+// drawSheetDimensions strokes each dimension's glyph (extension/dimension lines, arrowheads) and
+// draws its centred value text. The part being dragged (the line or the text) is highlighted so
+// the active selection is visible.
+func drawSheetDimensions(s *app.Session, face rect, sheet *drawing.Sheet) {
+	dragName, dragText, dragging := s.DraggingDimension()
 	ds := sheet.Dimensions()
 	for i := 0; i < ds.Count(); i++ {
 		d := ds.Item(i)
+		grabbed := dragging && d.Name() == dragName
+		lineInk, thick := viewVisibleInk, float32(1.2)
+		if grabbed && !dragText {
+			lineInk, thick = viewSelectInk, 1.8
+		}
 		for _, c := range d.Curves() {
 			ax, ay := curveToScreen(face, c.Start())
 			bx, by := curveToScreen(face, c.End())
-			native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.2)
+			native.DrawLine(ax, ay, bx, by, lineInk, thick)
 		}
 		tx, ty := curveToScreen(face, math.P2(math.Scalar(dimAnchorX(d)), math.Scalar(dimAnchorY(d))))
-		// Centre the value text on its anchor (already lifted off the dimension line).
-		runes := utf8.RuneCountInString(d.Text())
-		native.DrawText(tx-float32(runes)*3.2, ty-7, d.Text(), sheetInk)
+		runes := utf8.RuneCountInString(d.Text()) // centre the text on its (lifted) anchor
+		textInk := sheetInk
+		if grabbed && dragText {
+			textInk = viewSelectInk
+			drawTextHighlightBox(tx, ty, runes)
+		}
+		native.DrawText(tx-float32(runes)*3.2, ty-7, d.Text(), textInk)
 	}
+}
+
+// drawTextHighlightBox outlines the dragged value text in the highlight colour.
+func drawTextHighlightBox(tx, ty float32, runes int) {
+	w := float32(runes)*6.4 + 4
+	rectOutline(rect{x: tx - w/2, y: ty - 9, w: w, h: 16}, viewSelectInk, 1)
 }
 
 // dimAnchorX / dimAnchorY split the dimension's text-anchor for the mm→screen mapping.

@@ -18,6 +18,12 @@ type dimDragState struct {
 	active bool
 }
 
+// DraggingDimension reports the dimension currently being dragged and whether its text (vs its
+// line) is the grabbed part — so the canvas can highlight the active selection.
+func (s *Session) DraggingDimension() (name string, text, active bool) {
+	return s.dimDrag.name, s.dimDrag.text, s.dimDrag.active
+}
+
 // DragDimension drives a dimension drag on the canvas from the canvas item's ImGui state
 // (itemActive/itemClicked), the cursor in sheet mm (cx,cy) and the per-frame move in sheet mm
 // (dx,dy). It returns true while a drag is in progress, so the head suppresses view selection.

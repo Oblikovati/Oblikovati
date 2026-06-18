@@ -66,6 +66,9 @@ func TestDragDimensionStateMachine(t *testing.T) {
 	if !s.DragDimension(true, true, tx, ty, 0, 0) {
 		t.Fatal("press on a dimension's text should start a drag")
 	}
+	if name, text, active := s.DraggingDimension(); !active || !text || name != d.Name() {
+		t.Errorf("DraggingDimension = (%q,%v,%v), want the text of %q active", name, text, active, d.Name())
+	}
 	// Held with a move nudges the text.
 	s.DragDimension(true, false, tx, ty, 4, -2)
 	if nx, ny := d.TextAnchorMM(); nx != tx+4 || ny != ty-2 {

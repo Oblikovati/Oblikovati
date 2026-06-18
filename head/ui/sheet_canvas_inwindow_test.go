@@ -95,6 +95,18 @@ func TestInWindowDrawingCanvasRenders(t *testing.T) {
 		win.EndFrame(0.1, 0.1, 0.1)
 	}
 
+	// Frame 5–6: a dimension's text is being dragged → its highlight branch renders.
+	dc, _ := app.ActiveDrawing(s)
+	if d := dc.Sheets().Active().Dimensions().Item(0); d != nil {
+		tx, ty := d.TextAnchorMM()
+		s.DragDimension(true, true, tx, ty, 0, 0)
+		for i := 0; i < 2; i++ {
+			win.BeginFrame()
+			DrawChrome(win, s)
+			win.EndFrame(0.1, 0.1, 0.1)
+		}
+	}
+
 	if views.Item(0).CurveCount() == 0 {
 		t.Error("rendered base view lost its curves")
 	}
