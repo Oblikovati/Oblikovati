@@ -381,6 +381,28 @@ func TestEmbossRoundTrip(t *testing.T) {
 	}
 }
 
+// TestRestRoundTrip checks the rest pad's sketch ref, profiles, depth, recessed flag and taper
+// survive a recipe round trip (#486).
+func TestRestRoundTrip(t *testing.T) {
+	sk := squareSketch(4)
+	fs := NewPartFeatures(nil, nil)
+	NewPlasticFeatures(fs).AddRest(sk, []int{0}, func() float64 { return 1.2 }, true, 0.05)
+
+	data, err := fs.MarshalRecipe(oneSketch{s: sk})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{s: sk}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	r := fresh.Item(0).Definition().(*RestFeature).Definition()
+	if !r.Recessed || r.Depth() != 1.2 || len(r.ProfileIndices) != 1 || r.Taper != 0.05 {
+		t.Errorf("restored rest = recessed %v depth %v profiles %v taper %v, want true 1.2 [0] 0.05",
+			r.Recessed, r.Depth(), r.ProfileIndices, r.Taper)
+	}
+}
+
 func TestRevolveAboutCenterlineRoundTrip(t *testing.T) {
 	sk := offsetSquareSketch(2, 2)
 	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 2))

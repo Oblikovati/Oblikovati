@@ -43,6 +43,61 @@ type snapFitArgs struct {
 	CatchHeight string `json:"catchHeight"`
 }
 
+const restSchema = `{
+  "type": "object",
+  "properties": {
+    "sketchIndex": {"type": "integer", "minimum": 0},
+    "profileIndices": {"type": "array", "items": {"type": "integer", "minimum": 0}, "description": "Closed profiles bounding the rest; omit to use profileIndex."},
+    "profileIndex": {"type": "integer", "minimum": 0, "default": 0},
+    "depth": {"type": "string", "description": "Raise (or, when recessed, cut) depth, e.g. \"2 mm\"."},
+    "recessed": {"type": "boolean", "default": false, "description": "Recess a pocket into the face instead of raising a pad."}
+  },
+  "required": ["sketchIndex", "depth"]
+}`
+
+func restDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{
+		Name:    "rest",
+		Summary: "Add a raised or recessed rest pad bounded by a closed sketch profile.",
+		Schema:  json.RawMessage(restSchema),
+		Apply:   applyRest,
+	}
+}
+
+// restArgs is the rest op's wire shape: a sketch profile + depth, raised or recessed.
+type restArgs struct {
+	SketchIndex    int    `json:"sketchIndex"`
+	ProfileIndices []int  `json:"profileIndices,omitempty"`
+	ProfileIndex   int    `json:"profileIndex"`
+	Depth          string `json:"depth"`
+	Recessed       bool   `json:"recessed,omitempty"`
+}
+
+func applyRest(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in restArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	sk, err := sketchAt(part, in.SketchIndex)
+	if err != nil {
+		return nil, err
+	}
+	depth, err := lengthClosure(part, in.Depth, "rest: depth")
+	if err != nil {
+		return nil, err
+	}
+	profiles := in.ProfileIndices
+	if len(profiles) == 0 {
+		profiles = []int{in.ProfileIndex}
+	}
+	pf := feature.NewPlasticFeatures(part.Features()).AddRest(sk, profiles, depth, in.Recessed, 0)
+	return recomputeResult(part, pf)
+}
+
 func applySnapFit(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {

@@ -30,6 +30,7 @@ type FeatureData struct {
 	FaceFillet     *FaceFilletData     `yaml:"faceFillet,omitempty"`
 	RuleFillet     *RuleFilletData     `yaml:"ruleFillet,omitempty"`
 	SnapFit        *SnapFitData        `yaml:"snapFit,omitempty"`
+	Rest           *RestData           `yaml:"rest,omitempty"`
 	Chamfer        *EdgeDressData      `yaml:"chamfer,omitempty"`
 	Shell          *FaceDressData      `yaml:"shell,omitempty"`
 	Draft          *FaceDressData      `yaml:"draft,omitempty"`
@@ -200,6 +201,12 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.Emboss = ed
+	case *RestFeature:
+		rd, err := serializeRest(f.def, sk)
+		if err != nil {
+			return FeatureData{}, err
+		}
+		fd.Rest = rd
 	case *SplitSolidFeature:
 		sd, err := serializeSplitSolid(f.def)
 		if err != nil {
@@ -576,6 +583,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreRib(fs, fd.Rib, sk)
 	case "emboss":
 		return restoreEmboss(fs, fd.Emboss, sk)
+	case "rest":
+		return restoreRest(fs, fd.Rest, sk)
 	case "splitSolid":
 		return restoreSplitSolid(fs, fd.SplitSolid, work)
 	case "move":
