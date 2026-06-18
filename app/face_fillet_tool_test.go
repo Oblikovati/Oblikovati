@@ -131,6 +131,101 @@ func TestFaceFilletEditSeed(t *testing.T) {
 	}
 }
 
+// TestFaceFilletToolPromptAndName covers the tool's name and the step-by-step prompt, and the
+// non-edit Cancel path (restores the default selection filter).
+func TestFaceFilletToolPromptAndName(t *testing.T) {
+	s, block := newPartWithBlock(t, 2)
+	tool := NewFaceFilletTool()
+	s.StartTool(tool)
+	if tool.Name() != "Face Fillet" {
+		t.Errorf("Name = %q, want Face Fillet", tool.Name())
+	}
+	if s.ActiveFaceFillet() != tool {
+		t.Error("ActiveFaceFillet did not return the running tool")
+	}
+	if got := tool.Prompt(s); got != "Click the first set of faces" {
+		t.Errorf("prompt with no faces = %q", got)
+	}
+	tool.Pick(s, FaceHandle{Face: topFaceOf(t, block), Body: block})
+	if got := tool.Prompt(s); got != "Arm Face Set 2, then click the second set of faces" {
+		t.Errorf("prompt with set A only = %q", got)
+	}
+	tool.ArmSetB()
+	tool.Pick(s, FaceHandle{Face: plusXFaceOf(t, block), Body: block})
+	if got := tool.Prompt(s); got != "Set the radius, then click OK" {
+		t.Errorf("prompt with both sets = %q", got)
+	}
+	tool.Cancel(s) // non-edit: restores the default selection filter
+}
+
+// TestFaceFilletDraftPreview checks the viewport draft is offered only once both sets and a
+// positive radius are set.
+func TestFaceFilletDraftPreview(t *testing.T) {
+	s, tool := pickFaceFilletSets(t)
+	tool.SetRadius(0)
+	if _, ok := tool.DraftFeature(s); ok {
+		t.Error("draft offered with a zero radius")
+	}
+	tool.SetRadius(0.3)
+	if _, ok := tool.DraftFeature(s); !ok {
+		t.Error("no draft preview after both sets + radius")
+	}
+}
+
+// TestFaceFilletCommitEdit re-edits a committed face fillet with a new radius and re-commits,
+// covering the edit-write path.
+func TestFaceFilletCommitEdit(t *testing.T) {
+	s, tool := pickFaceFilletSets(t)
+	tool.SetRadius(0.3)
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	pf := tool.AddedFeature()
+	et := editFaceFilletTool(pf, pf.Definition().(*feature.FaceFilletFeature))
+	s.StartTool(et)
+	et.SetRadius(0.4)
+	if err := s.OK(); err != nil {
+		t.Fatalf("commit edit: %v", err)
+	}
+	if got := pf.Definition().(*feature.FaceFilletFeature).Definition().Radius(); got != 0.4 {
+		t.Errorf("edited radius = %g, want 0.4", got)
+	}
+}
+
+// TestFaceFilletCancelEdit cancels an in-progress edit, covering the edit-abort branch of Cancel.
+func TestFaceFilletCancelEdit(t *testing.T) {
+	s, tool := pickFaceFilletSets(t)
+	tool.SetRadius(0.3)
+	if err := s.OK(); err != nil {
+		t.Fatalf("OK: %v", err)
+	}
+	pf := tool.AddedFeature()
+	et := editFaceFilletTool(pf, pf.Definition().(*feature.FaceFilletFeature))
+	s.StartTool(et)
+	et.Cancel(s) // edit branch: restore the original definition
+	if !pf.Health().OK() {
+		t.Error("cancelling the edit should leave the feature healthy")
+	}
+}
+
+// TestFaceFilletNonAdjacentErrors keeps the tool open with a notice when the two sets share no
+// edge (parallel top/bottom faces) — the non-adjacent case is not yet supported.
+func TestFaceFilletNonAdjacentErrors(t *testing.T) {
+	s, block := newPartWithBlock(t, 2)
+	tool := NewFaceFilletTool()
+	s.StartTool(tool)
+	tool.Pick(s, FaceHandle{Face: topFaceOf(t, block), Body: block})
+	tool.ArmSetB()
+	tool.Pick(s, FaceHandle{Face: lowestFaceOf(t, block), Body: block})
+	tool.SetRadius(0.3)
+	if err := s.OK(); err == nil {
+		t.Fatal("face fillet between parallel faces sharing no edge should fail")
+	}
+	if s.ActiveTool() == nil {
+		t.Error("a failed commit should keep the tool open")
+	}
+}
+
 // TestFaceFilletViaRibbonCommand checks the Face Fillet command (a Fillet split-button variant)
 // starts the tool.
 func TestFaceFilletViaRibbonCommand(t *testing.T) {
