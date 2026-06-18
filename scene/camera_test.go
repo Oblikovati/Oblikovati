@@ -128,6 +128,29 @@ func TestZoomToRectIgnoresDegenerate(t *testing.T) {
 	}
 }
 
+// TestSetPivotUnderCursorRecenters: clicking off-centre to set the orbit pivot brings that point to
+// the view centre (the new target) while keeping the view direction and eye–target distance.
+func TestSetPivotUnderCursorRecenters(t *testing.T) {
+	c := NewCamera(800, 600)
+	dist0 := float64(c.Eye.DistanceTo(c.Target))
+	pivot, _ := c.cursorPlanePoint(650, 180)
+	p := c.SetPivotUnderCursor(650, 180)
+	if !p.Target.IsEqualTo(pivot, 1e-6) {
+		t.Errorf("new target = %v, want the clicked world point %v", p.Target, pivot)
+	}
+	if !p.Forward().IsEqualTo(c.Forward(), 1e-9) {
+		t.Error("set-pivot must keep the view direction")
+	}
+	if d := float64(p.Eye.DistanceTo(p.Target)); stdmath.Abs(d-dist0) > 1e-6 {
+		t.Errorf("set-pivot distance = %v, want %v (unchanged)", d, dist0)
+	}
+	// The new pivot is the target, so it projects to the view centre.
+	o, dir := p.RayThrough(400, 300)
+	if dd := pointRayDistance(p.Target, o, dir); dd > 1e-6 {
+		t.Errorf("pivot is %g off the centre ray (should be centred)", dd)
+	}
+}
+
 // TestRollRotatesUpAboutView: roll spins the up vector about the forward axis without moving the
 // eye or target; a quarter turn takes +Y up to ±X (in the screen plane).
 func TestRollRotatesUpAboutView(t *testing.T) {

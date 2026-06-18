@@ -57,6 +57,13 @@ func (s *Session) CanLookAt() bool {
 	return planar
 }
 
+// SetOrbitPivot recenters the orbit on the world point under viewport pixel (x,y) — Free Orbit's
+// click-to-set-pivot (#913 N9). The clicked point becomes the orbit centre and is brought to the
+// view centre, keeping the view direction and distance.
+func (s *Session) SetOrbitPivot(x, y float64) {
+	s.SetCamera(s.Camera().SetPivotUnderCursor(x, y))
+}
+
 // lookAtPlane swings the camera to face the plane at target with the given normal and up.
 func (s *Session) lookAtPlane(target math.Point3, normal, up math.Vector3) {
 	s.PushViewHistory()

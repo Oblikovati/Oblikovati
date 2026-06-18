@@ -33,6 +33,9 @@ var (
 // single-pick click handler. Replaces the bare handleViewportClick call so they never both
 // fire on the same press.
 func handleViewportSelection(s *app.Session) {
+	if updateOrbitPivot(s) {
+		return // Free Orbit: a no-drag click set the orbit pivot (#913 N9)
+	}
 	if heldNavMode() != NavNone {
 		return // a held F2/F3/F4 turns a left-drag into navigation, not selection (#911)
 	}
@@ -142,6 +145,46 @@ func drawZoomWindowRect(s *app.Session, bx, by float32) {
 	native.DrawLine(sx1, sy0, sx1, sy1, border, 1.2)
 	native.DrawLine(sx1, sy1, sx0, sy1, border, 1.2)
 	native.DrawLine(sx0, sy1, sx0, sy0, border, 1.2)
+}
+
+// orbitPivotClickSlop is the max drag (pixels) under which an F4 left press counts as a click
+// (set-pivot) rather than an orbit drag.
+const orbitPivotClickSlop = 4
+
+// orbitPivot tracks one F4 left press: armed once pressed, moved once it drags past the slop.
+var orbitPivot struct {
+	armed bool
+	moved bool
+}
+
+// updateOrbitPivot sets a new orbit pivot when the user clicks (presses then releases without
+// dragging past the slop) in the viewport while Free Orbit (F4) is held — Inventor's set-pivot
+// (#913 N9). A drag orbits instead (ApplyNavigation handles the rotation), so only a no-drag click
+// sets the pivot. Reports whether it consumed this frame's left input (so selection stands down).
+func updateOrbitPivot(s *app.Session) bool {
+	if heldNavMode() != NavOrbit {
+		orbitPivot.armed = false
+		return false
+	}
+	if native.IsItemClicked(native.MouseLeft) {
+		orbitPivot.armed, orbitPivot.moved = true, false
+	}
+	if !orbitPivot.armed {
+		return false
+	}
+	if native.MouseDown(native.MouseLeft) {
+		dx, dy := native.MouseDelta()
+		if dx*dx+dy*dy > orbitPivotClickSlop*orbitPivotClickSlop {
+			orbitPivot.moved = true
+		}
+		return true // the drag (if any) orbits via ApplyNavigation; selection stands down
+	}
+	if !orbitPivot.moved { // released without dragging → a click sets the pivot
+		cx, cy := viewportCursor()
+		s.SetOrbitPivot(cx, cy)
+	}
+	orbitPivot.armed = false
+	return true
 }
 
 // drawOrbitRing draws the Free-Orbit ring centred on the viewport while F4 (Free Orbit) is held, so
