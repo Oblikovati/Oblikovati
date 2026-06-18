@@ -48,6 +48,9 @@ type Document struct {
 	Attachments []AttachmentRecord
 	// Interests are the add-in data registry records (M03-F10).
 	Interests []InterestRecord
+	// Attributes is the add-in attribute-set block (#155): the encoded AttributeManager
+	// (model/attr), nil for a document that carries no attributes.
+	Attributes []byte
 	// DisplaySettings are the per-document display settings (background/edges/ground/shadows),
 	// nil for a document that never customized them (M16-F07 #643).
 	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
@@ -153,6 +156,7 @@ type onDisk struct {
 	References      []FileReferenceRecord  `yaml:"references,omitempty"`
 	Attachments     []AttachmentRecord     `yaml:"attachments,omitempty"`
 	Interests       []InterestRecord       `yaml:"interests,omitempty"`
+	Attributes      []byte                 `yaml:"attributes,omitempty"`
 	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
 	Resources       yaml.Node              `yaml:"resources,omitempty"`
 	Model           yaml.Node              `yaml:"model,omitempty"`
@@ -171,6 +175,7 @@ func MarshalDocument(d Document) ([]byte, error) {
 		References:      d.References,
 		Attachments:     d.Attachments,
 		Interests:       d.Interests,
+		Attributes:      d.Attributes,
 		DisplaySettings: d.DisplaySettings,
 	}
 	if err := embedNativeNodes(&od, d); err != nil {
@@ -247,6 +252,7 @@ func documentHeader(od onDisk) Document {
 		References:      od.References,
 		Attachments:     od.Attachments,
 		Interests:       od.Interests,
+		Attributes:      od.Attributes,
 		DisplaySettings: od.DisplaySettings,
 	}
 }

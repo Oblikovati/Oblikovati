@@ -32,7 +32,16 @@ const (
 	// identity (GetReferenceKey applies to features and parameters too).
 	KindFeature   EntityKind = 10
 	KindParameter EntityKind = 11
+	// KindDocument names the document itself — the anchor for document-level
+	// attribute sets (#155). There is one such key per document; see [DocumentKey].
+	KindDocument EntityKind = 20
 )
+
+// DocumentKey is the single well-known reference key that names the document itself
+// (not any entity within it) — the anchor for document-level attribute sets (#155).
+// It is fixed (no lineage payload), so it survives recompute and round-trips through
+// the attribute codec like any other key.
+func DocumentKey() RefKey { return RefKey{kind: KindDocument} }
 
 // String returns a stable lowercase name for diagnostics.
 func (k EntityKind) String() string {
@@ -49,6 +58,8 @@ func (k EntityKind) String() string {
 		return "feature"
 	case KindParameter:
 		return "parameter"
+	case KindDocument:
+		return "document"
 	default:
 		return "unknown"
 	}
