@@ -47,7 +47,7 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 	}
-	return nonRectangularMesh(f, s, outer3D, holes3D, outerUV, holesUV)
+	return nonRectangularMesh(s, q, outer3D, holes3D, outerUV, holesUV)
 }
 
 // meshSeamCrossingFace meshes a curved face whose boundary loop wraps the periodic seam (so toUVLoops
@@ -70,55 +70,25 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 	return fullDomainGridMesh(s, q) // doubly-periodic / aperiodic seam face we can't reduce
 }
 
-// nonRectangularMesh meshes a non-iso-rectangular curved trim. A sphere cap is meshed over its own
-// (u,v) with interior nodes (gridPatchMesh) so it reads smooth; a B-spline uses the same CDT without
-// interior Steiner points (trimmedPatchMesh). A cyl/cone that shares a curved seam with another
-// cyl/cone — two fillet cylinders that mutually trim where two edges miter — ALSO needs the interior
-// nodes: meshed boundary-only, both faces fan a coincident diagonal across the shared seam into a
-// non-manifold overlap, so it gets gridPatchMesh too (small trims only — the (u,v) CDT is too slow on
-// the ~120-point cone trims that once froze import). Every other cyl/cone — an ordinary fillet wall, a
-// corner-blend cylinder meeting only planes and the sphere — keeps the O(boundary) best-fit-plane
-// ear-clip (boundaryPatchMesh), coarse but fast, with the conformance pass closing any small gap.
-func nonRectangularMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+// nonRectangularMesh meshes a non-iso-rectangular curved trim. Every analytic curved surface (torus,
+// sphere, cylinder, cone) goes through metricPatchMesh — a trim-local metric-scaled (u,v) CDT that
+// stays fold-free and volume-correct (#585). A B-spline that fell through nurbsPcurveMesh uses the same
+// CDT without interior Steiner points (trimmedPatchMesh). Anything else keeps the best-fit-plane
+// ear-clip (boundaryPatchMesh).
+func nonRectangularMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
 	switch s.(type) {
-	case geom.Sphere:
-		return gridPatchMesh(s, outer3D, holes3D, outerUV, holesUV)
+	case geom.Torus, geom.Sphere, geom.Cylinder, geom.Cone:
+		// Analytic curved trims fold when flattened to a best-fit plane (boundaryPatchMesh) or meshed
+		// over a plain anisotropic (u,v) (gridPatchMesh): a torus's ring-vs-tube, a sphere near its
+		// poles, a trimmed cyl/cone. metricPatchMesh triangulates in a TRIM-LOCAL metric-scaled (u,v)
+		// (√E,√G over the trim's own (u,v) bbox, so even a cone — whose metric degenerates only toward
+		// the far-off apex — stays well conditioned), plus repairFolds. This was the bulk of the EDF
+		// over-enclosure (#585: total volume +35.6% → ≈exact, torus the single largest fold source).
+		return metricPatchMesh(s, q, outer3D, holes3D, outerUV, holesUV)
 	case geom.BSplineSurface:
 		return trimmedPatchMesh(s, outer3D, holes3D)
-	case geom.Cylinder, geom.Cone:
-		if boundaryPointCount(outer3D, holes3D) <= curvedSeamMeshMax && sharesCurvedSeam(f) {
-			return gridPatchMesh(s, outer3D, holes3D, outerUV, holesUV)
-		}
 	}
 	return boundaryPatchMesh(s, outer3D, holes3D)
-}
-
-// curvedSeamMeshMax bounds the boundary size for which a curved-seam cyl/cone trim takes the
-// interior-node CDT (gridPatchMesh) instead of the fast ear-clip — comfortably above a fillet miter's
-// ~30-point boundary and below the ~120-point cone trims whose CDT froze import.
-const curvedSeamMeshMax = 64
-
-// boundaryPointCount totals a trim's outer and hole boundary points.
-func boundaryPointCount(outer3D []math.Point3, holes3D [][]math.Point3) int {
-	n := len(outer3D)
-	for _, h := range holes3D {
-		n += len(h)
-	}
-	return n
-}
-
-// sharesCurvedSeam reports whether f shares an edge with ANOTHER cylinder/cone face — a curved-curved
-// seam (two mutually-trimming fillet cylinders meet this way). A cyl/cone touching only planes and a
-// sphere (an ordinary fillet wall, a corner-blend cylinder) does not qualify.
-func sharesCurvedSeam(f *topo.Face) bool {
-	for _, e := range f.Edges() {
-		for _, nf := range e.Faces() {
-			if nf != f && isCylOrCone(nf.Geometry()) {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 // boundaryPatchMesh triangulates a curved face from its boundary loops alone (no interior
