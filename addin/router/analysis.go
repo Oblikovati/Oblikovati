@@ -3,7 +3,6 @@
 package router
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -75,10 +74,10 @@ func measureEntity(body *topo.Body, mt types.MeasureType, keyA, keyB string) (fl
 	return 0, "", fmt.Errorf("analysis.measure: unsupported measure type %v", mt)
 }
 
-// decodeKey hex-decodes a reference key (an invalid string decodes to nil, which matches nothing).
+// decodeKey carries a reference key as raw bytes — matching get_reference_keys and every other
+// key-consuming wire method (body_facets, brep, assembly_features); an unknown key matches nothing.
 func decodeKey(s string) []byte {
-	b, _ := hex.DecodeString(s)
-	return b
+	return []byte(s)
 }
 
 func analysisMassProperties(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

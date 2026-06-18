@@ -3,7 +3,7 @@
 package router
 
 import (
-	"encoding/hex"
+	"encoding/json"
 	"math"
 	"testing"
 
@@ -55,25 +55,27 @@ func TestAnalysisMeasureOverWire(t *testing.T) {
 		t.Fatalf("ActivePart: %v", err)
 	}
 	body := part.SurfaceBodies().Item(0)
-	edgeKey := hex.EncodeToString(body.Edges()[0].ReferenceKey())
-	faceKey := hex.EncodeToString(body.Faces()[0].ReferenceKey())
+	edgeKey := string(body.Edges()[0].ReferenceKey())
+	faceKey := string(body.Faces()[0].ReferenceKey())
 
+	// Reference keys carry raw bytes (e.g. a leading \x02); marshal via a map so they are JSON-escaped,
+	// exactly as the bridge sends them — string concatenation would emit invalid JSON.
 	var m wire.MeasureResult
-	call(t, r, s, "analysis.measure", `{"type":"length","keyA":"`+edgeKey+`"}`, &m)
+	call(t, r, s, "analysis.measure", measureArgs(t, "length", edgeKey, ""), &m)
 	if m.Unit != "mm" || !nearAny(m.Value, 40, 30, 50) {
 		t.Errorf("edge length = %+v, want one of 40/30/50 mm", m)
 	}
-	call(t, r, s, "analysis.measure", `{"type":"area","keyA":"`+faceKey+`"}`, &m)
+	call(t, r, s, "analysis.measure", measureArgs(t, "area", faceKey, ""), &m)
 	if m.Unit != "mm²" || !nearAny(m.Value, 1200, 1500, 2000) {
 		t.Errorf("face area = %+v, want one of 1200/1500/2000 mm²", m)
 	}
-	vA := hex.EncodeToString(body.Vertices()[0].ReferenceKey())
-	vB := hex.EncodeToString(body.Vertices()[1].ReferenceKey())
-	call(t, r, s, "analysis.measure", `{"type":"distance","keyA":"`+vA+`","keyB":"`+vB+`"}`, &m)
+	vA := string(body.Vertices()[0].ReferenceKey())
+	vB := string(body.Vertices()[1].ReferenceKey())
+	call(t, r, s, "analysis.measure", measureArgs(t, "distance", vA, vB), &m)
 	if m.Unit != "mm" || m.Value <= 0 {
 		t.Errorf("vertex distance = %+v, want a positive mm distance", m)
 	}
-	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"distance","keyA":"`+vA+`"}`)); err == nil {
+	if _, err := r.Handle(s, "analysis.measure", []byte(measureArgs(t, "distance", vA, ""))); err == nil {
 		t.Error("distance with one vertex key = ok, want error")
 	}
 	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"bogus","keyA":"00"}`)); err == nil {
@@ -82,6 +84,21 @@ func TestAnalysisMeasureOverWire(t *testing.T) {
 	if _, err := r.Handle(s, "analysis.measure", []byte(`{"type":"length","keyA":"dead"}`)); err == nil {
 		t.Error("measure with an unknown edge key = ok, want error")
 	}
+}
+
+// measureArgs JSON-encodes analysis.measure arguments through a map, so raw reference-key bytes are
+// escaped exactly as the bridge sends them (an omitted keyB stays absent).
+func measureArgs(t *testing.T, measureType, keyA, keyB string) string {
+	t.Helper()
+	args := map[string]any{"type": measureType, "keyA": keyA}
+	if keyB != "" {
+		args["keyB"] = keyB
+	}
+	b, err := json.Marshal(args)
+	if err != nil {
+		t.Fatalf("marshal measure args: %v", err)
+	}
+	return string(b)
 }
 
 // nearAny reports whether v is within 0.01 of any of the candidate values.
