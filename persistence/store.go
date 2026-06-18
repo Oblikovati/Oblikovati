@@ -95,6 +95,7 @@ func (s *PackageStore) buildPackage(d *doc.Document, displayName, subType string
 	pkg.SetFileReferences(toCodecFileReferences(d.FileReferenceRecords()))
 	pkg.SetAttachments(toCodecAttachments(d.AttachmentRecords()))
 	pkg.SetInterests(toCodecInterests(d.InterestRecords()))
+	pkg.SetAttributes(d.AttributeBytes())   // #155 add-in attribute sets
 	if set, ok := d.DisplaySettings(); ok { // M16-F07 #643: per-document display settings
 		pkg.SetDisplaySettings(toCodecDisplaySettings(set))
 	}
@@ -180,6 +181,9 @@ func restoreIdentity(d *doc.Document, pkg *Package) error {
 	}
 	d.SetAttachmentRecords(recs)
 	d.SetInterestRecords(fromCodecInterests(pkg.Interests()))
+	if err := d.SetAttributeBytes(pkg.Attributes()); err != nil { // #155
+		return err
+	}
 	return nil
 }
 

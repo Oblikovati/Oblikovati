@@ -34,6 +34,7 @@ type Package struct {
 	references  []yamlcodec.FileReferenceRecord
 	attachments []yamlcodec.AttachmentRecord     // external-file attachments (M03-F08)
 	interests   []yamlcodec.InterestRecord       // add-in data registry (M03-F10)
+	attributes  []byte                           // add-in attribute sets, encoded (#155)
 	display     *yamlcodec.DisplaySettingsRecord // per-document display settings (M16-F07 #643)
 }
 
@@ -71,6 +72,12 @@ func (p *Package) SetInterests(i []yamlcodec.InterestRecord) { p.interests = i }
 
 // Interests returns the add-in data-registry records.
 func (p *Package) Interests() []yamlcodec.InterestRecord { return p.interests }
+
+// SetAttributes stores the encoded add-in attribute sets (#155).
+func (p *Package) SetAttributes(a []byte) { p.attributes = a }
+
+// Attributes returns the encoded add-in attribute sets, nil when none.
+func (p *Package) Attributes() []byte { return p.attributes }
 
 // SetResources stores the document's embedded resource table (ADR-0031), keyed by UUID.
 func (p *Package) SetResources(r map[string]yamlcodec.Resource) { p.resources = r }

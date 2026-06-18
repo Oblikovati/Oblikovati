@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"oblikovati.org/event"
+	"oblikovati.org/model/attr"
 	"oblikovati.org/model/display"
 )
 
@@ -48,8 +49,9 @@ type Document struct {
 	displaySettings  *display.Settings // per-document display settings (background/edges/ground/shadows), nil ⇒ defaults (M16-F07 #643)
 	identity         FileIdentity      // the file's persisted identity block (M03-F07, #159)
 	fileReferences   []*FileReference
-	attachments      *FileAttachments   // external-file attachment records (M03-F08); lazily seeded
-	interests        *DocumentInterests // add-in data registry (M03-F10); lazily seeded
+	attachments      *FileAttachments       // external-file attachment records (M03-F08); lazily seeded
+	interests        *DocumentInterests     // add-in data registry (M03-F10); lazily seeded
+	attributes       *attr.AttributeManager // add-in attribute sets (#155); lazily seeded
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;
@@ -87,6 +89,39 @@ func (d *Document) SubType() SubTypeID { return d.subType }
 
 // SetSubType stamps the flavored subtype id.
 func (d *Document) SetSubType(id SubTypeID) { d.subType = id }
+
+// Attributes returns the document's add-in attribute manager (#155), lazily seeded.
+// Document-level attribute sets are anchored under [identity.DocumentKey]; per-entity
+// sets (features, bodies) share the same manager under their own keys.
+func (d *Document) Attributes() *attr.AttributeManager {
+	if d.attributes == nil {
+		d.attributes = attr.NewAttributeManager()
+	}
+	return d.attributes
+}
+
+// AttributeBytes returns the encoded attribute manager for persistence, or nil when no
+// attributes exist (so an unannotated document writes no attribute block).
+func (d *Document) AttributeBytes() []byte {
+	if d.attributes == nil || d.attributes.Count() == 0 {
+		return nil
+	}
+	return d.attributes.Encode()
+}
+
+// SetAttributeBytes restores the attribute manager from persisted bytes (the load path);
+// empty data leaves the manager unseeded.
+func (d *Document) SetAttributeBytes(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	m, err := attr.DecodeAttributes(data)
+	if err != nil {
+		return err
+	}
+	d.attributes = m
+	return nil
+}
 
 // Content returns the modeling payload, or nil if this is an unopened reference
 // stub. Callers needing a typed view use the specialization accessors
