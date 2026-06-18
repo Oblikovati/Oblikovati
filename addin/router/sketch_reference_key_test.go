@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
+	"oblikovati.org/model/compdef"
 )
 
 // TestSketchEntitiesReportReferenceKeys: sketch.entities now reports a persistent reference
@@ -93,6 +94,47 @@ func TestSketchReferenceKeyBadIndexFails(t *testing.T) {
 	r, s := emptyPartSession(t)
 	if _, err := r.Handle(s, "sketch.referenceKey", []byte(`{"sketchIndex":7}`)); err == nil {
 		t.Error("sketch.referenceKey with an out-of-range index should fail")
+	}
+}
+
+// TestResolveReferenceIsDocumentScoped opens a second part document and proves resolve is
+// scoped to the active document: a key minted in document A resolves only while A is active,
+// and is found=false while B is active — even though both documents hold sketches at once.
+// This is the multi-document guarantee behind #153's cross-document collision-impossibility.
+func TestResolveReferenceIsDocumentScoped(t *testing.T) {
+	r, s := emptyPartSession(t) // document A is active
+	docA := s.ActiveDocument()
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"40 mm","height":"30 mm"}`, &wire.SketchRectangleResult{})
+	var entsA wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &entsA)
+	keyA := entsA.Entities[0].ReferenceKey
+
+	// Open a second part document with its own sketch and make it active.
+	docB, err := compdef.AddPart(s.Workspace(), "second.obk", true)
+	if err != nil {
+		t.Fatalf("AddPart B: %v", err)
+	}
+	if err := s.Workspace().SetActiveDocument(docB); err != nil {
+		t.Fatalf("activate B: %v", err)
+	}
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.rectangle", `{"sketchIndex":0,"width":"10 mm","height":"10 mm"}`, &wire.SketchRectangleResult{})
+
+	// Document A's key must not resolve against document B.
+	var res wire.ResolveSketchReferenceResult
+	call(t, r, s, "sketch.resolveReference", mustJSON(t, wire.ResolveSketchReferenceArgs{ReferenceKey: keyA}), &res)
+	if res.Found {
+		t.Errorf("document A's key resolved while B is active: %+v", res)
+	}
+
+	// Switch back to A: the same key resolves again.
+	if err := s.Workspace().SetActiveDocument(docA); err != nil {
+		t.Fatalf("reactivate A: %v", err)
+	}
+	call(t, r, s, "sketch.resolveReference", mustJSON(t, wire.ResolveSketchReferenceArgs{ReferenceKey: keyA}), &res)
+	if !res.Found || res.Kind != "sketchEntity" {
+		t.Errorf("document A's key did not resolve while A is active: %+v", res)
 	}
 }
 
