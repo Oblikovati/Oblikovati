@@ -91,6 +91,45 @@ func (t *CenterMarkTool) Params() ToolParams {
 	}}
 }
 
+// CenterlineTool adds the horizontal+vertical dash-dot symmetry centerlines through a chosen base
+// view's centre.
+type CenterlineTool struct {
+	views     []string
+	viewIndex int
+}
+
+// NewCenterlineTool creates the tool; its view list is captured on Start.
+func NewCenterlineTool() *CenterlineTool { return &CenterlineTool{} }
+
+func (t *CenterlineTool) Name() string              { return "Centerline" }
+func (t *CenterlineTool) Start(s *Session)          { t.views = baseViewNames(s) }
+func (t *CenterlineTool) Pick(*Session, Selectable) {}
+func (t *CenterlineTool) CanCommit() bool           { return len(t.views) > 0 }
+func (t *CenterlineTool) Cancel(*Session)           {}
+
+// Commit adds the centerlines on the selected view.
+func (t *CenterlineTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if len(t.views) == 0 {
+		return fmt.Errorf("drawing: no view for centerlines — add a base view first")
+	}
+	if _, err := c.Sheets().Active().Annotations().AddCenterlines("", t.views[clampIndex(t.viewIndex, len(t.views))]); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the view choice for the property dialog.
+func (t *CenterlineTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
+	}}
+}
+
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
 	width, height    float64

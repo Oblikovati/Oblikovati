@@ -116,8 +116,25 @@ func (as *DrawingAnnotations) addCenterMarkForEdge(viewName string, edgeKey []by
 	return a
 }
 
-// Recompute re-derives the associative annotations (CoG markers and centre marks) against the
-// current model.
+// AddCenterlines adds the horizontal+vertical dash-dot symmetry centerlines through the named
+// view's centre, spanning its extent. The lines re-derive from the view's bounds, so they track
+// the model.
+func (as *DrawingAnnotations) AddCenterlines(name, viewName string) (*DrawingAnnotation, error) {
+	view, ok := as.views.ByName(viewName)
+	if !ok {
+		return nil, fmt.Errorf("drawing: no view %q for centerlines", viewName)
+	}
+	if _, _, _, _, ok := view.BoundsMM(); !ok {
+		return nil, fmt.Errorf("drawing: view %q has no geometry for centerlines", viewName)
+	}
+	a := &DrawingAnnotation{name: as.uniqueName(name), kind: types.CenterlineAnnotation, viewName: viewName}
+	as.recomputeCenterline(a)
+	as.items = append(as.items, a)
+	return a, nil
+}
+
+// Recompute re-derives the associative annotations (CoG markers, centre marks and centerlines)
+// against the current model.
 func (as *DrawingAnnotations) Recompute() {
 	for _, a := range as.items {
 		switch a.kind {
@@ -125,8 +142,27 @@ func (as *DrawingAnnotations) Recompute() {
 			as.recomputeCoG(a)
 		case types.CenterMarkAnnotation:
 			as.recomputeCenterMark(a)
+		case types.CenterlineAnnotation:
+			as.recomputeCenterline(a)
 		}
 	}
+}
+
+// recomputeCenterline rebuilds the view's horizontal+vertical dash-dot centerlines from its current
+// bounds (spanning the extent plus a small overshoot); with no view geometry it clears the glyph.
+func (as *DrawingAnnotations) recomputeCenterline(a *DrawingAnnotation) {
+	a.curves = nil
+	view, ok := as.views.ByName(a.viewName)
+	if !ok {
+		return
+	}
+	minX, minY, maxX, maxY, ok := view.BoundsMM()
+	if !ok {
+		return
+	}
+	const overshoot = 4.0
+	cx, cy := (minX+maxX)/2, (minY+maxY)/2
+	a.curves = append(dashDotLine(minX-overshoot, cy, maxX+overshoot, cy), dashDotLine(cx, minY-overshoot, cx, maxY+overshoot)...)
 }
 
 // annotationBasis resolves a base view, the referenced model body and the view's projection frame
@@ -256,6 +292,36 @@ func centerMarkCurves(cx, cy, r float64) []DrawingCurve {
 		seg(cx-ext, cy, cx-gap, cy), seg(cx+gap, cy, cx+ext, cy), // horizontal extension arms
 		seg(cx, cy-ext, cx, cy-gap), seg(cx, cy+gap, cx, cy+ext), // vertical extension arms
 	}
+}
+
+// dashDotLine builds a centerline's dash-dot pattern (long dash · short dot · …, sheet mm) from
+// (ax, ay) to (bx, by): it marches the repeating pattern along the line, emitting a drawing curve
+// for each dash and dot and skipping the gaps.
+func dashDotLine(ax, ay, bx, by float64) []DrawingCurve {
+	// Pattern lengths (mm): long dash, gap, dot, gap — the ISO centerline rhythm.
+	pattern := [4]float64{12, 2, 2, 2}
+	const drawn = 0b0101 // bits 0 and 2 (dash and dot) are drawn; the gaps are not
+	dx, dy := bx-ax, by-ay
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return nil
+	}
+	ux, uy := dx/length, dy/length
+	var out []DrawingCurve
+	pos, k := 0.0, 0
+	for pos < length {
+		seg := math.Min(pattern[k%4], length-pos)
+		if drawn&(1<<(k%4)) != 0 {
+			s, e := pos, pos+seg
+			out = append(out, DrawingCurve{
+				A: gmath.P2(gmath.Scalar(ax+ux*s), gmath.Scalar(ay+uy*s)),
+				B: gmath.P2(gmath.Scalar(ax+ux*e), gmath.Scalar(ay+uy*e)), Visible: true,
+			})
+		}
+		pos += seg
+		k++
+	}
+	return out
 }
 
 // circlePolyline tessellates a circle (cx, cy, r) into visible drawing curves.

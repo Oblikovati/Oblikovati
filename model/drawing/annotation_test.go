@@ -80,6 +80,47 @@ func TestAddCenterMarksOnCircularEdges(t *testing.T) {
 	}
 }
 
+// TestAddCenterlinesOnView: centerlines on a view produce a dash-dot horizontal+vertical cross
+// (many segments) spanning its bounds, survive reopen, and re-derive on recompute.
+func TestAddCenterlinesOnView(t *testing.T) {
+	c := drawingWithBox(t)
+	front, err := c.Sheets().Active().Views().AddBase(BaseViewSpec{Name: "FRONT", Orientation: types.BaseViewFront, Scale: 2, CenterX: 100, CenterY: 100})
+	if err != nil {
+		t.Fatalf("AddBase: %v", err)
+	}
+	cl, err := c.Sheets().Active().Annotations().AddCenterlines("CL", "FRONT")
+	if err != nil {
+		t.Fatalf("AddCenterlines: %v", err)
+	}
+	if cl.Kind() != types.CenterlineAnnotation || cl.CurveCount() < 4 {
+		t.Fatalf("centerlines = (%v, %d curves), want a dash-dot cross (many segments)", cl.Kind(), cl.CurveCount())
+	}
+	// The dash-dot segments should straddle the view bounds (the cross spans the whole view).
+	minX, _, maxX, _, _ := front.BoundsMM()
+	lo, hi := 1e9, -1e9
+	for _, cv := range cl.Curves() {
+		lo = min(lo, float64(cv.Start().X))
+		hi = max(hi, float64(cv.End().X))
+	}
+	if lo > minX || hi < maxX {
+		t.Errorf("centerline horizontal span [%g,%g] does not cover the view [%g,%g]", lo, hi, minX, maxX)
+	}
+
+	rann := reopen(t, c).Sheets().Active().Annotations()
+	rcl, ok := rann.ByName("CL")
+	if !ok || rcl.Kind() != types.CenterlineAnnotation || rcl.CurveCount() < 4 {
+		t.Errorf("reopened centerlines wrong: ok=%v curves=%d", ok, rcl.CurveCount())
+	}
+}
+
+// TestCenterlinesNeedView: centerlines need an existing view with geometry.
+func TestCenterlinesNeedView(t *testing.T) {
+	c := drawingWithBox(t)
+	if _, err := c.Sheets().Active().Annotations().AddCenterlines("CL", "NOPE"); err == nil {
+		t.Error("AddCenterlines on a missing view = ok, want error")
+	}
+}
+
 // TestCenterMarksNeedCircularEdge: a box has no circular edges, so centre-marking errors.
 func TestCenterMarksNeedCircularEdge(t *testing.T) {
 	c := drawingWithBox(t)
