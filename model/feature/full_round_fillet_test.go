@@ -3,10 +3,12 @@
 package feature
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -61,14 +63,74 @@ func TestFullRoundRoundsRibTop(t *testing.T) {
 	}
 }
 
-// TestFullRoundRejectsNonParallelSides: choosing a side and the top (not parallel) is a clean error.
-func TestFullRoundRejectsNonParallelSides(t *testing.T) {
+// TestFullRoundRejectsDegenerateSide: reusing the center face as a side cannot resolve a round — a
+// clean error (the would-be sides share the center's plane, so there is no enclosed round).
+func TestFullRoundRejectsDegenerateSide(t *testing.T) {
 	fs, s1, ctr, _ := ribForFullRound(t)
-	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, ctr) // ctr (top) is not parallel to s1
+	pf := NewDressUpFeatures(fs).AddFullRoundFillet(s1, ctr, ctr) // side2 == center
 	fs.Recompute()
 	if pf.Health().OK() {
-		t.Error("full round with non-parallel sides should be sick")
+		t.Error("full round with the center reused as a side should be sick")
 	}
+}
+
+// TestFullRoundConvergingSides: a trapezoidal rib (sides converge upward) full-rounds the narrow top
+// between the two slanted sides (#694). The round is tangent to both sides with its apex on the
+// original top plane — a valid solid whose volume DROPS (corners rounded off) and whose apex stays at
+// the original top height (no upward bulge). The round is faceted (the boolean planarizes it).
+func TestFullRoundConvergingSides(t *testing.T) {
+	trap := []math.Point2{{X: 0, Y: 0}, {X: 4, Y: 0}, {X: 3, Y: 2}, {X: 1, Y: 2}}
+	rib := buildPrism(trap, sketch.XYPlane(), span{near: 0, far: 6}, 0, "rib")
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(rib)
+	orig := ops.BodyGeometryProperties(rib, ops.DefaultQuality()).Volume
+
+	top := faceKeyByNormal(t, rib, math.V3(0, 1, 0)) // narrow +Y top = center
+	pf := NewDressUpFeatures(fs).AddFullRoundFillet(
+		[][]byte{slantedSideKey(t, rib, -1)}, [][]byte{top}, [][]byte{slantedSideKey(t, rib, +1)})
+	fs.Recompute()
+	if !pf.Health().OK() {
+		t.Fatalf("converging full round sick: %+v", pf.Health())
+	}
+	res := fs.Result()[0]
+	if r := ops.Validate(res); !r.Valid || !res.IsSolid() {
+		t.Fatalf("converging full round not a valid solid: %+v", r)
+	}
+	v := ops.BodyGeometryProperties(res, ops.Quality{ChordTolerance: 1e-3}).Volume
+	if v >= orig {
+		t.Errorf("converging full round volume = %g, want < %g (corners rounded off)", v, orig)
+	}
+	if maxY := maxVertexY(res); maxY > 2.0001 {
+		t.Errorf("round apex maxY = %g, want ≈2 (no bulge above the original top)", maxY)
+	}
+}
+
+// slantedSideKey returns the key of the trapezoid rib's slanted side whose normal has the given X sign.
+func slantedSideKey(t *testing.T, b *topo.Body, sign float64) []byte {
+	t.Helper()
+	for _, f := range b.Faces() {
+		pl, ok := f.Geometry().(geom.Plane)
+		if !ok {
+			continue
+		}
+		n := pl.Normal()
+		if float64(n.Dot(math.V3(0, 1, 0))) > 0.2 && float64(n.X)*sign > 0.2 {
+			return f.ReferenceKey()
+		}
+	}
+	t.Fatalf("no slanted side with X sign %g", sign)
+	return nil
+}
+
+// maxVertexY returns the highest vertex Y over all the body's faces.
+func maxVertexY(b *topo.Body) float64 {
+	hi := stdmath.Inf(-1)
+	for _, f := range b.Faces() {
+		for _, v := range f.Vertices() {
+			hi = stdmath.Max(hi, float64(v.Point().Y))
+		}
+	}
+	return hi
 }
 
 // TestFullRoundRejectsMissingFace: an unknown face key is a clean error.
