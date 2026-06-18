@@ -32,6 +32,7 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddRevTag] = drawingAnnotationsAddRevisionTag
 	r.handlers[wire.MethodDrawingAnnotationsAddNote] = drawingAnnotationsAddNote
 	r.handlers[wire.MethodDrawingAnnotationsAddCustomTable] = drawingAnnotationsAddCustomTable
+	r.handlers[wire.MethodDrawingAnnotationsAddHoleNotes] = drawingAnnotationsAddHoleNotes
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -311,6 +312,23 @@ func drawingAnnotationsAddCustomTable(s *app.Session, raw json.RawMessage) (json
 		return nil, err
 	}
 	a, err := an.AddCustomTable(in.Name, in.XMM, in.YMM, in.Headers, in.Rows)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddHoleNotes(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddHoleNotesArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddHoleNotes(in.Name, in.ViewName)
 	if err != nil {
 		return nil, err
 	}

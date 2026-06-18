@@ -289,6 +289,45 @@ func (t *RevisionTagTool) Params() ToolParams {
 	}}
 }
 
+// HoleNotesTool annotates every hole in a chosen base view with a leadered diameter callout that
+// re-resolves with the model.
+type HoleNotesTool struct {
+	views     []string
+	viewIndex int
+}
+
+// NewHoleNotesTool creates the tool; its base-view list is captured on Start.
+func NewHoleNotesTool() *HoleNotesTool { return &HoleNotesTool{} }
+
+func (t *HoleNotesTool) Name() string              { return "Hole Notes" }
+func (t *HoleNotesTool) Start(s *Session)          { t.views = baseViewNames(s) }
+func (t *HoleNotesTool) Pick(*Session, Selectable) {}
+func (t *HoleNotesTool) CanCommit() bool           { return len(t.views) > 0 }
+func (t *HoleNotesTool) Cancel(*Session)           {}
+
+// Commit annotates every hole in the selected view with a diameter callout.
+func (t *HoleNotesTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if len(t.views) == 0 {
+		return fmt.Errorf("drawing: no base view for hole notes — add a base view first")
+	}
+	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("", t.views[clampIndex(t.viewIndex, len(t.views))]); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view choice for the property dialog.
+func (t *HoleNotesTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
+	}}
+}
+
 // NoteTool drops a free text note at the cursor, with an optional leader to a point.
 type NoteTool struct {
 	text             string

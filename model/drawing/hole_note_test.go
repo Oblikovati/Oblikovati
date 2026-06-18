@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package drawing
+
+import (
+	"testing"
+
+	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/brep"
+	gmath "oblikovati.org/math"
+)
+
+// TestAddHoleNotes: hole notes annotate a cylinder's rim with a leadered Ø callout that re-resolves
+// the diameter when the model changes.
+func TestAddHoleNotes(t *testing.T) {
+	c := drawingWithCylinder(t, 2) // 2 cm radius → Ø40
+	topBase(t, c.Sheets().Active().Views())
+	hn, err := c.Sheets().Active().Annotations().AddHoleNotes("HN", "TOP")
+	if err != nil {
+		t.Fatalf("AddHoleNotes: %v", err)
+	}
+	if hn.Kind() != types.HoleNoteAnnotation || hn.RowCount() != 1 || hn.CurveCount() == 0 {
+		t.Fatalf("hole notes = (%v, %d notes, %d curves), want a holeNote with 1 callout + leader", hn.Kind(), hn.RowCount(), hn.CurveCount())
+	}
+	if len(hn.Labels()) != 1 || hn.Labels()[0].Text != "Ø40.00" {
+		t.Fatalf("hole note label = %v, want Ø40.00", hn.Labels())
+	}
+
+	wider, err := brep.SolidCylinder(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), 3, 5) // → Ø60
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	c.SetBodyResolver(fakeBodyResolver{body: wider})
+	c.RecomputeViews()
+	if hn.Labels()[0].Text != "Ø60.00" {
+		t.Errorf("after the cylinder widened, hole note = %q, want Ø60.00 (re-resolved)", hn.Labels()[0].Text)
+	}
+}
+
+// TestHoleNotesNeedHoles: a box has no holes, so hole notes error.
+func TestHoleNotesNeedHoles(t *testing.T) {
+	c := drawingWithBox(t)
+	frontBase(t, c.Sheets().Active().Views())
+	if _, err := c.Sheets().Active().Annotations().AddHoleNotes("HN", "FRONT"); err == nil {
+		t.Error("AddHoleNotes on a box (no holes) = ok, want error")
+	}
+}

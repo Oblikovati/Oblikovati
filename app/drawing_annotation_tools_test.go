@@ -337,6 +337,32 @@ func TestCustomTableToolDropsTable(t *testing.T) {
 	}
 }
 
+// TestHoleNotesToolAnnotatesHoles: the hole-notes tool annotates a base view's holes with a
+// diameter callout.
+func TestHoleNotesToolAnnotatesHoles(t *testing.T) {
+	s := drawingWithCylinderSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.Params().Choices[0].Set(1) // Top, so the cylinder's rim projects as a circle
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+	tool := NewHoleNotesTool()
+	tool.Start(s)
+	if tool.Name() != "Hole Notes" || !tool.CanCommit() {
+		t.Fatalf("hole-notes tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.HoleNoteAnnotation || an.Item(0).RowCount() != 1 {
+		t.Fatalf("hole notes not added (count=%d)", an.Count())
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()
