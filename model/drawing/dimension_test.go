@@ -4,11 +4,100 @@ package drawing
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/subd"
+	gmath "oblikovati.org/math"
 )
+
+// drawingWithCylinder returns a box-named drawing backed by a solid cylinder (radius cm, height
+// 5 cm along +Z) — the fixture for radius/diameter dimension tests (a box has no circular edges).
+func drawingWithCylinder(t *testing.T, radius float64) *Content {
+	t.Helper()
+	cyl, err := brep.SolidCylinder(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), radius, 5)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	c := NewContent()
+	c.SetBodyResolver(fakeBodyResolver{body: cyl})
+	c.SetModelReference("box.opd")
+	return c
+}
+
+// topBase adds a TOP base view (so a cylinder's rim circles project as circles) at scale 1.
+func topBase(t *testing.T, views *DrawingViews) {
+	t.Helper()
+	if _, err := views.AddBase(BaseViewSpec{Name: "TOP", Orientation: types.BaseViewTop, Scale: 1, CenterX: 100, CenterY: 100}); err != nil {
+		t.Fatalf("AddBase TOP: %v", err)
+	}
+}
+
+// TestRadialDimensionMeasuresCircle: a radius dimension on a 2 cm cylinder reports R20 and a
+// diameter dimension Ø40 — the true model size, with leader glyph curves.
+func TestRadialDimensionMeasuresCircle(t *testing.T) {
+	c := drawingWithCylinder(t, 2)
+	views := c.Sheets().Active().Views()
+	topBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+
+	rd, err := dims.AddRadial("R1", "TOP", types.RadiusDimension, 100, 100)
+	if err != nil {
+		t.Fatalf("AddRadial radius: %v", err)
+	}
+	if math.Abs(rd.ValueMM()-20) > 1e-6 || !strings.HasPrefix(rd.Text(), "R") || rd.CurveCount() == 0 {
+		t.Errorf("radius dim = (%v mm, %q, %d curves), want 20 / R… / glyph", rd.ValueMM(), rd.Text(), rd.CurveCount())
+	}
+	dd, err := dims.AddRadial("D1", "TOP", types.DiameterDimension, 100, 100)
+	if err != nil {
+		t.Fatalf("AddRadial diameter: %v", err)
+	}
+	if math.Abs(dd.ValueMM()-40) > 1e-6 || !strings.HasPrefix(dd.Text(), "Ø") {
+		t.Errorf("diameter dim = (%v mm, %q), want 40 / Ø…", dd.ValueMM(), dd.Text())
+	}
+}
+
+// TestRadialDimensionIsAssociative: a radius dimension follows the model — widening the cylinder
+// 2→3 cm re-measures 20→30 mm.
+func TestRadialDimensionIsAssociative(t *testing.T) {
+	c := drawingWithCylinder(t, 2)
+	views := c.Sheets().Active().Views()
+	topBase(t, views)
+	dims := c.Sheets().Active().Dimensions()
+	rd, err := dims.AddRadial("R1", "TOP", types.RadiusDimension, 100, 100)
+	if err != nil {
+		t.Fatalf("AddRadial: %v", err)
+	}
+	if math.Abs(rd.ValueMM()-20) > 1e-6 {
+		t.Fatalf("initial radius = %v mm, want 20", rd.ValueMM())
+	}
+	wider, err := brep.SolidCylinder(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), 3, 5)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	c.SetBodyResolver(fakeBodyResolver{body: wider})
+	c.RecomputeViews()
+	if math.Abs(rd.ValueMM()-30) > 1e-6 {
+		t.Errorf("after the cylinder widened, radius = %v mm, want 30", rd.ValueMM())
+	}
+}
+
+// TestRadialForEachCircleDedupsRims: auto-dimensioning a cylinder's circular edges dimensions the
+// through-feature once (its two coincident rims), not twice.
+func TestRadialForEachCircleDedupsRims(t *testing.T) {
+	c := drawingWithCylinder(t, 2)
+	views := c.Sheets().Active().Views()
+	topBase(t, views)
+	n, err := c.Sheets().Active().Dimensions().AddRadialForEachCircle("TOP", types.DiameterDimension)
+	if err != nil {
+		t.Fatalf("AddRadialForEachCircle: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("added %d dimensions, want 1 (the two coincident rims dedup)", n)
+	}
+}
 
 // TestLinearDimensionMeasuresTrueModelSize: a horizontal dimension across the front view's bottom
 // edge reports the box's true X-width (2 cm → 20 mm), independent of the view scale, and produces

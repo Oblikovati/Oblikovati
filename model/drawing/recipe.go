@@ -56,8 +56,9 @@ type dimensionRecipe struct {
 	Name     string  `yaml:"name"`
 	Type     string  `yaml:"type,omitempty"`
 	ViewName string  `yaml:"viewName"`
-	KeyA     string  `yaml:"keyA"`
-	KeyB     string  `yaml:"keyB"`
+	KeyA     string  `yaml:"keyA,omitempty"`    // linear: first attached vertex
+	KeyB     string  `yaml:"keyB,omitempty"`    // linear: second attached vertex
+	EdgeKey  string  `yaml:"edgeKey,omitempty"` // radial: the attached circular edge
 	Offset   float64 `yaml:"offsetMm,omitempty"`
 }
 
@@ -178,7 +179,8 @@ func dimensionRecipesOf(sh *Sheet) []dimensionRecipe {
 	for _, d := range sh.dimensions.items {
 		out = append(out, dimensionRecipe{
 			Name: d.name, Type: d.dimType.String(), ViewName: d.viewName,
-			KeyA: hex.EncodeToString(d.keyA), KeyB: hex.EncodeToString(d.keyB), Offset: d.offset,
+			KeyA: hex.EncodeToString(d.keyA), KeyB: hex.EncodeToString(d.keyB),
+			EdgeKey: hex.EncodeToString(d.edgeKey), Offset: d.offset,
 		})
 	}
 	return out
@@ -242,7 +244,8 @@ func restoreDimensions(sh *Sheet, recs []dimensionRecipe) {
 		dimType, _ := types.ParseDrawingDimensionType(dr.Type)
 		keyA, _ := hex.DecodeString(dr.KeyA)
 		keyB, _ := hex.DecodeString(dr.KeyB)
-		d := &DrawingDimension{name: dr.Name, dimType: dimType, viewName: dr.ViewName, keyA: keyA, keyB: keyB, offset: dr.Offset}
+		edgeKey, _ := hex.DecodeString(dr.EdgeKey)
+		d := &DrawingDimension{name: dr.Name, dimType: dimType, viewName: dr.ViewName, keyA: keyA, keyB: keyB, edgeKey: edgeKey, offset: dr.Offset}
 		ds.recompute(d)
 		ds.items = append(ds.items, d)
 	}

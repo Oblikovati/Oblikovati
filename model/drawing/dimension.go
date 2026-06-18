@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/api/contract"
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/hlr"
 	"oblikovati.org/kernel/topo"
 	gmath "oblikovati.org/math"
@@ -26,8 +27,9 @@ type DrawingDimension struct {
 	name     string
 	dimType  types.DrawingDimensionType
 	viewName string
-	keyA     []byte // attached model vertices (reference keys) — the associativity anchors
+	keyA     []byte // linear: attached model vertices (reference keys) — the associativity anchors
 	keyB     []byte
+	edgeKey  []byte  // radial: the attached circular model edge (reference key)
 	offset   float64 // dimension-line standoff from the measured points (signed, sheet mm)
 	valueMM  float64 // measured model distance (mm), scale-independent
 	text     string  // displayed text (the formatted value)
@@ -82,6 +84,60 @@ func (ds *DrawingDimensions) AddLinear(name, viewName string, dimType types.Draw
 	return d, nil
 }
 
+// AddRadial adds a radius or diameter dimension on the circular model edge nearest the pick point
+// (sheet mm) projected on the named base view; the value re-measures when the model changes.
+func (ds *DrawingDimensions) AddRadial(name, viewName string, dimType types.DrawingDimensionType, pickX, pickY float64) (*DrawingDimension, error) {
+	view, body, basis, err := ds.dimensionBasis(viewName)
+	if err != nil {
+		return nil, err
+	}
+	key, ok := nearestCircularEdgeKey(body, view, basis, pickX, pickY)
+	if !ok {
+		return nil, fmt.Errorf("drawing: view %q has no circular edge to dimension", viewName)
+	}
+	d := &DrawingDimension{name: ds.uniqueName(name), dimType: dimType, viewName: viewName, edgeKey: key}
+	ds.recompute(d)
+	ds.items = append(ds.items, d)
+	return d, nil
+}
+
+// AddRadialForEachCircle adds a radius or diameter dimension for every distinct circular edge in
+// the named base view — auto hole callouts. Coincident projections (a through-hole's two rims) are
+// dimensioned once. Returns how many it added.
+func (ds *DrawingDimensions) AddRadialForEachCircle(viewName string, dimType types.DrawingDimensionType) (int, error) {
+	view, body, basis, err := ds.dimensionBasis(viewName)
+	if err != nil {
+		return 0, err
+	}
+	seen := map[string]bool{}
+	added := 0
+	for _, e := range body.Edges() {
+		circle, ok := e.Geometry().(geom.Circle)
+		if !ok {
+			continue
+		}
+		c := view.place(hlr.ProjectPoint(basis, circle.Center))
+		key := fmt.Sprintf("%.1f/%.1f/%.2f", float64(c.X), float64(c.Y), circle.Radius)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		ds.addRadialForEdge(viewName, dimType, e.ReferenceKey())
+		added++
+	}
+	if added == 0 {
+		return 0, fmt.Errorf("drawing: view %q has no circular edges to dimension", viewName)
+	}
+	return added, nil
+}
+
+// addRadialForEdge appends a radial dimension on a specific circular edge (already resolved).
+func (ds *DrawingDimensions) addRadialForEdge(viewName string, dimType types.DrawingDimensionType, edgeKey []byte) {
+	d := &DrawingDimension{name: ds.uniqueName(""), dimType: dimType, viewName: viewName, edgeKey: edgeKey}
+	ds.recompute(d)
+	ds.items = append(ds.items, d)
+}
+
 // Recompute re-measures every dimension against the current model — the associativity path.
 func (ds *DrawingDimensions) Recompute() {
 	for _, d := range ds.items {
@@ -89,14 +145,23 @@ func (ds *DrawingDimensions) Recompute() {
 	}
 }
 
-// recompute re-binds the dimension's two vertices, re-projects them through its view, re-measures
-// and rebuilds the glyph. With no resolvable view, model or vertices it clears the dimension.
+// recompute re-binds the dimension's geometry, re-measures and rebuilds the glyph. With no
+// resolvable view, model or geometry it clears the dimension.
 func (ds *DrawingDimensions) recompute(d *DrawingDimension) {
 	d.curves = nil
 	view, body, basis, err := ds.dimensionBasis(d.viewName)
 	if err != nil {
 		return
 	}
+	if isRadial(d.dimType) {
+		ds.recomputeRadial(d, view, body, basis)
+		return
+	}
+	ds.recomputeLinear(d, view, body, basis)
+}
+
+// recomputeLinear re-binds the two vertices, re-projects them and rebuilds the linear glyph.
+func (ds *DrawingDimensions) recomputeLinear(d *DrawingDimension, view *DrawingView, body *topo.Body, basis hlr.View) {
 	va, okA := body.FindVertexByKey(d.keyA)
 	vb, okB := body.FindVertexByKey(d.keyB)
 	if !okA || !okB {
@@ -109,6 +174,75 @@ func (ds *DrawingDimensions) recompute(d *DrawingDimension) {
 	s1, s2 := view.place(p1), view.place(p2)
 	ax, ay := dimensionAxis(d.dimType, s1, s2)
 	d.curves, d.anchorX, d.anchorY = linearDimensionCurves(s1, s2, ax, ay, d.offset)
+}
+
+// isRadial reports whether a dimension type measures a circular edge (radius or diameter).
+func isRadial(t types.DrawingDimensionType) bool {
+	return t == types.RadiusDimension || t == types.DiameterDimension
+}
+
+// recomputeRadial re-binds the circular edge, re-measures its radius/diameter (the true model
+// size) and rebuilds the leader glyph.
+func (ds *DrawingDimensions) recomputeRadial(d *DrawingDimension, view *DrawingView, body *topo.Body, basis hlr.View) {
+	edge, ok := body.FindEdgeByKey(d.edgeKey)
+	if !ok {
+		return
+	}
+	circle, ok := edge.Geometry().(geom.Circle)
+	if !ok {
+		return
+	}
+	radiusMM := circle.Radius * cmToMM
+	if d.dimType == types.DiameterDimension {
+		d.valueMM = 2 * radiusMM
+		// Ø (U+00D8) is the diameter prefix: it is in the head's Latin-1 font, unlike the
+		// typographic ⌀ (U+2300), which renders as a missing-glyph box.
+		d.text = "Ø" + strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+	} else {
+		d.valueMM = radiusMM
+		d.text = "R" + strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+	}
+	center := view.place(hlr.ProjectPoint(basis, circle.Center))
+	arc := view.place(hlr.ProjectPoint(basis, circle.PointAt(0)))
+	opp := view.place(hlr.ProjectPoint(basis, circle.PointAt(0.5)))
+	d.curves, d.anchorX, d.anchorY = radialDimensionCurves(center, arc, opp, d.dimType == types.DiameterDimension)
+}
+
+// nearestCircularEdgeKey returns the reference key of the circular model edge whose centre projects
+// nearest the pick (sheet mm), and false when the body has no circular edges.
+func nearestCircularEdgeKey(body *topo.Body, v *DrawingView, basis hlr.View, x, y float64) ([]byte, bool) {
+	var bestKey []byte
+	bestD := -1.0
+	for _, e := range body.Edges() {
+		circle, ok := e.Geometry().(geom.Circle)
+		if !ok {
+			continue
+		}
+		s := v.place(hlr.ProjectPoint(basis, circle.Center))
+		dx, dy := float64(s.X)-x, float64(s.Y)-y
+		if d := dx*dx + dy*dy; bestD < 0 || d < bestD {
+			bestD, bestKey = d, e.ReferenceKey()
+		}
+	}
+	return bestKey, bestD >= 0
+}
+
+// radialDimensionCurves builds a radial dimension's glyph (sheet mm): a radius leader from the
+// centre to the arc with an arrowhead, or a diameter line across the circle with arrowheads at
+// both ends. It returns the text anchor (the midpoint of the leader / the centre).
+func radialDimensionCurves(center, arc, opp gmath.Point2, diameter bool) (curves []DrawingCurve, anchorX, anchorY float64) {
+	cx, cy := float64(center.X), float64(center.Y)
+	ax, ay := float64(arc.X), float64(arc.Y)
+	if diameter {
+		ox, oy := float64(opp.X), float64(opp.Y)
+		out := []DrawingCurve{dimSegment(ax, ay, ox, oy)}
+		out = append(out, arrowheadCurves(ax, ay, cx, cy)...)
+		out = append(out, arrowheadCurves(ox, oy, cx, cy)...)
+		return out, cx, cy
+	}
+	out := []DrawingCurve{dimSegment(cx, cy, ax, ay)}
+	out = append(out, arrowheadCurves(ax, ay, cx, cy)...)
+	return out, (cx + ax) / 2, (cy + ay) / 2
 }
 
 // dimensionBasis resolves a dimension's view (which must be a base view in this increment), the

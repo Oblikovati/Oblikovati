@@ -3,10 +3,70 @@
 package app
 
 import (
+	"math"
 	"testing"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/ops"
+	gmath "oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
+
+// drawingWithCylinderSession builds a 2 cm-radius cylinder part + an active drawing of it — the
+// fixture for the radial dimension tool (a box has no circular edges).
+func drawingWithCylinderSession(t *testing.T) *Session {
+	t.Helper()
+	s := NewSession()
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("commands: %v", err)
+	}
+	part, err := compdef.AddPart(s.Workspace(), "box.opd", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := part.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	sk.Circles().AddByCenterRadius(gmath.P2(0, 0), 2)
+	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+	def.Recompute()
+	if _, err := s.NewDrawing(); err != nil {
+		t.Fatalf("NewDrawing: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	c.SetModelReference("box.opd")
+	return s
+}
+
+// TestRadialDimensionToolDimensionsHoles: the radial tool dimensions a base view's circular edges
+// as diameter callouts (the auto "dimension all holes" action).
+func TestRadialDimensionToolDimensionsHoles(t *testing.T) {
+	s := drawingWithCylinderSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.Params().Choices[0].Set(1) // Top, so the cylinder's rim projects as a circle
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+
+	tool := NewRadialDimensionTool()
+	tool.Start(s)
+	tool.Params().Choices[1].Set(1) // Type = Diameter
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("radial Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	dims := c.Sheets().Active().Dimensions()
+	if dims.Count() != 1 {
+		t.Fatalf("dimension count = %d, want 1 (the deduped hole)", dims.Count())
+	}
+	d := dims.Item(0)
+	if d.Type() != types.DiameterDimension || math.Abs(d.ValueMM()-40) > 1e-6 {
+		t.Errorf("dimension = (%v, %v mm), want a diameter ⌀40", d.Type(), d.ValueMM())
+	}
+}
 
 // TestLinearDimensionToolPlacesOverallDimension: the tool dimensions a base view's overall size in
 // the chosen direction, producing an associative dimension with a positive measured value.

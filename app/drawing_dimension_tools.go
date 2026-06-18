@@ -57,6 +57,56 @@ func (t *LinearDimensionTool) Params() ToolParams {
 	}}
 }
 
+// radialDimensionTypes indexes the Type dropdown for the radial tool.
+var radialDimensionTypes = []struct {
+	label string
+	typ   types.DrawingDimensionType
+}{
+	{"Radius", types.RadiusDimension}, {"Diameter", types.DiameterDimension},
+}
+
+// RadialDimensionTool dimensions every circular edge (hole) in a chosen base view as a radius or
+// diameter callout — the common "dimension all holes" action.
+type RadialDimensionTool struct {
+	derivedViewTool
+	typeIdx int
+}
+
+// NewRadialDimensionTool creates the tool; its base-view list is captured on Start.
+func NewRadialDimensionTool() *RadialDimensionTool { return &RadialDimensionTool{} }
+
+func (t *RadialDimensionTool) Name() string { return "Radial Dimension" }
+
+// Commit dimensions every distinct circular edge in the selected base view.
+func (t *RadialDimensionTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	if parent == "" {
+		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+	}
+	dimType := radialDimensionTypes[clampIndex(t.typeIdx, len(radialDimensionTypes))].typ
+	if _, err := c.Sheets().Active().Dimensions().AddRadialForEachCircle(parent, dimType); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view and radius/diameter choices for the property dialog.
+func (t *RadialDimensionTool) Params() ToolParams {
+	labels := make([]string, len(radialDimensionTypes))
+	for i, r := range radialDimensionTypes {
+		labels[i] = r.label
+	}
+	return ToolParams{Choices: []ChoiceParam{
+		t.baseChoice("Base View"),
+		{Label: "Type", Options: labels, Get: func() int { return t.typeIdx }, Set: func(i int) { t.typeIdx = i }},
+	}}
+}
+
 // dimensionPlacement maps the Type index + a view's bounds (sheet mm) to the two pick points and
 // the dimension-line offset: horizontal across the width below the view, vertical down the height
 // to its right, or aligned along the diagonal. The pick points snap to the nearest model vertices.

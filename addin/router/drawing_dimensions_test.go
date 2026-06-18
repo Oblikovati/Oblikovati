@@ -3,10 +3,55 @@
 package router
 
 import (
+	"math"
 	"testing"
 
+	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/api/wire"
+	"oblikovati.org/app"
+	"oblikovati.org/kernel/ops"
+	gmath "oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/feature"
+	"oblikovati.org/model/sketch"
 )
+
+// drawingCylinderSession builds a 2 cm-radius cylinder part + a drawing of it — the fixture for
+// radial (radius/diameter) dimension tests, since a box has no circular edges.
+func drawingCylinderSession(t *testing.T) (*Router, *app.Session) {
+	t.Helper()
+	r := New(opregistry.Default())
+	s := app.NewSession()
+	part, err := compdef.AddPart(s.Workspace(), "box.opd", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := part.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+	sk.Circles().AddByCenterRadius(gmath.P2(0, 0), 2)
+	feature.NewExtrudeFeatures(def.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 5 })
+	def.Recompute()
+	call(t, r, s, "documents.create", `{"type":"drawing","name":"box.odd"}`, nil)
+	call(t, r, s, "drawing.setModelReference", `{"fullDocumentName":"box.opd"}`, nil)
+	return r, s
+}
+
+// TestDrawingRadialDimensionsOverWire drives the radial-dimension surface: a diameter dimension on
+// a cylinder's circular edge re-measures the true 40 mm diameter through the live stack.
+func TestDrawingRadialDimensionsOverWire(t *testing.T) {
+	r, s := drawingCylinderSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
+
+	var dim wire.DimensionResult
+	call(t, r, s, "drawingDimensions.addRadial",
+		`{"name":"D1","viewName":"TOP","type":"diameter","pickXmm":100,"pickYmm":100}`, &dim)
+	if dim.Dimension.Type != "diameter" || math.Abs(dim.Dimension.ValueMM-40) > 1e-6 || dim.Dimension.CurveCount == 0 {
+		t.Fatalf("radial dimension = %+v, want a diameter ⌀40 with glyph", dim.Dimension)
+	}
+	if _, err := r.Handle(s, "drawingDimensions.addRadial", []byte(`{"viewName":"TOP","type":"bogus","pickXmm":100,"pickYmm":100}`)); err == nil {
+		t.Error("addRadial with a bad type = ok, want error")
+	}
+}
 
 // TestDrawingDimensionsOverWire drives the linear-dimension surface: add a horizontal dimension
 // across a base view, list it, and delete it — through the live router→model→kernel stack.
