@@ -27,15 +27,9 @@ type PartsListRow struct {
 type bomLookup func() ([]PartsListRow, bool)
 
 // partsListColumns are the table's columns (header text + width in mm), left to right.
-var partsListColumns = []struct {
-	header string
-	width  float64
-}{
+var partsListColumns = []gridColumn{
 	{"ITEM", 12}, {"PART NUMBER", 40}, {"DESCRIPTION", 50}, {"QTY", 12},
 }
-
-// partsListRowMM is each row's height.
-const partsListRowMM = 8.0
 
 // AddPartsList adds a parts list table at (x, y) on the sheet (its top-left corner), sourced from
 // the referenced assembly's parts-only BOM. It errors when no BOM resolves (no reference, an
@@ -68,49 +62,11 @@ func (as *DrawingAnnotations) recomputePartsList(a *DrawingAnnotation) {
 	a.curves, a.labels = partsListGeometry(a.x, a.y, rows)
 }
 
-// partsListGeometry builds the parts list's grid (drawing curves) and cell text (labels), with
-// (x, y) the table's top-left corner. The header row is at the top; data rows grow downward.
+// partsListGeometry builds the parts list's grid + cell text from its BOM rows.
 func partsListGeometry(x, y float64, rows []PartsListRow) ([]DrawingCurve, []AnnotationLabel) {
-	total := 0.0
-	for _, c := range partsListColumns {
-		total += c.width
-	}
-	lineCount := len(rows) + 1 // header + one per row
-	bottom := y - float64(lineCount)*partsListRowMM
-	var curves []DrawingCurve
-	// Horizontal grid lines (top, under header, between rows, bottom).
-	for i := 0; i <= lineCount; i++ {
-		ly := y - float64(i)*partsListRowMM
-		curves = append(curves, dimSegment(x, ly, x+total, ly))
-	}
-	// Vertical grid lines (column dividers + outer left/right).
-	cx := x
-	for _, c := range partsListColumns {
-		curves = append(curves, dimSegment(cx, y, cx, bottom))
-		cx += c.width
-	}
-	curves = append(curves, dimSegment(cx, y, cx, bottom))
-	return curves, partsListLabels(x, y, rows)
-}
-
-// partsListLabels centres each header and cell value in its column/row.
-func partsListLabels(x, y float64, rows []PartsListRow) []AnnotationLabel {
-	var labels []AnnotationLabel
-	addRow := func(rowTop float64, cells []string) {
-		cx := x
-		cy := rowTop - partsListRowMM/2
-		for i, c := range partsListColumns {
-			labels = append(labels, AnnotationLabel{Text: cells[i], X: cx + c.width/2, Y: cy})
-			cx += c.width
-		}
-	}
-	headers := make([]string, len(partsListColumns))
-	for i, c := range partsListColumns {
-		headers[i] = c.header
-	}
-	addRow(y, headers)
+	cells := make([][]string, len(rows))
 	for i, r := range rows {
-		addRow(y-float64(i+1)*partsListRowMM, []string{strconv.Itoa(r.Item), r.PartNumber, r.Description, strconv.Itoa(r.Quantity)})
+		cells[i] = []string{strconv.Itoa(r.Item), r.PartNumber, r.Description, strconv.Itoa(r.Quantity)}
 	}
-	return labels
+	return gridTableGeometry(x, y, partsListColumns, cells)
 }

@@ -161,6 +161,25 @@ func TestDrawingBalloonOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingHoleTableOverWire drives the hole-table surface: a cylinder's TOP view yields a
+// one-row table (its two coincident rims dedup) carrying its grid geometry through the live stack.
+func TestDrawingHoleTableOverWire(t *testing.T) {
+	r, s := drawingCylinderSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"TOP","orientation":"top","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
+
+	var ht wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addHoleTable", `{"name":"HT","viewName":"TOP","xmm":220,"ymm":240}`, &ht)
+	if ht.Annotation.Kind != "holeTable" || ht.Annotation.CurveCount == 0 {
+		t.Fatalf("hole table = %+v, want a holeTable with grid geometry", ht.Annotation)
+	}
+	if ht.Annotation.RowCount != 1 {
+		t.Errorf("hole table rowCount = %d, want 1 (dedup coincident rims)", ht.Annotation.RowCount)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addHoleTable", []byte(`{"viewName":"NOPE","xmm":0,"ymm":0}`)); err == nil {
+		t.Error("addHoleTable on a missing view = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

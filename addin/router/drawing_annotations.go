@@ -27,6 +27,7 @@ func (r *Router) registerDrawingAnnotationHandlers() {
 	r.handlers[wire.MethodDrawingAnnotationsAddSurfaceText] = drawingAnnotationsAddSurfaceText
 	r.handlers[wire.MethodDrawingAnnotationsAddPartsList] = drawingAnnotationsAddPartsList
 	r.handlers[wire.MethodDrawingAnnotationsAddBalloon] = drawingAnnotationsAddBalloon
+	r.handlers[wire.MethodDrawingAnnotationsAddHoleTable] = drawingAnnotationsAddHoleTable
 	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
 }
 
@@ -217,6 +218,23 @@ func drawingAnnotationsAddBalloon(s *app.Session, raw json.RawMessage) (json.Raw
 		return nil, err
 	}
 	a, err := an.AddBalloon(in.Name, in.XMM, in.YMM, in.Item, in.LeaderXMM, in.LeaderYMM)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.AnnotationResult{Annotation: drawingAnnotationInfo(a)})
+}
+
+func drawingAnnotationsAddHoleTable(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	an, err := activeSheetAnnotations(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddHoleTableArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	a, err := an.AddHoleTable(in.Name, in.ViewName, in.XMM, in.YMM)
 	if err != nil {
 		return nil, err
 	}

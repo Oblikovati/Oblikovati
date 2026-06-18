@@ -213,6 +213,45 @@ func TestBalloonToolDropsBalloon(t *testing.T) {
 	}
 }
 
+// TestHoleTableToolDropsTable: the hole-table tool drops a table listing a base view's holes.
+func TestHoleTableToolDropsTable(t *testing.T) {
+	s := drawingWithCylinderSession(t)
+	base := NewBaseViewTool()
+	base.Start(s)
+	base.Params().Choices[0].Set(1) // Top, so the cylinder's rim projects as a circle
+	base.SetPlacement(120, 100)
+	if err := base.Commit(s); err != nil {
+		t.Fatalf("place base view: %v", err)
+	}
+	tool := NewHoleTableTool()
+	tool.Start(s)
+	tool.SetPlacement(220, 240)
+	if tool.Name() != "Hole Table" || !tool.CanCommit() {
+		t.Fatalf("hole-table tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	c, _ := ActiveDrawing(s)
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.HoleTableAnnotation || an.Item(0).RowCount() != 1 {
+		t.Fatalf("hole table not added (count=%d, rows=%d)", an.Count(), an.Item(0).RowCount())
+	}
+}
+
+// TestHoleTableToolWithoutView: the tool is inert and errors with no base view to read holes from.
+func TestHoleTableToolWithoutView(t *testing.T) {
+	s := drawingWithModelSession(t) // no base view added
+	tool := NewHoleTableTool()
+	tool.Start(s)
+	if tool.CanCommit() {
+		t.Error("hole-table tool can commit with no view, want it disabled")
+	}
+	if err := tool.Commit(s); err == nil {
+		t.Error("Commit with no base view should error")
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()

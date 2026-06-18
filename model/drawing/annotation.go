@@ -164,6 +164,8 @@ func (as *DrawingAnnotations) Recompute() {
 			as.recomputeCenterline(a)
 		case types.PartsListAnnotation:
 			as.recomputePartsList(a)
+		case types.HoleTableAnnotation:
+			as.recomputeHoleTable(a)
 		}
 	}
 }
