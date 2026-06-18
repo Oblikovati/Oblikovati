@@ -375,6 +375,47 @@ func (t *BalloonTool) Params() ToolParams {
 	}
 }
 
+// HoleTableTool drops a hole table for a chosen base view at the cursor (the table's top-left
+// corner), listing the view's circular edges with X/Y from a datum and diameter.
+type HoleTableTool struct {
+	views            []string
+	viewIndex        int
+	centerX, centerY float64
+}
+
+// NewHoleTableTool creates the tool; its base-view list is captured on Start.
+func NewHoleTableTool() *HoleTableTool { return &HoleTableTool{centerX: 250, centerY: 260} }
+
+func (t *HoleTableTool) Name() string              { return "Hole Table" }
+func (t *HoleTableTool) Start(s *Session)          { t.views = baseViewNames(s) }
+func (t *HoleTableTool) Pick(*Session, Selectable) {}
+func (t *HoleTableTool) CanCommit() bool           { return len(t.views) > 0 }
+func (t *HoleTableTool) Cancel(*Session)           {}
+func (t *HoleTableTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the hole table for the selected view at the placed point.
+func (t *HoleTableTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if len(t.views) == 0 {
+		return fmt.Errorf("drawing: no base view for a hole table — add a base view first")
+	}
+	if _, err := c.Sheets().Active().Annotations().AddHoleTable("", t.views[clampIndex(t.viewIndex, len(t.views))], t.centerX, t.centerY); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view choice for the property dialog.
+func (t *HoleTableTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
+	}}
+}
+
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
 	width, height    float64

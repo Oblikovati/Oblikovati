@@ -338,6 +338,50 @@ func TestBalloonNeedsItem(t *testing.T) {
 	}
 }
 
+// TestAddHoleTable: a hole table on a cylinder's TOP view lists its rim (one hole after dedup) with
+// a Ø40 diameter, reports its row count, and re-reads on recompute (a wider cylinder → Ø60).
+func TestAddHoleTable(t *testing.T) {
+	c := drawingWithCylinder(t, 2)
+	topBase(t, c.Sheets().Active().Views())
+	ht, err := c.Sheets().Active().Annotations().AddHoleTable("HT", "TOP", 40, 260)
+	if err != nil {
+		t.Fatalf("AddHoleTable: %v", err)
+	}
+	if ht.Kind() != types.HoleTableAnnotation || ht.RowCount() != 1 || ht.CurveCount() == 0 {
+		t.Fatalf("hole table = (%v, %d rows, %d curves), want a holeTable with 1 hole + grid", ht.Kind(), ht.RowCount(), ht.CurveCount())
+	}
+	texts := map[string]bool{}
+	for _, l := range ht.Labels() {
+		texts[l.Text] = true
+	}
+	if !texts["HOLE"] || !texts["Ø40.00"] {
+		t.Errorf("hole table labels missing header/diameter: %v", ht.Labels())
+	}
+
+	wider, err := brep.SolidCylinder(gmath.P3(0, 0, 0), gmath.V3(0, 0, 1), 3, 5)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	c.SetBodyResolver(fakeBodyResolver{body: wider})
+	c.RecomputeViews()
+	got := map[string]bool{}
+	for _, l := range ht.Labels() {
+		got[l.Text] = true
+	}
+	if !got["Ø60.00"] {
+		t.Errorf("after the cylinder widened, hole table diameter labels = %v, want Ø60.00", ht.Labels())
+	}
+}
+
+// TestHoleTableNeedsCircularEdge: a box has no circular edges, so a hole table errors.
+func TestHoleTableNeedsCircularEdge(t *testing.T) {
+	c := drawingWithBox(t)
+	frontBase(t, c.Sheets().Active().Views())
+	if _, err := c.Sheets().Active().Annotations().AddHoleTable("HT", "FRONT", 40, 260); err == nil {
+		t.Error("AddHoleTable on a box (no circular edges) = ok, want error")
+	}
+}
+
 // TestFeatureControlFrameNeedsTolerance: an FCF with no tolerance value errors.
 func TestFeatureControlFrameNeedsTolerance(t *testing.T) {
 	c := drawingWithBox(t)
