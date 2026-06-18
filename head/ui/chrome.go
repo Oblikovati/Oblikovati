@@ -122,6 +122,7 @@ func drawSolidFeatureDialogs(s *app.Session) {
 	drawChamferDialog(s)
 	drawThreadDialog(s)
 	drawFilletDialog(s)
+	drawFaceFilletDialog(s)
 	drawShellDialog(s)
 	drawSplitDialog(s)
 	drawGripSnapDialog(s)

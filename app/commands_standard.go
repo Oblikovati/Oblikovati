@@ -468,12 +468,7 @@ func cutFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("chamfer").WithButtonStyle(LargeIconButton).
 			WithTooltip("Chamfer — bevel selected edges by a setback distance."),
-		NewCommand("Modify.Fillet", "Fillet", "Modify", func(s *Session) error {
-			s.StartTool(NewFilletTool())
-			return nil
-		}).WithTab(tab3DModel).WithAlias("F").WithEnable(notInSketch).
-			WithIcon("fillet").WithButtonStyle(LargeIconButton).
-			WithTooltip("Fillet — round selected convex edges with a rolling-ball radius."),
+		filletCommand(),
 		NewCommand("Modify.Thread", "Thread", "Modify", func(s *Session) error {
 			s.StartTool(NewThreadTool())
 			return nil
@@ -481,6 +476,26 @@ func cutFeatureCommands() []*CommandDefinition {
 			WithIcon("thread").WithButtonStyle(LargeIconButton).
 			WithTooltip("Thread — apply a cosmetic or modeled-cut thread to a cylindrical face (ISO/ANSI/JIS)."),
 	}
+}
+
+// filletCommand is the Fillet split button: the primary rounds picked edges (Edge Fillet), and
+// the dropdown adds Face Fillet — rounding the edges shared between two face sets (#694), the way
+// Inventor groups the fillet variants under one command. Only the primary is returned;
+// RegisterStandardCommands registers the variant for id dispatch by walking primary.Variants().
+func filletCommand() *CommandDefinition {
+	faceFillet := NewCommand("Modify.FaceFillet", "Face Fillet", "Modify", func(s *Session) error {
+		s.StartTool(NewFaceFilletTool())
+		return nil
+	}).WithTab(tab3DModel).WithEnable(notInSketch).
+		WithIcon("fillet").WithButtonStyle(LargeIconButton).
+		WithTooltip("Face Fillet — round the edges shared between two sets of faces.")
+	return NewCommand("Modify.Fillet", "Fillet", "Modify", func(s *Session) error {
+		s.StartTool(NewFilletTool())
+		return nil
+	}).WithTab(tab3DModel).WithAlias("F").WithEnable(notInSketch).
+		WithIcon("fillet").WithButtonStyle(LargeIconButton).
+		WithTooltip("Fillet — round selected convex edges with a rolling-ball radius.").
+		WithVariants(faceFillet)
 }
 
 // localFaceCommands are the F04 local face operations — the metric edits (shell, offset
