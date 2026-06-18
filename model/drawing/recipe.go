@@ -285,6 +285,8 @@ func restoreAnnotations(sh *Sheet, recs []annotationRecipe) {
 			a.curves = revisionCloudCurves(ar.X, ar.Y, ar.W, ar.H)
 		case types.FeatureControlFrameAnnotation:
 			a.curves, a.labels = featureControlFrameGeometry(ar.X, ar.Y, characteristic, ar.Tolerance, ar.Datums)
+		case types.DatumFeatureAnnotation:
+			a.curves, a.labels = datumFeatureGeometry(ar.X, ar.Y, ar.Tag)
 		}
 		as.items = append(as.items, a)
 	}

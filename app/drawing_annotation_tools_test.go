@@ -97,6 +97,26 @@ func TestFeatureControlFrameToolDropsFrame(t *testing.T) {
 	}
 }
 
+// TestDatumFeatureToolDropsSymbol: the datum tool drops a datum feature symbol at the placed point.
+func TestDatumFeatureToolDropsSymbol(t *testing.T) {
+	s := drawingWithModelSession(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewDatumFeatureTool()
+	tool.Start(s)
+	tool.SetPlacement(90, 90)
+	tool.Params().Texts[0].Set("B")
+	if tool.Name() != "Datum Feature" || !tool.CanCommit() {
+		t.Fatalf("datum tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.DatumFeatureAnnotation || an.Item(0).Tag() != "B" {
+		t.Fatalf("datum not added (count=%d)", an.Count())
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()

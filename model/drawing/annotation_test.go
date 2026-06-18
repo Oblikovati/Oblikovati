@@ -178,6 +178,36 @@ func TestFeatureControlFrameAllCharacteristics(t *testing.T) {
 	}
 }
 
+// TestAddDatumFeature: a datum feature symbol draws a box + triangle (curves) and the datum letter
+// label, and survives reopen with its geometry re-derived from the persisted letter.
+func TestAddDatumFeature(t *testing.T) {
+	c := drawingWithBox(t)
+	d, err := c.Sheets().Active().Annotations().AddDatumFeature("DAT", 70, 70, "A")
+	if err != nil {
+		t.Fatalf("AddDatumFeature: %v", err)
+	}
+	if d.Kind() != types.DatumFeatureAnnotation || d.CurveCount() == 0 {
+		t.Fatalf("datum = (%v, %d curves), want a datum feature symbol with box+triangle geometry", d.Kind(), d.CurveCount())
+	}
+	if got := d.Labels(); len(got) != 1 || got[0].Text != "A" {
+		t.Fatalf("datum labels = %v, want the single letter A", got)
+	}
+
+	rann := reopen(t, c).Sheets().Active().Annotations()
+	rd, ok := rann.ByName("DAT")
+	if !ok || rd.Kind() != types.DatumFeatureAnnotation || rd.CurveCount() == 0 || len(rd.Labels()) != 1 {
+		t.Errorf("reopened datum wrong: ok=%v curves=%d labels=%d", ok, rd.CurveCount(), len(rd.Labels()))
+	}
+}
+
+// TestDatumFeatureNeedsLetter: a datum feature symbol with no letter errors.
+func TestDatumFeatureNeedsLetter(t *testing.T) {
+	c := drawingWithBox(t)
+	if _, err := c.Sheets().Active().Annotations().AddDatumFeature("D", 10, 10, ""); err == nil {
+		t.Error("AddDatumFeature with no letter = ok, want error")
+	}
+}
+
 // TestFeatureControlFrameNeedsTolerance: an FCF with no tolerance value errors.
 func TestFeatureControlFrameNeedsTolerance(t *testing.T) {
 	c := drawingWithBox(t)

@@ -209,6 +209,45 @@ func splitDatums(s string) []string {
 	return out
 }
 
+// DatumFeatureTool drops a GD&T datum feature symbol (a lettered box + datum triangle) at the
+// cursor.
+type DatumFeatureTool struct {
+	letter           string
+	centerX, centerY float64
+}
+
+// NewDatumFeatureTool starts on datum letter A.
+func NewDatumFeatureTool() *DatumFeatureTool {
+	return &DatumFeatureTool{letter: "A", centerX: 150, centerY: 150}
+}
+
+func (t *DatumFeatureTool) Name() string              { return "Datum Feature" }
+func (t *DatumFeatureTool) Start(*Session)            {}
+func (t *DatumFeatureTool) Pick(*Session, Selectable) {}
+func (t *DatumFeatureTool) CanCommit() bool           { return t.letter != "" }
+func (t *DatumFeatureTool) Cancel(*Session)           {}
+func (t *DatumFeatureTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the datum symbol at the placed point.
+func (t *DatumFeatureTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Sheets().Active().Annotations().AddDatumFeature("", t.centerX, t.centerY, t.letter); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the datum letter input.
+func (t *DatumFeatureTool) Params() ToolParams {
+	return ToolParams{Texts: []TextParam{
+		{Label: "Datum letter", Get: func() string { return t.letter }, Set: func(v string) { t.letter = v }},
+	}}
+}
+
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
 	width, height    float64

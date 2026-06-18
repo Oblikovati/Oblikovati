@@ -91,6 +91,20 @@ func TestDrawingFeatureControlFrameOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingDatumFeatureOverWire drives the GD&T datum surface: a datum feature symbol produces a
+// framed annotation (box + triangle) through the live stack.
+func TestDrawingDatumFeatureOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var dat wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addDatumFeature", `{"name":"DAT","xmm":70,"ymm":70,"letter":"A"}`, &dat)
+	if dat.Annotation.Kind != "datumFeature" || dat.Annotation.CurveCount == 0 {
+		t.Fatalf("datum = %+v, want a datumFeature with box+triangle geometry", dat.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addDatumFeature", []byte(`{"xmm":0,"ymm":0,"letter":""}`)); err == nil {
+		t.Error("addDatumFeature with no letter = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{
