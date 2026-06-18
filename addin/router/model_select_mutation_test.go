@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/feature"
@@ -30,6 +31,41 @@ func boxFaceRefs(t *testing.T) (*Router, *app.Session, string, string) {
 		t.Fatalf("box has %d faces, want >= 2", len(faces))
 	}
 	return r, s, string(feature.FaceRef(faces[0].ReferenceKey())), string(feature.FaceRef(faces[1].ReferenceKey()))
+}
+
+// boxVertexRef returns one of the box's vertex selection references.
+func boxVertexRef(t *testing.T, s *app.Session) string {
+	t.Helper()
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		t.Fatalf("active part: %v", err)
+	}
+	verts := part.SurfaceBodies().Item(0).Vertices()
+	if len(verts) == 0 {
+		t.Fatal("box has no vertices")
+	}
+	return string(feature.VertexRef(verts[0].ReferenceKey()))
+}
+
+// TestModelSelectVertexByReference covers the vertex resolution path.
+func TestModelSelectVertexByReference(t *testing.T) {
+	r, s, _, _ := boxFaceRefs(t)
+	var sel wire.SelectionResult
+	call(t, r, s, "model.select", mustJSON(t, wire.SelectArgs{Refs: []string{boxVertexRef(t, s)}}), &sel)
+	if sel.Count != 1 {
+		t.Errorf("select vertex = %+v, want 1", sel)
+	}
+}
+
+// TestModelSelectNoActivePartFails: the mutation methods reject when there is no active part.
+func TestModelSelectNoActivePartFails(t *testing.T) {
+	r := New(opregistry.Default())
+	s := app.NewSession()
+	for _, m := range []string{"model.select", "model.deselect"} {
+		if _, err := r.Handle(s, m, []byte(`{"refs":["face/AAA"]}`)); err == nil {
+			t.Errorf("%s with no active part should fail", m)
+		}
+	}
 }
 
 // TestModelSelectMutationOverWire drives the #157 selection round trip: select two faces by
