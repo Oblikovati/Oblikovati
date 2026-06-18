@@ -121,6 +121,45 @@ func TestCenterlinesNeedView(t *testing.T) {
 	}
 }
 
+// TestAddFeatureControlFrame: a position FCF with two datums draws the frame + symbol curves and a
+// tolerance + datum text label per compartment, and survives reopen with its labels re-derived.
+func TestAddFeatureControlFrame(t *testing.T) {
+	c := drawingWithBox(t)
+	an := c.Sheets().Active().Annotations()
+	fcf, err := an.AddFeatureControlFrame("FCF", 60, 60, types.CharacteristicPosition, "⌀0.5", []string{"A", "B"})
+	if err != nil {
+		t.Fatalf("AddFeatureControlFrame: %v", err)
+	}
+	if fcf.Kind() != types.FeatureControlFrameAnnotation || fcf.CurveCount() == 0 {
+		t.Fatalf("FCF = (%v, %d curves), want a feature control frame with frame+symbol geometry", fcf.Kind(), fcf.CurveCount())
+	}
+	// Labels: the tolerance value plus one per datum (the position symbol is drawn, not labelled).
+	if got := len(fcf.Labels()); got != 3 {
+		t.Fatalf("FCF labels = %d, want 3 (tolerance + 2 datums)", got)
+	}
+	texts := map[string]bool{}
+	for _, l := range fcf.Labels() {
+		texts[l.Text] = true
+	}
+	if !texts["⌀0.5"] || !texts["A"] || !texts["B"] {
+		t.Errorf("FCF labels = %v, want the tolerance and datums A,B", fcf.Labels())
+	}
+
+	rann := reopen(t, c).Sheets().Active().Annotations()
+	rfcf, ok := rann.ByName("FCF")
+	if !ok || rfcf.Kind() != types.FeatureControlFrameAnnotation || len(rfcf.Labels()) != 3 || rfcf.CurveCount() == 0 {
+		t.Errorf("reopened FCF wrong: ok=%v labels=%d curves=%d", ok, len(rfcf.Labels()), rfcf.CurveCount())
+	}
+}
+
+// TestFeatureControlFrameNeedsTolerance: an FCF with no tolerance value errors.
+func TestFeatureControlFrameNeedsTolerance(t *testing.T) {
+	c := drawingWithBox(t)
+	if _, err := c.Sheets().Active().Annotations().AddFeatureControlFrame("F", 10, 10, types.CharacteristicFlatness, "", nil); err == nil {
+		t.Error("AddFeatureControlFrame with no tolerance = ok, want error")
+	}
+}
+
 // TestCenterMarksNeedCircularEdge: a box has no circular edges, so centre-marking errors.
 func TestCenterMarksNeedCircularEdge(t *testing.T) {
 	c := drawingWithBox(t)

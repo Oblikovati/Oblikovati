@@ -4,7 +4,9 @@ package app
 
 import (
 	"fmt"
+	"strings"
 
+	"oblikovati.org/api/types"
 	gmath "oblikovati.org/math"
 	"oblikovati.org/model/drawing"
 )
@@ -128,6 +130,83 @@ func (t *CenterlineTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
 		{Label: "View", Options: t.views, Get: func() int { return t.viewIndex }, Set: func(i int) { t.viewIndex = i }},
 	}}
+}
+
+// fcfCharacteristics indexes the feature control frame's Characteristic dropdown.
+var fcfCharacteristics = []struct {
+	label string
+	value types.GeometricCharacteristic
+}{
+	{"Position", types.CharacteristicPosition},
+	{"Flatness", types.CharacteristicFlatness},
+	{"Perpendicularity", types.CharacteristicPerpendicularity},
+	{"Parallelism", types.CharacteristicParallelism},
+	{"Straightness", types.CharacteristicStraightness},
+	{"Circularity", types.CharacteristicCircularity},
+	{"Concentricity", types.CharacteristicConcentricity},
+	{"Angularity", types.CharacteristicAngularity},
+}
+
+// FeatureControlFrameTool drops a GD&T feature control frame at the cursor with a chosen
+// characteristic, tolerance value and comma-separated datum references.
+type FeatureControlFrameTool struct {
+	charIndex        int
+	tolerance        string
+	datums           string
+	centerX, centerY float64
+}
+
+// NewFeatureControlFrameTool starts on a position tolerance of 0.5.
+func NewFeatureControlFrameTool() *FeatureControlFrameTool {
+	return &FeatureControlFrameTool{tolerance: "0.5", centerX: 150, centerY: 150}
+}
+
+func (t *FeatureControlFrameTool) Name() string              { return "Feature Control Frame" }
+func (t *FeatureControlFrameTool) Start(*Session)            {}
+func (t *FeatureControlFrameTool) Pick(*Session, Selectable) {}
+func (t *FeatureControlFrameTool) CanCommit() bool           { return t.tolerance != "" }
+func (t *FeatureControlFrameTool) Cancel(*Session)           {}
+func (t *FeatureControlFrameTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the frame at the placed point.
+func (t *FeatureControlFrameTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	ch := fcfCharacteristics[clampIndex(t.charIndex, len(fcfCharacteristics))].value
+	_, err = c.Sheets().Active().Annotations().AddFeatureControlFrame("", t.centerX, t.centerY, ch, t.tolerance, splitDatums(t.datums))
+	if err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the characteristic, tolerance and datum-reference inputs.
+func (t *FeatureControlFrameTool) Params() ToolParams {
+	labels := make([]string, len(fcfCharacteristics))
+	for i, c := range fcfCharacteristics {
+		labels[i] = c.label
+	}
+	return ToolParams{
+		Choices: []ChoiceParam{{Label: "Characteristic", Options: labels, Get: func() int { return t.charIndex }, Set: func(i int) { t.charIndex = i }}},
+		Texts: []TextParam{
+			{Label: "Tolerance", Get: func() string { return t.tolerance }, Set: func(v string) { t.tolerance = v }},
+			{Label: "Datums (A,B,C)", Get: func() string { return t.datums }, Set: func(v string) { t.datums = v }},
+		},
+	}
+}
+
+// splitDatums turns a comma-separated datum string ("A, B,C") into trimmed, non-empty references.
+func splitDatums(s string) []string {
+	var out []string
+	for _, part := range strings.Split(s, ",") {
+		if d := strings.TrimSpace(part); d != "" {
+			out = append(out, d)
+		}
+	}
+	return out
 }
 
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
