@@ -35,4 +35,13 @@ func TestDrawingSketchesOverWire(t *testing.T) {
 	if _, err := r.Handle(s, "drawingSketches.addEntity", []byte(`{"sketchName":"S1","kind":"bogus","points":[[0,0]]}`)); err == nil {
 		t.Error("addEntity with a bad kind = ok, want error")
 	}
+
+	var hatch wire.DrawingSketchResult
+	call(t, r, s, "drawingSketches.addHatchRegion", `{"sketchName":"S1","xmm":100,"ymm":100,"widthMm":60,"heightMm":40,"pattern":"cross"}`, &hatch)
+	if hatch.Sketch.CurveCount <= sk.Sketch.CurveCount {
+		t.Errorf("after a cross-hatch the sketch has %d curves, want more than before (%d)", hatch.Sketch.CurveCount, sk.Sketch.CurveCount)
+	}
+	if _, err := r.Handle(s, "drawingSketches.addHatchRegion", []byte(`{"sketchName":"S1","xmm":0,"ymm":0,"widthMm":60,"heightMm":40,"pattern":"bogus"}`)); err == nil {
+		t.Error("addHatchRegion with a bad pattern = ok, want error")
+	}
 }
