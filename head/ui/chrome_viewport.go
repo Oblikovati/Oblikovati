@@ -643,12 +643,15 @@ const (
 func readNavInput() NavInput {
 	dx, dy := native.MouseDelta()
 	modal := heldNavMode()
+	cx, cy := viewportCursor()
 	return NavInput{
 		Hovered: native.IsItemHovered(),
 		Active:  native.IsItemActive(),
 		Wheel:   native.MouseWheel(),
 		DX:      dx,
 		DY:      dy,
+		CursorX: float32(cx),
+		CursorY: float32(cy),
 		Middle:  native.MouseDown(native.MouseMiddle),
 		Shift:   native.KeyShift(),
 		Modal:   modal,
