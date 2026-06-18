@@ -19,6 +19,7 @@ import (
 func (r *Router) registerDrawingDimensionHandlers() {
 	r.handlers[wire.MethodDrawingDimensionsList] = drawingDimensionsList
 	r.handlers[wire.MethodDrawingDimensionsAddLinear] = drawingDimensionsAddLinear
+	r.handlers[wire.MethodDrawingDimensionsAddRadial] = drawingDimensionsAddRadial
 	r.handlers[wire.MethodDrawingDimensionsDelete] = drawingDimensionsDelete
 }
 
@@ -61,6 +62,31 @@ func drawingDimensionsAddLinear(s *app.Session, raw json.RawMessage) (json.RawMe
 		dimType = t
 	}
 	d, err := ds.AddLinear(in.Name, in.ViewName, dimType, in.X1, in.Y1, in.X2, in.Y2, in.OffsetMM)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
+}
+
+func drawingDimensionsAddRadial(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	ds, err := activeSheetDimensions(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddRadialDimensionArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	dimType := types.RadiusDimension
+	if in.Type != "" {
+		t, ok := types.ParseDrawingDimensionType(in.Type)
+		if !ok || (t != types.RadiusDimension && t != types.DiameterDimension) {
+			return nil, fmt.Errorf("drawing: radial dimension type %q must be radius|diameter", in.Type)
+		}
+		dimType = t
+	}
+	d, err := ds.AddRadial(in.Name, in.ViewName, dimType, in.PickXMM, in.PickYMM)
 	if err != nil {
 		return nil, err
 	}
