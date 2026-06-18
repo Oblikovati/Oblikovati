@@ -447,6 +447,11 @@ func (r *Router) Handle(s *app.Session, method string, req []byte) (resp []byte,
 			r.record(method, time.Since(start), false, "", err.Error(), stack)
 		}
 	}()
+	// Open the active document's undo stream before a mutating handler runs, so the delta the
+	// central seam records afterwards is measured against the pre-edit state (commitMutation).
+	if _, mutates := mutatingMethods[method]; mutates {
+		s.EnsureActiveEditBaseline()
+	}
 	out, herr := h(s, args)
 	if herr != nil {
 		herr = methodError(method, herr)
@@ -454,108 +459,131 @@ func (r *Router) Handle(s *app.Session, method string, req []byte) (resp []byte,
 		return nil, herr
 	}
 	r.record(method, time.Since(start), true, "", "", "")
-	// A document-mutating method that succeeded is a committed edit: emit it as the wire
-	// request that produced it, so a collaboration add-in can replicate it (ADR-0004).
-	// First cut: only router-path edits; local UI edits are not yet captured.
-	if mutatingMethods[method] {
-		s.EmitEditCommitted(method, req)
-		// The edit may have moved values other documents derive from
-		// (M02-F06); recordEdit covers session edits, this covers the wire.
-		s.ResyncDerivedFromActiveDocument()
-	}
+	r.commitMutation(s, method, req)
 	return out, nil
 }
 
-// mutatingMethods is the set of router methods that commit a document mutation worth
-// replicating to collaboration peers as an edit.committed event. It is a curated
-// allowlist: a method missing here simply is not broadcast (a known first-cut gap,
-// failing safe), whereas a read-only method must never appear (it would broadcast noise).
-var mutatingMethods = map[string]bool{
-	wire.MethodDocumentsCreate:                     true,
-	wire.MethodDocumentsImport:                     true,
-	wire.MethodParametersAdd:                       true,
-	wire.MethodParametersSet:                       true,
-	wire.MethodParametersUpdate:                    true,
-	wire.MethodParametersSetTolerance:              true,
-	wire.MethodParametersSetExpressionList:         true,
-	wire.MethodParametersDelete:                    true,
-	wire.MethodParametersGroupsAdd:                 true,
-	wire.MethodParametersGroupsDelete:              true,
-	wire.MethodParametersGroupsSetDisplayName:      true,
-	wire.MethodParametersGroupsAddMember:           true,
-	wire.MethodParametersGroupsRemoveMember:        true,
-	wire.MethodParametersSetSettings:               true,
-	wire.MethodParametersSetAllModelValueType:      true,
-	wire.MethodParametersImport:                    true,
-	wire.MethodParametersDerivedTablesAdd:          true,
-	wire.MethodParametersDerivedTablesSetLinked:    true,
-	wire.MethodParametersDerivedTablesDelete:       true,
-	wire.MethodFeaturesAdd:                         true,
-	wire.MethodFeaturesEdit:                        true,
-	wire.MethodFeaturesDelete:                      true,
-	wire.MethodFeaturesRename:                      true,
-	wire.MethodFeaturesSetSuppressed:               true,
-	wire.MethodFeaturesReorder:                     true,
-	wire.MethodFreeformSetLevel:                    true,
-	wire.MethodFreeformMoveVertices:                true,
-	wire.MethodFreeformCreaseEdges:                 true,
-	wire.MethodWorkPlanesCreate:                    true,
-	wire.MethodWorkPlanesRedefine:                  true,
-	wire.MethodWorkPointsCreate:                    true,
-	wire.MethodWorkSurfacesSetVisible:              true,
-	wire.MethodWorkSurfacesRename:                  true,
-	wire.MethodAssemblyDeriveCreate:                true,
-	wire.MethodAssemblyShrinkwrapCreate:            true,
-	wire.MethodAssemblyDeriveBreakLink:             true,
-	wire.MethodAssemblyFeaturesAdd:                 true,
-	wire.MethodAssemblyFeaturesAddProxyCut:         true,
-	wire.MethodAssemblyFeaturesAddHole:             true,
-	wire.MethodAssemblyFeaturesAddExtrude:          true,
-	wire.MethodAssemblyFeaturesAddSweep:            true,
-	wire.MethodAssemblyFeaturesAddChamfer:          true,
-	wire.MethodAssemblyFeaturesAddFillet:           true,
-	wire.MethodAssemblyFeaturesAddMoveFace:         true,
-	wire.MethodAssemblyFeaturesEdit:                true,
-	wire.MethodAssemblyFeaturesSetParticipants:     true,
-	wire.MethodAssemblyFeaturesSetParticipantPaths: true,
-	wire.MethodAssemblyFeaturesSetSuppressed:       true,
-	wire.MethodAssemblySetEndOfFeatures:            true,
-	wire.MethodModelAssignMaterial:                 true,
-	wire.MethodModelAssignAppearance:               true,
-	wire.MethodSketchCreate:                        true,
-	wire.MethodSketchRectangle:                     true,
-	wire.MethodSketchDelete:                        true,
-	wire.MethodSketchEdit:                          true,
-	wire.MethodSketchExitEdit:                      true,
-	wire.MethodSketchSolve:                         true,
-	wire.MethodSketchAddEntity:                     true,
-	wire.MethodSketchSetSplineHandle:               true,
-	wire.MethodSketchBlockDefinitionCreate:         true,
-	wire.MethodSketchBlockDefinitionDelete:         true,
-	wire.MethodSketchAddBlockInstance:              true,
-	wire.MethodSketch3DSetSplineHandle:             true,
-	wire.MethodSketch3DEditHelix:                   true,
-	wire.MethodSketchSetInferenceOptions:           true,
-	wire.MethodSketchAddConstraint:                 true,
-	wire.MethodSketchDeleteConstraint:              true,
-	wire.MethodSketchAddDimension:                  true,
-	wire.MethodSketchDriveDimension:                true,
-	wire.MethodSketchSetProperty:                   true,
-	wire.MethodSketchSetCustomLineType:             true,
-	wire.MethodSketchTransform:                     true,
-	wire.MethodSketchAddPattern:                    true,
-	wire.MethodSketchOffset:                        true,
-	wire.MethodSketchProject:                       true,
-	wire.MethodTransactionUndo:                     true,
-	wire.MethodTransactionRedo:                     true,
-	wire.MethodTransactionEnd:                      true,
-	wire.MethodTransactionAbort:                    true,
-	wire.MethodFilesReplaceReference:               true,
-	wire.MethodDocumentsAddAttachment:              true,
-	wire.MethodDocumentsRemoveAttachment:           true,
-	wire.MethodDocumentsAddInterest:                true,
-	wire.MethodDocumentsRemoveInterest:             true,
-	wire.MethodDocumentsOpen:                       true,
+// commitMutation runs the post-success side effects of a document-mutating method, from the
+// single mutatingMethods table so undo recording and collaboration replication cannot drift:
+//   - emit edit.committed so a collaboration add-in can replay the wire request (ADR-0004);
+//   - resync any values other documents derive from (M02-F06);
+//   - record one undo step (the central seam — RecordActiveEdit) when the method carries a
+//     label, so every API / MCP / Lua mutation is undoable, not just parameter edits.
+//
+// Methods with an empty label are broadcast but record no step: transaction-control methods
+// (undo/redo/end/abort, which move the cursor themselves) and metadata-only methods the
+// parametric recipe does not capture. A read-only method is absent from the table entirely.
+func (r *Router) commitMutation(s *app.Session, method string, req []byte) {
+	label, mutates := mutatingMethods[method]
+	if !mutates {
+		return
+	}
+	s.EmitEditCommitted(method, req)
+	s.ResyncDerivedFromActiveDocument()
+	if label != "" {
+		s.RecordActiveEdit(label)
+	}
+}
+
+// mutatingMethods maps every router method that commits a document mutation to the label of
+// the undo step it records. It is the single source of truth for both post-success effects so
+// they cannot drift (see commitMutation):
+//   - membership ⇒ broadcast edit.committed for collaboration replication (ADR-0004);
+//   - a non-empty value ⇒ also record one undo step with that label (the central seam).
+//
+// An empty value means "broadcast but record no undo step": the four transaction-control
+// methods (which move the undo cursor themselves — recording would corrupt the stream) and
+// metadata-only methods whose change the parametric recipe does not capture (attachments,
+// interests, references, open/create — the document's baseline is its open state). A read-only
+// method must never appear here. The no-op-delta guard in commitRecipeDelta makes a label
+// harmless even when a handler already recorded its own step (parameters), so labels stay
+// descriptive without risk of a duplicate step.
+var mutatingMethods = map[string]string{
+	wire.MethodDocumentsCreate:                     "",
+	wire.MethodDocumentsImport:                     "Import",
+	wire.MethodParametersAdd:                       "Edit Parameters",
+	wire.MethodParametersSet:                       "Edit Parameters",
+	wire.MethodParametersUpdate:                    "Edit Parameters",
+	wire.MethodParametersSetTolerance:              "Edit Parameters",
+	wire.MethodParametersSetExpressionList:         "Edit Parameters",
+	wire.MethodParametersDelete:                    "Delete Parameter",
+	wire.MethodParametersGroupsAdd:                 "Edit Parameter Groups",
+	wire.MethodParametersGroupsDelete:              "Edit Parameter Groups",
+	wire.MethodParametersGroupsSetDisplayName:      "Edit Parameter Groups",
+	wire.MethodParametersGroupsAddMember:           "Edit Parameter Groups",
+	wire.MethodParametersGroupsRemoveMember:        "Edit Parameter Groups",
+	wire.MethodParametersSetSettings:               "Edit Parameter Settings",
+	wire.MethodParametersSetAllModelValueType:      "Edit Parameters",
+	wire.MethodParametersImport:                    "Import Parameters",
+	wire.MethodParametersDerivedTablesAdd:          "Edit Derived Parameters",
+	wire.MethodParametersDerivedTablesSetLinked:    "Edit Derived Parameters",
+	wire.MethodParametersDerivedTablesDelete:       "Edit Derived Parameters",
+	wire.MethodFeaturesAdd:                         "Add Feature",
+	wire.MethodFeaturesEdit:                        "Edit Feature",
+	wire.MethodFeaturesDelete:                      "Delete Feature",
+	wire.MethodFeaturesRename:                      "Rename Feature",
+	wire.MethodFeaturesSetSuppressed:               "Suppress Feature",
+	wire.MethodFeaturesReorder:                     "Reorder Features",
+	wire.MethodFreeformSetLevel:                    "Edit Freeform",
+	wire.MethodFreeformMoveVertices:                "Edit Freeform",
+	wire.MethodFreeformCreaseEdges:                 "Crease Edges",
+	wire.MethodWorkPlanesCreate:                    "Create Work Plane",
+	wire.MethodWorkPlanesRedefine:                  "Redefine Work Plane",
+	wire.MethodWorkPointsCreate:                    "Create Work Point",
+	wire.MethodWorkSurfacesSetVisible:              "",
+	wire.MethodWorkSurfacesRename:                  "Rename Work Surface",
+	wire.MethodAssemblyDeriveCreate:                "Derive Component",
+	wire.MethodAssemblyShrinkwrapCreate:            "Shrinkwrap",
+	wire.MethodAssemblyDeriveBreakLink:             "Break Link",
+	wire.MethodAssemblyFeaturesAdd:                 "Add Assembly Feature",
+	wire.MethodAssemblyFeaturesAddProxyCut:         "Add Assembly Feature",
+	wire.MethodAssemblyFeaturesAddHole:             "Hole",
+	wire.MethodAssemblyFeaturesAddExtrude:          "Extrude",
+	wire.MethodAssemblyFeaturesAddSweep:            "Sweep",
+	wire.MethodAssemblyFeaturesAddChamfer:          "Chamfer",
+	wire.MethodAssemblyFeaturesAddFillet:           "Fillet",
+	wire.MethodAssemblyFeaturesAddMoveFace:         "Move Face",
+	wire.MethodAssemblyFeaturesEdit:                "Edit Assembly Feature",
+	wire.MethodAssemblyFeaturesSetParticipants:     "Edit Participants",
+	wire.MethodAssemblyFeaturesSetParticipantPaths: "Edit Participants",
+	wire.MethodAssemblyFeaturesSetSuppressed:       "Suppress Assembly Feature",
+	wire.MethodAssemblySetEndOfFeatures:            "Set End of Features",
+	wire.MethodModelAssignMaterial:                 "Assign Material",
+	wire.MethodModelAssignAppearance:               "Assign Appearance",
+	wire.MethodSketchCreate:                        "Create Sketch",
+	wire.MethodSketchRectangle:                     "Add Sketch Geometry",
+	wire.MethodSketchDelete:                        "Delete Sketch",
+	wire.MethodSketchEdit:                          "",
+	wire.MethodSketchExitEdit:                      "",
+	wire.MethodSketchSolve:                         "",
+	wire.MethodSketchAddEntity:                     "Add Sketch Geometry",
+	wire.MethodSketchSetSplineHandle:               "Edit Spline",
+	wire.MethodSketchBlockDefinitionCreate:         "Create Block",
+	wire.MethodSketchBlockDefinitionDelete:         "Delete Block",
+	wire.MethodSketchAddBlockInstance:              "Insert Block",
+	wire.MethodSketch3DSetSplineHandle:             "Edit Spline",
+	wire.MethodSketch3DEditHelix:                   "Edit Helix",
+	wire.MethodSketchSetInferenceOptions:           "",
+	wire.MethodSketchAddConstraint:                 "Add Constraint",
+	wire.MethodSketchDeleteConstraint:              "Delete Constraint",
+	wire.MethodSketchAddDimension:                  "Add Dimension",
+	wire.MethodSketchDriveDimension:                "Edit Dimension",
+	wire.MethodSketchSetProperty:                   "Edit Sketch",
+	wire.MethodSketchSetCustomLineType:             "Edit Sketch",
+	wire.MethodSketchTransform:                     "Transform Sketch",
+	wire.MethodSketchAddPattern:                    "Sketch Pattern",
+	wire.MethodSketchOffset:                        "Offset Geometry",
+	wire.MethodSketchProject:                       "Project Geometry",
+	wire.MethodTransactionUndo:                     "",
+	wire.MethodTransactionRedo:                     "",
+	wire.MethodTransactionEnd:                      "",
+	wire.MethodTransactionAbort:                    "",
+	wire.MethodFilesReplaceReference:               "Replace Reference",
+	wire.MethodDocumentsAddAttachment:              "",
+	wire.MethodDocumentsRemoveAttachment:           "",
+	wire.MethodDocumentsAddInterest:                "",
+	wire.MethodDocumentsRemoveInterest:             "",
+	wire.MethodDocumentsOpen:                       "",
 }
 
 // record appends an operation entry to the trace, except for logs.tail itself (so polling the

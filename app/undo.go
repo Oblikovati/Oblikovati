@@ -189,6 +189,48 @@ func (s *Session) RecordAddInEdit(part *compdef.PartComponentDefinition, label s
 	s.recordEdit(part, label)
 }
 
+// EnsureActiveEditBaseline opens the active document's undo stream now, if it has not been
+// opened already, so its baseline snapshot is the pre-edit state. The router calls it before
+// dispatching a mutating method, so a document whose stream was never opened (it did not come
+// through NewPart/NewAssembly/open) still records its first wire edit against the state before
+// the handler runs — a lazily-created stream would capture the post-edit recipe as its
+// baseline and silently drop that first step. Idempotent: an existing stream keeps its
+// snapshot, so calling it before every mutating method is cheap.
+func (s *Session) EnsureActiveEditBaseline() {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	if _, ok := d.Content().(recipeStore); !ok {
+		return
+	}
+	s.documentHistory(d)
+}
+
+// RecordActiveEdit registers the active document's recipe delta as one undo step labelled
+// label, resolving the document's recipe-store content (part or assembly) itself. It is the
+// central seam the method router calls after any mutating wire method succeeds, so every
+// API / MCP / Lua mutation lands on the same undo stream interactive tools use — no
+// per-handler wiring (the gap that left feature/sketch/work-plane/assembly edits made over
+// the wire un-undoable). Resolving content from the active document means the router needs
+// no per-method knowledge of part vs assembly.
+//
+// It is safe to call unconditionally: a no-op delta records nothing, so a method whose
+// handler already recorded its own step (parameters) and a metadata-only method whose change
+// the parametric recipe does not capture both leave the stream untouched. Inside a bounded
+// transaction the delta defers to EndTransaction.
+func (s *Session) RecordActiveEdit(label string) {
+	d := s.ActiveDocument()
+	if d == nil {
+		return
+	}
+	content, ok := d.Content().(recipeStore)
+	if !ok {
+		return
+	}
+	s.recordEdit(content, label)
+}
+
 // ErrNoOpenTransaction is returned by EndTransaction when no bounded transaction is open.
 var ErrNoOpenTransaction = errors.New("app: no open transaction to end")
 
