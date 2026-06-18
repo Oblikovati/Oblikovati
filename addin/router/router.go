@@ -192,6 +192,8 @@ func (r *Router) registerTransactionHandlers() {
 	r.handlers[wire.MethodTransactionBegin] = beginTransaction
 	r.handlers[wire.MethodTransactionEnd] = endTransaction
 	r.handlers[wire.MethodTransactionAbort] = abortTransaction
+	r.handlers[wire.MethodTransactionHistory] = transactionHistory
+	r.handlers[wire.MethodTransactionJumpTo] = jumpTransaction
 }
 
 // registerParameterDetailHandlers wires the member-level parameter surface —
@@ -578,6 +580,7 @@ var mutatingMethods = map[string]string{
 	wire.MethodTransactionRedo:                     "",
 	wire.MethodTransactionEnd:                      "",
 	wire.MethodTransactionAbort:                    "",
+	wire.MethodTransactionJumpTo:                   "",
 	wire.MethodFilesReplaceReference:               "Replace Reference",
 	wire.MethodDocumentsAddAttachment:              "",
 	wire.MethodDocumentsRemoveAttachment:           "",

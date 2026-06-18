@@ -5,6 +5,7 @@ package app
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"time"
 
 	"oblikovati.org/command"
@@ -84,6 +85,36 @@ type docHistory struct {
 	// exactly the "before" for the group. See BeginTransaction/EndTransaction.
 	groupDepth int
 	groupLabel string
+
+	// savedDepths are the cursor positions (history depths) at which the document was
+	// written to disk — the save checkpoints a history browser flags so the user can tell
+	// persisted edits from in-memory ones. Saving appends here; it never clears the stream,
+	// so the full history since the document opened stays navigable across saves.
+	savedDepths []int
+}
+
+// markSaved records the current cursor depth as a save checkpoint, ignoring a repeated save
+// at the same depth (saving twice with no edit between).
+func (dh *docHistory) markSaved() {
+	pos := dh.hist.Len()
+	if n := len(dh.savedDepths); n > 0 && dh.savedDepths[n-1] == pos {
+		return
+	}
+	dh.savedDepths = append(dh.savedDepths, pos)
+}
+
+// savedDepthsWithin returns the save checkpoints that still fall within a timeline of max
+// steps, as a fresh slice. A new edit truncates the redo branch, so a checkpoint recorded on
+// a since-discarded branch (depth > max) is dropped rather than shown against an unrelated
+// state.
+func (dh *docHistory) savedDepthsWithin(max int) []int {
+	out := make([]int, 0, len(dh.savedDepths))
+	for _, d := range dh.savedDepths {
+		if d <= max {
+			out = append(out, d)
+		}
+	}
+	return out
 }
 
 // resync sets snapshot to the recipe the document now holds — called after undo/redo
@@ -334,13 +365,7 @@ func (s *Session) Undo() error {
 		s.notice = ErrNoActiveDoc.Error()
 		return ErrNoActiveDoc
 	}
-	dh := s.documentHistory(d)
-	ev := TransactionUndone{Document: d.ID(), Label: s.UndoLabel()}
-	if err := cursorMove(s, d, dh, ev, dh.hist.Undo); err != nil {
-		return err
-	}
-	event.Emit(s.bus, event.After, ev)
-	return nil
+	return s.undoDocument(d)
 }
 
 // Redo re-applies the next event ahead of the active document's cursor.
@@ -350,13 +375,100 @@ func (s *Session) Redo() error {
 		s.notice = ErrNoActiveDoc.Error()
 		return ErrNoActiveDoc
 	}
+	return s.redoDocument(d)
+}
+
+// undoDocument / redoDocument move one document's cursor by a single step, restoring the
+// matching recipe and emitting the lifecycle event for that document. They take the document
+// explicitly (not the active one) so a history browser can navigate a background document's
+// timeline without first activating it — the per-step seam JumpDocumentTo loops over.
+func (s *Session) undoDocument(d *doc.Document) error {
 	dh := s.documentHistory(d)
-	ev := TransactionRedone{Document: d.ID(), Label: s.RedoLabel()}
+	ev := TransactionUndone{Document: d.ID(), Label: lastLabel(dh.hist.UndoLabels())}
+	if err := cursorMove(s, d, dh, ev, dh.hist.Undo); err != nil {
+		return err
+	}
+	event.Emit(s.bus, event.After, ev)
+	return nil
+}
+
+func (s *Session) redoDocument(d *doc.Document) error {
+	dh := s.documentHistory(d)
+	ev := TransactionRedone{Document: d.ID(), Label: firstLabel(dh.hist.RedoLabels())}
 	if err := cursorMove(s, d, dh, ev, dh.hist.Redo); err != nil {
 		return err
 	}
 	event.Emit(s.bus, event.After, ev)
 	return nil
+}
+
+// ErrHistoryTransactionOpen is returned by JumpDocumentTo when a bounded transaction is open
+// on the target document — a bare cursor move would corrupt the unit being recorded.
+var ErrHistoryTransactionOpen = errors.New("app: cannot jump history while a transaction is open")
+
+// JumpDocumentTo moves the open document id's undo cursor to an absolute position (0 = the
+// open/baseline state, len(entries) = the latest state), undoing or redoing as many steps as
+// needed in one call — the click-to-jump a history browser needs over a long stream. Each step
+// runs through the same per-step seam as Undo/Redo, so references re-bind and derived values
+// resync along the way (essential for an assembly whose parts the jump moves). It errors if the
+// document is not open, a transaction is open, or position is out of range.
+func (s *Session) JumpDocumentTo(id doc.ID, position int) error {
+	d, ok := s.workspace.ByID(id)
+	if !ok {
+		return fmt.Errorf("app: history jump: document %d is not open", id)
+	}
+	dh := s.documentHistory(d)
+	if dh.groupDepth > 0 {
+		return ErrHistoryTransactionOpen
+	}
+	if total := dh.hist.Len() + len(dh.hist.RedoLabels()); position < 0 || position > total {
+		return fmt.Errorf("app: history jump: position %d out of range [0,%d]", position, total)
+	}
+	for dh.hist.Len() > position {
+		if err := s.undoDocument(d); err != nil {
+			return err
+		}
+	}
+	for dh.hist.Len() < position {
+		if err := s.redoDocument(d); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DocumentTimeline is one open document's undo stream for a history browser: every committed
+// step oldest-first (Labels), the cursor Position (how many steps are applied, so
+// Labels[:Position] are past and Labels[Position:] are future), the save checkpoints
+// (SavedDepths, cursor positions at which the document was written to disk), and the document
+// Name. It is a read-only snapshot; JumpDocumentTo moves the cursor.
+type DocumentTimeline struct {
+	Name        string
+	Position    int
+	Labels      []string
+	SavedDepths []int
+}
+
+// DocumentHistoryView returns the open document id's full timeline since it was opened, or
+// false when id is not an open recipe document. It does not activate the document, so a browser
+// can read several documents' timelines side by side. UndoLabels is the applied past
+// (oldest-first) and RedoLabels the redoable future, so their concatenation is the whole stream.
+func (s *Session) DocumentHistoryView(id doc.ID) (DocumentTimeline, bool) {
+	d, ok := s.workspace.ByID(id)
+	if !ok {
+		return DocumentTimeline{}, false
+	}
+	if _, ok := d.Content().(recipeStore); !ok {
+		return DocumentTimeline{}, false
+	}
+	dh := s.documentHistory(d)
+	labels := append(dh.hist.UndoLabels(), dh.hist.RedoLabels()...)
+	return DocumentTimeline{
+		Name:        d.DisplayName(),
+		Position:    dh.hist.Len(),
+		Labels:      labels,
+		SavedDepths: dh.savedDepthsWithin(len(labels)),
+	}, true
 }
 
 // cursorMove runs one undo/redo navigation behind its Before event: a handler may

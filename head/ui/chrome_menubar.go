@@ -124,6 +124,12 @@ func drawEditMenu(s *app.Session) {
 			_ = s.Redo()
 		}
 		native.Separator()
+		// History Browser complements undo/redo for long histories and multi-document
+		// assemblies: jump to any point on each document's timeline, side by side.
+		if native.MenuItem(checkLabel("History Browser", s.HistoryBrowserOpen())) {
+			s.ToggleHistoryBrowser()
+		}
+		native.Separator()
 		if native.MenuItem("Cancel Tool (Esc)") && s.ActiveTool() != nil {
 			s.CancelTool()
 		}
