@@ -157,6 +157,19 @@ func (s *Sketch3D) addEntity3D(e Entity) {
 	s.byID[e.EntityID()] = e
 }
 
+// pinEntityID3D pins a restored point/entity's local id to its persisted value so its
+// derived persistent reference key (#153) is stable across save/load, re-keying the byID
+// index when the object is registered there (standalone points and curve entities; a
+// curve-owned point is not in byID, so the re-key is skipped).
+func (s *Sketch3D) pinEntityID3D(e Entity, saved int) {
+	old := e.EntityID()
+	e.(idCarrier).setID(ID(saved))
+	if _, ok := s.byID[old]; ok {
+		delete(s.byID, old)
+		s.byID[e.EntityID()] = e
+	}
+}
+
 // Constraints returns every residual-bearing constraint — all geometric plus the driving
 // dimensions — which is exactly what the solver consumes. Driven dimensions are excluded.
 func (s *Sketch3D) Constraints() []Constraint {
@@ -224,6 +237,20 @@ func (c *Sketches3D) AddNamed(name string) *Sketch3D {
 	c.items = append(c.items, s)
 	c.byID[s.id] = s
 	return s
+}
+
+// restoreSketch3DID pins a freshly-added 3D sketch's local id to its persisted value so the
+// sketch's document-derived persistent reference key (#153) is stable across load, re-keying
+// the byID index and raising the id clock past it. A zero saved id (a legacy recipe) keeps
+// the minted one.
+func (c *Sketches3D) restoreSketch3DID(s *Sketch3D, saved uint64) {
+	if saved == 0 {
+		return
+	}
+	delete(c.byID, s.id)
+	s.id = ID(saved)
+	c.byID[s.id] = s
+	raiseIDSeq(saved)
 }
 
 // nextName mints the first unused "3D Sketch{N}" name, advancing past taken numbers.

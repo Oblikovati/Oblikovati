@@ -21,6 +21,10 @@ func NewPoint3D(p math.Point3) *Point3D {
 // EntityID implements [Entity].
 func (p *Point3D) EntityID() ID { return p.id }
 
+// setID pins the point's local id to a persisted value (restore path only); see
+// [entityBase.setID]. Keeps a 3D point's derived persistent reference key stable (#153).
+func (p *Point3D) setID(id ID) { p.id = id }
+
 // Position returns the point as a [math.Point3].
 func (p *Point3D) Position() math.Point3 { return math.P3(p.X, p.Y, p.Z) }
 

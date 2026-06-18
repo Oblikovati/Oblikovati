@@ -19,6 +19,10 @@ import (
 // SketchData3D is the serializable form of one 3D sketch. Hidden inverts Visible so the
 // common visible=true case omits the field; DimsHidden inverts DimensionsVisible likewise.
 type SketchData3D struct {
+	// ID is the 3D sketch's document-local id, persisted (#153) so it and its entities'
+	// derived reference keys survive the round trip. Zero in legacy recipes; restore then
+	// keeps the freshly-minted id.
+	ID           uint64            `yaml:"id,omitempty"`
 	Name         string            `yaml:"name,omitempty"`
 	Hidden       bool              `yaml:"hidden,omitempty"`
 	DimsHidden   bool              `yaml:"dimsHidden,omitempty"`
@@ -151,6 +155,7 @@ func (c *Sketches3D) MarshalRecipe3D() ([]SketchData3D, error) {
 
 func serializeSketch3D(s *Sketch3D) (SketchData3D, error) {
 	sd := SketchData3D{
+		ID:           uint64(s.id),
 		Name:         s.name,
 		Hidden:       !s.visible,
 		DimsHidden:   !s.dimensionsVisible,
@@ -399,32 +404,15 @@ func (c *Sketches3D) ApplyRecipe3D(data []SketchData3D) error {
 
 func (c *Sketches3D) restoreSketch3D(sd SketchData3D) error {
 	s := c.AddNamed(sd.Name)
-	s.visible = !sd.Hidden
-	s.dimensionsVisible = !sd.DimsHidden
-	s.shared = sd.Shared
-	s.color = sd.Color
-	s.deferUpdates = sd.DeferUpdates
-	seq.Restore(&s.seq, sd.Seq)
-	// Re-create points, mapping their saved ids onto the freshly minted ones so
-	// constraints can re-bind by id.
-	idmap := make(map[int]*Point3D, len(sd.Points))
-	for _, pd := range sd.Points {
-		var p *Point3D
-		if pd.Standalone {
-			p = s.AddPoint3D(math.P3(pd.X, pd.Y, pd.Z))
-		} else {
-			p = s.newPoint3D(math.P3(pd.X, pd.Y, pd.Z))
-		}
-		idmap[pd.ID] = p
+	c.restoreSketch3DID(s, sd.ID)
+	restoreSketch3DProps(s, sd)
+	idmap, maxPoint := restorePoints3D(s, sd.Points)
+	entmap, maxEntity, err := restoreEntities3D(s, sd.Entities, idmap)
+	if err != nil {
+		return err
 	}
-	entmap := make(map[int]Entity, len(sd.Entities))
-	for _, ed := range sd.Entities {
-		e, err := restoreEntity3D(s, ed, idmap)
-		if err != nil {
-			return err
-		}
-		entmap[ed.ID] = e
-	}
+	raiseIDSeq(maxPoint) // ids minted after load must not collide with the restored ones
+	raiseIDSeq(maxEntity)
 	for _, cd := range sd.Constraints {
 		if err := restoreConstraint3D(s, cd, idmap, entmap); err != nil {
 			return err
@@ -436,6 +424,61 @@ func (c *Sketches3D) restoreSketch3D(sd SketchData3D) error {
 		}
 	}
 	return nil
+}
+
+// restoreSketch3DProps reapplies a 3D sketch's persisted display/solve properties.
+func restoreSketch3DProps(s *Sketch3D, sd SketchData3D) {
+	s.visible = !sd.Hidden
+	s.dimensionsVisible = !sd.DimsHidden
+	s.shared = sd.Shared
+	s.color = sd.Color
+	s.deferUpdates = sd.DeferUpdates
+	seq.Restore(&s.seq, sd.Seq)
+}
+
+// restorePoints3D recreates the sketch's 3D points (standalone or curve-owned), pinning
+// each saved id verbatim so derived reference keys stay stable, and returns the id map plus
+// the largest id seen.
+func restorePoints3D(s *Sketch3D, points []Point3DData) (map[int]*Point3D, uint64) {
+	idmap := make(map[int]*Point3D, len(points))
+	var maxID uint64
+	for _, pd := range points {
+		p := restorePoint3D(s, pd)
+		s.pinEntityID3D(p, pd.ID)
+		idmap[pd.ID] = p
+		if uint64(pd.ID) > maxID {
+			maxID = uint64(pd.ID)
+		}
+	}
+	return idmap, maxID
+}
+
+// restorePoint3D creates one 3D point — standalone (an entity) or curve-owned — exactly one.
+func restorePoint3D(s *Sketch3D, pd Point3DData) *Point3D {
+	pos := math.P3(pd.X, pd.Y, pd.Z)
+	if pd.Standalone {
+		return s.AddPoint3D(pos)
+	}
+	return s.newPoint3D(pos)
+}
+
+// restoreEntities3D recreates the sketch's 3D curve entities over the restored points,
+// pinning each saved id, and returns the entity map plus the largest id seen.
+func restoreEntities3D(s *Sketch3D, entities []Entity3DData, idmap map[int]*Point3D) (map[int]Entity, uint64, error) {
+	entmap := make(map[int]Entity, len(entities))
+	var maxID uint64
+	for _, ed := range entities {
+		e, err := restoreEntity3D(s, ed, idmap)
+		if err != nil {
+			return nil, 0, err
+		}
+		s.pinEntityID3D(e, ed.ID)
+		entmap[ed.ID] = e
+		if uint64(ed.ID) > maxID {
+			maxID = uint64(ed.ID)
+		}
+	}
+	return entmap, maxID, nil
 }
 
 // restoreDimension3D re-adds one 3D dimension, binding operands through the id maps and
