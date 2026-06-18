@@ -93,6 +93,41 @@ func TestDollyToCursorClampsMinDistance(t *testing.T) {
 	}
 }
 
+// TestZoomToRectCentersAndFills: zooming to a centred half-size box keeps the view direction, recentres
+// on the box centre, and halves the eye–target distance (the box's relative size sets the zoom).
+func TestZoomToRectCentersAndFills(t *testing.T) {
+	c := NewCamera(800, 600)
+	before, _ := c.cursorPlanePoint(400, 300) // box centre = viewport centre → the current target depth
+	z := c.ZoomToRect(200, 150, 600, 450)     // a 400×300 box (half W, half H) centred
+	if !z.Forward().IsEqualTo(c.Forward(), 1e-9) {
+		t.Error("ZoomToRect must keep the view direction")
+	}
+	if !z.Target.IsEqualTo(before, 1e-6) {
+		t.Errorf("recentre target = %v, want the box-centre world point %v", z.Target, before)
+	}
+	if d := float64(z.Eye.DistanceTo(z.Target)); stdmath.Abs(d-5) > 1e-6 {
+		t.Errorf("zoom distance = %v, want 5 (half of 10: the box is half the viewport)", d)
+	}
+}
+
+// TestZoomToRectOffCentreRecenters: an off-centre box moves the target to that box's centre.
+func TestZoomToRectOffCentreRecenters(t *testing.T) {
+	c := NewCamera(800, 600)
+	pivot, _ := c.cursorPlanePoint(650, 180)
+	z := c.ZoomToRect(600, 130, 700, 230) // centre (650,180)
+	if !z.Target.IsEqualTo(pivot, 1e-6) {
+		t.Errorf("off-centre zoom target = %v, want %v", z.Target, pivot)
+	}
+}
+
+// TestZoomToRectIgnoresDegenerate: a near-zero box (a click) is a no-op.
+func TestZoomToRectIgnoresDegenerate(t *testing.T) {
+	c := NewCamera(800, 600)
+	if z := c.ZoomToRect(400, 300, 401, 301); z != c {
+		t.Error("a degenerate rectangle should leave the camera unchanged")
+	}
+}
+
 func TestDollyScalesDistanceKeepingDirection(t *testing.T) {
 	c := NewCamera(800, 600) // eye (0,0,10), target origin
 	in := c.Dolly(0.5)

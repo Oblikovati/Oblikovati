@@ -34,6 +34,9 @@ func handleViewportSelection(s *app.Session) {
 	if heldNavMode() != NavNone {
 		return // a held F2/F3/F4 turns a left-drag into navigation, not selection (#911)
 	}
+	if updateZoomWindow(s) {
+		return // the Zoom Window tool owns the left-drag while armed (#913 N16)
+	}
 	if s.SelectOtherActive() {
 		if native.IsItemClicked(native.MouseLeft) {
 			s.CommitSelectOther() // a click in the viewport accepts the highlighted candidate (#910)
@@ -97,6 +100,46 @@ func updateBoxSelect(s *app.Session) bool {
 	}
 	s.BeginBoxSelect(lx, ly)
 	return s.BoxSelectActive() // false when no RegionPicker is installed → fall through to click
+}
+
+// updateZoomWindow drives the Zoom Window rubber band while the tool is armed: a fresh left press
+// anchors the box, the cursor sweeps it, and release zooms the view to fit it (#913 N16). It consumes
+// all left input while armed so the drag never also selects. Esc disarms via cancelViewportTool.
+func updateZoomWindow(s *app.Session) bool {
+	if !s.ZoomWindowArmed() {
+		return false
+	}
+	lx, ly := viewportCursor()
+	if s.ZoomWindowDragging() {
+		if native.MouseDown(native.MouseLeft) {
+			s.UpdateZoomWindow(lx, ly)
+		} else {
+			s.CommitZoomWindow()
+		}
+		return true
+	}
+	if native.IsItemClicked(native.MouseLeft) {
+		s.BeginZoomWindow(lx, ly)
+	}
+	return true
+}
+
+// drawZoomWindowRect draws the in-progress Zoom Window rubber band over the viewport image, in a
+// neutral white (distinct from box-select's blue/green window/crossing colours). No-op when idle.
+func drawZoomWindowRect(s *app.Session, bx, by float32) {
+	if !s.ZoomWindowDragging() {
+		return
+	}
+	x0, y0, x1, y1 := s.ZoomWindowRect()
+	sx0, sy0 := bx+float32(x0), by+float32(y0)
+	sx1, sy1 := bx+float32(x1), by+float32(y1)
+	fill := [4]float32{0.85, 0.85, 0.90, 0.15}
+	border := [4]float32{0.95, 0.95, 1.00, 0.95}
+	native.DrawQuadFilled(sx0, sy0, sx1, sy0, sx1, sy1, sx0, sy1, fill)
+	native.DrawLine(sx0, sy0, sx1, sy0, border, 1.2)
+	native.DrawLine(sx1, sy0, sx1, sy1, border, 1.2)
+	native.DrawLine(sx1, sy1, sx0, sy1, border, 1.2)
+	native.DrawLine(sx0, sy1, sx0, sy0, border, 1.2)
 }
 
 // viewportSelectMods reads the Shift/Ctrl modifiers held this frame (Shift adds, Ctrl

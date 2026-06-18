@@ -77,7 +77,8 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
 	sketchPlane, dims, gfxLabels, gfxImages := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
-	drawBoxSelectRect(s, bx, by) // the rubber-band selection rectangle, on top of the image
+	drawBoxSelectRect(s, bx, by)  // the rubber-band selection rectangle, on top of the image
+	drawZoomWindowRect(s, bx, by) // the Zoom Window rubber band (#913 N16), if armed
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity(), hit.arrow)
 	}
