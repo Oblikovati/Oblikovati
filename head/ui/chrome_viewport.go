@@ -26,6 +26,13 @@ import (
 // the scene — rebuilt from the model each frame (renderer.BuildDrawList) and projected
 // with the navigated camera — always reflects current model and view state (ADR-0004).
 func drawViewportPanel(win *native.Window, s *app.Session) {
+	// The viewport draws icon textures (the Navigation Bar, #913 N25), so the icon cache must be bound
+	// to THIS window. DrawChrome binds it lazily, but the in-window viewportFrame test path calls us
+	// directly — without that, a stale cache from a destroyed window would feed ImageButton invalid
+	// textures and crash Vulkan at EndFrame. Rebind when absent or bound to a different window.
+	if icons == nil || icons.win != win {
+		icons = newIconCache(win)
+	}
 	win.SetViewportNormalDebug(normalDebugOn || s.NormalDebug()) // Tools ▸ Normal Debug, or viewport.setNormalDebug
 	if native.Begin("Viewport") {
 		drawDocumentTabs(s)
