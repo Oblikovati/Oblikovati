@@ -7,6 +7,7 @@ package ui
 import (
 	"fmt"
 	stdmath "math"
+	"unicode/utf8"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
@@ -153,7 +154,9 @@ func drawSheetDimensions(face rect, sheet *drawing.Sheet) {
 			native.DrawLine(ax, ay, bx, by, viewVisibleInk, 1.2)
 		}
 		tx, ty := curveToScreen(face, math.P2(math.Scalar(dimAnchorX(d)), math.Scalar(dimAnchorY(d))))
-		native.DrawText(tx+2, ty-14, d.Text(), sheetInk)
+		// Centre the value text on its anchor (already lifted off the dimension line).
+		runes := utf8.RuneCountInString(d.Text())
+		native.DrawText(tx-float32(runes)*3.2, ty-7, d.Text(), sheetInk)
 	}
 }
 

@@ -36,8 +36,24 @@ func handleSheetCanvasInput(s *app.Session, face rect, hovered bool, mx, my floa
 			return
 		}
 	}
+	if handleDimensionDrag(s, face, hovered, cx, cy) {
+		return
+	}
 	handleSelection(s, hovered, cx, cy)
 	drawViewCtxMenu(s)
+}
+
+// handleDimensionDrag forwards the canvas item's ImGui state and the per-frame mouse move to the
+// session's dimension-drag state machine, returning true while a drag is in progress so view
+// selection is suppressed. The drag logic itself lives in app (Session.DragDimension).
+func handleDimensionDrag(s *app.Session, face rect, hovered bool, cx, cy float64) bool {
+	ddx, ddy := native.MouseDelta()
+	var dx, dy float64
+	if face.scale != 0 {
+		dx, dy = float64(ddx)/float64(face.scale), -float64(ddy)/float64(face.scale)
+	}
+	clicked := hovered && native.IsItemClicked(native.MouseLeft)
+	return s.DragDimension(native.IsItemActive(), clicked, cx, cy, dx, dy)
 }
 
 // handlePlacement tracks the cursor as the pending view centre, draws the preview there, and
