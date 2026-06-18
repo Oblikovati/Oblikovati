@@ -79,6 +79,12 @@ func TestInWindowDrawingCanvasRenders(t *testing.T) {
 	c, _ := app.ActiveDrawing(s)
 	views := c.Sheets().Active().Views()
 
+	// A feature control frame on the sheet so drawSheetAnnotations renders its curves AND its
+	// tolerance/datum text labels (the GD&T label branch).
+	if _, err := c.Sheets().Active().Annotations().AddFeatureControlFrame("FCF", 40, 40, types.CharacteristicPosition, "0.5", []string{"A", "B"}); err != nil {
+		t.Fatalf("AddFeatureControlFrame: %v", err)
+	}
+
 	// Frame 1–2: a base-view placement tool is active → the preview branch renders.
 	s.StartTool(app.NewBaseViewTool())
 	renderChromeFrames(win, s, 2)
