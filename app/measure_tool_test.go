@@ -76,6 +76,83 @@ func TestMeasureToolPick(t *testing.T) {
 	}
 }
 
+// TestMeasureToolMisc covers the tool's name/prompt/cancel and the readout edge cases.
+func TestMeasureToolMisc(t *testing.T) {
+	s, block := newPartWithBlock(t, 4)
+	top, side := topFaceOf(t, block), sideFaceOf(t, block)
+	v := block.Vertices()[0]
+
+	m := NewMeasureTool()
+	if m.Name() != "Measure" {
+		t.Errorf("Name = %q, want Measure", m.Name())
+	}
+	if p := m.Prompt(nil); !strings.Contains(p, "pick a face") {
+		t.Errorf("empty prompt = %q, want a pick instruction", p)
+	}
+	m.picks = []measurePick{vertEntity(v)}
+	m.readout = "edge length 1.000 mm"
+	if p := m.Prompt(nil); !strings.Contains(p, "pick more") {
+		t.Errorf("active prompt = %q, want a pick-more hint", p)
+	}
+
+	// Readout edge cases: no picks, a lone vertex, and a three-pick fallback (not all vertices).
+	if r := measureReadout(nil); !strings.Contains(r, "pick a face") {
+		t.Errorf("empty readout = %q", r)
+	}
+	if r := measureReadout([]measurePick{vertEntity(v)}); !strings.Contains(r, "vertex") {
+		t.Errorf("lone-vertex readout = %q, want a hint to pick more", r)
+	}
+	if r := measureReadout([]measurePick{faceEntity(top), faceEntity(side), vertEntity(v)}); !strings.Contains(r, "min distance") {
+		t.Errorf("mixed three-pick readout = %q, want the pair fallback", r)
+	}
+
+	// A fourth pick is never accepted.
+	m.picks = []measurePick{vertEntity(v), vertEntity(v), vertEntity(v)}
+	if m.accepts(vertEntity(v)) {
+		t.Error("a fourth pick should not be accepted")
+	}
+	// Cancel clears the picks and readout.
+	m.Cancel(s)
+	if len(m.picks) != 0 || m.readout != "" {
+		t.Errorf("after Cancel: picks=%d readout=%q, want empty", len(m.picks), m.readout)
+	}
+
+	// Direct picks exercise every handle kind, the reset path, and an ignored kind.
+	mp := NewMeasureTool()
+	mp.Start(s)
+	mp.Pick(s, EdgeHandle{Edge: block.Edges()[0]})
+	mp.Pick(s, FaceHandle{Face: top, Body: block})  // 2 picks: edge + face
+	mp.Pick(s, FaceHandle{Face: side, Body: block}) // 3rd non-vertex ⇒ restart at the new face
+	if len(mp.picks) != 1 {
+		t.Errorf("after a third non-vertex pick: %d picks, want 1 (restarted)", len(mp.picks))
+	}
+	mp.Pick(s, VertexHandle{Vertex: v})
+	mp.Pick(s, BodyHandle{Body: block}) // unhandled kind ⇒ ignored
+	if len(mp.picks) != 2 {
+		t.Errorf("after a vertex then an ignored body pick: %d picks, want 2", len(mp.picks))
+	}
+}
+
+// TestStartMeasureCommand checks the Inspect.Measure command activates the tool on a part and
+// errors without one, and that ActiveMeasure reflects the running tool.
+func TestStartMeasureCommand(t *testing.T) {
+	s, _ := newPartWithBlock(t, 2)
+	if err := startMeasure(s); err != nil {
+		t.Fatalf("startMeasure: %v", err)
+	}
+	if s.ActiveMeasure() == nil {
+		t.Error("Measure tool not active after startMeasure")
+	}
+
+	empty := NewSession()
+	if err := startMeasure(empty); err == nil {
+		t.Error("startMeasure with no active part = ok, want error")
+	}
+	if empty.ActiveMeasure() != nil {
+		t.Error("ActiveMeasure with no tool = non-nil, want nil")
+	}
+}
+
 // TestMeasureToolAcceptsResets checks that a third non-vertex pick restarts the selection.
 func TestMeasureToolAcceptsResets(t *testing.T) {
 	_, block := newPartWithBlock(t, 4)

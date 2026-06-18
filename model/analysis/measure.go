@@ -54,19 +54,14 @@ func FaceLoopLengthMm(f *topo.Face, q ops.Quality) float64 {
 	return total
 }
 
-// outerLoop returns a face's outer boundary loop (the one flagged outer, else the first), or nil
-// when the face has no loops.
+// outerLoop returns a face's outer boundary loop, or nil when the face has no loops. Face.Loops()
+// is outer-first by construction, so the first loop is the outer boundary.
 func outerLoop(f *topo.Face) *topo.Loop {
 	loops := f.Loops()
-	for _, l := range loops {
-		if l.IsOuter() {
-			return l
-		}
+	if len(loops) == 0 {
+		return nil
 	}
-	if len(loops) > 0 {
-		return loops[0]
-	}
-	return nil
+	return loops[0]
 }
 
 // distanceMm is the millimetre distance between two database-unit points.
