@@ -116,6 +116,13 @@ type RuleFilletData struct {
 	Value float64 `yaml:"value"`
 }
 
+// FullRoundData persists a full-round fillet (#694): the three face-set reference keys.
+type FullRoundData struct {
+	Side1  []string `yaml:"side1"`
+	Center []string `yaml:"center"`
+	Side2  []string `yaml:"side2"`
+}
+
 // SnapFitData persists a cantilever snap-fit (#486): the beam and catch dimensions.
 type SnapFitData struct {
 	Length      float64 `yaml:"length"`

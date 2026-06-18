@@ -28,6 +28,7 @@ type FeatureData struct {
 	Extrude        *ExtrudeData        `yaml:"extrude,omitempty"`
 	Fillet         *EdgeDressData      `yaml:"fillet,omitempty"`
 	FaceFillet     *FaceFilletData     `yaml:"faceFillet,omitempty"`
+	FullRound      *FullRoundData      `yaml:"fullRound,omitempty"`
 	RuleFillet     *RuleFilletData     `yaml:"ruleFillet,omitempty"`
 	SnapFit        *SnapFitData        `yaml:"snapFit,omitempty"`
 	Rest           *RestData           `yaml:"rest,omitempty"`
@@ -144,6 +145,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType)}
 	case *FaceFilletFeature:
 		fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(f.def.FaceKeysA), FacesB: encodeKeys(f.def.FaceKeysB), Value: evalFloat(f.def.Radius)}
+	case *FullRoundFilletFeature:
+		fd.FullRound = &FullRoundData{Side1: encodeKeys(f.def.Side1Keys), Center: encodeKeys(f.def.CenterKeys), Side2: encodeKeys(f.def.Side2Keys)}
 	case *RuleFilletFeature:
 		fd.RuleFillet = &RuleFilletData{Rule: f.def.Rule.String(), Value: evalFloat(f.def.Radius)}
 	case *SnapFitFeature:
@@ -465,6 +468,23 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 			return nil, err
 		}
 		return du.AddFaceFillet(a, b, constFloat(fd.FaceFillet.Value)), nil
+	case "full-round-fillet":
+		if fd.FullRound == nil {
+			return nil, fmt.Errorf("full-round-fillet feature is missing its payload")
+		}
+		s1, err := decodeKeys(fd.FullRound.Side1)
+		if err != nil {
+			return nil, err
+		}
+		ctr, err := decodeKeys(fd.FullRound.Center)
+		if err != nil {
+			return nil, err
+		}
+		s2, err := decodeKeys(fd.FullRound.Side2)
+		if err != nil {
+			return nil, err
+		}
+		return du.AddFullRoundFillet(s1, ctr, s2), nil
 	case "rule-fillet":
 		if fd.RuleFillet == nil {
 			return nil, fmt.Errorf("rule-fillet feature is missing its payload")
