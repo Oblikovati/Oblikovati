@@ -304,6 +304,35 @@ func (t *SurfaceTextureTool) Params() ToolParams {
 	}
 }
 
+// PartsListTool drops a parts list table (sourced from the referenced assembly's BOM) at the
+// cursor (the table's top-left corner).
+type PartsListTool struct {
+	centerX, centerY float64
+}
+
+// NewPartsListTool starts placing near the top-left of the sheet.
+func NewPartsListTool() *PartsListTool { return &PartsListTool{centerX: 40, centerY: 260} }
+
+func (t *PartsListTool) Name() string              { return "Parts List" }
+func (t *PartsListTool) Start(*Session)            {}
+func (t *PartsListTool) Pick(*Session, Selectable) {}
+func (t *PartsListTool) CanCommit() bool           { return true }
+func (t *PartsListTool) Cancel(*Session)           {}
+func (t *PartsListTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the parts list at the placed point.
+func (t *PartsListTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Sheets().Active().Annotations().AddPartsList("", t.centerX, t.centerY); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
 	width, height    float64

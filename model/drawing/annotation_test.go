@@ -249,6 +249,59 @@ func TestSurfaceTextureNoRoughness(t *testing.T) {
 	}
 }
 
+// fakeBOM is a named BOM resolver returning a fixed parts-only row set, for parts-list tests.
+type fakeBOM struct{ rows []PartsListRow }
+
+func (f fakeBOM) BOMRows(string) ([]PartsListRow, bool) { return f.rows, len(f.rows) > 0 }
+
+// TestAddPartsList: a parts list builds a grid + header and one labelled row per BOM item, reports
+// its row count, and re-reads the BOM on recompute (a new item appears).
+func TestAddPartsList(t *testing.T) {
+	c := drawingWithBox(t)
+	c.SetModelReference("asm.oba")
+	c.SetBOMResolver(fakeBOM{rows: []PartsListRow{
+		{Item: 1, PartNumber: "BRKT-01", Description: "Bracket", Quantity: 2},
+		{Item: 2, PartNumber: "BOLT-M6", Description: "Bolt", Quantity: 4},
+	}})
+	pl, err := c.Sheets().Active().Annotations().AddPartsList("PL", 40, 200)
+	if err != nil {
+		t.Fatalf("AddPartsList: %v", err)
+	}
+	if pl.Kind() != types.PartsListAnnotation || pl.RowCount() != 2 {
+		t.Fatalf("parts list = (%v, %d rows), want a partsList with 2 BOM rows", pl.Kind(), pl.RowCount())
+	}
+	if pl.CurveCount() == 0 {
+		t.Fatal("parts list produced no grid curves")
+	}
+	// Labels: 4 columns × (1 header + 2 data) rows = 12, including the part numbers.
+	texts := map[string]bool{}
+	for _, l := range pl.Labels() {
+		texts[l.Text] = true
+	}
+	if !texts["ITEM"] || !texts["BRKT-01"] || !texts["BOLT-M6"] {
+		t.Errorf("parts list labels missing header/part numbers: %v", pl.Labels())
+	}
+
+	// Add a third item and recompute — the list grows.
+	c.SetBOMResolver(fakeBOM{rows: []PartsListRow{
+		{Item: 1, PartNumber: "BRKT-01", Description: "Bracket", Quantity: 2},
+		{Item: 2, PartNumber: "BOLT-M6", Description: "Bolt", Quantity: 4},
+		{Item: 3, PartNumber: "WSHR-M6", Description: "Washer", Quantity: 4},
+	}})
+	c.RecomputeViews()
+	if pl.RowCount() != 3 {
+		t.Errorf("after BOM change, parts list rows = %d, want 3", pl.RowCount())
+	}
+}
+
+// TestPartsListNeedsBOM: a parts list on a drawing with no BOM source errors.
+func TestPartsListNeedsBOM(t *testing.T) {
+	c := drawingWithBox(t) // no BOM resolver wired
+	if _, err := c.Sheets().Active().Annotations().AddPartsList("PL", 40, 200); err == nil {
+		t.Error("AddPartsList with no BOM source = ok, want error")
+	}
+}
+
 // TestFeatureControlFrameNeedsTolerance: an FCF with no tolerance value errors.
 func TestFeatureControlFrameNeedsTolerance(t *testing.T) {
 	c := drawingWithBox(t)

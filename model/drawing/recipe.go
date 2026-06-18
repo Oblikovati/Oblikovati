@@ -231,7 +231,7 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	if err != nil {
 		return err
 	}
-	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve)}
+	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve}
 	if rec.Border {
 		sh.border = newBorder(DefaultBorderDefinition())
 	}

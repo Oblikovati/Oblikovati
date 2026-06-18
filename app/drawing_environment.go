@@ -9,6 +9,8 @@ import (
 	"oblikovati.org/event"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/attr"
+	"oblikovati.org/model/bom"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/drawing"
 )
@@ -54,7 +56,35 @@ func ActiveDrawing(s *Session) (*drawing.Content, error) {
 	}
 	c.SetModelProperties(referencedModelProperties{ws: s.workspace, ref: c.ModelReference})
 	c.SetBodyResolver(referencedModelBodies{ws: s.workspace})
+	c.SetBOMResolver(referencedModelBOM{ws: s.workspace})
 	return c, nil
+}
+
+// referencedModelBOM resolves a drawing's referenced assembly document to its parts-only BOM rows
+// for a parts list, looking it up by name in the workspace on each call (so the list tracks the
+// assembly). A non-assembly model (or one with no occurrences) yields no rows.
+type referencedModelBOM struct {
+	ws *doc.Workspace
+}
+
+func (r referencedModelBOM) BOMRows(fullDocumentName string) ([]drawing.PartsListRow, bool) {
+	d, ok := r.ws.ByName(fullDocumentName)
+	if !ok || d.Content() == nil {
+		return nil, false
+	}
+	asm, ok := d.Content().(*compdef.AssemblyComponentDefinition)
+	if !ok {
+		return nil, false
+	}
+	view := bom.New(asm.Occurrences()).PartsOnly()
+	if len(view.Rows) == 0 {
+		return nil, false
+	}
+	rows := make([]drawing.PartsListRow, len(view.Rows))
+	for i, br := range view.Rows {
+		rows[i] = drawing.PartsListRow{Item: br.ItemNumber, PartNumber: br.PartNumber, Description: br.Description, Quantity: br.Quantity}
+	}
+	return rows, true
 }
 
 // hasActiveDrawing reports whether the active document is a drawing — the enable
@@ -71,6 +101,7 @@ func wireDrawingResolver(s *Session, d *doc.Document) {
 	if c, ok := d.Content().(*drawing.Content); ok {
 		c.SetModelProperties(referencedModelProperties{ws: s.workspace, ref: c.ModelReference})
 		c.SetBodyResolver(referencedModelBodies{ws: s.workspace})
+		c.SetBOMResolver(referencedModelBOM{ws: s.workspace})
 	}
 }
 
