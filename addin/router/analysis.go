@@ -61,8 +61,18 @@ func measureEntity(body *topo.Body, mt types.MeasureType, keyA, keyB, keyC strin
 		return measureMinDistance(body, keyA, keyB, q)
 	case types.MeasureAngle:
 		return measureAngle(body, keyA, keyB, keyC, q)
+	case types.MeasureLoopLength:
+		return measureLoopLength(body, keyA, q)
 	}
 	return 0, "", fmt.Errorf("analysis.measure: unsupported measure type %v", mt)
+}
+
+func measureLoopLength(body *topo.Body, keyA string, q ops.Quality) (float64, string, error) {
+	f, ok := body.FindFaceByKey(decodeKey(keyA))
+	if !ok {
+		return 0, "", fmt.Errorf("analysis.measure: no face for key %q", keyA)
+	}
+	return analysis.FaceLoopLengthMm(f, q), "mm", nil
 }
 
 func measureEdgeLength(body *topo.Body, keyA string, q ops.Quality) (float64, string, error) {
