@@ -30,8 +30,19 @@ func (s *Session) SaveDocument(d *doc.Document) error {
 	if err := s.workspace.Save(d); err != nil {
 		return err
 	}
+	s.markDocumentSaved(d)
 	s.saveViewState(d) // persist this user's camera/view layout alongside (not inside) the document
 	return nil
+}
+
+// markDocumentSaved flags the document's current history depth as a save checkpoint, so the
+// history browser can show which edits are persisted to disk. Saving only adds a marker; it
+// never clears the undo stream, so the whole history since the document opened stays navigable.
+// A no-op for a document that has not recorded any edit yet (it has no stream).
+func (s *Session) markDocumentSaved(d *doc.Document) {
+	if dh, ok := s.histories[d.ID()]; ok {
+		dh.markSaved()
+	}
 }
 
 // saveDirtyDependents saves d's dirty referenced documents before d itself, so
@@ -44,6 +55,7 @@ func (s *Session) saveDirtyDependents(d *doc.Document) error {
 		if err := s.workspace.Save(dep); err != nil {
 			return fmt.Errorf("app: save dependent %q: %w", dep.FullFileName(), err)
 		}
+		s.markDocumentSaved(dep)
 	}
 	return nil
 }
@@ -58,6 +70,7 @@ func (s *Session) SaveDocumentAs(d *doc.Document, path string) error {
 	if err := s.workspace.SaveAs(d, path); err != nil {
 		return err
 	}
+	s.markDocumentSaved(d)
 	s.saveViewState(d)
 	s.rememberRecentDocument(path)
 	return nil

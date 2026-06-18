@@ -29,6 +29,9 @@ func TestEveryWireMethodHasAHandler(t *testing.T) {
 	r := New(opregistry.Default())
 	var missing []string
 	for name, value := range methods {
+		if notYetHandled[name] {
+			continue
+		}
 		if _, ok := r.handlers[value]; !ok {
 			missing = append(missing, name+" = "+strconv.Quote(value))
 		}
@@ -38,6 +41,28 @@ func TestEveryWireMethodHasAHandler(t *testing.T) {
 		t.Fatalf("%d wire method(s) declared in the API have NO router handler:\n  %s",
 			len(missing), strings.Join(missing, "\n  "))
 	}
+	// The allowlist may only shrink: a now-handled (or no-longer-declared) method must be removed.
+	for name := range notYetHandled {
+		value, declared := methods[name]
+		if !declared {
+			t.Errorf("notYetHandled lists %q, which is not a wire Method constant", name)
+			continue
+		}
+		if _, ok := r.handlers[value]; ok {
+			t.Errorf("method %q is now handled — delete it from notYetHandled", name)
+		}
+	}
+}
+
+// notYetHandled are wire methods the API declares ahead of the router handler that will serve
+// them. The drawing dimension-set methods (API v0.32.0, #148) released at the same time as this
+// branch's transaction.history contract, so two API versions landed together and develop does
+// not yet carry their handlers — they come in the dimension-sets adoption PR. Tracked debt:
+// DELETE each entry when its handler lands (the guard above fails once a listed method is handled
+// or undeclared, so this list may only shrink). See #148.
+var notYetHandled = map[string]bool{
+	"MethodDrawingDimensionsAddBaseline": true,
+	"MethodDrawingDimensionsAddChain":    true,
 }
 
 // notYetRelayed are wire events the API declares ahead of the host behavior that would
