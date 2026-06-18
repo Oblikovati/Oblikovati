@@ -489,13 +489,19 @@ func filletCommand() *CommandDefinition {
 	}).WithTab(tab3DModel).WithEnable(notInSketch).
 		WithIcon("fillet").WithButtonStyle(LargeIconButton).
 		WithTooltip("Face Fillet — round the edges shared between two sets of faces.")
+	fullRound := NewCommand("Modify.FullRoundFillet", "Full Round Fillet", "Modify", func(s *Session) error {
+		s.StartTool(NewFullRoundFilletTool())
+		return nil
+	}).WithTab(tab3DModel).WithEnable(notInSketch).
+		WithIcon("fillet").WithButtonStyle(LargeIconButton).
+		WithTooltip("Full Round Fillet — replace a face between two parallel sides with a half-round.")
 	return NewCommand("Modify.Fillet", "Fillet", "Modify", func(s *Session) error {
 		s.StartTool(NewFilletTool())
 		return nil
 	}).WithTab(tab3DModel).WithAlias("F").WithEnable(notInSketch).
 		WithIcon("fillet").WithButtonStyle(LargeIconButton).
 		WithTooltip("Fillet — round selected convex edges with a rolling-ball radius.").
-		WithVariants(faceFillet)
+		WithVariants(faceFillet, fullRound)
 }
 
 // localFaceCommands are the F04 local face operations — the metric edits (shell, offset

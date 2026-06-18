@@ -98,6 +98,8 @@ func editDressUpTool(f *feature.PartFeature) (Tool, bool) {
 		return editFilletToolOr(f, d)
 	case *feature.FaceFilletFeature:
 		return editFaceFilletTool(f, d), true
+	case *feature.FullRoundFilletFeature:
+		return editFullRoundFilletTool(f, d), true
 	case *feature.ChamferFeature:
 		return editChamferTool(f, d), true
 	case *feature.ShellFeature:
@@ -315,6 +317,26 @@ func snapshotFaceFilletDef(def *feature.FaceFilletDefinition) func() {
 	orig := *def
 	orig.FaceKeysA = cloneKeys(def.FaceKeysA)
 	orig.FaceKeysB = cloneKeys(def.FaceKeysB)
+	return func() { *def = orig }
+}
+
+// editFullRoundFilletTool seeds the Full Round panel from a committed full round (#694): the three
+// face sets' reference keys are retained as the seeded selection (their faces are consumed).
+func editFullRoundFilletTool(f *feature.PartFeature, fr *feature.FullRoundFilletFeature) *FullRoundFilletTool {
+	def := fr.Definition()
+	t := NewFullRoundFilletTool()
+	t.seeded1 = cloneKeys(def.Side1Keys)
+	t.seededCenter = cloneKeys(def.CenterKeys)
+	t.seeded2 = cloneKeys(def.Side2Keys)
+	t.bindEdit(f, snapshotFullRoundFilletDef(def))
+	return t
+}
+
+func snapshotFullRoundFilletDef(def *feature.FullRoundFilletDefinition) func() {
+	orig := *def
+	orig.Side1Keys = cloneKeys(def.Side1Keys)
+	orig.CenterKeys = cloneKeys(def.CenterKeys)
+	orig.Side2Keys = cloneKeys(def.Side2Keys)
 	return func() { *def = orig }
 }
 
