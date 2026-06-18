@@ -53,6 +53,31 @@ func TestDrawingRadialDimensionsOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingDimensionSetsOverWire drives the baseline/chain set surface: a 4-corner baseline set
+// produces three associative linear dimensions through the live stack.
+func TestDrawingDimensionSetsOverWire(t *testing.T) {
+	r, s := drawingViewSession(t) // box 4×6×5 cm; FRONT corners x∈{80,120}, y∈{75,125}
+	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":1,"centerXmm":100,"centerYmm":100}`, nil)
+
+	var set struct {
+		Dimensions []struct {
+			Type    string  `json:"type"`
+			ValueMM float64 `json:"valueMm"`
+		} `json:"dimensions"`
+	}
+	call(t, r, s, "drawingDimensions.addBaseline",
+		`{"viewName":"FRONT","type":"aligned","points":[[80,75],[120,75],[120,125],[80,125]]}`, &set)
+	if len(set.Dimensions) != 3 {
+		t.Fatalf("baseline set = %d dimensions, want 3", len(set.Dimensions))
+	}
+	if math.Abs(set.Dimensions[0].ValueMM-40) > 1e-6 { // datum→bottom-right = 4 cm width
+		t.Errorf("baseline[0] = %v mm, want 40", set.Dimensions[0].ValueMM)
+	}
+	if _, err := r.Handle(s, "drawingDimensions.addChain", []byte(`{"viewName":"FRONT","points":[[80,75]]}`)); err == nil {
+		t.Error("a one-point chain set = ok, want error")
+	}
+}
+
 // TestDrawingAngularDimensionOverWire drives the angular-dimension surface: the angle between two
 // perpendicular box edges re-derives 90° through the live stack, reported in valueDeg.
 func TestDrawingAngularDimensionOverWire(t *testing.T) {

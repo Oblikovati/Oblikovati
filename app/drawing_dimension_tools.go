@@ -140,6 +140,62 @@ func (t *AngularDimensionTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{t.baseChoice("Base View")}}
 }
 
+// setStyleLabels indexes the dimension-set Style dropdown.
+var setStyleLabels = []string{"Baseline", "Chain"}
+
+// DimensionSetTool dimensions a base view's corners as a baseline or chain set of linear
+// dimensions (a full multi-pick set is a follow-up).
+type DimensionSetTool struct {
+	derivedViewTool
+	style int
+	dim   int
+}
+
+// NewDimensionSetTool creates the tool; its base-view list is captured on Start.
+func NewDimensionSetTool() *DimensionSetTool { return &DimensionSetTool{} }
+
+func (t *DimensionSetTool) Name() string { return "Dimension Set" }
+
+// Commit dimensions the selected base view's corners as the chosen set style/type.
+func (t *DimensionSetTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	if parent == "" {
+		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+	}
+	dimType := dimensionTypeForIndex(t.dim)
+	if _, err := c.Sheets().Active().Dimensions().AddSetForViewCorners(parent, dimType, t.style == 0); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view, set-style and measurement-type choices.
+func (t *DimensionSetTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{
+		t.baseChoice("Base View"),
+		{Label: "Style", Options: setStyleLabels, Get: func() int { return t.style }, Set: func(i int) { t.style = i }},
+		{Label: "Type", Options: dimensionTypeLabels, Get: func() int { return t.dim }, Set: func(i int) { t.dim = i }},
+	}}
+}
+
+// dimensionTypeForIndex maps the Type dropdown index to the dimension type (shared with the linear
+// tool's labels: Horizontal, Vertical, Aligned).
+func dimensionTypeForIndex(idx int) types.DrawingDimensionType {
+	switch idx {
+	case 1:
+		return types.VerticalDimension
+	case 2:
+		return types.AlignedDimension
+	default:
+		return types.HorizontalDimension
+	}
+}
+
 // dimensionPlacement maps the Type index + a view's bounds (sheet mm) to the two pick points and
 // the dimension-line offset: horizontal across the width below the view, vertical down the height
 // to its right, or aligned along the diagonal. The pick points snap to the nearest model vertices.
