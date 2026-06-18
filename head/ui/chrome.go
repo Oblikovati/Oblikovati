@@ -190,6 +190,8 @@ func handleKeyboard(s *app.Session) {
 			s.DisarmZoomWindow() // Esc cancels an armed Zoom Window before/while dragging (#913 N16)
 		case s.ConstrainedOrbitActive():
 			s.DisarmConstrainedOrbit() // Esc exits the Constrained Orbit tool (#913 N10)
+		case s.SteeringWheelActive():
+			s.DisarmSteeringWheel() // Esc dismisses the SteeringWheels menu (#913 N26)
 		default:
 			_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
 		}

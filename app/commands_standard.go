@@ -686,6 +686,12 @@ func viewNavigateCommands() []*CommandDefinition {
 		}).WithTab("View").WithIcon("orbit-constrained").WithButtonStyle(LargeIconButton).WithEnable(hasActivePart).
 			WithActive(func(s *Session) bool { return s.ConstrainedOrbitActive() }).
 			WithTooltip("Constrained Orbit — left-drag turntables about the vertical axis (horizontal = turn, vertical = tilt)."),
+		NewCommand("View.SteeringWheel", "SteeringWheels", "Navigate", func(s *Session) error {
+			s.ToggleSteeringWheel()
+			return nil
+		}).WithTab("View").WithIcon("steering-wheel").WithButtonStyle(LargeIconButton).WithEnable(hasActivePart).
+			WithActive(func(s *Session) bool { return s.SteeringWheelActive() }).
+			WithTooltip("SteeringWheels — a radial menu of navigation tools that follows the cursor."),
 	}
 }
 

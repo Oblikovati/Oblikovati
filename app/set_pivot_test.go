@@ -4,6 +4,22 @@ package app
 
 import "testing"
 
+// TestToggleSteeringWheel covers the SteeringWheels menu's on/off/disarm state (#913 N26).
+func TestToggleSteeringWheel(t *testing.T) {
+	s := NewSession()
+	if s.SteeringWheelActive() {
+		t.Fatal("SteeringWheels should be off by default")
+	}
+	s.ToggleSteeringWheel()
+	if !s.SteeringWheelActive() {
+		t.Fatal("toggle should show the wheel")
+	}
+	s.DisarmSteeringWheel()
+	if s.SteeringWheelActive() {
+		t.Fatal("disarm should hide the wheel")
+	}
+}
+
 // TestToggleConstrainedOrbit covers the Constrained Orbit tool's on/off/disarm state (#913 N10).
 func TestToggleConstrainedOrbit(t *testing.T) {
 	s := NewSession()

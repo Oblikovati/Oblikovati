@@ -57,6 +57,16 @@ func (s *Session) CanLookAt() bool {
 	return planar
 }
 
+// ToggleSteeringWheel shows or hides the SteeringWheels radial navigation menu (#913 N26) — a
+// transient on-cursor wheel of nav tools, entered from the View tab / Navigation Bar.
+func (s *Session) ToggleSteeringWheel() { s.steeringWheel = !s.steeringWheel }
+
+// SteeringWheelActive reports whether the SteeringWheels menu is shown.
+func (s *Session) SteeringWheelActive() bool { return s.steeringWheel }
+
+// DisarmSteeringWheel hides the SteeringWheels menu (e.g. Esc, or after a tool is chosen).
+func (s *Session) DisarmSteeringWheel() { s.steeringWheel = false }
+
 // ShowNavBar reports whether the floating Navigation Bar is shown in viewports (default true).
 func (s *Session) ShowNavBar() bool { return !s.prefs.NavBarHidden }
 
