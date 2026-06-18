@@ -58,6 +58,7 @@ func TestFeatureDialogsRenderUnitFields(t *testing.T) {
 	for name, draw := range map[string]func(*app.Session){
 		"sweep":      drawSweepDialog,
 		"fillet":     drawFilletDialog,
+		"faceFillet": drawFaceFilletDialog,
 		"chamfer":    drawChamferDialog,
 		"shell":      drawShellDialog,
 		"draft":      drawDraftDialog,
@@ -76,6 +77,11 @@ func TestFeatureDialogsRenderUnitFields(t *testing.T) {
 				f.AddMidPoint() // #695: render a Position/Radius intermediate-point row
 				frame(func() { drawFilletDialog(s) })
 			}
+			if name == "faceFillet" {
+				faceFilletUI.seeded = nil
+				s.ActiveFaceFillet().ArmSetB() // re-render with set 2 as the armed (accent) selector
+				frame(func() { drawFaceFilletDialog(s) })
+			}
 		})
 	}
 }
@@ -87,6 +93,8 @@ func toolFor(name string) app.Tool {
 		return app.NewSweepTool()
 	case "fillet":
 		return app.NewFilletTool()
+	case "faceFillet":
+		return app.NewFaceFilletTool()
 	case "chamfer":
 		return app.NewChamferTool()
 	case "shell":

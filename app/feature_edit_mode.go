@@ -86,8 +86,18 @@ func editToolFor(s *Session, f *feature.PartFeature) (Tool, bool) {
 		return editCoilTool(s, f, d), true
 	case *feature.HoleFeature:
 		return editHoleTool(f, d), true
+	}
+	return editDressUpTool(f)
+}
+
+// editDressUpTool seeds the edit panel for the dress-up / local-op features (fillet, face fillet,
+// chamfer, shell, draft); any other kind falls through to the generic editor.
+func editDressUpTool(f *feature.PartFeature) (Tool, bool) {
+	switch d := f.Definition().(type) {
 	case *feature.FilletFeature:
 		return editFilletToolOr(f, d)
+	case *feature.FaceFilletFeature:
+		return editFaceFilletTool(f, d), true
 	case *feature.ChamferFeature:
 		return editChamferTool(f, d), true
 	case *feature.ShellFeature:
@@ -285,6 +295,26 @@ func seedFilletSet(t *FilletTool, set feature.FilletEdgeSet) {
 func snapshotFilletDef(def *feature.FilletDefinition) func() {
 	orig := *def
 	orig.EdgeKeys = cloneKeys(def.EdgeKeys)
+	return func() { *def = orig }
+}
+
+// editFaceFilletTool seeds the Face Fillet panel from a committed face fillet (#694): the two
+// face sets' reference keys are retained as the seeded selection (their faces are consumed, so no
+// live handles exist), and the radius fills the field.
+func editFaceFilletTool(f *feature.PartFeature, ff *feature.FaceFilletFeature) *FaceFilletTool {
+	def := ff.Definition()
+	t := NewFaceFilletTool()
+	t.seededKeysA = cloneKeys(def.FaceKeysA)
+	t.seededKeysB = cloneKeys(def.FaceKeysB)
+	t.radius = callOrZeroFn(def.Radius)
+	t.bindEdit(f, snapshotFaceFilletDef(def))
+	return t
+}
+
+func snapshotFaceFilletDef(def *feature.FaceFilletDefinition) func() {
+	orig := *def
+	orig.FaceKeysA = cloneKeys(def.FaceKeysA)
+	orig.FaceKeysB = cloneKeys(def.FaceKeysB)
 	return func() { *def = orig }
 }
 
