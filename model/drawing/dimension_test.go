@@ -99,6 +99,44 @@ func TestRadialForEachCircleDedupsRims(t *testing.T) {
 	}
 }
 
+// TestAngularDimensionMeasuresCorner: an angular dimension between a horizontal and a vertical box
+// edge reports 90°, with ValueMM 0 (the value is in degrees) and an arc glyph.
+func TestAngularDimensionMeasuresCorner(t *testing.T) {
+	c := drawingWithBox(t) // box 2×3×4 cm
+	views := c.Sheets().Active().Views()
+	frontBase(t, views) // FRONT, scale 1, centre (100,100): bottom edge at y=80, side edges at x∈{90,110}
+	dims := c.Sheets().Active().Dimensions()
+
+	d, err := dims.AddAngular("A1", "FRONT", 100, 80, 110, 100) // bottom (horizontal) + a side (vertical)
+	if err != nil {
+		t.Fatalf("AddAngular: %v", err)
+	}
+	if math.Abs(d.ValueDeg()-90) > 1e-6 {
+		t.Errorf("angle = %v°, want 90 (perpendicular box edges)", d.ValueDeg())
+	}
+	if d.ValueMM() != 0 || !strings.HasSuffix(d.Text(), "°") || d.CurveCount() == 0 {
+		t.Errorf("angular dim = (%v mm, %q, %d curves), want 0 mm / …° / arc glyph", d.ValueMM(), d.Text(), d.CurveCount())
+	}
+	if d.Type() != types.AngularDimension {
+		t.Errorf("type = %v, want angular", d.Type())
+	}
+}
+
+// TestAngularForFirstCorner: the single-action corner callout finds two non-parallel edges (a box
+// corner) and reports 90°.
+func TestAngularForFirstCorner(t *testing.T) {
+	c := drawingWithBox(t)
+	views := c.Sheets().Active().Views()
+	frontBase(t, views)
+	d, err := c.Sheets().Active().Dimensions().AddAngularForFirstCorner("FRONT")
+	if err != nil {
+		t.Fatalf("AddAngularForFirstCorner: %v", err)
+	}
+	if math.Abs(d.ValueDeg()-90) > 1e-6 {
+		t.Errorf("corner angle = %v°, want 90", d.ValueDeg())
+	}
+}
+
 // TestLinearDimensionMeasuresTrueModelSize: a horizontal dimension across the front view's bottom
 // edge reports the box's true X-width (2 cm → 20 mm), independent of the view scale, and produces
 // glyph curves (extension lines, dimension line, arrowheads).

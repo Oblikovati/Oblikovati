@@ -107,6 +107,39 @@ func (t *RadialDimensionTool) Params() ToolParams {
 	}}
 }
 
+// AngularDimensionTool dimensions the corner angle between the first two non-parallel straight
+// edges in a chosen base view (e.g. a 90° corner or a bevel angle).
+type AngularDimensionTool struct {
+	derivedViewTool
+}
+
+// NewAngularDimensionTool creates the tool; its base-view list is captured on Start.
+func NewAngularDimensionTool() *AngularDimensionTool { return &AngularDimensionTool{} }
+
+func (t *AngularDimensionTool) Name() string { return "Angular Dimension" }
+
+// Commit dimensions the angle between the selected base view's first two non-parallel edges.
+func (t *AngularDimensionTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	parent := t.parent()
+	if parent == "" {
+		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+	}
+	if _, err := c.Sheets().Active().Dimensions().AddAngularForFirstCorner(parent); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the base-view choice for the property dialog.
+func (t *AngularDimensionTool) Params() ToolParams {
+	return ToolParams{Choices: []ChoiceParam{t.baseChoice("Base View")}}
+}
+
 // dimensionPlacement maps the Type index + a view's bounds (sheet mm) to the two pick points and
 // the dimension-line offset: horizontal across the width below the view, vertical down the height
 // to its right, or aligned along the diagonal. The pick points snap to the nearest model vertices.

@@ -20,6 +20,7 @@ func (r *Router) registerDrawingDimensionHandlers() {
 	r.handlers[wire.MethodDrawingDimensionsList] = drawingDimensionsList
 	r.handlers[wire.MethodDrawingDimensionsAddLinear] = drawingDimensionsAddLinear
 	r.handlers[wire.MethodDrawingDimensionsAddRadial] = drawingDimensionsAddRadial
+	r.handlers[wire.MethodDrawingDimensionsAddAngular] = drawingDimensionsAddAngular
 	r.handlers[wire.MethodDrawingDimensionsDelete] = drawingDimensionsDelete
 }
 
@@ -94,6 +95,23 @@ func drawingDimensionsAddRadial(s *app.Session, raw json.RawMessage) (json.RawMe
 	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
 }
 
+func drawingDimensionsAddAngular(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	ds, err := activeSheetDimensions(s)
+	if err != nil {
+		return nil, err
+	}
+	var in wire.AddAngularDimensionArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	d, err := ds.AddAngular(in.Name, in.ViewName, in.X1, in.Y1, in.X2, in.Y2)
+	if err != nil {
+		return nil, err
+	}
+	s.ActiveDocument().MarkDirty()
+	return json.Marshal(wire.DimensionResult{Dimension: drawingDimensionInfo(d)})
+}
+
 func drawingDimensionsDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	ds, err := activeSheetDimensions(s)
 	if err != nil {
@@ -123,6 +141,6 @@ func listDimensions(ds *drawing.DrawingDimensions) wire.ListDrawingDimensionsRes
 func drawingDimensionInfo(d *drawing.DrawingDimension) wire.DrawingDimensionInfo {
 	return wire.DrawingDimensionInfo{
 		Name: d.Name(), Type: d.Type().String(), ViewName: d.ViewName(),
-		ValueMM: d.ValueMM(), Text: d.Text(), CurveCount: d.CurveCount(),
+		ValueMM: d.ValueMM(), ValueDeg: d.ValueDeg(), Text: d.Text(), CurveCount: d.CurveCount(),
 	}
 }
