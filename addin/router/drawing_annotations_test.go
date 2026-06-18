@@ -180,6 +180,35 @@ func TestDrawingHoleTableOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingRevisionTableOverWire drives the revision-table surface: a table with two rows
+// produces a grid annotation reporting the row count through the live stack.
+func TestDrawingRevisionTableOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var rt wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addRevisionTable",
+		`{"name":"RT","xmm":250,"ymm":60,"rows":[{"revision":"A","date":"2026-06-01","description":"Initial release"},{"revision":"B","date":"2026-06-18","description":"Added holes"}]}`, &rt)
+	if rt.Annotation.Kind != "revisionTable" || rt.Annotation.CurveCount == 0 || rt.Annotation.RowCount != 2 {
+		t.Fatalf("revision table = %+v, want a revisionTable with 2 rows + grid geometry", rt.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addRevisionTable", []byte(`{"xmm":0,"ymm":0}`)); err == nil {
+		t.Error("addRevisionTable with no rows = ok, want error")
+	}
+}
+
+// TestDrawingRevisionTagOverWire drives the revision-tag surface: a tag produces a triangle
+// annotation carrying its revision letter through the live stack.
+func TestDrawingRevisionTagOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	var tag wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addRevisionTag", `{"name":"RT1","xmm":120,"ymm":90,"revision":"B"}`, &tag)
+	if tag.Annotation.Kind != "revisionTag" || tag.Annotation.CurveCount == 0 || tag.Annotation.Tag != "B" {
+		t.Fatalf("revision tag = %+v, want a revisionTag triangle tagged B", tag.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addRevisionTag", []byte(`{"xmm":0,"ymm":0,"revision":""}`)); err == nil {
+		t.Error("addRevisionTag with no revision = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{

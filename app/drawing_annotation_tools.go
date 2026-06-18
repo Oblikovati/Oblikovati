@@ -209,6 +209,86 @@ func splitDatums(s string) []string {
 	return out
 }
 
+// RevisionTableTool drops a revision table seeded with one revision row (revision/date/description)
+// at the cursor; the API/bridge can place multi-row tables.
+type RevisionTableTool struct {
+	revision, date, description string
+	centerX, centerY            float64
+}
+
+// NewRevisionTableTool seeds the first revision row (rev A).
+func NewRevisionTableTool() *RevisionTableTool {
+	return &RevisionTableTool{revision: "A", description: "Initial release", centerX: 250, centerY: 60}
+}
+
+func (t *RevisionTableTool) Name() string              { return "Revision Table" }
+func (t *RevisionTableTool) Start(*Session)            {}
+func (t *RevisionTableTool) Pick(*Session, Selectable) {}
+func (t *RevisionTableTool) CanCommit() bool           { return t.revision != "" }
+func (t *RevisionTableTool) Cancel(*Session)           {}
+func (t *RevisionTableTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the one-row revision table at the placed point.
+func (t *RevisionTableTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	rows := []drawing.RevisionRow{{Revision: t.revision, Date: t.date, Description: t.description}}
+	if _, err := c.Sheets().Active().Annotations().AddRevisionTable("", t.centerX, t.centerY, rows); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the first revision row's fields.
+func (t *RevisionTableTool) Params() ToolParams {
+	return ToolParams{Texts: []TextParam{
+		{Label: "Revision", Get: func() string { return t.revision }, Set: func(v string) { t.revision = v }},
+		{Label: "Date", Get: func() string { return t.date }, Set: func(v string) { t.date = v }},
+		{Label: "Description", Get: func() string { return t.description }, Set: func(v string) { t.description = v }},
+	}}
+}
+
+// RevisionTagTool drops a revision tag (a triangle holding a revision letter) at the cursor.
+type RevisionTagTool struct {
+	revision         string
+	centerX, centerY float64
+}
+
+// NewRevisionTagTool starts on revision A.
+func NewRevisionTagTool() *RevisionTagTool {
+	return &RevisionTagTool{revision: "A", centerX: 150, centerY: 150}
+}
+
+func (t *RevisionTagTool) Name() string              { return "Revision Tag" }
+func (t *RevisionTagTool) Start(*Session)            {}
+func (t *RevisionTagTool) Pick(*Session, Selectable) {}
+func (t *RevisionTagTool) CanCommit() bool           { return t.revision != "" }
+func (t *RevisionTagTool) Cancel(*Session)           {}
+func (t *RevisionTagTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
+
+// Commit drops the revision tag at the placed point.
+func (t *RevisionTagTool) Commit(s *Session) error {
+	c, err := ActiveDrawing(s)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Sheets().Active().Annotations().AddRevisionTag("", t.centerX, t.centerY, t.revision); err != nil {
+		return err
+	}
+	s.ActiveDocument().MarkDirty()
+	return nil
+}
+
+// Params exposes the revision letter input.
+func (t *RevisionTagTool) Params() ToolParams {
+	return ToolParams{Texts: []TextParam{
+		{Label: "Revision", Get: func() string { return t.revision }, Set: func(v string) { t.revision = v }},
+	}}
+}
+
 // DatumFeatureTool drops a GD&T datum feature symbol (a lettered box + datum triangle) at the
 // cursor.
 type DatumFeatureTool struct {

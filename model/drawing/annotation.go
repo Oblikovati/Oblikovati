@@ -35,9 +35,18 @@ type DrawingAnnotation struct {
 	datums         []string
 	// surface texture: the material-removal variant (the roughness value reuses tag).
 	materialRemoval types.MaterialRemoval
-	rowCount        int // parts list: the number of BOM data rows
+	rowCount        int           // parts list / hole table: the number of data rows
+	revisions       []RevisionRow // revision table: the user-supplied change-history rows
 	labels          []AnnotationLabel
 	curves          []DrawingCurve
+}
+
+// RevisionRow is one row of a revision table: a revision identifier, its date, and a description
+// of the change. The rows are user-supplied drawing history (not model-derived), so they persist.
+type RevisionRow struct {
+	Revision    string
+	Date        string
+	Description string
 }
 
 // AnnotationLabel is one piece of text an annotation renders (sheet millimetres) — e.g. a feature
