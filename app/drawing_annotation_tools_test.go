@@ -53,6 +53,24 @@ func TestCenterMarkToolMarksHoles(t *testing.T) {
 	}
 }
 
+// TestCenterlineToolAddsCenterlines: the centerline tool adds a dash-dot cross on a base view.
+func TestCenterlineToolAddsCenterlines(t *testing.T) {
+	s := drawingWithFrontBase(t)
+	c, _ := ActiveDrawing(s)
+	tool := NewCenterlineTool()
+	tool.Start(s)
+	if tool.Name() != "Centerline" || !tool.CanCommit() {
+		t.Fatalf("centerline tool name/commit wrong: %q / %v", tool.Name(), tool.CanCommit())
+	}
+	if err := tool.Commit(s); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	an := c.Sheets().Active().Annotations()
+	if an.Count() != 1 || an.Item(0).Kind() != types.CenterlineAnnotation || an.Item(0).CurveCount() < 4 {
+		t.Fatalf("centerlines not added (count=%d)", an.Count())
+	}
+}
+
 func TestCoGMarkerToolWithoutView(t *testing.T) {
 	s := drawingWithModelSession(t) // no base view added
 	tool := NewCoGMarkerTool()

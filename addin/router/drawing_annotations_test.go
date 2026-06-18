@@ -60,6 +60,22 @@ func TestDrawingCenterMarksOverWire(t *testing.T) {
 	}
 }
 
+// TestDrawingCenterlinesOverWire drives the centerline surface: adding centerlines to a base view
+// produces one dash-dot annotation through the live stack.
+func TestDrawingCenterlinesOverWire(t *testing.T) {
+	r, s := drawingViewSession(t)
+	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, nil)
+
+	var cl wire.AnnotationResult
+	call(t, r, s, "drawingAnnotations.addCenterlines", `{"name":"CL","viewName":"FRONT"}`, &cl)
+	if cl.Annotation.Kind != "centerline" || cl.Annotation.CurveCount < 4 {
+		t.Fatalf("centerlines = %+v, want a centerline with a dash-dot cross", cl.Annotation)
+	}
+	if _, err := r.Handle(s, "drawingAnnotations.addCenterlines", []byte(`{"viewName":"NOPE"}`)); err == nil {
+		t.Error("addCenterlines on a missing view = ok, want error")
+	}
+}
+
 func TestDrawingAnnotationsRejectBadArgs(t *testing.T) {
 	r, s := drawingViewSession(t)
 	for method, args := range map[string]string{
