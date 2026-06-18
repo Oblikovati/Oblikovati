@@ -264,6 +264,20 @@ func (c Camera) Orbit(yaw, pitch float64) Camera {
 	return c
 }
 
+// Roll twists the view about the forward (eye→target) axis — the spin a Free-Orbit ring perimeter
+// drag produces (#913 N8). Eye and Target are unchanged; only Up rotates, so the model appears to
+// turn in-plane about the view centre. A degenerate view direction is a no-op.
+//
+// Example: cam = cam.Roll(0.1) // twist the view ~5.7°
+func (c Camera) Roll(angle float64) Camera {
+	forward := c.Forward()
+	if forward == (math.Vector3{}) {
+		return c
+	}
+	c.Up = unit(rotateAboutAxis(c.Up, forward, angle))
+	return c
+}
+
 // Pan slides the eye and target together in the view plane so the point under the
 // cursor tracks the drag (Inventor's Pan). dxPixels/dyPixels are screen-space deltas
 // (y down); the world step per pixel is derived from the target distance and FOV.

@@ -79,6 +79,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
 	drawBoxSelectRect(s, bx, by)  // the rubber-band selection rectangle, on top of the image
 	drawZoomWindowRect(s, bx, by) // the Zoom Window rubber band (#913 N16), if armed
+	drawOrbitRing(bx, by, pw, ph) // the Free-Orbit ring while F4 is held (#913 N5–N8)
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity(), hit.arrow)
 	}
@@ -645,7 +646,7 @@ func readNavInput() NavInput {
 	dx, dy := native.MouseDelta()
 	modal := heldNavMode()
 	cx, cy := viewportCursor()
-	return NavInput{
+	in := NavInput{
 		Hovered: native.IsItemHovered(),
 		Active:  native.IsItemActive(),
 		Wheel:   native.MouseWheel(),
@@ -658,6 +659,38 @@ func readNavInput() NavInput {
 		Modal:   modal,
 		Left:    modal != NavNone && native.MouseDown(native.MouseLeft),
 	}
+	in.OrbitZone = latchOrbitZone(in, cx, cy)
+	return in
+}
+
+// orbitLatch holds the Free-Orbit ring zone for the duration of one F4 orbit drag.
+var orbitLatch struct {
+	active bool
+	zone   OrbitZone
+}
+
+// latchOrbitZone classifies the Free-Orbit ring zone once at the start of an F4 orbit drag (Modal ==
+// NavOrbit + left held) and holds it until the drag ends, so the whole drag uses the zone the cursor
+// started in — Inventor's ring behaviour (#913 N5–N8). Non-F4 orbits (Shift+middle) keep OrbitFree.
+func latchOrbitZone(in NavInput, cx, cy float64) OrbitZone {
+	if !in.Active || in.Modal != NavOrbit || !in.Left {
+		orbitLatch.active = false
+		return OrbitFree
+	}
+	if !orbitLatch.active {
+		w, h := viewportPixelSize()
+		orbitLatch.zone = classifyOrbitZone(cx, cy, w/2, h/2, orbitRingRadius(w, h))
+		orbitLatch.active = true
+	}
+	return orbitLatch.zone
+}
+
+// viewportPixelSize returns the viewport image's pixel size (ItemRectMax − ItemRectMin), valid right
+// after the viewport's InvisibleButton.
+func viewportPixelSize() (float64, float64) {
+	x0, y0 := native.ItemRectMin()
+	x1, y1 := native.ItemRectMax()
+	return float64(x1 - x0), float64(y1 - y0)
 }
 
 // heldNavMode reports which hold-to-navigate function key is down — F2 pan, F3 zoom, F4 orbit

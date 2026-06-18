@@ -5,6 +5,8 @@
 package ui
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 )
@@ -140,6 +142,27 @@ func drawZoomWindowRect(s *app.Session, bx, by float32) {
 	native.DrawLine(sx1, sy0, sx1, sy1, border, 1.2)
 	native.DrawLine(sx1, sy1, sx0, sy1, border, 1.2)
 	native.DrawLine(sx0, sy1, sx0, sy0, border, 1.2)
+}
+
+// drawOrbitRing draws the Free-Orbit ring centred on the viewport while F4 (Free Orbit) is held, so
+// the user sees the zones a drag selects: inside = free orbit, rim = axis-locked, outside = roll
+// (#913 N5–N8). bx,by is the viewport image's top-left in screen pixels; pw,ph its pixel size.
+func drawOrbitRing(bx, by float32, pw, ph int) {
+	if heldNavMode() != NavOrbit {
+		return
+	}
+	cx, cy := bx+float32(pw)/2, by+float32(ph)/2
+	radius := float32(orbitRingRadius(float64(pw), float64(ph)))
+	col := [4]float32{0.85, 0.85, 0.95, 0.55}
+	const seg = 48
+	prevx, prevy := cx+radius, cy
+	for i := 1; i <= seg; i++ {
+		a := 2 * stdmath.Pi * float64(i) / seg
+		x := cx + radius*float32(stdmath.Cos(a))
+		y := cy + radius*float32(stdmath.Sin(a))
+		native.DrawLine(prevx, prevy, x, y, col, 1.4)
+		prevx, prevy = x, y
+	}
 }
 
 // viewportSelectMods reads the Shift/Ctrl modifiers held this frame (Shift adds, Ctrl
