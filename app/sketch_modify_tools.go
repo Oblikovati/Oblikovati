@@ -29,6 +29,7 @@ func (c *pickCollector) Picked() []sketch.Entity { return c.picks }
 
 // SketchFilletTool rounds the corner between two picked lines with a tangent arc.
 type SketchFilletTool struct {
+	dialogTool
 	pickCollector
 	radius math.Scalar
 }
@@ -39,7 +40,6 @@ func NewSketchFilletTool(radius float64) *SketchFilletTool {
 }
 
 func (t *SketchFilletTool) Name() string                  { return "Sketch Fillet" }
-func (t *SketchFilletTool) Start(*Session)                {}
 func (t *SketchFilletTool) Pick(_ *Session, s Selectable) { t.take(s) }
 func (t *SketchFilletTool) CanCommit() bool               { return t.ready() }
 func (t *SketchFilletTool) AutoCommitOnPick() bool        { return true }
@@ -70,6 +70,7 @@ func (t *SketchFilletTool) Commit(s *Session) error {
 
 // SketchOffsetTool offsets a single picked curve by a distance.
 type SketchOffsetTool struct {
+	dialogTool
 	pickCollector
 	distance math.Scalar
 }
@@ -80,7 +81,6 @@ func NewSketchOffsetTool(distance float64) *SketchOffsetTool {
 }
 
 func (t *SketchOffsetTool) Name() string                  { return "Offset" }
-func (t *SketchOffsetTool) Start(*Session)                {}
 func (t *SketchOffsetTool) Pick(_ *Session, s Selectable) { t.take(s) }
 func (t *SketchOffsetTool) CanCommit() bool               { return t.ready() }
 func (t *SketchOffsetTool) AutoCommitOnPick() bool        { return true }
@@ -107,6 +107,7 @@ func (t *SketchOffsetTool) Commit(s *Session) error {
 
 // SketchMirrorTool mirrors the first picked entity across the second picked line.
 type SketchMirrorTool struct {
+	dialogTool
 	pickCollector
 }
 
@@ -116,7 +117,6 @@ func NewSketchMirrorTool() *SketchMirrorTool {
 }
 
 func (t *SketchMirrorTool) Name() string                  { return "Mirror" }
-func (t *SketchMirrorTool) Start(*Session)                {}
 func (t *SketchMirrorTool) Pick(_ *Session, s Selectable) { t.take(s) }
 func (t *SketchMirrorTool) CanCommit() bool               { return t.ready() }
 func (t *SketchMirrorTool) AutoCommitOnPick() bool        { return true }

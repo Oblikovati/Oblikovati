@@ -14,6 +14,7 @@ import (
 // dialog drives the closing tolerance. The bounding surfaces must enclose a closed cell, else the
 // feature goes sick.
 type SculptTool struct {
+	dialogTool
 	tolerance float64
 	added     *feature.PartFeature
 }
@@ -25,10 +26,8 @@ func NewSculptTool() *SculptTool { return &SculptTool{} }
 func (t *SculptTool) Name() string { return "Sculpt" }
 
 // Start has nothing to select — sculpt acts on every bounding surface.
-func (t *SculptTool) Start(*Session) {}
 
 // Pick is unused.
-func (t *SculptTool) Pick(*Session, Selectable) {}
 
 // SetTolerance/Tolerance drive the coincidence tolerance for closing the bounding surfaces.
 func (t *SculptTool) SetTolerance(v float64) { t.tolerance = v }
@@ -64,7 +63,6 @@ func (t *SculptTool) addSculpt(fs *feature.PartFeatures) *feature.PartFeature {
 }
 
 // Cancel abandons the tool with no change.
-func (t *SculptTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SculptTool) AddedFeature() *feature.PartFeature { return t.added }

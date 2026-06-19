@@ -45,17 +45,18 @@ func (c *collectClicks) SubmitToken(_ *Session, tok CommandToken) error {
 }
 
 // CircleTool draws a circle from a clicked center and a radius point.
-type CircleTool struct{ collectClicks }
+type CircleTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewCircleTool returns a center-radius circle tool.
 func NewCircleTool() *CircleTool { return &CircleTool{} }
 
-func (t *CircleTool) Name() string              { return "Circle" }
-func (t *CircleTool) Start(*Session)            {}
-func (t *CircleTool) Pick(*Session, Selectable) {}
-func (t *CircleTool) Cancel(*Session)           { t.reset() }
-func (t *CircleTool) CanCommit() bool           { return len(t.pts) == 2 }
-func (t *CircleTool) AutoCommits() bool         { return true }
+func (t *CircleTool) Name() string      { return "Circle" }
+func (t *CircleTool) Cancel(*Session)   { t.reset() }
+func (t *CircleTool) CanCommit() bool   { return len(t.pts) == 2 }
+func (t *CircleTool) AutoCommits() bool { return true }
 
 // Commit adds a circle centered at the first click with radius to the second.
 func (t *CircleTool) Commit(s *Session) error {
@@ -79,17 +80,18 @@ func (t *CircleTool) Prompt(*Session) string {
 }
 
 // ArcTool draws a three-point arc (start, end, then a point the arc passes through).
-type ArcTool struct{ collectClicks }
+type ArcTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewArcTool returns a three-point arc tool.
 func NewArcTool() *ArcTool { return &ArcTool{} }
 
-func (t *ArcTool) Name() string              { return "Arc" }
-func (t *ArcTool) Start(*Session)            {}
-func (t *ArcTool) Pick(*Session, Selectable) {}
-func (t *ArcTool) Cancel(*Session)           { t.reset() }
-func (t *ArcTool) CanCommit() bool           { return len(t.pts) == 3 }
-func (t *ArcTool) AutoCommits() bool         { return true }
+func (t *ArcTool) Name() string      { return "Arc" }
+func (t *ArcTool) Cancel(*Session)   { t.reset() }
+func (t *ArcTool) CanCommit() bool   { return len(t.pts) == 3 }
+func (t *ArcTool) AutoCommits() bool { return true }
 
 // Commit fits the arc's center as the circumcenter of the three points; the sweep
 // direction is the orientation of start→through→end so the arc passes through it.
@@ -123,17 +125,18 @@ func (t *ArcTool) Prompt(*Session) string {
 
 // PointTool places a sketch point at the click, then deactivates (one point per
 // activation, like the other auto-commit tools).
-type PointTool struct{ collectClicks }
+type PointTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewPointTool returns a point-placement tool.
 func NewPointTool() *PointTool { return &PointTool{} }
 
-func (t *PointTool) Name() string              { return "Point" }
-func (t *PointTool) Start(*Session)            {}
-func (t *PointTool) Pick(*Session, Selectable) {}
-func (t *PointTool) Cancel(*Session)           { t.reset() }
-func (t *PointTool) CanCommit() bool           { return len(t.pts) >= 1 }
-func (t *PointTool) AutoCommits() bool         { return true }
+func (t *PointTool) Name() string      { return "Point" }
+func (t *PointTool) Cancel(*Session)   { t.reset() }
+func (t *PointTool) CanCommit() bool   { return len(t.pts) >= 1 }
+func (t *PointTool) AutoCommits() bool { return true }
 
 // Commit adds every placed point to the sketch.
 func (t *PointTool) Commit(s *Session) error {
@@ -156,6 +159,7 @@ func (t *PointTool) Prompt(*Session) string {
 
 // SplineTool draws an interpolated spline through clicked points (OK finishes).
 type SplineTool struct {
+	dialogTool
 	collectClicks
 	withHandles bool
 }
@@ -163,11 +167,9 @@ type SplineTool struct {
 // NewSplineTool returns a fit-point spline tool.
 func NewSplineTool() *SplineTool { return &SplineTool{} }
 
-func (t *SplineTool) Name() string              { return "Spline" }
-func (t *SplineTool) Start(*Session)            {}
-func (t *SplineTool) Pick(*Session, Selectable) {}
-func (t *SplineTool) Cancel(*Session)           { t.reset() }
-func (t *SplineTool) CanCommit() bool           { return len(t.pts) >= 2 }
+func (t *SplineTool) Name() string    { return "Spline" }
+func (t *SplineTool) Cancel(*Session) { t.reset() }
+func (t *SplineTool) CanCommit() bool { return len(t.pts) >= 2 }
 
 // SetActivateHandles makes Commit also activate the tangency handle on every
 // placed fit point, ready for interactive shaping (M06-F11, #626).
@@ -200,17 +202,18 @@ func (t *SplineTool) Prompt(*Session) string {
 
 // EllipseTool draws an ellipse from a center, a major-axis endpoint, and a point
 // setting the minor radius.
-type EllipseTool struct{ collectClicks }
+type EllipseTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewEllipseTool returns a center-axis ellipse tool.
 func NewEllipseTool() *EllipseTool { return &EllipseTool{} }
 
-func (t *EllipseTool) Name() string              { return "Ellipse" }
-func (t *EllipseTool) Start(*Session)            {}
-func (t *EllipseTool) Pick(*Session, Selectable) {}
-func (t *EllipseTool) Cancel(*Session)           { t.reset() }
-func (t *EllipseTool) CanCommit() bool           { return len(t.pts) == 3 }
-func (t *EllipseTool) AutoCommits() bool         { return true }
+func (t *EllipseTool) Name() string      { return "Ellipse" }
+func (t *EllipseTool) Cancel(*Session)   { t.reset() }
+func (t *EllipseTool) CanCommit() bool   { return len(t.pts) == 3 }
+func (t *EllipseTool) AutoCommits() bool { return true }
 
 // Commit builds the ellipse: the second click sets the major direction and radius, the
 // third its perpendicular distance from the major axis sets the minor radius.
@@ -246,6 +249,7 @@ func (t *EllipseTool) Prompt(*Session) string {
 // PolygonTool draws a regular inscribed polygon from a center and a vertex; Sides sets
 // the edge count (default 6).
 type PolygonTool struct {
+	dialogTool
 	collectClicks
 	Sides int
 }
@@ -258,12 +262,10 @@ func NewPolygonTool(sides int) *PolygonTool {
 	return &PolygonTool{Sides: sides}
 }
 
-func (t *PolygonTool) Name() string              { return "Polygon" }
-func (t *PolygonTool) Start(*Session)            {}
-func (t *PolygonTool) Pick(*Session, Selectable) {}
-func (t *PolygonTool) Cancel(*Session)           { t.reset() }
-func (t *PolygonTool) CanCommit() bool           { return len(t.pts) == 2 }
-func (t *PolygonTool) AutoCommits() bool         { return true }
+func (t *PolygonTool) Name() string      { return "Polygon" }
+func (t *PolygonTool) Cancel(*Session)   { t.reset() }
+func (t *PolygonTool) CanCommit() bool   { return len(t.pts) == 2 }
+func (t *PolygonTool) AutoCommits() bool { return true }
 
 // Commit builds the Sides-gon inscribed in the circle through the vertex click,
 // connecting consecutive vertices with lines sharing their corner points.

@@ -12,6 +12,7 @@ import (
 // into one quilt, promoting a closed quilt to a solid unless "keep as surface" is set. It takes
 // no pick (it operates on all surfaces); the property dialog drives the tolerance and that flag.
 type StitchTool struct {
+	dialogTool
 	tolerance   float64
 	keepSurface bool
 	added       *feature.PartFeature
@@ -24,10 +25,8 @@ func NewStitchTool() *StitchTool { return &StitchTool{} }
 func (t *StitchTool) Name() string { return "Stitch" }
 
 // Start has nothing to select — stitch welds every running surface body.
-func (t *StitchTool) Start(*Session) {}
 
 // Pick is unused.
-func (t *StitchTool) Pick(*Session, Selectable) {}
 
 // The options the dialog drives: weld tolerance and whether to keep a closed quilt as a surface.
 func (t *StitchTool) SetTolerance(v float64) { t.tolerance = v }
@@ -67,7 +66,6 @@ func (t *StitchTool) addStitch(fs *feature.PartFeatures) *feature.PartFeature {
 }
 
 // Cancel abandons the tool with no change.
-func (t *StitchTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *StitchTool) AddedFeature() *feature.PartFeature { return t.added }

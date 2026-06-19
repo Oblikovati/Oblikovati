@@ -43,6 +43,7 @@ type DrawingPlacementTool interface {
 // orientation/style/scale in the dialog and clicks the sheet to drop the view; the preview
 // follows the cursor.
 type BaseViewTool struct {
+	dialogTool
 	orientation int
 	style       int
 	scale       float64
@@ -57,11 +58,8 @@ func NewBaseViewTool() *BaseViewTool {
 	return &BaseViewTool{scale: 1, centerX: 150, centerY: 150}
 }
 
-func (t *BaseViewTool) Name() string              { return labelBaseView }
-func (t *BaseViewTool) Start(*Session)            {}
-func (t *BaseViewTool) Pick(*Session, Selectable) {}
-func (t *BaseViewTool) CanCommit() bool           { return true }
-func (t *BaseViewTool) Cancel(*Session)           {}
+func (t *BaseViewTool) Name() string    { return labelBaseView }
+func (t *BaseViewTool) CanCommit() bool { return true }
 
 // SetPlacement records the cursor sheet position the view will be centred on.
 func (t *BaseViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
@@ -122,6 +120,7 @@ func (t *BaseViewTool) Params() ToolParams {
 // and the cached cursor-follow preview. The concrete tools embed it and add their own option
 // (direction / fold angle / cut orientation) plus PreviewCurves/Commit/Params.
 type derivedViewTool struct {
+	dialogTool
 	bases      []string
 	baseIndex  int
 	centerX    float64
@@ -131,9 +130,7 @@ type derivedViewTool struct {
 }
 
 // Start captures the base views the derived view can be built from.
-func (t *derivedViewTool) Start(s *Session)          { t.bases = baseViewNames(s) }
-func (t *derivedViewTool) Pick(*Session, Selectable) {}
-func (t *derivedViewTool) Cancel(*Session)           {}
+func (t *derivedViewTool) Start(s *Session) { t.bases = baseViewNames(s) }
 
 // CanCommit requires at least one base view to derive from.
 func (t *derivedViewTool) CanCommit() bool { return len(t.bases) > 0 }
@@ -672,6 +669,7 @@ func (t *BreakoutViewTool) Params() ToolParams {
 // DraftViewTool drops a model-less framed draft view (a container for manual 2D geometry); the
 // frame follows the cursor and a click drops it.
 type DraftViewTool struct {
+	dialogTool
 	width, height    float64
 	centerX, centerY float64
 	preview          []drawing.DrawingCurve
@@ -683,10 +681,7 @@ func NewDraftViewTool() *DraftViewTool {
 }
 
 func (t *DraftViewTool) Name() string              { return "Draft View" }
-func (t *DraftViewTool) Start(*Session)            {}
-func (t *DraftViewTool) Pick(*Session, Selectable) {}
 func (t *DraftViewTool) CanCommit() bool           { return true }
-func (t *DraftViewTool) Cancel(*Session)           {}
 func (t *DraftViewTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // PreviewCurves builds the origin-centred frame rectangle to follow the cursor.

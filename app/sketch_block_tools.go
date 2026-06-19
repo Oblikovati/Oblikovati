@@ -52,6 +52,7 @@ func (t *SketchCreateBlockTool) Commit(s *Session) error {
 
 // SketchPlaceBlockTool stamps instances of a definition at clicked points.
 type SketchPlaceBlockTool struct {
+	dialogTool
 	definition string
 	rotation   float64
 	scale      float64
@@ -76,8 +77,6 @@ func (t *SketchPlaceBlockTool) Prompt(*Session) string {
 func (t *SketchPlaceBlockTool) SetDefinition(name string)   { t.definition = name }
 func (t *SketchPlaceBlockTool) SetRotation(radians float64) { t.rotation = radians }
 func (t *SketchPlaceBlockTool) SetScale(factor float64)     { t.scale = factor }
-func (t *SketchPlaceBlockTool) Start(*Session)              {}
-func (t *SketchPlaceBlockTool) Pick(*Session, Selectable)   {}
 func (t *SketchPlaceBlockTool) Cancel(*Session)             { t.at = nil }
 func (t *SketchPlaceBlockTool) CanCommit() bool             { return t.at != nil && t.definition != "" }
 func (t *SketchPlaceBlockTool) AutoCommits() bool           { return true }

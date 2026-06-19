@@ -12,6 +12,7 @@ import (
 // the wall thickness in the property window and OK to turn it into a solid slab. It takes no
 // face picks — it thickens the running surface body.
 type ThickenTool struct {
+	dialogTool
 	thickness float64
 	approxIdx int // index into ApproximationOptions (#331; 0 = exact)
 	added     *feature.PartFeature
@@ -27,7 +28,6 @@ func (t *ThickenTool) Name() string { return "Thicken" }
 func (t *ThickenTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
 
 // Pick is a no-op — thicken acts on the running surface body, not a selection.
-func (t *ThickenTool) Pick(*Session, Selectable) {}
 
 // SetThickness/Thickness set the wall thickness (database units).
 func (t *ThickenTool) SetThickness(d float64) { t.thickness = d }

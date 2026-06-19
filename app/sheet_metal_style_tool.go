@@ -21,6 +21,7 @@ import (
 // converts them back to model units and re-authors the Thickness/BendRadius parameters so the
 // rule stays parameter-backed.
 type SheetMetalStyleTool struct {
+	dialogTool
 	thickness   float64 // preferred (display) units
 	bendRadius  float64 // preferred (display) units
 	reliefWidth float64 // preferred (display) units
@@ -33,9 +34,7 @@ type SheetMetalStyleTool struct {
 // NewSheetMetalStyleTool returns a style-editor tool.
 func NewSheetMetalStyleTool() *SheetMetalStyleTool { return &SheetMetalStyleTool{} }
 
-func (t *SheetMetalStyleTool) Name() string              { return "Sheet Metal Style" }
-func (t *SheetMetalStyleTool) Pick(*Session, Selectable) {}
-func (t *SheetMetalStyleTool) Cancel(*Session)           {}
+func (t *SheetMetalStyleTool) Name() string { return "Sheet Metal Style" }
 
 // Start seeds the edit buffers from the active part's rule, converting its model-unit lengths
 // to the document's preferred unit. A no-op when the active part is not sheet metal.

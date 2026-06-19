@@ -10,6 +10,7 @@ import "oblikovati.org/model/feature"
 
 // SheetMetalUnfoldTool flattens every bend of the part (Create Flat Pattern).
 type SheetMetalUnfoldTool struct {
+	dialogTool
 	added *feature.PartFeature
 }
 
@@ -17,10 +18,7 @@ type SheetMetalUnfoldTool struct {
 func NewSheetMetalUnfoldTool() *SheetMetalUnfoldTool { return &SheetMetalUnfoldTool{} }
 
 func (t *SheetMetalUnfoldTool) Name() string                       { return "Sheet Metal Unfold" }
-func (t *SheetMetalUnfoldTool) Start(*Session)                     {}
-func (t *SheetMetalUnfoldTool) Pick(*Session, Selectable)          {}
 func (t *SheetMetalUnfoldTool) CanCommit() bool                    { return true }
-func (t *SheetMetalUnfoldTool) Cancel(*Session)                    {}
 func (t *SheetMetalUnfoldTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalUnfoldTool) Commit(s *Session) error {
@@ -38,6 +36,7 @@ func (t *SheetMetalUnfoldTool) Commit(s *Session) error {
 
 // SheetMetalRefoldTool re-folds the bends an earlier unfold flattened.
 type SheetMetalRefoldTool struct {
+	dialogTool
 	added *feature.PartFeature
 }
 
@@ -45,10 +44,7 @@ type SheetMetalRefoldTool struct {
 func NewSheetMetalRefoldTool() *SheetMetalRefoldTool { return &SheetMetalRefoldTool{} }
 
 func (t *SheetMetalRefoldTool) Name() string                       { return "Sheet Metal Refold" }
-func (t *SheetMetalRefoldTool) Start(*Session)                     {}
-func (t *SheetMetalRefoldTool) Pick(*Session, Selectable)          {}
 func (t *SheetMetalRefoldTool) CanCommit() bool                    { return true }
-func (t *SheetMetalRefoldTool) Cancel(*Session)                    {}
 func (t *SheetMetalRefoldTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalRefoldTool) Commit(s *Session) error {

@@ -27,6 +27,7 @@ var (
 // AssemblyExtrudeTool extrudes a picked assembly-sketch profile into a machining feature applied to
 // every participant.
 type AssemblyExtrudeTool struct {
+	dialogTool
 	profile   *ProfileHandle
 	distance  float64
 	operation int // index into assemblyExtrudeOps
@@ -38,7 +39,6 @@ func (t *AssemblyExtrudeTool) Name() string        { return "Extrude" }
 func (t *AssemblyExtrudeTool) Prompt(*Session) string {
 	return "Pick a sketch profile, set the distance and operation, then OK."
 }
-func (t *AssemblyExtrudeTool) Start(*Session) {}
 
 // Pick collects the profile region clicked in the viewport.
 func (t *AssemblyExtrudeTool) Pick(_ *Session, sel Selectable) {

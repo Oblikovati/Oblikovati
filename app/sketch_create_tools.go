@@ -19,6 +19,7 @@ import (
 // SketchChamferTool bevels the corner between two picked lines (like Fillet, but a flat
 // cut). It uses an equal setback on both lines.
 type SketchChamferTool struct {
+	dialogTool
 	pickCollector
 	distance math.Scalar
 }
@@ -29,7 +30,6 @@ func NewSketchChamferTool(distance float64) *SketchChamferTool {
 }
 
 func (t *SketchChamferTool) Name() string                  { return "Chamfer" }
-func (t *SketchChamferTool) Start(*Session)                {}
 func (t *SketchChamferTool) Pick(_ *Session, s Selectable) { t.take(s) }
 func (t *SketchChamferTool) CanCommit() bool               { return t.ready() }
 func (t *SketchChamferTool) AutoCommitOnPick() bool        { return true }
@@ -55,6 +55,7 @@ func (t *SketchChamferTool) Commit(s *Session) error {
 
 // SketchSlotTool draws a straight slot from two centre-axis clicks and a width.
 type SketchSlotTool struct {
+	dialogTool
 	points []math.Point2
 	width  math.Scalar
 }
@@ -64,12 +65,10 @@ func NewSketchSlotTool(width float64) *SketchSlotTool {
 	return &SketchSlotTool{width: math.Scalar(width)}
 }
 
-func (t *SketchSlotTool) Name() string              { return "Slot" }
-func (t *SketchSlotTool) Start(*Session)            {}
-func (t *SketchSlotTool) Pick(*Session, Selectable) {}
-func (t *SketchSlotTool) Cancel(*Session)           { t.points = nil }
-func (t *SketchSlotTool) AutoCommits() bool         { return true }
-func (t *SketchSlotTool) CanCommit() bool           { return len(t.points) == 2 }
+func (t *SketchSlotTool) Name() string      { return "Slot" }
+func (t *SketchSlotTool) Cancel(*Session)   { t.points = nil }
+func (t *SketchSlotTool) AutoCommits() bool { return true }
+func (t *SketchSlotTool) CanCommit() bool   { return len(t.points) == 2 }
 func (t *SketchSlotTool) Prompt(*Session) string {
 	if len(t.points) == 0 {
 		return "Click the slot's first centre point."
@@ -100,6 +99,7 @@ func (t *SketchSlotTool) Commit(s *Session) error {
 // CenterPointArcSlotTool draws an arc-shaped slot whose centre line is an arc given by its
 // center, start and end (Inventor's Center Point Arc Slot); the width is a parameter.
 type CenterPointArcSlotTool struct {
+	dialogTool
 	collectClicks
 	width math.Scalar
 }
@@ -109,12 +109,10 @@ func NewCenterPointArcSlotTool(width float64) *CenterPointArcSlotTool {
 	return &CenterPointArcSlotTool{width: math.Scalar(width)}
 }
 
-func (t *CenterPointArcSlotTool) Name() string              { return "Center Point Arc Slot" }
-func (t *CenterPointArcSlotTool) Start(*Session)            {}
-func (t *CenterPointArcSlotTool) Pick(*Session, Selectable) {}
-func (t *CenterPointArcSlotTool) Cancel(*Session)           { t.reset() }
-func (t *CenterPointArcSlotTool) CanCommit() bool           { return len(t.pts) == 3 }
-func (t *CenterPointArcSlotTool) AutoCommits() bool         { return true }
+func (t *CenterPointArcSlotTool) Name() string      { return "Center Point Arc Slot" }
+func (t *CenterPointArcSlotTool) Cancel(*Session)   { t.reset() }
+func (t *CenterPointArcSlotTool) CanCommit() bool   { return len(t.pts) == 3 }
+func (t *CenterPointArcSlotTool) AutoCommits() bool { return true }
 
 // SetWidth sets the slot width.
 func (t *CenterPointArcSlotTool) SetWidth(w float64) { t.width = math.Scalar(w) }
@@ -152,6 +150,7 @@ func (t *CenterPointArcSlotTool) Params() ToolParams {
 // ThreePointArcSlotTool draws an arc-shaped slot whose centre line is the arc through three
 // clicked points — start, a point on the arc, then end (Inventor's Three Point Arc Slot).
 type ThreePointArcSlotTool struct {
+	dialogTool
 	collectClicks
 	width math.Scalar
 }
@@ -161,12 +160,10 @@ func NewThreePointArcSlotTool(width float64) *ThreePointArcSlotTool {
 	return &ThreePointArcSlotTool{width: math.Scalar(width)}
 }
 
-func (t *ThreePointArcSlotTool) Name() string              { return "Three Point Arc Slot" }
-func (t *ThreePointArcSlotTool) Start(*Session)            {}
-func (t *ThreePointArcSlotTool) Pick(*Session, Selectable) {}
-func (t *ThreePointArcSlotTool) Cancel(*Session)           { t.reset() }
-func (t *ThreePointArcSlotTool) CanCommit() bool           { return len(t.pts) == 3 }
-func (t *ThreePointArcSlotTool) AutoCommits() bool         { return true }
+func (t *ThreePointArcSlotTool) Name() string      { return "Three Point Arc Slot" }
+func (t *ThreePointArcSlotTool) Cancel(*Session)   { t.reset() }
+func (t *ThreePointArcSlotTool) CanCommit() bool   { return len(t.pts) == 3 }
+func (t *ThreePointArcSlotTool) AutoCommits() bool { return true }
 
 // SetWidth sets the slot width.
 func (t *ThreePointArcSlotTool) SetWidth(w float64) { t.width = math.Scalar(w) }
@@ -211,6 +208,7 @@ func (t *ThreePointArcSlotTool) Params() ToolParams {
 // font and derives its glyph geometry on demand (by reference), so it is embossable without
 // baking outlines.
 type SketchTextTool struct {
+	dialogTool
 	anchor   *math.Point2
 	text     string
 	height   math.Scalar
@@ -227,11 +225,9 @@ func NewSketchTextTool() *SketchTextTool {
 	return &SketchTextTool{height: 1, family: fontCatalog()[0].Family}
 }
 
-func (t *SketchTextTool) Name() string              { return "Text" }
-func (t *SketchTextTool) Start(*Session)            {}
-func (t *SketchTextTool) Pick(*Session, Selectable) {}
-func (t *SketchTextTool) Cancel(*Session)           { t.anchor, t.text = nil, "" }
-func (t *SketchTextTool) CanCommit() bool           { return t.anchor != nil && t.text != "" }
+func (t *SketchTextTool) Name() string    { return "Text" }
+func (t *SketchTextTool) Cancel(*Session) { t.anchor, t.text = nil, "" }
+func (t *SketchTextTool) CanCommit() bool { return t.anchor != nil && t.text != "" }
 func (t *SketchTextTool) Prompt(*Session) string {
 	if t.anchor == nil {
 		return "Click to place the text anchor."

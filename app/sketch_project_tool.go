@@ -14,6 +14,7 @@ import (
 // sketch geometry can be constrained to the projected anchors). Picks arrive as edge/vertex
 // handles; Commit projects each onto the active 2D sketch.
 type ProjectGeometryTool struct {
+	dialogTool
 	edges    []EdgeHandle
 	vertices []VertexHandle
 }
@@ -67,6 +68,5 @@ func (t *ProjectGeometryTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (no model change to roll back before commit).
-func (t *ProjectGeometryTool) Cancel(*Session) {}
 
 var _ Tool = (*ProjectGeometryTool)(nil)

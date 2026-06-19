@@ -105,6 +105,7 @@ func (t *AssemblyRevolveTool) Params() ToolParams {
 // AssemblyHoleTool drills a parametric cylindrical bore (centre, axis, diameter, depth) through
 // every participant — a through-feature placed by coordinate, no sketch needed.
 type AssemblyHoleTool struct {
+	dialogTool
 	cx, cy, cz float64
 	axisIndex  int // index into signedAxes (the drill direction)
 	diameter   float64
@@ -122,10 +123,7 @@ func (t *AssemblyHoleTool) Prompt(*Session) string {
 
 // The hole tool takes only numeric input (centre, axis, diameter, depth), so it has no
 // selection lifecycle: nothing to set up, pick, or undo on cancel.
-func (t *AssemblyHoleTool) Start(*Session)            {}
-func (t *AssemblyHoleTool) Pick(*Session, Selectable) {}
-func (t *AssemblyHoleTool) Cancel(*Session)           {}
-func (t *AssemblyHoleTool) CanCommit() bool           { return t.diameter > 0 && t.depth > 0 }
+func (t *AssemblyHoleTool) CanCommit() bool { return t.diameter > 0 && t.depth > 0 }
 
 func (t *AssemblyHoleTool) Commit(s *Session) error {
 	asm, err := activeAssembly(s)

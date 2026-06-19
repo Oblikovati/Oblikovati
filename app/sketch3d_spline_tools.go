@@ -18,6 +18,7 @@ import (
 // them (3D Spline), control shapes the curve by its control polygon (3D Control
 // Point Spline). Closed wraps the curve back to its first point.
 type Spline3DTool struct {
+	dialogTool
 	points []math.Point3
 	fit    bool
 	closed bool
@@ -36,8 +37,6 @@ func (t *Spline3DTool) Name() string {
 	}
 	return "3D Control Point Spline"
 }
-func (t *Spline3DTool) Start(*Session)            {}
-func (t *Spline3DTool) Pick(*Session, Selectable) {}
 
 // AddPoint appends the next defining point (a viewport click).
 func (t *Spline3DTool) AddPoint(p math.Point3) { t.points = append(t.points, p) }
@@ -59,7 +58,6 @@ func (t *Spline3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *Spline3DTool) Cancel(*Session) {}
 
 // Params exposes the closed flag (points come from viewport clicks).
 func (t *Spline3DTool) Params() ToolParams {
@@ -71,6 +69,7 @@ func (t *Spline3DTool) Params() ToolParams {
 // EquationCurve3DTool draws a parametric x(t)/y(t)/z(t) curve over [t0,t1]; the
 // expressions go through the document's expression engine (lengths in cm).
 type EquationCurve3DTool struct {
+	dialogTool
 	xExpr, yExpr, zExpr string
 	t0, t1              float64
 }
@@ -80,9 +79,7 @@ type EquationCurve3DTool struct {
 func NewEquationCurve3DTool() *EquationCurve3DTool { return &EquationCurve3DTool{t1: 1} }
 
 // Name implements [Tool]; Start/Pick are no-ops (all input is the dialog's).
-func (t *EquationCurve3DTool) Name() string              { return "Equation Curve" }
-func (t *EquationCurve3DTool) Start(*Session)            {}
-func (t *EquationCurve3DTool) Pick(*Session, Selectable) {}
+func (t *EquationCurve3DTool) Name() string { return "Equation Curve" }
 
 // CanCommit requires all three expressions and a non-empty parameter range.
 func (t *EquationCurve3DTool) CanCommit() bool {
@@ -104,7 +101,6 @@ func (t *EquationCurve3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *EquationCurve3DTool) Cancel(*Session) {}
 
 // Params exposes the three coordinate expressions and the parameter range.
 func (t *EquationCurve3DTool) Params() ToolParams {

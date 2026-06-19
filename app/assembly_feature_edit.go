@@ -17,6 +17,7 @@ import (
 
 // AssemblyFeatureEditTool edits one committed assembly feature's scalar parameters in place.
 type AssemblyFeatureEditTool struct {
+	dialogTool
 	feature *compdef.AssemblyFeature
 	params  []feature.EditableParam
 	orig    []float64 // values captured at open, restored on Cancel
@@ -39,11 +40,9 @@ func (t *AssemblyFeatureEditTool) Name() string { return "Edit " + t.feature.Nam
 
 // Start is a no-op: the editable parameters were snapshotted in the constructor, so the dialog
 // can open straight away.
-func (t *AssemblyFeatureEditTool) Start(*Session) {}
 
 // Pick is unused — an assembly feature edit changes scalar parameters, not geometric references
 // (re-picking participant edges/faces is a later refinement).
-func (t *AssemblyFeatureEditTool) Pick(*Session, Selectable) {}
 
 // CanCommit reports the feature has editable parameters to apply.
 func (t *AssemblyFeatureEditTool) CanCommit() bool { return len(t.params) > 0 }

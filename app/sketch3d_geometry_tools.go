@@ -13,6 +13,7 @@ import (
 // 3D Line). Points arrive via AddPoint (the head feeds model-space picks; e2e tests call
 // it directly). Committing adds the segments to the active 3D sketch.
 type Line3DTool struct {
+	dialogTool
 	points []math.Point3
 }
 
@@ -23,10 +24,8 @@ func NewLine3DTool() *Line3DTool { return &Line3DTool{} }
 func (t *Line3DTool) Name() string { return "3D Line" }
 
 // Start implements [Tool]; the 3D line tool needs no selection filter.
-func (t *Line3DTool) Start(*Session) {}
 
 // Pick implements [Tool]; model-space picks arrive via AddPoint, not selectables.
-func (t *Line3DTool) Pick(*Session, Selectable) {}
 
 // AddPoint records a model-space vertex of the polyline.
 func (t *Line3DTool) AddPoint(p math.Point3) { t.points = append(t.points, p) }
@@ -51,10 +50,10 @@ func (t *Line3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (no state to restore).
-func (t *Line3DTool) Cancel(*Session) {}
 
 // Point3DTool places a single standalone point in the active 3D sketch.
 type Point3DTool struct {
+	dialogTool
 	point *math.Point3
 }
 
@@ -65,8 +64,6 @@ func NewPoint3DTool() *Point3DTool { return &Point3DTool{} }
 func (t *Point3DTool) Name() string { return "3D Point" }
 
 // Start/Pick implement [Tool]; the point arrives via SetPoint.
-func (t *Point3DTool) Start(*Session)            {}
-func (t *Point3DTool) Pick(*Session, Selectable) {}
 
 // SetPoint records the point's model-space position.
 func (t *Point3DTool) SetPoint(p math.Point3) { t.point = &p }
@@ -88,11 +85,11 @@ func (t *Point3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *Point3DTool) Cancel(*Session) {}
 
 // Circle3DTool places a full circle in the active 3D sketch from a center, a plane axis
 // (defaulting to +Z), and a radius.
 type Circle3DTool struct {
+	dialogTool
 	center *math.Point3
 	axis   math.Vector3
 	radius float64
@@ -102,9 +99,7 @@ type Circle3DTool struct {
 func NewCircle3DTool() *Circle3DTool { return &Circle3DTool{axis: math.V3(0, 0, 1)} }
 
 // Name implements [Tool]; Start/Pick are no-ops (inputs arrive via the setters).
-func (t *Circle3DTool) Name() string              { return "3D Circle" }
-func (t *Circle3DTool) Start(*Session)            {}
-func (t *Circle3DTool) Pick(*Session, Selectable) {}
+func (t *Circle3DTool) Name() string { return "3D Circle" }
 
 // SetCenter/SetAxis/SetRadius supply the circle's inputs.
 func (t *Circle3DTool) SetCenter(p math.Point3) { t.center = &p }
@@ -132,10 +127,10 @@ func (t *Circle3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *Circle3DTool) Cancel(*Session) {}
 
 // Arc3DTool places a circular arc from three picked points: center, start, end.
 type Arc3DTool struct {
+	dialogTool
 	points []math.Point3
 	ccw    bool
 }
@@ -144,9 +139,7 @@ type Arc3DTool struct {
 func NewArc3DTool() *Arc3DTool { return &Arc3DTool{ccw: true} }
 
 // Name implements [Tool]; Start/Pick are no-ops.
-func (t *Arc3DTool) Name() string              { return "3D Arc" }
-func (t *Arc3DTool) Start(*Session)            {}
-func (t *Arc3DTool) Pick(*Session, Selectable) {}
+func (t *Arc3DTool) Name() string { return "3D Arc" }
 
 // AddPoint records the next of the arc's center/start/end points; SetCCW orients it.
 func (t *Arc3DTool) AddPoint(p math.Point3) { t.points = append(t.points, p) }
@@ -169,11 +162,11 @@ func (t *Arc3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *Arc3DTool) Cancel(*Session) {}
 
 // Helix3DTool places a cylindrical helix from an axis-base origin, radius, pitch and turn
 // count (axis defaults to +Z). It is the spring/thread-path tool.
 type Helix3DTool struct {
+	dialogTool
 	origin    *math.Point3
 	axis      math.Vector3
 	radius    float64
@@ -186,9 +179,7 @@ type Helix3DTool struct {
 func NewHelix3DTool() *Helix3DTool { return &Helix3DTool{axis: math.V3(0, 0, 1)} }
 
 // Name implements [Tool]; Start/Pick are no-ops.
-func (t *Helix3DTool) Name() string              { return "Helical Curve" }
-func (t *Helix3DTool) Start(*Session)            {}
-func (t *Helix3DTool) Pick(*Session, Selectable) {}
+func (t *Helix3DTool) Name() string { return "Helical Curve" }
 
 // Setters supply the helix's inputs (radius/pitch in cm, turns a revolution count).
 func (t *Helix3DTool) SetOrigin(p math.Point3) { t.origin = &p }
@@ -221,7 +212,6 @@ func (t *Helix3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *Helix3DTool) Cancel(*Session) {}
 
 // --- Params (generic property dialog) -------------------------------------
 // The 3D tools take their points from viewport clicks; the dialog edits the scalar/bool

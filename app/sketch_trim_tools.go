@@ -47,16 +47,17 @@ func (c *curveEditPick) pickedLine() (*sketch.Line, error) {
 
 // SketchTrimTool removes the picked segment of a line up to its nearest crossings with
 // other sketch geometry (lines, circles, arcs).
-type SketchTrimTool struct{ curveEditPick }
+type SketchTrimTool struct {
+	dialogTool
+	curveEditPick
+}
 
 // NewSketchTrimTool makes a trim tool.
 func NewSketchTrimTool() *SketchTrimTool { return &SketchTrimTool{} }
 
-func (t *SketchTrimTool) Name() string              { return "Trim" }
-func (t *SketchTrimTool) Start(*Session)            {}
-func (t *SketchTrimTool) Pick(*Session, Selectable) {}
-func (t *SketchTrimTool) Cancel(*Session)           { t.reset() }
-func (t *SketchTrimTool) Prompt(*Session) string    { return "Pick the curve segment to trim." }
+func (t *SketchTrimTool) Name() string           { return "Trim" }
+func (t *SketchTrimTool) Cancel(*Session)        { t.reset() }
+func (t *SketchTrimTool) Prompt(*Session) string { return "Pick the curve segment to trim." }
 
 // Commit trims the picked curve (line, circle or arc) at the pick point.
 func (t *SketchTrimTool) Commit(s *Session) error {
@@ -83,16 +84,17 @@ func (t *SketchTrimTool) Commit(s *Session) error {
 
 // SketchExtendTool lengthens the picked line's nearer end to the next crossing of its
 // support with other sketch geometry.
-type SketchExtendTool struct{ curveEditPick }
+type SketchExtendTool struct {
+	dialogTool
+	curveEditPick
+}
 
 // NewSketchExtendTool makes an extend tool.
 func NewSketchExtendTool() *SketchExtendTool { return &SketchExtendTool{} }
 
-func (t *SketchExtendTool) Name() string              { return "Extend" }
-func (t *SketchExtendTool) Start(*Session)            {}
-func (t *SketchExtendTool) Pick(*Session, Selectable) {}
-func (t *SketchExtendTool) Cancel(*Session)           { t.reset() }
-func (t *SketchExtendTool) Prompt(*Session) string    { return "Pick near the line end to extend." }
+func (t *SketchExtendTool) Name() string           { return "Extend" }
+func (t *SketchExtendTool) Cancel(*Session)        { t.reset() }
+func (t *SketchExtendTool) Prompt(*Session) string { return "Pick near the line end to extend." }
 
 // Commit extends whichever end of the picked line is nearer the pick point.
 func (t *SketchExtendTool) Commit(s *Session) error {
@@ -109,16 +111,17 @@ func (t *SketchExtendTool) Commit(s *Session) error {
 }
 
 // SketchSplitTool splits the picked line into two at the pick point.
-type SketchSplitTool struct{ curveEditPick }
+type SketchSplitTool struct {
+	dialogTool
+	curveEditPick
+}
 
 // NewSketchSplitTool makes a split tool.
 func NewSketchSplitTool() *SketchSplitTool { return &SketchSplitTool{} }
 
-func (t *SketchSplitTool) Name() string              { return "Split" }
-func (t *SketchSplitTool) Start(*Session)            {}
-func (t *SketchSplitTool) Pick(*Session, Selectable) {}
-func (t *SketchSplitTool) Cancel(*Session)           { t.reset() }
-func (t *SketchSplitTool) Prompt(*Session) string    { return "Pick the point to split the curve." }
+func (t *SketchSplitTool) Name() string           { return "Split" }
+func (t *SketchSplitTool) Cancel(*Session)        { t.reset() }
+func (t *SketchSplitTool) Prompt(*Session) string { return "Pick the point to split the curve." }
 
 // Commit splits the picked line at the pick point.
 func (t *SketchSplitTool) Commit(s *Session) error {

@@ -15,6 +15,7 @@ import (
 
 // deriveSourceTool collects the source-assembly choice shared by Derive and Shrinkwrap.
 type deriveSourceTool struct {
+	dialogTool
 	sources  []*doc.Document // open assemblies, captured on Start
 	selected int             // index into sources
 }
@@ -23,8 +24,6 @@ type deriveSourceTool struct {
 func (t *deriveSourceTool) Start(s *Session) { t.sources = s.OpenAssemblies() }
 
 // Pick is unused — the source is chosen from the dialog, not by a viewport pick.
-func (t *deriveSourceTool) Pick(*Session, Selectable) {}
-func (t *deriveSourceTool) Cancel(*Session)           {}
 
 // source returns the chosen source document, or nil when no assembly is open.
 func (t *deriveSourceTool) source() *doc.Document {

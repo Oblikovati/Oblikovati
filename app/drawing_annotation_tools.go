@@ -18,6 +18,7 @@ import (
 
 // CoGMarkerTool places a centre-of-gravity marker on a chosen base view.
 type CoGMarkerTool struct {
+	dialogTool
 	views     []string
 	viewIndex int
 }
@@ -25,11 +26,9 @@ type CoGMarkerTool struct {
 // NewCoGMarkerTool creates the tool; its view list is captured on Start.
 func NewCoGMarkerTool() *CoGMarkerTool { return &CoGMarkerTool{} }
 
-func (t *CoGMarkerTool) Name() string              { return "Center of Gravity" }
-func (t *CoGMarkerTool) Start(s *Session)          { t.views = baseViewNames(s) }
-func (t *CoGMarkerTool) Pick(*Session, Selectable) {}
-func (t *CoGMarkerTool) CanCommit() bool           { return len(t.views) > 0 }
-func (t *CoGMarkerTool) Cancel(*Session)           {}
+func (t *CoGMarkerTool) Name() string     { return "Center of Gravity" }
+func (t *CoGMarkerTool) Start(s *Session) { t.views = baseViewNames(s) }
+func (t *CoGMarkerTool) CanCommit() bool  { return len(t.views) > 0 }
 
 // Commit adds the marker on the selected view.
 func (t *CoGMarkerTool) Commit(s *Session) error {
@@ -57,6 +56,7 @@ func (t *CoGMarkerTool) Params() ToolParams {
 // CenterMarkTool places a centre mark (crosshair) at every circular edge's centre in a chosen base
 // view — the auto centre-mark-all-holes action.
 type CenterMarkTool struct {
+	dialogTool
 	views     []string
 	viewIndex int
 }
@@ -64,11 +64,9 @@ type CenterMarkTool struct {
 // NewCenterMarkTool creates the tool; its view list is captured on Start.
 func NewCenterMarkTool() *CenterMarkTool { return &CenterMarkTool{} }
 
-func (t *CenterMarkTool) Name() string              { return "Center Mark" }
-func (t *CenterMarkTool) Start(s *Session)          { t.views = baseViewNames(s) }
-func (t *CenterMarkTool) Pick(*Session, Selectable) {}
-func (t *CenterMarkTool) CanCommit() bool           { return len(t.views) > 0 }
-func (t *CenterMarkTool) Cancel(*Session)           {}
+func (t *CenterMarkTool) Name() string     { return "Center Mark" }
+func (t *CenterMarkTool) Start(s *Session) { t.views = baseViewNames(s) }
+func (t *CenterMarkTool) CanCommit() bool  { return len(t.views) > 0 }
 
 // Commit centre-marks every circular edge in the selected view.
 func (t *CenterMarkTool) Commit(s *Session) error {
@@ -96,6 +94,7 @@ func (t *CenterMarkTool) Params() ToolParams {
 // CenterlineTool adds the horizontal+vertical dash-dot symmetry centerlines through a chosen base
 // view's centre.
 type CenterlineTool struct {
+	dialogTool
 	views     []string
 	viewIndex int
 }
@@ -103,11 +102,9 @@ type CenterlineTool struct {
 // NewCenterlineTool creates the tool; its view list is captured on Start.
 func NewCenterlineTool() *CenterlineTool { return &CenterlineTool{} }
 
-func (t *CenterlineTool) Name() string              { return "Centerline" }
-func (t *CenterlineTool) Start(s *Session)          { t.views = baseViewNames(s) }
-func (t *CenterlineTool) Pick(*Session, Selectable) {}
-func (t *CenterlineTool) CanCommit() bool           { return len(t.views) > 0 }
-func (t *CenterlineTool) Cancel(*Session)           {}
+func (t *CenterlineTool) Name() string     { return "Centerline" }
+func (t *CenterlineTool) Start(s *Session) { t.views = baseViewNames(s) }
+func (t *CenterlineTool) CanCommit() bool  { return len(t.views) > 0 }
 
 // Commit adds the centerlines on the selected view.
 func (t *CenterlineTool) Commit(s *Session) error {
@@ -150,6 +147,7 @@ var fcfCharacteristics = []struct {
 // FeatureControlFrameTool drops a GD&T feature control frame at the cursor with a chosen
 // characteristic, tolerance value and comma-separated datum references.
 type FeatureControlFrameTool struct {
+	dialogTool
 	charIndex        int
 	tolerance        string
 	datums           string
@@ -162,10 +160,7 @@ func NewFeatureControlFrameTool() *FeatureControlFrameTool {
 }
 
 func (t *FeatureControlFrameTool) Name() string              { return "Feature Control Frame" }
-func (t *FeatureControlFrameTool) Start(*Session)            {}
-func (t *FeatureControlFrameTool) Pick(*Session, Selectable) {}
 func (t *FeatureControlFrameTool) CanCommit() bool           { return t.tolerance != "" }
-func (t *FeatureControlFrameTool) Cancel(*Session)           {}
 func (t *FeatureControlFrameTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the frame at the placed point.
@@ -212,6 +207,7 @@ func splitDatums(s string) []string {
 // RevisionTableTool drops a revision table seeded with one revision row (revision/date/description)
 // at the cursor; the API/bridge can place multi-row tables.
 type RevisionTableTool struct {
+	dialogTool
 	revision, date, description string
 	centerX, centerY            float64
 }
@@ -222,10 +218,7 @@ func NewRevisionTableTool() *RevisionTableTool {
 }
 
 func (t *RevisionTableTool) Name() string              { return "Revision Table" }
-func (t *RevisionTableTool) Start(*Session)            {}
-func (t *RevisionTableTool) Pick(*Session, Selectable) {}
 func (t *RevisionTableTool) CanCommit() bool           { return t.revision != "" }
-func (t *RevisionTableTool) Cancel(*Session)           {}
 func (t *RevisionTableTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the one-row revision table at the placed point.
@@ -253,6 +246,7 @@ func (t *RevisionTableTool) Params() ToolParams {
 
 // RevisionTagTool drops a revision tag (a triangle holding a revision letter) at the cursor.
 type RevisionTagTool struct {
+	dialogTool
 	revision         string
 	centerX, centerY float64
 }
@@ -263,10 +257,7 @@ func NewRevisionTagTool() *RevisionTagTool {
 }
 
 func (t *RevisionTagTool) Name() string              { return "Revision Tag" }
-func (t *RevisionTagTool) Start(*Session)            {}
-func (t *RevisionTagTool) Pick(*Session, Selectable) {}
 func (t *RevisionTagTool) CanCommit() bool           { return t.revision != "" }
-func (t *RevisionTagTool) Cancel(*Session)           {}
 func (t *RevisionTagTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the revision tag at the placed point.
@@ -296,6 +287,7 @@ var holeNoteQuantities = []types.HoleNoteQuantity{types.HoleNotePerHole, types.H
 // re-resolves with the model; the Quantity option groups same-diameter holes into one callout, and
 // the Format option overrides the callout text ({d} = diameter, {n} = count).
 type HoleNotesTool struct {
+	dialogTool
 	views         []string
 	viewIndex     int
 	quantityIndex int
@@ -305,11 +297,9 @@ type HoleNotesTool struct {
 // NewHoleNotesTool creates the tool; its base-view list is captured on Start.
 func NewHoleNotesTool() *HoleNotesTool { return &HoleNotesTool{} }
 
-func (t *HoleNotesTool) Name() string              { return "Hole Notes" }
-func (t *HoleNotesTool) Start(s *Session)          { t.views = baseViewNames(s) }
-func (t *HoleNotesTool) Pick(*Session, Selectable) {}
-func (t *HoleNotesTool) CanCommit() bool           { return len(t.views) > 0 }
-func (t *HoleNotesTool) Cancel(*Session)           {}
+func (t *HoleNotesTool) Name() string     { return "Hole Notes" }
+func (t *HoleNotesTool) Start(s *Session) { t.views = baseViewNames(s) }
+func (t *HoleNotesTool) CanCommit() bool  { return len(t.views) > 0 }
 
 // Commit annotates every hole in the selected view with a diameter callout.
 func (t *HoleNotesTool) Commit(s *Session) error {
@@ -343,6 +333,7 @@ func (t *HoleNotesTool) Params() ToolParams {
 
 // NoteTool drops a free text note at the cursor, with an optional leader to a point.
 type NoteTool struct {
+	dialogTool
 	text             string
 	leaderX, leaderY float64
 	centerX, centerY float64
@@ -352,10 +343,7 @@ type NoteTool struct {
 func NewNoteTool() *NoteTool { return &NoteTool{text: "NOTE", centerX: 150, centerY: 150} }
 
 func (t *NoteTool) Name() string              { return "Note" }
-func (t *NoteTool) Start(*Session)            {}
-func (t *NoteTool) Pick(*Session, Selectable) {}
 func (t *NoteTool) CanCommit() bool           { return t.text != "" }
-func (t *NoteTool) Cancel(*Session)           {}
 func (t *NoteTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the note (with its optional leader) at the placed point.
@@ -385,6 +373,7 @@ func (t *NoteTool) Params() ToolParams {
 // CustomTableTool drops a general-purpose table seeded with two columns and one empty row at the
 // cursor; the API/bridge place tables with arbitrary headers and rows.
 type CustomTableTool struct {
+	dialogTool
 	col1, col2       string
 	centerX, centerY float64
 }
@@ -395,10 +384,7 @@ func NewCustomTableTool() *CustomTableTool {
 }
 
 func (t *CustomTableTool) Name() string              { return "Custom Table" }
-func (t *CustomTableTool) Start(*Session)            {}
-func (t *CustomTableTool) Pick(*Session, Selectable) {}
 func (t *CustomTableTool) CanCommit() bool           { return t.col1 != "" }
-func (t *CustomTableTool) Cancel(*Session)           {}
 func (t *CustomTableTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the seeded two-column table at the placed point.
@@ -427,6 +413,7 @@ func (t *CustomTableTool) Params() ToolParams {
 // DatumFeatureTool drops a GD&T datum feature symbol (a lettered box + datum triangle) at the
 // cursor.
 type DatumFeatureTool struct {
+	dialogTool
 	letter           string
 	centerX, centerY float64
 }
@@ -437,10 +424,7 @@ func NewDatumFeatureTool() *DatumFeatureTool {
 }
 
 func (t *DatumFeatureTool) Name() string              { return "Datum Feature" }
-func (t *DatumFeatureTool) Start(*Session)            {}
-func (t *DatumFeatureTool) Pick(*Session, Selectable) {}
 func (t *DatumFeatureTool) CanCommit() bool           { return t.letter != "" }
-func (t *DatumFeatureTool) Cancel(*Session)           {}
 func (t *DatumFeatureTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the datum symbol at the placed point.
@@ -476,6 +460,7 @@ var surfaceVariants = []struct {
 // SurfaceTextureTool drops an ISO 1302 surface texture symbol at the cursor with a roughness value
 // and material-removal variant.
 type SurfaceTextureTool struct {
+	dialogTool
 	roughness        string
 	variantIndex     int
 	centerX, centerY float64
@@ -487,10 +472,7 @@ func NewSurfaceTextureTool() *SurfaceTextureTool {
 }
 
 func (t *SurfaceTextureTool) Name() string              { return "Surface Texture" }
-func (t *SurfaceTextureTool) Start(*Session)            {}
-func (t *SurfaceTextureTool) Pick(*Session, Selectable) {}
 func (t *SurfaceTextureTool) CanCommit() bool           { return true }
-func (t *SurfaceTextureTool) Cancel(*Session)           {}
 func (t *SurfaceTextureTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the surface texture symbol at the placed point.
@@ -522,6 +504,7 @@ func (t *SurfaceTextureTool) Params() ToolParams {
 // PartsListTool drops a parts list table (sourced from the referenced assembly's BOM) at the
 // cursor (the table's top-left corner).
 type PartsListTool struct {
+	dialogTool
 	centerX, centerY float64
 }
 
@@ -529,10 +512,7 @@ type PartsListTool struct {
 func NewPartsListTool() *PartsListTool { return &PartsListTool{centerX: 40, centerY: 260} }
 
 func (t *PartsListTool) Name() string              { return "Parts List" }
-func (t *PartsListTool) Start(*Session)            {}
-func (t *PartsListTool) Pick(*Session, Selectable) {}
 func (t *PartsListTool) CanCommit() bool           { return true }
-func (t *PartsListTool) Cancel(*Session)           {}
 func (t *PartsListTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the parts list at the placed point.
@@ -551,6 +531,7 @@ func (t *PartsListTool) Commit(s *Session) error {
 // BalloonTool drops a balloon (a circled parts-list item number) at the cursor, with an optional
 // leader to a previously-picked point.
 type BalloonTool struct {
+	dialogTool
 	item             int
 	centerX, centerY float64
 	leaderX, leaderY float64
@@ -560,10 +541,7 @@ type BalloonTool struct {
 func NewBalloonTool() *BalloonTool { return &BalloonTool{item: 1, centerX: 150, centerY: 150} }
 
 func (t *BalloonTool) Name() string              { return "Balloon" }
-func (t *BalloonTool) Start(*Session)            {}
-func (t *BalloonTool) Pick(*Session, Selectable) {}
 func (t *BalloonTool) CanCommit() bool           { return t.item > 0 }
-func (t *BalloonTool) Cancel(*Session)           {}
 func (t *BalloonTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the balloon at the placed point.
@@ -593,6 +571,7 @@ func (t *BalloonTool) Params() ToolParams {
 // HoleTableTool drops a hole table for a chosen base view at the cursor (the table's top-left
 // corner), listing the view's circular edges with X/Y from a datum and diameter.
 type HoleTableTool struct {
+	dialogTool
 	views            []string
 	viewIndex        int
 	centerX, centerY float64
@@ -603,9 +582,7 @@ func NewHoleTableTool() *HoleTableTool { return &HoleTableTool{centerX: 250, cen
 
 func (t *HoleTableTool) Name() string              { return "Hole Table" }
 func (t *HoleTableTool) Start(s *Session)          { t.views = baseViewNames(s) }
-func (t *HoleTableTool) Pick(*Session, Selectable) {}
 func (t *HoleTableTool) CanCommit() bool           { return len(t.views) > 0 }
-func (t *HoleTableTool) Cancel(*Session)           {}
 func (t *HoleTableTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops the hole table for the selected view at the placed point.
@@ -633,6 +610,7 @@ func (t *HoleTableTool) Params() ToolParams {
 
 // RevisionCloudTool drops a scalloped revision cloud of a chosen size at the cursor.
 type RevisionCloudTool struct {
+	dialogTool
 	width, height    float64
 	centerX, centerY float64
 	preview          []drawing.DrawingCurve
@@ -644,10 +622,7 @@ func NewRevisionCloudTool() *RevisionCloudTool {
 }
 
 func (t *RevisionCloudTool) Name() string              { return "Revision Cloud" }
-func (t *RevisionCloudTool) Start(*Session)            {}
-func (t *RevisionCloudTool) Pick(*Session, Selectable) {}
 func (t *RevisionCloudTool) CanCommit() bool           { return true }
-func (t *RevisionCloudTool) Cancel(*Session)           {}
 func (t *RevisionCloudTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // PreviewCurves outlines the cloud region (a plain rectangle) at the origin to follow the cursor;

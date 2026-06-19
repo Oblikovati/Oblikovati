@@ -10,6 +10,7 @@ import "oblikovati.org/model/drawing"
 // view edits orientation/style/scale/centre; a projected view edits direction/centre (its
 // orientation/scale/style follow its base).
 type DrawingViewEditTool struct {
+	dialogTool
 	views     *drawing.DrawingViews
 	view      *drawing.DrawingView
 	projected bool
@@ -33,11 +34,8 @@ func newDrawingViewEditTool(views *drawing.DrawingViews, view *drawing.DrawingVi
 	}
 }
 
-func (t *DrawingViewEditTool) Name() string              { return "Edit View" }
-func (t *DrawingViewEditTool) Start(*Session)            {}
-func (t *DrawingViewEditTool) Pick(*Session, Selectable) {}
-func (t *DrawingViewEditTool) CanCommit() bool           { return true }
-func (t *DrawingViewEditTool) Cancel(*Session)           {}
+func (t *DrawingViewEditTool) Name() string    { return "Edit View" }
+func (t *DrawingViewEditTool) CanCommit() bool { return true }
 
 // Commit writes the edited settings back to the view and re-projects it.
 func (t *DrawingViewEditTool) Commit(s *Session) error {

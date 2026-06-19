@@ -41,6 +41,7 @@ func sheetSizeIndexOf(s types.SheetSize) int {
 // the user chooses a standard size or a custom width×height and an orientation, then OK
 // adds the sheet and makes it active.
 type AddSheetTool struct {
+	dialogTool
 	sizeIndex   int
 	orientation int // index into {portrait, landscape}
 	widthMM     float64
@@ -57,11 +58,8 @@ func NewAddSheetTool() *AddSheetTool {
 	}
 }
 
-func (t *AddSheetTool) Name() string              { return "New Sheet" }
-func (t *AddSheetTool) Start(*Session)            {}
-func (t *AddSheetTool) Pick(*Session, Selectable) {}
-func (t *AddSheetTool) CanCommit() bool           { return true }
-func (t *AddSheetTool) Cancel(*Session)           {}
+func (t *AddSheetTool) Name() string    { return "New Sheet" }
+func (t *AddSheetTool) CanCommit() bool { return true }
 
 // Commit adds the configured sheet to the active drawing.
 func (t *AddSheetTool) Commit(s *Session) error {
