@@ -185,16 +185,58 @@ func buildSlot(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire
 	if err != nil {
 		return nil, fmt.Errorf("sketch.addEntity: slot width %q: %w", in.Width, err)
 	}
-	if in.Variant == "arc" {
-		if err := wantPoints("arc slot", pts, 3); err != nil {
+	width := math.Scalar(w.Value)
+	switch in.Variant {
+	case "arc":
+		return buildArcSlot(in, pts, width, sk.AddArcSlot)
+	case "arcThreePoint":
+		return buildArcSlot(in, pts, width, func(a, b, c math.Point2, _ math.Scalar, _ bool) ([]sketch.Entity, error) {
+			return sk.AddArcSlotByThreePoints(a, b, c, width)
+		})
+	case "arcCenterPoint":
+		return buildArcCenterPointSlot(part, sk, in, pts, width)
+	case "overall", "slotCenter":
+		return buildStraightSlotVariant(sk, in, pts, width)
+	default:
+		if err := wantPoints("slot", pts, 2); err != nil {
 			return nil, err
 		}
-		return sk.AddArcSlot(pts[0], pts[1], pts[2], math.Scalar(w.Value), in.CCW)
+		return sk.AddStraightSlot(pts[0], pts[1], width)
 	}
+}
+
+// buildArcSlot resolves the 3-point arc-slot input shared by the centerline-3-point and
+// through-3-points placements; add is the matching builder.
+func buildArcSlot(in wire.AddSketchEntityArgs, pts []math.Point2, width math.Scalar,
+	add func(a, b, c math.Point2, w math.Scalar, ccw bool) ([]sketch.Entity, error)) ([]sketch.Entity, error) {
+	if err := wantPoints("arc slot", pts, 3); err != nil {
+		return nil, err
+	}
+	return add(pts[0], pts[1], pts[2], width, in.CCW)
+}
+
+// buildArcCenterPointSlot builds an arc slot from center + start + a unit-bearing sweep angle
+// (in EndAngle), the Inventor by-center-point placement (#149).
+func buildArcCenterPointSlot(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2, width math.Scalar) ([]sketch.Entity, error) {
+	if err := wantPoints("arc slot by center point", pts, 2); err != nil {
+		return nil, err
+	}
+	sweep, err := part.Units().Parse(in.EndAngle, param.Angle)
+	if err != nil {
+		return nil, fmt.Errorf("sketch.addEntity: arc slot sweep angle %q: %w", in.EndAngle, err)
+	}
+	return sk.AddArcSlotByCenterPoint(pts[0], pts[1], math.Scalar(sweep.Value), width)
+}
+
+// buildStraightSlotVariant builds the by-overall and by-slot-center straight placements (#149).
+func buildStraightSlotVariant(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2, width math.Scalar) ([]sketch.Entity, error) {
 	if err := wantPoints("slot", pts, 2); err != nil {
 		return nil, err
 	}
-	return sk.AddStraightSlot(pts[0], pts[1], math.Scalar(w.Value))
+	if in.Variant == "overall" {
+		return sk.AddStraightSlotByOverall(pts[0], pts[1], width)
+	}
+	return sk.AddStraightSlotBySlotCenter(pts[0], pts[1], width)
 }
 
 // buildSketchEntity dispatches a create request to the matching model constructor,
