@@ -24,6 +24,9 @@ func (m *Model) EnclosingCall() (chain []string, ok bool) {
 // `oblikovati.documents.create` yields {"oblikovati","documents","create"}; hovering off any word
 // yields ok=false.
 func (m *Model) MethodChainAt(p textbuf.Position) (chain []string, ok bool) {
+	if p.Line < 0 || p.Line >= m.buf.LineCount() { // a mouse hover can land past the document
+		return nil, false
+	}
 	line := []rune(m.buf.Line(p.Line))
 	end := wordEndAt(line, p.Col)
 	if end == 0 {

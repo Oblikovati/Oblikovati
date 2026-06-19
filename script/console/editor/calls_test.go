@@ -78,3 +78,15 @@ func TestMethodChainAtOffWord(t *testing.T) {
 		t.Error("hover off a word should yield ok=false")
 	}
 }
+
+// TestMethodChainAtOutOfRangeLine guards the live crash where a mouse hover below the document
+// (e.g. the empty area under a one-line buffer) produced a line index past the buffer.
+func TestMethodChainAtOutOfRangeLine(t *testing.T) {
+	m := New("") // one empty line: valid index is only 0
+	if _, ok := m.MethodChainAt(pos(5, 0)); ok {
+		t.Error("hover past the document should yield ok=false, not panic")
+	}
+	if _, ok := m.MethodChainAt(pos(-1, 0)); ok {
+		t.Error("negative line should yield ok=false")
+	}
+}
