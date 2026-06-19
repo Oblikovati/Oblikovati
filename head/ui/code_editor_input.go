@@ -27,9 +27,15 @@ func (e *codeEditor) handleKeys() {
 	}
 	e.handleMovement(k, shift, ctrl)
 	e.handleEditing(k)
-	if k.Left || k.Right || k.Up || k.Down || k.Home || k.End {
+	if navigated(k) {
 		e.dismissCompletion() // caret navigation closes the popup
 	}
+}
+
+// navigated reports whether any caret-navigation key fired this frame (used to close the
+// completion popup and to refresh the blink on a move).
+func navigated(k native.EditorKeys) bool {
+	return k.Left || k.Right || k.Up || k.Down || k.Home || k.End
 }
 
 // handleTab block-indents (Tab) or outdents (Shift+Tab) the selection, returning true when it
@@ -67,7 +73,7 @@ func (e *codeEditor) handleMovement(k native.EditorKeys, shift, ctrl bool) {
 	e.handleVertical(k, shift, ctrl)
 }
 
-// handleVertical maps Up/Down and Home/End (Ctrl ⇒ document bounds).
+// handleVertical maps Up/Down and (via handleHomeEnd) Home/End.
 func (e *codeEditor) handleVertical(k native.EditorKeys, shift, ctrl bool) {
 	switch {
 	case k.Up:
@@ -75,6 +81,14 @@ func (e *codeEditor) handleVertical(k native.EditorKeys, shift, ctrl bool) {
 	case k.Down:
 		e.model.MoveDown(shift)
 	}
+	e.handleHomeEnd(k, shift, ctrl)
+	if navigated(k) {
+		e.resetBlink()
+	}
+}
+
+// handleHomeEnd maps Home/End to line bounds, or to document bounds when Ctrl is held.
+func (e *codeEditor) handleHomeEnd(k native.EditorKeys, shift, ctrl bool) {
 	switch {
 	case k.Home && ctrl:
 		e.model.MoveDocStart(shift)
@@ -84,9 +98,6 @@ func (e *codeEditor) handleVertical(k native.EditorKeys, shift, ctrl bool) {
 		e.model.MoveDocEnd(shift)
 	case k.End:
 		e.model.MoveEnd(shift)
-	}
-	if k.Up || k.Down || k.Home || k.End {
-		e.resetBlink()
 	}
 }
 
@@ -107,16 +118,12 @@ func (e *codeEditor) handleEditing(k native.EditorKeys) {
 	e.resetBlink()
 }
 
-// handleShortcuts applies the Ctrl-modified shortcuts (copy/cut/paste/select-all/undo/redo),
-// returning true when one fired so the movement handlers skip the same keystroke (e.g. Ctrl+A).
+// handleShortcuts applies the Ctrl-modified shortcuts, returning true when one fired so the
+// movement handlers skip the same keystroke (e.g. Ctrl+A).
 func (e *codeEditor) handleShortcuts(k native.EditorKeys) bool {
 	switch {
-	case k.Copy:
-		e.copySelection()
-	case k.Cut:
-		e.cutSelection()
-	case k.Paste:
-		e.model.Insert(native.ClipboardText())
+	case k.Copy, k.Cut, k.Paste:
+		e.handleClipboard(k)
 	case k.SelectAll:
 		e.model.SelectAll()
 	case k.Undo:
@@ -132,6 +139,18 @@ func (e *codeEditor) handleShortcuts(k native.EditorKeys) bool {
 	}
 	e.resetBlink()
 	return true
+}
+
+// handleClipboard runs the clipboard shortcut among copy/cut/paste that fired.
+func (e *codeEditor) handleClipboard(k native.EditorKeys) {
+	switch {
+	case k.Copy:
+		e.copySelection()
+	case k.Cut:
+		e.cutSelection()
+	case k.Paste:
+		e.model.Insert(native.ClipboardText())
+	}
 }
 
 // copySelection puts the current selection on the clipboard (a no-op when nothing is selected).

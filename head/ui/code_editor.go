@@ -88,7 +88,7 @@ func (e *codeEditor) Draw(width, height float32) {
 	native.InvisibleButton("##code-editor", width, height)
 	hovered := native.IsItemHovered()
 	m := e.metrics()
-	e.handleInput(ox, oy, width, height, m, hovered)
+	e.handleInput(ox, oy, height, m, hovered)
 	e.analyzer.Observe(e.model.Text(), time.Now()) // settles a few hundred ms after typing stops
 	e.render(ox, oy, width, height, m)
 	e.drawHoverDoc(ox, oy, m, hovered)
@@ -96,7 +96,7 @@ func (e *codeEditor) Draw(width, height float32) {
 
 // handleInput dispatches mouse, then (only when focused) scroll, keys and typed text, finally
 // keeping the caret on screen and advancing the blink clock.
-func (e *codeEditor) handleInput(ox, oy, width, height float32, m editorMetrics, hovered bool) {
+func (e *codeEditor) handleInput(ox, oy, height float32, m editorMetrics, hovered bool) {
 	e.handleMouse(ox, oy, m, hovered)
 	if !e.focused {
 		return
