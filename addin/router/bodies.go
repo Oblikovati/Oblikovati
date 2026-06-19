@@ -39,13 +39,36 @@ func bodyList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	}
 	var out wire.BodyListResult
 	for i, b := range part.SurfaceBodies().All() {
-		out.Bodies = append(out.Bodies, wire.BodyInfo{
-			Index: i, Solid: b.IsSolid(),
-			Faces: len(b.Faces()), Edges: len(b.Edges()), Vertices: len(b.Vertices()),
-			Shells: len(b.Shells()), Wires: len(b.Wires()),
-		})
+		out.Bodies = append(out.Bodies, bodyInfo(s, i, b))
 	}
 	return json.Marshal(out)
+}
+
+// bodyInfo builds a body's wire summary, including its display name and current visibility (#158).
+func bodyInfo(s *app.Session, index int, b *topo.Body) wire.BodyInfo {
+	return wire.BodyInfo{
+		Index: index, Name: bodyDisplayName(index), Solid: b.IsSolid(), Visible: s.BodyVisible(b),
+		Faces: len(b.Faces()), Edges: len(b.Edges()), Vertices: len(b.Vertices()),
+		Shells: len(b.Shells()), Wires: len(b.Wires()),
+	}
+}
+
+// bodyDisplayName is the body's browser name ("Solid1", …), index-derived until bodies carry
+// stored, renamable names (the #158 rename follow-up). Matches the model browser.
+func bodyDisplayName(index int) string { return fmt.Sprintf("Solid%d", index+1) }
+
+// bodySetVisible shows or hides one body of the active part (#158); the renderer reads the flag.
+func bodySetVisible(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.BodySetVisibleArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	b, err := resolveBody(s, in.BodyIndex)
+	if err != nil {
+		return nil, err
+	}
+	s.SetBodyVisible(b, in.Visible)
+	return json.Marshal(wire.BodyInfoResult{Body: bodyInfo(s, in.BodyIndex, b)})
 }
 
 // bodyShells serves wire.MethodBodyShells.
