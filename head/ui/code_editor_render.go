@@ -8,11 +8,12 @@ import (
 	"strconv"
 
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/script/console/lualex"
 	"oblikovati.org/script/console/textbuf"
 )
 
 // Editor palette. The editor draws its own background so its contrast is stable regardless of
-// the app theme; Phase 3 will route these through the theme token system (ADR-0021).
+// the app theme; routing these through the theme token system (ADR-0021) is a follow-up.
 var (
 	colEditorBg    = [4]float32{0.12, 0.12, 0.14, 1}
 	colEditorText  = [4]float32{0.86, 0.86, 0.88, 1}
@@ -22,6 +23,26 @@ var (
 	colSelection   = [4]float32{0.26, 0.45, 0.78, 0.45}
 	colCaret       = [4]float32{0.92, 0.92, 0.97, 1}
 )
+
+// syntaxPalette maps each token class to its colour — a conventional dark code-editor scheme
+// (keywords magenta, strings amber, numbers green, comments grey, builtins cyan).
+var syntaxPalette = map[lualex.Kind][4]float32{
+	lualex.KindKeyword:  {0.80, 0.47, 0.85, 1},
+	lualex.KindBuiltin:  {0.36, 0.72, 0.79, 1},
+	lualex.KindString:   {0.83, 0.66, 0.40, 1},
+	lualex.KindNumber:   {0.60, 0.80, 0.50, 1},
+	lualex.KindComment:  {0.42, 0.46, 0.42, 1},
+	lualex.KindOperator: {0.74, 0.74, 0.80, 1},
+}
+
+// tokenColor returns the colour for a token kind, defaulting to the plain text colour for
+// identifiers (and any unmapped kind).
+func tokenColor(k lualex.Kind) [4]float32 {
+	if c, ok := syntaxPalette[k]; ok {
+		return c
+	}
+	return colEditorText
+}
 
 // render draws the editor: background, current-line highlight, selection, text, gutter, caret —
 // all clipped to the editor rectangle so scrolled content never bleeds past the viewport.
@@ -47,11 +68,35 @@ func (e *codeEditor) colX(ox float32, col int, m editorMetrics) float32 {
 	return ox + m.gutterW + float32(col)*m.charW
 }
 
-// drawText renders each visible line's source in the fixed-width face. Phase 3 replaces the
-// single colour with per-token highlighting from the lualex tokenizer.
+// drawText renders each visible line's source with per-token syntax highlighting. The lualex
+// State threads across lines (so a long string/comment opened above colours correctly), so the
+// scan starts from the top of the buffer up to the first visible line, then draws forward.
 func (e *codeEditor) drawText(ox, oy float32, m editorMetrics, first, last int) {
+	st := e.startState(first)
 	for i := first; i <= last; i++ {
-		native.DrawTextMono(ox+m.gutterW, e.lineY(oy, i, m), e.model.Line(i), colEditorText)
+		line := e.model.Line(i)
+		toks, next := lualex.TokenizeLine(line, st)
+		e.drawTokens(ox, e.lineY(oy, i, m), m, line, toks)
+		st = next
+	}
+}
+
+// startState returns the tokenizer State at the top of line `first` by scanning every earlier
+// line. This is O(first) per frame — negligible for an interactive console script.
+func (e *codeEditor) startState(first int) lualex.State {
+	var st lualex.State
+	for i := 0; i < first; i++ {
+		_, st = lualex.TokenizeLine(e.model.Line(i), st)
+	}
+	return st
+}
+
+// drawTokens draws one line's coloured token spans (whitespace between tokens is left as the
+// editor background).
+func (e *codeEditor) drawTokens(ox, y float32, m editorMetrics, line string, toks []lualex.Token) {
+	r := []rune(line)
+	for _, t := range toks {
+		native.DrawTextMono(e.colX(ox, t.Start, m), y, string(r[t.Start:t.End]), tokenColor(t.Kind))
 	}
 }
 
