@@ -122,7 +122,7 @@ func (s *Session) BodyVisible(body *topo.Body) bool {
 	if body == nil {
 		return false
 	}
-	return !s.hiddenBodyKeys[string(body.ReferenceKey())]
+	return !s.activeHiddenBodyKeys()[string(body.ReferenceKey())]
 }
 
 // SetBodyVisible updates the browser-driven display state for one body.
@@ -130,12 +130,30 @@ func (s *Session) SetBodyVisible(body *topo.Body, visible bool) {
 	if body == nil {
 		return
 	}
+	keys := s.activeHiddenBodyKeys()
 	key := string(body.ReferenceKey())
 	if visible {
-		delete(s.hiddenBodyKeys, key)
+		delete(keys, key)
 		return
 	}
-	s.hiddenBodyKeys[key] = true
+	keys[key] = true
+}
+
+// activeHiddenBodyKeys returns the hidden-body set for the active document, creating it on first
+// use; with no active document it returns the scratch set. Body visibility is per-document view
+// state (#1105): a single session-wide map leaked one document's hidden bodies into another's
+// viewport and never released them on close — the same class of bug as the client-graphics store.
+func (s *Session) activeHiddenBodyKeys() map[string]bool {
+	d := s.ActiveDocument()
+	if d == nil {
+		return s.hiddenBodyKeys
+	}
+	keys, ok := s.hiddenBodyKeysByDoc[d.ID()]
+	if !ok {
+		keys = map[string]bool{}
+		s.hiddenBodyKeysByDoc[d.ID()] = keys
+	}
+	return keys
 }
 
 // ToggleBodyVisibility flips the browser-driven display state for one body.
