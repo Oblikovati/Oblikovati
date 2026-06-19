@@ -90,13 +90,17 @@ func (s *AssignmentStore) EffectiveAppearance(look AssetLookup, bodyKey, faceKey
 	if a := apprOrNil(look, s.bodyAppearance[bodyKey]); a != nil {
 		return a
 	}
+	// An explicit PART-level appearance override wins over the assigned material's own
+	// appearance — otherwise assigning a material (e.g. via an add-in) would make a later
+	// "set appearance" no-op (the grey-appearance bug, #1103). Material appearance is the
+	// fallback when no explicit override is set.
+	if a := apprOrNil(look, s.partAppearance); a != nil {
+		return a
+	}
 	if m, ok := s.EffectiveMaterial(look, bodyKey); ok {
 		if a := apprOrNil(look, m.AppearanceID()); a != nil {
 			return a
 		}
-	}
-	if a := apprOrNil(look, s.partAppearance); a != nil {
-		return a
 	}
 	return look.DefaultAppearance()
 }

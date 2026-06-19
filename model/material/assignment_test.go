@@ -65,3 +65,22 @@ func TestSetEmptyClearsAssignment(t *testing.T) {
 		t.Errorf("empty id did not clear the assignment: %v", st.BodyMaterials())
 	}
 }
+
+// TestPartAppearanceOverrideBeatsMaterialAppearance locks the #1103 precedence fix: an explicit
+// PART-level appearance override wins over the assigned material's own appearance. Before the fix
+// the material appearance (step 3) was checked before the part override (step 4), so assigning a
+// material (e.g. from an add-in) made a later "set appearance" a silent no-op (rendered grey).
+func TestPartAppearanceOverrideBeatsMaterialAppearance(t *testing.T) {
+	lib := NewLibrary()
+	st := NewAssignmentStore()
+	st.SetPartMaterial("steel") // material default → "steel" appearance
+	st.SetPartAppearance("oak") // explicit part-level override
+	if got := st.EffectiveAppearance(lib, "body", ""); got.ID() != "oak" {
+		t.Errorf("part appearance override = %q, want \"oak\" (override must beat the material appearance)", got.ID())
+	}
+	// Clearing the override falls back to the material's appearance.
+	st.SetPartAppearance("")
+	if got := st.EffectiveAppearance(lib, "body", ""); got.ID() != "steel" {
+		t.Errorf("after clearing the override, appearance = %q, want the material's \"steel\"", got.ID())
+	}
+}
