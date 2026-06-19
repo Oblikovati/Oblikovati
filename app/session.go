@@ -50,6 +50,7 @@ type Session struct {
 	prefsStore           userprefs.Store        // persists prefs to the user config dir (nil ⇒ in-session only)
 	bus                  *event.Bus
 	selection            *Selection
+	highlightSets        *HighlightSets // named, colored emphasis groups for add-ins (#157)
 	tool                 *ToolInstance
 	picker               Picker
 	regionPicker         RegionPicker      // resolves a box-select rectangle (nil ⇒ box-select disabled)

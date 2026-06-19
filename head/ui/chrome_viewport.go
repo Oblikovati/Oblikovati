@@ -537,6 +537,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, threadOverlay(s)...)
 	list.Items = append(list.Items, toolHoverHighlight(s)...)
 	list.Items = append(list.Items, toolSelectedHighlight(s)...)
+	list.Items = append(list.Items, highlightSetItems(s)...)
 	list.Items = append(list.Items, revolveCenterlineHighlight(s)...)
 	list.Items = append(list.Items, activeToolPreviewItems(s)...)
 	return list
