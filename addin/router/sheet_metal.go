@@ -92,7 +92,7 @@ func applyStyleEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Rul
 		return err
 	}
 	if in.MinimumGap != "" {
-		gap, err := part.Units().Parse(in.MinimumGap, param.Length)
+		gap, err := resolveQuantity(part, in.MinimumGap, param.Length)
 		if err != nil {
 			return fmt.Errorf("sheetMetal minimumGap %q: %w", in.MinimumGap, err)
 		}
@@ -118,7 +118,7 @@ func applyReliefEdits(part *compdef.PartComponentDefinition, rule *sheetmetal.Ru
 		if e.expr == "" {
 			continue
 		}
-		v, err := part.Units().Parse(e.expr, param.Length)
+		v, err := resolveQuantity(part, e.expr, param.Length)
 		if err != nil {
 			return fmt.Errorf("sheetMetal relief size %q: %w", e.expr, err)
 		}
@@ -156,13 +156,13 @@ func sheetMetalBendAllowance(s *app.Session, raw json.RawMessage) (json.RawMessa
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	angle, err := part.Units().Parse(in.Angle, param.Angle)
+	angle, err := resolveQuantity(part, in.Angle, param.Angle)
 	if err != nil {
 		return nil, fmt.Errorf("sheetMetal bendAllowance angle %q: %w", in.Angle, err)
 	}
 	radius := 0.0
 	if in.Radius != "" {
-		r, err := part.Units().Parse(in.Radius, param.Length)
+		r, err := resolveQuantity(part, in.Radius, param.Length)
 		if err != nil {
 			return nil, fmt.Errorf("sheetMetal bendAllowance radius %q: %w", in.Radius, err)
 		}

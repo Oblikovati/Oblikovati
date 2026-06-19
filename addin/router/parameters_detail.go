@@ -247,7 +247,7 @@ func toleranceOperand(part *compdef.PartComponentDefinition, p *param.Parameter,
 	if expr == "" {
 		return 0, fmt.Errorf("parameters.setTolerance: %s value is required for this mode", field)
 	}
-	q, err := part.Units().Parse(expr, p.Unit())
+	q, err := resolveQuantity(part, expr, p.Unit())
 	if err != nil {
 		return 0, fmt.Errorf("parameters.setTolerance: %s %q: %w", field, expr, err)
 	}

@@ -63,7 +63,7 @@ func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.Dimen
 		dim.SetDriven(in.Driven)
 	}
 	if in.Expression != "" {
-		v, err := part.Units().Parse(in.Expression, dimensionUnit(dim.Kind()))
+		v, err := resolveQuantity(part, in.Expression, dimensionUnit(dim.Kind()))
 		if err != nil {
 			return nil, fmt.Errorf("sketch.driveDimension: value %q: %w", in.Expression, err)
 		}

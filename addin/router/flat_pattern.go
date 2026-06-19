@@ -331,7 +331,7 @@ func orientationFromArgs(part *compdef.PartComponentDefinition, in wire.AddOrien
 		}
 		at = parsed
 	}
-	rotation, err := part.Units().Parse(fmt.Sprintf("%g deg", in.AlignmentRotation), param.Angle)
+	rotation, err := resolveQuantity(part, fmt.Sprintf("%g deg", in.AlignmentRotation), param.Angle)
 	if err != nil {
 		return nil, fmt.Errorf("flatPattern: alignmentRotation %g: %w", in.AlignmentRotation, err)
 	}

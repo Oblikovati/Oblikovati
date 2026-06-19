@@ -78,7 +78,7 @@ func rotate3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, ents [
 	if err != nil {
 		return err
 	}
-	a, err := part.Units().Parse(in.Angle, param.Angle)
+	a, err := resolveQuantity(part, in.Angle, param.Angle)
 	if err != nil {
 		return fmt.Errorf("sketch3d.transform: angle %q: %w", in.Angle, err)
 	}
