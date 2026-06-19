@@ -28,6 +28,31 @@ func TestControlPointSplineKind(t *testing.T) {
 	}
 }
 
+// TestSlotPlacementVariants (#149): the by-overall straight slot and the by-center-point arc
+// slot (sweep angle via endAngle) create closed profiles over the wire.
+func TestSlotPlacementVariants(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var res wire.AddSketchEntityResult
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"slot","variant":"overall","points":[[0,0],[8,0]],"width":"2 cm"}`, &res)
+	if len(res.EntityIDs) != 4 {
+		t.Errorf("by-overall slot = %d entities, want 4", len(res.EntityIDs))
+	}
+
+	var prof wire.ListProfilesResult
+	call(t, r, s, "sketch.profiles", `{"sketchIndex":0}`, &prof)
+	if len(prof.Profiles) < 1 {
+		t.Errorf("by-overall slot profiles = %d, want >= 1", len(prof.Profiles))
+	}
+
+	// Arc slot by center point: center + start + a sweep angle in endAngle.
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"slot","variant":"arcCenterPoint","points":[[20,0],[25,0]],"width":"1 cm","endAngle":"90 deg"}`, &res)
+	if len(res.EntityIDs) != 4 {
+		t.Errorf("arc-center-point slot = %d entities, want 4", len(res.EntityIDs))
+	}
+}
+
 // TestTangentDistanceDimension (#152): the distance from a line to a circle's near and far
 // tangent point. With the line on y=0 and the circle centered at (0,5) r=2, near = 5-2 = 3,
 // far = 5+2 = 7.

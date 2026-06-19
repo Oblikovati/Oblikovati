@@ -199,6 +199,48 @@ func (s *Sketch) AddArcSlot(center, start, end math.Point2, width math.Scalar, c
 	}, nil
 }
 
+// AddStraightSlotByOverall builds a straight slot whose end0/end1 are the OUTER cap tips
+// (the overall extents, Inventor AddStraightSlotByOverall): it shrinks each end inward by
+// width/2 to the cap centers and delegates to AddStraightSlot (#149).
+func (s *Sketch) AddStraightSlotByOverall(end0, end1 math.Point2, width math.Scalar) ([]Entity, error) {
+	d := end0.VectorTo(end1)
+	if d.Length() <= float64(width) {
+		return nil, fmt.Errorf("slot by overall: overall length %.4g must exceed the width %.4g", d.Length(), float64(width))
+	}
+	du := d.Scale(1 / d.Length()).Scale(float64(width / 2))
+	return s.AddStraightSlot(end0.TranslateBy(du), end1.TranslateBy(du.Negate()), width)
+}
+
+// AddStraightSlotBySlotCenter builds a straight slot from its center point and one end cap
+// center; the other cap is the reflection of endCenter through slotCenter (Inventor
+// AddStraightSlotBySlotCenter, #149).
+func (s *Sketch) AddStraightSlotBySlotCenter(slotCenter, endCenter math.Point2, width math.Scalar) ([]Entity, error) {
+	other := math.P2(2*slotCenter.X-endCenter.X, 2*slotCenter.Y-endCenter.Y)
+	return s.AddStraightSlot(other, endCenter, width)
+}
+
+// AddArcSlotByCenterPoint builds an arc slot from the arc center, the start cap center, and a
+// signed sweep angle in radians: the end cap is start rotated about center by sweep (Inventor
+// AddArcSlotByCenterPointArc, #149).
+func (s *Sketch) AddArcSlotByCenterPoint(center, start math.Point2, sweep, width math.Scalar) ([]Entity, error) {
+	v := center.VectorTo(start)
+	cos, sin := stdmath.Cos(float64(sweep)), stdmath.Sin(float64(sweep))
+	end := center.TranslateBy(math.V2(v.X*math.Scalar(cos)-v.Y*math.Scalar(sin), v.X*math.Scalar(sin)+v.Y*math.Scalar(cos)))
+	return s.AddArcSlot(center, start, end, width, sweep > 0)
+}
+
+// AddArcSlotByThreePoints builds an arc slot whose centerline passes through three points on
+// it (start, a mid point, end); the arc center is their circumcenter, the sweep direction from
+// the points' turn (Inventor AddArcSlotByThreePointArc, #149).
+func (s *Sketch) AddArcSlotByThreePoints(p0, p1, p2 math.Point2, width math.Scalar) ([]Entity, error) {
+	center, _, err := circumcircle(p0, p1, p2)
+	if err != nil {
+		return nil, fmt.Errorf("arc slot by three points: %w", err)
+	}
+	turn := (p1.X-p0.X)*(p2.Y-p0.Y) - (p1.Y-p0.Y)*(p2.X-p0.X) // >0 ⇒ p0→p1→p2 turns left (ccw)
+	return s.AddArcSlot(center, p0, p2, width, turn > 0)
+}
+
 // polygonVertices returns the n vertex positions. For circumscribed polygons the vertex
 // radius is the apothem / cos(π/n) and the ring is rotated half a step so the through
 // point lands on an edge midpoint.
