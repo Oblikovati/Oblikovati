@@ -279,16 +279,26 @@ func (g *GeometricConstraints) AddTangent(l *Line, c CircularCurve) *TangentCons
 }
 
 func (t *TangentConstraint) Residuals() []float64 {
-	dx, dy := lineDir(t.L)
-	length := stdmath.Hypot(dx, dy)
-	if length == 0 {
+	signed, ok := signedCenterToLine(t.L, t.C)
+	if !ok {
 		return []float64{t.C.CurveRadius()} // degenerate line: cannot be tangent
 	}
 	// Unsigned perpendicular distance from the center to the line equals the
 	// radius at tangency. (The center may lie on either side of the line.)
-	ctr := t.C.CenterPoint()
-	signed := (dx*(ctr.Y-t.L.A.Y) - dy*(ctr.X-t.L.A.X)) / length
 	return []float64{stdmath.Abs(signed) - t.C.CurveRadius()}
+}
+
+// signedCenterToLine returns the signed perpendicular distance from a circular curve's center
+// to the infinite line through l, and false for a degenerate (zero-length) line. Shared by the
+// tangent constraint and the tangent-distance dimension (#152).
+func signedCenterToLine(l *Line, c CircularCurve) (float64, bool) {
+	dx, dy := lineDir(l)
+	length := stdmath.Hypot(dx, dy)
+	if length == 0 {
+		return 0, false
+	}
+	ctr := c.CenterPoint()
+	return (dx*(ctr.Y-l.A.Y) - dy*(ctr.X-l.A.X)) / length, true
 }
 
 func (t *TangentConstraint) Variables() []*math.Scalar {

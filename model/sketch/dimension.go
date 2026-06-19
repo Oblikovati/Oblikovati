@@ -28,6 +28,8 @@ const (
 	PointPlaneDimKind3D // signed distance from a 3D point to an origin plane
 	// Appended for issue #144 (do not reorder).
 	SplineLengthDimKind3D // a 3D spline's sampled arc length
+	// Appended for issue #152 (do not reorder).
+	TangentDistanceDim // distance from a line to a circle/arc's near/far tangent point
 )
 
 // ConstraintLimits bounds a dimension's value for drive/animation. When Enabled,
@@ -67,7 +69,12 @@ type DimensionConstraint struct {
 	measure func() float64
 	vars    []*math.Scalar
 	refs    []Entity // the dimensioned geometry (points/lines/arcs), for editing + serialization
+	farSide bool     // tangentDistance only: dimension to the far tangent point (#152)
 }
+
+// FarSide reports whether a tangent-distance dimension measures to the far tangent point
+// (#152); false (the near side) for every other kind.
+func (d *DimensionConstraint) FarSide() bool { return d.farSide }
 
 // Refs returns the geometry the dimension measures (points for a distance, the line
 // pair for an angle, the circle for a radius, …). It is what serialization records so
@@ -178,6 +185,31 @@ func (dc *DimensionConstraints) AddAngle(l1, l2 *Line, expression string) (*Dime
 		return stdmath.Atan2(stdmath.Abs(d1x*d2y-d1y*d2x), d1x*d2x+d1y*d2y)
 	}
 	return dc.create(AngleDim, expression, []Entity{l1, l2}, measure, lineVars(l1, l2))
+}
+
+// AddTangentDistance dimensions the distance from a line to a circle/arc measured to its
+// tangent point: |perpendicular distance from the center to the line| ∓ radius — the near
+// side (default) subtracts the radius, the far side adds it (#152). The solver drives the
+// line's endpoints and the curve's center/radius (circularVars) to satisfy the target.
+func (dc *DimensionConstraints) AddTangentDistance(l *Line, c CircularCurve, farSide bool, expression string) (*DimensionConstraint, error) {
+	measure := func() float64 {
+		signed, ok := signedCenterToLine(l, c)
+		if !ok {
+			return 0
+		}
+		d := stdmath.Abs(signed)
+		if farSide {
+			return d + c.CurveRadius()
+		}
+		return d - c.CurveRadius()
+	}
+	vars := append([]*math.Scalar{&l.A.X, &l.A.Y, &l.B.X, &l.B.Y}, c.circularVars()...)
+	d, err := dc.create(TangentDistanceDim, expression, []Entity{l, c}, measure, vars)
+	if err != nil {
+		return nil, err
+	}
+	d.farSide = farSide
+	return d, nil
 }
 
 // AddArcLength dimensions an arc's length (radius × swept angle).
