@@ -71,7 +71,7 @@ func (m *AddInManager) LoadBehavior(id string) types.AddInLoadBehavior {
 // activate the add-in on future startups. It does not deactivate a running add-in.
 func (m *AddInManager) SetLoadBehavior(id string, b types.AddInLoadBehavior) error {
 	if _, ok := m.addins[id]; !ok {
-		return fmt.Errorf("app: no add-in %q", id)
+		return fmt.Errorf(errNoAddIn, id)
 	}
 	m.behaviors[id] = b
 	if m.behaviorStore == nil {
@@ -97,7 +97,7 @@ func (m *AddInManager) behaviorSnapshot() map[string]types.AddInLoadBehavior {
 func (m *AddInManager) Describe(id string) (wire.AddInInfo, error) {
 	a, ok := m.addins[id]
 	if !ok {
-		return wire.AddInInfo{}, fmt.Errorf("app: no add-in %q", id)
+		return wire.AddInInfo{}, fmt.Errorf(errNoAddIn, id)
 	}
 	info := wire.AddInInfo{
 		ID:            id,
@@ -142,7 +142,7 @@ func addInHasAutomation(a AddIn) bool {
 func (m *AddInManager) CallAutomation(id, method string, args []byte) ([]byte, error) {
 	a, ok := m.addins[id]
 	if !ok {
-		return nil, fmt.Errorf("app: no add-in %q", id)
+		return nil, fmt.Errorf(errNoAddIn, id)
 	}
 	if !m.active[id] {
 		return nil, fmt.Errorf("app: add-in %q is not active; automation needs an active add-in", id)

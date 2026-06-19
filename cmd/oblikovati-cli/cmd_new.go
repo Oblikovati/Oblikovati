@@ -35,7 +35,7 @@ func cmdNew(args []string, out io.Writer) error {
 	}
 	t, err := doc.ParseDocumentType(operands[0])
 	if err != nil {
-		return fmt.Errorf("new: %w", err)
+		return fmt.Errorf(errNew, err)
 	}
 	path := withDocExt(operands[1], t)
 	ws := doc.NewWorkspace(persistence.NewPackageStore())
@@ -60,13 +60,13 @@ func createDocument(ws *doc.Workspace, t doc.DocumentType, path string, seed boo
 		}
 		d, err := ws.Add(t, path, true)
 		if err != nil {
-			return nil, fmt.Errorf("new: %w", err)
+			return nil, fmt.Errorf(errNew, err)
 		}
 		return d, nil
 	}
 	d, err := compdef.AddPart(ws, path, true)
 	if err != nil {
-		return nil, fmt.Errorf("new: %w", err)
+		return nil, fmt.Errorf(errNew, err)
 	}
 	if seed {
 		seedPart(d, out)

@@ -50,7 +50,7 @@ func (m *AddInManager) Register(a AddIn) error {
 func (m *AddInManager) Activate(s *Session, id string) error {
 	a, ok := m.addins[id]
 	if !ok {
-		return fmt.Errorf("app: no add-in %q", id)
+		return fmt.Errorf(errNoAddIn, id)
 	}
 	if m.behaviors[id] == LoadDisabled {
 		return fmt.Errorf("app: add-in %q is disabled; set its load behavior to startup or demand first", id)
@@ -83,7 +83,7 @@ func (m *AddInManager) Deactivate(s *Session, id string) error {
 // its commands and event handlers would leak — so callers Deactivate first.
 func (m *AddInManager) Unregister(id string) error {
 	if _, ok := m.addins[id]; !ok {
-		return fmt.Errorf("app: no add-in %q", id)
+		return fmt.Errorf(errNoAddIn, id)
 	}
 	if m.active[id] {
 		return fmt.Errorf("app: add-in %q is active; deactivate before unregister", id)

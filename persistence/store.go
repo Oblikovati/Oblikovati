@@ -121,7 +121,7 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	}
 	manifest, err := pkg.Manifest()
 	if err != nil {
-		return nil, fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
+		return nil, fmt.Errorf(errLoad, fullDocumentName, err)
 	}
 	d, err := doc.Restore(doc.DocumentType(manifest.DocumentType), fullDocumentName, manifest.DisplayName)
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	}
 	d.SetSubType(doc.SubTypeID(manifest.SubType)) // restore the flavor (M05-F15)
 	if err := restoreIdentity(d, pkg); err != nil {
-		return nil, fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
+		return nil, fmt.Errorf(errLoad, fullDocumentName, err)
 	}
 	// Resources must be restored BEFORE the recipe is applied, so a feature that re-derives
 	// geometry from an embedded resource (e.g. an imported body) can read its bytes (ADR-0031).
@@ -157,7 +157,7 @@ func applyModelRecipe(d *doc.Document, pkg *Package, fullDocumentName string) er
 		return fmt.Errorf("persistence: load %q: file has a model recipe but %v content cannot restore it (is its package imported?)", fullDocumentName, d.DocumentType())
 	}
 	if err := rc.ApplyRecipe(model); err != nil {
-		return fmt.Errorf("persistence: load %q: %w", fullDocumentName, err)
+		return fmt.Errorf(errLoad, fullDocumentName, err)
 	}
 	return nil
 }

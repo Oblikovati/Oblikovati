@@ -19,7 +19,7 @@ import (
 // true, per the reference ExpressionList); SetCustomOrder(false) re-enables sorting.
 func (p *Parameter) SetExpressionList(list []string, allowCustom bool) error {
 	if !p.kind.Editable() {
-		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+		return fmt.Errorf(errReadOnly, p.kind, p.name)
 	}
 	p.exprList = append([]string(nil), list...)
 	p.allowCustom = allowCustom && len(list) > 0

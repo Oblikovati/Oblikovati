@@ -115,11 +115,11 @@ func validateDefinitionIndices(def SurfaceBodyDefinition) []DefinitionIssue {
 	var issues []DefinitionIssue
 	for i, e := range def.Edges {
 		if e.StartVertex < 0 || e.StartVertex >= len(def.Vertices) || e.EndVertex < 0 || e.EndVertex >= len(def.Vertices) {
-			issues = issuef(issues, fmt.Sprintf("edges[%d]", i),
+			issues = issuef(issues, fmt.Sprintf(edgeIssueLabel, i),
 				"vertex indices (%d, %d) out of range (have %d vertices)", e.StartVertex, e.EndVertex, len(def.Vertices))
 		}
 		if e.Curve == nil {
-			issues = issuef(issues, fmt.Sprintf("edges[%d]", i), "edge has no curve")
+			issues = issuef(issues, fmt.Sprintf(edgeIssueLabel, i), "edge has no curve")
 		}
 	}
 	issues = append(issues, validateFaceIndices(def)...)
@@ -190,7 +190,7 @@ func compileEdges(bld *topo.Builder, def SurfaceBodyDefinition, verts []*topo.Ve
 		s, t := e.Curve.PointAt(lo), e.Curve.PointAt(hi)
 		sv, ev := verts[e.StartVertex].Point(), verts[e.EndVertex].Point()
 		if float64(s.DistanceTo(sv)) > endTol || float64(t.DistanceTo(ev)) > endTol {
-			issues = issuef(issues, fmt.Sprintf("edges[%d]", i),
+			issues = issuef(issues, fmt.Sprintf(edgeIssueLabel, i),
 				"curve ends %v→%v do not meet vertices %v→%v (tolerance %g)", s, t, sv, ev, endTol)
 			continue
 		}

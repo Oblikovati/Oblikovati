@@ -139,7 +139,7 @@ func applyParallel(s *Session, ents []sketch.Entity) error {
 		s.geom().AddParallel(l[0], l[1])
 		return s.afterConstraint()
 	}
-	return errNeed("parallel", "two lines")
+	return errNeed("parallel", needTwoLines)
 }
 
 func applyPerpendicular(s *Session, ents []sketch.Entity) error {
@@ -147,7 +147,7 @@ func applyPerpendicular(s *Session, ents []sketch.Entity) error {
 		s.geom().AddPerpendicular(l[0], l[1])
 		return s.afterConstraint()
 	}
-	return errNeed("perpendicular", "two lines")
+	return errNeed("perpendicular", needTwoLines)
 }
 
 func applyCollinear(s *Session, ents []sketch.Entity) error {
@@ -155,7 +155,7 @@ func applyCollinear(s *Session, ents []sketch.Entity) error {
 		s.geom().AddCollinear(l[0], l[1])
 		return s.afterConstraint()
 	}
-	return errNeed("collinear", "two lines")
+	return errNeed("collinear", needTwoLines)
 }
 
 func applyEqual(s *Session, ents []sketch.Entity) error {

@@ -145,7 +145,7 @@ func (g *WorkGeometry) plane(ref WorkRef) (sketch.Plane, error) {
 	}
 	if i, ok := userIndex(ref, "plane"); ok {
 		if i < 0 || i >= g.planes.Count() {
-			return sketch.Plane{}, fmt.Errorf("work geometry: no work plane %q", ref)
+			return sketch.Plane{}, fmt.Errorf(errNoWorkPlane, ref)
 		}
 		return g.planes.Item(i).Plane(), nil
 	}
@@ -167,7 +167,7 @@ func (g *WorkGeometry) ResolvePlaneRef(ref WorkRef) (sketch.Plane, error) { retu
 func (g *WorkGeometry) WorkPlaneByRef(ref WorkRef) (*WorkPlane, error) {
 	if i, ok := userIndex(ref, "plane"); ok {
 		if i < 0 || i >= g.planes.Count() {
-			return nil, fmt.Errorf("work geometry: no work plane %q", ref)
+			return nil, fmt.Errorf(errNoWorkPlane, ref)
 		}
 		return g.planes.Item(i), nil
 	}
@@ -263,7 +263,7 @@ func (g *WorkGeometry) validateRedefineRef(ref WorkRef, self WorkRef) error {
 func (g *WorkGeometry) userFeatureRefs(ref WorkRef) (refs []WorkRef, isUser bool, err error) {
 	if i, ok := userIndex(ref, "plane"); ok {
 		if i < 0 || i >= g.planes.Count() {
-			return nil, true, fmt.Errorf("work geometry: no work plane %q", ref)
+			return nil, true, fmt.Errorf(errNoWorkPlane, ref)
 		}
 		return g.planes.Item(i).def.refs(), true, nil
 	}

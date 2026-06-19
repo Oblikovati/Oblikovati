@@ -63,7 +63,7 @@ func (ps *Parameters) AddGroup(internalName, displayName, clientID string) (*Par
 // group goes.
 func (ps *Parameters) DeleteGroup(key string, deleteParameters bool) error {
 	if _, ok := ps.GroupByKey(key); !ok {
-		return fmt.Errorf("param: no group named %q", key)
+		return fmt.Errorf(errNoGroup, key)
 	}
 	members := ps.GroupMembers(key)
 	for _, id := range members {
@@ -90,10 +90,10 @@ func (ps *Parameters) deleteMembers(members []ID) {
 // is untouched.
 func (ps *Parameters) AddToGroup(id ID, key string) error {
 	if _, ok := ps.byID[id]; !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
+		return fmt.Errorf(errNoParameter, id)
 	}
 	if _, ok := ps.GroupByKey(key); !ok {
-		return fmt.Errorf("param: no group named %q", key)
+		return fmt.Errorf(errNoGroup, key)
 	}
 	if ps.memberships[id] == nil {
 		ps.memberships[id] = map[string]bool{}
@@ -106,10 +106,10 @@ func (ps *Parameters) AddToGroup(id ID, key string) error {
 // and its other memberships are kept.
 func (ps *Parameters) RemoveFromGroup(id ID, key string) error {
 	if _, ok := ps.byID[id]; !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
+		return fmt.Errorf(errNoParameter, id)
 	}
 	if _, ok := ps.GroupByKey(key); !ok {
-		return fmt.Errorf("param: no group named %q", key)
+		return fmt.Errorf(errNoGroup, key)
 	}
 	delete(ps.memberships[id], key)
 	return nil
@@ -118,7 +118,7 @@ func (ps *Parameters) RemoveFromGroup(id ID, key string) error {
 // RemoveFromAllGroups detaches a parameter from every group it belongs to.
 func (ps *Parameters) RemoveFromAllGroups(id ID) error {
 	if _, ok := ps.byID[id]; !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
+		return fmt.Errorf(errNoParameter, id)
 	}
 	delete(ps.memberships, id)
 	return nil
@@ -162,7 +162,7 @@ func (ps *Parameters) dropGroup(key string) {
 func (ps *Parameters) CopyToUser(id ID) (*Parameter, error) {
 	src, ok := ps.byID[id]
 	if !ok {
-		return nil, fmt.Errorf("param: no parameter with id %d", id)
+		return nil, fmt.Errorf(errNoParameter, id)
 	}
 	copyParam, err := ps.addCopyValue(src)
 	if err != nil {

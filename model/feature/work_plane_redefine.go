@@ -141,17 +141,17 @@ func (w *WorkPlane) tangentSlots() []WorkRefSlot {
 	case *pointAndTangentPlaneDef:
 		return []WorkRefSlot{
 			w.slot("Point", WorkRefPoint, func(r WorkRef) { d.point = r }),
-			w.slot("Tangent face", WorkRefFace, func(r WorkRef) { d.face = r }),
+			w.slot(labelTangentFace, WorkRefFace, func(r WorkRef) { d.face = r }),
 		}
 	case *planeAndTangentPlaneDef:
 		return []WorkRefSlot{
 			w.slot("Parallel plane", WorkRefPlane, func(r WorkRef) { d.base = r }),
-			w.slot("Tangent face", WorkRefFace, func(r WorkRef) { d.face = r }),
+			w.slot(labelTangentFace, WorkRefFace, func(r WorkRef) { d.face = r }),
 		}
 	case *lineAndTangentPlaneDef:
 		return []WorkRefSlot{
 			w.slot("Line", WorkRefAxis, func(r WorkRef) { d.line = r }),
-			w.slot("Tangent face", WorkRefFace, func(r WorkRef) { d.face = r }),
+			w.slot(labelTangentFace, WorkRefFace, func(r WorkRef) { d.face = r }),
 		}
 	default:
 		return nil

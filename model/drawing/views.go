@@ -445,7 +445,7 @@ func (vs *DrawingViews) PreviewProjected(baseName string, dir types.ProjectionDi
 func (vs *DrawingViews) EditBase(name string, orientation types.BaseViewOrientation, style types.DrawingViewStyle, scale, cx, cy float64) error {
 	v, ok := vs.ByName(name)
 	if !ok {
-		return fmt.Errorf("drawing: no view named %q", name)
+		return fmt.Errorf(errNoViewNamed, name)
 	}
 	v.orientation, v.style, v.scale, v.centerX, v.centerY = orientation, style, positiveScale(scale), cx, cy
 	vs.Recompute()
@@ -456,7 +456,7 @@ func (vs *DrawingViews) EditBase(name string, orientation types.BaseViewOrientat
 func (vs *DrawingViews) EditProjected(name string, dir types.ProjectionDirection, cx, cy float64) error {
 	v, ok := vs.ByName(name)
 	if !ok {
-		return fmt.Errorf("drawing: no view named %q", name)
+		return fmt.Errorf(errNoViewNamed, name)
 	}
 	v.direction, v.centerX, v.centerY = dir, cx, cy
 	vs.Recompute()
@@ -543,7 +543,7 @@ func (vs *DrawingViews) ByName(name string) (*DrawingView, bool) {
 // (projected/auxiliary/…), which have no parent left to derive from.
 func (vs *DrawingViews) Remove(name string) error {
 	if _, ok := vs.ByName(name); !ok {
-		return fmt.Errorf("drawing: no view named %q", name)
+		return fmt.Errorf(errNoViewNamed, name)
 	}
 	kept := vs.items[:0]
 	for _, v := range vs.items {

@@ -64,7 +64,7 @@ func (r *Representations) CaptureLOD(name string) LODRep {
 func (r *Representations) ActivateDesignView(id uint64) (DesignViewRep, error) {
 	d := r.designByID(id)
 	if d == nil {
-		return nil, fmt.Errorf("assembly: no design-view representation with id %d", id)
+		return nil, fmt.Errorf(errNoDesignViewRep, id)
 	}
 	d.apply(r.occs)
 	for _, o := range r.design {
@@ -78,7 +78,7 @@ func (r *Representations) ActivateDesignView(id uint64) (DesignViewRep, error) {
 func (r *Representations) ActivatePositional(id uint64) (PositionalRep, error) {
 	p := r.posByID(id)
 	if p == nil {
-		return nil, fmt.Errorf("assembly: no positional representation with id %d", id)
+		return nil, fmt.Errorf(errNoPositionalRep, id)
 	}
 	p.apply(r.cs)
 	solveOver(r.occs, r.positionalRelationships(p), true)
@@ -121,7 +121,7 @@ func (r *Representations) ActivateLOD(id uint64) (LODRep, error) {
 func (r *Representations) SetVisibility(repID uint64, occ *occurrence.Occurrence, visible bool) error {
 	d := r.designByID(repID)
 	if d == nil {
-		return fmt.Errorf("assembly: no design-view representation with id %d", repID)
+		return fmt.Errorf(errNoDesignViewRep, repID)
 	}
 	if visible {
 		delete(d.hidden, occ.Name())
@@ -135,7 +135,7 @@ func (r *Representations) SetVisibility(repID uint64, occ *occurrence.Occurrence
 func (r *Representations) SetAppearance(repID uint64, occ *occurrence.Occurrence, appearanceID string) error {
 	d := r.designByID(repID)
 	if d == nil {
-		return fmt.Errorf("assembly: no design-view representation with id %d", repID)
+		return fmt.Errorf(errNoDesignViewRep, repID)
 	}
 	if appearanceID == "" {
 		delete(d.appearance, occ.Name())
@@ -149,7 +149,7 @@ func (r *Representations) SetAppearance(repID uint64, occ *occurrence.Occurrence
 func (r *Representations) AddSection(repID uint64, plane types.SectionPlane) error {
 	d := r.designByID(repID)
 	if d == nil {
-		return fmt.Errorf("assembly: no design-view representation with id %d", repID)
+		return fmt.Errorf(errNoDesignViewRep, repID)
 	}
 	d.sections = append(d.sections, plane)
 	return nil
@@ -160,7 +160,7 @@ func (r *Representations) AddSection(repID uint64, plane types.SectionPlane) err
 func (r *Representations) SetPositionalOverride(repID, relationship uint64, isJoint bool, value float64) error {
 	p := r.posByID(repID)
 	if p == nil {
-		return fmt.Errorf("assembly: no positional representation with id %d", repID)
+		return fmt.Errorf(errNoPositionalRep, repID)
 	}
 	if isJoint {
 		p.jointValues[relationship] = value
@@ -174,7 +174,7 @@ func (r *Representations) SetPositionalOverride(repID, relationship uint64, isJo
 func (r *Representations) SetFlexible(repID uint64, occ *occurrence.Occurrence, flexible bool) error {
 	p := r.posByID(repID)
 	if p == nil {
-		return fmt.Errorf("assembly: no positional representation with id %d", repID)
+		return fmt.Errorf(errNoPositionalRep, repID)
 	}
 	p.flexible[occ.Name()] = flexible
 	return nil

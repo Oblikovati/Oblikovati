@@ -214,7 +214,7 @@ func applyFaceFillet(part *compdef.PartComponentDefinition, in edgeDressArgs) (j
 	if len(in.FaceRefsA) == 0 || len(in.FaceRefsB) == 0 {
 		return nil, errors.New("face fillet: both faceRefsA and faceRefsB are required")
 	}
-	r, err := lengthClosure(part, in.Radius, "fillet: radius")
+	r, err := lengthClosure(part, in.Radius, fieldFilletRadius)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func applyFilletFlat(part *compdef.PartComponentDefinition, in edgeDressArgs, co
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius or edgeSets)")
 	}
-	r, err := lengthClosure(part, in.Radius, "fillet: radius")
+	r, err := lengthClosure(part, in.Radius, fieldFilletRadius)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func filletSetRadii(part *compdef.PartComponentDefinition, a filletSetArgs, i in
 		return feature.FilletEdgeSet{}, fmt.Errorf("fillet: edgeSets[%d] needs radius OR startRadius+endRadius (got radius=%q start=%q end=%q)", i, a.Radius, a.StartRadius, a.EndRadius)
 	}
 	if hasConst {
-		r, err := lengthClosure(part, a.Radius, "fillet: radius")
+		r, err := lengthClosure(part, a.Radius, fieldFilletRadius)
 		return feature.FilletEdgeSet{Radius: r}, err
 	}
 	r0, err := lengthClosure(part, a.StartRadius, "fillet: startRadius")

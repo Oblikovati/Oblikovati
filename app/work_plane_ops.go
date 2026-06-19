@@ -129,7 +129,7 @@ func (s *Session) CreateMidplaneWorkPlane() (*feature.WorkPlane, error) {
 		return nil, errors.New("app: select two work planes to make a midplane between them")
 	}
 	wp := finishWorkPlane(part, part.WorkPlanes().AddByTwoPlanes(planes[0].Key(), planes[1].Key()))
-	s.recordEdit(part, "Work Plane")
+	s.recordEdit(part, labelWorkPlane)
 	return wp, nil
 }
 
@@ -142,7 +142,7 @@ func uniqueWorkPlaneName(planes *feature.WorkPlanes) string {
 		taken[planes.Item(i).Name()] = true
 	}
 	for n := 1; ; n++ {
-		if name := "Work Plane" + strconv.Itoa(n); !taken[name] {
+		if name := labelWorkPlane + strconv.Itoa(n); !taken[name] {
 			return name
 		}
 	}
@@ -212,7 +212,7 @@ func (s *Session) CreateThreePointWorkPlane() (*feature.WorkPlane, error) {
 		return nil, errors.New("app: select three points (datum points or model vertices) for a three-point plane")
 	}
 	wp := finishWorkPlane(part, part.WorkPlanes().AddByThreePoints(refs[0], refs[1], refs[2]))
-	s.recordEdit(part, "Work Plane")
+	s.recordEdit(part, labelWorkPlane)
 	return wp, nil
 }
 
@@ -228,7 +228,7 @@ func (s *Session) CreateNormalToAxisWorkPlane() (*feature.WorkPlane, error) {
 		return nil, errors.New("app: select an axis and a point for a normal-to-axis plane")
 	}
 	wp := finishWorkPlane(part, part.WorkPlanes().AddByNormalToCurve(axes[0].Key(), refs[0]))
-	s.recordEdit(part, "Work Plane")
+	s.recordEdit(part, labelWorkPlane)
 	return wp, nil
 }
 
@@ -245,7 +245,7 @@ func (s *Session) CreateTangentWorkPlane() (*feature.WorkPlane, error) {
 		return nil, errors.New("app: select a plane and a face for a tangent plane")
 	}
 	wp := finishWorkPlane(part, part.WorkPlanes().AddByPlaneAndTangent(base.Key(), feature.FaceRef(face.ReferenceKey())))
-	s.recordEdit(part, "Work Plane")
+	s.recordEdit(part, labelWorkPlane)
 	return wp, nil
 }
 

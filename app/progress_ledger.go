@@ -55,7 +55,7 @@ func (l *ProgressLedger) Begin(steps int, message string) (int, error) {
 func (l *ProgressLedger) Update(id, step int, message string) (cancelled bool, err error) {
 	bar, ok := l.bars[id]
 	if !ok {
-		return false, fmt.Errorf("app: no progress bar %d", id)
+		return false, fmt.Errorf(errNoProgressBar, id)
 	}
 	if step > bar.Steps {
 		step = bar.Steps
@@ -70,7 +70,7 @@ func (l *ProgressLedger) Update(id, step int, message string) (cancelled bool, e
 // End removes a bar.
 func (l *ProgressLedger) End(id int) error {
 	if _, ok := l.bars[id]; !ok {
-		return fmt.Errorf("app: no progress bar %d", id)
+		return fmt.Errorf(errNoProgressBar, id)
 	}
 	delete(l.bars, id)
 	for i, x := range l.order {
@@ -98,7 +98,7 @@ func (s *Session) Progress() *ProgressLedger { return s.progress }
 func (s *Session) CancelProgress(id int) error {
 	bar, ok := s.progress.bars[id]
 	if !ok {
-		return fmt.Errorf("app: no progress bar %d", id)
+		return fmt.Errorf(errNoProgressBar, id)
 	}
 	if bar.Cancelled {
 		return nil

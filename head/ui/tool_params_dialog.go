@@ -93,7 +93,7 @@ func drawToolChoice(c app.ChoiceParam) {
 	if cur >= 0 && cur < len(c.Options) {
 		preview = c.Options[cur]
 	}
-	if !native.BeginCombo("##tool-param-"+c.Label, preview) {
+	if !native.BeginCombo(toolParamPrefix+c.Label, preview) {
 		return
 	}
 	for i, opt := range c.Options {
@@ -109,7 +109,7 @@ func drawToolFloatParams(params app.ToolParams) {
 		propertyRow(f.Label)
 		native.SetNextItemWidth(propertyFieldWidth)
 		v := float32(f.Get())
-		if native.InputFloat("##tool-param-"+f.Label, &v) {
+		if native.InputFloat(toolParamPrefix+f.Label, &v) {
 			f.Set(float64(v))
 		}
 	}
@@ -120,7 +120,7 @@ func drawToolIntParams(params app.ToolParams) {
 		propertyRow(n.Label)
 		native.SetNextItemWidth(propertyFieldWidth)
 		v := int32(n.Get())
-		if native.InputInt("##tool-param-"+n.Label, &v) {
+		if native.InputInt(toolParamPrefix+n.Label, &v) {
 			n.Set(int(v))
 		}
 	}
@@ -140,7 +140,7 @@ func drawToolTextParams(params app.ToolParams) {
 	}
 	propertyRow(tp.Label)
 	native.SetNextItemWidth(propertyComboWidth)
-	if native.InputText("##tool-param-"+tp.Label, toolText.buf) {
+	if native.InputText(toolParamPrefix+tp.Label, toolText.buf) {
 		tp.Set(string(bytes.TrimRight(toolText.buf, "\x00")))
 	}
 }

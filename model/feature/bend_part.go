@@ -39,11 +39,11 @@ type BendPartFeature struct {
 func (b *BendPartFeature) Definition() *BendPartDefinition { return b.def }
 
 // Kind implements [Feature].
-func (b *BendPartFeature) Kind() string { return "bend-part" }
+func (b *BendPartFeature) Kind() string { return kindBendPart }
 
 // Recompute folds the running body about the bend line and replaces it with the result.
 func (b *BendPartFeature) Recompute(in Input) (Output, error) {
-	body, err := lastBody(in, "bend-part")
+	body, err := lastBody(in, kindBendPart)
 	if err != nil {
 		return Output{}, err
 	}
@@ -65,7 +65,7 @@ func (b *BendPartFeature) Recompute(in Input) (Output, error) {
 // bendLine resolves the bend line's model-space point, direction, and the up-normal (the
 // sketch plane normal, flipped when Flip is set) the moving flange folds toward.
 func (b *BendPartFeature) bendLine() (point math.Point3, dir, up math.Vector3, err error) {
-	return sketchBendLine(b.def.Sketch, b.def.LineIndex, b.def.Flip, "bend-part")
+	return sketchBendLine(b.def.Sketch, b.def.LineIndex, b.def.Flip, kindBendPart)
 }
 
 // sketchBendLine resolves a sketch line into the model-space bend axis: a point on it, its

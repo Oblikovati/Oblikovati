@@ -29,7 +29,7 @@ func brepSource(s *app.Session, ref wire.BrepBodyRef) (*bodyapi.TransientBody, e
 	if ref.Handle > 0 {
 		tb, ok := reg.ByHandle(ref.Handle)
 		if !ok {
-			return nil, fmt.Errorf("no transient body with handle %d", ref.Handle)
+			return nil, fmt.Errorf(errNoTransientBody, ref.Handle)
 		}
 		return tb, nil
 	}
@@ -165,7 +165,7 @@ func brepTransform(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	}
 	tb, ok := s.TransientBodies().ByHandle(in.Handle)
 	if !ok {
-		return nil, fmt.Errorf("no transient body with handle %d", in.Handle)
+		return nil, fmt.Errorf(errNoTransientBody, in.Handle)
 	}
 	if len(in.Matrix) != 16 {
 		return nil, fmt.Errorf("transform needs 16 row-major cells, got %d", len(in.Matrix))
@@ -233,7 +233,7 @@ func brepDeleteFaces(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	}
 	tb, ok := s.TransientBodies().ByHandle(in.Handle)
 	if !ok {
-		return nil, fmt.Errorf("no transient body with handle %d", in.Handle)
+		return nil, fmt.Errorf(errNoTransientBody, in.Handle)
 	}
 	keys := make([][]byte, len(in.FaceKeys))
 	for i, k := range in.FaceKeys {
@@ -398,7 +398,7 @@ func brepDescribe(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	}
 	tb, ok := s.TransientBodies().ByHandle(in.Handle)
 	if !ok {
-		return nil, fmt.Errorf("no transient body with handle %d", in.Handle)
+		return nil, fmt.Errorf(errNoTransientBody, in.Handle)
 	}
 	return brepHandleReply(tb)
 }
@@ -415,7 +415,7 @@ func brepDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return nil, err
 	}
 	if !s.TransientBodies().Delete(in.Handle) {
-		return nil, fmt.Errorf("no transient body with handle %d", in.Handle)
+		return nil, fmt.Errorf(errNoTransientBody, in.Handle)
 	}
 	return json.Marshal(wire.OKResult{OK: true})
 }

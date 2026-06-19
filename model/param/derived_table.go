@@ -93,7 +93,7 @@ func (ps *Parameters) AddDerivedTable(sourceDocument string, linked []string, so
 func (ps *Parameters) SetDerivedTableLinked(id int, linked []string, source []SourceParameterValue) error {
 	t, ok := ps.DerivedTableByID(id)
 	if !ok {
-		return fmt.Errorf("param: no derived table with id %d", id)
+		return fmt.Errorf(errNoDerivedTable, id)
 	}
 	for name, pid := range t.produced {
 		if slices.Contains(linked, name) {
@@ -146,7 +146,7 @@ func (ps *Parameters) produceDerived(t *DerivedParameterTable, name string, q Qu
 func (ps *Parameters) SyncDerivedTable(id int, source []SourceParameterValue, sourceOK bool) error {
 	t, ok := ps.DerivedTableByID(id)
 	if !ok {
-		return fmt.Errorf("param: no derived table with id %d", id)
+		return fmt.Errorf(errNoDerivedTable, id)
 	}
 	if !sourceOK {
 		ps.sickenTable(t, "source document "+t.sourceDocument+" is unavailable")
@@ -211,7 +211,7 @@ func (ps *Parameters) RestoreDerivedTable(id int, sourceDocument string, linked 
 func (ps *Parameters) DeleteDerivedTable(id int) error {
 	t, ok := ps.DerivedTableByID(id)
 	if !ok {
-		return fmt.Errorf("param: no derived table with id %d", id)
+		return fmt.Errorf(errNoDerivedTable, id)
 	}
 	if t.ownedByFeature {
 		return fmt.Errorf("param: derived table %d is owned by a derived component; delete the component instead", id)
