@@ -6,10 +6,13 @@ package ui
 
 import (
 	"strconv"
+	"time"
 
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/script/console/diag"
 	"oblikovati.org/script/console/editor"
 	"oblikovati.org/script/console/textbuf"
+	"oblikovati.org/script/gopherlua"
 )
 
 // codeEditor is the Script Console's text editor widget. The editing brain is the headless
@@ -19,15 +22,26 @@ import (
 // rules — only layout, input plumbing, and drawing (lua-scripting-plan, ADR-0028).
 type codeEditor struct {
 	model      *editor.Model
-	scrollY    float32   // vertical scroll offset in logical pixels
-	focused    bool      // consumes keyboard only when focused (clicked into)
-	blink      float32   // caret blink phase accumulator (seconds)
-	dragging   bool      // a left-drag selection is in progress
-	completion completer // autocomplete popup state
+	scrollY    float32        // vertical scroll offset in logical pixels
+	focused    bool           // consumes keyboard only when focused (clicked into)
+	blink      float32        // caret blink phase accumulator (seconds)
+	dragging   bool           // a left-drag selection is in progress
+	completion completer      // autocomplete popup state
+	analyzer   *diag.Analyzer // debounced live syntax diagnostics
 }
 
-// newCodeEditor builds an editor over initial source text.
-func newCodeEditor(text string) *codeEditor { return &codeEditor{model: editor.New(text)} }
+// diagnosticDebounce is how long the source must be unchanged before a syntax re-check runs, so
+// parsing stays off the keystroke hot path while still updating promptly when typing pauses.
+const diagnosticDebounce = 350 * time.Millisecond
+
+// newCodeEditor builds an editor over initial source text with a gopher-lua-backed syntax
+// analyzer (compile-only; it never executes the script).
+func newCodeEditor(text string) *codeEditor {
+	return &codeEditor{
+		model:    editor.New(text),
+		analyzer: diag.NewAnalyzer(gopherlua.SyntaxChecker{}, diagnosticDebounce),
+	}
+}
 
 // Text returns the current source (what the console Runs); SetText replaces it.
 func (e *codeEditor) Text() string     { return e.model.Text() }
@@ -60,6 +74,7 @@ func (e *codeEditor) Draw(width, height float32) {
 	hovered := native.IsItemHovered()
 	m := e.metrics()
 	e.handleInput(ox, oy, width, height, m, hovered)
+	e.analyzer.Observe(e.model.Text(), time.Now()) // settles a few hundred ms after typing stops
 	e.render(ox, oy, width, height, m)
 }
 

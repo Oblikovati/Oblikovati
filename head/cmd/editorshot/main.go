@@ -50,18 +50,26 @@ func apiMethods() []string {
 	return []string{"documents.create", "documents.activate", "sketch.rectangle", "sketch.circle"}
 }
 
+// brokenSource has a deliberate syntax error (an `if` with no `then`) so the diagnostics capture
+// shows the red underline and gutter marker.
+const brokenSource = `local n = 10
+if n > 5
+    print("big")
+end`
+
 func main() {
 	out := flag.String("out", "/tmp/editor.png", "window PNG output path")
 	frames := flag.Int("frames", 6, "frames to render before capture")
+	broken := flag.Bool("broken", false, "seed a syntax error and show diagnostics")
 	flag.Parse()
-	if err := run(*out, *frames); err != nil {
+	if err := run(*out, *frames, *broken); err != nil {
 		fmt.Fprintln(os.Stderr, "editorshot:", err)
 		os.Exit(1)
 	}
 	fmt.Fprintln(os.Stdout, "wrote", *out)
 }
 
-func run(out string, frames int) error {
+func run(out string, frames int, broken bool) error {
 	s := app.NewSession()
 	if err := app.RegisterStandardCommands(s); err != nil {
 		return err
@@ -72,10 +80,15 @@ func run(out string, frames int) error {
 	wireConsole()
 	s.OpenScriptConsole()
 	ui.SetScriptMethods(apiMethods)
-	ui.SetScriptSource(sampleSource)
 	ui.FocusScriptEditor()
-	ui.SetScriptCaret(4, 15)     // just after the '.' of oblikovati.documents on line 5
-	ui.TriggerScriptCompletion() // open the autocomplete popup at the caret
+	if broken {
+		ui.SetScriptSource(brokenSource)
+		ui.ForceScriptDiagnostics()
+	} else {
+		ui.SetScriptSource(sampleSource)
+		ui.SetScriptCaret(4, 15)     // just after the '.' of oblikovati.documents on line 5
+		ui.TriggerScriptCompletion() // open the autocomplete popup at the caret
+	}
 
 	win, err := native.CreateWindow(1280, 800, "editorshot")
 	if err != nil {

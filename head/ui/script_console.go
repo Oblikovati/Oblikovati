@@ -72,6 +72,15 @@ func SetScriptCaret(line, col int) {
 // drivers / tests.
 func TriggerScriptCompletion() { scriptCodeEditor().refreshCompletion(true) }
 
+// ForceScriptDiagnostics runs the syntax check immediately (bypassing the debounce), so a capture
+// driver can show error underlines without waiting real time. Exposed for capture drivers / tests.
+func ForceScriptDiagnostics() {
+	e := scriptCodeEditor()
+	src, now := e.model.Text(), time.Now()
+	e.analyzer.Observe(src, now)
+	e.analyzer.Observe(src, now.Add(time.Hour)) // settle past the debounce window
+}
+
 // SetScriptController injects the console runtime. Called once at head startup, after the
 // add-in host (and thus the dispatcher the script's host calls hop through) exists.
 func SetScriptController(c *console.Controller) { scriptController = c }
