@@ -217,12 +217,40 @@ func readUcsDimAndInsunits(r *BitReader, hv *HeaderVars, version Version) int {
 // capturing DIMSCALE. The pre-R2000 layout (a different bool/BS ordering) is gated out
 // here because the supported generations are R2000+.
 //
+// skipBD/skipBS/skipBit consume n undecoded header fields of the given primitive type — used to
+// step over runs of variables the importer does not retain, keeping the bit cursor in sync.
+//
 //nolint:funlen,gocyclo // sequential version-gated dimension-variable reads; length/branches are the format.
-func readDimVars(r *BitReader, hv *HeaderVars, version Version) {
-	hv.DimScale = r.ReadBD()
-	for i := 0; i < 8; i++ { // DIMASZ, DIMEXO, DIMDLI, DIMEXE, DIMRND, DIMDLE, DIMTP, DIMTM
+func skipBD(r *BitReader, n int) {
+	for i := 0; i < n; i++ {
 		r.ReadBD()
 	}
+}
+
+func skipBS(r *BitReader, n int) {
+	for i := 0; i < n; i++ {
+		r.ReadBS()
+	}
+}
+
+func skipBit(r *BitReader, n int) {
+	for i := 0; i < n; i++ {
+		r.ReadBit()
+	}
+}
+
+// readDimVars consumes the DIM* dimension-style header block in its three on-disk sections; only
+// DimScale is retained, the rest are stepped over to keep the cursor in sync for the caller.
+func readDimVars(r *BitReader, hv *HeaderVars, version Version) {
+	hv.DimScale = r.ReadBD()
+	readDimArrowVars(r, version)
+	readDimTextVars(r, version)
+	readDimUnitVars(r, version)
+}
+
+// readDimArrowVars reads the arrow/tolerance group (DIMASZ..DIMARCSYM).
+func readDimArrowVars(r *BitReader, version Version) {
+	skipBD(r, 8) // DIMASZ, DIMEXO, DIMDLI, DIMEXE, DIMRND, DIMDLE, DIMTP, DIMTM
 	if version >= R2007 {
 		r.ReadBD() // DIMFXL
 		r.ReadBD() // DIMJOGANG
@@ -230,19 +258,19 @@ func readDimVars(r *BitReader, hv *HeaderVars, version Version) {
 		readCMC(r) // DIMTFILLCLR
 	}
 	if version >= R2000 {
-		for i := 0; i < 6; i++ { // DIMTOL, DIMLIM, DIMTIH, DIMTOH, DIMSE1, DIMSE2
-			r.ReadBit()
-		}
-		r.ReadBS() // DIMTAD
-		r.ReadBS() // DIMZIN
-		r.ReadBS() // DIMAZIN
+		skipBit(r, 6) // DIMTOL, DIMLIM, DIMTIH, DIMTOH, DIMSE1, DIMSE2
+		r.ReadBS()    // DIMTAD
+		r.ReadBS()    // DIMZIN
+		r.ReadBS()    // DIMAZIN
 	}
 	if version >= R2007 {
 		r.ReadBS() // DIMARCSYM
 	}
-	for i := 0; i < 8; i++ { // DIMTXT, DIMCEN, DIMTSZ, DIMALTF, DIMLFAC, DIMTVP, DIMTFAC, DIMGAP
-		r.ReadBD()
-	}
+}
+
+// readDimTextVars reads the text-placement group (DIMTXT..DIMCLRT).
+func readDimTextVars(r *BitReader, version Version) {
+	skipBD(r, 8) // DIMTXT, DIMCEN, DIMTSZ, DIMALTF, DIMLFAC, DIMTVP, DIMTFAC, DIMGAP
 	if version >= R2000 {
 		r.ReadBD()  // DIMALTRND
 		r.ReadBit() // DIMALT
@@ -255,17 +283,18 @@ func readDimVars(r *BitReader, hv *HeaderVars, version Version) {
 	readCMC(r) // DIMCLRD
 	readCMC(r) // DIMCLRE
 	readCMC(r) // DIMCLRT
+}
+
+// readDimUnitVars reads the units/lineweight group (DIMADEC..TSTACKSIZE); the remaining DIM*
+// entries are handles/strings consumed from the handle and string streams, not here.
+func readDimUnitVars(r *BitReader, version Version) {
 	if version >= R2000 {
-		for i := 0; i < 11; i++ { // DIMADEC, DIMDEC, DIMTDEC, DIMALTU, DIMALTTD, DIMAUNIT, DIMFRAC, DIMLUNIT, DIMDSEP, DIMTMOVE, DIMJUST
-			r.ReadBS()
-		}
-		r.ReadBit()              // DIMSD1
-		r.ReadBit()              // DIMSD2
-		for i := 0; i < 4; i++ { // DIMTOLJ, DIMTZIN, DIMALTZ, DIMALTTZ
-			r.ReadBS()
-		}
-		r.ReadBit() // DIMUPT
-		r.ReadBS()  // DIMATFIT
+		skipBS(r, 11) // DIMADEC, DIMDEC, DIMTDEC, DIMALTU, DIMALTTD, DIMAUNIT, DIMFRAC, DIMLUNIT, DIMDSEP, DIMTMOVE, DIMJUST
+		r.ReadBit()   // DIMSD1
+		r.ReadBit()   // DIMSD2
+		skipBS(r, 4)  // DIMTOLJ, DIMTZIN, DIMALTZ, DIMALTTZ
+		r.ReadBit()   // DIMUPT
+		r.ReadBS()    // DIMATFIT
 	}
 	if version >= R2007 {
 		r.ReadBit() // DIMFXLON
@@ -275,18 +304,14 @@ func readDimVars(r *BitReader, hv *HeaderVars, version Version) {
 		r.ReadBD()  // DIMALTMZF
 		r.ReadBD()  // DIMMZF
 	}
-	// DIMTXSTY..DIMLTEX2 are handles — skipped.
 	if version >= R2000 {
 		r.ReadBS() // DIMLWD
 		r.ReadBS() // DIMLWE
 	}
-	// Control-object and dictionary handles are in the handle stream — skipped.
 	if version >= R2000 {
 		r.ReadBS() // TSTACKALIGN
 		r.ReadBS() // TSTACKSIZE
 	}
-	// HYPERLINKBASE/STYLESHEET (TV) and the remaining dictionary handles are in the
-	// string/handle streams — skipped; the caller reads FLAGS next.
 }
 
 // readHeaderVarsR2000 reads the header variables for R2000, where data, handles, and
