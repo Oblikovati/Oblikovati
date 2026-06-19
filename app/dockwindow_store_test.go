@@ -100,3 +100,42 @@ func TestSetDockableWindowRejectsMissingIdentity(t *testing.T) {
 		t.Error("Set without id should fail")
 	}
 }
+
+// TestPanelValueChangedUpdatesControlAndEmits covers the editable-panel edit path: the stored
+// control's value is updated and a PanelValueChanged event is emitted for the add-in.
+func TestPanelValueChangedUpdatesControlAndEmits(t *testing.T) {
+	s := NewSession()
+	w := simWindow(true)
+	w.Controls = append(w.Controls, wire.PanelControlSpec{Kind: types.PanelTextBox, ID: "poles", Value: "10"})
+	if err := s.SetDockableWindow(w); err != nil {
+		t.Fatalf("SetDockableWindow: %v", err)
+	}
+	var got []PanelValueChanged
+	event.Subscribe(s.Events(), event.After, func(_ event.Context, e PanelValueChanged) event.Outcome {
+		got = append(got, e)
+		return event.Continue()
+	})
+
+	s.PanelValueChanged("sim.panel", "poles", "12")
+
+	spec, _ := s.DockableWindows().Get("sim.panel")
+	var poles string
+	for _, c := range spec.Controls {
+		if c.ID == "poles" {
+			poles = c.Value
+		}
+	}
+	if poles != "12" {
+		t.Errorf("stored control value = %q, want 12", poles)
+	}
+	if len(got) != 1 || got[0].ControlID != "poles" || got[0].Value != "12" {
+		t.Errorf("emitted = %+v, want one poles=12", got)
+	}
+}
+
+// TestGraphicsLabelsEmptyWithoutGraphics exercises GraphicsLabels (no add-in graphics → none).
+func TestGraphicsLabelsEmptyWithoutGraphics(t *testing.T) {
+	if got := NewSession().GraphicsLabels(); len(got) != 0 {
+		t.Errorf("labels without graphics = %d, want 0", len(got))
+	}
+}
