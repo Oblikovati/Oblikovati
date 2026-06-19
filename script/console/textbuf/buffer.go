@@ -146,6 +146,15 @@ func (b *Buffer) ReplaceRange(a, c Position, text string) Position {
 	return b.Insert(a, text)
 }
 
+// TextInRange returns the text of the half-open span [a, c) without mutating the buffer,
+// ordering the endpoints first. It backs Copy/Cut and selection inspection.
+func (b *Buffer) TextInRange(a, c Position) string {
+	if c.Before(a) {
+		a, c = c, a
+	}
+	return b.textInRange(a, c)
+}
+
 // textInRange returns the text of the half-open span [a, c) (assumed ordered and valid),
 // joining intermediate lines with "\n".
 func (b *Buffer) textInRange(a, c Position) string {

@@ -149,5 +149,36 @@ func (b *Buffer) skipRightWhile(p Position, pred func(rune) bool) Position {
 	return p
 }
 
+// WordStartAt returns the start column of the identifier word covering p, or p itself when p is
+// not on a word rune — the left edge of a double-click selection.
+func (b *Buffer) WordStartAt(p Position) Position {
+	if !b.onWord(p) {
+		return p
+	}
+	col := p.Col
+	for col > 0 && isWord(b.lines[p.Line][col-1]) {
+		col--
+	}
+	return Position{p.Line, col}
+}
+
+// WordEndAt returns the end column of the identifier word covering p, or p itself when p is not
+// on a word rune — the right edge of a double-click selection.
+func (b *Buffer) WordEndAt(p Position) Position {
+	if !b.onWord(p) {
+		return p
+	}
+	col := p.Col
+	for col < b.LineLen(p.Line) && isWord(b.lines[p.Line][col]) {
+		col++
+	}
+	return Position{p.Line, col}
+}
+
+// onWord reports whether p sits on an identifier rune (so a word actually exists there).
+func (b *Buffer) onWord(p Position) bool {
+	return p.Col < b.LineLen(p.Line) && isWord(b.runeAt(p))
+}
+
 // runeAt returns the rune at p (p.Col must be < line length).
 func (b *Buffer) runeAt(p Position) rune { return b.lines[p.Line][p.Col] }
