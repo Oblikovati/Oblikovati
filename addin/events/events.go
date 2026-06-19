@@ -53,6 +53,7 @@ func styleEventType(k app.StyleChangeKind) string {
 func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 	bus := s.Events()
 	subs := subscribeDocuments(s.Workspace().Events(), sink)
+	subs = append(subs, subscribeModelChanges(s.Workspace().Events(), sink)...)
 	subs = append(subs, subscribeSessionUI(bus, sink)...)
 	subs = append(subs, subscribeRepresentations(bus, sink)...)
 	subs = append(subs, subscribeParameters(bus, sink)...)
@@ -131,16 +132,41 @@ func subscribeRepresentations(bus *event.Bus, sink Sink) []event.Subscription {
 func subscribeDocuments(ws *event.Bus, sink Sink) []event.Subscription {
 	return []event.Subscription{
 		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentCreated) event.Outcome {
-			relayClientOperation(sink, e.Document, "created")
-			return relay(sink, wireEvent{Type: "document.created", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
+			return relayDocumentLifecycle(sink, e.Document, wire.EventDocumentCreated, "created")
+		}),
+		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentOpened) event.Outcome {
+			// DocumentOpened carries only the name (the document object is paged in afterwards).
+			return relay(sink, wireEvent{Type: wire.EventDocumentOpened, Document: e.FullDocumentName})
 		}),
 		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentSave) event.Outcome {
-			relayClientOperation(sink, e.Document, "saved")
-			return relay(sink, wireEvent{Type: "document.saved", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
+			return relayDocumentLifecycle(sink, e.Document, wire.EventDocumentSaved, "saved")
+		}),
+		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentClose) event.Outcome {
+			return relayDocumentLifecycle(sink, e.Document, wire.EventDocumentClosed, "closed")
 		}),
 		event.Subscribe(ws, event.After, func(_ event.Context, e doc.DocumentActivate) event.Outcome {
-			relayClientOperation(sink, e.Document, "activated")
-			return relay(sink, wireEvent{Type: "document.activated", Document: e.Document.DisplayName(), ID: uint64(e.Document.ID())})
+			return relayDocumentLifecycle(sink, e.Document, wire.EventDocumentActivated, "activated")
+		}),
+	}
+}
+
+// relayDocumentLifecycle forwards one document lifecycle event (and services a flavored
+// document's owner via client.operation).
+func relayDocumentLifecycle(sink Sink, d *doc.Document, eventType, operation string) event.Outcome {
+	relayClientOperation(sink, d, operation)
+	return relay(sink, wireEvent{Type: eventType, Document: d.DisplayName(), ID: uint64(d.ID())})
+}
+
+// subscribeModelChanges relays the committed batch of model changes on a document (#148): the
+// feature/sketch/parameter mutations the engine just applied, so an add-in re-queries it.
+func subscribeModelChanges(ws *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(ws, event.After, func(_ event.Context, e doc.ModelChanged) event.Outcome {
+			name := ""
+			if e.Document != nil {
+				name = e.Document.DisplayName()
+			}
+			return relayJSON(sink, wire.ModelChangedEvent{Type: wire.EventModelChanged, Document: name, Changes: len(e.Changes)})
 		}),
 	}
 }
@@ -237,7 +263,8 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.FileResolutionEventPayload | wire.FileDirtyEventPayload |
 	wire.FileDialogHookPayload | wire.OccurrenceEventPayload |
 	wire.AssemblyFeaturesChangedEvent | wire.ConstraintEventPayload |
-	wire.JointEventPayload | wire.ParameterChangedEvent](sink Sink, ev E) event.Outcome {
+	wire.JointEventPayload | wire.ParameterChangedEvent |
+	wire.ModelChangedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}
