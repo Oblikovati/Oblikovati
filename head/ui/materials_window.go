@@ -9,6 +9,7 @@ import (
 
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/model/material"
 )
 
@@ -20,13 +21,39 @@ var (
 	selectedAppearance string
 	matNameBuf         [64]byte
 	apprNameBuf        [64]byte
+	// matSelectionDoc is the active document the selectors currently reflect; when the active
+	// document changes the selectors resync to that part's assignments (see syncMaterialSelection).
+	matSelectionDoc    doc.ID
+	matSelectionSynced bool
 )
+
+// syncMaterialSelection points the Material/Appearance selectors at the ACTIVE document's part
+// assignments whenever the active document changes, so switching documents shows that part's
+// current material/appearance instead of the previously selected one. Library-default fallback
+// (an unassigned part, or an assembly) leaves the last selection untouched.
+func syncMaterialSelection(s *app.Session) {
+	var id doc.ID
+	if d := s.ActiveDocument(); d != nil {
+		id = d.ID()
+	}
+	if matSelectionSynced && id == matSelectionDoc {
+		return
+	}
+	matSelectionDoc, matSelectionSynced = id, true
+	if m := s.ActivePartMaterialID(); m != "" {
+		selectedMaterialID = m
+	}
+	if a := s.ActivePartAppearanceID(); a != "" {
+		selectedAppearance = a
+	}
+}
 
 // drawMaterialsWindow renders the Materials browser/editor: pick or duplicate a material or
 // appearance, edit a project-scoped copy (built-ins are read-only), assign it to the active
 // part, and read the part's physical properties. Edits flow straight to the session, so the
 // viewport recolors next frame (ADR-0022).
 func drawMaterialsWindow(s *app.Session) {
+	syncMaterialSelection(s) // keep the selectors pointed at the active document's part (every frame)
 	if !showMaterials {
 		return
 	}

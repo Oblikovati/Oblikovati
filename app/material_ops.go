@@ -18,6 +18,26 @@ const (
 	ScopeFace = "face"
 )
 
+// ActivePartMaterialID returns the active part's assigned part-level material id, or "" when
+// there is no active part (e.g. an assembly is active) or it carries no part-level material.
+// The Materials UI reads this to keep its selector in sync with the active document.
+func (s *Session) ActivePartMaterialID() string {
+	part, err := activePart(s)
+	if err != nil {
+		return ""
+	}
+	return part.Assignments().PartMaterial()
+}
+
+// ActivePartAppearanceID returns the active part's assigned part-level appearance id, or "".
+func (s *Session) ActivePartAppearanceID() string {
+	part, err := activePart(s)
+	if err != nil {
+		return ""
+	}
+	return part.Assignments().PartAppearance()
+}
+
 // AssignMaterial sets the material for a body (bodyKey hex) or the part default (empty
 // bodyKey), embedding a portable copy of the material and its appearance in the document
 // so the assignment survives a round-trip even without the project library.
