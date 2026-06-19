@@ -8,13 +8,19 @@ Usage:
 
 import json
 import math
+import os
 import struct
 import sys
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pathsafe import resolved_within  # noqa: E402  (after sys.path bootstrap)
+
 
 def read_stl(path: Path):
-    data = path.read_bytes()
+    # path is caller-supplied (argv); confine reads to the working tree so a
+    # crafted argument cannot read an arbitrary file outside it.
+    data = Path(resolved_within(str(path), os.getcwd())).read_bytes()
     if len(data) >= 84:
         tri_count = struct.unpack_from("<I", data, 80)[0]
         if 84 + tri_count * 50 == len(data):

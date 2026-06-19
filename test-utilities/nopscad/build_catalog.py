@@ -23,6 +23,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pathsafe import resolved_within  # noqa: E402  (after sys.path bootstrap)
+
 # Complexity rubric: weight per operation token. Mirrors the plan's scoring.
 OP_WEIGHTS = {
     "cube": 1, "cylinder": 1, "sphere": 1, "circle": 1, "square": 1,
@@ -146,8 +149,10 @@ def params_for(src: str) -> list:
     return PARAM_NAME_RE.findall(src)
 
 
-def analyze_file(path: str, rel: str) -> list:
-    with open(path, encoding="utf-8", errors="replace") as f:
+def analyze_file(path: str, rel: str, root: str) -> list:
+    # path is built from the caller-supplied scan root; confine the read to root
+    # so a crafted root/entry cannot read a file outside the NopSCADlib tree.
+    with open(resolved_within(path, root), encoding="utf-8", errors="replace") as f:
         raw = f.read()
     src = strip_comments(raw)
     modules = MODULE_RE.findall(src)
@@ -192,7 +197,7 @@ def main(root: str):
             if not fn.endswith(".scad"):
                 continue
             rel = os.path.join(sub, fn)
-            entries.extend(analyze_file(os.path.join(d, fn), rel))
+            entries.extend(analyze_file(os.path.join(d, fn), rel, root))
 
     entries.sort(key=lambda e: (e["tier"], e["score"], e["path"], e["module"]))
     with open(os.path.join(out_dir, "catalog.json"), "w") as f:

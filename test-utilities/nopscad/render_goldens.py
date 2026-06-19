@@ -22,6 +22,9 @@ import shutil
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pathsafe import safe_name  # noqa: E402  (after sys.path bootstrap)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 NOPSCAD = os.path.abspath(os.path.join(HERE, "../../../NopSCADlib"))
 GOLDENS = os.path.join(HERE, "goldens")
@@ -49,8 +52,11 @@ INSTANCES = {
 
 def render(module: str, body: str) -> bool:
     os.makedirs(GOLDENS, exist_ok=True)
-    scad = os.path.join(GOLDENS, module + ".scad")
-    stl = os.path.join(GOLDENS, module + ".stl")
+    # module is caller-supplied (argv); pin it to a bare name so the derived
+    # .scad/.stl paths and the OpenSCAD invocation cannot escape GOLDENS.
+    name = safe_name(module)
+    scad = os.path.join(GOLDENS, name + ".scad")
+    stl = os.path.join(GOLDENS, name + ".stl")
     with open(scad, "w") as f:
         f.write(HEADER + body + "\n")
     try:
