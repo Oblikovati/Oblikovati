@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
@@ -23,9 +24,12 @@ type patternArgs struct {
 	SourceFeatures    []string     `json:"sourceFeatures"`
 	CountX            int          `json:"countX,omitempty"`
 	CountY            int          `json:"countY,omitempty"`
+	CountXExpr        string       `json:"countXExpr,omitempty"`
+	CountYExpr        string       `json:"countYExpr,omitempty"`
 	StepX             []float64    `json:"stepX,omitempty"`
 	StepY             []float64    `json:"stepY,omitempty"`
 	Count             int          `json:"count,omitempty"`
+	CountExpr         string       `json:"countExpr,omitempty"`
 	Angle             string       `json:"angle,omitempty"`
 	AxisPoint         []float64    `json:"axisPoint,omitempty"`
 	AxisDir           []float64    `json:"axisDir,omitempty"`
@@ -54,6 +58,8 @@ const rectPatternSchema = `{
     "sourceFeatures": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Names of the features to replicate (see model.tree), e.g. [\"Extrusion1\"]."},
     "countX": {"type": "integer", "minimum": 1, "default": 2},
     "countY": {"type": "integer", "minimum": 1, "default": 1},
+    "countXExpr": {"type": "string", "description": "Parameter-expression form of countX; when set it supersedes countX."},
+    "countYExpr": {"type": "string", "description": "Parameter-expression form of countY; when set it supersedes countY."},
     "stepX": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the first direction [x,y,z] in cm."},
     "stepY": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Spacing vector for the second direction [x,y,z] in cm."},
     "spacingType": {"type": "string", "enum": ["spacing", "fitted", "fitToPathLength"], "description": "How a step is read: 'spacing' = gap between occurrences (default); 'fitted' = total span divided across the count."},
@@ -75,6 +81,7 @@ const circPatternSchema = `{
   "properties": {
     "sourceFeatures": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "Names of the features to replicate (see model.tree)."},
     "count": {"type": "integer", "minimum": 1, "default": 4},
+    "countExpr": {"type": "string", "description": "Parameter-expression form of count (e.g. \"slots\", \"poles/2\"); when set it supersedes count so the occurrence count tracks the parameter."},
     "angle": {"type": "string", "description": "Total sweep angle, e.g. \"360 deg\"."},
     "axisPoint": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on the rotation axis [x,y,z] (default origin)."},
     "axisDir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Rotation axis direction [x,y,z] (default +Z)."},
@@ -147,14 +154,31 @@ func applyRectPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 			return nil, err
 		}
 	}
-	cx, cy := defaultInt(in.CountX, 2), defaultInt(in.CountY, 1)
+	countX, countY, err := rectCounts(part, in)
+	if err != nil {
+		return nil, err
+	}
 	opts, err := patternOptions(in)
 	if err != nil {
 		return nil, err
 	}
-	f := feature.NewPatternFeatures(part.Features()).AddRectangular(ids, constIntFn(cx), constIntFn(cy), stepX, stepY)
+	f := feature.NewPatternFeatures(part.Features()).AddRectangular(ids, countX, countY, stepX, stepY)
 	f.Definition().Options = opts
 	return lastFeatureResult(part)
+}
+
+// rectCounts resolves the two grid counts as live closures, preferring the parameter-expression
+// forms (countXExpr/countYExpr) over the numeric counts (#189).
+func rectCounts(part *compdef.PartComponentDefinition, in patternArgs) (countX, countY func() int, err error) {
+	countX, err = countClosure(part, in.CountXExpr, "patternRectangular: countXExpr", defaultInt(in.CountX, 2))
+	if err != nil {
+		return nil, nil, err
+	}
+	countY, err = countClosure(part, in.CountYExpr, "patternRectangular: countYExpr", defaultInt(in.CountY, 1))
+	if err != nil {
+		return nil, nil, err
+	}
+	return countX, countY, nil
 }
 
 func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -166,11 +190,15 @@ func applyCircPattern(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err != nil {
 		return nil, err
 	}
+	count, err := countClosure(part, in.CountExpr, "patternCircular: countExpr", defaultInt(in.Count, 4))
+	if err != nil {
+		return nil, err
+	}
 	opts, err := patternOptions(in)
 	if err != nil {
 		return nil, err
 	}
-	f := feature.NewPatternFeatures(part.Features()).AddCircular(ids, constIntFn(defaultInt(in.Count, 4)), angle, originOr(in.AxisPoint), zAxisOr(in.AxisDir))
+	f := feature.NewPatternFeatures(part.Features()).AddCircular(ids, count, angle, originOr(in.AxisPoint), zAxisOr(in.AxisDir))
 	f.Definition().Options = opts
 	return lastFeatureResult(part)
 }
@@ -258,6 +286,28 @@ func defaultInt(v, def int) int {
 		return def
 	}
 	return v
+}
+
+// countClosure turns a pattern count into a live func() int (Oblikovati.API#189): when expr is a
+// parameter expression ("slots", "poles/2") it is evaluated through the part's parameter engine on
+// every recompute, so the occurrence count tracks the parameter; otherwise the numeric fallback (a
+// literal count, defaulted) is used as a constant. Non-positive results clamp to 1 (a pattern has
+// at least the seed).
+func countClosure(part *compdef.PartComponentDefinition, expr, field string, fallback int) (func() int, error) {
+	if strings.TrimSpace(expr) == "" {
+		return constIntFn(fallback), nil
+	}
+	f, err := numberClosure(part, expr, field)
+	if err != nil {
+		return nil, err
+	}
+	return func() int {
+		n := int(f() + 0.5) // counts are positive — round to nearest
+		if n < 1 {
+			return 1
+		}
+		return n
+	}, nil
 }
 
 func originOr(a []float64) math.Point3 {

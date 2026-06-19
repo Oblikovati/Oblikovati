@@ -35,12 +35,14 @@ func (s *Session) CreateSketch3D() (*sketch.Sketch3D, error) {
 // sketch there is no plane to face, so the camera is left as the user had it.
 func (s *Session) EnterSketch3D(sk *sketch.Sketch3D) {
 	s.activeSketch3D = sk
+	s.emitSketchEdit(sk.Seq(), sk.Name(), true) // SketchEvents surface (#148)
 	sk.Edit()
 }
 
 // ExitSketch3D leaves the 3D-sketch environment.
 func (s *Session) ExitSketch3D() {
 	if s.activeSketch3D != nil {
+		s.emitSketchEdit(s.activeSketch3D.Seq(), s.activeSketch3D.Name(), false) // SketchEvents surface (#148)
 		s.activeSketch3D.ExitEdit()
 		s.activeSketch3D = nil
 	}

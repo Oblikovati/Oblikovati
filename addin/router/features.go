@@ -35,5 +35,10 @@ func (r *Router) addFeature(s *app.Session, raw json.RawMessage) (json.RawMessag
 	if len(args) == 0 {
 		args = json.RawMessage("{}")
 	}
-	return d.Apply(s, args)
+	out, err := d.Apply(s, args)
+	if err != nil {
+		return nil, err
+	}
+	emitFeatureLifecycle(s, app.FeatureAdded, lastPartFeature(s)) // feature.added (#148)
+	return out, nil
 }

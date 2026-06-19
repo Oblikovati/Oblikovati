@@ -114,7 +114,7 @@ func compositePointIDs(ents []sketch.Entity) []uint64 {
 
 // buildComposite dispatches a composite create request to its model builder.
 func buildComposite(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) ([]sketch.Entity, *sketch.Point, error) {
-	pts, err := toPoint2s(in.Points)
+	pts, err := resolvePoints(part, in)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -242,7 +242,7 @@ func buildStraightSlotVariant(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pt
 // buildSketchEntity dispatches a create request to the matching model constructor,
 // returning the entity and the ids of its defining points.
 func buildSketchEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs) (sketch.Entity, []uint64, error) {
-	pts, err := toPoint2s(in.Points)
+	pts, err := resolvePoints(part, in)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -537,6 +537,33 @@ func toPoint2s(in [][]float64) ([]math.Point2, error) {
 			return nil, fmt.Errorf("sketch.addEntity: point %d has %d coords, want [x,y]", i, len(p))
 		}
 		out[i] = math.P2(math.Scalar(p[0]), math.Scalar(p[1]))
+	}
+	return out, nil
+}
+
+// resolvePoints returns the entity's defining points, preferring the parameter-expression form
+// PointExprs over the literal Points (Oblikovati.API#189). Each expression coordinate is evaluated
+// through the part's parameter engine (resolveQuantity, the #187 helper) as a length, yielding cm —
+// so generated line/arc/point geometry is parametric at construction. PointExprs supersedes Points
+// when set; otherwise the literal path is unchanged.
+func resolvePoints(part *compdef.PartComponentDefinition, in wire.AddSketchEntityArgs) ([]math.Point2, error) {
+	if len(in.PointExprs) == 0 {
+		return toPoint2s(in.Points)
+	}
+	out := make([]math.Point2, len(in.PointExprs))
+	for i, p := range in.PointExprs {
+		if len(p) != 2 {
+			return nil, fmt.Errorf("sketch.addEntity: pointExprs %d has %d coords, want [x-expr,y-expr]", i, len(p))
+		}
+		x, err := resolveQuantity(part, p[0], param.Length)
+		if err != nil {
+			return nil, fmt.Errorf("sketch.addEntity: point %d x %q: %w", i, p[0], err)
+		}
+		y, err := resolveQuantity(part, p[1], param.Length)
+		if err != nil {
+			return nil, fmt.Errorf("sketch.addEntity: point %d y %q: %w", i, p[1], err)
+		}
+		out[i] = math.P2(math.Scalar(x.Value), math.Scalar(y.Value))
 	}
 	return out, nil
 }

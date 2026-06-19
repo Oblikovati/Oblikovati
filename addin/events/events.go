@@ -57,6 +57,7 @@ func Subscribe(s *app.Session, sink Sink) []event.Subscription {
 	subs = append(subs, subscribeSessionUI(bus, sink)...)
 	subs = append(subs, subscribeRepresentations(bus, sink)...)
 	subs = append(subs, subscribeParameters(bus, sink)...)
+	subs = append(subs, subscribeModeling(bus, sink)...)
 	subs = append(subs, subscribeTransactions(bus, sink)...)
 	subs = append(subs, subscribeFileAccess(s.Workspace().Events(), sink)...)
 	subs = append(subs, subscribeAssemblies(s.Workspace().Events(), sink)...)
@@ -113,6 +114,46 @@ func subscribeParameters(bus *event.Bus, sink Sink) []event.Subscription {
 			})
 		}),
 	}
+}
+
+// featureEventType maps a feature-lifecycle op to its wire event constant (references all three so
+// the API↔router parity guard sees each one relayed).
+func featureEventType(op app.FeatureOp) string {
+	switch op {
+	case app.FeatureAdded:
+		return wire.EventFeatureAdded
+	case app.FeatureDeleted:
+		return wire.EventFeatureDeleted
+	default:
+		return wire.EventFeatureEdited
+	}
+}
+
+// subscribeModeling relays the granular feature-lifecycle and sketch-edit notifications (#148): a
+// feature was added/edited/deleted, or a sketch's edit mode was entered/exited — beyond the batched
+// model.changed, so an add-in reacts per feature/sketch without diffing the tree.
+func subscribeModeling(bus *event.Bus, sink Sink) []event.Subscription {
+	return []event.Subscription{
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.FeatureLifecycleChanged) event.Outcome {
+			return relayJSON(sink, wire.FeatureLifecycleEvent{
+				Type: featureEventType(e.Op), Document: uint64(e.Document), Feature: e.Feature, Name: e.Name, Kind: e.Kind,
+			})
+		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.SketchEditChanged) event.Outcome {
+			return relayJSON(sink, wire.SketchEditEvent{
+				Type: sketchEditEventType(e.Entered), Document: uint64(e.Document), Sketch: e.Sketch, Name: e.Name,
+			})
+		}),
+	}
+}
+
+// sketchEditEventType maps the entered/exited flag to its wire event constant (references both so
+// the parity guard sees each relayed).
+func sketchEditEventType(entered bool) string {
+	if entered {
+		return wire.EventSketchEditEntered
+	}
+	return wire.EventSketchEditExited
 }
 
 // subscribeRepresentations relays the representation / model-state change notifications (#901): the
@@ -269,7 +310,8 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.FileDialogHookPayload | wire.OccurrenceEventPayload |
 	wire.AssemblyFeaturesChangedEvent | wire.ConstraintEventPayload |
 	wire.JointEventPayload | wire.ParameterChangedEvent |
-	wire.ModelChangedEvent | wire.PanelValueChangedEvent](sink Sink, ev E) event.Outcome {
+	wire.ModelChangedEvent | wire.PanelValueChangedEvent |
+	wire.FeatureLifecycleEvent | wire.SketchEditEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}
