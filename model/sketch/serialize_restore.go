@@ -503,6 +503,16 @@ func (r *sketchRestorer) restoreAdvancedDimension(dd DimensionData) (*DimensionC
 			return nil, err
 		}
 		return dc.AddEllipseRadius(e, dd.Expression)
+	case "tangentDistance":
+		l, err := r.line(dd.Curves, 0)
+		if err != nil {
+			return nil, err
+		}
+		c, err := r.curve(dd.Curves, 1)
+		if err != nil {
+			return nil, err
+		}
+		return dc.AddTangentDistance(l, c, dd.FarSide, dd.Expression)
 	default:
 		return nil, fmt.Errorf("unknown dimension kind %q", dd.Kind)
 	}

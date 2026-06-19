@@ -139,6 +139,7 @@ type DimensionData struct {
 	Curves     []int       `yaml:"curves,omitempty"`
 	Expression string      `yaml:"expression"`
 	Driven     bool        `yaml:"driven,omitempty"`
+	FarSide    bool        `yaml:"farSide,omitempty"` // tangentDistance only (#152)
 	Limits     *LimitsData `yaml:"limits,omitempty"`
 }
 
@@ -387,7 +388,7 @@ func serializeSplineHandles(sp *Spline) []SplineHandleData {
 }
 
 func serializeDimension(d *DimensionConstraint) (DimensionData, error) {
-	dd := DimensionData{Expression: d.param.Expression(), Driven: d.driven}
+	dd := DimensionData{Expression: d.param.Expression(), Driven: d.driven, FarSide: d.farSide}
 	if d.limits.Enabled {
 		dd.Limits = &LimitsData{Min: d.limits.Min, Max: d.limits.Max}
 	}
@@ -427,6 +428,8 @@ func dimKindName(k DimKind) (string, error) {
 		return "threePointAngle", nil
 	case EllipseRadiusDim:
 		return "ellipseRadius", nil
+	case TangentDistanceDim:
+		return "tangentDistance", nil
 	default:
 		return "", fmt.Errorf("cannot serialize dimension of kind %d (no codec)", k)
 	}

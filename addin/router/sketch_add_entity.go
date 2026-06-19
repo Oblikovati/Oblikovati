@@ -226,7 +226,7 @@ func buildCurvedEntity(part *compdef.PartComponentDefinition, sk *sketch.Sketch,
 		return buildEllipse(part, sk, in, pts)
 	case "ellipticalArc":
 		return buildEllipticalArc(part, sk, in, pts)
-	case "spline":
+	case "spline", "controlPointSpline":
 		return buildSpline(sk, in, pts)
 	case "fillet":
 		return buildFillet(part, sk, in)
@@ -461,7 +461,9 @@ func buildSpline(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Poin
 		return nil, nil, fmt.Errorf("sketch.addEntity: spline needs at least 2 points, got %d", len(pts))
 	}
 	var sp *sketch.Spline
-	if in.Variant == "controlPoint" {
+	// A control-point (approximating) spline is named either by the first-class
+	// "controlPointSpline" kind (#150) or the legacy variant=controlPoint flag.
+	if in.Kind == "controlPointSpline" || in.Variant == "controlPoint" {
 		sp = sk.Splines().AddByControlPoints(pts, in.Closed)
 	} else {
 		sp = sk.Splines().AddByPoints(pts, in.Closed)

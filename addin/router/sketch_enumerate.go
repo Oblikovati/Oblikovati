@@ -121,12 +121,21 @@ func entityShape(e sketch.Entity) (types.SketchEntityKind, [][]float64, float64)
 	case *sketch.EllipticalArc:
 		return types.SketchEntityEllipticalArc, [][]float64{pt(v.Center)}, 0
 	case *sketch.Spline:
-		return types.SketchEntitySpline, splinePts(v), 0
+		return splineKind(v), splinePts(v), 0
 	case *sketch.SplineHandle:
 		return types.SketchEntitySplineHandle, [][]float64{pt(v.Anchor), pt(v.End)}, 0
 	default:
 		return annotationShape(e)
 	}
+}
+
+// splineKind reports a spline's wire kind: a fit (interpolating) spline is "spline", a
+// control-point (approximating) spline is "controlPointSpline" (#150).
+func splineKind(s *sketch.Spline) types.SketchEntityKind {
+	if s.IsFitType() {
+		return types.SketchEntitySpline
+	}
+	return types.SketchEntityControlPointSpline
 }
 
 // splineFitSpelling reports a fit spline's fit-method wire spelling (the
@@ -300,12 +309,23 @@ func dimensionKind(k sketch.DimKind) types.DimensionConstraintKind {
 		return types.DimConstraintDiameter
 	case sketch.ArcLengthDim:
 		return types.DimConstraintArcLength
+	default:
+		return advancedDimensionKind(k)
+	}
+}
+
+// advancedDimensionKind maps the M21+ dimension kinds (offset/three-point-angle/ellipse-radius/
+// tangent-distance); split from dimensionKind to keep each switch small.
+func advancedDimensionKind(k sketch.DimKind) types.DimensionConstraintKind {
+	switch k {
 	case sketch.OffsetDim:
 		return types.DimConstraintOffset
 	case sketch.ThreePointAngleDim:
 		return types.DimConstraintThreePointAngle
 	case sketch.EllipseRadiusDim:
 		return types.DimConstraintEllipseRadius
+	case sketch.TangentDistanceDim:
+		return types.DimConstraintTangentDistance
 	default:
 		return types.DimConstraintUnknown
 	}

@@ -26,7 +26,7 @@ func addDimension(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression)
+	dim, err := buildDimension(sk, types.DimensionConstraintKind(in.Kind), in.Entities, in.Expression, in.FarSide)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func applyDimensionEdit(part *compdef.PartComponentDefinition, dim *sketch.Dimen
 }
 
 // buildDimension resolves references and applies the matching model dimension factory.
-func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide bool) (*sketch.DimensionConstraint, error) {
 	dc := sk.DimensionConstraints()
 	switch kind {
 	case types.DimConstraintDistance:
@@ -97,15 +97,18 @@ func buildDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs 
 	case types.DimConstraintArcLength:
 		return arcLengthDimension(sk, refs, expr)
 	default:
-		return buildAdvancedDimension(sk, kind, refs, expr)
+		return buildAdvancedDimension(sk, kind, refs, expr, farSide)
 	}
 }
 
 // buildAdvancedDimension handles the M21 dimension kinds (offset/three-point-angle/
-// ellipse-radius); split out of buildDimension to keep that switch small.
-func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string) (*sketch.DimensionConstraint, error) {
+// ellipse-radius) plus the tangent-distance dimension (#152); split out of buildDimension to
+// keep that switch small.
+func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKind, refs []uint64, expr string, farSide bool) (*sketch.DimensionConstraint, error) {
 	dc := sk.DimensionConstraints()
 	switch kind {
+	case types.DimConstraintTangentDistance:
+		return tangentDistanceDimension(sk, refs, expr, farSide)
 	case types.DimConstraintOffset:
 		return offsetDimension(sk, refs, expr)
 	case types.DimConstraintThreePointAngle:
@@ -123,6 +126,23 @@ func buildAdvancedDimension(sk *sketch.Sketch, kind types.DimensionConstraintKin
 	default:
 		return nil, fmt.Errorf("sketch.addDimension: unsupported kind %q", kind)
 	}
+}
+
+// tangentDistanceDimension resolves a line + circle/arc ref and dimensions the distance from
+// the line to the curve's near (default) or far tangent point (#152).
+func tangentDistanceDimension(sk *sketch.Sketch, refs []uint64, expr string, farSide bool) (*sketch.DimensionConstraint, error) {
+	if len(refs) != 2 {
+		return nil, fmt.Errorf("sketch.addDimension: tangentDistance needs a line ref and a circle/arc ref, got %d", len(refs))
+	}
+	l, err := lineRef(sk, refs[0])
+	if err != nil {
+		return nil, err
+	}
+	c, err := circularRef(sk, refs[1])
+	if err != nil {
+		return nil, err
+	}
+	return sk.DimensionConstraints().AddTangentDistance(l, c, farSide, expr)
 }
 
 // offsetDimension resolves a point + line ref and dimensions their perpendicular distance.
