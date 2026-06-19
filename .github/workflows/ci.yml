@@ -109,7 +109,9 @@ jobs:
           go-version-file: go.mod
           cache: false
       - uses: ./.github/actions/api-contract
-      - run: go install gotest.tools/gotestsum@v1.12.0
+        # Install the version locked in go.mod/go.sum (pinned via tools.go) rather than
+        # resolving one ad hoc — reproducible, lock-enforced (SonarCloud githubactions:S8545).
+      - run: go install gotest.tools/gotestsum
       - name: Test
         run: gotestsum --junitfile test-results-${{ matrix.os }}.xml -- -coverprofile=coverage.out -covermode=count ./...
       - uses: actions/upload-artifact@v6

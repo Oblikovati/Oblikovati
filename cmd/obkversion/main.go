@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"oblikovati.org/release"
@@ -146,8 +147,27 @@ func (g realGit) commitsSince(ref string) []string {
 }
 
 func (g realGit) run(args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
+	cmd := exec.Command(gitBinary(), args...)
 	cmd.Dir = g.dir
 	out, err := cmd.Output()
 	return string(out), err
+}
+
+var (
+	gitOnce sync.Once
+	gitPath string
+)
+
+// gitBinary resolves git to a fixed absolute path once, so commands run that resolved
+// binary rather than whatever a (possibly attacker-mutable) PATH maps "git" to at call
+// time (SonarCloud go:S4036). Falls back to the bare name when git is not on PATH.
+func gitBinary() string {
+	gitOnce.Do(func() {
+		if p, err := exec.LookPath("git"); err == nil {
+			gitPath = p
+			return
+		}
+		gitPath = "git"
+	})
+	return gitPath
 }

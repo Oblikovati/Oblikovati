@@ -3,6 +3,8 @@
 package main
 
 import (
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -88,5 +90,20 @@ func TestAssemble(t *testing.T) {
 func TestAssembleRejectsUnknownChannel(t *testing.T) {
 	if _, err := assemble("beta", 0, "000200", fakeRepo{}, time.Now()); err == nil {
 		t.Fatal("assemble with an unknown channel should error")
+	}
+}
+
+// TestGitBinaryResolvesAbsolute pins the go:S4036 hardening: when git is on PATH, run()
+// invokes a fixed absolute path (not the mutable bare name "git"), and the result is cached.
+func TestGitBinaryResolvesAbsolute(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not installed; nothing to resolve")
+	}
+	got := gitBinary()
+	if !filepath.IsAbs(got) {
+		t.Errorf("gitBinary() = %q, want an absolute path", got)
+	}
+	if again := gitBinary(); again != got {
+		t.Errorf("gitBinary() not cached: %q then %q", got, again)
 	}
 }
