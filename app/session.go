@@ -72,7 +72,8 @@ type Session struct {
 	activeSketch3D       *sketch.Sketch3D
 	pendingDim           *sketch.DimensionConstraint
 	overlays             []renderer.DrawItem
-	hiddenBodyKeys       map[string]bool
+	hiddenBodyKeys       map[string]bool                  // scratch hidden-body set used only when no document is active
+	hiddenBodyKeysByDoc  map[doc.ID]map[string]bool       // browser-driven body visibility, scoped per document (#1105)
 	graphics             *clientgraphics.Store            // scratch store used only when no document is active
 	graphicsByDoc        map[doc.ID]*clientgraphics.Store // add-in client/interaction graphics, scoped per document (M05-F05)
 	addins               *AddInManager
@@ -194,8 +195,8 @@ func newSession(store doc.Store) *Session {
 		bus:            event.NewBus(),
 		selection:      NewSelection(),
 		camera:         scene.NewCamera(800, 600),
-		hiddenBodyKeys: map[string]bool{},
-		graphics:       clientgraphics.NewStore(), graphicsByDoc: map[doc.ID]*clientgraphics.Store{},
+		hiddenBodyKeys: map[string]bool{}, hiddenBodyKeysByDoc: map[doc.ID]map[string]bool{},
+		graphics: clientgraphics.NewStore(), graphicsByDoc: map[doc.ID]*clientgraphics.Store{},
 		addins:          NewAddInManager(),
 		clientApps:      NewClientApplicationRegistry(),
 		browserPanes:    NewAddInBrowserPanes(),
@@ -221,6 +222,7 @@ func newSession(store doc.Store) *Session {
 	s.messageCenter.sink = s.routeMessage            // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.watchDocumentCloses()
+	s.watchDocumentSwitches() // #1105: drop the prior document's selection when a different one is activated
 	s.watchDocumentInterests()
 	s.watchDocumentIdentityCollisions() // open-time identity-GUID clash → reassign + notify
 	s.watchTransactions()               // append-only transaction log for bug reports

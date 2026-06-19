@@ -277,6 +277,24 @@ func (s *Session) watchDocumentCloses() {
 		// The document's add-in client graphics die with it, so its overlays cannot resurface
 		// on a later document that happens to reuse no id (M05-F05 doc-scoped graphics).
 		delete(s.graphicsByDoc, e.Document.ID())
+		// Its hidden-body view state dies with it too (#1105 doc-scoped visibility).
+		delete(s.hiddenBodyKeysByDoc, e.Document.ID())
+		return event.Continue()
+	})
+}
+
+// watchDocumentSwitches clears the selection when a DIFFERENT document is activated (#1105). The
+// selection set holds Selectable refs into the previously active document; without this they leaked
+// into the newly activated document's viewport (stale highlights, wrong-document operations). It
+// fires only on an actual switch, so re-activating the same document leaves its selection intact.
+func (s *Session) watchDocumentSwitches() {
+	var prev doc.ID
+	event.Subscribe(s.workspace.Events(), event.After, func(_ event.Context, e doc.DocumentActivate) event.Outcome {
+		id := e.Document.ID()
+		if id != prev {
+			prev = id
+			s.selection.Clear()
+		}
 		return event.Continue()
 	})
 }
