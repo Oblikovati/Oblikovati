@@ -73,9 +73,13 @@ func polylineParamAtPoint2(g Polyline2d, p math.Point2) (float64, SolutionNature
 		local := segmentParamAtPoint2(seg, p)
 		foot := seg.PointAt(local)
 		d := foot.DistanceTo(p)
-		tol := 1e-12 * stdmath.Max(1, best)
+		// tol is a scale-relative band for the closer/tie decision. It must be computed from a
+		// FINITE reference: seeding best with +Inf made 1e-12*best = +Inf, so best-tol was NaN and
+		// the "strictly closer" guard was always false — every point on a polyline resolved to the
+		// start (param 0). Base it on the candidate distance, and always accept the first segment.
+		tol := 1e-12 * stdmath.Max(1, d)
 		switch {
-		case d < best-tol:
+		case stdmath.IsInf(best, 1) || d < best-tol:
 			best, bestT, ties, bestFoot = d, (float64(i)+local)/float64(segs), 0, foot
 		case d <= best+tol && foot.DistanceTo(bestFoot) > math.DefaultTolerance:
 			ties++
