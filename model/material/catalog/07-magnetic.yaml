@@ -22,13 +22,17 @@
 #        magnetic: relativePermeability - | remanence & saturationFluxDensity T |
 #                  coercivity kA/m | coreLoss W/kg (at 1.5 T, 50 Hz)
 
+# Appearances are physically-based: electrical steel is a satin bluish-grey lamination
+# stack; sintered NdFeB ships nickel-plated (bright, near-chrome silver); SmCo and AlNiCo
+# are uncoated dull grey cast/sintered metals; ferrites (soft MnZn and hard ceramic) are
+# dark, low-metalness ceramics with a matte finish.
 appearances:
-  - {id: electrical-steel, name: Electrical Steel,  albedo: "#b9bcbeff", metallic: 1.0, roughness: 0.40, opacity: 1.0}
-  - {id: soft-ferrite,     name: Soft Ferrite,      albedo: "#3a3c40ff", metallic: 0.2, roughness: 0.55, opacity: 1.0}
-  - {id: ndfeb-magnet,     name: NdFeB Magnet,      albedo: "#9a9ea3ff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
-  - {id: smco-magnet,      name: SmCo Magnet,       albedo: "#8e9094ff", metallic: 1.0, roughness: 0.45, opacity: 1.0}
-  - {id: hard-ferrite,     name: Ferrite Magnet,    albedo: "#2f3134ff", metallic: 0.2, roughness: 0.60, opacity: 1.0}
-  - {id: alnico-magnet,    name: AlNiCo Magnet,     albedo: "#a2a4a6ff", metallic: 1.0, roughness: 0.50, opacity: 1.0}
+  - {id: electrical-steel, name: Electrical Steel,  albedo: "#b6bbc0ff", metallic: 1.0, roughness: 0.42, opacity: 1.0}
+  - {id: soft-ferrite,     name: Soft Ferrite,      albedo: "#34363aff", metallic: 0.15, roughness: 0.55, opacity: 1.0}
+  - {id: ndfeb-magnet,     name: NdFeB Magnet,      albedo: "#d8dadcff", metallic: 1.0, roughness: 0.22, opacity: 1.0}
+  - {id: smco-magnet,      name: SmCo Magnet,       albedo: "#7f8186ff", metallic: 1.0, roughness: 0.58, opacity: 1.0}
+  - {id: hard-ferrite,     name: Ferrite Magnet,    albedo: "#2a2c2fff", metallic: 0.10, roughness: 0.65, opacity: 1.0}
+  - {id: alnico-magnet,    name: AlNiCo Magnet,     albedo: "#9a9da0ff", metallic: 1.0, roughness: 0.52, opacity: 1.0}
 
 materials:
   # --- Soft-magnetic cores -------------------------------------------------------------
