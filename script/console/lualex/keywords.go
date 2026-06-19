@@ -2,6 +2,8 @@
 
 package lualex
 
+import "sort"
+
 // luaKeywords is the reserved-word set of Lua 5.4 (the manual's §3.1). These can never be
 // identifiers, so they always colour as keywords.
 var luaKeywords = map[string]bool{
@@ -30,6 +32,24 @@ var luaBuiltins = map[string]bool{
 	"coroutine": true, "utf8": true, "debug": true, "package": true,
 	// the Script Console host door
 	"oblikovati": true,
+}
+
+// Keywords returns the Lua reserved words in sorted order. The autocomplete engine consumes
+// this so the keyword list lives in exactly one place (no duplicate table to drift).
+func Keywords() []string { return sortedKeys(luaKeywords) }
+
+// Builtins returns the known standard-library globals/tables (and the `oblikovati` door) in
+// sorted order, for the autocomplete engine's bare-prefix suggestions.
+func Builtins() []string { return sortedKeys(luaBuiltins) }
+
+// sortedKeys returns the keys of set in ascending order.
+func sortedKeys(set map[string]bool) []string {
+	out := make([]string, 0, len(set))
+	for k := range set {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // classifyWord returns the token Kind for an identifier word: a reserved keyword, a known
