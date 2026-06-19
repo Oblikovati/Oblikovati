@@ -61,15 +61,16 @@ func main() {
 	out := flag.String("out", "/tmp/editor.png", "window PNG output path")
 	frames := flag.Int("frames", 6, "frames to render before capture")
 	broken := flag.Bool("broken", false, "seed a syntax error and show diagnostics")
+	find := flag.String("find", "", "open the find bar pre-filled with this query")
 	flag.Parse()
-	if err := run(*out, *frames, *broken); err != nil {
+	if err := run(*out, *frames, *broken, *find); err != nil {
 		fmt.Fprintln(os.Stderr, "editorshot:", err)
 		os.Exit(1)
 	}
 	fmt.Fprintln(os.Stdout, "wrote", *out)
 }
 
-func run(out string, frames int, broken bool) error {
+func run(out string, frames int, broken bool, find string) error {
 	s := app.NewSession()
 	if err := app.RegisterStandardCommands(s); err != nil {
 		return err
@@ -87,6 +88,9 @@ func run(out string, frames int, broken bool) error {
 	} else {
 		ui.SetScriptSource(sampleSource)
 		ui.SetScriptCaret(4, 35) // inside oblikovati.documents.create{ … } so signature help shows
+		if find != "" {
+			ui.OpenScriptFind(find)
+		}
 	}
 
 	win, err := native.CreateWindow(1280, 800, "editorshot")

@@ -30,6 +30,17 @@ type codeEditor struct {
 	completion completer      // autocomplete popup state
 	analyzer   *diag.Analyzer // debounced live syntax diagnostics
 	apidocs    *apidoc.Set    // signature-help / hover doc source
+	find       findState      // find/replace bar
+}
+
+// findState is the editor's find/replace bar: whether it is open, its query/replace input
+// buffers (owned across frames for native.InputText), the current matches and which is selected.
+type findState struct {
+	active  bool
+	query   []byte
+	replace []byte
+	matches []editor.Match
+	index   int
 }
 
 // diagnosticDebounce is how long the source must be unchanged before a syntax re-check runs, so
@@ -43,6 +54,7 @@ func newCodeEditor(text string) *codeEditor {
 		model:    editor.New(text),
 		analyzer: diag.NewAnalyzer(gopherlua.SyntaxChecker{}, diagnosticDebounce),
 		apidocs:  apidoc.Default(),
+		find:     findState{query: make([]byte, 256), replace: make([]byte, 256)},
 	}
 }
 

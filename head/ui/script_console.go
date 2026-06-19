@@ -72,6 +72,18 @@ func SetScriptCaret(line, col int) {
 // drivers / tests.
 func TriggerScriptCompletion() { scriptCodeEditor().refreshCompletion(true) }
 
+// OpenScriptFind opens the find bar pre-filled with query (and selects the first hit). Exposed
+// for capture drivers / tests.
+func OpenScriptFind(query string) {
+	e := scriptCodeEditor()
+	for i := range e.find.query {
+		e.find.query[i] = 0
+	}
+	copy(e.find.query, query)
+	e.find.active = true
+	e.recomputeMatches()
+}
+
 // ForceScriptDiagnostics runs the syntax check immediately (bypassing the debounce), so a capture
 // driver can show error underlines without waiting real time. Exposed for capture drivers / tests.
 func ForceScriptDiagnostics() {
@@ -108,6 +120,7 @@ func drawScriptConsoleBody() {
 	}
 	snap := scriptController.Console().Snapshot()
 	drawScriptToolbar(snap.Running)
+	scriptCodeEditor().DrawFindBar()
 	scriptCodeEditor().Draw(0, editorHeight)
 	native.Separator()
 	drawScriptStatus(snap)

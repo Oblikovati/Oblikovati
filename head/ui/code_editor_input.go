@@ -125,6 +125,8 @@ func (e *codeEditor) handleShortcuts(k native.EditorKeys) bool {
 		e.model.Redo()
 	case k.Slash:
 		e.model.ToggleLineComment()
+	case k.Find:
+		e.toggleFind()
 	default:
 		return false
 	}
