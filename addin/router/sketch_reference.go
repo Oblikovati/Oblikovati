@@ -30,7 +30,7 @@ func offsetSketchEntity(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if err != nil {
 		return nil, err
 	}
-	d, err := part.Units().Parse(in.Distance, param.Length)
+	d, err := resolveQuantity(part, in.Distance, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.offset: distance %q: %w", in.Distance, err)
 	}
@@ -243,14 +243,14 @@ func applyTextEdit(part *compdef.PartComponentDefinition, tb *sketch.TextBox, in
 // applyTextLengths parses and applies the edit's unit-bearing height/rotation/fontSize.
 func applyTextLengths(part *compdef.PartComponentDefinition, tb *sketch.TextBox, in wire.EditTextArgs) error {
 	if in.Height != "" {
-		h, err := part.Units().Parse(in.Height, param.Length)
+		h, err := resolveQuantity(part, in.Height, param.Length)
 		if err != nil {
 			return fmt.Errorf("sketch.editText: height %q: %w", in.Height, err)
 		}
 		tb.Height = math.Scalar(h.Value)
 	}
 	if in.FontSize != "" {
-		fsz, err := part.Units().Parse(in.FontSize, param.Length)
+		fsz, err := resolveQuantity(part, in.FontSize, param.Length)
 		if err != nil {
 			return fmt.Errorf("sketch.editText: fontSize %q: %w", in.FontSize, err)
 		}
@@ -291,7 +291,7 @@ func textBoxRef(sk *sketch.Sketch, id uint64) (*sketch.TextBox, error) {
 
 // textMetrics parses a text box's unit-bearing height, optional rotation, and font size.
 func textMetrics(part *compdef.PartComponentDefinition, in wire.AddTextArgs) (height, rot, fontSize math.Scalar, err error) {
-	h, err := part.Units().Parse(in.Height, param.Length)
+	h, err := resolveQuantity(part, in.Height, param.Length)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("sketch.addText: height %q: %w", in.Height, err)
 	}
@@ -303,7 +303,7 @@ func textMetrics(part *compdef.PartComponentDefinition, in wire.AddTextArgs) (he
 	}
 	size := 0.0
 	if in.FontSize != "" {
-		fsz, ferr := part.Units().Parse(in.FontSize, param.Length)
+		fsz, ferr := resolveQuantity(part, in.FontSize, param.Length)
 		if ferr != nil {
 			return 0, 0, 0, fmt.Errorf("sketch.addText: fontSize %q: %w", in.FontSize, ferr)
 		}
@@ -365,11 +365,11 @@ func vAlignString(j sketch.TextVJustify) types.TextVerticalAlign {
 
 // imageMetrics parses the image's unit-bearing width/height/rotation.
 func imageMetrics(part *compdef.PartComponentDefinition, in wire.AddSketchImageArgs) (math.Scalar, math.Scalar, math.Scalar, error) {
-	w, err := part.Units().Parse(in.Width, param.Length)
+	w, err := resolveQuantity(part, in.Width, param.Length)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("sketch.addImage: width %q: %w", in.Width, err)
 	}
-	h, err := part.Units().Parse(in.Height, param.Length)
+	h, err := resolveQuantity(part, in.Height, param.Length)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("sketch.addImage: height %q: %w", in.Height, err)
 	}

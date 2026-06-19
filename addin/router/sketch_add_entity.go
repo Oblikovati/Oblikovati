@@ -181,7 +181,7 @@ func buildPolygon(sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Poi
 // buildSlot builds a straight (center-to-center, default) or arc (3-point) slot of the
 // given unit-bearing width.
 func buildSlot(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wire.AddSketchEntityArgs, pts []math.Point2) ([]sketch.Entity, error) {
-	w, err := part.Units().Parse(in.Width, param.Length)
+	w, err := resolveQuantity(part, in.Width, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.addEntity: slot width %q: %w", in.Width, err)
 	}
@@ -221,7 +221,7 @@ func buildArcCenterPointSlot(part *compdef.PartComponentDefinition, sk *sketch.S
 	if err := wantPoints("arc slot by center point", pts, 2); err != nil {
 		return nil, err
 	}
-	sweep, err := part.Units().Parse(in.EndAngle, param.Angle)
+	sweep, err := resolveQuantity(part, in.EndAngle, param.Angle)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.addEntity: arc slot sweep angle %q: %w", in.EndAngle, err)
 	}
@@ -313,7 +313,7 @@ func buildOffsetSpline(part *compdef.PartComponentDefinition, sk *sketch.Sketch,
 	if !ok {
 		return nil, nil, fmt.Errorf("sketch.addEntity: entity %d is %T, want a spline", in.EntityRefs[0], e)
 	}
-	d, err := part.Units().Parse(in.Radius, param.Length)
+	d, err := resolveQuantity(part, in.Radius, param.Length)
 	if err != nil {
 		return nil, nil, fmt.Errorf("sketch.addEntity: offset distance %q: %w", in.Radius, err)
 	}
@@ -326,7 +326,7 @@ func buildFillet(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wi
 	if err != nil {
 		return nil, nil, err
 	}
-	r, err := part.Units().Parse(in.Radius, param.Length)
+	r, err := resolveQuantity(part, in.Radius, param.Length)
 	if err != nil {
 		return nil, nil, fmt.Errorf("sketch.addEntity: fillet radius %q: %w", in.Radius, err)
 	}
@@ -343,13 +343,13 @@ func buildChamfer(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in w
 	if err != nil {
 		return nil, nil, err
 	}
-	d1, err := part.Units().Parse(in.Radius, param.Length)
+	d1, err := resolveQuantity(part, in.Radius, param.Length)
 	if err != nil {
 		return nil, nil, fmt.Errorf("sketch.addEntity: chamfer distance %q: %w", in.Radius, err)
 	}
 	d2 := d1
 	if in.Distance2 != "" {
-		if d2, err = part.Units().Parse(in.Distance2, param.Length); err != nil {
+		if d2, err = resolveQuantity(part, in.Distance2, param.Length); err != nil {
 			return nil, nil, fmt.Errorf("sketch.addEntity: chamfer distance2 %q: %w", in.Distance2, err)
 		}
 	}
@@ -422,7 +422,7 @@ func buildCircle(part *compdef.PartComponentDefinition, sk *sketch.Sketch, in wi
 	if err := wantPoints("circle centerRadius", pts, 1); err != nil {
 		return nil, nil, err
 	}
-	r, err := part.Units().Parse(in.Radius, param.Length)
+	r, err := resolveQuantity(part, in.Radius, param.Length)
 	if err != nil {
 		return nil, nil, fmt.Errorf("sketch.addEntity: circle radius %q: %w", in.Radius, err)
 	}
@@ -486,11 +486,11 @@ func ellipseFrame(part *compdef.PartComponentDefinition, in wire.AddSketchEntity
 	if len(in.Axis) != 2 {
 		return math.Vector2{}, 0, 0, fmt.Errorf("sketch.addEntity: ellipse axis needs 2 components, got %d", len(in.Axis))
 	}
-	majorR, err := part.Units().Parse(in.MajorRadius, param.Length)
+	majorR, err := resolveQuantity(part, in.MajorRadius, param.Length)
 	if err != nil {
 		return math.Vector2{}, 0, 0, fmt.Errorf("sketch.addEntity: majorRadius %q: %w", in.MajorRadius, err)
 	}
-	minorR, err := part.Units().Parse(in.MinorRadius, param.Length)
+	minorR, err := resolveQuantity(part, in.MinorRadius, param.Length)
 	if err != nil {
 		return math.Vector2{}, 0, 0, fmt.Errorf("sketch.addEntity: minorRadius %q: %w", in.MinorRadius, err)
 	}

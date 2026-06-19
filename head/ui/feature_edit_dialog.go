@@ -23,9 +23,13 @@ import (
 // feature being edited — so switching directly from one feature's edit to another's reseeds
 // the fields (a bare "was open" bool would carry the first feature's stale values over).
 var featureEditUI struct {
-	values  []float32
-	editing string // EditingFeatureName of the feature the fields were seeded from ("" = none)
+	values  []float32 // integer fields (pattern counts) stay numeric
+	texts   [][]byte  // scalar fields edit as text so they accept parameter expressions
+	editing string    // EditingFeatureName of the feature the fields were seeded from ("" = none)
 }
+
+// editFieldBufLen bounds a parameter-expression field ("d0 + 12 mm" and the like).
+const editFieldBufLen = 64
 
 // drawFeatureEditDialog shows the parameter + reference editor while a generic feature
 // edit is open.
@@ -53,8 +57,11 @@ func refreshFeatureEditUI(s *app.Session, nParams int) {
 		return
 	}
 	featureEditUI.values = make([]float32, nParams)
+	featureEditUI.texts = make([][]byte, nParams)
 	for i := 0; i < nParams; i++ {
 		featureEditUI.values[i] = float32(s.EditFeatureParamValue(i))
+		featureEditUI.texts[i] = make([]byte, editFieldBufLen)
+		setBuf(featureEditUI.texts[i], strconv.FormatFloat(s.EditFeatureParamValue(i), 'g', -1, 64))
 	}
 	featureEditUI.editing = s.EditingFeatureName()
 }
@@ -110,20 +117,25 @@ func drawEditParams(s *app.Session, n int) {
 	}
 	for i := 0; i < n && i < len(featureEditUI.values); i++ {
 		drawEditParamRow(s, i)
-		s.SetEditFeatureParamValue(i, float64(featureEditUI.values[i])) // keep the feature in sync
 	}
 }
 
-// drawEditParamRow renders one scalar row: label, value field, unit suffix.
+// drawEditParamRow renders one scalar row: label, value field, unit suffix. Integer
+// fields stay a numeric spinner; scalar fields edit as text and commit through the
+// parameter evaluator (SetEditFeatureParamText), so a field accepts a parameter name
+// or formula ("bore_r + 2 mm") as well as a literal (Oblikovati.API#187, UI side). An
+// expression that does not yet parse (mid-typing) is simply not committed.
 func drawEditParamRow(s *app.Session, i int) {
 	propertyRow(s.EditFeatureParamLabel(i))
 	native.SetNextItemWidth(propertyFieldWidth)
 	if s.EditFeatureParamIsInteger(i) {
 		iv := int32(featureEditUI.values[i] + 0.5)
-		native.InputInt(fmt.Sprintf("##edit-feature-param-%d", i), &iv)
-		featureEditUI.values[i] = float32(iv)
-	} else {
-		native.InputFloat(fmt.Sprintf("##edit-feature-param-%d", i), &featureEditUI.values[i])
+		if native.InputInt(fmt.Sprintf("##edit-feature-param-%d", i), &iv) {
+			featureEditUI.values[i] = float32(iv)
+			s.SetEditFeatureParamValue(i, float64(iv))
+		}
+	} else if native.InputText(fmt.Sprintf("##edit-feature-param-%d", i), featureEditUI.texts[i]) {
+		_ = s.SetEditFeatureParamText(i, bufString(featureEditUI.texts[i]))
 	}
 	if u := s.EditFeatureParamUnitName(i); u != "" {
 		native.SameLine()

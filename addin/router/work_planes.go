@@ -168,7 +168,7 @@ func applyScalarEdits(host workHost, wp *feature.WorkPlane, edits []wire.ScalarE
 		if e.Index < 0 || e.Index >= len(scalars) {
 			return fmt.Errorf("workPlanes.redefine: scalar index %d out of range (%d scalars)", e.Index, len(scalars))
 		}
-		q, err := host.Units().Parse(e.Value, scalars[e.Index].Unit)
+		q, err := resolveQuantity(host, e.Value, scalars[e.Index].Unit)
 		if err != nil {
 			return fmt.Errorf("workPlanes.redefine: scalar %d value %q: %w", e.Index, e.Value, err)
 		}
@@ -390,7 +390,7 @@ func isWorkFeatureRef(r string) bool {
 // re-evaluated by the host's Recompute). Mirrors opregistry's lengthClosure for the router
 // args that feed func() float64 (work-plane offset).
 func modelLengthClosure(host workHost, expr string) (func() float64, error) {
-	if q, err := host.Units().Parse(expr, param.Length); err == nil {
+	if q, err := resolveQuantity(host, expr, param.Length); err == nil {
 		v := q.Value
 		return func() float64 { return v }, nil
 	}
@@ -406,7 +406,7 @@ func modelLengthClosure(host workHost, expr string) (func() float64, error) {
 
 // modelAngle parses a unit-bearing angle ("45 deg") into a model value (radians).
 func modelAngle(host workHost, expr string) (float64, error) {
-	q, err := host.Units().Parse(expr, param.Angle)
+	q, err := resolveQuantity(host, expr, param.Angle)
 	if err != nil {
 		return 0, fmt.Errorf("workPlanes.create: angle %q: %w", expr, err)
 	}

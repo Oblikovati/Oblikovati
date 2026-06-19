@@ -69,7 +69,7 @@ func parseBoolInto(value, property string, set func(bool)) error {
 
 // setSketchLineWeight parses a unit-bearing length ("0.5 mm") into model cm and applies it.
 func setSketchLineWeight(part *compdef.PartComponentDefinition, sk *sketch.Sketch, value string) error {
-	q, err := part.Units().Parse(value, param.Length)
+	q, err := resolveQuantity(part, value, param.Length)
 	if err != nil {
 		return fmt.Errorf("sketch.setProperty: lineWeight %q: %w", value, err)
 	}
