@@ -308,6 +308,7 @@ func (s *Session) EnterSketch(sk *sketch.Sketch) {
 	s.activeSketch = sk
 	// The contextual environment switched: add-ins re-aim their UI (M05-F12).
 	event.Emit(s.bus, event.After, EnvironmentChanged{Environment: SketchEnvironment})
+	s.emitSketchEdit(sk.Seq(), sk.Name(), true) // SketchEvents surface (#148)
 	sk.Edit()
 	s.beginEditScope(sk.Seq()) // hide features/datums created after this sketch while editing it
 	s.sketchReturnCam = s.camera
@@ -319,6 +320,7 @@ func (s *Session) EnterSketch(sk *sketch.Sketch) {
 
 func (s *Session) ExitSketch() {
 	if s.activeSketch != nil {
+		s.emitSketchEdit(s.activeSketch.Seq(), s.activeSketch.Name(), false) // SketchEvents surface (#148)
 		s.activeSketch.ExitEdit()
 		s.activeSketch = nil
 		event.Emit(s.bus, event.After, EnvironmentChanged{Environment: BaseEnvironment})
