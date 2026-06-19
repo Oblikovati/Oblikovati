@@ -86,8 +86,7 @@ func run(out string, frames int, broken bool) error {
 		ui.ForceScriptDiagnostics()
 	} else {
 		ui.SetScriptSource(sampleSource)
-		ui.SetScriptCaret(4, 15)     // just after the '.' of oblikovati.documents on line 5
-		ui.TriggerScriptCompletion() // open the autocomplete popup at the caret
+		ui.SetScriptCaret(4, 35) // inside oblikovati.documents.create{ … } so signature help shows
 	}
 
 	win, err := native.CreateWindow(1280, 800, "editorshot")

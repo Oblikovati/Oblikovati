@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/script/console/apidoc"
 	"oblikovati.org/script/console/diag"
 	"oblikovati.org/script/console/editor"
 	"oblikovati.org/script/console/textbuf"
@@ -28,6 +29,7 @@ type codeEditor struct {
 	dragging   bool           // a left-drag selection is in progress
 	completion completer      // autocomplete popup state
 	analyzer   *diag.Analyzer // debounced live syntax diagnostics
+	apidocs    *apidoc.Set    // signature-help / hover doc source
 }
 
 // diagnosticDebounce is how long the source must be unchanged before a syntax re-check runs, so
@@ -40,6 +42,7 @@ func newCodeEditor(text string) *codeEditor {
 	return &codeEditor{
 		model:    editor.New(text),
 		analyzer: diag.NewAnalyzer(gopherlua.SyntaxChecker{}, diagnosticDebounce),
+		apidocs:  apidoc.Default(),
 	}
 }
 
@@ -76,6 +79,7 @@ func (e *codeEditor) Draw(width, height float32) {
 	e.handleInput(ox, oy, width, height, m, hovered)
 	e.analyzer.Observe(e.model.Text(), time.Now()) // settles a few hundred ms after typing stops
 	e.render(ox, oy, width, height, m)
+	e.drawHoverDoc(ox, oy, m, hovered)
 }
 
 // handleInput dispatches mouse, then (only when focused) scroll, keys and typed text, finally
