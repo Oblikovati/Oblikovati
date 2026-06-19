@@ -26,6 +26,8 @@ type (
 	Mechanical         = types.Mechanical
 	Thermal            = types.Thermal
 	Electrical         = types.Electrical
+	Magnetic           = types.Magnetic
+	MagneticClass      = types.MagneticClass
 	IsotropyClass      = types.IsotropyClass
 	AnisotropicElastic = types.AnisotropicElastic
 	PhysicalProperties = types.PhysicalProperties
@@ -39,6 +41,10 @@ const (
 	Isotropic             = types.Isotropic
 	Orthotropic           = types.Orthotropic
 	TransverselyIsotropic = types.TransverselyIsotropic
+
+	NonMagnetic  = types.NonMagnetic
+	SoftMagnetic = types.SoftMagnetic
+	HardMagnetic = types.HardMagnetic
 )
 
 // ParseColor parses a "#RRGGBBAA" (or "#RRGGBB") hex color into an Rgba — re-exported

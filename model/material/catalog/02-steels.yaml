@@ -34,6 +34,10 @@ materials:
     mechanical: {youngsModulus: 205, poissonsRatio: 0.29, yieldStrength: 370, ultimateTensileStrength: 440}
     thermal:    {conductivity: 51.9, expansionCoeff: 11.5e-6, specificHeat: 486}
     electrical: {resistivity: 1.59e-7, relativePermittivity: 1}
+    # Soft-magnetic: low-carbon steel as a solid back-iron / pole. μr is a representative
+    # amplitude value at moderate field (AISI 1018 ~1000–2000); Bsat ≈ 2.1 T.
+    # Source: Bozorth, "Ferromagnetism"; ASM; FEMM low-carbon-steel BH library.
+    magnetic:   {class: soft-magnetic, relativePermeability: 1000, saturationFluxDensity: 2.1}
   - id: steel-a36
     name: Steel (ASTM A36 Structural)
     density: 7.85
@@ -41,6 +45,8 @@ materials:
     mechanical: {youngsModulus: 200, poissonsRatio: 0.26, yieldStrength: 250, ultimateTensileStrength: 400}
     thermal:    {conductivity: 50.0, expansionCoeff: 11.7e-6, specificHeat: 486}
     electrical: {resistivity: 1.5e-7, relativePermittivity: 1}
+    # Soft-magnetic structural steel (common solid magnetic return path). Source: ASM; FEMM.
+    magnetic:   {class: soft-magnetic, relativePermeability: 1000, saturationFluxDensity: 2.1}
   - id: steel-1045
     name: Steel (AISI 1045, Cold Drawn)
     density: 7.87
@@ -125,6 +131,9 @@ materials:
     mechanical: {youngsModulus: 200, poissonsRatio: 0.28, yieldStrength: 310, ultimateTensileStrength: 515}
     thermal:    {conductivity: 26.1, expansionCoeff: 10.4e-6, specificHeat: 460}
     electrical: {resistivity: 6.0e-7, relativePermittivity: 1}
+    # Ferritic stainless is magnetic (unlike austenitic 304/316). μr ~600–1000; Bsat ≈ 1.4 T.
+    # Source: AK Steel 430 datasheet; Bozorth.
+    magnetic:   {class: soft-magnetic, relativePermeability: 800, saturationFluxDensity: 1.4}
   - id: stainless-410
     name: Stainless Steel (AISI 410, Martensitic)
     density: 7.74
@@ -132,6 +141,8 @@ materials:
     mechanical: {youngsModulus: 200, poissonsRatio: 0.28, yieldStrength: 415, ultimateTensileStrength: 585}
     thermal:    {conductivity: 24.9, expansionCoeff: 9.9e-6, specificHeat: 460}
     electrical: {resistivity: 5.7e-7, relativePermittivity: 1}
+    # Martensitic stainless is ferromagnetic. μr ~700–1000; Bsat ≈ 1.5 T. Source: AK Steel 410.
+    magnetic:   {class: soft-magnetic, relativePermeability: 750, saturationFluxDensity: 1.5}
   - id: stainless-17-4ph
     name: Stainless Steel (17-4 PH, H900)
     density: 7.75
@@ -147,6 +158,8 @@ materials:
     mechanical: {youngsModulus: 100, poissonsRatio: 0.26, yieldStrength: 275, ultimateTensileStrength: 290}
     thermal:    {conductivity: 53.0, expansionCoeff: 11.0e-6, specificHeat: 490}
     electrical: {resistivity: 1.1e-6, relativePermittivity: 1}
+    # Gray iron is soft-magnetic but graphite flakes lower μr and Bsat vs steel. Source: ASM.
+    magnetic:   {class: soft-magnetic, relativePermeability: 300, saturationFluxDensity: 1.4}
   - id: cast-iron-ductile
     name: Cast Iron (Ductile, 65-45-12)
     density: 7.10

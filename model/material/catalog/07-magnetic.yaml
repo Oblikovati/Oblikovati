@@ -1,0 +1,141 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: magnetic materials — soft-magnetic cores (electrical/lamination
+# steels, soft iron, soft ferrite) and permanent magnets (NdFeB, SmCo, hard ferrite,
+# AlNiCo). These carry the `magnetic` property group a magnetostatics solver (the FEMM
+# bridge add-in) reads to assign a block material, in addition to the usual mechanical/
+# thermal/electrical groups required of every catalog entry.
+#
+# Magnetic property sources (room temperature, ~20 C):
+#   - Soft-magnetic μr / Bsat: Bozorth, "Ferromagnetism"; Cullity & Graham, "Introduction
+#     to Magnetic Materials"; the FEMM material BH library; AK Steel / Cogent (NO electrical
+#     steel) datasheets. μr is a representative amplitude/initial value (these are nonlinear,
+#     so a single μr is the linear-region approximation the rough study uses).
+#   - Permanent-magnet Br / Hcj / recoil μr: Arnold Magnetic Technologies and Eclipse Magnetics
+#     sintered NdFeB / SmCo / ferrite / AlNiCo datasheets; recoil μr ≈ Br/(μ0·Hc) ≈ 1.05 for
+#     sintered rare-earth grades. coreLoss is the W15/50 specific loss for lamination grades.
+#   - Mechanical/thermal/electrical: MatWeb grade datasheets; magnet-supplier datasheets;
+#     ASM. Sintered magnets are brittle (yield ≈ flexural/tensile strength).
+#
+# Units: density g/cm3 | youngsModulus GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
+#        magnetic: relativePermeability - | remanence & saturationFluxDensity T |
+#                  coercivity kA/m | coreLoss W/kg (at 1.5 T, 50 Hz)
+
+# Appearances are physically-based: electrical steel is a satin bluish-grey lamination
+# stack; sintered NdFeB ships nickel-plated (bright, near-chrome silver); SmCo and AlNiCo
+# are uncoated dull grey cast/sintered metals; ferrites (soft MnZn and hard ceramic) are
+# dark, low-metalness ceramics with a matte finish.
+appearances:
+  - {id: electrical-steel, name: Electrical Steel,  albedo: "#b6bbc0ff", metallic: 1.0, roughness: 0.42, opacity: 1.0}
+  - {id: soft-ferrite,     name: Soft Ferrite,      albedo: "#34363aff", metallic: 0.15, roughness: 0.55, opacity: 1.0}
+  - {id: ndfeb-magnet,     name: NdFeB Magnet,      albedo: "#eef0f3ff", metallic: 1.0, roughness: 0.07, opacity: 1.0}
+  - {id: smco-magnet,      name: SmCo Magnet,       albedo: "#7f8186ff", metallic: 1.0, roughness: 0.58, opacity: 1.0}
+  - {id: hard-ferrite,     name: Ferrite Magnet,    albedo: "#2a2c2fff", metallic: 0.10, roughness: 0.65, opacity: 1.0}
+  - {id: alnico-magnet,    name: AlNiCo Magnet,     albedo: "#9a9da0ff", metallic: 1.0, roughness: 0.52, opacity: 1.0}
+
+materials:
+  # --- Soft-magnetic cores -------------------------------------------------------------
+  - id: electrical-steel-m270
+    name: Electrical Steel (M270-35A, NO)
+    density: 7.65
+    appearance: electrical-steel
+    # Non-oriented silicon steel, the workhorse motor lamination. Source: Cogent M270-35A.
+    mechanical: {youngsModulus: 185, poissonsRatio: 0.30, yieldStrength: 450, ultimateTensileStrength: 565}
+    thermal:    {conductivity: 25.0, expansionCoeff: 11.6e-6, specificHeat: 460}
+    electrical: {resistivity: 5.2e-7, relativePermittivity: 1}
+    magnetic:   {class: soft-magnetic, relativePermeability: 4000, saturationFluxDensity: 1.8, coreLoss: 2.7}
+  - id: electrical-steel-m400
+    name: Electrical Steel (M400-50A, NO)
+    density: 7.70
+    appearance: electrical-steel
+    # Lower-cost, higher-loss NO grade. Source: Cogent M400-50A.
+    mechanical: {youngsModulus: 185, poissonsRatio: 0.30, yieldStrength: 410, ultimateTensileStrength: 520}
+    thermal:    {conductivity: 28.0, expansionCoeff: 11.6e-6, specificHeat: 460}
+    electrical: {resistivity: 4.0e-7, relativePermittivity: 1}
+    magnetic:   {class: soft-magnetic, relativePermeability: 3500, saturationFluxDensity: 1.8, coreLoss: 4.0}
+  - id: electrical-steel-m19
+    name: Electrical Steel (AISI M-19, NO)
+    density: 7.65
+    appearance: electrical-steel
+    # The FEMM-library reference NO silicon steel (29 gauge). Source: FEMM material library.
+    mechanical: {youngsModulus: 185, poissonsRatio: 0.30, yieldStrength: 360, ultimateTensileStrength: 490}
+    thermal:    {conductivity: 25.0, expansionCoeff: 11.6e-6, specificHeat: 460}
+    electrical: {resistivity: 5.0e-7, relativePermittivity: 1}
+    magnetic:   {class: soft-magnetic, relativePermeability: 5000, saturationFluxDensity: 1.8, coreLoss: 3.0}
+  - id: cobalt-iron-vacoflux
+    name: Cobalt Iron (49% Co, Vacoflux 50)
+    density: 8.12
+    appearance: electrical-steel
+    # Highest-Bsat soft-magnetic alloy, used in high-power-density motors. Source: VAC Vacoflux 50.
+    mechanical: {youngsModulus: 220, poissonsRatio: 0.30, yieldStrength: 400, ultimateTensileStrength: 700}
+    thermal:    {conductivity: 30.0, expansionCoeff: 9.3e-6, specificHeat: 420}
+    electrical: {resistivity: 4.0e-7, relativePermittivity: 1}
+    magnetic:   {class: soft-magnetic, relativePermeability: 5000, saturationFluxDensity: 2.35, coreLoss: 1.5}
+  - id: soft-ferrite-mnzn
+    name: Soft Ferrite (MnZn, N87)
+    density: 4.85
+    appearance: soft-ferrite
+    # High-frequency core (transformers/inductors): high μr, very high resistivity, low Bsat.
+    # Source: TDK/EPCOS N87 datasheet.
+    mechanical: {youngsModulus: 150, poissonsRatio: 0.28, yieldStrength: 30, ultimateTensileStrength: 50}
+    thermal:    {conductivity: 4.0, expansionCoeff: 10.0e-6, specificHeat: 750}
+    electrical: {resistivity: 8.0, relativePermittivity: 1}
+    magnetic:   {class: soft-magnetic, relativePermeability: 2200, saturationFluxDensity: 0.49}
+
+  # --- Permanent magnets ---------------------------------------------------------------
+  - id: magnet-ndfeb-n35
+    name: Magnet (NdFeB, N35 Sintered)
+    density: 7.50
+    appearance: ndfeb-magnet
+    # Sintered NdFeB, entry grade. Source: Arnold/Eclipse N35 datasheet.
+    mechanical: {youngsModulus: 160, poissonsRatio: 0.24, yieldStrength: 75, ultimateTensileStrength: 80}
+    thermal:    {conductivity: 9.0, expansionCoeff: 5.2e-6, specificHeat: 440}
+    electrical: {resistivity: 1.4e-6, relativePermittivity: 1}
+    magnetic:   {class: hard-magnetic, remanence: 1.18, coercivity: 955, relativePermeability: 1.05}
+  - id: magnet-ndfeb-n42
+    name: Magnet (NdFeB, N42 Sintered)
+    density: 7.50
+    appearance: ndfeb-magnet
+    # The default servo-motor magnet. Source: Arnold/Eclipse N42 datasheet.
+    mechanical: {youngsModulus: 160, poissonsRatio: 0.24, yieldStrength: 75, ultimateTensileStrength: 80}
+    thermal:    {conductivity: 9.0, expansionCoeff: 5.2e-6, specificHeat: 440}
+    electrical: {resistivity: 1.4e-6, relativePermittivity: 1}
+    magnetic:   {class: hard-magnetic, remanence: 1.30, coercivity: 915, relativePermeability: 1.05}
+  - id: magnet-ndfeb-n52
+    name: Magnet (NdFeB, N52 Sintered)
+    density: 7.50
+    appearance: ndfeb-magnet
+    # Highest-energy commercial grade. Source: Arnold/Eclipse N52 datasheet.
+    mechanical: {youngsModulus: 160, poissonsRatio: 0.24, yieldStrength: 75, ultimateTensileStrength: 80}
+    thermal:    {conductivity: 9.0, expansionCoeff: 5.2e-6, specificHeat: 440}
+    electrical: {resistivity: 1.4e-6, relativePermittivity: 1}
+    magnetic:   {class: hard-magnetic, remanence: 1.45, coercivity: 875, relativePermeability: 1.05}
+  - id: magnet-smco-2-17
+    name: Magnet (SmCo, Sm2Co17)
+    density: 8.40
+    appearance: smco-magnet
+    # High-temperature rare-earth magnet (to ~300 C), high coercivity. Source: Arnold SmCo 2:17.
+    mechanical: {youngsModulus: 150, poissonsRatio: 0.24, yieldStrength: 35, ultimateTensileStrength: 40}
+    thermal:    {conductivity: 10.0, expansionCoeff: 9.0e-6, specificHeat: 370}
+    electrical: {resistivity: 8.6e-7, relativePermittivity: 1}
+    magnetic:   {class: hard-magnetic, remanence: 1.05, coercivity: 1990, relativePermeability: 1.05}
+  - id: magnet-ferrite-y30
+    name: Magnet (Hard Ferrite, Y30)
+    density: 4.90
+    appearance: hard-ferrite
+    # Low-cost ceramic magnet; low Br but cheap and corrosion-proof. Source: Eclipse Y30.
+    mechanical: {youngsModulus: 150, poissonsRatio: 0.28, yieldStrength: 50, ultimateTensileStrength: 55}
+    thermal:    {conductivity: 4.0, expansionCoeff: 13.0e-6, specificHeat: 800}
+    electrical: {resistivity: 1.0e4, relativePermittivity: 1}
+    magnetic:   {class: hard-magnetic, remanence: 0.40, coercivity: 250, relativePermeability: 1.10}
+  - id: magnet-alnico-5
+    name: Magnet (AlNiCo 5, Cast)
+    density: 7.30
+    appearance: alnico-magnet
+    # High Br but low Hc (easily demagnetised); high-temperature, used in sensors/instruments.
+    # Source: Arnold AlNiCo 5 datasheet.
+    mechanical: {youngsModulus: 100, poissonsRatio: 0.28, yieldStrength: 50, ultimateTensileStrength: 55}
+    thermal:    {conductivity: 12.0, expansionCoeff: 11.3e-6, specificHeat: 460}
+    electrical: {resistivity: 4.7e-7, relativePermittivity: 1}
+    magnetic:   {class: hard-magnetic, remanence: 1.25, coercivity: 51, relativePermeability: 4.0}

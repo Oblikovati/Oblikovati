@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/material"
 	"oblikovati.org/model/occurrence"
 	"oblikovati.org/scene"
 )
@@ -63,6 +64,33 @@ func TestVisibleBodiesTransformsPlacedComponents(t *testing.T) {
 	}
 	if got := float64(rb.Max.Z); got < 3.99 || got > 4.01 {
 		t.Errorf("placed body max Z = %g, want 4 (the extrude height, unmoved on Z)", got)
+	}
+}
+
+// TestAssemblySurfaceLookupResolvesOccurrenceAppearance locks the #1103 fix: an active
+// assembly's SurfaceLookup resolves each placed body to ITS source part's assigned
+// appearance, not the neutral default. Before the fix SurfaceLookup returned nil for an
+// assembly, so every occurrence rendered flat default grey.
+func TestAssemblySurfaceLookupResolvesOccurrenceAppearance(t *testing.T) {
+	s, asm, boxDoc, asmDoc := emptyBoxAssembly(t)
+	part := boxDoc.Content().(*compdef.PartComponentDefinition)
+	body := part.SurfaceBodies().All()[0]
+	part.Assignments().SetBodyAppearance(material.RefKey(body.ReferenceKey()), "steel")
+	if _, err := asm.PlaceComponentFromFile(asmDoc, boxDoc, "box:1", math.Translation4(math.V3(5, 0, 0))); err != nil {
+		t.Fatalf("place box: %v", err)
+	}
+
+	lookup := s.SurfaceLookup() // assembly is active
+	if lookup == nil {
+		t.Fatal("assembly SurfaceLookup is nil — every occurrence would render default grey (#1103)")
+	}
+	steel, ok := s.Materials().Appearance("steel")
+	if !ok {
+		t.Fatal("steel appearance missing from the seeded library")
+	}
+	got := lookup(body)
+	if got.Albedo != steel.Albedo().Array() || got.Metallic != steel.Metallic() {
+		t.Errorf("placed body resolved to %+v, want the steel appearance (per-occurrence material, #1103)", got)
 	}
 }
 

@@ -255,6 +255,12 @@ void main() {
         return;
     }
 
+    // Client-graphics flood plots (scalar heatmaps) carry per-vertex color but NO surface
+    // normal: they are flat data overlays, not lit geometry. A zero normal cannot be shaded —
+    // Lambert collapses NoL to 0 and renders them at the 0.2 ambient floor (the ~20%-dark
+    // heatmap bug). Emit the authoritative mapped color flat instead.
+    if (dot(vNormal, vNormal) < 1e-8) { outColor = vColor; return; }
+
     vec3 N = normalize(vNormal);
     vec3 V = normalize(pc.camPosLit.xyz - vWorldPos);
     if (dot(N, V) < 0.0) N = -N; // two-sided shading (CAD faces can present either way)

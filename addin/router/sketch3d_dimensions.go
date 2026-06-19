@@ -187,7 +187,7 @@ func applySketch3DDimensionEdit(part *compdef.PartComponentDefinition, dim *sket
 	if dim.KindName() == "twoLineAngle" {
 		unit = param.Angle
 	}
-	v, err := part.Units().Parse(in.Expression, unit)
+	v, err := resolveQuantity(part, in.Expression, unit)
 	if err != nil {
 		return fmt.Errorf("sketch3d.driveDimension: value %q: %w", in.Expression, err)
 	}

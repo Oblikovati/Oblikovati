@@ -12,6 +12,10 @@ type MaterialSpec struct {
 	Mechanical  Mechanical
 	Thermal     Thermal
 	Electrical  Electrical
+	// Magnetic carries magnetostatics data (μr, Br, Hc, Bsat) for soft-magnetic cores and
+	// permanent magnets (ADR-0018 / FEMM bridge GAP #3). The zero value is non-magnetic, so
+	// ordinary materials carry nothing extra.
+	Magnetic Magnetic
 	// IsotropyClass / Anisotropic describe direction-dependent elasticity for FEA
 	// (ADR-0025). Empty class + zero Anisotropic means an ordinary isotropic material, so
 	// metals and bulk plastics carry nothing extra.
@@ -43,6 +47,7 @@ func (m *Material) Density() float64       { return m.spec.Density }
 func (m *Material) Mechanical() Mechanical { return m.spec.Mechanical }
 func (m *Material) Thermal() Thermal       { return m.spec.Thermal }
 func (m *Material) Electrical() Electrical { return m.spec.Electrical }
+func (m *Material) Magnetic() Magnetic     { return m.spec.Magnetic }
 func (m *Material) AppearanceID() string   { return m.spec.AppearanceID }
 
 // IsotropyClass reports the material's elastic symmetry, normalising an unset class to

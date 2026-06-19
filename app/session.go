@@ -73,7 +73,8 @@ type Session struct {
 	pendingDim           *sketch.DimensionConstraint
 	overlays             []renderer.DrawItem
 	hiddenBodyKeys       map[string]bool
-	graphics             *clientgraphics.Store // add-in client/interaction graphics (M05-F05)
+	graphics             *clientgraphics.Store            // scratch store used only when no document is active
+	graphicsByDoc        map[doc.ID]*clientgraphics.Store // add-in client/interaction graphics, scoped per document (M05-F05)
 	addins               *AddInManager
 	clientApps           *ClientApplicationRegistry        // external automation drivers (M05-F01)
 	browserPanes         *AddInBrowserPanes                // add-in browser panes (M05-F03)
@@ -186,15 +187,15 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	s := &Session{
-		store:           store,
-		workspace:       doc.NewWorkspace(store),
-		commands:        NewCommandManager(),
-		histories:       map[doc.ID]*docHistory{},
-		bus:             event.NewBus(),
-		selection:       NewSelection(),
-		camera:          scene.NewCamera(800, 600),
-		hiddenBodyKeys:  map[string]bool{},
-		graphics:        clientgraphics.NewStore(),
+		store:          store,
+		workspace:      doc.NewWorkspace(store),
+		commands:       NewCommandManager(),
+		histories:      map[doc.ID]*docHistory{},
+		bus:            event.NewBus(),
+		selection:      NewSelection(),
+		camera:         scene.NewCamera(800, 600),
+		hiddenBodyKeys: map[string]bool{},
+		graphics:       clientgraphics.NewStore(), graphicsByDoc: map[doc.ID]*clientgraphics.Store{},
 		addins:          NewAddInManager(),
 		clientApps:      NewClientApplicationRegistry(),
 		browserPanes:    NewAddInBrowserPanes(),
@@ -216,7 +217,7 @@ func newSession(store doc.Store) *Session {
 		chamferConcaveOut:  true, // concave edges fill the inside corner by default (outward)
 	}
 	s.seedVisualState()
-	s.graphics.SetBodyResolver(s.resolveOverlayMesh) // M16-F05: surface-overlay body tessellation
+	s.graphics.SetBodyResolver(s.resolveOverlayMesh) // scratch store (no active document)
 	s.messageCenter.sink = s.routeMessage            // M26 F03: mirror message-center entries to the command line
 	s.initShellSurfaces()
 	s.watchDocumentCloses()

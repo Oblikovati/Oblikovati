@@ -74,6 +74,11 @@ func subscribeSessionUI(bus *event.Bus, sink Sink) []event.Subscription {
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.CommandEnded) event.Outcome {
 			return relay(sink, wireEvent{Type: "command.ended", Command: e.ID, Failed: e.Failed})
 		}),
+		event.Subscribe(bus, event.After, func(_ event.Context, e app.PanelValueChanged) event.Outcome {
+			return relayJSON(sink, wire.PanelValueChangedEvent{
+				Type: wire.EventPanelValueChanged, WindowId: e.WindowID, ControlId: e.ControlID, Value: e.Value,
+			})
+		}),
 		event.Subscribe(bus, event.After, func(_ event.Context, e app.SelectionChanged) event.Outcome {
 			return relayJSON(sink, wire.SelectionChangedEvent{Type: wire.EventSelectionChanged, Count: e.Count})
 		}),
@@ -264,7 +269,7 @@ func relayJSON[E wire.BrowserNodeEvent | wire.DockableWindowChangedEvent |
 	wire.FileDialogHookPayload | wire.OccurrenceEventPayload |
 	wire.AssemblyFeaturesChangedEvent | wire.ConstraintEventPayload |
 	wire.JointEventPayload | wire.ParameterChangedEvent |
-	wire.ModelChangedEvent](sink Sink, ev E) event.Outcome {
+	wire.ModelChangedEvent | wire.PanelValueChangedEvent](sink Sink, ev E) event.Outcome {
 	if b, err := json.Marshal(ev); err == nil {
 		sink(b)
 	}

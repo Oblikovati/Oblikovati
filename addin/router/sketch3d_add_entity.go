@@ -289,7 +289,7 @@ func angleArg(part *compdef.PartComponentDefinition, name, expr string) (float64
 	if expr == "" {
 		return 0, nil
 	}
-	q, err := part.Units().Parse(expr, param.Angle)
+	q, err := resolveQuantity(part, expr, param.Angle)
 	if err != nil {
 		return 0, fmt.Errorf("sketch3d.addEntity: %s %q: %w", name, expr, err)
 	}
@@ -312,7 +312,7 @@ func lengthArg(part *compdef.PartComponentDefinition, name, expr string) (float6
 	if expr == "" {
 		return 0, nil
 	}
-	q, err := part.Units().Parse(expr, param.Length)
+	q, err := resolveQuantity(part, expr, param.Length)
 	if err != nil {
 		return 0, fmt.Errorf("sketch3d.addEntity: %s %q: %w", name, expr, err)
 	}
@@ -338,7 +338,7 @@ func buildCircle3D(part *compdef.PartComponentDefinition, sk *sketch.Sketch3D, i
 	if err != nil {
 		return nil, err
 	}
-	r, err := part.Units().Parse(in.Radius, param.Length)
+	r, err := resolveQuantity(part, in.Radius, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch3d.addEntity: circle radius %q: %w", in.Radius, err)
 	}

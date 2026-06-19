@@ -27,6 +27,7 @@ const (
 	tidTriadSegment         event.TypeID = 0x0510 // app/triad.go (M05-F13)
 	tidTriadDrag            event.TypeID = 0x0511 // app/triad.go (M05-F13)
 	tidManipulatorDrag      event.TypeID = 0x0512 // app/manipulators.go (M05-F13)
+	tidPanelValueChanged    event.TypeID = 0x0513 // app/dockwindow_store.go (M05-F03 editable controls)
 	tidCameraChanged        event.TypeID = 0x1601 // app/named_views.go (M16-F03 #404)
 	tidStyleChanged         event.TypeID = 0x1602 // app/style.go (M16-F02 #403/#408)
 )
@@ -67,6 +68,18 @@ type CommandStarted struct{ ID string }
 
 // EventID implements event.Event.
 func (CommandStarted) EventID() event.TypeID { return tidCommandStarted }
+
+// PanelValueChanged fires (After) when the user edits an editable control of an add-in
+// dockable window (M05-F03). It carries the owning window + control ids and the new value, so
+// the add-in updates its model. It is the editable-panel counterpart of CommandStarted.
+type PanelValueChanged struct {
+	WindowID  string
+	ControlID string
+	Value     string
+}
+
+// EventID implements event.Event.
+func (PanelValueChanged) EventID() event.TypeID { return tidPanelValueChanged }
 
 // CommandEnded fires (After) when a command finishes — OnExecute(After) /
 // OnTerminate. Failed reports whether the command returned an error.

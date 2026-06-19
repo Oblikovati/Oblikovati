@@ -102,11 +102,11 @@ func sketchRectangle(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	w, err := host.Units().Parse(in.Width, param.Length)
+	w, err := resolveQuantity(host, in.Width, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.rectangle: width %q: %w", in.Width, err)
 	}
-	h, err := host.Units().Parse(in.Height, param.Length)
+	h, err := resolveQuantity(host, in.Height, param.Length)
 	if err != nil {
 		return nil, fmt.Errorf("sketch.rectangle: height %q: %w", in.Height, err)
 	}

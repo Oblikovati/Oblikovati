@@ -53,14 +53,30 @@ func (s *Session) Overlays() []renderer.DrawItem {
 	return out
 }
 
-// Graphics returns the add-in client/interaction graphics store (M05-F05), the seam the
-// router mutates from clientGraphics.* / interactionGraphics.* calls.
-func (s *Session) Graphics() *clientgraphics.Store { return s.graphics }
+// Graphics returns the add-in client/interaction graphics store (M05-F05) for the ACTIVE
+// document — the seam the router mutates from clientGraphics.* / interactionGraphics.* calls.
+// Persistent graphics are document-owned (the API contract), so each document gets its own
+// store and overlays from one document never bleed into another's viewport; a scratch store
+// backs the no-active-document case. The store is created lazily and shares the host body
+// resolver used for surface overlays.
+func (s *Session) Graphics() *clientgraphics.Store {
+	d := s.ActiveDocument()
+	if d == nil {
+		return s.graphics
+	}
+	st, ok := s.graphicsByDoc[d.ID()]
+	if !ok {
+		st = clientgraphics.NewStore()
+		st.SetBodyResolver(s.resolveOverlayMesh)
+		s.graphicsByDoc[d.ID()] = st
+	}
+	return st
+}
 
 // GraphicsLabels returns the world-anchored text labels of the live client graphics, for
 // the UI head to draw via its projected-ImGui label path (text is not draw-list geometry).
 func (s *Session) GraphicsLabels() []clientgraphics.Label {
-	_, labels, _ := s.graphics.Build(s.camera)
+	_, labels, _ := s.Graphics().Build(s.camera)
 	return labels
 }
 
@@ -71,7 +87,7 @@ func (s *Session) RenderFrame(backend renderer.Backend) {
 	list := renderer.BuildDrawListStyled(s.VisibleBodies(), s.camera, ops.DefaultQuality(), s.SurfaceLookup(), s.visualStyle)
 	list.Items = append(list.Items, s.overlays...)
 	list.Items = append(list.Items, s.toolPreviewItems()...)
-	graphics, _, _ := s.graphics.Build(s.camera)
+	graphics, _, _ := s.Graphics().Build(s.camera)
 	list.Items = append(list.Items, graphics...)
 	backend.Render(list)
 }

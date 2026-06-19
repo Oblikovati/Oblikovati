@@ -154,6 +154,71 @@ func TestOrthotropicSurvivesRecipeRoundTrip(t *testing.T) {
 	}
 }
 
+// TestMagneticMaterialsAreComplete enforces the magnetostatics-readiness invariant: a
+// material that declares a magnetic class must carry the constitutive data its solver
+// needs (a soft-magnetic core needs μr; a permanent magnet needs Br, Hc and recoil μr).
+// Non-magnetic materials (the zero value) carry no magnetic group, so a forgotten `class:`
+// tag with stray numbers, or a magnet missing its remanence, can't ship.
+func TestMagneticMaterialsAreComplete(t *testing.T) {
+	for _, m := range NewLibrary().Materials() {
+		mag := m.Magnetic()
+		if !mag.IsMagnetic() {
+			if mag.RelativePermeability != 0 || mag.Remanence != 0 || mag.Coercivity != 0 {
+				t.Errorf("material %q is non-magnetic but carries magnetic data (%+v) — missing class tag?", m.ID(), mag)
+			}
+			continue
+		}
+		if mag.RelativePermeability <= 0 {
+			t.Errorf("material %q (%s): relativePermeability = %v, want > 0", m.ID(), mag.Class, mag.RelativePermeability)
+		}
+		if mag.Class == HardMagnetic && (mag.Remanence <= 0 || mag.Coercivity <= 0) {
+			t.Errorf("permanent magnet %q: remanence=%v coercivity=%v, both want > 0", m.ID(), mag.Remanence, mag.Coercivity)
+		}
+		if mag.Class == SoftMagnetic && mag.SaturationFluxDensity <= 0 {
+			t.Errorf("soft-magnetic %q: saturationFluxDensity = %v, want > 0", m.ID(), mag.SaturationFluxDensity)
+		}
+	}
+}
+
+// TestMagnetCatalogIDsPresent pins the motor-design / FEMM magnet + core grades other code
+// and tests assign by id, so a catalog rename can't silently break the magnetics hand-off.
+func TestMagnetCatalogIDsPresent(t *testing.T) {
+	lib := NewLibrary()
+	for _, id := range []string{"electrical-steel-m270", "magnet-ndfeb-n42", "magnet-smco-2-17", "magnet-ferrite-y30"} {
+		m, ok := lib.Material(id)
+		if !ok {
+			t.Errorf("required magnetic material %q missing", id)
+			continue
+		}
+		if !m.Magnetic().IsMagnetic() {
+			t.Errorf("material %q must carry a magnetic class, got %+v", id, m.Magnetic())
+		}
+	}
+}
+
+// TestMagneticSurvivesRecipeRoundTrip locks the YAML persistence: a magnet keeps its full
+// magnetic group through marshal/unmarshal, and a non-magnetic material writes no magnetic
+// block (pointer stays nil, so saved files don't gain {class:"",...} noise).
+func TestMagneticSurvivesRecipeRoundTrip(t *testing.T) {
+	lib := NewLibrary()
+	n42, _ := lib.Material("magnet-ndfeb-n42")
+	r := materialToRecipe(n42)
+	if r.Magnetic == nil {
+		t.Fatal("magnet-ndfeb-n42 recipe lost its magnetic block")
+	}
+	back := recipeToMaterial(r, SourceBuiltin)
+	if back.Magnetic() != n42.Magnetic() {
+		t.Errorf("magnetic round-trip changed data: %+v -> %+v", n42.Magnetic(), back.Magnetic())
+	}
+	alu, ok := lib.Material("aluminum-6061")
+	if !ok {
+		t.Fatal("aluminum-6061 missing from catalog")
+	}
+	if got := materialToRecipe(alu); got.Magnetic != nil {
+		t.Errorf("non-magnetic aluminum emitted a magnetic block: %+v", *got.Magnetic)
+	}
+}
+
 // forEachCatalogFile parses every embedded catalog file and invokes fn — a fake-free way
 // to assert over the shipped data directly (the embed.FS is the production source).
 func forEachCatalogFile(t *testing.T, fn func(name string, rd RecipeData)) {

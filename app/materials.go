@@ -4,6 +4,7 @@ package app
 
 import (
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/material"
 	"oblikovati.org/renderer"
 )
@@ -73,15 +74,22 @@ func (s *Session) saveProjectMaterials() {
 // and converts that to a [renderer.Surface]. It returns nil when there is no active part,
 // so the renderer falls back to the neutral default.
 func (s *Session) SurfaceLookup() renderer.SurfaceLookup {
-	part, err := activePart(s)
-	if err != nil {
-		return nil
+	if asm, err := activeAssembly(s); err == nil {
+		return s.assemblySurfaceLookup(asm)
 	}
+	if part, err := activePart(s); err == nil {
+		return s.partSurfaceLookup(part)
+	}
+	return nil
+}
+
+// partSurfaceLookup resolves a part's bodies to their assigned appearance (face →
+// body → body-material → part-material → default), with a color-style assignment
+// winning over the appearance (M16-F02 #403/#408).
+func (s *Session) partSurfaceLookup(part *compdef.PartComponentDefinition) renderer.SurfaceLookup {
 	look := material.MergedLookup{Embedded: part.Assets(), Catalog: s.Materials()}
 	assign := part.Assignments()
 	return func(b *topo.Body) renderer.Surface {
-		// A color-style assignment (M16-F02 #403/#408) wins over the appearance: the body
-		// renders in the style's color.
 		if name, ok := s.bodyColorStyles[string(b.ReferenceKey())]; ok {
 			if cs, found := s.styles.ByName(name); found {
 				return styleSurface(cs)
@@ -89,6 +97,35 @@ func (s *Session) SurfaceLookup() renderer.SurfaceLookup {
 		}
 		appr := assign.EffectiveAppearance(look, material.RefKey(b.ReferenceKey()), "")
 		return appearanceSurface(appr)
+	}
+}
+
+// assemblySurfaceLookup resolves every placed occurrence body to the appearance from
+// its OWN source part (that part's assignment store + merged material lookup), so an
+// assembly view renders each component with its assigned material instead of the
+// neutral default (Oblikovati#1103). The part graph already carries the linkage —
+// each PlacedBody knows its source occurrence, whose definition is the part.
+func (s *Session) assemblySurfaceLookup(asm *compdef.AssemblyComponentDefinition) renderer.SurfaceLookup {
+	byBody := make(map[*topo.Body]renderer.SurfaceLookup)
+	perPart := make(map[*compdef.PartComponentDefinition]renderer.SurfaceLookup)
+	for _, pb := range asm.PlacedBodies() {
+		part, ok := pb.Source.Definition().(*compdef.PartComponentDefinition)
+		if !ok {
+			continue // a sub-assembly occurrence's own placed bodies already carry their part
+		}
+		look, ok := perPart[part]
+		if !ok {
+			look = s.partSurfaceLookup(part)
+			perPart[part] = look
+		}
+		byBody[pb.Body] = look
+	}
+	fallback := appearanceSurface(material.MergedLookup{Catalog: s.Materials()}.DefaultAppearance())
+	return func(b *topo.Body) renderer.Surface {
+		if look, ok := byBody[b]; ok {
+			return look(b)
+		}
+		return fallback
 	}
 }
 
