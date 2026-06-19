@@ -18,11 +18,12 @@ import (
 // events into Model commands. Keeping the logic in the Model means this file carries no editing
 // rules — only layout, input plumbing, and drawing (lua-scripting-plan, ADR-0028).
 type codeEditor struct {
-	model    *editor.Model
-	scrollY  float32 // vertical scroll offset in logical pixels
-	focused  bool    // consumes keyboard only when focused (clicked into)
-	blink    float32 // caret blink phase accumulator (seconds)
-	dragging bool    // a left-drag selection is in progress
+	model      *editor.Model
+	scrollY    float32   // vertical scroll offset in logical pixels
+	focused    bool      // consumes keyboard only when focused (clicked into)
+	blink      float32   // caret blink phase accumulator (seconds)
+	dragging   bool      // a left-drag selection is in progress
+	completion completer // autocomplete popup state
 }
 
 // newCodeEditor builds an editor over initial source text.
@@ -109,11 +110,33 @@ func (e *codeEditor) handleScroll(hovered bool, m editorMetrics) {
 	}
 }
 
-// handleChars inserts this frame's typed text (Tab/Enter arrive as keys, not characters).
+// handleChars inserts this frame's typed text (Tab/Enter arrive as keys, not characters) and
+// updates the completion popup: an identifier rune or '.' refreshes it, anything else dismisses.
 func (e *codeEditor) handleChars() {
-	if s := native.InputChars(); s != "" {
-		e.model.Insert(s)
-		e.resetBlink()
+	s := native.InputChars()
+	if s == "" {
+		return
+	}
+	e.model.Insert(s)
+	e.resetBlink()
+	last := []rune(s)[len([]rune(s))-1]
+	switch {
+	case last == '.':
+		e.refreshCompletion(true)
+	case isWordRune(last):
+		e.refreshCompletion(false)
+	default:
+		e.dismissCompletion()
+	}
+}
+
+// isWordRune reports whether r can be part of a Lua identifier (mirrors the lexer's class).
+func isWordRune(r rune) bool {
+	switch {
+	case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+		return true
+	default:
+		return r == '_'
 	}
 }
 

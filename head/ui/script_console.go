@@ -29,12 +29,29 @@ var scriptEditor *codeEditor
 // fills the remaining window height.
 const editorHeight = 260
 
-// scriptCodeEditor returns the lazily-created code editor.
+// scriptMethods provides the host's dotted wire-method names for autocomplete; injected at
+// startup alongside the controller (the router's Methods).
+var scriptMethods func() []string
+
+// scriptCodeEditor returns the lazily-created code editor, seeding its completion engine from
+// the host method list when one has been injected.
 func scriptCodeEditor() *codeEditor {
 	if scriptEditor == nil {
 		scriptEditor = newCodeEditor("")
+		if scriptMethods != nil {
+			scriptEditor.setMethods(scriptMethods())
+		}
 	}
 	return scriptEditor
+}
+
+// SetScriptMethods injects the host's wire-method-name provider for autocomplete. Called at head
+// startup with the router's Methods; safe to call before or after the editor exists.
+func SetScriptMethods(methods func() []string) {
+	scriptMethods = methods
+	if scriptEditor != nil && methods != nil {
+		scriptEditor.setMethods(methods())
+	}
 }
 
 // SetScriptSource replaces the Script Console editor's text. Exposed for capture drivers and
@@ -50,6 +67,10 @@ func FocusScriptEditor() { scriptCodeEditor().focused = true }
 func SetScriptCaret(line, col int) {
 	scriptCodeEditor().model.SetCaret(textbuf.Position{Line: line, Col: col}, false)
 }
+
+// TriggerScriptCompletion forces the autocomplete popup open at the caret. Exposed for capture
+// drivers / tests.
+func TriggerScriptCompletion() { scriptCodeEditor().refreshCompletion(true) }
 
 // SetScriptController injects the console runtime. Called once at head startup, after the
 // add-in host (and thus the dispatcher the script's host calls hop through) exists.

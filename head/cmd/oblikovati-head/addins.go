@@ -45,6 +45,7 @@ type addInHost struct {
 	watchDone  chan struct{}       // closed by stop() to end the watcher goroutine
 	changed    int32               // set by the watcher when a library is replaced on disk
 	script     *console.Controller // the Script Console runtime (Lua over the dispatched router)
+	methods    func() []string     // host wire-method names, for the editor's autocomplete
 }
 
 // startAddIns wires the add-in subsystem: it installs the router as the host call
@@ -67,6 +68,7 @@ func startAddIns(session *app.Session) *addInHost {
 	// The Script Console runs Lua over the SAME router + dispatcher add-ins use, so its
 	// host calls serialize onto the session goroutine and never freeze the UI (ADR-0028 §5).
 	h.script = newScriptController(rtr, session, d)
+	h.methods = rtr.Methods // the editor's autocomplete walks this method set
 	useBehaviorStore(session)
 	useDialogMemoryStore(session)
 	h.loadAndRegister(session, dir)

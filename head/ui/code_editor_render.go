@@ -58,6 +58,7 @@ func (e *codeEditor) render(ox, oy, width, height float32, m editorMetrics) {
 	e.drawGutter(ox, oy, width, height, m, first, last)
 	e.drawCaret(ox, oy, m)
 	native.PopClipRect()
+	e.drawCompletion(ox, oy, m) // outside the clip so it can overhang the editor edge
 }
 
 // lineY returns the top y of line i in screen space for the current scroll.

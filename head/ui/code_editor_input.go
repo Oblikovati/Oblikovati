@@ -12,6 +12,13 @@ import "oblikovati.org/head/internal/native"
 func (e *codeEditor) handleKeys() {
 	k := native.EditorKeysPressed()
 	shift, ctrl := native.KeyShift(), native.KeyCtrl()
+	if ctrl && k.Space { // explicit completion trigger
+		e.refreshCompletion(true)
+		return
+	}
+	if e.completionVisible() && e.handleCompletionKeys(k) {
+		return // the popup consumed Up/Down/Enter/Tab/Esc
+	}
 	if ctrl && e.handleShortcuts(k) {
 		return // a clipboard/undo/select-all/comment shortcut consumed the frame
 	}
@@ -20,6 +27,9 @@ func (e *codeEditor) handleKeys() {
 	}
 	e.handleMovement(k, shift, ctrl)
 	e.handleEditing(k)
+	if k.Left || k.Right || k.Up || k.Down || k.Home || k.End {
+		e.dismissCompletion() // caret navigation closes the popup
+	}
 }
 
 // handleTab block-indents (Tab) or outdents (Shift+Tab) the selection, returning true when it

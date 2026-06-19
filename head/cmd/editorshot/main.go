@@ -71,9 +71,11 @@ func run(out string, frames int) error {
 	}
 	wireConsole()
 	s.OpenScriptConsole()
+	ui.SetScriptMethods(apiMethods)
 	ui.SetScriptSource(sampleSource)
 	ui.FocusScriptEditor()
-	ui.SetScriptCaret(3, 14) // park on the '(' of build(name) so the bracket match shows
+	ui.SetScriptCaret(4, 15)     // just after the '.' of oblikovati.documents on line 5
+	ui.TriggerScriptCompletion() // open the autocomplete popup at the caret
 
 	win, err := native.CreateWindow(1280, 800, "editorshot")
 	if err != nil {

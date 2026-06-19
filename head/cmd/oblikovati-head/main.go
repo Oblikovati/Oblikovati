@@ -63,6 +63,7 @@ func run(session *app.Session, maxFrames int) error {
 	addins := startAddIns(session)
 	defer addins.stop(session)
 	ui.SetScriptController(addins.script) // the Manage ▸ Script Console panel drives this runtime
+	ui.SetScriptMethods(addins.methods)   // seed the editor's autocomplete with the host API
 
 	updates := newUpdatePoller()
 	startupUpdateCheck(session, updates) // silent check on launch (honors the user's preference)
