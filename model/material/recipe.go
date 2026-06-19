@@ -28,6 +28,9 @@ type MaterialRecipe struct {
 	Mechanical  types.Mechanical `yaml:"mechanical,omitempty"`
 	Thermal     types.Thermal    `yaml:"thermal,omitempty"`
 	Electrical  types.Electrical `yaml:"electrical,omitempty"`
+	// Magnetic carries magnetostatics data; a pointer so the block is omitted entirely for
+	// the overwhelmingly common non-magnetic material (no {class:"",...} noise on disk).
+	Magnetic *types.Magnetic `yaml:"magnetic,omitempty"`
 	// Isotropy / Orthotropic capture direction-dependent elasticity (ADR-0025). Orthotropic
 	// is a pointer so the block is omitted entirely for ordinary isotropic materials.
 	Isotropy     types.IsotropyClass       `yaml:"isotropy,omitempty"`
@@ -119,6 +122,10 @@ func materialToRecipe(m *Material) MaterialRecipe {
 		o := m.spec.Anisotropic
 		r.Orthotropic = &o
 	}
+	if m.spec.Magnetic.IsMagnetic() {
+		mag := m.spec.Magnetic
+		r.Magnetic = &mag
+	}
 	return r
 }
 
@@ -130,6 +137,9 @@ func recipeToMaterial(r MaterialRecipe, source Source) *Material {
 	}
 	if r.Orthotropic != nil {
 		spec.Anisotropic = *r.Orthotropic
+	}
+	if r.Magnetic != nil {
+		spec.Magnetic = *r.Magnetic
 	}
 	return NewMaterial(r.ID, source, spec)
 }

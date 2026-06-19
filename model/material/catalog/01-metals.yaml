@@ -107,6 +107,9 @@ materials:
     mechanical: {youngsModulus: 211, poissonsRatio: 0.29, yieldStrength: 50, ultimateTensileStrength: 200}
     thermal:    {conductivity: 80.4, expansionCoeff: 11.8e-6, specificHeat: 449}
     electrical: {resistivity: 9.71e-8, relativePermittivity: 1}
+    # Annealed pure iron: the textbook soft-magnetic element. μr (max, well-annealed) reaches
+    # ~5000; Bsat ≈ 2.16 T. Source: Bozorth "Ferromagnetism"; Cullity & Graham.
+    magnetic:   {class: soft-magnetic, relativePermeability: 5000, saturationFluxDensity: 2.16}
   - id: cobalt
     name: Cobalt
     density: 8.90
@@ -114,6 +117,9 @@ materials:
     mechanical: {youngsModulus: 209, poissonsRatio: 0.31, yieldStrength: 225, ultimateTensileStrength: 800}
     thermal:    {conductivity: 100, expansionCoeff: 13.0e-6, specificHeat: 421}
     electrical: {resistivity: 6.24e-8, relativePermittivity: 1}
+    # Ferromagnetic element, highest Bsat of the three (≈1.8 T). μr lower than iron.
+    # Source: Cullity & Graham, "Introduction to Magnetic Materials".
+    magnetic:   {class: soft-magnetic, relativePermeability: 250, saturationFluxDensity: 1.8}
   - id: nickel
     name: Nickel
     density: 8.90
@@ -121,6 +127,8 @@ materials:
     mechanical: {youngsModulus: 200, poissonsRatio: 0.31, yieldStrength: 148, ultimateTensileStrength: 462}
     thermal:    {conductivity: 90.9, expansionCoeff: 13.4e-6, specificHeat: 444}
     electrical: {resistivity: 6.99e-8, relativePermittivity: 1}
+    # Ferromagnetic element, low Bsat (≈0.6 T). Source: Cullity & Graham.
+    magnetic:   {class: soft-magnetic, relativePermeability: 600, saturationFluxDensity: 0.6}
   - id: copper-c110
     name: Copper (C110)
     density: 8.96
