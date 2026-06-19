@@ -95,6 +95,9 @@ func (r *Router) Trace() *trace.Buffer { return r.trace }
 func (r *Router) registerStandardHandlers() {
 	r.registerCommandHandlers()
 	r.handlers[wire.MethodDocumentsList] = listDocuments
+	r.handlers[wire.MethodDocumentsUpdate] = documentsUpdate
+	r.handlers[wire.MethodDocumentsRebuild] = documentsRebuild
+	r.handlers[wire.MethodDocumentsRequiresUpdate] = documentsRequiresUpdate
 	r.handlers[wire.MethodDocumentsCreate] = createDocument
 	r.handlers[wire.MethodDocumentsActivate] = activateDocument
 	r.handlers[wire.MethodDocumentsClose] = closeDocument
