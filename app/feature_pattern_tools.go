@@ -17,6 +17,7 @@ import (
 
 // featureSelectTool collects the source features (by id) the pattern/mirror replicates.
 type featureSelectTool struct {
+	dialogTool
 	sources []feature.ID
 	added   *feature.PartFeature
 }
@@ -28,7 +29,6 @@ func (t *featureSelectTool) Pick(_ *Session, sel Selectable) {
 	}
 }
 
-func (t *featureSelectTool) Start(*Session)  {}
 func (t *featureSelectTool) Cancel(*Session) { t.sources = nil }
 
 // patternFeatures resolves the active part and its pattern-feature collection, erroring on

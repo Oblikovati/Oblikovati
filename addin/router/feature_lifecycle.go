@@ -120,7 +120,7 @@ func planAndApplyFeatureEdits(part *compdef.PartComponentDefinition, f *feature.
 	if len(in.Scalars) == 0 && len(in.Repick) == 0 {
 		return fmt.Errorf("features.edit: feature %d has no scalar or repick edits to apply", in.ID)
 	}
-	applyScalars := func() {}
+	applyScalars := func() { /* default: no scalar edits to apply */ }
 	if len(in.Scalars) > 0 {
 		apply, err := parseScalarEdits(part, f, in.Scalars)
 		if err != nil {

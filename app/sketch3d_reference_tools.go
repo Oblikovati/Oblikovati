@@ -15,6 +15,7 @@ import (
 // geometry (an edge as a reference polyline, a vertex as a constrainable anchor point).
 // They re-derive through recompute via their reference keys.
 type IncludeGeometry3DTool struct {
+	dialogTool
 	edges    []EdgeHandle
 	vertices []VertexHandle
 }
@@ -68,13 +69,13 @@ func (t *IncludeGeometry3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *IncludeGeometry3DTool) Cancel(*Session) {}
 
 // SurfaceCurve3DTool is the interactive 3D-sketch surface-derived-curve command: while
 // editing a 3D sketch, pick faces and commit an intersection curve (two faces) or a
 // silhouette curve (one face, for the current view direction) onto the sketch. The curve is
 // associative — it re-evaluates against the rebuilt B-rep on recompute via the face keys.
 type SurfaceCurve3DTool struct {
+	dialogTool
 	faces      []FaceHandle
 	silhouette bool
 	viewDir    math.Vector3
@@ -141,7 +142,6 @@ func (t *SurfaceCurve3DTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool].
-func (t *SurfaceCurve3DTool) Cancel(*Session) {}
 
 var (
 	_ Tool = (*IncludeGeometry3DTool)(nil)

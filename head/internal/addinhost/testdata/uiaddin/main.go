@@ -164,4 +164,4 @@ func callHost(method string, req []byte) ([]byte, bool) {
 //export ObkFree
 func ObkFree(p *C.uint8_t) { C.free(unsafe.Pointer(p)) }
 
-func main() {}
+func main() { /* fixture add-in: built as a shared library, never run directly */ }

@@ -12,6 +12,7 @@ import (
 // whose iProperties fill the title block. It is a dialog-only tool: the user picks one of
 // the open part/assembly documents and OK stores the reference.
 type ModelReferenceTool struct {
+	dialogTool
 	candidates []string // full document names of the open part/assembly documents
 	selected   int
 }
@@ -34,12 +35,8 @@ func (t *ModelReferenceTool) Start(s *Session) {
 	}
 }
 
-func (t *ModelReferenceTool) Pick(*Session, Selectable) {}
-
 // CanCommit requires at least one open model to reference.
 func (t *ModelReferenceTool) CanCommit() bool { return len(t.candidates) > 0 }
-
-func (t *ModelReferenceTool) Cancel(*Session) {}
 
 // Commit stores the selected model as the drawing's referenced model.
 func (t *ModelReferenceTool) Commit(s *Session) error {

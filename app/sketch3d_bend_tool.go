@@ -15,6 +15,7 @@ import (
 // auto-applies on the second pick, so a pipe-run's corners can be bent click-by-click
 // after adjusting the radius once.
 type Bend3DTool struct {
+	dialogTool
 	lines  []*sketch.Line3D
 	radius float64 // database units (cm)
 }
@@ -29,7 +30,6 @@ func NewBend3DTool() *Bend3DTool { return &Bend3DTool{radius: defaultBendRadius3
 func (t *Bend3DTool) Name() string { return "Bend" }
 
 // Start/Cancel implement [Tool].
-func (t *Bend3DTool) Start(*Session)  {}
 func (t *Bend3DTool) Cancel(*Session) { t.lines = nil }
 
 // Params exposes the bend radius (the head shows it in the tool-params dialog).

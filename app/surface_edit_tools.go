@@ -117,6 +117,7 @@ func (t *RuledSurfaceTool) AddedFeature() *feature.PartFeature { return t.added 
 // SurfaceOffsetTool offsets the running surface body along its normal by a distance —
 // parameter-only (the running surface is the input, nothing is picked).
 type SurfaceOffsetTool struct {
+	dialogTool
 	distance float64
 	added    *feature.PartFeature
 }
@@ -133,10 +134,8 @@ func (t *SurfaceOffsetTool) Prompt(*Session) string {
 }
 
 // Start implements [Tool] (no pick — the running surface is the input).
-func (t *SurfaceOffsetTool) Start(*Session) {}
 
 // Pick implements [Tool] (no pick).
-func (t *SurfaceOffsetTool) Pick(*Session, Selectable) {}
 
 // SetDistance/Distance drive how far the surface offsets (sign picks the side).
 func (t *SurfaceOffsetTool) SetDistance(d float64) { t.distance = d }
@@ -167,7 +166,6 @@ func (t *SurfaceOffsetTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (nothing to restore — no selection filter was set).
-func (t *SurfaceOffsetTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SurfaceOffsetTool) AddedFeature() *feature.PartFeature { return t.added }
@@ -175,6 +173,7 @@ func (t *SurfaceOffsetTool) AddedFeature() *feature.PartFeature { return t.added
 // MidSurfaceTool extracts mid-plane patches from the running solid's thin walls —
 // parameter-only (face pairs within the threshold are found automatically).
 type MidSurfaceTool struct {
+	dialogTool
 	maxThickness float64
 	added        *feature.PartFeature
 }
@@ -191,10 +190,8 @@ func (t *MidSurfaceTool) Prompt(*Session) string {
 }
 
 // Start implements [Tool] (no pick — the running solid is the input).
-func (t *MidSurfaceTool) Start(*Session) {}
 
 // Pick implements [Tool] (no pick).
-func (t *MidSurfaceTool) Pick(*Session, Selectable) {}
 
 // SetMaxThickness/MaxThickness drive the wall-pairing threshold.
 func (t *MidSurfaceTool) SetMaxThickness(d float64) { t.maxThickness = d }
@@ -226,7 +223,6 @@ func (t *MidSurfaceTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (nothing to restore).
-func (t *MidSurfaceTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *MidSurfaceTool) AddedFeature() *feature.PartFeature { return t.added }

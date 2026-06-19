@@ -33,6 +33,7 @@ func screenToSketch(s *Session, px, py float64) (math.Point2, bool) {
 // RectangleTool draws an axis-aligned rectangle from two clicked corners (two
 // lines per pair of corners), the most common closed sketch profile.
 type RectangleTool struct {
+	dialogTool
 	corners []math.Point2
 }
 
@@ -43,10 +44,8 @@ func NewRectangleTool() *RectangleTool { return &RectangleTool{} }
 func (t *RectangleTool) Name() string { return "Rectangle" }
 
 // Start requires an active sketch (the sketch environment must be open).
-func (t *RectangleTool) Start(*Session) {}
 
 // Pick is unused; rectangle corners come from raw clicks (see ClickAt).
-func (t *RectangleTool) Pick(*Session, Selectable) {}
 
 // ClickAt records a corner from a clicked pixel (snapped to points/grid).
 func (t *RectangleTool) ClickAt(s *Session, px, py float64) {
@@ -101,6 +100,7 @@ func (t *RectangleTool) Prompt(*Session) string {
 // runs continuous (EnableContinuous): point after point becomes a connected chain with
 // [Close/Undo] options, ended by Enter or Close — AutoCAD's LINE (M26 F02 follow-up).
 type LineTool struct {
+	dialogTool
 	points     []math.Point2
 	continuous bool // command-line polyline mode: chain segments until Enter/Close
 	closed     bool // a Close keyword was given: connect the last point back to the first
@@ -109,9 +109,7 @@ type LineTool struct {
 // NewLineTool returns a two-point line tool.
 func NewLineTool() *LineTool { return &LineTool{} }
 
-func (t *LineTool) Name() string              { return "Line" }
-func (t *LineTool) Start(*Session)            {}
-func (t *LineTool) Pick(*Session, Selectable) {}
+func (t *LineTool) Name() string { return "Line" }
 
 // EnableContinuous switches the tool to AutoCAD-style continuous-polyline mode (the command
 // line calls this when it starts a LINE). The viewport path leaves it off.

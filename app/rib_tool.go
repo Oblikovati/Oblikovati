@@ -15,6 +15,7 @@ import (
 // property window and OK to thicken the profile into a rib joined to the active part. It exposes
 // its parameters through ParameterizedTool, so the head renders the generic dialog.
 type RibTool struct {
+	dialogTool
 	profile   *sketch.Sketch
 	pathIndex int
 	thickness float64
@@ -33,7 +34,6 @@ func (t *RibTool) Name() string { return "Rib" }
 func (t *RibTool) Start(s *Session) { t.profile, t.pathIndex = ribProfile(s) }
 
 // Pick is unused — the rib operates on the resolved open profile, not a viewport selection.
-func (t *RibTool) Pick(*Session, Selectable) {}
 
 // The options the property window drives: thickness and signed depth (database units).
 func (t *RibTool) SetThickness(v float64) { t.thickness = v }
@@ -75,7 +75,6 @@ func (t *RibTool) addRib(fs *feature.PartFeatures) *feature.PartFeature {
 }
 
 // Cancel abandons the tool with no change.
-func (t *RibTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *RibTool) AddedFeature() *feature.PartFeature { return t.added }

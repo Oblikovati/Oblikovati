@@ -16,17 +16,18 @@ import (
 
 // ThreePointRectangleTool draws a rectangle from three corners: a base edge (first two
 // clicks) then the perpendicular extent (third click), so it is not axis-aligned.
-type ThreePointRectangleTool struct{ collectClicks }
+type ThreePointRectangleTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewThreePointRectangleTool returns a three-point rectangle tool.
 func NewThreePointRectangleTool() *ThreePointRectangleTool { return &ThreePointRectangleTool{} }
 
-func (t *ThreePointRectangleTool) Name() string              { return "Three Point Rectangle" }
-func (t *ThreePointRectangleTool) Start(*Session)            {}
-func (t *ThreePointRectangleTool) Pick(*Session, Selectable) {}
-func (t *ThreePointRectangleTool) Cancel(*Session)           { t.reset() }
-func (t *ThreePointRectangleTool) CanCommit() bool           { return len(t.pts) == 3 }
-func (t *ThreePointRectangleTool) AutoCommits() bool         { return true }
+func (t *ThreePointRectangleTool) Name() string      { return "Three Point Rectangle" }
+func (t *ThreePointRectangleTool) Cancel(*Session)   { t.reset() }
+func (t *ThreePointRectangleTool) CanCommit() bool   { return len(t.pts) == 3 }
+func (t *ThreePointRectangleTool) AutoCommits() bool { return true }
 
 // Commit adds the rectangle's four lines from the three clicked corners.
 func (t *ThreePointRectangleTool) Commit(s *Session) error {
@@ -54,17 +55,18 @@ func (t *ThreePointRectangleTool) Prompt(*Session) string {
 
 // CenterRectangleTool draws an axis-aligned rectangle from its center and a corner, so the
 // center stays put as the rectangle grows (Inventor's Two Point Center Rectangle).
-type CenterRectangleTool struct{ collectClicks }
+type CenterRectangleTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewCenterRectangleTool returns a center rectangle tool.
 func NewCenterRectangleTool() *CenterRectangleTool { return &CenterRectangleTool{} }
 
-func (t *CenterRectangleTool) Name() string              { return "Two Point Center Rectangle" }
-func (t *CenterRectangleTool) Start(*Session)            {}
-func (t *CenterRectangleTool) Pick(*Session, Selectable) {}
-func (t *CenterRectangleTool) Cancel(*Session)           { t.reset() }
-func (t *CenterRectangleTool) CanCommit() bool           { return len(t.pts) == 2 }
-func (t *CenterRectangleTool) AutoCommits() bool         { return true }
+func (t *CenterRectangleTool) Name() string      { return "Two Point Center Rectangle" }
+func (t *CenterRectangleTool) Cancel(*Session)   { t.reset() }
+func (t *CenterRectangleTool) CanCommit() bool   { return len(t.pts) == 2 }
+func (t *CenterRectangleTool) AutoCommits() bool { return true }
 
 // Commit adds the rectangle's four lines centered on the first click.
 func (t *CenterRectangleTool) Commit(s *Session) error {
@@ -86,17 +88,18 @@ func (t *CenterRectangleTool) Prompt(*Session) string {
 
 // ThreePointCircleTool draws the circle passing through three clicked points (Inventor's
 // Three Point Circle), the dual of the center-radius head tool.
-type ThreePointCircleTool struct{ collectClicks }
+type ThreePointCircleTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewThreePointCircleTool returns a three-point circle tool.
 func NewThreePointCircleTool() *ThreePointCircleTool { return &ThreePointCircleTool{} }
 
-func (t *ThreePointCircleTool) Name() string              { return "Three Point Circle" }
-func (t *ThreePointCircleTool) Start(*Session)            {}
-func (t *ThreePointCircleTool) Pick(*Session, Selectable) {}
-func (t *ThreePointCircleTool) Cancel(*Session)           { t.reset() }
-func (t *ThreePointCircleTool) CanCommit() bool           { return len(t.pts) == 3 }
-func (t *ThreePointCircleTool) AutoCommits() bool         { return true }
+func (t *ThreePointCircleTool) Name() string      { return "Three Point Circle" }
+func (t *ThreePointCircleTool) Cancel(*Session)   { t.reset() }
+func (t *ThreePointCircleTool) CanCommit() bool   { return len(t.pts) == 3 }
+func (t *ThreePointCircleTool) AutoCommits() bool { return true }
 
 // Commit fits and adds the circle through the three clicked points.
 func (t *ThreePointCircleTool) Commit(s *Session) error {
@@ -124,17 +127,18 @@ func (t *ThreePointCircleTool) Prompt(*Session) string {
 
 // CenterPointArcTool draws an arc from its center, a start point (sets the radius) and an
 // end point (sets the sweep), the dual of the three-point head arc tool.
-type CenterPointArcTool struct{ collectClicks }
+type CenterPointArcTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewCenterPointArcTool returns a center-point arc tool.
 func NewCenterPointArcTool() *CenterPointArcTool { return &CenterPointArcTool{} }
 
-func (t *CenterPointArcTool) Name() string              { return "Center Point Arc" }
-func (t *CenterPointArcTool) Start(*Session)            {}
-func (t *CenterPointArcTool) Pick(*Session, Selectable) {}
-func (t *CenterPointArcTool) Cancel(*Session)           { t.reset() }
-func (t *CenterPointArcTool) CanCommit() bool           { return len(t.pts) == 3 }
-func (t *CenterPointArcTool) AutoCommits() bool         { return true }
+func (t *CenterPointArcTool) Name() string      { return "Center Point Arc" }
+func (t *CenterPointArcTool) Cancel(*Session)   { t.reset() }
+func (t *CenterPointArcTool) CanCommit() bool   { return len(t.pts) == 3 }
+func (t *CenterPointArcTool) AutoCommits() bool { return true }
 
 // Commit adds the arc; it sweeps counter-clockwise when the end lies CCW of the start
 // about the center (the cross product of the two radii is positive).
@@ -165,16 +169,17 @@ func (t *CenterPointArcTool) Prompt(*Session) string {
 // ControlVertexSplineTool draws a B-spline from its control polygon (the clicked points are
 // control vertices, not points the curve passes through), the dual of the interpolation
 // head spline tool. OK finishes the curve.
-type ControlVertexSplineTool struct{ collectClicks }
+type ControlVertexSplineTool struct {
+	dialogTool
+	collectClicks
+}
 
 // NewControlVertexSplineTool returns a control-vertex spline tool.
 func NewControlVertexSplineTool() *ControlVertexSplineTool { return &ControlVertexSplineTool{} }
 
-func (t *ControlVertexSplineTool) Name() string              { return "Control Vertex Spline" }
-func (t *ControlVertexSplineTool) Start(*Session)            {}
-func (t *ControlVertexSplineTool) Pick(*Session, Selectable) {}
-func (t *ControlVertexSplineTool) Cancel(*Session)           { t.reset() }
-func (t *ControlVertexSplineTool) CanCommit() bool           { return len(t.pts) >= 2 }
+func (t *ControlVertexSplineTool) Name() string    { return "Control Vertex Spline" }
+func (t *ControlVertexSplineTool) Cancel(*Session) { t.reset() }
+func (t *ControlVertexSplineTool) CanCommit() bool { return len(t.pts) >= 2 }
 
 // Commit adds the spline from the clicked control polygon.
 func (t *ControlVertexSplineTool) Commit(s *Session) error {

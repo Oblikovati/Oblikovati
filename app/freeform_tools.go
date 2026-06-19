@@ -36,6 +36,7 @@ func levelParam(get func() int, set func(int)) IntParam {
 
 // FreeformBoxTool places a sub-D box primitive (sx × sy × sz cage at a subdivision level).
 type FreeformBoxTool struct {
+	dialogTool
 	sx, sy, sz float64
 	level      int
 	added      *feature.PartFeature
@@ -53,8 +54,6 @@ func (t *FreeformBoxTool) Prompt(*Session) string {
 }
 
 // Start/Pick implement [Tool] (parameter-only, nothing is picked).
-func (t *FreeformBoxTool) Start(*Session)            {}
-func (t *FreeformBoxTool) Pick(*Session, Selectable) {}
 
 // Params exposes the cage sizes and level for the generic property dialog.
 func (t *FreeformBoxTool) Params() ToolParams {
@@ -81,13 +80,13 @@ func (t *FreeformBoxTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (nothing to restore).
-func (t *FreeformBoxTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *FreeformBoxTool) AddedFeature() *feature.PartFeature { return t.added }
 
 // FreeformPlaneTool places a sub-D plane primitive (an open sx × sy cage — a surface body).
 type FreeformPlaneTool struct {
+	dialogTool
 	sx, sy float64
 	level  int
 	added  *feature.PartFeature
@@ -105,8 +104,6 @@ func (t *FreeformPlaneTool) Prompt(*Session) string {
 }
 
 // Start/Pick implement [Tool] (parameter-only).
-func (t *FreeformPlaneTool) Start(*Session)            {}
-func (t *FreeformPlaneTool) Pick(*Session, Selectable) {}
 
 // Params exposes the cage sizes and level for the generic property dialog.
 func (t *FreeformPlaneTool) Params() ToolParams {
@@ -132,13 +129,13 @@ func (t *FreeformPlaneTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (nothing to restore).
-func (t *FreeformPlaneTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *FreeformPlaneTool) AddedFeature() *feature.PartFeature { return t.added }
 
 // FreeformQuadBallTool places a sub-D quad-ball primitive (a closed sphere-like cage).
 type FreeformQuadBallTool struct {
+	dialogTool
 	radius float64
 	level  int
 	added  *feature.PartFeature
@@ -158,8 +155,6 @@ func (t *FreeformQuadBallTool) Prompt(*Session) string {
 }
 
 // Start/Pick implement [Tool] (parameter-only).
-func (t *FreeformQuadBallTool) Start(*Session)            {}
-func (t *FreeformQuadBallTool) Pick(*Session, Selectable) {}
 
 // Params exposes the radius and level for the generic property dialog.
 func (t *FreeformQuadBallTool) Params() ToolParams {
@@ -186,7 +181,6 @@ func (t *FreeformQuadBallTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (nothing to restore).
-func (t *FreeformQuadBallTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *FreeformQuadBallTool) AddedFeature() *feature.PartFeature { return t.added }

@@ -29,6 +29,7 @@ type constraintPick struct {
 // ConstraintTool is the generic interactive constraint/dimension tool: it gathers
 // accepted picks and applies its constraint when ready.
 type ConstraintTool struct {
+	dialogTool
 	name    string
 	prompt  string
 	accepts func(sketch.Entity) bool
@@ -39,7 +40,6 @@ type ConstraintTool struct {
 
 // Name/Start/Cancel implement [Tool].
 func (t *ConstraintTool) Name() string    { return t.name }
-func (t *ConstraintTool) Start(*Session)  {}
 func (t *ConstraintTool) Cancel(*Session) { t.picks = nil }
 
 // Pick records a clicked entity with no snap context (the generic-tool path).

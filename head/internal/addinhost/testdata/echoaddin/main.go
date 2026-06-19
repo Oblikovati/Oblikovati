@@ -90,4 +90,4 @@ func ObkAddInAutomation(method *C.char, req *C.uint8_t, n C.int, resp **C.uint8_
 	return C.OBK_OK
 }
 
-func main() {}
+func main() { /* fixture add-in: built as a shared library, never run directly */ }

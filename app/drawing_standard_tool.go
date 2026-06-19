@@ -29,6 +29,7 @@ func draftingStandardIndexOf(std types.DraftingStandard) int {
 // tool: the user picks ISO or ANSI and OK re-points the active style preset, so every
 // annotation re-renders to that standard.
 type DraftingStandardTool struct {
+	dialogTool
 	index int
 }
 
@@ -45,9 +46,7 @@ func (t *DraftingStandardTool) Start(s *Session) {
 	}
 }
 
-func (t *DraftingStandardTool) Pick(*Session, Selectable) {}
-func (t *DraftingStandardTool) CanCommit() bool           { return true }
-func (t *DraftingStandardTool) Cancel(*Session)           {}
+func (t *DraftingStandardTool) CanCommit() bool { return true }
 
 // Commit applies the selected standard to the active drawing.
 func (t *DraftingStandardTool) Commit(s *Session) error {

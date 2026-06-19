@@ -22,12 +22,11 @@ import (
 // and is ready once at least one entity is selected. Concrete tools embed it and add their
 // parameters + Commit.
 type sketchSelectTool struct {
+	dialogTool
 	picks []sketch.Entity
 }
 
 func (t *sketchSelectTool) PickSnap(ent sketch.Entity, _ SnapResult) { t.picks = append(t.picks, ent) }
-func (t *sketchSelectTool) Pick(*Session, Selectable)                {}
-func (t *sketchSelectTool) Start(*Session)                           {}
 func (t *sketchSelectTool) Cancel(*Session)                          { t.picks = nil }
 func (t *sketchSelectTool) CanCommit() bool                          { return len(t.picks) > 0 }
 
@@ -123,16 +122,15 @@ func (t *SketchCopyTool) Commit(s *Session) error {
 // geometry that shares them — Inventor's Stretch, where endpoints inside the window move
 // and the rest stay. It collects point picks (a non-point pick is ignored).
 type SketchStretchTool struct {
+	dialogTool
 	points []*sketch.Point
 	vector math.Vector2
 }
 
-func NewSketchStretchTool() *SketchStretchTool         { return &SketchStretchTool{} }
-func (t *SketchStretchTool) Name() string              { return "Stretch" }
-func (t *SketchStretchTool) Start(*Session)            {}
-func (t *SketchStretchTool) Pick(*Session, Selectable) {}
-func (t *SketchStretchTool) Cancel(*Session)           { t.points = nil }
-func (t *SketchStretchTool) CanCommit() bool           { return len(t.points) > 0 }
+func NewSketchStretchTool() *SketchStretchTool { return &SketchStretchTool{} }
+func (t *SketchStretchTool) Name() string      { return "Stretch" }
+func (t *SketchStretchTool) Cancel(*Session)   { t.points = nil }
+func (t *SketchStretchTool) CanCommit() bool   { return len(t.points) > 0 }
 func (t *SketchStretchTool) Prompt(*Session) string {
 	return "Pick the vertices to stretch, set the vector, then OK."
 }

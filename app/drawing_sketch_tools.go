@@ -18,7 +18,10 @@ const (
 )
 
 // SketchRectangleTool drops a new sketch containing a default-sized rectangle at the cursor.
-type SketchRectangleTool struct{ centerX, centerY float64 }
+type SketchRectangleTool struct {
+	dialogTool
+	centerX, centerY float64
+}
 
 // NewSketchRectangleTool creates the tool.
 func NewSketchRectangleTool() *SketchRectangleTool {
@@ -26,10 +29,7 @@ func NewSketchRectangleTool() *SketchRectangleTool {
 }
 
 func (t *SketchRectangleTool) Name() string              { return "Sketch Rectangle" }
-func (t *SketchRectangleTool) Start(*Session)            {}
-func (t *SketchRectangleTool) Pick(*Session, Selectable) {}
 func (t *SketchRectangleTool) CanCommit() bool           { return true }
-func (t *SketchRectangleTool) Cancel(*Session)           {}
 func (t *SketchRectangleTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops a sketch with a rectangle centred on the placed point.
@@ -53,6 +53,7 @@ var hatchPatterns = []types.HatchPattern{types.HatchGeneral, types.HatchCross, t
 
 // HatchRegionTool fills a default-sized rectangular region with a hatch pattern at the cursor.
 type HatchRegionTool struct {
+	dialogTool
 	patternIndex     int
 	centerX, centerY float64
 }
@@ -61,10 +62,7 @@ type HatchRegionTool struct {
 func NewHatchRegionTool() *HatchRegionTool { return &HatchRegionTool{centerX: 150, centerY: 150} }
 
 func (t *HatchRegionTool) Name() string              { return "Hatch Region" }
-func (t *HatchRegionTool) Start(*Session)            {}
-func (t *HatchRegionTool) Pick(*Session, Selectable) {}
 func (t *HatchRegionTool) CanCommit() bool           { return true }
-func (t *HatchRegionTool) Cancel(*Session)           {}
 func (t *HatchRegionTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops a hatch-filled rectangle centred on the placed point.
@@ -90,16 +88,16 @@ func (t *HatchRegionTool) Params() ToolParams {
 }
 
 // SketchCircleTool drops a new sketch containing a default-sized circle at the cursor.
-type SketchCircleTool struct{ centerX, centerY float64 }
+type SketchCircleTool struct {
+	dialogTool
+	centerX, centerY float64
+}
 
 // NewSketchCircleTool creates the tool.
 func NewSketchCircleTool() *SketchCircleTool { return &SketchCircleTool{centerX: 150, centerY: 150} }
 
 func (t *SketchCircleTool) Name() string              { return "Sketch Circle" }
-func (t *SketchCircleTool) Start(*Session)            {}
-func (t *SketchCircleTool) Pick(*Session, Selectable) {}
 func (t *SketchCircleTool) CanCommit() bool           { return true }
-func (t *SketchCircleTool) Cancel(*Session)           {}
 func (t *SketchCircleTool) SetPlacement(x, y float64) { t.centerX, t.centerY = x, y }
 
 // Commit drops a sketch with a circle centred on the placed point.

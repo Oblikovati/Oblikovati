@@ -24,6 +24,7 @@ import (
 //	s.StartTool(tool)
 //	s.Click(px, py)                   // drops widget:1 on the ground plane
 type PlaceComponentTool struct {
+	dialogTool
 	component *doc.Document // the document to instance; nil until chosen
 	placed    int           // occurrences dropped so far, for unique instance names
 }
@@ -50,7 +51,6 @@ func (t *PlaceComponentTool) Start(s *Session) { s.selection.Clear() }
 
 // Pick implements [Tool]. Placement is driven by ground-plane clicks (ClickAt), not entity
 // picks, so a pick is ignored — snapping a placement to existing geometry is a later refinement.
-func (t *PlaceComponentTool) Pick(_ *Session, _ Selectable) {}
 
 // ClickAt drops one instance of the component at the clicked point on the assembly ground plane
 // (Z = 0) and records it as an undo step, leaving the tool open for the next drop
@@ -91,7 +91,6 @@ func (t *PlaceComponentTool) Commit(_ *Session) error { return nil }
 
 // Cancel stops the tool. Instances dropped before cancelling remain (each is its own undo step),
 // matching the reference command where Esc keeps what was already placed.
-func (t *PlaceComponentTool) Cancel(_ *Session) {}
 
 // groundRayEpsilon is the |ray.Z| below which the view is treated as edge-on to the ground
 // plane, so no stable intersection exists.

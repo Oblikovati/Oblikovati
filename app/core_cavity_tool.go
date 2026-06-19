@@ -16,6 +16,7 @@ var partingAxisNames = []string{"Z", "X", "Y"}
 // parting (M10-F04, #701) — parameter-only: choose the parting axis, position and the
 // shrinkage allowance in the generic tool dialog, then OK.
 type CoreCavityTool struct {
+	dialogTool
 	axis      feature.PartingAxis
 	position  float64
 	shrinkage float64
@@ -34,8 +35,6 @@ func (t *CoreCavityTool) Prompt(*Session) string {
 }
 
 // Start/Pick implement [Tool] (parameter-only — the running block is the input).
-func (t *CoreCavityTool) Start(*Session)            {}
-func (t *CoreCavityTool) Pick(*Session, Selectable) {}
 
 // Params exposes the parting inputs for the generic property dialog.
 func (t *CoreCavityTool) Params() ToolParams {
@@ -92,7 +91,6 @@ func (t *CoreCavityTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel implements [Tool] (nothing to restore).
-func (t *CoreCavityTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *CoreCavityTool) AddedFeature() *feature.PartFeature { return t.added }

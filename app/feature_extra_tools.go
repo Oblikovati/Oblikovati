@@ -100,6 +100,7 @@ func (t *BossTool) AddedFeature() *feature.PartFeature { return t.added }
 
 // HullTool wraps the running solids into their single convex hull — no inputs, just OK.
 type HullTool struct {
+	dialogTool
 	added *feature.PartFeature
 }
 
@@ -115,8 +116,6 @@ func (t *HullTool) Prompt(*Session) string {
 }
 
 // Start/Pick implement [Tool] (no inputs).
-func (t *HullTool) Start(*Session)            {}
-func (t *HullTool) Pick(*Session, Selectable) {}
 
 // CanCommit is always true — the running solids are the input.
 func (t *HullTool) CanCommit() bool { return true }
@@ -137,7 +136,6 @@ func (t *HullTool) Commit(s *Session) error {
 }
 
 // Cancel implements [Tool] (nothing to restore).
-func (t *HullTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *HullTool) AddedFeature() *feature.PartFeature { return t.added }

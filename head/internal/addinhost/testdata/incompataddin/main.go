@@ -47,6 +47,6 @@ func ObkAddInDeactivate() C.int { return C.OBK_OK }
 func ObkAddInNotify(ev *C.uint8_t, n C.int) C.int { return C.OBK_OK }
 
 //export ObkFree
-func ObkFree(p *C.uint8_t) {}
+func ObkFree(p *C.uint8_t) { /* fixture: nothing was allocated to free */ }
 
-func main() {}
+func main() { /* fixture add-in: built as a shared library, never run directly */ }
