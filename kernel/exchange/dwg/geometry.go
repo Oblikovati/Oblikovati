@@ -170,6 +170,19 @@ func decodeLwPolyline(r *BitReader, handle uint64, version Version, objSize int)
 //
 //nolint:funlen // sequential SPLINE field reads across both scenarios; length is the format.
 func decodeSpline(r *BitReader, handle uint64, version Version, objSize int) *Spline {
+	scenario := splineScenario(r, version)
+	s := &Spline{Handle: handle, Degree: r.ReadBL()}
+	if scenario&1 != 0 {
+		readSplineControlForm(r, s, objSize)
+	} else {
+		readSplineFitForm(r, s, objSize)
+	}
+	return s
+}
+
+// splineScenario reads the SPLINE scenario selector — the leading BL, refined on R2013+ by the
+// spline-flags (bit 0 → control-point form) and knot-parameterization (15 → fit-point form).
+func splineScenario(r *BitReader, version Version) int {
 	scenario := r.ReadBL()
 	if version >= R2013 {
 		splineflags := r.ReadBL()
@@ -181,33 +194,38 @@ func decodeSpline(r *BitReader, handle uint64, version Version, objSize int) *Sp
 			scenario = 1
 		}
 	}
-	s := &Spline{Handle: handle, Degree: r.ReadBL()}
-	if scenario&1 != 0 { // control-point form
-		s.Rational = r.ReadBit() == 1
-		s.Closed = r.ReadBit() == 1
-		r.ReadBit() // periodic
-		r.ReadBD()  // knot tolerance
-		r.ReadBD()  // control tolerance
-		numKnots := r.CheckCount(r.ReadBL(), objSize)
-		numCtrl := r.CheckCount(r.ReadBL(), objSize)
-		weighted := r.ReadBit() == 1
-		s.Knots = make([]float64, numKnots)
-		for i := range s.Knots {
-			s.Knots[i] = r.ReadBD()
-		}
-		s.ControlPoints = make([][3]float64, numCtrl)
-		if weighted {
-			s.Weights = make([]float64, numCtrl)
-		}
-		for i := 0; i < numCtrl; i++ {
-			s.ControlPoints[i] = r.Read3BD()
-			if weighted {
-				s.Weights[i] = r.ReadBD()
-			}
-		}
-		return s
+	return scenario
+}
+
+// readSplineControlForm reads the control-point spline body (knots + control points, optionally
+// weighted) into s.
+func readSplineControlForm(r *BitReader, s *Spline, objSize int) {
+	s.Rational = r.ReadBit() == 1
+	s.Closed = r.ReadBit() == 1
+	r.ReadBit() // periodic
+	r.ReadBD()  // knot tolerance
+	r.ReadBD()  // control tolerance
+	numKnots := r.CheckCount(r.ReadBL(), objSize)
+	numCtrl := r.CheckCount(r.ReadBL(), objSize)
+	weighted := r.ReadBit() == 1
+	s.Knots = make([]float64, numKnots)
+	for i := range s.Knots {
+		s.Knots[i] = r.ReadBD()
 	}
-	// fit-point form
+	s.ControlPoints = make([][3]float64, numCtrl)
+	if weighted {
+		s.Weights = make([]float64, numCtrl)
+	}
+	for i := 0; i < numCtrl; i++ {
+		s.ControlPoints[i] = r.Read3BD()
+		if weighted {
+			s.Weights[i] = r.ReadBD()
+		}
+	}
+}
+
+// readSplineFitForm reads the fit-point spline body (tangents + fit points) into s.
+func readSplineFitForm(r *BitReader, s *Spline, objSize int) {
 	r.ReadBD()  // fit tolerance
 	r.Read3BD() // begin tangent
 	r.Read3BD() // end tangent
@@ -216,7 +234,6 @@ func decodeSpline(r *BitReader, handle uint64, version Version, objSize int) *Sp
 	for i := range s.FitPoints {
 		s.FitPoints[i] = r.Read3BD()
 	}
-	return s
 }
 
 // readLwVertices reads the LWPOLYLINE 2DD point vector: the first vertex is a full
