@@ -34,30 +34,41 @@ func (a *AssemblyComponentDefinition) PlacedBodies() []feature.PlacedBody {
 // sub-assembly show their components in different positions (M12-F06).
 func collectPlacedBodies(occs *occurrence.Occurrences, parent math.Matrix4, path occurrence.OccurrencePath, out *[]feature.PlacedBody, flexParent *occurrence.Occurrence) {
 	for _, o := range occs.All() {
-		if o.Suppressed() {
-			continue
+		placeOccurrence(o, parent, path, out, flexParent)
+	}
+}
+
+// placeOccurrence emits one occurrence's bodies (a leaf part) or recurses into it (a
+// sub-assembly), at its world placement under parent. Suppressed occurrences are skipped.
+func placeOccurrence(o *occurrence.Occurrence, parent math.Matrix4, path occurrence.OccurrencePath, out *[]feature.PlacedBody, flexParent *occurrence.Occurrence) {
+	if o.Suppressed() {
+		return
+	}
+	world := parent.Mul(childTransform(o, flexParent))
+	here := append(append(occurrence.OccurrencePath(nil), path...), o.Name())
+	switch def := o.Definition().(type) {
+	case bodyDefinition: // a leaf part: emit its bodies placed in the assembly
+		for _, b := range def.SurfaceBodies().All() {
+			*out = append(*out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: here})
 		}
-		local := o.Transform()
-		if flexParent != nil {
-			if override, ok := flexParent.ChildTransform(o.Name()); ok {
-				local = override
-			}
+	case occurrence.Composite: // a sub-assembly: recurse, carrying flexible-child overrides
+		var nextFlex *occurrence.Occurrence
+		if o.Flexible() {
+			nextFlex = o
 		}
-		world := parent.Mul(local)
-		here := append(append(occurrence.OccurrencePath(nil), path...), o.Name())
-		switch def := o.Definition().(type) {
-		case bodyDefinition: // a leaf part: emit its bodies placed in the assembly
-			for _, b := range def.SurfaceBodies().All() {
-				*out = append(*out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: here})
-			}
-		case occurrence.Composite: // a sub-assembly: recurse, carrying flexible-child overrides
-			var nextFlex *occurrence.Occurrence
-			if o.Flexible() {
-				nextFlex = o
-			}
-			collectPlacedBodies(def.Occurrences(), world, here, out, nextFlex)
+		collectPlacedBodies(def.Occurrences(), world, here, out, nextFlex)
+	}
+}
+
+// childTransform is o's local placement, replaced by flexParent's per-child override when this
+// occurrence is a child of a flexible sub-assembly that pins it to an independent transform.
+func childTransform(o *occurrence.Occurrence, flexParent *occurrence.Occurrence) math.Matrix4 {
+	if flexParent != nil {
+		if override, ok := flexParent.ChildTransform(o.Name()); ok {
+			return override
 		}
 	}
+	return o.Transform()
 }
 
 // bodyDefinition is a component definition that owns evaluated bodies — a part

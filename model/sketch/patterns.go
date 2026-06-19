@@ -33,29 +33,39 @@ func (s *Sketch) RectangularPatternLive(ents []Entity, step1 func() math.Vector2
 				continue // the seed
 			}
 			ii, jj := i, j
-			offset := step1().Scale(float64(ii)).Add(step2().Scale(float64(jj)))
-			clones, pmap := s.cloneEntitiesMapped(ents, translation(offset))
-			off := func() (float64, float64) {
-				o := step1().Scale(float64(ii)).Add(step2().Scale(float64(jj)))
-				return float64(o.X), float64(o.Y)
-			}
-			for seed, clone := range pmap {
-				g.AddPatternLinkLive(seed, clone, off)
-			}
-			// A clone's non-point DOFs (a circle/arc radius) are not pinned by the
-			// point links, so tie each clone's radius to its seed — this both removes
-			// the free DOF and makes the clone track the seed's (parametric) radius.
-			for k, clone := range clones {
-				if sc, ok := ents[k].(CircularCurve); ok {
-					if cc, ok := clone.(CircularCurve); ok {
-						g.AddEqualRadius(sc, cc)
-					}
-				}
-			}
-			copies = append(copies, clones...)
+			off := func() math.Vector2 { return step1().Scale(float64(ii)).Add(step2().Scale(float64(jj))) }
+			copies = append(copies, s.patternMemberLive(g, ents, off)...)
 		}
 	}
 	return copies, nil
+}
+
+// patternMemberLive clones ents at the live offset off(), links each clone point back to its
+// seed by that offset, and ties circular radii, returning the clones. The offset is read each
+// solve so the member tracks a moving (parametric) seed.
+func (s *Sketch) patternMemberLive(g *GeometricConstraints, ents []Entity, off func() math.Vector2) []Entity {
+	clones, pmap := s.cloneEntitiesMapped(ents, translation(off()))
+	linkOff := func() (float64, float64) { o := off(); return float64(o.X), float64(o.Y) }
+	for seed, clone := range pmap {
+		g.AddPatternLinkLive(seed, clone, linkOff)
+	}
+	tieCloneRadii(g, ents, clones)
+	return clones
+}
+
+// tieCloneRadii ties each circular clone's radius equal to its seed's. A clone's non-point DOF
+// (a circle/arc radius) is not pinned by the point links, so this removes the free DOF and makes
+// the clone track the seed's (parametric) radius. Shared by the rectangular and circular arrays.
+func tieCloneRadii(g *GeometricConstraints, ents, clones []Entity) {
+	for i, clone := range clones {
+		sc, ok := ents[i].(CircularCurve)
+		if !ok {
+			continue
+		}
+		if cc, ok := clone.(CircularCurve); ok {
+			g.AddEqualRadius(sc, cc)
+		}
+	}
 }
 
 // CircularPattern duplicates a selection around center: count instances (including the
@@ -81,13 +91,7 @@ func (s *Sketch) CircularPattern(ents []Entity, center math.Point2, count int, t
 		for seed, clone := range pmap {
 			g.AddPatternLinkLive(seed, clone, rotationOffset(seed, rot))
 		}
-		for i, clone := range clones {
-			if sc, ok := ents[i].(CircularCurve); ok {
-				if cc, ok := clone.(CircularCurve); ok {
-					g.AddEqualRadius(sc, cc)
-				}
-			}
-		}
+		tieCloneRadii(g, ents, clones)
 		copies = append(copies, clones...)
 	}
 	return copies, nil
