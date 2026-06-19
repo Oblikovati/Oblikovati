@@ -430,6 +430,8 @@ int obk_ig_editor_keys(void) {
     if (ImGui::IsKeyPressed(ImGuiKey_A, false)) m |= (1 << 13);
     if (ImGui::IsKeyPressed(ImGuiKey_Z, false)) m |= (1 << 14);
     if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) m |= (1 << 15);
+    if (ImGui::IsKeyPressed(ImGuiKey_Slash, false)) m |= (1 << 16);
+    if (ImGui::IsKeyPressed(ImGuiKey_F, false)) m |= (1 << 17);
     return m;
 }
 int  obk_ig_begin_combo(const char* label, const char* preview) {

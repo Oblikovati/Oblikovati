@@ -65,6 +65,40 @@ func TestWordLeftStopsAtWordStart(t *testing.T) {
 	}
 }
 
+func TestRuneAtBoundsAndContent(t *testing.T) {
+	b := New("ab\ncd")
+	if r, ok := b.RuneAt(Position{1, 1}); !ok || r != 'd' {
+		t.Errorf("RuneAt{1,1} = (%q,%v), want ('d',true)", r, ok)
+	}
+	if _, ok := b.RuneAt(Position{0, 2}); ok { // end-of-line: no rune
+		t.Error("RuneAt at EOL should be false")
+	}
+	if _, ok := b.RuneAt(Position{9, 0}); ok {
+		t.Error("RuneAt out of range should be false")
+	}
+}
+
+func TestTextInRangeOrdersEndpoints(t *testing.T) {
+	b := New("alpha\nbeta")
+	// Reversed endpoints must yield the same forward text.
+	if got := b.TextInRange(Position{1, 2}, Position{0, 3}); got != "ha\nbe" {
+		t.Errorf("TextInRange reversed = %q, want %q", got, "ha\nbe")
+	}
+}
+
+func TestWordBoundsAtPosition(t *testing.T) {
+	b := New("foo barbaz")
+	if s := b.WordStartAt(Position{0, 7}); s != (Position{0, 4}) {
+		t.Errorf("WordStartAt inside word = %+v, want {0,4}", s)
+	}
+	if e := b.WordEndAt(Position{0, 7}); e != (Position{0, 10}) {
+		t.Errorf("WordEndAt inside word = %+v, want {0,10}", e)
+	}
+	if s := b.WordStartAt(Position{0, 3}); s != (Position{0, 3}) { // on the space
+		t.Errorf("WordStartAt off-word should return p, got %+v", s)
+	}
+}
+
 func TestSelectionOrderedAndEmpty(t *testing.T) {
 	s := Selection{Anchor: Position{2, 1}, Caret: Position{0, 3}}
 	start, end := s.Ordered()

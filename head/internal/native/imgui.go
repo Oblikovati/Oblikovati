@@ -508,6 +508,7 @@ type EditorKeys struct {
 	Home, End                     bool
 	Copy, Paste, Cut, SelectAll   bool
 	Undo, Redo                    bool
+	Slash, Find                   bool // Ctrl+/ comment toggle, Ctrl+F find
 }
 
 // EditorKeysPressed reads the editor key bitmask from ImGui in a single cgo call and decodes
@@ -520,7 +521,7 @@ func EditorKeysPressed() EditorKeys {
 		Backspace: bit(4), Delete: bit(5), Enter: bit(6), Tab: bit(7),
 		Home: bit(8), End: bit(9),
 		Copy: bit(10), Paste: bit(11), Cut: bit(12), SelectAll: bit(13),
-		Undo: bit(14), Redo: bit(15),
+		Undo: bit(14), Redo: bit(15), Slash: bit(16), Find: bit(17),
 	}
 }
 

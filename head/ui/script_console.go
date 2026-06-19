@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/script/console"
+	"oblikovati.org/script/console/textbuf"
 )
 
 // scriptController is the head's live Script Console runtime (engine + dispatched caller),
@@ -43,6 +44,12 @@ func SetScriptSource(s string) { scriptCodeEditor().SetText(s) }
 // FocusScriptEditor forces the editor's keyboard focus on (so a capture shows the caret without
 // synthesising a click). Exposed for capture drivers / tests.
 func FocusScriptEditor() { scriptCodeEditor().focused = true }
+
+// SetScriptCaret moves the editor caret to (line, col). Exposed for capture drivers / tests
+// (e.g. to park the caret on a bracket so the match highlight shows).
+func SetScriptCaret(line, col int) {
+	scriptCodeEditor().model.SetCaret(textbuf.Position{Line: line, Col: col}, false)
+}
 
 // SetScriptController injects the console runtime. Called once at head startup, after the
 // add-in host (and thus the dispatcher the script's host calls hop through) exists.

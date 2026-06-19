@@ -182,3 +182,12 @@ func (b *Buffer) onWord(p Position) bool {
 
 // runeAt returns the rune at p (p.Col must be < line length).
 func (b *Buffer) runeAt(p Position) rune { return b.lines[p.Line][p.Col] }
+
+// RuneAt returns the rune at p and true, or (0, false) when p is out of range or at end-of-line
+// (no rune there). It backs scans — bracket matching — that walk arbitrary positions safely.
+func (b *Buffer) RuneAt(p Position) (rune, bool) {
+	if p.Line < 0 || p.Line >= len(b.lines) || p.Col < 0 || p.Col >= len(b.lines[p.Line]) {
+		return 0, false
+	}
+	return b.lines[p.Line][p.Col], true
+}

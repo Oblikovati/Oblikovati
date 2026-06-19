@@ -13,10 +13,32 @@ func (e *codeEditor) handleKeys() {
 	k := native.EditorKeysPressed()
 	shift, ctrl := native.KeyShift(), native.KeyCtrl()
 	if ctrl && e.handleShortcuts(k) {
-		return // a clipboard/undo/select-all shortcut consumed the frame
+		return // a clipboard/undo/select-all/comment shortcut consumed the frame
+	}
+	if e.handleTab(k, shift) {
+		return // Tab indented/outdented a selected block
 	}
 	e.handleMovement(k, shift, ctrl)
 	e.handleEditing(k)
+}
+
+// handleTab block-indents (Tab) or outdents (Shift+Tab) the selection, returning true when it
+// acted. With no selection, Tab falls through to handleEditing, which inserts an indent unit.
+func (e *codeEditor) handleTab(k native.EditorKeys, shift bool) bool {
+	if !k.Tab {
+		return false
+	}
+	if shift {
+		e.model.OutdentSelection()
+		e.resetBlink()
+		return true
+	}
+	if e.model.HasSelection() {
+		e.model.IndentSelection()
+		e.resetBlink()
+		return true
+	}
+	return false
 }
 
 // handleMovement maps the arrow/Home/End keys to caret moves, with Ctrl selecting the
@@ -91,6 +113,8 @@ func (e *codeEditor) handleShortcuts(k native.EditorKeys) bool {
 		e.model.Undo()
 	case k.Redo:
 		e.model.Redo()
+	case k.Slash:
+		e.model.ToggleLineComment()
 	default:
 		return false
 	}

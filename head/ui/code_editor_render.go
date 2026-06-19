@@ -22,6 +22,7 @@ var (
 	colCurrentLine = [4]float32{1, 1, 1, 0.045}
 	colSelection   = [4]float32{0.26, 0.45, 0.78, 0.45}
 	colCaret       = [4]float32{0.92, 0.92, 0.97, 1}
+	colBracket     = [4]float32{0.45, 0.55, 0.40, 0.55}
 )
 
 // syntaxPalette maps each token class to its colour — a conventional dark code-editor scheme
@@ -52,6 +53,7 @@ func (e *codeEditor) render(ox, oy, width, height float32, m editorMetrics) {
 	first, last := e.visibleRange(height, m)
 	e.drawCurrentLine(ox, oy, width, m)
 	e.drawSelection(ox, oy, m, first, last)
+	e.drawBracketMatch(ox, oy, m)
 	e.drawText(ox, oy, m, first, last)
 	e.drawGutter(ox, oy, width, height, m, first, last)
 	e.drawCaret(ox, oy, m)
@@ -150,6 +152,19 @@ func (e *codeEditor) drawGutter(ox, oy, width, height float32, m editorMetrics, 
 		num := strconv.Itoa(i + 1)
 		x := ox + m.gutterW - m.charW*float32(len(num)+1)
 		native.DrawTextMono(x, e.lineY(oy, i, m), num, colGutterText)
+	}
+}
+
+// drawBracketMatch outlines the bracket under/next to the caret and its partner with a subtle
+// box (drawn under the text so the glyphs stay legible).
+func (e *codeEditor) drawBracketMatch(ox, oy float32, m editorMetrics) {
+	a, b, ok := e.model.MatchingBracket()
+	if !ok {
+		return
+	}
+	for _, p := range [2]textbuf.Position{a, b} {
+		x, y := e.colX(ox, p.Col, m), e.lineY(oy, p.Line, m)
+		native.DrawRectFilled(x, y, x+m.charW, y+m.lineH, colBracket)
 	}
 }
 

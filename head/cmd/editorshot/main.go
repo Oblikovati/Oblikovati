@@ -73,6 +73,7 @@ func run(out string, frames int) error {
 	s.OpenScriptConsole()
 	ui.SetScriptSource(sampleSource)
 	ui.FocusScriptEditor()
+	ui.SetScriptCaret(3, 14) // park on the '(' of build(name) so the bracket match shows
 
 	win, err := native.CreateWindow(1280, 800, "editorshot")
 	if err != nil {
