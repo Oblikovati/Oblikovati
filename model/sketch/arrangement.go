@@ -151,23 +151,42 @@ func cutPair(segs []taggedSeg, i, j int, cuts [][]cut) {
 //
 //nolint:funlen // spatial-grid binning of segment AABBs; length is the binning, not logic.
 func gridCuts(segs []taggedSeg, cuts [][]cut) {
-	minX, minY := stdmath.Inf(1), stdmath.Inf(1)
-	maxX, maxY := stdmath.Inf(-1), stdmath.Inf(-1)
-	for _, s := range segs {
-		minX, minY = stdmath.Min(minX, stdmath.Min(s.a.X, s.b.X)), stdmath.Min(minY, stdmath.Min(s.a.Y, s.b.Y))
-		maxX, maxY = stdmath.Max(maxX, stdmath.Max(s.a.X, s.b.X)), stdmath.Max(maxY, stdmath.Max(s.a.Y, s.b.Y))
-	}
-	dim := int(stdmath.Sqrt(float64(len(segs))))
-	if dim < 1 {
-		dim = 1
-	} else if dim > 2048 {
-		dim = 2048
-	}
+	minX, minY, maxX, maxY := segsBounds(segs)
+	dim := gridDim(len(segs))
 	cell := stdmath.Max(stdmath.Max(maxX-minX, maxY-minY)/float64(dim), 1e-9)
 	cols := int((maxX-minX)/cell) + 1
 	rows := int((maxY-minY)/cell) + 1
 	col := func(x float64) int { return clampInt(int((x-minX)/cell), cols) }
 	row := func(y float64) int { return clampInt(int((y-minY)/cell), rows) }
+	bins := binSegments(segs, col, row, cols, rows)
+	testBinnedPairs(segs, bins, cuts)
+}
+
+// segsBounds returns the axis-aligned extent of the segment endpoints.
+func segsBounds(segs []taggedSeg) (minX, minY, maxX, maxY float64) {
+	minX, minY = stdmath.Inf(1), stdmath.Inf(1)
+	maxX, maxY = stdmath.Inf(-1), stdmath.Inf(-1)
+	for _, s := range segs {
+		minX, minY = stdmath.Min(minX, stdmath.Min(s.a.X, s.b.X)), stdmath.Min(minY, stdmath.Min(s.a.Y, s.b.Y))
+		maxX, maxY = stdmath.Max(maxX, stdmath.Max(s.a.X, s.b.X)), stdmath.Max(maxY, stdmath.Max(s.a.Y, s.b.Y))
+	}
+	return minX, minY, maxX, maxY
+}
+
+// gridDim picks the uniform-grid resolution from the segment count, clamped to [1, 2048].
+func gridDim(n int) int {
+	dim := int(stdmath.Sqrt(float64(n)))
+	if dim < 1 {
+		return 1
+	}
+	if dim > 2048 {
+		return 2048
+	}
+	return dim
+}
+
+// binSegments buckets each segment into every grid cell its bounding box touches.
+func binSegments(segs []taggedSeg, col, row func(float64) int, cols, rows int) [][]int32 {
 	bins := make([][]int32, cols*rows)
 	for i, s := range segs {
 		for cj := row(stdmath.Min(s.a.Y, s.b.Y)); cj <= row(stdmath.Max(s.a.Y, s.b.Y)); cj++ {
@@ -176,6 +195,12 @@ func gridCuts(segs []taggedSeg, cuts [][]cut) {
 			}
 		}
 	}
+	return bins
+}
+
+// testBinnedPairs cuts every distinct co-binned segment pair exactly once (a pair can share
+// several cells, so a tested-set deduplicates).
+func testBinnedPairs(segs []taggedSeg, bins [][]int32, cuts [][]cut) {
 	tested := map[[2]int32]struct{}{}
 	for _, bin := range bins {
 		for x := 0; x < len(bin); x++ {
