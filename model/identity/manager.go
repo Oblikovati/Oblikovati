@@ -42,7 +42,7 @@ func (m *KeyManager) ReleaseContext(id ContextID) {
 func (m *KeyManager) RebindSource(id ContextID, source EntitySource) error {
 	ctx, ok := m.contexts[id]
 	if !ok {
-		return fmt.Errorf("identity: unknown context %d", id)
+		return fmt.Errorf(errUnknownContext, id)
 	}
 	ctx.source = source
 	return nil
@@ -52,7 +52,7 @@ func (m *KeyManager) RebindSource(id ContextID, source EntitySource) error {
 // entity's lineage, so the key rebinds to the recreated entity after a recompute.
 func (m *KeyManager) GetReferenceKey(id ContextID, e Entity) (RefKey, error) {
 	if _, ok := m.contexts[id]; !ok {
-		return RefKey{}, fmt.Errorf("identity: unknown context %d", id)
+		return RefKey{}, fmt.Errorf(errUnknownContext, id)
 	}
 	if e == nil || e.Lineage() == nil {
 		return RefKey{}, fmt.Errorf("identity: cannot key a nil entity or entity without lineage")
@@ -102,7 +102,7 @@ func (m *KeyManager) CanBindKeyToObject(k RefKey) bool {
 func (m *KeyManager) SaveContextToArray(id ContextID) ([]byte, error) {
 	ctx, ok := m.contexts[id]
 	if !ok {
-		return nil, fmt.Errorf("identity: unknown context %d", id)
+		return nil, fmt.Errorf(errUnknownContext, id)
 	}
 	ctx.captureSnapshot()
 	return ctx.encode(), nil

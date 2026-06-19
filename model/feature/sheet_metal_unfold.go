@@ -49,7 +49,7 @@ func unfoldBend(body *topo.Body, bt BendTransform, sign float64, what string) (*
 	}
 	out, err := ops.DeformBody(body, fn, identityLineage)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", what, err)
+		return nil, fmt.Errorf(errCtxWrap, what, err)
 	}
 	return out, nil
 }

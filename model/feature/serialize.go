@@ -609,7 +609,7 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreSplitSolid(fs, fd.SplitSolid, work)
 	case "move":
 		return restoreMove(fs, fd.Move)
-	case "bend-part":
+	case kindBendPart:
 		return restoreBend(fs, fd.Bend, sk)
 	case "sheet-metal-face":
 		return restoreSheetMetalFace(fs, fd.SheetMetalFace, sk)

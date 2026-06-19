@@ -210,7 +210,7 @@ func (ps *Parameters) add(name string, kind ParameterKind) (*Parameter, error) {
 func (ps *Parameters) Rename(id ID, newName string) error {
 	p, ok := ps.byID[id]
 	if !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
+		return fmt.Errorf(errNoParameter, id)
 	}
 	if existing, taken := ps.byName[newName]; taken && existing != id {
 		return fmt.Errorf("param: a parameter named %q already exists", newName)
@@ -233,7 +233,7 @@ func (ps *Parameters) Rename(id ID, newName string) error {
 func (ps *Parameters) Delete(id ID) error {
 	p, ok := ps.byID[id]
 	if !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
+		return fmt.Errorf(errNoParameter, id)
 	}
 	ps.remove(p)
 	return nil

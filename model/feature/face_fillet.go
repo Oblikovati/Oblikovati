@@ -89,7 +89,7 @@ func nonAdjacentFaceFilletBody(in Input, body *topo.Body, faceKeysA, faceKeysB [
 	}
 	result, err := ops.FilletEdgesCorner(healed, picks, ops.CornerMiter, ops.FillConcaveOutward)
 	if err != nil {
-		return Output{}, fmt.Errorf("%s: %w", feat, err)
+		return Output{}, fmt.Errorf(errCtxWrap, feat, err)
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
 }

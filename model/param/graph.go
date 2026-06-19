@@ -27,10 +27,10 @@ func (e *CycleError) Error() string {
 func (ps *Parameters) SetExpression(id ID, src string) error {
 	p, ok := ps.byID[id]
 	if !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
+		return fmt.Errorf(errNoParameter, id)
 	}
 	if !p.kind.Editable() {
-		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+		return fmt.Errorf(errReadOnly, p.kind, p.name)
 	}
 	e, err := Parse(src)
 	if err != nil {
@@ -44,10 +44,10 @@ func (ps *Parameters) SetExpression(id ID, src string) error {
 func (ps *Parameters) SetValue(id ID, value Quantity) error {
 	p, ok := ps.byID[id]
 	if !ok {
-		return fmt.Errorf("param: no parameter with id %d", id)
+		return fmt.Errorf(errNoParameter, id)
 	}
 	if !p.kind.Editable() {
-		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+		return fmt.Errorf(errReadOnly, p.kind, p.name)
 	}
 	p.expr = constantExpr(value)
 	return ps.rebind(id)

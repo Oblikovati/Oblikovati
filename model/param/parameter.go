@@ -161,7 +161,7 @@ func (p *Parameter) SetTolerance(t Tolerance) { p.tol = t }
 // errors for read-only kinds and for malformed source.
 func (p *Parameter) SetExpression(src string) error {
 	if !p.kind.Editable() {
-		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+		return fmt.Errorf(errReadOnly, p.kind, p.name)
 	}
 	if !p.IsNumeric() {
 		return fmt.Errorf("param: %q is a %s parameter; only numeric parameters take expressions", p.name, p.value.Unit)
@@ -179,7 +179,7 @@ func (p *Parameter) SetExpression(src string) error {
 // expression. It errors for read-only kinds.
 func (p *Parameter) SetValue(q Quantity) error {
 	if !p.kind.Editable() {
-		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+		return fmt.Errorf(errReadOnly, p.kind, p.name)
 	}
 	if !p.IsNumeric() {
 		return fmt.Errorf("param: %q is a %s parameter; use SetText/SetBool", p.name, p.value.Unit)
@@ -195,7 +195,7 @@ func (p *Parameter) SetValue(q Quantity) error {
 // text parameter's equation as a quoted string).
 func (p *Parameter) SetText(s string) error {
 	if !p.kind.Editable() {
-		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+		return fmt.Errorf(errReadOnly, p.kind, p.name)
 	}
 	if !p.IsText() {
 		return fmt.Errorf("param: %q is not a text parameter (unit %s)", p.name, p.value.Unit)
@@ -210,7 +210,7 @@ func (p *Parameter) SetText(s string) error {
 // non-boolean parameters. Booleans are stored as 0/1 in the value quantity.
 func (p *Parameter) SetBool(b bool) error {
 	if !p.kind.Editable() {
-		return fmt.Errorf("param: %s parameter %q is read-only", p.kind, p.name)
+		return fmt.Errorf(errReadOnly, p.kind, p.name)
 	}
 	if !p.IsBoolean() {
 		return fmt.Errorf("param: %q is not a true/false parameter (unit %s)", p.name, p.value.Unit)

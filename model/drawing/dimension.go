@@ -90,7 +90,7 @@ func (ds *DrawingDimensions) AddLinear(name, viewName string, dimType types.Draw
 	keyA, okA := nearestVertexKey(body, view, basis, x1, y1)
 	keyB, okB := nearestVertexKey(body, view, basis, x2, y2)
 	if !okA || !okB {
-		return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
+		return nil, fmt.Errorf(errViewNoVertices, viewName)
 	}
 	return ds.addLinearFromKeys(name, viewName, dimType, keyA, keyB, offset), nil
 }
@@ -167,7 +167,7 @@ func (ds *DrawingDimensions) snapPoints(viewName string, points [][2]float64) ([
 	for i, p := range points {
 		k, ok := nearestVertexKey(body, view, basis, p[0], p[1])
 		if !ok {
-			return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
+			return nil, fmt.Errorf(errViewNoVertices, viewName)
 		}
 		keys[i] = k
 	}
@@ -188,13 +188,13 @@ func (ds *DrawingDimensions) AddOrdinateSet(viewName string, axisHorizontal bool
 	}
 	datumKey, ok := nearestVertexKey(body, view, basis, datum[0], datum[1])
 	if !ok {
-		return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
+		return nil, fmt.Errorf(errViewNoVertices, viewName)
 	}
 	out := make([]*DrawingDimension, 0, len(points))
 	for _, p := range points {
 		key, ok := nearestVertexKey(body, view, basis, p[0], p[1])
 		if !ok {
-			return nil, fmt.Errorf("drawing: view %q has no model vertices to dimension", viewName)
+			return nil, fmt.Errorf(errViewNoVertices, viewName)
 		}
 		out = append(out, ds.addOrdinateFromKeys(viewName, axisHorizontal, datumKey, key))
 	}

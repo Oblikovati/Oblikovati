@@ -83,7 +83,7 @@ func (o *Orientations) Activate(name string) error {
 		o.active = i
 		return nil
 	}
-	return fmt.Errorf("flat-pattern orientation %q does not exist", name)
+	return fmt.Errorf(errNoFlatOrientation, name)
 }
 
 // Copy duplicates the named orientation under newName (defaulting to "<name> Copy"), erroring
@@ -91,7 +91,7 @@ func (o *Orientations) Activate(name string) error {
 func (o *Orientations) Copy(name, newName string) (*FlatPatternOrientation, error) {
 	src, _, ok := o.ByName(name)
 	if !ok {
-		return nil, fmt.Errorf("flat-pattern orientation %q does not exist", name)
+		return nil, fmt.Errorf(errNoFlatOrientation, name)
 	}
 	if newName == "" {
 		newName = name + " Copy"
@@ -112,7 +112,7 @@ func (o *Orientations) Delete(name string) error {
 	}
 	_, i, ok := o.ByName(name)
 	if !ok {
-		return fmt.Errorf("flat-pattern orientation %q does not exist", name)
+		return fmt.Errorf(errNoFlatOrientation, name)
 	}
 	o.items = append(o.items[:i], o.items[i+1:]...)
 	if o.active == i {

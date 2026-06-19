@@ -552,7 +552,7 @@ func lookupCircle3D(ids []int, entmap map[int]Entity) (*Circle3D, error) {
 	}
 	e, ok := entmap[ids[0]]
 	if !ok {
-		return nil, fmt.Errorf("references unknown entity id %d", ids[0])
+		return nil, fmt.Errorf(errUnknownEntityRef, ids[0])
 	}
 	c, ok := e.(*Circle3D)
 	if !ok {
@@ -632,18 +632,18 @@ func restoreEntity3D(s *Sketch3D, ed Entity3DData, idmap map[int]*Point3D) (Enti
 func restoreConstraint3D(s *Sketch3D, cd Constraint3DRow, idmap map[int]*Point3D, entmap map[int]Entity) error {
 	pts, err := lookupPoints3D(cd.Points, idmap)
 	if err != nil {
-		return fmt.Errorf("%s constraint: %w", cd.Kind, err)
+		return fmt.Errorf(errConstraintWrap, cd.Kind, err)
 	}
 	if c, handled, err := curveConstraint3DFromRow(cd, pts, entmap); handled {
 		if err != nil {
-			return fmt.Errorf("%s constraint: %w", cd.Kind, err)
+			return fmt.Errorf(errConstraintWrap, cd.Kind, err)
 		}
 		s.geomCons.add(c)
 		return nil
 	}
 	lines, err := lookupLines3D(cd.Curves, entmap)
 	if err != nil {
-		return fmt.Errorf("%s constraint: %w", cd.Kind, err)
+		return fmt.Errorf(errConstraintWrap, cd.Kind, err)
 	}
 	c, err := constraint3DFromRow(cd.Kind, pts, lines)
 	if err != nil {
@@ -735,7 +735,7 @@ func restoreHelical3D(cd Constraint3DRow, entmap map[int]Entity) (Constraint, er
 func lookupSmoothCurve3D(id int, entmap map[int]Entity) (SmoothCurve3D, error) {
 	e, ok := entmap[id]
 	if !ok {
-		return nil, fmt.Errorf("references unknown entity id %d", id)
+		return nil, fmt.Errorf(errUnknownEntityRef, id)
 	}
 	c, ok := e.(SmoothCurve3D)
 	if !ok {
@@ -825,7 +825,7 @@ func lookupLines3D(ids []int, entmap map[int]Entity) ([]*Line3D, error) {
 	for i, id := range ids {
 		e, ok := entmap[id]
 		if !ok {
-			return nil, fmt.Errorf("references unknown entity id %d", id)
+			return nil, fmt.Errorf(errUnknownEntityRef, id)
 		}
 		l, ok := e.(*Line3D)
 		if !ok {
