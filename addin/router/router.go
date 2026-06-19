@@ -330,6 +330,7 @@ func (r *Router) registerSketchAuthoringHandlers() {
 	r.handlers[wire.MethodSketchAddDimension] = addDimension
 	r.handlers[wire.MethodSketchDriveDimension] = driveDimension
 	r.handlers[wire.MethodSketchTransform] = transformSketch
+	r.handlers[wire.MethodSketchCopyTo] = sketchCopyTo
 	r.handlers[wire.MethodSketchAddPattern] = addSketchPattern
 	r.handlers[wire.MethodSketchOffset] = offsetSketchEntity
 	r.handlers[wire.MethodSketchAddImage] = addSketchImage
