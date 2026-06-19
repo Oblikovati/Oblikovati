@@ -274,6 +274,9 @@ func (s *Session) watchDocumentCloses() {
 			delete(s.histories, e.Document.ID())
 			event.Emit(s.bus, event.After, TransactionDeleted{Document: e.Document.ID()})
 		}
+		// The document's add-in client graphics die with it, so its overlays cannot resurface
+		// on a later document that happens to reuse no id (M05-F05 doc-scoped graphics).
+		delete(s.graphicsByDoc, e.Document.ID())
 		return event.Continue()
 	})
 }

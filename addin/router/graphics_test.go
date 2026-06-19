@@ -84,6 +84,45 @@ func TestGraphicsEndToEndAppearsInFrame(t *testing.T) {
 	}
 }
 
+// TestClientGraphicsAreDocumentScoped pins the doc-scoping fix: a persistent overlay pushed
+// while document A is active must NOT appear when a second document B is active (it bled into
+// every viewport before — an FEA flood plot on one part showed on all of them), and must
+// reappear when A is reactivated.
+func TestClientGraphicsAreDocumentScoped(t *testing.T) {
+	r := New(opregistry.Default())
+	s := app.NewSession()
+
+	docA, err := s.NewPart()
+	if err != nil {
+		t.Fatalf("new part A: %v", err)
+	}
+	callGraphics(t, r, s, wire.MethodClientGraphicsSet, heatmapArgs())
+	if got := len(s.Graphics().Groups()); got != 1 {
+		t.Fatalf("doc A groups = %d, want 1", got)
+	}
+
+	docB, err := s.NewPart() // becomes active
+	if err != nil {
+		t.Fatalf("new part B: %v", err)
+	}
+	if got := len(s.Graphics().Groups()); got != 0 {
+		t.Errorf("doc B sees %d graphics groups, want 0 — doc A's overlay leaked", got)
+	}
+	be := &renderer.NullBackend{}
+	s.RenderFrame(be)
+	if findHeatmap(be.LastFrame()) != nil {
+		t.Error("doc B frame contains doc A's heatmap — overlay leaked across documents")
+	}
+
+	if err := s.Workspace().SetActiveDocument(docA); err != nil {
+		t.Fatalf("reactivate A: %v", err)
+	}
+	if got := len(s.Graphics().Groups()); got != 1 {
+		t.Errorf("doc A groups after switching back = %d, want 1", got)
+	}
+	_ = docB
+}
+
 // findHeatmap returns the per-vertex-colored triangle item in the frame, or nil.
 func findHeatmap(frame renderer.DrawList) *renderer.DrawItem {
 	for i := range frame.Items {
