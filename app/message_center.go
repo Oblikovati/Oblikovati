@@ -67,12 +67,12 @@ func (m *MessageCenter) AddMessage(text string, severity types.MessageSeverity) 
 	switch severity {
 	case types.SeverityError:
 		m.hasErrors = true
-		slog.Error("message-center", "text", text)
+		slog.Error(logMessageCenter, "text", text)
 	case types.SeverityWarning:
 		m.hasWarnings = true
-		slog.Warn("message-center", "text", text)
+		slog.Warn(logMessageCenter, "text", text)
 	default:
-		slog.Info("message-center", "text", text)
+		slog.Info(logMessageCenter, "text", text)
 	}
 	if m.sink != nil { // M26 F03: also surface it in the Command Window
 		m.sink(text, severity)

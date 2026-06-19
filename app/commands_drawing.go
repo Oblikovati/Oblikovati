@@ -12,7 +12,7 @@ func newDrawingCommand() *CommandDefinition {
 	return NewCommand("GetStarted.NewDrawing", "New Drawing", "Launch", func(s *Session) error {
 		_, err := s.NewDrawing()
 		return err
-	}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
+	}).WithTab(tabGetStarted).WithRibbons(ZeroDocRibbon).
 		WithIcon("new-drawing").WithButtonStyle(LargeIconButton).
 		WithTooltip("New Drawing — create a drawing document with one sheet, where you lay out views and annotations of a model.")
 }
@@ -34,7 +34,7 @@ func drawingTabCommands() []*CommandDefinition {
 		drawingToolCommand("Drafting Standard", "Setup", "drawing-standard",
 			"Set the drawing's drafting standard (ISO or ANSI); it governs dimension, text and line appearance.",
 			func() Tool { return NewDraftingStandardTool() }),
-		drawingToolCommand("Base View", "Views", "drawing-base-view",
+		drawingToolCommand(labelBaseView, "Views", "drawing-base-view",
 			"Project a base view of the referenced model onto the sheet (orientation, scale, hidden-line style).",
 			func() Tool { return NewBaseViewTool() }),
 		drawingToolCommand("Projected View", "Views", "drawing-projected-view",

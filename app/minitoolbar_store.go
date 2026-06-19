@@ -89,7 +89,7 @@ func (s *Session) SetMiniToolbar(spec wire.MiniToolbarSpec) error {
 func (s *Session) UpdateMiniToolbarControls(id string, controls []wire.MiniToolbarControlSpec) error {
 	spec, ok := s.miniToolbars.toolbars[id]
 	if !ok {
-		return fmt.Errorf("app: no mini-toolbar %q", id)
+		return fmt.Errorf(errNoMiniToolbar, id)
 	}
 	for _, incoming := range controls {
 		if !mergeMiniToolbarControl(&spec, incoming) {
@@ -116,7 +116,7 @@ func mergeMiniToolbarControl(spec *wire.MiniToolbarSpec, incoming wire.MiniToolb
 // RemoveMiniToolbar dismisses a toolbar.
 func (s *Session) RemoveMiniToolbar(id string) error {
 	if _, ok := s.miniToolbars.toolbars[id]; !ok {
-		return fmt.Errorf("app: no mini-toolbar %q", id)
+		return fmt.Errorf(errNoMiniToolbar, id)
 	}
 	delete(s.miniToolbars.toolbars, id)
 	for i, x := range s.miniToolbars.order {
@@ -145,7 +145,7 @@ func (s *Session) ChangeMiniToolbarControl(toolbarID string, control wire.MiniTo
 // dismiss it (apply keeps it for further edits).
 func (s *Session) CommitMiniToolbar(id, gesture string) error {
 	if _, ok := s.miniToolbars.toolbars[id]; !ok {
-		return fmt.Errorf("app: no mini-toolbar %q", id)
+		return fmt.Errorf(errNoMiniToolbar, id)
 	}
 	switch gesture {
 	case MiniToolbarOK, MiniToolbarApply, MiniToolbarCancel:

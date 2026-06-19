@@ -54,19 +54,19 @@ func getStartedCommands() []*CommandDefinition {
 		NewCommand("GetStarted.NewPart", "New Part", "Launch", func(s *Session) error {
 			_, err := s.NewPart()
 			return err
-		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).WithDefaultChord("Ctrl+N").
+		}).WithTab(tabGetStarted).WithRibbons(ZeroDocRibbon).WithDefaultChord("Ctrl+N").
 			WithIcon("new-part").WithButtonStyle(LargeIconButton).
 			WithTooltip("New Part — create a part document and open the part environment."),
 		NewCommand("GetStarted.NewSheetMetalPart", "New Sheet Metal Part", "Launch", func(s *Session) error {
 			_, err := s.NewSheetMetalPart()
 			return err
-		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
+		}).WithTab(tabGetStarted).WithRibbons(ZeroDocRibbon).
 			WithIcon("sheet-metal-new").WithButtonStyle(LargeIconButton).
 			WithTooltip("New Sheet Metal Part — create a part already in the sheet-metal environment."),
 		NewCommand("GetStarted.NewAssembly", "New Assembly", "Launch", func(s *Session) error {
 			_, err := s.NewAssembly()
 			return err
-		}).WithTab("Get Started").WithRibbons(ZeroDocRibbon).
+		}).WithTab(tabGetStarted).WithRibbons(ZeroDocRibbon).
 			WithIcon("new-assembly").WithButtonStyle(LargeIconButton).
 			WithTooltip("New Assembly — create an assembly document and open the assembly environment, where you place and constrain components."),
 	}

@@ -334,7 +334,7 @@ func placeMeshFromFile(s *app.Session, path, name string) {
 func importBodyFromFile(s *app.Session, path, name string) {
 	res, err := s.ImportFile(path)
 	if err != nil {
-		fileNotice(s, "Import failed: %v", err)
+		fileNotice(s, importFailedFmt, err)
 		return
 	}
 	fileNotice(s, "Imported %s (%d %s)", name, res.BodyCount, plural(res.BodyCount, "body", "bodies"))
@@ -355,7 +355,7 @@ func isSketchPath(path string) bool { return isDWGPath(path) || isDXFPath(path) 
 func importDWGFromFile(s *app.Session, act fileAction, name string) {
 	choices, err := s.DWGPlaneChoices()
 	if err != nil {
-		fileNotice(s, "Import failed: %v", err)
+		fileNotice(s, importFailedFmt, err)
 		return
 	}
 	plane := choices[0].Plane
@@ -364,7 +364,7 @@ func importDWGFromFile(s *app.Session, act fileAction, name string) {
 	}
 	res, err := s.ImportDWGFile(act.Path, plane)
 	if err != nil {
-		fileNotice(s, "Import failed: %v", err)
+		fileNotice(s, importFailedFmt, err)
 		return
 	}
 	kind := "2D sketch"
@@ -392,7 +392,7 @@ func importFromFile(s *app.Session, act fileAction, name string) {
 func importDXFFromFile(s *app.Session, act fileAction, name string) {
 	choices, err := s.DWGPlaneChoices()
 	if err != nil {
-		fileNotice(s, "Import failed: %v", err)
+		fileNotice(s, importFailedFmt, err)
 		return
 	}
 	plane := choices[0].Plane
@@ -401,7 +401,7 @@ func importDXFFromFile(s *app.Session, act fileAction, name string) {
 	}
 	res, err := s.ImportDXFFile(act.Path, plane)
 	if err != nil {
-		fileNotice(s, "Import failed: %v", err)
+		fileNotice(s, importFailedFmt, err)
 		return
 	}
 	kind := "2D sketch"

@@ -25,7 +25,7 @@ var sentinelPaint = [RoleCount]string{
 	RoleBackground: "#00ff00",
 	RoleTertiary:   "#0000ff",
 	RoleSecondary:  "#ff0000",
-	RolePrimary:    "#000000",
+	RolePrimary:    hexBlack,
 }
 
 // String names a role for error messages and tests.

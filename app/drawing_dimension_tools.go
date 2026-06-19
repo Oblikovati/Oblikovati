@@ -3,6 +3,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 
 	"oblikovati.org/api/types"
@@ -35,11 +36,11 @@ func (t *LinearDimensionTool) Commit(s *Session) error {
 	}
 	parent := t.parent()
 	if parent == "" {
-		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+		return errors.New(errNoBaseView)
 	}
 	minX, minY, maxX, maxY, ok := viewBoundsMM(s, parent)
 	if !ok {
-		return fmt.Errorf("drawing: base view %q has no geometry to dimension", parent)
+		return fmt.Errorf(errBaseViewNoGeometry, parent)
 	}
 	dimType, x1, y1, x2, y2, offset := dimensionPlacement(t.dimType, minX, minY, maxX, maxY)
 	if _, err := c.Sheets().Active().Dimensions().AddLinear("", parent, dimType, x1, y1, x2, y2, offset); err != nil {
@@ -52,7 +53,7 @@ func (t *LinearDimensionTool) Commit(s *Session) error {
 // Params exposes the base-view and dimension-type choices for the property dialog.
 func (t *LinearDimensionTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Type", Options: dimensionTypeLabels, Get: func() int { return t.dimType }, Set: func(i int) { t.dimType = i }},
 	}}
 }
@@ -85,7 +86,7 @@ func (t *RadialDimensionTool) Commit(s *Session) error {
 	}
 	parent := t.parent()
 	if parent == "" {
-		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+		return errors.New(errNoBaseView)
 	}
 	dimType := radialDimensionTypes[clampIndex(t.typeIdx, len(radialDimensionTypes))].typ
 	if _, err := c.Sheets().Active().Dimensions().AddRadialForEachCircle(parent, dimType); err != nil {
@@ -102,7 +103,7 @@ func (t *RadialDimensionTool) Params() ToolParams {
 		labels[i] = r.label
 	}
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Type", Options: labels, Get: func() int { return t.typeIdx }, Set: func(i int) { t.typeIdx = i }},
 	}}
 }
@@ -126,7 +127,7 @@ func (t *AngularDimensionTool) Commit(s *Session) error {
 	}
 	parent := t.parent()
 	if parent == "" {
-		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+		return errors.New(errNoBaseView)
 	}
 	if _, err := c.Sheets().Active().Dimensions().AddAngularForFirstCorner(parent); err != nil {
 		return err
@@ -137,7 +138,7 @@ func (t *AngularDimensionTool) Commit(s *Session) error {
 
 // Params exposes the base-view choice for the property dialog.
 func (t *AngularDimensionTool) Params() ToolParams {
-	return ToolParams{Choices: []ChoiceParam{t.baseChoice("Base View")}}
+	return ToolParams{Choices: []ChoiceParam{t.baseChoice(labelBaseView)}}
 }
 
 // setStyleLabels indexes the dimension-set Style dropdown.
@@ -164,7 +165,7 @@ func (t *DimensionSetTool) Commit(s *Session) error {
 	}
 	parent := t.parent()
 	if parent == "" {
-		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+		return errors.New(errNoBaseView)
 	}
 	dimType := dimensionTypeForIndex(t.dim)
 	if _, err := c.Sheets().Active().Dimensions().AddSetForViewCorners(parent, dimType, t.style == 0); err != nil {
@@ -177,7 +178,7 @@ func (t *DimensionSetTool) Commit(s *Session) error {
 // Params exposes the base-view, set-style and measurement-type choices.
 func (t *DimensionSetTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Style", Options: setStyleLabels, Get: func() int { return t.style }, Set: func(i int) { t.style = i }},
 		{Label: "Type", Options: dimensionTypeLabels, Get: func() int { return t.dim }, Set: func(i int) { t.dim = i }},
 	}}
@@ -203,11 +204,11 @@ func (t *ArcLengthDimensionTool) Commit(s *Session) error {
 	}
 	parent := t.parent()
 	if parent == "" {
-		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+		return errors.New(errNoBaseView)
 	}
 	minX, minY, maxX, maxY, ok := viewBoundsMM(s, parent)
 	if !ok {
-		return fmt.Errorf("drawing: base view %q has no geometry to dimension", parent)
+		return fmt.Errorf(errBaseViewNoGeometry, parent)
 	}
 	if _, err := c.Sheets().Active().Dimensions().AddArcLength("", parent, (minX+maxX)/2, (minY+maxY)/2); err != nil {
 		return err
@@ -218,7 +219,7 @@ func (t *ArcLengthDimensionTool) Commit(s *Session) error {
 
 // Params exposes the base-view choice for the property dialog.
 func (t *ArcLengthDimensionTool) Params() ToolParams {
-	return ToolParams{Choices: []ChoiceParam{t.baseChoice("Base View")}}
+	return ToolParams{Choices: []ChoiceParam{t.baseChoice(labelBaseView)}}
 }
 
 // ordinateAxisLabels indexes the ordinate Axis dropdown.
@@ -245,11 +246,11 @@ func (t *OrdinateDimensionTool) Commit(s *Session) error {
 	}
 	parent := t.parent()
 	if parent == "" {
-		return fmt.Errorf("drawing: no base view to dimension — add a base view first")
+		return errors.New(errNoBaseView)
 	}
 	minX, minY, maxX, maxY, ok := viewBoundsMM(s, parent)
 	if !ok {
-		return fmt.Errorf("drawing: base view %q has no geometry to dimension", parent)
+		return fmt.Errorf(errBaseViewNoGeometry, parent)
 	}
 	datum := [2]float64{minX, minY}
 	corners := [][2]float64{{minX, minY}, {maxX, minY}, {maxX, maxY}, {minX, maxY}}
@@ -263,7 +264,7 @@ func (t *OrdinateDimensionTool) Commit(s *Session) error {
 // Params exposes the base-view and axis choices for the property dialog.
 func (t *OrdinateDimensionTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Axis", Options: ordinateAxisLabels, Get: func() int { return t.axis }, Set: func(i int) { t.axis = i }},
 	}}
 }

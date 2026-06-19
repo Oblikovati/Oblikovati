@@ -25,7 +25,7 @@ var shapeElems = map[string]bool{
 // are fill=black, stroke=none.
 type paintState struct{ stroke, fill string }
 
-var rootPaintDefaults = paintState{stroke: "", fill: "#000000"}
+var rootPaintDefaults = paintState{stroke: "", fill: hexBlack}
 
 // filterForRole returns a copy of the document in which only elements painted with
 // role's sentinel still draw — the input to the role's rasterization pass.
@@ -66,7 +66,7 @@ func inheritPaints(n *blenderxml.Node, inherited paintState) paintState {
 // drawn (black) when it matches the wanted sentinel, off otherwise.
 func keepPaint(paint, want string) string {
 	if paint == want {
-		return "#000000"
+		return hexBlack
 	}
 	return "none"
 }
@@ -79,7 +79,7 @@ func normalizePaint(v string) string {
 	case "", "none", "transparent":
 		return ""
 	case "black":
-		return "#000000"
+		return hexBlack
 	case "red":
 		return "#ff0000"
 	case "blue":

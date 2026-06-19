@@ -57,7 +57,7 @@ func NewBaseViewTool() *BaseViewTool {
 	return &BaseViewTool{scale: 1, centerX: 150, centerY: 150}
 }
 
-func (t *BaseViewTool) Name() string              { return "Base View" }
+func (t *BaseViewTool) Name() string              { return labelBaseView }
 func (t *BaseViewTool) Start(*Session)            {}
 func (t *BaseViewTool) Pick(*Session, Selectable) {}
 func (t *BaseViewTool) CanCommit() bool           { return true }
@@ -218,7 +218,7 @@ func (t *ProjectedViewTool) Commit(s *Session) error {
 // Params exposes the base-view and direction choices for the property dialog.
 func (t *ProjectedViewTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Direction", Options: labelsOf(len(projectionDirections), func(i int) string { return projectionDirections[i].label }),
 			Get: func() int { return t.direction }, Set: func(i int) { t.direction = i }},
 	}}
@@ -351,7 +351,7 @@ func (t *SectionViewTool) Commit(s *Session) error {
 // Params exposes the base-view and cut-orientation choices for the property dialog.
 func (t *SectionViewTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Cut", Options: sectionOrientations, Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
 	}}
 }
@@ -421,7 +421,7 @@ func (t *DetailViewTool) Commit(s *Session) error {
 // Params exposes the base-view choice and detail scale for the property dialog.
 func (t *DetailViewTool) Params() ToolParams {
 	return ToolParams{
-		Choices: []ChoiceParam{t.baseChoice("Base View")},
+		Choices: []ChoiceParam{t.baseChoice(labelBaseView)},
 		Floats:  []FloatParam{{"Scale", func() float64 { return t.scale }, func(v float64) { t.scale = v }}},
 	}
 }
@@ -515,7 +515,7 @@ func (t *BreakViewTool) Commit(s *Session) error {
 // Params exposes the base-view and break-orientation choices for the property dialog.
 func (t *BreakViewTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Break", Options: labelsOf(len(breakOrientations), func(i int) string { return breakOrientations[i].label }),
 			Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
 	}}
@@ -612,7 +612,7 @@ func (t *SliceViewTool) Commit(s *Session) error {
 // Params exposes the base-view and cut-orientation choices.
 func (t *SliceViewTool) Params() ToolParams {
 	return ToolParams{Choices: []ChoiceParam{
-		t.baseChoice("Base View"),
+		t.baseChoice(labelBaseView),
 		{Label: "Cut", Options: sectionOrientations, Get: func() int { return t.orient }, Set: func(i int) { t.orient = i }},
 	}}
 }
@@ -666,7 +666,7 @@ func (t *BreakoutViewTool) Commit(s *Session) error {
 
 // Params exposes the base-view choice.
 func (t *BreakoutViewTool) Params() ToolParams {
-	return ToolParams{Choices: []ChoiceParam{t.baseChoice("Base View")}}
+	return ToolParams{Choices: []ChoiceParam{t.baseChoice(labelBaseView)}}
 }
 
 // DraftViewTool drops a model-less framed draft view (a container for manual 2D geometry); the

@@ -179,7 +179,7 @@ func addAssemblyJointNodes(root *BrowserNode, set *assembly.JointSet) {
 // it is suppressed.
 func jointBrowserLabel(j assembly.Joint) string {
 	if j.Suppressed() {
-		return j.Name() + " (suppressed)"
+		return j.Name() + suffixSuppressed
 	}
 	return j.Name()
 }
@@ -202,7 +202,7 @@ func addAssemblyConstraintNodes(root *BrowserNode, set *assembly.ConstraintSet) 
 // when it is suppressed.
 func constraintBrowserLabel(c assembly.Constraint) string {
 	if c.Suppressed() {
-		return c.Name() + " (suppressed)"
+		return c.Name() + suffixSuppressed
 	}
 	return c.Name()
 }
@@ -224,7 +224,7 @@ func addAssemblyFeatureNodes(root *BrowserNode, fs *compdef.AssemblyFeatures) {
 // assemblyFeatureLabel is the feature row's label, suffixed when it is suppressed.
 func assemblyFeatureLabel(af *compdef.AssemblyFeature) string {
 	if af.Suppressed() {
-		return af.Name() + " (suppressed)"
+		return af.Name() + suffixSuppressed
 	}
 	return af.Name()
 }
@@ -252,7 +252,7 @@ func occurrenceLabel(o *occurrence.Occurrence) string {
 		label += " (grounded)"
 	}
 	if o.Suppressed() {
-		label += " (suppressed)"
+		label += suffixSuppressed
 	}
 	return label
 }

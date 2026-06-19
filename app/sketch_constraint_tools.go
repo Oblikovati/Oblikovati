@@ -215,33 +215,33 @@ var constraintToolDefs = []struct {
 		},
 	},
 	{
-		"Sketch.Collinear", "Collinear", "Collinear — pick two lines.", "Select two lines",
+		"Sketch.Collinear", "Collinear", "Collinear — pick two lines.", promptSelectTwoLines,
 		func() *ConstraintTool {
-			return &ConstraintTool{name: "Collinear", prompt: "Select two lines", accepts: acceptLines, ready: ready2Lines, apply: entityApply(applyCollinear)}
+			return &ConstraintTool{name: "Collinear", prompt: promptSelectTwoLines, accepts: acceptLines, ready: ready2Lines, apply: entityApply(applyCollinear)}
 		},
 	},
 	{
-		"Sketch.Parallel", "Parallel", "Parallel — pick two lines.", "Select two lines",
+		"Sketch.Parallel", "Parallel", "Parallel — pick two lines.", promptSelectTwoLines,
 		func() *ConstraintTool {
-			return &ConstraintTool{name: "Parallel", prompt: "Select two lines", accepts: acceptLines, ready: ready2Lines, apply: entityApply(applyParallel)}
+			return &ConstraintTool{name: "Parallel", prompt: promptSelectTwoLines, accepts: acceptLines, ready: ready2Lines, apply: entityApply(applyParallel)}
 		},
 	},
 	{
-		"Sketch.Perpendicular", "Perpendicular", "Perpendicular — pick two lines.", "Select two lines",
+		"Sketch.Perpendicular", "Perpendicular", "Perpendicular — pick two lines.", promptSelectTwoLines,
 		func() *ConstraintTool {
-			return &ConstraintTool{name: "Perpendicular", prompt: "Select two lines", accepts: acceptLines, ready: ready2Lines, apply: entityApply(applyPerpendicular)}
+			return &ConstraintTool{name: "Perpendicular", prompt: promptSelectTwoLines, accepts: acceptLines, ready: ready2Lines, apply: entityApply(applyPerpendicular)}
 		},
 	},
 	{
-		"Sketch.Horizontal", "Horizontal", "Horizontal — pick a line or two points.", "Select a line or two points",
+		"Sketch.Horizontal", "Horizontal", "Horizontal — pick a line or two points.", promptSelectLineOrTwoPoints,
 		func() *ConstraintTool {
-			return &ConstraintTool{name: "Horizontal", prompt: "Select a line or two points", accepts: acceptLinesOrPoints, ready: readyLineOr2Points, apply: entityApply(applyHorizontal)}
+			return &ConstraintTool{name: "Horizontal", prompt: promptSelectLineOrTwoPoints, accepts: acceptLinesOrPoints, ready: readyLineOr2Points, apply: entityApply(applyHorizontal)}
 		},
 	},
 	{
-		"Sketch.Vertical", "Vertical", "Vertical — pick a line or two points.", "Select a line or two points",
+		"Sketch.Vertical", "Vertical", "Vertical — pick a line or two points.", promptSelectLineOrTwoPoints,
 		func() *ConstraintTool {
-			return &ConstraintTool{name: "Vertical", prompt: "Select a line or two points", accepts: acceptLinesOrPoints, ready: readyLineOr2Points, apply: entityApply(applyVertical)}
+			return &ConstraintTool{name: "Vertical", prompt: promptSelectLineOrTwoPoints, accepts: acceptLinesOrPoints, ready: readyLineOr2Points, apply: entityApply(applyVertical)}
 		},
 	},
 	{
