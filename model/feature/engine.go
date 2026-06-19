@@ -133,6 +133,11 @@ func (fs *PartFeatures) Result() []*topo.Body { return fs.result }
 // MarkDirty flags a feature for re-evaluation on the next recompute.
 func (fs *PartFeatures) MarkDirty(f *PartFeature) { f.dirty = true }
 
+// RequiresUpdate reports whether any feature up to the end-of-part marker is dirty — i.e. a
+// recompute would change the result. It is the read-only "needs update" flag the API exposes
+// (Inventor PartDocument.RequiresUpdate), the predicate behind documents.update (#139).
+func (fs *PartFeatures) RequiresUpdate() bool { return fs.earliestDirty(fs.effectiveEnd()) >= 0 }
+
 // MarkAllDirty flags every feature for re-evaluation. A parameter edit can change
 // any feature's inputs — a dimension expression a sketch profile is built from, or
 // a feature's own value closure (extrude distance, revolve angle) — but those
