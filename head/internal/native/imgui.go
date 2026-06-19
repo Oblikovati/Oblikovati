@@ -139,6 +139,7 @@ float obk_ig_mono_line_height(void);
 int  obk_ig_input_chars(char* buf, int buf_size);
 const char* obk_ig_get_clipboard(void);
 void obk_ig_set_clipboard(const char* s);
+int  obk_ig_editor_keys(void);
 int  obk_ig_begin_combo(const char* label, const char* preview);
 void obk_ig_end_combo(void);
 
@@ -495,6 +496,32 @@ func SetClipboardText(s string) {
 	cs, free := cstr(s)
 	defer free()
 	C.obk_ig_set_clipboard(cs)
+}
+
+// EditorKeys reports the code editor's navigation and shortcut keys pressed this frame.
+// Navigation/edit fields honour auto-repeat (a held arrow or Backspace repeats); the shortcut
+// fields (Copy/Paste/Cut/SelectAll/Undo/Redo) do not repeat and are only meaningful when Ctrl
+// is held — EditorKeysPressed leaves that gating to the caller.
+type EditorKeys struct {
+	Left, Right, Up, Down         bool
+	Backspace, Delete, Enter, Tab bool
+	Home, End                     bool
+	Copy, Paste, Cut, SelectAll   bool
+	Undo, Redo                    bool
+}
+
+// EditorKeysPressed reads the editor key bitmask from ImGui in a single cgo call and decodes
+// it. The bit layout mirrors obk_ig_editor_keys.
+func EditorKeysPressed() EditorKeys {
+	m := uint32(C.obk_ig_editor_keys())
+	bit := func(i uint) bool { return m&(1<<i) != 0 }
+	return EditorKeys{
+		Left: bit(0), Right: bit(1), Up: bit(2), Down: bit(3),
+		Backspace: bit(4), Delete: bit(5), Enter: bit(6), Tab: bit(7),
+		Home: bit(8), End: bit(9),
+		Copy: bit(10), Paste: bit(11), Cut: bit(12), SelectAll: bit(13),
+		Undo: bit(14), Redo: bit(15),
+	}
 }
 
 // BeginCombo / EndCombo bracket a dropdown showing preview as the closed value; when

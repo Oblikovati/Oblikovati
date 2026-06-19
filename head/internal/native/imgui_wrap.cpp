@@ -406,6 +406,32 @@ int obk_ig_input_chars(char* buf, int buf_size) {
 // internal buffer (valid until the next clipboard call), so the Go side copies it immediately.
 const char* obk_ig_get_clipboard(void) { return ImGui::GetClipboardText(); }
 void obk_ig_set_clipboard(const char* s) { ImGui::SetClipboardText(s); }
+
+// obk_ig_editor_keys returns a bitmask of the editor's navigation and shortcut keys pressed
+// this frame. Navigation/edit keys (bits 0..9) use auto-repeat so a held arrow or Backspace
+// repeats; the shortcut letters (bits 10..15) do not repeat — the Go side gates them on Ctrl.
+// One call avoids a per-key cgo crossing each frame. Bit layout mirrors native.EditorKeys.
+int obk_ig_editor_keys(void) {
+    int m = 0;
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow,  true)) m |= (1 << 0);
+    if (ImGui::IsKeyPressed(ImGuiKey_RightArrow, true)) m |= (1 << 1);
+    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow,    true)) m |= (1 << 2);
+    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow,  true)) m |= (1 << 3);
+    if (ImGui::IsKeyPressed(ImGuiKey_Backspace,  true)) m |= (1 << 4);
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete,     true)) m |= (1 << 5);
+    if (ImGui::IsKeyPressed(ImGuiKey_Enter,      true) ||
+        ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, true)) m |= (1 << 6);
+    if (ImGui::IsKeyPressed(ImGuiKey_Tab,        true)) m |= (1 << 7);
+    if (ImGui::IsKeyPressed(ImGuiKey_Home,       true)) m |= (1 << 8);
+    if (ImGui::IsKeyPressed(ImGuiKey_End,        true)) m |= (1 << 9);
+    if (ImGui::IsKeyPressed(ImGuiKey_C, false)) m |= (1 << 10);
+    if (ImGui::IsKeyPressed(ImGuiKey_V, false)) m |= (1 << 11);
+    if (ImGui::IsKeyPressed(ImGuiKey_X, false)) m |= (1 << 12);
+    if (ImGui::IsKeyPressed(ImGuiKey_A, false)) m |= (1 << 13);
+    if (ImGui::IsKeyPressed(ImGuiKey_Z, false)) m |= (1 << 14);
+    if (ImGui::IsKeyPressed(ImGuiKey_Y, false)) m |= (1 << 15);
+    return m;
+}
 int  obk_ig_begin_combo(const char* label, const char* preview) {
     return ImGui::BeginCombo(label, preview) ? 1 : 0;
 }

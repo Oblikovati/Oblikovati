@@ -19,13 +19,30 @@ import (
 // rather than crashing.
 var scriptController *console.Controller
 
-// scriptSourceBuf is the editable Lua source the console edits in place. 64 KiB is ample
-// for an interactive console script; it persists across frames so the editor keeps text.
-var scriptSourceBuf = make([]byte, 64<<10)
+// scriptEditor is the console's Lua code editor (syntax-highlighted, gutter, autocomplete),
+// created on first use so the mono font and runtime are ready. It persists across frames so the
+// edited source and caret survive between draws.
+var scriptEditor *codeEditor
 
 // editorHeight is the fixed height (logical px) of the source pane; the output pane below
 // fills the remaining window height.
 const editorHeight = 260
+
+// scriptCodeEditor returns the lazily-created code editor.
+func scriptCodeEditor() *codeEditor {
+	if scriptEditor == nil {
+		scriptEditor = newCodeEditor("")
+	}
+	return scriptEditor
+}
+
+// SetScriptSource replaces the Script Console editor's text. Exposed for capture drivers and
+// in-window tests that need to seed the editor before a frame.
+func SetScriptSource(s string) { scriptCodeEditor().SetText(s) }
+
+// FocusScriptEditor forces the editor's keyboard focus on (so a capture shows the caret without
+// synthesising a click). Exposed for capture drivers / tests.
+func FocusScriptEditor() { scriptCodeEditor().focused = true }
 
 // SetScriptController injects the console runtime. Called once at head startup, after the
 // add-in host (and thus the dispatcher the script's host calls hop through) exists.
@@ -54,7 +71,7 @@ func drawScriptConsoleBody() {
 	}
 	snap := scriptController.Console().Snapshot()
 	drawScriptToolbar(snap.Running)
-	native.InputTextMultiline("##script-source", scriptSourceBuf, 0, editorHeight)
+	scriptCodeEditor().Draw(0, editorHeight)
 	native.Separator()
 	drawScriptStatus(snap)
 	drawScriptOutput(snap)
@@ -64,7 +81,7 @@ func drawScriptConsoleBody() {
 func drawScriptToolbar(running bool) {
 	native.BeginDisabled(running)
 	if native.Button("Run") {
-		_ = scriptController.Run(bufString(scriptSourceBuf))
+		_ = scriptController.Run(scriptCodeEditor().Text())
 	}
 	native.EndDisabled()
 	native.SameLine()
