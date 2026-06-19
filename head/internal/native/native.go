@@ -49,7 +49,8 @@ func CreateWindow(width, height int, title string) (*Window, error) {
 		return nil, errors.New("native: head window/Vulkan/ImGui init failed (no display or no Vulkan driver?)")
 	}
 	w := &Window{handle: h}
-	w.SetUIFont(uiFontSizePx) // embedded Helvetica-metric UI font (before the first frame)
+	w.SetUIFont(uiFontSizePx)     // embedded Helvetica-metric UI font (before the first frame)
+	w.SetMonoFont(monoFontSizePx) // editor fixed-width face, added after the UI font clears the atlas
 	return w, nil
 }
 
