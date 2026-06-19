@@ -25,9 +25,25 @@ var scriptController *console.Controller
 // edited source and caret survive between draws.
 var scriptEditor *codeEditor
 
-// editorHeight is the fixed height (logical px) of the source pane; the output pane below
-// fills the remaining window height.
-const editorHeight = 260
+// Console layout: the editor fills the space above a user-resizable output pane, so growing the
+// window grows the EDITOR (the output keeps its set height). A draggable splitter between them
+// adjusts that height.
+const (
+	splitterThickness = 6  // grab height of the editor/output splitter (px)
+	minEditorHeight   = 80 // the editor never collapses below this
+	minOutputHeight   = 48 // nor the output pane
+)
+
+// scriptOutputHeight is the output pane's height (px), adjusted by dragging the splitter and
+// kept across frames. scriptOutputLastCount tracks output growth so the pane auto-scrolls to the
+// tail only when new lines arrive (leaving the user free to scroll back otherwise).
+var (
+	scriptOutputHeight    float32 = 150
+	scriptOutputLastCount int
+)
+
+// colSplitterGrip tints the splitter handle (brighter while dragged is left to ImGui's hover).
+var colSplitterGrip = [4]float32{0.45, 0.46, 0.52, 0.7}
 
 // scriptMethods provides the host's dotted wire-method names for autocomplete; injected at
 // startup alongside the controller (the router's Methods).
@@ -106,13 +122,18 @@ func drawScriptConsole(s *app.Session) {
 		return
 	}
 	native.SetNextWindowSizeOnce(640, 560)
-	if native.Begin("Script Console") {
+	visible, open := native.BeginClosable("Script Console")
+	if visible {
 		drawScriptConsoleBody()
 	}
 	native.End()
+	if !open { // the title-bar X was clicked
+		s.CloseScriptConsole()
+	}
 }
 
-// drawScriptConsoleBody renders the console contents once the window is open.
+// drawScriptConsoleBody renders the console contents: toolbar, the editor (filling the space
+// above the output pane), a draggable splitter, the status line, and the output pane.
 func drawScriptConsoleBody() {
 	if scriptController == nil {
 		native.Text("Script runtime unavailable.")
@@ -121,10 +142,49 @@ func drawScriptConsoleBody() {
 	snap := scriptController.Console().Snapshot()
 	drawScriptToolbar(snap.Running)
 	scriptCodeEditor().DrawFindBar()
-	scriptCodeEditor().Draw(0, editorHeight)
-	native.Separator()
+	scriptCodeEditor().Draw(0, scriptEditorHeight())
+	drawOutputSplitter()
 	drawScriptStatus(snap)
 	drawScriptOutput(snap)
+}
+
+// scriptEditorHeight returns the editor height for this frame: the remaining content height
+// minus the output pane, the splitter and the status line — so the editor absorbs window
+// resizing while the output keeps its set height. It also re-clamps the output height.
+func scriptEditorHeight() float32 {
+	_, availH := native.ContentRegionAvail()
+	clampScriptOutputHeight(availH)
+	h := availH - scriptOutputHeight - splitterThickness - native.FrameHeight()
+	if h < minEditorHeight {
+		h = minEditorHeight
+	}
+	return h
+}
+
+// clampScriptOutputHeight keeps the output height within [minOutputHeight, max] where max leaves
+// the editor at least minEditorHeight — so the splitter cannot squeeze either pane away.
+func clampScriptOutputHeight(availH float32) {
+	maxOut := availH - minEditorHeight - splitterThickness - native.FrameHeight()
+	if scriptOutputHeight > maxOut {
+		scriptOutputHeight = maxOut
+	}
+	if scriptOutputHeight < minOutputHeight {
+		scriptOutputHeight = minOutputHeight
+	}
+}
+
+// drawOutputSplitter draws the draggable divider between the editor and the output pane.
+// Dragging it down grows the editor (shrinks the output); a grip line marks it.
+func drawOutputSplitter() {
+	availW, _ := native.ContentRegionAvail()
+	native.InvisibleButton("##script-split", availW, splitterThickness)
+	if native.IsItemActive() {
+		_, dy := native.MouseDelta()
+		scriptOutputHeight -= dy
+	}
+	x, y := native.ItemRectMin()
+	mid := y + splitterThickness/2
+	native.DrawRectFilled(x, mid-1, x+availW, mid+1, colSplitterGrip)
 }
 
 // drawScriptToolbar renders Run (disabled mid-run), Stop (disabled when idle), and Clear.
@@ -160,18 +220,20 @@ func drawScriptStatus(snap console.Snapshot) {
 	}
 }
 
-// drawScriptOutput renders the captured print() output in a scrollable pane that follows
-// the tail as new lines arrive.
+// drawScriptOutput renders the captured print() output in a fixed-height scrollable pane that
+// auto-scrolls to the tail when new lines arrive (so a chatty run stays pinned to the bottom),
+// while leaving the user free to scroll back when no new output is coming.
 func drawScriptOutput(snap console.Snapshot) {
-	if !native.BeginChild("##script-output", 0, 0, true) {
+	if !native.BeginChild("##script-output", 0, scriptOutputHeight, true) {
 		native.EndChild()
 		return
 	}
 	for _, line := range snap.Output {
 		native.Text(line)
 	}
-	if snap.Running {
-		native.SetScrollHereY()
+	if len(snap.Output) > scriptOutputLastCount {
+		native.SetScrollHereY() // new lines since last frame: follow the tail
 	}
+	scriptOutputLastCount = len(snap.Output)
 	native.EndChild()
 }
