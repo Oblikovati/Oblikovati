@@ -130,6 +130,15 @@ void obk_ig_draw_line(float x1, float y1, float x2, float y2, float r, float g, 
 void obk_ig_draw_triangle_filled(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
 void obk_ig_draw_quad_filled(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a);
 void obk_ig_draw_text(float x, float y, float r, float g, float b, float a, const char* s);
+void obk_ig_draw_rect_filled(float x0, float y0, float x1, float y1, float r, float g, float b, float a);
+void obk_ig_push_clip_rect(float x0, float y0, float x1, float y1);
+void obk_ig_pop_clip_rect(void);
+void obk_ig_draw_text_mono(float x, float y, float r, float g, float b, float a, const char* s);
+float obk_ig_mono_char_width(void);
+float obk_ig_mono_line_height(void);
+int  obk_ig_input_chars(char* buf, int buf_size);
+const char* obk_ig_get_clipboard(void);
+void obk_ig_set_clipboard(const char* s);
 int  obk_ig_begin_combo(const char* label, const char* preview);
 void obk_ig_end_combo(void);
 
@@ -436,6 +445,56 @@ func DrawText(x, y float32, s string, c [4]float32) {
 	cs, free := cstr(s)
 	defer free()
 	C.obk_ig_draw_text(C.float(x), C.float(y), C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]), cs)
+}
+
+// DrawRectFilled fills a screen-space rectangle [x0,y0]-[x1,y1] in the current window's draw
+// list (color is 0..1 RGBA) — the Script Console editor's selection, current-line and gutter
+// backgrounds. Call inside the owning window's Begin/End so it clips to that window.
+func DrawRectFilled(x0, y0, x1, y1 float32, c [4]float32) {
+	C.obk_ig_draw_rect_filled(C.float(x0), C.float(y0), C.float(x1), C.float(y1),
+		C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]))
+}
+
+// PushClipRect clips subsequent draw-list output to [x0,y0]-[x1,y1] (intersecting the current
+// clip), bounding the editor's scrolling text region; pair every call with PopClipRect.
+func PushClipRect(x0, y0, x1, y1 float32) {
+	C.obk_ig_push_clip_rect(C.float(x0), C.float(y0), C.float(x1), C.float(y1))
+}
+
+// PopClipRect undoes the last PushClipRect.
+func PopClipRect() { C.obk_ig_pop_clip_rect() }
+
+// DrawTextMono draws text in the fixed-width editor face at (x,y) (color 0..1 RGBA); it falls
+// back to the default font if the mono face is unavailable.
+func DrawTextMono(x, y float32, s string, c [4]float32) {
+	cs, free := cstr(s)
+	defer free()
+	C.obk_ig_draw_text_mono(C.float(x), C.float(y), C.float(c[0]), C.float(c[1]), C.float(c[2]), C.float(c[3]), cs)
+}
+
+// MonoCharWidth and MonoLineHeight are the editor's cell metrics: the advance of one
+// fixed-width glyph and the line height, both in logical pixels.
+func MonoCharWidth() float32  { return float32(C.obk_ig_mono_char_width()) }
+func MonoLineHeight() float32 { return float32(C.obk_ig_mono_line_height()) }
+
+// InputChars returns the characters typed this frame (ImGui's input queue) as a string. The
+// code editor consumes these for text entry since it does not use ImGui's InputText widget.
+func InputChars() string {
+	var buf [256]byte
+	n := C.obk_ig_input_chars((*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf)))
+	if n == 0 {
+		return ""
+	}
+	return string(buf[:n])
+}
+
+// ClipboardText returns the system clipboard's text; SetClipboardText writes it — the editor's
+// cut/copy/paste payload.
+func ClipboardText() string { return C.GoString(C.obk_ig_get_clipboard()) }
+func SetClipboardText(s string) {
+	cs, free := cstr(s)
+	defer free()
+	C.obk_ig_set_clipboard(cs)
 }
 
 // BeginCombo / EndCombo bracket a dropdown showing preview as the closed value; when

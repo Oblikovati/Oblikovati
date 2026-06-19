@@ -264,6 +264,29 @@ void obk_head_set_ui_font(const unsigned char* data, int len, float sizePx) {
     io.Fonts->AddFontFromMemoryTTF(copy, len, sizePx, &cfg);
 }
 
+// g_monoFont is the Script Console code editor's fixed-width face (Liberation Mono), added to
+// the atlas alongside the UI font before the first frame so the editor's columns align. The
+// pointer is retained for the draw-list AddText-with-font path and the glyph metrics the Go
+// editor lays out against. NULL until obk_head_set_mono_font runs (the editor then falls back
+// to the default font).
+static ImFont* g_monoFont = nullptr;
+
+// obk_head_set_mono_font adds a fixed-width face from in-memory TTF bytes as a SECOND atlas
+// font (it must run after obk_head_set_ui_font, which clears the atlas, and before the first
+// frame). The bytes are copied into ImGui-owned memory like the UI font.
+void obk_head_set_mono_font(const unsigned char* data, int len, float sizePx) {
+    if (!data || len <= 0) return;
+    ImGuiIO& io = ImGui::GetIO();
+    void* copy = IM_ALLOC((size_t)len);
+    std::memcpy(copy, data, (size_t)len);
+    ImFontConfig cfg;
+    cfg.FontDataOwnedByAtlas = true;
+    g_monoFont = io.Fonts->AddFontFromMemoryTTF(copy, len, sizePx, &cfg);
+}
+
+// obk_head_mono_font exposes the retained mono face to the draw helpers in imgui_wrap.cpp.
+ImFont* obk_head_mono_font(void) { return g_monoFont; }
+
 int obk_head_should_close(void* h) {
     HeadContext* c = (HeadContext*)h;
     return glfwWindowShouldClose(c->window) ? 1 : 0;

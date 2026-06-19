@@ -320,6 +320,92 @@ void obk_ig_draw_quad_filled(float x0, float y0, float x1, float y1, float x2, f
 void obk_ig_draw_text(float x, float y, float r, float g, float b, float a, const char* s) {
     ImGui::GetWindowDrawList()->AddText(ImVec2(x, y), obk_col32(r, g, b, a), s);
 }
+
+// The Script Console code editor draws itself directly onto the window draw list (it does not
+// use ImGui's InputText), so it needs filled rects (selection/current-line/gutter), a scoped
+// clip rect (the scrolling text viewport), fixed-width text, and the typed-character queue.
+// The mono ImFont* is owned by app.cpp (added to the atlas at startup).
+extern "C" ImFont* obk_head_mono_font(void);
+
+void obk_ig_draw_rect_filled(float x0, float y0, float x1, float y1,
+                             float r, float g, float b, float a) {
+    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), obk_col32(r, g, b, a));
+}
+void obk_ig_push_clip_rect(float x0, float y0, float x1, float y1) {
+    ImGui::GetWindowDrawList()->PushClipRect(ImVec2(x0, y0), ImVec2(x1, y1), true);
+}
+void obk_ig_pop_clip_rect(void) { ImGui::GetWindowDrawList()->PopClipRect(); }
+
+// obk_ig_draw_text_mono draws s in the fixed-width face (falling back to the default font when
+// the mono face failed to load), so editor glyphs land on integer columns.
+void obk_ig_draw_text_mono(float x, float y, float r, float g, float b, float a, const char* s) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImU32 col = obk_col32(r, g, b, a);
+    ImFont* f = obk_head_mono_font();
+    if (f) dl->AddText(f, f->LegacySize, ImVec2(x, y), col, s); // LegacySize == size passed to AddFont
+    else   dl->AddText(ImVec2(x, y), col, s);
+}
+// obk_ig_mono_char_width / obk_ig_mono_line_height give the editor its cell size: a mono
+// glyph's advance and the line height. They fall back to the UI font metrics without a mono face.
+// (ImGui's font API is baked-per-size here: the advance comes from the baked face.)
+float obk_ig_mono_char_width(void) {
+    ImFont* f = obk_head_mono_font();
+    if (!f) return ImGui::CalcTextSize("M").x;
+    ImFontBaked* baked = f->GetFontBaked(f->LegacySize);
+    return baked ? baked->GetCharAdvance((ImWchar)'M') : ImGui::CalcTextSize("M").x;
+}
+float obk_ig_mono_line_height(void) {
+    ImFont* f = obk_head_mono_font();
+    return f ? f->LegacySize : ImGui::GetTextLineHeight();
+}
+
+// obk_ig_utf8_encode appends the UTF-8 of code point c to buf at *off (bounded by buf_size),
+// returning the bytes written (0 when it would overflow). Encoding here keeps the wrap free of
+// imgui_internal.h's ImTextCharToUtf8.
+static int obk_ig_utf8_encode(char* buf, int off, int buf_size, unsigned int c) {
+    if (c < 0x80) {
+        if (off + 1 >= buf_size) return 0;
+        buf[off] = (char)c; return 1;
+    }
+    if (c < 0x800) {
+        if (off + 2 >= buf_size) return 0;
+        buf[off]   = (char)(0xC0 | (c >> 6));
+        buf[off+1] = (char)(0x80 | (c & 0x3F));
+        return 2;
+    }
+    if (c < 0x10000) {
+        if (off + 3 >= buf_size) return 0;
+        buf[off]   = (char)(0xE0 | (c >> 12));
+        buf[off+1] = (char)(0x80 | ((c >> 6) & 0x3F));
+        buf[off+2] = (char)(0x80 | (c & 0x3F));
+        return 3;
+    }
+    if (off + 4 >= buf_size) return 0;
+    buf[off]   = (char)(0xF0 | (c >> 18));
+    buf[off+1] = (char)(0x80 | ((c >> 12) & 0x3F));
+    buf[off+2] = (char)(0x80 | ((c >> 6) & 0x3F));
+    buf[off+3] = (char)(0x80 | (c & 0x3F));
+    return 4;
+}
+// obk_ig_input_chars writes the UTF-8 of every character typed this frame (ImGui's input
+// queue) into buf and returns the byte count, NUL-terminating. The editor consumes this for
+// text entry since it owns its own widget rather than using InputText.
+int obk_ig_input_chars(char* buf, int buf_size) {
+    if (buf_size <= 0) return 0;
+    ImGuiIO& io = ImGui::GetIO();
+    int off = 0;
+    for (int i = 0; i < io.InputQueueCharacters.Size; i++) {
+        int n = obk_ig_utf8_encode(buf, off, buf_size, (unsigned int)io.InputQueueCharacters[i]);
+        if (n == 0) break;
+        off += n;
+    }
+    buf[off] = 0;
+    return off;
+}
+// Clipboard passthrough for the editor's cut/copy/paste. GetClipboardText returns ImGui's
+// internal buffer (valid until the next clipboard call), so the Go side copies it immediately.
+const char* obk_ig_get_clipboard(void) { return ImGui::GetClipboardText(); }
+void obk_ig_set_clipboard(const char* s) { ImGui::SetClipboardText(s); }
 int  obk_ig_begin_combo(const char* label, const char* preview) {
     return ImGui::BeginCombo(label, preview) ? 1 : 0;
 }
