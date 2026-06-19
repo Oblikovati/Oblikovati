@@ -30,7 +30,7 @@ func (p *drivenPin) Suppressed() bool { return false }
 func (p *drivenPin) anchors() []anchor { return p.joint.anchors() }
 
 // setHealth is a no-op: the pin is transient and carries no reportable health.
-func (p *drivenPin) setHealth(health.Status) {}
+func (p *drivenPin) setHealth(health.Status) { /* transient pin: no reportable health */ }
 
 // bind emits the single pin residual over the joint's two origin placements.
 func (p *drivenPin) bind(b binder) []solve.Residual {

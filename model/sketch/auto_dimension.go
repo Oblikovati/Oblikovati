@@ -81,7 +81,7 @@ func dimCandidate(add func() (*DimensionConstraint, error), dc *DimensionConstra
 	return func() func() {
 		d, err := add()
 		if err != nil {
-			return func() {}
+			return func() { /* nothing was added, so nothing to undo */ }
 		}
 		return func() { dc.Delete(d) }
 	}

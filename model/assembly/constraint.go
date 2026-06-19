@@ -136,7 +136,8 @@ func (c *constraintBase) Value() float64 { return 0 }
 
 // SetValue is a no-op by default — a constraint with no driven value (e.g. a custom
 // residual) ignores a positional override. Value-bearing kinds override it.
-func (c *constraintBase) SetValue(float64) {}
+func (c *constraintBase) SetValue(float64) { /* no driven value to set; value-bearing kinds override */
+}
 
 // Limits returns the driven-value bounds, or a nil interface when unbounded.
 func (c *constraintBase) Limits() contract.ConstraintLimits {

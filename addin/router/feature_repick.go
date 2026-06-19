@@ -63,7 +63,7 @@ type plannedRepick struct {
 // feature health after recompute, exactly as it does for features.add (parametric, not edit-time).
 func planFeatureRepicks(part *compdef.PartComponentDefinition, f *feature.PartFeature, repicks []wire.FeatureRepick) (func(), error) {
 	if len(repicks) == 0 {
-		return func() {}, nil
+		return func() { /* nothing to re-pick */ }, nil
 	}
 	re, ok := f.Definition().(feature.ReferenceEditable)
 	if !ok {

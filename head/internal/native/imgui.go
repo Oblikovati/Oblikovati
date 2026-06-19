@@ -312,7 +312,7 @@ func InputTextCommand(label string, buf []byte, history []string, histCursor *in
 // that releases every string and the array. Returns (nil, no-op) for an empty slice.
 func cStringArray(ss []string) (**C.char, func()) {
 	if len(ss) == 0 {
-		return nil, func() {}
+		return nil, func() { /* no cleanup needed */ }
 	}
 	arr := C.malloc(C.size_t(len(ss)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	slice := unsafe.Slice((**C.char)(arr), len(ss))

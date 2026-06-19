@@ -49,7 +49,7 @@ type callNode struct {
 	args []node
 }
 
-func (n numberNode) walkRefs(func(*refNode))  {}
+func (n numberNode) walkRefs(func(*refNode))  { /* a literal has no references to walk */ }
 func (n *refNode) walkRefs(fn func(*refNode)) { fn(n) }
 func (n binaryNode) walkRefs(fn func(*refNode)) {
 	n.lhs.walkRefs(fn)

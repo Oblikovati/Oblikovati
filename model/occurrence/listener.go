@@ -32,8 +32,13 @@ type OccurrenceListener interface {
 // listener. SetListener(nil) restores it.
 type silentListener struct{}
 
-func (silentListener) OccurrenceAdded(*Occurrence)                     {}
-func (silentListener) OccurrenceRemoved(*Occurrence)                   {}
-func (silentListener) OccurrenceReplaced(*Occurrence, Definition)      {}
-func (silentListener) OccurrenceTransformed(*Occurrence, math.Matrix4) {}
-func (silentListener) OccurrenceSuppressionChanged(*Occurrence)        {}
+func (silentListener) OccurrenceAdded(*Occurrence) { /* silent null object: this event is intentionally ignored */
+}
+func (silentListener) OccurrenceRemoved(*Occurrence) { /* silent null object: this event is intentionally ignored */
+}
+func (silentListener) OccurrenceReplaced(*Occurrence, Definition) { /* silent null object: this event is intentionally ignored */
+}
+func (silentListener) OccurrenceTransformed(*Occurrence, math.Matrix4) { /* silent null object: this event is intentionally ignored */
+}
+func (silentListener) OccurrenceSuppressionChanged(*Occurrence) { /* silent null object: this event is intentionally ignored */
+}
