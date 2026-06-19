@@ -88,6 +88,24 @@ func (s *Session) SetDockableWindowVisible(id string, visible bool) error {
 	return nil
 }
 
+// PanelValueChanged records the user's edit of an editable dockable-window control and
+// notifies the owning add-in: it updates the stored control's Value (so the window state stays
+// consistent if re-read) and emits PanelValueChanged on the bus, which the add-in event relay
+// forwards to the add-in as wire.PanelValueChangedEvent. The head calls this when a control
+// (text box, value editor, checkbox, dropdown, combo, slider) is edited.
+func (s *Session) PanelValueChanged(windowID, controlID, value string) {
+	if spec, ok := s.dockableWindows.windows[windowID]; ok {
+		for i := range spec.Controls {
+			if spec.Controls[i].ID == controlID {
+				spec.Controls[i].Value = value
+				s.dockableWindows.windows[windowID] = spec
+				break
+			}
+		}
+	}
+	event.Emit(s.bus, event.After, PanelValueChanged{WindowID: windowID, ControlID: controlID, Value: value})
+}
+
 // DeleteDockableWindow removes a window, emitting a hide first when it was visible
 // (the add-in sees a consistent shown→hidden→gone sequence).
 func (s *Session) DeleteDockableWindow(id string) error {
