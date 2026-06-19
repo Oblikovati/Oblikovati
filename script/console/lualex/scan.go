@@ -65,7 +65,7 @@ func (s *scanner) scanQuoted(q rune) {
 // job; the lexer only needs the span to colour.
 func (s *scanner) scanNumber() {
 	start := s.i
-	if s.src[s.i] == '0' && (s.peek(1) == 'x' || s.peek(1) == 'X') {
+	if s.src[s.i] == '0' && (s.peekNext() == 'x' || s.peekNext() == 'X') {
 		s.i += 2
 		s.consumeWhile(func(r rune) bool { return isHexDigit(r) || r == '.' })
 		s.consumeExponent('p', 'P')

@@ -81,19 +81,20 @@ func (s *scanner) resumeLong(in State) State {
 	return State{}
 }
 
-// scanTokens is the main per-line loop, dispatching on the rune at the cursor.
+// scanTokens is the main per-line loop, dispatching on the rune at the cursor. The start-of-
+// token tests are factored into predicates so the dispatch stays simple.
 func (s *scanner) scanTokens() {
 	for s.i < len(s.src) {
 		switch r := s.src[s.i]; {
 		case isSpaceRune(r):
 			s.i++
-		case r == '-' && s.peek(1) == '-':
+		case s.startsComment():
 			s.scanComment()
-		case r == '"' || r == '\'':
+		case s.startsQuote():
 			s.scanQuoted(r)
-		case r == '[' && longBracketLevel(s.src, s.i) >= 0:
+		case s.startsLongString():
 			s.scanLongString()
-		case isDigit(r) || (r == '.' && isDigit(s.peek(1))):
+		case s.startsNumber():
 			s.scanNumber()
 		case isIdentStart(r):
 			s.scanIdent()
@@ -101,6 +102,18 @@ func (s *scanner) scanTokens() {
 			s.scanOperator()
 		}
 	}
+}
+
+// startsComment / startsQuote / startsLongString / startsNumber report whether the cursor begins
+// that token kind, keeping scanTokens' dispatch flat.
+func (s *scanner) startsComment() bool { return s.src[s.i] == '-' && s.peekNext() == '-' }
+func (s *scanner) startsQuote() bool   { return s.src[s.i] == '"' || s.src[s.i] == '\'' }
+func (s *scanner) startsLongString() bool {
+	return s.src[s.i] == '[' && longBracketLevel(s.src, s.i) >= 0
+}
+func (s *scanner) startsNumber() bool {
+	r := s.src[s.i]
+	return isDigit(r) || (r == '.' && isDigit(s.peekNext()))
 }
 
 // emit appends a token spanning [start, end); it drops empty spans so callers can emit
@@ -111,10 +124,10 @@ func (s *scanner) emit(k Kind, start, end int) {
 	}
 }
 
-// peek returns the rune n positions ahead of the cursor, or -1 past end-of-line.
-func (s *scanner) peek(n int) rune {
-	j := s.i + n
-	if j < 0 || j >= len(s.src) {
+// peekNext returns the rune immediately after the cursor, or -1 at end-of-line.
+func (s *scanner) peekNext() rune {
+	j := s.i + 1
+	if j >= len(s.src) {
 		return -1
 	}
 	return s.src[j]
