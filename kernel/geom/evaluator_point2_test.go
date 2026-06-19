@@ -55,3 +55,19 @@ func TestCurveRangeBox2BoundsCurve(t *testing.T) {
 		}
 	}
 }
+
+// TestCurveParamAtPoint2GenericPath covers the sampled multistart solver for curves with no
+// closed-form inverse: an ellipse query exercises genericParamAtPoint2 → sampleDistances2 →
+// clusterMinima2 → refineClosest2. The recovered parameter must evaluate back to the query point.
+func TestCurveParamAtPoint2GenericPath(t *testing.T) {
+	el, err := NewEllipseFull2d(gmath.P2(0, 0), gmath.V2(1, 0), 3, 1)
+	if err != nil {
+		t.Fatalf("NewEllipseFull2d: %v", err)
+	}
+	want := el.PointAt(0.3) // a point genuinely on the ellipse, away from the axis vertices
+	got, _ := CurveParamAtPoint2(el, want)
+	back := el.PointAt(got)
+	if d := math.Hypot(float64(back.X-want.X), float64(back.Y-want.Y)); d > 1e-4 {
+		t.Errorf("ellipse param %.4f maps to %v, want ~%v (off by %g)", got, back, want, d)
+	}
+}
