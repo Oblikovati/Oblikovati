@@ -11,7 +11,6 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/event"
 	"oblikovati.org/kernel/topo"
-	"oblikovati.org/model/feature"
 )
 
 // Selection mutation (#157): make the read-only selection writable. References are the face/vertex
@@ -91,21 +90,7 @@ func activeBodies(s *app.Session, method string) ([]*topo.Body, error) {
 // Edges/work-features are not round-trippable through model.selection yet (it reports no ref for
 // them), so they are not resolved here.
 func resolveSelectionRef(bodies []*topo.Body, ref string) (app.Selectable, bool) {
-	if key, ok := feature.FaceRefKey(feature.WorkRef(ref)); ok {
-		for _, b := range bodies {
-			if f, found := b.FindFaceByKey(key); found {
-				return app.FaceHandle{Face: f, Body: b}, true
-			}
-		}
-	}
-	if key, ok := feature.VertexRefKey(feature.WorkRef(ref)); ok {
-		for _, b := range bodies {
-			if v, found := b.FindVertexByKey(key); found {
-				return app.VertexHandle{Vertex: v}, true
-			}
-		}
-	}
-	return nil, false
+	return app.ResolveRefOnBodies(bodies, ref)
 }
 
 // announceSelection emits the selection-changed event (relayed to add-ins, #148) and returns the

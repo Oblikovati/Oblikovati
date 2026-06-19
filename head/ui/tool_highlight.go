@@ -49,6 +49,23 @@ func edgeWire(edges []*topo.Edge, color [4]float32) []renderer.DrawItem {
 	return []renderer.DrawItem{lineItem(acc, color)}
 }
 
+// highlightSetItems draws the session's add-in highlight sets (#157): each set's references are
+// resolved against the live geometry and outlined in the set's colour — a non-selecting emphasis
+// the renderer reads every frame, so the highlight follows edits (a lost reference isn't drawn).
+func highlightSetItems(s *app.Session) []renderer.DrawItem {
+	var items []renderer.DrawItem
+	for _, set := range s.HighlightSets().All() {
+		rgba := set.Color().Rgba()
+		color := [4]float32{rgba.R, rgba.G, rgba.B, rgba.A}
+		for _, ref := range set.Refs() {
+			if sel, ok := s.ResolveReference(ref); ok {
+				items = append(items, drawSelectable(sel, color)...)
+			}
+		}
+	}
+	return items
+}
+
 // toolHoverHighlight outlines the selectable under the cursor that the active tool would pick,
 // in the candidate colour — the same hover feedback for every tool.
 func toolHoverHighlight(s *app.Session) []renderer.DrawItem {
