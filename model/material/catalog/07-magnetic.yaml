@@ -29,7 +29,7 @@
 appearances:
   - {id: electrical-steel, name: Electrical Steel,  albedo: "#b6bbc0ff", metallic: 1.0, roughness: 0.42, opacity: 1.0}
   - {id: soft-ferrite,     name: Soft Ferrite,      albedo: "#34363aff", metallic: 0.15, roughness: 0.55, opacity: 1.0}
-  - {id: ndfeb-magnet,     name: NdFeB Magnet,      albedo: "#d8dadcff", metallic: 1.0, roughness: 0.22, opacity: 1.0}
+  - {id: ndfeb-magnet,     name: NdFeB Magnet,      albedo: "#eef0f3ff", metallic: 1.0, roughness: 0.07, opacity: 1.0}
   - {id: smco-magnet,      name: SmCo Magnet,       albedo: "#7f8186ff", metallic: 1.0, roughness: 0.58, opacity: 1.0}
   - {id: hard-ferrite,     name: Ferrite Magnet,    albedo: "#2a2c2fff", metallic: 0.10, roughness: 0.65, opacity: 1.0}
   - {id: alnico-magnet,    name: AlNiCo Magnet,     albedo: "#9a9da0ff", metallic: 1.0, roughness: 0.52, opacity: 1.0}
