@@ -24,6 +24,17 @@ func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh,
 	if len(free) == 0 {
 		return // watertight body: nothing to repair (and the hot path skips the weld below)
 	}
+	for j := range cylConeFacesToFix(faces, idx, fm, free) {
+		if m := conformingCylConeMesh(faces[j], q); m != nil {
+			fm[j] = m
+		}
+	}
+}
+
+// cylConeFacesToFix is the set of face indices to re-mesh: every cyl/cone face whose mesh touches
+// a free (unwelded) segment, plus its cyl/cone topo neighbours across the shared edge (the face
+// MISSING the segment).
+func cylConeFacesToFix(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, free map[segKey]bool) map[int]bool {
 	toFix := map[int]bool{}
 	for i, f := range faces {
 		if !meshTouchesFree(fm[i], free) {
@@ -32,18 +43,18 @@ func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh,
 		if isCylOrCone(f.Geometry()) {
 			toFix[i] = true
 		}
-		// The face MISSING the segment is the topo neighbour across the shared edge; re-mesh it too.
-		for _, e := range f.Edges() {
-			for _, nf := range e.Faces() {
-				if j, ok := idx[nf]; ok && j != i && isCylOrCone(nf.Geometry()) {
-					toFix[j] = true
-				}
-			}
-		}
+		addCylConeNeighbours(f, i, idx, toFix)
 	}
-	for j := range toFix {
-		if m := conformingCylConeMesh(faces[j], q); m != nil {
-			fm[j] = m
+	return toFix
+}
+
+// addCylConeNeighbours marks face i's cyl/cone neighbours (across a shared edge) for re-meshing.
+func addCylConeNeighbours(f *topo.Face, i int, idx map[*topo.Face]int, toFix map[int]bool) {
+	for _, e := range f.Edges() {
+		for _, nf := range e.Faces() {
+			if j, ok := idx[nf]; ok && j != i && isCylOrCone(nf.Geometry()) {
+				toFix[j] = true
+			}
 		}
 	}
 }
