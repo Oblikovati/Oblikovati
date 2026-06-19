@@ -515,23 +515,23 @@ func (r *Router) commitMutation(s *app.Session, method string, req []byte) {
 var mutatingMethods = map[string]string{
 	wire.MethodDocumentsCreate:                     "",
 	wire.MethodDocumentsImport:                     "Import",
-	wire.MethodParametersAdd:                       "Edit Parameters",
-	wire.MethodParametersSet:                       "Edit Parameters",
-	wire.MethodParametersUpdate:                    "Edit Parameters",
-	wire.MethodParametersSetTolerance:              "Edit Parameters",
-	wire.MethodParametersSetExpressionList:         "Edit Parameters",
+	wire.MethodParametersAdd:                       labelEditParameters,
+	wire.MethodParametersSet:                       labelEditParameters,
+	wire.MethodParametersUpdate:                    labelEditParameters,
+	wire.MethodParametersSetTolerance:              labelEditParameters,
+	wire.MethodParametersSetExpressionList:         labelEditParameters,
 	wire.MethodParametersDelete:                    "Delete Parameter",
-	wire.MethodParametersGroupsAdd:                 "Edit Parameter Groups",
-	wire.MethodParametersGroupsDelete:              "Edit Parameter Groups",
-	wire.MethodParametersGroupsSetDisplayName:      "Edit Parameter Groups",
-	wire.MethodParametersGroupsAddMember:           "Edit Parameter Groups",
-	wire.MethodParametersGroupsRemoveMember:        "Edit Parameter Groups",
+	wire.MethodParametersGroupsAdd:                 labelEditParameterGroups,
+	wire.MethodParametersGroupsDelete:              labelEditParameterGroups,
+	wire.MethodParametersGroupsSetDisplayName:      labelEditParameterGroups,
+	wire.MethodParametersGroupsAddMember:           labelEditParameterGroups,
+	wire.MethodParametersGroupsRemoveMember:        labelEditParameterGroups,
 	wire.MethodParametersSetSettings:               "Edit Parameter Settings",
-	wire.MethodParametersSetAllModelValueType:      "Edit Parameters",
+	wire.MethodParametersSetAllModelValueType:      labelEditParameters,
 	wire.MethodParametersImport:                    "Import Parameters",
-	wire.MethodParametersDerivedTablesAdd:          "Edit Derived Parameters",
-	wire.MethodParametersDerivedTablesSetLinked:    "Edit Derived Parameters",
-	wire.MethodParametersDerivedTablesDelete:       "Edit Derived Parameters",
+	wire.MethodParametersDerivedTablesAdd:          labelEditDerivedParameters,
+	wire.MethodParametersDerivedTablesSetLinked:    labelEditDerivedParameters,
+	wire.MethodParametersDerivedTablesDelete:       labelEditDerivedParameters,
 	wire.MethodFeaturesAdd:                         "Add Feature",
 	wire.MethodFeaturesEdit:                        "Edit Feature",
 	wire.MethodFeaturesDelete:                      "Delete Feature",
@@ -616,7 +616,7 @@ func methodError(method string, err error) error {
 	if strings.HasPrefix(err.Error(), method) {
 		return err
 	}
-	return fmt.Errorf("%s: %w", method, err)
+	return fmt.Errorf(errCtxWrap, method, err)
 }
 
 // Methods returns the supported method names, sorted — used by self-description.

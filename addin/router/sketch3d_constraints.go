@@ -105,7 +105,7 @@ func splineFitConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constrain
 	}
 	c, err := sketch.NewSplineFitPoints3D(sp, p)
 	if err != nil {
-		return nil, fmt.Errorf("sketch3d.addConstraint: %w", err)
+		return nil, fmt.Errorf(errAddConstraintFmt, err)
 	}
 	return c, nil
 }
@@ -126,7 +126,7 @@ func helicalConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint,
 	}
 	c, err := sketch.NewHelical3D(h, circle)
 	if err != nil {
-		return nil, fmt.Errorf("sketch3d.addConstraint: %w", err)
+		return nil, fmt.Errorf(errAddConstraintFmt, err)
 	}
 	return c, nil
 }
@@ -148,7 +148,7 @@ func bendConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, er
 	}
 	e, ok := sk.EntityByID(sketch.ID(refs[0]))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: no entity with id %d", refs[0])
+		return nil, fmt.Errorf(errNoSketch3DEntity, refs[0])
 	}
 	arc, ok := e.(*sketch.Arc3D)
 	if !ok {
@@ -164,7 +164,7 @@ func bendConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, er
 	}
 	c, err := sketch.NewBend3D(arc, l1, l2)
 	if err != nil {
-		return nil, fmt.Errorf("sketch3d.addConstraint: %w", err)
+		return nil, fmt.Errorf(errAddConstraintFmt, err)
 	}
 	return c, nil
 }
@@ -191,7 +191,7 @@ func equalConstraint3D(sk *sketch.Sketch3D, refs []uint64) (sketch.Constraint, e
 func radiusScalar3D(sk *sketch.Sketch3D, id uint64) (*math.Scalar, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+		return nil, fmt.Errorf(errNoSketch3DEntity, id)
 	}
 	switch v := e.(type) {
 	case *sketch.Circle3D:
@@ -350,7 +350,7 @@ func pointRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Point3D, error) {
 func lineRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Line3D, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+		return nil, fmt.Errorf(errNoSketch3DEntity, id)
 	}
 	l, ok := e.(*sketch.Line3D)
 	if !ok {
@@ -364,7 +364,7 @@ func lineRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Line3D, error) {
 func smoothCurveRef3D(sk *sketch.Sketch3D, id uint64) (sketch.SmoothCurve3D, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+		return nil, fmt.Errorf(errNoSketch3DEntity, id)
 	}
 	c, ok := e.(sketch.SmoothCurve3D)
 	if !ok {
@@ -377,7 +377,7 @@ func smoothCurveRef3D(sk *sketch.Sketch3D, id uint64) (sketch.SmoothCurve3D, err
 func splineRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Spline3D, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+		return nil, fmt.Errorf(errNoSketch3DEntity, id)
 	}
 	sp, ok := e.(*sketch.Spline3D)
 	if !ok {
@@ -390,7 +390,7 @@ func splineRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Spline3D, error) {
 func helixRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.HelicalCurve3D, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+		return nil, fmt.Errorf(errNoSketch3DEntity, id)
 	}
 	h, ok := e.(*sketch.HelicalCurve3D)
 	if !ok {
@@ -403,7 +403,7 @@ func helixRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.HelicalCurve3D, error) 
 func circleRef3D(sk *sketch.Sketch3D, id uint64) (*sketch.Circle3D, error) {
 	e, ok := sk.EntityByID(sketch.ID(id))
 	if !ok {
-		return nil, fmt.Errorf("sketch3d: no entity with id %d", id)
+		return nil, fmt.Errorf(errNoSketch3DEntity, id)
 	}
 	c, ok := e.(*sketch.Circle3D)
 	if !ok {

@@ -76,15 +76,15 @@ func callBinding(call script.CallFunc) lua.LGFunction {
 func invokeMethod(l *lua.LState, call script.CallFunc, method string, args *lua.LTable) int {
 	argsJSON, err := tableToJSON(args)
 	if err != nil {
-		l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
+		l.RaiseError(errCallFmt, method, err.Error())
 	}
 	resJSON, err := callHost(call, method, argsJSON)
 	if err != nil {
-		l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
+		l.RaiseError(errCallFmt, method, err.Error())
 	}
 	result, err := jsonToTable(l, resJSON)
 	if err != nil {
-		l.RaiseError("oblikovati.call(%q): %s", method, err.Error())
+		l.RaiseError(errCallFmt, method, err.Error())
 	}
 	l.Push(result)
 	return 1

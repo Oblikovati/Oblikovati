@@ -120,7 +120,7 @@ func assemblyFeaturesAddExtrude(s *app.Session, raw json.RawMessage) (json.RawMe
 	}
 	sk, err := sketchAtIndex(asm, in.SketchIndex)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddExtrude, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyFeaturesAddExtrude, err)
 	}
 	if in.Distance <= 0 {
 		return nil, fmt.Errorf("%s: distance %g must be positive", wire.MethodAssemblyFeaturesAddExtrude, in.Distance)
@@ -150,7 +150,7 @@ func assemblyFeaturesAddRevolve(s *app.Session, raw json.RawMessage) (json.RawMe
 	}
 	sk, err := sketchAtIndex(asm, in.SketchIndex)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddRevolve, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyFeaturesAddRevolve, err)
 	}
 	axis, err := revolveAxisFromArgs(in)
 	if err != nil {
@@ -193,7 +193,7 @@ func assemblyFeaturesAddSweep(s *app.Session, raw json.RawMessage) (json.RawMess
 	}
 	sk, err := sketchAtIndex(asm, in.SketchIndex)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddSweep, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyFeaturesAddSweep, err)
 	}
 	path, err := assemblySweepPath(in.Path, wire.MethodAssemblyFeaturesAddSweep)
 	if err != nil {
@@ -381,7 +381,7 @@ func assemblyFeaturesAddHole(s *app.Session, raw json.RawMessage) (json.RawMessa
 	}
 	hole, err := feature.NewAssemblyHoleFeature(math.P3(in.Center[0], in.Center[1], in.Center[2]), axis, in.Diameter, in.Depth)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyFeaturesAddHole, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyFeaturesAddHole, err)
 	}
 	af := asm.AddFeature(hole)
 	af.SetName(asm.Features().UniqueName(af.Kind()))

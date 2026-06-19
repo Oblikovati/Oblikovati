@@ -57,14 +57,14 @@ func assemblyPlace(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 	}
 	d, err := documentByID(s, in.Document)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyPlace, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyPlace, err)
 	}
 	// Place persistently: record the assembly→component reference and the occurrence's
 	// document name, so the placement survives a save/reopen (#715) and the occurrence is
 	// file-backed (e.g. for mirror-into-part, #717).
 	o, err := asm.PlaceComponentFromFile(s.ActiveDocument(), d, in.Name, matrixFromWire(in.Transform))
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyPlace, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyPlace, err)
 	}
 	return occurrenceReply(o)
 }
@@ -200,7 +200,7 @@ func assemblySuppress(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 		return nil, err
 	}
 	if err := asm.SetOccurrenceSuppressed(o, in.Suppressed); err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblySuppress, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblySuppress, err)
 	}
 	return occurrenceReply(o)
 }
@@ -243,7 +243,7 @@ func assemblyRemove(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 		return nil, err
 	}
 	if err := asm.DeleteOccurrence(o); err != nil {
-		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyRemove, err)
+		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyRemove, err)
 	}
 	return json.Marshal(occurrenceTreeResult(asm))
 }
@@ -274,7 +274,7 @@ func occurrenceByID(asm *compdef.AssemblyComponentDefinition, id uint64, method 
 func placeableDefinition(s *app.Session, id uint64, method string) (occurrence.Definition, error) {
 	d, err := documentByID(s, id)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", method, err)
+		return nil, fmt.Errorf(errCtxWrap, method, err)
 	}
 	def, ok := d.Content().(occurrence.Definition)
 	if !ok {

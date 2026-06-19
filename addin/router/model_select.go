@@ -76,7 +76,7 @@ func modelClearSelection(s *app.Session, _ json.RawMessage) (json.RawMessage, er
 func activeBodies(s *app.Session, method string) ([]*topo.Body, error) {
 	part, err := modelaccess.ActivePart(s)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", method, err)
+		return nil, fmt.Errorf(errCtxWrap, method, err)
 	}
 	n := part.SurfaceBodies().Count()
 	bodies := make([]*topo.Body, 0, n)
