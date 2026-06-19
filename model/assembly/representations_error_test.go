@@ -5,6 +5,7 @@ package assembly
 import (
 	"testing"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/math"
 )
 
@@ -32,4 +33,5 @@ func TestRepresentationLookupMissErrors(t *testing.T) {
 	wantErr("SetFlexible", reps.SetFlexible(missing, occ, true))
 	wantErr("SetSuppressed", reps.SetSuppressed(missing, occ, true))
 	wantErr("SetPositionalOverride", reps.SetPositionalOverride(missing, 1, false, 0))
+	wantErr("AddSection", reps.AddSection(missing, types.SectionPlane{}))
 }

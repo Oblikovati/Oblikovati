@@ -36,7 +36,7 @@ func (r *Router) registerDocumentPropertyHandlers() {
 func documentProperties(s *app.Session, id uint64, method string) (*attr.PropertySets, error) {
 	d, err := documentByID(s, id)
 	if err != nil {
-		return nil, fmt.Errorf(errCtxWrap, method, err)
+		return nil, fmt.Errorf("%s: %w", method, err)
 	}
 	holder, ok := d.Content().(propertyHolder)
 	if !ok {

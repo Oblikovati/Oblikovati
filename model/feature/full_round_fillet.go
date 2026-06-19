@@ -171,7 +171,7 @@ func cornerSliverPrism(fr convergingFrame, l float64, center, side planarFace, f
 	poly := append([]math.Point2{to2(corner), tangent2}, roundArcChords(tangent2, apex2, fr.r)...)
 	plane, err := sketch.NewPlane(fr.C, fr.cross.AsUnit(), fr.up.AsUnit())
 	if err != nil {
-		return nil, fmt.Errorf(errCtxWrap, feat, err)
+		return nil, fmt.Errorf("%s: %w", feat, err)
 	}
 	return buildPrism(poly, plane, span{near: -l / 2, far: l / 2}, 0, feat), nil
 }
@@ -282,7 +282,7 @@ func fullRoundFrame(body *topo.Body, def *FullRoundFilletDefinition, center plan
 func fullRoundCornerTool(pc math.Point3, up, sideN, axisDir math.Vector3, r, l float64, feat string) (*topo.Body, error) {
 	plane, err := sketch.NewPlane(pc, sideN.AsUnit(), up.AsUnit())
 	if err != nil {
-		return nil, fmt.Errorf(errCtxWrap, feat, err)
+		return nil, fmt.Errorf("%s: %w", feat, err)
 	}
 	// Box (in the sideN×up plane, centred on pc): full width 2r across the sides, depth r below the
 	// centre face, extruded ±l/2 along the rib axis (the plane normal).
@@ -293,11 +293,11 @@ func fullRoundCornerTool(pc math.Point3, up, sideN, axisDir math.Vector3, r, l f
 	base := axisPt.TranslateBy(axisDir.Scale(-l / 2))
 	cyl, err := brep.SolidCylinder(base, axisDir, r, l)
 	if err != nil {
-		return nil, fmt.Errorf(errCtxWrap, feat, err)
+		return nil, fmt.Errorf("%s: %w", feat, err)
 	}
 	corner, err := ops.Boolean(ops.Cut, planarized(box, feat), planarized(cyl, feat))
 	if err != nil {
-		return nil, fmt.Errorf(errCtxWrap, feat, err)
+		return nil, fmt.Errorf("%s: %w", feat, err)
 	}
 	return corner, nil
 }

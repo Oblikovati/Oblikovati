@@ -213,7 +213,7 @@ func retopoFacesBody(in Input, keys [][]byte, feat string, op func(*topo.Body, [
 	}
 	result, err := op(body, keys)
 	if err != nil {
-		return Output{}, fmt.Errorf(errCtxWrap, feat, err)
+		return Output{}, fmt.Errorf("%s: %w", feat, err)
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
 }

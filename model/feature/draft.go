@@ -19,7 +19,7 @@ func draftBody(in Input, faceKeys [][]byte, pull math.Vector3, angle float64, fe
 	}
 	result, err := ops.DraftFaces(body, faceKeys, pull, angle)
 	if err != nil {
-		return Output{}, fmt.Errorf(errCtxWrap, feat, err)
+		return Output{}, fmt.Errorf("%s: %w", feat, err)
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, result)}, nil
 }

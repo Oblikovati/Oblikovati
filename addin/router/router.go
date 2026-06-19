@@ -616,7 +616,7 @@ func methodError(method string, err error) error {
 	if strings.HasPrefix(err.Error(), method) {
 		return err
 	}
-	return fmt.Errorf(errCtxWrap, method, err)
+	return fmt.Errorf("%s: %w", method, err)
 }
 
 // Methods returns the supported method names, sorted — used by self-description.

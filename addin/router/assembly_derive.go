@@ -172,7 +172,7 @@ func assemblyDeriveBreakLink(s *app.Session, raw json.RawMessage) (json.RawMessa
 			wire.MethodAssemblyDeriveBreakLink, in.ID, pf.Kind())
 	}
 	if err := linked.BreakLink(); err != nil {
-		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyDeriveBreakLink, err)
+		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyDeriveBreakLink, err)
 	}
 	part.Recompute()
 	return featureDetailReply(part, pf, idx)
@@ -202,7 +202,7 @@ func resolveDeriveSource(s *app.Session, raw json.RawMessage, method string) (*c
 func assemblySource(s *app.Session, id uint64, method string) (feature.AssemblyBodySource, *doc.Document, error) {
 	d, err := documentByID(s, id)
 	if err != nil {
-		return nil, nil, fmt.Errorf(errCtxWrap, method, err)
+		return nil, nil, fmt.Errorf("%s: %w", method, err)
 	}
 	source, ok := d.Content().(feature.AssemblyBodySource)
 	if !ok {

@@ -59,7 +59,7 @@ func assemblyBOMExport(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	}
 	csv, err := bom.ExportCSV(view, exportColumns(in.Columns))
 	if err != nil {
-		return nil, fmt.Errorf(errCtxWrap, wire.MethodAssemblyBOMExport, err)
+		return nil, fmt.Errorf("%s: %w", wire.MethodAssemblyBOMExport, err)
 	}
 	return json.Marshal(wire.BOMExportResult{CSV: csv})
 }

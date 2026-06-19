@@ -35,7 +35,7 @@ func (r *Router) registerAttributeHandlers() {
 func documentAttributeSets(s *app.Session, id uint64, method string) (*attr.AttributeSets, error) {
 	d, err := documentByID(s, id)
 	if err != nil {
-		return nil, fmt.Errorf(errCtxWrap, method, err)
+		return nil, fmt.Errorf("%s: %w", method, err)
 	}
 	return d.Attributes().AttributeSets(identity.DocumentKey()), nil
 }
