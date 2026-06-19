@@ -3,6 +3,8 @@
 package app
 
 import (
+	"fmt"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
 )
@@ -247,6 +249,19 @@ func (s *Session) SetEditFeatureParamValue(i int, value float64) {
 	if p, ok := s.editScalarParam(i); ok {
 		s.setParamDisplayValue(p, value)
 	}
+}
+
+// SetEditFeatureParamText sets the i-th field from a unit-bearing string that may be
+// a parameter expression ("d0 + 5 mm") or a literal ("12 mm"), routing it through the
+// active part's parameter evaluator so feature dialogs accept parameters like the
+// sketch-dimension editor does. Returns an error the dialog can surface on bad input
+// (Oblikovati.API#187, UI side).
+func (s *Session) SetEditFeatureParamText(i int, text string) error {
+	p, ok := s.editScalarParam(i)
+	if !ok {
+		return fmt.Errorf("SetEditFeatureParamText: no editable parameter at index %d", i)
+	}
+	return s.setParamText(p, text)
 }
 
 func (s *Session) editScalarParam(i int) (feature.EditableParam, bool) {

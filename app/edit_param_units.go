@@ -41,3 +41,30 @@ func (s *Session) setParamDisplayValue(p feature.EditableParam, value float64) {
 	}
 	p.Set(s.DocumentUnits().FromPreferred(value, p.Unit).Value)
 }
+
+// setParamText sets p from a unit-bearing STRING that may be a parameter expression
+// (a bare parameter name "d0" or a formula "d0 + 5 mm") or a literal ("12 mm"). It
+// evaluates the text against the active part's parameter table first — so feature
+// dialogs accept parameter expressions just like the sketch-dimension editor — and
+// falls back to the document's literal unit parser otherwise. Mirrors the API
+// router's resolveQuantity so the UI and the API resolve fields the same way
+// (Oblikovati.API#187; the gap was solution-wide on the UI side too).
+func (s *Session) setParamText(p feature.EditableParam, text string) error {
+	q, err := s.evalParamText(text, p.Unit)
+	if err != nil {
+		return err
+	}
+	p.Set(q.Value) // EvaluateExpression and Parse both return database units
+	return nil
+}
+
+// evalParamText resolves text to a database-unit quantity in dimension dim: the
+// active part's parameter evaluator first (names + formulas), then a literal parse.
+func (s *Session) evalParamText(text string, dim param.Unit) (param.Quantity, error) {
+	if part, err := activePart(s); err == nil {
+		if q, e := part.Parameters().EvaluateExpression(text); e == nil && q.Unit == dim {
+			return q, nil
+		}
+	}
+	return s.DocumentUnits().Parse(text, dim)
+}
