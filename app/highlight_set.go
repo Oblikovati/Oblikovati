@@ -112,21 +112,55 @@ func (s *Session) ResolveReference(ref string) (Selectable, bool) {
 	return ResolveRefOnBodies(part.SurfaceBodies().All(), ref)
 }
 
-// ResolveRefOnBodies resolves a face/vertex reference string against the given bodies. Edges and
-// work features are not round-trippable through model.selection yet, so they are not resolved.
+// ResolveRefOnBodies resolves a topology reference string against the given bodies, accepting
+// BOTH ref forms an add-in encounters: the "face/…" / "vertex/…" form model.selection reports
+// (decoded via feature.*RefKey) and the RAW reference-key bytes model.referenceKeys reports.
+// The raw form additionally resolves edges (which the selection form does not round-trip).
 func ResolveRefOnBodies(bodies []*topo.Body, ref string) (Selectable, bool) {
 	if key, ok := feature.FaceRefKey(feature.WorkRef(ref)); ok {
-		for _, b := range bodies {
-			if f, found := b.FindFaceByKey(key); found {
-				return FaceHandle{Face: f, Body: b}, true
-			}
+		if sel, found := findFace(bodies, key); found {
+			return sel, true
 		}
 	}
 	if key, ok := feature.VertexRefKey(feature.WorkRef(ref)); ok {
-		for _, b := range bodies {
-			if v, found := b.FindVertexByKey(key); found {
-				return VertexHandle{Vertex: v}, true
-			}
+		if sel, found := findVertex(bodies, key); found {
+			return sel, true
+		}
+	}
+	// Raw reference-key form (model.referenceKeys): try face, edge, then vertex.
+	raw := []byte(ref)
+	if sel, found := findFace(bodies, raw); found {
+		return sel, true
+	}
+	if sel, found := findEdge(bodies, raw); found {
+		return sel, true
+	}
+	return findVertex(bodies, raw)
+}
+
+// findFace/findEdge/findVertex bind a raw reference key to a selectable across the bodies.
+func findFace(bodies []*topo.Body, key []byte) (Selectable, bool) {
+	for _, b := range bodies {
+		if f, ok := b.FindFaceByKey(key); ok {
+			return FaceHandle{Face: f, Body: b}, true
+		}
+	}
+	return nil, false
+}
+
+func findEdge(bodies []*topo.Body, key []byte) (Selectable, bool) {
+	for _, b := range bodies {
+		if e, ok := b.FindEdgeByKey(key); ok {
+			return EdgeHandle{Edge: e}, true
+		}
+	}
+	return nil, false
+}
+
+func findVertex(bodies []*topo.Body, key []byte) (Selectable, bool) {
+	for _, b := range bodies {
+		if v, ok := b.FindVertexByKey(key); ok {
+			return VertexHandle{Vertex: v}, true
 		}
 	}
 	return nil, false

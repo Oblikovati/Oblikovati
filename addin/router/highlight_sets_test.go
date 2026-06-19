@@ -56,11 +56,22 @@ func TestHighlightSetCreateDuplicateAndBadColor(t *testing.T) {
 }
 
 // TestHighlightSetItemsResolveToGeometry (#157): a highlight set's stored references resolve to
-// real selectables against the live bodies — the path the viewport overlay draws.
+// real selectables against the live bodies — the path the viewport overlay draws. Both ref forms
+// an add-in encounters must work: the "face/…" form model.selection reports AND the raw key
+// form model.referenceKeys reports (the documented highlight-set input), including edges.
 func TestHighlightSetItemsResolveToGeometry(t *testing.T) {
-	_, s, ref0, _ := boxFaceRefs(t)
+	r, s, ref0, _ := boxFaceRefs(t)
 	if sel, ok := s.ResolveReference(ref0); !ok || sel == nil {
-		t.Errorf("a box face reference did not resolve to a selectable (ok=%v)", ok)
+		t.Errorf("the selection-form face reference did not resolve (ok=%v)", ok)
+	}
+
+	var keys wire.ReferenceKeysResult
+	call(t, r, s, "model.referenceKeys", `{}`, &keys)
+	if sel, ok := s.ResolveReference(keys.Bodies[0].Faces[0].Key); !ok || sel == nil {
+		t.Errorf("the raw model.referenceKeys face key did not resolve (ok=%v)", ok)
+	}
+	if sel, ok := s.ResolveReference(keys.Bodies[0].Edges[0].Key); !ok || sel == nil {
+		t.Errorf("the raw model.referenceKeys edge key did not resolve (ok=%v)", ok)
 	}
 	if _, ok := s.ResolveReference("face/ZZZZ"); ok {
 		t.Error("a bogus reference resolved unexpectedly")
