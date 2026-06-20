@@ -5,6 +5,7 @@ package app
 import (
 	"testing"
 
+	"oblikovati.org/app/cmdline"
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
 )
@@ -138,6 +139,75 @@ func TestHUDCommitRejectsBadNumber(t *testing.T) {
 	}
 	if !s.HUDEngaged() {
 		t.Error("a failed commit should keep the HUD engaged for correction")
+	}
+}
+
+// TestHUDBackspaceAndCancel checks Backspace edits the active field and Cancel/non-number
+// runes clear or are ignored.
+func TestHUDBackspaceAndCancel(t *testing.T) {
+	s, _ := hudLineSession(t)
+	s.HUDBackspace() // no-op on an empty field (must not panic)
+	for _, r := range "12" {
+		s.HUDInputRune(r)
+	}
+	s.HUDInputRune('x') // not a number rune → ignored
+	s.HUDBackspace()
+	if got := s.SketchHUDView(100, 100).Values[0]; got != "1" {
+		t.Errorf("after 12 + ignored x + backspace, field0 = %q, want %q", got, "1")
+	}
+	s.HUDCancel()
+	if s.HUDEngaged() {
+		t.Error("HUDCancel should disengage the HUD")
+	}
+}
+
+// TestHUDCommitPolarPoint checks committing a typed Length/Angle resolves to the reference
+// point offset by length∠angle (the polar branch + degree→radian conversion).
+func TestHUDCommitPolarPoint(t *testing.T) {
+	s, line := hudLineSession(t)
+	line.points = []math.Point2{math.P2(1, 0)} // a placed reference point → polar mode
+	for _, r := range "100" {                  // Length = 100 mm = 10 cm model
+		s.HUDInputRune(r)
+	}
+	s.HUDTab()
+	for _, r := range "90" { // Angle = 90° → straight up
+		s.HUDInputRune(r)
+	}
+	if err := s.HUDCommit(100, 100); err != nil {
+		t.Fatalf("HUDCommit: %v", err)
+	}
+	// ref (1,0) + 10 cm at 90° = (1, 10).
+	got := line.points[len(line.points)-1]
+	if !got.IsEqualTo(math.P2(1, 10), 1e-6) {
+		t.Errorf("polar commit landed at %v, want (1,10)", got)
+	}
+}
+
+// TestHUDCommitWithoutToolErrors checks committing with no coordinate tool active errors (the
+// hudTool nil guard) and a non-numeric polar angle is rejected (hudResolveCoord polar branch).
+func TestHUDCommitWithoutToolErrors(t *testing.T) {
+	s, _ := sketchSession(t) // in a sketch, but no tool started
+	s.HUDInputRune('5')
+	if err := s.HUDCommit(100, 100); err == nil {
+		t.Error("HUDCommit with no coordinate tool active should error")
+	}
+
+	sl, lt := hudLineSession(t)
+	lt.points = []math.Point2{math.P2(0, 0)} // polar mode
+	sl.HUDTab()                              // focus the Angle field
+	sl.HUDInputRune('-')
+	sl.HUDInputRune('-') // "--" — not a number
+	if err := sl.HUDCommit(100, 100); err == nil {
+		t.Error("a non-numeric angle should fail the polar commit")
+	}
+}
+
+// TestSubmitResolvedCoordGuards checks the shared command-engine entry the HUD uses rejects a
+// missing or non-coordinate tool.
+func TestSubmitResolvedCoordGuards(t *testing.T) {
+	s := NewSession()
+	if err := s.CommandLine().SubmitResolvedCoord(s, cmdline.Coord{X: 1, Y: 2}); err == nil {
+		t.Error("SubmitResolvedCoord with no active tool should error")
 	}
 }
 
