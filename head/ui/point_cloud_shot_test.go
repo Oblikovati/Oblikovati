@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
@@ -34,6 +35,8 @@ func TestInWindowPointCloudRenders(t *testing.T) {
 	if len(s.PointCloudItems(0.5)) != 1 {
 		t.Fatalf("expected one point-cloud draw item, got %d", len(s.PointCloudItems(0.5)))
 	}
+	// Select a scan point so its orange snap-highlight reads among the cyan grid.
+	s.Select(app.PointCloudPointHandle{Point: math.P3(0, 0, 0)})
 
 	for i := 0; i < 8; i++ {
 		win.BeginFrame()

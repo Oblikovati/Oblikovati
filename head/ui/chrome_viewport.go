@@ -554,10 +554,15 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	return list
 }
 
-// pointCloudOverlay builds the active part's visible point-cloud marker batches, sized in screen
-// space so each cross stays a fixed pixel size at any zoom (like sketch point markers, #645).
+// pointCloudOverlay builds the active part's visible point-cloud marker batches, plus a highlight
+// for a snapped/selected scan point, sized in screen space so each cross stays a fixed pixel size
+// at any zoom (like sketch point markers, #645).
 func pointCloudOverlay(s *app.Session, cam scene.Camera) []renderer.DrawItem {
-	return s.PointCloudItems(pointCloudMarkerPixels * cam.WorldPerPixel())
+	items := s.PointCloudItems(pointCloudMarkerPixels * cam.WorldPerPixel())
+	if hi, ok := s.SelectedCloudPointHighlight(pointCloudMarkerPixels * cam.WorldPerPixel()); ok {
+		items = append(items, hi)
+	}
+	return items
 }
 
 // pointCloudMarkerPixels is the on-screen half-extent of a point-cloud cross marker.
