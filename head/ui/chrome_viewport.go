@@ -558,7 +558,7 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 // for a snapped/selected scan point, sized in screen space so each cross stays a fixed pixel size
 // at any zoom (like sketch point markers, #645).
 func pointCloudOverlay(s *app.Session, cam scene.Camera) []renderer.DrawItem {
-	items := s.PointCloudItems(pointCloudMarkerPixels * cam.WorldPerPixel())
+	items := s.PointCloudItems(cam, pointCloudMarkerPixels*cam.WorldPerPixel())
 	if hi, ok := s.SelectedCloudPointHighlight(pointCloudMarkerPixels * cam.WorldPerPixel()); ok {
 		items = append(items, hi)
 	}

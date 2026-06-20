@@ -14,7 +14,7 @@ import (
 // (6 vertices per point); hiding it removes the batch (M17-F06, #645).
 func TestPointCloudItemsRendersVisibleClouds(t *testing.T) {
 	s, def := emptyPartSession(t)
-	if got := s.PointCloudItems(0.5); len(got) != 0 {
+	if got := s.PointCloudItems(s.Camera(), 0.5); len(got) != 0 {
 		t.Fatalf("a part with no clouds yields %d items, want 0", len(got))
 	}
 
@@ -25,7 +25,7 @@ func TestPointCloudItemsRendersVisibleClouds(t *testing.T) {
 		t.Fatalf("attach: %v", err)
 	}
 
-	items := s.PointCloudItems(0.5)
+	items := s.PointCloudItems(s.Camera(), 0.5)
 	if len(items) != 1 || items[0].Primitive != renderer.Lines {
 		t.Fatalf("items = %+v, want one Lines batch", items)
 	}
@@ -34,7 +34,7 @@ func TestPointCloudItemsRendersVisibleClouds(t *testing.T) {
 	}
 
 	pc.SetVisible(false)
-	if got := s.PointCloudItems(0.5); len(got) != 0 {
+	if got := s.PointCloudItems(s.Camera(), 0.5); len(got) != 0 {
 		t.Errorf("a hidden cloud still rendered %d items, want 0", len(got))
 	}
 }

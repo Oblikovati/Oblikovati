@@ -32,8 +32,8 @@ func TestInWindowPointCloudRenders(t *testing.T) {
 	if _, err := def.PointClouds().Add("Grid", "grid.xyz", rid, gridPoints()); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
-	if len(s.PointCloudItems(0.5)) != 1 {
-		t.Fatalf("expected one point-cloud draw item, got %d", len(s.PointCloudItems(0.5)))
+	if len(s.PointCloudItems(s.Camera(), 0.5)) != 1 {
+		t.Fatalf("expected one point-cloud draw item, got %d", len(s.PointCloudItems(s.Camera(), 0.5)))
 	}
 	// Select a scan point so its orange snap-highlight reads among the cyan grid.
 	s.Select(app.PointCloudPointHandle{Point: math.P3(0, 0, 0)})
