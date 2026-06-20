@@ -92,6 +92,57 @@ func TestPointCloudPlacementAndBudget(t *testing.T) {
 	}
 }
 
+// TestPointCloudMissingNameErrors: every name-keyed operation errors when no cloud has the name,
+// exercising the not-found branches of each handler (#645).
+func TestPointCloudMissingNameErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	ops := []struct {
+		method string
+		args   string
+	}{
+		{"pointClouds.get", `{"name":"nope"}`},
+		{"pointClouds.setVisible", `{"name":"nope","visible":true}`},
+		{"pointClouds.setScale", `{"name":"nope","scale":2}`},
+		{"pointClouds.setDensity", `{"name":"nope","maximumPointCount":1}`},
+		{"pointClouds.setTransform", `{"name":"nope","transform":{"cells":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}}`},
+		{"pointClouds.toModelSpace", `{"name":"nope","point":{"x":0,"y":0,"z":0}}`},
+		{"pointClouds.fromModelSpace", `{"name":"nope","point":{"x":0,"y":0,"z":0}}`},
+	}
+	for _, op := range ops {
+		if _, err := r.Handle(s, op.method, []byte(op.args)); err == nil {
+			t.Errorf("%s on a missing cloud should fail", op.method)
+		}
+	}
+	// delete of a missing cloud is not an error — it reports Deleted=false.
+	var del wire.DeletePointCloudResult
+	call(t, r, s, "pointClouds.delete", `{"name":"nope"}`, &del)
+	if del.Deleted {
+		t.Error("delete of a missing cloud should report Deleted=false")
+	}
+}
+
+// TestPointCloudBadJSON: a malformed request body is rejected by the decode guard (#645).
+func TestPointCloudBadJSON(t *testing.T) {
+	r, s := emptyPartSession(t)
+	for _, m := range []string{"pointClouds.attach", "pointClouds.get", "pointClouds.setScale", "pointClouds.toModelSpace"} {
+		if _, err := r.Handle(s, m, []byte(`{`)); err == nil {
+			t.Errorf("%s with malformed JSON should fail", m)
+		}
+	}
+}
+
+// TestPointCloudUnreadableScan: attaching a file whose extension has no reader fails (#645).
+func TestPointCloudUnreadableScan(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := filepath.Join(t.TempDir(), "scan.las")
+	if err := os.WriteFile(path, []byte("binary"), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if _, err := r.Handle(s, "pointClouds.attach", []byte(mustJSON(t, wire.AttachPointCloudArgs{FullFileName: path}))); err == nil {
+		t.Error("attach of an unsupported scan format should fail")
+	}
+}
+
 // TestPointCloudAttachErrors: a missing file and a non-positive scale are rejected (#645).
 func TestPointCloudAttachErrors(t *testing.T) {
 	r, s := emptyPartSession(t)
