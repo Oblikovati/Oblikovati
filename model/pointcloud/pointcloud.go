@@ -2,7 +2,13 @@
 
 package pointcloud
 
-import "oblikovati.org/math"
+import (
+	"encoding/binary"
+	"hash/fnv"
+	stdmath "math"
+
+	"oblikovati.org/math"
+)
 
 // PointCloud is one attached scan: its points in cloud-local coordinates, a placement transform
 // and uniform scale into model space, a display point budget, and visibility (M17-F06, #645). It
@@ -19,6 +25,14 @@ type PointCloud struct {
 	resourceID string        // ADR-0031 resource UUID addressing the scan bytes
 	maxPoints  int           // display budget; 0 = show every point
 	crops      PointCloudCrops
+
+	// Display cache (#645 perf): DisplayedPoints transforms every scan point to model space each
+	// call, which the head invokes every frame — ~2 ms for a 266k-point scan. The result depends
+	// only on the placement, scale, budget and crops, not the camera, so it is cached and returned
+	// unchanged while you orbit; displaySig is the signature of those inputs it was built for.
+	displayCache []math.Point3
+	displaySig   uint64
+	displayValid bool
 }
 
 // Crops returns the cloud's crop-volume collection — the model-space boxes that limit display
@@ -128,9 +142,66 @@ func (pc *PointCloud) CloudPoints() []math.Point3 { return pc.points }
 
 // DisplayedPoints returns the rendered point set in MODEL space — the points passing the active
 // crops, then strided evenly to the display budget so the sample stays spatially representative
-// rather than a truncated prefix.
+// rather than a truncated prefix. The result is cached and reused while the placement, scale,
+// budget and crops are unchanged (the head rebuilds the overlay every frame, but the cloud is
+// static as the camera orbits), so a static 266k-point scan costs O(1) per frame after the first.
 func (pc *PointCloud) DisplayedPoints() []math.Point3 {
+	sig := pc.displaySignature()
+	if pc.displayValid && sig == pc.displaySig {
+		return pc.displayCache
+	}
+	pc.displayCache = pc.buildDisplayed()
+	pc.displaySig, pc.displayValid = sig, true
+	return pc.displayCache
+}
+
+// buildDisplayed transforms the displayed set. When the cloud is budgeted and uncropped it strides
+// the cloud-local points to the budget FIRST and transforms only those, so a 50k-budget rebuild
+// touches 50k points, not all 266k. With an active crop the crop test is in model space, so every
+// point must be transformed.
+func (pc *PointCloud) buildDisplayed() []math.Point3 {
+	if pc.maxPoints > 0 && pc.maxPoints < len(pc.points) && !pc.crops.anyActive() {
+		sampled := strideSample(pc.points, pc.maxPoints)
+		out := make([]math.Point3, len(sampled))
+		for i, p := range sampled {
+			out[i] = pc.ToModelSpace(p)
+		}
+		return out
+	}
 	return strideSample(pc.croppedModelPoints(), pc.maxPoints)
+}
+
+// displaySignature hashes the inputs that determine the displayed set — the placement, scale,
+// budget, and each active crop — so DisplayedPoints can detect when its cache is stale without
+// threading invalidation through every setter.
+func (pc *PointCloud) displaySignature() uint64 {
+	h := fnv.New64a()
+	var buf [8]byte
+	putF := func(f float64) { binary.LittleEndian.PutUint64(buf[:], stdmath.Float64bits(f)); _, _ = h.Write(buf[:]) }
+	for _, c := range pc.transform.Cells() {
+		putF(float64(c))
+	}
+	putF(pc.scale)
+	putF(float64(pc.maxPoints))
+	pc.hashActiveCrops(putF)
+	return h.Sum64()
+}
+
+// hashActiveCrops feeds each active crop's box into the display signature.
+func (pc *PointCloud) hashActiveCrops(putF func(float64)) {
+	for i := 0; i < pc.crops.Count(); i++ {
+		c := pc.crops.Item(i)
+		if !c.Active() {
+			continue
+		}
+		b := c.Box()
+		putF(float64(b.Min.X))
+		putF(float64(b.Min.Y))
+		putF(float64(b.Min.Z))
+		putF(float64(b.Max.X))
+		putF(float64(b.Max.Y))
+		putF(float64(b.Max.Z))
+	}
 }
 
 // CroppedModelPoints returns every point in MODEL space that passes the active crops, at full
