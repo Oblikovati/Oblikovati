@@ -225,6 +225,11 @@ func pointCloudCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(canWorkPointAtCloudPoint).
 			WithIcon("point-cloud-work-point").WithButtonStyle(SmallIconButton).
 			WithTooltip("Work Point — place a datum point on the selected scan point (snap to a cloud point first)."),
+		NewCommand("PointCloud.CropBox", "Crop Box", "Point Cloud", func(s *Session) error {
+			return s.StartCropSelectedCloud()
+		}).WithTab(tab3DModel).WithEnable(canCropSelectedCloud).
+			WithIcon("point-cloud-crop").WithButtonStyle(SmallIconButton).
+			WithTooltip("Crop Box — box a region of the selected cloud in the viewport to crop its display to those points."),
 	}
 }
 
