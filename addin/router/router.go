@@ -375,6 +375,7 @@ func (r *Router) registerMaterialHandlers() {
 	r.handlers[wire.MethodBodyList] = bodyList
 	r.handlers[wire.MethodBodySetVisible] = bodySetVisible
 	r.handlers[wire.MethodBodyRename] = bodyRename
+	r.handlers[wire.MethodBodyDelete] = bodyDelete
 	r.handlers[wire.MethodBodyPhysicalProps] = bodyPhysicalProperties
 	r.handlers[wire.MethodBodyShells] = bodyShells
 	r.handlers[wire.MethodBodyWires] = bodyWires

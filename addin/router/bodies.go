@@ -14,6 +14,7 @@ import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/analysis"
+	"oblikovati.org/model/compdef"
 )
 
 // Body, shell and wire enumeration over the wire (M07-F06, #629), plus the
@@ -38,6 +39,12 @@ func bodyList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	return bodyListResult(s, part)
+}
+
+// bodyListResult marshals the active part's current body list (shared by body.list and the
+// mutating body.delete, which returns the refreshed list).
+func bodyListResult(s *app.Session, part *compdef.PartComponentDefinition) (json.RawMessage, error) {
 	var out wire.BodyListResult
 	for i, b := range part.SurfaceBodies().All() {
 		out.Bodies = append(out.Bodies, bodyInfo(s, i, b))
@@ -131,6 +138,30 @@ func bodySetVisible(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 	}
 	s.SetBodyVisible(b, in.Visible)
 	return json.Marshal(wire.BodyInfoResult{Body: bodyInfo(s, in.BodyIndex, b)})
+}
+
+// bodyDelete serves wire.MethodBodyDelete: append a delete-body feature that removes the body at
+// BodyIndex (anchored to its reference key so it survives recompute), then return the refreshed
+// body list (#1078).
+func bodyDelete(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.BodyIndexArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	all := part.SurfaceBodies().All()
+	if in.BodyIndex < 0 || in.BodyIndex >= len(all) {
+		return nil, fmt.Errorf("body index %d out of range (part has %d bodies)", in.BodyIndex, len(all))
+	}
+	pf := part.Features().AddDeleteBody(all[in.BodyIndex].ReferenceKey())
+	part.Recompute()
+	if !pf.Health().OK() {
+		return nil, fmt.Errorf("body.delete: %s", pf.Health().Reason)
+	}
+	return bodyListResult(s, part)
 }
 
 // bodyShells serves wire.MethodBodyShells.

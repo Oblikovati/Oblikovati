@@ -58,11 +58,7 @@ func TestEveryWireMethodHasAHandler(t *testing.T) {
 // them. Tracked debt: add an entry only when the contract genuinely lands before its handler, and
 // DELETE it the moment the handler lands (the guard above fails on a stale entry, so this list may
 // only shrink).
-var notYetHandled = map[string]bool{
-	// #1078 body delete: the contract (API v0.76.1) lands ahead of the /source handler, which
-	// follows in the body-delete impl PR. DELETE this the moment that handler lands.
-	"MethodBodyDelete": true,
-}
+var notYetHandled = map[string]bool{}
 
 // notYetRelayed are wire events the API declares ahead of the host behavior that would
 // emit them (the representations / model-state surface has no app-level event yet). They
