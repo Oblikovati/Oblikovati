@@ -15,3 +15,7 @@ var (
 // The assembly definition satisfies the public contract's scalar assembly read surface
 // (#728); the occurrence tree and mutators travel over api/wire (assembly.*).
 var _ contract.AssemblyComponentDefinition = (*AssemblyComponentDefinition)(nil)
+
+// The part definition satisfies the public end-of-part rollback-marker contract (#141): the wire
+// surface (document.get/setEndOfPart) drives EndOfPartPosition / SetEndOfPart / RollToEnd.
+var _ contract.EndOfPart = (*PartComponentDefinition)(nil)
