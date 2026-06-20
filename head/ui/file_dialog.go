@@ -131,7 +131,7 @@ var staticDialogTitles = map[fileDialogMode]string{
 	dialogMeshRef:        "Place Mesh (.stl)",
 	dialogPointCloud:     "Import Point Cloud (.xyz/.pts)",
 	dialogPlaceComponent: "Place Component",
-	dialogImport:         "Import (.stl/.obj/.3mf/.step/.dwg/.dxf · scans .ply/.xyz/.pts)",
+	dialogImport:         "Import (.stl/.obj/.3mf/.step/.dwg/.dxf · scans .ply/.e57/.xyz/.pts)",
 	dialogExport:         "Export (.stl/.obj/.3mf/.step/.dxf)",
 	dialogExportBOM:      "Export BOM (.csv)",
 }
@@ -285,9 +285,9 @@ func (d *fileDialog) allowedExts() []string {
 	case dialogPointCloud:
 		return []string{".xyz", ".pts", ".asc", ".txt"}
 	case dialogImport:
-		// DWG/DXF import into a sketch, scan formats (.ply/.xyz/.pts/.asc) into a point cloud, the
-		// rest into bodies.
-		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg", ".dxf", ".ply", ".xyz", ".pts", ".asc"}
+		// DWG/DXF import into a sketch, scan formats (.ply/.e57/.xyz/.pts/.asc) into a point cloud,
+		// the rest into bodies.
+		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg", ".dxf", ".ply", ".e57", ".xyz", ".pts", ".asc"}
 	case dialogExport:
 		// DXF exports the active sketch; the others export the part's bodies.
 		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dxf"}

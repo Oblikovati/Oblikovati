@@ -116,7 +116,7 @@ func TestReadScanDispatch(t *testing.T) {
 // TestIsScanFileAndExtensions: scan extensions are recognized (any case) and non-scan ones are not
 // (#645).
 func TestIsScanFileAndExtensions(t *testing.T) {
-	for _, p := range []string{"room.ply", "scan.XYZ", "a.pts", "b.asc", "c.txt"} {
+	for _, p := range []string{"room.ply", "scan.XYZ", "a.pts", "b.asc", "c.txt", "part.E57"} {
 		if !IsScanFile(p) {
 			t.Errorf("IsScanFile(%q) = false, want true", p)
 		}
