@@ -45,6 +45,12 @@ func sketchTabCommands() []*CommandDefinition {
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
 		WithIcon("project-geometry").WithButtonStyle(LargeIconButton).
 		WithTooltip("Project Geometry — pick part edges/vertices to reference onto the sketch plane."))
+	cmds = append(cmds, NewCommand("Sketch.ProjectScanPoint", "Project Scan Point", "Create", func(s *Session) error {
+		_, err := s.CreateSketchPointAtSelectedCloudPoint()
+		return err
+	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(canSketchPointAtCloudPoint).
+		WithIcon("sketch-point-scan").WithButtonStyle(SmallIconButton).
+		WithTooltip("Project Scan Point — place a sketch point on the selected scan point, projected onto the sketch plane."))
 	cmds = append(cmds, NewCommand("Sketch.Finish", "Finish Sketch", "Exit", func(s *Session) error {
 		return s.FinishSketch()
 	}).WithTab("Sketch").WithEnvironment(SketchEnvironment).WithEnable(inSketch).
