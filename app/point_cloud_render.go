@@ -3,6 +3,7 @@
 package app
 
 import (
+	"oblikovati.org/math"
 	"oblikovati.org/model/pointcloud"
 	"oblikovati.org/renderer"
 )
@@ -28,6 +29,43 @@ func (s *Session) PointCloudItems(markerSize float64) []renderer.DrawItem {
 		}
 	}
 	return items
+}
+
+// PickablePointClouds returns the active part's visible attached clouds — the snap targets the ray
+// picker tests for cloud-point snapping (M17-F06, #645). Empty when the active document is not a
+// part. The picker itself skips hidden clouds, but filtering here keeps the provider lean.
+func (s *Session) PickablePointClouds() []*pointcloud.PointCloud {
+	part, err := activePart(s)
+	if err != nil {
+		return nil
+	}
+	clouds := part.PointClouds()
+	out := make([]*pointcloud.PointCloud, 0, clouds.Count())
+	for i := 0; i < clouds.Count(); i++ {
+		if pc := clouds.Item(i); pc.Visible() {
+			out = append(out, pc)
+		}
+	}
+	return out
+}
+
+// CloudPointHighlightColor is the marker color for a selected (snapped) scan point.
+var cloudPointHighlightColor = [4]float32{1.0, 0.62, 0.1, 1}
+
+// SelectedCloudPointHighlight returns an on-top highlight marker for the currently selected scan
+// point (a larger orange cross at its location), or ok=false when the selection is not a cloud
+// point — the visible feedback that a click snapped to a scan point (M17-F06, #645).
+func (s *Session) SelectedCloudPointHighlight(markerSize float64) (renderer.DrawItem, bool) {
+	h, ok := s.Selection().First().(PointCloudPointHandle)
+	if !ok {
+		return renderer.DrawItem{}, false
+	}
+	item := renderer.PointMarkers([]math.Point3{h.Point}, markerSize*2.5, cloudPointHighlightColor, 0)
+	if item == nil {
+		return renderer.DrawItem{}, false
+	}
+	item.OnTop = true // draw over the model so the snap reads clearly
+	return *item, true
 }
 
 // cloudDrawItem builds one visible cloud's marker batch; nil for a hidden or empty cloud.

@@ -3,6 +3,7 @@
 package app
 
 import (
+	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/pointcloud"
 )
@@ -20,6 +21,20 @@ type PointCloudHandle struct {
 
 // SelectionKind implements Selectable.
 func (PointCloudHandle) SelectionKind() SelectionKind { return SelectPointCloud }
+
+// PointCloudPointHandle is a snapped scan point: the owning cloud and the picked point's
+// model-space location. A point-collecting tool reads Position to model against as-built scan
+// data (M17-F06, #645). It is what the ray picker returns when the cursor snaps to a cloud point.
+type PointCloudPointHandle struct {
+	Cloud *pointcloud.PointCloud
+	Point math.Point3
+}
+
+// SelectionKind implements Selectable.
+func (PointCloudPointHandle) SelectionKind() SelectionKind { return SelectPointCloudPoint }
+
+// Position returns the snapped point's model-space location.
+func (h PointCloudPointHandle) Position() math.Point3 { return h.Point }
 
 // PointCloudCropHandle is the selectable browser handle for one crop: the owning cloud (for the
 // crop collection) and the crop itself.

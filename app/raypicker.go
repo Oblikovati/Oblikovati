@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/occurrence"
+	"oblikovati.org/model/pointcloud"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/scene"
 )
@@ -27,6 +28,7 @@ type RayPicker struct {
 	axes         func() []*feature.WorkAxis
 	sketches     func() []*sketch.Sketch
 	sketches3D   func() []*sketch.Sketch3D
+	pointClouds  func() []*pointcloud.PointCloud                 // attached scans whose points snap (#645)
 	occurrenceOf func(*topo.Body) (*occurrence.Occurrence, bool) // maps an assembly body hit to its component (#769)
 }
 
@@ -60,6 +62,13 @@ func (p *RayPicker) WithSketches(sketches func() []*sketch.Sketch) *RayPicker {
 // (issue #142).
 func (p *RayPicker) WithSketches3D(sketches3D func() []*sketch.Sketch3D) *RayPicker {
 	p.sketches3D = sketches3D
+	return p
+}
+
+// WithPointClouds adds a provider of the part's visible attached scans, so the cursor snaps to a
+// scan point and a point-collecting tool can model against it (M17-F06, #645).
+func (p *RayPicker) WithPointClouds(clouds func() []*pointcloud.PointCloud) *RayPicker {
+	p.pointClouds = clouds
 	return p
 }
 
@@ -210,6 +219,9 @@ func (p *RayPicker) snapPick(origin math.Point3, dir math.Vector3, filter *Selec
 	}
 	if ax, _ := p.nearestAxis(origin, dir); ax != nil && filter.Accepts(SelectWorkAxis) {
 		return WorkAxisHandle{Axis: ax}, true
+	}
+	if pt, cloud, ok := p.nearestCloudPoint(origin, dir); ok && filter.Accepts(SelectPointCloudPoint) {
+		return PointCloudPointHandle{Cloud: cloud, Point: pt}, true
 	}
 	if v := p.nearestVertex(origin, dir); v != nil && filter.Accepts(SelectVertex) {
 		return VertexHandle{Vertex: v}, true
@@ -445,6 +457,34 @@ func (p *RayPicker) nearestPoint(origin math.Point3, dir math.Vector3) (*feature
 		}
 	}
 	return hit, best
+}
+
+// nearestCloudPoint returns the displayed scan point closest to the ray within the pixel-snap
+// radius, across every visible attached cloud, and its owning cloud (or ok=false if none). Only
+// the budgeted, cropped DisplayedPoints are tested — what the user actually sees and can snap to.
+func (p *RayPicker) nearestCloudPoint(origin math.Point3, dir math.Vector3) (math.Point3, *pointcloud.PointCloud, bool) {
+	if p.pointClouds == nil {
+		return math.Point3{}, nil, false
+	}
+	tol := pickPixelRadius * p.camera.WorldPerPixel()
+	var hit math.Point3
+	var owner *pointcloud.PointCloud
+	best := stdmath.Inf(1)
+	for _, cloud := range p.pointClouds() {
+		if !cloud.Visible() {
+			continue
+		}
+		for _, pt := range cloud.DisplayedPoints() {
+			t := origin.VectorTo(pt).Dot(dir)
+			if t <= 0 || t >= best {
+				continue
+			}
+			if origin.TranslateBy(dir.Scale(t)).DistanceTo(pt) <= tol {
+				best, hit, owner = t, pt, cloud
+			}
+		}
+	}
+	return hit, owner, owner != nil
 }
 
 // nearestAxis returns the closest datum axis within the pixel-snap radius of the ray, and
