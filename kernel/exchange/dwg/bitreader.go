@@ -56,6 +56,18 @@ func (r *BitReader) SetPosition(bitPos int) {
 	r.bitPos = uint8(bitPos % 8)
 }
 
+// Reset re-points the reader at buf positioned at bit offset bitPos and clears the
+// sticky error, so a single reader can be reused across the many per-object decodes
+// in a drawing without allocating a fresh [BitReader] each time (the object pass runs
+// once per object — 100k+ on large files — and a stack/collector-held reader avoids
+// that many heap allocations).
+func (r *BitReader) Reset(buf []byte, bitPos int) {
+	r.buf = buf
+	r.bytePos = bitPos / 8
+	r.bitPos = uint8(bitPos % 8)
+	r.err = nil
+}
+
 // BitLen returns the total size of the underlying buffer in bits.
 func (r *BitReader) BitLen() int { return len(r.buf) * 8 }
 
@@ -100,19 +112,59 @@ func (r *BitReader) ReadBit() uint {
 
 // ReadBits reads n bits (0..64) MSB-first into the low bits of the result. Used
 // for the 2-bit and 3-bit selector fields and for handle nibbles.
+//
+// It consumes the stream in chunks of up to 8 bits (each spanning at most two
+// bytes) rather than one bit per call: ReadBit-per-bit made the bit reader ~53%
+// of total DWG decode CPU (every RC/RS/RL/RD on a mid-byte cursor fell to an
+// 8-iteration loop). Behaviour is identical; only the throughput changes.
 func (r *BitReader) ReadBits(n int) uint64 {
 	if n < 0 || n > 64 {
 		r.fail("ReadBits invalid count %d (want 0..64)", n)
 		return 0
 	}
 	var v uint64
-	for i := 0; i < n; i++ {
-		v = (v << 1) | uint64(r.ReadBit())
+	for n > 0 {
+		take := n
+		if take > 8 {
+			take = 8
+		}
+		v = v<<uint(take) | uint64(r.readUpTo8(take))
+		n -= take
 	}
 	return v
 }
 
-// ReadRC reads a raw 8-bit char (RC). Valid even when the cursor is mid-byte.
+// readUpTo8 reads take bits (1..8) MSB-first from the current cursor, which may
+// straddle one byte boundary, and advances by take. On overrun it records the
+// sticky error and returns 0. Factored out of [BitReader.ReadBits] so the common
+// 1–8 bit reads avoid a per-bit loop.
+func (r *BitReader) readUpTo8(take int) uint8 {
+	if r.err != nil {
+		return 0
+	}
+	avail := 8 - int(r.bitPos) // bits left in the current byte
+	if take <= avail {
+		if r.bytePos >= len(r.buf) {
+			r.fail("ReadBits past end (len=%d bytes)", len(r.buf))
+			return 0
+		}
+		v := r.buf[r.bytePos] >> uint(avail-take) & (1<<uint(take) - 1)
+		r.advance(take)
+		return v
+	}
+	if r.bytePos+1 >= len(r.buf) {
+		r.fail("ReadBits past end (len=%d bytes)", len(r.buf))
+		return 0
+	}
+	need := take - avail // bits taken from the next byte
+	hi := r.buf[r.bytePos] & (1<<uint(avail) - 1)
+	lo := r.buf[r.bytePos+1] >> uint(8-need)
+	r.advance(take)
+	return hi<<uint(need) | lo
+}
+
+// ReadRC reads a raw 8-bit char (RC). Valid even when the cursor is mid-byte — a
+// mid-byte read is a single two-byte combine, not eight ReadBit calls.
 func (r *BitReader) ReadRC() byte {
 	if r.err != nil {
 		return 0
@@ -126,7 +178,16 @@ func (r *BitReader) ReadRC() byte {
 		r.bytePos++
 		return b
 	}
-	return byte(r.ReadBits(8))
+	if r.bytePos+1 >= len(r.buf) {
+		r.fail("ReadRC past end (len=%d bytes)", len(r.buf))
+		return 0
+	}
+	// The byte spans the low (8-bitPos) bits of the current byte and the high
+	// bitPos bits of the next; advancing 8 bits leaves bitPos unchanged (bytePos++).
+	k := r.bitPos
+	b := r.buf[r.bytePos]<<k | r.buf[r.bytePos+1]>>(8-k)
+	r.bytePos++
+	return b
 }
 
 // ReadRS reads a raw little-endian unsigned 16-bit short (RS).
