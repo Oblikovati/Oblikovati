@@ -8,7 +8,6 @@ import (
 
 	"oblikovati.org/kernel/fit"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/pointcloud"
 )
@@ -28,12 +27,13 @@ func (s *Session) CreatePointCloudPlane(cloud string) (*feature.WorkPlane, geom.
 	if !ok {
 		return nil, geom.Plane{}, fmt.Errorf("app: no point cloud named %q to fit a plane to", cloud)
 	}
-	plane, err := fit.Plane(pc.CroppedModelPoints())
+	plane, err := fit.Plane(pc.CroppedModelPoints()) // validate the fit and report origin/normal
 	if err != nil {
 		return nil, geom.Plane{}, fmt.Errorf("app: fit plane to point cloud %q: %w", cloud, err)
 	}
-	origin := plane.Origin
-	wp := finishWorkPlane(part, part.WorkPlanes().AddFixed(func() math.Point3 { return origin }, plane.UAxis, plane.VAxis))
+	// The plane keeps a live link to the cloud (provenance): it re-fits when the cloud moves and
+	// the link round-trips in the document (#645).
+	wp := finishWorkPlane(part, part.WorkPlanes().AddByPointCloudFit(cloudPlaneFitSource{pc}))
 	s.recordEdit(part, labelWorkPlane)
 	return wp, plane, nil
 }
