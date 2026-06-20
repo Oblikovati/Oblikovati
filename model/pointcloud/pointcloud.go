@@ -138,6 +138,25 @@ func (pc *PointCloud) DisplayedPoints() []math.Point3 {
 // best-fit consumer reads — fitting a work plane to the cloud's current working region (#645).
 func (pc *PointCloud) CroppedModelPoints() []math.Point3 { return pc.croppedModelPoints() }
 
+// NearestModelPoint returns the cloud's scan point in MODEL space closest to query (snapping a
+// model coordinate onto the as-built data), searching the full cloud — placement-transformed but
+// not crop-limited — so a snap finds a point even where the display is cropped away. Found is false
+// only for an empty cloud.
+func (pc *PointCloud) NearestModelPoint(query math.Point3) (math.Point3, bool) {
+	if len(pc.points) == 0 {
+		return math.Point3{}, false
+	}
+	best := pc.ToModelSpace(pc.points[0])
+	bestD := query.DistanceSquaredTo(best)
+	for _, p := range pc.points[1:] {
+		m := pc.ToModelSpace(p)
+		if d := query.DistanceSquaredTo(m); d < bestD {
+			best, bestD = m, d
+		}
+	}
+	return best, true
+}
+
 // croppedModelPoints returns every point in MODEL space that passes the active crops.
 func (pc *PointCloud) croppedModelPoints() []math.Point3 {
 	out := make([]math.Point3, 0, len(pc.points))

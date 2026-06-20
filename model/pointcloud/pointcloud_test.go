@@ -120,3 +120,20 @@ func translation(x, y, z omath.Scalar) omath.Matrix4 {
 func near(a, b omath.Point3) bool {
 	return math.Abs(float64(a.X-b.X)) < 1e-9 && math.Abs(float64(a.Y-b.Y)) < 1e-9 && math.Abs(float64(a.Z-b.Z)) < 1e-9
 }
+
+// TestNearestModelPoint: the closest scan point to a query is returned in model space, honouring
+// the placement scale; an empty cloud reports not-found (#645).
+func TestNearestModelPoint(t *testing.T) {
+	pc := New("s", "", "", []omath.Point3{omath.P3(0, 0, 0), omath.P3(2, 0, 0), omath.P3(0, 2, 0)})
+	got, ok := pc.NearestModelPoint(omath.P3(1.9, 0.1, 0))
+	if !ok || !near(got, omath.P3(2, 0, 0)) {
+		t.Errorf("nearest = %v (ok=%v), want (2,0,0)", got, ok)
+	}
+	pc.SetScale(3) // (0,2,0) → (0,6,0); a query near it snaps there
+	if got, ok := pc.NearestModelPoint(omath.P3(0, 5.5, 0)); !ok || !near(got, omath.P3(0, 6, 0)) {
+		t.Errorf("scaled nearest = %v (ok=%v), want (0,6,0)", got, ok)
+	}
+	if _, ok := New("e", "", "", nil).NearestModelPoint(omath.P3(0, 0, 0)); ok {
+		t.Error("empty cloud should report not-found")
+	}
+}
