@@ -53,3 +53,36 @@ func TestCreateSketchPointAtSelectedCloudPoint(t *testing.T) {
 		t.Errorf("sketch point at %v, want (3,4) — (3,4,7) projected onto XY", got)
 	}
 }
+
+// TestProjectScanPointCommandRuns: the registered Project Scan Point command executes the consumer
+// end to end, and the in-sketch-without-a-selection path errors (the command's enable would block
+// it, but the action must fail safe) (#645).
+func TestProjectScanPointCommandRuns(t *testing.T) {
+	s, def := emptyPartSession(t)
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("RegisterStandardCommands: %v", err)
+	}
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(2, 5, 9)})
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	sk, err := s.CreateSketch(sketch.XYPlane())
+	if err != nil {
+		t.Fatalf("CreateSketch: %v", err)
+	}
+
+	// In a sketch but nothing selected → the action errors.
+	if err := s.Execute("Sketch.ProjectScanPoint"); err == nil {
+		t.Error("Project Scan Point should error with no scan point selected")
+	}
+
+	s.Select(PointCloudPointHandle{Cloud: pc, Point: math.P3(2, 5, 9)})
+	before := sk.Points().Count()
+	if err := s.Execute("Sketch.ProjectScanPoint"); err != nil {
+		t.Fatalf("Execute(Sketch.ProjectScanPoint): %v", err)
+	}
+	if sk.Points().Count() != before+1 {
+		t.Errorf("after command, sketch point count = %d, want %d", sk.Points().Count(), before+1)
+	}
+}
