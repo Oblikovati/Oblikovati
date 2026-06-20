@@ -3,6 +3,7 @@
 package app
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/math"
@@ -33,11 +34,12 @@ func TestCloudMoveDragTranslatesAndDatumFollows(t *testing.T) {
 	}
 	s.UpdateCloudDrag(150, 100)
 	moved := wp.Point()
-	if moved == math.P3(0, 0, 0) {
-		t.Fatal("the anchored work point did not follow the cloud drag")
+	const eps = 1e-9
+	if stdmath.Abs(float64(moved.X)) < eps {
+		t.Errorf("dragged work point = %v, want a non-trivial x move (screen-parallel, top view)", moved)
 	}
-	if float64(moved.X) == 0 || float64(moved.Z) != 0 {
-		t.Errorf("dragged work point = %v, want movement in x only (screen-parallel, top view)", moved)
+	if stdmath.Abs(float64(moved.Y)) > eps || stdmath.Abs(float64(moved.Z)) > eps {
+		t.Errorf("dragged work point = %v, want movement in x only", moved)
 	}
 	s.CommitCloudDrag()
 	if s.CloudDragActive() {
