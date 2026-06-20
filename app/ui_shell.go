@@ -78,6 +78,24 @@ func (s *Session) SetMarkingMenu(menu wire.MarkingMenuView) error {
 	return nil
 }
 
+// RepeatMenuEntry returns the right-click "Repeat <command>" entry shown when idle: its display
+// label and the command id to re-invoke. ok is false when a tool/command is active (the menu then
+// offers in-command actions, not Repeat) or there is no prior command (#915 C5).
+func (s *Session) RepeatMenuEntry() (label, commandID string, ok bool) {
+	if s.ActiveTool() != nil {
+		return "", "", false
+	}
+	id, has := s.LastCommandID()
+	if !has {
+		return "", "", false
+	}
+	name := id
+	if c, found := s.commands.ByID(id); found {
+		name = c.DisplayName()
+	}
+	return "Repeat " + name, id, true
+}
+
 // SetContextMenuItems replaces one add-in's injected entries for a browser node
 // kind ("" injects into every node's menu).
 func (s *Session) SetContextMenuItems(addin, kind string, items []wire.ContextMenuItemSpec) error {
