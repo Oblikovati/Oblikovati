@@ -14,6 +14,7 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/head/internal/native"
+	"oblikovati.org/model/pointcloud"
 )
 
 // fileModal is the chrome's single file explorer (UI state, not model state, so it lives
@@ -394,6 +395,8 @@ func importFromFile(s *app.Session, act fileAction, name string) {
 		importDWGFromFile(s, act, name)
 	case isDXFPath(act.Path):
 		importDXFFromFile(s, act, name)
+	case pointcloud.IsScanFile(act.Path):
+		attachPointCloudFromFile(s, act.Path, name) // a 3D scan (.ply/.xyz/.pts…) → a point cloud (#645)
 	default:
 		importBodyFromFile(s, act.Path, name)
 	}

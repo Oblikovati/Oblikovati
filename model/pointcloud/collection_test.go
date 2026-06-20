@@ -112,3 +112,21 @@ func TestReadScanDispatch(t *testing.T) {
 		t.Error("ReadScan of an unregistered extension should fail")
 	}
 }
+
+// TestIsScanFileAndExtensions: scan extensions are recognized (any case) and non-scan ones are not
+// (#645).
+func TestIsScanFileAndExtensions(t *testing.T) {
+	for _, p := range []string{"room.ply", "scan.XYZ", "a.pts", "b.asc", "c.txt"} {
+		if !IsScanFile(p) {
+			t.Errorf("IsScanFile(%q) = false, want true", p)
+		}
+	}
+	for _, p := range []string{"part.stl", "model.step", "draw.dxf", "noext"} {
+		if IsScanFile(p) {
+			t.Errorf("IsScanFile(%q) = true, want false", p)
+		}
+	}
+	if exts := ScanExtensions(); len(exts) < 5 {
+		t.Errorf("ScanExtensions = %v, want at least the ascii + ply set", exts)
+	}
+}

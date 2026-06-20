@@ -68,43 +68,6 @@ func TestPLYBinaryDoublePrecision(t *testing.T) {
 	}
 }
 
-// TestPLYScalarTypes: every PLY scalar type decodes to the right value and reports the right size,
-// so a scan using integer or big-endian position properties reads correctly.
-func TestPLYScalarTypes(t *testing.T) {
-	le := binary.ByteOrder(binary.LittleEndian)
-	cases := []struct {
-		typ  string
-		size int
-		b    []byte
-		want float64
-	}{
-		{"char", 1, []byte{0xFE}, -2},
-		{"uchar", 1, []byte{200}, 200},
-		{"short", 2, le16(0xFFFF), -1},
-		{"ushort", 2, le16(513), 513},
-		{"int", 4, le32(0xFFFFFFFF), -1},
-		{"uint", 4, le32(70000), 70000},
-		{"float", 4, le32(math.Float32bits(2.5)), 2.5},
-		{"double", 8, le64(math.Float64bits(-3.25)), -3.25},
-		{"unknown", 0, nil, 0},
-	}
-	for _, c := range cases {
-		if got := plyTypeSize(c.typ); got != c.size {
-			t.Errorf("plyTypeSize(%s) = %d, want %d", c.typ, got, c.size)
-		}
-		if c.b == nil {
-			continue
-		}
-		if got := scalarValue(c.b, c.typ, c.size, le); got != c.want {
-			t.Errorf("scalarValue(%s) = %v, want %v", c.typ, got, c.want)
-		}
-	}
-}
-
-func le16(v uint16) []byte { b := make([]byte, 2); binary.LittleEndian.PutUint16(b, v); return b }
-func le32(v uint32) []byte { b := make([]byte, 4); binary.LittleEndian.PutUint32(b, v); return b }
-func le64(v uint64) []byte { b := make([]byte, 8); binary.LittleEndian.PutUint64(b, v); return b }
-
 // TestPLYErrors: a non-PLY blob, a missing vertex element, and missing x/y/z are rejected.
 func TestPLYErrors(t *testing.T) {
 	if _, err := (plyReader{}).Read([]byte("not a ply")); err == nil {

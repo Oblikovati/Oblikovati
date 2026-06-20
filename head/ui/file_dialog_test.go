@@ -108,7 +108,7 @@ func TestFileDialogTitleDefaultsToOpen(t *testing.T) {
 func TestFileDialogImportExportModes(t *testing.T) {
 	var d fileDialog
 	d.openFor(dialogImport)
-	if d.title() != "Import (.stl/.obj/.3mf/.step/.dwg/.dxf)" {
+	if d.title() != "Import (.stl/.obj/.3mf/.step/.dwg/.dxf · scans .ply/.xyz/.pts)" {
 		t.Errorf("import title = %q", d.title())
 	}
 	d.openFor(dialogExport)

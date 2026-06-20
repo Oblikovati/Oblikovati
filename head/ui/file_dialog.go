@@ -123,30 +123,28 @@ func (d *fileDialog) openForRequest(req app.FileDialogRequest) {
 // isOpen reports whether the modal should render this frame.
 func (d *fileDialog) isOpen() bool { return d.mode != dialogClosed }
 
+// staticDialogTitles maps each mode whose heading is a constant to that heading; the
+// dynamic ones (add-in titles, the open fallback) are handled in title().
+var staticDialogTitles = map[fileDialogMode]string{
+	dialogSaveAs:         "Save As",
+	dialogLoadHDR:        "Load HDR",
+	dialogMeshRef:        "Place Mesh (.stl)",
+	dialogPointCloud:     "Import Point Cloud (.xyz/.pts)",
+	dialogPlaceComponent: "Place Component",
+	dialogImport:         "Import (.stl/.obj/.3mf/.step/.dwg/.dxf · scans .ply/.xyz/.pts)",
+	dialogExport:         "Export (.stl/.obj/.3mf/.step/.dxf)",
+	dialogExportBOM:      "Export BOM (.csv)",
+}
+
 // title is the window heading for the current mode.
 func (d *fileDialog) title() string {
-	switch d.mode {
-	case dialogSaveAs:
-		return "Save As"
-	case dialogLoadHDR:
-		return "Load HDR"
-	case dialogMeshRef:
-		return "Place Mesh (.stl)"
-	case dialogPointCloud:
-		return "Import Point Cloud (.xyz/.pts)"
-	case dialogPlaceComponent:
-		return "Place Component"
-	case dialogImport:
-		return "Import (.stl/.obj/.3mf/.step/.dwg/.dxf)"
-	case dialogExport:
-		return "Export (.stl/.obj/.3mf/.step/.dxf)"
-	case dialogExportBOM:
-		return "Export BOM (.csv)"
-	case dialogAddIn:
+	if d.mode == dialogAddIn {
 		return d.addInTitle()
-	default:
-		return "Open"
 	}
+	if t, ok := staticDialogTitles[d.mode]; ok {
+		return t
+	}
+	return "Open"
 }
 
 // addInTitle is the window heading for an add-in's file dialog request: its custom title when
@@ -287,8 +285,9 @@ func (d *fileDialog) allowedExts() []string {
 	case dialogPointCloud:
 		return []string{".xyz", ".pts", ".asc", ".txt"}
 	case dialogImport:
-		// DWG/DXF import into a sketch (curve geometry), the others into bodies.
-		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg", ".dxf"}
+		// DWG/DXF import into a sketch, scan formats (.ply/.xyz/.pts/.asc) into a point cloud, the
+		// rest into bodies.
+		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg", ".dxf", ".ply", ".xyz", ".pts", ".asc"}
 	case dialogExport:
 		// DXF exports the active sketch; the others export the part's bodies.
 		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dxf"}
