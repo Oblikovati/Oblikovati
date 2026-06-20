@@ -271,6 +271,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("surface-extend").WithButtonStyle(LargeIconButton).
 			WithTooltip("Extend — grow a surface outward along a boundary edge."),
+		NewCommand("Surface.RuleFillet", "Rule Fillet", "Surface", func(s *Session) error {
+			s.StartTool(NewRuleFilletTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("fillet").WithButtonStyle(LargeIconButton).
+			WithTooltip("Rule Fillet — round a whole class of edges (all rounds, all fillets, or all edges) at one radius."),
 		NewCommand("Surface.Ruled", "Ruled Surface", "Surface", func(s *Session) error {
 			s.StartTool(NewRuledSurfaceTool())
 			return nil
