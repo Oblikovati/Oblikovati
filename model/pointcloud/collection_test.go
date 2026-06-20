@@ -108,7 +108,7 @@ func TestReadScanDispatch(t *testing.T) {
 	if err != nil || len(pts) != 1 {
 		t.Fatalf("ReadScan(.PTS) = %v points, err %v", len(pts), err)
 	}
-	if _, err := ReadScan("room.las", []byte("binary")); err == nil {
+	if _, err := ReadScan("room.bin", []byte("binary")); err == nil {
 		t.Error("ReadScan of an unregistered extension should fail")
 	}
 }
@@ -116,7 +116,7 @@ func TestReadScanDispatch(t *testing.T) {
 // TestIsScanFileAndExtensions: scan extensions are recognized (any case) and non-scan ones are not
 // (#645).
 func TestIsScanFileAndExtensions(t *testing.T) {
-	for _, p := range []string{"room.ply", "scan.XYZ", "a.pts", "b.asc", "c.txt", "part.E57"} {
+	for _, p := range []string{"room.ply", "scan.XYZ", "a.pts", "b.asc", "c.txt", "part.E57", "survey.las"} {
 		if !IsScanFile(p) {
 			t.Errorf("IsScanFile(%q) = false, want true", p)
 		}

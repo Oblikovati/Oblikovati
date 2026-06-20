@@ -18,9 +18,9 @@ import (
 	"oblikovati.org/math"
 )
 
-// registeredReaders is the decoder set keyed by lowercase extension. ASCII, PLY, and E57 ship now;
-// a LAS reader registers here later without touching call sites.
-var registeredReaders = []PointReader{NewASCIIReader(), NewPLYReader(), NewE57Reader()}
+// registeredReaders is the decoder set keyed by lowercase extension: ASCII, PLY, E57, and LAS.
+// A new format's reader registers here without touching call sites.
+var registeredReaders = []PointReader{NewASCIIReader(), NewPLYReader(), NewE57Reader(), NewLASReader()}
 
 // ReadScan decodes a scan file's bytes into cloud-local points, choosing the reader by the
 // filename's extension. It errors when no registered reader handles the extension, naming it.
@@ -37,7 +37,7 @@ func ReadScan(filename string, data []byte) ([]math.Point3, error) {
 }
 
 // IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a
-// registered reader (.xyz/.pts/.asc/.txt/.ply/.e57). The import flow routes such files to the
+// registered reader (.xyz/.pts/.asc/.txt/.ply/.e57/.las). The import flow routes such files to the
 // point-cloud attach path — the appropriate home for scan data — rather than the body/sketch
 // importers (#645).
 func IsScanFile(path string) bool {
