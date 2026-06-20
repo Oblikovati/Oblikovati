@@ -219,6 +219,12 @@ func pointCloudCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(canFitPointCloudPlane).
 			WithIcon("point-cloud-fit-plane").WithButtonStyle(SmallIconButton).
 			WithTooltip("Fit Work Plane — least-squares plane through the selected cloud's displayed points (crop first to fit a region)."),
+		NewCommand("PointCloud.WorkPoint", "Work Point", "Point Cloud", func(s *Session) error {
+			_, err := s.CreateWorkPointAtSelectedCloudPoint()
+			return err
+		}).WithTab(tab3DModel).WithEnable(canWorkPointAtCloudPoint).
+			WithIcon("point-cloud-work-point").WithButtonStyle(SmallIconButton).
+			WithTooltip("Work Point — place a datum point on the selected scan point (snap to a cloud point first)."),
 	}
 }
 
