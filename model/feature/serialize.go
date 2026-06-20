@@ -47,6 +47,7 @@ type FeatureData struct {
 	Rib            *RibData            `yaml:"rib,omitempty"`
 	Emboss         *EmbossData         `yaml:"emboss,omitempty"`
 	Combine        *CombineData        `yaml:"combine,omitempty"`
+	DeleteBody     *DeleteBodyData     `yaml:"deleteBody,omitempty"`
 	SplitSolid     *SplitSolidData     `yaml:"splitSolid,omitempty"`
 	DirectEdit     *DirectEditData     `yaml:"directEdit,omitempty"`
 
@@ -222,6 +223,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.Combine = &CombineData{Target: f.def.TargetIndex, Tool: f.def.ToolIndex, Operation: op}
+	case *DeleteBodyFeature:
+		fd.DeleteBody = serializeDeleteBody(f.def)
 	case *RectangularPatternFeature:
 		src, err := sourceIndices(f.def.SourceFeatures, idx)
 		if err != nil {
@@ -564,6 +567,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreBoss(fs, fd.Boss)
 	case "combine":
 		return restoreCombine(fs, fd.Combine)
+	case "delete-body":
+		return restoreDeleteBody(fs, fd.DeleteBody)
 	case "directEdit":
 		return restoreDirectEdit(fs, fd.DirectEdit)
 	case "rectangular-pattern":
