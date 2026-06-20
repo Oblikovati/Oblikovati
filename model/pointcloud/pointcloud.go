@@ -133,6 +133,11 @@ func (pc *PointCloud) DisplayedPoints() []math.Point3 {
 	return strideSample(pc.croppedModelPoints(), pc.maxPoints)
 }
 
+// CroppedModelPoints returns every point in MODEL space that passes the active crops, at full
+// density (unlike DisplayedPoints it is not strided to the display budget). It is the input a
+// best-fit consumer reads — fitting a work plane to the cloud's current working region (#645).
+func (pc *PointCloud) CroppedModelPoints() []math.Point3 { return pc.croppedModelPoints() }
+
 // croppedModelPoints returns every point in MODEL space that passes the active crops.
 func (pc *PointCloud) croppedModelPoints() []math.Point3 {
 	out := make([]math.Point3, 0, len(pc.points))
