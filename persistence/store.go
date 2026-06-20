@@ -142,14 +142,17 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 }
 
 // storeDocumentSettings copies a document's per-document settings into the package for the save path:
-// display settings (#643) and sketch settings (#147), each written only when the document customised
-// them.
+// display settings (#643), sketch settings (#147) and per-body names (#1078), each written only when
+// the document customised them.
 func storeDocumentSettings(pkg *Package, d *doc.Document) {
 	if set, ok := d.DisplaySettings(); ok {
 		pkg.SetDisplaySettings(toCodecDisplaySettings(set))
 	}
 	if d.SketchSettingsSet() {
 		pkg.SetSketchSettings(toCodecSketchSettings(d.SketchSettings()))
+	}
+	if names := d.BodyNames(); names != nil {
+		pkg.SetBodyNames(names)
 	}
 }
 
@@ -161,6 +164,9 @@ func restoreDocumentSettings(d *doc.Document, pkg *Package) {
 	}
 	if rec := pkg.SketchSettings(); rec != nil {
 		d.RestoreSketchSettings(fromCodecSketchSettings(rec))
+	}
+	if names := pkg.BodyNames(); names != nil {
+		d.RestoreBodyNames(names)
 	}
 }
 

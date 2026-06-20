@@ -57,6 +57,9 @@ type Document struct {
 	// SketchSettings are the per-document sketch-authoring defaults (constraint inference),
 	// nil for a document that never customized them (#147).
 	SketchSettings *SketchSettingsRecord `yaml:"sketchSettings,omitempty"`
+	// BodyNames are the per-body display names keyed by body reference key (#1078), absent for a
+	// document where no body was renamed.
+	BodyNames map[string]string `yaml:"bodyNames,omitempty"`
 }
 
 // SketchSettingsRecord is the on-disk per-document sketch settings (#147): the constraint-inference
@@ -170,6 +173,7 @@ type onDisk struct {
 	Attributes      []byte                 `yaml:"attributes,omitempty"`
 	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
 	SketchSettings  *SketchSettingsRecord  `yaml:"sketchSettings,omitempty"`
+	BodyNames       map[string]string      `yaml:"bodyNames,omitempty"`
 	Resources       yaml.Node              `yaml:"resources,omitempty"`
 	Model           yaml.Node              `yaml:"model,omitempty"`
 	Data            map[string]string      `yaml:"data,omitempty"`
@@ -190,6 +194,7 @@ func MarshalDocument(d Document) ([]byte, error) {
 		Attributes:      d.Attributes,
 		DisplaySettings: d.DisplaySettings,
 		SketchSettings:  d.SketchSettings,
+		BodyNames:       d.BodyNames,
 	}
 	if err := embedNativeNodes(&od, d); err != nil {
 		return nil, err
@@ -268,6 +273,7 @@ func documentHeader(od onDisk) Document {
 		Attributes:      od.Attributes,
 		DisplaySettings: od.DisplaySettings,
 		SketchSettings:  od.SketchSettings,
+		BodyNames:       od.BodyNames,
 	}
 }
 
