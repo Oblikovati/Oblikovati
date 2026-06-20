@@ -123,6 +123,12 @@ func setupOp(s *app.Session, op string) error {
 		startPendingEmboss(s, mustBlock(s))
 	case "grill":
 		startPendingGrill(s, mustBlock(s))
+	case "rest":
+		startPendingRest(s, mustBlock(s))
+	case "snapfit":
+		startPendingSnapFit(s)
+	case "lip":
+		startPendingLip(s, mustBlock(s))
 	case "replaceface":
 		startPendingReplaceFace(s, mustBlock(s))
 	case "patch":
@@ -441,6 +447,41 @@ func startPendingGrill(s *app.Session, def *compdef.PartComponentDefinition) {
 	t := app.NewGrillTool()
 	s.StartTool(t)
 	t.Pick(s, app.ProfileHandle{Sketch: es, ProfileIndex: 0})
+}
+
+// startPendingRest raises a pad over a closed region on the block's top face (adds material → green).
+func startPendingRest(s *app.Session, def *compdef.PartComponentDefinition) {
+	es := def.Sketches().Add(topPlaneZ(3))
+	rectOn(es, 2, 2, 4, 4)
+	def.Recompute()
+	t := app.NewRestTool()
+	s.StartTool(t)
+	t.Pick(s, app.ProfileHandle{Sketch: es, ProfileIndex: 0})
+	t.SetDepth(1)
+}
+
+// startPendingSnapFit previews a free-standing cantilever snap-fit hook (adds material → green).
+func startPendingSnapFit(s *app.Session) {
+	newPart(s, previewDocName)
+	t := app.NewSnapFitTool()
+	s.StartTool(t)
+	t.SetLength(6)
+	t.SetWidth(3)
+	t.SetThickness(1.2)
+	t.SetCatchLength(1.5)
+	t.SetCatchHeight(1.2)
+}
+
+// startPendingLip runs a raised bead along a vertical edge of the block (adds material → green).
+func startPendingLip(s *app.Session, def *compdef.PartComponentDefinition) {
+	body := def.SurfaceBodies().Item(0)
+	edge := verticalEdge(body.Edges())
+	t := app.NewLipTool()
+	s.StartTool(t)
+	t.Pick(s, app.EdgeHandle{Edge: edge})
+	t.SetWidth(0.8)
+	t.SetHeight(0.8)
+	aimCameraAtEdge(s, body, edge)
 }
 
 // startPendingReplaceFace replaces the block's chamfered face with a flat side plane (the

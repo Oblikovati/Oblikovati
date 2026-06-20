@@ -56,9 +56,9 @@ autodesk_inventor_ribbon:
             - name: "Sketch"
               buttons: [Start 2D Sketch, Start 3D Sketch]
             - name: "Create"
-              buttons: [Extrude, Revolve, Sweep, Loft, Coil, Rib, Emboss, Decal]
+              buttons: [Extrude, Revolve, Sweep, Loft, Coil, Rib, Emboss, Grill, Rest, Snap Fit, Decal]
             - name: "Modify"
-              buttons: [Hole, Fillet, Chamfer, Shell, Draft, Thread, Split, Direct, Combine, Thicken/Offset]
+              buttons: [Hole, Boss, Lip, Fillet, Chamfer, Shell, Draft, Thread, Split, Direct, Combine, Thicken/Offset]
             - name: "Work Features"
               buttons: [Plane, Axis, Point, Coordinate System]
             - name: "Pattern"
