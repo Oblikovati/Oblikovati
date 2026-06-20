@@ -7,7 +7,7 @@ import "fmt"
 // decodeInsert reads an INSERT entity: its placement (insertion point, scale, rotation)
 // from the data stream and the referenced block's handle from the handle stream
 // (ODA INSERT spec, R2000+). Pre-2004 attribute handles are not needed and left unread.
-func decodeInsert(data []byte, cur *entityCursor, handle uint64, version Version) (in *Insert, owner uint64, err error) {
+func decodeInsert(hr *BitReader, data []byte, cur *entityCursor, handle uint64, version Version) (in *Insert, owner uint64, err error) {
 	r := cur.geom
 	ins := r.Read3BD()
 	scale := readInsertScale(r)
@@ -20,7 +20,7 @@ func decodeInsert(data []byte, cur *entityCursor, handle uint64, version Version
 	if e := r.Err(); e != nil {
 		return nil, 0, fmt.Errorf("dwg: INSERT handle %d data: %w", handle, e)
 	}
-	owner, hr := commonEntityHandles(data, cur, version)
+	owner = commonEntityHandles(hr, data, cur, version)
 	block := readResolvedHandle(hr, cur.ownHandle) // block_header is the first entity-specific handle
 	if e := hr.Err(); e != nil {
 		return nil, 0, fmt.Errorf("dwg: INSERT handle %d block ref: %w", handle, e)

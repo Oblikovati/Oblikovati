@@ -39,8 +39,11 @@ type entityCursor struct {
 // flags and the start of its handle stream. It supersedes the previous
 // seekEntityGeometry, which discarded both (ADR: blocks/INSERT need the handle stream
 // and entmode-based space filtering). Supports R2000 (flat) and R2010+ (paged).
-func seekEntity(data []byte, ref ObjectRef, version Version) (*entityCursor, error) {
-	r := NewBitReaderAt(data, int(ref.Offset)*8)
+// The cursor is returned by value so the caller can keep it on its stack: seekEntity runs
+// once per type-matching object (hundreds of thousands on large drawings) and a per-call
+// &entityCursor was the single largest allocation by object count.
+func seekEntity(r *BitReader, data []byte, ref ObjectRef, version Version) (entityCursor, error) {
+	r.Reset(data, int(ref.Offset)*8)
 	size := r.ReadMS() // object size, in bytes, measured from the address below
 	var hssize uint64
 	if version >= R2010 {
@@ -64,9 +67,9 @@ func seekEntity(data []byte, ref ObjectRef, version Version) (*entityCursor, err
 	skipEED(r)
 	ce := readCommonEntityData(r, version)
 	if err := r.Err(); err != nil {
-		return nil, fmt.Errorf("dwg: entity handle %d common data: %w", ref.Handle, err)
+		return entityCursor{}, fmt.Errorf("dwg: entity handle %d common data: %w", ref.Handle, err)
 	}
-	return &entityCursor{geom: r, common: ce, ownHandle: own.Value, handleStart: addrBit + bitsize}, nil
+	return entityCursor{geom: r, common: ce, ownHandle: own.Value, handleStart: addrBit + bitsize}, nil
 }
 
 // skipEED consumes the extended entity data block: BS-sized records each carrying an

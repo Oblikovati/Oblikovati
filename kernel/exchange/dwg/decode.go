@@ -65,6 +65,11 @@ type collector struct {
 	blockEntities map[uint64][]Entity // by owning BLOCK_HEADER handle
 	blockInserts  map[uint64][]*Insert
 	paperCurves   int // paper-space curve entities skipped (for classification accounting)
+	// Readers reused across the per-object loop so each object does not allocate a fresh
+	// *BitReader: geomReader walks the data stream (held by the cursor), handleReader the
+	// handle stream. The loop fully decodes one object before the next, so reuse is safe.
+	geomReader   BitReader
+	handleReader BitReader
 }
 
 // collect walks every referenced object, decoding the geometry and INSERT records and
@@ -81,7 +86,7 @@ func (c *collector) collect(refs []ObjectRef) []string {
 		if !isInsert && !hdr.Type.IsSketchGeometry() {
 			continue
 		}
-		cur, err := seekEntity(c.data, ref, c.version)
+		cur, err := seekEntity(&c.geomReader, c.data, ref, c.version)
 		if err != nil {
 			warns = append(warns, err.Error())
 			continue
@@ -92,7 +97,7 @@ func (c *collector) collect(refs []ObjectRef) []string {
 			}
 			continue // paper-space layout geometry is not imported into the model sketch
 		}
-		if w := c.addObject(cur, hdr); w != "" {
+		if w := c.addObject(&cur, hdr); w != "" {
 			warns = append(warns, w)
 		}
 	}
@@ -103,7 +108,7 @@ func (c *collector) collect(refs []ObjectRef) []string {
 // space or its owning block. It returns a warning string on a decode failure.
 func (c *collector) addObject(cur *entityCursor, hdr ObjectHeader) string {
 	if hdr.Type == TypeInsert {
-		in, owner, err := decodeInsert(c.data, cur, hdr.Handle, c.version)
+		in, owner, err := decodeInsert(&c.handleReader, c.data, cur, hdr.Handle, c.version)
 		if err != nil {
 			return err.Error()
 		}
@@ -122,7 +127,7 @@ func (c *collector) addObject(cur *entityCursor, hdr ObjectHeader) string {
 		return ""
 	}
 	if cur.common.entmode == entmodeBlock {
-		owner, _ := commonEntityHandles(c.data, cur, c.version)
+		owner := commonEntityHandles(&c.handleReader, c.data, cur, c.version)
 		c.blockEntities[owner] = append(c.blockEntities[owner], e)
 	} else {
 		c.modelEntities = append(c.modelEntities, e)

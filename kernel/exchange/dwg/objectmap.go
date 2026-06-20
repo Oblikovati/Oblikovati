@@ -30,7 +30,10 @@ const objectMapMaxSection = 2040
 //nolint:funlen // section + (handle,location) delta-decode loop; length is the wire format.
 func parseObjectMap(data []byte) ([]ObjectRef, error) {
 	r := NewBitReader(data)
-	var refs []ObjectRef
+	// Pre-size from the map length: each (handle,location) pair is a UMC+MC delta of at
+	// least ~3 bytes, so len/4 is a close lower bound on the final count and spares the
+	// slice the repeated doubling-and-copy that dominated decode allocation (157 MB → ~4 MB).
+	refs := make([]ObjectRef, 0, len(data)/4)
 	for r.Err() == nil {
 		size := int(r.ReadRC())<<8 | int(r.ReadRC()) // section size, big-endian
 		if size == 2 {

@@ -22,7 +22,10 @@ func decodeObjectHeader(data []byte, ref ObjectRef, version Version) (ObjectHead
 	if ref.Offset < 0 || ref.Offset >= int64(len(data)) {
 		return ObjectHeader{}, fmt.Errorf("dwg: object handle %d offset %d out of bounds (len %d)", ref.Handle, ref.Offset, len(data))
 	}
-	r := NewBitReaderAt(data, int(ref.Offset)*8)
+	// A stack-local reader (vs NewBitReaderAt's heap *BitReader): this runs once per
+	// object in the map — 100k+ on large drawings — and the reader does not escape.
+	var r BitReader
+	r.Reset(data, int(ref.Offset)*8)
 	size := r.ReadMS()
 	if version >= R2010 {
 		r.ReadUMC() // handle-stream size, not part of the object size
