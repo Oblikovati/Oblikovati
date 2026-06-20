@@ -106,10 +106,9 @@ func editFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err := planAndApplyFeatureEdits(part, f, in); err != nil {
 		return nil, err
 	}
-	if err := s.CommitFeatureEdit(f); err != nil {
+	if err := s.CommitFeatureEdit(f); err != nil { // emits feature.edited (#1085)
 		return nil, err
 	}
-	emitFeatureLifecycle(s, app.FeatureEdited, f) // feature.edited (#148)
 	return featureDetailReply(part, f, idx)
 }
 
@@ -156,10 +155,9 @@ func deleteFeature(s *app.Session, raw json.RawMessage) (json.RawMessage, error)
 		return nil, err
 	}
 	id := uint64(f.ID())
-	if err := s.DeleteFeature(f); err != nil {
+	if err := s.DeleteFeature(f); err != nil { // emits feature.deleted (#1085)
 		return nil, err
 	}
-	emitFeatureLifecycle(s, app.FeatureDeleted, f) // feature.deleted (#148); f still holds its identity
 	return json.Marshal(wire.DeleteFeatureResult{ID: id, Deleted: true})
 }
 

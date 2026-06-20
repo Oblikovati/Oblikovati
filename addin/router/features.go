@@ -39,6 +39,6 @@ func (r *Router) addFeature(s *app.Session, raw json.RawMessage) (json.RawMessag
 	if err != nil {
 		return nil, err
 	}
-	emitFeatureLifecycle(s, app.FeatureAdded, lastPartFeature(s)) // feature.added (#148)
+	s.EmitFeatureLifecycle(app.FeatureAdded, lastPartFeature(s)) // feature.added (#1085)
 	return out, nil
 }

@@ -53,6 +53,7 @@ func commitFeatureEdit(s *Session, f *feature.PartFeature) error {
 	part.Features().MarkDirty(f)
 	part.Recompute()
 	s.recordEdit(part, "Edit "+f.Name())
+	s.EmitFeatureLifecycle(FeatureEdited, f) // featureEdited for UI-driven edits (#1085)
 	s.Selection().SetFilter(NewSelectionFilter())
 	if !f.Health().OK() {
 		return errors.New("feature edit: " + f.Health().Reason)

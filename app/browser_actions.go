@@ -82,6 +82,7 @@ func (s *Session) DeleteFeature(f *feature.PartFeature) error {
 	s.selection.Clear()
 	part.Recompute()
 	s.recordEdit(part, "Delete Feature")
+	s.EmitFeatureLifecycle(FeatureDeleted, f) // featureDeleted (#1085); f still holds its identity
 	return nil
 }
 
