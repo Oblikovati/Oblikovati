@@ -95,3 +95,60 @@ func TestAttachPointCloudAndRequest(t *testing.T) {
 		t.Error("import request should be true once, then cleared")
 	}
 }
+
+// TestPointCloudHandleKind: the browser handle reports the point-cloud selection kind (#645).
+func TestPointCloudHandleKind(t *testing.T) {
+	if k := (PointCloudHandle{}).SelectionKind(); k != SelectPointCloud {
+		t.Errorf("SelectionKind = %v, want SelectPointCloud", k)
+	}
+}
+
+// TestPointCloudEdgeCasesWithoutPart: with no active part the render and attach paths return empty
+// / error rather than panicking, and the menu rejects a wrong handle (#645).
+func TestPointCloudEdgeCasesWithoutPart(t *testing.T) {
+	s := NewSession() // no active document
+	if len(s.PointCloudItems(0.5)) != 0 {
+		t.Error("no active part should yield no point-cloud items")
+	}
+	if _, err := s.AttachPointCloud("X", "/tmp/whatever.xyz"); err == nil {
+		t.Error("AttachPointCloud with no active part should fail")
+	}
+	if pointCloudMenu(BodyHandle{}) != nil {
+		t.Error("pointCloudMenu with a non-cloud handle should be nil")
+	}
+}
+
+// TestImportPointCloudCommandArmsDialog: executing the Import Point Cloud command arms the file
+// dialog request (#645).
+func TestImportPointCloudCommandArmsDialog(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	if err := s.Execute("PointCloud.Import"); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+	if !s.TakeImportPointCloudRequest() {
+		t.Error("Import Point Cloud command should arm the import request")
+	}
+}
+
+// TestAttachPointCloudEmptyName mints a unique name when none is given (#645).
+func TestAttachPointCloudEmptyName(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	path := filepath.Join(t.TempDir(), "s.xyz")
+	_ = os.WriteFile(path, []byte("0 0 0\n"), 0o600)
+	pc, err := s.AttachPointCloud("", path)
+	if err != nil || pc.Name() != "Cloud1" {
+		t.Errorf("AttachPointCloud(empty name) = %v, err %v; want Cloud1", pc, err)
+	}
+
+	if _, err := s.AttachPointCloud("X", ""); err == nil {
+		t.Error("AttachPointCloud with an empty file name should fail")
+	}
+	bad := filepath.Join(t.TempDir(), "scan.las") // exists but no reader for .las
+	_ = os.WriteFile(bad, []byte("binary"), 0o600)
+	if _, err := s.AttachPointCloud("Y", bad); err == nil {
+		t.Error("AttachPointCloud of an unsupported scan format should fail")
+	}
+}
