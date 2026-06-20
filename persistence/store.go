@@ -95,10 +95,8 @@ func (s *PackageStore) buildPackage(d *doc.Document, displayName, subType string
 	pkg.SetFileReferences(toCodecFileReferences(d.FileReferenceRecords()))
 	pkg.SetAttachments(toCodecAttachments(d.AttachmentRecords()))
 	pkg.SetInterests(toCodecInterests(d.InterestRecords()))
-	pkg.SetAttributes(d.AttributeBytes())   // #155 add-in attribute sets
-	if set, ok := d.DisplaySettings(); ok { // M16-F07 #643: per-document display settings
-		pkg.SetDisplaySettings(toCodecDisplaySettings(set))
-	}
+	pkg.SetAttributes(d.AttributeBytes()) // #155 add-in attribute sets
+	storeDocumentSettings(pkg, d)         // per-document display (#643) + sketch (#147) settings
 	if rc, ok := d.Content().(doc.RecipeContent); ok {
 		model, err := rc.MarshalRecipe()
 		if err != nil {
@@ -139,10 +137,31 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	if err := applyModelRecipe(d, pkg, fullDocumentName); err != nil {
 		return nil, err
 	}
-	if rec := pkg.DisplaySettings(); rec != nil { // M16-F07 #643: per-document display settings
+	restoreDocumentSettings(d, pkg) // per-document display (#643) + sketch (#147) settings
+	return d, nil
+}
+
+// storeDocumentSettings copies a document's per-document settings into the package for the save path:
+// display settings (#643) and sketch settings (#147), each written only when the document customised
+// them.
+func storeDocumentSettings(pkg *Package, d *doc.Document) {
+	if set, ok := d.DisplaySettings(); ok {
+		pkg.SetDisplaySettings(toCodecDisplaySettings(set))
+	}
+	if d.SketchSettingsSet() {
+		pkg.SetSketchSettings(toCodecSketchSettings(d.SketchSettings()))
+	}
+}
+
+// restoreDocumentSettings applies a package's per-document settings onto the document for the load
+// path (without dirtying it).
+func restoreDocumentSettings(d *doc.Document, pkg *Package) {
+	if rec := pkg.DisplaySettings(); rec != nil {
 		d.RestoreDisplaySettings(fromCodecDisplaySettings(rec))
 	}
-	return d, nil
+	if rec := pkg.SketchSettings(); rec != nil {
+		d.RestoreSketchSettings(fromCodecSketchSettings(rec))
+	}
 }
 
 // applyModelRecipe replays the persisted recipe into the document's content,

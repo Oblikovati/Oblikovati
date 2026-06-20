@@ -36,6 +36,7 @@ type Package struct {
 	interests   []yamlcodec.InterestRecord       // add-in data registry (M03-F10)
 	attributes  []byte                           // add-in attribute sets, encoded (#155)
 	display     *yamlcodec.DisplaySettingsRecord // per-document display settings (M16-F07 #643)
+	sketch      *yamlcodec.SketchSettingsRecord  // per-document sketch settings (#147)
 }
 
 // NewPackage returns an empty package.
@@ -66,6 +67,12 @@ func (p *Package) SetDisplaySettings(d *yamlcodec.DisplaySettingsRecord) { p.dis
 
 // DisplaySettings returns the per-document display settings record (nil when unset).
 func (p *Package) DisplaySettings() *yamlcodec.DisplaySettingsRecord { return p.display }
+
+// SetSketchSettings stores the per-document sketch settings record (#147).
+func (p *Package) SetSketchSettings(s *yamlcodec.SketchSettingsRecord) { p.sketch = s }
+
+// SketchSettings returns the per-document sketch settings record (nil when unset).
+func (p *Package) SketchSettings() *yamlcodec.SketchSettingsRecord { return p.sketch }
 
 // SetInterests stores the add-in data-registry records (M03-F10).
 func (p *Package) SetInterests(i []yamlcodec.InterestRecord) { p.interests = i }
