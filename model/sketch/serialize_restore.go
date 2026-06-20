@@ -46,7 +46,23 @@ func restoreSketch(sc *Sketches, sd SketchData) error {
 	if err := r.restoreConstraints(sd.Constraints); err != nil {
 		return err
 	}
-	return r.restoreDimensions(sd.Dimensions)
+	if err := r.restoreDimensions(sd.Dimensions); err != nil {
+		return err
+	}
+	return r.restoreCloudAnchors(sd.CloudAnchors)
+}
+
+// restoreCloudAnchors re-creates the scan-anchored point links over the already-restored points;
+// the live cloud source is re-attached later by the host (RelinkCloudAnchors) (#645).
+func (r *sketchRestorer) restoreCloudAnchors(anchors []CloudAnchorData) error {
+	for _, a := range anchors {
+		p, ok := r.pointMap[a.PointID]
+		if !ok {
+			return fmt.Errorf("cloud anchor references unknown point id %d", a.PointID)
+		}
+		r.s.RestoreCloudAnchor(p, a.CloudID, math.P3(math.Scalar(a.Local[0]), math.Scalar(a.Local[1]), math.Scalar(a.Local[2])))
+	}
+	return nil
 }
 
 // restoreDerivedCurve rebuilds the M21 derived curves (equation/fixed/offset spline);
