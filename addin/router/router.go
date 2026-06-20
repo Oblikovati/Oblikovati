@@ -395,6 +395,7 @@ func (r *Router) registerMaterialHandlers() {
 	r.handlers[wire.MethodBodyStrokeTolerances] = bodyStrokeTolerances
 	r.handlers[wire.MethodFaceCalculateFacets] = faceCalculateFacets
 	r.handlers[wire.MethodFaceCalculateStrokes] = faceCalculateStrokes
+	r.handlers[wire.MethodBodyFaceEvaluate] = bodyFaceEvaluate
 
 	// The transient B-rep factory (M07 #628) — session-scoped, no document
 	// mutation, so none of these are mutating methods.
