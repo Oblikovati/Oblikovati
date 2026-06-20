@@ -61,6 +61,24 @@ func TestCropBudgetOrder(t *testing.T) {
 	}
 }
 
+// TestCropAccessors: the crop's box/active accessors and setters round-trip, and Item resolves it.
+func TestCropAccessors(t *testing.T) {
+	pc := gridCloud()
+	box := math.NewBox(math.P3(1, 2, 3), math.P3(4, 5, 6))
+	c := pc.AddCrop(box)
+	if c.Box() != box || !c.Active() {
+		t.Fatalf("new crop = box %+v active %v, want %+v / true", c.Box(), c.Active(), box)
+	}
+	c.SetBox(math.EmptyBox())
+	c.SetActive(false)
+	if c.Active() || !c.Box().IsEmpty() {
+		t.Error("SetBox/SetActive did not take")
+	}
+	if pc.Crops().Item(0) != c {
+		t.Error("Item(0) should return the added crop")
+	}
+}
+
 // TestCropCollection: add/byName/remove/names + unique-name minting and bad-name rejection.
 func TestCropCollection(t *testing.T) {
 	pc := gridCloud()

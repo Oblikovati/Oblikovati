@@ -147,6 +147,11 @@ func TestPointCloudCropErrors(t *testing.T) {
 	if _, err := r.Handle(s, "pointClouds.setCropActive", []byte(`{"cloud":"S","crop":"nope","active":true}`)); err == nil {
 		t.Error("setCropActive on a missing crop should fail")
 	}
+	for _, m := range []string{"pointClouds.listCrops", "pointClouds.deleteCrop"} {
+		if _, err := r.Handle(s, m, []byte(`{"cloud":"nope","crop":"x"}`)); err == nil {
+			t.Errorf("%s on a missing cloud should fail", m)
+		}
+	}
 }
 
 // TestPointCloudMissingNameErrors: every name-keyed operation errors when no cloud has the name,
