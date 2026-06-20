@@ -176,4 +176,5 @@ func (s *Sketch) UpdateProjections() {
 			v.Update()
 		}
 	}
+	s.updateCloudAnchors() // re-project scan-anchored points so they follow their clouds (#645)
 }

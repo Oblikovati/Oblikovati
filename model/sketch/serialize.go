@@ -34,14 +34,23 @@ type SketchData struct {
 	DeferUpdates bool    `yaml:"deferUpdates,omitempty"`
 	// Custom line type (issue #161): the pattern is stored so reopening never
 	// needs the original .lin file.
-	CustomLineName    string           `yaml:"customLineName,omitempty"`
-	CustomLineFile    string           `yaml:"customLineFile,omitempty"`
-	CustomLinePattern []float64        `yaml:"customLinePattern,omitempty,flow"`
-	Plane             PlaneData        `yaml:"plane"`
-	Points            []PointData      `yaml:"points,omitempty"`
-	Entities          []EntityData     `yaml:"entities,omitempty"`
-	Constraints       []ConstraintData `yaml:"constraints,omitempty"`
-	Dimensions        []DimensionData  `yaml:"dimensions,omitempty"`
+	CustomLineName    string            `yaml:"customLineName,omitempty"`
+	CustomLineFile    string            `yaml:"customLineFile,omitempty"`
+	CustomLinePattern []float64         `yaml:"customLinePattern,omitempty,flow"`
+	Plane             PlaneData         `yaml:"plane"`
+	Points            []PointData       `yaml:"points,omitempty"`
+	Entities          []EntityData      `yaml:"entities,omitempty"`
+	Constraints       []ConstraintData  `yaml:"constraints,omitempty"`
+	Dimensions        []DimensionData   `yaml:"dimensions,omitempty"`
+	CloudAnchors      []CloudAnchorData `yaml:"cloudAnchors,omitempty"` // scan-anchored points (provenance, #645)
+}
+
+// CloudAnchorData is the persisted provenance of one cloud-anchored sketch point: which standalone
+// point it drives, the source cloud's id, and the cloud-local 3D anchor the point re-projects from.
+type CloudAnchorData struct {
+	PointID int        `yaml:"point"`
+	CloudID string     `yaml:"cloud"`
+	Local   [3]float64 `yaml:"local"`
 }
 
 // PlaneData is a sketch plane as an origin and two in-plane axes (model space).
@@ -213,6 +222,12 @@ func serializeSketch(s *Sketch) (SketchData, error) {
 			return SketchData{}, err
 		}
 		sd.Dimensions = append(sd.Dimensions, dd)
+	}
+	for _, a := range s.CloudAnchors() {
+		sd.CloudAnchors = append(sd.CloudAnchors, CloudAnchorData{
+			PointID: int(a.PointID), CloudID: a.CloudID,
+			Local: [3]float64{float64(a.Local.X), float64(a.Local.Y), float64(a.Local.Z)},
+		})
 	}
 	return sd, nil
 }

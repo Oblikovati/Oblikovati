@@ -156,8 +156,9 @@ type Sketch struct {
 	plane     Plane
 	planeHost func() Plane // when set, RefreshPlane re-reads the host (e.g. a work plane)
 	ents      []Entity
-	pts       []*Point // every constrainable point (endpoints, centers, standalone) — the solver's variables
-	refPts    []*Point // fixed reference points (projected anchors): constrainable but not solved
+	pts       []*Point              // every constrainable point (endpoints, centers, standalone) — the solver's variables
+	refPts    []*Point              // fixed reference points (projected anchors): constrainable but not solved
+	cloudPts  []*cloudAnchoredPoint // sketch points anchored on scan points (datum-cloud provenance, #645)
 
 	lines         *Lines
 	arcs          *Arcs
