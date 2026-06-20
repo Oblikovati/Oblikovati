@@ -96,6 +96,51 @@ func TestAttachPointCloudAndRequest(t *testing.T) {
 	}
 }
 
+// TestBrowserNestsCropsWithMenu: a cloud's crops appear as child nodes (inactive ones tagged),
+// and the crop right-click menu toggles active and deletes (#645).
+func TestBrowserNestsCropsWithMenu(t *testing.T) {
+	s, def := emptyPartSession(t)
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, _ := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(0, 0, 0)})
+	crop := pc.AddCrop(math.NewBox(math.P3(0, 0, 0), math.P3(1, 1, 1)))
+
+	cloudNode := findChild(*findChild(BuildBrowser(s), "Point Clouds"), "Scan")
+	if cloudNode == nil || len(cloudNode.Children) != 1 || cloudNode.Children[0].Label != "Crop1" {
+		t.Fatalf("cloud node children = %+v, want one Crop1", cloudNode)
+	}
+
+	menu := BrowserMenu(cloudNode.Children[0])
+	if len(menu) != 2 || menu[0].Label != "Deactivate" {
+		t.Fatalf("crop menu = %+v, want Deactivate + Delete", menu)
+	}
+	_ = menu[0].Invoke(s)
+	if crop.Active() {
+		t.Error("Deactivate should have turned the crop off")
+	}
+	// Now the menu's toggle reads Activate, and the node is tagged inactive.
+	cloudNode = findChild(*findChild(BuildBrowser(s), "Point Clouds"), "Scan")
+	if cloudNode.Children[0].Label != "Crop1  (inactive)" {
+		t.Errorf("inactive crop label = %q, want the (inactive) tag", cloudNode.Children[0].Label)
+	}
+	if BrowserMenu(cloudNode.Children[0])[0].Label != "Activate" {
+		t.Error("an inactive crop's menu should offer Activate")
+	}
+	_ = menu[1].Invoke(s)
+	if pc.Crops().Count() != 0 {
+		t.Errorf("Delete left %d crops, want 0", pc.Crops().Count())
+	}
+}
+
+// TestPointCloudCropMenuWrongHandle: the crop menu rejects a non-crop handle (#645).
+func TestPointCloudCropMenuWrongHandle(t *testing.T) {
+	if pointCloudCropMenu(BodyHandle{}) != nil {
+		t.Error("pointCloudCropMenu with a non-crop handle should be nil")
+	}
+	if k := (PointCloudCropHandle{}).SelectionKind(); k != SelectPointCloud {
+		t.Errorf("crop handle SelectionKind = %v, want SelectPointCloud", k)
+	}
+}
+
 // TestPointCloudHandleKind: the browser handle reports the point-cloud selection kind (#645).
 func TestPointCloudHandleKind(t *testing.T) {
 	if k := (PointCloudHandle{}).SelectionKind(); k != SelectPointCloud {

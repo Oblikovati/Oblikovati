@@ -21,8 +21,19 @@ type PointCloudHandle struct {
 // SelectionKind implements Selectable.
 func (PointCloudHandle) SelectionKind() SelectionKind { return SelectPointCloud }
 
+// PointCloudCropHandle is the selectable browser handle for one crop: the owning cloud (for the
+// crop collection) and the crop itself.
+type PointCloudCropHandle struct {
+	Cloud *pointcloud.PointCloud
+	Crop  *pointcloud.PointCloudCrop
+}
+
+// SelectionKind implements Selectable.
+func (PointCloudCropHandle) SelectionKind() SelectionKind { return SelectPointCloud }
+
 // addPointCloudBranch lists the part's attached scans under a Point Clouds folder, a hidden cloud
-// tagged so its state reads in the tree. Omitted when the part has no clouds.
+// tagged so its state reads in the tree, each cloud nesting its crop volumes. Omitted when the
+// part has no clouds.
 func addPointCloudBranch(root *BrowserNode, part *compdef.PartComponentDefinition) {
 	clouds := part.PointClouds()
 	if clouds.Count() == 0 {
@@ -35,6 +46,20 @@ func addPointCloudBranch(root *BrowserNode, part *compdef.PartComponentDefinitio
 		if !pc.Visible() {
 			label += "  (hidden)"
 		}
-		folder.selectableChild(label, "pointCloud", PointCloudHandle{Clouds: clouds, Cloud: pc})
+		node := folder.selectableBranch(label, "pointCloud", PointCloudHandle{Clouds: clouds, Cloud: pc})
+		addCropNodes(node, pc)
+	}
+}
+
+// addCropNodes nests a cloud's crop volumes under its browser node, each tagged active/inactive.
+func addCropNodes(cloudNode *BrowserNode, pc *pointcloud.PointCloud) {
+	crops := pc.Crops()
+	for i := 0; i < crops.Count(); i++ {
+		c := crops.Item(i)
+		label := c.Name()
+		if !c.Active() {
+			label += "  (inactive)"
+		}
+		cloudNode.selectableChild(label, "pointCloudCrop", PointCloudCropHandle{Cloud: pc, Crop: c})
 	}
 }

@@ -64,8 +64,32 @@ func partNodeMenu(n BrowserNode) []BrowserMenuItem {
 		return bodyMenu(n.Select)
 	case "pointCloud":
 		return pointCloudMenu(n.Select)
+	case "pointCloudCrop":
+		return pointCloudCropMenu(n.Select)
 	default:
 		return nil
+	}
+}
+
+// pointCloudCropMenu offers an active toggle and Delete for a crop volume (#645).
+func pointCloudCropMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(PointCloudCropHandle)
+	if !ok {
+		return nil
+	}
+	toggle := "Deactivate"
+	if !h.Crop.Active() {
+		toggle = "Activate"
+	}
+	return []BrowserMenuItem{
+		{Label: toggle, Enabled: true, Invoke: func(*Session) error {
+			h.Crop.SetActive(!h.Crop.Active())
+			return nil
+		}},
+		{Label: "Delete", Enabled: true, Invoke: func(*Session) error {
+			h.Cloud.Crops().Remove(h.Crop.Name())
+			return nil
+		}},
 	}
 }
 
