@@ -137,3 +137,29 @@ func TestNearestModelPoint(t *testing.T) {
 		t.Error("empty cloud should report not-found")
 	}
 }
+
+// TestDisplayCacheInvalidates: the displayed set is cached but re-derives whenever the placement,
+// scale, budget, or crops change (#645 perf).
+func TestDisplayCacheInvalidates(t *testing.T) {
+	pc := New("s", "", "", []omath.Point3{omath.P3(0, 0, 0), omath.P3(2, 0, 0), omath.P3(0, 2, 0), omath.P3(2, 2, 0)})
+	base := pc.DisplayedPoints()
+	if len(base) != 4 {
+		t.Fatalf("displayed = %d, want 4", len(base))
+	}
+	if &pc.DisplayedPoints()[0] != &base[0] {
+		t.Error("a second call with no change should return the cached slice")
+	}
+	pc.SetTransform(translation(0, 0, 10))
+	if moved := pc.DisplayedPoints(); moved[0].Z != 10 {
+		t.Errorf("after move, first point z = %v, want 10 (cache should have re-derived)", moved[0].Z)
+	}
+	pc.SetMaximumPointCount(2)
+	if got := len(pc.DisplayedPoints()); got != 2 {
+		t.Errorf("after budget=2, displayed = %d, want 2", got)
+	}
+	pc.SetMaximumPointCount(0)
+	pc.AddCrop(omath.NewBox(omath.P3(-1, -1, 9), omath.P3(1, 1, 11)))
+	if got := len(pc.DisplayedPoints()); got != 1 {
+		t.Errorf("after crop, displayed = %d, want 1 (only the cropped point)", got)
+	}
+}

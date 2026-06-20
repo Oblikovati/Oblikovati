@@ -152,7 +152,7 @@ func TestPointCloudHandleKind(t *testing.T) {
 // / error rather than panicking, and the menu rejects a wrong handle (#645).
 func TestPointCloudEdgeCasesWithoutPart(t *testing.T) {
 	s := NewSession() // no active document
-	if len(s.PointCloudItems(0.5)) != 0 {
+	if len(s.PointCloudItems(s.Camera(), 0.5)) != 0 {
 		t.Error("no active part should yield no point-cloud items")
 	}
 	if _, err := s.AttachPointCloud("X", "/tmp/whatever.xyz"); err == nil {
