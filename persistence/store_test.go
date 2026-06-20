@@ -43,6 +43,35 @@ func TestWorkspaceRoundTripsThroughPackageStore(t *testing.T) {
 	}
 }
 
+// TestBodyNameSurvivesStoreRoundTrip exercises the store/restore hooks (#1078): a renamed body
+// reopens with its stored name, and the reopened document is clean (restore does not dirty it).
+func TestBodyNameSurvivesStoreRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "case.obk")
+	store := NewPackageStore()
+
+	ws := doc.NewWorkspace(store)
+	d, err := ws.Add(doc.Part, path, true)
+	if err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	d.SetBodyName("body-ref-key", "Housing")
+	if err := ws.Save(d); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	reopened, err := doc.NewWorkspace(store).Open(path, true)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if name, ok := reopened.BodyName("body-ref-key"); !ok || name != "Housing" {
+		t.Errorf("reopened body name = (%q, %v), want (Housing, true)", name, ok)
+	}
+	if reopened.Dirty() {
+		t.Error("reopened document should be clean (RestoreBodyNames must not dirty it)")
+	}
+}
+
 func TestPackageStoreExists(t *testing.T) {
 	dir := t.TempDir()
 	store := NewPackageStore()

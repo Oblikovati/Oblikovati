@@ -51,16 +51,43 @@ func bodyInfo(s *app.Session, index int, b *topo.Body) wire.BodyInfo {
 	key := string(b.ReferenceKey())
 	style, _ := s.BodyColorStyle(key)
 	return wire.BodyInfo{
-		Index: index, Name: bodyDisplayName(index), Solid: b.IsSolid(), Visible: s.BodyVisible(b),
+		Index: index, Name: bodyDisplayName(s, index, key), Solid: b.IsSolid(), Visible: s.BodyVisible(b),
 		Faces: len(b.Faces()), Edges: len(b.Edges()), Vertices: len(b.Vertices()),
 		Shells: len(b.Shells()), Wires: len(b.Wires()),
 		Key: key, Style: style,
 	}
 }
 
-// bodyDisplayName is the body's browser name ("Solid1", …), index-derived until bodies carry
-// stored, renamable names (the #1078 rename follow-up). Matches the model browser.
-func bodyDisplayName(index int) string { return fmt.Sprintf("Solid%d", index+1) }
+// bodyDisplayName is the body's browser name: the user's stored name for that body (#1078), or the
+// index-derived "Solid{N}" default when it was never renamed. Matches the model browser.
+func bodyDisplayName(s *app.Session, index int, key string) string {
+	if d := s.ActiveDocument(); d != nil {
+		if name, ok := d.BodyName(key); ok {
+			return name
+		}
+	}
+	return fmt.Sprintf("Solid%d", index+1)
+}
+
+// bodyRename serves wire.MethodBodyRename: store (or, with an empty name, clear) the display name
+// of one body of the active part, keyed by its reference key so it survives recompute and
+// round-trips in the .obk (#1078).
+func bodyRename(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.BodyRenameArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	b, err := resolveBody(s, in.BodyIndex)
+	if err != nil {
+		return nil, err
+	}
+	d := s.ActiveDocument()
+	if d == nil {
+		return nil, fmt.Errorf("body.rename: no active document")
+	}
+	d.SetBodyName(string(b.ReferenceKey()), in.Name)
+	return json.Marshal(wire.BodyInfoResult{Body: bodyInfo(s, in.BodyIndex, b)})
+}
 
 // bodyPhysicalProperties serves wire.MethodBodyPhysicalProperties: the geometry and mass
 // properties of one body — the per-body counterpart of analysis.massProperties, which sums all

@@ -37,6 +37,7 @@ type Package struct {
 	attributes  []byte                           // add-in attribute sets, encoded (#155)
 	display     *yamlcodec.DisplaySettingsRecord // per-document display settings (M16-F07 #643)
 	sketch      *yamlcodec.SketchSettingsRecord  // per-document sketch settings (#147)
+	bodyNames   map[string]string                // per-body display names by reference key (#1078)
 }
 
 // NewPackage returns an empty package.
@@ -73,6 +74,12 @@ func (p *Package) SetSketchSettings(s *yamlcodec.SketchSettingsRecord) { p.sketc
 
 // SketchSettings returns the per-document sketch settings record (nil when unset).
 func (p *Package) SketchSettings() *yamlcodec.SketchSettingsRecord { return p.sketch }
+
+// SetBodyNames stores the per-body display-name map, keyed by body reference key (#1078).
+func (p *Package) SetBodyNames(names map[string]string) { p.bodyNames = names }
+
+// BodyNames returns the per-body display-name map (nil when no body was renamed).
+func (p *Package) BodyNames() map[string]string { return p.bodyNames }
 
 // SetInterests stores the add-in data-registry records (M03-F10).
 func (p *Package) SetInterests(i []yamlcodec.InterestRecord) { p.interests = i }

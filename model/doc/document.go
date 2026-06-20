@@ -54,6 +54,7 @@ type Document struct {
 	interests        *DocumentInterests     // add-in data registry (M03-F10); lazily seeded
 	attributes       *attr.AttributeManager // add-in attribute sets (#155); lazily seeded
 	sketchSettings   *types.SketchSettings  // per-document sketch-authoring defaults (#147), nil ⇒ defaults
+	bodyNames        map[string]string      // per-body display names, keyed by body reference key (#1078); nil/absent ⇒ the "Solid{N}" default
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;
@@ -252,6 +253,54 @@ func (d *Document) SetSketchSettings(set types.SketchSettings) {
 func (d *Document) RestoreSketchSettings(set types.SketchSettings) {
 	cp := set
 	d.sketchSettings = &cp
+}
+
+// BodyName returns the stored display name for the body with the given reference key, and whether
+// one is set. Bodies without a stored name fall back to the index-derived "Solid{N}" default at
+// the call site (#1078).
+func (d *Document) BodyName(key string) (string, bool) {
+	name, ok := d.bodyNames[key]
+	return name, ok
+}
+
+// SetBodyName stores (or, with an empty name, clears) the display name for one body, keyed by its
+// reference key, and marks the document dirty since body names round-trip in the .obk (#1078).
+func (d *Document) SetBodyName(key, name string) {
+	if name == "" {
+		delete(d.bodyNames, key)
+	} else {
+		if d.bodyNames == nil {
+			d.bodyNames = map[string]string{}
+		}
+		d.bodyNames[key] = name
+	}
+	d.MarkDirty()
+}
+
+// BodyNames returns a copy of the per-body name map (reference key → name), for the persistence
+// save path; nil when no body has been renamed.
+func (d *Document) BodyNames() map[string]string {
+	if len(d.bodyNames) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(d.bodyNames))
+	for k, v := range d.bodyNames {
+		out[k] = v
+	}
+	return out
+}
+
+// RestoreBodyNames installs the per-body name map WITHOUT marking the document dirty — the load
+// path, where the in-memory state already matches disk (like [Document.RestoreSketchSettings]).
+func (d *Document) RestoreBodyNames(names map[string]string) {
+	if len(names) == 0 {
+		d.bodyNames = nil
+		return
+	}
+	d.bodyNames = make(map[string]string, len(names))
+	for k, v := range names {
+		d.bodyNames[k] = v
+	}
 }
 
 // Referenced reports whether any open document references this one. An
