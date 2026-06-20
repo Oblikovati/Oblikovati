@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/analysis"
 )
 
 // Body, shell and wire enumeration over the wire (M07-F06, #629), plus the
@@ -44,18 +45,52 @@ func bodyList(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(out)
 }
 
-// bodyInfo builds a body's wire summary, including its display name and current visibility (#158).
+// bodyInfo builds a body's wire summary: its display name, visibility (#158), persistent
+// reference key and assigned color-style name (#1078).
 func bodyInfo(s *app.Session, index int, b *topo.Body) wire.BodyInfo {
+	key := string(b.ReferenceKey())
+	style, _ := s.BodyColorStyle(key)
 	return wire.BodyInfo{
 		Index: index, Name: bodyDisplayName(index), Solid: b.IsSolid(), Visible: s.BodyVisible(b),
 		Faces: len(b.Faces()), Edges: len(b.Edges()), Vertices: len(b.Vertices()),
 		Shells: len(b.Shells()), Wires: len(b.Wires()),
+		Key: key, Style: style,
 	}
 }
 
 // bodyDisplayName is the body's browser name ("Solid1", …), index-derived until bodies carry
-// stored, renamable names (the #158 rename follow-up). Matches the model browser.
+// stored, renamable names (the #1078 rename follow-up). Matches the model browser.
 func bodyDisplayName(index int) string { return fmt.Sprintf("Solid%d", index+1) }
+
+// bodyPhysicalProperties serves wire.MethodBodyPhysicalProperties: the geometry and mass
+// properties of one body — the per-body counterpart of analysis.massProperties, which sums all
+// bodies (#1078).
+func bodyPhysicalProperties(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.BodyPhysicalPropertiesArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	b, err := resolveBody(s, in.BodyIndex)
+	if err != nil {
+		return nil, err
+	}
+	accuracy := types.MassPropertiesMedium
+	if in.Accuracy != "" {
+		a, ok := types.ParseMassPropertiesAccuracy(in.Accuracy)
+		if !ok {
+			return nil, fmt.Errorf("body.physicalProperties: unknown accuracy %q (want low|medium|high)", in.Accuracy)
+		}
+		accuracy = a
+	}
+	density := in.DensityGCm3
+	if density == 0 { // default to the part's assigned material density
+		if props, ok := s.PhysicalProperties(); ok && props.Density > 0 {
+			density = props.Density
+		}
+	}
+	mp := analysis.MassPropertiesOf([]*topo.Body{b}, density, accuracy)
+	return json.Marshal(massPropertiesResult(mp))
+}
 
 // bodySetVisible shows or hides one body of the active part (#158); the renderer reads the flag.
 func bodySetVisible(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
