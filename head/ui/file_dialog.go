@@ -32,6 +32,7 @@ const (
 	dialogMeshRef                       // Mesh ▸ Place Mesh (ASCII STL → mesh reference geometry, #700)
 	dialogPlaceComponent                // Assemble ▸ Place: choose the component document to instance (#763)
 	dialogExportBOM                     // Assemble ▸ Bill of Materials ▸ Export CSV (#768)
+	dialogPointCloud                    // 3D Model ▸ Import Point Cloud (ASCII scan → referenced cloud, #645)
 )
 
 // pathBufferLen bounds the path the user can type. ImGui edits the buffer in place,
@@ -131,6 +132,8 @@ func (d *fileDialog) title() string {
 		return "Load HDR"
 	case dialogMeshRef:
 		return "Place Mesh (.stl)"
+	case dialogPointCloud:
+		return "Import Point Cloud (.xyz/.pts)"
 	case dialogPlaceComponent:
 		return "Place Component"
 	case dialogImport:
@@ -281,6 +284,8 @@ func (d *fileDialog) allowedExts() []string {
 		return []string{".hdr"}
 	case dialogMeshRef:
 		return []string{".stl"}
+	case dialogPointCloud:
+		return []string{".xyz", ".pts", ".asc", ".txt"}
 	case dialogImport:
 		// DWG/DXF import into a sketch (curve geometry), the others into bodies.
 		return []string{".stl", ".obj", ".3mf", ".step", ".stp", ".dwg", ".dxf"}

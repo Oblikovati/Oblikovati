@@ -301,6 +301,8 @@ func applyFileAction(s *app.Session, act fileAction) {
 		s.LoadEnvironmentFile(act.Path) // the decode happens lazily on the next viewport frame
 	case dialogMeshRef:
 		placeMeshFromFile(s, act.Path, name)
+	case dialogPointCloud:
+		attachPointCloudFromFile(s, act.Path, name)
 	case dialogImport:
 		importFromFile(s, act, name)
 	case dialogExport:
@@ -328,6 +330,16 @@ func placeMeshFromFile(s *app.Session, path, name string) {
 		return
 	}
 	fileNotice(s, "Placed mesh %s", name)
+}
+
+// attachPointCloudFromFile attaches an ASCII scan as a referenced point cloud (3D Model ▸ Import
+// Point Cloud, #645).
+func attachPointCloudFromFile(s *app.Session, path, name string) {
+	if _, err := s.AttachPointCloud("", path); err != nil {
+		fileNotice(s, "Import Point Cloud failed: %v", err)
+		return
+	}
+	fileNotice(s, "Attached point cloud %s", name)
 }
 
 // importBodyFromFile imports a CAD file into the active part as an imported body (File ▸ Import).
