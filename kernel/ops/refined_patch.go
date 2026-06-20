@@ -184,7 +184,7 @@ func metricPatchMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 	for i := range holes3D {
 		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
 	}
-	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q) {
+	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q, 1) {
 		b.addInterior(g)
 	}
 	tris := constrainedDelaunay(b.scaled, loops)
@@ -193,8 +193,16 @@ func metricPatchMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 	}
 	m := patchMeshFrom(b.pos, b.nrm, tris)
 	repairFolds(m, 8)
-	if !patchIsManifold(m, loops) {
-		return boundaryPatchMesh(s, outer3D, holes3D)
+	if patchIsManifold(m, loops) && FoldEdgeCount(m) == 0 {
+		return m
+	}
+	// The metric CDT tore (a pole/seam-distorted cap) or still folds (a cap whose boundary touches
+	// the sphere pole — the degenerate sliver where all u collapse, which repairFolds can't flip).
+	// The boundary-only best-fit-plane triangulation is watertight and, for such a small cap,
+	// fold-free; keep the metric mesh only when it is manifold and folds no more than the fallback.
+	fallback := boundaryPatchMesh(s, outer3D, holes3D)
+	if !patchIsManifold(m, loops) || FoldEdgeCount(fallback) < FoldEdgeCount(m) {
+		return fallback
 	}
 	return m
 }
@@ -250,7 +258,9 @@ func trimmedPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Po
 	if len(tris) == 0 {
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}
-	return patchMeshFrom(pos, nrm, tris)
+	m := patchMeshFrom(pos, nrm, tris)
+	repairFolds(m, 8) // a pole/seam-distorted cap's CDT can crease; flip the folding diagonals (#585)
+	return m
 }
 
 // patchLoops2D pairs each boundary loop's chosen 2D embedding (outer2D/holes2D) with its exact 3D

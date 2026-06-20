@@ -49,7 +49,7 @@ func TestAdaptiveInteriorNoSpill(t *testing.T) {
 	s := domeSurface(t)
 	outer := uvSquare(0.1, 0.9, 8)
 	holes := [][]math.Point2{uvSquare(0.4, 0.6, 6)}
-	nodes := adaptiveInteriorNodes(s, outer, holes, DefaultQuality())
+	nodes := adaptiveInteriorNodes(s, outer, holes, DefaultQuality(), 1)
 	if len(nodes) == 0 {
 		t.Fatal("a curved patch should get interior nodes")
 	}
@@ -67,8 +67,8 @@ func TestAdaptiveInteriorDensityFollowsCurvature(t *testing.T) {
 	flat := unitPatch(t) // z=0 bilinear (from refined_patch_test.go)
 	dome := domeSurface(t)
 	outer := uvSquare(0.05, 0.95, 8)
-	nFlat := len(adaptiveInteriorNodes(flat, outer, nil, DefaultQuality()))
-	nDome := len(adaptiveInteriorNodes(dome, outer, nil, DefaultQuality()))
+	nFlat := len(adaptiveInteriorNodes(flat, outer, nil, DefaultQuality(), 1))
+	nDome := len(adaptiveInteriorNodes(dome, outer, nil, DefaultQuality(), 1))
 	if nDome <= nFlat {
 		t.Errorf("curved patch should get more interior nodes than flat: dome=%d flat=%d", nDome, nFlat)
 	}
@@ -77,8 +77,8 @@ func TestAdaptiveInteriorDensityFollowsCurvature(t *testing.T) {
 func TestAdaptiveInteriorDeterministic(t *testing.T) {
 	s := domeSurface(t)
 	outer := uvSquare(0.1, 0.9, 8)
-	a := adaptiveInteriorNodes(s, outer, nil, DefaultQuality())
-	b := adaptiveInteriorNodes(s, outer, nil, DefaultQuality())
+	a := adaptiveInteriorNodes(s, outer, nil, DefaultQuality(), 1)
+	b := adaptiveInteriorNodes(s, outer, nil, DefaultQuality(), 1)
 	if len(a) != len(b) {
 		t.Fatalf("non-deterministic node count: %d vs %d", len(a), len(b))
 	}

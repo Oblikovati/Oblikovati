@@ -103,12 +103,13 @@ func TestImportedNurbsDuctWatertight(t *testing.T) {
 	}
 }
 
-// edfOCCVolume is OCC getMass for the EDF model (mm³); edfFoldCeiling is the current residual fold
-// count (sphere pole + B-spline pcurve self-proximity), which may only shrink. See edfVolumeTol.
+// edfOCCVolume is OCC getMass for the EDF model (mm³); edfFoldCeiling is the residual fold count,
+// which may only shrink. It is now 0: fold-driven interior refinement clears the B-spline lip folds
+// (#585) and the sphere pole caps fall back to the fold-free boundary triangulation. See edfVolumeTol.
 const (
 	edfOCCVolume   = 207002.0
 	edfVolumeTol   = 0.01 // 1% — the trim-local metric mesher lands EDF at ≈ -0.4% (was +35.6%)
-	edfFoldCeiling = 38
+	edfFoldCeiling = 0
 )
 
 // TestImportedNurbsDuctVolumeAndFolds guards the #585 fix: EDF's tessellation is not merely watertight
