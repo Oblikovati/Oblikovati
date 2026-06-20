@@ -213,6 +213,12 @@ func pointCloudCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("point-cloud-import").WithButtonStyle(LargeIconButton).
 			WithTooltip("Import Point Cloud — attach an ASCII scan (.xyz/.pts) as referenced display data."),
+		NewCommand("PointCloud.FitPlane", "Fit Work Plane", "Point Cloud", func(s *Session) error {
+			_, err := s.FitSelectedCloudPlane()
+			return err
+		}).WithTab(tab3DModel).WithEnable(canFitPointCloudPlane).
+			WithIcon("point-cloud-fit-plane").WithButtonStyle(SmallIconButton).
+			WithTooltip("Fit Work Plane — least-squares plane through the selected cloud's displayed points (crop first to fit a region)."),
 	}
 }
 
