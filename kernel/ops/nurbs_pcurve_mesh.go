@@ -39,12 +39,12 @@ var nurbsRefineFactors = []float64{1, 0.5, 0.25}
 // foldDrivenPatch triangulates a B-spline trim at increasing interior density, keeping the first
 // fold-free result (or the least-folded one if none reaches zero). Each attempt is an independent
 // metric-scaled CDT of the SAME exact boundary loops (so neighbouring faces still stitch watertight,
-// whatever density wins) plus a denser interior node set.
+// whatever density wins) plus a denser interior node set — built by the shared metricCDTPatch.
 func foldDrivenPatch(s geom.BSplineSurface, su, sv float64, q Quality, outer3D []math.Point3, outerUV []math.Point2, holes3D [][]math.Point3, holesUV [][]math.Point2) *Mesh {
 	var best *Mesh
 	bestFolds := 1 << 30
 	for _, refine := range nurbsRefineFactors {
-		m := pcurvePatchAt(s, su, sv, q, outer3D, outerUV, holes3D, holesUV, refine)
+		m, _ := metricCDTPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV, refine)
 		if m == nil {
 			continue
 		}
@@ -56,26 +56,6 @@ func foldDrivenPatch(s geom.BSplineSurface, su, sv float64, q Quality, outer3D [
 		}
 	}
 	return best
-}
-
-// pcurvePatchAt builds one metric-scaled CDT of the trim with interior nodes at the given refinement
-// factor, then sweeps residual folds with repairFolds. Returns nil to fall back when the CDT is empty.
-func pcurvePatchAt(s geom.BSplineSurface, su, sv float64, q Quality, outer3D []math.Point3, outerUV []math.Point2, holes3D [][]math.Point3, holesUV [][]math.Point2, refine float64) *Mesh {
-	b := newPatchBuilder(s, su, sv)
-	loops := [][]int{b.addLoop(outer3D, outerUV)}
-	for i := range holes3D {
-		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
-	}
-	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q, refine) {
-		b.addInterior(g)
-	}
-	tris := constrainedDelaunay(b.scaled, loops)
-	if len(tris) == 0 {
-		return nil
-	}
-	m := patchMeshFrom(b.pos, b.nrm, tris)
-	repairFolds(m, 8)
-	return m
 }
 
 // metricScale returns the mean 3D length of a unit step in u and in v (√E, √G of the first

@@ -179,20 +179,10 @@ func pointInUVPoly(poly []math.Point2, p [2]float64) bool {
 // the CDT degenerates or tears (a pole/seam-distorted cap).
 func metricPatchMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
 	su, sv := trimMetricScale(s, outerUV)
-	b := newPatchBuilder(s, su, sv)
-	loops := [][]int{b.addLoop(outer3D, outerUV)}
-	for i := range holes3D {
-		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
-	}
-	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q, 1) {
-		b.addInterior(g)
-	}
-	tris := constrainedDelaunay(b.scaled, loops)
-	if len(tris) == 0 {
+	m, loops := metricCDTPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV, 1)
+	if m == nil {
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}
-	m := patchMeshFrom(b.pos, b.nrm, tris)
-	repairFolds(m, 8)
 	if patchIsManifold(m, loops) && FoldEdgeCount(m) == 0 {
 		return m
 	}
@@ -205,6 +195,29 @@ func metricPatchMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [
 		return fallback
 	}
 	return m
+}
+
+// metricCDTPatch is the shared metric-scaled CDT builder behind both the B-spline fold-driven loop
+// and the analytic metricPatchMesh: it lays the exact 3D boundary loops plus deflection-adaptive
+// interior nodes (at the given refine factor) into metric-scaled (u,v), constrained-Delaunay
+// triangulates them, lifts to 3D and sweeps residual folds. It returns the mesh and the loop index
+// sequences (so a caller can run patchIsManifold), or a nil mesh when the CDT yields nothing.
+func metricCDTPatch(s geom.Surface, su, sv float64, q Quality, outer3D []math.Point3, outerUV []math.Point2, holes3D [][]math.Point3, holesUV [][]math.Point2, refine float64) (*Mesh, [][]int) {
+	b := newPatchBuilder(s, su, sv)
+	loops := [][]int{b.addLoop(outer3D, outerUV)}
+	for i := range holes3D {
+		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
+	}
+	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q, refine) {
+		b.addInterior(g)
+	}
+	tris := constrainedDelaunay(b.scaled, loops)
+	if len(tris) == 0 {
+		return nil, loops
+	}
+	m := patchMeshFrom(b.pos, b.nrm, tris)
+	repairFolds(m, 8)
+	return m, loops
 }
 
 // trimMetricScale returns the per-axis (u,v) metric (mean 3D length of a unit u/v step) sampled over
