@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"math"
 	"strconv"
 	"time"
 
@@ -326,7 +327,7 @@ func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPla
 // baseDrawList is the model geometry (styled) with the current selection highlighted, with
 // no environment overlays — what a passive (non-focused) tile shows for its view's camera.
 func baseDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
-	list := cachedBodyDrawList(s, cam) // a per-frame copy of the cached tessellation (see viewport_cache.go)
+	list := cachedBodyDrawList(s, cam)                            // a per-frame copy of the cached tessellation (see viewport_cache.go)
 	list.Items = append(list.Items, pointCloudOverlay(s, cam)...) // attached scans (M17-F06, #645)
 	return highlightSelection(list, s.Selection().First(), activeBodies(s))
 }
@@ -458,7 +459,8 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	tb := frameClock()
 	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups)
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
-	mvp := renderer.ViewProjection(cam, viewportNear, viewportFar)
+	flo, fhi, fok := farBounds(mn, mx, hasGeom)
+	mvp := renderer.ViewProjection(cam, viewportNear, viewportClipFar(cam, flo, fhi, fok))
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	applyEnvironment(win, s.Environment())
@@ -671,6 +673,50 @@ const (
 	viewportNear = 0.1
 	viewportFar  = 5000.0
 )
+
+// viewportClipFar returns the far clip distance for this frame. It is the fixed viewportFar
+// for ordinary scenes, but extends to enclose the model once the camera pulls back far enough
+// that the geometry would fall beyond it. Large imported drawings (DWG/DXF) span tens of
+// thousands of units, so a fixed 5000 far plane clipped the whole sketch to nothing on
+// zoom-out — the geometry was simply behind the far plane (the near plane stays fixed, so
+// nothing closer is ever clipped and small scenes are unchanged). The bound comes from the
+// camera's distance to the scene's bounding sphere, with a margin so the far face isn't
+// exactly on the plane.
+// farBounds unions the framed (instanced/triangle) bounds with the finished-sketch overlay
+// extent so the adaptive far plane encloses sketch-only drawings. frameBounds/DrawListBounds
+// see only non-OnTop triangles, so a DWG/DXF import — all OnTop line work — would otherwise
+// report no bounds and fall back to the fixed far plane, clipping the sketch on zoom-out.
+func farBounds(mn, mx [3]float32, hasGeom bool) (lo, hi [3]float32, ok bool) {
+	lo, hi, ok = mn, mx, hasGeom
+	smn, smx, sok := cachedSketchOverlayBounds()
+	if !sok {
+		return lo, hi, ok
+	}
+	if !ok {
+		return smn, smx, true
+	}
+	for i := 0; i < 3; i++ {
+		lo[i], hi[i] = minF32(lo[i], smn[i]), maxF32(hi[i], smx[i])
+	}
+	return lo, hi, true
+}
+
+func viewportClipFar(cam scene.Camera, mn, mx [3]float32, hasGeom bool) float64 {
+	if !hasGeom {
+		return viewportFar
+	}
+	cx := (float64(mn[0]) + float64(mx[0])) / 2
+	cy := (float64(mn[1]) + float64(mx[1])) / 2
+	cz := (float64(mn[2]) + float64(mx[2])) / 2
+	rx, ry, rz := float64(mx[0])-cx, float64(mx[1])-cy, float64(mx[2])-cz
+	radius := math.Sqrt(rx*rx + ry*ry + rz*rz)
+	dx, dy, dz := cam.Eye.X-cx, cam.Eye.Y-cy, cam.Eye.Z-cz
+	dist := math.Sqrt(dx*dx + dy*dy + dz*dz)
+	if far := (dist + radius) * 1.1; far > viewportFar {
+		return far
+	}
+	return viewportFar
+}
 
 // readNavInput snapshots this frame's viewport pointer state from the native layer for
 // the pure ApplyNavigation mapping (see navigate.go). It must be called right after the

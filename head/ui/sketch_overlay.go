@@ -25,6 +25,12 @@ import (
 var sketchOverlayCache struct {
 	key   string
 	items []renderer.DrawItem
+	// bounds is the model-space extent of the cached line work, computed once per rebuild so
+	// the viewport's adaptive far plane can enclose a sketch-only drawing (DWG/DXF imports are
+	// all OnTop line primitives, which DrawListBounds excludes). hasBounds is false for an
+	// empty overlay.
+	boundsMin, boundsMax [3]float32
+	hasBounds            bool
 }
 
 // cachedPartSketchOverlays returns the finished-sketch overlay, rebuilding it only
@@ -39,8 +45,33 @@ func cachedPartSketchOverlays(s *app.Session) []renderer.DrawItem {
 	if key != sketchOverlayCache.key {
 		sketchOverlayCache.key = key
 		sketchOverlayCache.items = partSketchOverlays(s)
+		sketchOverlayCache.boundsMin, sketchOverlayCache.boundsMax, sketchOverlayCache.hasBounds =
+			drawItemsBounds(sketchOverlayCache.items)
 	}
 	return append([]renderer.DrawItem(nil), sketchOverlayCache.items...)
+}
+
+// cachedSketchOverlayBounds returns the model-space extent of the finished-sketch overlay
+// computed at the last cache rebuild, so the viewport far plane encloses it without rescanning
+// hundreds of thousands of line vertices every frame. ok is false when there is no line work.
+func cachedSketchOverlayBounds() (min, max [3]float32, ok bool) {
+	return sketchOverlayCache.boundsMin, sketchOverlayCache.boundsMax, sketchOverlayCache.hasBounds
+}
+
+// drawItemsBounds is the axis-aligned model-space box over every vertex of items (all
+// primitives, including the OnTop lines a sketch overlay is made of). ok is false when items
+// carry no positions.
+func drawItemsBounds(items []renderer.DrawItem) (min, max [3]float32, ok bool) {
+	min = [3]float32{stdmath.MaxFloat32, stdmath.MaxFloat32, stdmath.MaxFloat32}
+	max = [3]float32{-stdmath.MaxFloat32, -stdmath.MaxFloat32, -stdmath.MaxFloat32}
+	for _, it := range items {
+		for _, p := range it.Positions {
+			min[0], max[0] = minF32(min[0], float32(p.X)), maxF32(max[0], float32(p.X))
+			min[1], max[1] = minF32(min[1], float32(p.Y)), maxF32(max[1], float32(p.Y))
+			min[2], max[2] = minF32(min[2], float32(p.Z)), maxF32(max[2], float32(p.Z))
+		}
+	}
+	return min, max, min[0] <= max[0]
 }
 
 // sketchOverlayKey identifies the finished-sketch overlay geometry. Sketch edits do
