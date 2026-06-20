@@ -72,6 +72,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerAssemblyBOMHandlers()
 	r.registerDocumentPropertyHandlers()
 	r.registerDocumentSettingsHandlers()
+	r.registerEndOfPartHandlers()
 	r.registerAttributeHandlers()
 	r.registerSelectionMutationHandlers()
 	r.registerSketchReferenceKeyHandlers()
