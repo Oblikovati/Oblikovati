@@ -459,8 +459,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	tb := frameClock()
 	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups)
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
-	flo, fhi, fok := farBounds(mn, mx, hasGeom)
-	mvp := renderer.ViewProjection(cam, viewportNear, viewportClipFar(cam, flo, fhi, fok))
+	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(cam, mn, mx, hasGeom))
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	applyEnvironment(win, s.Environment())
@@ -682,6 +681,15 @@ const (
 // nothing closer is ever clipped and small scenes are unchanged). The bound comes from the
 // camera's distance to the scene's bounding sphere, with a margin so the far face isn't
 // exactly on the plane.
+// viewportFarPlane is the per-frame far clip distance: it unions the framed geometry with the
+// finished-sketch overlay extent (farBounds) and computes the adaptive far from that
+// (viewportClipFar). Split so the bounding-sphere math is unit-tested in isolation from the
+// package-level overlay cache.
+func viewportFarPlane(cam scene.Camera, mn, mx [3]float32, hasGeom bool) float64 {
+	lo, hi, ok := farBounds(mn, mx, hasGeom)
+	return viewportClipFar(cam, lo, hi, ok)
+}
+
 // farBounds unions the framed (instanced/triangle) bounds with the finished-sketch overlay
 // extent so the adaptive far plane encloses sketch-only drawings. frameBounds/DrawListBounds
 // see only non-OnTop triangles, so a DWG/DXF import — all OnTop line work — would otherwise

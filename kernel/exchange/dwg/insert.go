@@ -20,7 +20,7 @@ func decodeInsert(hr *BitReader, data []byte, cur *entityCursor, handle uint64, 
 	if e := r.Err(); e != nil {
 		return nil, 0, fmt.Errorf("dwg: INSERT handle %d data: %w", handle, e)
 	}
-	owner, _ = commonEntityHandles(hr, data, cur, version)
+	owner = commonEntityHandles(hr, data, cur, version)
 	block := readResolvedHandle(hr, cur.ownHandle) // block_header is the first entity-specific handle
 	if e := hr.Err(); e != nil {
 		return nil, 0, fmt.Errorf("dwg: INSERT handle %d block ref: %w", handle, e)

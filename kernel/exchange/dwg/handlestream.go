@@ -34,13 +34,14 @@ func readResolvedHandle(r *BitReader, own uint64) uint64 {
 	return resolveHandle(h.Code, h.Value, own)
 }
 
-// commonEntityHandles walks the common-entity handle references in spec order and
-// returns the owner handle (the owning block for entmode 0; 0 otherwise) plus a reader
-// positioned right after them, so an entity-specific handle (e.g. INSERT.block_header)
-// can be read next. The reader is independent of the geometry/data-stream cursor.
+// commonEntityHandles walks the common-entity handle references in spec order and returns
+// the owner handle (the owning block for entmode 0; 0 otherwise). It reads through the
+// caller's reader r (independent of the geometry/data-stream cursor), leaving it positioned
+// right after the common handles so an entity-specific handle (e.g. INSERT.block_header) can
+// be read next from the same reader.
 //
 //nolint:funlen,gocyclo // sequential flag-gated handle reads in spec order; length/branches are the format.
-func commonEntityHandles(r *BitReader, data []byte, cur *entityCursor, version Version) (owner uint64, _ *BitReader) {
+func commonEntityHandles(r *BitReader, data []byte, cur *entityCursor, version Version) (owner uint64) {
 	r.Reset(data, cur.handleStart)
 	ce := cur.common
 	own := cur.ownHandle
@@ -90,5 +91,5 @@ func commonEntityHandles(r *BitReader, data []byte, cur *entityCursor, version V
 			readResolvedHandle(r, own)
 		}
 	}
-	return owner, r
+	return owner
 }

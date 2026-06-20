@@ -127,7 +127,7 @@ func (c *collector) addObject(cur *entityCursor, hdr ObjectHeader) string {
 		return ""
 	}
 	if cur.common.entmode == entmodeBlock {
-		owner, _ := commonEntityHandles(&c.handleReader, c.data, cur, c.version)
+		owner := commonEntityHandles(&c.handleReader, c.data, cur, c.version)
 		c.blockEntities[owner] = append(c.blockEntities[owner], e)
 	} else {
 		c.modelEntities = append(c.modelEntities, e)
