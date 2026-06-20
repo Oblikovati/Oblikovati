@@ -27,18 +27,38 @@ func ViewProjection(cam scene.Camera, near, far float64) [16]float32 {
 // (x, y) sits exactly over the 3D point (e.g. a dimension's value label over its anchor).
 // ok is false when the point is at or behind the camera (clip w ≤ 0, not on screen).
 func Project(cam scene.Camera, near, far float64, p math.Point3) (x, y float64, ok bool) {
-	vp := ViewProjection(cam, near, far)
+	return NewProjector(cam, near, far).Project(p)
+}
+
+// Projector projects many model points to screen with a single, precomputed view-projection. Use
+// it instead of calling [Project] in a loop — Project rebuilds the matrix every call, which is O(N)
+// matrix multiplies over N points (e.g. a 250k-point cloud's frustum clip); a Projector builds it
+// once.
+type Projector struct {
+	vp   [16]float32
+	w, h float64
+}
+
+// NewProjector precomputes the view-projection for cam (the depth range only sets clipping; the
+// screen x,y depend on FOV/aspect).
+func NewProjector(cam scene.Camera, near, far float64) Projector {
+	return Projector{vp: ViewProjection(cam, near, far), w: float64(cam.Width), h: float64(cam.Height)}
+}
+
+// Project maps a model point to viewport pixels; ok is false when the point is at or behind the
+// camera.
+func (pr Projector) Project(p math.Point3) (x, y float64, ok bool) {
 	v := [4]float64{p.X, p.Y, p.Z, 1}
 	var clip [4]float64
 	for r := 0; r < 4; r++ {
-		clip[r] = float64(vp[0*4+r])*v[0] + float64(vp[1*4+r])*v[1] +
-			float64(vp[2*4+r])*v[2] + float64(vp[3*4+r])*v[3]
+		clip[r] = float64(pr.vp[0*4+r])*v[0] + float64(pr.vp[1*4+r])*v[1] +
+			float64(pr.vp[2*4+r])*v[2] + float64(pr.vp[3*4+r])*v[3]
 	}
 	if clip[3] <= 0 {
 		return 0, 0, false
 	}
 	ndcX, ndcY := clip[0]/clip[3], clip[1]/clip[3] // Vulkan clip y already points down
-	return (ndcX*0.5 + 0.5) * float64(cam.Width), (ndcY*0.5 + 0.5) * float64(cam.Height), true
+	return (ndcX*0.5 + 0.5) * pr.w, (ndcY*0.5 + 0.5) * pr.h, true
 }
 
 // view is the right-handed world→eye transform (camera looks down its local −Z),
