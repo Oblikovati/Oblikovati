@@ -32,6 +32,17 @@ func (s *Session) StartTool(t Tool) {
 // ActiveTool returns the running tool instance, or nil.
 func (s *Session) ActiveTool() *ToolInstance { return s.tool }
 
+// ActiveToolConsumesClicks reports whether the active tool takes raw viewport clicks as input (a
+// [PlaneClickTool] — the sketch geometry tools and the point-cloud Crop Box tool). When it does, the
+// viewport must route a press to the tool, not start a box-select that would swallow it (#645).
+func (s *Session) ActiveToolConsumesClicks() bool {
+	if s.tool == nil {
+		return false
+	}
+	_, ok := s.tool.tool.(PlaneClickTool)
+	return ok
+}
+
 // PickAt hit-tests the pixel through the installed picker without changing selection —
 // the viewport uses it for hover feedback (which plane/face is under the cursor).
 func (s *Session) PickAt(x, y float64, filter *SelectionFilter) (Selectable, bool) {
