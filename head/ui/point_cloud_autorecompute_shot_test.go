@@ -19,21 +19,10 @@ import (
 // scene without any explicit recompute. The fitted plane must have already followed the cloud,
 // confirming the auto-recompute on a cloud move (#645). Skips without a display.
 func TestInWindowAutoRecomputeOnCloudMove(t *testing.T) {
-	win := newViewportWindow(t)
+	win := newShotWindow(t)
 	defer win.Destroy()
-	dockLaidOut = false
-	icons = nil
-
 	s := framedSession()
-	pc, err := s.AttachPointCloud("Sheet", tiltedSheetScan(t)) // the tilted sheet from the provenance shot
-	if err != nil {
-		t.Fatalf("attach scan: %v", err)
-	}
-	wp, _, err := s.CreatePointCloudPlane("Sheet")
-	if err != nil {
-		t.Fatalf("fit plane: %v", err)
-	}
-	wp.SetVisible(true)
+	pc, wp := attachSheetWithFitPlane(t, s)
 	z0 := float64(wp.Plane().Origin().Z)
 
 	// Move the cloud +12 in z via the router — and do NOT recompute by hand.
