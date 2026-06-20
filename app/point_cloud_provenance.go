@@ -101,6 +101,17 @@ func (s *Session) relinkPointCloudProvenance(part *compdef.PartComponentDefiniti
 	}
 }
 
+// RecomputeAfterPointCloudMove re-derives the datums built on point clouds — the fit planes, the
+// anchored work points, and the scan-anchored sketch points — after a cloud's placement (transform
+// or scale) changes, so they follow the cloud immediately instead of waiting for an unrelated
+// recompute. part.Recompute already re-derives the work features and re-projects the sketches'
+// cloud anchors, so one recompute of the active part suffices. It is a no-op outside a part (#645).
+func (s *Session) RecomputeAfterPointCloudMove() {
+	if part, err := activePart(s); err == nil {
+		part.Recompute()
+	}
+}
+
 // relinkSketchCloudAnchors re-attaches cloud sources to every sketch's scan-anchored points.
 func (s *Session) relinkSketchCloudAnchors(part *compdef.PartComponentDefinition) int {
 	n := 0

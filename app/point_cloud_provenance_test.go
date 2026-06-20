@@ -216,3 +216,28 @@ func TestWorkPointProvenanceEdges(t *testing.T) {
 	def.PointClouds().Remove("Scan")
 	s.relinkPointCloudProvenance(def) // no cloud "Scan" now → nothing relinked
 }
+
+// TestRecomputeAfterPointCloudMoveFollowsDatum: the auto-recompute hook makes a cloud-derived datum
+// follow the cloud without a manual part recompute (#645).
+func TestRecomputeAfterPointCloudMoveFollowsDatum(t *testing.T) {
+	s, def := emptyPartSession(t)
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(3, 4, 5)})
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	s.Select(PointCloudPointHandle{Cloud: pc, Point: math.P3(3, 4, 5)})
+	wp, err := s.CreateWorkPointAtSelectedCloudPoint()
+	if err != nil {
+		t.Fatalf("create work point: %v", err)
+	}
+
+	pc.SetTransform(liftZ(10)) // move the cloud; do NOT call Recompute directly
+	s.RecomputeAfterPointCloudMove()
+	if wp.Point() != math.P3(3, 4, 15) {
+		t.Errorf("work point = %v, want (3,4,15) (the move hook should drive it)", wp.Point())
+	}
+
+	// Outside a part the hook is a harmless no-op.
+	NewSession().RecomputeAfterPointCloudMove()
+}
