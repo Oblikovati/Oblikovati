@@ -117,6 +117,10 @@ func serializePointDef(def pointDefinition) (WorkFeatureData, error) {
 	case positionPointDef:
 		p := v.at()
 		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
+	case *pointCloudPointDef:
+		p := v.FrozenPosition() // last good model position; the source re-derives it after relink (#645)
+		d.CloudID = v.cloudID
+		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
 	case planeAxisPointDef:
 		// references only
 	default:
@@ -279,6 +283,15 @@ func restorePointFeature(c *WorkPoints, d WorkFeatureData) error {
 			return err
 		}
 		c.AddByPosition(func() math.Point3 { return pos })
+		return nil
+	case "point-cloud-point":
+		pos, err := point3From(d.Position, "point-cloud point")
+		if err != nil {
+			return err
+		}
+		// The live cloud source is re-attached after load (RelinkCloudPoints); until then the point
+		// holds its frozen position (#645).
+		c.addUser(&pointCloudPointDef{cloudID: d.CloudID, frozen: pos, hasPos: true})
 		return nil
 	case "plane-axis-intersection":
 		r, err := workRefs(d.Refs, 2)

@@ -17,27 +17,37 @@ import (
 // SelectedCloudPoint returns the model-space location of the snapped scan point selected in the
 // viewport, if one is selected.
 func (s *Session) SelectedCloudPoint() (math.Point3, bool) {
-	for _, it := range s.selection.Items() {
-		if h, ok := it.(PointCloudPointHandle); ok {
-			return h.Position(), true
-		}
+	if h, ok := s.SelectedCloudPointHandle(); ok {
+		return h.Position(), true
 	}
 	return math.Point3{}, false
 }
 
-// CreateWorkPointAtSelectedCloudPoint adds a fixed datum point at the snapped scan point selected in
-// the viewport, then recomputes — the Point Cloud panel's Work Point command. It errors when there
-// is no active part or no scan point is selected.
+// SelectedCloudPointHandle returns the full snapped scan-point selection (the cloud and the picked
+// point), so a consumer that needs the source cloud — like an associative work point — can reach it.
+func (s *Session) SelectedCloudPointHandle() (PointCloudPointHandle, bool) {
+	for _, it := range s.selection.Items() {
+		if h, ok := it.(PointCloudPointHandle); ok {
+			return h, true
+		}
+	}
+	return PointCloudPointHandle{}, false
+}
+
+// CreateWorkPointAtSelectedCloudPoint adds a datum point at the snapped scan point selected in the
+// viewport, then recomputes — the Point Cloud panel's Work Point command. The point keeps a live
+// link to its cloud (provenance): it follows the cloud's placement and the link round-trips in the
+// document. It errors when there is no active part or no scan point is selected.
 func (s *Session) CreateWorkPointAtSelectedCloudPoint() (*feature.WorkPoint, error) {
 	part, err := activePart(s)
 	if err != nil {
 		return nil, err
 	}
-	at, ok := s.SelectedCloudPoint()
+	h, ok := s.SelectedCloudPointHandle()
 	if !ok {
 		return nil, errors.New("app: select a point on a scan (snap to a cloud point) to place a work point")
 	}
-	wp := part.WorkPoints().AddByPosition(func() math.Point3 { return at })
+	wp := part.WorkPoints().AddByCloudPoint(newCloudPointSource(h.Cloud, h.Point))
 	part.Recompute()
 	s.recordEdit(part, labelWorkPoint)
 	return wp, nil
