@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/pointcloud"
+	"oblikovati.org/model/sketch"
 )
 
 // Datum-cloud provenance (M17-F06, #645): a work plane fit to a point cloud keeps a live link to
@@ -55,10 +56,32 @@ func newCloudPointSource(cloud *pointcloud.PointCloud, modelPoint math.Point3) c
 	return cloudPointSource{cloud: cloud, local: local}
 }
 
+// cloudSketchPointSource adapts a point cloud to sketch.CloudPointAnchor: it anchors a scan point in
+// cloud space and re-derives its model-space position as the cloud moves, for the sketch to project.
+type cloudSketchPointSource struct {
+	cloud *pointcloud.PointCloud
+	local math.Point3
+}
+
+func (s cloudSketchPointSource) SourceID() string         { return s.cloud.Name() }
+func (s cloudSketchPointSource) LocalAnchor() math.Point3 { return s.local }
+func (s cloudSketchPointSource) ModelPosition() (math.Point3, bool) {
+	return s.cloud.ToModelSpace(s.local), true
+}
+
+// newCloudSketchPointSource anchors a model-space scan point in cloud space for a sketch point.
+func newCloudSketchPointSource(cloud *pointcloud.PointCloud, modelPoint math.Point3) cloudSketchPointSource {
+	local, ok := cloud.FromModelSpace(modelPoint)
+	if !ok {
+		local = modelPoint
+	}
+	return cloudSketchPointSource{cloud: cloud, local: local}
+}
+
 // relinkPointCloudProvenance re-attaches live cloud sources to a freshly opened part's
-// point-cloud-derived datums — the fit planes and the anchored work points — matching by cloud id,
-// then recomputes so they re-derive against the restored clouds. It is a no-op for a non-part
-// document or a part with no such datums.
+// point-cloud-derived datums — the fit planes, the anchored work points, and the scan-anchored
+// sketch points — matching by cloud id, then recomputes so they re-derive against the restored
+// clouds. It is a no-op for a non-part document or a part with no such datums.
 func (s *Session) relinkPointCloudProvenance(part *compdef.PartComponentDefinition) {
 	relinked := part.WorkPlanes().RelinkCloudFits(func(id string) (feature.PlaneFitSource, bool) {
 		if pc, ok := part.PointClouds().ByName(id); ok {
@@ -72,7 +95,23 @@ func (s *Session) relinkPointCloudProvenance(part *compdef.PartComponentDefiniti
 		}
 		return nil, false
 	})
+	relinked += s.relinkSketchCloudAnchors(part)
 	if relinked > 0 {
 		part.Recompute()
 	}
+}
+
+// relinkSketchCloudAnchors re-attaches cloud sources to every sketch's scan-anchored points.
+func (s *Session) relinkSketchCloudAnchors(part *compdef.PartComponentDefinition) int {
+	n := 0
+	sketches := part.Sketches()
+	for i := 0; i < sketches.Count(); i++ {
+		n += sketches.Item(i).RelinkCloudAnchors(func(id string, local math.Point3) (sketch.CloudPointAnchor, bool) {
+			if pc, ok := part.PointClouds().ByName(id); ok {
+				return cloudSketchPointSource{cloud: pc, local: local}, true
+			}
+			return nil, false
+		})
+	}
+	return n
 }

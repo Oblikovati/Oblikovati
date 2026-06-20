@@ -62,18 +62,19 @@ func canWorkPointAtCloudPoint(s *Session) bool {
 
 // CreateSketchPointAtSelectedCloudPoint adds a sketch point at the snapped scan point selected in
 // the viewport, projected onto the active sketch plane — the in-sketch counterpart of the Work
-// Point command, so a 2D profile can be drawn against scanned features. It errors when there is no
-// active 2D sketch or no scan point is selected.
+// Point command, so a 2D profile can be drawn against scanned features. The point keeps a live link
+// to its cloud (provenance): it re-projects when the cloud moves and the link round-trips in the
+// document. It errors when there is no active 2D sketch or no scan point is selected.
 func (s *Session) CreateSketchPointAtSelectedCloudPoint() (*sketch.Point, error) {
 	sk := s.ActiveSketch()
 	if sk == nil {
 		return nil, errors.New("app: enter a 2D sketch to place a sketch point on a scan point")
 	}
-	at, ok := s.SelectedCloudPoint()
+	h, ok := s.SelectedCloudPointHandle()
 	if !ok {
 		return nil, errors.New("app: select a point on a scan (snap to a cloud point) for a sketch point")
 	}
-	return sk.Points().Add(sk.ToSketch(at)), nil
+	return sk.AddCloudAnchoredPoint(newCloudSketchPointSource(h.Cloud, h.Point)), nil
 }
 
 // canSketchPointAtCloudPoint enables Sketch Point from a scan: in a 2D sketch with a snapped scan
