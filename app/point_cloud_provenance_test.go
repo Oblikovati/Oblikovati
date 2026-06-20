@@ -9,7 +9,25 @@ import (
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/pointcloud"
 )
+
+// anchorWorkPointOnScan attaches a single-point cloud, selects that scan point, and places a work
+// point on it — the shared setup for the work-point provenance tests.
+func anchorWorkPointOnScan(t *testing.T, s *Session, def *compdef.PartComponentDefinition, at math.Point3) (*pointcloud.PointCloud, *feature.WorkPoint) {
+	t.Helper()
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{at})
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	s.Select(PointCloudPointHandle{Cloud: pc, Point: at})
+	wp, err := s.CreateWorkPointAtSelectedCloudPoint()
+	if err != nil {
+		t.Fatalf("create work point: %v", err)
+	}
+	return pc, wp
+}
 
 // planarPoints are scan points on z = 5 (a horizontal plane), shared by the provenance tests.
 func planarPoints() []math.Point3 {
@@ -126,16 +144,7 @@ func TestCloudPlaneFitSourceEdges(t *testing.T) {
 // because it keeps a live link (provenance) rather than a frozen position (#645).
 func TestWorkPointFollowsCloud(t *testing.T) {
 	s, def := emptyPartSession(t)
-	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
-	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(3, 4, 5)})
-	if err != nil {
-		t.Fatalf("attach: %v", err)
-	}
-	s.Select(PointCloudPointHandle{Cloud: pc, Point: math.P3(3, 4, 5)})
-	wp, err := s.CreateWorkPointAtSelectedCloudPoint()
-	if err != nil {
-		t.Fatalf("CreateWorkPointAtSelectedCloudPoint: %v", err)
-	}
+	pc, wp := anchorWorkPointOnScan(t, s, def, math.P3(3, 4, 5))
 	if wp.Point() != math.P3(3, 4, 5) {
 		t.Fatalf("initial work point = %v, want (3,4,5)", wp.Point())
 	}
@@ -221,16 +230,7 @@ func TestWorkPointProvenanceEdges(t *testing.T) {
 // follow the cloud without a manual part recompute (#645).
 func TestRecomputeAfterPointCloudMoveFollowsDatum(t *testing.T) {
 	s, def := emptyPartSession(t)
-	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
-	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(3, 4, 5)})
-	if err != nil {
-		t.Fatalf("attach: %v", err)
-	}
-	s.Select(PointCloudPointHandle{Cloud: pc, Point: math.P3(3, 4, 5)})
-	wp, err := s.CreateWorkPointAtSelectedCloudPoint()
-	if err != nil {
-		t.Fatalf("create work point: %v", err)
-	}
+	pc, wp := anchorWorkPointOnScan(t, s, def, math.P3(3, 4, 5))
 
 	pc.SetTransform(liftZ(10)) // move the cloud; do NOT call Recompute directly
 	s.RecomputeAfterPointCloudMove()

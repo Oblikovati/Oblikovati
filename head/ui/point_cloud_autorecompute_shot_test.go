@@ -6,7 +6,6 @@ package ui
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"testing"
 
 	"oblikovati.org/addin/opregistry"
@@ -51,13 +50,5 @@ func TestInWindowAutoRecomputeOnCloudMove(t *testing.T) {
 		t.Fatalf("plane did not auto-follow the cloud move: Z %.3f → %.3f", z0, z1)
 	}
 
-	frameCameraOn(s, pc.RangeBox())
-	for i := 0; i < 10; i++ {
-		win.BeginFrame()
-		DrawChrome(win, s)
-		win.EndFrame(0.1, 0.1, 0.12)
-	}
-	if err := win.SaveWindowPNG(filepath.Join(outDir(), "point-cloud-autorecompute.png")); err != nil {
-		t.Logf("SaveWindowPNG: %v", err)
-	}
+	captureFramed(t, win, s, pc.RangeBox(), "point-cloud-autorecompute")
 }
