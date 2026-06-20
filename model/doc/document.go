@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/event"
 	"oblikovati.org/model/attr"
 	"oblikovati.org/model/display"
@@ -52,6 +53,7 @@ type Document struct {
 	attachments      *FileAttachments       // external-file attachment records (M03-F08); lazily seeded
 	interests        *DocumentInterests     // add-in data registry (M03-F10); lazily seeded
 	attributes       *attr.AttributeManager // add-in attribute sets (#155); lazily seeded
+	sketchSettings   *types.SketchSettings  // per-document sketch-authoring defaults (#147), nil ⇒ defaults
 }
 
 // newDocument builds a base document. open reflects whether content is paged in;
@@ -221,6 +223,35 @@ func (d *Document) SetDisplaySettings(set display.Settings) {
 func (d *Document) RestoreDisplaySettings(set display.Settings) {
 	cp := set
 	d.displaySettings = &cp
+}
+
+// SketchSettings returns the document's per-document sketch-authoring defaults — the constraint-
+// inference toggles the sketch tools read (#147) — falling back to [types.DefaultSketchSettings]
+// when none have been set on this document.
+func (d *Document) SketchSettings() types.SketchSettings {
+	if d.sketchSettings == nil {
+		return types.DefaultSketchSettings()
+	}
+	return *d.sketchSettings
+}
+
+// SketchSettingsSet reports whether explicit sketch settings have been stored (so the persistence
+// layer writes a record only for documents that customised them).
+func (d *Document) SketchSettingsSet() bool { return d.sketchSettings != nil }
+
+// SetSketchSettings stores the document's sketch settings (and marks it dirty, since they
+// round-trip in the .obk).
+func (d *Document) SetSketchSettings(set types.SketchSettings) {
+	cp := set
+	d.sketchSettings = &cp
+	d.MarkDirty()
+}
+
+// RestoreSketchSettings stores the sketch settings WITHOUT marking the document dirty — the load
+// path, where the in-memory state already matches disk (like [Document.RestoreDisplaySettings]).
+func (d *Document) RestoreSketchSettings(set types.SketchSettings) {
+	cp := set
+	d.sketchSettings = &cp
 }
 
 // Referenced reports whether any open document references this one. An

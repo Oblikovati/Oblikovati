@@ -56,6 +56,7 @@ func (p *Package) marshal() ([]byte, error) {
 		Interests:       p.interests,
 		Attributes:      p.attributes,
 		DisplaySettings: p.display,
+		SketchSettings:  p.sketch,
 		Model:           p.model,
 		Data:            p.streams,
 		Resources:       p.resources,
@@ -85,6 +86,7 @@ func decode(raw []byte) (*Package, error) {
 	p.interests = doc.Interests
 	p.attributes = doc.Attributes
 	p.display = doc.DisplaySettings
+	p.sketch = doc.SketchSettings
 	for name, data := range doc.Data {
 		p.WriteStream(name, data)
 	}

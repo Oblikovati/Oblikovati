@@ -54,6 +54,17 @@ type Document struct {
 	// DisplaySettings are the per-document display settings (background/edges/ground/shadows),
 	// nil for a document that never customized them (M16-F07 #643).
 	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
+	// SketchSettings are the per-document sketch-authoring defaults (constraint inference),
+	// nil for a document that never customized them (#147).
+	SketchSettings *SketchSettingsRecord `yaml:"sketchSettings,omitempty"`
+}
+
+// SketchSettingsRecord is the on-disk per-document sketch settings (#147): the constraint-inference
+// toggles and family priority. The priority enum is stored as its frozen integer id.
+type SketchSettingsRecord struct {
+	InferConstraints     bool  `yaml:"inferConstraints"`
+	AutoApplyConstraints bool  `yaml:"autoApplyConstraints"`
+	ConstraintPriority   int32 `yaml:"constraintPriority"`
 }
 
 // ColorRecord is a color value object on disk: 8-bit rgb, opacity, and the color-source enum.
@@ -158,6 +169,7 @@ type onDisk struct {
 	Interests       []InterestRecord       `yaml:"interests,omitempty"`
 	Attributes      []byte                 `yaml:"attributes,omitempty"`
 	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
+	SketchSettings  *SketchSettingsRecord  `yaml:"sketchSettings,omitempty"`
 	Resources       yaml.Node              `yaml:"resources,omitempty"`
 	Model           yaml.Node              `yaml:"model,omitempty"`
 	Data            map[string]string      `yaml:"data,omitempty"`
@@ -177,6 +189,7 @@ func MarshalDocument(d Document) ([]byte, error) {
 		Interests:       d.Interests,
 		Attributes:      d.Attributes,
 		DisplaySettings: d.DisplaySettings,
+		SketchSettings:  d.SketchSettings,
 	}
 	if err := embedNativeNodes(&od, d); err != nil {
 		return nil, err
@@ -254,6 +267,7 @@ func documentHeader(od onDisk) Document {
 		Interests:       od.Interests,
 		Attributes:      od.Attributes,
 		DisplaySettings: od.DisplaySettings,
+		SketchSettings:  od.SketchSettings,
 	}
 }
 
