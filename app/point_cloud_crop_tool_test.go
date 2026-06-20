@@ -48,8 +48,15 @@ func TestCropBoxToolFlow(t *testing.T) {
 	s, def := emptyPartSession(t)
 	pc := cropTestCloud(t, def)
 
+	tool := NewCropBoxTool(pc)
+	if tool.Name() == "" { // exercise the trivial accessors/no-ops
+		t.Error("tool should have a name")
+	}
+	tool.Start(s)
+	tool.Pick(s, nil)
+
 	before := pc.Crops().Count()
-	s.StartTool(NewCropBoxTool(pc))
+	s.StartTool(tool)
 	s.Click(0, 0)     // first corner
 	s.Click(200, 200) // opposite corner → auto-commits the crop
 	if pc.Crops().Count() != before+1 {
@@ -70,4 +77,30 @@ func TestCropBoxToolFlow(t *testing.T) {
 	if err := s.StartCropSelectedCloud(); err != nil {
 		t.Fatalf("StartCropSelectedCloud: %v", err)
 	}
+}
+
+// TestCropBoxToolCommitErrors covers Commit's guards directly: no cloud, too few corners, and a
+// rectangle enclosing no scan points (#645).
+func TestCropBoxToolCommitErrors(t *testing.T) {
+	s, def := emptyPartSession(t)
+	pc := cropTestCloud(t, def)
+
+	if err := (&CropBoxTool{}).Commit(s); err == nil {
+		t.Error("Commit with no target cloud should error")
+	}
+	one := NewCropBoxTool(pc)
+	one.ClickAt(s, 10, 10) // only one corner → not enough to crop
+	if one.CanCommit() {
+		t.Error("CanCommit should be false with one corner")
+	}
+	if err := one.Commit(s); err == nil {
+		t.Error("Commit with one corner should error")
+	}
+	off := NewCropBoxTool(pc)
+	off.ClickAt(s, -80, -80) // a rectangle entirely off-screen → no points inside
+	off.ClickAt(s, -40, -40)
+	if err := off.Commit(s); err == nil {
+		t.Error("Commit of a box enclosing no scan points should error")
+	}
+	off.Cancel(s) // exercise Cancel
 }
