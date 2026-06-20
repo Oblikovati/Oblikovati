@@ -26,21 +26,36 @@ func nurbsPcurveMesh(f *topo.Face, q Quality) *Mesh {
 		return nil
 	}
 	su, sv := metricScale(s)
-	b := newPatchBuilder(s, su, sv)
-	loops := [][]int{b.addLoop(outer3D, outerUV)}
-	for i := range holes3D {
-		loops = append(loops, b.addLoop(holes3D[i], holesUV[i]))
+	return foldDrivenPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV)
+}
+
+// nurbsRefineFactors are the interior-grid density multipliers the fold-driven loop tries in turn
+// (1 = the curvature-adaptive grid, then 2×, 4× denser). A B-spline lip whose curvature the chord
+// estimate under-resolves leaves large triangles that fold across it; a denser interior grid shrinks
+// them below the fold threshold. repairFolds handles the rest; refinement stops as soon as a density
+// is fold-free (#585).
+var nurbsRefineFactors = []float64{1, 0.5, 0.25}
+
+// foldDrivenPatch triangulates a B-spline trim at increasing interior density, keeping the first
+// fold-free result (or the least-folded one if none reaches zero). Each attempt is an independent
+// metric-scaled CDT of the SAME exact boundary loops (so neighbouring faces still stitch watertight,
+// whatever density wins) plus a denser interior node set — built by the shared metricCDTPatch.
+func foldDrivenPatch(s geom.BSplineSurface, su, sv float64, q Quality, outer3D []math.Point3, outerUV []math.Point2, holes3D [][]math.Point3, holesUV [][]math.Point2) *Mesh {
+	var best *Mesh
+	bestFolds := 1 << 30
+	for _, refine := range nurbsRefineFactors {
+		m, _ := metricCDTPatch(s, su, sv, q, outer3D, outerUV, holes3D, holesUV, refine)
+		if m == nil {
+			continue
+		}
+		if folds := FoldEdgeCount(m); folds < bestFolds {
+			best, bestFolds = m, folds
+		}
+		if bestFolds == 0 {
+			break
+		}
 	}
-	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q) {
-		b.addInterior(g)
-	}
-	tris := constrainedDelaunay(b.scaled, loops)
-	if len(tris) == 0 {
-		return nil
-	}
-	m := patchMeshFrom(b.pos, b.nrm, tris)
-	repairFolds(m, 8)
-	return m
+	return best
 }
 
 // metricScale returns the mean 3D length of a unit step in u and in v (√E, √G of the first

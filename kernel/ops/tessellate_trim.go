@@ -120,7 +120,9 @@ func boundaryPatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 		u, v := s.ParamAt(p)
 		nrm[i] = s.NormalAt(u, v)
 	}
-	return patchMeshFrom(pos, nrm, tris)
+	m := patchMeshFrom(pos, nrm, tris)
+	repairFolds(m, 8) // a curved cap's boundary triangulation can crease; flip the folding diagonals (#585)
+	return m
 }
 
 // patchProjection picks the 2D embedding to ear-clip a curved patch's boundary in. A B-spline

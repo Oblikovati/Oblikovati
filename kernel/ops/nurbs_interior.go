@@ -22,9 +22,15 @@ const (
 // hole, and at least a margin off the boundary so no node spills past the trim or sits on it (the
 // over-enclosure that inflated the volume in every naive attempt — ADR-0030 / M24 F02). The pcurves
 // are the smooth march-projected boundary (F01); their point-in-polygon test is therefore reliable.
-func adaptiveInteriorNodes(s geom.Surface, outer []math.Point2, holes [][]math.Point2, q Quality) [][2]float64 {
+func adaptiveInteriorNodes(s geom.Surface, outer []math.Point2, holes [][]math.Point2, q Quality, refine float64) [][2]float64 {
 	umin, umax, vmin, vmax := uvBBox(outer)
 	stepU, stepV := adaptiveStep(s, umin, umax, vmin, vmax, q)
+	if refine > 0 && refine < 1 {
+		// Fold-driven refinement asks for a denser grid (#585), floored at maxInteriorCells so a
+		// re-mesh cannot explode the node count even on a face that was already finely sampled.
+		stepU = stdmath.Max(stepU*refine, (umax-umin)/maxInteriorCells)
+		stepV = stdmath.Max(stepV*refine, (vmax-vmin)/maxInteriorCells)
+	}
 	if stepU <= 0 || stepV <= 0 {
 		return nil
 	}
