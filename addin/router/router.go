@@ -43,6 +43,7 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerLightingHandlers()
 	r.registerGraphicsHandlers()
 	r.registerExchangeHandlers()
+	r.registerPointCloudHandlers()
 	r.registerFontHandlers()
 	r.registerAddInHandlers()
 	r.registerApplicationHandlers()

@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package router
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"oblikovati.org/api/types"
+	"oblikovati.org/api/wire"
+)
+
+// writeScan writes a small ASCII scan file and returns its path.
+func writeScan(t *testing.T, body string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "scan.xyz")
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatalf("write scan: %v", err)
+	}
+	return path
+}
+
+// TestPointCloudAttachListGetDelete: the full attach → list → get → delete flow over the wire,
+// with the cloud's point count and default state surfaced (M17-F06, #645).
+func TestPointCloudAttachListGetDelete(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := writeScan(t, "0 0 0\n1 0 0\n2 0 0\n3 0 0\n")
+
+	var attached wire.PointCloudInfo
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{FullFileName: path}), &attached)
+	if attached.Name != "Cloud1" || attached.TotalPointCount != 4 || !attached.Visible || attached.Scale != 1 {
+		t.Fatalf("attached = %+v, want Cloud1/4 pts/visible/scale 1", attached)
+	}
+
+	var list wire.ListPointCloudsResult
+	call(t, r, s, "pointClouds.list", `{}`, &list)
+	if len(list.PointClouds) != 1 || list.PointClouds[0].Name != "Cloud1" {
+		t.Errorf("list = %+v, want one Cloud1", list.PointClouds)
+	}
+
+	var got wire.PointCloudInfo
+	call(t, r, s, "pointClouds.get", `{"name":"Cloud1"}`, &got)
+	if got.TotalPointCount != 4 {
+		t.Errorf("get TotalPointCount = %d, want 4", got.TotalPointCount)
+	}
+
+	var del wire.DeletePointCloudResult
+	call(t, r, s, "pointClouds.delete", `{"name":"Cloud1"}`, &del)
+	if !del.Deleted {
+		t.Error("delete should report Deleted=true")
+	}
+	call(t, r, s, "pointClouds.list", `{}`, &list)
+	if len(list.PointClouds) != 0 {
+		t.Errorf("after delete, list = %+v, want empty", list.PointClouds)
+	}
+}
+
+// TestPointCloudPlacementAndBudget: setScale/setDensity/setVisible/setTransform mutate the cloud,
+// and the space-conversion methods round-trip a point through the placement (#645).
+func TestPointCloudPlacementAndBudget(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := writeScan(t, "0 0 0\n1 1 1\n2 2 2\n3 3 3\n4 4 4\n")
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})
+
+	var info wire.PointCloudInfo
+	call(t, r, s, "pointClouds.setScale", `{"name":"Scan","scale":2}`, &info)
+	if info.Scale != 2 {
+		t.Errorf("scale = %v, want 2", info.Scale)
+	}
+	call(t, r, s, "pointClouds.setDensity", `{"name":"Scan","maximumPointCount":2}`, &info)
+	if info.MaximumPointCount != 2 || info.DisplayedPointCount != 2 {
+		t.Errorf("budget = max %d displayed %d, want 2/2", info.MaximumPointCount, info.DisplayedPointCount)
+	}
+	call(t, r, s, "pointClouds.setVisible", `{"name":"Scan","visible":false}`, &info)
+	if info.Visible {
+		t.Error("setVisible(false) should hide the cloud")
+	}
+
+	move := types.TranslationMatrix(types.Vector{X: 10, Y: 0, Z: 0})
+	call(t, r, s, "pointClouds.setTransform", mustJSON(t, wire.SetPointCloudTransformArgs{Name: "Scan", Transform: move}), &info)
+
+	// A cloud point (1,1,1) maps to model space scaled (×2) then translated (+10x) → (12,2,2).
+	var sp wire.PointCloudSpaceResult
+	call(t, r, s, "pointClouds.toModelSpace", mustJSON(t, wire.PointCloudSpaceArgs{Name: "Scan", Point: types.Point{X: 1, Y: 1, Z: 1}}), &sp)
+	if !sp.OK || sp.Point != (types.Point{X: 12, Y: 2, Z: 2}) {
+		t.Errorf("toModelSpace = %+v (ok=%v), want (12,2,2)", sp.Point, sp.OK)
+	}
+	call(t, r, s, "pointClouds.fromModelSpace", mustJSON(t, wire.PointCloudSpaceArgs{Name: "Scan", Point: sp.Point}), &sp)
+	if !sp.OK || sp.Point != (types.Point{X: 1, Y: 1, Z: 1}) {
+		t.Errorf("fromModelSpace round-trip = %+v (ok=%v), want (1,1,1)", sp.Point, sp.OK)
+	}
+}
+
+// TestPointCloudAttachErrors: a missing file and a non-positive scale are rejected (#645).
+func TestPointCloudAttachErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	if _, err := r.Handle(s, "pointClouds.attach", []byte(`{"fullFileName":"/no/such/scan.xyz"}`)); err == nil {
+		t.Error("attach of a missing file should fail")
+	}
+	path := writeScan(t, "0 0 0\n")
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "S", FullFileName: path}), &wire.PointCloudInfo{})
+	if _, err := r.Handle(s, "pointClouds.setScale", []byte(`{"name":"S","scale":0}`)); err == nil {
+		t.Error("setScale(0) should fail")
+	}
+}
