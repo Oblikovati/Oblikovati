@@ -56,11 +56,11 @@ func buildInsertObject(ownHandle, blockHandle uint64, ins [3]float64, rot float6
 // walk in CI (no corpus needed).
 func TestDecodeInsertSynthetic(t *testing.T) {
 	data := buildInsertObject(0x10, 0x42, [3]float64{5, 6, 0}, 0.75)
-	cur, err := seekEntity(data, ObjectRef{Handle: 0x10, Offset: 0}, R2000)
+	cur, err := seekEntity(&BitReader{}, data, ObjectRef{Handle: 0x10, Offset: 0}, R2000)
 	if err != nil {
 		t.Fatalf("seekEntity: %v", err)
 	}
-	in, _, err := decodeInsert(data, cur, 0x10, R2000)
+	in, _, err := decodeInsert(&BitReader{}, data, &cur, 0x10, R2000)
 	if err != nil {
 		t.Fatalf("decodeInsert: %v", err)
 	}

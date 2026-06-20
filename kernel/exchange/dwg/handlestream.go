@@ -40,8 +40,8 @@ func readResolvedHandle(r *BitReader, own uint64) uint64 {
 // can be read next. The reader is independent of the geometry/data-stream cursor.
 //
 //nolint:funlen,gocyclo // sequential flag-gated handle reads in spec order; length/branches are the format.
-func commonEntityHandles(data []byte, cur *entityCursor, version Version) (owner uint64, r *BitReader) {
-	r = NewBitReaderAt(data, cur.handleStart)
+func commonEntityHandles(r *BitReader, data []byte, cur *entityCursor, version Version) (owner uint64, _ *BitReader) {
+	r.Reset(data, cur.handleStart)
 	ce := cur.common
 	own := cur.ownHandle
 	if ce.colorByHandle {
