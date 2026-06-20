@@ -19,6 +19,16 @@ type PointCloudRecord struct {
 	Scale      float64
 	Transform  [16]float64
 	MaxPoints  int
+	Crops      []PointCloudCropRecord
+}
+
+// PointCloudCropRecord is the serialisable form of one crop volume (#645): its name, whether it
+// is active, and its model-space box as min/max corners.
+type PointCloudCropRecord struct {
+	Name   string
+	Active bool
+	Min    [3]float64
+	Max    [3]float64
 }
 
 // PointCloudBearer is the optional interface content implements when it owns attached point

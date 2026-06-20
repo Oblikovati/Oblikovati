@@ -352,6 +352,7 @@ func toCodecPointClouds(in []doc.PointCloudRecord) []yamlcodec.PointCloudRecord 
 		out[i] = yamlcodec.PointCloudRecord{
 			Name: r.Name, Source: r.Source, ResourceID: r.ResourceID,
 			Visible: r.Visible, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
+			Crops: toCodecCrops(r.Crops),
 		}
 	}
 	return out
@@ -366,7 +367,31 @@ func fromCodecPointClouds(in []yamlcodec.PointCloudRecord) []doc.PointCloudRecor
 		out[i] = doc.PointCloudRecord{
 			Name: r.Name, Source: r.Source, ResourceID: r.ResourceID,
 			Visible: r.Visible, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
+			Crops: fromCodecCrops(r.Crops),
 		}
+	}
+	return out
+}
+
+// toCodecCrops / fromCodecCrops bridge the document and on-disk crop-volume records (#645).
+func toCodecCrops(in []doc.PointCloudCropRecord) []yamlcodec.PointCloudCropRecord {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]yamlcodec.PointCloudCropRecord, len(in))
+	for i, c := range in {
+		out[i] = yamlcodec.PointCloudCropRecord{Name: c.Name, Active: c.Active, Min: c.Min, Max: c.Max}
+	}
+	return out
+}
+
+func fromCodecCrops(in []yamlcodec.PointCloudCropRecord) []doc.PointCloudCropRecord {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]doc.PointCloudCropRecord, len(in))
+	for i, c := range in {
+		out[i] = doc.PointCloudCropRecord{Name: c.Name, Active: c.Active, Min: c.Min, Max: c.Max}
 	}
 	return out
 }

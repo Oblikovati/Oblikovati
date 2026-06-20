@@ -18,6 +18,17 @@ type PointCloud struct {
 	source     string        // SourceFullFileName (display / re-link metadata)
 	resourceID string        // ADR-0031 resource UUID addressing the scan bytes
 	maxPoints  int           // display budget; 0 = show every point
+	crops      PointCloudCrops
+}
+
+// Crops returns the cloud's crop-volume collection — the model-space boxes that limit display
+// (#645). AddCrop is the factory: it mints a unique name and starts the crop active.
+func (pc *PointCloud) Crops() *PointCloudCrops { return &pc.crops }
+
+// AddCrop adds an active crop over the given model-space box under a freshly minted name.
+func (pc *PointCloud) AddCrop(box math.Box) *PointCloudCrop {
+	c, _ := pc.crops.Add(pc.crops.uniqueName("Crop"), box)
+	return c
 }
 
 // New creates a cloud from decoded cloud-local points. It starts visible, unscaled (factor 1),
@@ -64,13 +75,28 @@ func (pc *PointCloud) SourceFullFileName() string { return pc.source }
 func (pc *PointCloud) ResourceID() string         { return pc.resourceID }
 
 // TotalPointCount returns how many points the scan holds; DisplayedPointCount returns how many
-// render after the display budget (MaximumPointCount) is applied.
+// render after the active crops and the display budget (MaximumPointCount) are applied.
 func (pc *PointCloud) TotalPointCount() int { return len(pc.points) }
 func (pc *PointCloud) DisplayedPointCount() int {
-	if pc.maxPoints <= 0 || pc.maxPoints >= len(pc.points) {
+	n := pc.croppedCount()
+	if pc.maxPoints > 0 && pc.maxPoints < n {
+		return pc.maxPoints
+	}
+	return n
+}
+
+// croppedCount returns how many points pass the active crops (all of them when none is active).
+func (pc *PointCloud) croppedCount() int {
+	if !pc.crops.anyActive() {
 		return len(pc.points)
 	}
-	return pc.maxPoints
+	n := 0
+	for _, p := range pc.points {
+		if pc.crops.Admits(pc.ToModelSpace(p)) {
+			n++
+		}
+	}
+	return n
 }
 
 // MaximumPointCount/SetMaximumPointCount get and set the display budget (0 = unbounded). A
@@ -100,26 +126,35 @@ func (pc *PointCloud) FromModelSpace(p math.Point3) (math.Point3, bool) {
 // CloudPoints returns the scan points in cloud-local space (the decoded coordinates).
 func (pc *PointCloud) CloudPoints() []math.Point3 { return pc.points }
 
-// DisplayedPoints returns the budgeted point set in MODEL space — what the renderer draws. When
-// a display budget is set it strides evenly across the scan so the sample stays spatially
-// representative rather than a truncated prefix.
+// DisplayedPoints returns the rendered point set in MODEL space — the points passing the active
+// crops, then strided evenly to the display budget so the sample stays spatially representative
+// rather than a truncated prefix.
 func (pc *PointCloud) DisplayedPoints() []math.Point3 {
-	out := make([]math.Point3, 0, pc.DisplayedPointCount())
-	for _, p := range pc.sampledCloudPoints() {
-		out = append(out, pc.ToModelSpace(p))
+	return strideSample(pc.croppedModelPoints(), pc.maxPoints)
+}
+
+// croppedModelPoints returns every point in MODEL space that passes the active crops.
+func (pc *PointCloud) croppedModelPoints() []math.Point3 {
+	out := make([]math.Point3, 0, len(pc.points))
+	for _, p := range pc.points {
+		m := pc.ToModelSpace(p)
+		if pc.crops.Admits(m) {
+			out = append(out, m)
+		}
 	}
 	return out
 }
 
-// sampledCloudPoints returns the cloud-local points after the display budget, strided evenly.
-func (pc *PointCloud) sampledCloudPoints() []math.Point3 {
-	if pc.maxPoints <= 0 || pc.maxPoints >= len(pc.points) {
-		return pc.points
+// strideSample returns pts capped to max entries, taken at an even stride (the whole slice when
+// max is 0 or already within budget).
+func strideSample(pts []math.Point3, max int) []math.Point3 {
+	if max <= 0 || max >= len(pts) {
+		return pts
 	}
-	stride := len(pc.points) / pc.maxPoints
-	out := make([]math.Point3, 0, pc.maxPoints)
-	for i := 0; i < len(pc.points) && len(out) < pc.maxPoints; i += stride {
-		out = append(out, pc.points[i])
+	stride := len(pts) / max
+	out := make([]math.Point3, 0, max)
+	for i := 0; i < len(pts) && len(out) < max; i += stride {
+		out = append(out, pts[i])
 	}
 	return out
 }

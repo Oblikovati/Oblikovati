@@ -31,6 +31,10 @@ func (r *Router) registerPointCloudHandlers() {
 	r.handlers[wire.MethodPointCloudsSetDensity] = setPointCloudDensity
 	r.handlers[wire.MethodPointCloudsToModelSpace] = pointCloudToModelSpace
 	r.handlers[wire.MethodPointCloudsFromModelSpace] = pointCloudFromModelSpace
+	r.handlers[wire.MethodPointCloudsAddCrop] = addPointCloudCrop
+	r.handlers[wire.MethodPointCloudsListCrops] = listPointCloudCrops
+	r.handlers[wire.MethodPointCloudsDeleteCrop] = deletePointCloudCrop
+	r.handlers[wire.MethodPointCloudsSetCropActive] = setPointCloudCropActive
 }
 
 // attachPointCloud reads the scan file, embeds its bytes as a resource, decodes its points, and
@@ -213,6 +217,77 @@ func pointCloudInfo(pc *pointcloud.PointCloud) wire.PointCloudInfo {
 		TotalPointCount:     pc.TotalPointCount(),
 		DisplayedPointCount: pc.DisplayedPointCount(),
 		MaximumPointCount:   pc.MaximumPointCount(),
+	}
+}
+
+// addPointCloudCrop adds an active crop over the requested box on a named cloud.
+func addPointCloudCrop(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.AddPointCloudCropArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsAddCrop)
+	if err != nil {
+		return nil, err
+	}
+	crop := pc.AddCrop(math.NewBox(point3Of(in.Min), point3Of(in.Max)))
+	return json.Marshal(cropInfo(in.Cloud, crop))
+}
+
+// listPointCloudCrops enumerates a named cloud's crops.
+func listPointCloudCrops(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.ListPointCloudCropsArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsListCrops)
+	if err != nil {
+		return nil, err
+	}
+	crops := pc.Crops()
+	out := make([]wire.PointCloudCropInfo, 0, crops.Count())
+	for i := 0; i < crops.Count(); i++ {
+		out = append(out, cropInfo(in.Cloud, crops.Item(i)))
+	}
+	return json.Marshal(wire.ListPointCloudCropsResult{Crops: out})
+}
+
+// deletePointCloudCrop removes a named crop from a cloud.
+func deletePointCloudCrop(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.PointCloudCropArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsDeleteCrop)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(wire.DeletePointCloudCropResult{Crop: in.Crop, Deleted: pc.Crops().Remove(in.Crop)})
+}
+
+// setPointCloudCropActive toggles whether a named crop limits display.
+func setPointCloudCropActive(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.SetPointCloudCropActiveArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsSetCropActive)
+	if err != nil {
+		return nil, err
+	}
+	crop, ok := pc.Crops().ByName(in.Crop)
+	if !ok {
+		return nil, fmt.Errorf("pointClouds.setCropActive: cloud %q has no crop %q", in.Cloud, in.Crop)
+	}
+	crop.SetActive(in.Active)
+	return json.Marshal(cropInfo(in.Cloud, crop))
+}
+
+// cropInfo maps a crop to its wire shape under the owning cloud's name.
+func cropInfo(cloud string, c *pointcloud.PointCloudCrop) wire.PointCloudCropInfo {
+	return wire.PointCloudCropInfo{
+		Cloud: cloud, Crop: c.Name(), Active: c.Active(),
+		Min: pointOf(c.Box().Min), Max: pointOf(c.Box().Max),
 	}
 }
 

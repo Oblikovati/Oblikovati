@@ -92,6 +92,68 @@ func TestPointCloudPlacementAndBudget(t *testing.T) {
 	}
 }
 
+// TestPointCloudCropLifecycle: add a crop, see it limit the displayed count, toggle it off and on,
+// list it, and delete it — all over the wire (#645).
+func TestPointCloudCropLifecycle(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := writeScan(t, "0 0 0\n1 0 0\n2 0 0\n3 0 0\n4 0 0\n5 0 0\n")
+	var info wire.PointCloudInfo
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &info)
+	if info.DisplayedPointCount != 6 {
+		t.Fatalf("attached displayed count = %d, want 6", info.DisplayedPointCount)
+	}
+
+	// Crop to x in [0,2] → 3 points displayed.
+	crop := wire.AddPointCloudCropArgs{Cloud: "Scan", Min: types.Point{X: -0.5, Y: -1, Z: -1}, Max: types.Point{X: 2.5, Y: 1, Z: 1}}
+	var ci wire.PointCloudCropInfo
+	call(t, r, s, "pointClouds.addCrop", mustJSON(t, crop), &ci)
+	if ci.Crop != "Crop1" || !ci.Active {
+		t.Fatalf("addCrop = %+v, want active Crop1", ci)
+	}
+	call(t, r, s, "pointClouds.get", `{"name":"Scan"}`, &info)
+	if info.DisplayedPointCount != 3 {
+		t.Errorf("cropped displayed count = %d, want 3 (x 0..2)", info.DisplayedPointCount)
+	}
+
+	// Deactivating restores the full set.
+	call(t, r, s, "pointClouds.setCropActive", `{"cloud":"Scan","crop":"Crop1","active":false}`, &ci)
+	call(t, r, s, "pointClouds.get", `{"name":"Scan"}`, &info)
+	if info.DisplayedPointCount != 6 {
+		t.Errorf("after deactivating crop, displayed = %d, want 6", info.DisplayedPointCount)
+	}
+
+	var list wire.ListPointCloudCropsResult
+	call(t, r, s, "pointClouds.listCrops", `{"cloud":"Scan"}`, &list)
+	if len(list.Crops) != 1 || list.Crops[0].Active {
+		t.Errorf("listCrops = %+v, want one inactive crop", list.Crops)
+	}
+
+	var del wire.DeletePointCloudCropResult
+	call(t, r, s, "pointClouds.deleteCrop", `{"cloud":"Scan","crop":"Crop1"}`, &del)
+	call(t, r, s, "pointClouds.listCrops", `{"cloud":"Scan"}`, &list)
+	if !del.Deleted || len(list.Crops) != 0 {
+		t.Errorf("after delete: deleted=%v crops=%+v, want deleted/empty", del.Deleted, list.Crops)
+	}
+}
+
+// TestPointCloudCropErrors: crop ops on a missing cloud or crop error (#645).
+func TestPointCloudCropErrors(t *testing.T) {
+	r, s := emptyPartSession(t)
+	if _, err := r.Handle(s, "pointClouds.addCrop", []byte(`{"cloud":"nope","min":{"x":0,"y":0,"z":0},"max":{"x":1,"y":1,"z":1}}`)); err == nil {
+		t.Error("addCrop on a missing cloud should fail")
+	}
+	path := writeScan(t, "0 0 0\n")
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "S", FullFileName: path}), &wire.PointCloudInfo{})
+	if _, err := r.Handle(s, "pointClouds.setCropActive", []byte(`{"cloud":"S","crop":"nope","active":true}`)); err == nil {
+		t.Error("setCropActive on a missing crop should fail")
+	}
+	for _, m := range []string{"pointClouds.listCrops", "pointClouds.deleteCrop"} {
+		if _, err := r.Handle(s, m, []byte(`{"cloud":"nope","crop":"x"}`)); err == nil {
+			t.Errorf("%s on a missing cloud should fail", m)
+		}
+	}
+}
+
 // TestPointCloudMissingNameErrors: every name-keyed operation errors when no cloud has the name,
 // exercising the not-found branches of each handler (#645).
 func TestPointCloudMissingNameErrors(t *testing.T) {
