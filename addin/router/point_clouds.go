@@ -115,6 +115,7 @@ func setPointCloudTransform(s *app.Session, raw json.RawMessage) (json.RawMessag
 		return nil, err
 	}
 	pc.SetTransform(math.Matrix4FromCells(in.Transform.Cells))
+	s.RecomputeAfterPointCloudMove() // datums built on the cloud follow it (#645)
 	return json.Marshal(pointCloudInfo(pc))
 }
 
@@ -131,6 +132,7 @@ func setPointCloudScale(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	if !pc.SetScale(in.Scale) {
 		return nil, fmt.Errorf("pointClouds.setScale: scale must be positive, got %v", in.Scale)
 	}
+	s.RecomputeAfterPointCloudMove() // datums built on the cloud follow it (#645)
 	return json.Marshal(pointCloudInfo(pc))
 }
 

@@ -10,6 +10,7 @@ import (
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/api/wire"
+	"oblikovati.org/model/feature"
 )
 
 // writeScan writes a small ASCII scan file and returns its path.
@@ -260,5 +261,37 @@ func TestPointCloudNearestPoint(t *testing.T) {
 	}
 	if _, err := r.Handle(s, "pointClouds.nearestPoint", []byte(`{"cloud":"nope","point":{"x":0,"y":0,"z":0}}`)); err == nil {
 		t.Error("nearestPoint on an unknown cloud should error")
+	}
+}
+
+// TestSetTransformAutoRecomputesDatums: moving a cloud over the wire re-derives a plane fit to it,
+// so the datum follows without any separate recompute call (#645).
+func TestSetTransformAutoRecomputesDatums(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := writeScan(t, "0 0 5\n2 0 5\n0 2 5\n2 2 5\n")
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})
+
+	var fit wire.FitPointCloudPlaneResult
+	call(t, r, s, "pointClouds.fitPlane", `{"cloud":"Scan"}`, &fit)
+	if stdmath.Abs(fit.Origin.Z-5) > 1e-9 {
+		t.Fatalf("fitted plane Z = %v, want 5", fit.Origin.Z)
+	}
+
+	// Move the cloud up by 10 over the wire; no explicit recompute follows.
+	move := types.TranslationMatrix(types.Vector{X: 0, Y: 0, Z: 10})
+	call(t, r, s, "pointClouds.setTransform", mustJSON(t, wire.SetPointCloudTransformArgs{Name: "Scan", Transform: move}), &wire.PointCloudInfo{})
+
+	// The fitted work plane must have re-derived to z = 15.
+	var plane *feature.WorkPlane
+	for _, p := range s.PickableWorkPlanes() {
+		if p.Kind() == "point-cloud-fit" {
+			plane = p
+		}
+	}
+	if plane == nil {
+		t.Fatal("no point-cloud-fit work plane found")
+	}
+	if got := float64(plane.Plane().Origin().Z); stdmath.Abs(got-15) > 1e-9 {
+		t.Errorf("after the wire move, plane Z = %v, want 15 (auto-recompute should drive it)", got)
 	}
 }
