@@ -48,6 +48,15 @@ func (e SurfaceEvaluator) ClosestPoint(p math.Point3) math.Point3 {
 	return e.surface.PointAt(u, v)
 }
 
+// ParamRange returns the surface's (u, v) parameter domain as [uLo, uHi, vLo, vHi], with
+// infinite bounds clamped to the same finite window ClosestParam searches — so a caller can
+// pick sample parameters without tripping over an unbounded analytic domain.
+func (e SurfaceEvaluator) ParamRange() (uLo, uHi, vLo, vHi float64) {
+	uLo, uHi = clampDomain(e.surface.UDomain())
+	vLo, vHi = clampDomain(e.surface.VDomain())
+	return uLo, uHi, vLo, vHi
+}
+
 // gridSeed returns the sampled (u, v) nearest p over a coarse grid.
 func gridSeed(s geom.Surface, p math.Point3, uLo, uHi, vLo, vHi float64) (float64, float64) {
 	const n = 16
