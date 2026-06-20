@@ -66,6 +66,8 @@ func (s *Session) PersistLiveOptions() error {
 		GridMajorEvery: g.MajorEvery,
 		SnapToPoints:   g.SnapToPoints,
 		SnapToGrid:     g.SnapToGrid,
+		HeadsUpDisplay: s.hudEnabled,
+		RelaxMode:      s.relaxMode,
 	}
 	s.appOptions.Part = options.Part{ChamferFlatCorners: s.chamferFlatCorners}
 	return s.saveOptions()
@@ -79,6 +81,8 @@ func (s *Session) applySketchOptions(o options.Sketch) {
 	g.MajorEvery = o.GridMajorEvery
 	g.SnapToPoints = o.SnapToPoints
 	g.SnapToGrid = o.SnapToGrid
+	s.hudEnabled = o.HeadsUpDisplay
+	s.relaxMode = o.RelaxMode
 }
 
 // saveOptions persists the groups when a store is wired (in-session only otherwise).

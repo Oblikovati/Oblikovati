@@ -9,6 +9,24 @@ func TestBuildStatusIdle(t *testing.T) {
 	if sb.ToolActive || sb.Prompt != "Ready" || sb.SelectionCount != 0 {
 		t.Fatalf("idle status = %+v, want Ready / inactive / 0 selected", sb)
 	}
+	if sb.InSketch {
+		t.Error("idle status should not report InSketch")
+	}
+}
+
+// TestBuildStatusReportsSketchAndRelax checks the status model surfaces the sketch + Relax
+// Mode state the command-window control row needs to draw its toggle (#791).
+func TestBuildStatusReportsSketchAndRelax(t *testing.T) {
+	s, sk := sketchSession(t)
+	_ = sk
+	s.SetRelaxMode(true)
+	sb := BuildStatus(s)
+	if !sb.InSketch {
+		t.Error("editing a 2D sketch should report InSketch")
+	}
+	if !sb.RelaxMode {
+		t.Error("Relax Mode on should be reported in the status model")
+	}
 }
 
 func TestBuildStatusGuidesExtrude(t *testing.T) {

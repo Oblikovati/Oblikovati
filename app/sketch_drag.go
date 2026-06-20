@@ -45,7 +45,7 @@ func (s *Session) BeginEntityDrag(px, py float64) bool {
 		return false
 	}
 	ent, ok := s.pickSketchEntity(px, py)
-	if !ok || s.activeSketch.MoveableClassifier().Of(ent) != types.MoveableFree {
+	if !ok || !s.draggableForMode(ent) {
 		return false
 	}
 	grab, ok := screenToSketch(s, px, py)
@@ -54,6 +54,16 @@ func (s *Session) BeginEntityDrag(px, py float64) bool {
 	}
 	s.entityDrag = sketchDrag{anchors: s.dragAnchors(ent), grabPt: grab, active: true}
 	return true
+}
+
+// draggableForMode reports whether ent may be direct-dragged in the current mode. Normally
+// only MoveableFree geometry drags (fixed / fully-dimensioned entities click-select instead);
+// in Relax Mode any entity drags, because the solver relaxes the dimensions holding it (#791).
+func (s *Session) draggableForMode(ent sketch.Entity) bool {
+	if s.relaxMode {
+		return true
+	}
+	return s.activeSketch.MoveableClassifier().Of(ent) == types.MoveableFree
 }
 
 // dragAnchors collects the distinct points to pin while dragging — the defining points of every
@@ -116,6 +126,10 @@ func (s *Session) UpdateEntityDrag(px, py float64) {
 	pins := make([]sketch.PinTarget, len(s.entityDrag.anchors))
 	for i, a := range s.entityDrag.anchors {
 		pins[i] = sketch.PinTarget{P: a.p, Target: a.start.TranslateBy(delta)}
+	}
+	if s.relaxMode {
+		s.activeSketch.RelaxSolve(pins) // relax dimensions so over/fully-constrained geometry follows (#791)
+		return
 	}
 	s.activeSketch.DragSolve(pins)
 }
