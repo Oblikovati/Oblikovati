@@ -102,3 +102,22 @@ func cloudFitPlaneOf(t *testing.T, def *compdef.PartComponentDefinition) *featur
 }
 
 func approxEq(a, b float64) bool { d := a - b; return d < 1e-9 && d > -1e-9 }
+
+// TestCloudPlaneFitSourceEdges covers the source's no-fit branch (too few points) and a relink
+// that finds no matching cloud in the part (#645).
+func TestCloudPlaneFitSourceEdges(t *testing.T) {
+	_, def := emptyPartSession(t)
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, err := def.PointClouds().Add("Tiny", "t.xyz", rid, []math.Point3{math.P3(0, 0, 0), math.P3(1, 1, 1)})
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	if _, _, _, ok := (cloudPlaneFitSource{pc}).FitFrame(); ok {
+		t.Error("FitFrame on two points should report ok=false (no plane)")
+	}
+	// A point-cloud-fit plane whose cloud is absent: relink finds no match (the attach false branch).
+	def.WorkPlanes().AddByPointCloudFit(cloudPlaneFitSource{pc})
+	def.PointClouds().Remove("Tiny")
+	s2, _ := emptyPartSession(t)
+	s2.relinkPointCloudFits(def) // no cloud named "Tiny" now → nothing relinked, no recompute
+}

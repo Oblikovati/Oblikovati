@@ -112,3 +112,18 @@ func TestCloudFitPlaneSerializeRoundTrip(t *testing.T) {
 		t.Errorf("after relink Z = %v, want 12 (follows the re-attached cloud)", got)
 	}
 }
+
+// TestCloudFitPlaneEvalAndRelinkEdges covers the error/edge branches: eval with neither a source
+// nor a prior fit, the CloudID accessor, and a relink whose id does not match (#645).
+func TestCloudFitPlaneEvalAndRelinkEdges(t *testing.T) {
+	d := &pointCloudFitPlaneDef{cloudID: "X"} // no source, no frozen fit
+	if _, err := d.eval(nil); err == nil {
+		t.Error("eval with no source and no prior fit should error")
+	}
+	if d.CloudID() != "X" {
+		t.Errorf("CloudID = %q, want X", d.CloudID())
+	}
+	if d.relink(&fakePlaneFitSource{id: "other"}) {
+		t.Error("relink with a mismatched id should report false")
+	}
+}
