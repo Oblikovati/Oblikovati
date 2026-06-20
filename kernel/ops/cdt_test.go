@@ -52,6 +52,24 @@ func TestCDTSquare(t *testing.T) {
 	}
 }
 
+// TestCDTDuplicateBoundaryPoint guards the #1073 freeze fix: an imported boundary loop with a
+// DUPLICATE sample (two points at the same coords, as STEP pcurves produce) must still triangulate to
+// the correct domain. The duplicate is skipped by point insertion (it owns no triangle), so a
+// constraint referencing it used to make the flip recovery spin its whole 4·len(tris) retry finding
+// no crossing — the O(T²) freeze on large faces. constrainedDelaunay now constrains between the
+// inserted representatives, and the degenerate (coincident-endpoint) edge is skipped.
+func TestCDTDuplicateBoundaryPoint(t *testing.T) {
+	// A unit square whose loop repeats the (0,0) corner as a separate index (4) — a duplicate sample.
+	pts := [][2]float64{{0, 0}, {2, 0}, {2, 2}, {0, 2}, {0, 0}}
+	tris := constrainedDelaunay(pts, [][]int{{0, 1, 2, 3, 4}})
+	if len(tris) != 2 {
+		t.Fatalf("square with a duplicate corner should triangulate to 2 triangles, got %d", len(tris))
+	}
+	if got := cdtAreaSum(pts, tris); stdmath.Abs(got-4) > 1e-9 {
+		t.Errorf("duplicate-corner square area = %g, want 4 (the duplicate constraint cracked the domain)", got)
+	}
+}
+
 func TestCDTConcaveLShape(t *testing.T) {
 	// An L: the triangulation must NOT bridge the notch (that was the plain-Delaunay over-count).
 	pts := [][2]float64{{0, 0}, {2, 0}, {2, 1}, {1, 1}, {1, 2}, {0, 2}}
