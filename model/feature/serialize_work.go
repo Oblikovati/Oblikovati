@@ -29,6 +29,7 @@ type WorkFeatureData struct {
 	Position   []float64 `yaml:"position,omitempty"` // point position / fixed-frame origin [x,y,z]
 	XAxis      []float64 `yaml:"xaxis,omitempty"`    // fixed-frame X axis [x,y,z]
 	YAxis      []float64 `yaml:"yaxis,omitempty"`    // fixed-frame Y axis [x,y,z]
+	CloudID    string    `yaml:"cloud,omitempty"`    // point-cloud-fit: the source cloud's id (provenance, #645)
 }
 
 // MarshalWork projects the user work features into the recipe, in creation order.
@@ -82,6 +83,12 @@ func serializePlaneDef(def planeDefinition) (WorkFeatureData, error) {
 	case *fixedFramePlaneDef:
 		p := v.origin()
 		d.Position = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
+		d.XAxis, d.YAxis = unitSlice(v.x), unitSlice(v.y)
+	case *pointCloudFitPlaneDef:
+		// Persist the provenance link and the last good fit (the frozen frame), so the plane has
+		// geometry on load even before the cloud source is re-attached (#645).
+		d.CloudID = v.cloudID
+		d.Position = []float64{float64(v.origin.X), float64(v.origin.Y), float64(v.origin.Z)}
 		d.XAxis, d.YAxis = unitSlice(v.x), unitSlice(v.y)
 	case *linePlaneAnglePlaneDef:
 		d.Angle = v.angle()
@@ -171,6 +178,8 @@ func restorePlaneFeature(c *WorkPlanes, d WorkFeatureData) error {
 		return restoreRefPlane(d, 3, func(r []WorkRef) { c.AddByThreePoints(r[0], r[1], r[2]) })
 	case "fixed-frame":
 		return restoreFixedFrame(c, d)
+	case "point-cloud-fit":
+		return restorePointCloudFit(c, d)
 	case "plane-point":
 		return restoreRefPlane(d, 2, func(r []WorkRef) { c.AddByPlaneAndPoint(r[0], r[1]) })
 	case "two-planes":
@@ -223,6 +232,26 @@ func restoreFixedFrame(c *WorkPlanes, d WorkFeatureData) error {
 		return err
 	}
 	c.AddFixed(func() math.Point3 { return origin }, x, y)
+	return nil
+}
+
+// restorePointCloudFit rebuilds an associative point-cloud-fit plane from its provenance id and
+// last good fit (the frozen frame). The live cloud source is re-attached after load by the host
+// (RelinkCloudFits), so until then the plane holds its frozen geometry (#645).
+func restorePointCloudFit(c *WorkPlanes, d WorkFeatureData) error {
+	origin, err := point3From(d.Position, "point-cloud-fit origin")
+	if err != nil {
+		return err
+	}
+	x, err := unit3From(d.XAxis, "point-cloud-fit X axis")
+	if err != nil {
+		return err
+	}
+	y, err := unit3From(d.YAxis, "point-cloud-fit Y axis")
+	if err != nil {
+		return err
+	}
+	c.addUser(&pointCloudFitPlaneDef{cloudID: d.CloudID, origin: origin, x: x, y: y, hasFit: true})
 	return nil
 }
 
