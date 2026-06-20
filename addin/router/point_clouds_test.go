@@ -3,6 +3,7 @@
 package router
 
 import (
+	stdmath "math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -215,5 +216,29 @@ func TestPointCloudAttachErrors(t *testing.T) {
 	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "S", FullFileName: path}), &wire.PointCloudInfo{})
 	if _, err := r.Handle(s, "pointClouds.setScale", []byte(`{"name":"S","scale":0}`)); err == nil {
 		t.Error("setScale(0) should fail")
+	}
+}
+
+// TestPointCloudFitPlane: fitPlane over the wire fits a work plane to a planar (z = 5) scan and
+// reports the new plane's name, origin (centroid), and unit normal (#645).
+func TestPointCloudFitPlane(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := writeScan(t, "0 0 5\n2 0 5\n0 2 5\n2 2 5\n1 3 5\n-1 1 5\n")
+	var info wire.PointCloudInfo
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &info)
+
+	var res wire.FitPointCloudPlaneResult
+	call(t, r, s, "pointClouds.fitPlane", `{"cloud":"Scan"}`, &res)
+	if res.WorkPlane == "" {
+		t.Fatal("fitPlane should return a work plane name")
+	}
+	if stdmath.Abs(res.Origin.Z-5) > 1e-9 {
+		t.Errorf("origin Z = %v, want 5", res.Origin.Z)
+	}
+	if stdmath.Abs(stdmath.Abs(res.Normal.Z)-1) > 1e-6 {
+		t.Errorf("normal = %+v, want ±Z", res.Normal)
+	}
+	if _, err := r.Handle(s, "pointClouds.fitPlane", []byte(`{"cloud":"nope"}`)); err == nil {
+		t.Error("fitPlane on an unknown cloud should error")
 	}
 }

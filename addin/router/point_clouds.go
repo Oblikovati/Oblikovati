@@ -35,6 +35,7 @@ func (r *Router) registerPointCloudHandlers() {
 	r.handlers[wire.MethodPointCloudsListCrops] = listPointCloudCrops
 	r.handlers[wire.MethodPointCloudsDeleteCrop] = deletePointCloudCrop
 	r.handlers[wire.MethodPointCloudsSetCropActive] = setPointCloudCropActive
+	r.handlers[wire.MethodPointCloudsFitPlane] = fitPointCloudPlane
 }
 
 // attachPointCloud reads the scan file, embeds its bytes as a resource, decodes its points, and
@@ -232,6 +233,25 @@ func addPointCloudCrop(s *app.Session, raw json.RawMessage) (json.RawMessage, er
 	}
 	crop := pc.AddCrop(math.NewBox(point3Of(in.Min), point3Of(in.Max)))
 	return json.Marshal(cropInfo(in.Cloud, crop))
+}
+
+// fitPointCloudPlane fits a least-squares work plane to the named cloud's displayed points and
+// returns the created work plane's name with the fitted origin (centroid) and unit normal.
+func fitPointCloudPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.FitPointCloudPlaneArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	wp, plane, err := s.CreatePointCloudPlane(in.Cloud)
+	if err != nil {
+		return nil, err
+	}
+	n := plane.Normal()
+	return json.Marshal(wire.FitPointCloudPlaneResult{
+		WorkPlane: wp.Name(),
+		Origin:    pointOf(plane.Origin),
+		Normal:    pointOf(math.P3(n.X, n.Y, n.Z)),
+	})
 }
 
 // listPointCloudCrops enumerates a named cloud's crops.
