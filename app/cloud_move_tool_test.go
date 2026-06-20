@@ -108,3 +108,20 @@ func TestCloudMoveToolTrivialsAndNoCloudBranch(t *testing.T) {
 		t.Error("BeginCloudDrag should not start when no cloud is selected")
 	}
 }
+
+// TestActiveToolConsumesClicks: the predicate that makes box-select stand down — true for a
+// PlaneClickTool (the Crop Box tool), false otherwise (#645).
+func TestActiveToolConsumesClicks(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	if s.ActiveToolConsumesClicks() {
+		t.Error("no active tool should not consume clicks")
+	}
+	s.StartTool(NewCropBoxTool(nil)) // a PlaneClickTool (ClickAt)
+	if !s.ActiveToolConsumesClicks() {
+		t.Error("the Crop Box tool should consume clicks")
+	}
+	s.StartTool(NewCloudMoveTool()) // drag-driven, not a PlaneClickTool
+	if s.ActiveToolConsumesClicks() {
+		t.Error("the Move tool is drag-driven and should not consume clicks (updateCloudDrag handles it)")
+	}
+}

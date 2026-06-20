@@ -129,6 +129,9 @@ func updateBoxSelect(s *app.Session) bool {
 	if !native.IsItemClicked(native.MouseLeft) {
 		return false
 	}
+	if s.ActiveToolConsumesClicks() {
+		return false // a click tool (sketch geometry, point-cloud Crop Box) owns the press, not box-select
+	}
 	lx, ly := viewportCursor()
 	if _, hit := s.PickAt(lx, ly, app.NewSelectionFilter()); hit {
 		return false // pressed on geometry → normal click select (drag-to-move is future work)
