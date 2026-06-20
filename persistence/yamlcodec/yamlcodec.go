@@ -48,6 +48,8 @@ type Document struct {
 	Attachments []AttachmentRecord
 	// Interests are the add-in data registry records (M03-F10).
 	Interests []InterestRecord
+	// PointClouds are the attached scan records (M17-F06, #645); their bytes are in Resources.
+	PointClouds []PointCloudRecord
 	// Attributes is the add-in attribute-set block (#155): the encoded AttributeManager
 	// (model/attr), nil for a document that carries no attributes.
 	Attributes []byte
@@ -149,6 +151,19 @@ type AttachmentRecord struct {
 	BrowserVisible    bool   `yaml:"browserVisible,omitempty"`
 }
 
+// PointCloudRecord is one attached scan's metadata (M17-F06, #645): its name, source path, the
+// id of the resource holding its bytes, visibility, scale, the 16 cloud→model transform cells,
+// and the display point budget. The points themselves live once in the resource table.
+type PointCloudRecord struct {
+	Name       string      `yaml:"name"`
+	Source     string      `yaml:"source,omitempty"`
+	ResourceID string      `yaml:"resourceId,omitempty"`
+	Visible    bool        `yaml:"visible"`
+	Scale      float64     `yaml:"scale"`
+	Transform  [16]float64 `yaml:"transform,flow"`
+	MaxPoints  int         `yaml:"maxPoints,omitempty"`
+}
+
 // InterestRecord is one add-in data-registry entry (M03-F10): client X has
 // data in / depends on this document, readable without loading the add-in.
 type InterestRecord struct {
@@ -170,6 +185,7 @@ type onDisk struct {
 	References      []FileReferenceRecord  `yaml:"references,omitempty"`
 	Attachments     []AttachmentRecord     `yaml:"attachments,omitempty"`
 	Interests       []InterestRecord       `yaml:"interests,omitempty"`
+	PointClouds     []PointCloudRecord     `yaml:"pointClouds,omitempty"`
 	Attributes      []byte                 `yaml:"attributes,omitempty"`
 	DisplaySettings *DisplaySettingsRecord `yaml:"displaySettings,omitempty"`
 	SketchSettings  *SketchSettingsRecord  `yaml:"sketchSettings,omitempty"`
@@ -191,6 +207,7 @@ func MarshalDocument(d Document) ([]byte, error) {
 		References:      d.References,
 		Attachments:     d.Attachments,
 		Interests:       d.Interests,
+		PointClouds:     d.PointClouds,
 		Attributes:      d.Attributes,
 		DisplaySettings: d.DisplaySettings,
 		SketchSettings:  d.SketchSettings,
@@ -270,6 +287,7 @@ func documentHeader(od onDisk) Document {
 		References:      od.References,
 		Attachments:     od.Attachments,
 		Interests:       od.Interests,
+		PointClouds:     od.PointClouds,
 		Attributes:      od.Attributes,
 		DisplaySettings: od.DisplaySettings,
 		SketchSettings:  od.SketchSettings,
