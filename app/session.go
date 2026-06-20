@@ -108,6 +108,8 @@ type Session struct {
 	activeAddInEnv       Environment                                      // the entered add-in environment (base when none)
 	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
 	contextMenus         map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
+	lastCommandID        string                                           // the most recently invoked command, for right-click Repeat (#915 C5)
+	classicContextMenu   bool                                             // right-click shows the classic linear menu instead of the radial marking menu (#915 C8)
 	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
 	cmdInput             commandInput                                     // command-alias input box state (M05-F17)
 	cmdLine              *CommandLine                                     // Command Window REPL engine (M26)
@@ -356,11 +358,39 @@ func (s *Session) Execute(id string) error {
 	if !c.IsEnabled(s) {
 		return fmt.Errorf("app: command %q is disabled", id)
 	}
+	s.lastCommandID = id // the right-click Repeat target (#915 C5)
 	event.Emit(s.bus, event.Before, CommandStarted{ID: id})
 	err := c.run(s)
 	event.Emit(s.bus, event.After, CommandEnded{ID: id, Failed: err != nil})
 	return err
 }
+
+// LastCommandID returns the most recently invoked command's id and whether one exists — the
+// target of the right-click "Repeat <command>" entry (#915 C5).
+func (s *Session) LastCommandID() (string, bool) {
+	return s.lastCommandID, s.lastCommandID != ""
+}
+
+// RepeatLastCommand re-invokes the most recently run command, if any and still enabled; with no
+// prior command it is a no-op. This backs the marking menu's idle "Repeat" entry (#915 C5).
+func (s *Session) RepeatLastCommand() error {
+	id, ok := s.LastCommandID()
+	if !ok {
+		return nil
+	}
+	return s.Execute(id)
+}
+
+// ClassicContextMenu reports whether the viewport right-click shows the classic linear menu
+// instead of the radial marking menu (#915 C8).
+func (s *Session) ClassicContextMenu() bool { return s.classicContextMenu }
+
+// SetClassicContextMenu chooses the right-click menu style (true = classic linear, false =
+// radial marking menu).
+func (s *Session) SetClassicContextMenu(classic bool) { s.classicContextMenu = classic }
+
+// ToggleContextMenuStyle flips between the radial marking menu and the classic linear menu.
+func (s *Session) ToggleContextMenuStyle() { s.classicContextMenu = !s.classicContextMenu }
 
 // Invoke is the alias-driven entry (Inventor command alias): typing a command alias
 // runs the matching command.

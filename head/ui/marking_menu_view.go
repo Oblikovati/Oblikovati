@@ -38,9 +38,10 @@ var quadrantDirections = map[types.ScreenQuadrant][2]float32{
 	types.QuadrantWest: {-1, 0}, types.QuadrantNorthWest: {-0.7, -0.7},
 }
 
-// drawMarkingMenu renders the popup when open: the ring for the active
-// environment, then the overflow rows. Unknown command ids are skipped, so a
-// customized menu can name commands before they register.
+// drawMarkingMenu renders the right-click popup when open, in the user's chosen style: the radial
+// ring (default) or the classic linear menu (#915 C8). Both lead with the idle "Repeat <command>"
+// entry (#915 C5) and end with the style toggle. Unknown command ids are skipped, so a customized
+// menu can name commands before they register.
 func drawMarkingMenu(s *app.Session) {
 	if openMarkingMenuOnFirstFrame {
 		openMarkingMenuOnFirstFrame = false
@@ -49,6 +50,17 @@ func drawMarkingMenu(s *app.Session) {
 	if !native.BeginPopup(markingMenuPopupID) {
 		return
 	}
+	if s.ClassicContextMenu() {
+		drawClassicContextMenu(s)
+	} else {
+		drawRadialMarkingMenu(s)
+	}
+	native.EndPopup()
+}
+
+// drawRadialMarkingMenu draws the eight-quadrant ring plus its overflow rows.
+func drawRadialMarkingMenu(s *app.Session) {
+	drawRepeatEntry(s)
 	menu := s.MarkingMenu(app.CurrentEnvironment(s))
 	const size = 2*markingMenuRadius + 96 // ring + button width margin
 	centerX, centerY := float32(size)/2, float32(size)/2
@@ -57,7 +69,64 @@ func drawMarkingMenu(s *app.Session) {
 		drawMarkingSlot(s, centerX, centerY, item)
 	}
 	drawMarkingOverflow(s, menu.Overflow)
-	native.EndPopup()
+	drawContextMenuStyleToggle(s)
+}
+
+// drawClassicContextMenu draws the same commands as a plain vertical list — the classic
+// (non-radial) right-click menu (#915 C8).
+func drawClassicContextMenu(s *app.Session) {
+	drawRepeatEntry(s)
+	menu := s.MarkingMenu(app.CurrentEnvironment(s))
+	for _, item := range menu.Quadrants {
+		drawLinearCommandEntry(s, item.CommandID)
+	}
+	for _, id := range menu.Overflow {
+		drawLinearCommandEntry(s, id)
+	}
+	drawContextMenuStyleToggle(s)
+}
+
+// drawRepeatEntry renders the idle "Repeat <command>" entry at the top of the menu when a prior
+// command exists and no tool is active (#915 C5).
+func drawRepeatEntry(s *app.Session) {
+	label, _, ok := s.RepeatMenuEntry()
+	if !ok {
+		return
+	}
+	if native.Selectable(label+"##mm-repeat", false) {
+		_ = s.RepeatLastCommand()
+		native.CloseCurrentPopup()
+	}
+	native.Separator()
+}
+
+// drawContextMenuStyleToggle renders the entry that switches between the radial and classic
+// styles (#915 C8).
+func drawContextMenuStyleToggle(s *app.Session) {
+	native.Separator()
+	label := "Use Classic Menu"
+	if s.ClassicContextMenu() {
+		label = "Use Marking Menu"
+	}
+	if native.Selectable(label+"##mm-style", false) {
+		s.ToggleContextMenuStyle()
+		native.CloseCurrentPopup()
+	}
+}
+
+// drawLinearCommandEntry renders one command as a vertical menu row (greyed when disabled,
+// skipped when unknown), running it and closing the popup on click.
+func drawLinearCommandEntry(s *app.Session, id string) {
+	cmd, ok := s.Commands().ByID(id)
+	if !ok {
+		return
+	}
+	native.BeginDisabled(!cmd.IsEnabled(s))
+	if native.Selectable(cmd.DisplayName()+"##mmc-"+id, false) {
+		_ = s.Execute(id)
+		native.CloseCurrentPopup()
+	}
+	native.EndDisabled()
 }
 
 // drawMarkingSlot places one quadrant's command button on the ring.
