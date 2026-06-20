@@ -24,44 +24,60 @@ func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh,
 	if len(free) == 0 {
 		return // watertight body: nothing to repair (and the hot path skips the weld below)
 	}
-	for j := range cylConeFacesToFix(faces, idx, fm, free) {
-		if m := conformingCylConeMesh(faces[j], q); m != nil {
+	for j := range facesToFix(faces, idx, fm, free) {
+		if m := conformingMesh(faces[j], q); m != nil {
 			fm[j] = m
 		}
 	}
 }
 
-// cylConeFacesToFix is the set of face indices to re-mesh: every cyl/cone face whose mesh touches
-// a free (unwelded) segment, plus its cyl/cone topo neighbours across the shared edge (the face
-// MISSING the segment).
-func cylConeFacesToFix(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, free map[segKey]bool) map[int]bool {
+// conformingMesh re-meshes an absorber face with the appropriate boundary-faithful mesher: a
+// cyl/cone via the metric-(u,v) CDT, a plane via the projected-plane CDT. Both keep every boundary
+// segment, so the face conforms to its neighbour; nil for anything else (left as meshed).
+func conformingMesh(f *topo.Face, q Quality) *Mesh {
+	switch f.Geometry().(type) {
+	case geom.Cylinder, geom.Cone:
+		return conformingCylConeMesh(f, q)
+	case geom.Plane:
+		return conformingPlaneMesh(f, q)
+	}
+	return nil
+}
+
+// facesToFix is the set of face indices to re-mesh: every cyl/cone/plane face whose mesh touches a
+// free (unwelded) segment, plus its cyl/cone/plane topo neighbours across the shared edge — the face
+// that ABSORBED the segment (dropped a near-collinear shared-edge point its neighbour kept).
+func facesToFix(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh, free map[segKey]bool) map[int]bool {
 	toFix := map[int]bool{}
 	for i, f := range faces {
 		if !meshTouchesFree(fm[i], free) {
 			continue
 		}
-		if isCylOrCone(f.Geometry()) {
+		if conformable(f.Geometry()) {
 			toFix[i] = true
 		}
-		addCylConeNeighbours(f, i, idx, toFix)
+		addConformableNeighbours(f, i, idx, toFix)
 	}
 	return toFix
 }
 
-// addCylConeNeighbours marks face i's cyl/cone neighbours (across a shared edge) for re-meshing.
-func addCylConeNeighbours(f *topo.Face, i int, idx map[*topo.Face]int, toFix map[int]bool) {
+// addConformableNeighbours marks face i's cyl/cone/plane neighbours (across a shared edge) for
+// re-meshing — the plane neighbour is the absorber when a planar cap drops a curved rim point.
+func addConformableNeighbours(f *topo.Face, i int, idx map[*topo.Face]int, toFix map[int]bool) {
 	for _, e := range f.Edges() {
 		for _, nf := range e.Faces() {
-			if j, ok := idx[nf]; ok && j != i && isCylOrCone(nf.Geometry()) {
+			if j, ok := idx[nf]; ok && j != i && conformable(nf.Geometry()) {
 				toFix[j] = true
 			}
 		}
 	}
 }
 
-func isCylOrCone(s geom.Surface) bool {
+// conformable reports whether a face's surface has a boundary-faithful conforming re-mesher
+// (conformingMesh): cylinders, cones, and planes.
+func conformable(s geom.Surface) bool {
 	switch s.(type) {
-	case geom.Cylinder, geom.Cone:
+	case geom.Cylinder, geom.Cone, geom.Plane:
 		return true
 	}
 	return false
@@ -96,6 +112,54 @@ func conformingCylConeMesh(f *topo.Face, q Quality) *Mesh {
 		return nil
 	}
 	return patchMeshFrom(b.pos, b.nrm, tris)
+}
+
+// conformingPlaneMesh re-meshes a planar absorber with the projected-plane constrained Delaunay,
+// which keeps EVERY boundary segment (so the face reproduces a near-collinear shared-edge point a
+// curved neighbour kept, instead of the area-gated planarTris dropping it — the plane-absorber crack
+// on screw caps, #1073). It feeds constrainedDelaunay the SAME projected coordinates the plane's
+// neighbours discretize from, so it conforms rather than cascading; and because every one of the
+// plane's OWN boundary segments stays a constraint, re-meshing it cannot crack its other neighbours.
+// nil when the trim has overlapping holes (its own union mesher conforms) or exceeds the CDT budget.
+func conformingPlaneMesh(f *topo.Face, q Quality) *Mesh {
+	normal := f.Geometry().NormalAt(0, 0)
+	flat := planeProjector(normal)
+	outer3D := faceOuterBoundary(f, q)
+	if len(outer3D) < 3 {
+		return nil
+	}
+	holes3D := faceHoleBoundaries(f, q)
+	outer2D := project2D(outer3D, flat)
+	holes2D := make([][]math.Point2, len(holes3D))
+	for i, h := range holes3D {
+		holes2D[i] = project2D(h, flat)
+	}
+	if holesOverlap(holes2D) || boundaryVertCount(outer2D, holes2D) > maxCDTFallbackVerts {
+		return nil
+	}
+	tris := planarCDT(outer2D, holes2D)
+	if len(tris) == 0 {
+		return nil
+	}
+	return planarMeshFromTris(outer3D, holes3D, tris, normal)
+}
+
+// planarMeshFromTris builds a planar face mesh: the outer-then-holes 3D vertex buffer (the order
+// planarTris/planarCDT index into) carrying the face normal, triangulated by tris.
+func planarMeshFromTris(outer3D []math.Point3, holes3D [][]math.Point3, tris [][3]int, normal math.Vector3) *Mesh {
+	m := &Mesh{}
+	for _, p := range outer3D {
+		m.addVertex(p, normal)
+	}
+	for _, h := range holes3D {
+		for _, p := range h {
+			m.addVertex(p, normal)
+		}
+	}
+	for _, t := range tris {
+		m.addTriangle(t[0], t[1], t[2])
+	}
+	return m
 }
 
 // segKey is the collision-free, order-independent key of a welded segment: the quantized (1 µm grid,
