@@ -143,6 +143,7 @@ type Session struct {
 	historyBrowserOpen   bool                           // the Edit ▸ History Browser window is open
 	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
 	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
+	pointCloudRequested  bool                           // an "Import Point Cloud…" was requested; the head opens the file dialog (#645)
 	scriptConsoleOpen    bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
 	capturePath          string                         // a requested viewport PNG capture path; the head writes it after render
 	captureWindowPath    string                         // a requested whole-window PNG capture path; the head writes it after the frame composites

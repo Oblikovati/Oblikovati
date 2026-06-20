@@ -35,6 +35,7 @@ const (
 	SelectRepresentation
 	SelectModelState
 	SelectDrawingView
+	SelectPointCloud
 )
 
 // Selectable is anything the selection set can hold. Concrete handles wrap the

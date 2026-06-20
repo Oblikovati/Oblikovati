@@ -270,6 +270,7 @@ func addPartBranches(root *BrowserNode, part *compdef.PartComponentDefinition) {
 		params.child(p.Name(), "parameter")
 	}
 	addBodyBranch(root, part)
+	addPointCloudBranch(root, part)
 	addModelTimeline(root, part)
 }
 
