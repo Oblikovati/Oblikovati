@@ -39,7 +39,7 @@ func TestPointCloudRibbonButtonsWiredAndEnable(t *testing.T) {
 		t.Fatalf("RegisterStandardCommands: %v", err)
 	}
 
-	for _, name := range []string{"Import Point Cloud", "Fit Work Plane", "Work Point", "Crop Box"} {
+	for _, name := range []string{"Import Point Cloud", "Fit Work Plane", "Work Point", "Crop Box", "Move"} {
 		b, ok := pointCloudButton(t, s, name)
 		if !ok {
 			t.Fatalf("Point Cloud panel is missing the %q button", name)
@@ -54,6 +54,7 @@ func TestPointCloudRibbonButtonsWiredAndEnable(t *testing.T) {
 	mustEnabled(t, s, "Fit Work Plane", false)
 	mustEnabled(t, s, "Crop Box", false)
 	mustEnabled(t, s, "Work Point", false)
+	mustEnabled(t, s, "Move", false)
 
 	// Attaching and selecting a cloud enables the cloud-level commands.
 	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
@@ -64,6 +65,7 @@ func TestPointCloudRibbonButtonsWiredAndEnable(t *testing.T) {
 	s.Select(PointCloudHandle{Clouds: def.PointClouds(), Cloud: pc})
 	mustEnabled(t, s, "Fit Work Plane", true)
 	mustEnabled(t, s, "Crop Box", true)
+	mustEnabled(t, s, "Move", true)
 	mustEnabled(t, s, "Work Point", false) // needs a snapped scan point, not the cloud
 
 	// Selecting a snapped scan point enables Work Point.

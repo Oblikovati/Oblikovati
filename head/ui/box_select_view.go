@@ -54,10 +54,37 @@ func handleViewportSelection(s *app.Session) {
 	if updateSketchDrag(s) {
 		return
 	}
+	if updateCloudDrag(s) {
+		return
+	}
 	if updateBoxSelect(s) {
 		return
 	}
 	handleViewportClick(s)
+}
+
+// updateCloudDrag advances the interactive Move of a point cloud and reports whether it consumed
+// this frame's left input. While the Move tool is active, a left press begins the drag, the cursor
+// translates the cloud (datums built on it follow), and release commits — mirroring the sketch
+// drag-to-move (#645).
+func updateCloudDrag(s *app.Session) bool {
+	if !s.CloudMoveActive() {
+		return false
+	}
+	if s.CloudDragActive() {
+		lx, ly := viewportCursor()
+		if native.MouseDown(native.MouseLeft) {
+			s.UpdateCloudDrag(lx, ly)
+		} else {
+			s.CommitCloudDrag()
+		}
+		return true
+	}
+	if !native.IsItemClicked(native.MouseLeft) {
+		return false
+	}
+	lx, ly := viewportCursor()
+	return s.BeginCloudDrag(lx, ly)
 }
 
 // updateSketchDrag advances direct drag-to-move of sketch entities and reports whether it
