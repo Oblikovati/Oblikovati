@@ -468,6 +468,12 @@ func cutFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("boss").WithButtonStyle(LargeIconButton).
 			WithTooltip("Boss — raise a cylindrical stud on a planar face (the join-side mirror of Hole)."),
+		NewCommand("Modify.Lip", "Lip", "Modify", func(s *Session) error {
+			s.StartTool(NewLipTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
+			WithIcon("lip").WithButtonStyle(LargeIconButton).
+			WithTooltip("Lip — run a raised lip (or recessed groove) bead along picked edges of the part."),
 		NewCommand("Modify.Chamfer", "Chamfer", "Modify", func(s *Session) error {
 			s.StartTool(NewChamferTool())
 			return nil
@@ -622,6 +628,18 @@ func sweptSolidCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(notInSketch).
 			WithIcon("grill").WithButtonStyle(LargeIconButton).
 			WithTooltip("Grill — cut a ventilation grill: a vent bridged by the boundary profile's rib/spar/island structure."),
+		NewCommand("Create.Rest", "Rest", "Create", func(s *Session) error {
+			s.StartTool(NewRestTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(notInSketch).
+			WithIcon("rest").WithButtonStyle(LargeIconButton).
+			WithTooltip("Rest — raise a pad (or recess a pocket) over a closed sketch region on the part."),
+		NewCommand("Create.SnapFit", "Snap Fit", "Create", func(s *Session) error {
+			s.StartTool(NewSnapFitTool())
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("snap-fit").WithButtonStyle(LargeIconButton).
+			WithTooltip("Snap Fit — add a cantilever snap-fit hook sized by its beam and catch dimensions."),
 		NewCommand("Create.Decal", "Decal", "Create", func(s *Session) error {
 			s.StartTool(NewDecalTool())
 			return nil
