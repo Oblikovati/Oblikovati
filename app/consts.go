@@ -14,6 +14,7 @@ const (
 
 	labelBaseView  = "Base View"
 	labelWorkPlane = "Work Plane"
+	labelWorkPoint = "Work Point"
 	tabGetStarted  = "Get Started"
 
 	promptSelectTwoLines        = "Select two lines"
