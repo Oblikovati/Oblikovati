@@ -36,6 +36,7 @@ func (r *Router) registerPointCloudHandlers() {
 	r.handlers[wire.MethodPointCloudsDeleteCrop] = deletePointCloudCrop
 	r.handlers[wire.MethodPointCloudsSetCropActive] = setPointCloudCropActive
 	r.handlers[wire.MethodPointCloudsFitPlane] = fitPointCloudPlane
+	r.handlers[wire.MethodPointCloudsNearestPoint] = nearestPointCloudPoint
 }
 
 // attachPointCloud reads the scan file, embeds its bytes as a resource, decodes its points, and
@@ -251,6 +252,26 @@ func fitPointCloudPlane(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 		WorkPlane: wp.Name(),
 		Origin:    pointOf(plane.Origin),
 		Normal:    pointOf(math.P3(n.X, n.Y, n.Z)),
+	})
+}
+
+// nearestPointCloudPoint snaps the query point onto the named cloud, returning its nearest scan
+// point in model space and the distance to it.
+func nearestPointCloudPoint(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.NearestPointArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	pc, err := namedCloud(s, in.Cloud, wire.MethodPointCloudsNearestPoint)
+	if err != nil {
+		return nil, err
+	}
+	query := point3Of(in.Point)
+	nearest, found := pc.NearestModelPoint(query)
+	return json.Marshal(wire.NearestPointResult{
+		Point:    pointOf(nearest),
+		Distance: float64(query.DistanceTo(nearest)),
+		Found:    found,
 	})
 }
 

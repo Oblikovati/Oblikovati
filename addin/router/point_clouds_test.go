@@ -242,3 +242,23 @@ func TestPointCloudFitPlane(t *testing.T) {
 		t.Error("fitPlane on an unknown cloud should error")
 	}
 }
+
+// TestPointCloudNearestPoint: nearestPoint snaps a query onto the cloud's closest scan point and
+// reports the distance; an unknown cloud errors (#645).
+func TestPointCloudNearestPoint(t *testing.T) {
+	r, s := emptyPartSession(t)
+	path := writeScan(t, "0 0 0\n2 0 0\n0 2 0\n")
+	call(t, r, s, "pointClouds.attach", mustJSON(t, wire.AttachPointCloudArgs{Name: "Scan", FullFileName: path}), &wire.PointCloudInfo{})
+
+	var res wire.NearestPointResult
+	call(t, r, s, "pointClouds.nearestPoint", mustJSON(t, wire.NearestPointArgs{Cloud: "Scan", Point: types.Point{X: 1.9, Y: 0.1, Z: 0}}), &res)
+	if !res.Found || res.Point != (types.Point{X: 2, Y: 0, Z: 0}) {
+		t.Errorf("nearest = %+v (found=%v), want (2,0,0)", res.Point, res.Found)
+	}
+	if stdmath.Abs(res.Distance-stdmath.Hypot(0.1, 0.1)) > 1e-9 {
+		t.Errorf("distance = %v, want hypot(0.1,0.1)", res.Distance)
+	}
+	if _, err := r.Handle(s, "pointClouds.nearestPoint", []byte(`{"cloud":"nope","point":{"x":0,"y":0,"z":0}}`)); err == nil {
+		t.Error("nearestPoint on an unknown cloud should error")
+	}
+}
