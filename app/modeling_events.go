@@ -5,6 +5,7 @@ package app
 import (
 	"oblikovati.org/event"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/model/feature"
 )
 
 // Modeling/sketch event type ids (#148): the granular feature-lifecycle and sketch-edit
@@ -57,4 +58,30 @@ func (s *Session) emitSketchEdit(seq uint64, name string, entered bool) {
 		d = active.ID()
 	}
 	event.Emit(s.bus, event.After, SketchEditChanged{Document: d, Entered: entered, Sketch: seq, Name: name})
+}
+
+// EmitFeatureLifecycle publishes a granular feature-lifecycle notification (#1085) on the
+// session bus, keyed to the active document, so the add-in event relay forwards
+// feature.added/edited/deleted for UI- and add-in-driven feature ops alike (lifting #148's
+// router-only v1 scope). It is the single emit seam the session-level feature ops and the host
+// method router both call. A nil feature is a no-op — a producer tool that built nothing.
+func (s *Session) EmitFeatureLifecycle(op FeatureOp, f *feature.PartFeature) {
+	if f == nil {
+		return
+	}
+	var d doc.ID
+	if active := s.ActiveDocument(); active != nil {
+		d = active.ID()
+	}
+	event.Emit(s.bus, event.After, FeatureLifecycleChanged{
+		Document: d, Op: op, Feature: uint64(f.ID()), Name: f.Name(), Kind: f.Kind(),
+	})
+}
+
+// featureProducer is implemented by the tools that create a part feature; AddedFeature returns
+// the feature they just appended (nil before commit). The tool-commit seam (Session.OK) reads it
+// to fire featureAdded for UI-driven creation (#1085), so every add-tool emits without each one
+// wiring the event itself.
+type featureProducer interface {
+	AddedFeature() *feature.PartFeature
 }

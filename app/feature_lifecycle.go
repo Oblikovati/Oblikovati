@@ -101,5 +101,6 @@ func (s *Session) CommitFeatureEdit(f *feature.PartFeature) error {
 	part.Features().MarkDirty(f)
 	part.Recompute()
 	s.recordEdit(part, "Edit Feature")
+	s.EmitFeatureLifecycle(FeatureEdited, f) // featureEdited (#1085)
 	return nil
 }

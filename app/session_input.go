@@ -54,6 +54,9 @@ func (s *Session) OK() error {
 		s.notice = err.Error() // surface why (the status bar shows it); keep the tool open
 		return err
 	}
+	if fp, ok := s.tool.tool.(featureProducer); ok {
+		s.EmitFeatureLifecycle(FeatureAdded, fp.AddedFeature()) // featureAdded for UI-driven creation (#1085)
+	}
 	s.notice = ""
 	s.tool = nil
 	s.Graphics().ClearInteraction() // a committed command's transient preview vanishes
