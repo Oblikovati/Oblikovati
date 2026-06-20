@@ -60,6 +60,7 @@ type Session struct {
 	constrainedOrbit     bool              // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
 	steeringWheel        bool              // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
 	entityDrag           sketchDrag        // the in-progress direct drag of sketch entities, if any
+	cloudMove            cloudMoveDrag     // the in-progress interactive drag of a point cloud, if any (#645)
 	relaxMode            bool              // Relax Mode: drag over/fully-constrained sketch geometry (#791)
 	hudEnabled           bool              // the 2D-sketch dynamic-input HUD is enabled (#790)
 	sketchHUD            sketchHUD         // the dynamic-input HUD's live typing state (#790)

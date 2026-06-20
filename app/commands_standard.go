@@ -230,6 +230,11 @@ func pointCloudCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(canCropSelectedCloud).
 			WithIcon("point-cloud-crop").WithButtonStyle(SmallIconButton).
 			WithTooltip("Crop Box — box a region of the selected cloud in the viewport to crop its display to those points."),
+		NewCommand("PointCloud.Move", "Move", "Point Cloud", func(s *Session) error {
+			return s.StartMoveSelectedCloud()
+		}).WithTab(tab3DModel).WithEnable(canMoveSelectedCloud).
+			WithIcon("point-cloud-move").WithButtonStyle(SmallIconButton).
+			WithTooltip("Move — drag the selected cloud in the viewport; datums built on it follow as it moves."),
 	}
 }
 
