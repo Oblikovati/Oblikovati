@@ -62,6 +62,7 @@ type Session struct {
 	entityDrag           sketchDrag        // the in-progress direct drag of sketch entities, if any
 	relaxMode            bool              // Relax Mode: drag over/fully-constrained sketch geometry (#791)
 	hudEnabled           bool              // the 2D-sketch dynamic-input HUD is enabled (#790)
+	sketchHUD            sketchHUD         // the dynamic-input HUD's live typing state (#790)
 	dimDrag              dimDragState      // the in-progress drag of a drawing dimension's text/line
 	selectOther          selectOther       // the in-progress Select Other cycle, if any
 	viewHistory          viewHistory       // recorded views for Previous View (F5)

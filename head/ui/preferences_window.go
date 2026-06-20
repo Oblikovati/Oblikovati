@@ -92,11 +92,22 @@ func reportPrefError(err error) {
 	}
 }
 
-// drawGridTab renders the sketch-grid preference fields.
+// drawGridTab renders the sketch-grid and sketch-input preference fields.
 func drawGridTab(s *app.Session) {
 	editGridSpacing(s)
 	editGridVisibility(s)
 	editGridMajor(s)
+	native.Separator()
+	editHUDEnabled(s)
+}
+
+// editHUDEnabled draws the dynamic-input HUD enable checkbox (#790): the in-canvas heads-up
+// entry of coordinates/length/angle shown while drawing sketch geometry.
+func editHUDEnabled(s *app.Session) {
+	on := s.HUDEnabled()
+	if native.Checkbox("Heads-up dynamic input while sketching", &on) {
+		s.SetHUDEnabled(on)
+	}
 }
 
 // editGridSpacing draws the spacing field labeled with the document's length unit.

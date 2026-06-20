@@ -32,6 +32,15 @@ func (c *collectClicks) ClickAt(s *Session, px, py float64) {
 // Cancel discards the in-progress points.
 func (c *collectClicks) reset() { c.pts = nil }
 
+// PendingReferencePoint returns the last placed point so the dynamic-input HUD can show polar
+// Length/Angle for the next one (#790); false before the first click (Cartesian X/Y).
+func (c *collectClicks) PendingReferencePoint() (math.Point2, bool) {
+	if len(c.pts) == 0 {
+		return math.Point2{}, false
+	}
+	return c.pts[len(c.pts)-1], true
+}
+
 // SubmitToken records a typed point for the command line (M26), so every multi-point
 // geometry tool that embeds collectClicks (circle, arc, point, polygon) is command-driven
 // for free. The engine resolves relative/polar input to an absolute sketch coordinate
