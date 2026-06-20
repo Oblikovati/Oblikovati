@@ -151,7 +151,17 @@ func (s *Sketch) cloneEntities(ents []Entity, a affine2) []Entity {
 // cloneEntitiesMapped is cloneEntities that also returns the seed→clone point map, so
 // a caller (a parametric pattern) can link each clone point back to its seed.
 func (s *Sketch) cloneEntitiesMapped(ents []Entity, a affine2) ([]Entity, map[*Point]*Point) {
+	out, pmap, _ := s.cloneEntitiesFull(ents, a)
+	return out, pmap
+}
+
+// cloneEntitiesFull is cloneEntitiesMapped that additionally returns the seed→clone entity
+// map, so the constraint/dimension carry-over (#1083) can decide which relations are wholly
+// inside the copied set and remap their operands. Points are tracked separately (a constraint
+// references a point that may be shared by several entities, so the point map is the finer key).
+func (s *Sketch) cloneEntitiesFull(ents []Entity, a affine2) ([]Entity, map[*Point]*Point, map[Entity]Entity) {
 	pmap := map[*Point]*Point{}
+	emap := map[Entity]Entity{}
 	mapped := func(p *Point) *Point {
 		if np, ok := pmap[p]; ok {
 			return np
@@ -163,10 +173,11 @@ func (s *Sketch) cloneEntitiesMapped(ents []Entity, a affine2) ([]Entity, map[*P
 	out := make([]Entity, 0, len(ents))
 	for _, e := range ents {
 		if c := s.cloneEntity(e, mapped, a); c != nil {
+			emap[e] = c
 			out = append(out, c)
 		}
 	}
-	return out, pmap
+	return out, pmap, emap
 }
 
 // cloneEntity duplicates one entity, resolving its points through mapped and transforming

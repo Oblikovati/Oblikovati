@@ -13,12 +13,11 @@ import (
 	"oblikovati.org/model/sketch"
 )
 
-// Sketch-to-sketch copy (#151): re-instantiate one sketch's geometry in another. The source
-// entities' sketch-local coordinates are cloned into the target sketch's plane (offset by
-// Position), reusing the cross-sketch clone machinery (Sketch.CopyEntities reads the source
-// and creates fresh geometry on the target). v1 copies geometry only — external constraints
-// and dimensions are dropped (Inventor CopyEntitiesTo); carry-over among the copied set is a
-// follow-up.
+// Sketch-to-sketch copy (#151, #1083): re-instantiate one sketch's geometry in another. The
+// source entities' sketch-local coordinates are cloned into the target sketch's plane (offset
+// by Position), reusing the cross-sketch clone machinery. CopyEntitiesWithConstraints also
+// carries over the geometric constraints and dimensions whose operands are entirely within the
+// copied set, dropping any that reference geometry left behind (Inventor CopyEntitiesTo).
 
 // sketchCopyTo copies geometry from one 2D sketch into another.
 func sketchCopyTo(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -38,7 +37,7 @@ func sketchCopyTo(s *app.Session, raw json.RawMessage) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	created := target.CopyEntities(ents, offset)
+	created := target.CopyEntitiesWithConstraints(source, ents, offset)
 	ids := make([]uint64, len(created))
 	for i, e := range created {
 		ids[i] = uint64(e.EntityID())
