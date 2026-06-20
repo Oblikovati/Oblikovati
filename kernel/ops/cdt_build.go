@@ -154,17 +154,43 @@ func (m *cdt) flip(t, i int) bool {
 	return true
 }
 
-// insertConstraint forces edge (a,b) into the triangulation (flipping the edges it crosses) and
-// marks it constrained. A non-flippable (non-convex) crossing is retried after others resolve it;
-// it gives up if no progress is possible (a degenerate, near-collinear boundary). The flips rely on
-// the now-exact orient2d, so a near-collinear boundary no longer mis-signs and tangles the mesh.
+// insertConstraint forces edge (a,b) into the triangulation by flipping the edges it crosses, then
+// marks it constrained. A degenerate constraint between coincident endpoints (duplicate boundary
+// samples) is skipped: it has no edge to recover, and the flip loop would otherwise spin its whole
+// 4·len(tris) retry never finding a crossing — the real O(T²) freeze on imported faces with duplicate
+// points (linkrods: 8.3s → 0.1s, #1073; callers pass deduplicated representatives, see
+// constrainedDelaunay). A non-flippable (non-convex) crossing is retried after others resolve it; it
+// gives up if no progress is possible. The flips rely on the exact orient2d, so a near-collinear
+// boundary no longer mis-signs and tangles the mesh.
 func (m *cdt) insertConstraint(a, b int) {
+	if a == b || m.pts[a] == m.pts[b] {
+		return
+	}
 	for tries := 0; !m.hasEdge(a, b) && tries < 4*len(m.tris)+8; tries++ {
 		if !m.flipOneCrossing(a, b) {
 			break
 		}
 	}
 	m.con[conKey(a, b)] = true
+}
+
+// representatives maps each input point index to the inserted vertex that carries its coordinates:
+// itself when unique, or the first earlier point with the same coords (the one insert kept — later
+// duplicates are skipped, owning no triangle). Constraints are recovered between representatives so a
+// duplicate boundary sample never references a vertex absent from the mesh (which the flip recovery
+// would spin on forever, #1073).
+func (m *cdt) representatives() []int {
+	rep := make([]int, m.nsup)
+	canon := map[[2]float64]int{}
+	for i := 0; i < m.nsup; i++ {
+		if c, ok := canon[m.pts[i]]; ok {
+			rep[i] = c
+		} else {
+			canon[m.pts[i]] = i
+			rep[i] = i
+		}
+	}
+	return rep
 }
 
 // flipOneCrossing flips one flippable triangulation edge that properly crosses segment (a,b),
@@ -270,9 +296,14 @@ func constrainedDelaunay(pts [][2]float64, loops [][]int) [][3]int {
 	for i := 0; i < m.nsup; i++ {
 		m.insert(i)
 	}
+	// A duplicate boundary sample (same coords as an earlier point) is SKIPPED by insert (it has no
+	// strictly-bad triangle), so it owns no triangle; a constraint referencing it can be recovered by
+	// neither the corridor walk (no incident triangle) nor the flips (which then spin to exhaustion —
+	// the real O(T²) freeze on imported faces, #1073). Constrain between the inserted REPRESENTATIVES.
+	rep := m.representatives()
 	for _, lp := range loops {
 		for k := 0; k < len(lp); k++ {
-			m.insertConstraint(lp[k], lp[(k+1)%len(lp)])
+			m.insertConstraint(rep[lp[k]], rep[lp[(k+1)%len(lp)]])
 		}
 	}
 	return m.extractDomain()
