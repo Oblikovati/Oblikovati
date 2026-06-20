@@ -28,6 +28,7 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
+	"oblikovati.org/model/pointcloud"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/persistence"
 	"oblikovati.org/persistence/userprefs"
@@ -220,6 +221,7 @@ func installPicker(s *app.Session) {
 			return activeSketches(s)
 		}).
 		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }).
+		WithPointClouds(func() []*pointcloud.PointCloud { return s.PickablePointClouds() }).
 		WithOccurrenceLookup(s.OccurrenceOfBody)
 	s.SetPicker(picker)
 	s.SetRegionPicker(picker) // the same picker answers box-select (window/crossing)
