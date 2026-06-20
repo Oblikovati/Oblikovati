@@ -5,7 +5,6 @@ package router
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
@@ -13,7 +12,6 @@ import (
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
-	"oblikovati.org/model/doc"
 	"oblikovati.org/model/pointcloud"
 )
 
@@ -42,41 +40,11 @@ func attachPointCloud(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if err := decode(raw, &in); err != nil {
 		return nil, err
 	}
-	part, err := modelaccess.ActivePart(s)
-	if err != nil {
-		return nil, err
-	}
-	data, points, err := loadScan(in.FullFileName)
-	if err != nil {
-		return nil, err
-	}
-	name := in.Name
-	if name == "" {
-		name = part.PointClouds().UniqueName("Cloud")
-	}
-	rid := part.AddResource(doc.Resource{Type: "PointCloudScan", Encoding: doc.EncodingUTF8, Value: data, Origin: in.FullFileName})
-	pc, err := part.PointClouds().Add(name, in.FullFileName, rid, points)
+	pc, err := s.AttachPointCloud(in.Name, in.FullFileName)
 	if err != nil {
 		return nil, fmt.Errorf("pointClouds.attach: %w", err)
 	}
 	return json.Marshal(pointCloudInfo(pc))
-}
-
-// loadScan reads a scan file and decodes its cloud-local points, returning the raw bytes (for
-// embedding as a resource) alongside the points.
-func loadScan(fullFileName string) ([]byte, []math.Point3, error) {
-	if fullFileName == "" {
-		return nil, nil, fmt.Errorf("pointClouds.attach: fullFileName is required")
-	}
-	data, err := os.ReadFile(fullFileName)
-	if err != nil {
-		return nil, nil, fmt.Errorf("pointClouds.attach: read %q: %w", fullFileName, err)
-	}
-	points, err := pointcloud.ReadScan(fullFileName, data)
-	if err != nil {
-		return nil, nil, err
-	}
-	return data, points, nil
 }
 
 // listPointClouds enumerates the active part's clouds.

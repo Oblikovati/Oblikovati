@@ -62,8 +62,28 @@ func partNodeMenu(n BrowserNode) []BrowserMenuItem {
 		return workAxisMenu(n.Select)
 	case "body":
 		return bodyMenu(n.Select)
+	case "pointCloud":
+		return pointCloudMenu(n.Select)
 	default:
 		return nil
+	}
+}
+
+// pointCloudMenu offers a Visibility toggle and Delete for an attached scan (M17-F06, #645).
+func pointCloudMenu(sel Selectable) []BrowserMenuItem {
+	h, ok := sel.(PointCloudHandle)
+	if !ok {
+		return nil
+	}
+	return []BrowserMenuItem{
+		{Label: "Visibility", Enabled: true, Invoke: func(*Session) error {
+			h.Cloud.SetVisible(!h.Cloud.Visible())
+			return nil
+		}},
+		{Label: "Delete", Enabled: true, Invoke: func(*Session) error {
+			h.Clouds.Remove(h.Cloud.Name())
+			return nil
+		}},
 	}
 }
 

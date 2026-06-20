@@ -173,6 +173,9 @@ func serviceFileModalRequests(s *app.Session) {
 	if s.TakeImportMeshRequest() { // the Mesh ▸ Place Mesh ribbon button arms the file modal (#700)
 		fileModal.openFor(dialogMeshRef)
 	}
+	if s.TakeImportPointCloudRequest() { // the 3D Model ▸ Import Point Cloud button arms the file modal (#645)
+		fileModal.openFor(dialogPointCloud)
+	}
 }
 
 // handleKeyboard forwards keyboard input to the session's binding engine (M05-F17). Esc and

@@ -184,7 +184,8 @@ func modelTabCommands() []*CommandDefinition {
 	cmds = append(cmds, surfaceFeatureCommands()...)
 	cmds = append(cmds, freeformFeatureCommands()...)
 	cmds = append(cmds, moldFeatureCommands()...)
-	return append(cmds, meshFeatureCommands()...)
+	cmds = append(cmds, meshFeatureCommands()...)
+	return append(cmds, pointCloudCommands()...)
 }
 
 // meshFeatureCommands are the 3D Model tab's Mesh panel: place an STL as mesh reference
@@ -198,6 +199,20 @@ func meshFeatureCommands() []*CommandDefinition {
 		}).WithTab(tab3DModel).WithEnable(hasActivePart).
 			WithIcon("mesh-place").WithButtonStyle(LargeIconButton).
 			WithTooltip("Place Mesh — load an ASCII STL as selectable mesh reference geometry."),
+	}
+}
+
+// pointCloudCommands are the 3D Model tab's Point Cloud panel: attach a laser-scan /
+// photogrammetry file as a referenced display object (M17-F06, #645). Like Place Mesh, the
+// command arms the head's file dialog; the attach itself is Session.AttachPointCloud.
+func pointCloudCommands() []*CommandDefinition {
+	return []*CommandDefinition{
+		NewCommand("PointCloud.Import", "Import Point Cloud", "Point Cloud", func(s *Session) error {
+			s.RequestImportPointCloud()
+			return nil
+		}).WithTab(tab3DModel).WithEnable(hasActivePart).
+			WithIcon("point-cloud-import").WithButtonStyle(LargeIconButton).
+			WithTooltip("Import Point Cloud — attach an ASCII scan (.xyz/.pts) as referenced display data."),
 	}
 }
 

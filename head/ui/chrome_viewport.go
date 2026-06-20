@@ -327,6 +327,7 @@ func viewportDrawList(s *app.Session, cam scene.Camera, hovered *feature.WorkPla
 // no environment overlays — what a passive (non-focused) tile shows for its view's camera.
 func baseDrawList(s *app.Session, cam scene.Camera) renderer.DrawList {
 	list := cachedBodyDrawList(s, cam) // a per-frame copy of the cached tessellation (see viewport_cache.go)
+	list.Items = append(list.Items, pointCloudOverlay(s, cam)...) // attached scans (M17-F06, #645)
 	return highlightSelection(list, s.Selection().First(), activeBodies(s))
 }
 
@@ -549,8 +550,18 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, highlightSetItems(s)...)
 	list.Items = append(list.Items, revolveCenterlineHighlight(s)...)
 	list.Items = append(list.Items, activeToolPreviewItems(s)...)
+	list.Items = append(list.Items, pointCloudOverlay(s, cam)...) // attached scans (M17-F06, #645)
 	return list
 }
+
+// pointCloudOverlay builds the active part's visible point-cloud marker batches, sized in screen
+// space so each cross stays a fixed pixel size at any zoom (like sketch point markers, #645).
+func pointCloudOverlay(s *app.Session, cam scene.Camera) []renderer.DrawItem {
+	return s.PointCloudItems(pointCloudMarkerPixels * cam.WorldPerPixel())
+}
+
+// pointCloudMarkerPixels is the on-screen half-extent of a point-cloud cross marker.
+const pointCloudMarkerPixels = 3.0
 
 // gizmoOverlays appends the triad and manipulator-handle geometry (M05-F13).
 func gizmoOverlays(s *app.Session, cam scene.Camera, list renderer.DrawList) renderer.DrawList {
