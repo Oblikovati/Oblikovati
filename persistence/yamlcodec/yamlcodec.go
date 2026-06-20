@@ -155,13 +155,23 @@ type AttachmentRecord struct {
 // id of the resource holding its bytes, visibility, scale, the 16 cloud→model transform cells,
 // and the display point budget. The points themselves live once in the resource table.
 type PointCloudRecord struct {
-	Name       string      `yaml:"name"`
-	Source     string      `yaml:"source,omitempty"`
-	ResourceID string      `yaml:"resourceId,omitempty"`
-	Visible    bool        `yaml:"visible"`
-	Scale      float64     `yaml:"scale"`
-	Transform  [16]float64 `yaml:"transform,flow"`
-	MaxPoints  int         `yaml:"maxPoints,omitempty"`
+	Name       string                 `yaml:"name"`
+	Source     string                 `yaml:"source,omitempty"`
+	ResourceID string                 `yaml:"resourceId,omitempty"`
+	Visible    bool                   `yaml:"visible"`
+	Scale      float64                `yaml:"scale"`
+	Transform  [16]float64            `yaml:"transform,flow"`
+	MaxPoints  int                    `yaml:"maxPoints,omitempty"`
+	Crops      []PointCloudCropRecord `yaml:"crops,omitempty"`
+}
+
+// PointCloudCropRecord is one crop volume (#645): a name, the active flag, and the model-space box
+// min/max corners.
+type PointCloudCropRecord struct {
+	Name   string     `yaml:"name"`
+	Active bool       `yaml:"active"`
+	Min    [3]float64 `yaml:"min,flow"`
+	Max    [3]float64 `yaml:"max,flow"`
 }
 
 // InterestRecord is one add-in data-registry entry (M03-F10): client X has

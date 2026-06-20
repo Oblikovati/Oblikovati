@@ -40,6 +40,8 @@ func TestPointCloudSurvivesStoreRoundTrip(t *testing.T) {
 	pc.SetScale(2.5)
 	pc.SetMaximumPointCount(2)
 	pc.SetTransform(translation4(10, 0, 0))
+	crop := pc.AddCrop(math.NewBox(math.P3(0, 0, 0), math.P3(5, 5, 5)))
+	crop.SetActive(false)
 
 	if err := ws.Save(d); err != nil {
 		t.Fatalf("Save: %v", err)
@@ -65,6 +67,10 @@ func TestPointCloudSurvivesStoreRoundTrip(t *testing.T) {
 	}
 	if got.SourceFullFileName() != "room.xyz" || got.ResourceID() != rid {
 		t.Errorf("reopened source/resource = %q/%q, want room.xyz/%q", got.SourceFullFileName(), got.ResourceID(), rid)
+	}
+	rc, ok := got.Crops().ByName("Crop1")
+	if !ok || rc.Active() || rc.Box().Max != math.P3(5, 5, 5) {
+		t.Errorf("reopened crop = %+v (ok=%v), want an inactive Crop1 to (5,5,5)", rc, ok)
 	}
 }
 
