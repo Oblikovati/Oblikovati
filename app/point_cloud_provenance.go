@@ -31,13 +31,44 @@ func (s cloudPlaneFitSource) FitFrame() (math.Point3, math.UnitVector3, math.Uni
 	return plane.Origin, plane.UAxis, plane.VAxis, true
 }
 
-// relinkPointCloudFits re-attaches live cloud sources to a freshly opened part's point-cloud-fit
-// work planes (matching by cloud id), then recomputes so they re-fit to the restored clouds. It is
-// a no-op for a non-part document.
-func (s *Session) relinkPointCloudFits(part *compdef.PartComponentDefinition) {
+// cloudPointSource adapts a point cloud to feature.PointFromCloudSource: it anchors a scan point in
+// cloud space (local) and re-derives its model-space position as the cloud moves, identified by
+// cloud name.
+type cloudPointSource struct {
+	cloud *pointcloud.PointCloud
+	local math.Point3 // cloud-space anchor; the model position re-derives from the cloud's placement
+}
+
+func (s cloudPointSource) SourceID() string { return s.cloud.Name() }
+
+// Position re-derives the anchor's current model-space location through the cloud's placement.
+func (s cloudPointSource) Position() (math.Point3, bool) { return s.cloud.ToModelSpace(s.local), true }
+
+// newCloudPointSource anchors a model-space scan point in cloud space so the work point follows the
+// cloud's placement. A non-invertible placement (degenerate, scale 0) leaves the anchor at the raw
+// point — it stays valid, it just will not track.
+func newCloudPointSource(cloud *pointcloud.PointCloud, modelPoint math.Point3) cloudPointSource {
+	local, ok := cloud.FromModelSpace(modelPoint)
+	if !ok {
+		local = modelPoint
+	}
+	return cloudPointSource{cloud: cloud, local: local}
+}
+
+// relinkPointCloudProvenance re-attaches live cloud sources to a freshly opened part's
+// point-cloud-derived datums — the fit planes and the anchored work points — matching by cloud id,
+// then recomputes so they re-derive against the restored clouds. It is a no-op for a non-part
+// document or a part with no such datums.
+func (s *Session) relinkPointCloudProvenance(part *compdef.PartComponentDefinition) {
 	relinked := part.WorkPlanes().RelinkCloudFits(func(id string) (feature.PlaneFitSource, bool) {
 		if pc, ok := part.PointClouds().ByName(id); ok {
 			return cloudPlaneFitSource{pc}, true
+		}
+		return nil, false
+	})
+	relinked += part.WorkPoints().RelinkCloudPoints(func(id string, frozen math.Point3) (feature.PointFromCloudSource, bool) {
+		if pc, ok := part.PointClouds().ByName(id); ok {
+			return newCloudPointSource(pc, frozen), true // reconstruct the cloud-local anchor from the frozen point
 		}
 		return nil, false
 	})

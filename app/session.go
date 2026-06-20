@@ -423,7 +423,7 @@ func (s *Session) OpenDocument(path string) (*doc.Document, error) {
 		return nil, err
 	}
 	if part, ok := d.Content().(*compdef.PartComponentDefinition); ok {
-		s.relinkPointCloudFits(part) // restore datum-cloud provenance links (#645)
+		s.relinkPointCloudProvenance(part) // restore datum-cloud provenance links (#645)
 	}
 	s.documentHistory(d) // open the event stream now so the first edit's before-snapshot is the open state
 	s.loadViewState(d)   // restore this user's saved camera/view layout (kept outside the .obk)

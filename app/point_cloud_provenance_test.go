@@ -73,7 +73,7 @@ func TestPointCloudPlaneProvenanceRoundTrip(t *testing.T) {
 	}
 
 	// Relink the way OpenDocument does, then recompute: the plane re-fits to the restored cloud.
-	s.relinkPointCloudFits(restored)
+	s.relinkPointCloudProvenance(restored)
 	restored.Recompute()
 	wp := cloudFitPlaneOf(t, restored)
 	if got := float64(wp.Plane().Origin().Z); !approxEq(got, 5) {
@@ -119,5 +119,100 @@ func TestCloudPlaneFitSourceEdges(t *testing.T) {
 	def.WorkPlanes().AddByPointCloudFit(cloudPlaneFitSource{pc})
 	def.PointClouds().Remove("Tiny")
 	s2, _ := emptyPartSession(t)
-	s2.relinkPointCloudFits(def) // no cloud named "Tiny" now → nothing relinked, no recompute
+	s2.relinkPointCloudProvenance(def) // no cloud named "Tiny" now → nothing relinked, no recompute
+}
+
+// TestWorkPointFollowsCloud: a work point anchored on a scan point follows the cloud when it moves,
+// because it keeps a live link (provenance) rather than a frozen position (#645).
+func TestWorkPointFollowsCloud(t *testing.T) {
+	s, def := emptyPartSession(t)
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(3, 4, 5)})
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	s.Select(PointCloudPointHandle{Cloud: pc, Point: math.P3(3, 4, 5)})
+	wp, err := s.CreateWorkPointAtSelectedCloudPoint()
+	if err != nil {
+		t.Fatalf("CreateWorkPointAtSelectedCloudPoint: %v", err)
+	}
+	if wp.Point() != math.P3(3, 4, 5) {
+		t.Fatalf("initial work point = %v, want (3,4,5)", wp.Point())
+	}
+
+	pc.SetTransform(liftZ(10)) // the cloud moves up
+	def.Recompute()
+	if wp.Point() != math.P3(3, 4, 15) {
+		t.Errorf("after the cloud moved, work point = %v, want (3,4,15) (it should follow)", wp.Point())
+	}
+}
+
+// TestWorkPointProvenanceRoundTrip: the work point's cloud link survives marshal/restore + relink,
+// so a reopened document re-anchors it and it follows the restored cloud (#645).
+func TestWorkPointProvenanceRoundTrip(t *testing.T) {
+	s, def := emptyPartSession(t)
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, _ := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(1, 2, 3)})
+	s.Select(PointCloudPointHandle{Cloud: pc, Point: math.P3(1, 2, 3)})
+	if _, err := s.CreateWorkPointAtSelectedCloudPoint(); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	data, err := feature.MarshalWork(def.WorkGeometry())
+	if err != nil {
+		t.Fatalf("MarshalWork: %v", err)
+	}
+	restored := compdef.NewPartComponentDefinition()
+	rid2 := restored.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	rpc, _ := restored.PointClouds().Add("Scan", "s.xyz", rid2, []math.Point3{math.P3(1, 2, 3)})
+	if err := feature.ApplyWork(restored.WorkGeometry(), data); err != nil {
+		t.Fatalf("ApplyWork: %v", err)
+	}
+	s.relinkPointCloudProvenance(restored)
+	restored.Recompute()
+
+	wp := restoredCloudPoint(t, restored)
+	if wp.Point() != math.P3(1, 2, 3) {
+		t.Errorf("restored+relinked work point = %v, want (1,2,3)", wp.Point())
+	}
+	rpc.SetTransform(liftZ(8)) // moving the restored cloud drives the relinked point
+	restored.Recompute()
+	if wp.Point() != math.P3(1, 2, 11) {
+		t.Errorf("after moving the restored cloud, work point = %v, want (1,2,11)", wp.Point())
+	}
+}
+
+func restoredCloudPoint(t *testing.T, def *compdef.PartComponentDefinition) *feature.WorkPoint {
+	t.Helper()
+	pts := def.WorkPoints()
+	for i := 0; i < pts.Count(); i++ {
+		// the position kind is "position"; the anchored one round-trips as a distinct frozen point
+		if pts.Item(i).Point() == math.P3(1, 2, 3) {
+			return pts.Item(i)
+		}
+	}
+	t.Fatal("no restored cloud work point")
+	return nil
+}
+
+// TestWorkPointProvenanceEdges covers the degenerate-placement anchor fallback and a work-point
+// relink that finds no matching cloud (#645).
+func TestWorkPointProvenanceEdges(t *testing.T) {
+	s, def := emptyPartSession(t)
+	rid := def.AddResource(doc.Resource{Encoding: doc.EncodingUTF8, Value: []byte("x")})
+	pc, err := def.PointClouds().Add("Scan", "s.xyz", rid, []math.Point3{math.P3(1, 1, 1)})
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	// A singular placement makes FromModelSpace fail → newCloudPointSource anchors at the raw point.
+	pc.SetTransform(math.Matrix4FromCells([16]math.Scalar{}))
+	src := newCloudPointSource(pc, math.P3(2, 2, 2))
+	if src.local != math.P3(2, 2, 2) {
+		t.Errorf("degenerate anchor local = %v, want the raw point (2,2,2)", src.local)
+	}
+
+	// A point-cloud work point whose cloud is gone: relink finds no match (the attach false branch).
+	def.WorkPoints().AddByCloudPoint(newCloudPointSource(pc, math.P3(1, 1, 1)))
+	def.PointClouds().Remove("Scan")
+	s.relinkPointCloudProvenance(def) // no cloud "Scan" now → nothing relinked
 }
