@@ -13,6 +13,7 @@ import (
 	"oblikovati.org/model/identity"
 	"oblikovati.org/model/material"
 	"oblikovati.org/model/param"
+	"oblikovati.org/model/pointcloud"
 	"oblikovati.org/model/sheetmetal"
 	"oblikovati.org/model/sketch"
 )
@@ -33,9 +34,14 @@ type PartComponentDefinition struct {
 	keys       *identity.KeyManager
 	work       *feature.WorkGeometry // origin coordinate frame + user work planes/axes/points
 	surfaces   *feature.WorkSurfaces // construction surfaces wrapping the result's sheet bodies (M20-F16)
-	units      param.UnitsOfMeasure  // document display units (length/angle/…)
-	version    uint64
-	eop        int // end-of-part feature index; endOfPartAtEnd ⇒ full program
+	// pointClouds are the part's attached laser-scan / photogrammetry references (M17-F06,
+	// #645): transformable display objects a design is modeled against, not B-rep geometry. Their
+	// scan bytes live in resources (ADR-0031); the cloud cites the resource UUID. Document-level
+	// input, NOT part of the recipe — they survive a recipe reset (undo/reopen).
+	pointClouds *pointcloud.PointClouds
+	units       param.UnitsOfMeasure // document display units (length/angle/…)
+	version     uint64
+	eop         int // end-of-part feature index; endOfPartAtEnd ⇒ full program
 	// assignments survive Recompute (keyed by persistent reference key, not body id), so a
 	// material/appearance stays put when the body it is on is regenerated.
 	assignments *material.AssignmentStore
@@ -90,6 +96,7 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		assets:      material.NewAssetSet(),
 		resources:   map[string]doc.Resource{},
 		props:       attr.NewPropertySets(),
+		pointClouds: pointcloud.NewPointClouds(),
 	}
 	d.features.SetResourceStore(d) // re-derive imported bodies from the resource table on open
 	d.features.SetFontResolver(d)  // resolve text/emboss fonts from embedded/app-provided resources
@@ -211,6 +218,9 @@ func (d *PartComponentDefinition) SetUnits(u param.UnitsOfMeasure) { d.units = u
 
 // Sketches returns the part's planar (2D) sketches.
 func (d *PartComponentDefinition) Sketches() *sketch.Sketches { return d.sketches }
+
+// PointClouds returns the part's attached scan collection (M17-F06, #645).
+func (d *PartComponentDefinition) PointClouds() *pointcloud.PointClouds { return d.pointClouds }
 
 // SketchBlocks returns the part's block-definition registry — the reference
 // API's SketchBlocks on the component definition (M06-F07, #622).

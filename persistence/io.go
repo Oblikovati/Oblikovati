@@ -54,6 +54,7 @@ func (p *Package) marshal() ([]byte, error) {
 		References:      p.references,
 		Attachments:     p.attachments,
 		Interests:       p.interests,
+		PointClouds:     p.pointClouds,
 		Attributes:      p.attributes,
 		DisplaySettings: p.display,
 		SketchSettings:  p.sketch,
@@ -85,6 +86,7 @@ func decode(raw []byte) (*Package, error) {
 	p.references = doc.References
 	p.attachments = doc.Attachments
 	p.interests = doc.Interests
+	p.pointClouds = doc.PointClouds
 	p.attributes = doc.Attributes
 	p.display = doc.DisplaySettings
 	p.sketch = doc.SketchSettings

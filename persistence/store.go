@@ -107,6 +107,9 @@ func (s *PackageStore) buildPackage(d *doc.Document, displayName, subType string
 	if rb, ok := d.Content().(doc.ResourceBearer); ok {
 		pkg.SetResources(toCodecResources(rb.Resources()))
 	}
+	if pb, ok := d.Content().(doc.PointCloudBearer); ok {
+		pkg.SetPointClouds(toCodecPointClouds(pb.PointCloudRecords()))
+	}
 	return pkg, nil
 }
 
@@ -133,6 +136,11 @@ func (s *PackageStore) Load(fullDocumentName string) (*doc.Document, error) {
 	// geometry from an embedded resource (e.g. an imported body) can read its bytes (ADR-0031).
 	if rb, ok := d.Content().(doc.ResourceBearer); ok {
 		rb.SetResources(fromCodecResources(pkg.Resources()))
+	}
+	// Point clouds restore AFTER resources (they re-decode their points from the resource table)
+	// but they are not recipe-dependent, so order relative to the recipe does not matter (#645).
+	if pb, ok := d.Content().(doc.PointCloudBearer); ok {
+		pb.SetPointCloudRecords(fromCodecPointClouds(pkg.PointClouds()))
 	}
 	if err := applyModelRecipe(d, pkg, fullDocumentName); err != nil {
 		return nil, err
@@ -328,6 +336,37 @@ func fromCodecResources(in map[string]yamlcodec.Resource) map[string]doc.Resourc
 	out := make(map[string]doc.Resource, len(in))
 	for id, r := range in {
 		out[id] = doc.Resource{Type: r.Type, Encoding: r.Encoding, Value: r.Value, Origin: r.Origin}
+	}
+	return out
+}
+
+// toCodecPointClouds / fromCodecPointClouds bridge the document-layer point-cloud record
+// (doc.PointCloudRecord) and the on-disk serialization type (yamlcodec.PointCloudRecord); the
+// fields are identical, this keeps the layers decoupled (M17-F06, #645).
+func toCodecPointClouds(in []doc.PointCloudRecord) []yamlcodec.PointCloudRecord {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]yamlcodec.PointCloudRecord, len(in))
+	for i, r := range in {
+		out[i] = yamlcodec.PointCloudRecord{
+			Name: r.Name, Source: r.Source, ResourceID: r.ResourceID,
+			Visible: r.Visible, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
+		}
+	}
+	return out
+}
+
+func fromCodecPointClouds(in []yamlcodec.PointCloudRecord) []doc.PointCloudRecord {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]doc.PointCloudRecord, len(in))
+	for i, r := range in {
+		out[i] = doc.PointCloudRecord{
+			Name: r.Name, Source: r.Source, ResourceID: r.ResourceID,
+			Visible: r.Visible, Scale: r.Scale, Transform: r.Transform, MaxPoints: r.MaxPoints,
+		}
 	}
 	return out
 }
