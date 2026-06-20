@@ -3,6 +3,7 @@
 package app
 
 import (
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/renderer"
@@ -70,19 +71,35 @@ func (p *RayPicker) regionFaces(sel screenRect, crossing bool) []Selectable {
 	return hits
 }
 
-// regionEdges selects edges whose projected endpoints satisfy the rectangle (window: both
-// inside; crossing: an endpoint inside or the segment crosses an edge of the box).
+// regionEdges selects edges whose projected outline satisfies the rectangle. The outline is the
+// edge's full adaptive sampling (ops.TessellateEdge — the same discretization the renderer draws),
+// not just the two endpoints, so a curved edge whose mid-span enters the box but whose endpoints
+// sit outside is caught by a crossing select and correctly excluded by a window select (#936).
+// A straight edge samples to its two endpoints, preserving the prior behaviour.
 func (p *RayPicker) regionEdges(sel screenRect, crossing bool) []Selectable {
+	q := ops.DefaultQuality()
 	var hits []Selectable
 	for _, b := range p.bodies() {
 		for _, e := range b.Edges() {
-			pts := p.projectVertices(e.Vertices())
-			if len(pts) == len(e.Vertices()) && regionCoversOutline(pts, sel, crossing) {
+			pts := p.projectModelPoints(ops.TessellateEdge(e, q))
+			if len(pts) >= 2 && regionCoversOutline(pts, sel, crossing) {
 				hits = append(hits, EdgeHandle{Edge: e})
 			}
 		}
 	}
 	return hits
+}
+
+// projectModelPoints maps world points to viewport pixels, dropping any at/behind the camera —
+// the projected outline a region edge test consumes.
+func (p *RayPicker) projectModelPoints(model []math.Point3) []screenPt {
+	out := make([]screenPt, 0, len(model))
+	for _, m := range model {
+		if sx, sy, ok := renderer.Project(p.camera, regionNear, regionFar, m); ok {
+			out = append(out, screenPt{sx, sy})
+		}
+	}
+	return out
 }
 
 // rectCovers reports whether sel covers box per the select mode: crossing = overlap, window =
@@ -132,18 +149,6 @@ func (p *RayPicker) projectVertexRect(vs []*topo.Vertex) (screenRect, bool) {
 		pts[i] = v.Point()
 	}
 	return p.projectPointsRect(pts)
-}
-
-// projectVertices projects topology vertices to viewport pixels, dropping any at/behind the
-// camera — the outline a region edge test consumes.
-func (p *RayPicker) projectVertices(vs []*topo.Vertex) []screenPt {
-	out := make([]screenPt, 0, len(vs))
-	for _, v := range vs {
-		if sx, sy, ok := renderer.Project(p.camera, regionNear, regionFar, v.Point()); ok {
-			out = append(out, screenPt{sx, sy})
-		}
-	}
-	return out
 }
 
 // projectPointsRect projects world points to their screen bounding rectangle. ok is false when
