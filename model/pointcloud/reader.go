@@ -18,9 +18,9 @@ import (
 	"oblikovati.org/math"
 )
 
-// registeredReaders is the decoder set keyed by lowercase extension. ASCII formats ship now;
+// registeredReaders is the decoder set keyed by lowercase extension. ASCII and PLY ship now;
 // LAS/E57 readers register here later without touching call sites.
-var registeredReaders = []PointReader{NewASCIIReader()}
+var registeredReaders = []PointReader{NewASCIIReader(), NewPLYReader()}
 
 // ReadScan decodes a scan file's bytes into cloud-local points, choosing the reader by the
 // filename's extension. It errors when no registered reader handles the extension, naming it.
