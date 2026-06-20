@@ -54,6 +54,18 @@ func TestCreateSketchPointAtSelectedCloudPoint(t *testing.T) {
 	}
 }
 
+// TestSketchPointFromScanNoSelectionInSketch directly covers the in-sketch-without-a-selection
+// branch (a scan point must be picked first) (#645).
+func TestSketchPointFromScanNoSelectionInSketch(t *testing.T) {
+	s, _ := emptyPartSession(t)
+	if _, err := s.CreateSketch(sketch.XYPlane()); err != nil {
+		t.Fatalf("CreateSketch: %v", err)
+	}
+	if _, err := s.CreateSketchPointAtSelectedCloudPoint(); err == nil {
+		t.Error("expected an error in a sketch with no scan point selected")
+	}
+}
+
 // TestProjectScanPointCommandRuns: the registered Project Scan Point command executes the consumer
 // end to end, and the in-sketch-without-a-selection path errors (the command's enable would block
 // it, but the action must fail safe) (#645).
