@@ -283,6 +283,25 @@ func (cl *CommandLine) finish(s *Session) error {
 	return nil
 }
 
+// SubmitResolvedCoord feeds an already-absolute sketch coordinate to the active
+// command-driven tool and auto-finishes, sharing the command engine with the in-canvas
+// dynamic-input HUD (#790): the HUD resolves its fields to one point, this applies it exactly
+// as a typed "x,y" would (auto-commit, continuous chaining), and records it as the @relative
+// anchor so subsequent typed input stays consistent. It errors when no tool can take a point.
+func (cl *CommandLine) SubmitResolvedCoord(s *Session, c cmdline.Coord) error {
+	ti := s.ActiveTool()
+	if ti == nil {
+		return fmt.Errorf("cmdline: no active tool to take a coordinate")
+	}
+	driven, ok := ti.Tool().(CommandDriven)
+	if !ok {
+		return fmt.Errorf("cmdline: %s takes input in the viewport", ti.Name())
+	}
+	c.Relative = false
+	cl.lastPoint = &c
+	return cl.apply(s, driven, CommandToken{Kind: CoordToken, Coord: c})
+}
+
 // resolveRelative turns a relative ("@") coordinate into an absolute one against the last
 // point of this interaction, and records the result as the new last point.
 func (cl *CommandLine) resolveRelative(c cmdline.Coord) cmdline.Coord {

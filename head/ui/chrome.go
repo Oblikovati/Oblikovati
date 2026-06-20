@@ -185,19 +185,14 @@ func handleKeyboard(s *app.Session) {
 		_ = s.DisplayHelpTopic("", "")
 	}
 	mods := heldModifiers()
+	// While the sketch dynamic-input HUD has a started entry it owns plain keyboard (#790):
+	// Enter/Esc/Backspace/typing are processed in the viewport (handleSketchHUD), so skip the
+	// tool-level Esc/shortcut handling here. Ctrl/Alt chords still fire so Ctrl+S works mid-entry.
+	if s.HUDEngaged() && !mods.Has(app.CtrlMod) && !mods.Has(app.AltMod) {
+		return
+	}
 	if native.EscapePressed() {
-		switch {
-		case s.SelectOtherActive():
-			s.CancelSelectOther() // Esc ends the cycle, keeping the highlighted candidate (#910)
-		case s.ZoomWindowArmed():
-			s.DisarmZoomWindow() // Esc cancels an armed Zoom Window before/while dragging (#913 N16)
-		case s.ConstrainedOrbitActive():
-			s.DisarmConstrainedOrbit() // Esc exits the Constrained Orbit tool (#913 N10)
-		case s.SteeringWheelActive():
-			s.DisarmSteeringWheel() // Esc dismisses the SteeringWheels menu (#913 N26)
-		default:
-			_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
-		}
+		handleEscape(s, mods)
 	}
 	// M26 F05: modifier chords (Ctrl/Alt — e.g. Ctrl+S, Ctrl+Z) fire even while the
 	// command-window input is focused, so they work mid-typing; PressKey routes them through
@@ -219,6 +214,24 @@ func handleKeyboard(s *app.Session) {
 	// TestInWindowDockedViewportIsInteractive). True stickiness needs the viewport to decline
 	// keyboard focus on click instead; see ADR-0037's follow-ups.
 	dispatchPressedKeys(s, native.PressedKeys(), mods)
+}
+
+// handleEscape routes an Escape press: it disarms whichever transient interaction owns Esc
+// (Select Other, Zoom Window, Constrained Orbit, SteeringWheels), else forwards Esc to the
+// session's binding engine (cancel the active tool/selection).
+func handleEscape(s *app.Session, mods app.Modifier) {
+	switch {
+	case s.SelectOtherActive():
+		s.CancelSelectOther() // Esc ends the cycle, keeping the highlighted candidate (#910)
+	case s.ZoomWindowArmed():
+		s.DisarmZoomWindow() // Esc cancels an armed Zoom Window before/while dragging (#913 N16)
+	case s.ConstrainedOrbitActive():
+		s.DisarmConstrainedOrbit() // Esc exits the Constrained Orbit tool (#913 N10)
+	case s.SteeringWheelActive():
+		s.DisarmSteeringWheel() // Esc dismisses the SteeringWheels menu (#913 N26)
+	default:
+		_ = s.PressKey(app.KeyEvent{Key: "Escape", Mods: mods})
+	}
 }
 
 // dispatchPressedKeys sends each non-modifier key pressed this frame to the session as a

@@ -26,6 +26,8 @@ type StatusBar struct {
 	Progress       ProgressView // the innermost live progress bar (M05-F09)
 	HasProgress    bool         // whether Progress is live (so the bar renders)
 	MessageBadge   bool         // the message center holds errors/warnings (panel indicator)
+	InSketch       bool         // a 2D sketch is being edited (gates the Relax Mode toggle, #791)
+	RelaxMode      bool         // Relax Mode is on (the status-row toggle's state, #791)
 }
 
 // BuildStatus assembles the status bar from the session: the active tool's prompt and
@@ -35,6 +37,8 @@ func BuildStatus(s *Session) StatusBar {
 	sb.StatusText = s.StatusText()
 	sb.Progress, sb.HasProgress = s.Progress().Innermost()
 	sb.MessageBadge = s.Messages().HasErrors() || s.Messages().HasWarnings()
+	sb.InSketch = s.InSketch()
+	sb.RelaxMode = s.RelaxMode()
 	ti := s.ActiveTool()
 	if ti == nil {
 		return sb

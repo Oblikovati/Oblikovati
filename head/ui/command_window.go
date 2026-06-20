@@ -106,7 +106,7 @@ func drawCommandWindowBody(s *app.Session) {
 // progress bar, or a non-empty selection), else nothing — so an idle command window is all
 // scrollback + input.
 func controlsHeight(sb app.StatusBar) float32 {
-	if sb.ToolActive || sb.HasProgress || sb.SelectionCount > 0 {
+	if sb.ToolActive || sb.HasProgress || sb.SelectionCount > 0 || sb.InSketch {
 		return commandControlsRow
 	}
 	return 0
@@ -135,7 +135,21 @@ func drawCommandControls(s *app.Session, sb app.StatusBar) {
 		native.SameLine()
 		drawCommandProgress(s, sb)
 	}
+	if sb.InSketch {
+		drawRelaxToggle(s, sb)
+	}
 	native.Separator()
+}
+
+// drawRelaxToggle renders the Relax Mode checkbox while a 2D sketch is being edited — the
+// status-bar toggle of #791. Flipping it drags over/fully-constrained geometry with solver
+// relaxation; the state is sticky across sessions (Session.SetRelaxMode persists it).
+func drawRelaxToggle(s *app.Session, sb app.StatusBar) {
+	native.SameLine()
+	relax := sb.RelaxMode
+	if native.Checkbox("Relax Mode", &relax) {
+		s.SetRelaxMode(relax)
+	}
 }
 
 // drawCommandProgress renders the innermost live progress bar with its cancel control (M05-F09).

@@ -69,6 +69,7 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	// Reserve the region with an input-capturing button, then read navigation from it.
 	cx, cy := native.GetCursorPos()
 	native.InvisibleButton("##viewport-nav", float32(pw), float32(ph))
+	viewportHovered := native.IsItemHovered() // captured before later items shift IsItemHovered
 	handleViewportRightClick(s)
 	bx, by := native.ItemRectMin()
 
@@ -84,14 +85,22 @@ func drawSingleViewport(win *native.Window, s *app.Session) {
 	cam, hovered := updateViewportCamera(s, pw, ph, hit.overCube)
 	sketchPlane, dims, gfxLabels, gfxImages := buildAndRenderScene(win, s, cam, hovered, pw, ph, cx, cy, t0)
 	drawViewportOverlays(s, cam, sketchPlane, dims, gfxLabels, gfxImages, cx, cy, ph)
-	drawBoxSelectRect(s, bx, by)         // the rubber-band selection rectangle, on top of the image
-	drawZoomWindowRect(s, bx, by)        // the Zoom Window rubber band (#913 N16), if armed
-	drawOrbitRing(bx, by, pw, ph)        // the Free-Orbit ring while F4 is held (#913 N5–N8)
-	drawNavigationBar(s, cx, cy, pw, ph) // the floating nav-tool strip at the right edge (#913 N25)
-	drawSteeringWheel(s, cx, cy)         // the on-cursor radial nav menu (#913 N26), if active
+	drawViewportRubberBands(s, bx, by, cx, cy, pw, ph, viewportHovered)
 	if s.ShowViewCube() {
 		drawViewCube(cam, s.CubeOrientation(), p, hit.region, hit.homeHit, s.ShowCompass(), s.InactiveOpacity(), hit.arrow)
 	}
+}
+
+// drawViewportRubberBands paints the on-image interaction overlays drawn after the scene: the
+// box-select and Zoom Window rubber bands, the Free-Orbit ring, the navigation bar and
+// SteeringWheels menu, and the 2D-sketch dynamic-input HUD (#790).
+func drawViewportRubberBands(s *app.Session, bx, by, cx, cy float32, pw, ph int, viewportHovered bool) {
+	drawBoxSelectRect(s, bx, by)                // the rubber-band selection rectangle, on top of the image
+	drawZoomWindowRect(s, bx, by)               // the Zoom Window rubber band (#913 N16), if armed
+	drawOrbitRing(bx, by, pw, ph)               // the Free-Orbit ring while F4 is held (#913 N5–N8)
+	drawNavigationBar(s, cx, cy, pw, ph)        // the floating nav-tool strip at the right edge (#913 N25)
+	drawSteeringWheel(s, cx, cy)                // the on-cursor radial nav menu (#913 N26), if active
+	handleSketchHUD(s, bx, by, viewportHovered) // the 2D-sketch dynamic-input HUD (#790)
 }
 
 // buildAndRenderScene assembles the single view's draw list (body instances + overlays), renders it,

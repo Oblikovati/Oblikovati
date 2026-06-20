@@ -25,12 +25,17 @@ type General struct {
 
 // Sketch is the grid and click snapping, applied live to the session's
 // GridSettings. Spacing is in model/database units (cm), unit-independent.
+// HeadsUpDisplay and RelaxMode are the 2D-sketch UI-environment toggles (M21-F12,
+// #790/#791): the dynamic-input HUD shown while drawing geometry, and Relax Mode
+// (drag fully/over-constrained geometry while the solver relaxes the dimensions).
 type Sketch struct {
 	GridSpacingCm  float64 `yaml:"gridSpacingCm"`
 	GridVisible    bool    `yaml:"gridVisible"`
 	GridMajorEvery int     `yaml:"gridMajorEvery"`
 	SnapToPoints   bool    `yaml:"snapToPoints"`
 	SnapToGrid     bool    `yaml:"snapToGrid"`
+	HeadsUpDisplay bool    `yaml:"headsUpDisplay"`
+	RelaxMode      bool    `yaml:"relaxMode"`
 }
 
 // Part is the part-modeling defaults, applied live to the session.
@@ -71,7 +76,7 @@ type All struct {
 func Defaults() All {
 	return All{
 		General: General{StartupAction: types.StartupNewPart},
-		Sketch:  Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true},
+		Sketch:  Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true, HeadsUpDisplay: true},
 		Part:    Part{ChamferFlatCorners: true},
 		Save:    Save{Thumbnail: types.ThumbnailNone},
 		Updates: Updates{CheckOnStartup: true},

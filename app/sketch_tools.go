@@ -57,6 +57,15 @@ func (t *RectangleTool) ClickAt(s *Session, px, py float64) {
 // CanCommit is true once two opposite corners are placed.
 func (t *RectangleTool) CanCommit() bool { return len(t.corners) == 2 }
 
+// PendingReferencePoint returns the first corner so the dynamic-input HUD shows the opposite
+// corner's Length/Angle (#790); false before the first click.
+func (t *RectangleTool) PendingReferencePoint() (math.Point2, bool) {
+	if len(t.corners) == 0 {
+		return math.Point2{}, false
+	}
+	return t.corners[len(t.corners)-1], true
+}
+
 // Commit adds the four rectangle lines (sharing corner points) to the active sketch.
 func (t *RectangleTool) Commit(s *Session) error {
 	if s.activeSketch == nil {
@@ -155,6 +164,15 @@ func (t *LineTool) Commit(s *Session) error {
 
 // Cancel discards the in-progress line.
 func (t *LineTool) Cancel(*Session) { t.points = nil }
+
+// PendingReferencePoint returns the last placed endpoint so the dynamic-input HUD shows the
+// next segment's Length/Angle (#790); false before the first click.
+func (t *LineTool) PendingReferencePoint() (math.Point2, bool) {
+	if len(t.points) == 0 {
+		return math.Point2{}, false
+	}
+	return t.points[len(t.points)-1], true
+}
 
 // AutoCommits creates the line on the second click in single-line mode; a continuous chain
 // finishes on Enter/Close instead, so it does not auto-commit.

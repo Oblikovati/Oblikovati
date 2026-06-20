@@ -60,6 +60,9 @@ type Session struct {
 	constrainedOrbit     bool              // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
 	steeringWheel        bool              // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
 	entityDrag           sketchDrag        // the in-progress direct drag of sketch entities, if any
+	relaxMode            bool              // Relax Mode: drag over/fully-constrained sketch geometry (#791)
+	hudEnabled           bool              // the 2D-sketch dynamic-input HUD is enabled (#790)
+	sketchHUD            sketchHUD         // the dynamic-input HUD's live typing state (#790)
 	dimDrag              dimDragState      // the in-progress drag of a drawing dimension's text/line
 	selectOther          selectOther       // the in-progress Select Other cycle, if any
 	viewHistory          viewHistory       // recorded views for Previous View (F5)
@@ -215,6 +218,7 @@ func newSession(store doc.Store) *Session {
 		lightingStyle:      renderer.LightingThreePoint,
 		lighting:           renderer.SceneLightingFor(renderer.LightingThreePoint),
 		chamferFlatCorners: true, // match Inventor's default flat three-edge-corner blend
+		hudEnabled:         true, // dynamic-input HUD on by default, like Inventor (#790)
 		chamferConcaveOut:  true, // concave edges fill the inside corner by default (outward)
 	}
 	s.seedVisualState()
