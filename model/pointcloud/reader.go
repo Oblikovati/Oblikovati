@@ -36,6 +36,32 @@ func ReadScan(filename string, data []byte) ([]math.Point3, error) {
 	return nil, fmt.Errorf("pointcloud: no reader for scan extension %q (file %q)", ext, filename)
 }
 
+// IsScanFile reports whether a path's extension is a 3D-scan point-cloud format handled by a
+// registered reader (.xyz/.pts/.asc/.txt/.ply). The import flow routes such files to the
+// point-cloud attach path — the appropriate home for scan data — rather than the body/sketch
+// importers (#645).
+func IsScanFile(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	for _, r := range registeredReaders {
+		for _, e := range r.Extensions() {
+			if e == ext {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ScanExtensions returns every file extension a registered scan reader handles (for the import
+// file dialog's filter).
+func ScanExtensions() []string {
+	var out []string
+	for _, r := range registeredReaders {
+		out = append(out, r.Extensions()...)
+	}
+	return out
+}
+
 // PointReader decodes one scan-file format's bytes into cloud-local points. One implementation
 // per format keeps the cloud model format-agnostic; the host wraps any third-party decoder
 // behind this project-owned seam (CLAUDE.md "Dependencies"). The first reader is clean-room
