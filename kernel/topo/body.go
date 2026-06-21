@@ -10,12 +10,24 @@ import (
 
 // Body (SurfaceBody) is the top of the topology graph: one or more shells. A solid
 // body is bounded by closed shells; a surface body may have open shells.
+//
+// derived/cached* memoize the distinct face/edge/vertex lists, which the render hot paths
+// (range box, drawlist) re-query every frame — re-deriving them rebuilt a dedup map each call,
+// ~28% of orbit allocation at 30k (M34-F2b). They are written exactly once, by finalizeDerived
+// at the end of every body-construction path (RegroupShells / BodyFromShells / MergeBodies), and
+// read-only afterward, so reads need no lock even under the parallel flatten (which never queries
+// them). Before finalize (derived==false) the accessors derive live, so a partially-built body —
+// e.g. RegroupShells querying Faces() mid-regroup — still sees current geometry.
 type Body struct {
-	id      uint64
-	shells  []*Shell
-	wires   []*Wire
-	solid   bool
-	lineage Lineage
+	id             uint64
+	shells         []*Shell
+	wires          []*Wire
+	solid          bool
+	lineage        Lineage
+	derived        bool
+	cachedFaces    []*Face
+	cachedEdges    []*Edge
+	cachedVertices []*Vertex
 }
 
 func (b *Body) ID() uint64           { return b.id }
@@ -29,8 +41,47 @@ func (b *Body) IsSolid() bool { return b.solid }
 // Shells returns the body's shells.
 func (b *Body) Shells() []*Shell { return append([]*Shell(nil), b.shells...) }
 
-// Faces returns every face in the body, across all shells.
+// Faces returns every face in the body, across all shells. The result is a fresh slice the
+// caller may keep; once the body is finalized it is a copy of the cached list.
 func (b *Body) Faces() []*Face {
+	if b.derived {
+		return append([]*Face(nil), b.cachedFaces...)
+	}
+	return b.deriveFaces()
+}
+
+// Edges returns every distinct edge in the body.
+func (b *Body) Edges() []*Edge {
+	if b.derived {
+		return append([]*Edge(nil), b.cachedEdges...)
+	}
+	return deriveEdgesFrom(b.deriveFaces())
+}
+
+// Vertices returns every distinct vertex in the body.
+func (b *Body) Vertices() []*Vertex {
+	if b.derived {
+		return append([]*Vertex(nil), b.cachedVertices...)
+	}
+	return deriveVerticesFrom(deriveEdgesFrom(b.deriveFaces()))
+}
+
+// finalizeDerived precomputes the distinct face/edge/vertex lists once the body's shells are
+// final, so later queries return a cached copy instead of rebuilding a dedup map every call. It
+// must be the last step of every construction path; reads after it are race-free because the
+// lists are written here once and never mutated.
+func (b *Body) finalizeDerived() {
+	b.cachedFaces = b.deriveFaces()
+	for _, f := range b.cachedFaces {
+		f.finalizeDerived()
+	}
+	b.cachedEdges = deriveEdgesFrom(b.cachedFaces)
+	b.cachedVertices = deriveVerticesFrom(b.cachedEdges)
+	b.derived = true
+}
+
+// deriveFaces collects the faces across all shells in shell order (the live, uncached form).
+func (b *Body) deriveFaces() []*Face {
 	var out []*Face
 	for _, s := range b.shells {
 		out = append(out, s.faces...)
@@ -38,11 +89,11 @@ func (b *Body) Faces() []*Face {
 	return out
 }
 
-// Edges returns every distinct edge in the body.
-func (b *Body) Edges() []*Edge {
+// deriveEdgesFrom returns the distinct edges of the given faces, in first-seen order.
+func deriveEdgesFrom(faces []*Face) []*Edge {
 	seen := map[*Edge]bool{}
 	var out []*Edge
-	for _, f := range b.Faces() {
+	for _, f := range faces {
 		for _, e := range f.Edges() {
 			if !seen[e] {
 				seen[e] = true
@@ -53,11 +104,11 @@ func (b *Body) Edges() []*Edge {
 	return out
 }
 
-// Vertices returns every distinct vertex in the body.
-func (b *Body) Vertices() []*Vertex {
+// deriveVerticesFrom returns the distinct vertices of the given edges, in first-seen order.
+func deriveVerticesFrom(edges []*Edge) []*Vertex {
 	seen := map[*Vertex]bool{}
 	var out []*Vertex
-	for _, e := range b.Edges() {
+	for _, e := range edges {
 		for _, v := range e.Vertices() {
 			if !seen[v] {
 				seen[v] = true
@@ -125,6 +176,7 @@ func BodyFromShells(lineage Lineage, solid bool, shells ...*Shell) *Body {
 		sh.body = body
 		body.shells = append(body.shells, sh)
 	}
+	body.finalizeDerived()
 	return body
 }
 
@@ -139,5 +191,6 @@ func MergeBodies(lineage Lineage, solid bool, bodies ...*Body) *Body {
 			merged.shells = append(merged.shells, sh)
 		}
 	}
+	merged.finalizeDerived()
 	return merged
 }

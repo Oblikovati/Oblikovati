@@ -66,6 +66,7 @@ func (s *Shell) RangeBox() math.Box {
 func RegroupShells(b *Body) {
 	faces := b.Faces()
 	if len(faces) == 0 {
+		b.finalizeDerived() // finalize even an empty body so its accessors take the cached path
 		return
 	}
 	groups := connectedFaceGroups(faces)
@@ -77,6 +78,7 @@ func RegroupShells(b *Body) {
 		}
 		b.shells[i] = sh
 	}
+	b.finalizeDerived() // shells are now final — precompute the adjacency lists once (M34-F2b)
 }
 
 // connectedFaceGroups partitions faces into edge-connected groups, preserving
