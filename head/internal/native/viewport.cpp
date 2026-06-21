@@ -1525,12 +1525,14 @@ void obk_viewport_destroy(HeadContext* c) {
     Viewport* v = c->viewport;
     if (!v) return;
     for (int i = 0; i < kMaxTiles; i++) destroy_target(c, &v->targets[i]);
-    if (v->vbuf.buffer) vkDestroyBuffer(c->device, v->vbuf.buffer, nullptr);
-    if (v->vbuf.memory) vkFreeMemory(c->device, v->vbuf.memory, nullptr);
-    if (v->ibuf.buffer) vkDestroyBuffer(c->device, v->ibuf.buffer, nullptr);
-    if (v->ibuf.memory) vkFreeMemory(c->device, v->ibuf.memory, nullptr);
-    if (v->instbuf.buffer) vkDestroyBuffer(c->device, v->instbuf.buffer, nullptr);
-    if (v->instbuf.memory) vkFreeMemory(c->device, v->instbuf.memory, nullptr);
+    // Free every geometry buffer including the F4 DEVICE_LOCAL staging sources (vstage/istage):
+    // omitting these leaked VkDeviceMemory past vkDestroyDevice (VUID-vkDestroyDevice-device-05137,
+    // surfaced by object-lifetime validation on a real GPU — lavapipe did not flag it). M34-F4.
+    GpuBuffer* geom[] = {&v->vbuf, &v->ibuf, &v->instbuf, &v->vstage, &v->istage};
+    for (GpuBuffer* b : geom) {
+        if (b->buffer) vkDestroyBuffer(c->device, b->buffer, nullptr);
+        if (b->memory) vkFreeMemory(c->device, b->memory, nullptr);
+    }
     destroy_env_image(c, v);
     if (v->envSampler) vkDestroySampler(c->device, v->envSampler, nullptr);
     if (v->shadowFB) vkDestroyFramebuffer(c->device, v->shadowFB, nullptr);
