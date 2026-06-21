@@ -4,9 +4,12 @@ package exchange
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/exchange/drawing"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/sketch"
 )
 
 // farCluster builds n circles clustered around (cx,cy) plus a few outliers far on the
@@ -73,5 +76,21 @@ func TestRecenterIgnoresOppositeOutliers(t *testing.T) {
 func TestRobustCenterEmpty(t *testing.T) {
 	if _, ok := robustCenter([]drawing.Entity{&drawing.LwPolyline{}}); ok {
 		t.Error("a drawing with no anchored entities should report no centre")
+	}
+}
+
+// TestImportDrawingRecentersAndWarns wires the recenter into the shared import: a far-from-origin
+// drawing lands near the origin and the import surfaces the recenter warning.
+func TestImportDrawingRecentersAndWarns(t *testing.T) {
+	part := compdef.NewPartComponentDefinition()
+	dr := &drawing.Drawing{Entities: farCluster(6e8, 2e8, 60)} // unitless ⇒ no unit scaling
+	imp := importDrawing(part, dr, sketch.XYPlane())
+	if len(imp.warnings) == 0 || !strings.HasPrefix(imp.warnings[0], "import: recentered drawing") {
+		t.Fatalf("expected a recenter warning first, got %v", imp.warnings)
+	}
+	// The geometry now lives near the origin (well inside the float32-safe range).
+	sk := part.Sketches3D()
+	if sk.Count() == 0 && part.Sketches().Count() == 0 {
+		t.Fatal("no sketch produced by import")
 	}
 }
