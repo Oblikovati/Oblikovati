@@ -76,4 +76,7 @@ func TestOffsetFaceSurfacesCylinderArea(t *testing.T) {
 	if _, err := ops.OffsetFaceSurfaces(body, nil, 1, false); err == nil {
 		t.Error("offsetting no faces must error")
 	}
+	if _, err := ops.OffsetFaceSurfaces(body, [][]byte{[]byte("nope")}, 1, false); err == nil {
+		t.Error("offsetting an unknown face key must error")
+	}
 }

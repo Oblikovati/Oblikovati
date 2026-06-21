@@ -37,3 +37,37 @@ func TestOffsetSurfaceDefiningProperty(t *testing.T) {
 		}
 	}
 }
+
+// TestOffsetSurfaceInterface covers the rest of the Surface contract on the offset surface: the
+// derivatives cross to the (parallel) normal, the parameter domains are the base's, and ParamAt
+// inverts PointAt for a point of the offset surface.
+func TestOffsetSurfaceInterface(t *testing.T) {
+	cyl, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	off := OffsetSurface{Base: cyl, Distance: 2}
+
+	du, dv := off.DerivativesAt(1, 3)
+	n := du.Cross(dv)
+	bn := off.NormalAt(1, 3)
+	// ∂u×∂v points along the surface normal (same direction once normalized).
+	cosang := float64(n.Dot(bn)) / float64(n.Length())
+	if stdmath.Abs(cosang-1) > 1e-3 {
+		t.Errorf("∂u×∂v not aligned with the normal: cos = %g", cosang)
+	}
+
+	ulo, uhi := off.UDomain()
+	bulo, buhi := cyl.UDomain()
+	vlo, vhi := off.VDomain()
+	bvlo, bvhi := cyl.VDomain()
+	if ulo != bulo || uhi != buhi || vlo != bvlo || vhi != bvhi {
+		t.Error("offset surface domains must equal the base's")
+	}
+
+	p := off.PointAt(1.2, 4)
+	u, v := off.ParamAt(p)
+	if back := off.PointAt(u, v); back.DistanceTo(p) > 1e-6 {
+		t.Errorf("ParamAt did not invert PointAt: off by %g", back.DistanceTo(p))
+	}
+}
