@@ -131,6 +131,60 @@ func TestPickThroughIndexResolvesOccurrence(t *testing.T) {
 	}
 }
 
+// countTransforms totals the instance transforms across groups — the number of draws the GPU
+// would issue, the quantity frustum culling reduces.
+func countTransforms(groups []InstanceGroup) int {
+	n := 0
+	for _, g := range groups {
+		n += len(g.Transforms)
+	}
+	return n
+}
+
+func TestCulledInstancesKeepsAllWhenFramed(t *testing.T) {
+	s, _, _ := boxRowAssembly(t, 8) // boxes along X at 0,10,…,70
+	cam := scene.NewCamera(400, 400)
+	cam.Eye = math.P3(35, 1, 300) // far back, centered on the row → whole row on screen
+	cam.Target = math.P3(35, 1, 2)
+	if got, want := countTransforms(s.CulledInstances(cam)), countTransforms(s.VisibleInstances()); got != want {
+		t.Errorf("framing the whole row culled to %d of %d transforms; should keep all", got, want)
+	}
+}
+
+func TestCulledInstancesDropsOffscreenAndKeepsTarget(t *testing.T) {
+	s, _, _ := boxRowAssembly(t, 8)
+	full := countTransforms(s.VisibleInstances())
+	cam := scene.NewCamera(400, 400)
+	cam.Eye = math.P3(1, 1, 30) // zoomed onto box 0's column, looking down -Z
+	cam.Target = math.P3(1, 1, 2)
+	culled := s.CulledInstances(cam)
+	if n := countTransforms(culled); n >= full || n == 0 {
+		t.Fatalf("zoomed view kept %d of %d transforms; want a non-empty strict subset", n, full)
+	}
+	// Box 0 (translation X≈0) is dead center and must survive culling.
+	keptBox0 := false
+	for _, g := range culled {
+		for _, tr := range g.Transforms {
+			if x := float64(tr.Translation().X); x > -3 && x < 3 {
+				keptBox0 = true
+			}
+		}
+	}
+	if !keptBox0 {
+		t.Error("the box at the view center was culled (false negative — would pop)")
+	}
+}
+
+func TestCulledInstancesPartUnchanged(t *testing.T) {
+	s := extrudedBox(t, 2, 4)
+	cam := scene.NewCamera(400, 400)
+	cam.Eye = math.P3(10, 0, 2)
+	cam.Target = math.P3(1, 1, 2)
+	if got, want := countTransforms(s.CulledInstances(cam)), countTransforms(s.VisibleInstances()); got != want {
+		t.Errorf("a part should not be culled: %d vs %d transforms", got, want)
+	}
+}
+
 func TestWidestCentroidAxisAndCentroid(t *testing.T) {
 	mk := func(boxes ...math.Box) *assemblyPickIndex {
 		idx := &assemblyPickIndex{}

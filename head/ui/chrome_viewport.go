@@ -451,13 +451,15 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	// instance groups' transformed range boxes (no tessellation) rather than scanning a world-body
 	// mesh, so framing a 10k-copy assembly is O(instances).
 	groups := s.VisibleInstances()
-	mn, mx, hasGeom := frameBounds(s, list, groups)
+	mn, mx, hasGeom := frameBounds(s, list, groups) // framing/shadow bounds cover the whole model
 	var ground []renderer.DrawItem
 	if hasGeom && wantGround(s) {
 		ground = []renderer.DrawItem{groundPlaneItem(mn, mx, renderer.PassSetFor(s.VisualStyle()).Faces, displayGroundColor(s))}
 	}
 	tb := frameClock()
-	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups)
+	// Draw only the instances inside the view frustum (M34-F1) — off-screen placements never reach
+	// the GPU upload. The bounds above still use the full set so shadows/framing don't shift on orbit.
+	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, s.CulledInstances(cam))
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}

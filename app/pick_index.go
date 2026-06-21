@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/occurrence"
+	"oblikovati.org/scene"
 )
 
 // pickLeafSize is the most placements a BVH leaf holds. A small leaf keeps the broad-phase
@@ -231,4 +232,60 @@ func (idx *assemblyPickIndex) materialize(p int) (*topo.Body, bool) {
 func (idx *assemblyPickIndex) occurrenceOf(b *topo.Body) (*occurrence.Occurrence, bool) {
 	o, ok := idx.owner[b]
 	return o, ok
+}
+
+// frustumPlacements returns the placement indices whose world AABB the frustum keeps, pruning any
+// BVH subtree wholly outside the view — the broad phase of F1 per-instance culling. The result is
+// in ascending placement order so grouping is deterministic and matches VisibleInstances'
+// first-seen order (the head's per-source mesh cache then keeps hitting).
+func (idx *assemblyPickIndex) frustumPlacements(f scene.Frustum) []int {
+	if len(idx.nodes) == 0 {
+		return nil
+	}
+	var out []int
+	stack := []int{0}
+	for len(stack) > 0 {
+		n := idx.nodes[stack[len(stack)-1]]
+		stack = stack[:len(stack)-1]
+		if !f.IntersectsBox(n.box) {
+			continue
+		}
+		if n.left < 0 {
+			out = idx.appendFrustumLeaf(out, n, f)
+			continue
+		}
+		stack = append(stack, n.left, n.right)
+	}
+	sort.Ints(out)
+	return out
+}
+
+// appendFrustumLeaf adds the leaf's placements whose own AABB the frustum keeps (the leaf box is a
+// union, so a kept leaf does not mean every member is in view).
+func (idx *assemblyPickIndex) appendFrustumLeaf(out []int, n bvhNode, f scene.Frustum) []int {
+	for _, p := range idx.order[n.first : n.first+n.count] {
+		if f.IntersectsBox(idx.placements[p].box) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// groupPlacements collapses the given placements into render instance groups by shared source body,
+// preserving the placements' (ascending) order so the result is deterministic and identical in
+// shape to assemblyInstances when every placement is included.
+func (idx *assemblyPickIndex) groupPlacements(placements []int) []InstanceGroup {
+	bySource := make(map[*topo.Body]int, len(placements))
+	out := make([]InstanceGroup, 0, len(placements))
+	for _, p := range placements {
+		pl := idx.placements[p]
+		i, ok := bySource[pl.source]
+		if !ok {
+			i = len(out)
+			bySource[pl.source] = i
+			out = append(out, InstanceGroup{Source: pl.source})
+		}
+		out[i].Transforms = append(out[i].Transforms, pl.transform)
+	}
+	return out
 }
