@@ -12,8 +12,8 @@ type fakeRecipeStore struct {
 	restores int
 }
 
-func (f *fakeRecipeStore) RestoreRecipe(model []byte) error {
-	f.current = string(model)
+func (f *fakeRecipeStore) RestoreSnapshot(snapshot []byte) error {
+	f.current = string(snapshot)
 	f.restores++
 	return nil
 }

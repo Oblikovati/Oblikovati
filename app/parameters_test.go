@@ -40,6 +40,28 @@ func rowByName(rows []ParameterRow, name string) (ParameterRow, bool) {
 	return ParameterRow{}, false
 }
 
+// TestImportParametersRollsBackOnError: a rejected parameter import restores the pre-import
+// snapshot and adds nothing — the snapshot/rollback path (now on the fast snapshot codec).
+func TestImportParametersRollsBackOnError(t *testing.T) {
+	s := newSessionWithPart(t)
+	ps := partParams(t, s)
+	if _, err := ps.AddUserParameter("keep", "3 mm"); err != nil {
+		t.Fatalf("seed param: %v", err)
+	}
+	before := ps.Count()
+
+	// A structurally invalid import (numeric parameter with no expression) must be rejected.
+	if _, _, err := s.ImportParameters(`<parameters><parameter name="x"/></parameters>`); err == nil {
+		t.Fatal("ImportParameters accepted invalid XML")
+	}
+	if got := ps.Count(); got != before {
+		t.Errorf("after rejected import: %d parameters, want %d (rollback failed)", got, before)
+	}
+	if _, ok := ps.ByName("keep"); !ok {
+		t.Error("the pre-import parameter was lost on rollback")
+	}
+}
+
 func TestParametersCommandOpensDialog(t *testing.T) {
 	s := newSessionWithPart(t)
 	if err := RegisterStandardCommands(s); err != nil {

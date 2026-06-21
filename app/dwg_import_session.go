@@ -51,6 +51,10 @@ func (s *Session) ImportDWGFile(path string, plane sketch.Plane) (exchange.DWGIm
 	if err != nil {
 		return exchange.DWGImportResult{}, err
 	}
+	// Open the undo baseline at the pre-import state so the whole import is ONE undoable step —
+	// the thousands of per-entity sketch additions it makes internally are not individual undo
+	// steps. Idempotent: a no-op when the document already has an open stream.
+	s.EnsureActiveEditBaseline()
 	res, err := exchange.ImportDWGFile(part, path, plane)
 	if err != nil {
 		return res, err

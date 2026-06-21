@@ -10,16 +10,16 @@ import (
 	"oblikovati.org/model/compdef"
 )
 
-// TestAssemblyRestoreRecipeResetsToSnapshot checks RestoreRecipe is a full replace, not a
+// TestAssemblyRestoreSnapshotResetsToSnapshot checks RestoreSnapshot is a full replace, not a
 // union: restoring an earlier snapshot onto an assembly that has since gained occurrences
 // yields exactly the snapshot's occurrences after re-binding — the undo invariant the
 // transaction stream depends on (#763). The reset would silently union (showing both
-// placements) if RestoreRecipe merged like ApplyRecipe instead of clearing first.
-func TestAssemblyRestoreRecipeResetsToSnapshot(t *testing.T) {
+// placements) if RestoreSnapshot merged like ApplyRecipe instead of clearing first.
+func TestAssemblyRestoreSnapshotResetsToSnapshot(t *testing.T) {
 	_, _, asm, widget, asmDef := placedAssembly(t)
 
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
-	oneOccurrence, err := asmDef.MarshalRecipe() // snapshot with exactly one occurrence
+	oneOccurrence, err := asmDef.MarshalSnapshot() // snapshot with exactly one occurrence
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestAssemblyRestoreRecipeResetsToSnapshot(t *testing.T) {
 		t.Fatalf("after second place: occurrence count = %d, want 2", got)
 	}
 
-	if err := asmDef.RestoreRecipe(oneOccurrence); err != nil {
+	if err := asmDef.RestoreSnapshot(oneOccurrence); err != nil {
 		t.Fatalf("restore: %v", err)
 	}
 	if got := asmDef.Occurrences().Count(); got != 0 {
@@ -48,17 +48,17 @@ func TestAssemblyRestoreRecipeResetsToSnapshot(t *testing.T) {
 	}
 }
 
-// TestAssemblyRestoreRecipeToEmptyRemovesOccurrences checks restoring the empty baseline
+// TestAssemblyRestoreSnapshotToEmptyRemovesOccurrences checks restoring the empty baseline
 // clears every occurrence — undo of the very first placement back to a bare assembly (#763).
-func TestAssemblyRestoreRecipeToEmptyRemovesOccurrences(t *testing.T) {
+func TestAssemblyRestoreSnapshotToEmptyRemovesOccurrences(t *testing.T) {
 	_, _, asm, widget, asmDef := placedAssembly(t)
-	empty, err := asmDef.MarshalRecipe() // baseline: no occurrences yet
+	empty, err := asmDef.MarshalSnapshot() // baseline: no occurrences yet
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
 
-	if err := asmDef.RestoreRecipe(empty); err != nil {
+	if err := asmDef.RestoreSnapshot(empty); err != nil {
 		t.Fatalf("restore: %v", err)
 	}
 	if err := asmDef.ResolveReferences(asm); err != nil {
@@ -75,12 +75,12 @@ func TestAssemblyRestoreRecipeToEmptyRemovesOccurrences(t *testing.T) {
 // the browser and event surface from updating after an undo (#763).
 func TestRestoreRewiresOccurrenceEvents(t *testing.T) {
 	_, _, asm, widget, asmDef := placedAssembly(t)
-	empty, err := asmDef.MarshalRecipe()
+	empty, err := asmDef.MarshalSnapshot()
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
 	placeFromFile(t, asm, widget, asmDef, "widget:1", math.Identity4())
-	if err := asmDef.RestoreRecipe(empty); err != nil { // swaps the occurrence collection
+	if err := asmDef.RestoreSnapshot(empty); err != nil { // swaps the occurrence collection
 		t.Fatalf("restore: %v", err)
 	}
 

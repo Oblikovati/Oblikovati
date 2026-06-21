@@ -170,57 +170,47 @@ var unitCategories = []param.Unit{
 
 // MarshalRecipe renders the part's recipe as YAML bytes (doc.RecipeContent).
 func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
-	sketches, err := d.sketches.MarshalRecipe()
+	r, err := d.buildRecipe()
 	if err != nil {
-		return nil, fmt.Errorf("compdef: marshal sketches: %w", err)
-	}
-	blocks, err := d.sketches.MarshalBlockDefinitions()
-	if err != nil {
-		return nil, fmt.Errorf("compdef: marshal block definitions: %w", err)
-	}
-	sketches3D, err := d.sketches3D.MarshalRecipe3D()
-	if err != nil {
-		return nil, fmt.Errorf("compdef: marshal 3D sketches: %w", err)
-	}
-	features, err := d.features.MarshalRecipe(sketchIndex{d.sketches})
-	if err != nil {
-		return nil, fmt.Errorf("compdef: marshal features: %w", err)
-	}
-	work, err := feature.MarshalWork(d.work)
-	if err != nil {
-		return nil, fmt.Errorf("compdef: marshal work features: %w", err)
-	}
-	r := partRecipe{
-		Units:             d.unitsRecipe(),
-		Parameters:        d.parametersRecipe(),
-		ParameterGroups:   d.parameterGroupsRecipe(),
-		ParameterSettings: d.parameterSettingsRecipe(),
-		DerivedTables:     d.derivedTablesRecipe(),
-		WorkFeatures:      work,
-		BlockDefinitions:  blocks,
-		Sketches:          sketches,
-		Sketches3D:        sketches3D,
-		Features:          features,
-		Materials:         d.materialsRecipe(),
-		Properties:        propertiesRecipeOf(d.props),
-		SheetMetal:        d.sheetMetalRecipeOf(),
-	}
-	if d.eop != endOfPartAtEnd {
-		eop := d.eop
-		r.EndOfPart = &eop
+		return nil, err
 	}
 	return yamlcodec.Marshal(r)
 }
 
-// RestoreRecipe replaces the part's entire recipe with the snapshot in model and
-// recomputes — the undo/redo restore path. Unlike [ApplyRecipe] (which loads onto a
-// fresh, empty definition and so merges additively), RestoreRecipe first resets the
-// definition to empty in place, so applying a snapshot to an already-populated part
-// yields exactly that snapshot rather than a union. The definition pointer is
-// preserved, so the document's Content and any held reference to it stay valid.
-func (d *PartComponentDefinition) RestoreRecipe(model []byte) error {
-	d.resetRecipe()
-	return d.ApplyRecipe(model)
+// buildRecipe captures the part's full parametric state as a [partRecipe] value, the shared
+// step behind both the YAML save ([MarshalRecipe]) and the fast undo snapshot
+// ([MarshalSnapshot]) — so a snapshot can re-use a faster codec without re-deriving the recipe.
+func (d *PartComponentDefinition) buildRecipe() (partRecipe, error) {
+	var r partRecipe
+	// The fallible sub-marshals share one error wrap (each names its section), so a sub-marshal
+	// failure does not need five near-identical branches.
+	for _, step := range []struct {
+		what string
+		run  func() error
+	}{
+		{"sketches", func() (err error) { r.Sketches, err = d.sketches.MarshalRecipe(); return }},
+		{"block definitions", func() (err error) { r.BlockDefinitions, err = d.sketches.MarshalBlockDefinitions(); return }},
+		{"3D sketches", func() (err error) { r.Sketches3D, err = d.sketches3D.MarshalRecipe3D(); return }},
+		{"features", func() (err error) { r.Features, err = d.features.MarshalRecipe(sketchIndex{d.sketches}); return }},
+		{"work features", func() (err error) { r.WorkFeatures, err = feature.MarshalWork(d.work); return }},
+	} {
+		if err := step.run(); err != nil {
+			return partRecipe{}, fmt.Errorf("compdef: marshal %s: %w", step.what, err)
+		}
+	}
+	r.Units = d.unitsRecipe()
+	r.Parameters = d.parametersRecipe()
+	r.ParameterGroups = d.parameterGroupsRecipe()
+	r.ParameterSettings = d.parameterSettingsRecipe()
+	r.DerivedTables = d.derivedTablesRecipe()
+	r.Materials = d.materialsRecipe()
+	r.Properties = propertiesRecipeOf(d.props)
+	r.SheetMetal = d.sheetMetalRecipeOf()
+	if d.eop != endOfPartAtEnd {
+		eop := d.eop
+		r.EndOfPart = &eop
+	}
+	return r, nil
 }
 
 // resetRecipe returns the definition's recipe-bearing state to the empty configuration
@@ -251,6 +241,13 @@ func (d *PartComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := yamlcodec.Unmarshal(model, &r); err != nil {
 		return fmt.Errorf("compdef: parse part recipe: %w", err)
 	}
+	return d.applyRecipeStruct(r)
+}
+
+// applyRecipeStruct restores the part from an already-decoded [partRecipe] and recomputes —
+// the shared tail of [ApplyRecipe] (YAML) and [RestoreSnapshot] (the fast undo codec), so both
+// decode formats converge on one apply path.
+func (d *PartComponentDefinition) applyRecipeStruct(r partRecipe) error {
 	if err := d.applyUnits(r.Units); err != nil {
 		return err
 	}

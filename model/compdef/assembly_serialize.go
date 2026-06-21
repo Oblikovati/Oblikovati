@@ -59,9 +59,19 @@ type occurrenceRecipe struct {
 
 // MarshalRecipe renders the assembly's recipe as YAML bytes (doc.RecipeContent).
 func (a *AssemblyComponentDefinition) MarshalRecipe() ([]byte, error) {
+	r, err := a.buildRecipe()
+	if err != nil {
+		return nil, err
+	}
+	return yamlcodec.Marshal(r)
+}
+
+// buildRecipe captures the assembly's parametric state as an [assemblyRecipe] value — the shared
+// step behind the YAML save ([MarshalRecipe]) and the fast undo snapshot ([MarshalSnapshot]).
+func (a *AssemblyComponentDefinition) buildRecipe() (assemblyRecipe, error) {
 	sketches, err := a.sketches.MarshalRecipe()
 	if err != nil {
-		return nil, fmt.Errorf("compdef: marshal assembly sketches: %w", err)
+		return assemblyRecipe{}, fmt.Errorf("compdef: marshal assembly sketches: %w", err)
 	}
 	r := assemblyRecipe{
 		Units:       unitsRecipeFor(a.units),
@@ -73,7 +83,7 @@ func (a *AssemblyComponentDefinition) MarshalRecipe() ([]byte, error) {
 	if eof := a.features.EndOfFeaturesPosition(); eof != endOfFeaturesAtEnd {
 		r.EndOfFeatures = &eof
 	}
-	return yamlcodec.Marshal(r)
+	return r, nil
 }
 
 // featuresRecipe captures the machining program in order — each feature whose state is
@@ -151,6 +161,13 @@ func (a *AssemblyComponentDefinition) ApplyRecipe(model []byte) error {
 	if err := yamlcodec.Unmarshal(model, &r); err != nil {
 		return fmt.Errorf("compdef: parse assembly recipe: %w", err)
 	}
+	return a.applyRecipeStruct(r)
+}
+
+// applyRecipeStruct restores the assembly from an already-decoded [assemblyRecipe] — the shared
+// tail of [ApplyRecipe] (YAML) and [RestoreSnapshot] (the fast undo codec). It stashes
+// occurrences as pending; binding happens in [ResolveReferences] (see ApplyRecipe).
+func (a *AssemblyComponentDefinition) applyRecipeStruct(r assemblyRecipe) error {
 	if err := applyUnitsTo(&a.units, r.Units); err != nil {
 		return err
 	}
@@ -167,27 +184,6 @@ func (a *AssemblyComponentDefinition) ApplyRecipe(model []byte) error {
 	a.pending = r.Occurrences
 	a.pendingFeatures = r.Features // features bind after occurrences resolve (they snapshot participation)
 	return nil
-}
-
-// RestoreRecipe replaces the assembly's entire occurrence structure with the snapshot — the
-// undo/redo restore path (command.RecipeStore, #763). Unlike a part's RestoreRecipe it cannot
-// finish in place: each occurrence must be re-bound to its component document, which needs the
-// workspace to open the component (the same reason ApplyRecipe defers binding). So it resets
-// the occurrences and re-stashes the snapshot as pending; the owner-aware caller pairs every
-// restore with [ResolveReferences] to re-bind (app/undo.go's rebindReferences does this for
-// every restore). Resetting in place preserves the definition pointer, so the document Content
-// and any held reference to the assembly stay valid, and applying a snapshot to an
-// already-populated assembly yields exactly that snapshot rather than a union.
-//
-// Example:
-//
-//	before, _ := asm.MarshalRecipe()
-//	asm.PlaceComponentFromFile(owner, widget, "widget:1", math.Identity4())
-//	asm.RestoreRecipe(before)            // occurrences back to pending
-//	asm.ResolveReferences(owner)         // re-bound: the placement is gone
-func (a *AssemblyComponentDefinition) RestoreRecipe(model []byte) error {
-	a.resetOccurrences()
-	return a.ApplyRecipe(model)
 }
 
 // resetOccurrences clears the occurrence structure in place, re-wiring the fresh collection to
