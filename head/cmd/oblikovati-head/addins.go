@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,6 +75,7 @@ func startAddIns(session *app.Session) *addInHost {
 	useDialogMemoryStore(session)
 	h.loadAndRegister(session, dir)
 	h.loadInstalledAddIns(session) // add-ins the in-app catalogue installed under the per-user dir (#1164)
+	wireAddInCatalogue(session)    // Tools ▸ Get Add-Ins… browse/install (#1164)
 	h.subs = events.Subscribe(session, func(ev []byte) { h.notifyActive(session, ev) })
 	// Under a supervisor (make run-watch sets OBK_ADDIN_AUTORESTART=1), watch the
 	// add-ins dir so a rebuilt library makes the app exit-and-relaunch — the safe way
@@ -91,6 +93,23 @@ func startAddIns(session *app.Session) *addInHost {
 func (h *addInHost) loadAndRegister(session *app.Session, dir string) {
 	libs, skipped, err := addinhost.LoadDir(dir)
 	h.registerResults(session, libs, skipped, err)
+}
+
+// catalogueHTTPTimeout bounds each catalogue request and bundle download so a slow service
+// never strands a worker goroutine.
+const catalogueHTTPTimeout = 60 * time.Second
+
+// wireAddInCatalogue injects the catalogue query + install seams into the session so Tools ▸
+// Get Add-Ins… can browse and install (#1164). OBLIKOVATI_ADDINS_ENDPOINT overrides the
+// service base URL (development/tests); an unresolvable user dir disables the feature.
+func wireAddInCatalogue(session *app.Session) {
+	dir, err := addincat.UserAddInsDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "add-in catalogue: %v\n", err)
+		return
+	}
+	client := addincat.NewClient(os.Getenv("OBLIKOVATI_ADDINS_ENDPOINT"), &http.Client{Timeout: catalogueHTTPTimeout})
+	session.SetAddInCatalogue(client, addincat.NewInstaller(dir, client))
 }
 
 // loadInstalledAddIns loads add-ins the in-app catalogue installed under the per-user

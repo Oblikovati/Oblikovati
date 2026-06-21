@@ -154,6 +154,9 @@ func drawToolsMenu(s *app.Session) {
 		if native.MenuItem("Command Input") { // M05-F17: type an alias to run a command
 			s.BeginCommandInput()
 		}
+		if native.MenuItem("Get Add-Ins…") { // #1164: browse/install/update add-ins from the catalogue
+			OpenAddInCatalogue(s)
+		}
 		if native.MenuItem(checkLabel("Command Window", s.CommandWindowOpen())) { // M26 F04: docked REPL
 			s.ToggleCommandWindow()
 		}
