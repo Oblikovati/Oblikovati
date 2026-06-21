@@ -64,6 +64,10 @@ func TestAddInCatalogueWindowDrawsInWindow(t *testing.T) {
 	defer win.Destroy()
 	win.InitViewport()
 
+	// The open flag is package-global; leaving it set would make later in-window tests' full
+	// DrawChrome draw this window over the viewport and steal their injected input.
+	defer func() { addInCatalogueUI.open = false }()
+
 	s := app.NewSession()
 	s.SetAddInCatalogue(fakeCatSource{}, fakeCatInstaller{})
 	OpenAddInCatalogue(s)
