@@ -12,6 +12,24 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
+// TestGeomKeyFor pins the F4 geometry key: deterministic, non-zero (0 means "always re-upload"), and
+// distinct keys hash apart so the native side re-uploads only on a real geometry change.
+func TestGeomKeyFor(t *testing.T) {
+	a := geomKeyFor("ver1|ov:ab")
+	if a == 0 {
+		t.Fatal("geomKeyFor must never return 0")
+	}
+	if a != geomKeyFor("ver1|ov:ab") {
+		t.Error("geomKeyFor must be deterministic for the same key")
+	}
+	if a == geomKeyFor("ver2|ov:ab") {
+		t.Error("a different geometry key must hash to a different value")
+	}
+	if geomKeyFor("") == 0 {
+		t.Error("even the empty key must map to a non-zero geomKey")
+	}
+}
+
 // TestLeafRunLengths pins how drawChildren partitions a child list into the contiguous leaf runs it
 // virtualizes: branches break runs, leaves between/around them form runs (M34-F3). This is the
 // flat-assembly case — a long run of occurrence leaves beside the Origin/Parameters branches.
