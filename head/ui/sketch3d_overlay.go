@@ -14,35 +14,74 @@ import (
 	"oblikovati.org/renderer"
 )
 
-// sketch3DBoundsCache memoises the model-space extent of the finished 3D-sketch line work, so
-// the viewport's adaptive far plane can enclose a non-planar DWG import (large coordinates,
-// all line primitives) without rescanning every segment each frame. Keyed on the 3D-sketch
-// geometry so it survives camera moves and rebuilds only on import/edit.
-var sketch3DBoundsCache struct {
+// sketch3DOverlayCache memoises the finished 3D-sketch CURVE wireframe (the camera-independent
+// bulk) together with the standalone-point positions and the model-space extent. A dense
+// non-planar DWG import becomes a Sketch3D of hundreds of thousands of segments; re-sampling
+// every curve every frame (SamplePolyline3D is the costly step) dropped the viewport to a
+// crawl and meant a captured frame could catch a mid-build overlay. The curve geometry is
+// camera-independent (model space), so it holds across camera moves and picking and rebuilds
+// only when the geometry changes (see sketch3DOverlayKey). Standalone-point crosses are screen-
+// constant (size depends on zoom) and pick highlights change per interaction, so those small
+// pieces are built fresh each frame on top of the cached curves — without re-sampling the bulk.
+// The render loop is single-threaded, so a package-level cache is safe.
+var sketch3DOverlayCache struct {
 	key                  string
+	curves               []renderer.DrawItem // all visible curve segments, normal colour
+	points               []math.Point3       // standalone-point positions (cross drawn per frame)
 	boundsMin, boundsMax [3]float32
 	hasBounds            bool
 }
 
-// cachedSketch3DBounds returns the extent of the active part's visible 3D sketches, computed at
-// the last geometry change. ok is false when there is no 3D-sketch line work. The far plane
-// unions this with the body/2D-sketch bounds so a 3D import is not clipped on zoom-out.
-func cachedSketch3DBounds(s *app.Session) (min, max [3]float32, ok bool) {
-	key, keyed := sketch3DBoundsKey(s)
-	if !keyed {
-		return drawItemsBounds(sketch3DOverlays(s, 1))
+// cachedSketch3DCurves returns the cached normal-colour curve overlay, rebuilding it only when
+// the 3D-sketch geometry changes. The returned slice is a shallow copy so the caller's appends
+// never mutate the cached list. With no part to key on it falls back to an uncached build.
+func cachedSketch3DCurves(s *app.Session) []renderer.DrawItem {
+	key, ok := sketch3DOverlayKey(s)
+	if !ok {
+		curves, _ := buildSketch3DCurves(s)
+		return curves
 	}
-	if key != sketch3DBoundsCache.key {
-		sketch3DBoundsCache.key = key
-		sketch3DBoundsCache.boundsMin, sketch3DBoundsCache.boundsMax, sketch3DBoundsCache.hasBounds =
-			drawItemsBounds(sketch3DOverlays(s, 1))
+	if key != sketch3DOverlayCache.key {
+		sketch3DOverlayCache.key = key
+		sketch3DOverlayCache.curves, sketch3DOverlayCache.points = buildSketch3DCurves(s)
+		sketch3DOverlayCache.boundsMin, sketch3DOverlayCache.boundsMax, sketch3DOverlayCache.hasBounds =
+			sketch3DCacheBounds()
 	}
-	return sketch3DBoundsCache.boundsMin, sketch3DBoundsCache.boundsMax, sketch3DBoundsCache.hasBounds
+	return append([]renderer.DrawItem(nil), sketch3DOverlayCache.curves...)
 }
 
-// sketch3DBoundsKey fingerprints the 3D-sketch geometry (model version + each sketch's seq /
-// visibility / entity count), which changes on import and on add/remove/edit.
-func sketch3DBoundsKey(s *app.Session) (string, bool) {
+// sketch3DCacheBounds is the extent of the just-rebuilt cache: the curve vertices widened by
+// any standalone points (a lone point off on its own still extends the far plane / Fit box).
+func sketch3DCacheBounds() (min, max [3]float32, ok bool) {
+	min, max, ok = drawItemsBounds(sketch3DOverlayCache.curves)
+	for _, p := range sketch3DOverlayCache.points {
+		if !ok {
+			min, max, ok = [3]float32{float32(p.X), float32(p.Y), float32(p.Z)}, [3]float32{float32(p.X), float32(p.Y), float32(p.Z)}, true
+			continue
+		}
+		min[0], max[0] = minF32(min[0], float32(p.X)), maxF32(max[0], float32(p.X))
+		min[1], max[1] = minF32(min[1], float32(p.Y)), maxF32(max[1], float32(p.Y))
+		min[2], max[2] = minF32(min[2], float32(p.Z)), maxF32(max[2], float32(p.Z))
+	}
+	return min, max, ok
+}
+
+// cachedSketch3DBounds returns the extent of the active part's visible 3D sketches, computed at
+// the last cache rebuild, so the viewport far plane encloses a non-planar DWG import (large
+// coordinates, all line primitives) without rescanning every segment each frame. ok is false
+// when there is no 3D-sketch line work. Reading the cache first builds it if the key changed.
+func cachedSketch3DBounds(s *app.Session) (min, max [3]float32, ok bool) {
+	if _, keyed := sketch3DOverlayKey(s); !keyed {
+		return drawItemsBounds(buildSketch3DCurvesOnly(s))
+	}
+	cachedSketch3DCurves(s) // rebuilds the cache (including bounds) when the key changed
+	return sketch3DOverlayCache.boundsMin, sketch3DOverlayCache.boundsMax, sketch3DOverlayCache.hasBounds
+}
+
+// sketch3DOverlayKey fingerprints the 3D-sketch geometry (model version + each sketch's seq /
+// visibility / entity count), which changes on import and on add/remove/edit — but NOT on a
+// camera move or a pick, so the cached curve bulk survives both.
+func sketch3DOverlayKey(s *app.Session) (string, bool) {
 	version, ok := activeModelGeometryVersion(s)
 	if !ok {
 		return "", false
@@ -60,29 +99,98 @@ func sketch3DBoundsKey(s *app.Session) (string, bool) {
 	return b.String(), true
 }
 
-// sketch3DOverlays renders the active part's 3D sketches in the viewport — curves as
-// sampled polylines (the same sampling the ray picker tests against), standalone
-// points as screen-constant crosses — so 3D-sketch geometry is visible and pickable
-// for the constraint tools (issue #142). Entities picked by the active pick-driven
-// tool draw highlighted, mirroring the 2D sketch overlay's cue.
+// sketch3DOverlays renders the active part's 3D sketches in the viewport — curves as sampled
+// polylines (the same sampling the ray picker tests against), standalone points as screen-
+// constant crosses — so 3D-sketch geometry is visible and pickable for the constraint tools
+// (issue #142). The curve bulk comes from the geometry-keyed cache; the small per-frame tail
+// is the standalone-point crosses (sized by hPoint) and the highlight for entities the active
+// pick-driven tool has gathered, drawn over the cached normal curves.
 func sketch3DOverlays(s *app.Session, hPoint float64) []renderer.DrawItem {
+	items := cachedSketch3DCurves(s)
+	return append(items, sketch3DLiveOverlay(s, hPoint)...)
+}
+
+// sketch3DLiveOverlay builds the per-frame, non-cacheable part of the 3D overlay: standalone-
+// point crosses at the current screen-constant size, plus the pick highlight. It draws the
+// cached points (positions are camera-independent) and re-samples only the small picked set,
+// so it never re-samples the curve bulk.
+func sketch3DLiveOverlay(s *app.Session, h float64) []renderer.DrawItem {
+	normal, sel := &segAccum{}, &segAccum{}
+	for _, p := range cachePointsFor(s) {
+		accumPointCross3D(normal, p, h)
+	}
+	highlightPickedSketch3D(s, sel, h)
+	var items []renderer.DrawItem
+	items = appendGrid(items, normal, sketchColor)
+	items = appendGrid(items, sel, sketchSelectedColor)
+	return items
+}
+
+// cachePointsFor returns the standalone-point positions for the active part, from the cache
+// when it is keyed (the common path) or a fresh scan when it is not.
+func cachePointsFor(s *app.Session) []math.Point3 {
+	if _, ok := sketch3DOverlayKey(s); ok {
+		return sketch3DOverlayCache.points
+	}
+	_, points := buildSketch3DCurves(s)
+	return points
+}
+
+// highlightPickedSketch3D adds the active pick-driven tool's gathered entities to sel — curves
+// re-sampled (the set is small) and standalone points as crosses — so they highlight over the
+// cached normal curves. A no-op when no such tool is active or nothing is picked.
+func highlightPickedSketch3D(s *app.Session, sel *segAccum, h float64) {
+	for e := range pickedSketchEntities(s) {
+		pts := sketch.SamplePolyline3D(e, sketchSegments)
+		if len(pts) == 1 {
+			accumPointCross3D(sel, pts[0], h)
+			continue
+		}
+		for i := 0; i+1 < len(pts); i++ {
+			sel.addSegment(pts[i], pts[i+1])
+		}
+	}
+}
+
+// buildSketch3DCurves samples every visible 3D sketch once, returning the normal-colour curve
+// overlay items and the standalone-point positions. This is the cached (geometry-keyed) build.
+func buildSketch3DCurves(s *app.Session) (curves []renderer.DrawItem, points []math.Point3) {
 	part := activePart(s)
 	if part == nil {
-		return nil
+		return nil, nil
 	}
-	picked := pickedSketchEntities(s)
-	normal, sel := &segAccum{}, &segAccum{}
+	acc := &segAccum{}
 	for i := 0; i < part.Sketches3D().Count(); i++ {
 		sk := part.Sketches3D().Item(i)
 		if !sk.Visible() {
 			continue
 		}
-		accumSketch3D(sk, picked, normal, sel, hPoint)
+		points = accumSketch3DCurves(sk, acc, points)
 	}
-	var items []renderer.DrawItem
-	items = appendGrid(items, normal, sketchColor)
-	items = appendGrid(items, sel, sketchSelectedColor)
-	return items
+	return appendGrid(nil, acc, sketchColor), points
+}
+
+// buildSketch3DCurvesOnly is buildSketch3DCurves discarding the points — the un-keyed bounds
+// fallback only needs the curve extent.
+func buildSketch3DCurvesOnly(s *app.Session) []renderer.DrawItem {
+	curves, _ := buildSketch3DCurves(s)
+	return curves
+}
+
+// accumSketch3DCurves accumulates one 3D sketch's curve segments into acc and appends its
+// standalone-point positions to points (single-sample entities are lone points, not curves).
+func accumSketch3DCurves(sk *sketch.Sketch3D, acc *segAccum, points []math.Point3) []math.Point3 {
+	for _, e := range sk.Entities() {
+		pts := sketch.SamplePolyline3D(e, sketchSegments)
+		if len(pts) == 1 {
+			points = append(points, pts[0])
+			continue
+		}
+		for i := 0; i+1 < len(pts); i++ {
+			acc.addSegment(pts[i], pts[i+1])
+		}
+	}
+	return points
 }
 
 // pickedSketchEntities returns the entities the active pick-driven tool has gathered
@@ -105,25 +213,6 @@ func pickedSketchEntities(s *app.Session) map[sketch.Entity]bool {
 		set[e] = true
 	}
 	return set
-}
-
-// accumSketch3D accumulates one 3D sketch's entities as model-space segments: curves
-// by their sampled polyline, single points as a three-axis cross of half-size h.
-func accumSketch3D(sk *sketch.Sketch3D, picked map[sketch.Entity]bool, normal, sel *segAccum, h float64) {
-	for _, e := range sk.Entities() {
-		acc := normal
-		if picked[e] {
-			acc = sel
-		}
-		pts := sketch.SamplePolyline3D(e, sketchSegments)
-		if len(pts) == 1 {
-			accumPointCross3D(acc, pts[0], h)
-			continue
-		}
-		for i := 0; i+1 < len(pts); i++ {
-			acc.addSegment(pts[i], pts[i+1])
-		}
-	}
 }
 
 // accumPointCross3D draws a standalone 3D point as a small axis-aligned cross.
