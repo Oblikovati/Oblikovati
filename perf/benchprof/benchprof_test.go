@@ -59,3 +59,23 @@ func TestStartRejectsEmptyLabel(t *testing.T) {
 		t.Error("expected error for empty label")
 	}
 }
+
+func TestStartReportsUncreatableDir(t *testing.T) {
+	// A regular file cannot be a profile directory's parent, so MkdirAll fails and Start
+	// surfaces it with the offending path rather than panicking later in Stop.
+	file := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(envDir, filepath.Join(file, "sub"))
+	if _, err := Start("blocked"); err == nil {
+		t.Error("expected error when the profile directory cannot be created")
+	}
+}
+
+func TestMemSummaryString(t *testing.T) {
+	s := MemSummary{Label: "x", HeapAllocBytes: 2 << 20, PeakRSSBytes: 4 << 20}
+	if !strings.Contains(s.String(), "[x]") || !strings.Contains(s.String(), "MB") {
+		t.Errorf("unexpected summary string: %q", s.String())
+	}
+}

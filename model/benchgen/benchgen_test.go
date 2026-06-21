@@ -116,7 +116,69 @@ func TestProfileByName(t *testing.T) {
 	if _, err := ProfileByName("auto30k"); err != nil {
 		t.Errorf("auto30k: %v", err)
 	}
+	if _, err := ProfileByName("auto1m"); err != nil {
+		t.Errorf("auto1m: %v", err)
+	}
 	if _, err := ProfileByName("nope"); err == nil {
 		t.Error("expected error for unknown profile")
+	}
+}
+
+func TestProfileAccessors(t *testing.T) {
+	for _, p := range []Profile{Auto30k(), Auto1M()} {
+		if p.BayCount() != p.Systems*p.Modules*p.SubModules*p.Bays {
+			t.Errorf("%s BayCount mismatch", p.Name)
+		}
+		if p.TotalPlacements() == 0 || p.TotalUniqueMeshes() == 0 {
+			t.Errorf("%s totals should be non-zero", p.Name)
+		}
+		if _, ok := p.Tier(Fastener); !ok {
+			t.Errorf("%s should define the fastener tier", p.Name)
+		}
+	}
+	// A tier the profile does not define is reported absent.
+	empty := Profile{Name: "empty"}
+	if _, ok := empty.Tier(Bracket); ok {
+		t.Error("empty profile should not define any tier")
+	}
+}
+
+func TestTierString(t *testing.T) {
+	cases := map[Tier]string{Fastener: "fastener", Bracket: "bracket", Machined: "machined", System: "system"}
+	for tier, want := range cases {
+		if got := tier.String(); got != want {
+			t.Errorf("Tier(%d).String() = %q, want %q", int(tier), got, want)
+		}
+	}
+	if got := Tier(99).String(); got != "tier(99)" {
+		t.Errorf("unknown tier String = %q", got)
+	}
+}
+
+func TestGenerateRejectsDegenerateGeometry(t *testing.T) {
+	// A profile whose tier has fewer than three polygon sides cannot form a profile, so
+	// generation must fail with the offending value rather than build an empty body.
+	bad := Profile{
+		Name: "bad", Systems: 1, Modules: 1, SubModules: 1, Bays: 1,
+		Tiers: []TierSpec{{Tier: Bracket, UniqueMeshes: 1, Placements: 1, Sides: 2, RadiusCm: 1, HeightCm: 1}},
+	}
+	if _, _, err := Generate(newMemWorkspace(), "bad", bad); err == nil {
+		t.Error("expected error for a 2-sided polygon tier")
+	}
+}
+
+func TestGridPositionSpreadsAndCenters(t *testing.T) {
+	// A single cell sits at the volume center; many indices fan out to distinct points.
+	c := gridPosition(0, 1, carBoundsCm)
+	if c.X != carBoundsCm.X/2 {
+		t.Errorf("single-cell X = %g, want center %g", c.X, carBoundsCm.X/2)
+	}
+	a := bayTransform(0, 64).Translation()
+	b := bayTransform(40, 64).Translation()
+	if a == b {
+		t.Error("distinct bay indices should map to distinct positions")
+	}
+	if partTransform(1).Translation() == partTransform(2).Translation() {
+		t.Error("distinct part slots should jitter to distinct offsets")
 	}
 }

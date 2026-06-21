@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"oblikovati.org/model/benchgen"
@@ -63,5 +64,23 @@ func TestGenerateAssemblyArgErrors(t *testing.T) {
 	}
 	if err := cmdGenerateAssembly([]string{"--profile", "nope", "--out", t.TempDir()}, &buf); err == nil {
 		t.Error("expected error for unknown profile")
+	}
+	if err := cmdGenerateAssembly([]string{"--out", t.TempDir(), "stray"}, &buf); err == nil {
+		t.Error("expected error for an unexpected positional argument")
+	}
+}
+
+func TestGenerateAssemblyNoSavePrintsStats(t *testing.T) {
+	var buf bytes.Buffer
+	// --save=false exercises the generate + stats-print path (and benchprof memory
+	// summary) without writing thousands of files, so it is fast and table-clean.
+	if err := generateAssembly(cliTinyProfile(), "tinycar", false, &buf); err != nil {
+		t.Fatalf("generateAssembly: %v", err)
+	}
+	out := buf.String()
+	for _, want := range []string{"leaf placements:", "unique meshes:", "memory:", "(not saved"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output missing %q:\n%s", want, out)
+		}
 	}
 }
