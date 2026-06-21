@@ -23,6 +23,7 @@ import (
 type RayPicker struct {
 	camera       scene.Camera
 	bodies       func() []*topo.Body
+	rayBodies    func(origin math.Point3, dir math.Vector3) []*topo.Body // spatial-index ray query (assemblies, M34-F5)
 	planes       func() []*feature.WorkPlane
 	points       func() []*feature.WorkPoint
 	axes         func() []*feature.WorkAxis
@@ -90,6 +91,28 @@ func (p *RayPicker) WithAxes(axes func() []*feature.WorkAxis) *RayPicker {
 func (p *RayPicker) WithOccurrenceLookup(lookup func(*topo.Body) (*occurrence.Occurrence, bool)) *RayPicker {
 	p.occurrenceOf = lookup
 	return p
+}
+
+// WithRayBodies adds a ray-aware body provider — a spatial index that returns only the bodies a
+// given ray could hit — so face/edge/vertex hit-tests in a large assembly skip the placements
+// the ray misses instead of scanning (and materializing) every world body (M34-F5). A nil
+// result means "no index for this scene" and the picker falls back to the full body list.
+func (p *RayPicker) WithRayBodies(query func(origin math.Point3, dir math.Vector3) []*topo.Body) *RayPicker {
+	p.rayBodies = query
+	return p
+}
+
+// candidateBodies returns the bodies to hit-test for one ray: the spatial-index candidates when
+// a ray-body provider is set and answers for this scene (assemblies — only placements the ray
+// crosses), otherwise the full scene body list (parts, which are small). A non-nil result, even
+// when empty, is authoritative: it means the index ran and the ray crossed nothing.
+func (p *RayPicker) candidateBodies(origin math.Point3, dir math.Vector3) []*topo.Body {
+	if p.rayBodies != nil {
+		if cand := p.rayBodies(origin, dir); cand != nil {
+			return cand
+		}
+	}
+	return p.bodies()
 }
 
 // SetCamera updates the view used for picking.
@@ -307,7 +330,7 @@ func (p *RayPicker) nearestFace(origin math.Point3, dir math.Vector3) (*topo.Fac
 	var hitFace *topo.Face
 	var hitBody *topo.Body
 	best := stdmath.Inf(1)
-	for _, b := range p.bodies() {
+	for _, b := range p.candidateBodies(origin, dir) {
 		if f, t, ok := ops.RayCastFaces(b, origin, dir, ops.DefaultQuality()); ok && t < best {
 			best, hitFace, hitBody = t, f, b
 		}
@@ -322,7 +345,7 @@ func (p *RayPicker) nearestVertex(origin math.Point3, dir math.Vector3) *topo.Ve
 	tol := pickPixelRadius * p.camera.WorldPerPixel()
 	var hit *topo.Vertex
 	best := stdmath.Inf(1)
-	for _, b := range p.bodies() {
+	for _, b := range p.candidateBodies(origin, dir) {
 		for _, v := range b.Vertices() {
 			t := origin.VectorTo(v.Point()).Dot(dir)
 			if t <= 0 || t >= best {
@@ -343,7 +366,7 @@ func (p *RayPicker) nearestEdge(origin math.Point3, dir math.Vector3) *topo.Edge
 	tol := pickPixelRadius * p.camera.WorldPerPixel()
 	var hit *topo.Edge
 	best := stdmath.Inf(1)
-	for _, b := range p.bodies() {
+	for _, b := range p.candidateBodies(origin, dir) {
 		for _, e := range b.Edges() {
 			pts := ops.TessellateEdge(e, ops.DefaultQuality())
 			for i := 0; i+1 < len(pts); i++ {

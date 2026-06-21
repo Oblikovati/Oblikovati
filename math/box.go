@@ -124,6 +124,46 @@ func (b Box) Corners() [8]Point3 {
 	return c
 }
 
+// IntersectsRay reports whether the forward ray (origin + t·dir, t ≥ 0) crosses the box,
+// returning the entry parameter tEnter (0 when the origin is inside). It is the slab test:
+// for each axis the ray is clipped to the box's [Min,Max] span, and the surviving t-interval
+// is the box crossing. dir need not be unit; an axis-parallel ray (zero component) is handled
+// by treating that slab as the whole line unless the origin is already outside it. This is the
+// broad-phase test a spatial index uses to reject placements a pick ray cannot hit (M34-F5).
+//
+//	if t, ok := box.IntersectsRay(origin, dir); ok { /* candidate at depth t */ }
+func (b Box) IntersectsRay(origin Point3, dir Vector3) (tEnter Scalar, ok bool) {
+	if b.IsEmpty() {
+		return 0, false
+	}
+	tMin, tMax := stdmath.Inf(-1), stdmath.Inf(1)
+	axes := [3]struct{ o, d, lo, hi Scalar }{
+		{origin.X, dir.X, b.Min.X, b.Max.X},
+		{origin.Y, dir.Y, b.Min.Y, b.Max.Y},
+		{origin.Z, dir.Z, b.Min.Z, b.Max.Z},
+	}
+	for _, a := range axes {
+		if a.d == 0 { // parallel to this slab: a miss only if the origin is outside it
+			if a.o < a.lo || a.o > a.hi {
+				return 0, false
+			}
+			continue
+		}
+		t1, t2 := (a.lo-a.o)/a.d, (a.hi-a.o)/a.d
+		if t1 > t2 {
+			t1, t2 = t2, t1
+		}
+		tMin, tMax = max(tMin, t1), min(tMax, t2)
+		if tMin > tMax {
+			return 0, false
+		}
+	}
+	if tMax < 0 { // the whole crossing is behind the ray origin
+		return 0, false
+	}
+	return max(tMin, 0), true
+}
+
 // Transform returns the axis-aligned box bounding this box's eight corners after the
 // affine transform m — the AABB of a placed (rotated/translated) component, used to
 // accumulate an assembly's range box from its occurrences. A rotation enlarges the

@@ -153,6 +153,7 @@ type Session struct {
 	meshColorsPerTri     bool                           // when meshColors: color per TRIANGLE (else per B-rep face)
 	editScope            editScope                      // while editing a node, hide everything created after it (issue #132)
 	asmBodies            assemblyBodyCache              // memoized world-space assembly bodies + their occurrences (#769)
+	pickIndex            *assemblyPickIndex             // BVH over placement AABBs for sub-linear ray picking (M34-F5)
 	bomPanelOpen         bool                           // the Assemble ▸ Bill of Materials panel is open (#768)
 	bomViewKind          bom.ViewKind                   // the BOM panel's selected view (structured / parts-only)
 	updateCheckRequested bool                           // Help ▸ Check for Updates was clicked; the head runs the (network) check

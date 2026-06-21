@@ -128,6 +128,39 @@ func TestBox2d(t *testing.T) {
 	}
 }
 
+func TestBoxIntersectsRay(t *testing.T) {
+	b := NewBox(P3(0, 0, 0), P3(2, 2, 2))
+	cases := []struct {
+		name      string
+		origin    Point3
+		dir       Vector3
+		want      bool
+		wantEnter Scalar
+	}{
+		{"hits from outside", P3(1, 1, -5), V3(0, 0, 1), true, 5},
+		{"origin inside", P3(1, 1, 1), V3(0, 0, 1), true, 0},
+		{"misses beside the box", P3(5, 5, -5), V3(0, 0, 1), false, 0},
+		{"points away (box behind)", P3(1, 1, 5), V3(0, 0, 1), false, 0},
+		{"axis-parallel grazes through", P3(-5, 1, 1), V3(1, 0, 0), true, 5},
+		{"axis-parallel outside slab", P3(-5, 9, 1), V3(1, 0, 0), false, 0},
+		{"diagonal corner hit", P3(-1, -1, -1), V3(1, 1, 1), true, 1},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			enter, ok := b.IntersectsRay(c.origin, c.dir)
+			if ok != c.want {
+				t.Fatalf("ok = %v, want %v", ok, c.want)
+			}
+			if ok && !IsNearZero(enter-c.wantEnter, 1e-9) {
+				t.Errorf("tEnter = %v, want %v", enter, c.wantEnter)
+			}
+		})
+	}
+	if _, ok := EmptyBox().IntersectsRay(P3(0, 0, 0), V3(0, 0, 1)); ok {
+		t.Error("empty box should never be hit")
+	}
+}
+
 func TestIsNearZero(t *testing.T) {
 	if !IsNearZero(1e-12, 0) {
 		t.Error("1e-12 should be near zero at default tolerance")

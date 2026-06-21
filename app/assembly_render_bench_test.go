@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"oblikovati.org/math"
 	"oblikovati.org/model/benchgen"
 )
 
@@ -60,6 +61,29 @@ func BenchmarkWorldAssemblyBodies(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		s.asmBodies = assemblyBodyCache{} // bust the revision cache to measure the rebuild
 		_ = s.worldAssemblyBodies(asm)
+	}
+}
+
+// BenchmarkRayPickBodies measures the F5 fix: one pick ray through the 30k assembly answered by
+// the BVH (only ray-crossed placements transformed) instead of materializing all N world bodies.
+// Compare allocs/op and ns/op against BenchmarkWorldAssemblyBodies — that is the before/after of
+// M34-F5. The index build is warmed out of the loop (revision cache), so the loop times the query.
+func BenchmarkRayPickBodies(b *testing.B) {
+	s := largeAssemblySession(b)
+	asm, err := activeAssembly(s)
+	if err != nil {
+		b.Fatal(err)
+	}
+	// Aim straight down through the assembly's center so the ray actually crosses geometry —
+	// a representative pick, not an empty miss. Building the index here also warms it (revision
+	// cache), so the loop times only the query.
+	root := s.assemblyPickIndexFor(asm).nodes[0].box
+	c := root.Center()
+	origin, dir := math.P3(c.X, c.Y, root.Max.Z+1000), math.V3(0, 0, -1)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = s.RayPickBodies(origin, dir)
 	}
 }
 

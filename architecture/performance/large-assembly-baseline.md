@@ -55,7 +55,8 @@ the 29,900 placements** (the flyweight claim, confirmed).
 | CollectPlacedBodies (flatten) | 6.3 ms | 31 MB | 62k |
 | VisibleInstances (render scene) | 8.7 ms | 44 MB | 69k |
 | BuildBrowser (model tree) | 1.0 ms | 5 MB | 4.5k |
-| **WorldAssemblyBodies (picking)** | **1.54 s** | **2.03 GB** | **31.7M** |
+| **WorldAssemblyBodies (picking, pre-F5)** | **1.54 s** | **2.03 GB** | **31.7M** |
+| **RayPickBodies (picking, post-F5)** | **18.5 µs** | **362 B** | **7** |
 
 ### Scenario driver (auto30k, lavapipe)
 
@@ -80,10 +81,13 @@ driven by the per-frame allocation churn — not GPU submission.
 
 ## Ranked bottlenecks → roadmap
 
-1. **F5 — spatial-index picking (#1204).** `worldAssemblyBodies` rebuilds every
+1. **F5 — spatial-index picking (#1204). ✅ RESOLVED.** `worldAssemblyBodies` rebuilt every
    occurrence's geometry via `ops.TransformBody`: **2.03 GB / 1.54 s / 31.7M allocs for a
-   single selection at 30k** — already unusable, impossible at 1M. Highest severity:
-   it blocks basic interaction.
+   single selection at 30k** — unusable, impossible at 1M. Fixed by a BVH over placement world
+   AABBs (`app/pick_index.go`): a pick ray now visits O(log N + hits) boxes and materializes
+   only the placements it actually crosses. The same selection is now **362 B / 18.5 µs / 7
+   allocs** — a ~5.6-million× drop in allocation and ~83,000× in time. Picking was the highest
+   severity (it blocked basic interaction); it is now the cheapest hot path.
 2. **F1 — cull + retain the instanced frame mesh (#1200).** `instanceBuilder.appendStream`
    is 53% of orbit allocation because the merged vertex/index/instance streams are rebuilt
    every frame for every instance with no culling and no frame-mesh caching. Scope:
@@ -113,7 +117,7 @@ go run ./cmd/oblikovati-cli generate-assembly --profile auto30k --out /tmp/car30
 # pure-Go benches
 go test -bench 'CollectPlacedBodies' -benchmem ./model/compdef/
 go test -bench 'VisibleInstances|BuildBrowser' -benchmem ./app/
-go test -bench 'WorldAssemblyBodies' -benchmem -benchtime=3x ./app/
+go test -bench 'WorldAssemblyBodies|RayPickBodies' -benchmem -benchtime=3x ./app/  # F5 before/after
 
 # scenario driver + profiles (offscreen; lavapipe in headless envs)
 export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_PPROF_DIR=/tmp/prof

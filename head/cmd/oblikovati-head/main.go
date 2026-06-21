@@ -224,7 +224,8 @@ func installPicker(s *app.Session) {
 		}).
 		WithSketches3D(func() []*sketch.Sketch3D { return activeSketches3D(s) }).
 		WithPointClouds(func() []*pointcloud.PointCloud { return s.PickablePointClouds() }).
-		WithOccurrenceLookup(s.OccurrenceOfBody)
+		WithOccurrenceLookup(s.OccurrenceOfBody).
+		WithRayBodies(s.RayPickBodies)
 	s.SetPicker(picker)
 	s.SetRegionPicker(picker) // the same picker answers box-select (window/crossing)
 }
