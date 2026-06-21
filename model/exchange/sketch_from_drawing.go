@@ -37,12 +37,16 @@ type drawingImport struct {
 // import path every codec shares; only the decode step is format-specific.
 func importDrawing(part *compdef.PartComponentDefinition, dr *drawing.Drawing, plane sketch.Plane) drawingImport {
 	dr.Entities = drawing.ScaleEntities(dr.Entities, drawingToDocumentScale(dr.Units, part.Units()))
+	var recenter []string
+	if shifted, offset, did := recenterFarFromOrigin(dr.Entities); did {
+		dr.Entities, recenter = shifted, []string{recenterWarning(offset)}
+	}
 	if _, planar := dr.Planar(planarTolerance); planar {
 		n, w := add2DEntities(part.Sketches().Add(plane), dr.Entities)
-		return drawingImport{entityCount: n, warnings: w}
+		return drawingImport{entityCount: n, warnings: append(recenter, w...)}
 	}
 	n, w := add3DEntities(part.Sketches3D().Add(), dr.Entities)
-	return drawingImport{is3D: true, entityCount: n, warnings: w}
+	return drawingImport{is3D: true, entityCount: n, warnings: append(recenter, w...)}
 }
 
 // dbUnitMetres is the model's database length unit in metres (centimetres; see
