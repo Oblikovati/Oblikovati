@@ -69,6 +69,25 @@ func TestFrustumNeverDropsAVisiblePoint(t *testing.T) {
 	}
 }
 
+func TestProjectedSizePixels(t *testing.T) {
+	cam := centeredCamera()                                  // eye (0,0,10), target origin, 90° FOV (tanHalf=1), 400px tall
+	near := cam.ProjectedSizePixels(boxAt(0, 0, 0, 1))       // 2-unit box at dist 10
+	far := cam.ProjectedSizePixels(boxAt(0, 0, -90, 1))      // same box at dist 100
+	tiny := cam.ProjectedSizePixels(boxAt(0, 0, -990, 0.01)) // 0.02-unit box at dist 1000
+	if near <= far {
+		t.Errorf("a closer box should project larger: near=%.2f far=%.2f", near, far)
+	}
+	if near < 1 {
+		t.Errorf("a 2-unit box at dist 10 should be well over a pixel, got %.3f", near)
+	}
+	if tiny >= 1 {
+		t.Errorf("a 0.02-unit box at dist 1000 should be sub-pixel, got %.3f", tiny)
+	}
+	if got := cam.ProjectedSizePixels(math.EmptyBox()); got != 0 {
+		t.Errorf("empty box projects to %v, want 0", got)
+	}
+}
+
 func TestFrustumOrthographicCulls(t *testing.T) {
 	cam := centeredCamera()
 	cam.Orthographic = true

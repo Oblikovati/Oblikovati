@@ -133,7 +133,13 @@ driven by the per-frame allocation churn — not GPU submission.
    definitions on the current branch (cycle set) and caps recursion at `maxAssemblyDepth` (256), so
    a self-containing or pathologically deep occurrence DAG degrades to a bounded, finite flatten
    instead of overflowing the stack. No measurable overhead (guard touches only interior nodes).
-7. **F7 — LOD / impostors (#1206).** The vertex-throughput wall at true 1M, after F1–F5.
+7. **F7 — detail-culling LOD (#1206). ✅ RESOLVED.** The vertex-throughput wall at true 1M is the
+   sea of parts too small to see. `CulledInstances` now drops any placement projecting below
+   `minDetailPixels` (~1px) — the coarsest level of detail — via `Camera.ProjectedSizePixels` over
+   the frustum-passed candidates. Sub-pixel threshold: a normal view drops nothing (render
+   byte-identical at 30k), while a zoomed-out 1M assembly sheds its invisible majority. Finer LOD
+   meshes / billboard impostors for *mid*-distance parts are a natural future extension on this
+   threshold infrastructure.
 
 ## Reproduce
 

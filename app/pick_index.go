@@ -271,6 +271,25 @@ func (idx *assemblyPickIndex) appendFrustumLeaf(out []int, n bvhNode, f scene.Fr
 	return out
 }
 
+// minDetailPixels is the on-screen size (vertical pixels of a placement's world AABB) below which it
+// is dropped from the drawn set (M34-F7). A part smaller than ~one pixel adds nothing visible, only
+// vertex throughput — the wall at 1M instances. The threshold is sub-pixel-ish so a normal view
+// drops nothing (every part is bigger), and only a zoomed-out massive assembly sheds invisible detail.
+const minDetailPixels = 1.0
+
+// detailVisible drops the candidate placements whose world AABB projects smaller than
+// minDetailPixels for the camera — the coarsest level of detail (M34-F7). It runs only over the
+// frustum-passed candidates (already a pruned set) and filters in place into the same backing slice.
+func (idx *assemblyPickIndex) detailVisible(candidates []int, cam scene.Camera) []int {
+	out := candidates[:0]
+	for _, p := range candidates {
+		if cam.ProjectedSizePixels(idx.placements[p].box) >= minDetailPixels {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
 // groupPlacements collapses the given placements into render instance groups by shared source body,
 // preserving the placements' (ascending) order so the result is deterministic and identical in
 // shape to assemblyInstances when every placement is included.
