@@ -15,6 +15,7 @@ import (
 	"oblikovati.org/addin/events"
 	"oblikovati.org/addin/opregistry"
 	"oblikovati.org/addin/router"
+	"oblikovati.org/addincat"
 	"oblikovati.org/app"
 	"oblikovati.org/event"
 	"oblikovati.org/head/internal/addinhost"
@@ -72,6 +73,7 @@ func startAddIns(session *app.Session) *addInHost {
 	useBehaviorStore(session)
 	useDialogMemoryStore(session)
 	h.loadAndRegister(session, dir)
+	h.loadInstalledAddIns(session) // add-ins the in-app catalogue installed under the per-user dir (#1164)
 	h.subs = events.Subscribe(session, func(ev []byte) { h.notifyActive(session, ev) })
 	// Under a supervisor (make run-watch sets OBK_ADDIN_AUTORESTART=1), watch the
 	// add-ins dir so a rebuilt library makes the app exit-and-relaunch — the safe way
@@ -88,6 +90,26 @@ func startAddIns(session *app.Session) *addInHost {
 // activates) the loadable ones. A bad add-in is logged and skipped — never fatal.
 func (h *addInHost) loadAndRegister(session *app.Session, dir string) {
 	libs, skipped, err := addinhost.LoadDir(dir)
+	h.registerResults(session, libs, skipped, err)
+}
+
+// loadInstalledAddIns loads add-ins the in-app catalogue installed under the per-user
+// directory (#1164), in addition to those beside the executable. A relocated or
+// unresolvable directory is logged and skipped — never fatal.
+func (h *addInHost) loadInstalledAddIns(session *app.Session) {
+	dir, err := addincat.UserAddInsDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "add-ins: locate user add-ins dir: %v\n", err)
+		return
+	}
+	libs, skipped, err := addinhost.LoadInstalledTree(dir)
+	h.registerResults(session, libs, skipped, err)
+}
+
+// registerResults surfaces a load's error and version-skips, then registers (and per stored
+// behavior, activates) each loadable add-in. Shared by the flat exe-adjacent directory and
+// the per-user install tree so both report and register identically.
+func (h *addInHost) registerResults(session *app.Session, libs []*addinhost.LoadedAddIn, skipped []addinhost.IncompatibleAddIn, err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "add-ins: %v\n", err)
 	}
