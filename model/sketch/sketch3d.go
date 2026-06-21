@@ -217,15 +217,20 @@ func (s *Sketch3D) DegreesOfFreedom() int { return s.AnalyzeConstraints().DOF }
 
 // Sketches3D is the collection of 3D sketches owned by a component definition.
 type Sketches3D struct {
-	items []*Sketch3D
-	byID  map[ID]*Sketch3D
-	seq   int // running counter behind the "3D Sketch1", "3D Sketch2", … auto-names
+	items  []*Sketch3D
+	byID   map[ID]*Sketch3D
+	seq    int               // running counter behind the "3D Sketch1", "3D Sketch2", … auto-names
+	params *param.Parameters // shared into every 3D sketch so dimensions resolve (see Sketches.ShareParameters)
 }
 
 // NewSketches3D returns an empty collection.
 func NewSketches3D() *Sketches3D {
 	return &Sketches3D{byID: map[ID]*Sketch3D{}}
 }
+
+// ShareParameters makes the collection hand the document's parameter DAG to every 3D
+// sketch it creates, so dimension expressions resolve (mirrors [Sketches.ShareParameters]).
+func (c *Sketches3D) ShareParameters(ps *param.Parameters) { c.params = ps }
 
 // Add creates a 3D sketch with the next free auto-name ("3D Sketch1", "3D Sketch2", …).
 func (c *Sketches3D) Add() *Sketch3D { return c.AddNamed(c.nextName()) }
@@ -234,6 +239,9 @@ func (c *Sketches3D) Add() *Sketch3D { return c.AddNamed(c.nextName()) }
 func (c *Sketches3D) AddNamed(name string) *Sketch3D {
 	s := &Sketch3D{base: newBase(name)}
 	s.initSketch3D()
+	if c.params != nil {
+		s.SetParameters(c.params) // before any dimensions are added (live or on restore)
+	}
 	c.items = append(c.items, s)
 	c.byID[s.id] = s
 	return s
