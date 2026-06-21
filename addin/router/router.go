@@ -409,6 +409,7 @@ func (r *Router) registerMaterialHandlers() {
 	r.handlers[wire.MethodBrepDeleteFaces] = brepDeleteFaces
 	r.handlers[wire.MethodBrepSilhouette] = brepSilhouette
 	r.handlers[wire.MethodBrepRuledSurface] = brepRuledSurface
+	r.handlers[wire.MethodBrepOffsetFaces] = brepOffsetFaces
 	r.handlers[wire.MethodBrepImprint] = brepImprint
 	r.handlers[wire.MethodBrepIdenticalBodies] = brepIdenticalBodies
 	r.handlers[wire.MethodBrepCreateFromDefinition] = brepCreateFromDefinition

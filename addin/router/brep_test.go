@@ -264,6 +264,32 @@ func TestBrepSilhouetteOnDocumentCylinder(t *testing.T) {
 	}
 }
 
+// TestBrepOffsetFaces offsets the cylindrical side face of an extruded disc and checks the result is
+// a one-face transient surface body (the offset wall to sample).
+func TestBrepOffsetFaces(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	call(t, r, s, "sketch.addEntity", `{"sketchIndex":0,"kind":"circle","points":[[0,0]],"radius":"20 mm"}`, &struct{}{})
+	call(t, r, s, "features.add", `{"kind":"extrude","args":{"sketchIndex":0,"profileIndex":0,"distance":"50 mm"}}`, &struct{}{})
+	var copied wire.BrepHandleResult
+	call(t, r, s, "brep.copy", `{"source":{"bodyIndex":0}}`, &copied)
+
+	args, _ := json.Marshal(wire.BrepOffsetFacesArgs{
+		Source: wire.BrepBodyRef{Handle: copied.Handle}, FaceKeys: []string{sideFaceKey(t, s, copied.Handle)}, Distance: 5,
+	})
+	var off wire.BrepHandleResult
+	call(t, r, s, "brep.offsetFaces", string(args), &off)
+	if off.Handle == 0 || off.Stats.Faces != 1 {
+		t.Fatalf("offset result = %+v, want one offset face on a new transient body", off)
+	}
+
+	// No faces selected is an error.
+	if _, err := r.Handle(s, "brep.offsetFaces",
+		[]byte(fmt.Sprintf(`{"source":{"handle":%d},"faceKeys":[],"distance":5}`, copied.Handle))); err == nil {
+		t.Error("offsetFaces with no faces should error")
+	}
+}
+
 // sideFaceKey returns the transient copy's curved (cylindrical) side face
 // key, probed directly on the registry — the wire surface addresses faces by
 // key but does not enumerate a transient body's faces (the document's
