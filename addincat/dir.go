@@ -3,10 +3,11 @@
 package addincat
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"oblikovati.org/persistence/userpaths"
 )
 
 // UserAddInsDir is the per-user directory add-ins install into and the host scans at startup.
@@ -20,28 +21,11 @@ func UserAddInsDir() (string, error) {
 	if dir := os.Getenv("OBK_USER_ADDINS_DIR"); dir != "" {
 		return dir, nil
 	}
-	base, err := userBase()
+	home, err := userpaths.OblikovatiHome()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "oblikovati", "addins"), nil
-}
-
-// userBase is the parent of the "oblikovati/addins" path: $HOME on the Unix-likes (a visible
-// ~/oblikovati folder a user can manage), %AppData% on Windows.
-func userBase() (string, error) {
-	if runtime.GOOS == "windows" {
-		cfg, err := os.UserConfigDir() // %AppData%
-		if err != nil {
-			return "", fmt.Errorf("addincat: locate AppData dir: %w", err)
-		}
-		return cfg, nil
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("addincat: locate home dir: %w", err)
-	}
-	return home, nil
+	return filepath.Join(home, "addins"), nil
 }
 
 // Platform is the current host's bundle key ("linux-amd64", "darwin-arm64", "windows-amd64"),
