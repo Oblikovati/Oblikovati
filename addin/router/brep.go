@@ -275,6 +275,28 @@ func brepSilhouette(s *app.Session, raw json.RawMessage) (json.RawMessage, error
 	return json.Marshal(wire.BrepWiresResult{Handle: tb.Handle(), Wires: wirePolylines(sil)})
 }
 
+// brepOffsetFaces serves wire.MethodBrepOffsetFaces: the named faces of the source, offset by
+// Distance along their normals, come back as a new transient surface body to sample.
+func brepOffsetFaces(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.BrepOffsetFacesArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	src, err := brepSource(s, in.Source)
+	if err != nil {
+		return nil, err
+	}
+	keys := make([][]byte, len(in.FaceKeys))
+	for i, k := range in.FaceKeys {
+		keys[i] = []byte(k)
+	}
+	off, err := ops.OffsetFaceSurfaces(src.Topo(), keys, in.Distance, in.Reverse)
+	if err != nil {
+		return nil, err
+	}
+	return brepHandleReply(s.TransientBodies().Adopt(off))
+}
+
 // brepRuledSurface serves wire.MethodBrepRuledSurface.
 func brepRuledSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	var in wire.BrepRuledSurfaceArgs
