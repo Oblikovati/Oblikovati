@@ -4,6 +4,7 @@ package addinhost
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -97,17 +98,76 @@ func LoadDir(dir string) ([]*LoadedAddIn, []IncompatibleAddIn, error) {
 		if e.IsDir() || !isSharedLib(e.Name()) {
 			continue
 		}
-		loaded, skip, err := loadOne(filepath.Join(dir, e.Name()))
-		switch {
-		case err != nil:
+		if out, skipped, err = classifyLoad(filepath.Join(dir, e.Name()), out, skipped); err != nil {
 			return out, skipped, err
-		case skip != nil:
-			skipped = append(skipped, *skip)
-		default:
-			out = append(out, loaded)
 		}
 	}
 	return out, skipped, nil
+}
+
+// LoadInstalledTree loads add-ins installed under a per-name tree — dir/<name>/… — where
+// each <name> directory holds one extracted bundle (the shared library, possibly nested in a
+// subfolder, alongside its manifest and dependencies). This is the layout the in-app
+// installer writes to the per-user add-ins directory (#1164), distinct from LoadDir's flat
+// directory of bare libraries. It loads the first shared library found in each add-in's
+// directory with the same version handshake as LoadDir; a missing dir is empty, not an error.
+func LoadInstalledTree(dir string) ([]*LoadedAddIn, []IncompatibleAddIn, error) {
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return nil, nil, nil
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("addinhost: read installed add-in dir %q: %w", dir, err)
+	}
+	var out []*LoadedAddIn
+	var skipped []IncompatibleAddIn
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		lib, found := firstSharedLib(filepath.Join(dir, e.Name()))
+		if !found {
+			continue
+		}
+		if out, skipped, err = classifyLoad(lib, out, skipped); err != nil {
+			return out, skipped, err
+		}
+	}
+	return out, skipped, nil
+}
+
+// classifyLoad loads the library at path and folds the result into out/skipped: a loadable
+// add-in is appended to out, a version-incompatible one to skipped, and a hard open failure
+// is returned as an error (which the caller may treat as fatal). Shared by LoadDir and
+// LoadInstalledTree so both classify a load identically.
+func classifyLoad(path string, out []*LoadedAddIn, skipped []IncompatibleAddIn) ([]*LoadedAddIn, []IncompatibleAddIn, error) {
+	loaded, skip, err := loadOne(path)
+	switch {
+	case err != nil:
+		return out, skipped, err
+	case skip != nil:
+		return out, append(skipped, *skip), nil
+	default:
+		return append(out, loaded), skipped, nil
+	}
+}
+
+// firstSharedLib returns the path of the first shared library found anywhere under dir, so an
+// installed bundle's library is located whether it sits at the add-in's root or in a
+// subfolder. ok is false when the subtree contains no shared library.
+func firstSharedLib(dir string) (string, bool) {
+	var found string
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		if isSharedLib(d.Name()) {
+			found = path
+			return fs.SkipAll
+		}
+		return nil
+	})
+	return found, found != ""
 }
 
 // loadOne opens one shared library and either returns a loadable add-in or, when its
