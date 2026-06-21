@@ -31,6 +31,50 @@ type RayPicker struct {
 	sketches3D   func() []*sketch.Sketch3D
 	pointClouds  func() []*pointcloud.PointCloud                 // attached scans whose points snap (#645)
 	occurrenceOf func(*topo.Body) (*occurrence.Occurrence, bool) // maps an assembly body hit to its component (#769)
+	priorityRank func(SelectionKind) int                         // user pick-priority ranking for ambiguous hits (#1222); nil ⇒ default order
+}
+
+// SetPriorityRank installs the user-defined pick priority (lower rank = higher priority). The
+// Session pushes its SelectionFilterState.Rank so reordering the Selection Filter window changes
+// which kind wins an ambiguous pick (#1222). A nil ranker keeps the historical default order.
+func (p *RayPicker) SetPriorityRank(rank func(SelectionKind) int) { p.priorityRank = rank }
+
+// defaultRankByKind is the historical pick precedence used when no user ranking is installed:
+// the snapPick exact targets (datum point/axis, cloud point, vertex, edge) outrank the
+// depth-sorted occurrence/body/face/plane/profile/sketch hits, matching the old fixed snapPick
+// sequence and RayPicker.Pick append order.
+var defaultRankByKind = func() map[SelectionKind]int {
+	m := make(map[SelectionKind]int)
+	for i, k := range defaultFilterableKinds() {
+		m[k] = i
+	}
+	return m
+}()
+
+// rankOf returns the priority rank of a kind (0 = highest); unranked kinds sort last.
+func (p *RayPicker) rankOf(k SelectionKind) int {
+	if p.priorityRank != nil {
+		return p.priorityRank(k)
+	}
+	if r, ok := defaultRankByKind[k]; ok {
+		return r
+	}
+	return len(defaultRankByKind)
+}
+
+// highestPriority returns the candidate with the lowest rank (the user's top priority among the
+// co-located exact snaps), or false when there are none.
+func (p *RayPicker) highestPriority(cands []Selectable) (Selectable, bool) {
+	best, bestRank := -1, stdmath.MaxInt
+	for i, c := range cands {
+		if r := p.rankOf(c.SelectionKind()); r < bestRank {
+			best, bestRank = i, r
+		}
+	}
+	if best < 0 {
+		return nil, false
+	}
+	return cands[best], true
 }
 
 // pickPixelRadius is how close (in pixels) the cursor must be to a datum point or axis to
@@ -153,7 +197,7 @@ func (p *RayPicker) Pick(x, y float64, filter *SelectionFilter) (Selectable, boo
 	if sel, t, ok := p.nearestSketch3DEntity(origin, dir, filter); ok {
 		cands = append(cands, pickCandidate{t, sel})
 	}
-	return nearestCandidate(cands)
+	return p.nearestCandidate(cands)
 }
 
 // nearestSketch3DEntity returns the 3D-sketch entity (curve or standalone point) the
@@ -233,26 +277,28 @@ func (p *RayPicker) nearestSketchCurve(origin math.Point3, dir math.Vector3, fil
 	return hit, best, hit != nil
 }
 
-// snapPick returns the precise snap the cursor lands on — a datum point, datum axis, body
-// vertex, then edge — each winning over the face behind it (Inventor's snap order). These
-// are exact targets (within the pixel-snap radius), so the first accepted one wins.
+// snapPick returns the precise snap the cursor lands on — a datum point, datum axis, cloud
+// point, body vertex, or edge — each an exact target within the pixel-snap radius that wins over
+// the face behind it. When several are co-located the user's priority order decides which wins
+// (#1222); by default that is the historical point→axis→cloud→vertex→edge precedence.
 func (p *RayPicker) snapPick(origin math.Point3, dir math.Vector3, filter *SelectionFilter) (Selectable, bool) {
+	var snaps []Selectable
 	if pt, _ := p.nearestPoint(origin, dir); pt != nil && filter.Accepts(SelectWorkPoint) {
-		return WorkPointHandle{Point: pt}, true
+		snaps = append(snaps, WorkPointHandle{Point: pt})
 	}
 	if ax, _ := p.nearestAxis(origin, dir); ax != nil && filter.Accepts(SelectWorkAxis) {
-		return WorkAxisHandle{Axis: ax}, true
+		snaps = append(snaps, WorkAxisHandle{Axis: ax})
 	}
 	if pt, cloud, ok := p.nearestCloudPoint(origin, dir); ok && filter.Accepts(SelectPointCloudPoint) {
-		return PointCloudPointHandle{Cloud: cloud, Point: pt}, true
+		snaps = append(snaps, PointCloudPointHandle{Cloud: cloud, Point: pt})
 	}
 	if v := p.nearestVertex(origin, dir); v != nil && filter.Accepts(SelectVertex) {
-		return VertexHandle{Vertex: v}, true
+		snaps = append(snaps, VertexHandle{Vertex: v})
 	}
 	if e := p.nearestEdge(origin, dir); e != nil && filter.Accepts(SelectEdge) {
-		return EdgeHandle{Edge: e}, true
+		snaps = append(snaps, EdgeHandle{Edge: e})
 	}
-	return nil, false
+	return p.highestPriority(snaps)
 }
 
 // pickCandidate is one ray hit: its forward parameter and the selectable it resolves to.
@@ -261,19 +307,39 @@ type pickCandidate struct {
 	sel Selectable
 }
 
-// nearestCandidate returns the candidate with the smallest ray parameter (the first one
-// on ties, preserving the face→plane→profile precedence), or false when there are none.
-func nearestCandidate(cands []pickCandidate) (Selectable, bool) {
-	best, bestT := -1, stdmath.Inf(1)
-	for i, c := range cands {
-		if c.t < bestT {
-			best, bestT = i, c.t
-		}
-	}
-	if best < 0 {
+// nearestCandidate returns the candidate the click resolves to: the one nearest along the ray,
+// breaking near-coincident ties (within a screen-scaled depth window) by the user's pick priority
+// so the Selection Filter ordering decides an ambiguous pick (#1222). With the default order the
+// window collapses to the historical occurrence→face→plane→profile append precedence, and a
+// candidate genuinely in front (more than the window nearer) always wins regardless of priority.
+func (p *RayPicker) nearestCandidate(cands []pickCandidate) (Selectable, bool) {
+	if len(cands) == 0 {
 		return nil, false
 	}
+	minT := stdmath.Inf(1)
+	for _, c := range cands {
+		if c.t < minT {
+			minT = c.t
+		}
+	}
+	eps := p.depthTieEpsilon()
+	best, bestRank := -1, stdmath.MaxInt
+	for i, c := range cands {
+		if c.t > minT+eps {
+			continue // genuinely behind the front candidate — proximity wins over priority
+		}
+		if r := p.rankOf(c.sel.SelectionKind()); r < bestRank {
+			best, bestRank = i, r
+		}
+	}
 	return cands[best].sel, true
+}
+
+// depthTieEpsilon is the world-space depth window within which two hits count as the same pick
+// for priority resolution — one pixel-snap radius at the view scale. A zero/unset camera yields
+// 0, so only exact ties resolve by priority (the historical behaviour).
+func (p *RayPicker) depthTieEpsilon() float64 {
+	return pickPixelRadius * p.camera.WorldPerPixel()
 }
 
 // nearestProfile returns the closest sketch profile region the ray lands inside (mapped
