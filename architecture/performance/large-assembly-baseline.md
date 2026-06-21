@@ -118,10 +118,12 @@ driven by the per-frame allocation churn — not GPU submission.
    lavapipe, but the architecture (per-frame full stall + per-frame HOST_VISIBLE
    re-upload of the whole scene) is the next wall on real GPUs once F1/F2 cut the CPU
    churn; first-frame upload is already multi-second.
-5. **F3 — virtualized browser tree (#1202).** Lower than first expected:
-   `BuildBrowser` is only 4.8 MB / 1.1 ms at 30k. The real cost is the `drawNode` cgo
-   walk (every node, every frame), which `OBK_FRAME_TIMING`'s new `browserNs` phase now
-   measures in-app — re-rank after an in-app capture with the tree expanded.
+5. **F3 — virtualized browser tree (#1202). ✅ RESOLVED.** `BuildBrowser` itself is cheap (4.8 MB /
+   1.1 ms); the cost was the `drawNode` cgo walk over every node every frame. Now any long
+   contiguous run of leaf sibling rows (bodies, occurrences) is drawn through an `ImGuiListClipper`
+   (new native binding), so only the rows in the scroll viewport make cgo calls — O(visible) instead
+   of O(N). Runs are clipped even beside the Origin/Parameters branches, so a flat assembly's
+   thousands of occurrences virtualize. Branches and short runs stay recursive (non-uniform height).
 6. **F6 — DAG cycle/depth guard (#1205). ✅ RESOLVED.** The flatten now tracks the sub-assembly
    definitions on the current branch (cycle set) and caps recursion at `maxAssemblyDepth` (256), so
    a self-containing or pathologically deep occurrence DAG degrades to a bounded, finite flatten

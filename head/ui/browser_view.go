@@ -122,6 +122,113 @@ func reportDoubleClick(s *app.Session, paneID, nodeID string) {
 	}
 }
 
+// browserClipThreshold is the child count above which a node's (all-leaf) children are drawn through
+// an ImGuiListClipper, so a body/occurrence list with thousands of rows only makes cgo calls for the
+// rows on screen — not all of them every frame (M34-F3). Below it the clipper's overhead isn't worth
+// it and the rows draw normally.
+const browserClipThreshold = 64
+
+// drawChildren renders a branch's children, virtualizing any long CONTIGUOUS RUN of leaf siblings
+// with a clipper and walking branches (and short runs) normally. Clipping runs — not just whole
+// all-leaf lists — means a flat assembly's 10k occurrences are virtualized even though they sit
+// beside the Origin/Parameters branches under the root (M34-F3). A run is uniform-height (every row
+// is a leaf), which is what the clipper requires; branches have variable height (an open branch is
+// taller) so they stay recursive. Leaves are contiguous in pre-order, so a run's ids stay correct.
+func drawChildren(s *app.Session, children []app.BrowserNode) {
+	for i := 0; i < len(children); {
+		if len(children[i].Children) > 0 { // a branch: recurse (advances browserNodeSeq by its subtree)
+			drawNode(s, children[i])
+			i++
+			continue
+		}
+		j := i
+		for j < len(children) && len(children[j].Children) == 0 {
+			j++
+		}
+		drawLeafRun(s, children[i:j])
+		i = j
+	}
+}
+
+// drawLeafRun draws a contiguous run of leaf siblings: clipped when long enough to be worth it,
+// else one by one (the clipper has fixed per-list overhead not worth paying for a few rows).
+func drawLeafRun(s *app.Session, run []app.BrowserNode) {
+	if len(run) >= browserClipThreshold {
+		drawClippedLeaves(s, run)
+		return
+	}
+	for k := range run {
+		drawNode(s, run[k])
+	}
+}
+
+// leafRunLengths returns the lengths of the maximal contiguous leaf runs in children, in order —
+// the structure drawChildren virtualizes. Exposed for testing the run partition without a window.
+func leafRunLengths(children []app.BrowserNode) []int {
+	var runs []int
+	for i := 0; i < len(children); {
+		if len(children[i].Children) > 0 {
+			i++
+			continue
+		}
+		j := i
+		for j < len(children) && len(children[j].Children) == 0 {
+			j++
+		}
+		runs = append(runs, j-i)
+		i = j
+	}
+	return runs
+}
+
+// drawClippedLeaves draws a wide leaf list through the clipper. It reserves exactly the per-row
+// ImGui ids the recursive walk would (one per leaf, contiguous from browserNodeSeq), force-includes
+// the selected row so scroll-to-selection still works when it is off-screen, and advances
+// browserNodeSeq past the whole list (each leaf consumes one id and has no descendants), so sibling
+// nodes after this branch keep the ids they had before.
+func drawClippedLeaves(s *app.Session, leaves []app.BrowserNode) {
+	base := browserNodeSeq
+	native.ClipperBegin(len(leaves))
+	if i := selectedLeafIndex(s, leaves); i >= 0 {
+		native.ClipperIncludeItem(i) // force-submit the selection so its SetScrollHereY runs (after Begin, before Step)
+	}
+	for native.ClipperStep() {
+		lo, hi := native.ClipperRange()
+		for i := lo; i < hi; i++ {
+			native.PushIDInt(base + 1 + i)
+			drawLeafRow(s, leaves[i])
+			native.PopID()
+		}
+	}
+	native.ClipperEnd()
+	browserNodeSeq = base + len(leaves)
+}
+
+// drawLeafRow draws one leaf: a selectable row (selection + double-click edit + context menu +
+// scroll-into-view) or a plain bullet.
+func drawLeafRow(s *app.Session, n app.BrowserNode) {
+	if n.Select != nil {
+		drawSelectableNode(s, n)
+		return
+	}
+	native.BulletText(n.Label)
+}
+
+// selectedLeafIndex returns the index of the leaf that is the current selection, or -1 — so the
+// clipper can force-submit it and its SetScrollHereY runs even when it is scrolled out of view.
+func selectedLeafIndex(s *app.Session, leaves []app.BrowserNode) int {
+	current := s.Selection().First()
+	if current == nil {
+		return -1
+	}
+	for i := range leaves {
+		if leaves[i].Select == current {
+			return i
+		}
+	}
+	return -1
+}
+
 // drawNode renders a browser node and its children: a selectable node as a clickable,
 // highlightable row; a branch as a collapsible tree node; a plain leaf as a bullet row.
 //
@@ -162,9 +269,7 @@ func drawSelectableBranchNode(s *app.Session, n app.BrowserNode) {
 	if !open {
 		return
 	}
-	for _, child := range n.Children {
-		drawNode(s, child)
-	}
+	drawChildren(s, n.Children)
 	native.TreePop()
 }
 
@@ -221,9 +326,7 @@ func drawBranchNode(s *app.Session, n app.BrowserNode) {
 	if !open {
 		return
 	}
-	for _, child := range n.Children {
-		drawNode(s, child)
-	}
+	drawChildren(s, n.Children)
 	native.TreePop()
 }
 
