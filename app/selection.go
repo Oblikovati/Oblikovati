@@ -166,9 +166,12 @@ func (WorkPointHandle) SelectionKind() SelectionKind { return SelectWorkPoint }
 func (WorkAxisHandle) SelectionKind() SelectionKind  { return SelectWorkAxis }
 
 // SelectionFilter restricts which selection kinds a pick accepts — Inventor's
-// SelectionFilterEnum. A zero filter (no kinds) accepts everything.
+// SelectionFilterEnum. A zero filter (no kinds) accepts everything; a blocking
+// filter (every kind deactivated via the Selection Filter window, #1222) accepts
+// nothing so a click selects nothing at all.
 type SelectionFilter struct {
-	kinds map[SelectionKind]bool
+	kinds    map[SelectionKind]bool
+	blockAll bool
 }
 
 // NewSelectionFilter accepts only the given kinds; with none it accepts all.
@@ -180,9 +183,20 @@ func NewSelectionFilter(kinds ...SelectionKind) *SelectionFilter {
 	return f
 }
 
-// Accepts reports whether the filter admits a kind (an empty filter admits all).
+// newBlockingFilter accepts no kind at all — the "Deselect All" state of the
+// Selection Filter window (#1222), distinct from the empty accept-all filter.
+func newBlockingFilter() *SelectionFilter { return &SelectionFilter{blockAll: true} }
+
+// Accepts reports whether the filter admits a kind (an empty filter admits all,
+// a blocking filter admits none).
 func (f *SelectionFilter) Accepts(k SelectionKind) bool {
-	if f == nil || len(f.kinds) == 0 {
+	if f == nil {
+		return true
+	}
+	if f.blockAll {
+		return false
+	}
+	if len(f.kinds) == 0 {
 		return true
 	}
 	return f.kinds[k]
@@ -190,7 +204,9 @@ func (f *SelectionFilter) Accepts(k SelectionKind) bool {
 
 // IsRestricted reports whether the filter limits the accepted kinds (i.e. it is not the
 // accept-everything default) — so a caller can tell an explicitly-set filter from the default.
-func (f *SelectionFilter) IsRestricted() bool { return f != nil && len(f.kinds) > 0 }
+func (f *SelectionFilter) IsRestricted() bool {
+	return f != nil && (f.blockAll || len(f.kinds) > 0)
+}
 
 // Selection is the current selection set — Inventor's SelectSet. It is an ordered,
 // de-duplicated list of selectables with an active filter.

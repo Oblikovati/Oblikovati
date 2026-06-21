@@ -53,21 +53,22 @@ type Session struct {
 	highlightSets        *HighlightSets // named, colored emphasis groups for add-ins (#157)
 	tool                 *ToolInstance
 	picker               Picker
-	regionPicker         RegionPicker      // resolves a box-select rectangle (nil ⇒ box-select disabled)
-	boxSelect            BoxSelection      // the in-progress rubber-band rectangle, if any
-	zoomWindow           BoxSelection      // the in-progress Zoom Window rubber-band, if any (#913 N16)
-	zoomWindowArmed      bool              // the Zoom Window tool is armed: the next left-drag zooms
-	constrainedOrbit     bool              // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
-	steeringWheel        bool              // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
-	entityDrag           sketchDrag        // the in-progress direct drag of sketch entities, if any
-	cloudMove            cloudMoveDrag     // the in-progress interactive drag of a point cloud, if any (#645)
-	relaxMode            bool              // Relax Mode: drag over/fully-constrained sketch geometry (#791)
-	hudEnabled           bool              // the 2D-sketch dynamic-input HUD is enabled (#790)
-	sketchHUD            sketchHUD         // the dynamic-input HUD's live typing state (#790)
-	dimDrag              dimDragState      // the in-progress drag of a drawing dimension's text/line
-	selectOther          selectOther       // the in-progress Select Other cycle, if any
-	viewHistory          viewHistory       // recorded views for Previous View (F5)
-	selectionPriority    SelectionPriority // biases no-tool picking (Edge/Face/Part) (#912)
+	regionPicker         RegionPicker          // resolves a box-select rectangle (nil ⇒ box-select disabled)
+	boxSelect            BoxSelection          // the in-progress rubber-band rectangle, if any
+	zoomWindow           BoxSelection          // the in-progress Zoom Window rubber-band, if any (#913 N16)
+	zoomWindowArmed      bool                  // the Zoom Window tool is armed: the next left-drag zooms
+	constrainedOrbit     bool                  // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
+	steeringWheel        bool                  // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
+	entityDrag           sketchDrag            // the in-progress direct drag of sketch entities, if any
+	cloudMove            cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
+	relaxMode            bool                  // Relax Mode: drag over/fully-constrained sketch geometry (#791)
+	hudEnabled           bool                  // the 2D-sketch dynamic-input HUD is enabled (#790)
+	sketchHUD            sketchHUD             // the dynamic-input HUD's live typing state (#790)
+	dimDrag              dimDragState          // the in-progress drag of a drawing dimension's text/line
+	selectOther          selectOther           // the in-progress Select Other cycle, if any
+	viewHistory          viewHistory           // recorded views for Previous View (F5)
+	selectionPriority    SelectionPriority     // biases no-tool picking (Edge/Face/Part) (#912)
+	selectionFilterState *SelectionFilterState // user-editable no-tool ambient filter + priority order (#1222)
 	camera               scene.Camera
 	camTween             cameraTween
 	driveAnim            driveAnimation
@@ -197,14 +198,15 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	s := &Session{
-		store:          store,
-		workspace:      doc.NewWorkspace(store),
-		commands:       NewCommandManager(),
-		histories:      map[doc.ID]*docHistory{},
-		bus:            event.NewBus(),
-		selection:      NewSelection(),
-		camera:         scene.NewCamera(800, 600),
-		hiddenBodyKeys: map[string]bool{}, hiddenBodyKeysByDoc: map[doc.ID]map[string]bool{},
+		store:                store,
+		workspace:            doc.NewWorkspace(store),
+		commands:             NewCommandManager(),
+		histories:            map[doc.ID]*docHistory{},
+		bus:                  event.NewBus(),
+		selection:            NewSelection(),
+		selectionFilterState: NewSelectionFilterState(),
+		camera:               scene.NewCamera(800, 600),
+		hiddenBodyKeys:       map[string]bool{}, hiddenBodyKeysByDoc: map[doc.ID]map[string]bool{},
 		graphics: clientgraphics.NewStore(), graphicsByDoc: map[doc.ID]*clientgraphics.Store{},
 		addins:          NewAddInManager(),
 		clientApps:      NewClientApplicationRegistry(),
@@ -348,6 +350,11 @@ func (s *Session) Workspace() *doc.Workspace { return s.workspace }
 func (s *Session) Commands() *CommandManager { return s.commands }
 func (s *Session) Events() *event.Bus        { return s.bus }
 func (s *Session) Selection() *Selection     { return s.selection }
+
+// SelectionFilterState returns the user-editable no-tool ambient selection filter and priority
+// order (the Selection Filter & Priority window, #1222). Mutating it re-pushes the priority
+// order into the picker.
+func (s *Session) SelectionFilterState() *SelectionFilterState { return s.selectionFilterState }
 
 // ActiveDocument returns the workspace's active document, or nil.
 func (s *Session) ActiveDocument() *doc.Document { return s.workspace.ActiveDocument() }
