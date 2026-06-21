@@ -181,41 +181,31 @@ func (d *PartComponentDefinition) MarshalRecipe() ([]byte, error) {
 // step behind both the YAML save ([MarshalRecipe]) and the fast undo snapshot
 // ([MarshalSnapshot]) — so a snapshot can re-use a faster codec without re-deriving the recipe.
 func (d *PartComponentDefinition) buildRecipe() (partRecipe, error) {
-	sketches, err := d.sketches.MarshalRecipe()
-	if err != nil {
-		return partRecipe{}, fmt.Errorf("compdef: marshal sketches: %w", err)
+	var r partRecipe
+	// The fallible sub-marshals share one error wrap (each names its section), so a sub-marshal
+	// failure does not need five near-identical branches.
+	for _, step := range []struct {
+		what string
+		run  func() error
+	}{
+		{"sketches", func() (err error) { r.Sketches, err = d.sketches.MarshalRecipe(); return }},
+		{"block definitions", func() (err error) { r.BlockDefinitions, err = d.sketches.MarshalBlockDefinitions(); return }},
+		{"3D sketches", func() (err error) { r.Sketches3D, err = d.sketches3D.MarshalRecipe3D(); return }},
+		{"features", func() (err error) { r.Features, err = d.features.MarshalRecipe(sketchIndex{d.sketches}); return }},
+		{"work features", func() (err error) { r.WorkFeatures, err = feature.MarshalWork(d.work); return }},
+	} {
+		if err := step.run(); err != nil {
+			return partRecipe{}, fmt.Errorf("compdef: marshal %s: %w", step.what, err)
+		}
 	}
-	blocks, err := d.sketches.MarshalBlockDefinitions()
-	if err != nil {
-		return partRecipe{}, fmt.Errorf("compdef: marshal block definitions: %w", err)
-	}
-	sketches3D, err := d.sketches3D.MarshalRecipe3D()
-	if err != nil {
-		return partRecipe{}, fmt.Errorf("compdef: marshal 3D sketches: %w", err)
-	}
-	features, err := d.features.MarshalRecipe(sketchIndex{d.sketches})
-	if err != nil {
-		return partRecipe{}, fmt.Errorf("compdef: marshal features: %w", err)
-	}
-	work, err := feature.MarshalWork(d.work)
-	if err != nil {
-		return partRecipe{}, fmt.Errorf("compdef: marshal work features: %w", err)
-	}
-	r := partRecipe{
-		Units:             d.unitsRecipe(),
-		Parameters:        d.parametersRecipe(),
-		ParameterGroups:   d.parameterGroupsRecipe(),
-		ParameterSettings: d.parameterSettingsRecipe(),
-		DerivedTables:     d.derivedTablesRecipe(),
-		WorkFeatures:      work,
-		BlockDefinitions:  blocks,
-		Sketches:          sketches,
-		Sketches3D:        sketches3D,
-		Features:          features,
-		Materials:         d.materialsRecipe(),
-		Properties:        propertiesRecipeOf(d.props),
-		SheetMetal:        d.sheetMetalRecipeOf(),
-	}
+	r.Units = d.unitsRecipe()
+	r.Parameters = d.parametersRecipe()
+	r.ParameterGroups = d.parameterGroupsRecipe()
+	r.ParameterSettings = d.parameterSettingsRecipe()
+	r.DerivedTables = d.derivedTablesRecipe()
+	r.Materials = d.materialsRecipe()
+	r.Properties = propertiesRecipeOf(d.props)
+	r.SheetMetal = d.sheetMetalRecipeOf()
 	if d.eop != endOfPartAtEnd {
 		eop := d.eop
 		r.EndOfPart = &eop
