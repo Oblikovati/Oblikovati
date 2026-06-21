@@ -58,3 +58,9 @@ func (h Health) OK() bool { return h.Status == OK }
 func Sicken(reason string) Health {
 	return Health{Status: Sick, Reason: reason}
 }
+
+// Warn returns a Warning health carrying reason — usable but flagged for review
+// (e.g. a reference auto-healed to a surviving sibling rather than its exact entity).
+func Warn(reason string) Health {
+	return Health{Status: Warning, Reason: reason}
+}

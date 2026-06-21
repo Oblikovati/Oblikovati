@@ -24,6 +24,16 @@ func TestSicken(t *testing.T) {
 	}
 }
 
+func TestWarn(t *testing.T) {
+	h := Warn("reference auto-healed via ancestral match")
+	if h.OK() || h.Status != Warning {
+		t.Errorf("Warn status = %v, want warning", h.Status)
+	}
+	if h.Reason != "reference auto-healed via ancestral match" {
+		t.Errorf("Warn reason = %q", h.Reason)
+	}
+}
+
 func TestStatusStrings(t *testing.T) {
 	cases := map[Status]string{OK: "ok", Warning: "warning", Sick: "sick", Suppressed: "suppressed", Status(9): "unknown"}
 	for s, want := range cases {

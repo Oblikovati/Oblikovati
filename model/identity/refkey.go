@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+
+	"oblikovati.org/math"
 )
 
 // ContextID identifies a key context (a versioned topology snapshot) within a
@@ -21,6 +23,28 @@ type RefKey struct {
 	ctx     ContextID
 	kind    EntityKind
 	payload []byte // the entity's LineageKey at mint time
+
+	// Fallback hints captured at mint time to drive degraded re-binding when the
+	// exact entity is gone (M31-F06). They are an in-memory optimisation only: the
+	// wire format ([RefKey.Encode]) is unchanged, so a key reloaded from disk has
+	// no hints and degrades to exact-only until the encoding is versioned (F07,
+	// #1157). Both are absent unless the keyed entity exposed the capability.
+	parent ancestryHint // the parent lineage, for ancestral sibling recovery
+	anchor anchorHint   // a representative point, for geometric tie-breaking
+}
+
+// ancestryHint records the keyed entity's parent lineage key, present only when
+// the entity's lineage implemented [AncestralLineage] at mint time.
+type ancestryHint struct {
+	key []byte
+	ok  bool
+}
+
+// anchorHint records the keyed entity's representative point, present only when
+// the entity implemented [AnchoredEntity] at mint time.
+type anchorHint struct {
+	point math.Point3
+	ok    bool
 }
 
 // Context returns the key's owning context id.
@@ -40,22 +64,43 @@ func (k RefKey) Equal(other RefKey) bool {
 }
 
 // MatchType classifies a bind attempt. It modernizes COM ReferenceKeyMatchType,
-// trimmed to what the lineage-based design needs.
+// trimmed to what the lineage-based design needs. Values ascend by quality
+// (none < geometric < ancestral < exact), so a larger value is a stronger bind;
+// MatchNone stays the zero value (the natural "no match"). The fallback tiers
+// (M31-F06, #1156) let an edit that destroys the exact entity recover to a
+// surviving sibling instead of fully losing the reference.
 type MatchType uint8
 
 const (
 	// MatchNone: nothing in the current topology matches the key — the reference
 	// is lost (a legitimate, non-fatal outcome).
 	MatchNone MatchType = iota
+	// MatchGeometric: no lineage match, but a lone ancestral sibling was selected
+	// by geometric nearness to the key's mint-time anchor — auto-healed, flagged.
+	MatchGeometric
+	// MatchAncestral: no exact lineage, but a single surviving sibling shares the
+	// key's parent lineage — auto-healed, flagged for review.
+	MatchAncestral
 	// MatchExact: a single entity with the same kind and lineage was found.
 	MatchExact
 )
+
+// IsFallback reports whether the match was recovered by a degraded tier
+// (ancestral/geometric) rather than exact lineage — the binder's signal to
+// resolve the reference to Warning health rather than fully healthy.
+func (m MatchType) IsFallback() bool {
+	return m == MatchAncestral || m == MatchGeometric
+}
 
 // String returns a stable name for diagnostics.
 func (m MatchType) String() string {
 	switch m {
 	case MatchExact:
 		return "exact"
+	case MatchAncestral:
+		return "ancestral"
+	case MatchGeometric:
+		return "geometric"
 	default:
 		return "none"
 	}

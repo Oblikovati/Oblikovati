@@ -58,22 +58,69 @@ func (m *KeyManager) GetReferenceKey(id ContextID, e Entity) (RefKey, error) {
 		return RefKey{}, fmt.Errorf("identity: cannot key a nil entity or entity without lineage")
 	}
 	payload := append([]byte(nil), e.Lineage().LineageKey()...)
-	return RefKey{ctx: id, kind: e.EntityKind(), payload: payload}, nil
+	return RefKey{
+		ctx:     id,
+		kind:    e.EntityKind(),
+		payload: payload,
+		parent:  parentHint(e.Lineage()),
+		anchor:  anchorOf(e),
+	}, nil
+}
+
+// parentHint captures the lineage's parent key for ancestral re-binding, when the
+// lineage exposes one (M31-F06). A root lineage yields an absent hint.
+func parentHint(l Lineage) ancestryHint {
+	al, ok := l.(AncestralLineage)
+	if !ok {
+		return ancestryHint{}
+	}
+	pk := al.ParentKey()
+	if len(pk) == 0 {
+		return ancestryHint{}
+	}
+	return ancestryHint{key: append([]byte(nil), pk...), ok: true}
+}
+
+// anchorOf captures the entity's representative point for geometric tie-breaking,
+// when the entity exposes one (M31-F06).
+func anchorOf(e Entity) anchorHint {
+	ae, ok := e.(AnchoredEntity)
+	if !ok {
+		return anchorHint{}
+	}
+	p, ok := ae.Anchor()
+	if !ok {
+		return anchorHint{}
+	}
+	return anchorHint{point: p, ok: true}
 }
 
 // BindKeyToObject resolves a key to a live entity in its context, returning the
-// match type. MatchNone (with a nil entity) means the referenced topology is gone.
+// match type. It tries tiers in descending quality (M31-F06, #1156): an exact
+// lineage match, then — only on an exact miss — an ancestral sibling, then a
+// geometric tie-break among ambiguous siblings. MatchNone (with a nil entity)
+// means the referenced topology is truly gone.
 func (m *KeyManager) BindKeyToObject(k RefKey) (Entity, MatchType) {
 	ctx, ok := m.contexts[k.ctx]
 	if !ok || ctx.source == nil {
 		return nil, MatchNone
 	}
-	for _, e := range ctx.source.Entities() {
+	ents := ctx.source.Entities()
+	if e := exactMatch(k, ents); e != nil {
+		return e, MatchExact
+	}
+	return fallbackMatch(k, ents)
+}
+
+// exactMatch returns the lone entity whose kind and full lineage equal the key, or
+// nil. This is the only tier that yields healthy state.
+func exactMatch(k RefKey, ents []Entity) Entity {
+	for _, e := range ents {
 		if e.EntityKind() == k.kind && bytes.Equal(e.Lineage().LineageKey(), k.payload) {
-			return e, MatchExact
+			return e
 		}
 	}
-	return nil, MatchNone
+	return nil
 }
 
 // CanBindKeyToObject reports whether the key would bind, without returning the

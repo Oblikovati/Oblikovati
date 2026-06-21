@@ -18,14 +18,20 @@ var ErrReferenceLost = errors.New("reference lost")
 
 // Resolve binds a key and translates the outcome into modeling health — the single
 // place the reference-loss policy lives, applied identically by every consumer
-// (features, dimensions, mates). A found entity yields healthy state; a lost
-// reference yields [health.Sick] with a reason naming the entity kind, so the UI
-// can offer re-selection. The repair is simply binding a fresh key (see
+// (features, dimensions, mates). An exact match yields healthy state; a degraded
+// match (ancestral/geometric, M31-F06) yields [health.Warning] so the reference is
+// kept usable but flagged for the user to confirm; only a true loss yields
+// [health.Sick] with a reason naming the entity kind, so the UI can offer
+// re-selection. The repair is simply binding a fresh key (see
 // [KeyManager.GetReferenceKey]) and resolving again.
 func (m *KeyManager) Resolve(k RefKey) (Entity, health.Health) {
 	entity, match := m.BindKeyToObject(k)
-	if match == MatchNone {
+	switch {
+	case match == MatchNone:
 		return nil, health.Sicken(fmt.Sprintf("%s: %s reference no longer binds", ErrReferenceLost, k.kind))
+	case match.IsFallback():
+		return entity, health.Warn(fmt.Sprintf("%s reference auto-healed via %s match; confirm selection", k.kind, match))
+	default:
+		return entity, health.Healthy
 	}
-	return entity, health.Healthy
 }
