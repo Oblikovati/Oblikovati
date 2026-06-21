@@ -118,6 +118,12 @@ func (r *Run) summary() MemSummary {
 }
 
 // writeHeapProfile forces a GC so the heap profile reflects live memory, then writes it.
+//
+// Security note: pprof is a development/benchmark profiling feature, not a runtime
+// debug endpoint. It is reachable only when the operator explicitly sets OBK_PPROF_DIR
+// (see Start), is never enabled by default in any shipped path, and exposes no network
+// surface (it writes local files) — so the "debug feature in production" hotspot here is
+// intended and gated.
 func (r *Run) writeHeapProfile() error {
 	f, err := os.Create(filepath.Join(r.dir, r.label+".heap.pprof"))
 	if err != nil {
