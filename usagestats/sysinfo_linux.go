@@ -8,15 +8,22 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
-// totalRAMBytes reads MemTotal (in kB) from /proc/meminfo. Returns 0 if unreadable.
+// totalRAMBytes reads MemTotal from /proc/meminfo. Returns 0 if unreadable or unparsable.
 func totalRAMBytes() int64 {
 	b, err := os.ReadFile("/proc/meminfo")
 	if err != nil {
 		return 0
 	}
-	for _, line := range strings.Split(string(b), "\n") {
+	return parseMemTotalKB(b) * 1024
+}
+
+// parseMemTotalKB extracts the MemTotal value (in kB) from /proc/meminfo contents, or 0 if the
+// line is absent or malformed. Kept pure so the parsing is unit-tested without /proc.
+func parseMemTotalKB(meminfo []byte) int64 {
+	for _, line := range strings.Split(string(meminfo), "\n") {
 		if !strings.HasPrefix(line, "MemTotal:") {
 			continue
 		}
@@ -28,22 +35,38 @@ func totalRAMBytes() int64 {
 		if err != nil {
 			return 0
 		}
-		return kb * 1024
+		return kb
 	}
 	return 0
 }
 
-// cpuModel returns the first "model name" from /proc/cpuinfo. Returns "" if unreadable.
+// cpuModel returns the first CPU "model name" from /proc/cpuinfo. Returns "" if unreadable.
 func cpuModel() string {
 	b, err := os.ReadFile("/proc/cpuinfo")
 	if err != nil {
 		return ""
 	}
-	for _, line := range strings.Split(string(b), "\n") {
+	return parseCPUModelName(b)
+}
+
+// parseCPUModelName extracts the first "model name" value from /proc/cpuinfo contents, or "".
+// Kept pure so the parsing is unit-tested without /proc.
+func parseCPUModelName(cpuinfo []byte) string {
+	for _, line := range strings.Split(string(cpuinfo), "\n") {
 		key, val, ok := strings.Cut(line, ":")
 		if ok && strings.TrimSpace(key) == "model name" {
 			return strings.TrimSpace(val)
 		}
 	}
 	return ""
+}
+
+// homeVolumeCapacityBytes returns the total size of the filesystem holding the probe dir via
+// statfs (blocks × block size). On Linux, Bsize is already int64. Returns 0 on error.
+func homeVolumeCapacityBytes() int64 {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(probeDir(), &stat); err != nil {
+		return 0
+	}
+	return int64(stat.Blocks) * stat.Bsize
 }

@@ -2,9 +2,9 @@
 
 package report
 
-import "errors"
+import "oblikovati.org/crcpost"
 
 // ErrOffline reports that the reporting service could not be reached (DNS, connection, or
 // timeout). Callers treat it as a graceful skip — being offline is not a failure to shout
-// about — mirroring update.ErrOffline.
-var ErrOffline = errors.New("report: reporting server unreachable")
+// about. It is the shared [crcpost.ErrOffline] so errors.Is works across the seam.
+var ErrOffline = crcpost.ErrOffline

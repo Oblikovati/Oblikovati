@@ -2,9 +2,9 @@
 
 package usagestats
 
-import "errors"
+import "oblikovati.org/crcpost"
 
 // ErrOffline reports that the telemetry service could not be reached (DNS, connection, or
 // timeout). Callers treat it as a graceful skip — being offline is not a failure to shout
-// about — mirroring report.ErrOffline and update.ErrOffline.
-var ErrOffline = errors.New("usagestats: telemetry server unreachable")
+// about. It is the shared [crcpost.ErrOffline] so errors.Is works across the seam.
+var ErrOffline = crcpost.ErrOffline

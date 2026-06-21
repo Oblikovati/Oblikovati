@@ -4,40 +4,12 @@ package usagestats
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"hash/crc32"
+	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
+	"net/http/httptest"
 	"testing"
 )
-
-// fakeDoer captures the request it is handed and replies with a canned response (or a
-// transport error), so Submit can be exercised without a live server.
-type fakeDoer struct {
-	gotReq  *http.Request
-	gotBody []byte
-	status  int
-	body    string
-	err     error
-}
-
-func (f *fakeDoer) Do(req *http.Request) (*http.Response, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	f.gotReq = req
-	if req.Body != nil {
-		f.gotBody, _ = io.ReadAll(req.Body)
-	}
-	return &http.Response{
-		StatusCode: f.status,
-		Status:     fmt.Sprintf("%d %s", f.status, http.StatusText(f.status)),
-		Body:       io.NopCloser(strings.NewReader(f.body)),
-		Header:     make(http.Header),
-	}, nil
-}
 
 func sampleSnapshot() Snapshot {
 	return Snapshot{
@@ -48,49 +20,42 @@ func sampleSnapshot() Snapshot {
 	}
 }
 
-func TestSubmitSendsCRCTokenOverExactBody(t *testing.T) {
-	doer := &fakeDoer{status: http.StatusAccepted}
-	sub := NewSubmitter("https://example.test/report", doer)
-	if err := sub.Submit(context.Background(), sampleSnapshot()); err != nil {
+// TestSubmitSendsSnapshotAsJSON checks the delegation: Submit marshals the snapshot and POSTs
+// it with the CRC token crcpost computes. (crcpost_test covers the transport edge cases.)
+func TestSubmitSendsSnapshotAsJSON(t *testing.T) {
+	var gotBody []byte
+	var gotAuth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		gotAuth = r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer srv.Close()
+
+	if err := NewSubmitter(srv.URL, srv.Client()).Submit(context.Background(), sampleSnapshot()); err != nil {
 		t.Fatalf("Submit: %v", err)
 	}
-	if doer.gotReq.Method != http.MethodPost {
-		t.Errorf("method = %q, want POST", doer.gotReq.Method)
+	var got Snapshot
+	if err := json.Unmarshal(gotBody, &got); err != nil {
+		t.Fatalf("server received non-snapshot JSON: %v", err)
 	}
-	if ct := doer.gotReq.Header.Get("Content-Type"); ct != "application/json" {
-		t.Errorf("content-type = %q", ct)
+	if got.MachineUUID != "f1e2d3c4-0000-4000-8000-000000000001" || got.AppVersion != "0.87.0" {
+		t.Errorf("server received wrong snapshot: %+v", got)
 	}
-	want := fmt.Sprintf("%08x", crc32.ChecksumIEEE(doer.gotBody))
-	if got := doer.gotReq.Header.Get("Authorization"); got != want {
-		t.Errorf("authorization = %q, want %q (CRC of exact body)", got, want)
-	}
-}
-
-func TestSubmitOfflineMapsToErrOffline(t *testing.T) {
-	sub := NewSubmitter("", &fakeDoer{err: errors.New("dial tcp: no route to host")})
-	if err := sub.Submit(context.Background(), sampleSnapshot()); !errors.Is(err, ErrOffline) {
-		t.Fatalf("err = %v, want ErrOffline", err)
-	}
-}
-
-func TestSubmitRejectsNon2xx(t *testing.T) {
-	sub := NewSubmitter("", &fakeDoer{status: http.StatusUnauthorized, body: "invalid authorization token"})
-	err := sub.Submit(context.Background(), sampleSnapshot())
-	if err == nil || errors.Is(err, ErrOffline) {
-		t.Fatalf("err = %v, want a non-offline error on 401", err)
-	}
-	if !strings.Contains(err.Error(), "invalid authorization token") {
-		t.Errorf("err missing body context: %v", err)
+	if gotAuth != Token(gotBody) {
+		t.Errorf("authorization %q is not the CRC of the body", gotAuth)
 	}
 }
 
 func TestNewSubmitterDefaultsEndpoint(t *testing.T) {
-	doer := &fakeDoer{status: http.StatusOK}
-	sub := NewSubmitter("", doer)
-	if err := sub.Submit(context.Background(), sampleSnapshot()); err != nil {
-		t.Fatalf("Submit: %v", err)
+	sub := NewSubmitter("", http.DefaultClient)
+	if sub.endpoint != DefaultEndpoint {
+		t.Errorf("endpoint = %q, want default %q", sub.endpoint, DefaultEndpoint)
 	}
-	if doer.gotReq.URL.String() != DefaultEndpoint {
-		t.Errorf("url = %q, want default %q", doer.gotReq.URL, DefaultEndpoint)
+}
+
+func TestTokenDelegatesToCRC(t *testing.T) {
+	if len(Token([]byte("abc"))) != 8 {
+		t.Errorf("Token did not return an 8-char CRC hex")
 	}
 }
