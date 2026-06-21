@@ -5,11 +5,60 @@
 package ui
 
 import (
+	"fmt"
+	"strings"
+
 	"oblikovati.org/app"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 	"oblikovati.org/renderer"
 )
+
+// sketch3DBoundsCache memoises the model-space extent of the finished 3D-sketch line work, so
+// the viewport's adaptive far plane can enclose a non-planar DWG import (large coordinates,
+// all line primitives) without rescanning every segment each frame. Keyed on the 3D-sketch
+// geometry so it survives camera moves and rebuilds only on import/edit.
+var sketch3DBoundsCache struct {
+	key                  string
+	boundsMin, boundsMax [3]float32
+	hasBounds            bool
+}
+
+// cachedSketch3DBounds returns the extent of the active part's visible 3D sketches, computed at
+// the last geometry change. ok is false when there is no 3D-sketch line work. The far plane
+// unions this with the body/2D-sketch bounds so a 3D import is not clipped on zoom-out.
+func cachedSketch3DBounds(s *app.Session) (min, max [3]float32, ok bool) {
+	key, keyed := sketch3DBoundsKey(s)
+	if !keyed {
+		return drawItemsBounds(sketch3DOverlays(s, 1))
+	}
+	if key != sketch3DBoundsCache.key {
+		sketch3DBoundsCache.key = key
+		sketch3DBoundsCache.boundsMin, sketch3DBoundsCache.boundsMax, sketch3DBoundsCache.hasBounds =
+			drawItemsBounds(sketch3DOverlays(s, 1))
+	}
+	return sketch3DBoundsCache.boundsMin, sketch3DBoundsCache.boundsMax, sketch3DBoundsCache.hasBounds
+}
+
+// sketch3DBoundsKey fingerprints the 3D-sketch geometry (model version + each sketch's seq /
+// visibility / entity count), which changes on import and on add/remove/edit.
+func sketch3DBoundsKey(s *app.Session) (string, bool) {
+	version, ok := activeModelGeometryVersion(s)
+	if !ok {
+		return "", false
+	}
+	part := activePart(s)
+	if part == nil {
+		return "", false
+	}
+	var b strings.Builder
+	b.WriteString(version)
+	for i := 0; i < part.Sketches3D().Count(); i++ {
+		sk := part.Sketches3D().Item(i)
+		fmt.Fprintf(&b, "|%d:%t:%d", sk.Seq(), sk.Visible(), sk.EntityCount())
+	}
+	return b.String(), true
+}
 
 // sketch3DOverlays renders the active part's 3D sketches in the viewport — curves as
 // sampled polylines (the same sampling the ray picker tests against), standalone

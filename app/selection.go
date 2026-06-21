@@ -143,6 +143,12 @@ type SketchHandle struct{ Sketch *sketch.Sketch }
 
 func (SketchHandle) SelectionKind() SelectionKind { return SelectSketch }
 
+// Sketch3DHandle wraps a 3D sketch (selected from its browser node). A 3D sketch is a sketch
+// for selection purposes, so it shares SelectSketch — the concrete handle distinguishes it.
+type Sketch3DHandle struct{ Sketch3D *sketch.Sketch3D }
+
+func (Sketch3DHandle) SelectionKind() SelectionKind { return SelectSketch }
+
 // WorkPlaneHandle wraps a picked origin/work plane (selected to host a new sketch).
 type WorkPlaneHandle struct{ Plane *feature.WorkPlane }
 

@@ -16,8 +16,8 @@ import (
 // adders live in sketch_from_drawing.go.
 
 // add3DEntities maps decoded entities onto a 3D sketch (used when the drawing is
-// non-planar). Line/Circle/Arc/Spline/Point map directly; ellipses and bulged polylines
-// have no 3D adder yet and are reported as warnings.
+// non-planar). Line/Circle/Arc/Spline/Point/Ellipse/LwPolyline all map directly; an entity
+// with no 3D adder is reported as a warning rather than silently dropped.
 func add3DEntities(sk *sketch.Sketch3D, entities []drawing.Entity) (int, []string) {
 	var warns []string
 	added := 0
@@ -46,10 +46,66 @@ func add3DEntity(sk *sketch.Sketch3D, e drawing.Entity) bool {
 		sk.AddPoint3D(p3(g.Position))
 	case *drawing.Spline:
 		return add3DSpline(sk, g)
+	case *drawing.Ellipse:
+		add3DEllipse(sk, g)
+	case *drawing.LwPolyline:
+		return add3DPolyline(sk, g)
 	default:
 		return false
 	}
 	return true
+}
+
+// add3DEllipse places a DWG ellipse on a 3D sketch in its own plane (center + extrusion
+// normal + major axis). A partial parametric span becomes an elliptical arc, a full span a
+// closed ellipse — mirroring the 2D mapping (which split arcs out to stop giant ovals).
+func add3DEllipse(sk *sketch.Sketch3D, g *drawing.Ellipse) {
+	majorR := math.Hypot(math.Hypot(g.MajorAxis[0], g.MajorAxis[1]), g.MajorAxis[2])
+	center, normal, axis := p3(g.Center), normal3(g.Normal), axisUnit(g.MajorAxis)
+	if isFullEllipse(g.StartAngle, g.EndAngle) {
+		sk.AddEllipse3D(center, normal, axis, majorR, majorR*g.AxisRatio)
+		return
+	}
+	sweep := g.EndAngle - g.StartAngle
+	if sweep <= 0 {
+		sweep += 2 * math.Pi
+	}
+	sk.AddEllipticalArc3D(center, normal, axis, majorR, majorR*g.AxisRatio, g.StartAngle, sweep)
+}
+
+// add3DPolyline places each LWPOLYLINE segment on a 3D sketch at the polyline's elevation: a
+// straight run as a 3D line, a bulged run as a 3D arc in the elevation plane. Mirrors
+// add2DPolyline; returns false only for a degenerate (<2 vertex) polyline.
+func add3DPolyline(sk *sketch.Sketch3D, g *drawing.LwPolyline) bool {
+	n := len(g.Points)
+	if n < 2 {
+		return false
+	}
+	z := g.Elevation
+	last := n - 1
+	if g.Closed {
+		last = n
+	}
+	for i := 0; i < last; i++ {
+		a, b := g.Points[i], g.Points[(i+1)%n]
+		if bulge := bulgeAt(g.Bulges, i); bulge != 0 {
+			c, ccw := bulgeArc(a, b, bulge)
+			sk.AddArc3D(gmath.P3(c[0], c[1], z), gmath.P3(a[0], a[1], z), gmath.P3(b[0], b[1], z), ccw)
+		} else {
+			sk.AddLine3D(gmath.P3(a[0], a[1], z), gmath.P3(b[0], b[1], z))
+		}
+	}
+	return true
+}
+
+// axisUnit makes a unit vector from a decoded ellipse major-axis vector, defaulting to +X for
+// a degenerate (zero) vector.
+func axisUnit(v [3]float64) gmath.UnitVector3 {
+	u, err := gmath.UnitVector3FromVector(gmath.V3(v[0], v[1], v[2]))
+	if err != nil {
+		return gmath.V3(1, 0, 0).AsUnit()
+	}
+	return u
 }
 
 // add3DSpline adds a 3D spline from control points, or fit points when present.
