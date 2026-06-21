@@ -294,7 +294,7 @@ func drawButtonControl(btn app.RibbonButton) bool {
 		defer native.PopStyleColor(3)
 	}
 	if px, ok := iconSizeFor(btn.Command.ButtonStyle()); ok {
-		if tex, ok := icons.texture(btn.Command.Icon(), px); ok {
+		if tex, ok := icons.texture(btn.Command.Icon(), btn.Command.InlineIconSVG(), px); ok {
 			return drawIconButton(btn, tex, float32(px))
 		}
 	}

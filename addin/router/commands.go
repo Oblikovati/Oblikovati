@@ -11,6 +11,10 @@ import (
 	"oblikovati.org/app"
 )
 
+// maxInlineIconSVGBytes caps an add-in's inline command glyph (wire IconSVG). A 24×24 line icon is
+// a few hundred bytes; 16 KiB leaves generous headroom while rejecting a runaway payload.
+const maxInlineIconSVGBytes = 16 * 1024
+
 // listCommands returns every registered command and whether it can run now.
 func listCommands(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 	all := s.Commands().All()
@@ -21,7 +25,7 @@ func listCommands(s *app.Session, _ json.RawMessage) (json.RawMessage, error) {
 			Tab: c.Tab(), Category: c.Category(), Environment: c.Environment(),
 			Alias: c.Alias(), Tooltip: c.Tooltip(),
 			TooltipTitle: c.TooltipTitle(), TooltipExpanded: c.TooltipExpanded(),
-			Icon: c.Icon(), ButtonStyle: c.ButtonStyle(),
+			Icon: c.Icon(), IconSVG: c.InlineIconSVG(), ButtonStyle: c.ButtonStyle(),
 			Enabled: c.IsEnabled(s),
 		}
 	}
@@ -43,9 +47,14 @@ func createCommand(s *app.Session, args json.RawMessage) (json.RawMessage, error
 	if in.Ribbon != "" && !in.Ribbon.Valid() {
 		return nil, fmt.Errorf("commands.create: unknown ribbon %q (one of ZeroDoc/Part/Assembly/Drawing/Presentation/iFeatures/UnknownDocument)", in.Ribbon)
 	}
+	// Cap the inline glyph so a stray payload cannot bloat the ribbon; a real 24×24 icon is well
+	// under this. The head rasterizes it through the same theming as a bundled glyph.
+	if len(in.IconSVG) > maxInlineIconSVGBytes {
+		return nil, fmt.Errorf("commands.create: iconSvg is %d bytes, over the %d-byte limit", len(in.IconSVG), maxInlineIconSVGBytes)
+	}
 	cmd := app.NewCommand(in.ID, in.DisplayName, in.Category, func(*app.Session) error { return nil }).
 		WithTab(in.Tab).WithEnvironment(in.Environment).WithAlias(in.Alias).WithTooltip(in.Tooltip).
-		WithIcon(in.Icon).WithButtonStyle(in.ButtonStyle).WithKind(in.Kind).
+		WithIcon(in.Icon).WithInlineIconSVG(in.IconSVG).WithButtonStyle(in.ButtonStyle).WithKind(in.Kind).
 		WithTooltipDetail(in.TooltipTitle, in.TooltipExpanded)
 	if in.Ribbon != "" {
 		cmd.WithRibbons(in.Ribbon)

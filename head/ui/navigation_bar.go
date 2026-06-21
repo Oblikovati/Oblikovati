@@ -49,7 +49,7 @@ func drawNavigationBar(s *app.Session, ox, oy float32, pw, ph int) {
 	x := ox + float32(pw) - cell - navBarMargin
 	y := oy + (float32(ph)-cell*float32(len(navBarButtons)))/2
 	for _, b := range navBarButtons {
-		tex, ok := icons.texture(b.icon, navBarIconPx)
+		tex, ok := icons.texture(b.icon, "", navBarIconPx)
 		if !ok {
 			continue
 		}

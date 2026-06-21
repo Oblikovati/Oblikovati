@@ -247,7 +247,7 @@ func drawBooleanPropertyRow(id string, current ops.PartFeatureOperation, set fun
 // drawPropertyToggleControl draws the toggle's clickable control: the icon at the small
 // glyph size, or a text button when the asset is missing/unuploadable.
 func drawPropertyToggleControl(group, key, tip string) bool {
-	if tex, ok := icons.texture(key, smallIconPx); ok {
+	if tex, ok := icons.texture(key, "", smallIconPx); ok {
 		px := float32(smallIconPx)
 		return native.ImageButton(group+"-"+key, tex, px, px, identityTint)
 	}
