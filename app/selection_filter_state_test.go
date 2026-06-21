@@ -111,6 +111,47 @@ func TestSelectionPriorityPresetsMatchPriorityFilter(t *testing.T) {
 	}
 }
 
+func TestSelectionFilterWindowOpenAccessors(t *testing.T) {
+	s := NewSession()
+	if s.SelectionFilterWindowOpen() {
+		t.Fatal("the window must start closed")
+	}
+	s.OpenSelectionFilterWindow()
+	if !s.SelectionFilterWindowOpen() {
+		t.Fatal("Open must open the window")
+	}
+	s.ToggleSelectionFilterWindow()
+	if s.SelectionFilterWindowOpen() {
+		t.Fatal("Toggle must close an open window")
+	}
+	s.OpenSelectionFilterWindow()
+	s.CloseSelectionFilterWindow()
+	if s.SelectionFilterWindowOpen() {
+		t.Fatal("Close must close the window")
+	}
+}
+
+func TestSelectionFilterCommandTogglesWindow(t *testing.T) {
+	s := NewSession()
+	if err := RegisterStandardCommands(s); err != nil {
+		t.Fatalf("RegisterStandardCommands: %v", err)
+	}
+	if err := s.Execute("Select.Filter"); err != nil {
+		t.Fatalf("execute Select.Filter: %v", err)
+	}
+	if !s.SelectionFilterWindowOpen() {
+		t.Error("the Select.Filter command must open the Selection Filter window")
+	}
+}
+
+func TestSelectionKindLabelCoversFilterableKinds(t *testing.T) {
+	for _, k := range defaultFilterableKinds() {
+		if label := SelectionKindLabel(k); label == "" || label == "Unknown" {
+			t.Errorf("filterable kind %d has no human label (got %q)", k, label)
+		}
+	}
+}
+
 func TestPickFilterReflectsAmbientState(t *testing.T) {
 	s := NewSession()
 	s.SelectionFilterState().SetEnabled(SelectFace, false)

@@ -22,7 +22,7 @@ func drawSelectionFilterWindow(s *app.Session) {
 	if !s.SelectionFilterWindowOpen() {
 		return
 	}
-	native.SetNextWindowSizeOnce(280, 380)
+	native.SetNextWindowSizeOnce(340, 400)
 	visible, open := native.BeginClosable("Selection Filter###selection-filter")
 	if visible {
 		drawSelectionFilterBody(s)

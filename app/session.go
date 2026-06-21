@@ -199,15 +199,14 @@ func NewSessionWithStore(store doc.Store) *Session { return newSession(store) }
 
 func newSession(store doc.Store) *Session {
 	s := &Session{
-		store:                store,
-		workspace:            doc.NewWorkspace(store),
-		commands:             NewCommandManager(),
-		histories:            map[doc.ID]*docHistory{},
-		bus:                  event.NewBus(),
-		selection:            NewSelection(),
-		selectionFilterState: NewSelectionFilterState(),
-		camera:               scene.NewCamera(800, 600),
-		hiddenBodyKeys:       map[string]bool{}, hiddenBodyKeysByDoc: map[doc.ID]map[string]bool{},
+		store:     store,
+		workspace: doc.NewWorkspace(store),
+		commands:  NewCommandManager(),
+		histories: map[doc.ID]*docHistory{},
+		bus:       event.NewBus(),
+		selection: NewSelection(), selectionFilterState: NewSelectionFilterState(),
+		camera:         scene.NewCamera(800, 600),
+		hiddenBodyKeys: map[string]bool{}, hiddenBodyKeysByDoc: map[doc.ID]map[string]bool{},
 		graphics: clientgraphics.NewStore(), graphicsByDoc: map[doc.ID]*clientgraphics.Store{},
 		addins:          NewAddInManager(),
 		clientApps:      NewClientApplicationRegistry(),

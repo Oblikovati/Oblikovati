@@ -119,32 +119,25 @@ func (st *SelectionFilterState) Filter() *SelectionFilter {
 	}
 }
 
+// selectionKindLabels are the human labels shown per kind in the Selection Filter window.
+var selectionKindLabels = map[SelectionKind]string{
+	SelectWorkPoint:       "Work Points",
+	SelectWorkAxis:        "Work Axes",
+	SelectPointCloudPoint: "Point-Cloud Points",
+	SelectVertex:          "Vertices",
+	SelectEdge:            "Edges",
+	SelectOccurrence:      "Components",
+	SelectBody:            "Solid Bodies",
+	SelectFace:            "Faces",
+	SelectWorkPlane:       "Work Planes",
+	SelectProfile:         "Sketch Profiles/Areas",
+	SelectSketchEntity:    "Sketch Elements",
+}
+
 // SelectionKindLabel is the human label shown for a kind in the Selection Filter window.
 func SelectionKindLabel(k SelectionKind) string {
-	switch k {
-	case SelectWorkPoint:
-		return "Work Points"
-	case SelectWorkAxis:
-		return "Work Axes"
-	case SelectPointCloudPoint:
-		return "Point-Cloud Points"
-	case SelectVertex:
-		return "Vertices"
-	case SelectEdge:
-		return "Edges"
-	case SelectOccurrence:
-		return "Components"
-	case SelectBody:
-		return "Solid Bodies"
-	case SelectFace:
-		return "Faces"
-	case SelectWorkPlane:
-		return "Work Planes"
-	case SelectProfile:
-		return "Sketch Profiles/Areas"
-	case SelectSketchEntity:
-		return "Sketch Elements"
-	default:
-		return "Unknown"
+	if label, ok := selectionKindLabels[k]; ok {
+		return label
 	}
+	return "Unknown"
 }
