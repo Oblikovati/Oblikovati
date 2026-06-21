@@ -380,7 +380,7 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 // overlay/ground tail as one identity instance, returning the merged mesh + per-instance matrices +
 // draw records. It falls back to a single legacy flatten of the whole list (nil mats/recs) when
 // instancing does not apply — mesh-color debug mode (its own builder) or no keyable geometry.
-func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups, culled []app.InstanceGroup) (viewport.Mesh, []float32, []int32, uint64) {
+func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups, culled []app.InstanceGroup) (viewport.Mesh, []float32, []int32) {
 	if bodyCount < 0 || bodyCount > len(list.Items) {
 		bodyCount = len(list.Items)
 	}
@@ -400,12 +400,12 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 		decorate := func(l renderer.DrawList) renderer.DrawList {
 			return highlightSelection(l, s.Selection().First(), sources)
 		}
-		if m, mats, recs, geomKey, ok := buildInstancedFrame(groups, culled, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
-			return m, mats, recs, geomKey
+		if m, mats, recs, ok := buildInstancedFrame(groups, culled, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
+			return m, mats, recs
 		}
 	}
 	list.Items = append(list.Items, ground...) // legacy: one flatten of the whole (world-space) list
-	return viewport.Flatten(list), nil, nil, 0 // geomKey 0 → native always re-uploads (no stable atlas here)
+	return viewport.Flatten(list), nil, nil
 }
 
 // frameBounds is the model bounds for shadow + ground framing: the instance groups' transformed
@@ -460,7 +460,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	// Draw only the instances inside the view frustum (M34-F1) — off-screen placements never reach
 	// the GPU upload. The bounds above still use the full set so shadows/framing don't shift on orbit.
 	// allGroups builds the retained vertex atlas (stable on orbit); culled drives the per-frame draws.
-	m, mats, recs, geomKey := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups, s.CulledInstances(cam))
+	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups, s.CulledInstances(cam))
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
@@ -477,7 +477,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 		m.TopTriVerts, m.TopTriVCount, m.TopTriIndices,
 		m.TopLineVerts, m.TopLineVCount, m.TopLineIndices,
 		m.TriBiasFirst, s.ActiveSectionClip(), // section-plane clip (M12-F04)
-		mats, recs, geomKey) // instanced draw (ADR-0038); geomKey lets native skip re-upload on orbit (M34-F4)
+		mats, recs) // instanced draw (ADR-0038); nil mats/recs ⇒ legacy one-identity-instance path
 	frameStats.gpuNs = time.Since(tg).Nanoseconds()
 	if tex := win.ViewportTexture(slot); tex != 0 {
 		native.SetCursorPos(cx, cy) // draw the image back over the invisible button

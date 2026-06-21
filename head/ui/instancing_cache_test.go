@@ -109,7 +109,7 @@ func TestBuildInstancedFrameDedupes(t *testing.T) {
 		t.Fatalf("VisibleInstances = %d groups, want 1 (copies share one mesh)", len(groups))
 	}
 	n := len(groups[0].Transforms)
-	m, mats, recs, _, ok := buildInstancedFrame(groups, groups, renderer.DrawList{}, instCamera(), nullSurface, renderer.Shaded, nil, "k")
+	m, mats, recs, ok := buildInstancedFrame(groups, groups, renderer.DrawList{}, instCamera(), nullSurface, renderer.Shaded, nil, "k")
 	if !ok {
 		t.Fatal("buildInstancedFrame returned ok=false")
 	}

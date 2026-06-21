@@ -131,13 +131,8 @@ struct Viewport {
     // single-view target; the quad layout uses up to kMaxTiles.
     Target          targets[kMaxTiles];
 
-    GpuBuffer       vbuf, ibuf;     // DEVICE_LOCAL geometry (M34-F4), uploaded only when geomKey changes
-    GpuBuffer       vstage, istage; // HOST_VISIBLE staging sources copied into vbuf/ibuf on a geometry change
-    GpuBuffer       instbuf;        // per-instance model matrices (binding 1, ADR-0038), HOST_VISIBLE (per-frame)
-    // lastGeomKey is the geometry signature the device-local buffers currently hold; a render whose
-    // geomKey matches reuses them and skips the concatenation + staging copy entirely (M34-F4). 0
-    // means "unknown" (legacy non-instanced path), which always re-uploads.
-    unsigned long long lastGeomKey = 0;
+    GpuBuffer       vbuf, ibuf; // concatenated vertex + index geometry (HOST_VISIBLE, uploaded per frame)
+    GpuBuffer       instbuf;    // per-instance model matrices (binding 1, ADR-0038)
 
     // Background the 3D pass clears to (themed; ADR-0021). Defaults reproduce the
     // pre-theming look so an un-themed build is unchanged.
@@ -457,21 +452,6 @@ void upload(HeadContext* c, GpuBuffer* b, VkBufferUsageFlags usage, const void* 
     vkMapMemory(c->device, b->memory, 0, bytes, 0, &mapped);
     std::memcpy(mapped, data, (size_t)bytes);
     vkUnmapMemory(c->device, b->memory);
-}
-
-// stage_to_device copies host data into a DEVICE_LOCAL buffer via a HOST_VISIBLE staging buffer: it
-// fills the staging buffer now and records a buffer copy into cmd (which must be recording, before
-// the render pass). DEVICE_LOCAL geometry is faster for the GPU to read each frame; combined with
-// the geomKey dirty-flag the staging copy runs only when the geometry actually changes (M34-F4).
-void stage_to_device(HeadContext* c, VkCommandBuffer cmd, GpuBuffer* dst, GpuBuffer* staging,
-                     VkBufferUsageFlags usage, const void* data, VkDeviceSize bytes) {
-    if (bytes == 0) return;
-    upload(c, staging, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, data, bytes); // HOST_VISIBLE memcpy
-    ensure_buffer(c, dst, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
-                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, bytes);
-    VkBufferCopy region{};
-    region.size = bytes;
-    vkCmdCopyBuffer(cmd, staging->buffer, dst->buffer, 1, &region);
 }
 
 VkImageView make_image(HeadContext* c, VkFormat fmt, VkImageUsageFlags usage,
@@ -1015,8 +995,7 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
                          const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                          const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
                          int triBiasFirst, const float* clip,
-                         const float* mats, int matCount, const int32_t* recs, int recCount,
-                         unsigned long long geomKey) {
+                         const float* mats, int matCount, const int32_t* recs, int recCount) {
     HeadContext* c = (HeadContext*)h;
     Viewport* v = c->viewport;
     if (!v || w <= 0 || hh <= 0) return;
@@ -1032,30 +1011,29 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     const int occFirst = 0, triFirst = occIC, lineFirst = occIC + triIC, hidFirst = occIC + triIC + lineIC;
     const int topTriFirst = hidFirst + hidIC, topLineFirst = topTriFirst + topTriIC;
 
-    // Geometry is uploaded to DEVICE_LOCAL only when its signature (geomKey) changes; an orbit reuses
-    // the buffers and skips the concatenation + staging copy entirely (M34-F4). geomKey 0 marks the
-    // legacy non-instanced path, which always re-uploads. The concatenation below runs only when
-    // dirty, so a steady frame builds no vectors and copies nothing.
-    const bool geomDirty =
-        geomKey == 0 || geomKey != v->lastGeomKey || v->vbuf.buffer == VK_NULL_HANDLE;
+    // Concatenate the six streams into one vertex + one index buffer and upload them every frame.
+    // (M34-F4 tried to skip this on unchanged geometry: it holds in steady state but renders blank
+    // across viewport-target recreation/dock-layout transitions — a fragile offscreen-buffer-reuse
+    // interaction — so geometry is uploaded unconditionally for correctness; see #1218 for the
+    // careful re-attempt.)
     std::vector<float> verts;
+    verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) * kVertexFloats);
+    verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
+    verts.insert(verts.end(), triV, triV + (size_t)triVC * kVertexFloats);
+    verts.insert(verts.end(), lineV, lineV + (size_t)lineVC * kVertexFloats);
+    verts.insert(verts.end(), hidV, hidV + (size_t)hidVC * kVertexFloats);
+    verts.insert(verts.end(), topTriV, topTriV + (size_t)topTriVC * kVertexFloats);
+    verts.insert(verts.end(), topLineV, topLineV + (size_t)topLineVC * kVertexFloats);
     std::vector<uint32_t> idx;
-    if (geomDirty) {
-        verts.reserve((size_t)(occVC + triVC + lineVC + hidVC + topTriVC + topLineVC) * kVertexFloats);
-        verts.insert(verts.end(), occV, occV + (size_t)occVC * kVertexFloats);
-        verts.insert(verts.end(), triV, triV + (size_t)triVC * kVertexFloats);
-        verts.insert(verts.end(), lineV, lineV + (size_t)lineVC * kVertexFloats);
-        verts.insert(verts.end(), hidV, hidV + (size_t)hidVC * kVertexFloats);
-        verts.insert(verts.end(), topTriV, topTriV + (size_t)topTriVC * kVertexFloats);
-        verts.insert(verts.end(), topLineV, topLineV + (size_t)topLineVC * kVertexFloats);
-        idx.reserve((size_t)(occIC + triIC + lineIC + hidIC + topTriIC + topLineIC));
-        idx.insert(idx.end(), occIdx, occIdx + occIC);
-        idx.insert(idx.end(), triIdx, triIdx + triIC);
-        idx.insert(idx.end(), lineIdx, lineIdx + lineIC);
-        idx.insert(idx.end(), hidIdx, hidIdx + hidIC);
-        idx.insert(idx.end(), topTriIdx, topTriIdx + topTriIC);
-        idx.insert(idx.end(), topLineIdx, topLineIdx + topLineIC);
-    }
+    idx.reserve((size_t)(occIC + triIC + lineIC + hidIC + topTriIC + topLineIC));
+    idx.insert(idx.end(), occIdx, occIdx + occIC);
+    idx.insert(idx.end(), triIdx, triIdx + triIC);
+    idx.insert(idx.end(), lineIdx, lineIdx + lineIC);
+    idx.insert(idx.end(), hidIdx, hidIdx + hidIC);
+    idx.insert(idx.end(), topTriIdx, topTriIdx + topTriIC);
+    idx.insert(idx.end(), topLineIdx, topLineIdx + topLineIC);
+    upload(c, &v->vbuf, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, verts.data(), verts.size() * sizeof(float));
+    upload(c, &v->ibuf, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, idx.data(), idx.size() * sizeof(uint32_t));
 
     // Per-instance model matrices (binding 1, ADR-0038) are small and change every frame (the
     // frustum-culled set), so they stay HOST_VISIBLE and upload each frame. With matrices supplied,
@@ -1077,25 +1055,6 @@ void obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp, con
     bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(v->cmd, &bi);
-
-    // On a geometry change, copy the new vertex/index data into the DEVICE_LOCAL buffers and barrier
-    // it before the vertex-input stage reads it. Recorded into the render command buffer so it runs
-    // ahead of the render pass on the GPU timeline — no extra submit (M34-F4).
-    if (geomDirty) {
-        stage_to_device(c, v->cmd, &v->vbuf, &v->vstage, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                        verts.data(), verts.size() * sizeof(float));
-        stage_to_device(c, v->cmd, &v->ibuf, &v->istage, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                        idx.data(), idx.size() * sizeof(uint32_t));
-        VkMemoryBarrier mb{};
-        mb.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-        mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        mb.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
-        vkCmdPipelineBarrier(v->cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
-        if (geomKey != 0) {
-            v->lastGeomKey = geomKey;
-        }
-    }
 
     // Shadow pass: render the casters' depth from the sun's POV into the shadow map, when
     // shadows are enabled and there is geometry to cast. The light matrix rides the mvp slot.
@@ -1525,10 +1484,10 @@ void obk_viewport_destroy(HeadContext* c) {
     Viewport* v = c->viewport;
     if (!v) return;
     for (int i = 0; i < kMaxTiles; i++) destroy_target(c, &v->targets[i]);
-    // Free every geometry buffer including the F4 DEVICE_LOCAL staging sources (vstage/istage):
-    // omitting these leaked VkDeviceMemory past vkDestroyDevice (VUID-vkDestroyDevice-device-05137,
-    // surfaced by object-lifetime validation on a real GPU — lavapipe did not flag it). M34-F4.
-    GpuBuffer* geom[] = {&v->vbuf, &v->ibuf, &v->instbuf, &v->vstage, &v->istage};
+    // Free the geometry buffers before vkDestroyDevice so no VkDeviceMemory leaks past device
+    // teardown (VUID-vkDestroyDevice-device-05137, surfaced by object-lifetime validation on a real
+    // GPU — lavapipe did not flag it).
+    GpuBuffer* geom[] = {&v->vbuf, &v->ibuf, &v->instbuf};
     for (GpuBuffer* b : geom) {
         if (b->buffer) vkDestroyBuffer(c->device, b->buffer, nullptr);
         if (b->memory) vkFreeMemory(c->device, b->memory, nullptr);
