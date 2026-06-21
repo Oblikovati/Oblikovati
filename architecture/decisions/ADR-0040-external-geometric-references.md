@@ -2,7 +2,7 @@
 
 **Status:** Accepted — design (2026-06-21); the resolver landed as a spike (`kernel/topo`),
 the feature/API/exporter wiring is the M8 follow-up (see Scope). · **Builds on / refines:**
-[ADR-0018](ADR-0018-api-implementation-split.md) (the API/implementation split this must
+[ADR-0018](ADR-0018-apache-api-contract-module.md) (the API/implementation split this must
 follow), the M31 topological-naming work (F06 tiered binding `model/identity/binding.go`,
 F07 versioned encoding). **Touches (when implemented):** `kernel/topo` (the resolver,
 prototyped in `kernel/topo/geometric_ref.go`), the dress-up resolution in
@@ -80,7 +80,7 @@ with. A separate, explicitly-geometric ref keeps both systems honest.
 
 ## Spike evidence
 
-`kernel/topo/geometric_ref.go` + `kernel/ops/geometric_ref_spike_test.go` (this branch)
+`kernel/topo/geometric_ref.go` + `kernel/topo/geometric_ref_test.go` (this branch)
 demonstrate the core claim: a descriptor captured on one box **re-resolves every face and
 every edge on an independently built, geometrically identical box** (different object graph,
 no shared lineage), and a far-away descriptor **misses honestly** (no wrong bind). This
