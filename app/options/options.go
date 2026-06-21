@@ -59,15 +59,24 @@ type Updates struct {
 	CheckOnStartup bool `yaml:"checkOnStartup"`
 }
 
+// Telemetry is the anonymous usage-statistics behavior (#1182). When ShareUsageStatistics is
+// on, the head submits one anonymous installation snapshot (OS, hardware, version, installed
+// add-ins) to stats.oblikovati.org during the startup update-check. It is opt-out: on by
+// default, toggled from the same preferences surface as the update check.
+type Telemetry struct {
+	ShareUsageStatistics bool `yaml:"shareUsageStatistics"`
+}
+
 // All is every persisted option group. The ViewCube/display preferences live in
 // their own store (persistence/userprefs) and the color scheme in the theme store —
 // the options surface proxies those rather than duplicating their persistence.
 type All struct {
-	General General `yaml:"general"`
-	Sketch  Sketch  `yaml:"sketch"`
-	Part    Part    `yaml:"part"`
-	Save    Save    `yaml:"save"`
-	Updates Updates `yaml:"updates"`
+	General   General   `yaml:"general"`
+	Sketch    Sketch    `yaml:"sketch"`
+	Part      Part      `yaml:"part"`
+	Save      Save      `yaml:"save"`
+	Updates   Updates   `yaml:"updates"`
+	Telemetry Telemetry `yaml:"telemetry"`
 }
 
 // Defaults returns the out-of-the-box options, mirroring the session's historical
@@ -75,11 +84,12 @@ type All struct {
 // launch) so a fresh install behaves exactly as before this file existed.
 func Defaults() All {
 	return All{
-		General: General{StartupAction: types.StartupNewPart},
-		Sketch:  Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true, HeadsUpDisplay: true},
-		Part:    Part{ChamferFlatCorners: true},
-		Save:    Save{Thumbnail: types.ThumbnailNone},
-		Updates: Updates{CheckOnStartup: true},
+		General:   General{StartupAction: types.StartupNewPart},
+		Sketch:    Sketch{GridSpacingCm: 1, GridVisible: true, GridMajorEvery: 5, SnapToPoints: true, SnapToGrid: true, HeadsUpDisplay: true},
+		Part:      Part{ChamferFlatCorners: true},
+		Save:      Save{Thumbnail: types.ThumbnailNone},
+		Updates:   Updates{CheckOnStartup: true},
+		Telemetry: Telemetry{ShareUsageStatistics: true},
 	}
 }
 

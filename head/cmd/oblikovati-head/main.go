@@ -68,6 +68,7 @@ func run(session *app.Session, maxFrames int) error {
 
 	updates := newUpdatePoller()
 	startupUpdateCheck(session, updates) // silent check on launch (honors the user's preference)
+	reportUsage(session, win)            // anonymous installation telemetry, opt-out (#1182)
 
 	for frame := 0; ; frame++ {
 		if maxFrames > 0 && frame >= maxFrames {
