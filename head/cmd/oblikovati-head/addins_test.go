@@ -67,3 +67,12 @@ func TestLoadInstalledAddInsEmptyDir(t *testing.T) {
 		t.Errorf("loaded = %d from an empty user dir, want 0", len(h.loaded))
 	}
 }
+
+// TestLoadAndRegisterEmptyDir covers the flat-directory load path with no add-ins present.
+func TestLoadAndRegisterEmptyDir(t *testing.T) {
+	h := &addInHost{}
+	h.loadAndRegister(app.NewSession(), t.TempDir())
+	if len(h.loaded) != 0 {
+		t.Errorf("loaded = %d from an empty dir, want 0", len(h.loaded))
+	}
+}
