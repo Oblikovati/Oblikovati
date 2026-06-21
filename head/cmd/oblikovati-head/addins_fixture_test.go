@@ -78,4 +78,23 @@ func TestLoadInstalledAddInsRegistersFixture(t *testing.T) {
 	if got := h.loaded[0].ID(); got != "com.oblikovati.echo-fixture" {
 		t.Errorf("ID = %q, want com.oblikovati.echo-fixture", got)
 	}
+
+	// A second load registers the same id again: Register rejects the duplicate, so the
+	// loaded set is unchanged (exercises registerResults' register-failure branch).
+	h.loadInstalledAddIns(session)
+	if len(h.loaded) != 1 {
+		t.Errorf("loaded %d after re-load, want 1 (duplicate id must be rejected)", len(h.loaded))
+	}
+}
+
+// TestLoadInstalledAddInsDirError covers the branch where the per-user directory cannot be
+// resolved: with no override and no home directory, it logs and loads nothing.
+func TestLoadInstalledAddInsDirError(t *testing.T) {
+	t.Setenv("OBK_USER_ADDINS_DIR", "")
+	t.Setenv("HOME", "") // os.UserHomeDir then errors on Unix, so UserAddInsDir fails
+	h := &addInHost{}
+	h.loadInstalledAddIns(app.NewSession())
+	if len(h.loaded) != 0 {
+		t.Errorf("loaded = %d, want 0 when the user dir is unresolvable", len(h.loaded))
+	}
 }
