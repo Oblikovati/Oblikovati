@@ -152,13 +152,13 @@ func (s *Session) ImportParameters(xml string) (added, updated int, err error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	snapshot, err := part.MarshalRecipe()
+	snapshot, err := part.MarshalSnapshot()
 	if err != nil {
 		return 0, 0, fmt.Errorf("app: snapshot before parameter import: %w", err)
 	}
 	added, updated, err = part.Parameters().ImportXML(xml)
 	if err != nil {
-		if restoreErr := part.RestoreRecipe(snapshot); restoreErr != nil {
+		if restoreErr := part.RestoreSnapshot(snapshot); restoreErr != nil {
 			return 0, 0, fmt.Errorf("app: parameter import failed (%w) and the rollback failed too: %v", err, restoreErr)
 		}
 		return 0, 0, err

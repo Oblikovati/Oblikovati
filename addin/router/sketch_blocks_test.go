@@ -81,12 +81,12 @@ func TestBlockRoundTripThroughRecipe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("active part: %v", err)
 	}
-	recipe, err := part.MarshalRecipe()
+	recipe, err := part.MarshalSnapshot()
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
 	}
-	if err := part.RestoreRecipe(recipe); err != nil {
-		t.Fatalf("RestoreRecipe: %v", err)
+	if err := part.RestoreSnapshot(recipe); err != nil {
+		t.Fatalf("RestoreSnapshot: %v", err)
 	}
 
 	var defs wire.ListBlockDefinitionsResult

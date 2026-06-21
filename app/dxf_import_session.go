@@ -24,6 +24,9 @@ func (s *Session) ImportDXFFile(path string, plane sketch.Plane) (exchange.Sketc
 	if err != nil {
 		return exchange.SketchImportResult{}, err
 	}
+	// One undoable step for the whole import (not per added entity); idempotent baseline. See
+	// ImportDWGFile for the rationale.
+	s.EnsureActiveEditBaseline()
 	res, err := exchange.ImportDXFFile(part, path, plane)
 	if err != nil {
 		return res, err

@@ -215,9 +215,10 @@ func TestTransactionLogIsAppendOnlySinceOpen(t *testing.T) {
 	if log[before].Document != d.DisplayName() {
 		t.Errorf("event document = %q, want %q", log[before].Document, d.DisplayName())
 	}
-	// The replayable recipe payload is captured from the document's content.
+	// The replayable recipe payload is captured from the document's content (the undo-stream
+	// snapshot codec, JSON).
 	if rc, ok := d.Content().(recipeStore); ok {
-		want, _ := rc.MarshalRecipe()
+		want, _ := rc.MarshalSnapshot()
 		if log[before].Recipe != string(want) {
 			t.Errorf("recipe payload not captured:\n got %q\nwant %q", log[before].Recipe, want)
 		}

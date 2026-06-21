@@ -41,7 +41,7 @@ func (s *Session) watchTransactions() {
 		if d, ok := s.workspace.ByID(e.Document); ok {
 			name = d.DisplayName()
 			if rc, ok := d.Content().(recipeStore); ok {
-				recipe, _ = rc.MarshalRecipe()
+				recipe, _ = rc.MarshalSnapshot()
 			}
 		}
 		s.txEvents = append(s.txEvents, sessionTxEvent{when: time.Now().UTC(), doc: name, label: e.Label, recipe: recipe})
@@ -53,12 +53,16 @@ func (s *Session) watchTransactions() {
 }
 
 // recipeStore is the document content the app's undo stream records: content whose entire
-// recipe can be captured (MarshalRecipe) and restored (command.RecipeStore.RestoreRecipe). Part
-// and assembly definitions both satisfy it, so an assembly edit — placing a component (#763) —
-// is one undo step exactly like a part edit, recorded through the same chokepoint.
+// recipe can be captured (MarshalSnapshot) and restored (command.RecipeStore.RestoreSnapshot).
+// Part and assembly definitions both satisfy it, so an assembly edit — placing a component
+// (#763) — is one undo step exactly like a part edit, recorded through the same chokepoint.
+//
+// Snapshots use a fast internal codec (JSON), NOT the human-readable YAML of the on-disk recipe:
+// yaml.v3-encoding a large part's recipe on every edit was ~7 s / 150 MB (#1147). The codec is
+// internal to the undo stream + the session transaction log, so it never affects file format.
 type recipeStore interface {
 	command.RecipeStore
-	MarshalRecipe() ([]byte, error)
+	MarshalSnapshot() ([]byte, error)
 }
 
 // Part and assembly definitions are the concrete recipe stores a snapshot event navigates.
@@ -121,7 +125,7 @@ func (dh *docHistory) savedDepthsWithin(max int) []int {
 // so the next new edit captures the correct before-snapshot for its event.
 func (dh *docHistory) resync(d *doc.Document) {
 	if c, ok := d.Content().(recipeStore); ok {
-		dh.snapshot, _ = c.MarshalRecipe()
+		dh.snapshot, _ = c.MarshalSnapshot()
 	}
 }
 
@@ -172,7 +176,7 @@ func (s *Session) recordEdit(content recipeStore, label string) {
 // TransactionCommitted handler may veto, which reverts the part to the
 // pre-edit snapshot and reports the commit as an abort (M04-F05).
 func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, content recipeStore, label string) {
-	after, err := content.MarshalRecipe()
+	after, err := content.MarshalSnapshot()
 	if err != nil || bytes.Equal(after, dh.snapshot) {
 		return
 	}
@@ -189,7 +193,7 @@ func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, content rec
 // revertVetoedCommit rolls the part back to the stream's snapshot after a Before
 // handler vetoed the commit, surfacing the veto reason in the status bar.
 func (s *Session) revertVetoedCommit(d *doc.Document, dh *docHistory, content recipeStore, label, reason string) {
-	if err := content.RestoreRecipe(dh.snapshot); err != nil {
+	if err := content.RestoreSnapshot(dh.snapshot); err != nil {
 		s.notice = err.Error()
 		return
 	}
@@ -200,7 +204,7 @@ func (s *Session) revertVetoedCommit(d *doc.Document, dh *docHistory, content re
 }
 
 // rebindReferences re-binds cross-document references after a recipe restore (#763). An
-// assembly's RestoreRecipe leaves its occurrences pending — binding each to its component
+// assembly's RestoreSnapshot leaves its occurrences pending — binding each to its component
 // document needs the workspace to open the component, which only an owner-aware caller has — so
 // every app-layer restore (undo, redo, abort, veto-revert) pairs with this to re-bind. It also
 // re-binds a derived part's source after a part restore. Content that restores fully in place
@@ -360,7 +364,7 @@ func (s *Session) AbortTransaction() error {
 	label := dh.groupLabel
 	dh.groupDepth, dh.groupLabel = 0, ""
 	if content, ok := d.Content().(recipeStore); ok {
-		if err := content.RestoreRecipe(dh.snapshot); err != nil {
+		if err := content.RestoreSnapshot(dh.snapshot); err != nil {
 			return err
 		}
 		s.rebindReferences(d)
