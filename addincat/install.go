@@ -263,11 +263,12 @@ func extractOne(f *zip.File, dest string) error {
 	return nil
 }
 
-// safeJoin joins dest and a zip entry name, erroring if the result escapes dest.
+// safeJoin joins dest and a zip entry name, erroring if the entry is not a local path (it is
+// absolute or escapes dest via ".."). filepath.IsLocal is the lexical zip-slip guard: it
+// rejects exactly the entries that would write outside the install directory.
 func safeJoin(dest, name string) (string, error) {
-	target := filepath.Join(dest, name)
-	if target != dest && !strings.HasPrefix(target, dest+string(os.PathSeparator)) {
+	if !filepath.IsLocal(name) {
 		return "", fmt.Errorf("addincat: bundle entry %q escapes the install directory", name)
 	}
-	return target, nil
+	return filepath.Join(dest, name), nil
 }
