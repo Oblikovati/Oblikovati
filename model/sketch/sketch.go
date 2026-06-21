@@ -431,7 +431,17 @@ type Sketches struct {
 	// blockDefs is the part-level block-definition registry every sketch of
 	// the part places instances from (M06-F07, #622).
 	blockDefs *BlockDefinitions
+	// params is the document's parameter DAG, shared into every sketch added to the
+	// collection so dimension expressions referencing user parameters resolve. Nil for
+	// a bare collection (tests), which leaves each sketch with its own empty set.
+	params *param.Parameters
 }
+
+// ShareParameters makes the collection hand the document's parameter DAG to every
+// sketch it creates (live or on restore), so a dimension expression like "width"
+// resolves against user parameters. Wiring at creation matters: the restore path adds a
+// sketch's dimensions immediately, and SetParameters must precede them.
+func (c *Sketches) ShareParameters(ps *param.Parameters) { c.params = ps }
 
 // NewSketches returns an empty collection.
 func NewSketches() *Sketches {
@@ -473,6 +483,9 @@ func (c *Sketches) nameTaken(name string) bool {
 func (c *Sketches) AddNamed(name string, plane Plane) *Sketch {
 	s := &Sketch{base: newBase(name), plane: plane}
 	s.initCollections()
+	if c.params != nil {
+		s.SetParameters(c.params) // before any dimensions are added (live or on restore)
+	}
 	c.items = append(c.items, s)
 	c.byID[s.id] = s
 	return s
