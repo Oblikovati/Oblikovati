@@ -118,3 +118,18 @@ type AnchoredEntity interface {
 type EntitySource interface {
 	Entities() []Entity
 }
+
+// RevisionedSource is an OPTIONAL [EntitySource] capability: a counter that changes
+// whenever the entity set changes. It lets the key manager cache an O(1) lineage
+// index and rebuild it only when the topology actually moved — the scaling path for
+// the 100k-unique / 1M-total-part ambition, where a recompute resolves many
+// references per feature (M31-F08, #1158). A source that does NOT implement it binds
+// correctly via a linear scan, just not in O(1); so adopting the interface is a pure
+// performance opt-in with no behavioural change for sources that skip it.
+type RevisionedSource interface {
+	EntitySource
+	// Revision returns a value that differs from every prior value once the entity
+	// set has changed. It need not be dense or ordered — only "different after a
+	// change" — so a recompute counter or content hash both qualify.
+	Revision() uint64
+}

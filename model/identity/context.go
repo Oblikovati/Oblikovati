@@ -22,10 +22,77 @@ type entityRecord struct {
 // captured state written by SaveContextToArray and restored by LoadContextToArray,
 // used to validate keys after reload until the source is re-pointed at the rebuilt
 // B-rep (see KeyManager.RebindSource).
+//
+// index is an O(1) exact-bind acceleration over a [RevisionedSource] (M31-F08): a
+// (kind, lineage)→entity map, rebuilt lazily only when the source's revision moves
+// or the source is re-pointed. It is absent for a source that does not report a
+// revision, which then binds by linear scan exactly as before.
 type keyContext struct {
 	id       ContextID
 	source   EntitySource
 	snapshot []entityRecord
+
+	index      map[indexKey]Entity
+	indexedRev uint64
+	indexed    bool
+}
+
+// indexKey is the composite identity an exact bind matches on — the same (kind,
+// lineage) pair the linear scan compares, so the index never changes which entity a
+// key resolves to.
+type indexKey struct {
+	kind    EntityKind
+	lineage string
+}
+
+// lookupExact returns the live entity whose kind and lineage equal the key, or nil.
+// It is O(1) when the source reports a revision (consulting a cached index, rebuilt
+// only when the revision changes); otherwise it falls back to the linear scan, so an
+// un-revisioned source behaves exactly as it did before F08.
+func (c *keyContext) lookupExact(k RefKey) Entity {
+	if c.source == nil {
+		return nil
+	}
+	rev, ok := revisionOf(c.source)
+	if !ok {
+		return exactMatch(k, c.source.Entities())
+	}
+	if !c.indexed || rev != c.indexedRev {
+		c.rebuildIndex(rev)
+	}
+	return c.index[indexKey{kind: k.kind, lineage: string(k.payload)}]
+}
+
+// rebuildIndex refreshes the (kind, lineage)→entity map from the current source and
+// stamps it with rev. On the rare degenerate topology where two entities share a
+// (kind, lineage), the last wins — but lineage is unique by construction, so this
+// matches the scan's single-result contract in every real body.
+func (c *keyContext) rebuildIndex(rev uint64) {
+	ents := c.source.Entities()
+	idx := make(map[indexKey]Entity, len(ents))
+	for _, e := range ents {
+		idx[indexKey{kind: e.EntityKind(), lineage: string(e.Lineage().LineageKey())}] = e
+	}
+	c.index = idx
+	c.indexedRev = rev
+	c.indexed = true
+}
+
+// invalidateIndex drops the cached index so the next exact bind rebuilds it. Called
+// when the source is re-pointed (RebindSource), since a new source may legitimately
+// reuse a revision value the old one already had.
+func (c *keyContext) invalidateIndex() {
+	c.index = nil
+	c.indexed = false
+}
+
+// revisionOf reports a source's revision when it implements [RevisionedSource].
+func revisionOf(s EntitySource) (uint64, bool) {
+	rs, ok := s.(RevisionedSource)
+	if !ok {
+		return 0, false
+	}
+	return rs.Revision(), true
 }
 
 // captureSnapshot records the current source entities into the context snapshot.
