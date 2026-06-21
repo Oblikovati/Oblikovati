@@ -59,10 +59,11 @@ func Boolean(op Op, a, b *topo.Body) (*topo.Body, error) {
 // opens a clean clearance), else the zero vector.
 func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.Vector3, error) {
 	impA, impB := imprintAll(fa, fb)
+	prov := provenanceOf(fa, fb)
 	var kept []subFace
-	kept = append(kept, selectFaces(fa, impA, b, fb, op, false)...)
-	kept = append(kept, selectFaces(fb, impB, a, fa, op, true)...)
-	return stitch(kept, provenanceOf(fa, fb))
+	kept = append(kept, selectFaces(fa, impA, b, fb, op, false, prov)...)
+	kept = append(kept, selectFaces(fb, impB, a, fa, op, true, prov)...)
+	return stitch(kept, prov)
 }
 
 // nudgeEps is the magnitude (cm) of the clearance opened at a tangent contact: above the weld
@@ -190,7 +191,7 @@ func minf(a, b float64) float64 {
 // selectFaces splits each face by its imprints and keeps the material sub-faces this
 // operation wants, classifying each via [classifySubFace]. `others` is the other solid's
 // face list (for the coplanar overlap test); `other` is the body itself (for the ray cast).
-func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Body, others []planarFace, op Op, isB bool) []subFace {
+func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Body, others []planarFace, op Op, isB bool, prov []imprintSeg) []subFace {
 	var kept []subFace
 	for i, f := range faces {
 		var fromFace []subFace
@@ -200,24 +201,39 @@ func selectFaces(faces []planarFace, imprints [][][2]math.Point3, other *topo.Bo
 			}
 		}
 		fromFace = mergeFilledHoles(fromFace)
-		// A face that survives as a single piece carries its source lineage unchanged, so
-		// its reference key is identical after the boolean (K1a). A face split into several
-		// kept pieces gives each a distinct child lineage (parent + split#k).
-		for k := range fromFace {
-			fromFace[k].fromB = isB // operand tag, so the stitch can fuse tangent contacts
-			if len(fromFace) == 1 {
-				fromFace[k].lineage = f.lineage
-			} else {
-				fromFace[k].lineage = splitLineage(f.lineage, k)
-			}
-		}
+		nameFragments(fromFace, f.lineage, isB, prov)
 		kept = append(kept, fromFace...)
 	}
 	return kept
 }
 
+// nameFragments assigns each kept piece of one source face its reference-key lineage. A face that
+// survives as a single piece keeps its source lineage unchanged (K1a — its key is identical after
+// the boolean). A face split into several pieces names each piece by the SET of cutting faces
+// bordering it (#1154), so the piece's identity is the geometry that bounds it rather than an
+// ordinal index that an upstream edit can reorder. A piece with no detectable cut border (a
+// degenerate split) and any duplicate cutting set fall back to an ordinal, deferred to F05.
+func nameFragments(fromFace []subFace, parent topo.Lineage, isB bool, prov []imprintSeg) {
+	dups := map[string]int{}
+	for k := range fromFace {
+		fromFace[k].fromB = isB // operand tag, so the stitch can fuse tangent contacts
+		if len(fromFace) == 1 {
+			fromFace[k].lineage = parent // K1a: a single survivor keeps its key
+			continue
+		}
+		cutting := fragmentCuttingFaces(parent, fromFace[k], prov)
+		if len(cutting) == 0 {
+			fromFace[k].lineage = splitLineage(parent, k) // no detectable border: ordinal fallback
+			continue
+		}
+		setKey := string(fragmentLineage(parent, cutting, 0).Key())
+		fromFace[k].lineage = fragmentLineage(parent, cutting, dups[setKey])
+		dups[setKey]++
+	}
+}
+
 // splitLineage derives a distinct child lineage for the k-th piece of a face split into
-// several by the boolean.
+// several by the boolean — the fallback when a piece's cutting border cannot be resolved.
 func splitLineage(parent topo.Lineage, k int) topo.Lineage {
 	return topo.NewLineage(append(parent.Tokens(), topo.Tok("brep", "split", k))...)
 }

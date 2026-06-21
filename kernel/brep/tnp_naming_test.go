@@ -155,10 +155,11 @@ func TestSplitFaceFragmentKeySurvivesUpstreamEdit(t *testing.T) {
 		t.Fatalf("middle top fragment not found over %v after the edit (harness invalid)", middleFragmentPoint)
 	}
 
+	// Fixed in F04 (#1154): the middle fragment is named by the cutting faces bordering it
+	// (the two inner prong walls), a set the lower prong does not change, so its key is stable.
 	if !bytes.Equal(key, f2.ReferenceKey()) {
-		t.Skip("pending #1154 (M31-F04): split-face fragments are named by ordinal piece index " +
-			"(split#k), so an upstream edit that reorders pieces changes the key. Un-skip when " +
-			"bounding-set fragment naming lands.")
+		t.Errorf("split-face fragment key changed across an unrelated edit:\n before = %q\n after  = %q",
+			key, f2.ReferenceKey())
 	}
 }
 
