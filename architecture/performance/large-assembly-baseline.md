@@ -106,7 +106,10 @@ driven by the per-frame allocation churn — not GPU submission.
    occurrence revision does not capture a child part's geometry edit, and `PlacedBodies` must read
    live child bodies — caching them would return stale geometry. The remaining `topo.*.Edges`
    re-derivation (~28% of orbit alloc, a render-path cost on the immutable kernel body, not the
-   flatten) is split out as **F2b cache body edge/face derivation (#1212)**.
+   flatten) is split out as **F2b cache body edge/face derivation (#1212). ✅ RESOLVED**: the
+   distinct face/edge/vertex lists are now precomputed once at body finalization (immutable
+   topology) and returned from cache — per-query 6 allocs/223 ns → 1 alloc/21 ns, full-frame 30k
+   orbit allocation 738 MB → 603 MB.
 4. **F4 — Vulkan frames-in-flight + DEVICE_LOCAL geometry (#1203).** Not isolable on
    lavapipe, but the architecture (per-frame full stall + per-frame HOST_VISIBLE
    re-upload of the whole scene) is the next wall on real GPUs once F1/F2 cut the CPU

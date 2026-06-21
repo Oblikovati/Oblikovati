@@ -178,6 +178,12 @@ type Face struct {
 	shell    *Shell
 	lineage  Lineage
 	reversed bool
+	// derived/cached* memoize the face's distinct edges/vertices, re-queried per frame by the
+	// drawlist and range-box paths (M34-F2b). Written once by finalizeDerived when the owning body
+	// is finalized (the loops are complete by then); before that the accessors derive live.
+	derived        bool
+	cachedEdges    []*Edge
+	cachedVertices []*Vertex
 }
 
 func (f *Face) ID() uint64           { return f.id }
@@ -197,8 +203,33 @@ func (f *Face) Reversed() bool { return f.reversed }
 // Loops returns the face's boundary loops (outer first by construction).
 func (f *Face) Loops() []*Loop { return append([]*Loop(nil), f.loops...) }
 
-// Edges returns the distinct edges bounding the face.
+// Edges returns the distinct edges bounding the face. The result is a fresh slice the caller may
+// keep; once the owning body is finalized it is a copy of the cached list (M34-F2b).
 func (f *Face) Edges() []*Edge {
+	if f.derived {
+		return append([]*Edge(nil), f.cachedEdges...)
+	}
+	return f.deriveEdges()
+}
+
+// Vertices returns the distinct vertices bounding the face.
+func (f *Face) Vertices() []*Vertex {
+	if f.derived {
+		return append([]*Vertex(nil), f.cachedVertices...)
+	}
+	return deriveVerticesFrom(f.deriveEdges())
+}
+
+// finalizeDerived precomputes the face's distinct edge/vertex lists once its loops are complete
+// (the owning body is being finalized). Written once, read-only after — see Body.finalizeDerived.
+func (f *Face) finalizeDerived() {
+	f.cachedEdges = f.deriveEdges()
+	f.cachedVertices = deriveVerticesFrom(f.cachedEdges)
+	f.derived = true
+}
+
+// deriveEdges collects the distinct edges across the face's loops in first-seen order (live form).
+func (f *Face) deriveEdges() []*Edge {
 	seen := map[*Edge]bool{}
 	var out []*Edge
 	for _, l := range f.loops {
@@ -206,21 +237,6 @@ func (f *Face) Edges() []*Edge {
 			if !seen[u.edge] {
 				seen[u.edge] = true
 				out = append(out, u.edge)
-			}
-		}
-	}
-	return out
-}
-
-// Vertices returns the distinct vertices bounding the face.
-func (f *Face) Vertices() []*Vertex {
-	seen := map[*Vertex]bool{}
-	var out []*Vertex
-	for _, e := range f.Edges() {
-		for _, v := range e.Vertices() {
-			if !seen[v] {
-				seen[v] = true
-				out = append(out, v)
 			}
 		}
 	}
