@@ -41,7 +41,9 @@ func DrawChrome(win *native.Window, s *app.Session) string {
 		activated = id
 	}
 	layoutDockedPanels()
+	browserStart := frameClock()
 	drawBrowser(s)
+	recordBrowser(browserStart)
 	drawViewportIfPresent(win, s)
 	drawChromeDialogs(s)
 	drawChromeWindows(s)

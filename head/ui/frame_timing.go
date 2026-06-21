@@ -19,6 +19,16 @@ var frameTimingOn = os.Getenv("OBK_FRAME_TIMING") != ""
 var frameStats struct {
 	n              int
 	buildNs, gpuNs int64 // set by renderViewportImage for the current frame
+	browserNs      int64 // set by recordBrowser for the current frame (model-tree walk cost)
+}
+
+// recordBrowser stores the wall time the model browser took to build+emit this frame
+// (the no-clipper O(N) tree walk, M34-F3). start comes from frameClock, so this is a
+// no-op when timing is off.
+func recordBrowser(start time.Time) {
+	if frameTimingOn {
+		frameStats.browserNs = time.Since(start).Nanoseconds()
+	}
 }
 
 // frameClock returns now when timing is on, else the zero time (so the arithmetic is cheap and the
@@ -44,7 +54,8 @@ func frameTiming(t0, t1, t2, t3 time.Time) {
 	pick := t1.Sub(t0)
 	list := t2.Sub(t1)
 	render := t3.Sub(t2)
-	fmt.Fprintf(os.Stderr, "[frame %d] pick=%v drawlist=%v render=%v (build=%v gpu=%v)\n",
+	fmt.Fprintf(os.Stderr, "[frame %d] pick=%v drawlist=%v render=%v (build=%v gpu=%v) browser=%v\n",
 		frameStats.n, pick.Round(time.Microsecond), list.Round(time.Microsecond), render.Round(time.Microsecond),
-		time.Duration(frameStats.buildNs).Round(time.Microsecond), time.Duration(frameStats.gpuNs).Round(time.Microsecond))
+		time.Duration(frameStats.buildNs).Round(time.Microsecond), time.Duration(frameStats.gpuNs).Round(time.Microsecond),
+		time.Duration(frameStats.browserNs).Round(time.Microsecond))
 }

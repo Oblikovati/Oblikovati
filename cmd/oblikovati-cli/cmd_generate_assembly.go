@@ -11,6 +11,7 @@ import (
 
 	"oblikovati.org/model/benchgen"
 	"oblikovati.org/model/doc"
+	"oblikovati.org/perf/benchprof"
 	"oblikovati.org/persistence"
 )
 
@@ -47,6 +48,10 @@ func cmdGenerateAssembly(args []string, out io.Writer) error {
 // generateAssembly builds the profile into a fresh workspace, optionally saves every
 // document, and reports the result — split from flag parsing so it is unit-testable.
 func generateAssembly(profile benchgen.Profile, outDir string, save bool, out io.Writer) error {
+	run, err := benchprof.Start("generate-" + profile.Name)
+	if err != nil {
+		return err
+	}
 	ws := doc.NewWorkspace(persistence.NewPackageStore())
 	root, stats, err := benchgen.Generate(ws, outDir, profile)
 	if err != nil {
@@ -57,7 +62,12 @@ func generateAssembly(profile benchgen.Profile, outDir string, save bool, out io
 			return err
 		}
 	}
+	summary, err := run.Stop()
+	if err != nil {
+		return err
+	}
 	printAssemblyStats(out, stats, root, outDir, save)
+	fmt.Fprintf(out, "memory:          %s\n", summary)
 	return nil
 }
 
