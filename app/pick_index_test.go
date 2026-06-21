@@ -175,6 +175,29 @@ func TestCulledInstancesDropsOffscreenAndKeepsTarget(t *testing.T) {
 	}
 }
 
+// TestDetailCullingDropsSubPixelInstances pins F7: from very far every box projects sub-pixel and is
+// dropped (only vertex throughput, no visible contribution); from close they are kept. VisibleInstances
+// is never detail-culled, so bounds/framing still see the whole model.
+func TestDetailCullingDropsSubPixelInstances(t *testing.T) {
+	s, _, _ := boxRowAssembly(t, 8)
+	full := countTransforms(s.VisibleInstances())
+	if full == 0 {
+		t.Fatal("fixture has no instances")
+	}
+	farCam := scene.NewCamera(400, 400)
+	farCam.Eye = math.P3(35, 1, 200000) // every box is a fraction of a pixel from here
+	farCam.Target = math.P3(35, 1, 2)
+	if n := countTransforms(s.CulledInstances(farCam)); n != 0 {
+		t.Errorf("from very far every box is sub-pixel; drew %d of %d, want 0", n, full)
+	}
+	nearCam := scene.NewCamera(400, 400)
+	nearCam.Eye = math.P3(35, 1, 60) // boxes are tens of pixels here
+	nearCam.Target = math.P3(35, 1, 2)
+	if n := countTransforms(s.CulledInstances(nearCam)); n == 0 {
+		t.Error("from close the boxes are well over a pixel and should be drawn")
+	}
+}
+
 func TestCulledInstancesPartUnchanged(t *testing.T) {
 	s := extrudedBox(t, 2, 4)
 	cam := scene.NewCamera(400, 400)

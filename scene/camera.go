@@ -56,6 +56,29 @@ func (c Camera) WorldPerPixel() float64 {
 	return 2 * dist * stdmath.Tan(c.FOV/2) / float64(c.Height)
 }
 
+// ProjectedSizePixels estimates how many vertical pixels the box spans on screen — its world
+// bounding-sphere diameter divided by the world-per-pixel at its depth. It is the detail-culling
+// measure (M34-F7): a placement projecting below ~1px contributes only vertex throughput, the wall
+// at 1M instances, so it can be dropped without a visible change. Perspective uses the box's own
+// depth; orthographic uses the (constant) target depth. Returns 0 for an empty box.
+//
+//	if cam.ProjectedSizePixels(inst.WorldBox()) >= 1 { draw(inst) }
+func (c Camera) ProjectedSizePixels(b math.Box) float64 {
+	if b.IsEmpty() || c.Height <= 0 {
+		return 0
+	}
+	worldDiameter := float64(b.Diagonal().Length())
+	tanHalf := stdmath.Tan(c.FOV / 2)
+	dist := float64(c.Eye.DistanceTo(c.Target))
+	if !c.Orthographic {
+		dist = float64(c.Eye.DistanceTo(b.Center()))
+	}
+	if dist < 1e-9 {
+		return float64(c.Height) // at the eye: treat as filling the viewport
+	}
+	return worldDiameter / (2 * dist * tanHalf) * float64(c.Height)
+}
+
 // RayThrough returns the world-space ray (origin, unit direction) through screen
 // pixel (px, py). It is the inverse of the perspective projection used to render.
 func (c Camera) RayThrough(px, py float64) (math.Point3, math.Vector3) {

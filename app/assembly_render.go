@@ -54,7 +54,9 @@ func (s *Session) CulledInstances(cam scene.Camera) []InstanceGroup {
 		return s.VisibleInstances()
 	}
 	idx := s.assemblyPickIndexFor(asm)
-	return idx.groupPlacements(idx.frustumPlacements(cam.Frustum()))
+	visible := idx.frustumPlacements(cam.Frustum())
+	visible = idx.detailVisible(visible, cam)
+	return idx.groupPlacements(visible)
 }
 
 // assemblyInstances groups the assembly's placed bodies by their shared source body pointer (copies
