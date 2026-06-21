@@ -137,7 +137,7 @@ func (s *Session) unionSketchBounds(box math.Box) math.Box {
 	if len(pts) == 0 {
 		return box
 	}
-	return box.Union(robustPointBox(pts))
+	return box.Union(math.RobustPointBox(pts))
 }
 
 // appendSketch2DPoints appends a 2D sketch's entity sample points, mapped from sketch space to

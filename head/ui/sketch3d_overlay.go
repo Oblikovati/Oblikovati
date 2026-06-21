@@ -50,20 +50,29 @@ func cachedSketch3DCurves(s *app.Session) []renderer.DrawItem {
 	return append([]renderer.DrawItem(nil), sketch3DOverlayCache.curves...)
 }
 
-// sketch3DCacheBounds is the extent of the just-rebuilt cache: the curve vertices widened by
-// any standalone points (a lone point off on its own still extends the far plane / Fit box).
+// sketch3DCacheBounds is the model-space extent of the just-rebuilt cache. It is computed
+// ROBUSTLY (math.RobustPointBox): far-flung off-sheet strays — a georeferenced DWG's stray
+// entities sit hundreds of thousands of units from the drawing — are excluded, so the viewport
+// far plane is sized to the drawing the camera frames rather than to a stray. A huge far plane
+// degenerated the inverse view-projection the skybox reconstructs view rays from, blanking the
+// HDR sky to black (the strays are still drawn; they are simply clipped once far enough behind
+// the framed drawing). Matches the framing in app.unionSketchBounds so the two stay consistent.
 func sketch3DCacheBounds() (min, max [3]float32, ok bool) {
-	min, max, ok = drawItemsBounds(sketch3DOverlayCache.curves)
-	for _, p := range sketch3DOverlayCache.points {
-		if !ok {
-			min, max, ok = [3]float32{float32(p.X), float32(p.Y), float32(p.Z)}, [3]float32{float32(p.X), float32(p.Y), float32(p.Z)}, true
-			continue
-		}
-		min[0], max[0] = minF32(min[0], float32(p.X)), maxF32(max[0], float32(p.X))
-		min[1], max[1] = minF32(min[1], float32(p.Y)), maxF32(max[1], float32(p.Y))
-		min[2], max[2] = minF32(min[2], float32(p.Z)), maxF32(max[2], float32(p.Z))
+	total := len(sketch3DOverlayCache.points)
+	for _, it := range sketch3DOverlayCache.curves {
+		total += len(it.Positions)
 	}
-	return min, max, ok
+	pts := make([]math.Point3, 0, total)
+	for _, it := range sketch3DOverlayCache.curves {
+		pts = append(pts, it.Positions...)
+	}
+	pts = append(pts, sketch3DOverlayCache.points...)
+	b := math.RobustPointBox(pts)
+	if b.IsEmpty() {
+		return min, max, false
+	}
+	return [3]float32{float32(b.Min.X), float32(b.Min.Y), float32(b.Min.Z)},
+		[3]float32{float32(b.Max.X), float32(b.Max.Y), float32(b.Max.Z)}, true
 }
 
 // cachedSketch3DBounds returns the extent of the active part's visible 3D sketches, computed at
