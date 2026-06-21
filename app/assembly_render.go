@@ -105,11 +105,41 @@ func (s *Session) worldAssemblyBodies(asm *compdef.AssemblyComponentDefinition) 
 }
 
 // OccurrenceOfBody returns the occurrence a world-space assembly body was placed from, for the
-// ray-picker to resolve a body hit to its component (occurrence-level selection). It reads the
-// cache worldAssemblyBodies built, so it is only valid for bodies from the current frame's set.
+// ray-picker to resolve a body hit to its component (occurrence-level selection). It checks the
+// F5 pick index first (the path picking now takes) and falls back to the legacy
+// worldAssemblyBodies cache, so either source of world body resolves.
 func (s *Session) OccurrenceOfBody(b *topo.Body) (*occurrence.Occurrence, bool) {
+	if s.pickIndex != nil {
+		if o, ok := s.pickIndex.occurrenceOf(b); ok {
+			return o, true
+		}
+	}
 	o, ok := s.asmBodies.owner[b]
 	return o, ok
+}
+
+// assemblyPickIndexFor returns the BVH pick index for asm, rebuilding it when the occurrence
+// structure changed (the same revision key worldAssemblyBodies uses). It is the picker's
+// spatial query so a selection does not materialize every world body (M34-F5).
+func (s *Session) assemblyPickIndexFor(asm *compdef.AssemblyComponentDefinition) *assemblyPickIndex {
+	rev := asm.Occurrences().Revision()
+	if s.pickIndex != nil && s.pickIndex.asm == asm && s.pickIndex.revision == rev {
+		return s.pickIndex
+	}
+	s.pickIndex = newAssemblyPickIndex(asm)
+	return s.pickIndex
+}
+
+// RayPickBodies returns the world-space bodies a pick ray could hit, using the assembly BVH so
+// only ray-crossed placements are transformed (M34-F5). For a part — or when there is no active
+// assembly — it returns nil so the RayPicker falls back to its full body list; part scenes are
+// small and need no index.
+func (s *Session) RayPickBodies(origin math.Point3, dir math.Vector3) []*topo.Body {
+	asm, err := activeAssembly(s)
+	if err != nil {
+		return nil
+	}
+	return s.assemblyPickIndexFor(asm).rayBodies(origin, dir)
 }
 
 // occurrenceBodyLineage gives each placed body a distinct lineage prefix by occurrence index, so
