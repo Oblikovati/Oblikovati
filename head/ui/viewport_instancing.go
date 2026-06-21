@@ -131,7 +131,6 @@ func (b *instanceBuilder) finishAtlas(key string) frameAtlas {
 // overlay changes — not when the camera orbits (M34-F1b).
 type frameAtlas struct {
 	key     string
-	geomKey uint64 // non-zero hash of key, passed to native so it re-uploads the DEVICE_LOCAL geometry only on change (M34-F4)
 	mesh    viewport.Mesh
 	recs    [][5]int32 // absolute templates: stream, firstIndex, indexCount, vertexOffset, biased
 	regions []atlasRegion
@@ -219,9 +218,9 @@ func sortRecsByStream(recs [][7]int32) [][7]int32 {
 func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
 	lookup renderer.SurfaceLookup, style renderer.VisualStyle,
 	decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
-) (viewport.Mesh, []float32, []int32, uint64, bool) {
+) (viewport.Mesh, []float32, []int32, bool) {
 	if len(allGroups) == 0 && len(overlay.Items) == 0 {
-		return viewport.Mesh{}, nil, nil, 0, false
+		return viewport.Mesh{}, nil, nil, false
 	}
 	atlas := cachedFrameAtlas(allGroups, overlay, cam, lookup, style, decorate, sourceKey)
 	visible := make(map[*topo.Body][]math.Matrix4, len(culledGroups))
@@ -229,7 +228,7 @@ func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay re
 		visible[g.Source] = g.Transforms
 	}
 	mats, recs := atlas.assemble(visible)
-	return atlas.mesh, mats, recs, atlas.geomKey, len(recs) > 0
+	return atlas.mesh, mats, recs, len(recs) > 0
 }
 
 // frameAtlasCache retains the last built atlas. The render loop is single-threaded, so a single
@@ -260,19 +259,7 @@ func cachedFrameAtlas(allGroups []app.InstanceGroup, overlay renderer.DrawList, 
 		b.addSource(nil, overlayMesh) // the overlay region: one identity instance in assemble
 	}
 	frameAtlasCache = b.finishAtlas(key)
-	frameAtlasCache.geomKey = geomKeyFor(key)
 	return frameAtlasCache
-}
-
-// geomKeyFor hashes an atlas key to the non-zero uint64 the native side compares to decide whether
-// to re-upload the device-local geometry (M34-F4). Non-zero because 0 means "unknown/always upload".
-func geomKeyFor(key string) uint64 {
-	h := fnv.New64a()
-	_, _ = h.Write([]byte(key))
-	if k := h.Sum64(); k != 0 {
-		return k
-	}
-	return 1
 }
 
 // overlayHash is an order-sensitive FNV-1a digest of the overlay mesh's streams, so the atlas cache

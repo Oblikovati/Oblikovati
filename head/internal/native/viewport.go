@@ -20,8 +20,7 @@ void     obk_viewport_render(void* h, int slot, int w, int hh, const float* mvp,
                              const float* topTriV, int topTriVC, const uint32_t* topTriIdx, int topTriIC,
                              const float* topLineV, int topLineVC, const uint32_t* topLineIdx, int topLineIC,
                              int triBiasFirst, const float* clip,
-                             const float* mats, int matCount, const int32_t* recs, int recCount,
-                             unsigned long long geomKey);
+                             const float* mats, int matCount, const int32_t* recs, int recCount);
 void     obk_viewport_set_clear(void* h, float r, float g, float b);
 void     obk_viewport_set_normal_debug(void* h, int on);
 void     obk_viewport_set_lighting(void* h, const float* data, int n);
@@ -79,7 +78,7 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 	topTriVerts []float32, topTriVCount int, topTriIdx []uint32,
 	topLineVerts []float32, topLineVCount int, topLineIdx []uint32,
 	triBiasFirst int, clip []float32,
-	mats []float32, recs []int32, geomKey uint64,
+	mats []float32, recs []int32,
 ) {
 	C.obk_viewport_render(win.handle, C.int(slot), C.int(w), C.int(h),
 		(*C.float)(unsafe.Pointer(&mvp[0])), floatPtr(camPos),
@@ -90,8 +89,7 @@ func (win *Window) RenderViewport(slot, w, h int, mvp []float32, camPos []float3
 		floatPtr(topTriVerts), C.int(topTriVCount), uint32Ptr(topTriIdx), C.int(len(topTriIdx)),
 		floatPtr(topLineVerts), C.int(topLineVCount), uint32Ptr(topLineIdx), C.int(len(topLineIdx)),
 		C.int(triBiasFirst), floatPtr(clip),
-		floatPtr(mats), C.int(len(mats)/16), int32Ptr(recs), C.int(len(recs)/recDrawInts),
-		C.ulonglong(geomKey))
+		floatPtr(mats), C.int(len(mats)/16), int32Ptr(recs), C.int(len(recs)/recDrawInts))
 }
 
 // recDrawInts is the int32 stride of one instanced draw record (ADR-0038): stream, firstIndex,

@@ -114,15 +114,15 @@ driven by the per-frame allocation churn — not GPU submission.
    distinct face/edge/vertex lists are now precomputed once at body finalization (immutable
    topology) and returned from cache — per-query 6 allocs/223 ns → 1 alloc/21 ns, full-frame 30k
    orbit allocation 738 MB → 603 MB.
-4. **F4 — DEVICE_LOCAL geometry + dirty-flag re-upload (#1203). ✅ RESOLVED.** The native pass
-   rebuilt two `std::vector`s by concatenating all six streams and re-uploaded the whole scene
-   through HOST_VISIBLE memory *every frame*, even when (post-F1b) the geometry was unchanged. Now
-   the geometry lives in DEVICE_LOCAL buffers, uploaded via a staging copy + barrier only when the
-   geometry key changes; an orbit reuses the buffers and skips the concatenation and copy entirely.
-   **30k orbit wall time 523 ms → 274 ms** (native per-frame concatenation/upload eliminated;
-   instance matrices stay HOST_VISIBLE, per-frame). The remaining per-frame `vkWaitForFences` CPU
-   stall is split out as **F4b (#1218)** — it needs a real discrete GPU to measure and an
-   offscreen→ImGui GPU-semaphore (or double-buffered targets), so it is not validatable on lavapipe.
+4. **F4 — DEVICE_LOCAL geometry + dirty-flag re-upload (#1203). ⚠️ REVERTED (correctness).** The
+   native pass rebuilds two `std::vector`s and re-uploads the scene every frame even when the
+   geometry is unchanged. F4 added a geometry-key dirty-flag (skip the concatenation + upload when
+   unchanged), reaching 523 ms → 274 ms orbit — but it rendered **blank** across viewport-target
+   recreation / dock-layout transitions: a geometry buffer uploaded on one frame and reused after
+   the offscreen target is recreated draws nothing (the skip-upload holds in steady state but not
+   across that transition). Validated on a real AMD GPU; reverted to the unconditional per-frame
+   upload for correctness. The dirty-flag is viable but needs the offscreen-buffer-reuse interaction
+   root-caused first — tracked with the frames-in-flight rework in **F4b (#1218)**.
 5. **F3 — virtualized browser tree (#1202). ✅ RESOLVED.** `BuildBrowser` itself is cheap (4.8 MB /
    1.1 ms); the cost was the `drawNode` cgo walk over every node every frame. Now any long
    contiguous run of leaf sibling rows (bodies, occurrences) is drawn through an `ImGuiListClipper`
