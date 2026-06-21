@@ -14,7 +14,6 @@ import (
 	"oblikovati.org/addincat"
 	"oblikovati.org/app"
 	"oblikovati.org/build"
-	"oblikovati.org/head/internal/native"
 	"oblikovati.org/usagestats"
 )
 
@@ -24,13 +23,13 @@ const usageReportTimeout = 8 * time.Second
 
 // reportUsage submits one anonymous installation snapshot during startup, off the UI thread,
 // when the user has not opted out (#1182). It is fire-and-forget: telemetry must never block
-// launch or surface an error. The GPU/Vulkan strings come from the live renderer; everything
-// else from usagestats. OBLIKOVATI_STATS_ENDPOINT overrides the service URL (for dev/tests).
-func reportUsage(session *app.Session, win *native.Window) {
+// launch or surface an error. The GPU/Vulkan strings come from the live renderer (read by the
+// caller, the only holder of the window); everything else from usagestats.
+// OBLIKOVATI_STATS_ENDPOINT overrides the service URL (for dev/tests).
+func reportUsage(session *app.Session, gpu, vulkanVersion string) {
 	if !session.TelemetryEnabled() {
 		return
 	}
-	gpu, vulkanVersion := win.GPUInfo()
 	snap := assembleSnapshot(gpu, vulkanVersion)
 	go func() { _ = submitSnapshot(snap) }() // best-effort; offline/errors intentionally dropped
 }

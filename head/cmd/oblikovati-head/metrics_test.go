@@ -11,8 +11,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
+	"time"
 
+	"oblikovati.org/app"
 	"oblikovati.org/build"
 	"oblikovati.org/usagestats"
 )
@@ -86,6 +89,43 @@ func TestSubmitSnapshotPostsToConfiguredEndpoint(t *testing.T) {
 	}
 	if gotAuth != usagestats.Token(gotBody) {
 		t.Errorf("authorization %q is not the CRC of the body", gotAuth)
+	}
+}
+
+func TestReportUsageHonorsOptOut(t *testing.T) {
+	t.Setenv("OBK_USER_GLOBALS_FILE", filepath.Join(t.TempDir(), "globals"))
+	t.Setenv("OBK_USER_ADDINS_DIR", t.TempDir())
+	got := make(chan string, 4)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		got <- string(b)
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer srv.Close()
+	t.Setenv("OBLIKOVATI_STATS_ENDPOINT", srv.URL)
+
+	// Opted out: must not post (reportUsage returns before spawning the upload).
+	off := app.NewSession()
+	if err := off.SetTelemetryEnabled(false); err != nil {
+		t.Fatalf("opt out: %v", err)
+	}
+	reportUsage(off, "gpu", "1.0")
+
+	// Default (opted in): must post the snapshot, carrying the renderer's GPU string.
+	reportUsage(app.NewSession(), "llvmpipe", "1.4.318")
+	select {
+	case body := <-got:
+		if !strings.Contains(body, "llvmpipe") {
+			t.Errorf("posted body missing GPU: %s", body)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("opted-in telemetry did not post")
+	}
+	// No second request: the opted-out session must have sent nothing.
+	select {
+	case extra := <-got:
+		t.Errorf("opted-out session posted a snapshot: %s", extra)
+	case <-time.After(200 * time.Millisecond):
 	}
 }
 
