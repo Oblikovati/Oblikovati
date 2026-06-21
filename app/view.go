@@ -5,6 +5,7 @@ package app
 import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
+	"oblikovati.org/model/sketch"
 )
 
 // View navigation commands operate on the session camera. FitView frames the active
@@ -100,11 +101,61 @@ func (s *Session) lookAtPlane(target math.Point3, normal, up math.Vector3) {
 	s.animateCameraTo(s.Camera().Facing(target, normal, up), sketchViewTweenSeconds)
 }
 
-// modelBounds is the union of the active part's body bounding boxes (empty if none).
+// modelBounds is the union of the active part's body bounding boxes AND its visible sketch
+// geometry, so Fit/Home frame a sketch-only part — e.g. a DWG/DXF import that produces a 2D
+// sketch or a Sketch3D with no solid body (issue #1146). Empty when there is nothing visible.
 func (s *Session) modelBounds() math.Box {
 	box := math.EmptyBox()
 	for _, b := range s.sceneBodies() {
 		box = box.Union(b.RangeBox())
 	}
+	return s.unionSketchBounds(box)
+}
+
+// unionSketchBounds widens box by the model-space extent of the active part's visible 2D and 3D
+// sketches. Curves are sampled the same way the viewport overlay and ray picker sample them
+// (EntityPolyline / SamplePolyline3D), so the framed box matches what is drawn.
+func (s *Session) unionSketchBounds(box math.Box) math.Box {
+	part, err := activePart(s)
+	if err != nil {
+		return box
+	}
+	for i := 0; i < part.Sketches().Count(); i++ {
+		if sk := part.Sketches().Item(i); sk.Visible() {
+			box = unionSketch2DBounds(box, sk)
+		}
+	}
+	for i := 0; i < part.Sketches3D().Count(); i++ {
+		if sk := part.Sketches3D().Item(i); sk.Visible() {
+			box = unionSketch3DBounds(box, sk)
+		}
+	}
 	return box
 }
+
+// unionSketch2DBounds widens box by a 2D sketch's entities, mapped from sketch space to model
+// space through the sketch plane.
+func unionSketch2DBounds(box math.Box, sk *sketch.Sketch) math.Box {
+	for _, e := range sk.Entities() {
+		pts, _ := sketch.EntityPolyline(e)
+		for _, p := range pts {
+			m := sk.ToModel(p)
+			box = box.Union(math.NewBox(m, m))
+		}
+	}
+	return box
+}
+
+// unionSketch3DBounds widens box by a 3D sketch's entities, already in model space.
+func unionSketch3DBounds(box math.Box, sk *sketch.Sketch3D) math.Box {
+	for _, e := range sk.Entities() {
+		for _, p := range sketch.SamplePolyline3D(e, sketch3DBoundsSegments) {
+			box = box.Union(math.NewBox(p, p))
+		}
+	}
+	return box
+}
+
+// sketch3DBoundsSegments is the per-curve sample count for the 3D-sketch framing bounds — coarse
+// is fine (Fit adds margin), and a low count keeps a dense import's Fit responsive.
+const sketch3DBoundsSegments = 4
