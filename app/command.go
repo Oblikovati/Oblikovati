@@ -50,6 +50,7 @@ type CommandDefinition struct {
 	tooltipTitle     string      // progressive tooltip title (M05-F09)
 	tooltipExpanded  string      // progressive tooltip long text, shown after a longer hover
 	iconKey          string      // icon asset key (e.g. "extrude"); empty ⇒ no icon
+	inlineIconSVG    string      // add-in-supplied inline SVG glyph; takes precedence over iconKey
 	buttonStyle      ButtonStyle // ribbon render style; zero value ⇒ text-only
 	ribbons          []RibbonKey // ribbons this command appears on; empty ⇒ the Part ribbon
 	environment      Environment // ribbon environment; BaseEnvironment ⇒ always shown
@@ -112,6 +113,14 @@ func (c *CommandDefinition) TooltipExpanded() string { return c.tooltipExpanded 
 // Pair it with WithButtonStyle to make the ribbon show the icon; a key with the
 // text-only style is ignored by the renderer.
 func (c *CommandDefinition) WithIcon(key string) *CommandDefinition { c.iconKey = key; return c }
+
+// WithInlineIconSVG sets an add-in-supplied inline SVG glyph for the command, used when the add-in
+// ships its own icon rather than naming a host-bundled key (wire CreateCommandArgs.IconSVG). It
+// takes precedence over WithIcon; the head renders it through the same theming as a bundled glyph.
+func (c *CommandDefinition) WithInlineIconSVG(svg string) *CommandDefinition {
+	c.inlineIconSVG = svg
+	return c
+}
 
 // WithButtonStyle sets how the command renders in the ribbon (text/small-icon/
 // large-icon). Inventor's large buttons head a panel; small ones fill dense grids.
@@ -234,6 +243,7 @@ func (c *CommandDefinition) Kind() ControlKind        { return c.kind }
 func (c *CommandDefinition) Alias() string            { return c.alias }
 func (c *CommandDefinition) Tooltip() string          { return c.tooltip }
 func (c *CommandDefinition) Icon() string             { return c.iconKey }
+func (c *CommandDefinition) InlineIconSVG() string    { return c.inlineIconSVG }
 func (c *CommandDefinition) ButtonStyle() ButtonStyle { return c.buttonStyle }
 func (c *CommandDefinition) Environment() Environment { return c.environment }
 

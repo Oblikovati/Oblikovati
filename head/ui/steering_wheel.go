@@ -48,7 +48,7 @@ func drawSteeringWheel(s *app.Session, ox, oy float32) {
 	cx, cy := ox+float32(vcx), oy+float32(vcy)
 	drawSteeringRing(cx, cy)
 	for i, tool := range steeringWheelTools {
-		tex, ok := icons.texture(tool.icon, steeringIconPx)
+		tex, ok := icons.texture(tool.icon, "", steeringIconPx)
 		if !ok {
 			continue
 		}

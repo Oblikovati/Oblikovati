@@ -145,6 +145,29 @@ func TestCommandsCreateAddsRibbonButtonAndNotifiesOnExecute(t *testing.T) {
 	}
 }
 
+// TestCommandsCreateInlineIconSVG checks an add-in can ship its own button glyph as inline SVG: it
+// is stored on the command (so the head renders it instead of a bundled key), and an oversized
+// payload is rejected.
+func TestCommandsCreateInlineIconSVG(t *testing.T) {
+	r, s := seededSession(t)
+	svg := `<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#00ff00"/></svg>`
+	call(t, r, s, "commands.create",
+		`{"id":"AddIn.Glyph","displayName":"Glyph","category":"Demo","iconSvg":`+jsonString(svg)+`,"buttonStyle":2}`, nil)
+
+	panel, ok := app.BuildRibbon(s).Panel("Demo")
+	if !ok || len(panel.Buttons) != 1 {
+		t.Fatalf("Demo panel = %+v ok=%v, want one add-in button", panel, ok)
+	}
+	if got := panel.Buttons[0].Command.InlineIconSVG(); got != svg {
+		t.Errorf("InlineIconSVG = %q, want the supplied markup", got)
+	}
+
+	big := `{"id":"AddIn.Big","displayName":"Big","iconSvg":` + jsonString("<svg>"+strings.Repeat("x", 17*1024)+"</svg>") + `}`
+	if _, err := r.Handle(s, "commands.create", []byte(big)); err == nil {
+		t.Error("oversized iconSvg accepted, want rejected")
+	}
+}
+
 func TestDocumentsCreateListActivate(t *testing.T) {
 	r, s := seededSession(t)
 	var created wire.DocumentInfo

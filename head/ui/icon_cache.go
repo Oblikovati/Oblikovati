@@ -45,7 +45,8 @@ type iconCache struct {
 }
 
 type iconKey struct {
-	name string
+	name string // bundled asset key, or "" when inline SVG is supplied
+	svg  string // add-in-supplied inline SVG markup; takes precedence over name
 	px   int
 }
 
@@ -75,14 +76,15 @@ func (c *iconCache) beginFrame(themeRevision uint64) {
 }
 
 // texture returns the ImGui texture handle for an icon at the given pixel size,
-// composing and uploading it on first use after a theme change. It returns (0,false)
-// when the key has no bundled asset or rasterization/upload fails, so the caller falls
-// back to text. A failed lookup is cached too, so a bad glyph is not retried per frame.
-func (c *iconCache) texture(name string, px int) (uint64, bool) {
-	if name == "" || px <= 0 {
+// composing and uploading it on first use after a theme change. The glyph comes from the
+// inline SVG when an add-in supplied one, otherwise from the bundled asset key. It returns
+// (0,false) when there is no asset or rasterization/upload fails, so the caller falls back to
+// text. A failed lookup is cached too, so a bad glyph is not retried per frame.
+func (c *iconCache) texture(name, svg string, px int) (uint64, bool) {
+	if (name == "" && svg == "") || px <= 0 {
 		return 0, false
 	}
-	k := iconKey{name, px}
+	k := iconKey{name: name, svg: svg, px: px}
 	if t, ok := c.tex[k]; ok {
 		return t, t != 0
 	}
@@ -107,11 +109,16 @@ func (c *iconCache) compose(k iconKey) uint64 {
 }
 
 // rasterizeRoles renders one glyph's role masks, or nil when the asset is missing or
-// invalid (the nil is cached so the failure costs once, not every frame).
+// invalid (the nil is cached so the failure costs once, not every frame). An add-in's inline
+// SVG is used directly; otherwise the bundled asset is looked up by key.
 func rasterizeRoles(k iconKey) *icon.RoleMasks {
-	svg, ok := icon.SVG(k.name)
-	if !ok {
-		return nil
+	svg := []byte(k.svg)
+	if k.svg == "" {
+		bundled, ok := icon.SVG(k.name)
+		if !ok {
+			return nil
+		}
+		svg = bundled
 	}
 	masks, err := icon.RasterizeRoles(svg, k.px)
 	if err != nil {

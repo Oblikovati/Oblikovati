@@ -32,6 +32,19 @@ func TestRibbonCommandIconsResolve(t *testing.T) {
 	}
 }
 
+// TestRasterizeRolesUsesInlineSVG checks the renderer draws an add-in's own glyph: an iconKey
+// carrying inline SVG rasterizes to role masks directly (no bundled-asset lookup), while a missing
+// bundled key with no inline SVG yields nil so the button falls back to text.
+func TestRasterizeRolesUsesInlineSVG(t *testing.T) {
+	inline := iconKey{svg: `<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#00ff00"/></svg>`, px: 16}
+	if rasterizeRoles(inline) == nil {
+		t.Error("an inline SVG should rasterize to role masks")
+	}
+	if rasterizeRoles(iconKey{name: "definitely-not-a-bundled-icon", px: 16}) != nil {
+		t.Error("a missing bundled key with no inline SVG should yield nil masks (text fallback)")
+	}
+}
+
 // TestRibbonIconCommandsHaveButtonStyle guards that a command which names an icon also sets
 // a (small/large) button style — the renderer only draws the glyph when both are present, so
 // an icon with the default text-only style silently renders as a text button (the bug that
