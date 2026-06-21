@@ -67,3 +67,56 @@ func TestTransformEntityAllTypes(t *testing.T) {
 		t.Errorf("spline transform: ctrl=%v fit=%v", sp.ControlPoints, sp.FitPoints)
 	}
 }
+
+// TestTranslateEntities checks a pure translation shifts positions while preserving radii
+// and is a no-op at zero shift (returns the same slice).
+func TestTranslateEntities(t *testing.T) {
+	in := []Entity{
+		&Line{Start: [3]float64{1, 2, 3}, End: [3]float64{4, 5, 6}},
+		&Circle{Center: [3]float64{2, 0, 0}, Radius: 5},
+		&Arc{Center: [3]float64{0, 0, 0}, Radius: 3, StartAngle: 0, EndAngle: math.Pi},
+	}
+	out := TranslateEntities(in, -10, -20, -30)
+	if l := out[0].(*Line); l.Start != [3]float64{-9, -18, -27} || l.End != [3]float64{-6, -15, -24} {
+		t.Errorf("line not translated: %+v", l)
+	}
+	if c := out[1].(*Circle); c.Center != [3]float64{-8, -20, -30} || c.Radius != 5 {
+		t.Errorf("circle center/radius wrong after translate: %+v", c)
+	}
+	if a := out[2].(*Arc); a.Radius != 3 {
+		t.Errorf("arc radius changed under translation: %v", a.Radius)
+	}
+	if same := TranslateEntities(in, 0, 0, 0); &same[0] != &in[0] {
+		t.Error("zero shift should return the input slice unchanged")
+	}
+}
+
+// TestEntityAnchor checks each entity type yields a representative point, and types without
+// positional geometry report ok=false.
+func TestEntityAnchor(t *testing.T) {
+	cases := []struct {
+		e    Entity
+		want [3]float64
+	}{
+		{&Line{Start: [3]float64{1, 2, 3}}, [3]float64{1, 2, 3}},
+		{&Circle{Center: [3]float64{4, 5, 6}}, [3]float64{4, 5, 6}},
+		{&Arc{Center: [3]float64{7, 8, 9}}, [3]float64{7, 8, 9}},
+		{&Point{Position: [3]float64{1, 1, 1}}, [3]float64{1, 1, 1}},
+		{&Ellipse{Center: [3]float64{2, 2, 2}}, [3]float64{2, 2, 2}},
+		{&LwPolyline{Points: [][2]float64{{3, 4}}, Elevation: 5}, [3]float64{3, 4, 5}},
+		{&Spline{ControlPoints: [][3]float64{{6, 7, 8}}}, [3]float64{6, 7, 8}},
+		{&Spline{FitPoints: [][3]float64{{9, 9, 9}}}, [3]float64{9, 9, 9}},
+	}
+	for _, c := range cases {
+		got, ok := EntityAnchor(c.e)
+		if !ok || got != c.want {
+			t.Errorf("EntityAnchor(%T) = %v ok=%v, want %v", c.e, got, ok, c.want)
+		}
+	}
+	if _, ok := EntityAnchor(&LwPolyline{}); ok {
+		t.Error("empty polyline should have no anchor")
+	}
+	if _, ok := EntityAnchor(&Spline{}); ok {
+		t.Error("empty spline should have no anchor")
+	}
+}
