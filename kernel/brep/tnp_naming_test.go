@@ -232,3 +232,38 @@ func TestSamePairEdgesGetDistinctTransformInvariantKeys(t *testing.T) {
 			lo0, loT, hi0, hiT)
 	}
 }
+
+// vertexKeyAt returns the reference key of the body vertex at p, if any.
+func vertexKeyAt(b *topo.Body, p math.Point3) ([]byte, bool) {
+	for _, v := range b.Vertices() {
+		if float64(v.Point().DistanceTo(p)) < 1e-9 {
+			return v.ReferenceKey(), true
+		}
+	}
+	return nil, false
+}
+
+// TestIntersectionVertexNamedByMeetingFaces (F05, #1155): a vertex the boolean creates is named by
+// the SET of faces meeting at it, so its key is meaningful and invariant under a rigid placement —
+// unlike the raw ordinal it carried before. A plain original corner keeps its ordinal.
+func TestIntersectionVertexNamedByMeetingFaces(t *testing.T) {
+	// (8,0,4): the slot's −X wall, the top, and the front face meet — an intersection vertex.
+	k0, ok0 := vertexKeyAt(holedSlotWall(t, 0, 0), math.P3(8, 0, 4))
+	if !ok0 {
+		t.Fatal("expected an intersection vertex at the slot rim corner (harness invalid)")
+	}
+	if !bytes.Contains(k0, []byte("brep:meet")) {
+		t.Errorf("intersection vertex is not named by its meeting faces: %q", k0)
+	}
+
+	kT, okT := vertexKeyAt(holedSlotWall(t, 1000, 2000), math.P3(1008, 2000, 4))
+	if !okT || !bytes.Equal(k0, kT) {
+		t.Errorf("intersection vertex key is not transform-invariant:\n at origin   %q\n translated  %q", k0, kT)
+	}
+
+	// An original plate corner lies on no imprint, so it keeps an ordinal vertex key.
+	corner, ok := vertexKeyAt(holedSlotWall(t, 0, 0), math.P3(0, 0, 0))
+	if !ok || !bytes.Contains(corner, []byte("brep:vertex#")) {
+		t.Errorf("an original corner should keep an ordinal vertex key, got %q (found=%v)", corner, ok)
+	}
+}

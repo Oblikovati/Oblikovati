@@ -220,3 +220,77 @@ func fragmentLineage(parent topo.Lineage, cutting []topo.Lineage, dup int) topo.
 	}
 	return topo.NewLineage(toks...)
 }
+
+// vertexMark prefixes an intersection vertex's meeting-face set; meetSep precedes each face so the
+// variable-length set parses unambiguously (brep:meet#0, then one brep:at#0 + that face's tokens).
+var (
+	vertexMark = topo.Tok("brep", "meet", 0)
+	meetSep    = topo.Tok("brep", "at", 0)
+)
+
+// vertexLineages names each welded vertex (M31-F05, #1155). An INTERSECTION vertex — one lying on
+// an imprint segment, i.e. created by the boolean — is named by the order-independent SET of faces
+// meeting at it, each now carrying a parent-derived name, so the vertex name is stable across
+// edits and rigid placements. A vertex on no imprint (an original corner) keeps its ordinal index
+// (its welder position v), so the change is confined to the topology the boolean creates.
+func vertexLineages(verts []math.Point3, faces []builtFace, prov []imprintSeg) []topo.Lineage {
+	sets := vertexFaceSets(verts, faces)
+	out := make([]topo.Lineage, len(verts))
+	dups := map[string]int{}
+	for v := range verts {
+		if len(sets[v]) == 0 || !pointOnAnyImprint(verts[v], prov) {
+			out[v] = topo.NewLineage(topo.Tok("brep", "vertex", v))
+			continue
+		}
+		setKey := string(vertexLineage(sets[v], 0).Key())
+		out[v] = vertexLineage(sets[v], dups[setKey])
+		dups[setKey]++
+	}
+	return out
+}
+
+// vertexFaceSets returns, per welded vertex, the sorted unique lineages of the faces whose loops
+// use it — the set that identifies an intersection vertex.
+func vertexFaceSets(verts []math.Point3, faces []builtFace) [][]topo.Lineage {
+	seen := make([]map[string]topo.Lineage, len(verts))
+	for v := range verts {
+		seen[v] = map[string]topo.Lineage{}
+	}
+	for _, f := range faces {
+		for _, ring := range f.rings {
+			for _, v := range ring {
+				seen[v][string(f.lineage.Key())] = f.lineage
+			}
+		}
+	}
+	out := make([][]topo.Lineage, len(verts))
+	for v := range verts {
+		out[v] = sortedLineages(seen[v])
+	}
+	return out
+}
+
+// pointOnAnyImprint reports whether p lies on some imprint segment — the test for "this vertex was
+// created where the operands cross" (endpoints included, since a vertex is a segment endpoint).
+func pointOnAnyImprint(p math.Point3, prov []imprintSeg) bool {
+	for _, s := range prov {
+		if pointOnSegment3(p, s.a, s.b, edgeParentTol) {
+			return true
+		}
+	}
+	return false
+}
+
+// vertexLineage names an intersection vertex by the canonical set of faces meeting at it:
+// brep:meet#0 / (brep:at#0 / face)*. `dup` disambiguates two vertices with the same meeting set.
+func vertexLineage(faces []topo.Lineage, dup int) topo.Lineage {
+	toks := []topo.LineageToken{vertexMark}
+	for _, f := range faces {
+		toks = append(toks, meetSep)
+		toks = append(toks, f.Tokens()...)
+	}
+	if dup > 0 {
+		toks = append(toks, topo.Tok("brep", "vtx", dup))
+	}
+	return topo.NewLineage(toks...)
+}
