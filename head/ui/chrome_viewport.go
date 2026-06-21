@@ -380,7 +380,7 @@ func updateViewportCamera(s *app.Session, pw, ph int, overCube bool) (scene.Came
 // overlay/ground tail as one identity instance, returning the merged mesh + per-instance matrices +
 // draw records. It falls back to a single legacy flatten of the whole list (nil mats/recs) when
 // instancing does not apply — mesh-color debug mode (its own builder) or no keyable geometry.
-func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups []app.InstanceGroup) (viewport.Mesh, []float32, []int32) {
+func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawList, bodyCount int, ground []renderer.DrawItem, groups, culled []app.InstanceGroup) (viewport.Mesh, []float32, []int32) {
 	if bodyCount < 0 || bodyCount > len(list.Items) {
 		bodyCount = len(list.Items)
 	}
@@ -400,7 +400,7 @@ func frameMeshAndInstances(s *app.Session, cam scene.Camera, list renderer.DrawL
 		decorate := func(l renderer.DrawList) renderer.DrawList {
 			return highlightSelection(l, s.Selection().First(), sources)
 		}
-		if m, mats, recs, ok := buildInstancedFrame(groups, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
+		if m, mats, recs, ok := buildInstancedFrame(groups, culled, overlay, cam, s.SurfaceLookup(), s.VisualStyle(), decorate, instancedSourceKey(s)); ok {
 			return m, mats, recs
 		}
 	}
@@ -459,7 +459,8 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	tb := frameClock()
 	// Draw only the instances inside the view frustum (M34-F1) — off-screen placements never reach
 	// the GPU upload. The bounds above still use the full set so shadows/framing don't shift on orbit.
-	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, s.CulledInstances(cam))
+	// allGroups builds the retained vertex atlas (stable on orbit); culled drives the per-frame draws.
+	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups, s.CulledInstances(cam))
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
 	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}

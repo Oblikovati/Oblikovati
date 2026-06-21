@@ -96,7 +96,11 @@ driven by the per-frame allocation churn — not GPU submission.
    cached index instead of re-flattening). This is the win for zoomed views and the 1M target.
    **Still open (separate from culling):** at a *full-frame* orbit everything is in view, so the
    53%-of-allocation `instanceBuilder.appendStream` rebuild of the merged frame mesh remains —
-   tracked as **F1b retain/dirty-flag the merged frame mesh (#1210)**. ~725 MB/frame today.
+   tracked as **F1b retain/dirty-flag the merged frame mesh (#1210). ✅ RESOLVED**: the merged
+   vertex/index streams are now built once into a retained `frameAtlas` (keyed by source signature +
+   overlay hash) over ALL sources, and only the frustum-culled instance matrices + draw records are
+   assembled per frame. The per-frame `appendStream` concatenation is gone — combined with F2/F2b,
+   **30k orbit allocation fell 738 MB → 108 MB/12 frames (~9 MB/frame)**.
 3. **F2 — parallel + GC-trimmed transform traversal (#1201). ✅ RESOLVED.** `collectPlacedBodies`
    was 31 MB / 62k allocs / 6.3 ms every flatten (render + propagation both pay it),
    single-threaded, with a fresh `OccurrencePath` allocated per node. Rewritten to walk with a
