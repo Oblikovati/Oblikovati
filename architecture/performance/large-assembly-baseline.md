@@ -97,10 +97,16 @@ driven by the per-frame allocation churn — not GPU submission.
    **Still open (separate from culling):** at a *full-frame* orbit everything is in view, so the
    53%-of-allocation `instanceBuilder.appendStream` rebuild of the merged frame mesh remains —
    tracked as **F1b retain/dirty-flag the merged frame mesh (#1210)**. ~725 MB/frame today.
-3. **F2 — parallel + cached transform traversal (#1201).** `collectPlacedBodies` is
-   31 MB / 62k allocs every flatten (render + propagation both pay it), single-threaded,
-   rebuilt wholesale. Also re-derives `topo.*.Edges` (~28% of orbit alloc) — cache edges
-   per body. Drives both render churn and the 47% GC time.
+3. **F2 — parallel + GC-trimmed transform traversal (#1201). ✅ RESOLVED.** `collectPlacedBodies`
+   was 31 MB / 62k allocs / 6.3 ms every flatten (render + propagation both pay it),
+   single-threaded, with a fresh `OccurrencePath` allocated per node. Rewritten to walk with a
+   reused DFS path stack (one path copy per emitted leaf — **allocs halved to ~30k**) and to fan
+   the top-level subtrees across workers (**6.3 ms → 3.48 ms, ~1.8×**), output byte-identical to
+   the serial walk (race-clean equality test). A *body cache keyed by revision was rejected*: the
+   occurrence revision does not capture a child part's geometry edit, and `PlacedBodies` must read
+   live child bodies — caching them would return stale geometry. The remaining `topo.*.Edges`
+   re-derivation (~28% of orbit alloc, a render-path cost on the immutable kernel body, not the
+   flatten) is split out as **F2b cache body edge/face derivation (#1212)**.
 4. **F4 — Vulkan frames-in-flight + DEVICE_LOCAL geometry (#1203).** Not isolable on
    lavapipe, but the architecture (per-frame full stall + per-frame HOST_VISIBLE
    re-upload of the whole scene) is the next wall on real GPUs once F1/F2 cut the CPU
