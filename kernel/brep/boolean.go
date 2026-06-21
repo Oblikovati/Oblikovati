@@ -62,7 +62,7 @@ func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.
 	var kept []subFace
 	kept = append(kept, selectFaces(fa, impA, b, fb, op, false)...)
 	kept = append(kept, selectFaces(fb, impB, a, fa, op, true)...)
-	return stitch(kept)
+	return stitch(kept, provenanceOf(fa, fb))
 }
 
 // nudgeEps is the magnitude (cm) of the clearance opened at a tangent contact: above the weld
@@ -77,7 +77,7 @@ const nudgeEps = 1e-5
 // to the original (topologically resolved) result.
 func retryNudged(op Op, fa, fb []planarFace, a, original *topo.Body, away math.Vector3) (*topo.Body, error) {
 	fbp := translateFaces(fb, away.Scale(nudgeEps))
-	bp, _, err := stitch(planarToSubFaces(fbp))
+	bp, _, err := stitch(planarToSubFaces(fbp), nil) // materialising nudged B: no intersections to name
 	if err != nil || bp == nil {
 		return original, nil
 	}
