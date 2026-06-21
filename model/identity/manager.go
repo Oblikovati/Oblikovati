@@ -45,6 +45,7 @@ func (m *KeyManager) RebindSource(id ContextID, source EntitySource) error {
 		return fmt.Errorf(errUnknownContext, id)
 	}
 	ctx.source = source
+	ctx.invalidateIndex()
 	return nil
 }
 
@@ -106,15 +107,17 @@ func (m *KeyManager) BindKeyToObject(k RefKey) (Entity, MatchType) {
 	if !ok || ctx.source == nil {
 		return nil, MatchNone
 	}
-	ents := ctx.source.Entities()
-	if e := exactMatch(k, ents); e != nil {
+	if e := ctx.lookupExact(k); e != nil {
 		return e, MatchExact
 	}
-	return fallbackMatch(k, ents)
+	// The fallback tiers are deliberately off the hot path: they run only on an
+	// exact miss and still scan, so the common (exact-hit) case stays O(1) (F08).
+	return fallbackMatch(k, ctx.source.Entities())
 }
 
 // exactMatch returns the lone entity whose kind and full lineage equal the key, or
-// nil. This is the only tier that yields healthy state.
+// nil — the linear-scan exact tier used directly for un-revisioned sources and to
+// populate the F08 index. It is the only tier that yields healthy state.
 func exactMatch(k RefKey, ents []Entity) Entity {
 	for _, e := range ents {
 		if e.EntityKind() == k.kind && bytes.Equal(e.Lineage().LineageKey(), k.payload) {
