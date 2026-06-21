@@ -161,6 +161,7 @@ type Session struct {
 	bugReport            bugReportState                 // in-progress Help ▸ Report Bug capture+submit, if any
 	bugOutcome           atomic.Pointer[bugResult]      // submit goroutine → frame loop handoff (session never touched off-thread)
 	bugSubmitter         bugSubmitter                   // injectable reporting endpoint (DI; lazily defaults to real HTTP)
+	addInCat             addInCatalogue                 // Add-In Catalogue browse/install state (#1164)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
