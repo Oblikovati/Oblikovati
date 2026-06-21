@@ -31,6 +31,10 @@ func drawPreferencesWindow(s *app.Session) {
 			drawGeneralTab(s)
 			native.EndTabItem()
 		}
+		if native.BeginTabItem("Privacy") {
+			drawPrivacyTab(s)
+			native.EndTabItem()
+		}
 		if native.BeginTabItem("Sketch Grid") {
 			drawGridTab(s)
 			native.EndTabItem()
@@ -46,6 +50,18 @@ func drawPreferencesWindow(s *app.Session) {
 		native.EndTabBar()
 	}
 	native.End()
+}
+
+// drawPrivacyTab renders the anonymous usage-statistics opt-out (#1182). Telemetry is on by
+// default; unchecking it stops the startup snapshot upload to stats.oblikovati.org.
+func drawPrivacyTab(s *app.Session) {
+	native.Text("Oblikovati can share anonymous usage statistics to guide development.")
+	native.Text("No personal data is collected — only OS, hardware, version and installed add-ins.")
+	native.Separator()
+	share := s.TelemetryEnabled()
+	if native.Checkbox("Share anonymous usage statistics", &share) {
+		reportPrefError(s.SetTelemetryEnabled(share))
+	}
 }
 
 // drawModelingTab renders modeling-feature preferences (the default chamfer corner

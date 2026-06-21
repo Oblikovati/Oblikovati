@@ -446,6 +446,25 @@ void obk_head_end_frame(void* h, float r, float g, float b) {
     }
 }
 
+// obk_head_gpu_info reports the selected physical device's name and Vulkan API version for
+// anonymous installation telemetry (#1182). nameOut is filled NUL-terminated up to nameCap
+// bytes; apiVersionOut receives the raw VkPhysicalDeviceProperties.apiVersion (the Go side
+// formats major.minor.patch). On macOS the device runs over MoltenVK, so this reports the
+// MoltenVK-backed Vulkan version. Safe any time after obk_head_create; yields ""/0 if no
+// device was selected.
+void obk_head_gpu_info(void* h, char* nameOut, int nameCap, unsigned int* apiVersionOut) {
+    HeadContext* c = (HeadContext*)h;
+    if (apiVersionOut) *apiVersionOut = 0;
+    if (nameCap > 0) nameOut[0] = '\0';
+    if (!c || c->physical == VK_NULL_HANDLE) return;
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(c->physical, &props);
+    if (apiVersionOut) *apiVersionOut = props.apiVersion;
+    int i = 0;
+    for (; i + 1 < nameCap && props.deviceName[i] != '\0'; i++) nameOut[i] = props.deviceName[i];
+    if (nameCap > 0) nameOut[i] = '\0';
+}
+
 void obk_head_destroy(void* h) {
     HeadContext* c = (HeadContext*)h;
     if (!c) return;

@@ -24,11 +24,13 @@ void  obk_head_end_frame(void* h, float r, float g, float b);
 void  obk_head_destroy(void* h);
 void  obk_head_get_window_state(void* h, int* x, int* y, int* w, int* hh, int* maximized);
 void  obk_head_apply_window_state(void* h, int x, int y, int maximized);
+void  obk_head_gpu_info(void* h, char* nameOut, int nameCap, unsigned int* apiVersionOut);
 */
 import "C"
 
 import (
 	"errors"
+	"fmt"
 	"unsafe"
 )
 
@@ -94,6 +96,26 @@ func (w *Window) BeginFrame() { C.obk_head_begin_frame(w.handle) }
 // background color) and presents it.
 func (w *Window) EndFrame(r, g, b float32) {
 	C.obk_head_end_frame(w.handle, C.float(r), C.float(g), C.float(b))
+}
+
+// GPUInfo reports the selected Vulkan physical device's name and API version (formatted
+// "major.minor.patch"), for anonymous installation telemetry (#1182). On macOS the device
+// runs over MoltenVK, so the version is the MoltenVK-backed Vulkan version. Both are "" when
+// no device is available (e.g. a software-only or torn-down window).
+func (w *Window) GPUInfo() (name, vulkanVersion string) {
+	var buf [256]C.char
+	var apiVer C.uint
+	C.obk_head_gpu_info(w.handle, &buf[0], C.int(len(buf)), &apiVer)
+	return C.GoString(&buf[0]), formatVulkanVersion(uint32(apiVer))
+}
+
+// formatVulkanVersion renders a packed VkPhysicalDeviceProperties.apiVersion as
+// "major.minor.patch" (the Vulkan version bit layout), or "" for a zero (no device) value.
+func formatVulkanVersion(v uint32) string {
+	if v == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d.%d.%d", (v>>22)&0x7f, (v>>12)&0x3ff, v&0xfff)
 }
 
 // Destroy tears down ImGui, the Vulkan device, and the window.
