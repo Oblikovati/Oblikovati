@@ -63,6 +63,36 @@ func TestMinDistanceBox(t *testing.T) {
 	}
 }
 
+// TestMinDistanceProbeToBody checks the transient-probe distance on the same 4×3×5 cm block: a
+// travel segment above the top face clears it by the gap, a segment piercing the block touches (0),
+// a lone point measures point-to-body, and an empty probe is +Inf. Results are database units (cm).
+func TestMinDistanceProbeToBody(t *testing.T) {
+	block, err := brep.SolidBlock(gmath.P3(0, 0, 0), gmath.P3(4, 3, 5), "block")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	q := ops.DefaultQuality()
+
+	// A horizontal travel segment 5 cm above the top face (z=5).
+	above := []gmath.Point3{gmath.P3(0, 1.5, 10), gmath.P3(4, 1.5, 10)}
+	if d := MinDistanceProbeToBody(above, block, q); math.Abs(d-5) > 1e-6 {
+		t.Errorf("above-box probe distance = %g cm, want 5", d)
+	}
+	// A segment piercing the block touches it.
+	through := []gmath.Point3{gmath.P3(2, 1.5, 2), gmath.P3(2, 1.5, 3)}
+	if d := MinDistanceProbeToBody(through, block, q); d > 1e-6 {
+		t.Errorf("through-box probe distance = %g cm, want 0", d)
+	}
+	// A lone point 2 cm beyond the +x face.
+	if d := MinDistanceProbeToBody([]gmath.Point3{gmath.P3(6, 1.5, 2.5)}, block, q); math.Abs(d-2) > 1e-6 {
+		t.Errorf("point probe distance = %g cm, want 2", d)
+	}
+	// No probe geometry → +Inf.
+	if d := MinDistanceProbeToBody(nil, block, q); !math.IsInf(d, 1) {
+		t.Errorf("empty probe distance = %g, want +Inf", d)
+	}
+}
+
 // sameSet reports whether got contains exactly the wanted values (within tolerance, any order).
 func sameSet(got, want []float64) bool {
 	if len(got) != len(want) {

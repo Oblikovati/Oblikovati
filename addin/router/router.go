@@ -385,6 +385,7 @@ func (r *Router) registerMaterialHandlers() {
 	r.handlers[wire.MethodBodyFindUsingRay] = bodyFindUsingRay
 	r.handlers[wire.MethodBodyIsPointInside] = bodyIsPointInside
 	r.handlers[wire.MethodBodyConvexityEdges] = bodyConvexityEdges
+	r.handlers[wire.MethodBodyMinimumDistance] = bodyMinimumDistance
 	r.handlers[wire.MethodBodyValidate] = bodyValidate
 	r.handlers[wire.MethodBodyRangeBox] = bodyRangeBox
 	r.handlers[wire.MethodBodyBindTransientKey] = bodyBindTransientKey

@@ -49,6 +49,33 @@ func TestBodyListAndShells(t *testing.T) {
 	}
 }
 
+// TestBodyMinimumDistance: a transient travel polyline measured against the box — clearance above
+// the top face, tool-radius widening, and a piercing move clamped to 0; plus the malformed-input
+// guard. Distances are database units (cm); the box top is at z=5.
+func TestBodyMinimumDistance(t *testing.T) {
+	r, s := boxPartSession(t)
+	var md wire.MinimumDistanceResult
+
+	call(t, r, s, "body.minimumDistance", `{"bodyIndex":0,"points":[0,1.5,10,4,1.5,10]}`, &md)
+	if stdmath.Abs(md.Distance-5) > 1e-6 {
+		t.Errorf("above-box distance = %g cm, want 5", md.Distance)
+	}
+	// A 1 cm tool radius shrinks the clearance to 4 cm.
+	call(t, r, s, "body.minimumDistance", `{"bodyIndex":0,"points":[0,1.5,10,4,1.5,10],"radius":1}`, &md)
+	if stdmath.Abs(md.Distance-4) > 1e-6 {
+		t.Errorf("radius-widened distance = %g cm, want 4", md.Distance)
+	}
+	// A move through the block clamps at 0.
+	call(t, r, s, "body.minimumDistance", `{"bodyIndex":0,"points":[2,1.5,2,2,1.5,3]}`, &md)
+	if md.Distance != 0 {
+		t.Errorf("through-box distance = %g, want 0", md.Distance)
+	}
+	// A points list that is not a multiple of three is rejected, not truncated.
+	if err := tryCall(t, r, s, "body.minimumDistance", `{"bodyIndex":0,"points":[0,1.5]}`); err == nil {
+		t.Error("malformed probe points should error")
+	}
+}
+
 // TestBodyPointAndRayQueries: locate, ray, containment.
 func TestBodyPointAndRayQueries(t *testing.T) {
 	r, s := boxPartSession(t)
