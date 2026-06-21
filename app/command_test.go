@@ -33,6 +33,23 @@ func TestCommandRegistrationAndLookup(t *testing.T) {
 	}
 }
 
+// TestCommandInlineIconSVG checks an add-in's own glyph is carried on the command: WithInlineIconSVG
+// stores the markup and InlineIconSVG reads it back, distinct from the bundled-key Icon.
+func TestCommandInlineIconSVG(t *testing.T) {
+	svg := `<svg viewBox="0 0 24 24"><rect width="24" height="24"/></svg>`
+	c := NewCommand("AddIn.Glyph", "Glyph", "Demo", func(*Session) error { return nil }).
+		WithIcon("fallback-key").WithInlineIconSVG(svg)
+	if got := c.InlineIconSVG(); got != svg {
+		t.Errorf("InlineIconSVG = %q, want the supplied markup", got)
+	}
+	if got := c.Icon(); got != "fallback-key" {
+		t.Errorf("Icon = %q, want the bundled key kept alongside the inline SVG", got)
+	}
+	if NewCommand("x", "X", "Demo", func(*Session) error { return nil }).InlineIconSVG() != "" {
+		t.Error("a command with no inline glyph should report an empty InlineIconSVG")
+	}
+}
+
 func TestCommandManagerRejectsDuplicates(t *testing.T) {
 	m := NewCommandManager()
 	_ = m.Add(NewCommand("x", "X", "C", func(*Session) error { return nil }).WithAlias("A"))
