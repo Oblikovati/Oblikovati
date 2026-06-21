@@ -693,6 +693,7 @@ func viewTabCommands() []*CommandDefinition {
 	cmds = append(cmds, displayViewCommands()...)
 	cmds = append(cmds, colorStylesCommand())
 	cmds = append(cmds, selectionPriorityCommands()...)
+	cmds = append(cmds, selectionFilterCommand())
 	cmds = append(cmds, visualStyleCommands()...)
 	cmds = append(cmds, colorSchemeCommands()...)
 	cmds = append(cmds, lightingViewCommands()...)

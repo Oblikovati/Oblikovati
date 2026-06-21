@@ -13,8 +13,17 @@ import (
 // They implement Inventor's mouse/keyboard behavior at the logic level; the actual
 // device events come from the window in production and from tests headlessly.
 
-// SetPicker installs the hit-test used to resolve clicks to selectables.
-func (s *Session) SetPicker(p Picker) { s.picker = p }
+// SetPicker installs the hit-test used to resolve clicks to selectables. When the picker
+// honours a priority ranking (RayPicker), the live SelectionFilterState ordering is pushed so
+// reordering the Selection Filter window changes ambiguous-pick resolution (#1222).
+func (s *Session) SetPicker(p Picker) {
+	s.picker = p
+	if pr, ok := p.(interface {
+		SetPriorityRank(func(SelectionKind) int)
+	}); ok {
+		pr.SetPriorityRank(s.selectionFilterState.Rank)
+	}
+}
 
 // StartTool activates an interactive tool, cancelling any tool already running.
 func (s *Session) StartTool(t Tool) {

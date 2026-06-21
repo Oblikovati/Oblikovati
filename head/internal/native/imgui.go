@@ -29,6 +29,12 @@ int  obk_ig_begin_tab_bar(const char* id);
 int  obk_ig_begin_tab_item_ex(const char* label, int setSelected);
 int  obk_ig_begin_tab_item_closable(const char* label, int setSelected, int* open);
 int  obk_ig_selectable(const char* label, int selected);
+int  obk_ig_begin_drag_drop_source(void);
+void obk_ig_set_drag_drop_payload_int(const char* type, int v);
+void obk_ig_end_drag_drop_source(void);
+int  obk_ig_begin_drag_drop_target(void);
+int  obk_ig_accept_drag_drop_payload_int(const char* type, int* out);
+void obk_ig_end_drag_drop_target(void);
 void obk_ig_end_tab_bar(void);
 int  obk_ig_begin_tab_item(const char* label);
 void obk_ig_end_tab_item(void);
@@ -654,6 +660,40 @@ func Selectable(label string, selected bool) bool {
 	defer free()
 	return C.obk_ig_selectable(c, cBool(selected)) != 0
 }
+
+// BeginDragDropSource reports whether the last item is being dragged this frame; if so set a
+// payload and draw a preview before EndDragDropSource. Used to reorder the Selection Filter
+// priority list by dragging a row (#1222).
+func BeginDragDropSource() bool { return C.obk_ig_begin_drag_drop_source() != 0 }
+
+// SetDragDropPayloadInt attaches an int payload (the dragged row index) under a type tag.
+func SetDragDropPayloadInt(payloadType string, v int) {
+	c, free := cstr(payloadType)
+	defer free()
+	C.obk_ig_set_drag_drop_payload_int(c, C.int(v))
+}
+
+// EndDragDropSource closes a BeginDragDropSource block.
+func EndDragDropSource() { C.obk_ig_end_drag_drop_source() }
+
+// BeginDragDropTarget reports whether the last item can receive a drop this frame; if so call
+// AcceptDragDropPayloadInt before EndDragDropTarget.
+func BeginDragDropTarget() bool { return C.obk_ig_begin_drag_drop_target() != 0 }
+
+// AcceptDragDropPayloadInt returns the dropped int payload (and true) when a payload of the
+// given type is released on the current target this frame.
+func AcceptDragDropPayloadInt(payloadType string) (int, bool) {
+	c, free := cstr(payloadType)
+	defer free()
+	var out C.int
+	if C.obk_ig_accept_drag_drop_payload_int(c, &out) != 0 {
+		return int(out), true
+	}
+	return 0, false
+}
+
+// EndDragDropTarget closes a BeginDragDropTarget block.
+func EndDragDropTarget() { C.obk_ig_end_drag_drop_target() }
 
 // CollapsingHeader draws a collapsible section header; reports whether it is open.
 func CollapsingHeader(label string) bool {

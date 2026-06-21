@@ -25,16 +25,36 @@ const (
 // SelectionPriority returns the active no-tool selection priority.
 func (s *Session) SelectionPriority() SelectionPriority { return s.selectionPriority }
 
-// SetSelectionPriority sets the no-tool selection priority.
-func (s *Session) SetSelectionPriority(p SelectionPriority) { s.selectionPriority = p }
+// SetSelectionPriority sets the no-tool selection priority. The four priorities are presets of
+// the richer SelectionFilterState (#1222): they enable just the kinds the priority accepts, so
+// the combo on the View tab and the Selection Filter window stay a single source of truth.
+func (s *Session) SetSelectionPriority(p SelectionPriority) {
+	s.selectionPriority = p
+	s.selectionFilterState.applyPriorityPreset(p)
+}
+
+// applyPriorityPreset enables exactly the kinds the priority accepts (General enables all). It
+// reuses priorityFilter so the preset→kinds mapping is defined once.
+func (st *SelectionFilterState) applyPriorityPreset(p SelectionPriority) {
+	if p == PriorityGeneral {
+		st.EnableAll()
+		return
+	}
+	st.DisableAll()
+	for _, k := range st.order {
+		if priorityFilter(p).Accepts(k) {
+			st.SetEnabled(k, true)
+		}
+	}
+}
 
 // pickFilter is the filter a viewport pick honours. An active tool's filter, or any explicitly
 // restricted filter, always wins; only when nothing has restricted it (no tool, default
-// accept-all filter) does the selection priority apply. The no-tool click (Session.Pointer) and
-// box-select consult it so a priority biases both.
+// accept-all filter) does the user's ambient SelectionFilterState apply. The no-tool click
+// (Session.Pointer) and box-select consult it so the filter/priority biases both.
 func (s *Session) pickFilter() *SelectionFilter {
 	if s.tool == nil && !s.selection.Filter().IsRestricted() {
-		return priorityFilter(s.selectionPriority)
+		return s.selectionFilterState.Filter()
 	}
 	return s.selection.Filter()
 }

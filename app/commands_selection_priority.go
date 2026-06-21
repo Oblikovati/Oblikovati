@@ -15,6 +15,27 @@ var selectionPrioritySpecs = []selectionPrioritySpec{
 	{PriorityEdge, "Select.Priority.Edge", "Edge Priority", "A click selects edges."},
 }
 
+// OpenSelectionFilterWindow / CloseSelectionFilterWindow / ToggleSelectionFilterWindow drive the
+// Selection Filter & Priority window's visibility (#1222); SelectionFilterWindowOpen reports it.
+func (s *Session) OpenSelectionFilterWindow()  { s.selectionFilterWindowOpen = true }
+func (s *Session) CloseSelectionFilterWindow() { s.selectionFilterWindowOpen = false }
+func (s *Session) ToggleSelectionFilterWindow() {
+	s.selectionFilterWindowOpen = !s.selectionFilterWindowOpen
+}
+func (s *Session) SelectionFilterWindowOpen() bool { return s.selectionFilterWindowOpen }
+
+// selectionFilterCommand is the View tab's Select panel button that opens the Selection Filter &
+// Priority window — the full per-kind enable + drag-to-prioritise editor behind the quick combo
+// presets (#1222).
+func selectionFilterCommand() *CommandDefinition {
+	return NewCommand("Select.Filter", "Selection Filter", "Select", func(s *Session) error {
+		s.ToggleSelectionFilterWindow()
+		return nil
+	}).WithTab("View").WithKind(ButtonControl).
+		WithTooltip("Choose which entity types are selectable and their pick priority.").
+		WithActive(func(s *Session) bool { return s.SelectionFilterWindowOpen() })
+}
+
 // selectionPriorityCommands are the View tab's Select panel: a mutually-exclusive combo (like the
 // Visual Style box) that sets the no-tool selection priority, biasing both click and box-select
 // picking (#912 / Inventor's Select dropdown).

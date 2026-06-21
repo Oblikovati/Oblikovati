@@ -110,6 +110,22 @@ int  obk_ig_selectable(const char* label, int selected) {
     return ImGui::Selectable(label, selected != 0) ? 1 : 0;
 }
 
+// Drag-and-drop: reorder a list by dragging a row onto another (#1222). The payload is a single
+// int (the dragged row index); SetDragDropPayload copies it internally so a local is safe.
+int  obk_ig_begin_drag_drop_source(void) { return ImGui::BeginDragDropSource() ? 1 : 0; }
+void obk_ig_set_drag_drop_payload_int(const char* type, int v) {
+    ImGui::SetDragDropPayload(type, &v, sizeof(int));
+}
+void obk_ig_end_drag_drop_source(void)   { ImGui::EndDragDropSource(); }
+int  obk_ig_begin_drag_drop_target(void) { return ImGui::BeginDragDropTarget() ? 1 : 0; }
+// Writes *out and returns 1 when a payload of this type was dropped on the current target.
+int  obk_ig_accept_drag_drop_payload_int(const char* type, int* out) {
+    const ImGuiPayload* pl = ImGui::AcceptDragDropPayload(type);
+    if (pl && pl->DataSize == (int)sizeof(int)) { *out = *(const int*)pl->Data; return 1; }
+    return 0;
+}
+void obk_ig_end_drag_drop_target(void)   { ImGui::EndDragDropTarget(); }
+
 int  obk_ig_collapsing_header(const char* l) { return ImGui::CollapsingHeader(l) ? 1 : 0; }
 void obk_ig_set_next_item_open(int open, int first_use) {
     ImGui::SetNextItemOpen(open != 0, first_use != 0 ? ImGuiCond_FirstUseEver : ImGuiCond_Always);

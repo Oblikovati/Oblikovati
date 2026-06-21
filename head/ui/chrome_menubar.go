@@ -160,6 +160,9 @@ func drawToolsMenu(s *app.Session) {
 		if native.MenuItem(checkLabel("Command Window", s.CommandWindowOpen())) { // M26 F04: docked REPL
 			s.ToggleCommandWindow()
 		}
+		if native.MenuItem(checkLabel("Selection Filter", s.SelectionFilterWindowOpen())) { // #1222
+			s.ToggleSelectionFilterWindow()
+		}
 		native.Separator()
 		if native.MenuItem(checkLabel("Normal Debug (front green / back red)", normalDebugOn)) {
 			normalDebugOn = !normalDebugOn
