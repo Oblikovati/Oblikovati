@@ -53,6 +53,47 @@ func (e MeasureEntity) simplices(q ops.Quality) ([]segment, []triangle) {
 	return nil, nil
 }
 
+// MinDistanceProbeToBody returns the minimum distance, in database units (cm), between a transient
+// probe polyline and a body — the closest approach of an arbitrary travel path (e.g. a CAM linking
+// move) to the part. The probe reduces to its segments (a lone point becomes a zero-length segment),
+// the body to its face triangles, and the result is the smallest segment-triangle distance. It is
+// +Inf when the probe or the body has no geometry, and 0 when they touch or intersect. This is the
+// transient-operand counterpart of MinDistanceMm (which measures two resolved model entities), the
+// out-of-process projection of MeasureTools.GetMinimumDistance — Oblikovati/Oblikovati#630.
+func MinDistanceProbeToBody(probe []math.Point3, body *topo.Body, q ops.Quality) float64 {
+	segs := probeSegments(probe)
+	if len(segs) == 0 {
+		return stdmath.Inf(1)
+	}
+	// Distance to a *solid*, not just its skin: a probe point inside the material is a collision
+	// (distance 0) even when no segment crosses a boundary face — a fully interior travel move would
+	// otherwise report the gap to the nearest wall. A segment that merely passes through is caught by
+	// the segment-triangle pass below (it crosses the boundary). Matches OCC distToShape's overlap=0.
+	for _, p := range probe {
+		if ops.BodyContainment(body, p, q, 1e-6) == ops.ContainInside {
+			return 0
+		}
+	}
+	best := stdmath.Inf(1)
+	for _, f := range body.Faces() {
+		best = minSegTri(best, segs, faceTriangles(f, q))
+	}
+	return best
+}
+
+// probeSegments turns a probe polyline into its consecutive segments; a single point becomes one
+// zero-length segment so it still measures point-to-body.
+func probeSegments(probe []math.Point3) []segment {
+	if len(probe) == 1 {
+		return []segment{{probe[0], probe[0]}}
+	}
+	segs := make([]segment, 0, len(probe))
+	for i := 1; i < len(probe); i++ {
+		segs = append(segs, segment{probe[i-1], probe[i]})
+	}
+	return segs
+}
+
 func edgeSegments(e *topo.Edge, q ops.Quality) []segment {
 	pts := ops.TessellateEdge(e, q)
 	segs := make([]segment, 0, len(pts))

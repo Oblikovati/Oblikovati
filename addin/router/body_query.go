@@ -12,6 +12,7 @@ import (
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/model/analysis"
 )
 
 // Body point/ray/validity queries over the wire (M07-F07, #630).
@@ -149,6 +150,42 @@ func containmentSpelling(c ops.PointContainment) string {
 	default:
 		return types.OutsideContainment.String()
 	}
+}
+
+// bodyMinimumDistance serves wire.MethodBodyMinimumDistance: the closest approach between the body
+// and a transient probe polyline (a CAM travel path), optionally widened by the tool radius. The
+// out-of-process projection of MeasureTools.GetMinimumDistance for a transient operand (#630).
+func bodyMinimumDistance(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	var in wire.MinimumDistanceArgs
+	if err := decode(raw, &in); err != nil {
+		return nil, err
+	}
+	b, err := resolveBody(s, in.BodyIndex)
+	if err != nil {
+		return nil, err
+	}
+	probe, err := probePolyline(in.Points)
+	if err != nil {
+		return nil, err
+	}
+	dist := analysis.MinDistanceProbeToBody(probe, b, ops.DefaultQuality()) - in.Radius
+	if dist < 0 {
+		dist = 0
+	}
+	return json.Marshal(wire.MinimumDistanceResult{Distance: dist})
+}
+
+// probePolyline decodes a flat [x,y,z, ...] list (database units) into points; it requires a
+// non-empty multiple of three so the offending shape is reported rather than silently truncated.
+func probePolyline(flat []float64) ([]math.Point3, error) {
+	if len(flat) == 0 || len(flat)%3 != 0 {
+		return nil, fmt.Errorf("probe points = %d floats, want a non-empty multiple of 3 (x,y,z per point)", len(flat))
+	}
+	pts := make([]math.Point3, 0, len(flat)/3)
+	for i := 0; i < len(flat); i += 3 {
+		pts = append(pts, math.V3(math.Scalar(flat[i]), math.Scalar(flat[i+1]), math.Scalar(flat[i+2])).AsPoint())
+	}
+	return pts, nil
 }
 
 // bodyConvexityEdges serves wire.MethodBodyConvexityEdges.
