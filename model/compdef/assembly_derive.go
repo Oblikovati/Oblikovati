@@ -3,6 +3,9 @@
 package compdef
 
 import (
+	"runtime"
+	"sync"
+
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
@@ -20,44 +23,131 @@ var _ feature.AssemblyBodySource = (*AssemblyComponentDefinition)(nil)
 // skipped. It is what a derived-assembly component pulls to build a base body — and
 // what shrinkwrap will simplify (M11-F06).
 func (a *AssemblyComponentDefinition) PlacedBodies() []feature.PlacedBody {
-	var out []feature.PlacedBody
-	collectPlacedBodies(a.occurrences, math.Identity4(), nil, &out, nil)
+	if a.occurrences.Count() >= parallelFlattenMinRoots {
+		return flattenParallel(a.occurrences)
+	}
+	return flattenSerial(a.occurrences)
+}
+
+// parallelFlattenMinRoots is the top-level occurrence count at or above which PlacedBodies fans the
+// flatten across workers; below it the goroutine/concat overhead outweighs the gain.
+const parallelFlattenMinRoots = 4
+
+// flattenSerial walks the whole tree on one goroutine — the small-assembly path and the reference
+// the parallel path must match exactly.
+func flattenSerial(occs *occurrence.Occurrences) []feature.PlacedBody {
+	w := placeWalker{}
+	w.walk(occs, math.Identity4(), nil)
+	return w.out
+}
+
+// flattenParallel splits the top-level occurrences into contiguous chunks (one per worker, bounded
+// by GOMAXPROCS) and walks each subtree concurrently, then concatenates the per-worker results in
+// occurrence order. The walk is read-only over immutable topology and each worker owns its walker
+// and output, so there is no shared mutable state; the contiguous, in-order concat makes the result
+// byte-for-byte identical to flattenSerial. This is the M34-F2 wall-time cut over the deep DAG.
+func flattenParallel(occs *occurrence.Occurrences) []feature.PlacedBody {
+	n := occs.Count()
+	workers := runtime.GOMAXPROCS(0)
+	if workers > n {
+		workers = n
+	}
+	parts := make([][]feature.PlacedBody, workers)
+	var wg sync.WaitGroup
+	for wkr := 0; wkr < workers; wkr++ {
+		lo, hi := chunkRange(n, workers, wkr)
+		wg.Add(1)
+		go func(slot, lo, hi int) {
+			defer wg.Done()
+			w := placeWalker{}
+			for i := lo; i < hi; i++ {
+				w.place(occs.Item(i), math.Identity4(), nil)
+			}
+			parts[slot] = w.out
+		}(wkr, lo, hi)
+	}
+	wg.Wait()
+	return concatPlaced(parts)
+}
+
+// chunkRange returns the half-open [lo, hi) of the n items assigned to worker w of workers,
+// distributing the remainder to the lowest-numbered workers so every item is covered exactly once.
+func chunkRange(n, workers, w int) (lo, hi int) {
+	base, rem := n/workers, n%workers
+	lo = w*base + min(w, rem)
+	size := base
+	if w < rem {
+		size++
+	}
+	return lo, lo + size
+}
+
+// concatPlaced joins the per-worker outputs into one slice in worker order (which is occurrence
+// order), preallocating the exact total so there is a single allocation.
+func concatPlaced(parts [][]feature.PlacedBody) []feature.PlacedBody {
+	total := 0
+	for _, p := range parts {
+		total += len(p)
+	}
+	out := make([]feature.PlacedBody, 0, total)
+	for _, p := range parts {
+		out = append(out, p...)
+	}
 	return out
 }
 
-// collectPlacedBodies walks one occurrence level, composing each occurrence's transform
-// with its parent's and extending the instance-name path, emitting a leaf part's bodies
-// and recursing into sub-assemblies. The path disambiguates a shared flyweight reached
-// through several placements (M11-F08 nested participation). flexParent, when non-nil, is the
-// flexible sub-assembly occurrence whose children we are walking: each child uses that
-// placement's independent override transform when one is set, so two placements of one flexible
-// sub-assembly show their components in different positions (M12-F06).
-func collectPlacedBodies(occs *occurrence.Occurrences, parent math.Matrix4, path occurrence.OccurrencePath, out *[]feature.PlacedBody, flexParent *occurrence.Occurrence) {
-	for _, o := range occs.All() {
-		placeOccurrence(o, parent, path, out, flexParent)
+// placeWalker carries the DFS state that used to be reallocated per node (M34-F2). The
+// occurrence-name path is ONE stack pushed/popped down the tree and copied only when a leaf body
+// is emitted (each PlacedBody keeps its own path), instead of a fresh growing slice per
+// occurrence; iteration is by index (Occurrences.Item) so no per-level snapshot slice is
+// allocated either. Output is byte-for-byte identical to the previous recursion — same DFS order,
+// same paths — so this is a pure allocation cut, not a behaviour change.
+type placeWalker struct {
+	stack []string // current occurrence-name path, reused across the whole walk
+	out   []feature.PlacedBody
+}
+
+// walk descends one occurrence level, composing each child's transform with parent's. flexParent,
+// when non-nil, is the flexible sub-assembly occurrence whose children we are walking: each child
+// uses that placement's independent override transform when one is set, so two placements of one
+// flexible sub-assembly show components in different positions (M12-F06). The path disambiguates a
+// shared flyweight reached through several placements (M11-F08).
+func (w *placeWalker) walk(occs *occurrence.Occurrences, parent math.Matrix4, flexParent *occurrence.Occurrence) {
+	for i := 0; i < occs.Count(); i++ {
+		w.place(occs.Item(i), parent, flexParent)
 	}
 }
 
-// placeOccurrence emits one occurrence's bodies (a leaf part) or recurses into it (a
-// sub-assembly), at its world placement under parent. Suppressed occurrences are skipped.
-func placeOccurrence(o *occurrence.Occurrence, parent math.Matrix4, path occurrence.OccurrencePath, out *[]feature.PlacedBody, flexParent *occurrence.Occurrence) {
+// place emits one occurrence's bodies (a leaf part) or recurses into it (a sub-assembly), at its
+// world placement under parent. Suppressed occurrences are skipped. It pushes the occurrence name
+// before descending and pops it after, so the shared stack always holds the current branch's path.
+func (w *placeWalker) place(o *occurrence.Occurrence, parent math.Matrix4, flexParent *occurrence.Occurrence) {
 	if o.Suppressed() {
 		return
 	}
 	world := parent.Mul(childTransform(o, flexParent))
-	here := append(append(occurrence.OccurrencePath(nil), path...), o.Name())
+	w.stack = append(w.stack, o.Name())
 	switch def := o.Definition().(type) {
 	case bodyDefinition: // a leaf part: emit its bodies placed in the assembly
 		for _, b := range def.SurfaceBodies().All() {
-			*out = append(*out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: here})
+			w.out = append(w.out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: w.clonePath()})
 		}
 	case occurrence.Composite: // a sub-assembly: recurse, carrying flexible-child overrides
-		var nextFlex *occurrence.Occurrence
+		var nextFlex *occurrence.Occurrence // reset: a non-flexible sub-assembly clears the override
 		if o.Flexible() {
 			nextFlex = o
 		}
-		collectPlacedBodies(def.Occurrences(), world, here, out, nextFlex)
+		w.walk(def.Occurrences(), world, nextFlex)
 	}
+	w.stack = w.stack[:len(w.stack)-1]
+}
+
+// clonePath returns an owned copy of the current name path; each PlacedBody retains its own, so a
+// path never aliases the walker's mutating stack.
+func (w *placeWalker) clonePath() occurrence.OccurrencePath {
+	p := make(occurrence.OccurrencePath, len(w.stack))
+	copy(p, w.stack)
+	return p
 }
 
 // childTransform is o's local placement, replaced by flexParent's per-child override when this
