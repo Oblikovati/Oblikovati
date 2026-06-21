@@ -17,6 +17,8 @@
 // — that the real topology types implement later. Today it is exercised by fakes.
 package identity
 
+import "oblikovati.org/math"
+
 // EntityKind discriminates the topological/model entities a key can name. Values
 // are STABLE: they are encoded into persisted keys, so never renumber them.
 type EntityKind uint32
@@ -83,6 +85,30 @@ type Lineage interface {
 type Entity interface {
 	EntityKind() EntityKind
 	Lineage() Lineage
+}
+
+// AncestralLineage is an OPTIONAL capability of a [Lineage]: the key of its parent
+// derivation (this lineage with its most-specific step removed). The tiered binder
+// uses it to recover a reference to a surviving sibling when the exact entity is
+// gone — siblings are the entities that share a parent (M31-F06, #1156). A lineage
+// with no meaningful parent (a root) need not implement it; such entities then have
+// no ancestral fallback and a lost key resolves to Sick as before.
+type AncestralLineage interface {
+	Lineage
+	// ParentKey returns the stable bytes of the parent lineage, or nil when this
+	// lineage is a root with no parent to fall back to.
+	ParentKey() []byte
+}
+
+// AnchoredEntity is an OPTIONAL capability of an [Entity]: a representative point in
+// the body's local frame. The binder uses it only as a geometric tie-breaker when
+// several surviving siblings share the key's parent lineage (M31-F06). It is never
+// used for exact binding; entities that cannot supply a stable point omit it.
+type AnchoredEntity interface {
+	Entity
+	// Anchor returns a representative point and true, or the zero point and false
+	// when no stable anchor exists for this entity.
+	Anchor() (math.Point3, bool)
 }
 
 // EntitySource enumerates the entities currently present in a context's topology —
