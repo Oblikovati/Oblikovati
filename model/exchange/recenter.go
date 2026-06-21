@@ -5,9 +5,9 @@ package exchange
 import (
 	"fmt"
 	"math"
-	"sort"
 
 	"oblikovati.org/kernel/exchange/drawing"
+	gmath "oblikovati.org/math"
 )
 
 // recenterThreshold is the distance from the origin (in database units, cm) beyond which an
@@ -52,18 +52,7 @@ func robustCenter(entities []drawing.Entity) ([3]float64, bool) {
 	if len(xs) == 0 {
 		return [3]float64{}, false
 	}
-	return [3]float64{median(xs), median(ys), median(zs)}, true
-}
-
-// median returns the middle value of v (averaging the two middle values for an even count).
-// It sorts v in place; callers pass a scratch slice they own.
-func median(v []float64) float64 {
-	sort.Float64s(v)
-	n := len(v)
-	if n%2 == 1 {
-		return v[n/2]
-	}
-	return (v[n/2-1] + v[n/2]) / 2
+	return [3]float64{gmath.Median(xs), gmath.Median(ys), gmath.Median(zs)}, true
 }
 
 // recenterWarning describes a recenter so the import surfaces it to the user (the absolute

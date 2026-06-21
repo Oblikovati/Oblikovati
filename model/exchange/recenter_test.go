@@ -69,16 +69,6 @@ func TestRecenterIgnoresOppositeOutliers(t *testing.T) {
 	}
 }
 
-// TestMedian covers the odd/even split.
-func TestMedian(t *testing.T) {
-	if m := median([]float64{3, 1, 2}); m != 2 {
-		t.Errorf("median odd = %v, want 2", m)
-	}
-	if m := median([]float64{4, 1, 3, 2}); m != 2.5 {
-		t.Errorf("median even = %v, want 2.5", m)
-	}
-}
-
 // TestRobustCenterEmpty: no anchored entities yields ok=false.
 func TestRobustCenterEmpty(t *testing.T) {
 	if _, ok := robustCenter([]drawing.Entity{&drawing.LwPolyline{}}); ok {
