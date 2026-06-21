@@ -79,7 +79,7 @@ const edgeParentTol = 1e-7
 func edgeParents(p, q math.Point3, prov []imprintSeg) (topo.Lineage, topo.Lineage, bool) {
 	mid := p.TranslateBy(p.VectorTo(q).Scale(0.5))
 	for _, s := range prov {
-		if pointOnSegment3(mid, s.a, s.b, edgeParentTol) {
+		if pointOnSegment3(mid, s.a, s.b) {
 			lo, hi := canonicalPair(s.owner, s.other)
 			return lo, hi, true
 		}
@@ -176,7 +176,7 @@ func fragmentCuttingFaces(parent topo.Lineage, sf subFace, prov []imprintSeg) []
 		for i := range ring {
 			mid := ring[i].TranslateBy(ring[i].VectorTo(ring[(i+1)%len(ring)]).Scale(0.5))
 			for _, s := range prov {
-				if bytes.Equal(s.owner.Key(), parent.Key()) && pointOnSegment3(mid, s.a, s.b, edgeParentTol) {
+				if bytes.Equal(s.owner.Key(), parent.Key()) && pointOnSegment3(mid, s.a, s.b) {
 					found[string(s.other.Key())] = s.other
 				}
 			}
@@ -274,7 +274,7 @@ func vertexFaceSets(verts []math.Point3, faces []builtFace) [][]topo.Lineage {
 // created where the operands cross" (endpoints included, since a vertex is a segment endpoint).
 func pointOnAnyImprint(p math.Point3, prov []imprintSeg) bool {
 	for _, s := range prov {
-		if pointOnSegment3(p, s.a, s.b, edgeParentTol) {
+		if pointOnSegment3(p, s.a, s.b) {
 			return true
 		}
 	}

@@ -116,23 +116,25 @@ func edgeOnSegments(e *topo.Edge, segs [][2]math.Point3) bool {
 	lo, hi := c.Domain()
 	mid := c.PointAt((lo + hi) / 2)
 	for _, s := range segs {
-		if pointOnSegment3(mid, s[0], s[1], 1e-7) {
+		if pointOnSegment3(mid, s[0], s[1]) {
 			return true
 		}
 	}
 	return false
 }
 
-func pointOnSegment3(p, a, b math.Point3, tol float64) bool {
+// pointOnSegment3 reports whether p lies on the segment a→b within edgeParentTol
+// (the boolean weld tolerance shared by every imprint-segment proximity test).
+func pointOnSegment3(p, a, b math.Point3) bool {
 	ab := a.VectorTo(b)
 	denom := float64(ab.LengthSquared())
 	if denom == 0 {
-		return float64(p.DistanceTo(a)) <= tol
+		return float64(p.DistanceTo(a)) <= edgeParentTol
 	}
 	t := float64(a.VectorTo(p).Dot(ab)) / denom
 	if t < 0 || t > 1 {
 		return false
 	}
 	on := a.TranslateBy(ab.Scale(math.Scalar(t)))
-	return float64(p.DistanceTo(on)) <= tol
+	return float64(p.DistanceTo(on)) <= edgeParentTol
 }
