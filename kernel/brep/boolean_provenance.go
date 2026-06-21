@@ -22,10 +22,13 @@ import (
 // imprintSeg is an intersection (or coplanar-overlap) segment tagged with the lineages of the
 // two faces whose crossing produced it: owner is the face the segment was recorded on, other is
 // the crossing face. The unordered {owner, other} pair is the generating parentage of any edge
-// built along the segment.
+// built along the segment. ownerN/otherN are those faces' outward normals — the geometry the F05
+// disambiguator (#1155) needs to order several edges that share one parent pair by a
+// transform-invariant characteristic.
 type imprintSeg struct {
-	a, b         math.Point3
-	owner, other topo.Lineage
+	a, b           math.Point3
+	owner, other   topo.Lineage
+	ownerN, otherN math.Vector3
 }
 
 // pairImprints returns the intersection/overlap segments of one crossing face pair, as recorded
@@ -49,17 +52,18 @@ func provenanceOf(fa, fb []planarFace) []imprintSeg {
 	for i := range fa {
 		for j := range fb {
 			onA, onB := pairImprints(fa[i], fb[j])
-			prov = appendTagged(prov, onA, fa[i].lineage, fb[j].lineage)
-			prov = appendTagged(prov, onB, fb[j].lineage, fa[i].lineage)
+			prov = appendTagged(prov, onA, fa[i], fb[j])
+			prov = appendTagged(prov, onB, fb[j], fa[i])
 		}
 	}
 	return prov
 }
 
-// appendTagged appends each segment tagged with the owner/other face lineages that produced it.
-func appendTagged(prov []imprintSeg, segs [][2]math.Point3, owner, other topo.Lineage) []imprintSeg {
+// appendTagged appends each segment tagged with the owner/other faces' lineages and normals.
+func appendTagged(prov []imprintSeg, segs [][2]math.Point3, owner, other planarFace) []imprintSeg {
 	for _, s := range segs {
-		prov = append(prov, imprintSeg{a: s[0], b: s[1], owner: owner, other: other})
+		prov = append(prov, imprintSeg{a: s[0], b: s[1],
+			owner: owner.lineage, other: other.lineage, ownerN: owner.normal, otherN: other.normal})
 	}
 	return prov
 }
@@ -112,6 +116,45 @@ func intersectionLineage(lo, hi topo.Lineage, dup int) topo.Lineage {
 		toks = append(toks, topo.Tok("brep", "seg", dup))
 	}
 	return topo.NewLineage(toks...)
+}
+
+// pairLineDir returns the intersection line's direction for the parent pair (lo, hi), derived
+// equivariantly from the two faces' normals (n_lo × n_hi) so it rotates and translates rigidly
+// with the geometry — the canonical axis along which the F05 disambiguator orders several edges
+// that share this parent pair. ok is false when the pair has no segment in prov or the normals
+// are parallel (no unique line).
+func pairLineDir(lo, hi topo.Lineage, prov []imprintSeg) (math.Vector3, bool) {
+	nLo, nHi, ok := pairNormals(lo, hi, prov)
+	if !ok {
+		return math.Vector3{}, false
+	}
+	d := nLo.Cross(nHi)
+	if d.LengthSquared() < 1e-18 {
+		return math.Vector3{}, false
+	}
+	return d.AsUnit().AsVector(), true
+}
+
+// pairNormals finds, in prov, the outward normals of the two faces named by the canonical pair
+// (lo, hi), mapping each seg's owner/other normal to the matching member of the pair.
+func pairNormals(lo, hi topo.Lineage, prov []imprintSeg) (nLo, nHi math.Vector3, ok bool) {
+	loK, hiK := lo.Key(), hi.Key()
+	for _, s := range prov {
+		switch {
+		case bytes.Equal(s.owner.Key(), loK) && bytes.Equal(s.other.Key(), hiK):
+			return s.ownerN, s.otherN, true
+		case bytes.Equal(s.owner.Key(), hiK) && bytes.Equal(s.other.Key(), loK):
+			return s.otherN, s.ownerN, true
+		}
+	}
+	return math.Vector3{}, math.Vector3{}, false
+}
+
+// lineCharacteristic projects p onto direction d — the transform-invariant scalar (a dot product
+// is preserved by rotation; differences of it are preserved by translation) that orders edges
+// sharing one parent pair along their common intersection line.
+func lineCharacteristic(p math.Point3, d math.Vector3) float64 {
+	return float64(d.X)*float64(p.X) + float64(d.Y)*float64(p.Y) + float64(d.Z)*float64(p.Z)
 }
 
 // fragmentMark prefixes a split-face fragment's cutting set; cuttingSep precedes each bordering

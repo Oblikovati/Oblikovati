@@ -59,38 +59,84 @@ func allUsesPaired(uses map[[2]int][]loopEdgeUse) bool {
 // Each edge is named by its GENERATING PARENTS when prov resolves it to an intersection of two
 // faces (#1153) — a name invariant to the stitch's vertex ordering, unlike the ordinal index
 // used as a fallback for edges with no provenance (original face boundaries, and callers that
-// pass nil such as the drilled-hole path).
+// pass nil such as the drilled-hole path). Several edges sharing one parent pair (a face crossed
+// twice) are disambiguated by their order ALONG the parents' intersection line, a
+// transform-invariant characteristic (#1155) rather than a build-order counter.
 func buildResolvedEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, uses map[[2]int][]loopEdgeUse, faces []builtFace, prov []imprintSeg) map[[3]int]*topo.Edge {
-	keys := sortedPairKeys(uses)
+	builds := planEdgeBuilds(verts, uses, faces, prov)
+	rankSamePairEdges(builds, prov)
 	useEdge := make(map[[3]int]*topo.Edge)
-	dups := map[string]int{} // per parent-pair counter, so two edges of one pair never collide
 	idx := 0
-	for _, k := range keys {
-		for _, group := range resolveEdgeUses(k, uses[k], verts, faces) {
-			lin := edgeLineage(verts[k[0]], verts[k[1]], prov, dups, &idx)
-			e := bld.AddEdge(geom.NewLineSegment(verts[k[0]], verts[k[1]]), tv[k[0]], tv[k[1]], lin)
-			for _, h := range group {
-				useEdge[[3]int{h.face, h.ring, h.pos}] = e
-			}
+	for i := range builds {
+		b := &builds[i]
+		e := bld.AddEdge(geom.NewLineSegment(verts[b.k[0]], verts[b.k[1]]), tv[b.k[0]], tv[b.k[1]], edgeBuildLineage(b, &idx))
+		for _, h := range b.group {
+			useEdge[[3]int{h.face, h.ring, h.pos}] = e
 		}
 	}
 	return useEdge
 }
 
-// edgeLineage returns an edge's lineage: its parent-pair name when prov attributes the edge p→q
-// to a face crossing, else the ordinal fallback (incrementing idx). dups disambiguates the rare
-// case of two edges sharing one parent pair.
-func edgeLineage(p, q math.Point3, prov []imprintSeg, dups map[string]int, idx *int) topo.Lineage {
-	lo, hi, ok := edgeParents(p, q, prov)
-	if !ok {
+// edgeBuild is one planned topo edge: its vertex pair, the half-edge uses it carries, its
+// midpoint, and the parent faces (when it is an intersection edge) plus its rank among edges of
+// the same parent pair.
+type edgeBuild struct {
+	k        [2]int
+	group    []loopEdgeUse
+	mid      math.Point3
+	lo, hi   topo.Lineage
+	parented bool
+	rank     int
+}
+
+// planEdgeBuilds enumerates the edges to create (resolving tangent contacts) with each one's
+// parent pair and midpoint — the input the geometric disambiguator ranks.
+func planEdgeBuilds(verts []math.Point3, uses map[[2]int][]loopEdgeUse, faces []builtFace, prov []imprintSeg) []edgeBuild {
+	var builds []edgeBuild
+	for _, k := range sortedPairKeys(uses) {
+		for _, group := range resolveEdgeUses(k, uses[k], verts, faces) {
+			p, q := verts[k[0]], verts[k[1]]
+			lo, hi, ok := edgeParents(p, q, prov)
+			builds = append(builds, edgeBuild{k: k, group: group, mid: p.TranslateBy(p.VectorTo(q).Scale(0.5)), lo: lo, hi: hi, parented: ok})
+		}
+	}
+	return builds
+}
+
+// rankSamePairEdges assigns each parented edge its rank among edges sharing the same parent pair,
+// ordered by the transform-invariant characteristic along the pair's intersection line. A lone
+// edge of a pair keeps rank 0 (no disambiguator); the common case is therefore untouched.
+func rankSamePairEdges(builds []edgeBuild, prov []imprintSeg) {
+	groups := map[string][]int{}
+	for i := range builds {
+		if builds[i].parented {
+			key := string(builds[i].lo.Key()) + "\x00" + string(builds[i].hi.Key())
+			groups[key] = append(groups[key], i)
+		}
+	}
+	for _, idxs := range groups {
+		if len(idxs) < 2 {
+			continue
+		}
+		d, ok := pairLineDir(builds[idxs[0]].lo, builds[idxs[0]].hi, prov)
+		sort.SliceStable(idxs, func(a, b int) bool {
+			return ok && lineCharacteristic(builds[idxs[a]].mid, d) < lineCharacteristic(builds[idxs[b]].mid, d)
+		})
+		for r, i := range idxs {
+			builds[i].rank = r
+		}
+	}
+}
+
+// edgeBuildLineage is an edge's lineage: its parent-pair name (with the disambiguating rank) when
+// it is an intersection edge, else the ordinal fallback (incrementing idx).
+func edgeBuildLineage(b *edgeBuild, idx *int) topo.Lineage {
+	if !b.parented {
 		lin := topo.NewLineage(topo.Tok("brep", "edge", *idx))
 		*idx++
 		return lin
 	}
-	pairKey := string(lo.Key()) + "\x00" + string(hi.Key())
-	dup := dups[pairKey]
-	dups[pairKey]++
-	return intersectionLineage(lo, hi, dup)
+	return intersectionLineage(b.lo, b.hi, b.rank)
 }
 
 // sortedPairKeys returns the vertex pairs in ascending order for stable edge lineage.
