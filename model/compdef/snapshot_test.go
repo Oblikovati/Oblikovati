@@ -4,6 +4,7 @@ package compdef_test
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/ops"
@@ -174,6 +175,60 @@ func TestParamsOnlySnapshotByteStable(t *testing.T) {
 	s2, _ := def.MarshalSnapshot()
 	if !bytes.Equal(s1, s2) {
 		t.Errorf("params-only snapshot not byte-stable across round-trip (len %d vs %d)", len(s1), len(s2))
+	}
+}
+
+// TestRestoreSnapshotRejectsBadSnapshots: the undo restore must reject a corrupt event payload
+// rather than apply a half-state — both malformed JSON (parse error, decoded before the reset so
+// the part is untouched) and structurally-valid JSON carrying bad content (an unparseable
+// parameter expression or an unknown unit). Covers the restore-error paths for part + assembly.
+func TestRestoreSnapshotRejectsBadSnapshots(t *testing.T) {
+	ws := doc.NewWorkspace(nil)
+	d, _ := compdef.AddPart(ws, "Part1", true)
+	def := d.Content().(*compdef.PartComponentDefinition)
+	def.Sketches().Add(sketch.XYPlane())
+	if _, err := def.Parameters().AddUserParameter("w", "4 cm"); err != nil {
+		t.Fatalf("seed param: %v", err)
+	}
+	def.Recompute()
+
+	if err := def.RestoreSnapshot([]byte("{not valid json")); err == nil {
+		t.Error("part RestoreSnapshot accepted invalid JSON")
+	}
+	if def.Sketches().Count() != 1 {
+		t.Errorf("part mutated by a failed parse-restore: %d sketches, want 1 untouched", def.Sketches().Count())
+	}
+
+	good, err := def.MarshalSnapshot()
+	if err != nil {
+		t.Fatalf("MarshalSnapshot: %v", err)
+	}
+	for _, c := range []struct{ name, find, repl string }{
+		{"bad parameter expression", "4 cm", "(((("},
+		{"unknown unit", `"length":"mm"`, `"length":"#bad#"`},
+	} {
+		corrupt := strings.Replace(string(good), c.find, c.repl, 1)
+		if corrupt == string(good) {
+			t.Fatalf("%s: corruption pattern %q not found in snapshot", c.name, c.find)
+		}
+		if err := def.RestoreSnapshot([]byte(corrupt)); err == nil {
+			t.Errorf("%s: RestoreSnapshot accepted a semantically-invalid snapshot", c.name)
+		}
+	}
+
+	asm := compdef.NewAssemblyComponentDefinition()
+	if err := asm.RestoreSnapshot([]byte("\xff\xfe not json")); err == nil {
+		t.Error("assembly RestoreSnapshot accepted invalid JSON")
+	}
+	asmGood, err := asm.MarshalSnapshot()
+	if err != nil {
+		t.Fatalf("assembly MarshalSnapshot: %v", err)
+	}
+	asmBad := strings.Replace(string(asmGood), `"length":"mm"`, `"length":"#bad#"`, 1)
+	if asmBad != string(asmGood) { // assembly recipe carries units only when non-default
+		if err := asm.RestoreSnapshot([]byte(asmBad)); err == nil {
+			t.Error("assembly RestoreSnapshot accepted an unknown unit")
+		}
 	}
 }
 

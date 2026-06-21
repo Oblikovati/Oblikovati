@@ -6,7 +6,31 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/exchange"
+	"oblikovati.org/model/param"
+	"oblikovati.org/model/sketch"
 )
+
+// syntheticDWG writes a small DWG (a rectangle sketch exported through the DWG writer) to a temp
+// file and returns its path, so an import test runs on CI without the git-ignored corpus.
+func syntheticDWG(t *testing.T) string {
+	t.Helper()
+	src := compdef.NewPartComponentDefinition()
+	sk := src.Sketches().Add(sketch.XYPlane())
+	c0 := sk.Points().Add(math.P2(0, 0))
+	c1 := sk.Points().Add(math.P2(40, 0))
+	c2 := sk.Points().Add(math.P2(40, 30))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	path := filepath.Join(t.TempDir(), "synthetic.dwg")
+	if err := exchange.ExportDWGFile(sk, path, param.DefaultUnitsOfMeasure()); err != nil {
+		t.Fatalf("ExportDWGFile: %v", err)
+	}
+	return path
+}
 
 func corpusDWG(t *testing.T, name string) string {
 	t.Helper()
@@ -76,7 +100,7 @@ func TestSessionImportDWGIsOneUndoStep(t *testing.T) {
 	}
 	before := len(s.undoLabels())
 
-	res, err := s.ImportDWGFile(corpusDWG(t, "testfile-7.dwg"), choices[0].Plane)
+	res, err := s.ImportDWGFile(syntheticDWG(t), choices[0].Plane)
 	if err != nil {
 		t.Fatalf("ImportDWGFile: %v", err)
 	}
