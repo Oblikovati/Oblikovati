@@ -4,6 +4,7 @@ package compdef_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -199,10 +200,14 @@ func TestRestoreSnapshotRejectsBadSnapshots(t *testing.T) {
 		t.Errorf("part mutated by a failed parse-restore: %d sketches, want 1 untouched", def.Sketches().Count())
 	}
 
-	good, err := def.MarshalSnapshot()
+	// A rich part so a corrupt section fails at its specific apply step (units → parameters →
+	// work features → sketches → features), each covering a distinct restore-error branch.
+	_, rich := richPart(t)
+	good, err := rich.MarshalSnapshot()
 	if err != nil {
 		t.Fatalf("MarshalSnapshot: %v", err)
 	}
+	// String-level corruptions of scalar fields.
 	for _, c := range []struct{ name, find, repl string }{
 		{"bad parameter expression", "4 cm", "(((("},
 		{"unknown unit", `"length":"mm"`, `"length":"#bad#"`},
@@ -211,8 +216,19 @@ func TestRestoreSnapshotRejectsBadSnapshots(t *testing.T) {
 		if corrupt == string(good) {
 			t.Fatalf("%s: corruption pattern %q not found in snapshot", c.name, c.find)
 		}
-		if err := def.RestoreSnapshot([]byte(corrupt)); err == nil {
+		if err := rich.RestoreSnapshot([]byte(corrupt)); err == nil {
 			t.Errorf("%s: RestoreSnapshot accepted a semantically-invalid snapshot", c.name)
+		}
+	}
+	// Section corruptions: replace a top-level recipe section with an entry whose kind has no
+	// restore codec, so apply fails at exactly that stage.
+	for _, c := range []struct{ key, entry string }{
+		{"WorkFeatures", `[{"Kind":"#nope#"}]`},
+		{"Sketches", `[{"Entities":[{"Kind":"#nope#"}]}]`},
+		{"Features", `[{"Kind":"#nope#"}]`},
+	} {
+		if err := rich.RestoreSnapshot(corruptSection(t, good, c.key, c.entry)); err == nil {
+			t.Errorf("RestoreSnapshot accepted a corrupt %s section", c.key)
 		}
 	}
 
@@ -230,6 +246,26 @@ func TestRestoreSnapshotRejectsBadSnapshots(t *testing.T) {
 			t.Error("assembly RestoreSnapshot accepted an unknown unit")
 		}
 	}
+}
+
+// corruptSection re-encodes a valid snapshot with one top-level recipe section replaced by entry,
+// for the restore-rejection test. The result is structurally valid JSON whose content fails to
+// apply at that section.
+func corruptSection(t *testing.T, good []byte, key, entry string) []byte {
+	t.Helper()
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(good, &m); err != nil {
+		t.Fatalf("unmarshal snapshot: %v", err)
+	}
+	if _, ok := m[key]; !ok {
+		t.Fatalf("snapshot has no %q section to corrupt", key)
+	}
+	m[key] = json.RawMessage(entry)
+	out, err := json.Marshal(m)
+	if err != nil {
+		t.Fatalf("re-marshal: %v", err)
+	}
+	return out
 }
 
 // BenchmarkPartSnapshot vs BenchmarkPartMarshalRecipe guard the reason this codec exists: the
