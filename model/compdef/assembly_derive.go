@@ -36,7 +36,7 @@ const parallelFlattenMinRoots = 4
 // flattenSerial walks the whole tree on one goroutine — the small-assembly path and the reference
 // the parallel path must match exactly.
 func flattenSerial(occs *occurrence.Occurrences) []feature.PlacedBody {
-	w := placeWalker{}
+	w := newPlaceWalker()
 	w.walk(occs, math.Identity4(), nil)
 	return w.out
 }
@@ -59,7 +59,7 @@ func flattenParallel(occs *occurrence.Occurrences) []feature.PlacedBody {
 		wg.Add(1)
 		go func(slot, lo, hi int) {
 			defer wg.Done()
-			w := placeWalker{}
+			w := newPlaceWalker()
 			for i := lo; i < hi; i++ {
 				w.place(occs.Item(i), math.Identity4(), nil)
 			}
@@ -103,8 +103,22 @@ func concatPlaced(parts [][]feature.PlacedBody) []feature.PlacedBody {
 // allocated either. Output is byte-for-byte identical to the previous recursion — same DFS order,
 // same paths — so this is a pure allocation cut, not a behaviour change.
 type placeWalker struct {
-	stack []string // current occurrence-name path, reused across the whole walk
-	out   []feature.PlacedBody
+	stack  []string // current occurrence-name path, reused across the whole walk
+	out    []feature.PlacedBody
+	active map[occurrence.Composite]bool // sub-assembly definitions on the current branch (cycle guard)
+	depth  int                           // current recursion depth (depth guard)
+}
+
+// maxAssemblyDepth caps the occurrence-DAG recursion. Real assemblies are 6–8 levels (the
+// automotive benchmark is 7); 256 is a generous backstop so a pathologically deep — or
+// definition-cyclic — tree degrades to a bounded, finite flatten instead of overflowing the stack
+// (M34-F6). The cycle set catches a definition reached through itself directly; the depth cap is the
+// belt-and-braces limit for any other runaway nesting.
+const maxAssemblyDepth = 256
+
+// newPlaceWalker returns a walker with its cycle-guard set initialised.
+func newPlaceWalker() placeWalker {
+	return placeWalker{active: map[occurrence.Composite]bool{}}
 }
 
 // walk descends one occurrence level, composing each child's transform with parent's. flexParent,
@@ -133,13 +147,28 @@ func (w *placeWalker) place(o *occurrence.Occurrence, parent math.Matrix4, flexP
 			w.out = append(w.out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: w.clonePath()})
 		}
 	case occurrence.Composite: // a sub-assembly: recurse, carrying flexible-child overrides
-		var nextFlex *occurrence.Occurrence // reset: a non-flexible sub-assembly clears the override
-		if o.Flexible() {
-			nextFlex = o
-		}
-		w.walk(def.Occurrences(), world, nextFlex)
+		w.descend(def, o, world)
 	}
 	w.stack = w.stack[:len(w.stack)-1]
+}
+
+// descend recurses into a sub-assembly under the cycle and depth guards (M34-F6): a definition
+// already on the current branch (a self-containing assembly) or a branch past maxAssemblyDepth is
+// skipped, so a malformed DAG degrades to a bounded flatten instead of overflowing the stack. The
+// flexible-child override resets unless this occurrence is itself flexible.
+func (w *placeWalker) descend(def occurrence.Composite, o *occurrence.Occurrence, world math.Matrix4) {
+	if w.depth >= maxAssemblyDepth || w.active[def] {
+		return
+	}
+	var nextFlex *occurrence.Occurrence // reset: a non-flexible sub-assembly clears the override
+	if o.Flexible() {
+		nextFlex = o
+	}
+	w.active[def] = true
+	w.depth++
+	w.walk(def.Occurrences(), world, nextFlex)
+	w.depth--
+	delete(w.active, def)
 }
 
 // clonePath returns an owned copy of the current name path; each PlacedBody retains its own, so a

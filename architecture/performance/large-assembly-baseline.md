@@ -118,7 +118,10 @@ driven by the per-frame allocation churn — not GPU submission.
    `BuildBrowser` is only 4.8 MB / 1.1 ms at 30k. The real cost is the `drawNode` cgo
    walk (every node, every frame), which `OBK_FRAME_TIMING`'s new `browserNs` phase now
    measures in-app — re-rank after an in-app capture with the tree expanded.
-6. **F6 — DAG cycle/depth guard (#1205).** Safety before 1M stress runs.
+6. **F6 — DAG cycle/depth guard (#1205). ✅ RESOLVED.** The flatten now tracks the sub-assembly
+   definitions on the current branch (cycle set) and caps recursion at `maxAssemblyDepth` (256), so
+   a self-containing or pathologically deep occurrence DAG degrades to a bounded, finite flatten
+   instead of overflowing the stack. No measurable overhead (guard touches only interior nodes).
 7. **F7 — LOD / impostors (#1206).** The vertex-throughput wall at true 1M, after F1–F5.
 
 ## Reproduce
