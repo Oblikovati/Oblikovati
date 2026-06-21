@@ -84,6 +84,23 @@ func ScaleEntities(entities []Entity, factor float64) []Entity {
 		return entities
 	}
 	m := Affine{{factor, 0, 0, 0}, {0, factor, 0, 0}, {0, 0, factor, 0}}
+	return mapEntities(entities, m)
+}
+
+// TranslateEntities returns the entities shifted by (dx,dy,dz). The importer uses it to
+// recenter a drawing whose coordinates sit far from the origin (georeferenced survey data
+// in the tens of millions) back toward it, so the single-precision GPU vertex buffer keeps
+// sub-unit accuracy. A pure translation leaves radii, axes and angles unchanged, so the
+// shape is preserved exactly. A zero shift returns the input unchanged.
+func TranslateEntities(entities []Entity, dx, dy, dz float64) []Entity {
+	if dx == 0 && dy == 0 && dz == 0 {
+		return entities
+	}
+	return mapEntities(entities, Affine{{1, 0, 0, dx}, {0, 1, 0, dy}, {0, 0, 1, dz}})
+}
+
+// mapEntities applies one affine to every entity, returning a new slice.
+func mapEntities(entities []Entity, m Affine) []Entity {
 	out := make([]Entity, len(entities))
 	for i, e := range entities {
 		out[i] = TransformEntity(e, m)

@@ -114,46 +114,50 @@ func (s *Session) modelBounds() math.Box {
 
 // unionSketchBounds widens box by the model-space extent of the active part's visible 2D and 3D
 // sketches. Curves are sampled the same way the viewport overlay and ray picker sample them
-// (EntityPolyline / SamplePolyline3D), so the framed box matches what is drawn.
+// (EntityPolyline / SamplePolyline3D), so the framed box matches what is drawn. The sample
+// points are framed ROBUSTLY (robustPointBox) so a handful of far-flung entities — e.g. a
+// georeferenced DWG import's off-sheet strays — do not shrink Fit/Home to a sub-pixel dot;
+// ordinary geometry, with no strays, is framed exactly.
 func (s *Session) unionSketchBounds(box math.Box) math.Box {
 	part, err := activePart(s)
 	if err != nil {
 		return box
 	}
+	var pts []math.Point3
 	for i := 0; i < part.Sketches().Count(); i++ {
 		if sk := part.Sketches().Item(i); sk.Visible() {
-			box = unionSketch2DBounds(box, sk)
+			pts = appendSketch2DPoints(pts, sk)
 		}
 	}
 	for i := 0; i < part.Sketches3D().Count(); i++ {
 		if sk := part.Sketches3D().Item(i); sk.Visible() {
-			box = unionSketch3DBounds(box, sk)
+			pts = appendSketch3DPoints(pts, sk)
 		}
 	}
-	return box
+	if len(pts) == 0 {
+		return box
+	}
+	return box.Union(math.RobustPointBox(pts))
 }
 
-// unionSketch2DBounds widens box by a 2D sketch's entities, mapped from sketch space to model
-// space through the sketch plane.
-func unionSketch2DBounds(box math.Box, sk *sketch.Sketch) math.Box {
+// appendSketch2DPoints appends a 2D sketch's entity sample points, mapped from sketch space to
+// model space through the sketch plane.
+func appendSketch2DPoints(pts []math.Point3, sk *sketch.Sketch) []math.Point3 {
 	for _, e := range sk.Entities() {
-		pts, _ := sketch.EntityPolyline(e)
-		for _, p := range pts {
-			m := sk.ToModel(p)
-			box = box.Union(math.NewBox(m, m))
+		poly, _ := sketch.EntityPolyline(e)
+		for _, p := range poly {
+			pts = append(pts, sk.ToModel(p))
 		}
 	}
-	return box
+	return pts
 }
 
-// unionSketch3DBounds widens box by a 3D sketch's entities, already in model space.
-func unionSketch3DBounds(box math.Box, sk *sketch.Sketch3D) math.Box {
+// appendSketch3DPoints appends a 3D sketch's entity sample points (already in model space).
+func appendSketch3DPoints(pts []math.Point3, sk *sketch.Sketch3D) []math.Point3 {
 	for _, e := range sk.Entities() {
-		for _, p := range sketch.SamplePolyline3D(e, sketch3DBoundsSegments) {
-			box = box.Union(math.NewBox(p, p))
-		}
+		pts = append(pts, sketch.SamplePolyline3D(e, sketch3DBoundsSegments)...)
 	}
-	return box
+	return pts
 }
 
 // sketch3DBoundsSegments is the per-curve sample count for the 3D-sketch framing bounds — coarse
