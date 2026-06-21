@@ -1,6 +1,7 @@
 # ADR-0040 — External geometric references for externally-authored topology selections
 
-**Status:** Proposed (spike) (2026-06-21) · **Builds on / refines:**
+**Status:** Accepted — design (2026-06-21); the resolver landed as a spike (`kernel/topo`),
+the feature/API/exporter wiring is the M8 follow-up (see Scope). · **Builds on / refines:**
 [ADR-0018](ADR-0018-api-implementation-split.md) (the API/implementation split this must
 follow), the M31 topological-naming work (F06 tiered binding `model/identity/binding.go`,
 F07 versioned encoding). **Touches (when implemented):** `kernel/topo` (the resolver,
