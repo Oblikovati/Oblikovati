@@ -3,9 +3,11 @@
 package main
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	"oblikovati.org/app"
 	"oblikovati.org/head/internal/addinhost"
 )
 
@@ -35,5 +37,33 @@ func TestIncompatibleNotice(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("multi skip notice %q missing %q", got, want)
 		}
+	}
+}
+
+// TestRegisterResultsSurfacesSkipAsNotice confirms a version-skipped add-in (no loadable
+// libraries) sets the status-bar notice and adds nothing to the loaded set.
+func TestRegisterResultsSurfacesSkipAsNotice(t *testing.T) {
+	h := &addInHost{}
+	session := app.NewSession()
+	skipped := []addinhost.IncompatibleAddIn{{ID: "com.x.bridge", Reason: "newer than host"}}
+
+	h.registerResults(session, nil, skipped, errors.New("read error"))
+
+	if !strings.Contains(session.Notice(), "com.x.bridge") {
+		t.Errorf("notice = %q, want it to name the skipped add-in", session.Notice())
+	}
+	if len(h.loaded) != 0 {
+		t.Errorf("loaded = %d, want 0 (nothing loadable)", len(h.loaded))
+	}
+}
+
+// TestLoadInstalledAddInsEmptyDir exercises the per-user install path against an empty
+// directory: it must load nothing and leave the loaded set empty, without error.
+func TestLoadInstalledAddInsEmptyDir(t *testing.T) {
+	t.Setenv("OBK_USER_ADDINS_DIR", t.TempDir())
+	h := &addInHost{}
+	h.loadInstalledAddIns(app.NewSession())
+	if len(h.loaded) != 0 {
+		t.Errorf("loaded = %d from an empty user dir, want 0", len(h.loaded))
 	}
 }
