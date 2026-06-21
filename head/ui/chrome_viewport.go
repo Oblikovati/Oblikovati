@@ -459,7 +459,7 @@ func renderViewportImage(win *native.Window, s *app.Session, slot int, cam scene
 	tb := frameClock()
 	m, mats, recs := frameMeshAndInstances(s, cam, list, bodyCount, ground, groups)
 	frameStats.buildNs = time.Since(tb).Nanoseconds()
-	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(cam, mn, mx, hasGeom))
+	mvp := renderer.ViewProjection(cam, viewportNear, viewportFarPlane(s, cam, mn, mx, hasGeom))
 	eye := []float32{float32(cam.Eye.X), float32(cam.Eye.Y), float32(cam.Eye.Z)}
 	win.SetViewportLighting(viewport.PackLighting(s.SceneLighting()))
 	applyEnvironment(win, s.Environment())
@@ -682,11 +682,15 @@ const (
 // camera's distance to the scene's bounding sphere, with a margin so the far face isn't
 // exactly on the plane.
 // viewportFarPlane is the per-frame far clip distance: it unions the framed geometry with the
-// finished-sketch overlay extent (farBounds) and computes the adaptive far from that
-// (viewportClipFar). Split so the bounding-sphere math is unit-tested in isolation from the
-// package-level overlay cache.
-func viewportFarPlane(cam scene.Camera, mn, mx [3]float32, hasGeom bool) float64 {
+// finished 2D- and 3D-sketch overlay extents (farBounds + cachedSketch3DBounds) and computes
+// the adaptive far from that (viewportClipFar). Split so the bounding-sphere math is unit-tested
+// in isolation from the package-level overlay caches.
+func viewportFarPlane(s *app.Session, cam scene.Camera, mn, mx [3]float32, hasGeom bool) float64 {
 	lo, hi, ok := farBounds(mn, mx, hasGeom)
+	if smn, smx, sok := cachedSketch3DBounds(s); sok {
+		lo, hi = unionBounds(lo, hi, ok, smn, smx)
+		ok = true
+	}
 	return viewportClipFar(cam, lo, hi, ok)
 }
 
@@ -696,17 +700,24 @@ func viewportFarPlane(cam scene.Camera, mn, mx [3]float32, hasGeom bool) float64
 // report no bounds and fall back to the fixed far plane, clipping the sketch on zoom-out.
 func farBounds(mn, mx [3]float32, hasGeom bool) (lo, hi [3]float32, ok bool) {
 	lo, hi, ok = mn, mx, hasGeom
-	smn, smx, sok := cachedSketchOverlayBounds()
-	if !sok {
-		return lo, hi, ok
+	if smn, smx, sok := cachedSketchOverlayBounds(); sok {
+		lo, hi = unionBounds(lo, hi, ok, smn, smx)
+		ok = true
 	}
-	if !ok {
-		return smn, smx, true
+	return lo, hi, ok
+}
+
+// unionBounds widens an (optional) box by another box. When the first box is absent (!has) the
+// second becomes the result; otherwise the two are merged component-wise. The result always has
+// bounds, so the caller sets ok = true.
+func unionBounds(lo, hi [3]float32, has bool, omn, omx [3]float32) ([3]float32, [3]float32) {
+	if !has {
+		return omn, omx
 	}
 	for i := 0; i < 3; i++ {
-		lo[i], hi[i] = minF32(lo[i], smn[i]), maxF32(hi[i], smx[i])
+		lo[i], hi[i] = minF32(lo[i], omn[i]), maxF32(hi[i], omx[i])
 	}
-	return lo, hi, true
+	return lo, hi
 }
 
 func viewportClipFar(cam scene.Camera, mn, mx [3]float32, hasGeom bool) float64 {
