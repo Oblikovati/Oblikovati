@@ -4,6 +4,7 @@ package brep
 
 import (
 	"bytes"
+	"sort"
 
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -109,6 +110,70 @@ func intersectionLineage(lo, hi topo.Lineage, dup int) topo.Lineage {
 	toks = append(toks, hi.Tokens()...)
 	if dup > 0 {
 		toks = append(toks, topo.Tok("brep", "seg", dup))
+	}
+	return topo.NewLineage(toks...)
+}
+
+// fragmentMark prefixes a split-face fragment's cutting set; cuttingSep precedes each bordering
+// cutting face so the variable-length set parses unambiguously (the parent tokens, then
+// brep:cut#0, then one brep:by#0 + that face's tokens per cutting face).
+var (
+	fragmentMark = topo.Tok("brep", "cut", 0)
+	cuttingSep   = topo.Tok("brep", "by", 0)
+)
+
+// fragmentCuttingFaces returns the sorted, unique set of OTHER-operand face lineages whose imprint
+// borders the fragment sf of `parent` — the faces that cut this piece out (M31-F04, #1154). Only
+// segments recorded ON the parent (owner == parent) count, so each "other" is a genuine cutting
+// face. The set, not an ordinal index, identifies the piece, so it survives an upstream edit that
+// merely reorders the pieces.
+func fragmentCuttingFaces(parent topo.Lineage, sf subFace, prov []imprintSeg) []topo.Lineage {
+	found := map[string]topo.Lineage{}
+	collect := func(ring []math.Point3) {
+		for i := range ring {
+			mid := ring[i].TranslateBy(ring[i].VectorTo(ring[(i+1)%len(ring)]).Scale(0.5))
+			for _, s := range prov {
+				if bytes.Equal(s.owner.Key(), parent.Key()) && pointOnSegment3(mid, s.a, s.b, edgeParentTol) {
+					found[string(s.other.Key())] = s.other
+				}
+			}
+		}
+	}
+	collect(sf.outer)
+	for _, h := range sf.holes {
+		collect(h)
+	}
+	return sortedLineages(found)
+}
+
+// sortedLineages returns a lineage map's values ordered by key, so a cutting-face SET yields one
+// canonical sequence regardless of discovery order.
+func sortedLineages(m map[string]topo.Lineage) []topo.Lineage {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]topo.Lineage, len(keys))
+	for i, k := range keys {
+		out[i] = m[k]
+	}
+	return out
+}
+
+// fragmentLineage names a split-face fragment by its parent plus the canonical set of cutting
+// faces bordering it: parent / brep:cut#0 / (brep:by#0 / cuttingFace)*. `dup` disambiguates two
+// fragments of one face that share the same cutting set (a single straight cut halving a face) —
+// 0 in the common distinct-border case, an interim index F05 (#1155) replaces geometrically.
+func fragmentLineage(parent topo.Lineage, cutting []topo.Lineage, dup int) topo.Lineage {
+	toks := append([]topo.LineageToken{}, parent.Tokens()...)
+	toks = append(toks, fragmentMark)
+	for _, c := range cutting {
+		toks = append(toks, cuttingSep)
+		toks = append(toks, c.Tokens()...)
+	}
+	if dup > 0 {
+		toks = append(toks, topo.Tok("brep", "frag", dup))
 	}
 	return topo.NewLineage(toks...)
 }
