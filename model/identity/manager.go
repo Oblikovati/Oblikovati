@@ -64,6 +64,7 @@ func (m *KeyManager) GetReferenceKey(id ContextID, e Entity) (RefKey, error) {
 		payload: payload,
 		parent:  parentHint(e.Lineage()),
 		anchor:  anchorOf(e),
+		scheme:  SchemeCurrent,
 	}, nil
 }
 
