@@ -39,6 +39,14 @@ int  obk_ig_tree_node_selectable(const char* label, int selected);
 void obk_ig_tree_pop(void);
 void obk_ig_bullet_text(const char* s);
 void obk_ig_set_item_tooltip(const char* s);
+void obk_ig_clipper_begin(int items);
+void obk_ig_clipper_include_item(int item);
+int  obk_ig_clipper_step(void);
+int  obk_ig_clipper_display_start(void);
+int  obk_ig_clipper_display_end(void);
+void obk_ig_clipper_end(void);
+void obk_ig_indent(float w);
+void obk_ig_unindent(float w);
 void obk_ig_progress_bar(float fraction, float w, const char* overlay);
 void obk_ig_main_viewport_size(float* w, float* h);
 float obk_ig_hover_seconds(void);
@@ -675,6 +683,33 @@ func TreeNodeSelectable(label string, selected bool) bool {
 	return C.obk_ig_tree_node_selectable(c, cBool(selected)) != 0
 }
 func TreePop() { C.obk_ig_tree_pop() }
+
+// ClipperBegin starts an ImGuiListClipper over items uniform-height rows, so only the rows that
+// fall inside the scroll viewport are submitted — the virtualization behind the large model
+// browser (M34-F3). Drive it with ClipperStep/ClipperRange and finish with ClipperEnd. Row height
+// is auto-measured from the first submitted row, so all rows must be the same height.
+func ClipperBegin(items int) { C.obk_ig_clipper_begin(C.int(items)) }
+
+// ClipperIncludeItem forces a row index to be submitted even when off-screen — used so a selected
+// row that is scrolled out can still call SetScrollHereY to bring itself into view. Call BEFORE the
+// first ClipperStep.
+func ClipperIncludeItem(item int) { C.obk_ig_clipper_include_item(C.int(item)) }
+
+// ClipperStep advances the clipper; it reports whether there is a visible range to draw this step.
+func ClipperStep() bool { return C.obk_ig_clipper_step() != 0 }
+
+// ClipperRange is the [start,end) row index range to draw for the current step.
+func ClipperRange() (int, int) {
+	return int(C.obk_ig_clipper_display_start()), int(C.obk_ig_clipper_display_end())
+}
+
+// ClipperEnd finishes the clipper, restoring the cursor to past the full virtual list height.
+func ClipperEnd() { C.obk_ig_clipper_end() }
+
+// Indent / Unindent shift the cursor by w pixels, used to render a flattened tree row at its depth
+// (the clipper draws a flat list, so nesting indentation is applied manually).
+func Indent(w float32)   { C.obk_ig_indent(C.float(w)) }
+func Unindent(w float32) { C.obk_ig_unindent(C.float(w)) }
 
 // BulletText draws a leaf row with a bullet (browser leaves).
 func BulletText(s string) {

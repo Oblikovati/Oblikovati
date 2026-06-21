@@ -125,6 +125,19 @@ int  obk_ig_tree_node_selectable(const char* label, int selected) {
 }
 void obk_ig_tree_pop(void)                   { ImGui::TreePop(); }
 void obk_ig_bullet_text(const char* s)       { ImGui::BulletText("%s", s); }
+
+// ImGuiListClipper virtualizes a uniform-height row list: only the rows inside the scroll viewport
+// are submitted (M34-F3, the large model browser). The render loop is single-threaded and these
+// flat leaf lists never nest a clipper inside another, so one static instance is reused per frame.
+static ImGuiListClipper g_obk_clipper;
+void obk_ig_clipper_begin(int items)         { g_obk_clipper.Begin(items, -1.0f); }
+void obk_ig_clipper_include_item(int item)   { g_obk_clipper.IncludeItemByIndex(item); }
+int  obk_ig_clipper_step(void)               { return g_obk_clipper.Step() ? 1 : 0; }
+int  obk_ig_clipper_display_start(void)      { return g_obk_clipper.DisplayStart; }
+int  obk_ig_clipper_display_end(void)        { return g_obk_clipper.DisplayEnd; }
+void obk_ig_clipper_end(void)                { g_obk_clipper.End(); }
+void obk_ig_indent(float w)                  { ImGui::Indent(w); }
+void obk_ig_unindent(float w)                { ImGui::Unindent(w); }
 void obk_ig_set_item_tooltip(const char* s)  { ImGui::SetItemTooltip("%s", s); }
 // progress_bar draws a determinate bar of the given pixel width; overlay text ("")
 // falls back to ImGui's percentage.
