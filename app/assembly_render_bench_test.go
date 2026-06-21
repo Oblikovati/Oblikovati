@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/benchgen"
+	"oblikovati.org/scene"
 )
 
 // benchAssembly builds the committed 30k automotive benchmark assembly once and shares
@@ -61,6 +62,29 @@ func BenchmarkWorldAssemblyBodies(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		s.asmBodies = assemblyBodyCache{} // bust the revision cache to measure the rebuild
 		_ = s.worldAssemblyBodies(asm)
+	}
+}
+
+// BenchmarkCulledInstances measures the F1 fix: per-instance frustum culling over the 30k
+// assembly via the BVH, for a zoomed-in view where most of the car is off-screen. Compare its
+// transform count and allocs against BenchmarkVisibleInstances (which emits every placement). The
+// index build is warmed out of the loop so the loop times the frustum query + grouping.
+func BenchmarkCulledInstances(b *testing.B) {
+	s := largeAssemblySession(b)
+	asm, err := activeAssembly(s)
+	if err != nil {
+		b.Fatal(err)
+	}
+	// A tight view near one corner of the model: zoom in so culling has real work to do.
+	root := s.assemblyPickIndexFor(asm).nodes[0].box
+	cam := scene.NewCamera(1920, 1080)
+	cam.Eye = root.Min.TranslateBy(math.V3(0, 0, 50))
+	cam.Target = root.Min
+	b.Logf("culled %d of %d transforms in view", countTransforms(s.CulledInstances(cam)), countTransforms(s.VisibleInstances()))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = s.CulledInstances(cam)
 	}
 }
 

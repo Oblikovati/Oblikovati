@@ -88,11 +88,15 @@ driven by the per-frame allocation churn — not GPU submission.
    only the placements it actually crosses. The same selection is now **362 B / 18.5 µs / 7
    allocs** — a ~5.6-million× drop in allocation and ~83,000× in time. Picking was the highest
    severity (it blocked basic interaction); it is now the cheapest hot path.
-2. **F1 — cull + retain the instanced frame mesh (#1200).** `instanceBuilder.appendStream`
-   is 53% of orbit allocation because the merged vertex/index/instance streams are rebuilt
-   every frame for every instance with no culling and no frame-mesh caching. Scope:
-   per-instance frustum culling + a spatial index, AND retain/dirty-flag the merged frame
-   mesh instead of rebuilding it. ~725 MB/frame today.
+2. **F1 — per-instance frustum culling (#1200). ✅ RESOLVED.** The instanced path emitted a
+   matrix + draw for every placement every frame regardless of view. Fixed with a frustum
+   broad phase over the F5 placement BVH (`scene.Frustum` + `Session.CulledInstances`): a
+   zoomed corner view of the 30k car now reaches the GPU with **19 of 29,900 transforms**, and
+   the culled query is 9.4 µs / 4.4 KB vs `VisibleInstances`' 10.75 ms / 44 MB (it reuses the
+   cached index instead of re-flattening). This is the win for zoomed views and the 1M target.
+   **Still open (separate from culling):** at a *full-frame* orbit everything is in view, so the
+   53%-of-allocation `instanceBuilder.appendStream` rebuild of the merged frame mesh remains —
+   tracked as **F1b retain/dirty-flag the merged frame mesh (#1210)**. ~725 MB/frame today.
 3. **F2 — parallel + cached transform traversal (#1201).** `collectPlacedBodies` is
    31 MB / 62k allocs every flatten (render + propagation both pay it), single-threaded,
    rebuilt wholesale. Also re-derives `topo.*.Edges` (~28% of orbit alloc) — cache edges

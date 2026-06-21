@@ -60,7 +60,8 @@ type OrbitResult struct {
 
 // orbitScenario sweeps the camera a full turn around the framed assembly, rendering one
 // frame per step through the real DrawChrome path and recording each frame's wall time —
-// the ViewCube-orbit stress that exercises command-buffer recording and (absent) culling.
+// the ViewCube-orbit stress that exercises command-buffer recording and per-instance frustum
+// culling (M34-F1: as the view turns, the off-screen part of the car is dropped before upload).
 func orbitScenario(win *native.Window, s *app.Session, frames int) OrbitResult {
 	if frames < 2 {
 		frames = 2

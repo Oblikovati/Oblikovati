@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/occurrence"
+	"oblikovati.org/scene"
 )
 
 // InstanceGroup is one unique component mesh and the world transforms it is drawn at — the
@@ -38,6 +39,22 @@ func (s *Session) VisibleInstances() []InstanceGroup {
 		}
 	}
 	return out
+}
+
+// CulledInstances returns the render instance groups limited to the components whose world AABB is
+// inside the camera frustum — per-instance frustum culling backed by the assembly BVH, so off-screen
+// placements never reach the GPU upload (M34-F1, essential at the 1M-placement target). Grouping
+// matches VisibleInstances (by shared source body, first-seen order), so the head's per-source mesh
+// cache still hits. A part — or no active assembly — has no index and is small, so it returns the
+// full VisibleInstances unchanged. Use VisibleInstances (not this) for framing/shadow bounds, which
+// must cover the whole model regardless of view.
+func (s *Session) CulledInstances(cam scene.Camera) []InstanceGroup {
+	asm, err := activeAssembly(s)
+	if err != nil {
+		return s.VisibleInstances()
+	}
+	idx := s.assemblyPickIndexFor(asm)
+	return idx.groupPlacements(idx.frustumPlacements(cam.Frustum()))
 }
 
 // assemblyInstances groups the assembly's placed bodies by their shared source body pointer (copies
