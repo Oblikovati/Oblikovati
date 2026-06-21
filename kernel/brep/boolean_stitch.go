@@ -157,8 +157,9 @@ func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.
 	uses := collectEdgeUses(faces)
 	bld := topo.NewBuilder(allUsesPaired(uses), topo.NewLineage(topo.Tok("brep", "body", 0)))
 	tv := make([]*topo.Vertex, len(verts))
+	vlin := vertexLineages(verts, faces, prov)
 	for i, p := range verts {
-		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok("brep", "vertex", i)))
+		tv[i] = bld.AddVertex(p, vlin[i])
 	}
 	useEdge := buildResolvedEdges(bld, verts, tv, uses, faces, prov)
 	for fi, f := range faces {

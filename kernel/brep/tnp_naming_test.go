@@ -182,3 +182,88 @@ func TestSurvivingFaceKeyIsTheWorkingBaseline(t *testing.T) {
 		t.Fatal("an untouched side face's key did not survive the edit — the K1a baseline is broken")
 	}
 }
+
+// holedSlotWall builds the one geometry where two edges share a parent pair: a plate with a
+// through-hole (x∈[5,15], y∈[3,7]) whose top face is non-convex, then a slot (x∈[8,12]) whose −X
+// wall at x=8 crosses that top in TWO disjoint intervals (y∈[0,3] and y∈[7,10]). Both edges are
+// (plate top × slot wall), so they need the F05 disambiguator. The scene is offset by (ox,oy) to
+// probe transform-invariance.
+func holedSlotWall(t *testing.T, ox, oy float64) *topo.Body {
+	t.Helper()
+	plate := cutDifference(t, boxNamed("plate", ox, oy, 0, 20, 10, 4), boxNamed("hole", ox+5, oy+3, -1, 10, 4, 6))
+	return cutDifference(t, plate, boxNamed("slot", ox+8, oy-1, 2, 4, 12, 4))
+}
+
+// wallEdgeKeysAtX8 returns the reference keys of the two top-face (z=4) edges on the slot's −X
+// wall (x=ox+8), split by whether they lie below or above the hole, so the SAME geometric edge is
+// identified across two builds.
+func wallEdgeKeysAtX8(b *topo.Body, ox, oy float64) (lower, upper []byte) {
+	for _, e := range b.Edges() {
+		m := edgeMidpoint(e)
+		if stdmath.Abs(float64(m.Z-4)) > 1e-6 || stdmath.Abs(float64(m.X-(ox+8))) > 1e-6 {
+			continue
+		}
+		if float64(m.Y) < oy+5 {
+			lower = e.ReferenceKey()
+		} else {
+			upper = e.ReferenceKey()
+		}
+	}
+	return lower, upper
+}
+
+// TestSamePairEdgesGetDistinctTransformInvariantKeys (F05, #1155): two intersection edges sharing
+// one parent pair must get DISTINCT keys, and the disambiguation — their order along the parents'
+// intersection line — must be invariant under a rigid translation of the whole part (the property
+// occurrence placement needs, #735), unlike a build-order counter.
+func TestSamePairEdgesGetDistinctTransformInvariantKeys(t *testing.T) {
+	lo0, hi0 := wallEdgeKeysAtX8(holedSlotWall(t, 0, 0), 0, 0)
+	if lo0 == nil || hi0 == nil {
+		t.Fatal("expected two same-pair wall edges below and above the hole (harness invalid)")
+	}
+	if bytes.Equal(lo0, hi0) {
+		t.Errorf("the two same-parent-pair edges share one key (collision):\n %q", lo0)
+	}
+
+	// Same part translated far from the origin: each edge must keep its key.
+	loT, hiT := wallEdgeKeysAtX8(holedSlotWall(t, 1000, 2000), 1000, 2000)
+	if !bytes.Equal(lo0, loT) || !bytes.Equal(hi0, hiT) {
+		t.Errorf("same-pair edge keys are not transform-invariant:\n lower %q -> %q\n upper %q -> %q",
+			lo0, loT, hi0, hiT)
+	}
+}
+
+// vertexKeyAt returns the reference key of the body vertex at p, if any.
+func vertexKeyAt(b *topo.Body, p math.Point3) ([]byte, bool) {
+	for _, v := range b.Vertices() {
+		if float64(v.Point().DistanceTo(p)) < 1e-9 {
+			return v.ReferenceKey(), true
+		}
+	}
+	return nil, false
+}
+
+// TestIntersectionVertexNamedByMeetingFaces (F05, #1155): a vertex the boolean creates is named by
+// the SET of faces meeting at it, so its key is meaningful and invariant under a rigid placement —
+// unlike the raw ordinal it carried before. A plain original corner keeps its ordinal.
+func TestIntersectionVertexNamedByMeetingFaces(t *testing.T) {
+	// (8,0,4): the slot's −X wall, the top, and the front face meet — an intersection vertex.
+	k0, ok0 := vertexKeyAt(holedSlotWall(t, 0, 0), math.P3(8, 0, 4))
+	if !ok0 {
+		t.Fatal("expected an intersection vertex at the slot rim corner (harness invalid)")
+	}
+	if !bytes.Contains(k0, []byte("brep:meet")) {
+		t.Errorf("intersection vertex is not named by its meeting faces: %q", k0)
+	}
+
+	kT, okT := vertexKeyAt(holedSlotWall(t, 1000, 2000), math.P3(1008, 2000, 4))
+	if !okT || !bytes.Equal(k0, kT) {
+		t.Errorf("intersection vertex key is not transform-invariant:\n at origin   %q\n translated  %q", k0, kT)
+	}
+
+	// An original plate corner lies on no imprint, so it keeps an ordinal vertex key.
+	corner, ok := vertexKeyAt(holedSlotWall(t, 0, 0), math.P3(0, 0, 0))
+	if !ok || !bytes.Contains(corner, []byte("brep:vertex#")) {
+		t.Errorf("an original corner should keep an ordinal vertex key, got %q (found=%v)", corner, ok)
+	}
+}
