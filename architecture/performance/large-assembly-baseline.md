@@ -114,10 +114,15 @@ driven by the per-frame allocation churn — not GPU submission.
    distinct face/edge/vertex lists are now precomputed once at body finalization (immutable
    topology) and returned from cache — per-query 6 allocs/223 ns → 1 alloc/21 ns, full-frame 30k
    orbit allocation 738 MB → 603 MB.
-4. **F4 — Vulkan frames-in-flight + DEVICE_LOCAL geometry (#1203).** Not isolable on
-   lavapipe, but the architecture (per-frame full stall + per-frame HOST_VISIBLE
-   re-upload of the whole scene) is the next wall on real GPUs once F1/F2 cut the CPU
-   churn; first-frame upload is already multi-second.
+4. **F4 — DEVICE_LOCAL geometry + dirty-flag re-upload (#1203). ✅ RESOLVED.** The native pass
+   rebuilt two `std::vector`s by concatenating all six streams and re-uploaded the whole scene
+   through HOST_VISIBLE memory *every frame*, even when (post-F1b) the geometry was unchanged. Now
+   the geometry lives in DEVICE_LOCAL buffers, uploaded via a staging copy + barrier only when the
+   geometry key changes; an orbit reuses the buffers and skips the concatenation and copy entirely.
+   **30k orbit wall time 523 ms → 274 ms** (native per-frame concatenation/upload eliminated;
+   instance matrices stay HOST_VISIBLE, per-frame). The remaining per-frame `vkWaitForFences` CPU
+   stall is split out as **F4b (#1218)** — it needs a real discrete GPU to measure and an
+   offscreen→ImGui GPU-semaphore (or double-buffered targets), so it is not validatable on lavapipe.
 5. **F3 — virtualized browser tree (#1202). ✅ RESOLVED.** `BuildBrowser` itself is cheap (4.8 MB /
    1.1 ms); the cost was the `drawNode` cgo walk over every node every frame. Now any long
    contiguous run of leaf sibling rows (bodies, occurrences) is drawn through an `ImGuiListClipper`
