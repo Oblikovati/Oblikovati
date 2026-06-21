@@ -134,14 +134,9 @@ func imprintAll(fa, fb []planarFace) (impA, impB [][][2]math.Point3) {
 	impB = make([][][2]math.Point3, len(fb))
 	for i := range fa {
 		for j := range fb {
-			if coplanar(fa[i], fb[j]) {
-				impA[i] = append(impA[i], coplanarOverlapSegments(fa[i], faceEdges3D(fb[j]))...)
-				impB[j] = append(impB[j], coplanarOverlapSegments(fb[j], faceEdges3D(fa[i]))...)
-				continue
-			}
-			segs := imprint(fa[i], fb[j])
-			impA[i] = append(impA[i], interiorSegments(fa[i], segs)...)
-			impB[j] = append(impB[j], interiorSegments(fb[j], segs)...)
+			onA, onB := pairImprints(fa[i], fb[j])
+			impA[i] = append(impA[i], onA...)
+			impB[j] = append(impB[j], onB...)
 		}
 	}
 	return impA, impB
