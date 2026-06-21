@@ -91,3 +91,24 @@ func canonicalPair(x, y topo.Lineage) (lo, hi topo.Lineage) {
 	}
 	return y, x
 }
+
+// intersectionSep separates the two parent lineages in an intersection edge's name. Its feature
+// id "brep" and role "x" (for "crossing") carry no separators, so the composed key parses
+// unambiguously (lo tokens / brep:x#0 / hi tokens).
+var intersectionSep = topo.Tok("brep", "x", 0)
+
+// intersectionLineage names an edge born where two faces cross by the canonical concatenation of
+// its two PARENT faces' lineages: lo / brep:x#0 / hi. Because the parents are the ORIGINAL faces
+// (captured before any split), this name is invariant to how those faces are later subdivided and
+// to the stitch's vertex ordering — the property the ordinal index lacked (#1153). `dup` is 0 for
+// the common one-edge-per-pair case; a second edge sharing the same parent pair (a face crossed
+// twice) gets dup>0, an interim disambiguator the geometric one in F05 (#1155) replaces.
+func intersectionLineage(lo, hi topo.Lineage, dup int) topo.Lineage {
+	toks := append([]topo.LineageToken{}, lo.Tokens()...)
+	toks = append(toks, intersectionSep)
+	toks = append(toks, hi.Tokens()...)
+	if dup > 0 {
+		toks = append(toks, topo.Tok("brep", "seg", dup))
+	}
+	return topo.NewLineage(toks...)
+}

@@ -55,20 +55,42 @@ func allUsesPaired(uses map[[2]int][]loopEdgeUse) bool {
 // tangent/grazing contact between the operands — is split by resolveEdgeUses into manifold
 // pairs, each its own coincident edge between the same endpoints, so no edge ends up shared by
 // more than two faces.
-func buildResolvedEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, uses map[[2]int][]loopEdgeUse, faces []builtFace) map[[3]int]*topo.Edge {
+//
+// Each edge is named by its GENERATING PARENTS when prov resolves it to an intersection of two
+// faces (#1153) — a name invariant to the stitch's vertex ordering, unlike the ordinal index
+// used as a fallback for edges with no provenance (original face boundaries, and callers that
+// pass nil such as the drilled-hole path).
+func buildResolvedEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, uses map[[2]int][]loopEdgeUse, faces []builtFace, prov []imprintSeg) map[[3]int]*topo.Edge {
 	keys := sortedPairKeys(uses)
 	useEdge := make(map[[3]int]*topo.Edge)
+	dups := map[string]int{} // per parent-pair counter, so two edges of one pair never collide
 	idx := 0
 	for _, k := range keys {
 		for _, group := range resolveEdgeUses(k, uses[k], verts, faces) {
-			e := bld.AddEdge(geom.NewLineSegment(verts[k[0]], verts[k[1]]), tv[k[0]], tv[k[1]], topo.NewLineage(topo.Tok("brep", "edge", idx)))
-			idx++
+			lin := edgeLineage(verts[k[0]], verts[k[1]], prov, dups, &idx)
+			e := bld.AddEdge(geom.NewLineSegment(verts[k[0]], verts[k[1]]), tv[k[0]], tv[k[1]], lin)
 			for _, h := range group {
 				useEdge[[3]int{h.face, h.ring, h.pos}] = e
 			}
 		}
 	}
 	return useEdge
+}
+
+// edgeLineage returns an edge's lineage: its parent-pair name when prov attributes the edge p→q
+// to a face crossing, else the ordinal fallback (incrementing idx). dups disambiguates the rare
+// case of two edges sharing one parent pair.
+func edgeLineage(p, q math.Point3, prov []imprintSeg, dups map[string]int, idx *int) topo.Lineage {
+	lo, hi, ok := edgeParents(p, q, prov)
+	if !ok {
+		lin := topo.NewLineage(topo.Tok("brep", "edge", *idx))
+		*idx++
+		return lin
+	}
+	pairKey := string(lo.Key()) + "\x00" + string(hi.Key())
+	dup := dups[pairKey]
+	dups[pairKey]++
+	return intersectionLineage(lo, hi, dup)
 }
 
 // sortedPairKeys returns the vertex pairs in ascending order for stable edge lineage.

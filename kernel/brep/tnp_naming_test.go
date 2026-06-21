@@ -130,10 +130,11 @@ func TestGeneratedEdgeKeySurvivesUpstreamEdit(t *testing.T) {
 		t.Fatalf("rim edge not found at %v after the edit (harness invalid)", rimMidpoint)
 	}
 
+	// Fixed in F03 (#1153): the rim edge is named by its parent faces (base top × tool wall),
+	// so the lower-X prong no longer renumbers it.
 	if !bytes.Equal(key, e2.ReferenceKey()) {
-		t.Skip("pending #1153 (M31-F03): boolean-generated edges are named by their rank in the " +
-			"stitch's coordinate ordering, so adding a feature at a lower coordinate renumbers the " +
-			"key. Un-skip when parent-derived edge naming lands.")
+		t.Errorf("generated edge key changed across an unrelated edit:\n before = %q\n after  = %q",
+			key, e2.ReferenceKey())
 	}
 }
 

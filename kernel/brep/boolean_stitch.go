@@ -21,7 +21,7 @@ import (
 // resolved (an edge used by more than two faces): operand B nudged along it separates from the
 // contact, so a re-run yields a non-degenerate, re-weld-safe result. It is the zero vector when
 // the result is already clean.
-func stitch(faces []subFace) (*topo.Body, math.Vector3, error) {
+func stitch(faces []subFace, prov []imprintSeg) (*topo.Body, math.Vector3, error) {
 	if len(faces) == 0 {
 		return nil, math.Vector3{}, nil
 	}
@@ -45,7 +45,7 @@ func stitch(faces []subFace) (*topo.Body, math.Vector3, error) {
 		}
 	}
 	reorientFaces(out, w.points)
-	body, away := assemble(w.points, out)
+	body, away := assemble(w.points, out, prov)
 	return body, away, nil
 }
 
@@ -153,14 +153,14 @@ type builtFace struct {
 // non-manifold edge if collapsed onto one edge — the uses are split into manifold pairs by
 // radial order around the edge (resolveEdgeUses), so each resulting edge is used exactly
 // twice. This keeps a tangent union a valid manifold solid (M20-F01).
-func assemble(verts []math.Point3, faces []builtFace) (*topo.Body, math.Vector3) {
+func assemble(verts []math.Point3, faces []builtFace, prov []imprintSeg) (*topo.Body, math.Vector3) {
 	uses := collectEdgeUses(faces)
 	bld := topo.NewBuilder(allUsesPaired(uses), topo.NewLineage(topo.Tok("brep", "body", 0)))
 	tv := make([]*topo.Vertex, len(verts))
 	for i, p := range verts {
 		tv[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok("brep", "vertex", i)))
 	}
-	useEdge := buildResolvedEdges(bld, verts, tv, uses, faces)
+	useEdge := buildResolvedEdges(bld, verts, tv, uses, faces, prov)
 	for fi, f := range faces {
 		specs := make([]topo.LoopSpec, len(f.rings))
 		for ri, r := range f.rings {
