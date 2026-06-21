@@ -50,6 +50,15 @@ func sibling(parent, child string, p math.Point3, located bool) kinNode {
 	}
 }
 
+// equidistantSiblings is two anchored ext#1 siblings, symmetric about the origin —
+// the ambiguous case both the tie and no-anchor tests model.
+func equidistantSiblings() []Entity {
+	return []Entity{
+		sibling("ext#1", "edge#7", math.P3(5, 0, 0), true),
+		sibling("ext#1", "edge#8", math.P3(-5, 0, 0), true),
+	}
+}
+
 func mintKey(t *testing.T, m *KeyManager, ctx ContextID, e Entity) RefKey {
 	t.Helper()
 	k, err := m.GetReferenceKey(ctx, e)
@@ -59,14 +68,23 @@ func mintKey(t *testing.T, m *KeyManager, ctx ContextID, e Entity) RefKey {
 	return k
 }
 
+// mintFor stands up a manager holding entities, keys keyed (which must be one of
+// them), and returns the manager, its mutable source, and the key — the common
+// arrange step for every rebind test. Mutate src.entities to model the edit, then
+// BindKeyToObject(key).
+func mintFor(t *testing.T, keyed Entity, entities ...Entity) (*KeyManager, *fakeSource, RefKey) {
+	t.Helper()
+	m := NewKeyManager()
+	src := &fakeSource{entities: entities}
+	ctx := m.CreateKeyContext(src)
+	return m, src, mintKey(t, m, ctx, keyed)
+}
+
 // --- ancestral tier ---
 
 func TestAncestralBindsLoneSurvivingSibling(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(0, 0, 0), false)
-	src := &fakeSource{entities: []Entity{keyed, sibling("ext#1", "edge#4", math.P3(0, 0, 0), false)}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed, sibling("ext#1", "edge#4", math.P3(0, 0, 0), false))
 
 	// The exact edge#3 is gone; one sibling under ext#1 survives (renamed edge#9).
 	src.entities = []Entity{sibling("ext#1", "edge#9", math.P3(0, 0, 0), false)}
@@ -81,11 +99,8 @@ func TestAncestralBindsLoneSurvivingSibling(t *testing.T) {
 }
 
 func TestAncestralMissWhenNoSiblingSharesParent(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(0, 0, 0), false)
-	src := &fakeSource{entities: []Entity{keyed}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed)
 
 	// Survivor belongs to a different parent — not a sibling, so the reference is lost.
 	src.entities = []Entity{sibling("ext#2", "edge#3", math.P3(0, 0, 0), false)}
@@ -96,11 +111,8 @@ func TestAncestralMissWhenNoSiblingSharesParent(t *testing.T) {
 }
 
 func TestRootLineageHasNoAncestralFallback(t *testing.T) {
-	m := NewKeyManager()
 	keyed := kinNode{kind: KindFace, lin: tokenLineage{key: "base", parent: ""}}
-	src := &fakeSource{entities: []Entity{keyed}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed)
 
 	src.entities = []Entity{kinNode{kind: KindFace, lin: tokenLineage{key: "base2", parent: ""}}}
 
@@ -110,11 +122,8 @@ func TestRootLineageHasNoAncestralFallback(t *testing.T) {
 }
 
 func TestAncestralSiblingMustMatchKind(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(0, 0, 0), false)
-	src := &fakeSource{entities: []Entity{keyed}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed)
 
 	// Same parent, but a vertex — not a candidate for an edge key.
 	src.entities = []Entity{kinNode{kind: KindVertex, lin: tokenLineage{key: "ext#1/vert#0", parent: "ext#1"}}}
@@ -127,11 +136,8 @@ func TestAncestralSiblingMustMatchKind(t *testing.T) {
 // --- geometric tier ---
 
 func TestGeometricPicksNearestAmbiguousSibling(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(10, 0, 0), true)
-	src := &fakeSource{entities: []Entity{keyed}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed)
 
 	// Exact gone; two siblings survive — disambiguate by nearness to the mint anchor.
 	far := sibling("ext#1", "edge#7", math.P3(-10, 0, 0), true)
@@ -148,17 +154,11 @@ func TestGeometricPicksNearestAmbiguousSibling(t *testing.T) {
 }
 
 func TestGeometricMissOnEquidistantTie(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(0, 0, 0), true)
-	src := &fakeSource{entities: []Entity{keyed}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed)
 
 	// Two equidistant siblings — no defensible winner.
-	src.entities = []Entity{
-		sibling("ext#1", "edge#7", math.P3(5, 0, 0), true),
-		sibling("ext#1", "edge#8", math.P3(-5, 0, 0), true),
-	}
+	src.entities = equidistantSiblings()
 
 	if _, match := m.BindKeyToObject(key); match != MatchNone {
 		t.Fatalf("match = %v, want none (geometric tie is not defensible)", match)
@@ -166,16 +166,10 @@ func TestGeometricMissOnEquidistantTie(t *testing.T) {
 }
 
 func TestGeometricMissWithoutAnchor(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(0, 0, 0), false) // no anchor captured
-	src := &fakeSource{entities: []Entity{keyed}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed)
 
-	src.entities = []Entity{
-		sibling("ext#1", "edge#7", math.P3(5, 0, 0), true),
-		sibling("ext#1", "edge#8", math.P3(-5, 0, 0), true),
-	}
+	src.entities = equidistantSiblings()
 
 	if _, match := m.BindKeyToObject(key); match != MatchNone {
 		t.Fatalf("match = %v, want none (no anchor to disambiguate)", match)
@@ -185,11 +179,8 @@ func TestGeometricMissWithoutAnchor(t *testing.T) {
 // --- exact path is unchanged by the new tiers ---
 
 func TestExactStillWinsOverSiblings(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(0, 0, 0), true)
-	src := &fakeSource{entities: []Entity{keyed, sibling("ext#1", "edge#4", math.P3(1, 0, 0), true)}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed, sibling("ext#1", "edge#4", math.P3(1, 0, 0), true))
 
 	// edge#3 still present alongside its sibling — exact must win.
 	src.entities = []Entity{sibling("ext#1", "edge#4", math.P3(1, 0, 0), true), keyed}
@@ -205,11 +196,8 @@ func TestExactStillWinsOverSiblings(t *testing.T) {
 // --- health policy: fallback is Warning, true loss is Sick ---
 
 func TestResolveWarnsOnFallbackAndSickensOnLoss(t *testing.T) {
-	m := NewKeyManager()
 	keyed := sibling("ext#1", "edge#3", math.P3(0, 0, 0), false)
-	src := &fakeSource{entities: []Entity{keyed}}
-	ctx := m.CreateKeyContext(src)
-	key := mintKey(t, m, ctx, keyed)
+	m, src, key := mintFor(t, keyed, keyed)
 
 	// Lone sibling survives → ancestral → Warning, entity returned.
 	src.entities = []Entity{sibling("ext#1", "edge#9", math.P3(0, 0, 0), false)}
