@@ -119,8 +119,8 @@ func (st *SelectionFilterState) Filter() *SelectionFilter {
 	}
 }
 
-// selectionKindLabel is the human label shown for a kind in the Selection Filter window.
-func selectionKindLabel(k SelectionKind) string {
+// SelectionKindLabel is the human label shown for a kind in the Selection Filter window.
+func SelectionKindLabel(k SelectionKind) string {
 	switch k {
 	case SelectWorkPoint:
 		return "Work Points"

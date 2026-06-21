@@ -37,133 +37,134 @@ import (
 // it through Execute / the input methods (Click, PressKey…) — there is no GPU or
 // window involved, so "operating the UI" is fully unit-testable (ADR-0014/0004).
 type Session struct {
-	workspace            *doc.Workspace
-	store                doc.Store                // the workspace's persistence backend; nil for in-memory sessions
-	sketchInference      *sketch.InferenceOptions // session inference prefs (M06-F10; nil ⇒ defaults)
-	facetStore           *facetstore.FacetStore   // tolerance-keyed facet/stroke cache (M07 #293; lazy)
-	transientBodies      *bodyapi.TransientBRep   // transient B-rep registry (M07 #628; lazy)
-	commands             *CommandManager
-	bindings             *Bindings              // keyboard shortcut + alias resolver (M05-F17)
-	histories            map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
-	viewState            viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
-	prefs                userprefs.Prefs        // global user preferences (ViewCube show/lock/compass/size/…)
-	prefsStore           userprefs.Store        // persists prefs to the user config dir (nil ⇒ in-session only)
-	bus                  *event.Bus
-	selection            *Selection
-	highlightSets        *HighlightSets // named, colored emphasis groups for add-ins (#157)
-	tool                 *ToolInstance
-	picker               Picker
-	regionPicker         RegionPicker          // resolves a box-select rectangle (nil ⇒ box-select disabled)
-	boxSelect            BoxSelection          // the in-progress rubber-band rectangle, if any
-	zoomWindow           BoxSelection          // the in-progress Zoom Window rubber-band, if any (#913 N16)
-	zoomWindowArmed      bool                  // the Zoom Window tool is armed: the next left-drag zooms
-	constrainedOrbit     bool                  // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
-	steeringWheel        bool                  // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
-	entityDrag           sketchDrag            // the in-progress direct drag of sketch entities, if any
-	cloudMove            cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
-	relaxMode            bool                  // Relax Mode: drag over/fully-constrained sketch geometry (#791)
-	hudEnabled           bool                  // the 2D-sketch dynamic-input HUD is enabled (#790)
-	sketchHUD            sketchHUD             // the dynamic-input HUD's live typing state (#790)
-	dimDrag              dimDragState          // the in-progress drag of a drawing dimension's text/line
-	selectOther          selectOther           // the in-progress Select Other cycle, if any
-	viewHistory          viewHistory           // recorded views for Previous View (F5)
-	selectionPriority    SelectionPriority     // biases no-tool picking (Edge/Face/Part) (#912)
-	selectionFilterState *SelectionFilterState // user-editable no-tool ambient filter + priority order (#1222)
-	camera               scene.Camera
-	camTween             cameraTween
-	driveAnim            driveAnimation
-	sketchReturnCam      scene.Camera
-	activeSketch         *sketch.Sketch
-	activeSketch3D       *sketch.Sketch3D
-	pendingDim           *sketch.DimensionConstraint
-	overlays             []renderer.DrawItem
-	hiddenBodyKeys       map[string]bool                  // scratch hidden-body set used only when no document is active
-	hiddenBodyKeysByDoc  map[doc.ID]map[string]bool       // browser-driven body visibility, scoped per document (#1105)
-	graphics             *clientgraphics.Store            // scratch store used only when no document is active
-	graphicsByDoc        map[doc.ID]*clientgraphics.Store // add-in client/interaction graphics, scoped per document (M05-F05)
-	addins               *AddInManager
-	clientApps           *ClientApplicationRegistry        // external automation drivers (M05-F01)
-	browserPanes         *AddInBrowserPanes                // add-in browser panes (M05-F03)
-	dockableWindows      *AddInDockableWindows             // add-in dockable windows (M05-F03)
-	appOptions           options.All                       // typed per-user option groups (M05-F11)
-	optionsStore         options.Store                     // persists appOptions (nil ⇒ in-session only)
-	statusText           string                            // wire-set status-bar message (M05-F09)
-	messageCenter        *MessageCenter                    // sectioned errors/warnings tree (M05-F09)
-	messageCenterOpen    bool                              // the Messages panel is open
-	progress             *ProgressLedger                   // live progress bars (M05-F09)
-	balloonTips          *BalloonTipCenter                 // notification balloons (M05-F09)
-	prompts              *PromptCenter                     // declarative prompts (M05-F09)
-	dialogMemoryStore    dialogmemory.Store                // persists suppressions + remembered answers
-	miniToolbars         *MiniToolbarRack                  // in-canvas mini-toolbars (M05-F07)
-	fileDialogQueue      []FileDialogRequest               // pending add-in file-dialog asks (M05-F08)
-	webViews             map[string]wire.WebDialogSpec     // presented web views (M05-F08)
-	webViewOrder         []string                          // web views in creation order
-	urlOpener            URLOpener                         // platform URL opener (head-injected)
-	windowFrame          WindowFrameStatus                 // mirrored host-window state (M05-F10)
-	triad                TriadGizmo                        // the move/rotate triad (M05-F13)
-	manipulators         *ManipulatorBoard                 // add-in drag handles (M05-F13)
-	helpSources          map[string]string                 // add-in help bases by source (M05-F14)
-	helpInterceptor      HelpInterceptor                   // before-help veto hook (M05-F14)
-	documentSubTypes     map[doc.SubTypeID]DocumentSubType // registered flavors (M05-F15)
-	documentSubTypeOrder []doc.SubTypeID
-	addinEnvironments    map[Environment]string                           // registered add-in environments (M05-F16)
-	activeAddInEnv       Environment                                      // the entered add-in environment (base when none)
-	markingMenus         map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
-	contextMenus         map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
-	lastCommandID        string                                           // the most recently invoked command, for right-click Repeat (#915 C5)
-	classicContextMenu   bool                                             // right-click shows the classic linear menu instead of the radial marking menu (#915 C8)
-	objectVisibility     wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
-	cmdInput             commandInput                                     // command-alias input box state (M05-F17)
-	cmdLine              *CommandLine                                     // Command Window REPL engine (M26)
-	commandWindowHidden  bool                                             // Command Window docked panel hidden? (M26; inverted so zero ⇒ visible)
-	commandFocusWanted   bool                                             // a cancel/ESC asked to refocus the command input (M26; head clears it)
-	grid                 *GridSettings
-	themes               *theme.Library
-	themeStore           *theme.Store
-	materials            *material.Library
-	materialStore        *material.Store
-	recentDocuments      []string                       // recently opened/saved paths, most recent first (M04-F05)
-	fileMetadata         map[doc.ID][]FileMetadataValue // last save's PopulateFileMetadata harvest (M04-F05)
-	notice               string                         // last user-facing notice (e.g. a failed-commit reason)
-	visualStyle          renderer.VisualStyle           // how the scene is drawn (View tab's Visual Style)
-	lightingStyle        renderer.LightingStyleID       // active lighting preset (View tab's Lighting Style)
-	lighting             renderer.SceneLighting         // the live lighting rig (resolved from the style, then edited)
-	colorSchemes         *colorscheme.Registry          // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
-	colorSchemeRev       uint64                         // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
-	styles               *style.Manager                 // document color styles + style-library cascade (M16-F02 #403/#408)
-	bodyColorStyles      map[string]string              // body reference key → assigned color-style name (M16-F02 #403/#408)
-	displayOptions       display.Options                // app-level display options that parameterize the display modes (M16-F07 #643)
-	chamferFlatCorners   bool                           // default three-edge-corner treatment for new chamfers
-	chamferConcaveOut    bool                           // default concave-edge strategy for new chamfers (true ⇒ outward fill)
-	paramsDialogOpen     bool                           // the Manage ▸ Parameters dialog is open
-	keymapEditorOpen     bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
-	lightingPanelOpen    bool                           // the View ▸ Lighting settings panel is open
-	namedViewsPanelOpen  bool                           // the View ▸ Named Views panel is open (M16-F03 #404)
-	colorStylesPanelOpen bool                           // the Color Styles panel is open (M16-F02 #403/#408)
-	displaySettingsOpen  bool                           // the Display Settings dialog is open (M16-F07 #643)
-	unitsSettingsOpen    bool                           // the Document Settings ▸ Units dialog is open (#146)
-	historyBrowserOpen   bool                           // the Edit ▸ History Browser window is open
-	loadEnvRequested     bool                           // a "Load HDR…" was requested; the head opens the file dialog
-	meshImportRequested  bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
-	pointCloudRequested  bool                           // an "Import Point Cloud…" was requested; the head opens the file dialog (#645)
-	scriptConsoleOpen    bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
-	capturePath          string                         // a requested viewport PNG capture path; the head writes it after render
-	captureWindowPath    string                         // a requested whole-window PNG capture path; the head writes it after the frame composites
-	normalDebug          bool                           // viewport normal-debug render (front green / back red); head reads each frame
-	meshColors           bool                           // viewport mesh-debug-colors render (each face/triangle a distinct color)
-	meshColorsPerTri     bool                           // when meshColors: color per TRIANGLE (else per B-rep face)
-	editScope            editScope                      // while editing a node, hide everything created after it (issue #132)
-	asmBodies            assemblyBodyCache              // memoized world-space assembly bodies + their occurrences (#769)
-	pickIndex            *assemblyPickIndex             // BVH over placement AABBs for sub-linear ray picking (M34-F5)
-	bomPanelOpen         bool                           // the Assemble ▸ Bill of Materials panel is open (#768)
-	bomViewKind          bom.ViewKind                   // the BOM panel's selected view (structured / parts-only)
-	updateCheckRequested bool                           // Help ▸ Check for Updates was clicked; the head runs the (network) check
-	pendingUpdate        *update.Result                 // last update-check outcome to show in the update window; nil = closed
-	txEvents             []sessionTxEvent               // append-only transaction log since app open (for bug reports)
-	bugReport            bugReportState                 // in-progress Help ▸ Report Bug capture+submit, if any
-	bugOutcome           atomic.Pointer[bugResult]      // submit goroutine → frame loop handoff (session never touched off-thread)
-	bugSubmitter         bugSubmitter                   // injectable reporting endpoint (DI; lazily defaults to real HTTP)
-	addInCat             addInCatalogue                 // Add-In Catalogue browse/install state (#1164)
+	workspace                 *doc.Workspace
+	store                     doc.Store                // the workspace's persistence backend; nil for in-memory sessions
+	sketchInference           *sketch.InferenceOptions // session inference prefs (M06-F10; nil ⇒ defaults)
+	facetStore                *facetstore.FacetStore   // tolerance-keyed facet/stroke cache (M07 #293; lazy)
+	transientBodies           *bodyapi.TransientBRep   // transient B-rep registry (M07 #628; lazy)
+	commands                  *CommandManager
+	bindings                  *Bindings              // keyboard shortcut + alias resolver (M05-F17)
+	histories                 map[doc.ID]*docHistory // per-document transaction-event streams (undo/redo)
+	viewState                 viewstate.Store        // per-user document view/camera persistence (nil ⇒ disabled)
+	prefs                     userprefs.Prefs        // global user preferences (ViewCube show/lock/compass/size/…)
+	prefsStore                userprefs.Store        // persists prefs to the user config dir (nil ⇒ in-session only)
+	bus                       *event.Bus
+	selection                 *Selection
+	highlightSets             *HighlightSets // named, colored emphasis groups for add-ins (#157)
+	tool                      *ToolInstance
+	picker                    Picker
+	regionPicker              RegionPicker          // resolves a box-select rectangle (nil ⇒ box-select disabled)
+	boxSelect                 BoxSelection          // the in-progress rubber-band rectangle, if any
+	zoomWindow                BoxSelection          // the in-progress Zoom Window rubber-band, if any (#913 N16)
+	zoomWindowArmed           bool                  // the Zoom Window tool is armed: the next left-drag zooms
+	constrainedOrbit          bool                  // the Constrained Orbit tool is active: left-drag turntables (#913 N10)
+	steeringWheel             bool                  // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
+	entityDrag                sketchDrag            // the in-progress direct drag of sketch entities, if any
+	cloudMove                 cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
+	relaxMode                 bool                  // Relax Mode: drag over/fully-constrained sketch geometry (#791)
+	hudEnabled                bool                  // the 2D-sketch dynamic-input HUD is enabled (#790)
+	sketchHUD                 sketchHUD             // the dynamic-input HUD's live typing state (#790)
+	dimDrag                   dimDragState          // the in-progress drag of a drawing dimension's text/line
+	selectOther               selectOther           // the in-progress Select Other cycle, if any
+	viewHistory               viewHistory           // recorded views for Previous View (F5)
+	selectionPriority         SelectionPriority     // biases no-tool picking (Edge/Face/Part) (#912)
+	selectionFilterState      *SelectionFilterState // user-editable no-tool ambient filter + priority order (#1222)
+	selectionFilterWindowOpen bool                  // the Selection Filter & Priority window is open (#1222)
+	camera                    scene.Camera
+	camTween                  cameraTween
+	driveAnim                 driveAnimation
+	sketchReturnCam           scene.Camera
+	activeSketch              *sketch.Sketch
+	activeSketch3D            *sketch.Sketch3D
+	pendingDim                *sketch.DimensionConstraint
+	overlays                  []renderer.DrawItem
+	hiddenBodyKeys            map[string]bool                  // scratch hidden-body set used only when no document is active
+	hiddenBodyKeysByDoc       map[doc.ID]map[string]bool       // browser-driven body visibility, scoped per document (#1105)
+	graphics                  *clientgraphics.Store            // scratch store used only when no document is active
+	graphicsByDoc             map[doc.ID]*clientgraphics.Store // add-in client/interaction graphics, scoped per document (M05-F05)
+	addins                    *AddInManager
+	clientApps                *ClientApplicationRegistry        // external automation drivers (M05-F01)
+	browserPanes              *AddInBrowserPanes                // add-in browser panes (M05-F03)
+	dockableWindows           *AddInDockableWindows             // add-in dockable windows (M05-F03)
+	appOptions                options.All                       // typed per-user option groups (M05-F11)
+	optionsStore              options.Store                     // persists appOptions (nil ⇒ in-session only)
+	statusText                string                            // wire-set status-bar message (M05-F09)
+	messageCenter             *MessageCenter                    // sectioned errors/warnings tree (M05-F09)
+	messageCenterOpen         bool                              // the Messages panel is open
+	progress                  *ProgressLedger                   // live progress bars (M05-F09)
+	balloonTips               *BalloonTipCenter                 // notification balloons (M05-F09)
+	prompts                   *PromptCenter                     // declarative prompts (M05-F09)
+	dialogMemoryStore         dialogmemory.Store                // persists suppressions + remembered answers
+	miniToolbars              *MiniToolbarRack                  // in-canvas mini-toolbars (M05-F07)
+	fileDialogQueue           []FileDialogRequest               // pending add-in file-dialog asks (M05-F08)
+	webViews                  map[string]wire.WebDialogSpec     // presented web views (M05-F08)
+	webViewOrder              []string                          // web views in creation order
+	urlOpener                 URLOpener                         // platform URL opener (head-injected)
+	windowFrame               WindowFrameStatus                 // mirrored host-window state (M05-F10)
+	triad                     TriadGizmo                        // the move/rotate triad (M05-F13)
+	manipulators              *ManipulatorBoard                 // add-in drag handles (M05-F13)
+	helpSources               map[string]string                 // add-in help bases by source (M05-F14)
+	helpInterceptor           HelpInterceptor                   // before-help veto hook (M05-F14)
+	documentSubTypes          map[doc.SubTypeID]DocumentSubType // registered flavors (M05-F15)
+	documentSubTypeOrder      []doc.SubTypeID
+	addinEnvironments         map[Environment]string                           // registered add-in environments (M05-F16)
+	activeAddInEnv            Environment                                      // the entered add-in environment (base when none)
+	markingMenus              map[Environment]wire.MarkingMenuView             // radial menus per environment (M05-F12)
+	contextMenus              map[string]map[string][]wire.ContextMenuItemSpec // add-in menu injections by kind
+	lastCommandID             string                                           // the most recently invoked command, for right-click Repeat (#915 C5)
+	classicContextMenu        bool                                             // right-click shows the classic linear menu instead of the radial marking menu (#915 C8)
+	objectVisibility          wire.ObjectVisibilityView                        // View ▸ Object-visibility toggles
+	cmdInput                  commandInput                                     // command-alias input box state (M05-F17)
+	cmdLine                   *CommandLine                                     // Command Window REPL engine (M26)
+	commandWindowHidden       bool                                             // Command Window docked panel hidden? (M26; inverted so zero ⇒ visible)
+	commandFocusWanted        bool                                             // a cancel/ESC asked to refocus the command input (M26; head clears it)
+	grid                      *GridSettings
+	themes                    *theme.Library
+	themeStore                *theme.Store
+	materials                 *material.Library
+	materialStore             *material.Store
+	recentDocuments           []string                       // recently opened/saved paths, most recent first (M04-F05)
+	fileMetadata              map[doc.ID][]FileMetadataValue // last save's PopulateFileMetadata harvest (M04-F05)
+	notice                    string                         // last user-facing notice (e.g. a failed-commit reason)
+	visualStyle               renderer.VisualStyle           // how the scene is drawn (View tab's Visual Style)
+	lightingStyle             renderer.LightingStyleID       // active lighting preset (View tab's Lighting Style)
+	lighting                  renderer.SceneLighting         // the live lighting rig (resolved from the style, then edited)
+	colorSchemes              *colorscheme.Registry          // application color schemes — viewport bg + highlight/select palette (M16-F06 #642)
+	colorSchemeRev            uint64                         // bumped on scheme/background change; the head re-applies the viewport colors (live preview)
+	styles                    *style.Manager                 // document color styles + style-library cascade (M16-F02 #403/#408)
+	bodyColorStyles           map[string]string              // body reference key → assigned color-style name (M16-F02 #403/#408)
+	displayOptions            display.Options                // app-level display options that parameterize the display modes (M16-F07 #643)
+	chamferFlatCorners        bool                           // default three-edge-corner treatment for new chamfers
+	chamferConcaveOut         bool                           // default concave-edge strategy for new chamfers (true ⇒ outward fill)
+	paramsDialogOpen          bool                           // the Manage ▸ Parameters dialog is open
+	keymapEditorOpen          bool                           // the Tools ▸ Customize Keyboard panel is open (M05-F17)
+	lightingPanelOpen         bool                           // the View ▸ Lighting settings panel is open
+	namedViewsPanelOpen       bool                           // the View ▸ Named Views panel is open (M16-F03 #404)
+	colorStylesPanelOpen      bool                           // the Color Styles panel is open (M16-F02 #403/#408)
+	displaySettingsOpen       bool                           // the Display Settings dialog is open (M16-F07 #643)
+	unitsSettingsOpen         bool                           // the Document Settings ▸ Units dialog is open (#146)
+	historyBrowserOpen        bool                           // the Edit ▸ History Browser window is open
+	loadEnvRequested          bool                           // a "Load HDR…" was requested; the head opens the file dialog
+	meshImportRequested       bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
+	pointCloudRequested       bool                           // an "Import Point Cloud…" was requested; the head opens the file dialog (#645)
+	scriptConsoleOpen         bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
+	capturePath               string                         // a requested viewport PNG capture path; the head writes it after render
+	captureWindowPath         string                         // a requested whole-window PNG capture path; the head writes it after the frame composites
+	normalDebug               bool                           // viewport normal-debug render (front green / back red); head reads each frame
+	meshColors                bool                           // viewport mesh-debug-colors render (each face/triangle a distinct color)
+	meshColorsPerTri          bool                           // when meshColors: color per TRIANGLE (else per B-rep face)
+	editScope                 editScope                      // while editing a node, hide everything created after it (issue #132)
+	asmBodies                 assemblyBodyCache              // memoized world-space assembly bodies + their occurrences (#769)
+	pickIndex                 *assemblyPickIndex             // BVH over placement AABBs for sub-linear ray picking (M34-F5)
+	bomPanelOpen              bool                           // the Assemble ▸ Bill of Materials panel is open (#768)
+	bomViewKind               bom.ViewKind                   // the BOM panel's selected view (structured / parts-only)
+	updateCheckRequested      bool                           // Help ▸ Check for Updates was clicked; the head runs the (network) check
+	pendingUpdate             *update.Result                 // last update-check outcome to show in the update window; nil = closed
+	txEvents                  []sessionTxEvent               // append-only transaction log since app open (for bug reports)
+	bugReport                 bugReportState                 // in-progress Help ▸ Report Bug capture+submit, if any
+	bugOutcome                atomic.Pointer[bugResult]      // submit goroutine → frame loop handoff (session never touched off-thread)
+	bugSubmitter              bugSubmitter                   // injectable reporting endpoint (DI; lazily defaults to real HTTP)
+	addInCat                  addInCatalogue                 // Add-In Catalogue browse/install state (#1164)
 }
 
 // Notice returns the last user-facing notice (a failed commit's reason), or "" — shown in
