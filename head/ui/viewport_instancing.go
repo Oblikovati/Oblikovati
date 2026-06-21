@@ -5,7 +5,10 @@
 package ui
 
 import (
+	"encoding/binary"
 	"fmt"
+	"hash"
+	"hash/fnv"
 	stdmath "math"
 	"strconv"
 
@@ -44,36 +47,41 @@ var instStreams = []instStream{
 	{5, func(m *viewport.Mesh) []float32 { return m.TopLineVerts }, func(m *viewport.Mesh) int { return m.TopLineVCount }, func(m *viewport.Mesh) []uint32 { return m.TopLineIndices }},
 }
 
-// instanceBuilder accumulates the per-stream vertices/indices of every group plus the instance
-// matrices and the draw records, then resolves the records' offsets to absolute positions in the
-// concatenated buffers.
+// instanceBuilder accumulates the per-stream vertices/indices of every SOURCE mesh plus, per source
+// region, the draw-record TEMPLATES (stream + local offsets + biased flag, with NO instance range).
+// It builds the camera- and cull-independent atlas that frameAtlasCache retains; the per-frame
+// instance matrices and final records are produced separately by frameAtlas.assemble, so orbiting
+// no longer re-concatenates the vertex/index streams every frame — the F1 appendStream cost that
+// was ~53% of orbit allocation (M34-F1b).
 type instanceBuilder struct {
 	streamVerts [6][]float32
 	streamIdx   [6][]uint32
-	mats        []float32
-	recs        [][7]int32 // stream, firstIndex(local), indexCount, vertexOffset(local), firstInstance, instanceCount, biased
+	recs        [][5]int32 // template: stream, firstIndex(local), indexCount, vertexOffset(local), biased
+	regions     []atlasRegion
 }
 
-// addGroup flattens one group's source mesh into the accumulator and emits its draw records (one
-// per non-empty stream; the tri stream is split into opaque + depth-biased halves at TriBiasFirst).
-// transforms are the occurrence world matrices (one instance each); a part passes a single identity.
-func (b *instanceBuilder) addGroup(mesh viewport.Mesh, transforms []math.Matrix4) {
-	if len(transforms) == 0 {
-		return
-	}
-	firstInstance := int32(len(b.mats) / 16)
-	for _, t := range transforms {
-		b.mats = append(b.mats, matrixFloats(t)...)
-	}
+// atlasRegion maps one source body (nil marks the overlay) to the contiguous span recs[start:end]
+// that draws it, so assemble can emit those records with a frame's instance range when the source
+// is visible.
+type atlasRegion struct {
+	source     *topo.Body
+	start, end int
+}
+
+// addSource concatenates a source mesh's streams into the atlas and records its draw-record
+// templates as one region; transforms are NOT taken here — they are per-frame (assemble).
+func (b *instanceBuilder) addSource(src *topo.Body, mesh viewport.Mesh) {
+	start := len(b.recs)
 	for _, st := range instStreams {
-		b.appendStream(st, &mesh, firstInstance, int32(len(transforms)))
+		b.appendStream(st, &mesh)
 	}
+	b.regions = append(b.regions, atlasRegion{source: src, start: start, end: len(b.recs)})
 }
 
-// appendStream concatenates one stream of a source mesh into the accumulator and emits its draw
-// record(s) — the tri stream splits into opaque + depth-biased halves at TriBiasFirst; the rest are
-// one record. The record offsets are LOCAL to the stream here; finish() makes them absolute.
-func (b *instanceBuilder) appendStream(st instStream, mesh *viewport.Mesh, firstInstance, instCount int32) {
+// appendStream concatenates one stream of a source mesh into the atlas and emits its record
+// template(s) — the tri stream splits into opaque + depth-biased halves at TriBiasFirst; the rest
+// are one record. Offsets are LOCAL to the stream here; finishAtlas makes them absolute.
+func (b *instanceBuilder) appendStream(st instStream, mesh *viewport.Mesh) {
 	idx := st.idx(mesh)
 	if len(idx) == 0 {
 		return
@@ -83,7 +91,7 @@ func (b *instanceBuilder) appendStream(st instStream, mesh *viewport.Mesh, first
 	b.streamVerts[st.id] = append(b.streamVerts[st.id], st.verts(mesh)...)
 	b.streamIdx[st.id] = append(b.streamIdx[st.id], idx...)
 	if st.id != 1 {
-		b.recs = append(b.recs, [7]int32{st.id, ibase, int32(len(idx)), vbase, firstInstance, instCount, 0})
+		b.recs = append(b.recs, [5]int32{st.id, ibase, int32(len(idx)), vbase, 0})
 		return
 	}
 	bias := mesh.TriBiasFirst // tri: opaque [0:bias) then depth-biased [bias:len) (overlays only)
@@ -91,17 +99,17 @@ func (b *instanceBuilder) appendStream(st instStream, mesh *viewport.Mesh, first
 		bias = len(idx)
 	}
 	if bias > 0 {
-		b.recs = append(b.recs, [7]int32{1, ibase, int32(bias), vbase, firstInstance, instCount, 0})
+		b.recs = append(b.recs, [5]int32{1, ibase, int32(bias), vbase, 0})
 	}
 	if len(idx)-bias > 0 {
-		b.recs = append(b.recs, [7]int32{1, ibase + int32(bias), int32(len(idx) - bias), vbase, firstInstance, instCount, 1})
+		b.recs = append(b.recs, [5]int32{1, ibase + int32(bias), int32(len(idx) - bias), vbase, 1})
 	}
 }
 
-// finish concatenates the per-stream buffers in the native's order, absolutizes every record's
-// firstIndex/vertexOffset to that concatenation, and returns the merged mesh + instance matrices +
-// flattened int32 records. Records are sorted by stream so the native binds each pipeline once.
-func (b *instanceBuilder) finish() (viewport.Mesh, []float32, []int32) {
+// finishAtlas concatenates the per-stream buffers in the native's order, absolutizes every record
+// template's firstIndex/vertexOffset to that concatenation, and returns the retained atlas (merged
+// mesh + absolute templates + regions). key identifies the geometry+overlay state it was built for.
+func (b *instanceBuilder) finishAtlas(key string) frameAtlas {
 	var vbase, ibase [6]int32 // absolute base of each stream in the concatenated vert/index buffers
 	var vAcc, iAcc int32
 	for _, st := range instStreams {
@@ -109,15 +117,69 @@ func (b *instanceBuilder) finish() (viewport.Mesh, []float32, []int32) {
 		vAcc += int32(len(b.streamVerts[st.id]) / 16)
 		iAcc += int32(len(b.streamIdx[st.id]))
 	}
-	recsByStream := sortRecsByStream(b.recs)
-	recs := make([]int32, 0, len(recsByStream)*7)
-	for _, r := range recsByStream {
-		s := r[0]
-		r[1] += ibase[s] // firstIndex → absolute
-		r[3] += vbase[s] // vertexOffset → absolute
-		recs = append(recs, r[:]...)
+	for i := range b.recs {
+		s := b.recs[i][0]
+		b.recs[i][1] += ibase[s] // firstIndex → absolute
+		b.recs[i][3] += vbase[s] // vertexOffset → absolute
 	}
-	return b.mergedMesh(), b.mats, recs
+	return frameAtlas{key: key, mesh: b.mergedMesh(), recs: b.recs, regions: b.regions}
+}
+
+// frameAtlas is the retained, camera/cull-independent merged geometry of every source mesh plus the
+// overlay: the concatenated streams, the absolute draw-record templates, and the per-source regions.
+// Held by frameAtlasCache and rebuilt only when the geometry/style/selection (sourceKey) or the
+// overlay changes — not when the camera orbits (M34-F1b).
+type frameAtlas struct {
+	key     string
+	mesh    viewport.Mesh
+	recs    [][5]int32 // absolute templates: stream, firstIndex, indexCount, vertexOffset, biased
+	regions []atlasRegion
+}
+
+// assemble builds the per-frame instance matrices and draw records from the retained atlas and the
+// frame's visible (frustum-culled) instances: each region whose source is visible contributes its
+// transforms to mats and its templates as records carrying that instance range. The overlay region
+// (nil source) always draws as one identity instance. Records are stream-sorted so native binds
+// each pipeline once. This is all the per-frame work now — the heavy streams come from the cache.
+func (a *frameAtlas) assemble(visible map[*topo.Body][]math.Matrix4) ([]float32, []int32) {
+	var mats []float32
+	var recs [][7]int32
+	for _, region := range a.regions {
+		tfs := regionTransforms(region, visible)
+		if len(tfs) == 0 {
+			continue
+		}
+		first := int32(len(mats) / 16)
+		for _, t := range tfs {
+			mats = append(mats, matrixFloats(t)...)
+		}
+		for _, tmpl := range a.recs[region.start:region.end] {
+			recs = append(recs, [7]int32{tmpl[0], tmpl[1], tmpl[2], tmpl[3], first, int32(len(tfs)), tmpl[4]})
+		}
+	}
+	return mats, flattenRecs(sortRecsByStream(recs))
+}
+
+// regionTransforms returns the world matrices to draw a region this frame: the overlay (nil source)
+// is a single identity instance; a source region uses its visible (culled) transforms, or none.
+func regionTransforms(region atlasRegion, visible map[*topo.Body][]math.Matrix4) []math.Matrix4 {
+	if region.source == nil {
+		return identityInstance
+	}
+	return visible[region.source]
+}
+
+// identityInstance is the overlay's single, fixed instance (work planes/sketches/gizmos live in
+// world space and are placed by the view-projection, not a model matrix).
+var identityInstance = []math.Matrix4{math.Identity4()}
+
+// flattenRecs packs the stream-sorted [7]int32 records into the flat []int32 native expects.
+func flattenRecs(recs [][7]int32) []int32 {
+	out := make([]int32, 0, len(recs)*7)
+	for _, r := range recs {
+		out = append(out, r[:]...)
+	}
+	return out
 }
 
 // mergedMesh assembles the six accumulated streams into one viewport.Mesh (the per-stream order
@@ -147,30 +209,90 @@ func sortRecsByStream(recs [][7]int32) [][7]int32 {
 	return out
 }
 
-// buildInstancedFrame flattens each instance group's source mesh once (component-local) and the
-// overlay items as one identity instance, returning the merged mesh + instance matrices + draw
-// records for native.RenderViewport. ok is false when there is no keyable geometry, so the caller
-// falls back to the legacy single-mesh path.
-func buildInstancedFrame(groups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
+// buildInstancedFrame returns the merged mesh + per-frame instance matrices + draw records for
+// native.RenderViewport. The merged mesh comes from a retained atlas built over ALL source meshes
+// (allGroups) plus the overlay — rebuilt only when the geometry/overlay changes, not on orbit
+// (M34-F1b) — while the matrices/records are assembled each frame from the frustum-culled instances
+// (culledGroups, M34-F1). ok is false when there is nothing to draw, so the caller falls back to
+// the legacy single-mesh path.
+func buildInstancedFrame(allGroups, culledGroups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
 	lookup renderer.SurfaceLookup, style renderer.VisualStyle,
 	decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
 ) (viewport.Mesh, []float32, []int32, bool) {
-	if len(groups) == 0 && len(overlay.Items) == 0 {
+	if len(allGroups) == 0 && len(overlay.Items) == 0 {
 		return viewport.Mesh{}, nil, nil, false
 	}
+	atlas := cachedFrameAtlas(allGroups, overlay, cam, lookup, style, decorate, sourceKey)
+	visible := make(map[*topo.Body][]math.Matrix4, len(culledGroups))
+	for _, g := range culledGroups {
+		visible[g.Source] = g.Transforms
+	}
+	mats, recs := atlas.assemble(visible)
+	return atlas.mesh, mats, recs, len(recs) > 0
+}
+
+// frameAtlasCache retains the last built atlas. The render loop is single-threaded, so a single
+// package-level entry is safe; alternating between two viewports with different content simply
+// rebuilds (degrading to the pre-F1b cost, never incorrectly).
+var frameAtlasCache frameAtlas
+
+// cachedFrameAtlas returns the atlas for the given sources + overlay, rebuilding it only when the
+// source signature (sourceKey, which bumps on any geometry/style/selection/placement change) or the
+// overlay content changes. The overlay is flattened every frame (it is small) so its hash can key
+// the cache; on a hit the expensive per-source concatenation is skipped entirely.
+func cachedFrameAtlas(allGroups []app.InstanceGroup, overlay renderer.DrawList, cam scene.Camera,
+	lookup renderer.SurfaceLookup, style renderer.VisualStyle,
+	decorate func(renderer.DrawList) renderer.DrawList, sourceKey string,
+) frameAtlas {
+	overlayMesh := viewport.Flatten(overlay)
+	key := sourceKey + "|ov:" + strconv.FormatUint(overlayHash(overlayMesh), 16)
+	if frameAtlasCache.key == key && key != "" {
+		return frameAtlasCache
+	}
 	var b instanceBuilder
-	for _, g := range groups {
-		// The expensive part — tessellate the source + extract edges + flatten — is cached per
-		// source body, so orbiting a 1024-copy assembly reuses the mesh instead of re-tessellating a
-		// ~14k-face Möbius every frame (the orbit-perf bug: ~60ms/frame). Only the cheap per-frame
-		// matrices/records (below) adapt to camera/transform changes.
-		b.addGroup(cachedSourceMesh(g.Source, cam, lookup, style, decorate, sourceKey), g.Transforms)
+	for _, g := range allGroups {
+		// The per-source tessellate+flatten is cached by sourceMeshCache; addSource only concatenates
+		// the cached streams into the atlas, which is itself retained across frames by this cache.
+		b.addSource(g.Source, cachedSourceMesh(g.Source, cam, lookup, style, decorate, sourceKey))
 	}
 	if len(overlay.Items) > 0 {
-		b.addGroup(viewport.Flatten(overlay), []math.Matrix4{math.Identity4()})
+		b.addSource(nil, overlayMesh) // the overlay region: one identity instance in assemble
 	}
-	m, mats, recs := b.finish()
-	return m, mats, recs, len(recs) > 0
+	frameAtlasCache = b.finishAtlas(key)
+	return frameAtlasCache
+}
+
+// overlayHash is an order-sensitive FNV-1a digest of the overlay mesh's streams, so the atlas cache
+// rebuilds when an overlay (work plane, sketch, gizmo, ground) appears, moves or disappears, but
+// holds while it is unchanged during an orbit.
+func overlayHash(m viewport.Mesh) uint64 {
+	h := fnv.New64a()
+	for _, s := range [][]float32{m.TriVerts, m.OccVerts, m.LineVerts, m.HidVerts, m.TopTriVerts, m.TopLineVerts} {
+		hashFloat32s(h, s)
+	}
+	for _, s := range [][]uint32{m.TriIndices, m.OccIndices, m.LineIndices, m.HidIndices, m.TopTriIndices, m.TopLineIndices} {
+		hashUint32s(h, s)
+	}
+	var b [4]byte
+	binary.LittleEndian.PutUint32(b[:], uint32(m.TriBiasFirst))
+	_, _ = h.Write(b[:])
+	return h.Sum64()
+}
+
+func hashFloat32s(h hash.Hash64, xs []float32) {
+	var b [4]byte
+	for _, x := range xs {
+		binary.LittleEndian.PutUint32(b[:], stdmath.Float32bits(x))
+		_, _ = h.Write(b[:])
+	}
+}
+
+func hashUint32s(h hash.Hash64, xs []uint32) {
+	var b [4]byte
+	for _, x := range xs {
+		binary.LittleEndian.PutUint32(b[:], x)
+		_, _ = h.Write(b[:])
+	}
 }
 
 // sourceMeshCache memoises the flattened, styled mesh of each unique component body, keyed on the
