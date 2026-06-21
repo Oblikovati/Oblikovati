@@ -26,7 +26,7 @@ import (
 // clicking "XY Plane" selects the plane to sketch on).
 type BrowserNode struct {
 	Label    string
-	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "feature" | "occurrence" | "features" | "assemblyFeature"
+	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "sketch3d" | "feature" | "occurrence" | "features" | "assemblyFeature"
 	Select   Selectable
 	Children []BrowserNode
 }
@@ -290,6 +290,7 @@ func addModelTimeline(root *BrowserNode, part *compdef.PartComponentDefinition) 
 	entries = appendWorkPlaneEntries(entries, part)
 	entries = appendWorkAxisPointEntries(entries, part)
 	entries = appendTopLevelSketchEntries(entries, part, absorber)
+	entries = appendSketch3DEntries(entries, part)
 	entries = appendFeatureEntries(entries, part, absorber)
 
 	sort.SliceStable(entries, func(i, j int) bool { return entries[i].seq < entries[j].seq })
@@ -372,6 +373,20 @@ func appendTopLevelSketchEntries(entries []timelineEntry, part *compdef.PartComp
 		}
 		entries = append(entries, timelineEntry{sk.Seq(), func(root *BrowserNode) {
 			root.selectableChild(sk.Name(), "sketch", SketchHandle{Sketch: sk})
+		}})
+	}
+	return entries
+}
+
+// appendSketch3DEntries adds the part's 3D sketches at their creation position, so an imported
+// or hand-built Sketch3D shows in the browser like a 2D sketch (it was previously omitted, so a
+// non-planar DWG import produced an invisible sketch). 3D sketches are never feature-absorbed.
+func appendSketch3DEntries(entries []timelineEntry, part *compdef.PartComponentDefinition) []timelineEntry {
+	sketches := part.Sketches3D()
+	for i := 0; i < sketches.Count(); i++ {
+		sk := sketches.Item(i)
+		entries = append(entries, timelineEntry{sk.Seq(), func(root *BrowserNode) {
+			root.selectableChild(sk.Name(), "sketch3d", Sketch3DHandle{Sketch3D: sk})
 		}})
 	}
 	return entries
