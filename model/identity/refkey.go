@@ -5,7 +5,6 @@ package identity
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/binary"
 	"fmt"
 
 	"oblikovati.org/math"
@@ -25,12 +24,19 @@ type RefKey struct {
 	payload []byte // the entity's LineageKey at mint time
 
 	// Fallback hints captured at mint time to drive degraded re-binding when the
-	// exact entity is gone (M31-F06). They are an in-memory optimisation only: the
-	// wire format ([RefKey.Encode]) is unchanged, so a key reloaded from disk has
-	// no hints and degrades to exact-only until the encoding is versioned (F07,
-	// #1157). Both are absent unless the keyed entity exposed the capability.
+	// exact entity is gone (M31-F06). They are an in-memory SESSION optimisation: a
+	// key reloaded from disk has no hints (they are not serialized — see encoding.go
+	// for why the drift-prone anchor must stay out of the identity bytes) and so
+	// degrades to exact-only. Both are absent unless the keyed entity exposed the
+	// capability.
 	parent ancestryHint // the parent lineage, for ancestral sibling recovery
 	anchor anchorHint   // a representative point, for geometric tie-breaking
+
+	// scheme is the lineage-encoding version this key was decoded from
+	// (SchemeLegacy for a pre-M31 key), or SchemeCurrent for a freshly minted one.
+	// It is provenance only: it is NOT part of the key's identity (see Equal) and
+	// re-encoding always writes SchemeCurrent (M31-F07, #1157).
+	scheme uint8
 }
 
 // ancestryHint records the keyed entity's parent lineage key, present only when
@@ -52,6 +58,11 @@ func (k RefKey) Context() ContextID { return k.ctx }
 
 // Kind returns the kind of entity the key names.
 func (k RefKey) Kind() EntityKind { return k.kind }
+
+// Scheme returns the lineage-encoding version this key was decoded from
+// ([SchemeLegacy] for a pre-M31 key), or [SchemeCurrent] for a freshly minted key
+// (M31-F07). It is provenance for migration diagnostics, not part of identity.
+func (k RefKey) Scheme() uint8 { return k.scheme }
 
 // IsZero reports whether the key is the zero value (names nothing).
 func (k RefKey) IsZero() bool {
@@ -104,32 +115,6 @@ func (m MatchType) String() string {
 	default:
 		return "none"
 	}
-}
-
-// Encode serializes the key to bytes: [ctx u64][kind u32][len u32][payload]. The
-// layout is fixed and little-endian so keys persist portably (architecture core/05).
-func (k RefKey) Encode() []byte {
-	buf := make([]byte, 0, 16+len(k.payload))
-	buf = binary.LittleEndian.AppendUint64(buf, uint64(k.ctx))
-	buf = binary.LittleEndian.AppendUint32(buf, uint32(k.kind))
-	buf = binary.LittleEndian.AppendUint32(buf, uint32(len(k.payload)))
-	return append(buf, k.payload...)
-}
-
-// DecodeKey parses bytes produced by [RefKey.Encode].
-func DecodeKey(data []byte) (RefKey, error) {
-	if len(data) < 16 {
-		return RefKey{}, fmt.Errorf("identity: key too short: %d bytes, want >= 16", len(data))
-	}
-	ctx := ContextID(binary.LittleEndian.Uint64(data[0:8]))
-	kind := EntityKind(binary.LittleEndian.Uint32(data[8:12]))
-	n := binary.LittleEndian.Uint32(data[12:16])
-	if int(n) != len(data)-16 {
-		return RefKey{}, fmt.Errorf("identity: key payload length %d does not match %d trailing bytes", n, len(data)-16)
-	}
-	payload := make([]byte, n)
-	copy(payload, data[16:])
-	return RefKey{ctx: ctx, kind: kind, payload: payload}, nil
 }
 
 // KeyToString renders a key as a URL-safe base64 string for transport and UI.
