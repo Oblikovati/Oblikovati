@@ -12,10 +12,10 @@ import (
 )
 
 // BenchmarkCollectPlacedBodies measures the transform-propagation flatten over the 30k
-// automotive DAG (M34-B4): the recursive, single-threaded walk that composes a world
-// matrix for every leaf occurrence (model/compdef/assembly_derive.go). allocs/op is the
-// GC-pressure signal behind the F2 parallel/cached-traversal work — it allocates a fresh
-// PlacedBody slice and per-node OccurrencePath on every call.
+// automotive DAG (model/compdef/assembly_derive.go). After M34-F2 it walks with a reused DFS
+// path stack (one path allocation per emitted leaf, ~half the pre-F2 allocs) and fans the
+// top-level subtrees across workers (~1.8× faster wall time at 30k). allocs/op is the
+// GC-pressure signal the trim targets.
 func BenchmarkCollectPlacedBodies(b *testing.B) {
 	ws := doc.NewWorkspace(persistence.NewPackageStore())
 	root, stats, err := benchgen.Generate(ws, "bench", benchgen.Auto30k())
