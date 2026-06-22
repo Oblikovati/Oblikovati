@@ -50,11 +50,18 @@ func NewLoftTool() *LoftTool { return &LoftTool{operation: ops.NewBody} }
 // Name implements [Tool].
 func (t *LoftTool) Name() string { return "Loft" }
 
-// Start lets clicks pick sketch regions (profiles), points (vertices / work points) for an apex,
-// a body face the loft can leave tangent, or an open sketch path as a guide rail.
-func (t *LoftTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectVertex, SelectWorkPoint, SelectFace, SelectPath))
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *LoftTool) Start(*Session) {}
+
+// AcceptedKinds declares loft picks sketch regions (profiles), points (vertices / work points) for
+// an apex, a body face it can leave tangent, or an open sketch path as a guide rail.
+func (t *LoftTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectProfile, SelectVertex, SelectWorkPoint, SelectFace, SelectPath}
 }
+
+// Picks reports the picked profile cross-sections for the unified highlight (point/face sections
+// have nothing to outline, matching the prior PickedProfiles-based highlight).
+func (t *LoftTool) Picks() []Selectable { return profileSelectables(t.PickedProfiles()) }
 
 // Pick routes the clicked entity: a profile/point/face is the next cross-section (a profile
 // already in the list is ignored so a double-click doesn't duplicate it); an open path is a
@@ -168,7 +175,6 @@ func (t *LoftTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("loft: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

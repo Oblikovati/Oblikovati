@@ -37,11 +37,15 @@ type MoveFaceTool struct {
 	added      *feature.PartFeature
 }
 
-func NewMoveFaceTool() *MoveFaceTool { return &MoveFaceTool{} }
-func (t *MoveFaceTool) Name() string { return "Move Face" }
-func (t *MoveFaceTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectFace))
-}
+func NewMoveFaceTool() *MoveFaceTool   { return &MoveFaceTool{} }
+func (t *MoveFaceTool) Name() string   { return "Move Face" }
+func (t *MoveFaceTool) Start(*Session) {}
+
+// AcceptedKinds declares move-face picks faces (the faces to move).
+func (t *MoveFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *MoveFaceTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 func (t *MoveFaceTool) Pick(_ *Session, sel Selectable) {
 	if f, ok := sel.(FaceHandle); ok {
@@ -53,7 +57,6 @@ func (t *MoveFaceTool) Pick(_ *Session, sel Selectable) {
 func (t *MoveFaceTool) Faces() []FaceHandle { return append([]FaceHandle(nil), t.faces...) }
 
 func (t *MoveFaceTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
 	t.faces = nil
 }
 
@@ -80,7 +83,6 @@ func (t *MoveFaceTool) Commit(s *Session) error {
 	t.added = feature.NewModifyFeatures(part.Features()).AddMoveFace(keys, math.V3(math.Scalar(t.dx), math.Scalar(t.dy), math.Scalar(t.dz)))
 	part.Recompute()
 	s.recordEdit(part, "Move Face")
-	s.Selection().SetFilter(NewSelectionFilter())
 	if !t.added.Health().OK() {
 		return errors.New("move face: " + t.added.Health().Reason)
 	}
@@ -105,11 +107,12 @@ type CombineTool struct {
 	added  *feature.PartFeature
 }
 
-func NewCombineTool() *CombineTool  { return &CombineTool{op: ops.Join} }
-func (t *CombineTool) Name() string { return "Combine" }
-func (t *CombineTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectBody))
-}
+func NewCombineTool() *CombineTool    { return &CombineTool{op: ops.Join} }
+func (t *CombineTool) Name() string   { return "Combine" }
+func (t *CombineTool) Start(*Session) {}
+
+// AcceptedKinds declares combine picks solid bodies (target then tool body).
+func (t *CombineTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectBody} }
 
 func (t *CombineTool) Pick(_ *Session, sel Selectable) {
 	if b, ok := sel.(BodyHandle); ok {
@@ -118,7 +121,6 @@ func (t *CombineTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *CombineTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
 	t.bodies = nil
 }
 
@@ -139,7 +141,6 @@ func (t *CombineTool) Commit(s *Session) error {
 	t.added = feature.NewModifyFeatures(part.Features()).AddCombine(ti, tj, t.op)
 	part.Recompute()
 	s.recordEdit(part, "Combine")
-	s.Selection().SetFilter(NewSelectionFilter())
 	if !t.added.Health().OK() {
 		return errors.New("combine: " + t.added.Health().Reason)
 	}
@@ -164,11 +165,12 @@ type MoveBodyTool struct {
 	added      *feature.PartFeature
 }
 
-func NewMoveBodyTool() *MoveBodyTool { return &MoveBodyTool{} }
-func (t *MoveBodyTool) Name() string { return "Move Bodies" }
-func (t *MoveBodyTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectBody))
-}
+func NewMoveBodyTool() *MoveBodyTool   { return &MoveBodyTool{} }
+func (t *MoveBodyTool) Name() string   { return "Move Bodies" }
+func (t *MoveBodyTool) Start(*Session) {}
+
+// AcceptedKinds declares move-bodies picks solid bodies (the bodies to move).
+func (t *MoveBodyTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectBody} }
 
 func (t *MoveBodyTool) Pick(_ *Session, sel Selectable) {
 	if b, ok := sel.(BodyHandle); ok {
@@ -177,7 +179,6 @@ func (t *MoveBodyTool) Pick(_ *Session, sel Selectable) {
 }
 
 func (t *MoveBodyTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
 	t.bodies = nil
 }
 
@@ -205,7 +206,6 @@ func (t *MoveBodyTool) Commit(s *Session) error {
 	t.added = feature.NewModifyFeatures(part.Features()).AddMove(idx, xf)
 	part.Recompute()
 	s.recordEdit(part, "Move Bodies")
-	s.Selection().SetFilter(NewSelectionFilter())
 	if !t.added.Health().OK() {
 		return errors.New("move: " + t.added.Health().Reason)
 	}
