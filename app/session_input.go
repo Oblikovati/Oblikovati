@@ -36,6 +36,7 @@ func (s *Session) StartTool(t Tool) {
 	s.notice = ""
 	s.tool = &ToolInstance{tool: t}
 	t.Start(s)
+	s.installToolFilter() // derive the filter from the tool's declared AcceptedKinds (engine)
 }
 
 // ActiveTool returns the running tool instance, or nil.
@@ -79,6 +80,7 @@ func (s *Session) OK() error {
 	}
 	s.notice = ""
 	s.tool = nil
+	s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
 	s.Graphics().ClearInteraction() // a committed command's transient preview vanishes
 	s.dropCommandMiniToolbars()     // command-bound mini-toolbars die with the tool (M05-F07)
 	s.dropCommandGizmos()           // and the command-bound triad/manipulators (M05-F13)
@@ -91,6 +93,7 @@ func (s *Session) CancelTool() {
 	if s.tool != nil {
 		s.tool.tool.Cancel(s)
 		s.tool = nil
+		s.restoreSelectionFilter()      // hand selection back to the ambient filter (engine)
 		s.Graphics().ClearInteraction() // a cancelled command's transient preview vanishes
 		s.dropCommandMiniToolbars()     // command-bound mini-toolbars die with the tool (M05-F07)
 		s.dropCommandGizmos()           // and the command-bound triad/manipulators (M05-F13)
@@ -109,6 +112,9 @@ type autoCommitter interface {
 func (s *Session) feedPick(sel Selectable) {
 	s.tool.tool.Pick(s, sel)
 	s.autoCommitAfterPick()
+	if s.tool != nil {
+		s.installToolFilter() // re-derive the filter for the tool's next step
+	}
 }
 
 // modifierPicker is a Tool whose pick behavior depends on held modifiers — e.g. Extrude
@@ -126,6 +132,9 @@ func (s *Session) feedPickMods(sel Selectable, mods Modifier) {
 		s.tool.tool.Pick(s, sel)
 	}
 	s.autoCommitAfterPick()
+	if s.tool != nil {
+		s.installToolFilter() // re-derive the filter for the tool's next step
+	}
 }
 
 // autoCommitAfterPick commits the active tool when it opts into auto-commit and is now
