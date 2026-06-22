@@ -22,7 +22,9 @@ type unitDef struct {
 // vocabulary). Database units are the factor-1 member of each category: cm for
 // length, radian for angle, and so on.
 var namedUnits = map[string]unitDef{
-	// Length (database unit: cm).
+	// Length (database unit: cm). Sub-millimetre metric units down to picometres are accepted by
+	// the parser; "µm" and its ASCII spelling "um" are the same micrometre.
+	"pm": {Length, 1e-10}, "nm": {Length, 1e-7}, "um": {Length, 1e-4}, "µm": {Length, 1e-4},
 	"mm": {Length, 0.1}, "cm": {Length, 1}, "m": {Length, 100}, "km": {Length, 100000},
 	"in": {Length, 2.54}, "ft": {Length, 30.48},
 	// Angle (database unit: radian).

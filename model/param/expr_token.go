@@ -109,6 +109,12 @@ func (l *lexer) skipSpaces() {
 	}
 }
 
-func isDigit(c byte) bool      { return c >= '0' && c <= '9' }
-func isIdentStart(c byte) bool { return c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') }
-func isIdentPart(c byte) bool  { return isIdentStart(c) || isDigit(c) }
+func isDigit(c byte) bool { return c >= '0' && c <= '9' }
+
+// isIdentStart/isIdentPart accept any non-ASCII byte (c >= 0x80) so a multi-byte UTF-8 rune is
+// taken as part of an identifier — this is what lets a unit name carry a symbol such as the micro
+// sign in "µm" (and tolerates Unicode parameter names generally).
+func isIdentStart(c byte) bool {
+	return c == '_' || c >= 0x80 || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+}
+func isIdentPart(c byte) bool { return isIdentStart(c) || isDigit(c) }
