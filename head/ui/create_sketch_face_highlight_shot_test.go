@@ -89,3 +89,31 @@ func TestInWindowCreateSketchHoversFaceHighlight(t *testing.T) {
 		t.Logf("SaveWindowPNG: %v", err)
 	}
 }
+
+// TestInWindowToolFaceHighlightGeneralizes proves the unified face highlight is not bespoke to
+// Create Sketch: a DIFFERENT face-picking tool (Shell, which declares AcceptedKinds = {Face}) lights
+// the hovered face through the same engine path, with no Shell-specific head code (ADR-0041).
+func TestInWindowToolFaceHighlightGeneralizes(t *testing.T) {
+	win := newViewportWindow(t)
+	defer win.Destroy()
+	dockLaidOut = false
+	icons = nil
+
+	s := boxHostSession(t)
+	frameCameraOn(s, s.VisibleBodies()[0].RangeBox())
+	s.StartTool(app.NewShellTool())
+
+	cx, cy := float32(480), float32(400)
+	for i := 0; i < 10; i++ {
+		native.InjectMousePos(cx, cy)
+		viewportFrame(win, s)
+	}
+	ox, oy := native.ItemRectMin()
+	sel, ok := s.PickAt(float64(cx-ox), float64(cy-oy), s.Selection().Filter())
+	if _, isFace := sel.(app.FaceHandle); !ok || !isFace {
+		t.Fatalf("Shell hover over a face resolved to %T (ok=%v); want a FaceHandle", sel, ok)
+	}
+	if err := win.SaveWindowPNG(filepath.Join(outDir(), "shell-face-hover.png")); err != nil {
+		t.Logf("SaveWindowPNG: %v", err)
+	}
+}
