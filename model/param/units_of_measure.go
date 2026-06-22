@@ -57,6 +57,14 @@ type UnitsOfMeasure struct {
 	anglePrecision  int             // angle display precision (decimal places)
 	lengthFormat    types.ParameterDisplayFormat
 	angleFormat     AngleFormat
+	// workingScale is the centimetre size of one stored (working/database) length unit —
+	// the key to ADR-0042 Phase 2. A [Quantity]'s Value is in WORKING units, not always
+	// centimetres: realCm = workingValue × workingScale^L (L = the unit's length exponent,
+	// 1 for Length, 2 for Area, 3 for Volume). Default 1.0 ⇒ working unit IS the centimetre,
+	// so every existing document and stored value is unchanged. Centring it on the document's
+	// length unit (e.g. 1e-4 for µm, 1e5 for km) keeps coordinates O(1) so sub-µm and km-scale
+	// parts stay well-conditioned and out of the primitive-construction underflow floor.
+	workingScale float64
 }
 
 // AngleFormat is how an angle is rendered for display: as decimal degrees or as
@@ -82,6 +90,7 @@ func DefaultUnitsOfMeasure() UnitsOfMeasure {
 		anglePrecision:  2,
 		lengthFormat:    types.DisplayFormatDecimal,
 		angleFormat:     AngleDecimal,
+		workingScale:    1, // working unit = centimetre (back-compatible default)
 	}
 }
 
@@ -157,6 +166,63 @@ func (m UnitsOfMeasure) preferredFactor(category Unit) (factor float64, name str
 	return namedUnits[name].factor, name
 }
 
+// WorkingScale is the centimetre size of one stored (working/database) length unit
+// (ADR-0042 Phase 2). 1.0 means working coordinates are centimetres — the default.
+func (m UnitsOfMeasure) WorkingScale() float64 { return m.effectiveWorkingScale() }
+
+// effectiveWorkingScale guards a zero/negative or absent (older-struct) working scale,
+// treating it as the centimetre default so a value is never divided by zero.
+func (m UnitsOfMeasure) effectiveWorkingScale() float64 {
+	if m.workingScale <= 0 {
+		return 1
+	}
+	return m.workingScale
+}
+
+// WithWorkingScale returns a copy whose working unit is cmPerUnit centimetres — the
+// general lever behind [UnitsOfMeasure.CenteredOnLength]. A non-positive value is
+// rejected (the working unit must have a positive size).
+func (m UnitsOfMeasure) WithWorkingScale(cmPerUnit float64) (UnitsOfMeasure, error) {
+	if cmPerUnit <= 0 {
+		return m, fmt.Errorf("param: working scale %g is not positive (cm per working unit)", cmPerUnit)
+	}
+	out := m.Clone()
+	out.workingScale = cmPerUnit
+	return out, nil
+}
+
+// CenteredOnLength returns a copy whose working unit equals the named length unit, so a
+// length authored in that unit is stored as an O(1) coordinate (ADR-0042 Phase 2): a µm
+// document keeps sub-micron features out of the primitive-construction underflow floor,
+// a km document avoids needlessly tight tolerances. The name must be a registered length
+// unit.
+func (m UnitsOfMeasure) CenteredOnLength(name string) (UnitsOfMeasure, error) {
+	def, ok := lookupUnit(name)
+	if !ok || def.category != Length {
+		return m, fmt.Errorf("param: %q is not a registered length unit", name)
+	}
+	return m.WithWorkingScale(def.factor)
+}
+
+// wsFactor is workingScale raised to the unit's length exponent (Length¹, Area², Volume³,
+// 0 otherwise) — the multiplier converting a working-unit Value to centimetres. An explicit
+// switch keeps the common exponents exact (no Pow round-off).
+func (m UnitsOfMeasure) wsFactor(u Unit) float64 {
+	ws := m.effectiveWorkingScale()
+	switch dimensions[u].l {
+	case 0:
+		return 1
+	case 1:
+		return ws
+	case 2:
+		return ws * ws
+	case 3:
+		return ws * ws * ws
+	default:
+		return stdmath.Pow(ws, float64(dimensions[u].l))
+	}
+}
+
 // Parse converts a user string ("25 mm", "30 deg", "5") to a database-unit
 // [Quantity]. A bare number is interpreted in the preferred unit of defaultCat;
 // an explicit unit suffix overrides both the factor and the category. This is
@@ -169,13 +235,13 @@ func (m UnitsOfMeasure) Parse(s string, defaultCat Unit) (Quantity, error) {
 	}
 	if unitName == "" {
 		factor, _ := m.preferredFactor(defaultCat)
-		return Quantity{value * factor, defaultCat}, nil
+		return Quantity{value * factor / m.wsFactor(defaultCat), defaultCat}, nil
 	}
 	def, ok := lookupUnit(unitName)
 	if !ok {
 		return Quantity{}, fmt.Errorf("param: unknown unit %q in %q", unitName, s)
 	}
-	return Quantity{value * def.factor, def.category}, nil
+	return Quantity{value * def.factor / m.wsFactor(def.category), def.category}, nil
 }
 
 // Format renders a database-unit quantity in its category's preferred unit, with
@@ -193,7 +259,7 @@ func (m UnitsOfMeasure) Format(q Quantity) string {
 // the shortest exact decimal so parse/format round-trips without loss.
 func (m UnitsOfMeasure) FormatValue(q Quantity) string {
 	factor, _ := m.preferredFactor(q.Unit)
-	return strconv.FormatFloat(q.Value/factor, 'g', -1, 64)
+	return strconv.FormatFloat(q.Value*m.wsFactor(q.Unit)/factor, 'g', -1, 64)
 }
 
 // unitName returns the preferred display-unit name for a category.
@@ -209,14 +275,14 @@ func (m UnitsOfMeasure) PreferredName(category Unit) string { return m.unitName(
 // the value a UI edits (vs the database-unit value stored in the model).
 func (m UnitsOfMeasure) ToPreferred(q Quantity) float64 {
 	factor, _ := m.preferredFactor(q.Unit)
-	return q.Value / factor
+	return q.Value * m.wsFactor(q.Unit) / factor
 }
 
 // FromPreferred builds a database-unit [Quantity] from a value given in category's
 // preferred unit — the inverse of [UnitsOfMeasure.ToPreferred].
 func (m UnitsOfMeasure) FromPreferred(value float64, category Unit) Quantity {
 	factor, _ := m.preferredFactor(category)
-	return Quantity{value * factor, category}
+	return Quantity{value * factor / m.wsFactor(category), category}
 }
 
 // splitNumberUnit separates the leading numeric literal from a trailing unit

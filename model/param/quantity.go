@@ -4,10 +4,14 @@ package param
 
 import "fmt"
 
-// Quantity is a dimensioned value: its Value is ALWAYS in database units (cm,
-// radians, cm², …) for the given Unit. User units exist only at the parse/
-// display boundary ([UnitsOfMeasure]). Quantity is an immutable value type;
-// arithmetic returns new quantities and enforces dimensional consistency.
+// Quantity is a dimensioned value: its Value is in WORKING (database) units for the
+// given Unit. The working length unit is the centimetre by default, so historically a
+// length Value was simply centimetres; under ADR-0042 Phase 2 a document may centre its
+// working unit elsewhere (µm, km) for conditioning, in which case realCm = Value ×
+// workingScale^L. Either way the conversion to a named user unit happens only at the
+// parse/display boundary ([UnitsOfMeasure]); the kernel math is unit-agnostic and operates
+// on the raw Value. Quantity is an immutable value type; arithmetic returns new quantities
+// and enforces dimensional consistency.
 type Quantity struct {
 	Value float64
 	Unit  Unit
