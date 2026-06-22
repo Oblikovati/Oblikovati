@@ -9,10 +9,10 @@ import (
 	"oblikovati.org/head/internal/native"
 )
 
-// prevInSketch tracks the sketch-environment state across frames so the ribbon can
-// auto-switch to the contextual Sketch tab on entry and back to 3D Model on exit — but
-// only on the transition frame, so the user can still pick tabs by hand afterwards.
-var prevInSketch bool
+// prevEnv tracks the ribbon environment across frames so the ribbon can auto-switch to the
+// contextual tab on entry and back to the modelling tab on exit — but only on the transition
+// frame, so the user can still pick tabs by hand afterwards.
+var prevEnv app.Environment
 
 // drawRibbon renders the ribbon as a fixed band pinned across the top of the window,
 // directly under the menu bar — classic CAD ribbons are window chrome, not dockable
@@ -80,18 +80,23 @@ func drawTabPanels(panels []app.RibbonPanel) string {
 	return activated
 }
 
-// contextualTab returns the ribbon tab to force-select this frame when the sketch
-// environment was just entered ("Sketch") or left ("3D Model"), else "".
+// contextualTab returns the ribbon tab to force-select on the frame the ribbon environment
+// changes: the Sketch / 3D Sketch tab on entering that environment, the Create & Modify tab on
+// returning to the base environment. "" on a non-transition frame, so manual tab picks stick.
 func contextualTab(s *app.Session) string {
-	cur := s.InSketch()
-	if cur == prevInSketch {
+	cur := app.CurrentEnvironment(s)
+	if cur == prevEnv {
 		return ""
 	}
-	prevInSketch = cur
-	if cur {
+	prevEnv = cur
+	switch cur {
+	case app.SketchEnvironment:
 		return "Sketch"
+	case app.Sketch3DEnvironment:
+		return "3D Sketch"
+	default:
+		return "Create & Modify"
 	}
-	return "3D Model"
 }
 
 // packPanelColumns lays a panel's buttons into the ribbon's column-major flow: a large

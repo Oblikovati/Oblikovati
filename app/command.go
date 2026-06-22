@@ -41,8 +41,9 @@ const (
 type CommandDefinition struct {
 	id               string
 	displayName      string
-	tab              string // ribbon tab (e.g. "3D Model"); empty ⇒ the default "Tools" tab
-	category         string // ribbon panel within the tab (e.g. "Create")
+	tab              string   // primary ribbon tab (e.g. "Create & Modify"); empty ⇒ the default "Tools" tab
+	extraTabs        []string // additional tabs the same command also appears on (Inventor repeats a panel across tabs)
+	category         string   // ribbon panel within the tab (e.g. "Create")
 	kind             ControlKind
 	alias            string // typed command alias (e.g. "E" → Extrude), Inventor-style
 	defaultChord     string // predefined keyboard chord (e.g. "Ctrl+N"); single-letter chords are not allowed (M26)
@@ -73,9 +74,34 @@ func NewCommand(id, displayName, category string, run func(*Session) error) *Com
 }
 
 // WithTab sets the ribbon tab the command appears on (its Category is the panel within
-// that tab). Inventor groups commands two levels deep — tab → panel — so e.g. Extrude
-// lives on the "3D Model" tab, "Create" panel.
+// that tab). Commands group two levels deep — tab → panel — so e.g. Extrude lives on the
+// "Create & Modify" tab, "Create" panel.
 func (c *CommandDefinition) WithTab(tab string) *CommandDefinition { c.tab = tab; return c }
+
+// WithTabs makes one command appear on several tabs at once — the first is the primary tab
+// (what [CommandDefinition.Tab] reports), the rest are repeats. Inventor repeats some panels
+// across tabs (e.g. the Sketch panel on both the modelling and surfacing tabs); this is how a
+// single command renders a button on each of them without duplicate registrations.
+func (c *CommandDefinition) WithTabs(tabs ...string) *CommandDefinition {
+	if len(tabs) == 0 {
+		return c
+	}
+	c.tab, c.extraTabs = tabs[0], tabs[1:]
+	return c
+}
+
+// ribbonTabs lists every tab this command renders a button on: its primary tab (or the default
+// catch-all when unset) followed by any extras. BuildRibbon places the button on each.
+func (c *CommandDefinition) ribbonTabs() []string {
+	primary := c.tab
+	if primary == "" {
+		primary = DefaultTab
+	}
+	if len(c.extraTabs) == 0 {
+		return []string{primary}
+	}
+	return append([]string{primary}, c.extraTabs...)
+}
 
 // WithAlias sets the typed command alias.
 func (c *CommandDefinition) WithAlias(alias string) *CommandDefinition { c.alias = alias; return c }

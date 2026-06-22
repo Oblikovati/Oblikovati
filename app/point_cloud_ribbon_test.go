@@ -14,7 +14,7 @@ import (
 // is currently enabled.
 func pointCloudButton(t *testing.T, s *Session, name string) (RibbonButton, bool) {
 	t.Helper()
-	tab, ok := BuildRibbon(s).Tab(tab3DModel)
+	tab, ok := BuildRibbon(s).Tab(tabSurfacesMesh)
 	if !ok {
 		t.Fatal("ribbon has no 3D Model tab")
 	}

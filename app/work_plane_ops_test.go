@@ -400,7 +400,7 @@ func TestWorkFeatureRibbonCommandsRegistered(t *testing.T) {
 		if !ok {
 			t.Fatalf("command %q not registered", id)
 		}
-		if c.Tab() != "3D Model" || c.Category() != "Work Features" {
+		if c.Tab() != "Create & Modify" || c.Category() != "Work Features" {
 			t.Errorf("%q is on tab %q/panel %q, want 3D Model/Work Features", id, c.Tab(), c.Category())
 		}
 	}

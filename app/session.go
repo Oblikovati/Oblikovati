@@ -148,6 +148,8 @@ type Session struct {
 	meshImportRequested       bool                           // a "Place Mesh…" was requested; the head opens the file dialog (#700)
 	pointCloudRequested       bool                           // an "Import Point Cloud…" was requested; the head opens the file dialog (#645)
 	scriptConsoleOpen         bool                           // the Manage ▸ Scripts ▸ Script Console panel is open
+	addInCatalogueRequested   bool                           // a Get Started ▸ AddIn Catalogue was requested; the head opens the catalogue window
+	preferencesRequested      bool                           // a Get Started ▸ Preferences was requested; the head opens the Preferences window
 	capturePath               string                         // a requested viewport PNG capture path; the head writes it after render
 	captureWindowPath         string                         // a requested whole-window PNG capture path; the head writes it after the frame composites
 	normalDebug               bool                           // viewport normal-debug render (front green / back red); head reads each frame

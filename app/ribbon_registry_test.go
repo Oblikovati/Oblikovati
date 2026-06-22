@@ -50,7 +50,7 @@ func TestZeroDocRibbonWhenNoDocumentOpen(t *testing.T) {
 	if _, ok := r.Panel("Launch"); !ok {
 		t.Error("Get Started tab has no Launch panel with New Part")
 	}
-	if _, ok := r.Tab("3D Model"); ok {
+	if _, ok := r.Tab("Create & Modify"); ok {
 		t.Error("the part-only 3D Model tab should be absent on the ZeroDoc ribbon")
 	}
 }
@@ -62,7 +62,7 @@ func TestPartRibbonWhenPartActive(t *testing.T) {
 	if r.Key != PartRibbon {
 		t.Fatalf("ribbon key = %q, want Part", r.Key)
 	}
-	if _, ok := r.Tab("3D Model"); !ok {
+	if _, ok := r.Tab("Create & Modify"); !ok {
 		t.Error("Part ribbon has no 3D Model tab")
 	}
 	if _, ok := r.Tab("Get Started"); ok {
