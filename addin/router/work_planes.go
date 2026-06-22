@@ -5,7 +5,6 @@ package router
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
@@ -360,29 +359,9 @@ func toWorkRefs(refs []string) []feature.WorkRef {
 // ("vertex/…") — passes through verbatim; any other string is a B-rep topology reference key
 // (from model.referenceKeys) and is tagged as a FaceRef so the resolver builds the plane on
 // that body face. This lets a user work point/plane/axis feed another work feature over the
-// wire (e.g. a three-point plane through three created points, or a redefine re-pick).
-func toWorkRef(r string) feature.WorkRef {
-	if isWorkFeatureRef(r) {
-		return feature.WorkRef(r)
-	}
-	return feature.FaceRef([]byte(r))
-}
-
-// workFeatureRefPrefixes are the reference-string prefixes that name a work feature (an origin
-// element, a user plane/axis/point/coordinate-system, or an encoded vertex) rather than a raw
-// B-rep face key.
-var workFeatureRefPrefixes = []string{"origin/", "plane/", "axis/", "point/", "ucs/", "vertex/"}
-
-// isWorkFeatureRef reports whether r names a work feature (so it is passed through as a plane/
-// axis/point ref) rather than a raw face key.
-func isWorkFeatureRef(r string) bool {
-	for _, p := range workFeatureRefPrefixes {
-		if strings.HasPrefix(r, p) {
-			return true
-		}
-	}
-	return false
-}
+// wire (e.g. a three-point plane through three created points, or a redefine re-pick). The
+// classification lives in feature.ParseWorkRef so the router and the op registry share it.
+func toWorkRef(r string) feature.WorkRef { return feature.ParseWorkRef(r) }
 
 // modelLengthClosure turns a distance argument into a live, parameter-aware value: a
 // plain literal is constant; an expression ("h", "h/2") is backed by an auto model

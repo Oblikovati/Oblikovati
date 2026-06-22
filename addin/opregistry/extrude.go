@@ -23,10 +23,11 @@ type extrudeArgs struct {
 	ProfileIndex   int    `json:"profileIndex"`
 	Distance       string `json:"distance"`                 // e.g. "50 mm", "5 cm"
 	Operation      string `json:"operation"`                // join|cut|intersect|new (default new)
-	Extent         string `json:"extent,omitempty"`         // distance|through-all|to-next (default distance)
+	Extent         string `json:"extent,omitempty"`         // distance|through-all|to-next|to-face (default distance)
 	Direction      string `json:"direction,omitempty"`      // positive|negative|symmetric (default positive)
 	SecondDistance string `json:"secondDistance,omitempty"` // asymmetric two-direction depth
 	Taper          string `json:"taper,omitempty"`          // draft angle, e.g. "3 deg"
+	ToFace         string `json:"toFace,omitempty"`         // to-face target: a planar face key, "plane/N", or "origin/plane/xy"
 }
 
 const extrudeSchema = `{
@@ -36,10 +37,11 @@ const extrudeSchema = `{
     "profileIndex": {"type": "integer", "minimum": 0, "default": 0, "description": "Which closed profile of the sketch to extrude."},
     "distance": {"type": "string", "description": "Extrude depth with units, e.g. \"50 mm\" or \"5 cm\". Required for distance and distance-from-face extents."},
     "operation": {"type": "string", "enum": ["new", "join", "cut", "intersect"], "default": "new", "description": "Boolean against existing bodies."},
-    "extent": {"type": "string", "enum": ["distance", "through-all", "to-next"], "default": "distance", "description": "How the extrude terminates."},
+    "extent": {"type": "string", "enum": ["distance", "through-all", "to-next", "to-face"], "default": "distance", "description": "How the extrude terminates."},
     "direction": {"type": "string", "enum": ["positive", "negative", "symmetric"], "default": "positive", "description": "Which side(s) of the sketch plane to grow."},
     "secondDistance": {"type": "string", "description": "Asymmetric two-direction depth on the negative side, e.g. \"10 mm\"."},
-    "taper": {"type": "string", "description": "Draft angle, e.g. \"3 deg\" (positive widens away from the sketch)."}
+    "taper": {"type": "string", "description": "Draft angle, e.g. \"3 deg\" (positive widens away from the sketch)."},
+    "toFace": {"type": "string", "description": "Termination target for the to-face extent: a planar face reference key (from model.referenceKeys), a work plane (\"plane/N\"), or an origin plane (\"origin/plane/xy\")."}
   },
   "required": ["sketchIndex"]
 }`
@@ -99,17 +101,40 @@ func resolveExtrude(part *compdef.PartComponentDefinition, raw json.RawMessage) 
 	return in, sk, extent, op, taper, nil
 }
 
-// buildExtent assembles the model extent from the request: the extent type and direction,
-// plus the distance(s) for the distance extent.
+// buildExtent assembles the model extent from the request: the extent type and direction, plus
+// the distance(s) for the distance extent or the termination plane for the to-face extent.
 func buildExtent(part *compdef.PartComponentDefinition, in extrudeArgs) (feature.Extent, error) {
 	etype, err := parseExtentType(in.Extent)
 	if err != nil {
 		return feature.Extent{}, err
 	}
 	ext := feature.Extent{Type: etype, Direction: parseExtentDirection(in.Direction)}
-	if etype != feature.DistanceExtent {
+	switch etype {
+	case feature.ToFaceExtent:
+		return withToFaceTarget(part, ext, in.ToFace)
+	case feature.DistanceExtent:
+		return withDistance(part, ext, in)
+	default:
 		return ext, nil // through-all / to-next are gauged from the model, not a distance
 	}
+}
+
+// withToFaceTarget resolves the to-face termination reference (a planar face key, "plane/N", or
+// "origin/plane/xy") onto the extent's ToPlane.
+func withToFaceTarget(part *compdef.PartComponentDefinition, ext feature.Extent, ref string) (feature.Extent, error) {
+	if strings.TrimSpace(ref) == "" {
+		return feature.Extent{}, errors.New(`extrude: to-face extent requires "toFace" (a planar face key, "plane/N", or "origin/plane/xy")`)
+	}
+	wp, err := part.WorkGeometry().PlaneTargetFromRef(ref)
+	if err != nil {
+		return feature.Extent{}, fmt.Errorf("extrude: to-face target %q: %w", ref, err)
+	}
+	ext.ToPlane = wp
+	return ext, nil
+}
+
+// withDistance fills the distance extent's primary (and optional asymmetric) depth.
+func withDistance(part *compdef.PartComponentDefinition, ext feature.Extent, in extrudeArgs) (feature.Extent, error) {
 	dist, err := lengthClosure(part, in.Distance, "extrude: distance")
 	if err != nil {
 		return feature.Extent{}, err
@@ -140,9 +165,9 @@ func parseTaperAngle(part *compdef.PartComponentDefinition, expr string) (float6
 	return a.Value, nil
 }
 
-// parseExtentType maps an extent name to its model type (empty ⇒ distance). Reference
-// extents (to-face / from-to / distance-from-face) need a target plane and are not yet
-// exposed over the JSON API.
+// parseExtentType maps an extent name to its model type (empty ⇒ distance). The to-face extent
+// terminates at a plane the request names via "toFace"; the remaining reference extents (from-to /
+// distance-from-face) are not yet exposed over the JSON API.
 func parseExtentType(name string) (feature.ExtentType, error) {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "", "distance":
@@ -151,8 +176,10 @@ func parseExtentType(name string) (feature.ExtentType, error) {
 		return feature.ThroughAllExtent, nil
 	case "to-next", "tonext":
 		return feature.ToNextExtent, nil
+	case "to-face", "toface":
+		return feature.ToFaceExtent, nil
 	default:
-		return 0, fmt.Errorf("extrude: unknown extent %q (want distance|through-all|to-next)", name)
+		return 0, fmt.Errorf("extrude: unknown extent %q (want distance|through-all|to-next|to-face)", name)
 	}
 }
 
