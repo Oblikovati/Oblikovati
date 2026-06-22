@@ -19,10 +19,6 @@ import (
 // polyline (the M25 SnappedCurve machinery), so both faces tessellate the seam
 // identically and the result stays watertight downstream.
 
-// defaultSewTolerance is the gap a Sew with tolerance 0 closes — generous next
-// to the exact-coincidence stitch grid, tight next to feature sizes (cm units).
-const defaultSewTolerance = 1e-4
-
 // Sew closes an open shell's near-coincident boundary gaps and promotes the
 // result to a solid. If gaps remain beyond the tolerance, it reports every
 // unsewable boundary edge precisely (id, endpoints, nearest opposite gap)
@@ -32,7 +28,9 @@ const defaultSewTolerance = 1e-4
 func Sew(b *topo.Body, tolerance float64) (*topo.Body, error) {
 	tol := tolerance
 	if tol <= 0 {
-		tol = defaultSewTolerance
+		// Model-relative default gap (ADR-0042): generous next to the exact-coincidence
+		// stitch grid, but scaled to the body so a sub-µm shell is not sewn shut.
+		tol = ResolutionForBody(b).Sew()
 	}
 	open := BoundaryEdges(b)
 	if len(open) == 0 {

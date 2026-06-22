@@ -80,12 +80,25 @@ Adopt the model that mature kernels (Parasolid's size-box + linear precision, AC
 3. **Replace the absolute constants** in `boolean.go`, `csg.go`, `csg_body.go`, `sew.go`,
    `union_holes.go`, `edge_discretize.go` with resolution-derived tolerances; fold the already
    relative `convexhull`/`surface_query` ops onto the same helper.
-4. Gate with **scale-sweep regression tests**: the same part modelled at 1 pm, 1 µm, 1 mm, 1 m and
-   1 km unit scale must produce the same topology and volume (up to relative tolerance). This is
-   the acceptance criterion and the thing the current design fails.
+4. Gate with **scale-sweep regression tests**: the same part modelled across a range of unit
+   scales must produce the same topology and volume (up to relative tolerance). This is the
+   acceptance criterion and the thing the current design fails.
 
-Phase 1 resolves the semiconductor/urban cases on its own and touches only the kernel — no
-document, persistence, assembly or exchange change.
+Phase 1 touches only the kernel — no document, persistence, assembly or exchange change.
+
+**What Phase 1 actually delivers (implementation finding, #1242–#1244).** The model-relative
+tolerances make a representative filleted boolean part scale-invariant from **1 µm to 1 km**
+(the `TestScaleSweepInvariance` gate). It fully resolves the **urban/large** case and reaches
+down to micron features. It does **not**, on its own, reach the **nm/pm semiconductor** extreme:
+below ~1 µm the limiting factor is no longer a kernel weld tolerance but the **fundamental
+vector-normalisation epsilon used in primitive construction** — building a plane/box at pm scale
+takes a cross product of pm-length edge vectors (~1e-20 magnitude) which underflows the absolute
+`math.UnitVector3FromVector` floor (1e-9), so the primitive is born degenerate before any
+tolerance applies. That epsilon is a pure vector operation with no model-size context to scale
+by; the only correct fix is to keep coordinates `O(1)` — i.e. **Phase 2**. Attempting to bridge
+the gap by normalising operands at an op boundary fails for the same reason (the similarity
+transform itself underflows on native pm geometry). So the semiconductor case is **re-scoped to
+Phase 2**, not Phase 1.
 
 ### Phase 2 — Working-scale storage centred on the document unit
 
@@ -100,6 +113,11 @@ document, persistence, assembly or exchange change.
      working scale (it already owns unit conversion, #146).
 2. Document the **single-model span ceiling** (~15 orders) in the UI/docs so a user mixing pm
    features onto a km part gets a clear diagnostic rather than silent merging.
+
+Because working-scale storage keeps coordinates `O(1)` regardless of the document unit, Phase 2
+is also what unlocks the **nm/pm semiconductor** scales that Phase 1 cannot reach (see the Phase 1
+finding above): a pm document's coordinates become `O(1)` working values, so primitive
+construction and the vector-normalisation epsilon never see 1e-10 magnitudes.
 
 Phase 2 is the larger, multi-PR, multi-repo change and is sequenced after Phase 1 proves the
 relative-tolerance core.

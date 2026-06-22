@@ -11,9 +11,6 @@ import (
 	"oblikovati.org/math"
 )
 
-// weldGrid is the coincidence grid for welding CSG output vertices (database units).
-const weldGrid = 1e-6
-
 // booleanInputQuality is the faceting the BSP-tree CSG meshes its operands at. It keeps the
 // display chord tolerance but DISABLES the angular-deflection refinement (a huge angle bound
 // → chord-only), because the faceted CSG fallback is numerically fragile: feeding it the
@@ -63,12 +60,17 @@ func bodyTriangles(b *topo.Body) []tri {
 // vertices merge, T-junctions are split out so the cage is combinatorially closed, and
 // the welded triangle cage becomes a body. Returns nil when the result is empty.
 func trianglesToBody(tris []tri, feat string) *topo.Body {
-	verts, faces := weldTriangles(tris)
+	// One model-relative resolution for the whole triangle set (ADR-0042): a tight
+	// vertex weld and a wider on-line tolerance, both scaling with the operand size,
+	// so a sub-µm part is no longer welded out of existence while a finely-detailed
+	// large part is not over-merged.
+	res := resolutionForTris(tris)
+	verts, faces := weldTriangles(tris, res.Weld())
 	faces = dedupTriangles(faces)
 	if len(faces) == 0 {
 		return nil
 	}
-	faces = removeTJunctions(verts, faces)
+	faces = removeTJunctions(verts, faces, res.Plane())
 	return cageToBody(verts, dropDegenerate(faces), feat)
 }
 
@@ -127,11 +129,11 @@ func sortedTri(f [3]int) ([3]int, bool) {
 
 // weldTriangles merges coincident triangle corners onto a shared vertex list, dropping
 // triangles that collapse to a degenerate (a repeated corner).
-func weldTriangles(tris []tri) ([]math.Point3, [][3]int) {
+func weldTriangles(tris []tri, grid float64) ([]math.Point3, [][3]int) {
 	index := map[[3]int64]int{}
 	var verts []math.Point3
 	weld := func(p math.Point3) int {
-		k := [3]int64{quantize(p.X), quantize(p.Y), quantize(p.Z)}
+		k := [3]int64{quantize(p.X, grid), quantize(p.Y, grid), quantize(p.Z, grid)}
 		if i, ok := index[k]; ok {
 			return i
 		}
@@ -149,12 +151,15 @@ func weldTriangles(tris []tri) ([]math.Point3, [][3]int) {
 	return verts, faces
 }
 
-func quantize(v float64) int64 { return int64(stdmath.Round(v / weldGrid)) }
+// quantize snaps a coordinate to a weld grid (database units), so points within a
+// grid cell collapse to one vertex. The grid is the model-relative resolution the
+// caller derives (ADR-0042), not a fixed constant.
+func quantize(v, grid float64) int64 { return int64(stdmath.Round(v / grid)) }
 
 // removeTJunctions repeatedly splits any triangle edge that another vertex lands on, so
 // every undirected edge ends up shared by exactly two triangles (the prerequisite for a
 // closed solid). Capped to avoid pathological loops.
-func removeTJunctions(verts []math.Point3, faces [][3]int) [][3]int {
+func removeTJunctions(verts []math.Point3, faces [][3]int, lineTol float64) [][3]int {
 	// The CSG fallback only matters for small degenerate cases (it is adopted only when its
 	// result validates). On a large tessellated mesh — a faceted curved wall the loft-blade
 	// boolean tessellates into thousands of triangles — the per-edge vertex scan below is
@@ -169,7 +174,7 @@ func removeTJunctions(verts []math.Point3, faces [][3]int) [][3]int {
 		split := false
 		var next [][3]int
 		for _, f := range faces {
-			if rep, ok := splitFaceAtTJunction(verts, f); ok {
+			if rep, ok := splitFaceAtTJunction(verts, f, lineTol); ok {
 				next = append(next, rep...)
 				split = true
 			} else {
@@ -192,7 +197,7 @@ const tjunctionFaceBudget = 4000
 
 // splitFaceAtTJunction finds a vertex lying on one of the triangle's edges and splits
 // the triangle across it into two triangles, reporting whether a split happened.
-func splitFaceAtTJunction(verts []math.Point3, f [3]int) ([][3]int, bool) {
+func splitFaceAtTJunction(verts []math.Point3, f [3]int, lineTol float64) ([][3]int, bool) {
 	for e := 0; e < 3; e++ {
 		p, q := f[e], f[(e+1)%3]
 		apex := f[(e+2)%3]
@@ -200,7 +205,7 @@ func splitFaceAtTJunction(verts []math.Point3, f [3]int) ([][3]int, bool) {
 			if ci == p || ci == q || ci == apex {
 				continue
 			}
-			if onSegment(verts[ci], verts[p], verts[q]) {
+			if onSegment(verts[ci], verts[p], verts[q], lineTol) {
 				return [][3]int{{p, ci, apex}, {ci, q, apex}}, true
 			}
 		}
@@ -208,13 +213,12 @@ func splitFaceAtTJunction(verts []math.Point3, f [3]int) ([][3]int, bool) {
 	return nil, false
 }
 
-// onSegment reports whether p lies on the interior of segment a→b: within onLineTol of
-// the line and strictly between the endpoints (more than onLineTol from each). Endpoint
+// onSegment reports whether p lies on the interior of segment a→b: within lineTol of
+// the line and strictly between the endpoints (more than lineTol from each). Endpoint
 // exclusion is by absolute distance, not a parameter fraction, so a vertex near a long
-// edge's end is still recognized as a T-junction.
-const onLineTol = 1e-6
-
-func onSegment(p, a, b math.Point3) bool {
+// edge's end is still recognized as a T-junction. lineTol is the model-relative on-line
+// resolution the caller derives (ADR-0042), not a fixed constant.
+func onSegment(p, a, b math.Point3, lineTol float64) bool {
 	ab := a.VectorTo(b)
 	lenSq := ab.LengthSquared()
 	if lenSq == 0 {
@@ -225,10 +229,10 @@ func onSegment(p, a, b math.Point3) bool {
 		return false
 	}
 	foot := a.TranslateBy(ab.Scale(t))
-	if foot.DistanceTo(p) >= onLineTol {
+	if foot.DistanceTo(p) >= lineTol {
 		return false
 	}
-	return p.DistanceTo(a) > onLineTol && p.DistanceTo(b) > onLineTol
+	return p.DistanceTo(a) > lineTol && p.DistanceTo(b) > lineTol
 }
 
 // dropDegenerate removes triangles with a repeated corner.

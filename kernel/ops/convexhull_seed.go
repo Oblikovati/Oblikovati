@@ -90,11 +90,11 @@ func farthestFromPlane(pts []math.Point3, i0, i1, i2 int) int {
 
 // dedupPoints removes points that coincide to the weld grid, preserving first-seen order so
 // the hull is deterministic.
-func dedupPoints(points []math.Point3) []math.Point3 {
+func dedupPoints(points []math.Point3, grid float64) []math.Point3 {
 	seen := map[[3]int64]bool{}
 	out := make([]math.Point3, 0, len(points))
 	for _, p := range points {
-		k := [3]int64{quantize(p.X), quantize(p.Y), quantize(p.Z)}
+		k := [3]int64{quantize(p.X, grid), quantize(p.Y, grid), quantize(p.Z, grid)}
 		if seen[k] {
 			continue
 		}

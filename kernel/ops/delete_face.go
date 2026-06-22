@@ -214,7 +214,13 @@ func healedRing(l *topo.Loop, moved map[uint64]math.Point3) []math.Point3 {
 // (zero-length) edges that a heal collapses. One shared edge per undirected vertex pair; a
 // closed body (every edge used twice) is a solid.
 func buildSolidFromLoops(faces []ploop) *topo.Body {
-	w := newPointWelder()
+	var pts []math.Point3
+	for _, f := range faces {
+		for _, r := range f.rings {
+			pts = append(pts, r...)
+		}
+	}
+	w := newPointWelder(ResolutionForPoints(pts).Weld())
 	rings := make([][][]int, len(faces))
 	for i, f := range faces {
 		for _, r := range f.rings {
@@ -314,16 +320,20 @@ func dropRepeats(r []int) []int {
 	return out
 }
 
-// pointWelder merges coincident 3D points onto a shared index list (the weldGrid grid).
+// pointWelder merges coincident 3D points onto a shared index list, snapping to a
+// model-relative weld grid (ADR-0042) the caller derives from the points' size.
 type pointWelder struct {
 	index  map[[3]int64]int
 	points []math.Point3
+	grid   float64
 }
 
-func newPointWelder() *pointWelder { return &pointWelder{index: map[[3]int64]int{}} }
+func newPointWelder(grid float64) *pointWelder {
+	return &pointWelder{index: map[[3]int64]int{}, grid: grid}
+}
 
 func (w *pointWelder) add(p math.Point3) int {
-	k := [3]int64{int64(stdmath.Round(p.X / weldGrid)), int64(stdmath.Round(p.Y / weldGrid)), int64(stdmath.Round(p.Z / weldGrid))}
+	k := [3]int64{quantize(p.X, w.grid), quantize(p.Y, w.grid), quantize(p.Z, w.grid)}
 	if i, ok := w.index[k]; ok {
 		return i
 	}

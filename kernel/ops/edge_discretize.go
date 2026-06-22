@@ -55,7 +55,9 @@ func loopBoundary(l *topo.Loop, q Quality) []math.Point3 {
 		}
 		out = append(out, pts...)
 	}
-	if n := len(out); n > 1 && out[0].DistanceTo(out[n-1]) < weldPointTol {
+	// Model-relative closure test (ADR-0042): the duplicate-end threshold scales with
+	// the loop's size so a sub-µm loop is not falsely seen as closed.
+	if n := len(out); n > 1 && out[0].DistanceTo(out[n-1]) < ResolutionForPoints(out).Weld() {
 		out = out[:n-1] // drop the closing duplicate (last == first)
 	}
 	return out
