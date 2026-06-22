@@ -130,6 +130,44 @@ func TestHoleDrillsThroughForReal(t *testing.T) {
 	}
 }
 
+func TestHoleDrillsAtExplicitCenter(t *testing.T) {
+	// An 8×8×2 block. Drill a Ø2 through hole with an EXPLICIT off-centre drill point at
+	// (2,3) instead of the face centroid (4,4): the bore must land there, not at the middle.
+	block := buildPrism([]math.Point2{{X: 0, Y: 0}, {X: 8, Y: 0}, {X: 8, Y: 8}, {X: 0, Y: 8}}, sketch.XYPlane(), span{near: 0, far: 2}, 0, "blk")
+	top := block.Faces()[1].ReferenceKey() // z=2 cap, normal +Z
+
+	fs := NewPartFeatures(nil, nil)
+	NewBaseFeatures(fs).AddBase(block)
+	hole := NewHoleFeatures(fs).AddDrilledThrough(top, func() float64 { return 2 })
+	center := math.P3(2, 3, 2)
+	hole.feature.(*HoleFeature).def.Center = &center
+	fs.Recompute()
+	if !hole.Health().OK() {
+		t.Fatalf("explicit-centre hole sick: %+v", hole.Health())
+	}
+
+	res := fs.Result()
+	if r := ops.Validate(res[0]); !r.Valid || !res[0].IsSolid() {
+		t.Fatalf("drilled body not a valid solid: %+v", r)
+	}
+	var bore *geom.Cylinder
+	for _, f := range res[0].Faces() {
+		if c, ok := f.Geometry().(geom.Cylinder); ok {
+			bore = &c
+		}
+	}
+	if bore == nil {
+		t.Fatal("no cylinder face: the through bore was not cut")
+	}
+	if stdmath.Abs(bore.Origin.X-2) > 1e-6 || stdmath.Abs(bore.Origin.Y-3) > 1e-6 {
+		t.Errorf("bore axis at (%g,%g), want the explicit centre (2,3)", bore.Origin.X, bore.Origin.Y)
+	}
+	want := 64 - stdmath.Pi*1*1*2 // block − Ø2 through cylinder
+	if got := ops.BodyGeometryProperties(res[0], ops.DefaultQuality()).Volume; (want-got)/want > 0.03 {
+		t.Errorf("drilled volume = %g, want a hair under %g (64 − Ø2 through hole)", got, want)
+	}
+}
+
 func TestHoleThroughAllProducesCylinderWall(t *testing.T) {
 	// A 4×4×2 block, Ø2 hole through the top face. ThroughAll routes through the curved
 	// boolean → a TRUE cylinder wall (one curved face), not a 32-gon prism.
