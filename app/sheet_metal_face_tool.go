@@ -24,10 +24,14 @@ func NewSheetMetalFaceTool() *SheetMetalFaceTool { return &SheetMetalFaceTool{} 
 // Name implements [Tool].
 func (t *SheetMetalFaceTool) Name() string { return "Sheet Metal Face" }
 
-// Start filters selection to closed sketch profiles.
-func (t *SheetMetalFaceTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile))
-}
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *SheetMetalFaceTool) Start(*Session) {}
+
+// AcceptedKinds declares the sheet-metal face picks closed sketch regions (profiles).
+func (t *SheetMetalFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
+
+// Picks reports the picked regions for the unified highlight.
+func (t *SheetMetalFaceTool) Picks() []Selectable { return profileSelectables(t.profiles) }
 
 // Pick captures the clicked profile (a single region; a re-pick replaces it).
 func (t *SheetMetalFaceTool) Pick(_ *Session, sel Selectable) {
@@ -68,7 +72,7 @@ func (t *SheetMetalFaceTool) addFace(part *compdef.PartComponentDefinition, fs *
 }
 
 // Cancel abandons the tool.
-func (t *SheetMetalFaceTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalFaceTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SheetMetalFaceTool) AddedFeature() *feature.PartFeature { return t.added }

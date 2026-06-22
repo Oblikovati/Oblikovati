@@ -24,8 +24,11 @@ func NewThickenTool() *ThickenTool { return &ThickenTool{thickness: 1} }
 // Name implements [Tool].
 func (t *ThickenTool) Name() string { return "Thicken" }
 
-// Start clears the selection filter (thicken needs no picks).
-func (t *ThickenTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+// Start is a no-op; thicken needs no picks.
+func (t *ThickenTool) Start(*Session) {}
+
+// AcceptedKinds declares no restriction (thicken acts on the whole body and gathers no picks).
+func (t *ThickenTool) AcceptedKinds() []SelectionKind { return nil }
 
 // Pick is a no-op — thicken acts on the running surface body, not a selection.
 
@@ -82,5 +85,5 @@ func (t *ThickenTool) DraftFeature(*Session) (feature.Feature, bool) {
 // Prompt guides the user.
 func (t *ThickenTool) Prompt(*Session) string { return "Set the thickness, then click OK" }
 
-// Cancel restores the default selection filter.
-func (t *ThickenTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+// Cancel is a no-op; the engine restores the ambient filter.
+func (t *ThickenTool) Cancel(*Session) {}

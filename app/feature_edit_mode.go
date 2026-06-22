@@ -54,7 +54,6 @@ func commitFeatureEdit(s *Session, f *feature.PartFeature) error {
 	part.Recompute()
 	s.recordEdit(part, "Edit "+f.Name())
 	s.EmitFeatureLifecycle(FeatureEdited, f) // featureEdited for UI-driven edits (#1085)
-	s.Selection().SetFilter(NewSelectionFilter())
 	if !f.Health().OK() {
 		return errors.New("feature edit: " + f.Health().Reason)
 	}
@@ -72,7 +71,6 @@ func cancelFeatureEdit(s *Session, f *feature.PartFeature, restore func()) {
 		part.Features().MarkDirty(f)
 		part.Recompute()
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // editToolFor builds the creation tool re-opened over a committed feature, or false for

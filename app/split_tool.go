@@ -24,12 +24,22 @@ func NewSplitTool() *SplitTool { return &SplitTool{keep: feature.SplitBoth} }
 // Name implements [Tool].
 func (t *SplitTool) Name() string { return "Split" }
 
-// Start adopts a pre-selected work plane and filters selection to work planes.
+// Start adopts a pre-selected work plane; the engine installs the filter from AcceptedKinds.
 func (t *SplitTool) Start(s *Session) {
 	if wp := s.SelectedWorkPlane(); wp != nil {
 		t.plane = wp
 	}
-	s.Selection().SetFilter(NewSelectionFilter(SelectWorkPlane))
+}
+
+// AcceptedKinds declares split picks a work plane (the cutting plane).
+func (t *SplitTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectWorkPlane} }
+
+// Picks reports the picked cutting plane for the unified highlight.
+func (t *SplitTool) Picks() []Selectable {
+	if t.plane == nil {
+		return nil
+	}
+	return []Selectable{WorkPlaneHandle{Plane: t.plane}}
 }
 
 // Pick captures the work plane the user clicked.
@@ -86,7 +96,6 @@ func (t *SplitTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("split: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -110,7 +119,7 @@ func (t *SplitTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *SplitTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SplitTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SplitTool) AddedFeature() *feature.PartFeature { return t.added }

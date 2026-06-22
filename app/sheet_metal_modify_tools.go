@@ -20,9 +20,12 @@ type SheetMetalBendTool struct {
 // NewSheetMetalBendTool returns a bend tool awaiting a sketch line.
 func NewSheetMetalBendTool() *SheetMetalBendTool { return &SheetMetalBendTool{} }
 
-func (t *SheetMetalBendTool) Name() string { return "Sheet Metal Bend" }
-func (t *SheetMetalBendTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectSketchEntity))
+func (t *SheetMetalBendTool) Name() string   { return "Sheet Metal Bend" }
+func (t *SheetMetalBendTool) Start(*Session) {}
+
+// AcceptedKinds declares the bend picks a sketch entity (the bend line).
+func (t *SheetMetalBendTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectSketchEntity}
 }
 func (t *SheetMetalBendTool) Pick(_ *Session, sel Selectable) {
 	if h, ok := sel.(SketchEntityHandle); ok {
@@ -30,7 +33,7 @@ func (t *SheetMetalBendTool) Pick(_ *Session, sel Selectable) {
 	}
 }
 func (t *SheetMetalBendTool) CanCommit() bool                    { return t.line != nil }
-func (t *SheetMetalBendTool) Cancel(s *Session)                  { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalBendTool) Cancel(s *Session)                  {}
 func (t *SheetMetalBendTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalBendTool) Commit(s *Session) error {
@@ -58,9 +61,12 @@ type SheetMetalFoldTool struct {
 // NewSheetMetalFoldTool returns a fold tool awaiting a sketch line.
 func NewSheetMetalFoldTool() *SheetMetalFoldTool { return &SheetMetalFoldTool{} }
 
-func (t *SheetMetalFoldTool) Name() string { return "Sheet Metal Fold" }
-func (t *SheetMetalFoldTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectSketchEntity))
+func (t *SheetMetalFoldTool) Name() string   { return "Sheet Metal Fold" }
+func (t *SheetMetalFoldTool) Start(*Session) {}
+
+// AcceptedKinds declares the fold picks a sketch entity (the fold line).
+func (t *SheetMetalFoldTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectSketchEntity}
 }
 func (t *SheetMetalFoldTool) Pick(_ *Session, sel Selectable) {
 	if h, ok := sel.(SketchEntityHandle); ok {
@@ -68,7 +74,7 @@ func (t *SheetMetalFoldTool) Pick(_ *Session, sel Selectable) {
 	}
 }
 func (t *SheetMetalFoldTool) CanCommit() bool                    { return t.line != nil }
-func (t *SheetMetalFoldTool) Cancel(s *Session)                  { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalFoldTool) Cancel(s *Session)                  {}
 func (t *SheetMetalFoldTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalFoldTool) Commit(s *Session) error {
@@ -99,10 +105,14 @@ type SheetMetalCornerTool struct {
 // NewSheetMetalCornerTool returns a corner tool defaulting to a 3 mm chamfer.
 func NewSheetMetalCornerTool() *SheetMetalCornerTool { return &SheetMetalCornerTool{size: 0.3} }
 
-func (t *SheetMetalCornerTool) Name() string { return "Sheet Metal Corner" }
-func (t *SheetMetalCornerTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
-}
+func (t *SheetMetalCornerTool) Name() string   { return "Sheet Metal Corner" }
+func (t *SheetMetalCornerTool) Start(*Session) {}
+
+// AcceptedKinds declares the corner picks edges (the corner edges to treat).
+func (t *SheetMetalCornerTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edges for the unified highlight.
+func (t *SheetMetalCornerTool) Picks() []Selectable { return edgeSelectables(t.edges) }
 func (t *SheetMetalCornerTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
 		t.edges = append(t.edges, e)
@@ -111,7 +121,7 @@ func (t *SheetMetalCornerTool) Pick(_ *Session, sel Selectable) {
 func (t *SheetMetalCornerTool) SetSize(v float64)                  { t.size = v }
 func (t *SheetMetalCornerTool) Size() float64                      { return t.size }
 func (t *SheetMetalCornerTool) CanCommit() bool                    { return len(t.edges) > 0 && t.size > 0 }
-func (t *SheetMetalCornerTool) Cancel(s *Session)                  { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalCornerTool) Cancel(s *Session)                  {}
 func (t *SheetMetalCornerTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalCornerTool) Commit(s *Session) error {
@@ -141,10 +151,16 @@ func NewSheetMetalCornerSeamTool() *SheetMetalCornerSeamTool {
 	return &SheetMetalCornerSeamTool{gap: 0.02}
 }
 
-func (t *SheetMetalCornerSeamTool) Name() string { return "Sheet Metal Corner Seam" }
-func (t *SheetMetalCornerSeamTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
+func (t *SheetMetalCornerSeamTool) Name() string   { return "Sheet Metal Corner Seam" }
+func (t *SheetMetalCornerSeamTool) Start(*Session) {}
+
+// AcceptedKinds declares the corner seam picks edges (the corner edges to seam).
+func (t *SheetMetalCornerSeamTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectEdge}
 }
+
+// Picks reports the picked edges for the unified highlight.
+func (t *SheetMetalCornerSeamTool) Picks() []Selectable { return edgeSelectables(t.edges) }
 func (t *SheetMetalCornerSeamTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
 		t.edges = append(t.edges, e)
@@ -153,7 +169,7 @@ func (t *SheetMetalCornerSeamTool) Pick(_ *Session, sel Selectable) {
 func (t *SheetMetalCornerSeamTool) SetGap(v float64)                   { t.gap = v }
 func (t *SheetMetalCornerSeamTool) Gap() float64                       { return t.gap }
 func (t *SheetMetalCornerSeamTool) CanCommit() bool                    { return len(t.edges) > 0 && t.gap > 0 }
-func (t *SheetMetalCornerSeamTool) Cancel(s *Session)                  { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalCornerSeamTool) Cancel(s *Session)                  {}
 func (t *SheetMetalCornerSeamTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalCornerSeamTool) Commit(s *Session) error {
@@ -180,17 +196,21 @@ type SheetMetalCutTool struct {
 // NewSheetMetalCutTool returns a cut tool awaiting a profile.
 func NewSheetMetalCutTool() *SheetMetalCutTool { return &SheetMetalCutTool{} }
 
-func (t *SheetMetalCutTool) Name() string { return "Sheet Metal Cut" }
-func (t *SheetMetalCutTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile))
-}
+func (t *SheetMetalCutTool) Name() string   { return "Sheet Metal Cut" }
+func (t *SheetMetalCutTool) Start(*Session) {}
+
+// AcceptedKinds declares the cut picks a closed sketch region (profile).
+func (t *SheetMetalCutTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
+
+// Picks reports the picked region for the unified highlight.
+func (t *SheetMetalCutTool) Picks() []Selectable { return singlePick(t.profile) }
 func (t *SheetMetalCutTool) Pick(_ *Session, sel Selectable) {
 	if p, ok := sel.(ProfileHandle); ok {
 		t.profile = &p
 	}
 }
 func (t *SheetMetalCutTool) CanCommit() bool                    { return t.profile != nil }
-func (t *SheetMetalCutTool) Cancel(s *Session)                  { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalCutTool) Cancel(s *Session)                  {}
 func (t *SheetMetalCutTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalCutTool) Commit(s *Session) error {

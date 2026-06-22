@@ -117,11 +117,13 @@ func TestCreateSketchToolCancelRestoresFilter(t *testing.T) {
 	s, _ := emptyPartSession(t)
 	tool := NewCreateSketchTool()
 	s.StartTool(tool)
-	if s.Selection().Filter().Accepts(SelectFace) {
-		t.Error("Create Sketch tool should restrict the filter to work planes")
+	// The tool restricts to the sketch hosts (work planes and planar faces), so edges
+	// (not a host) are excluded while it is active.
+	if !s.Selection().Filter().IsRestricted() || s.Selection().Filter().Accepts(SelectEdge) {
+		t.Error("Create Sketch tool should restrict the filter to sketch hosts (planes and faces)")
 	}
 	s.CancelTool()
-	if !s.Selection().Filter().Accepts(SelectFace) {
+	if !s.Selection().Filter().Accepts(SelectEdge) {
 		t.Error("cancelling should restore the all-accepting filter")
 	}
 }

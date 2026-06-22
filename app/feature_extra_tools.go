@@ -34,8 +34,14 @@ func NewBossTool() *BossTool { return &BossTool{diameter: 1, height: 1} }
 // Name implements [Tool].
 func (t *BossTool) Name() string { return "Boss" }
 
-// Start filters selection to faces so clicks pick the placement face.
-func (t *BossTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *BossTool) Start(*Session) {}
+
+// AcceptedKinds declares boss picks a face (the placement face).
+func (t *BossTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the placement face for the unified highlight.
+func (t *BossTool) Picks() []Selectable { return faceSelectables(t.Faces()) }
 
 // Pick captures the planar face the stud grows from.
 func (t *BossTool) Pick(_ *Session, sel Selectable) {
@@ -83,7 +89,6 @@ func (t *BossTool) Commit(s *Session) error {
 		Add(t.face.Face.ReferenceKey(), func() float64 { return d }, func() float64 { return h })
 	part.Recompute()
 	s.recordEdit(part, "Boss")
-	s.Selection().SetFilter(NewSelectionFilter())
 	if !t.added.Health().OK() {
 		return errors.New("boss: " + t.added.Health().Reason)
 	}
@@ -91,7 +96,7 @@ func (t *BossTool) Commit(s *Session) error {
 }
 
 // Cancel restores the default selection filter.
-func (t *BossTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *BossTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *BossTool) AddedFeature() *feature.PartFeature { return t.added }
@@ -241,10 +246,14 @@ func NewDirectEditTool() *DirectEditTool {
 // Name implements [Tool].
 func (t *DirectEditTool) Name() string { return "Direct Edit" }
 
-// Start filters selection to faces.
-func (t *DirectEditTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectFace))
-}
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *DirectEditTool) Start(*Session) {}
+
+// AcceptedKinds declares direct-edit picks faces (the faces to move/rotate/scale/etc.).
+func (t *DirectEditTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *DirectEditTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick collects the faces the operation acts on.
 func (t *DirectEditTool) Pick(_ *Session, sel Selectable) {
@@ -313,7 +322,6 @@ func (t *DirectEditTool) Commit(s *Session) error {
 	t.added = feature.NewModifyFeatures(part.Features()).AddDirectEdit(t.definition())
 	part.Recompute()
 	s.recordEdit(part, "Direct Edit")
-	s.Selection().SetFilter(NewSelectionFilter())
 	if !t.added.Health().OK() {
 		return errors.New("direct edit: " + t.added.Health().Reason)
 	}
@@ -350,7 +358,6 @@ func (t *DirectEditTool) fillOperationInputs(def *feature.DirectEditDefinition) 
 
 // Cancel restores the default selection filter.
 func (t *DirectEditTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
 	t.faces = nil
 }
 

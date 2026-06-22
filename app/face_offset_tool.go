@@ -24,8 +24,14 @@ func NewFaceOffsetTool() *FaceOffsetTool { return &FaceOffsetTool{distance: 1} }
 // Name implements [Tool].
 func (t *FaceOffsetTool) Name() string { return "Offset Face" }
 
-// Start sets the selection filter to faces.
-func (t *FaceOffsetTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *FaceOffsetTool) Start(*Session) {}
+
+// AcceptedKinds declares offset-face picks faces (the faces to move).
+func (t *FaceOffsetTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *FaceOffsetTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick appends the clicked face (ignoring a duplicate).
 func (t *FaceOffsetTool) Pick(_ *Session, sel Selectable) {
@@ -75,7 +81,6 @@ func (t *FaceOffsetTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("offset face: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -108,7 +113,7 @@ func (t *FaceOffsetTool) Prompt(*Session) string {
 }
 
 // Cancel restores the default selection filter.
-func (t *FaceOffsetTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *FaceOffsetTool) Cancel(*Session) {}
 
 // ClearFaces empties the picked faces — the property panel's selector clear (⊗) —
 // returning the tool to its pick-faces step.

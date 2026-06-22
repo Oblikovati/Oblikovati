@@ -117,16 +117,19 @@ var extrudeDirectionToggles = propertyToggleSet{
 }
 
 var extrudeExtentToggles = propertyToggleSet{
-	keys: []string{"extent-distance", "extent-through-all", "extent-to-next"},
+	keys: []string{"extent-distance", "extent-through-all", "extent-to-next", "extent-to-face"},
 	tips: []string{
 		"Distance — extrude exactly Distance A",
 		"Through All — extrude through all existing material",
 		"To Next — extrude up to the next face",
+		"To Face — extrude up to a face or work plane you then pick",
 	},
 }
 
 // extrudeExtentTypes lists the extents in the extent toggle row's order.
-var extrudeExtentTypes = []feature.ExtentType{feature.DistanceExtent, feature.ThroughAllExtent, feature.ToNextExtent}
+var extrudeExtentTypes = []feature.ExtentType{
+	feature.DistanceExtent, feature.ThroughAllExtent, feature.ToNextExtent, feature.ToFaceExtent,
+}
 
 // drawExtrudeBehavior is the Behavior section: the direction toggle row, the Distance A
 // field with the extent toggles beside it, and the Distance B field while asymmetric.

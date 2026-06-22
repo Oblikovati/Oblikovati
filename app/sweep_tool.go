@@ -29,9 +29,17 @@ func NewSweepTool() *SweepTool { return &SweepTool{operation: ops.NewBody} }
 // Name implements [Tool].
 func (t *SweepTool) Name() string { return "Sweep" }
 
-// Start accepts both profile and path picks.
-func (t *SweepTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectPath))
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *SweepTool) Start(*Session) {}
+
+// AcceptedKinds declares sweep picks a closed region (profile) and a path to sweep it along.
+func (t *SweepTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectProfile, SelectPath}
+}
+
+// Picks reports the picked profile and path for the unified highlight.
+func (t *SweepTool) Picks() []Selectable {
+	return appendPick(appendPick(nil, t.profile), t.path)
 }
 
 // Pick routes a profile pick to the profile slot and a path pick to the path slot.
@@ -100,7 +108,6 @@ func (t *SweepTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("sweep: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -161,4 +168,4 @@ func (t *SweepTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *SweepTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SweepTool) Cancel(*Session) {}

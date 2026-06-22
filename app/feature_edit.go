@@ -100,13 +100,23 @@ func (t *FeatureEditTool) Cancel(s *Session) {
 	})
 }
 
-// Arm puts the i-th reference slot into pick mode (its kind's filter); ClearSlot empties it.
+// Arm puts the i-th reference slot into pick mode; the engine then installs that slot's kind
+// filter from AcceptedKinds. ClearSlot empties it.
 func (t *FeatureEditTool) Arm(s *Session, i int) {
 	if i < 0 || i >= len(t.refs) {
 		return
 	}
 	t.armed = i
-	s.Selection().SetFilter(NewSelectionFilter(filterKinds(t.refs[i].Kind)...))
+	s.installToolFilter()
+}
+
+// AcceptedKinds declares the kinds the armed reference slot accepts (nil when no slot is armed, so
+// clicks fall through to the ambient filter and the tool's Pick ignores them).
+func (t *FeatureEditTool) AcceptedKinds() []SelectionKind {
+	if t.armed < 0 || t.armed >= len(t.refs) {
+		return nil
+	}
+	return filterKinds(t.refs[t.armed].Kind)
 }
 
 // ClearSlot removes every reference from the i-th slot and recomputes (no-op for a slot that
@@ -137,7 +147,7 @@ func (t *FeatureEditTool) ArmedSlot() int { return t.armed }
 
 func (t *FeatureEditTool) disarm(s *Session) {
 	t.armed = -1
-	s.Selection().SetFilter(NewSelectionFilter())
+	s.installToolFilter() // armed = -1 ⇒ no restriction (back to the ambient filter)
 }
 
 func (t *FeatureEditTool) recompute(s *Session) {

@@ -24,8 +24,14 @@ func NewGrillTool() *GrillTool { return &GrillTool{} }
 // Name implements [Tool].
 func (t *GrillTool) Name() string { return "Grill" }
 
-// Start filters selection to closed regions so clicks pick a boundary profile.
-func (t *GrillTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectProfile)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *GrillTool) Start(*Session) {}
+
+// AcceptedKinds declares grill picks closed boundary regions (profiles).
+func (t *GrillTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
+
+// Picks reports the picked boundaries for the unified highlight.
+func (t *GrillTool) Picks() []Selectable { return profileSelectables(t.profiles) }
 
 // Pick captures a single clicked region (replacing any previous selection).
 func (t *GrillTool) Pick(_ *Session, sel Selectable) {
@@ -80,7 +86,6 @@ func (t *GrillTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("grill: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -103,7 +108,7 @@ func (t *GrillTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *GrillTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *GrillTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *GrillTool) AddedFeature() *feature.PartFeature { return t.added }

@@ -68,8 +68,29 @@ func NewRevolveTool() *RevolveTool {
 // Name implements [Tool].
 func (t *RevolveTool) Name() string { return "Revolve" }
 
-// Start sets the selection filter to profiles so clicks pick a region.
-func (t *RevolveTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectProfile)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *RevolveTool) Start(*Session) {}
+
+// AcceptedKinds declares revolve's two steps: pick the region (profile), then — once a profile is
+// set — pick the centerline axis (a sketch entity). The engine re-derives this after each pick.
+func (t *RevolveTool) AcceptedKinds() []SelectionKind {
+	if t.profile == nil {
+		return []SelectionKind{SelectProfile}
+	}
+	return []SelectionKind{SelectSketchEntity}
+}
+
+// Picks reports the picked region and centerline for the unified highlight.
+func (t *RevolveTool) Picks() []Selectable {
+	var picks []Selectable
+	if t.profile != nil {
+		picks = append(picks, *t.profile)
+	}
+	if t.centerline != nil {
+		picks = append(picks, SketchEntityHandle{Entity: t.centerline})
+	}
+	return picks
+}
 
 // Pick captures the region (then auto-advances to the centerline axis, pre-selecting one per
 // Inventor's rules) or, once a profile is set, a centerline the user clicks to override it.
@@ -93,7 +114,7 @@ func (t *RevolveTool) advanceToCenterline(s *Session) {
 	if sk, line, ok := preselectCenterline(t.profile.Sketch, visiblePartSketches(s)); ok {
 		t.centerline, t.centerlineSk = line, sk
 	}
-	s.Selection().SetFilter(NewSelectionFilter(SelectSketchEntity))
+	// The engine re-derives the filter (now SketchEntity) from AcceptedKinds after this pick.
 }
 
 // visiblePartSketches returns the active part's visible 2D sketches (the centerline candidates).
@@ -249,7 +270,6 @@ func (t *RevolveTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("revolve: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -341,7 +361,6 @@ func (t *RevolveTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // FullTurn is the swept angle of a complete revolution, for the property window's

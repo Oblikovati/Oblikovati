@@ -28,11 +28,15 @@ func NewSheetMetalLipTool() *SheetMetalLipTool {
 	return &SheetMetalLipTool{height: 1.0, returnLen: 0.3, angle: halfPiAngle}
 }
 
-func (t *SheetMetalLipTool) Name() string { return "Sheet Metal Lip" }
-func (t *SheetMetalLipTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
-}
-func (t *SheetMetalLipTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalLipTool) Name() string   { return "Sheet Metal Lip" }
+func (t *SheetMetalLipTool) Start(*Session) {}
+
+// AcceptedKinds declares the sheet-metal lip picks an edge.
+func (t *SheetMetalLipTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edge for the unified highlight.
+func (t *SheetMetalLipTool) Picks() []Selectable { return singlePick(t.edge) }
+func (t *SheetMetalLipTool) Cancel(*Session)     {}
 func (t *SheetMetalLipTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
 		t.edge = &e
@@ -95,11 +99,14 @@ type SheetMetalRipTool struct {
 // NewSheetMetalRipTool returns a rip tool defaulting to a 0.1 mm kerf.
 func NewSheetMetalRipTool() *SheetMetalRipTool { return &SheetMetalRipTool{gap: 0.01} }
 
-func (t *SheetMetalRipTool) Name() string { return "Sheet Metal Rip" }
-func (t *SheetMetalRipTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectSketchEntity))
+func (t *SheetMetalRipTool) Name() string   { return "Sheet Metal Rip" }
+func (t *SheetMetalRipTool) Start(*Session) {}
+
+// AcceptedKinds declares the rip picks a sketch entity (the slit line).
+func (t *SheetMetalRipTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectSketchEntity}
 }
-func (t *SheetMetalRipTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalRipTool) Cancel(*Session) {}
 func (t *SheetMetalRipTool) Pick(_ *Session, sel Selectable) {
 	if h, ok := sel.(SketchEntityHandle); ok {
 		t.line = &h
@@ -161,11 +168,15 @@ type SheetMetalPunchTool struct {
 // NewSheetMetalPunchTool returns a punch tool awaiting a profile.
 func NewSheetMetalPunchTool() *SheetMetalPunchTool { return &SheetMetalPunchTool{} }
 
-func (t *SheetMetalPunchTool) Name() string { return "Sheet Metal Punch" }
-func (t *SheetMetalPunchTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile))
-}
-func (t *SheetMetalPunchTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalPunchTool) Name() string   { return "Sheet Metal Punch" }
+func (t *SheetMetalPunchTool) Start(*Session) {}
+
+// AcceptedKinds declares the punch picks a closed sketch region (profile).
+func (t *SheetMetalPunchTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
+
+// Picks reports the picked region for the unified highlight.
+func (t *SheetMetalPunchTool) Picks() []Selectable { return singlePick(t.profile) }
+func (t *SheetMetalPunchTool) Cancel(*Session)     {}
 func (t *SheetMetalPunchTool) Pick(_ *Session, sel Selectable) {
 	if p, ok := sel.(ProfileHandle); ok {
 		t.profile = &p
@@ -214,13 +225,14 @@ func NewSheetMetalCosmeticBendTool() *SheetMetalCosmeticBendTool {
 	return &SheetMetalCosmeticBendTool{angle: halfPiAngle}
 }
 
-func (t *SheetMetalCosmeticBendTool) Name() string { return "Sheet Metal Cosmetic Bend" }
-func (t *SheetMetalCosmeticBendTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectSketchEntity))
+func (t *SheetMetalCosmeticBendTool) Name() string   { return "Sheet Metal Cosmetic Bend" }
+func (t *SheetMetalCosmeticBendTool) Start(*Session) {}
+
+// AcceptedKinds declares the cosmetic bend picks a sketch entity (the bend line).
+func (t *SheetMetalCosmeticBendTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectSketchEntity}
 }
-func (t *SheetMetalCosmeticBendTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
-}
+func (t *SheetMetalCosmeticBendTool) Cancel(*Session) {}
 func (t *SheetMetalCosmeticBendTool) Pick(_ *Session, sel Selectable) {
 	if h, ok := sel.(SketchEntityHandle); ok {
 		t.line = &h

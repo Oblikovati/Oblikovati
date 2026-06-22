@@ -23,8 +23,14 @@ func NewExtendTool() *ExtendTool { return &ExtendTool{distance: 1} }
 // Name implements [Tool].
 func (t *ExtendTool) Name() string { return "Extend" }
 
-// Start filters selection to edges so clicks pick a boundary edge.
-func (t *ExtendTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectEdge)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *ExtendTool) Start(*Session) {}
+
+// AcceptedKinds declares extend picks edges (the surface boundary edges to extend).
+func (t *ExtendTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edges for the unified highlight.
+func (t *ExtendTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
 
 // Pick captures the boundary edge to extend.
 func (t *ExtendTool) Pick(_ *Session, sel Selectable) {
@@ -66,7 +72,6 @@ func (t *ExtendTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("extend: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -87,7 +92,7 @@ func (t *ExtendTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *ExtendTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *ExtendTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ExtendTool) AddedFeature() *feature.PartFeature { return t.added }

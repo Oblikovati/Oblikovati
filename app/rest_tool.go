@@ -25,8 +25,14 @@ func NewRestTool() *RestTool { return &RestTool{depth: 1} }
 // Name implements [Tool].
 func (t *RestTool) Name() string { return "Rest" }
 
-// Start filters selection to closed regions so clicks pick a profile.
-func (t *RestTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectProfile)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *RestTool) Start(*Session) {}
+
+// AcceptedKinds declares rest picks closed sketch regions (profiles).
+func (t *RestTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
+
+// Picks reports the picked regions for the unified highlight.
+func (t *RestTool) Picks() []Selectable { return profileSelectables(t.profiles) }
 
 // Pick captures a single clicked region (replacing any previous selection).
 func (t *RestTool) Pick(_ *Session, sel Selectable) {
@@ -86,7 +92,6 @@ func (t *RestTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("rest: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -108,7 +113,7 @@ func (t *RestTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *RestTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *RestTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *RestTool) AddedFeature() *feature.PartFeature { return t.added }

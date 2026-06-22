@@ -29,10 +29,14 @@ func NewFullRoundFilletTool() *FullRoundFilletTool { return &FullRoundFilletTool
 // Name implements [Tool].
 func (t *FullRoundFilletTool) Name() string { return "Full Round Fillet" }
 
-// Start sets the selection filter to faces so clicks pick the center and side faces.
-func (t *FullRoundFilletTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectFace))
-}
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *FullRoundFilletTool) Start(*Session) {}
+
+// AcceptedKinds declares full-round-fillet picks faces (the center and side face sets).
+func (t *FullRoundFilletTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports every picked face for the unified highlight.
+func (t *FullRoundFilletTool) Picks() []Selectable { return faceSelectables(t.Faces()) }
 
 // Pick appends the clicked face to the active set, ignoring a face already in any set.
 func (t *FullRoundFilletTool) Pick(_ *Session, sel Selectable) {
@@ -113,7 +117,6 @@ func (t *FullRoundFilletTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("full round fillet: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -163,5 +166,4 @@ func (t *FullRoundFilletTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }

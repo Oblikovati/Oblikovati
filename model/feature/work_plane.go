@@ -117,6 +117,14 @@ func (w *WorkPlane) Health() health.Health { return w.health }
 // Plane returns the current datum plane, also usable directly as a sketch host.
 func (w *WorkPlane) Plane() sketch.Plane { return w.plane }
 
+// NewFixedWorkPlane returns a transient work plane fixed at the given plane, not part of any
+// work-geometry collection. It is used as an extent target — e.g. a "to face" termination derived
+// from a picked planar face — where only Plane() is consulted. It carries no key/provenance, so it
+// is not persisted as a datum; persisting a face-based to-face target is a follow-up.
+func NewFixedWorkPlane(plane sketch.Plane) *WorkPlane {
+	return &WorkPlane{id: nextID(), plane: plane, displaySize: defaultOriginPlaneSize, visible: true}
+}
+
 // DisplaySize is the half-edge length of the square the plane is drawn/picked as.
 func (w *WorkPlane) DisplaySize() float64 { return w.displaySize }
 

@@ -25,9 +25,17 @@ func NewProjectGeometryTool() *ProjectGeometryTool { return &ProjectGeometryTool
 // Name implements [Tool].
 func (t *ProjectGeometryTool) Name() string { return "Project Geometry" }
 
-// Start restricts the selection to projectable references (edges and vertices).
-func (t *ProjectGeometryTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge, SelectVertex))
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *ProjectGeometryTool) Start(*Session) {}
+
+// AcceptedKinds declares project-geometry picks projectable references: edges and vertices.
+func (t *ProjectGeometryTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectEdge, SelectVertex}
+}
+
+// Picks reports the picked edges and vertices for the unified highlight.
+func (t *ProjectGeometryTool) Picks() []Selectable {
+	return append(edgeSelectables(t.edges), vertexSelectables(t.vertices)...)
 }
 
 // Pick records a clicked edge or vertex (ignoring other kinds).
@@ -63,7 +71,6 @@ func (t *ProjectGeometryTool) Commit(s *Session) error {
 	for _, v := range t.vertices {
 		sk.ProjectPoint(compdef.NewVertexRefSource(part, string(v.Vertex.ReferenceKey())))
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

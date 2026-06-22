@@ -159,9 +159,10 @@ func workFeatureCommands() []*CommandDefinition {
 func modelTabCommands() []*CommandDefinition {
 	cmds := []*CommandDefinition{
 		NewCommand("Sketch.Create2D", "Create 2D Sketch", "Sketch", func(s *Session) error {
-			// With a plane already selected, sketch on it immediately; otherwise start
-			// the tool and let the user pick a plane in the 3D view or the browser.
-			if s.SelectedWorkPlane() != nil {
+			// With a host (work plane or planar face) already selected, sketch on it
+			// immediately; otherwise start the tool and let the user pick one in the 3D
+			// view or the browser.
+			if _, ok := s.SelectedSketchHostPlane(); ok {
 				_, err := s.CreateSketchOnSelectedPlane()
 				return err
 			}

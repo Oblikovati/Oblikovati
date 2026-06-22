@@ -39,9 +39,14 @@ type assemblyEdgeSelectTool struct {
 
 // Start restricts picking to edges, so a click selects a participant edge rather than the whole
 // occurrence (the SelectEdge filter bypasses occurrence selection — see #769).
-func (t *assemblyEdgeSelectTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
-}
+func (t *assemblyEdgeSelectTool) Start(*Session) {}
+
+// AcceptedKinds declares the assembly dress-up picks component edges (the SelectEdge filter
+// bypasses occurrence selection — see #769).
+func (t *assemblyEdgeSelectTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked component edges for the unified highlight.
+func (t *assemblyEdgeSelectTool) Picks() []Selectable { return edgeSelectables(t.edges) }
 
 // Pick appends a picked edge (ignoring a repeat, so a double-click does not duplicate it).
 func (t *assemblyEdgeSelectTool) Pick(_ *Session, sel Selectable) {
@@ -62,7 +67,6 @@ func (t *assemblyEdgeSelectTool) hasEdge(e EdgeHandle) bool {
 // Cancel abandons the picks and clears the edge filter.
 func (t *assemblyEdgeSelectTool) Cancel(s *Session) {
 	t.edges = nil
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // resolve returns the active assembly and the component-local suffix of each picked edge, erroring
@@ -88,7 +92,6 @@ func (t *assemblyEdgeSelectTool) finish(s *Session, asm *compdef.AssemblyCompone
 	af.SetName(asm.Features().UniqueName(af.Kind()))
 	asm.RecomputeFeatures()
 	s.recordEdit(asm, af.Kind())
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // --- Chamfer --------------------------------------------------------------

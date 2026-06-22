@@ -38,8 +38,14 @@ func NewHoleTool() *HoleTool {
 // Name implements [Tool].
 func (t *HoleTool) Name() string { return "Hole" }
 
-// Start sets the selection filter to faces so clicks pick a placement face.
-func (t *HoleTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *HoleTool) Start(*Session) {}
+
+// AcceptedKinds declares hole picks a face (the placement face).
+func (t *HoleTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the placement face for the unified highlight.
+func (t *HoleTool) Picks() []Selectable { return singlePick(t.face) }
 
 // Pick captures the planar face the user clicked.
 func (t *HoleTool) Pick(_ *Session, sel Selectable) {
@@ -163,7 +169,6 @@ func (t *HoleTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("hole: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -247,5 +252,4 @@ func (t *HoleTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }

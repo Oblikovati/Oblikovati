@@ -30,9 +30,12 @@ func NewMeasureTool() *MeasureTool { return &MeasureTool{} }
 // Name is the tool's display name.
 func (t *MeasureTool) Name() string { return "Measure" }
 
-// Start lets the user pick any face, edge or vertex.
-func (t *MeasureTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectFace, SelectEdge, SelectVertex))
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *MeasureTool) Start(*Session) {}
+
+// AcceptedKinds declares measure picks faces, edges and vertices (the entities it measures).
+func (t *MeasureTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectFace, SelectEdge, SelectVertex}
 }
 
 // Pick adds an entity (starting a fresh selection when the pick can't extend the current one) and
@@ -89,15 +92,13 @@ func (t *MeasureTool) CanCommit() bool { return len(t.picks) > 0 }
 
 // Commit closes the tool, leaving the last readout in the status bar.
 func (t *MeasureTool) Commit(s *Session) error {
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
-// Cancel clears the picks and the filter.
-func (t *MeasureTool) Cancel(s *Session) {
+// Cancel clears the picks; the engine restores the ambient filter.
+func (t *MeasureTool) Cancel(*Session) {
 	t.picks = nil
 	t.readout = ""
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // measurePickFrom resolves a selection handle to a measurement entity.

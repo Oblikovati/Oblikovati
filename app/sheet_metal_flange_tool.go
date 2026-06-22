@@ -30,10 +30,14 @@ const halfPiAngle = 1.5707963267948966
 // Name implements [Tool].
 func (t *SheetMetalFlangeTool) Name() string { return "Sheet Metal Flange" }
 
-// Start filters selection to edges so a click picks the edge to flange from.
-func (t *SheetMetalFlangeTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
-}
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *SheetMetalFlangeTool) Start(*Session) {}
+
+// AcceptedKinds declares flange picks an edge (the straight edge to fold from).
+func (t *SheetMetalFlangeTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edge for the unified highlight.
+func (t *SheetMetalFlangeTool) Picks() []Selectable { return singlePick(t.edge) }
 
 // Pick captures the clicked edge (a re-pick replaces it).
 func (t *SheetMetalFlangeTool) Pick(_ *Session, sel Selectable) {
@@ -79,7 +83,7 @@ func (t *SheetMetalFlangeTool) addFlange(fs *feature.PartFeatures) *feature.Part
 }
 
 // Cancel abandons the tool.
-func (t *SheetMetalFlangeTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalFlangeTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SheetMetalFlangeTool) AddedFeature() *feature.PartFeature { return t.added }

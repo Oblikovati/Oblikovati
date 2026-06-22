@@ -82,7 +82,6 @@ func (t *SheetMetalStyleTool) Commit(s *Session) error {
 	part.Features().MarkAllDirty()
 	part.Recompute()
 	s.recordEdit(part, "Sheet Metal Style")
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

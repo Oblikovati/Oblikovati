@@ -36,8 +36,13 @@ func (t *ChamferTool) Name() string { return "Chamfer" }
 func (t *ChamferTool) Start(s *Session) {
 	t.flatCorners = s.ChamferFlatCorners()
 	t.concaveStrategy = s.ChamferConcaveStrategy()
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
 }
+
+// AcceptedKinds declares chamfer picks edges (the edges to bevel).
+func (t *ChamferTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edges for the unified highlight.
+func (t *ChamferTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
 
 // SetFlatCorners/FlatCorners choose whether a vertex where three picked edges meet is
 // blended into a flat triangular face (true) or left pointy (false).
@@ -126,7 +131,6 @@ func (t *ChamferTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("chamfer: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -166,7 +170,6 @@ func (t *ChamferTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // commitEdit writes the panel state back into the committed chamfer's definition.

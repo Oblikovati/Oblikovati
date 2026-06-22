@@ -22,8 +22,14 @@ func NewDeleteFaceTool() *DeleteFaceTool { return &DeleteFaceTool{} }
 // Name implements [Tool].
 func (t *DeleteFaceTool) Name() string { return "Delete Face" }
 
-// Start sets the selection filter to faces.
-func (t *DeleteFaceTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *DeleteFaceTool) Start(*Session) {}
+
+// AcceptedKinds declares delete-face picks faces (the faces to remove).
+func (t *DeleteFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *DeleteFaceTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick appends the clicked face (ignoring a duplicate).
 func (t *DeleteFaceTool) Pick(_ *Session, sel Selectable) {
@@ -62,7 +68,6 @@ func (t *DeleteFaceTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("delete face: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -92,8 +97,8 @@ func (t *DeleteFaceTool) Prompt(*Session) string {
 	return "Click OK to delete and heal"
 }
 
-// Cancel restores the default selection filter.
-func (t *DeleteFaceTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+// Cancel is a no-op; the engine restores the ambient filter.
+func (t *DeleteFaceTool) Cancel(*Session) {}
 
 // ClearFaces empties the picked faces — the property panel's selector clear (⊗) —
 // returning the tool to its pick-faces step.

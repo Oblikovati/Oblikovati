@@ -29,6 +29,8 @@ type ExtrudeTool struct {
 	asymmetric      bool
 	operation       ops.PartFeatureOperation
 	added           *feature.PartFeature
+	toPlane         *feature.WorkPlane // "to face" termination target (a work plane or a face's plane)
+	toFace          *FaceHandle        // the picked termination face, for the highlight (nil for a work plane)
 }
 
 // NewExtrudeTool returns an extrude tool defaulting to a positive distance extrusion that
@@ -40,14 +42,37 @@ func NewExtrudeTool() *ExtrudeTool {
 // Name implements [Tool].
 func (t *ExtrudeTool) Name() string { return "Extrude" }
 
-// Start sets the selection filter to profiles (so clicks pick a region).
-func (t *ExtrudeTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectProfile)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *ExtrudeTool) Start(*Session) {}
 
-// Pick captures the region the user clicked, replacing any previous selection (a plain
-// click selects a single region).
+// AcceptedKinds declares extrude's selection per step: it picks sketch regions (profiles), and
+// once at least one region is picked AND the extent is "to face", it switches to picking the
+// termination face (or work plane) the extrude runs up to — the engine re-derives this after each
+// pick, so the same tool drives both steps with no manual filter juggling.
+func (t *ExtrudeTool) AcceptedKinds() []SelectionKind {
+	if t.extent == feature.ToFaceExtent && len(t.profiles) > 0 {
+		return []SelectionKind{SelectFace, SelectWorkPlane}
+	}
+	return []SelectionKind{SelectProfile}
+}
+
+// Picks reports the picked regions plus the termination face for the unified highlight.
+func (t *ExtrudeTool) Picks() []Selectable {
+	return appendPick(profileSelectables(t.profiles), t.toFace)
+}
+
+// Pick captures the region the user clicked, or — during the "to face" step — the termination
+// face/work-plane the extrude runs up to. A plain region click selects a single region.
 func (t *ExtrudeTool) Pick(_ *Session, sel Selectable) {
-	if p, ok := sel.(ProfileHandle); ok {
-		t.profiles = []ProfileHandle{p}
+	switch h := sel.(type) {
+	case ProfileHandle:
+		t.profiles = []ProfileHandle{h}
+	case FaceHandle:
+		if pl, ok := sketchPlaneFromFace(h); ok {
+			t.toPlane, t.toFace = feature.NewFixedWorkPlane(pl), &h
+		}
+	case WorkPlaneHandle:
+		t.toPlane = h.Plane
 	}
 }
 
@@ -57,6 +82,7 @@ func (t *ExtrudeTool) Pick(_ *Session, sel Selectable) {
 func (t *ExtrudeTool) PickWithMods(s *Session, sel Selectable, mods Modifier) {
 	p, ok := sel.(ProfileHandle)
 	if !ok {
+		t.Pick(s, sel) // a "to face" termination pick (face/work-plane) — not a region
 		return
 	}
 	if !mods.Has(CtrlMod) {
@@ -131,6 +157,9 @@ func (t *ExtrudeTool) buildExtent() feature.Extent {
 			ext.Distance2 = func() float64 { return d2 }
 		}
 	}
+	if t.extent == feature.ToFaceExtent {
+		ext.ToPlane = t.toPlane
+	}
 	return ext
 }
 
@@ -153,10 +182,19 @@ func (t *ExtrudeTool) PickedProfile() (ProfileHandle, bool) {
 func (t *ExtrudeTool) SetOperation(op ops.PartFeatureOperation) { t.operation = op }
 func (t *ExtrudeTool) Operation() ops.PartFeatureOperation      { return t.operation }
 
-// CanCommit reports whether enough input is gathered: at least one region, and — for a
-// distance-gauged extent — a non-zero distance.
+// CanCommit reports whether enough input is gathered: at least one region, a non-zero distance
+// for a distance-gauged extent, and a termination target for a "to face" extent.
 func (t *ExtrudeTool) CanCommit() bool {
-	return len(t.profiles) > 0 && (!t.needsDistance() || t.distance != 0)
+	if len(t.profiles) == 0 {
+		return false
+	}
+	if t.needsDistance() && t.distance == 0 {
+		return false
+	}
+	if t.extent == feature.ToFaceExtent && t.toPlane == nil {
+		return false
+	}
+	return true
 }
 
 // Commit adds the extrude feature to the active part and recomputes; a sick feature
@@ -178,7 +216,6 @@ func (t *ExtrudeTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("extrude: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -302,7 +339,6 @@ func (t *ExtrudeTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // activePart returns the active document's part component definition, or an error.

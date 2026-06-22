@@ -25,8 +25,14 @@ func NewShellTool() *ShellTool { return &ShellTool{thickness: 1} }
 // Name implements [Tool].
 func (t *ShellTool) Name() string { return "Shell" }
 
-// Start sets the selection filter to faces so clicks pick faces to open.
-func (t *ShellTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *ShellTool) Start(*Session) {}
+
+// AcceptedKinds declares shell picks faces (the faces to open).
+func (t *ShellTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *ShellTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick appends the clicked face (ignoring one already chosen, so a double-click does not
 // duplicate it).
@@ -89,7 +95,6 @@ func (t *ShellTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("shell: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -129,7 +134,6 @@ func (t *ShellTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // commitEdit writes the panel state back into the committed shell's definition.

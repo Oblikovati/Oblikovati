@@ -28,8 +28,14 @@ func NewFaceFilletTool() *FaceFilletTool { return &FaceFilletTool{radius: 1} }
 // Name implements [Tool].
 func (t *FaceFilletTool) Name() string { return "Face Fillet" }
 
-// Start sets the selection filter to faces so clicks pick faces to round between.
-func (t *FaceFilletTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *FaceFilletTool) Start(*Session) {}
+
+// AcceptedKinds declares face-fillet picks faces (the two face sets to blend between).
+func (t *FaceFilletTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports every picked face for the unified highlight.
+func (t *FaceFilletTool) Picks() []Selectable { return faceSelectables(t.Faces()) }
 
 // Pick appends the clicked face to the active set, ignoring a face already in either set.
 func (t *FaceFilletTool) Pick(_ *Session, sel Selectable) {
@@ -117,7 +123,6 @@ func (t *FaceFilletTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("face fillet: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -167,5 +172,4 @@ func (t *FaceFilletTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }

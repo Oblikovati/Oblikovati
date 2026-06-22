@@ -21,8 +21,14 @@ func NewDecalTool() *DecalTool { return &DecalTool{} }
 // Name implements [Tool].
 func (t *DecalTool) Name() string { return "Decal" }
 
-// Start filters selection to faces.
-func (t *DecalTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *DecalTool) Start(*Session) {}
+
+// AcceptedKinds declares decal picks a face (the surface to project onto).
+func (t *DecalTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked face for the unified highlight.
+func (t *DecalTool) Picks() []Selectable { return singlePick(t.face) }
 
 // Pick captures the target face.
 func (t *DecalTool) Pick(_ *Session, sel Selectable) {
@@ -61,12 +67,11 @@ func (t *DecalTool) Commit(s *Session) error {
 	t.added = feature.NewCosmeticFeatures(part.Features()).AddDecal(t.face.Face.ReferenceKey(), t.image)
 	part.Recompute()
 	s.recordEdit(part, "Decal")
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
-// Cancel restores the default selection filter.
-func (t *DecalTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+// Cancel is a no-op; the engine restores the ambient filter.
+func (t *DecalTool) Cancel(*Session) {}
 
 // AddedFeature returns the decal created on commit (for inspection/tests).
 func (t *DecalTool) AddedFeature() *feature.DecalFeature { return t.added }
