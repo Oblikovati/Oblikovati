@@ -56,13 +56,14 @@ func TestCurveAtBounds(t *testing.T) {
 
 func TestOnSegment(t *testing.T) {
 	a, b := math.P3(0, 0, 0), math.P3(2, 0, 0)
-	if !onSegment(math.P3(1, 0, 0), a, b) {
+	tol := ResolutionForPoints([]math.Point3{a, b}).Plane()
+	if !onSegment(math.P3(1, 0, 0), a, b, tol) {
 		t.Error("midpoint should be on the segment")
 	}
-	if onSegment(math.P3(5, 0, 0), a, b) {
+	if onSegment(math.P3(5, 0, 0), a, b, tol) {
 		t.Error("a point past the end should be off the segment")
 	}
-	if onSegment(math.P3(0, 0, 0), a, a) {
+	if onSegment(math.P3(0, 0, 0), a, a, tol) {
 		t.Error("a zero-length segment contains nothing")
 	}
 }

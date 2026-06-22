@@ -10,9 +10,6 @@ import "oblikovati.org/math"
 // and the kept triangles are welded back into a watertight B-rep. Correctness depends on
 // the tessellation being consistently outward-wound (see planeProjector).
 
-// csgEps is the on-plane tolerance (database units, cm); below it a point is coplanar.
-const csgEps = 1e-7
-
 // tri is a triangle with its supporting plane (unit normal n, offset w: n·p = w).
 type tri struct {
 	a, b, c math.Point3
@@ -36,9 +33,10 @@ func (t tri) flipped() tri {
 func (t tri) points() [3]math.Point3 { return [3]math.Point3{t.a, t.b, t.c} }
 
 // csgUnion / csgSubtract / csgIntersect implement A∪B, A−B and A∩B over triangle sets
-// via BSP clipping (the csg.js operation sequences).
-func csgUnion(a, b []tri) []tri {
-	na, nb := newBSP(a), newBSP(b)
+// via BSP clipping (the csg.js operation sequences). planeTol is the model-relative
+// on-plane resolution (ADR-0042) the BSP uses to classify a point coplanar.
+func csgUnion(a, b []tri, planeTol float64) []tri {
+	na, nb := newBSP(a, planeTol), newBSP(b, planeTol)
 	na.clipTo(nb)
 	nb.clipTo(na)
 	nb.invert()
@@ -48,8 +46,8 @@ func csgUnion(a, b []tri) []tri {
 	return na.all()
 }
 
-func csgSubtract(a, b []tri) []tri {
-	na, nb := newBSP(a), newBSP(b)
+func csgSubtract(a, b []tri, planeTol float64) []tri {
+	na, nb := newBSP(a, planeTol), newBSP(b, planeTol)
 	na.invert()
 	na.clipTo(nb)
 	nb.clipTo(na)
@@ -61,8 +59,8 @@ func csgSubtract(a, b []tri) []tri {
 	return na.all()
 }
 
-func csgIntersect(a, b []tri) []tri {
-	na, nb := newBSP(a), newBSP(b)
+func csgIntersect(a, b []tri, planeTol float64) []tri {
+	na, nb := newBSP(a, planeTol), newBSP(b, planeTol)
 	na.invert()
 	nb.clipTo(na)
 	nb.invert()
@@ -81,10 +79,11 @@ type bspNode struct {
 	hasPlane    bool
 	tris        []tri
 	front, back *bspNode
+	planeTol    float64 // model-relative on-plane resolution, propagated to every subtree
 }
 
-func newBSP(tris []tri) *bspNode {
-	node := &bspNode{}
+func newBSP(tris []tri, planeTol float64) *bspNode {
+	node := &bspNode{planeTol: planeTol}
 	node.build(tris)
 	return node
 }
@@ -113,7 +112,7 @@ func (node *bspNode) clip(tris []tri) []tri {
 	}
 	var front, back []tri
 	for _, t := range tris {
-		splitTri(node.n, node.w, t, &front, &back, &front, &back)
+		splitTri(node.n, node.w, t, &front, &back, &front, &back, node.planeTol)
 	}
 	if node.front != nil {
 		front = node.front.clip(front)
@@ -160,17 +159,17 @@ func (node *bspNode) build(tris []tri) {
 	}
 	var front, back []tri
 	for _, t := range tris {
-		splitTri(node.n, node.w, t, &node.tris, &node.tris, &front, &back)
+		splitTri(node.n, node.w, t, &node.tris, &node.tris, &front, &back, node.planeTol)
 	}
 	if len(front) > 0 {
 		if node.front == nil {
-			node.front = &bspNode{}
+			node.front = &bspNode{planeTol: node.planeTol}
 		}
 		node.front.build(front)
 	}
 	if len(back) > 0 {
 		if node.back == nil {
-			node.back = &bspNode{}
+			node.back = &bspNode{planeTol: node.planeTol}
 		}
 		node.back.build(back)
 	}

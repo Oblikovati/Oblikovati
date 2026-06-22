@@ -15,9 +15,9 @@ const (
 // splitTri classifies triangle t against the plane (n·p = w) and appends its pieces to
 // the four buckets, fan-triangulating any split so every bucket holds triangles. A
 // triangle spanning the plane is cut along it into a front and a back polygon.
-func splitTri(n math.Vector3, w float64, t tri, coFront, coBack, fr, bk *[]tri) {
+func splitTri(n math.Vector3, w float64, t tri, coFront, coBack, fr, bk *[]tri, planeTol float64) {
 	pts := t.points()
-	types, polyType := classifyVertices(n, w, pts)
+	types, polyType := classifyVertices(n, w, pts, planeTol)
 	switch polyType {
 	case coplanar:
 		if n.Dot(t.n) > 0 {
@@ -38,15 +38,15 @@ func splitTri(n math.Vector3, w float64, t tri, coFront, coBack, fr, bk *[]tri) 
 
 // classifyVertices labels each triangle vertex front/back/coplanar against the plane and
 // returns the per-vertex labels plus their OR (the polygon's overall relationship).
-func classifyVertices(n math.Vector3, w float64, pts [3]math.Point3) ([]int, int) {
+func classifyVertices(n math.Vector3, w float64, pts [3]math.Point3, planeTol float64) ([]int, int) {
 	types := make([]int, 3)
 	polyType := 0
 	for i, p := range pts {
 		d := n.Dot(p.AsVector()) - w
 		ty := coplanar
-		if d < -csgEps {
+		if d < -planeTol {
 			ty = backOf
-		} else if d > csgEps {
+		} else if d > planeTol {
 			ty = frontOf
 		}
 		types[i] = ty

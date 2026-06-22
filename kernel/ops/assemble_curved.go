@@ -35,7 +35,13 @@ type edgeRec struct {
 // a face per surface. A closed result (every edge used twice) is a solid. Curves let a face
 // carry arc edges (a fillet's end arcs) alongside straight ones.
 func assembleBody(faces []filletFace, tag string) *topo.Body {
-	w := newPointWelder()
+	var pts []math.Point3
+	for _, f := range faces {
+		for _, l := range f.loops {
+			pts = append(pts, l.pts...)
+		}
+	}
+	w := newPointWelder(ResolutionForPoints(pts).Weld())
 	rings := make([][][]int, len(faces))
 	for i, f := range faces {
 		for _, l := range f.loops {

@@ -111,7 +111,9 @@ func validBooleanSolid(body *topo.Body) bool {
 }
 
 func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body) bool {
-	const tol = 1e-6
+	// Model-relative volume tolerance (ADR-0042): scales with the operands' size³ so
+	// the result-volume sanity check is faithful at any scale, not just ~cm parts.
+	tol := ResolutionForBodies(target, tool).Volume()
 	targetVol := BodyGeometryProperties(target, DefaultQuality()).Volume
 	toolVol := BodyGeometryProperties(tool, DefaultQuality()).Volume
 	bodyVol := BodyGeometryProperties(body, DefaultQuality()).Volume
@@ -166,14 +168,17 @@ func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
 // empty body, which the caller drops.
 func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
 	a, b := bodyTriangles(target), bodyTriangles(tool)
+	// One model-relative on-plane tolerance for the BSP, scaled to the larger operand
+	// (ADR-0042) so a sub-µm boolean classifies coplanarity correctly.
+	planeTol := ResolutionForBodies(target, tool).Plane()
 	var result []tri
 	switch op {
 	case Join:
-		result = csgUnion(a, b)
+		result = csgUnion(a, b, planeTol)
 	case Cut:
-		result = csgSubtract(a, b)
+		result = csgSubtract(a, b, planeTol)
 	default:
-		result = csgIntersect(a, b)
+		result = csgIntersect(a, b, planeTol)
 	}
 	if body := trianglesToBody(result, "boolean-"+op.String()); body != nil {
 		return body, nil

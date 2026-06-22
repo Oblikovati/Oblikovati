@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -105,7 +106,7 @@ func mergeAbuttingHoles(holes [][]math.Point2) [][]math.Point2 {
 	if len(holes) <= 1 {
 		return holes
 	}
-	w := newHoleWelder()
+	w := newHoleWelder(holeGrid(holes))
 	dirCount := map[[2]int]int{}
 	for _, h := range holes {
 		idx := make([]int, len(h))
@@ -176,17 +177,20 @@ func traceBoundaryLoop(start int, next map[int][]int) []int {
 	}
 }
 
-// holeWelder merges coincident hole vertices onto a shared index list (1e-9 grid, the
-// arrangement tolerance).
+// holeWelder merges coincident hole vertices onto a shared index list, snapping to a
+// model-relative arrangement weld grid (ADR-0042) the caller derives from the holes' size.
 type holeWelder struct {
 	index  map[[2]int64]int
 	points []math.Point2
+	grid   float64
 }
 
-func newHoleWelder() *holeWelder { return &holeWelder{index: map[[2]int64]int{}} }
+func newHoleWelder(grid float64) *holeWelder {
+	return &holeWelder{index: map[[2]int64]int{}, grid: grid}
+}
 
 func (w *holeWelder) add(p math.Point2) int {
-	k := [2]int64{int64(stdmath.Round(p.X / arrWeld)), int64(stdmath.Round(p.Y / arrWeld))}
+	k := [2]int64{int64(stdmath.Round(p.X / w.grid)), int64(stdmath.Round(p.Y / w.grid))}
 	if i, ok := w.index[k]; ok {
 		return i
 	}
@@ -195,8 +199,16 @@ func (w *holeWelder) add(p math.Point2) int {
 	return len(w.points) - 1
 }
 
-// arrWeld is the hole-vertex welding grid (matches the planar arrangement's coincidence tol).
-const arrWeld = 1e-9
+// holeGrid is the model-relative arrangement weld grid for a 2D hole set (ADR-0042):
+// the weld resolution of the loops' bounding-box diagonal, floored so a degenerate set
+// still welds at a positive grid. At a ~1 cm arrangement this is the historical 1e-9.
+func holeGrid(holes [][]math.Point2) float64 {
+	var pts []math.Point2
+	for _, h := range holes {
+		pts = append(pts, h...)
+	}
+	return geom.ResolutionForPoints2D(pts).Weld()
+}
 
 // cellIsMaterial reports whether an arrangement cell is solid material — its interior lies
 // outside every original hole. A cell wholly inside the holes' union is a void and is dropped.

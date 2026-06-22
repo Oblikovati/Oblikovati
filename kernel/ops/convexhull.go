@@ -51,7 +51,12 @@ func (e *hullError) Error() string { return "convex hull: " + e.msg }
 // a tetrahedron, then for each point fold the faces it can see into a fan to the point. Faces
 // are wound so each triangle's (b−a)×(c−a) points outward, which is what cageToBody needs.
 func convexHull3D(points []math.Point3) ([]math.Point3, [][3]int, error) {
-	pts := dedupPoints(points)
+	// Fold onto the shared model-relative resolution (ADR-0042): the dedup weld grid
+	// and the visibility tolerance both scale with the point set's size. (The visibility
+	// tolerance was already 1e-9 × bounds-diagonal — i.e. exactly Weld() — the precedent
+	// this whole scheme generalises.)
+	res := ResolutionForPoints(points)
+	pts := dedupPoints(points, res.Weld())
 	if len(pts) < 4 {
 		return nil, nil, errHull("need at least 4 distinct points, got " + itoa(len(pts)))
 	}
@@ -59,7 +64,7 @@ func convexHull3D(points []math.Point3) ([]math.Point3, [][3]int, error) {
 	if !ok {
 		return nil, nil, errHull("points are collinear or coplanar (no 3D hull)")
 	}
-	tol := 1e-9 * boundsDiagonal(pts)
+	tol := res.Weld()
 	faces := initialFaces(pts, tet)
 	for i := range pts {
 		if i == tet[0] || i == tet[1] || i == tet[2] || i == tet[3] {
