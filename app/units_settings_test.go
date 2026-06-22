@@ -69,6 +69,10 @@ func TestUnitOptionLists(t *testing.T) {
 	if !has(LengthUnitOptions(), "mm") || !has(LengthUnitOptions(), "in") {
 		t.Error("length options missing mm/in")
 	}
+	// Micrometres are now the smallest selectable length unit.
+	if LengthUnitOptions()[0] != "µm" {
+		t.Errorf("smallest length option = %q, want \"µm\"", LengthUnitOptions()[0])
+	}
 	if !has(AngleUnitOptions(), "deg") || !has(AngleUnitOptions(), "rad") {
 		t.Error("angle options missing deg/rad")
 	}

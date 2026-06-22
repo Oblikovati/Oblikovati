@@ -30,7 +30,7 @@ func (s *Session) SetDocumentUnits(u param.UnitsOfMeasure) {
 // LengthUnitOptions / AngleUnitOptions / MassUnitOptions / TimeUnitOptions are the
 // unit names the Units dialog offers per category, so the head needs no unit
 // vocabulary of its own.
-func LengthUnitOptions() []string { return []string{"mm", "cm", "m", "in", "ft"} }
+func LengthUnitOptions() []string { return []string{"µm", "mm", "cm", "m", "in", "ft"} }
 func AngleUnitOptions() []string  { return []string{"deg", "rad"} }
 func MassUnitOptions() []string   { return []string{"kg", "g", "lb"} }
 func TimeUnitOptions() []string   { return []string{"s", "ms", "min", "hr"} }

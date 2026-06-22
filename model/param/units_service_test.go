@@ -8,6 +8,44 @@ import (
 	"oblikovati.org/api/types"
 )
 
+// TestSubMillimetreUnits: the parser accepts metric length units down to picometres (and the
+// micro sign µ), each converting to the correct database-unit (cm) value.
+func TestSubMillimetreUnits(t *testing.T) {
+	ps := NewParameters()
+	cases := map[string]float64{ // expression → database cm
+		"1 µm":    1e-4,   // micrometre via the micro sign
+		"1 um":    1e-4,   // ASCII spelling of the same
+		"2500 nm": 2.5e-4, // nanometre
+		"1000 pm": 1e-7,   // picometre
+	}
+	for expr, want := range cases {
+		q, err := ps.EvaluateExpression(expr)
+		if err != nil {
+			t.Errorf("EvaluateExpression(%q) error: %v", expr, err)
+			continue
+		}
+		if q.Unit != Length || !approxScalar(q.Value, want) {
+			t.Errorf("%q = (%g, %v), want (%g, Length)", expr, q.Value, q.Unit, want)
+		}
+	}
+}
+
+// TestMicrometrePreferredUnit: a document can select micrometres as its length unit, and values
+// display in it.
+func TestMicrometrePreferredUnit(t *testing.T) {
+	m := DefaultUnitsOfMeasure().Clone()
+	if err := m.SetPreferred(Length, "µm"); err != nil {
+		t.Fatalf("SetPreferred µm: %v", err)
+	}
+	// 0.05 cm = 500 µm.
+	if got := m.FormatValue(Q(0.05, Length)); got != "500" {
+		t.Errorf("0.05 cm in µm = %q, want \"500\"", got)
+	}
+	if got := m.PreferredName(Length); got != "µm" {
+		t.Errorf("preferred name = %q, want \"µm\"", got)
+	}
+}
+
 func TestConvertValue(t *testing.T) {
 	got, err := ConvertValue(1, "in", "cm")
 	if err != nil || !approxScalar(got, 2.54) {
