@@ -31,3 +31,15 @@ func resolveQuantity(part quantitySource, src string, dim param.Unit) (param.Qua
 	}
 	return part.Units().Parse(src, dim)
 }
+
+// literalLength parses src as a pure literal quantity in dim WITHOUT consulting the parameter
+// table — the discriminator a LIVE closure needs to tell a constant ("5 mm") from a parameter
+// expression ("h", "L - 2*m") that must stay live (a parameter name has no unit, so it fails to
+// parse here). ok is false for anything that is not a bare literal. This is a sanctioned
+// Units().Parse site (it lives in param_expr.go alongside resolveQuantity's literal fallback — see
+// TestRouterUnitStringsGoThroughResolver); callers that need parameter-expression support compose
+// it with the auto-parameter path (see modelLengthClosure), they do not bypass the resolver.
+func literalLength(host quantitySource, src string, dim param.Unit) (param.Quantity, bool) {
+	q, err := host.Units().Parse(src, dim)
+	return q, err == nil
+}

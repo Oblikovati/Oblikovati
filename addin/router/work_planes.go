@@ -363,13 +363,15 @@ func toWorkRefs(refs []string) []feature.WorkRef {
 // classification lives in feature.ParseWorkRef so the router and the op registry share it.
 func toWorkRef(r string) feature.WorkRef { return feature.ParseWorkRef(r) }
 
-// modelLengthClosure turns a distance argument into a live, parameter-aware value: a
-// plain literal is constant; an expression ("h", "h/2") is backed by an auto model
-// parameter, so editing the parameter and recomputing re-reads it (a work plane is
-// re-evaluated by the host's Recompute). Mirrors opregistry's lengthClosure for the router
-// args that feed func() float64 (work-plane offset).
+// modelLengthClosure turns a distance argument into a live, parameter-aware value. A plain
+// literal ("5 mm") has no parameter dependency, so its value is baked. ANY expression that
+// references parameters ("h", "h/2", "L - 2*m") must stay LIVE — it is backed by an auto model
+// parameter and re-read on every recompute, so a later edit to L/h re-offsets the work plane or
+// re-spaces the sketch pattern that uses it (issue #1230). The discriminator is a pure-literal
+// parse: only Units().Parse (which never consults the parameter table) may bake; the previous
+// resolveQuantity fast path baked parameter expressions too, freezing them.
 func modelLengthClosure(host workHost, expr string) (func() float64, error) {
-	if q, err := resolveQuantity(host, expr, param.Length); err == nil {
+	if q, ok := literalLength(host, expr, param.Length); ok {
 		v := q.Value
 		return func() float64 { return v }, nil
 	}
