@@ -33,10 +33,14 @@ func NewAssemblyJointTool(label string, build jointBuild) *AssemblyJointTool {
 // Name is the tool's display name.
 func (t *AssemblyJointTool) Name() string { return t.label }
 
-// Start restricts picking to component faces.
-func (t *AssemblyJointTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectFace))
-}
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *AssemblyJointTool) Start(*Session) {}
+
+// AcceptedKinds declares the joint picks component faces (the two joint-origin faces).
+func (t *AssemblyJointTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked component faces for the unified highlight.
+func (t *AssemblyJointTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick appends a picked face until the joint has its two origins.
 func (t *AssemblyJointTool) Pick(_ *Session, sel Selectable) {
@@ -56,7 +60,6 @@ func (t *AssemblyJointTool) CanCommit() bool { return len(t.faces) == 2 }
 // Cancel abandons the picks and clears the face filter.
 func (t *AssemblyJointTool) Cancel(s *Session) {
 	t.faces = nil
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // Commit resolves the picks, creates the joint, solves the assembly, and records the edit.
@@ -76,6 +79,5 @@ func (t *AssemblyJointTool) Commit(s *Session) error {
 	j := t.build(asm.Joints(), refs)
 	asm.SolveConstraints()
 	s.recordEdit(asm, j.Name())
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }

@@ -270,7 +270,6 @@ func (t *RevolveTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("revolve: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

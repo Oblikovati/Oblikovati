@@ -43,7 +43,6 @@ func commitSheetMetalFeature(s *Session, part *compdef.PartComponentDefinition, 
 	if !added.Health().OK() {
 		return errors.New(label + ": " + added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

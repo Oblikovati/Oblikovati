@@ -121,7 +121,7 @@ func (t *LipTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *LipTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *LipTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *LipTool) AddedFeature() *feature.PartFeature { return t.added }

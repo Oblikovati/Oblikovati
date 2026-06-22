@@ -96,7 +96,7 @@ func (t *BossTool) Commit(s *Session) error {
 }
 
 // Cancel restores the default selection filter.
-func (t *BossTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *BossTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *BossTool) AddedFeature() *feature.PartFeature { return t.added }

@@ -82,7 +82,6 @@ func (t *WorkPlaneEditTool) Commit(s *Session) error {
 	s.endEditScope()
 	part.Recompute()
 	s.recordEdit(part, "Edit "+t.plane.Name())
-	s.Selection().SetFilter(NewSelectionFilter())
 	if !t.plane.Health().OK() {
 		return errors.New("work plane edit: " + t.plane.Health().Reason)
 	}
@@ -99,16 +98,24 @@ func (t *WorkPlaneEditTool) Cancel(s *Session) {
 	if part, err := activePart(s); err == nil {
 		part.Recompute()
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
-// Arm puts the i-th reference slot into pick mode (its kind's filter).
+// Arm puts the i-th reference slot into pick mode; the engine installs that slot's kind filter
+// from AcceptedKinds.
 func (t *WorkPlaneEditTool) Arm(s *Session, i int) {
 	if i < 0 || i >= len(t.slots) {
 		return
 	}
 	t.armed = i
-	s.Selection().SetFilter(NewSelectionFilter(workRefFilterKinds(t.slots[i].Kind)...))
+	s.installToolFilter()
+}
+
+// AcceptedKinds declares the kinds the armed redefine slot accepts (nil when no slot is armed).
+func (t *WorkPlaneEditTool) AcceptedKinds() []SelectionKind {
+	if t.armed < 0 || t.armed >= len(t.slots) {
+		return nil
+	}
+	return workRefFilterKinds(t.slots[t.armed].Kind)
 }
 
 // ArmedSlot returns the index of the reference slot currently collecting picks, or -1.
@@ -116,7 +123,7 @@ func (t *WorkPlaneEditTool) ArmedSlot() int { return t.armed }
 
 func (t *WorkPlaneEditTool) disarm(s *Session) {
 	t.armed = -1
-	s.Selection().SetFilter(NewSelectionFilter())
+	s.installToolFilter() // armed = -1 ⇒ no restriction (back to the ambient filter)
 }
 
 func (t *WorkPlaneEditTool) recompute(s *Session) {

@@ -26,9 +26,21 @@ func NewIncludeGeometry3DTool() *IncludeGeometry3DTool { return &IncludeGeometry
 // Name implements [Tool].
 func (t *IncludeGeometry3DTool) Name() string { return "Include Geometry" }
 
-// Start restricts the selection to includable references (edges and vertices).
-func (t *IncludeGeometry3DTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge, SelectVertex))
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *IncludeGeometry3DTool) Start(*Session) {}
+
+// AcceptedKinds declares include-geometry picks includable references: edges and vertices.
+func (t *IncludeGeometry3DTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectEdge, SelectVertex}
+}
+
+// Picks reports the picked edges and vertices for the unified highlight.
+func (t *IncludeGeometry3DTool) Picks() []Selectable {
+	picks := edgeSelectables(t.edges)
+	for _, v := range t.vertices {
+		picks = append(picks, v)
+	}
+	return picks
 }
 
 // Pick records a clicked edge or vertex (ignoring other kinds).
@@ -64,7 +76,6 @@ func (t *IncludeGeometry3DTool) Commit(s *Session) error {
 	for _, v := range t.vertices {
 		sk.IncludePoint3D(compdef.NewVertexRefSource(part, string(v.Vertex.ReferenceKey())))
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -90,10 +101,14 @@ func NewSurfaceCurve3DTool() *SurfaceCurve3DTool {
 // Name implements [Tool].
 func (t *SurfaceCurve3DTool) Name() string { return "Surface Curve" }
 
-// Start restricts the selection to faces.
-func (t *SurfaceCurve3DTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectFace))
-}
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *SurfaceCurve3DTool) Start(*Session) {}
+
+// AcceptedKinds declares surface-curve picks faces (the surfaces to intersect).
+func (t *SurfaceCurve3DTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *SurfaceCurve3DTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick records a clicked face.
 func (t *SurfaceCurve3DTool) Pick(_ *Session, sel Selectable) {
@@ -137,7 +152,6 @@ func (t *SurfaceCurve3DTool) Commit(s *Session) error {
 		b := compdef.NewFaceRefSource(part, string(t.faces[1].Face.ReferenceKey()))
 		sk.AddIntersectionCurve3DRef(a, b, geom.SurfaceGrid{})
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

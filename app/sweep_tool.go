@@ -175,4 +175,4 @@ func (t *SweepTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *SweepTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SweepTool) Cancel(*Session) {}

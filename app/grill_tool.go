@@ -108,7 +108,7 @@ func (t *GrillTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *GrillTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *GrillTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *GrillTool) AddedFeature() *feature.PartFeature { return t.added }

@@ -117,7 +117,7 @@ func (t *RuledSurfaceTool) Commit(s *Session) error {
 }
 
 // Cancel restores the default selection filter.
-func (t *RuledSurfaceTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *RuledSurfaceTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *RuledSurfaceTool) AddedFeature() *feature.PartFeature { return t.added }

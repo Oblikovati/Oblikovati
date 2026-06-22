@@ -92,7 +92,7 @@ func (t *ExtendTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *ExtendTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *ExtendTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ExtendTool) AddedFeature() *feature.PartFeature { return t.added }

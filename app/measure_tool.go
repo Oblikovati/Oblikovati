@@ -92,7 +92,6 @@ func (t *MeasureTool) CanCommit() bool { return len(t.picks) > 0 }
 
 // Commit closes the tool, leaving the last readout in the status bar.
 func (t *MeasureTool) Commit(s *Session) error {
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

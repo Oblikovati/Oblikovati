@@ -22,9 +22,18 @@ type SheetMetalHemTool struct {
 // NewSheetMetalHemTool returns a hem tool defaulting to a 6 mm fold-back.
 func NewSheetMetalHemTool() *SheetMetalHemTool { return &SheetMetalHemTool{length: 0.6} }
 
-func (t *SheetMetalHemTool) Name() string { return "Sheet Metal Hem" }
-func (t *SheetMetalHemTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge))
+func (t *SheetMetalHemTool) Name() string   { return "Sheet Metal Hem" }
+func (t *SheetMetalHemTool) Start(*Session) {}
+
+// AcceptedKinds declares the hem picks an edge (the edge to hem).
+func (t *SheetMetalHemTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edge for the unified highlight.
+func (t *SheetMetalHemTool) Picks() []Selectable {
+	if t.edge == nil {
+		return nil
+	}
+	return []Selectable{*t.edge}
 }
 func (t *SheetMetalHemTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
@@ -34,7 +43,7 @@ func (t *SheetMetalHemTool) Pick(_ *Session, sel Selectable) {
 func (t *SheetMetalHemTool) SetLength(l float64)                { t.length = l }
 func (t *SheetMetalHemTool) Length() float64                    { return t.length }
 func (t *SheetMetalHemTool) CanCommit() bool                    { return t.edge != nil && t.length > 0 }
-func (t *SheetMetalHemTool) Cancel(s *Session)                  { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SheetMetalHemTool) Cancel(*Session)                    {}
 func (t *SheetMetalHemTool) AddedFeature() *feature.PartFeature { return t.added }
 
 func (t *SheetMetalHemTool) Commit(s *Session) error {
@@ -64,9 +73,24 @@ func NewSheetMetalContourFlangeTool() *SheetMetalContourFlangeTool {
 	return &SheetMetalContourFlangeTool{}
 }
 
-func (t *SheetMetalContourFlangeTool) Name() string { return "Sheet Metal Contour Flange" }
-func (t *SheetMetalContourFlangeTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectEdge, SelectProfile))
+func (t *SheetMetalContourFlangeTool) Name() string   { return "Sheet Metal Contour Flange" }
+func (t *SheetMetalContourFlangeTool) Start(*Session) {}
+
+// AcceptedKinds declares the contour flange picks an edge and a profile (the contour to sweep).
+func (t *SheetMetalContourFlangeTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectEdge, SelectProfile}
+}
+
+// Picks reports the picked edge and profile for the unified highlight.
+func (t *SheetMetalContourFlangeTool) Picks() []Selectable {
+	var picks []Selectable
+	if t.edge != nil {
+		picks = append(picks, *t.edge)
+	}
+	if t.profile != nil {
+		picks = append(picks, *t.profile)
+	}
+	return picks
 }
 func (t *SheetMetalContourFlangeTool) Pick(_ *Session, sel Selectable) {
 	switch h := sel.(type) {
@@ -78,7 +102,6 @@ func (t *SheetMetalContourFlangeTool) Pick(_ *Session, sel Selectable) {
 }
 func (t *SheetMetalContourFlangeTool) CanCommit() bool { return t.edge != nil && t.profile != nil }
 func (t *SheetMetalContourFlangeTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 func (t *SheetMetalContourFlangeTool) AddedFeature() *feature.PartFeature { return t.added }
 
@@ -107,10 +130,16 @@ func NewSheetMetalLoftedFlangeTool() *SheetMetalLoftedFlangeTool {
 	return &SheetMetalLoftedFlangeTool{}
 }
 
-func (t *SheetMetalLoftedFlangeTool) Name() string { return "Sheet Metal Lofted Flange" }
-func (t *SheetMetalLoftedFlangeTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile))
+func (t *SheetMetalLoftedFlangeTool) Name() string   { return "Sheet Metal Lofted Flange" }
+func (t *SheetMetalLoftedFlangeTool) Start(*Session) {}
+
+// AcceptedKinds declares the lofted flange picks two closed sketch regions (profiles).
+func (t *SheetMetalLoftedFlangeTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectProfile}
 }
+
+// Picks reports the picked regions for the unified highlight.
+func (t *SheetMetalLoftedFlangeTool) Picks() []Selectable { return profileSelectables(t.profiles) }
 func (t *SheetMetalLoftedFlangeTool) Pick(_ *Session, sel Selectable) {
 	if p, ok := sel.(ProfileHandle); ok && len(t.profiles) < 2 {
 		t.profiles = append(t.profiles, p)
@@ -118,7 +147,6 @@ func (t *SheetMetalLoftedFlangeTool) Pick(_ *Session, sel Selectable) {
 }
 func (t *SheetMetalLoftedFlangeTool) CanCommit() bool { return len(t.profiles) == 2 }
 func (t *SheetMetalLoftedFlangeTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 func (t *SheetMetalLoftedFlangeTool) AddedFeature() *feature.PartFeature { return t.added }
 
@@ -149,9 +177,21 @@ func NewSheetMetalContourRollTool() *SheetMetalContourRollTool {
 	return &SheetMetalContourRollTool{angle: halfPiAngle}
 }
 
-func (t *SheetMetalContourRollTool) Name() string { return "Sheet Metal Contour Roll" }
-func (t *SheetMetalContourRollTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile, SelectSketchEntity))
+func (t *SheetMetalContourRollTool) Name() string   { return "Sheet Metal Contour Roll" }
+func (t *SheetMetalContourRollTool) Start(*Session) {}
+
+// AcceptedKinds declares the contour roll picks a profile (the contour) and a sketch entity (the
+// roll axis line).
+func (t *SheetMetalContourRollTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectProfile, SelectSketchEntity}
+}
+
+// Picks reports the picked profile for the unified highlight (the axis is a sketch line).
+func (t *SheetMetalContourRollTool) Picks() []Selectable {
+	if t.profile == nil {
+		return nil
+	}
+	return []Selectable{*t.profile}
 }
 func (t *SheetMetalContourRollTool) Pick(_ *Session, sel Selectable) {
 	switch h := sel.(type) {
@@ -167,7 +207,6 @@ func (t *SheetMetalContourRollTool) CanCommit() bool {
 	return t.profile != nil && t.axis != nil && t.angle > 0
 }
 func (t *SheetMetalContourRollTool) Cancel(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 func (t *SheetMetalContourRollTool) AddedFeature() *feature.PartFeature { return t.added }
 

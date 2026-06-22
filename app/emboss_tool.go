@@ -112,7 +112,7 @@ func (t *EmbossTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *EmbossTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *EmbossTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *EmbossTool) AddedFeature() *feature.PartFeature { return t.added }

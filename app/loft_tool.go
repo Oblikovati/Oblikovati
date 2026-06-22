@@ -283,7 +283,7 @@ func (t *LoftTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *LoftTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *LoftTool) Cancel(*Session) {}
 
 // ClearSections empties the picked cross-sections — the property panel's selector
 // clear (⊗) on the Sections chip.

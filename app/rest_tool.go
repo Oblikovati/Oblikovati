@@ -113,7 +113,7 @@ func (t *RestTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *RestTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *RestTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *RestTool) AddedFeature() *feature.PartFeature { return t.added }

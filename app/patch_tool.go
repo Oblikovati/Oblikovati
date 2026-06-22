@@ -89,7 +89,7 @@ func (t *PatchTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *PatchTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *PatchTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *PatchTool) AddedFeature() *feature.PartFeature { return t.added }

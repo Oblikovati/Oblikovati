@@ -37,10 +37,14 @@ func NewAssemblyConstraintTool(label string, need int, build constraintBuild) *A
 // Name is the tool's display name.
 func (t *AssemblyConstraintTool) Name() string { return t.label }
 
-// Start restricts picking to component faces.
-func (t *AssemblyConstraintTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectFace))
-}
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *AssemblyConstraintTool) Start(*Session) {}
+
+// AcceptedKinds declares the constraint picks component faces.
+func (t *AssemblyConstraintTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked component faces for the unified highlight.
+func (t *AssemblyConstraintTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick appends a picked face until the constraint has all the inputs it needs.
 func (t *AssemblyConstraintTool) Pick(_ *Session, sel Selectable) {
@@ -60,7 +64,6 @@ func (t *AssemblyConstraintTool) CanCommit() bool { return len(t.faces) == t.nee
 // Cancel abandons the picks and clears the face filter.
 func (t *AssemblyConstraintTool) Cancel(s *Session) {
 	t.faces = nil
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // Commit resolves the picks, creates the constraint, solves the assembly, and records the edit.
@@ -80,7 +83,6 @@ func (t *AssemblyConstraintTool) Commit(s *Session) error {
 	c := t.build(asm.Constraints(), refs)
 	asm.SolveConstraints()
 	s.recordEdit(asm, c.Name())
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

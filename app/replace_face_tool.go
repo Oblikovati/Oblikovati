@@ -130,7 +130,7 @@ func (t *ReplaceFaceTool) Prompt(*Session) string {
 }
 
 // Cancel restores the default selection filter.
-func (t *ReplaceFaceTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *ReplaceFaceTool) Cancel(*Session) {}
 
 // ClearFaces / ClearTarget empty one pick set each — the property panel's selector
 // clear (⊗) affordances on the replace-faces and target chips.

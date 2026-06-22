@@ -95,7 +95,7 @@ func (t *SurfaceTrimTool) DraftFeature(*Session) (feature.Feature, bool) {
 }
 
 // Cancel restores the default selection filter.
-func (t *SurfaceTrimTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *SurfaceTrimTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *SurfaceTrimTool) AddedFeature() *feature.PartFeature { return t.added }

@@ -209,7 +209,7 @@ func (t *ThreadTool) addThread(dress *feature.DressUpFeatures) (*feature.PartFea
 }
 
 // Cancel abandons the tool.
-func (t *ThreadTool) Cancel(s *Session) { s.Selection().SetFilter(NewSelectionFilter()) }
+func (t *ThreadTool) Cancel(*Session) {}
 
 // AddedFeature returns the feature created on commit (for inspection/tests).
 func (t *ThreadTool) AddedFeature() *feature.PartFeature { return t.added }
