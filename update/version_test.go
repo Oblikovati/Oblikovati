@@ -21,6 +21,13 @@ func TestIsNewer(t *testing.T) {
 		{"0.000200.1.0-nightly.20260614T030000", "0.000200.1.0-nightly.20260615T030000", false}, // older stamp
 		{"0.000200.1.0-nightly.20260615T030000", "0.000200.1.0-nightly.20260615T030000", false}, // equal nightly
 		{"0.000200.2.0-nightly.20260101T000000", "0.000200.1.0-nightly.20260615T030000", true},  // minor beats a newer stamp
+		// Compact YYMMDDTHH stamps still compare chronologically by string.
+		{"0.000200.1.0-nightly.260616T03", "0.000200.1.0-nightly.260615T09", true},  // next day beats a later hour
+		{"0.000200.1.0-nightly.260615T09", "0.000200.1.0-nightly.260615T03", true},  // later hour, same day
+		{"0.000200.1.0-nightly.260615T03", "0.000200.1.0-nightly.260615T03", false}, // equal compact stamp
+		// The format switch is monotonic: any new compact stamp (26…) sorts above every
+		// old long stamp (2026… → "20…"), so the first post-switch nightly reads as newer.
+		{"0.000200.1.0-nightly.260622T11", "0.000200.1.0-nightly.20260622T110000", true},
 	}
 	for _, c := range cases {
 		if got := IsNewer(c.latest, c.current); got != c.want {
