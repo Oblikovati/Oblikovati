@@ -26,6 +26,33 @@ type Picking interface {
 	Picks() []Selectable
 }
 
+// faceSelectables / edgeSelectables / profileSelectables / vertexSelectables widen a tool's typed
+// pick slice to []Selectable for its Picks() implementation, so the engine highlights them
+// uniformly without each tool writing a loop.
+func faceSelectables(fs []FaceHandle) []Selectable {
+	out := make([]Selectable, len(fs))
+	for i, f := range fs {
+		out[i] = f
+	}
+	return out
+}
+
+func edgeSelectables(es []EdgeHandle) []Selectable {
+	out := make([]Selectable, len(es))
+	for i, e := range es {
+		out[i] = e
+	}
+	return out
+}
+
+func profileSelectables(ps []ProfileHandle) []Selectable {
+	out := make([]Selectable, len(ps))
+	for i, p := range ps {
+		out[i] = p
+	}
+	return out
+}
+
 // installToolFilter derives the active selection filter from the running tool's declaration. A
 // tool implementing Selecting with a non-empty AcceptedKinds gets exactly those kinds; an empty
 // declaration (or a tool that does not implement Selecting) leaves the filter unrestricted so the

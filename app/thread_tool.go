@@ -33,8 +33,19 @@ func NewThreadTool() *ThreadTool { return &ThreadTool{} }
 // Name implements [Tool].
 func (t *ThreadTool) Name() string { return "Thread" }
 
-// Start sets the selection filter to faces.
-func (t *ThreadTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *ThreadTool) Start(*Session) {}
+
+// AcceptedKinds declares thread picks a face (the cylindrical face to thread).
+func (t *ThreadTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked cylindrical face for the unified highlight.
+func (t *ThreadTool) Picks() []Selectable {
+	if t.face == nil {
+		return nil
+	}
+	return []Selectable{*t.face}
+}
 
 // Pick accepts a clicked cylindrical face (ignoring non-cylindrical picks).
 func (t *ThreadTool) Pick(_ *Session, sel Selectable) {
@@ -178,7 +189,6 @@ func (t *ThreadTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("thread: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

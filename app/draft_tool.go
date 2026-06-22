@@ -29,8 +29,14 @@ func NewDraftTool() *DraftTool { return &DraftTool{angleDeg: 3} }
 // Name implements [Tool].
 func (t *DraftTool) Name() string { return "Draft" }
 
-// Start sets the selection filter to faces.
-func (t *DraftTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *DraftTool) Start(*Session) {}
+
+// AcceptedKinds declares draft picks faces (the faces to taper).
+func (t *DraftTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *DraftTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick appends the clicked face (ignoring a duplicate).
 func (t *DraftTool) Pick(_ *Session, sel Selectable) {
@@ -90,7 +96,6 @@ func (t *DraftTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("draft: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -124,13 +129,12 @@ func (t *DraftTool) Prompt(*Session) string {
 	return "Set the angle, then click OK"
 }
 
-// Cancel restores the default selection filter.
+// Cancel abandons the tool; the engine restores the ambient filter.
 func (t *DraftTool) Cancel(s *Session) {
 	if t.IsEditing() {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // commitEdit writes the panel state back into the committed draft's definition.

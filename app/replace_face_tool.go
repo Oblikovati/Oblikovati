@@ -24,8 +24,20 @@ func NewReplaceFaceTool() *ReplaceFaceTool { return &ReplaceFaceTool{} }
 // Name implements [Tool].
 func (t *ReplaceFaceTool) Name() string { return "Replace Face" }
 
-// Start sets the selection filter to faces.
-func (t *ReplaceFaceTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *ReplaceFaceTool) Start(*Session) {}
+
+// AcceptedKinds declares replace-face picks faces (the faces to replace, then the target face).
+func (t *ReplaceFaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the faces to replace plus the target face for the unified highlight.
+func (t *ReplaceFaceTool) Picks() []Selectable {
+	picks := faceSelectables(t.faces)
+	if t.target != nil {
+		picks = append(picks, *t.target)
+	}
+	return picks
+}
 
 // Pick routes a click to the target slot when in target mode, else appends a face to replace.
 func (t *ReplaceFaceTool) Pick(_ *Session, sel Selectable) {
@@ -85,7 +97,6 @@ func (t *ReplaceFaceTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("replace face: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

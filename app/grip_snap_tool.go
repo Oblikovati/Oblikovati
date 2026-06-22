@@ -36,8 +36,14 @@ func NewGripSnapTool() *GripSnapTool { return &GripSnapTool{} }
 // Name is the tool's display name.
 func (t *GripSnapTool) Name() string { return "Grip Snap" }
 
-// Start restricts picking to component faces.
-func (t *GripSnapTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectFace)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *GripSnapTool) Start(*Session) {}
+
+// AcceptedKinds declares grip-snap picks component faces (the moving face, then the target face).
+func (t *GripSnapTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
+
+// Picks reports the picked faces for the unified highlight.
+func (t *GripSnapTool) Picks() []Selectable { return faceSelectables(t.faces) }
 
 // Pick appends a face until both the moving and the target geometry are chosen.
 func (t *GripSnapTool) Pick(_ *Session, sel Selectable) {
@@ -64,7 +70,6 @@ func (t *GripSnapTool) CanCommit() bool { return len(t.faces) == 2 }
 // Cancel abandons the picks and clears the filter.
 func (t *GripSnapTool) Cancel(s *Session) {
 	t.faces = nil
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // PreferIndex returns the selected Constraint override as a [GripSnapPreferOptions] index.
@@ -110,7 +115,6 @@ func (t *GripSnapTool) Commit(s *Session) error {
 	t.inferred = kind.String()
 	s.SetNotice(fmt.Sprintf("Grip Snap: created a %s constraint.", kind))
 	s.recordEdit(asm, c.Name())
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
