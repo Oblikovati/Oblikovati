@@ -62,17 +62,30 @@ func dimensionView(d *sketch.DimensionConstraint, units param.UnitsOfMeasure) (D
 		if a == nil || b == nil {
 			return DimensionView{}, false
 		}
-		return distanceView(d, a.Position(), b.Position(), lengthExpr(units, d.Measured())), true
+		return distanceView(d, a.Position(), b.Position(), lengthLabel(units, d.Measured())), true
 	case sketch.RadiusDim:
-		return circleView(d, refs, radiusPrefix+lengthExpr(units, d.Measured()), false)
+		return circleView(d, refs, radiusPrefix+lengthLabel(units, d.Measured()), false)
 	case sketch.DiameterDim:
-		return circleView(d, refs, diameterPrefix+lengthExpr(units, d.Measured()), true)
+		return circleView(d, refs, diameterPrefix+lengthLabel(units, d.Measured()), true)
 	case sketch.AngleDim:
-		return angleView(d, refs, angleExpr(units, d.Measured()))
+		return angleView(d, refs, angleLabel(units, d.Measured()))
 	case sketch.ArcLengthDim:
-		return arcLengthView(d, refs, lengthExpr(units, d.Measured()))
+		return arcLengthView(d, refs, lengthLabel(units, d.Measured()))
 	}
 	return DimensionView{}, false
+}
+
+// lengthLabel / angleLabel render a database-unit measurement for a dimension's on-screen label
+// at the document's display precision and FORMAT (decimal/fractional/architectural, decimal-deg/
+// DMS). Unlike the seed expression (lengthExpr), the label is recomputed from live geometry each
+// frame, so it must format down from the raw measured float (e.g. 9.999999998 cm → "10.00 mm")
+// rather than print it losslessly.
+func lengthLabel(units param.UnitsOfMeasure, dbValue float64) string {
+	return units.FormatDisplay(param.Quantity{Value: dbValue, Unit: param.Length})
+}
+
+func angleLabel(units param.UnitsOfMeasure, radians float64) string {
+	return units.FormatDisplay(param.Quantity{Value: radians, Unit: param.Angle})
 }
 
 // distanceView offsets the dimension line off the measured segment by a perpendicular
