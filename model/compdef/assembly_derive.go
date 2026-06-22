@@ -24,9 +24,9 @@ var _ feature.AssemblyBodySource = (*AssemblyComponentDefinition)(nil)
 // what shrinkwrap will simplify (M11-F06).
 func (a *AssemblyComponentDefinition) PlacedBodies() []feature.PlacedBody {
 	if a.occurrences.Count() >= parallelFlattenMinRoots {
-		return flattenParallel(a.occurrences)
+		return flattenParallel(a.occurrences, a.WorkingScale())
 	}
-	return flattenSerial(a.occurrences)
+	return flattenSerial(a.occurrences, a.WorkingScale())
 }
 
 // parallelFlattenMinRoots is the top-level occurrence count at or above which PlacedBodies fans the
@@ -35,9 +35,9 @@ const parallelFlattenMinRoots = 4
 
 // flattenSerial walks the whole tree on one goroutine — the small-assembly path and the reference
 // the parallel path must match exactly.
-func flattenSerial(occs *occurrence.Occurrences) []feature.PlacedBody {
+func flattenSerial(occs *occurrence.Occurrences, rootWS float64) []feature.PlacedBody {
 	w := newPlaceWalker()
-	w.walk(occs, math.Identity4(), nil)
+	w.walk(occs, math.Identity4(), nil, rootWS)
 	return w.out
 }
 
@@ -46,7 +46,7 @@ func flattenSerial(occs *occurrence.Occurrences) []feature.PlacedBody {
 // occurrence order. The walk is read-only over immutable topology and each worker owns its walker
 // and output, so there is no shared mutable state; the contiguous, in-order concat makes the result
 // byte-for-byte identical to flattenSerial. This is the M34-F2 wall-time cut over the deep DAG.
-func flattenParallel(occs *occurrence.Occurrences) []feature.PlacedBody {
+func flattenParallel(occs *occurrence.Occurrences, rootWS float64) []feature.PlacedBody {
 	n := occs.Count()
 	workers := runtime.GOMAXPROCS(0)
 	if workers > n {
@@ -61,7 +61,7 @@ func flattenParallel(occs *occurrence.Occurrences) []feature.PlacedBody {
 			defer wg.Done()
 			w := newPlaceWalker()
 			for i := lo; i < hi; i++ {
-				w.place(occs.Item(i), math.Identity4(), nil)
+				w.place(occs.Item(i), math.Identity4(), nil, rootWS)
 			}
 			parts[slot] = w.out
 		}(wkr, lo, hi)
@@ -126,37 +126,63 @@ func newPlaceWalker() placeWalker {
 // uses that placement's independent override transform when one is set, so two placements of one
 // flexible sub-assembly show components in different positions (M12-F06). The path disambiguates a
 // shared flyweight reached through several placements (M11-F08).
-func (w *placeWalker) walk(occs *occurrence.Occurrences, parent math.Matrix4, flexParent *occurrence.Occurrence) {
+func (w *placeWalker) walk(occs *occurrence.Occurrences, parent math.Matrix4, flexParent *occurrence.Occurrence, ownerWS float64) {
 	for i := 0; i < occs.Count(); i++ {
-		w.place(occs.Item(i), parent, flexParent)
+		w.place(occs.Item(i), parent, flexParent, ownerWS)
 	}
 }
 
 // place emits one occurrence's bodies (a leaf part) or recurses into it (a sub-assembly), at its
 // world placement under parent. Suppressed occurrences are skipped. It pushes the occurrence name
 // before descending and pops it after, so the shared stack always holds the current branch's path.
-func (w *placeWalker) place(o *occurrence.Occurrence, parent math.Matrix4, flexParent *occurrence.Occurrence) {
+func (w *placeWalker) place(o *occurrence.Occurrence, parent math.Matrix4, flexParent *occurrence.Occurrence, ownerWS float64) {
 	if o.Suppressed() {
 		return
 	}
-	world := parent.Mul(childTransform(o, flexParent))
+	// Convert at the placement boundary (ADR-0042 Phase 2): the component's geometry is in its
+	// own working unit; scale it into the owning assembly's working unit before placing. The
+	// scale (childWS / ownerWS) is 1 when units match — every same-unit (and all-centimetre)
+	// assembly is therefore unchanged.
+	childWS := childWorkingScale(o.Definition(), ownerWS)
+	world := parent.Mul(childTransform(o, flexParent).Mul(unitScale(childWS, ownerWS)))
 	w.stack = append(w.stack, o.Name())
 	switch def := o.Definition().(type) {
 	case bodyDefinition: // a leaf part: emit its bodies placed in the assembly
 		for _, b := range def.SurfaceBodies().All() {
 			w.out = append(w.out, feature.PlacedBody{Body: b, Transform: world, Source: o, Path: w.clonePath()})
 		}
-	case occurrence.Composite: // a sub-assembly: recurse, carrying flexible-child overrides
-		w.descend(def, o, world)
+	case occurrence.Composite: // a sub-assembly: recurse, its children converted from ITS working unit
+		w.descend(def, o, world, childWS)
 	}
 	w.stack = w.stack[:len(w.stack)-1]
+}
+
+// childWorkingScale reports a definition's working scale (centimetres per working unit), or the
+// owner's scale when the definition does not carry one (so no conversion is applied — patterns,
+// test fakes). ADR-0042 Phase 2.
+func childWorkingScale(def occurrence.Definition, ownerWS float64) float64 {
+	if ws, ok := def.(interface{ WorkingScale() float64 }); ok {
+		return ws.WorkingScale()
+	}
+	return ownerWS
+}
+
+// unitScale is the uniform similarity that converts a component's working-unit geometry into its
+// owning assembly's working unit (childWS / ownerWS). It is the identity when the units match or
+// either scale is degenerate, so the common path allocates the cheap identity matrix.
+func unitScale(childWS, ownerWS float64) math.Matrix4 {
+	if ownerWS <= 0 || childWS <= 0 || childWS == ownerWS {
+		return math.Identity4()
+	}
+	s := math.Scalar(childWS / ownerWS)
+	return math.Scale4(s, s, s)
 }
 
 // descend recurses into a sub-assembly under the cycle and depth guards (M34-F6): a definition
 // already on the current branch (a self-containing assembly) or a branch past maxAssemblyDepth is
 // skipped, so a malformed DAG degrades to a bounded flatten instead of overflowing the stack. The
 // flexible-child override resets unless this occurrence is itself flexible.
-func (w *placeWalker) descend(def occurrence.Composite, o *occurrence.Occurrence, world math.Matrix4) {
+func (w *placeWalker) descend(def occurrence.Composite, o *occurrence.Occurrence, world math.Matrix4, defWS float64) {
 	if w.depth >= maxAssemblyDepth || w.active[def] {
 		return
 	}
@@ -166,7 +192,8 @@ func (w *placeWalker) descend(def occurrence.Composite, o *occurrence.Occurrence
 	}
 	w.active[def] = true
 	w.depth++
-	w.walk(def.Occurrences(), world, nextFlex)
+	// The sub-assembly's children are authored in ITS working unit, so it is their owner scale.
+	w.walk(def.Occurrences(), world, nextFlex, defWS)
 	w.depth--
 	delete(w.active, def)
 }

@@ -209,6 +209,11 @@ func (d *PartComponentDefinition) Parameters() *param.Parameters { return d.para
 // and dimensions present values in these units.
 func (d *PartComponentDefinition) Units() param.UnitsOfMeasure { return d.units }
 
+// WorkingScale is the centimetre size of one of the part's stored (working) length units
+// (ADR-0042 Phase 2). The assembly placement walker reads it to convert a component placed
+// into an assembly of a different working unit (1.0 ⇒ the centimetre default).
+func (d *PartComponentDefinition) WorkingScale() float64 { return d.units.WorkingScale() }
+
 // SetLengthUnit sets the document's preferred length unit (e.g. "mm", "in").
 func (d *PartComponentDefinition) SetLengthUnit(name string) error {
 	return d.units.SetPreferred(param.Length, name)

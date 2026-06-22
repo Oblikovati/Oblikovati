@@ -373,6 +373,11 @@ func (a *AssemblyComponentDefinition) OrientedMinimumRangeBox() math.OrientedBox
 // Units returns the document's display units (default metric — mm).
 func (a *AssemblyComponentDefinition) Units() param.UnitsOfMeasure { return a.units }
 
+// WorkingScale is the centimetre size of one of the assembly's stored (working) length units
+// (ADR-0042 Phase 2) — the owner scale the placement walker converts each component into, and
+// the scale a parent assembly converts THIS sub-assembly's frame from (1.0 ⇒ centimetre).
+func (a *AssemblyComponentDefinition) WorkingScale() float64 { return a.units.WorkingScale() }
+
 // SetLengthUnit sets the assembly's preferred length unit (e.g. "mm", "in").
 func (a *AssemblyComponentDefinition) SetLengthUnit(name string) error {
 	return a.units.SetPreferred(param.Length, name)
