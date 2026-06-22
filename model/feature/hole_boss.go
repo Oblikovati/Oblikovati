@@ -41,6 +41,7 @@ const (
 // type, and optional tap data.
 type HoleDefinition struct {
 	PlacementFaceKey []byte
+	GeomFace         *topo.GeometricFaceRef // externally-authored placement face by geometric descriptor (ADR-0040)
 	Diameter         func() float64
 	Depth            func() float64
 	ThroughAll       bool           // drill all the way through (depth ignored)
@@ -83,7 +84,7 @@ func (h *HoleFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	face, ok := body.FindFaceByKey(h.def.PlacementFaceKey)
+	face, ok := resolveHoleFace(body, h.def)
 	if !ok {
 		return Output{}, fmt.Errorf("hole: placement face reference lost")
 	}
@@ -318,6 +319,18 @@ func (c *HoleFeatures) AddTapped(faceKey []byte, diameter, depth func() float64,
 
 // addHole adds a hole feature, naming it (Hole1, Hole2, …) so its generated topology has
 // a stable, distinct lineage.
+// resolveHoleFace finds the hole's placement face: by lineage key when present, else by a
+// geometric descriptor (the externally-authored path, ADR-0040), else lost.
+func resolveHoleFace(body *topo.Body, def *HoleDefinition) (*topo.Face, bool) {
+	if len(def.PlacementFaceKey) > 0 {
+		return body.FindFaceByKey(def.PlacementFaceKey)
+	}
+	if def.GeomFace != nil {
+		return body.FindFaceByGeometry(*def.GeomFace, geomEdgeBindTol)
+	}
+	return nil, false
+}
+
 func (c *HoleFeatures) addHole(def *HoleDefinition) *PartFeature {
 	hf := &HoleFeature{def: def}
 	pf := c.engine.Add(hf)
