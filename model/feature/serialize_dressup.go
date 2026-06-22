@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -43,6 +44,18 @@ type EdgeDressData struct {
 	Angle       float64 `yaml:"angle,omitempty"`
 	// Fillet-only: the shared-corner treatment. FilletCornerType 0 (or absent) ⇒ the miter default.
 	CornerType int32 `yaml:"cornerType,omitempty"`
+	// GeomEdges are edges selected by a serialized GEOMETRIC descriptor (ADR-0040), the path
+	// an external author (the NX exporter) uses because it cannot mint Oblikovati lineage
+	// keys. Empty for an Oblikovati-authored dress-up (which uses Edges).
+	GeomEdges []GeomEdgeRefData `yaml:"geomEdges,omitempty"`
+}
+
+// GeomEdgeRefData is the serialized form of a geometric edge descriptor: the edge's
+// midpoint and (sign-agnostic) direction in model space. It binds to a running-body edge
+// at recompute via [topo.Body.FindEdgeByGeometry] (ADR-0040).
+type GeomEdgeRefData struct {
+	Midpoint  []float64 `yaml:"midpoint,flow"`
+	Direction []float64 `yaml:"direction,omitempty,flow"`
 }
 
 // FilletSetData is one serialized fillet edge set: constant (Radius) or variable
@@ -134,6 +147,18 @@ type FaceDressData struct {
 	Faces []string  `yaml:"faces"`
 	Value float64   `yaml:"value"`
 	Pull  []float64 `yaml:"pull,omitempty"` // draft pull direction (dx,dy,dz); absent ⇒ +Z
+	// GeomFaces are faces selected by a serialized GEOMETRIC descriptor (ADR-0040), the
+	// path the NX exporter uses since it cannot mint Oblikovati lineage keys. Empty for an
+	// Oblikovati-authored dress-up (which uses Faces).
+	GeomFaces []GeomFaceRefData `yaml:"geomFaces,omitempty"`
+}
+
+// GeomFaceRefData is the serialized form of a geometric face descriptor: the face's
+// centroid and outward normal in model space. It binds to a running-body face at recompute
+// via [topo.Body.FindFaceByGeometry] (ADR-0040).
+type GeomFaceRefData struct {
+	Centroid []float64 `yaml:"centroid,flow"`
+	Normal   []float64 `yaml:"normal,omitempty,flow"`
 }
 
 // FaceFilletData persists a face fillet (#694): the two face-set reference keys and the radius.
@@ -177,10 +202,13 @@ type ThreadData struct {
 	ModelDiameter string `yaml:"modelDiameter,omitempty"`
 }
 
-// dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups.
+// dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups, plus any
+// geometric edge descriptors (externally-authored selections, ADR-0040).
 type dressInputs struct {
-	keys  [][]byte
-	value float64
+	keys      [][]byte
+	value     float64
+	geom      []topo.GeometricEdgeRef
+	geomFaces []topo.GeometricFaceRef
 }
 
 func requireEdgeDress(d *EdgeDressData, kind string) (dressInputs, error) {
@@ -191,7 +219,32 @@ func requireEdgeDress(d *EdgeDressData, kind string) (dressInputs, error) {
 	if err != nil {
 		return dressInputs{}, err
 	}
-	return dressInputs{keys: keys, value: d.Value}, nil
+	return dressInputs{keys: keys, value: d.Value, geom: decodeGeomEdges(d.GeomEdges)}, nil
+}
+
+// encodeGeomEdges / decodeGeomEdges convert geometric edge descriptors to and from their
+// serialized form. A descriptor with no direction (degenerate) still round-trips by
+// midpoint alone.
+func encodeGeomEdges(geom []topo.GeometricEdgeRef) []GeomEdgeRefData {
+	if len(geom) == 0 {
+		return nil
+	}
+	out := make([]GeomEdgeRefData, len(geom))
+	for i, g := range geom {
+		out[i] = GeomEdgeRefData{Midpoint: encodePoint3(g.Midpoint), Direction: encodeVec3(g.Direction)}
+	}
+	return out
+}
+
+func decodeGeomEdges(data []GeomEdgeRefData) []topo.GeometricEdgeRef {
+	if len(data) == 0 {
+		return nil
+	}
+	out := make([]topo.GeometricEdgeRef, len(data))
+	for i, d := range data {
+		out[i] = topo.GeometricEdgeRef{Midpoint: decodePoint3(d.Midpoint), Direction: decodeVec3(d.Direction)}
+	}
+	return out
 }
 
 func requireFaceDress(d *FaceDressData, kind string) (dressInputs, error) {
@@ -202,7 +255,47 @@ func requireFaceDress(d *FaceDressData, kind string) (dressInputs, error) {
 	if err != nil {
 		return dressInputs{}, err
 	}
-	return dressInputs{keys: keys, value: d.Value}, nil
+	return dressInputs{keys: keys, value: d.Value, geomFaces: decodeGeomFaces(d.GeomFaces)}, nil
+}
+
+// encodeGeomFaces / decodeGeomFaces convert geometric face descriptors to and from their
+// serialized form (centroid + outward normal).
+func encodeGeomFaces(geom []topo.GeometricFaceRef) []GeomFaceRefData {
+	if len(geom) == 0 {
+		return nil
+	}
+	out := make([]GeomFaceRefData, len(geom))
+	for i, g := range geom {
+		out[i] = GeomFaceRefData{Centroid: encodePoint3(g.Centroid), Normal: encodeVec3(g.Normal)}
+	}
+	return out
+}
+
+func decodeGeomFaces(data []GeomFaceRefData) []topo.GeometricFaceRef {
+	if len(data) == 0 {
+		return nil
+	}
+	out := make([]topo.GeometricFaceRef, len(data))
+	for i, d := range data {
+		out[i] = topo.GeometricFaceRef{Centroid: decodePoint3(d.Centroid), Normal: decodeVec3(d.Normal)}
+	}
+	return out
+}
+
+// encodeGeomFacePtr / decodeGeomFacePtr handle a single optional geometric face descriptor
+// (a hole's placement face).
+func encodeGeomFacePtr(g *topo.GeometricFaceRef) *GeomFaceRefData {
+	if g == nil {
+		return nil
+	}
+	return &GeomFaceRefData{Centroid: encodePoint3(g.Centroid), Normal: encodeVec3(g.Normal)}
+}
+
+func decodeGeomFacePtr(d *GeomFaceRefData) *topo.GeometricFaceRef {
+	if d == nil {
+		return nil
+	}
+	return &topo.GeometricFaceRef{Centroid: decodePoint3(d.Centroid), Normal: decodeVec3(d.Normal)}
 }
 
 // encodeKeys / decodeKeys base64-encode reference keys (opaque lineage bytes) so they
