@@ -78,14 +78,7 @@ func (t *SheetMetalContourFlangeTool) AcceptedKinds() []SelectionKind {
 
 // Picks reports the picked edge and profile for the unified highlight.
 func (t *SheetMetalContourFlangeTool) Picks() []Selectable {
-	var picks []Selectable
-	if t.edge != nil {
-		picks = append(picks, *t.edge)
-	}
-	if t.profile != nil {
-		picks = append(picks, *t.profile)
-	}
-	return picks
+	return appendPick(appendPick(nil, t.edge), t.profile)
 }
 func (t *SheetMetalContourFlangeTool) Pick(_ *Session, sel Selectable) {
 	switch h := sel.(type) {

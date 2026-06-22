@@ -58,11 +58,7 @@ func (t *ExtrudeTool) AcceptedKinds() []SelectionKind {
 
 // Picks reports the picked regions plus the termination face for the unified highlight.
 func (t *ExtrudeTool) Picks() []Selectable {
-	picks := profileSelectables(t.profiles)
-	if t.toFace != nil {
-		picks = append(picks, *t.toFace)
-	}
-	return picks
+	return appendPick(profileSelectables(t.profiles), t.toFace)
 }
 
 // Pick captures the region the user clicked, or — during the "to face" step — the termination

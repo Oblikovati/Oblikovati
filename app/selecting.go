@@ -36,6 +36,15 @@ func singlePick[T Selectable](p *T) []Selectable {
 	return []Selectable{*p}
 }
 
+// appendPick appends a tool's optional single pick (nil until picked) to its running Picks() list —
+// the shared form of a multi-step tool that reports a base set plus one further pick.
+func appendPick[T Selectable](picks []Selectable, p *T) []Selectable {
+	if p == nil {
+		return picks
+	}
+	return append(picks, *p)
+}
+
 // faceSelectables / edgeSelectables / profileSelectables widen a tool's typed pick slice to
 // []Selectable for its Picks() implementation, so the engine highlights them uniformly without
 // each tool writing a loop.
@@ -59,6 +68,14 @@ func profileSelectables(ps []ProfileHandle) []Selectable {
 	out := make([]Selectable, len(ps))
 	for i, p := range ps {
 		out[i] = p
+	}
+	return out
+}
+
+func vertexSelectables(vs []VertexHandle) []Selectable {
+	out := make([]Selectable, len(vs))
+	for i, v := range vs {
+		out[i] = v
 	}
 	return out
 }

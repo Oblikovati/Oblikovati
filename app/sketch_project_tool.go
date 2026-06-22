@@ -35,11 +35,7 @@ func (t *ProjectGeometryTool) AcceptedKinds() []SelectionKind {
 
 // Picks reports the picked edges and vertices for the unified highlight.
 func (t *ProjectGeometryTool) Picks() []Selectable {
-	picks := edgeSelectables(t.edges)
-	for _, v := range t.vertices {
-		picks = append(picks, v)
-	}
-	return picks
+	return append(edgeSelectables(t.edges), vertexSelectables(t.vertices)...)
 }
 
 // Pick records a clicked edge or vertex (ignoring other kinds).
