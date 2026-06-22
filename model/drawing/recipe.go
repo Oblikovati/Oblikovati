@@ -174,6 +174,7 @@ func (c *Content) ApplyRecipe(model []byte) error {
 	c.sheets = newSheets()
 	c.sheets.lookup = c.resolveProperty
 	c.sheets.bodyResolve = c.resolveBody
+	c.sheets.dimPrecision = c.dimDecimals
 	for _, sr := range r.Sheets {
 		if err := c.sheets.restore(sr); err != nil {
 			return err
@@ -327,7 +328,7 @@ func (s *Sheets) restore(rec sheetRecipe) error {
 	if err != nil {
 		return err
 	}
-	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve}
+	sh := &Sheet{name: rec.Name, size: size, orientation: orient, width: w, height: h, views: newDrawingViews(s.bodyResolve), bomResolve: s.bomResolve, dimPrecision: s.dimPrecision}
 	if rec.Border {
 		sh.border = newBorder(DefaultBorderDefinition())
 	}

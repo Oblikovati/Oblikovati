@@ -349,14 +349,35 @@ func TestLinearDimensionMeasuresTrueModelSize(t *testing.T) {
 	if math.Abs(d.ValueMM()-20) > 1e-6 {
 		t.Errorf("value = %v mm, want 20 (the box's 2 cm X-width)", d.ValueMM())
 	}
-	if d.Text() != "20" {
-		t.Errorf("text = %q, want %q", d.Text(), "20")
+	// Text honors the active drafting standard's precision (ISO default = 2 decimals).
+	if d.Text() != "20.00" {
+		t.Errorf("text = %q, want %q", d.Text(), "20.00")
 	}
 	if d.CurveCount() == 0 {
 		t.Error("dimension produced no glyph curves")
 	}
 	if d.Type() != types.HorizontalDimension || d.ViewName() != "FRONT" {
 		t.Errorf("dimension = (%v on %q), want a horizontal dim on FRONT", d.Type(), d.ViewName())
+	}
+}
+
+// TestDimensionTextFollowsStandardPrecision: a dimension's displayed value honors the active
+// drafting standard's decimal places, and re-formats when the standard changes (ISO 2 → ANSI 3).
+func TestDimensionTextFollowsStandardPrecision(t *testing.T) {
+	c := drawingWithBox(t)
+	frontBase(t, c.Sheets().Active().Views())
+	dims := c.Sheets().Active().Dimensions()
+	d, err := dims.AddLinear("D1", "FRONT", types.HorizontalDimension, 88, 80, 112, 80, -12)
+	if err != nil {
+		t.Fatalf("AddLinear: %v", err)
+	}
+	if d.Text() != "20.00" { // ISO default: 2 decimals
+		t.Errorf("ISO text = %q, want \"20.00\"", d.Text())
+	}
+	c.Styles().SetActiveStandard(types.DraftingANSI) // ANSI: 3 decimals
+	dims.Recompute()
+	if d.Text() != "20.000" {
+		t.Errorf("ANSI text = %q, want \"20.000\"", d.Text())
 	}
 }
 
