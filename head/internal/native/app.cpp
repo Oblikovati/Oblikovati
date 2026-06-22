@@ -113,13 +113,16 @@ bool create_device(HeadContext* c) {
 
 bool create_descriptor_pool(HeadContext* c) {
     // Combined-image-sampler sets are shared by the font atlas, the offscreen viewport
-    // image, and one per cached ribbon icon (texture.cpp). The icon set alone is ~25
-    // and grows with the command set, so size generously to avoid AddTexture failing.
-    VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 256}};
+    // image, and one per cached ribbon icon (texture.cpp). The icon set alone is ~25 and
+    // grows with the command set; during a UI icon-scale drag the cache re-rasterizes at each
+    // pixel size and keeps the previous set retired-in-flight for a few frames, so size with
+    // ample headroom to keep the font atlas always allocatable (#1237: an exhausted pool made
+    // CreateTexture/AddTexture fail — icons vanished and the font GetTexID assertion fired).
+    VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024}};
     VkDescriptorPoolCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    ci.maxSets = 256;
+    ci.maxSets = 1024;
     ci.poolSizeCount = 1;
     ci.pPoolSizes = sizes;
     return ok(vkCreateDescriptorPool(c->device, &ci, c->allocator, &c->descriptorPool));
