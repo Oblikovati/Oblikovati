@@ -1,11 +1,11 @@
 name: nightly
 
-# Nightly prereleases from develop. Runs daily and on demand; skips when develop has
-# no new commits since the last nightly. Publishes a single rolling `nightly`
-# prerelease (tag moved each run).
+# Nightly prereleases from develop. Runs every 6 hours and on demand; skips unless develop
+# has new commits (merged PRs) since the last STABLE release. Publishes a single rolling
+# `nightly` prerelease (tag moved each run).
 on:
   schedule:
-    - cron: "0 3 * * *" # 03:00 UTC daily
+    - cron: "0 */6 * * *" # every 6 hours (00:00/06:00/12:00/18:00 UTC)
   workflow_dispatch:
 
 permissions:
@@ -32,16 +32,21 @@ jobs:
         run: |
           set -euo pipefail
           echo "version=$(go run ./cmd/obkversion nightly)" >> "$GITHUB_OUTPUT"
-          if git rev-parse -q --verify refs/tags/nightly >/dev/null; then
-            n="$(git rev-list --count nightly..HEAD)"
+          # Proceed only when develop has commits (merged PRs) since the last STABLE release.
+          # The last release is the newest v* tag (release.yml tags v{...}); the rolling
+          # `nightly` prerelease tag is excluded on purpose. With no v* tag yet there is
+          # unreleased work, so we proceed (the first release has not been cut).
+          last="$(git tag -l 'v*' --sort=-v:refname | head -n1)"
+          if [ -n "$last" ]; then
+            n="$(git rev-list --count "$last"..HEAD)"
           else
-            n=1 # first nightly
+            n=1 # no stable release yet — proceed
           fi
           if [ "$n" -gt 0 ]; then
             echo "proceed=true" >> "$GITHUB_OUTPUT"
           else
             echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "No new commits on develop since the last nightly — skipping."
+            echo "No PRs merged on develop since the last release ($last) — skipping."
           fi
 
   build:
