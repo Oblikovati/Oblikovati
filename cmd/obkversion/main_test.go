@@ -30,7 +30,7 @@ func (f fakeRepo) newestTag(pattern string) string {
 func (f fakeRepo) commitsSince(ref string) []string { return f.commits[ref] }
 
 func TestAssemble(t *testing.T) {
-	noon := time.Date(2026, 6, 15, 3, 0, 0, 0, time.UTC)
+	noon := time.Date(2026, 6, 15, 3, 47, 51, 0, time.UTC) // non-zero min/sec: the stamp must drop them
 	cases := []struct {
 		name    string
 		repo    fakeRepo
@@ -71,10 +71,10 @@ func TestAssemble(t *testing.T) {
 			want:    "0.000200.0.1", // reset to 0.0, then a fix
 		},
 		{
-			name:    "nightly appends the timestamp",
+			name:    "nightly appends the compact stamp (YYMMDDTHH, no minutes/seconds)",
 			repo:    fakeRepo{commits: map[string][]string{"": {"feat: thing"}}},
 			channel: "nightly",
-			want:    "0.000200.1.0-nightly.20260615T030000",
+			want:    "0.000200.1.0-nightly.260615T03",
 		},
 	}
 	for _, c := range cases {

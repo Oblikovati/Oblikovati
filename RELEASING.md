@@ -4,7 +4,7 @@ Two channels, both automated by GitHub Actions:
 
 | Channel | Trigger | Workflow | Result |
 |---------|---------|----------|--------|
-| **Nightly** | daily cron + manual `workflow_dispatch`, on `develop` | `.github/workflows/nightly.yml` | rolling `nightly` **prerelease** (skipped if no new commits) |
+| **Nightly** | 6-hourly cron + manual `workflow_dispatch`, on `develop` | `.github/workflows/nightly.yml` | rolling `nightly` **prerelease** (skipped unless commits merged since the last stable release) |
 | **Stable** | push to `release` (merge a PR `develop` → `release`) | `.github/workflows/release.yml` | GitHub release tagged `v{MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}` |
 
 Both build the **GUI head + CLI** for Windows, Linux (AppImage), and macOS (one
@@ -21,8 +21,8 @@ Add-ins are **not** shipped; they are maintained by external vendors.
 - **MINOR** / **PATCH** — auto-numbered from the **conventional-commit scope** since the
   last stable release, per SemVer: a `feat` (or a breaking change) bumps **MINOR** and
   resets PATCH; a `fix` bumps **PATCH**. They **reset to `0.0`** whenever MANUAL_MAJOR or
-  API_VERSION changes (a new line gets its own sequence). Nightlies append
-  `-nightly.<timestamp>` (a semver prerelease).
+  API_VERSION changes (a new line gets its own sequence). Nightlies append a compact
+  UTC build stamp `-nightly.YYMMDDTHH` (two-digit year, date, hour — a semver prerelease).
 
 [`cmd/obkversion`](cmd/obkversion) computes the whole string; its logic lives in the
 tested [`release`](release) package. It reads `version.yaml`, the api pin, and git
@@ -30,7 +30,7 @@ tags + commit history — so it needs a full checkout (`fetch-depth: 0`):
 
 ```sh
 go run ./cmd/obkversion stable    # -> 0.000200.1.0          (e.g.)
-go run ./cmd/obkversion nightly   # -> 0.000200.1.0-nightly.20260602T120000
+go run ./cmd/obkversion nightly   # -> 0.000200.1.0-nightly.260602T12
 ```
 
 ### Bumping the version
