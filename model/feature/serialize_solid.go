@@ -23,6 +23,9 @@ type HoleData struct {
 	Type            string  `yaml:"type"`
 	Tapped          bool    `yaml:"tapped,omitempty"`
 	Designation     string  `yaml:"designation,omitempty"`
+	// GeomFace selects the placement face by a GEOMETRIC descriptor (ADR-0040) when the
+	// hole is externally authored (NX exporter) and Face (the lineage key) is empty.
+	GeomFace *GeomFaceRefData `yaml:"geomFace,omitempty"`
 }
 
 // BossData is a boss's recipe: a raised cylinder on a placement face.
@@ -56,6 +59,7 @@ func serializeHole(def *HoleDefinition) (*HoleData, error) {
 		Type:            kind,
 		Tapped:          def.Tap.Tapped,
 		Designation:     def.Tap.Designation,
+		GeomFace:        encodeGeomFacePtr(def.GeomFace),
 	}, nil
 }
 
@@ -89,6 +93,7 @@ func restoreHole(fs *PartFeatures, h *HoleData) (*PartFeature, error) {
 	def.Type = holeType
 	def.ThroughAll = h.ThroughAll
 	def.PointAngle = constFloat(h.PointAngle)
+	def.GeomFace = decodeGeomFacePtr(h.GeomFace)
 	return pf, nil
 }
 

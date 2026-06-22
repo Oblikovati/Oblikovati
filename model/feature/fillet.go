@@ -41,6 +41,29 @@ func bindGeomEdges(in Input, keys [][]byte, geom []topo.GeometricEdgeRef, feat s
 	return out, nil
 }
 
+// bindGeomFaces is the face counterpart of [bindGeomEdges]: it resolves geometric face
+// descriptors (centroid + outward normal) against the running body via
+// topo.Body.FindFaceByGeometry and folds the bound faces' lineage keys into keys, so the
+// shell/draft/hole pipelines are unchanged. A descriptor that binds nothing is an error.
+func bindGeomFaces(in Input, keys [][]byte, geom []topo.GeometricFaceRef, feat string) ([][]byte, error) {
+	if len(geom) == 0 {
+		return keys, nil
+	}
+	body, err := runningBody(in)
+	if err != nil {
+		return nil, err
+	}
+	out := append([][]byte(nil), keys...)
+	for _, g := range geom {
+		f, ok := body.FindFaceByGeometry(g, geomEdgeBindTol)
+		if !ok {
+			return nil, fmt.Errorf("%s: geometric face reference did not bind near centroid %v", feat, g.Centroid)
+		}
+		out = append(out, f.ReferenceKey())
+	}
+	return out, nil
+}
+
 // cornerStrategy maps the public corner-type discriminator to the kernel's 2-edge corner strategy.
 func cornerStrategy(t types.FilletCornerType) ops.CornerStrategy {
 	switch t {

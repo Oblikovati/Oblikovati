@@ -146,6 +146,7 @@ func (c *ChamferFeature) Recompute(in Input) (Output, error) {
 type ShellDefinition struct {
 	RemovedFaceKeys [][]byte
 	Thickness       func() float64
+	GeomFaces       []topo.GeometricFaceRef // externally-authored removed faces by geometric descriptor (ADR-0040)
 }
 
 // ShellFeature hollows a solid.
@@ -160,14 +161,19 @@ func (s *ShellFeature) Kind() string                 { return "shell" }
 // Recompute hollows the running body to the wall thickness, opening the removed faces. See
 // shell.go.
 func (s *ShellFeature) Recompute(in Input) (Output, error) {
-	return shellBody(in, s.def.RemovedFaceKeys, callOrZero(s.def.Thickness), featOr(s.featName, "shell"))
+	keys, err := bindGeomFaces(in, s.def.RemovedFaceKeys, s.def.GeomFaces, featOr(s.featName, "shell"))
+	if err != nil {
+		return Output{}, err
+	}
+	return shellBody(in, keys, callOrZero(s.def.Thickness), featOr(s.featName, "shell"))
 }
 
 // FaceDraftDefinition tapers selected faces by an angle about a pull direction.
 type FaceDraftDefinition struct {
-	FaceKeys [][]byte
-	PullDir  math.Vector3
-	Angle    func() float64
+	FaceKeys  [][]byte
+	PullDir   math.Vector3
+	Angle     func() float64
+	GeomFaces []topo.GeometricFaceRef // externally-authored drafted faces by geometric descriptor (ADR-0040)
 }
 
 // FaceDraftFeature applies draft to faces.
@@ -178,7 +184,11 @@ func (d *FaceDraftFeature) Kind() string                     { return "draft" }
 
 // Recompute tapers the picked faces about the pull direction by the angle (see draft.go).
 func (d *FaceDraftFeature) Recompute(in Input) (Output, error) {
-	return draftBody(in, d.def.FaceKeys, d.def.PullDir, callOrZero(d.def.Angle), "draft")
+	keys, err := bindGeomFaces(in, d.def.FaceKeys, d.def.GeomFaces, "draft")
+	if err != nil {
+		return Output{}, err
+	}
+	return draftBody(in, keys, d.def.PullDir, callOrZero(d.def.Angle), "draft")
 }
 
 // ThreadDefinition applies thread data to a cylindrical face. Cut=false is a cosmetic thread
@@ -399,6 +409,20 @@ func (c *DressUpFeatures) AddDraft(faceKeys [][]byte, angle func() float64) *Par
 // AddDraftPull tapers the given faces by angle about an explicit pull direction.
 func (c *DressUpFeatures) AddDraftPull(faceKeys [][]byte, pull math.Vector3, angle func() float64) *PartFeature {
 	return c.engine.Add(&FaceDraftFeature{def: &FaceDraftDefinition{FaceKeys: faceKeys, PullDir: pull, Angle: angle}})
+}
+
+// addShell / addFaceDraft add a face dress-up from a fully-built definition (used by the
+// recipe restore to carry geometric face refs the public builders don't take).
+func (c *DressUpFeatures) addShell(def *ShellDefinition) *PartFeature {
+	sf := &ShellFeature{def: def}
+	pf := c.engine.Add(sf)
+	pf.SetName(c.engine.UniqueName("Shell"))
+	sf.featName = pf.name
+	return pf
+}
+
+func (c *DressUpFeatures) addFaceDraft(def *FaceDraftDefinition) *PartFeature {
+	return c.engine.Add(&FaceDraftFeature{def: def})
 }
 
 // AddThread tags a cylindrical face with thread data; cut=true models a real (cut) thread,

@@ -147,6 +147,18 @@ type FaceDressData struct {
 	Faces []string  `yaml:"faces"`
 	Value float64   `yaml:"value"`
 	Pull  []float64 `yaml:"pull,omitempty"` // draft pull direction (dx,dy,dz); absent ⇒ +Z
+	// GeomFaces are faces selected by a serialized GEOMETRIC descriptor (ADR-0040), the
+	// path the NX exporter uses since it cannot mint Oblikovati lineage keys. Empty for an
+	// Oblikovati-authored dress-up (which uses Faces).
+	GeomFaces []GeomFaceRefData `yaml:"geomFaces,omitempty"`
+}
+
+// GeomFaceRefData is the serialized form of a geometric face descriptor: the face's
+// centroid and outward normal in model space. It binds to a running-body face at recompute
+// via [topo.Body.FindFaceByGeometry] (ADR-0040).
+type GeomFaceRefData struct {
+	Centroid []float64 `yaml:"centroid,flow"`
+	Normal   []float64 `yaml:"normal,omitempty,flow"`
 }
 
 // FaceFilletData persists a face fillet (#694): the two face-set reference keys and the radius.
@@ -193,9 +205,10 @@ type ThreadData struct {
 // dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups, plus any
 // geometric edge descriptors (externally-authored selections, ADR-0040).
 type dressInputs struct {
-	keys  [][]byte
-	value float64
-	geom  []topo.GeometricEdgeRef
+	keys      [][]byte
+	value     float64
+	geom      []topo.GeometricEdgeRef
+	geomFaces []topo.GeometricFaceRef
 }
 
 func requireEdgeDress(d *EdgeDressData, kind string) (dressInputs, error) {
@@ -242,7 +255,47 @@ func requireFaceDress(d *FaceDressData, kind string) (dressInputs, error) {
 	if err != nil {
 		return dressInputs{}, err
 	}
-	return dressInputs{keys: keys, value: d.Value}, nil
+	return dressInputs{keys: keys, value: d.Value, geomFaces: decodeGeomFaces(d.GeomFaces)}, nil
+}
+
+// encodeGeomFaces / decodeGeomFaces convert geometric face descriptors to and from their
+// serialized form (centroid + outward normal).
+func encodeGeomFaces(geom []topo.GeometricFaceRef) []GeomFaceRefData {
+	if len(geom) == 0 {
+		return nil
+	}
+	out := make([]GeomFaceRefData, len(geom))
+	for i, g := range geom {
+		out[i] = GeomFaceRefData{Centroid: encodePoint3(g.Centroid), Normal: encodeVec3(g.Normal)}
+	}
+	return out
+}
+
+func decodeGeomFaces(data []GeomFaceRefData) []topo.GeometricFaceRef {
+	if len(data) == 0 {
+		return nil
+	}
+	out := make([]topo.GeometricFaceRef, len(data))
+	for i, d := range data {
+		out[i] = topo.GeometricFaceRef{Centroid: decodePoint3(d.Centroid), Normal: decodeVec3(d.Normal)}
+	}
+	return out
+}
+
+// encodeGeomFacePtr / decodeGeomFacePtr handle a single optional geometric face descriptor
+// (a hole's placement face).
+func encodeGeomFacePtr(g *topo.GeometricFaceRef) *GeomFaceRefData {
+	if g == nil {
+		return nil
+	}
+	return &GeomFaceRefData{Centroid: encodePoint3(g.Centroid), Normal: encodeVec3(g.Normal)}
+}
+
+func decodeGeomFacePtr(d *GeomFaceRefData) *topo.GeometricFaceRef {
+	if d == nil {
+		return nil
+	}
+	return &topo.GeometricFaceRef{Centroid: decodePoint3(d.Centroid), Normal: decodeVec3(d.Normal)}
 }
 
 // encodeKeys / decodeKeys base64-encode reference keys (opaque lineage bytes) so they
