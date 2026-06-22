@@ -114,9 +114,12 @@ func TestWorkingScaleDefaultOmittedAndMigrates(t *testing.T) {
 	if legacy.WorkingScale() != 1 {
 		t.Errorf("legacy (no key) WorkingScale = %v, want cm default 1", legacy.WorkingScale())
 	}
-	// A corrupt value is rejected, not silently dropped.
-	bad := param.DefaultUnitsOfMeasure().Clone()
-	if err := applyUnitsTo(&bad, map[string]string{keyWorkingScale: "0"}); err == nil {
-		t.Error("workingScale 0 should be rejected")
+	// A corrupt value is rejected, not silently dropped — both a non-positive number and a
+	// non-numeric string.
+	for _, badVal := range []string{"0", "-1", "abc"} {
+		bad := param.DefaultUnitsOfMeasure().Clone()
+		if err := applyUnitsTo(&bad, map[string]string{keyWorkingScale: badVal}); err == nil {
+			t.Errorf("workingScale %q should be rejected", badVal)
+		}
 	}
 }

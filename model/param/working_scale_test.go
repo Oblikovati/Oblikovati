@@ -128,6 +128,24 @@ func TestWorkingScaleGuardsAndRejects(t *testing.T) {
 	}
 }
 
+// TestSetWorkingScale covers the in-place mutating setter (the .obk restore path): it sets a
+// positive scale and rejects a non-positive one naming the value.
+func TestSetWorkingScale(t *testing.T) {
+	m := DefaultUnitsOfMeasure()
+	if err := m.SetWorkingScale(1e-4); err != nil {
+		t.Fatalf("SetWorkingScale(1e-4): %v", err)
+	}
+	if m.WorkingScale() != 1e-4 {
+		t.Errorf("WorkingScale after set = %v, want 1e-4", m.WorkingScale())
+	}
+	if err := m.SetWorkingScale(0); err == nil {
+		t.Error("SetWorkingScale(0) should be rejected")
+	}
+	if err := m.SetWorkingScale(-2); err == nil {
+		t.Error("SetWorkingScale(-2) should be rejected")
+	}
+}
+
 // TestCloneKeepsWorkingScale ensures the working scale survives a Clone.
 func TestCloneKeepsWorkingScale(t *testing.T) {
 	m, _ := DefaultUnitsOfMeasure().CenteredOnLength("µm")
