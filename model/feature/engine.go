@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/health"
@@ -24,14 +25,15 @@ const eopAll = -1
 // the clean prefix, isolates failures as feature health, and supports
 // reorder/rename/suppression and the end-of-part marker (ADR-0010).
 type PartFeatures struct {
-	items     []*PartFeature
-	byID      map[ID]*PartFeature
-	params    *param.Parameters
-	keys      *identity.KeyManager
-	eop       int
-	result    []*topo.Body
-	resources ResourceStore
-	fonts     text.FontResolver
+	items        []*PartFeature
+	byID         map[ID]*PartFeature
+	params       *param.Parameters
+	keys         *identity.KeyManager
+	eop          int
+	result       []*topo.Body
+	resources    ResourceStore
+	fonts        text.FontResolver
+	workingScale func() float64 // ADR-0042 Phase 2: live working scale (cm per working unit) for re-import
 }
 
 // ResourceStore reads embedded imported-file bytes by their document resource UUID
@@ -45,6 +47,22 @@ type ResourceStore interface {
 // read imported files by UUID. Set by the owning content after construction (the engine is
 // recreated on a recipe reset, so this must be re-wired each time).
 func (fs *PartFeatures) SetResourceStore(rs ResourceStore) { fs.resources = rs }
+
+// SetWorkingScaleResolver wires a getter for the live working scale (centimetres per working
+// length unit), so re-importing an embedded foreign file on reopen scales it into the
+// document's working coordinates (ADR-0042 Phase 2). Like the resource store it is re-wired
+// after a recipe reset. When unset, re-import falls back to the centimetre default.
+func (fs *PartFeatures) SetWorkingScaleResolver(fn func() float64) { fs.workingScale = fn }
+
+// workingTargetMM resolves the working-unit millimetre size for a re-import (the working scale
+// in centimetres × the centimetre's millimetre size), or 0 when no resolver is wired
+// (ImportBodiesFromData then applies the centimetre default).
+func (fs *PartFeatures) workingTargetMM() float64 {
+	if fs.workingScale == nil {
+		return 0
+	}
+	return fs.workingScale() * exchange.DBUnitMM
+}
 
 // SetFontResolver wires the document's font resolver (resource-aware) into the engine so a
 // text/emboss feature resolves its font from the document's embedded/app-provided faces. Like

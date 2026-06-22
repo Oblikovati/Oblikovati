@@ -13,28 +13,35 @@ import (
 	"oblikovati.org/kernel/topo"
 )
 
-// ImportBodies reads path and translates it via [ImportBodiesFromData]. The interactive
-// importer uses it to read a file once before embedding its bytes as a document resource.
-func ImportBodies(format types.ExchangeFormat, path string) ([]*topo.Body, []string, error) {
+// ImportBodies reads path and translates it via [ImportBodiesFromData], scaling the file's
+// declared unit into the document's working unit (targetUnitMM = mm per working unit; 0 ⇒ the
+// centimetre default). The interactive importer uses it to read a file once before embedding
+// its bytes as a document resource.
+func ImportBodies(format types.ExchangeFormat, path string, targetUnitMM float64) ([]*topo.Body, []string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("import: read %q: %w", path, err)
 	}
-	return ImportBodiesFromData(format, data)
+	return ImportBodiesFromData(format, data, targetUnitMM)
 }
 
 // ImportBodiesFromData translates raw file bytes into kernel bodies, routing by format: a mesh
 // format (STL/OBJ/3MF) yields one welded body; STEP yields every B-rep solid in the file. It is
 // the shared reader for both an interactive import and a recipe re-import-from-resource — the
 // bytes come from the file the first time and from the embedded document resource on reopen.
-func ImportBodiesFromData(format types.ExchangeFormat, data []byte) ([]*topo.Body, []string, error) {
+// targetUnitMM is the millimetre size of one working (database) length unit; 0 selects the
+// centimetre default so the file's declared unit scales into the document's working coordinates
+// (ADR-0042 Phase 2).
+func ImportBodiesFromData(format types.ExchangeFormat, data []byte, targetUnitMM float64) ([]*topo.Body, []string, error) {
+	if targetUnitMM <= 0 {
+		targetUnitMM = exchange.DBUnitMM
+	}
 	switch {
 	case format == types.FormatSTEP:
-		// The kernel works in centimetres; the reader scales the file's declared unit into it.
-		return step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
+		return step.Reader{}.ImportSolids(data, exchange.TranslationOptions{TargetUnitMM: targetUnitMM})
 	case format.IsMesh():
 		body, warns, err := meshio.ImportBody(format, data, fmt.Sprintf("import:%s#0", format), 0,
-			exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
+			exchange.TranslationOptions{TargetUnitMM: targetUnitMM})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -74,7 +81,7 @@ func restoreImportedBody(fs *PartFeatures, d *ImportData) (*PartFeature, error) 
 	if !ok {
 		return nil, fmt.Errorf("imported-body re-import: resource %q not present in the document", d.Resource)
 	}
-	bodies, _, err := ImportBodiesFromData(types.ExchangeFormat(d.Format), data)
+	bodies, _, err := ImportBodiesFromData(types.ExchangeFormat(d.Format), data, fs.workingTargetMM())
 	if err != nil {
 		return nil, fmt.Errorf("imported-body re-import (resource %q): %w", d.Resource, err)
 	}

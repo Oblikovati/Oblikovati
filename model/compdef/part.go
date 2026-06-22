@@ -98,10 +98,11 @@ func NewPartComponentDefinition() *PartComponentDefinition {
 		props:       attr.NewPropertySets(),
 		pointClouds: pointcloud.NewPointClouds(),
 	}
-	d.features.SetResourceStore(d)       // re-derive imported bodies from the resource table on open
-	d.features.SetFontResolver(d)        // resolve text/emboss fonts from embedded/app-provided resources
-	d.sketches.ShareParameters(params)   // dimension expressions resolve against user params (live + restore)
-	d.sketches3D.ShareParameters(params) // same for 3D sketches
+	d.features.SetResourceStore(d)                                                       // re-derive imported bodies from the resource table on open
+	d.features.SetFontResolver(d)                                                        // resolve text/emboss fonts from embedded/app-provided resources
+	d.features.SetWorkingScaleResolver(func() float64 { return d.units.WorkingScale() }) // re-import scales into the doc working unit
+	d.sketches.ShareParameters(params)                                                   // dimension expressions resolve against user params (live + restore)
+	d.sketches3D.ShareParameters(params)                                                 // same for 3D sketches
 	return d
 }
 
