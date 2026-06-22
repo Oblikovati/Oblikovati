@@ -73,6 +73,61 @@ func (m UnitsOfMeasure) formatAngleDisplay(q Quantity) string {
 	return formatFixed(m.ToPreferred(q), m.anglePrecision)
 }
 
+// DisplayRoundedExpr renders q rounded to the granularity the document's display precision/format
+// actually shows, as a plain, always-parseable decimal expression in the displayed unit
+// ("10 mm", "30 deg", "0.125 in"). A dimension seeded with this stores exactly the clean on-screen
+// number instead of the raw measured float ("9.999999998 mm") (Oblikovati/Oblikovati#146
+// follow-up). The value is rounded in the displayed unit and emitted as decimal even when the
+// FORMAT is fractional/architectural/DMS — so it round-trips through the expression parser
+// (which has no fraction/°/feet literals) without the db→preferred float noise that re-dividing a
+// db value would reintroduce for an irrational unit factor (e.g. degrees↔radians). Categories
+// without a rich display fall back to the lossless form.
+//
+// Example: with mm units at precision 3, DisplayRoundedExpr(Q(0.9999999998, Length)) → "10 mm".
+func (m UnitsOfMeasure) DisplayRoundedExpr(q Quantity) string {
+	switch q.Unit {
+	case Length:
+		switch m.lengthFormat {
+		case types.DisplayFormatFractional:
+			return decimalExpr(roundToFraction(m.ToPreferred(q), m.fractionDenominator()), m.PreferredName(Length))
+		case types.DisplayFormatArchitectural:
+			return decimalExpr(roundToFraction(m.inchesOf(q), m.fractionDenominator()), "in")
+		default:
+			return decimalExpr(roundToDecimals(m.ToPreferred(q), m.lengthPrecision), m.PreferredName(Length))
+		}
+	case Angle:
+		if m.angleFormat == AngleDMS {
+			return decimalExpr(roundToDecimals(m.degreesOf(q)*3600, 0)/3600, "deg") // nearest arcsecond
+		}
+		return decimalExpr(roundToDecimals(m.ToPreferred(q), m.anglePrecision), m.PreferredName(Angle))
+	default:
+		return m.Format(q)
+	}
+}
+
+// decimalExpr joins a shortest-decimal value with a unit name into a parseable expression.
+func decimalExpr(v float64, unit string) string {
+	s := strconv.FormatFloat(v, 'g', -1, 64)
+	if unit == "" {
+		return s
+	}
+	return s + " " + unit
+}
+
+// roundToDecimals rounds v to places decimal places (places < 0 treated as 0).
+func roundToDecimals(v float64, places int) float64 {
+	if places < 0 {
+		places = 0
+	}
+	scale := stdmath.Pow(10, float64(places))
+	return stdmath.Round(v*scale) / scale
+}
+
+// roundToFraction rounds v to the nearest 1/denom.
+func roundToFraction(v float64, denom int) float64 {
+	return stdmath.Round(v*float64(denom)) / float64(denom)
+}
+
 // fractionDenominator maps the length precision to a power-of-two fraction
 // denominator: precision 1→halves, 3→eighths, 6→sixty-fourths, clamped to the
 // 1/2…1/128 range Inventor offers.

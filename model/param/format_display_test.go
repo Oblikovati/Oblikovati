@@ -113,6 +113,48 @@ func TestFractionHelpers(t *testing.T) {
 	}
 }
 
+// TestDisplayRoundedExpr verifies a raw measured float collapses to the clean value the display
+// precision shows, emitted as a parseable decimal expression (no float noise — the whole point).
+func TestDisplayRoundedExpr(t *testing.T) {
+	m := DefaultUnitsOfMeasure() // mm, 3 length decimals; deg, 2 angle decimals
+	deg := namedUnits["deg"].factor
+	cases := []struct {
+		q    Quantity
+		want string
+	}{
+		{Q(0.9999999998, Length), "10 mm"},     // ~10 mm edge with float noise → clean
+		{Q(1.234567, Length), "12.346 mm"},     // rounds to 3 mm-decimals
+		{Q(29.999999998*deg, Angle), "30 deg"}, // angle noise → clean (no deg↔rad round-trip noise)
+		{Q(30.126*deg, Angle), "30.13 deg"},    // rounds to 2 angle-decimals
+	}
+	for _, c := range cases {
+		if got := m.DisplayRoundedExpr(c.q); got != c.want {
+			t.Errorf("DisplayRoundedExpr(%v) = %q, want %q", c.q, got, c.want)
+		}
+	}
+	// A category without a rich display falls back to the lossless form.
+	if got := m.DisplayRoundedExpr(Q(2.5, Mass)); got != m.Format(Q(2.5, Mass)) {
+		t.Errorf("mass expr = %q, want lossless %q", got, m.Format(Q(2.5, Mass)))
+	}
+}
+
+// TestDisplayRoundedExprFractional: a fractional-format document seeds a decimal expression that
+// still parses (the parser has no fraction literal), rounded to the fraction granularity.
+func TestDisplayRoundedExprFractional(t *testing.T) {
+	m := DefaultUnitsOfMeasure().Clone()
+	if err := m.SetPreferred(Length, "in"); err != nil {
+		t.Fatal(err)
+	}
+	m.SetLengthFormat(types.DisplayFormatFractional)
+	if err := m.SetLengthPrecision(3); err != nil { // eighths
+		t.Fatal(err)
+	}
+	// 0.124 in ≈ 1/8 in → rounds to exactly 0.125 in, emitted as decimal.
+	if got := m.DisplayRoundedExpr(Q(0.124*2.54, Length)); got != "0.125 in" {
+		t.Errorf("fractional expr = %q, want \"0.125 in\"", got)
+	}
+}
+
 // TestFormatDisplayEdgeCases covers the fallback, clamp, and negative paths.
 func TestFormatDisplayEdgeCases(t *testing.T) {
 	m := DefaultUnitsOfMeasure()

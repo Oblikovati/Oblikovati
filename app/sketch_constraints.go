@@ -324,16 +324,19 @@ func addDimensionFor(dims *sketch.DimensionConstraints, units param.UnitsOfMeasu
 	}
 }
 
-// lengthExpr formats a database-unit length as a parseable expression in the document's
-// length unit (e.g. 2.5 cm → "25 mm").
+// lengthExpr formats a database-unit length as a parseable expression in the document's length
+// unit, rounded to the document's display precision so a freshly placed dimension reads as the
+// clean on-screen number ("10 mm") instead of the raw measured float ("9.999999998 mm"). The
+// rounded value is emitted in plain decimal so it always round-trips through the expression
+// parser, whatever the display format (fractional/architectural/DMS are display-only).
 func lengthExpr(units param.UnitsOfMeasure, dbValue float64) string {
-	return units.Format(param.Quantity{Value: dbValue, Unit: param.Length})
+	return units.DisplayRoundedExpr(param.Quantity{Value: dbValue, Unit: param.Length})
 }
 
-// angleExpr formats a radian angle as a parseable expression in the document's angle
-// unit (e.g. "30 deg").
+// angleExpr formats a radian angle as a parseable expression in the document's angle unit,
+// rounded to the document's angle precision (e.g. "30 deg" rather than "29.999999998 deg").
 func angleExpr(units param.UnitsOfMeasure, radians float64) string {
-	return units.Format(param.Quantity{Value: radians, Unit: param.Angle})
+	return units.DisplayRoundedExpr(param.Quantity{Value: radians, Unit: param.Angle})
 }
 
 // lineAngle returns the angle (radians, [0,π]) between two lines.
