@@ -29,8 +29,10 @@ on:
         required: false
 
 env:
-  # Stamp build.{Version,Commit,Date}; Commit/Date are filled per job.
-  CORE: oblikovati
+  # The Go module path, used to address the build.{Version,Commit,Date} symbols for `-ldflags -X`
+  # (Commit/Date are filled per job). It MUST equal the module path in go.mod — a mismatch makes
+  # the linker silently ignore the -X and ship Version="dev" (issue #1228).
+  CORE: oblikovati.org
 
 jobs:
   # CLI — pure Go, cross-compiled for every target in one job.
