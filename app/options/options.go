@@ -67,6 +67,15 @@ type Telemetry struct {
 	ShareUsageStatistics bool `yaml:"shareUsageStatistics"`
 }
 
+// UI is the user-facing scale of the interface, applied live by the head every frame
+// (#1232 follow-up: icons/text too small on high-resolution monitors). 1.0 = 100%.
+// FontScale drives ImGui's style.FontScaleMain (live, no atlas rebuild on ImGui 1.92);
+// IconScale multiplies every ribbon/nav/steering/property icon's rasterization size.
+type UI struct {
+	FontScale float64 `yaml:"fontScale"`
+	IconScale float64 `yaml:"iconScale"`
+}
+
 // All is every persisted option group. The ViewCube/display preferences live in
 // their own store (persistence/userprefs) and the color scheme in the theme store —
 // the options surface proxies those rather than duplicating their persistence.
@@ -77,11 +86,12 @@ type All struct {
 	Save      Save      `yaml:"save"`
 	Updates   Updates   `yaml:"updates"`
 	Telemetry Telemetry `yaml:"telemetry"`
+	UI        UI        `yaml:"ui"`
 }
 
 // Defaults returns the out-of-the-box options, mirroring the session's historical
 // defaults (10 mm visible grid with both snaps, flat chamfer corners, new part at
-// launch) so a fresh install behaves exactly as before this file existed.
+// launch, 100% UI scale) so a fresh install behaves exactly as before this file existed.
 func Defaults() All {
 	return All{
 		General:   General{StartupAction: types.StartupNewPart},
@@ -90,6 +100,7 @@ func Defaults() All {
 		Save:      Save{Thumbnail: types.ThumbnailNone},
 		Updates:   Updates{CheckOnStartup: true},
 		Telemetry: Telemetry{ShareUsageStatistics: true},
+		UI:        UI{FontScale: 1, IconScale: 1},
 	}
 }
 

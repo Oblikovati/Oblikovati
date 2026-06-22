@@ -113,13 +113,16 @@ bool create_device(HeadContext* c) {
 
 bool create_descriptor_pool(HeadContext* c) {
     // Combined-image-sampler sets are shared by the font atlas, the offscreen viewport
-    // image, and one per cached ribbon icon (texture.cpp). The icon set alone is ~25
-    // and grows with the command set, so size generously to avoid AddTexture failing.
-    VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 256}};
+    // image, and one per cached ribbon icon (texture.cpp). The icon set alone is ~25 and
+    // grows with the command set; during a UI icon-scale drag the cache re-rasterizes at each
+    // pixel size and keeps the previous set retired-in-flight for a few frames, so size with
+    // ample headroom to keep the font atlas always allocatable (#1237: an exhausted pool made
+    // CreateTexture/AddTexture fail — icons vanished and the font GetTexID assertion fired).
+    VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024}};
     VkDescriptorPoolCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    ci.maxSets = 256;
+    ci.maxSets = 1024;
     ci.poolSizeCount = 1;
     ci.pPoolSizes = sizes;
     return ok(vkCreateDescriptorPool(c->device, &ci, c->allocator, &c->descriptorPool));
@@ -286,6 +289,14 @@ void obk_head_set_mono_font(const unsigned char* data, int len, float sizePx) {
 
 // obk_head_mono_font exposes the retained mono face to the draw helpers in imgui_wrap.cpp.
 ImFont* obk_head_mono_font(void) { return g_monoFont; }
+
+// obk_head_set_font_scale sets ImGui's global text scale (style.FontScaleMain, ImGui 1.92's
+// dynamic-font knob — io.FontGlobalScale was removed). All UI text rescales next frame with no
+// atlas rebuild; the mono editor helpers in imgui_wrap.cpp read it too so the code editor tracks
+// the user's UI-scale preference. Safe to call every frame (#1232 follow-up).
+void obk_head_set_font_scale(float scale) {
+    if (scale > 0.0f) ImGui::GetStyle().FontScaleMain = scale;
+}
 
 int obk_head_should_close(void* h) {
     HeadContext* c = (HeadContext*)h;

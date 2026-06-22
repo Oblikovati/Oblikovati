@@ -39,7 +39,8 @@ type iconCache struct {
 	win         *native.Window
 	masks       map[iconKey]*icon.RoleMasks // nil entry = known-bad asset, never retried
 	tex         map[iconKey]uint64
-	texRevision uint64 // theme revision the cached textures were composed with
+	texRevision uint64  // theme revision the cached textures were composed with
+	iconScale   float64 // UI icon scale the cached textures were rasterized at
 	frame       uint64
 	retired     []retiredTexture
 }
@@ -59,16 +60,20 @@ func newIconCache(win *native.Window) *iconCache {
 	return &iconCache{win: win, masks: map[iconKey]*icon.RoleMasks{}, tex: map[iconKey]uint64{}}
 }
 
-// beginFrame advances the cache's frame clock, frees safely-retired textures, and —
-// when the theme changed — retires every composed texture so the next texture() call
-// re-composes it with the new colors. Called once per frame from prepareChromeFrame.
-func (c *iconCache) beginFrame(themeRevision uint64) {
+// beginFrame advances the cache's frame clock, frees safely-retired textures, and — when the
+// theme OR the UI icon scale changed — retires every composed texture so the next texture() call
+// re-composes/re-rasterizes it. Retiring on scale change is what bounds the cache: textures are
+// keyed by pixel size, so without it a slider drag would leak one texture per intermediate size
+// per icon and exhaust the Vulkan descriptor pool (icons then vanish and the font atlas can no
+// longer allocate — the #1237 crash). Called once per frame from prepareChromeFrame.
+func (c *iconCache) beginFrame(themeRevision uint64, iconScale float64) {
 	c.frame++
 	c.destroyExpired()
-	if themeRevision == c.texRevision {
+	if themeRevision == c.texRevision && iconScale == c.iconScale {
 		return
 	}
 	c.texRevision = themeRevision
+	c.iconScale = iconScale
 	for _, t := range c.tex {
 		c.retire(t)
 	}

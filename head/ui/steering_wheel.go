@@ -47,16 +47,17 @@ func drawSteeringWheel(s *app.Session, ox, oy float32) {
 	vcx, vcy := viewportCursor()
 	cx, cy := ox+float32(vcx), oy+float32(vcy)
 	drawSteeringRing(cx, cy)
+	iconPx := scaledIconPx(steeringIconPx)
 	for i, tool := range steeringWheelTools {
-		tex, ok := icons.texture(tool.icon, "", steeringIconPx)
+		tex, ok := icons.texture(tool.icon, "", iconPx)
 		if !ok {
 			continue
 		}
 		a := 2*stdmath.Pi*float64(i)/float64(len(steeringWheelTools)) - stdmath.Pi/2 // start at the top
-		bx := cx + float32(steeringRadius*stdmath.Cos(a)) - steeringIconPx/2
-		by := cy + float32(steeringRadius*stdmath.Sin(a)) - steeringIconPx/2
+		bx := cx + float32(steeringRadius*stdmath.Cos(a)) - float32(iconPx)/2
+		by := cy + float32(steeringRadius*stdmath.Sin(a)) - float32(iconPx)/2
 		native.SetCursorPos(bx, by)
-		if native.ImageButton(tool.id, tex, steeringIconPx, steeringIconPx, identityTint) {
+		if native.ImageButton(tool.id, tex, float32(iconPx), float32(iconPx), identityTint) {
 			tool.run(s)
 			s.DisarmSteeringWheel()
 		}

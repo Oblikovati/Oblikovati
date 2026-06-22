@@ -29,6 +29,8 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 	in.Sketch.GridSpacingCm = 0.5
 	in.Sketch.SnapToGrid = false
 	in.Part.ChamferFlatCorners = false
+	in.UI.FontScale = 1.25
+	in.UI.IconScale = 1.5
 	if err := s.Save(in); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
@@ -57,5 +59,14 @@ func TestLoadKeepsDefaultsForAbsentKeys(t *testing.T) {
 	}
 	if !out.Part.ChamferFlatCorners || out.General.StartupAction != types.StartupNewPart {
 		t.Errorf("absent groups = %+v, want defaults kept", out)
+	}
+	if out.UI != (UI{FontScale: 1, IconScale: 1}) {
+		t.Errorf("absent ui group = %+v, want 100%% scale defaults", out.UI)
+	}
+}
+
+func TestDefaultsUIScaleIsFullSize(t *testing.T) {
+	if ui := Defaults().UI; ui != (UI{FontScale: 1, IconScale: 1}) {
+		t.Errorf("Defaults().UI = %+v, want {1, 1}", ui)
 	}
 }

@@ -75,6 +75,7 @@ int  obk_ig_begin_child(const char* id, float w, float h, int border);
 void obk_ig_end_child(void);
 int  obk_ig_checkbox(const char* label, int* v);
 int  obk_ig_slider_float(const char* label, float* v, float lo, float hi);
+int  obk_ig_slider_float_fmt(const char* label, float* v, float lo, float hi, const char* fmt);
 void obk_ig_begin_disabled(int disabled);
 void obk_ig_end_disabled(void);
 int  obk_ig_want_capture_mouse(void);
@@ -396,6 +397,19 @@ func SliderFloat(label string, v *float32, lo, hi float32) bool {
 	defer free()
 	cv := C.float(*v)
 	changed := C.obk_ig_slider_float(c, &cv, C.float(lo), C.float(hi)) != 0
+	*v = float32(cv)
+	return changed
+}
+
+// SliderPercent draws a slider over [lo,hi] that reads as a whole-number percentage (e.g.
+// "120%"), editing *v in place. Used for the UI scale preferences, where the value is a percent.
+func SliderPercent(label string, v *float32, lo, hi float32) bool {
+	c, free := cstr(label)
+	defer free()
+	fmtC, freeFmt := cstr("%.0f%%")
+	defer freeFmt()
+	cv := C.float(*v)
+	changed := C.obk_ig_slider_float_fmt(c, &cv, C.float(lo), C.float(hi), fmtC) != 0
 	*v = float32(cv)
 	return changed
 }

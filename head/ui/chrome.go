@@ -58,8 +58,9 @@ func prepareChromeFrame(win *native.Window, s *app.Session) {
 	}
 	bindGraphicsImages(win) // client-graphics image billboards create textures on this window (M16-F05)
 	reportWindowFrame(win, s)
-	icons.beginFrame(s.ThemeRevision()) // free retired textures; flush composes on theme change
-	applyThemeIfChanged(win, s)         // restyle ImGui + overlays when the theme changed (live preview)
+	applyUIScale(win, s)                                 // push the user's font/icon scale before the ribbon sizes itself
+	icons.beginFrame(s.ThemeRevision(), s.UIIconScale()) // free retired textures; reflush on theme or icon-scale change
+	applyThemeIfChanged(win, s)                          // restyle ImGui + overlays when the theme changed (live preview)
 	handleKeyboard(s)
 	followActiveDocument(s)
 }

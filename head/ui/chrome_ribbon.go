@@ -45,7 +45,7 @@ const ribbonMaxRows = 3
 // ribbonGridHeight is the height of the band's button-grid area: the tallest column
 // shape, ribbonMaxRows rows of small icon buttons.
 func ribbonGridHeight(m native.StyleMetrics) float32 {
-	row := smallIconPx + 2*m.FramePadY
+	row := float32(scaledIconPx(smallIconPx)) + 2*m.FramePadY
 	return ribbonMaxRows*row + (ribbonMaxRows-1)*m.ItemSpacingY
 }
 
@@ -308,9 +308,9 @@ func drawButtonControl(btn app.RibbonButton) bool {
 func iconSizeFor(s app.ButtonStyle) (int, bool) {
 	switch s {
 	case app.SmallIconButton, app.CompactIconButton:
-		return smallIconPx, true
+		return scaledIconPx(smallIconPx), true
 	case app.LargeIconButton:
-		return largeIconPx, true
+		return scaledIconPx(largeIconPx), true
 	default:
 		return 0, false
 	}

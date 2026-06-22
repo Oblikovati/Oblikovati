@@ -45,27 +45,34 @@ func drawNavigationBar(s *app.Session, ox, oy float32, pw, ph int) {
 	if !s.ShowNavBar() {
 		return
 	}
-	cell := float32(navBarIconPx + 2*navBarPad)
+	iconPx := scaledIconPx(navBarIconPx)
+	cell := float32(iconPx + 2*navBarPad)
 	x := ox + float32(pw) - cell - navBarMargin
 	y := oy + (float32(ph)-cell*float32(len(navBarButtons)))/2
 	for _, b := range navBarButtons {
-		tex, ok := icons.texture(b.icon, "", navBarIconPx)
-		if !ok {
-			continue
+		if drawNavBarButton(s, b, x, y, iconPx) {
+			y += cell // a button with no icon asset consumes no slot (keeps the strip gapless)
 		}
-		native.SetCursorPos(x, y)
-		on := b.active != nil && b.active(s)
-		if on {
-			native.PushStyleColor("Button", accentColor)
-			native.PushStyleColor("ButtonHovered", accentColor)
-			native.PushStyleColor("ButtonActive", accentColor)
-		}
-		if native.ImageButton(b.id, tex, navBarIconPx, navBarIconPx, identityTint) {
-			b.run(s)
-		}
-		if on {
-			native.PopStyleColor(3)
-		}
-		y += cell
 	}
+}
+
+// drawNavBarButton draws one Navigation Bar button at (x,y): its icon at iconPx, accented while
+// its tool is armed/toggled. Returns false (drawing nothing) when the icon asset is missing.
+func drawNavBarButton(s *app.Session, b navBarButton, x, y float32, iconPx int) bool {
+	tex, ok := icons.texture(b.icon, "", iconPx)
+	if !ok {
+		return false
+	}
+	native.SetCursorPos(x, y)
+	on := b.active != nil && b.active(s)
+	if on {
+		native.PushStyleColor("Button", accentColor)
+		native.PushStyleColor("ButtonHovered", accentColor)
+		native.PushStyleColor("ButtonActive", accentColor)
+		defer native.PopStyleColor(3)
+	}
+	if native.ImageButton(b.id, tex, float32(iconPx), float32(iconPx), identityTint) {
+		b.run(s)
+	}
+	return true
 }
