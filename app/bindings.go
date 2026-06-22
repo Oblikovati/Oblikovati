@@ -24,6 +24,7 @@ import (
 const (
 	ActionUndo             = "edit.undo"
 	ActionRedo             = "edit.redo"
+	ActionDelete           = "edit.delete"
 	ActionSave             = "file.save"
 	ActionCancel           = "tool.cancel"
 	ActionCommit           = "tool.commit"
@@ -54,6 +55,7 @@ func builtinActions() []builtinAction {
 		{id: ActionUndo, displayName: "Undo", defaultChord: mustChord("Ctrl+Z"), dispatch: dispatchUndo},
 		{id: ActionRedo, displayName: "Redo", defaultChord: mustChord("Ctrl+Y"),
 			extraChords: []types.KeyChord{mustChord("Ctrl+Shift+Z")}, dispatch: dispatchRedo},
+		{id: ActionDelete, displayName: "Delete", defaultChord: mustChord("Delete"), dispatch: dispatchDelete},
 		{id: ActionSave, displayName: "Save", defaultChord: mustChord("Ctrl+S"), dispatch: dispatchSave},
 		{id: ActionCancel, displayName: "Cancel / Deselect", defaultChord: mustChord("Escape"), dispatch: dispatchCancel},
 		{id: ActionCommit, displayName: "Finish Command", defaultChord: mustChord("Enter"), dispatch: dispatchCommit},
@@ -126,6 +128,11 @@ func dispatchToggleVisibility(s *Session) error {
 	s.ToggleSelectedWorkPlaneVisibility()
 	return nil
 }
+
+// dispatchDelete is the Delete key: it removes the selected sketch entities while editing a
+// sketch (issue #1232). With no sketch open / nothing selected it is a no-op, so it never
+// destroys 3D geometry by accident — feature/body delete stays on the browser menu.
+func dispatchDelete(s *Session) error { return s.DeleteSelectedSketchEntities() }
 
 // dispatchSave saves the active document (Ctrl+S / the "SAVE" command word, M26 F05).
 func dispatchSave(s *Session) error { return s.SaveActiveDocument() }
