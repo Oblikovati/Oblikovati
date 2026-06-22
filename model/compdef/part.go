@@ -5,6 +5,7 @@ package compdef
 import (
 	"strconv"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/attr"
@@ -223,6 +224,20 @@ func (d *PartComponentDefinition) SetLengthUnit(name string) error {
 // API and the Units settings dialog apply an edited preferences object (build
 // it from Units().Clone()).
 func (d *PartComponentDefinition) SetUnits(u param.UnitsOfMeasure) { d.units = u }
+
+// FeatureScaleWarning returns a non-empty diagnostic when a feature of the given size (in the
+// part's working unit) is below what this model can resolve at its current extent, and "" when
+// it is fine (ADR-0042 §Phase 2). float64 caps a single model at ~15 orders of magnitude, so a
+// feature far smaller than the part would be silently merged; the head/API surfaces this so the
+// user re-scales or splits the design rather than losing the feature. An empty part (no extent)
+// never warns — there is nothing to be dwarfed by yet.
+func (d *PartComponentDefinition) FeatureScaleWarning(featureSize float64) string {
+	box := d.RangeBox()
+	if box.IsEmpty() {
+		return ""
+	}
+	return geom.SpanCeilingWarning(box, featureSize)
+}
 
 // Sketches returns the part's planar (2D) sketches.
 func (d *PartComponentDefinition) Sketches() *sketch.Sketches { return d.sketches }

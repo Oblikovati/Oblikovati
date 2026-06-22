@@ -95,3 +95,28 @@ func approxRel(got, want float64) bool {
 	}
 	return math.Abs(got-want)/math.Abs(want) < 1e-12
 }
+
+// TestSpanCeilingDiagnostic covers the single-model span-ceiling check (ADR-0042 Phase 2,
+// #1249): a feature below the model's resolution is flagged; a resolvable one is not.
+func TestSpanCeilingDiagnostic(t *testing.T) {
+	// A 1000-unit model resolves to 1e-9×1000 = 1e-6.
+	box := gmath.NewBox(gmath.P3(0, 0, 0), gmath.P3(1000, 0, 0))
+	res := ResolutionForBox(box).Weld()
+
+	if !FeatureResolvable(box, res*10) {
+		t.Error("a feature 10× the resolution should be resolvable")
+	}
+	if FeatureResolvable(box, res/10) {
+		t.Error("a feature below the resolution should not be resolvable")
+	}
+	if w := SpanCeilingWarning(box, res/10); w == "" {
+		t.Error("a sub-resolution feature should produce a warning")
+	}
+	if w := SpanCeilingWarning(box, res*10); w != "" {
+		t.Errorf("a resolvable feature should not warn, got %q", w)
+	}
+	// A non-positive feature size is not a span-ceiling condition (no warning).
+	if w := SpanCeilingWarning(box, 0); w != "" {
+		t.Errorf("zero feature size should not warn, got %q", w)
+	}
+}
