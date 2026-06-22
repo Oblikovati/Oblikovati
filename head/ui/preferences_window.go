@@ -27,29 +27,32 @@ func drawPreferencesWindow(s *app.Session) {
 	}
 	native.SetNextWindowSizeOnce(640, 480) // sensible default; the user can still resize
 	if native.Begin("Preferences") && native.BeginTabBar("##prefs-tabs") {
-		if native.BeginTabItem("General") {
-			drawGeneralTab(s)
-			native.EndTabItem()
-		}
-		if native.BeginTabItem("Privacy") {
-			drawPrivacyTab(s)
-			native.EndTabItem()
-		}
-		if native.BeginTabItem("Sketch Grid") {
-			drawGridTab(s)
-			native.EndTabItem()
-		}
-		if native.BeginTabItem("Modeling") {
-			drawModelingTab(s)
-			native.EndTabItem()
-		}
-		if native.BeginTabItem("Theme") {
-			drawAppearanceTab(s)
-			native.EndTabItem()
-		}
+		drawPreferencesTabs(s)
 		native.EndTabBar()
 	}
 	native.End()
+}
+
+// drawPreferencesTabs mounts each preference tab in order. Kept separate from the window
+// open/close so the tab list reads as one table and the window function stays small.
+func drawPreferencesTabs(s *app.Session) {
+	tabs := []struct {
+		name string
+		draw func(*app.Session)
+	}{
+		{"General", drawGeneralTab},
+		{"UI", drawUITab},
+		{"Privacy", drawPrivacyTab},
+		{"Sketch Grid", drawGridTab},
+		{"Modeling", drawModelingTab},
+		{"Theme", drawAppearanceTab},
+	}
+	for _, t := range tabs {
+		if native.BeginTabItem(t.name) {
+			t.draw(s)
+			native.EndTabItem()
+		}
+	}
 }
 
 // drawPrivacyTab renders the anonymous usage-statistics opt-out (#1182). Telemetry is on by
