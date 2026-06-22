@@ -52,15 +52,47 @@ func (s *Session) installToolFilter() {
 // ambient setting. The Session calls it when a tool ends (commit/cancel).
 func (s *Session) restoreSelectionFilter() { s.selection.SetFilter(NewSelectionFilter()) }
 
-// toolPicks returns the active tool's current picks via the Picking contract, or nil — the
-// uniform source the head highlights. Tools that do not implement Picking contribute nothing
-// here (their feedback, if any, comes from a dedicated overlay).
-func (s *Session) toolPicks() []Selectable {
+// ToolPicks returns the active tool's current picks — the uniform source the head highlights. A
+// tool implementing the Picking contract reports them directly; tools not yet migrated fall back
+// to the legacy duck-typed accessors (legacyToolPicks) so highlighting keeps working through the
+// migration. The fallback is removed once every selecting tool implements Picking.
+func (s *Session) ToolPicks() []Selectable {
 	if s.tool == nil {
 		return nil
 	}
 	if p, ok := s.tool.tool.(Picking); ok {
 		return p.Picks()
 	}
-	return nil
+	return legacyToolPicks(s.tool.tool)
+}
+
+// legacyToolPicks gathers a not-yet-migrated tool's picks from whichever bespoke accessor it
+// happens to implement. TRANSITIONAL: delete once all tools implement Picking.
+func legacyToolPicks(t Tool) []Selectable {
+	var picks []Selectable
+	if el, ok := t.(interface{ Edges() []EdgeHandle }); ok {
+		for _, e := range el.Edges() {
+			picks = append(picks, e)
+		}
+	}
+	if fl, ok := t.(interface{ Faces() []FaceHandle }); ok {
+		for _, f := range fl.Faces() {
+			picks = append(picks, f)
+		}
+	}
+	if pl, ok := t.(interface{ PickedProfiles() []ProfileHandle }); ok {
+		for _, p := range pl.PickedProfiles() {
+			picks = append(picks, p)
+		}
+	} else if pp, ok := t.(interface{ PickedProfile() (ProfileHandle, bool) }); ok {
+		if ph, has := pp.PickedProfile(); has {
+			picks = append(picks, ph)
+		}
+	}
+	if hf, ok := t.(interface{ PickedFace() (FaceHandle, bool) }); ok {
+		if fh, has := hf.PickedFace(); has {
+			picks = append(picks, fh)
+		}
+	}
+	return picks
 }

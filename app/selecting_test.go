@@ -101,11 +101,11 @@ func TestToolPicksReportsViaPickingContract(t *testing.T) {
 	tool := &fakeSelectingTool{}
 	s.StartTool(tool)
 	s.feedPick(EdgeHandle{})
-	got := s.toolPicks()
+	got := s.ToolPicks()
 	if len(got) != 1 {
-		t.Fatalf("toolPicks = %d, want 1 picked edge", len(got))
+		t.Fatalf("ToolPicks = %d, want 1 picked edge", len(got))
 	}
 	if _, ok := got[0].(EdgeHandle); !ok {
-		t.Fatalf("toolPicks[0] = %T, want EdgeHandle", got[0])
+		t.Fatalf("ToolPicks[0] = %T, want EdgeHandle", got[0])
 	}
 }

@@ -13,15 +13,18 @@ import (
 )
 
 // Unified tool highlighting: every interactive tool gives the SAME feedback — the selectable
-// under the cursor (that the tool's filter would pick) is outlined in the candidate colour, and
-// what the tool has already picked is outlined in the selection colour. Both run off one per-kind
-// dispatcher (drawSelectable) and the tool's existing pick accessors (toolPicks), so a new tool
-// needs no head-side highlight code. Work planes and sketch curves keep their own overlays
-// (planesOverlay/hoveredPlane and revolveCenterlineHighlight) since they are not B-rep selectables.
+// under the cursor (that the tool's filter would pick) is highlighted in the candidate colour, and
+// what the tool has already picked (reported through the app.Picking contract) is highlighted in
+// the selection colour. Both run off one per-kind renderer (drawSelectable), so a tool that
+// accepts a kind highlights it identically with no head-side per-tool code (ADR-0041). Work planes
+// and axes keep their own overlays (planesOverlay/hoveredPlane), but go through the same
+// preselect path via hoveredPlane.
 
-// drawSelectable returns the overlay wireframe for one selectable in colour — the kinds tools
-// pick in the 3D view (a sketch profile region, a B-rep edge, a B-rep face). Other kinds (work
-// planes, sketch entities) are drawn by their dedicated overlays and return nil here.
+// drawSelectable returns the overlay for one selectable in colour, keyed on its kind — the single
+// place a selection kind's highlight appearance is defined. A face is both outlined AND tinted
+// with a translucent on-top fill, because a face's outline coincides with the model's own edges
+// and z-fights into invisibility on its own. Kinds drawn by dedicated overlays (work planes/axes,
+// sketch entities) return nil here.
 func drawSelectable(sel app.Selectable, color [4]float32) []renderer.DrawItem {
 	switch h := sel.(type) {
 	case app.ProfileHandle:
@@ -29,7 +32,7 @@ func drawSelectable(sel app.Selectable, color [4]float32) []renderer.DrawItem {
 	case app.EdgeHandle:
 		return edgeWire([]*topo.Edge{h.Edge}, color)
 	case app.FaceHandle:
-		return edgeWire(h.Face.Edges(), color)
+		return append(edgeWire(h.Face.Edges(), color), faceFill(h, color))
 	}
 	return nil
 }
@@ -66,8 +69,9 @@ func highlightSetItems(s *app.Session) []renderer.DrawItem {
 	return items
 }
 
-// toolHoverHighlight outlines the selectable under the cursor that the active tool would pick,
-// in the candidate colour — the same hover feedback for every tool.
+// toolHoverHighlight highlights the selectable under the cursor that the active tool would pick,
+// in the candidate colour — the same preselect feedback for every tool, through the one per-kind
+// renderer.
 func toolHoverHighlight(s *app.Session) []renderer.DrawItem {
 	if s.ActiveTool() == nil || !native.IsItemHovered() {
 		return nil
@@ -81,20 +85,13 @@ func toolHoverHighlight(s *app.Session) []renderer.DrawItem {
 	if !ok {
 		return nil
 	}
-	items := drawSelectable(sel, sketchCandidateColor)
-	// A face's outline coincides with the model's own edges, so an at-depth wireframe alone is
-	// nearly invisible. Tint the whole hovered face (Inventor's preselect look) so picking a face
-	// — e.g. choosing a planar face as a sketch host — gives unmistakable feedback.
-	if fh, isFace := sel.(app.FaceHandle); isFace {
-		items = append(items, faceHoverFill(fh, sketchCandidateColor))
-	}
-	return items
+	return drawSelectable(sel, sketchCandidateColor)
 }
 
-// faceHoverFill returns a translucent, always-on-top tint of a face's tessellation in the candidate
-// colour — the visible part of the face preselect highlight (the cursor's face is the front-most
-// hit, so drawing it on top reads cleanly without z-fighting the model's edges).
-func faceHoverFill(fh app.FaceHandle, color [4]float32) renderer.DrawItem {
+// faceFill returns a translucent, always-on-top tint of a face's tessellation — the visible part
+// of a face highlight (the highlighted face is the front-most hit, so drawing it on top reads
+// cleanly without z-fighting the model's own edges). Used for both preselect and selected faces.
+func faceFill(fh app.FaceHandle, color [4]float32) renderer.DrawItem {
 	mesh := ops.TessellateFace(fh.Face, ops.DefaultQuality())
 	return renderer.DrawItem{
 		Primitive: renderer.Triangles,
@@ -102,57 +99,21 @@ func faceHoverFill(fh app.FaceHandle, color [4]float32) renderer.DrawItem {
 		Normals:   mesh.Normals,
 		Indices:   mesh.Indices,
 		Color:     color,
-		Opacity:   faceHoverOpacity,
+		Opacity:   faceFillOpacity,
 		OnTop:     true,
 	}
 }
 
-// faceHoverOpacity keeps the hovered-face tint translucent so the face's shading still reads through.
-const faceHoverOpacity = 0.5
+// faceFillOpacity keeps the face tint translucent so the face's shading still reads through.
+const faceFillOpacity = 0.5
 
-// toolSelectedHighlight outlines everything the active tool has picked, in the selection colour —
-// gathered from the tool's existing accessors (toolPicks), so all tools highlight their picks.
+// toolSelectedHighlight highlights everything the active tool has picked, in the selection colour —
+// the picks come from the uniform app.Picking contract (s.ToolPicks), so every tool highlights its
+// selection through the same renderer with no per-tool head code.
 func toolSelectedHighlight(s *app.Session) []renderer.DrawItem {
-	at := s.ActiveTool()
-	if at == nil {
-		return nil
-	}
 	var items []renderer.DrawItem
-	for _, sel := range toolPicks(at.Tool()) {
+	for _, sel := range s.ToolPicks() {
 		items = append(items, drawSelectable(sel, selectionHighlight)...)
 	}
 	return items
-}
-
-// toolPicks gathers the selectables a tool has picked from whichever accessor interfaces it
-// already implements (Edges/Faces/PickedProfiles/PickedProfile/PickedFace) — no per-tool method.
-func toolPicks(t app.Tool) []app.Selectable {
-	var picks []app.Selectable
-	if el, ok := t.(interface{ Edges() []app.EdgeHandle }); ok {
-		for _, e := range el.Edges() {
-			picks = append(picks, e)
-		}
-	}
-	if fl, ok := t.(interface{ Faces() []app.FaceHandle }); ok {
-		for _, f := range fl.Faces() {
-			picks = append(picks, f)
-		}
-	}
-	if pl, ok := t.(interface{ PickedProfiles() []app.ProfileHandle }); ok {
-		for _, p := range pl.PickedProfiles() {
-			picks = append(picks, p)
-		}
-	} else if pp, ok := t.(interface {
-		PickedProfile() (app.ProfileHandle, bool)
-	}); ok {
-		if ph, has := pp.PickedProfile(); has {
-			picks = append(picks, ph)
-		}
-	}
-	if hf, ok := t.(interface{ PickedFace() (app.FaceHandle, bool) }); ok {
-		if fh, has := hf.PickedFace(); has {
-			picks = append(picks, fh)
-		}
-	}
-	return picks
 }
