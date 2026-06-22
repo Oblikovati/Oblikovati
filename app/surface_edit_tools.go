@@ -40,9 +40,18 @@ func (t *RuledSurfaceTool) Prompt(*Session) string {
 	return "Select a closed profile, set the direction and distance, then OK."
 }
 
-// Start filters selection to closed regions.
-func (t *RuledSurfaceTool) Start(s *Session) {
-	s.Selection().SetFilter(NewSelectionFilter(SelectProfile))
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *RuledSurfaceTool) Start(*Session) {}
+
+// AcceptedKinds declares ruled-surface picks a closed sketch region (profile).
+func (t *RuledSurfaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
+
+// Picks reports the picked region for the unified highlight.
+func (t *RuledSurfaceTool) Picks() []Selectable {
+	if t.profile == nil {
+		return nil
+	}
+	return []Selectable{*t.profile}
 }
 
 // Pick captures the clicked closed region.
@@ -104,7 +113,6 @@ func (t *RuledSurfaceTool) Commit(s *Session) error {
 	if t.added.Health().Status == health.Sick {
 		return errors.New("ruled surface: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

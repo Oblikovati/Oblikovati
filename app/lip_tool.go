@@ -26,8 +26,14 @@ func NewLipTool() *LipTool { return &LipTool{width: 1, height: 1} }
 // Name implements [Tool].
 func (t *LipTool) Name() string { return "Lip" }
 
-// Start sets the selection filter to edges so clicks pick the bead path.
-func (t *LipTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectEdge)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *LipTool) Start(*Session) {}
+
+// AcceptedKinds declares lip picks edges (the edges to build the lip/groove along).
+func (t *LipTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edges for the unified highlight.
+func (t *LipTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
 
 // Pick appends the clicked edge (ignoring one already chosen, so a double-click does not
 // duplicate it).
@@ -86,7 +92,6 @@ func (t *LipTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("lip: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 

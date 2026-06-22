@@ -81,8 +81,14 @@ func (t *FilletTool) SetCornerTypeIndex(i int) {
 // Name implements [Tool].
 func (t *FilletTool) Name() string { return "Fillet" }
 
-// Start sets the selection filter to edges so clicks pick edges to round.
-func (t *FilletTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectEdge)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *FilletTool) Start(*Session) {}
+
+// AcceptedKinds declares fillet picks edges (the edges to round).
+func (t *FilletTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
+
+// Picks reports the picked edges for the unified highlight.
+func (t *FilletTool) Picks() []Selectable { return edgeSelectables(t.Edges()) }
 
 // Pick appends the clicked edge (ignoring one already chosen).
 func (t *FilletTool) Pick(_ *Session, sel Selectable) {
@@ -177,7 +183,6 @@ func (t *FilletTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("fillet: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -210,7 +215,6 @@ func (t *FilletTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // addFillet appends the picked edges in the active mode: the legacy constant-radius

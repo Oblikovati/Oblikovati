@@ -35,8 +35,19 @@ func NewCoilTool() *CoilTool {
 // Name implements [Tool].
 func (t *CoilTool) Name() string { return "Coil" }
 
-// Start sets the selection filter to profiles so clicks pick a region.
-func (t *CoilTool) Start(s *Session) { s.Selection().SetFilter(NewSelectionFilter(SelectProfile)) }
+// Start is a no-op; the engine installs the filter from AcceptedKinds.
+func (t *CoilTool) Start(*Session) {}
+
+// AcceptedKinds declares coil picks a closed sketch region (profile).
+func (t *CoilTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
+
+// Picks reports the picked region for the unified highlight.
+func (t *CoilTool) Picks() []Selectable {
+	if t.profile == nil {
+		return nil
+	}
+	return []Selectable{*t.profile}
+}
 
 // Pick captures the region the user clicked.
 func (t *CoilTool) Pick(_ *Session, sel Selectable) {
@@ -107,7 +118,6 @@ func (t *CoilTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("coil: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
@@ -178,7 +188,6 @@ func (t *CoilTool) Cancel(s *Session) {
 		cancelFeatureEdit(s, t.target, t.restoreDef)
 		return
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 }
 
 // ClearProfile empties the picked profile — the property panel's selector clear (⊗) —
