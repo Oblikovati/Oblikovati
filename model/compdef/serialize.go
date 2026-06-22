@@ -320,6 +320,7 @@ const (
 	keyAnglePrecision  = "anglePrecision"
 	keyLengthFormat    = "lengthFormat"
 	keyAngleFormat     = "angleFormat"
+	keyWorkingScale    = "workingScale" // ADR-0042 Phase 2: cm size of one stored working length unit
 )
 
 // unitsRecipeFor captures the preferred display-unit name for each category plus
@@ -334,6 +335,13 @@ func unitsRecipeFor(u param.UnitsOfMeasure) map[string]string {
 	out[keyAnglePrecision] = strconv.Itoa(u.AnglePrecision())
 	out[keyLengthFormat] = u.LengthFormat().String()
 	out[keyAngleFormat] = angleFormatName(u.AngleFormat())
+	// Persist the working scale only when it is not the centimetre default (ADR-0042
+	// Phase 2). Omitting it keeps every existing cm document's .obk byte-identical and
+	// makes the migration automatic: a recipe with no key restores the cm default — which
+	// is exactly what a pre-Phase-2 (cm-stored) document is.
+	if ws := u.WorkingScale(); ws != 1 {
+		out[keyWorkingScale] = strconv.FormatFloat(ws, 'g', -1, 64)
+	}
 	return out
 }
 
@@ -388,6 +396,12 @@ func applyReservedUnitKey(u *param.UnitsOfMeasure, name, val string) (bool, erro
 		}
 		u.SetAngleFormat(f)
 		return true, nil
+	case keyWorkingScale:
+		ws, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			return true, fmt.Errorf("compdef: working scale %q is not a number: %w", val, err)
+		}
+		return true, u.SetWorkingScale(ws)
 	}
 	return false, nil
 }
