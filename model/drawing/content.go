@@ -63,8 +63,16 @@ func NewContent() *Content {
 	c.sheets.lookup = c.resolveProperty
 	c.sheets.bodyResolve = c.resolveBody
 	c.sheets.bomResolve = c.resolveBOM
+	c.sheets.dimPrecision = c.dimDecimals
 	c.sheets.addDefault()
 	return c
+}
+
+// dimDecimals returns the active drafting standard's dimension decimal places, the precision a
+// sheet's dimensions format their values to. Drives drawing-dimension precision the way the part
+// document's Units settings drive sketch-dimension precision.
+func (c *Content) dimDecimals() int {
+	return c.styles.ActiveStyle().DimensionStyle().DecimalPlaces()
 }
 
 // DocumentType identifies this as drawing content.

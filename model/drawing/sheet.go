@@ -17,18 +17,19 @@ type propertyLookup func(set, name string) (string, bool)
 // Sheet is one sheet of a drawing: its size/orientation (which fix its laid-out width
 // and height in millimetres), its border, and its title block.
 type Sheet struct {
-	name        string
-	size        types.SheetSize
-	orientation types.SheetOrientation
-	width       float64 // laid-out mm (orientation applied)
-	height      float64
-	border      *Border
-	titleBlock  *TitleBlock
-	views       *DrawingViews
-	annotations *DrawingAnnotations
-	dimensions  *DrawingDimensions
-	sketches    *DrawingSketches
-	bomResolve  bomLookup // parts-list BOM source, captured from the owning Sheets
+	name         string
+	size         types.SheetSize
+	orientation  types.SheetOrientation
+	width        float64 // laid-out mm (orientation applied)
+	height       float64
+	border       *Border
+	titleBlock   *TitleBlock
+	views        *DrawingViews
+	annotations  *DrawingAnnotations
+	dimensions   *DrawingDimensions
+	sketches     *DrawingSketches
+	bomResolve   bomLookup  // parts-list BOM source, captured from the owning Sheets
+	dimPrecision func() int // active drafting-standard decimal places, captured from the owning Sheets
 }
 
 // Views returns the sheet's drawing views (projections of the referenced model).
@@ -53,7 +54,7 @@ func (s *Sheet) Sketches() *DrawingSketches {
 // Dimensions returns the sheet's drawing dimensions (associative linear measurements on views).
 func (s *Sheet) Dimensions() *DrawingDimensions {
 	if s.dimensions == nil {
-		s.dimensions = newDrawingDimensions(s.views, s.views.body)
+		s.dimensions = newDrawingDimensions(s.views, s.views.body, s.dimPrecision)
 	}
 	return s.dimensions
 }
@@ -98,11 +99,12 @@ func (s *Sheet) TitleBlock() contract.DrawingTitleBlock {
 
 // Sheets is a drawing's ordered, named sheet collection, tracking which sheet is active.
 type Sheets struct {
-	items       []*Sheet
-	active      int
-	lookup      propertyLookup // handed to each new title block; set by the owning Content
-	bodyResolve bodyLookup     // handed to each sheet's views; set by the owning Content
-	bomResolve  bomLookup      // handed to each sheet's annotations (parts lists); set by Content
+	items        []*Sheet
+	active       int
+	lookup       propertyLookup // handed to each new title block; set by the owning Content
+	bodyResolve  bodyLookup     // handed to each sheet's views; set by the owning Content
+	bomResolve   bomLookup      // handed to each sheet's annotations (parts lists); set by Content
+	dimPrecision func() int     // handed to each sheet's dimensions (decimal places); set by Content
 }
 
 func newSheets() *Sheets { return &Sheets{} }
@@ -130,10 +132,11 @@ func (s *Sheets) Add(spec SheetSpec) (*Sheet, error) {
 	}
 	sh := &Sheet{
 		name: name, size: spec.Size, orientation: spec.Orientation, width: w, height: h,
-		border:     newBorder(DefaultBorderDefinition()),
-		titleBlock: newTitleBlock(DefaultTitleBlockDefinition(), s.lookup),
-		views:      newDrawingViews(s.bodyResolve),
-		bomResolve: s.bomResolve,
+		border:       newBorder(DefaultBorderDefinition()),
+		titleBlock:   newTitleBlock(DefaultTitleBlockDefinition(), s.lookup),
+		views:        newDrawingViews(s.bodyResolve),
+		bomResolve:   s.bomResolve,
+		dimPrecision: s.dimPrecision,
 	}
 	s.items = append(s.items, sh)
 	s.active = len(s.items) - 1

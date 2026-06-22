@@ -70,13 +70,37 @@ func (d *DrawingDimension) TextAnchorMM() (x, y float64) {
 // dimension's view and project through it) and the body-resolution hook (to re-bind the attached
 // vertices on recompute).
 type DrawingDimensions struct {
-	items []*DrawingDimension
-	views *DrawingViews
-	body  bodyLookup
+	items     []*DrawingDimension
+	views     *DrawingViews
+	body      bodyLookup
+	precision func() int // active drafting standard's decimal places; set by the owning sheet
 }
 
-func newDrawingDimensions(views *DrawingViews, body bodyLookup) *DrawingDimensions {
-	return &DrawingDimensions{views: views, body: body}
+func newDrawingDimensions(views *DrawingViews, body bodyLookup, precision func() int) *DrawingDimensions {
+	return &DrawingDimensions{views: views, body: body, precision: precision}
+}
+
+// defaultDimDecimals is the fallback decimal places when no drafting-standard precision provider
+// is wired (e.g. a bare DrawingDimensions in a unit test) — the ISO default.
+const defaultDimDecimals = 2
+
+// decimals returns the active drafting standard's dimension decimal places, or the ISO default
+// when no precision provider is wired (clamped non-negative).
+func (ds *DrawingDimensions) decimals() int {
+	if ds.precision == nil {
+		return defaultDimDecimals
+	}
+	if p := ds.precision(); p >= 0 {
+		return p
+	}
+	return 0
+}
+
+// formatDimValue renders a dimension value at the active drafting standard's precision — fixed
+// decimal places, so a value measured as 9.999999998 reads as the clean "10.00" and honors the
+// configured precision instead of a bare 4-significant-figure float (Oblikovati/Oblikovati#146).
+func formatDimValue(v float64, decimals int) string {
+	return strconv.FormatFloat(v, 'f', decimals, 64)
 }
 
 // AddLinear adds a linear dimension on the named base view between two pick points (sheet mm),
@@ -404,7 +428,7 @@ func (ds *DrawingDimensions) recomputeOrdinate(d *DrawingDimension, view *Drawin
 	} else {
 		d.valueMM = math.Abs(float64(pp.Y-pd.Y)) * cmToMM
 	}
-	d.text = strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+	d.text = formatDimValue(d.valueMM, ds.decimals())
 	curves, mx, my, nx, ny := ordinateDimensionCurves(view, view.place(pp), d.axisHorizontal)
 	d.curves = curves
 	d.setTextAnchor(mx, my, nx, ny, 1)
@@ -419,7 +443,7 @@ func (ds *DrawingDimensions) recomputeAngular(d *DrawingDimension, view *Drawing
 		return
 	}
 	d.valueDeg = angleBetweenDeg(a.dir, b.dir)
-	d.text = strconv.FormatFloat(d.valueDeg, 'g', 4, 64) + "°"
+	d.text = formatDimValue(d.valueDeg, ds.decimals()) + "°"
 	curves, mx, my, nx, ny := angularDimensionCurves(a, b)
 	d.curves = curves
 	d.setTextAnchor(mx, my, nx, ny, 1)
@@ -435,7 +459,7 @@ func (ds *DrawingDimensions) recomputeLinear(d *DrawingDimension, view *DrawingV
 	p1 := hlr.ProjectPoint(basis, va.Point())
 	p2 := hlr.ProjectPoint(basis, vb.Point())
 	d.valueMM = measureMM(d.dimType, p1, p2)
-	d.text = strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+	d.text = formatDimValue(d.valueMM, ds.decimals())
 	s1, s2 := view.place(p1), view.place(p2)
 	ax, ay := dimensionAxis(d.dimType, s1, s2)
 	var mx, my float64
@@ -476,10 +500,10 @@ func (ds *DrawingDimensions) recomputeRadial(d *DrawingDimension, view *DrawingV
 		d.valueMM = 2 * radiusMM
 		// Ø (U+00D8) is the diameter prefix: it is in the head's Latin-1 font, unlike the
 		// typographic ⌀ (U+2300), which renders as a missing-glyph box.
-		d.text = "Ø" + strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+		d.text = "Ø" + formatDimValue(d.valueMM, ds.decimals())
 	} else {
 		d.valueMM = radiusMM
-		d.text = "R" + strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+		d.text = "R" + formatDimValue(d.valueMM, ds.decimals())
 	}
 	center := view.place(hlr.ProjectPoint(basis, circle.Center))
 	arc := view.place(hlr.ProjectPoint(basis, circle.PointAt(0)))
@@ -515,7 +539,7 @@ func (ds *DrawingDimensions) recomputeArcLength(d *DrawingDimension, view *Drawi
 		return
 	}
 	d.valueMM = lengthCM * cmToMM
-	d.text = strconv.FormatFloat(d.valueMM, 'g', 4, 64)
+	d.text = formatDimValue(d.valueMM, ds.decimals())
 	const samples = 32
 	pts := make([]gmath.Point2, 0, samples+1)
 	for i := 0; i <= samples; i++ {
