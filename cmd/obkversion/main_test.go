@@ -71,10 +71,10 @@ func TestAssemble(t *testing.T) {
 			want:    "0.000200.0.1", // reset to 0.0, then a fix
 		},
 		{
-			name:    "nightly appends the compact stamp (YYMMDDTHH, no minutes/seconds)",
+			name:    "nightly appends the compact stamp (YYMMDDHH, no minutes/seconds)",
 			repo:    fakeRepo{commits: map[string][]string{"": {"feat: thing"}}},
 			channel: "nightly",
-			want:    "0.000200.1.0-nightly.260615T03",
+			want:    "0.000200.1.0-nightly.26061503",
 		},
 	}
 	for _, c := range cases {

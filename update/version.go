@@ -14,8 +14,8 @@ import (
 // share a core, the sortable UTC timestamp breaks the tie.
 //
 //	IsNewer("0.000200.2.0", "0.000200.1.5")                                    // => true
-//	IsNewer("0.000200.1.0-nightly.260615T03",
-//	        "0.000200.1.0-nightly.260614T03")                                  // => true
+//	IsNewer("0.000200.1.0-nightly.26061503",
+//	        "0.000200.1.0-nightly.26061403")                                   // => true
 func IsNewer(latest, current string) bool {
 	if c := compareCore(latest, current); c != 0 {
 		return c > 0
@@ -55,7 +55,7 @@ func coreParts(v string) [4]int64 {
 }
 
 // nightlyStamp returns the sortable timestamp a nightly version carries after
-// "-nightly." (e.g. "260615T03"), or "" for a stable build — the tiebreaker
+// "-nightly." (e.g. "26061503"), or "" for a stable build — the tiebreaker
 // between two nightlies that share a numeric core.
 func nightlyStamp(v string) string {
 	_, after, found := strings.Cut(v, nightlySuffix+".")

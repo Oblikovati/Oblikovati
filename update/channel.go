@@ -32,7 +32,7 @@ const (
 )
 
 // nightlySuffix is the semver prerelease identifier cmd/obkversion gives a nightly
-// build, followed by ".<timestamp>" (e.g. "0.000200.1.0-nightly.260614T12").
+// build, followed by ".<timestamp>" (e.g. "0.000200.1.0-nightly.26061412").
 const nightlySuffix = "-nightly"
 
 // String renders the channel for user-facing text and logs.

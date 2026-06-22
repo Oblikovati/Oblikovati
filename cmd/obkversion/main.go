@@ -5,7 +5,7 @@
 // The release and nightly workflows call it to stamp the build:
 //
 //	go run ./cmd/obkversion stable    # -> 0.000200.1.0
-//	go run ./cmd/obkversion nightly   # -> 0.000200.1.0-nightly.260615T03
+//	go run ./cmd/obkversion nightly   # -> 0.000200.1.0-nightly.26061503
 //
 // MINOR.PATCH come from git tags + conventional-commit scope and reset to 0.0 when
 // MANUAL_MAJOR or API_VERSION change, so the tool needs full history and tags.
@@ -65,9 +65,9 @@ func assemble(channel string, major int, apiField string, repo gitRepo, now time
 	case "stable":
 		return v, nil
 	case "nightly":
-		// Compact build stamp: two-digit year, date, and hour only (YYMMDDTHH) — minutes
-		// and seconds dropped so the build number stays short (e.g. 260622T11).
-		return v + "-nightly." + now.UTC().Format("060102T15"), nil
+		// Compact build stamp: two-digit year, date, and hour only (YYMMDDHH) — minutes
+		// and seconds dropped so the build number stays short (e.g. 26062211).
+		return v + "-nightly." + now.UTC().Format("06010215"), nil
 	default:
 		return "", fmt.Errorf("unknown channel %q (want stable|nightly)", channel)
 	}
