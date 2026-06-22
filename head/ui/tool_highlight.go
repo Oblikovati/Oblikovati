@@ -81,8 +81,34 @@ func toolHoverHighlight(s *app.Session) []renderer.DrawItem {
 	if !ok {
 		return nil
 	}
-	return drawSelectable(sel, sketchCandidateColor)
+	items := drawSelectable(sel, sketchCandidateColor)
+	// A face's outline coincides with the model's own edges, so an at-depth wireframe alone is
+	// nearly invisible. Tint the whole hovered face (Inventor's preselect look) so picking a face
+	// — e.g. choosing a planar face as a sketch host — gives unmistakable feedback.
+	if fh, isFace := sel.(app.FaceHandle); isFace {
+		items = append(items, faceHoverFill(fh, sketchCandidateColor))
+	}
+	return items
 }
+
+// faceHoverFill returns a translucent, always-on-top tint of a face's tessellation in the candidate
+// colour — the visible part of the face preselect highlight (the cursor's face is the front-most
+// hit, so drawing it on top reads cleanly without z-fighting the model's edges).
+func faceHoverFill(fh app.FaceHandle, color [4]float32) renderer.DrawItem {
+	mesh := ops.TessellateFace(fh.Face, ops.DefaultQuality())
+	return renderer.DrawItem{
+		Primitive: renderer.Triangles,
+		Positions: mesh.Positions,
+		Normals:   mesh.Normals,
+		Indices:   mesh.Indices,
+		Color:     color,
+		Opacity:   faceHoverOpacity,
+		OnTop:     true,
+	}
+}
+
+// faceHoverOpacity keeps the hovered-face tint translucent so the face's shading still reads through.
+const faceHoverOpacity = 0.5
 
 // toolSelectedHighlight outlines everything the active tool has picked, in the selection colour —
 // gathered from the tool's existing accessors (toolPicks), so all tools highlight their picks.

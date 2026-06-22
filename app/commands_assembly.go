@@ -66,7 +66,7 @@ func jointCommand(id, name, icon, tooltip string, build jointBuild) *CommandDefi
 func assemblyModelingCommands() []*CommandDefinition {
 	return []*CommandDefinition{
 		NewCommand("Assembly.CreateSketch", "Create 2D Sketch", "Sketch", func(s *Session) error {
-			if s.SelectedWorkPlane() != nil {
+			if _, ok := s.SelectedSketchHostPlane(); ok {
 				_, err := s.CreateSketchOnSelectedPlane()
 				return err
 			}

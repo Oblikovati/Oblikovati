@@ -5,6 +5,7 @@ package app
 import (
 	"errors"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -65,14 +66,48 @@ func (s *Session) CreateSketchOnOrigin(p OriginPlane) (*sketch.Sketch, error) {
 	return s.CreateSketch(p.plane())
 }
 
-// CreateSketchOnSelectedPlane starts a sketch on the selected work plane (picked in the
-// 3D view or the browser), falling back to the XY origin plane when nothing usable is
-// selected — the action behind the Create 2D Sketch ribbon command.
+// CreateSketchOnSelectedPlane starts a sketch on the selected sketch host (a work plane
+// OR a planar face picked in the 3D view or the browser), falling back to the XY origin
+// plane when nothing usable is selected — the action behind the Create 2D Sketch ribbon
+// command.
 func (s *Session) CreateSketchOnSelectedPlane() (*sketch.Sketch, error) {
-	if wp := s.SelectedWorkPlane(); wp != nil {
-		return s.CreateSketch(wp.Plane())
+	if plane, ok := s.SelectedSketchHostPlane(); ok {
+		return s.CreateSketch(plane)
 	}
 	return s.CreateSketchOnOrigin(OriginXY)
+}
+
+// SelectedSketchHostPlane returns the sketch plane of the first selected valid host — a
+// work plane or a planar face — so a pre-selected face (not just a work plane) sketches
+// immediately. ok is false when nothing in the selection can host a sketch.
+func (s *Session) SelectedSketchHostPlane() (sketch.Plane, bool) {
+	for _, it := range s.selection.Items() {
+		if h, ok := it.(WorkPlaneHandle); ok {
+			return h.Plane.Plane(), true
+		}
+		if h, ok := it.(FaceHandle); ok {
+			if pl, ok := sketchPlaneFromFace(h); ok {
+				return pl, true
+			}
+		}
+	}
+	return sketch.Plane{}, false
+}
+
+// sketchPlaneFromFace derives a sketch plane from a picked planar face (its underlying
+// geometry plane), or ok=false for a non-planar face — the seam that lets a planar face
+// act as a sketch host wherever a work plane can. The face's geometry is the same plane
+// pickedPlaneRef uses for plane-driven features (feature_edit.go).
+func sketchPlaneFromFace(fh FaceHandle) (sketch.Plane, bool) {
+	pl, ok := fh.Face.Geometry().(geom.Plane)
+	if !ok {
+		return sketch.Plane{}, false
+	}
+	sp, err := sketch.NewPlane(pl.Origin, pl.UAxis, pl.VAxis)
+	if err != nil {
+		return sketch.Plane{}, false
+	}
+	return sp, true
 }
 
 // SelectedWorkPlane returns the first selected work plane, or nil.
