@@ -31,8 +31,7 @@ func downLookingBoxWithPlanes(t *testing.T) *Session {
 // work planes, so a face never highlighted and a click over it picked the origin plane behind it.
 func TestCreateSketchToolAcceptsFaceAndPlaneHosts(t *testing.T) {
 	s, _ := emptyPartSession(t)
-	tool := NewCreateSketchTool()
-	tool.Start(s)
+	s.StartTool(NewCreateSketchTool()) // the engine installs the filter from AcceptedKinds
 	f := s.Selection().Filter()
 	if !f.Accepts(SelectWorkPlane) || !f.Accepts(SelectFace) {
 		t.Errorf("create-sketch filter must accept work planes AND faces; accepts(plane)=%v accepts(face)=%v",
