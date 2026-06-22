@@ -19,7 +19,6 @@ type OffsetWorkPlaneTool struct {
 	hasBase  bool
 	distance float64 // offset in model units; 0 until the user sets it (so OK stays disabled)
 	added    *feature.WorkPlane
-	prev     *SelectionFilter
 }
 
 // NewOffsetWorkPlaneTool returns an offset-plane tool awaiting a plane pick and distance.
@@ -28,15 +27,18 @@ func NewOffsetWorkPlaneTool() *OffsetWorkPlaneTool { return &OffsetWorkPlaneTool
 // Name implements [Tool].
 func (t *OffsetWorkPlaneTool) Name() string { return "Offset Plane" }
 
-// Start filters selection to work planes and planar faces and seeds the base from a
-// pre-selected plane (so a user who picked a plane first only needs to enter the distance).
+// Start seeds the base from a pre-selected plane (so a user who picked a plane first only needs to
+// enter the distance); the engine installs the filter from AcceptedKinds.
 func (t *OffsetWorkPlaneTool) Start(s *Session) {
-	t.prev = s.Selection().Filter()
 	if wp := s.SelectedWorkPlane(); wp != nil {
 		t.baseRef, t.hasBase = wp.Key(), true
 	}
 	s.Selection().Clear()
-	s.Selection().SetFilter(NewSelectionFilter(SelectWorkPlane, SelectFace))
+}
+
+// AcceptedKinds declares offset-plane picks the plane or planar face to offset from.
+func (t *OffsetWorkPlaneTool) AcceptedKinds() []SelectionKind {
+	return []SelectionKind{SelectWorkPlane, SelectFace}
 }
 
 // Pick records the plane or planar face to offset from.
@@ -64,7 +66,6 @@ func (t *OffsetWorkPlaneTool) CanCommit() bool { return t.hasBase && t.distance 
 
 // Commit creates the offset work plane at the entered distance and recomputes.
 func (t *OffsetWorkPlaneTool) Commit(s *Session) error {
-	s.Selection().SetFilter(t.prev)
 	if !t.hasBase {
 		return errors.New("offset plane: no base plane or face picked")
 	}
@@ -78,8 +79,8 @@ func (t *OffsetWorkPlaneTool) Commit(s *Session) error {
 	return nil
 }
 
-// Cancel restores the prior selection filter with no change.
-func (t *OffsetWorkPlaneTool) Cancel(s *Session) { s.Selection().SetFilter(t.prev) }
+// Cancel is a no-op; the engine restores the ambient filter.
+func (t *OffsetWorkPlaneTool) Cancel(*Session) {}
 
 // Prompt guides the user through the two steps (Inventor's status-bar prompts).
 func (t *OffsetWorkPlaneTool) Prompt(*Session) string {

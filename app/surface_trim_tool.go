@@ -23,12 +23,22 @@ func NewSurfaceTrimTool() *SurfaceTrimTool { return &SurfaceTrimTool{keepPositiv
 // Name implements [Tool].
 func (t *SurfaceTrimTool) Name() string { return "Trim" }
 
-// Start adopts a pre-selected work plane and filters selection to work planes.
+// Start adopts a pre-selected work plane; the engine installs the filter from AcceptedKinds.
 func (t *SurfaceTrimTool) Start(s *Session) {
 	if wp := s.SelectedWorkPlane(); wp != nil {
 		t.plane = wp
 	}
-	s.Selection().SetFilter(NewSelectionFilter(SelectWorkPlane))
+}
+
+// AcceptedKinds declares surface-trim picks a work plane (the cutting plane).
+func (t *SurfaceTrimTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectWorkPlane} }
+
+// Picks reports the picked cutting plane for the unified highlight.
+func (t *SurfaceTrimTool) Picks() []Selectable {
+	if t.plane == nil {
+		return nil
+	}
+	return []Selectable{WorkPlaneHandle{Plane: t.plane}}
 }
 
 // Pick captures the cutting work plane.
@@ -65,7 +75,6 @@ func (t *SurfaceTrimTool) Commit(s *Session) error {
 	if !t.added.Health().OK() {
 		return errors.New("trim: " + t.added.Health().Reason)
 	}
-	s.Selection().SetFilter(NewSelectionFilter())
 	return nil
 }
 
