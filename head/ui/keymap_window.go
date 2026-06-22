@@ -17,15 +17,20 @@ import (
 
 const keymapBufLen = 48
 
+const keymapFilterBufLen = 64
+
 // keymapUI is the panel's cross-frame state: per-action edit buffers (seeded lazily, then
-// dropped after an apply so the canonical value re-seeds) and the last apply error.
+// dropped after an apply so the canonical value re-seeds), the command-name filter buffer,
+// and the last apply error.
 var keymapUI = struct {
 	chord   map[string][]byte
 	alias   map[string][]byte
+	filter  []byte
 	lastErr string
 }{}
 
-// drawKeymapEditor renders the customization panel while it is open.
+// drawKeymapEditor renders the customization panel while it is open. The title-bar X closes
+// it (issue #1232: the window had no close button), alongside the Done button.
 func drawKeymapEditor(s *app.Session) {
 	if !s.KeymapEditorOpen() {
 		return
@@ -34,27 +39,48 @@ func drawKeymapEditor(s *app.Session) {
 		dropKeymapBuffers()
 	}
 	native.SetNextWindowSizeOnce(720, 560)
-	if native.Begin("Customize Keyboard") {
-		native.Text("Type a shortcut (e.g. Ctrl+Shift+E) or an alias, then Enter. Empty clears it.")
-		if keymapUI.lastErr != "" {
-			native.Text("! " + keymapUI.lastErr)
-		}
-		native.Separator()
-		drawKeymapTable(s)
-		native.Separator()
-		if native.Button("Reset All") {
-			recordKeymapResult(s.Bindings().ResetAll())
-			dropKeymapBuffers()
-		}
-		native.SameLine()
-		if native.Button("Done") {
-			s.CloseKeymapEditor()
-		}
+	visible, open := native.BeginClosable("Customize Keyboard")
+	if visible {
+		drawKeymapBody(s)
 	}
 	native.End()
+	if !open {
+		s.CloseKeymapEditor()
+	}
 }
 
-// drawKeymapTable renders the catalog as an editable four-column table.
+// drawKeymapBody renders the panel contents: the help line, the filter box, the editable
+// table, and the footer buttons.
+func drawKeymapBody(s *app.Session) {
+	native.Text("Type a shortcut (e.g. Ctrl+Shift+E) or an alias, then Enter. Empty clears it.")
+	if keymapUI.lastErr != "" {
+		native.Text("! " + keymapUI.lastErr)
+	}
+	native.Separator()
+	drawKeymapFilter()
+	drawKeymapTable(s)
+	native.Separator()
+	if native.Button("Reset All") {
+		recordKeymapResult(s.Bindings().ResetAll())
+		dropKeymapBuffers()
+	}
+	native.SameLine()
+	if native.Button("Done") {
+		s.CloseKeymapEditor()
+	}
+}
+
+// drawKeymapFilter renders the command-name filter box (issue #1232: there was no way to
+// find a command by name in the unsorted list).
+func drawKeymapFilter() {
+	native.Text("Filter")
+	native.SameLine()
+	native.SetNextItemWidth(-1)
+	native.InputText("##keymap-filter", keymapUI.filter)
+}
+
+// drawKeymapTable renders the catalog as an editable four-column table, alphabetically
+// sorted and narrowed by the filter box (issue #1232).
 func drawKeymapTable(s *app.Session) {
 	if !native.BeginTable("##keymap", 4, 0, 0) {
 		return
@@ -65,7 +91,7 @@ func drawKeymapTable(s *app.Session) {
 	native.TableSetupColumn("")
 	native.TableSetupScrollFreeze(0, 1)
 	native.TableHeadersRow()
-	for _, b := range s.Bindings().Catalog() {
+	for _, b := range s.Bindings().CatalogFiltered(bufString(keymapUI.filter)) {
 		drawKeymapRow(s, b)
 	}
 	native.EndTable()
@@ -128,8 +154,12 @@ func recordKeymapResult(err error) {
 	keymapUI.lastErr = ""
 }
 
-// dropKeymapBuffers forces every field to re-seed from the model (after a reset-all).
+// dropKeymapBuffers forces every field to re-seed from the model (after a reset-all). It
+// keeps the filter buffer allocated so the active filter survives a Reset All.
 func dropKeymapBuffers() {
 	keymapUI.chord = map[string][]byte{}
 	keymapUI.alias = map[string][]byte{}
+	if keymapUI.filter == nil {
+		keymapUI.filter = make([]byte, keymapFilterBufLen)
+	}
 }
