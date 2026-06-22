@@ -74,8 +74,8 @@ func NewCommand(id, displayName, category string, run func(*Session) error) *Com
 }
 
 // WithTab sets the ribbon tab the command appears on (its Category is the panel within
-// that tab). Inventor groups commands two levels deep — tab → panel — so e.g. Extrude
-// lives on the "3D Model" tab, "Create" panel.
+// that tab). Commands group two levels deep — tab → panel — so e.g. Extrude lives on the
+// "Create & Modify" tab, "Create" panel.
 func (c *CommandDefinition) WithTab(tab string) *CommandDefinition { c.tab = tab; return c }
 
 // WithTabs makes one command appear on several tabs at once — the first is the primary tab

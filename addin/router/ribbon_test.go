@@ -30,8 +30,8 @@ func TestRibbonListPartRibbon(t *testing.T) {
 	if res.Key != types.PartRibbon {
 		t.Fatalf("ribbon key = %q, want Part", res.Key)
 	}
-	if !hasTab(res, "3D Model") {
-		t.Error("Part ribbon has no 3D Model tab")
+	if !hasTab(res, "Create & Modify") {
+		t.Error("Part ribbon has no Create & Modify tab")
 	}
 	if hasTab(res, "Sketch") {
 		t.Error("Sketch tab should be contextual (absent outside the sketch environment)")
