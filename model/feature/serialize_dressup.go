@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -43,6 +44,18 @@ type EdgeDressData struct {
 	Angle       float64 `yaml:"angle,omitempty"`
 	// Fillet-only: the shared-corner treatment. FilletCornerType 0 (or absent) ⇒ the miter default.
 	CornerType int32 `yaml:"cornerType,omitempty"`
+	// GeomEdges are edges selected by a serialized GEOMETRIC descriptor (ADR-0040), the path
+	// an external author (the NX exporter) uses because it cannot mint Oblikovati lineage
+	// keys. Empty for an Oblikovati-authored dress-up (which uses Edges).
+	GeomEdges []GeomEdgeRefData `yaml:"geomEdges,omitempty"`
+}
+
+// GeomEdgeRefData is the serialized form of a geometric edge descriptor: the edge's
+// midpoint and (sign-agnostic) direction in model space. It binds to a running-body edge
+// at recompute via [topo.Body.FindEdgeByGeometry] (ADR-0040).
+type GeomEdgeRefData struct {
+	Midpoint  []float64 `yaml:"midpoint,flow"`
+	Direction []float64 `yaml:"direction,omitempty,flow"`
 }
 
 // FilletSetData is one serialized fillet edge set: constant (Radius) or variable
@@ -177,10 +190,12 @@ type ThreadData struct {
 	ModelDiameter string `yaml:"modelDiameter,omitempty"`
 }
 
-// dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups.
+// dressInputs is the decoded (keys, value) pair shared by edge/face dress-ups, plus any
+// geometric edge descriptors (externally-authored selections, ADR-0040).
 type dressInputs struct {
 	keys  [][]byte
 	value float64
+	geom  []topo.GeometricEdgeRef
 }
 
 func requireEdgeDress(d *EdgeDressData, kind string) (dressInputs, error) {
@@ -191,7 +206,32 @@ func requireEdgeDress(d *EdgeDressData, kind string) (dressInputs, error) {
 	if err != nil {
 		return dressInputs{}, err
 	}
-	return dressInputs{keys: keys, value: d.Value}, nil
+	return dressInputs{keys: keys, value: d.Value, geom: decodeGeomEdges(d.GeomEdges)}, nil
+}
+
+// encodeGeomEdges / decodeGeomEdges convert geometric edge descriptors to and from their
+// serialized form. A descriptor with no direction (degenerate) still round-trips by
+// midpoint alone.
+func encodeGeomEdges(geom []topo.GeometricEdgeRef) []GeomEdgeRefData {
+	if len(geom) == 0 {
+		return nil
+	}
+	out := make([]GeomEdgeRefData, len(geom))
+	for i, g := range geom {
+		out[i] = GeomEdgeRefData{Midpoint: encodePoint3(g.Midpoint), Direction: encodeVec3(g.Direction)}
+	}
+	return out
+}
+
+func decodeGeomEdges(data []GeomEdgeRefData) []topo.GeometricEdgeRef {
+	if len(data) == 0 {
+		return nil
+	}
+	out := make([]topo.GeometricEdgeRef, len(data))
+	for i, d := range data {
+		out[i] = topo.GeometricEdgeRef{Midpoint: decodePoint3(d.Midpoint), Direction: decodeVec3(d.Direction)}
+	}
+	return out
 }
 
 func requireFaceDress(d *FaceDressData, kind string) (dressInputs, error) {

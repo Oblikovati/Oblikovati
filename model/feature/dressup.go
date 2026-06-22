@@ -59,6 +59,12 @@ type FilletDefinition struct {
 	EdgeSets        []FilletEdgeSet
 	CornerType      FilletCornerType
 	ConcaveStrategy types.FilletConcaveStrategy // concave edges: outward fill (zero/default) or inward recess
+	// GeomEdges are edges selected by a serialized GEOMETRIC descriptor rather than an
+	// Oblikovati lineage key — the path an external author (the NX exporter, M8/ADR-0040)
+	// uses, since it cannot synthesize lineage. They bind to the running body's edges at
+	// recompute (see bindGeomEdges) and fold into the edge list; absent for a normal
+	// Oblikovati-authored fillet.
+	GeomEdges []topo.GeometricEdgeRef
 }
 
 // FilletType reports the definition's discriminator: always an edge fillet for now (the
@@ -80,7 +86,11 @@ func (f *FilletFeature) Recompute(in Input) (Output, error) {
 	if len(f.def.EdgeSets) > 0 {
 		return filletBodySets(in, f.def.EdgeSets, f.def.CornerType, f.def.ConcaveStrategy, "fillet")
 	}
-	return filletBody(in, f.def.EdgeKeys, callOrZero(f.def.Radius), f.def.CornerType, f.def.ConcaveStrategy, "fillet")
+	keys, err := bindGeomEdges(in, f.def.EdgeKeys, f.def.GeomEdges, "fillet")
+	if err != nil {
+		return Output{}, err
+	}
+	return filletBody(in, keys, callOrZero(f.def.Radius), f.def.CornerType, f.def.ConcaveStrategy, "fillet")
 }
 
 // ChamferType aliases the public chamfer-mode discriminator (ADR-0018).
@@ -103,7 +113,8 @@ type ChamferDefinition struct {
 	Angle           func() float64 // distanceAndAngle: chamfer-face angle (radians)
 	Type            ChamferType    // zero value ⇒ equal-distance
 	FlatCorners     bool
-	ConcaveStrategy ChamferConcaveStrategy // zero value ⇒ outward (fill the inside corner)
+	ConcaveStrategy ChamferConcaveStrategy  // zero value ⇒ outward (fill the inside corner)
+	GeomEdges       []topo.GeometricEdgeRef // externally-authored edges by geometric descriptor (see FilletDefinition.GeomEdges)
 }
 
 // ChamferFeature bevels selected edges (equal-distance, two-distance, or distance-and-angle).
@@ -124,7 +135,11 @@ func (c *ChamferFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, err
 	}
-	return chamferEdges(in, c.def.EdgeKeys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners, c.def.ConcaveStrategy)
+	keys, err := bindGeomEdges(in, c.def.EdgeKeys, c.def.GeomEdges, "chamfer")
+	if err != nil {
+		return Output{}, err
+	}
+	return chamferEdges(in, keys, d1, d2, featOr(c.featName, "chamfer"), c.def.FlatCorners, c.def.ConcaveStrategy)
 }
 
 // ShellDefinition hollows a body, removing the selected faces, to a wall thickness.
@@ -286,6 +301,12 @@ func (c *DressUpFeatures) AddFillet(edgeKeys [][]byte, radius func() float64) *P
 // Concave edges fill outward (the default); use [AddFilletConcave] to round a recess inward.
 func (c *DressUpFeatures) AddFilletCorner(edgeKeys [][]byte, radius func() float64, corner FilletCornerType) *PartFeature {
 	return c.engine.Add(&FilletFeature{def: &FilletDefinition{EdgeKeys: edgeKeys, Radius: radius, CornerType: corner}})
+}
+
+// addFillet adds a fillet from a fully-built definition (used by the recipe restore to
+// carry fields the public builders don't take, e.g. geometric edge refs).
+func (c *DressUpFeatures) addFillet(def *FilletDefinition) *PartFeature {
+	return c.engine.Add(&FilletFeature{def: def})
 }
 
 // AddFilletConcave rounds the given edges to radius with an explicit concave-edge strategy: outward

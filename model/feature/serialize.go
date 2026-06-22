@@ -143,7 +143,7 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(f.def.EdgeSets), CornerType: int32(f.def.CornerType)}
 			break
 		}
-		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType)}
+		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType), GeomEdges: encodeGeomEdges(f.def.GeomEdges)}
 	case *FaceFilletFeature:
 		fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(f.def.FaceKeysA), FacesB: encodeKeys(f.def.FaceKeysB), Value: evalFloat(f.def.Radius)}
 	case *FullRoundFilletFeature:
@@ -160,6 +160,7 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Chamfer = &EdgeDressData{
 			Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Distance), FlatCorners: &flat,
 			ChamferType: int32(f.def.Type), Value2: evalFloat(f.def.Distance2), Angle: evalFloat(f.def.Angle),
+			GeomEdges: encodeGeomEdges(f.def.GeomEdges),
 		}
 	case *ShellFeature:
 		fd.Shell = &FaceDressData{Faces: encodeKeys(f.def.RemovedFaceKeys), Value: evalFloat(f.def.Thickness)}
@@ -457,7 +458,9 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if err != nil {
 			return nil, err
 		}
-		return du.AddFilletCorner(d.keys, constFloat(d.value), corner), nil
+		return du.addFillet(&FilletDefinition{
+			EdgeKeys: d.keys, GeomEdges: d.geom, Radius: constFloat(d.value), CornerType: corner,
+		}), nil
 	case "face-fillet":
 		if fd.FaceFillet == nil {
 			return nil, fmt.Errorf("face-fillet feature is missing its payload")
@@ -513,7 +516,7 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		// Build the def directly so the stored flat-corner flag round-trips for EVERY mode
 		// (the asymmetric builders default it to true, but a recipe carries the saved value).
 		def := &ChamferDefinition{
-			EdgeKeys: d.keys, Distance: constFloat(d.value),
+			EdgeKeys: d.keys, GeomEdges: d.geom, Distance: constFloat(d.value),
 			Type: types.ChamferType(fd.Chamfer.ChamferType), FlatCorners: chamferFlatCornersOr(fd.Chamfer.FlatCorners),
 		}
 		switch def.Type {

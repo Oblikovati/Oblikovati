@@ -8,7 +8,38 @@ import (
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
+
+// geomEdgeBindTol is the model-space distance within which a geometric edge descriptor's
+// midpoint must match a running-body edge's midpoint to bind. Generous enough to absorb
+// unit-conversion and tessellation drift, tight enough that distinct edges stay
+// unambiguous (the resolver also requires direction alignment and is unique-or-fail).
+const geomEdgeBindTol = math.Scalar(1e-3)
+
+// bindGeomEdges resolves any geometric edge descriptors against the running body and folds
+// the bound edges' current lineage keys into keys, so the rest of the dress-up pipeline is
+// unchanged. An external author (the NX exporter, ADR-0040) supplies these because it
+// cannot mint Oblikovati lineage keys. A descriptor that does not bind is an error so the
+// feature goes Sick honestly (rather than silently dropping the selection).
+func bindGeomEdges(in Input, keys [][]byte, geom []topo.GeometricEdgeRef, feat string) ([][]byte, error) {
+	if len(geom) == 0 {
+		return keys, nil
+	}
+	body, err := runningBody(in)
+	if err != nil {
+		return nil, err
+	}
+	out := append([][]byte(nil), keys...)
+	for _, g := range geom {
+		e, ok := body.FindEdgeByGeometry(g, geomEdgeBindTol)
+		if !ok {
+			return nil, fmt.Errorf("%s: geometric edge reference did not bind near midpoint %v", feat, g.Midpoint)
+		}
+		out = append(out, e.ReferenceKey())
+	}
+	return out, nil
+}
 
 // cornerStrategy maps the public corner-type discriminator to the kernel's 2-edge corner strategy.
 func cornerStrategy(t types.FilletCornerType) ops.CornerStrategy {
