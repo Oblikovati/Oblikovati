@@ -149,14 +149,26 @@ relative-tolerance core.
 
 Tracked by milestone **M35: Model Scale & Relative Tolerances**.
 
-**Phase 1 — relative tolerances (kernel-only):**
-- #1242 — kernel resolution & tolerance context (`resolution = εRel × modelSize`)
-- #1243 — migrate boolean/CSG/sew/weld ops off the absolute cm constants
-- #1244 — scale-sweep regression tests (pm→km topology/volume invariance) — the acceptance gate
+**Phase 1 — relative tolerances (kernel-only) — DONE:**
+- #1242 — kernel resolution & tolerance context (`resolution = εRel × modelSize`) ✅
+- #1243 — migrate boolean/CSG/sew/weld ops off the absolute cm constants ✅
+- #1244 — scale-sweep regression tests (µm→km topology/volume invariance) — the acceptance gate ✅
 
-**Phase 2 — working-scale storage (centred on the document unit):**
-- #1245 — working-scale storage
-- #1246 — persist values in working scale + unit round-trip (`.obk`, with migration)
-- #1247 — assembly mixing: convert at the placement boundary
-- #1248 — exchange: working-scale ↔ STEP mm
-- #1249 — UI/docs diagnostic for the single-model span ceiling
+**Phase 2 — working-scale storage (centred on the document unit) — DONE:**
+- #1245 — working-scale storage (`param.UnitsOfMeasure.workingScale`; `Quantity.Value` in working units) ✅
+- #1246 — persist values in working scale + unit round-trip (`.obk`, with automatic migration) ✅
+- #1247 — assembly mixing: convert at the placement boundary (`childWS/ownerWS` scale term) ✅
+- #1248 — exchange: working-scale ↔ STEP mm (`TargetUnitMM` = working-unit mm) ✅
+- #1249 — span-ceiling diagnostic (`geom.SpanCeilingWarning` / `PartComponentDefinition.FeatureScaleWarning`) ✅
+
+### Span-ceiling diagnostic (#1249)
+
+float64 holds ~15.95 significant decimal digits, so **one model** spans at most ~15 orders of
+magnitude before a small feature falls below the representable floor and is silently merged. A
+document is free to sit anywhere on the scale (a pm part and a km part are each fine on their own),
+but a feature more than ~10¹⁵ smaller than the model extent cannot coexist with it. The kernel
+surfaces this rather than merging silently: `geom.FeatureResolvable` / `geom.SpanCeilingWarning`
+compare a candidate feature size against the model's coincidence resolution
+(`Resolution.Weld() = εRel × extent`), and `PartComponentDefinition.FeatureScaleWarning` wraps it
+for the head/API to show. The remedy the message gives is to model at a working unit nearer the
+feature scale (Phase 2 makes that free) or split the design across documents.

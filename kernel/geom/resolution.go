@@ -3,6 +3,7 @@
 package geom
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/math"
@@ -129,3 +130,33 @@ func (r Resolution) Area() float64 { return epsRel * r.size * r.size }
 // Volume is the relative volume tolerance for boolean result classification. It scales
 // with size³.
 func (r Resolution) Volume() float64 { return volCoef * r.size * r.size * r.size }
+
+// spanCeilingOrders is the usable dynamic range of one model in float64: ~15.95 significant
+// decimal digits, so a feature more than ~10^15 smaller than the model extent is below the
+// representable floor and would be silently merged (ADR-0042 §Phase 2). We use 15 as the
+// conservative, round ceiling.
+const spanCeilingOrders = 15
+
+// FeatureResolvable reports whether a feature of size featureSize is distinguishable in a model
+// whose extent is modelBox — i.e. it is at least the model's coincidence resolution. A false
+// result means the feature is below the single-model span ceiling (float64 ~15 orders) and would
+// be welded away; the caller should surface SpanCeilingWarning rather than build silently.
+func FeatureResolvable(modelBox math.Box, featureSize float64) bool {
+	return featureSize >= ResolutionForBox(modelBox).Weld()
+}
+
+// SpanCeilingWarning returns a human-readable diagnostic when a feature of size featureSize
+// cannot be resolved in a model bounded by modelBox, and "" when it can. float64 caps a single
+// model at ~15 orders of magnitude (ADR-0042 §Phase 2): a pm feature on a km part exceeds that,
+// so this lets the UI/API warn the user instead of silently merging the feature. The message
+// names the offending size, the model's resolution, and the working-scale remedy.
+func SpanCeilingWarning(modelBox math.Box, featureSize float64) string {
+	res := ResolutionForBox(modelBox)
+	if featureSize <= 0 || featureSize >= res.Weld() {
+		return ""
+	}
+	return fmt.Sprintf("feature size %g is below this model's resolution %g (extent %g spans more than "+
+		"the ~%d orders of magnitude float64 can represent in one model); it would be merged away — "+
+		"model at a working unit closer to the feature scale, or split the design across documents",
+		featureSize, res.Weld(), res.Size(), spanCeilingOrders)
+}
