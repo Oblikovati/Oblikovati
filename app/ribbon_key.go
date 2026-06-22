@@ -65,9 +65,12 @@ type Environment = types.Environment
 const (
 	// BaseEnvironment is the document's normal environment; its commands always show.
 	BaseEnvironment = types.BaseEnvironment
-	// SketchEnvironment is active while a sketch is open for editing; its commands form the
+	// SketchEnvironment is active while a 2D sketch is open for editing; its commands form the
 	// contextual Sketch tab and show only then.
 	SketchEnvironment = types.SketchEnvironment
+	// Sketch3DEnvironment is active while a 3D sketch is open for editing; its commands form the
+	// contextual 3D Sketch tab and show only then.
+	Sketch3DEnvironment = types.Sketch3DEnvironment
 )
 
 // CurrentEnvironment reports the session's active ribbon environment — exported so
@@ -76,6 +79,9 @@ const (
 func CurrentEnvironment(s *Session) Environment {
 	if s.activeAddInEnv != BaseEnvironment { // an entered add-in environment wins (M05-F16)
 		return s.activeAddInEnv
+	}
+	if s.InSketch3D() { // a 3D sketch is its own environment, checked before the 2D one
+		return Sketch3DEnvironment
 	}
 	if s.InSketch() {
 		return SketchEnvironment

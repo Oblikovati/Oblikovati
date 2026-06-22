@@ -19,7 +19,13 @@ const DefaultTab = "Tools"
 // Standard ribbon tab and panel names, mirroring Inventor's layout. Centralized here so
 // the command registrations reference one source instead of repeating the display strings.
 const (
-	tab3DModel        = "3D Model"
+	// tabCreateModify is the part ribbon's primary modelling tab — sketches, the solid
+	// features (Create/Modify) and patterns. Renamed from "3D Model" when the surfacing and
+	// mesh tools were split onto their own tab (see tabSurfacesMesh).
+	tabCreateModify = "Create & Modify"
+	// tabSurfacesMesh groups the surface, freeform, mesh, point-cloud and mold tools, split out
+	// of the modelling tab so each tab stays focused.
+	tabSurfacesMesh   = "Surfaces & Mesh"
 	tab3DSketch       = "3D Sketch"
 	panelWorkFeatures = "Work Features"
 )
@@ -181,13 +187,12 @@ type ribbonBuilder struct {
 }
 
 func (b *ribbonBuilder) add(btn RibbonButton) {
-	tab := btn.Command.Tab()
-	if tab == "" {
-		tab = DefaultTab
+	// A command may declare several tabs (WithTabs); render its button on each, in order.
+	for _, tab := range btn.Command.ribbonTabs() {
+		ti := b.tabAt(tab)
+		pi := b.panelAt(tab, ti, btn.Command.Category())
+		b.tabs[ti].Panels[pi].Buttons = append(b.tabs[ti].Panels[pi].Buttons, btn)
 	}
-	ti := b.tabAt(tab)
-	pi := b.panelAt(tab, ti, btn.Command.Category())
-	b.tabs[ti].Panels[pi].Buttons = append(b.tabs[ti].Panels[pi].Buttons, btn)
 }
 
 func (b *ribbonBuilder) tabAt(name string) int {

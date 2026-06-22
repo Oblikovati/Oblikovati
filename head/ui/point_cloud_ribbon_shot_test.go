@@ -18,7 +18,7 @@ import (
 // pointCloudRibbonPanel extracts the 3D Model ▸ Point Cloud panel from the built ribbon.
 func pointCloudRibbonPanel(t *testing.T, s *app.Session) app.RibbonPanel {
 	t.Helper()
-	tab, ok := app.BuildRibbon(s).Tab("3D Model")
+	tab, ok := app.BuildRibbon(s).Tab("Surfaces & Mesh")
 	if !ok {
 		t.Fatal("no 3D Model tab")
 	}

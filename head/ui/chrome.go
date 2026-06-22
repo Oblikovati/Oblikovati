@@ -168,6 +168,18 @@ func drawChromeWindows(s *app.Session) {
 	drawMarkingMenu(s)       // radial marking menu popup (M05-F12)
 	drawSelectOtherWidget(s) // Select Other cycle control over stacked geometry (#910)
 	serviceFileModalRequests(s)
+	serviceWindowOpenRequests(s)
+}
+
+// serviceWindowOpenRequests opens head-only windows that a ribbon command asked for from the
+// core (the Get Started ▸ Manage buttons). Each request is one-shot, consumed here.
+func serviceWindowOpenRequests(s *app.Session) {
+	if s.TakeAddInCatalogueRequest() { // Get Started ▸ AddIn Catalogue
+		OpenAddInCatalogue(s)
+	}
+	if s.TakePreferencesRequest() { // Get Started ▸ Preferences
+		showPreferences = true
+	}
 }
 
 // serviceFileModalRequests arms the file modal for ribbon buttons that request a file picker.

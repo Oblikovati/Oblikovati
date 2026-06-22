@@ -28,9 +28,14 @@ func TestStandardRibbonHasSketchCreatePanel(t *testing.T) {
 	}
 	// Line, Rectangle, Circle, Arc, Slot, Spline, Ellipse, Polygon, Fillet, Chamfer, Text,
 	// Point, Project Geometry (merged from the non-canonical Draw panel 2026-06-11), Create
-	// Block (M06-F07, #622), plus Project Scan Point (a sketch point on a snapped scan, #645).
-	if len(panel.Buttons) != 15 {
-		t.Errorf("Sketch Create panel has %d tools, want 15", len(panel.Buttons))
+	// Block (M06-F07, #622). Project Scan Point (#645) is no longer a standalone button — it
+	// rides under Project Geometry as a split-button variant, so it is not counted here.
+	if len(panel.Buttons) != 14 {
+		t.Errorf("Sketch Create panel has %d tools, want 14", len(panel.Buttons))
+	}
+	project, ok := buttonNamed(panel, "Project Geometry")
+	if !ok || len(project.Variants) != 1 || project.Variants[0].Label != "Project Scan Point" {
+		t.Errorf("Project Geometry should carry Project Scan Point as its only variant, got %+v", project.Variants)
 	}
 }
 
@@ -69,7 +74,7 @@ func TestIconCommandsCarryIconAndStyle(t *testing.T) {
 func TestModelTabHasCreate2DSketch(t *testing.T) {
 	s := registeredSession(t)
 	r := BuildRibbon(s)
-	tab, ok := r.Tab("3D Model")
+	tab, ok := r.Tab("Create & Modify")
 	if !ok {
 		t.Fatal("ribbon has no 3D Model tab")
 	}
