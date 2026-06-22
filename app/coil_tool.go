@@ -42,12 +42,7 @@ func (t *CoilTool) Start(*Session) {}
 func (t *CoilTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked region for the unified highlight.
-func (t *CoilTool) Picks() []Selectable {
-	if t.profile == nil {
-		return nil
-	}
-	return []Selectable{*t.profile}
-}
+func (t *CoilTool) Picks() []Selectable { return singlePick(t.profile) }
 
 // Pick captures the region the user clicked.
 func (t *CoilTool) Pick(_ *Session, sel Selectable) {

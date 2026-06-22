@@ -26,9 +26,19 @@ type Picking interface {
 	Picks() []Selectable
 }
 
-// faceSelectables / edgeSelectables / profileSelectables / vertexSelectables widen a tool's typed
-// pick slice to []Selectable for its Picks() implementation, so the engine highlights them
-// uniformly without each tool writing a loop.
+// singlePick widens a tool's optional single pick (a *FaceHandle/*EdgeHandle/*ProfileHandle, nil
+// until picked) to the []Selectable its Picks() returns — the shared form of the common
+// "one optional pick" tool, so each does not repeat the nil-check.
+func singlePick[T Selectable](p *T) []Selectable {
+	if p == nil {
+		return nil
+	}
+	return []Selectable{*p}
+}
+
+// faceSelectables / edgeSelectables / profileSelectables widen a tool's typed pick slice to
+// []Selectable for its Picks() implementation, so the engine highlights them uniformly without
+// each tool writing a loop.
 func faceSelectables(fs []FaceHandle) []Selectable {
 	out := make([]Selectable, len(fs))
 	for i, f := range fs {

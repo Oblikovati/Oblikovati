@@ -29,12 +29,7 @@ func (t *PatchTool) Start(*Session) {}
 func (t *PatchTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked region for the unified highlight.
-func (t *PatchTool) Picks() []Selectable {
-	if t.profile == nil {
-		return nil
-	}
-	return []Selectable{*t.profile}
-}
+func (t *PatchTool) Picks() []Selectable { return singlePick(t.profile) }
 
 // Pick captures the clicked closed region.
 func (t *PatchTool) Pick(_ *Session, sel Selectable) {

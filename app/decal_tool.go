@@ -28,12 +28,7 @@ func (t *DecalTool) Start(*Session) {}
 func (t *DecalTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked face for the unified highlight.
-func (t *DecalTool) Picks() []Selectable {
-	if t.face == nil {
-		return nil
-	}
-	return []Selectable{*t.face}
-}
+func (t *DecalTool) Picks() []Selectable { return singlePick(t.face) }
 
 // Pick captures the target face.
 func (t *DecalTool) Pick(_ *Session, sel Selectable) {

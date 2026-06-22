@@ -203,12 +203,7 @@ func (t *SheetMetalCutTool) Start(*Session) {}
 func (t *SheetMetalCutTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked region for the unified highlight.
-func (t *SheetMetalCutTool) Picks() []Selectable {
-	if t.profile == nil {
-		return nil
-	}
-	return []Selectable{*t.profile}
-}
+func (t *SheetMetalCutTool) Picks() []Selectable { return singlePick(t.profile) }
 func (t *SheetMetalCutTool) Pick(_ *Session, sel Selectable) {
 	if p, ok := sel.(ProfileHandle); ok {
 		t.profile = &p

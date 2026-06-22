@@ -35,13 +35,8 @@ func (t *SheetMetalLipTool) Start(*Session) {}
 func (t *SheetMetalLipTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edge for the unified highlight.
-func (t *SheetMetalLipTool) Picks() []Selectable {
-	if t.edge == nil {
-		return nil
-	}
-	return []Selectable{*t.edge}
-}
-func (t *SheetMetalLipTool) Cancel(*Session) {}
+func (t *SheetMetalLipTool) Picks() []Selectable { return singlePick(t.edge) }
+func (t *SheetMetalLipTool) Cancel(*Session)     {}
 func (t *SheetMetalLipTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
 		t.edge = &e
@@ -180,13 +175,8 @@ func (t *SheetMetalPunchTool) Start(*Session) {}
 func (t *SheetMetalPunchTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked region for the unified highlight.
-func (t *SheetMetalPunchTool) Picks() []Selectable {
-	if t.profile == nil {
-		return nil
-	}
-	return []Selectable{*t.profile}
-}
-func (t *SheetMetalPunchTool) Cancel(*Session) {}
+func (t *SheetMetalPunchTool) Picks() []Selectable { return singlePick(t.profile) }
+func (t *SheetMetalPunchTool) Cancel(*Session)     {}
 func (t *SheetMetalPunchTool) Pick(_ *Session, sel Selectable) {
 	if p, ok := sel.(ProfileHandle); ok {
 		t.profile = &p

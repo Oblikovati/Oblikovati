@@ -29,12 +29,7 @@ func (t *SheetMetalHemTool) Start(*Session) {}
 func (t *SheetMetalHemTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edge for the unified highlight.
-func (t *SheetMetalHemTool) Picks() []Selectable {
-	if t.edge == nil {
-		return nil
-	}
-	return []Selectable{*t.edge}
-}
+func (t *SheetMetalHemTool) Picks() []Selectable { return singlePick(t.edge) }
 func (t *SheetMetalHemTool) Pick(_ *Session, sel Selectable) {
 	if e, ok := sel.(EdgeHandle); ok {
 		t.edge = &e
@@ -187,12 +182,7 @@ func (t *SheetMetalContourRollTool) AcceptedKinds() []SelectionKind {
 }
 
 // Picks reports the picked profile for the unified highlight (the axis is a sketch line).
-func (t *SheetMetalContourRollTool) Picks() []Selectable {
-	if t.profile == nil {
-		return nil
-	}
-	return []Selectable{*t.profile}
-}
+func (t *SheetMetalContourRollTool) Picks() []Selectable { return singlePick(t.profile) }
 func (t *SheetMetalContourRollTool) Pick(_ *Session, sel Selectable) {
 	switch h := sel.(type) {
 	case ProfileHandle:

@@ -45,12 +45,7 @@ func (t *HoleTool) Start(*Session) {}
 func (t *HoleTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the placement face for the unified highlight.
-func (t *HoleTool) Picks() []Selectable {
-	if t.face == nil {
-		return nil
-	}
-	return []Selectable{*t.face}
-}
+func (t *HoleTool) Picks() []Selectable { return singlePick(t.face) }
 
 // Pick captures the planar face the user clicked.
 func (t *HoleTool) Pick(_ *Session, sel Selectable) {

@@ -37,12 +37,7 @@ func (t *SheetMetalFlangeTool) Start(*Session) {}
 func (t *SheetMetalFlangeTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectEdge} }
 
 // Picks reports the picked edge for the unified highlight.
-func (t *SheetMetalFlangeTool) Picks() []Selectable {
-	if t.edge == nil {
-		return nil
-	}
-	return []Selectable{*t.edge}
-}
+func (t *SheetMetalFlangeTool) Picks() []Selectable { return singlePick(t.edge) }
 
 // Pick captures the clicked edge (a re-pick replaces it).
 func (t *SheetMetalFlangeTool) Pick(_ *Session, sel Selectable) {

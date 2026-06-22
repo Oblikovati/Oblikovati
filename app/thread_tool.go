@@ -40,12 +40,7 @@ func (t *ThreadTool) Start(*Session) {}
 func (t *ThreadTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectFace} }
 
 // Picks reports the picked cylindrical face for the unified highlight.
-func (t *ThreadTool) Picks() []Selectable {
-	if t.face == nil {
-		return nil
-	}
-	return []Selectable{*t.face}
-}
+func (t *ThreadTool) Picks() []Selectable { return singlePick(t.face) }
 
 // Pick accepts a clicked cylindrical face (ignoring non-cylindrical picks).
 func (t *ThreadTool) Pick(_ *Session, sel Selectable) {

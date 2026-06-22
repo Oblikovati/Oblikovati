@@ -47,12 +47,7 @@ func (t *RuledSurfaceTool) Start(*Session) {}
 func (t *RuledSurfaceTool) AcceptedKinds() []SelectionKind { return []SelectionKind{SelectProfile} }
 
 // Picks reports the picked region for the unified highlight.
-func (t *RuledSurfaceTool) Picks() []Selectable {
-	if t.profile == nil {
-		return nil
-	}
-	return []Selectable{*t.profile}
-}
+func (t *RuledSurfaceTool) Picks() []Selectable { return singlePick(t.profile) }
 
 // Pick captures the clicked closed region.
 func (t *RuledSurfaceTool) Pick(_ *Session, sel Selectable) {
