@@ -113,6 +113,19 @@ func TestInWindowToolFaceHighlightGeneralizes(t *testing.T) {
 	if _, isFace := sel.(app.FaceHandle); !ok || !isFace {
 		t.Fatalf("Shell hover over a face resolved to %T (ok=%v); want a FaceHandle", sel, ok)
 	}
+
+	// Click the face so the tool holds a pick, then render more frames — exercising the SELECTED
+	// highlight path (toolSelectedHighlight → ToolPicks → the per-kind renderer) too.
+	native.InjectMouseButton(native.MouseLeft, true)
+	viewportFrame(win, s)
+	native.InjectMouseButton(native.MouseLeft, false)
+	for i := 0; i < 3; i++ {
+		native.InjectMousePos(cx, cy)
+		viewportFrame(win, s)
+	}
+	if picks := s.ToolPicks(); len(picks) == 0 {
+		t.Error("clicking the face did not register a Shell pick for the selected highlight")
+	}
 	if err := win.SaveWindowPNG(filepath.Join(outDir(), "shell-face-hover.png")); err != nil {
 		t.Logf("SaveWindowPNG: %v", err)
 	}
