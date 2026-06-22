@@ -191,6 +191,17 @@ func (m UnitsOfMeasure) WithWorkingScale(cmPerUnit float64) (UnitsOfMeasure, err
 	return out, nil
 }
 
+// SetWorkingScale sets the working unit to cmPerUnit centimetres in place (the mutating
+// counterpart of [UnitsOfMeasure.WithWorkingScale]) — used by the .obk restore path. A
+// non-positive value is rejected.
+func (m *UnitsOfMeasure) SetWorkingScale(cmPerUnit float64) error {
+	if cmPerUnit <= 0 {
+		return fmt.Errorf("param: working scale %g is not positive (cm per working unit)", cmPerUnit)
+	}
+	m.workingScale = cmPerUnit
+	return nil
+}
+
 // CenteredOnLength returns a copy whose working unit equals the named length unit, so a
 // length authored in that unit is stored as an O(1) coordinate (ADR-0042 Phase 2): a µm
 // document keeps sub-micron features out of the primitive-construction underflow floor,
