@@ -62,7 +62,7 @@ func (MeshExchange) ImportInto(part *compdef.PartComponentDefinition, path strin
 		return ImportResult{}, fmt.Errorf("import: read %q: %w", path, err)
 	}
 	feat := fmt.Sprintf("import:%s#0", format)
-	body, warns, err := meshio.ImportBody(format, data, feat, 0, exchange.TranslationOptions{TargetUnitMM: exchange.DBUnitMM})
+	body, warns, err := meshio.ImportBody(format, data, feat, 0, exchange.TranslationOptions{TargetUnitMM: workingUnitMM(part)})
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import %q: %w", path, err)
 	}
