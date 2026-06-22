@@ -163,6 +163,22 @@ func decodePoint3(s []float64) math.Point3 {
 	return math.P3(s[0], s[1], s[2])
 }
 
+// encodePoint3Ptr / decodePoint3Ptr round-trip an optional point: nil <-> empty slice.
+func encodePoint3Ptr(p *math.Point3) []float64 {
+	if p == nil {
+		return nil
+	}
+	return encodePoint3(*p)
+}
+
+func decodePoint3Ptr(s []float64) *math.Point3 {
+	if len(s) < 3 {
+		return nil
+	}
+	p := math.P3(s[0], s[1], s[2])
+	return &p
+}
+
 func decodePoints(s [][]float64) []math.Point3 {
 	out := make([]math.Point3, len(s))
 	for i, p := range s {

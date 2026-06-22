@@ -13,14 +13,15 @@ import (
 )
 
 // Hole and boss features place parametric cylindrical cuts/bosses on a picked placement
-// face (held by reference key, re-resolved each recompute). A hole drills at the face
-// centroid along the inward normal with an EXACT cylinder wall (K1b): a Through All hole on a
+// face (held by reference key, re-resolved each recompute). A hole drills at an explicit
+// Center (externally-authored holes) or the face centroid, along the inward normal with an
+// EXACT cylinder wall (K1b): a Through All hole on a
 // planar slab via brep.CutCylindricalHole, a blind hole via brep.CutBlindCylindricalHole
 // (flat bottom, or a conical drill point when PointAngle is set). A counterbore adds a flat
 // recess + shoulder; a countersink a true cone recess (exact-only). Unsupported drilled/
 // counterbore shapes fall back to the faceted boolean. A boss is the join-side mirror of the
 // drilled hole: the same tool cylinder grown OUT of the face and unioned (#327). A lost
-// placement face → Sick. Point placement (vs. the face centroid) is a follow-up.
+// placement face → Sick.
 
 // HoleTapInfo carries thread data for a tapped hole, consumed by hole tables (M14).
 type HoleTapInfo struct {
@@ -42,15 +43,18 @@ const (
 type HoleDefinition struct {
 	PlacementFaceKey []byte
 	GeomFace         *topo.GeometricFaceRef // externally-authored placement face by geometric descriptor (ADR-0040)
-	Diameter         func() float64
-	Depth            func() float64
-	ThroughAll       bool           // drill all the way through (depth ignored)
-	CounterDiameter  func() float64 // recess/sink diameter (Counterbore + Countersink)
-	CounterDepth     func() float64 // counterbore recess depth (CounterboreHole)
-	CounterAngle     func() float64 // countersink included angle, radians (CountersinkHole)
-	PointAngle       func() float64 // drilled blind-hole point: included angle, radians (0 = flat)
-	Type             HoleType
-	Tap              HoleTapInfo
+	// Center is an explicit drill point in model space (e.g. an exporter reading the host's
+	// real hole position). Nil means drill at the placement face centroid (interactive default).
+	Center          *math.Point3
+	Diameter        func() float64
+	Depth           func() float64
+	ThroughAll      bool           // drill all the way through (depth ignored)
+	CounterDiameter func() float64 // recess/sink diameter (Counterbore + Countersink)
+	CounterDepth    func() float64 // counterbore recess depth (CounterboreHole)
+	CounterAngle    func() float64 // countersink included angle, radians (CountersinkHole)
+	PointAngle      func() float64 // drilled blind-hole point: included angle, radians (0 = flat)
+	Type            HoleType
+	Tap             HoleTapInfo
 }
 
 // HoleFeature drills a hole into the running solid.
@@ -77,8 +81,8 @@ func (h *HoleFeature) Operation() ops.PartFeatureOperation { return ops.Cut }
 // the dominant cut — so a pattern of one reproduces its bores. Implements [ToolFeature].
 func (h *HoleFeature) ToolBody() *topo.Body { return h.tool }
 
-// Recompute resolves the placement face, then drills at its centroid along the inward normal
-// (see drill), subtracting the hole from the running body.
+// Recompute resolves the placement face, then drills at the explicit center (or the face
+// centroid) along the inward normal (see drill), subtracting the hole from the running body.
 func (h *HoleFeature) Recompute(in Input) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
@@ -99,13 +103,34 @@ func (h *HoleFeature) Recompute(in Input) (Output, error) {
 	if err != nil {
 		return Output{}, fmt.Errorf("hole: placement face has no normal")
 	}
-	center := centroidOf(faceVertexPoints(face))
+	center := holeCenter(h.def, face)
 	h.tool = h.buildTool(body, center, into, r, depth)
 	res, err := h.drill(body, center, into, r, depth)
 	if err != nil {
 		return Output{}, err
 	}
 	return Output{Bodies: replaceBody(in.Bodies, body, res)}, nil
+}
+
+// holeCenter is the drill start point: an explicit center (projected onto the placement face's
+// plane so the bore starts exactly at the surface), or the face centroid when none is set.
+func holeCenter(def *HoleDefinition, face *topo.Face) math.Point3 {
+	if def.Center == nil {
+		return centroidOf(faceVertexPoints(face))
+	}
+	return projectOntoFacePlane(*def.Center, face)
+}
+
+// projectOntoFacePlane drops a model-space point onto a planar face's plane along its normal.
+func projectOntoFacePlane(p math.Point3, face *topo.Face) math.Point3 {
+	n, err := math.UnitVector3FromVector(face.Geometry().NormalAt(0, 0))
+	if err != nil {
+		return p
+	}
+	nv := n.AsVector()
+	root := centroidOf(faceVertexPoints(face))
+	d := root.VectorTo(p).Dot(nv)
+	return p.TranslateBy(nv.Scale(-d))
 }
 
 // buildTool returns the clean drill cylinder a pattern replicates: the bore radius along the

@@ -26,6 +26,9 @@ type HoleData struct {
 	// GeomFace selects the placement face by a GEOMETRIC descriptor (ADR-0040) when the
 	// hole is externally authored (NX exporter) and Face (the lineage key) is empty.
 	GeomFace *GeomFaceRefData `yaml:"geomFace,omitempty"`
+	// Center is the explicit drill point [x,y,z] in model space (externally-authored holes).
+	// Empty means drill at the placement face centroid.
+	Center []float64 `yaml:"center,omitempty,flow"`
 }
 
 // BossData is a boss's recipe: a raised cylinder on a placement face.
@@ -60,6 +63,7 @@ func serializeHole(def *HoleDefinition) (*HoleData, error) {
 		Tapped:          def.Tap.Tapped,
 		Designation:     def.Tap.Designation,
 		GeomFace:        encodeGeomFacePtr(def.GeomFace),
+		Center:          encodePoint3Ptr(def.Center),
 	}, nil
 }
 
@@ -94,6 +98,7 @@ func restoreHole(fs *PartFeatures, h *HoleData) (*PartFeature, error) {
 	def.ThroughAll = h.ThroughAll
 	def.PointAngle = constFloat(h.PointAngle)
 	def.GeomFace = decodeGeomFacePtr(h.GeomFace)
+	def.Center = decodePoint3Ptr(h.Center)
 	return pf, nil
 }
 
