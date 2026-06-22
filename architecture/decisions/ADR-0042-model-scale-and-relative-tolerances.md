@@ -89,7 +89,7 @@ document, persistence, assembly or exchange change.
 
 ### Phase 2 — Working-scale storage centred on the document unit
 
-5. Make the kernel's working scale track the **document unit** so coordinates are `O(1)–O(1e3)`
+1. Make the kernel's working scale track the **document unit** so coordinates are `O(1)–O(1e3)`
    (the conditioning win above). Storage, persistence, assembly placement and exchange all carry
    or convert the unit:
    - **Persistence:** the `.obk` already records the document unit (ADR-0020); values are stored
@@ -98,7 +98,7 @@ document, persistence, assembly or exchange change.
      placement boundary (the transform already exists; this adds a scale term).
    - **Exchange:** STEP is mm-based; the exchange layer remains the single place lengths leave the
      working scale (it already owns unit conversion, #146).
-6. Document the **single-model span ceiling** (~15 orders) in the UI/docs so a user mixing pm
+2. Document the **single-model span ceiling** (~15 orders) in the UI/docs so a user mixing pm
    features onto a km part gets a clear diagnostic rather than silent merging.
 
 Phase 2 is the larger, multi-PR, multi-repo change and is sequenced after Phase 1 proves the
