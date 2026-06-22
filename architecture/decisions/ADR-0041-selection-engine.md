@@ -63,9 +63,28 @@ edges/profiles are outlined, work planes/axes use their overlays.
 - **Intersect a tool's filter with the ambient user filter.** Deferred: a tool's declared kinds win
   while it runs (v1), as before; intersurfacing them is a possible later refinement.
 
+## API / add-in exposure
+
+The engine is **not** exposed over the wire, and deliberately so: add-ins drive the model by
+*reference*, not by interactive picking. A feature that takes a geometric input takes a reference
+key — and the host resolves it the same way a viewport pick would. So **Extrude "To Face" is
+add-in-/MCP-drivable through the existing `features.add` path** (no new wire method): the extrude
+kind's schema gains `extent: "to-face"` + a `toFace` reference (a planar face key from
+`model.referenceKeys`, a work plane `"plane/N"`, or an origin plane `"origin/plane/xy"`), resolved
+by the shared `feature.WorkGeometry.PlaneTargetFromRef` (also used by the router's plane re-pick, via
+`feature.ParseWorkRef`, so the two never drift). The selection-*set* is already
+read/mutable over the wire (`model.select` / `deselect` / `clearSelection` / `selection` +
+`selection.changed`). The interactive engine (`AcceptedKinds`/`Picks`, the ambient filter) stays a
+host concern — there is no live cursor for a headless add-in — so wiring it would add surface with
+no consumer. If a future add-in genuinely needs to constrain the *user's* ambient selection, that is
+a small get/set on the `SelectionFilterState` (#1222), added then, not speculatively.
+
 ## Out of scope (follow-ups)
 
-- Public-API/MCP exposure of the engine and cross-restart persistence of the ambient filter.
+- Cross-restart persistence of the ambient filter; a get/set wire surface for it only if an add-in
+  needs to steer the user's selection.
+- The remaining reference extents over the API (from-to, distance-from-face) — the same
+  `PlaneTargetFromRef` seam, wired when needed.
 - Geometric sub-type filters (planar vs cylindrical faces, linear vs circular edges) beyond the
   coarse `SelectionKind` taxonomy.
 - Highlighting body/path/sketch-entity picks that the per-kind renderer currently draws as no-ops.
