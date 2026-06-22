@@ -32,8 +32,8 @@ func wideAssembly(t *testing.T) *AssemblyComponentDefinition {
 // transforms, sources and paths — or picking/derivation built on PlacedBodies would shift.
 func TestFlattenParallelMatchesSerial(t *testing.T) {
 	top := wideAssembly(t)
-	serial := flattenSerial(top.occurrences)
-	parallel := flattenParallel(top.occurrences)
+	serial := flattenSerial(top.occurrences, 1)
+	parallel := flattenParallel(top.occurrences, 1)
 	if len(serial) != len(parallel) {
 		t.Fatalf("parallel produced %d bodies, serial %d", len(parallel), len(serial))
 	}
@@ -92,7 +92,7 @@ func TestPlacedBodiesParallelAndSerialPathsAgree(t *testing.T) {
 	if top.occurrences.Count() < parallelFlattenMinRoots {
 		t.Fatalf("fixture has %d roots, need ≥ %d to exercise the parallel path", top.occurrences.Count(), parallelFlattenMinRoots)
 	}
-	if got, want := len(top.PlacedBodies()), len(flattenSerial(top.occurrences)); got != want {
+	if got, want := len(top.PlacedBodies()), len(flattenSerial(top.occurrences, 1)); got != want {
 		t.Errorf("public PlacedBodies = %d bodies, serial reference = %d", got, want)
 	}
 }
