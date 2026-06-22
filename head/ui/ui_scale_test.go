@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"oblikovati.org/app"
-	"oblikovati.org/head/internal/native"
 )
 
 func TestScaledIconPx(t *testing.T) {
