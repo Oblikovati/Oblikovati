@@ -266,6 +266,9 @@ int  obk_ig_checkbox(const char* label, int* v) {
 int  obk_ig_slider_float(const char* label, float* v, float lo, float hi) {
     return ImGui::SliderFloat(label, v, lo, hi) ? 1 : 0;
 }
+int  obk_ig_slider_float_fmt(const char* label, float* v, float lo, float hi, const char* fmt) {
+    return ImGui::SliderFloat(label, v, lo, hi, fmt) ? 1 : 0;
+}
 
 void obk_ig_begin_disabled(int disabled)     { ImGui::BeginDisabled(disabled != 0); }
 void obk_ig_end_disabled(void)               { ImGui::EndDisabled(); }
@@ -365,13 +368,18 @@ void obk_ig_push_clip_rect(float x0, float y0, float x1, float y1) {
 }
 void obk_ig_pop_clip_rect(void) { ImGui::GetWindowDrawList()->PopClipRect(); }
 
+// obk_ig_mono_size is the mono face's baked size scaled by the global UI text scale
+// (style.FontScaleMain). Threading the scale through every mono metric keeps the Script Console
+// editor tracking the user's UI-scale preference, with glyphs and cell geometry in step.
+static float obk_ig_mono_size(ImFont* f) { return f->LegacySize * ImGui::GetStyle().FontScaleMain; }
+
 // obk_ig_draw_text_mono draws s in the fixed-width face (falling back to the default font when
 // the mono face failed to load), so editor glyphs land on integer columns.
 void obk_ig_draw_text_mono(float x, float y, float r, float g, float b, float a, const char* s) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImU32 col = obk_col32(r, g, b, a);
     ImFont* f = obk_head_mono_font();
-    if (f) dl->AddText(f, f->LegacySize, ImVec2(x, y), col, s); // LegacySize == size passed to AddFont
+    if (f) dl->AddText(f, obk_ig_mono_size(f), ImVec2(x, y), col, s);
     else   dl->AddText(ImVec2(x, y), col, s);
 }
 // obk_ig_mono_char_width / obk_ig_mono_line_height give the editor its cell size: a mono
@@ -380,12 +388,12 @@ void obk_ig_draw_text_mono(float x, float y, float r, float g, float b, float a,
 float obk_ig_mono_char_width(void) {
     ImFont* f = obk_head_mono_font();
     if (!f) return ImGui::CalcTextSize("M").x;
-    ImFontBaked* baked = f->GetFontBaked(f->LegacySize);
+    ImFontBaked* baked = f->GetFontBaked(obk_ig_mono_size(f));
     return baked ? baked->GetCharAdvance((ImWchar)'M') : ImGui::CalcTextSize("M").x;
 }
 float obk_ig_mono_line_height(void) {
     ImFont* f = obk_head_mono_font();
-    return f ? f->LegacySize : ImGui::GetTextLineHeight();
+    return f ? obk_ig_mono_size(f) : ImGui::GetTextLineHeight();
 }
 
 // obk_ig_utf8_encode appends the UTF-8 of code point c to buf at *off (bounded by buf_size),

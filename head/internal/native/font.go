@@ -7,6 +7,7 @@ package native
 /*
 void obk_head_set_ui_font(const unsigned char* data, int len, float sizePx);
 void obk_head_set_mono_font(const unsigned char* data, int len, float sizePx);
+void obk_head_set_font_scale(float scale);
 */
 import "C"
 
@@ -54,4 +55,11 @@ func (w *Window) SetMonoFont(sizePx float32) {
 		return
 	}
 	C.obk_head_set_mono_font((*C.uchar)(unsafe.Pointer(&monoFontTTF[0])), C.int(len(monoFontTTF)), C.float(sizePx))
+}
+
+// SetUIFontScale sets the global UI text scale (ImGui 1.92 style.FontScaleMain), where 1.0 is the
+// baked size. Unlike SetUIFont it needs no atlas rebuild and is safe to call every frame, so the
+// head drives it live from the user's UI-scale preference. Non-positive values are ignored.
+func (w *Window) SetUIFontScale(scale float32) {
+	C.obk_head_set_font_scale(C.float(scale))
 }

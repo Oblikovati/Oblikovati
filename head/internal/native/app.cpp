@@ -287,6 +287,14 @@ void obk_head_set_mono_font(const unsigned char* data, int len, float sizePx) {
 // obk_head_mono_font exposes the retained mono face to the draw helpers in imgui_wrap.cpp.
 ImFont* obk_head_mono_font(void) { return g_monoFont; }
 
+// obk_head_set_font_scale sets ImGui's global text scale (style.FontScaleMain, ImGui 1.92's
+// dynamic-font knob — io.FontGlobalScale was removed). All UI text rescales next frame with no
+// atlas rebuild; the mono editor helpers in imgui_wrap.cpp read it too so the code editor tracks
+// the user's UI-scale preference. Safe to call every frame (#1232 follow-up).
+void obk_head_set_font_scale(float scale) {
+    if (scale > 0.0f) ImGui::GetStyle().FontScaleMain = scale;
+}
+
 int obk_head_should_close(void* h) {
     HeadContext* c = (HeadContext*)h;
     return glfwWindowShouldClose(c->window) ? 1 : 0;
