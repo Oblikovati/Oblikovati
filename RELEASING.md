@@ -22,7 +22,7 @@ Add-ins are **not** shipped; they are maintained by external vendors.
   last stable release, per SemVer: a `feat` (or a breaking change) bumps **MINOR** and
   resets PATCH; a `fix` bumps **PATCH**. They **reset to `0.0`** whenever MANUAL_MAJOR or
   API_VERSION changes (a new line gets its own sequence). Nightlies append a compact
-  UTC build stamp `-nightly.YYMMDDTHH` (two-digit year, date, hour — a semver prerelease).
+  UTC build stamp `-nightly.YYMMDDHH` (two-digit year, date, hour — a semver prerelease).
 
 [`cmd/obkversion`](cmd/obkversion) computes the whole string; its logic lives in the
 tested [`release`](release) package. It reads `version.yaml`, the api pin, and git
@@ -30,7 +30,7 @@ tags + commit history — so it needs a full checkout (`fetch-depth: 0`):
 
 ```sh
 go run ./cmd/obkversion stable    # -> 0.000200.1.0          (e.g.)
-go run ./cmd/obkversion nightly   # -> 0.000200.1.0-nightly.260602T12
+go run ./cmd/obkversion nightly   # -> 0.000200.1.0-nightly.26060212
 ```
 
 ### Bumping the version
