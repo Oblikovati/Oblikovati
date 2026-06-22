@@ -163,13 +163,20 @@ func (s *Sketch) dropConstraintsTouching(ents []Entity) {
 			moved[&p.Y] = true
 		}
 	}
+	s.dropConstraintsOnVars(moved)
+}
+
+// dropConstraintsOnVars removes every geometric constraint and dimension that reads any
+// of the given solver variables (matched by scalar-pointer identity) — the shared half of
+// the move-into-block (dropConstraintsTouching) and delete (DeleteEntities) paths.
+func (s *Sketch) dropConstraintsOnVars(vars map[*math.Scalar]bool) {
 	for _, c := range s.geomCons.All() {
-		if constraintTouches(c, moved) {
+		if constraintTouches(c, vars) {
 			s.geomCons.Delete(c)
 		}
 	}
 	for _, d := range append([]*DimensionConstraint(nil), s.dimCons.items...) {
-		if constraintTouches(d, moved) {
+		if constraintTouches(d, vars) {
 			s.dimCons.Delete(d)
 		}
 	}
