@@ -6,8 +6,23 @@ import (
 	"testing"
 
 	"oblikovati.org/math"
+	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/model/sketch"
 )
+
+// partWithSketches returns a session whose active document is an empty part ready to host profiles.
+func partWithSketches(t *testing.T) (*Session, *compdef.PartComponentDefinition) {
+	t.Helper()
+	s := NewSession()
+	def := compdef.NewPartComponentDefinition()
+	pd, err := s.Workspace().Add(doc.Part, "network.obk", true)
+	if err != nil {
+		t.Fatalf("Add part: %v", err)
+	}
+	pd.SetContent(def)
+	return s, def
+}
 
 // addSquareProfile adds a closed square profile (offset in x by ox) to the part and returns its handle.
 func addSquareProfile(def interface {
@@ -26,7 +41,7 @@ func addSquareProfile(def interface {
 }
 
 func TestNetworkToolPickAssignsDirections(t *testing.T) {
-	s, def := partWithOneSurface(t)
+	s, def := partWithSketches(t)
 	u1 := addSquareProfile(def, 1, 0)
 	u2 := addSquareProfile(def, 1, 2)
 	v1 := addSquareProfile(def, 1, 4)
@@ -65,7 +80,7 @@ func TestNetworkToolPromptStages(t *testing.T) {
 }
 
 func TestNetworkToolBakesProfilesToModel(t *testing.T) {
-	_, def := partWithOneSurface(t)
+	_, def := partWithSketches(t)
 	h := addSquareProfile(def, 2, 0)
 	lines := bakeProfiles([]ProfileHandle{h})
 	if len(lines) != 1 || len(lines[0]) < 4 {
