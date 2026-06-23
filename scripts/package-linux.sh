@@ -23,10 +23,12 @@ mkdir -p "$appdir/usr/bin"
 cp "$bin" "$appdir/usr/bin/oblikovati-head"
 chmod +x "$appdir/usr/bin/oblikovati-head"
 
-# Placeholder icon until real branding exists (linuxdeploy requires an icon).
+# App icon: render the brand mark from the source SVG (head/cmd/genappicon) so the
+# AppImage + .desktop entry carry the real Oblikovati icon. linuxdeploy requires an icon
+# file; 256px is the standard AppImage app-icon size.
+repo="$(cd "$(dirname "$0")/.." && pwd)"
 icon="$work/oblikovati.png"
-convert -size 256x256 xc:'#2b2f3a' -gravity center -fill '#cdd6f4' -pointsize 140 \
-	-annotate 0 'O' "$icon"
+go -C "$repo/head" run ./cmd/genappicon -format png -size 256 -out "$icon"
 
 cat >"$work/oblikovati.desktop" <<'EOF'
 [Desktop Entry]
