@@ -35,8 +35,8 @@ type loftEndUI struct {
 }
 
 // Condition combo entries: 0 Free, 1 Angle, 2 Direction (profile takeoff), 3 Sharp,
-// 4 Tangent to plane (point/apex sections), 5 Tangent, 6 Smooth (face sections).
-var loftCondLabels = []string{"Free", "Angle", "Direction", "Sharp", "Tangent to plane", "Tangent", "Smooth"}
+// 4 Tangent to plane (point/apex sections), 5 Tangent, 6 Smooth, 7 G3 (face sections).
+var loftCondLabels = []string{"Free", "Angle", "Direction", "Sharp", "Tangent to plane", "Tangent", "Smooth", "G3"}
 
 // drawLoftDialog shows the Loft property panel while the Loft tool is active.
 func drawLoftDialog(s *app.Session) {
@@ -222,6 +222,8 @@ func loftCondAt(i int) feature.LoftCondition {
 		return feature.LoftTangent
 	case 6:
 		return feature.LoftSmooth
+	case 7:
+		return feature.LoftG3
 	default:
 		return feature.LoftFree
 	}
@@ -241,6 +243,8 @@ func loftCondIndex(c feature.LoftCondition) int {
 		return 5
 	case feature.LoftSmooth:
 		return 6
+	case feature.LoftG3:
+		return 7
 	default:
 		return 0
 	}

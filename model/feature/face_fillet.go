@@ -60,7 +60,7 @@ func faceFilletBody(in Input, faceKeysA, faceKeysB [][]byte, radius float64, fea
 	if len(edgeKeys) == 0 {
 		return nonAdjacentFaceFilletBody(in, body, faceKeysA, faceKeysB, radius, feat)
 	}
-	return filletBody(in, edgeKeys, radius, types.FilletCornerMiter, types.FilletConcaveOutward, feat)
+	return filletBody(in, edgeKeys, radius, types.FilletCornerMiter, types.FilletConcaveOutward, blendProfile{}, feat)
 }
 
 // nonAdjacentFaceFilletBody rounds two face sets that share no edge (#694): it deletes the faces in

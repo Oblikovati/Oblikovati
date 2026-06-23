@@ -23,14 +23,45 @@ type FilletTool struct {
 	midPoints       []FilletMidPoint            // optional intermediate radius stops along each edge (#695)
 	cornerType      feature.FilletCornerType    // shared-corner treatment (miter default)
 	concaveStrategy types.FilletConcaveStrategy // concave edges: outward fill (default) or inward recess
+	crossSection    feature.FilletCrossSection  // blend cross-section: arc (default), G2, or conic (#1284)
+	rho             float64                     // conic fullness (0<ρ<1, 0.5 = parabola)
 	added           *feature.PartFeature
 }
 
 // NewFilletTool returns a fillet tool with a default 1-unit radius, mitered corners, and outward
 // concave fill.
 func NewFilletTool() *FilletTool {
-	return &FilletTool{radius: 1, startRadius: 1, endRadius: 1, concaveStrategy: types.FilletConcaveOutward}
+	return &FilletTool{radius: 1, startRadius: 1, endRadius: 1, concaveStrategy: types.FilletConcaveOutward, rho: 0.5}
 }
+
+// filletCrossOrder maps the UI option index to the cross-section enum.
+var filletCrossOrder = []feature.FilletCrossSection{feature.FilletArc, feature.FilletG2, feature.FilletConic}
+
+// FilletCrossSectionOptions are the cross-section labels for the property panel, in index order.
+func FilletCrossSectionOptions() []string {
+	return []string{"Circular (G1)", "Curvature (G2)", "Conic"}
+}
+
+// CrossSectionIndex returns the selected cross-section as a [FilletCrossSectionOptions] index.
+func (t *FilletTool) CrossSectionIndex() int {
+	for i, c := range filletCrossOrder {
+		if c == t.crossSection {
+			return i
+		}
+	}
+	return 0
+}
+
+// SetCrossSectionIndex selects the cross-section from a [FilletCrossSectionOptions] index.
+func (t *FilletTool) SetCrossSectionIndex(i int) {
+	if i >= 0 && i < len(filletCrossOrder) {
+		t.crossSection = filletCrossOrder[i]
+	}
+}
+
+// Rho/SetRho get and set the conic cross-section's fullness (0<ρ<1; only used when Conic is selected).
+func (t *FilletTool) Rho() float64     { return t.rho }
+func (t *FilletTool) SetRho(r float64) { t.rho = r }
 
 // filletConcaveOrder maps the UI option index to the concave-strategy enum (0 outward, 1 inward).
 var filletConcaveOrder = []types.FilletConcaveStrategy{types.FilletConcaveOutward, types.FilletConcaveInward}
@@ -227,7 +258,10 @@ func (t *FilletTool) addFillet(dress *feature.DressUpFeatures) *feature.PartFeat
 		r := t.radius
 		pf = dress.AddFilletCorner(t.selectedEdgeKeys(), func() float64 { return r }, t.cornerType)
 	}
-	pf.Definition().(*feature.FilletFeature).Definition().ConcaveStrategy = t.concaveStrategy
+	def := pf.Definition().(*feature.FilletFeature).Definition()
+	def.ConcaveStrategy = t.concaveStrategy
+	def.CrossSection = t.crossSection
+	def.Rho = t.rho
 	return pf
 }
 

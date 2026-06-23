@@ -131,6 +131,8 @@ func TestDressUpOnSolid(t *testing.T) {
 		args     map[string]any
 	}{
 		{"fillet flat", "fillet", map[string]any{"radius": "1 mm"}},
+		{"fillet g2", "fillet", map[string]any{"radius": "1 mm", "crossSection": "g2"}},
+		{"fillet conic", "fillet", map[string]any{"radius": "1 mm", "crossSection": "conic", "rho": 0.7}},
 		{"fillet outward", "fillet", map[string]any{"radius": "1 mm", "concaveStrategy": "outward"}},
 		{"fillet inward", "fillet", map[string]any{"radius": "1 mm", "concaveStrategy": "inward"}},
 		{"fillet set const", "fillet", map[string]any{"_set": "radius"}},
@@ -249,6 +251,14 @@ func TestDressUpRejectsBadConcaveStrategy(t *testing.T) {
 		if _, err := apply(t, s, c.op, c.args); err == nil {
 			t.Errorf("%s with an unknown concaveStrategy should error", c.op)
 		}
+	}
+}
+
+// TestFilletRejectsBadCrossSection: the fillet op rejects an unknown crossSection (#1284).
+func TestFilletRejectsBadCrossSection(t *testing.T) {
+	s, edge, _ := extrudedSolid(t)
+	if _, err := applyMap(t, s, "fillet", map[string]any{"edgeRefs": []string{edge}, "radius": "1 mm", "crossSection": "wavy"}); err == nil {
+		t.Error("fillet with an unknown crossSection should error")
 	}
 }
 

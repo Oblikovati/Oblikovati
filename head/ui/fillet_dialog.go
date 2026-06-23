@@ -18,8 +18,9 @@ var filletUI = struct {
 	radius      float32
 	startRadius float32
 	endRadius   float32
+	rho         float32         // conic cross-section fullness (#1284)
 	seeded      *app.FilletTool // the tool the fields were seeded from (nil = none)
-}{radius: 1, startRadius: 1, endRadius: 1}
+}{radius: 1, startRadius: 1, endRadius: 1, rho: 0.5}
 
 // drawFilletDialog shows the Fillet property panel while the Fillet tool is active —
 // creating a fillet or re-editing a committed one (the same panel serves both).
@@ -53,10 +54,26 @@ func drawFilletPanelBody(s *app.Session, f *app.FilletTool) {
 	}
 	if propertySection("Behavior") {
 		drawFilletRadiusRows(s, f)
+		drawFilletCrossRows(f)
 		drawFilletCornerRows(f)
 	}
 	native.Separator()
 	drawCommitCancelButtons(s, f.CanCommit())
+}
+
+// drawFilletCrossRows draws the cross-section dropdown (circular/G2/conic) and, for a conic, the
+// fullness (rho) slider — the Class-A blend shape controls (#1284).
+func drawFilletCrossRows(f *app.FilletTool) {
+	if i := propertyComboRow("Cross-section", "fillet-cross", app.FilletCrossSectionOptions(), f.CrossSectionIndex()); i >= 0 {
+		f.SetCrossSectionIndex(i)
+	}
+	if app.FilletCrossSectionOptions()[f.CrossSectionIndex()] == "Conic" {
+		propertyRow("Fullness (ρ)")
+		if native.SliderFloat("##fillet-rho", &filletUI.rho, 0.1, 0.9) {
+			f.SetRho(float64(filletUI.rho))
+		}
+		native.SetItemTooltip("Conic shoulder fullness: 0.5 = parabola, lower = flatter, higher = fuller")
+	}
 }
 
 // drawFilletCornerRows draws the shared-corner treatment and concave-edge strategy dropdowns.
@@ -75,6 +92,7 @@ func seedFilletUI(f *app.FilletTool) {
 	filletUI.radius = float32(f.Radius())
 	filletUI.startRadius = float32(f.StartRadius())
 	filletUI.endRadius = float32(f.EndRadius())
+	filletUI.rho = float32(f.Rho())
 	filletUI.seeded = f
 }
 

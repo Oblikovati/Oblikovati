@@ -88,7 +88,14 @@ func concaveFill(t types.FilletConcaveStrategy) ops.ConcaveFill {
 // ops.FilletEdgesCorner (a real rolling-ball blend with cylinder faces), replacing it in the body
 // list. corner selects how a 2-edge corner is treated. A lost edge, a non-convex edge, or a
 // non-positive radius is an error so the feature goes Sick. See kernel/ops/fillet.go for the geometry.
-func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCornerType, concave types.FilletConcaveStrategy, feat string) (Output, error) {
+// blendProfile is the cross-section shape (M36-F08) carried from the feature into the kernel picks:
+// the section type (arc/G2/conic) and a conic's fullness rho. The zero value is the circular arc.
+type blendProfile struct {
+	cross FilletCrossSection
+	rho   float64
+}
+
+func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCornerType, concave types.FilletConcaveStrategy, prof blendProfile, feat string) (Output, error) {
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
@@ -96,13 +103,18 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 	if radius <= 0 {
 		return Output{}, fmt.Errorf("%s: radius %g must be > 0", feat, radius)
 	}
-	if out, ok, err := analyticFilletFastPath(in, body, edgeKeys, radius, feat); ok || err != nil {
-		return out, err
+	// The analytic fast path builds exact cylinder/torus surfaces (circular arc only); a G2/conic
+	// cross-section must go through the swept ruling band instead.
+	if prof.cross.IsArc() {
+		if out, ok, err := analyticFilletFastPath(in, body, edgeKeys, radius, feat); ok || err != nil {
+			return out, err
+		}
 	}
 	work, keys := planarizedFillet(body, edgeKeys, feat)
 	picks := make([]ops.EdgeFilletRadii, len(keys))
+	cross := opsCrossSection(prof.cross)
 	for i, k := range keys {
-		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius}
+		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius, Cross: cross, Rho: prof.rho}
 	}
 	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner), concaveFill(concave))
 	if err != nil {
@@ -153,15 +165,15 @@ func planarizedFillet(body *topo.Body, edgeKeys [][]byte, feat string) (*topo.Bo
 // filletBodySets rounds the definition's edge sets in one kernel pass: each constant set
 // contributes its edges at one radius, each variable set one edge with a start→end radius.
 // A single constant set routes through filletBody to keep the analytic cylinder-rim path.
-func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, concave types.FilletConcaveStrategy, feat string) (Output, error) {
+func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, concave types.FilletConcaveStrategy, prof blendProfile, feat string) (Output, error) {
 	if len(sets) == 1 && !sets[0].variable() {
-		return filletBody(in, sets[0].EdgeKeys, callOrZero(sets[0].Radius), corner, concave, feat)
+		return filletBody(in, sets[0].EdgeKeys, callOrZero(sets[0].Radius), corner, concave, prof, feat)
 	}
 	body, err := runningBody(in)
 	if err != nil {
 		return Output{}, err
 	}
-	picks, err := filletPicksOf(sets, feat)
+	picks, err := filletPicksOf(sets, prof, feat)
 	if err != nil {
 		return Output{}, err
 	}
@@ -176,13 +188,14 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, con
 // filletPicksOf flattens the edge sets into per-edge radius picks, rejecting a variable set
 // that holds more than one edge (a variable radius runs along ONE edge; tangent chains are a
 // follow-up).
-func filletPicksOf(sets []FilletEdgeSet, feat string) ([]ops.EdgeFilletRadii, error) {
+func filletPicksOf(sets []FilletEdgeSet, prof blendProfile, feat string) ([]ops.EdgeFilletRadii, error) {
 	var out []ops.EdgeFilletRadii
+	cross := opsCrossSection(prof.cross)
 	for _, s := range sets {
 		if !s.variable() {
 			r := callOrZero(s.Radius)
 			for _, k := range s.EdgeKeys {
-				out = append(out, ops.EdgeFilletRadii{Key: k, R0: r, R1: r})
+				out = append(out, ops.EdgeFilletRadii{Key: k, R0: r, R1: r, Cross: cross, Rho: prof.rho})
 			}
 			continue
 		}
@@ -191,7 +204,7 @@ func filletPicksOf(sets []FilletEdgeSet, feat string) ([]ops.EdgeFilletRadii, er
 		}
 		out = append(out, ops.EdgeFilletRadii{
 			Key: s.EdgeKeys[0], R0: callOrZero(s.StartRadius), R1: callOrZero(s.EndRadius),
-			Mids: midRadiiOf(s.RadiusPoints),
+			Mids: midRadiiOf(s.RadiusPoints), Cross: cross, Rho: prof.rho,
 		})
 	}
 	return out, nil
