@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/doc"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -55,10 +56,14 @@ func (s *Session) CreateSketch(plane sketch.Plane) (*sketch.Sketch, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.EnsureActiveEditBaseline() // capture the pre-sketch state so "Create Sketch" is its own step (#1270)
 	sk := host.Sketches().Add(plane)
 	sk.SetParameters(host.Parameters()) // dimension expressions resolve in the host's table
 	autoProjectOrigin(host, sk)
 	s.EnterSketch(sk)
+	// Creating the sketch is its own undo step, so the baseline for the in-sketch operations that
+	// follow is the empty sketch — undoing them reverts each op without removing the sketch (#1270).
+	s.RecordActiveEdit("Create Sketch")
 	return sk, nil
 }
 
@@ -174,6 +179,56 @@ func (s *Session) FinishSketch() error {
 		}
 	}
 	return nil
+}
+
+// reattachActiveSketchAfterRestore re-resolves the active sketch after an undo/redo restored the
+// part — which rebuilds the sketch objects, leaving s.activeSketch dangling. It re-finds the
+// sketch by its stable id, re-enters edit on the fresh object, and clears the now-stale selection
+// so editing continues seamlessly (#1270). A sketch undone past its own creation drops out of the
+// sketch environment. Only the active document's edit is reattached (a background-document jump
+// leaves it untouched).
+func (s *Session) reattachActiveSketchAfterRestore(d *doc.Document) {
+	if d != s.ActiveDocument() {
+		return
+	}
+	if s.activeSketch != nil {
+		s.reattach2DSketch(d)
+	}
+	if s.activeSketch3D != nil {
+		s.reattach3DSketch(d)
+	}
+}
+
+func (s *Session) reattach2DSketch(d *doc.Document) {
+	host, ok := d.Content().(interface {
+		Sketches() *sketch.Sketches
+	})
+	if !ok {
+		return
+	}
+	sk, ok := host.Sketches().ByID(s.activeSketch.ID())
+	if !ok {
+		s.ExitSketch() // the sketch was undone away
+		return
+	}
+	s.activeSketch = sk
+	sk.Edit()
+	s.selection.Clear()
+}
+
+func (s *Session) reattach3DSketch(d *doc.Document) {
+	part, ok := d.Content().(*compdef.PartComponentDefinition)
+	if !ok {
+		return
+	}
+	sk, ok := part.Sketches3D().ByID(s.activeSketch3D.ID())
+	if !ok {
+		s.activeSketch3D = nil
+		return
+	}
+	s.activeSketch3D = sk
+	sk.Edit()
+	s.selection.Clear()
 }
 
 // InSketch reports whether a sketch is currently being edited — the predicate that

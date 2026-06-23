@@ -134,10 +134,16 @@ func (s *Session) UpdateEntityDrag(px, py float64) {
 	s.activeSketch.DragSolve(pins)
 }
 
-// CommitEntityDrag ends the drag. The geometry was moved live during the drag, so this only
-// clears the drag state. (An undo snapshot lands when sketch editing joins the transaction
-// stream — see [[undo-redo-event-stream]].)
-func (s *Session) CommitEntityDrag() { s.entityDrag = sketchDrag{} }
+// CommitEntityDrag ends the drag. The geometry was moved live during the drag, so this clears
+// the drag state and records the move as one undo step (#1270); the recipe no-op guard ignores a
+// drag that didn't actually move anything.
+func (s *Session) CommitEntityDrag() {
+	active := s.entityDrag.active
+	s.entityDrag = sketchDrag{}
+	if active {
+		s.RecordActiveEdit("Move Sketch Geometry")
+	}
+}
 
 // CancelEntityDrag abandons the drag state (e.g. on Escape). Live edits already applied are not
 // rolled back in v1.

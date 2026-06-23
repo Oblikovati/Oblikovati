@@ -71,12 +71,19 @@ func (s *Session) OK() error {
 	if !s.tool.tool.CanCommit() {
 		return errors.New("app: active tool is not ready to commit")
 	}
+	toolName := s.tool.tool.Name()
 	if err := s.tool.tool.Commit(s); err != nil {
 		s.notice = err.Error() // surface why (the status bar shows it); keep the tool open
 		return err
 	}
 	if fp, ok := s.tool.tool.(featureProducer); ok {
 		s.EmitFeatureLifecycle(FeatureAdded, fp.AddedFeature()) // featureAdded for UI-driven creation (#1085)
+	}
+	// In-sketch tool commits (geometry creation, constraints, dimensions, 3D includes) each become
+	// their own undo step, so Ctrl+Z reverts the last sketch operation while editing (#1270). The
+	// recipe no-op guard makes a non-mutating commit record nothing.
+	if s.InSketch() || s.InSketch3D() {
+		s.RecordActiveEdit(toolName)
 	}
 	s.notice = ""
 	s.tool = nil

@@ -47,6 +47,7 @@ func (s *Session) CommitPendingDimension(expression string) error {
 	if s.activeSketch != nil {
 		s.activeSketch.Solve()
 	}
+	s.RecordActiveEdit("Edit Dimension") // one undo step per dimension value change (#1270)
 	return nil
 }
 
