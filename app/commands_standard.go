@@ -378,6 +378,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("control-point-edit").WithButtonStyle(LargeIconButton).
 			WithTooltip("Edit Control Points — drag a NURBS surface's control net to shape it (region, falloff, symmetry)."),
+		NewCommand("Surface.Match", "Match Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewMatchTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("match-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Match Surface — rebuild the surface against its neighbour to G0/G1/G2/G3 continuity."),
 	}
 }
 
