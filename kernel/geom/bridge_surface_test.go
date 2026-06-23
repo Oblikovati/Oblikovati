@@ -73,4 +73,3 @@ func TestBridgeSurfaceRejectsAboveG2(t *testing.T) {
 		t.Error("BridgeSurface should reject G3 (order 3)")
 	}
 }
-
