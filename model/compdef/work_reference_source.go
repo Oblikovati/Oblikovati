@@ -38,6 +38,9 @@ func NewWorkPointRefSource(part *PartComponentDefinition, ref feature.WorkRef) W
 // SourceID returns the datum reference (its stable cross-recompute identity).
 func (s WorkPointRefSource) SourceID() string { return string(s.ref) }
 
+// SourceKind tags this as a work-point reference for projection persistence/rebind (#1268).
+func (s WorkPointRefSource) SourceKind() string { return "workPoint" }
+
 // Position re-resolves the datum point by reference; ok=false when it no longer resolves.
 func (s WorkPointRefSource) Position() (math.Point3, bool) {
 	w, ok := s.work().WorkPointByRef(s.ref)
@@ -68,6 +71,9 @@ func NewWorkAxisRefSource(part *PartComponentDefinition, ref feature.WorkRef) Wo
 
 // SourceID returns the datum axis reference.
 func (s WorkAxisRefSource) SourceID() string { return string(s.ref) }
+
+// SourceKind tags this as a work-axis reference for projection persistence/rebind (#1268).
+func (s WorkAxisRefSource) SourceKind() string { return "workAxis" }
 
 // SamplePoints re-resolves the axis and returns its two endpoints at ±span from the origin;
 // ok=false when the axis no longer resolves.
@@ -105,6 +111,9 @@ func NewWorkPlaneRefSource(part *PartComponentDefinition, ref feature.WorkRef, t
 
 // SourceID returns the datum plane reference.
 func (s WorkPlaneRefSource) SourceID() string { return string(s.ref) }
+
+// SourceKind tags this as a work-plane reference for projection persistence/rebind (#1268).
+func (s WorkPlaneRefSource) SourceKind() string { return "workPlane" }
 
 // SamplePoints re-resolves the work plane and returns the two endpoints of its intersection
 // line with the target sketch plane, at ±span from the line's anchor point; ok=false when

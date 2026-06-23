@@ -37,6 +37,9 @@ func NewEdgeRefSource(part *PartComponentDefinition, ref string) EdgeRefSource {
 // SourceID returns the edge's reference key (its stable cross-recompute identity).
 func (s EdgeRefSource) SourceID() string { return s.ref }
 
+// SourceKind tags this as an edge reference for projection persistence/rebind (#1268).
+func (s EdgeRefSource) SourceKind() string { return "edge" }
+
 // SamplePoints re-resolves the edge by key and samples its curve; ok=false when lost.
 func (s EdgeRefSource) SamplePoints() ([]math.Point3, bool) {
 	key := []byte(s.ref)
@@ -61,6 +64,9 @@ func NewVertexRefSource(part *PartComponentDefinition, ref string) VertexRefSour
 
 // SourceID returns the vertex's reference key.
 func (s VertexRefSource) SourceID() string { return s.ref }
+
+// SourceKind tags this as a vertex reference for projection persistence/rebind (#1268).
+func (s VertexRefSource) SourceKind() string { return "vertex" }
 
 // Position re-resolves the vertex by key; ok=false when lost.
 func (s VertexRefSource) Position() (math.Point3, bool) {

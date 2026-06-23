@@ -87,6 +87,8 @@ type EntityData struct {
 	Fit          bool      `yaml:"fit,omitempty"`
 	Construction bool      `yaml:"construction,omitempty"`
 	Centerline   bool      `yaml:"centerline,omitempty"`   // line only: an axis
+	Source       string    `yaml:"source,omitempty"`       // projected*: the source's SourceID
+	SourceKind   string    `yaml:"sourceKind,omitempty"`   // projected*: vertex|edge|workPoint|workAxis|workPlane
 	ImageRef     string    `yaml:"imageRef,omitempty"`     // image only
 	Anchor       []float64 `yaml:"anchor,omitempty"`       // image/text: [x, y]
 	Size         []float64 `yaml:"size,omitempty"`         // image only: [w, h]
@@ -290,6 +292,15 @@ func serializeEntity(e Entity) (EntityData, error) {
 			Size:     []float64{float64(v.Width), float64(v.Height)},
 			Rotation: float64(v.Rotation), Opacity: v.Opacity,
 		}, nil
+	case *ProjectedPoint:
+		kind, id := v.SourceDescriptor()
+		return EntityData{
+			ID: int(v.anchor.id), Kind: "projectedPoint", Points: []int{int(v.anchor.id)},
+			Anchor: []float64{float64(v.anchor.X), float64(v.anchor.Y)}, Source: id, SourceKind: kind,
+		}, nil
+	case *ProjectedCurve:
+		kind, id := v.SourceDescriptor()
+		return EntityData{ID: int(v.id), Kind: "projectedCurve", Coords: flattenPoints(v.points), Source: id, SourceKind: kind}, nil
 	case *FillRegion:
 		return EntityData{ID: int(v.id), Kind: "fillRegion", Seed: []float64{float64(v.Seed.X), float64(v.Seed.Y)}, Style: v.Style}, nil
 	case *TextBox:

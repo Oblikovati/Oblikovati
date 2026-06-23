@@ -65,6 +65,79 @@ func TestProjectedPointIsConstrainableAnchor(t *testing.T) {
 	}
 }
 
+// kindedVertex/kindedEdge are kinded fake sources, so the projection records a source kind for
+// persistence (the unkinded movableVertex/Edge record "").
+type kindedVertex struct{ movableVertex }
+
+func (kindedVertex) SourceKind() string { return "vertex" }
+
+type kindedEdge struct{ movableEdge }
+
+func (kindedEdge) SourceKind() string { return "edge" }
+
+// TestProjectedSourceDescriptorAndRebind covers the persistence seam: a projection records its
+// source (kind, id); a restored-frozen projection keeps the descriptor and re-links + re-projects
+// once a live source is rebound (#1268).
+func TestProjectedSourceDescriptorAndRebind(t *testing.T) {
+	live := NewSketches().Add(XYPlane())
+	pp := live.ProjectPoint(&kindedVertex{movableVertex{id: "v1", pos: math.P3(1, 2, 0)}})
+	if k, id := pp.SourceDescriptor(); k != "vertex" || id != "v1" {
+		t.Errorf("point descriptor = (%q,%q), want (vertex,v1)", k, id)
+	}
+	pc := live.ProjectCurve(&kindedEdge{movableEdge{id: "e1", samples: []math.Point3{{X: 0}, {X: 1}}}})
+	if k, id := pc.SourceDescriptor(); k != "edge" || id != "e1" {
+		t.Errorf("curve descriptor = (%q,%q), want (edge,e1)", k, id)
+	}
+
+	s := NewSketches().Add(XYPlane())
+	rp := s.RestoreProjectedPoint(ID(7), math.P2(1, 2), "vertex", "v1")
+	if rp.Linked() {
+		t.Error("a restored projection starts frozen (no live source yet)")
+	}
+	rp.Rebind(&movableVertex{id: "v1", pos: math.P3(5, 6, 0)})
+	rp.Update()
+	if !rp.Linked() || !rp.Position().IsEqualTo(math.P2(5, 6), tol) {
+		t.Errorf("after rebind+update the point should track its source, got %v linked=%v", rp.Position(), rp.Linked())
+	}
+
+	rc := s.RestoreProjectedCurve(ID(8), []math.Point2{{X: 0}, {X: 1}}, "edge", "e1")
+	if k, id := rc.SourceDescriptor(); k != "edge" || id != "e1" {
+		t.Errorf("restored curve descriptor = (%q,%q), want (edge,e1)", k, id)
+	}
+	rc.Rebind(&movableEdge{id: "e1", samples: []math.Point3{{X: 0}, {X: 2}, {X: 4}}})
+	rc.Update()
+	if !rc.Linked() || len(rc.Points()) != 3 {
+		t.Errorf("after rebind the curve should re-project, got %d points linked=%v", len(rc.Points()), rc.Linked())
+	}
+}
+
+// TestProjectedAnchorIsPickable proves the projected anchor appears in AllPoints — the
+// pick/snap/selection candidate set — so a coincident constraint can actually be picked to it
+// (#1268; the anchor was previously omitted, so the user's click found nothing and no
+// constraint was ever created).
+func TestProjectedAnchorIsPickable(t *testing.T) {
+	s := NewSketches().Add(XYPlane())
+	pp := s.ProjectPoint(&movableVertex{id: "v1", pos: math.P3(4, 2, 0)})
+	free := s.Points().Add(math.P2(0, 0))
+
+	pts := s.AllPoints()
+	if !containsPoint(pts, pp.Anchor()) {
+		t.Error("AllPoints must include the projected anchor so it can be picked/snapped")
+	}
+	if !containsPoint(pts, free) {
+		t.Error("AllPoints must still include free points")
+	}
+}
+
+func containsPoint(pts []*Point, p *Point) bool {
+	for _, q := range pts {
+		if q == p {
+			return true
+		}
+	}
+	return false
+}
+
 // TestProjectedLostReferenceFreezes checks UpdateProjections breaks the link and freezes
 // geometry when a projected source's reference is lost.
 func TestProjectedLostReferenceFreezes(t *testing.T) {
@@ -151,5 +224,50 @@ func TestProjectCutEdgesProjectsEachSource(t *testing.T) {
 	curves[0].BreakLink()
 	if curves[0].Linked() || curves[0].SourceID() != "" {
 		t.Error("broken curve link still reports linked/source")
+	}
+}
+
+// TestProjectedGeometrySerializeRoundTrip exercises the model-side serialize/restore of projected
+// geometry (the codec that used to be missing, #1268): a projected point and curve survive a
+// MarshalRecipe→ApplyRecipe, restoring frozen with their anchor id, geometry and source
+// descriptor preserved (the host rebinds the live source separately).
+func TestProjectedGeometrySerializeRoundTrip(t *testing.T) {
+	sc := NewSketches()
+	s := sc.Add(XYPlane())
+	pp := s.ProjectPoint(&kindedVertex{movableVertex{id: "v9", pos: math.P3(2, 3, 0)}})
+	anchorID := pp.EntityID()
+	s.ProjectCurve(&kindedEdge{movableEdge{id: "e9", samples: []math.Point3{{X: 0}, {X: 1, Y: 1}}}})
+
+	out := roundTrip(t, sc)
+	var rp *ProjectedPoint
+	var rc *ProjectedCurve
+	for _, e := range out.Entities() {
+		switch v := e.(type) {
+		case *ProjectedPoint:
+			rp = v
+		case *ProjectedCurve:
+			rc = v
+		}
+	}
+	if rp == nil || rc == nil {
+		t.Fatalf("projected geometry lost on round trip: point=%v curve=%v", rp, rc)
+	}
+	if rp.EntityID() != anchorID {
+		t.Errorf("restored anchor id = %d, want %d (constraints reference it)", rp.EntityID(), anchorID)
+	}
+	if !rp.Position().IsEqualTo(math.P2(2, 3), tol) {
+		t.Errorf("restored projected point at %v, want frozen (2,3)", rp.Position())
+	}
+	if k, id := rp.SourceDescriptor(); k != "vertex" || id != "v9" {
+		t.Errorf("restored point descriptor = (%q,%q), want (vertex,v9)", k, id)
+	}
+	if rp.Linked() {
+		t.Error("restored projection should be frozen until the host rebinds it")
+	}
+	if k, id := rc.SourceDescriptor(); k != "edge" || id != "e9" {
+		t.Errorf("restored curve descriptor = (%q,%q), want (edge,e9)", k, id)
+	}
+	if len(rc.Points()) != 2 {
+		t.Errorf("restored curve has %d points, want 2", len(rc.Points()))
 	}
 }
