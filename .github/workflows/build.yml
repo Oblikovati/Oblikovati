@@ -246,6 +246,15 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
+      # Go + the api contract so package-macos.sh can render the .icns from the source SVG
+      # via head/cmd/genappicon (pure Go; no brew deps). iconutil ships with the runner.
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.24"
+          cache: false
+      - uses: ./.github/actions/api-contract
+        with:
+          modules: head
       - uses: actions/download-artifact@v7
         with:
           pattern: head-macos-stage-*

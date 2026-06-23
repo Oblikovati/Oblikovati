@@ -51,6 +51,7 @@ cat >"$app/Contents/Info.plist" <<EOF
 	<key>CFBundleIdentifier</key><string>com.oblikovati.head</string>
 	<key>CFBundleName</key><string>Oblikovati</string>
 	<key>CFBundleDisplayName</key><string>Oblikovati</string>
+	<key>CFBundleIconFile</key><string>Oblikovati</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
 	<key>CFBundleShortVersionString</key><string>${version}</string>
 	<key>CFBundleVersion</key><string>${version}</string>
@@ -79,5 +80,34 @@ for dep in $(otool -L "$macos/oblikovati-head" | awk 'NR>1{print $1}'); do
 done
 otool -l "$macos/oblikovati-head" | grep -q "@executable_path/../Frameworks" \
 	|| install_name_tool -add_rpath "@executable_path/../Frameworks" "$macos/oblikovati-head"
+
+# App/dock icon: render the brand mark from the source SVG (head/cmd/genappicon) into the
+# Apple .icns the Info.plist's CFBundleIconFile points at. genappicon needs Go + the head
+# module (the CI job sets these up via setup-go + the api-contract action); iconutil is in
+# the Xcode CLT. Best-effort: a local assembly without them still yields a runnable bundle.
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+if command -v go >/dev/null && command -v iconutil >/dev/null; then
+	iconset="$(mktemp -d)/Oblikovati.iconset"
+	mkdir -p "$iconset"
+	# size + canonical iconset member name (Retina @2x members are the next size up).
+	while read -r size name; do
+		go -C "$repo/head" run ./cmd/genappicon -format png -size "$size" -out "$iconset/$name.png"
+	done <<'SIZES'
+16 icon_16x16
+32 icon_16x16@2x
+32 icon_32x32
+64 icon_32x32@2x
+128 icon_128x128
+256 icon_128x128@2x
+256 icon_256x256
+512 icon_256x256@2x
+512 icon_512x512
+1024 icon_512x512@2x
+SIZES
+	iconutil -c icns "$iconset" -o "$app/Contents/Resources/Oblikovati.icns"
+	echo "icon: wrote $app/Contents/Resources/Oblikovati.icns"
+else
+	echo "package-macos: go or iconutil missing — skipping the app icon (bundle still runnable)"
+fi
 
 echo "assembled $app"

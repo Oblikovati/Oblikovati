@@ -25,6 +25,7 @@ void  obk_head_destroy(void* h);
 void  obk_head_get_window_state(void* h, int* x, int* y, int* w, int* hh, int* maximized);
 void  obk_head_apply_window_state(void* h, int x, int y, int maximized);
 void  obk_head_gpu_info(void* h, char* nameOut, int nameCap, unsigned int* apiVersionOut);
+void  obk_head_set_icon(void* h, int count, const int* sizes, const unsigned char* const* pixels);
 */
 import "C"
 
