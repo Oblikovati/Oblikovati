@@ -30,6 +30,8 @@ type edgeDressArgs struct {
 	FaceRefsA       []string        `json:"faceRefsA,omitempty"`       // fillet face-fillet: first face set (#694)
 	FaceRefsB       []string        `json:"faceRefsB,omitempty"`       // fillet face-fillet: second face set
 	CornerType      string          `json:"cornerType,omitempty"`      // fillet shared-corner treatment (default miter)
+	CrossSection    string          `json:"crossSection,omitempty"`    // fillet blend cross-section (default arc; #1284)
+	Rho             float64         `json:"rho,omitempty"`             // fillet conic fullness (0<ρ<1, 0.5=parabola)
 	ChamferType     string          `json:"chamferType,omitempty"`     // chamfer mode (default distance)
 	Distance2       string          `json:"distance2,omitempty"`       // chamfer twoDistances
 	Angle           string          `json:"angle,omitempty"`           // chamfer distanceAndAngle
@@ -70,6 +72,8 @@ const filletSchema = `{
       }, "required": ["t", "radius"]}}
     }, "required": ["edgeRefs"]}},
     "cornerType": {"type": "string", "enum": ["miter", "setback", "round"], "default": "miter", "description": "How a vertex where two filleted edges meet (third edge sharp) is treated: miter (exact crease), round (fillets the third edge into a smooth sphere). setback is reserved."},
+    "crossSection": {"type": "string", "enum": ["arc", "g2", "conic"], "default": "arc", "description": "Blend cross-section shape (#1284): arc = circular rolling-ball (G1, default), g2 = curvature-continuous (no highlight break at the tangency lines), conic = rho-controlled. G2/conic apply to planar-walled edge fillets."},
+    "rho": {"type": "number", "minimum": 0.1, "maximum": 0.9, "description": "Conic fullness when crossSection=conic: 0.5 = parabola, lower = flatter, higher = fuller."},
     "concaveStrategy": {"type": "string", "enum": ["outward", "inward"], "default": "outward", "description": "Concave (internal) edge handling: outward fills the inside corner with an exact rolling-ball cylinder (default). inward rounds a recess into the corner and is only valid where the faces extend into the material (e.g. a pocket). Convex edges ignore this."}
   }
 }`
@@ -148,11 +152,7 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	if err := json.Unmarshal(raw, &in); err != nil {
 		return nil, err
 	}
-	corner, err := filletCornerOf(in.CornerType)
-	if err != nil {
-		return nil, err
-	}
-	cs, err := filletConcaveStrategyOf(in.ConcaveStrategy)
+	corner, cs, prof, err := filletControls(in)
 	if err != nil {
 		return nil, err
 	}
@@ -160,9 +160,42 @@ func applyFillet(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 		return applyFaceFillet(part, in)
 	}
 	if len(in.EdgeSets) > 0 {
-		return applyFilletSets(part, in.EdgeSets, corner, cs)
+		return applyFilletSets(part, in.EdgeSets, corner, cs, prof)
 	}
-	return applyFilletFlat(part, in, corner, cs)
+	return applyFilletFlat(part, in, corner, cs, prof)
+}
+
+// blendProfileArgs carries the parsed cross-section + rho into the fillet apply functions.
+type blendProfileArgs struct {
+	cross types.FilletCrossSection
+	rho   float64
+}
+
+// filletControls parses the fillet op's shared controls: the corner treatment, concave strategy, and
+// blend cross-section/rho (each defaulting when absent, erroring on an unknown spelling).
+func filletControls(in edgeDressArgs) (types.FilletCornerType, types.FilletConcaveStrategy, blendProfileArgs, error) {
+	corner, err := filletCornerOf(in.CornerType)
+	if err != nil {
+		return 0, 0, blendProfileArgs{}, err
+	}
+	cs, err := filletConcaveStrategyOf(in.ConcaveStrategy)
+	if err != nil {
+		return 0, 0, blendProfileArgs{}, err
+	}
+	cross, err := filletCrossOf(in.CrossSection)
+	if err != nil {
+		return 0, 0, blendProfileArgs{}, err
+	}
+	return corner, cs, blendProfileArgs{cross: cross, rho: in.Rho}, nil
+}
+
+// filletCrossOf resolves the optional crossSection wire spelling (empty ⇒ arc).
+func filletCrossOf(spelling string) (types.FilletCrossSection, error) {
+	c, ok := types.ParseFilletCrossSection(spelling)
+	if !ok {
+		return "", fmt.Errorf("fillet: unknown crossSection %q (want arc, g2, or conic)", spelling)
+	}
+	return c, nil
 }
 
 const fullRoundSchema = `{
@@ -224,7 +257,7 @@ func applyFaceFillet(part *compdef.PartComponentDefinition, in edgeDressArgs) (j
 
 // applyFilletFlat builds the flat (edgeRefs + single radius) fillet with the chosen corner
 // treatment and concave-edge strategy.
-func applyFilletFlat(part *compdef.PartComponentDefinition, in edgeDressArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy) (json.RawMessage, error) {
+func applyFilletFlat(part *compdef.PartComponentDefinition, in edgeDressArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy, prof blendProfileArgs) (json.RawMessage, error) {
 	if len(in.EdgeRefs) == 0 {
 		return nil, errors.New("fillet: edgeRefs is empty (give edgeRefs+radius or edgeSets)")
 	}
@@ -233,20 +266,28 @@ func applyFilletFlat(part *compdef.PartComponentDefinition, in edgeDressArgs, co
 		return nil, err
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddFilletCorner(refKeys(in.EdgeRefs), r, corner)
-	pf.Definition().(*feature.FilletFeature).Definition().ConcaveStrategy = cs
+	applyDressProfile(pf, cs, prof)
 	return recomputeResult(part, pf)
 }
 
-// applyFilletSets decodes the edge-set form and adds the fillet with the chosen corner treatment
-// and concave-edge strategy.
-func applyFilletSets(part *compdef.PartComponentDefinition, args []filletSetArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy) (json.RawMessage, error) {
+// applyFilletSets decodes the edge-set form and adds the fillet with the chosen corner treatment,
+// concave-edge strategy, and blend cross-section.
+func applyFilletSets(part *compdef.PartComponentDefinition, args []filletSetArgs, corner types.FilletCornerType, cs types.FilletConcaveStrategy, prof blendProfileArgs) (json.RawMessage, error) {
 	sets, err := filletSetsFromArgs(part, args)
 	if err != nil {
 		return nil, err
 	}
 	pf := feature.NewDressUpFeatures(part.Features()).AddFilletSetsCorner(sets, corner)
-	pf.Definition().(*feature.FilletFeature).Definition().ConcaveStrategy = cs
+	applyDressProfile(pf, cs, prof)
 	return recomputeResult(part, pf)
+}
+
+// applyDressProfile sets the concave strategy and blend cross-section/rho on a freshly-added fillet.
+func applyDressProfile(pf *feature.PartFeature, cs types.FilletConcaveStrategy, prof blendProfileArgs) {
+	def := pf.Definition().(*feature.FilletFeature).Definition()
+	def.ConcaveStrategy = cs
+	def.CrossSection = prof.cross
+	def.Rho = prof.rho
 }
 
 // filletConcaveStrategyOf resolves the optional concaveStrategy wire spelling (empty ⇒ outward).

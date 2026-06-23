@@ -18,14 +18,33 @@ type FilletRadiusPoint struct {
 	T, R float64
 }
 
+// FilletCrossSection is the shape of a fillet's cross-section profile (M36-F08). The default arc is
+// the circular rolling-ball blend (G1 — tangent to both walls); G2 and Conic flow more smoothly for
+// Class-A styling, where the tell-tale circular-arc highlight break is unacceptable.
+type FilletCrossSection int
+
+const (
+	// FilletArc is the circular rolling-ball cross-section (G1, the default/zero value).
+	FilletArc FilletCrossSection = iota
+	// FilletG2 is a curvature-continuous cross-section: zero curvature at both tangency lines, so a
+	// blend between flat walls has NO curvature jump where it meets them (a quintic profile).
+	FilletG2
+	// FilletConic is a conic (rho-controlled) cross-section: a rational quadratic whose shoulder
+	// fullness is set by Rho (0<ρ<1; 0.5 = parabola, <0.5 flatter/elliptic, >0.5 fuller/hyperbolic).
+	FilletConic
+)
+
 // EdgeFilletRadii is one picked edge with its blend radius at each end: R0 at the edge's
 // start vertex, R1 at its end vertex. Equal radii give a constant fillet; differing radii a
 // variable fillet whose radius runs linearly along the edge (#323). Mids adds intermediate radius
 // points the blend interpolates through (#695), sorted by T; empty = the plain R0→R1 taper.
+// Cross selects the cross-section shape (default arc); Rho sets a conic's fullness (#1284).
 type EdgeFilletRadii struct {
 	Key    []byte
 	R0, R1 float64
 	Mids   []FilletRadiusPoint
+	Cross  FilletCrossSection
+	Rho    float64
 }
 
 // FilletEdges rounds the selected convex straight edges of a planar solid with a constant-
@@ -127,16 +146,23 @@ func filletResolvedEdges(body *topo.Body, edges []filletPick, concave ConcaveFil
 	return res, nil
 }
 
-// filletPick is one resolved fillet input: the edge and its per-end radii.
+// filletPick is one resolved fillet input: the edge, its per-end radii, and cross-section.
 type filletPick struct {
 	edge   *topo.Edge
 	r0, r1 float64
 	mids   []FilletRadiusPoint
+	cross  FilletCrossSection
+	rho    float64
 }
 
 // varying reports whether the pick's radius changes along the edge (differing ends, or any
 // intermediate radius point that bulges/pinches the profile).
 func (p filletPick) varying() bool { return p.r0 != p.r1 || len(p.mids) > 0 }
+
+// chordPath reports whether the fillet builds via the chord-sampled ruling band rather than the
+// analytic cylinder: a varying radius OR any non-arc (G2/conic) cross-section, since those are swept
+// NURBS profiles, not a cylinder.
+func (p filletPick) chordPath() bool { return p.varying() || p.cross != FilletArc }
 
 // resolveFilletPicks resolves the edge reference keys against the body, erroring on a lost
 // key or a non-positive radius.
@@ -153,7 +179,7 @@ func resolveFilletPicks(body *topo.Body, picks []EdgeFilletRadii) ([]filletPick,
 		if !ok {
 			return nil, fmt.Errorf("fillet: edge reference lost: %x", p.Key)
 		}
-		out = append(out, filletPick{edge: e, r0: p.R0, r1: p.R1, mids: p.Mids})
+		out = append(out, filletPick{edge: e, r0: p.R0, r1: p.R1, mids: p.Mids, cross: p.Cross, rho: p.Rho})
 	}
 	return out, nil
 }
@@ -256,9 +282,9 @@ func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[ui
 	if err != nil {
 		return edgeFillet{}, err
 	}
-	if p.varying() {
-		sampleCornerChords(&c0, &c1, in)
-		mids := midProfiles(e, in, p.mids, cornerChordCount(in))
+	if p.chordPath() {
+		sampleCornerChords(&c0, &c1, in, p.cross, p.rho)
+		mids := midProfiles(e, in, p.mids, cornerChordCount(in), p.cross, p.rho)
 		return edgeFillet{a: in.a, b: in.b, c0: c0, c1: c1, mids: mids, edge: e, varying: true, flip: in.flip}, nil
 	}
 	cyl, err := geom.NewCylinder(c0.cen, in.axis, p.r0)
@@ -271,10 +297,10 @@ func solvedEdgeFillet(e *topo.Edge, p filletPick, in cornerInputs, blends map[ui
 // edgeCorners solves the rounded corners at both endpoints of an edge (each blended when its
 // vertex is a shared corner), with the pick's per-end radius.
 func edgeCorners(e *topo.Edge, p filletPick, in cornerInputs, blends map[uint64]*cornerBlend, miters map[uint64]*cornerMiter) (c0, c1 corner, err error) {
-	if c0, err = cornerAt(e.StartVertex(), in, p.r0, blends[e.StartVertex().ID()], miters[e.StartVertex().ID()], p.varying()); err != nil {
+	if c0, err = cornerAt(e.StartVertex(), in, p.r0, blends[e.StartVertex().ID()], miters[e.StartVertex().ID()], p.chordPath()); err != nil {
 		return corner{}, corner{}, err
 	}
-	c1, err = cornerAt(e.EndVertex(), in, p.r1, blends[e.EndVertex().ID()], miters[e.EndVertex().ID()], p.varying())
+	c1, err = cornerAt(e.EndVertex(), in, p.r1, blends[e.EndVertex().ID()], miters[e.EndVertex().ID()], p.chordPath())
 	return c0, c1, err
 }
 
@@ -319,7 +345,7 @@ func validateRadiusPoints(mids []FilletRadiusPoint) error {
 // midProfiles builds one corner cross-section per intermediate radius point: the rolling-ball circle
 // at the interpolated edge point and radius, sampled as chords with the same frame as the end corners
 // (#695). They have no end face/blend — they are pure ruling profiles between c0 and c1.
-func midProfiles(e *topo.Edge, in cornerInputs, mids []FilletRadiusPoint, k int) []corner {
+func midProfiles(e *topo.Edge, in cornerInputs, mids []FilletRadiusPoint, k int, cross FilletCrossSection, rho float64) []corner {
 	if len(mids) == 0 {
 		return nil
 	}
@@ -330,18 +356,31 @@ func midProfiles(e *topo.Edge, in cornerInputs, mids []FilletRadiusPoint, k int)
 		p := p0.TranslateBy(span.Scale(m.T))
 		cen := p.TranslateBy(in.offDir.Scale(m.R))
 		c := corner{a: in.a, b: in.b, cen: cen, ta: cen.TranslateBy(in.nA.Scale(m.R)), tb: cen.TranslateBy(in.nB.Scale(m.R))}
-		c.chords = arcChords(c, in, k)
+		c.chords = crossSectionChords(c, in, k, cross, rho)
 		out = append(out, c)
 	}
 	return out
 }
 
-// sampleCornerChords samples both corners' arcs at the same angular stations, so chord j of
-// one corner pairs with chord j of the other as a straight ruling of the blend cone.
-func sampleCornerChords(c0, c1 *corner, in cornerInputs) {
+// sampleCornerChords samples both corners' cross-section profiles at the same stations, so chord j of
+// one corner pairs with chord j of the other as a straight ruling of the blend band.
+func sampleCornerChords(c0, c1 *corner, in cornerInputs, cross FilletCrossSection, rho float64) {
 	k := cornerChordCount(in)
-	c0.chords = arcChords(*c0, in, k)
-	c1.chords = arcChords(*c1, in, k)
+	c0.chords = crossSectionChords(*c0, in, k, cross, rho)
+	c1.chords = crossSectionChords(*c1, in, k, cross, rho)
+}
+
+// crossSectionChords samples a corner's cross-section ta…tb into k+1 points for the requested shape
+// (M36-F08): the circular arc (G1), a curvature-continuous G2 quintic, or a rho-controlled conic.
+func crossSectionChords(c corner, in cornerInputs, k int, cross FilletCrossSection, rho float64) []math.Point3 {
+	switch cross {
+	case FilletG2:
+		return g2Chords(c, in, k)
+	case FilletConic:
+		return conicChords(c, in, k, rho)
+	default:
+		return arcChords(c, in, k)
+	}
 }
 
 // arcChords samples a corner's arc ta…tb as k+1 points: cen + r·slerp(nA→nB), the exact
@@ -354,6 +393,80 @@ func arcChords(c corner, in cornerInputs, k int) []math.Point3 {
 		out[j] = c.cen.TranslateBy(dir.Scale(r))
 	}
 	return out
+}
+
+// shoulder is the sharp-corner point where the two walls' tangent lines (at ta along wall A, at tb
+// along wall B) meet — cen + r·(nA+nB)/(1+nA·nB) — the apex a conic/G2 cross-section pulls toward.
+func shoulder(c corner, in cornerInputs) math.Point3 {
+	r := c.cen.DistanceTo(c.ta)
+	cdot := in.nA.Dot(in.nB)
+	return c.cen.TranslateBy(in.nA.Add(in.nB).Scale(r / (1 + cdot)))
+}
+
+// conicChords samples a rho-controlled conic cross-section (rational quadratic Bézier ta–S–tb) into
+// k+1 points. The shoulder weight w follows the projective discriminant rho = w/(1+w): rho=0.5 ⇒ w=1
+// (parabola), rho<0.5 flatter, rho>0.5 fuller. rho≤0 or ≥1 falls back to the parabola.
+func conicChords(c corner, in cornerInputs, k int, rho float64) []math.Point3 {
+	s := shoulder(c, in)
+	if rho <= 0 || rho >= 1 {
+		rho = 0.5
+	}
+	w := rho / (1 - rho) // shoulder weight
+	out := make([]math.Point3, k+1)
+	for j := 0; j <= k; j++ {
+		out[j] = rationalQuad(c.ta, s, c.tb, w, float64(j)/float64(k))
+	}
+	return out
+}
+
+// rationalQuad evaluates the rational quadratic Bézier with end weights 1 and shoulder weight w at t.
+func rationalQuad(p0, p1, p2 math.Point3, w, t float64) math.Point3 {
+	b0 := (1 - t) * (1 - t)
+	b1 := 2 * (1 - t) * t * w
+	b2 := t * t
+	den := b0 + b1 + b2
+	x := (b0*float64(p0.X) + b1*float64(p1.X) + b2*float64(p2.X)) / den
+	y := (b0*float64(p0.Y) + b1*float64(p1.Y) + b2*float64(p2.Y)) / den
+	z := (b0*float64(p0.Z) + b1*float64(p1.Z) + b2*float64(p2.Z)) / den
+	return math.P3(math.Scalar(x), math.Scalar(y), math.Scalar(z))
+}
+
+// g2Chords samples a curvature-continuous (G2) cross-section into k+1 points. It is a quintic Bézier
+// whose first three control points are collinear along wall A's tangent (ta→shoulder) and last three
+// along wall B's (shoulder→tb), so the profile's curvature is ZERO at both tangency lines — matching
+// the flat walls' zero curvature, i.e. no curvature jump where the blend meets them.
+func g2Chords(c corner, in cornerInputs, k int) []math.Point3 {
+	s := shoulder(c, in)
+	ctrl := [6]math.Point3{
+		c.ta, lerp3(c.ta, s, 1.0/3), lerp3(c.ta, s, 2.0/3),
+		lerp3(s, c.tb, 1.0/3), lerp3(s, c.tb, 2.0/3), c.tb,
+	}
+	out := make([]math.Point3, k+1)
+	for j := 0; j <= k; j++ {
+		out[j] = bezier5(ctrl, float64(j)/float64(k))
+	}
+	return out
+}
+
+// lerp3 returns (1−t)·a + t·b.
+func lerp3(a, b math.Point3, t float64) math.Point3 {
+	return math.P3(
+		a.X+(b.X-a.X)*math.Scalar(t),
+		a.Y+(b.Y-a.Y)*math.Scalar(t),
+		a.Z+(b.Z-a.Z)*math.Scalar(t),
+	)
+}
+
+// bezier5 evaluates a quintic Bézier via de Casteljau.
+func bezier5(ctrl [6]math.Point3, t float64) math.Point3 {
+	p := ctrl
+	pts := p[:]
+	for n := 5; n > 0; n-- {
+		for i := 0; i < n; i++ {
+			pts[i] = lerp3(pts[i], pts[i+1], t)
+		}
+	}
+	return pts[0]
 }
 
 // edgePlanarFaces returns the edge's two faces and their outward normals, erroring unless
