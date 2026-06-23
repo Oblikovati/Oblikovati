@@ -20,7 +20,7 @@ import (
 // overwritten from the active theme whenever it changes (ADR-0021). The overlay files
 // read these vars by name exactly as before.
 var (
-	gridMinorColor, gridMajorColor, gridAxisColor          [4]float32
+	gridMinorColor, gridMajorColor                         [4]float32
 	sketchColor, sketchSelectedColor, sketchCandidateColor [4]float32
 	previewColor                                           [4]float32 // rubber-band preview
 	dimensionColor, dimensionDrivenColor                   [4]float32
@@ -91,7 +91,6 @@ func refreshThemeColors(t contract.Theme) {
 func refreshGridThemeColors(arr func(types.ThemeToken) [4]float32) {
 	gridMinorColor = arr(types.TokenGridMinor)
 	gridMajorColor = arr(types.TokenGridMajor)
-	gridAxisColor = arr(types.TokenGridAxis)
 }
 
 func refreshSketchThemeColors(arr func(types.ThemeToken) [4]float32) {

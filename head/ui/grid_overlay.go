@@ -17,37 +17,43 @@ const gridCells = 20
 
 // gridOverlay builds the sketch grid: lines parallel to the plane's axes, spaced by
 // spacing (model units), centred on the plane origin (the sketch's 0,0). Minor, major
-// (every `major` lines) and the two axis lines are separate colored items. Returns nil
-// when spacing is non-positive.
+// (every `major` lines) and the two origin axis lines are separate colored items: the
+// origin lines take the universal CAD axis colors (X red, Y green) so users read axis
+// identity by color exactly as on the orientation triad. Returns nil when spacing is
+// non-positive.
 func gridOverlay(plane sketch.Plane, spacing float64, major int) []renderer.DrawItem {
 	if spacing <= 0 {
 		return nil
 	}
-	minor, maj, axis := &segAccum{}, &segAccum{}, &segAccum{}
+	minor, maj := &segAccum{}, &segAccum{}
+	xAxis, yAxis := &segAccum{}, &segAccum{}
 	half := float64(gridCells) * spacing
 	for i := -gridCells; i <= gridCells; i++ {
-		acc := gridAccum(i, major, minor, maj, axis)
 		c := float64(i) * spacing
-		acc.seg(plane, math.P2(c, -half), math.P2(c, half)) // line of constant u
-		acc.seg(plane, math.P2(-half, c), math.P2(half, c)) // line of constant v
+		uAcc, vAcc := gridLineAccum(i, major, minor, maj, xAxis, yAxis)
+		uAcc.seg(plane, math.P2(c, -half), math.P2(c, half)) // line of constant u (the Y axis at i==0)
+		vAcc.seg(plane, math.P2(-half, c), math.P2(half, c)) // line of constant v (the X axis at i==0)
 	}
 	var items []renderer.DrawItem
 	items = appendGrid(items, minor, gridMinorColor)
 	items = appendGrid(items, maj, gridMajorColor)
-	items = appendGrid(items, axis, gridAxisColor)
+	items = appendGrid(items, xAxis, axisColorX)
+	items = appendGrid(items, yAxis, axisColorY)
 	return items
 }
 
-// gridAccum routes line index i to the axis (0), major (every `major`), or minor group.
-func gridAccum(i, major int, minor, maj, axis *segAccum) *segAccum {
-	switch {
-	case i == 0:
-		return axis
-	case major > 0 && i%major == 0:
-		return maj
-	default:
-		return minor
+// gridLineAccum returns the accumulators for the two grid lines at index i: the
+// constant-u line (uAcc) and the constant-v line (vAcc). Off-origin lines share one
+// minor/major group; at the origin (i==0) the constant-u line is the Y axis and the
+// constant-v line is the X axis, so each goes to its own axis-colored group.
+func gridLineAccum(i, major int, minor, maj, xAxis, yAxis *segAccum) (uAcc, vAcc *segAccum) {
+	if i == 0 {
+		return yAxis, xAxis
 	}
+	if major > 0 && i%major == 0 {
+		return maj, maj
+	}
+	return minor, minor
 }
 
 // appendGrid adds a colored line item for a non-empty accumulator.
