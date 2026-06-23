@@ -93,6 +93,24 @@ func TestCrossEdgeReportsCurvatureBreak(t *testing.T) {
 	}
 }
 
+func TestAlignCurvatureAndFoldedAngle(t *testing.T) {
+	up, down := math.V3(0, 0, 1), math.V3(0, 0, -1)
+	// Opposed normals: alignCurvature flips the sign so both bend senses match.
+	if got := alignCurvature(2, up, down); got != -2 {
+		t.Errorf("alignCurvature with opposed normals = %g, want -2", got)
+	}
+	if got := alignCurvature(2, up, up); got != 2 {
+		t.Errorf("alignCurvature with aligned normals = %g, want 2", got)
+	}
+	// Opposed normals are still a coincident tangent plane → folded angle 0.
+	if got := foldedAngleDeg(up, down); got > 1e-9 {
+		t.Errorf("foldedAngleDeg(up,down) = %g, want ~0 (parallel planes)", got)
+	}
+	if got := foldedAngleDeg(up, math.V3(1, 0, 0)); stdmath.Abs(got-90) > 1e-9 {
+		t.Errorf("foldedAngleDeg(up,+X) = %g, want 90", got)
+	}
+}
+
 func TestCrossEdgeIsDeterministic(t *testing.T) {
 	a := xyPlane(t, 0)
 	b, _ := geom.NewCylinderWithRef(math.P3(0, 0, 0), math.V3(1, 0, 0), math.V3(0, 0, 1), 3)

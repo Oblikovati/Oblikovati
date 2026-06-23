@@ -72,6 +72,40 @@ func TestContinuityCheckViaRibbonCommand(t *testing.T) {
 	}
 }
 
+func TestContinuityCheckToolInterface(t *testing.T) {
+	tool := NewContinuityCheckTool()
+	tool.Start(nil)
+	tool.Cancel(nil)
+	if err := tool.Commit(nil); err != nil {
+		t.Errorf("Commit is a no-op, got %v", err)
+	}
+	if tool.CanCommit() {
+		t.Error("CanCommit should be false (report-on-pick)")
+	}
+	if len(tool.AcceptedKinds()) != 1 || tool.AcceptedKinds()[0] != SelectEdge {
+		t.Error("the tool should accept edge picks")
+	}
+	if len(tool.Picks()) != 0 || len(tool.Edges()) != 0 || tool.Preview(nil) != nil {
+		t.Error("before a pick the tool has no edge, picks, or overlay")
+	}
+}
+
+func TestContinuitySeverityHelpers(t *testing.T) {
+	cases := []struct {
+		in, want float64
+	}{{-1, 0}, {0.4, 0.4}, {2, 1}}
+	for _, c := range cases {
+		if got := clampUnit(c.in); got != c.want {
+			t.Errorf("clampUnit(%g) = %g, want %g", c.in, got, c.want)
+		}
+	}
+	// A mid-severity sample produces a colour between green and red.
+	col := severityColor(0.5)
+	if col[0] <= 0.1 || col[1] <= 0 {
+		t.Errorf("mid severity colour = %v, want a green/red blend", col)
+	}
+}
+
 func continuityScrollbackHas(s *Session, substr string) bool {
 	for _, l := range s.CommandLine().Scrollback().Lines() {
 		if strings.Contains(l.Text, substr) {

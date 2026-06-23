@@ -82,19 +82,19 @@ func edgeTangent(a geom.Surface, ea EdgeParam, t float64) math.Vector3 {
 	t0, t1 := stdmath.Max(0, t-h), stdmath.Min(1, t+h)
 	u0, v0 := ea(t0)
 	u1, v1 := ea(t1)
-	return unit(a.PointAt(u0, v0).VectorTo(a.PointAt(u1, v1)))
+	return normalize(a.PointAt(u0, v0).VectorTo(a.PointAt(u1, v1)))
 }
 
 // normalCurvatureCross returns the surface's normal curvature in the cross-boundary direction
 // (perpendicular to the edge within the tangent plane), via Euler's formula on the principal
 // curvatures.
 func normalCurvatureCross(s geom.Surface, u, v float64, n, edgeTan math.Vector3) float64 {
-	cross := unit(n.Cross(edgeTan)) // tangent-plane direction perpendicular to the edge
+	cross := normalize(n.Cross(edgeTan)) // tangent-plane direction perpendicular to the edge
 	maxDir, kMax, kMin := geom.SurfaceCurvatures(s, u, v)
 	if float64(maxDir.Length()) < 1e-12 {
 		return kMax // degenerate frame: principal curvatures are equal (or zero)
 	}
-	cosA := float64(unit(maxDir).Dot(cross))
+	cosA := float64(normalize(maxDir).Dot(cross))
 	cos2 := cosA * cosA
 	return kMax*cos2 + kMin*(1-cos2) // Euler: κ(α) = kMax·cos²α + kMin·sin²α
 }
@@ -111,7 +111,7 @@ func alignCurvature(kb float64, na, nb math.Vector3) float64 {
 // foldedAngleDeg returns the angle between two normals in degrees, folded to [0, 90] so an opposite
 // (but parallel-plane) orientation reads as 0 — tangent-plane agreement, not normal-vector equality.
 func foldedAngleDeg(na, nb math.Vector3) float64 {
-	deg := float64(unit(na).AngleTo(unit(nb))) * 180 / stdmath.Pi
+	deg := float64(normalize(na).AngleTo(normalize(nb))) * 180 / stdmath.Pi
 	if deg > 90 {
 		deg = 180 - deg
 	}
@@ -141,13 +141,4 @@ func aggregate(rep *ContinuityReport) {
 		rep.AvgCurvDiff += s.CurvDiff / n
 		rep.AvgCurvPct += s.CurvPct / n
 	}
-}
-
-// unit returns v normalized, or v unchanged when it is (near) zero.
-func unit(v math.Vector3) math.Vector3 {
-	l := float64(v.Length())
-	if l < 1e-12 {
-		return v
-	}
-	return v.Scale(math.Scalar(1 / l))
 }
