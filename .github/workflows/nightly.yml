@@ -82,7 +82,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          find artifacts -type f -exec cp {} dist/ \;
+          # Collect ONLY shippable artifacts. The macOS universal build also uploads
+          # per-arch staging artifacts (head-macos-stage-*: the bare unsigned
+          # oblikovati-head binary + bundled *.dylib) for the lipo step; those must
+          # never land on the public release, so select by release filename shape
+          # rather than copying every downloaded file.
+          find artifacts -type f \( \
+            -name '*.AppImage' -o \
+            -name '*-macos-universal.zip' -o \
+            -name '*-windows-amd64.zip' -o \
+            -name 'oblikovati-cli-*' \
+          \) -exec cp {} dist/ \;
           ( cd dist && files=$(ls) && sha256sum $files > checksums.txt )
           ls -la dist
       - name: Publish rolling nightly prerelease
