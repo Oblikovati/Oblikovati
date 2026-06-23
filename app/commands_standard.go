@@ -366,6 +366,18 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("rebuild-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Rebuild Surface — refit freeform faces to clean Class-A NURBS (fewer, even control points)."),
+		NewCommand("Surface.NurbsPlane", "NURBS Plane", "Surface", func(s *Session) error {
+			s.StartTool(NewNurbsPlaneTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("nurbs-plane").WithButtonStyle(LargeIconButton).
+			WithTooltip("NURBS Plane — create a flat Class-A NURBS surface patch to start styling from."),
+		NewCommand("Surface.EditCV", "Edit Control Points", "Surface", func(s *Session) error {
+			s.StartTool(NewControlPointEditTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("control-point-edit").WithButtonStyle(LargeIconButton).
+			WithTooltip("Edit Control Points — drag a NURBS surface's control net to shape it (region, falloff, symmetry)."),
 	}
 }
 

@@ -60,6 +60,7 @@ type FeatureData struct {
 	RuledSurface     *RuledSurfaceData     `yaml:"ruledSurface,omitempty"`
 	Rebuild          *RebuildData          `yaml:"rebuild,omitempty"`
 	ControlPointEdit *ControlPointEditData `yaml:"controlPointEdit,omitempty"`
+	NurbsPlane       *NurbsPlaneData       `yaml:"nurbsPlane,omitempty"`
 	FaceEdit         *FaceEditData         `yaml:"faceEdit,omitempty"`
 	Thicken          *ThickenData          `yaml:"thicken,omitempty"`
 	Revolve          *RevolveData          `yaml:"revolve,omitempty"`
@@ -279,6 +280,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Rebuild = serializeRebuild(f.def)
 	case *ControlPointEditFeature:
 		fd.ControlPointEdit = serializeControlPointEdit(f.def)
+	case *NurbsPlaneFeature:
+		fd.NurbsPlane = serializeNurbsPlane(f.def)
 	case *RevolveFeature:
 		rv, err := serializeRevolve(f.def, sk)
 		if err != nil {
@@ -600,6 +603,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreRebuild(fs, fd.Rebuild)
 	case "control-point-edit":
 		return restoreControlPointEdit(fs, fd.ControlPointEdit)
+	case "nurbs-plane":
+		return restoreNurbsPlane(fs, fd.NurbsPlane)
 	case "split", "move-face", "face-offset", "delete-face", "replace-face":
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
 	case "thicken":
