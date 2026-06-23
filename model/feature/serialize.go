@@ -58,6 +58,7 @@ type FeatureData struct {
 
 	BoundaryPatch *BoundaryPatchData `yaml:"boundaryPatch,omitempty"`
 	RuledSurface  *RuledSurfaceData  `yaml:"ruledSurface,omitempty"`
+	Rebuild       *RebuildData       `yaml:"rebuild,omitempty"`
 	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
 	Thicken       *ThickenData       `yaml:"thicken,omitempty"`
 	Revolve       *RevolveData       `yaml:"revolve,omitempty"`
@@ -273,6 +274,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 			return FeatureData{}, err
 		}
 		fd.RuledSurface = rs
+	case *RebuildFeature:
+		fd.Rebuild = serializeRebuild(f.def)
 	case *RevolveFeature:
 		rv, err := serializeRevolve(f.def, sk)
 		if err != nil {
@@ -590,6 +593,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreBoundaryPatch(fs, fd.BoundaryPatch, sk)
 	case "ruled-surface":
 		return restoreRuledSurface(fs, fd.RuledSurface, sk)
+	case "rebuild-surface":
+		return restoreRebuild(fs, fd.Rebuild)
 	case "split", "move-face", "face-offset", "delete-face", "replace-face":
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
 	case "thicken":
