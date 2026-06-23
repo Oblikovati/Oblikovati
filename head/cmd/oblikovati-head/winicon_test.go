@@ -25,6 +25,20 @@ func TestRenderWindowIconsCoversAllSizes(t *testing.T) {
 	}
 }
 
+// TestRenderWindowIconsAndApplyHandleRenderError drives the error paths without a window:
+// a 0px candidate makes appicon.Image fail, so renderWindowIcons returns the error and
+// applyWindowIcon takes its early return (and never dereferences the nil window).
+func TestRenderWindowIconsAndApplyHandleRenderError(t *testing.T) {
+	saved := iconSizes
+	iconSizes = []int{0}
+	defer func() { iconSizes = saved }()
+
+	if _, err := renderWindowIcons(); err == nil {
+		t.Fatal("renderWindowIcons should error on a 0px candidate size")
+	}
+	applyWindowIcon(nil) // error path returns before touching the window
+}
+
 // TestApplyWindowIcon drives the full window-icon path against a real window (skipped
 // when no display/Vulkan is available).
 func TestApplyWindowIcon(t *testing.T) {

@@ -48,6 +48,12 @@ func TestWritePNGDecodes(t *testing.T) {
 	}
 }
 
+func TestWritePNGRejectsBadSize(t *testing.T) {
+	if err := WritePNG(&bytes.Buffer{}, 0); err == nil {
+		t.Fatal("WritePNG(_, 0) should error")
+	}
+}
+
 func TestWriteICOHasEntriesAndPNGPayloads(t *testing.T) {
 	sizes := []int{16, 32, 256}
 	var buf bytes.Buffer
