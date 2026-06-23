@@ -180,6 +180,76 @@ jobs:
           name: coverage-head
           path: head/coverage.out
 
+  # cgo GUI head — macOS compile check on EVERY PR (Apple Silicon + Intel). build.yml
+  # only builds the macOS head in the release/nightly pipeline, and there it is gated on
+  # the signing secrets, so darwin-only cgo / go.sum breakage used to reach develop
+  # completely unvalidated (it surfaced only post-merge in nightly). Compiling the whole
+  # head module on both Mac arches here makes a green PR guarantee the macOS build won't
+  # break. Build-only: headless CI Macs have no window server for GLFW and no Metal
+  # device for MoltenVK, so the in-window e2e tests stay on the ubuntu `head` job (xvfb +
+  # lavapipe). The dep list mirrors build.yml's head-macos-build.
+  head-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-14, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.24"
+          cache: false
+      - uses: ./.github/actions/api-contract
+        with:
+          modules: head
+      - name: Install cgo + Vulkan deps
+        run: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config
+      - name: Build head
+        working-directory: head
+        run: CGO_ENABLED=1 go build ./...
+
+  # cgo GUI head — Windows compile check on EVERY PR (mingw toolchain). Mirrors
+  # build.yml's head-windows minus packaging, so mingw/cgo breakage is caught pre-merge
+  # rather than in nightly. msys2 provides the Go + gcc + glfw/vulkan toolchain; the api
+  # contract is resolved/checked out in bash then pinned in the msys2 shell (the same
+  # split build.yml uses, because that job's Go lives inside msys2).
+  head-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v5
+      - id: api
+        shell: bash
+        run: echo "version=$(scripts/latest-api-version.sh)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        with:
+          repository: Oblikovati/Oblikovati.API
+          ref: ${{ steps.api.outputs.version }}
+          path: _api
+      - uses: msys2/setup-msys2@e9898307ac31d1a803454791be09ab9973336e1c # v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-go
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-glfw
+            mingw-w64-x86_64-vulkan-loader
+            mingw-w64-x86_64-vulkan-headers
+      - name: Pin + replace api to the release
+        env:
+          VERSION: ${{ steps.api.outputs.version }}
+        run: |
+          go -C head mod edit -require="oblikovati.org/api@$VERSION"
+          go -C head mod edit -replace "oblikovati.org/api=$GITHUB_WORKSPACE/_api"
+      - name: Build head
+        working-directory: head
+        run: CGO_ENABLED=1 go build ./...
+
   # Confirm the cgo-free core cross-compiles for every shipping target.
   build:
     runs-on: ubuntu-latest
