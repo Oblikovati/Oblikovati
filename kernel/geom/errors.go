@@ -37,3 +37,10 @@ type CollinearPoints3dError struct {
 func (e *CollinearPoints3dError) Error() string {
 	return fmt.Sprintf("geom: points %v, %v, %v are collinear; a circle/arc through three points needs them non-collinear", e.A, e.B, e.C)
 }
+
+// insertOverflow formats the panic message for a knot insertion that would push a
+// knot's multiplicity past the degree (r+s > p), which is a caller invariant the
+// public InsertKnot methods guard before reaching the homogeneous core (M36-F01).
+func insertOverflow(u float64, r, s, p int) string {
+	return fmt.Sprintf("geom: cannot insert knot %g %d time(s): existing multiplicity %d + %d exceeds degree %d", u, r, r, s, p)
+}
