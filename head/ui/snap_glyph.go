@@ -62,6 +62,13 @@ func pointsOverlay(plane sketch.Plane, sk *sketch.Sketch, hWorld float64) (rende
 	for i := 0; i < pts.Count(); i++ {
 		acc.targetMarker(plane, pts.Item(i).Position(), hWorld)
 	}
+	// Projected point anchors (e.g. the auto-projected origin centre, #1262) live in the
+	// entity list, not the typed Points collection, so glyph them here too.
+	for _, e := range sk.Entities() {
+		if pp, ok := e.(*sketch.ProjectedPoint); ok {
+			acc.targetMarker(plane, pp.Position(), hWorld)
+		}
+	}
 	if len(acc.pos) == 0 {
 		return renderer.DrawItem{}, false
 	}

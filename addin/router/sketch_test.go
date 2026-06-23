@@ -951,6 +951,43 @@ func TestSketchProjectGeometry(t *testing.T) {
 	}
 }
 
+// TestSketchProjectDatumGeometry projects the part's origin datum geometry over the wire using
+// the public WorkRef vocabulary: the centre point, the X axis and the XZ plane onto an XY
+// sketch. The point becomes a projected point; the axis and the plane↔sketch intersection both
+// become projected curves (#1262).
+func TestSketchProjectDatumGeometry(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+
+	var proj wire.ProjectGeometryResult
+	args := `{"sketchIndex":0,"refs":["origin/point/center","origin/axis/x","origin/plane/xz"]}`
+	call(t, r, s, "sketch.project", args, &proj)
+	if len(proj.Created) != 3 || !proj.Healthy {
+		t.Fatalf("project datums = %+v, want 3 created / healthy", proj)
+	}
+
+	var ents wire.EnumerateEntitiesResult
+	call(t, r, s, "sketch.entities", `{"sketchIndex":0}`, &ents)
+	if got := countKind(ents.Entities, "projectedPoint"); got != 1 {
+		t.Errorf("want 1 projectedPoint (origin centre), got %d", got)
+	}
+	if got := countKind(ents.Entities, "projectedCurve"); got != 2 {
+		t.Errorf("want 2 projectedCurve (X axis + XZ∩XY), got %d", got)
+	}
+}
+
+// TestSketchProjectParallelPlaneIsUnhealthy: projecting the XY origin plane onto an XY sketch is
+// parallel — there is no intersection line, so it reports unhealthy and creates nothing.
+func TestSketchProjectParallelPlaneIsUnhealthy(t *testing.T) {
+	r, s := emptyPartSession(t)
+	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})
+	var proj wire.ProjectGeometryResult
+	call(t, r, s, "sketch.project", `{"sketchIndex":0,"refs":["origin/plane/xy"]}`, &proj)
+	if proj.Healthy || len(proj.Created) != 0 {
+		t.Fatalf("project of a parallel plane = %+v, want unhealthy / nothing created", proj)
+	}
+}
+
 func TestSketchProjectUnknownRefIsUnhealthy(t *testing.T) {
 	r, s := emptyPartSession(t)
 	call(t, r, s, "sketch.create", `{"plane":"XY"}`, &wire.CreateSketchResult{})

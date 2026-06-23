@@ -291,6 +291,14 @@ func (c *WorkPoints) Item(i int) *WorkPoint { return c.items[i] }
 
 // planeIntersectionLine returns a point on, and the direction of, the line where two
 // planes meet (error if they are parallel).
+// PlaneIntersectionLine returns a point on, and the unit direction of, the line where two
+// planes meet; it errors when the planes are parallel (no line). Exported so projecting a
+// work plane onto a sketch (model/compdef) reuses the same intersection math rather than
+// re-deriving it (#1262).
+func PlaneIntersectionLine(p1, p2 sketch.Plane) (math.Point3, math.UnitVector3, error) {
+	return planeIntersectionLine(p1, p2)
+}
+
 func planeIntersectionLine(p1, p2 sketch.Plane) (math.Point3, math.UnitVector3, error) {
 	n1, n2 := p1.Normal().AsVector(), p2.Normal().AsVector()
 	cross := n1.Cross(n2)

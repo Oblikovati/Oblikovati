@@ -123,6 +123,7 @@ func partSketchOverlays(s *app.Session) []renderer.DrawItem {
 			continue
 		}
 		items = append(items, sketchOverlay(sk, allEntitiesWhenSelected(sk, selected), nil)...)
+		items = append(items, projectedCurveOverlay(sk)...)
 	}
 	return items
 }
@@ -176,6 +177,24 @@ func sketchOverlay(sk *sketch.Sketch, selected func(sketch.Entity) bool, candida
 	}
 	normal, sel, cand := sketchSegmentsFor(sk, selected, candidate)
 	return sketchItems(normal, sel, cand)
+}
+
+// projectedCurveOverlay draws a sketch's projected reference curves — the lines projected from
+// edges or datum geometry (axes, plane↔sketch intersections, #1262). They live in the entity
+// list rather than the typed Lines/Arcs collections, so sketchOverlay misses them; this draws
+// each as a polyline in the sketch colour. Returns nil when the sketch projects no curves.
+func projectedCurveOverlay(sk *sketch.Sketch) []renderer.DrawItem {
+	if sk == nil {
+		return nil
+	}
+	plane := sk.Plane()
+	acc := &segAccum{}
+	for _, e := range sk.Entities() {
+		if pc, ok := e.(*sketch.ProjectedCurve); ok {
+			acc.polyline(plane, pc.Points(), false)
+		}
+	}
+	return appendGrid(nil, acc, sketchColor)
 }
 
 func sketchSegmentsFor(sk *sketch.Sketch, selected func(sketch.Entity) bool, candidate sketch.Entity) (*segAccum, *segAccum, *segAccum) {

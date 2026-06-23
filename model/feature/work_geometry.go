@@ -203,6 +203,21 @@ func (g *WorkGeometry) AxisByRef(ref WorkRef) (*WorkAxis, bool) {
 	return a, true
 }
 
+// WorkPointByRef returns the datum work point with the given reference (e.g. [OriginCenter]),
+// or false when none exists — the exported lookup projecting the origin centre point into a
+// sketch uses (#1262). It resolves only datum points (origin frame + user work points), not
+// B-rep vertex references.
+func (g *WorkGeometry) WorkPointByRef(ref WorkRef) (*WorkPoint, bool) {
+	if i, ok := userIndex(ref, "point"); ok {
+		if i < 0 || i >= g.points.Count() {
+			return nil, false
+		}
+		return g.points.Item(i), true
+	}
+	w, ok := g.points.byKey[ref]
+	return w, ok
+}
+
 func (g *WorkGeometry) point(ref WorkRef) (math.Point3, error) {
 	if p, isVertex, err := g.vertexPoint(ref); isVertex {
 		return p, err
