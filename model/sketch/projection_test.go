@@ -226,3 +226,48 @@ func TestProjectCutEdgesProjectsEachSource(t *testing.T) {
 		t.Error("broken curve link still reports linked/source")
 	}
 }
+
+// TestProjectedGeometrySerializeRoundTrip exercises the model-side serialize/restore of projected
+// geometry (the codec that used to be missing, #1268): a projected point and curve survive a
+// MarshalRecipe→ApplyRecipe, restoring frozen with their anchor id, geometry and source
+// descriptor preserved (the host rebinds the live source separately).
+func TestProjectedGeometrySerializeRoundTrip(t *testing.T) {
+	sc := NewSketches()
+	s := sc.Add(XYPlane())
+	pp := s.ProjectPoint(&kindedVertex{movableVertex{id: "v9", pos: math.P3(2, 3, 0)}})
+	anchorID := pp.EntityID()
+	s.ProjectCurve(&kindedEdge{movableEdge{id: "e9", samples: []math.Point3{{X: 0}, {X: 1, Y: 1}}}})
+
+	out := roundTrip(t, sc)
+	var rp *ProjectedPoint
+	var rc *ProjectedCurve
+	for _, e := range out.Entities() {
+		switch v := e.(type) {
+		case *ProjectedPoint:
+			rp = v
+		case *ProjectedCurve:
+			rc = v
+		}
+	}
+	if rp == nil || rc == nil {
+		t.Fatalf("projected geometry lost on round trip: point=%v curve=%v", rp, rc)
+	}
+	if rp.EntityID() != anchorID {
+		t.Errorf("restored anchor id = %d, want %d (constraints reference it)", rp.EntityID(), anchorID)
+	}
+	if !rp.Position().IsEqualTo(math.P2(2, 3), tol) {
+		t.Errorf("restored projected point at %v, want frozen (2,3)", rp.Position())
+	}
+	if k, id := rp.SourceDescriptor(); k != "vertex" || id != "v9" {
+		t.Errorf("restored point descriptor = (%q,%q), want (vertex,v9)", k, id)
+	}
+	if rp.Linked() {
+		t.Error("restored projection should be frozen until the host rebinds it")
+	}
+	if k, id := rc.SourceDescriptor(); k != "edge" || id != "e9" {
+		t.Errorf("restored curve descriptor = (%q,%q), want (edge,e9)", k, id)
+	}
+	if len(rc.Points()) != 2 {
+		t.Errorf("restored curve has %d points, want 2", len(rc.Points()))
+	}
+}
