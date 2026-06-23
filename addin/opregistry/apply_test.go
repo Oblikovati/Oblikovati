@@ -373,6 +373,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"bridgeSurface":           `{"continuityA":"g2","continuityB":"g2"}`,
 		"networkSurface":          `{"uCurves":[[[0,0,0],[2,0,0]],[[0,2,0],[2,2,0]]],"vCurves":[[[0,0,0],[0,2,0]],[[2,0,0],[2,2,0]]]}`,
 		"fairSurface":             `{"continuity":"g2","strength":0.5,"iterations":10}`,
+		"fitSurface":              `{"cloud":"Scan","degree":3,"nu":5,"nv":5}`,
 		"freeformBox":             `{"length":"10 mm","width":"10 mm","height":"10 mm"}`,
 		"freeformPlane":           `{"length":"10 mm","width":"10 mm"}`,
 		"freeformQuadBall":        `{"radius":"5 mm"}`,

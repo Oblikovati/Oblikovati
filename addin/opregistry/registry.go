@@ -172,6 +172,7 @@ func Default() *Registry {
 		bridgeSurfaceDescriptor(),
 		networkSurfaceDescriptor(),
 		fairSurfaceDescriptor(),
+		fitSurfaceDescriptor(),
 		// Freeform primitives.
 		freeformBoxDescriptor(),
 		freeformPlaneDescriptor(),
