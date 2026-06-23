@@ -36,7 +36,20 @@ func analysisCommands() []*CommandDefinition {
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("continuity-check").WithButtonStyle(LargeIconButton).
 			WithTooltip("Continuity Check — pick a shared edge to report the G0 gap, G1 normal angle and G2 curvature difference across it."),
+		NewCommand("Inspect.SurfaceDeviation", "Surface Deviation", "Analyze", startSurfaceDeviation).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("surface-deviation").WithButtonStyle(LargeIconButton).
+			WithTooltip("Surface Deviation — colour-map the signed gap between the last two surfaces with min/max/RMS and out-of-tolerance highlighting."),
 	}
+}
+
+// startSurfaceDeviation activates the deviation map between the active part's last two surfaces.
+func startSurfaceDeviation(s *Session) error {
+	if _, err := activePart(s); err != nil {
+		return err
+	}
+	s.StartTool(NewSurfaceDeviationTool())
+	return nil
 }
 
 // startContinuityCheck activates the cross-edge continuity checker on the active part.
