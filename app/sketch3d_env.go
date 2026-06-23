@@ -26,8 +26,10 @@ func (s *Session) CreateSketch3D() (*sketch.Sketch3D, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.EnsureActiveEditBaseline() // capture the pre-sketch state so "Create 3D Sketch" is its own step (#1270)
 	sk := part.Sketches3D().Add()
 	s.EnterSketch3D(sk)
+	s.RecordActiveEdit("Create 3D Sketch")
 	return sk, nil
 }
 

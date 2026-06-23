@@ -413,6 +413,7 @@ func (s *Session) undoDocument(d *doc.Document) error {
 	if err := cursorMove(s, d, dh, ev, dh.hist.Undo); err != nil {
 		return err
 	}
+	s.reattachActiveSketchAfterRestore(d) // restore rebuilt the sketch objects; re-bind the edit (#1270)
 	event.Emit(s.bus, event.After, ev)
 	return nil
 }
@@ -423,6 +424,7 @@ func (s *Session) redoDocument(d *doc.Document) error {
 	if err := cursorMove(s, d, dh, ev, dh.hist.Redo); err != nil {
 		return err
 	}
+	s.reattachActiveSketchAfterRestore(d) // restore rebuilt the sketch objects; re-bind the edit (#1270)
 	event.Emit(s.bus, event.After, ev)
 	return nil
 }
