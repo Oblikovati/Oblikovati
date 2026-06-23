@@ -49,6 +49,17 @@ func (s FilletEdgeSet) variable() bool { return s.Radius == nil }
 // FilletCornerType aliases the public corner-treatment discriminator (ADR-0018).
 type FilletCornerType = types.FilletCornerType
 
+// FilletCrossSection aliases the kernel's blend cross-section shape (M36-F08): arc (G1, default),
+// G2 (curvature-continuous), or conic (rho-controlled). Kept in /source until exposed on the wire.
+type FilletCrossSection = ops.FilletCrossSection
+
+// Fillet cross-section shapes (aliases of the kernel values).
+const (
+	FilletArc   = ops.FilletArc
+	FilletG2    = ops.FilletG2
+	FilletConic = ops.FilletConic
+)
+
 // FilletDefinition rounds selected edges. EdgeKeys+Radius is the original single
 // constant-radius form; EdgeSets (when non-empty) takes precedence and carries any mix of
 // constant and variable sets (#323). CornerType selects how a vertex where two filleted edges
@@ -59,6 +70,11 @@ type FilletDefinition struct {
 	EdgeSets        []FilletEdgeSet
 	CornerType      FilletCornerType
 	ConcaveStrategy types.FilletConcaveStrategy // concave edges: outward fill (zero/default) or inward recess
+	// CrossSection selects the blend cross-section shape (M36-F08): the default arc (G1), a
+	// curvature-continuous G2, or a rho-controlled conic. Rho sets a conic's fullness (0<ρ<1,
+	// 0.5=parabola). Non-arc sections build via the swept ruling band (no analytic cylinder).
+	CrossSection ops.FilletCrossSection
+	Rho          float64
 	// GeomEdges are edges selected by a serialized GEOMETRIC descriptor rather than an
 	// Oblikovati lineage key — the path an external author (the NX exporter, M8/ADR-0040)
 	// uses, since it cannot synthesize lineage. They bind to the running body's edges at
@@ -83,14 +99,15 @@ func (f *FilletFeature) Kind() string { return "fillet" }
 // Recompute rounds the picked convex edges on the running body with a real rolling-ball
 // blend (cylinder faces; planar ruling strips for variable sets). See fillet.go.
 func (f *FilletFeature) Recompute(in Input) (Output, error) {
+	prof := blendProfile{cross: f.def.CrossSection, rho: f.def.Rho}
 	if len(f.def.EdgeSets) > 0 {
-		return filletBodySets(in, f.def.EdgeSets, f.def.CornerType, f.def.ConcaveStrategy, "fillet")
+		return filletBodySets(in, f.def.EdgeSets, f.def.CornerType, f.def.ConcaveStrategy, prof, "fillet")
 	}
 	keys, err := bindGeomEdges(in, f.def.EdgeKeys, f.def.GeomEdges, "fillet")
 	if err != nil {
 		return Output{}, err
 	}
-	return filletBody(in, keys, callOrZero(f.def.Radius), f.def.CornerType, f.def.ConcaveStrategy, "fillet")
+	return filletBody(in, keys, callOrZero(f.def.Radius), f.def.CornerType, f.def.ConcaveStrategy, prof, "fillet")
 }
 
 // ChamferType aliases the public chamfer-mode discriminator (ADR-0018).
@@ -317,6 +334,14 @@ func (c *DressUpFeatures) AddFilletCorner(edgeKeys [][]byte, radius func() float
 // carry fields the public builders don't take, e.g. geometric edge refs).
 func (c *DressUpFeatures) addFillet(def *FilletDefinition) *PartFeature {
 	return c.engine.Add(&FilletFeature{def: def})
+}
+
+// AddFilletCross rounds the given edges to radius with a chosen cross-section shape (M36-F08): arc
+// (G1, the default), G2 (curvature-continuous), or conic with fullness rho. Shared corners miter.
+func (c *DressUpFeatures) AddFilletCross(edgeKeys [][]byte, radius func() float64, cross ops.FilletCrossSection, rho float64) *PartFeature {
+	return c.engine.Add(&FilletFeature{def: &FilletDefinition{
+		EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, CrossSection: cross, Rho: rho,
+	}})
 }
 
 // AddFilletConcave rounds the given edges to radius with an explicit concave-edge strategy: outward

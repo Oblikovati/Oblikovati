@@ -87,7 +87,7 @@ func ruleFilletBody(in Input, rule RuleFilletRule, radius float64, feat string) 
 	if len(keys) == 0 {
 		return Output{Bodies: in.Bodies}, nil
 	}
-	return filletBody(in, keys, radius, types.FilletCornerMiter, types.FilletConcaveOutward, feat)
+	return filletBody(in, keys, radius, types.FilletCornerMiter, types.FilletConcaveOutward, blendProfile{}, feat)
 }
 
 // ruleEdgeKeys returns the reference keys of every edge whose dihedral class matches rule.

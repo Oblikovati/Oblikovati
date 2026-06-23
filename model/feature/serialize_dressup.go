@@ -44,6 +44,10 @@ type EdgeDressData struct {
 	Angle       float64 `yaml:"angle,omitempty"`
 	// Fillet-only: the shared-corner treatment. FilletCornerType 0 (or absent) ⇒ the miter default.
 	CornerType int32 `yaml:"cornerType,omitempty"`
+	// Fillet-only cross-section (M36-F08): 0/absent ⇒ arc (G1), 1 ⇒ G2, 2 ⇒ conic; Rho is the
+	// conic's fullness (0<ρ<1, 0.5 = parabola). Absent ⇒ the circular-arc rolling-ball blend.
+	CrossSection int32   `yaml:"crossSection,omitempty"`
+	Rho          float64 `yaml:"rho,omitempty"`
 	// GeomEdges are edges selected by a serialized GEOMETRIC descriptor (ADR-0040), the path
 	// an external author (the NX exporter) uses because it cannot mint Oblikovati lineage
 	// keys. Empty for an Oblikovati-authored dress-up (which uses Edges).
@@ -81,6 +85,22 @@ func (d *EdgeDressData) cornerTypeOrZero() int32 {
 		return 0
 	}
 	return d.CornerType
+}
+
+// crossSectionOrZero returns the fillet cross-section id (0 ⇒ arc) for an absent/older recipe.
+func (d *EdgeDressData) crossSectionOrZero() int32 {
+	if d == nil {
+		return 0
+	}
+	return d.CrossSection
+}
+
+// rhoOrZero returns the conic fullness rho (0 ⇒ default) for an absent/older recipe.
+func (d *EdgeDressData) rhoOrZero() float64 {
+	if d == nil {
+		return 0
+	}
+	return d.Rho
 }
 
 // serializeFilletSets encodes a fillet's edge sets (nil for the legacy single-set form).
