@@ -394,6 +394,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 			WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("untrim-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Untrim — recover a trimmed NURBS face's full underlying surface."),
+		NewCommand("Surface.Fill", "Fill Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewFillSurfaceTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("fill-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Fill Surface — close a four-sided opening with a single clean NURBS at G0/G1/G2 continuity."),
 	}
 }
 
