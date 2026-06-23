@@ -20,7 +20,7 @@ func TestDefaultDescriptors(t *testing.T) {
 		"combine", "thicken", "trim", "directEdit", "moveFace", "faceOffset", "deleteFace", "split",
 		"replaceFace", "simplify", "unwrap", "modelTolerance", "moveBody", "bendPart", "sheetMetalFace", "sheetMetalFlange", "sheetMetalHem", "sheetMetalBend", "sheetMetalFold", "sheetMetalCorner", "sheetMetalContourFlange", "sheetMetalLoftedFlange", "sheetMetalContourRoll", "sheetMetalCornerSeam", "sheetMetalCut", "sheetMetalRip", "sheetMetalPunch", "sheetMetalLip", "sheetMetalCosmeticBend", "sheetMetalUnfold", "sheetMetalRefold", "splitSolid", "coreCavity", "hull",
 		"sweep", "patternRectangular", "patternCircular", "mirror", "patternSketchDriven",
-		"boundaryPatch", "ruledSurface", "surfaceOffset", "extend", "midSurface", "stitch", "sculpt", "fillSurface", "bridgeSurface", "networkSurface",
+		"boundaryPatch", "ruledSurface", "surfaceOffset", "extend", "midSurface", "stitch", "sculpt", "fillSurface", "bridgeSurface", "networkSurface", "fairSurface",
 		"freeformBox", "freeformPlane", "freeformQuadBall", "mesh",
 	}
 	if got := len(r.All()); got != len(all) {
