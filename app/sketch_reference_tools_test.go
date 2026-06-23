@@ -52,8 +52,9 @@ func TestProjectGeometryToolEndToEnd(t *testing.T) {
 	}
 
 	sk := s.ActiveSketch()
-	if got := projectedCount(sk); got != 2 {
-		t.Fatalf("active sketch has %d projected entities, want 2", got)
+	// 3 = the auto-projected origin centre point (#1262) + the picked edge + the picked vertex.
+	if got := projectedCount(sk); got != 3 {
+		t.Fatalf("active sketch has %d projected entities, want 3 (origin + edge + vertex)", got)
 	}
 }
 

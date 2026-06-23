@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/param"
 	"oblikovati.org/model/sketch"
@@ -56,8 +57,22 @@ func (s *Session) CreateSketch(plane sketch.Plane) (*sketch.Sketch, error) {
 	}
 	sk := host.Sketches().Add(plane)
 	sk.SetParameters(host.Parameters()) // dimension expressions resolve in the host's table
+	autoProjectOrigin(host, sk)
 	s.EnterSketch(sk)
 	return sk, nil
+}
+
+// autoProjectOrigin projects the part's origin centre point into a freshly created sketch, so
+// every new sketch carries the projected origin as a constrainable reference at (0,0) — the
+// Inventor default the bug report (#1262) asked for. It is a no-op for hosts without an origin
+// centre point (an assembly), and the projection is associative like any other (it re-derives
+// through recompute via the [feature.OriginCenter] reference).
+func autoProjectOrigin(host sketchHost, sk *sketch.Sketch) {
+	part, ok := host.(*compdef.PartComponentDefinition)
+	if !ok {
+		return
+	}
+	sk.ProjectPoint(compdef.NewWorkPointRefSource(part, feature.OriginCenter))
 }
 
 // CreateSketchOnOrigin creates a sketch on one of the part's origin planes (XY/XZ/YZ),
