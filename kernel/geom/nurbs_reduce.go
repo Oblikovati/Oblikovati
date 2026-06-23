@@ -20,12 +20,12 @@ package geom
 // degreeReduceHomog reduces the homogeneous B-spline (degree p) by one degree to its C^0
 // Bézier-joined form within tol, returning ok=false when any segment is not reducible.
 // The result still carries the redundant join knots; the caller cleans them up.
-func degreeReduceHomog(p int, U []float64, pw []hpoint4, tol float64) (newU []float64, newPw []hpoint4, ok bool) {
+func degreeReduceHomog(p int, knots []float64, pw []hpoint4, tol float64) (newU []float64, newPw []hpoint4, ok bool) {
 	if p < 2 {
 		return nil, nil, false
 	}
-	breaks := distinctValues(U)
-	segs := decomposeBezier(p, U, pw, breaks)
+	breaks := distinctValues(knots)
+	segs := decomposeBezier(p, knots, pw, breaks)
 	reduced := make([][]hpoint4, len(segs))
 	for i, seg := range segs {
 		r, segOK := reduceBezierSegment(seg, tol)
@@ -38,12 +38,12 @@ func degreeReduceHomog(p int, U []float64, pw []hpoint4, tol float64) (newU []fl
 	return newU, newPw, true
 }
 
-// distinctValues returns the distinct knot values of U in order (consecutive equal
+// distinctValues returns the distinct knot values of knots in order (consecutive equal
 // entries collapse to one), i.e. the Bézier break points including the two clamped ends.
-func distinctValues(U []float64) []float64 {
+func distinctValues(knots []float64) []float64 {
 	var out []float64
-	for i, k := range U {
-		if i == 0 || k != U[i-1] {
+	for i, k := range knots {
+		if i == 0 || k != knots[i-1] {
 			out = append(out, k)
 		}
 	}
@@ -53,8 +53,8 @@ func distinctValues(U []float64) []float64 {
 // decomposeBezier inserts every interior break up to multiplicity p so the curve becomes
 // a chain of Bézier segments, then slices out each segment's p+1 control points (segments
 // overlap by one shared endpoint).
-func decomposeBezier(p int, U []float64, pw []hpoint4, breaks []float64) [][]hpoint4 {
-	knots, work := U, pw
+func decomposeBezier(p int, knots []float64, pw []hpoint4, breaks []float64) [][]hpoint4 {
+	work := pw
 	for _, v := range breaks[1 : len(breaks)-1] {
 		if m := knotMultiplicity(knots, v); m < p {
 			knots, work = insertKnotHomog(p, knots, work, v, p-m)
@@ -150,7 +150,7 @@ func elevateBezier1(q []hpoint4, d int) []hpoint4 {
 
 // recomposeBezier joins the reduced (degree pr) Bézier segments into one C^0 B-spline:
 // segments share endpoints and every interior break carries multiplicity pr.
-func recomposeBezier(pr int, breaks []float64, reduced [][]hpoint4) (U []float64, pw []hpoint4) {
+func recomposeBezier(pr int, breaks []float64, reduced [][]hpoint4) (knots []float64, pw []hpoint4) {
 	pw = append([]hpoint4(nil), reduced[0]...)
 	for s := 1; s < len(reduced); s++ {
 		pw = append(pw, reduced[s][1:]...)
@@ -162,17 +162,17 @@ func recomposeBezier(pr int, breaks []float64, reduced [][]hpoint4) (U []float64
 // the given break points (interior breaks at multiplicity pr, ends at pr+1).
 func bezierJoinKnots(pr int, breaks []float64) []float64 {
 	nseg := len(breaks) - 1
-	U := make([]float64, 0, 2*(pr+1)+(nseg-1)*pr)
+	knots := make([]float64, 0, 2*(pr+1)+(nseg-1)*pr)
 	for k := 0; k <= pr; k++ {
-		U = append(U, breaks[0])
+		knots = append(knots, breaks[0])
 	}
 	for s := 1; s < nseg; s++ {
 		for k := 0; k < pr; k++ {
-			U = append(U, breaks[s])
+			knots = append(knots, breaks[s])
 		}
 	}
 	for k := 0; k <= pr; k++ {
-		U = append(U, breaks[nseg])
+		knots = append(knots, breaks[nseg])
 	}
-	return U
+	return knots
 }

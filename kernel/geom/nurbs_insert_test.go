@@ -131,6 +131,64 @@ func TestInsertKnot2dPreservesCurve(t *testing.T) {
 	}
 }
 
+func TestRefineKnots2dPreservesCurve(t *testing.T) {
+	c, err := NewBSplineCurve2dUniformWeights(
+		2,
+		[]math.Point2{math.P2(0, 0), math.P2(1, 2), math.P2(3, 0), math.P2(4, 1)},
+		[]float64{0, 0, 0, 0.5, 1, 1, 1},
+	)
+	if err != nil {
+		t.Fatalf("2d curve: %v", err)
+	}
+	got, err := c.RefineKnots([]float64{0.25, 0.75})
+	if err != nil {
+		t.Fatalf("RefineKnots: %v", err)
+	}
+	if len(got.Ctrl) != len(c.Ctrl)+2 {
+		t.Errorf("control count = %d, want %d", len(got.Ctrl), len(c.Ctrl)+2)
+	}
+	lo, hi := c.Domain()
+	for i := 0; i <= 20; i++ {
+		u := lo + (hi-lo)*float64(i)/20
+		if !c.PointAt(u).IsEqualTo(got.PointAt(u), 1e-12) {
+			t.Fatalf("2d curve diverges at u=%g after refine", u)
+		}
+	}
+}
+
+func TestRefineKnotsSurfacePreservesGeometry(t *testing.T) {
+	s := sampleQuadraticSurface(t)
+	gu, err := s.RefineKnotsU([]float64{0.25, 0.5})
+	if err != nil {
+		t.Fatalf("RefineKnotsU: %v", err)
+	}
+	gv, err := gu.RefineKnotsV([]float64{0.5, 0.75})
+	if err != nil {
+		t.Fatalf("RefineKnotsV: %v", err)
+	}
+	if len(gv.Ctrl) != len(s.Ctrl)+2 || len(gv.Ctrl[0]) != len(s.Ctrl[0])+2 {
+		t.Errorf("net dims = %dx%d, want %dx%d", len(gv.Ctrl), len(gv.Ctrl[0]), len(s.Ctrl)+2, len(s.Ctrl[0])+2)
+	}
+	for i := 0; i <= 10; i++ {
+		for j := 0; j <= 10; j++ {
+			u, v := float64(i)/10, float64(j)/10
+			if !s.PointAt(u, v).IsEqualTo(gv.PointAt(u, v), 1e-12) {
+				t.Fatalf("surface diverges at (%g,%g) after refine", u, v)
+			}
+		}
+	}
+}
+
+func TestRefineKnotsSurfaceRejectsBadKnot(t *testing.T) {
+	s := sampleQuadraticSurface(t)
+	if _, err := s.RefineKnotsU([]float64{1.5}); err == nil {
+		t.Error("refining with an out-of-domain U knot should error")
+	}
+	if _, err := s.RefineKnotsV([]float64{-0.2}); err == nil {
+		t.Error("refining with an out-of-domain V knot should error")
+	}
+}
+
 func TestInsertKnotSurfacePreservesGeometry(t *testing.T) {
 	s := sampleQuadraticSurface(t)
 	gu, err := s.InsertKnotU(0.5, 1)

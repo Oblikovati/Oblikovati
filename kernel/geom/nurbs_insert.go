@@ -10,36 +10,36 @@ import "fmt"
 // block of refine, make-compatible, Bézier extraction and (with removal) rebuild.
 
 // insertKnotHomog inserts the knot u into the homogeneous B-spline (degree p, knots
-// U, control points pw) r times, returning the refined knot vector and control
+// knots, control points pw) r times, returning the refined knot vector and control
 // points. It is Boehm's A5.1 generalized over the seeded span/multiplicity (k, s).
 // It panics on r+s > p (more insertions than the degree allows, a caller bug).
-func insertKnotHomog(p int, U []float64, pw []hpoint4, u float64, r int) (newU []float64, newPw []hpoint4) {
+func insertKnotHomog(p int, knots []float64, pw []hpoint4, u float64, r int) (newU []float64, newPw []hpoint4) {
 	n := len(pw) - 1
-	k, s := findSpanMult(n, p, u, U)
+	k, s := findSpanMult(n, p, u, knots)
 	if r+s > p {
 		panic(insertOverflow(u, r, s, p))
 	}
-	newU = insertedKnots(U, u, k, r)
-	newPw = insertedCtrl(p, U, pw, u, k, s, r)
+	newU = insertedKnots(knots, u, k, r)
+	newPw = insertedCtrl(p, knots, pw, u, k, s, r)
 	return newU, newPw
 }
 
 // insertedKnots builds the knot vector after inserting u (r times) at span k.
-func insertedKnots(U []float64, u float64, k, r int) []float64 {
-	out := make([]float64, len(U)+r)
-	copy(out[:k+1], U[:k+1])
+func insertedKnots(knots []float64, u float64, k, r int) []float64 {
+	out := make([]float64, len(knots)+r)
+	copy(out[:k+1], knots[:k+1])
 	for i := 1; i <= r; i++ {
 		out[k+i] = u
 	}
-	for i := k + 1; i < len(U); i++ {
-		out[i+r] = U[i]
+	for i := k + 1; i < len(knots); i++ {
+		out[i+r] = knots[i]
 	}
 	return out
 }
 
 // insertedCtrl builds the control points after inserting u (r times) at span k with
 // pre-existing multiplicity s, via the affine corner-cutting blend of A5.1.
-func insertedCtrl(p int, U []float64, pw []hpoint4, u float64, k, s, r int) []hpoint4 {
+func insertedCtrl(p int, knots []float64, pw []hpoint4, u float64, k, s, r int) []hpoint4 {
 	n := len(pw) - 1
 	out := make([]hpoint4, len(pw)+r)
 	for i := 0; i <= k-p; i++ {
@@ -50,18 +50,18 @@ func insertedCtrl(p int, U []float64, pw []hpoint4, u float64, k, s, r int) []hp
 	}
 	tmp := make([]hpoint4, p-s+1)
 	copy(tmp, pw[k-p:k-s+1])
-	insertBlend(p, U, tmp, out, u, k, s, r)
+	insertBlend(p, knots, tmp, out, u, k, s, r)
 	return out
 }
 
 // insertBlend runs the r corner-cutting passes of A5.1, writing the new control
 // points into out and threading the working row tmp between passes.
-func insertBlend(p int, U []float64, tmp, out []hpoint4, u float64, k, s, r int) {
+func insertBlend(p int, knots []float64, tmp, out []hpoint4, u float64, k, s, r int) {
 	var L int
 	for j := 1; j <= r; j++ {
 		L = k - p + j
 		for i := 0; i <= p-j-s; i++ {
-			alpha := (u - U[L+i]) / (U[i+k+1] - U[L+i])
+			alpha := (u - knots[L+i]) / (knots[i+k+1] - knots[L+i])
 			tmp[i] = tmp[i].lerp(tmp[i+1], alpha)
 		}
 		out[L] = tmp[0]
@@ -87,18 +87,4 @@ func validateInsert(p int, knots []float64, u float64, r int) error {
 		return fmt.Errorf("geom: inserting knot %g %d time(s) would exceed degree %d (current multiplicity %d)", u, r, p, s)
 	}
 	return nil
-}
-
-// refineKnotsHomog inserts each requested extra knot multiplicity into the
-// homogeneous curve, returning the fully refined knots and control points. values
-// and extra are parallel (extra[i] additional insertions of values[i]); it is the
-// repeated-insertion convenience over [insertKnotHomog] used by make-compatible.
-func refineKnotsHomog(p int, U []float64, pw []hpoint4, values []float64, extra []int) (newU []float64, newPw []hpoint4) {
-	newU, newPw = U, pw
-	for i, v := range values {
-		if extra[i] > 0 {
-			newU, newPw = insertKnotHomog(p, newU, newPw, v, extra[i])
-		}
-	}
-	return newU, newPw
 }

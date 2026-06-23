@@ -11,11 +11,11 @@ package geom
 
 // elevateDegreeHomog raises the degree of the homogeneous B-spline by t, returning the
 // new knot vector and control points. t <= 0 is a no-op copy.
-func elevateDegreeHomog(p, t int, U []float64, pw []hpoint4) (newU []float64, newPw []hpoint4) {
+func elevateDegreeHomog(p, t int, knots []float64, pw []hpoint4) (newU []float64, newPw []hpoint4) {
 	if t <= 0 {
-		return append([]float64(nil), U...), append([]hpoint4(nil), pw...)
+		return append([]float64(nil), knots...), append([]hpoint4(nil), pw...)
 	}
-	return newDegElevator(p, t, U, pw).run()
+	return newDegElevator(p, t, knots, pw).run()
 }
 
 // degElevator holds the working state of A5.9: the precomputed Bézier elevation
@@ -37,10 +37,10 @@ type degElevator struct {
 
 // newDegElevator sizes the output and scratch arrays exactly (every distinct knot ends
 // up with its multiplicity raised by t) and precomputes the Bézier elevation table.
-func newDegElevator(p, t int, U []float64, pw []hpoint4) *degElevator {
+func newDegElevator(p, t int, knots []float64, pw []hpoint4) *degElevator {
 	n := len(pw) - 1
-	e := &degElevator{p: p, t: t, ph: p + t, ph2: (p + t) / 2, m: n + p + 1, U: U, pw: pw}
-	knotLen := len(U) + t*distinctCount(U)
+	e := &degElevator{p: p, t: t, ph: p + t, ph2: (p + t) / 2, m: n + p + 1, U: knots, pw: pw}
+	knotLen := len(knots) + t*distinctCount(knots)
 	e.Uh = make([]float64, knotLen)
 	e.Qw = make([]hpoint4, knotLen-e.ph-1)
 	e.bpts = make([]hpoint4, p+1)
@@ -252,10 +252,10 @@ func (e *degElevator) setupNext() {
 
 // distinctCount returns the number of distinct knot values in U (consecutive equal
 // entries count once), the multiplier behind the elevated array sizing.
-func distinctCount(U []float64) int {
+func distinctCount(knots []float64) int {
 	count := 0
-	for i := range U {
-		if i == 0 || U[i] != U[i-1] {
+	for i := range knots {
+		if i == 0 || knots[i] != knots[i-1] {
 			count++
 		}
 	}
