@@ -337,6 +337,62 @@ func applyFairSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	return recomputeResult(part, pf)
 }
 
+// fitSurfaceArgs is the M36-F15 fit op: fit a clean NURBS to a named cloud's cropped region.
+type fitSurfaceArgs struct {
+	Cloud  string `json:"cloud"`
+	Degree int    `json:"degree,omitempty"`
+	NU     int    `json:"nu,omitempty"`
+	NV     int    `json:"nv,omitempty"`
+}
+
+const fitSurfaceSchema = `{
+  "type": "object",
+  "required": ["cloud"],
+  "properties": {
+    "cloud": {"type": "string", "description": "Name of the point cloud whose cropped region is fitted. Crop the cloud to the region first."},
+    "degree": {"type": "integer", "default": 3, "description": "Surface degree each way (3 = bicubic, the Class-A default)."},
+    "nu": {"type": "integer", "default": 6, "description": "Control-point (span) count in U; must exceed the degree."},
+    "nv": {"type": "integer", "default": 6, "description": "Control-point (span) count in V; must exceed the degree."}
+  }
+}`
+
+func fitSurfaceDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "fitSurface", Summary: "Fit a clean Class-A NURBS surface to a scanned point-cloud region (degree + U/V spans).", Schema: json.RawMessage(fitSurfaceSchema), Apply: applyFitSurface}
+}
+
+func applyFitSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in fitSurfaceArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	pc, ok := part.PointClouds().ByName(in.Cloud)
+	if !ok {
+		return nil, fmt.Errorf("fitSurface: no point cloud named %q", in.Cloud)
+	}
+	degree, nu, nv := fitSurfaceDefaults(in)
+	pf := feature.NewFitFeatures(part.Features()).Add(pc.CroppedModelPoints(), degree, nu, nv)
+	return recomputeResult(part, pf)
+}
+
+// fitSurfaceDefaults fills the bicubic 6×6 defaults for any unset fit parameter.
+func fitSurfaceDefaults(in fitSurfaceArgs) (degree, nu, nv int) {
+	degree, nu, nv = in.Degree, in.NU, in.NV
+	if degree <= 0 {
+		degree = 3
+	}
+	if nu <= 0 {
+		nu = 6
+	}
+	if nv <= 0 {
+		nv = 6
+	}
+	return degree, nu, nv
+}
+
 // networkPolylines converts wire [x,y,z] curve point lists to model points (skipping malformed points).
 func networkPolylines(curves [][][]float64) [][]math.Point3 {
 	out := make([][]math.Point3, len(curves))

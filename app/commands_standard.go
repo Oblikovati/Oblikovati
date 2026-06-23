@@ -418,6 +418,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fair-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fair Surface — smooth curvature wrinkles out of a surface while holding its boundary continuity (G0/G1/G2)."),
+		NewCommand("Surface.FitToCloud", "Fit Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewFitSurfaceTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("fit-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Fit Surface — fit a clean Class-A NURBS to a scanned point-cloud region (degree + U/V spans), reporting the deviation to the scan."),
 	}
 }
 
