@@ -81,7 +81,11 @@ func (t *SurfaceDeviationTool) recompute(s *Session) {
 
 // DeviationItems returns the active deviation overlay (empty when the tool is not running).
 func (s *Session) DeviationItems() []renderer.DrawItem {
-	t, ok := s.ActiveTool().Tool().(*SurfaceDeviationTool)
+	ti := s.ActiveTool()
+	if ti == nil {
+		return nil
+	}
+	t, ok := ti.Tool().(*SurfaceDeviationTool)
 	if !ok || t == nil {
 		return nil
 	}
