@@ -371,6 +371,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"sculpt":                  `{"faces":["f1"]}`,
 		"fillSurface":             `{"continuity":"g2"}`,
 		"bridgeSurface":           `{"continuityA":"g2","continuityB":"g2"}`,
+		"networkSurface":          `{"uCurves":[[[0,0,0],[2,0,0]],[[0,2,0],[2,2,0]]],"vCurves":[[[0,0,0],[0,2,0]],[[2,0,0],[2,2,0]]]}`,
 		"freeformBox":             `{"length":"10 mm","width":"10 mm","height":"10 mm"}`,
 		"freeformPlane":           `{"length":"10 mm","width":"10 mm"}`,
 		"freeformQuadBall":        `{"radius":"5 mm"}`,

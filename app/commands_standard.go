@@ -406,6 +406,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("bridge-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Bridge Surface — connect two surfaces with a clean NURBS transition at G0/G1/G2 continuity per side."),
+		NewCommand("Surface.Network", "Network Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewNetworkTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("network-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Network Surface — interpolate a grid of intersecting U and V curves with a single NURBS (Gordon surface)."),
 	}
 }
 
