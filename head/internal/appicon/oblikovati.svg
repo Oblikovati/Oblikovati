@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-label="Oblikovati logo" fill="none">
+  <!-- Parametric "O": an isometric cube wireframe shaping a form -->
+  <defs>
+    <linearGradient id="obkGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5eead4"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <!-- top face -->
+  <path d="M20 4 L34 12 L20 20 L6 12 Z" stroke="url(#obkGrad)" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- left face -->
+  <path d="M6 12 L20 20 L20 36 L6 28 Z" stroke="url(#obkGrad)" stroke-width="1.8" stroke-linejoin="round" opacity="0.85"/>
+  <!-- right face -->
+  <path d="M34 12 L20 20 L20 36 L34 28 Z" stroke="url(#obkGrad)" stroke-width="1.8" stroke-linejoin="round" opacity="0.6"/>
+  <!-- parametric vertex dots -->
+  <circle cx="20" cy="4" r="2" fill="#5eead4"/>
+  <circle cx="34" cy="12" r="2" fill="#38bdf8"/>
+  <circle cx="6" cy="12" r="2" fill="#38bdf8"/>
+  <circle cx="20" cy="36" r="2" fill="#38bdf8"/>
+</svg>
