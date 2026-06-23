@@ -120,6 +120,27 @@ func TestMatchToolParams(t *testing.T) {
 	}
 }
 
+func TestEdgeParamOfAllEdges(t *testing.T) {
+	cases := []struct {
+		edge           geom.Boundary
+		wantU0, wantV0 float64 // (u,v) at t=0
+		wantU1, wantV1 float64 // (u,v) at t=1
+	}{
+		{geom.UMinEdge, 0, 0, 0, 1},
+		{geom.UMaxEdge, 1, 0, 1, 1},
+		{geom.VMinEdge, 0, 0, 1, 0},
+		{geom.VMaxEdge, 0, 1, 1, 1},
+	}
+	for _, c := range cases {
+		ep := edgeParamOf(c.edge)
+		u0, v0 := ep(0)
+		u1, v1 := ep(1)
+		if u0 != c.wantU0 || v0 != c.wantV0 || u1 != c.wantU1 || v1 != c.wantV1 {
+			t.Errorf("edge %d: got (%g,%g)→(%g,%g), want (%g,%g)→(%g,%g)", c.edge, u0, v0, u1, v1, c.wantU0, c.wantV0, c.wantU1, c.wantV1)
+		}
+	}
+}
+
 func TestMatchToolErrorsWithoutTarget(t *testing.T) {
 	s, _ := emptyPartSession(t)
 	def := s.ActiveDocument().Content().(*compdef.PartComponentDefinition)

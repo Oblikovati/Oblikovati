@@ -92,6 +92,66 @@ func TestMatchSurfaceG3(t *testing.T) {
 	seamDersMatch(t, got, target, 3, 1e-9)
 }
 
+// vPatch builds a degree-3 5×5 patch occupying y ∈ [yoff, yoff+1], x ∈ [0,1] — for V-edge matching.
+func vPatch(t *testing.T, yoff float64, z func(i, j int) float64) BSplineSurface {
+	t.Helper()
+	const n = 5
+	ctrl := make([][]math.Point3, n)
+	w := make([][]float64, n)
+	for i := 0; i < n; i++ {
+		ctrl[i] = make([]math.Point3, n)
+		w[i] = make([]float64, n)
+		for j := 0; j < n; j++ {
+			ctrl[i][j] = math.P3(math.Scalar(float64(i)*0.25), math.Scalar(yoff+float64(j)*0.25), math.Scalar(z(i, j)))
+			w[i][j] = 1
+		}
+	}
+	k := clampedUniformKnots(n-1, 3)
+	s, err := NewBSplineSurface(3, 3, ctrl, w, k, k)
+	if err != nil {
+		t.Fatalf("vpatch: %v", err)
+	}
+	return s
+}
+
+func TestMatchSurfaceVEdgeG2(t *testing.T) {
+	target := vPatch(t, 0, func(i, j int) float64 { return 0.5 * float64(j*j) }) // curved in v
+	s := vPatch(t, 1, func(i, j int) float64 { return 0 })                       // flat slab above
+	got, err := MatchSurface(s, target, VMinEdge, VMaxEdge, 2)
+	if err != nil {
+		t.Fatalf("MatchSurface V G2: %v", err)
+	}
+	for _, u := range []float64{0, 0.5, 1} {
+		sd := got.SurfaceDersAt(u, 0, 0, 2)
+		td := target.SurfaceDersAt(u, 1, 0, 2)
+		for k := 0; k <= 2; k++ {
+			if !sd[0][k].IsEqualTo(td[0][k], 1e-7) {
+				t.Fatalf("V-edge G2 mismatch at u=%g order %d: %v vs %v", u, k, sd[0][k], td[0][k])
+			}
+		}
+	}
+}
+
+func TestMatchSurfaceReversedEdgesG2(t *testing.T) {
+	// The matched surface is on the LEFT, joining its U-max edge to the target's U-min edge — the
+	// reversed configuration that exercises the opposite into-seam direction signs.
+	target := uPatch(t, 1, func(i, j int) float64 { return 0.5 * float64(i*i) })
+	s := uPatch(t, 0, func(i, j int) float64 { return 0 })
+	got, err := MatchSurface(s, target, UMaxEdge, UMinEdge, 2)
+	if err != nil {
+		t.Fatalf("MatchSurface reversed G2: %v", err)
+	}
+	for _, v := range []float64{0, 0.5, 1} {
+		sd := got.SurfaceDersAt(1, v, 2, 0) // matched surface's U-max derivatives
+		td := target.SurfaceDersAt(0, v, 2, 0)
+		for k := 0; k <= 2; k++ {
+			if !sd[k][0].IsEqualTo(td[k][0], 1e-7) {
+				t.Fatalf("reversed G2 mismatch at v=%g order %d: %v vs %v", v, k, sd[k][0], td[k][0])
+			}
+		}
+	}
+}
+
 func TestMatchSurfaceValidates(t *testing.T) {
 	target := uPatch(t, 0, func(i, j int) float64 { return 0 })
 	s := uPatch(t, 1, func(i, j int) float64 { return 0 })
