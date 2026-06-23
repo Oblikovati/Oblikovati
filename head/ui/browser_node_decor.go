@@ -20,10 +20,12 @@ import (
 // height so the per-feature glyphs read clearly (#1264).
 const browserIconPx = 32
 
-// drawNodeIcon draws the node's icon glyph followed by SameLine, so the label that the caller
-// renders next sits to its right. A node with no icon, or a glyph that fails to rasterize, draws
-// nothing (the label still renders) so the tree degrades gracefully.
-func drawNodeIcon(n app.BrowserNode) {
+// drawNodeIcon draws the node's icon as a framed tile (the ribbon's button background, so the
+// glyph reads against the dark tree) and then advances the cursor so the label the caller renders
+// next sits to its right, vertically centred on the tile. Clicking the tile selects the node, like
+// clicking its label. A node with no icon, or a glyph that fails to rasterize, draws nothing (the
+// label still renders) so the tree degrades gracefully (#1264).
+func drawNodeIcon(s *app.Session, n app.BrowserNode) {
 	if n.Icon == "" || icons == nil {
 		return
 	}
@@ -31,8 +33,13 @@ func drawNodeIcon(n app.BrowserNode) {
 	if !ok {
 		return
 	}
-	native.Image(tex, browserIconPx, browserIconPx)
+	if native.ImageButton("##nodeicon", tex, browserIconPx, browserIconPx, identityTint) {
+		s.SelectBrowserNode(n)
+	}
 	native.SameLine()
+	m := native.Metrics()
+	x, y := native.GetCursorScreenPos()
+	native.SetCursorScreenPos(x, y+(browserIconPx+2*m.FramePadY-native.TextLineHeight())/2)
 }
 
 // browserRename holds the in-place feature rename: the node being edited (nil when none), the

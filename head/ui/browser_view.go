@@ -261,7 +261,7 @@ func drawSelectableBranchNode(s *app.Session, n app.BrowserNode) {
 		return
 	}
 	current := s.Selection().First()
-	drawNodeIcon(n)
+	drawNodeIcon(s, n)
 	open := native.TreeNodeSelectable(n.Label, current == n.Select)
 	if native.IsItemClicked(native.MouseLeft) {
 		s.SelectBrowserNode(n)
@@ -286,7 +286,7 @@ func drawSelectableNode(s *app.Session, n app.BrowserNode) {
 		return
 	}
 	current := s.Selection().First()
-	drawNodeIcon(n)
+	drawNodeIcon(s, n)
 	if native.Selectable(n.Label, current == n.Select) {
 		s.SelectBrowserNode(n)
 	}
