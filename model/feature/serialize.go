@@ -64,6 +64,7 @@ type FeatureData struct {
 	Match            *MatchData            `yaml:"match,omitempty"`
 	ExtendSurface    *ExtendSurfaceData    `yaml:"extendSurface,omitempty"`
 	Untrim           *UntrimData           `yaml:"untrim,omitempty"`
+	FillSurface      *FillSurfaceData      `yaml:"fillSurface,omitempty"`
 	FaceEdit         *FaceEditData         `yaml:"faceEdit,omitempty"`
 	Thicken          *ThickenData          `yaml:"thicken,omitempty"`
 	Revolve          *RevolveData          `yaml:"revolve,omitempty"`
@@ -291,6 +292,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.ExtendSurface = serializeExtendSurface(f.def)
 	case *UntrimFeature:
 		fd.Untrim = &UntrimData{}
+	case *FillFeature:
+		fd.FillSurface = serializeFillSurface(f.def)
 	case *RevolveFeature:
 		rv, err := serializeRevolve(f.def, sk)
 		if err != nil {
@@ -620,6 +623,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreExtendSurface(fs, fd.ExtendSurface)
 	case "untrim-surface":
 		return restoreUntrim(fs, fd.Untrim)
+	case "fill-surface":
+		return restoreFillSurface(fs, fd.FillSurface)
 	case "split", "move-face", "face-offset", "delete-face", "replace-face":
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
 	case "thicken":
