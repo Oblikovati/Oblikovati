@@ -555,7 +555,8 @@ func modelOverlays(s *app.Session, cam scene.Camera, hovered *feature.WorkPlane,
 	list.Items = append(list.Items, highlightSetItems(s)...)
 	list.Items = append(list.Items, revolveCenterlineHighlight(s)...)
 	list.Items = append(list.Items, activeToolPreviewItems(s)...)
-	list.Items = append(list.Items, pointCloudOverlay(s, cam)...) // attached scans (M17-F06, #645)
+	list.Items = append(list.Items, pointCloudOverlay(s, cam)...)     // attached scans (M17-F06, #645)
+	list.Items = append(list.Items, s.SurfaceInterrogationItems()...) // reflection/highlight/isophote (M36-F12)
 	return list
 }
 

@@ -28,7 +28,20 @@ func analysisCommands() []*CommandDefinition {
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("model-health").WithButtonStyle(LargeIconButton).
 			WithTooltip("Report the part's overall health and list every feature that is sick, warning or suppressed for repair."),
+		NewCommand("Inspect.SurfaceAnalysis", "Surface Analysis", "Analyze", startSurfaceAnalysis).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("surface-analysis").WithButtonStyle(LargeIconButton).
+			WithTooltip("Surface Analysis — overlay reflection, highlight and isophote lines to judge surface fairness and G1/G2 continuity."),
 	}
+}
+
+// startSurfaceAnalysis activates the live surface-interrogation overlay on the active part.
+func startSurfaceAnalysis(s *Session) error {
+	if _, err := activePart(s); err != nil {
+		return err
+	}
+	s.StartTool(NewSurfaceInterrogationTool())
+	return nil
 }
 
 // modelHealth aggregates the active part's feature health and reports it as a notice.

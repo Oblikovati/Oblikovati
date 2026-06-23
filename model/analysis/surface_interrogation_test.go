@@ -101,6 +101,64 @@ func TestIsophotesLinearFieldAreStraightAndParallel(t *testing.T) {
 	}
 }
 
+// tiltStrip builds a flat XY grid whose per-vertex normal tilts in x by the angle field a(x):
+// N = (a(x), 0, 1). N·L (L = +Z) depends only on x, so the isophote spacing mirrors the local
+// curvature |a'(x)| — the basis for the G1-vs-G2 continuity test.
+func tiltStrip(a func(float64) float64) SurfaceSamples {
+	var m SurfaceSamples
+	const nx, ny = 80, 4
+	idx := func(i, j int) int { return i*(ny+1) + j }
+	for i := 0; i <= nx; i++ {
+		x := -1 + 2*float64(i)/nx
+		nrm := math.V3(math.Scalar(a(x)), 0, 1)
+		for j := 0; j <= ny; j++ {
+			m.Positions = append(m.Positions, math.P3(math.Scalar(x), math.Scalar(float64(j)/ny), 0))
+			m.Normals = append(m.Normals, nrm)
+		}
+	}
+	for i := 0; i < nx; i++ {
+		for j := 0; j < ny; j++ {
+			a0, b0, c0, d0 := idx(i, j), idx(i, j+1), idx(i+1, j+1), idx(i+1, j)
+			m.Triangles = append(m.Triangles, [3]int{a0, b0, c0}, [3]int{a0, c0, d0})
+		}
+	}
+	return m
+}
+
+// halfCounts splits isophote segments by the sign of their midpoint x.
+func halfCounts(segs []Segment3) (left, right int) {
+	for _, s := range segs {
+		if float64(s.A.X+s.B.X)/2 < 0 {
+			left++
+		} else {
+			right++
+		}
+	}
+	return left, right
+}
+
+// TestIsophotesRevealCurvatureDiscontinuity is the G1-vs-G2 discriminator: a curvature jump across
+// a seam (the normal tilt's slope changes) makes the isophotes pack on the higher-curvature side,
+// so the two halves are strongly asymmetric — while a smooth (constant-curvature) field stays
+// balanced. (The visible isophote *kink* on a 2D-curved surface is confirmed in the live capture.)
+func TestIsophotesRevealCurvatureDiscontinuity(t *testing.T) {
+	g2 := tiltStrip(func(x float64) float64 { return 0.9 * x }) // constant curvature (G2)
+	g1 := tiltStrip(func(x float64) float64 {                   // tangent-continuous, curvature jumps at x=0 (G1 only)
+		if x < 0 {
+			return 0.4 * x
+		}
+		return 1.4 * x
+	})
+	asym := func(m SurfaceSamples) float64 {
+		l, r := halfCounts(Isophotes(m, math.V3(0, 0, 1), 24))
+		return stdmath.Abs(float64(l-r)) / float64(l+r+1)
+	}
+	ag1, ag2 := asym(g1), asym(g2)
+	if ag1 <= ag2+0.2 {
+		t.Errorf("a G1 (curvature-discontinuous) seam should make isophotes far more asymmetric than G2: g1=%g g2=%g", ag1, ag2)
+	}
+}
+
 func TestReflectionAndHighlightLinesOnSphere(t *testing.T) {
 	m := sphereMesh(1, 20, 40)
 	if segs := ReflectionLines(m, math.P3(0, 0, 5), math.V3(1, 0, 0), 8); len(segs) == 0 {
