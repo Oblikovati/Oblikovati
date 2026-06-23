@@ -157,27 +157,17 @@ func innerEdgeMidpoint(s geom.BSplineSurface, e geom.Boundary) math.Point3 {
 	}
 }
 
-// edgeCurve returns the boundary iso-curve of a surface as a B-spline curve.
+// edgeCurve returns the boundary iso-curve of a surface as a B-spline curve, reusing the untrim
+// iso-curve extractors (which return the same concrete BSplineCurve).
 func edgeCurve(s geom.BSplineSurface, e geom.Boundary) geom.BSplineCurve {
 	switch e {
-	case geom.UMinEdge, geom.UMaxEdge:
-		i := 0
-		if e == geom.UMaxEdge {
-			i = len(s.Ctrl) - 1
-		}
-		c, _ := geom.NewBSplineCurve(s.VDegree, s.Ctrl[i], s.Weights[i], s.VKnots)
-		return c
+	case geom.UMinEdge:
+		return uIsoCurve(s, false).(geom.BSplineCurve)
+	case geom.UMaxEdge:
+		return uIsoCurve(s, true).(geom.BSplineCurve)
+	case geom.VMinEdge:
+		return vIsoCurve(s, false).(geom.BSplineCurve)
 	default:
-		j := 0
-		if e == geom.VMaxEdge {
-			j = len(s.Ctrl[0]) - 1
-		}
-		ctrl := make([]math.Point3, len(s.Ctrl))
-		w := make([]float64, len(s.Ctrl))
-		for i := range s.Ctrl {
-			ctrl[i], w[i] = s.Ctrl[i][j], s.Weights[i][j]
-		}
-		c, _ := geom.NewBSplineCurve(s.UDegree, ctrl, w, s.UKnots)
-		return c
+		return vIsoCurve(s, true).(geom.BSplineCurve)
 	}
 }
