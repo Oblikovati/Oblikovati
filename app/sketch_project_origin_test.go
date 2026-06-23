@@ -48,13 +48,19 @@ func TestProjectGeometryToolProjectsDatums(t *testing.T) {
 	xAxis, _ := def.WorkGeometry().AxisByRef(feature.OriginXAxis)
 	xzPlane, _ := def.WorkGeometry().WorkPlaneByRef(feature.OriginXZPlane)
 
+	xyPlane, _ := def.WorkGeometry().WorkPlaneByRef(feature.OriginXYPlane) // parallel to the sketch
+
 	tool := NewProjectGeometryTool()
 	s.StartTool(tool)
 	tool.Pick(s, WorkPointHandle{Point: center})
 	tool.Pick(s, WorkAxisHandle{Axis: xAxis})
 	tool.Pick(s, WorkPlaneHandle{Plane: xzPlane})
+	tool.Pick(s, WorkPlaneHandle{Plane: xyPlane}) // parallel: must be skipped on commit
 	if !tool.CanCommit() {
 		t.Fatal("tool should be ready after picking datum geometry")
+	}
+	if got := len(tool.Picks()); got != 4 {
+		t.Errorf("Picks() = %d, want 4 datum picks for the highlight", got)
 	}
 	if err := s.OK(); err != nil {
 		t.Fatalf("OK: %v", err)

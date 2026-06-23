@@ -5,6 +5,7 @@ package compdef
 import (
 	"testing"
 
+	"oblikovati.org/kernel/ops"
 	"oblikovati.org/math"
 	"oblikovati.org/model/feature"
 	"oblikovati.org/model/sketch"
@@ -99,6 +100,85 @@ func TestWorkKeyResolvesClassifiesDatums(t *testing.T) {
 	}
 	if d.WorkPointKeyResolves("not-a-datum") {
 		t.Error("a non-datum reference must not resolve as a work point")
+	}
+}
+
+// TestWorkAxisAndPlaneSourceID: the axis/plane sources report their datum reference.
+func TestWorkAxisAndPlaneSourceID(t *testing.T) {
+	d := NewPartComponentDefinition()
+	if got := NewWorkAxisRefSource(d, feature.OriginXAxis).SourceID(); got != string(feature.OriginXAxis) {
+		t.Errorf("axis SourceID = %q, want %q", got, feature.OriginXAxis)
+	}
+	if got := NewWorkPlaneRefSource(d, feature.OriginXZPlane, sketch.XYPlane()).SourceID(); got != string(feature.OriginXZPlane) {
+		t.Errorf("plane SourceID = %q, want %q", got, feature.OriginXZPlane)
+	}
+}
+
+// TestWorkAxisRefSourceLostReference / TestWorkPlaneRefSourceLostReference: an unknown datum
+// reference reports lost rather than panicking.
+func TestWorkAxisRefSourceLostReference(t *testing.T) {
+	d := NewPartComponentDefinition()
+	if _, ok := NewWorkAxisRefSource(d, "origin/axis/bogus").SamplePoints(); ok {
+		t.Error("unknown datum axis should report ok=false")
+	}
+}
+
+func TestWorkPlaneRefSourceLostReference(t *testing.T) {
+	d := NewPartComponentDefinition()
+	if _, ok := NewWorkPlaneRefSource(d, "origin/plane/bogus", sketch.XYPlane()).SamplePoints(); ok {
+		t.Error("unknown datum plane should report ok=false")
+	}
+}
+
+// TestWorkPlaneIntersectsSketch: the viability probe is true for a meeting plane, false for a
+// parallel one.
+func TestWorkPlaneIntersectsSketch(t *testing.T) {
+	d := NewPartComponentDefinition()
+	if !d.WorkPlaneIntersectsSketch(feature.OriginXZPlane, sketch.XYPlane()) {
+		t.Error("XZ plane should meet the XY sketch in a line")
+	}
+	if d.WorkPlaneIntersectsSketch(feature.OriginXYPlane, sketch.XYPlane()) {
+		t.Error("XY plane is parallel to the XY sketch — no intersection line")
+	}
+}
+
+// TestReferenceLineHalfSpanScalesWithModel: a large body grows the reference-line span beyond
+// the empty-part default (half the model range-box diagonal).
+func TestReferenceLineHalfSpanScalesWithModel(t *testing.T) {
+	d := NewPartComponentDefinition()
+	sk := d.Sketches().Add(sketch.XYPlane())
+	c0 := sk.Points().Add(math.P2(0, 0))
+	c1 := sk.Points().Add(math.P2(100, 0))
+	c2 := sk.Points().Add(math.P2(100, 100))
+	c3 := sk.Points().Add(math.P2(0, 100))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+	feature.NewExtrudeFeatures(d.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 100 })
+	d.Recompute()
+	if got := d.referenceLineHalfSpan(); got <= referenceLineHalfSpan {
+		t.Errorf("large-model span = %v, want > default %v", got, referenceLineHalfSpan)
+	}
+}
+
+// TestReferenceLineHalfSpanSmallModelKeepsDefault: a tiny body (half-diagonal below the
+// default) keeps the default span so the reference line stays visible.
+func TestReferenceLineHalfSpanSmallModelKeepsDefault(t *testing.T) {
+	d := NewPartComponentDefinition()
+	sk := d.Sketches().Add(sketch.XYPlane())
+	c0 := sk.Points().Add(math.P2(0, 0))
+	c1 := sk.Points().Add(math.P2(1, 0))
+	c2 := sk.Points().Add(math.P2(1, 1))
+	c3 := sk.Points().Add(math.P2(0, 1))
+	sk.Lines().Add(c0, c1)
+	sk.Lines().Add(c1, c2)
+	sk.Lines().Add(c2, c3)
+	sk.Lines().Add(c3, c0)
+	feature.NewExtrudeFeatures(d.Features()).AddByDistanceExtent(sk, 0, ops.NewBody, func() float64 { return 1 })
+	d.Recompute()
+	if got := d.referenceLineHalfSpan(); got != referenceLineHalfSpan {
+		t.Errorf("small-model span = %v, want default %v", got, referenceLineHalfSpan)
 	}
 }
 
