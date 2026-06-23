@@ -370,6 +370,7 @@ func TestEveryOperationHandlesArgsCleanly(t *testing.T) {
 		"stitch":                  `{"faces":["f1"]}`,
 		"sculpt":                  `{"faces":["f1"]}`,
 		"fillSurface":             `{"continuity":"g2"}`,
+		"bridgeSurface":           `{"continuityA":"g2","continuityB":"g2"}`,
 		"freeformBox":             `{"length":"10 mm","width":"10 mm","height":"10 mm"}`,
 		"freeformPlane":           `{"length":"10 mm","width":"10 mm"}`,
 		"freeformQuadBall":        `{"radius":"5 mm"}`,

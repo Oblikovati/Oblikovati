@@ -220,6 +220,45 @@ func applyFillSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	return recomputeResult(part, pf)
 }
 
+// bridgeSurfaceArgs is the M36-F09 bridge op: the continuity to each of the two neighbour surfaces.
+type bridgeSurfaceArgs struct {
+	ContinuityA string `json:"continuityA,omitempty"`
+	ContinuityB string `json:"continuityB,omitempty"`
+}
+
+const bridgeSurfaceSchema = `{
+  "type": "object",
+  "properties": {
+    "continuityA": {"type": "string", "enum": ["g0", "g1", "g2"], "default": "g2", "description": "Continuity to the FIRST of the last two surface bodies (api/types SurfaceContinuity): g0/g1/g2."},
+    "continuityB": {"type": "string", "enum": ["g0", "g1", "g2"], "default": "g2", "description": "Continuity to the SECOND of the last two surface bodies."}
+  }
+}`
+
+func bridgeSurfaceDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "bridgeSurface", Summary: "Connect the last two surface bodies with a clean NURBS transition (G0/G1/G2 per side).", Schema: json.RawMessage(bridgeSurfaceSchema), Apply: applyBridgeSurface}
+}
+
+func applyBridgeSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in bridgeSurfaceArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	ca, ok := types.ParseSurfaceContinuity(in.ContinuityA, types.ContinuityG2)
+	if !ok {
+		return nil, fmt.Errorf("bridgeSurface: unknown continuityA %q (want g0, g1, or g2)", in.ContinuityA)
+	}
+	cb, ok := types.ParseSurfaceContinuity(in.ContinuityB, types.ContinuityG2)
+	if !ok {
+		return nil, fmt.Errorf("bridgeSurface: unknown continuityB %q (want g0, g1, or g2)", in.ContinuityB)
+	}
+	pf := feature.NewBridgeFeatures(part.Features()).Add(ca.Order(), cb.Order())
+	return recomputeResult(part, pf)
+}
+
 func applySurfaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
 	part, in, err := decodeSurface(s, raw)
 	if err != nil {
