@@ -25,6 +25,13 @@ func TestDocumentUnitsRoundTripOverWire(t *testing.T) {
 		t.Fatalf("default precision/format = %+v, want 3/2/decimal", got)
 	}
 
+	// The wire exposes the working scale (ADR-0042 Phase 2); this already-modeled document keeps
+	// the centimetre default (auto-centring only applies to a still-empty document — covered in
+	// model/compdef).
+	if got.WorkingScaleCm != 1 {
+		t.Errorf("working scale = %v, want 1 (cm)", got.WorkingScaleCm)
+	}
+
 	call(t, r, s, "documents.setUnits", `{"lengthUnit":"in","lengthDisplayPrecision":4,"lengthDisplayFormat":"fractional"}`, &got)
 	if got.LengthUnit != "in" || got.LengthDisplayPrecision != 4 || got.LengthDisplayFormat != "fractional" {
 		t.Errorf("after set = %+v, want in/4/fractional", got)

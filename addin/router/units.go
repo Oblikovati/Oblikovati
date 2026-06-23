@@ -48,6 +48,7 @@ func unitsInfoOf(u param.UnitsOfMeasure) wire.DocumentUnitsInfo {
 		LengthDisplayPrecision: u.LengthPrecision(),
 		AngleDisplayPrecision:  u.AnglePrecision(),
 		LengthDisplayFormat:    u.LengthFormat().String(),
+		WorkingScaleCm:         u.WorkingScale(),
 	}
 }
 

@@ -215,6 +215,32 @@ func (m UnitsOfMeasure) CenteredOnLength(name string) (UnitsOfMeasure, error) {
 	return m.WithWorkingScale(def.factor)
 }
 
+// safeWorkingBand brackets the centimetre size of length units that store well at the centimetre
+// working scale (ADR-0042 Phase 2). Units inside it (mm … ft) keep centimetre coordinates — so
+// existing documents are unchanged — while units outside (µm/nm/pm and km and larger) get a
+// working unit matching the document unit, keeping coordinates O(1) and clear of the
+// underflow/precision extremes.
+const (
+	safeWorkingBandLoCm = 1e-3
+	safeWorkingBandHiCm = 1e4
+)
+
+// RecommendedWorkingScale returns the working scale (centimetres per working unit) to centre a
+// fresh document on the named length unit: the unit's own size when it is extreme enough that
+// centimetre storage would lose conditioning, else 1.0 (the centimetre default). ok is false for
+// an unknown or non-length unit. This is the policy the document layer applies when a new
+// document's length unit is chosen.
+func RecommendedWorkingScale(lengthUnitName string) (scaleCm float64, ok bool) {
+	def, found := lookupUnit(lengthUnitName)
+	if !found || def.category != Length {
+		return 1, false
+	}
+	if def.factor < safeWorkingBandLoCm || def.factor > safeWorkingBandHiCm {
+		return def.factor, true
+	}
+	return 1, true
+}
+
 // wsFactor is workingScale raised to the unit's length exponent (Length¹, Area², Volume³,
 // 0 otherwise) — the multiplier converting a working-unit Value to centimetres. An explicit
 // switch keeps the common exponents exact (no Pow round-off).
