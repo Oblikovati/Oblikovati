@@ -88,3 +88,54 @@ func TestFillFourSidedErrorsOnNonNurbs(t *testing.T) {
 		t.Error("a non-NURBS neighbour should make FillFourSided error")
 	}
 }
+
+// planeNeighbour builds a single-face PLANAR surface body over [x0,x1]×[y0,y1] at z=0 (geom.Plane,
+// not NURBS) — the kind boundaryPatch produces.
+func planeNeighbour(t *testing.T, tag string, x0, x1, y0, y1 float64) *topo.Body {
+	t.Helper()
+	pl, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatalf("plane: %v", err)
+	}
+	c := [4]math.Point3{math.P3(math.Scalar(x0), math.Scalar(y0), 0), math.P3(math.Scalar(x1), math.Scalar(y0), 0), math.P3(math.Scalar(x1), math.Scalar(y1), 0), math.P3(math.Scalar(x0), math.Scalar(y1), 0)}
+	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok(tag, "body", 0)))
+	v := make([]*topo.Vertex, 4)
+	for i, p := range c {
+		v[i] = bld.AddVertex(p, topo.NewLineage(topo.Tok(tag, "v", i)))
+	}
+	uses := make([]topo.Use, 4)
+	for i := 0; i < 4; i++ {
+		j := (i + 1) % 4
+		e := bld.AddEdge(geom.NewLineSegment(c[i], c[j]), v[i], v[j], topo.NewLineage(topo.Tok(tag, "e", i)))
+		uses[i] = topo.Fwd(e)
+	}
+	bld.AddFace(pl, topo.NewLineage(topo.Tok(tag, "face", 0)), topo.OuterLoop(uses...))
+	return bld.Build()
+}
+
+// TestFillFourSidedPlanarNeighbours: a fill among four PLANAR (non-NURBS) neighbours — the common
+// boundary-patch case — closes the opening with a valid surface body in the shared plane (G0 on every
+// side, since planar neighbours have no curvature to match).
+func TestFillFourSidedPlanarNeighbours(t *testing.T) {
+	ns := [4]*topo.Body{
+		planeNeighbour(t, "w", -1, 0, 0, 1),
+		planeNeighbour(t, "e", 1, 2, 0, 1),
+		planeNeighbour(t, "s", 0, 1, -1, 0),
+		planeNeighbour(t, "n", 0, 1, 1, 2),
+	}
+	out, err := ops.FillFourSided(ns, 2) // G2 requested; planar ⇒ falls back to G0 per side
+	if err != nil {
+		t.Fatalf("FillFourSided (planar): %v", err)
+	}
+	bs, ok := out.Faces()[0].Geometry().(geom.BSplineSurface)
+	if !ok {
+		t.Fatalf("fill face is %T, want geom.BSplineSurface", out.Faces()[0].Geometry())
+	}
+	for i := 0; i <= 4; i++ {
+		for j := 0; j <= 4; j++ {
+			if p := bs.PointAt(float64(i)/4, float64(j)/4); p.Z < -1e-7 || p.Z > 1e-7 {
+				t.Fatalf("planar fill left z=0 at (%d,%d): z=%g", i, j, p.Z)
+			}
+		}
+	}
+}

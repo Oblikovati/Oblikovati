@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"oblikovati.org/addin/modelaccess"
+	"oblikovati.org/api/types"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
@@ -184,6 +185,39 @@ func stitchDescriptor() *OperationDescriptor {
 
 func sculptDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{Name: "sculpt", Summary: "Combine surfaces and solids into a sculpted body.", Schema: json.RawMessage(sculptSchema), Apply: applySculpt}
+}
+
+// fillSurfaceArgs is the M36-F07 boundary-fill op: the continuity to the four neighbour surfaces.
+type fillSurfaceArgs struct {
+	Continuity string `json:"continuity,omitempty"`
+}
+
+const fillSurfaceSchema = `{
+  "type": "object",
+  "properties": {
+    "continuity": {"type": "string", "enum": ["g0", "g1", "g2"], "default": "g2", "description": "Continuity to the four bounding surfaces (api/types SurfaceContinuity): g0 (position), g1 (tangent), g2 (curvature). The op closes the four-sided opening bounded by the LAST FOUR surface bodies with a single clean NURBS. NURBS neighbours are matched to the chosen continuity; planar neighbours are filled position-only."}
+  }
+}`
+
+func fillSurfaceDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "fillSurface", Summary: "Close a four-sided opening bounded by the last four surface bodies with a single NURBS (G0/G1/G2).", Schema: json.RawMessage(fillSurfaceSchema), Apply: applyFillSurface}
+}
+
+func applyFillSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in fillSurfaceArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	cont, ok := types.ParseSurfaceContinuity(in.Continuity, types.ContinuityG2)
+	if !ok {
+		return nil, fmt.Errorf("fillSurface: unknown continuity %q (want g0, g1, or g2)", in.Continuity)
+	}
+	pf := feature.NewFillFeatures(part.Features()).Add(cont.Order())
+	return recomputeResult(part, pf)
 }
 
 func applySurfaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
