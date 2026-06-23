@@ -360,6 +360,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("mid-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Mid-Surface — extract mid-plane patches from the solid's thin walls (for FEA)."),
+		NewCommand("Surface.Rebuild", "Rebuild Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewSurfaceRebuildTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("rebuild-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Rebuild Surface — refit freeform faces to clean Class-A NURBS (fewer, even control points)."),
 	}
 }
 
