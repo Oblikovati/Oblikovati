@@ -159,6 +159,16 @@ func TestIsophotesRevealCurvatureDiscontinuity(t *testing.T) {
 	}
 }
 
+func TestNormalizeZeroVectorIsSafe(t *testing.T) {
+	// A degenerate (zero) normal must not divide by zero — interrogation on a pole/apex.
+	if got := normalize(math.V3(0, 0, 0)); got != (math.V3(0, 0, 0)) {
+		t.Errorf("normalize(0) = %v, want the zero vector unchanged", got)
+	}
+	if got := normalize(math.V3(0, 0, 4)); !got.IsEqualTo(math.V3(0, 0, 1), 1e-12) {
+		t.Errorf("normalize((0,0,4)) = %v, want unit +Z", got)
+	}
+}
+
 func TestReflectionAndHighlightLinesOnSphere(t *testing.T) {
 	m := sphereMesh(1, 20, 40)
 	if segs := ReflectionLines(m, math.P3(0, 0, 5), math.V3(1, 0, 0), 8); len(segs) == 0 {

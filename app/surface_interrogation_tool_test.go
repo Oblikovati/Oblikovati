@@ -67,9 +67,14 @@ func TestSurfaceInterrogationToolParams(t *testing.T) {
 	}
 	p := tool.Params()
 	p.Ints[0].Set(20)
-	p.Floats[0].Set(0.5)
 	p.Choices[0].Set(interrogReflection)
-	if p.Ints[0].Get() != 20 || p.Floats[0].Get() != 0.5 || p.Choices[0].Get() != interrogReflection {
+	for i, v := range []float64{0.5, -0.3, 0.8} { // exercise all three direction closures
+		p.Floats[i].Set(v)
+		if p.Floats[i].Get() != v {
+			t.Errorf("float param %d get/set mismatch", i)
+		}
+	}
+	if p.Ints[0].Get() != 20 || p.Choices[0].Get() != interrogReflection {
 		t.Error("param get/set round-trip mismatch")
 	}
 }
