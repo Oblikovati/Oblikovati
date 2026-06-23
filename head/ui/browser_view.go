@@ -344,7 +344,7 @@ func drawBranchNode(s *app.Session, n app.BrowserNode) {
 // the action behind a clicked item. Nodes whose kind has no menu draw nothing.
 func drawNodeMenu(s *app.Session, n app.BrowserNode) {
 	items := app.BrowserMenuFor(s, n) // built-ins + add-in injections (M05-F12)
-	renameable := isRenameableFeature(n)
+	renameable := isRenameableNode(n)
 	if len(items) == 0 && !renameable {
 		return
 	}

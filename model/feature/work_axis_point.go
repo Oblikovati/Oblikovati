@@ -84,6 +84,7 @@ func (w *WorkAxis) ID() ID                          { return w.id }
 func (w *WorkAxis) Seq() uint64                     { return w.seq }
 func (w *WorkAxis) Key() WorkRef                    { return w.key }
 func (w *WorkAxis) Name() string                    { return w.name }
+func (w *WorkAxis) SetName(n string)                { w.name = n }
 func (w *WorkAxis) Health() health.Health           { return w.health }
 func (w *WorkAxis) Origin() math.Point3             { return w.origin }
 func (w *WorkAxis) Direction() math.UnitVector3     { return w.dir }
@@ -225,6 +226,7 @@ func (w *WorkPoint) ID() ID                          { return w.id }
 func (w *WorkPoint) Seq() uint64                     { return w.seq }
 func (w *WorkPoint) Key() WorkRef                    { return w.key }
 func (w *WorkPoint) Name() string                    { return w.name }
+func (w *WorkPoint) SetName(n string)                { w.name = n }
 func (w *WorkPoint) Health() health.Health           { return w.health }
 func (w *WorkPoint) Point() math.Point3              { return w.point }
 func (w *WorkPoint) IsCoordinateSystemElement() bool { return w.coordinateSystem }

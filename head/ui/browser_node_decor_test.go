@@ -54,11 +54,11 @@ func TestRenameStateHelpers(t *testing.T) {
 	if renaming(n) {
 		t.Error("nothing should be renaming initially")
 	}
-	if !isRenameableFeature(n) {
+	if !isRenameableNode(n) {
 		t.Error("a feature node should be renameable")
 	}
-	if got := featureNodeName(n); got != "Extrusion1" {
-		t.Errorf("featureNodeName = %q, want Extrusion1", got)
+	if got := nodeName(n); got != "Extrusion1" {
+		t.Errorf("nodeName = %q, want Extrusion1", got)
 	}
 	beginRename(n)
 	if !renaming(n) {
@@ -95,14 +95,106 @@ func TestApplyRenameRejectsDuplicate(t *testing.T) {
 	}
 }
 
-// TestIsRenameableFeatureRejectsNonFeature: a non-feature node is not renameable.
-func TestIsRenameableFeatureRejectsNonFeature(t *testing.T) {
+// TestIsRenameableNodeRejectsNonRenameable: a plain folder node is not renameable.
+func TestIsRenameableNodeRejectsNonRenameable(t *testing.T) {
 	n := app.BrowserNode{Label: "Solid Bodies", Kind: "bodies"}
-	if isRenameableFeature(n) {
-		t.Error("a non-feature node must not be renameable")
+	if isRenameableNode(n) {
+		t.Error("a non-renameable node must not be renameable")
 	}
-	if got := featureNodeName(n); got != "Solid Bodies" {
-		t.Errorf("featureNodeName of a non-feature node = %q, want its label", got)
+	if got := nodeName(n); got != "Solid Bodies" {
+		t.Errorf("nodeName of a non-handle node = %q, want its label", got)
+	}
+}
+
+// TestRenameSketchAndWorkFeatures: sketches and user work features rename through the browser
+// dispatch, while the grounded origin datums are rejected (#1264).
+func TestRenameSketchAndWorkFeatures(t *testing.T) {
+	s := app.NewSession()
+	pd, err := compdef.AddPart(s.Workspace(), "w.opd", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := pd.Content().(*compdef.PartComponentDefinition)
+	sk := def.Sketches().Add(sketch.XYPlane())
+
+	skNode := app.BrowserNode{Kind: "sketch", Select: app.SketchHandle{Sketch: sk}}
+	if !isRenameableNode(skNode) {
+		t.Fatal("a sketch node should be renameable")
+	}
+	if err := renameNode(s, skNode, "Profile"); err != nil {
+		t.Fatalf("rename sketch: %v", err)
+	}
+	if sk.Name() != "Profile" {
+		t.Errorf("sketch name = %q, want Profile", sk.Name())
+	}
+
+	// The origin centre point is a grounded coordinate-system datum: not renameable, and the
+	// backend rejects a rename attempt.
+	center, _ := def.WorkGeometry().WorkPointByRef(feature.OriginCenter)
+	xPlane, _ := def.WorkGeometry().WorkPlaneByRef(feature.OriginXYPlane)
+	xAxis, _ := def.WorkGeometry().AxisByRef(feature.OriginXAxis)
+	originNodes := []app.BrowserNode{
+		{Kind: "workpoint", Select: app.WorkPointHandle{Point: center}},
+		{Kind: "workplane", Select: app.WorkPlaneHandle{Plane: xPlane}},
+		{Kind: "workaxis", Select: app.WorkAxisHandle{Axis: xAxis}},
+	}
+	for _, n := range originNodes {
+		if isRenameableNode(n) {
+			t.Errorf("origin datum %T must not be renameable", n.Select)
+		}
+	}
+	if err := s.RenameWorkPoint(center, "Nope"); err == nil {
+		t.Error("renaming a coordinate-system datum should error")
+	}
+}
+
+// TestNodeNameAndRenameDispatchAllTypes exercises nodeName and renameNode for every renameable
+// handle type, so the per-type dispatch is covered end to end (#1264).
+func TestNodeNameAndRenameDispatchAllTypes(t *testing.T) {
+	s := app.NewSession()
+	pd, err := compdef.AddPart(s.Workspace(), "a.opd", true)
+	if err != nil {
+		t.Fatalf("AddPart: %v", err)
+	}
+	def := pd.Content().(*compdef.PartComponentDefinition)
+	addBox(def, 0)
+	sk2 := def.Sketches().Add(sketch.XYPlane())
+	sk3 := def.Sketches3D().Add()
+	wp := def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	wa := def.WorkAxes().AddByPlaneIntersection(feature.OriginXYPlane, feature.OriginXZPlane)
+	wpt := def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 1, 1) })
+	def.Recompute()
+	feat, _ := def.Features().ByName("Extrusion1")
+
+	cases := []struct {
+		node    app.BrowserNode
+		newName string
+		current func() string
+	}{
+		{app.BrowserNode{Select: app.FeatureHandle{Feature: feat}}, "Feat", feat.Name},
+		{app.BrowserNode{Select: app.SketchHandle{Sketch: sk2}}, "Sk2", sk2.Name},
+		{app.BrowserNode{Select: app.Sketch3DHandle{Sketch3D: sk3}}, "Sk3", sk3.Name},
+		{app.BrowserNode{Select: app.WorkPlaneHandle{Plane: wp}}, "WP", wp.Name},
+		{app.BrowserNode{Select: app.WorkAxisHandle{Axis: wa}}, "WA", wa.Name},
+		{app.BrowserNode{Select: app.WorkPointHandle{Point: wpt}}, "WPt", wpt.Name},
+	}
+	for _, c := range cases {
+		before := c.current()
+		if !isRenameableNode(c.node) {
+			t.Errorf("node %T should be renameable", c.node.Select)
+		}
+		if got := nodeName(c.node); got != before {
+			t.Errorf("nodeName = %q, want %q", got, before)
+		}
+		if err := renameNode(s, c.node, c.newName); err != nil {
+			t.Errorf("renameNode to %q: %v", c.newName, err)
+		}
+		if got := c.current(); got != c.newName {
+			t.Errorf("after rename = %q, want %q", got, c.newName)
+		}
+	}
+	if err := renameNode(s, app.BrowserNode{Label: "x"}, "y"); err != nil {
+		t.Errorf("renameNode of a non-handle node should be a no-op, got %v", err)
 	}
 }
 
