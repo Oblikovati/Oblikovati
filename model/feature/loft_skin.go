@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"oblikovati.org/api/types"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 
 	stdmath "math"
@@ -132,7 +133,102 @@ func splineSections(sections [][]math.Point3, closed bool, ends loftEnds, wrapSh
 	if m < 2 || loftSegmentSamples < 2 {
 		return sections
 	}
-	return hermiteBlend(sections, sectionTangents(sections, closed, ends, wrapShift), closed, wrapShift)
+	tan := sectionTangents(sections, closed, ends, wrapShift)
+	// Real face continuity (M36-F06): when an end section is a body face and its condition is
+	// Tangent/Smooth, override the end tangent with the adjacent surface's actual derivative (G1) and,
+	// for Smooth, supply its second derivative so the end segment blends with a quintic that matches
+	// the face's curvature (G2). Closed lofts have no end sections, so this is open-only.
+	var firstA, lastA []math.Vector3
+	if !closed {
+		firstA = faceContinuity(tan[0], sections[0], sections[1], ends.firstSurf, ends.first)
+		lastA = faceContinuity(tan[m-1], sections[m-1], sections[m-2], ends.lastSurf, ends.last)
+	}
+	return hermiteBlend(sections, tan, closed, wrapShift, firstA, lastA)
+}
+
+// continuityOrder maps a face-continuity condition to the derivative order it matches across the
+// section edge: Tangent = 1 (G1, tangent), Smooth = 2 (G2, curvature). (G3 is a follow-up — it needs
+// a new public condition value.) Non-face conditions return 0.
+func continuityOrder(c LoftCondition) int {
+	switch c {
+	case LoftTangent:
+		return 1
+	case LoftSmooth:
+		return 2
+	default:
+		return 0
+	}
+}
+
+// faceContinuity overrides an end section's tangents with the adjacent face's real longitudinal
+// derivative (true G1, replacing the normal-only approximation) and, for a Smooth (G2) end, returns
+// the per-point second derivative the quintic end-segment blend uses to match the face's curvature.
+// It returns nil (leaving the existing tangents) when there is no adjacent surface or the condition
+// is not face continuity. neighbor is the adjacent section; the takeoff speed follows the existing
+// impact·chord convention so G1 magnitudes are unchanged.
+func faceContinuity(tangents []math.Vector3, sec, neighbor []math.Point3, surf geom.Surface, end LoftEnd) []math.Vector3 {
+	order := continuityOrder(end.Condition)
+	if surf == nil || order == 0 {
+		return nil
+	}
+	impact := end.Impact
+	if impact <= 0 {
+		impact = 1
+	}
+	var second []math.Vector3
+	if order >= 2 {
+		second = make([]math.Vector3, len(sec))
+	}
+	c := centroidOf(sec)
+	for j := range sec {
+		outward := c.VectorTo(sec[j]) // away from the section centroid (the flare side)
+		edge := edgeDirAt(sec, j)     // boundary tangent at this point
+		t1, g2, ok := faceEndDeriv(surf, sec[j], edge, outward)
+		if !ok {
+			continue // degenerate surface here — keep the approximate tangent
+		}
+		speed := impact * float64(sec[j].DistanceTo(neighbor[j])) // c: matches applyFaceTangent's scale
+		tangents[j] = t1.Scale(math.Scalar(speed))                // m0 = c · unit cross-boundary tangent
+		if second != nil {
+			// P(t)=γ(s(t)) with s=c·t and |t1|=1 ⇒ P'(0)=c·t1, P''(0)=c²·γ'' — matching geometric
+			// curvature at the seam (G2), reparam-invariant.
+			second[j] = g2.Scale(math.Scalar(speed * speed))
+		}
+	}
+	return second
+}
+
+// faceEndDeriv returns, at the boundary point nearest p, the adjacent face surface's unit
+// cross-boundary tangent direction (perpendicular to the boundary edge, in the surface tangent
+// plane, pointing outward) and the surface's SECOND derivative along that same direction. The loft
+// leaves the face along this tangent (true G1) and, for a Smooth end, with this curvature (true G2),
+// so it continues the real surface — exact for planar and analytic faces and correct for NURBS faces
+// (the directional 2nd derivative includes the mixed term). ok is false at a degenerate point.
+func faceEndDeriv(surf geom.Surface, p math.Point3, edge, outwardRef math.Vector3) (t1, g2 math.Vector3, ok bool) {
+	u, v := surf.ParamAt(p)
+	su, sv := surf.DerivativesAt(u, v)
+	n := surf.NormalAt(u, v)
+	cross := n.Cross(edge) // in-surface direction perpendicular to the boundary edge
+	if cross.Dot(outwardRef) < 0 {
+		cross = cross.Scale(-1) // orient outward (away from the face interior)
+	}
+	if cross.Length() < 1e-9 {
+		return math.Vector3{}, math.Vector3{}, false
+	}
+	t1 = cross.Scale(1 / cross.Length())
+	// Solve du·Su + dv·Sv = t1 (t1 lies in the tangent plane) via the first fundamental form, so the
+	// directional 2nd derivative γ'' = du²·Suu + 2·du·dv·Suv + dv²·Svv is exact for this direction.
+	puu, puv, pvv := geom.SurfaceSecondPartials(surf, u, v)
+	e, f, g := su.Dot(su), su.Dot(sv), sv.Dot(sv)
+	det := e*g - f*f
+	if stdmath.Abs(float64(det)) < 1e-18 {
+		return t1, math.Vector3{}, true // degenerate metric ⇒ treat as zero curvature (G2 → straight)
+	}
+	b1, b2 := t1.Dot(su), t1.Dot(sv)
+	du := (g*b1 - f*b2) / det
+	dv := (e*b2 - f*b1) / det
+	g2 = puu.Scale(du * du).Add(puv.Scale(2 * du * dv)).Add(pvv.Scale(dv * dv))
+	return t1, g2, true
 }
 
 // railGuide deforms the densified sections so the loft follows guide rails (the kLoftWithRails
@@ -558,7 +654,12 @@ func unitOrFallback(v, fallback math.Vector3) math.Vector3 {
 // Möbius), the closing segment blends toward the start section REINDEXED by wrapShift, so the wrap
 // is a small twist (one step) instead of cramming the whole accumulated twist into one segment.
 // sweptSolid's mesh wrap applies the same shift, so the two stay consistent.
-func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool, wrapShift int) [][]math.Point3 {
+// firstA/lastA are the per-point second derivatives at the first/last section for a curvature (G2)
+// face-continuity end (nil otherwise): the first segment then blends with a QUINTIC Hermite that
+// matches firstA at its start, the last segment one that matches lastA at its end, so the loft
+// continues the adjacent face's curvature across the seam. The interior side of each such segment
+// keeps a natural (zero) second derivative.
+func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool, wrapShift int, firstA, lastA []math.Vector3) [][]math.Point3 {
 	m := len(sections)
 	segs := m - 1
 	if closed {
@@ -571,15 +672,67 @@ func hermiteBlend(sections [][]math.Point3, tan [][]math.Vector3, closed bool, w
 		if closed && i == segs-1 && wrapShift != 0 { // the wrap: aim at the start reindexed by the monodromy
 			p1, t1 = rotateLoop(sections[0], wrapShift), rotateVecLoop(tan[0], wrapShift)
 		}
-		n := segmentSamples(sections[i], p1, tan[i], t1)
+		var startA, endA []math.Vector3
+		if i == 0 {
+			startA = firstA
+		}
+		if i == segs-1 && !closed {
+			endA = lastA
+		}
+		n := segmentSamplesG2(sections[i], p1, tan[i], t1, startA, endA)
 		for s := 1; s <= n; s++ {
-			out = append(out, hermiteSection(sections[i], p1, tan[i], t1, float64(s)/float64(n)))
+			out = append(out, blendSection(sections[i], p1, tan[i], t1, startA, endA, float64(s)/float64(n)))
 		}
 	}
 	if closed {
 		out = out[:len(out)-1] // the final sample equals the (reindexed) start; drop it (sweptSolid closes the loop)
 	}
 	return out
+}
+
+// blendSection blends one sub-section with a cubic Hermite, or — when a curvature (G2) second
+// derivative is supplied at either end (startA/endA) — a quintic Hermite that additionally matches
+// that second derivative. A nil second-derivative end matches a natural (zero) second derivative.
+func blendSection(p0, p1 []math.Point3, m0, m1, startA, endA []math.Vector3, t float64) []math.Point3 {
+	if startA == nil && endA == nil {
+		return hermiteSection(p0, p1, m0, m1, t)
+	}
+	out := make([]math.Point3, len(p0))
+	for j := range p0 {
+		out[j] = hermite5(p0[j], p1[j], m0[j], m1[j], vecAt(startA, j), vecAt(endA, j), t)
+	}
+	return out
+}
+
+// vecAt returns a[j], or the zero vector when a is nil (a natural, unconstrained second derivative).
+func vecAt(a []math.Vector3, j int) math.Vector3 {
+	if a == nil {
+		return math.Vector3{}
+	}
+	return a[j]
+}
+
+// segmentSamplesG2 is segmentSamples, but probes the actual blend (quintic when a G2 second
+// derivative is present) so a curvature-matched end segment that bends more than its chord gets
+// enough sub-sections to read smooth.
+func segmentSamplesG2(p0, p1 []math.Point3, m0, m1, startA, endA []math.Vector3) int {
+	if startA == nil && endA == nil {
+		return segmentSamples(p0, p1, m0, m1)
+	}
+	const probes = 12
+	sec := make([][]math.Point3, probes+1)
+	for s := 0; s <= probes; s++ {
+		sec[s] = blendSection(p0, p1, m0, m1, startA, endA, float64(s)/float64(probes))
+	}
+	turn := stdmath.Max(segmentTwist(p0, p1), maxTrackTurn(sec))
+	n := int(stdmath.Ceil(turn / (loftMaxStepDeg * stdmath.Pi / 180)))
+	if n < loftSegmentSamples {
+		n = loftSegmentSamples
+	}
+	if n > loftMaxSegmentSamples {
+		n = loftMaxSegmentSamples
+	}
+	return n
 }
 
 // segmentSamples is how many sub-sections to blend a section pair into: at least
@@ -688,8 +841,15 @@ func segmentTrackTurn(p0, p1 []math.Point3, m0, m1 []math.Vector3) float64 {
 	for s := 0; s <= probes; s++ {
 		sec[s] = hermiteSection(p0, p1, m0, m1, float64(s)/float64(probes))
 	}
+	return maxTrackTurn(sec)
+}
+
+// maxTrackTurn is the most any corresponding-point track bends across a sequence of probed
+// sub-sections — the shared turning measure for cubic and quintic segment sampling.
+func maxTrackTurn(sec [][]math.Point3) float64 {
+	probes := len(sec) - 1
 	var maxTurn float64
-	for j := range p0 {
+	for j := range sec[0] {
 		var turn float64
 		for s := 1; s < probes; s++ {
 			turn += turnAngle(sec[s-1][j], sec[s][j], sec[s+1][j])
@@ -782,6 +942,34 @@ func hermite3(p0, p1 math.Point3, m0, m1 math.Vector3, t float64) math.Point3 {
 		axis(p0.X, m0.X, p1.X, m1.X),
 		axis(p0.Y, m0.Y, p1.Y, m1.Y),
 		axis(p0.Z, m0.Z, p1.Z, m1.Z),
+	)
+}
+
+// hermite5 is the quintic Hermite interpolant matching position, first AND second derivatives at
+// both ends: p0,m0,a0 at t=0 and p1,m1,a1 at t=1. With a0=a1=0 it does NOT reduce to the cubic
+// (the extra basis is nonzero), so it is only used where a curvature (G2) end condition supplies a
+// real second derivative; the other end passes a natural a=0. Basis (the standard quintic Hermite):
+//
+//	H0=1−10t³+15t⁴−6t⁵  H1=t−6t³+8t⁴−3t⁵  H2=½t²−1.5t³+1.5t⁴−0.5t⁵
+//	H3=10t³−15t⁴+6t⁵    H4=−4t³+7t⁴−3t⁵   H5=½t³−t⁴+½t⁵
+func hermite5(p0, p1 math.Point3, m0, m1, a0, a1 math.Vector3, t float64) math.Point3 {
+	t2 := t * t
+	t3 := t2 * t
+	t4 := t3 * t
+	t5 := t4 * t
+	h0 := 1 - 10*t3 + 15*t4 - 6*t5
+	h1 := t - 6*t3 + 8*t4 - 3*t5
+	h2 := 0.5*t2 - 1.5*t3 + 1.5*t4 - 0.5*t5
+	h3 := 10*t3 - 15*t4 + 6*t5
+	h4 := -4*t3 + 7*t4 - 3*t5
+	h5 := 0.5*t3 - t4 + 0.5*t5
+	axis := func(p0c, m0c, a0c, p1c, m1c, a1c float64) float64 {
+		return h0*p0c + h1*m0c + h2*a0c + h3*p1c + h4*m1c + h5*a1c
+	}
+	return math.P3(
+		axis(p0.X, m0.X, a0.X, p1.X, m1.X, a1.X),
+		axis(p0.Y, m0.Y, a0.Y, p1.Y, m1.Y, a1.Y),
+		axis(p0.Z, m0.Z, a0.Z, p1.Z, m1.Z, a1.Z),
 	)
 }
 
