@@ -28,6 +28,7 @@ const (
 	LoftDirection      = types.LoftDirection
 	LoftTangent        = types.LoftTangent
 	LoftSmooth         = types.LoftSmooth
+	LoftG3             = types.LoftG3
 	LoftSharpPoint     = types.LoftSharpPoint
 	LoftTangentToPlane = types.LoftTangentToPlane
 )
