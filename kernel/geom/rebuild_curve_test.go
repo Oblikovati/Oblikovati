@@ -132,6 +132,17 @@ func TestApproximateBSplineCurveValidates(t *testing.T) {
 	}
 }
 
+func TestApproximateBSplineCurveRejectsDegenerate(t *testing.T) {
+	coincident3 := []math.Point3{math.P3(1, 1, 1), math.P3(1, 1, 1), math.P3(1, 1, 1), math.P3(1, 1, 1)}
+	if _, err := NewApproximatedBSplineCurve(coincident3, 3, 4, FitChordLength); err == nil {
+		t.Error("coincident 3D points should error (no chord length to parameterize by)")
+	}
+	coincident2 := []math.Point2{math.P2(2, 2), math.P2(2, 2), math.P2(2, 2), math.P2(2, 2)}
+	if _, err := NewApproximatedBSplineCurve2d(coincident2, 3, 4, FitChordLength); err == nil {
+		t.Error("coincident 2D points should error (no chord length to parameterize by)")
+	}
+}
+
 func TestApproximateBSplineCurve2d(t *testing.T) {
 	var pts []math.Point2
 	for i := 0; i <= 20; i++ {

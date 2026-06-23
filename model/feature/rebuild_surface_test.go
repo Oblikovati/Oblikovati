@@ -99,6 +99,12 @@ func TestRebuildFeatureKind(t *testing.T) {
 	}
 }
 
+func TestRestoreRebuildRejectsMissingPayload(t *testing.T) {
+	if _, err := restoreRebuild(NewPartFeatures(nil, nil), nil); err == nil {
+		t.Error("restoreRebuild(nil) should error on a missing payload")
+	}
+}
+
 func TestRebuildFeatureRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
 	NewRebuildFeatures(fs).Add(3, 2, 5, 4)

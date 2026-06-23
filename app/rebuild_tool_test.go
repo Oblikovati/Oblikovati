@@ -139,6 +139,23 @@ func TestSurfaceRebuildToolCanCommit(t *testing.T) {
 	}
 }
 
+func TestSurfaceRebuildToolParamsRoundTrip(t *testing.T) {
+	tool := NewSurfaceRebuildTool()
+	if tool.Prompt(nil) == "" {
+		t.Error("rebuild tool should have a non-empty prompt")
+	}
+	p := tool.Params()
+	if len(p.Ints) != 4 {
+		t.Fatalf("want 4 integer params, got %d", len(p.Ints))
+	}
+	for i, ip := range p.Ints {
+		ip.Set(5 + i)
+		if ip.Get() != 5+i {
+			t.Errorf("param %q get/set mismatch: got %d", ip.Label, ip.Get())
+		}
+	}
+}
+
 func TestSurfaceRebuildViaRibbonCommand(t *testing.T) {
 	s, _ := partWithNurbsSurface(t)
 	if err := RegisterStandardCommands(s); err != nil {
