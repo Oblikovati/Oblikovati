@@ -384,6 +384,16 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("match-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Match Surface — rebuild the surface against its neighbour to G0/G1/G2/G3 continuity."),
+		NewCommand("Surface.ExtendNurbs", "Extend Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewExtendSurfaceTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("extend-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Extend Surface — lengthen a NURBS surface past an edge with tangent (G1) or curvature (G2) continuation."),
+		NewCommand("Surface.Untrim", "Untrim", "Surface", untrimSurface).
+			WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("untrim-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Untrim — recover a trimmed NURBS face's full underlying surface."),
 	}
 }
 
