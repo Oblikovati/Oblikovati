@@ -55,6 +55,11 @@ func (h hpoint4) add(o hpoint4) hpoint4 {
 	return hpoint4{h.x + o.x, h.y + o.y, h.z + o.z, h.w + o.w}
 }
 
+// sub returns the component-wise difference, used by knot removal's back-substitution.
+func (h hpoint4) sub(o hpoint4) hpoint4 {
+	return hpoint4{h.x - o.x, h.y - o.y, h.z - o.z, h.w - o.w}
+}
+
 // scale returns h scaled by s.
 func (h hpoint4) scale(s float64) hpoint4 {
 	return hpoint4{h.x * s, h.y * s, h.z * s, h.w * s}
