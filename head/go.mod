@@ -21,7 +21,6 @@ require (
 	golang.org/x/net v0.0.0-20211118161319-6a13c67c3ce4 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	oblikovati.org/motor-designer v0.0.0
 )
 
 // The core stays a relative replace: head is a submodule of this same repo, so
