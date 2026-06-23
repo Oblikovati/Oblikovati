@@ -32,7 +32,20 @@ func analysisCommands() []*CommandDefinition {
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("surface-analysis").WithButtonStyle(LargeIconButton).
 			WithTooltip("Surface Analysis — overlay reflection, highlight and isophote lines to judge surface fairness and G1/G2 continuity."),
+		NewCommand("Inspect.Continuity", "Continuity Check", "Analyze", startContinuityCheck).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("continuity-check").WithButtonStyle(LargeIconButton).
+			WithTooltip("Continuity Check — pick a shared edge to report the G0 gap, G1 normal angle and G2 curvature difference across it."),
 	}
+}
+
+// startContinuityCheck activates the cross-edge continuity checker on the active part.
+func startContinuityCheck(s *Session) error {
+	if _, err := activePart(s); err != nil {
+		return err
+	}
+	s.StartTool(NewContinuityCheckTool())
+	return nil
 }
 
 // startSurfaceAnalysis activates the live surface-interrogation overlay on the active part.
