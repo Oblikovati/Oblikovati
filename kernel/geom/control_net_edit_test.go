@@ -101,6 +101,30 @@ func TestFalloffDeltasRegionDecays(t *testing.T) {
 	}
 }
 
+func TestFalloffDeltasLinearVsSmooth(t *testing.T) {
+	s := flatGrid(t, 5)
+	lin := weightAt(s.FalloffDeltas([][2]int{{2, 2}}, math.V3(0, 0, 1), 0.6, FalloffLinear), 2, 3)
+	smooth := weightAt(s.FalloffDeltas([][2]int{{2, 2}}, math.V3(0, 0, 1), 0.6, FalloffSmooth), 2, 3)
+	// At t = 0.25/0.6 ≈ 0.42 (inside the half-radius), smoothstep stays nearer 1 than the linear
+	// ramp, so the smooth weight exceeds the linear one; both strictly inside (0,1).
+	if !(lin > 0 && lin < 1 && smooth > 0 && smooth < 1) {
+		t.Fatalf("weights out of range: linear=%g smooth=%g", lin, smooth)
+	}
+	if smooth <= lin {
+		t.Errorf("smooth weight %g should exceed linear %g at this distance", smooth, lin)
+	}
+}
+
+// weightAt returns the Z displacement weight of control (u,v) in a delta list (0 if absent).
+func weightAt(deltas []ControlPointDelta, u, v int) float64 {
+	for _, d := range deltas {
+		if d.U == u && d.V == v {
+			return float64(d.Delta.Z)
+		}
+	}
+	return 0
+}
+
 func TestFalloffDeltasRowDriver(t *testing.T) {
 	s := flatGrid(t, 5)
 	// Drive an entire V-row (constant U index 2): rigid row, radius 0.

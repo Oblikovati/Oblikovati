@@ -8,6 +8,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/scene"
 )
 
 // partWithNurbsGrid creates a part holding a flat 5×5 NURBS plane patch (2×2 in size), built
@@ -140,6 +141,92 @@ func TestControlPointPreviewDrawsNetHandles(t *testing.T) {
 	items := tool.Preview(s)
 	if len(items) < 2 {
 		t.Fatalf("preview should draw net lines + handle markers, got %d items", len(items))
+	}
+}
+
+func TestControlPointColumnDragWithFalloff(t *testing.T) {
+	s, _ := partWithNurbsGrid(t)
+	tool := NewControlPointEditTool()
+	tool.mode = cvModeColumn
+	tool.radius = 0.6
+	s.StartTool(tool)
+	surf, _ := activeEditableSurface(s)
+
+	armCVDrag(s, surf, 2, 2)
+	s.applyCVMove(math.V3(0, 0, 1))
+	s.CommitCVDrag()
+
+	edited, _ := activeEditableSurface(s)
+	// The driven column (v=2) lifts fully; an adjacent column (v=1) partially; the far edge less.
+	if !(edited.Ctrl[2][2].Z > edited.Ctrl[2][1].Z && edited.Ctrl[2][1].Z > edited.Ctrl[2][0].Z) {
+		t.Errorf("column falloff not monotonic: %g %g %g", edited.Ctrl[2][2].Z, edited.Ctrl[2][1].Z, edited.Ctrl[2][0].Z)
+	}
+}
+
+func TestControlPointToolGetters(t *testing.T) {
+	tool := NewControlPointEditTool()
+	if tool.Prompt(nil) == "" {
+		t.Error("prompt should be non-empty")
+	}
+	if tool.CanCommit() {
+		t.Error("CanCommit should be false (the tool is drag-driven)")
+	}
+	if err := tool.Commit(nil); err != nil {
+		t.Errorf("Commit is a no-op, got %v", err)
+	}
+	p := tool.Params()
+	p.Floats[0].Set(1.5)
+	p.Bools[0].Set(true)
+	p.Choices[0].Set(cvModeColumn)
+	p.Choices[1].Set(1)
+	if p.Floats[0].Get() != 1.5 || !p.Bools[0].Get() || p.Choices[0].Get() != cvModeColumn || p.Choices[1].Get() != 1 {
+		t.Error("param get/set round-trip mismatch")
+	}
+}
+
+func TestControlPointDragViaPixels(t *testing.T) {
+	s, _ := partWithNurbsGrid(t)
+	// Top-down camera centred on the patch (centre (1,1,0)), so the centre pixel grabs CV (2,2).
+	cam := scene.NewCamera(200, 200)
+	cam.Eye = math.P3(1, 1, 10)
+	cam.Target = math.P3(1, 1, 0)
+	cam.Up = math.V3(0, 1, 0)
+	s.SetCamera(cam)
+	s.StartTool(NewControlPointEditTool())
+
+	if !s.CVEditActive() {
+		t.Fatal("CVEditActive should be true")
+	}
+	if !s.BeginCVDrag(100, 100) {
+		t.Fatal("BeginCVDrag at the centre pixel should grab a control handle")
+	}
+	if !s.CVDragActive() {
+		t.Fatal("CVDragActive should be true after begin")
+	}
+	s.UpdateCVDrag(130, 100) // drag in +X
+	s.CommitCVDrag()
+	if s.CVDragActive() {
+		t.Error("the drag should end on commit")
+	}
+	// The grabbed CV moved in X (the camera-facing drag plane is XY for a top-down view).
+	if edited, _ := activeEditableSurface(s); edited.Ctrl[2][2].X == 1 {
+		t.Error("the dragged control point did not move")
+	}
+}
+
+func TestNurbsPlaneToolGetters(t *testing.T) {
+	tool := NewNurbsPlaneTool()
+	if tool.Prompt(nil) == "" {
+		t.Error("prompt should be non-empty")
+	}
+	if !tool.CanCommit() {
+		t.Error("defaults (10x10, 4x4) should be committable")
+	}
+	p := tool.Params()
+	p.Floats[0].Set(5)
+	p.Ints[0].Set(6)
+	if p.Floats[0].Get() != 5 || p.Ints[0].Get() != 6 {
+		t.Error("param get/set round-trip mismatch")
 	}
 }
 
