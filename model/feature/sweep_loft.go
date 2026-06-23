@@ -44,10 +44,14 @@ type LoftEnd struct {
 }
 
 // loftEnds carries the resolved start/end conditions plus the section-plane normals the skinner
-// needs to build the angled takeoff tangents.
+// needs to build the angled takeoff tangents. firstSurf/lastSurf are the adjacent face surfaces for
+// a face-continuity end (Tangent/Smooth on a face section): the skinner reads their real 1st/2nd
+// derivatives so the loft continues that face's tangent (G1) and curvature (G2) across the section
+// edge, instead of the normal-only approximation. They are nil for sketch/point sections.
 type loftEnds struct {
-	first, last   LoftEnd
-	firstN, lastN math.UnitVector3
+	first, last         LoftEnd
+	firstN, lastN       math.UnitVector3
+	firstSurf, lastSurf geom.Surface
 }
 
 // loftGuides carries everything that shapes the OUTER skin beyond the plain blend: an explicit
@@ -281,11 +285,11 @@ func (l *LoftFeature) ToolBody() *topo.Body                { return l.tool }
 // inner loop per section (the common pipe) is meshed directly into a hollow tube, so a loft of
 // annulus sections is a watertight pipe rather than a filled cone.
 func (l *LoftFeature) Recompute(in Input) (Output, error) {
-	outers, inners, normals, err := l.resolveSections(in.Bodies)
+	outers, inners, normals, surfs, err := l.resolveSections(in.Bodies)
 	if err != nil {
 		return Output{}, err
 	}
-	tool, err := l.skinTool(outers, inners, l.endsWith(normals), l.resolveGuides())
+	tool, err := l.skinTool(outers, inners, l.endsWith(normals, surfs), l.resolveGuides())
 	if err != nil {
 		return Output{}, err
 	}
@@ -298,13 +302,22 @@ func (l *LoftFeature) Recompute(in Input) (Output, error) {
 }
 
 // endsWith pairs the definition's end conditions with the first/last section normals (a sketch
-// plane, an apex tangent plane, or a source-face normal) the skinner needs to aim the takeoff.
-func (l *LoftFeature) endsWith(normals []math.UnitVector3) loftEnds {
+// plane, an apex tangent plane, or a source-face normal) the skinner needs to aim the takeoff, plus
+// the adjacent face surfaces for a face-continuity (Tangent/Smooth) end so the skinner can read real
+// tangent/curvature derivatives.
+func (l *LoftFeature) endsWith(normals []math.UnitVector3, surfs []geom.Surface) loftEnds {
 	first, last := l.def.First, l.def.Last
 	if l.def.LiveEnds != nil {
 		first, last = l.def.LiveEnds()
 	}
-	return loftEnds{first: first, last: last, firstN: normals[0], lastN: normals[len(normals)-1]}
+	e := loftEnds{first: first, last: last, firstN: normals[0], lastN: normals[len(normals)-1]}
+	if first.Condition.IsFaceContinuity() {
+		e.firstSurf = surfs[0]
+	}
+	if last.Condition.IsFaceContinuity() {
+		e.lastSurf = surfs[len(surfs)-1]
+	}
+	return e
 }
 
 // resolveGuides evaluates the definition's rail + centerline providers into model-space polylines
@@ -392,54 +405,55 @@ func holeRing(inners [][][]math.Point3, h int) [][]math.Point3 {
 // holes, valid only at an end), or an existing body face (resolved against bodies — its boundary
 // is the loop, its surface gives the normal for Tangent/Smooth). At least one section must be a
 // real profile/face, and all sections must share their inner-loop count.
-func (l *LoftFeature) resolveSections(bodies []*topo.Body) (outers [][]math.Point3, inners [][][]math.Point3, normals []math.UnitVector3, err error) {
+func (l *LoftFeature) resolveSections(bodies []*topo.Body) (outers [][]math.Point3, inners [][][]math.Point3, normals []math.UnitVector3, surfs []geom.Surface, err error) {
 	if len(l.def.Sections) < 2 {
-		return nil, nil, nil, fmt.Errorf("loft: %d sections, need at least 2", len(l.def.Sections))
+		return nil, nil, nil, nil, fmt.Errorf("loft: %d sections, need at least 2", len(l.def.Sections))
 	}
 	if err := l.validatePointSections(); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	for i, s := range l.def.Sections {
-		outer, holes, n, e := resolveSection(s, bodies)
+		outer, holes, n, surf, e := resolveSection(s, bodies)
 		if e != nil {
-			return nil, nil, nil, fmt.Errorf("loft section %d: %w", i, e)
+			return nil, nil, nil, nil, fmt.Errorf("loft section %d: %w", i, e)
 		}
-		outers, inners, normals = append(outers, outer), append(inners, holes), append(normals, n)
+		outers, inners, normals, surfs = append(outers, outer), append(inners, holes), append(normals, n), append(surfs, surf)
 	}
 	for i, h := range inners {
 		if len(h) != len(inners[0]) {
-			return nil, nil, nil, fmt.Errorf("loft: section %d has %d holes, want %d (hole counts must match across sections; a point section cannot pair with a hollow one)", i, len(h), len(inners[0]))
+			return nil, nil, nil, nil, fmt.Errorf("loft: section %d has %d holes, want %d (hole counts must match across sections; a point section cannot pair with a hollow one)", i, len(h), len(inners[0]))
 		}
 	}
-	return outers, inners, normals, nil
+	return outers, inners, normals, surfs, nil
 }
 
-// resolveSection resolves one section's outer loop, inner (hole) loops, and normal.
-func resolveSection(s LoftSection, bodies []*topo.Body) ([]math.Point3, [][]math.Point3, math.UnitVector3, error) {
+// resolveSection resolves one section's outer loop, inner (hole) loops, normal, and — for a face
+// section — the face's surface (nil otherwise; the skinner reads it for real face continuity).
+func resolveSection(s LoftSection, bodies []*topo.Body) ([]math.Point3, [][]math.Point3, math.UnitVector3, geom.Surface, error) {
 	switch {
 	case s.IsPoint():
-		return []math.Point3{*s.Point}, nil, sectionNormal(s), nil
+		return []math.Point3{*s.Point}, nil, sectionNormal(s), nil, nil
 	case s.IsFace():
 		f, ok := findFace(bodies, s.FaceKey)
 		if !ok {
-			return nil, nil, math.UnitVector3{}, fmt.Errorf("face reference is lost (no running body has it)")
+			return nil, nil, math.UnitVector3{}, nil, fmt.Errorf("face reference is lost (no running body has it)")
 		}
 		outer, holes := faceLoopsModel(f)
 		if len(outer) < 3 {
-			return nil, nil, math.UnitVector3{}, fmt.Errorf("face has a degenerate boundary (%d points)", len(outer))
+			return nil, nil, math.UnitVector3{}, nil, fmt.Errorf("face has a degenerate boundary (%d points)", len(outer))
 		}
-		return outer, holes, faceNormal(f, outer), nil
+		return outer, holes, faceNormal(f, outer), f.Geometry(), nil
 	default:
 		prof, e := resolveSingleProfile(s.Sketch, s.ProfileIndex, "loft")
 		if e != nil {
-			return nil, nil, math.UnitVector3{}, e
+			return nil, nil, math.UnitVector3{}, nil, e
 		}
 		outer := loopToModel(prof.OuterLoop(), s.Sketch.Plane())
 		var holes [][]math.Point3
 		for _, il := range prof.InnerLoops() {
 			holes = append(holes, loopToModel(il, s.Sketch.Plane()))
 		}
-		return outer, holes, s.Sketch.Plane().Normal(), nil
+		return outer, holes, s.Sketch.Plane().Normal(), nil, nil
 	}
 }
 
