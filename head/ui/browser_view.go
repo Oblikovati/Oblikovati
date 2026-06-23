@@ -256,7 +256,12 @@ func drawNode(s *app.Session, n app.BrowserNode) {
 // that nests its consumed sketch. The disclosure arrow toggles it open; a click on the label
 // selects it (and a double-click opens its editor), so expansion and selection don't fight.
 func drawSelectableBranchNode(s *app.Session, n app.BrowserNode) {
+	if renaming(n) {
+		drawRenameField(s, n)
+		return
+	}
 	current := s.Selection().First()
+	drawNodeIcon(n)
 	open := native.TreeNodeSelectable(n.Label, current == n.Select)
 	if native.IsItemClicked(native.MouseLeft) {
 		s.SelectBrowserNode(n)
@@ -276,7 +281,12 @@ func drawSelectableBranchNode(s *app.Session, n app.BrowserNode) {
 // drawSelectableNode draws a clickable row that selects the node, offers its context menu,
 // and scrolls itself into view when it is the node the selection just changed to.
 func drawSelectableNode(s *app.Session, n app.BrowserNode) {
+	if renaming(n) {
+		drawRenameField(s, n)
+		return
+	}
 	current := s.Selection().First()
+	drawNodeIcon(n)
 	if native.Selectable(n.Label, current == n.Select) {
 		s.SelectBrowserNode(n)
 	}
@@ -334,7 +344,8 @@ func drawBranchNode(s *app.Session, n app.BrowserNode) {
 // the action behind a clicked item. Nodes whose kind has no menu draw nothing.
 func drawNodeMenu(s *app.Session, n app.BrowserNode) {
 	items := app.BrowserMenuFor(s, n) // built-ins + add-in injections (M05-F12)
-	if len(items) == 0 {
+	renameable := isRenameableFeature(n)
+	if len(items) == 0 && !renameable {
 		return
 	}
 	if !native.BeginPopupContextItem("##menu-" + n.Kind + "/" + n.Label) {
@@ -346,6 +357,9 @@ func drawNodeMenu(s *app.Session, n app.BrowserNode) {
 				fmt.Fprintf(os.Stderr, "browser %q: %v\n", it.Label, err)
 			}
 		}
+	}
+	if renameable && native.MenuItemEx("Rename", "", true) {
+		beginRename(n) // in-place edit; commit enforces a document-unique name (#1264)
 	}
 	native.EndPopup()
 }
