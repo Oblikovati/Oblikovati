@@ -293,6 +293,50 @@ func applyNetworkSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, 
 	return recomputeResult(part, pf)
 }
 
+// fairSurfaceArgs is the M36-F04 fairing op: held boundary continuity + relaxation strength/iters.
+type fairSurfaceArgs struct {
+	Continuity string  `json:"continuity,omitempty"`
+	Strength   float64 `json:"strength,omitempty"`
+	Iterations int     `json:"iterations,omitempty"`
+}
+
+const fairSurfaceSchema = `{
+  "type": "object",
+  "properties": {
+    "continuity": {"type": "string", "enum": ["g0", "g1", "g2"], "default": "g2", "description": "Boundary continuity to hold while fairing the running surface (api/types SurfaceContinuity)."},
+    "strength": {"type": "number", "default": 0.5, "description": "Per-iteration relaxation (0<s<=1)."},
+    "iterations": {"type": "integer", "default": 20, "description": "Number of fairing iterations."}
+  }
+}`
+
+func fairSurfaceDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "fairSurface", Summary: "Smooth curvature wrinkles out of the running surface, holding its boundary continuity (G0/G1/G2).", Schema: json.RawMessage(fairSurfaceSchema), Apply: applyFairSurface}
+}
+
+func applyFairSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in fairSurfaceArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	cont, ok := types.ParseSurfaceContinuity(in.Continuity, types.ContinuityG2)
+	if !ok {
+		return nil, fmt.Errorf("fairSurface: unknown continuity %q (want g0, g1, or g2)", in.Continuity)
+	}
+	strength, iters := in.Strength, in.Iterations
+	if strength <= 0 {
+		strength = 0.5
+	}
+	if iters <= 0 {
+		iters = 20
+	}
+	pf := feature.NewFairFeatures(part.Features()).Add(cont.Order(), strength, iters)
+	return recomputeResult(part, pf)
+}
+
 // networkPolylines converts wire [x,y,z] curve point lists to model points (skipping malformed points).
 func networkPolylines(curves [][][]float64) [][]math.Point3 {
 	out := make([][]math.Point3, len(curves))

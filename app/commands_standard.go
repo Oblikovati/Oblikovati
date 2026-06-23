@@ -412,6 +412,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("network-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Network Surface — interpolate a grid of intersecting U and V curves with a single NURBS (Gordon surface)."),
+		NewCommand("Surface.Fair", "Fair Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewFairSurfaceTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("fair-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Fair Surface — smooth curvature wrinkles out of a surface while holding its boundary continuity (G0/G1/G2)."),
 	}
 }
 

@@ -67,6 +67,7 @@ type FeatureData struct {
 	FillSurface      *FillSurfaceData      `yaml:"fillSurface,omitempty"`
 	BridgeSurface    *BridgeSurfaceData    `yaml:"bridgeSurface,omitempty"`
 	NetworkSurface   *NetworkSurfaceData   `yaml:"networkSurface,omitempty"`
+	FairSurface      *FairSurfaceData      `yaml:"fairSurface,omitempty"`
 	FaceEdit         *FaceEditData         `yaml:"faceEdit,omitempty"`
 	Thicken          *ThickenData          `yaml:"thicken,omitempty"`
 	Revolve          *RevolveData          `yaml:"revolve,omitempty"`
@@ -300,6 +301,8 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.BridgeSurface = serializeBridgeSurface(f.def)
 	case *NetworkFeature:
 		fd.NetworkSurface = serializeNetworkSurface(f.def)
+	case *FairFeature:
+		fd.FairSurface = serializeFairSurface(f.def)
 	case *RevolveFeature:
 		rv, err := serializeRevolve(f.def, sk)
 		if err != nil {
@@ -638,6 +641,8 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreBridgeSurface(fs, fd.BridgeSurface)
 	case "network-surface":
 		return restoreNetworkSurface(fs, fd.NetworkSurface)
+	case "fair-surface":
+		return restoreFairSurface(fs, fd.FairSurface)
 	case "split", "move-face", "face-offset", "delete-face", "replace-face":
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
 	case "thicken":
