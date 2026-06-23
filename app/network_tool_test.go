@@ -88,6 +88,24 @@ func TestNetworkToolBakesProfilesToModel(t *testing.T) {
 	}
 }
 
+func TestNetworkToolCommitReportsBadGrid(t *testing.T) {
+	s, def := partWithSketches(t)
+	tool := NewNetworkTool()
+	tool.uProfiles = []ProfileHandle{addSquareProfile(def, 1, 0), addSquareProfile(def, 1, 4)}
+	tool.vProfiles = []ProfileHandle{addSquareProfile(def, 1, 8), addSquareProfile(def, 1, 12)}
+	if !tool.CanCommit() {
+		t.Fatal("two each way should be committable")
+	}
+	s.StartTool(tool)
+	// The disjoint squares do not form a grid, so the feature is unhealthy and OK surfaces the error.
+	if err := s.OK(); err == nil {
+		t.Error("committing non-intersecting profiles should report an error")
+	}
+	if tool.AddedFeature() == nil {
+		t.Error("the (unhealthy) feature should still have been created")
+	}
+}
+
 func TestNetworkToolAcceptsProfiles(t *testing.T) {
 	if k := NewNetworkTool().AcceptedKinds(); len(k) != 1 || k[0] != SelectProfile {
 		t.Errorf("AcceptedKinds = %v, want [SelectProfile]", k)
