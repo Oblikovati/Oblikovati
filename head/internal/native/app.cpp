@@ -334,6 +334,22 @@ void obk_head_apply_window_state(void* h, int x, int y, int maximized) {
     if (maximized) glfwMaximizeWindow(c->window);
 }
 
+// obk_head_set_icon sets the window + taskbar icon from one or more RGBA8 candidate
+// images (the window manager picks the size it needs); pixels[i] is sizes[i]*sizes[i]*4
+// bytes. GLFW copies the pixels during the call, so the caller frees them right after.
+// On macOS GLFW makes this a no-op — Cocoa uses the .app bundle icon (package-macos.sh).
+void obk_head_set_icon(void* h, int count, const int* sizes, const unsigned char* const* pixels) {
+    HeadContext* c = (HeadContext*)h;
+    if (!c || !c->window || count <= 0) return;
+    std::vector<GLFWimage> imgs((size_t)count);
+    for (int i = 0; i < count; i++) {
+        imgs[i].width = sizes[i];
+        imgs[i].height = sizes[i];
+        imgs[i].pixels = const_cast<unsigned char*>(pixels[i]); // GLFW copies; not retained
+    }
+    glfwSetWindowIcon(c->window, count, imgs.data());
+}
+
 // --- synthetic input injection (for in-window UI tests) ---
 // Production never calls the obk_inject_* setters, so g_inject stays inactive and the
 // real GLFW input flows untouched. When a test sets state, obk_apply_inject pushes it

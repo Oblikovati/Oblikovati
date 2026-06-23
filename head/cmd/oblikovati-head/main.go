@@ -11,6 +11,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"image"
 	"os"
 
 	"oblikovati.org/addin/modelaccess"
@@ -19,6 +20,7 @@ import (
 	"oblikovati.org/app/keymap"
 	"oblikovati.org/app/options"
 	"oblikovati.org/build"
+	"oblikovati.org/head/internal/appicon"
 	"oblikovati.org/head/internal/native"
 	"oblikovati.org/head/internal/sysopen"
 	"oblikovati.org/head/internal/windowstate"
@@ -114,10 +116,30 @@ func openMainWindow() (*native.Window, error) {
 	if err != nil {
 		return nil, err
 	}
+	applyWindowIcon(win)
 	if hasSaved {
 		win.ApplyWindowState(saved.X, saved.Y, saved.Maximized) // restore position + maximized
 	}
 	return win, nil
+}
+
+// iconSizes are the candidate window-icon resolutions handed to the window manager: the
+// small sizes serve the taskbar/title bar, the large ones the alt-tab switcher and HiDPI.
+var iconSizes = []int{16, 24, 32, 48, 64, 128, 256}
+
+// applyWindowIcon renders the Oblikovati mark at the candidate sizes and sets it as the
+// window/taskbar icon. Best-effort: a render failure must not stop the window from
+// opening, and on macOS SetIcon is a no-op (the dock uses the bundled .app icon).
+func applyWindowIcon(win *native.Window) {
+	imgs := make([]*image.RGBA, 0, len(iconSizes))
+	for _, px := range iconSizes {
+		img, err := appicon.Image(px)
+		if err != nil {
+			return // never block window creation on the icon
+		}
+		imgs = append(imgs, img)
+	}
+	win.SetIcon(imgs...)
 }
 
 // saveWindowState persists the window's current placement so the next session reopens in
