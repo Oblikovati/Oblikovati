@@ -131,15 +131,26 @@ var iconSizes = []int{16, 24, 32, 48, 64, 128, 256}
 // window/taskbar icon. Best-effort: a render failure must not stop the window from
 // opening, and on macOS SetIcon is a no-op (the dock uses the bundled .app icon).
 func applyWindowIcon(win *native.Window) {
+	imgs, err := renderWindowIcons()
+	if err != nil {
+		return // never block window creation on the icon
+	}
+	win.SetIcon(imgs...)
+}
+
+// renderWindowIcons rasterizes the app mark at every candidate window-icon size, in the
+// order of iconSizes. Split from applyWindowIcon so the rasterization is unit-testable
+// without a live window.
+func renderWindowIcons() ([]*image.RGBA, error) {
 	imgs := make([]*image.RGBA, 0, len(iconSizes))
 	for _, px := range iconSizes {
 		img, err := appicon.Image(px)
 		if err != nil {
-			return // never block window creation on the icon
+			return nil, err
 		}
 		imgs = append(imgs, img)
 	}
-	win.SetIcon(imgs...)
+	return imgs, nil
 }
 
 // saveWindowState persists the window's current placement so the next session reopens in
