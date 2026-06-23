@@ -215,15 +215,48 @@ func (d *PartComponentDefinition) Units() param.UnitsOfMeasure { return d.units 
 // into an assembly of a different working unit (1.0 ⇒ the centimetre default).
 func (d *PartComponentDefinition) WorkingScale() float64 { return d.units.WorkingScale() }
 
-// SetLengthUnit sets the document's preferred length unit (e.g. "mm", "in").
+// SetLengthUnit sets the document's preferred length unit (e.g. "mm", "in"). On a still-empty
+// document it also centres the working scale on that unit (ADR-0042 Phase 2) so coordinates
+// authored next are O(1) — the activation that lets a µm/pm or km document model without the
+// cm-storage extremes. Once geometry exists the working scale is left alone (changing it would
+// reinterpret stored coordinates); a unit change is then display-only.
 func (d *PartComponentDefinition) SetLengthUnit(name string) error {
-	return d.units.SetPreferred(param.Length, name)
+	if err := d.units.SetPreferred(param.Length, name); err != nil {
+		return err
+	}
+	d.centerWorkingScaleIfEmpty(name)
+	return nil
 }
 
-// SetUnits replaces the document's display units wholesale — the way the units
-// API and the Units settings dialog apply an edited preferences object (build
-// it from Units().Clone()).
-func (d *PartComponentDefinition) SetUnits(u param.UnitsOfMeasure) { d.units = u }
+// SetUnits replaces the document's display units wholesale — the way the units API and the Units
+// settings dialog apply an edited preferences object (build it from Units().Clone()). On a
+// still-empty document whose incoming working scale is the centimetre default, it centres the
+// working scale on the chosen length unit (ADR-0042 Phase 2); an explicitly-set working scale
+// (e.g. via CenteredOnLength) is respected.
+func (d *PartComponentDefinition) SetUnits(u param.UnitsOfMeasure) {
+	d.units = u
+	if u.WorkingScale() == 1 {
+		d.centerWorkingScaleIfEmpty(u.PreferredName(param.Length))
+	}
+}
+
+// centerWorkingScaleIfEmpty centres the working scale on the named length unit when the part has
+// no modeled content yet, so re-scaling cannot reinterpret existing geometry (ADR-0042 Phase 2).
+func (d *PartComponentDefinition) centerWorkingScaleIfEmpty(lengthUnit string) {
+	if !d.isEmptyForRescale() {
+		return
+	}
+	if ws, ok := param.RecommendedWorkingScale(lengthUnit); ok {
+		_ = d.units.SetWorkingScale(ws)
+	}
+}
+
+// isEmptyForRescale reports whether the part holds no modeled content yet, so re-centring the
+// working scale cannot reinterpret existing geometry (ADR-0042 Phase 2).
+func (d *PartComponentDefinition) isEmptyForRescale() bool {
+	return d.features.Count() == 0 && len(d.bodies.All()) == 0 &&
+		d.sketches.Count() == 0 && d.sketches3D.Count() == 0
+}
 
 // FeatureScaleWarning returns a non-empty diagnostic when a feature of the given size (in the
 // part's working unit) is below what this model can resolve at its current extent, and "" when

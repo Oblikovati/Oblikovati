@@ -160,3 +160,24 @@ func approxRelWS(got, want float64) bool {
 	}
 	return math.Abs(got-want)/math.Abs(want) < 1e-9
 }
+
+// TestRecommendedWorkingScale pins the auto-centre policy (ADR-0042 Phase 2 activation): units in
+// the safe centimetre band (mm…ft) stay at cm (1.0) so existing documents are unchanged; extreme
+// units (µm/nm/pm, km) centre on themselves so coordinates stay O(1).
+func TestRecommendedWorkingScale(t *testing.T) {
+	for _, tc := range []struct {
+		unit string
+		want float64
+	}{
+		{"mm", 1}, {"cm", 1}, {"m", 1}, {"in", 1}, {"ft", 1}, // band → centimetre
+		{"µm", 1e-4}, {"nm", 1e-7}, {"pm", 1e-10}, {"km", 1e5}, // extreme → centre
+	} {
+		got, ok := RecommendedWorkingScale(tc.unit)
+		if !ok || got != tc.want {
+			t.Errorf("RecommendedWorkingScale(%q) = %v,%v; want %v,true", tc.unit, got, ok, tc.want)
+		}
+	}
+	if _, ok := RecommendedWorkingScale("deg"); ok {
+		t.Error("RecommendedWorkingScale(deg) should be ok=false (not a length unit)")
+	}
+}

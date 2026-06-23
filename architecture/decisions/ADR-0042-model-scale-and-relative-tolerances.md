@@ -160,6 +160,26 @@ Tracked by milestone **M35: Model Scale & Relative Tolerances**.
 - #1247 — assembly mixing: convert at the placement boundary (`childWS/ownerWS` scale term) ✅
 - #1248 — exchange: working-scale ↔ STEP mm (`TargetUnitMM` = working-unit mm) ✅
 - #1249 — span-ceiling diagnostic (`geom.SpanCeilingWarning` / `PartComponentDefinition.FeatureScaleWarning`) ✅
+- #1259 — activation: auto-centre + working-unit report contract ✅
+
+### Activation & the report contract (#1259)
+
+Turning the storage on for users settled on a **working-unit report contract**: the kernel stores
+and reports every geometric quantity in the document's working length unit (the centimetre by
+default, so existing documents are byte-identical), and unit conversion happens only at the two
+boundaries that already own it — **input** (the parser/expression solver converts an explicit-unit
+value like `5 mm`; a bare number is taken in the working unit) and **output** (the user picks the
+file unit on export). The working scale is exposed (`wire.DocumentUnitsInfo.WorkingScaleCm`) so an
+add-in can recover centimetres from a raw geometry quantity by the appropriate power. This avoids a
+fragile per-call-site "convert everything to cm" audit and keeps every reported value internally
+consistent.
+
+A fresh document **auto-centres** its working scale on its chosen length unit
+(`PartComponentDefinition.SetLengthUnit` / `SetUnits` → `param.RecommendedWorkingScale`): band
+units (mm…ft) keep the centimetre scale; extreme units (µm/nm/pm, km) centre on themselves so
+coordinates stay O(1). Once geometry exists the scale is frozen (changing it would reinterpret
+stored coordinates), so a later unit change is display-only. This is what makes the nm/pm
+semiconductor (and km urban) scales modellable end to end.
 
 ### Span-ceiling diagnostic (#1249)
 
