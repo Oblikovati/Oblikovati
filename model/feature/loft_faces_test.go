@@ -79,13 +79,16 @@ func TestLoftFaceTangentFlares(t *testing.T) {
 	}
 }
 
-// TestLoftFaceSmoothApproximatesTangent: Smooth (G2) reuses the G1 tangent in the faceted kernel,
-// so it produces the same flare as Tangent (documented approximation).
-func TestLoftFaceSmoothApproximatesTangent(t *testing.T) {
+// TestLoftFaceSmoothIsRealCurvature (M36-F06): Smooth (G2) now imposes the adjacent face's real
+// curvature via the quintic end blend — it is no longer an alias of Tangent (G1), so it produces a
+// genuinely different, valid solid (against the planar cap it leaves with zero curvature, so the
+// takeoff stays in-plane longer than G1's cubic). The numeric curvature-continuity proof against a
+// CURVED face is TestLoftG2MatchesFaceCurvature.
+func TestLoftFaceSmoothIsRealCurvature(t *testing.T) {
 	tan := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftTangent}), ops.DefaultQuality()).Volume
 	smooth := ops.BodyGeometryProperties(loftFromCylinderTop(t, LoftEnd{Condition: LoftSmooth}), ops.DefaultQuality()).Volume
-	if relErr(tan, smooth) > 1e-9 {
-		t.Errorf("Smooth (%.4f) differs from Tangent (%.4f); it approximates G1 in the faceted kernel", smooth, tan)
+	if relErr(tan, smooth) < 1e-3 {
+		t.Errorf("Smooth (%.4f) should differ from Tangent (%.4f) now that G2 imposes real curvature, not an alias", smooth, tan)
 	}
 }
 
