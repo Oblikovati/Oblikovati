@@ -25,8 +25,11 @@ import (
 // clickable: selecting it puts that handle in the session's selection set (so e.g.
 // clicking "XY Plane" selects the plane to sketch on).
 type BrowserNode struct {
-	Label    string
-	Kind     string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "sketch3d" | "feature" | "occurrence" | "features" | "assemblyFeature"
+	Label string
+	Kind  string // "document" | "origin" | "workplane" | "workaxis" | "workpoint" | "parameters" | "parameter" | "bodies" | "body" | "sketch" | "sketch3d" | "feature" | "occurrence" | "features" | "assemblyFeature"
+	// Icon is the head's icon-asset key drawn before the label (e.g. "extrude", "fillet"), so a
+	// feature reads by glyph, not just by name. Empty means no icon (the head draws label only).
+	Icon     string
 	Select   Selectable
 	Children []BrowserNode
 }
@@ -37,10 +40,12 @@ func (n *BrowserNode) child(label, kind string) *BrowserNode {
 	return &n.Children[len(n.Children)-1]
 }
 
-// selectableChild appends a child whose click selects sel.
-func (n *BrowserNode) selectableChild(label, kind string, sel Selectable) {
+// selectableChild appends a child whose click selects sel, returning it so a caller can set
+// an icon (the return value is ignored by callers that don't need one).
+func (n *BrowserNode) selectableChild(label, kind string, sel Selectable) *BrowserNode {
 	c := n.child(label, kind)
 	c.Select = sel
+	return c
 }
 
 // selectableBranch appends a child that is BOTH selectable and a parent (a feature row that
@@ -372,7 +377,7 @@ func appendTopLevelSketchEntries(entries []timelineEntry, part *compdef.PartComp
 			continue
 		}
 		entries = append(entries, timelineEntry{sk.Seq(), func(root *BrowserNode) {
-			root.selectableChild(sk.Name(), "sketch", SketchHandle{Sketch: sk})
+			root.selectableChild(sk.Name(), "sketch", SketchHandle{Sketch: sk}).Icon = "create-sketch"
 		}})
 	}
 	return entries
@@ -386,7 +391,7 @@ func appendSketch3DEntries(entries []timelineEntry, part *compdef.PartComponentD
 	for i := 0; i < sketches.Count(); i++ {
 		sk := sketches.Item(i)
 		entries = append(entries, timelineEntry{sk.Seq(), func(root *BrowserNode) {
-			root.selectableChild(sk.Name(), "sketch3d", Sketch3DHandle{Sketch3D: sk})
+			root.selectableChild(sk.Name(), "sketch3d", Sketch3DHandle{Sketch3D: sk}).Icon = "create-sketch-3d"
 		}})
 	}
 	return entries
@@ -400,14 +405,38 @@ func appendFeatureEntries(entries []timelineEntry, part *compdef.PartComponentDe
 		f := features.Item(i)
 		entries = append(entries, timelineEntry{f.Seq(), func(root *BrowserNode) {
 			node := root.selectableBranch(featureLabel(f), "feature", FeatureHandle{Feature: f})
+			node.Icon = featureIcon(f.Kind())
 			for _, sk := range f.ConsumedSketches() {
 				if absorber[sk] == f {
-					node.selectableChild(sk.Name(), "sketch", SketchHandle{Sketch: sk})
+					node.selectableChild(sk.Name(), "sketch", SketchHandle{Sketch: sk}).Icon = "create-sketch"
 				}
 			}
 		}})
 	}
 	return entries
+}
+
+// featureIconByKind maps a feature's Kind() to the head icon-asset key drawn before its
+// browser label, so the feature reads by glyph not just by name. Kinds that share a glyph
+// (the fillet/pattern families) collapse onto one asset; a kind with no dedicated asset is
+// absent and falls through to featureIcon's default.
+var featureIconByKind = map[string]string{
+	"extrude": "extrude", "revolve": "revolve", "sweep": "sweep", "loft": "loft",
+	"coil": "coil", "emboss": "emboss", "rib": "rib", "thicken": "thicken",
+	"hole": "hole", "boss": "boss", "thread": "thread", "combine": "combine",
+	"fillet": "fillet", "face-fillet": "fillet", "full-round-fillet": "fillet", "rule-fillet": "fillet",
+	"chamfer": "chamfer", "shell": "shell", "draft": "draft",
+	"mirror": "mirror", "move": "move", "decal": "decal", "directEdit": "direct-edit",
+	"split": "split", "derived": "derive", "derivedAssembly": "derive",
+}
+
+// featureIcon returns the icon-asset key for a feature kind, defaulting to a generic
+// "extrude" glyph for an unmapped kind so every feature row still carries an icon (#1264).
+func featureIcon(kind string) string {
+	if key, ok := featureIconByKind[kind]; ok {
+		return key
+	}
+	return "extrude"
 }
 
 // featureLabel is a feature's browser label, with an "(out of date)" badge when it is a
