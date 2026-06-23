@@ -11,6 +11,7 @@ import (
 	"oblikovati.org/addin/modelaccess"
 	"oblikovati.org/api/types"
 	"oblikovati.org/app"
+	"oblikovati.org/math"
 	"oblikovati.org/model/compdef"
 	"oblikovati.org/model/feature"
 )
@@ -257,6 +258,53 @@ func applyBridgeSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, e
 	}
 	pf := feature.NewBridgeFeatures(part.Features()).Add(ca.Order(), cb.Order())
 	return recomputeResult(part, pf)
+}
+
+// networkSurfaceArgs is the M36-F10 network op: the U- and V-direction curve polylines (each curve a
+// list of [x,y,z] points in model space; the bake the tool/script does from picked sketch curves).
+type networkSurfaceArgs struct {
+	UCurves [][][]float64 `json:"uCurves"`
+	VCurves [][][]float64 `json:"vCurves"`
+}
+
+const networkSurfaceSchema = `{
+  "type": "object",
+  "properties": {
+    "uCurves": {"type": "array", "minItems": 2, "description": "U-direction curves, each a list of [x,y,z] points (model units).", "items": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}}},
+    "vCurves": {"type": "array", "minItems": 2, "description": "V-direction curves, each a list of [x,y,z] points; must approximately intersect the U-curves at a grid.", "items": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}}}
+  },
+  "required": ["uCurves", "vCurves"]
+}`
+
+func networkSurfaceDescriptor() *OperationDescriptor {
+	return &OperationDescriptor{Name: "networkSurface", Summary: "Interpolate a grid of intersecting U/V curves with a single NURBS (Gordon network surface).", Schema: json.RawMessage(networkSurfaceSchema), Apply: applyNetworkSurface}
+}
+
+func applyNetworkSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
+	part, err := modelaccess.ActivePart(s)
+	if err != nil {
+		return nil, err
+	}
+	var in networkSurfaceArgs
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return nil, err
+	}
+	pf := feature.NewNetworkFeatures(part.Features()).Add(networkPolylines(in.UCurves), networkPolylines(in.VCurves))
+	return recomputeResult(part, pf)
+}
+
+// networkPolylines converts wire [x,y,z] curve point lists to model points (skipping malformed points).
+func networkPolylines(curves [][][]float64) [][]math.Point3 {
+	out := make([][]math.Point3, len(curves))
+	for i, c := range curves {
+		out[i] = make([]math.Point3, 0, len(c))
+		for _, p := range c {
+			if len(p) == 3 {
+				out[i] = append(out[i], math.P3(math.Scalar(p[0]), math.Scalar(p[1]), math.Scalar(p[2])))
+			}
+		}
+	}
+	return out
 }
 
 func applySurfaceOffset(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
