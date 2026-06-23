@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
 
@@ -73,6 +74,136 @@ func TestSplineThreeSectionsBulges(t *testing.T) {
 	}
 	if maxX > 1.2 {
 		t.Errorf("3-section loft overshoots the middle: max x = %.3f, want ≈1", maxX)
+	}
+}
+
+// mengerCurv is the discrete (Menger) curvature of three points — the geometric curvature at the
+// middle point: 4·triangleArea / (|ab|·|bc|·|ca|). Scale/parameterization independent.
+func mengerCurv(a, b, c math.Point3) float64 {
+	ab := float64(a.DistanceTo(b))
+	bc := float64(b.DistanceTo(c))
+	ca := float64(c.DistanceTo(a))
+	area := 0.5 * float64(a.VectorTo(b).Cross(a.VectorTo(c)).Length())
+	if ab*bc*ca < 1e-18 {
+		return 0
+	}
+	return 4 * area / (ab * bc * ca)
+}
+
+// TestHermite5MatchesQuinticPolynomial: hermite5 is the exact quintic interpolant of its Hermite data
+// (position, 1st and 2nd derivatives at both ends), so it reproduces any degree-5 polynomial curve
+// from that curve's endpoint data.
+func TestHermite5MatchesQuinticPolynomial(t *testing.T) {
+	// Q(t) = c0 + c1 t + c2 t² + c3 t³ + c4 t⁴ + c5 t⁵ (a distinct cubic-ish per axis).
+	q := func(t float64) math.Point3 {
+		return math.P3(
+			math.Scalar(1+2*t-t*t+0.5*t*t*t+t*t*t*t-0.3*t*t*t*t*t),
+			math.Scalar(-2+t+3*t*t-t*t*t+0.2*t*t*t*t*t),
+			math.Scalar(t*t-2*t*t*t+t*t*t*t*t),
+		)
+	}
+	qd := func(t float64) math.Vector3 {
+		return math.V3(2-2*t+1.5*t*t+4*t*t*t-1.5*t*t*t*t, 1+6*t-3*t*t+t*t*t*t, 2*t-6*t*t+5*t*t*t*t)
+	}
+	qdd := func(t float64) math.Vector3 {
+		return math.V3(-2+3*t+12*t*t-6*t*t*t, 6-6*t+4*t*t*t, 2-12*t+20*t*t*t)
+	}
+	p0, p1 := q(0), q(1)
+	m0, m1 := qd(0), qd(1)
+	a0, a1 := qdd(0), qdd(1)
+	for _, tt := range []float64{0, 0.2, 0.5, 0.75, 1} {
+		got := hermite5(p0, p1, m0, m1, a0, a1, tt)
+		if !got.IsEqualTo(q(tt), 1e-9) {
+			t.Errorf("hermite5 at t=%g = %v, want %v", tt, got, q(tt))
+		}
+	}
+}
+
+// TestFaceEndDerivSphereCurvature: faceEndDeriv reports the adjacent surface's true cross-boundary
+// curvature. On a sphere of radius R the directional 2nd derivative along the meridian has magnitude
+// 1/R and points toward the centre (the sphere's normal curvature), and the takeoff tangent is unit
+// and perpendicular to the boundary (hoop) edge.
+func TestFaceEndDerivSphereCurvature(t *testing.T) {
+	const R = 2.0
+	sph, _ := geom.NewSphere(math.P3(0, 0, 0), R)
+	u0, v0 := 0.7, 0.3
+	p := sph.PointAt(u0, v0)
+	edge, _ := sph.DerivativesAt(u0, v0) // ∂/∂u = the latitude (hoop) tangent = boundary edge
+	ringC := math.P3(0, 0, math.Scalar(R*stdmath.Sin(v0)))
+	t1, g2, ok := faceEndDeriv(sph, p, edge, ringC.VectorTo(p))
+	if !ok {
+		t.Fatal("faceEndDeriv reported degenerate on a sphere")
+	}
+	if d := stdmath.Abs(float64(g2.Length()) - 1/R); d > 1e-6 {
+		t.Errorf("cross-boundary curvature |g2| = %g, want 1/R = %g", g2.Length(), 1/R)
+	}
+	if g2.Dot(p.VectorTo(math.P3(0, 0, 0))) <= 0 {
+		t.Error("sphere curvature vector should point toward the centre")
+	}
+	if d := stdmath.Abs(float64(t1.Length()) - 1); d > 1e-9 {
+		t.Errorf("takeoff tangent |t1| = %g, want unit", t1.Length())
+	}
+	if d := float64(t1.Dot(edge)); stdmath.Abs(d) > 1e-9 {
+		t.Errorf("takeoff tangent should be perpendicular to the boundary edge, dot = %g", d)
+	}
+}
+
+// TestLoftG2MatchesFaceCurvature is the F06 acceptance: a loft leaving a sphere face with a Smooth
+// (G2) end has its longitudinal seam curvature equal to the sphere's (1/R) — curvature continuity —
+// whereas a Tangent (G1) end leaves with a different seam curvature. This is the numeric F13-style
+// gate (the body is a faceted skin, so continuity is measured on the longitudinal track).
+func TestLoftG2MatchesFaceCurvature(t *testing.T) {
+	const R = 2.0
+	sph, _ := geom.NewSphere(math.P3(0, 0, 0), R)
+	v0 := 0.3
+	const n = 24
+	ring := func(radius, z float64) []math.Point3 {
+		out := make([]math.Point3, n)
+		for k := 0; k < n; k++ {
+			a := 2 * stdmath.Pi * float64(k) / float64(n)
+			out[k] = math.P3(math.Scalar(radius*stdmath.Cos(a)), math.Scalar(radius*stdmath.Sin(a)), math.Scalar(z))
+		}
+		return out
+	}
+	sphereRing := func() []math.Point3 { // the loft's start section, lying on the sphere at latitude v0
+		out := make([]math.Point3, n)
+		for k := 0; k < n; k++ {
+			out[k] = sph.PointAt(2*stdmath.Pi*float64(k)/float64(n), v0)
+		}
+		return out
+	}
+	sec0 := sphereRing()
+	sec1 := ring(R*stdmath.Cos(v0)+1, R*stdmath.Sin(v0)+1) // a flaring target circle above
+	ends := func(c LoftCondition) loftEnds {
+		return loftEnds{
+			first:  LoftEnd{Condition: c, Impact: 1},
+			firstN: math.V3(0, 0, 1).AsUnit(), lastN: math.V3(0, 0, 1).AsUnit(),
+			firstSurf: sph,
+		}
+	}
+	// Exact seam curvature of the G2 takeoff: faceContinuity sets the tangent m0 and returns the
+	// second derivative a0, so the longitudinal track's geometric curvature at the seam is
+	// |m0×a0|/|m0|³ — this must equal the sphere's 1/R (true curvature continuity), per point.
+	tan := sectionTangents([][]math.Point3{sec0, sec1}, false, ends(LoftSmooth), 0)
+	a0 := faceContinuity(tan[0], sec0, sec1, sph, LoftEnd{Condition: LoftSmooth, Impact: 1})
+	if a0 == nil {
+		t.Fatal("G2 face continuity produced no second-derivative data")
+	}
+	for j := 0; j < n; j++ {
+		m := tan[0][j]
+		k := float64(m.Cross(a0[j]).Length()) / stdmath.Pow(float64(m.Length()), 3)
+		if d := stdmath.Abs(k - 1/R); d > 1e-6 {
+			t.Fatalf("track %d seam curvature = %.6f, want 1/R = %.6f (G2 curvature continuity)", j, k, 1/R)
+		}
+	}
+	// End to end on the actual densified skin: the G2 track curves differently near the seam than the
+	// G1 (tangent-only) track — so the curvature condition really reshapes the built geometry.
+	g2 := splineSections([][]math.Point3{sec0, sec1}, false, ends(LoftSmooth), 0)
+	g1 := splineSections([][]math.Point3{sec0, sec1}, false, ends(LoftTangent), 0)
+	ck2 := mengerCurv(g2[0][0], g2[1][0], g2[2][0])
+	ck1 := mengerCurv(g1[0][0], g1[1][0], g1[2][0])
+	if stdmath.Abs(ck2-ck1) < 0.05 {
+		t.Errorf("G2 (%.4f) and G1 (%.4f) seam track curvatures should differ — G2 must reshape the skin", ck2, ck1)
 	}
 }
 
