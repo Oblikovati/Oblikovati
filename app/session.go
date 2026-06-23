@@ -61,6 +61,7 @@ type Session struct {
 	steeringWheel             bool                  // the SteeringWheels radial nav menu is shown at the cursor (#913 N26)
 	entityDrag                sketchDrag            // the in-progress direct drag of sketch entities, if any
 	cloudMove                 cloudMoveDrag         // the in-progress interactive drag of a point cloud, if any (#645)
+	cvEdit                    cvEditDrag            // the in-progress NURBS control-point drag, if any (M36-F03)
 	relaxMode                 bool                  // Relax Mode: drag over/fully-constrained sketch geometry (#791)
 	hudEnabled                bool                  // the 2D-sketch dynamic-input HUD is enabled (#790)
 	sketchHUD                 sketchHUD             // the dynamic-input HUD's live typing state (#790)

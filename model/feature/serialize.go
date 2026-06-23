@@ -56,23 +56,25 @@ type FeatureData struct {
 	SketchPattern *SketchDrivenPatternData `yaml:"sketchDrivenPattern,omitempty"`
 	Mirror        *MirrorData              `yaml:"mirror,omitempty"`
 
-	BoundaryPatch *BoundaryPatchData `yaml:"boundaryPatch,omitempty"`
-	RuledSurface  *RuledSurfaceData  `yaml:"ruledSurface,omitempty"`
-	Rebuild       *RebuildData       `yaml:"rebuild,omitempty"`
-	FaceEdit      *FaceEditData      `yaml:"faceEdit,omitempty"`
-	Thicken       *ThickenData       `yaml:"thicken,omitempty"`
-	Revolve       *RevolveData       `yaml:"revolve,omitempty"`
-	Coil          *CoilData          `yaml:"coil,omitempty"`
-	Sweep         *SweepData         `yaml:"sweep,omitempty"`
-	Loft          *LoftData          `yaml:"loft,omitempty"`
-	Move          *MoveData          `yaml:"move,omitempty"`
-	Bend          *BendData          `yaml:"bend,omitempty"`
-	Decal         *DecalData         `yaml:"decal,omitempty"`
-	Reference     *ReferenceData     `yaml:"reference,omitempty"`
-	Client        *ClientData        `yaml:"client,omitempty"`
-	Mark          *MarkData          `yaml:"mark,omitempty"`
-	Finish        *FinishData        `yaml:"finish,omitempty"`
-	Import        *ImportData        `yaml:"import,omitempty"`
+	BoundaryPatch    *BoundaryPatchData    `yaml:"boundaryPatch,omitempty"`
+	RuledSurface     *RuledSurfaceData     `yaml:"ruledSurface,omitempty"`
+	Rebuild          *RebuildData          `yaml:"rebuild,omitempty"`
+	ControlPointEdit *ControlPointEditData `yaml:"controlPointEdit,omitempty"`
+	NurbsPlane       *NurbsPlaneData       `yaml:"nurbsPlane,omitempty"`
+	FaceEdit         *FaceEditData         `yaml:"faceEdit,omitempty"`
+	Thicken          *ThickenData          `yaml:"thicken,omitempty"`
+	Revolve          *RevolveData          `yaml:"revolve,omitempty"`
+	Coil             *CoilData             `yaml:"coil,omitempty"`
+	Sweep            *SweepData            `yaml:"sweep,omitempty"`
+	Loft             *LoftData             `yaml:"loft,omitempty"`
+	Move             *MoveData             `yaml:"move,omitempty"`
+	Bend             *BendData             `yaml:"bend,omitempty"`
+	Decal            *DecalData            `yaml:"decal,omitempty"`
+	Reference        *ReferenceData        `yaml:"reference,omitempty"`
+	Client           *ClientData           `yaml:"client,omitempty"`
+	Mark             *MarkData             `yaml:"mark,omitempty"`
+	Finish           *FinishData           `yaml:"finish,omitempty"`
+	Import           *ImportData           `yaml:"import,omitempty"`
 
 	DerivedAssembly *DerivedAssemblyData `yaml:"derivedAssembly,omitempty"`
 	DerivedPart     *DerivedPartData     `yaml:"derivedPart,omitempty"`
@@ -276,6 +278,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.RuledSurface = rs
 	case *RebuildFeature:
 		fd.Rebuild = serializeRebuild(f.def)
+	case *ControlPointEditFeature:
+		fd.ControlPointEdit = serializeControlPointEdit(f.def)
+	case *NurbsPlaneFeature:
+		fd.NurbsPlane = serializeNurbsPlane(f.def)
 	case *RevolveFeature:
 		rv, err := serializeRevolve(f.def, sk)
 		if err != nil {
@@ -595,6 +601,10 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		return restoreRuledSurface(fs, fd.RuledSurface, sk)
 	case "rebuild-surface":
 		return restoreRebuild(fs, fd.Rebuild)
+	case "control-point-edit":
+		return restoreControlPointEdit(fs, fd.ControlPointEdit)
+	case "nurbs-plane":
+		return restoreNurbsPlane(fs, fd.NurbsPlane)
 	case "split", "move-face", "face-offset", "delete-face", "replace-face":
 		return restoreFaceEdit(fs, fd.Kind, fd.FaceEdit)
 	case "thicken":

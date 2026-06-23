@@ -57,10 +57,37 @@ func handleViewportSelection(s *app.Session) {
 	if updateCloudDrag(s) {
 		return
 	}
+	if updateControlPointDrag(s) {
+		return
+	}
 	if updateBoxSelect(s) {
 		return
 	}
 	handleViewportClick(s)
+}
+
+// updateControlPointDrag advances interactive NURBS control-point editing and reports whether it
+// consumed this frame's left input. While the Edit Control Points tool is active, a left press on
+// a control-net handle begins the drag, the cursor slides it (the surface re-evaluates live), and
+// release commits the edit (M36-F03). Mirrors updateCloudDrag.
+func updateControlPointDrag(s *app.Session) bool {
+	if !s.CVEditActive() {
+		return false
+	}
+	if s.CVDragActive() {
+		lx, ly := viewportCursor()
+		if native.MouseDown(native.MouseLeft) {
+			s.UpdateCVDrag(lx, ly)
+		} else {
+			s.CommitCVDrag()
+		}
+		return true
+	}
+	if !native.IsItemClicked(native.MouseLeft) {
+		return false
+	}
+	lx, ly := viewportCursor()
+	return s.BeginCVDrag(lx, ly)
 }
 
 // updateCloudDrag advances the interactive Move of a point cloud and reports whether it consumed
