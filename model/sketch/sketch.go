@@ -246,11 +246,16 @@ func (s *Sketch) PointByID(id ID) (*Point, bool) {
 	return nil, false
 }
 
-// AllPoints returns every constrainable point in the sketch — endpoints, centers,
-// and standalone points — which are the solver's position variables.
+// AllPoints returns every constrainable point in the sketch — free points (endpoints,
+// centers, standalone) AND the fixed projected/reference anchors (refPts). It is the
+// pick/snap/inference candidate set, so projected geometry (e.g. the origin centre point) can
+// be selected and constrained to; the solver's free-variable universe is variables(), which
+// deliberately excludes the fixed anchors. Before #1268 the anchors were omitted here, so a
+// coincident constraint to a projected point could never be picked.
 func (s *Sketch) AllPoints() []*Point {
-	out := make([]*Point, len(s.pts))
-	copy(out, s.pts)
+	out := make([]*Point, 0, len(s.pts)+len(s.refPts))
+	out = append(out, s.pts...)
+	out = append(out, s.refPts...)
 	return out
 }
 

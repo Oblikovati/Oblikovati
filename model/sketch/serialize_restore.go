@@ -183,13 +183,19 @@ func (r *sketchRestorer) restoreEntities(entities []EntityData) error {
 		if err != nil {
 			return err
 		}
-		e.(interface{ SetConstruction(bool) }).SetConstruction(ed.Construction)
+		// Projected reference entities (#1268) carry no construction flag and pin their own ids,
+		// so each post-step is optional rather than a hard type-assert.
+		if sc, ok := e.(interface{ SetConstruction(bool) }); ok {
+			sc.SetConstruction(ed.Construction)
+		}
 		if ed.Centerline {
 			if cl, ok := e.(interface{ SetCenterline(bool) }); ok {
 				cl.SetCenterline(true)
 			}
 		}
-		r.pin(e.(idCarrier), ed.ID)
+		if ic, ok := e.(idCarrier); ok {
+			r.pin(ic, ed.ID)
+		}
 		r.entityMap[ed.ID] = e
 	}
 	return nil
@@ -265,8 +271,36 @@ func (r *sketchRestorer) restoreEntity(ed EntityData) (Entity, error) {
 			TextHJustify(ed.Justify), TextVJustify(ed.VJustify), ed.FontFamily, math.Scalar(ed.FontSize))
 		tb.FontResource = ed.FontResource
 		return tb, nil
+	case "projectedPoint":
+		return r.restoreProjectedPoint(ed)
+	case "projectedCurve":
+		c := r.s.RestoreProjectedCurve(ID(ed.ID), unflattenPoints(ed.Coords), ed.SourceKind, ed.Source)
+		r.note(ed.ID)
+		return c, nil
 	default:
 		return r.restoreDerivedCurve(ed)
+	}
+}
+
+// restoreProjectedPoint rebuilds a frozen projected point and registers its anchor in the point
+// map so constraints referencing the anchor restore, pinning the anchor id (#1268).
+func (r *sketchRestorer) restoreProjectedPoint(ed EntityData) (Entity, error) {
+	if len(ed.Points) < 1 || len(ed.Anchor) < 2 {
+		return nil, fmt.Errorf("projectedPoint needs an anchor id and a 2-component anchor")
+	}
+	pos := math.P2(math.Scalar(ed.Anchor[0]), math.Scalar(ed.Anchor[1]))
+	pp := r.s.RestoreProjectedPoint(ID(ed.Points[0]), pos, ed.SourceKind, ed.Source)
+	r.pointMap[ed.Points[0]] = pp.Anchor()
+	r.note(ed.Points[0])
+	r.note(ed.ID)
+	return pp, nil
+}
+
+// note raises the restorer's max-id watermark for an id pinned outside pin() (the
+// self-id'd projected entities), so later minted ids never collide with restored ones.
+func (r *sketchRestorer) note(id int) {
+	if uint64(id) > r.maxID {
+		r.maxID = uint64(id)
 	}
 }
 

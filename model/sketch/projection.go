@@ -37,6 +37,10 @@ type ProjectedPoint struct {
 	plane  Plane
 	anchor *Point
 	linked bool
+	// srcKind/srcID persist the source's identity (its kind tag + SourceID) so a saved sketch
+	// round-trips: serialization writes them, restore keeps them, and compdef rebinds a live
+	// self-resolving source from them after a reload (#1268).
+	srcKind, srcID string
 }
 
 // EntityID is the anchor's id — constraining to this id binds to the fixed anchor.
@@ -88,6 +92,8 @@ type ProjectedCurve struct {
 	plane  Plane
 	points []math.Point2
 	linked bool
+	// srcKind/srcID persist the source's identity for save/reload + rebind (see ProjectedPoint).
+	srcKind, srcID string
 }
 
 // EntityID implements [Entity].
@@ -138,7 +144,10 @@ func (c *ProjectedCurve) BreakLink() { c.linked = false }
 // point and returns the associative projected point.
 func (s *Sketch) ProjectPoint(src PointSource) *ProjectedPoint {
 	pos, _ := src.Position() // resolved now; a later lost reference freezes via Update
-	p := &ProjectedPoint{source: src, plane: s.plane, anchor: s.newRefPoint(s.plane.ToSketch(pos)), linked: true}
+	p := &ProjectedPoint{
+		source: src, plane: s.plane, anchor: s.newRefPoint(s.plane.ToSketch(pos)), linked: true,
+		srcKind: pointSourceKind(src), srcID: src.SourceID(),
+	}
 	p.Update()
 	s.add(p)
 	return p
@@ -146,7 +155,10 @@ func (s *Sketch) ProjectPoint(src PointSource) *ProjectedPoint {
 
 // ProjectCurve projects a model edge into the sketch as reference geometry.
 func (s *Sketch) ProjectCurve(src CurveSource) *ProjectedCurve {
-	c := &ProjectedCurve{id: nextID(), source: src, plane: s.plane, linked: true}
+	c := &ProjectedCurve{
+		id: nextID(), source: src, plane: s.plane, linked: true,
+		srcKind: curveSourceKind(src), srcID: src.SourceID(),
+	}
 	c.Update()
 	s.add(c)
 	return c
@@ -177,4 +189,55 @@ func (s *Sketch) UpdateProjections() {
 		}
 	}
 	s.updateCloudAnchors() // re-project scan-anchored points so they follow their clouds (#645)
+}
+
+// sourceKinded is the optional interface a projection source implements to declare its kind
+// ("vertex"/"edge"/"workPoint"/"workAxis"/"workPlane"), so the sketch can persist enough to let
+// compdef rebuild a live source on restore (#1268). The model-side reference sources implement
+// it; a source that does not is persisted with an empty kind and stays frozen after a reload.
+type sourceKinded interface{ SourceKind() string }
+
+func pointSourceKind(src PointSource) string {
+	if k, ok := src.(sourceKinded); ok {
+		return k.SourceKind()
+	}
+	return ""
+}
+
+func curveSourceKind(src CurveSource) string {
+	if k, ok := src.(sourceKinded); ok {
+		return k.SourceKind()
+	}
+	return ""
+}
+
+// SourceDescriptor returns the (kind, id) a host uses to rebuild this projection's live source
+// after a reload; an empty kind means there is nothing to rebind (the projection stays frozen).
+func (p *ProjectedPoint) SourceDescriptor() (kind, id string) { return p.srcKind, p.srcID }
+
+// Rebind attaches a freshly built live source to a projection restored frozen, making it
+// associative again; the next UpdateProjections re-projects from it.
+func (p *ProjectedPoint) Rebind(src PointSource) { p.source, p.linked = src, true }
+
+// SourceDescriptor / Rebind for a projected curve mirror ProjectedPoint's.
+func (c *ProjectedCurve) SourceDescriptor() (kind, id string) { return c.srcKind, c.srcID }
+func (c *ProjectedCurve) Rebind(src CurveSource)              { c.source, c.linked = src, true }
+
+// RestoreProjectedPoint rebuilds a projected point frozen at pos, pinning the anchor's id so
+// constraints that reference it survive, and keeping the source descriptor for a later Rebind.
+// The host re-attaches the live source after load (compdef.rebindSketchProjections, #1268).
+func (s *Sketch) RestoreProjectedPoint(anchorID ID, pos math.Point2, srcKind, srcID string) *ProjectedPoint {
+	anchor := &Point{id: anchorID, X: pos.X, Y: pos.Y}
+	s.refPts = append(s.refPts, anchor)
+	p := &ProjectedPoint{plane: s.plane, anchor: anchor, linked: false, srcKind: srcKind, srcID: srcID}
+	s.add(p)
+	return p
+}
+
+// RestoreProjectedCurve rebuilds a projected curve frozen at the given polyline, pinning its id
+// and keeping the source descriptor for a later Rebind.
+func (s *Sketch) RestoreProjectedCurve(id ID, pts []math.Point2, srcKind, srcID string) *ProjectedCurve {
+	c := &ProjectedCurve{id: id, plane: s.plane, points: pts, linked: false, srcKind: srcKind, srcID: srcID}
+	s.add(c)
+	return c
 }

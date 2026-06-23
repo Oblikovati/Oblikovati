@@ -288,6 +288,7 @@ func (d *PartComponentDefinition) applyRecipeStruct(r partRecipe) error {
 	if r.EndOfPart != nil {
 		d.SetEndOfPart(*r.EndOfPart)
 	}
+	d.rebindSketchProjections() // re-attach live sources to restored projections before recompute (#1268)
 	d.Recompute()
 	return nil
 }
