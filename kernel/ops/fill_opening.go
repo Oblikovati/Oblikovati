@@ -17,11 +17,14 @@ import (
 // is a new one-face surface body covering the opening.
 
 // boundaryEdge is one neighbour's contribution to a fill: the curve along its inner edge, plus the
-// surface and edge it came from (for the continuity match).
+// surface and edge it came from (for the continuity match). nurbs reports whether the neighbour is a
+// NURBS surface — only then can tangent/curvature (G1/G2) matching apply; a planar (or other) face
+// contributes its boundary curve and is filled position-only (G0) on that side.
 type boundaryEdge struct {
 	curve   geom.BSplineCurve
 	surface geom.BSplineSurface
 	edge    geom.Boundary
+	nurbs   bool
 }
 
 // endpoints of a boundary curve.
@@ -29,9 +32,10 @@ func (b boundaryEdge) start() math.Point3 { return b.curve.Ctrl[0] }
 func (b boundaryEdge) end() math.Point3   { return b.curve.Ctrl[len(b.curve.Ctrl)-1] }
 
 // FillFourSided fills the opening bounded by four neighbour surface bodies with a single NURBS at the
-// given continuity order (0=G0..2=G2). Each neighbour must be a single NURBS face; its inner edge
-// (nearest the opening centre) bounds the fill. It errors when a neighbour is not a NURBS face or the
-// four edges do not chain into a closed loop.
+// given continuity order (0=G0..2=G2). Each neighbour must be a single surface face (NURBS or planar);
+// its inner edge (nearest the opening centre) bounds the fill. A NURBS neighbour is matched to the
+// requested continuity; a planar neighbour fills position-only on that side (it has no curvature to
+// match). It errors when a neighbour has no surface face or the four edges do not chain into a loop.
 func FillFourSided(neighbours [4]*topo.Body, order int) (*topo.Body, error) {
 	edges, err := openingEdges(neighbours)
 	if err != nil {
@@ -41,12 +45,7 @@ func FillFourSided(neighbours [4]*topo.Body, order int) (*topo.Body, error) {
 	if err != nil {
 		return nil, err
 	}
-	sides := [4]geom.FillSide{
-		{Adjacent: c0.surface, AdjEdge: c0.edge, Order: order},
-		{Adjacent: c1.surface, AdjEdge: c1.edge, Order: order},
-		{Adjacent: d0.surface, AdjEdge: d0.edge, Order: order},
-		{Adjacent: d1.surface, AdjEdge: d1.edge, Order: order},
-	}
+	sides := [4]geom.FillSide{fillSide(c0, order), fillSide(c1, order), fillSide(d0, order), fillSide(d1, order)}
 	fill, err := geom.FillSurface(c0.curve, c1.curve, d0.curve, d1.curve, sides)
 	if err != nil {
 		return nil, fmt.Errorf("ops.FillFourSided: %w", err)
@@ -54,26 +53,103 @@ func FillFourSided(neighbours [4]*topo.Body, order int) (*topo.Body, error) {
 	return fullDomainBody(fill, "fill"), nil
 }
 
-// openingEdges returns each neighbour's inner boundary edge (midpoint nearest the centre of all
-// neighbour centroids).
+// fillSide builds the geom.FillSide for one boundary: a NURBS neighbour matches to the requested
+// continuity; any other (planar) neighbour fills position-only (Order 0) so the fill still
+// interpolates its boundary.
+func fillSide(b boundaryEdge, order int) geom.FillSide {
+	if b.nurbs {
+		return geom.FillSide{Adjacent: b.surface, AdjEdge: b.edge, Order: order}
+	}
+	return geom.FillSide{Order: 0}
+}
+
+// openingEdges returns each neighbour's inner boundary edge (nearest the centre of the neighbour
+// faces). Each neighbour must be a single surface face (NURBS or planar).
 func openingEdges(neighbours [4]*topo.Body) ([4]boundaryEdge, error) {
-	var edges [4]boundaryEdge
-	var surfs [4]geom.BSplineSurface
+	var faces [4]*topo.Face
+	var surfs [4]geom.Surface
 	var sum math.Vector3
 	for i, b := range neighbours {
-		_, s, ok := firstNurbsFace(b)
+		f, s, ok := firstSurfaceFace(b)
 		if !ok {
-			return edges, fmt.Errorf("ops.FillFourSided: neighbour %d is not a NURBS face", i)
+			return [4]boundaryEdge{}, fmt.Errorf("ops.FillFourSided: neighbour %d has no surface face", i)
 		}
-		surfs[i] = s
-		sum = sum.Add(s.PointAt(0.5, 0.5).AsVector())
+		faces[i], surfs[i] = f, s
+		sum = sum.Add(faceCentroid(f).AsVector()) // face position (robust for planar faces, unlike surface.PointAt)
 	}
 	center := sum.Scale(0.25).AsPoint()
-	for i, s := range surfs {
-		edge := innerEdge(s, center)
-		edges[i] = boundaryEdge{curve: edgeCurve(s, edge), surface: s, edge: edge}
+	var edges [4]boundaryEdge
+	for i := range neighbours {
+		edges[i] = innerBoundary(faces[i], surfs[i], center)
 	}
 	return edges, nil
+}
+
+// faceCentroid averages a face's outer-loop edge start points — the face's position, valid for any
+// surface type (a planar face's surface.PointAt does not track the trimmed face's location).
+func faceCentroid(f *topo.Face) math.Point3 {
+	var sum math.Vector3
+	n := 0
+	for _, l := range f.Loops() {
+		for _, u := range l.EdgeUses() {
+			c := u.Edge().Geometry()
+			lo, _ := c.Domain()
+			sum = sum.Add(c.PointAt(lo).AsVector())
+			n++
+		}
+	}
+	if n == 0 {
+		return math.P3(0, 0, 0)
+	}
+	return sum.Scale(1 / float64(n)).AsPoint()
+}
+
+// firstSurfaceFace returns the body's first face carrying a surface (any kind), its surface, and ok.
+func firstSurfaceFace(b *topo.Body) (*topo.Face, geom.Surface, bool) {
+	for _, f := range b.Faces() {
+		if s := f.Geometry(); s != nil {
+			return f, s, true
+		}
+	}
+	return nil, nil, false
+}
+
+// innerBoundary returns the neighbour's inner boundary edge facing the opening centre. A NURBS face
+// uses its inner iso-row (so tangent/curvature matching can apply); any other surface (e.g. a planar
+// patch) uses the inner topo edge's curve and is filled position-only on that side.
+func innerBoundary(f *topo.Face, s geom.Surface, center math.Point3) boundaryEdge {
+	if bs, ok := s.(geom.BSplineSurface); ok {
+		e := innerEdge(bs, center)
+		return boundaryEdge{curve: edgeCurve(bs, e), surface: bs, edge: e, nurbs: true}
+	}
+	return boundaryEdge{curve: innerTopoEdge(f, center)}
+}
+
+// innerTopoEdge returns, as a B-spline curve, the face boundary edge whose midpoint is nearest center.
+func innerTopoEdge(f *topo.Face, center math.Point3) geom.BSplineCurve {
+	var best geom.Curve3
+	bestD := math.Scalar(stdmath.Inf(1))
+	for _, l := range f.Loops() {
+		for _, u := range l.EdgeUses() {
+			c := u.Edge().Geometry()
+			lo, hi := c.Domain()
+			if d := c.PointAt((lo + hi) / 2).DistanceTo(center); d < bestD {
+				best, bestD = c, d
+			}
+		}
+	}
+	return curveAsBSpline(best)
+}
+
+// curveAsBSpline returns c as a B-spline curve: itself if already one, else a degree-1 segment
+// through its endpoints (exact for the straight edges of a planar patch).
+func curveAsBSpline(c geom.Curve3) geom.BSplineCurve {
+	if bs, ok := c.(geom.BSplineCurve); ok {
+		return bs
+	}
+	lo, hi := c.Domain()
+	bc, _ := geom.NewBSplineCurve(1, []math.Point3{c.PointAt(lo), c.PointAt(hi)}, []float64{1, 1}, []float64{0, 0, 1, 1})
+	return bc
 }
 
 // chainLoop orders the four boundary edges into c0 (v=0), c1 (v=1), d0 (u=0), d1 (u=1) with curves

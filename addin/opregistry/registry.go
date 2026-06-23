@@ -168,6 +168,7 @@ func Default() *Registry {
 		midSurfaceDescriptor(),
 		stitchDescriptor(),
 		sculptDescriptor(),
+		fillSurfaceDescriptor(),
 		// Freeform primitives.
 		freeformBoxDescriptor(),
 		freeformPlaneDescriptor(),
