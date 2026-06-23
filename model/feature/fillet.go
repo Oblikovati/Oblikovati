@@ -91,7 +91,7 @@ func concaveFill(t types.FilletConcaveStrategy) ops.ConcaveFill {
 // blendProfile is the cross-section shape (M36-F08) carried from the feature into the kernel picks:
 // the section type (arc/G2/conic) and a conic's fullness rho. The zero value is the circular arc.
 type blendProfile struct {
-	cross ops.FilletCrossSection
+	cross FilletCrossSection
 	rho   float64
 }
 
@@ -105,15 +105,16 @@ func filletBody(in Input, edgeKeys [][]byte, radius float64, corner FilletCorner
 	}
 	// The analytic fast path builds exact cylinder/torus surfaces (circular arc only); a G2/conic
 	// cross-section must go through the swept ruling band instead.
-	if prof.cross == ops.FilletArc {
+	if prof.cross.IsArc() {
 		if out, ok, err := analyticFilletFastPath(in, body, edgeKeys, radius, feat); ok || err != nil {
 			return out, err
 		}
 	}
 	work, keys := planarizedFillet(body, edgeKeys, feat)
 	picks := make([]ops.EdgeFilletRadii, len(keys))
+	cross := opsCrossSection(prof.cross)
 	for i, k := range keys {
-		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius, Cross: prof.cross, Rho: prof.rho}
+		picks[i] = ops.EdgeFilletRadii{Key: k, R0: radius, R1: radius, Cross: cross, Rho: prof.rho}
 	}
 	result, err := ops.FilletEdgesCorner(work, picks, cornerStrategy(corner), concaveFill(concave))
 	if err != nil {
@@ -189,11 +190,12 @@ func filletBodySets(in Input, sets []FilletEdgeSet, corner FilletCornerType, con
 // follow-up).
 func filletPicksOf(sets []FilletEdgeSet, prof blendProfile, feat string) ([]ops.EdgeFilletRadii, error) {
 	var out []ops.EdgeFilletRadii
+	cross := opsCrossSection(prof.cross)
 	for _, s := range sets {
 		if !s.variable() {
 			r := callOrZero(s.Radius)
 			for _, k := range s.EdgeKeys {
-				out = append(out, ops.EdgeFilletRadii{Key: k, R0: r, R1: r, Cross: prof.cross, Rho: prof.rho})
+				out = append(out, ops.EdgeFilletRadii{Key: k, R0: r, R1: r, Cross: cross, Rho: prof.rho})
 			}
 			continue
 		}
@@ -202,7 +204,7 @@ func filletPicksOf(sets []FilletEdgeSet, prof blendProfile, feat string) ([]ops.
 		}
 		out = append(out, ops.EdgeFilletRadii{
 			Key: s.EdgeKeys[0], R0: callOrZero(s.StartRadius), R1: callOrZero(s.EndRadius),
-			Mids: midRadiiOf(s.RadiusPoints), Cross: prof.cross, Rho: prof.rho,
+			Mids: midRadiiOf(s.RadiusPoints), Cross: cross, Rho: prof.rho,
 		})
 	}
 	return out, nil

@@ -49,16 +49,28 @@ func (s FilletEdgeSet) variable() bool { return s.Radius == nil }
 // FilletCornerType aliases the public corner-treatment discriminator (ADR-0018).
 type FilletCornerType = types.FilletCornerType
 
-// FilletCrossSection aliases the kernel's blend cross-section shape (M36-F08): arc (G1, default),
-// G2 (curvature-continuous), or conic (rho-controlled). Kept in /source until exposed on the wire.
-type FilletCrossSection = ops.FilletCrossSection
+// FilletCrossSection aliases the public blend cross-section shape (M36-F08, ADR-0018): arc (G1,
+// default), G2 (curvature-continuous), or conic (rho-controlled).
+type FilletCrossSection = types.FilletCrossSection
 
-// Fillet cross-section shapes (aliases of the kernel values).
+// Fillet cross-section shapes (aliases of the canonical api/types values).
 const (
-	FilletArc   = ops.FilletArc
-	FilletG2    = ops.FilletG2
-	FilletConic = ops.FilletConic
+	FilletArc   = types.FilletSectionArc
+	FilletG2    = types.FilletSectionG2
+	FilletConic = types.FilletSectionConic
 )
+
+// opsCrossSection maps the public cross-section to the kernel's blend selector.
+func opsCrossSection(c FilletCrossSection) ops.FilletCrossSection {
+	switch c {
+	case FilletG2:
+		return ops.FilletG2
+	case FilletConic:
+		return ops.FilletConic
+	default:
+		return ops.FilletArc
+	}
+}
 
 // FilletDefinition rounds selected edges. EdgeKeys+Radius is the original single
 // constant-radius form; EdgeSets (when non-empty) takes precedence and carries any mix of
@@ -73,7 +85,7 @@ type FilletDefinition struct {
 	// CrossSection selects the blend cross-section shape (M36-F08): the default arc (G1), a
 	// curvature-continuous G2, or a rho-controlled conic. Rho sets a conic's fullness (0<ρ<1,
 	// 0.5=parabola). Non-arc sections build via the swept ruling band (no analytic cylinder).
-	CrossSection ops.FilletCrossSection
+	CrossSection FilletCrossSection
 	Rho          float64
 	// GeomEdges are edges selected by a serialized GEOMETRIC descriptor rather than an
 	// Oblikovati lineage key — the path an external author (the NX exporter, M8/ADR-0040)
@@ -338,7 +350,7 @@ func (c *DressUpFeatures) addFillet(def *FilletDefinition) *PartFeature {
 
 // AddFilletCross rounds the given edges to radius with a chosen cross-section shape (M36-F08): arc
 // (G1, the default), G2 (curvature-continuous), or conic with fullness rho. Shared corners miter.
-func (c *DressUpFeatures) AddFilletCross(edgeKeys [][]byte, radius func() float64, cross ops.FilletCrossSection, rho float64) *PartFeature {
+func (c *DressUpFeatures) AddFilletCross(edgeKeys [][]byte, radius func() float64, cross FilletCrossSection, rho float64) *PartFeature {
 	return c.engine.Add(&FilletFeature{def: &FilletDefinition{
 		EdgeKeys: edgeKeys, Radius: radius, CornerType: types.FilletCornerMiter, CrossSection: cross, Rho: rho,
 	}})

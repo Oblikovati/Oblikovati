@@ -12,7 +12,7 @@ import (
 // edge into a watertight solid.
 func TestFilletCrossG2BuildsValidSolid(t *testing.T) {
 	fs, keys := boxAndVerticalEdges(t)
-	pf := NewDressUpFeatures(fs).AddFilletCross([][]byte{keys[0]}, angleConst(0.5), ops.FilletG2, 0)
+	pf := NewDressUpFeatures(fs).AddFilletCross([][]byte{keys[0]}, angleConst(0.5), FilletG2, 0)
 	fs.Recompute()
 	if !pf.Health().OK() {
 		t.Fatalf("G2 fillet sick: %+v", pf.Health())
@@ -27,7 +27,7 @@ func TestFilletCrossG2BuildsValidSolid(t *testing.T) {
 func TestFilletCrossConicFullness(t *testing.T) {
 	vol := func(rho float64) float64 {
 		fs, keys := boxAndVerticalEdges(t)
-		NewDressUpFeatures(fs).AddFilletCross([][]byte{keys[0]}, angleConst(0.5), ops.FilletConic, rho)
+		NewDressUpFeatures(fs).AddFilletCross([][]byte{keys[0]}, angleConst(0.5), FilletConic, rho)
 		fs.Recompute()
 		return ops.BodyGeometryProperties(fs.Result()[0], ops.Quality{ChordTolerance: 1e-3}).Volume
 	}
@@ -39,7 +39,7 @@ func TestFilletCrossConicFullness(t *testing.T) {
 // TestFilletCrossRoundTrip: the cross-section and rho survive a recipe save/restore.
 func TestFilletCrossRoundTrip(t *testing.T) {
 	fs := NewPartFeatures(nil, nil)
-	NewDressUpFeatures(fs).AddFilletCross([][]byte{[]byte("edge/x")}, angleConst(0.5), ops.FilletConic, 0.65)
+	NewDressUpFeatures(fs).AddFilletCross([][]byte{[]byte("edge/x")}, angleConst(0.5), FilletConic, 0.65)
 	data, err := fs.MarshalRecipe(oneSketch{})
 	if err != nil {
 		t.Fatalf("MarshalRecipe: %v", err)
@@ -49,7 +49,7 @@ func TestFilletCrossRoundTrip(t *testing.T) {
 		t.Fatalf("ApplyRecipe: %v", err)
 	}
 	got := fresh.Item(0).Definition().(*FilletFeature).Definition()
-	if got.CrossSection != ops.FilletConic || got.Rho != 0.65 {
-		t.Errorf("restored cross-section = %d rho %g, want conic(2) 0.65", got.CrossSection, got.Rho)
+	if got.CrossSection != FilletConic || got.Rho != 0.65 {
+		t.Errorf("restored cross-section = %v rho %g, want conic(2) 0.65", got.CrossSection, got.Rho)
 	}
 }

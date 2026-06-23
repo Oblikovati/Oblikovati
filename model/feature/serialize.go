@@ -147,10 +147,10 @@ func serializeFeature(pf *PartFeature, sk SketchIndexer, idx map[ID]int) (Featur
 		fd.Extrude = ed
 	case *FilletFeature:
 		if len(f.def.EdgeSets) > 0 {
-			fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(f.def.EdgeSets), CornerType: int32(f.def.CornerType), CrossSection: int32(f.def.CrossSection), Rho: f.def.Rho}
+			fd.Fillet = &EdgeDressData{Sets: serializeFilletSets(f.def.EdgeSets), CornerType: int32(f.def.CornerType), CrossSection: crossSectionWire(f.def.CrossSection), Rho: f.def.Rho}
 			break
 		}
-		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType), CrossSection: int32(f.def.CrossSection), Rho: f.def.Rho, GeomEdges: encodeGeomEdges(f.def.GeomEdges)}
+		fd.Fillet = &EdgeDressData{Edges: encodeKeys(f.def.EdgeKeys), Value: evalFloat(f.def.Radius), CornerType: int32(f.def.CornerType), CrossSection: crossSectionWire(f.def.CrossSection), Rho: f.def.Rho, GeomEdges: encodeGeomEdges(f.def.GeomEdges)}
 	case *FaceFilletFeature:
 		fd.FaceFillet = &FaceFilletData{FacesA: encodeKeys(f.def.FaceKeysA), FacesB: encodeKeys(f.def.FaceKeysB), Value: evalFloat(f.def.Radius)}
 	case *FullRoundFilletFeature:
@@ -468,7 +468,7 @@ func buildFeature(fs *PartFeatures, fd FeatureData, sk SketchIndexer, restored [
 		if corner == 0 {
 			corner = types.FilletCornerMiter // absent / older recipe ⇒ the miter default
 		}
-		cross := ops.FilletCrossSection(fd.Fillet.crossSectionOrZero())
+		cross := fd.Fillet.crossSectionOrArc()
 		rho := fd.Fillet.rhoOrZero()
 		if fd.Fillet != nil && len(fd.Fillet.Sets) > 0 {
 			sets, err := restoreFilletSets(fd.Fillet.Sets)

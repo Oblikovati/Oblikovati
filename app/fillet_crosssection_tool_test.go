@@ -47,7 +47,7 @@ func TestFilletToolG2CommitsValidSolid(t *testing.T) {
 	}
 	def := f.AddedFeature().Definition().(*feature.FilletFeature).Definition()
 	if def.CrossSection != feature.FilletG2 {
-		t.Errorf("committed cross-section = %d, want G2", def.CrossSection)
+		t.Errorf("committed cross-section = %v, want G2", def.CrossSection)
 	}
 	body := activePartDef(t, s).SurfaceBodies().Item(0)
 	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
