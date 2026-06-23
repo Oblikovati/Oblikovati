@@ -79,26 +79,18 @@ func (s BSplineSurface) RemoveKnotV(v float64, num int, tol float64) (BSplineSur
 // common to every column, so all columns share one consistent U knot vector. A column
 // is re-refined to that common count when it could individually remove more.
 func removeSurfaceU(s BSplineSurface, u float64, r, sm, eff int, tol float64) (newU []float64, ctrl [][]math.Point3, weights [][]float64, removed int) {
-	uCount, vCount := len(s.Ctrl), len(s.Ctrl[0])
+	vCount := len(s.Ctrl[0])
 	removed = eff
-	cols := make([][]hpoint4, vCount)
 	for j := 0; j < vCount; j++ {
-		col := make([]hpoint4, uCount)
-		for i := 0; i < uCount; i++ {
-			col[i] = hpoint4FromCurve(s.Ctrl[i][j], s.Weights[i][j])
-		}
-		_, _, got := removeKnotHomog(s.UDegree, s.UKnots, col, u, r, sm, eff, tol)
+		_, _, got := removeKnotHomog(s.UDegree, s.UKnots, columnToHomog(s, j), u, r, sm, eff, tol)
 		removed = min(removed, got)
 	}
 	if removed == 0 {
 		return nil, nil, nil, 0
 	}
+	cols := make([][]hpoint4, vCount)
 	for j := 0; j < vCount; j++ {
-		col := make([]hpoint4, uCount)
-		for i := 0; i < uCount; i++ {
-			col[i] = hpoint4FromCurve(s.Ctrl[i][j], s.Weights[i][j])
-		}
-		newU, cols[j], _ = removeKnotHomog(s.UDegree, s.UKnots, col, u, r, sm, removed, tol)
+		newU, cols[j], _ = removeKnotHomog(s.UDegree, s.UKnots, columnToHomog(s, j), u, r, sm, removed, tol)
 	}
 	ctrl, weights = netFromColumns(cols)
 	return newU, ctrl, weights, removed

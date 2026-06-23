@@ -59,17 +59,23 @@ func (s BSplineSurface) RefineKnotsV(vs []float64) (BSplineSurface, error) {
 // insertSurfaceU refines each v-column as a U-direction curve; all columns share the
 // resulting U knot vector.
 func insertSurfaceU(s BSplineSurface, u float64, r int) (newU []float64, ctrl [][]math.Point3, weights [][]float64) {
-	uCount, vCount := len(s.Ctrl), len(s.Ctrl[0])
+	vCount := len(s.Ctrl[0])
 	cols := make([][]hpoint4, vCount)
 	for j := 0; j < vCount; j++ {
-		col := make([]hpoint4, uCount)
-		for i := 0; i < uCount; i++ {
-			col[i] = hpoint4FromCurve(s.Ctrl[i][j], s.Weights[i][j])
-		}
-		newU, cols[j] = insertKnotHomog(s.UDegree, s.UKnots, col, u, r)
+		newU, cols[j] = insertKnotHomog(s.UDegree, s.UKnots, columnToHomog(s, j), u, r)
 	}
 	ctrl, weights = netFromColumns(cols)
 	return newU, ctrl, weights
+}
+
+// columnToHomog converts the v-column j of the surface to homogeneous control points
+// (the U-direction curve at constant v).
+func columnToHomog(s BSplineSurface, j int) []hpoint4 {
+	col := make([]hpoint4, len(s.Ctrl))
+	for i := range s.Ctrl {
+		col[i] = hpoint4FromCurve(s.Ctrl[i][j], s.Weights[i][j])
+	}
+	return col
 }
 
 // insertSurfaceV refines each u-row as a V-direction curve.
