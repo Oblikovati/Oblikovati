@@ -16,8 +16,9 @@ import (
 // in-place rename of a feature node. Both live here so browser_view.go stays focused on the
 // tree structure (#1264).
 
-// browserIconPx is the browser-row icon size in pixels (matches a tree row's text height).
-const browserIconPx = 16
+// browserIconPx is the browser-row icon size in pixels. Sized at 200% of a tree row's text
+// height so the per-feature glyphs read clearly (#1264).
+const browserIconPx = 32
 
 // drawNodeIcon draws the node's icon glyph followed by SameLine, so the label that the caller
 // renders next sits to its right. A node with no icon, or a glyph that fails to rasterize, draws
@@ -44,12 +45,12 @@ type browserRenameState struct {
 
 var browserRename browserRenameState
 
-// beginRename opens the in-place editor for a feature node, seeding the buffer with its current
-// name and requesting focus on the next frame.
+// beginRename opens the in-place editor for a renameable node, seeding the buffer with its
+// current name and requesting focus on the next frame.
 func beginRename(n app.BrowserNode) {
 	browserRename.target = n.Select
 	browserRename.focus = true
-	setBuf(browserRename.buf[:], featureNodeName(n))
+	setBuf(browserRename.buf[:], nodeName(n))
 }
 
 // renaming reports whether n is the node currently being renamed in place.
@@ -77,30 +78,72 @@ func drawRenameField(s *app.Session, n app.BrowserNode) {
 	}
 }
 
-// applyRename commits the buffer to the feature behind n, then closes the editor.
+// applyRename commits the buffer to the entity behind n, then closes the editor. The per-type
+// backend keeps the stable id and enforces a non-empty, sibling-unique name.
 func applyRename(s *app.Session, n app.BrowserNode) {
-	if h, ok := n.Select.(app.FeatureHandle); ok {
-		if name := bufString(browserRename.buf[:]); name != "" {
-			if err := s.RenameFeature(h.Feature, name); err != nil {
-				fmt.Fprintf(os.Stderr, "rename feature: %v\n", err)
-			}
+	if name := bufString(browserRename.buf[:]); name != "" {
+		if err := renameNode(s, n, name); err != nil {
+			fmt.Fprintf(os.Stderr, "rename: %v\n", err)
 		}
 	}
 	browserRename.target = nil
 }
 
-// featureNodeName returns the editable feature name for a node — its handle's current name,
-// falling back to the label (the label may carry a status badge, so prefer the raw name).
-func featureNodeName(n app.BrowserNode) string {
-	if h, ok := n.Select.(app.FeatureHandle); ok {
-		return h.Feature.Name()
+// renameNode dispatches the rename to the session method for the node's handle type.
+func renameNode(s *app.Session, n app.BrowserNode, name string) error {
+	switch h := n.Select.(type) {
+	case app.FeatureHandle:
+		return s.RenameFeature(h.Feature, name)
+	case app.SketchHandle:
+		return s.RenameSketch(h.Sketch, name)
+	case app.Sketch3DHandle:
+		return s.RenameSketch3D(h.Sketch3D, name)
+	case app.WorkPlaneHandle:
+		return s.RenameWorkPlane(h.Plane, name)
+	case app.WorkAxisHandle:
+		return s.RenameWorkAxis(h.Axis, name)
+	case app.WorkPointHandle:
+		return s.RenameWorkPoint(h.Point, name)
+	default:
+		return nil
 	}
-	return n.Label
 }
 
-// isRenameableFeature reports whether n is a feature node (the only node kind the in-place
-// rename currently targets — its backend enforces document-unique names, #1264).
-func isRenameableFeature(n app.BrowserNode) bool {
-	_, ok := n.Select.(app.FeatureHandle)
-	return ok
+// nodeName returns the editable name for a node — its handle's current name, falling back to the
+// label (the label may carry a status badge, so prefer the raw name).
+func nodeName(n app.BrowserNode) string {
+	switch h := n.Select.(type) {
+	case app.FeatureHandle:
+		return h.Feature.Name()
+	case app.SketchHandle:
+		return h.Sketch.Name()
+	case app.Sketch3DHandle:
+		return h.Sketch3D.Name()
+	case app.WorkPlaneHandle:
+		return h.Plane.Name()
+	case app.WorkAxisHandle:
+		return h.Axis.Name()
+	case app.WorkPointHandle:
+		return h.Point.Name()
+	default:
+		return n.Label
+	}
+}
+
+// isRenameableNode reports whether n is a node the in-place rename targets: a feature, a 2D/3D
+// sketch, or a user work plane/axis/point. The grounded origin coordinate-system datums (the
+// Origin folder) are excluded — their names are fixed (#1264).
+func isRenameableNode(n app.BrowserNode) bool {
+	switch h := n.Select.(type) {
+	case app.FeatureHandle, app.SketchHandle, app.Sketch3DHandle:
+		return true
+	case app.WorkPlaneHandle:
+		return !h.Plane.IsCoordinateSystemElement()
+	case app.WorkAxisHandle:
+		return !h.Axis.IsCoordinateSystemElement()
+	case app.WorkPointHandle:
+		return !h.Point.IsCoordinateSystemElement()
+	default:
+		return false
+	}
 }

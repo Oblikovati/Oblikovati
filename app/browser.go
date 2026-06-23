@@ -335,7 +335,7 @@ func appendWorkPlaneEntries(entries []timelineEntry, part *compdef.PartComponent
 			continue
 		}
 		entries = append(entries, timelineEntry{wp.Seq(), func(root *BrowserNode) {
-			root.selectableChild(wp.Name(), "workplane", WorkPlaneHandle{Plane: wp})
+			root.selectableChild(wp.Name(), "workplane", WorkPlaneHandle{Plane: wp}).Icon = iconWorkPlane
 		}})
 	}
 	return entries
@@ -351,7 +351,7 @@ func appendWorkAxisPointEntries(entries []timelineEntry, part *compdef.PartCompo
 			continue
 		}
 		entries = append(entries, timelineEntry{a.Seq(), func(root *BrowserNode) {
-			root.selectableChild(a.Name(), "workaxis", WorkAxisHandle{Axis: a})
+			root.selectableChild(a.Name(), "workaxis", WorkAxisHandle{Axis: a}).Icon = iconWorkAxis
 		}})
 	}
 	points := part.WorkPoints()
@@ -361,7 +361,7 @@ func appendWorkAxisPointEntries(entries []timelineEntry, part *compdef.PartCompo
 			continue
 		}
 		entries = append(entries, timelineEntry{p.Seq(), func(root *BrowserNode) {
-			root.selectableChild(p.Name(), "workpoint", WorkPointHandle{Point: p})
+			root.selectableChild(p.Name(), "workpoint", WorkPointHandle{Point: p}).Icon = iconWorkPoint
 		}})
 	}
 	return entries
@@ -416,6 +416,14 @@ func appendFeatureEntries(entries []timelineEntry, part *compdef.PartComponentDe
 	return entries
 }
 
+// Icon-asset keys for the non-feature browser rows (work features). Sketch rows use
+// "create-sketch"/"create-sketch-3d" inline at their build sites.
+const (
+	iconWorkPlane = "work-plane-offset" // a generic work-plane glyph for origin + user planes
+	iconWorkAxis  = "line"              // a line glyph stands in for a datum axis
+	iconWorkPoint = "point"             // a point glyph for a datum point
+)
+
 // featureIconByKind maps a feature's Kind() to the head icon-asset key drawn before its
 // browser label, so the feature reads by glyph not just by name. Kinds that share a glyph
 // (the fillet/pattern families) collapse onto one asset; a kind with no dedicated asset is
@@ -455,18 +463,18 @@ func featureLabel(f *feature.PartFeature) string {
 func addOriginBranch(root *BrowserNode, wg *feature.WorkGeometry) {
 	origin := root.child("Origin", "origin")
 	for _, wp := range wg.OriginPlanes() {
-		origin.selectableChild(wp.Name(), "workplane", WorkPlaneHandle{Plane: wp})
+		origin.selectableChild(wp.Name(), "workplane", WorkPlaneHandle{Plane: wp}).Icon = iconWorkPlane
 	}
 	axes := wg.WorkAxes()
 	for i := 0; i < axes.Count(); i++ {
 		if a := axes.Item(i); a.IsCoordinateSystemElement() {
-			origin.selectableChild(a.Name(), "workaxis", WorkAxisHandle{Axis: a})
+			origin.selectableChild(a.Name(), "workaxis", WorkAxisHandle{Axis: a}).Icon = iconWorkAxis
 		}
 	}
 	points := wg.WorkPoints()
 	for i := 0; i < points.Count(); i++ {
 		if p := points.Item(i); p.IsCoordinateSystemElement() {
-			origin.selectableChild(p.Name(), "workpoint", WorkPointHandle{Point: p})
+			origin.selectableChild(p.Name(), "workpoint", WorkPointHandle{Point: p}).Icon = iconWorkPoint
 		}
 	}
 }

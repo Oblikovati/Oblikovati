@@ -52,3 +52,44 @@ func TestBrowserFeatureNodeCarriesIcon(t *testing.T) {
 		t.Errorf("extrude feature node Icon = %q, want %q", node.Icon, "extrude")
 	}
 }
+
+// TestBrowserWorkAndSketchNodesCarryIcons: top-level sketches, 3D sketches, and the user/origin
+// work planes, axes and points all carry their glyph keys on the browser node (#1264).
+func TestBrowserWorkAndSketchNodesCarryIcons(t *testing.T) {
+	s, def := emptyPartSession(t)
+	def.Sketches().Add(sketch.XYPlane()) // top-level 2D sketch
+	def.Sketches3D().Add()               // 3D sketch
+	def.WorkPlanes().AddByPlaneAndOffset(feature.OriginXYPlane, func() float64 { return 2 })
+	def.WorkAxes().AddByPlaneIntersection(feature.OriginXYPlane, feature.OriginXZPlane)
+	def.WorkPoints().AddByPosition(func() math.Point3 { return math.P3(1, 1, 1) })
+	def.Recompute()
+
+	root := BuildBrowser(s)
+	wants := map[string]string{ // node kind -> expected icon key
+		"sketch": "create-sketch", "sketch3d": "create-sketch-3d",
+		"workplane": iconWorkPlane, "workaxis": iconWorkAxis, "workpoint": iconWorkPoint,
+	}
+	for kind, icon := range wants {
+		n, ok := firstNodeOfKind(root, kind)
+		if !ok {
+			t.Errorf("no %q node in the browser", kind)
+			continue
+		}
+		if n.Icon != icon {
+			t.Errorf("%q node icon = %q, want %q", kind, n.Icon, icon)
+		}
+	}
+}
+
+// firstNodeOfKind returns the first node of the given kind that carries an icon, depth-first.
+func firstNodeOfKind(n BrowserNode, kind string) (BrowserNode, bool) {
+	if n.Kind == kind && n.Icon != "" {
+		return n, true
+	}
+	for _, c := range n.Children {
+		if got, ok := firstNodeOfKind(c, kind); ok {
+			return got, true
+		}
+	}
+	return BrowserNode{}, false
+}
