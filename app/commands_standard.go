@@ -400,6 +400,12 @@ func surfaceFeatureCommands() []*CommandDefinition {
 		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
 			WithIcon("fill-surface").WithButtonStyle(LargeIconButton).
 			WithTooltip("Fill Surface — close a four-sided opening with a single clean NURBS at G0/G1/G2 continuity."),
+		NewCommand("Surface.Bridge", "Bridge Surface", "Surface", func(s *Session) error {
+			s.StartTool(NewBridgeSurfaceTool())
+			return nil
+		}).WithTab(tabSurfacesMesh).WithEnable(hasActivePart).
+			WithIcon("bridge-surface").WithButtonStyle(LargeIconButton).
+			WithTooltip("Bridge Surface — connect two surfaces with a clean NURBS transition at G0/G1/G2 continuity per side."),
 	}
 }
 
