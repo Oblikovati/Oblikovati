@@ -57,6 +57,33 @@ func curvedPartialIntersect(op PartFeatureOperation, target, tool *topo.Body) (*
 	return res, true
 }
 
+// curvedPartialCut returns target − tool when tool is a thin rod ending inside the fatter target (a blind
+// hole), or ok=false to defer. Only Cut maps here, and only a valid closed manifold result is adopted.
+func curvedPartialCut(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Cut {
+		return nil, false
+	}
+	res, ok := brep.PartialPenetrationCut(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
+// curvedPartialJoin returns target ∪ tool for a thin rod ending inside the fatter cylinder (the fat with a
+// single rod stub sticking out the entry side), or ok=false to defer. Only Join maps here, and only a valid
+// closed manifold result is adopted.
+func curvedPartialJoin(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Join {
+		return nil, false
+	}
+	res, ok := brep.PartialPenetrationJoin(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedCrossingCut returns target − tool for two crossing cylinders (drilling a fat cylinder with a
 // crossing rod, or the two rod stubs of rod − fat), or ok=false to defer. Only Cut maps here, and only a
 // valid closed manifold result is adopted.
