@@ -64,7 +64,7 @@ func worstLoopOffset(loops []geom.Polyline, cone geom.Cone, cyl geom.Cylinder) f
 }
 
 func distToCylinderSurface(c geom.Cylinder, p math.Point3) float64 {
-	return stdmath.Abs(float64(radialOf(p, c).Length()) - c.Radius)
+	return stdmath.Abs(float64(radialOf(p, cylAxis(c)).Length()) - c.Radius)
 }
 
 func distToConeSurface(c geom.Cone, p math.Point3) float64 {
