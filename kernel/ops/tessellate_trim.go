@@ -43,6 +43,9 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
 		return m // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
 	}
+	if m, isPatch := spherePatchMesh(s, outer3D, holes3D, q); isPatch {
+		return m // a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
+	}
 	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
 		return meshSeamCrossingFace(f, s, outer3D, holes3D, q) // a loop wrapping the seam: band/cap fallbacks
