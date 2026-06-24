@@ -171,3 +171,113 @@ func assertConeCylinderAnalytic(t *testing.T, res *topo.Body) {
 		}
 	}
 }
+
+// conePartialPlugVolume is the volume of the partial-penetration frustum (apex at x=−14, half-angle atan
+// 0.125; the frustum runs x∈[−6,0], r 1→1.75) ∩ the cylinder x²+y²≤rFat² (axis z). The frustum ends at the
+// fat axis (x=0, inside the fat), so only x∈[−rFat,0] lies within the cylinder: integrate the clipped-disk
+// area there. Mirrors coneCylinderIntersectVolume but with the upper limit at the cone's blind end (x=0).
+func conePartialPlugVolume(rFat float64) float64 {
+	const n = 200000
+	const apexX, tanHalf = -14.0, 0.125
+	sum, lo, hi := 0.0, -rFat, 0.0
+	for i := 0; i < n; i++ {
+		x := lo + (hi-lo)*(float64(i)+0.5)/n
+		r := (x - apexX) * tanHalf
+		h := stdmath.Sqrt(rFat*rFat - x*x)
+		sum += clippedDiskArea(r, h)
+	}
+	return sum * (hi - lo) / n
+}
+
+// conePartialFrustum builds the partial-penetration frustum (x=−6 r=1 → x=0 r=1.75); conePartialFat the
+// radius-3 cylinder it ends inside.
+func conePartialFrustum() *topo.Body {
+	cone, _ := brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(0, 0, 0), 1, 1.75, "cone")
+	return cone
+}
+
+func conePartialFat() *topo.Body {
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	return fat
+}
+
+// TestBooleanIntersectConePartialPlug intersects the radius-3 cylinder with a frustum ending at its axis: the
+// result is the exact three-face plug (cone band + lens cap + blind cap) with the analytic cone∩cylinder
+// volume.
+func TestBooleanIntersectConePartialPlug(t *testing.T) {
+	const rFat = 3.0
+	res, err := ops.Boolean(ops.Intersect, conePartialFat(), conePartialFrustum())
+	if err != nil {
+		t.Fatalf("Boolean(Intersect cone-plug): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("cone plug is not a valid closed manifold solid: %+v", v)
+	}
+	assertConeCylinderAnalytic(t, res)
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := conePartialPlugVolume(rFat)
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("cone plug volume %.4f, want %.4f (analytic) — rel %.4f > 3%%", got, want, rel)
+	}
+}
+
+// TestBooleanCutConePartialBlindHole subtracts the frustum from the fat (fat − cone): a blind tapered pocket
+// whose volume is the fat minus the plug.
+func TestBooleanCutConePartialBlindHole(t *testing.T) {
+	const rFat, hFat = 3.0, 12.0
+	res, err := ops.Boolean(ops.Cut, conePartialFat(), conePartialFrustum())
+	if err != nil {
+		t.Fatalf("Boolean(Cut fat−cone partial): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("cone blind hole is not a valid closed manifold solid: %+v", v)
+	}
+	assertConeCylinderAnalytic(t, res)
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rFat*rFat*hFat - conePartialPlugVolume(rFat)
+	// 4%: the faceted fat wall and the inscribed tapered pocket run the meshed volume a little under the
+	// analytic fat − plug (the B-rep is exact; this bounds the property-mesh error).
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("cone blind hole volume %.4f, want %.4f (fat − plug) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
+// TestBooleanCutConePartialStub subtracts the fat from the frustum (cone − fat): the single tapered stub
+// sticking out the entry side (one shell) whose volume is the frustum minus the plug.
+func TestBooleanCutConePartialStub(t *testing.T) {
+	const rFat = 3.0
+	res, err := ops.Boolean(ops.Cut, conePartialFrustum(), conePartialFat())
+	if err != nil {
+		t.Fatalf("Boolean(Cut cone−fat partial): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("cone − fat (partial) is not a valid closed manifold solid: %+v", v)
+	}
+	if n := len(res.Shells()); n != 1 {
+		t.Errorf("cone − fat (partial) has %d shells, want 1 (a single one-sided stub)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := coneFrustumVolume(1, 1.75, 6) - conePartialPlugVolume(rFat)
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("cone − fat (partial) volume %.4f, want %.4f (frustum − plug) — rel %.4f > 3%%", got, want, rel)
+	}
+}
+
+// TestBooleanJoinConePartial joins the fat and the partially-penetrating frustum (fat ∪ cone): one connected
+// solid whose volume is fat + frustum − the plug.
+func TestBooleanJoinConePartial(t *testing.T) {
+	const rFat, hFat = 3.0, 12.0
+	res, err := ops.Boolean(ops.Join, conePartialFat(), conePartialFrustum())
+	if err != nil {
+		t.Fatalf("Boolean(Join fat∪cone partial): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("fat ∪ cone (partial) is not a valid closed manifold solid: %+v", v)
+	}
+	assertConeCylinderAnalytic(t, res)
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rFat*rFat*hFat + coneFrustumVolume(1, 1.75, 6) - conePartialPlugVolume(rFat)
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("fat ∪ cone (partial) volume %.4f, want %.4f (fat + frustum − plug) — rel %.4f > 4%%", got, want, rel)
+	}
+}

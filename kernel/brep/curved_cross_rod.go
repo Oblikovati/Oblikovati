@@ -50,3 +50,12 @@ func (r coneRod) endRadius(center math.Point3) float64 {
 	v := float64(r.c.Apex.VectorTo(center).Dot(r.c.AxisDir.AsVector()))
 	return v * stdmath.Tan(r.c.HalfAngle)
 }
+
+// rodCirclePoint returns the point on the rod's circle at a given end centre and axial angle: ref·cos u +
+// binormal·sin u at the end's radius — the frame convention both geom.Cylinder and geom.Cone use, so it
+// lands on the rod surface for either. Used to seat a seam vertex on the rod and to sample an end disc.
+func rodCirclePoint(rod crossRod, center math.Point3, angle float64) math.Point3 {
+	ax := rod.axisOf()
+	radial := ax.ref.Scale(stdmath.Cos(angle)).Add(ax.dir.Cross(ax.ref).Scale(stdmath.Sin(angle)))
+	return center.TranslateBy(radial.Scale(rod.endRadius(center)))
+}
