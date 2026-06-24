@@ -43,6 +43,20 @@ func curvedSteinmetzIntersect(op PartFeatureOperation, target, tool *topo.Body) 
 	return res, true
 }
 
+// curvedPartialIntersect returns the exact intersection of a thin rod ending inside a fatter cylinder (the
+// rod plug), or ok=false to defer. Only Intersect maps here, and only a valid closed manifold result is
+// adopted. This is the partial-penetration case the imprint traces as a single loop (one wall breach).
+func curvedPartialIntersect(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Intersect {
+		return nil, false
+	}
+	res, ok := brep.PartialPenetrationIntersect(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedCrossingCut returns target − tool for two crossing cylinders (drilling a fat cylinder with a
 // crossing rod, or the two rod stubs of rod − fat), or ok=false to defer. Only Cut maps here, and only a
 // valid closed manifold result is adopted.

@@ -155,6 +155,39 @@ func TestBooleanCutRodMinusFatStubs(t *testing.T) {
 	}
 }
 
+// TestBooleanIntersectPartialPenetration intersects a fat cylinder (R=3, axis z) with a thin rod (r=1.5,
+// axis x) that ENDS at the fat centre: Intersect must give the exact three-face plug (fat-wall lens, rod
+// stub band, blind end cap). Because the rod stops at the centre, the plug is exactly half the full-crossing
+// intersection, so its volume is crossingIntersectVolume(r,R)/2, not triangle-soup CSG.
+func TestBooleanIntersectPartialPenetration(t *testing.T) {
+	const rRod, rFat = 1.5, 3.0
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
+	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, 6) // ends at x=0, inside the fat
+
+	res, err := ops.Boolean(ops.Intersect, fat, stub)
+	if err != nil {
+		t.Fatalf("Boolean(Intersect partial): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("rod plug is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder, geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 3 {
+		t.Errorf("rod plug has %d faces, want 3 (lens, stub band, blind end cap)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := crossingIntersectVolume(rRod, rFat) / 2 // the plug is half the full crossing intersection
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("plug volume %.4f, want %.4f (half the crossing intersection) — rel %.4f > 2%%", got, want, rel)
+	}
+}
+
 // TestBooleanIntersectEqualRadiusSteinmetz intersects two EQUAL-radius perpendicular cylinders (axes x and
 // z, R=3): Intersect must give the exact Steinmetz bicylinder — four analytic cylinder faces — whose volume
 // is the closed form 16/3·R³, not triangle-soup CSG (the SSI tracer pinches on this case, so it is fitted
