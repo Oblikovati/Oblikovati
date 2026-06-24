@@ -155,6 +155,40 @@ func TestBooleanCutRodMinusFatStubs(t *testing.T) {
 	}
 }
 
+// TestBooleanIntersectEqualRadiusSteinmetz intersects two EQUAL-radius perpendicular cylinders (axes x and
+// z, R=3): Intersect must give the exact Steinmetz bicylinder — four analytic cylinder faces — whose volume
+// is the closed form 16/3·R³, not triangle-soup CSG (the SSI tracer pinches on this case, so it is fitted
+// analytically as two crossing ellipses).
+func TestBooleanIntersectEqualRadiusSteinmetz(t *testing.T) {
+	const r = 3.0
+	cx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, 12)
+	cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, 12)
+
+	res, err := ops.Boolean(ops.Intersect, cx, cz)
+	if err != nil {
+		t.Fatalf("Boolean(Intersect equal-radius): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("Steinmetz bicylinder is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); !ok {
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 4 {
+		t.Errorf("Steinmetz has %d faces, want 4 (two lobes per cylinder)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := 16.0 / 3.0 * r * r * r // the Steinmetz bicylinder volume
+	// 4%: the four lobes inscribe their curvature and pinch to a sharp corner at each pinch vertex, so the
+	// meshed volume runs a little under the analytic 16/3·R³ (the B-rep is exact; this bounds the
+	// property-mesh error, ~2.5% at DefaultQuality).
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("Steinmetz volume %.4f, want %.4f (16/3·R³) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
 // TestBooleanIntersectEqualRadiusDefersFromExactPath: two EQUAL-radius perpendicular cylinders are the
 // Steinmetz case the imprint tracer cannot trace cleanly, so the exact path must decline (leaving the
 // boolean to its fallback) rather than emit a wrong analytic solid.
