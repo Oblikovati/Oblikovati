@@ -131,8 +131,8 @@ func planeConeCurve(pl Plane, cone Cone) ([]Curve3, bool) {
 	if along < 1e-6 { // plane ∥ axis → hyperbola
 		return coneAxisParallelHyperbola(pl, cone, n, axis)
 	}
-	if along < 1-1e-6 { // oblique (ellipse/parabola/steep hyperbola) → defer to the tracer
-		return nil, false
+	if along < 1-1e-6 { // oblique → ellipse / hyperbola (parabolic boundary deferred inside)
+		return coneObliqueConic(pl, cone, n, axis)
 	}
 	t := n.Dot(cone.Apex.VectorTo(pl.Origin)) / axis.Dot(n)
 	r := stdmath.Abs(float64(t)) * stdmath.Tan(cone.HalfAngle)
