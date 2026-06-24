@@ -9,24 +9,27 @@ import (
 	"oblikovati.org/math"
 )
 
-// Holed cylinder-wall tessellation (M2 Phase 2, Oblikovati/Oblikovati#1335). A cylinder drilled through —
-// a fat cylinder Cut/Join with a crossing rod — leaves the fat SIDE wall as a full-period cylinder face
-// carrying one or more lens HOLES where the rod broke through. periodicBandGrid and metricPatchMesh both
-// reject a holed periodic face (toUVLoops can't unwrap the seam-wrapping outer loop), so it fell to the
-// full-domain grid, which ignores the holes entirely. But a cylinder is DEVELOPABLE — its first
-// fundamental form ds² = R²du² + dv² is flat — so its wall unrolls to a plane without distortion: unwrap
-// the wrapping outer loop's angle cumulatively into a contiguous (u,v) rectangle and hand it, holes and
-// all, straight to metricPatchMesh, whose metric-scaled CDT meshes the rectangle-minus-holes with interior
-// refinement. The seam (the rectangle's two vertical edges, 2π apart in u) maps to one line in 3D, so the
-// triangles on either side meet there with no gap.
+// Holed developable-wall tessellation (M2 Phase 2, Oblikovati/Oblikovati#1335). A cylinder OR cone drilled
+// through — a fat cylinder/cone Cut/Join with a crossing rod — leaves the fat SIDE wall as a full-period
+// cylinder/cone face carrying one or more lens HOLES where the rod broke through. periodicBandGrid and
+// metricPatchMesh both reject a holed periodic face (toUVLoops can't unwrap the seam-wrapping outer loop),
+// so it fell to the full-domain grid, which ignores the holes entirely. But both a cylinder and a cone are
+// DEVELOPABLE (zero Gaussian curvature), so the wall unrolls and meshes through the trim-local metric-scaled
+// CDT: unwrap the wrapping outer loop's angle cumulatively into a contiguous (u,v) rectangle and hand it,
+// holes and all, to that CDT. The boundary and hole loops map to their exact (u,v) and the interior nodes
+// lift to the exact surface, so the area is accurate regardless of the parameter metric; the metric scaling
+// (√E,√G over the trim's (u,v) bbox) only keeps the triangulation well shaped — exact (R,1) for a cylinder,
+// the local (v·tanα, secα) average for a cone, whose metric varies slowly over a wall away from the apex.
+// The seam (the rectangle's two vertical edges, 2π apart in u) maps to one line in 3D, so the triangles on
+// either side meet there with no gap.
 
-// holedCylinderWallMesh meshes a full-period cylinder side carrying holes by unrolling it to a contiguous
-// (u,v) rectangle and delegating to metricPatchMesh. ok=false unless the surface is a cylinder with at
-// least one hole and a genuinely seam-wrapping outer loop (a hole straddling the seam also defers — the
-// builder seams the wall clear of its holes, so that should not arise).
-func holedCylinderWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	if _, ok := s.(geom.Cylinder); !ok {
-		return nil, false // only a cylinder unrolls with a flat (distortion-free) metric
+// holedConicWallMesh meshes a full-period cylinder or cone side carrying holes by unrolling it to a
+// contiguous (u,v) rectangle and delegating to the metric-scaled CDT. ok=false unless the surface is a
+// developable side (cylinder/cone) with at least one hole and a genuinely seam-wrapping outer loop (a hole
+// straddling the seam also defers — the builder seams the wall clear of its holes, so that should not arise).
+func holedConicWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
+	if !isDevelopableSide(s) {
+		return nil, false // only a cylinder/cone unrolls (developable: zero Gaussian curvature)
 	}
 	if len(holes3D) == 0 || isPeriodic(s.UDomain()) == isPeriodic(s.VDomain()) {
 		return nil, false // need a holed, singly-periodic side
@@ -40,6 +43,17 @@ func holedCylinderWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]ma
 		return nil, false
 	}
 	return unrolledWallCDT(s, q, outer3D, holes3D, outerUV, holesUV), true
+}
+
+// isDevelopableSide reports whether the surface is a cylinder or a cone — the developable (zero
+// Gaussian-curvature) sides whose walls unroll, so a holed wall on them meshes through the unrolled CDT.
+func isDevelopableSide(s geom.Surface) bool {
+	switch s.(type) {
+	case geom.Cylinder, geom.Cone:
+		return true
+	default:
+		return false
+	}
 }
 
 // unrolledWallCDT triangulates the unrolled wall (the contiguous (u,v) rectangle minus the holes) with a

@@ -31,7 +31,7 @@ func ConeConeIntersect(a, b *topo.Body) (*topo.Body, bool) {
 	if !ok || len(loops) != 2 {
 		return nil, false
 	}
-	rod, fat, rodVMin, rodVMax, ok := rodAndFatCones(a, b, loops)
+	rod, fat, rodVMin, rodVMax, _, _, _, ok := rodAndFatCones(a, b, loops)
 	if !ok || !loopsSpanCone(rod, rodVMin, rodVMax, loops) {
 		return nil, false // a loop beyond a rod-cone cap is a partial penetration, not a full crossing
 	}
@@ -43,20 +43,21 @@ func ConeConeIntersect(a, b *topo.Body) (*topo.Body, bool) {
 }
 
 // rodAndFatCones picks which cone is the rod (the band-bearing one both imprint loops fully encircle) and
-// which is the fat cone (the lens-capped one), carrying the rod cone's apex-distance band [vMin, vMax]
-// through. ok=false unless both bodies are bare cones and exactly one is the rod the loops encircle.
-func rodAndFatCones(a, b *topo.Body, loops []geom.Polyline) (rod, fat geom.Cone, rodVMin, rodVMax float64, ok bool) {
+// which is the fat cone (the lens-capped one), carrying BOTH cones' apex-distance bands [vMin, vMax] through
+// (the rod's for the span check, the fat's for its cap centres). ok=false unless both bodies are bare cones
+// and exactly one is the rod the loops encircle.
+func rodAndFatCones(a, b *topo.Body, loops []geom.Polyline) (rod, fat geom.Cone, rodVMin, rodVMax, fatVMin, fatVMax float64, aIsRod, ok bool) {
 	ca, aMin, aMax, okA := coneSolidParams(facesOfAny(a))
 	cb, bMin, bMax, okB := coneSolidParams(facesOfAny(b))
 	if !okA || !okB {
-		return geom.Cone{}, geom.Cone{}, 0, 0, false
+		return geom.Cone{}, geom.Cone{}, 0, 0, 0, 0, false, false
 	}
 	aWraps, bWraps := allLoopsEncircle(loops, coneAxis(ca)), allLoopsEncircle(loops, coneAxis(cb))
 	if aWraps && !bWraps {
-		return ca, cb, aMin, aMax, true
+		return ca, cb, aMin, aMax, bMin, bMax, true, true
 	}
 	if bWraps && !aWraps {
-		return cb, ca, bMin, bMax, true
+		return cb, ca, bMin, bMax, aMin, aMax, false, true
 	}
-	return geom.Cone{}, geom.Cone{}, 0, 0, false
+	return geom.Cone{}, geom.Cone{}, 0, 0, 0, 0, false, false
 }

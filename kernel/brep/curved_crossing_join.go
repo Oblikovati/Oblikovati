@@ -110,11 +110,11 @@ func cutRodMinusFat(p *crossingParts) *topo.Body {
 // rodStubLump builds one closed rod stub: its wall band, the rod end cap, and the fat-wall lens closing the
 // inner end. The lens cap is the fat surface REVERSED — the kept material is outside the fat, so the lens
 // normal points back into the fat (away from the stub). Its edge is shared with the stub band opposite.
-func rodStubLump(rod crossRod, fat geom.Cylinder, endCenter math.Point3, capNormal math.Vector3, lens geom.Polyline, tag string) *topo.Body {
+func rodStubLump(rod, fat crossRod, endCenter math.Point3, capNormal math.Vector3, lens geom.Polyline, tag string) *topo.Body {
 	bld := topo.NewBuilder(true, crossLin(tag))
 	vLens := bld.AddVertex(lens.Vertices[0], crossLin(tag+"vl"))
 	eLens := bld.AddEdge(lens, vLens, vLens, crossLin(tag+"el"))
-	bld.AddReversedFace(fat, crossLin(tag+"lenscap"), topo.OuterLoop(topo.Rev(eLens)))
+	bld.AddReversedFace(fat.surface(), crossLin(tag+"lenscap"), topo.OuterLoop(topo.Rev(eLens)))
 	addRodStub(bld, rod, endCenter, capNormal, eLens, vLens, lens.Vertices[0], true, false, tag)
 	return bld.Build()
 }

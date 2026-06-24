@@ -226,7 +226,7 @@ func PartialPenetrationCut(target, tool *topo.Body) (*topo.Body, bool) {
 // side (the rod material outside the fat), a closed lump of the rod stub band, the rod's entry end cap, and
 // the fat-wall lens reversed to face back into the fat (the kept material is outside it).
 func partialRodMinusFat(p *partialPlugParts) *topo.Body {
-	return rodStubLump(p.rod, p.fat, p.entryCenter, p.entryNormal, p.lens, "prmf")
+	return rodStubLump(p.rod, cylinderRod{p.fat}, p.entryCenter, p.entryNormal, p.lens, "prmf")
 }
 
 // PartialPenetrationJoin builds target ∪ tool for a thin rod ending inside the fatter cylinder, or ok=false
@@ -257,7 +257,7 @@ func blindHole(p *partialPlugParts) *topo.Body {
 	lensStart := p.lens.Vertices[0]
 	vLens := bld.AddVertex(lensStart, partLin("vlens"))
 	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
-	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamForLens(p.fat, p.lens), topo.Rev(eLens))
+	addFatCapsAndHoledWall(bld, cylinderRod{p.fat}, p.fatBase, p.fatHeight, clearSeamForLens(cylinderRod{p.fat}, p.lens), topo.Rev(eLens))
 	addRodStub(bld, p.rod, p.blindCenter, p.blindNormal, eLens, vLens, lensStart, true, true, "blind")
 	return bld.Build()
 }
@@ -271,7 +271,7 @@ func partialJoinStub(p *partialPlugParts) *topo.Body {
 	lensStart := p.lens.Vertices[0]
 	vLens := bld.AddVertex(lensStart, partLin("vlens"))
 	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
-	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamForLens(p.fat, p.lens), topo.Rev(eLens))
+	addFatCapsAndHoledWall(bld, cylinderRod{p.fat}, p.fatBase, p.fatHeight, clearSeamForLens(cylinderRod{p.fat}, p.lens), topo.Rev(eLens))
 	addRodStub(bld, p.rod, p.entryCenter, p.entryNormal, eLens, vLens, lensStart, true, false, "jstub")
 	return bld.Build()
 }

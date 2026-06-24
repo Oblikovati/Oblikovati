@@ -64,7 +64,7 @@ func coneCrossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
 		return nil, false
 	}
 	rodBase := cone.Apex.TranslateBy(cone.AxisDir.AsVector().Scale(vMin))
-	return &crossingParts{coneRod{cone}, cyl, rodBase, fatBase, vMax - vMin, fatH, lo, hi}, true
+	return &crossingParts{coneRod{cone}, cylinderRod{cyl}, rodBase, fatBase, vMax - vMin, fatH, lo, hi}, true
 }
 
 // coneCrossingGeom resolves the cone (with its apex-distance band [vMin, vMax]) and the fat cylinder (with its

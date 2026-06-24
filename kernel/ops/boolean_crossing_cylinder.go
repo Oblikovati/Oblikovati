@@ -140,6 +140,34 @@ func curvedConeCylinderJoin(op PartFeatureOperation, target, tool *topo.Body) (*
 	return res, true
 }
 
+// curvedConeConeCut returns target − tool for a cone crossing a fatter cone (drilling the fat cone with the
+// rod cone, or the two rod-cone stubs of cone − fat), or ok=false to defer. Only Cut maps here, and only a
+// valid closed manifold result is adopted.
+func curvedConeConeCut(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Cut {
+		return nil, false
+	}
+	res, ok := brep.ConeConeCut(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
+// curvedConeConeJoin returns target ∪ tool for a cone crossing a fatter cone (the fat cone side-breached by a
+// rod cone passing through it, leaving a tapered stub each side), or ok=false to defer. Only Join maps here,
+// and only a valid closed manifold result is adopted.
+func curvedConeConeJoin(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Join {
+		return nil, false
+	}
+	res, ok := brep.ConeConeJoin(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedSteinmetzCut returns target − tool for two equal-radius perpendicular cylinders (the target with
 // the tool's saddle bite removed), or ok=false to defer. Only Cut maps here, and only a valid closed
 // manifold result is adopted.
