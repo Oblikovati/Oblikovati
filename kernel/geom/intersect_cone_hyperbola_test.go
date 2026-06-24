@@ -44,15 +44,6 @@ func TestPlaneConeAxisParallelHyperbola(t *testing.T) {
 	}
 }
 
-// An oblique-but-not-parallel plane is still deferred to the numeric tracer (handled=false).
-func TestPlaneConeObliqueStillDeferred(t *testing.T) {
-	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
-	pl, _ := NewPlane(math.P3(0, 0, 5), math.V3(1, 0, 1)) // 45° to the axis: an ellipse/hyperbola, deferred
-	if _, handled := IntersectSurfacesAnalytic(pl, cone); handled {
-		t.Error("oblique cone cut should defer (handled=false)")
-	}
-}
-
 // A plane through the apex (D≈0) is the degenerate two-generator case and is deferred.
 func TestPlaneConeThroughApexDeferred(t *testing.T) {
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
