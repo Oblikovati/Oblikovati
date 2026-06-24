@@ -125,6 +125,33 @@ func TestPartialPenetrationJoinIsWatertight(t *testing.T) {
 	}
 }
 
+// TestPartialPenetrationRodMinusFatStub cuts the fat cylinder out of the rod (rod − fat) and checks the
+// result is the single rod stub outside the fat: a watertight one-shell lump of three analytic faces — the
+// fat-wall lens, the rod stub band, and the rod's entry end cap.
+func TestPartialPenetrationRodMinusFatStub(t *testing.T) {
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	stub, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6)
+
+	res, ok := PartialPenetrationCut(stub, fat) // target is the rod
+	if !ok {
+		t.Fatal("rod − fat declined; want a single rod stub lump")
+	}
+	if !res.IsSolid() {
+		t.Fatalf("rod − fat result is not a solid: %+v", res)
+	}
+	if n := len(res.Shells()); n != 1 {
+		t.Errorf("rod − fat has %d shells, want 1 (the rod only breaches one wall)", n)
+	}
+	for _, e := range res.Edges() {
+		if uses := len(e.Uses()); uses != 2 {
+			t.Errorf("edge %v has %d uses, want 2 (a closed manifold)", e.Lineage(), uses)
+		}
+	}
+	if n := len(res.Faces()); n != 3 {
+		t.Errorf("rod − fat has %d faces, want 3 (lens, stub band, entry cap)", n)
+	}
+}
+
 // TestPartialPenetrationFullCrossingDefers: a rod that crosses all the way through gives two imprint loops,
 // not the single loop of a partial penetration, so the plug assembler declines.
 func TestPartialPenetrationFullCrossingDefers(t *testing.T) {

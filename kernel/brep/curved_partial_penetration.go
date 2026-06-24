@@ -159,22 +159,34 @@ func partialPlug(p *partialPlugParts) *topo.Body {
 	return bld.Build()
 }
 
-// PartialPenetrationCut builds target − tool when tool is a thin rod that ends inside the fatter target (a
-// BLIND HOLE), or ok=false to defer. The result is the fat with a blind cylindrical pocket: its two caps,
-// its side wall carrying the single lens hole, the rod-wall tunnel flipped inward, and the rod's blind end
-// cap as the pocket bottom.
+// PartialPenetrationCut builds target − tool for a thin rod that ends inside the fatter cylinder, or
+// ok=false to defer. Both subtraction directions are handled: when the target is the fat the result is a
+// BLIND HOLE (the fat with a blind cylindrical pocket — two caps, the holed side wall, the rod-wall tunnel
+// flipped inward, and the rod's blind end cap as the pocket bottom); when the target is the rod the result
+// is the single rod STUB sticking out the entry side (rod − fat: the rod material outside the fat).
 //
 // Example — a radius-3 cylinder blind-drilled by a radius-1.5 rod ending at its centre:
 //
 //	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	stub, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 6)
 //	res, ok := brep.PartialPenetrationCut(fat, stub) // fat with a blind pocket
+//	res, ok = brep.PartialPenetrationCut(stub, fat)  // the rod stub outside the fat
 func PartialPenetrationCut(target, tool *topo.Body) (*topo.Body, bool) {
 	p, ok := partialPlugPartsOf(target, tool)
-	if !ok || !targetIsFat(target, p) {
-		return nil, false // only fat − rod is the blind hole; rod − fat (a stub lump) defers for now
+	if !ok {
+		return nil, false
 	}
-	return blindHole(p), true
+	if targetIsFat(target, p) {
+		return blindHole(p), true // fat − rod: a blind hole
+	}
+	return partialRodMinusFat(p), true // rod − fat: a single stub lump
+}
+
+// partialRodMinusFat builds rod − fat for a partial penetration: the single rod stub sticking out the entry
+// side (the rod material outside the fat), a closed lump of the rod stub band, the rod's entry end cap, and
+// the fat-wall lens reversed to face back into the fat (the kept material is outside it).
+func partialRodMinusFat(p *partialPlugParts) *topo.Body {
+	return rodStubLump(p.rod, p.fat, p.entryCenter, p.entryNormal, p.lens, "prmf")
 }
 
 // PartialPenetrationJoin builds target ∪ tool for a thin rod ending inside the fatter cylinder, or ok=false
