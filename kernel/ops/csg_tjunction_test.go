@@ -4,6 +4,7 @@ package ops
 
 import (
 	"testing"
+	"time"
 
 	"oblikovati.org/math"
 )
@@ -66,3 +67,28 @@ func TestRemoveTJunctionsScalesPastOldBudget(t *testing.T) {
 
 // tjunctionPadCount pushes the test mesh past the retired 4000-face budget.
 const tjunctionPadCount = 4001
+
+// TestRemoveTJunctionsMixedScaleFast guards the cell-size hang fix (the previewshot 600s timeout): a mesh
+// of many tiny slivers (a tiny mean edge length) plus one triangle with a very long edge. Sizing the grid
+// cell by mean edge length made the long edge's segment walk take ~length/tiny ≈ millions of steps; sizing
+// by the bbox diagonal over ∛N bounds it. The pass must finish quickly, not hang.
+func TestRemoveTJunctionsMixedScaleFast(t *testing.T) {
+	var verts []math.Point3
+	var faces [][3]int
+	for i := 0; i < 6000; i++ { // many tiny triangles → a tiny mean edge length
+		b, x := len(verts), 0.001*float64(i)
+		verts = append(verts, math.P3(x, 0, 0), math.P3(x+0.0005, 0, 0), math.P3(x, 0.0005, 0))
+		faces = append(faces, [3]int{b, b + 1, b + 2})
+	}
+	b := len(verts) // one triangle with a 1000-unit edge: the old mean-edge cell would walk it in millions of steps
+	verts = append(verts, math.P3(-500, 10, 0), math.P3(500, 10, 0), math.P3(0, 11, 0))
+	faces = append(faces, [3]int{b, b + 1, b + 2})
+
+	done := make(chan struct{})
+	go func() { removeTJunctions(verts, faces, ResolutionForPoints(verts).Plane()); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("removeTJunctions did not finish in 10s on a mixed-scale mesh — the grid cell-size hang regressed")
+	}
+}

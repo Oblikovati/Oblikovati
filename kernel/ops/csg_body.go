@@ -159,7 +159,7 @@ func quantize(v, grid float64) int64 { return int64(stdmath.Round(v / grid)) }
 // removeTJunctions eliminates T-junctions so every undirected edge of the cage is shared by exactly two
 // triangles (the prerequisite for a closed solid). For each triangle it collects the mesh vertices lying
 // on the interior of its three edges and re-fans the triangle through them in ONE pass — no cascade and
-// no full-vertex scan: a vertex spatial hash (vertexGrid) makes the per-edge lookup local, so the pass is
+// no full-vertex scan: a sorted sweep index (axisIndex) makes the per-edge lookup local, so the pass is
 // near-linear in the triangle count and needs NO face budget. The cage always comes back combinatorially
 // closed, however many facets a curved wall contributed — this is acceptance #3 of the curved-boolean
 // umbrella (Oblikovati/Oblikovati#1336, #1320 #3), replacing the bounded O(faces·verts) cascade of
@@ -168,10 +168,10 @@ func quantize(v, grid float64) int64 { return int64(stdmath.Round(v / grid)) }
 // their subdivisions match and weld. Returns the (possibly grown) vertex list — a subdivided triangle
 // gains an interior centroid hub — alongside the new faces.
 func removeTJunctions(verts []math.Point3, faces [][3]int, lineTol float64) ([]math.Point3, [][3]int) {
-	grid := newVertexGrid(verts, meanEdgeLength(verts, faces))
+	idx := newAxisIndex(verts)
 	out := make([][3]int, 0, len(faces))
 	for _, f := range faces {
-		poly := edgeSubdividedBoundary(verts, f, grid, lineTol)
+		poly := edgeSubdividedBoundary(verts, f, idx, lineTol)
 		if len(poly) == 3 {
 			out = append(out, f) // no T-junction on this triangle: keep it as-is
 			continue
@@ -186,19 +186,20 @@ func removeTJunctions(verts []math.Point3, faces [][3]int, lineTol float64) ([]m
 // edgeSubdividedBoundary walks the triangle boundary, emitting each corner followed by the mesh vertices
 // lying on the interior of the edge leaving it (ordered along that edge). With no on-edge point it returns
 // the three corners unchanged.
-func edgeSubdividedBoundary(verts []math.Point3, f [3]int, grid *vertexGrid, lineTol float64) []int {
+func edgeSubdividedBoundary(verts []math.Point3, f [3]int, idx *axisIndex, lineTol float64) []int {
 	poly := make([]int, 0, 3)
 	for e := 0; e < 3; e++ {
 		p, q := f[e], f[(e+1)%3]
 		poly = append(poly, p)
-		poly = append(poly, edgeInteriorPoints(verts, p, q, grid, lineTol)...)
+		poly = append(poly, edgeInteriorPoints(verts, p, q, idx, lineTol)...)
 	}
 	return poly
 }
 
 // edgeInteriorPoints returns the mesh vertices on the interior of segment p→q, ordered from p to q. Only
-// the vertices the grid reports near the segment are tested, so the cost is local, not O(verts).
-func edgeInteriorPoints(verts []math.Point3, p, q int, grid *vertexGrid, lineTol float64) []int {
+// the vertices the axis index reports within the segment's coordinate slab are tested, so the cost is the
+// slab size, not O(verts).
+func edgeInteriorPoints(verts []math.Point3, p, q int, idx *axisIndex, lineTol float64) []int {
 	a, b := verts[p], verts[q]
 	ab := a.VectorTo(b)
 	type onPt struct {
@@ -206,12 +207,12 @@ func edgeInteriorPoints(verts []math.Point3, p, q int, grid *vertexGrid, lineTol
 		t   float64
 	}
 	var hits []onPt
-	for _, ci := range grid.near(a, b) {
+	for _, ci := range idx.near(a, b, lineTol) {
 		if ci == p || ci == q {
 			continue
 		}
 		if onSegment(verts[ci], a, b, lineTol) {
-			hits = append(hits, onPt{ci, ab.Dot(a.VectorTo(verts[ci]))})
+			hits = append(hits, onPt{ci, float64(ab.Dot(a.VectorTo(verts[ci])))})
 		}
 	}
 	sort.Slice(hits, func(i, j int) bool { return hits[i].t < hits[j].t })
@@ -242,73 +243,79 @@ func triangleCentroid(verts []math.Point3, f [3]int) math.Point3 {
 	return math.P3((a.X+b.X+c.X)/3, (a.Y+b.Y+c.Y)/3, (a.Z+b.Z+c.Z)/3)
 }
 
-// meanEdgeLength is the average triangle-edge length, used to size the vertexGrid cell so a typical edge
-// spans only a handful of cells. Returns 1 for an empty set (an unused grid).
-func meanEdgeLength(verts []math.Point3, faces [][3]int) float64 {
-	if len(faces) == 0 {
-		return 1
-	}
-	sum := 0.0
-	for _, f := range faces {
-		sum += verts[f[0]].DistanceTo(verts[f[1]]) +
-			verts[f[1]].DistanceTo(verts[f[2]]) +
-			verts[f[2]].DistanceTo(verts[f[0]])
-	}
-	return sum / float64(3*len(faces))
+// axisIndex sorts the vertices along their widest-spread axis so a segment's candidate on-edge vertices —
+// those whose axis coordinate falls in the segment's coordinate range — are found by binary search, in
+// time proportional to that slab, not O(verts). A uniform spatial hash fails here: there is no cell size
+// that is small enough to spread a dense vertex cluster (else one cell holds O(cluster²) pairs) yet large
+// enough that a long edge does not walk millions of cells — the previewshot 600s hang. The sweep index
+// avoids both: a tiny edge queries a tiny coordinate slab; the rare long edge scans more vertices but only
+// once. Worst case (many edges spanning the widest axis) degrades to a linear scan, still bounded.
+type axisIndex struct {
+	axis   int
+	order  []int     // vertex indices sorted ascending by their axis coordinate
+	coords []float64 // the sorted axis coordinates, parallel to order (for binary search)
 }
 
-// vertexGrid is a uniform spatial hash over vertex positions: it answers "which vertices lie near this
-// segment" in time proportional to the segment's cell span, not the vertex count, so T-junction removal is
-// near-linear rather than O(faces·verts).
-type vertexGrid struct {
-	cell float64
-	bins map[[3]int64][]int
+// newAxisIndex builds the sweep index on the widest-spread axis (the most discriminating).
+func newAxisIndex(verts []math.Point3) *axisIndex {
+	axis := widestAxis(verts)
+	order := make([]int, len(verts))
+	for i := range order {
+		order[i] = i
+	}
+	sort.Slice(order, func(a, b int) bool { return coordOf(verts[order[a]], axis) < coordOf(verts[order[b]], axis) })
+	coords := make([]float64, len(order))
+	for i, vi := range order {
+		coords[i] = coordOf(verts[vi], axis)
+	}
+	return &axisIndex{axis: axis, order: order, coords: coords}
 }
 
-// newVertexGrid hashes every vertex into a cell of side cell (clamped positive).
-func newVertexGrid(verts []math.Point3, cell float64) *vertexGrid {
-	if cell <= 0 {
-		cell = 1
-	}
-	g := &vertexGrid{cell: cell, bins: make(map[[3]int64][]int, len(verts))}
-	for i, p := range verts {
-		k := g.cellOf(p)
-		g.bins[k] = append(g.bins[k], i)
-	}
-	return g
-}
-
-func (g *vertexGrid) cellOf(p math.Point3) [3]int64 {
-	return [3]int64{
-		int64(stdmath.Floor(float64(p.X) / g.cell)),
-		int64(stdmath.Floor(float64(p.Y) / g.cell)),
-		int64(stdmath.Floor(float64(p.Z) / g.cell)),
-	}
-}
-
-// near returns the deduplicated vertex indices in the cells the segment a→b passes through, each expanded
-// by one cell so a vertex just across a cell boundary is not missed.
-func (g *vertexGrid) near(a, b math.Point3) []int {
-	seen := map[int]bool{}
-	var out []int
-	ab := a.VectorTo(b)
-	steps := int(a.DistanceTo(b)/g.cell) + 1
-	for s := 0; s <= steps; s++ {
-		c := g.cellOf(a.TranslateBy(ab.Scale(math.Scalar(float64(s) / float64(steps)))))
-		for dx := int64(-1); dx <= 1; dx++ {
-			for dy := int64(-1); dy <= 1; dy++ {
-				for dz := int64(-1); dz <= 1; dz++ {
-					for _, vi := range g.bins[[3]int64{c[0] + dx, c[1] + dy, c[2] + dz}] {
-						if !seen[vi] {
-							seen[vi] = true
-							out = append(out, vi)
-						}
-					}
-				}
-			}
-		}
+// near returns the vertex indices whose axis coordinate lies within the segment a→b's range, expanded by
+// tol so a vertex just off either end is still a candidate. Endpoint/off-line rejection is left to
+// onSegment; this only narrows the field cheaply.
+func (x *axisIndex) near(a, b math.Point3, tol float64) []int {
+	lo := stdmath.Min(coordOf(a, x.axis), coordOf(b, x.axis)) - tol
+	hi := stdmath.Max(coordOf(a, x.axis), coordOf(b, x.axis)) + tol
+	i := sort.SearchFloat64s(x.coords, lo)
+	out := make([]int, 0, 8)
+	for ; i < len(x.coords) && x.coords[i] <= hi; i++ {
+		out = append(out, x.order[i])
 	}
 	return out
+}
+
+// coordOf returns a point's coordinate on axis 0/1/2.
+func coordOf(p math.Point3, axis int) float64 {
+	switch axis {
+	case 0:
+		return float64(p.X)
+	case 1:
+		return float64(p.Y)
+	default:
+		return float64(p.Z)
+	}
+}
+
+// widestAxis returns the axis (0/1/2) over which the vertices spread furthest — the one that best
+// separates them in the sweep index.
+func widestAxis(verts []math.Point3) int {
+	if len(verts) == 0 {
+		return 0
+	}
+	lo, hi := verts[0], verts[0]
+	for _, p := range verts {
+		lo = math.P3(stdmath.Min(float64(lo.X), float64(p.X)), stdmath.Min(float64(lo.Y), float64(p.Y)), stdmath.Min(float64(lo.Z), float64(p.Z)))
+		hi = math.P3(stdmath.Max(float64(hi.X), float64(p.X)), stdmath.Max(float64(hi.Y), float64(p.Y)), stdmath.Max(float64(hi.Z), float64(p.Z)))
+	}
+	dx, dy, dz := float64(hi.X-lo.X), float64(hi.Y-lo.Y), float64(hi.Z-lo.Z)
+	if dx >= dy && dx >= dz {
+		return 0
+	}
+	if dy >= dz {
+		return 1
+	}
+	return 2
 }
 
 // onSegment reports whether p lies on the interior of segment a→b: within lineTol of
