@@ -170,8 +170,8 @@ func tessellateThreadedFace(f *topo.Face, s geom.ThreadedCylinder, q Quality) *M
 
 // reverseMesh flips a reversed face's sense (see topo.Face.Reversed): every outward normal
 // negates and every triangle's winding reverses, so the face presents its true material side
-// to shading and to the divergence-theorem volume (mass-properties orient triangles by these
-// per-vertex normals — see meshGeometryProperties).
+// to shading and to the divergence-theorem volume (mass-properties orient triangles by the
+// resulting shared-edge winding — see consistentOutwardFlips/meshGeometryProperties).
 func reverseMesh(m *Mesh) {
 	for i := range m.Normals {
 		m.Normals[i] = m.Normals[i].Scale(-1)

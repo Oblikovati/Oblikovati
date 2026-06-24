@@ -31,19 +31,18 @@ func BodyGeometryProperties(b *topo.Body, q Quality) GeometryProperties {
 // is testable without a body. Each triangle (a,b,c) forms a tetrahedron with the origin;
 // the signed tetra volumes sum to the enclosed volume regardless of where the origin sits
 // (the parts outside the body cancel), and the volume-weighted tetra centroids give the
-// body centroid. Each triangle is first oriented outward using the mesh's per-vertex
-// normals, so the sum is correct even when a tessellator does not guarantee globally
-// consistent winding across faces (without this the divergence sum is not
-// translation-invariant — see TestVolumeIsTranslationInvariant).
+// body centroid. The triangles are first oriented consistently outward TOPOLOGICALLY (shared-
+// edge 2-colouring, see consistentOutwardFlips), so the sum is correct even when a tessellator
+// does not guarantee globally consistent winding across faces, and — unlike the old shading-
+// normal test — without spurious per-triangle flips at saddles/silhouette slivers
+// (Oblikovati/Oblikovati#1318). It stays translation-invariant (see TestVolumeIsTranslationInvariant).
 func meshGeometryProperties(mesh *Mesh) GeometryProperties {
+	flips := consistentOutwardFlips(mesh)
 	origin := math.P3(0, 0, 0)
 	var vol, area, cx, cy, cz float64
-	for t := 0; t+2 < len(mesh.Indices); t += 3 {
-		ia, ib, ic := mesh.Indices[t], mesh.Indices[t+1], mesh.Indices[t+2]
-		a, b, c := mesh.Positions[ia], mesh.Positions[ib], mesh.Positions[ic]
-		// Force outward winding: if the geometric normal opposes the (outward) shading
-		// normal, swap two vertices.
-		if outwardRef(mesh, ia, ib, ic).Dot(a.VectorTo(b).Cross(a.VectorTo(c))) < 0 {
+	for ti, n := 0, mesh.TriangleCount(); ti < n; ti++ {
+		a, b, c := triVerts(mesh, ti)
+		if flips[ti] {
 			b, c = c, b
 		}
 		sv := float64(origin.VectorTo(a).Dot(origin.VectorTo(b).Cross(origin.VectorTo(c)))) / 6
