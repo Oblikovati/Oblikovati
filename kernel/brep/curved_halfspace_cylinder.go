@@ -20,6 +20,13 @@ import (
 // the cylinder axis (a constant-axial-coordinate cut). Looser than that is an oblique section.
 const cylinderAxisTol = 1e-7
 
+// CylinderParams recovers a bare cylinder's surface, base-cap centre and height from a body, for callers
+// (the curved subtract) that need the axis frame before building. ok=false unless the body is exactly one
+// cylindrical side plus two planar caps. It mirrors cylinderSolidParams, exported for kernel/ops.
+func CylinderParams(body *topo.Body) (cyl geom.Cylinder, base math.Point3, height float64, ok bool) {
+	return cylinderSolidParams(facesOfAny(body))
+}
+
 // perpendicularToAxis reports whether the cut plane normal is parallel to the cylinder axis (a
 // constant-axial-coordinate cut), the only orientation the fast SolidCylinder path handles; an
 // axis-parallel or oblique cut routes to the general arrangement instead.
