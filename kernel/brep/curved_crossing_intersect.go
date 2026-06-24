@@ -41,7 +41,7 @@ func CrossingCylinderIntersect(a, b *topo.Body) (*topo.Body, bool) {
 	if !ok || !loopsSpanRod(rod, rodBase, rodHeight, loops) {
 		return nil, false // a loop beyond a rod end is a partial penetration, not a full crossing
 	}
-	lo, hi, ok := assignRimLoops(rod, fat, loops)
+	lo, hi, ok := assignRimLoops(cylAxis(rod), cylAxis(fat), loops)
 	if !ok {
 		return nil, false
 	}
@@ -57,7 +57,7 @@ func rodAndFatCylinders(a, b *topo.Body, loops []geom.Polyline) (rod, fat geom.C
 	if !okA || !okB {
 		return geom.Cylinder{}, geom.Cylinder{}, math.Point3{}, 0, false
 	}
-	aWraps, bWraps := allLoopsEncircle(loops, ca), allLoopsEncircle(loops, cb)
+	aWraps, bWraps := allLoopsEncircle(loops, cylAxis(ca)), allLoopsEncircle(loops, cylAxis(cb))
 	if aWraps && !bWraps {
 		return ca, cb, baseA, hA, true
 	}
@@ -86,36 +86,52 @@ func loopsSpanRod(rod geom.Cylinder, rodBase math.Point3, rodHeight float64, loo
 	return true
 }
 
-// allLoopsEncircle reports whether every loop winds a full turn about the cylinder's axis — the test that
-// distinguishes the rod (each loop rings right around it, ≈ ±2π) from the fat cylinder (each loop is a
-// local lens off to one side that barely turns, ≈ 0).
-func allLoopsEncircle(loops []geom.Polyline, cyl geom.Cylinder) bool {
+// crossAxis is the axis of a crossing operand (a cylinder or a cone) — a point on it, the unit direction,
+// and the angle-zero reference — enough to measure how an imprint loop turns and where it sits about that
+// axis, without knowing the surface type. This lets the rod be a cone, not just a cylinder.
+type crossAxis struct {
+	point math.Point3
+	dir   math.Vector3
+	ref   math.Vector3
+}
+
+// cylAxis and coneAxis read the crossing axis of a cylinder (origin) or a cone (apex).
+func cylAxis(c geom.Cylinder) crossAxis {
+	return crossAxis{c.Origin, c.AxisDir.AsVector(), c.Ref.AsVector()}
+}
+
+func coneAxis(c geom.Cone) crossAxis {
+	return crossAxis{c.Apex, c.AxisDir.AsVector(), c.Ref.AsVector()}
+}
+
+// allLoopsEncircle reports whether every loop winds a full turn about the axis — the test that distinguishes
+// the rod (each loop rings right around it, ≈ ±2π) from the fat cylinder (each loop is a local lens off to
+// one side that barely turns, ≈ 0).
+func allLoopsEncircle(loops []geom.Polyline, ax crossAxis) bool {
 	for _, lp := range loops {
-		if stdmath.Abs(loopTurnAboutAxis(lp, cyl)) < stdmath.Pi {
+		if stdmath.Abs(loopTurnAboutAxis(lp, ax)) < stdmath.Pi {
 			return false
 		}
 	}
 	return true
 }
 
-// loopTurnAboutAxis sums the signed angle a loop's spokes sweep about the cylinder axis (≈ ±2π for a loop
-// encircling the axis, ≈ 0 for a local lens).
-func loopTurnAboutAxis(lp geom.Polyline, cyl geom.Cylinder) float64 {
-	axis := cyl.AxisDir.AsVector()
+// loopTurnAboutAxis sums the signed angle a loop's spokes sweep about the axis (≈ ±2π for a loop encircling
+// the axis, ≈ 0 for a local lens).
+func loopTurnAboutAxis(lp geom.Polyline, ax crossAxis) float64 {
 	vs := lp.Vertices
 	total := 0.0
 	for i := 0; i+1 < len(vs); i++ {
-		total += signedAngleAround(radialOf(vs[i], cyl), radialOf(vs[i+1], cyl), axis)
+		total += signedAngleAround(radialOf(vs[i], ax), radialOf(vs[i+1], ax), ax.dir)
 	}
 	return total
 }
 
-// radialOf returns the spoke from the cylinder axis out to p — the component of (axis origin → p)
-// perpendicular to the axis, whose turning measures the angle about the axis.
-func radialOf(p math.Point3, cyl geom.Cylinder) math.Vector3 {
-	axis := cyl.AxisDir.AsVector()
-	v := cyl.Origin.VectorTo(p)
-	return v.Sub(axis.Scale(v.Dot(axis)))
+// radialOf returns the spoke from the axis out to p — the component of (axis point → p) perpendicular to the
+// axis, whose turning measures the angle about the axis.
+func radialOf(p math.Point3, ax crossAxis) math.Vector3 {
+	v := ax.point.VectorTo(p)
+	return v.Sub(ax.dir.Scale(v.Dot(ax.dir)))
 }
 
 // assignRimLoops orients both imprint loops CCW about the rod axis and assigns them to the lower (lo) and
@@ -123,12 +139,11 @@ func radialOf(p math.Point3, cyl geom.Cylinder) math.Vector3 {
 // points along +rodaxis is the upper rim (the band traverses it reversed, its cap forward), the other the
 // lower. The hi loop is rotated to start at the lo loop's seam angle so their joining seam is a clean
 // constant-angle ruling of the rod. ok=false unless there is exactly one loop of each end.
-func assignRimLoops(rod, fat geom.Cylinder, loops []geom.Polyline) (lo, hi geom.Polyline, ok bool) {
-	rodAxis := rod.AxisDir.AsVector()
+func assignRimLoops(rodAx, fatAx crossAxis, loops []geom.Polyline) (lo, hi geom.Polyline, ok bool) {
 	var los, his []geom.Polyline
 	for _, lp := range loops {
-		ccw := orientLoopCCW(lp, rod)
-		if fatOutwardAlongAxis(ccw, fat, rodAxis) >= 0 {
+		ccw := orientLoopCCW(lp, rodAx)
+		if fatOutwardAlongAxis(ccw, fatAx, rodAx.dir) >= 0 {
 			his = append(his, ccw)
 		} else {
 			los = append(los, ccw)
@@ -137,13 +152,13 @@ func assignRimLoops(rod, fat geom.Cylinder, loops []geom.Polyline) (lo, hi geom.
 	if len(los) != 1 || len(his) != 1 {
 		return geom.Polyline{}, geom.Polyline{}, false
 	}
-	return los[0], alignLoopStart(his[0], los[0], rod), true
+	return los[0], alignLoopStart(his[0], los[0], rodAx), true
 }
 
 // orientLoopCCW returns the loop oriented so it winds CCW about the rod axis (positive turn), reversing
 // its vertex order when the traced loop runs the other way.
-func orientLoopCCW(lp geom.Polyline, rod geom.Cylinder) geom.Polyline {
-	if loopTurnAboutAxis(lp, rod) >= 0 {
+func orientLoopCCW(lp geom.Polyline, rodAx crossAxis) geom.Polyline {
+	if loopTurnAboutAxis(lp, rodAx) >= 0 {
 		return lp
 	}
 	return reverseLoop(lp)
@@ -163,9 +178,9 @@ func reverseLoop(lp geom.Polyline) geom.Polyline {
 
 // fatOutwardAlongAxis returns the component along the rod axis of the fat cylinder's outward normal at the
 // loop's centroid — its sign places the loop's lens on the +rodaxis (≥0) or −rodaxis (<0) end of the band.
-func fatOutwardAlongAxis(lp geom.Polyline, fat geom.Cylinder, rodAxis math.Vector3) float64 {
-	outward := unit(radialOf(loopCentroid(lp), fat))
-	return float64(outward.Dot(rodAxis))
+func fatOutwardAlongAxis(lp geom.Polyline, fatAx crossAxis, rodDir math.Vector3) float64 {
+	outward := unit(radialOf(loopCentroid(lp), fatAx))
+	return float64(outward.Dot(rodDir))
 }
 
 // loopCentroid averages a loop's distinct vertices (skipping the repeated closing vertex).
@@ -182,21 +197,21 @@ func loopCentroid(lp geom.Polyline) math.Point3 {
 // alignLoopStart rotates the hi loop so it begins at the vertex nearest, in rod-axis angle, to the lo
 // loop's start — so the seam joining the two starts is a near-constant-angle ruling of the rod (lying on
 // the surface), the clean seam the band's periodic face needs.
-func alignLoopStart(hi, lo geom.Polyline, rod geom.Cylinder) geom.Polyline {
-	target := axisAngleOf(lo.Vertices[0], rod)
+func alignLoopStart(hi, lo geom.Polyline, rodAx crossAxis) geom.Polyline {
+	target := axisAngleOf(lo.Vertices[0], rodAx)
 	core := hi.Vertices[:len(hi.Vertices)-1]
 	best, bestErr := 0, stdmath.Inf(1)
 	for i, p := range core {
-		if d := angleDelta(axisAngleOf(p, rod), target); d < bestErr {
+		if d := angleDelta(axisAngleOf(p, rodAx), target); d < bestErr {
 			best, bestErr = i, d
 		}
 	}
 	return rotateClosedLoop(core, best)
 }
 
-// axisAngleOf returns p's angle about the cylinder axis, measured from the cylinder's reference direction.
-func axisAngleOf(p math.Point3, cyl geom.Cylinder) float64 {
-	return signedAngleAround(cyl.Ref.AsVector(), radialOf(p, cyl), cyl.AxisDir.AsVector())
+// axisAngleOf returns p's angle about the axis, measured from the axis's reference direction.
+func axisAngleOf(p math.Point3, ax crossAxis) float64 {
+	return signedAngleAround(ax.ref, radialOf(p, ax), ax.dir)
 }
 
 // angleDelta is the absolute difference between two angles, wrapped into [0, π].
@@ -225,7 +240,7 @@ func rotateClosedLoop(core []math.Point3, start int) geom.Polyline {
 // two fat-wall lens caps, each sharing one rim edge with the band in the OPPOSITE orientation, so every
 // edge is used exactly twice (a closed manifold). The rims stay closed saddle-polyline edges so the band
 // tessellates via the saddle-band loft and each lens via the metric-patch mesher.
-func stitchRodWithSaddleCaps(rod, fat geom.Cylinder, lo, hi geom.Polyline) *topo.Body {
+func stitchRodWithSaddleCaps(rodSurface, fat geom.Surface, lo, hi geom.Polyline) *topo.Body {
 	loPts, hiPts := lo.Vertices, hi.Vertices
 	bld := topo.NewBuilder(true, crossLin("body"))
 	vLo := bld.AddVertex(loPts[0], crossLin("vlo"))
@@ -233,7 +248,7 @@ func stitchRodWithSaddleCaps(rod, fat geom.Cylinder, lo, hi geom.Polyline) *topo
 	eLo := bld.AddEdge(lo, vLo, vLo, crossLin("elo"))
 	eHi := bld.AddEdge(hi, vHi, vHi, crossLin("ehi"))
 	eSeam := bld.AddEdge(geom.NewLineSegment(loPts[0], hiPts[0]), vLo, vHi, crossLin("seam"))
-	bld.AddFace(rod, crossLin("band"),
+	bld.AddFace(rodSurface, crossLin("band"),
 		topo.OuterLoop(topo.Fwd(eSeam), topo.Rev(eHi), topo.Rev(eSeam), topo.Fwd(eLo)))
 	bld.AddFace(fat, crossLin("caplo"), topo.OuterLoop(topo.Rev(eLo)))
 	bld.AddFace(fat, crossLin("caphi"), topo.OuterLoop(topo.Fwd(eHi)))

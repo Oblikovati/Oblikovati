@@ -94,7 +94,7 @@ func addRodStub(bld *topo.Builder, rod geom.Cylinder, endCenter math.Point3, cap
 // so the seam connecting them is a near-constant-angle ruling of the rod (lying on the surface).
 func stubSeamPoint(rod geom.Cylinder, endCenter, lensStart math.Point3) math.Point3 {
 	v := float64(rod.Origin.VectorTo(endCenter).Dot(rod.AxisDir.AsVector()))
-	return rod.PointAt(axisAngleOf(lensStart, rod), v)
+	return rod.PointAt(axisAngleOf(lensStart, cylAxis(rod)), v)
 }
 
 // cutRodMinusFat builds rod − fat: the two rod stubs sticking out either side of the fat, each a separate

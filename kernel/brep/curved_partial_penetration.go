@@ -81,7 +81,7 @@ func tryPartialPlug(rodBody, fatBody *topo.Body) (*partialPlugParts, bool) {
 	}
 	rod, rodBase, rodH, okR := cylinderSolidParams(facesOfAny(rodBody))
 	fat, fatBase, fatH, okF := cylinderSolidParams(facesOfAny(fatBody))
-	if !okR || !okF || !allLoopsEncircle(loops, rod) {
+	if !okR || !okF || !allLoopsEncircle(loops, cylAxis(rod)) {
 		return nil, false
 	}
 	blindC, blindN, entryC, entryN, ok := rodEnds(rod, rodBase, rodH, fat, fatBase, fatH)
@@ -92,7 +92,7 @@ func tryPartialPlug(rodBody, fatBody *topo.Body) (*partialPlugParts, bool) {
 		rod: rod, fat: fat,
 		blindCenter: blindC, blindNormal: blindN,
 		entryCenter: entryC, entryNormal: entryN,
-		lens:    orientLoopCCW(loops[0], rod),
+		lens:    orientLoopCCW(loops[0], cylAxis(rod)),
 		fatBase: fatBase, fatHeight: fatH,
 	}, true
 }
@@ -136,7 +136,7 @@ func rodEndInsideFat(rod geom.Cylinder, center math.Point3, fat geom.Cylinder, f
 // radius and between the caps, by a small margin so a point on the surface counts as outside.
 func pointInsideCylinderSolid(c geom.Cylinder, base math.Point3, height float64, p math.Point3) bool {
 	const margin = 1e-7
-	if float64(radialOf(p, c).Length()) > c.Radius-margin {
+	if float64(radialOf(p, cylAxis(c)).Length()) > c.Radius-margin {
 		return false
 	}
 	axis := c.AxisDir.AsVector()
