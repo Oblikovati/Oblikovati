@@ -236,41 +236,29 @@ func classify(target, tool *topo.Body) relation {
 	return intersecting
 }
 
-// allVerticesInside reports whether every vertex of inner lies strictly within outer.
+// allVerticesInside reports whether every vertex of inner lies strictly within outer. It
+// tessellates outer ONCE and reuses that mesh for every vertex query (#1317) — previously each
+// vertex re-tessellated the whole body, making boolean classification O(V·T).
 func allVerticesInside(inner, outer *topo.Body) bool {
 	verts := inner.Vertices()
 	if len(verts) == 0 {
 		return false
 	}
+	mesh, _ := TessellateBody(outer, DefaultQuality())
 	for _, v := range verts {
-		if !PointInsideBody(outer, v.Point()) {
+		if !pointInMesh(mesh, v.Point()) {
 			return false
 		}
 	}
 	return true
 }
 
-// PointInsideBody reports whether p is inside a solid body, by casting a ray from p
-// and counting crossings of the body's tessellated faces (odd ⇒ inside). The ray
-// direction is skewed off the axes to avoid degenerate grazing hits.
+// PointInsideBody reports whether p is inside a solid body, via the generalized winding number of
+// the body's tessellation (see pointInMesh/windingNumber). This replaces the old single fixed-ray
+// parity test (#1317), which miscounted whenever the ray grazed a shared edge or vertex of the mesh
+// — ubiquitous on a closed surface — flipping the inside/outside result. The winding number
+// integrates the entire boundary, so it has no such degeneracy and tolerates small mesh cracks.
 func PointInsideBody(b *topo.Body, p math.Point3) bool {
 	mesh, _ := TessellateBody(b, DefaultQuality())
-	dir := math.V3(0.5773, 0.5774, 0.5775) // near-diagonal, non-axis-aligned
-	crossings := 0
-	for t := 0; t+2 < len(mesh.Indices); t += 3 {
-		a := mesh.Positions[mesh.Indices[t]]
-		q := mesh.Positions[mesh.Indices[t+1]]
-		r := mesh.Positions[mesh.Indices[t+2]]
-		if rayHitsTriangle(p, dir, a, q, r) {
-			crossings++
-		}
-	}
-	return crossings%2 == 1
-}
-
-// rayHitsTriangle reports whether the ray from orig along dir hits triangle abc at a
-// positive distance (Möller–Trumbore; shares rayTriangleDist with picking).
-func rayHitsTriangle(orig math.Point3, dir math.Vector3, a, b, c math.Point3) bool {
-	_, ok := rayTriangleDist(orig, dir, a, b, c)
-	return ok
+	return pointInMesh(mesh, p)
 }
