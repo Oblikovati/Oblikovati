@@ -28,6 +28,21 @@ func curvedCrossingIntersect(op PartFeatureOperation, target, tool *topo.Body) (
 	return res, true
 }
 
+// curvedSteinmetzIntersect returns the exact intersection of two equal-radius perpendicular cylinders (the
+// Steinmetz bicylinder), or ok=false to defer. Only Intersect maps here, and only a valid closed manifold
+// result is adopted. This is the equal-radius case the SSI imprint tracer cannot trace (it pinches), fitted
+// analytically as two crossing ellipses instead.
+func curvedSteinmetzIntersect(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Intersect {
+		return nil, false
+	}
+	res, ok := brep.EqualRadiusSteinmetzIntersect(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedCrossingCut returns target − tool for two crossing cylinders (drilling a fat cylinder with a
 // crossing rod, or the two rod stubs of rod − fat), or ok=false to defer. Only Cut maps here, and only a
 // valid closed manifold result is adopted.
