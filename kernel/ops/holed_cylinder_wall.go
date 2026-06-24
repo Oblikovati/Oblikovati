@@ -24,7 +24,7 @@ import (
 // (u,v) rectangle and delegating to metricPatchMesh. ok=false unless the surface is a cylinder with at
 // least one hole and a genuinely seam-wrapping outer loop (a hole straddling the seam also defers — the
 // builder seams the wall clear of its holes, so that should not arise).
-func holedCylinderWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (*Mesh, bool) {
+func holedCylinderWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
 	if _, ok := s.(geom.Cylinder); !ok {
 		return nil, false // only a cylinder unrolls with a flat (distortion-free) metric
 	}
@@ -39,17 +39,18 @@ func holedCylinderWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]ma
 	if !ok {
 		return nil, false
 	}
-	return unrolledWallCDT(s, outer3D, holes3D, outerUV, holesUV), true
+	return unrolledWallCDT(s, q, outer3D, holes3D, outerUV, holesUV), true
 }
 
 // unrolledWallCDT triangulates the unrolled wall (the contiguous (u,v) rectangle minus the holes) with a
-// BOUNDARY-ONLY constrained Delaunay in metric-scaled (u,v) — (√E,√G)≈(R,1) for a cylinder, so the
-// parameter space is isometric to 3D and the triangles are well shaped. No interior Steiner points: the
-// wall's curvature is entirely in u, already captured by the dense cap-circle samples on the rim edges,
-// and a large wall's interior nodes only make the hole's constraint recovery (insertConstraint) fail and
-// the domain flood leak. The exact 3D boundary points are kept so the wall welds to its caps, the rod
-// band and the lens caps that share its edges.
-func unrolledWallCDT(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+// metric-scaled constrained Delaunay in (u,v) — (√E,√G)≈(R,1) for a cylinder, so the parameter space is
+// isometric to 3D and the triangles are well shaped — and INTERIOR Steiner refinement so the curved area
+// is accurate. It uses the OCCT BRepMesh insertion order (constrainedDelaunayRefined): the frontier loops
+// first, constraints recovered on that small set, then the interior nodes inserted into the constrained
+// mesh (where the frontier edges are protected from the cavity). Inserting everything at once tears a large
+// wall with several concave saddle holes. The exact 3D boundary points are kept so the wall welds to its
+// caps and to the faces sharing its hole edges.
+func unrolledWallCDT(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
 	su, sv := trimMetricScale(s, outerUV)
 	outer2D := scaleUVLoop(outerUV, su, sv)
 	holes2D := make([][]math.Point2, len(holesUV))
@@ -57,7 +58,13 @@ func unrolledWallCDT(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Poi
 		holes2D[i] = scaleUVLoop(h, su, sv)
 	}
 	uv, pos, nrm, loops := patchLoops2D(s, outer3D, holes3D, outer2D, holes2D)
-	tris := constrainedDelaunay(uv, loops)
+	nFrontier := len(uv)
+	for _, g := range adaptiveInteriorNodes(s, outerUV, holesUV, q, 1) {
+		uv = append(uv, [2]float64{g[0] * su, g[1] * sv})
+		pos = append(pos, s.PointAt(g[0], g[1]))
+		nrm = append(nrm, s.NormalAt(g[0], g[1]))
+	}
+	tris := constrainedDelaunayRefined(uv, loops, nFrontier)
 	if len(tris) == 0 {
 		return boundaryPatchMesh(s, outer3D, holes3D)
 	}

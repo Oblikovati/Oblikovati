@@ -46,6 +46,13 @@ func (m *cdt) collectCavity(seed int, p [2]float64) cavity {
 			if ne < 0 || c.in[ne] {
 				continue
 			}
+			// Never grow the cavity across a constrained (frontier) edge: a point inserted after the
+			// boundary is constrained must not engulf triangles on the far side of a wire and erase it
+			// (OCCT's BRepMesh protects frontier edges the same way). con is empty while the boundary
+			// itself is being inserted, so existing callers are unaffected.
+			if a, b := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]; m.con[conKey(a, b)] {
+				continue
+			}
 			if inCircle(m.pts[m.tris[ne].v[0]], m.pts[m.tris[ne].v[1]], m.pts[m.tris[ne].v[2]], p) > 0 {
 				c.in[ne] = true
 				c.order = append(c.order, ne)
@@ -284,6 +291,39 @@ func (m *cdt) hasSuper(t int) bool {
 	return m.tris[t].v[0] >= m.nsup || m.tris[t].v[1] >= m.nsup || m.tris[t].v[2] >= m.nsup
 }
 
+// constrainedDelaunayRefined triangulates the domain bounded by loops with interior refinement, inserting
+// the boundary in the OCCT BRepMesh order: the loop (frontier) points FIRST, then the constraints are
+// recovered on that small point set (robust — no interior nodes fighting the flip recovery), then the
+// interior Steiner points are inserted into the already-constrained mesh, where collectCavity protects the
+// frontier edges. pts[:nFrontier] are the loop points (indexed by loops); pts[nFrontier:] are interior.
+// This is the accurate path for a large face with several concave holes, where inserting everything at
+// once (constrainedDelaunay) makes the constraint recovery leak and tear.
+func constrainedDelaunayRefined(pts [][2]float64, loops [][]int, nFrontier int) [][3]int {
+	if len(pts) < 3 || nFrontier < 3 {
+		return nil
+	}
+	m := newCDT(pts)
+	for i := 0; i < nFrontier; i++ {
+		m.insert(i)
+	}
+	m.constrain(loops)
+	for i := nFrontier; i < m.nsup; i++ {
+		m.insert(i) // interior nodes, now respecting the frontier edges (see collectCavity)
+	}
+	return m.extractDomain()
+}
+
+// constrain recovers every loop edge as a hard constraint between the inserted representatives (see
+// representatives) and records it in con.
+func (m *cdt) constrain(loops [][]int) {
+	rep := m.representatives()
+	for _, lp := range loops {
+		for k := 0; k < len(lp); k++ {
+			m.insertConstraint(rep[lp[k]], rep[lp[(k+1)%len(lp)]])
+		}
+	}
+}
+
 // constrainedDelaunay triangulates the planar domain bounded by the given loops (the first/largest
 // is the outer boundary, the rest are holes — but any nesting works: the flood toggles inside at
 // each loop), returning CCW triangles inside the domain as index triples into pts. Every loop edge
@@ -299,12 +339,7 @@ func constrainedDelaunay(pts [][2]float64, loops [][]int) [][3]int {
 	// A duplicate boundary sample (same coords as an earlier point) is SKIPPED by insert (it has no
 	// strictly-bad triangle), so it owns no triangle; a constraint referencing it can be recovered by
 	// neither the corridor walk (no incident triangle) nor the flips (which then spin to exhaustion —
-	// the real O(T²) freeze on imported faces, #1073). Constrain between the inserted REPRESENTATIVES.
-	rep := m.representatives()
-	for _, lp := range loops {
-		for k := 0; k < len(lp); k++ {
-			m.insertConstraint(rep[lp[k]], rep[lp[(k+1)%len(lp)]])
-		}
-	}
+	// the real O(T²) freeze on imported faces, #1073). constrain works between the inserted REPRESENTATIVES.
+	m.constrain(loops)
 	return m.extractDomain()
 }
