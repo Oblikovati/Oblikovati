@@ -98,6 +98,63 @@ func TestBooleanCutDrillCrossingCylinder(t *testing.T) {
 	}
 }
 
+// TestBooleanJoinCrossingCylinders joins a fat cylinder (R=3, axis z) with a crossing rod (r=1.5, axis x):
+// Join must give the connected analytic solid (fat caps, holed fat wall, a rod stub each side capped by the
+// rod's end disc) whose volume is fat + rod − the crossing intersection, not triangle-soup CSG.
+func TestBooleanJoinCrossingCylinders(t *testing.T) {
+	const rRod, hRod, rFat, hFat = 1.5, 12.0, 3.0, 12.0
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
+	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod)
+
+	res, err := ops.Boolean(ops.Join, fat, thin)
+	if err != nil {
+		t.Fatalf("Boolean(Join): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("joined cylinders are not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder, geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 7 {
+		t.Errorf("joined cylinders have %d faces, want 7 (two fat caps, holed wall, two stubs, two rod caps)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rFat*rFat*hFat + stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("joined volume %.4f, want %.4f (fat + rod − intersection) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
+// TestBooleanCutRodMinusFatStubs subtracts a fat cylinder (R=3, axis z) from a crossing rod (r=1.5, axis x):
+// Cut must give the two disconnected rod stubs (a two-shell solid) whose total volume is the rod minus the
+// crossing intersection, not triangle-soup CSG.
+func TestBooleanCutRodMinusFatStubs(t *testing.T) {
+	const rRod, hRod, rFat = 1.5, 12.0, 3.0
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
+	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod)
+
+	res, err := ops.Boolean(ops.Cut, thin, fat) // rod − fat
+	if err != nil {
+		t.Fatalf("Boolean(Cut rod−fat): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("rod − fat is not a valid closed manifold solid: %+v", v)
+	}
+	if n := len(res.Shells()); n != 2 {
+		t.Errorf("rod − fat has %d shells, want 2 (a disconnected stub each side)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("rod − fat volume %.4f, want %.4f (rod − intersection) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
 // TestBooleanIntersectEqualRadiusDefersFromExactPath: two EQUAL-radius perpendicular cylinders are the
 // Steinmetz case the imprint tracer cannot trace cleanly, so the exact path must decline (leaving the
 // boolean to its fallback) rather than emit a wrong analytic solid.
