@@ -28,8 +28,9 @@ func partLin(role string) topo.Lineage { return topo.NewLineage(topo.Tok("partpe
 
 // PartialPenetrationIntersect builds the exact intersection of a thin rod that ends inside a fatter
 // cylinder (the rod plug), or ok=false when the configuration is outside that case (not exactly one imprint
-// loop, neither cylinder is the rod the loop encircles, or no rod end lies cleanly inside the other) so
-// kernel/ops keeps its CSG fallback.
+// loop, neither operand is the rod the loop encircles, or no rod end lies cleanly inside the other) so
+// kernel/ops keeps its CSG fallback. The rod may be a cylinder or a tapered cone (its blind end disc carries
+// the cone's radius at that apex distance).
 //
 // Example — a radius-1.5 rod on x ending at the centre of a radius-3 cylinder on z gives a three-face plug:
 //
@@ -44,12 +45,14 @@ func PartialPenetrationIntersect(a, b *topo.Body) (*topo.Body, bool) {
 	return partialPlug(p), true
 }
 
-// partialPlugParts holds the resolved geometry of a partial penetration: the rod (the single imprint loop
-// encircles it) and the fat cylinder; the rod's blind end cap (inside the fat) and its entry end cap
-// (outside the fat), each as a centre and outward axial normal; the single entry imprint loop oriented CCW
-// about the rod axis; and the fat cylinder's cap base and height (for the wall the Cut and Join carry).
+// partialPlugParts holds the resolved geometry of a partial penetration: the rod (a cylinder or a cone, the
+// single imprint loop encircles it) and the fat cylinder; the rod's blind end cap (inside the fat) and its
+// entry end cap (outside the fat), each as a centre and outward axial normal; the single entry imprint loop
+// oriented CCW about the rod axis; and the fat cylinder's cap base and height (for the wall the Cut and Join
+// carry).
 type partialPlugParts struct {
-	rod, fat                 geom.Cylinder
+	rod                      crossRod
+	fat                      geom.Cylinder
 	blindCenter, entryCenter math.Point3
 	blindNormal, entryNormal math.Vector3
 	lens                     geom.Polyline
@@ -68,23 +71,61 @@ func partialPlugPartsOf(a, b *topo.Body) (*partialPlugParts, bool) {
 	if p, ok := tryPartialPlug(a, b); ok {
 		return p, true
 	}
-	return tryPartialPlug(b, a)
+	if p, ok := tryPartialPlug(b, a); ok {
+		return p, true
+	}
+	if p, ok := tryConePartialPlug(a, b); ok {
+		return p, true
+	}
+	return tryConePartialPlug(b, a)
 }
 
-// tryPartialPlug resolves a partial plug treating rodBody as the penetrating rod (traced first), or
-// ok=false when that does not hold: not exactly one imprint loop, the loop does not encircle rodBody, or
+// tryPartialPlug resolves a cylinder-rod partial plug treating rodBody as the penetrating rod (traced first),
+// or ok=false when that does not hold: not exactly one imprint loop, the loop does not encircle rodBody, or
 // not exactly one of rodBody's ends lies inside fatBody.
 func tryPartialPlug(rodBody, fatBody *topo.Body) (*partialPlugParts, bool) {
 	loops, ok := crossingCylinderImprint(rodBody, fatBody)
-	if !ok || len(loops) != 1 {
+	if !ok {
 		return nil, false
 	}
 	rod, rodBase, rodH, okR := cylinderSolidParams(facesOfAny(rodBody))
 	fat, fatBase, fatH, okF := cylinderSolidParams(facesOfAny(fatBody))
-	if !okR || !okF || !allLoopsEncircle(loops, cylAxis(rod)) {
+	if !okR || !okF {
 		return nil, false
 	}
-	blindC, blindN, entryC, entryN, ok := rodEnds(rod, rodBase, rodH, fat, fatBase, fatH)
+	axis := rod.AxisDir.AsVector()
+	e0, e1 := rodBase, rodBase.TranslateBy(axis.Scale(math.Scalar(rodH)))
+	return partialPlugFrom(loops, cylinderRod{rod}, e0, e1, fat, fatBase, fatH)
+}
+
+// tryConePartialPlug resolves a cone-rod partial plug: a cone (or frustum) ending inside the fatter cylinder.
+// coneCylinderImprint always traces the cone within its own apex-distance band, so a cone ending inside the
+// fat yields the single entry loop (the blind end is interior, no exit loop). ok=false unless coneBody is a
+// bare cone, fatBody a bare cylinder, and the partial-plug conditions hold (see partialPlugFrom).
+func tryConePartialPlug(coneBody, fatBody *topo.Body) (*partialPlugParts, bool) {
+	loops, ok := coneCylinderImprint(coneBody, fatBody)
+	if !ok {
+		return nil, false
+	}
+	cone, vMin, vMax, okC := coneSolidParams(facesOfAny(coneBody))
+	fat, fatBase, fatH, okF := cylinderSolidParams(facesOfAny(fatBody))
+	if !okC || !okF {
+		return nil, false
+	}
+	axis := cone.AxisDir.AsVector()
+	e0 := cone.Apex.TranslateBy(axis.Scale(math.Scalar(vMin)))
+	e1 := cone.Apex.TranslateBy(axis.Scale(math.Scalar(vMax)))
+	return partialPlugFrom(loops, coneRod{cone}, e0, e1, fat, fatBase, fatH)
+}
+
+// partialPlugFrom assembles the resolved parts from a traced imprint, the rod (as a crossRod) with its two
+// end centres e0 and e1, and the fat cylinder. ok=false unless there is exactly one loop, it encircles the
+// rod, and exactly one rod end lies inside the fat (so the rod truly ends inside — a partial penetration).
+func partialPlugFrom(loops []geom.Polyline, rod crossRod, e0, e1 math.Point3, fat geom.Cylinder, fatBase math.Point3, fatH float64) (*partialPlugParts, bool) {
+	if len(loops) != 1 || !allLoopsEncircle(loops, rod.axisOf()) {
+		return nil, false
+	}
+	blindC, blindN, entryC, entryN, ok := rodEnds(rod, e0, e1, fat, fatBase, fatH)
 	if !ok {
 		return nil, false
 	}
@@ -92,40 +133,39 @@ func tryPartialPlug(rodBody, fatBody *topo.Body) (*partialPlugParts, bool) {
 		rod: rod, fat: fat,
 		blindCenter: blindC, blindNormal: blindN,
 		entryCenter: entryC, entryNormal: entryN,
-		lens:    orientLoopCCW(loops[0], cylAxis(rod)),
+		lens:    orientLoopCCW(loops[0], rod.axisOf()),
 		fatBase: fatBase, fatHeight: fatH,
 	}, true
 }
 
 // rodEnds returns the rod's blind end cap (inside the fat — the tip of a partial penetration) and its entry
 // end cap (outside the fat — where the rod sticks out), each as a centre and the outward axial normal
-// (pointing away from the rod material). ok=false unless exactly one of the rod's two ends is inside the fat
-// (both inside is a rod fully contained, neither is a full crossing — both handled elsewhere).
-func rodEnds(rod geom.Cylinder, rodBase math.Point3, rodH float64, fat geom.Cylinder, fatBase math.Point3, fatH float64) (blindCenter math.Point3, blindNormal math.Vector3, entryCenter math.Point3, entryNormal math.Vector3, ok bool) {
-	axis := rod.AxisDir.AsVector()
-	e0 := rodBase
-	e1 := rodBase.TranslateBy(axis.Scale(math.Scalar(rodH)))
+// (pointing away from the rod material), given the rod's two end centres e0 (−axis end) and e1 (+axis end).
+// ok=false unless exactly one of the two ends is inside the fat (both inside is a rod fully contained,
+// neither is a full crossing — both handled elsewhere).
+func rodEnds(rod crossRod, e0, e1 math.Point3, fat geom.Cylinder, fatBase math.Point3, fatH float64) (blindCenter math.Point3, blindNormal math.Vector3, entryCenter math.Point3, entryNormal math.Vector3, ok bool) {
+	axis := rod.axisVec()
 	in0 := rodEndInsideFat(rod, e0, fat, fatBase, fatH)
 	in1 := rodEndInsideFat(rod, e1, fat, fatBase, fatH)
 	switch {
-	case in1 && !in0: // blind end at the +axis extreme (e1), entry end at the base (e0)
+	case in1 && !in0: // blind end at the +axis extreme (e1), entry end at the −axis end (e0)
 		return e1, axis, e0, axis.Scale(-1), true
-	case in0 && !in1: // blind end at the base (e0), entry end at the +axis extreme (e1)
+	case in0 && !in1: // blind end at the −axis end (e0), entry end at the +axis extreme (e1)
 		return e0, axis.Scale(-1), e1, axis, true
 	default:
 		return math.Point3{}, math.Vector3{}, math.Point3{}, math.Vector3{}, false
 	}
 }
 
-// rodEndInsideFat reports whether the whole rod end circle (radius = rod radius, centre = end) lies strictly
-// inside the fat solid — sampled around the circle so a tilted disc is judged by its actual extent, not just
-// its centre. This is the condition for the blind end cap to be a clean disc wholly within the fat.
-func rodEndInsideFat(rod geom.Cylinder, center math.Point3, fat geom.Cylinder, fatBase math.Point3, fatH float64) bool {
+// rodEndInsideFat reports whether the whole rod end circle (radius = the rod's radius at that end, centre =
+// end) lies strictly inside the fat solid — sampled around the circle so a tilted disc is judged by its
+// actual extent, not just its centre. This is the condition for the blind end cap to be a clean disc wholly
+// within the fat. The end radius grows with apex distance for a cone (see rodCirclePoint).
+func rodEndInsideFat(rod crossRod, center math.Point3, fat geom.Cylinder, fatBase math.Point3, fatH float64) bool {
 	const samples = 24
 	for k := 0; k < samples; k++ {
 		ang := 2 * stdmath.Pi * float64(k) / samples
-		p := center.TranslateBy(rod.NormalAt(ang, 0).Scale(math.Scalar(rod.Radius)))
-		if !pointInsideCylinderSolid(fat, fatBase, fatH, p) {
+		if !pointInsideCylinderSolid(fat, fatBase, fatH, rodCirclePoint(rod, center, ang)) {
 			return false
 		}
 	}
@@ -155,7 +195,7 @@ func partialPlug(p *partialPlugParts) *topo.Body {
 	vLens := bld.AddVertex(lensStart, partLin("vlens"))
 	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
 	bld.AddFace(p.fat, partLin("lenscap"), topo.OuterLoop(topo.Rev(eLens)))
-	addRodStub(bld, cylinderRod{p.rod}, p.blindCenter, p.blindNormal, eLens, vLens, lensStart, true, false, "plug")
+	addRodStub(bld, p.rod, p.blindCenter, p.blindNormal, eLens, vLens, lensStart, true, false, "plug")
 	return bld.Build()
 }
 
@@ -186,7 +226,7 @@ func PartialPenetrationCut(target, tool *topo.Body) (*topo.Body, bool) {
 // side (the rod material outside the fat), a closed lump of the rod stub band, the rod's entry end cap, and
 // the fat-wall lens reversed to face back into the fat (the kept material is outside it).
 func partialRodMinusFat(p *partialPlugParts) *topo.Body {
-	return rodStubLump(cylinderRod{p.rod}, p.fat, p.entryCenter, p.entryNormal, p.lens, "prmf")
+	return rodStubLump(p.rod, p.fat, p.entryCenter, p.entryNormal, p.lens, "prmf")
 }
 
 // PartialPenetrationJoin builds target ∪ tool for a thin rod ending inside the fatter cylinder, or ok=false
@@ -218,7 +258,7 @@ func blindHole(p *partialPlugParts) *topo.Body {
 	vLens := bld.AddVertex(lensStart, partLin("vlens"))
 	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
 	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamForLens(p.fat, p.lens), topo.Rev(eLens))
-	addRodStub(bld, cylinderRod{p.rod}, p.blindCenter, p.blindNormal, eLens, vLens, lensStart, true, true, "blind")
+	addRodStub(bld, p.rod, p.blindCenter, p.blindNormal, eLens, vLens, lensStart, true, true, "blind")
 	return bld.Build()
 }
 
@@ -232,6 +272,6 @@ func partialJoinStub(p *partialPlugParts) *topo.Body {
 	vLens := bld.AddVertex(lensStart, partLin("vlens"))
 	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
 	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamForLens(p.fat, p.lens), topo.Rev(eLens))
-	addRodStub(bld, cylinderRod{p.rod}, p.entryCenter, p.entryNormal, eLens, vLens, lensStart, true, false, "jstub")
+	addRodStub(bld, p.rod, p.entryCenter, p.entryNormal, eLens, vLens, lensStart, true, false, "jstub")
 	return bld.Build()
 }
