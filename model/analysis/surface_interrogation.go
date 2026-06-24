@@ -53,6 +53,35 @@ func HighlightLines(m SurfaceSamples, eye math.Point3, light math.Vector3, count
 	}), count)
 }
 
+// ZebraTriangleBands returns, per triangle, whether it falls in a DARK zebra band of a distant
+// parallel-stripe environment: the constant view direction is reflected about the surface normal and
+// projected on the stripe axis, and that projection (a unit-vector dot, in [-1,1]) is quantized into
+// count equal bands. A distant (directional) view, not a per-point eye, keeps the stripe frequency
+// uniform across the form instead of compressing at grazing angles. Filling each triangle solid by
+// its band parity renders the classic zebra map; the band EDGES reveal continuity — a G2 seam keeps
+// them flowing, a G1-only seam steps them. count is the number of bands (min 1).
+func ZebraTriangleBands(m SurfaceSamples, viewDir, stripeAxis math.Vector3, count int) []bool {
+	v, g := normalize(viewDir), normalize(stripeAxis)
+	vert := scalarField(m, func(_ math.Point3, n math.Vector3) float64 {
+		return float64(reflect(v, n).Dot(g))
+	})
+	if count < 1 {
+		count = 1
+	}
+	bands := make([]bool, len(m.Triangles))
+	for i, tri := range m.Triangles {
+		c := (vert[tri[0]] + vert[tri[1]] + vert[tri[2]]) / 3 // centroid projection in [-1,1]
+		b := int((c + 1) / 2 * float64(count))                // [-1,1] → [0,count)
+		if b >= count {
+			b = count - 1
+		} else if b < 0 {
+			b = 0
+		}
+		bands[i] = b%2 == 1
+	}
+	return bands
+}
+
 // scalarField evaluates f at every vertex (position + unit normal) of the mesh.
 func scalarField(m SurfaceSamples, f func(p math.Point3, n math.Vector3) float64) []float64 {
 	out := make([]float64, len(m.Positions))

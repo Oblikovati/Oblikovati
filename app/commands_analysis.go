@@ -28,10 +28,22 @@ func analysisCommands() []*CommandDefinition {
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("model-health").WithButtonStyle(LargeIconButton).
 			WithTooltip("Report the part's overall health and list every feature that is sick, warning or suppressed for repair."),
-		NewCommand("Inspect.SurfaceAnalysis", "Surface Analysis", "Analyze", startSurfaceAnalysis).
+		NewCommand("Inspect.Zebra", "Zebra", "Analyze", startZebra).
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
-			WithIcon("surface-analysis").WithButtonStyle(LargeIconButton).
-			WithTooltip("Surface Analysis — overlay reflection, highlight and isophote lines to judge surface fairness and G1/G2 continuity."),
+			WithIcon("zebra").WithButtonStyle(LargeIconButton).
+			WithTooltip("Zebra — shade the surface with reflected black/white stripe bands; the band edges step at a G1-only seam and flow smoothly across a G2 seam."),
+		NewCommand("Inspect.Isophotes", "Isophotes", "Analyze", startIsophotes).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("isophotes").WithButtonStyle(LargeIconButton).
+			WithTooltip("Isophotes — iso-contours of the surface-normal/light angle; a curvature break bends the lines, the classic G1-vs-G2 test."),
+		NewCommand("Inspect.Reflection", "Reflection Lines", "Analyze", startReflection).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("reflection-lines").WithButtonStyle(LargeIconButton).
+			WithTooltip("Reflection Lines — reflected stripe boundaries (the showroom test); a kink reveals a discontinuity."),
+		NewCommand("Inspect.Highlight", "Highlight Lines", "Analyze", startHighlight).
+			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
+			WithIcon("highlight-lines").WithButtonStyle(LargeIconButton).
+			WithTooltip("Highlight Lines — specular highlight contours whose smoothness tracks surface fairness."),
 		NewCommand("Inspect.Continuity", "Continuity Check", "Analyze", startContinuityCheck).
 			WithTab("Inspect").WithRibbons(PartRibbon).WithEnable(hasActivePart).
 			WithIcon("continuity-check").WithButtonStyle(LargeIconButton).
@@ -61,14 +73,21 @@ func startContinuityCheck(s *Session) error {
 	return nil
 }
 
-// startSurfaceAnalysis activates the live surface-interrogation overlay on the active part.
-func startSurfaceAnalysis(s *Session) error {
+// startInterrogation activates the live surface-interrogation overlay on the active part in one mode.
+func startInterrogation(s *Session, mode int) error {
 	if _, err := activePart(s); err != nil {
 		return err
 	}
-	s.StartTool(NewSurfaceInterrogationTool())
+	s.StartTool(NewSurfaceInterrogationToolMode(mode))
 	return nil
 }
+
+func startZebra(s *Session) error     { return startInterrogation(s, interrogZebra) }
+func startIsophotes(s *Session) error { return startInterrogation(s, interrogIsophote) }
+func startReflection(s *Session) error {
+	return startInterrogation(s, interrogReflection)
+}
+func startHighlight(s *Session) error { return startInterrogation(s, interrogHighlight) }
 
 // modelHealth aggregates the active part's feature health and reports it as a notice.
 func modelHealth(s *Session) error {

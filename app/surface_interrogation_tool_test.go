@@ -31,7 +31,7 @@ func TestSurfaceInterrogationOverlayActiveOnlyWithTool(t *testing.T) {
 	if items := s.SurfaceInterrogationItems(); items != nil {
 		t.Error("no overlay should draw when the Surface Analysis tool is inactive")
 	}
-	s.StartTool(NewSurfaceInterrogationTool())
+	s.StartTool(NewSurfaceInterrogationToolMode(interrogReflection))
 	items := s.SurfaceInterrogationItems()
 	if len(items) == 0 {
 		t.Fatal("the active overlay should draw interrogation lines on a curved surface")
@@ -41,14 +41,26 @@ func TestSurfaceInterrogationOverlayActiveOnlyWithTool(t *testing.T) {
 	}
 }
 
+// TestSurfaceInterrogationZebraFillsTriangles: the zebra map is a filled (Triangles) overlay with
+// per-vertex black/white band colours, not contour lines.
+func TestSurfaceInterrogationZebraFillsTriangles(t *testing.T) {
+	s, _ := partWithCurvedSurface(t)
+	s.StartTool(NewSurfaceInterrogationToolMode(interrogZebra))
+	items := s.SurfaceInterrogationItems()
+	if len(items) == 0 {
+		t.Fatal("zebra should draw a filled overlay on a curved surface")
+	}
+	if items[0].Primitive != renderer.Triangles || len(items[0].Colors) != len(items[0].Positions) {
+		t.Errorf("zebra item should be per-vertex-coloured triangles, got %+v with %d colors / %d positions", items[0].Primitive, len(items[0].Colors), len(items[0].Positions))
+	}
+}
+
 func TestSurfaceInterrogationModes(t *testing.T) {
 	s, _ := partWithCurvedSurface(t)
-	for _, mode := range []int{interrogIsophote, interrogReflection, interrogHighlight} {
-		tool := NewSurfaceInterrogationTool()
-		tool.mode = mode
-		s.StartTool(tool)
+	for _, mode := range []int{interrogZebra, interrogIsophote, interrogReflection, interrogHighlight} {
+		s.StartTool(NewSurfaceInterrogationToolMode(mode))
 		if len(s.SurfaceInterrogationItems()) == 0 {
-			t.Errorf("mode %d should produce interrogation lines on a curved surface", mode)
+			t.Errorf("mode %d should produce an interrogation overlay on a curved surface", mode)
 		}
 		s.CancelTool()
 	}
@@ -79,16 +91,28 @@ func TestSurfaceInterrogationToolParams(t *testing.T) {
 	}
 }
 
-func TestSurfaceAnalysisViaRibbonCommand(t *testing.T) {
-	s, _ := partWithCurvedSurface(t)
-	if err := RegisterStandardCommands(s); err != nil {
-		t.Fatalf("register commands: %v", err)
+func TestSurfaceAnalysisRibbonCommands(t *testing.T) {
+	cases := map[string]int{
+		"Inspect.Zebra":      interrogZebra,
+		"Inspect.Isophotes":  interrogIsophote,
+		"Inspect.Reflection": interrogReflection,
+		"Inspect.Highlight":  interrogHighlight,
 	}
-	if err := s.Execute("Inspect.SurfaceAnalysis"); err != nil {
-		t.Fatalf("execute Inspect.SurfaceAnalysis: %v", err)
-	}
-	if got := s.ActiveTool().Name(); got != "Surface Analysis" {
-		t.Errorf("Inspect.SurfaceAnalysis started tool %q, want Surface Analysis", got)
+	for id, wantMode := range cases {
+		s, _ := partWithCurvedSurface(t)
+		if err := RegisterStandardCommands(s); err != nil {
+			t.Fatalf("register commands: %v", err)
+		}
+		if err := s.Execute(id); err != nil {
+			t.Fatalf("execute %s: %v", id, err)
+		}
+		tool, ok := s.ActiveTool().Tool().(*SurfaceInterrogationTool)
+		if !ok {
+			t.Fatalf("%s did not start the Surface Analysis tool", id)
+		}
+		if tool.mode != wantMode {
+			t.Errorf("%s started mode %d, want %d", id, tool.mode, wantMode)
+		}
 	}
 }
 
