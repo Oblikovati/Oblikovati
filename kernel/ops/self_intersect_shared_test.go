@@ -70,6 +70,26 @@ func addTriWithRidge(bld *topo.Builder, feat string, ridge *topo.Edge, va, vb, a
 		topo.OuterLoop(ridgeUse, topo.Fwd(e1), topo.Fwd(e2)))
 }
 
+// TestOnSharedBoundaryMatchesAnySegment covers onSharedBoundary directly: a point on the SECOND
+// shared segment must match (the loop continues past a non-matching first), and a point off all
+// segments must not — plus the empty-boundary case.
+func TestOnSharedBoundaryMatchesAnySegment(t *testing.T) {
+	p := gmath.P3
+	shared := [][2]gmath.Point3{
+		{p(0, 0, 0), p(1, 0, 0)},  // first segment (far from the probe)
+		{p(0, 5, 0), p(0, 5, 10)}, // second segment (the probe lies on this one)
+	}
+	if !onSharedBoundary(p(0, 5, 4), shared, 1e-6) {
+		t.Error("a point on the second shared segment should be reported on the boundary")
+	}
+	if onSharedBoundary(p(9, 9, 9), shared, 1e-6) {
+		t.Error("a point far from every shared segment should not be on the boundary")
+	}
+	if onSharedBoundary(p(0, 0, 0), nil, 1e-6) {
+		t.Error("with no shared boundary nothing is on it")
+	}
+}
+
 // TestSelfIntersectionSharedVertexPokeThrough is the core #1321 regression: two faces share one
 // apex vertex but one pierces the other far from it. Exactly one self-intersection, witness off apex.
 func TestSelfIntersectionSharedVertexPokeThrough(t *testing.T) {
