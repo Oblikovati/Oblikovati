@@ -42,6 +42,15 @@ const (
 	ssiTangencyGapSteps = 5.0
 )
 
+// ssiTracer holds the immutable context for one surface↔surface trace: the two surfaces, the base's
+// parameter window, and the model-relative tolerance and march step. Bundling it keeps the marching
+// methods to a handful of varying arguments instead of threading eight of them through every call.
+type ssiTracer struct {
+	base, other Surface
+	g           SurfaceGrid
+	step, tol   float64
+}
+
 // traceIntersectionCurves returns the intersection curve(s) of base and other as polylines whose every
 // point lies on BOTH surfaces within tol. tol and the march step are model-relative (derived from the
 // base's domain extent in 3D). Tangential contacts yield a single-point "curve" flagged by being a
@@ -51,8 +60,7 @@ func traceIntersectionCurves(base, other Surface, grid SurfaceGrid) [][]math.Poi
 	if g.UMax <= g.UMin || g.VMax <= g.VMin {
 		return nil
 	}
-	tol := ssiTolerance(base, g)
-	step := ssiStep(base, g)
+	tr := ssiTracer{base: base, other: other, g: g, step: ssiStep(base, g), tol: ssiTolerance(base, g)}
 	var curves [][]math.Point3
 	for _, seed := range ssiSeeds(base, other, g) {
 		if len(curves) >= ssiMaxCurves {
@@ -62,20 +70,20 @@ func traceIntersectionCurves(base, other Surface, grid SurfaceGrid) [][]math.Poi
 		// contact, not a transversal curve: refine it to the contact point rather than running the
 		// (ill-conditioned, singular) curve corrector there, which would otherwise emit a spurious
 		// near-tangency point and suppress the true one.
-		if nearTangency(base, other, seed, step) {
-			if contact, isT := refineTangency(base, other, seed, tol); isT && !nearAnyCurve(curves, contact, step) {
+		if nearTangency(base, other, seed, tr.step) {
+			if contact, isT := refineTangency(base, other, seed, tr.tol); isT && !nearAnyCurve(curves, contact, tr.step) {
 				curves = append(curves, []math.Point3{contact})
 			}
 			continue
 		}
-		pc, nb, no, ok := correctToBothSurfaces(base, other, seed, tol)
+		pc, nb, no, ok := correctToBothSurfaces(base, other, seed, tr.tol)
 		if !ok {
 			continue
 		}
-		if nearAnyCurve(curves, pc, step*ssiDedupSteps) {
+		if nearAnyCurve(curves, pc, tr.step*ssiDedupSteps) {
 			continue // this seed lands on an already-traced curve (within a march step of it)
 		}
-		curves = append(curves, marchCurve(base, other, pc, nb, no, g, step, tol))
+		curves = append(curves, tr.marchCurve(pc, nb, no))
 	}
 	return curves
 }
@@ -83,12 +91,12 @@ func traceIntersectionCurves(base, other Surface, grid SurfaceGrid) [][]math.Poi
 // marchCurve traces one curve through pc by stepping forward then backward along the curve tangent,
 // correcting each predicted point back onto both surfaces, until the curve closes into a loop or leaves
 // the base's parameter window in both directions.
-func marchCurve(base, other Surface, pc math.Point3, nb, no math.Vector3, g SurfaceGrid, step, tol float64) []math.Point3 {
-	fwd, closed := marchOneWay(base, other, pc, nb, no, g, step, tol, true)
+func (tr ssiTracer) marchCurve(pc math.Point3, nb, no math.Vector3) []math.Point3 {
+	fwd, closed := tr.marchOneWay(pc, nb, no, true)
 	if closed {
 		return append([]math.Point3{pc}, fwd...)
 	}
-	bwd, _ := marchOneWay(base, other, pc, nb, no, g, step, tol, false)
+	bwd, _ := tr.marchOneWay(pc, nb, no, false)
 	out := make([]math.Point3, 0, len(bwd)+1+len(fwd))
 	for i := len(bwd) - 1; i >= 0; i-- {
 		out = append(out, bwd[i])
@@ -99,7 +107,7 @@ func marchCurve(base, other Surface, pc math.Point3, nb, no math.Vector3, g Surf
 
 // marchOneWay steps from start in one direction (forward=along +nb×no, else −) and returns the points
 // reached plus whether it closed back onto start (a loop).
-func marchOneWay(base, other Surface, start math.Point3, nb, no math.Vector3, g SurfaceGrid, step, tol float64, forward bool) ([]math.Point3, bool) {
+func (tr ssiTracer) marchOneWay(start math.Point3, nb, no math.Vector3, forward bool) ([]math.Point3, bool) {
 	var pts []math.Point3
 	p := start
 	dir, ok := curveTangent(nb, no, forward)
@@ -107,15 +115,15 @@ func marchOneWay(base, other Surface, start math.Point3, nb, no math.Vector3, g 
 		return pts, false
 	}
 	for i := 0; i < ssiMaxStepsPerCurve; i++ {
-		pred := p.TranslateBy(dir.Scale(math.Scalar(step)))
-		pc, nbc, noc, ok := correctToBothSurfaces(base, other, pred, tol)
+		pred := p.TranslateBy(dir.Scale(math.Scalar(tr.step)))
+		pc, nbc, noc, ok := correctToBothSurfaces(tr.base, tr.other, pred, tr.tol)
 		if !ok {
 			return pts, false
 		}
-		if !inWindow(base, pc, g) {
+		if !inWindow(tr.base, pc, tr.g) {
 			return append(pts, pc), false // exited the base window: keep the boundary point
 		}
-		if i > 2 && start.DistanceTo(pc) < step*ssiLoopCloseSteps {
+		if i > 2 && start.DistanceTo(pc) < tr.step*ssiLoopCloseSteps {
 			return append(pts, start), true // closed the loop
 		}
 		if moved, err := math.UnitVector3FromVector(p.VectorTo(pc)); err == nil {
