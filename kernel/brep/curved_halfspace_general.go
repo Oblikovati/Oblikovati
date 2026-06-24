@@ -58,7 +58,10 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedF
 	if len(f.loops) == 0 {
 		return capSplit(f, curves[0])
 	}
-	return nil, nil, ErrUnsupportedHalfSpace // looped face crossed by the imprint: next increment
+	if len(curves) != 1 {
+		return nil, nil, ErrUnsupportedHalfSpace // multiple imprints on one looped face: a later increment
+	}
+	return loopedSplit(f, curves[0], plane, n)
 }
 
 // capSplit splits a boundary-less face (a bare sphere) by its imprint circle into the kept negative cap
@@ -114,10 +117,52 @@ func chainSectionLoops(section []loopEdge) [][]loopEdge {
 			open = append(open, e)
 		}
 	}
-	if len(open) > 0 {
-		return nil // chaining arcs into loops lands with the looped split
+	chained := chainOpenArcs(open)
+	if chained == nil && len(open) > 0 {
+		return nil // open arcs that do not close into loops
+	}
+	return append(loops, chained...)
+}
+
+// chainOpenArcs links open section arcs end-to-start into closed loops (each arc's end meets the next
+// arc's start). Returns nil if any arc cannot be closed into a loop.
+func chainOpenArcs(open []loopEdge) [][]loopEdge {
+	used := make([]bool, len(open))
+	var loops [][]loopEdge
+	for i := range open {
+		if used[i] {
+			continue
+		}
+		loop, ok := traceArcLoop(open, used, i)
+		if !ok {
+			return nil
+		}
+		loops = append(loops, loop)
 	}
 	return loops
+}
+
+// traceArcLoop follows arcs from seed until it returns to the start, marking them used.
+func traceArcLoop(open []loopEdge, used []bool, seed int) ([]loopEdge, bool) {
+	loop := []loopEdge{open[seed]}
+	used[seed] = true
+	cur := open[seed].end()
+	for !samePoint(cur, open[seed].start()) {
+		next := -1
+		for j := range open {
+			if !used[j] && samePoint(open[j].start(), cur) {
+				next = j
+				break
+			}
+		}
+		if next == -1 {
+			return nil, false
+		}
+		loop = append(loop, open[next])
+		used[next] = true
+		cur = open[next].end()
+	}
+	return loop, true
 }
 
 // faceSample returns a point on the face (a boundary vertex, or a surface point for a boundary-less
