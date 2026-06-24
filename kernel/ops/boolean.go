@@ -87,6 +87,11 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	if body, ok := curvedConvexIntersect(op, target, tool); ok {
 		return body, nil
 	}
+	// And a curved solid cut by a convex prism tunnelling through it (cylinder − box), keeping the
+	// cylinder's exact surfaces with a clean prismatic hole instead of CSG soup (M2 #1334).
+	if body, ok := curvedConvexSubtract(op, target, tool); ok {
+		return body, nil
+	}
 	bop, ok := toBrepOp(op)
 	if !ok {
 		return booleanCSG(op, target, tool, lin)
