@@ -3,6 +3,8 @@
 package brep
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -51,7 +53,7 @@ func joinFatAndRod(p *crossingParts) *topo.Body {
 	eHi := bld.AddEdge(p.hi, vHi, vHi, crossLin("ehi"))
 	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamParam(p.fat, p.lo, p.hi),
 		topo.Rev(eLo), topo.Fwd(eHi))
-	axis := p.rod.AxisDir.AsVector()
+	axis := p.rod.axisVec()
 	rodFar := p.rodBase.TranslateBy(axis.Scale(math.Scalar(p.rodHeight)))
 	// The lo lens (fat-outward along −rodaxis) connects to the rod's base end; the hi lens to the far end.
 	// The wall holes are InnerLoop(Rev(eLo)) and InnerLoop(Fwd(eHi)), so the stubs take the opposite half.
@@ -68,9 +70,9 @@ func joinFatAndRod(p *crossingParts) *topo.Body {
 // blind hole) and the end cap faces back into the void. The end cap faces along capNormal (the outward
 // ±rod-axis), negated when reversed. The end circle is re-seamed to the lens loop's start angle so the band
 // loft stitches a near-constant-angle seam.
-func addRodStub(bld *topo.Builder, rod geom.Cylinder, endCenter math.Point3, capNormal math.Vector3, eLens *topo.Edge, vLens *topo.Vertex, lensStart math.Point3, lensFwd, reversed bool, tag string) {
+func addRodStub(bld *topo.Builder, rod crossRod, endCenter math.Point3, capNormal math.Vector3, eLens *topo.Edge, vLens *topo.Vertex, lensStart math.Point3, lensFwd, reversed bool, tag string) {
 	seamPt := stubSeamPoint(rod, endCenter, lensStart)
-	endC := seamedCircle(endCenter, rod.AxisDir, seamPt, rod.Radius)
+	endC := seamedCircle(endCenter, rod.axisUnit(), seamPt, rod.endRadius(endCenter))
 	vEnd := bld.AddVertex(seamPt, crossLin(tag+"ve"))
 	eEnd := bld.AddEdge(endC, vEnd, vEnd, crossLin(tag+"ee"))
 	eSeam := bld.AddEdge(geom.NewLineSegment(seamPt, lensStart), vEnd, vLens, crossLin(tag+"es"))
@@ -81,26 +83,30 @@ func addRodStub(bld *topo.Builder, rod geom.Cylinder, endCenter math.Point3, cap
 	band := topo.OuterLoop(lensHalf, topo.Rev(eSeam), topo.Fwd(eEnd), topo.Fwd(eSeam))
 	capNorm := capNormal
 	if reversed {
-		bld.AddReversedFace(rod, crossLin(tag+"band"), band)
+		bld.AddReversedFace(rod.surface(), crossLin(tag+"band"), band)
 		capNorm = capNormal.Scale(-1)
 	} else {
-		bld.AddFace(rod, crossLin(tag+"band"), band)
+		bld.AddFace(rod.surface(), crossLin(tag+"band"), band)
 	}
 	cap, _ := geom.NewPlane(endCenter, capNorm)
 	bld.AddFace(cap, crossLin(tag+"cap"), topo.OuterLoop(topo.Rev(eEnd)))
 }
 
 // stubSeamPoint returns the point on the rod's end circle at the same axial angle as the lens loop's start,
-// so the seam connecting them is a near-constant-angle ruling of the rod (lying on the surface).
-func stubSeamPoint(rod geom.Cylinder, endCenter, lensStart math.Point3) math.Point3 {
-	v := float64(rod.Origin.VectorTo(endCenter).Dot(rod.AxisDir.AsVector()))
-	return rod.PointAt(axisAngleOf(lensStart, cylAxis(rod)), v)
+// so the seam connecting them is a near-constant-angle ruling of the rod (lying on the surface). It rebuilds
+// the point from the rod's axis frame (ref·cos u + binormal·sin u, the convention both geom.Cylinder and
+// geom.Cone use) at the end's radius, so it works for a cone end too.
+func stubSeamPoint(rod crossRod, endCenter, lensStart math.Point3) math.Point3 {
+	ax := rod.axisOf()
+	u := axisAngleOf(lensStart, ax)
+	radial := ax.ref.Scale(stdmath.Cos(u)).Add(ax.dir.Cross(ax.ref).Scale(stdmath.Sin(u)))
+	return endCenter.TranslateBy(radial.Scale(rod.endRadius(endCenter)))
 }
 
 // cutRodMinusFat builds rod − fat: the two rod stubs sticking out either side of the fat, each a separate
 // closed lump, merged into one multi-shell body (the boolean result is two disconnected pieces).
 func cutRodMinusFat(p *crossingParts) *topo.Body {
-	axis := p.rod.AxisDir.AsVector()
+	axis := p.rod.axisVec()
 	rodFar := p.rodBase.TranslateBy(axis.Scale(math.Scalar(p.rodHeight)))
 	lo := rodStubLump(p.rod, p.fat, p.rodBase, axis.Scale(-1), p.lo, "rlo")
 	hi := rodStubLump(p.rod, p.fat, rodFar, axis, p.hi, "rhi")
@@ -110,7 +116,7 @@ func cutRodMinusFat(p *crossingParts) *topo.Body {
 // rodStubLump builds one closed rod stub: its wall band, the rod end cap, and the fat-wall lens closing the
 // inner end. The lens cap is the fat surface REVERSED — the kept material is outside the fat, so the lens
 // normal points back into the fat (away from the stub). Its edge is shared with the stub band opposite.
-func rodStubLump(rod, fat geom.Cylinder, endCenter math.Point3, capNormal math.Vector3, lens geom.Polyline, tag string) *topo.Body {
+func rodStubLump(rod crossRod, fat geom.Cylinder, endCenter math.Point3, capNormal math.Vector3, lens geom.Polyline, tag string) *topo.Body {
 	bld := topo.NewBuilder(true, crossLin(tag))
 	vLens := bld.AddVertex(lens.Vertices[0], crossLin(tag+"vl"))
 	eLens := bld.AddEdge(lens, vLens, vLens, crossLin(tag+"el"))

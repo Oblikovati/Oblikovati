@@ -49,11 +49,13 @@ func CrossingCylinderCut(target, tool *topo.Body) (*topo.Body, bool) {
 	return drillFatWithRod(p), true // target is the fat: drill a tunnel
 }
 
-// crossingParts holds the resolved geometry of two crossing cylinders: the rod (both imprint loops encircle
-// it) and the fat cylinder, each with its cap extent, plus the two imprint loops oriented CCW about the rod
-// axis and assigned to the lower (lo) and upper (hi) end of the band (see assignRimLoops).
+// crossingParts holds the resolved geometry of a crossing boolean: the rod (a cylinder or a cone, both
+// imprint loops encircle it) and the fat cylinder, each with its cap extent, plus the two imprint loops
+// oriented CCW about the rod axis and assigned to the lower (lo) and upper (hi) end of the band (see
+// assignRimLoops). rodBase is the rod's lower-axis cap centre and rodHeight its axial length.
 type crossingParts struct {
-	rod, fat             geom.Cylinder
+	rod                  crossRod
+	fat                  geom.Cylinder
 	rodBase, fatBase     math.Point3
 	rodHeight, fatHeight float64
 	lo, hi               geom.Polyline
@@ -80,7 +82,7 @@ func crossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &crossingParts{rod, fat, rodBase, fatBase, rodH, fatH, lo, hi}, true
+	return &crossingParts{cylinderRod{rod}, fat, rodBase, fatBase, rodH, fatH, lo, hi}, true
 }
 
 // orderRodFat picks which of the two cylinders is the rod (both loops encircle it) and which is the fat
@@ -124,7 +126,7 @@ func drillFatWithRod(p *crossingParts) *topo.Body {
 	eHi := bld.AddEdge(p.hi, vHi, vHi, crossLin("ehi"))
 	rSeam := bld.AddEdge(geom.NewLineSegment(loPts[0], hiPts[0]), vLo, vHi, crossLin("rseam"))
 	// The tunnel wall is the rod band flipped inward (kept material is outside the rod).
-	bld.AddReversedFace(p.rod, crossLin("tunnel"),
+	bld.AddReversedFace(p.rod.surface(), crossLin("tunnel"),
 		topo.OuterLoop(topo.Fwd(rSeam), topo.Rev(eHi), topo.Rev(rSeam), topo.Fwd(eLo)))
 	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamParam(p.fat, p.lo, p.hi),
 		topo.Rev(eLo), topo.Fwd(eHi))
