@@ -30,8 +30,10 @@ func OffsetFaceSurfaces(b *topo.Body, faceKeys [][]byte, distance float64, rever
 		if !ok {
 			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: no face with key %x", key)
 		}
-		off := geom.OffsetSurface{Base: f.Geometry(), Distance: signedOffset(distance, reverse, f.Reversed())}
-		var err error
+		off, err := geom.NewOffsetSurface(f.Geometry(), signedOffset(distance, reverse, f.Reversed()))
+		if err != nil {
+			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: offset face %x: %w", key, err)
+		}
 		if out, err = ReplaceFaceSurface(out, key, off); err != nil {
 			return nil, fmt.Errorf("ops.OffsetFaceSurfaces: offset face %x: %w", key, err)
 		}
