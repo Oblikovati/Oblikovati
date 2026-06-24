@@ -64,6 +64,12 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedF
 		}
 		return cylinderSideSplit(f, curves, plane, n)
 	}
+	if isFullConeSide(f) {
+		if !allHyperbolas(curves) {
+			return nil, nil, ErrUnsupportedHalfSpace // a perpendicular (circle) cut reaches the fast cone path
+		}
+		return coneSideSplit(f, curves, plane, n)
+	}
 	return loopedSplit(f, curves, plane, n)
 }
 

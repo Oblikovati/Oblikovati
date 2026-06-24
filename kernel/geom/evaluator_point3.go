@@ -27,9 +27,22 @@ func CurveParamAtPoint3(c Curve3, p math.Point3) (float64, SolutionNature) {
 		return arcParamAtPoint3(g, p)
 	case Polyline:
 		return polylineParamAtPoint3(g, p)
+	case Hyperbola:
+		return hyperbolaThetaAtPoint3(g.Center, g.ConjugateAxis.AsVector(), g.B, p), UniqueSolution
+	case HyperbolicArc:
+		theta := hyperbolaThetaAtPoint3(g.Center, g.ConjugateAxis.AsVector(), g.B, p)
+		return (theta - g.Theta0) / (g.Theta1 - g.Theta0), UniqueSolution
 	default:
 		return genericParamAtPoint3(c, p)
 	}
+}
+
+// hyperbolaThetaAtPoint3 inverts a hyperbola branch: with the conjugate coordinate y = B·sinh(θ),
+// θ = asinh(y/B). A point on the branch maps back to its exact parameter (the branch is simple, so
+// the conjugate component alone fixes θ — no sign ambiguity).
+func hyperbolaThetaAtPoint3(center math.Point3, conjugate math.Vector3, b float64, p math.Point3) float64 {
+	y := float64(center.VectorTo(p).Dot(conjugate))
+	return stdmath.Asinh(y / b)
 }
 
 // segmentParamAtPoint3 projects p onto the segment's chord and clamps.
@@ -227,7 +240,7 @@ func refineClosest3(c Curve3, p math.Point3, t, lo, hi float64) float64 {
 // (enclosing but not minimal), ±Inf faces for an unbounded line.
 func CurveRangeBox3(c Curve3) math.Box {
 	switch g := c.(type) {
-	case Line:
+	case Line, Hyperbola:
 		inf := stdmath.Inf(1)
 		return math.Box{Min: math.P3(-inf, -inf, -inf), Max: math.P3(inf, inf, inf)}
 	case LineSegment:

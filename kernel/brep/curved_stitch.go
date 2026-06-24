@@ -129,6 +129,8 @@ func edgeCurveFor(le loopEdge) geom.Curve3 {
 		return geom.NewLineSegment(le.start(), le.end())
 	case geom.Line:
 		return geom.NewLineSegment(le.start(), le.end())
+	case geom.Hyperbola:
+		return c.Arc(le.t0, le.t1) // a hyperbola loop edge's params are θ; the bounded arc is what the edge stores
 	default:
 		return c
 	}
