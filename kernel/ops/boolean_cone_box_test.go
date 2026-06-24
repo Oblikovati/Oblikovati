@@ -221,6 +221,65 @@ func resultHasEllipticalEdge(b *topo.Body) bool {
 	return false
 }
 
+// Oblique cone ∩/− box, HYPERBOLIC tilt (Oblikovati/Oblikovati#1375): a frustum tilted so its axis is
+// (0.2,0,0.98) — shallower than the box's x=2 face relative to that axis — so the section is a HYPERBOLA
+// (vertex below the band, arms crossing both rims). Both directions must stay exact (an analytic cone
+// face, the hyperbolic cut edge), not fall back to CSG, and match OCC getMass. This is also the case that
+// composes only because the cap-seam crossing fix (the near-axial plane slices both caps through centre).
+
+func obliqueHyperbolaFrustum(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(2, 0, 9.797958971), 3, 6, "frustum") // axis (0.2,0,0.98), h=10
+	if err != nil {
+		t.Fatalf("SolidCylinderCone: %v", err)
+	}
+	return b
+}
+
+func obliqueHyperbolaBox(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidBlock(math.P3(2, -20, -20), math.P3(40, 20, 40), "box") // only the x=2 face cuts
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return b
+}
+
+// TestConeIntersectBoxObliqueHyperbolaExact keeps the +x wedge (x ≥ 2) of the tilted frustum — an exact
+// cone arc-band bounded by the hyperbola arms, no faceted soup.
+func TestConeIntersectBoxObliqueHyperbolaExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Intersect, obliqueHyperbolaFrustum(t), obliqueHyperbolaBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Intersect): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasHyperbolicEdge(res) {
+		t.Error("result carries no hyperbolic edge — the oblique cut was not imprinted as a hyperbola")
+	}
+}
+
+// TestConeCutBoxObliqueHyperbolaExact removes the +x wedge, leaving the rest — also exact.
+func TestConeCutBoxObliqueHyperbolaExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Cut, obliqueHyperbolaFrustum(t), obliqueHyperbolaBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Cut): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasHyperbolicEdge(res) {
+		t.Error("result carries no hyperbolic edge — the oblique cut was not imprinted as a hyperbola")
+	}
+}
+
+// resultHasHyperbolicEdge reports whether any edge of the body stores an analytic hyperbolic arc.
+func resultHasHyperbolicEdge(b *topo.Body) bool {
+	for _, e := range b.Edges() {
+		if _, ok := e.Geometry().(geom.HyperbolicArc); ok {
+			return true
+		}
+	}
+	return false
+}
+
 // frustumCapBeyondPlaneVolume integrates the area of each circular cross-section lying at x ≥ xCut for
 // a cone of slope tanα over z∈[z0,z1] (apex at z=z0−r0/tanα). A circle of radius r centred on the axis
 // has area r²·(θ − sinθ·cosθ) beyond a chord at distance xCut, θ = arccos(xCut/r) (0 when xCut ≥ r).

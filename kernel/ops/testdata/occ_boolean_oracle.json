@@ -16,5 +16,7 @@
   "cone ∩ box (vertex-inside flat)": 31.78157847,
   "cone − box (vertex-inside flat)": 627.9528788,
   "cone ∩ box (oblique ellipse)": 410.117045,
-  "cone − box (oblique ellipse)": 249.6174126
+  "cone − box (oblique ellipse)": 249.6174126,
+  "cone ∩ box (oblique hyperbola)": 250.308012,
+  "cone − box (oblique hyperbola)": 409.4264453
 }

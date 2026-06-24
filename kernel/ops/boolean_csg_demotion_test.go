@@ -120,7 +120,16 @@ func curvedExactCases() []curvedExactCase {
 		{"cone − box (vertex-inside flat)", ops.Cut, coneVertexInsideFlatBox},
 		{"cone ∩ box (oblique ellipse)", ops.Intersect, coneObliqueEllipseBox},
 		{"cone − box (oblique ellipse)", ops.Cut, coneObliqueEllipseBox},
+		{"cone ∩ box (oblique hyperbola)", ops.Intersect, coneObliqueHyperbolaBox},
+		{"cone − box (oblique hyperbola)", ops.Cut, coneObliqueHyperbolaBox},
 	}
+}
+
+// coneObliqueHyperbolaBox is a frustum tilted so its axis (0.2,0,0.98) is shallower than the box's x=2
+// face relative to that axis — the oblique HYPERBOLA section (vertex below the band, arms crossing both
+// rims), the case that also exercises the cap-seam crossing fix (Oblikovati/Oblikovati#1375).
+func coneObliqueHyperbolaBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCone(t, math.P3(0, 0, 0), math.P3(2, 0, 9.797958971), 3, 6), demoBlock(t, math.P3(2, -20, -20), math.P3(40, 20, 40))
 }
 
 // coneObliqueEllipseBox is a frustum tilted so its axis is (0,0.6,0.8) and an axis-aligned box whose

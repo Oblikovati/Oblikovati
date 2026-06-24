@@ -198,12 +198,18 @@ func fullConeSideBand(f curvedFace) (geom.Cone, coneSideBand_, bool) {
 // closed ellipse (oblique tilt steeper than the generators) to coneSideEllipseSplit, a hyperbola
 // branch (axis-parallel or shallow tilt) to coneSideSplit. A perpendicular circle is handled by the
 // fast cone path before the arrangement, so anything else here defers.
-func coneSideBandSplit(f curvedFace, curves []geom.Curve3, cone geom.Cone, _ coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
+func coneSideBandSplit(f curvedFace, curves []geom.Curve3, cone geom.Cone, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	if allEllipses(curves) {
 		return coneSideEllipseSplit(f, curves, cone, plane, n)
 	}
-	if allHyperbolas(curves) {
-		return coneSideSplit(f, curves, plane, n)
+	if !allHyperbolas(curves) {
+		return nil, nil, ErrUnsupportedHalfSpace
+	}
+	if isAxisParallel(n, cone) {
+		return coneSideSplit(f, curves, plane, n) // the symmetric constant-chord hyperbola (#1372/#1374)
+	}
+	if hyper, ok := curves[0].(geom.Hyperbola); ok && len(curves) == 1 {
+		return coneSideObliqueHyperbolaSplit(f, cone, hyper, band, plane, n) // an oblique (tilted) hyperbola
 	}
 	return nil, nil, ErrUnsupportedHalfSpace
 }
