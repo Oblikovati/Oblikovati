@@ -177,18 +177,35 @@ func coneAngleOf(cone geom.Cone, dir math.Vector3) float64 {
 	return stdmath.Atan2(float64(r.Dot(binormal)), float64(r.Dot(cone.Ref.AsVector())))
 }
 
-// isFullConeSide reports whether f is a full periodic cone side (a geom.Cone bounded by a closed-
-// circle rim and the seam) — the case the general looped split tangles on, routed to coneSideSplit.
-func isFullConeSide(f curvedFace) bool {
-	if _, ok := f.surface.(geom.Cone); !ok || len(f.loops) == 0 {
-		return false
+// fullConeSideBand reports whether f is the GENUINE full periodic cone side — a geom.Cone bounded by
+// TWO closed-circle rims and the seam, the untrimmed frustum side the general looped split tangles on
+// — and returns its band. An already-trimmed band (one circle plus an ellipse/hyperbola rim, after a
+// first oblique cut) fails the two-circle test here and falls through to loopedSplit, so a later
+// clearing plane composes instead of re-entering the dedicated split (which needs both rim circles).
+func fullConeSideBand(f curvedFace) (geom.Cone, coneSideBand_, bool) {
+	cone, ok := f.surface.(geom.Cone)
+	if !ok || len(f.loops) == 0 {
+		return geom.Cone{}, coneSideBand_{}, false
 	}
-	for _, le := range f.loops[0].edges {
-		if _, isCircle := le.curve.(geom.Circle); isCircle && isFullDomain(le.t0, le.t1) {
-			return true
-		}
+	band, ok := coneSideBand(f, cone)
+	if !ok {
+		return geom.Cone{}, coneSideBand_{}, false
 	}
-	return false
+	return cone, band, true
+}
+
+// coneSideBandSplit routes a genuine full cone side by the section type the cut plane produces: a
+// closed ellipse (oblique tilt steeper than the generators) to coneSideEllipseSplit, a hyperbola
+// branch (axis-parallel or shallow tilt) to coneSideSplit. A perpendicular circle is handled by the
+// fast cone path before the arrangement, so anything else here defers.
+func coneSideBandSplit(f curvedFace, curves []geom.Curve3, cone geom.Cone, _ coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
+	if allEllipses(curves) {
+		return coneSideEllipseSplit(f, curves, cone, plane, n)
+	}
+	if allHyperbolas(curves) {
+		return coneSideSplit(f, curves, plane, n)
+	}
+	return nil, nil, ErrUnsupportedHalfSpace
 }
 
 // allHyperbolas reports whether every imprint curve is a hyperbola branch (the axis-parallel cut of a

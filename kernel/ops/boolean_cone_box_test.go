@@ -162,6 +162,65 @@ func TestConeVertexInsideVolumes(t *testing.T) {
 	}
 }
 
+// Oblique cone ∩/− box (Oblikovati/Oblikovati#1375): a frustum tilted so its axis is (0,0.6,0.8) cut by
+// the axis-aligned box face z=4 — a plane tilted steeper than the generators, so the section is a closed
+// ELLIPSE wholly within the band. Both directions must stay exact (an analytic cone face, the elliptical
+// cut edge), not fall back to CSG, and match OCC getMass.
+
+func obliqueConeBoxFrustum(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 6, "frustum") // axis (0,0.6,0.8)
+	if err != nil {
+		t.Fatalf("SolidCylinderCone: %v", err)
+	}
+	return b
+}
+
+func obliqueConeBox(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidBlock(math.P3(-20, -20, 4), math.P3(20, 20, 30), "box") // only the z=4 face cuts
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return b
+}
+
+// TestConeIntersectBoxObliqueExact keeps the frustum above z=4 — an exact cone band bounded below by the
+// elliptical lid, no faceted soup.
+func TestConeIntersectBoxObliqueExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Intersect, obliqueConeBoxFrustum(t), obliqueConeBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Intersect): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasEllipticalEdge(res) {
+		t.Error("result carries no elliptical edge — the oblique cut was not imprinted as an ellipse")
+	}
+}
+
+// TestConeCutBoxObliqueExact removes the frustum above z=4, leaving the lower piece — also exact.
+func TestConeCutBoxObliqueExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Cut, obliqueConeBoxFrustum(t), obliqueConeBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Cut): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasEllipticalEdge(res) {
+		t.Error("result carries no elliptical edge — the oblique cut was not imprinted as an ellipse")
+	}
+}
+
+// resultHasEllipticalEdge reports whether any edge of the body stores an analytic ellipse/elliptical arc.
+func resultHasEllipticalEdge(b *topo.Body) bool {
+	for _, e := range b.Edges() {
+		switch e.Geometry().(type) {
+		case geom.EllipseFull, geom.EllipticalArc:
+			return true
+		}
+	}
+	return false
+}
+
 // frustumCapBeyondPlaneVolume integrates the area of each circular cross-section lying at x ≥ xCut for
 // a cone of slope tanα over z∈[z0,z1] (apex at z=z0−r0/tanα). A circle of radius r centred on the axis
 // has area r²·(θ − sinθ·cosθ) beyond a chord at distance xCut, θ = arccos(xCut/r) (0 when xCut ≥ r).
