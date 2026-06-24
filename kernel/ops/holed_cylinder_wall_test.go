@@ -86,14 +86,14 @@ func TestHoledCylinderWallAreaMatchesAnalytic(t *testing.T) {
 	}
 }
 
-// TestHoledCylinderWallMeshIsRouted confirms the dispatch reaches holedCylinderWallMesh for a holed
+// TestHoledCylinderWallMeshIsRouted confirms the dispatch reaches holedConicWallMesh for a holed
 // periodic cylinder side rather than falling through to the full-domain grid (which ignores holes).
 func TestHoledCylinderWallMeshIsRouted(t *testing.T) {
 	face := windowedCylinderWall(t, stdmath.Pi/4, stdmath.Pi/2, 4, 8)
 	outer := faceOuterBoundary(face, DefaultQuality())
 	holes := faceHoleBoundaries(face, DefaultQuality())
-	if _, ok := holedCylinderWallMesh(face.Geometry(), outer, holes, DefaultQuality()); !ok {
-		t.Error("holedCylinderWallMesh declined a holed periodic cylinder wall; the dispatch would fall back")
+	if _, ok := holedConicWallMesh(face.Geometry(), outer, holes, DefaultQuality()); !ok {
+		t.Error("holedConicWallMesh declined a holed periodic cylinder wall; the dispatch would fall back")
 	}
 }
 
@@ -102,7 +102,7 @@ func TestHoledCylinderWallMeshIsRouted(t *testing.T) {
 func TestHoledCylinderWallDeclinesNoHoles(t *testing.T) {
 	side, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), wallR)
 	outer := []math.Point3{wallPoint(0, 0), wallPoint(2, 0), wallPoint(4, 0), wallPoint(0, wallH)}
-	if _, ok := holedCylinderWallMesh(side, outer, nil, DefaultQuality()); ok {
+	if _, ok := holedConicWallMesh(side, outer, nil, DefaultQuality()); ok {
 		t.Error("a hole-free cylinder side should defer from the holed-wall mesher")
 	}
 }
@@ -113,7 +113,7 @@ func TestHoledCylinderWallDeclinesNonCylinder(t *testing.T) {
 	sph, _ := geom.NewSphere(math.P3(0, 0, 0), wallR)
 	outer := []math.Point3{wallPoint(0, 0), wallPoint(2, 0), wallPoint(4, 0)}
 	hole := []math.Point3{wallPoint(1, 1), wallPoint(1.2, 1), wallPoint(1.1, 1.2)}
-	if _, ok := holedCylinderWallMesh(sph, outer, [][]math.Point3{hole}, DefaultQuality()); ok {
+	if _, ok := holedConicWallMesh(sph, outer, [][]math.Point3{hole}, DefaultQuality()); ok {
 		t.Error("a non-cylinder surface should defer from the holed-wall mesher")
 	}
 }
@@ -124,7 +124,7 @@ func TestHoledCylinderWallDeclinesNonWrappingOuter(t *testing.T) {
 	side, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), wallR)
 	outer := []math.Point3{wallPoint(0, 0), wallPoint(0.5, 0), wallPoint(0.5, wallH), wallPoint(0, wallH)}
 	hole := []math.Point3{wallPoint(0.2, 4), wallPoint(0.3, 4), wallPoint(0.25, 6)}
-	if _, ok := holedCylinderWallMesh(side, outer, [][]math.Point3{hole}, DefaultQuality()); ok {
+	if _, ok := holedConicWallMesh(side, outer, [][]math.Point3{hole}, DefaultQuality()); ok {
 		t.Error("a non-wrapping outer loop should defer from the holed-wall mesher")
 	}
 }
