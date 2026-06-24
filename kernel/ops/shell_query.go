@@ -82,10 +82,12 @@ func BodyContainment(b *topo.Body, p math.Point3, q Quality, onTol float64) Poin
 	return meshContainment(mesh, p, onTol)
 }
 
-// meshContainment is the shared mesh-level classifier.
+// meshContainment is the shared mesh-level classifier: ON when p is within onTol of any facet, else
+// INSIDE/OUTSIDE by the generalized winding number (pointInMesh). The winding number replaces the
+// former skewed parity ray (#1317) — robust to grazing edges/vertices — and still gives the right
+// cavity verdict: an outer shell contributes +1 and a void shell −1, so a point in a cavity sums to
+// 0 (outside the material), exactly as the old crossing-cancellation intended.
 func meshContainment(mesh *Mesh, p math.Point3, onTol float64) PointContainment {
-	dir := math.V3(0.5773, 0.5774, 0.5775) // same skewed ray as PointInsideBody
-	crossings := 0
 	for t := 0; t+2 < len(mesh.Indices); t += 3 {
 		a := mesh.Positions[mesh.Indices[t]]
 		b := mesh.Positions[mesh.Indices[t+1]]
@@ -93,11 +95,8 @@ func meshContainment(mesh *Mesh, p math.Point3, onTol float64) PointContainment 
 		if pointTriangleDistance(p, a, b, c) <= onTol {
 			return ContainOn
 		}
-		if rayHitsTriangle(p, dir, a, b, c) {
-			crossings++
-		}
 	}
-	if crossings%2 == 1 {
+	if pointInMesh(mesh, p) {
 		return ContainInside
 	}
 	return ContainOutside
