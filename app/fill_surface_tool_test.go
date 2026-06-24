@@ -97,9 +97,17 @@ func TestFillSurfaceToolParams(t *testing.T) {
 	if p.Choices[0].Get() != 0 {
 		t.Error("continuity get/set round-trip mismatch")
 	}
+	p.Ints[0].Set(5)
+	if tool.sides != 5 {
+		t.Errorf("sides get/set round-trip mismatch: %d", tool.sides)
+	}
 	tool.continuity = -1
 	if tool.CanCommit() {
 		t.Error("out-of-range continuity should block commit")
+	}
+	tool.continuity, tool.sides = 2, 2
+	if tool.CanCommit() {
+		t.Error("fewer than three sides should block commit")
 	}
 }
 

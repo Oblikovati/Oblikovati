@@ -99,3 +99,27 @@ func TestRestoreFillRejectMissingPayload(t *testing.T) {
 		t.Error("restoreFillSurface(nil) should error")
 	}
 }
+
+func TestFillNSidedRoundTrip(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	NewFillFeatures(fs).AddSides(1, 5)
+	data, err := fs.MarshalRecipe(oneSketch{})
+	if err != nil {
+		t.Fatalf("MarshalRecipe: %v", err)
+	}
+	fresh := NewPartFeatures(nil, nil)
+	if err := fresh.ApplyRecipe(data, oneSketch{}, nil); err != nil {
+		t.Fatalf("ApplyRecipe: %v", err)
+	}
+	d := fresh.Item(0).Definition().(*FillFeature).Definition()
+	if d.Order != 1 || d.Sides != 5 {
+		t.Errorf("restored N-sided fill = {order %d sides %d}, want {1 5}", d.Order, d.Sides)
+	}
+}
+
+func TestFillFeatureNeedsNBodies(t *testing.T) {
+	f := &FillFeature{def: &FillDefinition{Order: 0, Sides: 5}}
+	if _, err := f.Recompute(Input{}); err == nil {
+		t.Error("a 5-sided fill with no bodies should error")
+	}
+}
