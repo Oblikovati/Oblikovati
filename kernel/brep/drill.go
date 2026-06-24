@@ -53,9 +53,15 @@ func DrillThroughHole(slab, cylinderTool *topo.Body) (*topo.Body, bool) {
 	if !ok {
 		return nil, false // tool is not a single bare cylinder
 	}
-	res, err := CutCylindricalHole(slab, base, cyl.AxisDir.AsVector(), cyl.Radius)
+	ua := cyl.AxisDir.AsVector()
+	// All-planar slab → the proven planar assembly; a slab that already has curved faces (a prior bore's
+	// wall) → the curvedFace path, so a drilled plate chains exactly instead of falling to CSG (#1336).
+	if res, err := CutCylindricalHole(slab, base, ua, cyl.Radius); err == nil {
+		return res, true
+	}
+	res, err := drillThroughCurved(slab, base, ua, cyl.Radius)
 	if err != nil {
-		return nil, false // partial / clipped / off-axis hole → defer to the general fallback
+		return nil, false // partial / clipped / overlapping / off-axis hole → defer to the general fallback
 	}
 	return res, true
 }
