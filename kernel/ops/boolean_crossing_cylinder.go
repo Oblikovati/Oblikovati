@@ -28,6 +28,20 @@ func curvedCrossingIntersect(op PartFeatureOperation, target, tool *topo.Body) (
 	return res, true
 }
 
+// curvedConeCylinderIntersect returns the exact intersection of a cone crossing a cylinder (the cone band
+// plus two cylinder-wall lens caps), or ok=false to defer. Only Intersect maps here, and only a valid closed
+// manifold result is adopted.
+func curvedConeCylinderIntersect(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Intersect {
+		return nil, false
+	}
+	res, ok := brep.ConeCylinderIntersect(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedSteinmetzIntersect returns the exact intersection of two equal-radius perpendicular cylinders (the
 // Steinmetz bicylinder), or ok=false to defer. Only Intersect maps here, and only a valid closed manifold
 // result is adopted. This is the equal-radius case the SSI imprint tracer cannot trace (it pinches), fitted
