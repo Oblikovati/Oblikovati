@@ -79,4 +79,27 @@ func TestHyperbolicArcReparam(t *testing.T) {
 	}
 }
 
+// CurveParamAtPoint3 inverts a hyperbola branch in closed form: the parameter of a point on the
+// branch round-trips to the θ (or arc t) that produced it.
+func TestHyperbolaParamRoundTrip(t *testing.T) {
+	h, _ := NewHyperbola(math.P3(1, -2, 3), math.V3(0, 0, 1), math.V3(0, 1, 0), 2, 1.5)
+	lo, hi := h.Domain()
+	if !stdmath.IsInf(lo, -1) || !stdmath.IsInf(hi, 1) {
+		t.Errorf("Hyperbola.Domain = [%g,%g], want unbounded", lo, hi)
+	}
+	for _, theta := range []float64{-1.3, 0, 0.9} {
+		got, nature := CurveParamAtPoint3(h, h.PointAt(theta))
+		if nature != UniqueSolution || stdmath.Abs(got-theta) > 1e-9 {
+			t.Errorf("Hyperbola param at θ=%g: got %g (%v)", theta, got, nature)
+		}
+	}
+	arc := h.Arc(-1, 2)
+	for _, ts := range []float64{0.1, 0.5, 0.95} {
+		got, _ := CurveParamAtPoint3(arc, arc.PointAt(ts))
+		if stdmath.Abs(got-ts) > 1e-9 {
+			t.Errorf("HyperbolicArc param at t=%g: got %g", ts, got)
+		}
+	}
+}
+
 func ptFar(a, b math.Point3) bool { return float64(a.DistanceTo(b)) > 1e-9 }

@@ -1,0 +1,121 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops_test
+
+import (
+	stdmath "math"
+	"testing"
+
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+)
+
+// cone ∩ box / cone − box with a box face PARALLEL to the cone axis now stay exact: the cut is the
+// analytic hyperbola the plane carves from the cone, not faceted CSG (Oblikovati/Oblikovati#1372).
+// The frustum has tanα=0.3 (bottom r=3 at z=0, top r=6 at z=10); the box face x=2 (|D|=2 < bottom r)
+// cuts every cross-section, the arc-band case.
+
+func coneBoxFrustum(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6, "frustum")
+	if err != nil {
+		t.Fatalf("SolidCylinderCone: %v", err)
+	}
+	return b
+}
+
+// TestConeIntersectBoxExact keeps the +x wedge of the frustum (x ≥ 2): an exact cone arc-band face,
+// two cap segments and the planar lid, watertight, with no faceted soup.
+func TestConeIntersectBoxExact(t *testing.T) {
+	frustum := coneBoxFrustum(t)
+	box, err := brep.SolidBlock(math.P3(2, -20, -5), math.P3(20, 20, 15), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	res, err := ops.Boolean(ops.Intersect, frustum, box)
+	if err != nil {
+		t.Fatalf("Boolean(Intersect): %v", err)
+	}
+	assertConeBoxExact(t, res)
+}
+
+// TestConeCutBoxExact removes the +x wedge (the box spans the frustum on every side but x), leaving
+// the cone minus a flat — still an exact cone arc-band face.
+func TestConeCutBoxExact(t *testing.T) {
+	frustum := coneBoxFrustum(t)
+	box, err := brep.SolidBlock(math.P3(2, -20, -5), math.P3(20, 20, 15), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	res, err := ops.Boolean(ops.Cut, frustum, box)
+	if err != nil {
+		t.Fatalf("Boolean(Cut): %v", err)
+	}
+	assertConeBoxExact(t, res)
+}
+
+// assertConeBoxExact pins the result on the exact analytic path: a watertight solid carrying at least
+// one analytic cone face and no non-analytic (tessellated) face.
+func assertConeBoxExact(t *testing.T, res *topo.Body) {
+	t.Helper()
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("result is not a watertight solid: %+v", v)
+	}
+	cones, nonAnalytic := 0, 0
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cone:
+			cones++
+		case geom.Plane, geom.Cylinder, geom.Sphere, geom.Torus:
+		default:
+			nonAnalytic++
+		}
+	}
+	if cones == 0 {
+		t.Errorf("result has no analytic cone face across %d faces — it fell back to CSG", len(res.Faces()))
+	}
+	if nonAnalytic > 0 {
+		t.Errorf("result has %d non-analytic faces — not the exact path", nonAnalytic)
+	}
+}
+
+// TestConeIntersectBoxVolume cross-checks the kept +x wedge volume against a dense numeric integral of
+// the frustum cross-section area beyond x=2 (independent of the B-rep), so a wrong cut shape is caught.
+func TestConeIntersectBoxVolume(t *testing.T) {
+	frustum := coneBoxFrustum(t)
+	box, _ := brep.SolidBlock(math.P3(2, -20, -5), math.P3(20, 20, 15), "box")
+	res, err := ops.Boolean(ops.Intersect, frustum, box)
+	if err != nil {
+		t.Fatalf("Boolean: %v", err)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := frustumCapBeyondPlaneVolume(0.3, 0, 10, 2)
+	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
+		t.Errorf("kept wedge volume %.4f vs numeric %.4f (rel %.4f > 0.03)", got, want, rel)
+	}
+}
+
+// frustumCapBeyondPlaneVolume integrates the area of each circular cross-section lying at x ≥ xCut for
+// a cone of slope tanα over z∈[z0,z1] (apex at z=z0−r0/tanα). A circle of radius r centred on the axis
+// has area r²·(θ − sinθ·cosθ) beyond a chord at distance xCut, θ = arccos(xCut/r) (0 when xCut ≥ r).
+func frustumCapBeyondPlaneVolume(tanA, z0, z1, xCut float64) float64 {
+	const steps = 20000
+	sum := 0.0
+	for i := 0; i < steps; i++ {
+		z := z0 + (z1-z0)*(float64(i)+0.5)/steps
+		r := (z - (z0 - 3/tanA)) * tanA // radius grows linearly; bottom r=3 at z0
+		sum += circleAreaBeyondChord(r, xCut)
+	}
+	return sum * (z1 - z0) / steps
+}
+
+func circleAreaBeyondChord(r, x float64) float64 {
+	if x >= r {
+		return 0
+	}
+	theta := stdmath.Acos(x / r)
+	return r * r * (theta - stdmath.Sin(theta)*stdmath.Cos(theta))
+}
