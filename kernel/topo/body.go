@@ -127,7 +127,8 @@ func (b *Body) RangeBox() math.Box {
 	for _, v := range b.Vertices() {
 		box = box.ExtendPoint(v.point)
 	}
-	return extendBoxByEdges(box, b.Edges())
+	box = extendBoxByEdges(box, b.Edges())
+	return extendBoxByBoundarylessFaces(box, b.Faces())
 }
 
 // FindFaceByKey re-binds a face reference key to the matching face by lineage,

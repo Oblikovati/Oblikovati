@@ -32,8 +32,16 @@ func loopedSplit(f curvedFace, c geom.Curve3, plane geom.Plane, n math.Vector3) 
 		return nil, nil, ErrUnsupportedHalfSpace // holes/multi-loop: a later increment
 	}
 	segs, crossings := splitLoopByPlane(f.loops[0], plane, n)
-	if crossings == 0 || crossings%2 != 0 {
-		return nil, nil, ErrUnsupportedHalfSpace // island cut or a tangency we don't resolve yet
+	if crossings == 0 {
+		// The imprint exists as a curve but does not cross this face's boundary — the face lies wholly
+		// on one side (e.g. a planar lid whose plane meets the cut plane in a line far outside it).
+		if signedDistance(faceSample(f), plane, n) <= 0 {
+			return []curvedFace{f}, nil, nil
+		}
+		return nil, nil, nil
+	}
+	if crossings%2 != 0 {
+		return nil, nil, ErrUnsupportedHalfSpace // a tangency / island we don't resolve yet
 	}
 	runs := keptRuns(segs)
 	if len(runs) == 0 {
