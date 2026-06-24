@@ -49,6 +49,82 @@ func TestPartialPenetrationPlugIsWatertight(t *testing.T) {
 	}
 }
 
+// TestPartialPenetrationBlindHoleIsWatertight cuts a radius-1.5 rod (ending at the fat centre) from a
+// radius-3 cylinder and checks the blind pocket is a watertight solid: two fat caps, the holed fat wall
+// (one hole), the rod tunnel, and the blind end cap.
+func TestPartialPenetrationBlindHoleIsWatertight(t *testing.T) {
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	stub, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6)
+
+	res, ok := PartialPenetrationCut(fat, stub)
+	if !ok {
+		t.Fatal("blind-hole cut declined; want a five-face pocketed solid")
+	}
+	if !res.IsSolid() {
+		t.Fatalf("blind hole result is not a solid: %+v", res)
+	}
+	for _, e := range res.Edges() {
+		if uses := len(e.Uses()); uses != 2 {
+			t.Errorf("edge %v has %d uses, want 2 (a closed manifold)", e.Lineage(), uses)
+		}
+	}
+	cyls, planes, holed := 0, 0, 0
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder:
+			cyls++
+		case geom.Plane:
+			planes++
+		default:
+			t.Errorf("face surface %T is not analytic", f.Geometry())
+		}
+		if countInnerLoops(f) == 1 {
+			holed++ // the fat side wall with its one lens hole
+		}
+	}
+	if cyls != 2 || planes != 3 {
+		t.Errorf("got %d cylinder + %d planar faces, want 2 (holed wall + tunnel) + 3 (two fat caps + blind bottom)", cyls, planes)
+	}
+	if holed != 1 {
+		t.Errorf("got %d faces with one hole, want 1 (the pocketed wall)", holed)
+	}
+}
+
+// TestPartialPenetrationJoinIsWatertight joins a radius-1.5 rod (ending at the fat centre) with a radius-3
+// cylinder and checks the result is a watertight solid: two fat caps, the holed fat wall (one hole), the rod
+// stub band, and the rod's entry end cap.
+func TestPartialPenetrationJoinIsWatertight(t *testing.T) {
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	stub, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 6)
+
+	res, ok := PartialPenetrationJoin(fat, stub)
+	if !ok {
+		t.Fatal("partial-penetration join declined; want a five-face stubbed solid")
+	}
+	if !res.IsSolid() {
+		t.Fatalf("join result is not a solid: %+v", res)
+	}
+	for _, e := range res.Edges() {
+		if uses := len(e.Uses()); uses != 2 {
+			t.Errorf("edge %v has %d uses, want 2 (a closed manifold)", e.Lineage(), uses)
+		}
+	}
+	cyls, planes := 0, 0
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder:
+			cyls++
+		case geom.Plane:
+			planes++
+		default:
+			t.Errorf("face surface %T is not analytic", f.Geometry())
+		}
+	}
+	if cyls != 2 || planes != 3 {
+		t.Errorf("got %d cylinder + %d planar faces, want 2 (holed wall + stub band) + 3 (two fat caps + entry cap)", cyls, planes)
+	}
+}
+
 // TestPartialPenetrationFullCrossingDefers: a rod that crosses all the way through gives two imprint loops,
 // not the single loop of a partial penetration, so the plug assembler declines.
 func TestPartialPenetrationFullCrossingDefers(t *testing.T) {
