@@ -47,12 +47,14 @@ func meshInertia(mesh *Mesh) InertiaTensor {
 }
 
 // accumulateCovariance sums each outward-wound triangle's tetra covariance (∫ p pᵀ dV about the
-// origin) and signed volume / centroid numerator over the mesh.
+// origin) and signed volume / centroid numerator over the mesh. Triangles are oriented consistently
+// outward TOPOLOGICALLY (consistentOutwardFlips), not from shading normals, so a saddle/silhouette
+// facet can no longer flip its covariance sign at random (Oblikovati/Oblikovati#1318).
 func accumulateCovariance(mesh *Mesh) (cov mat3, vol, cx, cy, cz float64) {
-	for t := 0; t+2 < len(mesh.Indices); t += 3 {
-		ia, ib, ic := mesh.Indices[t], mesh.Indices[t+1], mesh.Indices[t+2]
-		a, b, c := mesh.Positions[ia], mesh.Positions[ib], mesh.Positions[ic]
-		if outwardRef(mesh, ia, ib, ic).Dot(a.VectorTo(b).Cross(a.VectorTo(c))) < 0 {
+	flips := consistentOutwardFlips(mesh)
+	for ti, n := 0, mesh.TriangleCount(); ti < n; ti++ {
+		a, b, c := triVerts(mesh, ti)
+		if flips[ti] {
 			b, c = c, b
 		}
 		// A = [a b c] as columns; det A = a · (b × c) = 6 × signed tetra volume.
