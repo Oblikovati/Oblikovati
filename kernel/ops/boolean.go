@@ -82,6 +82,11 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, 
 // triangle-soup BSP CSG only when an operand has a non-planar face the B-rep path can't take
 // (a cylinder, cone, etc.). A nil B-rep result is a (valid) empty body.
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
+	// Exact curved path first: a curved solid intersected with a convex planar tool composes
+	// brep.HalfSpaceCut over the tool's planes (M2 #1334), keeping analytic surfaces instead of CSG soup.
+	if body, ok := curvedConvexIntersect(op, target, tool); ok {
+		return body, nil
+	}
 	bop, ok := toBrepOp(op)
 	if !ok {
 		return booleanCSG(op, target, tool, lin)
