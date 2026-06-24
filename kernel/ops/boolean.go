@@ -123,6 +123,7 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 //   - a curved solid − a convex prism tunnelling through it (cylinder − box) (#1334);
 //   - two crossing cylinders ∩ (rod band + fat-wall lens caps) (#1335);
 //   - a cone crossing a cylinder ∩ (cone band + cylinder-wall lens caps) (#1335);
+//   - a cone crossing a fatter cone ∩ (rod-cone band + fat-cone lens caps) (#1335);
 //   - two EQUAL-radius perpendicular cylinders ∩/−/∪ (the Steinmetz bicylinder and its cut/union, fitted as crossing ellipses) (#1335);
 //   - a thin rod ending inside a fatter cylinder ∩/−/∪ (a partial penetration: the plug, a blind hole, a one-sided stub) (#1335);
 //   - drilling a fat cylinder with a crossing rod (fat − rod), and the two rod stubs of rod − fat (#1335);
@@ -141,7 +142,8 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo
 // returns ok=false when it does not apply to (op, target, tool).
 var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body) (*topo.Body, bool){
 	curvedConvexIntersect, curvedConvexSubtract,
-	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedPartialIntersect,
+	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
+	curvedPartialIntersect,
 	curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedCrossingCut,
 	curvedPartialJoin, curvedConeCylinderJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
