@@ -130,6 +130,22 @@ func curvedCylindricalHoleCut(op PartFeatureOperation, target, tool *topo.Body) 
 	return res, true
 }
 
+// curvedCoaxialJoin returns target ∪ tool when both are coaxial equal-radius cylinders overlapping or
+// abutting along the axis — one cylinder spanning their merged extent — or ok=false to defer. Their side
+// faces are coincident (the curved analogue of a coplanar overlap), which the CSG fallback faceted; the
+// exact union keeps the analytic cylinder. Only Join maps here, and only a valid closed manifold result is
+// adopted.
+func curvedCoaxialJoin(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Join {
+		return nil, false
+	}
+	res, ok := brep.CoaxialCylinderUnion(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedConeCylinderCut returns target − tool for a cone crossing a cylinder (drilling the fat cylinder with
 // the cone, or the two cone stubs of cone − fat), or ok=false to defer. Only Cut maps here, and only a valid
 // closed manifold result is adopted.
