@@ -58,10 +58,39 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedF
 	if len(f.loops) == 0 {
 		return capSplit(f, curves[0])
 	}
-	if len(curves) != 1 {
-		return nil, nil, ErrUnsupportedHalfSpace // multiple imprints on one looped face: a later increment
+	if isFullCylinderSide(f) {
+		if !allLines(curves) {
+			return nil, nil, ErrUnsupportedHalfSpace // an oblique cut of a full periodic side: deferred
+		}
+		return cylinderSideSplit(f, curves, plane, n)
 	}
-	return loopedSplit(f, curves[0], plane, n)
+	return loopedSplit(f, curves, plane, n)
+}
+
+// isFullCylinderSide reports whether f is the full periodic cylinder side (a geom.Cylinder bounded by two
+// closed-circle edges and the seam) — the case the general looped split tangles on, routed to the
+// dedicated cylinderSideSplit instead.
+func isFullCylinderSide(f curvedFace) bool {
+	if _, ok := f.surface.(geom.Cylinder); !ok || len(f.loops) == 0 {
+		return false
+	}
+	for _, le := range f.loops[0].edges {
+		if _, isCircle := le.curve.(geom.Circle); isCircle && isFullDomain(le.t0, le.t1) {
+			return true
+		}
+	}
+	return false
+}
+
+// allLines reports whether every imprint curve is an infinite line (the axis-parallel cut of a cylinder),
+// distinguishing it from a conic (an oblique ellipse) the dedicated cylinder split cannot consume.
+func allLines(curves []geom.Curve3) bool {
+	for _, c := range curves {
+		if _, ok := c.(geom.Line); !ok {
+			return false
+		}
+	}
+	return len(curves) > 0
 }
 
 // capSplit splits a boundary-less face (a bare sphere) by its imprint circle into the kept negative cap

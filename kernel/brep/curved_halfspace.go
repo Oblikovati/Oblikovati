@@ -35,8 +35,8 @@ var ErrUnsupportedHalfSpace = errors.New("brep: half-space cut handles only the 
 func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 	n := unit(plane.Normal())
 	faces := facesOfAny(body)
-	if cyl, base, height, ok := cylinderSolidParams(faces); ok {
-		return cylinderHalfSpace(body, cyl, base, height, plane)
+	if cyl, base, height, ok := cylinderSolidParams(faces); ok && perpendicularToAxis(n, cyl) {
+		return cylinderHalfSpace(body, cyl, base, height, plane) // ⟂ cut → shorter cylinder, fast path
 	}
 	return generalHalfSpace(body, plane, n, faces)
 }
