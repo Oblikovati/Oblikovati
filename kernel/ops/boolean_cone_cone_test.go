@@ -9,6 +9,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -69,5 +70,74 @@ func TestBooleanIntersectConeCone(t *testing.T) {
 	want := coneConeIntersectVolume()
 	if rel := stdmath.Abs(got-want) / want; rel > 0.03 {
 		t.Errorf("cone∩cone volume %.4f, want %.4f (analytic) — rel %.4f > 3%%", got, want, rel)
+	}
+}
+
+// coneConeBodies builds the test pair: the radius-0.8→1.5 rod cone (axis x) and the radius-2→4 fat cone
+// (axis z) it crosses.
+func coneConeBodies() (thin, fat *topo.Body) {
+	thin, _ = brep.SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
+	fat, _ = brep.SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
+	return thin, fat
+}
+
+// TestBooleanCutConeConeDrillsFat drills the fat cone with the crossing rod cone (fat − cone): the exact
+// analytic solid (two fat-cone caps, the holed fat-cone wall, the rod-cone tunnel) whose volume is the fat
+// cone minus the cone∩cone.
+func TestBooleanCutConeConeDrillsFat(t *testing.T) {
+	thin, fat := coneConeBodies()
+	res, err := ops.Boolean(ops.Cut, fat, thin)
+	if err != nil {
+		t.Fatalf("Boolean(Cut fatCone−rodCone): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("drilled fat cone is not a valid closed manifold solid: %+v", v)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := coneFrustumVolume(2, 4, 12) - coneConeIntersectVolume()
+	// 4%: the faceted fat-cone wall/caps and the tapered tunnel inscribe their curvature, so the meshed
+	// volume runs under the analytic fat − tunnel (the B-rep is exact; this bounds the property-mesh error).
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("drilled fat-cone volume %.4f, want %.4f (fat − cone∩cone) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
+// TestBooleanCutConeConeStubs subtracts the fat cone from the rod cone (cone − fat): the two disconnected
+// tapered stubs (a two-shell solid) whose total volume is the rod cone minus the cone∩cone.
+func TestBooleanCutConeConeStubs(t *testing.T) {
+	thin, fat := coneConeBodies()
+	res, err := ops.Boolean(ops.Cut, thin, fat)
+	if err != nil {
+		t.Fatalf("Boolean(Cut rodCone−fatCone): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("rod − fat (cones) is not a valid closed manifold solid: %+v", v)
+	}
+	if n := len(res.Shells()); n != 2 {
+		t.Errorf("rod − fat (cones) has %d shells, want 2 (a disconnected stub each side)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := coneFrustumVolume(0.8, 1.5, 12) - coneConeIntersectVolume()
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("rod − fat (cones) volume %.4f, want %.4f (rod − cone∩cone) — rel %.4f > 2%%", got, want, rel)
+	}
+}
+
+// TestBooleanJoinConeCone joins the fat cone and the crossing rod cone (fat ∪ cone): the connected analytic
+// solid (fat-cone caps, holed fat-cone wall, a tapered stub each side) whose volume is fat + rod − the
+// cone∩cone.
+func TestBooleanJoinConeCone(t *testing.T) {
+	thin, fat := coneConeBodies()
+	res, err := ops.Boolean(ops.Join, fat, thin)
+	if err != nil {
+		t.Fatalf("Boolean(Join fatCone∪rodCone): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("joined cone∪cone is not a valid closed manifold solid: %+v", v)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := coneFrustumVolume(2, 4, 12) + coneFrustumVolume(0.8, 1.5, 12) - coneConeIntersectVolume()
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("joined cone∪cone volume %.4f, want %.4f (fat + rod − cone∩cone) — rel %.4f > 4%%", got, want, rel)
 	}
 }
