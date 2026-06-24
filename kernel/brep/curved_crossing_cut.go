@@ -43,7 +43,7 @@ func CrossingCylinderCut(target, tool *topo.Body) (*topo.Body, bool) {
 	if !ok {
 		return nil, false
 	}
-	if allLoopsEncircle([]geom.Polyline{p.lo, p.hi}, tc) {
+	if allLoopsEncircle([]geom.Polyline{p.lo, p.hi}, cylAxis(tc)) {
 		return cutRodMinusFat(p), true // target is the rod: two disconnected stubs
 	}
 	return drillFatWithRod(p), true // target is the fat: drill a tunnel
@@ -76,7 +76,7 @@ func crossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
 	if !ok || !loopsSpanRod(rod, rodBase, rodH, loops) {
 		return nil, false // a loop beyond a rod end is a partial penetration, not a full crossing
 	}
-	lo, hi, ok := assignRimLoops(rod, fat, loops)
+	lo, hi, ok := assignRimLoops(cylAxis(rod), cylAxis(fat), loops)
 	if !ok {
 		return nil, false
 	}
@@ -87,9 +87,9 @@ func crossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
 // cylinder, carrying each one's cap base and height through.
 func orderRodFat(loops []geom.Polyline, ca geom.Cylinder, baseA math.Point3, hA float64, cb geom.Cylinder, baseB math.Point3, hB float64) (rod geom.Cylinder, rodBase math.Point3, rodH float64, fat geom.Cylinder, fatBase math.Point3, fatH float64, ok bool) {
 	switch {
-	case allLoopsEncircle(loops, ca) && !allLoopsEncircle(loops, cb):
+	case allLoopsEncircle(loops, cylAxis(ca)) && !allLoopsEncircle(loops, cylAxis(cb)):
 		return ca, baseA, hA, cb, baseB, hB, true
-	case allLoopsEncircle(loops, cb) && !allLoopsEncircle(loops, ca):
+	case allLoopsEncircle(loops, cylAxis(cb)) && !allLoopsEncircle(loops, cylAxis(ca)):
 		return cb, baseB, hB, ca, baseA, hA, true
 	default:
 		return geom.Cylinder{}, math.Point3{}, 0, geom.Cylinder{}, math.Point3{}, 0, false
@@ -164,8 +164,8 @@ func addFatCapsAndHoledWall(bld *topo.Builder, fat geom.Cylinder, fatBase math.P
 // two lens centres, so a seam placed there crosses neither hole (the holed-wall mesher needs a hole-free
 // seam).
 func clearSeamParam(fat geom.Cylinder, lo, hi geom.Polyline) float64 {
-	u1 := axisAngleOf(loopCentroid(lo), fat)
-	u2 := axisAngleOf(loopCentroid(hi), fat)
+	u1 := axisAngleOf(loopCentroid(lo), cylAxis(fat))
+	u2 := axisAngleOf(loopCentroid(hi), cylAxis(fat))
 	a, b := stdmath.Min(u1, u2), stdmath.Max(u1, u2)
 	if b-a >= 2*stdmath.Pi-(b-a) {
 		return (a + b) / 2 // the gap from a to b is the larger one
@@ -177,7 +177,7 @@ func clearSeamParam(fat geom.Cylinder, lo, hi geom.Polyline) float64 {
 // hole, so a seam placed there crosses the hole-free side of the wall (the holed-wall mesher needs a
 // hole-free seam).
 func clearSeamForLens(fat geom.Cylinder, lens geom.Polyline) float64 {
-	return axisAngleOf(loopCentroid(lens), fat) + stdmath.Pi
+	return axisAngleOf(loopCentroid(lens), cylAxis(fat)) + stdmath.Pi
 }
 
 // seamedCircle builds a cap circle whose angle-zero seam vertex is at seamPt (radius and centre on the
