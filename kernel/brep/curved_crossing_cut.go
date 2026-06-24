@@ -126,21 +126,22 @@ func drillFatWithRod(p *crossingParts) *topo.Body {
 	// The tunnel wall is the rod band flipped inward (kept material is outside the rod).
 	bld.AddReversedFace(p.rod, crossLin("tunnel"),
 		topo.OuterLoop(topo.Fwd(rSeam), topo.Rev(eHi), topo.Rev(rSeam), topo.Fwd(eLo)))
-	addFatCapsAndHoledWall(bld, p, eLo, eHi)
+	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamParam(p.fat, p.lo, p.hi),
+		topo.Rev(eLo), topo.Fwd(eHi))
 	return bld.Build()
 }
 
-// addFatCapsAndHoledWall adds the fat cylinder's two planar caps and its holed side wall, sharing the two
-// imprint-loop edges (as wall holes, opposite to the tunnel band's use of them). The wall's seam is placed
-// clear of the lens holes so the unroll-and-CDT mesher can mesh it.
-func addFatCapsAndHoledWall(bld *topo.Builder, p *crossingParts, eLo, eHi *topo.Edge) {
-	axis := p.fat.AxisDir.AsVector()
-	vBot := float64(p.fat.Origin.VectorTo(p.fatBase).Dot(axis))
-	topCenter := p.fatBase.TranslateBy(axis.Scale(math.Scalar(p.fatHeight)))
-	seam := clearSeamParam(p.fat, p.lo, p.hi)
-	seamBot, seamTop := p.fat.PointAt(seam, vBot), p.fat.PointAt(seam, vBot+p.fatHeight)
-	botC := seamedCircle(p.fatBase, p.fat.AxisDir, seamBot, p.fat.Radius)
-	topC := seamedCircle(topCenter, p.fat.AxisDir, seamTop, p.fat.Radius)
+// addFatCapsAndHoledWall adds the fat cylinder's two planar caps and its side wall carrying the given hole
+// loops (one per wall breach). seam is an angular parameter placed clear of every hole (the unroll-and-CDT
+// mesher needs a hole-free seam); each hole use is the lens-loop edge in the orientation OPPOSITE the band
+// that fills it from the other side, so every edge stays used exactly twice.
+func addFatCapsAndHoledWall(bld *topo.Builder, fat geom.Cylinder, fatBase math.Point3, fatHeight, seam float64, holes ...topo.Use) {
+	axis := fat.AxisDir.AsVector()
+	vBot := float64(fat.Origin.VectorTo(fatBase).Dot(axis))
+	topCenter := fatBase.TranslateBy(axis.Scale(math.Scalar(fatHeight)))
+	seamBot, seamTop := fat.PointAt(seam, vBot), fat.PointAt(seam, vBot+fatHeight)
+	botC := seamedCircle(fatBase, fat.AxisDir, seamBot, fat.Radius)
+	topC := seamedCircle(topCenter, fat.AxisDir, seamTop, fat.Radius)
 
 	vb := bld.AddVertex(seamBot, crossLin("fvb"))
 	vt := bld.AddVertex(seamTop, crossLin("fvt"))
@@ -148,13 +149,15 @@ func addFatCapsAndHoledWall(bld *topo.Builder, p *crossingParts, eLo, eHi *topo.
 	eTop := bld.AddEdge(topC, vt, vt, crossLin("fetop"))
 	eSeam := bld.AddEdge(geom.NewLineSegment(seamBot, seamTop), vb, vt, crossLin("fseam"))
 
-	capBot, _ := geom.NewPlane(p.fatBase, axis.Scale(-1))
+	capBot, _ := geom.NewPlane(fatBase, axis.Scale(-1))
 	capTop, _ := geom.NewPlane(topCenter, axis)
 	bld.AddFace(capBot, crossLin("fcapbot"), topo.OuterLoop(topo.Rev(eBot)))
 	bld.AddFace(capTop, crossLin("fcaptop"), topo.OuterLoop(topo.Fwd(eTop)))
-	bld.AddFace(p.fat, crossLin("fwall"),
-		topo.OuterLoop(topo.Fwd(eSeam), topo.Rev(eTop), topo.Rev(eSeam), topo.Fwd(eBot)),
-		topo.InnerLoop(topo.Rev(eLo)), topo.InnerLoop(topo.Fwd(eHi)))
+	wallLoops := []topo.LoopSpec{topo.OuterLoop(topo.Fwd(eSeam), topo.Rev(eTop), topo.Rev(eSeam), topo.Fwd(eBot))}
+	for _, h := range holes {
+		wallLoops = append(wallLoops, topo.InnerLoop(h))
+	}
+	bld.AddFace(fat, crossLin("fwall"), wallLoops...)
 }
 
 // clearSeamParam returns an angular parameter on the fat cylinder midway through the larger gap between the
@@ -168,6 +171,13 @@ func clearSeamParam(fat geom.Cylinder, lo, hi geom.Polyline) float64 {
 		return (a + b) / 2 // the gap from a to b is the larger one
 	}
 	return (a+b)/2 + stdmath.Pi // the gap wrapping past 0 is larger
+}
+
+// clearSeamForLens returns an angular parameter on the fat cylinder diametrically opposite a single lens
+// hole, so a seam placed there crosses the hole-free side of the wall (the holed-wall mesher needs a
+// hole-free seam).
+func clearSeamForLens(fat geom.Cylinder, lens geom.Polyline) float64 {
+	return axisAngleOf(loopCentroid(lens), fat) + stdmath.Pi
 }
 
 // seamedCircle builds a cap circle whose angle-zero seam vertex is at seamPt (radius and centre on the

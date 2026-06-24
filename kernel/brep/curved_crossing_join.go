@@ -49,23 +49,26 @@ func joinFatAndRod(p *crossingParts) *topo.Body {
 	vHi := bld.AddVertex(p.hi.Vertices[0], crossLin("vhi"))
 	eLo := bld.AddEdge(p.lo, vLo, vLo, crossLin("elo"))
 	eHi := bld.AddEdge(p.hi, vHi, vHi, crossLin("ehi"))
-	addFatCapsAndHoledWall(bld, p, eLo, eHi)
+	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamParam(p.fat, p.lo, p.hi),
+		topo.Rev(eLo), topo.Fwd(eHi))
 	axis := p.rod.AxisDir.AsVector()
 	rodFar := p.rodBase.TranslateBy(axis.Scale(math.Scalar(p.rodHeight)))
 	// The lo lens (fat-outward along −rodaxis) connects to the rod's base end; the hi lens to the far end.
 	// The wall holes are InnerLoop(Rev(eLo)) and InnerLoop(Fwd(eHi)), so the stubs take the opposite half.
-	addRodStub(bld, p.rod, p.rodBase, axis.Scale(-1), eLo, vLo, p.lo.Vertices[0], true, "slo")
-	addRodStub(bld, p.rod, rodFar, axis, eHi, vHi, p.hi.Vertices[0], false, "shi")
+	addRodStub(bld, p.rod, p.rodBase, axis.Scale(-1), eLo, vLo, p.lo.Vertices[0], true, false, "slo")
+	addRodStub(bld, p.rod, rodFar, axis, eHi, vHi, p.hi.Vertices[0], false, false, "shi")
 	return bld.Build()
 }
 
 // addRodStub adds one rod stub to a join/cut body: the rod-wall band from the lens loop out to the rod's
 // end cap, plus that planar end cap. The shared lens edge eLens is used in the orientation lensFwd so the
 // stub welds opposite to the face that owns the other side of it (the holed wall, or the fat lens cap). The
-// band keeps the rod's natural outward normal (the kept material is inside the rod); the end cap faces along
-// capNormal (the outward ±rod-axis). The end circle is re-seamed to the lens loop's start angle so the band
+// band keeps the rod's natural outward normal (the kept material is inside the rod) when reversed is false;
+// when reversed is true it is flipped inward as a tunnel wall (the kept material is outside the rod, e.g. a
+// blind hole) and the end cap faces back into the void. The end cap faces along capNormal (the outward
+// ±rod-axis), negated when reversed. The end circle is re-seamed to the lens loop's start angle so the band
 // loft stitches a near-constant-angle seam.
-func addRodStub(bld *topo.Builder, rod geom.Cylinder, endCenter math.Point3, capNormal math.Vector3, eLens *topo.Edge, vLens *topo.Vertex, lensStart math.Point3, lensFwd bool, tag string) {
+func addRodStub(bld *topo.Builder, rod geom.Cylinder, endCenter math.Point3, capNormal math.Vector3, eLens *topo.Edge, vLens *topo.Vertex, lensStart math.Point3, lensFwd, reversed bool, tag string) {
 	seamPt := stubSeamPoint(rod, endCenter, lensStart)
 	endC := seamedCircle(endCenter, rod.AxisDir, seamPt, rod.Radius)
 	vEnd := bld.AddVertex(seamPt, crossLin(tag+"ve"))
@@ -75,9 +78,15 @@ func addRodStub(bld *topo.Builder, rod geom.Cylinder, endCenter math.Point3, cap
 	if !lensFwd {
 		lensHalf = topo.Rev(eLens)
 	}
-	bld.AddFace(rod, crossLin(tag+"band"),
-		topo.OuterLoop(lensHalf, topo.Rev(eSeam), topo.Fwd(eEnd), topo.Fwd(eSeam)))
-	cap, _ := geom.NewPlane(endCenter, capNormal)
+	band := topo.OuterLoop(lensHalf, topo.Rev(eSeam), topo.Fwd(eEnd), topo.Fwd(eSeam))
+	capNorm := capNormal
+	if reversed {
+		bld.AddReversedFace(rod, crossLin(tag+"band"), band)
+		capNorm = capNormal.Scale(-1)
+	} else {
+		bld.AddFace(rod, crossLin(tag+"band"), band)
+	}
+	cap, _ := geom.NewPlane(endCenter, capNorm)
 	bld.AddFace(cap, crossLin(tag+"cap"), topo.OuterLoop(topo.Rev(eEnd)))
 }
 
@@ -106,6 +115,6 @@ func rodStubLump(rod, fat geom.Cylinder, endCenter math.Point3, capNormal math.V
 	vLens := bld.AddVertex(lens.Vertices[0], crossLin(tag+"vl"))
 	eLens := bld.AddEdge(lens, vLens, vLens, crossLin(tag+"el"))
 	bld.AddReversedFace(fat, crossLin(tag+"lenscap"), topo.OuterLoop(topo.Rev(eLens)))
-	addRodStub(bld, rod, endCenter, capNormal, eLens, vLens, lens.Vertices[0], true, tag)
+	addRodStub(bld, rod, endCenter, capNormal, eLens, vLens, lens.Vertices[0], true, false, tag)
 	return bld.Build()
 }

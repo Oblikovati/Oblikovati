@@ -188,6 +188,75 @@ func TestBooleanIntersectPartialPenetration(t *testing.T) {
 	}
 }
 
+// TestBooleanCutPartialPenetrationBlindHole cuts a thin rod (r=1.5, axis x) that ENDS at the fat centre out
+// of a fat cylinder (R=3, axis z): Cut must give the exact blind pocket (two caps, the holed wall, the rod
+// tunnel, the blind bottom) whose volume is the fat minus the plug (half the full crossing intersection).
+func TestBooleanCutPartialPenetrationBlindHole(t *testing.T) {
+	const rRod, rFat, hFat = 1.5, 3.0, 12.0
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
+	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, 6) // ends at x=0, inside the fat
+
+	res, err := ops.Boolean(ops.Cut, fat, stub)
+	if err != nil {
+		t.Fatalf("Boolean(Cut blind hole): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("blind hole is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder, geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 5 {
+		t.Errorf("blind hole has %d faces, want 5 (two caps, holed wall, tunnel, blind bottom)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rFat*rFat*hFat - crossingIntersectVolume(rRod, rFat)/2 // fat − the plug
+	// 4%: the curved tunnel and holed wall inscribe their curvature, so the meshed volume runs a little
+	// under the analytic fat − plug (the B-rep is exact; this bounds the property-mesh error, as for the
+	// full drill).
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("blind hole volume %.4f, want %.4f (fat − plug) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
+// TestBooleanJoinPartialPenetration joins a thin rod (r=1.5, axis x) ending at the fat centre with a fat
+// cylinder (R=3, axis z): Join must give the fat with one rod stub out the entry side, its volume the fat
+// plus the rod minus the plug (the doubly-counted overlap).
+func TestBooleanJoinPartialPenetration(t *testing.T) {
+	const rRod, hRod, rFat, hFat = 1.5, 6.0, 3.0, 12.0
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
+	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod) // ends at x=0, inside the fat
+
+	res, err := ops.Boolean(ops.Join, fat, stub)
+	if err != nil {
+		t.Fatalf("Boolean(Join partial): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("partial join is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder, geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 5 {
+		t.Errorf("partial join has %d faces, want 5 (two caps, holed wall, stub band, entry cap)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rFat*rFat*hFat + stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)/2
+	// 4%: the curved holed wall and stub inscribe their curvature, so the meshed volume runs a little under
+	// the analytic fat + rod − plug (the B-rep is exact; this bounds the property-mesh error).
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("partial join volume %.4f, want %.4f (fat + rod − plug) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
 // TestBooleanIntersectEqualRadiusSteinmetz intersects two EQUAL-radius perpendicular cylinders (axes x and
 // z, R=3): Intersect must give the exact Steinmetz bicylinder — four analytic cylinder faces — whose volume
 // is the closed form 16/3·R³, not triangle-soup CSG (the SSI tracer pinches on this case, so it is fitted

@@ -45,13 +45,16 @@ func PartialPenetrationIntersect(a, b *topo.Body) (*topo.Body, bool) {
 }
 
 // partialPlugParts holds the resolved geometry of a partial penetration: the rod (the single imprint loop
-// encircles it) and the fat cylinder, the rod's blind end cap (centre and outward normal, sitting inside
-// the fat), and the single entry imprint loop oriented CCW about the rod axis.
+// encircles it) and the fat cylinder; the rod's blind end cap (inside the fat) and its entry end cap
+// (outside the fat), each as a centre and outward axial normal; the single entry imprint loop oriented CCW
+// about the rod axis; and the fat cylinder's cap base and height (for the wall the Cut and Join carry).
 type partialPlugParts struct {
-	rod, fat     geom.Cylinder
-	rodEndCenter math.Point3
-	rodEndNormal math.Vector3
-	lens         geom.Polyline
+	rod, fat                 geom.Cylinder
+	blindCenter, entryCenter math.Point3
+	blindNormal, entryNormal math.Vector3
+	lens                     geom.Polyline
+	fatBase                  math.Point3
+	fatHeight                float64
 }
 
 // partialPlugPartsOf resolves two bodies into a partial penetration, or ok=false when they are not a thin
@@ -81,30 +84,36 @@ func tryPartialPlug(rodBody, fatBody *topo.Body) (*partialPlugParts, bool) {
 	if !okR || !okF || !allLoopsEncircle(loops, rod) {
 		return nil, false
 	}
-	center, normal, ok := blindRodEnd(rod, rodBase, rodH, fat, fatBase, fatH)
+	blindC, blindN, entryC, entryN, ok := rodEnds(rod, rodBase, rodH, fat, fatBase, fatH)
 	if !ok {
 		return nil, false
 	}
-	return &partialPlugParts{rod, fat, center, normal, orientLoopCCW(loops[0], rod)}, true
+	return &partialPlugParts{
+		rod: rod, fat: fat,
+		blindCenter: blindC, blindNormal: blindN,
+		entryCenter: entryC, entryNormal: entryN,
+		lens:    orientLoopCCW(loops[0], rod),
+		fatBase: fatBase, fatHeight: fatH,
+	}, true
 }
 
-// blindRodEnd returns the rod end cap that lies inside the fat solid (the blind tip of a partial
-// penetration) — its centre and the outward axial normal (pointing away from the rod material). ok=false
-// unless exactly one of the rod's two ends is inside the fat (both inside is a rod fully contained, neither
-// is a full crossing — both handled elsewhere).
-func blindRodEnd(rod geom.Cylinder, rodBase math.Point3, rodH float64, fat geom.Cylinder, fatBase math.Point3, fatH float64) (center math.Point3, normal math.Vector3, ok bool) {
+// rodEnds returns the rod's blind end cap (inside the fat — the tip of a partial penetration) and its entry
+// end cap (outside the fat — where the rod sticks out), each as a centre and the outward axial normal
+// (pointing away from the rod material). ok=false unless exactly one of the rod's two ends is inside the fat
+// (both inside is a rod fully contained, neither is a full crossing — both handled elsewhere).
+func rodEnds(rod geom.Cylinder, rodBase math.Point3, rodH float64, fat geom.Cylinder, fatBase math.Point3, fatH float64) (blindCenter math.Point3, blindNormal math.Vector3, entryCenter math.Point3, entryNormal math.Vector3, ok bool) {
 	axis := rod.AxisDir.AsVector()
 	e0 := rodBase
 	e1 := rodBase.TranslateBy(axis.Scale(math.Scalar(rodH)))
 	in0 := rodEndInsideFat(rod, e0, fat, fatBase, fatH)
 	in1 := rodEndInsideFat(rod, e1, fat, fatBase, fatH)
 	switch {
-	case in1 && !in0:
-		return e1, axis, true // blind end at the +axis extreme: material lies below it, normal points +axis
-	case in0 && !in1:
-		return e0, axis.Scale(-1), true // blind end at the base: material lies above it, normal points −axis
+	case in1 && !in0: // blind end at the +axis extreme (e1), entry end at the base (e0)
+		return e1, axis, e0, axis.Scale(-1), true
+	case in0 && !in1: // blind end at the base (e0), entry end at the +axis extreme (e1)
+		return e0, axis.Scale(-1), e1, axis, true
 	default:
-		return math.Point3{}, math.Vector3{}, false
+		return math.Point3{}, math.Vector3{}, math.Point3{}, math.Vector3{}, false
 	}
 }
 
@@ -146,6 +155,71 @@ func partialPlug(p *partialPlugParts) *topo.Body {
 	vLens := bld.AddVertex(lensStart, partLin("vlens"))
 	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
 	bld.AddFace(p.fat, partLin("lenscap"), topo.OuterLoop(topo.Rev(eLens)))
-	addRodStub(bld, p.rod, p.rodEndCenter, p.rodEndNormal, eLens, vLens, lensStart, true, "plug")
+	addRodStub(bld, p.rod, p.blindCenter, p.blindNormal, eLens, vLens, lensStart, true, false, "plug")
+	return bld.Build()
+}
+
+// PartialPenetrationCut builds target − tool when tool is a thin rod that ends inside the fatter target (a
+// BLIND HOLE), or ok=false to defer. The result is the fat with a blind cylindrical pocket: its two caps,
+// its side wall carrying the single lens hole, the rod-wall tunnel flipped inward, and the rod's blind end
+// cap as the pocket bottom.
+//
+// Example — a radius-3 cylinder blind-drilled by a radius-1.5 rod ending at its centre:
+//
+//	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
+//	stub, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 6)
+//	res, ok := brep.PartialPenetrationCut(fat, stub) // fat with a blind pocket
+func PartialPenetrationCut(target, tool *topo.Body) (*topo.Body, bool) {
+	p, ok := partialPlugPartsOf(target, tool)
+	if !ok || !targetIsFat(target, p) {
+		return nil, false // only fat − rod is the blind hole; rod − fat (a stub lump) defers for now
+	}
+	return blindHole(p), true
+}
+
+// PartialPenetrationJoin builds target ∪ tool for a thin rod ending inside the fatter cylinder, or ok=false
+// to defer. The result is the fat with a single rod STUB sticking out the entry side: the fat's two caps,
+// its holed side wall, the rod-wall stub band from the lens out to the rod's entry end, and the rod's entry
+// end cap.
+func PartialPenetrationJoin(a, b *topo.Body) (*topo.Body, bool) {
+	p, ok := partialPlugPartsOf(a, b)
+	if !ok {
+		return nil, false
+	}
+	return partialJoinStub(p), true
+}
+
+// targetIsFat reports whether the Cut target is the fat cylinder of the resolved partial penetration (so the
+// subtraction is the blind hole), rather than the rod.
+func targetIsFat(target *topo.Body, p *partialPlugParts) bool {
+	tc, _, _, ok := cylinderSolidParams(facesOfAny(target))
+	return ok && nearEqual(tc.Radius, p.fat.Radius)
+}
+
+// blindHole welds the fat with a blind pocket: the fat caps and holed side wall (one lens hole), the rod
+// tunnel flipped inward (kept material is outside the rod), and the rod's blind end cap as the pocket
+// bottom. The lens edge is shared by the wall hole and the tunnel band in opposite orientation, so the
+// result is a closed manifold solid.
+func blindHole(p *partialPlugParts) *topo.Body {
+	bld := topo.NewBuilder(true, partLin("body"))
+	lensStart := p.lens.Vertices[0]
+	vLens := bld.AddVertex(lensStart, partLin("vlens"))
+	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
+	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamForLens(p.fat, p.lens), topo.Rev(eLens))
+	addRodStub(bld, p.rod, p.blindCenter, p.blindNormal, eLens, vLens, lensStart, true, true, "blind")
+	return bld.Build()
+}
+
+// partialJoinStub welds the union of the fat and a partially-penetrating rod: the fat caps and holed side
+// wall (one lens hole), the rod stub band from the lens out to the rod's entry end, and the rod's entry end
+// cap. The lens edge is shared by the wall hole and the stub band in opposite orientation, so the result is
+// a closed manifold solid.
+func partialJoinStub(p *partialPlugParts) *topo.Body {
+	bld := topo.NewBuilder(true, partLin("body"))
+	lensStart := p.lens.Vertices[0]
+	vLens := bld.AddVertex(lensStart, partLin("vlens"))
+	eLens := bld.AddEdge(p.lens, vLens, vLens, partLin("elens"))
+	addFatCapsAndHoledWall(bld, p.fat, p.fatBase, p.fatHeight, clearSeamForLens(p.fat, p.lens), topo.Rev(eLens))
+	addRodStub(bld, p.rod, p.entryCenter, p.entryNormal, eLens, vLens, lensStart, true, false, "jstub")
 	return bld.Build()
 }
