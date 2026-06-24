@@ -188,20 +188,23 @@ func sculptDescriptor() *OperationDescriptor {
 	return &OperationDescriptor{Name: "sculpt", Summary: "Combine surfaces and solids into a sculpted body.", Schema: json.RawMessage(sculptSchema), Apply: applySculpt}
 }
 
-// fillSurfaceArgs is the M36-F07 boundary-fill op: the continuity to the four neighbour surfaces.
+// fillSurfaceArgs is the M36-F07/N-sided boundary-fill op: the continuity to the neighbour surfaces
+// and the number of bounding sides (omitted/0 or 4 = four-sided; 3, 5, 6… = N-sided, #1300).
 type fillSurfaceArgs struct {
 	Continuity string `json:"continuity,omitempty"`
+	Sides      int    `json:"sides,omitempty"`
 }
 
 const fillSurfaceSchema = `{
   "type": "object",
   "properties": {
-    "continuity": {"type": "string", "enum": ["g0", "g1", "g2"], "default": "g2", "description": "Continuity to the four bounding surfaces (api/types SurfaceContinuity): g0 (position), g1 (tangent), g2 (curvature). The op closes the four-sided opening bounded by the LAST FOUR surface bodies with a single clean NURBS. NURBS neighbours are matched to the chosen continuity; planar neighbours are filled position-only."}
+    "continuity": {"type": "string", "enum": ["g0", "g1", "g2"], "default": "g2", "description": "Continuity to the bounding surfaces (api/types SurfaceContinuity): g0 (position), g1 (tangent), g2 (curvature). NURBS neighbours are matched to the chosen continuity; planar/merged/split sides fill position-only."},
+    "sides": {"type": "integer", "default": 4, "description": "Number of bounding surface bodies forming the opening (the LAST N surface bodies). 4 = classic four-sided fill; 3, 5, 6… = N-sided fill mapped onto four logical sides."}
   }
 }`
 
 func fillSurfaceDescriptor() *OperationDescriptor {
-	return &OperationDescriptor{Name: "fillSurface", Summary: "Close a four-sided opening bounded by the last four surface bodies with a single NURBS (G0/G1/G2).", Schema: json.RawMessage(fillSurfaceSchema), Apply: applyFillSurface}
+	return &OperationDescriptor{Name: "fillSurface", Summary: "Close an N-sided opening bounded by the last N surface bodies with a single NURBS (G0/G1/G2).", Schema: json.RawMessage(fillSurfaceSchema), Apply: applyFillSurface}
 }
 
 func applyFillSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {
@@ -217,7 +220,11 @@ func applyFillSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	if !ok {
 		return nil, fmt.Errorf("fillSurface: unknown continuity %q (want g0, g1, or g2)", in.Continuity)
 	}
-	pf := feature.NewFillFeatures(part.Features()).Add(cont.Order())
+	sides := in.Sides
+	if sides <= 0 {
+		sides = 4
+	}
+	pf := feature.NewFillFeatures(part.Features()).AddSides(cont.Order(), sides)
 	return recomputeResult(part, pf)
 }
 

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/kernel/topo"
 )
 
 // The Fill feature (M36-F07) closes a four-sided opening bounded by the last four surface bodies with
@@ -17,9 +16,11 @@ import (
 // numeric acceptance gate.
 
 // FillDefinition is the recipe for a boundary fill: the continuity order to impose on every side
-// (0=G0/position … 2=G2/curvature).
+// (0=G0/position … 2=G2/curvature) and the number of bounding sides (0 or 4 = the classic four-sided
+// fill; 3, 5, 6… = an N-sided fill of the last Sides surface bodies).
 type FillDefinition struct {
 	Order int
+	Sides int
 }
 
 // FillFeature fills the opening bounded by the last four surface bodies.
@@ -34,15 +35,18 @@ func (f *FillFeature) Definition() *FillDefinition { return f.def }
 // Kind implements [Feature].
 func (f *FillFeature) Kind() string { return "fill-surface" }
 
-// Recompute fills the opening bounded by the last four surface bodies and appends the fill body. It
-// errors (→ sick) without four surface bodies or when the four edges do not form a closed loop.
+// Recompute fills the opening bounded by the last Sides surface bodies and appends the fill body. It
+// errors (→ sick) without that many surface bodies or when the edges do not form a closed loop.
 func (f *FillFeature) Recompute(in Input) (Output, error) {
-	if len(in.Bodies) < 4 {
-		return Output{}, fmt.Errorf("fill surface: needs four bounding surface bodies, have %d", len(in.Bodies))
+	sides := f.def.Sides
+	if sides <= 0 {
+		sides = 4
 	}
-	n := len(in.Bodies)
-	neighbours := [4]*topo.Body{in.Bodies[n-4], in.Bodies[n-3], in.Bodies[n-2], in.Bodies[n-1]}
-	fill, err := ops.FillFourSided(neighbours, f.def.Order)
+	if len(in.Bodies) < sides {
+		return Output{}, fmt.Errorf("fill surface: needs %d bounding surface bodies, have %d", sides, len(in.Bodies))
+	}
+	neighbours := in.Bodies[len(in.Bodies)-sides:]
+	fill, err := ops.FillNSided(neighbours, f.def.Order)
 	if err != nil {
 		return Output{}, err
 	}
@@ -56,8 +60,13 @@ type FillFeatures struct{ engine *PartFeatures }
 func NewFillFeatures(engine *PartFeatures) *FillFeatures { return &FillFeatures{engine: engine} }
 
 // Add fills the opening bounded by the last four surface bodies at the given continuity order.
-func (c *FillFeatures) Add(order int) *PartFeature {
-	def := &FillDefinition{Order: order}
+func (c *FillFeatures) Add(order int) *PartFeature { return c.AddSides(order, 4) }
+
+// AddSides fills the opening bounded by the last sides surface bodies (3, 4, 5, …) at the given
+// continuity order. With sides other than 4 the opening is mapped onto four logical sides (N-sided
+// fill, #1300); merged or split sides fill position-only (G0).
+func (c *FillFeatures) AddSides(order, sides int) *PartFeature {
+	def := &FillDefinition{Order: order, Sides: sides}
 	ff := &FillFeature{def: def, featName: "Fill"}
 	pf := c.engine.Add(ff)
 	ff.featName = pf.name

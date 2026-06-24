@@ -57,10 +57,18 @@ func FillFourSided(neighbours [4]*topo.Body, order int) (*topo.Body, error) {
 // continuity; any other (planar) neighbour fills position-only (Order 0) so the fill still
 // interpolates its boundary.
 func fillSide(b boundaryEdge, order int) geom.FillSide {
-	if b.nurbs {
+	if b.nurbs && matchableColumns(b) {
 		return geom.FillSide{Adjacent: b.surface, AdjEdge: b.edge, Order: order}
 	}
 	return geom.FillSide{Order: 0}
+}
+
+// matchableColumns reports whether the fill side's control-row count still equals its neighbour
+// edge's, the precondition for MatchSurface. It is false when an N-sided fill had to refine this side
+// (to stay knot-compatible with a merged opposite side), so that side falls back to G0 — the
+// documented N-sided G2 convergence limit.
+func matchableColumns(b boundaryEdge) bool {
+	return len(b.curve.Ctrl) == len(edgeCurve(b.surface, b.edge).Ctrl)
 }
 
 // openingEdges returns each neighbour's inner boundary edge (nearest the centre of the neighbour
