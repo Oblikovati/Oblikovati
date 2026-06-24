@@ -129,7 +129,8 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 //   - drilling a fat cylinder with a crossing rod (fat − rod), and the two rod stubs of rod − fat (#1335);
 //   - joining two crossing cylinders (fat ∪ rod: the fat with a rod stub each side) (#1335);
 //   - drilling/joining a fat cylinder with a crossing CONE (the tapered tunnel/stubs of cone − fat / fat ∪ cone) (#1335);
-//   - drilling a clean through-hole in an all-planar slab with a straight cylinder (a drilled plate: box − cylinder) (#1336).
+//   - drilling a clean through-hole in an all-planar slab with a straight cylinder (a drilled plate: box − cylinder) (#1336);
+//   - the union of two coaxial equal-radius cylinders that overlap/abut → one taller cylinder (a coplanar/tangent overlap) (#1336).
 func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
 	for _, exact := range curvedExactPaths {
 		if body, ok := exact(op, target, tool); ok {
@@ -146,7 +147,7 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body) (*to
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
 	curvedPartialIntersect,
 	curvedCylindricalHoleCut, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCrossingCut,
-	curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
+	curvedCoaxialJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
 
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {
