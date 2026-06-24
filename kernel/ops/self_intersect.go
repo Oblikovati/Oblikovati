@@ -37,10 +37,14 @@ func SelfIntersections(b *topo.Body, q Quality) []SelfIntersection {
 	var out []SelfIntersection
 	for i := range faces {
 		for j := i + 1; j < len(faces); j++ {
-			if !boxes[i].Intersects(boxes[j]) || facesAdjacent(faces[i], faces[j]) {
+			if !boxes[i].Intersects(boxes[j]) {
 				continue
 			}
-			if p, hit := meshesCross(meshes[i], meshes[j]); hit {
+			// Don't skip the whole pair when the faces merely touch (#1321): test every triangle
+			// pair and discard only crossings that land ON the shared boundary (the legitimate edge/
+			// vertex contact). A crossing AWAY from the shared topology is a real interpenetration.
+			shared := sharedFaceBoundary(faces[i], faces[j])
+			if p, hit := meshesCrossOffBoundary(meshes[i], meshes[j], shared, q.tol()); hit {
 				out = append(out, SelfIntersection{FaceA: faces[i], FaceB: faces[j], Witness: p})
 			}
 		}
@@ -48,33 +52,56 @@ func SelfIntersections(b *topo.Body, q Quality) []SelfIntersection {
 	return out
 }
 
-// facesAdjacent reports whether two faces share any vertex (which covers
-// sharing an edge) — contact along shared topology is legitimate.
-func facesAdjacent(a, b *topo.Face) bool {
-	verts := map[*topo.Vertex]bool{}
-	for _, e := range a.Edges() {
-		verts[e.StartVertex()] = true
-		verts[e.EndVertex()] = true
-	}
+// sharedFaceBoundary returns the geometry two faces legitimately share: their common edges as
+// segments and any common vertex as a degenerate (point) segment. Contact within tol of any of these
+// is the faces meeting along their shared topology, not an interpenetration.
+func sharedFaceBoundary(a, b *topo.Face) [][2]math.Point3 {
+	edgesB := map[*topo.Edge]bool{}
+	vertsB := map[*topo.Vertex]bool{}
 	for _, e := range b.Edges() {
-		if verts[e.StartVertex()] || verts[e.EndVertex()] {
-			return true
+		edgesB[e] = true
+		vertsB[e.StartVertex()], vertsB[e.EndVertex()] = true, true
+	}
+	var shared [][2]math.Point3
+	seenV := map[*topo.Vertex]bool{}
+	for _, e := range a.Edges() {
+		if edgesB[e] {
+			shared = append(shared, [2]math.Point3{e.StartVertex().Point(), e.EndVertex().Point()})
+		}
+		for _, v := range [2]*topo.Vertex{e.StartVertex(), e.EndVertex()} {
+			if vertsB[v] && !seenV[v] {
+				seenV[v] = true
+				shared = append(shared, [2]math.Point3{v.Point(), v.Point()})
+			}
 		}
 	}
-	return false
+	return shared
 }
 
-// meshesCross tests every triangle pair of the two face meshes.
-func meshesCross(a, b *Mesh) (math.Point3, bool) {
+// meshesCrossOffBoundary tests every triangle pair of the two face meshes and returns the first
+// crossing whose witness lies farther than tol from the shared boundary — the first real
+// interpenetration. Crossings on the shared boundary are the faces' legitimate contact and ignored.
+func meshesCrossOffBoundary(a, b *Mesh, shared [][2]math.Point3, tol float64) (math.Point3, bool) {
 	for i := 0; i+2 < len(a.Indices); i += 3 {
 		t1 := meshTriangle(a, i)
 		for j := 0; j+2 < len(b.Indices); j += 3 {
-			if p, hit := trianglesIntersect(t1, meshTriangle(b, j)); hit {
+			p, hit := trianglesIntersect(t1, meshTriangle(b, j))
+			if hit && !onSharedBoundary(p, shared, tol) {
 				return p, true
 			}
 		}
 	}
 	return math.Point3{}, false
+}
+
+// onSharedBoundary reports whether p lies within tol of any shared boundary segment/point.
+func onSharedBoundary(p math.Point3, shared [][2]math.Point3, tol float64) bool {
+	for _, s := range shared {
+		if pointToSegment(p, s[0], s[1]) <= tol {
+			return true
+		}
+	}
+	return false
 }
 
 func meshTriangle(m *Mesh, i int) [3]math.Point3 {
