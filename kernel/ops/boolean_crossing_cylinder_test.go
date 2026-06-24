@@ -316,6 +316,70 @@ func TestBooleanIntersectEqualRadiusSteinmetz(t *testing.T) {
 	}
 }
 
+// TestBooleanCutEqualRadiusSteinmetz subtracts two EQUAL-radius perpendicular cylinders (R=3): Cut must give
+// the exact bitten solid (the target with the tool's saddle bite) whose volume is the cylinder minus the
+// Steinmetz bicylinder (π·R²·h − 16/3·R³), not triangle-soup CSG.
+func TestBooleanCutEqualRadiusSteinmetz(t *testing.T) {
+	const r, h = 3.0, 12.0
+	cx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, h)
+	cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, h)
+
+	res, err := ops.Boolean(ops.Cut, cx, cz)
+	if err != nil {
+		t.Fatalf("Boolean(Cut equal-radius): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("Steinmetz cut is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder, geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 6 {
+		t.Errorf("Steinmetz cut has %d faces, want 6 (two bands, two lobes, two caps)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*r*r*h - 16.0/3.0*r*r*r // the cylinder minus the bicylinder
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("Steinmetz cut volume %.4f, want %.4f (cyl − bicylinder) — rel %.4f > 2%%", got, want, rel)
+	}
+}
+
+// TestBooleanJoinEqualRadiusSteinmetz unites two EQUAL-radius perpendicular cylinders (R=3): Join must give
+// the exact union (each cylinder's outside, meeting along the intersection ellipses) whose volume is two
+// cylinders minus the doubly-counted bicylinder (2·π·R²·h − 16/3·R³), not triangle-soup CSG.
+func TestBooleanJoinEqualRadiusSteinmetz(t *testing.T) {
+	const r, h = 3.0, 12.0
+	cx, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), r, h)
+	cz, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), r, h)
+
+	res, err := ops.Boolean(ops.Join, cx, cz)
+	if err != nil {
+		t.Fatalf("Boolean(Join equal-radius): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("Steinmetz join is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder, geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 8 {
+		t.Errorf("Steinmetz join has %d faces, want 8 (two bands + two caps per cylinder)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := 2*stdmath.Pi*r*r*h - 16.0/3.0*r*r*r // two cylinders minus the bicylinder
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("Steinmetz join volume %.4f, want %.4f (2·cyl − bicylinder) — rel %.4f > 2%%", got, want, rel)
+	}
+}
+
 // TestBooleanIntersectEqualRadiusDefersFromExactPath: two EQUAL-radius perpendicular cylinders are the
 // Steinmetz case the imprint tracer cannot trace cleanly, so the exact path must decline (leaving the
 // boolean to its fallback) rather than emit a wrong analytic solid.
