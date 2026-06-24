@@ -112,6 +112,24 @@ func curvedPartialJoin(op PartFeatureOperation, target, tool *topo.Body) (*topo.
 	return res, true
 }
 
+// curvedCylindricalHoleCut returns target − tool when the tool is a straight cylinder drilling a clean
+// through-hole in an all-planar target (a drilled plate), or ok=false to defer. The result is an EXACT
+// curved B-rep — the two pierced faces gain a circular hole and a single geom.Cylinder face forms the
+// hole wall — so the most common curved cut no longer degrades to triangle-soup CSG (M2 Phase 3,
+// Oblikovati/Oblikovati#1336, reverse of the #1334 cylinder − box case). Only Cut maps here; a tool that
+// is not a single full cylinder, or a hole that clips a face or does not pass clean through, returns
+// ok=false so the CSG fallback still runs.
+func curvedCylindricalHoleCut(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Cut {
+		return nil, false
+	}
+	res, ok := brep.DrillThroughHole(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedConeCylinderCut returns target − tool for a cone crossing a cylinder (drilling the fat cylinder with
 // the cone, or the two cone stubs of cone − fat), or ok=false to defer. Only Cut maps here, and only a valid
 // closed manifold result is adopted.
