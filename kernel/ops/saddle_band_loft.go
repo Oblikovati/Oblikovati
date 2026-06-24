@@ -17,6 +17,43 @@ import (
 // two rim rows — each the exact tessellation of its own saddle edge, so the band welds to the caps that
 // share those edges — is itself an exact loft of the band.
 
+// notchedRimBandMesh meshes a singly-periodic ruled side whose two rims are ONE full-period circle and
+// ONE notched rim — a frustum flat that fades out before the small rim, leaving the kept cone side as a
+// band with a complete circular rim plus a rim notched down to the hyperbola vertex
+// (Oblikovati/Oblikovati#1374). toUVLoops "succeeds" on such a face (the notched outer loop unwraps) and
+// would route it to metricPatchMesh, which treats the full circle as an interior hole and meshes a
+// boundary that does not weld to the cap sharing that rim. But it is a genuine two-rim band, so the
+// saddle-band loft meshes it exactly (ruled rows) AND tessellates each rim by its own shared edge, so it
+// welds. ok=false unless the face is a developable side carrying both a full-circle rim and an open
+// (notched) rim edge — so a plain two-circle band (which already bypasses toUVLoops) is untouched.
+func notchedRimBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
+	if !isDevelopableSide(s) || !hasFullCircleAndNotchedRim(f) {
+		return nil, false
+	}
+	return saddleBandLoftMesh(f, s, q)
+}
+
+// hasFullCircleAndNotchedRim reports whether the face has BOTH a full-period closed-circle rim edge and
+// at least one open (non-closed) rim edge — the notched-band signature. Seam edges (used twice within
+// the face) are excluded, as they bridge the rims and belong to neither.
+func hasFullCircleAndNotchedRim(f *topo.Face) bool {
+	seam := seamEdgesOf(f)
+	fullCircle, notched := false, false
+	for _, e := range f.Edges() {
+		if seam[e] {
+			continue
+		}
+		if e.StartVertex() == e.EndVertex() {
+			if _, isCircle := e.Geometry().(geom.Circle); isCircle {
+				fullCircle = true
+			}
+		} else {
+			notched = true
+		}
+	}
+	return fullCircle && notched
+}
+
 // saddleBandLoftMesh meshes a singly-periodic ruled band (a trimmed cylinder/cone side) bounded by two
 // full-wrap rim loops, stitching the rims directly. ok=false unless the surface is singly periodic (a
 // cylinder/cone, not a torus/plane) and the face has exactly two closed rim edges.

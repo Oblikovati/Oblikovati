@@ -3,7 +3,6 @@
 package brep
 
 import (
-	"errors"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -60,14 +59,56 @@ func TestConeSideHalfSpaceClears(t *testing.T) {
 	}
 }
 
-// The vertex-inside-band arrangement (the flat fades before the bottom rim, bottom r ≤ |D| < top r)
-// is not yet built and must defer cleanly so the CSG fallback still covers it.
-func TestConeSideHalfSpaceVertexInsideDefers(t *testing.T) {
+// The vertex-inside-band arrangement (the flat fades before the bottom rim, bottom r ≤ |D| < top r),
+// keeping the axis side, leaves an ANNULUS cone face: the intact small rim plus a notched top loop
+// whose tongue is bitten out down to the hyperbola vertex (Oblikovati/Oblikovati#1374).
+func TestConeSideHalfSpaceVertexInsideAnnulus(t *testing.T) {
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
 	plane, _ := geom.NewPlane(math.P3(4, 0, 0), math.V3(1, 0, 0)) // |D|=4: cuts the top (r=6) but not the bottom (r=3)
-	if _, err := HalfSpaceCut(frustum, plane); !errors.Is(err, ErrUnsupportedHalfSpace) {
-		t.Errorf("vertex-inside cut should defer with ErrUnsupportedHalfSpace, got %v", err)
+	res, err := HalfSpaceCut(frustum, plane)                      // keeps x<4, the axis side: apex kept → annulus
+	if err != nil {
+		t.Fatalf("HalfSpaceCut: %v", err)
 	}
+	assertWatertight(t, res)
+	cones, _, _ := faceTypeCounts(t, res)
+	if cones != 1 {
+		t.Errorf("result has %d cone faces, want exactly 1 (the notched annulus stays analytic)", cones)
+	}
+	if !anyFaceHasHyperbola(res) {
+		t.Error("no face carries a hyperbolic edge — the notch was not imprinted as a hyperbola")
+	}
+}
+
+// The same arrangement keeping the FAR side drops the small rim entirely and leaves a single TONGUE
+// cone face narrowing to the hyperbola vertex (Oblikovati/Oblikovati#1374).
+func TestConeSideHalfSpaceVertexInsideTongue(t *testing.T) {
+	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
+	plane, _ := geom.NewPlane(math.P3(4, 0, 0), math.V3(-1, 0, 0)) // keeps x>4, the far side: apex dropped → tongue
+	res, err := HalfSpaceCut(frustum, plane)
+	if err != nil {
+		t.Fatalf("HalfSpaceCut: %v", err)
+	}
+	assertWatertight(t, res)
+	cones, _, planes := faceTypeCounts(t, res)
+	if cones != 1 {
+		t.Errorf("result has %d cone faces, want exactly 1 (the tongue stays analytic)", cones)
+	}
+	if planes != 2 { // top-cap minor segment + lid only; the small cap is dropped
+		t.Errorf("result has %d planar faces, want 2 (top-cap segment + lid, no small cap)", planes)
+	}
+	if !anyFaceHasHyperbola(res) {
+		t.Error("no face carries a hyperbolic edge — the tongue was not imprinted as a hyperbola")
+	}
+}
+
+// anyFaceHasHyperbola reports whether any face of the body carries a hyperbolic edge.
+func anyFaceHasHyperbola(b *topo.Body) bool {
+	for _, f := range b.Faces() {
+		if hasHyperbolaEdge(f) {
+			return true
+		}
+	}
+	return false
 }
 
 // mustFrustum builds a frustum solid (bottom radius < top radius) or fails the test.

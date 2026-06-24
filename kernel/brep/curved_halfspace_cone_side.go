@@ -13,11 +13,13 @@ import (
 // cylinderSideSplit: a FULL periodic frustum side cut by a plane PARALLEL to the axis. Like the
 // cylinder, the seam tangles the general looped split, so this gives a dedicated closed-form split —
 // but the imprint is one hyperbola branch (the conic a plane ∥ axis cuts from a cone), not two lines,
-// and the kept band's two cross-section arcs have different radii. This slice handles the ARC-BAND
+// and the kept band's two cross-section arcs have different radii. coneArcBand handles the ARC-BAND
 // arrangement where the plane cuts EVERY cross-section in the band (the vertex sits at or below the
-// bottom rim, |D| < bottom radius) — a flat milled the full length of a frustum's side. The vertex-
-// inside-band arrangement (the flat fades out before the bottom rim) and a full cone reaching its
-// apex defer to ErrUnsupportedHalfSpace, so the CSG fallback still covers them with no regression.
+// bottom rim, |D| < bottom radius) — a flat milled the full length of a frustum's side. coneSideVertex-
+// Inside handles the VERTEX-INSIDE-BAND arrangement where the flat fades out before the small rim
+// (bottom radius ≤ |D| < top radius), the hyperbola turning through its vertex inside the side
+// (Oblikovati/Oblikovati#1374). A full cone reaching its apex still defers to ErrUnsupportedHalfSpace,
+// so the CSG fallback covers it with no regression.
 
 // coneSideSplit splits a full periodic frustum side f by a plane parallel to the axis, given the
 // hyperbola branch the plane cuts. It returns the kept arc-band sub-face and the two hyperbola arms
@@ -40,18 +42,20 @@ func coneSideSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.
 	if absD >= band.rTop-cylinderAxisTol { // plane clears every cross-section: whole side, or none
 		return coneSideWholeOrEmpty(f, d), nil, nil
 	}
-	if absD >= band.rBot-cylinderAxisTol { // vertex sits inside the band: deferred to CSG for now
-		return nil, nil, ErrUnsupportedHalfSpace
+	if absD >= band.rBot-cylinderAxisTol { // vertex sits inside the band: the flat fades before the small rim
+		return coneSideVertexInside(f, cone, hyper, band, n, d)
 	}
 	return coneArcBand(f, cone, hyper, band, n, d)
 }
 
 // coneSideBand carries a frustum side's two cross-section circles (centres on the axis, ordered
-// low→high in apex distance) and their radii.
+// low→high in apex distance), the source rim circles themselves (so a kept face can reuse a rim edge
+// and weld with its cap), and their radii.
 type coneSideBand_ struct {
-	bottom, top math.Point3
-	vMin, vMax  float64
-	rBot, rTop  float64
+	bottom, top         math.Point3
+	bottomCirc, topCirc geom.Circle
+	vMin, vMax          float64
+	rBot, rTop          float64
 }
 
 // coneSideBand recovers the frustum side's two full-circle rims, ordered by apex distance. ok=false
@@ -60,21 +64,25 @@ type coneSideBand_ struct {
 func coneSideBand(f curvedFace, cone geom.Cone) (coneSideBand_, bool) {
 	axis := cone.AxisDir.AsVector()
 	tanA := stdmath.Tan(cone.HalfAngle)
-	var centers []math.Point3
+	var circles []geom.Circle
 	for _, le := range f.loops[0].edges {
 		if c, isCircle := le.curve.(geom.Circle); isCircle && isFullDomain(le.t0, le.t1) {
-			centers = append(centers, c.Center)
+			circles = append(circles, c)
 		}
 	}
-	if len(centers) != 2 {
+	if len(circles) != 2 {
 		return coneSideBand_{}, false
 	}
-	if float64(cone.Apex.VectorTo(centers[0]).Dot(axis)) > float64(cone.Apex.VectorTo(centers[1]).Dot(axis)) {
-		centers[0], centers[1] = centers[1], centers[0]
+	if float64(cone.Apex.VectorTo(circles[0].Center).Dot(axis)) > float64(cone.Apex.VectorTo(circles[1].Center).Dot(axis)) {
+		circles[0], circles[1] = circles[1], circles[0]
 	}
-	vMin := float64(cone.Apex.VectorTo(centers[0]).Dot(axis))
-	vMax := float64(cone.Apex.VectorTo(centers[1]).Dot(axis))
-	return coneSideBand_{bottom: centers[0], top: centers[1], vMin: vMin, vMax: vMax, rBot: vMin * tanA, rTop: vMax * tanA}, true
+	vMin := float64(cone.Apex.VectorTo(circles[0].Center).Dot(axis))
+	vMax := float64(cone.Apex.VectorTo(circles[1].Center).Dot(axis))
+	return coneSideBand_{
+		bottom: circles[0].Center, top: circles[1].Center,
+		bottomCirc: circles[0], topCirc: circles[1],
+		vMin: vMin, vMax: vMax, rBot: vMin * tanA, rTop: vMax * tanA,
+	}, true
 }
 
 // coneSideWholeOrEmpty handles a plane that clears the whole band: the cone's axis sits at signed
@@ -110,6 +118,46 @@ func coneArcBand(f curvedFace, cone geom.Cone, hyper geom.Hyperbola, band coneSi
 	kept := curvedFace{surface: cone, reversed: f.reversed, lineage: f.lineage, loops: []curvedLoop{{edges: loop}}}
 	section := []loopEdge{reverseEdge(armA), reverseEdge(armB)}
 	return []curvedFace{kept}, section, nil
+}
+
+// coneSideVertexInside builds the kept sub-face(s) when the hyperbola vertex (apex distance |d|/tanα)
+// lies strictly inside the band — the flat fades out before reaching the small rim
+// (band.rBot ≤ |d| < band.rTop, Oblikovati/Oblikovati#1374). The imprint is one continuous hyperbola
+// branch through its vertex (an interior cone point), so the kept top boundary is NOTCHED down to that
+// vertex. Two arrangements by which side the apex is on:
+//   - d > 0 (apex on the dropped side): the small rim is wholly dropped and the kept region is a single
+//     tongue around u_n+π narrowing to the vertex — one loop.
+//   - d < 0 (apex on the kept side): the kept region is the whole side MINUS that tongue — an annulus
+//     whose outer loop is the notched top and whose inner loop is the full small-rim circle.
+//
+// Both arrangements share the same notched-top loop and the same through-vertex hyperbola section
+// (reversed for the lid).
+func coneSideVertexInside(f curvedFace, cone geom.Cone, hyper geom.Hyperbola, band coneSideBand_, n math.Vector3, d float64) ([]curvedFace, []loopEdge, error) {
+	axis := cone.AxisDir.AsVector()
+	ref := cone.Ref.AsVector()
+	uN := coneAngleOf(cone, n)
+	phiT := stdmath.Acos(clampUnit(-d / band.rTop))
+	topArc, err := geom.NewArc3d(band.top, axis, ref, band.rTop, uN-phiT, -(2*stdmath.Pi - 2*phiT))
+	if err != nil {
+		return nil, nil, ErrUnsupportedHalfSpace
+	}
+	vertex := hyper.PointAt(0)                                // the branch vertex sits on the cone at apex distance |d|/tanα
+	armDown := hyperbolaArm(hyper, topArc.PointAt(1), vertex) // top rim → vertex
+	armUp := hyperbolaArm(hyper, vertex, topArc.PointAt(0))   // vertex → top rim
+	notched := []loopEdge{{curve: topArc, t0: 0, t1: 1}, armDown, armUp}
+	section := []loopEdge{reverseEdge(armDown), reverseEdge(armUp)}
+	return coneVertexInsideFaces(f, cone, band, d, notched), section, nil
+}
+
+// coneVertexInsideFaces wraps the notched-top loop into the kept face: a lone tongue when the apex is
+// dropped (d>0), or an annulus closed by the intact small-rim circle as an inner loop when the apex is
+// kept (d<0). The small-rim circle is the source side's own edge so it welds with the small cap.
+func coneVertexInsideFaces(f curvedFace, cone geom.Cone, band coneSideBand_, d float64, notched []loopEdge) []curvedFace {
+	loops := []curvedLoop{{edges: notched}}
+	if d < 0 { // apex kept: close the annulus with the intact small rim
+		loops = append(loops, curvedLoop{edges: []loopEdge{{curve: band.bottomCirc, t0: 0, t1: 1}}})
+	}
+	return []curvedFace{{surface: cone, reversed: f.reversed, lineage: f.lineage, loops: loops}}
 }
 
 // hyperbolaArm builds the loop edge along the hyperbola branch from start to end, its parameters the

@@ -27,24 +27,16 @@ const trimBorderTol = 1e-6
 // tessellateCurvedFace meshes a curved face's trimmed region (see file doc).
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	s := f.Geometry()
-	if _, isSpline := s.(geom.BSplineSurface); isSpline {
-		if m := nurbsPcurveMesh(f, q); m != nil { // M25: metric-aware (u,v) triangulation
-			return m
-		}
+	if m := splineFaceMesh(f, s, q); m != nil {
+		return m // M25: a B-spline face via the metric-aware (u,v) triangulation
 	}
 	outer3D := faceOuterBoundary(f, q)
 	holes3D := faceHoleBoundaries(f, q)
 	if len(outer3D) < 3 {
 		return fullDomainGridMesh(s, q)
 	}
-	if m, isFan := coneApexFan(s, outer3D); isFan {
-		return m // a cone closing to its apex (a drill point): a fan from the apex to the rim
-	}
-	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
-		return m // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
-	}
-	if m, isPatch := spherePatchMesh(s, outer3D, holes3D, q); isPatch {
-		return m // a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
+	if m, special := specialCurvedMesh(f, s, outer3D, holes3D, q); special {
+		return m // a cone-apex/sphere fan or cap, sphere box-cut patch, or notched-rim band
 	}
 	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
@@ -54,6 +46,35 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
 	}
 	return nonRectangularMesh(s, q, outer3D, holes3D, outerUV, holesUV)
+}
+
+// specialCurvedMesh tries the surface-specific meshers that precede the generic (u,v) trim path: a cone
+// closing to its apex (a fan), a sphere cut by one plane (a cap fan) or by several (a gnomonic patch),
+// and a periodic developable side with one full-circle rim plus a notched rim (a band loft). It returns
+// (mesh, true) on the first that applies, or (nil, false) so the caller falls through to toUVLoops.
+func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
+	if m, isFan := coneApexFan(s, outer3D); isFan {
+		return m, true // a cone closing to its apex (a drill point): a fan from the apex to the rim
+	}
+	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
+		return m, true // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
+	}
+	if m, isPatch := spherePatchMesh(s, outer3D, holes3D, q); isPatch {
+		return m, true // a sphere bounded by several arcs (a box cut): gnomonic CDT, pole/seam-safe
+	}
+	if m, isBand := notchedRimBandMesh(f, s, q); isBand {
+		return m, true // a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft
+	}
+	return nil, false
+}
+
+// splineFaceMesh meshes a B-spline face through the metric-aware (u,v) triangulation (M25), or nil when
+// the face is not a B-spline (so the caller falls through to the analytic-surface paths).
+func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
+	if _, isSpline := s.(geom.BSplineSurface); !isSpline {
+		return nil
+	}
+	return nurbsPcurveMesh(f, q)
 }
 
 // meshSeamCrossingFace meshes a curved face whose boundary loop wraps the periodic seam (so toUVLoops
