@@ -64,6 +64,40 @@ func TestBooleanIntersectCrossingCylinders(t *testing.T) {
 	}
 }
 
+// TestBooleanCutDrillCrossingCylinder drills a fat cylinder (R=3, axis z) with a crossing rod (r=1.5, axis
+// x): Cut must give the exact four-face analytic solid (two caps, the holed side wall, the tunnel) whose
+// volume is the fat cylinder minus the crossing intersection (the tunnel), not triangle-soup CSG.
+func TestBooleanCutDrillCrossingCylinder(t *testing.T) {
+	const rRod, rFat, hFat = 1.5, 3.0, 12.0
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, hFat)
+	thin, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, 12)
+
+	res, err := ops.Boolean(ops.Cut, fat, thin)
+	if err != nil {
+		t.Fatalf("Boolean(Cut): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("drilled cylinder is not a valid closed manifold solid: %+v", v)
+	}
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder, geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must run, not CSG)", f.Geometry())
+		}
+	}
+	if n := len(res.Faces()); n != 4 {
+		t.Errorf("drilled cylinder has %d faces, want 4 (two caps, holed wall, tunnel)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rFat*rFat*hFat - crossingIntersectVolume(rRod, rFat)
+	// 4%: the concave tunnel and the drilled wall inscribe their curvature, so the meshed volume runs a
+	// little under the analytic fat − tunnel (the B-rep is exact; this bounds the property-mesh error).
+	if rel := stdmath.Abs(got-want) / want; rel > 0.04 {
+		t.Errorf("drilled volume %.4f, want %.4f (fat − tunnel) — rel %.4f > 4%%", got, want, rel)
+	}
+}
+
 // TestBooleanIntersectEqualRadiusDefersFromExactPath: two EQUAL-radius perpendicular cylinders are the
 // Steinmetz case the imprint tracer cannot trace cleanly, so the exact path must decline (leaving the
 // boolean to its fallback) rather than emit a wrong analytic solid.

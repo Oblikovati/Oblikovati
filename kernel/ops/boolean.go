@@ -82,20 +82,8 @@ func join(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, 
 // triangle-soup BSP CSG only when an operand has a non-planar face the B-rep path can't take
 // (a cylinder, cone, etc.). A nil B-rep result is a (valid) empty body.
 func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
-	// Exact curved path first: a curved solid intersected with a convex planar tool composes
-	// brep.HalfSpaceCut over the tool's planes (M2 #1334), keeping analytic surfaces instead of CSG soup.
-	if body, ok := curvedConvexIntersect(op, target, tool); ok {
-		return body, nil
-	}
-	// And a curved solid cut by a convex prism tunnelling through it (cylinder − box), keeping the
-	// cylinder's exact surfaces with a clean prismatic hole instead of CSG soup (M2 #1334).
-	if body, ok := curvedConvexSubtract(op, target, tool); ok {
-		return body, nil
-	}
-	// And two crossing cylinders (a rod through a fatter cylinder): assemble the rod band + the two
-	// fat-wall lens caps straight from the traced imprint loops, exact surfaces preserved (M2 #1335).
-	if body, ok := curvedCrossingIntersect(op, target, tool); ok {
-		return body, nil
+	if body, ok := curvedExactBoolean(op, target, tool); ok {
+		return body, nil // an exact analytic curved result (M2 #1334/#1335) — keeps surfaces, no CSG soup
 	}
 	bop, ok := toBrepOp(op)
 	if !ok {
@@ -126,6 +114,26 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 		}
 	}
 	return body, nil
+}
+
+// curvedExactBoolean tries each exact analytic curved-boolean path in turn, returning the first that
+// applies (M2, ADR-0027 §M2). Each keeps the operands' exact analytic surfaces instead of the triangle-soup
+// CSG fallback; one that does not apply returns ok=false so booleanGeneral moves on:
+//   - a curved solid ∩ a convex planar tool (a box) → composed half-space cuts (#1334);
+//   - a curved solid − a convex prism tunnelling through it (cylinder − box) (#1334);
+//   - two crossing cylinders ∩ (rod band + fat-wall lens caps) (#1335);
+//   - drilling a fat cylinder with a crossing rod (fat − rod) (#1335).
+func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if body, ok := curvedConvexIntersect(op, target, tool); ok {
+		return body, true
+	}
+	if body, ok := curvedConvexSubtract(op, target, tool); ok {
+		return body, true
+	}
+	if body, ok := curvedCrossingIntersect(op, target, tool); ok {
+		return body, true
+	}
+	return curvedCrossingCut(op, target, tool)
 }
 
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {
