@@ -87,6 +87,40 @@ stay (imprint → split → classify → stitch); each is lifted from "plane + 3
 Until a slice lands, the affected case keeps using the BSP-CSG fallback (correct, just
 faceted) — no regression.
 
+## M2 — the general arrangement boolean (#1320)
+
+Slices 1–3 and the slice-5 hole cutters are **specialized**: each is a hand-built assembly
+for one feature (through-hole, blind hole, counterbore, …). They do not generalize — an
+arbitrary `Boolean(Cut, curvedBody, planarTool)` still falls to BSP-CSG. M2 (#1320) finishes
+ADR-0027 by building the **general arrangement-based curved boolean** the four-stage pipeline
+above always intended, so *any* curved operand goes through the exact path, not a per-feature
+specialization. It is phased so each phase is shippable, oracle-tested, and leaves the CSG
+fallback intact for the unhandled cases.
+
+- **Phase 1 — curved solid ∩ planar half-spaces (analytic imprints, #1334).** A generalized
+  `curvedFace{surface, loops []curvedLoop, lineage}` (loops are `geom.Curve3` edges, not just
+  3D point rings) and `facesOfAny(body)` that flattens planar *and* analytic-curved bodies.
+  Imprint a curved face against a plane with `geom.IntersectSurfacesAnalytic` (the exact conic),
+  split the curved face in its (u,v) domain along that conic, classify each sub-face by the
+  **H3 generalized winding number** (`ops.PointInsideBody`), and stitch curved edges. Scope is
+  the case where every imprint is an analytic conic: a cylinder/sphere/cone solid cut/intersected
+  by planar half-spaces (a box). Hits acceptance #1 (cylinder−box, sphere∩box: exact curved
+  result faces, analytic volume). First slice: a single half-space cut (sphere→cap, cylinder→
+  frustum); then compose half-spaces for the box.
+- **Phase 2 — curved ∩ curved imprints via the M1 SSI tracer (#1335).** Two crossing cylinders
+  (cross/tee): imprint from `geom.IntersectSurfaceSurface` (the predictor–corrector tracer),
+  split both curved faces along the traced curve, exact watertight manifold result (acceptance
+  #2). Fit a traced loop to an analytic curve where one exists; otherwise carry it as a spline
+  edge.
+- **Phase 3 — robustness, chaining, oracle, fallback retirement (#1336).** Coplanar/tangent
+  curved overlaps; chained-boolean drift guard (acceptance #4); remove the dependence on
+  `tjunctionFaceBudget` for watertightness (acceptance #3); OCCT `getMass` regression oracle;
+  retire BSP-CSG as the *primary* curved path (keep only as last-resort fallback).
+
+Prerequisites now in place (M37): **H3** robust point membership (winding number), **M1** SSI
+tracer, the analytic conic intersect (slice 1), and curved-face tessellation. #1320 stays the
+open umbrella until Phase 3 lands.
+
 ## Consequences
 
 - Hole/Boss/Fillet become clean, low-face-count, chain-exact, with stable face keys.
