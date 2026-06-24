@@ -66,13 +66,30 @@ func countInnerLoops(f *topo.Face) int {
 	return n
 }
 
-// TestCrossingCylinderCutRodTargetDefers: rod − fat (the disconnected stub case) is not the drill; the
-// assembler declines so the caller keeps its fallback.
-func TestCrossingCylinderCutRodTargetDefers(t *testing.T) {
+// TestCrossingCylinderCutRodMinusFatStubs: rod − fat is the two disconnected rod stubs (the rod sticking
+// out either side of the fat). Each stub is a closed lump of three faces (the rod stub band, the rod end
+// cap, and the fat-wall lens), merged into one two-shell solid.
+func TestCrossingCylinderCutRodMinusFatStubs(t *testing.T) {
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	thin, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
-	if _, ok := CrossingCylinderCut(thin, fat); ok { // target is the rod
-		t.Error("rod − fat (stubs) should defer from the drill assembler (ok=false)")
+
+	res, ok := CrossingCylinderCut(thin, fat) // target is the rod
+	if !ok {
+		t.Fatal("rod − fat declined; want two disconnected rod stubs")
+	}
+	if !res.IsSolid() {
+		t.Fatalf("rod − fat result is not a solid: %+v", res)
+	}
+	if n := len(res.Shells()); n != 2 {
+		t.Errorf("rod − fat has %d shells, want 2 (a disconnected stub each side)", n)
+	}
+	for _, e := range res.Edges() {
+		if uses := len(e.Uses()); uses != 2 {
+			t.Errorf("edge %v has %d uses, want 2 (a closed manifold)", e.Lineage(), uses)
+		}
+	}
+	if n := len(res.Faces()); n != 6 {
+		t.Errorf("rod − fat has %d faces, want 6 (band + rod cap + lens, twice)", n)
 	}
 }
 
