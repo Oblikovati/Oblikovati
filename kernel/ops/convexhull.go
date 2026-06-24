@@ -5,6 +5,7 @@ package ops
 import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/math/predicate"
 )
 
 // ConvexHull returns the convex hull of a point set as a closed, triangulated solid body.
@@ -64,25 +65,24 @@ func convexHull3D(points []math.Point3) ([]math.Point3, [][3]int, error) {
 	if !ok {
 		return nil, nil, errHull("points are collinear or coplanar (no 3D hull)")
 	}
-	tol := res.Weld()
 	faces := initialFaces(pts, tet)
 	for i := range pts {
 		if i == tet[0] || i == tet[1] || i == tet[2] || i == tet[3] {
 			continue
 		}
-		faces = insertPoint(pts, faces, i, tol)
+		faces = insertPoint(pts, faces, i)
 	}
 	return compactHull(pts, faces)
 }
 
 // insertPoint folds the faces visible from pts[pi] into a triangle fan anchored at pi, leaving
 // the hull closed. A point that sees no face is interior and changes nothing.
-func insertPoint(pts []math.Point3, faces [][3]int, pi int, tol float64) [][3]int {
+func insertPoint(pts []math.Point3, faces [][3]int, pi int) [][3]int {
 	p := pts[pi]
 	visible := make([]bool, len(faces))
 	anyVisible := false
 	for fi, f := range faces {
-		if faceVisible(pts, f, p, tol) {
+		if faceVisible(pts, f, p) {
 			visible[fi], anyVisible = true, true
 		}
 	}
@@ -126,16 +126,13 @@ func visibleEdgeSet(faces [][3]int, visible []bool) map[[2]int]bool {
 	return seen
 }
 
-// faceVisible reports whether p lies strictly outside the face (on its outward side) by more
-// than tol — i.e. the face must fold to admit p.
-func faceVisible(pts []math.Point3, f [3]int, p math.Point3, tol float64) bool {
-	a, b, c := pts[f[0]], pts[f[1]], pts[f[2]]
-	n := a.VectorTo(b).Cross(a.VectorTo(c))
-	nl := n.Length()
-	if nl == 0 {
-		return false
-	}
-	return a.VectorTo(p).Dot(n)/nl > tol
+// faceVisible reports whether p lies strictly outside the face (on its outward side) — i.e. the face
+// must fold to admit p. The test is the EXACT orientation predicate (#1323 L2): with the face wound so
+// (b−a)×(c−a) points outward, p sees it iff Orient3D(a,b,c,p) < 0 (p on the +normal side). A float
+// dot-product tolerance was fragile on the coplanar/cocircular inputs hull() is built for (boxes,
+// cylinders), producing inverted or extra sliver faces; predicate.Orient3D is sign-exact there.
+func faceVisible(pts []math.Point3, f [3]int, p math.Point3) bool {
+	return predicate.Orient3D(pts[f[0]], pts[f[1]], pts[f[2]], p) < 0
 }
 
 // initialFaces builds the seed tetrahedron's four faces, each wound so its normal points away

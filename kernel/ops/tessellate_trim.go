@@ -71,22 +71,22 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 }
 
 // nonRectangularMesh meshes a non-iso-rectangular curved trim. Every analytic curved surface (torus,
-// sphere, cylinder, cone) goes through metricPatchMesh — a trim-local metric-scaled (u,v) CDT that
-// stays fold-free and volume-correct (#585). A B-spline that fell through nurbsPcurveMesh uses the same
-// CDT without interior Steiner points (trimmedPatchMesh). Anything else keeps the best-fit-plane
-// ear-clip (boundaryPatchMesh).
+// sphere, cylinder, cone) AND the B-spline trim go through metricPatchMesh — a trim-local metric-scaled
+// (u,v) CDT WITH curvature-adaptive interior Steiner points (#585, #1323 L3) — so a larger freeform
+// trim's interior is refined to the chord tolerance, not chorded flat across the boundary loops.
+// Anything else keeps the best-fit-plane ear-clip (boundaryPatchMesh).
 func nonRectangularMesh(s geom.Surface, q Quality, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
 	switch s.(type) {
-	case geom.Torus, geom.Sphere, geom.Cylinder, geom.Cone:
-		// Analytic curved trims fold when flattened to a best-fit plane (boundaryPatchMesh) or meshed
-		// over a plain anisotropic (u,v) (gridPatchMesh): a torus's ring-vs-tube, a sphere near its
-		// poles, a trimmed cyl/cone. metricPatchMesh triangulates in a TRIM-LOCAL metric-scaled (u,v)
+	case geom.Torus, geom.Sphere, geom.Cylinder, geom.Cone, geom.BSplineSurface:
+		// These trims fold when flattened to a best-fit plane (boundaryPatchMesh) or meshed over a plain
+		// anisotropic (u,v) (gridPatchMesh): a torus's ring-vs-tube, a sphere near its poles, a trimmed
+		// cyl/cone, a freeform B-spline. metricPatchMesh triangulates in a TRIM-LOCAL metric-scaled (u,v)
 		// (√E,√G over the trim's own (u,v) bbox, so even a cone — whose metric degenerates only toward
-		// the far-off apex — stays well conditioned), plus repairFolds. This was the bulk of the EDF
-		// over-enclosure (#585: total volume +35.6% → ≈exact, torus the single largest fold source).
+		// the far-off apex — stays well conditioned) with deflection-adaptive interior nodes kept
+		// strictly inside the trim (adaptiveInteriorNodes/clearOfTrim), plus repairFolds and a
+		// boundary-only fallback. This was the bulk of the EDF over-enclosure (#585) and, for B-splines,
+		// removes the interior chord error of the old boundary-only triangulation (#1323 L3).
 		return metricPatchMesh(s, q, outer3D, holes3D, outerUV, holesUV)
-	case geom.BSplineSurface:
-		return trimmedPatchMesh(s, outer3D, holes3D)
 	}
 	return boundaryPatchMesh(s, outer3D, holes3D)
 }
