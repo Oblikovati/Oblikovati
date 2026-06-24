@@ -106,9 +106,9 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	// so above the limit we keep the (fast) planar result rather than pay a big CSG attempt.
 	if shouldFallbackBoolean(op, target, tool, body) && len(target.Faces())+len(tool.Faces()) <= csgFallbackFaceLimit {
 		// Adopt the CSG fallback only when it is a genuine closed manifold solid — NOT merely
-		// Validate().Valid, which does not require Closed: a high-facet mesh whose T-junction
-		// removal bailed (tjunctionFaceBudget) comes back non-watertight, and adopting that
-		// would replace a sound planar result with open garbage.
+		// Validate().Valid, which does not require Closed. T-junction removal now always closes
+		// the cage (#1336), so this is belt-and-braces: never replace a sound planar result with
+		// an open one.
 		if csg, cerr := booleanCSG(op, target, tool, lin); cerr == nil && csg != nil && validBooleanSolid(csg) {
 			return csg, nil
 		}
@@ -128,7 +128,8 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 //   - a thin rod ending inside a fatter cylinder ∩/−/∪ (a partial penetration: the plug, a blind hole, a one-sided stub) (#1335);
 //   - drilling a fat cylinder with a crossing rod (fat − rod), and the two rod stubs of rod − fat (#1335);
 //   - joining two crossing cylinders (fat ∪ rod: the fat with a rod stub each side) (#1335);
-//   - drilling/joining a fat cylinder with a crossing CONE (the tapered tunnel/stubs of cone − fat / fat ∪ cone) (#1335).
+//   - drilling/joining a fat cylinder with a crossing CONE (the tapered tunnel/stubs of cone − fat / fat ∪ cone) (#1335);
+//   - drilling a clean through-hole in an all-planar slab with a straight cylinder (a drilled plate: box − cylinder) (#1336).
 func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
 	for _, exact := range curvedExactPaths {
 		if body, ok := exact(op, target, tool); ok {
@@ -144,7 +145,7 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body) (*to
 	curvedConvexIntersect, curvedConvexSubtract,
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
 	curvedPartialIntersect,
-	curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCrossingCut,
+	curvedCylindricalHoleCut, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCrossingCut,
 	curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
 

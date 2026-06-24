@@ -37,6 +37,29 @@ func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 	return assembleDrilled(copied, caps, ua, radius)
 }
 
+// DrillThroughHole cuts slab − cylinderTool as an EXACT through-hole when cylinderTool is a single
+// straight cylinder passing cleanly through two planar faces of an all-planar slab (a drilled plate). It
+// is the boolean entry point that keeps a drilled plate an exact curved B-rep rather than triangle-soup
+// CSG (M2 Phase 3, Oblikovati/Oblikovati#1336 — the reverse of the #1334 cylinder − box case). It returns
+// ok=false when cylinderTool is not a bare cylinder solid, or when the hole is partial / clipped / not
+// perpendicular-through (CutCylindricalHole errors), so the caller keeps its CSG fallback. The result
+// preserves the cylinder surface as the hole wall.
+//
+// Example:
+//
+//	res, ok := brep.DrillThroughHole(plate, rod) // plate − rod, exact round hole, ok==true
+func DrillThroughHole(slab, cylinderTool *topo.Body) (*topo.Body, bool) {
+	cyl, base, _, ok := cylinderSolidParams(facesOfAny(cylinderTool))
+	if !ok {
+		return nil, false // tool is not a single bare cylinder
+	}
+	res, err := CutCylindricalHole(slab, base, cyl.AxisDir.AsVector(), cyl.Radius)
+	if err != nil {
+		return nil, false // partial / clipped / off-axis hole → defer to the general fallback
+	}
+	return res, true
+}
+
 // drillCap is a planar face the hole axis pierces (an entry/exit face), with the pierce
 // point and its parameter along the axis (used to order entry before exit).
 type drillCap struct {
