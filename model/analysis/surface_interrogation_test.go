@@ -198,3 +198,49 @@ func TestInteriorLevels(t *testing.T) {
 		t.Errorf("a constant field should yield no levels, got %v", lv)
 	}
 }
+
+// TestZebraBandsOnSphereAlternate: a sphere swept by the stripe environment shows both dark and light
+// zebra bands (the map covers the form), unlike a single flat band.
+func TestZebraBandsOnSphereAlternate(t *testing.T) {
+	m := sphereMesh(2, 24, 48)
+	bands := ZebraTriangleBands(m, math.V3(0, 0, -1), math.V3(0, 0, 1), 12)
+	if len(bands) != len(m.Triangles) {
+		t.Fatalf("got %d band flags, want one per triangle (%d)", len(bands), len(m.Triangles))
+	}
+	var dark, light int
+	for _, b := range bands {
+		if b {
+			dark++
+		} else {
+			light++
+		}
+	}
+	if dark == 0 || light == 0 {
+		t.Errorf("a sphere should show both dark and light zebra bands, got %d dark / %d light", dark, light)
+	}
+}
+
+// TestZebraBandsFlatIsSingleBand: a flat patch reflects the view to one constant direction, so every
+// triangle falls in the same band (no stripes) — the zebra is uniform.
+func TestZebraBandsFlatIsSingleBand(t *testing.T) {
+	var m SurfaceSamples
+	for i := 0; i <= 3; i++ {
+		for j := 0; j <= 3; j++ {
+			m.Positions = append(m.Positions, math.P3(math.Scalar(i), math.Scalar(j), 0))
+			m.Normals = append(m.Normals, math.V3(0, 0, 1))
+		}
+	}
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			a := i*4 + j
+			m.Triangles = append(m.Triangles, [3]int{a, a + 1, a + 5}, [3]int{a, a + 5, a + 4})
+		}
+	}
+	bands := ZebraTriangleBands(m, math.V3(0, 0, -1), math.V3(0, 0, 1), 12)
+	first := bands[0]
+	for _, b := range bands {
+		if b != first {
+			t.Fatal("a flat patch should be a single uniform zebra band")
+		}
+	}
+}
