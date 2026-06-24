@@ -118,7 +118,16 @@ func curvedExactCases() []curvedExactCase {
 		{"cone − box (axis-∥ flat)", ops.Cut, coneFlatBox},
 		{"cone ∩ box (vertex-inside flat)", ops.Intersect, coneVertexInsideFlatBox},
 		{"cone − box (vertex-inside flat)", ops.Cut, coneVertexInsideFlatBox},
+		{"cone ∩ box (oblique ellipse)", ops.Intersect, coneObliqueEllipseBox},
+		{"cone − box (oblique ellipse)", ops.Cut, coneObliqueEllipseBox},
 	}
+}
+
+// coneObliqueEllipseBox is a frustum tilted so its axis is (0,0.6,0.8) and an axis-aligned box whose
+// only cutting face (z=4) is tilted steeper than the generators — the oblique ELLIPSE section, wholly
+// within the band (Oblikovati/Oblikovati#1375).
+func coneObliqueEllipseBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCone(t, math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 6), demoBlock(t, math.P3(-20, -20, 4), math.P3(20, 20, 30))
 }
 
 // coneVertexInsideFlatBox is the same frustum with a box whose face x=4 has |D|=4 BETWEEN the bottom
