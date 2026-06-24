@@ -27,3 +27,17 @@ func curvedCrossingIntersect(op PartFeatureOperation, target, tool *topo.Body) (
 	}
 	return res, true
 }
+
+// curvedCrossingCut returns target − tool for two crossing cylinders (drilling a fat cylinder with a
+// crossing rod), or ok=false to defer. Only Cut maps here, and only a valid closed manifold result is
+// adopted.
+func curvedCrossingCut(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Cut {
+		return nil, false
+	}
+	res, ok := brep.CrossingCylinderCut(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
