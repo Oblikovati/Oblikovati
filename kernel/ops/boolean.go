@@ -51,14 +51,29 @@ func Boolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, erro
 	rel := classify(target, tool)
 	switch op {
 	case Join:
-		if rel == intersecting {
-			return booleanGeneral(op, target, tool, lin)
-		}
-		return topo.MergeBodies(lin, true, target, tool), nil
+		return join(lin, target, tool, rel)
 	case Cut:
 		return cut(lin, target, tool, rel)
 	default: // Intersect
 		return intersect(lin, target, tool, rel)
+	}
+}
+
+// join combines target and tool under A ∪ B. When one body strictly contains the other (classify
+// guarantees no boundary crossing — see strictlyContains, #1315), the union IS the outer body, so the
+// inner shell is discarded rather than kept as a floating interior wall — the old MergeBodies path
+// concatenated both shells and double-counted the volume (#1316). Disjoint bodies merge into one
+// multi-lump body (each a separate valid shell); intersecting bodies go to the face-splitting boolean.
+func join(lin topo.Lineage, target, tool *topo.Body, rel relation) (*topo.Body, error) {
+	switch rel {
+	case targetContainsTool:
+		return target, nil // tool lies inside target → union is target alone
+	case toolContainsTarget:
+		return tool, nil
+	case intersecting:
+		return booleanGeneral(Join, target, tool, lin)
+	default: // disjoint: two separate lumps form a valid multi-shell body
+		return topo.MergeBodies(lin, true, target, tool), nil
 	}
 }
 
