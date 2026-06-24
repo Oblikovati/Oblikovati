@@ -40,6 +40,9 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	if m, isFan := coneApexFan(s, outer3D); isFan {
 		return m // a cone closing to its apex (a drill point): a fan from the apex to the rim
 	}
+	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
+		return m // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
+	}
 	outerUV, holesUV, ok := toUVLoops(s, outer3D, holes3D)
 	if !ok {
 		return meshSeamCrossingFace(f, s, outer3D, holes3D, q) // a loop wrapping the seam: band/cap fallbacks
