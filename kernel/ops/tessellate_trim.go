@@ -62,7 +62,10 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // (the full-domain grid tears there); a doubly-periodic torus we can't reduce keeps the full-domain grid.
 func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
-		return closedDomainMesh(s, us, vs) // full cylinder/cone side: wraps the seam watertight
+		return closedDomainMesh(s, us, vs) // full cylinder/cone side with circular rims: grid the period
+	}
+	if m, ok := saddleBandLoftMesh(f, s, q); ok {
+		return m // a cylinder/cone band with non-circular (saddle) rims — a crossing cylinder: loft v(u)
 	}
 	if _, _, isBand := doublyPeriodicBandGrid(s, outer3D, holes3D); isBand {
 		if m, ok := closedBandLoftMesh(f, s, q); ok {
