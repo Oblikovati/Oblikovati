@@ -86,6 +86,88 @@ func assertSphereAndPlaneFaces(t *testing.T, body *topo.Body) {
 	}
 }
 
+// TestHalfSpaceCutCylinderPerpendicularIsFrustum cuts a cylinder by a plane ⟂ its axis: the kept
+// band is a shorter cylinder (exact side + caps). The oracle is the tessellated volume of an
+// independently-built SolidCylinder of the kept height — identical faceting, so they must agree
+// exactly (comparing to the analytic π·r²·h' would only confirm the cylinder's own ~0.6% chord
+// inscription, not the cut).
+func TestHalfSpaceCutCylinderPerpendicularIsFrustum(t *testing.T) {
+	const r, h = 3.0, 4.0
+	facetedVol := func(height float64) float64 {
+		c, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, height)
+		return ops.BodyGeometryProperties(c, ops.DefaultQuality()).Volume
+	}
+	cases := []struct {
+		name        string
+		planePoint  math.Point3
+		planeNormal math.Vector3
+		keptHeight  float64 // 0 ⇒ empty, h ⇒ whole
+	}{
+		{"keep lower band", math.P3(0, 0, 2.5), math.V3(0, 0, 1), 2.5},
+		{"keep upper band", math.P3(0, 0, 1.5), math.V3(0, 0, -1), 2.5},
+		{"plane clears (whole)", math.P3(0, 0, 10), math.V3(0, 0, 1), h},
+		{"plane clears (empty)", math.P3(0, 0, -1), math.V3(0, 0, 1), 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
+			if err != nil {
+				t.Fatalf("SolidCylinder: %v", err)
+			}
+			plane, _ := geom.NewPlane(tc.planePoint, tc.planeNormal)
+			res, err := brep.HalfSpaceCut(cyl, plane)
+			if err != nil {
+				t.Fatalf("HalfSpaceCut: %v", err)
+			}
+			if tc.keptHeight == 0 {
+				if res.IsSolid() && len(res.Faces()) > 0 {
+					t.Fatalf("expected empty result, got %d faces", len(res.Faces()))
+				}
+				return
+			}
+			if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold || !res.IsSolid() {
+				t.Fatalf("frustum not a valid closed manifold solid: %+v", r)
+			}
+			assertCylinderAndPlaneFaces(t, res)
+			got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+			want := facetedVol(tc.keptHeight)
+			if rel := stdmath.Abs(got-want) / want; rel > 1e-6 {
+				t.Errorf("kept volume %.6f, want %.6f (rel %.2e)", got, want, rel)
+			}
+		})
+	}
+}
+
+// TestHalfSpaceCutCylinderObliqueDefers: an oblique cut (elliptical section) is not yet handled and
+// must report ErrUnsupportedHalfSpace so the caller keeps the CSG fallback.
+func TestHalfSpaceCutCylinderObliqueDefers(t *testing.T) {
+	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
+	plane, _ := geom.NewPlane(math.P3(0, 0, 2), math.V3(1, 0, 2)) // tilted off the axis
+	if _, err := brep.HalfSpaceCut(cyl, plane); err == nil {
+		t.Error("oblique cylinder cut should defer (ErrUnsupportedHalfSpace), not return a result")
+	}
+}
+
+// assertCylinderAndPlaneFaces verifies an exact truncated cylinder: one geom.Cylinder side + two
+// geom.Plane caps.
+func assertCylinderAndPlaneFaces(t *testing.T, body *topo.Body) {
+	t.Helper()
+	cyls, planes := 0, 0
+	for _, f := range body.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder:
+			cyls++
+		case geom.Plane:
+			planes++
+		default:
+			t.Errorf("unexpected result face surface %T", f.Geometry())
+		}
+	}
+	if cyls != 1 || planes != 2 {
+		t.Errorf("frustum has %d cylinder + %d plane faces, want 1 + 2", cyls, planes)
+	}
+}
+
 // TestHalfSpaceCutSpherePlaneMissKeepsOrEmpties: a plane clear of the sphere keeps the whole sphere
 // (centre on the negative side) or empties it (centre on the positive side).
 func TestHalfSpaceCutSpherePlaneMissKeepsOrEmpties(t *testing.T) {

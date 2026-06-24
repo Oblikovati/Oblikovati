@@ -40,6 +40,9 @@ func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 			return sphereHalfSpace(body, sph, plane, faces[0].lineage)
 		}
 	}
+	if cyl, base, height, ok := cylinderSolidParams(faces); ok {
+		return cylinderHalfSpace(body, cyl, base, height, plane)
+	}
 	return nil, ErrUnsupportedHalfSpace
 }
 
