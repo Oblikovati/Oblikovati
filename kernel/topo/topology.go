@@ -37,6 +37,34 @@ func extendBoxByEdges(box math.Box, edges []*Edge) math.Box {
 	return box
 }
 
+// faceSamplesPerAxis grids a boundary-less face's UV domain for its range-box contribution.
+const faceSamplesPerAxis = 8
+
+// extendBoxByBoundarylessFaces extends box by the surface of every face with NO boundary loops — a whole
+// sphere or torus, whose extent comes from neither vertices nor edges (it has none). Without this a bare
+// analytic primitive (SolidSphere) reports an empty range box, so boolean classification wrongly judges
+// it disjoint from any tool. Only bounded closed surfaces reach here; an unbounded domain is skipped.
+func extendBoxByBoundarylessFaces(box math.Box, faces []*Face) math.Box {
+	for _, f := range faces {
+		if len(f.loops) > 0 {
+			continue
+		}
+		uLo, uHi := f.surface.UDomain()
+		vLo, vHi := f.surface.VDomain()
+		if stdmath.IsInf(uLo, 0) || stdmath.IsInf(uHi, 0) || stdmath.IsInf(vLo, 0) || stdmath.IsInf(vHi, 0) {
+			continue
+		}
+		for i := 0; i <= faceSamplesPerAxis; i++ {
+			for j := 0; j <= faceSamplesPerAxis; j++ {
+				u := uLo + (uHi-uLo)*float64(i)/faceSamplesPerAxis
+				v := vLo + (vHi-vLo)*float64(j)/faceSamplesPerAxis
+				box = box.ExtendPoint(f.surface.PointAt(u, v))
+			}
+		}
+	}
+	return box
+}
+
 // Vertex is a 0-dimensional topological entity: a point with identity.
 type Vertex struct {
 	id      uint64
