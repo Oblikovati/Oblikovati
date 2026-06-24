@@ -223,6 +223,31 @@ func TestBooleanCutPartialPenetrationBlindHole(t *testing.T) {
 	}
 }
 
+// TestBooleanCutPartialPenetrationRodMinusFat subtracts a fat cylinder (R=3, axis z) from a thin rod
+// (r=1.5, axis x) that ends at the fat centre: Cut must give the single rod stub outside the fat (a
+// one-shell solid) whose volume is the rod minus the plug (half the full crossing intersection).
+func TestBooleanCutPartialPenetrationRodMinusFat(t *testing.T) {
+	const rRod, hRod, rFat = 1.5, 6.0, 3.0
+	fat, _ := brep.SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), rFat, 12)
+	stub, _ := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), rRod, hRod) // ends at x=0, inside the fat
+
+	res, err := ops.Boolean(ops.Cut, stub, fat) // rod − fat
+	if err != nil {
+		t.Fatalf("Boolean(Cut rod−fat partial): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("rod − fat is not a valid closed manifold solid: %+v", v)
+	}
+	if n := len(res.Shells()); n != 1 {
+		t.Errorf("rod − fat has %d shells, want 1 (the rod breaches only one wall)", n)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := stdmath.Pi*rRod*rRod*hRod - crossingIntersectVolume(rRod, rFat)/2 // rod − the plug
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("rod − fat volume %.4f, want %.4f (rod − plug) — rel %.4f > 2%%", got, want, rel)
+	}
+}
+
 // TestBooleanJoinPartialPenetration joins a thin rod (r=1.5, axis x) ending at the fat centre with a fat
 // cylinder (R=3, axis z): Join must give the fat with one rod stub out the entry side, its volume the fat
 // plus the rod minus the plug (the doubly-counted overlap).
