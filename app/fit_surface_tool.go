@@ -29,7 +29,9 @@ type FitSurfaceTool struct {
 }
 
 // NewFitSurfaceTool returns a fit tool defaulting to a bicubic 6×6 patch.
-func NewFitSurfaceTool() *FitSurfaceTool { return &FitSurfaceTool{degree: 3, nu: 6, nv: 6} }
+func NewFitSurfaceTool() *FitSurfaceTool {
+	return &FitSurfaceTool{degree: feature.DefaultFitDegree, nu: feature.DefaultFitSpans, nv: feature.DefaultFitSpans}
+}
 
 // Name implements [Tool].
 func (t *FitSurfaceTool) Name() string { return "Fit Surface" }
