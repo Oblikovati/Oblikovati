@@ -1,0 +1,14 @@
+{
+  "cylinder ∩ box": 237.7277827,
+  "cylinder − box tunnel": 137.93804,
+  "box − cylinder (drilled plate)": 2357.588499,
+  "crossing cylinders ∩": 41.04118851,
+  "crossing cylinders − (drill)": 298.2504735,
+  "crossing cylinders ∪": 383.0734752,
+  "equal-radius Steinmetz ∩": 144,
+  "cone ∩ cylinder": 55.44125747,
+  "cone ∩ cone": 24.59680642,
+  "partial penetration ∩": 20.52055473,
+  "coaxial cylinders ∪": 87.9645943,
+  "cylinder boss ∪": 221.2057504
+}
