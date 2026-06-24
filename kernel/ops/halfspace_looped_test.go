@@ -58,6 +58,37 @@ func TestLoopedSplitHalvesACapBySymmetry(t *testing.T) {
 	}
 }
 
+// TestHalfSpaceCutSphereBoxVsAnalytic composes two cuts into a sphere∩box corner (z ≤ 0, x ≤ 2). The
+// kept sphere face exceeds a hemisphere, so it exercises the stereographic patch chart. The result is an
+// exact curved B-rep whose volume matches the analytic lower-hemisphere-minus-side-cap (acceptance #1).
+func TestHalfSpaceCutSphereBoxVsAnalytic(t *testing.T) {
+	const R = 5.0
+	sphere, _ := brep.SolidSphere(math.P3(0, 0, 0), R, "s")
+	pZ, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1)) // keep z ≤ 0 (lower hemisphere)
+	pX, _ := geom.NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0)) // keep x ≤ 2 (trim the +x side)
+
+	hemi, err := brep.HalfSpaceCut(sphere, pZ)
+	if err != nil {
+		t.Fatalf("cut z: %v", err)
+	}
+	res, err := brep.HalfSpaceCut(hemi, pX)
+	if err != nil {
+		t.Fatalf("cut x: %v", err)
+	}
+	if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold || !res.IsSolid() {
+		t.Fatalf("sphere∩box corner is not a valid closed manifold solid: %+v", r)
+	}
+	assertOnlyAnalyticFaces(t, res)
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	// Lower hemisphere minus the z<0 half of the x>2 spherical cap (height R−2=3); the two removed
+	// regions do not overlap, so the volume is exact.
+	capV := stdmath.Pi * 9 * (3*R - 3) / 3
+	want := (2.0/3.0)*stdmath.Pi*R*R*R - capV/2
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("sphere∩box volume %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)
+	}
+}
+
 // assertOnlyAnalyticFaces checks the exact path kept analytic surfaces (a sphere patch + planar faces),
 // not tessellated soup.
 func assertOnlyAnalyticFaces(t *testing.T, body *topo.Body) {

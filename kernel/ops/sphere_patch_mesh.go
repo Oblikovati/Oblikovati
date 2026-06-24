@@ -12,33 +12,35 @@ import (
 // Multi-arc sphere-patch tessellation (M2 Phase 1, Oblikovati/Oblikovati#1334). A sphere face bounded
 // by SEVERAL arcs — the curved face a box (or any multi-plane) cut leaves on a sphere — meshed wrong
 // through the lat/long (u,v) path: near a pole every column collapses, so the constrained-Delaunay in
-// (u,v) folds and over/under-fills (a hand-built octant came out ~38% over its analytic πR³/6). The
-// fix is to triangulate in a GNOMONIC chart instead: central projection from the sphere centre onto
-// the tangent plane at the patch's mean direction. There great circles map to straight lines and there
-// is no pole/seam degeneracy within a hemisphere, so interior Steiner points lift back to the sphere
-// cleanly and the patch carries its true curvature. Like sphereCapFan/coneApexFan it self-gates — a
-// patch that exceeds a hemisphere (where the gnomonic projection blows up) defers to the existing path.
+// (u,v) folds and over/under-fills. The fix is to triangulate in a conformal-ish chart centred on the
+// patch instead, where there is no pole/seam degeneracy: a GNOMONIC chart for a patch within a
+// hemisphere (least distortion), a STEREOGRAPHIC chart for a larger patch (it stays finite for every
+// point except the patch's antipode, so a patch up to nearly the whole sphere maps to a bounded region).
+// Interior Steiner points lift back to the sphere exactly, so the patch carries its true curvature; the
+// boundary keeps the exact edge samples so it welds with neighbour faces. Self-gates: a patch that wraps
+// past the stereographic limit (its boundary reaches the antipode) defers to the caller.
 
-// minPatchAxisDot requires every boundary point to lie within ~81° of the chart axis (dir·axis ≥ this),
-// i.e. inside a hemisphere, so the gnomonic projection stays well-conditioned (the projection diverges
-// as a point approaches 90°). A larger patch defers to the caller.
-const minPatchAxisDot = 0.15
+// Chart axis-dot thresholds: every boundary point's direction·axis must clear the threshold so the chart
+// is well-conditioned. Gnomonic diverges at 90° (dot 0); stereographic diverges only at 180° (dot −1),
+// so it is used down to ~150° (dot −0.85) where the gnomonic chart has already bowed out.
+const (
+	gnomonicMinDot = 0.15  // ~81° from the axis: within a hemisphere → gnomonic (least distortion)
+	stereoMinDot   = -0.85 // ~148° from the axis: a >hemisphere patch clear of the antipode → stereographic
+)
 
-// spherePatchMesh meshes a multi-arc sphere patch in a gnomonic chart. ok=false unless the surface is a
-// sphere whose boundary lies within a hemisphere — then the caller keeps its existing path.
+// spherePatchMesh meshes a multi-arc sphere patch in a patch-centred chart. ok=false unless the surface
+// is a sphere whose boundary clears the chart's antipode — then the caller keeps its existing path.
 func spherePatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
 	sph, ok := s.(geom.Sphere)
 	if !ok || len(outer3D) < 3 {
 		return nil, false
 	}
-	axis, ok := patchAxis(sph, outer3D, holes3D)
+	chart, ok := chooseSphereChart(sph, outer3D, holes3D)
 	if !ok {
 		return nil, false
 	}
-	e1, e2 := planeBasis(axis)
-	c := gnomonicChart{sph: sph, axis: axis, e1: e1, e2: e2}
-	uv, pos, nrm, loops, loops2D := c.projectBoundary(outer3D, holes3D)
-	c.addInteriorNodes(&uv, &pos, &nrm, loops2D, q)
+	uv, pos, nrm, loops, loops2D := projectPatchBoundary(sph, chart, outer3D, holes3D)
+	addPatchInterior(chart, &uv, &pos, &nrm, loops2D, q)
 	tris := constrainedDelaunay(uv, loops)
 	if len(tris) == 0 {
 		return nil, false
@@ -48,48 +50,162 @@ func spherePatchMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Poi
 	return m, true
 }
 
-// gnomonicChart is the central projection of a sphere onto the tangent plane at axis: a point of unit
-// direction u maps to ((R/(u·axis))·u − R·axis) resolved in the orthonormal in-plane basis (e1, e2).
+// sphereChart projects a sphere point to a 2D chart and lifts a 2D point back to the sphere (point +
+// outward normal). Both the gnomonic and stereographic charts satisfy it.
+type sphereChart interface {
+	project(p math.Point3) [2]float64
+	lift(a, b float64) (math.Point3, math.Vector3)
+	gridSpacing(q Quality) float64 // interior Steiner spacing whose lifted chord error meets q
+}
+
+// chooseSphereChart picks the chart for a patch: gnomonic within a hemisphere, stereographic for a larger
+// patch that still clears the antipode, else ok=false. The axis is the boundary's mean direction.
+func chooseSphereChart(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (sphereChart, bool) {
+	axis, minDot, ok := patchAxis(sph, outer3D, holes3D)
+	if !ok {
+		return nil, false
+	}
+	e1, e2 := planeBasis(axis)
+	switch {
+	case minDot >= gnomonicMinDot:
+		return gnomonicChart{sph: sph, axis: axis, e1: e1, e2: e2}, true
+	case minDot >= stereoMinDot:
+		return stereoChart{sph: sph, axis: axis, e1: e1, e2: e2}, true
+	default:
+		return nil, false
+	}
+}
+
+// patchAxis returns the chart axis — a direction INSIDE the patch — and the minimum direction·axis over
+// the boundary (how far the patch reaches). The boundary's mean direction points at the patch for a small
+// patch but at the REMOVED region for a >hemisphere patch (e.g. a 7/8-sphere's boundary hugs the missing
+// octant), so the axis is whichever of ±mean the boundary loop winds positively around — the interior.
+func patchAxis(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (math.Vector3, float64, bool) {
+	pts := append(append([]math.Point3{}, outer3D...), flattenLoops(holes3D)...)
+	var sum math.Vector3
+	for _, p := range pts {
+		sum = sum.Add(sphereDir(sph, p))
+	}
+	mean, err := math.UnitVector3FromVector(sum)
+	if err != nil {
+		return math.Vector3{}, 0, false
+	}
+	axis := interiorAxis(sph, outer3D, mean.AsVector())
+	minDot := 1.0
+	for _, p := range pts {
+		minDot = stdmath.Min(minDot, float64(sphereDir(sph, p).Dot(axis)))
+	}
+	return axis, minDot, true
+}
+
+// interiorAxis chooses, between the mean direction and its opposite, the one the boundary loop winds
+// positively (≈ +2π) around — the side of the separating boundary that is the patch interior. Falls back
+// to the mean if neither reads clearly inside (a degenerate/non-convex boundary).
+func interiorAxis(sph geom.Sphere, outer3D []math.Point3, mean math.Vector3) math.Vector3 {
+	for _, cand := range []math.Vector3{mean, mean.Scale(-1)} {
+		center := sph.Center.TranslateBy(cand.Scale(math.Scalar(sph.Radius)))
+		if loopWindingAround(outer3D, center, cand) > stdmath.Pi {
+			return cand
+		}
+	}
+	return mean
+}
+
+// loopWindingAround returns the signed turning angle of the boundary points seen from p, summed around
+// the axis normal (the geodesic winding number): ≈ +2π when the loop winds CCW around p, else ≈ 0/−2π.
+func loopWindingAround(pts []math.Point3, p math.Point3, normal math.Vector3) float64 {
+	if len(pts) < 3 {
+		return 0
+	}
+	sum := 0.0
+	for i := range pts {
+		a := tangentPart(p.VectorTo(pts[i]), normal)
+		b := tangentPart(p.VectorTo(pts[(i+1)%len(pts)]), normal)
+		if a.LengthSquared() == 0 || b.LengthSquared() == 0 {
+			continue
+		}
+		sum += stdmath.Atan2(float64(a.Cross(b).Dot(normal)), float64(a.Dot(b)))
+	}
+	return sum
+}
+
+// tangentPart projects v onto the plane perpendicular to the unit normal.
+func tangentPart(v, normal math.Vector3) math.Vector3 {
+	return v.Sub(normal.Scale(v.Dot(normal)))
+}
+
+// gnomonicChart is the central projection of a sphere onto the tangent plane at axis: a unit direction u
+// maps to ((R/(u·axis))·u − R·axis) resolved in the orthonormal in-plane basis (e1, e2).
 type gnomonicChart struct {
 	sph    geom.Sphere
 	axis   math.Vector3
 	e1, e2 math.Vector3
 }
 
-// patchAxis returns the chart axis (the boundary's mean direction from the sphere centre) and whether
-// every boundary point lies within a hemisphere of it (so the gnomonic projection is well-conditioned).
-func patchAxis(sph geom.Sphere, outer3D []math.Point3, holes3D [][]math.Point3) (math.Vector3, bool) {
-	var sum math.Vector3
-	pts := append(append([]math.Point3{}, outer3D...), flattenLoops(holes3D)...)
-	for _, p := range pts {
-		sum = sum.Add(sphereDir(sph, p))
-	}
-	axis, err := math.UnitVector3FromVector(sum)
-	if err != nil {
-		return math.Vector3{}, false
-	}
-	a := axis.AsVector()
-	for _, p := range pts {
-		if float64(sphereDir(sph, p).Dot(a)) < minPatchAxisDot {
-			return math.Vector3{}, false
-		}
-	}
-	return a, true
+func (c gnomonicChart) project(p math.Point3) [2]float64 {
+	u := sphereDir(c.sph, p)
+	s := float64(u.Dot(c.axis))
+	local := u.Scale(math.Scalar(c.sph.Radius / s)).Add(c.axis.Scale(math.Scalar(-c.sph.Radius)))
+	return [2]float64{float64(local.Dot(c.e1)), float64(local.Dot(c.e2))}
 }
 
-// projectBoundary maps every boundary loop to the gnomonic plane, keeping the EXACT 3D points and radial
-// normals (so the patch welds to its neighbour faces at the shared edge samples). It returns the parallel
-// 2D/3D/normal arrays, the loop index sequences for the CDT, and the loops as math.Point2 for clearOfTrim.
-func (c gnomonicChart) projectBoundary(outer3D []math.Point3, holes3D [][]math.Point3) (uv [][2]float64, pos []math.Point3, nrm []math.Vector3, loops [][]int, loops2D [][]math.Point2) {
+func (c gnomonicChart) lift(a, b float64) (math.Point3, math.Vector3) {
+	planeDir := c.axis.Scale(math.Scalar(c.sph.Radius)).Add(c.e1.Scale(math.Scalar(a))).Add(c.e2.Scale(math.Scalar(b)))
+	dir := planeDir.Scale(math.Scalar(1 / float64(planeDir.Length())))
+	return c.sph.Center.TranslateBy(dir.Scale(math.Scalar(c.sph.Radius))), dir
+}
+
+// gridSpacing: a gnomonic step h near the axis lifts to ≈ h on the sphere, so the chord error R(1−cos
+// h/R) ≈ h²/2R ≤ tol gives h = √(2R·tol).
+func (c gnomonicChart) gridSpacing(q Quality) float64 {
+	return stdmath.Sqrt(2 * c.sph.Radius * q.tol())
+}
+
+// stereoChart is the stereographic projection of a sphere from the antipode of axis (−axis) onto the
+// equatorial plane: u maps to R·(u − (u·axis)·axis)/(1 + u·axis), finite for every u except −axis. It
+// maps a >hemisphere patch around axis to a bounded region (gnomonic would diverge past 90°).
+type stereoChart struct {
+	sph    geom.Sphere
+	axis   math.Vector3
+	e1, e2 math.Vector3
+}
+
+func (c stereoChart) project(p math.Point3) [2]float64 {
+	u := sphereDir(c.sph, p)
+	den := 1 + float64(u.Dot(c.axis))
+	k := c.sph.Radius / den
+	return [2]float64{k * float64(u.Dot(c.e1)), k * float64(u.Dot(c.e2))}
+}
+
+func (c stereoChart) lift(a, b float64) (math.Point3, math.Vector3) {
+	r := c.sph.Radius
+	rho2 := a*a + b*b
+	s := (r*r - rho2) / (r*r + rho2) // u·axis recovered from the projection radius
+	k := 2 * r / (r*r + rho2)        // perpendicular scale
+	u := c.axis.Scale(math.Scalar(s)).Add(c.e1.Scale(math.Scalar(k * a))).Add(c.e2.Scale(math.Scalar(k * b)))
+	dir := u.Scale(math.Scalar(1 / float64(u.Length()))) // unit to first order; normalise for exactness
+	return c.sph.Center.TranslateBy(dir.Scale(math.Scalar(r))), dir
+}
+
+// gridSpacing: stereographic magnifies most at the axis (a step h there lifts to ≈ 2h on the sphere), so
+// halve the gnomonic spacing to keep the worst-case (central) chord error within tol.
+func (c stereoChart) gridSpacing(q Quality) float64 {
+	return stdmath.Sqrt(2*c.sph.Radius*q.tol()) / 2
+}
+
+// projectPatchBoundary maps every boundary loop to the chart, keeping the EXACT 3D points and radial
+// normals (so the patch welds to neighbour faces). Returns the parallel 2D/3D/normal arrays, the loop
+// index sequences for the CDT, and the loops as math.Point2 for clearOfTrim.
+func projectPatchBoundary(sph geom.Sphere, chart sphereChart, outer3D []math.Point3, holes3D [][]math.Point3) (uv [][2]float64, pos []math.Point3, nrm []math.Vector3, loops [][]int, loops2D [][]math.Point2) {
 	for _, loop := range append([][]math.Point3{outer3D}, holes3D...) {
 		idx := make([]int, len(loop))
 		ring2D := make([]math.Point2, len(loop))
 		for i, p := range loop {
-			g := c.project(p)
+			g := chart.project(p)
 			idx[i] = len(uv)
 			uv = append(uv, g)
 			pos = append(pos, p)
-			nrm = append(nrm, sphereDir(c.sph, p))
+			nrm = append(nrm, sphereDir(sph, p))
 			ring2D[i] = math.P2(math.Scalar(g[0]), math.Scalar(g[1]))
 		}
 		loops = append(loops, idx)
@@ -98,32 +214,16 @@ func (c gnomonicChart) projectBoundary(outer3D []math.Point3, holes3D [][]math.P
 	return uv, pos, nrm, loops, loops2D
 }
 
-// project maps a 3D sphere point to its gnomonic (e1, e2) coordinates.
-func (c gnomonicChart) project(p math.Point3) [2]float64 {
-	u := sphereDir(c.sph, p)
-	s := float64(u.Dot(c.axis))
-	local := u.Scale(math.Scalar(c.sph.Radius / s)).Add(c.axis.Scale(math.Scalar(-c.sph.Radius)))
-	return [2]float64{float64(local.Dot(c.e1)), float64(local.Dot(c.e2))}
-}
-
-// lift inverts project: a gnomonic point becomes the sphere point along the direction axis·R + a·e1 + b·e2,
-// returning that point and its outward radial normal.
-func (c gnomonicChart) lift(a, b float64) (math.Point3, math.Vector3) {
-	planeDir := c.axis.Scale(math.Scalar(c.sph.Radius)).Add(c.e1.Scale(math.Scalar(a))).Add(c.e2.Scale(math.Scalar(b)))
-	dir := planeDir.Scale(math.Scalar(1 / float64(planeDir.Length())))
-	return c.sph.Center.TranslateBy(dir.Scale(math.Scalar(c.sph.Radius))), dir
-}
-
 // patchGridCap bounds the interior Steiner grid per axis so a large/fine patch cannot explode the node
 // count; beyond it the chord tolerance is met by the cap density rather than the exact spacing.
-const patchGridCap = 60
+const patchGridCap = 80
 
-// addInteriorNodes lays a grid of Steiner points across the gnomonic bbox at a spacing whose lifted
-// chord error meets the tolerance, keeping only points strictly inside the trim, and lifts each to the
-// sphere. Interior points carry the patch's curvature (a boundary-only triangulation would chord flat).
-func (c gnomonicChart) addInteriorNodes(uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3, loops2D [][]math.Point2, q Quality) {
+// addPatchInterior lays a grid of Steiner points across the chart bbox at the chart's spacing, keeps
+// those strictly inside the trim, and lifts each to the sphere — the interior curvature the boundary
+// alone would chord flat.
+func addPatchInterior(chart sphereChart, uv *[][2]float64, pos *[]math.Point3, nrm *[]math.Vector3, loops2D [][]math.Point2, q Quality) {
 	umin, umax, vmin, vmax := bounds2D(loops2D[0])
-	h := stdmath.Sqrt(2 * c.sph.Radius * q.tol()) // chord error R(1−cos(h/R)) ≈ h²/2R ≤ tol
+	h := chart.gridSpacing(q)
 	if h <= 0 {
 		return
 	}
@@ -135,7 +235,7 @@ func (c gnomonicChart) addInteriorNodes(uv *[][2]float64, pos *[]math.Point3, nr
 			if !clearOfTrim(loops2D[0], holes2D, p, h*0.25) {
 				continue
 			}
-			pt, n := c.lift(p[0], p[1])
+			pt, n := chart.lift(p[0], p[1])
 			*uv = append(*uv, p)
 			*pos = append(*pos, pt)
 			*nrm = append(*nrm, n)
