@@ -220,20 +220,29 @@ const (
 	intersecting
 )
 
-// classify determines the spatial relationship from bounding boxes and vertex
-// containment. It recognizes the cases that combine without face splitting (disjoint,
-// or one body containing the other); anything else is reported as intersecting.
+// classify determines the spatial relationship from bounding boxes and containment. It recognizes
+// the cases that combine without face splitting (disjoint, or one body strictly containing the
+// other); anything else is reported as intersecting and routed to the general face-splitting boolean.
 func classify(target, tool *topo.Body) relation {
 	if !target.RangeBox().Intersects(tool.RangeBox()) {
 		return disjoint
 	}
-	if allVerticesInside(tool, target) {
+	if strictlyContains(target, tool) {
 		return targetContainsTool
 	}
-	if allVerticesInside(target, tool) {
+	if strictlyContains(tool, target) {
 		return toolContainsTarget
 	}
 	return intersecting
+}
+
+// strictlyContains reports whether outer fully contains inner: every vertex of inner lies inside
+// outer AND the two boundaries do not cross. The boundary-crossing condition is essential — vertex
+// containment alone is unsound for non-convex bodies, where inner's surface can pass back out through
+// outer between inner's vertices (#1315). Without it such a pair skips face splitting and returns a
+// silently wrong solid. The crossing test runs only after the (cheap) vertex test passes.
+func strictlyContains(outer, inner *topo.Body) bool {
+	return allVerticesInside(inner, outer) && !boundariesCross(outer, inner)
 }
 
 // allVerticesInside reports whether every vertex of inner lies strictly within outer. It
