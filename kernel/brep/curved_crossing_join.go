@@ -3,8 +3,6 @@
 package brep
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -93,14 +91,10 @@ func addRodStub(bld *topo.Builder, rod crossRod, endCenter math.Point3, capNorma
 }
 
 // stubSeamPoint returns the point on the rod's end circle at the same axial angle as the lens loop's start,
-// so the seam connecting them is a near-constant-angle ruling of the rod (lying on the surface). It rebuilds
-// the point from the rod's axis frame (ref·cos u + binormal·sin u, the convention both geom.Cylinder and
-// geom.Cone use) at the end's radius, so it works for a cone end too.
+// so the seam connecting them is a near-constant-angle ruling of the rod (lying on the surface). It works for
+// a cone end too (the end's radius grows with apex distance, see rodCirclePoint).
 func stubSeamPoint(rod crossRod, endCenter, lensStart math.Point3) math.Point3 {
-	ax := rod.axisOf()
-	u := axisAngleOf(lensStart, ax)
-	radial := ax.ref.Scale(stdmath.Cos(u)).Add(ax.dir.Cross(ax.ref).Scale(stdmath.Sin(u)))
-	return endCenter.TranslateBy(radial.Scale(rod.endRadius(endCenter)))
+	return rodCirclePoint(rod, endCenter, axisAngleOf(lensStart, rod.axisOf()))
 }
 
 // cutRodMinusFat builds rod − fat: the two rod stubs sticking out either side of the fat, each a separate
