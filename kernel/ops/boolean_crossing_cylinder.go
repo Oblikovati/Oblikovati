@@ -146,6 +146,22 @@ func curvedCoaxialJoin(op PartFeatureOperation, target, tool *topo.Body) (*topo.
 	return res, true
 }
 
+// curvedCylinderBossJoin returns target ∪ tool when tool is a cylinder seated flush and perpendicular on
+// one planar face of target, protruding outward (a boss / spigot), or ok=false to defer. The boss base
+// disk is coplanar with the seat face — the canonical coplanar overlap the CSG fallback faceted; the exact
+// union keeps the analytic cylinder wall. Only Join maps here, and only a valid closed manifold result is
+// adopted.
+func curvedCylinderBossJoin(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	if op != Join {
+		return nil, false
+	}
+	res, ok := brep.JoinCylindricalBoss(target, tool)
+	if !ok || !validBooleanSolid(res) {
+		return nil, false
+	}
+	return res, true
+}
+
 // curvedConeCylinderCut returns target − tool for a cone crossing a cylinder (drilling the fat cylinder with
 // the cone, or the two cone stubs of cone − fat), or ok=false to defer. Only Cut maps here, and only a valid
 // closed manifold result is adopted.
