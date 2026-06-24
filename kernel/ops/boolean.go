@@ -122,7 +122,8 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 //   - a curved solid ∩ a convex planar tool (a box) → composed half-space cuts (#1334);
 //   - a curved solid − a convex prism tunnelling through it (cylinder − box) (#1334);
 //   - two crossing cylinders ∩ (rod band + fat-wall lens caps) (#1335);
-//   - drilling a fat cylinder with a crossing rod (fat − rod) (#1335).
+//   - drilling a fat cylinder with a crossing rod (fat − rod), and the two rod stubs of rod − fat (#1335);
+//   - joining two crossing cylinders (fat ∪ rod: the fat with a rod stub each side) (#1335).
 func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
 	if body, ok := curvedConvexIntersect(op, target, tool); ok {
 		return body, true
@@ -133,7 +134,10 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo
 	if body, ok := curvedCrossingIntersect(op, target, tool); ok {
 		return body, true
 	}
-	return curvedCrossingCut(op, target, tool)
+	if body, ok := curvedCrossingCut(op, target, tool); ok {
+		return body, true
+	}
+	return curvedCrossingJoin(op, target, tool)
 }
 
 func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {

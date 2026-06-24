@@ -19,28 +19,34 @@ import (
 // tunnel passes through the wall (not the caps) and the loops lie strictly between the fat caps; anything
 // else defers to the caller's fallback.
 
-// CrossingCylinderCut returns target − tool for two crossing cylinders when target is the fat cylinder the
-// rod tunnels through (the drill case), or ok=false to defer (the rod−fat stub case and out-of-scope
-// configurations are left to the caller's fallback).
+// CrossingCylinderCut returns target − tool for two crossing cylinders, or ok=false to defer (out-of-scope
+// configurations are left to the caller's fallback). Both subtraction directions are built from the same
+// imprint loops: when target is the fat cylinder the rod bores through, the result is the fat with a clean
+// tunnel (drillFatWithRod); when target is the rod, the result is the two disconnected rod stubs sticking
+// out either side of the fat (cutRodMinusFat).
 //
 // Example — a radius-3 cylinder drilled by a radius-1.5 rod:
 //
 //	fat, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
 //	thin, _ := brep.SolidCylinder(math.P3(-6,0,0), math.V3(1,0,0), 1.5, 12)
 //	res, ok := brep.CrossingCylinderCut(fat, thin) // fat with a tunnel
+//	res, ok = brep.CrossingCylinderCut(thin, fat)  // the two rod stubs
 func CrossingCylinderCut(target, tool *topo.Body) (*topo.Body, bool) {
 	p, ok := crossingPartsOf(target, tool)
 	if !ok {
 		return nil, false
 	}
-	tc, _, _, ok := cylinderSolidParams(facesOfAny(target))
-	if !ok || allLoopsEncircle([]geom.Polyline{p.lo, p.hi}, tc) {
-		return nil, false // target is the rod (rod−fat stubs): deferred to a later slice
-	}
 	if !loopsBetweenCaps(p.fat, p.fatBase, p.fatHeight, p.lo, p.hi) {
-		return nil, false // the tunnel reaches a cap (not a clean side breach): out of scope
+		return nil, false // the breach reaches a fat cap (not a clean side breach): out of scope
 	}
-	return drillFatWithRod(p), true
+	tc, _, _, ok := cylinderSolidParams(facesOfAny(target))
+	if !ok {
+		return nil, false
+	}
+	if allLoopsEncircle([]geom.Polyline{p.lo, p.hi}, tc) {
+		return cutRodMinusFat(p), true // target is the rod: two disconnected stubs
+	}
+	return drillFatWithRod(p), true // target is the fat: drill a tunnel
 }
 
 // crossingParts holds the resolved geometry of two crossing cylinders: the rod (both imprint loops encircle
