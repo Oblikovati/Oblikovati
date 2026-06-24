@@ -37,14 +37,66 @@ func saddleBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	return m, true
 }
 
-// bandWrapRings reads the band's rim rings by topology rather than curve type (the rims are saddle
-// polylines, not circles): every closed boundary edge (its start and end vertex coincide) is a rim.
+// bandWrapRings reads the band's rim rings by topology rather than curve type (a rim may be a circle or a
+// saddle polyline). A seam edge (used twice within the face) bridges the two rims and belongs to neither, so
+// it is dropped. Each remaining CLOSED edge is a rim on its own; the remaining OPEN edges are arcs that
+// together form one saddle rim (e.g. an equal-radius Steinmetz band whose saddle rim is two ellipse arcs
+// meeting at the pinch points), so their points are pooled into a single ring (orderedRing later sorts them
+// by angle). Coincident points where arcs meet are de-duplicated.
 func bandWrapRings(f *topo.Face, q Quality) [][]math.Point3 {
+	seam := seamEdgesOf(f)
 	var rings [][]math.Point3
+	var openPts []math.Point3
 	for _, e := range f.Edges() {
+		if seam[e] {
+			continue
+		}
+		pts := dropClosingDup(TessellateEdge(e, q))
 		if e.StartVertex() == e.EndVertex() {
-			rings = append(rings, dropClosingDup(TessellateEdge(e, q)))
+			rings = append(rings, pts)
+		} else {
+			openPts = append(openPts, pts...)
 		}
 	}
+	if len(openPts) > 0 {
+		rings = append(rings, dedupRingPoints(openPts))
+	}
 	return rings
+}
+
+// seamEdgesOf returns the edges used more than once within the face — the seam(s) bridging its two rims,
+// which belong to neither rim ring.
+func seamEdgesOf(f *topo.Face) map[*topo.Edge]bool {
+	count := map[*topo.Edge]int{}
+	for _, l := range f.Loops() {
+		for _, u := range l.EdgeUses() {
+			count[u.Edge()]++
+		}
+	}
+	seam := map[*topo.Edge]bool{}
+	for e, n := range count {
+		if n > 1 {
+			seam[e] = true
+		}
+	}
+	return seam
+}
+
+// dedupRingPoints drops points coincident with an earlier one (the pinch points where two saddle-rim arcs
+// meet appear in both arcs).
+func dedupRingPoints(pts []math.Point3) []math.Point3 {
+	var out []math.Point3
+	for _, p := range pts {
+		dup := false
+		for _, q := range out {
+			if p.DistanceTo(q) < weldPointTol {
+				dup = true
+				break
+			}
+		}
+		if !dup {
+			out = append(out, p)
+		}
+	}
+	return out
 }
