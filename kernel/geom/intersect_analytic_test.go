@@ -87,11 +87,32 @@ func TestAnalyticObliquePlaneCylinderIsEllipse(t *testing.T) {
 	}
 }
 
-// A plane parallel to the cylinder axis (a line pair) is left to the numeric tracer.
-func TestAnalyticPlaneParallelToCylinderDefers(t *testing.T) {
+// A plane parallel to the cylinder axis, cutting inside the radius, grazes the cylinder along a
+// pair of axis-parallel lines (the section edges of a box-wall subtraction).
+func TestAnalyticPlaneParallelToCylinderIsLinePair(t *testing.T) {
 	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
-	if _, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 1, 0, 0), cyl); ok {
-		t.Error("a plane parallel to the cylinder axis should defer (handled=false)")
+	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 1, 0, 0), cyl) // x = 0
+	if !ok || len(curves) != 2 {
+		t.Fatalf("plane∥axis through center = %v ok=%v, want two lines", curves, ok)
+	}
+	for _, c := range curves {
+		ln, isLine := c.(Line)
+		if !isLine || !near(stdmath.Abs(float64(ln.Origin.Y)), 2) || !near(float64(ln.Origin.X), 0) {
+			t.Errorf("line %+v, want axis-parallel through y=±2 on x=0", c)
+		}
+		if !near(stdmath.Abs(float64(ln.Dir.AsVector().Z)), 1) {
+			t.Errorf("line direction %v, want along the cylinder axis", ln.Dir)
+		}
+	}
+}
+
+// A plane parallel to the axis but clear of (or tangent to) the cylinder grazes no enclosed
+// region: handled, with no curves, so the half-space cut keeps the cylinder whole.
+func TestAnalyticPlaneParallelClearsCylinder(t *testing.T) {
+	cyl, _ := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
+	curves, ok := IntersectSurfacesAnalytic(mustPlane(t, 3, 0, 0, 1, 0, 0), cyl) // x = 3, radius 2
+	if !ok || len(curves) != 0 {
+		t.Errorf("plane clear of the cylinder = %v ok=%v, want handled with no curves", curves, ok)
 	}
 }
 

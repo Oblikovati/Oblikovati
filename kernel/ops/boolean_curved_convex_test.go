@@ -52,6 +52,43 @@ func TestBooleanIntersectSphereBoxExact(t *testing.T) {
 	}
 }
 
+// TestBooleanIntersectCylinderBoxExact intersects an axis-aligned cylinder with a box narrower than its
+// diameter: all four box walls clip chords off the cross-section, leaving four exact cylinder arc faces
+// at the corners (a "squircle" prism). The box top/bottom clear the cylinder height. The exact path must
+// preserve the cylinder surfaces and match the analytic cross-section (disk minus four segments) × height.
+func TestBooleanIntersectCylinderBoxExact(t *testing.T) {
+	const r, h, a = 3.0, 10.0, 2.5
+	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r, h)
+	box, _ := brep.SolidBlock(math.P3(-a, -a, -5), math.P3(a, a, 15), "box")
+
+	res, err := ops.Boolean(ops.Intersect, cyl, box)
+	if err != nil {
+		t.Fatalf("Boolean(Intersect): %v", err)
+	}
+	if v := ops.Validate(res); !v.Valid || !v.Closed || !v.Manifold || !res.IsSolid() {
+		t.Fatalf("cylinder∩box is not a valid closed manifold solid: %+v", v)
+	}
+	cylFaces := 0
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Cylinder:
+			cylFaces++
+		case geom.Plane:
+		default:
+			t.Errorf("face surface %T is not analytic (the exact path must be taken, not CSG)", f.Geometry())
+		}
+	}
+	if cylFaces != 4 {
+		t.Errorf("result has %d cylinder faces, want 4 (one exact arc per clipped corner)", cylFaces)
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	segs := r*r*stdmath.Acos(a/r) - a*stdmath.Sqrt(r*r-a*a) // one minor segment beyond a wall
+	want := (stdmath.Pi*r*r - 4*segs) * h
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("cylinder∩box volume %.4f, want %.4f (analytic) — rel %.4f > 2%%", got, want, rel)
+	}
+}
+
 // TestBooleanIntersectSphereContainedBoxUnaffected: a box fully inside the sphere intersects to the box
 // (handled by classify before the curved path) — a sanity check that the wiring did not disturb it.
 func TestBooleanIntersectSphereContainedBoxUnaffected(t *testing.T) {

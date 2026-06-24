@@ -64,15 +64,17 @@ func planePlaneCurve(a, b Plane) ([]Curve3, bool) {
 }
 
 // planeCylinderCurve returns the conic a plane cuts from a cylinder: a circle when the
-// plane is perpendicular to the axis, an ellipse when oblique. A plane parallel to the axis
-// (a line pair) is left to the numeric tracer.
+// plane is perpendicular to the axis, an ellipse when oblique, and — when the plane is
+// parallel to the axis — the pair of axis-parallel lines it grazes the cylinder along (none
+// when it clears or is tangent to the cylinder). The axis-parallel pair is what lets a box
+// wall be subtracted from a cylinder exactly (M2 Phase 1, Oblikovati/Oblikovati#1334).
 func planeCylinderCurve(pl Plane, cyl Cylinder) ([]Curve3, bool) {
 	n := unitVec3(pl.Normal())
 	axis := cyl.AxisDir.AsVector()
 	cosA := float64(axis.Dot(n)) // both unit; |cosA| = cos∠(axis, plane normal)
 	abs := stdmath.Abs(cosA)
-	if abs < 1e-6 { // axis ∥ plane → 0/1/2 lines, not a conic
-		return nil, false
+	if abs < 1e-6 { // axis ∥ plane → 0/1/2 lines along the axis
+		return cylinderAxisParallelLines(pl, cyl, n, axis)
 	}
 	t := n.Dot(cyl.Origin.VectorTo(pl.Origin)) / axis.Dot(n)
 	center := cyl.Origin.TranslateBy(axis.Scale(t))
@@ -91,6 +93,29 @@ func planeCylinderCurve(pl Plane, cyl Cylinder) ([]Curve3, bool) {
 		return nil, true
 	}
 	return []Curve3{e}, true
+}
+
+// cylinderAxisParallelLines returns the lines where a plane parallel to the cylinder axis grazes
+// the cylinder: two when the plane cuts inside the radius, none when it clears or is tangent to it
+// (a single tangent line carries no enclosed region, so the half-space cut keeps the cylinder
+// whole). Both lines run along the axis; they are the section edges of a box-wall subtraction.
+func cylinderAxisParallelLines(pl Plane, cyl Cylinder, n, axis math.Vector3) ([]Curve3, bool) {
+	d := float64(n.Dot(pl.Origin.VectorTo(cyl.Origin))) // signed distance of the axis from the plane
+	if stdmath.Abs(d) >= cyl.Radius-1e-9 {
+		return nil, true // plane clears or merely touches the cylinder: no line pair
+	}
+	half := stdmath.Sqrt(cyl.Radius*cyl.Radius - d*d) // half-chord of the cross-section
+	tangent := unitVec3(n.Cross(axis))                // in-plane, perpendicular to the axis
+	foot := cyl.Origin.TranslateBy(n.Scale(math.Scalar(-d)))
+	var out []Curve3
+	for _, s := range []float64{half, -half} {
+		ln, err := NewLine(foot.TranslateBy(tangent.Scale(math.Scalar(s))), axis)
+		if err != nil {
+			return nil, true
+		}
+		out = append(out, ln)
+	}
+	return out, true
 }
 
 // planeConeCurve returns the circle where a plane perpendicular to a cone's axis cuts it

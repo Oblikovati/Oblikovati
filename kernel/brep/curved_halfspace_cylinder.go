@@ -20,6 +20,14 @@ import (
 // the cylinder axis (a constant-axial-coordinate cut). Looser than that is an oblique section.
 const cylinderAxisTol = 1e-7
 
+// perpendicularToAxis reports whether the cut plane normal is parallel to the cylinder axis (a
+// constant-axial-coordinate cut), the only orientation the fast SolidCylinder path handles; an
+// axis-parallel or oblique cut routes to the general arrangement instead.
+func perpendicularToAxis(n math.Vector3, cyl geom.Cylinder) bool {
+	along := float64(n.Dot(cyl.AxisDir.AsVector()))
+	return stdmath.Abs(along) >= 1-cylinderAxisTol
+}
+
 // cylinderSolidParams recovers a closed cylinder's geometry from its flattened faces: the side's
 // geom.Cylinder, the base centre (axially lowest cap), and the height. ok=false unless the body is
 // exactly one cylindrical side plus two planar caps (a bare SolidCylinder), the only shape this
