@@ -116,7 +116,16 @@ func curvedExactCases() []curvedExactCase {
 		}},
 		{"cone ∩ box (axis-∥ flat)", ops.Intersect, coneFlatBox},
 		{"cone − box (axis-∥ flat)", ops.Cut, coneFlatBox},
+		{"cone ∩ box (vertex-inside flat)", ops.Intersect, coneVertexInsideFlatBox},
+		{"cone − box (vertex-inside flat)", ops.Cut, coneVertexInsideFlatBox},
 	}
+}
+
+// coneVertexInsideFlatBox is the same frustum with a box whose face x=4 has |D|=4 BETWEEN the bottom
+// radius (3) and the top radius (6): the flat fades out before the small rim, so the imprint turns
+// through the hyperbola vertex inside the side — the vertex-inside-band case (Oblikovati/Oblikovati#1374).
+func coneVertexInsideFlatBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCone(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6), demoBlock(t, math.P3(4, -20, -5), math.P3(20, 20, 15))
 }
 
 // coneFlatBox is the frustum (tanα=0.3, bottom r=3, top r=6) and an oversized box whose face x=2 is

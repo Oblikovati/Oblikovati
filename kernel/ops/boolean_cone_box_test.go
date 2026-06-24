@@ -98,6 +98,70 @@ func TestConeIntersectBoxVolume(t *testing.T) {
 	}
 }
 
+// Vertex-inside-band cone ∩/− box (Oblikovati/Oblikovati#1374): the box face x=4 has |D|=4 between the
+// bottom radius (3) and top radius (6), so the flat fades out before the small rim. Intersect keeps a
+// single tongue narrowing to the hyperbola vertex; Cut keeps an annulus notched down to that vertex.
+// Both must stay exact (an analytic cone face, no faceted soup), not fall back to CSG.
+
+func coneVertexInsideBox(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidBlock(math.P3(4, -20, -5), math.P3(20, 20, 15), "box")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return b
+}
+
+// TestConeIntersectBoxVertexInsideExact keeps the +x tongue (x ≥ 4) — an exact cone face narrowing to
+// the hyperbola vertex, with the small rim wholly dropped.
+func TestConeIntersectBoxVertexInsideExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Intersect, coneBoxFrustum(t), coneVertexInsideBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Intersect): %v", err)
+	}
+	assertConeBoxExact(t, res)
+}
+
+// TestConeCutBoxVertexInsideExact removes the +x tongue, leaving the cone minus a flat that fades out
+// before the small rim — an exact notched-annulus cone face.
+func TestConeCutBoxVertexInsideExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Cut, coneBoxFrustum(t), coneVertexInsideBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Cut): %v", err)
+	}
+	assertConeBoxExact(t, res)
+}
+
+// TestConeVertexInsideVolumes cross-checks both pieces against the independent numeric integral: the
+// kept tongue equals the cross-section area beyond x=4, and the notched complement equals the full
+// frustum (210π) minus that tongue. The tongue pinches to the hyperbola vertex, a sharply-curved cusp
+// whose chord error at display density is ~3%; it converges to the analytic value as the mesh refines
+// (proving the B-rep is exact, not just close), so this verifies the cut SHAPE at a fine quality where
+// chord error is negligible — the geometry is right, independent of display tessellation density.
+func TestConeVertexInsideVolumes(t *testing.T) {
+	tongue := frustumCapBeyondPlaneVolume(0.3, 0, 10, 4)
+	full := 210 * stdmath.Pi
+	fine := ops.Quality{ChordTolerance: 0.005, AngleTolerance: 5 * stdmath.Pi / 180}
+	cases := []struct {
+		name string
+		op   ops.PartFeatureOperation
+		want float64
+	}{
+		{"intersect tongue", ops.Intersect, tongue},
+		{"cut notched annulus", ops.Cut, full - tongue},
+	}
+	for _, c := range cases {
+		res, err := ops.Boolean(c.op, coneBoxFrustum(t), coneVertexInsideBox(t))
+		if err != nil {
+			t.Fatalf("%s: Boolean: %v", c.name, err)
+		}
+		got := ops.BodyGeometryProperties(res, fine).Volume
+		if rel := stdmath.Abs(got-c.want) / c.want; rel > 0.01 {
+			t.Errorf("%s volume %.4f vs numeric %.4f (rel %.4f > 0.01)", c.name, got, c.want, rel)
+		}
+	}
+}
+
 // frustumCapBeyondPlaneVolume integrates the area of each circular cross-section lying at x ≥ xCut for
 // a cone of slope tanα over z∈[z0,z1] (apex at z=z0−r0/tanα). A circle of radius r centred on the axis
 // has area r²·(θ − sinθ·cosθ) beyond a chord at distance xCut, θ = arccos(xCut/r) (0 when xCut ≥ r).
