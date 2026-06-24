@@ -219,6 +219,12 @@ func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
 // operands' triangles, welding the kept triangles back into a watertight solid
 // (PBI-171). An empty result (e.g. an intersection that turns out disjoint) yields an
 // empty body, which the caller drops.
+//
+// This is the LAST-RESORT fallback, not the primary curved path (M2 §M2, #1336): booleanGeneral reaches
+// it only after every exact analytic path (curvedExactPaths) and the exact planar B-rep boolean have
+// declined. The supported curved booleans keep their analytic surfaces and never land here — the
+// TestCurvedBooleansStayExact guard pins that. CSG remains for the unsupported long tail (arbitrary
+// freeform/NURBS overlaps), where a faceted-but-watertight result still beats failing.
 func booleanCSG(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage) (*topo.Body, error) {
 	a, b := bodyTriangles(target), bodyTriangles(tool)
 	// One model-relative on-plane tolerance for the BSP, scaled to the larger operand
