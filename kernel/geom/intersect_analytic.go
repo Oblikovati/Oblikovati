@@ -118,17 +118,23 @@ func cylinderAxisParallelLines(pl Plane, cyl Cylinder, n, axis math.Vector3) ([]
 	return out, true
 }
 
-// planeConeCurve returns the circle where a plane perpendicular to a cone's axis cuts it
-// (radius grows with distance from the apex); an oblique plane (ellipse/parabola/hyperbola)
-// is left to the numeric tracer, and a plane through the apex yields a point (no curve).
+// planeConeCurve returns the conic a plane cuts from a cone: a circle when the plane is
+// perpendicular to the axis (radius grows with distance from the apex), and — when the plane is
+// PARALLEL to the axis — the hyperbola branch it cuts (Oblikovati/Oblikovati#1372, the section that
+// lets a box face parallel to the cone axis be subtracted exactly). The intermediate oblique cases
+// (an ellipse, a parabola, or a hyperbola from a plane steeper than the generators but not
+// axis-parallel) are still left to the numeric tracer; a plane through the apex yields a point.
 func planeConeCurve(pl Plane, cone Cone) ([]Curve3, bool) {
 	n := unitVec3(pl.Normal())
 	axis := cone.AxisDir.AsVector()
-	denom := axis.Dot(n)
-	if stdmath.Abs(float64(denom)) < 1-1e-6 { // not perpendicular → conic section, defer
+	along := stdmath.Abs(float64(axis.Dot(n)))
+	if along < 1e-6 { // plane ∥ axis → hyperbola
+		return coneAxisParallelHyperbola(pl, cone, n, axis)
+	}
+	if along < 1-1e-6 { // oblique (ellipse/parabola/steep hyperbola) → defer to the tracer
 		return nil, false
 	}
-	t := n.Dot(cone.Apex.VectorTo(pl.Origin)) / denom
+	t := n.Dot(cone.Apex.VectorTo(pl.Origin)) / axis.Dot(n)
 	r := stdmath.Abs(float64(t)) * stdmath.Tan(cone.HalfAngle)
 	if r < 1e-9 { // plane through the apex
 		return nil, true
@@ -139,6 +145,27 @@ func planeConeCurve(pl Plane, cone Cone) ([]Curve3, bool) {
 		return nil, true
 	}
 	return []Curve3{c}, true
+}
+
+// coneAxisParallelHyperbola returns the hyperbola branch where a plane parallel to the cone axis
+// cuts the cone. With the apex-to-plane signed distance D = n·(Origin − Apex) (n ⟂ axis here), the
+// section is z²/A² − y²/B² = 1 in the plane: vertex on the axis side, transverse semi A = |D|/tanα
+// along the axis (the branch climbs the cone as v=A·coshθ grows), conjugate semi B = |D| along
+// a×n. Its centre sits at the foot of the apex on the plane, Apex + D·n. A plane through the apex
+// (D≈0, the two coincident generators) is degenerate and deferred.
+func coneAxisParallelHyperbola(pl Plane, cone Cone, n, axis math.Vector3) ([]Curve3, bool) {
+	d := float64(n.Dot(cone.Apex.VectorTo(pl.Origin)))
+	if stdmath.Abs(d) < 1e-9 {
+		return nil, false // plane through the apex/axis: two coincident generators, not a hyperbola
+	}
+	conjugate := axis.Cross(n)
+	tanA := stdmath.Tan(cone.HalfAngle)
+	center := cone.Apex.TranslateBy(n.Scale(math.Scalar(d)))
+	h, err := NewHyperbola(center, axis, conjugate, stdmath.Abs(d)/tanA, stdmath.Abs(d))
+	if err != nil {
+		return nil, true
+	}
+	return []Curve3{h}, true
 }
 
 // planeSphereCurve returns the circle where a plane cuts a sphere (empty when the plane

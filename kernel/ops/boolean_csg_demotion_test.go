@@ -114,7 +114,15 @@ func curvedExactCases() []curvedExactCase {
 		{"cylinder boss ∪", ops.Join, func(t *testing.T) (*topo.Body, *topo.Body) {
 			return demoBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 2)), demoCyl(t, math.P3(0, 0, 2), math.V3(0, 0, 1), 1.5, 3)
 		}},
+		{"cone ∩ box (axis-∥ flat)", ops.Intersect, coneFlatBox},
+		{"cone − box (axis-∥ flat)", ops.Cut, coneFlatBox},
 	}
+}
+
+// coneFlatBox is the frustum (tanα=0.3, bottom r=3, top r=6) and an oversized box whose face x=2 is
+// parallel to the cone axis and cuts every cross-section — the hyperbolic-imprint case (#1372).
+func coneFlatBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCone(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6), demoBlock(t, math.P3(2, -20, -5), math.P3(20, 20, 15))
 }
 
 // crossingCylinders is the shared thin-through-fat pair used by the three crossing-cylinder cases.

@@ -147,7 +147,7 @@ var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body) (*to
 	curvedConvexIntersect, curvedConvexSubtract,
 	curvedCrossingIntersect, curvedSteinmetzIntersect, curvedConeCylinderIntersect, curvedConeConeIntersect,
 	curvedPartialIntersect,
-	curvedCylindricalHoleCut, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCrossingCut,
+	curvedCylindricalHoleCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedConeCylinderCut, curvedConeConeCut, curvedCrossingCut,
 	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialJoin, curvedConeCylinderJoin, curvedConeConeJoin, curvedCrossingJoin, curvedSteinmetzJoin,
 }
 

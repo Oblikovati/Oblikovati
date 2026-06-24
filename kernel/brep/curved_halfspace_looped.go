@@ -273,6 +273,9 @@ func bridgeAlong(f curvedFace, c geom.Curve3, exit, entry math.Point3) (loopEdge
 	if _, isLine := c.(geom.Line); isLine {
 		return loopEdge{curve: c, t0: tExit, t1: tEntry}, true
 	}
+	if _, isHyp := c.(geom.Hyperbola); isHyp {
+		return loopEdge{curve: c, t0: tExit, t1: tEntry}, true // a hyperbola branch is simple: bridge by θ range
+	}
 	for _, t1 := range arcCandidates(tExit, tEntry) {
 		cand := loopEdge{curve: c, t0: tExit, t1: t1}
 		if pointInCurvedFace(f, c.PointAt((tExit+t1)/2)) {

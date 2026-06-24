@@ -10,5 +10,7 @@
   "cone ∩ cone": 24.59680642,
   "partial penetration ∩": 20.52055473,
   "coaxial cylinders ∪": 87.9645943,
-  "cylinder boss ∪": 221.2057504
+  "cylinder boss ∪": 221.2057504,
+  "cone ∩ box (axis-∥ flat)": 156.27698,
+  "cone − box (axis-∥ flat)": 503.4574773
 }
