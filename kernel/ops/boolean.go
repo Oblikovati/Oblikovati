@@ -92,6 +92,11 @@ func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.L
 	if body, ok := curvedConvexSubtract(op, target, tool); ok {
 		return body, nil
 	}
+	// And two crossing cylinders (a rod through a fatter cylinder): assemble the rod band + the two
+	// fat-wall lens caps straight from the traced imprint loops, exact surfaces preserved (M2 #1335).
+	if body, ok := curvedCrossingIntersect(op, target, tool); ok {
+		return body, nil
+	}
 	bop, ok := toBrepOp(op)
 	if !ok {
 		return booleanCSG(op, target, tool, lin)
