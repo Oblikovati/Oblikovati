@@ -222,7 +222,7 @@ func applyFillSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, err
 	}
 	sides := in.Sides
 	if sides <= 0 {
-		sides = 4
+		sides = feature.DefaultFillSides
 	}
 	pf := feature.NewFillFeatures(part.Features()).AddSides(cont.Order(), sides)
 	return recomputeResult(part, pf)
@@ -389,13 +389,13 @@ func applyFitSurface(s *app.Session, raw json.RawMessage) (json.RawMessage, erro
 func fitSurfaceDefaults(in fitSurfaceArgs) (degree, nu, nv int) {
 	degree, nu, nv = in.Degree, in.NU, in.NV
 	if degree <= 0 {
-		degree = 3
+		degree = feature.DefaultFitDegree
 	}
 	if nu <= 0 {
-		nu = 6
+		nu = feature.DefaultFitSpans
 	}
 	if nv <= 0 {
-		nv = 6
+		nv = feature.DefaultFitSpans
 	}
 	return degree, nu, nv
 }

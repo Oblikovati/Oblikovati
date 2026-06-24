@@ -24,7 +24,9 @@ type FillSurfaceTool struct {
 }
 
 // NewFillSurfaceTool returns a fill tool defaulting to a four-sided curvature (G2) fill.
-func NewFillSurfaceTool() *FillSurfaceTool { return &FillSurfaceTool{continuity: 2, sides: 4} }
+func NewFillSurfaceTool() *FillSurfaceTool {
+	return &FillSurfaceTool{continuity: 2, sides: feature.DefaultFillSides}
+}
 
 // SetContinuity sets the continuity order (0=G0, 1=G1, 2=G2).
 func (t *FillSurfaceTool) SetContinuity(order int) { t.continuity = order }

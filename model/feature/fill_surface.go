@@ -15,6 +15,10 @@ import (
 // fill math is kernel/geom.FillSurface via ops.FillFourSided; the F13 cross-edge checker is the
 // numeric acceptance gate.
 
+// DefaultFillSides is the classic four-sided boundary fill — the side count assumed when none is
+// given (Sides ≤ 0), shared by the fill feature, tool and MCP op.
+const DefaultFillSides = 4
+
 // FillDefinition is the recipe for a boundary fill: the continuity order to impose on every side
 // (0=G0/position … 2=G2/curvature) and the number of bounding sides (0 or 4 = the classic four-sided
 // fill; 3, 5, 6… = an N-sided fill of the last Sides surface bodies).
@@ -40,7 +44,7 @@ func (f *FillFeature) Kind() string { return "fill-surface" }
 func (f *FillFeature) Recompute(in Input) (Output, error) {
 	sides := f.def.Sides
 	if sides <= 0 {
-		sides = 4
+		sides = DefaultFillSides
 	}
 	if len(in.Bodies) < sides {
 		return Output{}, fmt.Errorf("fill surface: needs %d bounding surface bodies, have %d", sides, len(in.Bodies))

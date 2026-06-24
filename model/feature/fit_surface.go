@@ -15,6 +15,13 @@ import (
 // model-space points); the feature least-squares fits a degree×degree B-spline with the requested
 // nu×nv control net via ops.FitSurfaceToPoints and appends it as a surface body.
 
+// Class-A fit defaults shared by the Fit Surface tool and the fitSurface MCP op: a bicubic patch
+// (degree 3) with a 6×6 control net — few even spans for clean reflection lines.
+const (
+	DefaultFitDegree = 3
+	DefaultFitSpans  = 6
+)
+
 // FitDefinition is the recipe for a fitted surface: the region points and the degree/span targets.
 type FitDefinition struct {
 	Points []math.Point3

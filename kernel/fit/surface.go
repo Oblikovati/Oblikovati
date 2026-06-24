@@ -50,7 +50,7 @@ func planeParameters(points []math.Point3, plane geom.Plane) (us, vs []float64) 
 func normalizeUnit(vals []float64) {
 	lo, hi := vals[0], vals[0]
 	for _, v := range vals {
-		lo, hi = minF(lo, v), maxF(hi, v)
+		lo, hi = min(lo, v), max(hi, v)
 	}
 	span := hi - lo
 	for i, v := range vals {
@@ -60,18 +60,4 @@ func normalizeUnit(vals []float64) {
 		}
 		vals[i] = (v - lo) / span
 	}
-}
-
-func minF(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxF(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }

@@ -60,7 +60,7 @@ func JoinCurves(curves []BSplineCurve) (BSplineCurve, error) {
 	}
 	deg := 0
 	for _, c := range curves {
-		deg = maxInt(deg, c.Degree)
+		deg = max(deg, c.Degree)
 	}
 	acc, err := elevateTo(curves[0], deg)
 	if err != nil {
@@ -143,11 +143,4 @@ func repeatKnot(u float64, n int) []float64 {
 		out[i] = u
 	}
 	return out
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
