@@ -27,6 +27,19 @@ const (
 	// point a hair off the contact as a real crossing and emit a spurious tiny curve there. 1−1e-5
 	// corresponds to crossings shallower than ~0.18°, which are tangencies for all practical purposes.
 	ssiTangencyCos = 1 - 1e-5
+	// ssiToleranceFraction and ssiStepFraction scale the on-curve tolerance and the march step to the
+	// base patch's 3D extent (so both are model-relative, ADR-0042). 1e-7 is the stated acceptance
+	// tolerance reachable by the NURBS Gauss–Newton projection; 4e-3 keeps a full curve to a few
+	// thousand points while resolving curvature.
+	ssiToleranceFraction = 1e-7
+	ssiStepFraction      = 4e-3
+	// Step multiples used while marching: a seed within ssiDedupSteps of an existing curve is a
+	// duplicate of it; the loop closes when the march returns within ssiLoopCloseSteps of its start;
+	// a tangency seed may sit up to ssiTangencyGapSteps from the contact (the strict normal test, not
+	// this gate, is the real discriminator).
+	ssiDedupSteps       = 1.5
+	ssiLoopCloseSteps   = 0.75
+	ssiTangencyGapSteps = 5.0
 )
 
 // traceIntersectionCurves returns the intersection curve(s) of base and other as polylines whose every
@@ -59,7 +72,7 @@ func traceIntersectionCurves(base, other Surface, grid SurfaceGrid) [][]math.Poi
 		if !ok {
 			continue
 		}
-		if nearAnyCurve(curves, pc, step*1.5) {
+		if nearAnyCurve(curves, pc, step*ssiDedupSteps) {
 			continue // this seed lands on an already-traced curve (within a march step of it)
 		}
 		curves = append(curves, marchCurve(base, other, pc, nb, no, g, step, tol))
@@ -102,7 +115,7 @@ func marchOneWay(base, other Surface, start math.Point3, nb, no math.Vector3, g 
 		if !inWindow(base, pc, g) {
 			return append(pts, pc), false // exited the base window: keep the boundary point
 		}
-		if i > 2 && start.DistanceTo(pc) < step*0.75 {
+		if i > 2 && start.DistanceTo(pc) < step*ssiLoopCloseSteps {
 			return append(pts, start), true // closed the loop
 		}
 		if moved, err := math.UnitVector3FromVector(p.VectorTo(pc)); err == nil {
@@ -192,7 +205,7 @@ func nearTangency(base, other Surface, p math.Point3, step float64) bool {
 	// Gate generously (a seed can sit several steps from the contact) — the strict normal-parallelism
 	// test (ssiTangencyCos = 1 − 1e-10) is the real discriminator: only a genuine tangency passes it,
 	// a transversal crossing (even a shallow one) does not.
-	if do > 5*step {
+	if do > ssiTangencyGapSteps*step {
 		return false
 	}
 	c := stdmath.Abs(float64(base.NormalAt(ub, vb).Dot(other.NormalAt(uo, vo))))
@@ -271,13 +284,13 @@ func ssiSeeds(base, other Surface, g SurfaceGrid) []math.Point3 {
 // ssiTolerance is the model-relative on-curve tolerance: 1e-7 of the base's 3D extent (the stated
 // acceptance tolerance, reachable by the NURBS Gauss–Newton projection — a 1e-9 target is not).
 func ssiTolerance(base Surface, g SurfaceGrid) float64 {
-	return 1e-7 * ssiExtent(base, g)
+	return ssiToleranceFraction * ssiExtent(base, g)
 }
 
 // ssiStep is the nominal march step: a small fraction of the base's 3D extent, so a full curve is a
 // few thousand points at most while fine enough to resolve curvature.
 func ssiStep(base Surface, g SurfaceGrid) float64 {
-	return 4e-3 * ssiExtent(base, g)
+	return ssiStepFraction * ssiExtent(base, g)
 }
 
 // ssiExtent estimates the base patch's 3D size over the grid window (the diagonal of its corner box),
