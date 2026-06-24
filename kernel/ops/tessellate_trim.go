@@ -64,6 +64,9 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
 		return closedDomainMesh(s, us, vs) // full cylinder/cone side with circular rims: grid the period
 	}
+	if m, ok := holedCylinderWallMesh(s, outer3D, holes3D); ok {
+		return m // a drilled cylinder wall: full-period side with lens holes — unroll + metric CDT
+	}
 	if m, ok := saddleBandLoftMesh(f, s, q); ok {
 		return m // a cylinder/cone band with non-circular (saddle) rims — a crossing cylinder: loft v(u)
 	}

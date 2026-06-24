@@ -1,0 +1,177 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package ops
+
+import (
+	stdmath "math"
+
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+)
+
+// Holed cylinder-wall tessellation (M2 Phase 2, Oblikovati/Oblikovati#1335). A cylinder drilled through —
+// a fat cylinder Cut/Join with a crossing rod — leaves the fat SIDE wall as a full-period cylinder face
+// carrying one or more lens HOLES where the rod broke through. periodicBandGrid and metricPatchMesh both
+// reject a holed periodic face (toUVLoops can't unwrap the seam-wrapping outer loop), so it fell to the
+// full-domain grid, which ignores the holes entirely. But a cylinder is DEVELOPABLE — its first
+// fundamental form ds² = R²du² + dv² is flat — so its wall unrolls to a plane without distortion: unwrap
+// the wrapping outer loop's angle cumulatively into a contiguous (u,v) rectangle and hand it, holes and
+// all, straight to metricPatchMesh, whose metric-scaled CDT meshes the rectangle-minus-holes with interior
+// refinement. The seam (the rectangle's two vertical edges, 2π apart in u) maps to one line in 3D, so the
+// triangles on either side meet there with no gap.
+
+// holedCylinderWallMesh meshes a full-period cylinder side carrying holes by unrolling it to a contiguous
+// (u,v) rectangle and delegating to metricPatchMesh. ok=false unless the surface is a cylinder with at
+// least one hole and a genuinely seam-wrapping outer loop (a hole straddling the seam also defers — the
+// builder seams the wall clear of its holes, so that should not arise).
+func holedCylinderWallMesh(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (*Mesh, bool) {
+	if _, ok := s.(geom.Cylinder); !ok {
+		return nil, false // only a cylinder unrolls with a flat (distortion-free) metric
+	}
+	if len(holes3D) == 0 || isPeriodic(s.UDomain()) == isPeriodic(s.VDomain()) {
+		return nil, false // need a holed, singly-periodic side
+	}
+	outerUV, umin, umax, ok := wrappedWallUV(s, outer3D)
+	if !ok {
+		return nil, false
+	}
+	holesUV, ok := holesIntoBranch(s, holes3D, umin, umax)
+	if !ok {
+		return nil, false
+	}
+	return unrolledWallCDT(s, outer3D, holes3D, outerUV, holesUV), true
+}
+
+// unrolledWallCDT triangulates the unrolled wall (the contiguous (u,v) rectangle minus the holes) with a
+// BOUNDARY-ONLY constrained Delaunay in metric-scaled (u,v) — (√E,√G)≈(R,1) for a cylinder, so the
+// parameter space is isometric to 3D and the triangles are well shaped. No interior Steiner points: the
+// wall's curvature is entirely in u, already captured by the dense cap-circle samples on the rim edges,
+// and a large wall's interior nodes only make the hole's constraint recovery (insertConstraint) fail and
+// the domain flood leak. The exact 3D boundary points are kept so the wall welds to its caps, the rod
+// band and the lens caps that share its edges.
+func unrolledWallCDT(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, outerUV []math.Point2, holesUV [][]math.Point2) *Mesh {
+	su, sv := trimMetricScale(s, outerUV)
+	outer2D := scaleUVLoop(outerUV, su, sv)
+	holes2D := make([][]math.Point2, len(holesUV))
+	for i, h := range holesUV {
+		holes2D[i] = scaleUVLoop(h, su, sv)
+	}
+	uv, pos, nrm, loops := patchLoops2D(s, outer3D, holes3D, outer2D, holes2D)
+	tris := constrainedDelaunay(uv, loops)
+	if len(tris) == 0 {
+		return boundaryPatchMesh(s, outer3D, holes3D)
+	}
+	m := patchMeshFrom(pos, nrm, tris)
+	repairFolds(m, 8)
+	return m
+}
+
+// scaleUVLoop scales a (u,v) loop by the per-axis metric (su, sv) so the CDT runs in a space isometric to
+// 3D.
+func scaleUVLoop(loop []math.Point2, su, sv float64) []math.Point2 {
+	out := make([]math.Point2, len(loop))
+	for i, p := range loop {
+		out[i] = math.P2(p.X*math.Scalar(su), p.Y*math.Scalar(sv))
+	}
+	return out
+}
+
+// wrappedWallUV unwraps the wall's seam-wrapping outer loop angle (u) into contiguous values, returning
+// the (u,v) loop and its u-range. ok=false unless the loop spans essentially the full period (otherwise
+// it is an ordinary contractible patch toUVLoops already handles, not a wrapping wall).
+func wrappedWallUV(s geom.Surface, outer3D []math.Point3) (uv []math.Point2, umin, umax float64, ok bool) {
+	us := make([]float64, len(outer3D))
+	vs := make([]float64, len(outer3D))
+	for i, p := range outer3D {
+		us[i], vs[i] = s.ParamAt(p)
+	}
+	cu := cumulativeUnwrap(us)
+	umin, umax = minMax(cu)
+	if umax-umin < 2*stdmath.Pi-0.5 {
+		return nil, 0, 0, false // not a full wrap
+	}
+	uv = make([]math.Point2, len(outer3D))
+	for i := range outer3D {
+		uv[i] = math.P2(math.Scalar(cu[i]), math.Scalar(vs[i]))
+	}
+	return uv, umin, umax, true
+}
+
+// holesIntoBranch maps each hole loop to (u,v) and shifts it by whole periods into the wall rectangle's
+// u-range. ok=false if a hole wraps the seam or cannot be brought wholly inside (it straddles the seam —
+// the builder is expected to place the wall's seam clear of its holes).
+func holesIntoBranch(s geom.Surface, holes3D [][]math.Point3, umin, umax float64) ([][]math.Point2, bool) {
+	out := make([][]math.Point2, 0, len(holes3D))
+	for _, h := range holes3D {
+		uv, ok := holeUVInBranch(s, h, umin, umax)
+		if !ok {
+			return nil, false
+		}
+		out = append(out, uv)
+	}
+	return out, true
+}
+
+// holeUVInBranch unwraps one hole loop to contiguous (u,v) and offsets it by whole periods so it sits
+// inside [umin, umax]. ok=false when the hole itself wraps the seam or still straddles a rectangle edge.
+func holeUVInBranch(s geom.Surface, hole []math.Point3, umin, umax float64) ([]math.Point2, bool) {
+	us := make([]float64, len(hole))
+	vs := make([]float64, len(hole))
+	for i, p := range hole {
+		us[i], vs[i] = s.ParamAt(p)
+	}
+	cu := cumulativeUnwrap(us)
+	lo, hi := minMax(cu)
+	if hi-lo > 2*stdmath.Pi-0.5 {
+		return nil, false // a hole that itself wraps the seam
+	}
+	shift := branchShift((lo+hi)/2, umin, umax)
+	if lo+shift < umin-trimBorderTol || hi+shift > umax+trimBorderTol {
+		return nil, false // straddles a seam edge even after shifting
+	}
+	uv := make([]math.Point2, len(hole))
+	for i := range hole {
+		uv[i] = math.P2(math.Scalar(cu[i]+shift), math.Scalar(vs[i]))
+	}
+	return uv, true
+}
+
+// cumulativeUnwrap makes a periodic parameter contiguous by accumulating per-step deltas (each jump
+// folded into (−π, π]), WITHOUT failing on a full-period wrap — unlike unwrap(), which rejects exactly
+// the wrapping wall loop this mesher is built for.
+func cumulativeUnwrap(a []float64) []float64 {
+	out := make([]float64, len(a))
+	out[0] = a[0]
+	for i := 1; i < len(a); i++ {
+		d := a[i] - a[i-1]
+		for d > stdmath.Pi {
+			d -= 2 * stdmath.Pi
+		}
+		for d <= -stdmath.Pi {
+			d += 2 * stdmath.Pi
+		}
+		out[i] = out[i-1] + d
+	}
+	return out
+}
+
+// branchShift returns the whole-period offset that brings angle a into [umin, umax].
+func branchShift(a, umin, umax float64) float64 {
+	shift := 0.0
+	for a+shift < umin {
+		shift += 2 * stdmath.Pi
+	}
+	for a+shift > umax {
+		shift -= 2 * stdmath.Pi
+	}
+	return shift
+}
+
+// minMax returns the smallest and largest of a non-empty slice.
+func minMax(xs []float64) (lo, hi float64) {
+	lo, hi = xs[0], xs[0]
+	for _, x := range xs {
+		lo, hi = stdmath.Min(lo, x), stdmath.Max(hi, x)
+	}
+	return lo, hi
+}
