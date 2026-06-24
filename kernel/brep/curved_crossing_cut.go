@@ -54,8 +54,7 @@ func CrossingCylinderCut(target, tool *topo.Body) (*topo.Body, bool) {
 // oriented CCW about the rod axis and assigned to the lower (lo) and upper (hi) end of the band (see
 // assignRimLoops). rodBase is the rod's lower-axis cap centre and rodHeight its axial length.
 type crossingParts struct {
-	rod                  crossRod
-	fat                  geom.Cylinder
+	rod, fat             crossRod
 	rodBase, fatBase     math.Point3
 	rodHeight, fatHeight float64
 	lo, hi               geom.Polyline
@@ -82,7 +81,7 @@ func crossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &crossingParts{cylinderRod{rod}, fat, rodBase, fatBase, rodH, fatH, lo, hi}, true
+	return &crossingParts{cylinderRod{rod}, cylinderRod{fat}, rodBase, fatBase, rodH, fatH, lo, hi}, true
 }
 
 // orderRodFat picks which of the two cylinders is the rod (both loops encircle it) and which is the fat
@@ -98,14 +97,15 @@ func orderRodFat(loops []geom.Polyline, ca geom.Cylinder, baseA math.Point3, hA 
 	}
 }
 
-// loopsBetweenCaps reports whether both imprint loops lie strictly between the fat cylinder's two caps —
-// the side-breach condition where the tunnel passes through the wall and leaves the caps whole.
-func loopsBetweenCaps(fat geom.Cylinder, fatBase math.Point3, fatHeight float64, lo, hi geom.Polyline) bool {
-	axis := fat.AxisDir.AsVector()
-	vBot := float64(fat.Origin.VectorTo(fatBase).Dot(axis))
+// loopsBetweenCaps reports whether both imprint loops lie strictly between the fat's two caps — the
+// side-breach condition where the tunnel passes through the wall and leaves the caps whole. Works for a
+// cylinder or a cone fat (the test is purely axial).
+func loopsBetweenCaps(fat crossRod, fatBase math.Point3, fatHeight float64, lo, hi geom.Polyline) bool {
+	ax := fat.axisOf()
+	vBot := float64(ax.point.VectorTo(fatBase).Dot(ax.dir))
 	for _, lp := range []geom.Polyline{lo, hi} {
 		for _, p := range lp.Vertices {
-			s := float64(fat.Origin.VectorTo(p).Dot(axis)) - vBot
+			s := float64(ax.point.VectorTo(p).Dot(ax.dir)) - vBot
 			if s < 1e-9 || s > fatHeight-1e-9 {
 				return false
 			}
@@ -133,17 +133,18 @@ func drillFatWithRod(p *crossingParts) *topo.Body {
 	return bld.Build()
 }
 
-// addFatCapsAndHoledWall adds the fat cylinder's two planar caps and its side wall carrying the given hole
-// loops (one per wall breach). seam is an angular parameter placed clear of every hole (the unroll-and-CDT
-// mesher needs a hole-free seam); each hole use is the lens-loop edge in the orientation OPPOSITE the band
-// that fills it from the other side, so every edge stays used exactly twice.
-func addFatCapsAndHoledWall(bld *topo.Builder, fat geom.Cylinder, fatBase math.Point3, fatHeight, seam float64, holes ...topo.Use) {
-	axis := fat.AxisDir.AsVector()
-	vBot := float64(fat.Origin.VectorTo(fatBase).Dot(axis))
+// addFatCapsAndHoledWall adds the fat's two planar caps and its side wall carrying the given hole loops (one
+// per wall breach). The fat is a cylinder or a cone (a crossRod): the two cap circles take the fat's radius
+// at each cap centre (constant for a cylinder, growing with apex distance for a cone), and the wall is the
+// fat's analytic surface. seam is an angular parameter placed clear of every hole (the unroll-and-CDT mesher
+// needs a hole-free seam); each hole use is the lens-loop edge in the orientation OPPOSITE the band that
+// fills it from the other side, so every edge stays used exactly twice.
+func addFatCapsAndHoledWall(bld *topo.Builder, fat crossRod, fatBase math.Point3, fatHeight, seam float64, holes ...topo.Use) {
+	axis := fat.axisVec()
 	topCenter := fatBase.TranslateBy(axis.Scale(math.Scalar(fatHeight)))
-	seamBot, seamTop := fat.PointAt(seam, vBot), fat.PointAt(seam, vBot+fatHeight)
-	botC := seamedCircle(fatBase, fat.AxisDir, seamBot, fat.Radius)
-	topC := seamedCircle(topCenter, fat.AxisDir, seamTop, fat.Radius)
+	seamBot, seamTop := rodCirclePoint(fat, fatBase, seam), rodCirclePoint(fat, topCenter, seam)
+	botC := seamedCircle(fatBase, fat.axisUnit(), seamBot, fat.endRadius(fatBase))
+	topC := seamedCircle(topCenter, fat.axisUnit(), seamTop, fat.endRadius(topCenter))
 
 	vb := bld.AddVertex(seamBot, crossLin("fvb"))
 	vt := bld.AddVertex(seamTop, crossLin("fvt"))
@@ -159,15 +160,14 @@ func addFatCapsAndHoledWall(bld *topo.Builder, fat geom.Cylinder, fatBase math.P
 	for _, h := range holes {
 		wallLoops = append(wallLoops, topo.InnerLoop(h))
 	}
-	bld.AddFace(fat, crossLin("fwall"), wallLoops...)
+	bld.AddFace(fat.surface(), crossLin("fwall"), wallLoops...)
 }
 
-// clearSeamParam returns an angular parameter on the fat cylinder midway through the larger gap between the
-// two lens centres, so a seam placed there crosses neither hole (the holed-wall mesher needs a hole-free
-// seam).
-func clearSeamParam(fat geom.Cylinder, lo, hi geom.Polyline) float64 {
-	u1 := axisAngleOf(loopCentroid(lo), cylAxis(fat))
-	u2 := axisAngleOf(loopCentroid(hi), cylAxis(fat))
+// clearSeamParam returns an angular parameter on the fat midway through the larger gap between the two lens
+// centres, so a seam placed there crosses neither hole (the holed-wall mesher needs a hole-free seam).
+func clearSeamParam(fat crossRod, lo, hi geom.Polyline) float64 {
+	u1 := axisAngleOf(loopCentroid(lo), fat.axisOf())
+	u2 := axisAngleOf(loopCentroid(hi), fat.axisOf())
 	a, b := stdmath.Min(u1, u2), stdmath.Max(u1, u2)
 	if b-a >= 2*stdmath.Pi-(b-a) {
 		return (a + b) / 2 // the gap from a to b is the larger one
@@ -175,11 +175,10 @@ func clearSeamParam(fat geom.Cylinder, lo, hi geom.Polyline) float64 {
 	return (a+b)/2 + stdmath.Pi // the gap wrapping past 0 is larger
 }
 
-// clearSeamForLens returns an angular parameter on the fat cylinder diametrically opposite a single lens
-// hole, so a seam placed there crosses the hole-free side of the wall (the holed-wall mesher needs a
-// hole-free seam).
-func clearSeamForLens(fat geom.Cylinder, lens geom.Polyline) float64 {
-	return axisAngleOf(loopCentroid(lens), cylAxis(fat)) + stdmath.Pi
+// clearSeamForLens returns an angular parameter on the fat diametrically opposite a single lens hole, so a
+// seam placed there crosses the hole-free side of the wall (the holed-wall mesher needs a hole-free seam).
+func clearSeamForLens(fat crossRod, lens geom.Polyline) float64 {
+	return axisAngleOf(loopCentroid(lens), fat.axisOf()) + stdmath.Pi
 }
 
 // seamedCircle builds a cap circle whose angle-zero seam vertex is at seamPt (radius and centre on the
