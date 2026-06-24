@@ -37,9 +37,9 @@ func CrossingCylinderIntersect(a, b *topo.Body) (*topo.Body, bool) {
 	if !ok || len(loops) != 2 {
 		return nil, false
 	}
-	rod, fat, ok := rodAndFatCylinders(a, b, loops)
-	if !ok {
-		return nil, false
+	rod, fat, rodBase, rodHeight, ok := rodAndFatCylinders(a, b, loops)
+	if !ok || !loopsSpanRod(rod, rodBase, rodHeight, loops) {
+		return nil, false // a loop beyond a rod end is a partial penetration, not a full crossing
 	}
 	lo, hi, ok := assignRimLoops(rod, fat, loops)
 	if !ok {
@@ -49,21 +49,41 @@ func CrossingCylinderIntersect(a, b *topo.Body) (*topo.Body, bool) {
 }
 
 // rodAndFatCylinders picks which cylinder is the rod (the band-bearing one both imprint loops fully
-// encircle) and which is the fat cylinder (the lens-capped one). ok=false when neither or both qualify.
-func rodAndFatCylinders(a, b *topo.Body, loops []geom.Polyline) (rod, fat geom.Cylinder, ok bool) {
-	ca, _, _, okA := cylinderSolidParams(facesOfAny(a))
-	cb, _, _, okB := cylinderSolidParams(facesOfAny(b))
+// encircle) and which is the fat cylinder (the lens-capped one), carrying the rod's cap base and height
+// through. ok=false when neither or both qualify.
+func rodAndFatCylinders(a, b *topo.Body, loops []geom.Polyline) (rod, fat geom.Cylinder, rodBase math.Point3, rodHeight float64, ok bool) {
+	ca, baseA, hA, okA := cylinderSolidParams(facesOfAny(a))
+	cb, baseB, hB, okB := cylinderSolidParams(facesOfAny(b))
 	if !okA || !okB {
-		return geom.Cylinder{}, geom.Cylinder{}, false
+		return geom.Cylinder{}, geom.Cylinder{}, math.Point3{}, 0, false
 	}
 	aWraps, bWraps := allLoopsEncircle(loops, ca), allLoopsEncircle(loops, cb)
 	if aWraps && !bWraps {
-		return ca, cb, true
+		return ca, cb, baseA, hA, true
 	}
 	if bWraps && !aWraps {
-		return cb, ca, true
+		return cb, ca, baseB, hB, true
 	}
-	return geom.Cylinder{}, geom.Cylinder{}, false
+	return geom.Cylinder{}, geom.Cylinder{}, math.Point3{}, 0, false
+}
+
+// loopsSpanRod reports whether every imprint loop lies within the rod's finite axial extent (between its end
+// caps). The imprint is traced on the two infinite cylinder surfaces, so a thin rod that ENDS inside the fat
+// still yields two loops when traced fat-first — but the second (the would-be exit) sits beyond the rod's
+// end. When that happens the rod does not actually cross, so the full-crossing assemblers must defer and let
+// the partial-penetration path (curved_partial_penetration.go) handle it.
+func loopsSpanRod(rod geom.Cylinder, rodBase math.Point3, rodHeight float64, loops []geom.Polyline) bool {
+	axis := rod.AxisDir.AsVector()
+	vBase := float64(rod.Origin.VectorTo(rodBase).Dot(axis))
+	for _, lp := range loops {
+		for _, p := range lp.Vertices {
+			s := float64(rod.Origin.VectorTo(p).Dot(axis)) - vBase
+			if s < -1e-7 || s > rodHeight+1e-7 {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // allLoopsEncircle reports whether every loop winds a full turn about the cylinder's axis — the test that

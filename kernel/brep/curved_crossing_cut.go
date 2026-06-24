@@ -73,8 +73,8 @@ func crossingPartsOf(a, b *topo.Body) (*crossingParts, bool) {
 		return nil, false
 	}
 	rod, rodBase, rodH, fat, fatBase, fatH, ok := orderRodFat(loops, ca, baseA, hA, cb, baseB, hB)
-	if !ok {
-		return nil, false
+	if !ok || !loopsSpanRod(rod, rodBase, rodH, loops) {
+		return nil, false // a loop beyond a rod end is a partial penetration, not a full crossing
 	}
 	lo, hi, ok := assignRimLoops(rod, fat, loops)
 	if !ok {
