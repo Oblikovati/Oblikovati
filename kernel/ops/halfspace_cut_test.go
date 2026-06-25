@@ -138,14 +138,54 @@ func TestHalfSpaceCutCylinderPerpendicularIsFrustum(t *testing.T) {
 	}
 }
 
-// TestHalfSpaceCutCylinderObliqueDefers: an oblique cut (elliptical section) is not yet handled and
-// must report ErrUnsupportedHalfSpace so the caller keeps the CSG fallback.
-func TestHalfSpaceCutCylinderObliqueDefers(t *testing.T) {
+// TestHalfSpaceCutCylinderObliqueExact: an oblique cut carves an ELLIPTICAL section on the cylinder side,
+// the case the old line-only split deferred to CSG. The unified (u,v) ruled-side split now builds it
+// exactly — a cylinder band + an elliptical planar lid + the kept bottom cap — watertight. The plane
+// z=(4−x)/2 stays above the base over the whole disk, so the kept volume is the exact analytic
+// ∬(4−x)/2 dA = 18π (mean height 2 × π·3²) up to the tessellation chord deficit.
+func TestHalfSpaceCutCylinderObliqueExact(t *testing.T) {
 	cyl, _ := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
-	plane, _ := geom.NewPlane(math.P3(0, 0, 2), math.V3(1, 0, 2)) // tilted off the axis
-	if _, err := brep.HalfSpaceCut(cyl, plane); err == nil {
-		t.Error("oblique cylinder cut should defer (ErrUnsupportedHalfSpace), not return a result")
+	plane, _ := geom.NewPlane(math.P3(0, 0, 2), math.V3(1, 0, 2)) // tilted off the axis → within-band ellipse
+	res, err := brep.HalfSpaceCut(cyl, plane)
+	if err != nil {
+		t.Fatalf("oblique cylinder cut should now be exact, got %v", err)
 	}
+	if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold || !res.IsSolid() {
+		t.Fatalf("oblique cut is not a watertight solid: %+v", r)
+	}
+	if !bodyHasCylinderFace(res) || !bodyHasEllipticalEdge(res) {
+		t.Error("result lacks the analytic cylinder face or the elliptical section edge — it fell back to CSG")
+	}
+	got := ops.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	want := 18 * stdmath.Pi
+	if rel := stdmath.Abs(got-want) / want; rel > 0.02 {
+		t.Errorf("kept volume %.4f, want analytic %.4f (rel %.4f > 0.02)", got, want, rel)
+	}
+}
+
+// bodyHasCylinderFace reports whether the body carries an analytic cylinder face.
+func bodyHasCylinderFace(b *topo.Body) bool {
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// bodyHasEllipticalEdge reports whether any edge is an ellipse/elliptical arc — the oblique cut's section.
+func bodyHasEllipticalEdge(b *topo.Body) bool {
+	for _, f := range b.Faces() {
+		for _, l := range f.Loops() {
+			for _, u := range l.EdgeUses() {
+				switch u.Edge().Geometry().(type) {
+				case geom.EllipseFull, geom.EllipticalArc:
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // assertCylinderAndPlaneFaces verifies an exact truncated cylinder: one geom.Cylinder side + two

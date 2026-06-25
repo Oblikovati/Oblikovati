@@ -24,5 +24,9 @@
   "cone ∩ box (oblique vertex-inside)": 48.83120765,
   "cone − box (oblique vertex-inside)": 610.9032496,
   "cone − box (clips rim annulus)": 431.6646687,
-  "cone ∩ box (clips rim tongue)": 228.0697885
+  "cone ∩ box (clips rim tongue)": 228.0697885,
+  "cylinder ∩ box (oblique ellipse)": 141.3716694,
+  "cylinder − box (oblique ellipse)": 141.3716694,
+  "cylinder − box (clips rim annulus)": 245.4880608,
+  "cylinder ∩ box (clips rim tongue)": 37.25527803
 }
