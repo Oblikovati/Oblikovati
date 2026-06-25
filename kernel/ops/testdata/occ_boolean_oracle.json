@@ -41,5 +41,7 @@
   "torus ∩ box (oblique single oval)": 24.93812164,
   "torus − box (oblique single oval)": 369.8453969,
   "torus ∩ box (figure-eight pinch)": 114.8863256,
-  "torus − box (figure-eight pinch)": 279.8978536
+  "torus − box (figure-eight pinch)": 279.8978536,
+  "torus ∩ box (two oblique ovals)": 175.3359946,
+  "torus − box (two oblique ovals)": 219.4483228
 }

@@ -66,6 +66,59 @@ func TestTorusObliqueOvalRange(t *testing.T) {
 	}
 }
 
+// A tilted plane through the central hole cuts TWO oblique ovals (the section is valid at every tube angle):
+// the kept solid is a v-wrapping band + two oval lids, watertight, no CSG (Oblikovati#1375).
+func TestHalfSpaceCutTorusTwoObliqueOval(t *testing.T) {
+	tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2, "torus")
+	torS, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
+	plane, _ := geom.NewPlane(math.P3(0, 0, 0.5), math.V3(0, 0, 1)) // tilted, through the hole
+	if !torusTwoObliqueOval(torS, plane) {
+		t.Fatal("expected a tilted two-oval section")
+	}
+	res, err := HalfSpaceCut(tor, plane)
+	if err != nil {
+		t.Fatalf("HalfSpaceCut: %v", err)
+	}
+	assertWatertight(t, res)
+	tori, planes := 0, 0
+	for _, f := range res.Faces() {
+		switch f.Geometry().(type) {
+		case geom.Torus:
+			tori++
+		case geom.Plane:
+			planes++
+		}
+	}
+	if tori != 1 || planes != 2 {
+		t.Errorf("tilted two-oval cut has %d torus + %d plane faces, want 1 + 2 (band + two oval lids)", tori, planes)
+	}
+}
+
+// torusTwoObliqueOval admits only a tilted cut through the hole (two ovals); a tilted single-oval bite (with
+// w=±1 crossings) or an upright cut is not it.
+func TestTorusTwoObliqueOvalGuards(t *testing.T) {
+	torS, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
+	for _, tc := range []struct {
+		name   string
+		origin math.Point3
+		want   bool
+	}{
+		{"tilted through hole (two ovals)", math.P3(0, 0, 0.5), true},
+		{"tilted single-oval bite (z=3.6)", math.P3(0, 0, 3.6), false},
+	} {
+		plane, _ := geom.NewPlane(tc.origin, math.V3(0, 0, 1))
+		if got := torusTwoObliqueOval(torS, plane); got != tc.want {
+			t.Errorf("%s: torusTwoObliqueOval = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+	// An upright (axis-aligned) torus cut is never the oblique two-oval case.
+	upright, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	plane, _ := geom.NewPlane(math.P3(0, 2, 0), math.V3(0, 1, 0))
+	if torusTwoObliqueOval(upright, plane) {
+		t.Error("axis-parallel two-oval wrongly classified as oblique")
+	}
+}
+
 // A perpendicular or axis-parallel plane is not the oblique case; a non-tilted cut must defer.
 func TestTorusObliqueOvalGuards(t *testing.T) {
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)

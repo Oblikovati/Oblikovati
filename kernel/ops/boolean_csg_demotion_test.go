@@ -146,6 +146,8 @@ func curvedExactCases() []curvedExactCase {
 		{"torus − box (oblique single oval)", ops.Cut, torusObliqueOvalBox},
 		{"torus ∩ box (figure-eight pinch)", ops.Intersect, torusFigureEightBox},
 		{"torus − box (figure-eight pinch)", ops.Cut, torusFigureEightBox},
+		{"torus ∩ box (two oblique ovals)", ops.Intersect, torusTwoObliqueOvalBox},
+		{"torus − box (two oblique ovals)", ops.Cut, torusTwoObliqueOvalBox},
 	}
 }
 
@@ -195,6 +197,14 @@ func torusObliqueOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 // path (a v-wrapping band + two oval lids that touch at the pinch) serves it exactly (Oblikovati#1375).
 func torusFigureEightBox(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 3, -20), math.P3(20, 20, 20))
+}
+
+// torusTwoObliqueOvalBox cuts a TILTED torus (axis (0,0.6,0.8)) by the box face z=0.5 — a plane oblique to
+// the axis AND through the central hole, so it cuts both tube walls into TWO asymmetric (tilted) ovals. The
+// kept solid is the v-wrapping band between them + two oval lids, same as the axis-parallel two-oval but with
+// the section's C≠0 term; the general band builder/mesher serve it directly (Oblikovati#1375).
+func torusTwoObliqueOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2), demoBlock(t, math.P3(-20, -20, 0.5), math.P3(20, 20, 20))
 }
 
 func demoTorus(t *testing.T, center math.Point3, axis math.Vector3, major, minor float64) *topo.Body {
