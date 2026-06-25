@@ -32,6 +32,12 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	}
 	outer3D := faceOuterBoundary(f, q)
 	holes3D := faceHoleBoundaries(f, q)
+	if t, ok := s.(geom.Torus); ok && len(outer3D) < 3 && len(holes3D) > 0 {
+		// A torus face with hole loops but NO outer loop wraps the whole closed surface minus the holes —
+		// the genus-1 COMPLEMENT of an oval cap (a torus-minus-disk). The full-domain grid would ignore the
+		// hole; torusComplementMesh charts the torus minus the oval window instead (Oblikovati#1375).
+		return torusComplementMesh(t, holes3D, q)
+	}
 	if len(outer3D) < 3 {
 		return fullDomainGridMesh(s, q)
 	}
@@ -292,6 +298,12 @@ func isoRectangleGrid(loop []math.Point2) (us, vs []float64, ok bool) {
 // points reproduce the exact boundary vertices (ParamAt is the inverse of PointAt), so the
 // mesh conforms to the shared edge discretization.
 func structuredGridMesh(s geom.Surface, us, vs []float64) *Mesh {
+	return structuredGridMeshSkip(s, us, vs, nil)
+}
+
+// structuredGridMeshSkip is [structuredGridMesh] with an optional per-cell skip predicate (omit a cell
+// when skip(i,j) is true) — the torus complement grid omits the window cells the local patch fills.
+func structuredGridMeshSkip(s geom.Surface, us, vs []float64, skip func(i, j int) bool) *Mesh {
 	m := &Mesh{}
 	idx := make([][]int, len(us))
 	for i, u := range us {
@@ -302,6 +314,9 @@ func structuredGridMesh(s geom.Surface, us, vs []float64) *Mesh {
 	}
 	for i := 0; i+1 < len(us); i++ {
 		for j := 0; j+1 < len(vs); j++ {
+			if skip != nil && skip(i, j) {
+				continue
+			}
 			emitCellOutward(m, s, us[i], us[i+1], vs[j], vs[j+1], idx[i][j], idx[i+1][j], idx[i+1][j+1], idx[i][j+1])
 		}
 	}

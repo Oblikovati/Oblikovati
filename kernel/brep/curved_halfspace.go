@@ -47,5 +47,8 @@ func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 	if torus, ok := torusSolidParams(faces); ok && torusSingleOvalCap(torus, plane) {
 		return torusObliqueHalfSpace(torus, plane) // axis-∥ cut → single-oval cap + planar lid
 	}
+	if torus, ok := torusSolidParams(faces); ok && torusSingleOvalComplement(torus, plane) {
+		return torusComplementHalfSpace(torus, plane) // axis-∥ cut → genus-1 complement + planar lid
+	}
 	return generalHalfSpace(body, plane, n, faces)
 }

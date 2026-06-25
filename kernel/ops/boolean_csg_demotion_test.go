@@ -139,6 +139,7 @@ func curvedExactCases() []curvedExactCase {
 		{"torus ∩ box (perp half)", ops.Intersect, torusPerpHalfBox},
 		{"torus − box (perp off-centre)", ops.Cut, torusPerpOffCentreBox},
 		{"torus ∩ box (axis-∥ oval cap)", ops.Intersect, torusAxisParallelOvalBox},
+		{"torus − box (axis-∥ oval complement)", ops.Cut, torusAxisParallelOvalBox},
 	}
 }
 
@@ -157,9 +158,11 @@ func torusPerpOffCentreBox(t *testing.T) (*topo.Body, *topo.Body) {
 }
 
 // torusAxisParallelOvalBox cuts the same torus by the box face y=6 — PARALLEL to the axis, offset between
-// the inner (R−r=3) and outer (R+r=7) tube radii: the section is a single quartic SPIRIC oval, and the
-// ∩ keeps the small outer-tube CAP poking past y=6 (one analytic torus face inside the oval + a planar
-// oval lid). The first exact OBLIQUE torus cut (Oblikovati#1375); the box's other faces clear and compose.
+// the inner (R−r=3) and outer (R+r=7) tube radii: the section is a single quartic SPIRIC oval. The ∩ keeps
+// the small outer-tube CAP poking past y=6 (one analytic torus face inside the oval + an oval lid); the −
+// keeps the genus-1 COMPLEMENT (the full torus minus that cap — the torus face carries the oval as a HOLE,
+// meshed by the chart-window mesher). The first exact OBLIQUE torus cut (Oblikovati#1375); the box's other
+// faces clear and compose.
 func torusAxisParallelOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 6, -20), math.P3(20, 20, 20))
 }
