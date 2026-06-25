@@ -33,5 +33,6 @@
   "cone apex ∩ box (oblique, apex kept)": 12.73574788,
   "torus − box (perp half)": 197.392088,
   "torus ∩ box (perp half)": 197.392088,
-  "torus − box (perp off-centre)": 317.6034316
+  "torus − box (perp off-centre)": 317.6034316,
+  "torus ∩ box (axis-∥ oval cap)": 10.66402825
 }
