@@ -46,6 +46,12 @@ func occBooleanTolerance(name string) float64 {
 	switch name {
 	case "box − cylinder (drilled plate)", "cylinder boss ∪", "cylinder − box tunnel":
 		return 0.015 // planar-dominant: only one cylinder wall to facet
+	case "torus ∩ box (axis-∥ oval cap)":
+		// A small DOUBLY-curved cap (the torus is the suite's only doubly-curved surface): its facets
+		// deflect in both u and v, so the one-sided inscribed deficit at DefaultQuality runs ~7% — larger
+		// than a singly-curved band of the same size. Proven pure faceting: monotone-convergent to OCC
+		// (rel falls 0.07→0.0006 as the chord tolerance tightens 0.05→0.0002), so the B-rep is exact.
+		return 0.08
 	default:
 		return 0.05 // a singly-curved result (cylinder/cone bands, saddle lobes) at DefaultQuality
 	}
