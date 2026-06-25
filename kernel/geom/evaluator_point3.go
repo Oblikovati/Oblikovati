@@ -27,14 +27,36 @@ func CurveParamAtPoint3(c Curve3, p math.Point3) (float64, SolutionNature) {
 		return arcParamAtPoint3(g, p)
 	case Polyline:
 		return polylineParamAtPoint3(g, p)
+	case Hyperbola, HyperbolicArc, Parabola, ParabolicArc:
+		return openConicParamAtPoint3(c, p)
+	default:
+		return genericParamAtPoint3(c, p)
+	}
+}
+
+// openConicParamAtPoint3 inverts an open conic section (hyperbola branch or parabola) at a point on it:
+// the unbounded curve maps to its native parameter, the bounded arc rescales that onto [0, 1].
+func openConicParamAtPoint3(c Curve3, p math.Point3) (float64, SolutionNature) {
+	switch g := c.(type) {
 	case Hyperbola:
 		return hyperbolaThetaAtPoint3(g.Center, g.ConjugateAxis.AsVector(), g.B, p), UniqueSolution
 	case HyperbolicArc:
 		theta := hyperbolaThetaAtPoint3(g.Center, g.ConjugateAxis.AsVector(), g.B, p)
 		return (theta - g.Theta0) / (g.Theta1 - g.Theta0), UniqueSolution
+	case Parabola:
+		return parabolaTAtPoint3(g.Vertex, g.CrossDir.AsVector(), p), UniqueSolution
+	case ParabolicArc:
+		t := parabolaTAtPoint3(g.Vertex, g.CrossDir.AsVector(), p)
+		return (t - g.T0) / (g.T1 - g.T0), UniqueSolution
 	default:
-		return genericParamAtPoint3(c, p)
+		return 0, UniqueSolution
 	}
+}
+
+// parabolaTAtPoint3 inverts a parabola: the parameter t is the cross coordinate directly (x along
+// CrossDir), so a point on the curve maps back by projecting onto CrossDir.
+func parabolaTAtPoint3(vertex math.Point3, cross math.Vector3, p math.Point3) float64 {
+	return float64(vertex.VectorTo(p).Dot(cross))
 }
 
 // hyperbolaThetaAtPoint3 inverts a hyperbola branch: with the conjugate coordinate y = B·sinh(θ),
@@ -240,7 +262,7 @@ func refineClosest3(c Curve3, p math.Point3, t, lo, hi float64) float64 {
 // (enclosing but not minimal), ±Inf faces for an unbounded line.
 func CurveRangeBox3(c Curve3) math.Box {
 	switch g := c.(type) {
-	case Line, Hyperbola:
+	case Line, Hyperbola, Parabola:
 		inf := stdmath.Inf(1)
 		return math.Box{Min: math.P3(-inf, -inf, -inf), Max: math.P3(inf, inf, inf)}
 	case LineSegment:

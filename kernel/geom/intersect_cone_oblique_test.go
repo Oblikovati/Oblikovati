@@ -52,13 +52,23 @@ func TestPlaneConeObliqueHyperbola(t *testing.T) {
 	}
 }
 
-// The parabolic boundary tilt (plane parallel to a generator, φ = α) is the measure-zero degenerate
-// case and is deferred to the numeric tracer (handled=false), as #1375 allows.
-func TestPlaneConeParabolaDeferred(t *testing.T) {
-	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/4) // α = 45°
-	pl, _ := NewPlane(math.P3(0, 0, 3), math.V3(1, 0, 1))                // normal at 45° → plane ∥ a generator
-	if _, handled := IntersectSurfacesAnalytic(pl, cone); handled {
-		t.Error("parabolic tilt should defer (handled=false)")
+// The parabolic boundary tilt (plane parallel to a generator, φ = α) cuts an exact PARABOLA; every
+// sampled point lies on both the cone and the plane (Oblikovati/Oblikovati#1375). A cone whose axis is
+// tilted by its own half-angle has one generator vertical, so an axis-aligned x-plane is parallel to it.
+func TestPlaneConeParabola(t *testing.T) {
+	a := stdmath.Atan(0.3)
+	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(stdmath.Sin(a), 0, stdmath.Cos(a)), a)
+	pl, _ := NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0)) // x=2, parallel to the vertical generator
+	curves, handled := IntersectSurfacesAnalytic(pl, cone)
+	if !handled || len(curves) != 1 {
+		t.Fatalf("imprint handled=%v curves=%d, want one curve", handled, len(curves))
+	}
+	par, ok := curves[0].(Parabola)
+	if !ok {
+		t.Fatalf("imprint curve is %T, want Parabola", curves[0])
+	}
+	for _, tt := range []float64{-3, -1, 0, 1, 3} {
+		assertOnConeAndPlane(t, cone, pl, par.PointAt(tt))
 	}
 }
 

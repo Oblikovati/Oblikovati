@@ -131,6 +131,8 @@ func edgeCurveFor(le loopEdge) geom.Curve3 {
 		return geom.NewLineSegment(le.start(), le.end())
 	case geom.Hyperbola:
 		return c.Arc(le.t0, le.t1) // a hyperbola loop edge's params are θ; the bounded arc is what the edge stores
+	case geom.Parabola:
+		return c.Arc(le.t0, le.t1) // a parabola loop edge's params are the cross coordinate t; store the bounded arc
 	case geom.EllipticalArc:
 		return c // the re-anchored elliptical rim/lid of an oblique cone cut tessellates over its sweep
 	default:

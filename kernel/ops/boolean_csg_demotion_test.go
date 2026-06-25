@@ -3,6 +3,7 @@
 package ops_test
 
 import (
+	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/brep"
@@ -122,7 +123,17 @@ func curvedExactCases() []curvedExactCase {
 		{"cone − box (oblique ellipse)", ops.Cut, coneObliqueEllipseBox},
 		{"cone ∩ box (oblique hyperbola)", ops.Intersect, coneObliqueHyperbolaBox},
 		{"cone − box (oblique hyperbola)", ops.Cut, coneObliqueHyperbolaBox},
+		{"cone ∩ box (parabola)", ops.Intersect, coneParabolaBox},
+		{"cone − box (parabola)", ops.Cut, coneParabolaBox},
 	}
+}
+
+// coneParabolaBox is a frustum tilted by its own half-angle (one vertical generator) so the box's x=2
+// face is parallel to that generator — the PARABOLIC boundary tilt (Oblikovati/Oblikovati#1375).
+func coneParabolaBox(t *testing.T) (*topo.Body, *topo.Body) {
+	a := stdmath.Atan(0.3)
+	top := math.P3(math.Scalar(stdmath.Sin(a)*10), 0, math.Scalar(stdmath.Cos(a)*10))
+	return demoCone(t, math.P3(0, 0, 0), top, 3, 6), demoBlock(t, math.P3(2, -20, -20), math.P3(40, 20, 40))
 }
 
 // coneObliqueHyperbolaBox is a frustum tilted so its axis (0.2,0,0.98) is shallower than the box's x=2
