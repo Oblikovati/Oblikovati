@@ -39,7 +39,12 @@ func TestComplementCentroidAndWindow(t *testing.T) {
 	us := []float64{0, 1, 2, 3, 4, 5, 6}
 	vs := []float64{0, 1, 2, 3, 4, 5, 6}
 	i0, i1, j0, j1 := ovalWindow(us, vs, loop) // oval u∈[1,3], v∈[2,4]
-	if i0 < 1 || i1 > len(us)-1 || i0 >= i1 || j0 < 1 || j1 > len(vs)-1 || j0 >= j1 {
-		t.Errorf("ovalWindow = [%d,%d]x[%d,%d], want a non-empty interior bracket", i0, i1, j0, j1)
+	// The window must contain the oval (so the grid never tiles over it) and be a non-empty bracket; it may
+	// reach the chart edge (0 / len-1) for a near-full-wrap oval, but here it brackets the interior oval.
+	if i0 < 0 || i1 > len(us)-1 || i0 >= i1 || j0 < 0 || j1 > len(vs)-1 || j0 >= j1 {
+		t.Errorf("ovalWindow = [%d,%d]x[%d,%d], want a non-empty bracket within the chart", i0, i1, j0, j1)
+	}
+	if us[i0] > 1 || us[i1] < 3 || vs[j0] > 2 || vs[j1] < 4 {
+		t.Errorf("ovalWindow [%d,%d]x[%d,%d] does not contain the oval bbox u∈[1,3] v∈[2,4]", i0, i1, j0, j1)
 	}
 }

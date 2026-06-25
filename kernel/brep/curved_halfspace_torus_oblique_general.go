@@ -76,41 +76,60 @@ func torusObliqueOvalRange(t geom.Torus, m, k, c float64) (v0, v1, pinch float64
 	return v0, v1, pinch, true
 }
 
-// torusObliqueOval reports whether plane makes a single small oval bite we can build exactly: genuinely
-// tilted (cylinderAxisTol < |C| so it is not the axis-parallel case, |C| < 1 so it is not perpendicular),
-// one oval, and the BOUNDED disk under half the torus (so it is the small cap and its complement the large
-// genus-1 region — keeping the meshers well-conditioned). A tilt enclosing a larger disk defers to CSG.
+// figureEightWrapTol is the tube-angle arc over which a single oval's section may be ABSENT before it counts
+// as a near-full-wrap figure-eight (the oblique analogue of the axis-parallel tangent cut) and routes to the
+// two-oval band path instead. A single oval whose section exists over all but this sliver of the tube has
+// wrapped nearly the whole tube; its genus-1 complement is then a thin strip the chart can't mesh, so the
+// band loft (which meshes the sliver as the band's zero-width pinch) handles it robustly instead.
+//
+// The near-full-wrap test SAMPLES where the section exists (|w(v)|≤1) rather than reading the analytic
+// w(v)=±1 crossings: at the exact transition the two crossings collide into a double root whose asin is
+// platform-sensitive, so the analytic span flickers either side of the threshold across platforms.
+const figureEightWrapTol = 0.15
+
+// torusSectionAbsentArc returns the tube-angle arc length over which the spiric section does NOT exist
+// (|w(v)| > 1), sampled around the tube. Zero means the section wraps the whole tube (two ovals); a small
+// value means a near-full-wrap single oval; a large value a clear single-oval bite.
+func torusSectionAbsentArc(t geom.Torus, m, k, c float64) float64 {
+	const n = 720
+	absent := 0
+	for i := 0; i < n; i++ {
+		if stdmath.Abs(torusW(t, m, k, c, 2*stdmath.Pi*float64(i)/n)) > 1 {
+			absent++
+		}
+	}
+	return 2 * stdmath.Pi * float64(absent) / n
+}
+
+// torusObliqueOval reports whether plane makes a single CLEAR oval bite we build via the cap/complement
+// path: genuinely tilted (cylinderAxisTol < |C| < 1), one oval, and NOT near-full-wrap (the section is
+// absent over more than figureEightWrapTol of the tube, so the complement is a fat genus-1 region the chart
+// meshes well). A near-full-wrap oval is the oblique figure-eight, routed to [torusTwoObliqueOval] instead.
 func torusObliqueOval(t geom.Torus, plane geom.Plane) bool {
 	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
 	if stdmath.Abs(c) <= cylinderAxisTol || stdmath.Abs(c) >= 1-cylinderAxisTol || m <= cylinderAxisTol {
 		return false
 	}
-	v0, v1, pinch, ok := torusObliqueOvalRange(t, m, k, c)
-	return ok && ovalDiskArea(t, m, k, c, v0, v1, pinch) < 2*stdmath.Pi*stdmath.Pi
-}
-
-// ovalDiskArea returns the (u,v) area of the disk the oval bounds — the lens around the pinch, whose
-// half-width is arccos(pinch·w(v)) (arccos w around Phi, or π−arccos w around Phi+π). ∫ 2·that over [v0,v1].
-func ovalDiskArea(t geom.Torus, m, k, c, v0, v1, pinch float64) float64 {
-	const n = 200
-	var area float64
-	for i := 0; i < n; i++ {
-		v := v0 + (v1-v0)*(float64(i)+0.5)/n
-		area += 2 * stdmath.Acos(clampUnitF(pinch*torusW(t, m, k, c, v))) * (v1 - v0) / n
+	if torusSectionAbsentArc(t, m, k, c) <= figureEightWrapTol {
+		return false // near-full-wrap (or two-oval): the band path handles it
 	}
-	return area
+	_, _, _, ok := torusObliqueOvalRange(t, m, k, c)
+	return ok // a clear single oval (the substantial absent arc keeps the crossings well separated)
 }
 
-// torusTwoObliqueOval reports whether a TILTED plane (cylinderAxisTol < |C| < 1) cuts TWO ovals: the section
-// is valid at every tube angle (no w=±1 crossing, so each branch is a full closed oval) and not cleared
-// (|w(0)| < 1). The two-oval band builder and the spiric band mesher are general in C, so the tilted
-// two-oval reuses them exactly — only the detection differs from the axis-parallel [torusTwoOvalBand].
+// torusTwoObliqueOval reports whether a TILTED plane (cylinderAxisTol < |C| < 1) cuts a band the band loft
+// meshes: either TWO ovals (the section is valid at every tube angle — no w=±1 crossing — so each branch is
+// a full closed oval) or the near-full-wrap FIGURE-EIGHT (a single oval whose two pinches are within
+// figureEightWrapTol, valid over all but a sliver of the tube). Both are the tilted analogue of the
+// axis-parallel [torusTwoOvalBand]; the band builder and spiric mesher are general in C, so they reuse it.
 func torusTwoObliqueOval(t geom.Torus, plane geom.Plane) bool {
 	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
 	if stdmath.Abs(c) <= cylinderAxisTol || stdmath.Abs(c) >= 1-cylinderAxisTol || m <= cylinderAxisTol {
 		return false
 	}
-	return len(wUnitCrossings(t, m, k, c)) == 0 && stdmath.Abs(torusW(t, m, k, c, 0)) < 1
+	// The section exists over (nearly) all of the tube — two full ovals, or the near-full-wrap figure-eight.
+	// A plane that clears the tube has the section absent everywhere (a 2π absent arc), so it fails this too.
+	return torusSectionAbsentArc(t, m, k, c) <= figureEightWrapTol
 }
 
 // torusObliqueOvalHalfSpace keeps the cap or the genus-1 complement of the single oval a tilted plane bites

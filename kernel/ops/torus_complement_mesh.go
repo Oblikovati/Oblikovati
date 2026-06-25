@@ -50,13 +50,16 @@ func centroidUV(loop []math.Point2) (uc, vc float64) {
 }
 
 // ovalWindow returns the grid-index rectangle [i0,i1]×[j0,j1] that brackets the oval's (u,v) bounding box
-// with a one-cell margin, clamped to stay strictly interior to the chart (so the window is meshed by the
-// local patch and never touches the chart seam).
+// with a one-cell margin. It must always CONTAIN the oval: a near-full-wrap oval (one whose section barely
+// clears the seam, at the single/two-oval transition) extends to the chart edges, so the window is allowed
+// to reach them — otherwise the clamp would push the window inside the oval, the seam grid cells would tile
+// over the oval region, and the complement would double-count (Oblikovati/Oblikovati#1375). The local patch
+// then meshes the whole window (up to the full chart minus the oval), which stays well-conditioned.
 func ovalWindow(us, vs []float64, ovalUV []math.Point2) (i0, i1, j0, j1 int) {
 	uMin, uMax, vMin, vMax := loopUVBounds(ovalUV)
-	i0 = clampIndex(lastBelow(us, uMin)-1, 1, len(us)-2)
+	i0 = clampIndex(lastBelow(us, uMin)-1, 0, len(us)-2)
 	i1 = clampIndex(firstAbove(us, uMax)+1, i0+1, len(us)-1)
-	j0 = clampIndex(lastBelow(vs, vMin)-1, 1, len(vs)-2)
+	j0 = clampIndex(lastBelow(vs, vMin)-1, 0, len(vs)-2)
 	j1 = clampIndex(firstAbove(vs, vMax)+1, j0+1, len(vs)-1)
 	return i0, i1, j0, j1
 }
