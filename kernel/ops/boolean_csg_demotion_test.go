@@ -128,6 +128,7 @@ func curvedExactCases() []curvedExactCase {
 		{"cone ∩ box (oblique vertex-inside)", ops.Intersect, coneObliqueVertexInsideBox},
 		{"cone − box (oblique vertex-inside)", ops.Cut, coneObliqueVertexInsideBox},
 		{"cone − box (clips rim annulus)", ops.Cut, coneClipsRimBox},
+		{"cone ∩ box (clips rim tongue)", ops.Intersect, coneClipsRimBox},
 	}
 }
 
@@ -135,7 +136,8 @@ func curvedExactCases() []curvedExactCase {
 // THROUGH the tilted top rim (the rim z-range is [4.4, 11.6]): the section ellipse clips the top rim, so
 // the kept annulus's upper boundary is the ellipse arc PLUS the surviving top-rim arc — the clips-rim
 // arrangement built exactly by the (u,v) split (Oblikovati/Oblikovati#1375). The complementary ∩ keeps
-// the non-wrapping tongue above z=6, which still demotes to CSG, so only the Cut is an exact case.
+// the non-wrapping TONGUE above z=6 (the surviving top-rim arc plus the section arc, pinching where the
+// section meets the rim) — also built exactly by the (u,v) split's coneSideUVTongue.
 func coneClipsRimBox(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoCone(t, math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 6), demoBlock(t, math.P3(-30, -30, 6), math.P3(30, 30, 40))
 }
