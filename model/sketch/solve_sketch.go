@@ -40,6 +40,23 @@ func (s *Sketch) AnalyzeConstraints() DOFAnalysis {
 	return analyzeDOF(s.Constraints(), s.variables())
 }
 
+// ConflictingConstraints solves the sketch and returns the constraints it could not
+// satisfy — the offending subset for UI conflict diagnosis (#1420), most severe first,
+// or nil when the sketch solves cleanly. Like [Sketch.Solve] it moves geometry (it is a
+// solve); call it when a sketch reports sick to name the dimension(s) to relax.
+func (s *Sketch) ConflictingConstraints() []Constraint {
+	cons := s.Constraints()
+	r := Solve(cons, s.variables(), Options{})
+	if len(r.Conflicts) == 0 {
+		return nil
+	}
+	out := make([]Constraint, 0, len(r.Conflicts))
+	for _, i := range r.Conflicts {
+		out = append(out, cons[i])
+	}
+	return out
+}
+
 // DegreesOfFreedom returns the sketch's remaining free degrees of freedom (0 when
 // fully constrained).
 func (s *Sketch) DegreesOfFreedom() int {
