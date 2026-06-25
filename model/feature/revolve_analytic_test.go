@@ -255,3 +255,35 @@ func TestNativeObliqueRevolveTorusCutsAreExact(t *testing.T) {
 		}
 	}
 }
+
+// TestRevolvedTorusExtrudeCutStaysAnalytic proves the combine fix: cutting a revolved (analytic) torus with
+// an extruded box keeps the analytic torus surface — the feature boolean uses the M2 curved path rather than
+// faceting the torus first. Complements TestAnalyticRevolveTubeBooleanCutsHalf, where a COMPOSITE washer
+// (two cylinder walls) correctly stays on the faceted planar path.
+func TestRevolvedTorusExtrudeCutStaysAnalytic(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	sk := sketch.NewSketches().Add(sketch.XYPlane())
+	sk.Circles().AddByCenterRadius(math.P2(5, 0), 2)
+	cl := sk.Lines().AddByTwoPoints(math.P2(0, 0), math.P2(0, 1))
+	cl.SetCenterline(true)
+	NewRevolveFeatures(fs).AddAboutCenterline(sk, 0, nil, ops.NewBody)
+
+	// keep x>=6 (an axis-parallel single-oval cap) via a box on the x=6 plane intersected with the torus
+	pl, err := sketch.NewPlane(math.P3(6, 0, 0), math.V3(0, 1, 0).AsUnit(), math.V3(0, 0, 1).AsUnit())
+	if err != nil {
+		t.Fatal(err)
+	}
+	clip := sketch.NewSketches().Add(pl)
+	clip.AddRectangleByCorners(math.P2(-20, -20), math.P2(20, 20))
+	NewExtrudeFeatures(fs).AddByDistanceExtent(clip, 0, ops.Intersect, func() float64 { return 14 })
+	fs.Recompute()
+
+	body := fs.Result()[0]
+	if torusFaceCount(body) != 1 {
+		t.Fatalf("torus extrude-cut has %d torus faces, want 1 (analytic kept, not planarized) — %d total faces",
+			torusFaceCount(body), len(body.Faces()))
+	}
+	if n := len(body.Faces()); n > 40 {
+		t.Errorf("torus extrude-cut has %d faces — fell to faceted CSG", n)
+	}
+}

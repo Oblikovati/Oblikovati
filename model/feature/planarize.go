@@ -27,6 +27,19 @@ func hasCurvedFace(b *topo.Body) bool {
 	return false
 }
 
+// curvedFaceCount counts a body's non-planar faces. A BARE analytic primitive (cylinder/cone/sphere/torus
+// solid) has exactly one — its single curved wall; a composite (a washer's two cylinders, a filleted edge)
+// has more, which the curved boolean does not cut as a primitive.
+func curvedFaceCount(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if _, planar := f.Geometry().(geom.Plane); !planar {
+			n++
+		}
+	}
+	return n
+}
+
 // planarized converts a body with analytic curved faces into a planar B-rep the exact boolean can
 // consume (it hangs on a full periodic curved face, #129). A SIMPLE extrude-circle cylinder becomes
 // a clean, key-stable N-gon prism (the fast path that keeps downstream edge identity); any OTHER

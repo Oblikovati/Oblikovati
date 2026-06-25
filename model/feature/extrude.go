@@ -171,20 +171,37 @@ func combine(running []*topo.Body, body *topo.Body, op ops.PartFeatureOperation)
 	if len(running) == 0 || op == ops.NewBody {
 		return append(append([]*topo.Body(nil), running...), body), nil
 	}
-	// The planar B-rep boolean cannot consume a curved face (it hangs on one), so re-facet any
-	// analytic cylinder/cone into a planar B-rep before combining (#129). A standalone cylinder that
-	// is never combined keeps its analytic face for thread/chamfer/fillet.
-	target := planarized(running[len(running)-1], "combine-target")
+	target := running[len(running)-1]
+	// First try the EXACT curved boolean on the still-analytic operands when the target is a BARE analytic
+	// primitive (exactly one curved face — a revolved torus, an extruded cylinder/cone, a sphere) and the
+	// tool is all-planar (a prism): those keep their curved faces through the M2 curved boolean
+	// (#1334/#1335). The single-curved-face gate is deliberately tight — a composite curved body (a washer's
+	// two cylinder walls, a filleted edge) is NOT a primitive the half-space cut handles, so it stays on the
+	// faceted planar path; CurvedBoolean can over-match such a body and cut it wrongly.
+	if curvedFaceCount(target) == 1 && curvedFaceCount(body) == 0 {
+		if res, ok := ops.CurvedBoolean(op, target, body); ok {
+			return appendCombined(running, res), nil
+		}
+	}
+	// Otherwise re-facet any analytic curved face into a planar B-rep before the planar boolean — it hangs
+	// on a full periodic curved face it cannot consume (#129). A standalone primitive that is never
+	// combined keeps its analytic face for thread/chamfer/fillet.
+	target = planarized(target, "combine-target")
 	body = planarized(body, "combine-tool")
 	res, err := ops.Boolean(op, target, body)
 	if err != nil {
 		return nil, err
 	}
+	return appendCombined(running, res), nil
+}
+
+// appendCombined replaces the running target with the boolean result, dropping an empty result.
+func appendCombined(running []*topo.Body, res *topo.Body) []*topo.Body {
 	out := append([]*topo.Body(nil), running[:len(running)-1]...)
 	if res != nil && len(res.Faces()) > 0 {
 		out = append(out, res)
 	}
-	return out, nil
+	return out
 }
 
 // buildPrism extrudes a closed polygon over the span (near→far offsets along the plane
