@@ -101,6 +101,7 @@ func (c *Arcs) Add(center, start, end *Point, ccw bool) *Arc {
 		End:              end,
 		CounterClockwise: ccw,
 	}
+	a.circularity = newArcCircularity(a) // keep End on the circle (#1419)
 	c.s.add(a)
 	c.items = append(c.items, a)
 	return a
