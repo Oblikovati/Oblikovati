@@ -8,6 +8,7 @@ import (
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
+	"oblikovati.org/solve/ad"
 )
 
 // DimensionConstraint3D sizes a 3D sketch, backed by a model parameter like its 2D
@@ -15,10 +16,15 @@ import (
 // (F05) solves 3D sketches unchanged.
 type DimensionConstraint3D struct {
 	constraintBase
-	kind        DimKind
-	driven      bool
-	param       *param.Parameter
+	kind   DimKind
+	driven bool
+	param  *param.Parameter
+	// measure is the float quantity (for reporting and the residual value); measureAD is
+	// its dual twin for exact partials. measureAD is nil ONLY for the spline-length
+	// dimension, whose value comes from the kernel NURBS sampler — a black box with no
+	// closed-form derivative (see Partials) — and which therefore finite-differences.
 	measure     func() float64
+	measureAD   adFunc1
 	vars        []*math.Scalar
 	refs        []Entity     // dimensioned operands, for serialization
 	planeNormal math.Vector3 // point-plane dimension only
@@ -71,12 +77,47 @@ func (d *DimensionConstraint3D) Residuals() []float64 {
 	return []float64{d.measure() - d.param.ModelValue()}
 }
 
+// Partials returns the dimension's exact Jacobian row from its dual measure, or nil when
+// driven. The lone exception is the spline-length dimension (measureAD nil): its value is
+// produced by the kernel NURBS sampler, a black box with no closed-form derivative, so it
+// alone finite-differences over its own variables (restoring each) — every other 3D
+// dimension is exact and perturbs nothing (#1417).
+func (d *DimensionConstraint3D) Partials() [][]float64 {
+	if d.driven {
+		return nil
+	}
+	if d.measureAD == nil {
+		return sampledMeasurePartials(d.vars, d.measure)
+	}
+	return adPartials(d.vars, func(v []ad.Number) []ad.Number {
+		return []ad.Number{d.measureAD(v).AddConst(-d.param.ModelValue())}
+	})
+}
+
 // Variables returns the 3D DOFs this dimension constrains.
 func (d *DimensionConstraint3D) Variables() []*math.Scalar {
 	if d.driven {
 		return nil
 	}
 	return d.vars
+}
+
+// sampledMeasurePartials central-differences a single black-box measure (the NURBS-sampled
+// spline length) over its own variables, restoring each — the one residual whose
+// derivative is not closed-form (#1417). The target is constant, so ∂residual/∂v = ∂measure/∂v.
+func sampledMeasurePartials(vars []*math.Scalar, measure func() float64) [][]float64 {
+	const h = 1e-7 // tol:numeric — black-box (NURBS spline length) finite-difference step
+	row := make([]float64, len(vars))
+	for i, v := range vars {
+		orig := *v
+		*v = orig + h
+		plus := measure()
+		*v = orig - h
+		minus := measure()
+		*v = orig
+		row[i] = (plus - minus) / (2 * h)
+	}
+	return [][]float64{row}
 }
 
 // DimensionConstraints3D owns a 3D sketch's dimensions and their parameters.
@@ -101,9 +142,26 @@ func (dc *DimensionConstraints3D) Count() int                        { return le
 func (dc *DimensionConstraints3D) Item(i int) *DimensionConstraint3D { return dc.items[i] }
 
 // create builds a 3D dimension of the given kind, backed by a fresh model parameter, over
-// a measure closure and the scalar DOFs it constrains. It is the shared seam every
-// AddXxx factory uses.
-func (dc *DimensionConstraints3D) create(kind DimKind, expression string, refs []Entity, measure func() float64, vars []*math.Scalar) (*DimensionConstraint3D, error) {
+// a dual measure (the source of both its value and its exact Jacobian row, #1417) and the
+// scalar DOFs it constrains. It is the shared seam every closed-form AddXxx factory uses.
+func (dc *DimensionConstraints3D) create(kind DimKind, expression string, refs []Entity, measure adFunc1, vars []*math.Scalar) (*DimensionConstraint3D, error) {
+	d, err := dc.newDimension(kind, expression, refs, func() float64 { return adMeasureValue(vars, measure) }, vars)
+	if err != nil {
+		return nil, err
+	}
+	d.measureAD = measure
+	return d, nil
+}
+
+// createSampled builds a 3D dimension whose measure is a black-box float closure (the
+// NURBS-sampled spline length) with no closed-form derivative — its measureAD stays nil
+// and Partials finite-differences it.
+func (dc *DimensionConstraints3D) createSampled(kind DimKind, expression string, refs []Entity, measure func() float64, vars []*math.Scalar) (*DimensionConstraint3D, error) {
+	return dc.newDimension(kind, expression, refs, measure, vars)
+}
+
+// newDimension is the common construction step shared by create and createSampled.
+func (dc *DimensionConstraints3D) newDimension(kind DimKind, expression string, refs []Entity, measure func() float64, vars []*math.Scalar) (*DimensionConstraint3D, error) {
 	p, err := dc.params.AddModelParameter(dc.nextName(), expression)
 	if err != nil {
 		return nil, fmt.Errorf("sketch: 3D dimension parameter: %w", err)
@@ -115,31 +173,30 @@ func (dc *DimensionConstraints3D) create(kind DimKind, expression string, refs [
 
 // AddDistance dimensions the distance between two 3D points.
 func (dc *DimensionConstraints3D) AddDistance(a, b *Point3D, expression string) (*DimensionConstraint3D, error) {
-	return dc.create(DistanceDim, expression, []Entity{a, b},
-		func() float64 { return float64(a.Position().DistanceTo(b.Position())) },
+	measure := func(v []ad.Number) ad.Number { return adV3(v, 0).Sub(adV3(v, 3)).Length() }
+	return dc.create(DistanceDim, expression, []Entity{a, b}, measure,
 		[]*math.Scalar{&a.X, &a.Y, &a.Z, &b.X, &b.Y, &b.Z})
 }
 
 // AddLineLength dimensions a 3D line's length (the distance between its endpoints).
 func (dc *DimensionConstraints3D) AddLineLength(l *Line3D, expression string) (*DimensionConstraint3D, error) {
-	return dc.create(LengthDimKind3D, expression, []Entity{l},
-		func() float64 { return float64(l.Length()) },
+	measure := func(v []ad.Number) ad.Number { return adLine3DDir(v, 0).Length() }
+	return dc.create(LengthDimKind3D, expression, []Entity{l}, measure,
 		[]*math.Scalar{&l.A.X, &l.A.Y, &l.A.Z, &l.B.X, &l.B.Y, &l.B.Z})
 }
 
 // AddRadius dimensions a 3D circle's radius.
 func (dc *DimensionConstraints3D) AddRadius(c *Circle3D, expression string) (*DimensionConstraint3D, error) {
-	return dc.create(RadiusDim, expression, []Entity{c},
-		func() float64 { return float64(c.Radius) }, []*math.Scalar{&c.Radius})
+	measure := func(v []ad.Number) ad.Number { return v[0] }
+	return dc.create(RadiusDim, expression, []Entity{c}, measure, []*math.Scalar{&c.Radius})
 }
 
 // AddPointPlaneDistance dimensions the signed distance from a 3D point to the origin
 // plane with the given unit normal (XY ⇒ +Z, XZ ⇒ +Y, YZ ⇒ +X): the point's coordinate
 // along that normal.
 func (dc *DimensionConstraints3D) AddPointPlaneDistance(p *Point3D, normal math.Vector3, expression string) (*DimensionConstraint3D, error) {
-	d, err := dc.create(PointPlaneDimKind3D, expression, []Entity{p},
-		func() float64 { return float64(p.X*normal.X + p.Y*normal.Y + p.Z*normal.Z) },
-		[]*math.Scalar{&p.X, &p.Y, &p.Z})
+	measure := func(v []ad.Number) ad.Number { return adV3(v, 0).Dot(adConstVec3(normal)) }
+	d, err := dc.create(PointPlaneDimKind3D, expression, []Entity{p}, measure, []*math.Scalar{&p.X, &p.Y, &p.Z})
 	if err != nil {
 		return nil, err
 	}
@@ -147,11 +204,14 @@ func (dc *DimensionConstraints3D) AddPointPlaneDistance(p *Point3D, normal math.
 	return d, nil
 }
 
-// AddTwoLineAngle dimensions the angle between two 3D lines (radians).
+// AddTwoLineAngle dimensions the angle between two 3D lines (radians). The unsigned angle
+// atan2(|d1×d2|, d1·d2) equals acos(cos θ) on [0,π] but differentiates cleanly.
 func (dc *DimensionConstraints3D) AddTwoLineAngle(l1, l2 *Line3D, expression string) (*DimensionConstraint3D, error) {
-	return dc.create(AngleDim, expression, []Entity{l1, l2},
-		func() float64 { return angleBetweenLines3D(l1, l2) },
-		append(line3DVars(l1), line3DVars(l2)...))
+	measure := func(v []ad.Number) ad.Number {
+		d1, d2 := adLine3DDir(v, 0), adLine3DDir(v, 6)
+		return d1.Cross(d2).Length().Atan2(d1.Dot(d2))
+	}
+	return dc.create(AngleDim, expression, []Entity{l1, l2}, measure, append(line3DVars(l1), line3DVars(l2)...))
 }
 
 // AddSplineLength dimensions a 3D spline's arc length, measured over the same
@@ -161,7 +221,7 @@ func (dc *DimensionConstraints3D) AddSplineLength(sp *Spline3D, expression strin
 	if len(sp.Points) < 2 {
 		return nil, fmt.Errorf("sketch: splineLength: spline %d has %d points, need at least 2", sp.EntityID(), len(sp.Points))
 	}
-	return dc.create(SplineLengthDimKind3D, expression, []Entity{sp},
+	return dc.createSampled(SplineLengthDimKind3D, expression, []Entity{sp},
 		func() float64 { return splineLength3D(sp) }, sp.smoothVars3D())
 }
 

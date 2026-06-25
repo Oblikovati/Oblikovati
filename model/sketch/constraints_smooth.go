@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/math"
+	"oblikovati.org/solve/ad"
 )
 
 // The Smooth (G2) constraint makes two curves curvature-continuous where they join.
@@ -29,6 +30,10 @@ type SmoothCurve interface {
 	smoothFrame(p *Point) (tangent, curvature math.Vector2, ok bool)
 	// smoothVars returns the scalar DOFs of the curve's defining points.
 	smoothVars() []*math.Scalar
+	// smoothFrameAD is the dual twin of smoothFrame: it also returns the endpoint p as a
+	// dual (for the G0 coincidence residual), reading the curve's smoothVars from v
+	// starting at off (off advances by len(smoothVars) between the two curves).
+	smoothFrameAD(v []ad.Number, off int, p *Point) (point, tangent, curvature ad.Vec2, ok bool)
 }
 
 // SmoothConstraint makes curves C1 and C2 curvature-continuous at endpoints P1 and P2,
@@ -47,18 +52,23 @@ func (g *GeometricConstraints) AddSmooth(c1, c2 SmoothCurve, p1, p2 *Point) *Smo
 	return c
 }
 
-func (c *SmoothConstraint) Residuals() []float64 {
-	t1, k1, ok1 := c.C1.smoothFrame(c.P1)
-	t2, k2, ok2 := c.C2.smoothFrame(c.P2)
+// residualAD mirrors the float residual over duals: G0 join coincidence (2), G1 tangent
+// collinearity (1), G2 curvature-vector match (2). The frames carry their own exact
+// derivatives, so the spline circumcircle curvature differentiates by construction.
+func (c *SmoothConstraint) residualAD(v []ad.Number) []ad.Number {
+	p1, t1, k1, ok1 := c.C1.smoothFrameAD(v, 0, c.P1)
+	p2, t2, k2, ok2 := c.C2.smoothFrameAD(v, len(c.C1.smoothVars()), c.P2)
 	if !ok1 || !ok2 {
-		return []float64{1, 1, 1, 1, 1} // p1/p2 not endpoints: cannot be satisfied
+		return adConstResiduals(5, 1) // p1/p2 not endpoints: cannot be satisfied
 	}
-	return []float64{
-		c.P1.X - c.P2.X, c.P1.Y - c.P2.Y, // G0: join coincident
-		t1.Cross(t2),             // G1: tangents collinear
-		k1.X - k2.X, k1.Y - k2.Y, // G2: equal curvature vector
+	return []ad.Number{
+		p1.X.Sub(p2.X), p1.Y.Sub(p2.Y), // G0: join coincident
+		t1.Cross(t2),                   // G1: tangents collinear
+		k1.X.Sub(k2.X), k1.Y.Sub(k2.Y), // G2: equal curvature vector
 	}
 }
+func (c *SmoothConstraint) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *SmoothConstraint) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *SmoothConstraint) Variables() []*math.Scalar {
 	return append(c.C1.smoothVars(), c.C2.smoothVars()...)
@@ -185,3 +195,113 @@ func circumcenter(a, b, c math.Point2) (math.Point2, bool) {
 
 // originSq is the squared distance of p from the origin (a circumcenter sub-term).
 func originSq(p math.Point2) float64 { return p.X*p.X + p.Y*p.Y }
+
+// --- dual smooth frames (#1417) -----------------------------------------------------
+
+// smoothFrameAD for a line: tangent from p toward the other endpoint, zero curvature.
+func (l *Line) smoothFrameAD(v []ad.Number, off int, p *Point) (ad.Vec2, ad.Vec2, ad.Vec2, bool) {
+	a, b := ad.V2(v[off], v[off+1]), ad.V2(v[off+2], v[off+3])
+	switch p {
+	case l.A:
+		return a, adUnit2(b.Sub(a)), adZeroVec2(), true
+	case l.B:
+		return b, adUnit2(a.Sub(b)), adZeroVec2(), true
+	}
+	return ad.Vec2{}, ad.Vec2{}, ad.Vec2{}, false
+}
+
+// smoothFrameAD for an arc: tangent ⟂ the radius at p, curvature vector p→centre with
+// magnitude 1/r (computed as (centre−p)/r²).
+func (a *Arc) smoothFrameAD(v []ad.Number, off int, p *Point) (ad.Vec2, ad.Vec2, ad.Vec2, bool) {
+	center := ad.V2(v[off], v[off+1])
+	var pt ad.Vec2
+	switch p {
+	case a.Start:
+		pt = ad.V2(v[off+2], v[off+3])
+	case a.End:
+		pt = ad.V2(v[off+4], v[off+5])
+	default:
+		return ad.Vec2{}, ad.Vec2{}, ad.Vec2{}, false
+	}
+	radial := pt.Sub(center) // centre → p
+	rsq := radial.Dot(radial)
+	if rsq.Val() < math.DefaultTolerance*math.DefaultTolerance {
+		return ad.Vec2{}, ad.Vec2{}, ad.Vec2{}, false
+	}
+	tangent := adUnit2(ad.V2(radial.Y.Neg(), radial.X))
+	curvature := center.Sub(pt).MulN(ad.Const(1).Div(rsq))
+	return pt, tangent, curvature, true
+}
+
+// smoothFrameAD for a spline: tangent from the endpoint toward its adjacent control
+// point; curvature the circle through the three terminal control points.
+func (s *Spline) smoothFrameAD(v []ad.Number, off int, p *Point) (ad.Vec2, ad.Vec2, ad.Vec2, bool) {
+	pi, ai, si, ok := splineTerminalIndices(s, p)
+	if !ok {
+		return ad.Vec2{}, ad.Vec2{}, ad.Vec2{}, false
+	}
+	pt, adj := adSplinePoint(v, off, pi), adSplinePoint(v, off, ai)
+	tangent := adUnit2(adj.Sub(pt))
+	if si < 0 {
+		return pt, tangent, adZeroVec2(), true
+	}
+	return pt, tangent, adCurvatureVector(adSplinePoint(v, off, si), adj, pt), true
+}
+
+// splineTerminalIndices returns the indices (in Points order) of the endpoint p, its
+// adjacent point, and the second-adjacent point (si<0 when the spline has fewer than
+// three points, i.e. no curvature), or ok=false when p is not a spline endpoint.
+func splineTerminalIndices(s *Spline, p *Point) (pi, ai, si int, ok bool) {
+	n := len(s.Points)
+	if n < 2 {
+		return 0, 0, -1, false
+	}
+	switch p {
+	case s.Points[0]:
+		si = -1
+		if n >= 3 {
+			si = 2
+		}
+		return 0, 1, si, true
+	case s.Points[n-1]:
+		si = -1
+		if n >= 3 {
+			si = n - 3
+		}
+		return n - 1, n - 2, si, true
+	}
+	return 0, 0, -1, false
+}
+
+// adSplinePoint returns control point k of a spline as a dual, from its seeded segment.
+func adSplinePoint(v []ad.Number, off, k int) ad.Vec2 {
+	return ad.V2(v[off+2*k], v[off+2*k+1])
+}
+
+// adCurvatureVector is the dual twin of curvatureVector: the curvature vector at p of the
+// circle through a, b, p (zero when collinear or degenerate).
+func adCurvatureVector(a, b, p ad.Vec2) ad.Vec2 {
+	center, ok := adCircumcenter(a, b, p)
+	if !ok {
+		return adZeroVec2()
+	}
+	toCenter := center.Sub(p)
+	rsq := toCenter.Dot(toCenter)
+	if rsq.Val() < math.DefaultTolerance*math.DefaultTolerance {
+		return adZeroVec2()
+	}
+	return toCenter.MulN(ad.Const(1).Div(rsq))
+}
+
+// adCircumcenter is the dual twin of circumcenter: the centre of the circle through a, b,
+// c, and false when they are collinear (the determinant vanishes).
+func adCircumcenter(a, b, c ad.Vec2) (ad.Vec2, bool) {
+	d := a.X.Mul(b.Y.Sub(c.Y)).Add(b.X.Mul(c.Y.Sub(a.Y))).Add(c.X.Mul(a.Y.Sub(b.Y))).Scale(2)
+	if stdmath.Abs(d.Val()) < math.DefaultTolerance {
+		return ad.Vec2{}, false
+	}
+	a2, b2, c2 := a.Dot(a), b.Dot(b), c.Dot(c)
+	ux := a2.Mul(b.Y.Sub(c.Y)).Add(b2.Mul(c.Y.Sub(a.Y))).Add(c2.Mul(a.Y.Sub(b.Y))).Div(d)
+	uy := a2.Mul(c.X.Sub(b.X)).Add(b2.Mul(a.X.Sub(c.X))).Add(c2.Mul(b.X.Sub(a.X))).Div(d)
+	return ad.V2(ux, uy), true
+}

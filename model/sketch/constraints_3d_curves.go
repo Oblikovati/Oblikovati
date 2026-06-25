@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/math"
+	"oblikovati.org/solve/ad"
 )
 
 // The curve-attachment 3D constraints of issue #142 (M22 F04/F05): SplineFitPoints3D
@@ -62,10 +63,13 @@ func nearestFitIndex(sp *Spline3D, p *Point3D) int {
 	return best
 }
 
-func (c *SplineFitPoints3D) Residuals() []float64 {
-	fp := c.Spline.Points[c.FitIndex]
-	return []float64{float64(fp.X - c.P.X), float64(fp.Y - c.P.Y), float64(fp.Z - c.P.Z)}
+// residualAD: v = [fitPoint.xyz, P.xyz]; the fit point and the attached point coincide.
+func (c *SplineFitPoints3D) residualAD(v []ad.Number) []ad.Number {
+	d := adV3(v, 0).Sub(adV3(v, 3))
+	return []ad.Number{d.X, d.Y, d.Z}
 }
+func (c *SplineFitPoints3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *SplineFitPoints3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *SplineFitPoints3D) Variables() []*math.Scalar {
 	fp := c.Spline.Points[c.FitIndex]
@@ -93,14 +97,14 @@ func NewHelical3D(h *HelicalCurve3D, c *Circle3D) (*Helical3D, error) {
 	return &Helical3D{constraintBase: newConstraint(), H: h, C: c}, nil
 }
 
-func (c *Helical3D) Residuals() []float64 {
-	return []float64{
-		float64(c.H.Origin.X - c.C.Center.X),
-		float64(c.H.Origin.Y - c.C.Center.Y),
-		float64(c.H.Origin.Z - c.C.Center.Z),
-		float64(c.H.StartRadius - c.C.Radius),
-	}
+// residualAD: v = [H.Origin.xyz, H.StartRadius, C.Center.xyz, C.Radius]. The helix origin
+// coincides with the circle center and the start radius equals the circle radius.
+func (c *Helical3D) residualAD(v []ad.Number) []ad.Number {
+	d := adV3(v, 0).Sub(adV3(v, 4))
+	return []ad.Number{d.X, d.Y, d.Z, v[3].Sub(v[7])}
 }
+func (c *Helical3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Helical3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *Helical3D) Variables() []*math.Scalar {
 	return []*math.Scalar{

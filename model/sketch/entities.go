@@ -125,6 +125,7 @@ type CircularCurve interface {
 	// For a circle that is its center and radius; for an arc the radius has no DOF of
 	// its own, so it is the center and start point that define it.
 	circularVars() []*math.Scalar
+	circularAD
 }
 
 // CenterPoint, CurveRadius and circularVars make Circle a [CircularCurve].

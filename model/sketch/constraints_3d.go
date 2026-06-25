@@ -2,7 +2,10 @@
 
 package sketch
 
-import "oblikovati.org/math"
+import (
+	"oblikovati.org/math"
+	"oblikovati.org/solve/ad"
+)
 
 // Point3D is a constrainable point in a 3D sketch: three solver variables. The
 // solver is dimension-agnostic — it sees [Constraint.Variables] as []*math.Scalar
@@ -42,9 +45,13 @@ func NewCoincident3D(a, b *Point3D) *Coincident3D {
 	return &Coincident3D{constraintBase: newConstraint(), A: a, B: b}
 }
 
-func (c *Coincident3D) Residuals() []float64 {
-	return []float64{c.A.X - c.B.X, c.A.Y - c.B.Y, c.A.Z - c.B.Z}
+// residualAD: v = [A.xyz, B.xyz]; the two points must coincide.
+func (c *Coincident3D) residualAD(v []ad.Number) []ad.Number {
+	d := adV3(v, 0).Sub(adV3(v, 3))
+	return []ad.Number{d.X, d.Y, d.Z}
 }
+func (c *Coincident3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Coincident3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *Coincident3D) Variables() []*math.Scalar {
 	return []*math.Scalar{&c.A.X, &c.A.Y, &c.A.Z, &c.B.X, &c.B.Y, &c.B.Z}
@@ -62,12 +69,14 @@ func NewCollinear3D(a, b, c *Point3D) *Collinear3D {
 	return &Collinear3D{constraintBase: newConstraint(), A: a, B: b, C: c}
 }
 
-func (c *Collinear3D) Residuals() []float64 {
-	u := c.A.Position().VectorTo(c.B.Position())
-	v := c.A.Position().VectorTo(c.C.Position())
-	cr := u.Cross(v)
-	return []float64{cr.X, cr.Y, cr.Z}
+// residualAD: v = [A.xyz, B.xyz, C.xyz]; (B−A)×(C−A) vanishes iff the three are collinear.
+func (c *Collinear3D) residualAD(v []ad.Number) []ad.Number {
+	a := adV3(v, 0)
+	cr := adV3(v, 3).Sub(a).Cross(adV3(v, 6).Sub(a))
+	return []ad.Number{cr.X, cr.Y, cr.Z}
 }
+func (c *Collinear3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Collinear3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *Collinear3D) Variables() []*math.Scalar {
 	return []*math.Scalar{&c.A.X, &c.A.Y, &c.A.Z, &c.B.X, &c.B.Y, &c.B.Z, &c.C.X, &c.C.Y, &c.C.Z}
@@ -85,9 +94,13 @@ func NewConcentric3D(c1, c2 *Point3D) *Concentric3D {
 	return &Concentric3D{constraintBase: newConstraint(), Center1: c1, Center2: c2}
 }
 
-func (c *Concentric3D) Residuals() []float64 {
-	return []float64{c.Center1.X - c.Center2.X, c.Center1.Y - c.Center2.Y, c.Center1.Z - c.Center2.Z}
+// residualAD: v = [C1.xyz, C2.xyz]; the two centers must coincide.
+func (c *Concentric3D) residualAD(v []ad.Number) []ad.Number {
+	d := adV3(v, 0).Sub(adV3(v, 3))
+	return []ad.Number{d.X, d.Y, d.Z}
 }
+func (c *Concentric3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Concentric3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *Concentric3D) Variables() []*math.Scalar {
 	return []*math.Scalar{&c.Center1.X, &c.Center1.Y, &c.Center1.Z, &c.Center2.X, &c.Center2.Y, &c.Center2.Z}
@@ -103,8 +116,12 @@ type Equal3D struct {
 func NewEqual3D(a, b *math.Scalar) *Equal3D {
 	return &Equal3D{constraintBase: newConstraint(), A: a, B: b}
 }
-func (c *Equal3D) Residuals() []float64      { return []float64{*c.A - *c.B} }
-func (c *Equal3D) Variables() []*math.Scalar { return []*math.Scalar{c.A, c.B} }
+
+// residualAD: v = [A, B]; the two scalar DOFs must be equal.
+func (c *Equal3D) residualAD(v []ad.Number) []ad.Number { return []ad.Number{v[0].Sub(v[1])} }
+func (c *Equal3D) Residuals() []float64                 { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Equal3D) Partials() [][]float64                { return adPartials(c.Variables(), c.residualAD) }
+func (c *Equal3D) Variables() []*math.Scalar            { return []*math.Scalar{c.A, c.B} }
 
 // CustomConstraint3D adapts an arbitrary residual function over given variables
 // into a [Constraint], for relations not covered by the built-ins.

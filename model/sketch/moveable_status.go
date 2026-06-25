@@ -109,9 +109,10 @@ func freeVariableSet(cons []Constraint, universe []*math.Scalar) map[*math.Scala
 	return free
 }
 
-// freeVarTol is the residual-norm² threshold below which a coordinate
-// direction counts as captured by the constraints. It is generous because the
-// Jacobian rows are finite-difference approximations.
+// freeVarTol is the residual-norm² threshold below which a coordinate direction
+// counts as captured by the constraints. The Jacobian rows are now exact analytic
+// derivatives (#1417), so the slack absorbs Gram–Schmidt round-off rather than
+// finite-difference noise; it is left unchanged to keep classifications stable.
 const freeVarTol = 1e-6
 
 // orthonormalRows builds an orthonormal basis of the row space (modified
