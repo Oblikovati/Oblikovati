@@ -142,6 +142,8 @@ func curvedExactCases() []curvedExactCase {
 		{"torus − box (axis-∥ oval complement)", ops.Cut, torusAxisParallelOvalBox},
 		{"torus ∩ box (axis-∥ two-oval band)", ops.Intersect, torusTwoOvalBox},
 		{"torus − box (axis-∥ two-oval band)", ops.Cut, torusTwoOvalBox},
+		{"torus ∩ box (oblique single oval)", ops.Intersect, torusObliqueOvalBox},
+		{"torus − box (oblique single oval)", ops.Cut, torusObliqueOvalBox},
 	}
 }
 
@@ -175,6 +177,14 @@ func torusAxisParallelOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 // Each kept solid is one tube-wrapping torus band + TWO planar oval-disk lids (Oblikovati#1375).
 func torusTwoOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 2, -20), math.P3(20, 20, 20))
+}
+
+// torusObliqueOvalBox cuts a TILTED torus (axis (0,0.6,0.8)) by the box face z=3.6 — a plane oblique to the
+// axis (C = m·axis ≈ 0.8). The asymmetric spiric section is a single oval bitten off one side of the tube:
+// the ∩ keeps the small contractible CAP, the − the genus-1 COMPLEMENT. The general oblique cut (#1375);
+// a box can't make an oblique cut of an upright torus, so the torus is tilted instead (as the cone cases do).
+func torusObliqueOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2), demoBlock(t, math.P3(-20, -20, 3.6), math.P3(20, 20, 20))
 }
 
 func demoTorus(t *testing.T, center math.Point3, axis math.Vector3, major, minor float64) *topo.Body {

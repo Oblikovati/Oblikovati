@@ -37,5 +37,7 @@
   "torus ∩ box (axis-∥ oval cap)": 10.66402825,
   "torus − box (axis-∥ oval complement)": 384.1202201,
   "torus ∩ box (axis-∥ two-oval band)": 145.422929,
-  "torus − box (axis-∥ two-oval band)": 249.3613324
+  "torus − box (axis-∥ two-oval band)": 249.3613324,
+  "torus ∩ box (oblique single oval)": 24.93812164,
+  "torus − box (oblique single oval)": 369.8453969
 }
