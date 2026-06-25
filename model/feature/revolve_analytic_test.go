@@ -123,3 +123,36 @@ func TestAnalyticRevolveTubeBooleanCutsHalf(t *testing.T) {
 		t.Fatalf("revolve+cut volume = %g, want ≈%g (12π half-donut) — extent too small?", got, want)
 	}
 }
+
+// torusFaceCount tallies geom.Torus faces.
+func torusFaceCount(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Torus); ok {
+			n++
+		}
+	}
+	return n
+}
+
+// TestCircleRevolveMakesAnalyticTorus proves the #129 curved-meridian follow-up (torus case): a single
+// CIRCLE clear of the axis revolves to ONE analytic geom.Torus face — not hundreds of cone slivers — so a
+// later boolean (the M2 torus half-space cuts) takes the exact analytic path on a natively-revolved torus.
+func TestCircleRevolveMakesAnalyticTorus(t *testing.T) {
+	s := sketch.NewSketches().Add(sketch.XYPlane())
+	s.Circles().AddByCenterRadius(math.P2(5, 0), 2) // major 5, minor 2 about the Y axis
+	fs := NewPartFeatures(nil, nil)
+	NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
+	fs.Recompute()
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("revolved torus is not a valid solid: %+v", r.Issues)
+	}
+	if got := torusFaceCount(body); got != 1 {
+		t.Fatalf("revolved circle has %d torus faces, want exactly 1 analytic torus (got %d total faces)", got, len(body.Faces()))
+	}
+	want := 2 * stdmath.Pi * stdmath.Pi * 5 * 2 * 2 // 40π²
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+		t.Errorf("revolved torus volume = %g, want ≈%g (40π²)", got, want)
+	}
+}
