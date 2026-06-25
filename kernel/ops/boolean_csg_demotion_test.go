@@ -140,6 +140,8 @@ func curvedExactCases() []curvedExactCase {
 		{"torus − box (perp off-centre)", ops.Cut, torusPerpOffCentreBox},
 		{"torus ∩ box (axis-∥ oval cap)", ops.Intersect, torusAxisParallelOvalBox},
 		{"torus − box (axis-∥ oval complement)", ops.Cut, torusAxisParallelOvalBox},
+		{"torus ∩ box (axis-∥ two-oval band)", ops.Intersect, torusTwoOvalBox},
+		{"torus − box (axis-∥ two-oval band)", ops.Cut, torusTwoOvalBox},
 	}
 }
 
@@ -165,6 +167,14 @@ func torusPerpOffCentreBox(t *testing.T) (*topo.Body, *topo.Body) {
 // faces clear and compose.
 func torusAxisParallelOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 6, -20), math.P3(20, 20, 20))
+}
+
+// torusTwoOvalBox cuts the same torus by the box face y=2 — PARALLEL to the axis but offset INSIDE the inner
+// tube radius (R−r=3), so the plane passes through the central hole and cuts BOTH tube walls: the section is
+// TWO ovals, each wrapping the tube. The ∩ keeps the +y band between them; the − keeps the wider −y band.
+// Each kept solid is one tube-wrapping torus band + TWO planar oval-disk lids (Oblikovati#1375).
+func torusTwoOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 2, -20), math.P3(20, 20, 20))
 }
 
 func demoTorus(t *testing.T, center math.Point3, axis math.Vector3, major, minor float64) *topo.Body {

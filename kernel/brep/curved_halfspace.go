@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Curved half-space cut (M2 Phase 1, Oblikovati/Oblikovati#1334). The first operation of the
@@ -41,14 +42,32 @@ func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 	if cone, vMin, vMax, ok := coneSolidParams(faces); ok && perpendicularToConeAxis(n, cone) {
 		return coneHalfSpace(body, cone, vMin, vMax, plane) // ⟂ cut → cone/frustum, fast path
 	}
-	if torus, ok := torusSolidParams(faces); ok && perpendicularToTorusAxis(n, torus) {
-		return torusHalfSpace(body, torus, plane) // ⟂ cut → trimmed torus band + annular lid
-	}
-	if torus, ok := torusSolidParams(faces); ok && torusSingleOvalCap(torus, plane) {
-		return torusObliqueHalfSpace(torus, plane) // axis-∥ cut → single-oval cap + planar lid
-	}
-	if torus, ok := torusSolidParams(faces); ok && torusSingleOvalComplement(torus, plane) {
-		return torusComplementHalfSpace(torus, plane) // axis-∥ cut → genus-1 complement + planar lid
+	if torus, ok := torusSolidParams(faces); ok {
+		if res, handled, err := torusHalfSpaceCut(body, torus, plane, n); handled {
+			return res, err
+		}
 	}
 	return generalHalfSpace(body, plane, n, faces)
+}
+
+// torusHalfSpaceCut dispatches a bare torus's analytic half-space cuts by the section the plane carves:
+// a perpendicular cut (two concentric circles → a band + annular lid), and the axis-parallel spiric cuts
+// (a single oval cap, its genus-1 complement, or a two-oval band through the hole — Oblikovati#1375).
+// handled=false leaves an oblique/spiric topology not yet wired to the general CSG fallback.
+func torusHalfSpaceCut(body *topo.Body, torus geom.Torus, plane geom.Plane, n math.Vector3) (*topo.Body, bool, error) {
+	switch {
+	case perpendicularToTorusAxis(n, torus):
+		res, err := torusHalfSpace(body, torus, plane) // ⟂ cut → trimmed torus band + annular lid
+		return res, true, err
+	case torusSingleOvalCap(torus, plane):
+		res, err := torusObliqueHalfSpace(torus, plane) // axis-∥ → single-oval cap + planar lid
+		return res, true, err
+	case torusSingleOvalComplement(torus, plane):
+		res, err := torusComplementHalfSpace(torus, plane) // axis-∥ → genus-1 complement + planar lid
+		return res, true, err
+	case torusTwoOvalBand(torus, plane):
+		res, err := torusTwoOvalHalfSpace(torus, plane) // axis-∥ through the hole → v-wrapping band + 2 lids
+		return res, true, err
+	}
+	return nil, false, nil
 }

@@ -65,6 +65,11 @@ func (s SpiricArc) uOfV(v float64) float64 {
 	return s.Phi + s.Branch*stdmath.Acos(clampUnit(w))
 }
 
+// UAt returns the azimuth u on this branch at tube angle v — the spiric section's single-valued u(v).
+// A two-oval band (a plane that cuts both tube walls) is meshed by sweeping v over the full tube period
+// and filling u between the two branches' UAt, so the tessellator needs this without inverting PointAt.
+func (s SpiricArc) UAt(v float64) float64 { return s.uOfV(v) }
+
 // PointAt returns the point at parameter t∈[0,1], evaluated on the torus at (u(v), v).
 func (s SpiricArc) PointAt(t float64) math.Point3 {
 	v := s.V0 + t*(s.V1-s.V0)
