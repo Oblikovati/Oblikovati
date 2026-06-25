@@ -3,7 +3,6 @@
 package brep
 
 import (
-	"errors"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -35,12 +34,23 @@ func TestConeSideHalfSpaceEllipse(t *testing.T) {
 }
 
 // An oblique plane positioned so its ellipse straddles the top rim (some of the section above z=10) is
-// the clips-rim arrangement, not yet built: it must defer cleanly so the CSG fallback covers it.
-func TestConeSideHalfSpaceEllipseClipsRimDefers(t *testing.T) {
+// the clips-rim arrangement: the kept band's UPPER boundary is the cut ellipse arc PLUS the surviving
+// top-rim arc, and the planar lid is bounded by that ellipse arc and the top cap's chord. The (u,v)
+// arrangement split builds it exactly — one analytic cone band, watertight, no CSG fallback
+// (Oblikovati/Oblikovati#1375).
+func TestConeSideHalfSpaceEllipseClipsRim(t *testing.T) {
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 9.5), math.V3(0.5, 0, 0.866)) // ellipse crosses the top rim
-	if _, err := HalfSpaceCut(frustum, plane); !errors.Is(err, ErrUnsupportedHalfSpace) {
-		t.Errorf("clips-rim cut should defer with ErrUnsupportedHalfSpace, got %v", err)
+	res, err := HalfSpaceCut(frustum, plane)
+	if err != nil {
+		t.Fatalf("clips-rim cut should now be handled exactly, got %v", err)
+	}
+	assertWatertight(t, res)
+	if cones, _, _ := faceTypeCounts(t, res); cones != 1 {
+		t.Errorf("result has %d cone faces, want exactly 1 (the clipped band stays analytic)", cones)
+	}
+	if !anyFaceHasEllipse(res) {
+		t.Error("no face carries an elliptical edge — the rim-clipping ellipse was not imprinted")
 	}
 }
 

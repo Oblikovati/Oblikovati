@@ -127,7 +127,17 @@ func curvedExactCases() []curvedExactCase {
 		{"cone − box (parabola)", ops.Cut, coneParabolaBox},
 		{"cone ∩ box (oblique vertex-inside)", ops.Intersect, coneObliqueVertexInsideBox},
 		{"cone − box (oblique vertex-inside)", ops.Cut, coneObliqueVertexInsideBox},
+		{"cone − box (clips rim annulus)", ops.Cut, coneClipsRimBox},
 	}
+}
+
+// coneClipsRimBox is the oblique-ellipse frustum (axis (0,0.6,0.8)) cut by a box whose face z=6 slices
+// THROUGH the tilted top rim (the rim z-range is [4.4, 11.6]): the section ellipse clips the top rim, so
+// the kept annulus's upper boundary is the ellipse arc PLUS the surviving top-rim arc — the clips-rim
+// arrangement built exactly by the (u,v) split (Oblikovati/Oblikovati#1375). The complementary ∩ keeps
+// the non-wrapping tongue above z=6, which still demotes to CSG, so only the Cut is an exact case.
+func coneClipsRimBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCone(t, math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 6), demoBlock(t, math.P3(-30, -30, 6), math.P3(30, 30, 40))
 }
 
 // coneObliqueVertexInsideBox is the tilted frustum (axis (0.2,0,0.98)) cut by the box face x=5 — far

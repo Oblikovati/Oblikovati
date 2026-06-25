@@ -129,15 +129,35 @@ func edgeCurveFor(le loopEdge) geom.Curve3 {
 		return geom.NewLineSegment(le.start(), le.end())
 	case geom.Line:
 		return geom.NewLineSegment(le.start(), le.end())
+	default:
+		return conicEdgeCurveFor(le)
+	}
+}
+
+// conicEdgeCurveFor restricts the analytic conic edges (the oblique cone-cut sections) to their loop
+// sub-range: a hyperbola/parabola to its bounded arc, an elliptical arc as-is, a full ellipse to the
+// elliptical arc over [t0, t1]. Any other curve is stored whole.
+func conicEdgeCurveFor(le loopEdge) geom.Curve3 {
+	switch c := le.curve.(type) {
 	case geom.Hyperbola:
 		return c.Arc(le.t0, le.t1) // a hyperbola loop edge's params are θ; the bounded arc is what the edge stores
 	case geom.Parabola:
 		return c.Arc(le.t0, le.t1) // a parabola loop edge's params are the cross coordinate t; store the bounded arc
 	case geom.EllipticalArc:
 		return c // the re-anchored elliptical rim/lid of an oblique cone cut tessellates over its sweep
+	case geom.EllipseFull:
+		return ellipseArcOf(c, le.t0, le.t1) // a section sub-arc of a full ellipse (the (u,v) cone split)
 	default:
 		return c
 	}
+}
+
+// ellipseArcOf builds the EllipticalArc covering a full ellipse's parameter sub-range [t0, t1]
+// (EllipseFull.PointAt(t) is the point at angle 2πt), so the edge tessellates over that arc alone.
+func ellipseArcOf(e geom.EllipseFull, t0, t1 float64) geom.Curve3 {
+	const twoPi = 2 * stdmath.Pi
+	a, _ := geom.NewEllipticalArc(e.Center, e.Normal.AsVector(), e.MajorAxis.AsVector(), e.MajorRadius, e.MinorRadius, twoPi*t0, twoPi*(t1-t0))
+	return a
 }
 
 // isFullDomain reports whether [t0, t1] spans a curve's whole [0, 1] domain (a closed seam circle),

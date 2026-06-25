@@ -41,6 +41,34 @@ func generalHalfSpace(body *topo.Body, plane geom.Plane, n math.Vector3, faces [
 	return curvedStitch(append(kept, lids...)), nil
 }
 
+// faceWhollyOneSide reports whether a developable (cone/cylinder) face lies entirely on one side of the
+// plane even though the infinite surface's imprint conic exists — the case a clearing plane makes on a
+// band the earlier cut already trimmed (its rims are no longer the original circles, so the dedicated
+// band split would not recognise it). A cone/cylinder is RULED along v, so if every boundary point lies on
+// one side the whole ruled interior does too; the caller then keeps or drops the face whole. Only ruled
+// sides qualify (a sphere/torus interior can bulge past a chord between boundary points).
+func faceWhollyOneSide(f curvedFace, plane geom.Plane, n math.Vector3) bool {
+	switch f.surface.(type) {
+	case geom.Cone, geom.Cylinder:
+	default:
+		return false
+	}
+	neg, pos := false, false
+	for _, loop := range f.loops {
+		for _, le := range loop.edges {
+			for i := 0; i <= 8; i++ {
+				switch d := signedDistance(le.curve.PointAt(le.t0+(le.t1-le.t0)*float64(i)/8), plane, n); {
+				case d > cylinderAxisTol:
+					pos = true
+				case d < -cylinderAxisTol:
+					neg = true
+				}
+			}
+		}
+	}
+	return !neg || !pos // wholly on one side (or grazing): no genuine crossing
+}
+
 // splitFaceByPlane splits one face by the cutting plane, returning the kept (negative-side) sub-faces
 // and the section arcs that bound the lid. A face the plane does not cross is kept whole or dropped; a
 // boundary-less face (sphere) splits into the kept cap; a looped face crossed by the imprint defers.
@@ -49,7 +77,7 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedF
 	if !handled {
 		return nil, nil, ErrUnsupportedHalfSpace
 	}
-	if len(curves) == 0 {
+	if len(curves) == 0 || faceWhollyOneSide(f, plane, n) {
 		if signedDistance(faceSample(f), plane, n) <= 0 {
 			return []curvedFace{f}, nil, nil // whole face on the negative side
 		}
