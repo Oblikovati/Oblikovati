@@ -78,6 +78,9 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	if m, isBand := twoClosedRimBandMesh(f, s, q); isBand {
 		return m, true // a developable side with two CLOSED full-wrap rims (e.g. a circle + an oblique-cut ellipse): loft
 	}
+	if m, isBand := spiricBandMesh(f, s, q); isBand {
+		return m, true // a torus cut through the hole: a tube-wrapping band between two spiric ovals (#1375)
+	}
 	return nil, false
 }
 
