@@ -227,8 +227,25 @@ func (fs *PartFeatures) evaluate(pf *PartFeature, bodies []*topo.Body, sick map[
 		return bodies
 	}
 	pf.recomputes++
-	out, err := pf.feature.Recompute(Input{Bodies: bodies, Params: fs.params, Keys: fs.keys, SourceTool: fs.sourceTool})
+	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, Keys: fs.keys, SourceTool: fs.sourceTool})
 	return fs.classify(pf, bodies, out, err, sick)
+}
+
+// safeRecompute runs one feature's Recompute, converting a PANIC (a nil-deref or
+// index-out-of-range the alpha kernel can hit on an unhandled boolean/tessellation case) into
+// an ordinary error. That error flows through classify like any other failure, so the feature
+// goes Sick and the rebuild continues its tail instead of the panic unwinding the whole
+// Recompute and crashing the app — the canonical "a sick feature never aborts the rebuild"
+// rule (Oblikovati#1415). The recover is scoped to this single call so a programmer error
+// anywhere else still surfaces. The error names the offending feature (via classify's Kind
+// prefix) and the recovered panic value.
+func safeRecompute(pf *PartFeature, in Input) (out Output, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			out, err = Output{}, fmt.Errorf("panicked during recompute: %v", r)
+		}
+	}()
+	return pf.feature.Recompute(in)
 }
 
 // sourceTool resolves a source feature's geometric contribution for a pattern/mirror: the
