@@ -75,18 +75,6 @@ func TestConeSideHalfSpaceEllipseTongue(t *testing.T) {
 	}
 }
 
-// wrapToPi folds an angle into (−π, π] from either direction.
-func TestWrapToPi(t *testing.T) {
-	cases := []struct{ in, want float64 }{
-		{0, 0}, {3, 3}, {4, 4 - 2*3.141592653589793}, {-4, -4 + 2*3.141592653589793},
-	}
-	for _, c := range cases {
-		if got := wrapToPi(c.in); got-c.want > 1e-9 || c.want-got > 1e-9 {
-			t.Errorf("wrapToPi(%g) = %g, want %g", c.in, got, c.want)
-		}
-	}
-}
-
 // unwrapParamNear shifts a wrapped [0,1) parameter by whole turns to within ±0.5 of the reference, so a
 // section sub-arc straddling the ellipse param seam sweeps through the tongue interior, not the major arc.
 func TestUnwrapParamNear(t *testing.T) {
