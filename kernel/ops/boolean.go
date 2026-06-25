@@ -141,6 +141,15 @@ func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo
 	return nil, false
 }
 
+// CurvedBoolean attempts the exact analytic curved boolean and reports whether it applied. It is SAFE to
+// call on any operands — each path declines (ok=false) when it does not handle (op, target, tool), and none
+// hangs (unlike the planar B-rep boolean, which loops on a full periodic curved face). The model layer uses
+// it to combine a still-analytic primitive (a revolved torus, an extruded cylinder) by its curved faces
+// before falling back to faceting the operands for the planar path (#129).
+func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+	return curvedExactBoolean(op, target, tool)
+}
+
 // curvedExactPaths is the ordered list of exact analytic curved-boolean paths curvedExactBoolean tries; each
 // returns ok=false when it does not apply to (op, target, tool).
 var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body) (*topo.Body, bool){
