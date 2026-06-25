@@ -71,6 +71,9 @@ func torusHalfSpaceCut(body *topo.Body, torus geom.Torus, plane geom.Plane, n ma
 	case torusObliqueOval(torus, plane):
 		res, err := torusObliqueOvalHalfSpace(torus, plane) // tilted single-oval bite → cap or complement
 		return res, true, err
+	case torusTwoObliqueOval(torus, plane):
+		res, err := torusTwoOvalHalfSpace(torus, plane) // tilted cut through the hole → v-wrapping band + 2 lids
+		return res, true, err
 	}
 	return nil, false, nil
 }

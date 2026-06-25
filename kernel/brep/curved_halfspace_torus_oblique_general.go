@@ -15,8 +15,9 @@ import (
 // extra C·r·sin v term, so it is asymmetric in v — but it is still single-valued, u(v) = Phi ± arccos w(v).
 // This handles the common single-OVAL tilt (one bite off the tube): the section is one closed oval and the
 // kept solid is the small contractible CAP or its genus-1 COMPLEMENT, reusing the axis-parallel builders and
-// meshers with the oval's v-range found from the closed-form w(v) = ±1 crossings. Two oblique ovals, the
-// figure-eight pinch, and a tilt enclosing more than half the torus still demote to CSG.
+// meshers with the oval's v-range found from the closed-form w(v) = ±1 crossings. A tilted cut through the
+// hole makes TWO oblique ovals — [torusTwoObliqueOval] routes those through the two-oval band path. A tilt
+// enclosing more than half the torus (the disk-larger-than-half case) still demotes to CSG.
 
 // torusW evaluates the section function w(v) = (K − C·r·sin v) / (M·(R + r·cos v)).
 func torusW(t geom.Torus, m, k, c, v float64) float64 {
@@ -98,6 +99,18 @@ func ovalDiskArea(t geom.Torus, m, k, c, v0, v1, pinch float64) float64 {
 		area += 2 * stdmath.Acos(clampUnitF(pinch*torusW(t, m, k, c, v))) * (v1 - v0) / n
 	}
 	return area
+}
+
+// torusTwoObliqueOval reports whether a TILTED plane (cylinderAxisTol < |C| < 1) cuts TWO ovals: the section
+// is valid at every tube angle (no w=±1 crossing, so each branch is a full closed oval) and not cleared
+// (|w(0)| < 1). The two-oval band builder and the spiric band mesher are general in C, so the tilted
+// two-oval reuses them exactly — only the detection differs from the axis-parallel [torusTwoOvalBand].
+func torusTwoObliqueOval(t geom.Torus, plane geom.Plane) bool {
+	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
+	if stdmath.Abs(c) <= cylinderAxisTol || stdmath.Abs(c) >= 1-cylinderAxisTol || m <= cylinderAxisTol {
+		return false
+	}
+	return len(wUnitCrossings(t, m, k, c)) == 0 && stdmath.Abs(torusW(t, m, k, c, 0)) < 1
 }
 
 // torusObliqueOvalHalfSpace keeps the cap or the genus-1 complement of the single oval a tilted plane bites
