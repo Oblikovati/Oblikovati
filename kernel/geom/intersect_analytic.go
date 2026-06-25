@@ -17,10 +17,10 @@ const (
 	// axisAlignCosTol classifies axis↔plane-normal alignment: |cos∠| < axisAlignCosTol means
 	// the axis is parallel to the plane (axis ⟂ normal); |cos∠| > 1−axisAlignCosTol means the
 	// axis is perpendicular to the plane (axis ∥ normal). Below this the case is "oblique".
-	axisAlignCosTol = 1e-6
+	axisAlignCosTol = 1e-6 // tol:angular — cosine of the axis↔normal angle
 	// coincidentNormalSinTol treats two plane normals whose cross-product magnitude (the sine
 	// of the angle between them) is below this as parallel/coincident — no isolated section line.
-	coincidentNormalSinTol = 1e-9
+	coincidentNormalSinTol = 1e-9 // tol:angular — sine of the angle between unit normals
 )
 
 // IntersectSurfacesAnalytic returns the EXACT intersection curves of two analytic surfaces

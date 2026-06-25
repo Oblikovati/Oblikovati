@@ -20,7 +20,7 @@ import (
 // the cylinder axis (a constant-axial-coordinate cut). Looser than that is an oblique section. It is a
 // cosine of unit vectors — DIMENSIONLESS — so it stays absolute; the axial/radial LENGTH comparisons
 // that used to share this constant now derive from a model-relative Resolution (res.Plane(), #1399).
-const cylinderAxisCosTol = 1e-7
+const cylinderAxisCosTol = 1e-7 // tol:angular — |n·axis| cosine vs 1
 
 // CylinderParams recovers a bare cylinder's surface, base-cap centre and height from a body, for callers
 // (the curved subtract) that need the axis frame before building. ok=false unless the body is exactly one

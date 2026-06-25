@@ -128,6 +128,6 @@ func steinmetzArcs(o math.Point3, dirA, dirB math.Vector3, r float64) (ePlusFron
 // nearEqual reports whether two lengths are equal to a small relative tolerance (the Steinmetz case needs
 // the two cylinder radii to match).
 func nearEqual(x, y float64) bool {
-	// tol:numeric — a relative equality test (scaled by max|x|,|y|), not a model-anchored length.
-	return stdmath.Abs(x-y) <= 1e-7*(1+stdmath.Max(stdmath.Abs(x), stdmath.Abs(y)))
+	// a relative equality test (scaled by max|x|,|y|), not a model-anchored length.
+	return stdmath.Abs(x-y) <= 1e-7*(1+stdmath.Max(stdmath.Abs(x), stdmath.Abs(y))) // tol:numeric
 }

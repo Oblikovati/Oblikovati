@@ -193,7 +193,7 @@ func zipUnequalRows(m *Mesh, a, b bandRow) {
 		evs = append(evs, event{b.ang[i], v, false})
 	}
 	sort.SliceStable(evs, func(i, j int) bool {
-		if stdmath.Abs(evs[i].ang-evs[j].ang) > 1e-9 {
+		if stdmath.Abs(evs[i].ang-evs[j].ang) > 1e-9 { // tol:angular — azimuth (radians) tie-break
 			return evs[i].ang < evs[j].ang
 		}
 		return evs[i].isA && !evs[j].isA // break ties A-before-B so an aligned pair makes a clean quad
