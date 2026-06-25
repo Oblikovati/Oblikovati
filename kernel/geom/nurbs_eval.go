@@ -4,6 +4,7 @@ package geom
 
 import (
 	"fmt"
+	stdmath "math"
 
 	"oblikovati.org/math"
 )
@@ -22,17 +23,42 @@ func (h *homog) add(p math.Point3, weight float64) {
 	h.w += weight
 }
 
-// point returns the rational position A/w.
+// point returns the rational position A/w, or the origin when the basis weight w
+// has collapsed. The B-spline basis is a partition of unity in-span and the control
+// weights are positive ([requirePositiveWeights]), so a valid w is at least the
+// smallest control weight; only an out-of-span evaluation or malformed knots drive
+// it toward zero. Returning a finite zero instead of A/0 stops a NaN/Inf from
+// propagating into tessellation, mass properties and continuity analysis (#1402).
 func (h homog) point() math.Point3 {
+	if !weightUsable(h.w) {
+		return math.Point3{}
+	}
 	return h.a.Scale(1 / h.w).AsPoint()
 }
 
 // deriv applies the rational quotient rule: given the value accumulator (this)
 // and a derivative accumulator d (built from basis-function derivatives), it
-// returns d(A/w) = (d.a − point·d.w)/w.
+// returns d(A/w) = (d.a − point·d.w)/w, or the zero vector when w has collapsed
+// (#1402, see [homog.point]).
 func (h homog) deriv(d homog) math.Vector3 {
+	if !weightUsable(h.w) {
+		return math.Vector3{}
+	}
 	point := h.point()
 	return d.a.Sub(point.AsVector().Scale(d.w)).Scale(1 / h.w)
+}
+
+// weightFloor is the smallest accumulated basis weight treated as usable. It is far
+// below any realistic positive control weight, so it rejects only a genuinely
+// collapsed denominator (an exactly-zero or denormal w from an out-of-span /
+// malformed evaluation), never a valid rational point (#1402).
+const weightFloor = 1e-300
+
+// weightUsable reports whether the rational denominator w is a normal, strictly
+// positive number — division by it yields a finite point. A non-finite or
+// at-/below-floor w is unusable.
+func weightUsable(w float64) bool {
+	return w > weightFloor && !stdmath.IsInf(w, 0)
 }
 
 // validateBSpline checks the size relationships every B-spline (curve direction)

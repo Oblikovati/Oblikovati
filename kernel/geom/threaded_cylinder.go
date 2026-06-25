@@ -62,11 +62,15 @@ func (t ThreadedCylinder) PointAt(u, v float64) math.Point3 {
 }
 
 // DerivativesAt returns the partials by central differences (the thread modulation has no tidy
-// closed form; finite differences are exact enough for shading/normals).
+// closed form; finite differences are exact enough for shading/normals). Each direction uses the
+// first-difference-optimal step stepD1 = ε^{1/3} scaled by its domain span — the periodic angular
+// span in u and the threaded run in v — so the step stays scale-invariant rather than a fixed 1e-5
+// that ignored both the [0,2π] angular scale and the part size (#1402).
 func (t ThreadedCylinder) DerivativesAt(u, v float64) (du, dv math.Vector3) {
-	const e = 1e-5
-	du = t.PointAt(u-e, v).VectorTo(t.PointAt(u+e, v)).Scale(1 / (2 * e))
-	dv = t.PointAt(u, v-e).VectorTo(t.PointAt(u, v+e)).Scale(1 / (2 * e))
+	eu := stepD1 * spanOr1(t.UDomain())
+	ev := stepD1 * spanOr1(t.VDomain())
+	du = t.PointAt(u-eu, v).VectorTo(t.PointAt(u+eu, v)).Scale(1 / (2 * eu))
+	dv = t.PointAt(u, v-ev).VectorTo(t.PointAt(u, v+ev)).Scale(1 / (2 * ev))
 	return du, dv
 }
 

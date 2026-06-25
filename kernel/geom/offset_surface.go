@@ -48,22 +48,26 @@ func (o OffsetSurface) PointAt(u, v float64) math.Point3 {
 // NormalAt returns the base normal: a parallel surface has the same normal field as its base.
 func (o OffsetSurface) NormalAt(u, v float64) math.Vector3 { return o.Base.NormalAt(u, v) }
 
-// offsetStepFraction is the central-difference half-step for ∂N/∂param, as a FRACTION of the domain
-// span — so the step adapts to the base's parameter scale (a NURBS [0,1] domain and an analytic
-// [0,2π] domain need different absolute steps for the same truncation/roundoff balance). #1322.
-const offsetStepFraction = 1e-6
-
 // DerivativesAt returns the offset surface's partials, ∂S_d/∂u = ∂S/∂u + Distance·∂N/∂u (and v): the
-// base's exact partials plus the Distance-scaled rate of change of the normal. ∂N/∂param is a central
-// difference (the Surface interface exposes no second derivative) with a domain-scaled step.
+// base's exact partials plus the Distance-scaled rate of change of the normal.
 func (o OffsetSurface) DerivativesAt(u, v float64) (du, dv math.Vector3) {
 	bdu, bdv := o.Base.DerivativesAt(u, v)
-	hu := offsetStepFraction * spanOr1(o.Base.UDomain())
-	hv := offsetStepFraction * spanOr1(o.Base.VDomain())
-	dNdu := centralDiff(o.Base.NormalAt(u+hu, v), o.Base.NormalAt(u-hu, v), hu)
-	dNdv := centralDiff(o.Base.NormalAt(u, v+hv), o.Base.NormalAt(u, v-hv), hv)
+	dNdu, dNdv := o.normalDerivs(u, v)
 	d := math.Scalar(o.Distance)
 	return bdu.Add(dNdu.Scale(d)), bdv.Add(dNdv.Scale(d))
+}
+
+// normalDerivs returns ∂N/∂u, ∂N/∂v of the base normal field by central differences — the Surface
+// interface exposes no analytic ∂N, so this is the one place the offset's curvature-dependent partials
+// come from. Each direction uses the first-difference-optimal step stepD1 = ε^{1/3} scaled by its own
+// domain span, so the step adapts to the base's parameter scale (a NURBS [0,1] vs an analytic [0,2π]
+// domain) and the truncation/roundoff balance holds at any model scale (#1322, #1402).
+func (o OffsetSurface) normalDerivs(u, v float64) (dNdu, dNdv math.Vector3) {
+	hu := stepD1 * spanOr1(o.Base.UDomain())
+	hv := stepD1 * spanOr1(o.Base.VDomain())
+	dNdu = centralDiff(o.Base.NormalAt(u+hu, v), o.Base.NormalAt(u-hu, v), hu)
+	dNdv = centralDiff(o.Base.NormalAt(u, v+hv), o.Base.NormalAt(u, v-hv), hv)
+	return dNdu, dNdv
 }
 
 // centralDiff returns (hi − lo) / (2·h).
@@ -136,14 +140,11 @@ func (o OffsetSurface) minTangentScale(u, v float64) (float64, bool) {
 	}
 	su, sv := o.Base.DerivativesAt(u, v)
 	e, f, g := dot(su, su), dot(su, sv), dot(sv, sv)
-	det := e*g - f*f
-	if det < math.DefaultTolerance {
+	if degenerateFirstForm(e, f, g) { // scale-invariant (parallel/collapsed tangents), #1402
 		return 0, false
 	}
-	hu := offsetStepFraction * spanOr1(o.Base.UDomain())
-	hv := offsetStepFraction * spanOr1(o.Base.VDomain())
-	nu := centralDiff(o.Base.NormalAt(u+hu, v), o.Base.NormalAt(u-hu, v), hu)
-	nv := centralDiff(o.Base.NormalAt(u, v+hv), o.Base.NormalAt(u, v-hv), hv)
+	det := e*g - f*f
+	nu, nv := o.normalDerivs(u, v)
 	// Express ∂N/∂u, ∂N/∂v in the {Su,Sv} basis (solve the metric system) → the 2×2 map W.
 	w11, w21 := solveMetric(e, f, g, det, dot(nu, su), dot(nu, sv))
 	w12, w22 := solveMetric(e, f, g, det, dot(nv, su), dot(nv, sv))

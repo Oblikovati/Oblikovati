@@ -112,13 +112,16 @@ func lineSearchToward(s Surface, q math.Point3, u, v, ddu, ddv, d2 float64) (nu,
 }
 
 // gaussNewtonStep solves the 2×2 normal-equation system [[a,b],[b,c]]·Δ = g for the
-// projection step, where a=du·du, b=du·dv, c=dv·dv. ok is false at a degenerate frame.
+// projection step, where a=du·du, b=du·dv, c=dv·dv. ok is false at a degenerate
+// frame, judged by the SCALE-INVARIANT [degenerateFirstForm] (parallel/collapsed
+// tangents) rather than an absolute cutoff on the length⁴ determinant, which would
+// reject a valid small-scale patch and accept a singular huge-scale one (#1402).
 func gaussNewtonStep(du, dv math.Vector3, gu, gv float64) (ddu, ddv float64, ok bool) {
 	a, b, c := float64(du.Dot(du)), float64(du.Dot(dv)), float64(dv.Dot(dv))
-	det := a*c - b*b
-	if stdmath.Abs(det) < 1e-18 {
+	if degenerateFirstForm(a, b, c) {
 		return 0, 0, false
 	}
+	det := a*c - b*b
 	return (c*gu - b*gv) / det, (a*gv - b*gu) / det, true
 }
 
