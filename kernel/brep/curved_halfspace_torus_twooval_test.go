@@ -48,8 +48,34 @@ func TestHalfSpaceCutTorusTwoOvalBand(t *testing.T) {
 	}
 }
 
-// torusTwoOvalBand admits only the axis-parallel offset strictly inside the inner tube radius; a single-oval
-// offset (≥ R−r) or a perpendicular cut belongs elsewhere.
+// At offset EXACTLY R−r the plane is tangent to the inner equator: the two ovals merge into a figure-eight
+// pinched at the tangent point. The two-oval band path meshes it (the band's zero-width limit), watertight.
+func TestHalfSpaceCutTorusFigureEight(t *testing.T) {
+	for _, n := range []math.Vector3{math.V3(0, -1, 0), math.V3(0, 1, 0)} {
+		tor, _ := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
+		plane, _ := geom.NewPlane(math.P3(0, 3, 0), n) // |offset| = R−r = 3
+		res, err := HalfSpaceCut(tor, plane)
+		if err != nil {
+			t.Fatalf("HalfSpaceCut: %v", err)
+		}
+		assertWatertight(t, res)
+		tori, planes := 0, 0
+		for _, f := range res.Faces() {
+			switch f.Geometry().(type) {
+			case geom.Torus:
+				tori++
+			case geom.Plane:
+				planes++
+			}
+		}
+		if tori != 1 || planes != 2 {
+			t.Errorf("figure-eight cut has %d torus + %d plane faces, want 1 + 2 (band + two touching lids)", tori, planes)
+		}
+	}
+}
+
+// torusTwoOvalBand admits the axis-parallel offset up to (and including) the inner tube radius; a single-oval
+// offset (> R−r) or a perpendicular cut belongs elsewhere.
 func TestTorusTwoOvalBandGuards(t *testing.T) {
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	for _, tc := range []struct {
@@ -59,6 +85,7 @@ func TestTorusTwoOvalBandGuards(t *testing.T) {
 		want   bool
 	}{
 		{"two-oval (offset 2 < R−r)", math.P3(0, 2, 0), math.V3(0, 1, 0), true},
+		{"figure-eight (offset 3 = R−r, tangent)", math.P3(0, 3, 0), math.V3(0, 1, 0), true},
 		{"single-oval (offset 6 in (R−r,R+r))", math.P3(0, 6, 0), math.V3(0, 1, 0), false},
 		{"perpendicular to axis", math.P3(0, 0, 1), math.V3(0, 0, 1), false},
 		{"through the axis (offset 0)", math.P3(0, 0, 0), math.V3(0, 1, 0), false},

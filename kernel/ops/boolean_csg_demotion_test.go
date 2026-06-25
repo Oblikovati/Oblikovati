@@ -144,6 +144,8 @@ func curvedExactCases() []curvedExactCase {
 		{"torus − box (axis-∥ two-oval band)", ops.Cut, torusTwoOvalBox},
 		{"torus ∩ box (oblique single oval)", ops.Intersect, torusObliqueOvalBox},
 		{"torus − box (oblique single oval)", ops.Cut, torusObliqueOvalBox},
+		{"torus ∩ box (figure-eight pinch)", ops.Intersect, torusFigureEightBox},
+		{"torus − box (figure-eight pinch)", ops.Cut, torusFigureEightBox},
 	}
 }
 
@@ -185,6 +187,14 @@ func torusTwoOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 // a box can't make an oblique cut of an upright torus, so the torus is tilted instead (as the cone cases do).
 func torusObliqueOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2), demoBlock(t, math.P3(-20, -20, 3.6), math.P3(20, 20, 20))
+}
+
+// torusFigureEightBox cuts the same torus by the box face y=3 — axis-parallel and EXACTLY tangent to the
+// inner equator (offset = R−r = 3): the two ovals of the two-oval cut have merged into a single FIGURE-EIGHT
+// pinched at the tangent point (0,3,0). The band loft meshes the pinch as its zero-width limit, so the same
+// path (a v-wrapping band + two oval lids that touch at the pinch) serves it exactly (Oblikovati#1375).
+func torusFigureEightBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 3, -20), math.P3(20, 20, 20))
 }
 
 func demoTorus(t *testing.T, center math.Point3, axis math.Vector3, major, minor float64) *topo.Body {

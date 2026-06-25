@@ -17,16 +17,19 @@ import (
 // two tube cross-sections the plane carves), unlike the single-oval cut's one lid.
 
 // torusTwoOvalBand reports whether plane cuts two ovals from torus: PARALLEL to the axis (m·axis ≈ 0) with
-// the offset strictly inside the inner tube radius (0 < |K|/M < R−r). At |K|/M = 0 the plane passes through
-// the axis (the ovals degenerate to two meridian circles) and at ≥ R−r it cuts a single oval — both handled
-// elsewhere — so this is the strict two-oval interior.
+// the offset up to the inner tube radius (0 < |K|/M ≤ R−r). Below R−r the plane passes through the hole and
+// cuts both walls as two separate ovals; AT R−r exactly it is tangent to the inner equator and the two ovals
+// touch in a FIGURE-EIGHT pinch (Oblikovati/Oblikovati#1375). The band loft handles the pinch as the band's
+// zero-width limit there, so the same path serves both; above R−r the section is a single oval, handled
+// elsewhere. At |K|/M = 0 the plane passes through the axis (the ovals degenerate to meridian circles, still
+// deferred).
 func torusTwoOvalBand(t geom.Torus, plane geom.Plane) bool {
 	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
 	if stdmath.Abs(c) > cylinderAxisTol || m <= cylinderAxisTol {
 		return false
 	}
 	ratio := stdmath.Abs(k) / m
-	return ratio > cylinderAxisTol && ratio < t.MajorRadius-t.MinorRadius-cylinderAxisTol
+	return ratio > cylinderAxisTol && ratio < t.MajorRadius-t.MinorRadius+cylinderAxisTol
 }
 
 // torusTwoOvalHalfSpace keeps the v-wrapping band a plane parallel to the torus axis leaves on its negative
