@@ -118,19 +118,22 @@ func TestFarFromOriginAnalyticBeatsFiniteDifference(t *testing.T) {
 	cons, vars = build()
 	fd := solve.Solve(fdResiduals(cons), vars, solve.Options{MaxIterations: 200})
 
-	// FD's step underflows: it barely moves off the initial residual.
-	if fd.Residual < initial*0.5 {
-		t.Errorf("finite-difference residual %g made unexpected progress from initial %g (FD was expected to stall at this scale)", fd.Residual, initial)
+	// FD's step underflows: it barely moves off the initial residual, so it never reaches
+	// the (now relative, #1420) tolerance — it reports non-convergence.
+	if fd.Converged || fd.Residual < initial*0.5 {
+		t.Errorf("finite-difference solve made unexpected progress (converged=%v residual=%g vs initial %g) — it was expected to stall at this scale", fd.Converged, fd.Residual, initial)
 	}
-	// Analytic drives the residual down by orders of magnitude despite the scale.
-	if analytic.Residual > initial*1e-4 {
-		t.Errorf("analytic residual %g did not improve enough from initial %g", analytic.Residual, initial)
+	// The exact analytic Jacobian drives the system to the relative tolerance and converges
+	// — the relative tolerance (relTol·scale) is the achievable precision at scale 1e10
+	// (below it the coordinate ULP dominates, #1399).
+	if !analytic.Converged {
+		t.Errorf("analytic solve did not converge at scale: residual %g", analytic.Residual)
 	}
 	if analytic.Residual >= fd.Residual {
 		t.Errorf("analytic residual %g not better than stalled FD %g", analytic.Residual, fd.Residual)
 	}
-	t.Logf("initial %.3e → analytic %.3e (it=%d) vs FD %.3e (it=%d)",
-		initial, analytic.Residual, analytic.Iterations, fd.Residual, fd.Iterations)
+	t.Logf("initial %.3e → analytic %.3e conv=%v (it=%d) vs FD %.3e conv=%v (it=%d)",
+		initial, analytic.Residual, analytic.Converged, analytic.Iterations, fd.Residual, fd.Converged, fd.Iterations)
 }
 
 // TestWellConditionedAnalyticIsCorrect is the control: on a well-conditioned fixture the

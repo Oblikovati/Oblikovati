@@ -16,6 +16,7 @@ package solve
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/math"
 )
@@ -107,6 +108,11 @@ type Result struct {
 	// end of the solve and reused for the rank/DOF analysis here (#1417). Callers can
 	// reuse it for mobility analysis instead of rebuilding it.
 	Jacobian [][]float64
+	// Conflicts lists, on a FAILED solve, the indices of the residual sources still
+	// unsatisfied (their nondimensionalised residual exceeds the tolerance), most severe
+	// first — the offending-constraint subset a caller surfaces for conflict diagnosis
+	// (#1420). Empty on a converged solve.
+	Conflicts []int
 }
 
 // Solve drives the residuals to zero over the given variables, mutating them in place
@@ -118,46 +124,63 @@ type Result struct {
 //	if !r.Converged { /* mark the system sick */ }
 func Solve(res []Residual, vars []*math.Scalar, opts Options) Result {
 	opts = opts.withDefaults()
+	scale := modelScale(vars)
 	r := evalResiduals(res)
 	lambda := 1e-3 // tol:numeric — Levenberg–Marquardt initial damping
 	iter := 0
+	j := Jacobian(res, vars)
 	for ; iter < opts.MaxIterations; iter++ {
-		if infNorm(r) < opts.Tolerance || len(vars) == 0 {
+		if len(vars) == 0 || converged(r, j, scale, opts.Tolerance) {
 			break
 		}
-		next, ok := newtonStep(res, vars, r, &lambda)
+		next, ok := dampedStep(res, vars, j, r, &lambda)
 		if !ok {
 			break // stuck at a singular/non-improving point
 		}
 		r = next
+		j = Jacobian(res, vars) // at the new iterate, reused by the next convergence test and step
 	}
-	// Compute the Jacobian ONCE at the converged point and derive the DOF analysis from
-	// it, rather than rebuilding it inside AnalyzeDOF (#1417). The Result carries it so a
-	// caller can reuse it for mobility analysis too.
-	j := Jacobian(res, vars)
-	return Result{
-		Converged:   infNorm(r) < opts.Tolerance,
+	// j is the Jacobian at the final iterate; derive the DOF analysis from it (computed
+	// once, #1417) and, on failure, the offending-constraint subset (#1420).
+	conv := len(vars) == 0 || converged(r, j, scale, opts.Tolerance)
+	result := Result{
+		Converged:   conv,
 		Iterations:  iter,
 		Residual:    infNorm(r),
 		DOFAnalysis: analyzeJacobian(j, len(vars)),
 		Jacobian:    j,
 	}
+	if !conv {
+		result.Conflicts = conflictingSources(res, j, scale, opts.Tolerance)
+	}
+	return result
 }
 
-// newtonStep performs one damped Gauss–Newton update, adjusting lambda. It accepts the
-// step only if it reduces the residual norm; otherwise it increases damping and retries
-// a few times. It returns the new residual vector and whether it improved.
-func newtonStep(res []Residual, vars []*math.Scalar, r []float64, lambda *float64) ([]float64, bool) {
-	j := Jacobian(res, vars)
-	jtj, jtr := normalEquations(j, r)
-	current := infNorm(r)
+// converged reports whether every constraint is satisfied to a RELATIVE tolerance: the
+// nondimensionalised residual (max |rᵢ|/‖Jᵢ‖, a variable-space displacement) is within
+// relTol·scale of zero. Tying the threshold to the model's coordinate scale makes
+// convergence identical across a µm→m scale sweep and independent of mixed residual units
+// (#1420).
+func converged(r []float64, j [][]float64, scale, relTol float64) bool {
+	return weightedInfNorm(r, rowWeights(j)) < relTol*scale
+}
+
+// dampedStep performs one damped Gauss–Newton update from the precomputed Jacobian j,
+// adjusting lambda. The step solves the nondimensionalised LM system [Jₛ; √λ·I]·δ = [−rₛ; 0]
+// by Householder QR — no normal-equations JᵀJ, so the condition number is not squared
+// (#1420). It accepts the step only if it reduces the weighted residual norm, otherwise it
+// raises the damping and retries. Returns the new residual vector and whether it improved.
+func dampedStep(res []Residual, vars []*math.Scalar, j [][]float64, r []float64, lambda *float64) ([]float64, bool) {
+	current := sumSquares(r)
+	n := len(vars)
 	for try := 0; try < 8; try++ {
-		delta, ok := solveLinear(addDiagonal(jtj, *lambda), negated(jtr))
+		aug, rhs := augmentedLM(j, r, *lambda, n)
+		delta, ok := leastSquares(aug, rhs)
 		if ok {
 			snapshot := readVars(vars)
 			applyDelta(vars, delta)
 			trial := evalResiduals(res)
-			if infNorm(trial) < current {
+			if sumSquares(trial) < current {
 				*lambda = stdmath.Max(*lambda/10, 1e-12) // tol:numeric — LM damping floor
 				return trial, true
 			}
@@ -168,6 +191,41 @@ func newtonStep(res []Residual, vars []*math.Scalar, r []float64, lambda *float6
 	return r, false
 }
 
+// conflictingSources returns the residual sources still unsatisfied at a failed solve —
+// those whose largest nondimensionalised residual exceeds the tolerance — most severe
+// first, for UI conflict diagnosis (#1420). The residual rows are walked in source order,
+// aligned with the Jacobian.
+func conflictingSources(res []Residual, j [][]float64, scale, relTol float64) []int {
+	w := rowWeights(j)
+	full := evalResiduals(res)
+	threshold := relTol * scale
+	type offender struct {
+		index int
+		mag   float64
+	}
+	var bad []offender
+	row := 0
+	for s, src := range res {
+		k := len(src.Residuals())
+		worst := 0.0
+		for i := row; i < row+k; i++ {
+			if v := stdmath.Abs(full[i] * w[i]); v > worst {
+				worst = v
+			}
+		}
+		row += k
+		if worst > threshold {
+			bad = append(bad, offender{s, worst})
+		}
+	}
+	sort.Slice(bad, func(a, b int) bool { return bad[a].mag > bad[b].mag })
+	out := make([]int, len(bad))
+	for i, o := range bad {
+		out[i] = o.index
+	}
+	return out
+}
+
 // AnalyzeDOF computes the DOF/redundancy structure from the Jacobian rank. It is the
 // entry point for analysis WITHOUT a solve (e.g. a hover-time DOF query); within a
 // solve the Jacobian is computed once and [analyzeJacobian] is reused directly.
@@ -176,10 +234,12 @@ func AnalyzeDOF(res []Residual, vars []*math.Scalar) DOFAnalysis {
 }
 
 // analyzeJacobian derives the DOF/redundancy structure from an already-built Jacobian,
-// so the matrix is computed once per solve and reused (#1417).
+// so the matrix is computed once per solve and reused (#1417). It ranks the ROW-NORMALISED
+// Jacobian so the tolerance is relative — a short-segment or large-scale constraint row is
+// never spuriously dropped, giving scale-invariant DOF classification (#1420).
 func analyzeJacobian(j [][]float64, n int) DOFAnalysis {
 	m := len(j)
-	rank := matrixRank(j, 1e-7) // tol:numeric — Jacobian rank tolerance
+	rank := matrixRank(rowNormalized(j), 1e-7) // tol:numeric — relative rank tolerance (rows are unit-norm)
 	a := DOFAnalysis{Variables: n, Equations: m, Rank: rank, DOF: n - rank, Redundant: m - rank}
 	switch {
 	case a.Redundant > 0:
@@ -275,46 +335,6 @@ func finiteDiffJacobian(res []Residual, vars []*math.Scalar) [][]float64 {
 		}
 	}
 	return j
-}
-
-// normalEquations returns JᵀJ (n×n) and Jᵀr (n) for the Gauss–Newton step.
-func normalEquations(j [][]float64, r []float64) ([][]float64, []float64) {
-	m, n := len(j), 0
-	if m > 0 {
-		n = len(j[0])
-	}
-	jtj := make([][]float64, n)
-	jtr := make([]float64, n)
-	for a := 0; a < n; a++ {
-		jtj[a] = make([]float64, n)
-		for i := 0; i < m; i++ {
-			jtr[a] += j[i][a] * r[i]
-			for b := 0; b < n; b++ {
-				jtj[a][b] += j[i][a] * j[i][b]
-			}
-		}
-	}
-	return jtj, jtr
-}
-
-// addDiagonal returns a copy of jtj with lambda added to its diagonal (the
-// Levenberg–Marquardt damping that keeps the system solvable near singularities).
-func addDiagonal(jtj [][]float64, lambda float64) [][]float64 {
-	n := len(jtj)
-	out := make([][]float64, n)
-	for i := range out {
-		out[i] = append([]float64(nil), jtj[i]...)
-		out[i][i] += lambda
-	}
-	return out
-}
-
-func negated(v []float64) []float64 {
-	out := make([]float64, len(v))
-	for i, x := range v {
-		out[i] = -x
-	}
-	return out
 }
 
 func readVars(vars []*math.Scalar) []float64 {
