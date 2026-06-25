@@ -47,7 +47,7 @@ func DeformBody(b *topo.Body, fn func(math.Point3) math.Point3, derive func(topo
 
 // deformTol is the minimum moved-edge length below which the map is treated as collapsing an
 // edge (a degenerate result the boolean kernel cannot use).
-const deformTol = 1e-9
+const deformTol = 1e-9 // tol:calibrated — collapse guard used as BOTH a moved-edge length and a degenerate-normal magnitude; a clean split is deferred
 
 // deformFaceInto clones one face with a plane re-fitted through its moved outer loop, preserving
 // the face's material sense (a reversed cut/bore wall must stay reversed or its tessellation

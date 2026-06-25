@@ -112,7 +112,7 @@ func meshTriangle(m *Mesh, i int) [3]math.Point3 {
 
 // selfIntersectEps keeps grazing contact (faces meeting within numerical noise
 // of each other) from reporting as interpenetration.
-const selfIntersectEps = 1e-9
+const selfIntersectEps = 1e-9 // tol:calibrated — guards an UNNORMALISED plane equation (n·p−d, ~size³); relativising needs normalising by |n| first
 
 // trianglesIntersect is the Möller interval test: T1 must straddle T2's plane
 // and vice versa, and their intervals on the planes' intersection line must

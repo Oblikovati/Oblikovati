@@ -74,6 +74,21 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../ops/closed_band_loft.go",
 		"../ops/saddle_band_loft.go",
 		"../ops/nurbs_pcurve_mesh.go",
+		// ops: self-intersection, section, stitch, and the degeneracy/weld helpers.
+		"../ops/self_intersect.go",
+		"../ops/section_plane.go",
+		"../ops/stitch.go",
+		"../ops/oriented_box.go",
+		"../ops/ruled_surface.go",
+		"../ops/deform.go",
+		"../ops/smooth_normals.go",
+		"../ops/csg_body.go",
+		"../ops/assemble_curved.go",
+		// solve + sketch: the constraint solver and 2D arrangement.
+		"../../solve/solve.go",
+		"../../model/sketch/arrangement.go",
+		"../../model/sketch/profile.go",
+		"../../model/sketch/path_3d.go",
 	}
 	epsilon := regexp.MustCompile(`[^0-9a-zA-Z_.]1(?:\.0)?e-[0-9]+`)
 	var offenders []string

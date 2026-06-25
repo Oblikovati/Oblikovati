@@ -50,7 +50,7 @@ func Sew(b *topo.Body, tolerance float64) (*topo.Body, error) {
 // sewWeld re-welds every face of b with boundary endpoints snapped to their
 // cluster centers, returning the rebuilt body and the weld (for residuals).
 func sewWeld(b *topo.Body, snap *boundaryClusters) (*topo.Body, *weld) {
-	w := newWeld(defaultStitchTolerance)
+	w := newWeld(ResolutionForBody(b).Plane()) // model-relative coincidence grid (#1399)
 	w.snap = snap.apply
 	for _, f := range b.Faces() {
 		w.addFace(f)
@@ -118,7 +118,7 @@ func clusterCentroids(pts []math.Point3, cluster []int) *boundaryClusters {
 		sums[r] = sums[r].Add(p.AsVector())
 		counts[r]++
 	}
-	bc := &boundaryClusters{grid: defaultStitchTolerance, centers: map[vKey]math.Point3{}}
+	bc := &boundaryClusters{grid: ResolutionForPoints(pts).Plane(), centers: map[vKey]math.Point3{}} // model-relative (#1399)
 	for i, p := range pts {
 		r := find(cluster, i)
 		c := sums[r].Scale(math.Scalar(1 / float64(counts[r]))).AsPoint()

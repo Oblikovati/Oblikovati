@@ -383,7 +383,7 @@ type loopWelder struct {
 func newLoopWelder() *loopWelder { return &loopWelder{index: map[[2]int64]int{}} }
 
 func (w *loopWelder) add(p math.Point2) int {
-	const grid = 1e-7
+	const grid = 1e-7 // tol:calibrated — 2D loop-welder coincidence grid (see brep arrange2d)
 	k := [2]int64{int64(stdmath.Round(p.X / grid)), int64(stdmath.Round(p.Y / grid))}
 	if i, ok := w.index[k]; ok {
 		return i

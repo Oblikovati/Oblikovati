@@ -13,9 +13,6 @@ import (
 	stdmath "math"
 )
 
-// defaultStitchTolerance is the coincidence grid used when a feature passes 0.
-const defaultStitchTolerance = 1e-7
-
 // Stitch welds independently-built surface bodies into one quilt by exact-coincidence
 // matching: vertices that quantize to the same tolerance grid cell become one, and
 // the boundary edges they share are merged so each is used by both faces. When every
@@ -29,7 +26,7 @@ func Stitch(bodies []*topo.Body, tolerance float64, maintainSurface bool, feat s
 	}
 	tol := tolerance
 	if tol <= 0 {
-		tol = defaultStitchTolerance
+		tol = ResolutionForBodies(bodies...).Plane() // model-relative default coincidence grid (#1399)
 	}
 	w := newWeld(tol)
 	for _, b := range bodies {

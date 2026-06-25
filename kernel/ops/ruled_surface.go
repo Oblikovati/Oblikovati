@@ -213,7 +213,8 @@ func spanSurface(sc spanCorners) (geom.Surface, error) {
 	n := sc.a.VectorTo(sc.b).Cross(sc.a.VectorTo(sc.d))
 	if l := float64(n.Length()); l > 0 {
 		dev := stdmath.Abs(float64(sc.a.VectorTo(sc.c).Dot(n))) / l
-		if dev < 1e-9 {
+		// Coplanarity is model-relative (#1399): scaled by the span corners' own extent.
+		if dev < ResolutionForPoints([]math.Point3{sc.a, sc.b, sc.c, sc.d}).Weld() {
 			return geom.NewPlane(sc.a, n)
 		}
 	}

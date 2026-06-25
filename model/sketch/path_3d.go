@@ -11,7 +11,7 @@ import "oblikovati.org/math"
 // small tolerance.
 
 // chainTol is the endpoint-coincidence tolerance for 3D chain detection (database units).
-const chainTol = 1e-7
+const chainTol = 1e-7 // tol:calibrated — sketch 3D endpoint-coincidence shared across chain/plane-fit checks; a model-relative thread is deferred
 
 // seg3D is a two-endpoint 3D segment (a line or arc) participating in a chain.
 type seg3D struct {

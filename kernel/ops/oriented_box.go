@@ -231,7 +231,7 @@ func lessPoint2(a, b math.Point2) bool {
 func dedupePoints2(pts []math.Point2) []math.Point2 {
 	out := pts[:0]
 	for i, p := range pts {
-		if i == 0 || float64(p.DistanceTo(out[len(out)-1])) > 1e-12 {
+		if i == 0 || float64(p.DistanceTo(out[len(out)-1])) > 1e-12 { // tol:numeric — float-noise-level consecutive-point dedup
 			out = append(out, p)
 		}
 	}
