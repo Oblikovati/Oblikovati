@@ -53,13 +53,14 @@ func JoinCylindricalBoss(target, tool *topo.Body) (*topo.Body, bool) {
 func bossSeatFace(faces []curvedFace, c0, c1 math.Point3, ua math.Vector3, radius float64) (near, far math.Point3, idx int, ok bool) {
 	for i, f := range faces {
 		pl, isPlane := f.surface.(geom.Plane)
-		if !isPlane || stdmath.Abs(float64(unit(pl.Normal()).Dot(ua))) < 1-1e-7 {
+		if !isPlane || stdmath.Abs(float64(unit(pl.Normal()).Dot(ua))) < 1-1e-7 { // tol:angular — face ⟂ axis cosine
 			continue // not a face perpendicular to the boss axis
 		}
 		nOut := faceOutwardNormal(f, pl)
+		flushTol := geom.ResolutionForSize(radius).Plane() // model-relative cap-flush margin (#1399)
 		for _, cap := range [2][2]math.Point3{{c0, c1}, {c1, c0}} {
 			n, fr := cap[0], cap[1]
-			if stdmath.Abs(pointPlaneDistance(n, pl)) > axialTouchTol {
+			if stdmath.Abs(pointPlaneDistance(n, pl)) > flushTol {
 				continue // this cap is not flush on the face plane
 			}
 			if float64(n.VectorTo(fr).Dot(nOut)) <= 0 {

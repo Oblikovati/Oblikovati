@@ -36,7 +36,7 @@ func CoaxialCylinderUnion(a, b *topo.Body) (*topo.Body, bool) {
 	axis := ca.AxisDir.AsVector()
 	loA, loB := axialOffset(baseA, baseA, axis), axialOffset(baseA, baseB, axis)
 	lo, hi := stdmath.Min(loA, loB), stdmath.Max(loA+hA, loB+hB)
-	if hi-lo > hA+hB+axialTouchTol {
+	if hi-lo > hA+hB+geom.ResolutionForSize(hA+hB).Plane() { // model-relative axial-gap test (#1399)
 		return nil, false // an axial gap between the two — not a single solid, leave it to MergeBodies
 	}
 	union, err := SolidCylinder(baseA.TranslateBy(axis.Scale(math.Scalar(lo))), axis, ca.Radius, hi-lo)
@@ -50,13 +50,14 @@ func CoaxialCylinderUnion(a, b *topo.Body) (*topo.Body, bool) {
 // base on the other's axis) and the same radius — the precondition for their side faces to be coincident.
 func coaxialEqualRadius(ca geom.Cylinder, baseA math.Point3, cb geom.Cylinder, baseB math.Point3) bool {
 	ua, ub := ca.AxisDir.AsVector(), cb.AxisDir.AsVector()
-	if stdmath.Abs(float64(ua.Dot(ub))) < 1-1e-7 {
+	if stdmath.Abs(float64(ua.Dot(ub))) < 1-1e-7 { // tol:angular — axes-parallel cosine
 		return false // axes not parallel
 	}
 	if !nearEqual(ca.Radius, cb.Radius) {
 		return false
 	}
-	return offAxisDistance(baseA, ua, baseB) <= axialTouchTol // baseB lies on a's axis line
+	// Off-axis coincidence is model-relative (#1399), scaled by the cylinder radius (matching nearEqual).
+	return offAxisDistance(baseA, ua, baseB) <= geom.ResolutionForSize(ca.Radius).Plane() // baseB on a's axis line
 }
 
 // offAxisDistance returns the perpendicular distance of point p from the line through origin along the unit
@@ -72,7 +73,3 @@ func offAxisDistance(origin math.Point3, ua math.Vector3, p math.Point3) float64
 func axialOffset(origin, p math.Point3, ua math.Vector3) float64 {
 	return float64(origin.VectorTo(p).Dot(ua))
 }
-
-// axialTouchTol is the coincidence tolerance for the off-axis distance and the abut/gap test. Two
-// cylinders closer than this along the axis are treated as touching (no gap), matching nearEqual's scale.
-const axialTouchTol = 1e-7

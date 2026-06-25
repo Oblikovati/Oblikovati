@@ -53,10 +53,11 @@ func ConeCylinderIntersect(a, b *topo.Body) (*topo.Body, bool) {
 // penetration), so the full-crossing assembler must defer.
 func loopsSpanCone(cone geom.Cone, vMin, vMax float64, loops []geom.Polyline) bool {
 	axis := cone.AxisDir.AsVector()
+	tol := geom.ResolutionForSize(vMax).Plane() // model-relative apex-distance band margin (#1399)
 	for _, lp := range loops {
 		for _, p := range lp.Vertices {
 			v := float64(cone.Apex.VectorTo(p).Dot(axis))
-			if v < vMin-1e-7 || v > vMax+1e-7 {
+			if v < vMin-tol || v > vMax+tol {
 				return false
 			}
 		}

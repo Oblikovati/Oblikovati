@@ -57,12 +57,13 @@ func steinmetzFrame(a, b *topo.Body) (o math.Point3, dirA, dirB math.Vector3, r 
 		return math.Point3{}, math.Vector3{}, math.Vector3{}, 0, false
 	}
 	dirA, dirB = ca.AxisDir.AsVector(), cb.AxisDir.AsVector()
-	if !math.IsNearZero(dirA.Dot(dirB), 1e-7) { // axes must be perpendicular
+	if !math.IsNearZero(dirA.Dot(dirB), 1e-7) { // tol:angular — perpendicular-axes dot of unit vectors
 		return math.Point3{}, math.Vector3{}, math.Vector3{}, 0, false
 	}
 	lineA, _ := geom.NewLine(ca.Origin, dirA)
 	lineB, _ := geom.NewLine(cb.Origin, dirB)
-	o, ok = geom.LineLineIntersection(lineA, lineB, 1e-6)
+	// Axis-intersection coincidence is model-relative (#1399), from the two operands' extent.
+	o, ok = geom.LineLineIntersection(lineA, lineB, geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())).Plane())
 	if !ok || !axisReachesR(ca, baseA, hA, o) || !axisReachesR(cb, baseB, hB, o) {
 		return math.Point3{}, math.Vector3{}, math.Vector3{}, 0, false
 	}
@@ -76,7 +77,8 @@ func axisReachesR(c geom.Cylinder, base math.Point3, height float64, o math.Poin
 	axis := c.AxisDir.AsVector()
 	vBase := float64(c.Origin.VectorTo(base).Dot(axis))
 	vO := float64(c.Origin.VectorTo(o).Dot(axis))
-	return vO-c.Radius >= vBase-1e-9 && vO+c.Radius <= vBase+height+1e-9
+	tol := geom.ResolutionForSize(height + 2*c.Radius).Weld() // model-relative axial-reach margin (#1399)
+	return vO-c.Radius >= vBase-tol && vO+c.Radius <= vBase+height+tol
 }
 
 // buildSteinmetz welds the four cylinder lobes of the bicylinder. The four elliptical arcs (two ellipses,
@@ -126,5 +128,6 @@ func steinmetzArcs(o math.Point3, dirA, dirB math.Vector3, r float64) (ePlusFron
 // nearEqual reports whether two lengths are equal to a small relative tolerance (the Steinmetz case needs
 // the two cylinder radii to match).
 func nearEqual(x, y float64) bool {
+	// tol:numeric — a relative equality test (scaled by max|x|,|y|), not a model-anchored length.
 	return stdmath.Abs(x-y) <= 1e-7*(1+stdmath.Max(stdmath.Abs(x), stdmath.Abs(y)))
 }
