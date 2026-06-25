@@ -28,5 +28,7 @@
   "cylinder ∩ box (oblique ellipse)": 141.3716694,
   "cylinder − box (oblique ellipse)": 141.3716694,
   "cylinder − box (clips rim annulus)": 245.4880608,
-  "cylinder ∩ box (clips rim tongue)": 37.25527803
+  "cylinder ∩ box (clips rim tongue)": 37.25527803,
+  "cone apex − box (oblique, apex dropped)": 81.51203176,
+  "cone apex ∩ box (oblique, apex kept)": 12.73574788
 }

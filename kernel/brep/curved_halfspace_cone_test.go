@@ -3,7 +3,6 @@
 package brep
 
 import (
-	"errors"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -72,12 +71,35 @@ func TestHalfSpaceCutFrustumReCut(t *testing.T) {
 	assertConeManifold(t, res, 3)
 }
 
-// TestHalfSpaceCutConeObliqueDefers: an oblique plane cuts an ellipse/hyperbola section that the analytic
-// imprint does not solve, so the cut defers and the caller keeps the CSG fallback.
-func TestHalfSpaceCutConeObliqueDefers(t *testing.T) {
+// TestHalfSpaceCutConeObliqueApexExact: an oblique plane cuts a FULL cone (apex at z=10) in a conic
+// section the (u,v) ruled split now builds exactly — the full-cone-to-apex case (Oblikovati#1375). The
+// plane drops the apex, so the kept part is a frustum-like band (the base cap, the cone band, and the
+// section lid), watertight, no CSG fallback.
+func TestHalfSpaceCutConeObliqueApexExact(t *testing.T) {
 	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
-	plane, _ := geom.NewPlane(math.P3(0, 0, 5), math.V3(1, 0, 1)) // tilted: not perpendicular to the axis
-	if _, err := HalfSpaceCut(cone, plane); !errors.Is(err, ErrUnsupportedHalfSpace) {
-		t.Errorf("oblique cone cut should defer, got err=%v", err)
+	plane, _ := geom.NewPlane(math.P3(0, 0, 4), math.V3(0.5, 0, 0.866)) // steep oblique → ellipse, apex dropped
+	res, err := HalfSpaceCut(cone, plane)
+	if err != nil {
+		t.Fatalf("oblique full-cone cut should now be exact, got %v", err)
+	}
+	assertWatertight(t, res)
+	if cones, _, _ := faceTypeCounts(t, res); cones != 1 {
+		t.Errorf("result has %d cone faces, want exactly 1 (the band stays analytic)", cones)
+	}
+}
+
+// TestHalfSpaceCutConeObliqueApexKept keeps the apex side of an oblique full-cone cut: the kept solid is
+// the cone TIP closing to its apex pole, a single-loop cone face capped by the elliptical lid — watertight,
+// one analytic cone face, no CSG (the apex-kept branch of the full-cone-to-apex split, Oblikovati#1375).
+func TestHalfSpaceCutConeObliqueApexKept(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 0, "cone")
+	plane, _ := geom.NewPlane(math.P3(0, 0, 4), math.V3(-0.5, 0, -0.866)) // keep the apex tip above the ellipse
+	res, err := HalfSpaceCut(cone, plane)
+	if err != nil {
+		t.Fatalf("apex-kept oblique cut should be exact, got %v", err)
+	}
+	assertWatertight(t, res)
+	if cones, _, _ := faceTypeCounts(t, res); cones != 1 {
+		t.Errorf("result has %d cone faces, want exactly 1 (the cone tip stays analytic)", cones)
 	}
 }

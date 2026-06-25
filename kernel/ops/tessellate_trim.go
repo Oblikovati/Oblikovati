@@ -53,10 +53,12 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // and a periodic developable side with one full-circle rim plus a notched rim (a band loft). It returns
 // (mesh, true) on the first that applies, or (nil, false) so the caller falls through to toUVLoops.
 func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	if m, isFan := coneApexFan(s, outer3D); isFan && len(holes3D) == 0 {
-		return m, true // a cone closing to its apex (a drill point): a fan from the apex to the rim. A
-		// holed face is never an apex cap — it is a band whose inner rim is the hole (e.g. a (u,v) cone
-		// split whose outer rim is a circle and inner rim an oblique-cut ellipse), handled below.
+	if len(holes3D) == 0 && faceIsConeApexCap(f, s) {
+		if m, isFan := coneApexFan(s, outer3D); isFan {
+			return m, true // a cone closing to its apex (a drill point or an oblique apex cap): a fan from
+			// the apex to the rim. A holed face is never an apex cap — it is a band whose inner rim is the
+			// hole; a stub (saddle-bounded) is rejected by faceIsConeApexCap, not fanned to a far-off apex.
+		}
 	}
 	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
 		return m, true // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
@@ -409,14 +411,6 @@ func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
 	if !ok || len(outer3D) < 3 {
 		return nil, false
 	}
-	vMin, vMax := stdmath.Inf(1), stdmath.Inf(-1)
-	for _, p := range outer3D {
-		_, v := cone.ParamAt(p)
-		vMin, vMax = stdmath.Min(vMin, v), stdmath.Max(vMax, v)
-	}
-	if vMax-vMin > trimBorderTol {
-		return nil, false // a frustum (two rim circles), not an apex cap
-	}
 	m := &Mesh{}
 	apex := m.addVertex(cone.Apex, cone.AxisDir.AsVector().Scale(-1)) // axial normal at the pole
 	rim := make([]int, len(outer3D))
@@ -432,6 +426,28 @@ func coneApexFan(s geom.Surface, outer3D []math.Point3) (*Mesh, bool) {
 		m.addTriangle(apex, b, c)
 	}
 	return m, true
+}
+
+// faceIsConeApexCap reports whether a cone face is a SEAM-FREE apex cap — a single loop that is one closed
+// conic rim (a circle or an oblique-cut ellipse) encircling the axis, so an apex fan tiles it cleanly. This
+// is the brep drill point and the oblique apex cut (Oblikovati#1375). A SEAMED apex face (an imported cone
+// whose loop carries seam rulings down to the apex) is excluded: its boundary already spans the apex, so it
+// is meshed by the seamed closed-domain mesher, not the fan. A frustum band or a crossing-cone stub
+// (bounded by saddle curves) also fails the single-closed-conic test and is not fanned to a far-off apex.
+func faceIsConeApexCap(f *topo.Face, s geom.Surface) bool {
+	if _, ok := s.(geom.Cone); !ok || len(f.Loops()) != 1 {
+		return false
+	}
+	uses := f.Loops()[0].EdgeUses()
+	if len(uses) != 1 {
+		return false
+	}
+	e := uses[0].Edge()
+	switch e.Geometry().(type) {
+	case geom.Circle, geom.EllipseFull, geom.EllipticalArc:
+		return e.StartVertex() == e.EndVertex() // a single closed conic rim around the axis
+	}
+	return false
 }
 
 // bracketPeriod normalises a periodic direction's samples to span a CLOSED [0, 2π]: a seam sample whose
