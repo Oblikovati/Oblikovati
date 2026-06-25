@@ -75,9 +75,10 @@ func bandRingsAndSeam(f *topo.Face, q Quality) (rings [][]math.Point3, seamN int
 	return rings, seamN, seamMid, ok
 }
 
-// dropClosingDup removes the trailing point a closed-edge tessellation repeats at its seam.
+// dropClosingDup removes the trailing point a closed-edge tessellation repeats at its seam. The
+// duplicate threshold is model-relative (ADR-0042, #1399), scaling with the ring's extent.
 func dropClosingDup(pts []math.Point3) []math.Point3 {
-	if len(pts) > 1 && pts[0].DistanceTo(pts[len(pts)-1]) < weldPointTol {
+	if len(pts) > 1 && pts[0].DistanceTo(pts[len(pts)-1]) < ResolutionForPoints(pts).Weld() {
 		return pts[:len(pts)-1]
 	}
 	return pts

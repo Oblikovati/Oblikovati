@@ -160,13 +160,15 @@ func seamEdgesOf(f *topo.Face) map[*topo.Edge]bool {
 }
 
 // dedupRingPoints drops points coincident with an earlier one (the pinch points where two saddle-rim arcs
-// meet appear in both arcs).
+// meet appear in both arcs). The coincidence tolerance is model-relative (ADR-0042, #1399): derived from
+// the ring's own extent so a km-scale band still welds its pinch points instead of cracking.
 func dedupRingPoints(pts []math.Point3) []math.Point3 {
+	weld := ResolutionForPoints(pts).Weld()
 	var out []math.Point3
 	for _, p := range pts {
 		dup := false
 		for _, q := range out {
-			if p.DistanceTo(q) < weldPointTol {
+			if p.DistanceTo(q) < weld {
 				dup = true
 				break
 			}

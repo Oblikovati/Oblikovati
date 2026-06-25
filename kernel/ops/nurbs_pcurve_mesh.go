@@ -155,8 +155,8 @@ func concatLoopPcurve(s geom.Surface, l *topo.Loop, q Quality) (uv []math.Point2
 		uv = append(uv, pc...)
 		p3 = append(p3, pts...)
 	}
-	if n := len(p3); n > 1 && p3[0].DistanceTo(p3[n-1]) < weldPointTol {
-		uv, p3 = uv[:n-1], p3[:n-1]
+	if n := len(p3); n > 1 && p3[0].DistanceTo(p3[n-1]) < ResolutionForPoints(p3).Weld() {
+		uv, p3 = uv[:n-1], p3[:n-1] // model-relative loop closure (ADR-0042, #1399)
 	}
 	// Per-edge projection re-seeds a fresh GLOBAL closest point at each edge's start; on a self-proximal
 	// NURBS (the EDF bell-mouth lip) that start can snap to the wrong sheet, so the concatenated (u,v)
