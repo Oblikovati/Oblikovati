@@ -129,7 +129,25 @@ func curvedExactCases() []curvedExactCase {
 		{"cone − box (oblique vertex-inside)", ops.Cut, coneObliqueVertexInsideBox},
 		{"cone − box (clips rim annulus)", ops.Cut, coneClipsRimBox},
 		{"cone ∩ box (clips rim tongue)", ops.Intersect, coneClipsRimBox},
+		{"cylinder ∩ box (oblique ellipse)", ops.Intersect, cylinderObliqueEllipseBox},
+		{"cylinder − box (oblique ellipse)", ops.Cut, cylinderObliqueEllipseBox},
+		{"cylinder − box (clips rim annulus)", ops.Cut, cylinderClipsRimBox},
+		{"cylinder ∩ box (clips rim tongue)", ops.Intersect, cylinderClipsRimBox},
 	}
+}
+
+// cylinderObliqueEllipseBox is a tilted cylinder (axis (0,0.6,0.8)) cut by the axis-aligned box face z=4 —
+// tilted relative to the cylinder axis, so the section is an oblique ELLIPSE wholly within the band (the
+// case the old line-only cylinder split deferred to CSG, now built by the unified (u,v) split, #1375).
+func cylinderObliqueEllipseBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 3, 10), demoBlock(t, math.P3(-20, -20, 4), math.P3(20, 20, 30))
+}
+
+// cylinderClipsRimBox is the same tilted cylinder cut by the box face z=7, which slices THROUGH the tilted
+// top rim (its z-range is [6.2, 9.8]): the Cut keeps the clips-rim ANNULUS (ellipse arc + surviving rim
+// arc), the ∩ keeps the non-wrapping TONGUE above it — both built by the unified (u,v) split (#1375).
+func cylinderClipsRimBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 3, 10), demoBlock(t, math.P3(-30, -30, 7), math.P3(30, 30, 40))
 }
 
 // coneClipsRimBox is the oblique-ellipse frustum (axis (0,0.6,0.8)) cut by a box whose face z=6 slices
