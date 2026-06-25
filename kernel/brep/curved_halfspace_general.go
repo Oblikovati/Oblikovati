@@ -66,6 +66,16 @@ func faceWhollyOneSide(f curvedFace, plane geom.Plane, n math.Vector3) bool {
 			}
 		}
 	}
+	// A full cone closes to its apex pole, which lies on no boundary edge — sample it too, else a cut that
+	// separates the apex from the rim is missed (the rim alone reads as wholly one side, #1375).
+	if cone, _, ok := fullConeApexSideBand(f); ok {
+		switch d := signedDistance(cone.Apex, plane, n); {
+		case d > cylinderAxisTol:
+			pos = true
+		case d < -cylinderAxisTol:
+			neg = true
+		}
+	}
 	return !neg || !pos // wholly on one side (or grazing): no genuine crossing
 }
 
@@ -91,6 +101,9 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedF
 	}
 	if cone, band, ok := fullConeSideBand(f); ok {
 		return coneSideBandSplit(f, curves, cone, band, plane, n)
+	}
+	if cone, band, ok := fullConeApexSideBand(f); ok {
+		return coneApexSideSplit(f, cone, curves[0], band, plane, n)
 	}
 	return loopedSplit(f, curves, plane, n)
 }

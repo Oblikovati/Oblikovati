@@ -133,7 +133,17 @@ func curvedExactCases() []curvedExactCase {
 		{"cylinder − box (oblique ellipse)", ops.Cut, cylinderObliqueEllipseBox},
 		{"cylinder − box (clips rim annulus)", ops.Cut, cylinderClipsRimBox},
 		{"cylinder ∩ box (clips rim tongue)", ops.Intersect, cylinderClipsRimBox},
+		{"cone apex − box (oblique, apex dropped)", ops.Cut, coneApexObliqueBox},
+		{"cone apex ∩ box (oblique, apex kept)", ops.Intersect, coneApexObliqueBox},
 	}
+}
+
+// coneApexObliqueBox is a FULL cone (apex at the top, base radius 3) tilted (axis (0,0.6,0.8)) cut by the
+// box face z=4. The section is an oblique ELLIPSE wholly between the base rim and the apex: the Cut keeps
+// the base side (apex DROPPED → a frustum-like band) and the ∩ keeps the tip (apex KEPT → a one-loop cone
+// closing to its apex pole, capped by the elliptical cut). The full-cone-to-apex case (Oblikovati#1375).
+func coneApexObliqueBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCone(t, math.P3(0, 0, 0), math.P3(0, 6, 8), 3, 0), demoBlock(t, math.P3(-20, -20, 4), math.P3(20, 20, 30))
 }
 
 // cylinderObliqueEllipseBox is a tilted cylinder (axis (0,0.6,0.8)) cut by the axis-aligned box face z=4 —

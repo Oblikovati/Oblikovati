@@ -129,6 +129,40 @@ func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneS
 	return newConeUV(cone, band, plane, n).splitSide(f, cone, conic)
 }
 
+// coneApexSideSplit splits a FULL cone side (apex + one rim) by the (u,v) arrangement. The apex is the
+// v=0 pole; because a cone has q=0, the apex's signed distance is the constant p, so it is kept exactly
+// when p<0. Apex DROPPED → the kept region is a frustum-like band (section + rim) the standard splitSide
+// builds (it never references the degenerate apex rim). Apex KEPT → the kept face closes to the apex as a
+// single loop (the cut ellipse, or the notched rim), the apex an interior pole (apexCapSide).
+func coneApexSideSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
+	uv := newConeUV(cone, band, plane, n)
+	if !uv.apexKept() {
+		return uv.splitSide(f, cone, conic) // apex on the dropped side: a frustum-like band, no apex pole
+	}
+	return uv.apexCapSide(f, cone, conic)
+}
+
+// apexKept reports whether the cone apex (the v=0 pole) is on the kept (negative) side. A cone has q=0, so
+// a(0)=p is constant in u and the apex's signed distance g(0)=p; the apex is kept exactly when p<0.
+func (c ruledUV) apexKept() bool { return c.p < 0 }
+
+// apexCapSide builds the kept face when the apex is KEPT: the cone closes to its apex pole capped by the
+// cut, so the face is a SINGLE loop — the hi boundary (the full cut ellipse, or the rim notched by the
+// section) — with the apex an interior pole and no lower loop. The hi boundary is oriented like splitSide's
+// upper loop (reversed when it carries a rim shared with the base cap); the section caps the lid.
+func (c ruledUV) apexCapSide(f curvedFace, surface geom.Surface, conic geom.Curve3) ([]curvedFace, []loopEdge, error) {
+	hiEdges, hiSec, ok := c.boundaryLoop(conic, true)
+	if !ok {
+		return nil, nil, ErrUnsupportedHalfSpace
+	}
+	hiLoop, lidSec := hiEdges, reverseEdgeChain(hiSec)
+	if loopHasRim(hiEdges) && c.band.topRimReversed {
+		hiLoop, lidSec = reverseEdgeChain(hiEdges), hiSec
+	}
+	kept := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: []curvedLoop{{edges: hiLoop}}}
+	return []curvedFace{kept}, lidSec, nil
+}
+
 // cylinderSideUVSplit splits a full periodic cylinder side by the (u,v) arrangement (newCylinderUV +
 // splitSide). It handles both the axis-parallel flat (b≡0 → a vertical-edged span) and an oblique ellipse
 // cut (within-band / clips-rim / tongue), the latter the case the line-only cylinder split deferred to CSG.
@@ -151,12 +185,13 @@ func (c ruledUV) splitSide(f curvedFace, surface geom.Surface, conic geom.Curve3
 	if !ok1 || !ok2 {
 		return nil, nil, ErrUnsupportedHalfSpace
 	}
-	// A ruled side's two rims run oppositely (lower CCW, upper CW) so the side stays consistent with both
-	// caps. The lo boundary is built CCW (forward); the UPPER boundary is reversed to CW whenever it carries
-	// a rim shared with a kept cap, so that rim welds to the cap with opposite sense. The lid then uses each
-	// section sub-arc OPPOSITE to the band's (final) use of it, so the shared section edge is consistent too.
+	// A ruled side's two rims run oppositely so the side stays consistent with both caps. The lo boundary is
+	// built CCW (forward); the UPPER boundary is reversed whenever it carries a rim that the source face
+	// traversed reversed (band.topRimReversed) — so the rebuilt rim keeps the sense opposite its kept cap.
+	// A frustum/cylinder traverses the top rim reversed; an apex-at-top full cone traverses its rim forward,
+	// so this is NOT a fixed flip. The lid uses each section sub-arc OPPOSITE to the band's final use of it.
 	hiLoop, lidHiSec := hiEdges, reverseEdgeChain(hiSec)
-	if loopHasRim(hiEdges) {
+	if loopHasRim(hiEdges) && c.band.topRimReversed {
 		hiLoop, lidHiSec = reverseEdgeChain(hiEdges), hiSec
 	}
 	kept := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage,

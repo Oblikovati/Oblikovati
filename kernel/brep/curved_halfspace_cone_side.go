@@ -23,12 +23,16 @@ import (
 
 // coneSideBand carries a frustum side's two cross-section circles (centres on the axis, ordered
 // low→high in apex distance), the source rim circles themselves (so a kept face can reuse a rim edge
-// and weld with its cap), and their radii.
+// and weld with its cap), and their radii. topRimReversed records how the SOURCE side face traverses the
+// top (vMax) rim — opposite to the cap that shares it; the kept band reuses that sense so its rim stays
+// opposite that cap. A frustum/cylinder side (apex below, axis "up") traverses the top rim REVERSED; an
+// apex-at-top full cone (axis "down") traverses its sole rim FORWARD, so this is not a fixed convention.
 type coneSideBand_ struct {
 	bottom, top         math.Point3
 	bottomCirc, topCirc geom.Circle
 	vMin, vMax          float64
 	rBot, rTop          float64
+	topRimReversed      bool
 }
 
 // coneSideBand recovers the frustum side's two full-circle rims, ordered by apex distance. ok=false
@@ -38,9 +42,10 @@ func coneSideBand(f curvedFace, cone geom.Cone) (coneSideBand_, bool) {
 	axis := cone.AxisDir.AsVector()
 	tanA := stdmath.Tan(cone.HalfAngle)
 	var circles []geom.Circle
+	var revs []bool
 	for _, le := range f.loops[0].edges {
 		if c, isCircle := le.curve.(geom.Circle); isCircle && isFullDomain(le.t0, le.t1) {
-			circles = append(circles, c)
+			circles, revs = append(circles, c), append(revs, le.t1 < le.t0)
 		}
 	}
 	if len(circles) != 2 {
@@ -48,6 +53,7 @@ func coneSideBand(f curvedFace, cone geom.Cone) (coneSideBand_, bool) {
 	}
 	if float64(cone.Apex.VectorTo(circles[0].Center).Dot(axis)) > float64(cone.Apex.VectorTo(circles[1].Center).Dot(axis)) {
 		circles[0], circles[1] = circles[1], circles[0]
+		revs[0], revs[1] = revs[1], revs[0]
 	}
 	vMin := float64(cone.Apex.VectorTo(circles[0].Center).Dot(axis))
 	vMax := float64(cone.Apex.VectorTo(circles[1].Center).Dot(axis))
@@ -55,6 +61,7 @@ func coneSideBand(f curvedFace, cone geom.Cone) (coneSideBand_, bool) {
 		bottom: circles[0].Center, top: circles[1].Center,
 		bottomCirc: circles[0], topCirc: circles[1],
 		vMin: vMin, vMax: vMax, rBot: vMin * tanA, rTop: vMax * tanA,
+		topRimReversed: revs[1],
 	}, true
 }
 
@@ -67,6 +74,44 @@ func coneSideBandSplit(f curvedFace, curves []geom.Curve3, cone geom.Cone, band 
 		return nil, nil, ErrUnsupportedHalfSpace
 	}
 	return coneSideUVSplit(f, cone, curves[0], band, plane, n)
+}
+
+// fullConeApexSideBand reports whether f is a FULL cone side closing to its APEX — a geom.Cone whose
+// single boundary loop is exactly one full rim circle, the apex its v=0 pole (no second rim). It returns
+// the cone and a band whose bottom "rim" is the degenerate apex (vMin=0, rBot=0, a zero-radius circle) and
+// whose top rim is the circle, so the (u,v) split treats the apex as the v=0 pole. A frustum (two circles)
+// or an already-trimmed band (a circle plus section arcs) fails the one-edge test and is handled elsewhere.
+func fullConeApexSideBand(f curvedFace) (geom.Cone, coneSideBand_, bool) {
+	cone, ok := f.surface.(geom.Cone)
+	if !ok || len(f.loops) != 1 {
+		return geom.Cone{}, coneSideBand_{}, false
+	}
+	var circle geom.Circle
+	circles, rimReversed, touchesApex := 0, false, false
+	for _, le := range f.loops[0].edges {
+		if c, isCircle := le.curve.(geom.Circle); isCircle && isFullDomain(le.t0, le.t1) {
+			circle, circles, rimReversed = c, circles+1, le.t1 < le.t0
+		}
+		if samePoint(le.start(), cone.Apex) || samePoint(le.end(), cone.Apex) {
+			touchesApex = true // a seam ruling ends at the apex pole
+		}
+	}
+	if circles != 1 || !touchesApex { // a frustum has two circles; a trimmed band reaches no apex vertex
+		return geom.Cone{}, coneSideBand_{}, false
+	}
+	axis := cone.AxisDir.AsVector()
+	vRim := float64(cone.Apex.VectorTo(circle.Center).Dot(axis))
+	apexCirc, err := geom.NewCircle(cone.Apex, axis, 0) // the degenerate zero-radius rim at the apex pole
+	if err != nil {
+		return geom.Cone{}, coneSideBand_{}, false
+	}
+	band := coneSideBand_{
+		bottom: cone.Apex, top: circle.Center,
+		bottomCirc: apexCirc, topCirc: circle,
+		vMin: 0, vMax: vRim, rBot: 0, rTop: vRim * stdmath.Tan(cone.HalfAngle),
+		topRimReversed: rimReversed,
+	}
+	return cone, band, true
 }
 
 // conicArm builds the loop edge along an open conic section (a hyperbola branch or a parabola) from

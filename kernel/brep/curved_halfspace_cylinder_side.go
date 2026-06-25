@@ -27,9 +27,10 @@ func fullCylinderSideBand(f curvedFace) (geom.Cylinder, coneSideBand_, bool) {
 		return geom.Cylinder{}, coneSideBand_{}, false
 	}
 	var circles []geom.Circle
+	var revs []bool
 	for _, le := range f.loops[0].edges {
 		if c, isCircle := le.curve.(geom.Circle); isCircle && isFullDomain(le.t0, le.t1) {
-			circles = append(circles, c)
+			circles, revs = append(circles, c), append(revs, le.t1 < le.t0)
 		}
 	}
 	if len(circles) != 2 {
@@ -38,12 +39,14 @@ func fullCylinderSideBand(f curvedFace) (geom.Cylinder, coneSideBand_, bool) {
 	axis := cyl.AxisDir.AsVector()
 	if float64(circles[0].Center.VectorTo(circles[1].Center).Dot(axis)) < 0 {
 		circles[0], circles[1] = circles[1], circles[0] // order low→high along the axis
+		revs[0], revs[1] = revs[1], revs[0]
 	}
 	height := float64(circles[0].Center.VectorTo(circles[1].Center).Dot(axis))
 	band := coneSideBand_{
 		bottom: circles[0].Center, top: circles[1].Center,
 		bottomCirc: circles[0], topCirc: circles[1],
 		vMin: 0, vMax: height, rBot: cyl.Radius, rTop: cyl.Radius,
+		topRimReversed: revs[1],
 	}
 	return cyl, band, true
 }
