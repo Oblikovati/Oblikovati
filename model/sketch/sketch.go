@@ -310,6 +310,11 @@ func (s *Sketch) SetParameters(ps *param.Parameters) {
 // dimensions are excluded (they report, they do not constrain).
 func (s *Sketch) Constraints() []Constraint {
 	out := s.geomCons.All()
+	// Every arc carries an internal circularity constraint keeping its End on the circle
+	// (#1419); the solver consumes it like any other, but it is not a user-facing relation.
+	for _, a := range s.arcs.items {
+		out = append(out, a.circularity)
+	}
 	for _, d := range s.dimCons.items {
 		if !d.driven {
 			out = append(out, d)

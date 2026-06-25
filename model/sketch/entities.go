@@ -96,14 +96,16 @@ type Circle struct {
 }
 
 // Arc is a circular arc defined by a center and two endpoints; the radius is
-// derived from the center-to-start distance (a tangency/radius constraint keeps the
-// end at the same radius). Sweep direction is CounterClockwise.
+// derived from the center-to-start distance. An internal circularity constraint
+// (#1419) keeps End on the same circle as Start, so the arc stays circular under
+// radius/tangent edits. Sweep direction is CounterClockwise.
 type Arc struct {
 	entityBase
 	Center           *Point
 	Start            *Point
 	End              *Point
 	CounterClockwise bool
+	circularity      *arcCircularityConstraint // system-owned; keeps End at the arc radius
 }
 
 // Radius returns the current center-to-start distance.
