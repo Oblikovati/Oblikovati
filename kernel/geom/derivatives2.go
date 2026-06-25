@@ -37,15 +37,19 @@ func circularDers2(major, minor math.Vector2, a, b, angle, rate float64) (d1, d2
 	return d1, d2, d3
 }
 
-// numericDers2 estimates the derivatives by central differences.
+// numericDers2 estimates the derivatives by central differences — the 2D twin of
+// numericDers3. Each order uses its OWN optimal step (stepD1/2/3 = ε^{1/(n+2)}) so
+// the higher-order stencils are not swamped by roundoff; a single fixed 1e-5 step
+// drove the 3rd-derivative denominator to ~2e-15 and amplified value roundoff into
+// 5–50% error (#1323, #1402).
 func numericDers2(c Curve2, t float64) (d1, d2, d3 math.Vector2) {
-	const h = 1e-5
-	p2m, pm := c.PointAt(t-2*h).AsVector(), c.PointAt(t-h).AsVector()
-	p0 := c.PointAt(t).AsVector()
-	pp, p2p := c.PointAt(t+h).AsVector(), c.PointAt(t+2*h).AsVector()
-	d1 = pp.Sub(pm).Scale(1 / (2 * h))
-	d2 = pp.Add(pm).Sub(p0.Scale(2)).Scale(1 / (h * h))
-	d3 = p2p.Sub(pp.Scale(2)).Add(pm.Scale(2)).Sub(p2m).Scale(1 / (2 * h * h * h))
+	h1, h2, h3 := stepD1, stepD2, stepD3
+	d1 = c.PointAt(t + h1).AsVector().Sub(c.PointAt(t - h1).AsVector()).Scale(1 / (2 * h1))
+	pm, p0, pp := c.PointAt(t-h2).AsVector(), c.PointAt(t).AsVector(), c.PointAt(t+h2).AsVector()
+	d2 = pp.Add(pm).Sub(p0.Scale(2)).Scale(1 / (h2 * h2))
+	q2m, qm := c.PointAt(t-2*h3).AsVector(), c.PointAt(t-h3).AsVector()
+	qp, q2p := c.PointAt(t+h3).AsVector(), c.PointAt(t+2*h3).AsVector()
+	d3 = q2p.Sub(qp.Scale(2)).Add(qm.Scale(2)).Sub(q2m).Scale(1 / (2 * h3 * h3 * h3))
 	return d1, d2, d3
 }
 

@@ -85,15 +85,20 @@ func ellipticalConeSecondPartials(g EllipticalCone, u, v float64) (puu, puv, pvv
 	return puu, puv, math.Vector3{}
 }
 
-// numericSecondPartials estimates the second partials by central differences —
-// the fallback for unknown [Surface] implementations.
+// numericSecondPartials estimates the second partials by central-differencing the
+// first partials — the fallback for unknown [Surface] implementations (e.g. the
+// offset and threaded surfaces). Each direction uses the first-difference-optimal
+// step stepD1 = ε^{1/3} scaled by its OWN domain span, so the truncation/roundoff
+// balance holds whether the direction runs over [0,1] or [0,2π] and at any model
+// scale, rather than a fixed 1e-5 that was both non-optimal and scale-blind (#1402).
 func numericSecondPartials(s Surface, u, v float64) (puu, puv, pvv math.Vector3) {
-	const h = 1e-5
+	hu := stepD1 * spanOr1(s.UDomain())
+	hv := stepD1 * spanOr1(s.VDomain())
 	pu := func(uu, vv float64) math.Vector3 { du, _ := s.DerivativesAt(uu, vv); return du }
 	pv := func(uu, vv float64) math.Vector3 { _, dv := s.DerivativesAt(uu, vv); return dv }
-	puu = pu(u+h, v).Sub(pu(u-h, v)).Scale(1 / (2 * h))
-	puv = pu(u, v+h).Sub(pu(u, v-h)).Scale(1 / (2 * h))
-	pvv = pv(u, v+h).Sub(pv(u, v-h)).Scale(1 / (2 * h))
+	puu = pu(u+hu, v).Sub(pu(u-hu, v)).Scale(1 / (2 * hu))
+	puv = pu(u, v+hv).Sub(pu(u, v-hv)).Scale(1 / (2 * hv))
+	pvv = pv(u, v+hv).Sub(pv(u, v-hv)).Scale(1 / (2 * hv))
 	return puu, puv, pvv
 }
 
@@ -145,10 +150,10 @@ func SurfaceCurvatures(s Surface, u, v float64) (maxDir math.Vector3, kMax, kMin
 	puu, puv, pvv := SurfaceSecondPartials(s, u, v)
 	e, f, g := float64(du.Dot(du)), float64(du.Dot(dv)), float64(dv.Dot(dv))
 	l, m, nn := float64(puu.Dot(n)), float64(puv.Dot(n)), float64(pvv.Dot(n))
-	den := e*g - f*f
-	if den <= 0 {
-		return math.Vector3{}, 0, 0 // degenerate tangent frame
+	if degenerateFirstForm(e, f, g) {
+		return math.Vector3{}, 0, 0 // parallel/collapsed tangents (scale-invariant test, #1402)
 	}
+	den := e*g - f*f
 	mean := (e*nn - 2*f*m + g*l) / (2 * den)
 	gauss := (l*nn - m*m) / den
 	disc := stdmath.Sqrt(stdmath.Max(0, mean*mean-gauss))
