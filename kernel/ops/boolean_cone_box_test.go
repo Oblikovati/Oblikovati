@@ -280,6 +280,66 @@ func resultHasHyperbolicEdge(b *topo.Body) bool {
 	return false
 }
 
+// Parabolic boundary-tilt cone ∩/− box (Oblikovati/Oblikovati#1375): a frustum whose axis is tilted by
+// its own half-angle has one vertical generator, so the box's x=2 face is PARALLEL to it — the section is
+// a parabola (the limit between the elliptic and hyperbolic tilts). Both directions must stay exact (an
+// analytic cone face, the parabolic cut edge) and match OCC getMass.
+
+func parabolaFrustum(t *testing.T) *topo.Body {
+	t.Helper()
+	a := stdmath.Atan(0.3)
+	top := math.P3(math.Scalar(stdmath.Sin(a)*10), 0, math.Scalar(stdmath.Cos(a)*10)) // axis tilted by α
+	b, err := brep.SolidCylinderCone(math.P3(0, 0, 0), top, 3, 6, "frustum")
+	if err != nil {
+		t.Fatalf("SolidCylinderCone: %v", err)
+	}
+	return b
+}
+
+func parabolaBox(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidBlock(math.P3(2, -20, -20), math.P3(40, 20, 40), "box") // only the x=2 face cuts
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return b
+}
+
+// TestConeIntersectBoxParabolaExact keeps the +x wedge of the tilted frustum — an exact cone arc-band
+// bounded by the parabola arms.
+func TestConeIntersectBoxParabolaExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Intersect, parabolaFrustum(t), parabolaBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Intersect): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasParabolicEdge(res) {
+		t.Error("result carries no parabolic edge — the boundary-tilt cut was not imprinted as a parabola")
+	}
+}
+
+// TestConeCutBoxParabolaExact removes the +x wedge — also exact.
+func TestConeCutBoxParabolaExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Cut, parabolaFrustum(t), parabolaBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Cut): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasParabolicEdge(res) {
+		t.Error("result carries no parabolic edge — the boundary-tilt cut was not imprinted as a parabola")
+	}
+}
+
+// resultHasParabolicEdge reports whether any edge of the body stores an analytic parabolic arc.
+func resultHasParabolicEdge(b *topo.Body) bool {
+	for _, e := range b.Edges() {
+		if _, ok := e.Geometry().(geom.ParabolicArc); ok {
+			return true
+		}
+	}
+	return false
+}
+
 // frustumCapBeyondPlaneVolume integrates the area of each circular cross-section lying at x ≥ xCut for
 // a cone of slope tanα over z∈[z0,z1] (apex at z=z0−r0/tanα). A circle of radius r centred on the axis
 // has area r²·(θ − sinθ·cosθ) beyond a chord at distance xCut, θ = arccos(xCut/r) (0 when xCut ≥ r).

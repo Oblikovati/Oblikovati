@@ -18,5 +18,7 @@
   "cone ∩ box (oblique ellipse)": 410.117045,
   "cone − box (oblique ellipse)": 249.6174126,
   "cone ∩ box (oblique hyperbola)": 250.308012,
-  "cone − box (oblique hyperbola)": 409.4264453
+  "cone − box (oblique hyperbola)": 409.4264453,
+  "cone ∩ box (parabola)": 293.5440727,
+  "cone − box (parabola)": 366.1903846
 }

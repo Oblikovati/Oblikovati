@@ -112,8 +112,8 @@ func coneArcBand(f curvedFace, cone geom.Cone, hyper geom.Hyperbola, band coneSi
 	if err != nil {
 		return nil, nil, ErrUnsupportedHalfSpace
 	}
-	armA := hyperbolaArm(hyper, bottomArc.PointAt(1), topArc.PointAt(0)) // −φ side, bottom→top
-	armB := hyperbolaArm(hyper, topArc.PointAt(1), bottomArc.PointAt(0)) // +φ side, top→bottom
+	armA := conicArm(hyper, bottomArc.PointAt(1), topArc.PointAt(0)) // −φ side, bottom→top
+	armB := conicArm(hyper, topArc.PointAt(1), bottomArc.PointAt(0)) // +φ side, top→bottom
 	loop := []loopEdge{{curve: bottomArc, t0: 0, t1: 1}, armA, {curve: topArc, t0: 0, t1: 1}, armB}
 	kept := curvedFace{surface: cone, reversed: f.reversed, lineage: f.lineage, loops: []curvedLoop{{edges: loop}}}
 	section := []loopEdge{reverseEdge(armA), reverseEdge(armB)}
@@ -141,9 +141,9 @@ func coneSideVertexInside(f curvedFace, cone geom.Cone, hyper geom.Hyperbola, ba
 	if err != nil {
 		return nil, nil, ErrUnsupportedHalfSpace
 	}
-	vertex := hyper.PointAt(0)                                // the branch vertex sits on the cone at apex distance |d|/tanα
-	armDown := hyperbolaArm(hyper, topArc.PointAt(1), vertex) // top rim → vertex
-	armUp := hyperbolaArm(hyper, vertex, topArc.PointAt(0))   // vertex → top rim
+	vertex := hyper.PointAt(0)                            // the branch vertex sits on the cone at apex distance |d|/tanα
+	armDown := conicArm(hyper, topArc.PointAt(1), vertex) // top rim → vertex
+	armUp := conicArm(hyper, vertex, topArc.PointAt(0))   // vertex → top rim
 	notched := []loopEdge{{curve: topArc, t0: 0, t1: 1}, armDown, armUp}
 	section := []loopEdge{reverseEdge(armDown), reverseEdge(armUp)}
 	return coneVertexInsideFaces(f, cone, band, d, notched), section, nil
@@ -160,12 +160,13 @@ func coneVertexInsideFaces(f curvedFace, cone geom.Cone, band coneSideBand_, d f
 	return []curvedFace{{surface: cone, reversed: f.reversed, lineage: f.lineage, loops: loops}}
 }
 
-// hyperbolaArm builds the loop edge along the hyperbola branch from start to end, its parameters the
-// θ values the branch inverse gives at the two rim feet (a hyperbola loop edge's t0/t1 are θ).
-func hyperbolaArm(hyper geom.Hyperbola, start, end math.Point3) loopEdge {
-	t0, _ := geom.CurveParamAtPoint3(hyper, start)
-	t1, _ := geom.CurveParamAtPoint3(hyper, end)
-	return loopEdge{curve: hyper, t0: t0, t1: t1}
+// conicArm builds the loop edge along an open conic section (a hyperbola branch or a parabola) from
+// start to end, its parameters the conic's own parameter values at the two rim feet (the loop edge's
+// t0/t1 are the curve parameter — θ for a hyperbola, the cross coordinate t for a parabola).
+func conicArm(conic geom.Curve3, start, end math.Point3) loopEdge {
+	t0, _ := geom.CurveParamAtPoint3(conic, start)
+	t1, _ := geom.CurveParamAtPoint3(conic, end)
+	return loopEdge{curve: conic, t0: t0, t1: t1}
 }
 
 // coneAngleOf returns the angle of a direction (here the cut-plane normal, which lies in the cone's
@@ -194,24 +195,36 @@ func fullConeSideBand(f curvedFace) (geom.Cone, coneSideBand_, bool) {
 	return cone, band, true
 }
 
-// coneSideBandSplit routes a genuine full cone side by the section type the cut plane produces: a
-// closed ellipse (oblique tilt steeper than the generators) to coneSideEllipseSplit, a hyperbola
-// branch (axis-parallel or shallow tilt) to coneSideSplit. A perpendicular circle is handled by the
-// fast cone path before the arrangement, so anything else here defers.
+// coneSideBandSplit routes a genuine full cone side by the section type the cut plane produces: a closed
+// ellipse (oblique tilt steeper than the generators) to coneSideEllipseSplit; an AXIS-PARALLEL hyperbola
+// to the constant-chord coneSideSplit (#1372/#1374); an OBLIQUE open conic — a tilted hyperbola or a
+// parabola (the boundary tilt) — to the root-finding coneSideObliqueConicSplit. A perpendicular circle
+// is handled by the fast cone path before the arrangement, so anything else defers.
 func coneSideBandSplit(f curvedFace, curves []geom.Curve3, cone geom.Cone, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	if allEllipses(curves) {
 		return coneSideEllipseSplit(f, curves, cone, plane, n)
 	}
-	if !allHyperbolas(curves) {
-		return nil, nil, ErrUnsupportedHalfSpace
-	}
-	if isAxisParallel(n, cone) {
+	if allHyperbolas(curves) && isAxisParallel(n, cone) {
 		return coneSideSplit(f, curves, plane, n) // the symmetric constant-chord hyperbola (#1372/#1374)
 	}
-	if hyper, ok := curves[0].(geom.Hyperbola); ok && len(curves) == 1 {
-		return coneSideObliqueHyperbolaSplit(f, cone, hyper, band, plane, n) // an oblique (tilted) hyperbola
+	if conic, ok := obliqueConicArm(curves); ok {
+		return coneSideObliqueConicSplit(f, cone, conic, band, plane, n) // an oblique hyperbola or parabola
 	}
 	return nil, nil, ErrUnsupportedHalfSpace
+}
+
+// obliqueConicArm returns the single open conic section (hyperbola branch or parabola) an oblique plane
+// cuts from the cone side, ok=false otherwise. Both are routed to the same root-finding arc-band split.
+func obliqueConicArm(curves []geom.Curve3) (geom.Curve3, bool) {
+	if len(curves) != 1 {
+		return nil, false
+	}
+	switch curves[0].(type) {
+	case geom.Hyperbola, geom.Parabola:
+		return curves[0], true
+	default:
+		return nil, false
+	}
 }
 
 // allHyperbolas reports whether every imprint curve is a hyperbola branch (the axis-parallel cut of a

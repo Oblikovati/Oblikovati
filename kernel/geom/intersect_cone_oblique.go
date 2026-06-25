@@ -43,13 +43,22 @@ type conic2D struct {
 }
 
 // curve3 classifies the conic by its quadratic-form eigenvalues and lifts it to the analytic 3D curve:
-// a same-sign pair is an ellipse, an opposite-sign pair a hyperbola (the branch on the cone's nappe),
-// a (near-)zero eigenvalue a parabola — deferred. handled=false on the parabolic boundary or a
-// degenerate/empty section so the caller keeps the numeric-tracer fallback.
+// a same-sign pair is an ellipse, an opposite-sign pair a hyperbola (the branch on the cone's nappe), a
+// single (near-)zero eigenvalue a parabola. handled=false only on a fully degenerate section (both
+// eigenvalues zero, or the parabola collapses to parallel lines), where the caller keeps the fallback.
 func (q conic2D) curve3(o math.Point3, e1, e2, n, axis math.Vector3, apex math.Point3) ([]Curve3, bool) {
 	l1, l2, u1, u2 := symmetricEig2(q.a, q.b/2, q.c)
-	if stdmath.Abs(l1) < 1e-9 || stdmath.Abs(l2) < 1e-9 {
-		return nil, false // a (near-)zero eigenvalue: the parabolic tilt, deferred to the tracer
+	dir1 := e1.Scale(math.Scalar(u1[0])).Add(e2.Scale(math.Scalar(u1[1])))
+	dir2 := e1.Scale(math.Scalar(u2[0])).Add(e2.Scale(math.Scalar(u2[1])))
+	z1, z2 := stdmath.Abs(l1) < 1e-9, stdmath.Abs(l2) < 1e-9
+	if z1 && z2 {
+		return nil, false // both eigenvalues zero: a fully degenerate section
+	}
+	if z2 { // λ1 is the nonzero (cross) eigenvalue, dir2 the parabola's opening (zero) direction
+		return obliqueParabola(o, l1, u1, u2, dir1, dir2, q)
+	}
+	if z1 {
+		return obliqueParabola(o, l2, u2, u1, dir2, dir1, q)
 	}
 	s0, t0, ok := q.center()
 	if !ok {
@@ -57,12 +66,36 @@ func (q conic2D) curve3(o math.Point3, e1, e2, n, axis math.Vector3, apex math.P
 	}
 	center := o.TranslateBy(e1.Scale(math.Scalar(s0))).TranslateBy(e2.Scale(math.Scalar(t0)))
 	f0 := q.f + 0.5*(q.d*s0+q.e*t0) // the conic value at its centre: λ1·u²+λ2·v²=−f0 in principal axes
-	dir1 := e1.Scale(math.Scalar(u1[0])).Add(e2.Scale(math.Scalar(u1[1])))
-	dir2 := e1.Scale(math.Scalar(u2[0])).Add(e2.Scale(math.Scalar(u2[1])))
 	if l1*l2 > 0 {
 		return obliqueEllipse(center, n, l1, l2, f0, dir1, dir2)
 	}
 	return obliqueHyperbola(center, l1, l2, f0, dir1, dir2, axis, apex)
+}
+
+// obliqueParabola builds the parabolic section (plane parallel to a generator, the boundary tilt). In
+// principal coords with the zero-eigenvalue direction w the conic is λ·u²+d_u·u+d_w·w+f=0 (no w²
+// term), so w = quadratic(u): a parabola with cross axis u (crossDir), opening along w (zeroDir). Its
+// vertex is at u*=−d_u/(2λ), w*=(d_u²/(4λ)−f)/d_w; the shape coefficient k=−λ/d_w gives the focal
+// length f=1/(4|k|) and orients the opening. d_w≈0 means the section is two parallel lines — deferred.
+func obliqueParabola(o math.Point3, lam float64, crossEig, zeroEig [2]float64, crossDir, zeroDir math.Vector3, q conic2D) ([]Curve3, bool) {
+	duP := q.d*crossEig[0] + q.e*crossEig[1]
+	dwP := q.d*zeroEig[0] + q.e*zeroEig[1]
+	if stdmath.Abs(dwP) < 1e-12 {
+		return nil, false // the quadratic in u has no linear w term: parallel lines, not a parabola
+	}
+	uStar := -duP / (2 * lam)
+	wStar := (duP*duP/(4*lam) - q.f) / dwP
+	vertex := o.TranslateBy(crossDir.Scale(math.Scalar(uStar))).TranslateBy(zeroDir.Scale(math.Scalar(wStar)))
+	k := -lam / dwP
+	axisDir := zeroDir
+	if k < 0 {
+		axisDir = zeroDir.Scale(-1) // open toward +w when k>0, −w when k<0
+	}
+	par, err := NewParabola(vertex, axisDir, crossDir, 1/(4*stdmath.Abs(k)))
+	if err != nil {
+		return nil, false
+	}
+	return []Curve3{par}, true
 }
 
 // center solves the 2×2 system [[a, b/2],[b/2, c]]·[s0,t0] = −[d/2, e/2] for the conic's centre in
