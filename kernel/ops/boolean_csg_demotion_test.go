@@ -148,6 +148,9 @@ func curvedExactCases() []curvedExactCase {
 		{"torus − box (figure-eight pinch)", ops.Cut, torusFigureEightBox},
 		{"torus ∩ box (two oblique ovals)", ops.Intersect, torusTwoObliqueOvalBox},
 		{"torus − box (two oblique ovals)", ops.Cut, torusTwoObliqueOvalBox},
+		{"torus ∩ box (oblique figure-eight)", ops.Intersect, torusObliqueFigureEightBox},
+		{"torus − box (oblique figure-eight)", ops.Cut, torusObliqueFigureEightBox},
+		{"torus − box (axis-∥ near-pinch large oval)", ops.Cut, torusNearPinchOvalBox},
 	}
 }
 
@@ -205,6 +208,23 @@ func torusFigureEightBox(t *testing.T) (*topo.Body, *topo.Body) {
 // the section's C≠0 term; the general band builder/mesher serve it directly (Oblikovati#1375).
 func torusTwoObliqueOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2), demoBlock(t, math.P3(-20, -20, 0.5), math.P3(20, 20, 20))
+}
+
+// torusObliqueFigureEightBox cuts a TILTED torus (axis (0,0.6,0.8)) by z=1.0 — the offset where the tilted
+// section is EXACTLY at the single/two-oval transition: a single oval that wraps the whole tube but for a
+// measure-zero sliver (the oblique FIGURE-EIGHT). Its genus-1 complement is a thin strip the chart can't
+// mesh, so it routes to the v-wrapping band loft (which meshes the sliver as the band's pinch) like the
+// axis-parallel figure-eight (Oblikovati#1375).
+func torusObliqueFigureEightBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2), demoBlock(t, math.P3(-20, -20, 1), math.P3(20, 20, 20))
+}
+
+// torusNearPinchOvalBox cuts by y=3.01 — axis-parallel, JUST outside the inner equator (offset barely above
+// R−r=3): a single oval that wraps almost the whole tube, so its genus-1 complement is large and nearly
+// fills the chart. It exercises the complement chart's window reaching the chart seam (Oblikovati#1375); the
+// − keeps that near-full complement.
+func torusNearPinchOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 3.01, -20), math.P3(20, 20, 20))
 }
 
 func demoTorus(t *testing.T, center math.Point3, axis math.Vector3, major, minor float64) *topo.Body {

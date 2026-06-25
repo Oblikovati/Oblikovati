@@ -104,11 +104,16 @@ func TestTorusTwoObliqueOvalGuards(t *testing.T) {
 		want   bool
 	}{
 		{"tilted through hole (two ovals)", math.P3(0, 0, 0.5), true},
+		{"tilted figure-eight (z=1.0, near-full-wrap)", math.P3(0, 0, 1.0), true},
 		{"tilted single-oval bite (z=3.6)", math.P3(0, 0, 3.6), false},
 	} {
 		plane, _ := geom.NewPlane(tc.origin, math.V3(0, 0, 1))
 		if got := torusTwoObliqueOval(torS, plane); got != tc.want {
 			t.Errorf("%s: torusTwoObliqueOval = %v, want %v", tc.name, got, tc.want)
+		}
+		// The figure-eight and two-oval cases must NOT also be claimed by the single-oval (cap/complement) path.
+		if got := torusObliqueOval(torS, plane); got == tc.want && tc.want {
+			t.Errorf("%s: torusObliqueOval also claimed it (overlap with the band path)", tc.name)
 		}
 	}
 	// An upright (axis-aligned) torus cut is never the oblique two-oval case.
