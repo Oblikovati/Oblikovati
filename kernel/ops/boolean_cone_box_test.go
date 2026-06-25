@@ -280,6 +280,42 @@ func resultHasHyperbolicEdge(b *topo.Body) bool {
 	return false
 }
 
+// Oblique vertex-inside cone ∩/− box (Oblikovati/Oblikovati#1375): the tilted frustum cut by the box face
+// x=5 — far enough out that the oblique hyperbola's vertex falls INSIDE the band (apex distance ≈ 14, the
+// oblique analogue of #1374). Intersect keeps a lone tongue narrowing to the vertex; Cut keeps the notched
+// annulus (the intact small rim plus a top notched down to the vertex). Both must stay exact.
+
+func obliqueVertexInsideBox(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidBlock(math.P3(5, -20, -20), math.P3(40, 20, 40), "box") // x=5 face cuts, vertex inside band
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return b
+}
+
+func TestConeIntersectBoxObliqueVertexInsideExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Intersect, obliqueHyperbolaFrustum(t), obliqueVertexInsideBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Intersect): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasHyperbolicEdge(res) {
+		t.Error("result carries no hyperbolic edge")
+	}
+}
+
+func TestConeCutBoxObliqueVertexInsideExact(t *testing.T) {
+	res, err := ops.Boolean(ops.Cut, obliqueHyperbolaFrustum(t), obliqueVertexInsideBox(t))
+	if err != nil {
+		t.Fatalf("Boolean(Cut): %v", err)
+	}
+	assertConeBoxExact(t, res)
+	if !resultHasHyperbolicEdge(res) {
+		t.Error("result carries no hyperbolic edge")
+	}
+}
+
 // Parabolic boundary-tilt cone ∩/− box (Oblikovati/Oblikovati#1375): a frustum whose axis is tilted by
 // its own half-angle has one vertical generator, so the box's x=2 face is PARALLEL to it — the section is
 // a parabola (the limit between the elliptic and hyperbolic tilts). Both directions must stay exact (an
