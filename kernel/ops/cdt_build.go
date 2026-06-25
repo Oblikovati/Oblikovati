@@ -2,16 +2,94 @@
 
 package ops
 
-// insert adds point index ip by connected-cavity Bowyer–Watson: find the triangles whose
-// circumcircle contains the point (a connected star-shaped region), delete them, and fan the
-// cavity boundary to the new point. Skips a point that coincides with an existing vertex (no
-// strictly-bad triangle), which keeps a duplicated boundary sample from corrupting the mesh.
+// insert adds point index ip by connected-cavity Bowyer–Watson: find a triangle whose circumcircle
+// contains the point, delete the connected star of such triangles, and fan the cavity boundary to the
+// new point. Skips a point coinciding with an existing vertex (no strictly-bad triangle).
+//
+// Seeding the cavity depends on whether constraints are present. With NONE (the dense unconstrained
+// insertion — every interior Steiner node of a hole-free patch, the case the O(N²) scan choked on), the
+// mesh stays Delaunay and fold-free, so the O(√N) adjacency WALK to the triangle containing p gives a
+// valid seed — the #1408 near-linear win. After constraints are recovered, the recovery flips can leave
+// the mesh momentarily FOLDED, where the triangle that geometrically contains p is the wrong topological
+// region (its connected bad-component is disjoint from p's true cavity); there the exact circumcircle
+// scan picks the correct seed. That post-constraint set is the smaller refined-path interior, so keeping
+// the robust scan for it costs little.
 func (m *cdt) insert(ip int) {
-	seed := m.firstBad(m.pts[ip])
+	p := m.pts[ip]
+	seed := m.locateSeed(p)
 	if seed < 0 {
 		return // coincides with an existing vertex (no strictly-bad triangle)
 	}
-	m.fanCavity(ip, m.collectCavity(seed, m.pts[ip]))
+	m.fanCavity(ip, m.collectCavity(seed, p))
+}
+
+// locateSeed returns a circumcircle-bad triangle to seed the Bowyer–Watson cavity, or -1 when p
+// coincides with an existing vertex. It walks the adjacency from the last insertion while the mesh is
+// unconstrained (and so fold-free); once constraints exist it falls back to the exact scan, which is
+// robust to the folds constraint recovery can introduce (#1408).
+func (m *cdt) locateSeed(p [2]float64) int {
+	if len(m.con) > 0 {
+		return m.firstBad(p)
+	}
+	loc := m.locate(p)
+	t := m.tris[loc]
+	if inCircle(m.pts[t.v[0]], m.pts[t.v[1]], m.pts[t.v[2]], p) <= 0 {
+		return -1 // p is on the located triangle's circumcircle (a vertex of it): a coincident duplicate
+	}
+	return loc
+}
+
+// locate returns a live triangle whose circumdisk contains p, by an adjacency WALK from the last
+// insertion's triangle instead of the old O(N) scan: at each triangle it crosses the edge p lies
+// outside of (right of the CCW edge), stepping toward p over the n[3] adjacency until p is inside
+// (left of all three edges). Seeded from the previous insertion, this is O(√N) amortised on
+// spatially-coherent input (Mücke–Saias–Zhu; the boundary and grid Steiner points already arrive in
+// locality order), turning the whole Bowyer–Watson insertion from O(N²) to near-linear (#1408). The
+// mesh is Delaunay between insertions, where the straight walk cannot cycle; the step cap with a
+// [firstBad] fallback keeps it correct even on a degenerate intermediate state.
+func (m *cdt) locate(p [2]float64) int {
+	t := m.liveSeed()
+	for steps := 0; steps <= len(m.tris); steps++ {
+		next := m.walkAcross(t, p)
+		if next < 0 {
+			return t // p is left of (or on) all three edges → inside t
+		}
+		t = next
+	}
+	if bad := m.firstBad(p); bad >= 0 {
+		return bad // walk did not converge (degenerate): fall back to the exhaustive scan
+	}
+	return t
+}
+
+// walkAcross returns the neighbour across an edge p lies strictly outside of (right of the directed
+// CCW edge), or -1 when p is inside t (left of or on every edge). It also counts the visit for the
+// near-linear test.
+func (m *cdt) walkAcross(t int, p [2]float64) int {
+	m.walkSteps++
+	for i := 0; i < 3; i++ {
+		a, b := m.tris[t].v[(i+1)%3], m.tris[t].v[(i+2)%3]
+		if orient2d(m.pts[a], m.pts[b], p) < 0 { // p is right of the CCW edge (a,b): cross to n[i]
+			if ne := m.tris[t].n[i]; ne >= 0 {
+				return ne
+			}
+		}
+	}
+	return -1
+}
+
+// liveSeed returns the walk's starting triangle: the cached hint when still live, else the newest
+// live triangle (nearest the most recent work), else the super-triangle.
+func (m *cdt) liveSeed() int {
+	if m.last >= 0 && m.last < len(m.dead) && !m.dead[m.last] {
+		return m.last
+	}
+	for t := len(m.tris) - 1; t >= 0; t-- {
+		if !m.dead[t] {
+			return t
+		}
+	}
+	return 0
 }
 
 // cavity is a Bowyer–Watson cavity: the triangles to retriangulate, kept BOTH as a BFS-ordered slice
@@ -88,6 +166,7 @@ func (m *cdt) fanCavity(ip int, c cavity) {
 		m.relinkOpposite(e.ne, e.a, e.b, nt)
 		link(nt, 0, e.b) // edge opposite a = (b, ip)
 		link(nt, 1, e.a) // edge opposite b = (ip, a)
+		m.last = nt      // seed the next point-location walk from this fresh fan triangle (#1408)
 	}
 }
 
