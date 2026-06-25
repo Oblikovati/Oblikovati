@@ -75,12 +75,9 @@ func centralDiff(hi, lo math.Vector3, h float64) math.Vector3 {
 func (o OffsetSurface) UDomain() (lo, hi float64) { return o.Base.UDomain() }
 func (o OffsetSurface) VDomain() (lo, hi float64) { return o.Base.VDomain() }
 
-const (
-	// offsetInvertIters bounds the Gauss–Newton iterations inverting a point onto the offset surface.
-	offsetInvertIters = 40
-	// offsetInvertTol is the converged step size, as a fraction of the domain span.
-	offsetInvertTol = 1e-12
-)
+// offsetInvertIters bounds the Gauss–Newton iterations inverting a point onto the offset
+// surface (the inversion exits early on convergence, #1401).
+const offsetInvertIters = 40
 
 // ParamAt inverts PointAt by projecting p onto the OFFSET surface (not the base): seed from the base
 // inversion — exact for the radial/perpendicular analytic projections (plane/cylinder/sphere), a good
@@ -88,19 +85,9 @@ const (
 // the silent error of returning o.Base.ParamAt(p) directly (#1322): for a NURBS base (and even the
 // cone/torus, whose offset is not radially offset-invariant) that returned the wrong (u,v).
 func (o OffsetSurface) ParamAt(p math.Point3) (u, v float64) {
-	uLo, uHi := o.UDomain()
-	vLo, vHi := o.VDomain()
-	u, v = o.Base.ParamAt(p)
-	u, v = clampTo(u, uLo, uHi), clampTo(v, vLo, vHi)
-	uTol := offsetInvertTol * spanOr1(uLo, uHi)
-	vTol := offsetInvertTol * spanOr1(vLo, vHi)
-	for i := 0; i < offsetInvertIters; i++ {
-		nu, nv := surfaceProjectStep(o, p, u, v, uLo, uHi, vLo, vHi)
-		if stdmath.Abs(nu-u) <= uTol && stdmath.Abs(nv-v) <= vTol {
-			return nu, nv
-		}
-		u, v = nu, nv
-	}
+	bu, bv := o.Base.ParamAt(p) // seed from the base inversion
+	u, v = clampToSurface(o, bu, bv)
+	u, v, _ = refineSurfaceParam(o, p, u, v, offsetInvertIters)
 	return u, v
 }
 

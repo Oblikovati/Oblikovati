@@ -53,15 +53,22 @@ func (t Torus) ParamAt(q math.Point3) (u, v float64) {
 	return u, v
 }
 
-// ParamAt projects q onto the NURBS surface numerically: a coarse grid seed then
-// projected Gauss–Newton steps (Piegl & Tiller A6, simplified), staying in domain.
+// surfaceInvertMaxIter / surfaceNearMaxIter cap the Gauss–Newton point inversion: a fresh
+// grid-seeded ParamAt may start farther out than a march-seeded ParamNear, so it gets a
+// larger budget — but both exit early on convergence (#1401), so the cap is only hit on a
+// genuinely degenerate parameterisation.
+const (
+	surfaceInvertMaxIter = 40
+	surfaceNearMaxIter   = 24
+)
+
+// ParamAt projects q onto the NURBS surface numerically: a coarse grid seed then the shared
+// damped Gauss–Newton point inversion (Piegl & Tiller §6.1), with an early convergence exit.
 func (s BSplineSurface) ParamAt(q math.Point3) (u, v float64) {
 	uLo, uHi := s.UDomain()
 	vLo, vHi := s.VDomain()
 	u, v = surfaceGridSeed(s, q, uLo, uHi, vLo, vHi)
-	for i := 0; i < 40; i++ {
-		u, v = surfaceProjectStep(s, q, u, v, uLo, uHi, vLo, vHi)
-	}
+	u, v, _ = refineSurfaceParam(s, q, u, v, surfaceInvertMaxIter)
 	return u, v
 }
 
@@ -73,12 +80,8 @@ func (s BSplineSurface) ParamAt(q math.Point3) (u, v float64) {
 // boundary is the prerequisite for a non-folding interior triangulation and a reliable
 // point-in-trim test.
 func (s BSplineSurface) ParamNear(q math.Point3, u0, v0 float64) (u, v float64) {
-	uLo, uHi := s.UDomain()
-	vLo, vHi := s.VDomain()
-	u, v = clampTo(u0, uLo, uHi), clampTo(v0, vLo, vHi)
-	for i := 0; i < 24; i++ {
-		u, v = surfaceProjectStep(s, q, u, v, uLo, uHi, vLo, vHi)
-	}
+	u, v = clampToSurface(s, u0, v0)
+	u, v, _ = refineSurfaceParam(s, q, u, v, surfaceNearMaxIter)
 	return u, v
 }
 
@@ -97,22 +100,4 @@ func surfaceGridSeed(s Surface, q math.Point3, uLo, uHi, vLo, vHi float64) (floa
 		}
 	}
 	return bu, bv
-}
-
-// surfaceProjectStep advances (u, v) toward q by projecting the residual onto each
-// partial derivative, clamped to the domain.
-func surfaceProjectStep(s Surface, q math.Point3, u, v, uLo, uHi, vLo, vHi float64) (float64, float64) {
-	du, dv := s.DerivativesAt(u, v)
-	res := s.PointAt(u, v).VectorTo(q)
-	return clampTo(u+projectParam(res, du), uLo, uHi), clampTo(v+projectParam(res, dv), vLo, vHi)
-}
-
-// projectParam returns res·d / |d|² — the parameter step reducing the residual
-// along d (zero when d is degenerate).
-func projectParam(res, d math.Vector3) float64 {
-	denom := d.LengthSquared()
-	if denom < math.DefaultTolerance {
-		return 0
-	}
-	return res.Dot(d) / denom
 }

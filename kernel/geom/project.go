@@ -8,12 +8,15 @@ import (
 	"oblikovati.org/math"
 )
 
-// projectMaxIter and projectTol bound the point-projection iteration: enough steps to
-// converge from the ParamAt seed, and a residual tolerance on the perpendicularity
-// condition (tangent · (foot − p) ≈ 0).
+// projectMaxIter bounds the point-projection iteration (enough steps to converge from the
+// ParamAt seed); projectTol is the point-coincidence tolerance (|foot − p| ≈ 0, q on the
+// surface); zeroCosTol is the RELATIVE zero-cosine tolerance — |Sᵤ·r|/(|Sᵤ||r|), the cosine
+// of the angle from perpendicular — the scale-invariant convergence test (Piegl & Tiller
+// §6.1), so a tiny or huge patch stops at the same geometric accuracy (#1401).
 const (
 	projectMaxIter = 32
 	projectTol     = 1e-12
+	zeroCosTol     = 1e-10
 )
 
 // ClosestPointOnSurface returns the parameters (u, v) and the foot point on s nearest to
@@ -29,21 +32,83 @@ const (
 func ClosestPointOnSurface(s Surface, p math.Point3) (u, v float64, foot math.Point3) {
 	u, v = s.ParamAt(p)
 	u, v = clampToSurface(s, u, v)
-	for i := 0; i < projectMaxIter; i++ {
+	u, v, _ = refineSurfaceParam(s, p, u, v, projectMaxIter)
+	return u, v, s.PointAt(u, v)
+}
+
+// refineSurfaceParam drives (u, v) to the foot of the perpendicular from q on s by damped
+// 2×2 Gauss–Newton on the first-fundamental-form system [[Su·Su, Su·Sv],[Su·Sv, Sv·Sv]]
+// (Newton point inversion, Piegl & Tiller §6.1), stopping EARLY once the perpendicularity
+// residual (Su·r, Sv·r) is within projectTol. It is the one point-inversion every surface
+// shares — analytic [ClosestPointOnSurface] and the NURBS ParamAt/ParamNear and offset hot
+// paths (Oblikovati/Oblikovati#1401). The per-axis projection it replaced ignored the Su·Sv
+// cross-term and never tested convergence, so it crawled on a skewed/folding
+// parameterisation and burned every iteration even after converging. Returns the refined
+// (u, v) and the iterations actually run (< maxIter once converged).
+func refineSurfaceParam(s Surface, q math.Point3, u, v float64, maxIter int) (float64, float64, int) {
+	i := 0
+	for ; i < maxIter; i++ {
 		f := s.PointAt(u, v)
 		du, dv := s.DerivativesAt(u, v)
-		r := f.VectorTo(p) // p − f: the residual we drive perpendicular to the tangents
+		r := f.VectorTo(q) // q − f: the residual we drive perpendicular to the tangents
 		gu, gv := float64(du.Dot(r)), float64(dv.Dot(r))
-		if stdmath.Abs(gu) < projectTol && stdmath.Abs(gv) < projectTol {
+		if surfaceFootConverged(du, dv, r, gu, gv) {
 			break
 		}
 		ddu, ddv, ok := gaussNewtonStep(du, dv, gu, gv)
 		if !ok {
 			break // degenerate tangent frame (pole/apex): keep the seed
 		}
-		u, v = clampToSurface(s, u+ddu, v+ddv)
+		nu, nv, moved := lineSearchToward(s, q, u, v, ddu, ddv, float64(r.LengthSquared()))
+		if !moved {
+			break // no step reduces the distance — a local minimum / numerical floor
+		}
+		u, v = nu, nv
 	}
-	return u, v, s.PointAt(u, v)
+	return u, v, i
+}
+
+// surfaceFootConverged applies the Piegl & Tiller §6.1 stopping tests: point coincidence
+// (q lies on the surface, |r| ≈ 0) OR zero cosine (r is perpendicular to both tangents,
+// relative to their magnitudes). The relative cosine test is scale-invariant, unlike an
+// absolute residual threshold.
+func surfaceFootConverged(du, dv math.Vector3, r math.Vector3, gu, gv float64) bool {
+	rLen := float64(r.Length())
+	if rLen < projectTol {
+		return true // q is on the surface
+	}
+	duLen, dvLen := float64(du.Length()), float64(dv.Length())
+	cosU := tangentCosine(gu, duLen, rLen)
+	cosV := tangentCosine(gv, dvLen, rLen)
+	return cosU < zeroCosTol && cosV < zeroCosTol
+}
+
+// tangentCosine returns |tangent·r|/(|tangent||r|) — the cosine of the angle between a
+// tangent and the residual, 0 when perpendicular. A degenerate tangent reports 0 (it
+// imposes no perpendicularity condition).
+func tangentCosine(g, tangentLen, rLen float64) float64 {
+	if tangentLen < projectTol {
+		return 0
+	}
+	return stdmath.Abs(g) / (tangentLen * rLen)
+}
+
+// lineSearchToward backtracks the Gauss–Newton step (ddu, ddv) until it actually reduces
+// the squared distance to q (current d2), halving the step a few times. Backtracking on the
+// true objective — not the raw Newton step — keeps the inversion from overshooting and
+// diverging on a strongly curved or skewed patch far from the foot (the damping/line-search
+// the robust point inversion needs, Hu & Wallner; #1401). moved is false when even a tiny
+// step fails to improve.
+func lineSearchToward(s Surface, q math.Point3, u, v, ddu, ddv, d2 float64) (nu, nv float64, moved bool) {
+	alpha := 1.0
+	for k := 0; k < 8; k++ {
+		cu, cv := clampToSurface(s, u+alpha*ddu, v+alpha*ddv)
+		if float64(s.PointAt(cu, cv).VectorTo(q).LengthSquared()) < d2 {
+			return cu, cv, true
+		}
+		alpha *= 0.5
+	}
+	return u, v, false
 }
 
 // gaussNewtonStep solves the 2×2 normal-equation system [[a,b],[b,c]]·Δ = g for the
