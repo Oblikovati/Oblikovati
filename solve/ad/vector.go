@@ -31,6 +31,10 @@ func (a Vec3) Add(b Vec3) Vec3 { return Vec3{X: a.X.Add(b.X), Y: a.Y.Add(b.Y), Z
 func (a Vec2) Scale(c float64) Vec2 { return Vec2{X: a.X.Scale(c), Y: a.Y.Scale(c)} }
 func (a Vec3) Scale(c float64) Vec3 { return Vec3{X: a.X.Scale(c), Y: a.Y.Scale(c), Z: a.Z.Scale(c)} }
 
+// MulN multiplies every component by the dual scalar n (a varying scale, e.g. 1/length).
+func (a Vec2) MulN(n Number) Vec2 { return Vec2{X: a.X.Mul(n), Y: a.Y.Mul(n)} }
+func (a Vec3) MulN(n Number) Vec3 { return Vec3{X: a.X.Mul(n), Y: a.Y.Mul(n), Z: a.Z.Mul(n)} }
+
 // Dot returns a·b.
 func (a Vec2) Dot(b Vec2) Number { return a.X.Mul(b.X).Add(a.Y.Mul(b.Y)) }
 func (a Vec3) Dot(b Vec3) Number {

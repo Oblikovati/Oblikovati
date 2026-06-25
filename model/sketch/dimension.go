@@ -4,10 +4,10 @@ package sketch
 
 import (
 	"fmt"
-	stdmath "math"
 
 	"oblikovati.org/math"
 	"oblikovati.org/model/param"
+	"oblikovati.org/solve/ad"
 )
 
 // DimKind classifies a dimensional constraint.
@@ -62,14 +62,14 @@ func (l ConstraintLimits) clamp(v float64) float64 {
 // the parameter's value (modeling/00).
 type DimensionConstraint struct {
 	constraintBase
-	kind    DimKind
-	driven  bool
-	param   *param.Parameter
-	limits  ConstraintLimits
-	measure func() float64
-	vars    []*math.Scalar
-	refs    []Entity // the dimensioned geometry (points/lines/arcs), for editing + serialization
-	farSide bool     // tangentDistance only: dimension to the far tangent point (#152)
+	kind      DimKind
+	driven    bool
+	param     *param.Parameter
+	limits    ConstraintLimits
+	measureAD adFunc1 // the measured quantity over duals; the float measure derives from it
+	vars      []*math.Scalar
+	refs      []Entity // the dimensioned geometry (points/lines/arcs), for editing + serialization
+	farSide   bool     // tangentDistance only: dimension to the far tangent point (#152)
 }
 
 // FarSide reports whether a tangent-distance dimension measures to the far tangent point
@@ -88,7 +88,7 @@ func (d *DimensionConstraint) Kind() DimKind { return d.kind }
 func (d *DimensionConstraint) Parameter() *param.Parameter { return d.param }
 
 // Measured returns the current geometric value of the dimensioned quantity.
-func (d *DimensionConstraint) Measured() float64 { return d.measure() }
+func (d *DimensionConstraint) Measured() float64 { return adMeasureValue(d.vars, d.measureAD) }
 
 // Driven reports whether the dimension only reports (true) or constrains (false).
 func (d *DimensionConstraint) Driven() bool { return d.driven }
@@ -109,12 +109,26 @@ func (d *DimensionConstraint) Drive(value float64) error {
 	return d.param.SetValue(param.Q(d.limits.clamp(value), d.param.Unit()))
 }
 
+// residualAD: measured-minus-target, the target being a constant from the parameter DAG.
+func (d *DimensionConstraint) residualAD(v []ad.Number) []ad.Number {
+	return []ad.Number{d.measureAD(v).AddConst(-d.param.ModelValue())}
+}
+
 // Residuals returns measured-minus-target when driving, or nil when driven.
 func (d *DimensionConstraint) Residuals() []float64 {
 	if d.driven {
 		return nil
 	}
-	return []float64{d.measure() - d.param.ModelValue()}
+	return adResiduals(d.vars, d.residualAD)
+}
+
+// Partials returns the dimension's exact Jacobian row, or nil when driven (it contributes
+// no equation). It reuses the dual measure, so the derivative cannot drift from the value.
+func (d *DimensionConstraint) Partials() [][]float64 {
+	if d.driven {
+		return nil
+	}
+	return adPartials(d.vars, d.residualAD)
 }
 
 // Variables returns the geometry DOFs this dimension constrains (none when driven).
@@ -160,7 +174,7 @@ func (dc *DimensionConstraints) Delete(d *DimensionConstraint) bool {
 
 // AddDistance dimensions the distance between two points to expression (e.g. "25 mm").
 func (dc *DimensionConstraints) AddDistance(a, b *Point, expression string) (*DimensionConstraint, error) {
-	measure := func() float64 { return a.Position().DistanceTo(b.Position()) }
+	measure := func(v []ad.Number) ad.Number { return ad.V2(v[0], v[1]).Sub(ad.V2(v[2], v[3])).Length() }
 	vars := []*math.Scalar{&a.X, &a.Y, &b.X, &b.Y}
 	return dc.create(DistanceDim, expression, []Entity{a, b}, measure, vars)
 }
@@ -169,20 +183,21 @@ func (dc *DimensionConstraints) AddDistance(a, b *Point, expression string) (*Di
 // a circle the radius is a stored DOF; for an arc it is the center-to-start distance,
 // so the solver drives the center/start points (circularVars) to satisfy the target.
 func (dc *DimensionConstraints) AddRadius(c CircularCurve, expression string) (*DimensionConstraint, error) {
-	return dc.create(RadiusDim, expression, []Entity{c}, func() float64 { return float64(c.CurveRadius()) }, c.circularVars())
+	measure := func(v []ad.Number) ad.Number { _, r, _ := c.circularFrameAD(v, 0); return r }
+	return dc.create(RadiusDim, expression, []Entity{c}, measure, c.circularVars())
 }
 
 // AddDiameter dimensions the diameter of a circle or an arc.
 func (dc *DimensionConstraints) AddDiameter(c CircularCurve, expression string) (*DimensionConstraint, error) {
-	return dc.create(DiameterDim, expression, []Entity{c}, func() float64 { return 2 * float64(c.CurveRadius()) }, c.circularVars())
+	measure := func(v []ad.Number) ad.Number { _, r, _ := c.circularFrameAD(v, 0); return r.Scale(2) }
+	return dc.create(DiameterDim, expression, []Entity{c}, measure, c.circularVars())
 }
 
 // AddAngle dimensions the angle (radians, in [0,π]) between two lines.
 func (dc *DimensionConstraints) AddAngle(l1, l2 *Line, expression string) (*DimensionConstraint, error) {
-	measure := func() float64 {
-		d1x, d1y := lineDir(l1)
-		d2x, d2y := lineDir(l2)
-		return stdmath.Atan2(stdmath.Abs(d1x*d2y-d1y*d2x), d1x*d2x+d1y*d2y)
+	measure := func(v []ad.Number) ad.Number {
+		d1, d2 := adLineDirs(v)
+		return d1.Cross(d2).Abs().Atan2(d1.Dot(d2))
 	}
 	return dc.create(AngleDim, expression, []Entity{l1, l2}, measure, lineVars(l1, l2))
 }
@@ -192,16 +207,19 @@ func (dc *DimensionConstraints) AddAngle(l1, l2 *Line, expression string) (*Dime
 // side (default) subtracts the radius, the far side adds it (#152). The solver drives the
 // line's endpoints and the curve's center/radius (circularVars) to satisfy the target.
 func (dc *DimensionConstraints) AddTangentDistance(l *Line, c CircularCurve, farSide bool, expression string) (*DimensionConstraint, error) {
-	measure := func() float64 {
-		signed, ok := signedCenterToLine(l, c)
-		if !ok {
-			return 0
+	measure := func(v []ad.Number) ad.Number {
+		a, b := ad.V2(v[0], v[1]), ad.V2(v[2], v[3])
+		center, radius, _ := c.circularFrameAD(v, 4)
+		dir := b.Sub(a)
+		length := dir.Length()
+		if length.Val() == 0 {
+			return ad.Const(0)
 		}
-		d := stdmath.Abs(signed)
+		d := dir.Cross(center.Sub(a)).Div(length).Abs() // |perpendicular distance|
 		if farSide {
-			return d + c.CurveRadius()
+			return d.Add(radius)
 		}
-		return d - c.CurveRadius()
+		return d.Sub(radius)
 	}
 	vars := append([]*math.Scalar{&l.A.X, &l.A.Y, &l.B.X, &l.B.Y}, c.circularVars()...)
 	d, err := dc.create(TangentDistanceDim, expression, []Entity{l, c}, measure, vars)
@@ -214,19 +232,26 @@ func (dc *DimensionConstraints) AddTangentDistance(l *Line, c CircularCurve, far
 
 // AddArcLength dimensions an arc's length (radius × swept angle).
 func (dc *DimensionConstraints) AddArcLength(a *Arc, expression string) (*DimensionConstraint, error) {
-	measure := func() float64 { return a.Radius() * arcSweep(a) }
+	measure := func(v []ad.Number) ad.Number {
+		center, start, end := ad.V2(v[0], v[1]), ad.V2(v[2], v[3]), ad.V2(v[4], v[5])
+		radius := start.Sub(center).Length()
+		s, e := start.Sub(center), end.Sub(center)
+		sweep := s.Cross(e).Atan2(s.Dot(e)).Abs() // unsigned swept angle
+		return radius.Mul(sweep)
+	}
 	vars := []*math.Scalar{&a.Center.X, &a.Center.Y, &a.Start.X, &a.Start.Y, &a.End.X, &a.End.Y}
 	return dc.create(ArcLengthDim, expression, []Entity{a}, measure, vars)
 }
 
-// create builds a driving dimension backed by a fresh model parameter. refs records
-// the dimensioned geometry for editing and serialization.
-func (dc *DimensionConstraints) create(kind DimKind, expression string, refs []Entity, measure func() float64, vars []*math.Scalar) (*DimensionConstraint, error) {
+// create builds a driving dimension backed by a fresh model parameter. measure is the
+// dimensioned quantity over duals (the single source of both its value and its exact
+// Jacobian row, #1417); refs records the dimensioned geometry for editing/serialization.
+func (dc *DimensionConstraints) create(kind DimKind, expression string, refs []Entity, measure adFunc1, vars []*math.Scalar) (*DimensionConstraint, error) {
 	p, err := dc.params.AddModelParameter(dc.nextName(), expression)
 	if err != nil {
 		return nil, fmt.Errorf("sketch: dimension parameter: %w", err)
 	}
-	d := &DimensionConstraint{constraintBase: newConstraint(), kind: kind, param: p, measure: measure, vars: vars, refs: refs}
+	d := &DimensionConstraint{constraintBase: newConstraint(), kind: kind, param: p, measureAD: measure, vars: vars, refs: refs}
 	dc.items = append(dc.items, d)
 	return d, nil
 }
@@ -240,13 +265,4 @@ func (dc *DimensionConstraints) nextName() string {
 			return name
 		}
 	}
-}
-
-// arcSweep returns the unsigned swept angle of an arc about its center.
-func arcSweep(a *Arc) float64 {
-	c := a.Center.Position()
-	s := c.VectorTo(a.Start.Position())
-	e := c.VectorTo(a.End.Position())
-	sweep := stdmath.Atan2(s.Cross(e), s.Dot(e))
-	return stdmath.Abs(sweep)
 }

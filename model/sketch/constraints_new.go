@@ -3,9 +3,8 @@
 package sketch
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/math"
+	"oblikovati.org/solve/ad"
 )
 
 // GroundConstraint freezes every point of an entity at its current position — the
@@ -36,14 +35,19 @@ func (g *GeometricConstraints) AddGroundPoints(pts ...*Point) *GroundConstraint 
 // Points returns the grounded points (for serialization).
 func (c *GroundConstraint) Points() []*Point { return c.pts }
 
-// Residuals reports each point's drift from its frozen position.
-func (c *GroundConstraint) Residuals() []float64 {
-	out := make([]float64, 0, len(c.pts)*2)
-	for i, p := range c.pts {
-		out = append(out, float64(p.X)-c.x0[i], float64(p.Y)-c.y0[i])
+// residualAD: each grounded coordinate must hold its frozen value (v ordered X,Y per
+// point, matching Variables()).
+func (c *GroundConstraint) residualAD(v []ad.Number) []ad.Number {
+	out := make([]ad.Number, 0, len(c.pts)*2)
+	for i := range c.pts {
+		out = append(out, v[2*i].AddConst(-c.x0[i]), v[2*i+1].AddConst(-c.y0[i]))
 	}
 	return out
 }
+
+// Residuals reports each point's drift from its frozen position.
+func (c *GroundConstraint) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *GroundConstraint) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 // Variables returns the grounded points' coordinates.
 func (c *GroundConstraint) Variables() []*math.Scalar {
@@ -69,20 +73,24 @@ func (g *GeometricConstraints) AddOffset(l1, l2 *Line, dist float64) *OffsetCons
 	return c
 }
 
-// Residuals reports the parallel error and the perpendicular-distance error.
-func (c *OffsetConstraint) Residuals() []float64 {
-	d1x, d1y := lineDir(c.L1)
-	d2x, d2y := lineDir(c.L2)
-	parallel := float64(d1x*d2y - d1y*d2x)
-	length := stdmath.Hypot(float64(d1x), float64(d1y))
-	if length == 0 {
-		return []float64{parallel, 0}
+// residualAD: L2 stays parallel to L1 (cross of directions zero) and L2.A holds a fixed
+// signed perpendicular distance from L1's line. The signed distance is d1×(L2.A−L1.A) /
+// |d1|, the projection of L2.A−L1.A onto L1's left normal.
+func (c *OffsetConstraint) residualAD(v []ad.Number) []ad.Number {
+	a1, b1, a2, b2 := adTwoLines(v)
+	d1, d2 := b1.Sub(a1), b2.Sub(a2)
+	parallel := d1.Cross(d2)
+	length := d1.Length()
+	if length.Val() == 0 {
+		return []ad.Number{parallel, ad.Const(0)}
 	}
-	nx, ny := -float64(d1y)/length, float64(d1x)/length
-	wx := float64(c.L2.A.X - c.L1.A.X)
-	wy := float64(c.L2.A.Y - c.L1.A.Y)
-	return []float64{parallel, wx*nx + wy*ny - c.Dist}
+	dist := d1.Cross(a2.Sub(a1)).Div(length)
+	return []ad.Number{parallel, dist.AddConst(-c.Dist)}
 }
+
+// Residuals reports the parallel error and the perpendicular-distance error.
+func (c *OffsetConstraint) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *OffsetConstraint) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 // Variables returns the two lines' endpoint coordinates.
 func (c *OffsetConstraint) Variables() []*math.Scalar { return lineVars(c.L1, c.L2) }
@@ -114,17 +122,20 @@ func (g *GeometricConstraints) AddPatternLinkLive(seed, member *Point, offset fu
 	return c
 }
 
-// Residuals reports the member's drift from seed + the (frozen or live) offset.
-func (c *PatternConstraint) Residuals() []float64 {
+// residualAD: v = [Seed.X, Seed.Y, Member.X, Member.Y]. The member tracks the seed at a
+// fixed offset; the offset (frozen or spacing-driven) is constant w.r.t. the solver
+// variables, so it enters as an additive constant.
+func (c *PatternConstraint) residualAD(v []ad.Number) []ad.Number {
 	dx, dy := c.dx, c.dy
 	if c.live != nil {
 		dx, dy = c.live()
 	}
-	return []float64{
-		float64(c.Member.X-c.Seed.X) - dx,
-		float64(c.Member.Y-c.Seed.Y) - dy,
-	}
+	return []ad.Number{v[2].Sub(v[0]).AddConst(-dx), v[3].Sub(v[1]).AddConst(-dy)}
 }
+
+// Residuals reports the member's drift from seed + the (frozen or live) offset.
+func (c *PatternConstraint) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *PatternConstraint) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 // Variables returns the seed and member coordinates.
 func (c *PatternConstraint) Variables() []*math.Scalar {

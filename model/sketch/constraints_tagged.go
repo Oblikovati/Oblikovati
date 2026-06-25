@@ -36,6 +36,10 @@ type TextBoxAnchorConstraint struct {
 func (c *TextBoxAnchorConstraint) Residuals() []float64      { return nil }
 func (c *TextBoxAnchorConstraint) Variables() []*math.Scalar { return nil }
 
+// Partials implements the solver's Differentiable interface: an anchoring record has no
+// residuals, so its Jacobian block is empty (#1417).
+func (c *TextBoxAnchorConstraint) Partials() [][]float64 { return nil }
+
 // Deletable implements [NonDeletable]: the anchor lives and dies with its
 // text box.
 func (c *TextBoxAnchorConstraint) Deletable() bool { return false }
@@ -53,6 +57,10 @@ type CustomConstraint struct {
 // Residuals and Variables implement [Constraint]: a tag constrains nothing.
 func (c *CustomConstraint) Residuals() []float64      { return nil }
 func (c *CustomConstraint) Variables() []*math.Scalar { return nil }
+
+// Partials implements the solver's Differentiable interface: a tag constrains nothing,
+// so its Jacobian block is empty (#1417).
+func (c *CustomConstraint) Partials() [][]float64 { return nil }
 
 // AddCustom tags the given entities for the owning client. ClientID is
 // required — an anonymous tag could never be cleaned up by its owner.
