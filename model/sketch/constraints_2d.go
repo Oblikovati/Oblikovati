@@ -52,11 +52,12 @@ func (g *GeometricConstraints) AddPointOnLine(p *Point, l *Line) *PointOnLineCon
 	return c
 }
 
-// residualAD: v = [P.X, P.Y, A.X, A.Y, B.X, B.Y]. The cross product of (P−A) with the
-// line direction (B−A) is zero iff P lies on the line.
+// residualAD: v = [P.X, P.Y, A.X, A.Y, B.X, B.Y]. The signed perpendicular distance of P
+// from the line is zero iff P lies on it — a true distance residual, not the area
+// |line|·|offset| (#1418).
 func (c *PointOnLineConstraint) residualAD(v []ad.Number) []ad.Number {
 	p, a, b := ad.V2(v[0], v[1]), ad.V2(v[2], v[3]), ad.V2(v[4], v[5])
-	return []ad.Number{b.Sub(a).Cross(p.Sub(a))}
+	return []ad.Number{adSignedPerpDistance(b.Sub(a), p.Sub(a))}
 }
 func (c *PointOnLineConstraint) Residuals() []float64 {
 	return adResiduals(c.Variables(), c.residualAD)
@@ -184,10 +185,11 @@ func (g *GeometricConstraints) AddParallel(l1, l2 *Line) *ParallelConstraint {
 	return c
 }
 
-// residualAD: the two line directions are parallel iff their cross product is zero.
+// residualAD: the two line directions are parallel iff the sine of their angle is zero —
+// the length-normalised cross product, scale-invariant (#1418).
 func (c *ParallelConstraint) residualAD(v []ad.Number) []ad.Number {
 	d1, d2 := adLineDirs(v)
-	return []ad.Number{d1.Cross(d2)}
+	return []ad.Number{adSineAngle(d1, d2)}
 }
 func (c *ParallelConstraint) Residuals() []float64      { return adResiduals(c.Variables(), c.residualAD) }
 func (c *ParallelConstraint) Partials() [][]float64     { return adPartials(c.Variables(), c.residualAD) }
@@ -206,10 +208,11 @@ func (g *GeometricConstraints) AddPerpendicular(l1, l2 *Line) *PerpendicularCons
 	return c
 }
 
-// residualAD: the two line directions are perpendicular iff their dot product is zero.
+// residualAD: the two line directions are perpendicular iff the cosine of their angle is
+// zero — the length-normalised dot product, scale-invariant (#1418).
 func (c *PerpendicularConstraint) residualAD(v []ad.Number) []ad.Number {
 	d1, d2 := adLineDirs(v)
-	return []ad.Number{d1.Dot(d2)}
+	return []ad.Number{adCosAngle(d1, d2)}
 }
 func (c *PerpendicularConstraint) Residuals() []float64 {
 	return adResiduals(c.Variables(), c.residualAD)
@@ -237,7 +240,9 @@ func (g *GeometricConstraints) AddCollinear(l1, l2 *Line) *CollinearConstraint {
 func (c *CollinearConstraint) residualAD(v []ad.Number) []ad.Number {
 	a1, b1, a2, b2 := adTwoLines(v)
 	d1, d2 := b1.Sub(a1), b2.Sub(a2)
-	return []ad.Number{d1.Cross(d2), d1.Cross(a2.Sub(a1))}
+	// Parallel (sine of the angle) AND L2.A on L1's line (perpendicular distance) — both
+	// scale-invariant rather than area-scaled (#1418).
+	return []ad.Number{adSineAngle(d1, d2), adSignedPerpDistance(d1, a2.Sub(a1))}
 }
 func (c *CollinearConstraint) Residuals() []float64      { return adResiduals(c.Variables(), c.residualAD) }
 func (c *CollinearConstraint) Partials() [][]float64     { return adPartials(c.Variables(), c.residualAD) }
@@ -439,7 +444,10 @@ func (c *SymmetryConstraint) residualAD(v []ad.Number) []ad.Number {
 	la, lb := ad.V2(v[4], v[5]), ad.V2(v[6], v[7])
 	dir := lb.Sub(la)
 	mid := a.Add(b).Scale(0.5)
-	return []ad.Number{dir.Cross(mid.Sub(la)), b.Sub(a).Dot(dir)}
+	// Midpoint's perpendicular distance to the mirror line, and the A→B segment's
+	// component along it (zero when perpendicular) — both normalised by the mirror line's
+	// length so they are independent of its arbitrary representation (#1418).
+	return []ad.Number{adSignedPerpDistance(dir, mid.Sub(la)), adProjectionAlong(b.Sub(a), dir)}
 }
 func (c *SymmetryConstraint) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
 func (c *SymmetryConstraint) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }

@@ -79,12 +79,10 @@ func (g *GeometricConstraints) AddOffset(l1, l2 *Line, dist float64) *OffsetCons
 func (c *OffsetConstraint) residualAD(v []ad.Number) []ad.Number {
 	a1, b1, a2, b2 := adTwoLines(v)
 	d1, d2 := b1.Sub(a1), b2.Sub(a2)
-	parallel := d1.Cross(d2)
-	length := d1.Length()
-	if length.Val() == 0 {
-		return []ad.Number{parallel, ad.Const(0)}
-	}
-	dist := d1.Cross(a2.Sub(a1)).Div(length)
+	// Parallelism as the sine of the angle (scale-invariant, #1418); the perpendicular
+	// distance of L2.A from L1 was already a true distance.
+	parallel := adSineAngle(d1, d2)
+	dist := adSignedPerpDistance(d1, a2.Sub(a1))
 	return []ad.Number{parallel, dist.AddConst(-c.Dist)}
 }
 
