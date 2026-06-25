@@ -88,8 +88,7 @@ func deleteParameterGroup(s *app.Session, args json.RawMessage) (json.RawMessage
 		return nil, err
 	}
 	if in.DeleteParameters {
-		part.Features().MarkAllDirty()
-		part.Recompute()
+		part.RecomputeAfterParameterEdit()
 	}
 	s.RecordAddInEdit(part, "Delete Parameter Group")
 	return json.Marshal(struct{}{})

@@ -116,8 +116,7 @@ func sweepParameterModelValues(s *app.Session, args json.RawMessage) (json.RawMe
 	if err != nil {
 		return nil, err
 	}
-	part.Features().MarkAllDirty()
-	part.Recompute()
+	part.RecomputeAfterParameterEdit()
 	s.RecordAddInEdit(part, "Sweep Tolerances")
 	return json.Marshal(wire.ParameterSweepResult{Affected: affected})
 }
