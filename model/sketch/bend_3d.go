@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/math"
+	"oblikovati.org/solve/ad"
 )
 
 // The 3D-sketch bend (issue #143, M22-F05/PBI-237): Inventor's
@@ -156,31 +157,44 @@ func nearerEnd(l *Line3D, to math.Point3) *Point3D {
 	return l.B
 }
 
-func (c *Bend3D) Residuals() []float64 {
-	center := c.Arc.Center.Position()
-	rs := c.Arc.Start.Position().VectorTo(center) // start → center radius vectors
-	re := c.Arc.End.Position().VectorTo(center)
-	d1 := c.L1.A.Position().VectorTo(c.L1.B.Position())
-	d2 := c.L2.A.Position().VectorTo(c.L2.B.Position())
-	out := appendBendJoin3D(nil, c.P1, c.Arc.Start) // G0 line1↔start
-	out = appendBendJoin3D(out, c.P2, c.Arc.End)    // G0 line2↔end
+// residualAD mirrors the float residual over duals. v = [L1.A.xyz, L1.B.xyz, L2.A.xyz,
+// L2.B.xyz, Arc.Center.xyz, Arc.Start.xyz, Arc.End.xyz]. Rows: optional G0 joins (each
+// skipped when the line endpoint IS the arc endpoint), tangency at each join, the
+// end-on-same-circle relation, and the bend radius.
+func (c *Bend3D) residualAD(v []ad.Number) []ad.Number {
+	center, start, end := adV3(v, 12), adV3(v, 15), adV3(v, 18)
+	rs, re := center.Sub(start), center.Sub(end) // start → centre, end → centre
+	d1, d2 := adLine3DDir(v, 0), adLine3DDir(v, 6)
+	out := appendBendJoin3DAD(nil, c.P1, c.Arc.Start, adBendEndpoint(v, c.L1, c.P1, 0), start)
+	out = appendBendJoin3DAD(out, c.P2, c.Arc.End, adBendEndpoint(v, c.L2, c.P2, 6), end)
 	return append(out,
-		float64(d1.Dot(rs)), float64(d2.Dot(re)), // tangency at each join
-		float64(re.LengthSquared()-rs.LengthSquared()), // end on the same circle as start
-		float64(rs.Length())-c.Radius,                  // hold the bend radius
+		d1.Dot(rs), d2.Dot(re), // tangency at each join
+		re.Dot(re).Sub(rs.Dot(rs)),      // end on the same circle as start
+		rs.Length().AddConst(-c.Radius), // hold the bend radius
 	)
 }
+func (c *Bend3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Bend3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
-// appendBendJoin3D appends the G0 rows pulling a split join endpoint onto its arc
-// endpoint, skipping them when both are the same point object (the AddBend3D
-// sharing): identically-zero rows carry no Jacobian rank, so they only inflated
-// the redundancy count and flagged a fresh bend over-constrained (#145 audit
-// finding on the #143 bend).
-func appendBendJoin3D(out []float64, p, arcEnd *Point3D) []float64 {
+// adBendEndpoint returns the dual for a line's join endpoint p — its A end (v[off]) or B
+// end (v[off+3]).
+func adBendEndpoint(v []ad.Number, l *Line3D, p *Point3D, off int) ad.Vec3 {
+	if p == l.B {
+		return adV3(v, off+3)
+	}
+	return adV3(v, off)
+}
+
+// appendBendJoin3DAD appends the G0 rows pulling a split join endpoint onto its arc
+// endpoint, skipping them when both are the same point object (the AddBend3D sharing):
+// identically-zero rows carry no Jacobian rank, so they only inflated the redundancy
+// count and flagged a fresh bend over-constrained (#145 audit finding on the #143 bend).
+func appendBendJoin3DAD(out []ad.Number, p, arcEnd *Point3D, pd, arcd ad.Vec3) []ad.Number {
 	if p == arcEnd {
 		return out
 	}
-	return append(out, float64(p.X-arcEnd.X), float64(p.Y-arcEnd.Y), float64(p.Z-arcEnd.Z))
+	d := pd.Sub(arcd)
+	return append(out, d.X, d.Y, d.Z)
 }
 
 func (c *Bend3D) Variables() []*math.Scalar {

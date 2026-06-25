@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/math"
+	"oblikovati.org/solve/ad"
 )
 
 // Tangent (G1) and Smooth (G2) constraints for 3D curves — the 3D counterparts of
@@ -30,6 +31,10 @@ type SmoothCurve3D interface {
 	smoothVars3D() []*math.Scalar
 	// smoothEnds3D returns the curve's free endpoints (empty for a closed curve).
 	smoothEnds3D() []*Point3D
+	// smoothFrame3DAD is the dual twin of smoothFrame3D: it also returns the endpoint p as
+	// a dual (for the G0 coincidence residual), reading the curve's smoothVars3D from v
+	// starting at off (off advances by len(smoothVars3D) between the two curves).
+	smoothFrame3DAD(v []ad.Number, off int, p *Point3D) (point, tangent, curvature ad.Vec3, ok bool)
 }
 
 // Tangent3D joins curves C1 and C2 with collinear tangents (G1) at endpoints P1 and
@@ -48,18 +53,18 @@ func NewTangent3D(c1, c2 SmoothCurve3D, p1, p2 *Point3D) *Tangent3D {
 	return &Tangent3D{constraintBase: newConstraint(), C1: c1, C2: c2, P1: p1, P2: p2}
 }
 
-func (c *Tangent3D) Residuals() []float64 {
-	t1, _, ok1 := c.C1.smoothFrame3D(c.P1)
-	t2, _, ok2 := c.C2.smoothFrame3D(c.P2)
+// residualAD: G0 join coincidence (3) and G1 tangent collinearity (cross, 3).
+func (c *Tangent3D) residualAD(v []ad.Number) []ad.Number {
+	p1, t1, _, ok1 := c.C1.smoothFrame3DAD(v, 0, c.P1)
+	p2, t2, _, ok2 := c.C2.smoothFrame3DAD(v, len(c.C1.smoothVars3D()), c.P2)
 	if !ok1 || !ok2 {
-		return []float64{1, 1, 1, 1, 1, 1} // p1/p2 not endpoints: cannot be satisfied
+		return adConstResiduals(6, 1)
 	}
-	cr := t1.Cross(t2)
-	return []float64{
-		float64(c.P1.X - c.P2.X), float64(c.P1.Y - c.P2.Y), float64(c.P1.Z - c.P2.Z), // G0
-		float64(cr.X), float64(cr.Y), float64(cr.Z), // G1
-	}
+	d, cr := p1.Sub(p2), t1.Cross(t2)
+	return []ad.Number{d.X, d.Y, d.Z, cr.X, cr.Y, cr.Z}
 }
+func (c *Tangent3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Tangent3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *Tangent3D) Variables() []*math.Scalar {
 	return append(c.C1.smoothVars3D(), c.C2.smoothVars3D()...)
@@ -79,19 +84,18 @@ func NewSmooth3D(c1, c2 SmoothCurve3D, p1, p2 *Point3D) *Smooth3D {
 	return &Smooth3D{constraintBase: newConstraint(), C1: c1, C2: c2, P1: p1, P2: p2}
 }
 
-func (c *Smooth3D) Residuals() []float64 {
-	t1, k1, ok1 := c.C1.smoothFrame3D(c.P1)
-	t2, k2, ok2 := c.C2.smoothFrame3D(c.P2)
+// residualAD: the Tangent3D residuals (G0+G1) plus the G2 curvature-vector match (3).
+func (c *Smooth3D) residualAD(v []ad.Number) []ad.Number {
+	p1, t1, k1, ok1 := c.C1.smoothFrame3DAD(v, 0, c.P1)
+	p2, t2, k2, ok2 := c.C2.smoothFrame3DAD(v, len(c.C1.smoothVars3D()), c.P2)
 	if !ok1 || !ok2 {
-		return []float64{1, 1, 1, 1, 1, 1, 1, 1, 1}
+		return adConstResiduals(9, 1)
 	}
-	cr := t1.Cross(t2)
-	return []float64{
-		float64(c.P1.X - c.P2.X), float64(c.P1.Y - c.P2.Y), float64(c.P1.Z - c.P2.Z), // G0
-		float64(cr.X), float64(cr.Y), float64(cr.Z), // G1
-		float64(k1.X - k2.X), float64(k1.Y - k2.Y), float64(k1.Z - k2.Z), // G2
-	}
+	d, cr, dk := p1.Sub(p2), t1.Cross(t2), k1.Sub(k2)
+	return []ad.Number{d.X, d.Y, d.Z, cr.X, cr.Y, cr.Z, dk.X, dk.Y, dk.Z}
 }
+func (c *Smooth3D) Residuals() []float64  { return adResiduals(c.Variables(), c.residualAD) }
+func (c *Smooth3D) Partials() [][]float64 { return adPartials(c.Variables(), c.residualAD) }
 
 func (c *Smooth3D) Variables() []*math.Scalar {
 	return append(c.C1.smoothVars3D(), c.C2.smoothVars3D()...)
@@ -249,4 +253,112 @@ func circumcenter3(a, b, c math.Point3) (math.Point3, bool) {
 	}
 	offset := v.Cross(n).Scale(u.LengthSquared()).Add(n.Cross(u).Scale(v.LengthSquared())).Scale(1 / (2 * n2))
 	return a.TranslateBy(offset), true
+}
+
+// --- dual 3D smooth frames (#1417) --------------------------------------------------
+
+// smoothFrame3DAD for a line: tangent from p toward the other endpoint, zero curvature.
+func (l *Line3D) smoothFrame3DAD(v []ad.Number, off int, p *Point3D) (ad.Vec3, ad.Vec3, ad.Vec3, bool) {
+	a, b := adV3(v, off), adV3(v, off+3)
+	switch p {
+	case l.A:
+		return a, adUnit3(b.Sub(a)), adZeroVec3(), true
+	case l.B:
+		return b, adUnit3(a.Sub(b)), adZeroVec3(), true
+	}
+	return ad.Vec3{}, ad.Vec3{}, ad.Vec3{}, false
+}
+
+// smoothFrame3DAD for an arc: tangent ⟂ the radius within the arc plane, curvature p→centre
+// with magnitude 1/r.
+func (a *Arc3D) smoothFrame3DAD(v []ad.Number, off int, p *Point3D) (ad.Vec3, ad.Vec3, ad.Vec3, bool) {
+	center, start, end := adV3(v, off), adV3(v, off+3), adV3(v, off+6)
+	var pt ad.Vec3
+	switch p {
+	case a.Start:
+		pt = start
+	case a.End:
+		pt = end
+	default:
+		return ad.Vec3{}, ad.Vec3{}, ad.Vec3{}, false
+	}
+	normal := start.Sub(center).Cross(end.Sub(center))
+	radial := pt.Sub(center) // centre → p
+	rsq, nsq := radial.Dot(radial), normal.Dot(normal)
+	tol := math.DefaultTolerance * math.DefaultTolerance
+	if rsq.Val() < tol || nsq.Val() < tol {
+		return ad.Vec3{}, ad.Vec3{}, ad.Vec3{}, false // degenerate arc
+	}
+	tangent := adUnit3(normal.Cross(radial))
+	curvature := center.Sub(pt).MulN(ad.Const(1).Div(rsq))
+	return pt, tangent, curvature, true
+}
+
+// smoothFrame3DAD for a spline: tangent from the endpoint toward its adjacent point;
+// curvature the circle through the three terminal points.
+func (s *Spline3D) smoothFrame3DAD(v []ad.Number, off int, p *Point3D) (ad.Vec3, ad.Vec3, ad.Vec3, bool) {
+	pi, ai, si, ok := splineTerminalIndices3D(s, p)
+	if !ok {
+		return ad.Vec3{}, ad.Vec3{}, ad.Vec3{}, false
+	}
+	pt, adj := adV3(v, off+3*pi), adV3(v, off+3*ai)
+	tangent := adUnit3(adj.Sub(pt))
+	if si < 0 {
+		return pt, tangent, adZeroVec3(), true
+	}
+	return pt, tangent, adCurvatureVector3(adV3(v, off+3*si), adj, pt), true
+}
+
+// splineTerminalIndices3D returns the indices of the endpoint p, its adjacent point, and
+// its second-adjacent point (si<0 with fewer than three points), or ok=false when p is not
+// a free endpoint (closed or too short).
+func splineTerminalIndices3D(s *Spline3D, p *Point3D) (pi, ai, si int, ok bool) {
+	n := len(s.Points)
+	if n < 2 || s.Closed {
+		return 0, 0, -1, false
+	}
+	switch p {
+	case s.Points[0]:
+		si = -1
+		if n >= 3 {
+			si = 2
+		}
+		return 0, 1, si, true
+	case s.Points[n-1]:
+		si = -1
+		if n >= 3 {
+			si = n - 3
+		}
+		return n - 1, n - 2, si, true
+	}
+	return 0, 0, -1, false
+}
+
+// adCurvatureVector3 is the dual twin of curvatureVector3: the curvature vector at p of the
+// circle through a, b, p (zero when collinear or degenerate).
+func adCurvatureVector3(a, b, p ad.Vec3) ad.Vec3 {
+	center, ok := adCircumcenter3(a, b, p)
+	if !ok {
+		return adZeroVec3()
+	}
+	toCenter := center.Sub(p)
+	rsq := toCenter.Dot(toCenter)
+	if rsq.Val() < math.DefaultTolerance*math.DefaultTolerance {
+		return adZeroVec3()
+	}
+	return toCenter.MulN(ad.Const(1).Div(rsq))
+}
+
+// adCircumcenter3 is the dual twin of circumcenter3: with u = b−a, w = c−a and n = u×w,
+// the centre is a + (|u|²(w×n) + |w|²(n×u)) / (2|n|²).
+func adCircumcenter3(a, b, c ad.Vec3) (ad.Vec3, bool) {
+	u, w := b.Sub(a), c.Sub(a)
+	n := u.Cross(w)
+	n2 := n.Dot(n)
+	if n2.Val() < math.DefaultTolerance*math.DefaultTolerance {
+		return ad.Vec3{}, false
+	}
+	inv := ad.Const(1).Div(n2.Scale(2))
+	offset := w.Cross(n).MulN(u.Dot(u)).Add(n.Cross(u).MulN(w.Dot(w))).MulN(inv)
+	return a.Add(offset), true
 }

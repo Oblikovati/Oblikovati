@@ -91,6 +91,28 @@ func adConstResiduals(n int, val float64) []ad.Number {
 	return out
 }
 
+// adV3 reads a 3D point from three consecutive seeded variables starting at i.
+func adV3(v []ad.Number, i int) ad.Vec3 { return ad.V3(v[i], v[i+1], v[i+2]) }
+
+// adConstVec3 lifts a fixed (non-DOF) vector — a world axis or plane normal — into a
+// constant dual vector.
+func adConstVec3(n math.Vector3) ad.Vec3 {
+	return ad.V3(ad.Const(float64(n.X)), ad.Const(float64(n.Y)), ad.Const(float64(n.Z)))
+}
+
+// adZeroVec3 is the dual zero vector (a constant, no gradient).
+func adZeroVec3() ad.Vec3 { return ad.V3(ad.Const(0), ad.Const(0), ad.Const(0)) }
+
+// adUnit3 returns v scaled to unit length, or the zero vector when v is (near) zero — the
+// dual twin of unit3.
+func adUnit3(v ad.Vec3) ad.Vec3 {
+	l := v.Length()
+	if l.Val() < math.DefaultTolerance {
+		return adZeroVec3()
+	}
+	return v.MulN(ad.Const(1).Div(l))
+}
+
 // circularFrameAD returns a circular curve's center and radius as duals, read from the
 // segment of the seeded variable row that holds the curve's circularVars (starting at
 // off), plus the number of variables it consumed — so a constraint over two curves can
