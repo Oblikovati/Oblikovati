@@ -39,5 +39,7 @@
   "torus ∩ box (axis-∥ two-oval band)": 145.422929,
   "torus − box (axis-∥ two-oval band)": 249.3613324,
   "torus ∩ box (oblique single oval)": 24.93812164,
-  "torus − box (oblique single oval)": 369.8453969
+  "torus − box (oblique single oval)": 369.8453969,
+  "torus ∩ box (figure-eight pinch)": 114.8863256,
+  "torus − box (figure-eight pinch)": 279.8978536
 }
