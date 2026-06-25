@@ -146,15 +146,16 @@ func coneSideVertexInside(f curvedFace, cone geom.Cone, hyper geom.Hyperbola, ba
 	armUp := conicArm(hyper, vertex, topArc.PointAt(0))   // vertex → top rim
 	notched := []loopEdge{{curve: topArc, t0: 0, t1: 1}, armDown, armUp}
 	section := []loopEdge{reverseEdge(armDown), reverseEdge(armUp)}
-	return coneVertexInsideFaces(f, cone, band, d, notched), section, nil
+	return coneVertexInsideFaces(f, cone, band, d < 0, notched), section, nil // d<0: apex (small rim) kept → annulus
 }
 
-// coneVertexInsideFaces wraps the notched-top loop into the kept face: a lone tongue when the apex is
-// dropped (d>0), or an annulus closed by the intact small-rim circle as an inner loop when the apex is
-// kept (d<0). The small-rim circle is the source side's own edge so it welds with the small cap.
-func coneVertexInsideFaces(f curvedFace, cone geom.Cone, band coneSideBand_, d float64, notched []loopEdge) []curvedFace {
+// coneVertexInsideFaces wraps the notched-top loop into the kept face: a lone tongue narrowing to the
+// vertex (the small rim dropped), or — when annulus is true (the small rim is on the kept side) — the
+// whole side minus that tongue, closed by the intact small-rim circle as an inner loop. The small-rim
+// circle is the source side's own edge so it welds with the small cap.
+func coneVertexInsideFaces(f curvedFace, cone geom.Cone, band coneSideBand_, annulus bool, notched []loopEdge) []curvedFace {
 	loops := []curvedLoop{{edges: notched}}
-	if d < 0 { // apex kept: close the annulus with the intact small rim
+	if annulus {
 		loops = append(loops, curvedLoop{edges: []loopEdge{{curve: band.bottomCirc, t0: 0, t1: 1}}})
 	}
 	return []curvedFace{{surface: cone, reversed: f.reversed, lineage: f.lineage, loops: loops}}

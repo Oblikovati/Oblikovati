@@ -33,13 +33,34 @@ func TestConeSideHalfSpaceObliqueHyperbola(t *testing.T) {
 }
 
 // An oblique hyperbola whose vertex falls INSIDE the band (the arms turn before reaching the small rim,
-// the oblique analogue of #1374) is not yet built and must defer cleanly so the CSG fallback covers it.
-func TestConeSideHalfSpaceObliqueHyperbolaVertexInsideDefers(t *testing.T) {
+// the oblique analogue of #1374) splits exactly: keeping the apex side leaves a notched ANNULUS (the
+// intact small rim plus a top notched down to the vertex), keeping the far side a lone TONGUE.
+func TestConeSideHalfSpaceObliqueHyperbolaVertexInside(t *testing.T) {
 	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
-	plane, _ := geom.NewPlane(math.P3(4, 0, 0), math.V3(stdmath.Sqrt(1-0.2*0.2), 0, 0.2)) // vertex apex-dist ≈ 12, in band
-	if _, err := HalfSpaceCut(frustum, plane); err == nil {
-		t.Error("vertex-inside oblique hyperbola should defer, got nil error")
+	for _, c := range []struct {
+		name string
+		nx   float64
+	}{{"annulus (keep apex side)", stdmath.Sqrt(1 - 0.2*0.2)}, {"tongue (keep far side)", -stdmath.Sqrt(1 - 0.2*0.2)}} {
+		plane, _ := geom.NewPlane(math.P3(4, 0, 0), math.V3(c.nx, 0, 0.2*signOf(c.nx))) // vertex apex-dist ≈ 12, in band
+		res, err := HalfSpaceCut(frustum, plane)
+		if err != nil {
+			t.Fatalf("%s: HalfSpaceCut: %v", c.name, err)
+		}
+		assertWatertight(t, res)
+		if cones, _, _ := faceTypeCounts(t, res); cones != 1 {
+			t.Errorf("%s: got %d cone faces, want 1", c.name, cones)
+		}
+		if !anyFaceHasHyperbola(res) {
+			t.Errorf("%s: no hyperbolic edge", c.name)
+		}
 	}
+}
+
+func signOf(x float64) float64 {
+	if x < 0 {
+		return -1
+	}
+	return 1
 }
 
 // A plane shallower than the generators but clear of the frustum band (its section lies on the infinite

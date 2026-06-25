@@ -125,7 +125,15 @@ func curvedExactCases() []curvedExactCase {
 		{"cone − box (oblique hyperbola)", ops.Cut, coneObliqueHyperbolaBox},
 		{"cone ∩ box (parabola)", ops.Intersect, coneParabolaBox},
 		{"cone − box (parabola)", ops.Cut, coneParabolaBox},
+		{"cone ∩ box (oblique vertex-inside)", ops.Intersect, coneObliqueVertexInsideBox},
+		{"cone − box (oblique vertex-inside)", ops.Cut, coneObliqueVertexInsideBox},
 	}
+}
+
+// coneObliqueVertexInsideBox is the tilted frustum (axis (0.2,0,0.98)) cut by the box face x=5 — far
+// enough out that the oblique hyperbola's vertex falls inside the band (the oblique analogue of #1374).
+func coneObliqueVertexInsideBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoCone(t, math.P3(0, 0, 0), math.P3(2, 0, 9.797958971), 3, 6), demoBlock(t, math.P3(5, -20, -20), math.P3(40, 20, 40))
 }
 
 // coneParabolaBox is a frustum tilted by its own half-angle (one vertical generator) so the box's x=2

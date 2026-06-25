@@ -34,8 +34,12 @@ func coneSideObliqueConicSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, 
 	if side := bandSideOfPlane(cone, band, plane, n); side != 0 {
 		return coneSideWholeOrEmpty(f, float64(side)), nil, nil // the plane clears the side: whole or empty
 	}
-	if apexDistOf(cone, conic.PointAt(0)) >= band.vMin-cylinderAxisTol {
-		return nil, nil, ErrUnsupportedHalfSpace // vertex inside the band (oblique #1374 analogue): deferred
+	vertexDist := apexDistOf(cone, conic.PointAt(0))
+	if vertexDist >= band.vMax-cylinderAxisTol {
+		return nil, nil, ErrUnsupportedHalfSpace // vertex at/above the top rim: not a band-crossing cut
+	}
+	if vertexDist > band.vMin+cylinderAxisTol {
+		return coneSideObliqueVertexInside(f, cone, conic, band, plane, n) // vertex inside the band (oblique #1374)
 	}
 	paramBot, okB := conicParamAtApexDist(conic, cone, band.vMin)
 	paramTop, okT := conicParamAtApexDist(conic, cone, band.vMax)
@@ -48,6 +52,33 @@ func coneSideObliqueConicSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, 
 	}
 	kept := curvedFace{surface: cone, reversed: f.reversed, lineage: f.lineage, loops: []curvedLoop{{edges: loop}}}
 	return []curvedFace{kept}, section, nil
+}
+
+// coneSideObliqueVertexInside builds the kept sub-face when the oblique conic's vertex lies INSIDE the
+// band — the cut fades out before reaching the small rim (the oblique analogue of #1374). The two arms
+// climb only from the TOP rim down to the vertex; below the vertex no cross-section is cut, so the small
+// rim is intact on one side. It mirrors coneSideVertexInside (the notched-top loop, the through-vertex
+// section) but the top-rim half-angle comes from the ACTUAL crossing (root-found) rather than the
+// constant-chord formula, and the tongue-vs-annulus choice from which side the small rim sits on.
+func coneSideObliqueVertexInside(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
+	axis, ref := cone.AxisDir.AsVector(), cone.Ref.AsVector()
+	uN := coneAngleOf(cone, n)
+	paramTop, ok := conicParamAtApexDist(conic, cone, band.vMax)
+	if !ok {
+		return nil, nil, ErrUnsupportedHalfSpace // the arms do not reach the top rim
+	}
+	phiT := crossingHalfAngle(cone, conic.PointAt(paramTop), uN)
+	topArc, err := geom.NewArc3d(band.top, axis, ref, band.rTop, uN-phiT, -(2*stdmath.Pi - 2*phiT))
+	if err != nil {
+		return nil, nil, ErrUnsupportedHalfSpace
+	}
+	vertex := conic.PointAt(0)
+	armDown := conicArm(conic, topArc.PointAt(1), vertex) // top rim → vertex
+	armUp := conicArm(conic, vertex, topArc.PointAt(0))   // vertex → top rim
+	notched := []loopEdge{{curve: topArc, t0: 0, t1: 1}, armDown, armUp}
+	section := []loopEdge{reverseEdge(armDown), reverseEdge(armUp)}
+	annulus := signedDistance(rimPoint(band.bottomCirc), plane, n) < 0 // the small rim is on the kept side
+	return coneVertexInsideFaces(f, cone, band, annulus, notched), section, nil
 }
 
 // obliqueConicBand builds the kept band the SAME way coneArcBand (#1372) does — bottom arc CCW from
