@@ -20,7 +20,6 @@ const (
 	ssiCorrectIters     = 40   // max corrector iterations per point
 	ssiMaxStepsPerCurve = 6000 // guard against a non-closing march
 	ssiMaxCurves        = 256  // guard against pathological seeding
-	ssiSeedSteps        = 160  // seed-scan resolution (finer than the old 96 so thinner features seed)
 	// ssiTangencyCos is the |nb·no| above which the surfaces count as tangent (normals (anti)parallel).
 	// It must be loose enough to cover the FUZZY neighbourhood of a tangency, where the normals are
 	// nearly — but not exactly — parallel: too strict a value (e.g. 1−1e-10) lets the corrector treat a
@@ -258,35 +257,6 @@ func nearAnyCurve(curves [][]math.Point3, p math.Point3, tol float64) bool {
 		}
 	}
 	return false
-}
-
-// ssiSeeds returns candidate 3D points near the intersection: the bisected grid sign-changes of the
-// signed-distance field (every curve crossing a grid line) plus the grid points where the field is
-// smallest in magnitude (catching tangencies and small loops that do not cross a grid line).
-func ssiSeeds(base, other Surface, g SurfaceGrid) []math.Point3 {
-	du := (g.UMax - g.UMin) / float64(ssiSeedSteps)
-	dv := (g.VMax - g.VMin) / float64(ssiSeedSteps)
-	field := func(u, v float64) float64 { return SignedDistanceToSurface(other, base.PointAt(u, v)) }
-	var seeds []math.Point3
-	for i := 0; i <= ssiSeedSteps; i++ {
-		u := g.UMin + float64(i)*du
-		for j := 0; j <= ssiSeedSteps; j++ {
-			v := g.VMin + float64(j)*dv
-			f := field(u, v)
-			// Sign change to the +u / +v neighbour → a crossing seed (bisected for accuracy).
-			if i < ssiSeedSteps && straddlesZero(f, field(u+du, v)) {
-				seeds = append(seeds, bisectEdge(base, field, u, v, f, u+du, v))
-			}
-			if j < ssiSeedSteps && straddlesZero(f, field(u, v+dv)) {
-				seeds = append(seeds, bisectEdge(base, field, u, v, f, u, v+dv))
-			}
-			// Near-zero interior sample → seed for a tangency / sub-grid loop the contour misses.
-			if stdmath.Abs(f) < 2*stdmath.Max(du, dv) {
-				seeds = append(seeds, base.PointAt(u, v))
-			}
-		}
-	}
-	return seeds
 }
 
 // ssiTolerance is the model-relative on-curve tolerance: 1e-7 of the base's 3D extent (the stated
