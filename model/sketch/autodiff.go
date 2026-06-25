@@ -71,6 +71,59 @@ func scalarValues(vars []*math.Scalar) []float64 {
 // adZeroVec2 is the dual zero vector (a constant, no gradient).
 func adZeroVec2() ad.Vec2 { return ad.V2(ad.Const(0), ad.Const(0)) }
 
+// The orientation residuals below are normalised so their magnitude is in LENGTH units
+// (perpendicular distance / projection) or DIMENSIONLESS (sine / cosine of an angle),
+// never area (|line|·|offset|). An un-normalised cross/dot residual shrinks with the
+// line's length, so a short segment yields a tiny Jacobian row that matrixRank drops —
+// mis-reporting the constraint as redundant and falsifying the DOF / over-constrained
+// signal (Oblikovati/Oblikovati#1418). Normalising keeps the Jacobian rows O(1)
+// regardless of segment length, so classification matches the geometric truth and a long
+// vs short geometrically-identical sketch classify the same.
+
+// adSignedPerpDistance returns the signed perpendicular distance of offset w from a line
+// of direction dir: (dir × w)/|dir|. A degenerate (zero-length) direction falls back to
+// |w| (distance to the line's anchor), keeping the residual finite and in length units.
+func adSignedPerpDistance(dir, w ad.Vec2) ad.Number {
+	length := dir.Length()
+	if length.Val() < math.DefaultTolerance {
+		return w.Length()
+	}
+	return dir.Cross(w).Div(length)
+}
+
+// adSineAngle returns the sine of the angle between two directions, (d1 × d2)/(|d1||d2|) —
+// the scale-invariant parallelism residual. A degenerate direction (no orientation to be
+// parallel to) falls back to the raw cross product (which is itself ≈ 0).
+func adSineAngle(d1, d2 ad.Vec2) ad.Number {
+	denom := d1.Length().Mul(d2.Length())
+	if denom.Val() < math.DefaultTolerance {
+		return d1.Cross(d2)
+	}
+	return d1.Cross(d2).Div(denom)
+}
+
+// adCosAngle returns the cosine of the angle between two directions, (d1 · d2)/(|d1||d2|) —
+// the scale-invariant perpendicularity residual (zero at a right angle). Degenerate
+// directions fall back to the raw dot product.
+func adCosAngle(d1, d2 ad.Vec2) ad.Number {
+	denom := d1.Length().Mul(d2.Length())
+	if denom.Val() < math.DefaultTolerance {
+		return d1.Dot(d2)
+	}
+	return d1.Dot(d2).Div(denom)
+}
+
+// adProjectionAlong returns the component of w along dir, (w · dir)/|dir| — a length
+// independent of dir's arbitrary representation length. A degenerate dir falls back to the
+// raw dot product.
+func adProjectionAlong(w, dir ad.Vec2) ad.Number {
+	length := dir.Length()
+	if length.Val() < math.DefaultTolerance {
+		return w.Dot(dir)
+	}
+	return w.Dot(dir).Div(length)
+}
+
 // adUnit2 returns v scaled to unit length, or the zero vector when v is (near) zero —
 // the dual twin of unit2, keeping a degenerate direction from producing NaNs.
 func adUnit2(v ad.Vec2) ad.Vec2 {
