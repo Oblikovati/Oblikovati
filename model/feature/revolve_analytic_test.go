@@ -206,3 +206,52 @@ func TestNativeRevolveTorusHalfSpaceCutsAreExact(t *testing.T) {
 		}
 	}
 }
+
+// TestNativeObliqueRevolveTorusCutsAreExact completes native coverage of the M2 torus half-space family:
+// a circle revolved 360° about a TILTED axis (0,0.6,0.8) — sketched on a work plane that contains that axis
+// — yields an analytic OBLIQUE torus, and an axis-aligned box then cuts it at an oblique angle. The single
+// oblique oval (cap + complement), two oblique ovals, and the oblique figure-eight each take the exact
+// analytic path (a handful of faces, watertight), never faceted CSG.
+func TestNativeObliqueRevolveTorusCutsAreExact(t *testing.T) {
+	tiltedTorus := func() *topo.Body {
+		pl, err := sketch.NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 0).AsUnit(), math.V3(0, 0.6, 0.8).AsUnit())
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := sketch.NewSketches().Add(pl)
+		s.Circles().AddByCenterRadius(math.P2(5, 0), 2) // 5 ⟂ to the axis → major 5, minor 2
+		fs := NewPartFeatures(nil, nil)
+		NewRevolveFeatures(fs).Add(s, 0, &WorkAxis{origin: math.P3(0, 0, 0), dir: math.V3(0, 0.6, 0.8).AsUnit()}, nil, ops.NewBody)
+		fs.Recompute()
+		return fs.Result()[0]
+	}
+	if torusFaceCount(tiltedTorus()) != 1 {
+		t.Fatalf("tilted revolve has %d torus faces, want 1 analytic", torusFaceCount(tiltedTorus()))
+	}
+	cases := []struct {
+		name string
+		z    float64 // box z>=this cuts the tilted torus obliquely
+	}{
+		{"oblique single oval", 3.6},
+		{"two oblique ovals", 0.5},
+		{"oblique figure-eight", 1.0},
+	}
+	for _, c := range cases {
+		for _, op := range []struct {
+			tag string
+			op  ops.PartFeatureOperation
+		}{{"∩", ops.Intersect}, {"−", ops.Cut}} {
+			box, _ := brep.SolidBlock(math.P3(-20, -20, c.z), math.P3(20, 20, 20), "box")
+			res, err := ops.Boolean(op.op, tiltedTorus(), box)
+			if err != nil {
+				t.Fatalf("%s %s: %v", c.name, op.tag, err)
+			}
+			if n := len(res.Faces()); n > 40 {
+				t.Errorf("%s %s: %d faces — fell to faceted CSG", c.name, op.tag, n)
+			}
+			if !res.IsSolid() {
+				t.Errorf("%s %s: result is not a solid", c.name, op.tag)
+			}
+		}
+	}
+}
