@@ -26,11 +26,12 @@ import (
 // complement) is decided by the caller from the sign of K (K<0 keeps the small cap on the −m side).
 func torusAxisParallelOval(t geom.Torus, plane geom.Plane) (k float64, ok bool) {
 	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	if stdmath.Abs(c) > cylinderAxisTol || m <= cylinderAxisTol {
+	if stdmath.Abs(c) > cylinderAxisCosTol || m <= cylinderAxisCosTol {
 		return k, false
 	}
+	tol := torusSectionTol(t)
 	ratio := stdmath.Abs(k) / m // the plane's distance from the axis, in tube radii
-	ok = ratio > t.MajorRadius-t.MinorRadius+cylinderAxisTol && ratio < t.MajorRadius+t.MinorRadius-cylinderAxisTol
+	ok = ratio > t.MajorRadius-t.MinorRadius+tol && ratio < t.MajorRadius+t.MinorRadius-tol
 	return k, ok
 }
 

@@ -46,7 +46,7 @@ func TestHalfSpaceThroughCapSeam(t *testing.T) {
 func hasPlanarLid(b *topo.Body, plane geom.Plane) bool {
 	for _, f := range b.Faces() {
 		pl, ok := f.Geometry().(geom.Plane)
-		if ok && samePoint(pl.Origin, plane.Origin) {
+		if ok && samePoint(pl.Origin, plane.Origin, geom.ResolutionForSize(1)) {
 			return true
 		}
 	}

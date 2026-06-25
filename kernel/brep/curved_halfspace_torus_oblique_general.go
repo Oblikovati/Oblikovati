@@ -102,12 +102,12 @@ func torusSectionAbsentArc(t geom.Torus, m, k, c float64) float64 {
 }
 
 // torusObliqueOval reports whether plane makes a single CLEAR oval bite we build via the cap/complement
-// path: genuinely tilted (cylinderAxisTol < |C| < 1), one oval, and NOT near-full-wrap (the section is
+// path: genuinely tilted (cylinderAxisCosTol < |C| < 1), one oval, and NOT near-full-wrap (the section is
 // absent over more than figureEightWrapTol of the tube, so the complement is a fat genus-1 region the chart
 // meshes well). A near-full-wrap oval is the oblique figure-eight, routed to [torusTwoObliqueOval] instead.
 func torusObliqueOval(t geom.Torus, plane geom.Plane) bool {
 	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	if stdmath.Abs(c) <= cylinderAxisTol || stdmath.Abs(c) >= 1-cylinderAxisTol || m <= cylinderAxisTol {
+	if stdmath.Abs(c) <= cylinderAxisCosTol || stdmath.Abs(c) >= 1-cylinderAxisCosTol || m <= cylinderAxisCosTol {
 		return false
 	}
 	if torusSectionAbsentArc(t, m, k, c) <= figureEightWrapTol {
@@ -117,14 +117,14 @@ func torusObliqueOval(t geom.Torus, plane geom.Plane) bool {
 	return ok // a clear single oval (the substantial absent arc keeps the crossings well separated)
 }
 
-// torusTwoObliqueOval reports whether a TILTED plane (cylinderAxisTol < |C| < 1) cuts a band the band loft
+// torusTwoObliqueOval reports whether a TILTED plane (cylinderAxisCosTol < |C| < 1) cuts a band the band loft
 // meshes: either TWO ovals (the section is valid at every tube angle — no w=±1 crossing — so each branch is
 // a full closed oval) or the near-full-wrap FIGURE-EIGHT (a single oval whose two pinches are within
 // figureEightWrapTol, valid over all but a sliver of the tube). Both are the tilted analogue of the
 // axis-parallel [torusTwoOvalBand]; the band builder and spiric mesher are general in C, so they reuse it.
 func torusTwoObliqueOval(t geom.Torus, plane geom.Plane) bool {
 	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	if stdmath.Abs(c) <= cylinderAxisTol || stdmath.Abs(c) >= 1-cylinderAxisTol || m <= cylinderAxisTol {
+	if stdmath.Abs(c) <= cylinderAxisCosTol || stdmath.Abs(c) >= 1-cylinderAxisCosTol || m <= cylinderAxisCosTol {
 		return false
 	}
 	// The section exists over (nearly) all of the tube — two full ovals, or the near-full-wrap figure-eight.

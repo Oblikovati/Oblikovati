@@ -38,7 +38,7 @@ func TestCrossingCylinderImprintThinThroughFat(t *testing.T) {
 	ca, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	cb, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1.5)
 	for i, lp := range loops {
-		if !samePoint(lp.PointAt(0), lp.PointAt(1)) {
+		if !samePoint(lp.PointAt(0), lp.PointAt(1), geom.ResolutionForSize(1)) {
 			t.Errorf("loop %d is not closed: %v vs %v", i, lp.PointAt(0), lp.PointAt(1))
 		}
 		if err := onBothCylinders(lp, ca, cb); err > 1e-5 {

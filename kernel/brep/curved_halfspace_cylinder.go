@@ -16,9 +16,11 @@ import (
 // section, a wedge result) needs the general curved arrangement and returns ErrUnsupportedHalfSpace
 // so the caller keeps the CSG fallback.
 
-// cylinderAxisTol is how close |n·axis| must be to 1 for a cut plane to count as perpendicular to
-// the cylinder axis (a constant-axial-coordinate cut). Looser than that is an oblique section.
-const cylinderAxisTol = 1e-7
+// cylinderAxisCosTol is how close |n·axis| must be to 1 for a cut plane to count as perpendicular to
+// the cylinder axis (a constant-axial-coordinate cut). Looser than that is an oblique section. It is a
+// cosine of unit vectors — DIMENSIONLESS — so it stays absolute; the axial/radial LENGTH comparisons
+// that used to share this constant now derive from a model-relative Resolution (res.Plane(), #1399).
+const cylinderAxisCosTol = 1e-7
 
 // CylinderParams recovers a bare cylinder's surface, base-cap centre and height from a body, for callers
 // (the curved subtract) that need the axis frame before building. ok=false unless the body is exactly one
@@ -32,7 +34,7 @@ func CylinderParams(body *topo.Body) (cyl geom.Cylinder, base math.Point3, heigh
 // axis-parallel or oblique cut routes to the general arrangement instead.
 func perpendicularToAxis(n math.Vector3, cyl geom.Cylinder) bool {
 	along := float64(n.Dot(cyl.AxisDir.AsVector()))
-	return stdmath.Abs(along) >= 1-cylinderAxisTol
+	return stdmath.Abs(along) >= 1-cylinderAxisCosTol
 }
 
 // cylinderSolidParams recovers a closed cylinder's geometry from its flattened faces: the side's
@@ -77,16 +79,19 @@ func cylinderHalfSpace(body *topo.Body, cyl geom.Cylinder, base math.Point3, hei
 	n := unit(plane.Normal())
 	axis := cyl.AxisDir.AsVector()
 	along := float64(n.Dot(axis))
-	if stdmath.Abs(along) < 1-cylinderAxisTol {
+	if stdmath.Abs(along) < 1-cylinderAxisCosTol {
 		return nil, ErrUnsupportedHalfSpace // oblique cut: elliptical section, deferred
 	}
+	// Axial band lengths are model-relative (#1399): a km-scale cylinder is not falsely emptied or
+	// kept-whole by a cm-anchored axial epsilon.
+	axialTol := geom.ResolutionForBox(body.RangeBox()).Plane()
 	// Axial coordinate (from base, along +axis) where the cut plane sits, and the kept sub-band.
 	cut := float64(base.VectorTo(plane.Origin).Dot(axis))
 	lo, hi := keptAxialBand(cut, height, along > 0)
-	if hi-lo <= cylinderAxisTol {
+	if hi-lo <= axialTol {
 		return topo.MergeBodies(topo.NewLineage(topo.Tok("halfspace", "empty", 0)), true), nil
 	}
-	if hi-lo >= height-cylinderAxisTol {
+	if hi-lo >= height-axialTol {
 		return body, nil // plane clears the cylinder on the kept side
 	}
 	newBase := base.TranslateBy(axis.Scale(math.Scalar(lo)))

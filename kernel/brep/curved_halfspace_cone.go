@@ -62,10 +62,12 @@ func coneHalfSpace(body *topo.Body, cone geom.Cone, vMin, vMax float64, plane ge
 	along := float64(n.Dot(axis))
 	vCut := float64(cone.Apex.VectorTo(plane.Origin).Dot(axis))
 	vLo, vHi := keptConeBand(vCut, vMin, vMax, along > 0)
-	if vHi-vLo <= cylinderAxisTol {
+	// Apex-distance band lengths are model-relative (#1399).
+	axialTol := geom.ResolutionForBox(body.RangeBox()).Plane()
+	if vHi-vLo <= axialTol {
 		return topo.MergeBodies(topo.NewLineage(topo.Tok("halfspace", "empty", 0)), true), nil
 	}
-	if vLo <= vMin+cylinderAxisTol && vHi >= vMax-cylinderAxisTol {
+	if vLo <= vMin+axialTol && vHi >= vMax-axialTol {
 		return body, nil // plane clears the cone on the kept side
 	}
 	t := stdmath.Tan(cone.HalfAngle)
@@ -88,5 +90,5 @@ func keptConeBand(vCut, vMin, vMax float64, nAlongAxis bool) (vLo, vHi float64) 
 // perpendicularToConeAxis reports whether the cut plane normal is parallel to the cone axis (a
 // constant-apex-distance cut), the only orientation the fast cone path handles.
 func perpendicularToConeAxis(n math.Vector3, cone geom.Cone) bool {
-	return stdmath.Abs(float64(n.Dot(cone.AxisDir.AsVector()))) >= 1-cylinderAxisTol
+	return stdmath.Abs(float64(n.Dot(cone.AxisDir.AsVector()))) >= 1-cylinderAxisCosTol
 }

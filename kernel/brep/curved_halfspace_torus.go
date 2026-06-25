@@ -30,7 +30,14 @@ func torusSolidParams(faces []curvedFace) (geom.Torus, bool) {
 // perpendicularToTorusAxis reports whether the cut plane normal is parallel to the torus axis — the
 // constant-axial-level cut whose section is the two concentric circles this path handles.
 func perpendicularToTorusAxis(n math.Vector3, t geom.Torus) bool {
-	return stdmath.Abs(float64(n.Dot(t.AxisDir.AsVector()))) >= 1-cylinderAxisTol
+	return stdmath.Abs(float64(n.Dot(t.AxisDir.AsVector()))) >= 1-cylinderAxisCosTol
+}
+
+// torusSectionTol is the model-relative length margin for a torus spiric-section offset test (#1399):
+// the radius/offset comparisons that classify the section topology (single oval, two ovals, figure-eight)
+// scale with the torus's own extent (major + minor radius) instead of a cm-anchored 1e-7.
+func torusSectionTol(t geom.Torus) float64 {
+	return geom.ResolutionForSize(t.MajorRadius + t.MinorRadius).Plane()
 }
 
 // torusHalfSpace keeps the tube arc of a torus on the plane's negative side, rebuilt as a trimmed torus
@@ -42,10 +49,11 @@ func torusHalfSpace(body *topo.Body, t geom.Torus, plane geom.Plane) (*topo.Body
 	nAxis := float64(n.Dot(axis))
 	d := float64(t.Center.VectorTo(plane.Origin).Dot(axis)) // section level along the axis
 	r := t.MinorRadius
-	if d >= r-cylinderAxisTol {
+	radialTol := geom.ResolutionForBox(body.RangeBox()).Plane() // model-relative clearance (#1399)
+	if d >= r-radialTol {
 		return keepWholeOrEmpty(body, nAxis > 0) // the whole tube lies below d: kept iff the low side is kept
 	}
-	if d <= -r+cylinderAxisTol {
+	if d <= -r+radialTol {
 		return keepWholeOrEmpty(body, nAxis < 0)
 	}
 	half := stdmath.Sqrt(r*r - d*d)
