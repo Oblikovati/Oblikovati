@@ -102,12 +102,13 @@ func (c coneUV) point3(u, v float64) math.Point3 {
 // WRAPPING case (kept v-interval non-empty for every azimuth) is a band represented as a face with two
 // boundary loops (no seam, like the vertex-inside annulus #1374): the upper loop is the kept hi(u) curve
 // and the lower loop the kept lo(u) curve, each a closed chain of WHOLE rim arcs and section arcs split
-// only at the rim crossings — so each rim arc welds with the cap that shares it. A non-wrapping (tongue)
-// arrangement defers to the caller for now.
+// only at the rim crossings — so each rim arc welds with the cap that shares it. A NON-WRAPPING (tongue)
+// arrangement — the kept interval empties at some azimuths because the section straddles a rim on its
+// kept side — is built by coneSideUVTongue as one loop over the single surviving azimuth span.
 func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	uv := newConeUV(cone, band, plane, n)
 	if !uv.wrapsAllU() {
-		return nil, nil, ErrUnsupportedHalfSpace // a tongue (kept interval empties somewhere): not yet built here
+		return uv.coneSideUVTongue(f, cone, conic) // a non-wrapping arrangement: one kept azimuth span
 	}
 	hiEdges, hiSec, ok1 := uv.boundaryLoop(conic, band, true)
 	loEdges, loSec, ok2 := uv.boundaryLoop(conic, band, false)
@@ -126,6 +127,109 @@ func coneSideUVSplit(f curvedFace, cone geom.Cone, conic geom.Curve3, band coneS
 		loops: []curvedLoop{{edges: hiLoop}, {edges: loEdges}}}
 	lidSection := append(append([]loopEdge{}, lidHiSec...), reverseEdgeChain(loSec)...)
 	return []curvedFace{kept}, lidSection, nil
+}
+
+// coneSideUVTongue builds the kept face of a NON-WRAPPING arrangement: the section straddles the rim on
+// its kept side (the section ellipse dips below vMin, or rises above vMax), so the kept v-interval is
+// non-empty only over a single azimuth span [u1, u2] and pinches to a point at each end (where the
+// section meets the clamp rim). The kept region is one loop — the LOWER bound forward over [u1, u2] then
+// the UPPER bound reversed — closing at the two pinch vertices; the section sub-arcs cap the planar lid
+// together with the cap chords the same plane carves on the frustum's end caps (Oblikovati#1375).
+func (c coneUV) coneSideUVTongue(f curvedFace, cone geom.Cone, conic geom.Curve3) ([]curvedFace, []loopEdge, error) {
+	u1, u2, ok := c.keptUSpan()
+	if !ok {
+		return nil, nil, ErrUnsupportedHalfSpace // not a single span (only an ellipse-section tongue is built)
+	}
+	loEdges, loSec, ok1 := c.boundarySubChain(conic, u1, u2, false)
+	hiEdges, hiSec, ok2 := c.boundarySubChain(conic, u1, u2, true)
+	if !ok1 || !ok2 {
+		return nil, nil, ErrUnsupportedHalfSpace
+	}
+	loop := append(append([]loopEdge{}, loEdges...), reverseEdgeChain(hiEdges)...)
+	kept := curvedFace{surface: cone, reversed: f.reversed, lineage: f.lineage, loops: []curvedLoop{{edges: loop}}}
+	// The lid uses each section sub-arc OPPOSITE to the band's final use: the lo section runs forward in the
+	// band so the lid reverses it; the hi section runs reversed in the band so the lid uses it forward.
+	section := append(reverseEdgeChain(loSec), hiSec...)
+	return []curvedFace{kept}, section, nil
+}
+
+// keptUSpan returns the single azimuth interval [u1, u2] (u2 may exceed 2π when the span wraps the seam)
+// where the kept v-interval is non-empty — the tongue's u-extent, pinching at u1 and u2 where the section
+// reaches the clamp rim. ok=false unless the kept region is EXACTLY one such span (an ellipse section
+// straddling a rim makes exactly one; anything else is left to the caller's fallback).
+func (c coneUV) keptUSpan() (u1, u2 float64, ok bool) {
+	const twoPi, N = 2 * stdmath.Pi, 1440
+	var starts, ends []float64
+	prev := c.keptNonEmpty(0)
+	for i := 1; i <= N; i++ {
+		u := twoPi * float64(i) / N
+		cur := c.keptNonEmpty(u)
+		switch {
+		case cur && !prev:
+			starts = append(starts, c.bisectKeptEdge(twoPi*float64(i-1)/N, u, true))
+		case !cur && prev:
+			ends = append(ends, c.bisectKeptEdge(twoPi*float64(i-1)/N, u, false))
+		}
+		prev = cur
+	}
+	if len(starts) != 1 || len(ends) != 1 {
+		return 0, 0, false
+	}
+	u1, u2 = starts[0], ends[0]
+	if u2 < u1 {
+		u2 += twoPi // the kept span straddles the seam (it was already open at u=0)
+	}
+	return u1, u2, true
+}
+
+// keptNonEmpty reports whether the kept v-interval is non-empty at azimuth u.
+func (c coneUV) keptNonEmpty(u float64) bool { _, _, ok := c.keptV(u); return ok }
+
+// bisectKeptEdge refines the azimuth where the kept interval pinches to empty — the tongue endpoint where
+// the section curve meets the clamp rim. rising=true brackets an empty→non-empty edge, else non-empty→empty.
+func (c coneUV) bisectKeptEdge(lo, hi float64, rising bool) float64 {
+	for i := 0; i < 60; i++ {
+		mid := (lo + hi) / 2
+		if c.keptNonEmpty(mid) == rising {
+			hi = mid
+		} else {
+			lo = mid
+		}
+	}
+	return (lo + hi) / 2
+}
+
+// boundarySubChain builds the boundary chain (rim and section edges) of the upper or lower bound over the
+// non-wrapping azimuth span [ua, ub], split at the interior rim crossings, with the section sub-arcs
+// returned separately (u-increasing) for the lid.
+func (c coneUV) boundarySubChain(conic geom.Curve3, ua, ub float64, upper bool) (edges, section []loopEdge, ok bool) {
+	breaks := append([]float64{ua}, c.interiorRimCrossings(ua, ub, upper)...)
+	breaks = append(breaks, ub)
+	for i := 0; i+1 < len(breaks); i++ {
+		e, sec, good := c.boundaryEdge(conic, breaks[i], breaks[i+1], upper)
+		if !good {
+			return nil, nil, false
+		}
+		edges = append(edges, e)
+		section = append(section, sec...)
+	}
+	return edges, section, true
+}
+
+// interiorRimCrossings returns the azimuths strictly inside (ua, ub) where the bound switches between a
+// rim and the section curve, bisected to the exact crossing (where the section reaches the clamp rim).
+func (c coneUV) interiorRimCrossings(ua, ub float64, upper bool) []float64 {
+	const N = 1440
+	var out []float64
+	prev := c.onRim(ua, upper)
+	for i := 1; i < N; i++ {
+		u := ua + (ub-ua)*float64(i)/N
+		if cur := c.onRim(u, upper); cur != prev {
+			out = append(out, c.bisectRimBreak(ua+(ub-ua)*float64(i-1)/N, u, upper))
+			prev = cur
+		}
+	}
+	return out
 }
 
 // loAt and hiAt give the kept interval's lower / upper bound at azimuth u.
@@ -245,10 +349,42 @@ func (c coneUV) boundaryEdge(conic geom.Curve3, ua, ub float64, upper bool) (loo
 		}
 		return loopEdge{curve: arc, t0: 0, t1: 1}, nil, true
 	}
-	va := c.sectionV(ua)
-	vb := c.sectionV(ub)
-	e := conicArm(conic, c.point3(ua, va), c.point3(ub, vb)) // a partial section arc
+	e := c.sectionArm(conic, ua, ub) // a partial section arc, seam-wrap-safe for a full ellipse
 	return e, []loopEdge{e}, true
+}
+
+// sectionArm builds the section conic sub-arc spanning azimuth [ua, ub]. For a full ellipse the endpoint
+// parameters alone are ambiguous (the param seam may fall inside the span, so a plain start→end sweep can
+// trace the COMPLEMENTARY major arc instead of the tongue side); the midpoint azimuth's parameter
+// disambiguates by unwrapping start→mid→end onto one monotone run. Other conics (hyperbola/parabola arms)
+// are open and need no unwrapping, so conicArm's endpoint parameters suffice.
+func (c coneUV) sectionArm(conic geom.Curve3, ua, ub float64) loopEdge {
+	el, ok := conic.(geom.EllipseFull)
+	if !ok {
+		return conicArm(conic, c.point3(ua, c.sectionV(ua)), c.point3(ub, c.sectionV(ub)))
+	}
+	t0 := c.ellipseParamAt(el, ua)
+	tm := unwrapParamNear(t0, c.ellipseParamAt(el, (ua+ub)/2))
+	t1 := unwrapParamNear(tm, c.ellipseParamAt(el, ub))
+	return loopEdge{curve: el, t0: t0, t1: t1}
+}
+
+// ellipseParamAt returns the full ellipse's parameter (in [0,1)) at the section point of azimuth u.
+func (c coneUV) ellipseParamAt(el geom.EllipseFull, u float64) float64 {
+	t, _ := geom.CurveParamAtPoint3(el, c.point3(u, c.sectionV(u)))
+	return t
+}
+
+// unwrapParamNear shifts x by whole turns so it lands within ±0.5 of ref — turning a wrapped [0,1)
+// parameter sequence into a monotone run, so the swept ellipse arc passes through the interior point.
+func unwrapParamNear(ref, x float64) float64 {
+	for x-ref > 0.5 {
+		x--
+	}
+	for x-ref < -0.5 {
+		x++
+	}
+	return x
 }
 
 // fullSectionEdge builds the closed re-anchored ellipse edge when a boundary is the whole within-band

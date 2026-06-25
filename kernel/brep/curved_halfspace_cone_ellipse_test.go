@@ -54,6 +54,27 @@ func TestConeSideHalfSpaceEllipseClipsRim(t *testing.T) {
 	}
 }
 
+// The same rim-straddling ellipse kept from the OTHER side is the non-wrapping TONGUE: the kept region
+// survives only over the single azimuth span where the section sits inside the band, pinching to a point
+// at each end (where the section meets the top rim). The (u,v) split's coneSideUVTongue builds it as one
+// loop — the surviving top-rim arc plus the section arc — watertight, one analytic cone face, no CSG
+// (Oblikovati/Oblikovati#1375).
+func TestConeSideHalfSpaceEllipseTongue(t *testing.T) {
+	frustum := mustFrustum(t, math.P3(0, 0, 0), math.P3(0, 0, 10), 3, 6)
+	plane, _ := geom.NewPlane(math.P3(0, 0, 9.5), math.V3(-0.5, 0, -0.866)) // keep the wedge the ellipse cuts off
+	res, err := HalfSpaceCut(frustum, plane)
+	if err != nil {
+		t.Fatalf("tongue cut should be handled exactly, got %v", err)
+	}
+	assertWatertight(t, res)
+	if cones, _, _ := faceTypeCounts(t, res); cones != 1 {
+		t.Errorf("result has %d cone faces, want exactly 1 (the tongue stays analytic)", cones)
+	}
+	if !anyFaceHasEllipse(res) {
+		t.Error("no face carries an elliptical edge — the rim-clipping ellipse was not imprinted")
+	}
+}
+
 // wrapToPi folds an angle into (−π, π] from either direction.
 func TestWrapToPi(t *testing.T) {
 	cases := []struct{ in, want float64 }{
@@ -62,6 +83,22 @@ func TestWrapToPi(t *testing.T) {
 	for _, c := range cases {
 		if got := wrapToPi(c.in); got-c.want > 1e-9 || c.want-got > 1e-9 {
 			t.Errorf("wrapToPi(%g) = %g, want %g", c.in, got, c.want)
+		}
+	}
+}
+
+// unwrapParamNear shifts a wrapped [0,1) parameter by whole turns to within ±0.5 of the reference, so a
+// section sub-arc straddling the ellipse param seam sweeps through the tongue interior, not the major arc.
+func TestUnwrapParamNear(t *testing.T) {
+	cases := []struct{ ref, x, want float64 }{
+		{0.9, 0.1, 1.1},  // forward across the seam: 0.1 lifts a turn so 0.9→1.1 is the short arc
+		{0.1, 0.9, -0.1}, // backward across the seam: 0.9 drops a turn
+		{0.4, 0.6, 0.6},  // within half a turn: unchanged
+		{0.0, 0.5, 0.5},  // exactly half a turn: unchanged (boundary)
+	}
+	for _, c := range cases {
+		if got := unwrapParamNear(c.ref, c.x); got-c.want > 1e-9 || c.want-got > 1e-9 {
+			t.Errorf("unwrapParamNear(%g, %g) = %g, want %g", c.ref, c.x, got, c.want)
 		}
 	}
 }
