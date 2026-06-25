@@ -121,8 +121,7 @@ func updateParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	}
 	// A model-value selection change moves the value features consume.
 	if in.ModelValueType != nil {
-		part.Features().MarkAllDirty()
-		part.Recompute()
+		part.RecomputeAfterParameterEdit()
 	}
 	s.RecordAddInEdit(part, "Edit Parameter")
 	return json.Marshal(paramDetail(part, p))
@@ -197,8 +196,7 @@ func setParameterTolerance(s *app.Session, args json.RawMessage) (json.RawMessag
 	if err := applyToleranceMode(part, p, in); err != nil {
 		return nil, err
 	}
-	part.Features().MarkAllDirty()
-	part.Recompute()
+	part.RecomputeAfterParameterEdit()
 	s.RecordAddInEdit(part, "Edit Tolerance")
 	return json.Marshal(paramDetail(part, p))
 }
@@ -304,8 +302,7 @@ func deleteParameter(s *app.Session, args json.RawMessage) (json.RawMessage, err
 	if err := ps.Delete(p.ID()); err != nil {
 		return nil, err
 	}
-	part.Features().MarkAllDirty()
-	part.Recompute()
+	part.RecomputeAfterParameterEdit()
 	s.RecordAddInEdit(part, "Delete Parameter")
 	return json.Marshal(struct{}{})
 }

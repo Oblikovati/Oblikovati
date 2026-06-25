@@ -166,6 +166,20 @@ func (d *PartComponentDefinition) Recompute() {
 	d.MarkChanged()
 }
 
+// RecomputeAfterParameterEdit rebuilds the part after a parameter value/equation/bool edit. A
+// parameter edit can change any feature's LIVE inputs — sketch dimensions, extrude-distance and
+// work-plane-offset closures — which the feature engine does NOT track as dependencies, so a plain
+// Recompute would find nothing dirty and hand back the cached, pre-edit bodies (silent stale
+// geometry). It marks the whole program dirty first, so the rebuild actually re-evaluates. This is
+// the single invalidation seam every parameter-edit path shares — the UI verb, XML import, and the
+// wire router — so they cannot diverge (Oblikovati#1413; before this, the app verb omitted the
+// MarkAllDirty the router did, leaving UI dimension edits stale). Until per-parameter feature edges
+// exist (targeted invalidation, #16) this is a full rebuild.
+func (d *PartComponentDefinition) RecomputeAfterParameterEdit() {
+	d.features.MarkAllDirty()
+	d.Recompute()
+}
+
 // refreshSketchPlanes re-reads each sketch's host work plane (if any), so sketches on
 // datum planes follow them when they move.
 func (d *PartComponentDefinition) refreshSketchPlanes() {

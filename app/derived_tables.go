@@ -82,8 +82,7 @@ func (s *Session) SetDerivedTableLinked(id int, linked []string) error {
 	if err := part.Parameters().SetDerivedTableLinked(id, linked, source); err != nil {
 		return err
 	}
-	part.Features().MarkAllDirty()
-	part.Recompute()
+	part.RecomputeAfterParameterEdit()
 	s.recordEdit(part, "Edit Derived Parameters")
 	return nil
 }
@@ -98,8 +97,7 @@ func (s *Session) DeleteDerivedParameterTable(id int) error {
 	if err := part.Parameters().DeleteDerivedTable(id); err != nil {
 		return err
 	}
-	part.Features().MarkAllDirty()
-	part.Recompute()
+	part.RecomputeAfterParameterEdit()
 	s.recordEdit(part, "Delete Derived Parameters")
 	return nil
 }
@@ -148,8 +146,7 @@ func (s *Session) resyncDocumentFrom(d *doc.Document, sourceName string, values 
 		synced = true
 	}
 	if synced {
-		def.Features().MarkAllDirty()
-		def.Recompute()
+		def.RecomputeAfterParameterEdit()
 	}
 	return synced
 }

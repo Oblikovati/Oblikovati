@@ -163,8 +163,7 @@ func (s *Session) ImportParameters(xml string) (added, updated int, err error) {
 		}
 		return 0, 0, err
 	}
-	part.Features().MarkAllDirty()
-	part.Recompute()
+	part.RecomputeAfterParameterEdit()
 	s.recordEdit(part, "Import Parameters")
 	return added, updated, nil
 }
@@ -193,7 +192,7 @@ func (s *Session) editParameters(edit func(*param.Parameters) error) error {
 		return err
 	}
 	s.notice = ""
-	part.Recompute()
+	part.RecomputeAfterParameterEdit() // mark dirty before recompute, or the edit leaves stale geometry (#1413)
 	s.recordEdit(part, "Edit Parameters")
 	return nil
 }
