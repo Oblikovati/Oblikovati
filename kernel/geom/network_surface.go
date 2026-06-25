@@ -16,10 +16,6 @@ import (
 // u). With dense curves this passes through the curves within tolerance; degenerate / non-intersecting
 // input is a clear error (CLAUDE.md exception rule).
 
-// networkGapTol is how far a U- and V-curve crossing may be apart (model units) before the network is
-// rejected as non-intersecting.
-const networkGapTol = 1e-3
-
 // NetworkSurface interpolates the grid formed by uCurves (each spanning the u-direction at a v-station)
 // and vCurves (each spanning v at a u-station). It needs ≥2 curves each way. It errors when a U/V
 // crossing gap exceeds networkGapTol (the curves do not form a usable grid).
@@ -41,6 +37,7 @@ func NetworkSurface(uCurves, vCurves []BSplineCurve) (BSplineSurface, error) {
 // crossing is farther apart than networkGapTol.
 func networkGrid(uCurves, vCurves []BSplineCurve) ([][]math.Point3, error) {
 	nu, nv := len(vCurves), len(uCurves)
+	gapTol := networkGapTol(uCurves, vCurves)
 	grid := make([][]math.Point3, nu)
 	for a := 0; a < nu; a++ {
 		grid[a] = make([]math.Point3, nv)
@@ -49,13 +46,28 @@ func networkGrid(uCurves, vCurves []BSplineCurve) ([][]math.Point3, error) {
 			vs := float64(b) / float64(nv-1)
 			pu := uCurves[b].PointAt(us) // u-curve b at u-station a
 			pv := vCurves[a].PointAt(vs) // v-curve a at v-station b
-			if d := float64(pu.DistanceTo(pv)); d > networkGapTol {
-				return nil, fmt.Errorf("geom.NetworkSurface: curves do not intersect at grid node (%d,%d): gap %.4g > %.4g", a, b, d, networkGapTol)
+			if d := float64(pu.DistanceTo(pv)); d > gapTol {
+				return nil, fmt.Errorf("geom.NetworkSurface: curves do not intersect at grid node (%d,%d): gap %.4g > %.4g", a, b, d, gapTol)
 			}
 			grid[a][b] = pu.Midpoint(pv)
 		}
 	}
 	return grid, nil
+}
+
+// networkGapTol is the model-relative gap (#1399) a U- and V-curve crossing may span before the
+// network is rejected as non-intersecting: derived from the network's own extent (the curve
+// endpoints) so the generous "close enough to form a grid" threshold scales with the part instead
+// of a cm-anchored 1e-3.
+func networkGapTol(uCurves, vCurves []BSplineCurve) float64 {
+	pts := make([]math.Point3, 0, 2*(len(uCurves)+len(vCurves)))
+	for _, c := range uCurves {
+		pts = append(pts, c.PointAt(0), c.PointAt(1))
+	}
+	for _, c := range vCurves {
+		pts = append(pts, c.PointAt(0), c.PointAt(1))
+	}
+	return ResolutionForPoints(pts).Sew()
 }
 
 // globalInterpSurface tensor-interpolates a bicubic B-spline through the nu×nv point grid (A9.7):

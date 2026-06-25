@@ -26,13 +26,13 @@ const (
 	// nearly — but not exactly — parallel: too strict a value (e.g. 1−1e-10) lets the corrector treat a
 	// point a hair off the contact as a real crossing and emit a spurious tiny curve there. 1−1e-5
 	// corresponds to crossings shallower than ~0.18°, which are tangencies for all practical purposes.
-	ssiTangencyCos = 1 - 1e-5
+	ssiTangencyCos = 1 - 1e-5 // tol:angular — surface-normal alignment cosine at a tangency
 	// ssiToleranceFraction and ssiStepFraction scale the on-curve tolerance and the march step to the
 	// base patch's 3D extent (so both are model-relative, ADR-0042). 1e-7 is the stated acceptance
 	// tolerance reachable by the NURBS Gauss–Newton projection; 4e-3 keeps a full curve to a few
 	// thousand points while resolving curvature.
-	ssiToleranceFraction = 1e-7
-	ssiStepFraction      = 4e-3
+	ssiToleranceFraction = 1e-7 // tol:numeric — dimensionless fraction of the patch 3D extent (model-relative)
+	ssiStepFraction      = 4e-3 // tol:numeric — dimensionless fraction of the patch 3D extent (model-relative)
 	// Step multiples used while marching: a seed within ssiDedupSteps of an existing curve is a
 	// duplicate of it; the loop closes when the march returns within ssiLoopCloseSteps of its start;
 	// a tangency seed may sit up to ssiTangencyGapSteps from the contact (the strict normal test, not
@@ -243,8 +243,8 @@ func refineTangency(base, other Surface, p math.Point3, tol float64) (math.Point
 // point exactly on the boundary still counts).
 func inWindow(base Surface, pc math.Point3, g SurfaceGrid) bool {
 	u, v, _ := ProjectPointToSurface(base, pc)
-	mu := (g.UMax - g.UMin) * 1e-9
-	mv := (g.VMax - g.VMin) * 1e-9
+	mu := (g.UMax - g.UMin) * 1e-9 // tol:parametric — fraction of the u-window
+	mv := (g.VMax - g.VMin) * 1e-9 // tol:parametric — fraction of the v-window
 	return u >= g.UMin-mu && u <= g.UMax+mu && v >= g.VMin-mv && v <= g.VMax+mv
 }
 

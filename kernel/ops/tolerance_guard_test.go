@@ -34,8 +34,12 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 	// In-scope hot-path files (relative to this package dir, kernel/ops). Kept explicit rather than
 	// globbed so widening the guard's reach is a deliberate, reviewable act.
 	scope := []string{
-		// geom: the analytic + numeric surface-intersection classifiers.
+		// geom: the analytic + numeric surface-intersection classifiers and the SSI tracer.
 		"../geom/intersect_analytic.go",
+		"../geom/intersect2d.go",
+		"../geom/intersect_surface_trace.go",
+		"../geom/trace_surface_zero.go",
+		"../geom/network_surface.go",
 		// brep: the curved-boolean weld / imprint / half-space machinery.
 		"../brep/curved_halfspace_general.go",
 		"../brep/curved_halfspace_cylinder.go",

@@ -27,7 +27,6 @@ type SurfaceGrid struct {
 const (
 	traceDefaultSteps = 96
 	traceBisectIter   = 48
-	traceChainTol     = 1e-7
 )
 
 // resolveGrid fills a SurfaceGrid's zero/absent fields from the surface's finite domain
@@ -134,7 +133,7 @@ func straddlesZero(a, b float64) bool {
 
 // traceFieldEps is the field magnitude treated as exactly zero (fields here are
 // unit-vector dots, so 1e-12 is far below any genuine sample).
-const traceFieldEps = 1e-12
+const traceFieldEps = 1e-12 // tol:numeric — unit-vector-dot field magnitude treated as zero
 
 func snapTinyToZero(v float64) float64 {
 	if stdmath.Abs(v) < traceFieldEps {
@@ -171,6 +170,7 @@ func lerp(a, b, t float64) float64 { return a + (b-a)*t }
 // shared endpoints within tolerance.
 func chainSegments3D(segs []gridSeg) [][]math.Point3 {
 	used := make([]bool, len(segs))
+	tol := segChainTol(segs) // model-relative endpoint-coincidence tolerance (#1399)
 	var out [][]math.Point3
 	for i := range segs {
 		if used[i] {
@@ -178,18 +178,29 @@ func chainSegments3D(segs []gridSeg) [][]math.Point3 {
 		}
 		used[i] = true
 		poly := []math.Point3{segs[i].a, segs[i].b}
-		growPolyline(segs, used, &poly)
+		growPolyline(segs, used, &poly, tol)
 		out = append(out, poly)
 	}
 	return out
 }
 
+// segChainTol is the model-relative tolerance for chaining marching-squares segments end-to-end
+// (#1399): derived from the traced segments' own 3D extent (≈ the surface's size) so a km-scale
+// silhouette/isophote still chains instead of fragmenting under a cm-anchored 1e-7.
+func segChainTol(segs []gridSeg) float64 {
+	pts := make([]math.Point3, 0, 2*len(segs))
+	for _, s := range segs {
+		pts = append(pts, s.a, s.b)
+	}
+	return ResolutionForPoints(pts).Plane()
+}
+
 // growPolyline extends a polyline from its tail by attaching unused segments that share
 // the free endpoint (forward only; marching-squares contours are locally 1-manifold).
-func growPolyline(segs []gridSeg, used []bool, poly *[]math.Point3) {
+func growPolyline(segs []gridSeg, used []bool, poly *[]math.Point3, tol float64) {
 	for {
 		tail := (*poly)[len(*poly)-1]
-		j, far, ok := nextSegment(segs, used, tail)
+		j, far, ok := nextSegment(segs, used, tail, tol)
 		if !ok {
 			return
 		}
@@ -199,15 +210,15 @@ func growPolyline(segs []gridSeg, used []bool, poly *[]math.Point3) {
 }
 
 // nextSegment finds an unused segment with an endpoint coincident with tail.
-func nextSegment(segs []gridSeg, used []bool, tail math.Point3) (int, math.Point3, bool) {
+func nextSegment(segs []gridSeg, used []bool, tail math.Point3, tol float64) (int, math.Point3, bool) {
 	for j := range segs {
 		if used[j] {
 			continue
 		}
 		switch {
-		case tail.IsEqualTo(segs[j].a, traceChainTol):
+		case tail.IsEqualTo(segs[j].a, tol):
 			return j, segs[j].b, true
-		case tail.IsEqualTo(segs[j].b, traceChainTol):
+		case tail.IsEqualTo(segs[j].b, tol):
 			return j, segs[j].a, true
 		}
 	}
