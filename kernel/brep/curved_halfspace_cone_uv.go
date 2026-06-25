@@ -19,8 +19,14 @@ import (
 // because a cone point is P(u,v) = apex + v·â + v·tanα·r̂(u), so the signed distance is g(u,v)=A+v·C(u),
 // linear in v. The kept region {g<0} is then just a v-INTERVAL [lo(u), hi(u)] per u, bounded below/above
 // by the rims (v=vMin / vMax) and the section curve — tongue, annulus and rim-clip all fall out of that
-// interval, with the cone's own orientation inherited, no per-case winding. This file builds the (u,v)
-// model and the kept-interval structure; the boundary trace and edge build follow.
+// interval, with the cone's own orientation inherited, no per-case winding.
+//
+// This is the SOLE cone-side splitter: it replaced the bespoke per-section family (the axis-parallel
+// arc-band / vertex-inside #1372/#1374, the oblique ellipse, the root-finding oblique hyperbola/parabola),
+// each of which hand-derived its own loop and winding. The (u,v) model subsumes them all — every conic
+// section (ellipse / hyperbola branch / parabola) and every arrangement is one of two boundary walks:
+// wrapping (the kept interval is non-empty at every azimuth → a two-loop band) or non-wrapping (the
+// interval empties over part of the seam → a single tongue span). coneSideUVSplit picks between them.
 
 // coneUV is the cone side expressed in (u, v): the apex frame plus the cut plane reduced to A and the
 // cosine coefficient C(u) of the signed distance g(u,v) = A + v·C(u).
@@ -69,9 +75,17 @@ func (c coneUV) sectionV(u float64) float64 {
 	return -c.a / cu
 }
 
+// vPinchTol is the apex-distance margin below which a kept interval counts as PINCHED (empty). A tongue
+// pinches where the section meets a clamp rim (lo≈hi); when that azimuth lands exactly on a sample (a
+// symmetric cut puts the pinch on u=0/π/2π) the section value equals the rim to within rounding, so a
+// strict lo<hi flickers and breaks the span pairing. The margin makes the pinch read as empty either way.
+// It sits well ABOVE the ~1e-14 rounding flicker yet two orders below the 1e-7 weld tolerance, so the span
+// endpoint the bisection lands on (where the section sits vPinchTol inside the rim) still welds to the rim.
+const vPinchTol = 1e-9
+
 // keptV returns the kept (g<0) apex-distance interval [lo, hi] at azimuth u, clamped to the band, plus
-// whether it is non-empty. g=A+v·C(u) is linear in v: when C>0 the kept side is v<v(u), when C<0 it is
-// v>v(u), and when C≈0 the whole column is kept (A<0) or dropped (A≥0).
+// whether it is non-empty (thicker than vPinchTol). g=A+v·C(u) is linear in v: when C>0 the kept side is
+// v<v(u), when C<0 it is v>v(u), and when C≈0 the whole column is kept (A<0) or dropped (A≥0).
 func (c coneUV) keptV(u float64) (lo, hi float64, ok bool) {
 	cu := c.coeffC(u)
 	switch {
@@ -80,13 +94,13 @@ func (c coneUV) keptV(u float64) (lo, hi float64, ok bool) {
 		if v := -c.a / cu; v < hi {
 			hi = v
 		}
-		return c.vMin, hi, hi > c.vMin
+		return c.vMin, hi, hi > c.vMin+vPinchTol
 	case cu < -1e-12:
 		lo = c.vMin
 		if v := -c.a / cu; v > lo {
 			lo = v
 		}
-		return lo, c.vMax, lo < c.vMax
+		return lo, c.vMax, lo < c.vMax-vPinchTol
 	default:
 		return c.vMin, c.vMax, c.a < 0 // the plane is parallel to the generator: whole column kept or dropped
 	}
