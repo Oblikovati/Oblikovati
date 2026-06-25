@@ -41,5 +41,8 @@ func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 	if cone, vMin, vMax, ok := coneSolidParams(faces); ok && perpendicularToConeAxis(n, cone) {
 		return coneHalfSpace(body, cone, vMin, vMax, plane) // ⟂ cut → cone/frustum, fast path
 	}
+	if torus, ok := torusSolidParams(faces); ok && perpendicularToTorusAxis(n, torus) {
+		return torusHalfSpace(body, torus, plane) // ⟂ cut → trimmed torus band + annular lid
+	}
 	return generalHalfSpace(body, plane, n, faces)
 }

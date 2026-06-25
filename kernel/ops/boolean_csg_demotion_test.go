@@ -135,7 +135,33 @@ func curvedExactCases() []curvedExactCase {
 		{"cylinder ∩ box (clips rim tongue)", ops.Intersect, cylinderClipsRimBox},
 		{"cone apex − box (oblique, apex dropped)", ops.Cut, coneApexObliqueBox},
 		{"cone apex ∩ box (oblique, apex kept)", ops.Intersect, coneApexObliqueBox},
+		{"torus − box (perp half)", ops.Cut, torusPerpHalfBox},
+		{"torus ∩ box (perp half)", ops.Intersect, torusPerpHalfBox},
+		{"torus − box (perp off-centre)", ops.Cut, torusPerpOffCentreBox},
 	}
+}
+
+// torusPerpHalfBox is a torus (R=5, r=2, axis +z) cut by the box face z=0 — PERPENDICULAR to the axis at
+// the mid-plane: the section is two concentric circles, and the kept half is a trimmed torus band capped
+// by a planar annulus. The only torus cut with an analytic section (an oblique plane cuts a quartic spiric
+// curve, still CSG); the box's far parallel faces clear the torus and compose (Oblikovati#1375).
+func torusPerpHalfBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, -20, 0), math.P3(20, 20, 20))
+}
+
+// torusPerpOffCentreBox cuts the same torus by z=1 (off the mid-plane): the kept band's two section
+// circles have unequal tube parameters, exercising the seam-direction loft over the wrapping tube arc.
+func torusPerpOffCentreBox(t *testing.T) (*topo.Body, *topo.Body) {
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, -20, 1), math.P3(20, 20, 20))
+}
+
+func demoTorus(t *testing.T, center math.Point3, axis math.Vector3, major, minor float64) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidTorus(center, axis, major, minor, "torus")
+	if err != nil {
+		t.Fatalf("SolidTorus: %v", err)
+	}
+	return b
 }
 
 // coneApexObliqueBox is a FULL cone (apex at the top, base radius 3) tilted (axis (0,0.6,0.8)) cut by the

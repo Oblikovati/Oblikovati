@@ -26,18 +26,19 @@ import (
 // points all share angle 0 and pollute the v-partition. ok=false unless the band is exactly two
 // circle edges + one arc seam.
 func closedBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	rings, seamN := bandRingsAndSeam(f, q)
-	if len(rings) != 2 || seamN < 2 {
+	rings, seamN, seamMid, ok := bandRingsAndSeam(f, q)
+	if !ok || len(rings) != 2 || seamN < 2 {
 		return nil, false
 	}
 	lo, hi := orderedRing(s, rings[0]), orderedRing(s, rings[1])
 	if len(lo) < 3 || len(hi) < 3 {
 		return nil, false
 	}
-	vLo, vHi := vParam(s, lo[0]), vParam(s, hi[0])
-	if vLo > vHi {
-		lo, hi, vLo, vHi = hi, lo, vHi, vLo // lo is the smaller tube-parameter ring
-	}
+	// Loft from the lo ring to the hi ring ALONG THE SEAM — the seam's midpoint tube parameter says which
+	// of the two arcs between the rings the band spans. A torus cut keeps the long (seam-wrapping) arc;
+	// using min→max would loft the short complement instead (the dropped tube arc, Oblikovati#1375).
+	vLo, vHiRaw, vMid := vParam(s, lo[0]), vParam(s, hi[0]), vParam(s, seamMid)
+	vHi := vLo + wrapPi(vMid-vLo) + wrapPi(vHiRaw-vMid) // unwrapped so vLo→vMid→vHi is monotone
 	mid := make([]float64, 0, seamN-2)
 	for k := 1; k < seamN-1; k++ {
 		mid = append(mid, vLo+(vHi-vLo)*float64(k)/float64(seamN-1))
@@ -45,20 +46,33 @@ func closedBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	return loftRows(s, lo, hi, mid), true
 }
 
+// wrapPi folds an angle into (−π, π] — the signed shortest step between two tube parameters.
+func wrapPi(a float64) float64 {
+	const twoPi = 2 * stdmath.Pi
+	for a > stdmath.Pi {
+		a -= twoPi
+	}
+	for a <= -stdmath.Pi {
+		a += twoPi
+	}
+	return a
+}
+
 // bandRingsAndSeam reads the band face's boundary edges: each closed circle (with its closing
-// duplicate dropped) is a ring; seamN is the largest arc-edge sample count (the tube subdivision).
-func bandRingsAndSeam(f *topo.Face, q Quality) (rings [][]math.Point3, seamN int) {
+// duplicate dropped) is a ring; seamN is the largest arc-edge sample count (the tube subdivision) and
+// seamMid that arc's midpoint (whose tube parameter picks which arc the band spans). ok=false with no seam.
+func bandRingsAndSeam(f *topo.Face, q Quality) (rings [][]math.Point3, seamN int, seamMid math.Point3, ok bool) {
 	for _, e := range f.Edges() {
 		switch e.Geometry().(type) {
 		case geom.Circle:
 			rings = append(rings, dropClosingDup(TessellateEdge(e, q)))
 		case geom.Arc3d:
-			if n := len(TessellateEdge(e, q)); n > seamN {
-				seamN = n
+			if pts := TessellateEdge(e, q); len(pts) > seamN {
+				seamN, seamMid, ok = len(pts), pts[len(pts)/2], true
 			}
 		}
 	}
-	return rings, seamN
+	return rings, seamN, seamMid, ok
 }
 
 // dropClosingDup removes the trailing point a closed-edge tessellation repeats at its seam.

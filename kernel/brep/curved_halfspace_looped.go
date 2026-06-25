@@ -33,13 +33,20 @@ type keptSeg struct {
 // cylinder arc band a box re-cuts), each kept run bridged along whichever imprint curve joins it. A face
 // with holes, an odd crossing count (a tangency/island), or an unbridgeable run defers.
 func loopedSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
+	if !faceBoundaryCrosses(f, plane, n) {
+		// The imprint curve exists but does not cross ANY of the face's boundary loops — the face lies
+		// wholly on one side (e.g. a far clearing plane on a multi-loop annular lid). Keep or drop it whole;
+		// this precedes the single-loop requirement so a clearing plane composes over a holed planar face.
+		if signedDistance(faceSample(f), plane, n) <= 0 {
+			return []curvedFace{f}, nil, nil
+		}
+		return nil, nil, nil
+	}
 	if len(f.loops) != 1 {
-		return nil, nil, ErrUnsupportedHalfSpace // holes/multi-loop: a later increment
+		return nil, nil, ErrUnsupportedHalfSpace // a CROSSED holes/multi-loop face: a later increment
 	}
 	segs, crossings := splitLoopByPlane(f.loops[0], plane, n)
 	if crossings == 0 {
-		// An imprint curve exists but does not cross this face's boundary — the face lies wholly on one
-		// side (e.g. a planar lid whose plane meets the cut plane in a line far outside it).
 		if signedDistance(faceSample(f), plane, n) <= 0 {
 			return []curvedFace{f}, nil, nil
 		}
@@ -53,6 +60,19 @@ func loopedSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.Ve
 		return nil, nil, nil // every crossing-free piece was on the positive side: dropped
 	}
 	return traceKeptFaces(f, curves, runs)
+}
+
+// faceBoundaryCrosses reports whether any of the face's boundary loops crosses the cutting plane (an edge
+// runs from one side to the other). A face whose whole boundary lies on one side does not genuinely meet
+// the plane — the imprint curve passes outside it — so the caller keeps or drops it whole regardless of
+// how many loops it has (the multi-loop split is only needed when the plane actually cuts the boundary).
+func faceBoundaryCrosses(f curvedFace, plane geom.Plane, n math.Vector3) bool {
+	for i := range f.loops {
+		if _, crossings := splitLoopByPlane(f.loops[i], plane, n); crossings > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // traceKeptFaces threads the kept boundary runs into closed loops, each bridged along the imprint, and
