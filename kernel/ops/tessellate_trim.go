@@ -53,8 +53,10 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 // and a periodic developable side with one full-circle rim plus a notched rim (a band loft). It returns
 // (mesh, true) on the first that applies, or (nil, false) so the caller falls through to toUVLoops.
 func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
-	if m, isFan := coneApexFan(s, outer3D); isFan {
-		return m, true // a cone closing to its apex (a drill point): a fan from the apex to the rim
+	if m, isFan := coneApexFan(s, outer3D); isFan && len(holes3D) == 0 {
+		return m, true // a cone closing to its apex (a drill point): a fan from the apex to the rim. A
+		// holed face is never an apex cap — it is a band whose inner rim is the hole (e.g. a (u,v) cone
+		// split whose outer rim is a circle and inner rim an oblique-cut ellipse), handled below.
 	}
 	if m, isCap := sphereCapFan(s, outer3D, q); isCap {
 		return m, true // a sphere cut by one plane (a cap): rings from the rim to the enclosed pole
@@ -64,6 +66,9 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	}
 	if m, isBand := notchedRimBandMesh(f, s, q); isBand {
 		return m, true // a periodic side with one full-circle rim and one notched rim (a frustum flat that fades): loft
+	}
+	if m, isBand := twoClosedRimBandMesh(f, s, q); isBand {
+		return m, true // a developable side with two CLOSED full-wrap rims (e.g. a circle + an oblique-cut ellipse): loft
 	}
 	return nil, false
 }

@@ -33,6 +33,46 @@ func notchedRimBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	return saddleBandLoftMesh(f, s, q)
 }
 
+// twoClosedRimBandMesh meshes a developable side (cylinder/cone) bounded by exactly TWO closed full-wrap
+// rim edges and no open rim edge — the shape produced by the (u,v) cone-side split, whose band has one
+// circular rim and one oblique-cut ellipse rim, both closed loops with no seam (Oblikovati#1375). Such a
+// face's two loops each "unwrap" through toUVLoops, which would mis-route it to metricPatchMesh — a flat
+// best-fit-plane annulus that neither follows the cone nor welds to the caps sharing those rims. But it
+// is a genuine two-rim ruled band, so the saddle-band loft meshes it exactly (ruled rim-to-rim rows) and
+// tessellates each rim by its own shared edge, so it welds. ok=false unless the face is a developable
+// side with exactly two closed rim edges and no open (non-seam) edge.
+func twoClosedRimBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
+	if !isDevelopableSide(s) || !hasTwoClosedRimsNoOpen(f) {
+		return nil, false
+	}
+	return saddleBandLoftMesh(f, s, q)
+}
+
+// isPeriodicTwoRimBand reports whether the face is a no-seam two-rim ruled band — either two closed rims
+// (a (u,v) cone split) or a full circle plus a notched rim (#1374) — which the saddle loft meshes exactly
+// and whose full-wrap outer loop must NOT be re-meshed through the (u,v) CDT (it can spin / tear there).
+func isPeriodicTwoRimBand(f *topo.Face) bool {
+	return hasTwoClosedRimsNoOpen(f) || hasFullCircleAndNotchedRim(f)
+}
+
+// hasTwoClosedRimsNoOpen reports whether the face is the no-seam two-loop ruled band: exactly two closed
+// rim edges, no open edge, and NO seam edge. The absence of a seam is what distinguishes it from an
+// ordinary full periodic side (two closed circles bridged by a seam, used twice) — those are already
+// meshed by periodicBandGrid/cylinderSide and must keep that path (e.g. the off-surface-rim snap repair).
+func hasTwoClosedRimsNoOpen(f *topo.Face) bool {
+	if len(seamEdgesOf(f)) != 0 {
+		return false // a seam-bridged full side: handled by the grid path, not the two-loop band loft
+	}
+	closed := 0
+	for _, e := range f.Edges() {
+		if e.StartVertex() != e.EndVertex() {
+			return false // an open rim: handled by notchedRimBandMesh, not here
+		}
+		closed++
+	}
+	return closed == 2
+}
+
 // hasFullCircleAndNotchedRim reports whether the face has BOTH a full-period closed-circle rim edge and
 // at least one open (non-closed) rim edge — the notched-band signature. Seam edges (used twice within
 // the face) are excluded, as they bridge the rims and belong to neither.

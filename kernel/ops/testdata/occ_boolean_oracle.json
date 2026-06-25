@@ -22,5 +22,6 @@
   "cone ∩ box (parabola)": 293.5440727,
   "cone − box (parabola)": 366.1903846,
   "cone ∩ box (oblique vertex-inside)": 48.83120765,
-  "cone − box (oblique vertex-inside)": 610.9032496
+  "cone − box (oblique vertex-inside)": 610.9032496,
+  "cone − box (clips rim annulus)": 431.6646687
 }

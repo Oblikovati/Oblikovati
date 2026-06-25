@@ -203,7 +203,10 @@ func fullConeSideBand(f curvedFace) (geom.Cone, coneSideBand_, bool) {
 // is handled by the fast cone path before the arrangement, so anything else defers.
 func coneSideBandSplit(f curvedFace, curves []geom.Curve3, cone geom.Cone, band coneSideBand_, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
 	if allEllipses(curves) {
-		return coneSideEllipseSplit(f, curves, cone, plane, n)
+		if pieces, sec, err := coneSideUVSplit(f, cone, curves[0], band, plane, n); err == nil {
+			return pieces, sec, nil // the (u,v) arrangement: handles within-band AND a rim clip uniformly
+		}
+		return coneSideEllipseSplit(f, curves, cone, plane, n) // the non-wrapping (tongue) arrangement, for now
 	}
 	if allHyperbolas(curves) && isAxisParallel(n, cone) {
 		return coneSideSplit(f, curves, plane, n) // the symmetric constant-chord hyperbola (#1372/#1374)

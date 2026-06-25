@@ -37,6 +37,10 @@ func conformCylConeFaces(faces []*topo.Face, idx map[*topo.Face]int, fm []*Mesh,
 func conformingMesh(f *topo.Face, q Quality) *Mesh {
 	switch f.Geometry().(type) {
 	case geom.Cylinder, geom.Cone:
+		if isPeriodicTwoRimBand(f) {
+			return nil // a periodic two-rim band: the saddle loft already meshed it exactly, and its
+			// full-wrap outer loop degenerates the (u,v) CDT (constrainedDelaunay can spin) — keep the loft
+		}
 		return conformingCylConeMesh(f, q)
 	case geom.Plane:
 		return conformingPlaneMesh(f, q)
