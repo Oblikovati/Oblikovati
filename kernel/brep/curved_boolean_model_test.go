@@ -118,7 +118,7 @@ func TestCurvedImprintCylinderPlaneIsCircle(t *testing.T) {
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	side := cylSide(t, facesOfAny(cyl))
 	plane, _ := geom.NewPlane(math.P3(0, 0, 2.5), math.V3(0, 0, 1))
-	curves, ok := curvedImprint(side, curvedFace{surface: plane})
+	curves, ok := curvedImprint(side, curvedFace{surface: plane}, geom.ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("cylinder∩plane: handled=%v, %d curves; want handled, 1 circle", ok, len(curves))
 	}
@@ -139,7 +139,7 @@ func TestCurvedImprintCylinderPlaneIsCircle(t *testing.T) {
 func TestCurvedImprintSpherePlaneIsCircle(t *testing.T) {
 	sphere, _ := geom.NewSphere(math.P3(0, 0, 0), 5)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
-	curves, ok := curvedImprint(curvedFace{surface: sphere}, curvedFace{surface: plane})
+	curves, ok := curvedImprint(curvedFace{surface: sphere}, curvedFace{surface: plane}, geom.ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("sphere∩plane: handled=%v, %d curves; want handled, 1 circle", ok, len(curves))
 	}
@@ -157,7 +157,7 @@ func TestCurvedImprintPlanePlaneIsLine(t *testing.T) {
 	a, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	b, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 0))
 	_ = faces
-	curves, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b})
+	curves, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("plane∩plane: handled=%v, %d curves; want handled, 1 line", ok, len(curves))
 	}
@@ -172,7 +172,7 @@ func TestCurvedImprintPlanePlaneIsLine(t *testing.T) {
 func TestCurvedImprintCurvedCurvedDefers(t *testing.T) {
 	a, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	b, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2)
-	if _, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}); ok {
+	if _, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1)); ok {
 		t.Error("cylinder∩cylinder should defer (handled=false) to Phase 2, not be handled analytically")
 	}
 }

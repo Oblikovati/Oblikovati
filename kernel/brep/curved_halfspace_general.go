@@ -17,11 +17,13 @@ import (
 // CSG fallback until that split lands.
 
 // generalHalfSpace cuts an arbitrary analytic body by one plane via split → classify → lid → stitch.
-func generalHalfSpace(body *topo.Body, plane geom.Plane, n math.Vector3, faces []curvedFace) (*topo.Body, error) {
+// res is the body's model-relative coincidence scale (Oblikovati/Oblikovati#1399), threaded into the
+// per-face imprint so the exact-conic-vs-defer decision is scale-faithful.
+func generalHalfSpace(body *topo.Body, plane geom.Plane, n math.Vector3, faces []curvedFace, res geom.Resolution) (*topo.Body, error) {
 	var kept []curvedFace
 	var section []loopEdge
 	for _, f := range faces {
-		pieces, arcs, err := splitFaceByPlane(f, plane, n)
+		pieces, arcs, err := splitFaceByPlane(f, plane, n, res)
 		if err != nil {
 			return nil, err
 		}
@@ -82,8 +84,8 @@ func faceWhollyOneSide(f curvedFace, plane geom.Plane, n math.Vector3) bool {
 // splitFaceByPlane splits one face by the cutting plane, returning the kept (negative-side) sub-faces
 // and the section arcs that bound the lid. A face the plane does not cross is kept whole or dropped; a
 // boundary-less face (sphere) splits into the kept cap; a looped face crossed by the imprint defers.
-func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	curves, handled := curvedImprint(f, curvedFace{surface: plane})
+func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3, res geom.Resolution) ([]curvedFace, []loopEdge, error) {
+	curves, handled := curvedImprint(f, curvedFace{surface: plane}, res)
 	if !handled {
 		return nil, nil, ErrUnsupportedHalfSpace
 	}

@@ -36,6 +36,10 @@ var ErrUnsupportedHalfSpace = errors.New("brep: half-space cut handles only the 
 func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 	n := unit(plane.Normal())
 	faces := facesOfAny(body)
+	// One model-relative coincidence scale for this cut, derived from the body's extent
+	// (Oblikovati/Oblikovati#1399); threaded into the general split so the analytic imprint's
+	// clearance/grazing tests scale with the part rather than reading a cm-anchored epsilon.
+	res := geom.ResolutionForBox(body.RangeBox())
 	if cyl, base, height, ok := cylinderSolidParams(faces); ok && perpendicularToAxis(n, cyl) {
 		return cylinderHalfSpace(body, cyl, base, height, plane) // ⟂ cut → shorter cylinder, fast path
 	}
@@ -43,11 +47,11 @@ func HalfSpaceCut(body *topo.Body, plane geom.Plane) (*topo.Body, error) {
 		return coneHalfSpace(body, cone, vMin, vMax, plane) // ⟂ cut → cone/frustum, fast path
 	}
 	if torus, ok := torusSolidParams(faces); ok {
-		if res, handled, err := torusHalfSpaceCut(body, torus, plane, n); handled {
-			return res, err
+		if cut, handled, err := torusHalfSpaceCut(body, torus, plane, n); handled {
+			return cut, err
 		}
 	}
-	return generalHalfSpace(body, plane, n, faces)
+	return generalHalfSpace(body, plane, n, faces, res)
 }
 
 // torusHalfSpaceCut dispatches a bare torus's analytic half-space cuts by the section the plane carves:
