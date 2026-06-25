@@ -137,3 +137,38 @@ func TestAnalyticOrderIndependent(t *testing.T) {
 		t.Errorf("cylinder∩plane (swapped) = %v ok=%v, want one circle", curves, ok)
 	}
 }
+
+// A plane perpendicular to a torus axis cuts the tube in two concentric circles (the outer R+√(r²−d²)
+// and inner R−√(r²−d²)); an oblique plane that cuts the tube is a spiric quartic, deferred (handled=false).
+func TestAnalyticPlaneTorusPerpendicularIsTwoCircles(t *testing.T) {
+	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	curves, handled := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 1, 0, 0, 1), tor) // perpendicular at z=1
+	if !handled || len(curves) != 2 {
+		t.Fatalf("perpendicular torus cut: handled=%v, %d curves; want 2 circles", handled, len(curves))
+	}
+	want := []float64{5 + stdmath.Sqrt(4-1), 5 - stdmath.Sqrt(4-1)} // R ± √(r²−d²), d=1
+	for i, c := range curves {
+		circ, ok := c.(Circle)
+		if !ok {
+			t.Fatalf("curve %d is %T, want Circle", i, c)
+		}
+		if stdmath.Abs(circ.Radius-want[i]) > 1e-9 {
+			t.Errorf("circle %d radius %.6f, want %.6f", i, circ.Radius, want[i])
+		}
+	}
+}
+
+func TestAnalyticPlaneTorusObliqueDefers(t *testing.T) {
+	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	if _, handled := IntersectSurfacesAnalytic(mustPlane(t, 0, 0, 0, 1, 0, 1), tor); handled {
+		t.Error("an oblique torus cut (a spiric quartic) must defer, got handled=true")
+	}
+}
+
+func TestAnalyticPlaneTorusClearsIsEmpty(t *testing.T) {
+	tor, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	curves, handled := IntersectSurfacesAnalytic(mustPlane(t, 20, 0, 0, 1, 0, 0), tor) // axis-parallel, far clear
+	if !handled || len(curves) != 0 {
+		t.Errorf("a plane clearing the torus must be handled with no curves, got handled=%v n=%d", handled, len(curves))
+	}
+}

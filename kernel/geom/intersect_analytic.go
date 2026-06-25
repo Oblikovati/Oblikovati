@@ -38,9 +38,42 @@ func intersectPlaneSurface(pl Plane, other Surface) ([]Curve3, bool) {
 		return planeSphereCurve(pl, o)
 	case Cone:
 		return planeConeCurve(pl, o)
+	case Torus:
+		return planeTorusCurve(pl, o)
 	default:
 		return nil, false
 	}
+}
+
+// planeTorusCurve returns the section a plane PERPENDICULAR to the torus axis cuts: two concentric circles
+// (the outer R+√(r²−d²) and inner R−√(r²−d²), at the section level d along the axis), or none when the
+// plane clears or grazes the tube (|d|≥r). An OBLIQUE or axis-parallel plane cuts a quartic SPIRIC curve
+// (no analytic conic), so it is not solved here — handled=false defers it to the CSG fallback. Returned
+// outer first, then inner — both anchored to the torus Ref so their seam lines up with the band.
+func planeTorusCurve(pl Plane, t Torus) ([]Curve3, bool) {
+	n := unitVec3(pl.Normal())
+	axis := t.AxisDir.AsVector()
+	cosA := float64(axis.Dot(n))
+	if stdmath.Abs(cosA) < 1-1e-6 {
+		// Oblique / axis-parallel: a spiric quartic when it cuts the tube. But a plane that CLEARS the whole
+		// torus (its distance exceeds the torus's reach along n) carries no section — report that (handled,
+		// empty) so a box's far clearing faces compose; only a genuine spiric cut defers to CSG.
+		reach := (t.MajorRadius+t.MinorRadius)*float64(n.Sub(axis.Scale(math.Scalar(cosA))).Length()) + t.MinorRadius*stdmath.Abs(cosA)
+		if stdmath.Abs(float64(t.Center.VectorTo(pl.Origin).Dot(n))) >= reach-1e-9 {
+			return nil, true // the plane clears the torus
+		}
+		return nil, false // a spiric quartic cut, not an analytic conic
+	}
+	d := float64(t.Center.VectorTo(pl.Origin).Dot(axis)) // section level along the axis
+	r := t.MinorRadius
+	if stdmath.Abs(d) >= r-1e-9 {
+		return nil, true // the plane clears or grazes the tube: no crossing section
+	}
+	half := stdmath.Sqrt(r*r - d*d)
+	level := t.Center.TranslateBy(axis.Scale(math.Scalar(d)))
+	outer := Circle{Center: level, Normal: t.AxisDir, RefDir: t.Ref, Radius: t.MajorRadius + half}
+	inner := Circle{Center: level, Normal: t.AxisDir, RefDir: t.Ref, Radius: t.MajorRadius - half}
+	return []Curve3{outer, inner}, true
 }
 
 // planePlaneCurve returns the intersection line of two planes (empty when parallel).

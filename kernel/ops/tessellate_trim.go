@@ -393,10 +393,22 @@ func doublyPeriodicBandGrid(s geom.Surface, outer3D []math.Point3, holes3D [][]m
 }
 
 // spansFullPeriod reports whether a periodic parameter's samples cover essentially its whole [0,2π]
-// period (a band that wraps the seam), versus a bounded sub-range (the tube of a rim-fillet torus).
+// period (a band that wraps the seam), versus a bounded sub-range (the tube of a rim-fillet torus, or a
+// perpendicular torus cut's kept arc). It measures the OCCUPIED span as 2π minus the single largest gap —
+// so a sub-arc that merely STRADDLES the 0/2π seam (min near 0, max near 2π, but a wide gap in between) is
+// correctly seen as bounded, not full (Oblikovati#1375).
 func spansFullPeriod(g []float64) bool {
-	u := sortUnique(g)
-	return len(u) > 1 && u[len(u)-1]-u[0] > 2*stdmath.Pi-0.5
+	s := sortUnique(g)
+	if len(s) < 2 {
+		return false
+	}
+	maxGap := s[0] + 2*stdmath.Pi - s[len(s)-1] // the wrap gap (last sample → first, across the seam)
+	for i := 0; i+1 < len(s); i++ {
+		if gap := s[i+1] - s[i]; gap > maxGap {
+			maxGap = gap
+		}
+	}
+	return 2*stdmath.Pi-maxGap > 2*stdmath.Pi-0.5 // occupied span (all but the largest gap) is nearly full
 }
 
 // coneApexFan tessellates a cone face that closes to its apex (a drill point): its single rim
