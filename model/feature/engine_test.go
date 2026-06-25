@@ -4,6 +4,7 @@ package feature
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -28,6 +29,13 @@ type failer struct{}
 
 func (failer) Kind() string                    { return "failer" }
 func (failer) Recompute(Input) (Output, error) { return Output{}, errors.New("boom") }
+
+// panicker is a fake feature whose Recompute panics — the alpha-kernel crash (a nil-deref /
+// out-of-range mid-boolean) that #1415 must convert into a sick feature, not an app crash.
+type panicker struct{}
+
+func (panicker) Kind() string                    { return "panicker" }
+func (panicker) Recompute(Input) (Output, error) { panic("kernel nil-deref") }
 
 func makeBody() *topo.Body {
 	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("f", "body", 0)))
@@ -164,6 +172,56 @@ func TestSickFeaturePoisonsDependents(t *testing.T) {
 	}
 	if dependent.RecomputeCount() != 0 {
 		t.Error("poisoned feature should not run its recompute")
+	}
+}
+
+// TestPanickingFeatureGoesSickWithoutAbortingRebuild is acceptance criterion 1/2 of #1415: a
+// feature whose Recompute panics is marked Sick and the rebuild carries on — Recompute itself
+// must return normally (no panic escaping to crash the app), and an independent later feature
+// still evaluates healthy.
+func TestPanickingFeatureGoesSickWithoutAbortingRebuild(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	good := fs.Add(body())
+	bad := fs.Add(panicker{})
+	after := fs.Add(body()) // independent of bad → must still evaluate
+	fs.Recompute()          // must return, not unwind the panic
+
+	if !good.Health().OK() {
+		t.Error("healthy feature before the panic went sick")
+	}
+	if bad.Health().Status != health.Sick {
+		t.Errorf("panicking feature health = %v, want sick", bad.Health().Status)
+	}
+	if !after.Health().OK() {
+		t.Error("independent feature after the panic should still be healthy (rebuild not aborted)")
+	}
+}
+
+// TestPanicSickMessageNamesFeatureAndValue is acceptance criterion 3 of #1415: the sick reason
+// carries the offending feature's identity and the recovered panic value (per the CLAUDE.md
+// exception-message rule), so the user can see WHAT failed and WHY.
+func TestPanicSickMessageNamesFeatureAndValue(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	bad := fs.Add(panicker{})
+	fs.Recompute()
+	reason := bad.Health().Reason
+	if !strings.Contains(reason, "panicker") || !strings.Contains(reason, "kernel nil-deref") {
+		t.Errorf("sick reason %q must name the feature (panicker) and the panic value (kernel nil-deref)", reason)
+	}
+}
+
+// TestPanickingFeaturePoisonsDependents confirms a panic is treated like any other failure
+// downstream: a feature depending on the panicking one is poisoned sick, not evaluated.
+func TestPanickingFeaturePoisonsDependents(t *testing.T) {
+	fs := NewPartFeatures(nil, nil)
+	bad := fs.Add(panicker{})
+	dependent := fs.Add(body(), bad.ID())
+	fs.Recompute()
+	if bad.Health().Status != health.Sick {
+		t.Errorf("panicking feature = %v, want sick", bad.Health().Status)
+	}
+	if dependent.Health().Status != health.Sick {
+		t.Errorf("dependent of a panicking feature = %v, want sick (poisoned)", dependent.Health().Status)
 	}
 }
 
