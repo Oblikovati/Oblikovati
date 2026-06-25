@@ -106,6 +106,43 @@ func TestVarSeedsUnitGradient(t *testing.T) {
 	}
 }
 
+func TestVectorOpValues(t *testing.T) {
+	// Spot-check the value (not gradient) of each vector helper at constants.
+	a2, b2 := V2(Const(1), Const(2)), V2(Const(3), Const(5))
+	if v := a2.Add(b2); v.X.Val() != 4 || v.Y.Val() != 7 {
+		t.Errorf("Vec2.Add = (%v,%v), want (4,7)", v.X.Val(), v.Y.Val())
+	}
+	if v := b2.Sub(a2); v.X.Val() != 2 || v.Y.Val() != 3 {
+		t.Errorf("Vec2.Sub = (%v,%v), want (2,3)", v.X.Val(), v.Y.Val())
+	}
+	if v := a2.Scale(2); v.X.Val() != 2 || v.Y.Val() != 4 {
+		t.Errorf("Vec2.Scale = (%v,%v), want (2,4)", v.X.Val(), v.Y.Val())
+	}
+	if v := a2.MulN(Const(3)); v.X.Val() != 3 || v.Y.Val() != 6 {
+		t.Errorf("Vec2.MulN = (%v,%v), want (3,6)", v.X.Val(), v.Y.Val())
+	}
+	if d := a2.Dot(b2).Val(); d != 13 {
+		t.Errorf("Vec2.Dot = %v, want 13", d)
+	}
+
+	a3, b3 := V3(Const(1), Const(2), Const(3)), V3(Const(4), Const(5), Const(6))
+	if v := a3.Add(b3); v.X.Val() != 5 || v.Z.Val() != 9 {
+		t.Errorf("Vec3.Add = %v, want X=5,Z=9", v)
+	}
+	if v := b3.Scale(0.5); v.Y.Val() != 2.5 {
+		t.Errorf("Vec3.Scale Y = %v, want 2.5", v.Y.Val())
+	}
+	if v := a3.MulN(Const(2)); v.Z.Val() != 6 {
+		t.Errorf("Vec3.MulN Z = %v, want 6", v.Z.Val())
+	}
+}
+
+func TestIndexErrorMessage(t *testing.T) {
+	if got := adIndexError(5, 3).Error(); got != "ad: variable index 5 out of range for a 3-variable system" {
+		t.Errorf("error message = %q", got)
+	}
+}
+
 func TestVarPanicsOnBadIndex(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
