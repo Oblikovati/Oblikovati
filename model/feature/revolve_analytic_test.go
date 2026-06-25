@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -121,5 +122,87 @@ func TestAnalyticRevolveTubeBooleanCutsHalf(t *testing.T) {
 	want := 2 * stdmath.Pi * 3 * 2
 	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
 		t.Fatalf("revolve+cut volume = %g, want ≈%g (12π half-donut) — extent too small?", got, want)
+	}
+}
+
+// torusFaceCount tallies geom.Torus faces.
+func torusFaceCount(b *topo.Body) int {
+	n := 0
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Torus); ok {
+			n++
+		}
+	}
+	return n
+}
+
+// TestCircleRevolveMakesAnalyticTorus proves the #129 curved-meridian follow-up (torus case): a single
+// CIRCLE clear of the axis revolves to ONE analytic geom.Torus face — not hundreds of cone slivers — so a
+// later boolean (the M2 torus half-space cuts) takes the exact analytic path on a natively-revolved torus.
+func TestCircleRevolveMakesAnalyticTorus(t *testing.T) {
+	s := sketch.NewSketches().Add(sketch.XYPlane())
+	s.Circles().AddByCenterRadius(math.P2(5, 0), 2) // major 5, minor 2 about the Y axis
+	fs := NewPartFeatures(nil, nil)
+	NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
+	fs.Recompute()
+	body := fs.Result()[0]
+	if r := ops.Validate(body); !r.Valid || !body.IsSolid() {
+		t.Fatalf("revolved torus is not a valid solid: %+v", r.Issues)
+	}
+	if got := torusFaceCount(body); got != 1 {
+		t.Fatalf("revolved circle has %d torus faces, want exactly 1 analytic torus (got %d total faces)", got, len(body.Faces()))
+	}
+	want := 2 * stdmath.Pi * stdmath.Pi * 5 * 2 * 2 // 40π²
+	if got := ops.BodyGeometryProperties(body, ops.DefaultQuality()).Volume; relErr(got, want) > 0.03 {
+		t.Errorf("revolved torus volume = %g, want ≈%g (40π²)", got, want)
+	}
+}
+
+// TestNativeRevolveTorusHalfSpaceCutsAreExact drives the M2 torus half-space family end-to-end through
+// NATIVE modelling: a circle revolved 360° (analytic torus) cut by a box. Each box clips one axis-aligned
+// plane through a Y-axis torus (major 5, minor 2), exercising the perpendicular, axis-parallel single-oval
+// (cap + complement), two-oval and figure-eight topologies. The result must take the EXACT analytic path —
+// a handful of faces and watertight, never the faceted CSG fallback (which shatters into hundreds).
+func TestNativeRevolveTorusHalfSpaceCutsAreExact(t *testing.T) {
+	torus := func() *topo.Body {
+		s := sketch.NewSketches().Add(sketch.XYPlane())
+		s.Circles().AddByCenterRadius(math.P2(5, 0), 2)
+		fs := NewPartFeatures(nil, nil)
+		NewRevolveFeatures(fs).Add(s, 0, yAxis(), nil, ops.NewBody)
+		fs.Recompute()
+		return fs.Result()[0]
+	}
+	cases := []struct {
+		name string
+		bmin math.Point3 // box [bmin, (20,20,20)] clips one plane; the rest clears the torus
+	}{
+		{"perpendicular (y>=0)", math.P3(-20, 0, -20)},
+		{"axis-parallel single oval (x>=6)", math.P3(6, -20, -20)},
+		{"two-oval band (x>=2)", math.P3(2, -20, -20)},
+		{"figure-eight (x>=3, tangent)", math.P3(3, -20, -20)},
+	}
+	for _, c := range cases {
+		for _, op := range []struct {
+			tag string
+			op  ops.PartFeatureOperation
+		}{{"∩", ops.Intersect}, {"−", ops.Cut}} {
+			box, _ := brep.SolidBlock(c.bmin, math.P3(20, 20, 20), "box")
+			res, err := ops.Boolean(op.op, torus(), box)
+			if err != nil {
+				t.Fatalf("%s %s: %v", c.name, op.tag, err)
+			}
+			if n := len(res.Faces()); n > 40 {
+				t.Errorf("%s %s: %d faces — fell to faceted CSG, want the exact analytic path", c.name, op.tag, n)
+			}
+			if !res.IsSolid() {
+				t.Errorf("%s %s: result is not a solid", c.name, op.tag)
+			}
+			for _, e := range res.Edges() {
+				if len(e.Uses()) != 2 {
+					t.Errorf("%s %s: non-manifold edge (%d uses)", c.name, op.tag, len(e.Uses()))
+					break
+				}
+			}
+		}
 	}
 }

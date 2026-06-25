@@ -96,14 +96,49 @@ func buildRevolveSolid(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis,
 	// cylinder/cone/plane faces. A profile with an arc/spline (e.g. a sphere) would have its sampled
 	// chords turn into many tiny cone facets — worse than the faceted swept solid — so it stays
 	// faceted until curved meridian edges (torus, #129 follow-up) are supported.
-	if fullRevolution(angle) && isStraightLoop(prof.OuterLoop()) {
-		mer := meridianFromProfile(prof, plane, axis)
-		if body, err := brep.SolidOfRevolution(axis.Origin(), axis.Direction().AsVector(), mer, feat); err == nil && body != nil {
-			return body, nil
+	if fullRevolution(angle) {
+		if body, ok := circleProfileTorus(prof, plane, axis, feat); ok {
+			return body, nil // a circle clear of the axis revolves to an analytic torus (#129 follow-up)
+		}
+		if isStraightLoop(prof.OuterLoop()) {
+			mer := meridianFromProfile(prof, plane, axis)
+			if body, err := brep.SolidOfRevolution(axis.Origin(), axis.Direction().AsVector(), mer, feat); err == nil && body != nil {
+				return body, nil
+			}
 		}
 	}
 	sections, closed := revolveSectionsFrom(prof, plane, axis, angle, start)
 	return sweptSolid(sections, closed, feat)
+}
+
+// circleProfileTorus builds an analytic torus when the profile is a single CIRCLE clear of the axis: the
+// circle (the tube cross-section) revolved a full turn is a torus whose MAJOR radius is the circle centre's
+// distance from the axis and MINOR radius the circle's own radius. This is the #129 curved-meridian
+// follow-up for the torus case — a circle profile otherwise facets into hundreds of cone slivers. ok=false
+// for any other profile (the caller keeps the straight/faceted path), including a circle that reaches the
+// axis (minor ≥ major), which would revolve to a self-intersecting spindle/horn torus we do not build.
+func circleProfileTorus(prof *sketch.Profile, plane sketch.Plane, axis *WorkAxis, feat string) (*topo.Body, bool) {
+	ents := prof.OuterLoop().Entities()
+	if len(ents) != 1 {
+		return nil, false
+	}
+	circle, ok := ents[0].Entity.(*sketch.Circle)
+	if !ok {
+		return nil, false
+	}
+	o, a := axis.Origin(), axis.Direction().AsVector()
+	v := o.VectorTo(plane.ToModel(circle.CenterPoint().Position()))
+	z := v.Dot(a)
+	major := float64(v.Sub(a.Scale(z)).Length())
+	minor := float64(circle.CurveRadius())
+	if minor >= major {
+		return nil, false
+	}
+	body, err := brep.SolidTorus(o.TranslateBy(a.Scale(z)), a, major, minor, feat)
+	if err != nil {
+		return nil, false
+	}
+	return body, true
 }
 
 // revolveSpan resolves the total swept angle and its start offset: a
