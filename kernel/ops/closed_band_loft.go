@@ -75,9 +75,10 @@ func bandRingsAndSeam(f *topo.Face, q Quality) (rings [][]math.Point3, seamN int
 	return rings, seamN, seamMid, ok
 }
 
-// dropClosingDup removes the trailing point a closed-edge tessellation repeats at its seam.
+// dropClosingDup removes the trailing point a closed-edge tessellation repeats at its seam. The
+// duplicate threshold is model-relative (ADR-0042, #1399), scaling with the ring's extent.
 func dropClosingDup(pts []math.Point3) []math.Point3 {
-	if len(pts) > 1 && pts[0].DistanceTo(pts[len(pts)-1]) < weldPointTol {
+	if len(pts) > 1 && pts[0].DistanceTo(pts[len(pts)-1]) < ResolutionForPoints(pts).Weld() {
 		return pts[:len(pts)-1]
 	}
 	return pts
@@ -192,7 +193,7 @@ func zipUnequalRows(m *Mesh, a, b bandRow) {
 		evs = append(evs, event{b.ang[i], v, false})
 	}
 	sort.SliceStable(evs, func(i, j int) bool {
-		if stdmath.Abs(evs[i].ang-evs[j].ang) > 1e-9 {
+		if stdmath.Abs(evs[i].ang-evs[j].ang) > 1e-9 { // tol:angular — azimuth (radians) tie-break
 			return evs[i].ang < evs[j].ang
 		}
 		return evs[i].isA && !evs[j].isA // break ties A-before-B so an aligned pair makes a clean quad

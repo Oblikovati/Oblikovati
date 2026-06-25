@@ -92,6 +92,11 @@ func (c ruledUV) sectionV(u float64) float64 {
 // strict lo<hi flickers and breaks the span pairing. The margin makes the pinch read as empty either way.
 // It sits well ABOVE the ~1e-14 rounding flicker yet two orders below the 1e-7 weld tolerance, so the span
 // endpoint the bisection lands on (where the section sits vPinchTol inside the rim) still welds to the rim.
+//
+// tol:calibrated — this (u,v) arrangement margin is OCC-validated for the delicate tangent-limit cases
+// (the parabola cone∩box, the symmetric pinch). It is NOT model-relativised under #1399: at a part scale
+// of ~10 a size-scaled weld is an order of magnitude off and misclassifies the rim crossing, breaking the
+// validated volumes. The split operates on the cone's own (azimuth, axial) frame, which is already ~O(R).
 const vPinchTol = 1e-9
 
 // keptV returns the kept (g<0) axial-distance interval [lo, hi] at azimuth u, clamped to the band, plus

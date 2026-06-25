@@ -117,7 +117,7 @@ func (g *arcBuild) mapUse(f *topo.Face, u *topo.EdgeUse) []topo.Use {
 		})
 	case u.Edge() == af.arcEdge && f == af.cylF:
 		// arc on the cylinder → cyl-tangent arc (vc0→vc1); reversed when the use enters from end 1.
-		rev := useFromVertex(u).Point().DistanceTo(af.ends[1].rimV.Point()) < weldPointTol
+		rev := vertsCoincide(useFromVertex(u).Point(), af.ends[1].rimV.Point())
 		return []topo.Use{{Edge: g.cylTan, Reversed: rev}}
 	case u.Edge() == af.ends[0].smoothLine || u.Edge() == af.ends[1].smoothLine:
 		i := 0
@@ -126,12 +126,19 @@ func (g *arcBuild) mapUse(f *topo.Face, u *topo.EdgeUse) []topo.Use {
 		}
 		if f == af.cylF {
 			// cylinder keeps only the lower segment (vc→bottom); reversed when the use enters from bottom.
-			rev := useFromVertex(u).Point().DistanceTo(af.ends[i].bottomV.Point()) < weldPointTol
+			rev := vertsCoincide(useFromVertex(u).Point(), af.ends[i].bottomV.Point())
 			return []topo.Use{{Edge: g.lower[i], Reversed: rev}}
 		}
 		return orientChain(u, []chainEdge{{g.upper[i], g.verts[af.ends[i].rimV], g.vc[i]}, {g.lower[i], g.vc[i], g.verts[af.ends[i].bottomV]}})
 	}
 	return []topo.Use{{Edge: g.edges[u.Edge()], Reversed: u.Reversed()}}
+}
+
+// vertsCoincide reports whether two fillet vertices are the same point. The tolerance is model-relative
+// (ADR-0042, #1399): for distinct vertices it scales with their separation (so the test stays correct
+// at any scale), and for a coincident pair it floors to the base weld — no cm-anchored constant.
+func vertsCoincide(a, b math.Point3) bool {
+	return a.DistanceTo(b) < ResolutionForPoints([]math.Point3{a, b}).Weld()
 }
 
 // chainEdge is one directed edge of a substitution chain.
@@ -145,7 +152,7 @@ type chainEdge struct {
 // natural start. When the use runs against the chain's overall direction, the whole sequence flips.
 func orientChain(u *topo.EdgeUse, chain []chainEdge) []topo.Use {
 	out := make([]topo.Use, len(chain))
-	forward := useFromVertex(u).Point().DistanceTo(chain[0].from.Point()) < weldPointTol
+	forward := vertsCoincide(useFromVertex(u).Point(), chain[0].from.Point())
 	for i, c := range chain {
 		rev := c.e.StartVertex() != c.from // the edge's natural start differs from the desired start
 		if forward {

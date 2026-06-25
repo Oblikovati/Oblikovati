@@ -21,7 +21,7 @@ func TestPlaneConeAxisParallelHyperbola(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewPlane: %v", err)
 	}
-	curves, handled := IntersectSurfacesAnalytic(pl, cone)
+	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
 	if !handled || len(curves) != 1 {
 		t.Fatalf("imprint handled=%v curves=%d, want handled=true with one curve", handled, len(curves))
 	}
@@ -48,7 +48,7 @@ func TestPlaneConeAxisParallelHyperbola(t *testing.T) {
 func TestPlaneConeThroughApexDeferred(t *testing.T) {
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 1, 0)) // contains the apex and the axis
-	if _, handled := IntersectSurfacesAnalytic(pl, cone); handled {
+	if _, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1)); handled {
 		t.Error("plane through the apex should defer (handled=false)")
 	}
 }

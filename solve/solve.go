@@ -64,7 +64,7 @@ func (o Options) withDefaults() Options {
 		o.MaxIterations = 100
 	}
 	if o.Tolerance <= 0 {
-		o.Tolerance = 1e-10
+		o.Tolerance = 1e-10 // tol:numeric — solver residual-norm convergence target (residual normalisation is #1420)
 	}
 	return o
 }
@@ -98,7 +98,7 @@ type Result struct {
 func Solve(res []Residual, vars []*math.Scalar, opts Options) Result {
 	opts = opts.withDefaults()
 	r := evalResiduals(res)
-	lambda := 1e-3
+	lambda := 1e-3 // tol:numeric — Levenberg–Marquardt initial damping
 	iter := 0
 	for ; iter < opts.MaxIterations; iter++ {
 		if infNorm(r) < opts.Tolerance || len(vars) == 0 {
@@ -132,7 +132,7 @@ func newtonStep(res []Residual, vars []*math.Scalar, r []float64, lambda *float6
 			applyDelta(vars, delta)
 			trial := evalResiduals(res)
 			if infNorm(trial) < current {
-				*lambda = stdmath.Max(*lambda/10, 1e-12)
+				*lambda = stdmath.Max(*lambda/10, 1e-12) // tol:numeric — LM damping floor
 				return trial, true
 			}
 			writeVars(vars, snapshot)
@@ -147,7 +147,7 @@ func AnalyzeDOF(res []Residual, vars []*math.Scalar) DOFAnalysis {
 	n := len(vars)
 	j := Jacobian(res, vars)
 	m := len(j)
-	rank := matrixRank(j, 1e-7)
+	rank := matrixRank(j, 1e-7) // tol:numeric — Jacobian rank tolerance
 	a := DOFAnalysis{Variables: n, Equations: m, Rank: rank, DOF: n - rank, Redundant: m - rank}
 	switch {
 	case a.Redundant > 0:
@@ -172,7 +172,7 @@ func evalResiduals(res []Residual) []float64 {
 // Jacobian builds the m×n residual Jacobian by central finite differences (h=1e-7). It
 // is exported so a caller that does its own DOF/mobility analysis can reuse it.
 func Jacobian(res []Residual, vars []*math.Scalar) [][]float64 {
-	const h = 1e-7
+	const h = 1e-7 // tol:numeric — finite-difference Jacobian step (analytic Jacobian is #1417)
 	m := len(evalResiduals(res))
 	j := make([][]float64, m)
 	for i := range j {

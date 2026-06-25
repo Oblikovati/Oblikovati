@@ -64,7 +64,7 @@ func awayFromContacts(uses map[[2]int][]loopEdgeUse, faces []builtFace) math.Vec
 			}
 		}
 	}
-	if into.LengthSquared() < 1e-18 {
+	if into.LengthSquared() < 1e-18 { // tol:numeric — degenerate-direction guard (squared length)
 		return math.Vector3{}
 	}
 	return into.AsUnit().AsVector().Scale(-1)
@@ -126,10 +126,10 @@ func collectSegHits(pa math.Point3, ab math.Vector3, lenSq float64, onRing map[i
 			continue
 		}
 		t := pa.VectorTo(verts[c]).Dot(ab) / lenSq
-		if t <= 1e-7 || t >= 1-1e-7 {
+		if t <= 1e-7 || t >= 1-1e-7 { // tol:parametric — edge parameter t in [0,1]
 			continue
 		}
-		if pa.TranslateBy(ab.Scale(t)).DistanceTo(verts[c]) < 1e-6 {
+		if pa.TranslateBy(ab.Scale(t)).DistanceTo(verts[c]) < 1e-6 { // tol:calibrated — planar stitch weld (see arrange2d arrTol)
 			hits = append(hits, segHit{t, c})
 		}
 	}
@@ -229,7 +229,7 @@ func buildEdges(bld *topo.Builder, verts []math.Point3, tv []*topo.Vertex, edgeU
 
 // weldGrid is the coincidence tolerance for merging stitched vertices (cm). Points within it
 // are the same vertex.
-const weldGrid = 1e-6
+const weldGrid = 1e-6 // tol:calibrated — planar stitch weld grid (see arrange2d arrTol)
 
 // welder3 merges coincident 3D points onto a shared index list.
 type welder3 struct {

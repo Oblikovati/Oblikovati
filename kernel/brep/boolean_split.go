@@ -91,7 +91,7 @@ func ringSignature(ring []math.Point3) string {
 }
 
 func roundKey(p math.Point3) string {
-	const grid = 1e-6
+	const grid = 1e-6 // tol:calibrated — planar split weld grid (see arrange2d arrTol)
 	return strconv.FormatInt(int64(stdmath.Round(p.X/grid)), 36) + "," +
 		strconv.FormatInt(int64(stdmath.Round(p.Y/grid)), 36) + "," +
 		strconv.FormatInt(int64(stdmath.Round(p.Z/grid)), 36)
@@ -134,8 +134,8 @@ func interiorPoint2D(r Face2D) (math.Point2, bool) {
 		a, b := poly[i], poly[(i+1)%n]
 		e := a.VectorTo(b)
 		mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
-		left := math.V2(-e.Y, e.X) // interior side of a CCW loop (magnitude = |edge|)
-		for _, f := range []float64{1e-3, 1e-2, 0.05, 0.2} {
+		left := math.V2(-e.Y, e.X)                           // interior side of a CCW loop (magnitude = |edge|)
+		for _, f := range []float64{1e-3, 1e-2, 0.05, 0.2} { // tol:parametric — interior-probe offset fractions
 			p := mid.TranslateBy(left.Scale(f))
 			if pointInPolygon2D(p, poly) && !inHoles2D(p, r.Holes) {
 				return p, true

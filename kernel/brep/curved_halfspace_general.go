@@ -17,11 +17,13 @@ import (
 // CSG fallback until that split lands.
 
 // generalHalfSpace cuts an arbitrary analytic body by one plane via split → classify → lid → stitch.
-func generalHalfSpace(body *topo.Body, plane geom.Plane, n math.Vector3, faces []curvedFace) (*topo.Body, error) {
+// res is the body's model-relative coincidence scale (Oblikovati/Oblikovati#1399), threaded into the
+// per-face imprint so the exact-conic-vs-defer decision is scale-faithful.
+func generalHalfSpace(body *topo.Body, plane geom.Plane, n math.Vector3, faces []curvedFace, res geom.Resolution) (*topo.Body, error) {
 	var kept []curvedFace
 	var section []loopEdge
 	for _, f := range faces {
-		pieces, arcs, err := splitFaceByPlane(f, plane, n)
+		pieces, arcs, err := splitFaceByPlane(f, plane, n, res)
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +36,7 @@ func generalHalfSpace(body *topo.Body, plane geom.Plane, n math.Vector3, faces [
 	if len(section) == 0 {
 		return body, nil // no face was cut: the plane clears the body and the whole of it is kept
 	}
-	lids, ok := buildLids(plane, n, section)
+	lids, ok := buildLids(plane, n, section, res)
 	if !ok {
 		return nil, ErrUnsupportedHalfSpace
 	}
@@ -47,20 +49,28 @@ func generalHalfSpace(body *topo.Body, plane geom.Plane, n math.Vector3, faces [
 // band split would not recognise it). A cone/cylinder is RULED along v, so if every boundary point lies on
 // one side the whole ruled interior does too; the caller then keeps or drops the face whole. Only ruled
 // sides qualify (a sphere/torus interior can bulge past a chord between boundary points).
-func faceWhollyOneSide(f curvedFace, plane geom.Plane, n math.Vector3) bool {
+func faceWhollyOneSide(f curvedFace, plane geom.Plane, n math.Vector3, res geom.Resolution) bool {
 	switch f.surface.(type) {
 	case geom.Cone, geom.Cylinder:
 	default:
 		return false
 	}
-	neg, pos := false, false
+	pos, neg := ruledFaceSides(f, plane, n, res)
+	return !neg || !pos // wholly on one side (or grazing): no genuine crossing
+}
+
+// ruledFaceSides reports which sides of the cutting plane a ruled (cone/cylinder) face's boundary — and a
+// full cone's apex pole — touch, classified within the model-relative on-plane band res.Plane() (#1399) so
+// a grazing point counts as "on" the plane at any model scale.
+func ruledFaceSides(f curvedFace, plane geom.Plane, n math.Vector3, res geom.Resolution) (pos, neg bool) {
+	onPlane := res.Plane()
 	for _, loop := range f.loops {
 		for _, le := range loop.edges {
 			for i := 0; i <= 8; i++ {
 				switch d := signedDistance(le.curve.PointAt(le.t0+(le.t1-le.t0)*float64(i)/8), plane, n); {
-				case d > cylinderAxisTol:
+				case d > onPlane:
 					pos = true
-				case d < -cylinderAxisTol:
+				case d < -onPlane:
 					neg = true
 				}
 			}
@@ -68,26 +78,26 @@ func faceWhollyOneSide(f curvedFace, plane geom.Plane, n math.Vector3) bool {
 	}
 	// A full cone closes to its apex pole, which lies on no boundary edge — sample it too, else a cut that
 	// separates the apex from the rim is missed (the rim alone reads as wholly one side, #1375).
-	if cone, _, ok := fullConeApexSideBand(f); ok {
+	if cone, _, ok := fullConeApexSideBand(f, res); ok {
 		switch d := signedDistance(cone.Apex, plane, n); {
-		case d > cylinderAxisTol:
+		case d > onPlane:
 			pos = true
-		case d < -cylinderAxisTol:
+		case d < -onPlane:
 			neg = true
 		}
 	}
-	return !neg || !pos // wholly on one side (or grazing): no genuine crossing
+	return pos, neg
 }
 
 // splitFaceByPlane splits one face by the cutting plane, returning the kept (negative-side) sub-faces
 // and the section arcs that bound the lid. A face the plane does not cross is kept whole or dropped; a
 // boundary-less face (sphere) splits into the kept cap; a looped face crossed by the imprint defers.
-func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	curves, handled := curvedImprint(f, curvedFace{surface: plane})
+func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3, res geom.Resolution) ([]curvedFace, []loopEdge, error) {
+	curves, handled := curvedImprint(f, curvedFace{surface: plane}, res)
 	if !handled {
 		return nil, nil, ErrUnsupportedHalfSpace
 	}
-	if len(curves) == 0 || faceWhollyOneSide(f, plane, n) {
+	if len(curves) == 0 || faceWhollyOneSide(f, plane, n, res) {
 		if signedDistance(faceSample(f), plane, n) <= 0 {
 			return []curvedFace{f}, nil, nil // whole face on the negative side
 		}
@@ -102,10 +112,10 @@ func splitFaceByPlane(f curvedFace, plane geom.Plane, n math.Vector3) ([]curvedF
 	if cone, band, ok := fullConeSideBand(f); ok {
 		return coneSideBandSplit(f, curves, cone, band, plane, n)
 	}
-	if cone, band, ok := fullConeApexSideBand(f); ok {
+	if cone, band, ok := fullConeApexSideBand(f, res); ok {
 		return coneApexSideSplit(f, cone, curves[0], band, plane, n)
 	}
-	return loopedSplit(f, curves, plane, n)
+	return loopedSplit(f, curves, plane, n, res)
 }
 
 // capSplit splits a boundary-less face (a bare sphere) by its imprint circle into the kept negative cap
@@ -128,8 +138,8 @@ func capSplit(f curvedFace, c geom.Curve3) ([]curvedFace, []loopEdge, error) {
 // buildLids chains the section arcs into closed loops and builds one planar lid face per loop, on the
 // cutting plane with outward normal +n. ok=false when the section arcs do not close into loops (a case
 // the looped split will complete).
-func buildLids(plane geom.Plane, n math.Vector3, section []loopEdge) ([]curvedFace, bool) {
-	loops := chainSectionLoops(section)
+func buildLids(plane geom.Plane, n math.Vector3, section []loopEdge, res geom.Resolution) ([]curvedFace, bool) {
+	loops := chainSectionLoops(section, res)
 	if loops == nil {
 		return nil, false
 	}
@@ -151,17 +161,17 @@ func buildLids(plane geom.Plane, n math.Vector3, section []loopEdge) ([]curvedFa
 // chainSectionLoops groups section arcs into closed boundary loops: a closed-circle section is its own
 // loop; open arcs chain end-to-start. Returns nil if open arcs are present but cannot be closed (the
 // looped split's job).
-func chainSectionLoops(section []loopEdge) [][]loopEdge {
+func chainSectionLoops(section []loopEdge, res geom.Resolution) [][]loopEdge {
 	var loops [][]loopEdge
 	var open []loopEdge
 	for _, e := range section {
-		if samePoint(e.start(), e.end()) {
+		if samePoint(e.start(), e.end(), res) {
 			loops = append(loops, []loopEdge{e}) // a full section circle is a loop on its own
 		} else {
 			open = append(open, e)
 		}
 	}
-	chained := chainOpenArcs(open)
+	chained := chainOpenArcs(open, res)
 	if chained == nil && len(open) > 0 {
 		return nil // open arcs that do not close into loops
 	}
@@ -170,14 +180,14 @@ func chainSectionLoops(section []loopEdge) [][]loopEdge {
 
 // chainOpenArcs links open section arcs end-to-start into closed loops (each arc's end meets the next
 // arc's start). Returns nil if any arc cannot be closed into a loop.
-func chainOpenArcs(open []loopEdge) [][]loopEdge {
+func chainOpenArcs(open []loopEdge, res geom.Resolution) [][]loopEdge {
 	used := make([]bool, len(open))
 	var loops [][]loopEdge
 	for i := range open {
 		if used[i] {
 			continue
 		}
-		loop, ok := traceArcLoop(open, used, i)
+		loop, ok := traceArcLoop(open, used, i, res)
 		if !ok {
 			return nil
 		}
@@ -187,14 +197,14 @@ func chainOpenArcs(open []loopEdge) [][]loopEdge {
 }
 
 // traceArcLoop follows arcs from seed until it returns to the start, marking them used.
-func traceArcLoop(open []loopEdge, used []bool, seed int) ([]loopEdge, bool) {
+func traceArcLoop(open []loopEdge, used []bool, seed int, res geom.Resolution) ([]loopEdge, bool) {
 	loop := []loopEdge{open[seed]}
 	used[seed] = true
 	cur := open[seed].end()
-	for !samePoint(cur, open[seed].start()) {
+	for !samePoint(cur, open[seed].start(), res) {
 		next := -1
 		for j := range open {
-			if !used[j] && samePoint(open[j].start(), cur) {
+			if !used[j] && samePoint(open[j].start(), cur, res) {
 				next = j
 				break
 			}
@@ -223,7 +233,10 @@ func signedDistance(p math.Point3, plane geom.Plane, n math.Vector3) float64 {
 	return float64(plane.Origin.VectorTo(p).Dot(n))
 }
 
-// samePoint reports whether two points coincide within the weld tolerance.
-func samePoint(a, b math.Point3) bool {
-	return float64(a.DistanceTo(b)) < 1e-7
+// samePoint reports whether two points coincide within the model-relative weld tolerance (#1399).
+// Section/trace endpoints carry more accumulated round-off than an exact vertex weld, so they merge at
+// the looser on-line tolerance res.Plane() (1e-7 at unit scale) rather than res.Weld(); deriving it from
+// the body's extent keeps loop-closure and arc-chaining watertight on a km-scale part.
+func samePoint(a, b math.Point3, res geom.Resolution) bool {
+	return float64(a.DistanceTo(b)) < res.Plane()
 }

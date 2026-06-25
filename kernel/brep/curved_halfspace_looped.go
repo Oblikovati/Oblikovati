@@ -32,8 +32,8 @@ type keptSeg struct {
 // points with no holes; the imprint may be one conic (a sphere cap, a disk lid) or several lines (a
 // cylinder arc band a box re-cuts), each kept run bridged along whichever imprint curve joins it. A face
 // with holes, an odd crossing count (a tangency/island), or an unbridgeable run defers.
-func loopedSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.Vector3) ([]curvedFace, []loopEdge, error) {
-	if !faceBoundaryCrosses(f, plane, n) {
+func loopedSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.Vector3, res geom.Resolution) ([]curvedFace, []loopEdge, error) {
+	if !faceBoundaryCrosses(f, plane, n, res) {
 		// The imprint curve exists but does not cross ANY of the face's boundary loops — the face lies
 		// wholly on one side (e.g. a far clearing plane on a multi-loop annular lid). Keep or drop it whole;
 		// this precedes the single-loop requirement so a clearing plane composes over a holed planar face.
@@ -45,7 +45,7 @@ func loopedSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.Ve
 	if len(f.loops) != 1 {
 		return nil, nil, ErrUnsupportedHalfSpace // a CROSSED holes/multi-loop face: a later increment
 	}
-	segs, crossings := splitLoopByPlane(f.loops[0], plane, n)
+	segs, crossings := splitLoopByPlane(f.loops[0], plane, n, res)
 	if crossings == 0 {
 		if signedDistance(faceSample(f), plane, n) <= 0 {
 			return []curvedFace{f}, nil, nil
@@ -59,16 +59,16 @@ func loopedSplit(f curvedFace, curves []geom.Curve3, plane geom.Plane, n math.Ve
 	if len(runs) == 0 {
 		return nil, nil, nil // every crossing-free piece was on the positive side: dropped
 	}
-	return traceKeptFaces(f, curves, runs)
+	return traceKeptFaces(f, curves, runs, res)
 }
 
 // faceBoundaryCrosses reports whether any of the face's boundary loops crosses the cutting plane (an edge
 // runs from one side to the other). A face whose whole boundary lies on one side does not genuinely meet
 // the plane — the imprint curve passes outside it — so the caller keeps or drops it whole regardless of
 // how many loops it has (the multi-loop split is only needed when the plane actually cuts the boundary).
-func faceBoundaryCrosses(f curvedFace, plane geom.Plane, n math.Vector3) bool {
+func faceBoundaryCrosses(f curvedFace, plane geom.Plane, n math.Vector3, res geom.Resolution) bool {
 	for i := range f.loops {
-		if _, crossings := splitLoopByPlane(f.loops[i], plane, n); crossings > 0 {
+		if _, crossings := splitLoopByPlane(f.loops[i], plane, n, res); crossings > 0 {
 			return true
 		}
 	}
@@ -79,7 +79,7 @@ func faceBoundaryCrosses(f curvedFace, plane geom.Plane, n math.Vector3) bool {
 // returns one kept sub-face per loop plus all section edges (the reversed bridges, for the lid). A plane
 // can split one face into SEVERAL kept pieces — a slab leaves a cylinder band in two strips — so the runs
 // are grouped into as many loops as the bridging forms, not assumed to chain into one.
-func traceKeptFaces(f curvedFace, curves []geom.Curve3, runs [][]loopEdge) ([]curvedFace, []loopEdge, error) {
+func traceKeptFaces(f curvedFace, curves []geom.Curve3, runs [][]loopEdge, res geom.Resolution) ([]curvedFace, []loopEdge, error) {
 	used := make([]bool, len(runs))
 	var faces []curvedFace
 	var section []loopEdge
@@ -87,7 +87,7 @@ func traceKeptFaces(f curvedFace, curves []geom.Curve3, runs [][]loopEdge) ([]cu
 		if used[s] {
 			continue
 		}
-		loop, sec, err := traceKeptLoop(f, curves, runs, used, s)
+		loop, sec, err := traceKeptLoop(f, curves, runs, used, s, res)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -100,13 +100,13 @@ func traceKeptFaces(f curvedFace, curves []geom.Curve3, runs [][]loopEdge) ([]cu
 // traceKeptLoop walks from the start run, alternating boundary runs with imprint bridges, until it
 // returns to the start — one closed kept loop. Each run's exit bridges along the imprint curve to the
 // crossing where the next (or the same) run begins.
-func traceKeptLoop(f curvedFace, curves []geom.Curve3, runs [][]loopEdge, used []bool, start int) ([]loopEdge, []loopEdge, error) {
+func traceKeptLoop(f curvedFace, curves []geom.Curve3, runs [][]loopEdge, used []bool, start int, res geom.Resolution) ([]loopEdge, []loopEdge, error) {
 	var loop, section []loopEdge
 	for j := start; ; {
 		used[j] = true
 		loop = append(loop, runs[j]...)
 		exit := runs[j][len(runs[j])-1].end()
-		bridge, k, ok := bridgeToEntry(f, curves, runs, exit)
+		bridge, k, ok := bridgeToEntry(f, curves, runs, exit, res)
 		if !ok {
 			return nil, nil, ErrUnsupportedHalfSpace
 		}
@@ -125,10 +125,10 @@ func traceKeptLoop(f curvedFace, curves []geom.Curve3, runs [][]loopEdge, used [
 // bridgeToEntry finds the run whose start the exit point bridges to along an imprint curve, returning the
 // bridge edge and that run's index. The imprint curve must pass through BOTH the exit and the candidate
 // entry, so the matching line of an axis-parallel pair selects the run that continues the same strip.
-func bridgeToEntry(f curvedFace, curves []geom.Curve3, runs [][]loopEdge, exit math.Point3) (loopEdge, int, bool) {
+func bridgeToEntry(f curvedFace, curves []geom.Curve3, runs [][]loopEdge, exit math.Point3, res geom.Resolution) (loopEdge, int, bool) {
 	for k, run := range runs {
 		entry := run[0].start()
-		if bridge, ok := bridgeArc(f, curves, exit, entry); ok {
+		if bridge, ok := bridgeArc(f, curves, exit, entry, res); ok {
 			return bridge, k, true
 		}
 	}
@@ -140,13 +140,13 @@ func bridgeToEntry(f curvedFace, curves []geom.Curve3, runs [][]loopEdge, exit m
 // is cut at its crossings ONLY, the arcs running between consecutive crossings across the seam — never
 // split at the arbitrary seam vertex, which would fragment a kept arc that wraps it into two edges that
 // then fail to weld with the matching single arc on the adjoining face.
-func splitLoopByPlane(loop curvedLoop, plane geom.Plane, n math.Vector3) ([]keptSeg, int) {
+func splitLoopByPlane(loop curvedLoop, plane geom.Plane, n math.Vector3, res geom.Resolution) ([]keptSeg, int) {
 	var segs []keptSeg
 	crossings := 0
 	for _, le := range loop.edges {
-		cs := edgeCrossings(le, plane, n)
+		cs := edgeCrossings(le, plane, n, res)
 		crossings += len(cs)
-		if samePoint(le.start(), le.end()) && len(cs) > 0 {
+		if samePoint(le.start(), le.end(), res) && len(cs) > 0 {
 			segs = append(segs, closedEdgeSegs(le, cs, plane, n)...)
 		} else {
 			segs = append(segs, openEdgeSegs(le, cs, plane, n)...)
@@ -192,8 +192,8 @@ func taggedSeg(c geom.Curve3, a, b float64, plane geom.Plane, n math.Vector3) ke
 // edgeCrossings returns the parameters within an edge's [t0, t1] where g crosses zero (the plane cuts
 // the edge), found by sampling for sign changes then bisecting each. A CLOSED (seam) edge is sampled
 // cyclically — see closedEdgeCrossings — so a crossing that lands on its seam vertex is not missed.
-func edgeCrossings(le loopEdge, plane geom.Plane, n math.Vector3) []float64 {
-	if samePoint(le.start(), le.end()) {
+func edgeCrossings(le loopEdge, plane geom.Plane, n math.Vector3, res geom.Resolution) []float64 {
+	if samePoint(le.start(), le.end(), res) {
 		return closedEdgeCrossings(le, plane, n)
 	}
 	var out []float64
@@ -327,9 +327,9 @@ func allEdges(segs []keptSeg) []loopEdge {
 // each curve until one passes through both points (the right line of an axis-parallel pair, or the
 // imprint conic). A line gives the segment between them; a closed conic gives whichever of its two arcs
 // has its midpoint inside f.
-func bridgeArc(f curvedFace, curves []geom.Curve3, exit, entry math.Point3) (loopEdge, bool) {
+func bridgeArc(f curvedFace, curves []geom.Curve3, exit, entry math.Point3, res geom.Resolution) (loopEdge, bool) {
 	for _, c := range curves {
-		if e, ok := bridgeAlong(f, c, exit, entry); ok {
+		if e, ok := bridgeAlong(f, c, exit, entry, res); ok {
 			return e, true
 		}
 	}
@@ -338,10 +338,10 @@ func bridgeArc(f curvedFace, curves []geom.Curve3, exit, entry math.Point3) (loo
 
 // bridgeAlong returns the exit→entry portion of a single imprint curve c, or ok=false if c does not pass
 // through both endpoints (so the wrong line of a pair is rejected) or no arc of it lies inside f.
-func bridgeAlong(f curvedFace, c geom.Curve3, exit, entry math.Point3) (loopEdge, bool) {
+func bridgeAlong(f curvedFace, c geom.Curve3, exit, entry math.Point3, res geom.Resolution) (loopEdge, bool) {
 	tExit, _ := geom.CurveParamAtPoint3(c, exit)
 	tEntry, _ := geom.CurveParamAtPoint3(c, entry)
-	if !onCurve(c, tExit, exit) || !onCurve(c, tEntry, entry) {
+	if !onCurve(c, tExit, exit, res) || !onCurve(c, tEntry, entry, res) {
 		return loopEdge{}, false
 	}
 	if _, isLine := c.(geom.Line); isLine {
@@ -362,8 +362,8 @@ func bridgeAlong(f curvedFace, c geom.Curve3, exit, entry math.Point3) (loopEdge
 
 // onCurve reports whether c.PointAt(t) coincides with p — used to confirm a candidate imprint curve
 // actually passes through a crossing point before bridging along it.
-func onCurve(c geom.Curve3, t float64, p math.Point3) bool {
-	return samePoint(c.PointAt(t), p)
+func onCurve(c geom.Curve3, t float64, p math.Point3, res geom.Resolution) bool {
+	return samePoint(c.PointAt(t), p, res)
 }
 
 // arcCandidates returns the two end parameters that, paired with tExit, sweep the two arcs (positive and

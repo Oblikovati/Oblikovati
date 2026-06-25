@@ -71,6 +71,3 @@ func reverse3(pts []math.Point3) []math.Point3 {
 	}
 	return out
 }
-
-// weldPointTol is the distance under which two boundary points are the same vertex.
-const weldPointTol = 1e-9

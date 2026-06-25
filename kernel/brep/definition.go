@@ -182,7 +182,7 @@ func compileVertices(bld *topo.Builder, def SurfaceBodyDefinition, feat string) 
 // compileEdges builds the edges, checking each curve's ends actually land on
 // its declared vertices (the classic hand-built-graph mistake).
 func compileEdges(bld *topo.Builder, def SurfaceBodyDefinition, verts []*topo.Vertex, feat string) ([]*topo.Edge, []DefinitionIssue) {
-	const endTol = 1e-6
+	const endTol = 1e-6 // tol:calibrated — curve-endpoint-on-vertex distance (see arrange2d arrTol)
 	var issues []DefinitionIssue
 	out := make([]*topo.Edge, len(def.Edges))
 	for i, e := range def.Edges {

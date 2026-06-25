@@ -30,7 +30,8 @@ func crossingCylinderImprint(a, b *topo.Body) ([]geom.Polyline, bool) {
 	if !okA || !okB {
 		return nil, false
 	}
-	loops := closedTraceLoops(geom.IntersectSurfaceSurface(ca, cb, cylinderTraceWindow(ca, baseA, heightA)))
+	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
+	loops := closedTraceLoops(geom.IntersectSurfaceSurface(ca, cb, cylinderTraceWindow(ca, baseA, heightA)), res)
 	if len(loops) == 0 {
 		return nil, false
 	}
@@ -47,10 +48,10 @@ func cylinderTraceWindow(c geom.Cylinder, base math.Point3, height float64) geom
 // closedTraceLoops keeps the traced polylines that close into a loop (first point meets last), building a
 // geom.Polyline from each. An open chain — where the tracer broke at a tangency or pinch — is dropped, so
 // the imprint carries only watertight boundary loops.
-func closedTraceLoops(raw [][]math.Point3) []geom.Polyline {
+func closedTraceLoops(raw [][]math.Point3, res geom.Resolution) []geom.Polyline {
 	var out []geom.Polyline
 	for _, pts := range raw {
-		if len(pts) < 4 || !samePoint(pts[0], pts[len(pts)-1]) {
+		if len(pts) < 4 || !samePoint(pts[0], pts[len(pts)-1], res) {
 			continue
 		}
 		if pl, err := geom.NewPolyline(pts); err == nil {

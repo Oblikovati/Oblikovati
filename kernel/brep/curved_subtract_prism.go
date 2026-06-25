@@ -31,8 +31,9 @@ func SubtractAxialPrism(target *topo.Body, polyBottom []math.Point3) (*topo.Body
 		return nil, ErrUnsupportedHalfSpace
 	}
 	axis := cyl.AxisDir.AsVector()
+	radialTol := geom.ResolutionForSize(cyl.Radius).Weld() // model-relative side-reach margin (#1399)
 	for _, c := range polyBottom {
-		if float64(radialPart(base.VectorTo(c), axis).Length()) >= cyl.Radius-1e-9 {
+		if float64(radialPart(base.VectorTo(c), axis).Length()) >= cyl.Radius-radialTol {
 			return nil, ErrUnsupportedHalfSpace // a corner reaches the side: not a clean axial tunnel
 		}
 	}

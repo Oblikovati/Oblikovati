@@ -81,7 +81,7 @@ func coneSideBandSplit(f curvedFace, curves []geom.Curve3, cone geom.Cone, band 
 // the cone and a band whose bottom "rim" is the degenerate apex (vMin=0, rBot=0, a zero-radius circle) and
 // whose top rim is the circle, so the (u,v) split treats the apex as the v=0 pole. A frustum (two circles)
 // or an already-trimmed band (a circle plus section arcs) fails the one-edge test and is handled elsewhere.
-func fullConeApexSideBand(f curvedFace) (geom.Cone, coneSideBand_, bool) {
+func fullConeApexSideBand(f curvedFace, res geom.Resolution) (geom.Cone, coneSideBand_, bool) {
 	cone, ok := f.surface.(geom.Cone)
 	if !ok || len(f.loops) != 1 {
 		return geom.Cone{}, coneSideBand_{}, false
@@ -92,7 +92,7 @@ func fullConeApexSideBand(f curvedFace) (geom.Cone, coneSideBand_, bool) {
 		if c, isCircle := le.curve.(geom.Circle); isCircle && isFullDomain(le.t0, le.t1) {
 			circle, circles, rimReversed = c, circles+1, le.t1 < le.t0
 		}
-		if samePoint(le.start(), cone.Apex) || samePoint(le.end(), cone.Apex) {
+		if samePoint(le.start(), cone.Apex, res) || samePoint(le.end(), cone.Apex, res) {
 			touchesApex = true // a seam ruling ends at the apex pole
 		}
 	}

@@ -112,6 +112,47 @@ func longestVerticalEdge(t *testing.T, b *topo.Body, s float64) []byte {
 	return best
 }
 
+// TestFarFromOriginDrilledPlateWatertight is the far-from-origin arm of the #1399 acceptance
+// gate: a curved boolean run on a part whose coordinates sit far from the origin must stay
+// watertight AND keep the exact analytic path (the hole wall a geom.Cylinder, not a faceted CSG
+// prism). The model-relative weld (ADR-0042) scales with the part's extent, so coincident section
+// points still merge once their separation grows with the coordinate magnitude; a cm-anchored weld
+// would fail to chain the section arcs far out and demote the cut to CSG (no cylinder face).
+//
+// The offsets stay within float64's single-model range (≤ ~1e6 cm, the issue's spec). Beyond ~1e8
+// the coordinate ULP itself exceeds a usable feature tolerance and corrupts the geometry — a
+// working-scale-storage concern (ADR-0042 §Phase 2), orthogonal to #1399's relative tolerances.
+func TestFarFromOriginDrilledPlateWatertight(t *testing.T) {
+	const r = 1.5
+	const wantVol = 20*20*6 - stdmath.Pi*r*r*6 // analytic slab − πr²·thickness
+	for _, off := range []float64{0, 1e4, 1e6} {
+		slab, err := brep.SolidBlock(math.P3(off-10, off-10, 0), math.P3(off+10, off+10, 6), "slab")
+		if err != nil {
+			t.Fatalf("off %g: SolidBlock: %v", off, err)
+		}
+		rod, err := brep.SolidCylinder(math.P3(off, off, -1), math.V3(0, 0, 1), r, 8)
+		if err != nil {
+			t.Fatalf("off %g: SolidCylinder: %v", off, err)
+		}
+		drilled, err := ops.Boolean(ops.Cut, slab, rod)
+		if err != nil {
+			t.Fatalf("off %g: Boolean(Cut): %v", off, err)
+		}
+		if rr := ops.Validate(drilled); !rr.Valid || !rr.Closed || !rr.Manifold || !drilled.IsSolid() {
+			t.Errorf("off %g: drilled plate not a watertight solid: %+v", off, rr)
+		}
+		if len(ops.BoundaryEdges(drilled)) != 0 {
+			t.Errorf("off %g: %d boundary edges, want 0 (watertight)", off, len(ops.BoundaryEdges(drilled)))
+		}
+		if !hasCylinderFace(drilled) {
+			t.Errorf("off %g: hole wall is not an analytic cylinder — the cut demoted to CSG far from origin", off)
+		}
+		if v := ops.BodyGeometryProperties(drilled, ops.DefaultQuality()).Volume; stdmath.Abs(v-wantVol)/wantVol > 0.01 {
+			t.Errorf("off %g: volume %.4f, want %.4f within 1%%", off, v, wantVol)
+		}
+	}
+}
+
 // TestScaleSweepSewDefaultGap checks the sew arm of the gate: Sew's default (tolerance 0) gap
 // is now model-relative (ADR-0042 res.Sew()), so a quilt sews shut at any scale. A box built
 // at each scale is already a solid; re-sewing it must keep it a watertight solid rather than

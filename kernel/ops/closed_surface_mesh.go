@@ -2,7 +2,10 @@
 
 package ops
 
-import "oblikovati.org/kernel/geom"
+import (
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
+)
 
 // A bare closed surface — a whole sphere imported as ONE face with no seam edge (0 loops) — has no
 // trim to reduce, so it falls to the full-domain grid. A naive UV grid is NOT watertight on a closed
@@ -14,22 +17,41 @@ import "oblikovati.org/kernel/geom"
 // periodic seam, no pole row) it reduces to the plain UV grid. (M25 PBI-330)
 func closedDomainMesh(s geom.Surface, us, vs []float64) *Mesh {
 	cols := len(us)
-	uWrap := cols > 2 && columnsCoincide(s, us[0], us[cols-1], vs)
+	// One model-relative seam/pole weld for this surface (ADR-0042, #1399). Seam columns and pole
+	// rows are coincident BY CONSTRUCTION, so the tolerance cannot come from their own (degenerate)
+	// extent — it is derived from the whole surface's extent, so a km-scale sphere's seam still reads
+	// as coincident instead of cracking under a cm-anchored 1e-9.
+	weld := surfaceGridWeld(s, us, vs)
+	uWrap := cols > 2 && columnsCoincide(s, us[0], us[cols-1], vs, weld)
 	if uWrap {
 		cols-- // the last column repeats the first (the seam); cells wrap onto column 0 instead
 	}
 	m := &Mesh{}
-	poles := poleRowVertices(m, s, us[:cols], vs)
+	poles := poleRowVertices(m, s, us[:cols], vs, weld)
 	idx := closedGridVertices(m, s, us[:cols], vs, poles)
 	emitClosedGrid(m, idx, uWrap)
 	return m
 }
 
-// columnsCoincide reports whether the surface columns at parameters u0 and u1 trace the same points at
-// every v — a periodic seam (u0=0, u1=2π on a sphere/cylinder).
-func columnsCoincide(s geom.Surface, u0, u1 float64, vs []float64) bool {
+// surfaceGridWeld is the surface's model-relative vertex-weld tolerance (#1399): derived from the
+// extent of the parameter-grid boundary (the surface's own size), so seam and pole coincidence tests
+// scale with the body rather than reading a cm-anchored absolute epsilon.
+func surfaceGridWeld(s geom.Surface, us, vs []float64) float64 {
+	pts := make([]math.Point3, 0, 2*len(us)+2*len(vs))
+	for _, u := range us {
+		pts = append(pts, s.PointAt(u, vs[0]), s.PointAt(u, vs[len(vs)-1]))
+	}
 	for _, v := range vs {
-		if s.PointAt(u0, v).DistanceTo(s.PointAt(u1, v)) > weldPointTol {
+		pts = append(pts, s.PointAt(us[0], v), s.PointAt(us[len(us)-1], v))
+	}
+	return ResolutionForPoints(pts).Weld()
+}
+
+// columnsCoincide reports whether the surface columns at parameters u0 and u1 trace the same points at
+// every v — a periodic seam (u0=0, u1=2π on a sphere/cylinder). weld is the surface-relative tolerance.
+func columnsCoincide(s geom.Surface, u0, u1 float64, vs []float64, weld float64) bool {
+	for _, v := range vs {
+		if s.PointAt(u0, v).DistanceTo(s.PointAt(u1, v)) > weld {
 			return false
 		}
 	}
@@ -37,24 +59,25 @@ func columnsCoincide(s geom.Surface, u0, u1 float64, vs []float64) bool {
 }
 
 // poleRowVertices returns, per v-row, a single shared vertex index when that row degenerates to one
-// point (a pole: every column coincides), or -1 for a normal row. Sharing one vertex (not one per
-// column) is what removes the high-degree pole the naive grid produces.
-func poleRowVertices(m *Mesh, s geom.Surface, us, vs []float64) []int {
+// point (a pole: every column coincides within weld), or -1 for a normal row. Sharing one vertex (not
+// one per column) is what removes the high-degree pole the naive grid produces.
+func poleRowVertices(m *Mesh, s geom.Surface, us, vs []float64, weld float64) []int {
 	out := make([]int, len(vs))
 	for j, v := range vs {
 		out[j] = -1
-		if rowIsPole(s, us, v) {
+		if rowIsPole(s, us, v, weld) {
 			out[j] = m.addVertex(s.PointAt(us[0], v), s.NormalAt(us[0], v))
 		}
 	}
 	return out
 }
 
-// rowIsPole reports whether every column of the v-row collapses to one point (a surface pole).
-func rowIsPole(s geom.Surface, us []float64, v float64) bool {
+// rowIsPole reports whether every column of the v-row collapses to one point (a surface pole) within
+// the surface-relative weld tolerance.
+func rowIsPole(s geom.Surface, us []float64, v float64, weld float64) bool {
 	p0 := s.PointAt(us[0], v)
 	for _, u := range us[1:] {
-		if s.PointAt(u, v).DistanceTo(p0) > weldPointTol {
+		if s.PointAt(u, v).DistanceTo(p0) > weld {
 			return false
 		}
 	}

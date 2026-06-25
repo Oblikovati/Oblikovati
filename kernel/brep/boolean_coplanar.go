@@ -20,10 +20,10 @@ import (
 // coplanar reports whether two planar faces lie in the same plane (parallel normals and a
 // shared point), so their overlap is an area rather than the line an imprint would find.
 func coplanar(a, b planarFace) bool {
-	if stdmath.Abs(a.normal.Dot(b.normal)) < 1-1e-7 {
+	if stdmath.Abs(a.normal.Dot(b.normal)) < 1-1e-7 { // tol:angular — parallel-normals cosine
 		return false // not parallel
 	}
-	return stdmath.Abs(b.plane.Origin.VectorTo(a.plane.Origin).Dot(b.normal)) < 1e-7
+	return stdmath.Abs(b.plane.Origin.VectorTo(a.plane.Origin).Dot(b.normal)) < 1e-7 // tol:calibrated — coplanar gap (see arrange2d arrTol)
 }
 
 // faceEdges3D returns all of a face's loop edges as 3D segments — imprinted onto a coplanar

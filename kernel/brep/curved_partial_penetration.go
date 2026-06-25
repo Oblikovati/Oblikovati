@@ -175,7 +175,7 @@ func rodEndInsideFat(rod crossRod, center math.Point3, fat geom.Cylinder, fatBas
 // pointInsideCylinderSolid reports whether p is strictly inside the finite cylinder solid — within the
 // radius and between the caps, by a small margin so a point on the surface counts as outside.
 func pointInsideCylinderSolid(c geom.Cylinder, base math.Point3, height float64, p math.Point3) bool {
-	const margin = 1e-7
+	margin := geom.ResolutionForSize(c.Radius + height).Plane() // model-relative inside-solid margin (#1399)
 	if float64(radialOf(p, cylAxis(c)).Length()) > c.Radius-margin {
 		return false
 	}

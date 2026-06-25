@@ -25,11 +25,12 @@ import (
 // deferred).
 func torusTwoOvalBand(t geom.Torus, plane geom.Plane) bool {
 	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	if stdmath.Abs(c) > cylinderAxisTol || m <= cylinderAxisTol {
+	if stdmath.Abs(c) > cylinderAxisCosTol || m <= cylinderAxisCosTol {
 		return false
 	}
+	tol := torusSectionTol(t)
 	ratio := stdmath.Abs(k) / m
-	return ratio > cylinderAxisTol && ratio < t.MajorRadius-t.MinorRadius+cylinderAxisTol
+	return ratio > tol && ratio < t.MajorRadius-t.MinorRadius+tol
 }
 
 // torusTwoOvalHalfSpace keeps the v-wrapping band a plane parallel to the torus axis leaves on its negative

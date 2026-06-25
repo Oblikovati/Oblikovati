@@ -64,19 +64,25 @@ func trianglePlaneSegment(tri [3]math.Point3, n math.Vector3, d float64) ([2]mat
 		f := math.Scalar(s[i] / (s[i] - s[j]))
 		pts = append(pts, tri[i].TranslateBy(tri[i].VectorTo(tri[j]).Scale(f)))
 	}
-	if len(pts) != 2 || float64(pts[0].DistanceTo(pts[1])) < sectionWeldTol {
+	if len(pts) != 2 || float64(pts[0].DistanceTo(pts[1])) < sectionWeld(pts) {
 		return [2]math.Point3{}, false
 	}
 	return [2]math.Point3{pts[0], pts[1]}, true
 }
 
-// sectionWeldTol welds section segment endpoints into chains.
-const sectionWeldTol = 1e-7
+// sectionWeld is the model-relative tolerance (#1399) for welding section segment endpoints into
+// chains, derived from the section points' own extent rather than a cm-anchored grid.
+func sectionWeld(pts []math.Point3) float64 { return ResolutionForPoints(pts).Plane() }
 
 // wiresFromSegments chains loose segments into polyline wires on a fresh
 // wire-only body (shared endpoints welded on a tolerance grid).
 func wiresFromSegments(segs [][2]math.Point3, feat string) (*topo.Body, error) {
-	chains := chainSegments(segs, sectionWeldTol)
+	pts := make([]math.Point3, 0, 2*len(segs))
+	for _, s := range segs {
+		pts = append(pts, s[0], s[1])
+	}
+	weldTol := sectionWeld(pts)
+	chains := chainSegments(segs, weldTol)
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok(feat, "body", 0)))
 	body := bld.Build()
 	for i, chain := range chains {
@@ -86,7 +92,7 @@ func wiresFromSegments(segs [][2]math.Point3, feat string) (*topo.Body, error) {
 		}
 		v0 := bld.AddVertex(chain[0], topo.NewLineage(topo.Tok(feat, "vertex", 2*i)))
 		v1 := v0
-		if float64(chain[0].DistanceTo(chain[len(chain)-1])) > sectionWeldTol {
+		if float64(chain[0].DistanceTo(chain[len(chain)-1])) > weldTol {
 			v1 = bld.AddVertex(chain[len(chain)-1], topo.NewLineage(topo.Tok(feat, "vertex", 2*i+1)))
 		}
 		e := bld.AddEdge(curve, v0, v1, topo.NewLineage(topo.Tok(feat, "edge", i)))
@@ -159,7 +165,7 @@ func FaceSilhouetteWires(f *topo.Face, viewDir math.Vector3, includeBoundary boo
 		return nil, fmt.Errorf("ops: face %d has no silhouette from %v", f.ID(), viewDir)
 	}
 	mesh := TessellateFace(f, q)
-	onTol := stdmath.Max(q.tol(), 1e-6)
+	onTol := stdmath.Max(q.tol(), 1e-6) // tol:calibrated — floors the (already model-relative) quality chord tolerance
 	var segs [][2]math.Point3
 	for _, pl := range loops {
 		segs = append(segs, clipPolylineToFace(pl, mesh, f, onTol, includeBoundary)...)
@@ -240,7 +246,7 @@ func fullFiniteSpan(lo, hi, dLo, dHi float64) bool {
 	if stdmath.IsInf(dLo, 0) || stdmath.IsInf(dHi, 0) || dHi <= dLo {
 		return false
 	}
-	return lo <= dLo+1e-9 && hi >= dHi-1e-9
+	return lo <= dLo+1e-9 && hi >= dHi-1e-9 // tol:parametric — surface-domain bounds
 }
 
 // pointNearFaceBoundary reports whether p hugs one of the face's edges.

@@ -117,7 +117,7 @@ func TestSSINurbsPatchCutByPlane(t *testing.T) {
 func TestSSIAgreesWithAnalyticOnSpherePlane(t *testing.T) {
 	sp, _ := NewSphere(math.P3(0, 0, 0), 5)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
-	curves, handled := IntersectSurfacesAnalytic(sp, pl)
+	curves, handled := IntersectSurfacesAnalytic(sp, pl, ResolutionForSize(1))
 	if !handled || len(curves) == 0 {
 		t.Skip("analytic path did not handle sphere∩plane")
 	}

@@ -124,8 +124,8 @@ func probeJustInside(loop []math.Point2) math.Point2 {
 	a, b := loop[0], loop[1]
 	e := a.VectorTo(b)
 	mid := math.P2((a.X+b.X)/2, (a.Y+b.Y)/2)
-	left := math.V2(-e.Y, e.X) // interior side of a CCW loop
-	return mid.TranslateBy(left.Scale(1e-4))
+	left := math.V2(-e.Y, e.X)               // interior side of a CCW loop
+	return mid.TranslateBy(left.Scale(1e-4)) // tol:calibrated — interior-probe nudge (see arrange2d arrTol)
 }
 
 func reversedLoop(loop []math.Point2) []math.Point2 {

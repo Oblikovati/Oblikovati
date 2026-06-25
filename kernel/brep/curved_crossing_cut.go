@@ -103,10 +103,11 @@ func orderRodFat(loops []geom.Polyline, ca geom.Cylinder, baseA math.Point3, hA 
 func loopsBetweenCaps(fat crossRod, fatBase math.Point3, fatHeight float64, lo, hi geom.Polyline) bool {
 	ax := fat.axisOf()
 	vBot := float64(ax.point.VectorTo(fatBase).Dot(ax.dir))
+	tol := geom.ResolutionForSize(fatHeight).Weld() // model-relative axial cap margin (#1399)
 	for _, lp := range []geom.Polyline{lo, hi} {
 		for _, p := range lp.Vertices {
 			s := float64(ax.point.VectorTo(p).Dot(ax.dir)) - vBot
-			if s < 1e-9 || s > fatHeight-1e-9 {
+			if s < tol || s > fatHeight-tol {
 				return false
 			}
 		}

@@ -75,10 +75,11 @@ func rodAndFatCylinders(a, b *topo.Body, loops []geom.Polyline) (rod, fat geom.C
 func loopsSpanRod(rod geom.Cylinder, rodBase math.Point3, rodHeight float64, loops []geom.Polyline) bool {
 	axis := rod.AxisDir.AsVector()
 	vBase := float64(rod.Origin.VectorTo(rodBase).Dot(axis))
+	tol := geom.ResolutionForSize(rodHeight).Plane() // model-relative axial-extent margin (#1399)
 	for _, lp := range loops {
 		for _, p := range lp.Vertices {
 			s := float64(rod.Origin.VectorTo(p).Dot(axis)) - vBase
-			if s < -1e-7 || s > rodHeight+1e-7 {
+			if s < -tol || s > rodHeight+tol {
 				return false
 			}
 		}

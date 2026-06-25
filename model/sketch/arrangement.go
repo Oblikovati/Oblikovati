@@ -22,7 +22,7 @@ import (
 // arrMergeTol is the distance under which two arrangement endpoints are treated as the
 // same node. It is coarser than DefaultTolerance so a computed crossing point and a
 // curve endpoint that land on it snap together despite float error.
-const arrMergeTol = 1e-6
+const arrMergeTol = 1e-6 // tol:calibrated — 2D sketch arrangement node merge (exact 2D intersections; see brep arrange2d)
 
 // arrEdge is one straight sub-segment of a faceted curve, between two merged nodes,
 // remembering the sketch entity it came from (for the loop's entity list).
@@ -153,7 +153,7 @@ func cutPair(segs []taggedSeg, i, j int, cuts [][]cut) {
 func gridCuts(segs []taggedSeg, cuts [][]cut) {
 	minX, minY, maxX, maxY := segsBounds(segs)
 	dim := gridDim(len(segs))
-	cell := stdmath.Max(stdmath.Max(maxX-minX, maxY-minY)/float64(dim), 1e-9)
+	cell := stdmath.Max(stdmath.Max(maxX-minX, maxY-minY)/float64(dim), 1e-9) // tol:numeric — degenerate spatial-grid cell floor
 	cols := int((maxX-minX)/cell) + 1
 	rows := int((maxY-minY)/cell) + 1
 	col := func(x float64) int { return clampInt(int((x-minX)/cell), cols) }

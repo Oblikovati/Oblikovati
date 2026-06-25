@@ -36,7 +36,7 @@ func Segment2dIntersection(a, b LineSegment2d, tol float64) (pt math.Point2, s, 
 // parameter-range test (separate from the geometric DefaultTolerance).
 func paramTol(tol float64) float64 {
 	if tol <= 0 {
-		return 1e-9
+		return 1e-9 // tol:parametric — default acceptance widening for segment params s,t in [0,1]
 	}
 	return tol
 }

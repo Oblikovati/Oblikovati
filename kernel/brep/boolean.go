@@ -70,7 +70,7 @@ func booleanOnce(op Op, fa, fb []planarFace, a, b *topo.Body) (*topo.Body, math.
 // grid (1e-6) so it survives, far below any modelled feature so it is geometrically
 // irrelevant. A line tangency carries no material, so replacing it with a ~0.1 µm gap loses
 // nothing and — unlike the exact tangent — leaves no coincident edge for a re-weld to collapse.
-const nudgeEps = 1e-5
+const nudgeEps = 1e-5 // tol:calibrated — imprint nudge tied to the planar weld grid (see arrange2d arrTol)
 
 // retryNudged re-runs the boolean with operand B nudged a hair along `away` (out of the
 // tangent contact) so the degenerate touch becomes a clean clearance. It keeps the nudged
@@ -153,7 +153,7 @@ func imprint(a, b planarFace) [][2]math.Point3 {
 	overlap := intersectIntervals(faceLineIntervals(a, p0, dir), faceLineIntervals(b, p0, dir))
 	var segs [][2]math.Point3
 	for _, iv := range overlap {
-		if iv[1]-iv[0] > 1e-9 {
+		if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
 			segs = append(segs, [2]math.Point3{p0.TranslateBy(dir.Scale(iv[0])), p0.TranslateBy(dir.Scale(iv[1]))})
 		}
 	}
@@ -293,7 +293,7 @@ func reverseRing(r []math.Point3) []math.Point3 {
 // boundaryImprintTol is the distance at which an imprint point counts as lying on a face's
 // boundary. The wobble between a boundary edge and its imprint re-derivation is float noise
 // (~1e-15), far below it; genuinely interior imprints sit at feature scale, far above it.
-const boundaryImprintTol = 1e-7
+const boundaryImprintTol = 1e-7 // tol:calibrated — planar imprint-on-boundary distance (see arrange2d arrTol)
 
 // interiorSegments filters out the segments that lie along f's boundary, keeping only the
 // ones that can actually split the face's interior.

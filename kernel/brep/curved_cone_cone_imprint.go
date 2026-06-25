@@ -30,7 +30,8 @@ func coneConeImprint(a, b *topo.Body) ([]geom.Polyline, bool) {
 		return nil, false
 	}
 	window := geom.SurfaceGrid{VMin: vMin, VMax: vMax}
-	loops := closedTraceLoops(geom.IntersectSurfaceSurface(ca, cb, window))
+	res := geom.ResolutionForBox(a.RangeBox().Union(b.RangeBox())) // model-relative loop-closure weld (#1399)
+	loops := closedTraceLoops(geom.IntersectSurfaceSurface(ca, cb, window), res)
 	if len(loops) == 0 {
 		return nil, false
 	}

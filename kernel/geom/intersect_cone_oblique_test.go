@@ -15,7 +15,7 @@ import (
 func TestPlaneConeObliqueEllipse(t *testing.T) {
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6) // α = 30°
 	pl, _ := NewPlane(math.P3(0, 0, 5), math.V3(1, 0, 1))                // tilt 45° > 30° → ellipse on the +z nappe
-	curves, handled := IntersectSurfacesAnalytic(pl, cone)
+	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
 	if !handled || len(curves) != 1 {
 		t.Fatalf("imprint handled=%v curves=%d, want one curve", handled, len(curves))
 	}
@@ -36,7 +36,7 @@ func TestPlaneConeObliqueEllipse(t *testing.T) {
 func TestPlaneConeObliqueHyperbola(t *testing.T) {
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/3) // α = 60°, steep cone
 	pl, _ := NewPlane(math.P3(3, 0, 0), math.V3(1, 0, 0.6))              // tilt ~31° < 60° → hyperbola
-	curves, handled := IntersectSurfacesAnalytic(pl, cone)
+	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
 	if !handled || len(curves) != 1 {
 		t.Fatalf("imprint handled=%v curves=%d, want one curve", handled, len(curves))
 	}
@@ -59,7 +59,7 @@ func TestPlaneConeParabola(t *testing.T) {
 	a := stdmath.Atan(0.3)
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(stdmath.Sin(a), 0, stdmath.Cos(a)), a)
 	pl, _ := NewPlane(math.P3(2, 0, 0), math.V3(1, 0, 0)) // x=2, parallel to the vertical generator
-	curves, handled := IntersectSurfacesAnalytic(pl, cone)
+	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
 	if !handled || len(curves) != 1 {
 		t.Fatalf("imprint handled=%v curves=%d, want one curve", handled, len(curves))
 	}
@@ -76,7 +76,7 @@ func TestPlaneConeParabola(t *testing.T) {
 func TestPlaneConeObliqueThroughApexDeferred(t *testing.T) {
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/6)
 	pl, _ := NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 1)) // oblique AND through the apex
-	if _, handled := IntersectSurfacesAnalytic(pl, cone); handled {
+	if _, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1)); handled {
 		t.Error("oblique plane through the apex should defer (handled=false)")
 	}
 }
@@ -86,7 +86,7 @@ func TestPlaneConeObliqueThroughApexDeferred(t *testing.T) {
 func TestPlaneConeObliqueHyperbolaOtherSide(t *testing.T) {
 	cone, _ := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), stdmath.Pi/3)
 	pl, _ := NewPlane(math.P3(-3, 0, 0), math.V3(1, 0, -0.6)) // mirror of the +x hyperbola case
-	curves, handled := IntersectSurfacesAnalytic(pl, cone)
+	curves, handled := IntersectSurfacesAnalytic(pl, cone, ResolutionForSize(1))
 	if !handled || len(curves) != 1 {
 		t.Fatalf("imprint handled=%v curves=%d, want one curve", handled, len(curves))
 	}
