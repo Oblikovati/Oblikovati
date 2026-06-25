@@ -35,6 +35,11 @@ type cdt struct {
 	dead []bool          // tris[t] was deleted by an insertion
 	con  map[[2]int]bool // constrained undirected edges (sorted vertex pair)
 	nsup int             // index of the first super-triangle vertex (points >= nsup are super)
+	last int             // a recently-live triangle, the seed hint for the next point-location walk (#1408)
+	// walkSteps counts triangles visited by the adjacency walk over this triangulation's life — a
+	// per-instance counter (each cdt runs on one goroutine, so no data race), read by tests to assert
+	// point location is near-linear, not the old O(N²) full scan.
+	walkSteps int
 }
 
 func conKey(a, b int) [2]int {
