@@ -47,7 +47,7 @@ func classifyBlindDrill(slab *topo.Body, base math.Point3, ua math.Vector3, radi
 	}
 	found := false
 	for _, f := range faces {
-		isEntry := float64(f.normal.Dot(ua)) < -1+1e-7 && stdmath.Abs(pierceParam(base, ua, f.plane)) < 1e-6
+		isEntry := float64(f.normal.Dot(ua)) < -1+1e-7 && stdmath.Abs(pierceParam(base, ua, f.plane)) < 1e-6 // tol:angular (cosine) + calibrated (pierce dist)
 		if !isEntry {
 			copied = append(copied, f)
 			continue

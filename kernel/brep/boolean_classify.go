@@ -35,7 +35,7 @@ func rayHitsFace(p math.Point3, dir math.Vector3, f planarFace) bool {
 		return false // ray parallel to the face plane
 	}
 	t := f.plane.Origin.VectorTo(p).Dot(n) / -den // n·(p+t dir) = n·origin ⇒ t = n·(origin−p)/(n·dir)
-	if t <= 1e-9 {
+	if t <= 1e-9 {                                // tol:numeric — ray hit parameter near-zero guard (dir not unit)
 		return false
 	}
 	hit := p.TranslateBy(dir.Scale(t))

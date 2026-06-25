@@ -17,12 +17,18 @@ import (
 )
 
 // arrTol is the planar-arrangement coincidence/intersection tolerance (database units).
-const arrTol = 1e-9
+//
+// tol:calibrated — the 2D arrangement welds points computed by EXACT planar segment intersection
+// (no accumulated curved-surface error), so this matched set (arrTol / tjTol / the welder grid) is
+// scale-robust as an absolute across the validated µm→km range (ops TestScaleSweepInvariance).
+// Relativising the welder grid to size·ε coarsens it on a large part and risks merging distinct
+// arrangement vertices — a net regression — so under #1399 it stays absolute and validated.
+const arrTol = 1e-9 // tol:calibrated — exact-planar-intersection weld; see the note above
 
 // parallelDenomTol is the magnitude below which a line/ray·edge or line/ray·plane denominator
 // is treated as zero — the two are parallel, so there is no single crossing. Below arrTol
 // because it bounds a cross/dot product of (roughly unit) directions, not a length.
-const parallelDenomTol = 1e-12
+const parallelDenomTol = 1e-12 // tol:numeric — cross/dot denominator of unit directions
 
 // Face2D is one region of a planar arrangement: a counter-clockwise outer loop and any
 // clockwise hole loops nested directly inside it.
@@ -77,7 +83,7 @@ func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int) {
 // edge — a T-junction. It matches the welder's coincidence grid (1e-7): any point that would
 // weld onto the line is at most that far off it, while genuine features sit orders of
 // magnitude further (≥1e-2), so this never splits a near-miss.
-const tjTol = 1e-7
+const tjTol = 1e-7 // tol:calibrated — matches the welder grid; see arrTol
 
 // splitTJunctions subdivides every edge at any welded vertex lying strictly on its interior,
 // repeating until stable. splitOne only cuts at proper interior crossings of two segments;
@@ -169,7 +175,7 @@ type welder struct {
 func newWelder() *welder { return &welder{index: map[[2]int64]int{}} }
 
 func (w *welder) add(p math.Point2) int {
-	const grid = 1e-7
+	const grid = 1e-7 // tol:calibrated — the arrangement welder coincidence grid; see arrTol
 	k := [2]int64{int64(stdmath.Round(p.X / grid)), int64(stdmath.Round(p.Y / grid))}
 	if i, ok := w.index[k]; ok {
 		return i

@@ -70,7 +70,7 @@ func appendTagged(prov []imprintSeg, segs [][2]math.Point3, owner, other planarF
 
 // edgeParentTol is how far an edge midpoint may sit off an imprint segment and still count as
 // lying on it (model units, cm) — matches the imprint weld tolerance used elsewhere.
-const edgeParentTol = 1e-7
+const edgeParentTol = 1e-7 // tol:calibrated — distance to parent edge for provenance (see arrange2d arrTol)
 
 // edgeParents returns the canonical {owner, other} face-lineage pair of the imprint segment the
 // edge p→q lies on, or ok=false when the edge is not an intersection edge (e.g. an original face
@@ -129,7 +129,7 @@ func pairLineDir(lo, hi topo.Lineage, prov []imprintSeg) (math.Vector3, bool) {
 		return math.Vector3{}, false
 	}
 	d := nLo.Cross(nHi)
-	if d.LengthSquared() < 1e-18 {
+	if d.LengthSquared() < 1e-18 { // tol:numeric — degenerate-direction guard (squared length)
 		return math.Vector3{}, false
 	}
 	return d.AsUnit().AsVector(), true

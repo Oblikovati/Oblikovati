@@ -52,6 +52,18 @@ func TestNoUnjustifiedAbsoluteEpsilons(t *testing.T) {
 		"../brep/curved_coaxial_cylinder.go",
 		"../brep/curved_cylinder_boss.go",
 		"../brep/curved_steinmetz.go",
+		// brep: the planar-arrangement boolean (weld grid, T-junctions, imprint, stitch).
+		"../brep/arrange2d.go",
+		"../brep/arrange2d_trace.go",
+		"../brep/boolean.go",
+		"../brep/boolean_classify.go",
+		"../brep/boolean_coplanar.go",
+		"../brep/boolean_geom.go",
+		"../brep/boolean_split.go",
+		"../brep/boolean_stitch.go",
+		"../brep/boolean_provenance.go",
+		"../brep/definition.go",
+		"../brep/drill_blind.go",
 		// ops: the mesher vertex-weld path.
 		"../ops/edge_discretize.go",
 		"../ops/closed_surface_mesh.go",

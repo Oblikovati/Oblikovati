@@ -79,7 +79,7 @@ func to3D(pl geom.Plane, q math.Point2) math.Point3 {
 func planeLine(a, b geom.Plane) (p0 math.Point3, dir math.Vector3, ok bool) {
 	na, nb := unit(a.Normal()), unit(b.Normal())
 	d := na.Cross(nb)
-	if d.LengthSquared() < 1e-18 {
+	if d.LengthSquared() < 1e-18 { // tol:numeric — degenerate-direction guard (squared length)
 		return p0, dir, false
 	}
 	da, db := na.Dot(a.Origin.AsVector()), nb.Dot(b.Origin.AsVector())
@@ -101,7 +101,7 @@ func unit(v math.Vector3) math.Vector3 {
 // projected into the face plane.
 func faceLineIntervals(f planarFace, p0 math.Point3, dir math.Vector3) [][2]float64 {
 	o2, d2 := to2D(f.plane, p0), to2Dvec(f.plane, dir)
-	if d2.LengthSquared() < 1e-18 {
+	if d2.LengthSquared() < 1e-18 { // tol:numeric — degenerate-direction guard (squared length)
 		return nil // the line is perpendicular to this plane (no in-plane extent)
 	}
 	var ts []float64
@@ -183,7 +183,7 @@ func lineSegCross(o math.Point2, d math.Vector2, a, b math.Point2) (float64, boo
 	ao := o.VectorTo(a)
 	t := ao.Cross(e) / den
 	s := ao.Cross(d) / den
-	if s < -1e-9 || s > 1+1e-9 {
+	if s < -1e-9 || s > 1+1e-9 { // tol:parametric — segment parameter s in [0,1]
 		return 0, false
 	}
 	return t, true
