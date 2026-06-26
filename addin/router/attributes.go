@@ -22,12 +22,12 @@ import (
 
 // registerAttributeHandlers wires the attributes.* methods.
 func (r *Router) registerAttributeHandlers() {
-	r.handlers[wire.MethodAttributesSet] = setAttribute
-	r.handlers[wire.MethodAttributesGet] = getAttribute
-	r.handlers[wire.MethodAttributesList] = listAttributes
-	r.handlers[wire.MethodAttributesListSets] = listAttributeSets
-	r.handlers[wire.MethodAttributesDelete] = deleteAttribute
-	r.handlers[wire.MethodAttributesFind] = findByAttribute
+	r.readOnly(wire.MethodAttributesSet, setAttribute)
+	r.readOnly(wire.MethodAttributesGet, getAttribute)
+	r.readOnly(wire.MethodAttributesList, listAttributes)
+	r.readOnly(wire.MethodAttributesListSets, listAttributeSets)
+	r.readOnly(wire.MethodAttributesDelete, deleteAttribute)
+	r.readOnly(wire.MethodAttributesFind, findByAttribute)
 }
 
 // documentAttributeSets resolves the open document's document-level attribute sets, anchored under

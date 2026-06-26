@@ -16,9 +16,9 @@ import (
 // returns a detailed, method-named error and records it (with a stack) in the trace.
 func TestHandleRecoversPanicIntoError(t *testing.T) {
 	r := New(opregistry.Default())
-	r.handlers["test.boom"] = func(*app.Session, json.RawMessage) (json.RawMessage, error) {
+	r.readOnly("test.boom", func(*app.Session, json.RawMessage) (json.RawMessage, error) {
 		panic("kaboom")
-	}
+	})
 	s := app.NewSession()
 
 	_, err := r.Handle(s, "test.boom", []byte("{}"))

@@ -12,8 +12,8 @@ import (
 // registerDocumentSettingsHandlers wires the per-document settings methods (#147). Starts with the
 // Sketch tab — the constraint-inference defaults the sketch tools read.
 func (r *Router) registerDocumentSettingsHandlers() {
-	r.handlers[wire.MethodDocumentGetSketchSettings] = getDocumentSketchSettings
-	r.handlers[wire.MethodDocumentSetSketchSettings] = setDocumentSketchSettings
+	r.readOnly(wire.MethodDocumentGetSketchSettings, getDocumentSketchSettings)
+	r.readOnly(wire.MethodDocumentSetSketchSettings, setDocumentSketchSettings)
 }
 
 // getDocumentSketchSettings returns a document's persisted sketch settings

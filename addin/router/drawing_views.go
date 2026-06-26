@@ -20,18 +20,18 @@ import (
 
 // registerDrawingViewHandlers wires the drawingViews.* methods.
 func (r *Router) registerDrawingViewHandlers() {
-	r.handlers[wire.MethodDrawingViewsList] = drawingViewsList
-	r.handlers[wire.MethodDrawingViewsAddBase] = drawingViewsAddBase
-	r.handlers[wire.MethodDrawingViewsAddProjected] = drawingViewsAddProjected
-	r.handlers[wire.MethodDrawingViewsAddAuxiliary] = drawingViewsAddAuxiliary
-	r.handlers[wire.MethodDrawingViewsAddSection] = drawingViewsAddSection
-	r.handlers[wire.MethodDrawingViewsAddDetail] = drawingViewsAddDetail
-	r.handlers[wire.MethodDrawingViewsAddBreak] = drawingViewsAddBreak
-	r.handlers[wire.MethodDrawingViewsAddSlice] = drawingViewsAddSlice
-	r.handlers[wire.MethodDrawingViewsAddBreakout] = drawingViewsAddBreakout
-	r.handlers[wire.MethodDrawingViewsAddDraft] = drawingViewsAddDraft
-	r.handlers[wire.MethodDrawingViewsDelete] = drawingViewsDelete
-	r.handlers[wire.MethodDrawingViewsCurves] = drawingViewsCurves
+	r.readOnly(wire.MethodDrawingViewsList, drawingViewsList)
+	r.readOnly(wire.MethodDrawingViewsAddBase, drawingViewsAddBase)
+	r.readOnly(wire.MethodDrawingViewsAddProjected, drawingViewsAddProjected)
+	r.readOnly(wire.MethodDrawingViewsAddAuxiliary, drawingViewsAddAuxiliary)
+	r.readOnly(wire.MethodDrawingViewsAddSection, drawingViewsAddSection)
+	r.readOnly(wire.MethodDrawingViewsAddDetail, drawingViewsAddDetail)
+	r.readOnly(wire.MethodDrawingViewsAddBreak, drawingViewsAddBreak)
+	r.readOnly(wire.MethodDrawingViewsAddSlice, drawingViewsAddSlice)
+	r.readOnly(wire.MethodDrawingViewsAddBreakout, drawingViewsAddBreakout)
+	r.readOnly(wire.MethodDrawingViewsAddDraft, drawingViewsAddDraft)
+	r.readOnly(wire.MethodDrawingViewsDelete, drawingViewsDelete)
+	r.readOnly(wire.MethodDrawingViewsCurves, drawingViewsCurves)
 }
 
 // activeSheetViews returns the active drawing's active-sheet view collection.

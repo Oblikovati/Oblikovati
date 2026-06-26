@@ -3,6 +3,7 @@
 package router
 
 import (
+	"encoding/json"
 	"testing"
 
 	"oblikovati.org/addin/opregistry"
@@ -86,26 +87,20 @@ func TestCentralSeamRecordsWorkPlaneUndo(t *testing.T) {
 	}
 }
 
-// TestMutatingMethodConsistency guards the single source of truth against drift, so the
-// central seam keeps holding as methods are added:
-//   - every mutating method must be a real router handler (a typo'd constant is dead);
-//   - the four transaction-control methods must be broadcast-only (an empty label) — recording
-//     an undo step while moving the cursor would corrupt the stream;
-//   - the families this fix unblocked must keep a non-empty label (a regression tripwire).
-func TestMutatingMethodConsistency(t *testing.T) {
-	r := New(opregistry.Default())
-	for method := range mutatingMethods {
-		if _, ok := r.handlers[method]; !ok {
-			t.Errorf("mutatingMethods[%q] is not a registered router handler", method)
-		}
-	}
+// TestMutatingMethodLabels checks the undo-label contract of the registered mutating handlers,
+// reading the live classification (MutatingMethods) the handlers declare — there is no separate table:
+//   - the transaction-control methods must be broadcast-only (an empty label) — recording an undo step
+//     while moving the cursor would corrupt the stream;
+//   - the families the central seam unblocked must keep a non-empty label (a regression tripwire).
+func TestMutatingMethodLabels(t *testing.T) {
+	mut := New(opregistry.Default()).MutatingMethods()
 
 	for _, m := range []string{
 		wire.MethodTransactionUndo, wire.MethodTransactionRedo,
 		wire.MethodTransactionEnd, wire.MethodTransactionAbort,
 	} {
-		if mutatingMethods[m] != "" {
-			t.Errorf("transaction-control method %q must have an empty undo label, got %q", m, mutatingMethods[m])
+		if label, ok := mut[m]; !ok || label != "" {
+			t.Errorf("transaction-control method %q must be mutating with an empty undo label, got ok=%v label=%q", m, ok, label)
 		}
 	}
 
@@ -113,8 +108,69 @@ func TestMutatingMethodConsistency(t *testing.T) {
 		wire.MethodFeaturesAdd, wire.MethodSketchAddEntity,
 		wire.MethodWorkPlanesCreate, wire.MethodAssemblyFeaturesAdd,
 	} {
-		if mutatingMethods[m] == "" {
+		if mut[m] == "" {
 			t.Errorf("method %q must record an undo step (non-empty label); the central seam regressed", m)
 		}
 	}
+}
+
+// TestMutatingMethodsImplementInterface is the #1426 enforcement: the router's notion of "mutating" IS
+// the MutatingMethod interface — every handler it records + replicates implements MutatingMethod, and no
+// read-only handler does. Because the classification is the interface (not a side table), a mutating
+// method cannot exist without implementing the contract (and declaring its UndoLabel), so it can never
+// silently drift out of undo/replication.
+func TestMutatingMethodsImplementInterface(t *testing.T) {
+	r := New(opregistry.Default())
+	for method, h := range r.handlers {
+		_, implementsInterface := h.(MutatingMethod)
+		_, classifiedMutating := r.MutatingMethods()[method]
+		if implementsInterface != classifiedMutating {
+			t.Errorf("%s: implements MutatingMethod=%v but recorded-as-mutating=%v — the interface must be the sole classifier",
+				method, implementsInterface, classifiedMutating)
+		}
+	}
+	// Every method the central seam records MUST satisfy the interface (this is what makes its UndoLabel
+	// reachable). A regression that recorded a method by some other signal would trip here.
+	for method := range r.MutatingMethods() {
+		if _, ok := r.handlers[method].(MutatingMethod); !ok {
+			t.Errorf("%s is recorded as a document edit but does not implement MutatingMethod", method)
+		}
+	}
+}
+
+// TestRegistrationHelpersProduceCorrectInterface is the #1426 drift guard at the registration seam: a
+// handler registered through mutating() implements MutatingMethod (and carries its label); one registered
+// through readOnly() deliberately does NOT, so the router never records or replicates it. This is the one
+// pattern a document-editing method must follow — there is no second list to forget.
+func TestRegistrationHelpersProduceCorrectInterface(t *testing.T) {
+	r := New(opregistry.Default())
+	nop := func(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) { return nil, nil }
+
+	r.readOnly("test.queryOnly", nop)
+	if _, isMut := r.handlers["test.queryOnly"].(MutatingMethod); isMut {
+		t.Error("a readOnly handler must NOT implement MutatingMethod (it would wrongly record + replicate)")
+	}
+
+	r.mutating("test.editsDoc", "Test Edit", nop)
+	mut, isMut := r.handlers["test.editsDoc"].(MutatingMethod)
+	if !isMut {
+		t.Fatal("a mutating handler MUST implement MutatingMethod")
+	}
+	if mut.UndoLabel() != "Test Edit" {
+		t.Errorf("UndoLabel = %q, want %q", mut.UndoLabel(), "Test Edit")
+	}
+}
+
+// TestDuplicateRegistrationPanics guards against a copy-paste handler that would silently shadow another
+// (and could change its mutation classification). set() is the one registration chokepoint.
+func TestDuplicateRegistrationPanics(t *testing.T) {
+	r := New(opregistry.Default())
+	nop := func(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) { return nil, nil }
+	defer func() {
+		if recover() == nil {
+			t.Error("registering the same method twice must panic, not silently shadow the first handler")
+		}
+	}()
+	r.readOnly("test.dup", nop)
+	r.readOnly("test.dup", nop)
 }

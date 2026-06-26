@@ -18,14 +18,14 @@ import (
 
 // registerContactHandlers wires the contactSets.*/contactSolver.*/interference.* methods.
 func (r *Router) registerContactHandlers() {
-	r.handlers[wire.MethodContactSetsCreate] = contactSetsCreate
-	r.handlers[wire.MethodContactSetsList] = contactSetsList
-	r.handlers[wire.MethodContactSetsDelete] = contactSetsDelete
-	r.handlers[wire.MethodContactSetsAddMember] = contactSetsAddMember
-	r.handlers[wire.MethodContactSetsRemoveMember] = contactSetsRemoveMember
-	r.handlers[wire.MethodContactSolverSetEnabled] = contactSolverSetEnabled
-	r.handlers[wire.MethodContactSolverStatus] = contactSolverStatus
-	r.handlers[wire.MethodInterferenceAnalyze] = interferenceAnalyze
+	r.readOnly(wire.MethodContactSetsCreate, contactSetsCreate)
+	r.readOnly(wire.MethodContactSetsList, contactSetsList)
+	r.readOnly(wire.MethodContactSetsDelete, contactSetsDelete)
+	r.readOnly(wire.MethodContactSetsAddMember, contactSetsAddMember)
+	r.readOnly(wire.MethodContactSetsRemoveMember, contactSetsRemoveMember)
+	r.readOnly(wire.MethodContactSolverSetEnabled, contactSolverSetEnabled)
+	r.readOnly(wire.MethodContactSolverStatus, contactSolverStatus)
+	r.readOnly(wire.MethodInterferenceAnalyze, interferenceAnalyze)
 }
 
 func contactSetsCreate(s *app.Session, raw json.RawMessage) (json.RawMessage, error) {

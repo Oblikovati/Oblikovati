@@ -23,11 +23,11 @@ import (
 
 // registerAssemblyDeriveHandlers wires the assembly.* derive/shrinkwrap methods.
 func (r *Router) registerAssemblyDeriveHandlers() {
-	r.handlers[wire.MethodAssemblyDeriveCreate] = assemblyDeriveCreate
-	r.handlers[wire.MethodAssemblyShrinkwrapCreate] = assemblyShrinkwrapCreate
-	r.handlers[wire.MethodAssemblyDeriveBreakLink] = assemblyDeriveBreakLink
-	r.handlers[wire.MethodAssemblyDeriveStatus] = assemblyDeriveStatus
-	r.handlers[wire.MethodAssemblyDeriveUpdate] = assemblyDeriveUpdate
+	r.mutating(wire.MethodAssemblyDeriveCreate, "Derive Component", assemblyDeriveCreate)
+	r.mutating(wire.MethodAssemblyShrinkwrapCreate, "Shrinkwrap", assemblyShrinkwrapCreate)
+	r.mutating(wire.MethodAssemblyDeriveBreakLink, "Break Link", assemblyDeriveBreakLink)
+	r.readOnly(wire.MethodAssemblyDeriveStatus, assemblyDeriveStatus)
+	r.readOnly(wire.MethodAssemblyDeriveUpdate, assemblyDeriveUpdate)
 }
 
 // assemblyDeriveStatus reports the drive state of a derive-family feature: whether it is

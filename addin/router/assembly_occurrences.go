@@ -23,17 +23,17 @@ import (
 
 // registerAssemblyOccurrenceHandlers wires the assembly.* occurrence methods.
 func (r *Router) registerAssemblyOccurrenceHandlers() {
-	r.handlers[wire.MethodAssemblyOccurrences] = assemblyOccurrences
-	r.handlers[wire.MethodAssemblyPlace] = assemblyPlace
-	r.handlers[wire.MethodAssemblyPlaceByDefinition] = assemblyPlaceByDefinition
-	r.handlers[wire.MethodAssemblyPlaceByDefinitionBatch] = assemblyPlaceByDefinitionBatch
-	r.handlers[wire.MethodAssemblyTransform] = assemblyTransform
-	r.handlers[wire.MethodAssemblyGround] = assemblyGround
-	r.handlers[wire.MethodAssemblySetFlexible] = assemblySetFlexible
-	r.handlers[wire.MethodAssemblySetFlexibleChild] = assemblySetFlexibleChild
-	r.handlers[wire.MethodAssemblySuppress] = assemblySuppress
-	r.handlers[wire.MethodAssemblyReplace] = assemblyReplace
-	r.handlers[wire.MethodAssemblyRemove] = assemblyRemove
+	r.readOnly(wire.MethodAssemblyOccurrences, assemblyOccurrences)
+	r.readOnly(wire.MethodAssemblyPlace, assemblyPlace)
+	r.readOnly(wire.MethodAssemblyPlaceByDefinition, assemblyPlaceByDefinition)
+	r.readOnly(wire.MethodAssemblyPlaceByDefinitionBatch, assemblyPlaceByDefinitionBatch)
+	r.readOnly(wire.MethodAssemblyTransform, assemblyTransform)
+	r.readOnly(wire.MethodAssemblyGround, assemblyGround)
+	r.readOnly(wire.MethodAssemblySetFlexible, assemblySetFlexible)
+	r.readOnly(wire.MethodAssemblySetFlexibleChild, assemblySetFlexibleChild)
+	r.readOnly(wire.MethodAssemblySuppress, assemblySuppress)
+	r.readOnly(wire.MethodAssemblyReplace, assemblyReplace)
+	r.readOnly(wire.MethodAssemblyRemove, assemblyRemove)
 }
 
 // assemblyOccurrences returns the active assembly's occurrence tree.

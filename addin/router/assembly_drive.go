@@ -20,7 +20,7 @@ import (
 
 // registerAssemblyDriveHandlers wires the assemblyDrive.* methods.
 func (r *Router) registerAssemblyDriveHandlers() {
-	r.handlers[wire.MethodAssemblyDrivePreview] = assemblyDrivePreview
+	r.readOnly(wire.MethodAssemblyDrivePreview, assemblyDrivePreview)
 }
 
 // assemblyDrivePreview drives the requested joint through the given settings and returns the

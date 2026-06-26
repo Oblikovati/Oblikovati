@@ -19,13 +19,13 @@ import (
 
 // registerDrawingHandlers wires the drawing.* methods.
 func (r *Router) registerDrawingHandlers() {
-	r.handlers[wire.MethodDrawingListSheets] = drawingListSheets
-	r.handlers[wire.MethodDrawingAddSheet] = drawingAddSheet
-	r.handlers[wire.MethodDrawingRemoveSheet] = drawingRemoveSheet
-	r.handlers[wire.MethodDrawingSetActiveSheet] = drawingSetActiveSheet
-	r.handlers[wire.MethodDrawingSetModelReference] = drawingSetModelReference
-	r.handlers[wire.MethodDrawingTitleBlockFields] = drawingTitleBlockFields
-	r.handlers[wire.MethodDrawingExportDXF] = drawingExportDXF
+	r.readOnly(wire.MethodDrawingListSheets, drawingListSheets)
+	r.readOnly(wire.MethodDrawingAddSheet, drawingAddSheet)
+	r.readOnly(wire.MethodDrawingRemoveSheet, drawingRemoveSheet)
+	r.readOnly(wire.MethodDrawingSetActiveSheet, drawingSetActiveSheet)
+	r.readOnly(wire.MethodDrawingSetModelReference, drawingSetModelReference)
+	r.readOnly(wire.MethodDrawingTitleBlockFields, drawingTitleBlockFields)
+	r.readOnly(wire.MethodDrawingExportDXF, drawingExportDXF)
 }
 
 // drawingExportDXF writes the active sheet (its views' visible/hidden edges, border and title

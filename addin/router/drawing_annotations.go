@@ -17,23 +17,23 @@ import (
 
 // registerDrawingAnnotationHandlers wires the drawingAnnotations.* methods.
 func (r *Router) registerDrawingAnnotationHandlers() {
-	r.handlers[wire.MethodDrawingAnnotationsList] = drawingAnnotationsList
-	r.handlers[wire.MethodDrawingAnnotationsAddCoG] = drawingAnnotationsAddCoG
-	r.handlers[wire.MethodDrawingAnnotationsAddRevisionCloud] = drawingAnnotationsAddRevisionCloud
-	r.handlers[wire.MethodDrawingAnnotationsAddCenterMarks] = drawingAnnotationsAddCenterMarks
-	r.handlers[wire.MethodDrawingAnnotationsAddCenterlines] = drawingAnnotationsAddCenterlines
-	r.handlers[wire.MethodDrawingAnnotationsAddFCF] = drawingAnnotationsAddFCF
-	r.handlers[wire.MethodDrawingAnnotationsAddDatum] = drawingAnnotationsAddDatum
-	r.handlers[wire.MethodDrawingAnnotationsAddSurfaceText] = drawingAnnotationsAddSurfaceText
-	r.handlers[wire.MethodDrawingAnnotationsAddPartsList] = drawingAnnotationsAddPartsList
-	r.handlers[wire.MethodDrawingAnnotationsAddBalloon] = drawingAnnotationsAddBalloon
-	r.handlers[wire.MethodDrawingAnnotationsAddHoleTable] = drawingAnnotationsAddHoleTable
-	r.handlers[wire.MethodDrawingAnnotationsAddRevTable] = drawingAnnotationsAddRevisionTable
-	r.handlers[wire.MethodDrawingAnnotationsAddRevTag] = drawingAnnotationsAddRevisionTag
-	r.handlers[wire.MethodDrawingAnnotationsAddNote] = drawingAnnotationsAddNote
-	r.handlers[wire.MethodDrawingAnnotationsAddCustomTable] = drawingAnnotationsAddCustomTable
-	r.handlers[wire.MethodDrawingAnnotationsAddHoleNotes] = drawingAnnotationsAddHoleNotes
-	r.handlers[wire.MethodDrawingAnnotationsDelete] = drawingAnnotationsDelete
+	r.readOnly(wire.MethodDrawingAnnotationsList, drawingAnnotationsList)
+	r.readOnly(wire.MethodDrawingAnnotationsAddCoG, drawingAnnotationsAddCoG)
+	r.readOnly(wire.MethodDrawingAnnotationsAddRevisionCloud, drawingAnnotationsAddRevisionCloud)
+	r.readOnly(wire.MethodDrawingAnnotationsAddCenterMarks, drawingAnnotationsAddCenterMarks)
+	r.readOnly(wire.MethodDrawingAnnotationsAddCenterlines, drawingAnnotationsAddCenterlines)
+	r.readOnly(wire.MethodDrawingAnnotationsAddFCF, drawingAnnotationsAddFCF)
+	r.readOnly(wire.MethodDrawingAnnotationsAddDatum, drawingAnnotationsAddDatum)
+	r.readOnly(wire.MethodDrawingAnnotationsAddSurfaceText, drawingAnnotationsAddSurfaceText)
+	r.readOnly(wire.MethodDrawingAnnotationsAddPartsList, drawingAnnotationsAddPartsList)
+	r.readOnly(wire.MethodDrawingAnnotationsAddBalloon, drawingAnnotationsAddBalloon)
+	r.readOnly(wire.MethodDrawingAnnotationsAddHoleTable, drawingAnnotationsAddHoleTable)
+	r.readOnly(wire.MethodDrawingAnnotationsAddRevTable, drawingAnnotationsAddRevisionTable)
+	r.readOnly(wire.MethodDrawingAnnotationsAddRevTag, drawingAnnotationsAddRevisionTag)
+	r.readOnly(wire.MethodDrawingAnnotationsAddNote, drawingAnnotationsAddNote)
+	r.readOnly(wire.MethodDrawingAnnotationsAddCustomTable, drawingAnnotationsAddCustomTable)
+	r.readOnly(wire.MethodDrawingAnnotationsAddHoleNotes, drawingAnnotationsAddHoleNotes)
+	r.readOnly(wire.MethodDrawingAnnotationsDelete, drawingAnnotationsDelete)
 }
 
 // activeSheetAnnotations returns the active drawing's active-sheet annotation collection.

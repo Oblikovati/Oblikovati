@@ -29,22 +29,22 @@ import (
 // registerAssemblyFeatureHandlers wires the assemblyFeatures.* and assembly end-of-
 // features methods.
 func (r *Router) registerAssemblyFeatureHandlers() {
-	r.handlers[wire.MethodAssemblyFeaturesList] = assemblyFeaturesList
-	r.handlers[wire.MethodAssemblyFeaturesAdd] = assemblyFeaturesAdd
-	r.handlers[wire.MethodAssemblyFeaturesAddProxyCut] = assemblyFeaturesAddProxyCut
-	r.handlers[wire.MethodAssemblyFeaturesAddHole] = assemblyFeaturesAddHole
-	r.handlers[wire.MethodAssemblyFeaturesAddExtrude] = assemblyFeaturesAddExtrude
-	r.handlers[wire.MethodAssemblyFeaturesAddRevolve] = assemblyFeaturesAddRevolve
-	r.handlers[wire.MethodAssemblyFeaturesAddChamfer] = assemblyFeaturesAddChamfer
-	r.handlers[wire.MethodAssemblyFeaturesAddFillet] = assemblyFeaturesAddFillet
-	r.handlers[wire.MethodAssemblyFeaturesAddMoveFace] = assemblyFeaturesAddMoveFace
-	r.handlers[wire.MethodAssemblyFeaturesAddSweep] = assemblyFeaturesAddSweep
-	r.handlers[wire.MethodAssemblyFeaturesEdit] = assemblyFeaturesEdit
-	r.handlers[wire.MethodAssemblyFeaturesSetParticipants] = assemblyFeaturesSetParticipants
-	r.handlers[wire.MethodAssemblyFeaturesSetParticipantPaths] = assemblyFeaturesSetParticipantPaths
-	r.handlers[wire.MethodAssemblyFeaturesSetSuppressed] = assemblyFeaturesSetSuppressed
-	r.handlers[wire.MethodAssemblyGetEndOfFeatures] = assemblyGetEndOfFeatures
-	r.handlers[wire.MethodAssemblySetEndOfFeatures] = assemblySetEndOfFeatures
+	r.readOnly(wire.MethodAssemblyFeaturesList, assemblyFeaturesList)
+	r.mutating(wire.MethodAssemblyFeaturesAdd, "Add Assembly Feature", assemblyFeaturesAdd)
+	r.mutating(wire.MethodAssemblyFeaturesAddProxyCut, "Add Assembly Feature", assemblyFeaturesAddProxyCut)
+	r.mutating(wire.MethodAssemblyFeaturesAddHole, "Hole", assemblyFeaturesAddHole)
+	r.mutating(wire.MethodAssemblyFeaturesAddExtrude, "Extrude", assemblyFeaturesAddExtrude)
+	r.readOnly(wire.MethodAssemblyFeaturesAddRevolve, assemblyFeaturesAddRevolve)
+	r.mutating(wire.MethodAssemblyFeaturesAddChamfer, "Chamfer", assemblyFeaturesAddChamfer)
+	r.mutating(wire.MethodAssemblyFeaturesAddFillet, "Fillet", assemblyFeaturesAddFillet)
+	r.mutating(wire.MethodAssemblyFeaturesAddMoveFace, "Move Face", assemblyFeaturesAddMoveFace)
+	r.mutating(wire.MethodAssemblyFeaturesAddSweep, "Sweep", assemblyFeaturesAddSweep)
+	r.mutating(wire.MethodAssemblyFeaturesEdit, "Edit Assembly Feature", assemblyFeaturesEdit)
+	r.mutating(wire.MethodAssemblyFeaturesSetParticipants, "Edit Participants", assemblyFeaturesSetParticipants)
+	r.mutating(wire.MethodAssemblyFeaturesSetParticipantPaths, "Edit Participants", assemblyFeaturesSetParticipantPaths)
+	r.mutating(wire.MethodAssemblyFeaturesSetSuppressed, "Suppress Assembly Feature", assemblyFeaturesSetSuppressed)
+	r.readOnly(wire.MethodAssemblyGetEndOfFeatures, assemblyGetEndOfFeatures)
+	r.mutating(wire.MethodAssemblySetEndOfFeatures, "Set End of Features", assemblySetEndOfFeatures)
 }
 
 // assemblyFeaturesList returns the active assembly's feature program and marker state.

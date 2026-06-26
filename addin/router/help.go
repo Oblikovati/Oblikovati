@@ -11,10 +11,10 @@ import (
 
 // registerHelpHandlers wires the help-routing and language methods (M05-F14, #621).
 func (r *Router) registerHelpHandlers() {
-	r.handlers[wire.MethodHelpRegisterContext] = registerHelpContext
-	r.handlers[wire.MethodHelpDisplay] = displayHelp
-	r.handlers[wire.MethodHelpPath] = helpPath
-	r.handlers[wire.MethodLanguageInfo] = languageInfo
+	r.readOnly(wire.MethodHelpRegisterContext, registerHelpContext)
+	r.readOnly(wire.MethodHelpDisplay, displayHelp)
+	r.readOnly(wire.MethodHelpPath, helpPath)
+	r.readOnly(wire.MethodLanguageInfo, languageInfo)
 }
 
 func registerHelpContext(s *app.Session, args json.RawMessage) (json.RawMessage, error) {

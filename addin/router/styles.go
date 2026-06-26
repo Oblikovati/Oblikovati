@@ -13,12 +13,12 @@ import (
 
 // registerStyleHandlers wires the color-style + style-library methods (M16-F02, #403/#408).
 func (r *Router) registerStyleHandlers() {
-	r.handlers[wire.MethodStylesList] = listColorStyles
-	r.handlers[wire.MethodStylesGet] = getColorStyle
-	r.handlers[wire.MethodStylesSet] = setColorStyle
-	r.handlers[wire.MethodStylesDelete] = deleteColorStyle
-	r.handlers[wire.MethodStylesListLibraries] = listStyleLibraries
-	r.handlers[wire.MethodStylesImportLibrary] = importStyleLibrary
+	r.readOnly(wire.MethodStylesList, listColorStyles)
+	r.readOnly(wire.MethodStylesGet, getColorStyle)
+	r.readOnly(wire.MethodStylesSet, setColorStyle)
+	r.readOnly(wire.MethodStylesDelete, deleteColorStyle)
+	r.readOnly(wire.MethodStylesListLibraries, listStyleLibraries)
+	r.readOnly(wire.MethodStylesImportLibrary, importStyleLibrary)
 }
 
 // listColorStyles returns every color style in the document (wire.MethodStylesList).

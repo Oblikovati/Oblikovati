@@ -12,10 +12,10 @@ import (
 
 // registerWindowHandlers wires the view-frame/tab methods (M05-F10, #617).
 func (r *Router) registerWindowHandlers() {
-	r.handlers[wire.MethodWindowsListFrames] = listViewFrames
-	r.handlers[wire.MethodWindowsListTabs] = listViewTabs
-	r.handlers[wire.MethodWindowsActivateTab] = activateViewTab
-	r.handlers[wire.MethodWindowsCloseTab] = closeViewTab
+	r.readOnly(wire.MethodWindowsListFrames, listViewFrames)
+	r.readOnly(wire.MethodWindowsListTabs, listViewTabs)
+	r.readOnly(wire.MethodWindowsActivateTab, activateViewTab)
+	r.readOnly(wire.MethodWindowsCloseTab, closeViewTab)
 }
 
 // listViewFrames reports the host's top-level frames — exactly one on the

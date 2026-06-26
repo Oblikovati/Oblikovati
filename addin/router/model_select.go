@@ -20,9 +20,9 @@ import (
 
 // registerSelectionMutationHandlers wires the model.select/deselect/clearSelection methods.
 func (r *Router) registerSelectionMutationHandlers() {
-	r.handlers[wire.MethodModelSelect] = modelSelect
-	r.handlers[wire.MethodModelDeselect] = modelDeselect
-	r.handlers[wire.MethodModelClearSelection] = modelClearSelection
+	r.readOnly(wire.MethodModelSelect, modelSelect)
+	r.readOnly(wire.MethodModelDeselect, modelDeselect)
+	r.readOnly(wire.MethodModelClearSelection, modelClearSelection)
 }
 
 // modelSelect selects the referenced entities, replacing the selection unless Mode is "add".

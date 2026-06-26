@@ -12,15 +12,15 @@ import (
 // registerAddInHandlers wires the add-in registry/lifecycle/automation methods and
 // the external client-application registry (M05-F01: #245, #251, #252).
 func (r *Router) registerAddInHandlers() {
-	r.handlers[wire.MethodAddInsList] = listAddIns
-	r.handlers[wire.MethodAddInsGet] = getAddIn
-	r.handlers[wire.MethodAddInsActivate] = activateAddIn
-	r.handlers[wire.MethodAddInsDeactivate] = deactivateAddIn
-	r.handlers[wire.MethodAddInsSetLoadBehavior] = setAddInLoadBehavior
-	r.handlers[wire.MethodAddInsCallAutomation] = callAddInAutomation
-	r.handlers[wire.MethodClientAppsRegister] = registerClientApp
-	r.handlers[wire.MethodClientAppsUnregister] = unregisterClientApp
-	r.handlers[wire.MethodClientAppsList] = listClientApps
+	r.readOnly(wire.MethodAddInsList, listAddIns)
+	r.readOnly(wire.MethodAddInsGet, getAddIn)
+	r.readOnly(wire.MethodAddInsActivate, activateAddIn)
+	r.readOnly(wire.MethodAddInsDeactivate, deactivateAddIn)
+	r.readOnly(wire.MethodAddInsSetLoadBehavior, setAddInLoadBehavior)
+	r.readOnly(wire.MethodAddInsCallAutomation, callAddInAutomation)
+	r.readOnly(wire.MethodClientAppsRegister, registerClientApp)
+	r.readOnly(wire.MethodClientAppsUnregister, unregisterClientApp)
+	r.readOnly(wire.MethodClientAppsList, listClientApps)
 }
 
 // listAddIns returns every registered add-in in registration order

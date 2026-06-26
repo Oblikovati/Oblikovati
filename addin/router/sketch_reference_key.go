@@ -22,9 +22,9 @@ import (
 // registerSketchReferenceKeyHandlers wires the sketch.referenceKey / sketch.resolveReference
 // / sketch3d.referenceKey methods.
 func (r *Router) registerSketchReferenceKeyHandlers() {
-	r.handlers[wire.MethodSketchReferenceKey] = sketchReferenceKey
-	r.handlers[wire.MethodSketchResolveReference] = sketchResolveReference
-	r.handlers[wire.MethodSketch3DReferenceKey] = sketch3DReferenceKey
+	r.readOnly(wire.MethodSketchReferenceKey, sketchReferenceKey)
+	r.readOnly(wire.MethodSketchResolveReference, sketchResolveReference)
+	r.readOnly(wire.MethodSketch3DReferenceKey, sketch3DReferenceKey)
 }
 
 // activeDocumentGUID returns the active document's stable GUID — the namespace every sketch

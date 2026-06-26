@@ -27,16 +27,90 @@ import (
 // handlerFunc handles one method: decode args, read/mutate the session, return JSON.
 type handlerFunc func(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 
+// MethodHandler is a registered wire method. Every handler implements it; a handler that ALSO implements
+// [MutatingMethod] is treated as a document edit. Read-only is the absence of that second interface, so
+// there is no flag or side table to drift from the handler set.
+type MethodHandler interface {
+	Handle(s *app.Session, args json.RawMessage) (json.RawMessage, error)
+}
+
+// MutatingMethod is the contract a document-editing handler implements so the central seam records one
+// undo step (UndoLabel) after it succeeds and broadcasts edit.committed for collaboration replication
+// (ADR-0004). Being undoable is therefore a property of the handler's TYPE: a handler that does not
+// implement this interface is read-only BY CONSTRUCTION, and one that does cannot exist without declaring
+// its UndoLabel — so a mutating method can never silently become non-undoable or non-replicated, the
+// one-directional-table drift this replaces (#1426). An empty UndoLabel means "broadcast but record no
+// step" (the transaction-control cursor methods and metadata-only edits the recipe does not capture).
+type MutatingMethod interface {
+	MethodHandler
+	UndoLabel() string
+}
+
+// readOnlyFunc adapts a query func to [MethodHandler] only — it deliberately does NOT implement
+// [MutatingMethod], so the router never records or replicates it.
+type readOnlyFunc handlerFunc
+
+func (f readOnlyFunc) Handle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	return f(s, args)
+}
+
+// mutatingFunc adapts a func plus its undo label to [MutatingMethod], so a document-editing handler
+// carries its recording contract in its type.
+type mutatingFunc struct {
+	fn    handlerFunc
+	label string
+}
+
+func (m mutatingFunc) Handle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	return m.fn(s, args)
+}
+
+func (m mutatingFunc) UndoLabel() string { return m.label }
+
+// Compile-time proof that the two adapters sit on the right side of the interface split: a read-only
+// handler must NOT satisfy MutatingMethod, a mutating one must.
+var (
+	_ MethodHandler  = readOnlyFunc(nil)
+	_ MutatingMethod = mutatingFunc{}
+	_ MethodHandler  = mutatingFunc{}
+)
+
 // Router maps method names to handlers.
 type Router struct {
 	ops      *opregistry.Registry
-	handlers map[string]handlerFunc
+	handlers map[string]MethodHandler
 	trace    *trace.Buffer
+}
+
+// readOnly registers a query handler: not a [MutatingMethod], so the router neither records an undo step
+// nor replicates it. This is the default registration pattern; a handler that edits the document must use
+// [Router.mutating] instead.
+func (r *Router) readOnly(method string, fn handlerFunc) {
+	r.set(method, readOnlyFunc(fn))
+}
+
+// mutating registers a document-editing handler as a [MutatingMethod] under the one pattern every such
+// method follows: the router records a single undo step labelled label after it succeeds and broadcasts
+// edit.committed so a collaboration add-in replays it (ADR-0004). An empty label means "broadcast but
+// record no step" — the transaction-control methods (which move the undo cursor themselves) and
+// metadata-only edits the parametric recipe does not capture. Because the label rides in the handler's
+// type, a mutating method cannot drift out of the classification (#1426).
+func (r *Router) mutating(method, label string, fn handlerFunc) {
+	r.set(method, mutatingFunc{fn: fn, label: label})
+}
+
+// set records one method's handler, panicking on a duplicate registration (a copy-paste bug that would
+// otherwise silently shadow a handler). Both readOnly and mutating route through it.
+func (r *Router) set(method string, h MethodHandler) {
+	if _, dup := r.handlers[method]; dup {
+		panic(fmt.Sprintf("router: duplicate handler registration for %q", method))
+	}
+	r.handlers[method] = h
 }
 
 // New builds a router whose feature operations come from ops.
 func New(ops *opregistry.Registry) *Router {
-	r := &Router{ops: ops, handlers: map[string]handlerFunc{}, trace: trace.NewBuffer(0)}
+	r := &Router{ops: ops, handlers: map[string]MethodHandler{}, trace: trace.NewBuffer(0)}
 	r.registerStandardHandlers()
 	r.registerTransactionHandlers()
 	r.registerMaterialHandlers()
@@ -85,8 +159,8 @@ func New(ops *opregistry.Registry) *Router {
 	r.registerDrawingDimensionHandlers()
 	r.registerDrawingSketchHandlers()
 	r.registerAnalysisHandlers()
-	r.handlers[wire.MethodLogsTail] = r.logsTail
-	r.handlers[wire.MethodScriptRun] = r.scriptsRun
+	r.readOnly(wire.MethodLogsTail, r.logsTail)
+	r.readOnly(wire.MethodScriptRun, r.scriptsRun)
 	return r
 }
 
@@ -98,127 +172,127 @@ func (r *Router) Trace() *trace.Buffer { return r.trace }
 // methods.
 func (r *Router) registerStandardHandlers() {
 	r.registerCommandHandlers()
-	r.handlers[wire.MethodDocumentsList] = listDocuments
-	r.handlers[wire.MethodDocumentsUpdate] = documentsUpdate
-	r.handlers[wire.MethodDocumentsRebuild] = documentsRebuild
-	r.handlers[wire.MethodDocumentsRequiresUpdate] = documentsRequiresUpdate
-	r.handlers[wire.MethodDocumentsCreate] = createDocument
-	r.handlers[wire.MethodDocumentsActivate] = activateDocument
-	r.handlers[wire.MethodDocumentsClose] = closeDocument
-	r.handlers[wire.MethodDocumentsCloseAll] = closeAllDocuments
-	r.handlers[wire.MethodDocumentsRegisterSubType] = registerDocumentSubType
-	r.handlers[wire.MethodDocumentsListSubTypes] = listDocumentSubTypes
+	r.readOnly(wire.MethodDocumentsList, listDocuments)
+	r.readOnly(wire.MethodDocumentsUpdate, documentsUpdate)
+	r.readOnly(wire.MethodDocumentsRebuild, documentsRebuild)
+	r.readOnly(wire.MethodDocumentsRequiresUpdate, documentsRequiresUpdate)
+	r.mutating(wire.MethodDocumentsCreate, "", createDocument)
+	r.readOnly(wire.MethodDocumentsActivate, activateDocument)
+	r.readOnly(wire.MethodDocumentsClose, closeDocument)
+	r.readOnly(wire.MethodDocumentsCloseAll, closeAllDocuments)
+	r.readOnly(wire.MethodDocumentsRegisterSubType, registerDocumentSubType)
+	r.readOnly(wire.MethodDocumentsListSubTypes, listDocumentSubTypes)
 	r.registerFileHandlers()
-	r.handlers[wire.MethodParametersList] = listParameters
-	r.handlers[wire.MethodParametersGet] = getParameter
-	r.handlers[wire.MethodParametersAdd] = addParameter
-	r.handlers[wire.MethodParametersSet] = setParameter
+	r.readOnly(wire.MethodParametersList, listParameters)
+	r.readOnly(wire.MethodParametersGet, getParameter)
+	r.mutating(wire.MethodParametersAdd, labelEditParameters, addParameter)
+	r.mutating(wire.MethodParametersSet, labelEditParameters, setParameter)
 	r.registerParameterDetailHandlers()
-	r.handlers[wire.MethodModelTree] = modelTree
-	r.handlers[wire.MethodModelSelection] = modelSelection
-	r.handlers[wire.MethodModelReferenceKeys] = referenceKeys
-	r.handlers[wire.MethodThreadsTableQuery] = threadsTableQuery
-	r.handlers[wire.MethodThreadsResolve] = threadsResolve
-	r.handlers[wire.MethodFreeformSetLevel] = freeformSetLevel
-	r.handlers[wire.MethodFreeformMoveVertices] = freeformMoveVertices
-	r.handlers[wire.MethodFreeformCreaseEdges] = freeformCreaseEdges
+	r.readOnly(wire.MethodModelTree, modelTree)
+	r.readOnly(wire.MethodModelSelection, modelSelection)
+	r.readOnly(wire.MethodModelReferenceKeys, referenceKeys)
+	r.readOnly(wire.MethodThreadsTableQuery, threadsTableQuery)
+	r.readOnly(wire.MethodThreadsResolve, threadsResolve)
+	r.mutating(wire.MethodFreeformSetLevel, "Edit Freeform", freeformSetLevel)
+	r.mutating(wire.MethodFreeformMoveVertices, "Edit Freeform", freeformMoveVertices)
+	r.mutating(wire.MethodFreeformCreaseEdges, "Crease Edges", freeformCreaseEdges)
 	r.registerSketchHandlers()
 	r.registerFeatureHandlers()
 	r.registerSheetMetalHandlers()
 	r.registerFlatPatternHandlers()
-	r.handlers[wire.MethodWorkPlanesList] = listWorkPlanes
-	r.handlers[wire.MethodWorkPlanesCreate] = createWorkPlanes
-	r.handlers[wire.MethodWorkPlanesRedefine] = redefineWorkPlane
-	r.handlers[wire.MethodWorkPointsCreate] = createWorkPoint
+	r.readOnly(wire.MethodWorkPlanesList, listWorkPlanes)
+	r.mutating(wire.MethodWorkPlanesCreate, "Create Work Plane", createWorkPlanes)
+	r.mutating(wire.MethodWorkPlanesRedefine, "Redefine Work Plane", redefineWorkPlane)
+	r.mutating(wire.MethodWorkPointsCreate, "Create Work Point", createWorkPoint)
 
-	r.handlers[wire.MethodWorkSurfacesList] = listWorkSurfaces
-	r.handlers[wire.MethodWorkSurfacesGet] = getWorkSurface
-	r.handlers[wire.MethodWorkSurfacesSetVisible] = setWorkSurfaceVisible
-	r.handlers[wire.MethodWorkSurfacesRename] = renameWorkSurface
-	r.handlers[wire.MethodThemeActive] = themeActive
-	r.handlers[wire.MethodThemeList] = themeList
-	r.handlers[wire.MethodViewGetDisplayMode] = getDisplayMode
-	r.handlers[wire.MethodViewSetDisplayMode] = setDisplayMode
-	r.handlers[wire.MethodViewListDisplayModes] = listDisplayModes
-	r.handlers[wire.MethodViewGetCamera] = getCamera
-	r.handlers[wire.MethodViewSetCamera] = setCamera
-	r.handlers[wire.MethodViewportCapture] = captureViewport
-	r.handlers[wire.MethodViewportCaptureWindow] = captureWindow
-	r.handlers[wire.MethodViewportSetNormalDebug] = setNormalDebug
-	r.handlers[wire.MethodViewportSetMeshColors] = setMeshColors
-	r.handlers[wire.MethodInteractionState] = interactionState
-	r.handlers[wire.MethodInteractionSetNotice] = interactionSetNotice
-	r.handlers[wire.MethodViewsList] = listViews
-	r.handlers[wire.MethodViewsAdd] = addView
-	r.handlers[wire.MethodViewsActivate] = activateView
-	r.handlers[wire.MethodViewsClose] = closeView
-	r.handlers[wire.MethodViewsRename] = renameView
-	r.handlers[wire.MethodViewsGetLayout] = getLayout
-	r.handlers[wire.MethodViewsSetLayout] = setLayout
+	r.readOnly(wire.MethodWorkSurfacesList, listWorkSurfaces)
+	r.readOnly(wire.MethodWorkSurfacesGet, getWorkSurface)
+	r.mutating(wire.MethodWorkSurfacesSetVisible, "", setWorkSurfaceVisible)
+	r.mutating(wire.MethodWorkSurfacesRename, "Rename Work Surface", renameWorkSurface)
+	r.readOnly(wire.MethodThemeActive, themeActive)
+	r.readOnly(wire.MethodThemeList, themeList)
+	r.readOnly(wire.MethodViewGetDisplayMode, getDisplayMode)
+	r.readOnly(wire.MethodViewSetDisplayMode, setDisplayMode)
+	r.readOnly(wire.MethodViewListDisplayModes, listDisplayModes)
+	r.readOnly(wire.MethodViewGetCamera, getCamera)
+	r.readOnly(wire.MethodViewSetCamera, setCamera)
+	r.readOnly(wire.MethodViewportCapture, captureViewport)
+	r.readOnly(wire.MethodViewportCaptureWindow, captureWindow)
+	r.readOnly(wire.MethodViewportSetNormalDebug, setNormalDebug)
+	r.readOnly(wire.MethodViewportSetMeshColors, setMeshColors)
+	r.readOnly(wire.MethodInteractionState, interactionState)
+	r.readOnly(wire.MethodInteractionSetNotice, interactionSetNotice)
+	r.readOnly(wire.MethodViewsList, listViews)
+	r.readOnly(wire.MethodViewsAdd, addView)
+	r.readOnly(wire.MethodViewsActivate, activateView)
+	r.readOnly(wire.MethodViewsClose, closeView)
+	r.readOnly(wire.MethodViewsRename, renameView)
+	r.readOnly(wire.MethodViewsGetLayout, getLayout)
+	r.readOnly(wire.MethodViewsSetLayout, setLayout)
 }
 
 // registerFileHandlers wires the file surface (M03-F07, #608): identity, the
 // persisted file-to-file reference records, and reference repair.
 func (r *Router) registerFileHandlers() {
-	r.handlers[wire.MethodFilesGet] = getFile
-	r.handlers[wire.MethodFilesListReferences] = listFileReferences
-	r.handlers[wire.MethodFilesReplaceReference] = replaceFileReference
-	r.handlers[wire.MethodDocumentsListFileReferences] = listDocumentFileReferences
-	r.handlers[wire.MethodDocumentsListAttachments] = listAttachments
-	r.handlers[wire.MethodDocumentsAddAttachment] = addAttachment
-	r.handlers[wire.MethodDocumentsRemoveAttachment] = removeAttachment
-	r.handlers[wire.MethodDocumentsListInterests] = listDocumentInterests
-	r.handlers[wire.MethodDocumentsAddInterest] = addDocumentInterest
-	r.handlers[wire.MethodDocumentsRemoveInterest] = removeDocumentInterest
-	r.handlers[wire.MethodDocumentsHasInterest] = hasDocumentInterest
+	r.readOnly(wire.MethodFilesGet, getFile)
+	r.readOnly(wire.MethodFilesListReferences, listFileReferences)
+	r.mutating(wire.MethodFilesReplaceReference, "Replace Reference", replaceFileReference)
+	r.readOnly(wire.MethodDocumentsListFileReferences, listDocumentFileReferences)
+	r.readOnly(wire.MethodDocumentsListAttachments, listAttachments)
+	r.mutating(wire.MethodDocumentsAddAttachment, "", addAttachment)
+	r.mutating(wire.MethodDocumentsRemoveAttachment, "", removeAttachment)
+	r.readOnly(wire.MethodDocumentsListInterests, listDocumentInterests)
+	r.mutating(wire.MethodDocumentsAddInterest, "", addDocumentInterest)
+	r.mutating(wire.MethodDocumentsRemoveInterest, "", removeDocumentInterest)
+	r.readOnly(wire.MethodDocumentsHasInterest, hasDocumentInterest)
 
 	// Document units of measure + unit/expression service (#146).
-	r.handlers[wire.MethodDocumentsGetUnits] = getDocumentUnits
-	r.handlers[wire.MethodDocumentsSetUnits] = setDocumentUnits
-	r.handlers[wire.MethodUnitsConvert] = unitsConvert
-	r.handlers[wire.MethodUnitsGetStringFromValue] = unitsGetStringFromValue
-	r.handlers[wire.MethodUnitsGetPreciseStringFromValue] = unitsGetPreciseStringFromValue
-	r.handlers[wire.MethodUnitsGetValueFromExpression] = unitsGetValueFromExpression
-	r.handlers[wire.MethodUnitsGetDatabaseUnitsFromExpression] = unitsGetDatabaseUnitsFromExpression
-	r.handlers[wire.MethodUnitsIsExpressionValid] = unitsIsExpressionValid
-	r.handlers[wire.MethodUnitsCompatibleUnits] = unitsCompatibleUnits
-	r.handlers[wire.MethodUnitsGetTypeFromString] = unitsGetTypeFromString
-	r.handlers[wire.MethodUnitsGetStringFromType] = unitsGetStringFromType
-	r.handlers[wire.MethodUnitsGetLocaleCorrectedExpression] = unitsGetLocaleCorrectedExpression
-	r.handlers[wire.MethodUnitsGetDrivingParameters] = unitsGetDrivingParameters
+	r.readOnly(wire.MethodDocumentsGetUnits, getDocumentUnits)
+	r.readOnly(wire.MethodDocumentsSetUnits, setDocumentUnits)
+	r.readOnly(wire.MethodUnitsConvert, unitsConvert)
+	r.readOnly(wire.MethodUnitsGetStringFromValue, unitsGetStringFromValue)
+	r.readOnly(wire.MethodUnitsGetPreciseStringFromValue, unitsGetPreciseStringFromValue)
+	r.readOnly(wire.MethodUnitsGetValueFromExpression, unitsGetValueFromExpression)
+	r.readOnly(wire.MethodUnitsGetDatabaseUnitsFromExpression, unitsGetDatabaseUnitsFromExpression)
+	r.readOnly(wire.MethodUnitsIsExpressionValid, unitsIsExpressionValid)
+	r.readOnly(wire.MethodUnitsCompatibleUnits, unitsCompatibleUnits)
+	r.readOnly(wire.MethodUnitsGetTypeFromString, unitsGetTypeFromString)
+	r.readOnly(wire.MethodUnitsGetStringFromType, unitsGetStringFromType)
+	r.readOnly(wire.MethodUnitsGetLocaleCorrectedExpression, unitsGetLocaleCorrectedExpression)
+	r.readOnly(wire.MethodUnitsGetDrivingParameters, unitsGetDrivingParameters)
 
-	r.handlers[wire.MethodDocumentsOpen] = openDocument
-	r.handlers[wire.MethodDocumentsSave] = saveDocument
-	r.handlers[wire.MethodDocumentsSaveAs] = saveDocumentAs
-	r.handlers[wire.MethodDocumentsSaveCopyAs] = saveDocumentCopyAs
-	r.handlers[wire.MethodDocumentsBatchSave] = batchSave
+	r.mutating(wire.MethodDocumentsOpen, "", openDocument)
+	r.readOnly(wire.MethodDocumentsSave, saveDocument)
+	r.readOnly(wire.MethodDocumentsSaveAs, saveDocumentAs)
+	r.readOnly(wire.MethodDocumentsSaveCopyAs, saveDocumentCopyAs)
+	r.readOnly(wire.MethodDocumentsBatchSave, batchSave)
 }
 
 // registerTransactionHandlers wires the undo/redo control methods — navigate and query
 // the active document's transaction-event stream (transaction.undo/redo/state), plus the
 // bounded transaction.begin/end/abort that make a batch one undo step or discard it.
 func (r *Router) registerTransactionHandlers() {
-	r.handlers[wire.MethodTransactionUndo] = undoTransaction
-	r.handlers[wire.MethodTransactionRedo] = redoTransaction
-	r.handlers[wire.MethodTransactionState] = transactionState
-	r.handlers[wire.MethodTransactionBegin] = beginTransaction
-	r.handlers[wire.MethodTransactionEnd] = endTransaction
-	r.handlers[wire.MethodTransactionAbort] = abortTransaction
-	r.handlers[wire.MethodTransactionHistory] = transactionHistory
-	r.handlers[wire.MethodTransactionJumpTo] = jumpTransaction
+	r.mutating(wire.MethodTransactionUndo, "", undoTransaction)
+	r.mutating(wire.MethodTransactionRedo, "", redoTransaction)
+	r.readOnly(wire.MethodTransactionState, transactionState)
+	r.readOnly(wire.MethodTransactionBegin, beginTransaction)
+	r.mutating(wire.MethodTransactionEnd, "", endTransaction)
+	r.mutating(wire.MethodTransactionAbort, "", abortTransaction)
+	r.readOnly(wire.MethodTransactionHistory, transactionHistory)
+	r.mutating(wire.MethodTransactionJumpTo, "", jumpTransaction)
 }
 
 // registerParameterDetailHandlers wires the member-level parameter surface —
 // detail reads, presentation/tolerance/value-list mutations, dependency queries
 // and delete (M02-F08, Oblikovati#607).
 func (r *Router) registerParameterDetailHandlers() {
-	r.handlers[wire.MethodParametersGetDetail] = getParameterDetail
-	r.handlers[wire.MethodParametersUpdate] = updateParameter
-	r.handlers[wire.MethodParametersSetTolerance] = setParameterTolerance
-	r.handlers[wire.MethodParametersSetExpressionList] = setParameterExpressionList
-	r.handlers[wire.MethodParametersDelete] = deleteParameter
-	r.handlers[wire.MethodParametersDrivenBy] = parameterDrivenBy
-	r.handlers[wire.MethodParametersDependents] = parameterDependents
+	r.readOnly(wire.MethodParametersGetDetail, getParameterDetail)
+	r.mutating(wire.MethodParametersUpdate, labelEditParameters, updateParameter)
+	r.mutating(wire.MethodParametersSetTolerance, labelEditParameters, setParameterTolerance)
+	r.mutating(wire.MethodParametersSetExpressionList, labelEditParameters, setParameterExpressionList)
+	r.mutating(wire.MethodParametersDelete, "Delete Parameter", deleteParameter)
+	r.readOnly(wire.MethodParametersDrivenBy, parameterDrivenBy)
+	r.readOnly(wire.MethodParametersDependents, parameterDependents)
 	r.registerParameterGroupHandlers()
 	r.registerParameterSettingsHandlers()
 	r.registerDerivedTableHandlers()
@@ -227,62 +301,62 @@ func (r *Router) registerParameterDetailHandlers() {
 // registerParameterGroupHandlers wires the custom parameter groups (M02-F05,
 // Oblikovati#604).
 func (r *Router) registerParameterGroupHandlers() {
-	r.handlers[wire.MethodParametersGroupsList] = listParameterGroups
-	r.handlers[wire.MethodParametersGroupsAdd] = addParameterGroup
-	r.handlers[wire.MethodParametersGroupsDelete] = deleteParameterGroup
-	r.handlers[wire.MethodParametersGroupsSetDisplayName] = setParameterGroupDisplayName
-	r.handlers[wire.MethodParametersGroupsAddMember] = addParameterGroupMember
-	r.handlers[wire.MethodParametersGroupsRemoveMember] = removeParameterGroupMember
+	r.readOnly(wire.MethodParametersGroupsList, listParameterGroups)
+	r.mutating(wire.MethodParametersGroupsAdd, labelEditParameterGroups, addParameterGroup)
+	r.mutating(wire.MethodParametersGroupsDelete, labelEditParameterGroups, deleteParameterGroup)
+	r.mutating(wire.MethodParametersGroupsSetDisplayName, labelEditParameterGroups, setParameterGroupDisplayName)
+	r.mutating(wire.MethodParametersGroupsAddMember, labelEditParameterGroups, addParameterGroupMember)
+	r.mutating(wire.MethodParametersGroupsRemoveMember, labelEditParameterGroups, removeParameterGroupMember)
 }
 
 // registerParameterSettingsHandlers wires the document-level parameter
 // settings, the tolerance sweep, and the XML exchange (M02-F07, Oblikovati#606).
 func (r *Router) registerParameterSettingsHandlers() {
-	r.handlers[wire.MethodParametersGetSettings] = getParameterSettings
-	r.handlers[wire.MethodParametersSetSettings] = setParameterSettings
-	r.handlers[wire.MethodParametersSetAllModelValueType] = sweepParameterModelValues
-	r.handlers[wire.MethodParametersExport] = exportParameters
-	r.handlers[wire.MethodParametersImport] = importParameters
+	r.readOnly(wire.MethodParametersGetSettings, getParameterSettings)
+	r.mutating(wire.MethodParametersSetSettings, "Edit Parameter Settings", setParameterSettings)
+	r.mutating(wire.MethodParametersSetAllModelValueType, labelEditParameters, sweepParameterModelValues)
+	r.readOnly(wire.MethodParametersExport, exportParameters)
+	r.mutating(wire.MethodParametersImport, "Import Parameters", importParameters)
 }
 
 // registerDerivedTableHandlers wires the derived parameter tables (M02-F06,
 // Oblikovati#605).
 func (r *Router) registerDerivedTableHandlers() {
-	r.handlers[wire.MethodParametersDerivedTablesList] = listDerivedTables
-	r.handlers[wire.MethodParametersDerivedTablesAdd] = addDerivedTable
-	r.handlers[wire.MethodParametersDerivedTablesSetLinked] = setDerivedTableLinked
-	r.handlers[wire.MethodParametersDerivedTablesDelete] = deleteDerivedTable
+	r.readOnly(wire.MethodParametersDerivedTablesList, listDerivedTables)
+	r.mutating(wire.MethodParametersDerivedTablesAdd, labelEditDerivedParameters, addDerivedTable)
+	r.mutating(wire.MethodParametersDerivedTablesSetLinked, labelEditDerivedParameters, setDerivedTableLinked)
+	r.mutating(wire.MethodParametersDerivedTablesDelete, labelEditDerivedParameters, deleteDerivedTable)
 }
 
 // registerSketchHandlers wires the 2D-sketch methods: the spine + enumeration here, and
 // the authoring (entity/constraint/dimension/edit/pattern) methods in the companion.
 func (r *Router) registerSketchHandlers() {
-	r.handlers[wire.MethodSketchCreate] = createSketch
-	r.handlers[wire.MethodSketchRectangle] = sketchRectangle
-	r.handlers[wire.MethodSketchList] = listSketches
-	r.handlers[wire.MethodSketchGet] = getSketch
-	r.handlers[wire.MethodSketchDependents] = sketchDependents
-	r.handlers[wire.MethodSketchEdit] = editSketch
-	r.handlers[wire.MethodSketchExitEdit] = exitEditSketch
-	r.handlers[wire.MethodSketchSolve] = solveSketch
-	r.handlers[wire.MethodSketchDelete] = deleteSketch
-	r.handlers[wire.MethodSketchEntities] = enumerateEntities
-	r.handlers[wire.MethodSketchConstraints] = enumerateConstraints
-	r.handlers[wire.MethodSketchDimensions] = enumerateDimensions
-	r.handlers[wire.MethodSketchConstraintStatus] = constraintStatus
-	r.handlers[wire.MethodSketchProfiles] = sketchProfiles
-	r.handlers[wire.MethodSketchRegionProperties] = sketchRegionProperties
-	r.handlers[wire.MethodSketch3DRegionProperties] = sketch3DRegionProperties
-	r.handlers[wire.MethodSketchBlockDefinitionCreate] = createBlockDefinition
-	r.handlers[wire.MethodSketchBlockDefinitionList] = listBlockDefinitions
-	r.handlers[wire.MethodSketchBlockDefinitionDelete] = deleteBlockDefinition
-	r.handlers[wire.MethodSketchAddBlockInstance] = addBlockInstance
-	r.handlers[wire.MethodSketchListBlockInstances] = listBlockInstances
-	r.handlers[wire.MethodSketchSetSplineHandle] = setSplineHandle
-	r.handlers[wire.MethodSketch3DSetSplineHandle] = setSplineHandle3D
-	r.handlers[wire.MethodSketch3DEditHelix] = sketch3DEditHelix
-	r.handlers[wire.MethodSketchSetInferenceOptions] = setInferenceOptions
-	r.handlers[wire.MethodSketchGetInferenceOptions] = getInferenceOptions
+	r.mutating(wire.MethodSketchCreate, "Create Sketch", createSketch)
+	r.mutating(wire.MethodSketchRectangle, "Add Sketch Geometry", sketchRectangle)
+	r.readOnly(wire.MethodSketchList, listSketches)
+	r.readOnly(wire.MethodSketchGet, getSketch)
+	r.readOnly(wire.MethodSketchDependents, sketchDependents)
+	r.mutating(wire.MethodSketchEdit, "", editSketch)
+	r.mutating(wire.MethodSketchExitEdit, "", exitEditSketch)
+	r.mutating(wire.MethodSketchSolve, "", solveSketch)
+	r.mutating(wire.MethodSketchDelete, "Delete Sketch", deleteSketch)
+	r.readOnly(wire.MethodSketchEntities, enumerateEntities)
+	r.readOnly(wire.MethodSketchConstraints, enumerateConstraints)
+	r.readOnly(wire.MethodSketchDimensions, enumerateDimensions)
+	r.readOnly(wire.MethodSketchConstraintStatus, constraintStatus)
+	r.readOnly(wire.MethodSketchProfiles, sketchProfiles)
+	r.readOnly(wire.MethodSketchRegionProperties, sketchRegionProperties)
+	r.readOnly(wire.MethodSketch3DRegionProperties, sketch3DRegionProperties)
+	r.mutating(wire.MethodSketchBlockDefinitionCreate, "Create Block", createBlockDefinition)
+	r.readOnly(wire.MethodSketchBlockDefinitionList, listBlockDefinitions)
+	r.mutating(wire.MethodSketchBlockDefinitionDelete, "Delete Block", deleteBlockDefinition)
+	r.mutating(wire.MethodSketchAddBlockInstance, "Insert Block", addBlockInstance)
+	r.readOnly(wire.MethodSketchListBlockInstances, listBlockInstances)
+	r.mutating(wire.MethodSketchSetSplineHandle, "Edit Spline", setSplineHandle)
+	r.mutating(wire.MethodSketch3DSetSplineHandle, "Edit Spline", setSplineHandle3D)
+	r.mutating(wire.MethodSketch3DEditHelix, "Edit Helix", sketch3DEditHelix)
+	r.mutating(wire.MethodSketchSetInferenceOptions, "", setInferenceOptions)
+	r.readOnly(wire.MethodSketchGetInferenceOptions, getInferenceOptions)
 	r.registerSketchAuthoringHandlers()
 	r.registerSketch3DHandlers()
 }
@@ -291,159 +365,159 @@ func (r *Router) registerSketchHandlers() {
 // and property edits (M22-F01). The 3D authoring methods (addEntity/addConstraint/
 // addDimension) are wired by their features (M22 F02+).
 func (r *Router) registerSketch3DHandlers() {
-	r.handlers[wire.MethodSketch3DCreate] = createSketch3D
-	r.handlers[wire.MethodSketch3DList] = listSketches3D
-	r.handlers[wire.MethodSketch3DGet] = getSketch3D
-	r.handlers[wire.MethodSketch3DEdit] = editSketch3D
-	r.handlers[wire.MethodSketch3DExitEdit] = exitEditSketch3D
-	r.handlers[wire.MethodSketch3DSolve] = solveSketch3D
-	r.handlers[wire.MethodSketch3DDelete] = deleteSketch3D
-	r.handlers[wire.MethodSketch3DSetProperty] = setSketch3DProperty
-	r.handlers[wire.MethodSketch3DEntities] = enumerateEntities3D
-	r.handlers[wire.MethodSketch3DConstraints] = enumerateConstraints3D
-	r.handlers[wire.MethodSketch3DDimensions] = enumerateDimensions3D
-	r.handlers[wire.MethodSketch3DConstraintStatus] = constraintStatus3D
+	r.readOnly(wire.MethodSketch3DCreate, createSketch3D)
+	r.readOnly(wire.MethodSketch3DList, listSketches3D)
+	r.readOnly(wire.MethodSketch3DGet, getSketch3D)
+	r.readOnly(wire.MethodSketch3DEdit, editSketch3D)
+	r.readOnly(wire.MethodSketch3DExitEdit, exitEditSketch3D)
+	r.readOnly(wire.MethodSketch3DSolve, solveSketch3D)
+	r.readOnly(wire.MethodSketch3DDelete, deleteSketch3D)
+	r.readOnly(wire.MethodSketch3DSetProperty, setSketch3DProperty)
+	r.readOnly(wire.MethodSketch3DEntities, enumerateEntities3D)
+	r.readOnly(wire.MethodSketch3DConstraints, enumerateConstraints3D)
+	r.readOnly(wire.MethodSketch3DDimensions, enumerateDimensions3D)
+	r.readOnly(wire.MethodSketch3DConstraintStatus, constraintStatus3D)
 	r.registerSketch3DAuthoringHandlers()
 }
 
 // registerSketch3DAuthoringHandlers wires the 3D-sketch mutation/query methods: entity/
 // constraint/dimension creation, profiles/paths, edit transform, and include.
 func (r *Router) registerSketch3DAuthoringHandlers() {
-	r.handlers[wire.MethodSketch3DAddEntity] = addSketch3DEntity
-	r.handlers[wire.MethodSketch3DAddConstraint] = addSketch3DConstraint
-	r.handlers[wire.MethodSketch3DDeleteConstraint] = deleteSketch3DConstraint
-	r.handlers[wire.MethodSketch3DAddDimension] = addSketch3DDimension
-	r.handlers[wire.MethodSketch3DDriveDimension] = driveSketch3DDimension
-	r.handlers[wire.MethodSketch3DProfiles] = sketch3DProfiles
-	r.handlers[wire.MethodSketch3DPaths] = sketch3DPaths
-	r.handlers[wire.MethodSketch3DTransform] = transformSketch3D
-	r.handlers[wire.MethodSketch3DInclude] = includeSketch3D
-	r.handlers[wire.MethodSketch3DIncludeSketch] = includeSketch2DInto3D
-	r.handlers[wire.MethodSketch3DAddSurfaceCurve] = addSketch3DSurfaceCurve
+	r.readOnly(wire.MethodSketch3DAddEntity, addSketch3DEntity)
+	r.readOnly(wire.MethodSketch3DAddConstraint, addSketch3DConstraint)
+	r.readOnly(wire.MethodSketch3DDeleteConstraint, deleteSketch3DConstraint)
+	r.readOnly(wire.MethodSketch3DAddDimension, addSketch3DDimension)
+	r.readOnly(wire.MethodSketch3DDriveDimension, driveSketch3DDimension)
+	r.readOnly(wire.MethodSketch3DProfiles, sketch3DProfiles)
+	r.readOnly(wire.MethodSketch3DPaths, sketch3DPaths)
+	r.readOnly(wire.MethodSketch3DTransform, transformSketch3D)
+	r.readOnly(wire.MethodSketch3DInclude, includeSketch3D)
+	r.readOnly(wire.MethodSketch3DIncludeSketch, includeSketch2DInto3D)
+	r.readOnly(wire.MethodSketch3DAddSurfaceCurve, addSketch3DSurfaceCurve)
 }
 
 // registerSketchAuthoringHandlers wires the sketch mutation methods: property edits,
 // entity/constraint/dimension creation, and the edit/pattern operations.
 func (r *Router) registerSketchAuthoringHandlers() {
-	r.handlers[wire.MethodSketchSetProperty] = setSketchProperty
-	r.handlers[wire.MethodSketchGetCustomLineType] = getSketchCustomLineType
-	r.handlers[wire.MethodSketchSetCustomLineType] = setSketchCustomLineType
-	r.handlers[wire.MethodSketchAddEntity] = addSketchEntity
-	r.handlers[wire.MethodSketchAddConstraint] = addConstraint
-	r.handlers[wire.MethodSketchDeleteConstraint] = deleteConstraint
-	r.handlers[wire.MethodSketchAddDimension] = addDimension
-	r.handlers[wire.MethodSketchDriveDimension] = driveDimension
-	r.handlers[wire.MethodSketchTransform] = transformSketch
-	r.handlers[wire.MethodSketchCopyTo] = sketchCopyTo
-	r.handlers[wire.MethodSketchAddPattern] = addSketchPattern
-	r.handlers[wire.MethodSketchOffset] = offsetSketchEntity
-	r.handlers[wire.MethodSketchAddImage] = addSketchImage
-	r.handlers[wire.MethodSketchAddFillRegion] = addFillRegion
-	r.handlers[wire.MethodSketchAddText] = addText
-	r.handlers[wire.MethodSketchEditText] = editText
-	r.handlers[wire.MethodSketchGetText] = getText
-	r.handlers[wire.MethodSketchAutoDimension] = autoDimensionSketch
-	r.handlers[wire.MethodSketchProject] = projectGeometry
+	r.mutating(wire.MethodSketchSetProperty, "Edit Sketch", setSketchProperty)
+	r.readOnly(wire.MethodSketchGetCustomLineType, getSketchCustomLineType)
+	r.mutating(wire.MethodSketchSetCustomLineType, "Edit Sketch", setSketchCustomLineType)
+	r.mutating(wire.MethodSketchAddEntity, "Add Sketch Geometry", addSketchEntity)
+	r.mutating(wire.MethodSketchAddConstraint, "Add Constraint", addConstraint)
+	r.mutating(wire.MethodSketchDeleteConstraint, "Delete Constraint", deleteConstraint)
+	r.mutating(wire.MethodSketchAddDimension, "Add Dimension", addDimension)
+	r.mutating(wire.MethodSketchDriveDimension, "Edit Dimension", driveDimension)
+	r.mutating(wire.MethodSketchTransform, "Transform Sketch", transformSketch)
+	r.readOnly(wire.MethodSketchCopyTo, sketchCopyTo)
+	r.mutating(wire.MethodSketchAddPattern, "Sketch Pattern", addSketchPattern)
+	r.mutating(wire.MethodSketchOffset, "Offset Geometry", offsetSketchEntity)
+	r.readOnly(wire.MethodSketchAddImage, addSketchImage)
+	r.readOnly(wire.MethodSketchAddFillRegion, addFillRegion)
+	r.readOnly(wire.MethodSketchAddText, addText)
+	r.readOnly(wire.MethodSketchEditText, editText)
+	r.readOnly(wire.MethodSketchGetText, getText)
+	r.readOnly(wire.MethodSketchAutoDimension, autoDimensionSketch)
+	r.mutating(wire.MethodSketchProject, "Project Geometry", projectGeometry)
 }
 
 // registerCommandHandlers wires the command and ribbon methods — the add-in UI surface
 // (list/execute/create commands and enumerate the active ribbon, RibbonUI core/07).
 func (r *Router) registerCommandHandlers() {
-	r.handlers[wire.MethodCommandsList] = listCommands
-	r.handlers[wire.MethodCommandsExecute] = executeCommand
-	r.handlers[wire.MethodCommandsCreate] = createCommand
-	r.handlers[wire.MethodCommandsSetState] = setCommandState
-	r.handlers[wire.MethodCommandLineSubmit] = submitCommandLine
-	r.handlers[wire.MethodRibbonList] = ribbonList
+	r.readOnly(wire.MethodCommandsList, listCommands)
+	r.readOnly(wire.MethodCommandsExecute, executeCommand)
+	r.readOnly(wire.MethodCommandsCreate, createCommand)
+	r.readOnly(wire.MethodCommandsSetState, setCommandState)
+	r.readOnly(wire.MethodCommandLineSubmit, submitCommandLine)
+	r.readOnly(wire.MethodRibbonList, ribbonList)
 }
 
 // registerMaterialHandlers wires the appearance/material/assignment/physical-properties
 // methods (M19 / ADR-0022).
 func (r *Router) registerMaterialHandlers() {
-	r.handlers[wire.MethodAppearancesList] = listAppearances
-	r.handlers[wire.MethodAppearancesGet] = getAppearance
-	r.handlers[wire.MethodAppearancesCreate] = createAppearance
-	r.handlers[wire.MethodAppearancesUpdate] = updateAppearance
-	r.handlers[wire.MethodMaterialsList] = listMaterials
-	r.handlers[wire.MethodMaterialsGet] = getMaterial
-	r.handlers[wire.MethodMaterialsCreate] = createMaterial
-	r.handlers[wire.MethodMaterialsUpdate] = updateMaterial
-	r.handlers[wire.MethodModelAssignMaterial] = assignMaterial
-	r.handlers[wire.MethodModelAssignAppearance] = assignAppearance
-	r.handlers[wire.MethodModelPhysicalProperties] = physicalProperties
+	r.readOnly(wire.MethodAppearancesList, listAppearances)
+	r.readOnly(wire.MethodAppearancesGet, getAppearance)
+	r.readOnly(wire.MethodAppearancesCreate, createAppearance)
+	r.readOnly(wire.MethodAppearancesUpdate, updateAppearance)
+	r.readOnly(wire.MethodMaterialsList, listMaterials)
+	r.readOnly(wire.MethodMaterialsGet, getMaterial)
+	r.readOnly(wire.MethodMaterialsCreate, createMaterial)
+	r.readOnly(wire.MethodMaterialsUpdate, updateMaterial)
+	r.mutating(wire.MethodModelAssignMaterial, "Assign Material", assignMaterial)
+	r.mutating(wire.MethodModelAssignAppearance, "Assign Appearance", assignAppearance)
+	r.readOnly(wire.MethodModelPhysicalProperties, physicalProperties)
 
 	// Body topology, queries and facet sets (M07 #293/#629/#630).
-	r.handlers[wire.MethodBodyList] = bodyList
-	r.handlers[wire.MethodBodySetVisible] = bodySetVisible
-	r.handlers[wire.MethodBodyRename] = bodyRename
-	r.handlers[wire.MethodBodyDelete] = bodyDelete
-	r.handlers[wire.MethodBodyPhysicalProps] = bodyPhysicalProperties
-	r.handlers[wire.MethodBodyShells] = bodyShells
-	r.handlers[wire.MethodBodyWires] = bodyWires
-	r.handlers[wire.MethodWireOffsetPlanar] = wireOffsetPlanar
-	r.handlers[wire.MethodBodyLocateUsingPoint] = bodyLocateUsingPoint
-	r.handlers[wire.MethodBodyFindUsingRay] = bodyFindUsingRay
-	r.handlers[wire.MethodBodyIsPointInside] = bodyIsPointInside
-	r.handlers[wire.MethodBodyConvexityEdges] = bodyConvexityEdges
-	r.handlers[wire.MethodBodyMinimumDistance] = bodyMinimumDistance
-	r.handlers[wire.MethodBodyValidate] = bodyValidate
-	r.handlers[wire.MethodBodyRangeBox] = bodyRangeBox
-	r.handlers[wire.MethodBodyBindTransientKey] = bodyBindTransientKey
-	r.handlers[wire.MethodBodyCalculateFacets] = bodyCalculateFacets
-	r.handlers[wire.MethodBodyExistingFacets] = bodyExistingFacets
-	r.handlers[wire.MethodBodyFacetTolerances] = bodyFacetTolerances
-	r.handlers[wire.MethodBodyCalculateStrokes] = bodyCalculateStrokes
-	r.handlers[wire.MethodBodyExistingStrokes] = bodyExistingStrokes
-	r.handlers[wire.MethodBodyStrokeTolerances] = bodyStrokeTolerances
-	r.handlers[wire.MethodFaceCalculateFacets] = faceCalculateFacets
-	r.handlers[wire.MethodFaceCalculateStrokes] = faceCalculateStrokes
-	r.handlers[wire.MethodBodyFaceEvaluate] = bodyFaceEvaluate
+	r.readOnly(wire.MethodBodyList, bodyList)
+	r.readOnly(wire.MethodBodySetVisible, bodySetVisible)
+	r.readOnly(wire.MethodBodyRename, bodyRename)
+	r.readOnly(wire.MethodBodyDelete, bodyDelete)
+	r.readOnly(wire.MethodBodyPhysicalProps, bodyPhysicalProperties)
+	r.readOnly(wire.MethodBodyShells, bodyShells)
+	r.readOnly(wire.MethodBodyWires, bodyWires)
+	r.readOnly(wire.MethodWireOffsetPlanar, wireOffsetPlanar)
+	r.readOnly(wire.MethodBodyLocateUsingPoint, bodyLocateUsingPoint)
+	r.readOnly(wire.MethodBodyFindUsingRay, bodyFindUsingRay)
+	r.readOnly(wire.MethodBodyIsPointInside, bodyIsPointInside)
+	r.readOnly(wire.MethodBodyConvexityEdges, bodyConvexityEdges)
+	r.readOnly(wire.MethodBodyMinimumDistance, bodyMinimumDistance)
+	r.readOnly(wire.MethodBodyValidate, bodyValidate)
+	r.readOnly(wire.MethodBodyRangeBox, bodyRangeBox)
+	r.readOnly(wire.MethodBodyBindTransientKey, bodyBindTransientKey)
+	r.readOnly(wire.MethodBodyCalculateFacets, bodyCalculateFacets)
+	r.readOnly(wire.MethodBodyExistingFacets, bodyExistingFacets)
+	r.readOnly(wire.MethodBodyFacetTolerances, bodyFacetTolerances)
+	r.readOnly(wire.MethodBodyCalculateStrokes, bodyCalculateStrokes)
+	r.readOnly(wire.MethodBodyExistingStrokes, bodyExistingStrokes)
+	r.readOnly(wire.MethodBodyStrokeTolerances, bodyStrokeTolerances)
+	r.readOnly(wire.MethodFaceCalculateFacets, faceCalculateFacets)
+	r.readOnly(wire.MethodFaceCalculateStrokes, faceCalculateStrokes)
+	r.readOnly(wire.MethodBodyFaceEvaluate, bodyFaceEvaluate)
 
 	// The transient B-rep factory (M07 #628) — session-scoped, no document
 	// mutation, so none of these are mutating methods.
-	r.handlers[wire.MethodBrepCreatePrimitive] = brepCreatePrimitive
-	r.handlers[wire.MethodBrepBoolean] = brepBoolean
-	r.handlers[wire.MethodBrepTransform] = brepTransform
-	r.handlers[wire.MethodBrepCopy] = brepCopy
-	r.handlers[wire.MethodBrepSectionWithPlane] = brepSectionWithPlane
-	r.handlers[wire.MethodBrepDeleteFaces] = brepDeleteFaces
-	r.handlers[wire.MethodBrepSilhouette] = brepSilhouette
-	r.handlers[wire.MethodBrepRuledSurface] = brepRuledSurface
-	r.handlers[wire.MethodBrepOffsetFaces] = brepOffsetFaces
-	r.handlers[wire.MethodBrepImprint] = brepImprint
-	r.handlers[wire.MethodBrepIdenticalBodies] = brepIdenticalBodies
-	r.handlers[wire.MethodBrepCreateFromDefinition] = brepCreateFromDefinition
-	r.handlers[wire.MethodBrepDescribe] = brepDescribe
-	r.handlers[wire.MethodBrepList] = brepList
-	r.handlers[wire.MethodBrepDelete] = brepDelete
+	r.readOnly(wire.MethodBrepCreatePrimitive, brepCreatePrimitive)
+	r.readOnly(wire.MethodBrepBoolean, brepBoolean)
+	r.readOnly(wire.MethodBrepTransform, brepTransform)
+	r.readOnly(wire.MethodBrepCopy, brepCopy)
+	r.readOnly(wire.MethodBrepSectionWithPlane, brepSectionWithPlane)
+	r.readOnly(wire.MethodBrepDeleteFaces, brepDeleteFaces)
+	r.readOnly(wire.MethodBrepSilhouette, brepSilhouette)
+	r.readOnly(wire.MethodBrepRuledSurface, brepRuledSurface)
+	r.readOnly(wire.MethodBrepOffsetFaces, brepOffsetFaces)
+	r.readOnly(wire.MethodBrepImprint, brepImprint)
+	r.readOnly(wire.MethodBrepIdenticalBodies, brepIdenticalBodies)
+	r.readOnly(wire.MethodBrepCreateFromDefinition, brepCreateFromDefinition)
+	r.readOnly(wire.MethodBrepDescribe, brepDescribe)
+	r.readOnly(wire.MethodBrepList, brepList)
+	r.readOnly(wire.MethodBrepDelete, brepDelete)
 }
 
 // registerLightingHandlers wires the lighting-style, light, environment, and shadow methods
 // (M16/F03 PBI-155, ADR-0026).
 func (r *Router) registerLightingHandlers() {
-	r.handlers[wire.MethodLightingGetStyle] = getLightingStyle
-	r.handlers[wire.MethodLightingSetStyle] = setLightingStyle
-	r.handlers[wire.MethodLightingListStyles] = listLightingStyles
-	r.handlers[wire.MethodLightingListLights] = listLights
-	r.handlers[wire.MethodLightingAddLight] = addLight
-	r.handlers[wire.MethodLightingSetLight] = setLight
-	r.handlers[wire.MethodViewGetShadows] = getShadows
-	r.handlers[wire.MethodViewSetShadows] = setShadows
-	r.handlers[wire.MethodEnvironmentGet] = getEnvironment
-	r.handlers[wire.MethodEnvironmentSet] = setEnvironment
-	r.handlers[wire.MethodEnvironmentListPresets] = listEnvironmentPresets
-	r.handlers[wire.MethodEnvironmentLoadImage] = loadEnvironmentImage
+	r.readOnly(wire.MethodLightingGetStyle, getLightingStyle)
+	r.readOnly(wire.MethodLightingSetStyle, setLightingStyle)
+	r.readOnly(wire.MethodLightingListStyles, listLightingStyles)
+	r.readOnly(wire.MethodLightingListLights, listLights)
+	r.readOnly(wire.MethodLightingAddLight, addLight)
+	r.readOnly(wire.MethodLightingSetLight, setLight)
+	r.readOnly(wire.MethodViewGetShadows, getShadows)
+	r.readOnly(wire.MethodViewSetShadows, setShadows)
+	r.readOnly(wire.MethodEnvironmentGet, getEnvironment)
+	r.readOnly(wire.MethodEnvironmentSet, setEnvironment)
+	r.readOnly(wire.MethodEnvironmentListPresets, listEnvironmentPresets)
+	r.readOnly(wire.MethodEnvironmentLoadImage, loadEnvironmentImage)
 }
 
 // registerGraphicsHandlers wires the client/interaction graphics methods — the add-in
 // overlay surface for drawing meshes, heatmaps, lines, markers and labels (M05-F05).
 func (r *Router) registerGraphicsHandlers() {
-	r.handlers[wire.MethodClientGraphicsSet] = setClientGraphics
-	r.handlers[wire.MethodClientGraphicsList] = listClientGraphics
-	r.handlers[wire.MethodClientGraphicsDelete] = deleteClientGraphics
-	r.handlers[wire.MethodClientGraphicsSetVisible] = setClientGraphicsVisible
-	r.handlers[wire.MethodInteractionGraphicsUpdate] = updateInteractionGraphics
-	r.handlers[wire.MethodInteractionGraphicsClear] = clearInteractionGraphics
+	r.readOnly(wire.MethodClientGraphicsSet, setClientGraphics)
+	r.readOnly(wire.MethodClientGraphicsList, listClientGraphics)
+	r.readOnly(wire.MethodClientGraphicsDelete, deleteClientGraphics)
+	r.readOnly(wire.MethodClientGraphicsSetVisible, setClientGraphicsVisible)
+	r.readOnly(wire.MethodInteractionGraphicsUpdate, updateInteractionGraphics)
+	r.readOnly(wire.MethodInteractionGraphicsClear, clearInteractionGraphics)
 	r.registerGraphicsObjectModelHandlers()
 }
 
@@ -470,144 +544,42 @@ func (r *Router) Handle(s *app.Session, method string, req []byte) (resp []byte,
 			r.record(method, time.Since(start), false, "", err.Error(), stack)
 		}
 	}()
-	// Open the active document's undo stream before a mutating handler runs, so the delta the
-	// central seam records afterwards is measured against the pre-edit state (commitMutation).
-	if _, mutates := mutatingMethods[method]; mutates {
+	// A handler that implements MutatingMethod edits the document. Open the active document's undo stream
+	// before it runs, so the delta the central seam records afterwards is measured against the pre-edit
+	// state (commitMutation).
+	mut, mutates := h.(MutatingMethod)
+	if mutates {
 		s.EnsureActiveEditBaseline()
 	}
-	out, herr := h(s, args)
+	out, herr := h.Handle(s, args)
 	if herr != nil {
 		herr = methodError(method, herr)
 		r.record(method, time.Since(start), false, herr.Error(), "", "")
 		return nil, herr
 	}
 	r.record(method, time.Since(start), true, "", "", "")
-	r.commitMutation(s, method, req)
+	if mutates {
+		r.commitMutation(s, method, mut.UndoLabel(), req)
+	}
 	return out, nil
 }
 
-// commitMutation runs the post-success side effects of a document-mutating method, from the
-// single mutatingMethods table so undo recording and collaboration replication cannot drift:
+// commitMutation runs the post-success side effects of a document-mutating method — called only when the
+// handler implements [MutatingMethod], so undo recording and collaboration replication cannot drift from
+// the handler set:
 //   - emit edit.committed so a collaboration add-in can replay the wire request (ADR-0004);
 //   - resync any values other documents derive from (M02-F06);
-//   - record one undo step (the central seam — RecordActiveEdit) when the method carries a
+//   - record one undo step (the central seam — RecordActiveEdit) when the handler carries a non-empty
 //     label, so every API / MCP / Lua mutation is undoable, not just parameter edits.
 //
-// Methods with an empty label are broadcast but record no step: transaction-control methods
-// (undo/redo/end/abort, which move the cursor themselves) and metadata-only methods the
-// parametric recipe does not capture. A read-only method is absent from the table entirely.
-func (r *Router) commitMutation(s *app.Session, method string, req []byte) {
-	label, mutates := mutatingMethods[method]
-	if !mutates {
-		return
-	}
+// An empty label is broadcast but records no step: transaction-control methods (undo/redo/end/abort,
+// which move the cursor themselves) and metadata-only methods the parametric recipe does not capture.
+func (r *Router) commitMutation(s *app.Session, method, label string, req []byte) {
 	s.EmitEditCommitted(method, req)
 	s.ResyncDerivedFromActiveDocument()
 	if label != "" {
 		s.RecordActiveEdit(label)
 	}
-}
-
-// mutatingMethods maps every router method that commits a document mutation to the label of
-// the undo step it records. It is the single source of truth for both post-success effects so
-// they cannot drift (see commitMutation):
-//   - membership ⇒ broadcast edit.committed for collaboration replication (ADR-0004);
-//   - a non-empty value ⇒ also record one undo step with that label (the central seam).
-//
-// An empty value means "broadcast but record no undo step": the four transaction-control
-// methods (which move the undo cursor themselves — recording would corrupt the stream) and
-// metadata-only methods whose change the parametric recipe does not capture (attachments,
-// interests, references, open/create — the document's baseline is its open state). A read-only
-// method must never appear here. The no-op-delta guard in commitRecipeDelta makes a label
-// harmless even when a handler already recorded its own step (parameters), so labels stay
-// descriptive without risk of a duplicate step.
-var mutatingMethods = map[string]string{
-	wire.MethodDocumentsCreate:                     "",
-	wire.MethodDocumentsImport:                     "Import",
-	wire.MethodParametersAdd:                       labelEditParameters,
-	wire.MethodParametersSet:                       labelEditParameters,
-	wire.MethodParametersUpdate:                    labelEditParameters,
-	wire.MethodParametersSetTolerance:              labelEditParameters,
-	wire.MethodParametersSetExpressionList:         labelEditParameters,
-	wire.MethodParametersDelete:                    "Delete Parameter",
-	wire.MethodParametersGroupsAdd:                 labelEditParameterGroups,
-	wire.MethodParametersGroupsDelete:              labelEditParameterGroups,
-	wire.MethodParametersGroupsSetDisplayName:      labelEditParameterGroups,
-	wire.MethodParametersGroupsAddMember:           labelEditParameterGroups,
-	wire.MethodParametersGroupsRemoveMember:        labelEditParameterGroups,
-	wire.MethodParametersSetSettings:               "Edit Parameter Settings",
-	wire.MethodParametersSetAllModelValueType:      labelEditParameters,
-	wire.MethodParametersImport:                    "Import Parameters",
-	wire.MethodParametersDerivedTablesAdd:          labelEditDerivedParameters,
-	wire.MethodParametersDerivedTablesSetLinked:    labelEditDerivedParameters,
-	wire.MethodParametersDerivedTablesDelete:       labelEditDerivedParameters,
-	wire.MethodFeaturesAdd:                         "Add Feature",
-	wire.MethodFeaturesEdit:                        "Edit Feature",
-	wire.MethodFeaturesDelete:                      "Delete Feature",
-	wire.MethodFeaturesRename:                      "Rename Feature",
-	wire.MethodFeaturesSetSuppressed:               "Suppress Feature",
-	wire.MethodFeaturesReorder:                     "Reorder Features",
-	wire.MethodFreeformSetLevel:                    "Edit Freeform",
-	wire.MethodFreeformMoveVertices:                "Edit Freeform",
-	wire.MethodFreeformCreaseEdges:                 "Crease Edges",
-	wire.MethodWorkPlanesCreate:                    "Create Work Plane",
-	wire.MethodWorkPlanesRedefine:                  "Redefine Work Plane",
-	wire.MethodWorkPointsCreate:                    "Create Work Point",
-	wire.MethodWorkSurfacesSetVisible:              "",
-	wire.MethodWorkSurfacesRename:                  "Rename Work Surface",
-	wire.MethodAssemblyDeriveCreate:                "Derive Component",
-	wire.MethodAssemblyShrinkwrapCreate:            "Shrinkwrap",
-	wire.MethodAssemblyDeriveBreakLink:             "Break Link",
-	wire.MethodAssemblyFeaturesAdd:                 "Add Assembly Feature",
-	wire.MethodAssemblyFeaturesAddProxyCut:         "Add Assembly Feature",
-	wire.MethodAssemblyFeaturesAddHole:             "Hole",
-	wire.MethodAssemblyFeaturesAddExtrude:          "Extrude",
-	wire.MethodAssemblyFeaturesAddSweep:            "Sweep",
-	wire.MethodAssemblyFeaturesAddChamfer:          "Chamfer",
-	wire.MethodAssemblyFeaturesAddFillet:           "Fillet",
-	wire.MethodAssemblyFeaturesAddMoveFace:         "Move Face",
-	wire.MethodAssemblyFeaturesEdit:                "Edit Assembly Feature",
-	wire.MethodAssemblyFeaturesSetParticipants:     "Edit Participants",
-	wire.MethodAssemblyFeaturesSetParticipantPaths: "Edit Participants",
-	wire.MethodAssemblyFeaturesSetSuppressed:       "Suppress Assembly Feature",
-	wire.MethodAssemblySetEndOfFeatures:            "Set End of Features",
-	wire.MethodModelAssignMaterial:                 "Assign Material",
-	wire.MethodModelAssignAppearance:               "Assign Appearance",
-	wire.MethodSketchCreate:                        "Create Sketch",
-	wire.MethodSketchRectangle:                     "Add Sketch Geometry",
-	wire.MethodSketchDelete:                        "Delete Sketch",
-	wire.MethodSketchEdit:                          "",
-	wire.MethodSketchExitEdit:                      "",
-	wire.MethodSketchSolve:                         "",
-	wire.MethodSketchAddEntity:                     "Add Sketch Geometry",
-	wire.MethodSketchSetSplineHandle:               "Edit Spline",
-	wire.MethodSketchBlockDefinitionCreate:         "Create Block",
-	wire.MethodSketchBlockDefinitionDelete:         "Delete Block",
-	wire.MethodSketchAddBlockInstance:              "Insert Block",
-	wire.MethodSketch3DSetSplineHandle:             "Edit Spline",
-	wire.MethodSketch3DEditHelix:                   "Edit Helix",
-	wire.MethodSketchSetInferenceOptions:           "",
-	wire.MethodSketchAddConstraint:                 "Add Constraint",
-	wire.MethodSketchDeleteConstraint:              "Delete Constraint",
-	wire.MethodSketchAddDimension:                  "Add Dimension",
-	wire.MethodSketchDriveDimension:                "Edit Dimension",
-	wire.MethodSketchSetProperty:                   "Edit Sketch",
-	wire.MethodSketchSetCustomLineType:             "Edit Sketch",
-	wire.MethodSketchTransform:                     "Transform Sketch",
-	wire.MethodSketchAddPattern:                    "Sketch Pattern",
-	wire.MethodSketchOffset:                        "Offset Geometry",
-	wire.MethodSketchProject:                       "Project Geometry",
-	wire.MethodTransactionUndo:                     "",
-	wire.MethodTransactionRedo:                     "",
-	wire.MethodTransactionEnd:                      "",
-	wire.MethodTransactionAbort:                    "",
-	wire.MethodTransactionJumpTo:                   "",
-	wire.MethodFilesReplaceReference:               "Replace Reference",
-	wire.MethodDocumentsAddAttachment:              "",
-	wire.MethodDocumentsRemoveAttachment:           "",
-	wire.MethodDocumentsAddInterest:                "",
-	wire.MethodDocumentsRemoveInterest:             "",
-	wire.MethodDocumentsOpen:                       "",
 }
 
 // record appends an operation entry to the trace, except for logs.tail itself (so polling the
@@ -635,6 +607,19 @@ func (r *Router) Methods() []string {
 		out = append(out, m)
 	}
 	sort.Strings(out)
+	return out
+}
+
+// MutatingMethods returns the methods whose handler implements [MutatingMethod] (records an undo step and
+// replicates), each mapped to its undo label. It reads the handlers' own type, so it is the live
+// classification with no separate list to drift — used by the drift guard test (#1426).
+func (r *Router) MutatingMethods() map[string]string {
+	out := make(map[string]string, len(r.handlers))
+	for m, h := range r.handlers {
+		if mut, ok := h.(MutatingMethod); ok {
+			out[m] = mut.UndoLabel()
+		}
+	}
 	return out
 }
 

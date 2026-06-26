@@ -17,11 +17,11 @@ import (
 
 // registerHighlightSetHandlers wires the model.highlightSets.* methods.
 func (r *Router) registerHighlightSetHandlers() {
-	r.handlers[wire.MethodModelHighlightSetCreate] = createHighlightSet
-	r.handlers[wire.MethodModelHighlightSetDelete] = deleteHighlightSet
-	r.handlers[wire.MethodModelHighlightSetAddItems] = addHighlightItems
-	r.handlers[wire.MethodModelHighlightSetSetColor] = setHighlightSetColor
-	r.handlers[wire.MethodModelHighlightSetList] = listHighlightSets
+	r.readOnly(wire.MethodModelHighlightSetCreate, createHighlightSet)
+	r.readOnly(wire.MethodModelHighlightSetDelete, deleteHighlightSet)
+	r.readOnly(wire.MethodModelHighlightSetAddItems, addHighlightItems)
+	r.readOnly(wire.MethodModelHighlightSetSetColor, setHighlightSetColor)
+	r.readOnly(wire.MethodModelHighlightSetList, listHighlightSets)
 }
 
 // createHighlightSet adds a named, colored emphasis group.

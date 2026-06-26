@@ -12,14 +12,14 @@ import (
 // registerUIShellHandlers wires the M05-F12 shell methods: command search,
 // marking menus, context-menu injection, and object visibility (#619).
 func (r *Router) registerUIShellHandlers() {
-	r.handlers[wire.MethodUISearch] = searchCommands
-	r.handlers[wire.MethodUIGetMarkingMenu] = getMarkingMenu
-	r.handlers[wire.MethodUISetMarkingMenu] = setMarkingMenu
-	r.handlers[wire.MethodUISetContextMenu] = setContextMenu
-	r.handlers[wire.MethodUIGetObjectVisibility] = getObjectVisibility
-	r.handlers[wire.MethodUISetObjectVisibility] = setObjectVisibility
-	r.handlers[wire.MethodUIRegisterEnvironment] = registerEnvironment
-	r.handlers[wire.MethodUIActivateEnvironment] = activateEnvironment
+	r.readOnly(wire.MethodUISearch, searchCommands)
+	r.readOnly(wire.MethodUIGetMarkingMenu, getMarkingMenu)
+	r.readOnly(wire.MethodUISetMarkingMenu, setMarkingMenu)
+	r.readOnly(wire.MethodUISetContextMenu, setContextMenu)
+	r.readOnly(wire.MethodUIGetObjectVisibility, getObjectVisibility)
+	r.readOnly(wire.MethodUISetObjectVisibility, setObjectVisibility)
+	r.readOnly(wire.MethodUIRegisterEnvironment, registerEnvironment)
+	r.readOnly(wire.MethodUIActivateEnvironment, activateEnvironment)
 }
 
 // searchCommands finds registered commands matching the query (wire ui.search).
