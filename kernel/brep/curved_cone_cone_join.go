@@ -2,7 +2,10 @@
 
 package brep
 
-import "oblikovati.org/kernel/topo"
+import (
+	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/topo"
+)
 
 // Cone–cone join (M2 Phase 2, Oblikovati/Oblikovati#1335). The union of a cone (a tapered rod) passing right
 // through a fatter cone: one connected solid — the fat cone's two caps and its holed side wall (the two lens
@@ -20,9 +23,9 @@ import "oblikovati.org/kernel/topo"
 //
 //	thin, _ := brep.SolidCylinderCone(math.P3(-6,0,0), math.P3(6,0,0), 0.8, 1.5, "thin")
 //	fat, _  := brep.SolidCylinderCone(math.P3(0,0,-6), math.P3(0,0,6), 2, 4, "fat")
-//	res, ok := brep.ConeConeJoin(fat, thin)
-func ConeConeJoin(a, b *topo.Body) (*topo.Body, bool) {
-	p, _, ok := coneConeCrossingPartsOf(a, b)
+//	res, ok := brep.ConeConeJoin(fat, thin, nil)
+func ConeConeJoin(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	p, _, ok := coneConeCrossingPartsOf(a, b, rec)
 	if !ok {
 		return nil, false
 	}

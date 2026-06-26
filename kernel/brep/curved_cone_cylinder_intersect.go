@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 )
@@ -25,13 +26,13 @@ import (
 //
 //	cone, _ := brep.SolidCylinderCone(math.P3(-6,0,0), math.P3(6,0,0), 1, 2.5, "cone")
 //	cyl, _  := brep.SolidCylinder(math.P3(0,0,-6), math.V3(0,0,1), 3, 12)
-//	res, ok := brep.ConeCylinderIntersect(cone, cyl) // cone band capped by two lenses
-func ConeCylinderIntersect(a, b *topo.Body) (*topo.Body, bool) {
+//	res, ok := brep.ConeCylinderIntersect(cone, cyl, nil) // cone band capped by two lenses
+func ConeCylinderIntersect(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
 	cone, cyl, vMin, vMax, ok := coneAndCylinder(a, b)
 	if !ok {
 		return nil, false
 	}
-	loops, ok := coneCylinderImprint(a, b)
+	loops, ok := coneCylinderImprint(a, b, rec)
 	if !ok || len(loops) != 2 {
 		return nil, false
 	}

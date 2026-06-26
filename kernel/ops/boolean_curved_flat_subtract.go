@@ -4,6 +4,7 @@ package ops
 
 import (
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 )
@@ -19,7 +20,7 @@ import (
 
 // curvedFlatSubtract returns target − box when the removal is bounded by a single box face, or
 // ok=false to defer. Only Cut, a curved target, and a convex all-planar tool map here.
-func curvedFlatSubtract(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
+func curvedFlatSubtract(op PartFeatureOperation, target, tool *topo.Body, _ *diag.Recorder) (*topo.Body, bool) {
 	if op != Cut || !hasCurvedFace(target) || hasCurvedFace(tool) {
 		return nil, false
 	}

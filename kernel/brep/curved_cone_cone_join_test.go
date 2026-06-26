@@ -20,7 +20,7 @@ func TestConeConeJoinFatWithStubs(t *testing.T) {
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 
-	res, ok := ConeConeJoin(fat, thin)
+	res, ok := ConeConeJoin(fat, thin, nil)
 	if !ok {
 		t.Fatal("cone ∪ cone declined; want the fat cone with two tapered stubs")
 	}
@@ -39,7 +39,7 @@ func TestConeConeJoinFatWithStubs(t *testing.T) {
 func TestConeConeJoinOrderIndependent(t *testing.T) {
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
-	if _, ok := ConeConeJoin(thin, fat); !ok {
+	if _, ok := ConeConeJoin(thin, fat, nil); !ok {
 		t.Error("cone ∪ cone should resolve with the rod cone passed first too")
 	}
 }

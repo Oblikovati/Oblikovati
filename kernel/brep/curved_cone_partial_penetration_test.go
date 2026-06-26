@@ -29,7 +29,7 @@ func conePartialFat() *topo.Body {
 // TestConePartialPlugThreeFaces: the cone ∩ fat plug is a watertight three-face solid — the fat-wall lens
 // cap (cylinder), the cone stub band, and the cone's blind end cap (plane).
 func TestConePartialPlugThreeFaces(t *testing.T) {
-	res, ok := PartialPenetrationIntersect(conePartialFat(), conePartialFrustum())
+	res, ok := PartialPenetrationIntersect(conePartialFat(), conePartialFrustum(), nil)
 	if !ok {
 		t.Fatal("cone partial plug declined; want a three-face plug")
 	}
@@ -44,7 +44,7 @@ func TestConePartialPlugThreeFaces(t *testing.T) {
 // TestConePartialBlindHole: fat − cone is a watertight blind pocket — two fat caps, the holed wall, the cone
 // tunnel band, and the cone's blind end cap as the pocket bottom (5 faces).
 func TestConePartialBlindHole(t *testing.T) {
-	res, ok := PartialPenetrationCut(conePartialFat(), conePartialFrustum())
+	res, ok := PartialPenetrationCut(conePartialFat(), conePartialFrustum(), nil)
 	if !ok {
 		t.Fatal("cone blind hole declined; want a five-face pocketed solid")
 	}
@@ -59,7 +59,7 @@ func TestConePartialBlindHole(t *testing.T) {
 // TestConePartialConeMinusFatStub: cone − fat is the single tapered stub sticking out the entry side (one
 // shell — a partial penetration sticks out one side only, unlike a full crossing's two stubs).
 func TestConePartialConeMinusFatStub(t *testing.T) {
-	res, ok := PartialPenetrationCut(conePartialFrustum(), conePartialFat())
+	res, ok := PartialPenetrationCut(conePartialFrustum(), conePartialFat(), nil)
 	if !ok {
 		t.Fatal("cone − fat (partial) declined; want a single stub")
 	}
@@ -72,7 +72,7 @@ func TestConePartialConeMinusFatStub(t *testing.T) {
 // TestConePartialJoin: fat ∪ cone is one connected solid — the fat with a single tapered stub sticking out
 // the entry side (5 faces, one shell).
 func TestConePartialJoin(t *testing.T) {
-	res, ok := PartialPenetrationJoin(conePartialFat(), conePartialFrustum())
+	res, ok := PartialPenetrationJoin(conePartialFat(), conePartialFrustum(), nil)
 	if !ok {
 		t.Fatal("fat ∪ cone (partial) declined; want the fat with one tapered stub")
 	}
@@ -89,7 +89,7 @@ func TestConePartialJoin(t *testing.T) {
 
 // TestConePartialOrderIndependent: the plug resolves whichever body is passed first.
 func TestConePartialOrderIndependent(t *testing.T) {
-	if _, ok := PartialPenetrationIntersect(conePartialFrustum(), conePartialFat()); !ok {
+	if _, ok := PartialPenetrationIntersect(conePartialFrustum(), conePartialFat(), nil); !ok {
 		t.Error("cone partial plug should resolve with the cone passed first too")
 	}
 }
