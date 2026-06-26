@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"oblikovati.org/api/types"
 	"oblikovati.org/command"
 	"oblikovati.org/event"
 	"oblikovati.org/model/compdef"
@@ -41,7 +42,11 @@ func (s *Session) watchTransactions() {
 		if d, ok := s.workspace.ByID(e.Document); ok {
 			name = d.DisplayName()
 			if rc, ok := d.Content().(recipeStore); ok {
-				recipe, _ = rc.MarshalSnapshot()
+				if r, err := rc.MarshalSnapshot(); err != nil {
+					s.reportSnapshotFailure("capturing the session-log recipe", d, err) // #1425: not silent
+				} else {
+					recipe = r
+				}
 			}
 		}
 		s.txEvents = append(s.txEvents, sessionTxEvent{when: time.Now().UTC(), doc: name, label: e.Label, recipe: recipe})
@@ -122,11 +127,28 @@ func (dh *docHistory) savedDepthsWithin(max int) []int {
 }
 
 // resync sets snapshot to the recipe the document now holds — called after undo/redo
-// so the next new edit captures the correct before-snapshot for its event.
-func (dh *docHistory) resync(d *doc.Document) {
-	if c, ok := d.Content().(recipeStore); ok {
-		dh.snapshot, _ = c.MarshalSnapshot()
+// so the next new edit captures the correct before-snapshot for its event. It returns the
+// marshal error (content that is not a recipe store is a silent no-op) so the caller can
+// surface it; on failure the existing snapshot is left untouched (see resyncContent, #1425).
+func (dh *docHistory) resync(d *doc.Document) error {
+	c, ok := d.Content().(recipeStore)
+	if !ok {
+		return nil
 	}
+	return dh.resyncContent(c)
+}
+
+// resyncContent sets snapshot to content's current recipe. On a marshal failure it returns the error
+// and leaves the EXISTING snapshot untouched: a transient failure must never replace a good baseline
+// with an empty snapshot, which a later edit's before-revert would then restore as an empty model —
+// silent data loss on undo (#1425). An empty snapshot must never become a revert baseline.
+func (dh *docHistory) resyncContent(content recipeStore) error {
+	snap, err := content.MarshalSnapshot()
+	if err != nil {
+		return err
+	}
+	dh.snapshot = snap
+	return nil
 }
 
 // documentHistory returns d's event stream, creating it (and capturing the open-state
@@ -139,7 +161,9 @@ func (s *Session) documentHistory(d *doc.Document) *docHistory {
 		return dh
 	}
 	dh := &docHistory{hist: command.NewHistory()}
-	dh.resync(d)
+	if err := dh.resync(d); err != nil {
+		s.reportSnapshotFailure("capturing the open-state baseline", d, err) // #1425: empty baseline guarded at commit
+	}
 	dh.hist.OnChange(func() {
 		d.MarkDirty()
 		event.Emit(s.bus, event.After, TransactionChanged{Document: d.ID()})
@@ -177,7 +201,18 @@ func (s *Session) recordEdit(content recipeStore, label string) {
 // pre-edit snapshot and reports the commit as an abort (M04-F05).
 func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, content recipeStore, label string) {
 	after, err := content.MarshalSnapshot()
-	if err != nil || bytes.Equal(after, dh.snapshot) {
+	if err != nil {
+		s.reportSnapshotFailure("recording an edit", d, err) // never silently drop it (#1425)
+		return
+	}
+	if bytes.Equal(after, dh.snapshot) {
+		return
+	}
+	// Refuse to record against an empty baseline: a missing snapshot (a prior marshal failure left it
+	// empty) would make this event's Revert restore an empty recipe and wipe the model on undo. An empty
+	// snapshot must never become a revert baseline (#1425); surface it instead of poisoning the stream.
+	if len(dh.snapshot) == 0 {
+		s.reportSnapshotFailure("recording an edit (no undo baseline)", d, errEmptyBaseline)
 		return
 	}
 	if out := event.Emit(s.bus, event.Before, TransactionCommitted{Document: d.ID(), Label: label}); out.Vetoed() {
@@ -188,6 +223,19 @@ func (s *Session) commitRecipeDelta(d *doc.Document, dh *docHistory, content rec
 	dh.snapshot = after
 	s.resyncDerivedTables(d, map[string]bool{})
 	event.Emit(s.bus, event.After, TransactionCommitted{Document: d.ID(), Label: label})
+}
+
+// errEmptyBaseline marks a refused undo record whose before-snapshot was empty — a prior marshal failure
+// left no baseline, so recording would risk an empty-recipe revert (#1425).
+var errEmptyBaseline = errors.New("app: empty undo baseline (a prior snapshot marshal failed)")
+
+// reportSnapshotFailure surfaces a recipe-snapshot marshal failure — a serious, data-loss-adjacent event
+// — to the structured log and the reviewable Messages panel instead of silently discarding the error and
+// risking a poisoned undo baseline. The edit is left unrecorded so the model is never put at risk (#1425).
+func (s *Session) reportSnapshotFailure(where string, d *doc.Document, err error) {
+	s.messageCenter.AddMessage(
+		fmt.Sprintf("undo: %s failed for %q: %v — edit not recorded to protect the model", where, d.DisplayName(), err),
+		types.SeverityError)
 }
 
 // revertVetoedCommit rolls the part back to the stream's snapshot after a Before
@@ -513,7 +561,9 @@ func cursorMove[E event.Event](s *Session, d *doc.Document, dh *docHistory, ev E
 		return err
 	}
 	s.rebindReferences(d) // an assembly restore leaves occurrences pending; re-bind before resync (#763)
-	dh.resync(d)
+	if err := dh.resync(d); err != nil {
+		s.reportSnapshotFailure("re-capturing the baseline after a cursor move", d, err) // #1425
+	}
 	s.notice = ""
 	return nil
 }
