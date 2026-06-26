@@ -37,6 +37,11 @@ type uvSide interface {
 	emitRun(run []recoveredEdge) (loopEdge, bool)
 	// wrapsAllU reports whether the kept region is non-empty at every azimuth (gates the rim-orientation flip).
 	wrapsAllU() bool
+	// multiFace reports whether the kept region may be DISCONNECTED, so the boundary loops must be grouped
+	// into separate faces by containment (groupLoopFaces). Only the general curved∩curved cut needs this
+	// (a fat cone's wall punched by a rod yields two disjoint lens caps); a plane half-space always leaves
+	// one connected region, so the ruled/torus half-space paths return false and emit a single face (#1403).
+	multiFace() bool
 	// orientLoops applies the surface's winding convention to the ordered boundary loops, returning the face
 	// loops, the section (cut) arcs that bound the planar lid (reversed into it), and whether the kept face is
 	// outerless — a closed-surface face whose loops are all holes (the genus-1 torus complement).
@@ -62,14 +67,23 @@ func trimByImprint(c uvSide, f curvedFace, surface geom.Surface, imprint []geom.
 		return nil, nil, nil // the whole side is on the dropped side
 	}
 	loops := dropArtificialLoops(c, chainLoops(keptBoundaryEdges(kept, c.vPeriodic())), segs)
-	emitted, ok := emitKeptLoops(c, loops, segs)
-	if !ok {
-		return nil, nil, ErrUnsupportedHalfSpace
+	var faces []curvedFace
+	var lid []loopEdge
+	// A curved∩curved cut can leave the kept region DISCONNECTED (the two lens caps a rod punches in a fat
+	// cone's wall) — unlike a plane cut, which leaves one band/patch. groupLoopFaces splits the boundary
+	// loops into connected faces by (u,v) containment; a wrapping band or single patch stays one face, so
+	// the half-space path is unchanged (#1403).
+	for _, group := range groupLoopFaces(c, loops) {
+		emitted, ok := emitKeptLoops(c, group, segs)
+		if !ok {
+			return nil, nil, ErrUnsupportedHalfSpace
+		}
+		faceLoops, faceLid, outerless := c.orientLoops(emitted, c.wrapsAllU())
+		faceLoops = c.finalizeLoops(faceLoops)
+		faces = append(faces, curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless})
+		lid = append(lid, faceLid...)
 	}
-	faceLoops, lid, outerless := c.orientLoops(emitted, c.wrapsAllU())
-	faceLoops = c.finalizeLoops(faceLoops)
-	kf := curvedFace{surface: surface, reversed: f.reversed, lineage: f.lineage, loops: faceLoops, outerless: outerless}
-	return []curvedFace{kf}, lid, nil
+	return faces, lid, nil
 }
 
 // dropArtificialLoops removes boundary loops made entirely of artificial seam edges. On a v-periodic closed

@@ -17,7 +17,14 @@ import (
 // a non-wrapping tongue's mixed loop is not.
 func (c ruledUV) wrapsAllU() bool {
 	for i := 0; i < 720; i++ {
-		if _, _, ok := c.keptV(2 * stdmath.Pi * float64(i) / 720); !ok {
+		u := 2 * stdmath.Pi * float64(i) / 720
+		if c.solidMode {
+			if !c.anyKeptVSolid(u) { // general curved∩curved: kept at this azimuth iff some v is inside (#1403)
+				return false
+			}
+			continue
+		}
+		if _, _, ok := c.keptV(u); !ok {
 			return false
 		}
 	}

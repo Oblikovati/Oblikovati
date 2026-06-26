@@ -738,6 +738,90 @@ func dedgeLoopArea(loop []dedge) float64 {
 	return sum / 2
 }
 
+// groupLoopFaces groups the kept region's boundary loops into connected FACES (#1403). A WRAPPING band or a
+// single patch stays one face — all loops together, the half-space convention — so the plane-cut path is
+// unchanged. A non-wrapping region with several loops is grouped by (u,v) containment: each outer loop
+// (CCW, area>0) is a face; each hole (CW) joins the smallest outer that contains it; DISJOINT outer loops
+// (the two lens caps a rod punches in a fat cone's wall) become SEPARATE faces — the generalization a
+// curved∩curved cut needs over a plane cut, where the kept region is always one connected piece.
+func groupLoopFaces(c uvSide, loops [][]dedge) [][][]dedge {
+	if !c.multiFace() || c.wrapsAllU() || len(loops) <= 1 {
+		return [][][]dedge{loops} // half-space/torus, or a wrapping band, or a single patch — one face
+	}
+	var groups []*faceGroup
+	var holes [][]dedge
+	for _, lp := range loops {
+		if dedgeLoopArea(lp) >= 0 {
+			groups = append(groups, &faceGroup{loops: [][]dedge{lp}, area: dedgeLoopArea(lp), outer: lp})
+		} else {
+			holes = append(holes, lp)
+		}
+	}
+	if len(groups) == 0 { // all holes (a closed-surface complement) — keep as one face (outerless)
+		return [][][]dedge{loops}
+	}
+	for _, h := range holes {
+		if g := smallestContainingFace(groups, loopPointInside(h)); g != nil {
+			g.loops = append(g.loops, h)
+		}
+	}
+	out := make([][][]dedge, len(groups))
+	for i, g := range groups {
+		out[i] = g.loops
+	}
+	return out
+}
+
+// faceGroup accumulates one connected face's boundary loops (its outer plus any holes that nest in it)
+// during groupLoopFaces.
+type faceGroup struct {
+	outer []dedge
+	loops [][]dedge
+	area  float64
+}
+
+// smallestContainingFace returns the face group whose outer loop contains p and has the smallest area (so a
+// hole nested in nested outers attaches to its immediate parent), or nil when none contains it.
+func smallestContainingFace(groups []*faceGroup, p math.Point2) *faceGroup {
+	var best *faceGroup
+	bestArea := stdmath.MaxFloat64
+	for _, g := range groups {
+		if g.area < bestArea && dedgeLoopContains(g.outer, p) {
+			best, bestArea = g, g.area
+		}
+	}
+	return best
+}
+
+// loopPointInside returns a representative interior point of a loop: the average of an edge's endpoint and
+// the loop centroid, nudged inside. The first vertex sits ON the boundary, so a midpoint toward the centroid
+// lands strictly inside for the convex-ish lens/annulus loops this groups.
+func loopPointInside(loop []dedge) math.Point2 {
+	var cx, cy float64
+	for _, e := range loop {
+		cx += float64(e.a.X)
+		cy += float64(e.a.Y)
+	}
+	n := float64(len(loop))
+	return math.P2(cx/n, cy/n)
+}
+
+// dedgeLoopContains reports whether p is inside the (u,v) polygon of loop, by even-odd ray casting along +u.
+func dedgeLoopContains(loop []dedge, p math.Point2) bool {
+	inside := false
+	for _, e := range loop {
+		ay, by := float64(e.a.Y), float64(e.b.Y)
+		if (ay > float64(p.Y)) == (by > float64(p.Y)) {
+			continue
+		}
+		x := float64(e.a.X) + (float64(p.Y)-ay)/(by-ay)*(float64(e.b.X)-float64(e.a.X))
+		if float64(p.X) < x {
+			inside = !inside
+		}
+	}
+	return inside
+}
+
 // orientLoops applies the analytic splitSide orientation convention to the ordered loops: the lo boundaries
 // and the default hi boundary are forward with their section arcs reversed into the lid; but in a WRAPPING
 // band the hi loop is REVERSED when it carries a rim and the source side traversed its top rim reversed
@@ -892,6 +976,11 @@ func isClosedCurve(curve geom.Curve3) bool {
 		return true
 	case geom.SpiricArc:
 		return stdmath.Abs(stdmath.Abs(c.V1-c.V0)-2*stdmath.Pi) < 1e-9
+	case *geom.Polyline:
+		// An SSI imprint loop is a closed polyline (first point ≈ last). Recognising it as closed makes
+		// emitImprintRun re-emit the WHOLE loop [lo,hi] from PointAt(0), so both operand sides emit the same
+		// shared edge and the welder fuses them (#1403).
+		return roundKey(c.PointAt(0)) == roundKey(c.PointAt(1))
 	}
 	return false
 }
