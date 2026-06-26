@@ -101,6 +101,33 @@ func TestSplitSeamCrossingSplitsAtSeam(t *testing.T) {
 	}
 }
 
+// TestSplitVSeamCrossingSplitsAtTubeSeam: a segment whose endpoints straddle the TUBE seam (v=0≡2π) is split
+// into two meeting AT v=0/2π, with u and the curve parameter interpolated — the v-analogue of the azimuth
+// split, needed for the two-oval band whose ovals wrap the tube (Oblikovati#1406).
+func TestSplitVSeamCrossingSplitsAtTubeSeam(t *testing.T) {
+	twoPi := 2 * stdmath.Pi
+	// climbs past 2π in v: a=(1, 6.0) -> b=(3, 0.2); the short arc crosses the tube seam at v=2π.
+	up := uvSeg{a: math.P2(1, 6.0), b: math.P2(3, 0.2), tA: 0, tB: 1, kind: segImprint}
+	got := splitVSeamCrossing(up)
+	if len(got) != 2 {
+		t.Fatalf("v-seam-straddling segment split into %d, want 2", len(got))
+	}
+	if stdmath.Abs(float64(got[0].b.Y)-twoPi) > 1e-12 || got[1].a.Y != 0 {
+		t.Errorf("split not anchored at the tube seam: end-v=%.4f start-v=%.4f (want 2π, 0)", got[0].b.Y, got[1].a.Y)
+	}
+	if stdmath.Abs(float64(got[0].b.X)-float64(got[1].a.X)) > 1e-12 {
+		t.Errorf("u discontinuous across the tube seam: %.6f vs %.6f", got[0].b.X, got[1].a.X)
+	}
+	if got[0].tB != got[1].tA {
+		t.Errorf("curve parameter discontinuous across the tube seam: %.6f vs %.6f", got[0].tB, got[1].tA)
+	}
+	// a segment not straddling the tube seam passes through unchanged.
+	inside := uvSeg{a: math.P2(1, 1.0), b: math.P2(2, 2.0), kind: segImprint}
+	if s := splitVSeamCrossing(inside); len(s) != 1 || s[0] != inside {
+		t.Errorf("a non-straddling segment was altered: %+v", s)
+	}
+}
+
 // TestAssembleBandSegmentsClosesRectangle: assembling an imprint with the rim+seam frame yields a closed
 // parameter rectangle — the four frame edges span [0,2π]×[vMin,vMax] and share the rectangle corners — and
 // no assembled segment spans the seam discontinuity (Oblikovati#1405).

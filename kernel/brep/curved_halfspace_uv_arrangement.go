@@ -161,26 +161,49 @@ func unwrapAzimuthNear(ref, x float64) float64 {
 	return x
 }
 
-// splitSeamCrossing splits an imprint segment whose endpoints straddle the azimuth seam (the shorter arc
-// between them crosses u=0≡2π) into two segments meeting AT the seam, so no segment spans the discontinuity
-// — the arrangement sees a clean parameter rectangle. v and the curve parameter are interpolated to the
-// seam crossing. A segment that does not straddle the seam is returned unchanged.
-func splitSeamCrossing(s uvSeg) []uvSeg {
-	ub := unwrapAzimuthNear(s.a.X, s.b.X)
-	if ub >= 0 && ub <= 2*stdmath.Pi {
-		return []uvSeg{s} // wholly inside the band, no seam crossing
+// splitSeamCrossing splits an imprint segment whose endpoints straddle the AZIMUTH seam (u=0≡2π) into two
+// segments meeting AT the seam, so no segment spans the discontinuity — the arrangement sees a clean
+// parameter rectangle. A segment that does not straddle the seam is returned unchanged.
+func splitSeamCrossing(s uvSeg) []uvSeg { return splitPeriodicSeam(s, true) }
+
+// splitVSeamCrossing is the v (tube-angle) analogue for a torus: it splits a segment straddling the TUBE seam
+// (v=0≡2π), needed when the imprint wraps the tube period (the two-oval band's ovals span all v, so the v-seam
+// is crossed and cannot be placed clear of it). The ruled sides are bounded in v, so they never use it (#1406).
+func splitVSeamCrossing(s uvSeg) []uvSeg { return splitPeriodicSeam(s, false) }
+
+// splitPeriodicSeam splits an imprint segment that straddles a periodic seam on the chosen coordinate (onU:
+// the azimuth u=X, else the tube angle v=Y) into two segments meeting at the seam. The OTHER coordinate and
+// the curve parameter are interpolated to the crossing; a non-straddling segment is returned unchanged.
+func splitPeriodicSeam(s uvSeg, onU bool) []uvSeg {
+	ca, oa := float64(s.a.X), float64(s.a.Y)
+	cb, ob := float64(s.b.X), float64(s.b.Y)
+	if !onU {
+		ca, oa, cb, ob = oa, ca, ob, cb // wrap on Y; the other coordinate is X
 	}
-	seamU, otherU := 0.0, 2*stdmath.Pi
-	if ub > 2*stdmath.Pi { // the run climbs past 2π: a → 2π, then 0 → b
-		seamU, otherU = 2*stdmath.Pi, 0
+	cu := unwrapAzimuthNear(ca, cb)
+	if cu >= 0 && cu <= 2*stdmath.Pi {
+		return []uvSeg{s} // no seam crossing on this coordinate
 	}
-	f := (seamU - s.a.X) / (ub - s.a.X)
-	vSeam := s.a.Y + f*(s.b.Y-s.a.Y)
+	seam, other := 0.0, 2*stdmath.Pi
+	if cu > 2*stdmath.Pi { // the run climbs past 2π: a → 2π, then 0 → b
+		seam, other = 2*stdmath.Pi, 0
+	}
+	f := (seam - ca) / (cu - ca)
+	oSeam := oa + f*(ob-oa)
 	tSeam := s.tA + f*(s.tB-s.tA)
 	return []uvSeg{
-		{a: s.a, b: math.P2(seamU, vSeam), curve: s.curve, tA: s.tA, tB: tSeam, kind: s.kind},
-		{a: math.P2(otherU, vSeam), b: s.b, curve: s.curve, tA: tSeam, tB: s.tB, kind: s.kind},
+		{a: s.a, b: seamPoint(seam, oSeam, onU), curve: s.curve, tA: s.tA, tB: tSeam, kind: s.kind},
+		{a: seamPoint(other, oSeam, onU), b: s.b, curve: s.curve, tA: tSeam, tB: s.tB, kind: s.kind},
 	}
+}
+
+// seamPoint builds the (u,v) split point from the seam coordinate and the interpolated other coordinate,
+// placing them on the right axes (onU: seam is u=X; else seam is v=Y).
+func seamPoint(seamCoord, otherCoord float64, onU bool) math.Point2 {
+	if onU {
+		return math.P2(seamCoord, otherCoord)
+	}
+	return math.P2(otherCoord, seamCoord)
 }
 
 // bandFrameSegments returns the four straight (u,v) edges that bound the parameter rectangle for the

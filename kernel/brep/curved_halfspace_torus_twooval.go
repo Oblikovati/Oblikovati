@@ -33,6 +33,20 @@ func torusTwoOvalBand(t geom.Torus, plane geom.Plane) bool {
 	return ratio > tol && ratio < t.MajorRadius-t.MinorRadius+tol
 }
 
+// torusAxisParallelFigureEight reports the DEGENERATE tangent: an axis-parallel plane whose offset equals the
+// inner tube radius (|K|/M ≈ R−r) is tangent to the inner equator, so the two ovals merge into a FIGURE-EIGHT
+// pinched at one point. The (u,v) arrangement makes that a single self-touching loop the composition can't
+// re-cut, so this exact-tangent case keeps the analytic band builder (torusTwoOvalHalfSpace) — every other
+// two-oval / oblique-figure-eight cut routes through the unified trimmer (#1406). Like OCC, the tangent limit
+// is special-cased; migrating it is a follow-up (the self-touching loop needs degenerate-pinch handling).
+func torusAxisParallelFigureEight(t geom.Torus, plane geom.Plane) bool {
+	_, m, k, c := geom.TorusSectionCoeffs(t, plane)
+	if stdmath.Abs(c) > cylinderAxisCosTol || m <= cylinderAxisCosTol {
+		return false
+	}
+	return stdmath.Abs(stdmath.Abs(k)/m-(t.MajorRadius-t.MinorRadius)) < torusSectionTol(t)
+}
+
 // torusTwoOvalHalfSpace keeps the v-wrapping band a plane parallel to the torus axis leaves on its negative
 // side: the band {g ≤ 0} swept around the tube between the two section ovals (through u = Phi+π, the side the
 // half-space keeps), closed by the two planar oval-disk lids. The caller must have checked [torusTwoOvalBand].

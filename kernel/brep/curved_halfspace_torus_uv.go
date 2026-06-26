@@ -70,7 +70,11 @@ func (c torusUV) assembleSegments(imprint []geom.Curve3) []uvSeg {
 	out := make([]uvSeg, 0, len(imprint)*imprintSampleCount+4)
 	for _, cv := range imprint {
 		for _, s := range c.sampleSection(cv) {
-			out = append(out, splitSeamCrossing(s)...)
+			// Split on BOTH seams: an oval wraps the tube (v-seam) and a tilted section can wrap the azimuth
+			// (u-seam), so neither alone closes the doubly-periodic rectangle for a two-oval band (#1406).
+			for _, su := range splitSeamCrossing(s) {
+				out = append(out, splitVSeamCrossing(su)...)
+			}
 		}
 	}
 	return append(out, c.frameSegments()...)

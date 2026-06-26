@@ -63,17 +63,17 @@ func torusHalfSpaceCut(body *topo.Body, torus geom.Torus, plane geom.Plane, n ma
 	case perpendicularToTorusAxis(n, torus):
 		res, err := torusHalfSpace(body, torus, plane) // ⟂ cut → trimmed torus band + annular lid
 		return res, true, err
-	// The single-oval CAP and its genus-1 COMPLEMENT now route through the unified (u,v)-arrangement trimmer
-	// (torusSideSplit, via generalHalfSpace's handled=false fallthrough below) — the same spiric section, the
-	// kept side chosen by the section's sign (#1406). The remaining spiric cases stay analytic until migrated.
-	case torusTwoOvalBand(torus, plane):
-		res, err := torusTwoOvalHalfSpace(torus, plane) // axis-∥ through the hole → v-wrapping band + 2 lids
+	// The single-oval CAP, its genus-1 COMPLEMENT, and the v-wrapping TWO-OVAL BAND (axis-parallel through the
+	// hole and the tilted figure-eight) now route through the unified (u,v)-arrangement trimmer (torusSideSplit,
+	// via generalHalfSpace's handled=false fallthrough below) — the kept region's topology emerges from the
+	// arrangement, the kept side chosen by the section's sign (#1406). The oblique single oval stays analytic
+	// until its migration step. The DEGENERATE axis-parallel figure-eight tangent (the exact zero-width band
+	// limit, a self-touching loop the arrangement composition can't re-cut) also stays analytic for now.
+	case torusAxisParallelFigureEight(torus, plane):
+		res, err := torusTwoOvalHalfSpace(torus, plane) // exact inner-equator tangent → analytic band (zero-width limit)
 		return res, true, err
 	case torusObliqueOval(torus, plane):
 		res, err := torusObliqueOvalHalfSpace(torus, plane) // tilted single-oval bite → cap or complement
-		return res, true, err
-	case torusTwoObliqueOval(torus, plane):
-		res, err := torusTwoOvalHalfSpace(torus, plane) // tilted cut through the hole → v-wrapping band + 2 lids
 		return res, true, err
 	}
 	return nil, false, nil

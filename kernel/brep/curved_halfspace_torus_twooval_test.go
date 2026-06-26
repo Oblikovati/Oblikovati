@@ -40,9 +40,11 @@ func TestHalfSpaceCutTorusTwoOvalBand(t *testing.T) {
 			if tori != 1 || planes != 2 {
 				t.Errorf("two-oval band has %d torus + %d plane faces, want 1 + 2 (the band + two oval-disk lids)", tori, planes)
 			}
-			// Two ovals (each a closed spiric edge) + one bridging seam.
-			if e := len(res.Edges()); e != 3 {
-				t.Errorf("two-oval band has %d edges, want 3 (two ovals + a seam)", e)
+			// The unified (u,v)-arrangement trim emits the band as a SEAMLESS annulus — two closed spiric oval
+			// edges, no bridging seam (the v-wrapping band's artificial seam folds and cancels). The analytic
+			// builder bridged the ovals with a seam (3 edges); the seamless form is equally watertight (#1406).
+			if e := len(res.Edges()); e != 2 {
+				t.Errorf("two-oval band has %d edges, want 2 (the two ovals, seamless)", e)
 			}
 		})
 	}
