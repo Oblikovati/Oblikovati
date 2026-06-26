@@ -17,8 +17,8 @@ import (
 func TestAdaptiveInteriorNodesRefineDensifies(t *testing.T) {
 	s := domeSurface(t)
 	outer := []math.Point2{math.P2(0, 0), math.P2(1, 0), math.P2(1, 1), math.P2(0, 1)}
-	base := adaptiveInteriorNodes(s, outer, nil, DefaultQuality(), 1)
-	fine := adaptiveInteriorNodes(s, outer, nil, DefaultQuality(), 0.5)
+	base := interiorNodesOnly(s, outer, nil, DefaultQuality(), 1)
+	fine := interiorNodesOnly(s, outer, nil, DefaultQuality(), 0.5)
 	if len(fine) <= len(base) {
 		t.Errorf("refine 0.5 gave %d interior nodes, want more than the %d at refine 1", len(fine), len(base))
 	}
