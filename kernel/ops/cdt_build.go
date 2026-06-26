@@ -190,6 +190,7 @@ func (m *cdt) cavityBoundary(c cavity) []cavityEdge {
 func (m *cdt) addTri(a, b, c int) int {
 	m.tris = append(m.tris, cdtTri{v: [3]int{a, b, c}, n: [3]int{-1, -1, -1}})
 	m.dead = append(m.dead, false)
+	m.touch(len(m.tris) - 1) // keep the incidence hint current once recovery has built it (#1409)
 	return len(m.tris) - 1
 }
 
@@ -231,41 +232,23 @@ func (m *cdt) flip(t, i int) bool {
 	}
 	nCP, nQC := m.tris[t].n[(i+2)%3], m.tris[t].n[(i+1)%3]
 	nPD, nDQ := m.neighborAcross(s, pp, d), m.neighborAcross(s, d, q)
+	m.rebuildFlip(t, s, c, pp, d, q, nPD, nCP, nDQ, nQC)
+	return true
+}
+
+// rebuildFlip rewrites the two triangles of a Lawson flip to the new diagonal (c,d), relinks their
+// outside neighbours, counts the flip, and refreshes the incidence hint for both (#1409). Split out of
+// flip so each stays small; the parameters are the quad's vertices and the four outside neighbours.
+func (m *cdt) rebuildFlip(t, s, c, pp, d, q, nPD, nCP, nDQ, nQC int) {
 	m.tris[t] = cdtTri{v: [3]int{c, pp, d}, n: [3]int{nPD, s, nCP}}
 	m.tris[s] = cdtTri{v: [3]int{c, d, q}, n: [3]int{nDQ, nQC, t}}
 	m.relinkOpposite(nPD, pp, d, t)
 	m.relinkOpposite(nCP, c, pp, t)
 	m.relinkOpposite(nDQ, d, q, s)
 	m.relinkOpposite(nQC, q, c, s)
-	return true
-}
-
-// insertConstraint forces edge (a,b) into the triangulation by flipping the edges it crosses, then
-// marks it constrained. A degenerate constraint between coincident endpoints (duplicate boundary
-// samples) is skipped: it has no edge to recover, and the flip loop would otherwise spin its whole
-// 4·len(tris) retry never finding a crossing — the real O(T²) freeze on imported faces with duplicate
-// points (linkrods: 8.3s → 0.1s, #1073; callers pass deduplicated representatives, see
-// constrainedDelaunay). A non-flippable (non-convex) crossing is retried after others resolve it; it
-// gives up if no progress is possible. The flips rely on the exact orient2d, so a near-collinear
-// boundary no longer mis-signs and tangles the mesh.
-func (m *cdt) insertConstraint(a, b int) {
-	if a == b || m.pts[a] == m.pts[b] {
-		return
-	}
-	for tries := 0; !m.hasEdge(a, b) && tries < 4*len(m.tris)+8; tries++ {
-		if !m.flipOneCrossing(a, b) {
-			break
-		}
-	}
-	// Record the constraint ONLY when its edge actually survives in the mesh. Marking con
-	// unconditionally (the old behaviour) registered a phantom boundary the flood could not toggle at,
-	// leaking the domain across the unrecovered gap — a silent watertightness defect (#1410). A genuine
-	// non-recovery (cap hit / non-convex stall) is collected so the caller falls back deterministically.
-	if m.hasEdge(a, b) {
-		m.con[conKey(a, b)] = true
-		return
-	}
-	m.unrecovered = append(m.unrecovered, [2]int{a, b})
+	m.flipSteps++ // recovery flips only (flip is called nowhere else) — instrumented for #1409
+	m.touch(t)    // both reused triangles changed their vertex sets; refresh the incidence hint
+	m.touch(s)
 }
 
 // representatives maps each input point index to the inserted vertex that carries its coordinates:
@@ -423,9 +406,11 @@ func (m *cdt) finalizeDomain(pts [][2]float64, loops [][]int) ([][3]int, [][2]in
 }
 
 // constrain recovers every loop edge as a hard constraint between the inserted representatives (see
-// representatives) and records it in con.
+// representatives) and records it in con. It builds the vertex→triangle incidence hint once up front so
+// each recovery walks the constraint corridor in O(crossings), never rescanning the whole mesh (#1409).
 func (m *cdt) constrain(loops [][]int) {
 	rep := m.representatives()
+	m.buildIncident()
 	for _, lp := range loops {
 		for k := 0; k < len(lp); k++ {
 			m.insertConstraint(rep[lp[k]], rep[lp[(k+1)%len(lp)]])
