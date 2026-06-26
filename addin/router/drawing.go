@@ -20,10 +20,10 @@ import (
 // registerDrawingHandlers wires the drawing.* methods.
 func (r *Router) registerDrawingHandlers() {
 	r.readOnly(wire.MethodDrawingListSheets, drawingListSheets)
-	r.readOnly(wire.MethodDrawingAddSheet, drawingAddSheet)
-	r.readOnly(wire.MethodDrawingRemoveSheet, drawingRemoveSheet)
+	r.mutating(wire.MethodDrawingAddSheet, "Add Sheet", drawingAddSheet)
+	r.mutating(wire.MethodDrawingRemoveSheet, "Delete Sheet", drawingRemoveSheet)
 	r.readOnly(wire.MethodDrawingSetActiveSheet, drawingSetActiveSheet)
-	r.readOnly(wire.MethodDrawingSetModelReference, drawingSetModelReference)
+	r.mutating(wire.MethodDrawingSetModelReference, "Set Model Reference", drawingSetModelReference)
 	r.readOnly(wire.MethodDrawingTitleBlockFields, drawingTitleBlockFields)
 	r.readOnly(wire.MethodDrawingExportDXF, drawingExportDXF)
 }

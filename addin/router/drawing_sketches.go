@@ -18,9 +18,9 @@ import (
 // registerDrawingSketchHandlers wires the drawingSketches.* methods.
 func (r *Router) registerDrawingSketchHandlers() {
 	r.readOnly(wire.MethodDrawingSketchesList, drawingSketchesList)
-	r.readOnly(wire.MethodDrawingSketchesAdd, drawingSketchesAdd)
-	r.readOnly(wire.MethodDrawingSketchesAddEntity, drawingSketchesAddEntity)
-	r.readOnly(wire.MethodDrawingSketchesAddHatch, drawingSketchesAddHatch)
+	r.mutating(wire.MethodDrawingSketchesAdd, "Create Sketch", drawingSketchesAdd)
+	r.mutating(wire.MethodDrawingSketchesAddEntity, "Add Sketch Geometry", drawingSketchesAddEntity)
+	r.mutating(wire.MethodDrawingSketchesAddHatch, "Add Hatch", drawingSketchesAddHatch)
 }
 
 // activeSheetSketches returns the active drawing's active-sheet sketch collection.

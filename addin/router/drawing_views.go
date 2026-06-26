@@ -21,16 +21,16 @@ import (
 // registerDrawingViewHandlers wires the drawingViews.* methods.
 func (r *Router) registerDrawingViewHandlers() {
 	r.readOnly(wire.MethodDrawingViewsList, drawingViewsList)
-	r.readOnly(wire.MethodDrawingViewsAddBase, drawingViewsAddBase)
-	r.readOnly(wire.MethodDrawingViewsAddProjected, drawingViewsAddProjected)
-	r.readOnly(wire.MethodDrawingViewsAddAuxiliary, drawingViewsAddAuxiliary)
-	r.readOnly(wire.MethodDrawingViewsAddSection, drawingViewsAddSection)
-	r.readOnly(wire.MethodDrawingViewsAddDetail, drawingViewsAddDetail)
-	r.readOnly(wire.MethodDrawingViewsAddBreak, drawingViewsAddBreak)
-	r.readOnly(wire.MethodDrawingViewsAddSlice, drawingViewsAddSlice)
-	r.readOnly(wire.MethodDrawingViewsAddBreakout, drawingViewsAddBreakout)
-	r.readOnly(wire.MethodDrawingViewsAddDraft, drawingViewsAddDraft)
-	r.readOnly(wire.MethodDrawingViewsDelete, drawingViewsDelete)
+	r.mutating(wire.MethodDrawingViewsAddBase, "Add View", drawingViewsAddBase)
+	r.mutating(wire.MethodDrawingViewsAddProjected, "Add View", drawingViewsAddProjected)
+	r.mutating(wire.MethodDrawingViewsAddAuxiliary, "Add View", drawingViewsAddAuxiliary)
+	r.mutating(wire.MethodDrawingViewsAddSection, "Add View", drawingViewsAddSection)
+	r.mutating(wire.MethodDrawingViewsAddDetail, "Add View", drawingViewsAddDetail)
+	r.mutating(wire.MethodDrawingViewsAddBreak, "Add View", drawingViewsAddBreak)
+	r.mutating(wire.MethodDrawingViewsAddSlice, "Add View", drawingViewsAddSlice)
+	r.mutating(wire.MethodDrawingViewsAddBreakout, "Add View", drawingViewsAddBreakout)
+	r.mutating(wire.MethodDrawingViewsAddDraft, "Add View", drawingViewsAddDraft)
+	r.mutating(wire.MethodDrawingViewsDelete, "Delete View", drawingViewsDelete)
 	r.readOnly(wire.MethodDrawingViewsCurves, drawingViewsCurves)
 }
 
