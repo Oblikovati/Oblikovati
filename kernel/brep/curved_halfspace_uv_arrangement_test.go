@@ -125,3 +125,59 @@ func TestAssembleBandSegmentsClosesRectangle(t *testing.T) {
 		t.Errorf("frame has %d rims and %d seams, want 2 and 2", rims, seams)
 	}
 }
+
+// horizontalCutImprint samples the circle at axial height v as a (u,v) imprint (a horizontal line v=const).
+func (c ruledUV) horizontalCutImprint(t *testing.T, v float64) []uvSeg {
+	t.Helper()
+	circ, err := geom.NewCircle(math.P3(0, 0, v), math.V3(0, 0, 1), c.radConst)
+	if err != nil {
+		t.Fatalf("NewCircle: %v", err)
+	}
+	return c.sampleImprintUV(circ, 0, 1)
+}
+
+// TestKeptCellsClassifiesByMaterial: two horizontal imprint cuts split the band into three v-bands; the
+// material predicate selects which are kept — the middle band (one cell) or the two outer bands (#1405).
+func TestKeptCellsClassifiesByMaterial(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	imprint := append(c.horizontalCutImprint(t, -2), c.horizontalCutImprint(t, 2)...)
+	cells := c.arrangeBand(c.assembleBandSegments(imprint))
+	if len(cells) != 3 {
+		t.Fatalf("got %d cells, want 3 (v<-2, -2<v<2, v>2)", len(cells))
+	}
+	mid := keptCells(cells, func(uv math.Point2) bool { return uv.Y > -2 && uv.Y < 2 })
+	if len(mid) != 1 {
+		t.Errorf("middle-band material kept %d cells, want 1", len(mid))
+	}
+	outer := keptCells(cells, func(uv math.Point2) bool { return uv.Y < -2 || uv.Y > 2 })
+	if len(outer) != 2 {
+		t.Errorf("outer material kept %d cells, want 2", len(outer))
+	}
+}
+
+// TestHalfSpaceMaterialKeepsNegativeSide: with g(u,v)=v the half-space predicate keeps exactly the v<0
+// cell of a v=0 cut — the plane-cut classification the analytic walk produced, now via the arrangement.
+func TestHalfSpaceMaterialKeepsNegativeSide(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	c.s = 1 // g(u,v) = p + v·s = v  -> kept where v < 0
+	cells := c.arrangeBand(c.assembleBandSegments(c.horizontalCutImprint(t, 0)))
+	kept := keptCells(cells, c.halfSpaceMaterial())
+	if len(kept) != 1 {
+		t.Fatalf("kept %d cells, want 1 (the v<0 half)", len(kept))
+	}
+	if p, _ := interiorPointOf(kept[0].Outer); p.Y >= 0 {
+		t.Errorf("kept cell interior v=%.3f, want <0", p.Y)
+	}
+}
+
+// TestInteriorPointOfConcave: interiorPointOf returns a point genuinely inside even for a concave (L-shaped)
+// polygon whose centroid lies outside it — the robustness keptCells relies on for non-convex cells.
+func TestInteriorPointOfConcave(t *testing.T) {
+	lShape := []math.Point2{
+		math.P2(0, 0), math.P2(4, 0), math.P2(4, 1), math.P2(1, 1), math.P2(1, 4), math.P2(0, 4),
+	}
+	p, ok := interiorPointOf(lShape)
+	if !ok || !pointInPolygon2D(p, lShape) {
+		t.Errorf("interiorPointOf returned %v (ok=%v), not inside the L-shape", p, ok)
+	}
+}

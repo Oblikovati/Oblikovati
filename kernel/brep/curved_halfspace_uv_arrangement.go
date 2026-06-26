@@ -146,3 +146,76 @@ func (c ruledUV) assembleBandSegments(imprint []uvSeg) []uvSeg {
 	}
 	return append(out, c.bandFrameSegments()...)
 }
+
+// materialPredicate reports whether a (u,v) point of the band is on the KEPT side of the imprint. For a
+// plane cut it is the half-space membership g(u,v) = a(u)+v·b(u) < 0 (the same {g<0} the analytic walk
+// keeps); a general curved∩curved imprint supplies its own inside/outside test. The arrangement is built
+// once and classified through this predicate, so the two cases share the whole pipeline (#1405).
+type materialPredicate func(uv math.Point2) bool
+
+// halfSpaceMaterial is the plane-cut predicate: a band point is kept where the signed distance g(u,v) is
+// negative, exactly the {g<0} region the single-valued walk traced as a v-interval.
+func (c ruledUV) halfSpaceMaterial() materialPredicate {
+	return func(uv math.Point2) bool { return c.aU(uv.X)+uv.Y*c.bU(uv.X) < 0 }
+}
+
+// arrangeBand runs the planar subdivision on the assembled band, returning the cells as (u,v) polygons
+// (outer loop + nested holes). It is the periodic band flattened to a rectangle; cross-seam adjacency is
+// reconciled later when the kept region's boundary is walked.
+func (c ruledUV) arrangeBand(segs []uvSeg) []Face2D {
+	in := make([][2]math.Point2, 0, len(segs))
+	for _, s := range segs {
+		in = append(in, [2]math.Point2{s.a, s.b})
+	}
+	return Arrange(in)
+}
+
+// keptCells returns the arrangement cells whose interior is on the material side of the imprint, each cell
+// classified by evaluating the predicate at a point strictly inside its outer loop. A cell straddling the
+// imprint cannot occur (the imprint is an arrangement edge), so any interior sample decides the whole cell.
+func keptCells(cells []Face2D, material materialPredicate) []Face2D {
+	var kept []Face2D
+	for _, cell := range cells {
+		if p, ok := interiorPointOf(cell.Outer); ok && material(p) {
+			kept = append(kept, cell)
+		}
+	}
+	return kept
+}
+
+// interiorPointOf returns a point strictly inside the simple polygon (and ok). The centroid serves for a
+// convex cell; for a concave one it may fall outside, so the fallback steps a short way from each edge
+// midpoint toward the centroid until a point lands inside — robust for the arrangement's simple cells.
+func interiorPointOf(poly []math.Point2) (math.Point2, bool) {
+	if len(poly) < 3 {
+		return math.Point2{}, false
+	}
+	c := centroidOf(poly)
+	if pointInPolygon2D(c, poly) {
+		return c, true
+	}
+	for i := range poly {
+		a, b := poly[i], poly[(i+1)%len(poly)]
+		mid := math.P2((float64(a.X)+float64(b.X))/2, (float64(a.Y)+float64(b.Y))/2)
+		for _, f := range []float64{1e-3, 1e-2, 0.1, 0.5} {
+			p := math.P2(lerp(float64(mid.X), float64(c.X), f), lerp(float64(mid.Y), float64(c.Y), f))
+			if pointInPolygon2D(p, poly) {
+				return p, true
+			}
+		}
+	}
+	return c, false
+}
+
+// centroidOf returns the vertex average of a polygon (a cheap interior estimate, exact for the convex case).
+func centroidOf(poly []math.Point2) math.Point2 {
+	var sx, sy float64
+	for _, p := range poly {
+		sx, sy = sx+float64(p.X), sy+float64(p.Y)
+	}
+	n := float64(len(poly))
+	return math.P2(sx/n, sy/n)
+}
+
+// lerp linearly interpolates from a to b by fraction f.
+func lerp(a, b, f float64) float64 { return a + f*(b-a) }
