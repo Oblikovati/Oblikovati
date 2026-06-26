@@ -171,6 +171,39 @@ func polylineCurves(loops []geom.Polyline) []geom.Curve3 {
 	return out
 }
 
+// CrossingCylinderIntersectGeneral is the exported entry kernel/ops routes crossing-cylinder intersect
+// through: the GENERAL curved∩curved pipeline (#1403), no bespoke loop→body constructor. ok=false outside
+// the wired cylinder-through-cylinder crossing so the caller keeps its fallback.
+func CrossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	return crossingCylinderIntersectGeneral(a, b, rec)
+}
+
+// crossingCylinderIntersectGeneral builds cylinder ∩ cylinder (two crossing cylinders) through the GENERAL
+// pipeline (#1403): the SSI imprint, then trimByImprint on each cylinder side keeping the part inside the
+// other, then curvedStitch. The simplest pair — both sides are cylinders, so the recipe is fully symmetric
+// (no rod/fat split): the rod-wall band inside the fat plus the two fat-wall lens caps fall out of the same
+// two-sided trim. ok=false when the pair is not a cylinder-through-cylinder crossing.
+func crossingCylinderIntersectGeneral(a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	loops, ok := crossingCylinderImprint(a, b, rec)
+	if !ok || len(loops) == 0 {
+		return nil, false
+	}
+	fA, cylA, bandA, okA := cylinderSideFace(a)
+	fB, cylB, bandB, okB := cylinderSideFace(b)
+	insideA, okMA := curvedSolidMembership(a)
+	insideB, okMB := curvedSolidMembership(b)
+	if !okA || !okB || !okMA || !okMB {
+		return nil, false
+	}
+	imprint := polylineCurves(loops)
+	keptA, okKA := keptOrNone(cylinderSideSolidSplit(fA, cylA, bandA, imprint, Intersection, false, insideB))
+	keptB, okKB := keptOrNone(cylinderSideSolidSplit(fB, cylB, bandB, imprint, Intersection, true, insideA))
+	if !okKA || !okKB {
+		return nil, false
+	}
+	return curvedStitch(append(keptA, keptB...)), true
+}
+
 // ConeCylinderIntersectGeneral is the exported entry kernel/ops routes cone∩cylinder intersect through: the
 // GENERAL curved∩curved pipeline (#1403), no bespoke loop→body constructor. ok=false outside the wired
 // frustum-through-cylinder case so the caller keeps its fallback.
