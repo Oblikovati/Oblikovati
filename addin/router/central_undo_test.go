@@ -63,6 +63,27 @@ func TestCentralSeamRecordsFeatureUndo(t *testing.T) {
 	}
 }
 
+// TestCentralSeamRecordsBodyDeleteUndo proves deleting a body over the wire (body.delete, which records
+// a DeleteBody feature) is one undo step that restores the body — body editing was read-only before #1426.
+func TestCentralSeamRecordsBodyDeleteUndo(t *testing.T) {
+	r, s, def := twoBodyPartSession(t)
+
+	call(t, r, s, "body.delete", `{"bodyIndex":0}`, &wire.BodyListResult{})
+	if n := len(def.SurfaceBodies().All()); n != 1 {
+		t.Fatalf("after body.delete: %d bodies, want 1", n)
+	}
+
+	st := undoState(t, r, s)
+	if !st.CanUndo || st.NextUndo != "Delete Body" {
+		t.Fatalf("after body.delete state = %+v, want canUndo with nextUndo=Delete Body", st)
+	}
+
+	call(t, r, s, "transaction.undo", "{}", nil)
+	if n := len(def.SurfaceBodies().All()); n != 2 {
+		t.Errorf("after undo: %d bodies, want 2 (the delete reverted)", n)
+	}
+}
+
 // TestCentralSeamRecordsAssemblyPlacementUndo proves placing a component over the wire
 // (assembly.placeByDefinition) is one undo step that reverts the occurrence — the assembly authoring
 // family was registered read-only before #1426, so wire-driven placements were silently non-undoable and
