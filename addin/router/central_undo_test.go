@@ -4,6 +4,7 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"oblikovati.org/addin/opregistry"
@@ -59,6 +60,32 @@ func TestCentralSeamRecordsFeatureUndo(t *testing.T) {
 	}
 	if st := undoState(t, r, s); st.CanUndo || !st.CanRedo {
 		t.Fatalf("after undo state = %+v, want canRedo only", st)
+	}
+}
+
+// TestCentralSeamRecordsAssemblyPlacementUndo proves placing a component over the wire
+// (assembly.placeByDefinition) is one undo step that reverts the occurrence — the assembly authoring
+// family was registered read-only before #1426, so wire-driven placements were silently non-undoable and
+// not replicated to collaborators.
+func TestCentralSeamRecordsAssemblyPlacementUndo(t *testing.T) {
+	r, s, asm, _ := assemblySessionWithBoxes(t) // empty assembly, kept active
+	pin := openPartDoc(t, s, "pin.obk")         // a doc-backed component the snapshot can reference
+
+	var placed wire.OccurrenceResult
+	args := fmt.Sprintf(`{"document":%d,"name":"pin:1","transform":%s}`, uint64(pin.ID()), transformJSON(2, 0, 0))
+	call(t, r, s, "assembly.place", args, &placed)
+	if got := asm.Occurrences().Count(); got != 1 {
+		t.Fatalf("after assembly.place occurrences = %d, want 1", got)
+	}
+
+	st := undoState(t, r, s)
+	if !st.CanUndo || st.NextUndo != "Place Component" {
+		t.Fatalf("after assembly.place state = %+v, want canUndo with nextUndo=Place Component", st)
+	}
+
+	call(t, r, s, "transaction.undo", "{}", nil)
+	if got := asm.Occurrences().Count(); got != 0 {
+		t.Errorf("after undo occurrences = %d, want 0 (the placement reverted)", got)
 	}
 }
 

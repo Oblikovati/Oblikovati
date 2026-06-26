@@ -34,7 +34,7 @@ func (r *Router) registerAssemblyFeatureHandlers() {
 	r.mutating(wire.MethodAssemblyFeaturesAddProxyCut, "Add Assembly Feature", assemblyFeaturesAddProxyCut)
 	r.mutating(wire.MethodAssemblyFeaturesAddHole, "Hole", assemblyFeaturesAddHole)
 	r.mutating(wire.MethodAssemblyFeaturesAddExtrude, "Extrude", assemblyFeaturesAddExtrude)
-	r.readOnly(wire.MethodAssemblyFeaturesAddRevolve, assemblyFeaturesAddRevolve)
+	r.mutating(wire.MethodAssemblyFeaturesAddRevolve, "Add Assembly Feature", assemblyFeaturesAddRevolve)
 	r.mutating(wire.MethodAssemblyFeaturesAddChamfer, "Chamfer", assemblyFeaturesAddChamfer)
 	r.mutating(wire.MethodAssemblyFeaturesAddFillet, "Fillet", assemblyFeaturesAddFillet)
 	r.mutating(wire.MethodAssemblyFeaturesAddMoveFace, "Move Face", assemblyFeaturesAddMoveFace)

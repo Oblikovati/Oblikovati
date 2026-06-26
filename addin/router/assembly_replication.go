@@ -27,11 +27,11 @@ import (
 
 // registerAssemblyReplicationHandlers wires the assembly.* replication methods.
 func (r *Router) registerAssemblyReplicationHandlers() {
-	r.readOnly(wire.MethodAssemblyPatternCreate, assemblyPatternCreate)
-	r.readOnly(wire.MethodAssemblyMirror, assemblyMirror)
-	r.readOnly(wire.MethodAssemblyMirrorIntoPart, assemblyMirrorIntoPart)
-	r.readOnly(wire.MethodAssemblyCopy, assemblyCopy)
-	r.readOnly(wire.MethodAssemblySubstitute, assemblySubstitute)
+	r.mutating(wire.MethodAssemblyPatternCreate, "Pattern Components", assemblyPatternCreate)
+	r.mutating(wire.MethodAssemblyMirror, "Mirror Components", assemblyMirror)
+	r.mutating(wire.MethodAssemblyMirrorIntoPart, "Mirror", assemblyMirrorIntoPart)
+	r.mutating(wire.MethodAssemblyCopy, "Copy Component", assemblyCopy)
+	r.mutating(wire.MethodAssemblySubstitute, "Substitute Component", assemblySubstitute)
 }
 
 // assemblyPatternCreate replicates the seed occurrence across an arrangement, adding one
