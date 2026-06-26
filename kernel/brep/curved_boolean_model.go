@@ -44,6 +44,11 @@ type curvedFace struct {
 	reversed bool
 	loops    []curvedLoop
 	lineage  topo.Lineage
+	// outerless marks a face on a CLOSED surface whose boundary is holes only, with NO outer loop — the
+	// genus-1 torus complement, where the surviving spiric oval bounds a hole and the face wraps the whole
+	// torus minus it (Oblikovati#1406). loopSpecs then emits every loop as an InnerLoop. Default false: the
+	// usual convention (loops[0] is the outer loop) holds.
+	outerless bool
 }
 
 // facesOfAny flattens EVERY face of a body into a curvedFace, unlike facesOf which rejects any

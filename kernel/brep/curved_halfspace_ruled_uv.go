@@ -45,8 +45,9 @@ type ruledUV struct {
 // ruledUV satisfies uvSide: a singly-periodic surface whose v is the bounded axial band (#1406).
 var _ uvSide = (*ruledUV)(nil)
 
-// setSeamU moves the arrangement's artificial azimuth seam to absolute azimuth u (uvSide).
-func (c *ruledUV) setSeamU(u float64) { c.seamU = u }
+// placeSeams moves the arrangement's artificial azimuth seam clear of the imprint (uvSide). A ruled side
+// has only the one azimuth seam; v is bounded, so there is no tube seam to place.
+func (c *ruledUV) placeSeams(imprint []geom.Curve3) { c.seamU = c.chooseSeamU(imprint) }
 
 // vPeriodic reports that a ruled side's v (axial distance) does NOT wrap — only u does (uvSide).
 func (c ruledUV) vPeriodic() bool { return false }

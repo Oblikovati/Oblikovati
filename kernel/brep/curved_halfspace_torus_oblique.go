@@ -49,13 +49,9 @@ func torusSingleOvalComplement(t geom.Torus, plane geom.Plane) bool {
 	return ok && k > 0
 }
 
-// torusObliqueHalfSpace keeps the single outer-tube oval CAP a plane parallel to the torus axis slices
-// off (the negative side). The caller must have checked [torusSingleOvalCap].
-func torusObliqueHalfSpace(t geom.Torus, plane geom.Plane) (*topo.Body, error) {
-	phi, m, k, c := geom.TorusSectionCoeffs(t, plane)
-	vc := torusOvalHalfSpan(t, m, k)
-	return buildTorusOvalSolid(t, phi, m, k, c, -vc, vc, unit(plane.Normal()), plane, false)
-}
+// The single-oval CAP (formerly torusObliqueHalfSpace) now routes through the unified (u,v)-arrangement
+// trimmer (torusSideSplit, curved_halfspace_torus_uv.go), the first spiric case migrated off the bespoke
+// builders (#1406). Its complement still builds analytically below until its own migration step.
 
 // torusComplementHalfSpace keeps the genus-1 COMPLEMENT (the full torus minus the oval cap) a plane
 // parallel to the torus axis leaves on its negative side. The caller must have checked

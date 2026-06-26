@@ -301,15 +301,22 @@ func (c ruledUV) chooseSeamU(imprint []geom.Curve3) float64 {
 			us = append(us, float64(s.a.X))
 		}
 	}
-	if len(us) == 0 {
+	return widestGapMid(us)
+}
+
+// widestGapMid returns the midpoint of the widest circular gap (the wrap gap included) between the given
+// angles in [0, 2π) — the clearest place to put an artificial periodic seam. Empty (or a single value)
+// returns 0, the default seam. Shared by the ruled azimuth seam and both torus seams (#1406).
+func widestGapMid(angles []float64) float64 {
+	if len(angles) == 0 {
 		return 0
 	}
-	sort.Float64s(us)
+	sort.Float64s(angles)
 	twoPi := 2 * stdmath.Pi
-	bestGap, bestMid := us[0]+twoPi-us[len(us)-1], (us[len(us)-1]+us[0]+twoPi)/2
-	for i := 1; i < len(us); i++ {
-		if g := us[i] - us[i-1]; g > bestGap {
-			bestGap, bestMid = g, (us[i]+us[i-1])/2
+	bestGap, bestMid := angles[0]+twoPi-angles[len(angles)-1], (angles[len(angles)-1]+angles[0]+twoPi)/2
+	for i := 1; i < len(angles); i++ {
+		if g := angles[i] - angles[i-1]; g > bestGap {
+			bestGap, bestMid = g, (angles[i]+angles[i-1])/2
 		}
 	}
 	for bestMid >= twoPi {
@@ -670,11 +677,16 @@ func (c ruledUV) loopAtApex(lp curvedLoop) bool {
 }
 
 // emittedLoop is one re-emitted boundary loop awaiting orientation: its full edge chain, the imprint
-// (section) sub-arcs alone (for the lid), and its mean axial level (to order hi boundary first).
+// (section) sub-arcs alone (for the lid), its mean axial level (to order hi boundary first), and the signed
+// (u,v) area of the dedge loop it came from. keptBoundaryEdges orients edges so the kept material is on the
+// left, so a CCW (positive area) boundary encloses kept material (an outer loop) and a CW (negative area)
+// one bounds a dropped island (a hole) — the signal a closed-surface trim (torus) uses to tell the small
+// cap (kept inside, CCW) from its genus-1 complement (kept outside, the oval a CW hole) (#1406).
 type emittedLoop struct {
 	face    []loopEdge
 	section []loopEdge
 	mv      float64
+	area    float64
 }
 
 // emitKeptLoops re-emits every (u,v) boundary loop to analytic edges, sorted with the higher (hi) boundary
@@ -686,10 +698,21 @@ func emitKeptLoops(c uvSide, loops [][]dedge, segs []uvSeg) ([]emittedLoop, bool
 		if !ok {
 			return nil, false
 		}
-		out = append(out, emittedLoop{face: face, section: section, mv: meanEdgeV(c, face)})
+		out = append(out, emittedLoop{face: face, section: section, mv: meanEdgeV(c, face), area: dedgeLoopArea(lp)})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].mv > out[j].mv })
 	return out, true
+}
+
+// dedgeLoopArea returns the signed (u,v) area of a boundary loop by the shoelace formula over its dedge
+// start points. Positive is counter-clockwise. Meaningful only for a loop that does not wrap a seam (a
+// contractible imprint, e.g. a torus oval); a seam-wrapping band's area is not used.
+func dedgeLoopArea(loop []dedge) float64 {
+	sum := 0.0
+	for _, e := range loop {
+		sum += float64(e.a.X)*float64(e.b.Y) - float64(e.b.X)*float64(e.a.Y)
+	}
+	return sum / 2
 }
 
 // orientLoops applies the analytic splitSide orientation convention to the ordered loops: the lo boundaries
@@ -699,7 +722,7 @@ func emitKeptLoops(c uvSide, loops [][]dedge, segs []uvSeg) ([]emittedLoop, bool
 // sense opposite its cap and the band, lid and caps stay a consistent manifold. The reversal is gated on
 // wrapping because a non-wrapping tongue is one mixed loop the analytic tongueSide leaves un-reversed
 // (#1405, mirroring curved_halfspace_ruled_uv.go's splitSide vs tongueSide).
-func (c ruledUV) orientLoops(loops []emittedLoop, wrapping bool) ([]curvedLoop, []loopEdge) {
+func (c ruledUV) orientLoops(loops []emittedLoop, wrapping bool) ([]curvedLoop, []loopEdge, bool) {
 	faceLoops := make([]curvedLoop, 0, len(loops))
 	var lid []loopEdge
 	for i, e := range loops {
@@ -710,7 +733,7 @@ func (c ruledUV) orientLoops(loops []emittedLoop, wrapping bool) ([]curvedLoop, 
 		faceLoops = append(faceLoops, curvedLoop{edges: face})
 		lid = append(lid, lidSec...)
 	}
-	return faceLoops, lid
+	return faceLoops, lid, false // a ruled side is open in v: its kept face always has an outer loop
 }
 
 // allRimEdges reports whether every edge of a loop is a rim (circle/arc) — a PURE top-rim hi boundary, the
@@ -774,7 +797,7 @@ func (c ruledUV) emitRun(run []recoveredEdge) (loopEdge, bool) {
 	case segRim:
 		return c.emitRimRun(run)
 	case segImprint:
-		return c.emitImprintRun(run)
+		return emitImprintRun(run)
 	default:
 		return c.emitSeamRun(run)
 	}
@@ -811,7 +834,7 @@ func (c ruledUV) emitRimRun(run []recoveredEdge) (loopEdge, bool) {
 // unwrapped to a monotone span (handling the param seam, like the analytic sectionArm); a run that covers
 // the whole closed curve re-emits it over its full domain. Open conic arms (hyperbola/parabola/line) carry
 // monotone parameters already.
-func (c ruledUV) emitImprintRun(run []recoveredEdge) (loopEdge, bool) {
+func emitImprintRun(run []recoveredEdge) (loopEdge, bool) {
 	curve := run[0].curve
 	t0 := run[0].tA
 	tEnd := run[len(run)-1].tB
@@ -836,12 +859,16 @@ func (c ruledUV) emitSeamRun(run []recoveredEdge) (loopEdge, bool) {
 	return loopEdge{curve: geom.NewLineSegment(p0, p1), t0: 0, t1: 1}, true
 }
 
-// isClosedCurve reports whether a conic closes on itself (an ellipse or circle), so its parameter wraps and
-// a boundary run along it must be unwrapped to a monotone span before re-emission.
+// isClosedCurve reports whether a curve closes on itself, so its parameter wraps and a boundary run along it
+// must be unwrapped to a monotone span before re-emission. An ellipse/circle always closes; a SpiricArc
+// closes only when it spans the WHOLE tube period (V0,V1 a full 2π, the two-oval band's branches) — a
+// single-oval branch over a partial v-range is an open arc that meets its twin at the oval pinches (#1406).
 func isClosedCurve(curve geom.Curve3) bool {
-	switch curve.(type) {
+	switch c := curve.(type) {
 	case geom.EllipseFull, geom.Circle:
 		return true
+	case geom.SpiricArc:
+		return stdmath.Abs(stdmath.Abs(c.V1-c.V0)-2*stdmath.Pi) < 1e-9
 	}
 	return false
 }
