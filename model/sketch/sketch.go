@@ -185,7 +185,19 @@ type Sketch struct {
 	// was built for (counts + point coordinates), so any edit invalidates it.
 	profilesCache *Profiles
 	profilesSig   uint64
+
+	// paramFootprint is the model parameters this sketch's last solve read (its
+	// dimension targets), captured by the part recompute (Oblikovati#1414). A
+	// parameter edit re-solves and rebuilds only the features whose consumed sketch
+	// footprint it touches, instead of the whole program.
+	paramFootprint []param.ID
 }
+
+// SetParameterFootprint records the parameters the sketch's solve read; ParameterFootprint
+// returns them. The part recompute captures the footprint around each solve (param.Track)
+// so the feature engine can dirty only the features a parameter edit actually affects.
+func (s *Sketch) SetParameterFootprint(ids []param.ID) { s.paramFootprint = ids }
+func (s *Sketch) ParameterFootprint() []param.ID       { return s.paramFootprint }
 
 // Plane returns the sketch's host plane.
 func (s *Sketch) Plane() Plane { return s.plane }

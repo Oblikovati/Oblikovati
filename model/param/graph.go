@@ -158,11 +158,14 @@ func (ps *Parameters) attachEdges(id ID, drivers []ID) {
 }
 
 // recomputeFrom re-evaluates id and its transitive dependents in dependency
-// order — and nothing else.
+// order — and nothing else. The reflowed set is exactly the parameters this edit
+// can change, so it is recorded for the feature engine's targeted invalidation
+// (Oblikovati#1414): a later DrainChanged hands it to the edit seam.
 func (ps *Parameters) recomputeFrom(id ID) {
 	dirty := ps.dependentsClosure(id)
 	dirty[id] = true
 	for _, n := range ps.topoOrder(dirty) {
+		ps.markChanged(n)
 		ps.evaluate(ps.byID[n])
 	}
 }

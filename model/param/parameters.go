@@ -31,6 +31,10 @@ type Parameters struct {
 	// order, with their persistent id counter. See derived_table.go.
 	derivedTables []*DerivedParameterTable
 	nextTableID   int
+
+	// Incremental-recompute support (Oblikovati#1414); see tracking.go.
+	readSink idSet // when non-nil, every ModelValue read records its id here (a footprint capture)
+	changed  idSet // parameters whose value an edit re-evaluated since the last DrainChanged
 }
 
 // idSet is a set of parameter ids.
@@ -194,7 +198,7 @@ func (ps *Parameters) add(name string, kind ParameterKind) (*Parameter, error) {
 		return nil, fmt.Errorf("param: a parameter named %q already exists", name)
 	}
 	p := &Parameter{
-		id: ps.nextID, name: name, kind: kind, Visible: true,
+		id: ps.nextID, owner: ps, name: name, kind: kind, Visible: true,
 		DisplayFormat: DisplayFormatDecimal, modelValueType: Nominal,
 		CustomProperty: DefaultCustomPropertyFormat(),
 	}

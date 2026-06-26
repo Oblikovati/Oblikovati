@@ -51,6 +51,7 @@ func (h Health) OK() bool { return h.Status == Healthy }
 // parameters through a [Parameters] collection, never directly.
 type Parameter struct {
 	id     ID
+	owner  *Parameters // the collection that minted this parameter; nil for a bare test parameter
 	name   string
 	expr   Expr
 	value  Quantity
@@ -106,7 +107,17 @@ func (p *Parameter) Value() Quantity { return p.value }
 
 // ModelValue returns the value the model consumes after the tolerance band and
 // the parameter's model-value selection are applied (database units).
+//
+// This is the single accessor every geometry-driving consumer reads through — a
+// sketch dimension's residual, a work-plane offset closure, a sheet-metal
+// thickness, a suppression condition. So it is also the seam that records a read
+// during a footprint capture ([Parameters.Track]): the engine learns which
+// parameters a feature/sketch actually consumed, and a later edit re-evaluates
+// only those (Oblikovati#1414) instead of the whole program.
 func (p *Parameter) ModelValue() float64 {
+	if p.owner != nil {
+		p.owner.recordRead(p.id)
+	}
 	switch p.ModelValueType() {
 	case Upper:
 		return p.value.Value + p.tol.Upper

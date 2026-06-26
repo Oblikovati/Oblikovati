@@ -5,6 +5,7 @@ package feature
 import (
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/model/health"
+	"oblikovati.org/model/param"
 )
 
 // PartFeature wraps a [Feature] with the engine's per-feature state: identity,
@@ -22,6 +23,13 @@ type PartFeature struct {
 	recomputes int
 	cached     []*topo.Body
 	seq        uint64 // global creation stamp; see model/seq
+
+	// paramReads is the model parameters this feature read DIRECTLY during its last
+	// evaluation — a sheet-metal thickness, a suppression condition (NOT the
+	// dimensions of a consumed sketch, which are reported via ConsumedSketches). The
+	// engine uses it, with the consumed sketches' footprints, to skip the feature on a
+	// parameter edit that touches none of them (Oblikovati#1414).
+	paramReads []param.ID
 }
 
 // ID returns the feature's stable handle (unchanged by rename).
