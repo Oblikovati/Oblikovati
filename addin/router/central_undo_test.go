@@ -11,7 +11,20 @@ import (
 	"oblikovati.org/api/wire"
 	"oblikovati.org/app"
 	"oblikovati.org/model/compdef"
+	"oblikovati.org/model/drawing"
 )
+
+// activeDrawingViews returns the number of views on the active drawing's active sheet — the
+// observable the drawing central-seam test checks across an undo to prove the view actually
+// rolled back, not just that the cursor reports it can.
+func activeDrawingViews(t *testing.T, s *app.Session) int {
+	t.Helper()
+	c, ok := s.ActiveDocument().Content().(*drawing.Content)
+	if !ok {
+		t.Fatalf("active document content is %T, want *drawing.Content", s.ActiveDocument().Content())
+	}
+	return c.Sheets().Active().Views().Count()
+}
 
 // activePartBodies returns the number of solid bodies on the session's active part — the
 // observable the central-seam tests check before and after an undo to prove the model
@@ -99,6 +112,38 @@ func TestCentralSeamRecordsBodyDeleteUndo(t *testing.T) {
 	call(t, r, s, "transaction.undo", "{}", nil)
 	if n := len(def.SurfaceBodies().All()); n != 2 {
 		t.Errorf("after undo: %d bodies, want 2 (the delete reverted)", n)
+	}
+}
+
+// TestCentralSeamRecordsDrawingViewUndo proves a drawing edit over the wire (drawingViews.addBase)
+// is now one undo step that reverts the view. The whole drawing authoring surface was classified
+// mutating in #1447 for replication, but its undo labels were dead until DrawingContent gained
+// recipe-snapshot support (#1448): with no MarshalSnapshot the central seam recorded nothing. This
+// is the activation test for that support — addBase adds a view, undo removes it, redo restores it.
+func TestCentralSeamRecordsDrawingViewUndo(t *testing.T) {
+	r, s := drawingViewSession(t) // a part with geometry + an active drawing referencing it
+	if got := activeDrawingViews(t, s); got != 0 {
+		t.Fatalf("fresh drawing already has %d views, want 0", got)
+	}
+
+	call(t, r, s, "drawingViews.addBase", `{"name":"FRONT","orientation":"front","scale":2,"centerXmm":120,"centerYmm":100}`, &wire.ViewResult{})
+	if got := activeDrawingViews(t, s); got != 1 {
+		t.Fatalf("after drawingViews.addBase: %d views, want 1", got)
+	}
+
+	st := undoState(t, r, s)
+	if !st.CanUndo || st.NextUndo != "Add View" {
+		t.Fatalf("after drawingViews.addBase state = %+v, want canUndo with nextUndo=Add View", st)
+	}
+
+	call(t, r, s, "transaction.undo", "{}", nil)
+	if got := activeDrawingViews(t, s); got != 0 {
+		t.Errorf("after undo: %d views, want 0 (the view reverted)", got)
+	}
+
+	call(t, r, s, "transaction.redo", "{}", nil)
+	if got := activeDrawingViews(t, s); got != 1 {
+		t.Errorf("after redo: %d views, want 1 (the view restored)", got)
 	}
 }
 

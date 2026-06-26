@@ -10,14 +10,14 @@ import (
 	"oblikovati.org/event"
 )
 
-// TestDrawingEditsReplicate proves a drawing edit over the wire now emits edit.committed for
+// TestDrawingEditsReplicate proves a drawing edit over the wire emits edit.committed for
 // collaboration replication (ADR-0004). The whole drawing authoring surface (views/annotations/
 // dimensions/sketches/sheets) was registered read-only before #1426, so wire-driven drawing edits were
 // silently not replicated to collaborators. A read-only drawing query still emits nothing.
 //
-// Drawing UNDO additionally requires DrawingContent to support recipe snapshots (MarshalSnapshot); the
-// central seam records no undo step for content that is not a recipe store, so wiring these mutating
-// delivers replication today and undo once that support lands. See the package's drawing-undo follow-up.
+// Drawing UNDO is covered separately by TestCentralSeamRecordsDrawingViewUndo: since #1448 gave
+// DrawingContent recipe-snapshot support, the same mutating classification now also records an undo
+// step, so a wire drawing edit both replicates and is undoable.
 func TestDrawingEditsReplicate(t *testing.T) {
 	r, s := drawingViewSession(t) // a part with geometry + a drawing whose model reference is set
 
