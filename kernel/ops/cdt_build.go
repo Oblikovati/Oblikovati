@@ -257,7 +257,15 @@ func (m *cdt) insertConstraint(a, b int) {
 			break
 		}
 	}
-	m.con[conKey(a, b)] = true
+	// Record the constraint ONLY when its edge actually survives in the mesh. Marking con
+	// unconditionally (the old behaviour) registered a phantom boundary the flood could not toggle at,
+	// leaking the domain across the unrecovered gap — a silent watertightness defect (#1410). A genuine
+	// non-recovery (cap hit / non-convex stall) is collected so the caller falls back deterministically.
+	if m.hasEdge(a, b) {
+		m.con[conKey(a, b)] = true
+		return
+	}
+	m.unrecovered = append(m.unrecovered, [2]int{a, b})
 }
 
 // representatives maps each input point index to the inserted vertex that carries its coordinates:
@@ -370,16 +378,21 @@ func (m *cdt) hasSuper(t int) bool {
 	return m.tris[t].v[0] >= m.nsup || m.tris[t].v[1] >= m.nsup || m.tris[t].v[2] >= m.nsup
 }
 
-// constrainedDelaunayRefined triangulates the domain bounded by loops with interior refinement, inserting
-// the boundary in the OCCT BRepMesh order: the loop (frontier) points FIRST, then the constraints are
-// recovered on that small point set (robust — no interior nodes fighting the flip recovery), then the
-// interior Steiner points are inserted into the already-constrained mesh, where collectCavity protects the
-// frontier edges. pts[:nFrontier] are the loop points (indexed by loops); pts[nFrontier:] are interior.
-// This is the accurate path for a large face with several concave holes, where inserting everything at
-// once (constrainedDelaunay) makes the constraint recovery leak and tear.
-func constrainedDelaunayRefined(pts [][2]float64, loops [][]int, nFrontier int) [][3]int {
+// constrainedDelaunayRefinedChecked triangulates the domain bounded by loops with interior refinement,
+// inserting the boundary in the OCCT BRepMesh order: the loop (frontier) points FIRST, then the
+// constraints are recovered on that small point set (robust — no interior nodes fighting the flip
+// recovery), then the interior Steiner points are inserted into the already-constrained mesh, where
+// collectCavity protects the frontier edges. pts[:nFrontier] are the loop points (indexed by loops);
+// pts[nFrontier:] are interior. This is the accurate path for a large face with several concave holes,
+// where inserting everything at once (constrainedDelaunay) makes the constraint recovery leak and tear.
+// It also reports the recovery status: the constraint endpoint pairs whose edge never recovered, and
+// whether the deterministic earcut fallback was taken because the domain actually leaked across a missing
+// boundary (#1410). See finalizeDomain for how a benign non-recovery (an outer seam bordering the excluded
+// super region) keeps the higher-quality refined mesh while a genuine leak (a filled hole/notch) is
+// replaced.
+func constrainedDelaunayRefinedChecked(pts [][2]float64, loops [][]int, nFrontier int) ([][3]int, [][2]int, bool) {
 	if len(pts) < 3 || nFrontier < 3 {
-		return nil
+		return nil, nil, false
 	}
 	m := newCDT(pts)
 	for i := 0; i < nFrontier; i++ {
@@ -389,7 +402,24 @@ func constrainedDelaunayRefined(pts [][2]float64, loops [][]int, nFrontier int) 
 	for i := nFrontier; i < m.nsup; i++ {
 		m.insert(i) // interior nodes, now respecting the frontier edges (see collectCavity)
 	}
-	return m.extractDomain()
+	return m.finalizeDomain(pts, loops)
+}
+
+// finalizeDomain extracts the inside domain and, when constraint recovery left a boundary edge
+// unrealized, decides between the refined extraction and the deterministic earcut fallback by whether the
+// domain ACTUALLY leaked (domainLeaked) — a missing boundary that filled a hole or concave notch — rather
+// than assuming every non-recovery is harmful. A non-recovery that does not leak (the common holed-wall
+// seam, whose far side is the excluded super region) keeps the higher-quality refined mesh. Returns the
+// triangles, the unrecovered constraints (for the caller's diagnostic), and whether the fallback was used.
+func (m *cdt) finalizeDomain(pts [][2]float64, loops [][]int) ([][3]int, [][2]int, bool) {
+	ed := m.extractDomain()
+	if len(m.unrecovered) == 0 {
+		return ed, nil, false
+	}
+	if m.domainLeaked(ed, loops) {
+		return earcutFromLoops(pts, loops), m.unrecovered, true
+	}
+	return ed, m.unrecovered, false
 }
 
 // constrain recovers every loop edge as a hard constraint between the inserted representatives (see
@@ -408,8 +438,16 @@ func (m *cdt) constrain(loops [][]int) {
 // each loop), returning CCW triangles inside the domain as index triples into pts. Every loop edge
 // is a hard constraint; points not on a loop are interior Steiner points refining the mesh.
 func constrainedDelaunay(pts [][2]float64, loops [][]int) [][3]int {
+	tris, _, _ := constrainedDelaunayChecked(pts, loops)
+	return tris
+}
+
+// constrainedDelaunayChecked is constrainedDelaunay plus the recovery status: it also returns the
+// constraint endpoint pairs whose edge never recovered and whether the deterministic earcut fallback was
+// taken because the domain leaked across a missing boundary (#1410, see finalizeDomain).
+func constrainedDelaunayChecked(pts [][2]float64, loops [][]int) ([][3]int, [][2]int, bool) {
 	if len(pts) < 3 {
-		return nil
+		return nil, nil, false
 	}
 	m := newCDT(pts)
 	for i := 0; i < m.nsup; i++ {
@@ -420,5 +458,5 @@ func constrainedDelaunay(pts [][2]float64, loops [][]int) [][3]int {
 	// neither the corridor walk (no incident triangle) nor the flips (which then spin to exhaustion —
 	// the real O(T²) freeze on imported faces, #1073). constrain works between the inserted REPRESENTATIVES.
 	m.constrain(loops)
-	return m.extractDomain()
+	return m.finalizeDomain(pts, loops)
 }

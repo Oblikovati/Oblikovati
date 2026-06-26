@@ -36,6 +36,12 @@ type cdt struct {
 	con  map[[2]int]bool // constrained undirected edges (sorted vertex pair)
 	nsup int             // index of the first super-triangle vertex (points >= nsup are super)
 	last int             // a recently-live triangle, the seed hint for the next point-location walk (#1408)
+	// unrecovered collects the constraint endpoint pairs whose edge the flip recovery never realized
+	// (the flip cap hit, or a non-convex crossing stalled). Such a constraint is NOT recorded in con —
+	// a phantom con entry has no mesh edge for floodInside to toggle at, so the domain boundary leaks
+	// across the gap silently (#1410). A non-empty list means extractDomain is untrustworthy and the
+	// caller must take the deterministic earcut fallback instead.
+	unrecovered [][2]int
 	// walkSteps counts triangles visited by the adjacency walk over this triangulation's life — a
 	// per-instance counter (each cdt runs on one goroutine, so no data race), read by tests to assert
 	// point location is near-linear, not the old O(N²) full scan.
