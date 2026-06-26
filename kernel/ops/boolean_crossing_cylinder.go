@@ -22,6 +22,12 @@ func curvedCrossingIntersect(op PartFeatureOperation, target, tool *topo.Body, r
 	if op != Intersect {
 		return nil, false
 	}
+	// EPIC #1403: route crossing-cylinder intersect through the GENERAL pipeline first (no bespoke
+	// loop→body constructor); the hand-built CrossingCylinderIntersect stays as a fallback so no OCC case
+	// regresses.
+	if res, ok := brep.CrossingCylinderIntersectGeneral(target, tool, rec); ok && validBooleanSolid(res) {
+		return res, true
+	}
 	res, ok := brep.CrossingCylinderIntersect(target, tool, rec)
 	if !ok || !validBooleanSolid(res) {
 		return nil, false

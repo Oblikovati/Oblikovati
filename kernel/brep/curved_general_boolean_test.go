@@ -179,3 +179,32 @@ func TestConeCylinderIntersectGeneralDeclines(t *testing.T) {
 		t.Error("two cylinders should decline from the cone∩cylinder general path")
 	}
 }
+
+// TestCrossingCylinderIntersectGeneral: two crossing cylinders through the general pipeline yield a
+// watertight three-cylinder solid (rod band + two fat lens caps) — the simplest, fully symmetric pair
+// (both sides cylinders), the third EPIC #1403 migration and the largest bespoke handler replaced.
+func TestCrossingCylinderIntersectGeneral(t *testing.T) {
+	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
+	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	res, ok := crossingCylinderIntersectGeneral(rod, fat, nil)
+	if !ok {
+		t.Fatal("general crossing-cylinder declined; want the three-face intersection")
+	}
+	assertWatertight(t, res)
+	cones, cyls, planes := faceTypeCounts(t, res)
+	if cones != 0 || cyls != 3 || planes != 0 {
+		t.Errorf("got %d cone + %d cyl + %d plane faces, want 3 cylinders (rod band + 2 lens caps)", cones, cyls, planes)
+	}
+	if _, ok := CrossingCylinderIntersectGeneral(fat, rod, nil); !ok {
+		t.Error("crossing cylinders should resolve with the fat passed first too")
+	}
+}
+
+// TestCrossingCylinderIntersectGeneralDeclines: a cone and a cylinder are not the crossing-cylinder case.
+func TestCrossingCylinderIntersectGeneralDeclines(t *testing.T) {
+	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
+	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
+	if _, ok := CrossingCylinderIntersectGeneral(cone, cyl, nil); ok {
+		t.Error("cone+cylinder should decline from the crossing-cylinder general path")
+	}
+}
