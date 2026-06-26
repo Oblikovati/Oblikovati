@@ -347,3 +347,199 @@ func nextUnused(candidates []int, used []bool) int {
 	}
 	return -1
 }
+
+// recoveredEdge is one boundary dedge resolved back to the analytic curve it lies on: its kind, the source
+// curve, its (u,v) endpoints (giving the azimuth span for a rim/seam edge) and the curve parameters at
+// those endpoints (for an imprint sub-arc). It is the bridge from the (u,v) arrangement back to exact
+// 3D geometry (#1405).
+type recoveredEdge struct {
+	kind   segKind
+	curve  geom.Curve3
+	a, b   math.Point2
+	tA, tB float64
+}
+
+// recoverEdge resolves a boundary dedge to the assembled segment it lies on, recovering the segment's kind
+// and source curve, and (for an imprint edge) interpolating the curve parameter at each endpoint from the
+// matched segment's tagged endpoints. The dedge is a sub-piece of exactly one assembled segment, found by
+// its midpoint's perpendicular distance.
+func (c ruledUV) recoverEdge(d dedge, segs []uvSeg) (recoveredEdge, bool) {
+	mid := math.P2((float64(d.a.X)+float64(d.b.X))/2, (float64(d.a.Y)+float64(d.b.Y))/2)
+	best, bestDist := -1, tjTol
+	for i, s := range segs {
+		if dist := perpDistToSeg(mid, s.a, s.b); dist < bestDist {
+			best, bestDist = i, dist
+		}
+	}
+	if best < 0 {
+		return recoveredEdge{}, false
+	}
+	s := segs[best]
+	re := recoveredEdge{kind: s.kind, curve: s.curve, a: d.a, b: d.b}
+	if s.kind == segImprint {
+		re.tA = lerp(s.tA, s.tB, projFraction(d.a, s.a, s.b))
+		re.tB = lerp(s.tA, s.tB, projFraction(d.b, s.a, s.b))
+	}
+	return re, true
+}
+
+// perpDistToSeg returns the distance from p to the segment a→b (clamped to the segment).
+func perpDistToSeg(p, a, b math.Point2) float64 {
+	ab := a.VectorTo(b)
+	l2 := float64(ab.LengthSquared())
+	if l2 < arrTol*arrTol {
+		return float64(p.DistanceTo(a))
+	}
+	t := clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
+	return float64(p.DistanceTo(a.TranslateBy(ab.Scale(math.Scalar(t)))))
+}
+
+// projFraction returns p's projection parameter along a→b, clamped to [0,1].
+func projFraction(p, a, b math.Point2) float64 {
+	ab := a.VectorTo(b)
+	l2 := float64(ab.LengthSquared())
+	if l2 < arrTol*arrTol {
+		return 0
+	}
+	return clamp01(float64(a.VectorTo(p).Dot(ab)) / l2)
+}
+
+// clamp01 clamps t to [0,1].
+func clamp01(t float64) float64 {
+	if t < 0 {
+		return 0
+	}
+	if t > 1 {
+		return 1
+	}
+	return t
+}
+
+// emitLoopEdges re-emits a (u,v) boundary loop as a chain of exact analytic loopEdges: recover each dedge's
+// analytic source, merge consecutive edges that share a curve into one run, and emit each run as a single
+// loopEdge (a rim arc, an imprint sub-arc, or a seam ruling). This is the bridge back to the B-rep face.
+func (c ruledUV) emitLoopEdges(loop []dedge, segs []uvSeg) ([]loopEdge, bool) {
+	rec := make([]recoveredEdge, 0, len(loop))
+	for _, d := range loop {
+		re, ok := c.recoverEdge(d, segs)
+		if !ok {
+			return nil, false
+		}
+		rec = append(rec, re)
+	}
+	var edges []loopEdge
+	for _, run := range mergeRuns(rec) {
+		e, ok := c.emitRun(run)
+		if !ok {
+			return nil, false
+		}
+		edges = append(edges, e)
+	}
+	return edges, true
+}
+
+// mergeRuns groups consecutive recovered edges that lie on the same analytic curve into runs, so a chain of
+// many sampled sub-edges along one conic (or many sub-arcs of one rim) re-emits as a single loopEdge.
+func mergeRuns(rec []recoveredEdge) [][]recoveredEdge {
+	var runs [][]recoveredEdge
+	for _, e := range rec {
+		if n := len(runs); n > 0 && sameRun(runs[n-1][0], e) {
+			runs[n-1] = append(runs[n-1], e)
+		} else {
+			runs = append(runs, []recoveredEdge{e})
+		}
+	}
+	return runs
+}
+
+// emitRun re-emits one run of recovered edges (all on the same curve) as a single exact loopEdge.
+func (c ruledUV) emitRun(run []recoveredEdge) (loopEdge, bool) {
+	switch run[0].kind {
+	case segRim:
+		return c.emitRimRun(run)
+	case segImprint:
+		return c.emitImprintRun(run)
+	default:
+		return c.emitSeamRun(run)
+	}
+}
+
+// emitRimRun re-emits a run along a band rim as one circular edge: the full rim circle when the run wraps
+// the whole azimuth, else a geom.Arc3d over the run's azimuth span in the surface's own frame (so it lands
+// exactly on the rim). The span sums per-edge azimuth deltas, which stays correct across the seam and for
+// a single full-wrap edge (where the raw endpoints alone would read as a zero span).
+func (c ruledUV) emitRimRun(run []recoveredEdge) (loopEdge, bool) {
+	bottom := stdmath.Abs(float64(run[0].a.Y)-c.band.vMin) <= stdmath.Abs(float64(run[0].a.Y)-c.band.vMax)
+	center, radius, circle := c.band.top, c.band.rTop, c.band.topCirc
+	if bottom {
+		center, radius, circle = c.band.bottom, c.band.rBot, c.band.bottomCirc
+	}
+	span := 0.0
+	for _, e := range run {
+		span += float64(e.b.X) - float64(e.a.X)
+	}
+	if stdmath.Abs(span) >= 2*stdmath.Pi-1e-6 {
+		return loopEdge{curve: circle, t0: 0, t1: 1}, true // a full rim circle, reused whole
+	}
+	arc, err := geom.NewArc3d(center, c.axis, c.ref, radius, float64(run[0].a.X), span)
+	if err != nil {
+		return loopEdge{}, false
+	}
+	return loopEdge{curve: arc, t0: 0, t1: 1}, true
+}
+
+// emitImprintRun re-emits a run along one imprint curve as a single loopEdge over the recovered parameter
+// span. For a CLOSED conic (ellipse/circle) the parameters wrap, so the run's parameter sequence is
+// unwrapped to a monotone span (handling the param seam, like the analytic sectionArm); a run that covers
+// the whole closed curve re-emits it over its full domain. Open conic arms (hyperbola/parabola/line) carry
+// monotone parameters already.
+func (c ruledUV) emitImprintRun(run []recoveredEdge) (loopEdge, bool) {
+	curve := run[0].curve
+	t0 := run[0].tA
+	tEnd := run[len(run)-1].tB
+	if isClosedCurve(curve) {
+		prev := t0
+		for _, e := range run {
+			prev = unwrapParamNear(prev, e.tB)
+		}
+		tEnd = prev
+		if lo, hi := curve.Domain(); stdmath.Abs(tEnd-t0) >= (hi-lo)-1e-6 {
+			return loopEdge{curve: curve, t0: lo, t1: hi}, true // the whole closed curve
+		}
+	}
+	return loopEdge{curve: curve, t0: t0, t1: tEnd}, true
+}
+
+// emitSeamRun re-emits a (rare, surviving) seam-ruling run as a straight edge between its 3D endpoints — a
+// ruling of the side from the run's first to last (u,v) vertex.
+func (c ruledUV) emitSeamRun(run []recoveredEdge) (loopEdge, bool) {
+	p0 := c.point3(float64(run[0].a.X), float64(run[0].a.Y))
+	p1 := c.point3(float64(run[len(run)-1].b.X), float64(run[len(run)-1].b.Y))
+	return loopEdge{curve: geom.NewLineSegment(p0, p1), t0: 0, t1: 1}, true
+}
+
+// isClosedCurve reports whether a conic closes on itself (an ellipse or circle), so its parameter wraps and
+// a boundary run along it must be unwrapped to a monotone span before re-emission.
+func isClosedCurve(curve geom.Curve3) bool {
+	switch curve.(type) {
+	case geom.EllipseFull, geom.Circle:
+		return true
+	}
+	return false
+}
+
+// sameRun reports whether two recovered edges belong to one re-emittable run: the same kind, and for an
+// imprint the same source curve, for a rim the same rim level (a rim sits at constant v, so equal v).
+func sameRun(a, b recoveredEdge) bool {
+	if a.kind != b.kind {
+		return false
+	}
+	switch a.kind {
+	case segImprint:
+		return a.curve == b.curve
+	case segRim:
+		return stdmath.Abs(float64(a.a.Y)-float64(b.a.Y)) < 1e-6
+	default:
+		return true
+	}
+}

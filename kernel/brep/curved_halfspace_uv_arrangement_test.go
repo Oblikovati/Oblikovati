@@ -14,10 +14,16 @@ import (
 // (u,v)-arrangement unit tests: point3(u,v) = (R·cos u, R·sin u, v), so paramOf must invert it exactly.
 func cylinderRuledUV(r, vMin, vMax float64) ruledUV {
 	axis, ref := math.V3(0, 0, 1), math.V3(1, 0, 0)
+	bottom, top := math.P3(0, 0, vMin), math.P3(0, 0, vMax)
+	botCirc, _ := geom.NewCircle(bottom, axis, r)
+	topCirc, _ := geom.NewCircle(top, axis, r)
 	return ruledUV{
 		base: math.P3(0, 0, 0), axis: axis, ref: ref, binor: axis.Cross(ref),
 		radSlope: 0, radConst: r,
-		band: coneSideBand_{vMin: vMin, vMax: vMax},
+		band: coneSideBand_{
+			bottom: bottom, top: top, bottomCirc: botCirc, topCirc: topCirc,
+			vMin: vMin, vMax: vMax, rBot: r, rTop: r,
+		},
 	}
 }
 
@@ -225,5 +231,40 @@ func TestKeptBoundaryTongueSingleLoop(t *testing.T) {
 	}
 	if loops := chainLoops(keptBoundaryEdges(kept)); len(loops) != 1 {
 		t.Fatalf("tongue: %d boundary loops, want 1", len(loops))
+	}
+}
+
+// distFromAxis returns p's perpendicular distance from the side's axis (its cylinder radius).
+func distFromAxis(p math.Point3, c ruledUV) float64 {
+	d := c.base.VectorTo(p)
+	radial := d.Sub(c.axis.Scale(d.Dot(c.axis)))
+	return float64(radial.Length())
+}
+
+// TestEmitLoopEdgesStructurallyValid: re-emitting a wrapping-band boundary yields analytic loopEdges whose
+// 3D endpoints lie exactly on the cylinder, whose consecutive edges connect, and that close — the bridge
+// from the (u,v) arrangement back to a valid B-rep boundary (Oblikovati#1405).
+func TestEmitLoopEdgesStructurallyValid(t *testing.T) {
+	c := cylinderRuledUV(3, -5, 5)
+	c.s = 1 // g(u,v)=v -> keep v<0
+	segs := c.assembleBandSegments(c.horizontalCutImprint(t, 0))
+	loops := chainLoops(keptBoundaryEdges(keptCells(c.arrangeBand(segs), c.halfSpaceMaterial())))
+	if len(loops) != 2 {
+		t.Fatalf("want 2 boundary loops, got %d", len(loops))
+	}
+	for li, lp := range loops {
+		edges, ok := c.emitLoopEdges(lp, segs)
+		if !ok || len(edges) == 0 {
+			t.Fatalf("loop %d: emit failed (ok=%v, %d edges)", li, ok, len(edges))
+		}
+		for ei, e := range edges {
+			if r := distFromAxis(e.start(), c); stdmath.Abs(r-3) > 1e-6 {
+				t.Errorf("loop %d edge %d start off the cylinder: radius %.6f, want 3", li, ei, r)
+			}
+			next := edges[(ei+1)%len(edges)]
+			if gap := float64(e.end().DistanceTo(next.start())); gap > 1e-6 {
+				t.Errorf("loop %d edge %d end does not meet the next edge's start: gap %.2e", li, ei, gap)
+			}
+		}
 	}
 }
