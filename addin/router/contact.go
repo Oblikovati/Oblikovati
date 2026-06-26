@@ -18,11 +18,11 @@ import (
 
 // registerContactHandlers wires the contactSets.*/contactSolver.*/interference.* methods.
 func (r *Router) registerContactHandlers() {
-	r.readOnly(wire.MethodContactSetsCreate, contactSetsCreate)
+	r.mutating(wire.MethodContactSetsCreate, "Create Contact Set", contactSetsCreate)
 	r.readOnly(wire.MethodContactSetsList, contactSetsList)
-	r.readOnly(wire.MethodContactSetsDelete, contactSetsDelete)
-	r.readOnly(wire.MethodContactSetsAddMember, contactSetsAddMember)
-	r.readOnly(wire.MethodContactSetsRemoveMember, contactSetsRemoveMember)
+	r.mutating(wire.MethodContactSetsDelete, "Delete Contact Set", contactSetsDelete)
+	r.mutating(wire.MethodContactSetsAddMember, "Edit Contact Set", contactSetsAddMember)
+	r.mutating(wire.MethodContactSetsRemoveMember, "Edit Contact Set", contactSetsRemoveMember)
 	r.readOnly(wire.MethodContactSolverSetEnabled, contactSolverSetEnabled)
 	r.readOnly(wire.MethodContactSolverStatus, contactSolverStatus)
 	r.readOnly(wire.MethodInterferenceAnalyze, interferenceAnalyze)

@@ -29,37 +29,37 @@ func (r *Router) registerRepresentationHandlers() {
 }
 
 func (r *Router) registerDesignRepHandlers() {
-	r.readOnly(wire.MethodDesignRepsCapture, designRepsCapture)
+	r.mutating(wire.MethodDesignRepsCapture, "Capture Design View", designRepsCapture)
 	r.readOnly(wire.MethodDesignRepsActivate, designRepsActivate)
 	r.readOnly(wire.MethodDesignRepsList, designRepsList)
-	r.readOnly(wire.MethodDesignRepsDelete, designRepsDelete)
-	r.readOnly(wire.MethodDesignRepsSetVisibility, designRepsSetVisibility)
-	r.readOnly(wire.MethodDesignRepsSetAppearance, designRepsSetAppearance)
-	r.readOnly(wire.MethodDesignRepsAddSection, designRepsAddSection)
+	r.mutating(wire.MethodDesignRepsDelete, "Delete Design View", designRepsDelete)
+	r.mutating(wire.MethodDesignRepsSetVisibility, "Edit Design View", designRepsSetVisibility)
+	r.mutating(wire.MethodDesignRepsSetAppearance, "Edit Design View", designRepsSetAppearance)
+	r.mutating(wire.MethodDesignRepsAddSection, "Add Section View", designRepsAddSection)
 }
 
 func (r *Router) registerPositionalRepHandlers() {
-	r.readOnly(wire.MethodPositionalRepsCapture, positionalRepsCapture)
+	r.mutating(wire.MethodPositionalRepsCapture, "Capture Positional Rep", positionalRepsCapture)
 	r.readOnly(wire.MethodPositionalRepsActivate, positionalRepsActivate)
 	r.readOnly(wire.MethodPositionalRepsList, positionalRepsList)
-	r.readOnly(wire.MethodPositionalRepsDelete, positionalRepsDelete)
-	r.readOnly(wire.MethodPositionalRepsSetOverride, positionalRepsSetOverride)
-	r.readOnly(wire.MethodPositionalRepsSetFlexible, positionalRepsSetFlexible)
+	r.mutating(wire.MethodPositionalRepsDelete, "Delete Positional Rep", positionalRepsDelete)
+	r.mutating(wire.MethodPositionalRepsSetOverride, "Edit Positional Rep", positionalRepsSetOverride)
+	r.mutating(wire.MethodPositionalRepsSetFlexible, "Edit Positional Rep", positionalRepsSetFlexible)
 }
 
 func (r *Router) registerLODRepHandlers() {
-	r.readOnly(wire.MethodLODRepsCapture, lodRepsCapture)
+	r.mutating(wire.MethodLODRepsCapture, "Capture LOD Rep", lodRepsCapture)
 	r.readOnly(wire.MethodLODRepsActivate, lodRepsActivate)
 	r.readOnly(wire.MethodLODRepsList, lodRepsList)
-	r.readOnly(wire.MethodLODRepsDelete, lodRepsDelete)
-	r.readOnly(wire.MethodLODRepsSetSuppressed, lodRepsSetSuppressed)
+	r.mutating(wire.MethodLODRepsDelete, "Delete LOD Rep", lodRepsDelete)
+	r.mutating(wire.MethodLODRepsSetSuppressed, "Edit LOD Rep", lodRepsSetSuppressed)
 }
 
 func (r *Router) registerModelStateHandlers() {
-	r.readOnly(wire.MethodModelStatesCreate, modelStatesCreate)
+	r.mutating(wire.MethodModelStatesCreate, "Create Model State", modelStatesCreate)
 	r.readOnly(wire.MethodModelStatesActivate, modelStatesActivate)
 	r.readOnly(wire.MethodModelStatesList, modelStatesList)
-	r.readOnly(wire.MethodModelStatesDelete, modelStatesDelete)
+	r.mutating(wire.MethodModelStatesDelete, "Delete Model State", modelStatesDelete)
 }
 
 // --- design-view ---
