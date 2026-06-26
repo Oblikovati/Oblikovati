@@ -114,24 +114,50 @@ func TestMutatingMethodLabels(t *testing.T) {
 	}
 }
 
-// TestMutatingDeclarationDrivesRecording is the #1426 drift guard: undo recording + replication are
-// driven by the handler's OWN declaration (readOnly vs mutating), so a method cannot be mutating yet
-// silently absent from a table — there is no table. A handler registered read-only is not in the
-// mutating set; one registered mutating is, with its label. This replaces the old one-directional
-// table-parity check, which could not catch a mutating handler missing from the table.
-func TestMutatingDeclarationDrivesRecording(t *testing.T) {
+// TestMutatingMethodsImplementInterface is the #1426 enforcement: the router's notion of "mutating" IS
+// the MutatingMethod interface — every handler it records + replicates implements MutatingMethod, and no
+// read-only handler does. Because the classification is the interface (not a side table), a mutating
+// method cannot exist without implementing the contract (and declaring its UndoLabel), so it can never
+// silently drift out of undo/replication.
+func TestMutatingMethodsImplementInterface(t *testing.T) {
+	r := New(opregistry.Default())
+	for method, h := range r.handlers {
+		_, implementsInterface := h.(MutatingMethod)
+		_, classifiedMutating := r.MutatingMethods()[method]
+		if implementsInterface != classifiedMutating {
+			t.Errorf("%s: implements MutatingMethod=%v but recorded-as-mutating=%v — the interface must be the sole classifier",
+				method, implementsInterface, classifiedMutating)
+		}
+	}
+	// Every method the central seam records MUST satisfy the interface (this is what makes its UndoLabel
+	// reachable). A regression that recorded a method by some other signal would trip here.
+	for method := range r.MutatingMethods() {
+		if _, ok := r.handlers[method].(MutatingMethod); !ok {
+			t.Errorf("%s is recorded as a document edit but does not implement MutatingMethod", method)
+		}
+	}
+}
+
+// TestRegistrationHelpersProduceCorrectInterface is the #1426 drift guard at the registration seam: a
+// handler registered through mutating() implements MutatingMethod (and carries its label); one registered
+// through readOnly() deliberately does NOT, so the router never records or replicates it. This is the one
+// pattern a document-editing method must follow — there is no second list to forget.
+func TestRegistrationHelpersProduceCorrectInterface(t *testing.T) {
 	r := New(opregistry.Default())
 	nop := func(_ *app.Session, _ json.RawMessage) (json.RawMessage, error) { return nil, nil }
 
 	r.readOnly("test.queryOnly", nop)
-	r.mutating("test.editsDoc", "Test Edit", nop)
-	mut := r.MutatingMethods()
-
-	if _, isMut := mut["test.queryOnly"]; isMut {
-		t.Error("a read-only handler must not be classified mutating (it would wrongly record + replicate)")
+	if _, isMut := r.handlers["test.queryOnly"].(MutatingMethod); isMut {
+		t.Error("a readOnly handler must NOT implement MutatingMethod (it would wrongly record + replicate)")
 	}
-	if label, isMut := mut["test.editsDoc"]; !isMut || label != "Test Edit" {
-		t.Errorf("a mutating handler must be classified mutating with its label, got ok=%v label=%q", isMut, label)
+
+	r.mutating("test.editsDoc", "Test Edit", nop)
+	mut, isMut := r.handlers["test.editsDoc"].(MutatingMethod)
+	if !isMut {
+		t.Fatal("a mutating handler MUST implement MutatingMethod")
+	}
+	if mut.UndoLabel() != "Test Edit" {
+		t.Errorf("UndoLabel = %q, want %q", mut.UndoLabel(), "Test Edit")
 	}
 }
 

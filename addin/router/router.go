@@ -27,44 +27,81 @@ import (
 // handlerFunc handles one method: decode args, read/mutate the session, return JSON.
 type handlerFunc func(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 
-// handler is a registered wire method: its function plus how the router must treat its result. A
-// mutating handler commits a document edit, so after it succeeds the router records one undo step
-// (undoLabel) and broadcasts edit.committed for collaboration replication; a read-only handler does
-// neither. The classification lives HERE, on the handler, not in a separate table that could drift from
-// the handler set — every method is registered through [Router.mutating] or [Router.readOnly], so being
-// undoable is a structural property a handler declares, the single source of truth (ADR-0004, #1426).
-type handler struct {
-	fn        handlerFunc
-	mutates   bool
-	undoLabel string // the undo step label when mutates; "" mutates = broadcast-only (cursor/metadata methods)
+// MethodHandler is a registered wire method. Every handler implements it; a handler that ALSO implements
+// [MutatingMethod] is treated as a document edit. Read-only is the absence of that second interface, so
+// there is no flag or side table to drift from the handler set.
+type MethodHandler interface {
+	Handle(s *app.Session, args json.RawMessage) (json.RawMessage, error)
 }
+
+// MutatingMethod is the contract a document-editing handler implements so the central seam records one
+// undo step (UndoLabel) after it succeeds and broadcasts edit.committed for collaboration replication
+// (ADR-0004). Being undoable is therefore a property of the handler's TYPE: a handler that does not
+// implement this interface is read-only BY CONSTRUCTION, and one that does cannot exist without declaring
+// its UndoLabel — so a mutating method can never silently become non-undoable or non-replicated, the
+// one-directional-table drift this replaces (#1426). An empty UndoLabel means "broadcast but record no
+// step" (the transaction-control cursor methods and metadata-only edits the recipe does not capture).
+type MutatingMethod interface {
+	MethodHandler
+	UndoLabel() string
+}
+
+// readOnlyFunc adapts a query func to [MethodHandler] only — it deliberately does NOT implement
+// [MutatingMethod], so the router never records or replicates it.
+type readOnlyFunc handlerFunc
+
+func (f readOnlyFunc) Handle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	return f(s, args)
+}
+
+// mutatingFunc adapts a func plus its undo label to [MutatingMethod], so a document-editing handler
+// carries its recording contract in its type.
+type mutatingFunc struct {
+	fn    handlerFunc
+	label string
+}
+
+func (m mutatingFunc) Handle(s *app.Session, args json.RawMessage) (json.RawMessage, error) {
+	return m.fn(s, args)
+}
+
+func (m mutatingFunc) UndoLabel() string { return m.label }
+
+// Compile-time proof that the two adapters sit on the right side of the interface split: a read-only
+// handler must NOT satisfy MutatingMethod, a mutating one must.
+var (
+	_ MethodHandler  = readOnlyFunc(nil)
+	_ MutatingMethod = mutatingFunc{}
+	_ MethodHandler  = mutatingFunc{}
+)
 
 // Router maps method names to handlers.
 type Router struct {
 	ops      *opregistry.Registry
-	handlers map[string]handler
+	handlers map[string]MethodHandler
 	trace    *trace.Buffer
 }
 
-// readOnly registers a query handler: the router neither records an undo step nor replicates it. This is
-// the default registration pattern; a handler that edits the document must use [Router.mutating] instead.
+// readOnly registers a query handler: not a [MutatingMethod], so the router neither records an undo step
+// nor replicates it. This is the default registration pattern; a handler that edits the document must use
+// [Router.mutating] instead.
 func (r *Router) readOnly(method string, fn handlerFunc) {
-	r.set(method, handler{fn: fn})
+	r.set(method, readOnlyFunc(fn))
 }
 
-// mutating registers a document-editing handler under the one pattern every such method follows: the
-// router records a single undo step labelled label after it succeeds and broadcasts edit.committed so a
-// collaboration add-in replays it (ADR-0004). An empty label means "broadcast but record no step" — the
-// transaction-control methods (which move the undo cursor themselves) and metadata-only edits the
-// parametric recipe does not capture. There is no separate list to keep in sync, so a mutating method
-// cannot silently become non-undoable or non-replicated (#1426).
+// mutating registers a document-editing handler as a [MutatingMethod] under the one pattern every such
+// method follows: the router records a single undo step labelled label after it succeeds and broadcasts
+// edit.committed so a collaboration add-in replays it (ADR-0004). An empty label means "broadcast but
+// record no step" — the transaction-control methods (which move the undo cursor themselves) and
+// metadata-only edits the parametric recipe does not capture. Because the label rides in the handler's
+// type, a mutating method cannot drift out of the classification (#1426).
 func (r *Router) mutating(method, label string, fn handlerFunc) {
-	r.set(method, handler{fn: fn, mutates: true, undoLabel: label})
+	r.set(method, mutatingFunc{fn: fn, label: label})
 }
 
 // set records one method's handler, panicking on a duplicate registration (a copy-paste bug that would
 // otherwise silently shadow a handler). Both readOnly and mutating route through it.
-func (r *Router) set(method string, h handler) {
+func (r *Router) set(method string, h MethodHandler) {
 	if _, dup := r.handlers[method]; dup {
 		panic(fmt.Sprintf("router: duplicate handler registration for %q", method))
 	}
@@ -73,7 +110,7 @@ func (r *Router) set(method string, h handler) {
 
 // New builds a router whose feature operations come from ops.
 func New(ops *opregistry.Registry) *Router {
-	r := &Router{ops: ops, handlers: map[string]handler{}, trace: trace.NewBuffer(0)}
+	r := &Router{ops: ops, handlers: map[string]MethodHandler{}, trace: trace.NewBuffer(0)}
 	r.registerStandardHandlers()
 	r.registerTransactionHandlers()
 	r.registerMaterialHandlers()
@@ -507,41 +544,41 @@ func (r *Router) Handle(s *app.Session, method string, req []byte) (resp []byte,
 			r.record(method, time.Since(start), false, "", err.Error(), stack)
 		}
 	}()
-	// Open the active document's undo stream before a mutating handler runs, so the delta the
-	// central seam records afterwards is measured against the pre-edit state (commitMutation).
-	if h.mutates {
+	// A handler that implements MutatingMethod edits the document. Open the active document's undo stream
+	// before it runs, so the delta the central seam records afterwards is measured against the pre-edit
+	// state (commitMutation).
+	mut, mutates := h.(MutatingMethod)
+	if mutates {
 		s.EnsureActiveEditBaseline()
 	}
-	out, herr := h.fn(s, args)
+	out, herr := h.Handle(s, args)
 	if herr != nil {
 		herr = methodError(method, herr)
 		r.record(method, time.Since(start), false, herr.Error(), "", "")
 		return nil, herr
 	}
 	r.record(method, time.Since(start), true, "", "", "")
-	r.commitMutation(s, method, h, req)
+	if mutates {
+		r.commitMutation(s, method, mut.UndoLabel(), req)
+	}
 	return out, nil
 }
 
-// commitMutation runs the post-success side effects of a document-mutating method, driven by the
-// handler's own declaration (h.mutates) so undo recording and collaboration replication cannot drift
-// from the handler set:
+// commitMutation runs the post-success side effects of a document-mutating method — called only when the
+// handler implements [MutatingMethod], so undo recording and collaboration replication cannot drift from
+// the handler set:
 //   - emit edit.committed so a collaboration add-in can replay the wire request (ADR-0004);
 //   - resync any values other documents derive from (M02-F06);
-//   - record one undo step (the central seam — RecordActiveEdit) when the handler carries a
+//   - record one undo step (the central seam — RecordActiveEdit) when the handler carries a non-empty
 //     label, so every API / MCP / Lua mutation is undoable, not just parameter edits.
 //
-// A handler with mutates and an empty label is broadcast but records no step: transaction-control
-// methods (undo/redo/end/abort, which move the cursor themselves) and metadata-only methods the
-// parametric recipe does not capture. A read-only handler (mutates == false) does nothing here.
-func (r *Router) commitMutation(s *app.Session, method string, h handler, req []byte) {
-	if !h.mutates {
-		return
-	}
+// An empty label is broadcast but records no step: transaction-control methods (undo/redo/end/abort,
+// which move the cursor themselves) and metadata-only methods the parametric recipe does not capture.
+func (r *Router) commitMutation(s *app.Session, method, label string, req []byte) {
 	s.EmitEditCommitted(method, req)
 	s.ResyncDerivedFromActiveDocument()
-	if h.undoLabel != "" {
-		s.RecordActiveEdit(h.undoLabel)
+	if label != "" {
+		s.RecordActiveEdit(label)
 	}
 }
 
@@ -573,14 +610,14 @@ func (r *Router) Methods() []string {
 	return out
 }
 
-// MutatingMethods returns the methods that commit a document edit (record an undo step and replicate),
-// each mapped to its undo label, sorted-key-independent. It reads the handlers' own declarations, so it
-// is the live classification with no separate list to drift — used by the drift guard test (#1426).
+// MutatingMethods returns the methods whose handler implements [MutatingMethod] (records an undo step and
+// replicates), each mapped to its undo label. It reads the handlers' own type, so it is the live
+// classification with no separate list to drift — used by the drift guard test (#1426).
 func (r *Router) MutatingMethods() map[string]string {
 	out := make(map[string]string, len(r.handlers))
 	for m, h := range r.handlers {
-		if h.mutates {
-			out[m] = h.undoLabel
+		if mut, ok := h.(MutatingMethod); ok {
+			out[m] = mut.UndoLabel()
 		}
 	}
 	return out
